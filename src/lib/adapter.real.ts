@@ -1,8 +1,9 @@
 /**
- * ULTRA-MINIMAL WhatsApp Mobility - Real Adapter (Phase-2 Placeholder)
- * All methods throw - to be implemented in Phase-2 with Supabase
+ * ULTRA-MINIMAL WhatsApp Mobility - Real Adapter (Phase-2 Production)
+ * Calls Edge Function APIs for production admin operations
  */
 
+import { AdminAPI } from './api';
 import type { 
   Profile, 
   DriverPresence, 
@@ -19,16 +20,32 @@ export class RealAdapter {
 
   // Settings
   async getSettings(): Promise<Settings> {
-    throw new Error("Phase 2 not implemented - Real adapter requires Supabase");
+    const data = await AdminAPI.getSettings();
+    return {
+      subscription_price: data.subscription_price,
+      search_radius_km: data.search_radius_km,
+      max_results: data.max_results,
+      momo_payee_number: data.momo_payee_number,
+      support_phone_e164: data.support_phone_e164,
+      admin_whatsapp_numbers: data.admin_whatsapp_numbers,
+    };
   }
 
   async updateSettings(patch: Partial<Settings>): Promise<Settings> {
-    throw new Error("Phase 2 not implemented - Real adapter requires Supabase");
+    const data = await AdminAPI.saveSettings(patch);
+    return {
+      subscription_price: data.subscription_price,
+      search_radius_km: data.search_radius_km,
+      max_results: data.max_results,
+      momo_payee_number: data.momo_payee_number,
+      support_phone_e164: data.support_phone_e164,
+      admin_whatsapp_numbers: data.admin_whatsapp_numbers,
+    };
   }
 
   // Users (compatibility)
   async listUsers(): Promise<User[]> {
-    throw new Error("Phase 2 not implemented - Real adapter requires Supabase");
+    return AdminAPI.getUsers();
   }
 
   async getUsers(): Promise<User[]> {
@@ -37,25 +54,25 @@ export class RealAdapter {
 
   // Trips
   async getTrips(): Promise<Trip[]> {
-    throw new Error("Phase 2 not implemented - Real adapter requires Supabase");
+    return AdminAPI.listTrips();
   }
 
   // Subscriptions  
   async getSubscriptions(): Promise<Subscription[]> {
-    throw new Error("Phase 2 not implemented - Real adapter requires Supabase");
+    return AdminAPI.listSubs();
   }
 
   async approveSubscription(id: number, txnId?: string): Promise<void> {
-    throw new Error("Phase 2 not implemented - Real adapter requires Supabase");
+    await AdminAPI.approveSub(id, txnId);
   }
 
   async rejectSubscription(id: number): Promise<void> {
-    throw new Error("Phase 2 not implemented - Real adapter requires Supabase");
+    await AdminAPI.rejectSub(id);
   }
 
   // Admin Stats
   async getAdminStats(): Promise<AdminStats> {
-    throw new Error("Phase 2 not implemented - Real adapter requires Supabase");
+    return AdminAPI.getStats();
   }
 
   // Simulator Operations (Phase-2 will use real geospatial queries)

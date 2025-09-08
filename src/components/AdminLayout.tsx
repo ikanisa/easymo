@@ -10,6 +10,8 @@ const baseNavigation = [
   { name: "Users", href: "/users", icon: Users },
   { name: "Trips", href: "/trips", icon: Route },
   { name: "Settings", href: "/settings", icon: Settings },
+  { name: "Operations", href: "/operations", icon: Terminal },
+  { name: "Developer", href: "/developer", icon: Smartphone },
 ];
 
 const devNavigation = [

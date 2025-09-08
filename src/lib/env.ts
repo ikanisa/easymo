@@ -8,7 +8,7 @@ export function isDev(): boolean {
 }
 
 export function useMock(): boolean {
-  return import.meta.env.VITE_USE_MOCK !== 'false';
+  return import.meta.env.VITE_USE_MOCK === '1' || import.meta.env.VITE_USE_MOCK === 'true';
 }
 
 export function showDevTools(): boolean {

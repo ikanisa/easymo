@@ -8,6 +8,8 @@ interface PageHeaderProps {
     onClick: () => void;
     variant?: "default" | "outline" | "secondary" | "ghost" | "link" | "destructive";
     size?: "default" | "sm" | "lg" | "icon";
+    disabled?: boolean;
+    icon?: React.ComponentType<{ className?: string }>;
   };
 }
 
@@ -23,7 +25,9 @@ export function PageHeader({ title, description, action }: PageHeaderProps) {
           onClick={action.onClick}
           variant={action.variant || "outline"}
           size={action.size || "sm"}
+          disabled={action.disabled}
         >
+          {action.icon && <action.icon className="h-4 w-4 mr-2" />}
           {action.label}
         </Button>
       )}

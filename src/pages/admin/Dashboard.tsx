@@ -1,33 +1,55 @@
 import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, Route, CreditCard, MessageCircle, TrendingUp } from "lucide-react";
-import { ADAPTER } from "@/lib/adapter";
+import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Users, Route, CreditCard, MessageCircle, TrendingUp, ExternalLink, RefreshCw, Info } from "lucide-react";
+import { AdminAPI } from "@/lib/api";
+import { SUPABASE_LINKS } from "@/lib/api-constants";
 import type { AdminStats } from "@/lib/types";
 
 export default function Dashboard() {
-  const [stats, setStats] = useState<AdminStats | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
 
-  async function loadStats() {
-    try {
-      setLoading(true);
-      const data = await ADAPTER.getAdminStats();
-      setStats(data);
-    } catch (error) {
-      console.error("Failed to load stats:", error);
-    } finally {
-      setLoading(false);
-    }
-  }
+  const { 
+    data: stats, 
+    isLoading, 
+    error,
+    refetch 
+  } = useQuery({
+    queryKey: ['admin-stats'],
+    queryFn: async () => {
+      const result = await AdminAPI.getStats();
+      setLastRefresh(new Date());
+      return result;
+    },
+    refetchInterval: 30000, // Auto-refresh every 30 seconds
+  });
 
-  useEffect(() => {
-    loadStats();
-    const interval = setInterval(loadStats, 30000); // Refresh every 30 seconds
-    return () => clearInterval(interval);
-  }, []);
+  const { 
+    data: settings 
+  } = useQuery({
+    queryKey: ['admin-settings'],
+    queryFn: AdminAPI.getSettings,
+  });
 
-  if (loading || !stats) {
+  const handleRefresh = () => {
+    refetch();
+  };
+
+  const formatTime = (date: Date) => {
+    return date.toLocaleString('en-GB', {
+      timeZone: 'Africa/Kigali',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
+  if (isLoading && !stats) {
     return (
       <div className="space-y-6">
         <PageHeader title="Dashboard" description="WhatsApp Mobility Platform Overview" />
@@ -50,7 +72,20 @@ export default function Dashboard() {
     );
   }
 
-  const cards = [
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <PageHeader title="Dashboard" description="WhatsApp Mobility Platform Overview" />
+        <Alert variant="destructive">
+          <AlertDescription>
+            Failed to load dashboard data: {error instanceof Error ? error.message : 'Unknown error'}
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
+
+  const cards = stats ? [
     {
       title: "Drivers Online",
       value: stats.drivers_online,
@@ -72,11 +107,40 @@ export default function Dashboard() {
       description: "Paid driver subscriptions",
       color: "text-success",
     },
-  ];
+  ] : [];
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Dashboard" description="WhatsApp Mobility Platform Overview" />
+      <PageHeader 
+        title="Dashboard" 
+        description="WhatsApp Mobility Platform Overview"
+        action={{
+          label: isLoading ? "Refreshing..." : "Refresh",
+          onClick: handleRefresh,
+          disabled: isLoading,
+          icon: RefreshCw,
+        }}
+      />
+
+      {/* Launch Mode Banner */}
+      {settings && (
+        <Alert className={settings.pro_enabled ? "border-success" : "border-info"}>
+          <Info className="h-4 w-4" />
+          <AlertDescription>
+            <strong>
+              {settings.pro_enabled 
+                ? "Pro tier ACTIVE. Driver-only features gated." 
+                : "Launch Mode: All services FREE. Credits not consumed."
+              }
+            </strong>
+            {lastRefresh && (
+              <span className="ml-2 text-sm text-muted-foreground">
+                • Last updated {formatTime(lastRefresh)}
+              </span>
+            )}
+          </AlertDescription>
+        </Alert>
+      )}
 
       <div className="grid gap-6 md:grid-cols-3">
         {cards.map((card) => (
@@ -102,27 +166,31 @@ export default function Dashboard() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <div className="h-2 w-2 bg-success rounded-full"></div>
-                <span className="text-sm">Total Users</span>
-              </div>
-              <span className="text-sm font-medium">{stats.total_users}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <div className="h-2 w-2 bg-info rounded-full"></div>
-                <span className="text-sm">Total Trips</span>
-              </div>
-              <span className="text-sm font-medium">{stats.total_trips}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <div className="h-2 w-2 bg-warning rounded-full"></div>
-                <span className="text-sm">Pending Subscriptions</span>
-              </div>
-              <span className="text-sm font-medium">{stats.pending_subscriptions}</span>
-            </div>
+            {stats && (
+              <>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <div className="h-2 w-2 bg-success rounded-full"></div>
+                    <span className="text-sm">Total Users</span>
+                  </div>
+                  <span className="text-sm font-medium">{stats.total_users}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <div className="h-2 w-2 bg-info rounded-full"></div>
+                    <span className="text-sm">Total Trips</span>
+                  </div>
+                  <span className="text-sm font-medium">{stats.total_trips}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <div className="h-2 w-2 bg-warning rounded-full"></div>
+                    <span className="text-sm">Pending Subscriptions</span>
+                  </div>
+                  <span className="text-sm font-medium">{stats.pending_subscriptions}</span>
+                </div>
+              </>
+            )}
           </CardContent>
         </Card>
 
@@ -130,38 +198,39 @@ export default function Dashboard() {
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
               <TrendingUp className="h-5 w-5 text-success" />
-              <span>System Status</span>
+              <span>Quick Links</span>
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <div className="h-2 w-2 bg-success rounded-full"></div>
-                <span className="text-sm">Mock Adapter</span>
-              </div>
-              <span className="text-xs text-success font-medium">Phase-1 Ready</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <div className="h-2 w-2 bg-info rounded-full"></div>
-                <span className="text-sm">Local Storage</span>
-              </div>
-              <span className="text-xs text-success font-medium">Persisting</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <div className="h-2 w-2 bg-warning rounded-full"></div>
-                <span className="text-sm">WhatsApp Webhook</span>
-              </div>
-              <span className="text-xs text-warning font-medium">Phase-2</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <div className="h-2 w-2 bg-warning rounded-full"></div>
-                <span className="text-sm">Supabase Backend</span>
-              </div>
-              <span className="text-xs text-warning font-medium">Phase-2</span>
-            </div>
+          <CardContent className="space-y-3">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="w-full justify-start"
+              onClick={() => window.open(SUPABASE_LINKS.tables, '_blank')}
+            >
+              <ExternalLink className="h-4 w-4 mr-2" />
+              DB → Tables
+            </Button>
+            
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="w-full justify-start"
+              onClick={() => window.open(SUPABASE_LINKS.logs, '_blank')}
+            >
+              <ExternalLink className="h-4 w-4 mr-2" />
+              Logs → Edge Functions
+            </Button>
+            
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="w-full justify-start"
+              onClick={() => window.open(SUPABASE_LINKS.proofs, '_blank')}
+            >
+              <ExternalLink className="h-4 w-4 mr-2" />
+              Storage → Proofs
+            </Button>
           </CardContent>
         </Card>
       </div>
