@@ -116,3 +116,51 @@ export interface WAConsoleLog {
   from?: string;
   message: string;
 }
+
+// Tokens/Wallets Types
+export interface Shop {
+  id: string;
+  name: string;
+  short_code: string;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface Wallet {
+  id: string;
+  user_code: string;
+  whatsapp: string;
+  status: 'active' | 'frozen' | 'expired';
+  allow_any_shop: boolean;
+  created_at: string;
+  allowed_shop_ids?: string[];
+}
+
+export interface WalletBalance {
+  wallet_id: string;
+  balance: number;
+}
+
+export interface Transaction {
+  id: string;
+  type: 'issue' | 'spend' | 'reversal' | 'settlement';
+  amount: number;
+  wallet_id?: string;
+  merchant_id?: string | null;
+  created_at: string;
+  shops?: { name: string; short_code: string };
+}
+
+export interface IssueTokensRequest {
+  whatsapp: string;
+  user_code: string;
+  amount: number;
+  allow_any_shop: boolean;
+  allowed_shop_ids?: string[];
+}
+
+export interface IssueTokensResponse {
+  ok: boolean;
+  wallet_id: string;
+  link: string;
+}

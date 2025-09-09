@@ -13,6 +13,11 @@ import WAConsole from "./pages/WAConsole";
 import Simulator from "./pages/Simulator";
 import Operations from "./pages/Operations";
 import Developer from "./pages/Developer";
+import TokensIssue from "./pages/tokens/Issue";
+import TokensWallets from "./pages/tokens/Wallets";
+import TokensWalletDetail from "./pages/tokens/WalletDetail";
+import TokensShops from "./pages/tokens/Shops";
+import TokensReports from "./pages/tokens/Reports";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -38,6 +43,12 @@ const App = () => (
             <Route path="/users" element={<Users />} />
             <Route path="/trips" element={<Trips />} />
             <Route path="/settings" element={<Settings />} />
+            <Route path="/tokens" element={<TokensWallets />} />
+            <Route path="/tokens/issue" element={<TokensIssue />} />
+            <Route path="/tokens/wallets" element={<TokensWallets />} />
+            <Route path="/tokens/wallets/:id" element={<TokensWalletDetail />} />
+            <Route path="/tokens/shops" element={<TokensShops />} />
+            <Route path="/tokens/reports" element={<TokensReports />} />
             <Route path="/operations" element={<Operations />} />
             <Route path="/developer" element={<Developer />} />
             <Route path="/admin/wa-console" element={<WAConsole />} />

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Card } from "@/components/ui/card";
-import { MessageCircle, BarChart3, CreditCard, Settings, Users, Route, Menu, X, Terminal, Smartphone } from "lucide-react";
+import { MessageCircle, BarChart3, CreditCard, Settings, Users, Route, Menu, X, Terminal, Smartphone, Wallet, Coins } from "lucide-react";
 import { showDevTools } from "@/lib/env";
 
 const baseNavigation = [
@@ -9,6 +9,7 @@ const baseNavigation = [
   { name: "Subscriptions", href: "/subscriptions", icon: CreditCard },
   { name: "Users", href: "/users", icon: Users },
   { name: "Trips", href: "/trips", icon: Route },
+  { name: "Tokens", href: "/tokens", icon: Wallet },
   { name: "Settings", href: "/settings", icon: Settings },
   { name: "Operations", href: "/operations", icon: Terminal },
   { name: "Developer", href: "/developer", icon: Smartphone },
