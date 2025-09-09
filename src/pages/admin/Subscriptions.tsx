@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -7,68 +7,63 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { CreditCard, Copy, Check, X, MessageCircle, Calendar, DollarSign } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { StatsCards } from "@/components/admin/StatsCards";
-import { ADAPTER } from "@/lib/adapter";
+import { AdminAPI } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { formatUserRefCode } from "@/lib/utils";
 import type { Subscription } from "@/lib/types";
 
 export default function SubscriptionsAdmin() {
-  const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
-  const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
-  async function load() {
-    try {
-      setLoading(true);
-      const data = await ADAPTER.getSubscriptions();
-      setSubscriptions(data);
-    } catch (error) {
-      console.error("Failed to load subscriptions:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load subscriptions",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  }
+  const { 
+    data: subscriptions = [], 
+    isLoading, 
+    refetch 
+  } = useQuery({
+    queryKey: ['admin-subscriptions'],
+    queryFn: AdminAPI.listSubs,
+  });
 
-  async function approve(id: number) {
-    try {
-      await ADAPTER.approveSubscription(id);
-      await load(); // Refresh data
+  const approveMutation = useMutation({
+    mutationFn: ({ id, txn_id }: { id: number; txn_id?: string }) => 
+      AdminAPI.approveSub(id, txn_id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-subscriptions'] });
       toast({
         title: "Success",
         description: "Subscription approved successfully",
       });
-    } catch (error) {
+    },
+    onError: (error) => {
       console.error("Failed to approve subscription:", error);
       toast({
         title: "Error", 
         description: "Failed to approve subscription",
         variant: "destructive",
       });
-    }
-  }
+    },
+  });
 
-  async function reject(id: number) {
-    try {
-      await ADAPTER.rejectSubscription(id);
-      await load(); // Refresh data
+  const rejectMutation = useMutation({
+    mutationFn: ({ id, reason }: { id: number; reason?: string }) => 
+      AdminAPI.rejectSub(id, reason),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-subscriptions'] });
       toast({
         title: "Success",
         description: "Subscription rejected successfully",
       });
-    } catch (error) {
+    },
+    onError: (error) => {
       console.error("Failed to reject subscription:", error);
       toast({
         title: "Error",
         description: "Failed to reject subscription", 
         variant: "destructive",
       });
-    }
-  }
+    },
+  });
 
   async function copyToClipboard(text: string, description: string) {
     try {
@@ -199,7 +194,8 @@ export default function SubscriptionsAdmin() {
             <>
               <Button
                 size="sm"
-                onClick={() => approve(subscription.id)}
+                onClick={() => approveMutation.mutate({ id: subscription.id })}
+                disabled={approveMutation.isPending}
               >
                 <Check className="h-3 w-3 mr-1" />
                 Approve
@@ -208,7 +204,8 @@ export default function SubscriptionsAdmin() {
                 size="sm"
                 variant="outline"
                 className="text-destructive hover:text-destructive"
-                onClick={() => reject(subscription.id)}
+                onClick={() => rejectMutation.mutate({ id: subscription.id })}
+                disabled={rejectMutation.isPending}
               >
                 <X className="h-3 w-3 mr-1" />
                 Reject
@@ -222,11 +219,9 @@ export default function SubscriptionsAdmin() {
     },
   ];
 
-  useEffect(() => { 
-    load(); 
-  }, []);
+  // No need for useEffect with React Query
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="space-y-6">
         <PageHeader
@@ -253,7 +248,7 @@ export default function SubscriptionsAdmin() {
         description="Manage driver subscription payments"
         action={{
           label: "Refresh",
-          onClick: load,
+          onClick: () => refetch(),
           variant: "outline",
         }}
       />

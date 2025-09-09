@@ -124,31 +124,43 @@ const SEED_DATA: MockData = {
   ],
   users: [
     {
+      user_id: 'user-001',
+      whatsapp_e164: '+250788111111',
+      ref_code: '123456',
+      credits_balance: 10,
+      subscription_status: 'none',
+      created_at: new Date(Date.now() - 86400000).toISOString(),
+      // Compatibility fields
       id: 'user-001',
       whatsapp_number: '0788111111',
       name: 'John Doe',
       profile_pic: null,
-      ref_code: '123456',
-      subscription_status: 'none',
-      created_at: new Date(Date.now() - 86400000).toISOString()
     },
     {
+      user_id: 'user-002',
+      whatsapp_e164: '+250788222222', 
+      ref_code: '234567',
+      credits_balance: 5,
+      subscription_status: 'active',
+      created_at: new Date(Date.now() - 172800000).toISOString(),
+      // Compatibility fields
       id: 'user-002',
       whatsapp_number: '0788222222',
       name: 'Jane Smith',
       profile_pic: null,
-      ref_code: '234567', 
-      subscription_status: 'active',
-      created_at: new Date(Date.now() - 172800000).toISOString()
     },
     {
+      user_id: 'user-003',
+      whatsapp_e164: '+250788333333',
+      ref_code: '345678',
+      credits_balance: 0,
+      subscription_status: 'none',
+      created_at: new Date(Date.now() - 259200000).toISOString(),
+      // Compatibility fields  
       id: 'user-003',
       whatsapp_number: '0788333333',
-      name: 'Bob Wilson',
+      name: 'Bob Wilson', 
       profile_pic: null,
-      ref_code: '345678',
-      subscription_status: 'none', 
-      created_at: new Date(Date.now() - 259200000).toISOString()
     }
   ],
   settings: DEFAULT_SETTINGS

@@ -1,36 +1,26 @@
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DataTable, Column } from "@/components/ui/data-table";
-import { Users, MessageCircle, Calendar } from "lucide-react";
-import { ADAPTER } from "@/lib/adapter";
-import { formatPhone, timeAgo } from "@/lib/format";
+import { Users, MessageCircle, Calendar, Coins } from "lucide-react";
+import { AdminAPI } from "@/lib/api";
+import { timeAgo } from "@/lib/format";
 import { formatUserRefCode } from "@/lib/utils";
 import type { User } from "@/lib/types";
 
 export default function UsersAdmin() {
-  const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  async function loadUsers() {
-    try {
-      setLoading(true);
-      const data = await ADAPTER.getUsers();
-      // Sort by most recent first
-      const sortedData = data.sort((a, b) => 
+  const { 
+    data: users = [], 
+    isLoading, 
+    error 
+  } = useQuery({
+    queryKey: ['admin-users'],
+    queryFn: AdminAPI.getUsers,
+    select: (data) => 
+      [...data].sort((a, b) => 
         new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-      );
-      setUsers(sortedData);
-    } catch (error) {
-      console.error("Failed to load users:", error);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  useEffect(() => {
-    loadUsers();
-  }, []);
+      ),
+  });
 
   const columns: Column<User>[] = [
     {
@@ -45,18 +35,32 @@ export default function UsersAdmin() {
       searchWeight: 3,
     },
     {
-      id: "whatsapp_number",
+      id: "whatsapp_e164",
       header: "WhatsApp Number",
-      accessorKey: "whatsapp_number",
+      accessorKey: "whatsapp_e164",
       cell: (user) => (
         <div className="flex items-center space-x-2">
           <MessageCircle className="h-4 w-4 text-muted-foreground" />
-          <span className="font-mono">+250{user.whatsapp_number}</span>
+          <span className="font-mono">{user.whatsapp_e164}</span>
         </div>
       ),
       sortable: true,
       filterable: true,
       searchWeight: 3,
+    },
+    {
+      id: "credits_balance",
+      header: "Credits",
+      accessorKey: "credits_balance",
+      cell: (user) => (
+        <div className="flex items-center space-x-2">
+          <Coins className="h-4 w-4 text-muted-foreground" />
+          <span className="font-mono">{user.credits_balance}</span>
+        </div>
+      ),
+      sortable: true,
+      filterable: true,
+      searchWeight: 1,
     },
     {
       id: "subscription_status",
@@ -98,7 +102,7 @@ export default function UsersAdmin() {
     },
   ];
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="space-y-6">
         <PageHeader title="Users" description="Manage platform users and their activity" />

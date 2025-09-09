@@ -8,11 +8,13 @@ import { AdminAPI, isUnauthorized } from '@/lib/api';
 
 export function useAdminAuth() {
   const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
-  const [adminToken, setAdminToken] = useState<string>(
-    import.meta.env.VITE_ADMIN_TOKEN || localStorage.getItem('admin_token') || ''
-  );
+  const [adminToken, setAdminToken] = useState<string>(() => {
+    return import.meta.env.VITE_ADMIN_TOKEN || 
+           localStorage.getItem('admin_token') || 
+           '';
+  });
 
-  // Check authorization on mount
+  // Check authorization on mount and when token changes
   useEffect(() => {
     checkAuth();
   }, [adminToken]);
@@ -24,17 +26,15 @@ export function useAdminAuth() {
     }
 
     try {
-      // Update environment variable temporarily for this check
-      if (adminToken !== import.meta.env.VITE_ADMIN_TOKEN) {
-        // Store in localStorage for persistence
-        localStorage.setItem('admin_token', adminToken);
-      }
+      // Store in localStorage for persistence
+      localStorage.setItem('admin_token', adminToken);
       
       await AdminAPI.healthCheck();
       setIsAuthorized(true);
     } catch (error) {
       if (isUnauthorized(error)) {
         setIsAuthorized(false);
+        localStorage.removeItem('admin_token');
       } else {
         // Network or other error - assume authorized if token exists
         setIsAuthorized(!!adminToken);

@@ -7,8 +7,14 @@ export const API_BASE = import.meta.env.VITE_API_BASE || '/functions/v1';
 
 export const ADMIN_HEADERS = () => ({
   'Content-Type': 'application/json',
-  'x-admin-token': import.meta.env.VITE_ADMIN_TOKEN!,
+  'x-admin-token': getAdminToken(),
 });
+
+function getAdminToken(): string {
+  return import.meta.env.VITE_ADMIN_TOKEN || 
+         localStorage.getItem('admin_token') || 
+         '';
+}
 
 export const SUPABASE_PROJECT_ID = 'ezrriefbmhiiqfoxgjgz';
 

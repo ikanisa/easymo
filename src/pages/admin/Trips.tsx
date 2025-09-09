@@ -1,36 +1,50 @@
-import { useEffect, useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DataTable, Column } from "@/components/ui/data-table";
-import { Route, MapPin, Clock, User, Car } from "lucide-react";
-import { ADAPTER } from "@/lib/adapter";
+import { Button } from "@/components/ui/button";
+import { Route, MapPin, Clock, User, Car, AlertTriangle } from "lucide-react";
+import { AdminAPI } from "@/lib/api";
 import { VEHICLE_LABELS, timeAgo } from "@/lib/format";
 import { formatUserRefCode } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
 import type { Trip } from "@/lib/types";
 
 export default function TripsAdmin() {
-  const [trips, setTrips] = useState<Trip[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
-  async function loadTrips() {
-    try {
-      setLoading(true);
-      const data = await ADAPTER.getTrips();
-      // Sort by most recent first (created_at desc)
-      const sortedData = data.sort((a, b) => 
+  const { 
+    data: trips = [], 
+    isLoading, 
+    error 
+  } = useQuery({
+    queryKey: ['admin-trips'],
+    queryFn: AdminAPI.listTrips,
+    select: (data) => 
+      [...data].sort((a, b) => 
         new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-      );
-      setTrips(sortedData);
-    } catch (error) {
-      console.error("Failed to load trips:", error);
-    } finally {
-      setLoading(false);
-    }
-  }
+      ),
+  });
 
-  useEffect(() => {
-    loadTrips();
-  }, []);
+  const closeTripMutation = useMutation({
+    mutationFn: AdminAPI.closeTrip,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-trips'] });
+      toast({
+        title: "Success",
+        description: "Trip closed successfully",
+      });
+    },
+    onError: (error) => {
+      console.error("Failed to close trip:", error);
+      toast({
+        title: "Error",
+        description: "Failed to close trip",
+        variant: "destructive",
+      });
+    },
+  });
 
   const openTrips = trips.filter(t => t.status === "open").length;
   const expiredTrips = trips.filter(t => t.status === "expired").length;
@@ -143,9 +157,29 @@ export default function TripsAdmin() {
       filterable: true,
       searchWeight: 1,
     },
+    {
+      id: "actions",
+      header: "Actions",
+      cell: (trip) => (
+        <div className="flex space-x-2">
+          {trip.status === "open" && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => closeTripMutation.mutate(trip.id)}
+              disabled={closeTripMutation.isPending}
+            >
+              <AlertTriangle className="h-3 w-3 mr-1" />
+              Close
+            </Button>
+          )}
+        </div>
+      ),
+      searchable: false,
+    },
   ];
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="space-y-6">
         <PageHeader title="Trips" description="Manage platform trips and bookings" />

@@ -50,15 +50,19 @@ export interface Subscription {
   txn_id?: string | null;
 }
 
-// Compatibility User interface for existing components
+// Updated User interface aligned with backend
 export interface User {
-  id: string;
-  whatsapp_number: string;
-  name: string | null;
-  profile_pic: string | null;
+  user_id: string;
+  whatsapp_e164: string;
   ref_code: string;
+  credits_balance: number;
   subscription_status: "active" | "expired" | "none";
   created_at: string;
+  // Compatibility fields
+  id?: string;
+  whatsapp_number?: string;
+  name?: string | null;
+  profile_pic?: string | null;
 }
 
 export interface Settings {
