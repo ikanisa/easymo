@@ -4,6 +4,7 @@
  */
 
 import { API_BASE, ADMIN_HEADERS } from "./api-constants";
+import { supabase } from "@/integrations/supabase/client";
 
 async function j(res: Response) { 
   if (!res.ok) throw new Error(await res.text()); 
@@ -12,18 +13,27 @@ async function j(res: Response) {
 
 export const TokensApi = {
   // Issue tokens via existing endpoint
-  issue: (payload: {
+  issue: async (payload: {
     whatsapp: string;
     user_code: string;
     amount: number;
     allow_any_shop: boolean;
     allowed_shop_ids?: string[];
-  }) =>
-    fetch(`${API_BASE}/issue_tokens`, { 
-      method: "POST", 
-      headers: ADMIN_HEADERS(), 
-      body: JSON.stringify(payload) 
-    }).then(j),
+  }) => {
+    const { data, error } = await supabase.functions.invoke('issue_tokens', {
+      body: payload,
+      headers: {
+        'x-admin-token': (function getAdminToken(): string {
+          return import.meta.env.VITE_ADMIN_TOKEN || 
+                 localStorage.getItem('admin_token') || 
+                 '';
+        })(),
+      }
+    });
+    
+    if (error) throw new Error(error.message);
+    return data;
+  },
 
   // Read operations via REST API
   listWallets: (query: { 
@@ -44,7 +54,7 @@ export const TokensApi = {
       params.push(`status=eq.${query.status}`);
     }
     
-    return fetch(`/rest/v1/wallets?${params.join("&")}`, { 
+    return fetch(`https://ezrriefbmhiiqfoxgjgz.supabase.co/rest/v1/wallets?${params.join("&")}`, { 
       headers: { 
         apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
         "Content-Type": "application/json"
@@ -53,7 +63,7 @@ export const TokensApi = {
   },
 
   getWallet: (id: string) =>
-    fetch(`/rest/v1/wallets?id=eq.${id}&select=*`, { 
+    fetch(`https://ezrriefbmhiiqfoxgjgz.supabase.co/rest/v1/wallets?id=eq.${id}&select=*`, { 
       headers: { 
         apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
         "Content-Type": "application/json"
@@ -61,7 +71,7 @@ export const TokensApi = {
     }).then(j).then((r) => r[0]),
 
   getBalance: (wallet_id: string) =>
-    fetch(`/rest/v1/v_wallet_balances?wallet_id=eq.${wallet_id}&select=balance`, { 
+    fetch(`https://ezrriefbmhiiqfoxgjgz.supabase.co/rest/v1/v_wallet_balances?wallet_id=eq.${wallet_id}&select=balance`, { 
       headers: { 
         apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
         "Content-Type": "application/json"
@@ -72,7 +82,7 @@ export const TokensApi = {
     if (wallet_ids.length === 0) return Promise.resolve({});
     
     const filters = wallet_ids.map(id => `wallet_id.eq.${id}`).join(',');
-    return fetch(`/rest/v1/v_wallet_balances?or=(${filters})&select=wallet_id,balance`, { 
+    return fetch(`https://ezrriefbmhiiqfoxgjgz.supabase.co/rest/v1/v_wallet_balances?or=(${filters})&select=wallet_id,balance`, { 
       headers: { 
         apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
         "Content-Type": "application/json"
@@ -87,7 +97,7 @@ export const TokensApi = {
   },
 
   listShops: () =>
-    fetch(`/rest/v1/shops?select=*&order=created_at.desc`, { 
+    fetch(`https://ezrriefbmhiiqfoxgjgz.supabase.co/rest/v1/shops?select=*&order=created_at.desc`, { 
       headers: { 
         apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
         "Content-Type": "application/json"
@@ -95,7 +105,7 @@ export const TokensApi = {
     }).then(j),
 
   checkUserCodeExists: (user_code: string) =>
-    fetch(`/rest/v1/wallets?user_code=eq.${encodeURIComponent(user_code)}&select=id&limit=1`, { 
+    fetch(`https://ezrriefbmhiiqfoxgjgz.supabase.co/rest/v1/wallets?user_code=eq.${encodeURIComponent(user_code)}&select=id&limit=1`, { 
       headers: { 
         apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
         "Content-Type": "application/json"
@@ -131,7 +141,7 @@ export const TokensApi = {
       q.push(`created_at=lte.${params.to}`);
     }
     
-    return fetch(`/rest/v1/transactions?${q.join("&")}`, { 
+    return fetch(`https://ezrriefbmhiiqfoxgjgz.supabase.co/rest/v1/transactions?${q.join("&")}`, { 
       headers: { 
         apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
         "Content-Type": "application/json"
