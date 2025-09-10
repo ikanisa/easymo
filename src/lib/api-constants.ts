@@ -3,7 +3,7 @@
  * Single source of truth for API configuration
  */
 
-export const API_BASE = import.meta.env.VITE_API_BASE || '/functions/v1';
+export const API_BASE = 'https://ezrriefbmhiiqfoxgjgz.supabase.co/functions/v1';
 
 export const ADMIN_HEADERS = () => ({
   'Content-Type': 'application/json',
