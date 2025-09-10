@@ -66,7 +66,7 @@ export default function TokensIssue() {
     },
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     // Validation
@@ -86,6 +86,31 @@ export default function TokensIssue() {
         variant: "destructive",
       });
       return;
+    }
+
+    if (!formData.user_code.trim()) {
+      toast({
+        title: "Invalid User Code",
+        description: "User code is required",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Check if user code already exists
+    try {
+      const exists = await TokensApi.checkUserCodeExists(formData.user_code);
+      if (exists) {
+        toast({
+          title: "User Code Already Exists",
+          description: "This user code is already in use. Please choose a different one.",
+          variant: "destructive",
+        });
+        return;
+      }
+    } catch (error) {
+      console.error("Failed to check user code:", error);
+      // Continue with submission if check fails
     }
     
     issueMutation.mutate(formData);

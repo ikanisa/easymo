@@ -94,6 +94,14 @@ export const TokensApi = {
       } 
     }).then(j),
 
+  checkUserCodeExists: (user_code: string) =>
+    fetch(`/rest/v1/wallets?user_code=eq.${encodeURIComponent(user_code)}&select=id&limit=1`, { 
+      headers: { 
+        apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+        "Content-Type": "application/json"
+      } 
+    }).then(j).then((r) => r.length > 0),
+
   listTx: (params: { 
     wallet_id?: string; 
     merchant_id?: string; 
