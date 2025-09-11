@@ -18,6 +18,7 @@ import TokensWallets from "./pages/tokens/Wallets";
 import TokensWalletDetail from "./pages/tokens/WalletDetail";
 import TokensShops from "./pages/tokens/Shops";
 import TokensReports from "./pages/tokens/Reports";
+import CampaignsPage from "./marketing/CampaignsPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -49,6 +50,7 @@ const App = () => (
             <Route path="/tokens/wallets/:id" element={<TokensWalletDetail />} />
             <Route path="/tokens/shops" element={<TokensShops />} />
             <Route path="/tokens/reports" element={<TokensReports />} />
+            <Route path="/campaigns" element={<CampaignsPage />} />
             <Route path="/operations" element={<Operations />} />
             <Route path="/developer" element={<Developer />} />
             <Route path="/admin/wa-console" element={<WAConsole />} />

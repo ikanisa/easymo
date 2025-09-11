@@ -32,68 +32,44 @@ export const TokensApi = {
     });
     
     if (error) throw new Error(error.message);
+    
+    // Generate QR link from qr_secret if not provided
+    if (data?.qr_secret && !data?.link) {
+      data.link = `https://example.com/qr?secret=${data.qr_secret}`;
+    }
+    
     return data;
   },
 
-  // Read operations via REST API
-  listWallets: (query: { 
+  // Mock implementation - wallets table doesn't exist yet
+  listWallets: async (query: { 
     q?: string; 
     status?: string; 
     limit?: number; 
     offset?: number 
   }) => {
-    const params: string[] = [
-      "select=*",
-      "order=created_at.desc",
-      `limit=${query.limit ?? 20}`,
-      `offset=${query.offset ?? 0}`
-    ];
-    
-    // Add filters
-    if (query.status && query.status !== 'all') {
-      params.push(`status=eq.${query.status}`);
-    }
-    
-    return fetch(`https://ezrriefbmhiiqfoxgjgz.supabase.co/rest/v1/wallets?${params.join("&")}`, { 
-      headers: { 
-        apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-        "Content-Type": "application/json"
-      } 
-    }).then(j);
+    // Return mock data since wallets table doesn't exist
+    console.warn("TokensApi.listWallets: Using mock data - wallets table not found");
+    return [];
   },
 
-  getWallet: (id: string) =>
-    fetch(`https://ezrriefbmhiiqfoxgjgz.supabase.co/rest/v1/wallets?id=eq.${id}&select=*`, { 
-      headers: { 
-        apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-        "Content-Type": "application/json"
-      } 
-    }).then(j).then((r) => r[0]),
+  getWallet: async (id: string) => {
+    console.warn("TokensApi.getWallet: Using mock data - wallets table not found");
+    return null;
+  },
 
-  getBalance: (wallet_id: string) =>
-    fetch(`https://ezrriefbmhiiqfoxgjgz.supabase.co/rest/v1/v_wallet_balances?wallet_id=eq.${wallet_id}&select=balance`, { 
-      headers: { 
-        apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-        "Content-Type": "application/json"
-      } 
-    }).then(j).then((r) => r?.[0]?.balance ?? 0),
+  getBalance: async (wallet_id: string) => {
+    console.warn("TokensApi.getBalance: Using mock data - wallet balances table not found");
+    return 0;
+  },
 
-  getBatchBalances: (wallet_ids: string[]) => {
-    if (wallet_ids.length === 0) return Promise.resolve({});
-    
-    const filters = wallet_ids.map(id => `wallet_id.eq.${id}`).join(',');
-    return fetch(`https://ezrriefbmhiiqfoxgjgz.supabase.co/rest/v1/v_wallet_balances?or=(${filters})&select=wallet_id,balance`, { 
-      headers: { 
-        apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-        "Content-Type": "application/json"
-      } 
-    }).then(j).then((rows) => {
-      const balances: Record<string, number> = {};
-      rows.forEach((row: any) => {
-        balances[row.wallet_id] = row.balance;
-      });
-      return balances;
+  getBatchBalances: async (wallet_ids: string[]) => {
+    console.warn("TokensApi.getBatchBalances: Using mock data - wallet balances table not found");
+    const balances: Record<string, number> = {};
+    wallet_ids.forEach(id => {
+      balances[id] = 0;
     });
+    return balances;
   },
 
   listShops: () =>
@@ -104,15 +80,12 @@ export const TokensApi = {
       } 
     }).then(j),
 
-  checkUserCodeExists: (user_code: string) =>
-    fetch(`https://ezrriefbmhiiqfoxgjgz.supabase.co/rest/v1/wallets?user_code=eq.${encodeURIComponent(user_code)}&select=id&limit=1`, { 
-      headers: { 
-        apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-        "Content-Type": "application/json"
-      } 
-    }).then(j).then((r) => r.length > 0),
+  checkUserCodeExists: async (user_code: string) => {
+    console.warn("TokensApi.checkUserCodeExists: Using mock data - wallets table not found");
+    return false; // Always return false since we can't check
+  },
 
-  listTx: (params: { 
+  listTx: async (params: { 
     wallet_id?: string; 
     merchant_id?: string; 
     from?: string; 
@@ -120,32 +93,7 @@ export const TokensApi = {
     limit?: number; 
     offset?: number 
   }) => {
-    const q: string[] = [
-      "select=*,shops(name,short_code)",
-      "order=created_at.desc",
-      `limit=${params.limit ?? 50}`,
-      `offset=${params.offset ?? 0}`
-    ];
-    
-    // Add filters
-    if (params.wallet_id) {
-      q.push(`wallet_id=eq.${params.wallet_id}`);
-    }
-    if (params.merchant_id) {
-      q.push(`merchant_id=eq.${params.merchant_id}`);
-    }
-    if (params.from) {
-      q.push(`created_at=gte.${params.from}`);
-    }
-    if (params.to) {
-      q.push(`created_at=lte.${params.to}`);
-    }
-    
-    return fetch(`https://ezrriefbmhiiqfoxgjgz.supabase.co/rest/v1/transactions?${q.join("&")}`, { 
-      headers: { 
-        apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-        "Content-Type": "application/json"
-      } 
-    }).then(j);
+    console.warn("TokensApi.listTx: Using mock data - transactions table not found");
+    return [];
   },
 };
