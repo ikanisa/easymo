@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "@/hooks/use-toast";
 import { TokensApi } from "@/lib/tokensApi";
 import { Copy, Coins, Loader2, ExternalLink } from "lucide-react";
+import { QRGenerator } from "@/components/QRGenerator";
 import type { Shop, IssueTokensRequest, IssueTokensResponse } from "@/lib/types";
 
 export default function TokensIssue() {
@@ -289,31 +290,40 @@ export default function TokensIssue() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>QR Link</Label>
-                  <div className="flex gap-2">
-                    <Textarea
-                      value={issuedResult.link}
-                      readOnly
-                      className="font-mono text-sm"
-                      rows={3}
+                  <Label>QR Code</Label>
+                  <div className="flex items-start gap-4">
+                    <QRGenerator 
+                      value={issuedResult.link} 
+                      size={150}
+                      className="border-2" 
                     />
-                    <div className="flex flex-col gap-2">
-                      <Button variant="outline" size="sm" onClick={copyLink}>
-                        <Copy className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        asChild
-                      >
-                        <a
-                          href={issuedResult.link}
-                          target="_blank"
-                          rel="noopener noreferrer"
+                    <div className="flex-1 space-y-2">
+                      <Textarea
+                        value={issuedResult.link}
+                        readOnly
+                        className="font-mono text-xs"
+                        rows={4}
+                      />
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm" onClick={copyLink}>
+                          <Copy className="h-4 w-4 mr-1" />
+                          Copy
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          asChild
                         >
-                          <ExternalLink className="h-4 w-4" />
-                        </a>
-                      </Button>
+                          <a
+                            href={issuedResult.link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            <ExternalLink className="h-4 w-4 mr-1" />
+                            Open
+                          </a>
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 </div>

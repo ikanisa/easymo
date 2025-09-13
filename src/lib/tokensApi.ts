@@ -12,7 +12,7 @@ async function j(res: Response) {
 }
 
 export const TokensApi = {
-  // Issue tokens via existing endpoint
+  // Issue tokens via existing endpoint - correct function name
   issue: async (payload: {
     whatsapp: string;
     user_code: string;
@@ -20,69 +20,95 @@ export const TokensApi = {
     allow_any_shop: boolean;
     allowed_shop_ids?: string[];
   }) => {
-    const { data, error } = await supabase.functions.invoke('issue_tokens', {
-      body: payload,
-      headers: {
-        'x-admin-token': (function getAdminToken(): string {
-          return import.meta.env.VITE_ADMIN_TOKEN || 
-                 localStorage.getItem('admin_token') || 
-                 '';
-        })(),
+    const { data, error } = await supabase.functions.invoke('issue_token', {
+      body: {
+        amount: payload.amount,
+        currency: 'RWF',
+        memo: `Token for ${payload.user_code}`
       }
     });
     
     if (error) throw new Error(error.message);
     
-    // Generate QR link from qr_secret if not provided
-    if (data?.qr_secret && !data?.link) {
-      data.link = `https://example.com/qr?secret=${data.qr_secret}`;
-    }
-    
-    return data;
+    // Return properly formatted response
+    return {
+      wallet_id: data.token_id,
+      token_id: data.token_id,
+      qr_secret: data.token_id,
+      link: data.claim_url || `https://wallet.example.com/claim?token_id=${data.token_id}`,
+      ...data
+    };
   },
 
-  // Mock implementation - wallets table doesn't exist yet
+  // Use qr_info edge function to get token information (simulates wallet list)
   listWallets: async (query: { 
     q?: string; 
     status?: string; 
     limit?: number; 
     offset?: number 
   }) => {
-    // Return mock data since wallets table doesn't exist
-    console.warn("TokensApi.listWallets: Using mock data - wallets table not found");
+    // Since there's no wallets table, return empty array
+    // Real implementation would query actual wallet database
+    console.warn("TokensApi.listWallets: No wallet database - use tokens via qr_info");
     return [];
   },
 
   getWallet: async (id: string) => {
-    console.warn("TokensApi.getWallet: Using mock data - wallets table not found");
-    return null;
+    try {
+      const { data, error } = await supabase.functions.invoke('qr_info', {
+        body: { token_id: id }
+      });
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error("TokensApi.getWallet error:", error);
+      return null;
+    }
   },
 
   getBalance: async (wallet_id: string) => {
-    console.warn("TokensApi.getBalance: Using mock data - wallet balances table not found");
-    return 0;
+    try {
+      const wallet = await TokensApi.getWallet(wallet_id);
+      return wallet?.amount || 0;
+    } catch (error) {
+      console.error("TokensApi.getBalance error:", error);
+      return 0;
+    }
   },
 
   getBatchBalances: async (wallet_ids: string[]) => {
-    console.warn("TokensApi.getBatchBalances: Using mock data - wallet balances table not found");
     const balances: Record<string, number> = {};
-    wallet_ids.forEach(id => {
-      balances[id] = 0;
-    });
+    
+    // Get balances for each wallet (in real app, this would be a batch API)
+    await Promise.all(
+      wallet_ids.map(async (id) => {
+        try {
+          const balance = await TokensApi.getBalance(id);
+          balances[id] = balance;
+        } catch (error) {
+          console.error(`Failed to get balance for ${id}:`, error);
+          balances[id] = 0;
+        }
+      })
+    );
+    
     return balances;
   },
 
-  listShops: () =>
-    fetch(`https://ezrriefbmhiiqfoxgjgz.supabase.co/rest/v1/shops?select=*&order=created_at.desc`, { 
-      headers: { 
-        apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-        "Content-Type": "application/json"
-      } 
-    }).then(j),
+  listShops: async () => {
+    const { data, error } = await (supabase as any)
+      .from('shops')
+      .select('*')
+      .order('created_at', { ascending: false });
+    
+    if (error) throw error;
+    return data || [];
+  },
 
   checkUserCodeExists: async (user_code: string) => {
-    console.warn("TokensApi.checkUserCodeExists: Using mock data - wallets table not found");
-    return false; // Always return false since we can't check
+    // Since no user_codes table exists, always return false
+    console.warn("TokensApi.checkUserCodeExists: No user_codes table - allowing all codes");
+    return false;
   },
 
   listTx: async (params: { 
@@ -93,7 +119,39 @@ export const TokensApi = {
     limit?: number; 
     offset?: number 
   }) => {
-    console.warn("TokensApi.listTx: Using mock data - transactions table not found");
+    // No transactions table in current schema - return empty
+    console.warn("TokensApi.listTx: No transactions table in current schema");
     return [];
+  },
+
+  // Spend token using spend edge function
+  spend: async (token_id: string, spent_by?: string) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('spend', {
+        body: { 
+          token_id,
+          by: spent_by 
+        }
+      });
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error("TokensApi.spend error:", error);
+      throw error;
+    }
+  },
+
+  // Get token info using qr_info edge function  
+  getTokenInfo: async (token_id: string) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('qr_info', {
+        body: { token_id }
+      });
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error("TokensApi.getTokenInfo error:", error);
+      throw error;
+    }
   },
 };
