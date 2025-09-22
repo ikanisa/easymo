@@ -1,0 +1,30 @@
+project_id = "easymo"
+
+[api]
+port = 56311
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 57322
+shadow_port = 57323
+major_version = 15
+
+[studio]
+port = 55313
+
+[inbucket]
+port = 55314
+
+[storage]
+file_size_limit = 52428800
+
+[analytics]
+port = 55317
+
+[auth]
+site_url = "http://localhost:56311"
+additional_redirect_urls = []
+jwt_expiry = 3600
+
