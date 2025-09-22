@@ -1,0 +1,155 @@
+/*!****************************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** css ./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[14].oneOf[7].use[2]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[14].oneOf[7].use[3]!./components/SidebarNav.module.css ***!
+  \****************************************************************************************************************************************************************************************************************************************************************************/
+.SidebarNav_sidebar__hbAqi {
+  display: flex;
+  flex-direction: column;
+  width: 240px;
+  padding: 1.5rem 1rem;
+  background: var(--color-surface);
+  border-right: 1px solid var(--color-border);
+  gap: 1rem;
+}
+
+.SidebarNav_brand__7u6_g {
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.SidebarNav_list__HIa19 {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0;
+  margin: 0;
+}
+
+.SidebarNav_link__CtFks {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.55rem 0.75rem;
+  border-radius: 0.5rem;
+  color: var(--color-text-muted);
+  text-decoration: none;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.SidebarNav_link__CtFks:hover {
+  background: var(--color-surface-hover);
+  color: var(--color-text-primary);
+}
+
+.SidebarNav_active__x7RqA {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.55rem 0.75rem;
+  border-radius: 0.5rem;
+  text-decoration: none;
+  background: var(--color-surface-active);
+  color: var(--color-text-primary);
+  font-weight: 600;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.SidebarNav_icon__FTRfL {
+  width: 1.5rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/*!***************************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** css ./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[14].oneOf[7].use[2]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[14].oneOf[7].use[3]!./components/AppTopBar.module.css ***!
+  \***************************************************************************************************************************************************************************************************************************************************************************/
+.AppTopBar_topbar__GywJp {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1.25rem;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.AppTopBar_left__0it6v {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.95rem;
+}
+
+.AppTopBar_badge__fBcSM {
+  background: var(--color-accent-soft);
+  color: var(--color-accent-strong);
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.AppTopBar_right__kVeht {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.AppTopBar_themeButton__XIZjh {
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  border-radius: 0.5rem;
+  padding: 0.3rem 0.55rem;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.AppTopBar_themeButton__XIZjh:hover {
+  background: var(--color-surface-hover);
+}
+
+.AppTopBar_userAvatar__HKxaD {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: var(--color-accent-soft);
+  color: var(--color-accent-strong);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+}
+
+/*!*****************************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** css ./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[14].oneOf[7].use[2]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[14].oneOf[7].use[3]!./components/ShellLayout.module.css ***!
+  \*****************************************************************************************************************************************************************************************************************************************************************************/
+.ShellLayout_wrapper__G5ouw {
+  min-height: 100vh;
+  display: flex;
+  background: var(--color-app-background);
+  color: var(--color-text-primary);
+}
+
+.ShellLayout_contentArea__feQty {
+  flex: 1 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.ShellLayout_main__TQohQ {
+  flex: 1 1;
+  padding: 1.5rem;
+  overflow-y: auto;
+  background: var(--color-surface-muted);
+}
+
+.ShellLayout_main__TQohQ > section {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 1rem;
+  padding: 1.5rem;
+}
+

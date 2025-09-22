@@ -1,0 +1,12 @@
+node_modules/
+dist/
+build/
+.cache/
+*.log
+.env
+.env.*
+supabase/.env
+.DS_Store
+.vscode/
+.idea/
+supabase/.temp/
