@@ -4,7 +4,7 @@
   max-width: 520px;
 }
 
-label span {
+    .form label span {
   display: block;
   font-size: 0.8rem;
   color: var(--text-secondary);
