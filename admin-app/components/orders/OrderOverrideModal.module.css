@@ -1,0 +1,45 @@
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+textarea {
+  width: 100%;
+  min-height: 80px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(148, 163, 184, 0.4);
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+button {
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  background: rgba(14, 165, 233, 0.12);
+  color: var(--accent);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+button:nth-of-type(2) {
+  background: rgba(239, 68, 68, 0.12);
+  color: #b91c1c;
+}
+
+button:nth-of-type(3) {
+  background: rgba(34, 197, 94, 0.12);
+  color: #15803d;
+}
+
+.message {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
