@@ -10,3 +10,5 @@ supabase/.env
 .vscode/
 .idea/
 supabase/.temp/
+.next/
+**/.next/
