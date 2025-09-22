@@ -19,7 +19,7 @@
 }
 
 
-button {
+.form button {
   width: fit-content;
   padding: 8px 14px;
   border-radius: 10px;
@@ -30,7 +30,7 @@ button {
   cursor: pointer;
 }
 
-button[disabled] {
+..form button[disabled] {
   opacity: 0.65;
   cursor: progress;
 }
