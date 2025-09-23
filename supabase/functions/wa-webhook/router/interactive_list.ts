@@ -1,6 +1,8 @@
 import type { RouterContext } from "../types.ts";
 import {
   handleNearbyResultSelection,
+  handleSeeDrivers,
+  handleSeePassengers,
   handleVehicleSelection,
   isVehicleOption,
 } from "../flows/mobility/nearby.ts";
@@ -10,13 +12,24 @@ import {
   handleScheduleVehicle,
   isScheduleResult,
   isScheduleRole,
+  startScheduleTrip,
 } from "../flows/mobility/schedule.ts";
-import { handleBasketListSelection } from "../flows/baskets.ts";
-import { handleMarketplaceResult } from "../flows/marketplace.ts";
+import { handleBasketListSelection, startBaskets } from "../flows/baskets.ts";
+import { handleMarketplaceResult, startMarketplace } from "../flows/marketplace.ts";
 import { handleWalletEarnSelection } from "../flows/wallet/earn.ts";
 import { handleWalletRedeemSelection } from "../flows/wallet/redeem.ts";
-import { ADMIN_ROW_IDS } from "../flows/admin/hub.ts";
+import { ADMIN_ROW_IDS, openAdminHub } from "../flows/admin/hub.ts";
 import { handleAdminRow } from "../flows/admin/dispatcher.ts";
+import { IDS } from "../wa/ids.ts";
+import { startInsurance } from "../flows/insurance/ocr.ts";
+import { handleMomoButton, startMomoQr } from "../flows/momo/qr.ts";
+import { startWallet } from "../flows/wallet/home.ts";
+import { showWalletEarn } from "../flows/wallet/earn.ts";
+import { showWalletTransactions } from "../flows/wallet/transactions.ts";
+import { showWalletRedeem } from "../flows/wallet/redeem.ts";
+import { showWalletTop } from "../flows/wallet/top.ts";
+import { queueNotification } from "../notify/sender.ts";
+import { sendText } from "../wa/client.ts";
 
 export async function handleList(
   ctx: RouterContext,
@@ -25,6 +38,9 @@ export async function handleList(
 ): Promise<boolean> {
   const id = msg.interactive?.list_reply?.id;
   if (!id) return false;
+  if (await handleHomeMenuSelection(ctx, id, state)) {
+    return true;
+  }
   if (isVehicleOption(id) && state.key === "mobility_nearby_select") {
     return await handleVehicleSelection(ctx, (state.data ?? {}) as any, id);
   }
@@ -77,4 +93,53 @@ export async function handleList(
     }
   }
   return false;
+}
+
+async function handleHomeMenuSelection(
+  ctx: RouterContext,
+  id: string,
+  state: { key: string; data?: Record<string, unknown> },
+): Promise<boolean> {
+  switch (id) {
+    case IDS.SEE_DRIVERS:
+      return await handleSeeDrivers(ctx);
+    case IDS.SEE_PASSENGERS:
+      return await handleSeePassengers(ctx);
+    case IDS.SCHEDULE_TRIP:
+      return await startScheduleTrip(ctx, state);
+    case IDS.MARKETPLACE:
+      return await startMarketplace(ctx, state);
+    case IDS.BASKETS:
+      return await startBaskets(ctx, state);
+    case IDS.MOTOR_INSURANCE:
+      return await startInsurance(ctx, state);
+    case IDS.MOMO_QR:
+      return await startMomoQr(ctx, state);
+    case IDS.MOMO_QR_MY:
+    case IDS.MOMO_QR_NUMBER:
+    case IDS.MOMO_QR_CODE:
+      return await handleMomoButton(ctx, id, state);
+    case IDS.WALLET:
+      return await startWallet(ctx, state);
+    case IDS.WALLET_EARN:
+      return await showWalletEarn(ctx);
+    case IDS.WALLET_TRANSACTIONS:
+      return await showWalletTransactions(ctx);
+    case IDS.WALLET_REDEEM:
+      return await showWalletRedeem(ctx);
+    case IDS.WALLET_TOP:
+      return await showWalletTop(ctx);
+    case IDS.DINEIN_BARS:
+      await queueNotification(
+        { to: ctx.from, flow: { flow_id: "flow.cust.bar_browser.v1" } },
+        { type: "flow_launch" },
+      );
+      await sendText(ctx.from, "Launching dine-in flow…");
+      return true;
+    case IDS.ADMIN_HUB:
+      await openAdminHub(ctx);
+      return true;
+    default:
+      return false;
+  }
 }
