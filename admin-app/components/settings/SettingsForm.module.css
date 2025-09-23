@@ -4,7 +4,7 @@
   max-width: 520px;
 }
 
-    .form label span {
+.form label span {
   display: block;
   font-size: 0.8rem;
   color: var(--text-secondary);
@@ -18,19 +18,18 @@
   border: 1px solid rgba(148, 163, 184, 0.4);
 }
 
-
 .form button {
   width: fit-content;
   padding: 8px 14px;
   border-radius: 10px;
   border: 1px solid rgba(148, 163, 184, 0.4);
   background: rgba(14, 165, 233, 0.12);
- color: var(--accent);
-f  font-weight: 600;
+  color: var(--accent);
+  font-weight: 600;
   cursor: pointer;
 }
 
-..form button[disabled] {
+.form button[disabled] {
   opacity: 0.65;
   cursor: progress;
 }
