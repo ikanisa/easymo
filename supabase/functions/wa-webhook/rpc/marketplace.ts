@@ -16,7 +16,8 @@ export async function createBusiness(
     name: payload.name,
     description: payload.description ?? null,
     catalog_url: payload.catalog_url ?? null,
-    location: `SRID=4326;POINT(${payload.lng} ${payload.lat})`,
+    lat: payload.lat,
+    lng: payload.lng,
     is_active: true,
   });
   if (error) throw error;

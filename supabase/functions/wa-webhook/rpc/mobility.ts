@@ -7,7 +7,7 @@ export type NearbyDriver = {
 };
 
 export type NearbyPassenger = {
-  trip_id: number;
+  trip_id: string;
   ref_code: string;
   whatsapp_e164: string;
   created_at: string;
@@ -55,14 +55,14 @@ export async function recordDriverPresence(
   userId: string,
   params: { vehicleType: string; lat: number; lng: number },
 ): Promise<void> {
-  const point = `SRID=4326;POINT(${params.lng} ${params.lat})`;
   const { error } = await client
     .from('driver_status')
     .upsert({
       user_id: userId,
       vehicle_type: params.vehicleType,
       last_seen: new Date().toISOString(),
-      location: point,
+      lat: params.lat,
+      lng: params.lng,
       online: true,
     }, { onConflict: 'user_id' });
   if (error) throw error;
@@ -72,14 +72,14 @@ export async function insertTrip(
   client: SupabaseClient,
   params: { userId: string; role: 'driver' | 'passenger'; vehicleType: string; lat: number; lng: number },
 ): Promise<string> {
-  const point = `SRID=4326;POINT(${params.lng} ${params.lat})`;
   const { data, error } = await client
     .from('trips')
     .insert({
       creator_user_id: params.userId,
       role: params.role,
       vehicle_type: params.vehicleType,
-      pickup: point,
+      pickup_lat: params.lat,
+      pickup_lng: params.lng,
       status: 'open',
     })
     .select('id')
@@ -92,10 +92,9 @@ export async function updateTripDropoff(
   client: SupabaseClient,
   params: { tripId: string; lat: number; lng: number },
 ): Promise<void> {
-  const point = `SRID=4326;POINT(${params.lng} ${params.lat})`;
   const { error } = await client
     .from('trips')
-    .update({ dropoff: point })
+    .update({ dropoff_lat: params.lat, dropoff_lng: params.lng })
     .eq('id', params.tripId);
   if (error) throw error;
 }
