@@ -1,0 +1,333 @@
+{
+  "version": "6.3",
+  "flow": {
+    "name": "flow.cust.bar_menu.v1",
+    "screens": [
+      {
+        "id": "s_categories",
+        "title": "Menu Categories",
+        "layout": {
+          "type": "SingleColumnLayout",
+          "children": [
+            {
+              "type": "Form",
+              "name": "form",
+              "children": [
+                { "type": "TextHeading", "text": "${data.bar_name}" },
+                {
+                  "type": "Dropdown",
+                  "name": "category_id",
+                  "label": "Select category",
+                  "required": true,
+                  "data-source": "${data.categories}",
+                  "on-select-action": {
+                    "name": "data_exchange",
+                    "payload": {
+                      "action_id": "a_select_category",
+                      "fields": {
+                        "bar_id": "${data.bar_id}",
+                        "category_id": "${form.category_id}"
+                      }
+                    }
+                  }
+                },
+                {
+                  "type": "Footer",
+                  "label": "View items",
+                  "on-click-action": {
+                    "name": "data_exchange",
+                    "payload": {
+                      "action_id": "a_open_items",
+                      "fields": {
+                        "bar_id": "${data.bar_id}",
+                        "category_id": "${form.category_id}"
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "id": "s_items",
+        "title": "Items",
+        "layout": {
+          "type": "SingleColumnLayout",
+          "children": [
+            {
+              "type": "Form",
+              "name": "form",
+              "children": [
+                {
+                  "type": "RadioButtonsGroup",
+                  "name": "item_id",
+                  "label": "Select item",
+                  "required": true,
+                  "data-source": "${data.items}",
+                  "on-select-action": {
+                    "name": "data_exchange",
+                    "payload": {
+                      "action_id": "a_open_item",
+                      "fields": {
+                        "bar_id": "${data.bar_id}",
+                        "item_id": "${form.item_id}"
+                      }
+                    }
+                  }
+                },
+                {
+                  "type": "EmbeddedLink",
+                  "text": "Prev",
+                  "visible": "${data.page_token_prev}",
+                  "on-click-action": {
+                    "name": "data_exchange",
+                    "payload": {
+                      "action_id": "a_paged_items",
+                      "page_token": "${data.page_token_prev}",
+                      "fields": {
+                        "bar_id": "${data.bar_id}",
+                        "category_id": "${data.category_id}"
+                      }
+                    }
+                  }
+                },
+                {
+                  "type": "EmbeddedLink",
+                  "text": "Next",
+                  "visible": "${data.page_token_next}",
+                  "on-click-action": {
+                    "name": "data_exchange",
+                    "payload": {
+                      "action_id": "a_paged_items",
+                      "page_token": "${data.page_token_next}",
+                      "fields": {
+                        "bar_id": "${data.bar_id}",
+                        "category_id": "${data.category_id}"
+                      }
+                    }
+                  }
+                },
+                {
+                  "type": "Footer",
+                  "label": "Back",
+                  "on-click-action": {
+                    "name": "navigate",
+                    "next": { "type": "screen", "name": "s_categories" }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "id": "s_item_detail",
+        "title": "Item",
+        "layout": {
+          "type": "SingleColumnLayout",
+          "children": [
+            {
+              "type": "Form",
+              "name": "form",
+              "children": [
+                { "type": "TextHeading", "text": "${data.item_name}" },
+                { "type": "TextBody", "text": "${data.item_desc}" },
+                { "type": "TextCaption", "text": "${data.price}" },
+                { "type": "TextInput", "name": "qty", "label": "Quantity", "input-type": "number", "required": true, "default-value": "1" },
+                {
+                  "type": "Footer",
+                  "label": "Add to cart",
+                  "on-click-action": {
+                    "name": "data_exchange",
+                    "payload": {
+                      "action_id": "a_add_to_cart",
+                      "fields": {
+                        "bar_id": "${data.bar_id}",
+                        "item_id": "${data.item_id}",
+                        "qty": "${form.qty}"
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "id": "s_cart_view",
+        "title": "Your Cart",
+        "layout": {
+          "type": "SingleColumnLayout",
+          "children": [
+            {
+              "type": "Form",
+              "name": "form",
+              "children": [
+                { "type": "TextCaption", "text": "${data.cart_summary_text}" },
+                { "type": "TextBody", "text": "Subtotal: ${data.subtotal}\nService: ${data.service_charge}\nTotal: ${data.total}" },
+                {
+                  "type": "EmbeddedLink",
+                  "text": "Edit cart",
+                  "on-click-action": {
+                    "name": "data_exchange",
+                    "payload": {
+                      "action_id": "a_edit_cart",
+                      "fields": {
+                        "bar_id": "${data.bar_id}",
+                        "cart_id": "${data.cart_id}"
+                      }
+                    }
+                  }
+                },
+                {
+                  "type": "Footer",
+                  "label": "Proceed",
+                  "enabled": "${not data.is_empty}",
+                  "on-click-action": {
+                    "name": "navigate",
+                    "next": { "type": "screen", "name": "s_table_number" }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "id": "s_cart_edit",
+        "title": "Edit Cart",
+        "layout": {
+          "type": "SingleColumnLayout",
+          "children": [
+            {
+              "type": "Form",
+              "name": "form",
+              "children": [
+                { "type": "Dropdown", "name": "line_id", "label": "Line", "required": true, "data-source": "${data.lines}" },
+                { "type": "TextInput", "name": "new_qty", "label": "New qty (0 removes)", "required": true, "input-type": "number" },
+                {
+                  "type": "Footer",
+                  "label": "Update",
+                  "on-click-action": {
+                    "name": "data_exchange",
+                    "payload": {
+                      "action_id": "a_update_line",
+                      "fields": {
+                        "bar_id": "${data.bar_id}",
+                        "cart_id": "${data.cart_id}",
+                        "line_id": "${form.line_id}",
+                        "new_qty": "${form.new_qty}"
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "id": "s_table_number",
+        "title": "Table Number",
+        "layout": {
+          "type": "SingleColumnLayout",
+          "children": [
+            {
+              "type": "Form",
+              "name": "form",
+              "children": [
+                { "type": "TextInput", "name": "table_label", "label": "Table (e.g. T12)", "required": true, "max-chars": 8 },
+                { "type": "TextArea", "name": "note", "label": "Note (optional)", "required": false, "max-chars": 140 },
+                {
+                  "type": "Footer",
+                  "label": "Place order",
+                  "on-click-action": {
+                    "name": "data_exchange",
+                    "payload": {
+                      "action_id": "a_place_order",
+                      "fields": {
+                        "bar_id": "${data.bar_id}",
+                        "cart_id": "${data.cart_id}",
+                        "table_label": "${form.table_label}",
+                        "note": "${form.note}"
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "id": "s_payment",
+        "title": "Payment",
+        "layout": {
+          "type": "SingleColumnLayout",
+          "children": [
+            {
+              "type": "Form",
+              "name": "form",
+              "children": [
+                { "type": "TextHeading", "text": "Order #${data.order_code}" },
+                { "type": "TextBody", "text": "Total: ${data.total_formatted}" },
+                { "type": "TextCaption", "text": "If Pay with MoMo doesn't open dial: ${data.ussd_code_text}" },
+                {
+                  "type": "EmbeddedLink",
+                  "text": "I Paid",
+                  "on-click-action": {
+                    "name": "data_exchange",
+                    "payload": {
+                      "action_id": "a_customer_paid_signal",
+                      "fields": { "order_id": "${data.order_id}" }
+                    }
+                  }
+                },
+                {
+                  "type": "Footer",
+                  "label": "Pay with MoMo",
+                  "on-click-action": {
+                    "name": "open_url",
+                    "payload": {
+                      "url": "${data.ussd_uri}"
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "id": "s_order_status",
+        "title": "Order Status",
+        "terminal": true,
+        "success": true,
+        "layout": {
+          "type": "SingleColumnLayout",
+          "children": [
+            {
+              "type": "Form",
+              "name": "form",
+              "children": [
+                { "type": "TextHeading", "text": "Status: ${data.status}" },
+                { "type": "TextCaption", "text": "${data.timeline_text}" },
+                {
+                  "type": "Footer",
+                  "label": "Finish",
+                  "on-click-action": {
+                    "name": "complete",
+                    "payload": { "order_id": "${data.order_id}" }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

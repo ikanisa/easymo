@@ -1,0 +1,72 @@
+{
+  "version": "6.3",
+  "flow": {
+    "name": "flow.cust.order_tracker.v1",
+    "screens": [
+      {
+        "id": "s_orders_list",
+        "title": "My Orders",
+        "layout": {
+          "type": "SingleColumnLayout",
+          "children": [
+            {
+              "type": "Form",
+              "name": "form",
+              "children": [
+                {
+                  "type": "RadioButtonsGroup",
+                  "name": "order_id",
+                  "label": "Select order",
+                  "required": true,
+                  "data-source": "${data.orders}",
+                  "on-select-action": {
+                    "name": "data_exchange",
+                    "payload": {
+                      "action_id": "a_open_order",
+                      "fields": { "order_id": "${form.order_id}" }
+                    }
+                  }
+                },
+                {
+                  "type": "Footer",
+                  "label": "Refresh",
+                  "on-click-action": {
+                    "name": "data_exchange",
+                    "payload": { "action_id": "a_refresh_orders" }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "id": "s_order_detail",
+        "title": "Order Detail",
+        "terminal": true,
+        "success": true,
+        "layout": {
+          "type": "SingleColumnLayout",
+          "children": [
+            {
+              "type": "Form",
+              "name": "form",
+              "children": [
+                { "type": "TextHeading", "text": "Status: ${data.status}" },
+                { "type": "TextCaption", "text": "${data.timeline_text}" },
+                {
+                  "type": "Footer",
+                  "label": "Done",
+                  "on-click-action": {
+                    "name": "complete",
+                    "payload": { "order_id": "${data.order_id}" }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

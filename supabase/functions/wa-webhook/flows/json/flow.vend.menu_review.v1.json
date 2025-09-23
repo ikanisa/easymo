@@ -1,0 +1,324 @@
+{
+  "version": "6.3",
+  "flow": {
+    "name": "flow.vend.menu_review.v1",
+    "screens": [
+      {
+        "id": "s_cat_tree",
+        "title": "Menu Categories",
+        "layout": {
+          "type": "SingleColumnLayout",
+          "children": [
+            {
+              "type": "Form",
+              "name": "form",
+              "children": [
+                {
+                  "type": "Dropdown",
+                  "name": "category_id",
+                  "label": "Category",
+                  "required": true,
+                  "data-source": "${data.categories}",
+                  "on-select-action": {
+                    "name": "data_exchange",
+                    "payload": {
+                      "action_id": "a_open_items",
+                      "fields": { "category_id": "${form.category_id}" }
+                    }
+                  }
+                },
+                {
+                  "type": "EmbeddedLink",
+                  "text": "Move up",
+                  "on-click-action": {
+                    "name": "data_exchange",
+                    "payload": {
+                      "action_id": "a_cat_move",
+                      "fields": { "category_id": "${form.category_id}", "direction": "up" }
+                    }
+                  }
+                },
+                {
+                  "type": "EmbeddedLink",
+                  "text": "Move down",
+                  "on-click-action": {
+                    "name": "data_exchange",
+                    "payload": {
+                      "action_id": "a_cat_move",
+                      "fields": { "category_id": "${form.category_id}", "direction": "down" }
+                    }
+                  }
+                },
+                {
+                  "type": "EmbeddedLink",
+                  "text": "Rename",
+                  "on-click-action": {
+                    "name": "navigate",
+                    "next": { "type": "screen", "name": "s_cat_rename" }
+                  }
+                },
+                {
+                  "type": "EmbeddedLink",
+                  "text": "Add subcategory",
+                  "on-click-action": {
+                    "name": "navigate",
+                    "next": { "type": "screen", "name": "s_cat_add" }
+                  }
+                },
+                {
+                  "type": "Footer",
+                  "label": "Publish menu",
+                  "on-click-action": {
+                    "name": "data_exchange",
+                    "payload": { "action_id": "a_publish_now" }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "id": "s_cat_rename",
+        "title": "Rename Category",
+        "layout": {
+          "type": "SingleColumnLayout",
+          "children": [
+            {
+              "type": "Form",
+              "name": "form",
+              "children": [
+                { "type": "TextInput", "name": "new_name", "label": "New name", "required": true },
+                {
+                  "type": "Footer",
+                  "label": "Save",
+                  "on-click-action": {
+                    "name": "data_exchange",
+                    "payload": {
+                      "action_id": "a_cat_rename",
+                      "fields": {
+                        "category_id": "${data.category_id}",
+                        "new_name": "${form.new_name}"
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "id": "s_cat_add",
+        "title": "Add Subcategory",
+        "layout": {
+          "type": "SingleColumnLayout",
+          "children": [
+            {
+              "type": "Form",
+              "name": "form",
+              "children": [
+                { "type": "TextInput", "name": "name", "label": "Name", "required": true },
+                {
+                  "type": "Footer",
+                  "label": "Create",
+                  "on-click-action": {
+                    "name": "data_exchange",
+                    "payload": {
+                      "action_id": "a_cat_add",
+                      "fields": {
+                        "parent_category_id": "${data.category_id}",
+                        "name": "${form.name}"
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "id": "s_items_list",
+        "title": "Items",
+        "layout": {
+          "type": "SingleColumnLayout",
+          "children": [
+            {
+              "type": "Form",
+              "name": "form",
+              "children": [
+                {
+                  "type": "Dropdown",
+                  "name": "item_id",
+                  "label": "Item",
+                  "required": true,
+                  "data-source": "${data.items}",
+                  "on-select-action": {
+                    "name": "data_exchange",
+                    "payload": {
+                      "action_id": "a_item_edit_open",
+                      "fields": { "item_id": "${form.item_id}" }
+                    }
+                  }
+                },
+                {
+                  "type": "EmbeddedLink",
+                  "text": "Toggle availability",
+                  "on-click-action": {
+                    "name": "data_exchange",
+                    "payload": {
+                      "action_id": "a_item_toggle",
+                      "fields": { "item_id": "${form.item_id}" }
+                    }
+                  }
+                },
+                {
+                  "type": "EmbeddedLink",
+                  "text": "Add item",
+                  "on-click-action": {
+                    "name": "navigate",
+                    "next": { "type": "screen", "name": "s_item_add" }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "id": "s_item_edit",
+        "title": "Edit Item",
+        "layout": {
+          "type": "SingleColumnLayout",
+          "children": [
+            {
+              "type": "Form",
+              "name": "form",
+              "children": [
+                { "type": "TextInput", "name": "name", "label": "Name", "required": true, "default-value": "${data.name}" },
+                { "type": "TextArea", "name": "short_desc", "label": "Description", "default-value": "${data.short_desc}" },
+                { "type": "TextInput", "name": "price", "label": "Price", "required": true, "input-type": "number", "default-value": "${data.price}" },
+                {
+                  "type": "Dropdown",
+                  "name": "available",
+                  "label": "Available",
+                  "required": true,
+                  "data": [
+                    { "id": "true", "title": "Yes" },
+                    { "id": "false", "title": "No" }
+                  ],
+                  "default-value": "${data.available}"
+                },
+                {
+                  "type": "Footer",
+                  "label": "Save",
+                  "on-click-action": {
+                    "name": "data_exchange",
+                    "payload": {
+                      "action_id": "a_item_save",
+                      "fields": {
+                        "item_id": "${data.item_id}",
+                        "name": "${form.name}",
+                        "short_desc": "${form.short_desc}",
+                        "price": "${form.price}",
+                        "available": "${form.available}"
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "id": "s_item_add",
+        "title": "Add Item",
+        "layout": {
+          "type": "SingleColumnLayout",
+          "children": [
+            {
+              "type": "Form",
+              "name": "form",
+              "children": [
+                { "type": "TextInput", "name": "name", "label": "Name", "required": true },
+                { "type": "TextArea", "name": "short_desc", "label": "Description" },
+                { "type": "TextInput", "name": "price", "label": "Price", "required": true, "input-type": "number" },
+                {
+                  "type": "Footer",
+                  "label": "Create",
+                  "on-click-action": {
+                    "name": "data_exchange",
+                    "payload": {
+                      "action_id": "a_item_create",
+                      "fields": {
+                        "category_id": "${data.category_id}",
+                        "name": "${form.name}",
+                        "short_desc": "${form.short_desc}",
+                        "price": "${form.price}"
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "id": "s_bulk_edit_prices",
+        "title": "Bulk Edit Prices",
+        "layout": {
+          "type": "SingleColumnLayout",
+          "children": [
+            {
+              "type": "Form",
+              "name": "form",
+              "children": [
+                {
+                  "type": "Dropdown",
+                  "name": "mode",
+                  "label": "Mode",
+                  "required": true,
+                  "data": [
+                    { "id": "increase", "title": "Increase" },
+                    { "id": "decrease", "title": "Decrease" },
+                    { "id": "set_exact", "title": "Set exact" }
+                  ]
+                },
+                {
+                  "type": "Dropdown",
+                  "name": "amount_type",
+                  "label": "Amount type",
+                  "required": true,
+                  "data": [
+                    { "id": "currency", "title": "Currency" },
+                    { "id": "percent", "title": "Percent" }
+                  ]
+                },
+                { "type": "TextInput", "name": "amount_value", "label": "Value", "required": true, "input-type": "number" },
+                {
+                  "type": "Footer",
+                  "label": "Apply",
+                  "on-click-action": {
+                    "name": "data_exchange",
+                    "payload": {
+                      "action_id": "a_bulk_prices",
+                      "fields": {
+                        "category_id": "${data.category_id}",
+                        "mode": "${form.mode}",
+                        "amount_type": "${form.amount_type}",
+                        "amount_value": "${form.amount_value}"
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

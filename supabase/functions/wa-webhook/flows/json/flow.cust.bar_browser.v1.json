@@ -1,0 +1,143 @@
+{
+  "version": "6.3",
+  "flow": {
+    "name": "flow.cust.bar_browser.v1",
+    "screens": [
+      {
+        "id": "s_find_bar",
+        "title": "Find a Bar",
+        "layout": {
+          "type": "SingleColumnLayout",
+          "children": [
+            {
+              "type": "Form",
+              "name": "form",
+              "children": [
+                { "type": "TextHeading", "text": "Browse bars & restaurants" },
+                { "type": "TextBody", "text": "Search by name or pick an area." },
+                { "type": "TextInput", "name": "q", "label": "Search", "required": false, "max-chars": 60 },
+                { "type": "TextInput", "name": "area", "label": "Area / City", "required": false, "max-chars": 60 },
+                {
+                  "type": "Footer",
+                  "label": "Show results",
+                  "on-click-action": {
+                    "name": "data_exchange",
+                    "payload": {
+                      "action_id": "a_show_results",
+                      "fields": {
+                        "q": "${form.q}",
+                        "area": "${form.area}"
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "id": "s_bar_results",
+        "title": "Bars & Restaurants",
+        "layout": {
+          "type": "SingleColumnLayout",
+          "children": [
+            {
+              "type": "Form",
+              "name": "form",
+              "children": [
+                {
+                  "type": "RadioButtonsGroup",
+                  "name": "bar_id",
+                  "label": "Select a bar",
+                  "required": true,
+                  "data-source": "${data.bars}",
+                  "on-select-action": {
+                    "name": "data_exchange",
+                    "payload": {
+                      "action_id": "a_select_bar",
+                      "fields": {
+                        "bar_id": "${form.bar_id}"
+                      }
+                    }
+                  }
+                },
+                {
+                  "type": "EmbeddedLink",
+                  "text": "Prev",
+                  "visible": "${data.page_token_prev}",
+                  "on-click-action": {
+                    "name": "data_exchange",
+                    "payload": {
+                      "action_id": "a_paged_bars",
+                      "page_token": "${data.page_token_prev}",
+                      "filters": {
+                        "q": "${data.q}",
+                        "area": "${data.area}"
+                      }
+                    }
+                  }
+                },
+                {
+                  "type": "EmbeddedLink",
+                  "text": "Next",
+                  "visible": "${data.page_token_next}",
+                  "on-click-action": {
+                    "name": "data_exchange",
+                    "payload": {
+                      "action_id": "a_paged_bars",
+                      "page_token": "${data.page_token_next}",
+                      "filters": {
+                        "q": "${data.q}",
+                        "area": "${data.area}"
+                      }
+                    }
+                  }
+                },
+                {
+                  "type": "Footer",
+                  "label": "Open menu",
+                  "on-click-action": {
+                    "name": "data_exchange",
+                    "payload": {
+                      "action_id": "a_open_menu",
+                      "fields": {
+                        "bar_id": "${form.bar_id}"
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "id": "s_bar_detail",
+        "title": "Bar Details",
+        "layout": {
+          "type": "SingleColumnLayout",
+          "children": [
+            {
+              "type": "Form",
+              "name": "form",
+              "children": [
+                { "type": "TextHeading", "text": "${data.bar_name}" },
+                { "type": "TextBody", "text": "${data.location_text}" },
+                { "type": "TextCaption", "text": "MoMo accepted: ${data.momo_supported}" },
+                {
+                  "type": "Footer",
+                  "label": "Back to results",
+                  "on-click-action": {
+                    "name": "navigate",
+                    "next": { "type": "screen", "name": "s_bar_results" }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

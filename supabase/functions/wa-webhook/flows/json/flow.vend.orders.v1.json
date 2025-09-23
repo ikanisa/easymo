@@ -1,0 +1,172 @@
+{
+  "version": "6.3",
+  "flow": {
+    "name": "flow.vend.orders.v1",
+    "screens": [
+      {
+        "id": "s_order_queues",
+        "title": "Order Queues",
+        "layout": {
+          "type": "SingleColumnLayout",
+          "children": [
+            {
+              "type": "Form",
+              "name": "form",
+              "children": [
+                {
+                  "type": "Dropdown",
+                  "name": "queue",
+                  "label": "Status",
+                  "required": true,
+                  "data": [
+                    { "id": "pending", "title": "Pending" },
+                    { "id": "paid", "title": "Paid" },
+                    { "id": "served", "title": "Served" },
+                    { "id": "cancelled", "title": "Cancelled" }
+                  ],
+                  "on-select-action": {
+                    "name": "data_exchange",
+                    "payload": {
+                      "action_id": "a_view_queue",
+                      "fields": { "queue": "${form.queue}" }
+                    }
+                  }
+                },
+                {
+                  "type": "Footer",
+                  "label": "Refresh",
+                  "on-click-action": {
+                    "name": "data_exchange",
+                    "payload": { "action_id": "a_refresh" }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "id": "s_orders_list",
+        "title": "Orders",
+        "layout": {
+          "type": "SingleColumnLayout",
+          "children": [
+            {
+              "type": "Form",
+              "name": "form",
+              "children": [
+                {
+                  "type": "RadioButtonsGroup",
+                  "name": "order_id",
+                  "label": "Select order",
+                  "required": true,
+                  "data-source": "${data.orders}",
+                  "on-select-action": {
+                    "name": "data_exchange",
+                    "payload": {
+                      "action_id": "a_open_order_detail",
+                      "fields": { "order_id": "${form.order_id}" }
+                    }
+                  }
+                },
+                {
+                  "type": "Footer",
+                  "label": "Back",
+                  "on-click-action": {
+                    "name": "navigate",
+                    "next": { "type": "screen", "name": "s_order_queues" }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "id": "s_order_detail",
+        "title": "Order Detail",
+        "layout": {
+          "type": "SingleColumnLayout",
+          "children": [
+            {
+              "type": "Form",
+              "name": "form",
+              "children": [
+                { "type": "TextCaption", "text": "${data.summary_text}" },
+                { "type": "TextCaption", "text": "${data.timeline_text}" },
+                {
+                  "type": "EmbeddedLink",
+                  "text": "Mark Paid",
+                  "on-click-action": {
+                    "name": "data_exchange",
+                    "payload": {
+                      "action_id": "a_mark_paid",
+                      "fields": { "order_id": "${data.order_id}" }
+                    }
+                  }
+                },
+                {
+                  "type": "EmbeddedLink",
+                  "text": "Mark Served",
+                  "on-click-action": {
+                    "name": "data_exchange",
+                    "payload": {
+                      "action_id": "a_mark_served",
+                      "fields": { "order_id": "${data.order_id}" }
+                    }
+                  }
+                },
+                {
+                  "type": "EmbeddedLink",
+                  "text": "Cancel",
+                  "on-click-action": {
+                    "name": "navigate",
+                    "next": { "type": "screen", "name": "s_cancel_reason" }
+                  }
+                },
+                {
+                  "type": "Footer",
+                  "label": "Back",
+                  "on-click-action": {
+                    "name": "navigate",
+                    "next": { "type": "screen", "name": "s_orders_list" }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "id": "s_cancel_reason",
+        "title": "Cancel Order",
+        "layout": {
+          "type": "SingleColumnLayout",
+          "children": [
+            {
+              "type": "Form",
+              "name": "form",
+              "children": [
+                { "type": "TextArea", "name": "reason", "label": "Reason", "required": true },
+                {
+                  "type": "Footer",
+                  "label": "Confirm",
+                  "on-click-action": {
+                    "name": "data_exchange",
+                    "payload": {
+                      "action_id": "a_confirm_cancel",
+                      "fields": {
+                        "order_id": "${data.order_id}",
+                        "reason": "${form.reason}"
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

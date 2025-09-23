@@ -1,0 +1,151 @@
+{
+  "version": "6.3",
+  "flow": {
+    "name": "flow.vend.onboard.v1",
+    "screens": [
+      {
+        "id": "s_bar_identity",
+        "title": "Add Your Bar",
+        "layout": {
+          "type": "SingleColumnLayout",
+          "children": [
+            {
+              "type": "Form",
+              "name": "form",
+              "children": [
+                { "type": "TextHeading", "text": "Bar identity" },
+                { "type": "TextInput", "name": "bar_name", "label": "Bar name", "required": true, "max-chars": 80 },
+                { "type": "TextInput", "name": "location_text", "label": "Location", "required": true, "max-chars": 120 },
+                { "type": "TextInput", "name": "country", "label": "Country", "required": true, "max-chars": 40 },
+                { "type": "TextInput", "name": "city_area", "label": "City/Area", "required": true, "max-chars": 60 },
+                {
+                  "type": "Footer",
+                  "label": "Continue",
+                  "on-click-action": {
+                    "name": "data_exchange",
+                    "payload": {
+                      "action_id": "a_onboard_identity",
+                      "fields": {
+                        "bar_name": "${form.bar_name}",
+                        "location_text": "${form.location_text}",
+                        "country": "${form.country}",
+                        "city_area": "${form.city_area}"
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "id": "s_contact_payment",
+        "title": "Contacts & MoMo",
+        "layout": {
+          "type": "SingleColumnLayout",
+          "children": [
+            {
+              "type": "Form",
+              "name": "form",
+              "children": [
+                { "type": "TextArea", "name": "order_numbers_csv", "label": "WhatsApp numbers (comma separated)", "required": true },
+                { "type": "TextInput", "name": "momo_code", "label": "MoMo code", "required": false },
+                {
+                  "type": "Footer",
+                  "label": "Save",
+                  "on-click-action": {
+                    "name": "data_exchange",
+                    "payload": {
+                      "action_id": "a_onboard_contacts",
+                      "fields": {
+                        "bar_id": "${data.bar_id}",
+                        "order_numbers_csv": "${form.order_numbers_csv}",
+                        "momo_code": "${form.momo_code}"
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "id": "s_upload_menu_info",
+        "title": "Upload Menu",
+        "layout": {
+          "type": "SingleColumnLayout",
+          "children": [
+            {
+              "type": "TextBody",
+              "text": "Send your PDF or images in WhatsApp chat. We'll parse them automatically."
+            },
+            {
+              "type": "Footer",
+              "label": "I've uploaded",
+              "on-click-action": {
+                "name": "data_exchange",
+                "payload": {
+                  "action_id": "a_onboard_uploaded",
+                  "fields": { "bar_id": "${data.bar_id}" }
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "id": "s_onboard_publish",
+        "title": "Review & Publish",
+        "layout": {
+          "type": "SingleColumnLayout",
+          "children": [
+            {
+              "type": "TextBody",
+              "text": "OCR status: ${data.last_ocr_status}"
+            },
+            {
+              "type": "TextCaption",
+              "text": "Categories: ${data.draft_categories_count} | Items: ${data.draft_items_count}"
+            },
+            {
+              "type": "Footer",
+              "label": "Publish",
+              "on-click-action": {
+                "name": "data_exchange",
+                "payload": {
+                  "action_id": "a_publish_menu",
+                  "fields": { "bar_id": "${data.bar_id}" }
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "id": "s_onboard_done",
+        "title": "Setup Complete",
+        "terminal": true,
+        "success": true,
+        "layout": {
+          "type": "SingleColumnLayout",
+          "children": [
+            {
+              "type": "TextHeading",
+              "text": "You're live!"
+            },
+            {
+              "type": "Footer",
+              "label": "Finish",
+              "on-click-action": {
+                "name": "complete",
+                "payload": { "ok": true }
+              }
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
