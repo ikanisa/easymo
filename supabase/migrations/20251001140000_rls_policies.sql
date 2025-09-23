@@ -12,16 +12,16 @@ BEGIN
     EXECUTE 'ALTER TABLE public.voucher_events FORCE ROW LEVEL SECURITY';
 
     EXECUTE 'DROP POLICY IF EXISTS "voucher_events_admin_select" ON public.voucher_events';
-    EXECUTE $$CREATE POLICY "voucher_events_admin_select"
+    EXECUTE $policy$CREATE POLICY "voucher_events_admin_select"
       ON public.voucher_events
       FOR SELECT
       USING (
         auth.role() = ''service_role'' OR
         coalesce(auth.jwt()->>''role'', '''') IN (''super_admin'',''support'',''data_ops'',''readonly'')
-      )$$;
+      )$policy$;
 
     EXECUTE 'DROP POLICY IF EXISTS "voucher_events_station_select" ON public.voucher_events';
-    EXECUTE $$CREATE POLICY "voucher_events_station_select"
+    EXECUTE $policy$CREATE POLICY "voucher_events_station_select"
       ON public.voucher_events
       FOR SELECT
       USING (
@@ -29,7 +29,7 @@ BEGIN
         (auth.jwt()->>''station_id'') IS NOT NULL AND
         station_id IS NOT NULL AND
         (auth.jwt()->>''station_id'')::uuid = station_id
-      )$$;
+      )$policy$;
   END IF;
 END
 $$;
@@ -46,13 +46,13 @@ BEGIN
     EXECUTE 'ALTER TABLE public.campaign_targets FORCE ROW LEVEL SECURITY';
 
     EXECUTE 'DROP POLICY IF EXISTS "campaign_targets_admin_select" ON public.campaign_targets';
-    EXECUTE $$CREATE POLICY "campaign_targets_admin_select"
+    EXECUTE $policy$CREATE POLICY "campaign_targets_admin_select"
       ON public.campaign_targets
       FOR SELECT
       USING (
         auth.role() = ''service_role'' OR
         coalesce(auth.jwt()->>''role'', '''') IN (''super_admin'',''support'',''data_ops'')
-      )$$;
+      )$policy$;
   END IF;
 END
 $$;
@@ -69,25 +69,25 @@ BEGIN
     EXECUTE 'ALTER TABLE public.settings FORCE ROW LEVEL SECURITY';
 
     EXECUTE 'DROP POLICY IF EXISTS "settings_admin_read" ON public.settings';
-    EXECUTE $$CREATE POLICY "settings_admin_read"
+    EXECUTE $policy$CREATE POLICY "settings_admin_read"
       ON public.settings
       FOR SELECT
       USING (
         auth.role() = ''service_role'' OR
         coalesce(auth.jwt()->>''role'', '''') IN (''super_admin'',''support'',''data_ops'')
-      )$$;
+      )$policy$;
 
     EXECUTE 'DROP POLICY IF EXISTS "settings_admin_insert" ON public.settings';
-    EXECUTE $$CREATE POLICY "settings_admin_insert"
+    EXECUTE $policy$CREATE POLICY "settings_admin_insert"
       ON public.settings
       FOR INSERT
       WITH CHECK (
         auth.role() = ''service_role'' OR
         coalesce(auth.jwt()->>''role'', '''') IN (''super_admin'',''support'',''data_ops'')
-      )$$;
+      )$policy$;
 
     EXECUTE 'DROP POLICY IF EXISTS "settings_admin_update" ON public.settings';
-    EXECUTE $$CREATE POLICY "settings_admin_update"
+    EXECUTE $policy$CREATE POLICY "settings_admin_update"
       ON public.settings
       FOR UPDATE
       USING (
@@ -97,16 +97,16 @@ BEGIN
       WITH CHECK (
         auth.role() = ''service_role'' OR
         coalesce(auth.jwt()->>''role'', '''') IN (''super_admin'',''support'',''data_ops'')
-      )$$;
+      )$policy$;
 
     EXECUTE 'DROP POLICY IF EXISTS "settings_admin_delete" ON public.settings';
-    EXECUTE $$CREATE POLICY "settings_admin_delete"
+    EXECUTE $policy$CREATE POLICY "settings_admin_delete"
       ON public.settings
       FOR DELETE
       USING (
         auth.role() = ''service_role'' OR
         coalesce(auth.jwt()->>''role'', '''') IN (''super_admin'',''support'',''data_ops'')
-      )$$;
+      )$policy$;
   END IF;
 END
 $$;

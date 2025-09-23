@@ -20,6 +20,18 @@ export function LogsClient() {
   const [actorFilter, setActorFilter] = useState('');
   const [targetFilter, setTargetFilter] = useState('');
 
+  const filteredAudit = useMemo(
+    () =>
+      (data?.audit ?? []).filter((entry) => {
+        const actorMatch = actorFilter ? entry.actor.toLowerCase().includes(actorFilter.toLowerCase()) : true;
+        const targetMatch = targetFilter
+          ? `${entry.target_table}/${entry.target_id}`.toLowerCase().includes(targetFilter.toLowerCase())
+          : true;
+        return actorMatch && targetMatch;
+      }),
+    [data, actorFilter, targetFilter]
+  );
+
   if (isLoading) {
     return <LoadingState message="Loading logs…" />;
   }
@@ -27,18 +39,6 @@ export function LogsClient() {
   if (error || !data) {
     return <EmptyState title="Unable to load logs" description="Check network and try again." />;
   }
-
-  const filteredAudit = useMemo(
-    () =>
-      data.audit.filter((entry) => {
-        const actorMatch = actorFilter ? entry.actor.toLowerCase().includes(actorFilter.toLowerCase()) : true;
-        const targetMatch = targetFilter
-          ? `${entry.target_table}/${entry.target_id}`.toLowerCase().includes(targetFilter.toLowerCase())
-          : true;
-        return actorMatch && targetMatch;
-      }),
-    [data.audit, actorFilter, targetFilter]
-  );
 
   return (
     <div className="placeholder-grid">

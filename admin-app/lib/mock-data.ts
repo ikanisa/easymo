@@ -422,7 +422,7 @@ export const mockNotifications: NotificationOutbox[] = Array.from({ length: 15 }
   id: `notif-${idx + 1}`,
   toRole: idx % 2 === 0 ? 'vendor' : 'customer',
   type: idx % 3 === 0 ? 'order_created_vendor' : 'order_paid_customer',
-  status: ['queued', 'sent', 'failed'][idx % 3],
+  status: (['queued', 'sent', 'failed'] as const)[idx % 3],
   createdAt: formatISO(subDays(now, idx / 4)),
   sentAt: idx % 3 === 0 ? null : formatISO(subDays(now, idx / 6))
 }));

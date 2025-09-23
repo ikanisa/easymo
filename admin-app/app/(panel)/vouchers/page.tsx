@@ -3,9 +3,9 @@ import { VouchersTable } from '@/components/vouchers/VouchersTable';
 import { SectionCard } from '@/components/ui/SectionCard';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { VoucherPreviewButton } from '@/components/vouchers/VoucherPreviewButton';
-import { CsvUpload } from '@/components/uploads/CsvUpload';
 import { VoucherGenerationForm } from '@/components/vouchers/VoucherGenerationForm';
 import { listVouchers } from '@/lib/data-provider';
+import { VoucherCsvUpload } from '@/components/vouchers/VoucherCsvUpload';
 
 export default async function VouchersPage() {
   const { data } = await listVouchers({ limit: 200 });
@@ -36,10 +36,7 @@ export default async function VouchersPage() {
         <div className="stack">
           {data.length ? <VoucherPreviewButton voucher={data[0]} /> : null}
           <VoucherGenerationForm />
-          <CsvUpload
-            instructions="Upload voucher issuance CSV (headers: msisdn, amount, expires_at). Preview currently returns row count only."
-            onPreview={(rows) => console.info('Preview rows', rows.length)}
-          />
+          <VoucherCsvUpload instructions="Upload voucher issuance CSV (headers: msisdn, amount, expires_at). Preview currently returns row count only." />
         </div>
       </SectionCard>
     </div>
