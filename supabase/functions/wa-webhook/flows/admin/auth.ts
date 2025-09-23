@@ -27,7 +27,7 @@ async function loadAdminNumbers(ctx: RouterContext): Promise<Set<string>> {
   }
   const { data, error } = await ctx.supabase
     .from("app_config")
-    .select("admin_numbers, insurance_admin_numbers")
+    .select("*")
     .eq("id", 1)
     .maybeSingle();
   if (error) {

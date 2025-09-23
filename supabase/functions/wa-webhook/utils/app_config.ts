@@ -22,7 +22,7 @@ export async function getAppConfig(client: SupabaseClient): Promise<AppConfigRow
   if (cache && now - cache.loadedAt < TTL_MS) return cache.value;
   const { data, error } = await client
     .from("app_config")
-    .select("search_radius_km, max_results, subscription_price, wa_bot_number_e164, admin_numbers, insurance_admin_numbers")
+    .select("*")
     .eq("id", 1)
     .maybeSingle();
   if (error) {
