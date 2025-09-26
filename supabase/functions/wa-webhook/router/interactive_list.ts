@@ -333,7 +333,7 @@ async function handleHomeMenuSelection(
     case IDS.WALLET_TOP:
       return await showWalletTop(ctx);
     case IDS.DINEIN_BARS:
-      await startDineIn(ctx, state);
+      await showBarsEntry(ctx, managerCtx);
       return true;
     case IDS.ADMIN_HUB:
       await openAdminHub(ctx);
