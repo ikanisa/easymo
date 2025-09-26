@@ -7,6 +7,39 @@ import { handleLocation } from "./location.ts";
 import { handleText } from "./text.ts";
 import { runGuards } from "./guards.ts";
 import { logError } from "../observe/log.ts";
+import { logUnhandled } from "../observe/logging.ts";
+
+type RouterHooks = {
+  runGuards: typeof runGuards;
+  handleMedia: typeof handleMedia;
+  handleList: typeof handleList;
+  handleButton: typeof handleButton;
+  handleLocation: typeof handleLocation;
+  handleText: typeof handleText;
+  logUnhandled: typeof logUnhandled;
+};
+
+const defaultHooks: RouterHooks = {
+  runGuards,
+  handleMedia,
+  handleList,
+  handleButton,
+  handleLocation,
+  handleText,
+  logUnhandled,
+};
+
+let hooks: RouterHooks = { ...defaultHooks };
+
+export function __setRouterTestOverrides(
+  overrides: Partial<RouterHooks>,
+): void {
+  hooks = { ...hooks, ...overrides };
+}
+
+export function __resetRouterTestOverrides(): void {
+  hooks = { ...defaultHooks };
+}
 
 export async function handleMessage(
   ctx: RouterContext,
@@ -14,23 +47,23 @@ export async function handleMessage(
   state: ChatState,
 ): Promise<void> {
   try {
-    if (await runGuards(ctx, msg)) return;
-    if (await handleMedia(ctx, msg, state)) return;
+    if (await hooks.runGuards(ctx, msg)) return;
+    if (await hooks.handleMedia(ctx, msg, state)) return;
     if (msg.type === "interactive" && msg.interactive?.type === "list_reply") {
-      if (await handleList(ctx, msg, state)) return;
+      if (await hooks.handleList(ctx, msg, state)) return;
     }
     if (
       msg.type === "interactive" && msg.interactive?.type === "button_reply"
     ) {
-      if (await handleButton(ctx, msg, state)) return;
+      if (await hooks.handleButton(ctx, msg, state)) return;
     }
     if (msg.type === "location") {
-      if (await handleLocation(ctx, msg, state)) return;
+      if (await hooks.handleLocation(ctx, msg, state)) return;
     }
     if (msg.type === "text") {
-      if (await handleText(ctx, msg, state)) return;
+      if (await hooks.handleText(ctx, msg, state)) return;
     }
-    await logUnhandled(msg.type);
+    await hooks.logUnhandled(msg.type);
   } catch (err) {
     logError("wa_router.handleMessage", err, { msg });
   }
