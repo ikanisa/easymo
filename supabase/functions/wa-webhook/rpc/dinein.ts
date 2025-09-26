@@ -1,4 +1,5 @@
+import { logRpcNotImplemented } from "../observe/logging.ts";
 export async function listBars(): Promise<unknown[]> {
-  console.log("rpc.dinein.listBars not implemented");
+  await logRpcNotImplemented("rpc.dinein.listBars");
   return [];
 }

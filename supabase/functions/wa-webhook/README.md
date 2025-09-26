@@ -1,6 +1,7 @@
 # wa-webhook
 
-Additive edge function that modularises the WhatsApp webhook and new dine-in flows. Modules:
+Additive edge function that modularises the WhatsApp webhook and new dine-in
+flows. Modules:
 
 - `index.ts`: entrypoint (GET verify, POST dispatch)
 - `config.ts`: runtime configuration & Supabase client
@@ -15,4 +16,7 @@ Additive edge function that modularises the WhatsApp webhook and new dine-in flo
 - `exchange/`: Flow Data Channel handlers (Meta WhatsApp Flows)
 - `observe/`: logging and diagnostics utilities
 
-This directory now houses both the original vendor upload handler and the v2 conversational flows so nothing is lost while keeping a single deployment target. All new dine-in capabilities and future WA features should live here to honour the repository's additive-only guard.
+This directory now houses both the original vendor upload handler and the v2
+conversational flows so nothing is lost while keeping a single deployment
+target. All new dine-in capabilities and future WA features should live here to
+honour the repository's additive-only guard.

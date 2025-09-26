@@ -6,21 +6,24 @@ export async function ensureProfile(client = supabase, whatsapp: string) {
   const normalized = whatsapp.startsWith("+") ? whatsapp : `+${whatsapp}`;
   const { data, error } = await client
     .from("profiles")
-    .select("user_id, whatsapp_e164")
-    .eq("whatsapp_e164", normalized)
-    .maybeSingle();
-  if (error && error.code !== "PGRST116") throw error;
-  if (data) return data;
-  const { data: inserted, error: insertError } = await client
-    .from("profiles")
-    .insert({ whatsapp_e164: normalized })
+    .upsert(
+      { whatsapp_e164: normalized },
+      {
+        onConflict: "whatsapp_e164",
+        defaultToNull: false,
+        returning: "representation",
+      },
+    )
     .select("user_id, whatsapp_e164")
     .single();
-  if (insertError) throw insertError;
-  return inserted;
+  if (error) throw error;
+  return data;
 }
 
-export async function getState(client = supabase, userId: string): Promise<ChatState> {
+export async function getState(
+  client = supabase,
+  userId: string,
+): Promise<ChatState> {
   const { data, error } = await client
     .from("chat_state")
     .select("state")
@@ -31,7 +34,10 @@ export async function getState(client = supabase, userId: string): Promise<ChatS
   if (!raw) return { key: "home", data: {} };
   if (typeof raw === "string") return { key: raw, data: {} };
   if (typeof raw === "object" && raw !== null) {
-    return { key: (raw as { key?: string }).key ?? "home", data: (raw as { data?: Record<string, unknown> }).data ?? {} };
+    return {
+      key: (raw as { key?: string }).key ?? "home",
+      data: (raw as { data?: Record<string, unknown> }).data ?? {},
+    };
   }
   return { key: "home", data: {} };
 }
@@ -48,7 +54,10 @@ export async function setState(
   if (error) throw error;
 }
 
-export async function clearState(client = supabase, userId: string): Promise<void> {
+export async function clearState(
+  client = supabase,
+  userId: string,
+): Promise<void> {
   const { error } = await client
     .from("chat_state")
     .delete()

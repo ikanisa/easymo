@@ -1,14 +1,18 @@
 import type { RouterContext } from "../../types.ts";
-import { sendButtons, sendImageUrl, sendText } from "../../wa/client.ts";
+import { sendImageUrl } from "../../wa/client.ts";
 import { IDS } from "../../wa/ids.ts";
 import { clearState, setState } from "../../state/store.ts";
-import { sendHomeMenu } from "../home.ts";
 import { buildMomoUssd } from "../../utils/momo.ts";
 import { maskPhone } from "../support.ts";
-import { toE164 } from "../../utils/phone.ts";
 import { buildWaLink } from "../../utils/share.ts";
 import { logMomoQrRequest } from "../../rpc/momo.ts";
 import { logEvent } from "../../observe/log.ts";
+import {
+  buildButtons,
+  sendButtonsMessage,
+  sendListMessage,
+} from "../../utils/reply.ts";
+import { sendHomeMenu } from "../home.ts";
 
 const STATES = {
   MENU: "momo_qr_menu",
@@ -22,6 +26,7 @@ type MomoData = {
   target: string;
   targetType: "msisdn" | "code";
   display: string;
+  e164?: string;
 };
 
 export async function startMomoQr(
@@ -30,14 +35,41 @@ export async function startMomoQr(
 ): Promise<boolean> {
   if (!ctx.profileId) return false;
   await setState(ctx.supabase, ctx.profileId, { key: STATES.MENU, data: {} });
-  await sendButtons(ctx.from, "MoMo QR", [
-    { id: IDS.MOMO_QR_MY, title: "Use my number" },
-    { id: IDS.MOMO_QR_NUMBER, title: "Enter number" },
-    { id: IDS.MOMO_QR_CODE, title: "Merchant code" },
-  ]);
-  await sendText(
-    ctx.from,
-    "Reply with amount when prompted. Send HOME to exit.",
+  const selfNumber = normalizeMsisdn(ctx.from);
+  const rows = [
+    {
+      id: IDS.MOMO_QR_MY,
+      title: "Use my number",
+      description: selfNumber
+        ? `Use ${selfNumber.local} from this chat.`
+        : "Use your WhatsApp number (07…).",
+    },
+    {
+      id: IDS.MOMO_QR_NUMBER,
+      title: "Enter number",
+      description: "Provide the customer's 07… MoMo number.",
+    },
+    {
+      id: IDS.MOMO_QR_CODE,
+      title: "Enter code",
+      description: "Use the merchant paycode instead of a number.",
+    },
+    {
+      id: IDS.BACK_MENU,
+      title: "← Back",
+      description: "Return to the main menu.",
+    },
+  ];
+  await sendListMessage(
+    ctx,
+    {
+      title: "💳 MoMo QR",
+      body: "Generate a payment QR in seconds.",
+      sectionTitle: "Options",
+      rows,
+      buttonText: "View",
+    },
+    { emoji: "💳" },
   );
   return true;
 }
@@ -50,16 +82,27 @@ export async function handleMomoButton(
   if (!ctx.profileId) return false;
   switch (id) {
     case IDS.MOMO_QR_MY: {
-      const target = ctx.from.startsWith("+") ? ctx.from : `+${ctx.from}`;
+      const normalized = normalizeMsisdn(ctx.from);
+      if (!normalized) {
+        await sendButtonsMessage(
+          ctx,
+          "⚠️ Couldn't read your MoMo number. Reply with your 07… number instead.",
+          buildButtons({ id: IDS.MOMO_QR, title: "↩️ Menu" }),
+        );
+        return true;
+      }
+      const { local, e164 } = normalized;
+      const display = maskPhone(e164);
       await setState(ctx.supabase, ctx.profileId, {
         key: STATES.AMOUNT_INPUT,
         data: {
-          target,
+          target: local,
           targetType: "msisdn",
-          display: maskPhone(target),
+          display,
+          e164,
         },
       });
-      await sendText(ctx.from, "Enter amount in RWF (or reply SKIP).");
+      await promptAmount(ctx, display);
       return true;
     }
     case IDS.MOMO_QR_NUMBER:
@@ -67,9 +110,10 @@ export async function handleMomoButton(
         key: STATES.NUMBER_INPUT,
         data: {},
       });
-      await sendText(
-        ctx.from,
-        "Send the customer's phone number (07… or +250…).",
+      await sendButtonsMessage(
+        ctx,
+        "📱 Send the customer's MoMo number (format 07XXXXXXXX).",
+        buildButtons({ id: IDS.MOMO_QR, title: "↩️ Menu" }),
       );
       return true;
     case IDS.MOMO_QR_CODE:
@@ -77,7 +121,15 @@ export async function handleMomoButton(
         key: STATES.CODE_INPUT,
         data: {},
       });
-      await sendText(ctx.from, "Send the merchant paycode (digits only).");
+      await sendButtonsMessage(
+        ctx,
+        "🏪 Send the merchant paycode (digits only).",
+        buildButtons({ id: IDS.MOMO_QR, title: "↩️ Menu" }),
+      );
+      return true;
+    case IDS.BACK_MENU:
+      await clearState(ctx.supabase, ctx.profileId);
+      await sendHomeMenu(ctx);
       return true;
     default:
       return false;
@@ -122,18 +174,25 @@ async function handleNumberInput(
   if (!ctx.profileId) return false;
   const normalized = normalizeMsisdn(input);
   if (!normalized) {
-    await sendText(ctx.from, "Invalid number. Send format 07… or +250…");
+    await sendButtonsMessage(
+      ctx,
+      "⚠️ Invalid number. Use format 07XXXXXXXX.",
+      buildButtons({ id: IDS.MOMO_QR, title: "↩️ Menu" }),
+    );
     return true;
   }
+  const { local, e164 } = normalized;
+  const display = maskPhone(e164);
   await setState(ctx.supabase, ctx.profileId, {
     key: STATES.AMOUNT_INPUT,
     data: {
-      target: normalized,
+      target: local,
       targetType: "msisdn",
-      display: maskPhone(normalized),
+      display,
+      e164,
     },
   });
-  await sendText(ctx.from, "Enter amount in RWF (or reply SKIP).");
+  await promptAmount(ctx, display);
   return true;
 }
 
@@ -144,7 +203,11 @@ async function handleCodeInput(
   if (!ctx.profileId) return false;
   const code = sanitizeCode(input);
   if (!code) {
-    await sendText(ctx.from, "Invalid code. Use 4-12 digits.");
+    await sendButtonsMessage(
+      ctx,
+      "⚠️ Invalid code. Use 4-12 digits.",
+      buildButtons({ id: IDS.MOMO_QR, title: "↩️ Menu" }),
+    );
     return true;
   }
   await setState(ctx.supabase, ctx.profileId, {
@@ -155,7 +218,7 @@ async function handleCodeInput(
       display: code,
     },
   });
-  await sendText(ctx.from, "Enter amount in RWF (or reply SKIP).");
+  await promptAmount(ctx, code);
   return true;
 }
 
@@ -172,7 +235,11 @@ async function handleAmountInput(
   }
   const parsed = parseAmount(input);
   if (parsed === undefined) {
-    await sendText(ctx.from, "Enter amount like 12000 or reply SKIP.");
+    await sendButtonsMessage(
+      ctx,
+      "⚠️ Enter an amount like 12000 or tap Skip.",
+      buildButtons({ id: IDS.MOMO_QR, title: "↩️ Menu" }),
+    );
     return true;
   }
   await deliverMomoQr(ctx, data, parsed);
@@ -185,8 +252,9 @@ async function deliverMomoQr(
   amountRwf: number | null,
 ): Promise<void> {
   const isCode = data.targetType === "code";
+  const targetValue = data.targetType === "msisdn" ? data.target : data.target;
   const { ussd, telUri } = buildMomoUssd(
-    data.target,
+    targetValue,
     isCode,
     amountRwf ?? undefined,
   );
@@ -204,10 +272,17 @@ async function deliverMomoQr(
     lines.push(`Share: ${shareLink}`);
   }
   await sendImageUrl(ctx.from, qrUrl, `Scan to pay ${data.display}`);
-  await sendText(ctx.from, lines.join("\n"));
+  await sendButtonsMessage(
+    ctx,
+    lines.join("\n"),
+    buildButtons({ id: IDS.MOMO_QR, title: "🔁 New QR" }),
+  );
+  const loggedTarget = data.targetType === "msisdn"
+    ? data.e164 ?? localToE164(targetValue)
+    : targetValue;
   await logMomoQrRequest(ctx.supabase, {
     requesterWaId: ctx.from,
-    target: data.target,
+    target: loggedTarget,
     targetType: data.targetType,
     amountMinor: amountRwf && amountRwf > 0 ? amountRwf * 100 : null,
     qrUrl,
@@ -216,25 +291,57 @@ async function deliverMomoQr(
   });
   await logEvent("MOMO_QR", {
     requester: ctx.from,
-    target: data.target,
+    target: loggedTarget,
     target_type: data.targetType,
     amount_minor: amountRwf && amountRwf > 0 ? amountRwf * 100 : null,
   });
   await clearState(ctx.supabase, ctx.profileId!);
-  await sendHomeMenu(ctx);
 }
 
-function normalizeMsisdn(raw: string): string | null {
-  const digits = raw.replace(/[^0-9+]/g, "");
-  if (!digits) return null;
-  const e164 = toE164(digits);
-  return /^\+2507\d{7}$/.test(e164) ? e164 : null;
+type NormalizedMsisdn = { local: string; e164: string };
+
+function normalizeMsisdn(raw: string): NormalizedMsisdn | null {
+  const digitsOnly = raw.replace(/\D/g, "");
+  if (!digitsOnly) return null;
+
+  let digits = digitsOnly;
+  if (digits.startsWith("00")) {
+    digits = digits.slice(2);
+  }
+
+  if (digits.startsWith("2507") && digits.length >= 12) {
+    const core = digits.slice(0, 12);
+    const local = `0${core.slice(-9)}`;
+    return { local, e164: `+${core}` };
+  }
+
+  if (digits.startsWith("07") && digits.length === 10) {
+    const withoutZero = digits.slice(1);
+    return { local: digits, e164: `+250${withoutZero}` };
+  }
+
+  if (digits.startsWith("7") && digits.length === 9) {
+    return { local: `0${digits}`, e164: `+250${digits}` };
+  }
+
+  return null;
 }
 
 function sanitizeCode(raw: string): string | null {
   const digits = raw.replace(/\D/g, "");
   if (digits.length < 4 || digits.length > 12) return null;
   return digits;
+}
+
+async function promptAmount(
+  ctx: RouterContext,
+  display: string,
+): Promise<void> {
+  await sendButtonsMessage(
+    ctx,
+    `💰 Enter amount in RWF for ${display} (or reply Skip).`,
+    buildButtons({ id: IDS.MOMO_QR, title: "↩️ Menu" }),
+  );
 }
 
 function parseAmount(input: string): number | null | undefined {
@@ -250,4 +357,13 @@ function parseAmount(input: string): number | null | undefined {
 function buildQrLink(text: string): string {
   const encoded = encodeURIComponent(text);
   return `https://quickchart.io/qr?size=512&margin=2&text=${encoded}`;
+}
+
+function localToE164(local: string): string {
+  if (!local) return local;
+  if (local.startsWith("+")) return local;
+  if (local.startsWith("07") && local.length === 10) {
+    return `+250${local.slice(1)}`;
+  }
+  return local.startsWith("250") ? `+${local}` : local;
 }

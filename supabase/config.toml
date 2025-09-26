@@ -1,4 +1,4 @@
-project_id = "easymo"
+project_id = "ezrriefbmhiiqfoxgjgz"
 
 [api]
 port = 56311
@@ -27,4 +27,3 @@ port = 55317
 site_url = "http://localhost:56311"
 additional_redirect_urls = []
 jwt_expiry = 3600
-

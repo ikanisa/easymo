@@ -1,17 +1,38 @@
 import type { RouterContext } from "../../types.ts";
+import type { ChatState } from "../../state/store.ts";
 import { sendText } from "../../wa/client.ts";
 import { ADMIN_ROW_IDS } from "./hub.ts";
-import { isAdminNumber } from "./auth.ts";
+import { ensureAdmin } from "./state.ts";
+import { handleAdminVoucherRow, showAdminVouchersEntry } from "./vouchers.ts";
+import { handleAdminBasketsRow, showAdminBasketsEntry } from "./baskets.ts";
+import {
+  handleAdminInsuranceRow,
+  showAdminInsuranceEntry,
+} from "./insurance.ts";
 
-export async function handleAdminRow(ctx: RouterContext, id: string): Promise<boolean> {
-  if (!(await isAdminNumber(ctx))) {
-    await sendText(ctx.from, "Admin tools are restricted.");
-    return true;
-  }
+export async function handleAdminRow(
+  ctx: RouterContext,
+  id: string,
+  state: ChatState,
+): Promise<boolean> {
+  if (await handleAdminVoucherRow(ctx, id, state)) return true;
+  if (await handleAdminBasketsRow(ctx, id, state)) return true;
+  if (await handleAdminInsuranceRow(ctx, id, state)) return true;
+
+  const allowed = await ensureAdmin(ctx);
+  if (!allowed) return true;
+
   switch (id) {
-    case ADMIN_ROW_IDS.OPS_TRIPS:
+    case ADMIN_ROW_IDS.OPS_VOUCHERS:
+      await showAdminVouchersEntry(ctx);
+      return true;
     case ADMIN_ROW_IDS.OPS_BASKETS:
+      await showAdminBasketsEntry(ctx);
+      return true;
     case ADMIN_ROW_IDS.OPS_INSURANCE:
+      await showAdminInsuranceEntry(ctx);
+      return true;
+    case ADMIN_ROW_IDS.OPS_TRIPS:
     case ADMIN_ROW_IDS.OPS_MARKETPLACE:
     case ADMIN_ROW_IDS.OPS_WALLET:
     case ADMIN_ROW_IDS.OPS_MOMO:

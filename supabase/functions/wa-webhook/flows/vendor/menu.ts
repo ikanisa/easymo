@@ -35,7 +35,9 @@ export async function handleVendorMenuMedia(
     const media = await fetchWhatsAppMedia(mediaId);
     const filename = pickFilename(msg, media.filename, mediaId);
     const path = `${record.bar_id}/${crypto.randomUUID()}-${filename}`;
-    const { error: uploadError } = await ctx.supabase.storage.from(MENU_MEDIA_BUCKET)
+    const { error: uploadError } = await ctx.supabase.storage.from(
+      MENU_MEDIA_BUCKET,
+    )
       .upload(path, media.bytes, {
         upsert: false,
         contentType: media.mime ?? "application/octet-stream",
@@ -44,7 +46,11 @@ export async function handleVendorMenuMedia(
 
     const { error: insertError } = await ctx.supabase
       .from("ocr_jobs")
-      .insert({ bar_id: record.bar_id, source_file_id: path, status: "queued" });
+      .insert({
+        bar_id: record.bar_id,
+        source_file_id: path,
+        status: "queued",
+      });
     if (insertError) throw insertError;
 
     await logEvent("wa-webhook-vendor-upload", {
@@ -65,9 +71,10 @@ function pickFilename(
   apiFilename: string | undefined,
   mediaId: string,
 ): string {
-  const candidate = (msg.document as { filename?: string } | undefined)?.filename ??
-    apiFilename ??
-    `${mediaId}.bin`;
+  const candidate =
+    (msg.document as { filename?: string } | undefined)?.filename ??
+      apiFilename ??
+      `${mediaId}.bin`;
   return sanitizeFilename(candidate ?? DEFAULT_FILENAME);
 }
 

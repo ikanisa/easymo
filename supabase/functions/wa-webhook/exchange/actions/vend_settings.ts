@@ -1,19 +1,26 @@
 import type { FlowExchangeRequest, FlowExchangeResponse } from "../../types.ts";
 import { supabase } from "../../config.ts";
 
-export async function handleVendorSettings(req: FlowExchangeRequest): Promise<FlowExchangeResponse> {
+export async function handleVendorSettings(
+  req: FlowExchangeRequest,
+): Promise<FlowExchangeResponse> {
   switch (req.action_id) {
     case "a_save_settings":
       return await saveSettings(req);
     default:
       return {
         next_screen_id: req.screen_id,
-        messages: [{ level: "warning", text: `Unknown action ${req.action_id}` }],
+        messages: [{
+          level: "warning",
+          text: `Unknown action ${req.action_id}`,
+        }],
       };
   }
 }
 
-async function saveSettings(req: FlowExchangeRequest): Promise<FlowExchangeResponse> {
+async function saveSettings(
+  req: FlowExchangeRequest,
+): Promise<FlowExchangeResponse> {
   const barId = String(req.context?.bar_id ?? req.fields?.bar_id ?? "");
   if (!barId) {
     return {
@@ -22,10 +29,13 @@ async function saveSettings(req: FlowExchangeRequest): Promise<FlowExchangeRespo
     };
   }
   const momoCode = String(req.fields?.momo_code ?? "").trim();
-  const servicePct = parseFloat(String(req.fields?.service_charge_pct ?? "0")) || 0;
+  const servicePct =
+    parseFloat(String(req.fields?.service_charge_pct ?? "0")) || 0;
   const allowChat = String(req.fields?.allow_direct_chat ?? "false") === "true";
-  const prepMinutes = parseInt(String(req.fields?.default_prep_minutes ?? "0"), 10) || 0;
-  const paymentInstructions = String(req.fields?.payment_instructions ?? "").trim();
+  const prepMinutes =
+    parseInt(String(req.fields?.default_prep_minutes ?? "0"), 10) || 0;
+  const paymentInstructions = String(req.fields?.payment_instructions ?? "")
+    .trim();
   await supabase
     .from("bars")
     .update({ momo_code: momoCode })

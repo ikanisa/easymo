@@ -91,7 +91,7 @@ export async function createBasket(
 export async function joinBasketByCode(
   client: SupabaseClient,
   params: { profileId: string; whatsapp: string; code: string },
-): Promise<{ basketId: string | null; name: string | null }> {
+): Promise<{ basketId: string; name: string | null }> {
   const { data, error } = await client.rpc("basket_join_by_code", {
     _profile_id: params.profileId,
     _whatsapp: params.whatsapp,
@@ -99,8 +99,11 @@ export async function joinBasketByCode(
   });
   if (error) throw error;
   const row = Array.isArray(data) ? data[0] : data;
+  if (!row?.basket_id) {
+    throw new Error("No basket found for that code.");
+  }
   return {
-    basketId: (row?.basket_id ?? row?.id ?? null) as string | null,
+    basketId: (row?.basket_id ?? row?.id) as string,
     name: (row?.basket_name ?? row?.name ?? null) as string | null,
   };
 }

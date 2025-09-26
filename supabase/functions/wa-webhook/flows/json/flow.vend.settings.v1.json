@@ -1,74 +1,60 @@
 {
   "version": "6.3",
-  "flow": {
-    "name": "flow.vend.settings.v1",
-    "screens": [
-      {
-        "id": "s_settings",
-        "title": "Bar Settings",
-        "layout": {
-          "type": "SingleColumnLayout",
-          "children": [
-            {
-              "type": "Form",
-              "name": "form",
-              "children": [
-                { "type": "TextInput", "name": "momo_code", "label": "MoMo code", "required": false },
-                { "type": "TextInput", "name": "service_charge_pct", "label": "Service %", "required": false, "input-type": "number" },
-                {
-                  "type": "Dropdown",
-                  "name": "allow_direct_chat",
-                  "label": "Allow direct chat",
-                  "required": true,
-                  "data": [
-                    { "id": "true", "title": "Yes" },
-                    { "id": "false", "title": "No" }
-                  ]
-                },
-                { "type": "TextInput", "name": "default_prep_minutes", "label": "Default prep (min)", "required": false, "input-type": "number" },
-                { "type": "TextArea", "name": "payment_instructions", "label": "Payment instructions", "required": false },
-                {
-                  "type": "Footer",
-                  "label": "Save",
-                  "on-click-action": {
-                    "name": "data_exchange",
-                    "payload": {
-                      "action_id": "a_save_settings",
-                      "fields": {
-                        "momo_code": "${form.momo_code}",
-                        "service_charge_pct": "${form.service_charge_pct}",
-                        "allow_direct_chat": "${form.allow_direct_chat}",
-                        "default_prep_minutes": "${form.default_prep_minutes}",
-                        "payment_instructions": "${form.payment_instructions}"
-                      }
-                    }
-                  }
-                }
-              ]
-            }
+  "screens": [
+    {
+      "id": "s_settings",
+      "title": "Settings",
+      "layout": { "type": "single_column" },
+      "data_exchange": { "submit": { "action": { "id": "a_save_settings" } } },
+      "widgets": [
+        { "type": "text_input", "id": "momo_code", "label": "MoMo code" },
+        {
+          "type": "text_input",
+          "id": "service_charge_pct",
+          "label": "Service %",
+          "input_type": "number"
+        },
+        {
+          "type": "dropdown",
+          "id": "allow_direct_chat",
+          "label": "Direct chat",
+          "options": [
+            { "id": "true", "title": "Enabled" },
+            { "id": "false", "title": "Disabled" }
           ]
-        }
-      },
-      {
-        "id": "s_settings_saved",
-        "title": "Settings Updated",
-        "terminal": true,
-        "success": true,
-        "layout": {
-          "type": "SingleColumnLayout",
-          "children": [
-            { "type": "TextHeading", "text": "Saved" },
+        },
+        {
+          "type": "text_input",
+          "id": "default_prep_minutes",
+          "label": "Prep minutes",
+          "input_type": "number"
+        },
+        {
+          "type": "text_input",
+          "id": "payment_instructions",
+          "label": "Payment instructions"
+        },
+        {
+          "type": "footer_buttons",
+          "buttons": [
             {
-              "type": "Footer",
-              "label": "Finish",
-              "on-click-action": {
-                "name": "complete",
-                "payload": { "ok": true }
+              "id": "BTN_SAVE",
+              "title": "Save",
+              "action": {
+                "type": "data_exchange",
+                "id": "a_save_settings",
+                "fields": {
+                  "momo_code": "${widgets.momo_code.value}",
+                  "service_charge_pct": "${widgets.service_charge_pct.value}",
+                  "allow_direct_chat": "${widgets.allow_direct_chat.value}",
+                  "default_prep_minutes": "${widgets.default_prep_minutes.value}",
+                  "payment_instructions": "${widgets.payment_instructions.value}"
+                }
               }
             }
           ]
         }
-      }
-    ]
-  }
+      ]
+    }
+  ]
 }

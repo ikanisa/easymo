@@ -3,7 +3,10 @@ import { sendText } from "../../wa/client.ts";
 import { IDS } from "../../wa/ids.ts";
 import { isAdminNumber } from "./auth.ts";
 
-export async function handleAdminQuickAction(ctx: RouterContext, id: string): Promise<void> {
+export async function handleAdminQuickAction(
+  ctx: RouterContext,
+  id: string,
+): Promise<void> {
   if (!(await isAdminNumber(ctx))) {
     await sendText(ctx.from, "Admin tools are restricted.");
     return;

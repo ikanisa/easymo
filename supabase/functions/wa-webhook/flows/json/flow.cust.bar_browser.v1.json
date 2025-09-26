@@ -1,143 +1,170 @@
 {
-  "version": "6.3",
-  "flow": {
-    "name": "flow.cust.bar_browser.v1",
-    "screens": [
-      {
-        "id": "s_find_bar",
-        "title": "Find a Bar",
-        "layout": {
-          "type": "SingleColumnLayout",
-          "children": [
+  "version": "6.4",
+  "screens": [
+    {
+      "id": "s_find_bar",
+      "title": "Find a bar",
+      "layout": {
+        "type": "single_column"
+      },
+      "data_exchange": {
+        "submit": {
+          "action": {
+            "id": "a_show_results"
+          }
+        }
+      },
+      "widgets": [
+        {
+          "type": "text_input",
+          "id": "f_search",
+          "label": "Search",
+          "placeholder": "Bar name or landmark"
+        },
+        {
+          "type": "dropdown",
+          "id": "f_area",
+          "label": "Area",
+          "options_data_binding": "areas",
+          "placeholder": "All areas",
+          "helper_text": "Listing updates as bars add locations. Leave blank to search everywhere."
+        },
+        {
+          "type": "footer_buttons",
+          "buttons": [
             {
-              "type": "Form",
-              "name": "form",
-              "children": [
-                { "type": "TextHeading", "text": "Browse bars & restaurants" },
-                { "type": "TextBody", "text": "Search by name or pick an area." },
-                { "type": "TextInput", "name": "q", "label": "Search", "required": false, "max-chars": 60 },
-                { "type": "TextInput", "name": "area", "label": "Area / City", "required": false, "max-chars": 60 },
-                {
-                  "type": "Footer",
-                  "label": "Show results",
-                  "on-click-action": {
-                    "name": "data_exchange",
-                    "payload": {
-                      "action_id": "a_show_results",
-                      "fields": {
-                        "q": "${form.q}",
-                        "area": "${form.area}"
-                      }
-                    }
-                  }
+              "id": "BTN_SHOW_RESULTS",
+              "title": "Show results",
+              "action": {
+                "type": "data_exchange",
+                "id": "a_show_results",
+                "fields": {
+                  "q": "${widgets.f_search.value}",
+                  "area": "${widgets.f_area.value}"
                 }
-              ]
+              }
             }
           ]
         }
+      ]
+    },
+    {
+      "id": "s_bar_results",
+      "title": "Select a bar",
+      "layout": {
+        "type": "single_column"
       },
-      {
-        "id": "s_bar_results",
-        "title": "Bars & Restaurants",
-        "layout": {
-          "type": "SingleColumnLayout",
-          "children": [
+      "widgets": [
+        {
+          "type": "radio_list",
+          "id": "w_bar_list",
+          "options_data_binding": "bars",
+          "empty_state": {
+            "title": "No bars found",
+            "body": "Try adjusting your search or area filter."
+          }
+        },
+        {
+          "type": "footer_buttons",
+          "buttons": [
             {
-              "type": "Form",
-              "name": "form",
-              "children": [
-                {
-                  "type": "RadioButtonsGroup",
-                  "name": "bar_id",
-                  "label": "Select a bar",
-                  "required": true,
-                  "data-source": "${data.bars}",
-                  "on-select-action": {
-                    "name": "data_exchange",
-                    "payload": {
-                      "action_id": "a_select_bar",
-                      "fields": {
-                        "bar_id": "${form.bar_id}"
-                      }
-                    }
-                  }
-                },
-                {
-                  "type": "EmbeddedLink",
-                  "text": "Prev",
-                  "visible": "${data.page_token_prev}",
-                  "on-click-action": {
-                    "name": "data_exchange",
-                    "payload": {
-                      "action_id": "a_paged_bars",
-                      "page_token": "${data.page_token_prev}",
-                      "filters": {
-                        "q": "${data.q}",
-                        "area": "${data.area}"
-                      }
-                    }
-                  }
-                },
-                {
-                  "type": "EmbeddedLink",
-                  "text": "Next",
-                  "visible": "${data.page_token_next}",
-                  "on-click-action": {
-                    "name": "data_exchange",
-                    "payload": {
-                      "action_id": "a_paged_bars",
-                      "page_token": "${data.page_token_next}",
-                      "filters": {
-                        "q": "${data.q}",
-                        "area": "${data.area}"
-                      }
-                    }
-                  }
-                },
-                {
-                  "type": "Footer",
-                  "label": "Open menu",
-                  "on-click-action": {
-                    "name": "data_exchange",
-                    "payload": {
-                      "action_id": "a_open_menu",
-                      "fields": {
-                        "bar_id": "${form.bar_id}"
-                      }
-                    }
-                  }
+              "id": "BTN_PREV",
+              "title": "Prev",
+              "visibility_condition": "${data.page_token_prev} != null",
+              "action": {
+                "type": "data_exchange",
+                "id": "a_paged_bars",
+                "page_token": "${data.page_token_prev}",
+                "filters": {
+                  "q": "${data.q}",
+                  "area": "${data.area}"
                 }
-              ]
+              }
+            },
+            {
+              "id": "BTN_NEXT",
+              "title": "Next",
+              "visibility_condition": "${data.page_token_next} != null",
+              "action": {
+                "type": "data_exchange",
+                "id": "a_paged_bars",
+                "page_token": "${data.page_token_next}",
+                "filters": {
+                  "q": "${data.q}",
+                  "area": "${data.area}"
+                }
+              }
+            },
+            {
+              "id": "BTN_BACK_SEARCH",
+              "title": "Back",
+              "action": {
+                "type": "navigate",
+                "next": "s_find_bar"
+              }
             }
           ]
         }
-      },
-      {
-        "id": "s_bar_detail",
-        "title": "Bar Details",
-        "layout": {
-          "type": "SingleColumnLayout",
-          "children": [
-            {
-              "type": "Form",
-              "name": "form",
-              "children": [
-                { "type": "TextHeading", "text": "${data.bar_name}" },
-                { "type": "TextBody", "text": "${data.location_text}" },
-                { "type": "TextCaption", "text": "MoMo accepted: ${data.momo_supported}" },
-                {
-                  "type": "Footer",
-                  "label": "Back to results",
-                  "on-click-action": {
-                    "name": "navigate",
-                    "next": { "type": "screen", "name": "s_bar_results" }
-                  }
-                }
-              ]
+      ],
+      "events": {
+        "on_item_select": {
+          "widget_id": "w_bar_list",
+          "action": {
+            "type": "data_exchange",
+            "id": "a_select_bar",
+            "fields": {
+              "bar_id": "${selected.id}"
             }
-          ]
+          }
         }
       }
-    ]
-  }
+    },
+    {
+      "id": "s_bar_detail",
+      "title": "Bar details",
+      "layout": {
+        "type": "single_column"
+      },
+      "widgets": [
+        {
+          "type": "text_block",
+          "id": "w_bar_summary",
+          "text": "${data.bar_name}\n${data.location_text}"
+        },
+        {
+          "type": "footer_buttons",
+          "buttons": [
+            {
+              "id": "BTN_OPEN_MENU",
+              "title": "Open menu",
+              "action": {
+                "type": "data_exchange",
+                "id": "a_open_menu",
+                "fields": {
+                  "bar_id": "${data.bar_id}"
+                }
+              }
+            },
+            {
+              "id": "BTN_CHAT_BAR",
+              "title": "Chat with bar",
+              "visibility_condition": "${data.direct_chat_allowed} == 'true'",
+              "action": {
+                "type": "open_url",
+                "url": "${data.bar_chat_url}"
+              }
+            },
+            {
+              "id": "BTN_BACK_RESULTS",
+              "title": "Back",
+              "action": {
+                "type": "navigate",
+                "next": "s_bar_results"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
 }

@@ -1,4 +1,4 @@
-import { supabase, assertRuntimeReady } from "./config.ts";
+import { assertRuntimeReady, supabase } from "./config.ts";
 
 export async function health(): Promise<Response> {
   try {
@@ -8,10 +8,13 @@ export async function health(): Promise<Response> {
       .select("id")
       .limit(1);
     if (error) throw error;
-    return new Response(JSON.stringify({ ok: true, config: data?.[0]?.id ?? null }), {
-      status: 200,
-      headers: { "content-type": "application/json; charset=utf-8" },
-    });
+    return new Response(
+      JSON.stringify({ ok: true, config: data?.[0]?.id ?? null }),
+      {
+        status: 200,
+        headers: { "content-type": "application/json; charset=utf-8" },
+      },
+    );
   } catch (err) {
     return new Response(JSON.stringify({ ok: false, error: String(err) }), {
       status: 500,

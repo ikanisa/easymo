@@ -1,13 +1,20 @@
 import type { FlowExchangeRequest, FlowExchangeResponse } from "../../types.ts";
 import { supabase } from "../../config.ts";
-import { getPublishedMenu } from "../helpers.ts";
+import { promoteDraftToPublished } from "../helpers.ts";
 
-export async function handleVendorMenuReview(req: FlowExchangeRequest): Promise<FlowExchangeResponse> {
+export async function handleVendorMenuReview(
+  req: FlowExchangeRequest,
+): Promise<FlowExchangeResponse> {
   switch (req.action_id) {
     case "a_open_items":
       return await openItems(req);
+    case "a_load_categories":
+      return await loadCategories(req);
     case "a_cat_move":
-      return await reorderCategory(req, req.fields?.direction === "up" ? -1 : 1);
+      return await reorderCategory(
+        req,
+        req.fields?.direction === "up" ? -1 : 1,
+      );
     case "a_cat_rename":
       return await renameCategory(req);
     case "a_cat_add":
@@ -32,13 +39,24 @@ export async function handleVendorMenuReview(req: FlowExchangeRequest): Promise<
 function notHandled(req: FlowExchangeRequest): FlowExchangeResponse {
   return {
     next_screen_id: req.screen_id,
-    messages: [{ level: "warning", text: `Action ${req.action_id} under construction.` }],
+    messages: [{
+      level: "warning",
+      text: `Action ${req.action_id} under construction.`,
+    }],
   };
 }
 
-async function openItems(req: FlowExchangeRequest): Promise<FlowExchangeResponse> {
+async function openItems(
+  req: FlowExchangeRequest,
+): Promise<FlowExchangeResponse> {
   const categoryId = String(req.fields?.category_id ?? "");
   if (!categoryId) return notHandled(req);
+  const category = await supabase
+    .from("categories")
+    .select("id, bar_id, name")
+    .eq("id", categoryId)
+    .maybeSingle();
+  if (category.error || !category.data) return notHandled(req);
   const { data, error } = await supabase
     .from("items")
     .select("id, name, is_available, price_minor, currency")
@@ -54,17 +72,87 @@ async function openItems(req: FlowExchangeRequest): Promise<FlowExchangeResponse
   return {
     next_screen_id: "s_items_list",
     data: {
+      bar_id: category.data.bar_id,
       category_id: categoryId,
+      category_name: category.data.name,
       items: (data ?? []).map((item) => ({
         id: item.id,
-        title: `${item.name} — ${(item.price_minor ?? 0) / 100} ${(item.currency ?? "RWF")}`,
+        title: `${item.name} — ${
+          (item.price_minor ?? 0) / 100
+        } ${(item.currency ?? "RWF")}`,
         description: item.is_available ? "Available" : "Unavailable",
       })),
     },
   };
 }
 
-async function reorderCategory(req: FlowExchangeRequest, delta: number): Promise<FlowExchangeResponse> {
+async function loadCategories(
+  req: FlowExchangeRequest,
+): Promise<FlowExchangeResponse> {
+  const barId = String(
+    req.context?.bar_id ?? req.fields?.bar_id ?? req.filters?.bar_id ?? "",
+  );
+  if (!barId) {
+    return {
+      next_screen_id: req.screen_id,
+      messages: [{ level: "error", text: "Missing bar context" }],
+    };
+  }
+  const { data: menu, error: menuError } = await supabase
+    .from("menus")
+    .select("id, status")
+    .eq("bar_id", barId)
+    .order("updated_at", { ascending: false })
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (menuError || !menu) {
+    return {
+      next_screen_id: "s_categories",
+      data: {
+        bar_id: barId,
+        categories: [],
+        menu_status: "missing",
+      },
+      messages: [{
+        level: "warning",
+        text: "No menu yet. Upload a menu in onboarding first.",
+      }],
+    };
+  }
+  const { data: categories, error } = await supabase
+    .from("categories")
+    .select("id, name, sort_order")
+    .eq("menu_id", menu.id)
+    .is("parent_category_id", null)
+    .eq("is_deleted", false)
+    .order("sort_order", { ascending: true })
+    .order("name", { ascending: true });
+  if (error) {
+    return {
+      next_screen_id: req.screen_id,
+      messages: [{ level: "error", text: "Failed to load categories." }],
+    };
+  }
+  return {
+    next_screen_id: "s_categories",
+    data: {
+      bar_id: barId,
+      menu_id: menu.id,
+      menu_status: menu.status,
+      categories: (categories ?? []).map((cat) => ({
+        id: cat.id,
+        title: cat.name,
+        description: `Position ${cat.sort_order}`,
+      })),
+    },
+  };
+}
+
+async function reorderCategory(
+  req: FlowExchangeRequest,
+  delta: number,
+): Promise<FlowExchangeResponse> {
   const categoryId = String(req.fields?.category_id ?? "");
   if (!categoryId) return notHandled(req);
   const { data, error } = await supabase
@@ -83,7 +171,9 @@ async function reorderCategory(req: FlowExchangeRequest, delta: number): Promise
   };
 }
 
-async function renameCategory(req: FlowExchangeRequest): Promise<FlowExchangeResponse> {
+async function renameCategory(
+  req: FlowExchangeRequest,
+): Promise<FlowExchangeResponse> {
   const categoryId = String(req.fields?.category_id ?? "");
   const newName = String(req.fields?.new_name ?? "").trim();
   if (!categoryId || !newName) return notHandled(req);
@@ -97,7 +187,9 @@ async function renameCategory(req: FlowExchangeRequest): Promise<FlowExchangeRes
   };
 }
 
-async function addSubcategory(req: FlowExchangeRequest): Promise<FlowExchangeResponse> {
+async function addSubcategory(
+  req: FlowExchangeRequest,
+): Promise<FlowExchangeResponse> {
   const parentId = String(req.fields?.parent_category_id ?? "");
   const name = String(req.fields?.name ?? "").trim();
   if (!parentId || !name) return notHandled(req);
@@ -122,7 +214,9 @@ async function addSubcategory(req: FlowExchangeRequest): Promise<FlowExchangeRes
   };
 }
 
-async function toggleItem(req: FlowExchangeRequest): Promise<FlowExchangeResponse> {
+async function toggleItem(
+  req: FlowExchangeRequest,
+): Promise<FlowExchangeResponse> {
   const itemId = String(req.fields?.item_id ?? "");
   if (!itemId) return notHandled(req);
   const { data, error } = await supabase
@@ -137,16 +231,23 @@ async function toggleItem(req: FlowExchangeRequest): Promise<FlowExchangeRespons
     .eq("id", itemId);
   return {
     next_screen_id: req.screen_id,
-    messages: [{ level: "info", text: `Item ${data.is_available ? "hidden" : "available"}.` }],
+    messages: [{
+      level: "info",
+      text: `Item ${data.is_available ? "hidden" : "available"}.`,
+    }],
   };
 }
 
-async function openItem(req: FlowExchangeRequest): Promise<FlowExchangeResponse> {
+async function openItem(
+  req: FlowExchangeRequest,
+): Promise<FlowExchangeResponse> {
   const itemId = String(req.fields?.item_id ?? "");
   if (!itemId) return notHandled(req);
   const { data, error } = await supabase
     .from("items")
-    .select("id, name, short_description, price_minor, currency, flags, is_available")
+    .select(
+      "id, name, short_description, price_minor, currency, flags, is_available",
+    )
     .eq("id", itemId)
     .maybeSingle();
   if (error || !data) return notHandled(req);
@@ -163,7 +264,9 @@ async function openItem(req: FlowExchangeRequest): Promise<FlowExchangeResponse>
   };
 }
 
-async function saveItem(req: FlowExchangeRequest): Promise<FlowExchangeResponse> {
+async function saveItem(
+  req: FlowExchangeRequest,
+): Promise<FlowExchangeResponse> {
   const itemId = String(req.fields?.item_id ?? "");
   const name = String(req.fields?.name ?? "").trim();
   const price = parseFloat(String(req.fields?.price ?? "0")) || 0;
@@ -190,7 +293,9 @@ async function saveItem(req: FlowExchangeRequest): Promise<FlowExchangeResponse>
   };
 }
 
-async function createItem(req: FlowExchangeRequest): Promise<FlowExchangeResponse> {
+async function createItem(
+  req: FlowExchangeRequest,
+): Promise<FlowExchangeResponse> {
   const categoryId = String(req.fields?.category_id ?? "");
   const name = String(req.fields?.name ?? "").trim();
   const price = parseFloat(String(req.fields?.price ?? "0")) || 0;
@@ -218,7 +323,9 @@ async function createItem(req: FlowExchangeRequest): Promise<FlowExchangeRespons
   };
 }
 
-async function bulkEditPrices(req: FlowExchangeRequest): Promise<FlowExchangeResponse> {
+async function bulkEditPrices(
+  req: FlowExchangeRequest,
+): Promise<FlowExchangeResponse> {
   const categoryId = String(req.fields?.category_id ?? "");
   const mode = String(req.fields?.mode ?? "increase");
   const amountType = String(req.fields?.amount_type ?? "currency");
@@ -232,9 +339,13 @@ async function bulkEditPrices(req: FlowExchangeRequest): Promise<FlowExchangeRes
   for (const item of data ?? []) {
     let price = item.price_minor ?? 0;
     if (mode === "increase") {
-      price += amountType === "currency" ? Math.round(amountValue * 100) : Math.round(price * (amountValue / 100));
+      price += amountType === "currency"
+        ? Math.round(amountValue * 100)
+        : Math.round(price * (amountValue / 100));
     } else if (mode === "decrease") {
-      price -= amountType === "currency" ? Math.round(amountValue * 100) : Math.round(price * (amountValue / 100));
+      price -= amountType === "currency"
+        ? Math.round(amountValue * 100)
+        : Math.round(price * (amountValue / 100));
     } else if (mode === "set_exact") {
       price = Math.round(amountValue * 100);
     }
@@ -250,21 +361,34 @@ async function bulkEditPrices(req: FlowExchangeRequest): Promise<FlowExchangeRes
   };
 }
 
-async function publish(req: FlowExchangeRequest): Promise<FlowExchangeResponse> {
-  const barId = String(req.fields?.bar_id ?? "");
+async function publish(
+  req: FlowExchangeRequest,
+): Promise<FlowExchangeResponse> {
+  const barId = String(req.fields?.bar_id ?? req.context?.bar_id ?? "");
   if (!barId) return notHandled(req);
-  const menu = await getPublishedMenu(barId);
-  if (!menu) return notHandled(req);
-  await supabase
-    .from("menus")
-    .update({ status: "published", published_at: new Date().toISOString() })
-    .eq("id", menu.id);
-  await supabase
-    .from("bars")
-    .update({ is_active: true })
-    .eq("id", barId);
-  return {
-    next_screen_id: req.screen_id,
-    messages: [{ level: "info", text: "Menu published." }],
-  };
+  try {
+    const publishedMenuId = await promoteDraftToPublished({ barId });
+    const { data: publishedMeta } = await supabase
+      .from("menus")
+      .select("version")
+      .eq("id", publishedMenuId)
+      .maybeSingle();
+    await supabase
+      .from("bars")
+      .update({ is_active: true })
+      .eq("id", barId);
+    const versionText = publishedMeta?.version
+      ? `Version ${publishedMeta.version}`
+      : "Menu";
+    return {
+      next_screen_id: req.screen_id,
+      messages: [{ level: "info", text: `${versionText} published.` }],
+    };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Publish failed";
+    return {
+      next_screen_id: req.screen_id,
+      messages: [{ level: "error", text: `Publish failed: ${message}` }],
+    };
+  }
 }

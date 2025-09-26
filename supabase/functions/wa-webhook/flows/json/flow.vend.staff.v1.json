@@ -1,123 +1,105 @@
 {
   "version": "6.3",
-  "flow": {
-    "name": "flow.vend.staff.v1",
-    "screens": [
-      {
-        "id": "s_staff_list",
-        "title": "Staff Numbers",
-        "layout": {
-          "type": "SingleColumnLayout",
-          "children": [
-            { "type": "TextCaption", "text": "${data.staff_text}" },
+  "screens": [
+    {
+      "id": "s_staff_list",
+      "title": "Staff numbers",
+      "layout": { "type": "single_column" },
+      "widgets": [
+        {
+          "type": "text_block",
+          "id": "w_staff_text",
+          "text": "${data.staff_text}"
+        },
+        {
+          "type": "footer_buttons",
+          "buttons": [
             {
-              "type": "Form",
-              "name": "form",
-              "children": [
-                {
-                  "type": "EmbeddedLink",
-                  "text": "Add",
-                  "on-click-action": {
-                    "name": "navigate",
-                    "next": { "type": "screen", "name": "s_add_staff" }
-                  }
-                },
-                {
-                  "type": "EmbeddedLink",
-                  "text": "Remove",
-                  "on-click-action": {
-                    "name": "navigate",
-                    "next": { "type": "screen", "name": "s_remove_staff" }
-                  }
-                },
-                {
-                  "type": "Footer",
-                  "label": "Refresh",
-                  "on-click-action": {
-                    "name": "data_exchange",
-                    "payload": { "action_id": "a_staff_refresh" }
-                  }
-                }
-              ]
+              "id": "BTN_ADD",
+              "title": "Add",
+              "action": { "type": "navigate", "next": "s_add_staff" }
+            },
+            {
+              "id": "BTN_REMOVE",
+              "title": "Remove",
+              "action": { "type": "navigate", "next": "s_remove_staff" }
+            },
+            {
+              "id": "BTN_REFRESH",
+              "title": "Refresh",
+              "action": { "type": "data_exchange", "id": "a_staff_refresh" }
             }
           ]
         }
-      },
-      {
-        "id": "s_add_staff",
-        "title": "Add Staff",
-        "layout": {
-          "type": "SingleColumnLayout",
-          "children": [
+      ]
+    },
+    {
+      "id": "s_add_staff",
+      "title": "Add staff",
+      "layout": { "type": "single_column" },
+      "data_exchange": { "submit": { "action": { "id": "a_staff_add" } } },
+      "widgets": [
+        {
+          "type": "text_input",
+          "id": "phone",
+          "label": "WhatsApp number",
+          "required": true
+        },
+        {
+          "type": "dropdown",
+          "id": "role",
+          "label": "Role",
+          "options": [
+            { "id": "manager", "title": "Manager" },
+            { "id": "staff", "title": "Staff" }
+          ]
+        },
+        {
+          "type": "footer_buttons",
+          "buttons": [
             {
-              "type": "Form",
-              "name": "form",
-              "children": [
-                { "type": "TextInput", "name": "phone", "label": "WhatsApp number", "required": true },
-                {
-                  "type": "Dropdown",
-                  "name": "role",
-                  "label": "Role",
-                  "required": true,
-                  "data": [
-                    { "id": "manager", "title": "Manager" },
-                    { "id": "staff", "title": "Staff" }
-                  ]
-                },
-                {
-                  "type": "Footer",
-                  "label": "Save",
-                  "on-click-action": {
-                    "name": "data_exchange",
-                    "payload": {
-                      "action_id": "a_staff_add",
-                      "fields": {
-                        "phone": "${form.phone}",
-                        "role": "${form.role}"
-                      }
-                    }
-                  }
+              "id": "BTN_SAVE",
+              "title": "Save",
+              "action": {
+                "type": "data_exchange",
+                "id": "a_staff_add",
+                "fields": {
+                  "phone": "${widgets.phone.value}",
+                  "role": "${widgets.role.value}"
                 }
-              ]
+              }
             }
           ]
         }
-      },
-      {
-        "id": "s_remove_staff",
-        "title": "Remove Staff",
-        "layout": {
-          "type": "SingleColumnLayout",
-          "children": [
+      ]
+    },
+    {
+      "id": "s_remove_staff",
+      "title": "Remove staff",
+      "layout": { "type": "single_column" },
+      "data_exchange": { "submit": { "action": { "id": "a_staff_remove" } } },
+      "widgets": [
+        {
+          "type": "dropdown",
+          "id": "phone",
+          "label": "Number",
+          "options_data_binding": "staff_options"
+        },
+        {
+          "type": "footer_buttons",
+          "buttons": [
             {
-              "type": "Form",
-              "name": "form",
-              "children": [
-                {
-                  "type": "Dropdown",
-                  "name": "phone",
-                  "label": "Number",
-                  "required": true,
-                  "data-source": "${data.staff_options}"
-                },
-                {
-                  "type": "Footer",
-                  "label": "Remove",
-                  "on-click-action": {
-                    "name": "data_exchange",
-                    "payload": {
-                      "action_id": "a_staff_remove",
-                      "fields": {
-                        "phone": "${form.phone}"
-                      }
-                    }
-                  }
-                }
-              ]
+              "id": "BTN_REMOVE_CONFIRM",
+              "title": "Remove",
+              "action": {
+                "type": "data_exchange",
+                "id": "a_staff_remove",
+                "fields": { "phone": "${widgets.phone.value}" }
+              }
             }
           ]
         }
-      }
-    ]
-  }
+      ]
+    }
+  ]
 }

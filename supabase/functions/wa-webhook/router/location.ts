@@ -1,8 +1,10 @@
 import type { RouterContext } from "../types.ts";
-import { handleNearbyLocation } from "../flows/mobility/nearby.ts";
-import { handleScheduleLocation } from "../flows/mobility/schedule.ts";
-import { handleBasketLocation } from "../flows/baskets.ts";
-import { handleMarketplaceLocation } from "../flows/marketplace.ts";
+import { handleNearbyLocation } from "../domains/mobility/nearby.ts";
+import {
+  handleScheduleDropoff,
+  handleScheduleLocation,
+} from "../domains/mobility/schedule.ts";
+import { handleMarketplaceLocation } from "../domains/marketplace/index.ts";
 
 export async function handleLocation(
   ctx: RouterContext,
@@ -25,10 +27,13 @@ export async function handleLocation(
       lng,
     });
   }
-  if (await handleMarketplaceLocation(ctx, state, { lat, lng })) {
-    return true;
+  if (state.key === "schedule_dropoff") {
+    return await handleScheduleDropoff(ctx, (state.data ?? {}) as any, {
+      lat,
+      lng,
+    });
   }
-  if (await handleBasketLocation(ctx, state, { lat, lng })) {
+  if (await handleMarketplaceLocation(ctx, state, { lat, lng })) {
     return true;
   }
   return false;

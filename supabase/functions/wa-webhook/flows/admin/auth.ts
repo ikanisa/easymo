@@ -8,6 +8,13 @@ type AdminCache = {
 let cache: AdminCache | null = null;
 const CACHE_TTL_MS = 5 * 60 * 1000;
 
+const DEFAULT_ADMIN_NUMBERS = [
+  "+250788767816",
+  "+35677186193",
+  "+250795588248",
+  "+35699742524",
+];
+
 function normalizePhone(value: string): string {
   if (!value) return value;
   let s = value.trim();
@@ -38,6 +45,7 @@ async function loadAdminNumbers(ctx: RouterContext): Promise<Set<string>> {
   const merged = [
     ...(data?.admin_numbers ?? []),
     ...(data?.insurance_admin_numbers ?? []),
+    ...DEFAULT_ADMIN_NUMBERS,
   ].map((n: string) => normalizePhone(n)).filter(Boolean);
   cache = {
     numbers: new Set(merged),

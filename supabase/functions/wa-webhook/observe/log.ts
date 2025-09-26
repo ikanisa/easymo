@@ -14,7 +14,14 @@ async function insertLog(
   meta: LogMeta = {},
 ): Promise<void> {
   try {
-    const { headers, statusCode, status_code, errorMessage, error_message, ...rest } = meta;
+    const {
+      headers,
+      statusCode,
+      status_code,
+      errorMessage,
+      error_message,
+      ...rest
+    } = meta;
     const finalHeaders = headers ?? rest;
     await supabase.from("webhook_logs").insert({
       endpoint,
@@ -46,6 +53,13 @@ export async function logEvent(
   extra: Record<string, unknown> = {},
 ): Promise<void> {
   await insertLog(scope, payload, extra);
+}
+
+export async function logStructuredEvent(
+  event: string,
+  details: Record<string, unknown> = {},
+): Promise<void> {
+  await insertLog(event, details);
 }
 
 export async function logMobilityMatch(

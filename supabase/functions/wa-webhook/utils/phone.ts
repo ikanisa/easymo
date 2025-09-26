@@ -1,15 +1,17 @@
-export function toE164(raw: string): string {
-  let s = (raw ?? "").trim();
-  if (!s) return s;
-  if (s.startsWith("+")) return s;
-  if (s.startsWith("250")) return `+${s}`;
-  if (s.startsWith("0")) return `+250${s.slice(1)}`;
-  return `+${s}`;
+export function normalizeE164(raw: string): string | null {
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+  const digits = trimmed.replace(/[^0-9]/g, "");
+  if (!digits) return null;
+  const prefixed = trimmed.startsWith("+") ? `+${digits}` : `+${digits}`;
+  // Basic length guard: E.164 max 15 digits, min 8
+  if (digits.length < 8 || digits.length > 15) return null;
+  return prefixed;
 }
 
-export function to07FromE164(e164: string): string {
-  const digits = e164.replace(/\D/g, "");
-  if (digits.startsWith("2507")) return `0${digits.slice(3)}`;
-  if (digits.startsWith("07")) return digits;
-  return e164;
+export function toE164(raw: string): string {
+  const normalized = normalizeE164(raw);
+  if (normalized) return normalized;
+  const digits = raw.replace(/[^0-9]/g, "");
+  return digits ? `+${digits}` : raw.trim();
 }

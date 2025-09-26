@@ -14,6 +14,16 @@ CREATE TABLE IF NOT EXISTS public.app_config (
   updated_at timestamptz NOT NULL DEFAULT timezone('utc', now())
 );
 
+ALTER TABLE public.app_config
+  ADD COLUMN IF NOT EXISTS search_radius_km double precision DEFAULT 10,
+  ADD COLUMN IF NOT EXISTS max_results integer DEFAULT 9,
+  ADD COLUMN IF NOT EXISTS subscription_price numeric(10,2) DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS wa_bot_number_e164 text,
+  ADD COLUMN IF NOT EXISTS admin_numbers text[] DEFAULT ARRAY[]::text[],
+  ADD COLUMN IF NOT EXISTS insurance_admin_numbers text[] DEFAULT ARRAY[]::text[],
+  ADD COLUMN IF NOT EXISTS created_at timestamptz NOT NULL DEFAULT timezone('utc', now()),
+  ADD COLUMN IF NOT EXISTS updated_at timestamptz NOT NULL DEFAULT timezone('utc', now());
+
 DO $$
 BEGIN
   IF NOT EXISTS (
@@ -29,6 +39,9 @@ END $$;
 INSERT INTO public.app_config (id, search_radius_km, max_results, subscription_price, wa_bot_number_e164)
 VALUES (1, 10, 9, 0, '+250780000000')
 ON CONFLICT (id) DO NOTHING;
+
+ALTER TABLE public.profiles
+  ADD COLUMN IF NOT EXISTS metadata jsonb NOT NULL DEFAULT '{}'::jsonb;
 
 -- Chat state persistence for WA router
 CREATE TABLE IF NOT EXISTS public.chat_state (
@@ -89,6 +102,14 @@ CREATE TABLE IF NOT EXISTS public.driver_status (
   updated_at timestamptz NOT NULL DEFAULT timezone('utc', now())
 );
 
+ALTER TABLE public.driver_status
+  ADD COLUMN IF NOT EXISTS vehicle_type text,
+  ADD COLUMN IF NOT EXISTS last_seen timestamptz NOT NULL DEFAULT timezone('utc', now()),
+  ADD COLUMN IF NOT EXISTS lat double precision,
+  ADD COLUMN IF NOT EXISTS lng double precision,
+  ADD COLUMN IF NOT EXISTS online boolean NOT NULL DEFAULT true,
+  ADD COLUMN IF NOT EXISTS updated_at timestamptz NOT NULL DEFAULT timezone('utc', now());
+
 DO $$
 BEGIN
   IF NOT EXISTS (
@@ -115,6 +136,18 @@ CREATE TABLE IF NOT EXISTS public.trips (
   created_at timestamptz NOT NULL DEFAULT timezone('utc', now()),
   updated_at timestamptz NOT NULL DEFAULT timezone('utc', now())
 );
+
+ALTER TABLE public.trips
+  ADD COLUMN IF NOT EXISTS creator_user_id uuid,
+  ADD COLUMN IF NOT EXISTS role text,
+  ADD COLUMN IF NOT EXISTS vehicle_type text,
+  ADD COLUMN IF NOT EXISTS pickup_lat double precision,
+  ADD COLUMN IF NOT EXISTS pickup_lng double precision,
+  ADD COLUMN IF NOT EXISTS dropoff_lat double precision,
+  ADD COLUMN IF NOT EXISTS dropoff_lng double precision,
+  ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'open',
+  ADD COLUMN IF NOT EXISTS created_at timestamptz NOT NULL DEFAULT timezone('utc', now()),
+  ADD COLUMN IF NOT EXISTS updated_at timestamptz NOT NULL DEFAULT timezone('utc', now());
 
 DO $$
 BEGIN
@@ -261,6 +294,9 @@ SELECT user_id, 5, timezone('utc', now()) + interval '30 days'
 FROM public.profiles
 WHERE user_id NOT IN (SELECT user_id FROM public.mobility_pro_access)
 LIMIT 0; -- no-op seed to keep migration additive without assumptions
+
+DROP FUNCTION IF EXISTS public.match_drivers_for_trip(uuid, integer, boolean);
+DROP FUNCTION IF EXISTS public.match_passengers_for_trip(uuid, integer, boolean);
 
 -- Placeholder matching helpers (return empty result set until matchmaking implemented)
 CREATE OR REPLACE FUNCTION public.match_drivers_for_trip(

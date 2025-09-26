@@ -2,27 +2,83 @@ name: CI
 
 on:
   push:
+    branches:
+      - main
+      - deploy/**
   pull_request:
 
-permissions:
-  contents: read
-
 jobs:
-  baseline:
-    name: Baseline checks
+  lint:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Show tree
-        run: |
-          echo "Repo blueprint:"
-          ls -la
-          echo
-          echo "Key folders:"
-          ls -la app packages supabase agent .github docs .changeset || true
-      - name: Verify policy files exist
-        run: |
-          test -f agent/policies/ALLOWLIST.json || (echo "Missing ALLOWLIST.json" && exit 1)
-          echo "ALLOWLIST.json is present ✅"
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      - name: Install admin-app deps
+        run: npm install --prefix admin-app
+      - name: Lint admin-app
+        run: npm run --prefix admin-app lint -- --max-warnings=0
+      - uses: denoland/setup-deno@v1
+        with:
+          deno-version: v1.x
+      - name: Deno fmt
+        run: deno fmt --check supabase/functions tests/edge
+      - name: Deno lint
+        run: deno lint supabase/functions tests/edge
+      - name: Deno edge tests
+        run: deno test tests/edge
+      - name: Notification queue tests
+        run: deno test --allow-env supabase/functions/wa-webhook/notify/sender.test.ts
+      - name: Migration hygiene
+        run: deno run --allow-read tools/sql/check_migrations.ts
+      - name: Legacy archive refs
+        run: deno run --allow-read tools/lint/check_archive_refs.ts
 
+  db:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgis/postgis:15-3.4
+        ports:
+          - 5432:5432
+        env:
+          POSTGRES_DB: easymo
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install psql client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+      - name: Wait for database
+        env:
+          PGPASSWORD: postgres
+        run: |
+          for i in {1..20}; do
+            pg_isready -h localhost -p 5432 -U postgres && break
+            sleep 2
+          done
+      - name: Enable extensions
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -p 5432 -U postgres -d easymo -c 'CREATE EXTENSION IF NOT EXISTS postgis;'
+          psql -h localhost -p 5432 -U postgres -d easymo -c 'CREATE EXTENSION IF NOT EXISTS pgcrypto;'
+      - name: Apply migrations
+        env:
+          PGPASSWORD: postgres
+        run: |
+          set -euo pipefail
+          for file in supabase/migrations/*.sql; do
+            echo "Applying $file"
+            psql -h localhost -p 5432 -U postgres -d easymo -f "$file"
+          done
+      - name: Run SQL regression suite
+        env:
+          PGPASSWORD: postgres
+        run: psql -h localhost -p 5432 -U postgres -d easymo -f tests/sql/run_all.sql

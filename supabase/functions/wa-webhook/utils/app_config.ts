@@ -17,7 +17,9 @@ type ConfigCache = {
 let cache: ConfigCache | null = null;
 const TTL_MS = 5 * 60 * 1000;
 
-export async function getAppConfig(client: SupabaseClient): Promise<AppConfigRow> {
+export async function getAppConfig(
+  client: SupabaseClient,
+): Promise<AppConfigRow> {
   const now = Date.now();
   if (cache && now - cache.loadedAt < TTL_MS) return cache.value;
   const { data, error } = await client

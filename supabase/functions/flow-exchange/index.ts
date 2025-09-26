@@ -1,102 +1,198 @@
-import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
-import { z } from 'https://deno.land/x/zod@v3.23.8/mod.ts';
-import type { SupabaseClient } from './types.ts';
+import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { z } from "https://deno.land/x/zod@v3.23.8/mod.ts";
+import type { SupabaseClient } from "./types.ts";
 import {
-  handleShowBarResults,
-  handlePagedBars,
+  type CustomerRequestPayload,
   handleBarDetail,
   handleCategories,
-  handleItems,
   handleItemDetail,
-  type CustomerRequestPayload,
-} from './customer.ts';
+  handleItems,
+  handlePagedBars,
+  handleShowBarResults,
+} from "./customer.ts";
 import {
   handleAddToCart,
-  handleViewCart,
-  handleUpdateCartLine,
-  handlePlaceOrder,
   handleCustomerPaidSignal,
   handleOrderStatus,
-} from './customer-cart.ts';
+  handlePlaceOrder,
+  handleUpdateCartLine,
+  handleViewCart,
+} from "./customer-cart.ts";
 import {
-  handleOnboardIdentity,
   handleOnboardContacts,
-  handleOnboardUploaded,
+  handleOnboardIdentity,
   handleOnboardPublish,
   handleOnboardReview,
-} from './vendor-onboarding.ts';
+  handleOnboardUploaded,
+} from "./vendor-onboarding.ts";
 import {
+  handleBulkPrices,
+  handleCategoryAdd,
   handleCategoryList,
   handleCategoryMove,
   handleCategoryRename,
-  handleCategoryAdd,
+  handleItemCreate,
+  handleItemSave,
   handleItemsList,
   handleItemToggle,
-  handleItemSave,
-  handleItemCreate,
-  handleBulkPrices,
-} from './vendor-menu.ts';
+} from "./vendor-menu.ts";
 import {
-  handleVendorQueue,
-  handleVendorOrderDetail,
+  handleVendorCancel,
   handleVendorMarkPaid,
   handleVendorMarkServed,
-  handleVendorCancel,
-} from './vendor-orders.ts';
+  handleVendorOrderDetail,
+  handleVendorQueue,
+} from "./vendor-orders.ts";
 import {
-  handleStaffList,
-  handleStaffAdd,
-  handleStaffRemove,
   handleSaveSettings,
-} from './vendor-staff-settings.ts';
+  handleStaffAdd,
+  handleStaffList,
+  handleStaffRemove,
+} from "./vendor-staff-settings.ts";
+
+import {
+  decryptFlowEnvelope,
+  encryptFlowPayload,
+  type FlowEncryptionContext,
+  isEncryptedEnvelope,
+} from "../_shared/flow_crypto.ts";
 
 const ACTIONS = {
   CUSTOMER: {
-    SHOW_RESULTS: 'a_show_results',
-    PAGE_BARS: 'a_paged_bars',
-    SELECT_BAR: 'a_select_bar',
-    OPEN_MENU: 'a_open_menu',
-    SELECT_CATEGORY: 'a_select_category',
-    OPEN_ITEMS: 'a_open_items',
-    PAGE_ITEMS: 'a_paged_items',
-    OPEN_ITEM: 'a_open_item',
-    ADD_TO_CART: 'a_add_to_cart',
-    VIEW_CART: 'a_view_cart',
-    EDIT_CART: 'a_edit_cart',
-    UPDATE_LINE: 'a_update_line',
-    PLACE_ORDER: 'a_place_order',
-    CUSTOMER_PAID_SIGNAL: 'a_customer_paid_signal',
-    VIEW_STATUS: 'a_view_status',
-    REFRESH_ORDERS: 'a_refresh_orders',
-    OPEN_ORDER_DETAIL: 'a_open_order',
+    SHOW_RESULTS: "a_show_results",
+    PAGE_BARS: "a_paged_bars",
+    SELECT_BAR: "a_select_bar",
+    OPEN_MENU: "a_open_menu",
+    SELECT_CATEGORY: "a_select_category",
+    OPEN_ITEMS: "a_open_items",
+    PAGE_ITEMS: "a_paged_items",
+    OPEN_ITEM: "a_open_item",
+    ADD_TO_CART: "a_add_to_cart",
+    VIEW_CART: "a_view_cart",
+    EDIT_CART: "a_edit_cart",
+    UPDATE_LINE: "a_update_line",
+    PLACE_ORDER: "a_place_order",
+    CUSTOMER_PAID_SIGNAL: "a_customer_paid_signal",
+    VIEW_STATUS: "a_view_status",
+    REFRESH_ORDERS: "a_refresh_orders",
+    OPEN_ORDER_DETAIL: "a_open_order",
   },
   VENDOR: {
-    ONBOARD_IDENTITY: 'a_onboard_identity',
-    ONBOARD_CONTACTS: 'a_onboard_contacts',
-    ONBOARD_UPLOADED: 'a_onboard_uploaded',
-    PUBLISH_MENU: 'a_publish_menu',
-    OPEN_MENU_REVIEW: 'a_open_menu_review',
-    CAT_MOVE: 'a_cat_move',
-    CAT_RENAME: 'a_cat_rename',
-    CAT_ADD: 'a_cat_add',
-    OPEN_ITEMS: 'a_open_items',
-    ITEM_TOGGLE: 'a_item_toggle',
-    ITEM_EDIT_OPEN: 'a_item_edit_open',
-    ITEM_SAVE: 'a_item_save',
-    ITEM_CREATE: 'a_item_create',
-    BULK_PRICES: 'a_bulk_prices',
-    ORDER_VIEW_QUEUE: 'a_view_queue',
-    ORDER_OPEN_DETAIL: 'a_open_order_detail',
-    ORDER_MARK_PAID: 'a_mark_paid',
-    ORDER_MARK_SERVED: 'a_mark_served',
-    ORDER_CANCEL_CONFIRM: 'a_confirm_cancel',
-    STAFF_REFRESH: 'a_staff_refresh',
-    STAFF_ADD: 'a_staff_add',
-    STAFF_REMOVE: 'a_staff_remove',
-    SAVE_SETTINGS: 'a_save_settings',
+    ONBOARD_IDENTITY: "a_onboard_identity",
+    ONBOARD_CONTACTS: "a_onboard_contacts",
+    ONBOARD_UPLOADED: "a_onboard_uploaded",
+    PUBLISH_MENU: "a_publish_menu",
+    OPEN_MENU_REVIEW: "a_open_menu_review",
+    CAT_MOVE: "a_cat_move",
+    CAT_RENAME: "a_cat_rename",
+    CAT_ADD: "a_cat_add",
+    OPEN_ITEMS: "a_open_items",
+    ITEM_TOGGLE: "a_item_toggle",
+    ITEM_EDIT_OPEN: "a_item_edit_open",
+    ITEM_SAVE: "a_item_save",
+    ITEM_CREATE: "a_item_create",
+    BULK_PRICES: "a_bulk_prices",
+    ORDER_VIEW_QUEUE: "a_view_queue",
+    ORDER_OPEN_DETAIL: "a_open_order_detail",
+    ORDER_MARK_PAID: "a_mark_paid",
+    ORDER_MARK_SERVED: "a_mark_served",
+    ORDER_CANCEL_CONFIRM: "a_confirm_cancel",
+    STAFF_REFRESH: "a_staff_refresh",
+    STAFF_ADD: "a_staff_add",
+    STAFF_REMOVE: "a_staff_remove",
+    SAVE_SETTINGS: "a_save_settings",
   },
 } as const;
+
+const DEFAULT_FLOW_ID = "flow.cust.bar_browser.v1";
+
+type FlowRequestEnvelope = {
+  version?: string;
+  action?: string;
+  screen?: string;
+  data?: Record<string, unknown> | null;
+  flow_token?: string;
+  payload?: Record<string, unknown> | null;
+};
+
+type FlowResponsePayload = {
+  screen: string;
+  data: Record<string, unknown>;
+};
+
+type FlowAckPayload = { data: { acknowledged: true } };
+type FlowHealthPayload = { data: { status: "active" } };
+type FlowPayload = FlowResponsePayload | FlowAckPayload | FlowHealthPayload;
+
+async function respondEncrypted(
+  payload: FlowPayload,
+  context: EncryptionContext,
+): Promise<Response> {
+  const body = await encryptFlowPayload(payload, context);
+  return new Response(body, {
+    status: 200,
+    headers: { "Content-Type": "text/plain; charset=utf-8" },
+  });
+}
+
+type EncryptionContext = FlowEncryptionContext;
+
+async;
+
+async;
+async;
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function findValueByKey(root: unknown, key: string): unknown {
+  if (isRecord(root)) {
+    if (key in root) {
+      return root[key];
+    }
+    for (const value of Object.values(root)) {
+      const found = findValueByKey(value, key);
+      if (found !== undefined) return found;
+    }
+  } else if (Array.isArray(root)) {
+    for (const value of root) {
+      const found = findValueByKey(value, key);
+      if (found !== undefined) return found;
+    }
+  }
+  return undefined;
+}
+
+function findStringStartingWith(
+  root: unknown,
+  prefix: string,
+): string | undefined {
+  if (typeof root === "string") {
+    if (root.startsWith(prefix)) return root;
+    return undefined;
+  }
+  if (isRecord(root)) {
+    for (const value of Object.values(root)) {
+      const found = findStringStartingWith(value, prefix);
+      if (found) return found;
+    }
+  } else if (Array.isArray(root)) {
+    for (const value of root) {
+      const found = findStringStartingWith(value, prefix);
+      if (found) return found;
+    }
+  }
+  return undefined;
+}
+
+function toStringValue(value: unknown): string | undefined {
+  if (typeof value === "string") return value;
+  if (typeof value === "number" || typeof value === "boolean") {
+    return String(value);
+  }
+  return undefined;
+}
 
 const requestSchema = z.object({
   flow_id: z.string(),
@@ -114,17 +210,19 @@ const responseSchema = z.object({
   next_screen_id: z.string(),
   data: z.record(z.any()).optional(),
   page_token_next: z.string().nullable().optional(),
-  messages: z.array(z.object({ type: z.enum(['info', 'warning', 'error']), text: z.string() })).optional(),
+  messages: z.array(
+    z.object({ type: z.enum(["info", "warning", "error"]), text: z.string() }),
+  ).optional(),
   field_errors: z.record(z.string()).optional(),
 });
 
 function getSupabaseClient(req: Request) {
-  const url = Deno.env.get('SUPABASE_URL');
-  const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  const url = Deno.env.get("SUPABASE_URL");
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   if (!url || !serviceKey) {
-    throw new Error('Missing Supabase service credentials');
+    throw new Error("Missing Supabase service credentials");
   }
-  const authHeader = req.headers.get('Authorization');
+  const authHeader = req.headers.get("Authorization");
   return createClient(url, serviceKey, {
     global: {
       headers: authHeader ? { Authorization: authHeader } : undefined,
@@ -133,17 +231,69 @@ function getSupabaseClient(req: Request) {
 }
 
 async function handleRequest(req: Request): Promise<Response> {
-  if (req.method !== 'POST') {
-    return new Response('Method not allowed', { status: 405 });
+  if (req.method !== "POST") {
+    return new Response("Method not allowed", { status: 405 });
+  }
+
+  let body: Record<string, unknown>;
+  try {
+    const json = await req.json();
+    body = json as Record<string, unknown>;
+  } catch (error) {
+    console.error("Invalid request payload", error);
+    return new Response(JSON.stringify({ error: "invalid_payload" }), {
+      status: 400,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  const isEncrypted = isEncryptedEnvelope(body);
+
+  if (isEncrypted) {
+    try {
+      const { request: flowEnvelope, context } = await decryptFlowEnvelope<
+        FlowRequestEnvelope
+      >(body);
+      const normalized = normalizeRequest(flowEnvelope);
+
+      if (normalized.actionType === "PING") {
+        return respondEncrypted({ data: { status: "active" } }, context);
+      }
+      if (normalized.actionType === "ERROR_NOTIFICATION") {
+        return respondEncrypted({ data: { acknowledged: true } }, context);
+      }
+
+      const payload = buildActionPayload(flowEnvelope, normalized);
+      const supabase = getSupabaseClient(req);
+      const result = await routeAction(payload, supabase);
+      const flowResponse = buildFlowResponse(result);
+      return respondEncrypted(flowResponse, context);
+    } catch (error) {
+      console.error("flow-exchange decrypt error", error);
+      if (
+        error instanceof Error && error.message.includes("FLOW_PRIVATE_KEY")
+      ) {
+        return new Response("Unable to decrypt request", { status: 421 });
+      }
+      if (error instanceof DOMException) {
+        return new Response("Unable to decrypt request", { status: 421 });
+      }
+      return new Response(JSON.stringify({ error: "invalid_payload" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
   }
 
   let payload: ActionPayload;
   try {
-    const json = await req.json();
-    payload = requestSchema.parse(json);
+    payload = requestSchema.parse(body);
   } catch (error) {
-    console.error('Invalid request payload', error);
-    return new Response(JSON.stringify({ error: 'invalid_payload' }), { status: 400 });
+    console.error("Invalid request payload", error);
+    return new Response(JSON.stringify({ error: "invalid_payload" }), {
+      status: 400,
+      headers: { "Content-Type": "application/json" },
+    });
   }
 
   const supabase = getSupabaseClient(req);
@@ -152,11 +302,14 @@ async function handleRequest(req: Request): Promise<Response> {
     const result = await routeAction(payload, supabase);
     return new Response(JSON.stringify(responseSchema.parse(result)), {
       status: 200,
-      headers: { 'Content-Type': 'application/json' },
+      headers: { "Content-Type": "application/json" },
     });
   } catch (error) {
-    console.error('flow-exchange error', error);
-    return new Response(JSON.stringify({ error: 'internal_error' }), { status: 500 });
+    console.error("flow-exchange error", error);
+    return new Response(JSON.stringify({ error: "internal_error" }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
   }
 }
 
@@ -164,8 +317,137 @@ type ActionPayload = z.infer<typeof requestSchema>;
 type HandlerResult = z.infer<typeof responseSchema>;
 type ActionHandler = (
   payload: ActionPayload,
-  supabase: SupabaseClient
+  supabase: SupabaseClient,
 ) => Promise<HandlerResult>;
+
+type NormalizedRequest = {
+  actionType?: string;
+  actionId?: string;
+  screen?: string;
+  fields: Record<string, unknown>;
+  filters: Record<string, unknown>;
+  pageToken: string | null;
+};
+
+function normalizeRequest(request: FlowRequestEnvelope): NormalizedRequest {
+  const dataRoot = isRecord(request.data) ? request.data : undefined;
+  let actionType = typeof request.action === "string"
+    ? request.action.toUpperCase()
+    : undefined;
+  let actionId: string | undefined;
+
+  const payloadRoot = isRecord(request.payload) ? request.payload : undefined;
+  const searchRoot = payloadRoot ?? dataRoot;
+
+  const actionIdValue = findValueByKey(searchRoot, "action_id");
+  if (typeof actionIdValue === "string" && actionIdValue.startsWith("a_")) {
+    actionId = actionIdValue;
+  } else {
+    const deep = findStringStartingWith(searchRoot, "a_");
+    if (deep) actionId = deep;
+  }
+
+  const fieldsCandidate = findValueByKey(searchRoot, "fields");
+  const filtersCandidate = findValueByKey(searchRoot, "filters");
+  const pageTokenValue = findValueByKey(searchRoot, "page_token");
+
+  const fields = isRecord(fieldsCandidate)
+    ? fieldsCandidate
+    : (isRecord(dataRoot) ? dataRoot : {});
+  const filters = isRecord(filtersCandidate) ? filtersCandidate : {};
+
+  let pageToken: string | null = null;
+  const pageTokenStr = toStringValue(pageTokenValue);
+  if (pageTokenStr !== undefined) {
+    pageToken = pageTokenStr;
+  }
+
+  if (!pageToken && typeof fields["page_token"] === "string") {
+    pageToken = fields["page_token"] as string;
+  }
+
+  if (!actionId && actionType && actionType.startsWith("A_")) {
+    actionId = actionType.toLowerCase();
+  }
+
+  return {
+    actionType,
+    actionId,
+    screen: typeof request.screen === "string" ? request.screen : undefined,
+    fields,
+    filters,
+    pageToken,
+  };
+}
+
+function buildActionPayload(
+  envelope: FlowRequestEnvelope,
+  normalized: NormalizedRequest,
+): ActionPayload {
+  let actionId = normalized.actionId;
+  if (!actionId && normalized.actionType === "INIT") {
+    actionId = ACTIONS.CUSTOMER.SHOW_RESULTS;
+  }
+  if (!actionId) {
+    throw new Error(
+      `Missing action identifier for action ${
+        normalized.actionType ?? "unknown"
+      }`,
+    );
+  }
+
+  const flowIdCandidate = findStringStartingWith(envelope, "flow.");
+  const flowId = flowIdCandidate ?? DEFAULT_FLOW_ID;
+
+  const fields = normalized.fields;
+  const filters = normalized.filters;
+
+  const waId = toStringValue(fields["wa_id"] ?? filters["wa_id"]);
+  const sessionId = toStringValue(
+    fields["session_id"] ?? filters["session_id"],
+  );
+
+  const context: Record<string, unknown> = {};
+  if (envelope.flow_token) {
+    context.flow_token = envelope.flow_token;
+  }
+
+  const payload: ActionPayload = {
+    flow_id: flowId,
+    screen_id: normalized.screen,
+    action_id: actionId,
+    page_token: normalized.pageToken,
+    fields: Object.keys(fields).length ? fields : undefined,
+    filters: Object.keys(filters).length ? filters : undefined,
+    context: Object.keys(context).length ? context : undefined,
+  };
+
+  if (waId) payload.wa_id = waId;
+  if (sessionId) payload.session_id = sessionId;
+
+  return payload;
+}
+
+function buildFlowResponse(result: HandlerResult): FlowResponsePayload {
+  const data = { ...(result.data ?? {}) } as Record<string, unknown>;
+  if (result.page_token_next !== undefined) {
+    data.page_token_next = result.page_token_next;
+  }
+  if (result.messages?.length) {
+    const errorMessage = result.messages.find((msg) => msg.type === "error") ??
+      result.messages[0];
+    if (errorMessage) {
+      data.error_message = errorMessage.text;
+    }
+  }
+  if (result.field_errors) {
+    data.field_errors = result.field_errors;
+  }
+  return {
+    screen: result.next_screen_id,
+    data,
+  };
+}
 
 const unsupported: ActionHandler = async (payload) => {
   throw new Error(`Unsupported action_id: ${payload.action_id}`);
@@ -256,25 +538,31 @@ const ROUTES: Record<string, ActionHandler> = {
 
 async function routeAction(
   payload: ActionPayload,
-  supabase: SupabaseClient
+  supabase: SupabaseClient,
 ): Promise<HandlerResult> {
   const handler = ROUTES[payload.action_id] ?? unsupported;
   if (handler === unsupported) {
-    console.warn('Unhandled action_id', payload.action_id);
+    console.warn("Unhandled action_id", payload.action_id);
   }
   return handler(payload, supabase);
 }
 
 function toCustomerPayload(payload: ActionPayload): CustomerRequestPayload {
   return {
-    filters: (payload.filters ?? undefined) as Record<string, unknown> | undefined,
+    filters: (payload.filters ?? undefined) as
+      | Record<string, unknown>
+      | undefined,
     page_token: payload.page_token ?? undefined,
     fields: payload.fields ?? undefined,
     context: payload.context ?? undefined,
     bar_id: (payload as Record<string, unknown>).bar_id as string | undefined,
     menu_id: (payload as Record<string, unknown>).menu_id as string | undefined,
-    category_id: (payload as Record<string, unknown>).category_id as string | undefined,
-    subcategory_id: (payload as Record<string, unknown>).subcategory_id as string | undefined,
+    category_id: (payload as Record<string, unknown>).category_id as
+      | string
+      | undefined,
+    subcategory_id: (payload as Record<string, unknown>).subcategory_id as
+      | string
+      | undefined,
   };
 }
 

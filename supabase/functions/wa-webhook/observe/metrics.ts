@@ -1,3 +1,8 @@
-export function recordMetric(name: string, value = 1, dimensions: Record<string, string> = {}): void {
-  console.log("metric", { name, value, dimensions });
+import { logMetric } from "./logging.ts";
+export async function recordMetric(
+  name: string,
+  value = 1,
+  dimensions: Record<string, string> = {},
+): Promise<void> {
+  await logMetric(name, value, dimensions);
 }

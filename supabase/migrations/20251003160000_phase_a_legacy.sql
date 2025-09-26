@@ -64,16 +64,17 @@ CREATE TABLE IF NOT EXISTS public.baskets (
 );
 
 ALTER TABLE public.baskets
+  ADD COLUMN IF NOT EXISTS owner_profile_id uuid,
+  ADD COLUMN IF NOT EXISTS owner_whatsapp text,
   ADD COLUMN IF NOT EXISTS is_public boolean NOT NULL DEFAULT false,
   ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'open',
   ADD COLUMN IF NOT EXISTS goal_minor integer,
   ADD COLUMN IF NOT EXISTS currency text NOT NULL DEFAULT 'RWF',
   ADD COLUMN IF NOT EXISTS share_token text,
   ADD COLUMN IF NOT EXISTS lat double precision,
-  ADD COLUMN IF NOT EXISTS lng double precision;
-
-ALTER TABLE public.basket_members
-  ADD COLUMN IF NOT EXISTS role text NOT NULL DEFAULT 'member';
+  ADD COLUMN IF NOT EXISTS lng double precision,
+  ADD COLUMN IF NOT EXISTS created_at timestamptz NOT NULL DEFAULT timezone('utc', now()),
+  ADD COLUMN IF NOT EXISTS updated_at timestamptz NOT NULL DEFAULT timezone('utc', now());
 
 DO $$
 BEGIN
@@ -97,6 +98,12 @@ CREATE TABLE IF NOT EXISTS public.basket_members (
   UNIQUE (basket_id, whatsapp)
 );
 
+ALTER TABLE public.basket_members
+  ADD COLUMN IF NOT EXISTS whatsapp text,
+  ADD COLUMN IF NOT EXISTS profile_id uuid,
+  ADD COLUMN IF NOT EXISTS role text NOT NULL DEFAULT 'member',
+  ADD COLUMN IF NOT EXISTS joined_at timestamptz NOT NULL DEFAULT timezone('utc', now());
+
 CREATE TABLE IF NOT EXISTS public.basket_contributions (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   basket_id uuid NOT NULL REFERENCES public.baskets(id) ON DELETE CASCADE,
@@ -105,6 +112,11 @@ CREATE TABLE IF NOT EXISTS public.basket_contributions (
   currency text NOT NULL DEFAULT 'RWF',
   created_at timestamptz NOT NULL DEFAULT timezone('utc', now())
 );
+
+ALTER TABLE public.basket_contributions
+  ADD COLUMN IF NOT EXISTS amount_minor integer,
+  ADD COLUMN IF NOT EXISTS currency text NOT NULL DEFAULT 'RWF',
+  ADD COLUMN IF NOT EXISTS created_at timestamptz NOT NULL DEFAULT timezone('utc', now());
 
 CREATE INDEX IF NOT EXISTS idx_basket_members_basket ON public.basket_members (basket_id);
 CREATE INDEX IF NOT EXISTS idx_basket_contrib_basket ON public.basket_contributions (basket_id);
@@ -221,7 +233,7 @@ AS $$
          END AS distance_km,
          (SELECT count(*) FROM public.basket_members bm WHERE bm.basket_id = b.id) AS member_count
   FROM public.baskets b
-  WHERE b.is_public = true AND b.status = 'open'
+  WHERE b.is_public = true AND b.status::text = 'open'
   ORDER BY distance_km NULLS LAST, b.created_at DESC
   LIMIT COALESCE(_limit, 10);
 $$;
@@ -312,16 +324,32 @@ CREATE TABLE IF NOT EXISTS public.businesses (
   location_text text,
   lat double precision,
   lng double precision,
+  category text,
   is_active boolean NOT NULL DEFAULT true,
   created_at timestamptz NOT NULL DEFAULT timezone('utc', now())
 );
 
 CREATE INDEX IF NOT EXISTS idx_businesses_active ON public.businesses (is_active);
 
+ALTER TABLE public.businesses
+  ADD COLUMN IF NOT EXISTS owner_whatsapp text,
+  ADD COLUMN IF NOT EXISTS description text,
+  ADD COLUMN IF NOT EXISTS catalog_url text,
+  ADD COLUMN IF NOT EXISTS location_text text,
+  ADD COLUMN IF NOT EXISTS lat double precision,
+  ADD COLUMN IF NOT EXISTS lng double precision,
+  ADD COLUMN IF NOT EXISTS category text,
+  ADD COLUMN IF NOT EXISTS created_at timestamptz NOT NULL DEFAULT timezone('utc', now()),
+  ADD COLUMN IF NOT EXISTS is_active boolean NOT NULL DEFAULT true;
+
+DROP FUNCTION IF EXISTS public.nearby_businesses(double precision, double precision, text, integer);
+DROP FUNCTION IF EXISTS public.nearby_businesses(double precision, double precision, text, text, integer);
+
 CREATE OR REPLACE FUNCTION public.nearby_businesses(
   _lat double precision,
   _lng double precision,
   _viewer text,
+  _category text DEFAULT NULL,
   _limit integer DEFAULT 10
 )
 RETURNS TABLE(
@@ -330,6 +358,7 @@ RETURNS TABLE(
   name text,
   description text,
   location_text text,
+  category text,
   distance_km double precision
 )
 LANGUAGE sql
@@ -339,12 +368,17 @@ AS $$
          b.name,
          b.description,
          b.location_text,
+         b.category,
          CASE
            WHEN b.lat IS NULL OR b.lng IS NULL THEN NULL
            ELSE public.haversine_km(b.lat, b.lng, _lat, _lng)
          END AS distance_km
   FROM public.businesses b
   WHERE b.is_active = true
+    AND (
+      _category IS NULL OR _category = '' OR
+      lower(coalesce(b.category, 'other')) = lower(_category)
+    )
   ORDER BY distance_km NULLS LAST, b.created_at DESC
   LIMIT COALESCE(_limit, 10);
 $$;
@@ -354,14 +388,15 @@ CREATE OR REPLACE FUNCTION public.marketplace_add_business(
   _name text,
   _description text,
   _catalog text,
+  _category text,
   _lat double precision,
   _lng double precision
 )
 RETURNS uuid
 LANGUAGE sql
 AS $$
-  INSERT INTO public.businesses (owner_whatsapp, name, description, catalog_url, lat, lng)
-  VALUES (_owner, _name, _description, _catalog, _lat, _lng)
+  INSERT INTO public.businesses (owner_whatsapp, name, description, catalog_url, category, lat, lng)
+  VALUES (_owner, _name, _description, _catalog, _category, _lat, _lng)
   RETURNING id;
 $$;
 
@@ -477,6 +512,16 @@ CREATE TABLE IF NOT EXISTS public.momo_qr_requests (
   tel_uri text,
   created_at timestamptz NOT NULL DEFAULT timezone('utc', now())
 );
+
+ALTER TABLE public.momo_qr_requests
+  ADD COLUMN IF NOT EXISTS requester_wa_id text,
+  ADD COLUMN IF NOT EXISTS target_value text,
+  ADD COLUMN IF NOT EXISTS target_type text,
+  ADD COLUMN IF NOT EXISTS amount_minor integer,
+  ADD COLUMN IF NOT EXISTS qr_url text,
+  ADD COLUMN IF NOT EXISTS ussd_code text,
+  ADD COLUMN IF NOT EXISTS tel_uri text,
+  ADD COLUMN IF NOT EXISTS created_at timestamptz NOT NULL DEFAULT timezone('utc', now());
 
 CREATE INDEX IF NOT EXISTS idx_momo_qr_requests_requester ON public.momo_qr_requests (requester_wa_id, created_at DESC);
 

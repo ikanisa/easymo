@@ -1,6 +1,8 @@
 import { WA_TOKEN } from "../config.ts";
 
-export async function fetchWhatsAppMedia(metaId: string): Promise<{ bytes: Uint8Array; mime: string; filename?: string }> {
+export async function fetchWhatsAppMedia(
+  metaId: string,
+): Promise<{ bytes: Uint8Array; mime: string; filename?: string }> {
   const metaRes = await fetch(`https://graph.facebook.com/v20.0/${metaId}`, {
     headers: { Authorization: `Bearer ${WA_TOKEN}` },
   });

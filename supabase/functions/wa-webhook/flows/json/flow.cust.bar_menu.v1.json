@@ -1,333 +1,557 @@
 {
-  "version": "6.3",
-  "flow": {
-    "name": "flow.cust.bar_menu.v1",
-    "screens": [
-      {
-        "id": "s_categories",
-        "title": "Menu Categories",
-        "layout": {
-          "type": "SingleColumnLayout",
-          "children": [
+  "version": "6.5",
+  "screens": [
+    {
+      "id": "s_categories",
+      "title": "Categories",
+      "layout": {
+        "type": "single_column"
+      },
+      "widgets": [
+        {
+          "type": "list",
+          "id": "w_categories",
+          "selection_mode": "single",
+          "options_data_binding": "categories",
+          "empty_state": {
+            "title": "Menu not ready",
+            "body": "No categories are available yet. Please try again later."
+          }
+        },
+        {
+          "type": "footer_buttons",
+          "buttons": [
             {
-              "type": "Form",
-              "name": "form",
-              "children": [
-                { "type": "TextHeading", "text": "${data.bar_name}" },
-                {
-                  "type": "Dropdown",
-                  "name": "category_id",
-                  "label": "Select category",
-                  "required": true,
-                  "data-source": "${data.categories}",
-                  "on-select-action": {
-                    "name": "data_exchange",
-                    "payload": {
-                      "action_id": "a_select_category",
-                      "fields": {
-                        "bar_id": "${data.bar_id}",
-                        "category_id": "${form.category_id}"
-                      }
-                    }
-                  }
-                },
-                {
-                  "type": "Footer",
-                  "label": "View items",
-                  "on-click-action": {
-                    "name": "data_exchange",
-                    "payload": {
-                      "action_id": "a_open_items",
-                      "fields": {
-                        "bar_id": "${data.bar_id}",
-                        "category_id": "${form.category_id}"
-                      }
-                    }
-                  }
+              "id": "BTN_CAT_VIEW_CART",
+              "title": "View cart",
+              "action": {
+                "type": "data_exchange",
+                "id": "a_view_cart",
+                "fields": {
+                  "bar_id": "${data.bar_id}"
                 }
-              ]
+              }
+            },
+            {
+              "id": "BTN_CAT_OPEN",
+              "title": "Open",
+              "action": {
+                "type": "data_exchange",
+                "id": "a_select_category",
+                "fields": {
+                  "bar_id": "${data.bar_id}",
+                  "category_id": "${widgets.w_categories.value}"
+                }
+              },
+              "visibility_condition": "${widgets.w_categories.value} != null"
             }
           ]
         }
-      },
-      {
-        "id": "s_items",
-        "title": "Items",
-        "layout": {
-          "type": "SingleColumnLayout",
-          "children": [
-            {
-              "type": "Form",
-              "name": "form",
-              "children": [
-                {
-                  "type": "RadioButtonsGroup",
-                  "name": "item_id",
-                  "label": "Select item",
-                  "required": true,
-                  "data-source": "${data.items}",
-                  "on-select-action": {
-                    "name": "data_exchange",
-                    "payload": {
-                      "action_id": "a_open_item",
-                      "fields": {
-                        "bar_id": "${data.bar_id}",
-                        "item_id": "${form.item_id}"
-                      }
-                    }
-                  }
-                },
-                {
-                  "type": "EmbeddedLink",
-                  "text": "Prev",
-                  "visible": "${data.page_token_prev}",
-                  "on-click-action": {
-                    "name": "data_exchange",
-                    "payload": {
-                      "action_id": "a_paged_items",
-                      "page_token": "${data.page_token_prev}",
-                      "fields": {
-                        "bar_id": "${data.bar_id}",
-                        "category_id": "${data.category_id}"
-                      }
-                    }
-                  }
-                },
-                {
-                  "type": "EmbeddedLink",
-                  "text": "Next",
-                  "visible": "${data.page_token_next}",
-                  "on-click-action": {
-                    "name": "data_exchange",
-                    "payload": {
-                      "action_id": "a_paged_items",
-                      "page_token": "${data.page_token_next}",
-                      "fields": {
-                        "bar_id": "${data.bar_id}",
-                        "category_id": "${data.category_id}"
-                      }
-                    }
-                  }
-                },
-                {
-                  "type": "Footer",
-                  "label": "Back",
-                  "on-click-action": {
-                    "name": "navigate",
-                    "next": { "type": "screen", "name": "s_categories" }
-                  }
-                }
-              ]
+      ],
+      "events": {
+        "on_item_select": {
+          "widget_id": "w_categories",
+          "action": {
+            "type": "data_exchange",
+            "id": "a_select_category",
+            "fields": {
+              "bar_id": "${data.bar_id}",
+              "category_id": "${selected.id}"
             }
-          ]
-        }
-      },
-      {
-        "id": "s_item_detail",
-        "title": "Item",
-        "layout": {
-          "type": "SingleColumnLayout",
-          "children": [
-            {
-              "type": "Form",
-              "name": "form",
-              "children": [
-                { "type": "TextHeading", "text": "${data.item_name}" },
-                { "type": "TextBody", "text": "${data.item_desc}" },
-                { "type": "TextCaption", "text": "${data.price}" },
-                { "type": "TextInput", "name": "qty", "label": "Quantity", "input-type": "number", "required": true, "default-value": "1" },
-                {
-                  "type": "Footer",
-                  "label": "Add to cart",
-                  "on-click-action": {
-                    "name": "data_exchange",
-                    "payload": {
-                      "action_id": "a_add_to_cart",
-                      "fields": {
-                        "bar_id": "${data.bar_id}",
-                        "item_id": "${data.item_id}",
-                        "qty": "${form.qty}"
-                      }
-                    }
-                  }
-                }
-              ]
-            }
-          ]
-        }
-      },
-      {
-        "id": "s_cart_view",
-        "title": "Your Cart",
-        "layout": {
-          "type": "SingleColumnLayout",
-          "children": [
-            {
-              "type": "Form",
-              "name": "form",
-              "children": [
-                { "type": "TextCaption", "text": "${data.cart_summary_text}" },
-                { "type": "TextBody", "text": "Subtotal: ${data.subtotal}\nService: ${data.service_charge}\nTotal: ${data.total}" },
-                {
-                  "type": "EmbeddedLink",
-                  "text": "Edit cart",
-                  "on-click-action": {
-                    "name": "data_exchange",
-                    "payload": {
-                      "action_id": "a_edit_cart",
-                      "fields": {
-                        "bar_id": "${data.bar_id}",
-                        "cart_id": "${data.cart_id}"
-                      }
-                    }
-                  }
-                },
-                {
-                  "type": "Footer",
-                  "label": "Proceed",
-                  "enabled": "${not data.is_empty}",
-                  "on-click-action": {
-                    "name": "navigate",
-                    "next": { "type": "screen", "name": "s_table_number" }
-                  }
-                }
-              ]
-            }
-          ]
-        }
-      },
-      {
-        "id": "s_cart_edit",
-        "title": "Edit Cart",
-        "layout": {
-          "type": "SingleColumnLayout",
-          "children": [
-            {
-              "type": "Form",
-              "name": "form",
-              "children": [
-                { "type": "Dropdown", "name": "line_id", "label": "Line", "required": true, "data-source": "${data.lines}" },
-                { "type": "TextInput", "name": "new_qty", "label": "New qty (0 removes)", "required": true, "input-type": "number" },
-                {
-                  "type": "Footer",
-                  "label": "Update",
-                  "on-click-action": {
-                    "name": "data_exchange",
-                    "payload": {
-                      "action_id": "a_update_line",
-                      "fields": {
-                        "bar_id": "${data.bar_id}",
-                        "cart_id": "${data.cart_id}",
-                        "line_id": "${form.line_id}",
-                        "new_qty": "${form.new_qty}"
-                      }
-                    }
-                  }
-                }
-              ]
-            }
-          ]
-        }
-      },
-      {
-        "id": "s_table_number",
-        "title": "Table Number",
-        "layout": {
-          "type": "SingleColumnLayout",
-          "children": [
-            {
-              "type": "Form",
-              "name": "form",
-              "children": [
-                { "type": "TextInput", "name": "table_label", "label": "Table (e.g. T12)", "required": true, "max-chars": 8 },
-                { "type": "TextArea", "name": "note", "label": "Note (optional)", "required": false, "max-chars": 140 },
-                {
-                  "type": "Footer",
-                  "label": "Place order",
-                  "on-click-action": {
-                    "name": "data_exchange",
-                    "payload": {
-                      "action_id": "a_place_order",
-                      "fields": {
-                        "bar_id": "${data.bar_id}",
-                        "cart_id": "${data.cart_id}",
-                        "table_label": "${form.table_label}",
-                        "note": "${form.note}"
-                      }
-                    }
-                  }
-                }
-              ]
-            }
-          ]
-        }
-      },
-      {
-        "id": "s_payment",
-        "title": "Payment",
-        "layout": {
-          "type": "SingleColumnLayout",
-          "children": [
-            {
-              "type": "Form",
-              "name": "form",
-              "children": [
-                { "type": "TextHeading", "text": "Order #${data.order_code}" },
-                { "type": "TextBody", "text": "Total: ${data.total_formatted}" },
-                { "type": "TextCaption", "text": "If Pay with MoMo doesn't open dial: ${data.ussd_code_text}" },
-                {
-                  "type": "EmbeddedLink",
-                  "text": "I Paid",
-                  "on-click-action": {
-                    "name": "data_exchange",
-                    "payload": {
-                      "action_id": "a_customer_paid_signal",
-                      "fields": { "order_id": "${data.order_id}" }
-                    }
-                  }
-                },
-                {
-                  "type": "Footer",
-                  "label": "Pay with MoMo",
-                  "on-click-action": {
-                    "name": "open_url",
-                    "payload": {
-                      "url": "${data.ussd_uri}"
-                    }
-                  }
-                }
-              ]
-            }
-          ]
-        }
-      },
-      {
-        "id": "s_order_status",
-        "title": "Order Status",
-        "terminal": true,
-        "success": true,
-        "layout": {
-          "type": "SingleColumnLayout",
-          "children": [
-            {
-              "type": "Form",
-              "name": "form",
-              "children": [
-                { "type": "TextHeading", "text": "Status: ${data.status}" },
-                { "type": "TextCaption", "text": "${data.timeline_text}" },
-                {
-                  "type": "Footer",
-                  "label": "Finish",
-                  "on-click-action": {
-                    "name": "complete",
-                    "payload": { "order_id": "${data.order_id}" }
-                  }
-                }
-              ]
-            }
-          ]
+          }
         }
       }
-    ]
-  }
+    },
+    {
+      "id": "s_subcategories",
+      "title": "Subcategories",
+      "layout": {
+        "type": "single_column"
+      },
+      "widgets": [
+        {
+          "type": "text_block",
+          "id": "w_subcategory_header",
+          "text": "${data.category_name}"
+        },
+        {
+          "type": "list",
+          "id": "w_subcategories",
+          "selection_mode": "single",
+          "options_data_binding": "subcategories",
+          "empty_state": {
+            "title": "No subcategories",
+            "body": "Try another category to keep browsing."
+          }
+        },
+        {
+          "type": "footer_buttons",
+          "buttons": [
+            {
+              "id": "BTN_SUB_VIEW_CART",
+              "title": "View cart",
+              "action": {
+                "type": "data_exchange",
+                "id": "a_view_cart",
+                "fields": {
+                  "bar_id": "${data.bar_id}"
+                }
+              }
+            },
+            {
+              "id": "BTN_SUB_OPEN",
+              "title": "Open",
+              "action": {
+                "type": "data_exchange",
+                "id": "a_select_subcategory",
+                "fields": {
+                  "bar_id": "${data.bar_id}",
+                  "category_id": "${data.category_id}",
+                  "subcategory_id": "${widgets.w_subcategories.value}"
+                }
+              },
+              "visibility_condition": "${widgets.w_subcategories.value} != null"
+            },
+            {
+              "id": "BTN_SUB_BACK",
+              "title": "Back",
+              "action": {
+                "type": "navigate",
+                "next": "s_categories"
+              }
+            }
+          ]
+        }
+      ],
+      "events": {
+        "on_item_select": {
+          "widget_id": "w_subcategories",
+          "action": {
+            "type": "data_exchange",
+            "id": "a_select_subcategory",
+            "fields": {
+              "bar_id": "${data.bar_id}",
+              "category_id": "${data.category_id}",
+              "subcategory_id": "${selected.id}"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "s_items",
+      "title": "Items",
+      "layout": {
+        "type": "single_column"
+      },
+      "widgets": [
+        {
+          "type": "text_block",
+          "id": "w_items_header",
+          "text": "${data.category_name}${data.subcategory_name ? ' \u203a ' + data.subcategory_name : ''}"
+        },
+        {
+          "type": "radio_list",
+          "id": "w_items",
+          "options_data_binding": "items",
+          "empty_state": {
+            "title": "No items yet",
+            "body": "Please check another category or ask the bar for help."
+          }
+        },
+        {
+          "type": "footer_buttons",
+          "buttons": [
+            {
+              "id": "BTN_ITEMS_PREV",
+              "title": "Prev",
+              "visibility_condition": "${data.page_token_prev} != null",
+              "action": {
+                "type": "data_exchange",
+                "id": "a_paged_items",
+                "page_token": "${data.page_token_prev}",
+                "fields": {
+                  "bar_id": "${data.bar_id}",
+                  "category_id": "${data.category_id}",
+                  "subcategory_id": "${data.subcategory_id}"
+                }
+              }
+            },
+            {
+              "id": "BTN_ITEMS_NEXT",
+              "title": "Next",
+              "visibility_condition": "${data.page_token_next} != null",
+              "action": {
+                "type": "data_exchange",
+                "id": "a_paged_items",
+                "page_token": "${data.page_token_next}",
+                "fields": {
+                  "bar_id": "${data.bar_id}",
+                  "category_id": "${data.category_id}",
+                  "subcategory_id": "${data.subcategory_id}"
+                }
+              }
+            },
+            {
+              "id": "BTN_ITEMS_VIEW_CART",
+              "title": "View cart",
+              "action": {
+                "type": "data_exchange",
+                "id": "a_view_cart",
+                "fields": {
+                  "bar_id": "${data.bar_id}"
+                }
+              }
+            },
+            {
+              "id": "BTN_ITEMS_BACK_SUB",
+              "title": "Back",
+              "visibility_condition": "${data.subcategory_id} != null",
+              "action": {
+                "type": "navigate",
+                "next": "s_subcategories"
+              }
+            },
+            {
+              "id": "BTN_ITEMS_BACK_CAT",
+              "title": "Back",
+              "visibility_condition": "${data.subcategory_id} == null",
+              "action": {
+                "type": "navigate",
+                "next": "s_categories"
+              }
+            }
+          ]
+        }
+      ],
+      "events": {
+        "on_item_select": {
+          "widget_id": "w_items",
+          "action": {
+            "type": "data_exchange",
+            "id": "a_open_item",
+            "fields": {
+              "bar_id": "${data.bar_id}",
+              "category_id": "${data.category_id}",
+              "subcategory_id": "${data.subcategory_id}",
+              "item_id": "${selected.id}"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "s_item_detail",
+      "title": "Item detail",
+      "layout": {
+        "type": "single_column"
+      },
+      "widgets": [
+        {
+          "type": "text_block",
+          "id": "w_item_desc",
+          "text": "${data.item_name}\n${data.item_description}\n${data.item_price}"
+        },
+        {
+          "type": "number_stepper",
+          "id": "f_quantity",
+          "label": "Quantity",
+          "min": 1,
+          "max": 50,
+          "default": 1
+        },
+        {
+          "type": "text_block",
+          "id": "w_modifier_hint",
+          "text": "${data.modifier_info_text}",
+          "visibility_condition": "${data.modifier_options_count} > 0"
+        },
+        {
+          "type": "checkbox_group",
+          "id": "f_modifiers",
+          "options_data_binding": "modifier_options",
+          "visibility_condition": "${data.modifier_options_count} > 0"
+        },
+        {
+          "type": "footer_buttons",
+          "buttons": [
+            {
+              "id": "BTN_ADD_TO_CART",
+              "title": "Add to cart",
+              "action": {
+                "type": "data_exchange",
+                "id": "a_add_to_cart",
+                "fields": {
+                  "bar_id": "${data.bar_id}",
+                  "item_id": "${data.item_id}",
+                  "qty": "${widgets.f_quantity.value}",
+                  "modifier_ids": "${widgets.f_modifiers.value}"
+                }
+              }
+            },
+            {
+              "id": "BTN_DETAIL_VIEW_CART",
+              "title": "View cart",
+              "action": {
+                "type": "data_exchange",
+                "id": "a_view_cart",
+                "fields": {
+                  "bar_id": "${data.bar_id}"
+                }
+              }
+            },
+            {
+              "id": "BTN_DETAIL_BACK",
+              "title": "Back",
+              "action": {
+                "type": "navigate",
+                "next": "s_items"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "s_cart_view",
+      "title": "Cart",
+      "layout": {
+        "type": "single_column"
+      },
+      "widgets": [
+        {
+          "type": "text_block",
+          "id": "w_cart_summary",
+          "text": "${data.cart_summary_text}\n${data.totals_text}"
+        },
+        {
+          "type": "list",
+          "id": "w_cart_lines",
+          "selection_mode": "single",
+          "options_data_binding": "cart_lines"
+        },
+        {
+          "type": "footer_buttons",
+          "buttons": [
+            {
+              "id": "BTN_CART_EDIT",
+              "title": "Edit cart",
+              "action": {
+                "type": "data_exchange",
+                "id": "a_edit_cart",
+                "fields": {
+                  "bar_id": "${data.bar_id}",
+                  "cart_id": "${data.cart_id}"
+                }
+              }
+            },
+            {
+              "id": "BTN_CART_CHECKOUT",
+              "title": "Proceed to order",
+              "visibility_condition": "${data.is_empty} == false",
+              "action": {
+                "type": "navigate",
+                "next": "s_table_number"
+              }
+            },
+            {
+              "id": "BTN_CART_BACK",
+              "title": "Back to menu",
+              "action": {
+                "type": "navigate",
+                "next": "s_categories"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "s_cart_edit",
+      "title": "Edit cart",
+      "layout": {
+        "type": "single_column"
+      },
+      "widgets": [
+        {
+          "type": "dropdown",
+          "id": "f_line_id",
+          "label": "Select line",
+          "options_data_binding": "cart_lines"
+        },
+        {
+          "type": "number_stepper",
+          "id": "f_line_qty",
+          "label": "New quantity (0 removes)",
+          "min": 0,
+          "max": 50,
+          "default": 1
+        },
+        {
+          "type": "footer_buttons",
+          "buttons": [
+            {
+              "id": "BTN_APPLY_CART",
+              "title": "Apply",
+              "action": {
+                "type": "data_exchange",
+                "id": "a_update_line",
+                "fields": {
+                  "bar_id": "${data.bar_id}",
+                  "cart_id": "${data.cart_id}",
+                  "line_id": "${widgets.f_line_id.value}",
+                  "new_qty": "${widgets.f_line_qty.value}"
+                }
+              }
+            },
+            {
+              "id": "BTN_EDIT_BACK",
+              "title": "Back",
+              "action": {
+                "type": "data_exchange",
+                "id": "a_view_cart",
+                "fields": {
+                  "bar_id": "${data.bar_id}",
+                  "cart_id": "${data.cart_id}"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "s_table_number",
+      "title": "Table",
+      "layout": {
+        "type": "single_column"
+      },
+      "widgets": [
+        {
+          "type": "text_input",
+          "id": "f_table_label",
+          "label": "Table (e.g., T12)",
+          "placeholder": "T12"
+        },
+        {
+          "type": "text_input",
+          "id": "f_note",
+          "label": "Note (optional)",
+          "placeholder": "Allergy, side, etc.",
+          "max_chars": 140
+        },
+        {
+          "type": "footer_buttons",
+          "buttons": [
+            {
+              "id": "BTN_CONFIRM_ORDER",
+              "title": "Place order",
+              "action": {
+                "type": "data_exchange",
+                "id": "a_place_order",
+                "fields": {
+                  "bar_id": "${data.bar_id}",
+                  "cart_id": "${data.cart_id}",
+                  "table_label": "${widgets.f_table_label.value}",
+                  "note": "${widgets.f_note.value}"
+                }
+              }
+            },
+            {
+              "id": "BTN_TABLE_BACK",
+              "title": "Back",
+              "action": {
+                "type": "data_exchange",
+                "id": "a_view_cart",
+                "fields": {
+                  "bar_id": "${data.bar_id}",
+                  "cart_id": "${data.cart_id}"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "s_payment",
+      "title": "Payment",
+      "layout": {
+        "type": "single_column"
+      },
+      "widgets": [
+        {
+          "type": "text_block",
+          "id": "w_payment_summary",
+          "text": "Order ${data.order_code}\nTotal ${data.total_formatted}\nIf the dialer does not open, dial ${data.ussd_code_text} manually."
+        },
+        {
+          "type": "footer_buttons",
+          "buttons": [
+            {
+              "id": "BTN_PAYMENT_USSD",
+              "title": "Dial MoMo",
+              "action": {
+                "type": "open_url",
+                "url": "${data.ussd_uri}"
+              }
+            },
+            {
+              "id": "BTN_PAYMENT_PAID",
+              "title": "I paid",
+              "action": {
+                "type": "data_exchange",
+                "id": "a_customer_paid_signal",
+                "fields": {
+                  "order_id": "${data.order_id}"
+                }
+              }
+            },
+            {
+              "id": "BTN_PAYMENT_STATUS",
+              "title": "View status",
+              "action": {
+                "type": "data_exchange",
+                "id": "a_view_status",
+                "fields": {
+                  "order_id": "${data.order_id}"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "s_order_status",
+      "title": "Order status",
+      "terminal": true,
+      "success": true,
+      "layout": {
+        "type": "single_column"
+      },
+      "widgets": [
+        {
+          "type": "text_block",
+          "id": "w_status_timeline",
+          "text": "${data.timeline_text}"
+        },
+        {
+          "type": "footer_buttons",
+          "buttons": [
+            {
+              "id": "BTN_STATUS_DONE",
+              "title": "Done",
+              "action": {
+                "type": "complete",
+                "payload": {
+                  "order_id": "${data.order_id}"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
 }

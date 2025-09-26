@@ -14,6 +14,7 @@ export async function logMomoQrRequest(
 ): Promise<void> {
   const insertPayload = {
     requester_wa_id: payload.requesterWaId,
+    whatsapp_e164: payload.requesterWaId,
     target_value: payload.target,
     target_type: payload.targetType,
     amount_minor: payload.amountMinor,

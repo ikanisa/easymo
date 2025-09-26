@@ -3,7 +3,10 @@ import { WA_APP_SECRET } from "../config.ts";
 
 const encoder = new TextEncoder();
 
-export async function verifySignature(req: Request, rawBody: string): Promise<boolean> {
+export async function verifySignature(
+  req: Request,
+  rawBody: string,
+): Promise<boolean> {
   const header = req.headers.get("x-hub-signature-256") ?? "";
   if (!header.startsWith("sha256=")) return false;
   const theirHex = header.slice(7);

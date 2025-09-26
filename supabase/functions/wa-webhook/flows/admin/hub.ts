@@ -1,13 +1,15 @@
 import type { RouterContext } from "../../types.ts";
-import { sendButtons, sendList, sendText } from "../../wa/client.ts";
+import { sendText } from "../../wa/client.ts";
 import { IDS } from "../../wa/ids.ts";
-import { isAdminNumber } from "./auth.ts";
+import { ADMIN_STATE, ensureAdmin, setAdminState } from "./state.ts";
 import { maskPhone } from "../support.ts";
+import { sendAdminList, sendAdminViewButton } from "./ui.ts";
 
 export const ADMIN_ROW_IDS = {
   OPS_TRIPS: "ADMIN::OPS::TRIPS",
   OPS_BASKETS: "ADMIN::OPS::BASKETS",
   OPS_INSURANCE: "ADMIN::OPS::INSURANCE",
+  OPS_VOUCHERS: "ADMIN::OPS::VOUCHERS",
   OPS_MARKETPLACE: "ADMIN::OPS::MARKETPLACE",
   OPS_WALLET: "ADMIN::OPS::WALLET",
   OPS_MOMO: "ADMIN::OPS::MOMO",
@@ -20,60 +22,56 @@ export const ADMIN_ROW_IDS = {
   DIAG_INSURANCE: "ADMIN::DIAG::INSURANCE",
   DIAG_HEALTH: "ADMIN::DIAG::HEALTH",
   DIAG_LOGS: "ADMIN::DIAG::LOGS",
+  VOUCHERS_MENU_ISSUE: "ADMIN::VOUCHERS::MENU::ISSUE",
+  VOUCHERS_MENU_REDEEM: "ADMIN::VOUCHERS::MENU::REDEEM",
+  VOUCHERS_MENU_RECENT: "ADMIN::VOUCHERS::MENU::RECENT",
+  VOUCHERS_RECENT_PREFIX: "ADMIN::VOUCHERS::RECENT::",
+  BASKETS_QUEUE_PREFIX: "ADMIN::BASKETS::QUEUE::",
+  BASKETS_DETAIL_APPROVE: "ADMIN::BASKETS::DETAIL::APPROVE",
+  BASKETS_DETAIL_REVOKE: "ADMIN::BASKETS::DETAIL::REVOKE",
+  BASKETS_DETAIL_SHARE: "ADMIN::BASKETS::DETAIL::SHARE",
+  BASKETS_DETAIL_REGEN: "ADMIN::BASKETS::DETAIL::REGEN",
+  BASKETS_DETAIL_CLOSE: "ADMIN::BASKETS::DETAIL::CLOSE",
+  BASKETS_DETAIL_DM: "ADMIN::BASKETS::DETAIL::DM",
+  BASKETS_CONFIRM_PREFIX: "ADMIN::BASKETS::CONFIRM::",
+  INSURANCE_LEAD_PREFIX: "ADMIN::INSURANCE::LEAD::",
+  INSURANCE_DETAIL_DM: "ADMIN::INSURANCE::DETAIL::DM",
+  INSURANCE_DETAIL_REVIEW: "ADMIN::INSURANCE::DETAIL::REVIEW",
+  INSURANCE_DETAIL_MORE: "ADMIN::INSURANCE::DETAIL::MORE",
+  INSURANCE_MORE_REQUEST: "ADMIN::INSURANCE::MORE::REQUEST",
+  INSURANCE_MORE_ASSIGN: "ADMIN::INSURANCE::MORE::ASSIGN",
+  INSURANCE_MORE_EXPORT: "ADMIN::INSURANCE::MORE::EXPORT",
 };
 
 export async function openAdminHub(ctx: RouterContext): Promise<void> {
-  const isAdmin = await isAdminNumber(ctx);
-  if (!isAdmin) {
-    await sendText(ctx.from, "Admin tools are restricted. Message support if this is unexpected.");
-    return;
-  }
-  await sendButtons(ctx.from, `Admin Hub — Quick ops\n${maskPhone(ctx.from)}`, [
-    { id: IDS.ADMIN_TODAY, title: "Today" },
-    { id: IDS.ADMIN_ALERTS, title: "Alerts" },
-    { id: IDS.ADMIN_SETTINGS, title: "Settings" },
-  ]);
-  await sendList(ctx.from, {
-    title: "Admin Tools",
-    body: "Pick a tool. Use Back to menu anytime.",
-    sectionTitle: "Operations",
-    rows: [
-      { id: ADMIN_ROW_IDS.OPS_TRIPS, title: "Trips (live)" },
-      { id: ADMIN_ROW_IDS.OPS_BASKETS, title: "Baskets" },
-      { id: ADMIN_ROW_IDS.OPS_INSURANCE, title: "Insurance leads" },
-      { id: ADMIN_ROW_IDS.OPS_MARKETPLACE, title: "Marketplace" },
-      { id: ADMIN_ROW_IDS.OPS_WALLET, title: "Wallet/tokens" },
-      { id: ADMIN_ROW_IDS.OPS_MOMO, title: "MoMo QR" },
-    ],
+  const allowed = await ensureAdmin(ctx);
+  if (!allowed) return;
+  await setAdminState(ctx, ADMIN_STATE.ENTRY);
+  const body = `Admin hub — quick ops\n${maskPhone(ctx.from)}`;
+  await sendAdminViewButton(ctx, {
+    body,
+    id: IDS.ADMIN_HUB_VIEW,
+    emoji: "🛠️",
   });
-  await sendList(ctx.from, {
-    title: "Admin Tools",
-    body: "Growth & comms",
-    sectionTitle: "Growth",
-    rows: [
-      { id: ADMIN_ROW_IDS.GROW_PROMOTERS, title: "Promoters (Top 9)" },
-      { id: ADMIN_ROW_IDS.GROW_BROADCAST, title: "Broadcast" },
-      { id: ADMIN_ROW_IDS.GROW_TEMPLATES, title: "Templates" },
-    ],
-  });
-  await sendList(ctx.from, {
-    title: "Admin Tools",
-    body: "Trust & diagnostics",
-    sectionTitle: "Trust",
-    rows: [
-      { id: ADMIN_ROW_IDS.TRUST_REFERRALS, title: "Referrals review" },
-      { id: ADMIN_ROW_IDS.TRUST_FREEZE, title: "Freeze account" },
-    ],
-  });
-  await sendList(ctx.from, {
-    title: "Admin Tools",
-    body: "Diagnostics",
-    sectionTitle: "Diagnostics",
-    rows: [
-      { id: ADMIN_ROW_IDS.DIAG_MATCH, title: "Match diag" },
-      { id: ADMIN_ROW_IDS.DIAG_INSURANCE, title: "Insurance diag" },
-      { id: ADMIN_ROW_IDS.DIAG_HEALTH, title: "System health" },
-      { id: ADMIN_ROW_IDS.DIAG_LOGS, title: "Logs (latest)" },
-    ],
-  });
+}
+
+export async function showAdminHubList(ctx: RouterContext): Promise<void> {
+  const allowed = await ensureAdmin(ctx);
+  if (!allowed) return;
+  await setAdminState(ctx, ADMIN_STATE.HUB_LIST, { back: ADMIN_STATE.ENTRY });
+  await sendAdminList(
+    ctx,
+    {
+      title: "Admin Hub",
+      body: "Pick a tool. ← Back returns here.",
+      sectionTitle: "Ops tools",
+      rows: [
+        { id: ADMIN_ROW_IDS.OPS_INSURANCE, title: "Insurance" },
+        { id: ADMIN_ROW_IDS.OPS_BASKETS, title: "Baskets" },
+        { id: ADMIN_ROW_IDS.OPS_VOUCHERS, title: "Vouchers" },
+        { id: IDS.BACK_MENU, title: "← Back" },
+      ],
+    },
+    { emoji: "🛠️" },
+  );
 }

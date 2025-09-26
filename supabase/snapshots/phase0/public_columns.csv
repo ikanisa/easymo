@@ -1,0 +1,684 @@
+admin_alert_prefs,wa_id,text,NO,
+admin_alert_prefs,want_alerts,boolean,NO,true
+admin_alert_prefs,channels,ARRAY,NO,ARRAY['whatsapp'::text]
+admin_alert_prefs,updated_at,timestamp with time zone,NO,"timezone('utc'::text, now())"
+admin_alert_prefs,admin_user_id,uuid,YES,
+admin_alert_prefs,alert_key,text,YES,
+admin_alert_prefs,enabled,boolean,NO,true
+admin_audit_log,id,uuid,NO,gen_random_uuid()
+admin_audit_log,actor_wa,text,YES,
+admin_audit_log,action,text,NO,
+admin_audit_log,target,text,YES,
+admin_audit_log,details,jsonb,NO,'{}'::jsonb
+admin_audit_log,created_at,timestamp with time zone,NO,"timezone('utc'::text, now())"
+admin_audit_log,admin_user_id,uuid,YES,
+admin_audit_log,target_id,text,YES,
+admin_audit_log,before,jsonb,YES,
+admin_audit_log,after,jsonb,YES,
+admin_audit_log,reason,text,YES,
+admin_pin_sessions,session_id,uuid,NO,gen_random_uuid()
+admin_pin_sessions,wa_id,text,NO,
+admin_pin_sessions,unlocked_until,timestamp with time zone,NO,
+admin_pin_sessions,created_at,timestamp with time zone,NO,"timezone('utc'::text, now())"
+admin_sessions,wa_id,text,NO,
+admin_sessions,pin_ok_until,timestamp with time zone,YES,
+admin_sessions,updated_at,timestamp with time zone,NO,"timezone('utc'::text, now())"
+admin_submissions,reference,text,NO,
+admin_submissions,applicant_name,text,YES,
+admin_submissions,status,text,NO,'pending'::text
+admin_submissions,submitted_at,timestamp with time zone,NO,"timezone('utc'::text, now())"
+app_config,id,integer,NO,1
+app_config,insurance_admin_numbers,ARRAY,NO,'{}'::text[]
+app_config,updated_at,timestamp with time zone,YES,now()
+app_config,tokens_per_referral,integer,NO,10
+app_config,referral_daily_cap,integer,NO,0
+app_config,welcome_bonus_tokens,integer,NO,0
+app_config,wallet_redeem_catalog,jsonb,NO,'[]'::jsonb
+app_config,referral_short_domain,text,YES,
+app_config,referral_redeem_rules,text,YES,
+app_config,openai_api_key,text,YES,
+app_config,search_radius_km,double precision,YES,10
+app_config,max_results,integer,YES,9
+app_config,subscription_price,numeric,YES,0
+app_config,wa_bot_number_e164,text,YES,
+app_config,admin_numbers,ARRAY,YES,ARRAY[]::text[]
+app_config,created_at,timestamp with time zone,NO,"timezone('utc'::text, now())"
+app_config,momo_qr_logo_url,text,YES,
+app_config,redeem_catalog,jsonb,YES,
+app_config,admin_pin_required,boolean,NO,false
+app_config,admin_pin_hash,text,YES,
+audit_log,id,uuid,NO,gen_random_uuid()
+audit_log,actor,text,YES,
+audit_log,actor_type,text,YES,
+audit_log,action,text,NO,
+audit_log,target_table,text,YES,
+audit_log,target_id,text,YES,
+audit_log,diff,jsonb,NO,'{}'::jsonb
+audit_log,created_at,timestamp with time zone,NO,"timezone('utc'::text, now())"
+bar_numbers,id,uuid,NO,gen_random_uuid()
+bar_numbers,bar_id,uuid,NO,
+bar_numbers,number_e164,text,NO,
+bar_numbers,role,USER-DEFINED,NO,'staff'::bar_contact_role
+bar_numbers,is_active,boolean,NO,true
+bar_numbers,verified_at,timestamp with time zone,YES,
+bar_numbers,added_by,text,YES,
+bar_numbers,last_seen_at,timestamp with time zone,YES,
+bar_numbers,created_at,timestamp with time zone,NO,"timezone('utc'::text, now())"
+bar_numbers,updated_at,timestamp with time zone,NO,"timezone('utc'::text, now())"
+bar_numbers,verification_code_hash,text,YES,
+bar_numbers,verification_expires_at,timestamp with time zone,YES,
+bar_numbers,verification_attempts,integer,NO,0
+bar_numbers,invited_at,timestamp with time zone,YES,
+bar_settings,bar_id,uuid,NO,
+bar_settings,allow_direct_customer_chat,boolean,NO,false
+bar_settings,order_auto_ack,boolean,NO,false
+bar_settings,default_prep_minutes,integer,NO,0
+bar_settings,service_charge_pct,numeric,NO,0
+bar_settings,payment_instructions,text,YES,
+bar_settings,created_at,timestamp with time zone,NO,"timezone('utc'::text, now())"
+bar_settings,updated_at,timestamp with time zone,NO,"timezone('utc'::text, now())"
+bar_tables,id,uuid,NO,gen_random_uuid()
+bar_tables,bar_id,uuid,NO,
+bar_tables,label,text,NO,
+bar_tables,qr_payload,text,NO,
+bar_tables,token_nonce,text,YES,
+bar_tables,is_active,boolean,NO,true
+bar_tables,created_at,timestamp with time zone,NO,"timezone('utc'::text, now())"
+bar_tables,updated_at,timestamp with time zone,NO,"timezone('utc'::text, now())"
+bar_tables,last_scan_at,timestamp with time zone,YES,
+bars,id,uuid,NO,gen_random_uuid()
+bars,slug,text,NO,
+bars,name,text,NO,
+bars,location_text,text,YES,
+bars,country,text,YES,
+bars,city_area,text,YES,
+bars,currency,text,YES,
+bars,momo_code,text,YES,
+bars,is_active,boolean,NO,false
+bars,created_at,timestamp with time zone,NO,"timezone('utc'::text, now())"
+bars,updated_at,timestamp with time zone,NO,"timezone('utc'::text, now())"
+basket_contributions,id,uuid,NO,gen_random_uuid()
+basket_contributions,basket_id,uuid,NO,
+basket_contributions,contributor_user_id,uuid,NO,
+basket_contributions,amount_rwf,integer,NO,
+basket_contributions,status,text,NO,'pending'::text
+basket_contributions,created_at,timestamp with time zone,NO,now()
+basket_contributions,approved_at,timestamp with time zone,YES,
+basket_contributions,approver_user_id,uuid,YES,
+basket_contributions,wa_message_id,text,YES,
+basket_contributions,amount_minor,integer,YES,
+basket_contributions,currency,text,NO,'RWF'::text
+basket_contributions,momo_reference,text,YES,
+basket_contributions,source,text,YES,
+basket_contributions,metadata,jsonb,NO,'{}'::jsonb
+basket_contributions,profile_id,uuid,YES,
+basket_joins,id,uuid,NO,gen_random_uuid()
+basket_joins,basket_id,uuid,NO,
+basket_joins,user_id,uuid,YES,
+basket_joins,via_token,boolean,YES,
+basket_joins,source,text,YES,
+basket_joins,created_at,timestamp with time zone,NO,"timezone('utc'::text, now())"
+basket_joins,whatsapp,text,YES,
+basket_joins,invite_source,text,YES,
+basket_joins,status,text,NO,'pending'::text
+basket_joins,metadata,jsonb,NO,'{}'::jsonb
+basket_joins,processed_at,timestamp with time zone,YES,
+basket_members,basket_id,uuid,NO,
+basket_members,user_id,uuid,NO,
+basket_members,role,text,YES,'member'::text
+basket_members,created_at,timestamp with time zone,YES,now()
+basket_members,member_code,text,YES,
+basket_members,total_contributed,numeric,YES,
+basket_members,whatsapp,text,YES,
+basket_members,profile_id,uuid,YES,
+basket_members,joined_at,timestamp with time zone,NO,"timezone('utc'::text, now())"
+basket_members,joined_via,text,YES,
+basket_members,join_reference,text,YES,
+baskets,id,uuid,NO,gen_random_uuid()
+baskets,name,text,NO,
+baskets,description,text,YES,
+baskets,type,USER-DEFINED,NO,
+baskets,status,USER-DEFINED,NO,'draft'::basket_status
+baskets,public_slug,text,YES,
+baskets,creator_id,uuid,YES,
+baskets,created_at,timestamp with time zone,YES,now()
+baskets,momo_payee_number,text,YES,
+baskets,momo_ussd_code,text,YES,
+baskets,momo_target,text,YES,
+baskets,momo_is_code,boolean,YES,
+baskets,owner_profile_id,uuid,YES,
+baskets,owner_whatsapp,text,YES,
+baskets,is_public,boolean,NO,false
+baskets,goal_minor,integer,YES,
+baskets,currency,text,NO,'RWF'::text
+baskets,share_token,text,YES,
+baskets,lat,double precision,YES,
+baskets,lng,double precision,YES,
+baskets,updated_at,timestamp with time zone,NO,"timezone('utc'::text, now())"
+baskets,creator_user_id,uuid,YES,
+baskets,momo_number_or_code,text,YES,
+baskets,join_token,text,YES,
+baskets,join_token_revoked,boolean,NO,false
+baskets,metadata,jsonb,NO,'{}'::jsonb
+businesses,id,uuid,NO,gen_random_uuid()
+businesses,owner_whatsapp,text,NO,
+businesses,name,text,NO,
+businesses,description,text,YES,
+businesses,geo,USER-DEFINED,YES,
+businesses,is_active,boolean,NO,true
+businesses,created_at,timestamp with time zone,YES,now()
+businesses,category_id,bigint,YES,
+businesses,catalog_url,text,YES,
+businesses,location_text,text,YES,
+businesses,lat,double precision,YES,
+businesses,lng,double precision,YES,
+businesses,owner_user_id,uuid,YES,
+businesses,location,USER-DEFINED,YES,
+businesses,status,text,YES,
+campaign_recipients,id,bigint,NO,nextval('campaign_recipients_id_seq'::regclass)
+campaign_recipients,campaign_id,bigint,YES,
+campaign_recipients,contact_id,bigint,YES,
+campaign_recipients,msisdn_e164,text,NO,
+campaign_recipients,send_allowed,boolean,YES,true
+campaign_recipients,window_24h_open,boolean,YES,false
+campaigns,id,bigint,NO,nextval('campaigns_id_seq'::regclass)
+campaigns,title,text,NO,
+campaigns,template_id,bigint,YES,
+campaigns,message_kind,text,NO,
+campaigns,payload,jsonb,NO,
+campaigns,target_audience,jsonb,NO,
+campaigns,scheduled_at,timestamp with time zone,YES,
+campaigns,time_zone,text,YES,'Africa/Kigali'::text
+campaigns,status,text,YES,'DRAFT'::text
+campaigns,created_at,timestamp with time zone,YES,now()
+cart_items,id,uuid,NO,gen_random_uuid()
+cart_items,cart_id,uuid,NO,
+cart_items,item_id,uuid,YES,
+cart_items,item_name,text,NO,
+cart_items,item_snapshot,jsonb,NO,'{}'::jsonb
+cart_items,qty,integer,NO,
+cart_items,unit_price_minor,integer,NO,
+cart_items,flags_snapshot,jsonb,NO,'[]'::jsonb
+cart_items,modifiers_snapshot,jsonb,NO,'[]'::jsonb
+cart_items,line_total_minor,integer,NO,
+cart_items,created_at,timestamp with time zone,NO,"timezone('utc'::text, now())"
+carts,id,uuid,NO,gen_random_uuid()
+carts,bar_id,uuid,NO,
+carts,table_label,text,YES,
+carts,status,USER-DEFINED,NO,'open'::cart_status
+carts,subtotal_minor,integer,NO,0
+carts,service_charge_minor,integer,NO,0
+carts,total_minor,integer,NO,0
+carts,expires_at,timestamp with time zone,YES,
+carts,created_at,timestamp with time zone,NO,"timezone('utc'::text, now())"
+carts,updated_at,timestamp with time zone,NO,"timezone('utc'::text, now())"
+carts,profile_id,uuid,NO,
+categories,id,uuid,NO,gen_random_uuid()
+categories,bar_id,uuid,NO,
+categories,menu_id,uuid,NO,
+categories,parent_category_id,uuid,YES,
+categories,name,text,NO,
+categories,sort_order,integer,NO,0
+categories,is_deleted,boolean,NO,false
+categories,created_at,timestamp with time zone,NO,"timezone('utc'::text, now())"
+categories,updated_at,timestamp with time zone,NO,"timezone('utc'::text, now())"
+chat_sessions,user_id,text,NO,
+chat_sessions,state,jsonb,YES,
+chat_sessions,updated_at,timestamp with time zone,YES,now()
+chat_state,user_id,uuid,NO,
+chat_state,state,jsonb,NO,'{}'::jsonb
+chat_state,updated_at,timestamp with time zone,NO,now()
+chat_state,state_key,text,YES,
+contacts,id,bigint,NO,nextval('contacts_id_seq'::regclass)
+contacts,msisdn_e164,text,NO,
+contacts,full_name,text,YES,
+contacts,sector,text,YES,
+contacts,city,text,YES,
+contacts,tags,ARRAY,YES,'{}'::text[]
+contacts,attributes,jsonb,YES,'{}'::jsonb
+contacts,opted_in,boolean,NO,false
+contacts,opt_in_source,text,YES,
+contacts,opt_in_ts,timestamp with time zone,YES,
+contacts,opted_out,boolean,NO,false
+contacts,opt_out_ts,timestamp with time zone,YES,
+contacts,last_inbound_ts,timestamp with time zone,YES,
+contacts,last_inbound_at,timestamp with time zone,YES,
+contacts,created_at,timestamp with time zone,NO,"timezone('utc'::text, now())"
+contributions,id,uuid,NO,gen_random_uuid()
+contributions,basket_id,uuid,NO,
+contributions,user_id,uuid,YES,
+contributions,amount,numeric,YES,
+contributions,currency,text,YES,
+contributions,created_at,timestamp with time zone,NO,"timezone('utc'::text, now())"
+driver_status,user_id,uuid,NO,
+driver_status,vehicle_type,text,YES,
+driver_status,location,USER-DEFINED,YES,
+driver_status,last_seen,timestamp with time zone,YES,
+driver_status,online,boolean,YES,true
+driver_status,lat,double precision,YES,
+driver_status,lng,double precision,YES,
+driver_status,updated_at,timestamp with time zone,NO,"timezone('utc'::text, now())"
+drivers_available,id,uuid,NO,gen_random_uuid()
+drivers_available,whatsapp,text,NO,
+drivers_available,vehicle_type,text,YES,
+drivers_available,geo,USER-DEFINED,YES,
+drivers_available,served_at,timestamp with time zone,YES,
+drivers_available,served_by,text,YES,
+drivers_available,created_at,timestamp with time zone,YES,now()
+flow_submissions,id,uuid,NO,gen_random_uuid()
+flow_submissions,flow_id,text,NO,
+flow_submissions,screen_id,text,YES,
+flow_submissions,action_id,text,YES,
+flow_submissions,wa_id,text,YES,
+flow_submissions,payload,jsonb,NO,'{}'::jsonb
+flow_submissions,received_at,timestamp with time zone,NO,"timezone('utc'::text, now())"
+geography_columns,f_table_catalog,name,YES,
+geography_columns,f_table_schema,name,YES,
+geography_columns,f_table_name,name,YES,
+geography_columns,f_geography_column,name,YES,
+geography_columns,coord_dimension,integer,YES,
+geography_columns,srid,integer,YES,
+geography_columns,type,text,YES,
+geometry_columns,f_table_catalog,character varying,YES,
+geometry_columns,f_table_schema,name,YES,
+geometry_columns,f_table_name,name,YES,
+geometry_columns,f_geometry_column,name,YES,
+geometry_columns,coord_dimension,integer,YES,
+geometry_columns,srid,integer,YES,
+geometry_columns,type,character varying,YES,
+insurance_leads,id,uuid,NO,gen_random_uuid()
+insurance_leads,whatsapp,text,NO,
+insurance_leads,file_path,text,YES,
+insurance_leads,raw_ocr,jsonb,YES,
+insurance_leads,extracted,jsonb,YES,
+insurance_leads,created_at,timestamp with time zone,YES,now()
+insurance_leads,extracted_json,jsonb,YES,
+insurance_leads,status,text,NO,'received'::text
+insurance_media,id,uuid,NO,gen_random_uuid()
+insurance_media,lead_id,uuid,YES,
+insurance_media,wa_media_id,text,YES,
+insurance_media,storage_path,text,NO,
+insurance_media,mime_type,text,YES,
+insurance_media,created_at,timestamp with time zone,YES,now()
+insurance_media_queue,id,uuid,NO,gen_random_uuid()
+insurance_media_queue,profile_id,uuid,YES,
+insurance_media_queue,wa_id,text,YES,
+insurance_media_queue,storage_path,text,NO,
+insurance_media_queue,mime_type,text,YES,
+insurance_media_queue,caption,text,YES,
+insurance_media_queue,status,text,NO,'queued'::text
+insurance_media_queue,created_at,timestamp with time zone,NO,"timezone('utc'::text, now())"
+item_modifiers,id,uuid,NO,gen_random_uuid()
+item_modifiers,item_id,uuid,NO,
+item_modifiers,name,text,NO,
+item_modifiers,modifier_type,USER-DEFINED,NO,
+item_modifiers,is_required,boolean,NO,false
+item_modifiers,options,jsonb,NO,'[]'::jsonb
+item_modifiers,sort_order,integer,NO,0
+item_modifiers,created_at,timestamp with time zone,NO,"timezone('utc'::text, now())"
+item_modifiers,updated_at,timestamp with time zone,NO,"timezone('utc'::text, now())"
+items,id,uuid,NO,gen_random_uuid()
+items,bar_id,uuid,NO,
+items,menu_id,uuid,NO,
+items,category_id,uuid,YES,
+items,name,text,NO,
+items,short_description,text,YES,
+items,price_minor,integer,NO,
+items,currency,text,YES,
+items,flags,jsonb,NO,'[]'::jsonb
+items,is_available,boolean,NO,true
+items,sort_order,integer,NO,0
+items,metadata,jsonb,NO,'{}'::jsonb
+items,created_at,timestamp with time zone,NO,"timezone('utc'::text, now())"
+items,updated_at,timestamp with time zone,NO,"timezone('utc'::text, now())"
+leaderboard_notifications,user_id,uuid,NO,
+leaderboard_notifications,window,text,NO,
+leaderboard_notifications,last_entered_at,timestamp with time zone,YES,
+leaderboard_notifications,last_dropped_at,timestamp with time zone,YES,
+leaderboard_snapshots,window,text,NO,
+leaderboard_snapshots,generated_at,timestamp with time zone,NO,now()
+leaderboard_snapshots,payload,jsonb,NO,
+leaderboard_snapshots,id,uuid,YES,gen_random_uuid()
+leaderboard_snapshots,snapshot_window,text,YES,
+leaderboard_snapshots,top9,jsonb,YES,
+leaderboard_snapshots,your_rank_map,jsonb,YES,
+leaderboard_snapshots_v,id,uuid,YES,
+leaderboard_snapshots_v,window,text,YES,
+leaderboard_snapshots_v,generated_at,timestamp with time zone,YES,
+leaderboard_snapshots_v,top9,jsonb,YES,
+leaderboard_snapshots_v,your_rank_map,jsonb,YES,
+marketplace_categories,id,bigint,NO,nextval('marketplace_categories_id_seq'::regclass)
+marketplace_categories,name,text,NO,
+marketplace_categories,is_active,boolean,NO,true
+marketplace_categories,sort_order,integer,YES,
+marketplace_categories,created_at,timestamp with time zone,YES,now()
+menus,id,uuid,NO,gen_random_uuid()
+menus,bar_id,uuid,NO,
+menus,version,integer,NO,1
+menus,status,USER-DEFINED,NO,'draft'::menu_status
+menus,source,USER-DEFINED,NO,'manual'::menu_source
+menus,source_file_ids,ARRAY,NO,ARRAY[]::text[]
+menus,created_by,text,YES,
+menus,created_at,timestamp with time zone,NO,"timezone('utc'::text, now())"
+menus,updated_at,timestamp with time zone,NO,"timezone('utc'::text, now())"
+menus,published_at,timestamp with time zone,YES,
+mobility_pro_access,user_id,uuid,NO,
+mobility_pro_access,credits_left,integer,NO,0
+mobility_pro_access,granted_until,timestamp with time zone,YES,
+mobility_pro_access,updated_at,timestamp with time zone,NO,"timezone('utc'::text, now())"
+momo_qr_requests,id,uuid,NO,gen_random_uuid()
+momo_qr_requests,user_id,uuid,YES,
+momo_qr_requests,whatsapp_e164,text,NO,
+momo_qr_requests,kind,text,NO,
+momo_qr_requests,momo_value,text,NO,
+momo_qr_requests,amount_rwf,integer,YES,
+momo_qr_requests,ussd_text,text,NO,
+momo_qr_requests,tel_uri,text,NO,
+momo_qr_requests,qr_url,text,NO,
+momo_qr_requests,share_url,text,YES,
+momo_qr_requests,created_at,timestamp with time zone,NO,now()
+momo_qr_requests,requester_wa_id,text,YES,
+momo_qr_requests,target_value,text,YES,
+momo_qr_requests,target_type,text,YES,
+momo_qr_requests,amount_minor,integer,YES,
+momo_qr_requests,ussd_code,text,YES,
+momo_qr_requests,msisdn_or_code,text,YES,
+momo_qr_requests,amount,numeric,YES,
+momo_qr_requests,ussd,text,YES,
+notifications,id,uuid,NO,gen_random_uuid()
+notifications,order_id,uuid,YES,
+notifications,to_wa_id,text,NO,
+notifications,template_name,text,YES,
+notifications,notification_type,text,NO,
+notifications,channel,USER-DEFINED,NO,'template'::notification_channel
+notifications,status,USER-DEFINED,NO,'queued'::notification_status
+notifications,payload,jsonb,NO,'{}'::jsonb
+notifications,error_message,text,YES,
+notifications,sent_at,timestamp with time zone,YES,
+notifications,created_at,timestamp with time zone,NO,"timezone('utc'::text, now())"
+notifications,retry_count,integer,NO,0
+notifications,next_attempt_at,timestamp with time zone,YES,
+notifications,locked_at,timestamp with time zone,YES,
+ocr_jobs,id,uuid,NO,gen_random_uuid()
+ocr_jobs,bar_id,uuid,NO,
+ocr_jobs,menu_id,uuid,YES,
+ocr_jobs,source_file_id,text,YES,
+ocr_jobs,status,USER-DEFINED,NO,'queued'::ocr_job_status
+ocr_jobs,error_message,text,YES,
+ocr_jobs,attempts,smallint,NO,0
+ocr_jobs,last_attempt_at,timestamp with time zone,YES,
+ocr_jobs,result_path,text,YES,
+ocr_jobs,created_at,timestamp with time zone,NO,"timezone('utc'::text, now())"
+ocr_jobs,updated_at,timestamp with time zone,NO,"timezone('utc'::text, now())"
+order_events,id,uuid,NO,gen_random_uuid()
+order_events,order_id,uuid,NO,
+order_events,event_type,USER-DEFINED,NO,
+order_events,actor_type,USER-DEFINED,NO,
+order_events,actor_identifier,text,YES,
+order_events,note,text,YES,
+order_events,created_at,timestamp with time zone,NO,"timezone('utc'::text, now())"
+order_items,id,uuid,NO,gen_random_uuid()
+order_items,order_id,uuid,NO,
+order_items,item_id,uuid,YES,
+order_items,item_name,text,NO,
+order_items,item_description,text,YES,
+order_items,qty,integer,NO,
+order_items,unit_price_minor,integer,NO,
+order_items,flags_snapshot,jsonb,NO,'[]'::jsonb
+order_items,modifiers_snapshot,jsonb,NO,'[]'::jsonb
+order_items,line_total_minor,integer,NO,
+order_items,created_at,timestamp with time zone,NO,"timezone('utc'::text, now())"
+orders,id,uuid,NO,gen_random_uuid()
+orders,order_code,text,YES,
+orders,bar_id,uuid,NO,
+orders,source_cart_id,uuid,YES,
+orders,table_label,text,YES,
+orders,status,USER-DEFINED,NO,'pending'::order_status
+orders,subtotal_minor,integer,NO,0
+orders,service_charge_minor,integer,NO,0
+orders,total_minor,integer,NO,0
+orders,momo_code_used,text,YES,
+orders,note,text,YES,
+orders,paid_at,timestamp with time zone,YES,
+orders,served_at,timestamp with time zone,YES,
+orders,cancelled_at,timestamp with time zone,YES,
+orders,created_at,timestamp with time zone,NO,"timezone('utc'::text, now())"
+orders,updated_at,timestamp with time zone,NO,"timezone('utc'::text, now())"
+orders,profile_id,uuid,YES,
+passengers_requests,id,uuid,NO,gen_random_uuid()
+passengers_requests,whatsapp,text,NO,
+passengers_requests,vehicle_type,text,YES,
+passengers_requests,geo,USER-DEFINED,YES,
+passengers_requests,served_at,timestamp with time zone,YES,
+passengers_requests,served_by,text,YES,
+passengers_requests,created_at,timestamp with time zone,YES,now()
+petrol_stations,id,uuid,NO,gen_random_uuid()
+petrol_stations,name,text,NO,
+petrol_stations,city,text,YES,
+petrol_stations,owner_contact,text,YES,
+petrol_stations,status,text,NO,'active'::text
+petrol_stations,created_at,timestamp with time zone,NO,"timezone('utc'::text, now())"
+petrol_stations,updated_at,timestamp with time zone,NO,"timezone('utc'::text, now())"
+profiles,user_id,uuid,NO,gen_random_uuid()
+profiles,whatsapp_e164,text,NO,
+profiles,display_name,text,YES,
+profiles,locale,text,YES,'en'::text
+profiles,created_at,timestamp with time zone,YES,now()
+profiles,show_on_leaderboards,boolean,NO,true
+profiles,metadata,jsonb,NO,'{}'::jsonb
+profiles,id,uuid,YES,
+promo_rules,id,integer,NO,1
+promo_rules,tokens_per_new_user,integer,NO,10
+promo_rules,welcome_bonus,integer,YES,
+promo_rules,daily_cap_per_sharer,integer,YES,
+published_menus,id,uuid,YES,
+published_menus,bar_id,uuid,YES,
+published_menus,version,integer,YES,
+published_menus,status,USER-DEFINED,YES,
+published_menus,source,USER-DEFINED,YES,
+published_menus,source_file_ids,ARRAY,YES,
+published_menus,created_by,text,YES,
+published_menus,created_at,timestamp with time zone,YES,
+published_menus,updated_at,timestamp with time zone,YES,
+published_menus,published_at,timestamp with time zone,YES,
+referral_attributions,id,uuid,NO,gen_random_uuid()
+referral_attributions,code,text,NO,
+referral_attributions,sharer_user_id,uuid,NO,
+referral_attributions,joiner_user_id,uuid,NO,
+referral_attributions,first_message_at,timestamp with time zone,NO,
+referral_attributions,credited,boolean,NO,false
+referral_attributions,credited_tokens,integer,NO,0
+referral_attributions,reason,text,YES,
+referral_attributions,created_at,timestamp with time zone,NO,now()
+referral_clicks,id,uuid,NO,gen_random_uuid()
+referral_clicks,code,text,YES,
+referral_clicks,clicked_at,timestamp with time zone,NO,"timezone('utc'::text, now())"
+referral_clicks,ip,text,YES,
+referral_clicks,user_agent,text,YES,
+referral_clicks,country_guess,text,YES,
+referral_links,user_id,uuid,NO,
+referral_links,code,text,NO,
+referral_links,short_url,text,YES,
+referral_links,active,boolean,NO,true
+referral_links,created_at,timestamp with time zone,NO,now()
+referral_links,last_shared_at,timestamp with time zone,YES,
+segments,id,bigint,NO,nextval('segments_id_seq'::regclass)
+segments,name,text,NO,
+segments,description,text,YES,
+segments,filter,jsonb,NO,'{}'::jsonb
+segments,created_at,timestamp with time zone,YES,now()
+send_logs,id,bigint,NO,nextval('send_logs_id_seq'::regclass)
+send_logs,queue_id,bigint,YES,
+send_logs,campaign_id,bigint,NO,
+send_logs,msisdn_e164,text,NO,
+send_logs,sent_at,timestamp with time zone,YES,
+send_logs,provider_msg_id,text,YES,
+send_logs,delivery_status,text,YES,
+send_logs,error,text,YES,
+send_queue,id,bigint,NO,nextval('send_queue_id_seq'::regclass)
+send_queue,campaign_id,bigint,YES,
+send_queue,msisdn_e164,text,NO,
+send_queue,payload,jsonb,NO,
+send_queue,attempt,integer,YES,0
+send_queue,next_attempt_at,timestamp with time zone,YES,now()
+send_queue,status,text,YES,'PENDING'::text
+served_drivers,viewer_passenger_msisdn,text,NO,
+served_drivers,expires_at,timestamp with time zone,NO,
+served_drivers,created_at,timestamp with time zone,NO,now()
+served_drivers,driver_contact_id,uuid,NO,
+served_passengers,viewer_driver_msisdn,text,NO,
+served_passengers,passenger_trip_id,uuid,NO,
+served_passengers,expires_at,timestamp with time zone,NO,
+served_passengers,created_at,timestamp with time zone,NO,now()
+sessions,id,uuid,NO,gen_random_uuid()
+sessions,wa_id,text,NO,
+sessions,role,USER-DEFINED,NO,
+sessions,bar_id,uuid,YES,
+sessions,current_flow,text,YES,
+sessions,context,jsonb,NO,'{}'::jsonb
+sessions,flow_state,jsonb,NO,'{}'::jsonb
+sessions,last_interaction_at,timestamp with time zone,NO,"timezone('utc'::text, now())"
+sessions,created_at,timestamp with time zone,NO,"timezone('utc'::text, now())"
+sessions,updated_at,timestamp with time zone,NO,"timezone('utc'::text, now())"
+sessions,profile_id,uuid,YES,
+shops,id,uuid,NO,gen_random_uuid()
+shops,name,text,NO,
+shops,short_code,text,NO,
+shops,is_active,boolean,NO,true
+shops,created_at,timestamp with time zone,NO,now()
+spatial_ref_sys,srid,integer,NO,
+spatial_ref_sys,auth_name,character varying,YES,
+spatial_ref_sys,auth_srid,integer,YES,
+spatial_ref_sys,srtext,character varying,YES,
+spatial_ref_sys,proj4text,character varying,YES,
+station_numbers,station_id,uuid,NO,
+station_numbers,wa_e164,text,NO,
+station_numbers,role,text,NO,'staff'::text
+station_numbers,active,boolean,NO,true
+station_numbers,created_at,timestamp with time zone,NO,"timezone('utc'::text, now())"
+templates,id,bigint,NO,nextval('templates_id_seq'::regclass)
+templates,name,text,NO,
+templates,language_code,text,NO,'en'::text
+templates,category,text,YES,
+templates,status,text,NO,
+templates,meta_id,text,YES,
+templates,components,jsonb,NO,
+templates,sample,jsonb,YES,'{}'::jsonb
+templates,last_synced_at,timestamp with time zone,YES,
+trips,id,uuid,NO,gen_random_uuid()
+trips,creator_user_id,uuid,YES,
+trips,role,text,YES,
+trips,vehicle_type,text,YES,
+trips,pickup,USER-DEFINED,YES,
+trips,status,text,YES,
+trips,created_at,timestamp with time zone,YES,now()
+trips,dropoff,USER-DEFINED,YES,
+trips,pickup_lat,double precision,YES,
+trips,pickup_lng,double precision,YES,
+trips,dropoff_lat,double precision,YES,
+trips,dropoff_lng,double precision,YES,
+trips,updated_at,timestamp with time zone,NO,"timezone('utc'::text, now())"
+trips,pickup_text,text,YES,
+trips,dropoff_text,text,YES,
+trips,pickup_at,timestamp with time zone,NO,"timezone('utc'::text, now())"
+trips,pickup_lon,double precision,YES,
+trips,dropoff_lon,double precision,YES,
+trips,pickup_radius_m,integer,NO,200
+trips,dropoff_radius_m,integer,NO,200
+voucher_redemptions,id,uuid,NO,gen_random_uuid()
+voucher_redemptions,voucher_id,uuid,NO,
+voucher_redemptions,station_id,uuid,YES,
+voucher_redemptions,redeemer_wa_e164,text,YES,
+voucher_redemptions,reason,text,YES,
+voucher_redemptions,meta,jsonb,NO,'{}'::jsonb
+voucher_redemptions,created_at,timestamp with time zone,NO,"timezone('utc'::text, now())"
+vouchers,id,uuid,NO,gen_random_uuid()
+vouchers,code_5,text,NO,
+vouchers,amount_minor,integer,NO,
+vouchers,currency,text,NO,'RWF'::text
+vouchers,status,text,NO,'issued'::text
+vouchers,user_id,uuid,YES,
+vouchers,whatsapp_e164,text,NO,
+vouchers,policy_number,text,NO,
+vouchers,plate,text,YES,
+vouchers,qr_payload,text,NO,
+vouchers,image_url,text,YES,
+vouchers,issued_by_admin,uuid,YES,
+vouchers,issued_at,timestamp with time zone,NO,"timezone('utc'::text, now())"
+vouchers,redeemed_at,timestamp with time zone,YES,
+vouchers,redeemed_by_station_id,uuid,YES,
+vouchers,notes,text,YES,
+vouchers,created_at,timestamp with time zone,NO,"timezone('utc'::text, now())"
+vouchers,updated_at,timestamp with time zone,NO,"timezone('utc'::text, now())"
+wa_events,wa_message_id,text,NO,
+wa_events,created_at,timestamp with time zone,NO,now()
+wa_events,received_at,timestamp with time zone,NO,"timezone('utc'::text, now())"
+wa_inbound,wa_msg_id,text,NO,
+wa_inbound,from_msisdn,text,YES,
+wa_inbound,received_at,timestamp with time zone,YES,now()
+wa_inbox,id,bigint,NO,nextval('wa_inbox_id_seq'::regclass)
+wa_inbox,provider_msg_id,text,YES,
+wa_inbox,from_msisdn,text,NO,
+wa_inbox,to_msisdn,text,YES,
+wa_inbox,wa_timestamp,timestamp with time zone,YES,
+wa_inbox,type,text,YES,
+wa_inbox,payload,jsonb,NO,'{}'::jsonb
+wa_inbox,created_at,timestamp with time zone,YES,now()
+wallet_accounts,profile_id,uuid,NO,
+wallet_accounts,balance_minor,integer,NO,0
+wallet_accounts,pending_minor,integer,NO,0
+wallet_accounts,currency,text,NO,'RWF'::text
+wallet_accounts,tokens,integer,NO,0
+wallet_accounts,updated_at,timestamp with time zone,NO,"timezone('utc'::text, now())"
+wallet_earn_actions,id,uuid,NO,gen_random_uuid()
+wallet_earn_actions,title,text,YES,
+wallet_earn_actions,description,text,YES,
+wallet_earn_actions,reward_tokens,integer,YES,
+wallet_earn_actions,referral_code,text,YES,
+wallet_earn_actions,share_text,text,YES,
+wallet_earn_actions,is_active,boolean,NO,true
+wallet_earn_actions,created_at,timestamp with time zone,NO,"timezone('utc'::text, now())"
+wallet_ledger,id,bigint,NO,nextval('wallet_ledger_id_seq'::regclass)
+wallet_ledger,user_id,uuid,NO,
+wallet_ledger,delta_tokens,integer,NO,
+wallet_ledger,type,text,NO,
+wallet_ledger,meta,jsonb,NO,'{}'::jsonb
+wallet_ledger,created_at,timestamp with time zone,NO,now()
+wallet_promoters,id,uuid,NO,gen_random_uuid()
+wallet_promoters,display_name,text,YES,
+wallet_promoters,whatsapp,text,YES,
+wallet_promoters,tokens,integer,NO,0
+wallet_promoters,updated_at,timestamp with time zone,NO,"timezone('utc'::text, now())"
+wallet_redeem_options,id,uuid,NO,gen_random_uuid()
+wallet_redeem_options,title,text,YES,
+wallet_redeem_options,description,text,YES,
+wallet_redeem_options,cost_tokens,integer,YES,
+wallet_redeem_options,instructions,text,YES,
+wallet_redeem_options,is_active,boolean,NO,true
+wallet_redeem_options,created_at,timestamp with time zone,NO,"timezone('utc'::text, now())"
+wallet_redemptions,id,uuid,NO,gen_random_uuid()
+wallet_redemptions,user_id,uuid,NO,
+wallet_redemptions,reward_id,text,NO,
+wallet_redemptions,reward_name,text,NO,
+wallet_redemptions,cost_tokens,integer,NO,
+wallet_redemptions,status,text,NO,'fulfilled'::text
+wallet_redemptions,meta,jsonb,NO,'{}'::jsonb
+wallet_redemptions,created_at,timestamp with time zone,NO,now()
+wallet_transactions,id,uuid,NO,gen_random_uuid()
+wallet_transactions,profile_id,uuid,YES,
+wallet_transactions,amount_minor,integer,NO,
+wallet_transactions,currency,text,NO,'RWF'::text
+wallet_transactions,direction,text,NO,'credit'::text
+wallet_transactions,description,text,YES,
+wallet_transactions,occurred_at,timestamp with time zone,NO,"timezone('utc'::text, now())"
+wallets,user_id,uuid,NO,
+wallets,balance_tokens,integer,NO,0
+wallets,updated_at,timestamp with time zone,NO,now()
+webhook_logs,id,bigint,NO,nextval('webhook_logs_id_seq'::regclass)
+webhook_logs,endpoint,text,NO,
+webhook_logs,wa_id,text,YES,
+webhook_logs,status_code,integer,YES,
+webhook_logs,error_message,text,YES,
+webhook_logs,headers,jsonb,NO,'{}'::jsonb
+webhook_logs,payload,jsonb,NO,'{}'::jsonb
+webhook_logs,received_at,timestamp with time zone,NO,"timezone('utc'::text, now())"

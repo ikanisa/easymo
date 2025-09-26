@@ -1,5 +1,5 @@
 import { WA_PHONE_ID, WA_TOKEN } from "../config.ts";
-import { safeButtonTitle, safeRowTitle, safeRowDesc } from "../utils/text.ts";
+import { safeButtonTitle, safeRowDesc, safeRowTitle } from "../utils/text.ts";
 
 const GRAPH_BASE = "https://graph.facebook.com/v20.0";
 
@@ -75,7 +75,9 @@ export async function sendList(
             rows: opts.rows.slice(0, 10).map((row) => ({
               id: row.id,
               title: safeRowTitle(row.title),
-              description: row.description ? safeRowDesc(row.description) : undefined,
+              description: row.description
+                ? safeRowDesc(row.description)
+                : undefined,
             })),
           },
         ],
@@ -84,11 +86,35 @@ export async function sendList(
   });
 }
 
-export async function sendImageUrl(to: string, link: string, caption?: string): Promise<void> {
+export async function sendImageUrl(
+  to: string,
+  link: string,
+  caption?: string,
+): Promise<void> {
   await post({
     messaging_product: "whatsapp",
     to,
     type: "image",
     image: { link, caption: caption?.slice(0, 1024) },
+  });
+}
+
+export async function sendFlowMessage(
+  to: string,
+  flowId: string,
+  options: { languageCode?: string; metadata?: Record<string, unknown> } = {},
+): Promise<void> {
+  const flowPayload: Record<string, unknown> = {
+    name: flowId,
+    language: { code: options.languageCode ?? "en" },
+  };
+  if (options.metadata && Object.keys(options.metadata).length) {
+    flowPayload.metadata = options.metadata;
+  }
+  await post({
+    messaging_product: "whatsapp",
+    to,
+    type: "flow",
+    flow: flowPayload,
   });
 }

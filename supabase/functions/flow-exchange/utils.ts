@@ -1,4 +1,4 @@
-import { z } from 'https://deno.land/x/zod@v3.23.8/mod.ts';
+import { z } from "https://deno.land/x/zod@v3.23.8/mod.ts";
 
 export const paginationSchema = z.object({
   page_token: z.string().nullable().optional(),
@@ -38,7 +38,7 @@ export const orderDetailSchema = z.object({
 });
 
 export const vendorQueueSchema = z.object({
-  queue: z.enum(['pending', 'paid', 'served', 'cancelled']),
+  queue: z.enum(["pending", "paid", "served", "cancelled"]),
 });
 
 export const vendorOrderActionSchema = z.object({
@@ -64,13 +64,13 @@ export const vendorOnboardContactsSchema = z.object({
 
 export const vendorStaffSchema = z.object({
   phone: z.string().min(6).max(20),
-  role: z.enum(['manager', 'staff']).optional(),
+  role: z.enum(["manager", "staff"]).optional(),
 });
 
 export const vendorSettingsSchema = z.object({
   momo_code: z.string().min(2).max(40),
   service_charge_pct: z.coerce.number().min(0).max(25),
-  allow_direct_chat: z.enum(['true', 'false']),
+  allow_direct_chat: z.enum(["true", "false"]),
   default_prep_minutes: z.coerce.number().int().min(0).max(240),
   payment_instructions: z.string().max(240).optional(),
 });
@@ -80,16 +80,19 @@ export type Parsed<T extends z.ZodTypeAny> = z.infer<T>;
 export function buildErrorResponse(
   next_screen_id: string,
   message: string,
-  fieldErrors?: Record<string, string>
+  fieldErrors?: Record<string, string>,
 ) {
   return {
     next_screen_id,
-    messages: [{ type: 'error' as const, text: message }],
+    messages: [{ type: "error" as const, text: message }],
     field_errors: fieldErrors,
   };
 }
 
-export function buildInfoResponse(next_screen_id: string, data: Record<string, unknown>) {
+export function buildInfoResponse(
+  next_screen_id: string,
+  data: Record<string, unknown>,
+) {
   return {
     next_screen_id,
     data,
