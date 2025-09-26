@@ -1,5 +1,6 @@
 -- Normalize marketplace category slugs after prior data fixes.
 
+BEGIN;
 UPDATE public.marketplace_categories
 SET slug = regexp_replace(lower(name), '[^a-z0-9]+', '_', 'g')
 WHERE slug IS DISTINCT FROM regexp_replace(lower(name), '[^a-z0-9]+', '_', 'g');
@@ -28,3 +29,4 @@ WHERE lower(name) IN (
   'cars rental/sale',
   'houses rental/sale'
 );
+COMMIT;

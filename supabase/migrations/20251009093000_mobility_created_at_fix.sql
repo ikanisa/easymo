@@ -1,3 +1,4 @@
+BEGIN;
 DROP FUNCTION IF EXISTS public.match_drivers_for_trip_v2(uuid,int,boolean,int,int);
 DROP FUNCTION IF EXISTS public.match_passengers_for_trip_v2(uuid,int,boolean,int,int);
 
@@ -156,3 +157,4 @@ BEGIN
   LIMIT _limit;
 END;
 $$;
+COMMIT;

@@ -1,6 +1,7 @@
 -- Marketplace categories enhancements (add columns + seed required rows)
 
 -- Add metadata columns for slugs, descriptions, and icons.
+BEGIN;
 ALTER TABLE public.marketplace_categories
   ADD COLUMN IF NOT EXISTS slug text,
   ADD COLUMN IF NOT EXISTS description text,
@@ -69,3 +70,4 @@ SET description = COALESCE(description,
 UPDATE public.marketplace_categories
 SET slug = regexp_replace(lower(name), '[^a-z0-9]+', '_', 'g')
 WHERE slug IS NULL OR slug = '';
+COMMIT;

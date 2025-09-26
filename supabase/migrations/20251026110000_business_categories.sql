@@ -1,4 +1,5 @@
 -- Business categories for bars, pharmacies, saloons, etc.
+BEGIN;
 CREATE TABLE IF NOT EXISTS public.business_categories (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   slug text UNIQUE NOT NULL,
@@ -106,3 +107,4 @@ AS $$
   ORDER BY o.created_at DESC
   LIMIT COALESCE(p_limit, 9);
 $$;
+COMMIT;

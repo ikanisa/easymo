@@ -1,5 +1,6 @@
 -- Fuel voucher schema additions (vouchers, redemptions, petrol stations)
 
+BEGIN;
 CREATE TABLE IF NOT EXISTS public.petrol_stations (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   name text NOT NULL,
@@ -168,3 +169,4 @@ BEGIN
 END $$;
 
 -- Note: Create storage bucket `vouchers` (private) via Supabase dashboard or CLI before issuing vouchers.
+COMMIT;

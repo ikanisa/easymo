@@ -1,6 +1,7 @@
 -- Enable and define RLS policies for operational tables
 
 -- voucher_events RLS
+BEGIN;
 DO $$
 BEGIN
   IF NOT EXISTS (
@@ -110,3 +111,4 @@ BEGIN
   END IF;
 END
 $$;
+COMMIT;

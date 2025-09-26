@@ -1,4 +1,5 @@
 -- Phase 1 Step 1: add profile references alongside legacy customer_id
+BEGIN;
 DO $$
 BEGIN
   IF NOT EXISTS (
@@ -76,3 +77,4 @@ WHERE sess.customer_id = map.customer_id AND sess.profile_id IS NULL;
 CREATE INDEX IF NOT EXISTS idx_carts_profile ON public.carts(profile_id);
 CREATE INDEX IF NOT EXISTS idx_orders_profile ON public.orders(profile_id);
 CREATE INDEX IF NOT EXISTS idx_sessions_profile ON public.sessions(profile_id);
+COMMIT;

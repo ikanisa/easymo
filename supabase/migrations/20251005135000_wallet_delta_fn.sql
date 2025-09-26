@@ -1,3 +1,4 @@
+BEGIN;
 CREATE OR REPLACE FUNCTION public.wallet_apply_delta(
   _user_id uuid,
   _delta integer
@@ -12,3 +13,4 @@ BEGIN
   DO UPDATE SET balance_tokens = public.wallets.balance_tokens + COALESCE(_delta, 0), updated_at = timezone('utc', now());
 END;
 $$;
+COMMIT;

@@ -1,4 +1,5 @@
 -- Ensure mobility matching functions return numeric drop distances
+BEGIN;
 CREATE OR REPLACE FUNCTION public.match_drivers_for_trip_v2(
     _trip_id uuid,
     _limit int DEFAULT 9,
@@ -154,3 +155,4 @@ BEGIN
   LIMIT _limit;
 END;
 $$;
+COMMIT;

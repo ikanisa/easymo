@@ -1,4 +1,5 @@
 -- Strengthen notification worker concurrency controls
+BEGIN;
 DO $$
 BEGIN
   IF NOT EXISTS (
@@ -45,3 +46,4 @@ $$;
 
 COMMENT ON FUNCTION public.claim_notifications(integer) IS
   'Atomically locks and returns up to _limit queued notifications for delivery.';
+COMMIT;

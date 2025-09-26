@@ -1,6 +1,7 @@
 -- Master schema alignment for easyMO WhatsApp system
 -- Additive only: creates missing tables, columns, constraints, indexes per spec
 
+BEGIN;
 CREATE EXTENSION IF NOT EXISTS postgis;
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
@@ -380,3 +381,4 @@ BEGIN
       EXECUTE FUNCTION public.set_updated_at();
   END IF;
 END $$;
+COMMIT;

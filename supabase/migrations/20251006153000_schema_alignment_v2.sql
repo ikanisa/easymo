@@ -1,6 +1,7 @@
 -- Schema alignment updates for runtime config, mobility and baskets per master spec
 
 -- app_config additions
+BEGIN;
 ALTER TABLE public.app_config
   ADD COLUMN IF NOT EXISTS momo_qr_logo_url text,
   ADD COLUMN IF NOT EXISTS redeem_catalog jsonb NOT NULL DEFAULT '{}'::jsonb,
@@ -99,3 +100,4 @@ ALTER TABLE public.basket_contributions
   ADD COLUMN IF NOT EXISTS metadata jsonb NOT NULL DEFAULT '{}'::jsonb;
 
 -- validate new constraints where possible
+COMMIT;

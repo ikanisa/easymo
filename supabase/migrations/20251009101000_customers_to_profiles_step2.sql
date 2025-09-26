@@ -1,6 +1,7 @@
 -- Phase 1 Step 2: enforce profile_id, update RLS, and prepare to drop customer_id
 
 -- Ensure mapping still complete before enforcing constraints
+BEGIN;
 DO $$
 DECLARE
   missing_count integer;
@@ -107,3 +108,4 @@ DROP INDEX IF EXISTS idx_carts_customer_status;
 CREATE INDEX IF NOT EXISTS idx_carts_profile_status ON public.carts(profile_id, status);
 
 -- keep legacy columns until final step (drop in Step 3)
+COMMIT;

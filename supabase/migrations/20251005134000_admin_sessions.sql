@@ -1,5 +1,6 @@
 -- Admin session and PIN scaffolding
 
+BEGIN;
 CREATE TABLE IF NOT EXISTS public.admin_sessions (
   wa_id text PRIMARY KEY,
   pin_ok_until timestamptz,
@@ -21,3 +22,4 @@ END $$;
 ALTER TABLE public.app_config
   ADD COLUMN IF NOT EXISTS admin_pin_hash text;
 
+COMMIT;

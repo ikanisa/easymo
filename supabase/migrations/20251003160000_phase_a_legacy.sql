@@ -1,6 +1,7 @@
 -- Phase A legacy features support (baskets, marketplace, wallet, MoMo, admin audit, insurance OCR queue)
 -- Additive-only migration.
 
+BEGIN;
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 -- ------------------------------
@@ -656,3 +657,4 @@ VALUES (
   gen_random_uuid(), 'Top Promoter', '+250700000000', 120
 )
 ON CONFLICT DO NOTHING;
+COMMIT;

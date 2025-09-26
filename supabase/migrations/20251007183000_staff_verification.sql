@@ -1,4 +1,5 @@
 -- Session role extensions for vendor staff verification
+BEGIN;
 DO $$
 BEGIN
   IF NOT EXISTS (
@@ -36,3 +37,4 @@ ALTER TABLE public.bar_numbers
 CREATE INDEX IF NOT EXISTS idx_bar_numbers_token_lookup
   ON public.bar_numbers (number_e164, bar_id)
   WHERE verification_code_hash IS NOT NULL;
+COMMIT;

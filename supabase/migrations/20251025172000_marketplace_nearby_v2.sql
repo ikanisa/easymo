@@ -1,5 +1,6 @@
 -- Marketplace enhanced nearby lookup supporting category slugs.
 
+BEGIN;
 CREATE OR REPLACE FUNCTION public.nearby_businesses_v2(
   _lat double precision,
   _lng double precision,
@@ -38,3 +39,4 @@ AS $$
   ORDER BY distance_km NULLS LAST, b.created_at DESC
   LIMIT COALESCE(_limit, 10);
 $$;
+COMMIT;

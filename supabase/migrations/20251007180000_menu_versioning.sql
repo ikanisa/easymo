@@ -1,4 +1,5 @@
 -- Promote draft menus to published versions and clone dependent records
+BEGIN;
 CREATE OR REPLACE FUNCTION public.promote_draft_menu(
   _bar_id uuid,
   _draft_menu_id uuid DEFAULT NULL
@@ -184,3 +185,4 @@ BEGIN
   RETURN v_new_menu_id;
 END;
 $$;
+COMMIT;

@@ -1,5 +1,6 @@
 -- Referral application helper to credit promoters for new joiners.
 
+BEGIN;
 CREATE OR REPLACE FUNCTION public.referral_apply_code(
   _joiner_profile_id uuid,
   _joiner_whatsapp text,
@@ -196,3 +197,4 @@ BEGIN
   RETURN NEXT;
 END;
 $$;
+COMMIT;

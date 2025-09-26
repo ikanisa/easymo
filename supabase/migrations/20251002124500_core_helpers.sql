@@ -1,6 +1,7 @@
 -- Helper sequences, trigger functions, and supporting views for dine-in schema
 
 -- Order code sequence and generator
+BEGIN;
 CREATE SEQUENCE IF NOT EXISTS public.order_code_seq START 1000;
 
 CREATE OR REPLACE FUNCTION public.generate_order_code()
@@ -96,3 +97,4 @@ CREATE TRIGGER trg_menus_refresh_snapshot
   FOR EACH ROW
   WHEN (NEW.status = 'published')
   EXECUTE FUNCTION public.on_menu_publish_refresh();
+COMMIT;

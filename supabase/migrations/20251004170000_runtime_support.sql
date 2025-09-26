@@ -2,6 +2,7 @@
 -- Additive migration only.
 
 -- Configuration table consumed by wa-webhook runtime
+BEGIN;
 CREATE TABLE IF NOT EXISTS public.app_config (
   id integer PRIMARY KEY,
   search_radius_km double precision DEFAULT 10,
@@ -326,3 +327,4 @@ AS $$
          NULL::double precision AS distance_km
   WHERE false;
 $$;
+COMMIT;

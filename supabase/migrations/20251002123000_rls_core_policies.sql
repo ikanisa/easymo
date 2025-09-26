@@ -2,6 +2,7 @@
 -- Requires schema objects from 20251002120000_core_schema.sql
 
 -- Guard clause to prevent redefinition if rerun
+BEGIN;
 DO $$
 BEGIN
   IF NOT EXISTS (
@@ -335,3 +336,4 @@ CREATE POLICY webhook_logs_platform_full ON public.webhook_logs
 -- Audit log (platform only)
 CREATE POLICY audit_log_platform_full ON public.audit_log
   FOR ALL USING (public.auth_role() = 'platform') WITH CHECK (public.auth_role() = 'platform');
+COMMIT;

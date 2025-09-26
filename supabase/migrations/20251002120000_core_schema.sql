@@ -2,6 +2,7 @@
 -- Additive migration: introduces base entities, enums, and helper triggers
 
 -- Ensure uuid generation is available
+BEGIN;
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 -- ----------
@@ -407,3 +408,4 @@ CREATE TRIGGER trg_ocr_jobs_updated
   BEFORE UPDATE ON public.ocr_jobs
   FOR EACH ROW
   EXECUTE FUNCTION public.set_updated_at();
+COMMIT;

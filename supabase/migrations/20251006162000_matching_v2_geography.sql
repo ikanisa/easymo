@@ -1,5 +1,6 @@
 -- Refresh matching v2 RPCs to leverage pickup_radius_m and geography columns
 
+BEGIN;
 DROP FUNCTION IF EXISTS public.match_drivers_for_trip_v2(uuid,int,boolean,int,int);
 
 CREATE OR REPLACE FUNCTION public.match_drivers_for_trip_v2(
@@ -157,3 +158,4 @@ BEGIN
   LIMIT _limit;
 END;
 $$;
+COMMIT;

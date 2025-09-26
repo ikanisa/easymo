@@ -1,5 +1,6 @@
 -- Enrich matching v2 RPCs with contact details
 
+BEGIN;
 DROP FUNCTION IF EXISTS public.match_drivers_for_trip_v2(uuid,int,boolean,int,int);
 
 CREATE OR REPLACE FUNCTION public.match_drivers_for_trip_v2(
@@ -145,3 +146,4 @@ BEGIN
   LIMIT _limit;
 END;
 $$;
+COMMIT;

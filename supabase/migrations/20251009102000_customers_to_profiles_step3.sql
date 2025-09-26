@@ -1,6 +1,7 @@
 -- Phase 1 Step 3: remove legacy customer references after code rollout
 
 -- Final safety check: ensure new profile_id usage is complete
+BEGIN;
 DO $$
 DECLARE
   carts_missing integer;
@@ -69,3 +70,4 @@ BEGIN
   RETURN NULL;
 END;
 $$;
+COMMIT;
