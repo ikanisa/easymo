@@ -287,6 +287,7 @@ async function handleHomeMenuSelection(
   id: string,
   state: { key: string; data?: Record<string, unknown> },
 ): Promise<boolean> {
+  const managerCtx = managerContextFromState(state);
   switch (id) {
     case IDS.SEE_DRIVERS:
       return await handleSeeDrivers(ctx);
