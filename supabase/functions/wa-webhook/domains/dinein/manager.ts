@@ -116,10 +116,17 @@ export async function showBarsEntry(
     back: null,
     data: contextData(context),
   });
-  await sendButtons(ctx.from, `${ENTRY_EMOJI} Bars & restaurants`, [{
-    id: IDS.DINEIN_BARS_VIEW,
-    title: "View",
-  }]);
+  await sendList(ctx.from, {
+    title: "Bars & restaurants",
+    body: "What would you like to do?",
+    sectionTitle: "Options",
+    buttonText: "Choose",
+    rows: [
+      { id: IDS.DINEIN_BARS_VIEW_LIST, title: "View bars & restaurants" },
+      { id: IDS.DINEIN_BARS_ONBOARD, title: "Add a bar or restaurant" },
+      { id: IDS.BACK_MENU, title: "← Back" },
+    ],
+  }, { emoji: ENTRY_EMOJI });
 }
 
 export async function showBarsMenu(
