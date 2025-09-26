@@ -1,5 +1,3 @@
-import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
-
 import {
   decryptFlowEnvelope,
   encryptFlowPayload,
@@ -363,7 +361,7 @@ async function handleClearRequest(
   });
 }
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   if (req.method === "GET") {
     return new Response("flow-exchange-mock ok", { status: 200 });
   }

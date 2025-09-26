@@ -234,6 +234,91 @@ export async function showOnboardContacts(
   );
 }
 
+export async function handleOnboardIdentityText(
+  ctx: RouterContext,
+  state: { key: string; data?: Record<string, unknown> },
+  body: string,
+): Promise<boolean> {
+  if (state.key !== DINE_STATE.ONBOARD_IDENTITY) return false;
+  const context = extractManagerContext(state);
+  const existing = state.data ?? {};
+  const updates = parseIdentityInput(body);
+  let name = typeof existing.name === "string" ? existing.name : null;
+  let location = typeof existing.location === "string"
+    ? existing.location
+    : null;
+  let category = typeof existing.category === "string"
+    ? existing.category
+    : null;
+  let categorySlug = typeof existing.categorySlug === "string"
+    ? existing.categorySlug
+    : null;
+  if (updates.name) name = updates.name;
+  if (updates.location) location = updates.location;
+  if (updates.category) {
+    category = updates.category;
+    const categories = await listBusinessCategories(ctx);
+    const matched = matchBusinessCategory(categories, updates.category);
+    categorySlug = matched?.slug ?? categorySlug;
+  }
+  await setDineState(ctx, DINE_STATE.ONBOARD_IDENTITY, {
+    back: DINE_STATE.MANAGER_MENU,
+    data: contextData(context, { name, location, category, categorySlug }),
+  });
+  const summary = [
+    name ? `Name: ${name}` : "Name: (pending)",
+    location ? `Location: ${location}` : "Location: (pending)",
+    category ? `Category: ${category}` : "Category: optional",
+  ].join("\n");
+  await sendButtons(ctx.from, `${FORM_EMOJI} Identity updated\n${summary}`, [{
+    id: IDS.DINEIN_BARS_ONBOARD_CONTINUE,
+    title: "Continue",
+  }]);
+  return true;
+}
+
+export async function continueOnboardIdentity(
+  ctx: RouterContext,
+  state: { data?: Record<string, unknown> },
+): Promise<void> {
+  await showOnboardContacts(ctx, extractManagerContext(state));
+}
+
+export async function handleOnboardContactsText(
+  ctx: RouterContext,
+  state: { key: string; data?: Record<string, unknown> },
+  body: string,
+): Promise<boolean> {
+  if (state.key !== DINE_STATE.ONBOARD_CONTACTS) return false;
+  const context = extractManagerContext(state);
+  const parsed = parseContactsInput(body);
+  await setDineState(ctx, DINE_STATE.ONBOARD_CONTACTS, {
+    back: DINE_STATE.ONBOARD_IDENTITY,
+    data: contextData(context, {
+      whatsapp: parsed.whatsapp,
+      momo: parsed.momo ?? null,
+    }),
+  });
+  const summary = [
+    parsed.whatsapp.length
+      ? `WhatsApp: ${parsed.whatsapp.join(", ")}`
+      : "WhatsApp: (pending)",
+    parsed.momo ? `MoMo: ${parsed.momo}` : "MoMo: optional",
+  ].join("\n");
+  await sendButtons(ctx.from, `${FORM_EMOJI} Contacts updated\n${summary}`, [{
+    id: IDS.DINEIN_BARS_ONBOARD_CONTACTS_CONTINUE,
+    title: "Continue",
+  }]);
+  return true;
+}
+
+export async function continueOnboardContacts(
+  ctx: RouterContext,
+  state: { data?: Record<string, unknown> },
+): Promise<void> {
+  await showOnboardUpload(ctx, extractManagerContext(state));
+}
+
 export async function showOnboardUpload(
   ctx: RouterContext,
   context: ManagerContext = {},

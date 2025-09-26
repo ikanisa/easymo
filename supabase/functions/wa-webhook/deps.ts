@@ -1,7 +1,7 @@
-export { serve } from "https://deno.land/std@0.224.0/http/server.ts";
+export const serve = Deno.serve;
 export { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 export type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
-export { crypto } from "https://deno.land/std@0.224.0/crypto/mod.ts";
+export const crypto = globalThis.crypto;
 export { TextDecoder, TextEncoder } from "node:util";
 
 export function base64Decode(input: string): Uint8Array {

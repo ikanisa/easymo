@@ -1,4 +1,4 @@
-import { assertEquals } from "https://deno.land/std@0.224.0/assert/assert_equals.ts";
+import { assertEquals } from "../../../../tests/deps/asserts.ts";
 import { encodeTelUri, formatUssdText } from "./ussd.ts";
 
 Deno.test("encodeTelUri formats tel URI", () => {
