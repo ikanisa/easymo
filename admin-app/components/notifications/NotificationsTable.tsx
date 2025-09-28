@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import useSWR from 'swr';
 import { DataTable } from '@/components/data-table/DataTable';
 import type { NotificationOutbox } from '@/lib/schemas';
@@ -33,19 +33,49 @@ export function NotificationsTable({ initialData }: NotificationsTableProps) {
   const [pendingAction, setPendingAction] = useState<{ id: string; action: 'cancel' } | null>(null);
   const { pushToast } = useToast();
 
-  if (error) {
-    return <p>Failed to load notifications.</p>;
-  }
-
-  const notifications = (data?.data ?? []).filter((notification) =>
-    statusFilter ? notification.status === statusFilter : true
-  );
-
   useEffect(() => {
     if (data?.integration) {
       setIntegration(data.integration);
     }
   }, [data?.integration]);
+
+  const notifications = useMemo(
+    () =>
+      (data?.data ?? []).filter((notification) => (statusFilter ? notification.status === statusFilter : true)),
+    [data?.data, statusFilter]
+  );
+
+  const runAction = useCallback(
+    async (id: string, action: 'resend' | 'cancel') => {
+      setIsProcessing(true);
+      setFeedback(null);
+      try {
+        const response = await fetch(`/api/notifications/${id}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action })
+        });
+        const payload = await response.json();
+        setIntegration((current) => payload?.integration ?? current);
+        if (!response.ok) {
+          const text = payload?.error ?? `${action} failed`;
+          setFeedback(text);
+          pushToast(text, 'error');
+        } else {
+          const text = payload.message ?? `${action} applied.`;
+          setFeedback(text);
+          pushToast(text, 'success');
+          mutate();
+        }
+      } catch (err) {
+        console.error('Notification action failed', err);
+        setFeedback('Unexpected error while updating notification.');
+      } finally {
+        setIsProcessing(false);
+      }
+    },
+    [mutate, pushToast]
+  );
 
   const columns = useMemo<ColumnDef<NotificationOutbox>[]>(
     () => [
@@ -96,37 +126,12 @@ export function NotificationsTable({ initialData }: NotificationsTableProps) {
         )
       }
     ],
-    [isProcessing]
+    [isProcessing, runAction]
   );
 
-  const runAction = async (id: string, action: 'resend' | 'cancel') => {
-    setIsProcessing(true);
-    setFeedback(null);
-    try {
-      const response = await fetch(`/api/notifications/${id}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action })
-      });
-      const payload = await response.json();
-      setIntegration(payload?.integration ?? integration);
-      if (!response.ok) {
-        const text = payload?.error ?? `${action} failed`;
-        setFeedback(text);
-        pushToast(text, 'error');
-      } else {
-        const text = payload.message ?? `${action} applied.`;
-        setFeedback(text);
-        pushToast(text, 'success');
-        mutate();
-      }
-    } catch (err) {
-      console.error('Notification action failed', err);
-      setFeedback('Unexpected error while updating notification.');
-    } finally {
-      setIsProcessing(false);
-    }
-  };
+  if (error) {
+    return <p>Failed to load notifications.</p>;
+  }
 
   return (
     <div className="stack">

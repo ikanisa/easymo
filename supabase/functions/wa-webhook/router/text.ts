@@ -1,0 +1,218 @@
+import type { RouterContext } from "../types.ts";
+import { sendHomeMenu } from "../flows/home.ts";
+import { handleBasketText } from "../flows/baskets.ts";
+import { handleMarketplaceText } from "../domains/marketplace/index.ts";
+import { handleMomoText } from "../flows/momo/qr.ts";
+import { handleWalletText } from "../domains/wallet/home.ts";
+import { handleStaffVerification } from "../flows/staff.ts";
+import { handleAdminCommand } from "../flows/admin/commands.ts";
+import { applyReferralCodeFromMessage } from "../domains/wallet/referral.ts";
+import {
+  handleBarRow as dineHandleBarRow,
+  openBarBySlug,
+  openManagerPortal,
+  startDineIn,
+} from "../domains/dinein/browse.ts";
+import { openMenu } from "../domains/dinein/menu.ts";
+import { handleItemRow as dineHandleItemRow } from "../domains/dinein/item.ts";
+import { handleOrderMore, handlePayOrder } from "../domains/dinein/order.ts";
+import {
+  DINE_IDS,
+  makeBarRowId,
+  makeItemRowId,
+} from "../domains/dinein/ids.ts";
+import { DINE_STATE } from "../domains/dinein/state.ts";
+import { startInsurance } from "../domains/insurance/index.ts";
+import {
+  handleAddWhatsappText,
+  handleNumbersAddText,
+  handleNumbersRemoveText,
+  handleOnboardContactsText,
+  handleOnboardIdentityText,
+  handleOnboardLocationText,
+  handleOnboardPaymentText,
+  handleReviewEditText,
+} from "../domains/dinein/manager.ts";
+import { handleDineBack } from "../domains/dinein/navigation.ts";
+
+export async function handleText(
+  ctx: RouterContext,
+  msg: any,
+  state: { key: string; data?: Record<string, unknown> },
+): Promise<boolean> {
+  const body = (msg.text?.body ?? "").trim();
+  if (!body) return false;
+  const referralMatch = body.match(/^ref[:：]\s*([a-z0-9]{4,32})$/i);
+  if (referralMatch) {
+    const code = referralMatch[1];
+    if (await applyReferralCodeFromMessage(ctx, code)) {
+      return true;
+    }
+  }
+  const menuSlugMatch = body.match(/^menu\s+([a-z0-9][a-z0-9_-]{1,})$/i);
+  if (menuSlugMatch) {
+    if (await openBarBySlug(ctx, menuSlugMatch[1].toLowerCase())) {
+      return true;
+    }
+  }
+  const momoStates = new Set([
+    "momo_qr_menu",
+    "momo_qr_number",
+    "momo_qr_code",
+    "momo_qr_amount",
+  ]);
+  const dineOnboardingStates = new Set<string>([
+    DINE_STATE.ONBOARD_IDENTITY,
+    DINE_STATE.ONBOARD_LOCATION,
+    DINE_STATE.ONBOARD_PAYMENT,
+    DINE_STATE.ONBOARD_CONTACTS,
+    DINE_STATE.ONBOARD_UPLOAD,
+  ]);
+  if (
+    !momoStates.has(state.key) &&
+    !dineOnboardingStates.has(state.key) &&
+    await handleStaffVerification(ctx, body)
+  ) {
+    return true;
+  }
+  if (body.startsWith("/")) {
+    return await handleAdminCommand(ctx, body);
+  }
+  if (
+    state.key === "mobility_nearby_select" ||
+    state.key === "mobility_nearby_location"
+  ) {
+    return false; // expect list or location
+  }
+  if (await handleMomoText(ctx, body, state)) {
+    return true;
+  }
+  if (await handleWalletText(ctx, body, state)) {
+    return true;
+  }
+  if (await handleOnboardIdentityText(ctx, state, body)) {
+    return true;
+  }
+  if (await handleOnboardLocationText(ctx, state, body)) {
+    return true;
+  }
+  if (await handleOnboardPaymentText(ctx, state, body)) {
+    return true;
+  }
+  if (await handleOnboardContactsText(ctx, state, body)) {
+    return true;
+  }
+  if (await handleReviewEditText(ctx, state, body)) {
+    return true;
+  }
+  if (await handleNumbersAddText(ctx, state, body)) {
+    return true;
+  }
+  if (await handleNumbersRemoveText(ctx, state, body)) {
+    return true;
+  }
+  if (await handleAddWhatsappText(ctx, state, body)) {
+    return true;
+  }
+  if (await handleMarketplaceText(ctx, body, state)) {
+    return true;
+  }
+  if (await handleBasketText(ctx, body, state)) {
+    return true;
+  }
+  if (
+    (state.key === "ins_wait_doc" || state.key === "insurance_upload") &&
+    /^(cancel|back)$/i.test(body)
+  ) {
+    await startInsurance(ctx, state);
+    return true;
+  }
+  if (/^(menu|order|browse|start)$/i.test(body)) {
+    await startDineIn(ctx, state);
+    return true;
+  }
+  if (/^(back|←\s*back)$/i.test(body) && state.key?.startsWith("dine")) {
+    if (await handleDineBack(ctx, state)) {
+      return true;
+    }
+  }
+  if (/^[0-9]+$/.test(body)) {
+    if (await handleDineNumeric(ctx, body, state)) return true;
+  }
+  await sendHomeMenu(ctx);
+  return true;
+}
+
+async function handleDineNumeric(
+  ctx: RouterContext,
+  body: string,
+  state: { key: string; data?: Record<string, unknown> },
+): Promise<boolean> {
+  const choice = Number(body);
+  if (!Number.isFinite(choice)) return false;
+
+  const goMainMenu = async () => {
+    await startDineIn(ctx, { key: "dine_home", data: {} }, {
+      skipResume: true,
+    });
+    return true;
+  };
+
+  if (state.key === "dine_bars") {
+    const ids = Array.isArray(state.data?.bar_ids)
+      ? state.data?.bar_ids as string[]
+      : [];
+    const index = choice - 1;
+    if (index >= 0 && index < ids.length) {
+      return await dineHandleBarRow(ctx, makeBarRowId(ids[index]));
+    }
+    if (choice === 0) return await goMainMenu();
+    const offset = Number(state.data?.offset ?? 0);
+    await startDineIn(ctx, state, { skipResume: true, offset });
+    return true;
+  }
+
+  if (state.key === "dine_bar") {
+    const canManage = Boolean(state.data?.can_manage);
+    if (choice === 1) return await openMenu(ctx, state);
+    if (canManage && choice === 2) return await openManagerPortal(ctx, state);
+    if (choice === 0) return await goMainMenu();
+    await openMenu(ctx, state);
+    return true;
+  }
+
+  if (state.key === "dine_items") {
+    const ids = Array.isArray(state.data?.item_ids)
+      ? state.data?.item_ids as string[]
+      : [];
+    const index = choice - 1;
+    if (index >= 0 && index < ids.length) {
+      return await dineHandleItemRow(ctx, makeItemRowId(ids[index]), state);
+    }
+    const nextOffset = typeof state.data?.next_offset === "number"
+      ? Number(state.data?.next_offset)
+      : null;
+    const prevOffset = typeof state.data?.prev_offset === "number"
+      ? Number(state.data?.prev_offset)
+      : null;
+    if (nextOffset !== null && choice === ids.length + 1) {
+      return await openMenu(ctx, state, { offset: nextOffset });
+    }
+    if (prevOffset !== null && choice === ids.length + 2) {
+      return await openMenu(ctx, state, { offset: prevOffset });
+    }
+    if (choice === 0) return await goMainMenu();
+    await openMenu(ctx, state);
+    return true;
+  }
+
+  if (state.key === "dine_order") {
+    if (choice === 1) return await handlePayOrder(ctx, state);
+    if (choice === 2) return await handleOrderMore(ctx, state);
+    if (choice === 0) return await goMainMenu();
+    await handlePayOrder(ctx, state);
+    return true;
+  }
+
+  return false;
+}

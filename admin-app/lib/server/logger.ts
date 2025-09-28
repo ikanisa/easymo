@@ -1,5 +1,3 @@
-'use server';
-
 interface LogContext {
   event: string;
   target?: string;
@@ -17,4 +15,3 @@ export function logStructured(context: LogContext) {
   };
   console.log(JSON.stringify(payload));
 }
-

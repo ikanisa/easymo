@@ -10,21 +10,21 @@
   gap: 12px;
 }
 
-label span {
+.form label span {
   display: block;
   font-size: 0.8rem;
   color: var(--text-secondary);
   margin-bottom: 6px;
 }
 
-input {
+.form input {
   width: 100%;
   padding: 8px 10px;
   border-radius: 8px;
   border: 1px solid rgba(148, 163, 184, 0.4);
 }
 
-textarea {
+.form textarea {
   width: 100%;
   padding: 8px 10px;
   border-radius: 8px;

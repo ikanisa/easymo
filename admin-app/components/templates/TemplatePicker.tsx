@@ -26,6 +26,7 @@ export function TemplatePicker({ templates, value, onChange }: TemplatePickerPro
           key={template.id}
           className={selected === template.id ? styles.cardActive : styles.card}
           onClick={() => handleSelect(template.id)}
+          role="option"
           aria-selected={selected === template.id}
         >
           <div className={styles.cardHeader}>

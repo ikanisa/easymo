@@ -21,7 +21,7 @@
   gap: 8px;
 }
 
-button {
+.actions button {
   padding: 8px 12px;
   border-radius: 8px;
   border: 1px solid rgba(148, 163, 184, 0.4);

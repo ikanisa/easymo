@@ -1,33 +1,30 @@
+import { HydrationBoundary, dehydrate } from '@tanstack/react-query';
+import { createQueryClient } from '@/lib/api/queryClient';
 import { PageHeader } from '@/components/layout/PageHeader';
-import { SectionCard } from '@/components/ui/SectionCard';
-import { OrdersClient } from '@/components/orders/OrdersClient';
-import { OrderEventsList } from '@/components/orders/OrderEventsList';
-import { listOrders, listLatestOrderEvents } from '@/lib/data-provider';
+import { OrdersClientWrapper } from './OrdersClientWrapper';
+import { ordersQueryKeys, fetchOrders, type OrdersQueryParams } from '@/lib/queries/orders';
+
+const DEFAULT_PARAMS: OrdersQueryParams = { limit: 200 };
 
 export default async function OrdersPage() {
-  const [{ data: orders }] = await Promise.all([listOrders({ limit: 200 })]);
-  const recentEvents = listLatestOrderEvents();
+  const queryClient = createQueryClient();
+
+  await queryClient.prefetchQuery({
+    queryKey: ordersQueryKeys.list(DEFAULT_PARAMS),
+    queryFn: () => fetchOrders(DEFAULT_PARAMS)
+  });
+
+  const dehydratedState = dehydrate(queryClient);
 
   return (
-    <div className="placeholder-grid">
-      <PageHeader
-        title="Orders"
-        description="Monitor order lifecycle, nudge vendors, and execute policy-controlled overrides."
-      />
-
-      <SectionCard
-        title="Live orders"
-        description="Use overrides to cancel, nudge, or reopen orders. Policies will govern availability once Supabase data is wired."
-      >
-        <OrdersClient orders={orders} />
-      </SectionCard>
-
-      <SectionCard
-        title="Latest events"
-        description="Quick view of the last 10 order events to help triage issues."
-      >
-        <OrderEventsList events={recentEvents} />
-      </SectionCard>
-    </div>
+    <HydrationBoundary state={dehydratedState}>
+      <div className="admin-page">
+        <PageHeader
+          title="Orders"
+          description="Monitor order lifecycle, nudge vendors, and execute policy-controlled overrides."
+        />
+        <OrdersClientWrapper initialOrdersParams={DEFAULT_PARAMS} />
+      </div>
+    </HydrationBoundary>
   );
 }

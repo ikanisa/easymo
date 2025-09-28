@@ -59,9 +59,10 @@ export function MenuTable({ data }: MenuTableProps) {
           <span>Status</span>
           <select
             value={filters.status ?? ''}
-            onChange={(event) =>
-              setFilters((prev) => ({ ...prev, status: event.target.value || undefined }))
-            }
+            onChange={(event) => {
+              const value = event.target.value as MenuVersion['status'] | '';
+              setFilters((prev) => ({ ...prev, status: value === '' ? undefined : value }));
+            }}
           >
             <option value="">All</option>
             <option value="draft">Draft</option>

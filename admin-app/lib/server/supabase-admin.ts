@@ -1,5 +1,3 @@
-'use server';
-
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 let adminClient: SupabaseClient | null = null;

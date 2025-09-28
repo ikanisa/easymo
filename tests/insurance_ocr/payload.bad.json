@@ -1,0 +1,26 @@
+{
+  "object": "whatsapp_business_account",
+  "entry": [
+    {
+      "changes": [
+        {
+          "value": {
+            "messages": [
+              {
+                "id": "wamid.BAD-001",
+                "from": "250788123456",
+                "timestamp": "1727287200",
+                "type": "image",
+                "image": {
+                  "id": "MEDIA_BAD_001",
+                  "mime_type": "image/jpeg",
+                  "sha256": "stub"
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

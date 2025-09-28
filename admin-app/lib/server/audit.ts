@@ -23,6 +23,8 @@ export async function recordAudit(context: AuditContext) {
         target_id: context.targetId,
         summary: context.summary ?? null
       });
+      return;
+    } catch (error) {
       logStructured({
         event: 'audit_insert_failed',
         target: 'audit_log',
