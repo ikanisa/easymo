@@ -16,7 +16,9 @@ const columns: ColumnDef<Bar>[] = [
     cell: ({ row }) => (
       <div>
         <strong>{row.original.name}</strong>
-        <p className="cell-muted">{row.original.location ?? 'Location not set'}</p>
+        <p className="text-sm text-[color:var(--color-muted)]">
+          {row.original.location ?? 'Location not set'}
+        </p>
       </div>
     )
   },
@@ -55,22 +57,23 @@ export function BarsTable({ data }: BarsTableProps) {
   }, [data, filters]);
 
   return (
-    <div className="stack">
-      <div className="filters">
-        <label>
+    <div className="space-y-4">
+      <div className="flex flex-wrap gap-4 text-sm text-[color:var(--color-muted)]">
+        <label className="flex items-center gap-2">
           <span>Status</span>
           <select
             value={filters.active ?? ''}
             onChange={(event) =>
               setFilters((prev) => ({ ...prev, active: event.target.value || undefined }))
             }
+            className="rounded-lg border border-[color:var(--color-border)]/40 bg-white/90 px-3 py-1 text-sm text-[color:var(--color-foreground)]"
           >
             <option value="">All</option>
             <option value="true">Active</option>
             <option value="false">Inactive</option>
           </select>
         </label>
-        <label>
+        <label className="flex items-center gap-2">
           <span>Search</span>
           <input
             value={filters.search ?? ''}
@@ -78,6 +81,7 @@ export function BarsTable({ data }: BarsTableProps) {
               setFilters((prev) => ({ ...prev, search: event.target.value || undefined }))
             }
             placeholder="Search by name or location"
+            className="w-64 rounded-lg border border-[color:var(--color-border)]/40 bg-white/90 px-3 py-1 text-sm text-[color:var(--color-foreground)]"
           />
         </label>
       </div>

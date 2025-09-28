@@ -1,31 +1,23 @@
-import { PageHeader } from '@/components/layout/PageHeader';
-import { SectionCard } from '@/components/ui/SectionCard';
-import { StaffNumbersTable } from '@/components/staff/StaffNumbersTable';
-import { listStaffNumbers } from '@/lib/data-provider';
-import { EmptyState } from '@/components/ui/EmptyState';
+import { HydrationBoundary, dehydrate } from '@tanstack/react-query';
+import { createQueryClient } from '@/lib/api/queryClient';
+import { StaffNumbersClient } from './StaffNumbersClient';
+import { staffNumbersQueryKeys, fetchStaffNumbers, type StaffNumbersQueryParams } from '@/lib/queries/staffNumbers';
+
+const DEFAULT_PARAMS: StaffNumbersQueryParams = { limit: 200 };
 
 export default async function StaffNumbersPage() {
-  const { data } = await listStaffNumbers({ limit: 200 });
+  const queryClient = createQueryClient();
+
+  await queryClient.prefetchQuery({
+    queryKey: staffNumbersQueryKeys.list(DEFAULT_PARAMS),
+    queryFn: () => fetchStaffNumbers(DEFAULT_PARAMS)
+  });
+
+  const dehydratedState = dehydrate(queryClient);
 
   return (
-    <div className="admin-page">
-      <PageHeader
-        title="Staff Numbers"
-        description="Platform-wide directory of receiving numbers, roles, and verification status."
-      />
-      <SectionCard
-        title="Receiving numbers"
-        description="Actions to deactivate, verify, or change roles will be added once write APIs are in place."
-      >
-        {data.length ? (
-          <StaffNumbersTable data={data} />
-        ) : (
-          <EmptyState
-            title="No staff numbers yet"
-            description="Load fixtures or connect to Supabase to view receiving numbers."
-          />
-        )}
-      </SectionCard>
-    </div>
+    <HydrationBoundary state={dehydratedState}>
+      <StaffNumbersClient initialParams={DEFAULT_PARAMS} />
+    </HydrationBoundary>
   );
 }

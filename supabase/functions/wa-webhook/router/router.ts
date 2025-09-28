@@ -66,5 +66,6 @@ export async function handleMessage(
     await hooks.logUnhandled(msg.type);
   } catch (err) {
     logError("wa_router.handleMessage", err, { msg });
+    throw err;
   }
 }

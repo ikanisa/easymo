@@ -50,6 +50,7 @@ Deno.env.set("WA_APP_SECRET", "super-secret");
 Deno.env.set("WA_VERIFY_TOKEN", "verify-token");
 Deno.env.set("WA_BOT_NUMBER_E164", "+250700000000");
 Deno.env.set("WA_INBOUND_LOG_SAMPLE_RATE", "0");
+Deno.env.set("VOUCHER_SIGNING_SECRET", "voucher-secret");
 
 const fetchCalls: Array<{ url: string; payload: unknown }> = [];
 globalThis.fetch = async (url: string, init?: RequestInit) => {
@@ -350,18 +351,23 @@ Deno.test("releases idempotency lock on handler error", async () => {
     );
   };
 
-  const res = await handler(
-    new Request("https://example.com/webhook", {
-      method: "POST",
-      body,
-      headers: {
-        "content-type": "application/json",
-        "x-hub-signature-256": signature,
-      },
-    }),
-  );
+  let caught = false;
+  try {
+    await handler(
+      new Request("https://example.com/webhook", {
+        method: "POST",
+        body,
+        headers: {
+          "content-type": "application/json",
+          "x-hub-signature-256": signature,
+        },
+      }),
+    );
+  } catch (_err) {
+    caught = true;
+  }
 
-  assertEquals(res.status, 500);
+  assert(caught, "expected handler to throw");
   assertEquals(waEvents.has("wamid.fail.1"), false);
   // restore fetch
   globalThis.fetch = async (url: string, init?: RequestInit) => {

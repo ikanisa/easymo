@@ -1,50 +1,42 @@
-import { PageHeader } from '@/components/layout/PageHeader';
-import { SectionCard } from '@/components/ui/SectionCard';
-import { TemplatesTable } from '@/components/templates/TemplatesTable';
-import { FlowsTable } from '@/components/templates/FlowsTable';
-import { EmptyState } from '@/components/ui/EmptyState';
-import { listTemplates, listFlows } from '@/lib/data-provider';
+import { HydrationBoundary, dehydrate } from '@tanstack/react-query';
+import { createQueryClient } from '@/lib/api/queryClient';
+import { TemplatesClient } from './TemplatesClient';
+import {
+  templatesQueryKeys,
+  fetchTemplates,
+  type TemplatesQueryParams
+} from '@/lib/queries/templates';
+import {
+  flowsQueryKeys,
+  fetchFlows,
+  type FlowsQueryParams
+} from '@/lib/queries/flows';
+
+const DEFAULT_TEMPLATE_PARAMS: TemplatesQueryParams = { limit: 100 };
+const DEFAULT_FLOW_PARAMS: FlowsQueryParams = { limit: 100 };
 
 export default async function TemplatesPage() {
-  const [{ data: templates }, { data: flows }] = await Promise.all([
-    listTemplates({ limit: 100 }),
-    listFlows({ limit: 100 })
+  const queryClient = createQueryClient();
+
+  await Promise.all([
+    queryClient.prefetchQuery({
+      queryKey: templatesQueryKeys.list(DEFAULT_TEMPLATE_PARAMS),
+      queryFn: () => fetchTemplates(DEFAULT_TEMPLATE_PARAMS)
+    }),
+    queryClient.prefetchQuery({
+      queryKey: flowsQueryKeys.list(DEFAULT_FLOW_PARAMS),
+      queryFn: () => fetchFlows(DEFAULT_FLOW_PARAMS)
+    })
   ]);
 
+  const dehydratedState = dehydrate(queryClient);
+
   return (
-    <div className="admin-page">
-      <PageHeader
-        title="Templates & Flows"
-        description="Catalog of WhatsApp templates and flow metadata with health checks and deep links to Meta."
+    <HydrationBoundary state={dehydratedState}>
+      <TemplatesClient
+        initialTemplateParams={DEFAULT_TEMPLATE_PARAMS}
+        initialFlowParams={DEFAULT_FLOW_PARAMS}
       />
-
-      <SectionCard
-        title="Templates catalog"
-        description="Send tests, duplicate, and manage template variables once write APIs are available."
-      >
-        {templates.length ? (
-          <TemplatesTable data={templates} />
-        ) : (
-          <EmptyState
-            title="No templates"
-            description="Connect Supabase or load fixtures to review template metadata."
-          />
-        )}
-      </SectionCard>
-
-      <SectionCard
-        title="Flows catalog"
-        description="Publish, toggle test mode, and ping endpoints from this directory." 
-      >
-        {flows.length ? (
-          <FlowsTable data={flows} />
-        ) : (
-          <EmptyState
-            title="No flows"
-            description="Flow metadata will appear once Supabase data is connected."
-          />
-        )}
-      </SectionCard>
-    </div>
+    </HydrationBoundary>
   );
 }

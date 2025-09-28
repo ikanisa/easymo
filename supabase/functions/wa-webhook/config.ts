@@ -46,8 +46,9 @@ export const INSURANCE_MEDIA_BUCKET = getEnv("INSURANCE_MEDIA_BUCKET") ??
 export const VOUCHER_SIGNING_SECRET = mustGetOne("VOUCHER_SIGNING_SECRET");
 export const VOUCHER_BUCKET = getEnv("VOUCHERS_BUCKET") ?? "vouchers";
 
-const clientFactory = typeof createClientFactory === "function"
-  ? createClientFactory
+const clientFactory: typeof createClient = typeof createClientFactory ===
+    "function"
+  ? createClientFactory as typeof createClient
   : createClient;
 
 export const supabase: SupabaseClient = clientFactory(
