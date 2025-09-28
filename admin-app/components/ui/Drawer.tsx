@@ -1,28 +1,31 @@
-'use client';
+"use client";
 
-import { useEffect, useRef } from 'react';
-import styles from './Drawer.module.css';
+import { useEffect, useRef } from "react";
+import styles from "./Drawer.module.css";
+import { Button } from "@/components/ui/Button";
 
 interface DrawerProps {
   title: string;
   children: React.ReactNode;
   onClose: () => void;
-  position?: 'right' | 'left';
+  position?: "right" | "left";
 }
 
-export function Drawer({ title, children, onClose, position = 'right' }: DrawerProps) {
+export function Drawer(
+  { title, children, onClose, position = "right" }: DrawerProps,
+) {
   const drawerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose();
+      if (event.key === "Escape") onClose();
     };
 
     const previouslyFocused = document.activeElement as HTMLElement | null;
-    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener("keydown", handleKeyDown);
     drawerRef.current?.focus();
     return () => {
-      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener("keydown", handleKeyDown);
       previouslyFocused?.focus?.();
     };
   }, [onClose]);
@@ -30,7 +33,9 @@ export function Drawer({ title, children, onClose, position = 'right' }: DrawerP
   return (
     <div className={styles.overlay} role="presentation" onClick={onClose}>
       <div
-        className={position === 'right' ? styles.drawerRight : styles.drawerLeft}
+        className={position === "right"
+          ? styles.drawerRight
+          : styles.drawerLeft}
         role="dialog"
         aria-modal="true"
         aria-label={title}
@@ -42,9 +47,16 @@ export function Drawer({ title, children, onClose, position = 'right' }: DrawerP
           <div>
             <h2>{title}</h2>
           </div>
-          <button type="button" onClick={onClose} className={styles.closeButton} aria-label="Close drawer">
+          <Button
+            type="button"
+            onClick={onClose}
+            className={styles.closeButton}
+            aria-label="Close drawer"
+            variant="ghost"
+            size="icon"
+          >
             ×
-          </button>
+          </Button>
         </header>
         <div className={styles.body}>{children}</div>
       </div>

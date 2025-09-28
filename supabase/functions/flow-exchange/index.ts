@@ -57,6 +57,18 @@ import {
   isEncryptedEnvelope,
 } from "../_shared/flow_crypto.ts";
 
+const REQUIRED_ENVS = ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"];
+
+for (const key of REQUIRED_ENVS) {
+  if (!Deno.env.get(key)) {
+    console.warn(`flow-exchange missing env: ${key}`);
+  }
+}
+
+function logFlow(scope: string, details: Record<string, unknown>) {
+  console.info(`flow-exchange.${scope}`, details);
+}
+
 const ACTIONS = {
   CUSTOMER: {
     SHOW_RESULTS: "a_show_results",
@@ -137,10 +149,6 @@ async function respondEncrypted(
 
 type EncryptionContext = FlowEncryptionContext;
 
-async;
-
-async;
-async;
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
@@ -230,7 +238,15 @@ function getSupabaseClient(req: Request) {
 }
 
 async function handleRequest(req: Request): Promise<Response> {
+  const started = Date.now();
+  try {
+    const url = new URL(req.url);
+    logFlow("request", { method: req.method, path: url.pathname });
+  } catch {
+    logFlow("request", { method: req.method });
+  }
   if (req.method !== "POST") {
+    logFlow("response", { status: 405, duration_ms: Date.now() - started });
     return new Response("Method not allowed", { status: 405 });
   }
 
@@ -240,6 +256,10 @@ async function handleRequest(req: Request): Promise<Response> {
     body = json as Record<string, unknown>;
   } catch (error) {
     console.error("Invalid request payload", error);
+    return new Response(JSON.stringify({ error: "invalid_payload" }), {
+      status: 400,
+      headers: { "Content-Type": "application/json" },
+    });
     return new Response(JSON.stringify({ error: "invalid_payload" }), {
       status: 400,
       headers: { "Content-Type": "application/json" },
@@ -256,32 +276,63 @@ async function handleRequest(req: Request): Promise<Response> {
       const normalized = normalizeRequest(flowEnvelope);
 
       if (normalized.actionType === "PING") {
-        return respondEncrypted({ data: { status: "active" } }, context);
+        const response = await respondEncrypted(
+          { data: { status: "active" } },
+          context,
+        );
+        logFlow("response", {
+          status: response.status,
+          duration_ms: Date.now() - started,
+          action: "PING",
+        });
+        return response;
       }
       if (normalized.actionType === "ERROR_NOTIFICATION") {
-        return respondEncrypted({ data: { acknowledged: true } }, context);
+        const response = await respondEncrypted({
+          data: { acknowledged: true },
+        }, context);
+        logFlow("response", {
+          status: response.status,
+          duration_ms: Date.now() - started,
+          action: "ERROR_NOTIFICATION",
+        });
+        return response;
       }
 
       const payload = buildActionPayload(flowEnvelope, normalized);
       const supabase = getSupabaseClient(req);
       const result = await routeAction(payload, supabase);
       const flowResponse = buildFlowResponse(result);
-      return respondEncrypted(flowResponse, context);
+      const response = await respondEncrypted(flowResponse, context);
+      logFlow("response", {
+        status: response.status,
+        duration_ms: Date.now() - started,
+        action: normalized.actionId ?? normalized.actionType ?? "unknown",
+      });
+      return response;
     } catch (error) {
       console.error("flow-exchange decrypt error", error);
       if (
         error instanceof Error && error.message.includes("FLOW_PRIVATE_KEY")
       ) {
+        logFlow("response", { status: 421, duration_ms: Date.now() - started });
         return new Response("Unable to decrypt request", { status: 421 });
       }
       if (error instanceof DOMException) {
+        logFlow("response", { status: 421, duration_ms: Date.now() - started });
         return new Response("Unable to decrypt request", { status: 421 });
       }
+      logFlow("response", { status: 400, duration_ms: Date.now() - started });
       return new Response(JSON.stringify({ error: "invalid_payload" }), {
         status: 400,
         headers: { "Content-Type": "application/json" },
       });
     }
+    logFlow("response", { status: 400, duration_ms: Date.now() - started });
+    return new Response(JSON.stringify({ error: "invalid_payload" }), {
+      status: 400,
+      headers: { "Content-Type": "application/json" },
+    });
   }
 
   let payload: ActionPayload;
@@ -289,6 +340,7 @@ async function handleRequest(req: Request): Promise<Response> {
     payload = requestSchema.parse(body);
   } catch (error) {
     console.error("Invalid request payload", error);
+    logFlow("response", { status: 400, duration_ms: Date.now() - started });
     return new Response(JSON.stringify({ error: "invalid_payload" }), {
       status: 400,
       headers: { "Content-Type": "application/json" },
@@ -299,12 +351,19 @@ async function handleRequest(req: Request): Promise<Response> {
 
   try {
     const result = await routeAction(payload, supabase);
-    return new Response(JSON.stringify(responseSchema.parse(result)), {
+    const parsed = responseSchema.parse(result);
+    logFlow("response", {
+      status: 200,
+      action: payload.action_id,
+      duration_ms: Date.now() - started,
+    });
+    return new Response(JSON.stringify(parsed), {
       status: 200,
       headers: { "Content-Type": "application/json" },
     });
   } catch (error) {
     console.error("flow-exchange error", error);
+    logFlow("response", { status: 500, duration_ms: Date.now() - started });
     return new Response(JSON.stringify({ error: "internal_error" }), {
       status: 500,
       headers: { "Content-Type": "application/json" },
@@ -574,4 +633,10 @@ function toCartPayload(payload: ActionPayload) {
   };
 }
 
-Deno.serve(handleRequest);
+const denoWithMocks = Deno as typeof Deno & {
+  __FLOW_EXCHANGE_MOCKS__?: { serve?: typeof Deno.serve };
+};
+
+const serveFn = denoWithMocks.__FLOW_EXCHANGE_MOCKS__?.serve ?? Deno.serve;
+
+serveFn(handleRequest);

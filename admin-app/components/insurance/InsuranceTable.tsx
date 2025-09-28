@@ -1,10 +1,11 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import type { ColumnDef } from '@tanstack/react-table';
-import { DataTable } from '@/components/data-table/DataTable';
-import type { InsuranceQuote } from '@/lib/schemas';
-import { InsuranceDrawer } from './InsuranceDrawer';
+import { useState } from "react";
+import type { ColumnDef } from "@tanstack/react-table";
+import { DataTable } from "@/components/data-table/DataTable";
+import type { InsuranceQuote } from "@/lib/schemas";
+import { InsuranceDrawer } from "./InsuranceDrawer";
+import { Button } from "@/components/ui/Button";
 
 interface InsuranceTableProps {
   data: InsuranceQuote[];
@@ -12,32 +13,36 @@ interface InsuranceTableProps {
 
 const columns: ColumnDef<InsuranceQuote>[] = [
   {
-    header: 'Quote ID',
-    accessorKey: 'id'
+    header: "Quote ID",
+    accessorKey: "id",
   },
   {
-    header: 'User ID',
-    accessorKey: 'userId'
+    header: "User ID",
+    accessorKey: "userId",
   },
   {
-    header: 'Status',
-    accessorKey: 'status'
+    header: "Status",
+    accessorKey: "status",
   },
   {
-    header: 'Premium',
-    accessorKey: 'premium',
-    cell: ({ row }) => (row.original.premium ? `${row.original.premium.toLocaleString()} RWF` : '—')
+    header: "Premium",
+    accessorKey: "premium",
+    cell: (
+      { row },
+    ) => (row.original.premium
+      ? `${row.original.premium.toLocaleString()} RWF`
+      : "—"),
   },
   {
-    header: 'Insurer',
-    accessorKey: 'insurer',
-    cell: ({ row }) => row.original.insurer ?? '—'
+    header: "Insurer",
+    accessorKey: "insurer",
+    cell: ({ row }) => row.original.insurer ?? "—",
   },
   {
-    header: 'Created',
-    accessorKey: 'createdAt',
-    cell: ({ row }) => new Date(row.original.createdAt).toLocaleString()
-  }
+    header: "Created",
+    accessorKey: "createdAt",
+    cell: ({ row }) => new Date(row.original.createdAt).toLocaleString(),
+  },
 ];
 
 export function InsuranceTable({ data }: InsuranceTableProps) {
@@ -49,22 +54,26 @@ export function InsuranceTable({ data }: InsuranceTableProps) {
         data={data}
         columns={columns}
         searchPlaceholder="Search insurance quotes"
-        globalFilterFn={(row, value) => row.id.toLowerCase().includes(value.toLowerCase())}
+        globalFilterFn={(row, value) =>
+          row.id.toLowerCase().includes(value.toLowerCase())}
         downloadFileName="insurance-quotes.csv"
         emptyTitle="No quotes pending"
         emptyDescription="Insurance quotes will surface here when Supabase data is available."
       />
-      <div style={{ marginTop: '12px' }}>
-        <button
+      <div style={{ marginTop: "12px" }}>
+        <Button
           type="button"
           onClick={() => setSelected(data[0] ?? null)}
           disabled={!data.length}
-          className="link-muted"
+          variant="outline"
+          size="sm"
         >
           Open first quote
-        </button>
+        </Button>
       </div>
-      {selected ? <InsuranceDrawer quote={selected} onClose={() => setSelected(null)} /> : null}
+      {selected
+        ? <InsuranceDrawer quote={selected} onClose={() => setSelected(null)} />
+        : null}
     </>
   );
 }

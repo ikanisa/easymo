@@ -1,8 +1,7 @@
-import '@testing-library/jest-dom/vitest';
+import "@testing-library/jest-dom/vitest";
 
-if (typeof window !== 'undefined') {
-  window.matchMedia =
-    window.matchMedia ||
+if (typeof window !== "undefined") {
+  window.matchMedia = window.matchMedia ||
     ((query: string) => ({
       matches: false,
       media: query,
@@ -11,7 +10,7 @@ if (typeof window !== 'undefined') {
       removeListener: () => {},
       addEventListener: () => {},
       removeEventListener: () => {},
-      dispatchEvent: () => false
+      dispatchEvent: () => false,
     }));
 
   class ResizeObserverMock {

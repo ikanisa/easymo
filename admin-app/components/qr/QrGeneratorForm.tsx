@@ -1,10 +1,11 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import type { Bar } from '@/lib/schemas';
-import styles from './QrGeneratorForm.module.css';
-import { useToast } from '@/components/ui/ToastProvider';
-import { IntegrationStatusBadge } from '@/components/ui/IntegrationStatusBadge';
+import { useState } from "react";
+import type { Bar } from "@/lib/schemas";
+import styles from "./QrGeneratorForm.module.css";
+import { useToast } from "@/components/ui/ToastProvider";
+import { IntegrationStatusBadge } from "@/components/ui/IntegrationStatusBadge";
+import { Button } from "@/components/ui/Button";
 
 interface QrGeneratorFormProps {
   bars: Bar[];
@@ -19,13 +20,20 @@ interface TokenResult {
 }
 
 export function QrGeneratorForm({ bars }: QrGeneratorFormProps) {
-  const [barId, setBarId] = useState(bars[0]?.id ?? '');
-  const [tableLabels, setTableLabels] = useState('Table 1');
+  const [barId, setBarId] = useState(bars[0]?.id ?? "");
+  const [tableLabels, setTableLabels] = useState("Table 1");
   const [batchCount, setBatchCount] = useState(1);
   const [tokens, setTokens] = useState<TokenResult[] | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [integration, setIntegration] = useState<{ target: string; status: 'ok' | 'degraded'; reason?: string; message?: string } | null>(null);
+  const [integration, setIntegration] = useState<
+    {
+      target: string;
+      status: "ok" | "degraded";
+      reason?: string;
+      message?: string;
+    } | null
+  >(null);
   const { pushToast } = useToast();
 
   const selectedBar = bars.find((bar) => bar.id === barId);
@@ -39,37 +47,37 @@ export function QrGeneratorForm({ bars }: QrGeneratorFormProps) {
     setIntegration(null);
 
     try {
-      const response = await fetch('/api/qr/generate', {
-        method: 'POST',
+      const response = await fetch("/api/qr/generate", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          'x-idempotency-key': `qr-${Date.now()}`
+          "Content-Type": "application/json",
+          "x-idempotency-key": `qr-${Date.now()}`,
         },
         body: JSON.stringify({
           barName: selectedBar.name,
           tableLabels: tableLabels
-            .split(',')
+            .split(",")
             .map((label) => label.trim())
             .filter(Boolean),
-          batchCount
-        })
+          batchCount,
+        }),
       });
       const data = await response.json();
       setIntegration(data?.integration ?? null);
       if (!response.ok) {
-        const text = data?.error ?? 'Failed to generate QR tokens.';
+        const text = data?.error ?? "Failed to generate QR tokens.";
         setFeedback(text);
-        pushToast(text, 'error');
+        pushToast(text, "error");
       } else {
         setTokens(data.tokens ?? []);
         const text = `Generated ${data.tokens?.length ?? 0} QR tokens.`;
         setFeedback(text);
-        pushToast(text, 'success');
+        pushToast(text, "success");
       }
     } catch (error) {
-      console.error('QR generate failed', error);
-      setFeedback('Unexpected error while generating QR tokens.');
-      pushToast('Unexpected error while generating QR tokens.', 'error');
+      console.error("QR generate failed", error);
+      setFeedback("Unexpected error while generating QR tokens.");
+      pushToast("Unexpected error while generating QR tokens.", "error");
     } finally {
       setIsSubmitting(false);
     }
@@ -80,7 +88,10 @@ export function QrGeneratorForm({ bars }: QrGeneratorFormProps) {
       <div className={styles.row}>
         <label>
           <span>Bar</span>
-          <select value={barId} onChange={(event) => setBarId(event.target.value)}>
+          <select
+            value={barId}
+            onChange={(event) => setBarId(event.target.value)}
+          >
             {bars.map((bar) => (
               <option key={bar.id} value={bar.id}>
                 {bar.name}
@@ -107,23 +118,37 @@ export function QrGeneratorForm({ bars }: QrGeneratorFormProps) {
           />
         </label>
       </div>
-      <button type="submit" disabled={isSubmitting || !selectedBar}>
-        {isSubmitting ? 'Generating…' : 'Generate tokens'}
-      </button>
-      {integration ? <IntegrationStatusBadge integration={integration} label="QR generator" /> : null}
+      <Button
+        type="submit"
+        disabled={isSubmitting || !selectedBar}
+        variant="default"
+      >
+        {isSubmitting ? "Generating…" : "Generate tokens"}
+      </Button>
+      {integration
+        ? (
+          <IntegrationStatusBadge
+            integration={integration}
+            label="QR generator"
+          />
+        )
+        : null}
       {feedback ? <p className={styles.feedback}>{feedback}</p> : null}
-      {tokens && tokens.length ? (
-        <div className={styles.results}>
-          <h4>Generated tokens</h4>
-          <ul>
-            {tokens.map((token) => (
-              <li key={token.id}>
-                <strong>{token.token}</strong> – {token.tableLabel} ({new Date(token.createdAt).toLocaleString()})
-              </li>
-            ))}
-          </ul>
-        </div>
-      ) : null}
+      {tokens && tokens.length
+        ? (
+          <div className={styles.results}>
+            <h4>Generated tokens</h4>
+            <ul>
+              {tokens.map((token) => (
+                <li key={token.id}>
+                  <strong>{token.token}</strong> – {token.tableLabel}{" "}
+                  ({new Date(token.createdAt).toLocaleString()})
+                </li>
+              ))}
+            </ul>
+          </div>
+        )
+        : null}
     </form>
   );
 }

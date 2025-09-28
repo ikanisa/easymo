@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import type { ColumnDef } from '@tanstack/react-table';
-import { DataTable } from '@/components/data-table/DataTable';
-import type { SettingEntry } from '@/lib/schemas';
+import type { ColumnDef } from "@tanstack/react-table";
+import { DataTable } from "@/components/data-table/DataTable";
+import type { SettingEntry } from "@/lib/schemas";
 
 interface SettingsTableProps {
   data: SettingEntry[];
@@ -10,22 +10,22 @@ interface SettingsTableProps {
 
 const columns: ColumnDef<SettingEntry>[] = [
   {
-    header: 'Key',
-    accessorKey: 'key'
+    header: "Key",
+    accessorKey: "key",
   },
   {
-    header: 'Description',
-    accessorKey: 'description'
+    header: "Description",
+    accessorKey: "description",
   },
   {
-    header: 'Value preview',
-    accessorKey: 'valuePreview'
+    header: "Value preview",
+    accessorKey: "valuePreview",
   },
   {
-    header: 'Updated',
-    accessorKey: 'updatedAt',
-    cell: ({ row }) => new Date(row.original.updatedAt).toLocaleString()
-  }
+    header: "Updated",
+    accessorKey: "updatedAt",
+    cell: ({ row }) => new Date(row.original.updatedAt).toLocaleString(),
+  },
 ];
 
 export function SettingsTable({ data }: SettingsTableProps) {
@@ -35,8 +35,9 @@ export function SettingsTable({ data }: SettingsTableProps) {
       columns={columns}
       searchPlaceholder="Search settings"
       globalFilterFn={(row, value) =>
-        `${row.key} ${row.description}`.toLowerCase().includes(value.toLowerCase())
-      }
+        `${row.key} ${row.description}`.toLowerCase().includes(
+          value.toLowerCase(),
+        )}
       downloadFileName="settings.csv"
     />
   );

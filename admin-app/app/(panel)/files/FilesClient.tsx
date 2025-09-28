@@ -1,29 +1,36 @@
-'use client';
+"use client";
 
-import { useMemo, useState } from 'react';
-import { PageHeader } from '@/components/layout/PageHeader';
-import { SectionCard } from '@/components/ui/SectionCard';
-import { StorageTable } from '@/components/files/StorageTable';
-import { EmptyState } from '@/components/ui/EmptyState';
-import { LoadingState } from '@/components/ui/LoadingState';
-import { useStorageObjectsQuery, type StorageQueryParams } from '@/lib/queries/files';
+import { useMemo, useState } from "react";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { SectionCard } from "@/components/ui/SectionCard";
+import { StorageTable } from "@/components/files/StorageTable";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { LoadingState } from "@/components/ui/LoadingState";
+import {
+  type StorageQueryParams,
+  useStorageObjectsQuery,
+} from "@/lib/queries/files";
 
-const BUCKET_OPTIONS = ['vouchers', 'qr', 'campaign-media', 'docs'];
+const BUCKET_OPTIONS = ["vouchers", "qr", "campaign-media", "docs"];
 
 interface FilesClientProps {
   initialParams?: StorageQueryParams;
 }
 
-export function FilesClient({ initialParams = { limit: 200 } }: FilesClientProps) {
+export function FilesClient(
+  { initialParams = { limit: 200 } }: FilesClientProps,
+) {
   const [params, setParams] = useState<StorageQueryParams>(initialParams);
   const storageQuery = useStorageObjectsQuery(params);
 
-  const storageObjects = useMemo(() => storageQuery.data?.data ?? [], [storageQuery.data?.data]);
+  const storageObjects = useMemo(() => storageQuery.data?.data ?? [], [
+    storageQuery.data?.data,
+  ]);
 
   const derivedCounts = useMemo(() => {
     const counts = new Map<string, number>();
     storageObjects.forEach((object) => {
-      const bucket = object.bucket ?? 'unknown';
+      const bucket = object.bucket ?? "unknown";
       counts.set(bucket, (counts.get(bucket) ?? 0) + 1);
     });
     return counts;
@@ -44,8 +51,12 @@ export function FilesClient({ initialParams = { limit: 200 } }: FilesClientProps
             <label className="text-sm text-[color:var(--color-muted)]">
               Bucket
               <select
-                value={params.bucket ?? ''}
-                onChange={(event) => setParams((prev) => ({ ...prev, bucket: event.target.value || undefined }))}
+                value={params.bucket ?? ""}
+                onChange={(event) =>
+                  setParams((prev) => ({
+                    ...prev,
+                    bucket: event.target.value || undefined,
+                  }))}
                 className="ml-2 rounded-lg border border-[color:var(--color-border)]/40 bg-white/90 px-3 py-1 text-sm"
               >
                 <option value="">All</option>
@@ -59,8 +70,12 @@ export function FilesClient({ initialParams = { limit: 200 } }: FilesClientProps
             <label className="text-sm text-[color:var(--color-muted)]">
               Search
               <input
-                value={params.search ?? ''}
-                onChange={(event) => setParams((prev) => ({ ...prev, search: event.target.value || undefined }))}
+                value={params.search ?? ""}
+                onChange={(event) =>
+                  setParams((prev) => ({
+                    ...prev,
+                    search: event.target.value || undefined,
+                  }))}
                 placeholder="filename.png"
                 className="ml-2 rounded-lg border border-[color:var(--color-border)]/40 bg-white/90 px-3 py-1 text-sm"
               />
@@ -68,42 +83,51 @@ export function FilesClient({ initialParams = { limit: 200 } }: FilesClientProps
           </div>
         }
       >
-        {storageQuery.isLoading ? (
-          <LoadingState title="Loading storage objects" description="Fetching bucket contents." />
-        ) : storageObjects.length ? (
-          <StorageTable data={storageObjects} />
-        ) : (
-          <EmptyState
-            title="Storage empty"
-            description="No files found. Connect to Supabase or load fixtures to inspect storage."
-          />
-        )}
+        {storageQuery.isLoading
+          ? (
+            <LoadingState
+              title="Loading storage objects"
+              description="Fetching bucket contents."
+            />
+          )
+          : storageObjects.length
+          ? <StorageTable data={storageObjects} />
+          : (
+            <EmptyState
+              title="Storage empty"
+              description="No files found. Connect to Supabase or load fixtures to inspect storage."
+            />
+          )}
       </SectionCard>
 
       <SectionCard
         title="Bucket summary"
         description="Quick pulse on how many objects exist per bucket."
       >
-        {storageObjects.length ? (
-          <ul className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
-            {BUCKET_OPTIONS.map((bucket) => (
-              <li
-                key={bucket}
-                className="rounded-2xl border border-[color:var(--color-border)]/40 bg-[color:var(--color-surface)]/60 px-4 py-4 text-sm"
-              >
-                <div className="text-xs uppercase tracking-[0.2em] text-[color:var(--color-muted)]">{bucket}</div>
-                <div className="text-2xl font-semibold text-[color:var(--color-foreground)]">
-                  {derivedCounts.get(bucket) ?? 0}
-                </div>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <EmptyState
-            title="No data"
-            description="Bucket counts will appear when files are available."
-          />
-        )}
+        {storageObjects.length
+          ? (
+            <ul className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+              {BUCKET_OPTIONS.map((bucket) => (
+                <li
+                  key={bucket}
+                  className="rounded-2xl border border-[color:var(--color-border)]/40 bg-[color:var(--color-surface)]/60 px-4 py-4 text-sm"
+                >
+                  <div className="text-xs uppercase tracking-[0.2em] text-[color:var(--color-muted)]">
+                    {bucket}
+                  </div>
+                  <div className="text-2xl font-semibold text-[color:var(--color-foreground)]">
+                    {derivedCounts.get(bucket) ?? 0}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )
+          : (
+            <EmptyState
+              title="No data"
+              description="Bucket counts will appear when files are available."
+            />
+          )}
       </SectionCard>
 
       <SectionCard

@@ -25,4 +25,3 @@ jobs:
         run: |
           test -f agent/policies/ALLOWLIST.json || (echo "Missing ALLOWLIST.json" && exit 1)
           echo "ALLOWLIST.json is present ✅"
-

@@ -3,7 +3,11 @@
   aspect-ratio: 9 / 16;
   border-radius: 24px;
   padding: 24px;
-  background: radial-gradient(circle at 20% 20%, rgba(14, 165, 233, 0.35), rgba(15, 23, 42, 0.9));
+  background: radial-gradient(
+    circle at 20% 20%,
+    rgba(14, 165, 233, 0.35),
+    rgba(15, 23, 42, 0.9)
+  );
   color: #f8fafc;
   display: flex;
   flex-direction: column;
@@ -54,7 +58,7 @@
 }
 
 .code {
-  font-family: 'Space Mono', 'Roboto Mono', monospace;
+  font-family: "Space Mono", "Roboto Mono", monospace;
   font-size: 3rem;
   letter-spacing: 0.3em;
   margin-top: 8px;

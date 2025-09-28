@@ -30,7 +30,7 @@
 
 ## Action matrix (excerpt)
 
-| Flow | Action | Handler |
-| --- | --- | --- |
-| flow.cust.bar_browser.v1 | a_show_results | handleCustomerBarBrowser |
-| flow.admin.trips.v1 | a_admin_match_now | handleAdminTrips |
+| Flow                     | Action            | Handler                  |
+| ------------------------ | ----------------- | ------------------------ |
+| flow.cust.bar_browser.v1 | a_show_results    | handleCustomerBarBrowser |
+| flow.admin.trips.v1      | a_admin_match_now | handleAdminTrips         |

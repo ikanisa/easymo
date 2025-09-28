@@ -1,64 +1,62 @@
-// supabase/functions/admin-messages/index.ts
-// deno-lint-ignore-file no-explicit-any
-const cors = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "GET,OPTIONS",
-};
-function json(data, status = 200) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: {
-      "Content-Type": "application/json",
-      ...cors,
-    },
-  });
-}
+import { z } from "https://deno.land/x/zod@v3.23.8/mod.ts";
+import {
+  createServiceRoleClient,
+  handleOptions,
+  json,
+  logRequest,
+  logResponse,
+  requireAdminAuth,
+} from "../_shared/admin.ts";
+
+const supabase = createServiceRoleClient();
+
+const querySchema = z.object({
+  limit: z.coerce.number().int().min(1).max(200).default(50),
+  from: z.string().optional(),
+});
+
 Deno.serve(async (req) => {
+  logRequest("admin-messages", req);
+
   if (req.method === "OPTIONS") {
-    return new Response("ok", {
-      headers: cors,
-    });
+    return handleOptions();
   }
-  if (req.method === "GET") {
-    // Query params: ?limit=20&from=2507...
-    const url = new URL(req.url);
-    const limit = Math.min(Number(url.searchParams.get("limit") ?? "20"), 200);
-    const from = url.searchParams.get("from") ?? "";
-    const base = Deno.env.get("SUPABASE_URL");
-    const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-    if (!base || !key) {
-      return json({
-        error: "server not configured",
-      }, 500);
-    }
-    const qs = new URLSearchParams();
-    qs.set("select", "id,from_e164,message_id,msg_type,text_body,created_at");
-    qs.set("order", "id.desc");
-    qs.set("limit", String(limit));
-    if (from) qs.set("from_e164", `eq.${from}`);
-    const res = await fetch(`${base}/rest/v1/wa_messages?${qs.toString()}`, {
-      headers: {
-        "apikey": key,
-        "Authorization": `Bearer ${key}`,
-        "Accept": "application/json",
-      },
-    });
-    const text = await res.text();
-    let rows;
-    try {
-      rows = JSON.parse(text);
-    } catch {
-      rows = text;
-    }
-    return json({
-      ok: res.ok,
-      status: res.status,
-      rows,
-    });
+
+  const authResponse = requireAdminAuth(req);
+  if (authResponse) return authResponse;
+
+  if (req.method !== "GET") {
+    return json({ error: "method_not_allowed" }, 405);
   }
-  return json({
-    error: "method not allowed",
-  }, 405);
+
+  let query;
+  try {
+    query = querySchema.parse(
+      Object.fromEntries(new URL(req.url).searchParams),
+    );
+  } catch {
+    return json({ error: "invalid_query" }, 400);
+  }
+
+  try {
+    let builder = supabase.from("wa_messages").select(
+      "id,from_e164,message_id,msg_type,text_body,created_at",
+    ).order("id", { ascending: false }).limit(query.limit);
+
+    if (query.from) {
+      builder = builder.eq("from_e164", query.from);
+    }
+
+    const { data, error } = await builder;
+    if (error) {
+      console.error("admin-messages.query_failed", error);
+      return json({ error: "query_failed" }, 500);
+    }
+
+    logResponse("admin-messages", 200, { count: data?.length ?? 0 });
+    return json({ messages: data ?? [] });
+  } catch (error) {
+    console.error("admin-messages.unhandled", error);
+    return json({ error: "internal_error" }, 500);
+  }
 });

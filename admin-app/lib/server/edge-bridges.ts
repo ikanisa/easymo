@@ -1,17 +1,17 @@
-import { z } from 'zod';
-import { logStructured } from '@/lib/server/logger';
+import { z } from "zod";
+import { logStructured } from "@/lib/server/logger";
 
 type BridgeTarget =
-  | 'voucherPreview'
-  | 'voucherGenerate'
-  | 'voucherSend'
-  | 'campaignDispatch'
-  | 'insuranceWorkflow'
-  | 'stationDirectory';
+  | "voucherPreview"
+  | "voucherGenerate"
+  | "voucherSend"
+  | "campaignDispatch"
+  | "insuranceWorkflow"
+  | "stationDirectory";
 
-type BridgeMethod = 'POST' | 'GET';
+type BridgeMethod = "POST" | "GET";
 
-type BridgeFailureReason = 'missing_endpoint' | 'network_error' | 'http_error';
+type BridgeFailureReason = "missing_endpoint" | "network_error" | "http_error";
 
 export interface BridgeSuccess<T> {
   ok: true;
@@ -37,35 +37,47 @@ interface BridgeConfig {
 
 const TARGET_CONFIG: Record<BridgeTarget, BridgeConfig> = {
   voucherPreview: {
-    method: 'POST',
-    envKeys: ['VOUCHER_PREVIEW_ENDPOINT', 'NEXT_PUBLIC_VOUCHER_PREVIEW_ENDPOINT'],
-    defaultMessage: 'Voucher preview service not configured. Set VOUCHER_PREVIEW_ENDPOINT to enable previews.'
+    method: "POST",
+    envKeys: [
+      "VOUCHER_PREVIEW_ENDPOINT",
+      "NEXT_PUBLIC_VOUCHER_PREVIEW_ENDPOINT",
+    ],
+    defaultMessage:
+      "Voucher preview service not configured. Set VOUCHER_PREVIEW_ENDPOINT to enable previews.",
   },
   voucherGenerate: {
-    method: 'POST',
-    envKeys: ['VOUCHER_GENERATE_ENDPOINT'],
-    defaultMessage: 'Voucher issuance bridge unavailable. Configure VOUCHER_GENERATE_ENDPOINT to enable real issuance.'
+    method: "POST",
+    envKeys: ["VOUCHER_GENERATE_ENDPOINT"],
+    defaultMessage:
+      "Voucher issuance bridge unavailable. Configure VOUCHER_GENERATE_ENDPOINT to enable real issuance.",
   },
   voucherSend: {
-    method: 'POST',
-    envKeys: ['VOUCHER_SEND_ENDPOINT', 'NEXT_PUBLIC_WHATSAPP_SEND_ENDPOINT'],
-    defaultMessage: 'Voucher send bridge unavailable. Configure VOUCHER_SEND_ENDPOINT to dispatch WhatsApp messages.'
+    method: "POST",
+    envKeys: ["VOUCHER_SEND_ENDPOINT", "NEXT_PUBLIC_WHATSAPP_SEND_ENDPOINT"],
+    defaultMessage:
+      "Voucher send bridge unavailable. Configure VOUCHER_SEND_ENDPOINT to dispatch WhatsApp messages.",
   },
   campaignDispatch: {
-    method: 'POST',
-    envKeys: ['CAMPAIGN_DISPATCHER_ENDPOINT', 'NEXT_PUBLIC_CAMPAIGN_DISPATCHER_ENDPOINT'],
-    defaultMessage: 'Campaign dispatcher bridge unavailable. Configure CAMPAIGN_DISPATCHER_ENDPOINT to control campaign state.'
+    method: "POST",
+    envKeys: [
+      "CAMPAIGN_DISPATCHER_ENDPOINT",
+      "NEXT_PUBLIC_CAMPAIGN_DISPATCHER_ENDPOINT",
+    ],
+    defaultMessage:
+      "Campaign dispatcher bridge unavailable. Configure CAMPAIGN_DISPATCHER_ENDPOINT to control campaign state.",
   },
   insuranceWorkflow: {
-    method: 'POST',
-    envKeys: ['INSURANCE_WORKFLOW_ENDPOINT'],
-    defaultMessage: 'Insurance workflow bridge unavailable. Configure INSURANCE_WORKFLOW_ENDPOINT to sync quote decisions.'
+    method: "POST",
+    envKeys: ["INSURANCE_WORKFLOW_ENDPOINT"],
+    defaultMessage:
+      "Insurance workflow bridge unavailable. Configure INSURANCE_WORKFLOW_ENDPOINT to sync quote decisions.",
   },
   stationDirectory: {
-    method: 'POST',
-    envKeys: ['STATION_DIRECTORY_ENDPOINT'],
-    defaultMessage: 'Station directory bridge unavailable. Configure STATION_DIRECTORY_ENDPOINT to propagate station updates.'
-  }
+    method: "POST",
+    envKeys: ["STATION_DIRECTORY_ENDPOINT"],
+    defaultMessage:
+      "Station directory bridge unavailable. Configure STATION_DIRECTORY_ENDPOINT to propagate station updates.",
+  },
 };
 
 interface BridgeOptions {
@@ -88,7 +100,7 @@ function resolveEndpoint(envKeys: readonly string[]): string | null {
 
 function buildDefaultHeaders(): Record<string, string> {
   const headers: Record<string, string> = {
-    'Content-Type': 'application/json'
+    "Content-Type": "application/json",
   };
 
   const serviceRole = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -98,7 +110,7 @@ function buildDefaultHeaders(): Record<string, string> {
 
   const sharedSecret = process.env.BRIDGE_SHARED_SECRET;
   if (sharedSecret) {
-    headers['x-bridge-secret'] = sharedSecret;
+    headers["x-bridge-secret"] = sharedSecret;
   }
 
   return headers;
@@ -106,7 +118,7 @@ function buildDefaultHeaders(): Record<string, string> {
 
 const errorSchema = z
   .object({
-    message: z.string().optional()
+    message: z.string().optional(),
   })
   .passthrough();
 
@@ -115,7 +127,7 @@ async function parseJsonResponse<T>(response: Response): Promise<T> {
   if (!raw) {
     return {} as T;
   }
-  if (!jsonContentType.test(response.headers.get('content-type') ?? '')) {
+  if (!jsonContentType.test(response.headers.get("content-type") ?? "")) {
     return raw as unknown as T;
   }
   return JSON.parse(raw) as T;
@@ -124,43 +136,46 @@ async function parseJsonResponse<T>(response: Response): Promise<T> {
 export async function callBridge<T>(
   target: BridgeTarget,
   payload: unknown,
-  options: BridgeOptions = {}
+  options: BridgeOptions = {},
 ): Promise<BridgeResult<T>> {
   const config = TARGET_CONFIG[target];
   const endpoint = resolveEndpoint(config.envKeys);
 
   if (!endpoint) {
     logStructured({
-      event: 'bridge_missing_endpoint',
+      event: "bridge_missing_endpoint",
       target,
-      status: 'degraded',
-      message: config.defaultMessage
+      status: "degraded",
+      message: config.defaultMessage,
     });
     return {
       ok: false,
-      reason: 'missing_endpoint',
-      message: config.defaultMessage
+      reason: "missing_endpoint",
+      message: config.defaultMessage,
     };
   }
 
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), config.timeoutMs ?? 5000);
+  const timeout = setTimeout(
+    () => controller.abort(),
+    config.timeoutMs ?? 5000,
+  );
 
   try {
     const headers = {
       ...buildDefaultHeaders(),
-      ...(options.headers ?? {})
+      ...(options.headers ?? {}),
     };
 
     if (options.idempotencyKey) {
-      headers['Idempotency-Key'] = options.idempotencyKey;
+      headers["Idempotency-Key"] = options.idempotencyKey;
     }
 
     const response = await fetch(endpoint, {
       method: config.method,
       headers,
-      body: config.method === 'POST' ? JSON.stringify(payload) : undefined,
-      signal: options.signal ?? controller.signal
+      body: config.method === "POST" ? JSON.stringify(payload) : undefined,
+      signal: options.signal ?? controller.signal,
     });
 
     clearTimeout(timeout);
@@ -168,7 +183,9 @@ export async function callBridge<T>(
     if (!response.ok) {
       let message = config.defaultMessage;
       try {
-        const parsed = errorSchema.parse(await parseJsonResponse<unknown>(response));
+        const parsed = errorSchema.parse(
+          await parseJsonResponse<unknown>(response),
+        );
         if (parsed.message) {
           message = parsed.message;
         }
@@ -176,67 +193,67 @@ export async function callBridge<T>(
         console.error(`Bridge ${target} error payload parse failed`, error);
       }
       logStructured({
-        event: 'bridge_http_error',
+        event: "bridge_http_error",
         target,
-        status: 'degraded',
+        status: "degraded",
         message,
-        details: { status: response.status }
+        details: { status: response.status },
       });
       return {
         ok: false,
         status: response.status,
-        reason: 'http_error',
-        message
+        reason: "http_error",
+        message,
       };
     }
 
     const data = await parseJsonResponse<T>(response);
     logStructured({
-      event: 'bridge_success',
+      event: "bridge_success",
       target,
-      status: 'ok'
+      status: "ok",
     });
     return {
       ok: true,
       status: response.status,
-      data
+      data,
     };
   } catch (error) {
     logStructured({
-      event: 'bridge_network_error',
+      event: "bridge_network_error",
       target,
-      status: 'degraded',
-      message: error instanceof Error ? error.message : config.defaultMessage
+      status: "degraded",
+      message: error instanceof Error ? error.message : config.defaultMessage,
     });
     clearTimeout(timeout);
     return {
       ok: false,
-      reason: 'network_error',
-      message: error instanceof Error ? error.message : config.defaultMessage
+      reason: "network_error",
+      message: error instanceof Error ? error.message : config.defaultMessage,
     };
   }
 }
 
 export function bridgeDegraded(target: BridgeTarget, failure: BridgeFailure): {
   target: BridgeTarget;
-  status: 'degraded';
+  status: "degraded";
   reason: BridgeFailureReason;
   message: string;
 } {
   return {
     target,
-    status: 'degraded',
+    status: "degraded",
     reason: failure.reason,
-    message: failure.message
+    message: failure.message,
   };
 }
 
 export function bridgeHealthy(target: BridgeTarget): {
   target: BridgeTarget;
-  status: 'ok';
+  status: "ok";
 } {
   return {
     target,
-    status: 'ok'
+    status: "ok",
   };
 }

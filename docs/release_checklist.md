@@ -7,4 +7,5 @@
 - [ ] Upload insurance doc and confirm storage object + admin alert.
 - [ ] Run wallet menu (earn/transactions/redeem/top) for fixture profile.
 - [ ] Validate `/sub` admin commands log to `admin_audit_log` and update status.
-- [ ] Inspect `webhook_logs` for new event scopes (MOMO_QR, OCR_STATUS, ADMIN_ACTION).
+- [ ] Inspect `webhook_logs` for new event scopes (MOMO_QR, OCR_STATUS,
+      ADMIN_ACTION).

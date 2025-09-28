@@ -1,22 +1,22 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { PageHeader } from '@/components/layout/PageHeader';
-import { SectionCard } from '@/components/ui/SectionCard';
-import { SettingsForm } from '@/components/settings/SettingsForm';
-import { SettingsTable } from '@/components/settings/SettingsTable';
-import { TemplatesTable } from '@/components/templates/TemplatesTable';
-import { EmptyState } from '@/components/ui/EmptyState';
-import { IntegrationsStatus } from '@/components/settings/IntegrationsStatus';
-import { LoadingState } from '@/components/ui/LoadingState';
+import { useState } from "react";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { SectionCard } from "@/components/ui/SectionCard";
+import { SettingsForm } from "@/components/settings/SettingsForm";
+import { SettingsTable } from "@/components/settings/SettingsTable";
+import { TemplatesTable } from "@/components/templates/TemplatesTable";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { IntegrationsStatus } from "@/components/settings/IntegrationsStatus";
+import { LoadingState } from "@/components/ui/LoadingState";
 import {
+  type SettingsPreviewParams,
   useSettingsPreviewQuery,
-  type SettingsPreviewParams
-} from '@/lib/queries/settings';
+} from "@/lib/queries/settings";
 import {
+  type TemplatesQueryParams,
   useTemplatesQuery,
-  type TemplatesQueryParams
-} from '@/lib/queries/templates';
+} from "@/lib/queries/templates";
 
 interface SettingsClientProps {
   initialPreviewParams?: SettingsPreviewParams;
@@ -25,7 +25,7 @@ interface SettingsClientProps {
 
 export function SettingsClient({
   initialPreviewParams = { limit: 100 },
-  initialTemplateParams = { limit: 100 }
+  initialTemplateParams = { limit: 100 },
 }: SettingsClientProps) {
   const [previewParams] = useState(initialPreviewParams);
   const [templateParams] = useState(initialTemplateParams);
@@ -54,32 +54,42 @@ export function SettingsClient({
         title="Current values"
         description="Snapshot of settings from the data provider."
       >
-        {previewQuery.isLoading ? (
-          <LoadingState title="Loading settings" description="Reading saved configuration." />
-        ) : preview.length ? (
-          <SettingsTable data={preview} />
-        ) : (
-          <EmptyState
-            title="Settings preview unavailable"
-            description="Connect to Supabase to view saved settings."
-          />
-        )}
+        {previewQuery.isLoading
+          ? (
+            <LoadingState
+              title="Loading settings"
+              description="Reading saved configuration."
+            />
+          )
+          : preview.length
+          ? <SettingsTable data={preview} />
+          : (
+            <EmptyState
+              title="Settings preview unavailable"
+              description="Connect to Supabase to view saved settings."
+            />
+          )}
       </SectionCard>
 
       <SectionCard
         title="Template library"
         description="Manage template metadata and variables without leaving the settings screen."
       >
-        {templatesQuery.isLoading ? (
-          <LoadingState title="Loading templates" description="Fetching template metadata." />
-        ) : templates.length ? (
-          <TemplatesTable data={templates} />
-        ) : (
-          <EmptyState
-            title="Templates unavailable"
-            description="Connect to Supabase to view template configuration."
-          />
-        )}
+        {templatesQuery.isLoading
+          ? (
+            <LoadingState
+              title="Loading templates"
+              description="Fetching template metadata."
+            />
+          )
+          : templates.length
+          ? <TemplatesTable data={templates} />
+          : (
+            <EmptyState
+              title="Templates unavailable"
+              description="Connect to Supabase to view template configuration."
+            />
+          )}
       </SectionCard>
 
       <SectionCard

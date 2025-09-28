@@ -14,7 +14,9 @@ curl -X POST \
 ```
 
 Expected:
-- Storage upload under `insurance/<lead_id>/…` (see `notifications` → `file_path`).
+
+- Storage upload under `insurance/<lead_id>/…` (see `notifications` →
+  `file_path`).
 - `insurance_leads.status = 'ocr_ok'`, `raw_ocr` & `extracted` populated.
 - Logs: `INS_MEDIA_FETCH_OK`, `INS_UPLOAD_OK`, `INS_OCR_OK`,
   `INS_LEAD_UPDATE_OK`, `INS_ADMIN_NOTIFY_OK`.
@@ -29,6 +31,7 @@ extracted JSON contains VIN, policy number, expiry.
 ## 3. Low quality / unreadable image
 
 Use `payload.bad.json` (blurry photo). Expect:
+
 - `insurance_leads.status = 'ocr_error'` for the new lead.
 - Logs include `INS_OCR_FAIL` and `INS_LEAD_UPDATE_OK` (status `ocr_error`).
 - User receives the polite error message.
@@ -36,10 +39,10 @@ Use `payload.bad.json` (blurry photo). Expect:
 
 ## 4. Missing `OPENAI_API_KEY`
 
-Unset the secret locally (`deno run --allow-env --allow-net …`) or via
-the Supabase dashboard and resend `payload.image.json`.
-Expect an immediate user error message, lead status `ocr_error`, and
-`INS_OCR_FAIL` noting the missing key.
+Unset the secret locally (`deno run --allow-env --allow-net …`) or via the
+Supabase dashboard and resend `payload.image.json`. Expect an immediate user
+error message, lead status `ocr_error`, and `INS_OCR_FAIL` noting the missing
+key.
 
 ## 5. Admin mark reviewed (manual UI)
 

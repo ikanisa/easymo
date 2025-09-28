@@ -5,6 +5,9 @@ import { supabase } from "../wa-webhook/config.ts";
 import { logStructuredEvent } from "../wa-webhook/observe/log.ts";
 
 const QR_TOKEN_SECRET = Deno.env.get("QR_TOKEN_SECRET") ?? "";
+if (!QR_TOKEN_SECRET) {
+  console.warn("qr-resolve.secret_missing");
+}
 
 function normalize(label: string): string {
   return label.trim().replace(/\s+/g, " ").toUpperCase();
@@ -15,11 +18,13 @@ serve(async (req: Request): Promise<Response> => {
     return new Response("Method Not Allowed", { status: 405 });
   }
   if (!QR_TOKEN_SECRET) {
+    await logStructuredEvent("QR_RESOLVE_FAIL", { error: "secret_missing" });
     return new Response(
       JSON.stringify({ ok: false, error: "QR token secret missing" }),
       { status: 500 },
     );
   }
+  const started = Date.now();
   let body: { wa_id?: string; token?: string };
   try {
     body = await req.json();
@@ -59,6 +64,7 @@ serve(async (req: Request): Promise<Response> => {
       wa_id: `***${body.wa_id.slice(-4)}`,
       bar_slug: barSlug,
       table_label: matchTable.label,
+      duration_ms: Date.now() - started,
     });
     return new Response(
       JSON.stringify({
@@ -72,7 +78,10 @@ serve(async (req: Request): Promise<Response> => {
       },
     );
   } catch (err) {
-    await logStructuredEvent("QR_RESOLVE_FAIL", { error: String(err) });
+    await logStructuredEvent("QR_RESOLVE_FAIL", {
+      error: String(err),
+      duration_ms: Date.now() - started,
+    });
     return new Response(JSON.stringify({ ok: false, error: String(err) }), {
       status: 400,
     });

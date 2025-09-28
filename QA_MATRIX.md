@@ -1,19 +1,23 @@
 # QA Matrix – Admin Panel & Station PWA
 
-Each item lists Preconditions, Steps, Expected UI, Expected Data State, and Priority (M = mandatory before release, N = nice-to-have).
+Each item lists Preconditions, Steps, Expected UI, Expected Data State, and
+Priority (M = mandatory before release, N = nice-to-have).
 
 ## Admin Panel
 
 1. **Dashboard KPIs (M)**
    - Preconditions: Fixture data loaded; integrations status green or amber.
    - Steps: Open `/dashboard`.
-   - Expected UI: Six KPI tiles populated, time-series chart renders last 30 days.
-   - Expected Data: API `/api/dashboard/kpis` returns cached aggregates (≤1s response).
+   - Expected UI: Six KPI tiles populated, time-series chart renders last 30
+     days.
+   - Expected Data: API `/api/dashboard/kpis` returns cached aggregates (≤1s
+     response).
 
 2. **Dashboard Degraded State (N)**
    - Preconditions: Force voucher PNG probe to red.
    - Steps: Refresh `/dashboard`.
-   - Expected UI: KPI badge shows dotted outline with tooltip "voucher service offline".
+   - Expected UI: KPI badge shows dotted outline with tooltip "voucher service
+     offline".
    - Expected Data: Probe result cached with status `red`.
 
 3. **Users List & Drawer (M)**
@@ -31,14 +35,17 @@ Each item lists Preconditions, Steps, Expected UI, Expected Data State, and Prio
 5. **Insurance Approve (M)**
    - Preconditions: Pending quote available.
    - Steps: Open drawer → Approve → confirm.
-   - Expected UI: Success toast; status badge switches to Approved; audit entry visible.
-   - Expected Data: `insurance_quotes.status` = `approved`, `approved_at` set, audit log record created.
+   - Expected UI: Success toast; status badge switches to Approved; audit entry
+     visible.
+   - Expected Data: `insurance_quotes.status` = `approved`, `approved_at` set,
+     audit log record created.
 
 6. **Insurance Request Changes (M)**
    - Preconditions: Pending quote.
    - Steps: Request changes with comment.
    - Expected UI: Comment displayed; status `needs_changes`.
-   - Expected Data: Quote updated; audit entry `insurance_request_changes` saved.
+   - Expected Data: Quote updated; audit entry `insurance_request_changes`
+     saved.
 
 7. **Vouchers List Filters (M)**
    - Preconditions: Mixed-status vouchers.
@@ -62,7 +69,8 @@ Each item lists Preconditions, Steps, Expected UI, Expected Data State, and Prio
     - Preconditions: Admin user role.
     - Steps: Fill form → submit.
     - Expected UI: Result summary card with voucher code.
-    - Expected Data: `vouchers` row inserted; `voucher_events` entry `issued` recorded.
+    - Expected Data: `vouchers` row inserted; `voucher_events` entry `issued`
+      recorded.
 
 11. **Generate Voucher Batch (M)**
     - Preconditions: Provide CSV of msisdn.
@@ -97,14 +105,16 @@ Each item lists Preconditions, Steps, Expected UI, Expected Data State, and Prio
 16. **Campaign Start – Unavailable (M)**
     - Preconditions: Dispatcher EF offline.
     - Steps: Click Start.
-    - Expected UI: Inline alert with degraded copy; state remains `Draft` or `Paused`.
+    - Expected UI: Inline alert with degraded copy; state remains `Draft` or
+      `Paused`.
     - Expected Data: API returns reason `not_configured`.
 
 17. **Stations CRUD (M)**
     - Preconditions: Admin role.
     - Steps: Create station → edit fields → delete (soft delete recommended).
     - Expected UI: Forms with validation, confirmation dialog for delete.
-    - Expected Data: New row inserted; edits persisted; `audit_log` entries for each action.
+    - Expected Data: New row inserted; edits persisted; `audit_log` entries for
+      each action.
 
 18. **Files Browser Preview (N)**
     - Preconditions: Storage objects exist.
@@ -122,27 +132,31 @@ Each item lists Preconditions, Steps, Expected UI, Expected Data State, and Prio
     - Preconditions: Bars exist.
     - Steps: Select bar, enter table labels, generate tokens.
     - Expected UI: Success toast, generated token list appears.
-    - Expected Data: `qr_tokens` table receives new rows; audit entry `qr_generate` recorded.
+    - Expected Data: `qr_tokens` table receives new rows; audit entry
+      `qr_generate` recorded.
 
 21. **Notifications Resend (M)**
     - Preconditions: Notification in `failed` status.
     - Steps: Resend via table action.
     - Expected UI: Success toast, status transitions to `queued`.
-    - Expected Data: `notifications.status` updated; audit `notification_resend` recorded.
+    - Expected Data: `notifications.status` updated; audit `notification_resend`
+      recorded.
 
 22. **Notifications Cancel (M)**
     - Preconditions: Notification in `queued` status.
     - Steps: Cancel via table action.
     - Expected UI: Success toast, status becomes `cancelled`.
-    - Expected Data: `notifications.status` updated; audit `notification_cancel` recorded.
+    - Expected Data: `notifications.status` updated; audit `notification_cancel`
+      recorded.
 
 23. **Logs Filtering (N)**
     - Preconditions: Multiple audit entries.
     - Steps: Apply actor and target filters on `/logs`.
     - Expected UI: Filtered list updates, empty state shown when no matches.
-    - Expected Data: `/api/logs` responds within 1s; client polling refreshes every 30s.
+    - Expected Data: `/api/logs` responds within 1s; client polling refreshes
+      every 30s.
 
-20. **Logs Viewer Filter (N)**
+24. **Logs Viewer Filter (N)**
     - Preconditions: Logs present.
     - Steps: Filter by event type and entity.
     - Expected UI: Combined timeline with JSON drawer.
@@ -166,7 +180,8 @@ Each item lists Preconditions, Steps, Expected UI, Expected Data State, and Prio
     - Preconditions: Valid voucher with QR.
     - Steps: Scan code.
     - Expected UI: Confirmation screen with amount, masked msisdn.
-    - Expected Data: `/api/station/redeem` transitions voucher to `redeemed`; events logged.
+    - Expected Data: `/api/station/redeem` transitions voucher to `redeemed`;
+      events logged.
 
 24. **Redeem via Code – Happy Path (M)**
     - Preconditions: Valid 5-digit code.
@@ -213,28 +228,36 @@ Each item lists Preconditions, Steps, Expected UI, Expected Data State, and Prio
 31. **Policy Settings Badge (N)**
     - Preconditions: Run without Supabase credentials.
     - Steps: Open `/settings`, observe form before saving.
-    - Expected UI: Integration badge reports `Policy storage` degraded with helper copy.
-    - Expected Data: GET `/api/settings` returns `integration.status = 'degraded'`.
+    - Expected UI: Integration badge reports `Policy storage` degraded with
+      helper copy.
+    - Expected Data: GET `/api/settings` returns
+      `integration.status = 'degraded'`.
 
 32. **Signed URL Degraded Fallback (N)**
     - Preconditions: Storage credentials absent.
     - Steps: On `/files`, copy signed URL.
-    - Expected UI: Toast warns about mock URL; clipboard contains `example.com/mock/...`.
-    - Expected Data: `/api/files/signed-url` returns `integration.reason = 'mock_signed_url'`.
+    - Expected UI: Toast warns about mock URL; clipboard contains
+      `example.com/mock/...`.
+    - Expected Data: `/api/files/signed-url` returns
+      `integration.reason = 'mock_signed_url'`.
 
 33. **Logs Viewer Degraded State (N)**
     - Preconditions: Supabase audit table inaccessible.
     - Steps: Open `/logs`.
     - Expected UI: Integration badge indicates logs running on fixtures.
-    - Expected Data: `/api/logs` response includes `integration.status = 'degraded'`.
+    - Expected Data: `/api/logs` response includes
+      `integration.status = 'degraded'`.
 
 34. **Notifications Action Integration (N)**
     - Preconditions: Notification available; Supabase credentials toggled off.
     - Steps: Trigger resend.
     - Expected UI: Post-action badge warns of mock acknowledgement.
-    - Expected Data: `/api/notifications/:id` response includes degraded integration envelope.
+    - Expected Data: `/api/notifications/:id` response includes degraded
+      integration envelope.
 
 ## Execution Notes
+
 - Mark results in test management sheet after each pass.
 - Mandatory tests must pass before promoting a build beyond staging.
-- Nice-to-have tests should pass before production rollout unless blocked by known issues with documented mitigation.
+- Nice-to-have tests should pass before production rollout unless blocked by
+  known issues with documented mitigation.

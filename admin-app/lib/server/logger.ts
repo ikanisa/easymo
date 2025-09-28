@@ -3,7 +3,7 @@ interface LogContext {
   target?: string;
   actor?: string;
   entity?: string;
-  status?: 'ok' | 'degraded' | 'error';
+  status?: "ok" | "degraded" | "error";
   message?: string;
   details?: Record<string, unknown>;
 }
@@ -11,7 +11,7 @@ interface LogContext {
 export function logStructured(context: LogContext) {
   const payload = {
     timestamp: new Date().toISOString(),
-    ...context
+    ...context,
   };
   console.log(JSON.stringify(payload));
 }

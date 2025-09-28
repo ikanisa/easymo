@@ -1,7 +1,8 @@
-'use client';
+"use client";
 
-import { Modal } from '@/components/ui/Modal';
-import styles from './ConfirmDialog.module.css';
+import { Modal } from "@/components/ui/Modal";
+import styles from "./ConfirmDialog.module.css";
+import { Button } from "@/components/ui/Button";
 
 interface ConfirmDialogProps {
   open: boolean;
@@ -18,11 +19,11 @@ export function ConfirmDialog({
   open,
   title,
   description,
-  confirmLabel = 'Confirm',
-  cancelLabel = 'Cancel',
+  confirmLabel = "Confirm",
+  cancelLabel = "Cancel",
   destructive = false,
   onConfirm,
-  onCancel
+  onCancel,
 }: ConfirmDialogProps) {
   if (!open) return null;
 
@@ -30,18 +31,18 @@ export function ConfirmDialog({
     <Modal title={title} onClose={onCancel} width="min(420px, 90vw)">
       {description ? <p className={styles.description}>{description}</p> : null}
       <div className={styles.actions}>
-        <button type="button" onClick={onCancel} className={styles.cancelButton}>
+        <Button type="button" onClick={onCancel} variant="outline" size="sm">
           {cancelLabel}
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
           onClick={onConfirm}
-          className={destructive ? styles.destructiveButton : styles.confirmButton}
+          variant={destructive ? "danger" : "default"}
+          size="sm"
         >
           {confirmLabel}
-        </button>
+        </Button>
       </div>
     </Modal>
   );
 }
-

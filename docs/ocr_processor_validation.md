@@ -33,8 +33,8 @@ handled in staging/production before relying on the updated OCR worker.
    ```
 
 4. Confirm results:
-   - `select * from ocr_jobs where id = '<job-id>';` should show `status = 'succeeded'`
-     with `menu_id`, `result_path` populated.
+   - `select * from ocr_jobs where id = '<job-id>';` should show
+     `status = 'succeeded'` with `menu_id`, `result_path` populated.
    - Check `storage.objects` for `ocr-json-cache/results/<job-id>.json`.
    - Review WhatsApp notification logs (if enabled) or Supabase logs for
      `ocr.notify_menu_ready_*` messages.
@@ -43,12 +43,13 @@ handled in staging/production before relying on the updated OCR worker.
 
 Run the same steps with intentionally problematic files:
 
-- **Non-image asset** (e.g., PDF): expect job to fail with `Unsupported content
-  type`. The `ocr_jobs` row should be marked `failed` and `attempts` should grow
-  until `OCR_MAX_ATTEMPTS` trips.
+- **Non-image asset** (e.g., PDF): expect job to fail with
+  `Unsupported content
+  type`. The `ocr_jobs` row should be marked `failed` and
+  `attempts` should grow until `OCR_MAX_ATTEMPTS` trips.
 - **Oversized output**: feed an image that will generate >50 categories or
-  >500 items (tweak env limits if you need a lower bar). Confirm the job fails
-  with `category limit` or `item limit` message.
+  > 500 items (tweak env limits if you need a lower bar). Confirm the job fails
+  > with `category limit` or `item limit` message.
 - **Duplicate-heavy menu**: verify the succeeded job contains deduped categories
   and items by inspecting the `menus`, `categories`, and `items` tables.
 

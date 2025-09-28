@@ -1,8 +1,12 @@
-'use client';
+"use client";
 
-import { ReactNode } from 'react';
-import { QueryClientProvider, HydrationBoundary, DehydratedState } from '@tanstack/react-query';
-import { getBrowserQueryClient } from '@/lib/api/queryClient';
+import { ReactNode } from "react";
+import {
+  DehydratedState,
+  HydrationBoundary,
+  QueryClientProvider,
+} from "@tanstack/react-query";
+import { getBrowserQueryClient } from "@/lib/api/queryClient";
 
 interface QueryProviderProps {
   children: ReactNode;

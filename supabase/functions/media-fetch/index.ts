@@ -1,81 +1,51 @@
-// deno-lint-ignore-file no-explicit-any
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
-/*
- * media-fetch
- *
- * POST JSON: { media_id: string, subscription_id: number }
- * Auth: header x-admin-token must equal ADMIN_TOKEN secret.
- * Flow:
- *  1) Look up subscription → user_id
- *  2) Graph API: get media URL, then download binary with WA_TOKEN
- *  3) Upload to Storage bucket `proofs` at:
- *       subscriptions/{user_id}/{subscription_id}.{ext}
- *  4) Update subscriptions.proof_url with that path
- *  5) Return a 7-day signed URL
- */ const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
-const SUPABASE_SERVICE_KEY = Deno.env.get("SERVICE_ROLE_KEY"); // keep using SERVICE_ROLE_KEY
-const ADMIN_TOKEN = Deno.env.get("ADMIN_TOKEN");
-const WA_TOKEN = Deno.env.get("WA_TOKEN");
-const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
-const CORS_HEADERS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-admin-token",
-  "Access-Control-Allow-Methods": "POST,OPTIONS",
-  "Content-Type": "application/json",
+import { z } from "https://deno.land/x/zod@v3.23.8/mod.ts";
+import {
+  createServiceRoleClient,
+  handleOptions,
+  json,
+  logRequest,
+  logResponse,
+  requireAdminAuth,
+  withCors,
+} from "../_shared/admin.ts";
+
+const supabase = createServiceRoleClient();
+const WA_TOKEN = Deno.env.get("WA_TOKEN") ?? "";
+
+const requestSchema = z.object({
+  media_id: z.string().min(10),
+  subscription_id: z.number().int().positive(),
+}).strict();
+
+type DownloadedMedia = {
+  buffer: Uint8Array;
+  contentType: string;
 };
-function withCORS(init = {}) {
-  return {
-    ...init,
-    headers: {
-      ...init.headers || {},
-      ...CORS_HEADERS,
-    },
-  };
-}
-function checkAuth(req) {
-  return req.headers.get("x-admin-token") === ADMIN_TOKEN;
-}
-async function fetchMedia(mediaId) {
-  // 1) metadata → URL
+
+async function fetchMedia(mediaId: string): Promise<DownloadedMedia> {
   const metaResp = await fetch(`https://graph.facebook.com/v19.0/${mediaId}`, {
-    headers: {
-      Authorization: `Bearer ${WA_TOKEN}`,
-    },
+    headers: { Authorization: `Bearer ${WA_TOKEN}` },
   });
   if (!metaResp.ok) {
-    return {
-      error: `failed to get media metadata: ${await metaResp.text()}`,
-    };
+    throw new Error(`metadata_fetch_failed:${metaResp.status}`);
   }
   const meta = await metaResp.json();
   const url = meta?.url;
-  if (!url) {
-    return {
-      error: "media URL not found",
-    };
-  }
-  // 2) download binary
+  if (!url) throw new Error("media_url_missing");
+
   const mediaResp = await fetch(url, {
-    headers: {
-      Authorization: `Bearer ${WA_TOKEN}`,
-    },
+    headers: { Authorization: `Bearer ${WA_TOKEN}` },
   });
   if (!mediaResp.ok) {
-    return {
-      error: `failed to download media: ${await mediaResp.text()}`,
-    };
+    throw new Error(`media_download_failed:${mediaResp.status}`);
   }
-  const arrayBuffer = await mediaResp.arrayBuffer();
-  const buffer = new Uint8Array(arrayBuffer);
+  const buffer = new Uint8Array(await mediaResp.arrayBuffer());
   const contentType = mediaResp.headers.get("content-type") ??
     "application/octet-stream";
-  return {
-    buffer,
-    contentType,
-  };
+  return { buffer, contentType };
 }
-function pickExt(contentType) {
+
+function pickExt(contentType: string): string {
   const ct = contentType.toLowerCase();
   if (ct.includes("jpeg") || ct.includes("jpg")) return "jpg";
   if (ct.includes("png")) return "png";
@@ -84,159 +54,98 @@ function pickExt(contentType) {
   if (ct.includes("pdf")) return "pdf";
   return "bin";
 }
-async function handler(req) {
-  if (req.method === "OPTIONS") {
-    return new Response(
-      "ok",
-      withCORS({
-        status: 200,
-      }),
-    );
-  }
-  if (!checkAuth(req)) {
-    return new Response(
-      JSON.stringify({
-        error: "unauthorized",
-      }),
-      withCORS({
-        status: 401,
-      }),
-    );
-  }
-  if (req.method.toUpperCase() !== "POST") {
-    return new Response(
-      JSON.stringify({
-        error: "method not allowed",
-      }),
-      withCORS({
-        status: 405,
-      }),
-    );
-  }
-  let body;
-  try {
-    body = await req.json();
-  } catch {
-    return new Response(
-      JSON.stringify({
-        error: "invalid JSON body",
-      }),
-      withCORS({
-        status: 400,
-      }),
-    );
-  }
-  const mediaId = body?.media_id;
-  const subscriptionId = body?.subscription_id;
-  if (
-    !mediaId || typeof mediaId !== "string" ||
-    typeof subscriptionId !== "number"
-  ) {
-    return new Response(
-      JSON.stringify({
-        error: "media_id and subscription_id are required",
-      }),
-      withCORS({
-        status: 400,
-      }),
-    );
-  }
-  // get subscription → user_id
-  const { data: sub, error: subErr } = await supabase.from("subscriptions")
-    .select("id,user_id").eq("id", subscriptionId).maybeSingle();
-  if (subErr || !sub) {
-    return new Response(
-      JSON.stringify({
-        error: subErr?.message ?? "subscription not found",
-      }),
-      withCORS({
-        status: 404,
-      }),
-    );
-  }
-  // fetch media
-  const media = await fetchMedia(mediaId);
-  if ("error" in media) {
-    return new Response(
-      JSON.stringify({
-        error: media.error,
-      }),
-      withCORS({
-        status: 500,
-      }),
-    );
-  }
-  // file path
-  const ext = pickExt(media.contentType);
-  const filePath = `subscriptions/${sub.user_id}/${subscriptionId}.${ext}`;
-  // upload
-  const { error: uploadErr } = await supabase.storage.from("proofs").upload(
-    filePath,
-    media.buffer,
-    {
-      contentType: media.contentType,
-      upsert: true,
-    },
-  );
-  if (uploadErr) {
-    return new Response(
-      JSON.stringify({
-        error: uploadErr.message,
-      }),
-      withCORS({
-        status: 500,
-      }),
-    );
-  }
-  // update subscription
-  const { error: updateErr } = await supabase.from("subscriptions").update({
-    proof_url: filePath,
-  }).eq("id", subscriptionId);
-  if (updateErr) {
-    return new Response(
-      JSON.stringify({
-        error: updateErr.message,
-      }),
-      withCORS({
-        status: 500,
-      }),
-    );
-  }
-  // signed URL (7 days)
-  const { data: signed, error: signErr } = await supabase.storage.from("proofs")
-    .createSignedUrl(filePath, 60 * 60 * 24 * 7);
-  if (signErr) {
-    return new Response(
-      JSON.stringify({
-        error: signErr.message,
-      }),
-      withCORS({
-        status: 500,
-      }),
-    );
-  }
-  return new Response(
-    JSON.stringify({
-      success: true,
-      url: signed.signedUrl,
-    }),
-    withCORS({
-      status: 200,
-    }),
-  );
-}
+
 Deno.serve(async (req) => {
+  logRequest("media-fetch", req);
+
+  if (req.method === "OPTIONS") {
+    return handleOptions();
+  }
+
+  const authResponse = requireAdminAuth(req);
+  if (authResponse) return authResponse;
+
+  if (req.method !== "POST") {
+    return json({ error: "method_not_allowed" }, 405);
+  }
+
+  if (!WA_TOKEN) {
+    console.error("media-fetch.wa_token_missing");
+    return json({ error: "wa_token_missing" }, 500);
+  }
+
+  let payload: unknown;
   try {
-    return await handler(req);
-  } catch (e) {
-    console.error("media-fetch error:", e);
+    payload = await req.json();
+  } catch {
+    return json({ error: "invalid_json" }, 400);
+  }
+
+  const parseResult = requestSchema.safeParse(payload);
+  if (!parseResult.success) {
+    return json({ error: "invalid_payload" }, 400);
+  }
+
+  const { media_id: mediaId, subscription_id: subscriptionId } =
+    parseResult.data;
+
+  try {
+    const { data: subscription, error: subscriptionError } = await supabase
+      .from("subscriptions")
+      .select("id,user_id")
+      .eq("id", subscriptionId)
+      .maybeSingle();
+    if (subscriptionError || !subscription) {
+      throw new Error("subscription_not_found");
+    }
+
+    const media = await fetchMedia(mediaId);
+    const ext = pickExt(media.contentType);
+    const objectPath =
+      `subscriptions/${subscription.user_id}/${subscriptionId}.${ext}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("proofs")
+      .upload(objectPath, media.buffer, {
+        contentType: media.contentType,
+        upsert: true,
+      });
+    if (uploadError) {
+      throw new Error("storage_upload_failed");
+    }
+
+    const { error: updateError } = await supabase.from("subscriptions")
+      .update({ proof_url: objectPath, updated_at: new Date().toISOString() })
+      .eq("id", subscriptionId);
+    if (updateError) {
+      throw new Error("subscription_update_failed");
+    }
+
+    const { data: signedData, error: signedError } = await supabase.storage
+      .from("proofs")
+      .createSignedUrl(objectPath, 60 * 60 * 24 * 7);
+
+    const responseBody = {
+      ok: true,
+      proof_url: objectPath,
+      proof_url_signed: signedError ? null : signedData?.signedUrl ?? null,
+    };
+
+    if (signedError) {
+      console.warn("media-fetch.signed_url_failed", signedError);
+    }
+
+    logResponse("media-fetch", 200, { subscriptionId });
     return new Response(
-      JSON.stringify({
-        error: "internal error",
-      }),
-      withCORS({
-        status: 500,
-      }),
+      JSON.stringify(responseBody),
+      withCors({ status: 200 }),
     );
+  } catch (error) {
+    console.error("media-fetch.unhandled", error);
+    const message = error instanceof Error
+      ? error.message
+      : String(error ?? "error");
+    const status = message === "subscription_not_found" ? 404 : 502;
+    return json({ error: message }, status);
   }
 });

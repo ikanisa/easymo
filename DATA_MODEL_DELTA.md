@@ -1,16 +1,20 @@
 # Data Model Delta (Additive-Only)
 
-This document describes the additive database structures required for the Admin Panel and Station PWA. Existing tables remain untouched; all changes are new tables, columns, or indexes delivered through timestamped migrations.
+This document describes the additive database structures required for the Admin
+Panel and Station PWA. Existing tables remain untouched; all changes are new
+tables, columns, or indexes delivered through timestamped migrations.
 
 ## New Tables
 
 ### `admin_roles`
+
 - `user_id UUID PK` references `auth.users`.
 - `roles TEXT[]` (e.g., `{"super_admin","support","data_ops","readonly"}`).
 - `granted_by UUID` (admin who granted role).
 - `granted_at TIMESTAMPTZ DEFAULT now()`.
 
 ### `stations`
+
 - `id UUID PK DEFAULT gen_random_uuid()`.
 - `name TEXT NOT NULL`.
 - `engencode TEXT UNIQUE NOT NULL`.
@@ -21,6 +25,7 @@ This document describes the additive database structures required for the Admin 
 - `updated_at TIMESTAMPTZ DEFAULT now()` triggers.
 
 ### `vouchers`
+
 - `id UUID PK DEFAULT gen_random_uuid()`.
 - `user_id UUID NOT NULL` references `users.id`.
 - `station_scope UUID NULL` references `stations.id`.
@@ -39,6 +44,7 @@ This document describes the additive database structures required for the Admin 
 - Indexes: `(status)`, `(user_id)`, `(campaign_id)`, `(station_scope,status)`.
 
 ### `voucher_events`
+
 - `id UUID PK DEFAULT gen_random_uuid()`.
 - `voucher_id UUID NOT NULL` references `vouchers.id`.
 - `event_type TEXT CHECK (event_type IN ('issued','sent','redeemed','expired','void','policy_blocked'))`.
@@ -49,6 +55,7 @@ This document describes the additive database structures required for the Admin 
 - Indexes: `(voucher_id, created_at)`, `(event_type, created_at DESC)`.
 
 ### `campaigns`
+
 - `id UUID PK DEFAULT gen_random_uuid()`.
 - `name TEXT NOT NULL`.
 - `type TEXT CHECK (type IN ('promo','voucher')) NOT NULL`.
@@ -61,6 +68,7 @@ This document describes the additive database structures required for the Admin 
 - Indexes: `(status)`, `(created_at)`.
 
 ### `campaign_targets`
+
 - `id UUID PK DEFAULT gen_random_uuid()`.
 - `campaign_id UUID REFERENCES campaigns(id)`.
 - `msisdn TEXT NOT NULL`.
@@ -73,6 +81,7 @@ This document describes the additive database structures required for the Admin 
 - Indexes: `(campaign_id,status)`, `(msisdn)`.
 
 ### `insurance_quotes`
+
 - `id UUID PK DEFAULT gen_random_uuid()`.
 - `user_id UUID REFERENCES users(id)`.
 - `uploaded_docs TEXT[]` (storage paths).
@@ -84,45 +93,60 @@ This document describes the additive database structures required for the Admin 
 - `metadata JSONB DEFAULT '{}'::jsonb` (OCR snapshots).
 
 ### `settings`
+
 - `key TEXT PRIMARY KEY`.
 - `value JSONB NOT NULL`.
 - Seed keys include:
-  - `quiet_hours`: `{ "rw": { "start": "22:00", "end": "06:00" }, "mt": { ... } }`
+  - `quiet_hours`:
+    `{ "rw": { "start": "22:00", "end": "06:00" }, "mt": { ... } }`
   - `send_throttle`: `{ "whatsapp": { "per_minute": 60 } }`
   - `opt_out_list`: `["hash1", "hash2"]`
   - `templates`: array of template metadata objects.
   - `revolut_link`: `{ "url": "https://revolut.me/..." }`
 
 ### `audit_log`
+
 - If not present, add table with:
-  - `id UUID PK`, `actor_id UUID`, `action TEXT`, `target_table TEXT`, `target_id TEXT`, `diff JSONB`, `created_at TIMESTAMPTZ DEFAULT now()`.
+  - `id UUID PK`, `actor_id UUID`, `action TEXT`, `target_table TEXT`,
+    `target_id TEXT`, `diff JSONB`, `created_at TIMESTAMPTZ DEFAULT now()`.
 - Indexes: `(target_table, created_at DESC)`, `(actor_id, created_at DESC)`.
 
 ## New Columns (Existing Tables)
-- `users` → `roles TEXT[] DEFAULT '{}'::text[]` (if absent) for Admin Panel filters.
+
+- `users` → `roles TEXT[] DEFAULT '{}'::text[]` (if absent) for Admin Panel
+  filters.
 - `users` → `last_seen_at TIMESTAMPTZ` (for operations health).
 
 ## Views / Helpers
+
 - `view_active_bars` (if required) to aggregate station activity.
 - `view_voucher_metrics` to pre-compute issued/sent/redeemed counts per day.
 
 ## State Transitions
-- **Vouchers**: `issued → sent → redeemed`; `issued → expired`; `issued|sent → void`.
+
+- **Vouchers**: `issued → sent → redeemed`; `issued → expired`;
+  `issued|sent → void`.
 - **Campaigns**: `draft → running → paused → running → done`.
-- **Campaign Targets**: `queued → sent → delivered|read`; `queued → failed|opted_out`; `queued_throttled → queued` after retry.
-- **Insurance Quotes**: `pending → approved` OR `pending → needs_changes → pending`.
+- **Campaign Targets**: `queued → sent → delivered|read`;
+  `queued → failed|opted_out`; `queued_throttled → queued` after retry.
+- **Insurance Quotes**: `pending → approved` OR
+  `pending → needs_changes → pending`.
 
 ## Audit Expectations
-- Every write to vouchers, campaigns, campaign_targets, insurance_quotes, settings inserts an `audit_log` row with before/after diff.
+
+- Every write to vouchers, campaigns, campaign_targets, insurance_quotes,
+  settings inserts an `audit_log` row with before/after diff.
 - Voucher state transitions must also emit a `voucher_events` row.
 
 ## Storage Buckets
+
 - `vouchers` (PNG previews)
 - `qr` (generated QR images)
 - `campaign-media` (optional attachments)
 - `docs` (insurance uploads)
 
 ## Security & RLS Notes
+
 - Admin roles bypass bar-level RLS via role claim `role = 'admin'`.
 - Station operators restricted to vouchers redeemed at their station.
 - Campaign targets visible only to Super Admin and Support roles.

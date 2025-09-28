@@ -1,167 +1,117 @@
-// deno-lint-ignore-file no-explicit-any
-// admin-trips — list & close trips for the admin UI (with CORS)
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
-// ENV
-const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
-const SERVICE_ROLE_KEY = Deno.env.get("SERVICE_ROLE_KEY"); // keep this name for consistency
-const ADMIN_TOKEN = Deno.env.get("ADMIN_TOKEN");
-// Supabase (service role)
-const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
-// CORS helpers
-const CORS_HEADERS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-admin-token",
-  "Content-Type": "application/json",
-};
-const withCORS = (init = {}) => ({
-  ...init,
-  headers: {
-    ...init.headers ?? {},
-    ...CORS_HEADERS,
-  },
+import { z } from "https://deno.land/x/zod@v3.23.8/mod.ts";
+import {
+  createServiceRoleClient,
+  handleOptions,
+  json,
+  logRequest,
+  logResponse,
+  requireAdminAuth,
+  withCors,
+} from "../_shared/admin.ts";
+
+const supabase = createServiceRoleClient();
+
+const listQuerySchema = z.object({
+  action: z.string().optional().default("list"),
+  limit: z.coerce.number().int().min(1).max(500).default(200),
+  cursor: z.string().optional(),
 });
-// Auth helper
-function isAuthed(req) {
-  return req.headers.get("x-admin-token") === ADMIN_TOKEN;
-}
-// Handler
-async function handler(req) {
+
+const closeBodySchema = z.object({
+  id: z.number().int().positive(),
+}).strict();
+
+Deno.serve(async (req) => {
+  logRequest("admin-trips", req);
+
   if (req.method === "OPTIONS") {
-    return new Response(
-      null,
-      withCORS({
-        status: 204,
-      }),
-    );
+    return handleOptions();
   }
-  if (!isAuthed(req)) {
-    return new Response(
-      JSON.stringify({
-        error: "unauthorized",
-      }),
-      withCORS({
-        status: 401,
-      }),
-    );
-  }
+
+  const authResponse = requireAdminAuth(req);
+  if (authResponse) return authResponse;
+
   const url = new URL(req.url);
-  const action = (url.searchParams.get("action") ?? "list").toLowerCase();
+
   if (req.method === "GET") {
-    if (action !== "list") {
-      return new Response(
-        JSON.stringify({
-          error: "invalid action",
-        }),
-        withCORS({
-          status: 400,
-        }),
-      );
-    }
-    const { data, error } = await supabase.from("trips").select(
-      "id, creator_user_id, role, vehicle_type, status, created_at",
-    ).order("created_at", {
-      ascending: false,
-    }).limit(200);
-    if (error) {
-      return new Response(
-        JSON.stringify({
-          error: error.message,
-        }),
-        withCORS({
-          status: 500,
-        }),
-      );
-    }
-    return new Response(
-      JSON.stringify({
-        trips: data,
-      }),
-      withCORS({
-        status: 200,
-      }),
-    );
-  }
-  if (req.method === "POST") {
-    let body;
+    let query;
     try {
-      body = await req.json();
+      query = listQuerySchema.parse(Object.fromEntries(url.searchParams));
     } catch {
+      return json({ error: "invalid_query" }, 400);
+    }
+
+    if (query.action !== "list") {
+      return json({ error: "invalid_action" }, 400);
+    }
+
+    try {
+      let builder = supabase.from("trips").select(
+        "id, creator_user_id, role, vehicle_type, status, created_at",
+      ).order("created_at", { ascending: false }).limit(query.limit);
+
+      if (query.cursor) {
+        builder = builder.lt("created_at", query.cursor);
+      }
+
+      const { data, error } = await builder;
+      if (error) {
+        console.error("admin-trips.list_failed", error);
+        return json({ error: "query_failed" }, 500);
+      }
+
+      logResponse("admin-trips", 200, { count: data?.length ?? 0 });
       return new Response(
         JSON.stringify({
-          error: "invalid JSON body",
+          trips: data ?? [],
+          next_cursor: data && data.length === query.limit
+            ? data[data.length - 1]?.created_at ?? null
+            : null,
         }),
-        withCORS({
-          status: 400,
-        }),
+        withCors({ status: 200 }),
       );
+    } catch (error) {
+      console.error("admin-trips.list_unhandled", error);
+      return json({ error: "internal_error" }, 500);
     }
-    if (action === "close") {
-      const id = body?.id;
-      if (typeof id !== "number") {
-        return new Response(
-          JSON.stringify({
-            error: "id must be a number",
-          }),
-          withCORS({
-            status: 400,
-          }),
-        );
-      }
+  }
+
+  if (req.method === "POST") {
+    const action = (url.searchParams.get("action") ?? "").toLowerCase();
+    if (action !== "close") {
+      return json({ error: "invalid_action" }, 400);
+    }
+
+    let payload: unknown;
+    try {
+      payload = await req.json();
+    } catch {
+      return json({ error: "invalid_json" }, 400);
+    }
+
+    const parseResult = closeBodySchema.safeParse(payload);
+    if (!parseResult.success) {
+      return json({ error: "invalid_payload" }, 400);
+    }
+
+    try {
       const { error } = await supabase.from("trips").update({
         status: "closed",
-      }).eq("id", id);
+        updated_at: new Date().toISOString(),
+      }).eq("id", parseResult.data.id).eq("status", "open");
+
       if (error) {
-        return new Response(
-          JSON.stringify({
-            error: error.message,
-          }),
-          withCORS({
-            status: 500,
-          }),
-        );
+        console.error("admin-trips.close_failed", error);
+        return json({ error: "update_failed" }, 500);
       }
-      return new Response(
-        JSON.stringify({
-          success: true,
-        }),
-        withCORS({
-          status: 200,
-        }),
-      );
+
+      logResponse("admin-trips", 200, { id: parseResult.data.id });
+      return json({ success: true });
+    } catch (error) {
+      console.error("admin-trips.close_unhandled", error);
+      return json({ error: "internal_error" }, 500);
     }
-    return new Response(
-      JSON.stringify({
-        error: "invalid action",
-      }),
-      withCORS({
-        status: 400,
-      }),
-    );
   }
-  return new Response(
-    JSON.stringify({
-      error: "method not allowed",
-    }),
-    withCORS({
-      status: 405,
-    }),
-  );
-}
-// Serve
-Deno.serve(async (req) => {
-  try {
-    return await handler(req);
-  } catch (e) {
-    console.error("admin-trips error:", e);
-    return new Response(
-      JSON.stringify({
-        error: "internal error",
-      }),
-      withCORS({
-        status: 500,
-      }),
-    );
-  }
+
+  return json({ error: "method_not_allowed" }, 405);
 });

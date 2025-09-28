@@ -1,85 +1,75 @@
-// deno-lint-ignore-file no-explicit-any
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
-/*
- * admin-users
- *
- * GET only. Returns up to 500 latest users for the admin UI.
- * Protected by `x-admin-token` which must match `ADMIN_TOKEN` secret.
- */ const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
-const SERVICE_ROLE_KEY = Deno.env.get("SERVICE_ROLE_KEY") ?? "";
-const ADMIN_TOKEN = Deno.env.get("ADMIN_TOKEN") ?? "";
-const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
-// CORS helpers
-const CORS_HEADERS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-admin-token",
-  "Access-Control-Allow-Methods": "GET,OPTIONS",
-  "Content-Type": "application/json",
-};
-function withCORS(init = {}) {
-  return {
-    ...init,
-    headers: {
-      ...init.headers || {},
-      ...CORS_HEADERS,
-    },
-  };
-}
-function isAuthed(req) {
-  return req.headers.get("x-admin-token") === ADMIN_TOKEN;
-}
+import { z } from "https://deno.land/x/zod@v3.23.8/mod.ts";
+import {
+  createServiceRoleClient,
+  handleOptions,
+  json,
+  logRequest,
+  logResponse,
+  requireAdminAuth,
+  withCors,
+} from "../_shared/admin.ts";
+
+const supabase = createServiceRoleClient();
+
+const querySchema = z.object({
+  limit: z.coerce.number().int().min(1).max(1000).default(500),
+  cursor: z.string().optional(),
+});
+
 Deno.serve(async (req) => {
-  // Preflight
+  logRequest("admin-users", req);
+
   if (req.method === "OPTIONS") {
-    return new Response(
-      "ok",
-      withCORS({
-        status: 204,
-      }),
-    );
+    return handleOptions();
   }
-  if (!isAuthed(req)) {
-    return new Response(
-      JSON.stringify({
-        error: "unauthorized",
-      }),
-      withCORS({
-        status: 401,
-      }),
-    );
+
+  const authResponse = requireAdminAuth(req);
+  if (authResponse) {
+    return authResponse;
   }
+
   if (req.method !== "GET") {
+    return json({ error: "method_not_allowed" }, 405);
+  }
+
+  let query;
+  try {
+    const url = new URL(req.url);
+    query = querySchema.parse(Object.fromEntries(url.searchParams));
+  } catch (error) {
+    console.warn("admin-users.query_invalid", { error: String(error) });
+    return json({ error: "invalid_query" }, 400);
+  }
+
+  try {
+    let builder = supabase.from("profiles").select(
+      "user_id, whatsapp_e164, ref_code, credits_balance, created_at",
+    ).order("created_at", { ascending: false }).limit(query.limit);
+
+    if (query.cursor) {
+      builder = builder.lt("created_at", query.cursor);
+    }
+
+    const { data, error } = await builder;
+    if (error) {
+      console.error("admin-users.query_failed", { error: error.message });
+      return json({ error: "query_failed" }, 500);
+    }
+
+    logResponse("admin-users", 200, { count: data?.length ?? 0 });
     return new Response(
       JSON.stringify({
-        error: "method not allowed",
+        users: data ?? [],
+        next_cursor: data?.length === query.limit
+          ? data[data.length - 1]?.created_at ?? null
+          : null,
       }),
-      withCORS({
-        status: 405,
-      }),
-    );
-  }
-  const { data, error } = await supabase.from("profiles").select(
-    "user_id, whatsapp_e164, ref_code, credits_balance, created_at",
-  ).order("created_at", {
-    ascending: false,
-  }).limit(500);
-  if (error) {
-    return new Response(
-      JSON.stringify({
-        error: error.message,
-      }),
-      withCORS({
-        status: 500,
+      withCors({
+        status: 200,
       }),
     );
+  } catch (error) {
+    console.error("admin-users.unhandled", error);
+    return json({ error: "internal_error" }, 500);
   }
-  return new Response(
-    JSON.stringify({
-      users: data ?? [],
-    }),
-    withCORS({
-      status: 200,
-    }),
-  );
 });

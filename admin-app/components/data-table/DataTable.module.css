@@ -28,15 +28,6 @@
   background: rgba(248, 250, 252, 0.9);
 }
 
-.exportButton {
-  padding: 8px 12px;
-  border-radius: 10px;
-  border: 1px solid rgba(148, 163, 184, 0.4);
-  background: #0ea5e9;
-  color: #f8fafc;
-  font-weight: 600;
-}
-
 .tableContainer {
   display: flex;
   flex-direction: column;

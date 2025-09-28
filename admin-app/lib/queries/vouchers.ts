@@ -1,31 +1,38 @@
-import { QueryKey, useQuery, UseQueryOptions } from '@tanstack/react-query';
-import { listVouchers, type PaginatedResult } from '@/lib/data-provider';
-import type { Voucher } from '@/lib/schemas';
+import { QueryKey, useQuery, UseQueryOptions } from "@tanstack/react-query";
+import { listVouchers, type PaginatedResult } from "@/lib/data-provider";
+import type { Voucher } from "@/lib/schemas";
 
 export type VouchersQueryParams = {
-  status?: Voucher['status'];
+  status?: Voucher["status"];
   search?: string;
   offset?: number;
   limit?: number;
 };
 
-const vouchersKey = (params: VouchersQueryParams) => ['vouchers', params] satisfies QueryKey;
+const vouchersKey = (params: VouchersQueryParams) =>
+  ["vouchers", params] satisfies QueryKey;
 
-export function fetchVouchers(params: VouchersQueryParams = { limit: 50 }): Promise<PaginatedResult<Voucher>> {
+export function fetchVouchers(
+  params: VouchersQueryParams = { limit: 50 },
+): Promise<PaginatedResult<Voucher>> {
   return listVouchers(params);
 }
 
 export function useVouchersQuery(
   params: VouchersQueryParams = { limit: 50 },
-  options?: UseQueryOptions<PaginatedResult<Voucher>, unknown, PaginatedResult<Voucher>>
+  options?: UseQueryOptions<
+    PaginatedResult<Voucher>,
+    unknown,
+    PaginatedResult<Voucher>
+  >,
 ) {
   return useQuery({
     queryKey: vouchersKey(params),
     queryFn: () => fetchVouchers(params),
-    ...options
+    ...options,
   });
 }
 
 export const vouchersQueryKeys = {
-  list: (params: VouchersQueryParams = { limit: 50 }) => vouchersKey(params)
+  list: (params: VouchersQueryParams = { limit: 50 }) => vouchersKey(params),
 } as const;

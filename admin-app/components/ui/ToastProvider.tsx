@@ -1,9 +1,16 @@
-'use client';
+"use client";
 
-import { createContext, useCallback, useContext, useMemo, useState } from 'react';
-import styles from './ToastProvider.module.css';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useMemo,
+  useState,
+} from "react";
+import styles from "./ToastProvider.module.css";
+import { Button } from "@/components/ui/Button";
 
-export type ToastVariant = 'info' | 'success' | 'error';
+export type ToastVariant = "info" | "success" | "error";
 
 interface Toast {
   id: string;
@@ -26,26 +33,39 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const pushToast = useCallback(
-    (message: string, variant: ToastVariant = 'info') => {
+    (message: string, variant: ToastVariant = "info") => {
       const id = crypto.randomUUID();
       setToasts((prev) => [...prev, { id, message, variant }]);
       setTimeout(() => dismissToast(id), 4000);
     },
-    [dismissToast]
+    [dismissToast],
   );
 
-  const value = useMemo(() => ({ pushToast, dismissToast }), [pushToast, dismissToast]);
+  const value = useMemo(() => ({ pushToast, dismissToast }), [
+    pushToast,
+    dismissToast,
+  ]);
 
   return (
     <ToastContext.Provider value={value}>
       {children}
       <div className={styles.container} aria-live="polite" aria-atomic="true">
         {toasts.map((toast) => (
-          <div key={toast.id} className={`${styles.toast} ${styles[`toast_${toast.variant}`]}`}>
+          <div
+            key={toast.id}
+            className={`${styles.toast} ${styles[`toast_${toast.variant}`]}`}
+          >
             <span>{toast.message}</span>
-            <button type="button" onClick={() => dismissToast(toast.id)} aria-label="Dismiss notification">
+            <Button
+              type="button"
+              onClick={() => dismissToast(toast.id)}
+              aria-label="Dismiss notification"
+              size="icon"
+              variant="ghost"
+              className={styles.dismissButton}
+            >
               ×
-            </button>
+            </Button>
           </div>
         ))}
       </div>
@@ -56,7 +76,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
 export function useToast() {
   const context = useContext(ToastContext);
   if (!context) {
-    throw new Error('useToast must be used within a ToastProvider');
+    throw new Error("useToast must be used within a ToastProvider");
   }
   return context;
 }

@@ -1,14 +1,14 @@
-import { z } from 'zod';
+import { z } from "zod";
 
 export const userSchema = z.object({
   id: z.string().uuid().or(z.string()),
   msisdn: z.string(),
   displayName: z.string().optional(),
-  locale: z.string().default('rw-RW'),
+  locale: z.string().default("rw-RW"),
   roles: z.array(z.string()).default([]),
-  status: z.enum(['active', 'blocked', 'invited']).default('active'),
+  status: z.enum(["active", "blocked", "invited"]).default("active"),
   createdAt: z.string().datetime(),
-  lastSeenAt: z.string().datetime().nullable().optional()
+  lastSeenAt: z.string().datetime().nullable().optional(),
 });
 
 export const stationSchema = z.object({
@@ -16,15 +16,15 @@ export const stationSchema = z.object({
   name: z.string(),
   engencode: z.string(),
   ownerContact: z.string().nullable(),
-  status: z.enum(['active', 'inactive']).default('active'),
+  status: z.enum(["active", "inactive"]).default("active"),
   location: z
     .object({
       lat: z.number(),
-      lng: z.number()
+      lng: z.number(),
     })
     .nullable()
     .optional(),
-  updatedAt: z.string().datetime()
+  updatedAt: z.string().datetime(),
 });
 
 export const barSchema = z.object({
@@ -41,7 +41,7 @@ export const barSchema = z.object({
   serviceCharge: z.number().nullable(),
   directChatEnabled: z.boolean().optional(),
   defaultPrepMinutes: z.number().nullable(),
-  paymentInstructions: z.string().nullable()
+  paymentInstructions: z.string().nullable(),
 });
 
 export const voucherSchema = z.object({
@@ -51,36 +51,36 @@ export const voucherSchema = z.object({
   msisdn: z.string(),
   amount: z.number(),
   currency: z.string(),
-  status: z.enum(['issued', 'sent', 'redeemed', 'expired', 'void']),
+  status: z.enum(["issued", "sent", "redeemed", "expired", "void"]),
   campaignId: z.string().nullable(),
   stationScope: z.string().nullable(),
   code: z.string().optional(),
   issuedAt: z.string().datetime(),
   redeemedAt: z.string().datetime().nullable(),
-  expiresAt: z.string().datetime().nullable()
+  expiresAt: z.string().datetime().nullable(),
 });
 
 export const campaignSchema = z.object({
   id: z.string().uuid().or(z.string()),
   name: z.string(),
-  type: z.enum(['promo', 'voucher']),
-  status: z.enum(['draft', 'running', 'paused', 'done']),
+  type: z.enum(["promo", "voucher"]),
+  status: z.enum(["draft", "running", "paused", "done"]),
   templateId: z.string(),
   createdAt: z.string().datetime(),
   startedAt: z.string().datetime().nullable(),
-  metadata: z.record(z.any()).optional()
+  metadata: z.record(z.any()).optional(),
 });
 
 export const insuranceQuoteSchema = z.object({
   id: z.string().uuid().or(z.string()),
   userId: z.string(),
-  status: z.enum(['pending', 'approved', 'needs_changes']),
+  status: z.enum(["pending", "approved", "needs_changes"]),
   premium: z.number().nullable(),
   insurer: z.string().nullable(),
   uploadedDocs: z.array(z.string()).default([]),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime().nullable(),
-  reviewerComment: z.string().nullable()
+  reviewerComment: z.string().nullable(),
 });
 
 export const orderSchema = z.object({
@@ -92,7 +92,7 @@ export const orderSchema = z.object({
   total: z.number(),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
-  staffNumber: z.string().nullable()
+  staffNumber: z.string().nullable(),
 });
 
 export const orderEventSchema = z.object({
@@ -102,7 +102,7 @@ export const orderEventSchema = z.object({
   status: z.string().optional(),
   actor: z.string().nullable(),
   note: z.string().nullable(),
-  createdAt: z.string().datetime()
+  createdAt: z.string().datetime(),
 });
 
 export const webhookErrorSchema = z.object({
@@ -110,7 +110,7 @@ export const webhookErrorSchema = z.object({
   endpoint: z.string(),
   failureReason: z.string(),
   createdAt: z.string().datetime(),
-  retryUrl: z.string().nullable()
+  retryUrl: z.string().nullable(),
 });
 
 export const menuVersionSchema = z.object({
@@ -118,11 +118,11 @@ export const menuVersionSchema = z.object({
   barId: z.string(),
   barName: z.string(),
   version: z.string(),
-  status: z.enum(['draft', 'published']),
-  source: z.enum(['ocr', 'manual']).default('ocr'),
+  status: z.enum(["draft", "published"]),
+  source: z.enum(["ocr", "manual"]).default("ocr"),
   categories: z.number(),
   items: z.number(),
-  updatedAt: z.string().datetime()
+  updatedAt: z.string().datetime(),
 });
 
 export const ocrJobSchema = z.object({
@@ -130,11 +130,11 @@ export const ocrJobSchema = z.object({
   barId: z.string(),
   barName: z.string(),
   fileName: z.string(),
-  type: z.enum(['pdf', 'image']),
-  status: z.enum(['queued', 'processing', 'success', 'error']),
+  type: z.enum(["pdf", "image"]),
+  status: z.enum(["queued", "processing", "success", "error"]),
   durationSeconds: z.number().nullable(),
   retries: z.number().default(0),
-  submittedAt: z.string().datetime()
+  submittedAt: z.string().datetime(),
 });
 
 export const staffNumberSchema = z.object({
@@ -145,7 +145,7 @@ export const staffNumberSchema = z.object({
   active: z.boolean(),
   verified: z.boolean(),
   addedBy: z.string().nullable(),
-  lastSeenAt: z.string().datetime().nullable()
+  lastSeenAt: z.string().datetime().nullable(),
 });
 
 export const qrTokenSchema = z.object({
@@ -155,7 +155,7 @@ export const qrTokenSchema = z.object({
   token: z.string(),
   createdAt: z.string().datetime(),
   printed: z.boolean(),
-  lastScanAt: z.string().datetime().nullable()
+  lastScanAt: z.string().datetime().nullable(),
 });
 
 export const templateMetaSchema = z.object({
@@ -163,28 +163,28 @@ export const templateMetaSchema = z.object({
   name: z.string(),
   purpose: z.string(),
   locales: z.array(z.string()),
-  status: z.enum(['approved', 'draft']),
+  status: z.enum(["approved", "draft"]),
   variables: z.array(z.string()),
   lastUsedAt: z.string().datetime().nullable(),
-  errorRate: z.number()
+  errorRate: z.number(),
 });
 
 export const flowMetaSchema = z.object({
   id: z.string(),
   title: z.string(),
   version: z.string(),
-  status: z.enum(['published', 'draft']),
+  status: z.enum(["published", "draft"]),
   linkedEndpoints: z.array(z.string()),
-  lastErrorAt: z.string().datetime().nullable()
+  lastErrorAt: z.string().datetime().nullable(),
 });
 
 export const notificationSchema = z.object({
   id: z.string(),
   toRole: z.string(),
   type: z.string(),
-  status: z.enum(['queued', 'sent', 'failed']),
+  status: z.enum(["queued", "sent", "failed"]),
   createdAt: z.string().datetime(),
-  sentAt: z.string().datetime().nullable()
+  sentAt: z.string().datetime().nullable(),
 });
 
 export const auditEventSchema = z.object({
@@ -194,14 +194,14 @@ export const auditEventSchema = z.object({
   targetTable: z.string(),
   targetId: z.string(),
   createdAt: z.string().datetime(),
-  summary: z.string().nullable()
+  summary: z.string().nullable(),
 });
 
 export const settingEntrySchema = z.object({
   key: z.string(),
   description: z.string(),
   updatedAt: z.string().datetime(),
-  valuePreview: z.string()
+  valuePreview: z.string(),
 });
 
 export const storageObjectSchema = z.object({
@@ -210,21 +210,21 @@ export const storageObjectSchema = z.object({
   path: z.string(),
   mimeType: z.string(),
   sizeKb: z.number(),
-  updatedAt: z.string().datetime()
+  updatedAt: z.string().datetime(),
 });
 
 export const dashboardKpiSchema = z.object({
   label: z.string(),
   primaryValue: z.string(),
   secondaryValue: z.string().nullable(),
-  trend: z.enum(['up', 'down', 'flat']).nullable(),
-  helpText: z.string().optional()
+  trend: z.enum(["up", "down", "flat"]).nullable(),
+  helpText: z.string().optional(),
 });
 
 export const timeseriesPointSchema = z.object({
   date: z.string().datetime(),
   issued: z.number(),
-  redeemed: z.number()
+  redeemed: z.number(),
 });
 
 export type User = z.infer<typeof userSchema>;

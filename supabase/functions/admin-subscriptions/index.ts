@@ -1,253 +1,145 @@
-// deno-lint-ignore-file no-explicit-any
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
-/*
- * admin-subscriptions
- *
- * Secured by `x-admin-token` (must match ADMIN_TOKEN secret).
- * Operations:
- *   GET?action=list
- *     → latest 200 subs. If a row has `proof_url`, returns a 7-day signed URL
- *       as `proof_url_signed` (bucket: proofs).
- *   POST?action=approve { id:number, txn_id?:string }
- *     → status=active, sets started_at=now, expires_at=now+30 days, optional txn_id.
- *   POST?action=reject { id:number }
- *     → status=rejected
- */ const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
-const SUPABASE_SERVICE_KEY = Deno.env.get("SERVICE_ROLE_KEY"); // use SERVICE_ROLE_KEY (not SUPABASE_SERVICE_KEY)
-const ADMIN_TOKEN = Deno.env.get("ADMIN_TOKEN");
-const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
-const CORS_HEADERS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-admin-token",
-  "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
-  "Content-Type": "application/json",
-};
-function withCORS(init = {}) {
-  return {
-    ...init,
-    headers: {
-      ...init.headers || {},
-      ...CORS_HEADERS,
-    },
-  };
-}
-function checkAuth(req) {
-  return req.headers.get("x-admin-token") === ADMIN_TOKEN;
-}
-async function listSubscriptions() {
+import { z } from "https://deno.land/x/zod@v3.23.8/mod.ts";
+import {
+  createServiceRoleClient,
+  handleOptions,
+  json,
+  logRequest,
+  logResponse,
+  requireAdminAuth,
+  withCors,
+} from "../_shared/admin.ts";
+
+const supabase = createServiceRoleClient();
+
+const querySchema = z.object({
+  action: z.string().optional().default("list"),
+  limit: z.coerce.number().int().min(1).max(200).default(200),
+});
+
+const approveSchema = z.object({
+  id: z.number().int().positive(),
+  txn_id: z.string().max(64).optional(),
+}).strict();
+
+const rejectSchema = z.object({
+  id: z.number().int().positive(),
+}).strict();
+
+async function listSubscriptions(limit: number) {
   const { data, error } = await supabase.from("subscriptions").select(
     "id,user_id,status,started_at,expires_at,amount,proof_url,created_at",
-  ).order("created_at", {
-    ascending: false,
-  }).limit(200);
-  if (error) {
-    return {
-      error: error.message,
-    };
-  }
-  const out = [];
-  for (const sub of data ?? []) {
-    let proof_url_signed = null;
-    if (sub.proof_url) {
-      const { data: signed, error: signErr } = await supabase.storage.from(
-        "proofs",
-      ).createSignedUrl(sub.proof_url, 60 * 60 * 24 * 7); // 7 days
-      proof_url_signed = signErr ? null : signed.signedUrl;
+  ).order("created_at", { ascending: false }).limit(limit);
+  if (error) throw new Error(error.message);
+
+  const entries = data ?? [];
+
+  const signedResults = await Promise.all(entries.map(async (sub) => {
+    if (!sub.proof_url) return { id: sub.id, signedUrl: null };
+    const { data: signed, error: signErr } = await supabase.storage
+      .from("proofs")
+      .createSignedUrl(sub.proof_url, 60 * 60 * 24 * 7);
+    if (signErr) {
+      console.warn("admin-subscriptions.sign_failed", {
+        id: sub.id,
+        error: signErr.message,
+      });
+      return { id: sub.id, signedUrl: null };
     }
-    out.push({
-      ...sub,
-      proof_url_signed,
-    });
-  }
-  return {
-    subscriptions: out,
-  };
+    return { id: sub.id, signedUrl: signed.signedUrl };
+  }));
+
+  const signedMap = new Map(signedResults.map((r) => [r.id, r.signedUrl]));
+
+  return entries.map((sub) => ({
+    ...sub,
+    proof_url_signed: signedMap.get(sub.id) ?? null,
+  }));
 }
-async function approveSubscription(id, txn_id) {
+
+async function approveSubscription(id: number, txnId?: string) {
   const now = new Date();
   const expires = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
   const update = {
     status: "active",
     started_at: now.toISOString(),
     expires_at: expires.toISOString(),
+    txn_id: txnId ?? null,
+    updated_at: now.toISOString(),
   };
-  if (txn_id) update.txn_id = txn_id;
-  const { error } = await supabase.from("subscriptions").update(update).eq(
-    "id",
-    id,
-  );
-  return {
-    error: error?.message,
-  };
+  const { error } = await supabase.from("subscriptions")
+    .update(update)
+    .eq("id", id)
+    .in("status", ["pending", "review"])
+    .select("id");
+  if (error) throw new Error(error.message);
 }
-async function rejectSubscription(id) {
-  const { error } = await supabase.from("subscriptions").update({
-    status: "rejected",
-  }).eq("id", id);
-  return {
-    error: error?.message,
-  };
+
+async function rejectSubscription(id: number) {
+  const { error } = await supabase.from("subscriptions")
+    .update({ status: "rejected", updated_at: new Date().toISOString() })
+    .eq("id", id)
+    .in("status", ["pending", "review"])
+    .select("id");
+  if (error) throw new Error(error.message);
 }
-async function handler(req) {
-  if (req.method === "OPTIONS") {
-    return new Response(
-      "ok",
-      withCORS({
-        status: 200,
-      }),
-    );
-  }
-  if (!checkAuth(req)) {
-    return new Response(
-      JSON.stringify({
-        error: "unauthorized",
-      }),
-      withCORS({
-        status: 401,
-      }),
-    );
-  }
-  const url = new URL(req.url);
-  const action = url.searchParams.get("action") ?? "list";
-  if (req.method === "GET") {
-    if (action !== "list") {
-      return new Response(
-        JSON.stringify({
-          error: "invalid action",
-        }),
-        withCORS({
-          status: 400,
-        }),
-      );
-    }
-    const result = await listSubscriptions();
-    if ("error" in result) {
-      return new Response(
-        JSON.stringify({
-          error: result.error,
-        }),
-        withCORS({
-          status: 500,
-        }),
-      );
-    }
-    return new Response(
-      JSON.stringify(result),
-      withCORS({
-        status: 200,
-      }),
-    );
-  }
-  if (req.method === "POST") {
-    let body;
-    try {
-      body = await req.json();
-    } catch {
-      return new Response(
-        JSON.stringify({
-          error: "invalid JSON body",
-        }),
-        withCORS({
-          status: 400,
-        }),
-      );
-    }
-    if (action === "approve") {
-      const id = body?.id;
-      if (typeof id !== "number") {
-        return new Response(
-          JSON.stringify({
-            error: "id must be a number",
-          }),
-          withCORS({
-            status: 400,
-          }),
-        );
-      }
-      const txn_id = body?.txn_id;
-      const { error } = await approveSubscription(id, txn_id);
-      if (error) {
-        return new Response(
-          JSON.stringify({
-            error,
-          }),
-          withCORS({
-            status: 500,
-          }),
-        );
-      }
-      return new Response(
-        JSON.stringify({
-          success: true,
-        }),
-        withCORS({
-          status: 200,
-        }),
-      );
-    }
-    if (action === "reject") {
-      const id = body?.id;
-      if (typeof id !== "number") {
-        return new Response(
-          JSON.stringify({
-            error: "id must be a number",
-          }),
-          withCORS({
-            status: 400,
-          }),
-        );
-      }
-      const { error } = await rejectSubscription(id);
-      if (error) {
-        return new Response(
-          JSON.stringify({
-            error,
-          }),
-          withCORS({
-            status: 500,
-          }),
-        );
-      }
-      return new Response(
-        JSON.stringify({
-          success: true,
-        }),
-        withCORS({
-          status: 200,
-        }),
-      );
-    }
-    return new Response(
-      JSON.stringify({
-        error: "invalid action",
-      }),
-      withCORS({
-        status: 400,
-      }),
-    );
-  }
-  return new Response(
-    JSON.stringify({
-      error: "method not allowed",
-    }),
-    withCORS({
-      status: 405,
-    }),
-  );
-}
+
 Deno.serve(async (req) => {
+  logRequest("admin-subscriptions", req);
+
+  if (req.method === "OPTIONS") {
+    return handleOptions();
+  }
+
+  const authResponse = requireAdminAuth(req);
+  if (authResponse) return authResponse;
+
   try {
-    return await handler(req);
-  } catch (e) {
-    console.error("admin-subscriptions error:", e);
-    return new Response(
-      JSON.stringify({
-        error: "internal error",
-      }),
-      withCORS({
-        status: 500,
-      }),
-    );
+    if (req.method === "GET") {
+      const query = querySchema.parse(
+        Object.fromEntries(new URL(req.url).searchParams),
+      );
+      if (query.action !== "list") {
+        return json({ error: "invalid_action" }, 400);
+      }
+      const subscriptions = await listSubscriptions(query.limit);
+      logResponse("admin-subscriptions", 200, { count: subscriptions.length });
+      return new Response(
+        JSON.stringify({ subscriptions }),
+        withCors({ status: 200 }),
+      );
+    }
+
+    if (req.method === "POST") {
+      const action = (new URL(req.url).searchParams.get("action") ?? "")
+        .toLowerCase();
+      const payload = await req.json().catch(() => {
+        throw new Error("invalid_json");
+      });
+
+      if (action === "approve") {
+        const { id, txn_id } = approveSchema.parse(payload);
+        await approveSubscription(id, txn_id);
+        logResponse("admin-subscriptions", 200, { action, id });
+        return json({ success: true });
+      }
+      if (action === "reject") {
+        const { id } = rejectSchema.parse(payload);
+        await rejectSubscription(id);
+        logResponse("admin-subscriptions", 200, { action, id });
+        return json({ success: true });
+      }
+      return json({ error: "invalid_action" }, 400);
+    }
+
+    return json({ error: "method_not_allowed" }, 405);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return json({ error: "invalid_payload" }, 400);
+    }
+    if (error instanceof Error && error.message === "invalid_json") {
+      return json({ error: "invalid_json" }, 400);
+    }
+    console.error("admin-subscriptions.unhandled", error);
+    return json({ error: "internal_error" }, 500);
   }
 });

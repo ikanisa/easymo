@@ -33,10 +33,7 @@
   background: rgba(239, 68, 68, 0.2);
 }
 
-.toast button {
-  border: none;
-  background: transparent;
-  font-size: 1rem;
-  cursor: pointer;
+.dismissButton {
   color: inherit;
+  font-size: 1rem;
 }

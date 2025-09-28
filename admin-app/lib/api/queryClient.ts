@@ -1,4 +1,4 @@
-import { QueryClient } from '@tanstack/react-query';
+import { QueryClient } from "@tanstack/react-query";
 
 const DEFAULT_QUERY_OPTIONS = {
   queries: {
@@ -6,10 +6,10 @@ const DEFAULT_QUERY_OPTIONS = {
     refetchOnWindowFocus: false,
     retry: (failureCount: number, error: unknown) => {
       if (failureCount >= 2) return false;
-      if (typeof window === 'undefined') return false;
+      if (typeof window === "undefined") return false;
       return true;
-    }
-  }
+    },
+  },
 } as const;
 
 export function createQueryClient() {
@@ -19,7 +19,7 @@ export function createQueryClient() {
 let browserQueryClient: QueryClient | null = null;
 
 export function getBrowserQueryClient(): QueryClient {
-  if (typeof window === 'undefined') {
+  if (typeof window === "undefined") {
     return createQueryClient();
   }
   if (!browserQueryClient) {

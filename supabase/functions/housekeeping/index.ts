@@ -15,17 +15,26 @@ Deno.serve(async (_req) => {
       .toISOString();
     const dayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString();
     // 1) mark drivers offline if last_seen > 30m ago
-    const { error: driverErr } = await supabase.from("driver_status").update({
-      online: false,
-    }).lt("last_seen", thirtyMinsAgo).eq("online", true);
+    const { count: driversMarked, error: driverErr } = await supabase
+      .from("driver_status")
+      .update({ online: false, updated_at: now.toISOString() })
+      .lt("last_seen", thirtyMinsAgo)
+      .eq("online", true)
+      .select("id", { count: "exact" });
     // 2) expire active subscriptions whose expiry passed
-    const { error: subErr } = await supabase.from("subscriptions").update({
-      status: "expired",
-    }).lt("expires_at", now.toISOString()).eq("status", "active");
+    const { count: subsExpired, error: subErr } = await supabase
+      .from("subscriptions")
+      .update({ status: "expired", updated_at: now.toISOString() })
+      .lt("expires_at", now.toISOString())
+      .eq("status", "active")
+      .select("id", { count: "exact" });
     // 3) expire trips older than 24h that are still open
-    const { error: tripErr } = await supabase.from("trips").update({
-      status: "expired",
-    }).lt("created_at", dayAgo).eq("status", "open");
+    const { count: tripsExpired, error: tripErr } = await supabase
+      .from("trips")
+      .update({ status: "expired", updated_at: now.toISOString() })
+      .lt("created_at", dayAgo)
+      .eq("status", "open")
+      .select("id", { count: "exact" });
     const errs = [
       driverErr?.message,
       subErr?.message,
@@ -45,9 +54,17 @@ Deno.serve(async (_req) => {
         },
       );
     }
+    console.info("housekeeping.completed", {
+      drivers_marked_offline: driversMarked ?? 0,
+      subscriptions_expired: subsExpired ?? 0,
+      trips_expired: tripsExpired ?? 0,
+    });
     return new Response(
       JSON.stringify({
         ok: true,
+        drivers_marked_offline: driversMarked ?? 0,
+        subscriptions_expired: subsExpired ?? 0,
+        trips_expired: tripsExpired ?? 0,
       }),
       {
         status: 200,

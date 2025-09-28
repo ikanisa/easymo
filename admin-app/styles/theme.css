@@ -1,6 +1,8 @@
 :root {
-  --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --font-mono: 'JetBrains Mono', 'SFMono-Regular', Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+  --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono:
+    "JetBrains Mono", "SFMono-Regular", Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
 
   --color-background: #f4f6fb;
   --color-foreground: #0f172a;
@@ -54,18 +56,28 @@
 
 body {
   font-family: var(--font-sans);
-  background: radial-gradient(circle at top, rgba(37, 99, 235, 0.12), transparent 45%),
-    radial-gradient(circle at 20% 80%, rgba(14, 165, 233, 0.12), transparent 50%),
+  background:
+    radial-gradient(circle at top, rgba(37, 99, 235, 0.12), transparent 45%),
+    radial-gradient(
+    circle at 20% 80%,
+    rgba(14, 165, 233, 0.12),
+    transparent 50%
+  ),
     var(--color-background);
   color: var(--color-foreground);
 }
 
 body::before {
-  content: '';
+  content: "";
   position: fixed;
   inset: 0;
   pointer-events: none;
-  background: linear-gradient(120deg, rgba(37, 99, 235, 0.08), rgba(14, 165, 233, 0.05), transparent 65%);
+  background: linear-gradient(
+    120deg,
+    rgba(37, 99, 235, 0.08),
+    rgba(14, 165, 233, 0.05),
+    transparent 65%
+  );
   opacity: 0.5;
   z-index: -1;
 }
@@ -89,15 +101,21 @@ body::before {
 }
 
 .gradient-border::before {
-  content: '';
+  content: "";
   position: absolute;
   inset: -1px;
   border-radius: inherit;
   padding: 1px;
-  background: linear-gradient(135deg, var(--gradient-primary-start), var(--gradient-secondary-end));
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  background: linear-gradient(
+    135deg,
+    var(--gradient-primary-start),
+    var(--gradient-secondary-end)
+  );
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
-          mask-composite: exclude;
+  mask-composite: exclude;
   opacity: 0.85;
   pointer-events: none;
 }

@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import type { ColumnDef } from '@tanstack/react-table';
-import { DataTable } from '@/components/data-table/DataTable';
-import type { QrToken } from '@/lib/schemas';
+import type { ColumnDef } from "@tanstack/react-table";
+import { DataTable } from "@/components/data-table/DataTable";
+import type { QrToken } from "@/lib/schemas";
 
 interface QrTokenTableProps {
   data: QrToken[];
@@ -10,32 +10,36 @@ interface QrTokenTableProps {
 
 const columns: ColumnDef<QrToken>[] = [
   {
-    header: 'Bar',
-    accessorKey: 'barName'
+    header: "Bar",
+    accessorKey: "barName",
   },
   {
-    header: 'Table',
-    accessorKey: 'tableLabel'
+    header: "Table",
+    accessorKey: "tableLabel",
   },
   {
-    header: 'Token',
-    accessorKey: 'token'
+    header: "Token",
+    accessorKey: "token",
   },
   {
-    header: 'Created',
-    accessorKey: 'createdAt',
-    cell: ({ row }) => new Date(row.original.createdAt).toLocaleString()
+    header: "Created",
+    accessorKey: "createdAt",
+    cell: ({ row }) => new Date(row.original.createdAt).toLocaleString(),
   },
   {
-    header: 'Printed',
-    accessorKey: 'printed',
-    cell: ({ row }) => (row.original.printed ? 'Yes' : 'No')
+    header: "Printed",
+    accessorKey: "printed",
+    cell: ({ row }) => (row.original.printed ? "Yes" : "No"),
   },
   {
-    header: 'Last scan',
-    accessorKey: 'lastScanAt',
-    cell: ({ row }) => (row.original.lastScanAt ? new Date(row.original.lastScanAt).toLocaleString() : '—')
-  }
+    header: "Last scan",
+    accessorKey: "lastScanAt",
+    cell: (
+      { row },
+    ) => (row.original.lastScanAt
+      ? new Date(row.original.lastScanAt).toLocaleString()
+      : "—"),
+  },
 ];
 
 export function QrTokenTable({ data }: QrTokenTableProps) {
@@ -45,8 +49,9 @@ export function QrTokenTable({ data }: QrTokenTableProps) {
       columns={columns}
       searchPlaceholder="Search QR tokens"
       globalFilterFn={(row, value) =>
-        `${row.barName} ${row.tableLabel} ${row.token}`.toLowerCase().includes(value.toLowerCase())
-      }
+        `${row.barName} ${row.tableLabel} ${row.token}`.toLowerCase().includes(
+          value.toLowerCase(),
+        )}
       downloadFileName="qr-tokens.csv"
     />
   );

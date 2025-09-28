@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import Papa from 'papaparse';
-import styles from './CsvUpload.module.css';
+import { useState } from "react";
+import Papa from "papaparse";
+import styles from "./CsvUpload.module.css";
 
 interface CsvUploadProps<T = Record<string, unknown>> {
   accept?: string;
@@ -11,9 +11,9 @@ interface CsvUploadProps<T = Record<string, unknown>> {
 }
 
 export function CsvUpload<T = Record<string, unknown>>({
-  accept = '.csv',
+  accept = ".csv",
   onPreview,
-  instructions = 'Upload a CSV file. The first row should contain headers.'
+  instructions = "Upload a CSV file. The first row should contain headers.",
 }: CsvUploadProps<T>) {
   const [fileName, setFileName] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -30,14 +30,14 @@ export function CsvUpload<T = Record<string, unknown>>({
       skipEmptyLines: true,
       complete: (result) => {
         if (result.errors.length) {
-          setError(result.errors.map((err) => err.message).join(', '));
+          setError(result.errors.map((err) => err.message).join(", "));
           return;
         }
         onPreview(result.data);
       },
       error: (parseError) => {
         setError(parseError.message);
-      }
+      },
     });
   };
 

@@ -1,6 +1,7 @@
 # easymo
 
-This repo follows a standard blueprint to help our Dev Agent (Codex-style) work better.
+This repo follows a standard blueprint to help our Dev Agent (Codex-style) work
+better.
 
 - `app/` – app code
 - `packages/` – shared libs
@@ -8,4 +9,3 @@ This repo follows a standard blueprint to help our Dev Agent (Codex-style) work 
 - `agent/` – Dev Agent tools + policies
 - `.github/workflows/` – CI jobs
 - `docs/` – decisions & notes
-

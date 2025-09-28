@@ -19,26 +19,6 @@
   margin-bottom: 12px;
 }
 
-.actions button {
-  padding: 8px 12px;
-  border-radius: 8px;
-  border: 1px solid rgba(148, 163, 184, 0.4);
-  background: rgba(14, 165, 233, 0.12);
-  color: var(--accent);
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.actions button:nth-of-type(2) {
-  background: rgba(239, 68, 68, 0.12);
-  color: #b91c1c;
-}
-
-.actions button:nth-of-type(3) {
-  background: rgba(34, 197, 94, 0.12);
-  color: #15803d;
-}
-
 .message {
   font-size: 0.85rem;
   color: var(--text-secondary);

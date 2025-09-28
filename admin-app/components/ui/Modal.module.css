@@ -32,11 +32,8 @@
 }
 
 .closeButton {
-  border: none;
-  background: transparent;
-  font-size: 1.4rem;
-  cursor: pointer;
   color: var(--text-secondary);
+  font-size: 1.4rem;
 }
 
 .body {

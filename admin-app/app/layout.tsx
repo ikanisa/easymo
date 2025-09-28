@@ -1,15 +1,16 @@
-import type { Metadata } from 'next';
-import './globals.css';
-import '../styles/theme.css';
-import { AppProviders } from '@/components/providers/AppProviders';
+import type { Metadata } from "next";
+import "./globals.css";
+import "../styles/theme.css";
+import { AppProviders } from "@/components/providers/AppProviders";
 
 export const metadata: Metadata = {
-  title: 'easyMO Admin Panel',
-  description: 'Operations console for platform staff — dashboards, vouchers, campaigns, and support tools.'
+  title: "easyMO Admin Panel",
+  description:
+    "Operations console for platform staff — dashboards, vouchers, campaigns, and support tools.",
 };
 
 export default function RootLayout({
-  children
+  children,
 }: {
   children: React.ReactNode;
 }) {

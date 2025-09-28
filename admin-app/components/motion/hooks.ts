@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { useMemo } from 'react';
-import { usePrefersReducedMotion } from './MotionProviders';
+import { useMemo } from "react";
+import { usePrefersReducedMotion } from "./MotionProviders";
 
 export function usePageTransition() {
   const prefersReducedMotion = usePrefersReducedMotion();
@@ -12,7 +12,7 @@ export function usePageTransition() {
         initial: { opacity: 1, y: 0 },
         animate: { opacity: 1, y: 0 },
         exit: { opacity: 1, y: 0 },
-        transition: { duration: 0 }
+        transition: { duration: 0 },
       } as const;
     }
 
@@ -20,7 +20,7 @@ export function usePageTransition() {
       initial: { opacity: 0, y: 12 },
       animate: { opacity: 1, y: 0 },
       exit: { opacity: 0, y: -12 },
-      transition: { duration: 0.22, ease: [0.16, 1, 0.3, 1] }
+      transition: { duration: 0.22, ease: [0.16, 1, 0.3, 1] },
     } as const;
   }, [prefersReducedMotion]);
 }
@@ -33,14 +33,18 @@ export function useStaggeredList(delayStep = 0.04) {
       return (index: number) => ({
         initial: { opacity: 1, y: 0 },
         animate: { opacity: 1, y: 0 },
-        transition: { duration: 0 }
+        transition: { duration: 0 },
       });
     }
 
     return (index: number) => ({
       initial: { opacity: 0, y: 10 },
       animate: { opacity: 1, y: 0 },
-      transition: { duration: 0.18, delay: index * delayStep, ease: [0.16, 1, 0.3, 1] }
+      transition: {
+        duration: 0.18,
+        delay: index * delayStep,
+        ease: [0.16, 1, 0.3, 1],
+      },
     });
   }, [delayStep, prefersReducedMotion]);
 }

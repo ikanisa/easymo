@@ -6,7 +6,13 @@ const roots = [
   "apps",
 ];
 
-const forbidden = [/\b_archive\./i, /\bserved_drivers\b/i, /\bserved_passengers\b/i, /\bbasket_joins\b/i, /\bcontributions\b/i];
+const forbidden = [
+  /\b_archive\./i,
+  /\bserved_drivers\b/i,
+  /\bserved_passengers\b/i,
+  /\bbasket_joins\b/i,
+  /\bcontributions\b/i,
+];
 const offenders: Array<string> = [];
 
 async function* walkDir(path: string): AsyncGenerator<string> {

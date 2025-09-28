@@ -21,16 +21,6 @@
   gap: 8px;
 }
 
-.actions button {
-  padding: 8px 12px;
-  border-radius: 8px;
-  border: 1px solid rgba(148, 163, 184, 0.4);
-  background: rgba(14, 165, 233, 0.1);
-  color: var(--accent);
-  font-weight: 600;
-  cursor: pointer;
-}
-
 .status {
   font-size: 0.85rem;
   color: var(--text-secondary);

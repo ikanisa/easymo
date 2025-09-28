@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import type { TemplateMeta } from '@/lib/schemas';
-import styles from './TemplatePicker.module.css';
+import { useState } from "react";
+import type { TemplateMeta } from "@/lib/schemas";
+import styles from "./TemplatePicker.module.css";
 
 interface TemplatePickerProps {
   templates: TemplateMeta[];
@@ -10,7 +10,9 @@ interface TemplatePickerProps {
   onChange?: (templateId: string) => void;
 }
 
-export function TemplatePicker({ templates, value, onChange }: TemplatePickerProps) {
+export function TemplatePicker(
+  { templates, value, onChange }: TemplatePickerProps,
+) {
   const [selected, setSelected] = useState<string | undefined>(value);
 
   const handleSelect = (templateId: string) => {
@@ -34,8 +36,12 @@ export function TemplatePicker({ templates, value, onChange }: TemplatePickerPro
             <span className={styles.status}>{template.status}</span>
           </div>
           <p className={styles.purpose}>{template.purpose}</p>
-          <p className={styles.meta}>Locales: {template.locales.join(', ') || '—'}</p>
-          <p className={styles.meta}>Variables: {template.variables.join(', ') || '—'}</p>
+          <p className={styles.meta}>
+            Locales: {template.locales.join(", ") || "—"}
+          </p>
+          <p className={styles.meta}>
+            Variables: {template.variables.join(", ") || "—"}
+          </p>
         </button>
       ))}
     </div>

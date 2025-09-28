@@ -1,4 +1,4 @@
-import styles from './VoucherCardPreview.module.css';
+import styles from "./VoucherCardPreview.module.css";
 
 interface VoucherCardPreviewProps {
   amount: number;
@@ -9,9 +9,14 @@ interface VoucherCardPreviewProps {
   notes?: string;
 }
 
-export function VoucherCardPreview({ amount, currency, code, expiresAt, barName, notes }: VoucherCardPreviewProps) {
+export function VoucherCardPreview(
+  { amount, currency, code, expiresAt, barName, notes }:
+    VoucherCardPreviewProps,
+) {
   const amountLabel = `${amount.toLocaleString()} ${currency}`;
-  const expiryText = expiresAt ? new Date(expiresAt).toLocaleDateString() : 'No expiry set';
+  const expiryText = expiresAt
+    ? new Date(expiresAt).toLocaleDateString()
+    : "No expiry set";
 
   return (
     <div className={styles.card} aria-label="Voucher preview">
@@ -37,7 +42,9 @@ export function VoucherCardPreview({ amount, currency, code, expiresAt, barName,
         </div>
         <div>
           <strong>Notes</strong>
-          <span>{notes ?? 'Single-use voucher. Present to station operator.'}</span>
+          <span>
+            {notes ?? "Single-use voucher. Present to station operator."}
+          </span>
         </div>
       </footer>
     </div>

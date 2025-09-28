@@ -29,4 +29,5 @@ values ('44444444-4444-4444-4444-444444444444', '11111111-1111-1111-1111-1111111
 on conflict (id) do nothing;
 ```
 
-After seeding, run `REFRESH MATERIALIZED VIEW public.menu_items_snapshot;` to sync the snapshot. Use these records for local Flow testing.
+After seeding, run `REFRESH MATERIALIZED VIEW public.menu_items_snapshot;` to
+sync the snapshot. Use these records for local Flow testing.

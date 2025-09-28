@@ -1,66 +1,69 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import type { Station } from '@/lib/schemas';
-import { StationForm } from './StationForm';
-import styles from './StationListWithActions.module.css';
-import { useToast } from '@/components/ui/ToastProvider';
+import { useState } from "react";
+import type { Station } from "@/lib/schemas";
+import { StationForm } from "./StationForm";
+import styles from "./StationListWithActions.module.css";
+import { useToast } from "@/components/ui/ToastProvider";
+import { Button } from "@/components/ui/Button";
 
 interface StationListWithActionsProps {
   stations: Station[];
 }
 
-export function StationListWithActions({ stations }: StationListWithActionsProps) {
+export function StationListWithActions(
+  { stations }: StationListWithActionsProps,
+) {
   const [items, setItems] = useState(stations);
   const [isProcessing, setIsProcessing] = useState(false);
   const { pushToast } = useToast();
 
   const refresh = async () => {
-    const response = await fetch('/api/stations', { cache: 'no-store' });
+    const response = await fetch("/api/stations", { cache: "no-store" });
     if (response.ok) {
       const data = await response.json();
       setItems(data.data || []);
     }
   };
 
-  const updateStatus = async (id: string, status: 'active' | 'inactive') => {
+  const updateStatus = async (id: string, status: "active" | "inactive") => {
     setIsProcessing(true);
     try {
       const response = await fetch(`/api/stations/${id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status })
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
       });
       if (!response.ok) {
         const data = await response.json();
-        pushToast(data?.error ?? 'Failed to update station.', 'error');
+        pushToast(data?.error ?? "Failed to update station.", "error");
       } else {
-        pushToast('Station updated.', 'success');
+        pushToast("Station updated.", "success");
         refresh();
       }
     } catch (error) {
-      console.error('Station update failed', error);
-      pushToast('Unexpected error while updating station.', 'error');
+      console.error("Station update failed", error);
+      pushToast("Unexpected error while updating station.", "error");
     } finally {
       setIsProcessing(false);
     }
   };
 
   const removeStation = async (id: string) => {
-    if (!confirm('Delete this station?')) return;
+    if (!confirm("Delete this station?")) return;
     setIsProcessing(true);
     try {
-      const response = await fetch(`/api/stations/${id}`, { method: 'DELETE' });
+      const response = await fetch(`/api/stations/${id}`, { method: "DELETE" });
       if (!response.ok) {
         const data = await response.json();
-        pushToast(data?.error ?? 'Failed to delete station.', 'error');
+        pushToast(data?.error ?? "Failed to delete station.", "error");
       } else {
-        pushToast('Station deleted.', 'success');
+        pushToast("Station deleted.", "success");
         refresh();
       }
     } catch (error) {
-      console.error('Station delete failed', error);
-      pushToast('Unexpected error while deleting station.', 'error');
+      console.error("Station delete failed", error);
+      pushToast("Unexpected error while deleting station.", "error");
     } finally {
       setIsProcessing(false);
     }
@@ -84,19 +87,33 @@ export function StationListWithActions({ stations }: StationListWithActionsProps
             <tr key={station.id}>
               <td>{station.name}</td>
               <td>{station.engencode}</td>
-              <td>{station.ownerContact ?? '—'}</td>
+              <td>{station.ownerContact ?? "—"}</td>
               <td>{station.status}</td>
               <td>
-                <button
-                  type="button"
-                  onClick={() => updateStatus(station.id, station.status === 'active' ? 'inactive' : 'active')}
-                  disabled={isProcessing}
-                >
-                  {station.status === 'active' ? 'Deactivate' : 'Activate'}
-                </button>
-                <button type="button" onClick={() => removeStation(station.id)} disabled={isProcessing}>
-                  Delete
-                </button>
+                <div className={styles.actions}>
+                  <Button
+                    type="button"
+                    onClick={() =>
+                      updateStatus(
+                        station.id,
+                        station.status === "active" ? "inactive" : "active",
+                      )}
+                    disabled={isProcessing}
+                    size="sm"
+                    variant="outline"
+                  >
+                    {station.status === "active" ? "Deactivate" : "Activate"}
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={() => removeStation(station.id)}
+                    disabled={isProcessing}
+                    size="sm"
+                    variant="danger"
+                  >
+                    Delete
+                  </Button>
+                </div>
               </td>
             </tr>
           ))}

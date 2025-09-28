@@ -1,11 +1,12 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import type { InsuranceQuote } from '@/lib/schemas';
-import { Drawer } from '@/components/ui/Drawer';
-import styles from './InsuranceDrawer.module.css';
-import { IntegrationStatusBadge } from '@/components/ui/IntegrationStatusBadge';
-import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { useState } from "react";
+import type { InsuranceQuote } from "@/lib/schemas";
+import { Drawer } from "@/components/ui/Drawer";
+import styles from "./InsuranceDrawer.module.css";
+import { IntegrationStatusBadge } from "@/components/ui/IntegrationStatusBadge";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { Button } from "@/components/ui/Button";
 
 interface InsuranceDrawerProps {
   quote: InsuranceQuote;
@@ -15,8 +16,15 @@ interface InsuranceDrawerProps {
 export function InsuranceDrawer({ quote, onClose }: InsuranceDrawerProps) {
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [integration, setIntegration] = useState<{ target: string; status: 'ok' | 'degraded'; reason?: string; message?: string } | null>(null);
-  const [comment, setComment] = useState('');
+  const [integration, setIntegration] = useState<
+    {
+      target: string;
+      status: "ok" | "degraded";
+      reason?: string;
+      message?: string;
+    } | null
+  >(null);
+  const [comment, setComment] = useState("");
   const [confirmApprove, setConfirmApprove] = useState(false);
 
   const approve = async () => {
@@ -24,17 +32,19 @@ export function InsuranceDrawer({ quote, onClose }: InsuranceDrawerProps) {
     setStatusMessage(null);
     setIntegration(null);
     try {
-      const response = await fetch(`/api/insurance/${quote.id}/approve`, { method: 'POST' });
+      const response = await fetch(`/api/insurance/${quote.id}/approve`, {
+        method: "POST",
+      });
       const data = await response.json();
       setIntegration(data?.integration ?? null);
       if (!response.ok) {
-        setStatusMessage(data?.message ?? 'Approval failed.');
+        setStatusMessage(data?.message ?? "Approval failed.");
       } else {
-        setStatusMessage(data.message ?? 'Quote approved (mock).');
+        setStatusMessage(data.message ?? "Quote approved (mock).");
       }
     } catch (error) {
-      console.error('Approve quote failed', error);
-      setStatusMessage('Unexpected error while approving.');
+      console.error("Approve quote failed", error);
+      setStatusMessage("Unexpected error while approving.");
     } finally {
       setIsSubmitting(false);
     }
@@ -42,29 +52,32 @@ export function InsuranceDrawer({ quote, onClose }: InsuranceDrawerProps) {
 
   const requestChanges = async () => {
     if (!comment.trim()) {
-      setStatusMessage('Provide a comment before requesting changes.');
+      setStatusMessage("Provide a comment before requesting changes.");
       return;
     }
     setIsSubmitting(true);
     setStatusMessage(null);
     setIntegration(null);
     try {
-      const response = await fetch(`/api/insurance/${quote.id}/request-changes`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ comment })
-      });
+      const response = await fetch(
+        `/api/insurance/${quote.id}/request-changes`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ comment }),
+        },
+      );
       const data = await response.json();
       setIntegration(data?.integration ?? null);
       if (!response.ok) {
-        setStatusMessage(data?.message ?? 'Request changes failed.');
+        setStatusMessage(data?.message ?? "Request changes failed.");
       } else {
-        setStatusMessage(data.message ?? 'Change request recorded (mock).');
-        setComment('');
+        setStatusMessage(data.message ?? "Change request recorded (mock).");
+        setComment("");
       }
     } catch (error) {
-      console.error('Request changes failed', error);
-      setStatusMessage('Unexpected error while requesting changes.');
+      console.error("Request changes failed", error);
+      setStatusMessage("Unexpected error while requesting changes.");
     } finally {
       setIsSubmitting(false);
     }
@@ -78,25 +91,37 @@ export function InsuranceDrawer({ quote, onClose }: InsuranceDrawerProps) {
       </div>
       <div className={styles.section}>
         <h3>Premium</h3>
-        <p>{quote.premium ? `${quote.premium.toLocaleString()} RWF` : 'Pending pricing'}</p>
+        <p>
+          {quote.premium
+            ? `${quote.premium.toLocaleString()} RWF`
+            : "Pending pricing"}
+        </p>
       </div>
       <div className={styles.section}>
         <h3>Documents</h3>
         <ul>
-          {quote.uploadedDocs.map((doc) => (
-            <li key={doc}>{doc}</li>
-          ))}
+          {quote.uploadedDocs.map((doc) => <li key={doc}>{doc}</li>)}
         </ul>
       </div>
       <div className={styles.section}>
         <h3>Actions</h3>
         <div className={styles.actions}>
-          <button type="button" onClick={() => setConfirmApprove(true)} disabled={isSubmitting} title="Approve this insurance quote">
+          <Button
+            type="button"
+            onClick={() => setConfirmApprove(true)}
+            disabled={isSubmitting}
+            title="Approve this insurance quote"
+          >
             Approve
-          </button>
-          <button type="button" onClick={requestChanges} disabled={isSubmitting}>
+          </Button>
+          <Button
+            type="button"
+            onClick={requestChanges}
+            disabled={isSubmitting}
+            variant="danger"
+          >
             Request changes
-          </button>
+          </Button>
         </div>
         <label className={styles.commentField}>
           <span>Reviewer comment</span>
@@ -108,7 +133,14 @@ export function InsuranceDrawer({ quote, onClose }: InsuranceDrawerProps) {
           />
         </label>
       </div>
-      {integration ? <IntegrationStatusBadge integration={integration} label="Insurance workflow" /> : null}
+      {integration
+        ? (
+          <IntegrationStatusBadge
+            integration={integration}
+            label="Insurance workflow"
+          />
+        )
+        : null}
       {statusMessage ? <p className={styles.message}>{statusMessage}</p> : null}
       <ConfirmDialog
         open={confirmApprove}

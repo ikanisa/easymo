@@ -1,4 +1,4 @@
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
 
 let adminClient: SupabaseClient | null = null;
 
@@ -13,8 +13,8 @@ export function getSupabaseAdminClient(): SupabaseClient | null {
   if (!adminClient) {
     adminClient = createClient(url, serviceKey, {
       auth: {
-        persistSession: false
-      }
+        persistSession: false,
+      },
     });
   }
 

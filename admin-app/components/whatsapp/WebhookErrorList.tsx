@@ -1,4 +1,4 @@
-import type { WebhookError } from '@/lib/schemas';
+import type { WebhookError } from "@/lib/schemas";
 
 interface WebhookErrorListProps {
   errors: WebhookError[];
@@ -31,14 +31,16 @@ export function WebhookErrorList({ errors }: WebhookErrorListProps) {
                 {new Date(error.createdAt).toLocaleString()}
               </p>
             </div>
-            {error.retryUrl ? (
-              <a
-                href={error.retryUrl}
-                className="rounded-full border border-[color:var(--color-border)]/40 px-3 py-1 text-xs font-medium text-[color:var(--color-accent)] transition hover:border-[color:var(--color-accent)]/40 hover:bg-[color:var(--color-accent)]/10"
-              >
-                Retry
-              </a>
-            ) : null}
+            {error.retryUrl
+              ? (
+                <a
+                  href={error.retryUrl}
+                  className="rounded-full border border-[color:var(--color-border)]/40 px-3 py-1 text-xs font-medium text-[color:var(--color-accent)] transition hover:border-[color:var(--color-accent)]/40 hover:bg-[color:var(--color-accent)]/10"
+                >
+                  Retry
+                </a>
+              )
+              : null}
           </div>
         </li>
       ))}

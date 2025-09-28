@@ -1,16 +1,16 @@
-import { HydrationBoundary, dehydrate } from '@tanstack/react-query';
-import { createQueryClient } from '@/lib/api/queryClient';
-import { CampaignsClient } from './CampaignsClient';
+import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
+import { createQueryClient } from "@/lib/api/queryClient";
+import { CampaignsClient } from "./CampaignsClient";
 import {
   campaignsQueryKeys,
+  type CampaignsQueryParams,
   fetchCampaigns,
-  type CampaignsQueryParams
-} from '@/lib/queries/campaigns';
+} from "@/lib/queries/campaigns";
 import {
-  templatesQueryKeys,
   fetchTemplates,
-  type TemplatesQueryParams
-} from '@/lib/queries/templates';
+  templatesQueryKeys,
+  type TemplatesQueryParams,
+} from "@/lib/queries/templates";
 
 const DEFAULT_CAMPAIGN_PARAMS: CampaignsQueryParams = { limit: 100 };
 const DEFAULT_TEMPLATE_PARAMS: TemplatesQueryParams = { limit: 20 };
@@ -21,12 +21,12 @@ export default async function CampaignsPage() {
   await Promise.all([
     queryClient.prefetchQuery({
       queryKey: campaignsQueryKeys.list(DEFAULT_CAMPAIGN_PARAMS),
-      queryFn: () => fetchCampaigns(DEFAULT_CAMPAIGN_PARAMS)
+      queryFn: () => fetchCampaigns(DEFAULT_CAMPAIGN_PARAMS),
     }),
     queryClient.prefetchQuery({
       queryKey: templatesQueryKeys.list(DEFAULT_TEMPLATE_PARAMS),
-      queryFn: () => fetchTemplates(DEFAULT_TEMPLATE_PARAMS)
-    })
+      queryFn: () => fetchTemplates(DEFAULT_TEMPLATE_PARAMS),
+    }),
   ]);
 
   const dehydratedState = dehydrate(queryClient);

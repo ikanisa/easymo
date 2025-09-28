@@ -5,7 +5,9 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 const WA_TOKEN = Deno.env.get("WA_TOKEN");
 const WA_PHONE_ID = Deno.env.get("WA_PHONE_ID");
-const sb = createClient(SUPABASE_URL, SERVICE_KEY);
+const sb = createClient(SUPABASE_URL, SERVICE_KEY, {
+  auth: { persistSession: false },
+});
 const WA_BASE = `https://graph.facebook.com/v20.0/${WA_PHONE_ID}`;
 /** ========= WhatsApp send helpers ========= */ async function waSendMessages(
   body,
@@ -81,22 +83,48 @@ function buildWARequest(to, p) {
   ];
   return seq[Math.min(attempt, seq.length - 1)];
 }
+const LOCK_WINDOW_MS = 5 * 60 * 1000;
+
+async function claimJob(job) {
+  const lockUntil = new Date(Date.now() + LOCK_WINDOW_MS).toISOString();
+  const { data, error } = await sb.from("send_queue")
+    .update({ next_attempt_at: lockUntil })
+    .eq("id", job.id)
+    .eq("status", "PENDING")
+    .lte("next_attempt_at", new Date().toISOString())
+    .select("id,campaign_id,msisdn_e164,payload,attempt,status")
+    .maybeSingle();
+  if (error) throw error;
+  return data ?? null;
+}
+
+async function fetchCandidates(limit: number) {
+  const { data, error } = await sb.from("send_queue")
+    .select("id,campaign_id,msisdn_e164,payload,attempt,next_attempt_at,status")
+    .eq("status", "PENDING")
+    .lte("next_attempt_at", new Date().toISOString())
+    .order("id", { ascending: true })
+    .limit(limit * 3);
+  if (error) throw error;
+  return data ?? [];
+}
+
 /** ========= Process a batch ========= */ async function processBatch(
   limit = 40,
 ) {
-  // 1) pick jobs
-  const { data: jobs, error: pickErr } = await sb.from("send_queue").select(
-    "id,campaign_id,msisdn_e164,payload,attempt",
-  ).eq("status", "PENDING").lte("next_attempt_at", new Date().toISOString())
-    .order("id", {
-      ascending: true,
-    }).limit(limit);
-  if (pickErr) throw pickErr;
-  let sent = 0, failed = 0, skipped = 0;
-  for (const job of jobs || []) {
+  const candidates = await fetchCandidates(limit);
+  const claimed: typeof candidates = [];
+  for (const candidate of candidates) {
+    if (claimed.length >= limit) break;
+    const locked = await claimJob(candidate);
+    if (locked) claimed.push(locked);
+  }
+
+  let sent = 0, failed = 0, scheduled = 0;
+
+  for (const job of claimed) {
     const to = job.msisdn_e164;
     const attempt = job.attempt ?? 0;
-    // Normalize payload (DB returns object already, but be safe)
     const payload = typeof job.payload === "string"
       ? JSON.parse(job.payload)
       : job.payload;
@@ -110,6 +138,7 @@ function buildWARequest(to, p) {
         status: "SENT",
         attempt: attempt + 1,
         next_attempt_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
       }).eq("id", job.id);
       await sb.from("send_logs").insert({
         queue_id: job.id,
@@ -128,6 +157,7 @@ function buildWARequest(to, p) {
         attempt: attempt + 1,
         next_attempt_at: willFail ? new Date().toISOString() : next,
         status: willFail ? "FAILED" : "PENDING",
+        updated_at: new Date().toISOString(),
       }).eq("id", job.id);
       await sb.from("send_logs").insert({
         queue_id: job.id,
@@ -140,14 +170,14 @@ function buildWARequest(to, p) {
             .slice(0, 800),
       });
       if (willFail) failed++;
-      else skipped++;
+      else scheduled++;
     }
   }
   return {
-    picked: jobs?.length || 0,
+    picked: claimed.length,
     sent,
     failed,
-    retry_scheduled: skipped,
+    retry_scheduled: scheduled,
   };
 }
 /** ========= HTTP handler (cron or manual) ========= */ Deno.serve(

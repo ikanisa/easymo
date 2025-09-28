@@ -1,21 +1,26 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { PageHeader } from '@/components/layout/PageHeader';
-import { SectionCard } from '@/components/ui/SectionCard';
-import { MenuTable } from '@/components/menus/MenuTable';
-import { OcrJobsTable } from '@/components/menus/OcrJobsTable';
-import { EmptyState } from '@/components/ui/EmptyState';
-import { LoadingState } from '@/components/ui/LoadingState';
+import { useState } from "react";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { SectionCard } from "@/components/ui/SectionCard";
+import { MenuTable } from "@/components/menus/MenuTable";
+import { OcrJobsTable } from "@/components/menus/OcrJobsTable";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { LoadingState } from "@/components/ui/LoadingState";
 import {
-  useMenuVersionsQuery,
   type MenuQueryParams,
+  type OcrJobQueryParams,
+  useMenuVersionsQuery,
   useOcrJobsQuery,
-  type OcrJobQueryParams
-} from '@/lib/queries/menus';
+} from "@/lib/queries/menus";
 
-const MENU_STATUS_FILTERS = ['draft', 'published'] as const;
-const OCR_STATUS_FILTERS = ['queued', 'processing', 'success', 'error'] as const;
+const MENU_STATUS_FILTERS = ["draft", "published"] as const;
+const OCR_STATUS_FILTERS = [
+  "queued",
+  "processing",
+  "success",
+  "error",
+] as const;
 
 interface MenusClientProps {
   initialMenuParams?: MenuQueryParams;
@@ -24,10 +29,14 @@ interface MenusClientProps {
 
 export function MenusClient({
   initialMenuParams = { limit: 100 },
-  initialOcrParams = { limit: 50 }
+  initialOcrParams = { limit: 50 },
 }: MenusClientProps) {
-  const [menuParams, setMenuParams] = useState<MenuQueryParams>(initialMenuParams);
-  const [ocrParams, setOcrParams] = useState<OcrJobQueryParams>(initialOcrParams);
+  const [menuParams, setMenuParams] = useState<MenuQueryParams>(
+    initialMenuParams,
+  );
+  const [ocrParams, setOcrParams] = useState<OcrJobQueryParams>(
+    initialOcrParams,
+  );
 
   const menusQuery = useMenuVersionsQuery(menuParams);
   const ocrQuery = useOcrJobsQuery(ocrParams);
@@ -49,8 +58,12 @@ export function MenusClient({
           <label className="text-sm text-[color:var(--color-muted)]">
             Status
             <select
-              value={menuParams.status ?? ''}
-              onChange={(event) => setMenuParams((prev) => ({ ...prev, status: event.target.value || undefined }))}
+              value={menuParams.status ?? ""}
+              onChange={(event) =>
+                setMenuParams((prev) => ({
+                  ...prev,
+                  status: event.target.value || undefined,
+                }))}
               className="ml-2 rounded-lg border border-[color:var(--color-border)]/40 bg-white/90 px-3 py-1 text-sm"
             >
               <option value="">All</option>
@@ -63,16 +76,21 @@ export function MenusClient({
           </label>
         }
       >
-        {menusQuery.isLoading ? (
-          <LoadingState title="Loading menus" description="Fetching menu versions." />
-        ) : menus.length ? (
-          <MenuTable data={menus} />
-        ) : (
-          <EmptyState
-            title="No menus yet"
-            description="Load fixtures or connect Supabase to view menu records."
-          />
-        )}
+        {menusQuery.isLoading
+          ? (
+            <LoadingState
+              title="Loading menus"
+              description="Fetching menu versions."
+            />
+          )
+          : menus.length
+          ? <MenuTable data={menus} />
+          : (
+            <EmptyState
+              title="No menus yet"
+              description="Load fixtures or connect Supabase to view menu records."
+            />
+          )}
       </SectionCard>
 
       <SectionCard
@@ -82,8 +100,12 @@ export function MenusClient({
           <label className="text-sm text-[color:var(--color-muted)]">
             Status
             <select
-              value={ocrParams.status ?? ''}
-              onChange={(event) => setOcrParams((prev) => ({ ...prev, status: event.target.value || undefined }))}
+              value={ocrParams.status ?? ""}
+              onChange={(event) =>
+                setOcrParams((prev) => ({
+                  ...prev,
+                  status: event.target.value || undefined,
+                }))}
               className="ml-2 rounded-lg border border-[color:var(--color-border)]/40 bg-white/90 px-3 py-1 text-sm"
             >
               <option value="">All</option>
@@ -96,16 +118,21 @@ export function MenusClient({
           </label>
         }
       >
-        {ocrQuery.isLoading ? (
-          <LoadingState title="Loading OCR jobs" description="Fetching OCR pipeline activity." />
-        ) : ocrJobs.length ? (
-          <OcrJobsTable data={ocrJobs} />
-        ) : (
-          <EmptyState
-            title="Queue is empty"
-            description="Once vendors upload menus, they will appear here for review."
-          />
-        )}
+        {ocrQuery.isLoading
+          ? (
+            <LoadingState
+              title="Loading OCR jobs"
+              description="Fetching OCR pipeline activity."
+            />
+          )
+          : ocrJobs.length
+          ? <OcrJobsTable data={ocrJobs} />
+          : (
+            <EmptyState
+              title="Queue is empty"
+              description="Once vendors upload menus, they will appear here for review."
+            />
+          )}
       </SectionCard>
 
       <SectionCard

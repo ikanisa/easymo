@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { ReactNode, createContext, useContext } from 'react';
-import { AnimatePresence, MotionConfig } from 'framer-motion';
+import { createContext, ReactNode, useContext } from "react";
+import { AnimatePresence, MotionConfig } from "framer-motion";
 
 const ReducedMotionContext = createContext<boolean>(false);
 
@@ -14,10 +14,12 @@ export interface MotionProviderProps {
   reducedMotion?: boolean;
 }
 
-export function MotionProviders({ children, reducedMotion = false }: MotionProviderProps) {
+export function MotionProviders(
+  { children, reducedMotion = false }: MotionProviderProps,
+) {
   return (
     <ReducedMotionContext.Provider value={reducedMotion}>
-      <MotionConfig reducedMotion={reducedMotion ? 'always' : 'never'}>
+      <MotionConfig reducedMotion={reducedMotion ? "always" : "never"}>
         <AnimatePresence mode="wait">{children}</AnimatePresence>
       </MotionConfig>
     </ReducedMotionContext.Provider>

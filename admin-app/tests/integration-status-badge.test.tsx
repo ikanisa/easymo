@@ -1,26 +1,34 @@
-import { render, screen } from '@testing-library/react';
-import { IntegrationStatusBadge } from '@/components/ui/IntegrationStatusBadge';
+import { render, screen } from "@testing-library/react";
+import { IntegrationStatusBadge } from "@/components/ui/IntegrationStatusBadge";
 
-describe('IntegrationStatusBadge', () => {
-  it('renders healthy state copy', () => {
-    render(<IntegrationStatusBadge integration={{ target: 'voucherSend', status: 'ok' }} />);
-    expect(screen.getByText('voucherSend')).toBeInTheDocument();
-    expect(screen.getByText('Integration healthy')).toBeInTheDocument();
-  });
-
-  it('renders degraded details', () => {
+describe("IntegrationStatusBadge", () => {
+  it("renders healthy state copy", () => {
     render(
       <IntegrationStatusBadge
-        integration={{ target: 'voucherSend', status: 'degraded', reason: 'bridge_down', message: 'Bridge offline.' }}
-      />
+        integration={{ target: "voucherSend", status: "ok" }}
+      />,
     );
-    expect(screen.getByText('Bridge offline.')).toBeInTheDocument();
-    expect(screen.getByText('(bridge_down)')).toBeInTheDocument();
+    expect(screen.getByText("voucherSend")).toBeInTheDocument();
+    expect(screen.getByText("Integration healthy")).toBeInTheDocument();
   });
 
-  it('renders nothing when integration missing', () => {
+  it("renders degraded details", () => {
+    render(
+      <IntegrationStatusBadge
+        integration={{
+          target: "voucherSend",
+          status: "degraded",
+          reason: "bridge_down",
+          message: "Bridge offline.",
+        }}
+      />,
+    );
+    expect(screen.getByText("Bridge offline.")).toBeInTheDocument();
+    expect(screen.getByText("(bridge_down)")).toBeInTheDocument();
+  });
+
+  it("renders nothing when integration missing", () => {
     const { container } = render(<IntegrationStatusBadge integration={null} />);
     expect(container).toBeEmptyDOMElement();
   });
 });
-

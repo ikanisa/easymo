@@ -1,12 +1,15 @@
 # Incident Runbooks
 
 ## Voucher Preview Failures
-1. **Detect**: Integrations Status shows voucher PNG = red or preview modal error reports `not_configured`/`timeout`.
+
+1. **Detect**: Integrations Status shows voucher PNG = red or preview modal
+   error reports `not_configured`/`timeout`.
 2. **Immediate Actions**
    - Confirm Supabase Edge Function deployment status via Supabase dashboard.
    - Retry probe using `/api/integrations/status?force=true`.
 3. **Mitigation**
-   - Communicate to support team: "Voucher previews unavailable; fallback to code view." (Slack #ops channel).
+   - Communicate to support team: "Voucher previews unavailable; fallback to
+     code view." (Slack #ops channel).
    - Ensure Admin UI degraded copy is visible.
 4. **Resolution**
    - Redeploy EF or fix network issue.
@@ -15,10 +18,13 @@
    - Capture timeline, impacted vouchers, and mitigations used.
 
 ## WhatsApp Send Failures
-1. **Detect**: Elevated failures in Notifications, toast error `send_failed`, or EF returning 5xx/429.
+
+1. **Detect**: Elevated failures in Notifications, toast error `send_failed`, or
+   EF returning 5xx/429.
 2. **Immediate Actions**
    - Pause campaigns via Admin Panel (`Stop` action) to prevent further sends.
-   - Check quiet hours and throttle settings to ensure they are not misconfigured.
+   - Check quiet hours and throttle settings to ensure they are not
+     misconfigured.
 3. **Mitigation**
    - If rate-limited (429), honor `retry-after` and reschedule sends.
    - If invalid numbers, export failed targets for data cleanup.
@@ -29,7 +35,9 @@
    - Log incident summary in audit log under `incident_resolution`.
 
 ## Campaign Dispatcher Stalls
-1. **Detect**: Campaign detail shows running but targets not advancing; Integrations Status amber/red.
+
+1. **Detect**: Campaign detail shows running but targets not advancing;
+   Integrations Status amber/red.
 2. **Immediate Actions**
    - Hit `status` endpoint; confirm queue length.
    - Pause campaign to prevent stale state.
@@ -41,13 +49,16 @@
    - Record actions in `audit_log`.
 
 ## Station Redeem Anomalies
-1. **Detect**: Station PWA returns errors for valid vouchers or allows double redemption.
+
+1. **Detect**: Station PWA returns errors for valid vouchers or allows double
+   redemption.
 2. **Immediate Actions**
    - Check `/api/station/redeem` logs for idempotency failures.
    - Review voucher status and events for affected IDs.
 3. **Mitigation**
    - If double redemption: mark voucher `void` and issue replacement manually.
-   - If scope mismatch: update voucher `station_scope` or educate station operator.
+   - If scope mismatch: update voucher `station_scope` or educate station
+     operator.
 4. **Escalation**
    - Notify Data Ops if OCR mapping produced wrong station scope.
 5. **Resolution**

@@ -1,4 +1,4 @@
-declare module 'papaparse' {
+declare module "papaparse" {
   interface UnparseConfig {
     quotes?: boolean | boolean[] | ((value: unknown, index: number) => boolean);
     delimiter?: string;
@@ -7,7 +7,7 @@ declare module 'papaparse' {
     quoteChar?: string;
     escapeChar?: string;
     columns?: boolean;
-    skipEmptyLines?: boolean | 'greedy';
+    skipEmptyLines?: boolean | "greedy";
   }
 
   interface ParseError {
@@ -25,7 +25,7 @@ declare module 'papaparse' {
 
   interface ParseConfig<T> {
     header?: boolean;
-    skipEmptyLines?: boolean | 'greedy';
+    skipEmptyLines?: boolean | "greedy";
     complete?: (results: ParseResult<T>) => void;
     error?: (error: ParseError) => void;
   }
@@ -34,9 +34,9 @@ declare module 'papaparse' {
     | readonly unknown[]
     | readonly Record<string, unknown>[]
     | {
-        data: readonly unknown[];
-        fields?: readonly string[];
-      };
+      data: readonly unknown[];
+      fields?: readonly string[];
+    };
 
   interface PapaStatic {
     unparse(data: UnparseInput, config?: UnparseConfig): string;

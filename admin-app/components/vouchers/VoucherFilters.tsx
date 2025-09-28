@@ -1,17 +1,21 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
+import { useState } from "react";
 
 interface VoucherFiltersProps {
   onChange: (filters: { status?: string; search?: string }) => void;
 }
 
 export function VoucherFilters({ onChange }: VoucherFiltersProps) {
-  const [status, setStatus] = useState<string>('');
-  const [search, setSearch] = useState('');
+  const [status, setStatus] = useState<string>("");
+  const [search, setSearch] = useState("");
 
   return (
-    <form className="filters" aria-label="Voucher filters" onSubmit={(event) => event.preventDefault()}>
+    <form
+      className="filters"
+      aria-label="Voucher filters"
+      onSubmit={(event) => event.preventDefault()}
+    >
       <label className="filters__field">
         <span>Status</span>
         <select
@@ -35,7 +39,10 @@ export function VoucherFilters({ onChange }: VoucherFiltersProps) {
           value={search}
           onChange={(event) => {
             setSearch(event.target.value);
-            onChange({ status: status || undefined, search: event.target.value || undefined });
+            onChange({
+              status: status || undefined,
+              search: event.target.value || undefined,
+            });
           }}
           placeholder="Voucher ID or MSISDN"
         />

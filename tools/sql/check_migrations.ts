@@ -1,4 +1,5 @@
-const migrationDir = new URL("../../supabase/migrations", import.meta.url).pathname;
+const migrationDir =
+  new URL("../../supabase/migrations", import.meta.url).pathname;
 const errors: Array<string> = [];
 
 async function* walkDir(path: string): AsyncGenerator<string> {
@@ -28,10 +29,18 @@ for await (const filePath of walkDir(migrationDir)) {
   const last = meaningful[meaningful.length - 1].toUpperCase();
 
   if (first !== "BEGIN;") {
-    errors.push(`${filePath.split("/").pop()}: first statement must be BEGIN; found "${meaningful[0]}"`);
+    errors.push(
+      `${filePath.split("/").pop()}: first statement must be BEGIN; found "${
+        meaningful[0]
+      }"`,
+    );
   }
   if (last !== "COMMIT;") {
-    errors.push(`${filePath.split("/").pop()}: last statement must be COMMIT; found "${meaningful[meaningful.length - 1]}"`);
+    errors.push(
+      `${filePath.split("/").pop()}: last statement must be COMMIT; found "${
+        meaningful[meaningful.length - 1]
+      }"`,
+    );
   }
 }
 

@@ -1,7 +1,9 @@
 # Rollout Plan – Admin Panel
 
 ## Phase 1: Staging
-- **Objectives**: Validate integrations, fixtures, degraded modes, and smoke tests.
+
+- **Objectives**: Validate integrations, fixtures, degraded modes, and smoke
+  tests.
 - **Checklist**
   - [ ] Fixtures loaded per `DATA_FIXTURES_PLAN.md`.
   - [ ] EF probes show expected status (green/amber).
@@ -13,6 +15,7 @@
   - [ ] Rollback toggles documented in settings.
 
 ## Phase 2: Pilot
+
 - **Scope**: Limited set of bars/stations (≤5) and support agents (≤3).
 - **Checklist**
   - [ ] Pilot participants onboarded with admin roles.
@@ -24,6 +27,7 @@
   - [ ] Incident response drill executed (simulate EF outage).
 
 ## Phase 3: Production
+
 - **Scope**: All bars and support teams.
 - **Checklist**
   - [ ] EF availability green for 24h before launch.
@@ -36,12 +40,14 @@
   - [ ] Go/No-Go meeting sign-off recorded.
 
 ## Rollback Signals
+
 - Critical EF outages >30 minutes.
 - Redemption failure rate >5% over 15 minutes.
 - Policy engine misconfiguration causing mass blocks or sends.
 - Support team unable to access Admin Panel for >10 minutes.
 
 ## Communication Plan
+
 - Announce staging readiness to engineering + ops mailing list.
 - Prior to pilot, share FAQ & training video.
 - Production launch accompanied by runbook link and Ops contact rotation.

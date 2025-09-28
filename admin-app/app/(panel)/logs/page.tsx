@@ -1,15 +1,15 @@
-import { HydrationBoundary, dehydrate } from '@tanstack/react-query';
-import { createQueryClient } from '@/lib/api/queryClient';
-import { PageHeader } from '@/components/layout/PageHeader';
-import { LogsClient } from '@/components/logs/LogsClient';
-import { logsQueryKeys, fetchLogs } from '@/lib/queries/logs';
+import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
+import { createQueryClient } from "@/lib/api/queryClient";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { LogsClient } from "@/components/logs/LogsClient";
+import { fetchLogs, logsQueryKeys } from "@/lib/queries/logs";
 
 export default async function LogsPage() {
   const queryClient = createQueryClient();
 
   await queryClient.prefetchQuery({
     queryKey: logsQueryKeys.root(),
-    queryFn: fetchLogs
+    queryFn: fetchLogs,
   });
 
   const dehydratedState = dehydrate(queryClient);

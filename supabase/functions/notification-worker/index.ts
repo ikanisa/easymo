@@ -16,10 +16,35 @@ const CRON_ENV = (Deno.env.get("NOTIFICATION_WORKER_CRON_ENABLED") ?? "")
   .toLowerCase();
 const CRON_ENABLED = CRON_ENV === "true";
 
+let running = false;
+
 async function runNotificationWorker(trigger: "http" | "cron") {
-  await logStructuredEvent("NOTIFY_WORKER_START", { trigger });
-  await processNotificationQueue(BATCH_SIZE);
-  await logStructuredEvent("NOTIFY_WORKER_DONE", { trigger });
+  if (running) {
+    await logStructuredEvent("NOTIFY_WORKER_SKIP", { trigger, reason: "busy" });
+    return;
+  }
+  running = true;
+  const started = Date.now();
+  try {
+    await logStructuredEvent("NOTIFY_WORKER_START", { trigger });
+    const results = await processNotificationQueue(BATCH_SIZE);
+    await logStructuredEvent("NOTIFY_WORKER_DONE", {
+      trigger,
+      processed: results.length,
+      duration_ms: Date.now() - started,
+    });
+  } catch (error) {
+    console.error("notification-worker.run_failed", error);
+    await emitAlert("NOTIFY_WORKER_ERROR", {
+      trigger,
+      error: error instanceof Error
+        ? error.message
+        : String(error ?? "unknown"),
+    });
+    throw error;
+  } finally {
+    running = false;
+  }
 }
 
 serve(async (_req) => {

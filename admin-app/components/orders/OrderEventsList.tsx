@@ -1,4 +1,4 @@
-import type { OrderEvent } from '@/lib/schemas';
+import type { OrderEvent } from "@/lib/schemas";
 
 interface OrderEventsListProps {
   events: OrderEvent[];
@@ -29,11 +29,13 @@ export function OrderEventsList({ events }: OrderEventsListProps) {
                 {event.type} • {new Date(event.createdAt).toLocaleString()}
               </p>
             </div>
-            {event.note ? (
-              <span className="rounded-full border border-[color:var(--color-border)]/30 bg-[color:var(--color-surface)]/70 px-3 py-1 text-xs text-[color:var(--color-muted)]">
-                {event.note}
-              </span>
-            ) : null}
+            {event.note
+              ? (
+                <span className="rounded-full border border-[color:var(--color-border)]/30 bg-[color:var(--color-surface)]/70 px-3 py-1 text-xs text-[color:var(--color-muted)]">
+                  {event.note}
+                </span>
+              )
+              : null}
           </div>
         </li>
       ))}

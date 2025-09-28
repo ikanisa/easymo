@@ -1,105 +1,84 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
-/*
- * admin-settings
- *
- * GET  -> returns the single row from `app_config`
- * POST -> updates allowed fields on that same row
- *
- * Protected by x-admin-token which must match ADMIN_TOKEN.
- * Also adds CORS so the web admin UI can call it from the browser.
- */ const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
-const SUPABASE_SERVICE_KEY = Deno.env.get("SERVICE_ROLE_KEY");
-const ADMIN_TOKEN = Deno.env.get("ADMIN_TOKEN");
-const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
-const CORS_HEADERS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-admin-token",
-  "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
-};
-function json(body, status = 200) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: {
-      "Content-Type": "application/json",
-      ...CORS_HEADERS,
-    },
-  });
-}
-function checkAuth(req) {
-  return req.headers.get("x-admin-token") === ADMIN_TOKEN;
-}
+import { z } from "https://deno.land/x/zod@v3.23.8/mod.ts";
+import {
+  createServiceRoleClient,
+  handleOptions,
+  json,
+  logRequest,
+  logResponse,
+  requireAdminAuth,
+} from "../_shared/admin.ts";
+
+const supabase = createServiceRoleClient();
+
+const patchSchema = z.object({
+  subscription_price: z.number().nonnegative().optional(),
+  search_radius_km: z.number().int().nonnegative().optional(),
+  max_results: z.number().int().positive().optional(),
+  momo_payee_number: z.string().min(5).max(32).optional(),
+  support_phone_e164: z.string().min(5).max(32).optional(),
+  admin_whatsapp_numbers: z.array(z.string()).optional(),
+  pro_enabled: z.boolean().optional(),
+}).strict();
+
 Deno.serve(async (req) => {
-  // Handle preflight
+  logRequest("admin-settings", req);
+
   if (req.method === "OPTIONS") {
-    return new Response("ok", {
-      headers: CORS_HEADERS,
-    });
+    return handleOptions();
   }
-  // Enforce admin token
-  if (!checkAuth(req)) {
-    return json({
-      error: "unauthorized",
-    }, 401);
-  }
+
+  const authResponse = requireAdminAuth(req);
+  if (authResponse) return authResponse;
+
   const method = req.method.toUpperCase();
+
   if (method === "GET") {
-    const { data, error } = await supabase.from("app_config").select("*")
-      .single();
-    if (error) {
-      return json({
-        error: error.message,
-      }, 500);
-    }
-    return json({
-      config: data,
-    });
-  }
-  if (method === "POST") {
-    let body;
     try {
-      body = await req.json();
-    } catch {
-      return json({
-        error: "invalid JSON body",
-      }, 400);
-    }
-    // allowlist of fields we let admins update
-    const allowed = [
-      "subscription_price",
-      "search_radius_km",
-      "max_results",
-      "momo_payee_number",
-      "support_phone_e164",
-      "admin_whatsapp_numbers",
-      "pro_enabled",
-    ];
-    const patch = {};
-    for (const k of allowed) {
-      if (Object.prototype.hasOwnProperty.call(body, k)) {
-        patch[k] = body[k];
+      const { data, error } = await supabase.from("app_config")
+        .select("*")
+        .single();
+      if (error) {
+        console.error("admin-settings.get_failed", error);
+        return json({ error: "query_failed" }, 500);
       }
+      logResponse("admin-settings", 200);
+      return json({ config: data });
+    } catch (error) {
+      console.error("admin-settings.get_unhandled", error);
+      return json({ error: "internal_error" }, 500);
     }
-    if (Object.keys(patch).length === 0) {
-      return json({
-        error: "no valid fields to update",
-      }, 400);
-    }
-    // update the single row; your schema uses id=true for that row
-    const { error } = await supabase.from("app_config").update(patch).eq(
-      "id",
-      true,
-    );
-    if (error) {
-      return json({
-        error: error.message,
-      }, 500);
-    }
-    return json({
-      success: true,
-    });
   }
-  return json({
-    error: "method not allowed",
-  }, 405);
+
+  if (method === "POST") {
+    let payload: unknown;
+    try {
+      payload = await req.json();
+    } catch {
+      return json({ error: "invalid_json" }, 400);
+    }
+
+    const parseResult = patchSchema.safeParse(payload);
+    if (!parseResult.success || Object.keys(parseResult.data).length === 0) {
+      return json({ error: "invalid_payload" }, 400);
+    }
+
+    try {
+      const { error } = await supabase.from("app_config")
+        .update({ ...parseResult.data, updated_at: new Date().toISOString() })
+        .eq("id", true);
+      if (error) {
+        console.error("admin-settings.update_failed", error);
+        return json({ error: "update_failed" }, 500);
+      }
+      logResponse("admin-settings", 200, {
+        fields: Object.keys(parseResult.data).length,
+      });
+      return json({ success: true });
+    } catch (error) {
+      console.error("admin-settings.update_unhandled", error);
+      return json({ error: "internal_error" }, 500);
+    }
+  }
+
+  return json({ error: "method_not_allowed" }, 405);
 });
