@@ -15,7 +15,7 @@ export default async function WhatsAppHealthPage() {
   const successRate = total ? ((successCount / total) * 100).toFixed(1) : '—';
 
   return (
-    <div className="placeholder-grid">
+    <div className="admin-page">
       <PageHeader
         title="WhatsApp Health"
         description="Track delivery performance, webhook status, and pending retries across templates and flows."

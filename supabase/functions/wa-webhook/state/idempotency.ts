@@ -1,6 +1,6 @@
 import { supabase } from "../config.ts";
 
-export async function markEventProcessed(id: string): Promise<boolean> {
+export async function claimEvent(id: string): Promise<boolean> {
   const { data, error } = await supabase
     .from("wa_events")
     .upsert(
@@ -13,5 +13,13 @@ export async function markEventProcessed(id: string): Promise<boolean> {
     )
     .select("wa_message_id");
   if (error) throw error;
-  return (data ?? []).length === 0;
+  return (data ?? []).length > 0;
+}
+
+export async function releaseEvent(id: string): Promise<void> {
+  const { error } = await supabase
+    .from("wa_events")
+    .delete()
+    .eq("wa_message_id", id);
+  if (error) throw error;
 }

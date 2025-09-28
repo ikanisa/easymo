@@ -39,6 +39,7 @@ import { handleBasketButton as handleAdminBasketButton } from "../flows/admin/ba
 import { handleInsuranceButton } from "../flows/admin/insurance.ts";
 import { homeOnly, sendButtonsMessage } from "../utils/reply.ts";
 import { DINE_IDS } from "../domains/dinein/ids.ts";
+import { DINE_STATE } from "../domains/dinein/state.ts";
 import {
   handleBarsPagingButton,
   openManagerPortal,
@@ -51,22 +52,30 @@ import { copy } from "../domains/dinein/copy.ts";
 import {
   continueOnboardContacts,
   continueOnboardIdentity,
-  handleAddWhatsappSave,
+  continueOnboardLocation,
+  continueOnboardPayment,
+  handleDeleteMenuConfirm,
+  handleNumbersAddSubmit,
+  handleNumbersRemoveSubmit,
   handlePublish,
+  handleRemoveCategoriesConfirm,
   handleToggleAvailability,
   handleUploadDone,
   managerContextFromState,
   promptReviewEditField,
-  showAddWhatsappPrompt,
   showBarsEntry,
   showBarsMenu,
+  showCurrentNumbers,
+  showDeleteMenuConfirmation,
+  showEditMenu,
   showManageOrders,
   showManagerEntry,
   showManagerMenu,
+  showNumbersMenu,
   showOnboardContacts,
   showOnboardIdentity,
   showOnboardPublish,
-  showReviewEditOptions,
+  showRemoveCategoriesConfirmation,
   showReviewIntro,
   showReviewItemMenu,
   showUploadInstruction,
@@ -86,6 +95,9 @@ export async function handleButton(
   const currentItemName = typeof state.data?.itemName === "string"
     ? state.data.itemName
     : "Item";
+  const currentItemMenuId = typeof state.data?.itemMenuId === "string"
+    ? state.data.itemMenuId
+    : null;
   const currentAvailable = state.data?.itemAvailable === true;
   switch (id) {
     case IDS.SEE_DRIVERS:
@@ -164,7 +176,13 @@ export async function handleButton(
       await showManagerMenu(ctx, managerCtx);
       return true;
     case IDS.DINEIN_BARS_ONBOARD_CONTINUE:
-      await continueOnboardIdentity(ctx, state);
+      if (state.key === DINE_STATE.ONBOARD_LOCATION) {
+        await continueOnboardLocation(ctx, state);
+      } else if (state.key === DINE_STATE.ONBOARD_PAYMENT) {
+        await continueOnboardPayment(ctx, state);
+      } else {
+        await continueOnboardIdentity(ctx, state);
+      }
       return true;
     case IDS.DINEIN_BARS_ONBOARD_CONTACTS_CONTINUE:
       await continueOnboardContacts(ctx, state);
@@ -175,15 +193,35 @@ export async function handleButton(
     case IDS.DINEIN_BARS_ONBOARD_PUBLISH:
       await handlePublish(ctx);
       return true;
-    case IDS.DINEIN_BARS_ADD_WHATSAPP:
-      await handleAddWhatsappSave(ctx);
+    case IDS.DINEIN_BARS_NUMBERS_MENU:
+      await showNumbersMenu(ctx, managerCtx);
       return true;
-    case IDS.DINEIN_BARS_REVIEW_EDIT:
-      if (!currentItemId) return false;
-      await showReviewEditOptions(ctx, managerCtx, {
-        itemId: currentItemId,
-        itemName: currentItemName,
-      });
+    case IDS.DINEIN_BARS_NUMBERS_VIEW:
+      await showCurrentNumbers(ctx, managerCtx);
+      return true;
+    case IDS.DINEIN_BARS_NUMBERS_ADD:
+      await handleNumbersAddSubmit(ctx, state);
+      return true;
+    case IDS.DINEIN_BARS_NUMBERS_REMOVE:
+      await handleNumbersRemoveSubmit(ctx, state);
+      return true;
+    case IDS.DINEIN_BARS_EDIT_MENU:
+      await showEditMenu(ctx, managerCtx);
+      return true;
+    case IDS.DINEIN_BARS_EDIT_UPLOAD:
+      await showUploadInstruction(ctx, managerCtx);
+      return true;
+    case IDS.DINEIN_BARS_EDIT_DELETE:
+      await showDeleteMenuConfirmation(ctx, managerCtx);
+      return true;
+    case IDS.DINEIN_BARS_EDIT_REMOVE_CATEGORIES:
+      await showRemoveCategoriesConfirmation(ctx, managerCtx);
+      return true;
+    case IDS.DINEIN_BARS_EDIT_CONFIRM_DELETE:
+      await handleDeleteMenuConfirm(ctx, state);
+      return true;
+    case IDS.DINEIN_BARS_EDIT_CONFIRM_REMOVE_CATEGORIES:
+      await handleRemoveCategoriesConfirm(ctx, state);
       return true;
     case IDS.DINEIN_BARS_REVIEW_TOGGLE:
       if (!currentItemId) return false;
@@ -203,6 +241,7 @@ export async function handleButton(
         currentItemId,
         currentItemName,
         "name",
+        { itemMenuId: currentItemMenuId },
       );
       return true;
     case IDS.DINEIN_BARS_REVIEW_EDIT_PRICE:
@@ -213,6 +252,7 @@ export async function handleButton(
         currentItemId,
         currentItemName,
         "price",
+        { itemMenuId: currentItemMenuId },
       );
       return true;
     case IDS.DINEIN_BARS_REVIEW_EDIT_DESCRIPTION:
@@ -223,6 +263,18 @@ export async function handleButton(
         currentItemId,
         currentItemName,
         "description",
+        { itemMenuId: currentItemMenuId },
+      );
+      return true;
+    case IDS.DINEIN_BARS_REVIEW_EDIT_CATEGORY:
+      if (!currentItemId) return false;
+      await promptReviewEditField(
+        ctx,
+        managerCtx,
+        currentItemId,
+        currentItemName,
+        "category",
+        { itemMenuId: currentItemMenuId },
       );
       return true;
     case IDS.DINEIN_BARS_REVIEW_ITEM_MENU:

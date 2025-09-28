@@ -12,7 +12,7 @@ export default async function MenusPage() {
   ]);
 
   return (
-    <div className="placeholder-grid">
+    <div className="admin-page">
       <PageHeader
         title="Menus & OCR"
         description="Track menu drafts, published versions, and OCR pipelines. Support can review extracted content before it reaches vendors."

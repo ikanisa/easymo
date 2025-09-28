@@ -1,9 +1,8 @@
 import type { RouterContext } from "../../types.ts";
-import { sendButtons, sendList } from "../../wa/client.ts";
+import { sendButtons, sendList, sendText } from "../../wa/client.ts";
 import { IDS } from "../../wa/ids.ts";
 import { DINE_IDS, makeOrderRowId, makeReviewItemRowId } from "./ids.ts";
 import { DINE_STATE, setDineState } from "./state.ts";
-import { listBusinessCategories, matchBusinessCategory } from "./categories.ts";
 import { fmtCurrency, truncate } from "../../utils/text.ts";
 
 const ENTRY_EMOJI = "🍽️";
@@ -12,29 +11,27 @@ const FORM_EMOJI = "📝";
 const INFO_EMOJI = "ℹ️";
 const WARNING_EMOJI = "⚠️";
 
+const ORDERS_PAGE_SIZE = 9;
+const REVIEW_PAGE_SIZE = 9;
+
 type ManagerContext = {
   barId?: string | null;
   barName?: string | null;
   barSlug?: string | null;
 };
 
-type TopBarItem = {
-  item_id: string;
-  item_name: string;
-  short_description: string | null;
-  price_minor: number;
-  currency: string | null;
-  category_name: string | null;
-  is_available: boolean;
-  total_qty: number;
-  last_order: string | null;
+type ManagerResolution = {
+  context: ManagerContext;
+  hasManagedBar: boolean;
 };
 
 type RecentBarOrder = {
   order_id: string;
   order_code: string;
   created_at: string | null;
-  items: string | null;
+  total_minor: number | null;
+  currency: string | null;
+  items: RecentBarOrderItem[];
 };
 
 type ItemDetail = {
@@ -45,6 +42,19 @@ type ItemDetail = {
   currency: string | null;
   category_name: string | null;
   is_available: boolean;
+  menu_id: string | null;
+};
+
+type RecentBarOrderItem = {
+  name: string;
+  qty: number;
+};
+
+type BarNumberRecord = {
+  number_e164: string;
+  role: string | null;
+  is_active: boolean;
+  verified_at: string | null;
 };
 
 function extractManagerContext(
@@ -95,16 +105,51 @@ function contextData(
   return data;
 }
 
+async function resolveManagerContext(
+  ctx: RouterContext,
+  context: ManagerContext,
+): Promise<ManagerResolution> {
+  if (context.barId) {
+    return { context, hasManagedBar: true };
+  }
+  const waId = normalizeWa(ctx.from);
+  try {
+    const { data, error } = await ctx.supabase
+      .from("bar_numbers")
+      .select("bar_id, bars(name, slug)")
+      .eq("number_e164", waId)
+      .eq("role", "manager")
+      .eq("is_active", true)
+      .order("created_at", { ascending: true })
+      .limit(1)
+      .maybeSingle();
+    if (error && error.code !== "PGRST116") throw error;
+    if (data?.bar_id) {
+      return {
+        context: {
+          barId: data.bar_id,
+          barName: data.bars?.name ?? context.barName ?? null,
+          barSlug: data.bars?.slug ?? context.barSlug ?? null,
+        },
+        hasManagedBar: true,
+      };
+    }
+  } catch (error) {
+    console.error("dine.manager.resolve_fail", error);
+  }
+  return {
+    context: { ...context },
+    hasManagedBar: false,
+  };
+}
+
 async function ensureBarContext(
   ctx: RouterContext,
   context: ManagerContext,
-  message: string,
+  _message: string,
 ): Promise<ManagerContext | null> {
   if (context.barId) return context;
-  await sendButtons(ctx.from, `${WARNING_EMOJI} ${message}`, [{
-    id: IDS.DINEIN_BARS_VIEW,
-    title: "Find a bar",
-  }]);
+  await sendText(ctx.from, "You don’t have vendor access.");
   return null;
 }
 
@@ -118,15 +163,15 @@ export async function showBarsEntry(
   });
   await sendList(ctx.from, {
     title: "Bars & restaurants",
-    body: "What would you like to do?",
+    body: "Bars & restaurants",
     sectionTitle: "Options",
-    buttonText: "Choose",
+    buttonText: "View",
     rows: [
       { id: IDS.DINEIN_BARS_VIEW_LIST, title: "View bars & restaurants" },
-      { id: IDS.DINEIN_BARS_ONBOARD, title: "Add a bar or restaurant" },
+      { id: IDS.DINEIN_BARS_MANAGE, title: "Bar manager" },
       { id: IDS.BACK_MENU, title: "← Back" },
     ],
-  }, { emoji: ENTRY_EMOJI });
+  });
 }
 
 export async function showBarsMenu(
@@ -139,12 +184,12 @@ export async function showBarsMenu(
   });
   await sendList(ctx.from, {
     title: "Bars & restaurants",
-    body: "Pick an option.",
-    sectionTitle: "Explore",
+    body: "Bars & restaurants",
+    sectionTitle: "Options",
     buttonText: "View",
     rows: [
       { id: IDS.DINEIN_BARS_VIEW_LIST, title: "View bars & restaurants" },
-      { id: IDS.DINEIN_BARS_MANAGE, title: "Manage bars" },
+      { id: IDS.DINEIN_BARS_MANAGE, title: "Bar manager" },
       { id: IDS.BACK_MENU, title: "← Back" },
     ],
   });
@@ -154,11 +199,12 @@ export async function showManagerEntry(
   ctx: RouterContext,
   context: ManagerContext = {},
 ): Promise<void> {
+  const resolved = await resolveManagerContext(ctx, context);
   await setDineState(ctx, DINE_STATE.MANAGER_ENTRY, {
     back: DINE_STATE.MENU,
-    data: contextData(context),
+    data: contextData(resolved.context),
   });
-  await sendButtons(ctx.from, `${MANAGER_EMOJI} Bar manager`, [{
+  await sendButtons(ctx.from, "Bar manager", [{
     id: IDS.DINEIN_BARS_MANAGER_VIEW,
     title: "View",
   }]);
@@ -168,76 +214,69 @@ export async function showManagerMenu(
   ctx: RouterContext,
   context: ManagerContext = {},
 ): Promise<void> {
+  const resolved = await resolveManagerContext(ctx, context);
+  const nextContext = resolved.context;
   await setDineState(ctx, DINE_STATE.MANAGER_MENU, {
     back: DINE_STATE.MANAGER_ENTRY,
-    data: contextData(context),
+    data: contextData(nextContext, { hasManagedBar: resolved.hasManagedBar }),
   });
-  const bodyLines = ["Choose what to do next."];
-  if (context.barName) {
-    bodyLines.push(`Managing: ${context.barName}`);
-  } else {
-    bodyLines.push(
-      "Select a bar first via View bars & restaurants for context.",
-    );
-  }
+  const rows = resolved.hasManagedBar
+    ? [
+      { id: IDS.DINEIN_BARS_MANAGE_ORDERS, title: "Manage orders" },
+      { id: IDS.DINEIN_BARS_UPLOAD, title: "Upload/Update menu" },
+      { id: IDS.DINEIN_BARS_REVIEW, title: "Review & edit menu" },
+      { id: IDS.DINEIN_BARS_NUMBERS_MENU, title: "Add WhatsApp numbers" },
+      { id: IDS.BACK_MENU, title: "← Back" },
+    ]
+    : [
+      { id: IDS.DINEIN_BARS_ONBOARD, title: "Onboard bar" },
+      { id: IDS.BACK_MENU, title: "← Back" },
+    ];
+  const bodyLines = resolved.hasManagedBar && nextContext.barName
+    ? [`Managing: ${nextContext.barName}`]
+    : ["Onboard your bar to unlock tools."];
   await sendList(ctx.from, {
     title: "Bar manager",
     body: bodyLines.join("\n"),
     sectionTitle: "Manage",
     buttonText: "View",
-    rows: [
-      { id: IDS.DINEIN_BARS_ONBOARD, title: "Onboard bar" },
-      { id: IDS.DINEIN_BARS_UPLOAD, title: "Upload/Update menu" },
-      { id: IDS.DINEIN_BARS_REVIEW, title: "Review & edit menu" },
-      { id: IDS.DINEIN_BARS_MANAGE_ORDERS, title: "Manage orders" },
-      { id: IDS.DINEIN_BARS_ADD_WHATSAPP, title: "Add WhatsApp numbers" },
-      { id: IDS.BACK_MENU, title: "← Back" },
-    ],
+    rows,
   });
 }
 
 export async function showOnboardIdentity(
   ctx: RouterContext,
   context: ManagerContext = {},
+  existing: Record<string, unknown> = {},
 ): Promise<void> {
+  const resolved = await resolveManagerContext(ctx, context);
+  if (resolved.hasManagedBar && !existing?.allowRepeat) {
+    await sendText(ctx.from, "You already have vendor access.");
+    await showManagerMenu(ctx, resolved.context);
+    return;
+  }
+  const name = typeof existing.name === "string" ? existing.name : null;
+  const location = typeof existing.location === "string"
+    ? existing.location
+    : null;
+  const momo = typeof existing.momo === "string" ? existing.momo : null;
+  const whatsapp = Array.isArray(existing.whatsapp)
+    ? (existing.whatsapp as string[]).filter(Boolean)
+    : [];
   await setDineState(ctx, DINE_STATE.ONBOARD_IDENTITY, {
     back: DINE_STATE.MANAGER_MENU,
-    data: contextData(context, {
-      name: null,
-      location: null,
-      category: null,
-      categorySlug: null,
+    data: contextData(resolved.context, {
+      name,
+      location,
+      momo,
+      whatsapp,
+      locationLat: null,
+      locationLng: null,
     }),
   });
-  const categories = await listBusinessCategories(ctx);
-  const hints = categories.length
-    ? `Categories: ${categories.slice(0, 5).map((cat) => cat.label).join(", ")}`
-    : "Category optional";
-  await sendButtons(
+  await sendText(
     ctx.from,
-    `${FORM_EMOJI} Onboard bar — identity\n• Send bar name\n• Send location\n• Optional: category\n${hints}`,
-    [{
-      id: IDS.DINEIN_BARS_ONBOARD_CONTINUE,
-      title: "Continue",
-    }],
-  );
-}
-
-export async function showOnboardContacts(
-  ctx: RouterContext,
-  context: ManagerContext = {},
-): Promise<void> {
-  await setDineState(ctx, DINE_STATE.ONBOARD_CONTACTS, {
-    back: DINE_STATE.ONBOARD_IDENTITY,
-    data: contextData(context, { whatsapp: [], momo: null }),
-  });
-  await sendButtons(
-    ctx.from,
-    `${FORM_EMOJI} Contacts & payment\n• Reply with WhatsApp numbers (comma separated)\n• Reply with MoMo pay code`,
-    [{
-      id: IDS.DINEIN_BARS_ONBOARD_CONTACTS_CONTINUE,
-      title: "Continue",
-    }],
+    "Bar identity — Step 1/4\nPlease reply with Bar/Restaurant name.",
   );
 }
 
@@ -247,48 +286,268 @@ export async function handleOnboardIdentityText(
   body: string,
 ): Promise<boolean> {
   if (state.key !== DINE_STATE.ONBOARD_IDENTITY) return false;
+  const name = body.trim();
+  if (!name.length) {
+    await sendText(
+      ctx.from,
+      "Bar identity — Step 1/4\nPlease reply with Bar/Restaurant name.",
+    );
+    return true;
+  }
   const context = extractManagerContext(state);
   const existing = state.data ?? {};
-  const updates = parseIdentityInput(body);
-  let name = typeof existing.name === "string" ? existing.name : null;
-  let location = typeof existing.location === "string"
+  const location = typeof existing.location === "string"
     ? existing.location
     : null;
-  let category = typeof existing.category === "string"
-    ? existing.category
-    : null;
-  let categorySlug = typeof existing.categorySlug === "string"
-    ? existing.categorySlug
-    : null;
-  if (updates.name) name = updates.name;
-  if (updates.location) location = updates.location;
-  if (updates.category) {
-    category = updates.category;
-    const categories = await listBusinessCategories(ctx);
-    const matched = matchBusinessCategory(categories, updates.category);
-    categorySlug = matched?.slug ?? categorySlug;
-  }
+  const momo = typeof existing.momo === "string" ? existing.momo : null;
+  const whatsapp = Array.isArray(existing.whatsapp)
+    ? (existing.whatsapp as string[]).filter(Boolean)
+    : [];
   await setDineState(ctx, DINE_STATE.ONBOARD_IDENTITY, {
     back: DINE_STATE.MANAGER_MENU,
-    data: contextData(context, { name, location, category, categorySlug }),
+    data: contextData(context, {
+      name,
+      location,
+      momo,
+      whatsapp,
+      locationLat: null,
+      locationLng: null,
+    }),
   });
-  const summary = [
-    name ? `Name: ${name}` : "Name: (pending)",
-    location ? `Location: ${location}` : "Location: (pending)",
-    category ? `Category: ${category}` : "Category: optional",
-  ].join("\n");
-  await sendButtons(ctx.from, `${FORM_EMOJI} Identity updated\n${summary}`, [{
-    id: IDS.DINEIN_BARS_ONBOARD_CONTINUE,
-    title: "Continue",
-  }]);
+  await showOnboardLocation(ctx, context, {
+    name,
+    location,
+    momo,
+    whatsapp,
+  });
   return true;
 }
 
-export async function continueOnboardIdentity(
+export async function showOnboardLocation(
   ctx: RouterContext,
-  state: { data?: Record<string, unknown> },
+  context: ManagerContext = {},
+  existing: Record<string, unknown> = {},
 ): Promise<void> {
-  await showOnboardContacts(ctx, extractManagerContext(state));
+  const name = typeof existing.name === "string" ? existing.name : null;
+  const location = typeof existing.location === "string"
+    ? existing.location
+    : null;
+  const momo = typeof existing.momo === "string" ? existing.momo : null;
+  const whatsapp = Array.isArray(existing.whatsapp)
+    ? (existing.whatsapp as string[]).filter(Boolean)
+    : [];
+  const locationLat = typeof existing.locationLat === "number"
+    ? existing.locationLat
+    : null;
+  const locationLng = typeof existing.locationLng === "number"
+    ? existing.locationLng
+    : null;
+  await setDineState(ctx, DINE_STATE.ONBOARD_LOCATION, {
+    back: DINE_STATE.ONBOARD_IDENTITY,
+    data: contextData(context, {
+      name,
+      location,
+      locationLat,
+      locationLng,
+      momo,
+      whatsapp,
+    }),
+  });
+  await sendText(
+    ctx.from,
+    "Bar identity — Step 2/4\nSend your Location/Address.\nTip: tap '+' -> Share location (or type the address).",
+  );
+}
+
+export async function handleOnboardLocationText(
+  ctx: RouterContext,
+  state: { key: string; data?: Record<string, unknown> },
+  body: string,
+): Promise<boolean> {
+  if (state.key !== DINE_STATE.ONBOARD_LOCATION) return false;
+  const location = body.trim();
+  if (!location.length) {
+    await sendText(
+      ctx.from,
+      "Bar identity — Step 2/4\nSend your Location/Address.\nTip: tap '+' -> Share location (or type the address).",
+    );
+    return true;
+  }
+  const context = extractManagerContext(state);
+  const existing = state.data ?? {};
+  const name = typeof existing.name === "string" ? existing.name : null;
+  const momo = typeof existing.momo === "string" ? existing.momo : null;
+  const whatsapp = Array.isArray(existing.whatsapp)
+    ? (existing.whatsapp as string[]).filter(Boolean)
+    : [];
+  await setDineState(ctx, DINE_STATE.ONBOARD_LOCATION, {
+    back: DINE_STATE.ONBOARD_IDENTITY,
+    data: contextData(context, {
+      name,
+      location,
+      momo,
+      whatsapp,
+      locationLat: null,
+      locationLng: null,
+    }),
+  });
+  await showOnboardPayment(ctx, context, {
+    name,
+    location,
+    locationLat: null,
+    locationLng: null,
+    momo,
+    whatsapp,
+  });
+  return true;
+}
+
+type SharedLocation = {
+  lat: number;
+  lng: number;
+  name?: string | null;
+  address?: string | null;
+};
+
+export async function handleOnboardLocationCoordinates(
+  ctx: RouterContext,
+  state: { key: string; data?: Record<string, unknown> },
+  location: SharedLocation,
+): Promise<boolean> {
+  if (state.key !== DINE_STATE.ONBOARD_LOCATION) return false;
+  if (!Number.isFinite(location.lat) || !Number.isFinite(location.lng)) {
+    return false;
+  }
+  const context = extractManagerContext(state);
+  const existing = state.data ?? {};
+  const name = typeof existing.name === "string" ? existing.name : null;
+  const momo = typeof existing.momo === "string" ? existing.momo : null;
+  const whatsapp = Array.isArray(existing.whatsapp)
+    ? (existing.whatsapp as string[]).filter(Boolean)
+    : [];
+  const locationLabel = location.name?.trim().length
+    ? location.name.trim()
+    : location.address?.trim().length
+    ? location.address.trim()
+    : `${location.lat.toFixed(5)}, ${location.lng.toFixed(5)}`;
+
+  await setDineState(ctx, DINE_STATE.ONBOARD_LOCATION, {
+    back: DINE_STATE.ONBOARD_IDENTITY,
+    data: contextData(context, {
+      name,
+      location: locationLabel,
+      momo,
+      whatsapp,
+      locationLat: location.lat,
+      locationLng: location.lng,
+    }),
+  });
+
+  await showOnboardPayment(ctx, context, {
+    name,
+    location: locationLabel,
+    momo,
+    whatsapp,
+    locationLat: location.lat,
+    locationLng: location.lng,
+  });
+
+  return true;
+}
+
+export async function showOnboardPayment(
+  ctx: RouterContext,
+  context: ManagerContext = {},
+  existing: Record<string, unknown> = {},
+): Promise<void> {
+  const name = typeof existing.name === "string" ? existing.name : null;
+  const location = typeof existing.location === "string"
+    ? existing.location
+    : null;
+  const momo = typeof existing.momo === "string" ? existing.momo : null;
+  const whatsapp = Array.isArray(existing.whatsapp)
+    ? (existing.whatsapp as string[]).filter(Boolean)
+    : [];
+  const locationLat = typeof existing.locationLat === "number"
+    ? existing.locationLat
+    : null;
+  const locationLng = typeof existing.locationLng === "number"
+    ? existing.locationLng
+    : null;
+  await setDineState(ctx, DINE_STATE.ONBOARD_PAYMENT, {
+    back: DINE_STATE.ONBOARD_LOCATION,
+    data: contextData(context, {
+      name,
+      location,
+      locationLat,
+      locationLng,
+      momo,
+      whatsapp,
+    }),
+  });
+  await sendText(
+    ctx.from,
+    "Payments — Step 3/4\nPlease reply with your MoMo code or MOMO number (07xxx).",
+  );
+}
+
+export async function handleOnboardPaymentText(
+  ctx: RouterContext,
+  state: { key: string; data?: Record<string, unknown> },
+  body: string,
+): Promise<boolean> {
+  if (state.key !== DINE_STATE.ONBOARD_PAYMENT) return false;
+  const momo = body.trim();
+  if (!momo.length) {
+    await sendText(
+      ctx.from,
+      "Payments — Step 3/4\nPlease reply with your MoMo code or MOMO number (07xxx).",
+    );
+    return true;
+  }
+  const context = extractManagerContext(state);
+  const existing = state.data ?? {};
+  const name = typeof existing.name === "string" ? existing.name : null;
+  const location = typeof existing.location === "string"
+    ? existing.location
+    : null;
+  const whatsapp = Array.isArray(existing.whatsapp)
+    ? (existing.whatsapp as string[]).filter(Boolean)
+    : [];
+  await setDineState(ctx, DINE_STATE.ONBOARD_PAYMENT, {
+    back: DINE_STATE.ONBOARD_LOCATION,
+    data: contextData(context, { name, location, momo, whatsapp }),
+  });
+  await showOnboardContacts(ctx, context, {
+    name,
+    location,
+    momo,
+    whatsapp,
+  });
+  return true;
+}
+
+export async function showOnboardContacts(
+  ctx: RouterContext,
+  context: ManagerContext = {},
+  existing: Record<string, unknown> = {},
+): Promise<void> {
+  const name = typeof existing.name === "string" ? existing.name : null;
+  const location = typeof existing.location === "string"
+    ? existing.location
+    : null;
+  const momo = typeof existing.momo === "string" ? existing.momo : null;
+  const whatsapp = Array.isArray(existing.whatsapp)
+    ? (existing.whatsapp as string[]).filter(Boolean)
+    : [];
+  await setDineState(ctx, DINE_STATE.ONBOARD_CONTACTS, {
+    back: DINE_STATE.ONBOARD_PAYMENT,
+    data: contextData(context, { name, location, momo, whatsapp }),
+  });
+  await sendText(
+    ctx.from,
+    "Orders — Step 4/4\nReply with the WhatsApp number(s) to receive orders (comma-separated).\nExample: +2507xxxxxxx, +2507yyyyyyy",
+  );
 }
 
 export async function handleOnboardContactsText(
@@ -297,50 +556,105 @@ export async function handleOnboardContactsText(
   body: string,
 ): Promise<boolean> {
   if (state.key !== DINE_STATE.ONBOARD_CONTACTS) return false;
+  const numbers = extractWhatsappNumbers(body);
+  if (!numbers.length) {
+    await sendText(
+      ctx.from,
+      "Orders — Step 4/4\nReply with the WhatsApp number(s) to receive orders (comma-separated).\nExample: +2507xxxxxxx, +2507yyyyyyy",
+    );
+    return true;
+  }
   const context = extractManagerContext(state);
-  const parsed = parseContactsInput(body);
+  const existing = state.data ?? {};
+  const name = typeof existing.name === "string" ? existing.name : null;
+  const location = typeof existing.location === "string"
+    ? existing.location
+    : null;
+  const momo = typeof existing.momo === "string" ? existing.momo : null;
   await setDineState(ctx, DINE_STATE.ONBOARD_CONTACTS, {
-    back: DINE_STATE.ONBOARD_IDENTITY,
-    data: contextData(context, {
-      whatsapp: parsed.whatsapp,
-      momo: parsed.momo ?? null,
-    }),
+    back: DINE_STATE.ONBOARD_PAYMENT,
+    data: contextData(context, { name, location, momo, whatsapp: numbers }),
   });
-  const summary = [
-    parsed.whatsapp.length
-      ? `WhatsApp: ${parsed.whatsapp.join(", ")}`
-      : "WhatsApp: (pending)",
-    parsed.momo ? `MoMo: ${parsed.momo}` : "MoMo: optional",
-  ].join("\n");
-  await sendButtons(ctx.from, `${FORM_EMOJI} Contacts updated\n${summary}`, [{
-    id: IDS.DINEIN_BARS_ONBOARD_CONTACTS_CONTINUE,
-    title: "Continue",
-  }]);
+  await showOnboardUpload(ctx, context, {
+    name,
+    location,
+    momo,
+    whatsapp: numbers,
+  });
   return true;
+}
+
+export async function continueOnboardIdentity(
+  ctx: RouterContext,
+  state: { data?: Record<string, unknown> },
+): Promise<void> {
+  await showOnboardLocation(
+    ctx,
+    extractManagerContext(state),
+    state.data ?? {},
+  );
+}
+
+export async function continueOnboardLocation(
+  ctx: RouterContext,
+  state: { data?: Record<string, unknown> },
+): Promise<void> {
+  await showOnboardPayment(
+    ctx,
+    extractManagerContext(state),
+    state.data ?? {},
+  );
+}
+
+export async function continueOnboardPayment(
+  ctx: RouterContext,
+  state: { data?: Record<string, unknown> },
+): Promise<void> {
+  await showOnboardContacts(
+    ctx,
+    extractManagerContext(state),
+    state.data ?? {},
+  );
 }
 
 export async function continueOnboardContacts(
   ctx: RouterContext,
   state: { data?: Record<string, unknown> },
 ): Promise<void> {
-  await showOnboardUpload(ctx, extractManagerContext(state));
+  await showOnboardUpload(
+    ctx,
+    extractManagerContext(state),
+    state.data ?? {},
+  );
 }
 
 export async function showOnboardUpload(
   ctx: RouterContext,
   context: ManagerContext = {},
+  existing: Record<string, unknown> = {},
 ): Promise<void> {
+  const name = typeof existing.name === "string" ? existing.name : null;
+  const location = typeof existing.location === "string"
+    ? existing.location
+    : null;
+  const momo = typeof existing.momo === "string" ? existing.momo : null;
+  const whatsapp = Array.isArray(existing.whatsapp)
+    ? (existing.whatsapp as string[]).filter(Boolean)
+    : [];
   await setDineState(ctx, DINE_STATE.ONBOARD_UPLOAD, {
     back: DINE_STATE.ONBOARD_CONTACTS,
-    data: contextData(context, { mode: "onboard" }),
+    data: contextData(context, {
+      mode: "onboard",
+      name,
+      location,
+      momo,
+      whatsapp,
+    }),
   });
   await sendButtons(
     ctx.from,
-    `${FORM_EMOJI} Upload menu\nSend PDF or clear images in this chat.`,
-    [{
-      id: IDS.DINEIN_BARS_ONBOARD_UPLOAD_DONE,
-      title: "I uploaded",
-    }],
+    "Upload menu\nSend your PDF of the menu in this chat now.\nWe will read and structure it automatically.",
+    [{ id: IDS.DINEIN_BARS_MANAGER_VIEW, title: "← Back" }],
   );
 }
 
@@ -372,69 +686,155 @@ export async function showUploadInstruction(
   });
   await sendButtons(
     ctx.from,
-    `${FORM_EMOJI} Upload/Update menu\nSend PDFs or clear photos now. We'll notify once OCR finishes.`,
-    [{
-      id: IDS.DINEIN_BARS_ONBOARD_UPLOAD_DONE,
-      title: "Done",
-    }],
+    "Upload/Update menu\nSend PDF/images now. New items will be added automatically.",
+    [{ id: IDS.DINEIN_BARS_MANAGER_VIEW, title: "← Back" }],
   );
 }
 
 export async function showManageOrders(
   ctx: RouterContext,
   context: ManagerContext = {},
+  options: { page?: number } = {},
 ): Promise<void> {
   const ensured = await ensureBarContext(
     ctx,
     context,
     "Select a bar first via View bars & restaurants before viewing orders.",
   );
+  const page = Math.max(1, options.page ?? 1);
   await setDineState(ctx, DINE_STATE.MANAGE_ORDERS, {
     back: DINE_STATE.MANAGER_MENU,
-    data: contextData(context),
+    data: contextData(context, { page }),
   });
   if (!ensured) return;
-  const orders = await fetchRecentOrders(ctx, ensured.barId!);
+
+  const { orders, total } = await fetchRecentOrders(
+    ctx,
+    ensured.barId!,
+    page,
+  );
+  const totalPages = Math.max(1, Math.ceil(total / ORDERS_PAGE_SIZE));
+
+  await setDineState(ctx, DINE_STATE.MANAGE_ORDERS, {
+    back: DINE_STATE.MANAGER_MENU,
+    data: contextData(ensured, {
+      orders,
+      page,
+      totalPages,
+    }),
+  });
+
   if (!orders.length) {
     await sendButtons(ctx.from, `${INFO_EMOJI} No recent orders yet.`, [{
       id: IDS.DINEIN_BARS_MANAGER_VIEW,
-      title: "Back to manager",
+      title: "Done",
     }]);
     return;
   }
-  await setDineState(ctx, DINE_STATE.MANAGE_ORDERS, {
-    back: DINE_STATE.MANAGER_MENU,
-    data: contextData(ensured, { orders }),
-  });
+
   const rows = orders.map((order) => ({
     id: makeOrderRowId(order.order_id),
-    title: `#${order.order_code}`,
+    title: formatOrderTitle(order),
     description: formatOrderDescription(order),
   }));
+
+  if (page < totalPages) {
+    rows.push({
+      id: IDS.DINEIN_BARS_MANAGE_ORDERS_NEXT,
+      title: "Next page",
+    });
+  }
+  if (page > 1) {
+    rows.push({
+      id: IDS.DINEIN_BARS_MANAGE_ORDERS_PREV,
+      title: "Previous page",
+    });
+  }
   rows.push({ id: IDS.DINEIN_BARS_MANAGER_VIEW, title: "← Back" });
+
   await sendList(ctx.from, {
-    title: ensured.barName ? `${ensured.barName} orders` : "Recent orders",
-    body: "View-only queue.",
+    title: `Orders — Recent (page ${page})`,
+    body: "View-only list of recent orders.",
     sectionTitle: "Orders",
     buttonText: "View",
     rows,
   });
 }
 
-export async function showAddWhatsappPrompt(
+export async function showNumbersMenu(
   ctx: RouterContext,
   context: ManagerContext = {},
 ): Promise<void> {
-  await setDineState(ctx, DINE_STATE.ADD_WHATSAPP, {
+  await setDineState(ctx, DINE_STATE.NUMBERS_MENU, {
     back: DINE_STATE.MANAGER_MENU,
-    data: contextData(context, { numbers: [] }),
+    data: contextData(context),
   });
+  await sendList(ctx.from, {
+    title: "Receiving numbers",
+    body: "Choose what to do.",
+    sectionTitle: "Actions",
+    buttonText: "View",
+    rows: [
+      { id: IDS.DINEIN_BARS_NUMBERS_VIEW, title: "Current numbers" },
+      { id: IDS.DINEIN_BARS_NUMBERS_ADD, title: "Add number" },
+      { id: IDS.DINEIN_BARS_NUMBERS_REMOVE, title: "Remove number" },
+      { id: IDS.DINEIN_BARS_MANAGER_VIEW, title: "← Back" },
+    ],
+  });
+}
+
+export async function showCurrentNumbers(
+  ctx: RouterContext,
+  context: ManagerContext = {},
+): Promise<void> {
+  const ensured = await ensureBarContext(
+    ctx,
+    context,
+    "Select a bar first via View bars & restaurants before viewing numbers.",
+  );
+  await setDineState(ctx, DINE_STATE.NUMBERS_VIEW, {
+    back: DINE_STATE.NUMBERS_MENU,
+    data: contextData(context),
+  });
+  if (!ensured) return;
+  const numbers = await fetchBarNumbers(ctx, ensured.barId!);
+  await setDineState(ctx, DINE_STATE.NUMBERS_VIEW, {
+    back: DINE_STATE.NUMBERS_MENU,
+    data: contextData(ensured, { numbers }),
+  });
+  const summary = numbers.length
+    ? numbers.map((entry) => formatNumberRow(entry)).join("\n")
+    : "No numbers yet.";
   await sendButtons(
     ctx.from,
-    `${FORM_EMOJI} Add WhatsApp numbers\nReply with phone numbers in E.164 format (comma separated).`,
+    `Current numbers\n${summary}`,
     [{
-      id: IDS.DINEIN_BARS_ADD_WHATSAPP,
-      title: "Save",
+      id: IDS.DINEIN_BARS_NUMBERS_MENU,
+      title: "← Back",
+    }],
+  );
+}
+
+export async function promptAddNumber(
+  ctx: RouterContext,
+  context: ManagerContext = {},
+): Promise<void> {
+  const ensured = await ensureBarContext(
+    ctx,
+    context,
+    "Select a bar first via View bars & restaurants before adding numbers.",
+  );
+  await setDineState(ctx, DINE_STATE.NUMBERS_ADD, {
+    back: DINE_STATE.NUMBERS_MENU,
+    data: contextData(context, { numbers: [] }),
+  });
+  if (!ensured) return;
+  await sendButtons(
+    ctx.from,
+    "Add number\nReply with the WhatsApp number (E.164), e.g. +2507xxxxxxx",
+    [{
+      id: IDS.DINEIN_BARS_NUMBERS_ADD,
+      title: "Add",
     }],
   );
 }
@@ -453,34 +853,204 @@ export async function showReviewIntro(
     data: contextData(context),
   });
   if (!ensured) return;
-  await showReviewList(ctx, ensured);
+  await showReviewList(ctx, ensured, { page: 1 });
+}
+
+export async function showEditMenu(
+  ctx: RouterContext,
+  context: ManagerContext = {},
+): Promise<void> {
+  const ensured = await ensureBarContext(
+    ctx,
+    context,
+    "Select a bar first via View bars & restaurants before editing menu settings.",
+  );
+  await setDineState(ctx, DINE_STATE.EDIT_MENU, {
+    back: DINE_STATE.MANAGER_MENU,
+    data: contextData(context),
+  });
+  if (!ensured) return;
+  await sendList(ctx.from, {
+    title: "Menu maintenance",
+    body: ensured.barName
+      ? `Managing: ${ensured.barName}`
+      : "Choose how to update the menu.",
+    sectionTitle: "Actions",
+    buttonText: "View",
+    rows: [
+      { id: IDS.DINEIN_BARS_EDIT_UPLOAD, title: "Upload new PDF" },
+      { id: IDS.DINEIN_BARS_EDIT_DELETE, title: "Delete entire menu" },
+      {
+        id: IDS.DINEIN_BARS_EDIT_REMOVE_CATEGORIES,
+        title: "Remove categories",
+      },
+      { id: IDS.DINEIN_BARS_MANAGER_VIEW, title: "← Back" },
+    ],
+  });
+}
+
+export async function showDeleteMenuConfirmation(
+  ctx: RouterContext,
+  context: ManagerContext = {},
+): Promise<void> {
+  await setDineState(ctx, DINE_STATE.EDIT_CONFIRM_DELETE, {
+    back: DINE_STATE.EDIT_MENU,
+    data: contextData(context),
+  });
+  await sendButtons(
+    ctx.from,
+    "Confirm you want to delete all menu items. This cannot be undone.",
+    [{
+      id: IDS.DINEIN_BARS_EDIT_CONFIRM_DELETE,
+      title: "Confirm delete",
+    }],
+  );
+}
+
+export async function showRemoveCategoriesConfirmation(
+  ctx: RouterContext,
+  context: ManagerContext = {},
+): Promise<void> {
+  await setDineState(ctx, DINE_STATE.EDIT_CONFIRM_REMOVE_CATEGORIES, {
+    back: DINE_STATE.EDIT_MENU,
+    data: contextData(context),
+  });
+  await sendButtons(
+    ctx.from,
+    "Confirm to remove categories from all items. Items remain.",
+    [{
+      id: IDS.DINEIN_BARS_EDIT_CONFIRM_REMOVE_CATEGORIES,
+      title: "Confirm",
+    }],
+  );
+}
+
+export async function handleDeleteMenuConfirm(
+  ctx: RouterContext,
+  state: { data?: Record<string, unknown> },
+): Promise<void> {
+  const context = extractManagerContext(state);
+  const ensured = await ensureBarContext(
+    ctx,
+    context,
+    "Select a bar first via View bars & restaurants before deleting menus.",
+  );
+  if (!ensured) return;
+  try {
+    await ctx.supabase
+      .from("items")
+      .update({ is_available: false })
+      .eq("bar_id", ensured.barId);
+    await ctx.supabase
+      .from("menus")
+      .update({ status: "archived", published_at: null })
+      .eq("bar_id", ensured.barId);
+    await sendButtons(ctx.from, "All items deleted. ✅", [{
+      id: IDS.DINEIN_BARS_REVIEW,
+      title: "View menu",
+    }]);
+  } catch (error) {
+    console.error("dine.menu.delete_fail", error);
+    await sendButtons(
+      ctx.from,
+      `${WARNING_EMOJI} Failed to delete menu.`,
+      [{
+        id: IDS.DINEIN_BARS_EDIT_MENU,
+        title: "Back",
+      }],
+    );
+  }
+}
+
+export async function handleRemoveCategoriesConfirm(
+  ctx: RouterContext,
+  state: { data?: Record<string, unknown> },
+): Promise<void> {
+  const context = extractManagerContext(state);
+  const ensured = await ensureBarContext(
+    ctx,
+    context,
+    "Select a bar first via View bars & restaurants before updating categories.",
+  );
+  if (!ensured) return;
+  try {
+    await ctx.supabase
+      .from("items")
+      .update({ category_id: null })
+      .eq("bar_id", ensured.barId);
+    await sendButtons(ctx.from, "Categories removed. ✅", [{
+      id: IDS.DINEIN_BARS_REVIEW,
+      title: "View menu",
+    }]);
+    await showEditMenu(ctx, ensured);
+  } catch (error) {
+    console.error("dine.menu.clear_categories_fail", error);
+    await sendButtons(
+      ctx.from,
+      `${WARNING_EMOJI} Failed to clear categories.`,
+      [{
+        id: IDS.DINEIN_BARS_EDIT_MENU,
+        title: "Back",
+      }],
+    );
+  }
 }
 
 export async function showReviewList(
   ctx: RouterContext,
   context: ManagerContext,
+  options: { page?: number } = {},
 ): Promise<void> {
-  const items = await fetchTopBarItems(ctx, context.barId!);
+  const ensured = await ensureBarContext(
+    ctx,
+    context,
+    "Select a bar first via View bars & restaurants before reviewing menu items.",
+  );
+  const page = Math.max(1, options.page ?? 1);
+  await setDineState(ctx, DINE_STATE.REVIEW_LIST, {
+    back: DINE_STATE.MANAGER_MENU,
+    data: contextData(context, { page }),
+  });
+  if (!ensured) return;
+
+  const { items, total } = await fetchReviewItems(ctx, ensured.barId!, page);
+  const totalPages = Math.max(1, Math.ceil(total / REVIEW_PAGE_SIZE));
+
+  await setDineState(ctx, DINE_STATE.REVIEW_LIST, {
+    back: DINE_STATE.MANAGER_MENU,
+    data: contextData(ensured, {
+      items,
+      page,
+      totalPages,
+    }),
+  });
+
   if (!items.length) {
     await sendButtons(ctx.from, `${INFO_EMOJI} No menu items published yet.`, [{
-      id: IDS.DINEIN_BARS_MANAGER_VIEW,
-      title: "Back to manager",
+      id: IDS.DINEIN_BARS_UPLOAD,
+      title: "Upload menu",
     }]);
     return;
   }
-  await setDineState(ctx, DINE_STATE.REVIEW_LIST, {
-    back: DINE_STATE.MANAGER_MENU,
-    data: contextData(context, { items }),
-  });
+
   const rows = items.map((item) => ({
-    id: makeReviewItemRowId(item.item_id),
+    id: makeReviewItemRowId(item.id),
     title: formatItemTitle(item),
     description: formatItemDescription(item),
   }));
+
+  if (page < totalPages) {
+    rows.push({ id: IDS.DINEIN_BARS_REVIEW_NEXT_PAGE, title: "Next page" });
+  }
+  if (page > 1) {
+    rows.push({ id: IDS.DINEIN_BARS_REVIEW_PREV_PAGE, title: "Previous page" });
+  }
   rows.push({ id: IDS.DINEIN_BARS_MANAGER_VIEW, title: "← Back" });
+
   await sendList(ctx.from, {
-    title: context.barName ? `${context.barName} menu` : "Menu items",
-    body: "Top items by demand.",
+    title: `Menu — Items (page ${page})`,
+    body:
+      "9 items per page · Sorted A→Z, shifts to most ordered on top over time.",
     sectionTitle: "Items",
     buttonText: "View",
     rows,
@@ -494,9 +1064,9 @@ export async function showReviewItemMenu(
   state?: { data?: Record<string, unknown> },
 ): Promise<void> {
   const cachedItems = Array.isArray(state?.data?.items)
-    ? state?.data?.items as TopBarItem[]
+    ? state?.data?.items as ItemDetail[]
     : [];
-  const cached = cachedItems.find((item) => item.item_id === itemId);
+  const cached = cachedItems.find((item) => item.id === itemId);
   const detail = cached ?? await fetchItemDetail(ctx, itemId);
   if (!detail) {
     await sendButtons(ctx.from, `${WARNING_EMOJI} Item not found.`, [{
@@ -509,20 +1079,27 @@ export async function showReviewItemMenu(
     back: DINE_STATE.REVIEW_LIST,
     data: contextData(context, {
       itemId,
-      itemName: detail.item_name ?? detail.name,
+      itemName: detail.name,
       itemPriceMinor: detail.price_minor,
       itemCurrency: detail.currency,
       itemCategory: detail.category_name,
       itemAvailable: detail.is_available,
+      itemMenuId: detail.menu_id ?? null,
     }),
   });
   await sendList(ctx.from, {
-    title: detail.item_name ?? detail.name,
+    title: `Item: ${detail.name}`,
     body: formatItemDescription(detail),
     sectionTitle: "Actions",
     buttonText: "View",
     rows: [
-      { id: IDS.DINEIN_BARS_REVIEW_EDIT, title: "Edit item" },
+      { id: IDS.DINEIN_BARS_REVIEW_EDIT_NAME, title: "Change name" },
+      { id: IDS.DINEIN_BARS_REVIEW_EDIT_PRICE, title: "Change price" },
+      {
+        id: IDS.DINEIN_BARS_REVIEW_EDIT_DESCRIPTION,
+        title: "Change description",
+      },
+      { id: IDS.DINEIN_BARS_REVIEW_EDIT_CATEGORY, title: "Change category" },
       {
         id: IDS.DINEIN_BARS_REVIEW_TOGGLE,
         title: detail.is_available ? "Mark unavailable" : "Mark available",
@@ -532,40 +1109,13 @@ export async function showReviewItemMenu(
   });
 }
 
-export async function showReviewEditOptions(
-  ctx: RouterContext,
-  context: ManagerContext,
-  itemState: { itemId: string; itemName: string },
-): Promise<void> {
-  await setDineState(ctx, DINE_STATE.REVIEW_ITEM_MENU, {
-    back: DINE_STATE.REVIEW_LIST,
-    data: contextData(context, {
-      ...itemState,
-    }),
-  });
-  await sendList(ctx.from, {
-    title: `Edit ${itemState.itemName}`,
-    body: "What do you want to update?",
-    sectionTitle: "Fields",
-    buttonText: "View",
-    rows: [
-      { id: IDS.DINEIN_BARS_REVIEW_EDIT_NAME, title: "Edit name" },
-      { id: IDS.DINEIN_BARS_REVIEW_EDIT_PRICE, title: "Edit price" },
-      {
-        id: IDS.DINEIN_BARS_REVIEW_EDIT_DESCRIPTION,
-        title: "Edit description",
-      },
-      { id: IDS.DINEIN_BARS_REVIEW_ITEM_MENU, title: "← Back" },
-    ],
-  });
-}
-
 export async function promptReviewEditField(
   ctx: RouterContext,
   context: ManagerContext,
   itemId: string,
   itemName: string,
-  field: "name" | "price" | "description",
+  field: "name" | "price" | "description" | "category",
+  extra: { itemMenuId?: string | null } = {},
 ): Promise<void> {
   await setDineState(ctx, DINE_STATE.REVIEW_EDIT_FIELD, {
     back: DINE_STATE.REVIEW_ITEM_MENU,
@@ -573,17 +1123,17 @@ export async function promptReviewEditField(
       itemId,
       itemName,
       field,
+      itemMenuId: extra.itemMenuId ?? null,
     }),
   });
   const prompt = field === "name"
-    ? "Send the new item name."
+    ? "Send the new name."
     : field === "price"
-    ? "Send the new price (numbers only, optional currency)."
-    : "Send the new description.";
-  await sendButtons(ctx.from, `${FORM_EMOJI} ${prompt}`, [{
-    id: IDS.DINEIN_BARS_REVIEW_ITEM_MENU,
-    title: "Cancel",
-  }]);
+    ? "Send the new price (numbers only)."
+    : field === "description"
+    ? "Send the new description."
+    : "Send the new category.";
+  await sendText(ctx.from, `Item: ${itemName}\n${prompt}`);
 }
 
 export async function handleReviewEditText(
@@ -595,7 +1145,7 @@ export async function handleReviewEditText(
   const data = state.data ?? {};
   const itemId = typeof data.itemId === "string" ? data.itemId : null;
   const field = data.field === "name" || data.field === "price" ||
-      data.field === "description"
+      data.field === "description" || data.field === "category"
     ? data.field
     : null;
   if (!itemId || !field) return false;
@@ -605,14 +1155,10 @@ export async function handleReviewEditText(
       const value = body.trim();
       if (!value) throw new Error("Name required");
       await ctx.supabase.from("items").update({ name: value }).eq("id", itemId);
-      await sendButtons(
-        ctx.from,
-        `${MANAGER_EMOJI} Name updated to “${value}”.`,
-        [{
-          id: IDS.DINEIN_BARS_REVIEW_ITEM_MENU,
-          title: "View item",
-        }],
-      );
+      await sendButtons(ctx.from, "Updated. ✅", [{
+        id: IDS.DINEIN_BARS_REVIEW,
+        title: "View menu",
+      }]);
       return true;
     }
     if (field === "price") {
@@ -622,26 +1168,52 @@ export async function handleReviewEditText(
         "id",
         itemId,
       );
-      await sendButtons(ctx.from, `${MANAGER_EMOJI} Price updated.`, [{
-        id: IDS.DINEIN_BARS_REVIEW_ITEM_MENU,
-        title: "View item",
+      await sendButtons(ctx.from, "Updated. ✅", [{
+        id: IDS.DINEIN_BARS_REVIEW,
+        title: "View menu",
       }]);
       return true;
     }
-    const description = body.trim();
-    await ctx.supabase.from("items").update({
-      short_description: description || null,
-    }).eq("id", itemId);
-    await sendButtons(ctx.from, `${MANAGER_EMOJI} Description updated.`, [{
-      id: IDS.DINEIN_BARS_REVIEW_ITEM_MENU,
-      title: "View item",
+    if (field === "description") {
+      const description = body.trim();
+      await ctx.supabase.from("items").update({
+        short_description: description || null,
+      }).eq("id", itemId);
+      await sendButtons(ctx.from, "Updated. ✅", [{
+        id: IDS.DINEIN_BARS_REVIEW,
+        title: "View menu",
+      }]);
+      return true;
+    }
+    const categoryName = body.trim();
+    if (!categoryName) throw new Error("Category required");
+    const barId = context.barId ?? null;
+    const menuId = typeof data.itemMenuId === "string" ? data.itemMenuId : null;
+    const resolvedMenuId = menuId ?? await resolveMenuIdForItem(ctx, itemId);
+    const resolvedBarId = barId ?? await resolveBarIdForItem(ctx, itemId);
+    if (!resolvedMenuId || !resolvedBarId) {
+      throw new Error("Unable to resolve menu for item");
+    }
+    const categoryId = await ensureCategoryForMenu(
+      ctx,
+      resolvedMenuId,
+      resolvedBarId,
+      categoryName,
+    );
+    await ctx.supabase.from("items").update({ category_id: categoryId }).eq(
+      "id",
+      itemId,
+    );
+    await sendButtons(ctx.from, "Updated. ✅", [{
+      id: IDS.DINEIN_BARS_REVIEW,
+      title: "View menu",
     }]);
     return true;
   } catch (error) {
     console.error("dine.review.edit_fail", error);
     await sendButtons(ctx.from, `${WARNING_EMOJI} Update failed. Try again.`, [{
-      id: IDS.DINEIN_BARS_REVIEW_ITEM_MENU,
-      title: "Back",
+      id: IDS.DINEIN_BARS_REVIEW,
+      title: "View menu",
     }]);
     return true;
   } finally {
@@ -671,23 +1243,18 @@ export async function handleToggleAvailability(
         itemAvailable: !currentStatus,
       }),
     });
-    const statusLabel = !currentStatus ? "available" : "unavailable";
-    await sendButtons(
-      ctx.from,
-      `${MANAGER_EMOJI} Item marked ${statusLabel}.`,
-      [{
-        id: IDS.DINEIN_BARS_REVIEW_ITEM_MENU,
-        title: "View item",
-      }],
-    );
+    await sendButtons(ctx.from, "Availability updated. ✅", [{
+      id: IDS.DINEIN_BARS_REVIEW,
+      title: "View menu",
+    }]);
   } catch (error) {
     console.error("dine.review.toggle_fail", error);
     await sendButtons(
       ctx.from,
-      `${WARNING_EMOJI} Failed to toggle availability.`,
+      `${WARNING_EMOJI} Update failed. Try again.`,
       [{
-        id: IDS.DINEIN_BARS_REVIEW_ITEM_MENU,
-        title: "Back",
+        id: IDS.DINEIN_BARS_REVIEW,
+        title: "View menu",
       }],
     );
   }
@@ -705,18 +1272,236 @@ export async function handleOrderRowSelection(
   if (!match) {
     await sendButtons(ctx.from, `${WARNING_EMOJI} Order not found.`, [{
       id: IDS.DINEIN_BARS_MANAGER_VIEW,
-      title: "Back",
+      title: "Done",
     }]);
     return;
   }
+  const summary = formatOrderSummary(match);
   await sendButtons(
     ctx.from,
-    `${INFO_EMOJI} #${match.order_code}\n${formatOrderDescription(match)}`,
+    summary,
     [{
       id: IDS.DINEIN_BARS_MANAGER_VIEW,
-      title: "Back to manager",
+      title: "Done",
     }],
   );
+}
+
+export async function handleNumbersAddText(
+  ctx: RouterContext,
+  state: { key: string; data?: Record<string, unknown> },
+  body: string,
+): Promise<boolean> {
+  if (state.key !== DINE_STATE.NUMBERS_ADD) return false;
+  const context = extractManagerContext(state);
+  const numbers = extractWhatsappNumbers(body);
+  const firstNumber = numbers[0];
+  if (!firstNumber) {
+    await sendButtons(
+      ctx.from,
+      "Add number\nReply with the WhatsApp number (E.164), e.g. +2507xxxxxxx",
+      [{
+        id: IDS.DINEIN_BARS_NUMBERS_ADD,
+        title: "Add",
+      }],
+    );
+    return true;
+  }
+  const data = contextData(context, { numbers: [firstNumber] });
+  await setDineState(ctx, DINE_STATE.NUMBERS_ADD, {
+    back: DINE_STATE.NUMBERS_MENU,
+    data,
+  });
+  await handleNumbersAddSubmit(ctx, { data });
+  return true;
+}
+
+export async function handleNumbersAddSubmit(
+  ctx: RouterContext,
+  state: { data?: Record<string, unknown> },
+): Promise<void> {
+  const context = extractManagerContext(state);
+  const ensured = await ensureBarContext(
+    ctx,
+    context,
+    "Select a bar first via View bars & restaurants before saving numbers.",
+  );
+  const numbers = Array.isArray(state.data?.numbers)
+    ? state.data?.numbers as string[]
+    : [];
+  if (!ensured) return;
+  if (!numbers.length) {
+    await sendButtons(
+      ctx.from,
+      `${WARNING_EMOJI} Add at least one number.`,
+      [{
+        id: IDS.DINEIN_BARS_NUMBERS_MENU,
+        title: "← Back",
+      }],
+    );
+    return;
+  }
+  try {
+    await ctx.supabase.from("bar_numbers").upsert(
+      numbers.map((number) => ({
+        bar_id: ensured.barId,
+        number_e164: number,
+        role: "staff",
+        is_active: true,
+      })),
+      { onConflict: "bar_id,number_e164" },
+    );
+    const successMessage = numbers.length === 1
+      ? "Number added. ✅"
+      : "Numbers added. ✅";
+    await sendButtons(
+      ctx.from,
+      successMessage,
+      [{
+        id: IDS.DINEIN_BARS_NUMBERS_VIEW,
+        title: "View numbers",
+      }],
+    );
+    await showCurrentNumbers(ctx, ensured);
+  } catch (error) {
+    console.error("dine.numbers.add_fail", error);
+    await sendButtons(
+      ctx.from,
+      `${WARNING_EMOJI} Failed to save numbers. Try again soon.`,
+      [{
+        id: IDS.DINEIN_BARS_NUMBERS_MENU,
+        title: "← Back",
+      }],
+    );
+  }
+}
+
+export async function promptRemoveNumber(
+  ctx: RouterContext,
+  context: ManagerContext = {},
+): Promise<void> {
+  const ensured = await ensureBarContext(
+    ctx,
+    context,
+    "Select a bar first via View bars & restaurants before removing numbers.",
+  );
+  await setDineState(ctx, DINE_STATE.NUMBERS_REMOVE, {
+    back: DINE_STATE.NUMBERS_MENU,
+    data: contextData(context, { numbers: [] }),
+  });
+  if (!ensured) return;
+  const numbers = await fetchBarNumbers(ctx, ensured.barId!);
+  await setDineState(ctx, DINE_STATE.NUMBERS_REMOVE, {
+    back: DINE_STATE.NUMBERS_MENU,
+    data: contextData(ensured, { existingNumbers: numbers, remove: [] }),
+  });
+  const listText = numbers.length
+    ? numbers.map((entry, index) => `${index + 1}. ${formatNumberRow(entry)}`)
+      .join("\n")
+    : "No numbers yet.";
+  await sendButtons(
+    ctx.from,
+    `Remove number\nReply with the number to remove (E.164), as listed.\n${listText}`,
+    [{
+      id: IDS.DINEIN_BARS_NUMBERS_REMOVE,
+      title: numbers.length ? "Remove" : "← Back",
+    }],
+  );
+}
+
+export async function handleNumbersRemoveText(
+  ctx: RouterContext,
+  state: { key: string; data?: Record<string, unknown> },
+  body: string,
+): Promise<boolean> {
+  if (state.key !== DINE_STATE.NUMBERS_REMOVE) return false;
+  const context = extractManagerContext(state);
+  const removeList = extractWhatsappNumbers(body);
+  const remove = removeList.length ? [removeList[0]] : [];
+  const existingNumbers = Array.isArray(state.data?.existingNumbers)
+    ? state.data?.existingNumbers as BarNumberRecord[]
+    : [];
+  const data = contextData(context, { existingNumbers, remove });
+  await setDineState(ctx, DINE_STATE.NUMBERS_REMOVE, {
+    back: DINE_STATE.NUMBERS_MENU,
+    data,
+  });
+  if (!remove.length) {
+    await sendButtons(
+      ctx.from,
+      "Remove number\nReply with the number to remove (E.164), as listed.",
+      [{
+        id: IDS.DINEIN_BARS_NUMBERS_REMOVE,
+        title: "Remove",
+      }],
+    );
+    return true;
+  }
+  await handleNumbersRemoveSubmit(ctx, { data });
+  return true;
+}
+
+export async function handleNumbersRemoveSubmit(
+  ctx: RouterContext,
+  state: { data?: Record<string, unknown> },
+): Promise<void> {
+  const context = extractManagerContext(state);
+  const ensured = await ensureBarContext(
+    ctx,
+    context,
+    "Select a bar first via View bars & restaurants before removing numbers.",
+  );
+  if (!ensured) return;
+  const remove = Array.isArray(state.data?.remove)
+    ? state.data?.remove as string[]
+    : [];
+  if (!remove.length) {
+    await sendButtons(
+      ctx.from,
+      `${WARNING_EMOJI} Reply with numbers to remove.`,
+      [{
+        id: IDS.DINEIN_BARS_NUMBERS_MENU,
+        title: "← Back",
+      }],
+    );
+    return;
+  }
+  try {
+    await ctx.supabase
+      .from("bar_numbers")
+      .delete()
+      .eq("bar_id", ensured.barId)
+      .in("number_e164", remove);
+    const successMessage = remove.length === 1
+      ? "Number removed. ✅"
+      : "Numbers removed. ✅";
+    await sendButtons(
+      ctx.from,
+      successMessage,
+      [{
+        id: IDS.DINEIN_BARS_NUMBERS_VIEW,
+        title: "View numbers",
+      }],
+    );
+    await showCurrentNumbers(ctx, ensured);
+  } catch (error) {
+    console.error("dine.numbers.remove_fail", error);
+    await sendButtons(
+      ctx.from,
+      `${WARNING_EMOJI} Failed to remove numbers.`,
+      [{
+        id: IDS.DINEIN_BARS_NUMBERS_MENU,
+        title: "← Back",
+      }],
+    );
+  }
+}
+
+export async function showAddWhatsappPrompt(
+  ctx: RouterContext,
+  context: ManagerContext = {},
+): Promise<void> {
+  await promptAddNumber(ctx, context);
 }
 
 export async function handleAddWhatsappText(
@@ -724,35 +1509,14 @@ export async function handleAddWhatsappText(
   state: { key: string; data?: Record<string, unknown> },
   body: string,
 ): Promise<boolean> {
-  if (state.key !== DINE_STATE.ADD_WHATSAPP) return false;
-  const numbers = parseContactsInput(body).whatsapp;
-  const context = extractManagerContext(state);
-  await setDineState(ctx, DINE_STATE.ADD_WHATSAPP, {
-    back: DINE_STATE.MANAGER_MENU,
-    data: contextData(context, { numbers }),
-  });
-  await sendButtons(
-    ctx.from,
-    `${FORM_EMOJI} Numbers captured\n${
-      numbers.length ? numbers.join(", ") : "No valid numbers yet."
-    }`,
-    [{
-      id: IDS.DINEIN_BARS_ADD_WHATSAPP,
-      title: "Save",
-    }],
-  );
-  return true;
+  return await handleNumbersAddText(ctx, state, body);
 }
 
-export async function handleAddWhatsappSave(ctx: RouterContext): Promise<void> {
-  await sendButtons(
-    ctx.from,
-    `${MANAGER_EMOJI} WhatsApp numbers queued for syncing.`,
-    [{
-      id: IDS.DINEIN_BARS_MANAGER_VIEW,
-      title: "Back to manager",
-    }],
-  );
+export async function handleAddWhatsappSave(
+  ctx: RouterContext,
+  state?: { data?: Record<string, unknown> },
+): Promise<void> {
+  await handleNumbersAddSubmit(ctx, state ?? { data: {} });
 }
 
 export async function handleUploadDone(
@@ -760,14 +1524,8 @@ export async function handleUploadDone(
   state: { data?: Record<string, unknown> },
 ): Promise<void> {
   const context = extractManagerContext(state);
-  const mode = state?.data?.mode === "update" ? "update" : "onboard";
-  const message = mode === "update"
-    ? `${MANAGER_EMOJI} Thanks! We'll process the new menu and let you know when it's ready.`
-    : `${MANAGER_EMOJI} Menu received. We'll process OCR and prompt you to publish.`;
-  await sendButtons(ctx.from, message, [{
-    id: IDS.DINEIN_BARS_MANAGER_VIEW,
-    title: "Back to manager",
-  }]);
+  const message = "Thanks. Reading your menu…";
+  await sendText(ctx.from, message);
   await setDineState(ctx, DINE_STATE.MANAGER_MENU, {
     back: DINE_STATE.MANAGER_ENTRY,
     data: contextData(context),
@@ -785,27 +1543,25 @@ export async function handlePublish(ctx: RouterContext): Promise<void> {
   );
 }
 
-function parseIdentityInput(body: string): {
-  name?: string;
-  location?: string;
-  category?: string;
-} {
-  const updates: { name?: string; location?: string; category?: string } = {};
-  const parts = body.split(/\n|;/).map((value) => value.trim()).filter(Boolean);
-  for (const part of parts) {
-    const [labelPart, ...rest] = part.split(/[:=]/);
-    if (!rest.length) continue;
-    const label = labelPart.trim().toLowerCase();
-    const value = rest.join(":").trim();
-    if (!value) continue;
-    if (label.startsWith("name")) updates.name = value;
-    if (label.startsWith("location")) updates.location = value;
-    if (label.startsWith("category")) updates.category = value;
+function extractWhatsappNumbers(body: string): string[] {
+  const candidates = body.split(/[\n,]+/)
+    .map((value) => value.trim())
+    .filter(Boolean);
+  const results = new Set<string>();
+  for (const candidate of candidates) {
+    const parts = candidate.split(/\s+/).filter(Boolean);
+    for (const part of parts) {
+      const cleaned = part.replace(/[^0-9+]/g, "");
+      if (!cleaned) continue;
+      const normalized = cleaned.startsWith("+")
+        ? cleaned
+        : `+${cleaned.replace(/^\++/, "")}`;
+      if (/^\+[0-9]{6,15}$/.test(normalized)) {
+        results.add(normalized);
+      }
+    }
   }
-  if (!Object.keys(updates).length) {
-    if (!updates.name) updates.name = body.trim();
-  }
-  return updates;
+  return Array.from(results);
 }
 
 function parseContactsInput(body: string): {
@@ -846,72 +1602,254 @@ function parsePriceToMinor(input: string): number {
   return Number.isFinite(asInt) ? Math.trunc(asInt) : 0;
 }
 
-function formatItemTitle(item: TopBarItem | ItemDetail): string {
-  const name = "item_name" in item ? item.item_name : item.name;
-  const status = item.is_available ? "✅" : "⛔";
-  return `${status} ${truncate(name, 60)}`;
+function normalizeWa(raw: string): string {
+  const trimmed = raw.trim();
+  if (!trimmed.length) return trimmed;
+  const digits = trimmed.replace(/^\++/, "");
+  return `+${digits}`;
 }
 
-function formatItemDescription(item: TopBarItem | ItemDetail): string {
+function formatItemTitle(item: ItemDetail): string {
+  return truncate(item.name, 60);
+}
+
+function formatItemDescription(item: ItemDetail): string {
   const price = fmtCurrency(item.price_minor, item.currency ?? "RWF");
-  const parts = [price];
+  const parts: string[] = [price];
   if (item.category_name) parts.push(truncate(item.category_name, 32));
   if (item.short_description) parts.push(truncate(item.short_description, 60));
+  if (!item.is_available) parts.push("Unavailable");
   return parts.join(" • ");
 }
 
-function formatOrderDescription(order: RecentBarOrder): string {
-  const when = order.created_at
-    ? new Date(order.created_at).toLocaleString("en-GB", {
-      hour12: false,
-      month: "short",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-    })
-    : "";
-  const items = order.items ?? "No items";
-  return [items, when].filter(Boolean).join(" • ");
+function formatOrderTitle(order: RecentBarOrder): string {
+  const top = order.items[0];
+  if (!top) return `#${order.order_code}`;
+  const qty = top.qty > 1 ? ` ×${top.qty}` : "";
+  return truncate(`${top.name}${qty}`, 60);
 }
 
-async function fetchTopBarItems(
+function formatOrderDescription(order: RecentBarOrder): string {
+  const amount = typeof order.total_minor === "number"
+    ? fmtCurrency(order.total_minor, order.currency ?? "RWF")
+    : "N/A";
+  const parts: string[] = [`Total: ${amount}`];
+  if (order.items.length > 1) {
+    const other = order.items.slice(1).map((item) => {
+      const qty = item.qty > 1 ? ` ×${item.qty}` : "";
+      return truncate(`${item.name}${qty}`, 40);
+    });
+    if (other.length) parts.push(`Other items: ${other.join(", ")}`);
+  }
+  return parts.join(" • ");
+}
+
+function formatOrderSummary(order: RecentBarOrder): string {
+  const amount = typeof order.total_minor === "number"
+    ? fmtCurrency(order.total_minor, order.currency ?? "RWF")
+    : "N/A";
+  const itemsText = order.items.length
+    ? order.items
+      .map((item) => {
+        const qty = item.qty > 1 ? ` ×${item.qty}` : "";
+        return `${item.name}${qty}`;
+      })
+      .join(", ")
+    : "No items recorded.";
+  return [
+    `Order ${order.order_code}`,
+    `Total: ${amount}`,
+    `Items: ${itemsText}`,
+  ].join("\n");
+}
+
+async function fetchBarNumbers(
   ctx: RouterContext,
   barId: string,
-): Promise<TopBarItem[]> {
-  const { data, error } = await ctx.supabase.rpc("top_bar_items", {
-    p_bar: barId,
-    p_limit: 9,
-  });
+): Promise<BarNumberRecord[]> {
+  const { data, error } = await ctx.supabase
+    .from("bar_numbers")
+    .select("number_e164, role, is_active, verified_at")
+    .eq("bar_id", barId)
+    .order("created_at", { ascending: true });
   if (error) {
-    console.error("dine.top_items.fail", error);
+    console.error("dine.bar_numbers.fetch_fail", error);
     return [];
   }
-  return (data ?? []) as TopBarItem[];
+  return (data ?? []) as BarNumberRecord[];
+}
+
+function formatNumberRow(entry: BarNumberRecord): string {
+  const parts = [entry.number_e164];
+  if (entry.role) parts.push(entry.role);
+  if (!entry.is_active) parts.push("inactive");
+  if (entry.verified_at) parts.push("verified");
+  return parts.join(" • ");
 }
 
 async function fetchRecentOrders(
   ctx: RouterContext,
   barId: string,
-): Promise<RecentBarOrder[]> {
-  const { data, error } = await ctx.supabase.rpc("recent_bar_orders", {
-    p_bar: barId,
-    p_limit: 9,
-  });
+  page: number,
+): Promise<{ orders: RecentBarOrder[]; total: number }> {
+  const offset = (Math.max(1, page) - 1) * ORDERS_PAGE_SIZE;
+  const rangeEnd = offset + ORDERS_PAGE_SIZE - 1;
+  const { data, error, count } = await ctx.supabase
+    .from("orders")
+    .select(
+      "id, order_code, created_at, total_minor, currency, order_items(item_name, qty)",
+      { count: "exact" },
+    )
+    .eq("bar_id", barId)
+    .order("created_at", { ascending: false })
+    .range(offset, rangeEnd);
   if (error) {
     console.error("dine.recent_orders.fail", error);
-    return [];
+    return { orders: [], total: 0 };
   }
-  return (data ?? []) as RecentBarOrder[];
+  const orders = (data ?? []).map((row) => ({
+    order_id: row.id,
+    order_code: row.order_code ?? "",
+    created_at: row.created_at ?? null,
+    total_minor: typeof row.total_minor === "number" ? row.total_minor : null,
+    currency: row.currency ?? null,
+    items: Array.isArray(row.order_items)
+      ? row.order_items.map((item: Record<string, unknown>) => ({
+        name: String(item.item_name ?? "Item"),
+        qty: typeof item.qty === "number" ? item.qty : 1,
+      }))
+      : [],
+  }));
+  return {
+    orders,
+    total: typeof count === "number" ? count : orders.length,
+  };
+}
+
+async function fetchReviewItems(
+  ctx: RouterContext,
+  barId: string,
+  page: number,
+): Promise<{ items: ItemDetail[]; total: number }> {
+  const offset = (Math.max(1, page) - 1) * REVIEW_PAGE_SIZE;
+  const rangeEnd = offset + REVIEW_PAGE_SIZE - 1;
+  const { data, error, count } = await ctx.supabase
+    .from("items")
+    .select(
+      "id, bar_id, menu_id, name, short_description, price_minor, currency, is_available, categories(name), menus!inner(status)",
+      { count: "exact" },
+    )
+    .eq("bar_id", barId)
+    .eq("menus.status", "published")
+    .order("name", { ascending: true })
+    .range(offset, rangeEnd);
+  if (error) {
+    console.error("dine.items.fetch_fail", error);
+    return { items: [], total: 0 };
+  }
+  const items = (data ?? []).map((row) => ({
+    id: row.id,
+    name: row.name,
+    short_description: row.short_description ?? null,
+    price_minor: typeof row.price_minor === "number" ? row.price_minor : 0,
+    currency: row.currency ?? null,
+    category_name: row.categories?.name ?? null,
+    is_available: Boolean(row.is_available),
+    menu_id: row.menu_id ?? null,
+  }));
+  return {
+    items,
+    total: typeof count === "number" ? count : items.length,
+  };
+}
+
+async function resolveMenuIdForItem(
+  ctx: RouterContext,
+  itemId: string,
+): Promise<string | null> {
+  const { data, error } = await ctx.supabase
+    .from("items")
+    .select("menu_id")
+    .eq("id", itemId)
+    .maybeSingle();
+  if (error) {
+    console.error("dine.item_menu.resolve_fail", error);
+    return null;
+  }
+  return data?.menu_id ?? null;
+}
+
+async function resolveBarIdForItem(
+  ctx: RouterContext,
+  itemId: string,
+): Promise<string | null> {
+  const { data, error } = await ctx.supabase
+    .from("items")
+    .select("bar_id")
+    .eq("id", itemId)
+    .maybeSingle();
+  if (error) {
+    console.error("dine.item_bar.resolve_fail", error);
+    return null;
+  }
+  return data?.bar_id ?? null;
+}
+
+async function ensureCategoryForMenu(
+  ctx: RouterContext,
+  menuId: string,
+  barId: string,
+  categoryName: string,
+): Promise<string> {
+  const trimmed = categoryName.trim();
+  const normalized = trimmed.replace(/\s+/g, " ").trim();
+  const existing = await ctx.supabase
+    .from("categories")
+    .select("id")
+    .eq("menu_id", menuId)
+    .ilike("name", normalized)
+    .maybeSingle();
+  if (existing.error && existing.error.code !== "PGRST116") {
+    throw existing.error;
+  }
+  if (existing.data?.id) return existing.data.id;
+
+  const { data: maxRow, error: orderError } = await ctx.supabase
+    .from("categories")
+    .select("sort_order")
+    .eq("menu_id", menuId)
+    .order("sort_order", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (orderError) {
+    console.error("dine.category.order_fail", orderError);
+  }
+  const nextSort = typeof maxRow?.sort_order === "number"
+    ? maxRow.sort_order + 1
+    : 0;
+
+  const { data, error } = await ctx.supabase
+    .from("categories")
+    .insert({
+      bar_id: barId,
+      menu_id: menuId,
+      name: normalized,
+      sort_order: nextSort,
+    })
+    .select("id")
+    .single();
+  if (error) throw error;
+  return data.id as string;
 }
 
 async function fetchItemDetail(
   ctx: RouterContext,
   itemId: string,
-): Promise<TopBarItem | null> {
+): Promise<ItemDetail | null> {
   const { data, error } = await ctx.supabase
     .from("items")
     .select(
-      "id, name, short_description, price_minor, currency, is_available, categories(name)",
+      "id, menu_id, name, short_description, price_minor, currency, is_available, categories(name)",
     )
     .eq("id", itemId)
     .maybeSingle();
@@ -920,14 +1858,13 @@ async function fetchItemDetail(
     return null;
   }
   return {
-    item_id: data.id,
-    item_name: data.name,
+    id: data.id,
+    name: data.name,
     short_description: data.short_description ?? null,
     price_minor: data.price_minor,
     currency: data.currency,
     category_name: data.categories?.name ?? null,
     is_available: data.is_available,
-    total_qty: 0,
-    last_order: null,
-  };
+    menu_id: data.menu_id ?? null,
+  } as ItemDetail;
 }

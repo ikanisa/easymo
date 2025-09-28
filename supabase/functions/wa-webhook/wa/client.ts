@@ -1,4 +1,15 @@
 import { WA_PHONE_ID, WA_TOKEN } from "../config.ts";
+
+export class WhatsAppClientError extends Error {
+  readonly status: number;
+  readonly detail: string;
+
+  constructor(status: number, detail: string) {
+    super(`WhatsApp request failed (${status}): ${detail}`);
+    this.status = status;
+    this.detail = detail;
+  }
+}
 import { safeButtonTitle, safeRowDesc, safeRowTitle } from "../utils/text.ts";
 
 const GRAPH_BASE = "https://graph.facebook.com/v20.0";
@@ -15,6 +26,7 @@ async function post(payload: unknown): Promise<void> {
   if (!res.ok) {
     const text = await res.text();
     console.error("wa_client.send_fail", res.status, text);
+    throw new WhatsAppClientError(res.status, text);
   }
 }
 

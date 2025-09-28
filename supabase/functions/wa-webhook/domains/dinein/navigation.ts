@@ -3,16 +3,24 @@ import type { ChatState } from "../../state/store.ts";
 import { DINE_STATE, dineBackTarget } from "./state.ts";
 import {
   managerContextFromState,
-  showAddWhatsappPrompt,
+  promptAddNumber,
+  promptRemoveNumber,
   showBarsEntry,
   showBarsMenu,
+  showCurrentNumbers,
+  showDeleteMenuConfirmation,
+  showEditMenu,
   showManageOrders,
   showManagerEntry,
   showManagerMenu,
+  showNumbersMenu,
   showOnboardContacts,
   showOnboardIdentity,
+  showOnboardLocation,
+  showOnboardPayment,
   showOnboardPublish,
   showOnboardUpload,
+  showRemoveCategoriesConfirmation,
   showReviewIntro,
   showReviewItemMenu,
   showReviewList,
@@ -46,6 +54,12 @@ export async function handleDineBack(
     case DINE_STATE.ONBOARD_CONTACTS:
       await showOnboardContacts(ctx, context);
       return true;
+    case DINE_STATE.ONBOARD_LOCATION:
+      await showOnboardLocation(ctx, context);
+      return true;
+    case DINE_STATE.ONBOARD_PAYMENT:
+      await showOnboardPayment(ctx, context);
+      return true;
     case DINE_STATE.ONBOARD_UPLOAD:
       if (state.data?.mode === "update") {
         await showUploadInstruction(ctx, context);
@@ -57,7 +71,13 @@ export async function handleDineBack(
       await showOnboardPublish(ctx, context);
       return true;
     case DINE_STATE.REVIEW_LIST:
-      await showReviewIntro(ctx, context);
+      await showReviewList(
+        ctx,
+        context,
+        {
+          page: typeof state.data?.page === "number" ? state.data.page : 1,
+        },
+      );
       return true;
     case DINE_STATE.REVIEW_ITEM_MENU: {
       const itemId = typeof state.data?.itemId === "string"
@@ -82,10 +102,30 @@ export async function handleDineBack(
       return true;
     }
     case DINE_STATE.MANAGE_ORDERS:
-      await showManageOrders(ctx, context);
+      await showManageOrders(ctx, context, {
+        page: typeof state.data?.page === "number" ? state.data.page : 1,
+      });
       return true;
-    case DINE_STATE.ADD_WHATSAPP:
-      await showAddWhatsappPrompt(ctx, context);
+    case DINE_STATE.NUMBERS_MENU:
+      await showNumbersMenu(ctx, context);
+      return true;
+    case DINE_STATE.NUMBERS_VIEW:
+      await showCurrentNumbers(ctx, context);
+      return true;
+    case DINE_STATE.NUMBERS_ADD:
+      await promptAddNumber(ctx, context);
+      return true;
+    case DINE_STATE.NUMBERS_REMOVE:
+      await promptRemoveNumber(ctx, context);
+      return true;
+    case DINE_STATE.EDIT_MENU:
+      await showEditMenu(ctx, context);
+      return true;
+    case DINE_STATE.EDIT_CONFIRM_DELETE:
+      await showDeleteMenuConfirmation(ctx, context);
+      return true;
+    case DINE_STATE.EDIT_CONFIRM_REMOVE_CATEGORIES:
+      await showRemoveCategoriesConfirmation(ctx, context);
       return true;
     default:
       await startDineIn(ctx, state, { skipResume: true });

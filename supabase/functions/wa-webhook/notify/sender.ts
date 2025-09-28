@@ -52,6 +52,23 @@ export type MediaPayload = {
   filename?: string;
 };
 
+type InteractiveListRow = {
+  id: string;
+  title: string;
+  description?: string;
+};
+
+type InteractiveListPayload = {
+  type: "list";
+  headerText?: string;
+  bodyText: string;
+  buttonText: string;
+  sectionTitle: string;
+  rows: InteractiveListRow[];
+};
+
+type InteractivePayload = InteractiveListPayload;
+
 export type TemplatePayload = {
   name: string;
   language?: string;
@@ -63,6 +80,7 @@ export type QueueNotificationMessage = {
   template?: TemplatePayload;
   text?: string;
   media?: MediaPayload;
+  interactive?: InteractivePayload;
 };
 
 export type QueueNotificationOptions = {
@@ -122,6 +140,7 @@ type MessageEnvelope = {
   template?: TemplatePayload;
   text?: string;
   media?: MediaPayload;
+  interactive?: InteractivePayload;
   meta?: Record<string, unknown>;
 };
 
@@ -459,14 +478,21 @@ function buildMessageEnvelope(
   message: QueueNotificationMessage,
 ): MessageEnvelope {
   const hasTemplate = Boolean(message.template);
-  const hasFreeform = Boolean(message.text) || Boolean(message.media);
+  const hasInteractive = Boolean(message.interactive);
+  const hasFreeform = Boolean(message.text) || Boolean(message.media) ||
+    hasInteractive;
 
   if (!hasTemplate && !hasFreeform) {
-    throw new Error("Provide template, text, or media payload");
+    throw new Error("Provide template, text, media, or interactive payload");
   }
   if (hasTemplate && hasFreeform) {
     throw new Error(
-      "Template notifications cannot include text or media payload",
+      "Template notifications cannot include text, media, or interactive payload",
+    );
+  }
+  if (hasInteractive && (Boolean(message.text) || Boolean(message.media))) {
+    throw new Error(
+      "Interactive notifications cannot include additional text or media payload",
     );
   }
 
@@ -491,6 +517,7 @@ function buildMessageEnvelope(
   if (template) envelope.template = template;
   if (typeof message.text === "string") envelope.text = message.text;
   if (media) envelope.media = media;
+  if (message.interactive) envelope.interactive = message.interactive;
   return envelope;
 }
 
@@ -567,6 +594,67 @@ function buildStaffInviteText(params: QueueStaffInviteParams): string {
   return `EasyMO invite to ${params.barName}: reply with CODE ${params.code} within ${expiresIn}h to activate your staff access.`;
 }
 
+function normalizeInteractive(
+  value: Record<string, unknown>,
+): InteractivePayload | undefined {
+  const type = String(value.type ?? "");
+  if (type !== "list") return undefined;
+  const bodyRecord = isRecord(value.body) ? value.body : {};
+  const actionRecord = isRecord(value.action) ? value.action : {};
+  const sections = Array.isArray(actionRecord.sections)
+    ? actionRecord.sections
+    : [];
+  const firstSection = isRecord(sections[0]) ? sections[0] : {};
+  const bodyCandidate = typeof value.bodyText === "string"
+    ? value.bodyText
+    : typeof bodyRecord.text === "string"
+    ? bodyRecord.text
+    : undefined;
+  const buttonCandidate = typeof value.buttonText === "string"
+    ? value.buttonText
+    : typeof actionRecord.button === "string"
+    ? actionRecord.button
+    : undefined;
+  const sectionCandidate = typeof value.sectionTitle === "string"
+    ? value.sectionTitle
+    : typeof firstSection.title === "string"
+    ? firstSection.title
+    : undefined;
+  const rowsSource = Array.isArray(value.rows)
+    ? value.rows
+    : Array.isArray(firstSection.rows)
+    ? firstSection.rows
+    : [];
+  const rows: InteractiveListRow[] = rowsSource
+    .filter((row): row is Record<string, unknown> => isRecord(row))
+    .map((row) => ({
+      id: String(row.id ?? ""),
+      title: String(row.title ?? ""),
+      description: typeof row.description === "string"
+        ? row.description
+        : undefined,
+    }))
+    .filter((row) => row.id.length && row.title.length)
+    .slice(0, 10);
+  if (!bodyCandidate || !buttonCandidate || !sectionCandidate || !rows.length) {
+    return undefined;
+  }
+  const headerRecord = isRecord(value.header) ? value.header : {};
+  const headerCandidate = typeof value.headerText === "string"
+    ? value.headerText
+    : typeof headerRecord.text === "string"
+    ? headerRecord.text
+    : undefined;
+  return {
+    type: "list",
+    bodyText: bodyCandidate,
+    buttonText: buttonCandidate,
+    sectionTitle: sectionCandidate,
+    rows,
+    headerText: headerCandidate,
+  };
+}
+
 function extractMessage(row: NotificationRow): QueueNotificationMessage | null {
   const payload = row.payload;
   if (!isRecord(payload)) return fallbackFromLegacy(row);
@@ -591,12 +679,19 @@ function extractMessage(row: NotificationRow): QueueNotificationMessage | null {
         : undefined,
     }
     : undefined;
+  const interactive = isRecord(message.interactive)
+    ? normalizeInteractive(message.interactive)
+    : undefined;
 
   const envelope: QueueNotificationMessage = { to: row.to_wa_id };
   if (template) envelope.template = template;
   if (text) envelope.text = text;
   if (media && media.link) envelope.media = media;
-  return envelope.template || envelope.text || envelope.media ? envelope : null;
+  if (interactive) envelope.interactive = interactive;
+  return envelope.template || envelope.text || envelope.media ||
+      envelope.interactive
+    ? envelope
+    : null;
 }
 
 function fallbackFromLegacy(
@@ -627,7 +722,14 @@ function fallbackFromLegacy(
         : undefined,
     };
   }
-  return envelope.template || envelope.text || envelope.media ? envelope : null;
+  if (isRecord(payload.interactive)) {
+    const interactive = normalizeInteractive(payload.interactive);
+    if (interactive) envelope.interactive = interactive;
+  }
+  return envelope.template || envelope.text || envelope.media ||
+      envelope.interactive
+    ? envelope
+    : null;
 }
 
 function buildWhatsAppPayload(
@@ -663,6 +765,35 @@ function buildWhatsAppPayload(
     payload.type = message.media.type;
     payload[message.media.type] = pruneUndefined(media);
     return payload;
+  }
+
+  if (message.interactive) {
+    if (message.interactive.type === "list") {
+      payload.type = "interactive";
+      payload.interactive = pruneUndefined({
+        type: "list",
+        header: message.interactive.headerText
+          ? { type: "text", text: message.interactive.headerText }
+          : undefined,
+        body: { text: message.interactive.bodyText },
+        action: {
+          button: message.interactive.buttonText,
+          sections: [
+            {
+              title: message.interactive.sectionTitle,
+              rows: message.interactive.rows.slice(0, 10).map((row) =>
+                pruneUndefined({
+                  id: row.id,
+                  title: row.title,
+                  description: row.description,
+                })
+              ),
+            },
+          ],
+        },
+      });
+      return payload;
+    }
   }
 
   payload.type = "text";

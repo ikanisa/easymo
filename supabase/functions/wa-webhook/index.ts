@@ -2,7 +2,7 @@ import { serve } from "./deps.ts";
 import { supabase, WA_VERIFY_TOKEN } from "./config.ts";
 import { verifySignature } from "./wa/verify.ts";
 import { handleMessage } from "./router/router.ts";
-import { markEventProcessed } from "./state/idempotency.ts";
+import { claimEvent, releaseEvent } from "./state/idempotency.ts";
 import { ensureProfile, getState } from "./state/store.ts";
 import { logEvent, logInbound, logStructuredEvent } from "./observe/log.ts";
 
@@ -62,20 +62,29 @@ serve(async (req: Request): Promise<Response> => {
 
   for (const msg of messages) {
     if (!msg?.id) continue;
-    const already = await markEventProcessed(msg.id);
-    await logStructuredEvent(already ? "IDEMPOTENCY_HIT" : "IDEMPOTENCY_MISS", {
+    const claimed = await claimEvent(msg.id);
+    await logStructuredEvent(claimed ? "IDEMPOTENCY_MISS" : "IDEMPOTENCY_HIT", {
       message_id: msg.id,
     });
-    if (already) continue;
+    if (!claimed) continue;
 
     const from = msg.from?.startsWith("+") ? msg.from : `+${msg.from}`;
     const profile = await ensureProfile(supabase, from);
     const state = await getState(supabase, profile.user_id);
-    await handleMessage(
-      { supabase, from, profileId: profile.user_id },
-      msg,
-      state,
-    );
+    try {
+      await handleMessage(
+        { supabase, from, profileId: profile.user_id },
+        msg,
+        state,
+      );
+    } catch (err) {
+      await releaseEvent(msg.id);
+      await logStructuredEvent("IDEMPOTENCY_RELEASE", {
+        message_id: msg.id,
+        reason: err instanceof Error ? err.message : String(err),
+      });
+      throw err;
+    }
   }
 
   await logEvent("wa-webhook", payload, { statusCode: 200 });

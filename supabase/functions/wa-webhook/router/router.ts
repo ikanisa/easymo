@@ -47,7 +47,7 @@ export async function handleMessage(
   state: ChatState,
 ): Promise<void> {
   try {
-    if (await hooks.runGuards(ctx, msg)) return;
+    if (await hooks.runGuards(ctx, msg, state)) return;
     if (await hooks.handleMedia(ctx, msg, state)) return;
     if (msg.type === "interactive" && msg.interactive?.type === "list_reply") {
       if (await hooks.handleList(ctx, msg, state)) return;

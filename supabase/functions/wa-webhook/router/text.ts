@@ -21,11 +21,16 @@ import {
   makeBarRowId,
   makeItemRowId,
 } from "../domains/dinein/ids.ts";
+import { DINE_STATE } from "../domains/dinein/state.ts";
 import { startInsurance } from "../domains/insurance/index.ts";
 import {
   handleAddWhatsappText,
+  handleNumbersAddText,
+  handleNumbersRemoveText,
   handleOnboardContactsText,
   handleOnboardIdentityText,
+  handleOnboardLocationText,
+  handleOnboardPaymentText,
   handleReviewEditText,
 } from "../domains/dinein/manager.ts";
 import { handleDineBack } from "../domains/dinein/navigation.ts";
@@ -56,7 +61,18 @@ export async function handleText(
     "momo_qr_code",
     "momo_qr_amount",
   ]);
-  if (!momoStates.has(state.key) && await handleStaffVerification(ctx, body)) {
+  const dineOnboardingStates = new Set<string>([
+    DINE_STATE.ONBOARD_IDENTITY,
+    DINE_STATE.ONBOARD_LOCATION,
+    DINE_STATE.ONBOARD_PAYMENT,
+    DINE_STATE.ONBOARD_CONTACTS,
+    DINE_STATE.ONBOARD_UPLOAD,
+  ]);
+  if (
+    !momoStates.has(state.key) &&
+    !dineOnboardingStates.has(state.key) &&
+    await handleStaffVerification(ctx, body)
+  ) {
     return true;
   }
   if (body.startsWith("/")) {
@@ -77,10 +93,22 @@ export async function handleText(
   if (await handleOnboardIdentityText(ctx, state, body)) {
     return true;
   }
+  if (await handleOnboardLocationText(ctx, state, body)) {
+    return true;
+  }
+  if (await handleOnboardPaymentText(ctx, state, body)) {
+    return true;
+  }
   if (await handleOnboardContactsText(ctx, state, body)) {
     return true;
   }
   if (await handleReviewEditText(ctx, state, body)) {
+    return true;
+  }
+  if (await handleNumbersAddText(ctx, state, body)) {
+    return true;
+  }
+  if (await handleNumbersRemoveText(ctx, state, body)) {
     return true;
   }
   if (await handleAddWhatsappText(ctx, state, body)) {

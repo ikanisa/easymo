@@ -9,7 +9,7 @@ export default async function QrPage() {
   const [{ data: tokens }, { data: bars }] = await Promise.all([listQrTokens({ limit: 100 }), listBars({ limit: 100 })]);
 
   return (
-    <div className="placeholder-grid">
+    <div className="admin-page">
       <PageHeader
         title="QR & Deep Links"
         description="Generate QR batches, manage table tokens, and preview the deep-link copy vendors rely on."

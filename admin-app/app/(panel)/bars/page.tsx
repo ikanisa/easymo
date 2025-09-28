@@ -11,7 +11,7 @@ export default async function BarsPage() {
   ]);
 
   return (
-    <div className="placeholder-grid">
+    <div className="admin-page">
       <PageHeader
         title="Bars"
         description="Admin override surface for bar profiles, contact numbers, settings, and audit trails."

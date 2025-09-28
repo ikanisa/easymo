@@ -12,7 +12,7 @@ export default async function TemplatesPage() {
   ]);
 
   return (
-    <div className="placeholder-grid">
+    <div className="admin-page">
       <PageHeader
         title="Templates & Flows"
         description="Catalog of WhatsApp templates and flow metadata with health checks and deep links to Meta."

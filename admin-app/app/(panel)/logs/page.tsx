@@ -1,14 +1,28 @@
+import { HydrationBoundary, dehydrate } from '@tanstack/react-query';
+import { createQueryClient } from '@/lib/api/queryClient';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { LogsClient } from '@/components/logs/LogsClient';
+import { logsQueryKeys, fetchLogs } from '@/lib/queries/logs';
 
-export default function LogsPage() {
+export default async function LogsPage() {
+  const queryClient = createQueryClient();
+
+  await queryClient.prefetchQuery({
+    queryKey: logsQueryKeys.root(),
+    queryFn: fetchLogs
+  });
+
+  const dehydratedState = dehydrate(queryClient);
+
   return (
-    <div className="placeholder-grid">
-      <PageHeader
-        title="Logs"
-        description="Unified audit and voucher event stream with filters, JSON drawer, and export options."
-      />
-      <LogsClient />
-    </div>
+    <HydrationBoundary state={dehydratedState}>
+      <div className="admin-page">
+        <PageHeader
+          title="Logs"
+          description="Unified audit and voucher event stream with filters, JSON drawer, and export options."
+        />
+        <LogsClient />
+      </div>
+    </HydrationBoundary>
   );
 }

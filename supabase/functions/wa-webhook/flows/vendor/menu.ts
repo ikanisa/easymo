@@ -1,4 +1,5 @@
 import type { RouterContext } from "../../types.ts";
+import type { SupabaseClient } from "../../deps.ts";
 import { MENU_MEDIA_BUCKET } from "../../config.ts";
 import { fetchWhatsAppMedia } from "../../utils/media.ts";
 import { logEvent } from "../../observe/log.ts";
@@ -59,11 +60,27 @@ export async function handleVendorMenuMedia(
       media_id: mediaId,
       storage_path: path,
     });
+
+    await triggerOcrProcessing(ctx.supabase);
   } catch (err) {
     console.error("vendor.menu.store_fail", err, { mediaId, from: ctx.from });
   }
 
   return true;
+}
+
+async function triggerOcrProcessing(client: SupabaseClient): Promise<void> {
+  try {
+    console.log("vendor.menu.ocr_trigger_start");
+    const { error } = await client.functions.invoke("ocr-processor");
+    if (error) throw error;
+    console.log("vendor.menu.ocr_trigger_processor_ok");
+    const notify = await client.functions.invoke("notification-worker");
+    if (notify.error) throw notify.error;
+    console.log("vendor.menu.ocr_trigger_notifier_ok");
+  } catch (error) {
+    console.error("vendor.menu.ocr_trigger_fail", error);
+  }
 }
 
 function pickFilename(

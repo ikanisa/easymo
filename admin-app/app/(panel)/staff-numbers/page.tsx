@@ -8,7 +8,7 @@ export default async function StaffNumbersPage() {
   const { data } = await listStaffNumbers({ limit: 200 });
 
   return (
-    <div className="placeholder-grid">
+    <div className="admin-page">
       <PageHeader
         title="Staff Numbers"
         description="Platform-wide directory of receiving numbers, roles, and verification status."

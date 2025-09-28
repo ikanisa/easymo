@@ -5,6 +5,7 @@ import {
   handleScheduleLocation,
 } from "../domains/mobility/schedule.ts";
 import { handleMarketplaceLocation } from "../domains/marketplace/index.ts";
+import { handleOnboardLocationCoordinates } from "../domains/dinein/manager.ts";
 
 export async function handleLocation(
   ctx: RouterContext,
@@ -32,6 +33,18 @@ export async function handleLocation(
       lat,
       lng,
     });
+  }
+  if (
+    await handleOnboardLocationCoordinates(ctx, state, {
+      lat,
+      lng,
+      name: typeof msg.location?.name === "string" ? msg.location.name : null,
+      address: typeof msg.location?.address === "string"
+        ? msg.location.address
+        : null,
+    })
+  ) {
+    return true;
   }
   if (await handleMarketplaceLocation(ctx, state, { lat, lng })) {
     return true;

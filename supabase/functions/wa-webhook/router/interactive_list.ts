@@ -65,13 +65,19 @@ import {
 import {
   handleOrderRowSelection,
   managerContextFromState,
-  showAddWhatsappPrompt,
+  promptAddNumber,
+  promptRemoveNumber,
   showBarsEntry,
   showBarsMenu,
+  showCurrentNumbers,
+  showDeleteMenuConfirmation,
+  showEditMenu,
   showManageOrders,
   showManagerEntry,
   showManagerMenu,
+  showNumbersMenu,
   showOnboardIdentity,
+  showRemoveCategoriesConfirmation,
   showReviewIntro,
   showReviewItemMenu,
   showReviewList,
@@ -112,12 +118,60 @@ export async function handleList(
     await showManageOrders(ctx, managerCtx);
     return true;
   }
-  if (id === IDS.DINEIN_BARS_ADD_WHATSAPP) {
-    await showAddWhatsappPrompt(ctx, managerCtx);
+  if (id === IDS.DINEIN_BARS_MANAGE_ORDERS_NEXT) {
+    const page = Number(state.data?.page ?? 1);
+    await showManageOrders(ctx, managerCtx, { page: page + 1 });
+    return true;
+  }
+  if (id === IDS.DINEIN_BARS_MANAGE_ORDERS_PREV) {
+    const page = Number(state.data?.page ?? 1);
+    await showManageOrders(ctx, managerCtx, { page: Math.max(1, page - 1) });
+    return true;
+  }
+  if (id === IDS.DINEIN_BARS_NUMBERS_MENU) {
+    await showNumbersMenu(ctx, managerCtx);
+    return true;
+  }
+  if (id === IDS.DINEIN_BARS_NUMBERS_VIEW) {
+    await showCurrentNumbers(ctx, managerCtx);
+    return true;
+  }
+  if (id === IDS.DINEIN_BARS_NUMBERS_ADD) {
+    await promptAddNumber(ctx, managerCtx);
+    return true;
+  }
+  if (id === IDS.DINEIN_BARS_NUMBERS_REMOVE) {
+    await promptRemoveNumber(ctx, managerCtx);
+    return true;
+  }
+  if (id === IDS.DINEIN_BARS_EDIT_MENU) {
+    await showEditMenu(ctx, managerCtx);
+    return true;
+  }
+  if (id === IDS.DINEIN_BARS_EDIT_UPLOAD) {
+    await showUploadInstruction(ctx, managerCtx);
+    return true;
+  }
+  if (id === IDS.DINEIN_BARS_EDIT_DELETE) {
+    await showDeleteMenuConfirmation(ctx, managerCtx);
+    return true;
+  }
+  if (id === IDS.DINEIN_BARS_EDIT_REMOVE_CATEGORIES) {
+    await showRemoveCategoriesConfirmation(ctx, managerCtx);
     return true;
   }
   if (id === IDS.DINEIN_BARS_REVIEW) {
     await showReviewIntro(ctx, managerCtx);
+    return true;
+  }
+  if (id === IDS.DINEIN_BARS_REVIEW_NEXT_PAGE) {
+    const page = Number(state.data?.page ?? 1);
+    await showReviewList(ctx, managerCtx, { page: page + 1 });
+    return true;
+  }
+  if (id === IDS.DINEIN_BARS_REVIEW_PREV_PAGE) {
+    const page = Number(state.data?.page ?? 1);
+    await showReviewList(ctx, managerCtx, { page: Math.max(1, page - 1) });
     return true;
   }
   if (id === IDS.DINEIN_BARS_REVIEW_VIEW_LIST) {

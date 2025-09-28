@@ -9,7 +9,7 @@ export default async function OrdersPage() {
   const recentEvents = listLatestOrderEvents();
 
   return (
-    <div className="placeholder-grid">
+    <div className="admin-page">
       <PageHeader
         title="Orders"
         description="Monitor order lifecycle, nudge vendors, and execute policy-controlled overrides."
