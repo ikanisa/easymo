@@ -1,6 +1,24 @@
-export const serve = Deno.serve;
-export { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
-export type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
+const globals = globalThis as {
+  __WA_WEBHOOK_MOCKS__?: {
+    serve?: typeof Deno.serve;
+    createClient?: (...args: any[]) => unknown;
+  };
+};
+
+const serveMock = globals.__WA_WEBHOOK_MOCKS__?.serve;
+const createClientMock = globals.__WA_WEBHOOK_MOCKS__?.createClient;
+
+export const serve = serveMock ?? Deno.serve;
+
+import {
+  createClient as createClientReal,
+  type SupabaseClient,
+} from "https://esm.sh/@supabase/supabase-js@2.45.4";
+
+export { createClientReal as createClient };
+export type { SupabaseClient };
+
+export const createClientFactory = createClientMock ?? createClientReal;
 export const crypto = globalThis.crypto;
 export { TextDecoder, TextEncoder } from "node:util";
 

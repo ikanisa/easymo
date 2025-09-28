@@ -1,4 +1,8 @@
-import { createClient, type SupabaseClient } from "./deps.ts";
+import {
+  createClient,
+  createClientFactory,
+  type SupabaseClient,
+} from "./deps.ts";
 
 function getEnv(...names: string[]): string | undefined {
   for (const name of names) {
@@ -42,7 +46,11 @@ export const INSURANCE_MEDIA_BUCKET = getEnv("INSURANCE_MEDIA_BUCKET") ??
 export const VOUCHER_SIGNING_SECRET = mustGetOne("VOUCHER_SIGNING_SECRET");
 export const VOUCHER_BUCKET = getEnv("VOUCHERS_BUCKET") ?? "vouchers";
 
-export const supabase: SupabaseClient = createClient(
+const clientFactory = typeof createClientFactory === "function"
+  ? createClientFactory
+  : createClient;
+
+export const supabase: SupabaseClient = clientFactory(
   SUPABASE_URL,
   SUPABASE_SERVICE_ROLE_KEY,
   {

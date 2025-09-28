@@ -5,6 +5,7 @@ import { handleMessage } from "./router/router.ts";
 import { claimEvent, releaseEvent } from "./state/idempotency.ts";
 import { ensureProfile, getState } from "./state/store.ts";
 import { logEvent, logInbound, logStructuredEvent } from "./observe/log.ts";
+import { logMetric } from "./observe/logging.ts";
 
 serve(async (req: Request): Promise<Response> => {
   await logStructuredEvent("WEBHOOK_REQUEST_RECEIVED", {
@@ -30,6 +31,7 @@ serve(async (req: Request): Promise<Response> => {
     return new Response("Method Not Allowed", { status: 405 });
   }
 
+  const requestStart = Date.now();
   const rawBody = await req.text();
   await logStructuredEvent("WEBHOOK_BODY_READ", { bytes: rawBody.length });
 
@@ -71,17 +73,29 @@ serve(async (req: Request): Promise<Response> => {
     const from = msg.from?.startsWith("+") ? msg.from : `+${msg.from}`;
     const profile = await ensureProfile(supabase, from);
     const state = await getState(supabase, profile.user_id);
+    const messageStart = Date.now();
     try {
       await handleMessage(
         { supabase, from, profileId: profile.user_id },
         msg,
         state,
       );
+      await logMetric("wa_message_processed", 1, {
+        type: msg.type ?? "unknown",
+      });
+      await logStructuredEvent("MESSAGE_LATENCY", {
+        message_id: msg.id,
+        ms: Date.now() - messageStart,
+        type: msg.type ?? null,
+      });
     } catch (err) {
       await releaseEvent(msg.id);
       await logStructuredEvent("IDEMPOTENCY_RELEASE", {
         message_id: msg.id,
         reason: err instanceof Error ? err.message : String(err),
+      });
+      await logMetric("wa_message_failed", 1, {
+        type: msg.type ?? "unknown",
       });
       throw err;
     }
@@ -90,6 +104,9 @@ serve(async (req: Request): Promise<Response> => {
   await logEvent("wa-webhook", payload, { statusCode: 200 });
   await logStructuredEvent("WEBHOOK_RESPONSE", {
     status: 200,
+    messageCount: messages.length,
+  });
+  await logMetric("wa_webhook_request_ms", Date.now() - requestStart, {
     messageCount: messages.length,
   });
 
