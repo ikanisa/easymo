@@ -1,9 +1,12 @@
 import type { RouterContext } from "../types.ts";
 import { setState } from "../state/store.ts";
 import { IDS } from "../wa/ids.ts";
-import { isAdminNumber } from "./admin/auth.ts";
 import { maskPhone } from "./support.ts";
 import { sendListMessage } from "../utils/reply.ts";
+import {
+  evaluateMotorInsuranceGate,
+  recordMotorInsuranceHidden,
+} from "../domains/insurance/gate.ts";
 
 const PAGE_SIZE = 9;
 
@@ -75,8 +78,14 @@ export async function sendHomeMenu(
   ctx: RouterContext,
   page = 0,
 ): Promise<void> {
-  const isAdmin = await isAdminNumber(ctx);
-  const rows = buildRows(isAdmin);
+  const gate = await evaluateMotorInsuranceGate(ctx);
+  if (!gate.allowed) {
+    await recordMotorInsuranceHidden(ctx, gate, "menu");
+  }
+  const rows = buildRows({
+    isAdmin: gate.isAdmin,
+    showInsurance: gate.allowed,
+  });
   const totalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
   const safePage = Math.min(Math.max(page, 0), totalPages - 1);
   const start = safePage * PAGE_SIZE;
@@ -124,7 +133,12 @@ export async function sendHomeMenu(
   );
 }
 
-function buildRows(isAdmin: boolean): MenuRow[] {
-  if (!isAdmin) return [...BASE_ROWS];
-  return [ADMIN_ROW, ...BASE_ROWS];
+function buildRows(
+  options: { isAdmin: boolean; showInsurance: boolean },
+): MenuRow[] {
+  const filteredBase = options.showInsurance
+    ? [...BASE_ROWS]
+    : BASE_ROWS.filter((row) => row.id !== IDS.MOTOR_INSURANCE);
+  if (options.isAdmin) return [ADMIN_ROW, ...filteredBase];
+  return filteredBase;
 }

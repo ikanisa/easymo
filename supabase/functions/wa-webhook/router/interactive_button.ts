@@ -7,6 +7,7 @@ import {
 import {
   handleScheduleRefresh,
   handleScheduleRole,
+  handleScheduleSkipDropoff,
   requestScheduleDropoff,
   startScheduleTrip,
 } from "../domains/mobility/schedule.ts";
@@ -15,6 +16,11 @@ import {
   startMarketplace,
 } from "../domains/marketplace/index.ts";
 import { startInsurance } from "../domains/insurance/index.ts";
+import {
+  evaluateMotorInsuranceGate,
+  recordMotorInsuranceHidden,
+  sendMotorInsuranceBlockedMessage,
+} from "../domains/insurance/gate.ts";
 import {
   handleBasketButton,
   handleBasketConfirmButton,
@@ -132,13 +138,21 @@ export async function handleButton(
       if (await handleBasketButton(ctx, state, id)) return true;
       return false;
     case IDS.MOTOR_INSURANCE:
-    case IDS.MOTOR_INSURANCE_UPLOAD:
+    case IDS.MOTOR_INSURANCE_UPLOAD: {
+      const gate = await evaluateMotorInsuranceGate(ctx);
+      if (!gate.allowed) {
+        await recordMotorInsuranceHidden(ctx, gate, "command");
+        await sendMotorInsuranceBlockedMessage(ctx);
+        return true;
+      }
       return await startInsurance(ctx, state);
+    }
     case IDS.MOMO_QR:
       return await startMomoQr(ctx, state);
     case IDS.MOMO_QR_MY:
     case IDS.MOMO_QR_NUMBER:
     case IDS.MOMO_QR_CODE:
+    case IDS.MOMO_QR_SKIP:
       return await handleMomoButton(ctx, id, state);
     case IDS.WALLET:
       return await startWallet(ctx, state);
@@ -164,6 +178,8 @@ export async function handleButton(
       return await handleScheduleRole(ctx, id);
     case IDS.SCHEDULE_ADD_DROPOFF:
       return await requestScheduleDropoff(ctx, (state.data ?? {}) as any);
+    case IDS.SCHEDULE_SKIP_DROPOFF:
+      return await handleScheduleSkipDropoff(ctx, (state.data ?? {}) as any);
     case IDS.SCHEDULE_REFRESH_RESULTS:
       return await handleScheduleRefresh(ctx, (state.data ?? {}) as any);
     case IDS.DINEIN_BARS:

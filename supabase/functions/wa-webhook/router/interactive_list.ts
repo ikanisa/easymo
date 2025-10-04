@@ -41,6 +41,11 @@ import {
   handleInsuranceListSelection,
   startInsurance,
 } from "../domains/insurance/index.ts";
+import {
+  evaluateMotorInsuranceGate,
+  recordMotorInsuranceHidden,
+  sendMotorInsuranceBlockedMessage,
+} from "../domains/insurance/gate.ts";
 import { homeOnly, sendButtonsMessage } from "../utils/reply.ts";
 import { handleAdminBack } from "../flows/admin/navigation.ts";
 import {
@@ -353,8 +358,15 @@ async function handleHomeMenuSelection(
       return await startMarketplace(ctx, state);
     case IDS.BASKETS:
       return await startBaskets(ctx, state);
-    case IDS.MOTOR_INSURANCE:
+    case IDS.MOTOR_INSURANCE: {
+      const gate = await evaluateMotorInsuranceGate(ctx);
+      if (!gate.allowed) {
+        await recordMotorInsuranceHidden(ctx, gate, "command");
+        await sendMotorInsuranceBlockedMessage(ctx);
+        return true;
+      }
       return await startInsurance(ctx, state);
+    }
     case IDS.MOMO_QR:
       return await startMomoQr(ctx, state);
     case IDS.HOME_MORE: {
