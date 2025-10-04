@@ -1,23 +1,29 @@
 import { supabase } from "../config.ts";
+import type { SupportedLanguage } from "../i18n/language.ts";
 
 export type ChatState = { key: string; data?: Record<string, unknown> };
 
-export async function ensureProfile(client = supabase, whatsapp: string) {
+type ProfileRecord = {
+  user_id: string;
+  whatsapp_e164: string | null;
+  locale: string | null;
+};
+
+export async function ensureProfile(
+  client = supabase,
+  whatsapp: string,
+  locale?: SupportedLanguage,
+): Promise<ProfileRecord> {
   const normalized = whatsapp.startsWith("+") ? whatsapp : `+${whatsapp}`;
+  const payload: Record<string, unknown> = { whatsapp_e164: normalized };
+  if (locale) payload.locale = locale;
   const { data, error } = await client
     .from("profiles")
-    .upsert(
-      { whatsapp_e164: normalized },
-      {
-        onConflict: "whatsapp_e164",
-        defaultToNull: false,
-        returning: "representation",
-      },
-    )
-    .select("user_id, whatsapp_e164")
+    .upsert(payload, { onConflict: "whatsapp_e164" })
+    .select("user_id, whatsapp_e164, locale")
     .single();
   if (error) throw error;
-  return data;
+  return data as ProfileRecord;
 }
 
 export async function getState(

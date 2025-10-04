@@ -5,7 +5,10 @@ const handlerRef: { current: ((req: Request) => Promise<Response>) | null } = {
 const waEvents = new Map<string, { wa_message_id: string }>();
 const contacts: Array<Record<string, unknown>> = [];
 const logs: Array<{ endpoint: string; payload: unknown }> = [];
-const profiles = new Map<string, { user_id: string; whatsapp_e164: string }>();
+const profiles = new Map<
+  string,
+  { user_id: string; whatsapp_e164: string; locale: string | null }
+>();
 const chatState = new Map<string, { state: unknown }>();
 
 const mockSupabase = {
@@ -121,7 +124,13 @@ function createProfilesQuery() {
         profiles.set(number, {
           user_id: `user-${profiles.size + 1}`,
           whatsapp_e164: number,
+          locale: typeof record.locale === "string"
+            ? record.locale
+            : null,
         });
+      } else if (typeof record.locale === "string") {
+        const existing = profiles.get(number)!;
+        profiles.set(number, { ...existing, locale: record.locale });
       }
       return this;
     },

@@ -1,9 +1,11 @@
 import type { SupabaseClient } from "./deps.ts";
+import type { SupportedLanguage } from "./i18n/language.ts";
 
 export type RouterContext = {
   supabase: SupabaseClient;
   from: string; // customer/vendor WhatsApp E164 number
   profileId?: string; // optional profile.user_id
+  locale: SupportedLanguage;
 };
 
 export type FlowExchangeRequest = {

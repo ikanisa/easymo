@@ -6,6 +6,88 @@ import { claimEvent, releaseEvent } from "./state/idempotency.ts";
 import { ensureProfile, getState } from "./state/store.ts";
 import { logEvent, logInbound, logStructuredEvent } from "./observe/log.ts";
 import { logMetric } from "./observe/logging.ts";
+import { coerceToSupportedLanguage, resolveLanguage } from "./i18n/language.ts";
+
+type ChangeRecord = { value?: { contacts?: unknown[] } };
+
+function normalizeWaId(id: string): string {
+  return id.startsWith("+") ? id : `+${id}`;
+}
+
+function buildContactLocaleIndex(changes: ChangeRecord[]): Map<string, string> {
+  const index = new Map<string, string>();
+  for (const change of changes ?? []) {
+    const contacts = Array.isArray(change?.value?.contacts)
+      ? change.value.contacts
+      : [];
+    for (const contact of contacts) {
+      if (!contact || typeof contact !== "object") continue;
+      const record = contact as Record<string, unknown>;
+      const waIdRaw = getStringField(record, "wa_id") ??
+        getStringField(record, "waId");
+      if (!waIdRaw) continue;
+      const localeCandidate = extractLocaleCandidate(record);
+      if (!localeCandidate) continue;
+      const normalizedNumber = normalizeWaId(waIdRaw);
+      index.set(normalizedNumber, localeCandidate);
+      index.set(normalizedNumber.replace(/^\+/, ""), localeCandidate);
+    }
+  }
+  return index;
+}
+
+function getStringField(
+  source: Record<string, unknown> | undefined,
+  key: string,
+): string | null {
+  if (!source) return null;
+  const value = source[key];
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  return trimmed.length ? trimmed : null;
+}
+
+function extractLocaleCandidate(
+  contact: Record<string, unknown>,
+): string | null {
+  const profile = ("profile" in contact && contact.profile &&
+      typeof contact.profile === "object")
+    ? contact.profile as Record<string, unknown>
+    : undefined;
+  const candidates = [
+    getStringField(profile, "language"),
+    getStringField(profile, "locale"),
+    getStringField(contact, "language"),
+    getStringField(contact, "locale"),
+  ];
+  for (const candidate of candidates) {
+    if (candidate) return candidate;
+  }
+  return null;
+}
+
+function detectMessageLanguage(
+  msg: any,
+  contactLocales: Map<string, string>,
+): string | null {
+  const directCandidates = [
+    msg?.language?.code,
+    msg?.language,
+    msg?.context?.language,
+    msg?.context?.locale,
+  ];
+  for (const candidate of directCandidates) {
+    if (typeof candidate === "string" && candidate.trim()) {
+      return candidate.trim();
+    }
+  }
+
+  if (typeof msg?.from !== "string" || !msg.from.trim()) return null;
+  const normalized = normalizeWaId(msg.from.trim());
+  return contactLocales.get(normalized) ??
+    contactLocales.get(normalized.replace(/^\+/, "")) ??
+    null;
+}
 
 serve(async (req: Request): Promise<Response> => {
   await logStructuredEvent("WEBHOOK_REQUEST_RECEIVED", {
@@ -53,8 +135,14 @@ serve(async (req: Request): Promise<Response> => {
 
   await logInbound(payload);
 
-  const messages = payload?.entry?.flatMap((entry: any) => entry?.changes ?? [])
-    .flatMap((change: any) => change?.value?.messages ?? []) ?? [];
+  const changes = payload?.entry?.flatMap((entry: any) =>
+    entry?.changes ?? []
+  ) ??
+    [];
+  const messages = changes.flatMap((change: any) =>
+    change?.value?.messages ?? []
+  );
+  const contactLocales = buildContactLocaleIndex(changes);
 
   if (!messages.length) {
     await logStructuredEvent("WEBHOOK_NO_MESSAGE", {
@@ -71,12 +159,22 @@ serve(async (req: Request): Promise<Response> => {
     if (!claimed) continue;
 
     const from = msg.from?.startsWith("+") ? msg.from : `+${msg.from}`;
-    const profile = await ensureProfile(supabase, from);
+    const candidateLanguage = detectMessageLanguage(msg, contactLocales);
+    const messageLanguage = coerceToSupportedLanguage(candidateLanguage);
+    const profile = await ensureProfile(
+      supabase,
+      from,
+      messageLanguage ?? undefined,
+    );
     const state = await getState(supabase, profile.user_id);
+    const resolvedLocale = resolveLanguage(
+      messageLanguage ?? undefined,
+      profile.locale ?? undefined,
+    );
     const messageStart = Date.now();
     try {
       await handleMessage(
-        { supabase, from, profileId: profile.user_id },
+        { supabase, from, profileId: profile.user_id, locale: resolvedLocale },
         msg,
         state,
       );

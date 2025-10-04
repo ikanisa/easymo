@@ -7,6 +7,7 @@ import {
   evaluateMotorInsuranceGate,
   recordMotorInsuranceHidden,
 } from "../domains/insurance/gate.ts";
+import { t, type TranslationKey } from "../i18n/translator.ts";
 
 const PAGE_SIZE = 9;
 
@@ -20,58 +21,64 @@ type HomeState = {
   page: number;
 };
 
-const BASE_ROWS: MenuRow[] = [
+type MenuRowDef = {
+  id: string;
+  titleKey: TranslationKey;
+  descriptionKey: TranslationKey;
+};
+
+const BASE_ROW_DEFS: MenuRowDef[] = [
   {
     id: IDS.SEE_DRIVERS,
-    title: "🚖 Nearby Drivers",
-    description: "Find moto and cab partners close to you.",
+    titleKey: "home.rows.seeDrivers.title",
+    descriptionKey: "home.rows.seeDrivers.description",
   },
   {
     id: IDS.SEE_PASSENGERS,
-    title: "🧍‍♀️ Nearby Passengers",
-    description: "See riders nearby looking for a driver.",
+    titleKey: "home.rows.seePassengers.title",
+    descriptionKey: "home.rows.seePassengers.description",
   },
   {
     id: IDS.SCHEDULE_TRIP,
-    title: "🛵 Schedule Trip",
-    description: "Plan a future pickup for trusted drivers.",
+    titleKey: "home.rows.scheduleTrip.title",
+    descriptionKey: "home.rows.scheduleTrip.description",
   },
   {
     id: IDS.MARKETPLACE,
-    title: "🛍️ Marketplace",
-    description: "Discover local sellers or list your business.",
+    titleKey: "home.rows.marketplace.title",
+    descriptionKey: "home.rows.marketplace.description",
   },
   {
     id: IDS.BASKETS,
-    title: "🪣 Baskets",
-    description: "Create or join a saving basket with friends.",
+    titleKey: "home.rows.baskets.title",
+    descriptionKey: "home.rows.baskets.description",
   },
   {
     id: IDS.MOTOR_INSURANCE,
-    title: "🛡️ Motor Insurance",
-    description: "Upload documents and request insurance cover.",
+    titleKey: "home.rows.motorInsurance.title",
+    descriptionKey: "home.rows.motorInsurance.description",
   },
   {
     id: IDS.MOMO_QR,
-    title: "💳 MoMo QR",
-    description: "Generate or scan MoMo QR codes instantly.",
+    titleKey: "home.rows.momoQr.title",
+    descriptionKey: "home.rows.momoQr.description",
   },
   {
     id: IDS.WALLET,
-    title: "💎 Wallet & Tokens",
-    description: "Check rewards, redeem tokens, and track history.",
+    titleKey: "home.rows.wallet.title",
+    descriptionKey: "home.rows.wallet.description",
   },
   {
     id: IDS.DINEIN_BARS,
-    title: "🍽️ Bars & Restaurants",
-    description: "Order from partner bars with one tap.",
+    titleKey: "home.rows.dineIn.title",
+    descriptionKey: "home.rows.dineIn.description",
   },
 ];
 
-const ADMIN_ROW: MenuRow = {
+const ADMIN_ROW_DEF: MenuRowDef = {
   id: IDS.ADMIN_HUB,
-  title: "🛠️ Admin",
-  description: "Open the operations hub for staff tools.",
+  titleKey: "home.rows.admin.title",
+  descriptionKey: "home.rows.admin.description",
 };
 
 export async function sendHomeMenu(
@@ -85,6 +92,7 @@ export async function sendHomeMenu(
   const rows = buildRows({
     isAdmin: gate.isAdmin,
     showInsurance: gate.allowed,
+    locale: ctx.locale,
   });
   const totalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
   const safePage = Math.min(Math.max(page, 0), totalPages - 1);
@@ -95,15 +103,15 @@ export async function sendHomeMenu(
   if (safePage > 0) {
     extras.push({
       id: IDS.HOME_BACK,
-      title: "◀ Back",
-      description: "See the previous services.",
+      title: t(ctx.locale, "home.extras.back.title"),
+      description: t(ctx.locale, "home.extras.back.description"),
     });
   }
   if (safePage < totalPages - 1) {
     extras.push({
       id: IDS.HOME_MORE,
-      title: "➡️ More services",
-      description: "View additional easyMO services.",
+      title: t(ctx.locale, "home.extras.more.title"),
+      description: t(ctx.locale, "home.extras.more.description"),
     });
   }
 
@@ -116,29 +124,45 @@ export async function sendHomeMenu(
     });
   }
 
-  const greeting = `Hello 👋 ${maskPhone(ctx.from)}\nPage ${
-    safePage + 1
-  }/${totalPages}`;
+  const greeting = t(ctx.locale, "home.menu.greeting", {
+    phone: maskPhone(ctx.from),
+    current: String(safePage + 1),
+    total: String(totalPages),
+  });
 
   await sendListMessage(
     ctx,
     {
-      title: "easyMO Services",
+      title: t(ctx.locale, "home.menu.title"),
       body: greeting,
-      sectionTitle: "Quick actions",
+      sectionTitle: t(ctx.locale, "home.menu.section"),
       rows: visibleRows,
-      buttonText: "Open",
+      buttonText: t(ctx.locale, "home.menu.button"),
     },
     { emoji: "✨" },
   );
 }
 
-function buildRows(
-  options: { isAdmin: boolean; showInsurance: boolean },
-): MenuRow[] {
-  const filteredBase = options.showInsurance
-    ? [...BASE_ROWS]
-    : BASE_ROWS.filter((row) => row.id !== IDS.MOTOR_INSURANCE);
-  if (options.isAdmin) return [ADMIN_ROW, ...filteredBase];
-  return filteredBase;
+function buildRows(options: {
+  isAdmin: boolean;
+  showInsurance: boolean;
+  locale: RouterContext["locale"];
+}): MenuRow[] {
+  const baseDefs = options.showInsurance
+    ? BASE_ROW_DEFS
+    : BASE_ROW_DEFS.filter((row) => row.id !== IDS.MOTOR_INSURANCE);
+  const localizedBase = baseDefs.map((row) => ({
+    id: row.id,
+    title: t(options.locale, row.titleKey),
+    description: t(options.locale, row.descriptionKey),
+  }));
+  if (!options.isAdmin) return localizedBase;
+  return [
+    {
+      id: ADMIN_ROW_DEF.id,
+      title: t(options.locale, ADMIN_ROW_DEF.titleKey),
+      description: t(options.locale, ADMIN_ROW_DEF.descriptionKey),
+    },
+    ...localizedBase,
+  ];
 }

@@ -3,6 +3,7 @@ import { sendText } from "../wa/client.ts";
 import { clearState } from "../state/store.ts";
 import { sendHomeMenu } from "../flows/home.ts";
 import { DINE_STATE } from "../domains/dinein/state.ts";
+import { t } from "../i18n/translator.ts";
 
 const STOP_REGEX = /^\s*(stop|unsubscribe)\s*$/i;
 const START_REGEX = /^\s*start\s*$/i;
@@ -38,10 +39,7 @@ export async function runGuards(
           opt_in_ts: null,
           last_inbound_at: nowIso,
         }, { onConflict: "msisdn_e164" });
-      await sendText(
-        ctx.from,
-        "You have been opted out. Reply START to opt back in.",
-      );
+      await sendText(ctx.from, t(ctx.locale, "guards.stop.confirm"));
       return true;
     }
     if (START_REGEX.test(body)) {
@@ -58,7 +56,7 @@ export async function runGuards(
           opt_out_ts: null,
           last_inbound_at: nowIso,
         }, { onConflict: "msisdn_e164" });
-      await sendText(ctx.from, "You are now opted in. Sending menu...");
+      await sendText(ctx.from, t(ctx.locale, "guards.start.confirm"));
       if (ctx.profileId) {
         await clearState(ctx.supabase, ctx.profileId);
       }

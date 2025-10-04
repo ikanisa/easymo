@@ -3,6 +3,7 @@ import { detectCountryIso, normalizeE164 } from "../../utils/phone.ts";
 import { homeOnly, sendButtonsMessage } from "../../utils/reply.ts";
 import { isAdminNumber } from "../../flows/admin/auth.ts";
 import { logStructuredEvent } from "../../observe/log.ts";
+import { t } from "../../i18n/translator.ts";
 
 const FEATURE_NAME = "motor_insurance";
 const ALLOWED_COUNTRIES = new Set(["RW"]);
@@ -88,7 +89,7 @@ export async function sendMotorInsuranceBlockedMessage(
 ): Promise<void> {
   await sendButtonsMessage(
     ctx,
-    "This feature isn’t available in your country.",
+    t(ctx.locale, "insurance.blocked"),
     homeOnly(),
     { emoji: "🚫" },
   );

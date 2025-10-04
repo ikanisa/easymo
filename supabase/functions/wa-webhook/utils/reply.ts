@@ -1,6 +1,7 @@
 import type { RouterContext } from "../types.ts";
 import { sendButtons, sendList } from "../wa/client.ts";
 import { IDS } from "../wa/ids.ts";
+import { t } from "../i18n/translator.ts";
 
 export type ButtonSpec = { id: string; title: string };
 
@@ -25,7 +26,11 @@ export async function sendButtonsMessage(
   buttons: ButtonSpec[],
   options: { emoji?: string } = {},
 ): Promise<void> {
-  const payload = ensureHomeButton(buttons);
+  const payload = ensureHomeButton(buttons).map((button) =>
+    button.id === IDS.BACK_HOME
+      ? { ...button, title: t(ctx.locale, "common.home_button") }
+      : button
+  );
   await sendButtons(ctx.from, coerceBody(body, options.emoji ?? ""), payload);
 }
 
@@ -43,7 +48,7 @@ export async function sendListWithActions(
 ): Promise<void> {
   await sendList(ctx.from, {
     ...list,
-    buttonText: list.buttonText ?? "Choose",
+    buttonText: list.buttonText ?? t(ctx.locale, "common.buttons.choose"),
   });
   const trimmed = actions.filter((action) =>
     Boolean(action?.id && action?.title)
@@ -66,7 +71,7 @@ export async function sendListMessage(
   await sendList(ctx.from, {
     ...list,
     body: coerceBody(list.body, options.emoji ?? ""),
-    buttonText: list.buttonText ?? "Select",
+    buttonText: list.buttonText ?? t(ctx.locale, "common.buttons.select"),
   });
 }
 
