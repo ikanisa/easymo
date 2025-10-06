@@ -1,0 +1,42 @@
+.content {
+  padding: 24px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.definitionList {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: 1fr;
+}
+
+.definitionList div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 0.9rem;
+}
+
+.definitionList dt {
+  color: var(--text-secondary);
+}
+
+.trigger {
+  background: none;
+  border: none;
+  color: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.trigger:hover,
+.trigger:focus-visible {
+  color: var(--accent);
+}
+
+.subtitle {
+  color: var(--text-secondary);
+  padding: 0 24px;
+}

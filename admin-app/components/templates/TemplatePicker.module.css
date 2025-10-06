@@ -1,0 +1,54 @@
+.wrapper {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+}
+
+.card,
+.cardActive {
+  text-align: left;
+  border-radius: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  padding: 12px 14px;
+  background: rgba(248, 250, 252, 0.8);
+  cursor: pointer;
+}
+
+.card:hover,
+.card:focus-visible,
+.cardActive {
+  border-color: var(--accent);
+  background: rgba(14, 165, 233, 0.08);
+}
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.cardHeader h3 {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.status {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.2);
+  color: rgba(15, 23, 42, 0.7);
+}
+
+.purpose {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+.meta {
+  font-size: 0.75rem;
+  color: rgba(71, 85, 105, 0.85);
+}

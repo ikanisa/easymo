@@ -1,0 +1,20 @@
+{
+  "entry": [
+    {
+      "changes": [
+        {
+          "value": {
+            "messages": [
+              {
+                "id": "wamid.HBgMNTc4...",
+                "from": "250788000001",
+                "type": "text",
+                "text": { "body": "baskets" }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

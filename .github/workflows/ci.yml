@@ -1,0 +1,27 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  baseline:
+    name: Baseline checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Show tree
+        run: |
+          echo "Repo blueprint:"
+          ls -la
+          echo
+          echo "Key folders:"
+          ls -la app packages supabase agent .github docs .changeset || true
+      - name: Verify policy files exist
+        run: |
+          test -f agent/policies/ALLOWLIST.json || (echo "Missing ALLOWLIST.json" && exit 1)
+          echo "ALLOWLIST.json is present ✅"

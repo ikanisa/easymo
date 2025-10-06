@@ -1,0 +1,70 @@
+{
+  "info": {
+    "name": "easyMO WhatsApp Flows",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Customer: bar_browser a_show_results",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"flow_id\": \"flow.cust.bar_browser.v1\",\n  \"action_id\": \"a_show_results\",\n  \"wa_id\": \"+250700000001\",\n  \"session_id\": \"demo\",\n  \"fields\": {\"q\": \"\"},\n  \"filters\": {},\n  \"context\": {}\n}"
+        },
+        "url": {
+          "raw": "{{flow_exchange_url}}",
+          "host": ["{{flow_exchange_url}}"]
+        }
+      }
+    },
+    {
+      "name": "Customer: bar_menu a_add_to_cart",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"flow_id\": \"flow.cust.bar_menu.v1\",\n  \"action_id\": \"a_add_to_cart\",\n  \"wa_id\": \"+250700000001\",\n  \"session_id\": \"demo\",\n  \"fields\": {\"item_id\": \"ITEM_UUID\", \"qty\": 1},\n  \"context\": {\"bar_id\": \"BAR_UUID\"}\n}"
+        },
+        "url": {
+          "raw": "{{flow_exchange_url}}",
+          "host": ["{{flow_exchange_url}}"]
+        }
+      }
+    },
+    {
+      "name": "Vendor: orders a_mark_paid",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"flow_id\": \"flow.vend.orders.v1\",\n  \"action_id\": \"a_mark_paid\",\n  \"wa_id\": \"+250700000010\",\n  \"session_id\": \"vendor-demo\",\n  \"fields\": {\"order_id\": \"ORDER_UUID\"}\n}"
+        },
+        "url": {
+          "raw": "{{flow_exchange_url}}",
+          "host": ["{{flow_exchange_url}}"]
+        }
+      }
+    },
+    {
+      "name": "Admin: trips a_admin_match_now",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"flow_id\": \"flow.admin.trips.v1\",\n  \"action_id\": \"a_admin_match_now\",\n  \"wa_id\": \"+250700000099\",\n  \"session_id\": \"admin-demo\",\n  \"fields\": {\"trip_id\": \"TRIP_UUID\"}\n}"
+        },
+        "url": {
+          "raw": "{{flow_exchange_url}}",
+          "host": ["{{flow_exchange_url}}"]
+        }
+      }
+    }
+  ]
+}
