@@ -48,10 +48,12 @@ export function SaccoOfficersTable({ params }: SaccoOfficersTableProps) {
     onSettled: () => setRemovingId(null),
   });
 
-  const rows = officersQuery.data?.data ?? [];
+  const rowsData = officersQuery.data?.data;
+  const rows = useMemo(
+    () => rowsData ?? [],
+    [rowsData],
+  );
   const total = officersQuery.data?.total ?? 0;
-
-  const sortedRows = useMemo(() => rows, [rows]);
 
   return (
     <div className={styles.wrapper}>
@@ -81,7 +83,7 @@ export function SaccoOfficersTable({ params }: SaccoOfficersTableProps) {
             </tr>
           </thead>
           <tbody>
-            {sortedRows.map((row) => (
+            {rows.map((row) => (
               <tr key={row.id}>
                 <td>
                   <div className={styles.officerCell}>
@@ -122,4 +124,3 @@ export function SaccoOfficersTable({ params }: SaccoOfficersTableProps) {
     </div>
   );
 }
-

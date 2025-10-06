@@ -85,7 +85,11 @@ export function SaccoBranchesTable({ params }: SaccoBranchesTableProps) {
     },
   });
 
-  const saccoRows = saccoQuery.data?.data ?? [];
+  const saccoRowsData = saccoQuery.data?.data;
+  const saccoRows = useMemo(
+    () => saccoRowsData ?? [],
+    [saccoRowsData],
+  );
   const total = saccoQuery.data?.total ?? 0;
 
   const editingState: EditableSacco | null = useMemo(() => (

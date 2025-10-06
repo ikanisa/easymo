@@ -129,10 +129,18 @@ export function IbiminaRegistryTable({ params }: IbiminaRegistryTableProps) {
     },
   });
 
-  const ibiminaRows = ibiminaQuery.data?.data ?? [];
+  const ibiminaRowsData = ibiminaQuery.data?.data;
+  const ibiminaRows = useMemo(
+    () => ibiminaRowsData ?? [],
+    [ibiminaRowsData],
+  );
   const total = ibiminaQuery.data?.total ?? 0;
 
-  const saccoOptions: SaccoRow[] = saccoOptionsQuery.data?.data ?? [];
+  const saccoOptionsData = saccoOptionsQuery.data?.data as SaccoRow[] | undefined;
+  const saccoOptions = useMemo(
+    () => saccoOptionsData ?? [],
+    [saccoOptionsData],
+  );
 
   const editingRow = useMemo(() => (
     editing && ibiminaRows.find((row) => row.id === editing.id)

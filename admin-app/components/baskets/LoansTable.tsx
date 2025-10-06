@@ -41,8 +41,16 @@ export function LoansTable({ params }: LoansTableProps) {
   const loansQuery = useLoansQuery(queryParams, { keepPreviousData: true });
   const saccoOptionsQuery = useSaccosQuery(SACCO_OPTIONS_PARAMS);
 
-  const rows = loansQuery.data?.data ?? [];
-  const saccoOptions = saccoOptionsQuery.data?.data ?? [];
+  const loanRowsData = loansQuery.data?.data;
+  const rows = useMemo(
+    () => loanRowsData ?? [],
+    [loanRowsData],
+  );
+  const saccoOptionsData = saccoOptionsQuery.data?.data;
+  const saccoOptions = useMemo(
+    () => saccoOptionsData ?? [],
+    [saccoOptionsData],
+  );
 
   const [activeLoanId, setActiveLoanId] = useState<string | null>(null);
   const activeLoan = useMemo(() => (
@@ -165,4 +173,3 @@ export function LoansTable({ params }: LoansTableProps) {
     </div>
   );
 }
-

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/ToastProvider";
 import {
@@ -18,7 +18,11 @@ interface SaccoOfficerFormProps {
 
 export function SaccoOfficerForm({ onCreated }: SaccoOfficerFormProps) {
   const { data: saccoData } = useSaccosQuery(SACCO_OPTIONS_PARAMS);
-  const saccoOptions = (saccoData?.data ?? []) as SaccoRow[];
+  const saccoOptionsData = saccoData?.data as SaccoRow[] | undefined;
+  const saccoOptions = useMemo(
+    () => saccoOptionsData ?? [],
+    [saccoOptionsData],
+  );
 
   const [saccoId, setSaccoId] = useState<string>(saccoOptions[0]?.id ?? '');
   const [userId, setUserId] = useState("");

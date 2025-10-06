@@ -32,8 +32,15 @@ export function ContributionsLedgerTable({ params }: ContributionsLedgerTablePro
   const saccoOptionsQuery = useSaccosQuery(SACCO_OPTIONS_PARAMS);
   const queryClient = useQueryClient();
 
-  const saccoOptions = saccoOptionsQuery.data?.data ?? [];
-  const rows = contributionsQuery.data?.data ?? [];
+  const saccoOptions = useMemo(
+    () => saccoOptionsQuery.data?.data ?? [],
+    [saccoOptionsQuery.data?.data],
+  );
+  const contributionRows = contributionsQuery.data?.data;
+  const rows = useMemo(
+    () => contributionRows ?? [],
+    [contributionRows],
+  );
   const total = contributionsQuery.data?.total ?? 0;
 
   const totals = useMemo(() => {
@@ -180,4 +187,3 @@ export function ContributionsLedgerTable({ params }: ContributionsLedgerTablePro
     </div>
   );
 }
-
