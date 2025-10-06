@@ -1,5 +1,7 @@
 -- Contributions ledger, cycles, and rankings view.
 
+BEGIN;
+
 create table if not exists public.contributions_ledger (
   id uuid primary key default gen_random_uuid(),
   ikimina_id uuid not null references public.ibimina(id) on delete cascade,
@@ -58,3 +60,4 @@ select
   row_number() over (partition by t.ikimina_id order by t.month_amount desc nulls last, t.member_id) as rank_month
 from totals t;
 
+COMMIT;

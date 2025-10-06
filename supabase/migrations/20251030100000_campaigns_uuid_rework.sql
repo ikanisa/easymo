@@ -1,6 +1,8 @@
 -- Convert legacy bigint-based campaigns schema to the UUID structure expected by the Admin app
 -- and update dependent tables to reference the new identifiers.
 
+BEGIN;
+
 do $$
 declare
   needs_migration boolean;
@@ -194,3 +196,5 @@ $$;
 
 -- Keep campaign status lookup performant (idempotent for fresh environments).
 create index if not exists campaigns_status_idx on public.campaigns (status);
+
+COMMIT;

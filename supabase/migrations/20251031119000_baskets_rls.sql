@@ -1,5 +1,7 @@
 -- RLS scaffolding for Baskets tables.
 
+BEGIN;
+
 alter table public.saccos enable row level security;
 alter table public.sacco_officers enable row level security;
 alter table public.ibimina enable row level security;
@@ -81,3 +83,4 @@ create policy kyc_documents_admin_staff_rw on public.kyc_documents
   for all using (app.current_role() in ('admin','sacco_staff'))
   with check (app.current_role() in ('admin','sacco_staff'));
 
+COMMIT;

@@ -1,5 +1,7 @@
 -- Loans, collateral, invites, and KYC documents.
 
+BEGIN;
+
 create table if not exists public.sacco_loans (
   id uuid primary key default gen_random_uuid(),
   ikimina_id uuid not null references public.ibimina(id) on delete cascade,
@@ -79,3 +81,4 @@ alter table public.kyc_documents
 create index if not exists idx_kyc_documents_user on public.kyc_documents (user_id);
 create index if not exists idx_kyc_documents_status on public.kyc_documents (status);
 
+COMMIT;

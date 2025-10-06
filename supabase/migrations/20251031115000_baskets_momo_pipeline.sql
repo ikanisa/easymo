@@ -1,5 +1,7 @@
 -- MoMo SMS ingest and parsing tables.
 
+BEGIN;
+
 create table if not exists public.momo_sms_inbox (
   id uuid primary key default gen_random_uuid(),
   raw_text text not null,
@@ -45,3 +47,4 @@ alter table public.momo_unmatched
 create index if not exists idx_momo_unmatched_status on public.momo_unmatched (status);
 create index if not exists idx_momo_unmatched_created on public.momo_unmatched (created_at);
 
+COMMIT;

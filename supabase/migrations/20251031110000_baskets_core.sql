@@ -1,5 +1,7 @@
 -- Core SACCO & Ikimina tables for Baskets module.
 
+BEGIN;
+
 create table if not exists public.saccos (
   id uuid primary key default gen_random_uuid(),
   name text not null,
@@ -115,3 +117,4 @@ alter table public.ibimina_accounts
 create unique index if not exists ibimina_accounts_account_number_key on public.ibimina_accounts (sacco_account_number);
 create index if not exists idx_ibimina_accounts_ikimina on public.ibimina_accounts (ikimina_id);
 
+COMMIT;

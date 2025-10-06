@@ -1,5 +1,7 @@
 -- Refine RLS policies for Baskets tables with scoped access rules.
 
+BEGIN;
+
 alter policy saccos_admin_staff_rw on public.saccos
   using (
     app.current_role() = 'admin'
@@ -397,3 +399,4 @@ create policy contributions_committee_member_select on public.contributions_ledg
     )
   );
 
+COMMIT;

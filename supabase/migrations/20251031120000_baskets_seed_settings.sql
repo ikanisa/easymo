@@ -1,5 +1,7 @@
 -- Seed baseline settings for baskets module (idempotent).
 
+BEGIN;
+
 insert into public.settings (key, value, updated_at)
 values
   ('baskets.quiet_hours', jsonb_build_object('start', '22:00', 'end', '06:00'), now()),
@@ -17,3 +19,4 @@ on conflict (key) do update
   set value = excluded.value,
       updated_at = excluded.updated_at;
 
+COMMIT;

@@ -1,5 +1,7 @@
 -- Extend momo_unmatched with resolution metadata.
 
+BEGIN;
+
 alter table public.momo_unmatched
   add column if not exists resolved_at timestamptz,
   add column if not exists resolved_by uuid references auth.users(id) on delete set null,
@@ -10,3 +12,4 @@ alter table public.momo_unmatched
 create index if not exists idx_momo_unmatched_status_created on public.momo_unmatched (status, created_at);
 create index if not exists idx_momo_unmatched_linked_member on public.momo_unmatched (linked_member_id);
 
+COMMIT;

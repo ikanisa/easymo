@@ -1,5 +1,7 @@
 -- Additive migration to introduce core admin tables, indexes, and RLS policies.
 
+BEGIN;
+
 create schema if not exists app;
 
 create or replace function app.current_role() returns text
@@ -948,3 +950,5 @@ create policy audit_log_delete on public.audit_log
 create policy idempotency_keys_rw on public.idempotency_keys
   for all using (app.current_role() in ('admin','ops'))
   with check (app.current_role() in ('admin','ops'));
+
+COMMIT;
