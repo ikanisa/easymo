@@ -28,7 +28,7 @@ describe('notifications API', () => {
     getSupabaseAdminClient.mockReturnValue(null);
 
     const { GET } = await import('@/app/api/notifications/route');
-    const response = await GET(new Request('http://localhost/api/notifications'));
+    const response = await GET(new Request('http://localhost/api/notifications'), {} as unknown as { params: Record<string, never> });
     expect(response.status).toBe(503);
   });
 
@@ -62,7 +62,7 @@ describe('notifications API', () => {
     getSupabaseAdminClient.mockReturnValue({ from });
 
     const { GET } = await import('@/app/api/notifications/route');
-    const response = await GET(new Request('http://localhost/api/notifications'));
+    const response = await GET(new Request('http://localhost/api/notifications'), {} as unknown as { params: Record<string, never> });
     expect(response.status).toBe(200);
     const payload = await response.json();
     expect(payload.data).toHaveLength(1);

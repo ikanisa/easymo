@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { getSupabaseAdminClient } from "@/lib/server/supabase-admin";
+import { createHandler } from "@/app/api/withObservability";
 import { logStructured } from "@/lib/server/logger";
+import { getSupabaseAdminClient } from "@/lib/server/supabase-admin";
 
 const querySchema = z.object({
   status: z.enum(["queued", "processing", "success", "error"]).optional(),
@@ -10,9 +11,10 @@ const querySchema = z.object({
   offset: z.coerce.number().int().min(0).optional(),
 });
 
-export async function GET(request: Request) {
+export const GET = createHandler('admin_api.ocr_jobs.list', async (request, _context, { recordMetric }) => {
   const adminClient = getSupabaseAdminClient();
   if (!adminClient) {
+    recordMetric('ocr_jobs.supabase_unavailable', 1);
     return NextResponse.json(
       {
         error: "supabase_unavailable",
@@ -26,6 +28,7 @@ export async function GET(request: Request) {
   try {
     query = querySchema.parse(Object.fromEntries(new URL(request.url).searchParams));
   } catch (error) {
+    recordMetric('ocr_jobs.invalid_query', 1);
     return NextResponse.json(
       {
         error: "invalid_query",
@@ -63,6 +66,7 @@ export async function GET(request: Request) {
       status: "error",
       message: error.message,
     });
+    recordMetric('ocr_jobs.supabase_error', 1, { message: error.message });
     return NextResponse.json(
       { error: "ocr_jobs_fetch_failed", message: "Unable to load OCR jobs." },
       { status: 500 },
@@ -89,6 +93,7 @@ export async function GET(request: Request) {
 
   const total = count ?? items.length;
   const hasMore = offset + items.length < total;
+  recordMetric('ocr_jobs.success', 1, { total });
 
   return NextResponse.json({ data: items, total, hasMore }, { status: 200 });
-}
+});

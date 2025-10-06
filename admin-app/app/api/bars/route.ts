@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { getSupabaseAdminClient } from '@/lib/server/supabase-admin';
 import { logStructured } from '@/lib/server/logger';
 import { mockBars } from '@/lib/mock-data';
+import { createHandler } from '@/app/api/withObservability';
 
 const querySchema = z.object({
   status: z.enum(['active', 'inactive']).optional(),
@@ -46,11 +47,12 @@ function fromMocks(params: z.infer<typeof querySchema>, message: string) {
   );
 }
 
-export async function GET(request: Request) {
+export const GET = createHandler('admin_api.bars.list', async (request, _context, { recordMetric }) => {
   let params: z.infer<typeof querySchema>;
   try {
     params = querySchema.parse(Object.fromEntries(new URL(request.url).searchParams));
   } catch (error) {
+    recordMetric('bars.invalid_query', 1);
     return NextResponse.json(
       { error: 'invalid_query', message: error instanceof z.ZodError ? error.flatten() : 'Invalid query parameters.' },
       { status: 400 }
@@ -59,6 +61,7 @@ export async function GET(request: Request) {
 
   const adminClient = getSupabaseAdminClient();
   if (!adminClient) {
+    recordMetric('bars.supabase_unavailable', 1);
     return fromMocks(params, 'Supabase credentials missing. Showing mock bars.');
   }
 
@@ -72,7 +75,7 @@ export async function GET(request: Request) {
        default_prep_minutes, momo_code, service_charge, payment_instructions,
        published_menu_version,
        bar_numbers(count),
-       bar_settings:bar_settings(allow_direct_customer_chat)`,
+       bar_settings:bar_settings(allow_direct_customer_chat)` ,
       { count: 'exact' }
     )
     .order('updated_at', { ascending: false })
@@ -95,6 +98,7 @@ export async function GET(request: Request) {
       status: 'error',
       message: error.message
     });
+    recordMetric('bars.supabase_error', 1, { message: error.message });
     return fromMocks(params, 'Supabase query failed. Showing mock bars.');
   }
 
@@ -125,6 +129,8 @@ export async function GET(request: Request) {
     };
   });
 
+  recordMetric('bars.success', 1, { total });
+
   return NextResponse.json(
     {
       data: payload,
@@ -133,4 +139,4 @@ export async function GET(request: Request) {
     },
     { status: 200 }
   );
-}
+});

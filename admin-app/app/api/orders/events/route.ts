@@ -1,15 +1,17 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { getSupabaseAdminClient } from "@/lib/server/supabase-admin";
+import { createHandler } from "@/app/api/withObservability";
 import { logStructured } from "@/lib/server/logger";
+import { getSupabaseAdminClient } from "@/lib/server/supabase-admin";
 
 const querySchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).optional(),
 });
 
-export async function GET(request: Request) {
+export const GET = createHandler('admin_api.order_events.list', async (request, _context, { recordMetric }) => {
   const adminClient = getSupabaseAdminClient();
   if (!adminClient) {
+    recordMetric('order_events.supabase_unavailable', 1);
     return NextResponse.json(
       {
         error: "supabase_unavailable",
@@ -23,6 +25,7 @@ export async function GET(request: Request) {
   try {
     query = querySchema.parse(Object.fromEntries(new URL(request.url).searchParams));
   } catch (error) {
+    recordMetric('order_events.invalid_query', 1);
     return NextResponse.json(
       {
         error: "invalid_query",
@@ -47,6 +50,7 @@ export async function GET(request: Request) {
       status: "error",
       message: error.message,
     });
+    recordMetric('order_events.supabase_error', 1, { message: error.message });
     return NextResponse.json(
       { error: "order_events_fetch_failed", message: "Unable to load order events." },
       { status: 500 },
@@ -63,5 +67,6 @@ export async function GET(request: Request) {
     createdAt: row.created_at ?? new Date().toISOString(),
   }));
 
+  recordMetric('order_events.success', 1, { count: rows.length });
   return NextResponse.json({ data: rows }, { status: 200 });
-}
+});

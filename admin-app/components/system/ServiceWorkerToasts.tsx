@@ -3,6 +3,26 @@
 import { useEffect } from "react";
 import { useToast } from "@/components/ui/ToastProvider";
 
+const EVENT_COPY: Record<string, { message: string; variant: 'info' | 'success' | 'warning' | 'error'; duration?: number; }> = {
+  SW_BACKGROUND_SYNC_QUEUED: {
+    message: "Request saved offline. We’ll retry automatically soon.",
+    variant: "info",
+  },
+  SW_BACKGROUND_SYNC_SUCCESS: {
+    message: "Offline request delivered successfully.",
+    variant: "success",
+    duration: 5000,
+  },
+  SW_BACKGROUND_SYNC_RETRY: {
+    message: "Retrying queued request. We’ll keep you posted.",
+    variant: "warning",
+  },
+  SW_BACKGROUND_SYNC_DROPPED: {
+    message: "We couldn’t deliver a queued request. Please resend manually.",
+    variant: "error",
+  },
+};
+
 export function ServiceWorkerToasts() {
   const { pushToast } = useToast();
 
@@ -13,34 +33,13 @@ export function ServiceWorkerToasts() {
       const payload = event.data;
       if (!payload || typeof payload !== "object") return;
 
-      switch (payload.type) {
-        case "SW_BACKGROUND_SYNC_QUEUED":
-          pushToast("Request saved offline. We will retry automatically.", {
-            variant: "info",
-            duration: 6000,
-          });
-          break;
-        case "SW_BACKGROUND_SYNC_SUCCESS":
-          pushToast("Offline request completed successfully.", {
-            variant: "success",
-            duration: 5000,
-          });
-          break;
-        case "SW_BACKGROUND_SYNC_RETRY":
-          pushToast("Queued request still pending. We'll retry soon.", {
-            variant: "warning",
-            duration: 8000,
-          });
-          break;
-        case "SW_BACKGROUND_SYNC_DROPPED":
-          pushToast("Unable to deliver request. Please retry manually.", {
-            variant: "error",
-            duration: 8000,
-          });
-          break;
-        default:
-          break;
-      }
+      const entry = EVENT_COPY[payload.type as string];
+      if (!entry) return;
+
+      pushToast(entry.message, {
+        variant: entry.variant,
+        duration: entry.duration ?? 7000,
+      });
     };
 
     navigator.serviceWorker?.addEventListener("message", handleMessage);

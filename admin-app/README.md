@@ -61,10 +61,14 @@ remain additive-only.
 - The app ships a full Web App Manifest (`public/manifest.webmanifest`) with
   icons, shortcuts, and install metadata. Browsers will prompt to install once a
   user visits `/` twice.
-- A service worker (`public/sw.js`) precaches the shell, caches runtime GET
-  requests with network-first semantics, and posts `SW_ACTIVATED` to the client
-  when a new bundle is ready. The UI raises a "Refresh" toast so operators can
-  reload on their schedule.
+- A service worker (`public/sw.js`) precaches the shell, serves an offline
+  fallback, caches runtime GET requests with network-first semantics, and posts
+  `SW_ACTIVATED` to the client when a new bundle is ready. Operators see a
+  "Refresh" toast so they can reload on their schedule.
+- POST mutations are queued when offline and replayed automatically via
+  Background Sync once connectivity returns. Toasts surface queued, retried, or
+  dropped requests; you can manually flush the queue with
+  `navigator.serviceWorker.controller?.postMessage({ type: 'SW_FLUSH_QUEUE' })`.
 - When `navigator.onLine` reports offline, an overlay banner appears and write
   buttons are disabled globally. Lists remain readable from cache, but actions
   resume only after connectivity returns.

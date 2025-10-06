@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getSupabaseAdminClient } from '@/lib/server/supabase-admin';
 import { logStructured } from '@/lib/server/logger';
+import { createHandler } from '@/app/api/withObservability';
 
 const querySchema = z.object({
   status: z.string().optional(),
@@ -10,9 +11,10 @@ const querySchema = z.object({
   offset: z.coerce.number().int().min(0).optional()
 });
 
-export async function GET(request: Request) {
+export const GET = createHandler('admin_api.orders.list', async (request, _context, { recordMetric }) => {
   const adminClient = getSupabaseAdminClient();
   if (!adminClient) {
+    recordMetric('orders.supabase_unavailable', 1);
     return NextResponse.json(
       {
         error: 'supabase_unavailable',
@@ -26,6 +28,7 @@ export async function GET(request: Request) {
   try {
     query = querySchema.parse(Object.fromEntries(new URL(request.url).searchParams));
   } catch (error) {
+    recordMetric('orders.invalid_query', 1);
     return NextResponse.json(
       {
         error: 'invalid_query',
@@ -59,6 +62,7 @@ export async function GET(request: Request) {
       status: 'error',
       message: error.message
     });
+    recordMetric('orders.supabase_error', 1, { message: error.message });
     return NextResponse.json(
       { error: 'orders_fetch_failed', message: 'Unable to load orders.' },
       { status: 500 }
@@ -80,6 +84,8 @@ export async function GET(request: Request) {
   const total = count ?? orders.length;
   const hasMore = rangeStart + orders.length < total;
 
+  recordMetric('orders.success', 1, { total });
+
   return NextResponse.json(
     {
       data: orders,
@@ -88,4 +94,4 @@ export async function GET(request: Request) {
     },
     { status: 200 }
   );
-}
+});

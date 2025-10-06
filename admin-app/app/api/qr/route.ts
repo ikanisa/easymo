@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getSupabaseAdminClient } from '@/lib/server/supabase-admin';
 import { logStructured } from '@/lib/server/logger';
+import { createHandler } from '@/app/api/withObservability';
 
 const querySchema = z.object({
   stationId: z.string().uuid().optional(),
@@ -10,11 +11,15 @@ const querySchema = z.object({
   offset: z.coerce.number().int().min(0).optional()
 });
 
-export async function GET(request: Request) {
+export const GET = createHandler('admin_api.qr_tokens.list', async (request, _context, { recordMetric }) => {
   const adminClient = getSupabaseAdminClient();
   if (!adminClient) {
+    recordMetric('qr_tokens.supabase_unavailable', 1);
     return NextResponse.json(
-      { error: 'supabase_unavailable', message: 'Supabase credentials missing.' },
+      {
+        error: 'supabase_unavailable',
+        message: 'Supabase credentials missing. Unable to fetch QR tokens.'
+      },
       { status: 503 }
     );
   }
@@ -23,6 +28,7 @@ export async function GET(request: Request) {
   try {
     query = querySchema.parse(Object.fromEntries(new URL(request.url).searchParams));
   } catch (error) {
+    recordMetric('qr_tokens.invalid_query', 1);
     return NextResponse.json(
       { error: 'invalid_query', message: error instanceof z.ZodError ? error.flatten() : 'Invalid query parameters.' },
       { status: 400 }
@@ -53,6 +59,7 @@ export async function GET(request: Request) {
       status: 'error',
       message: error.message
     });
+    recordMetric('qr_tokens.supabase_error', 1, { message: error.message });
     return NextResponse.json(
       { error: 'qr_tokens_fetch_failed', message: 'Unable to load QR tokens.' },
       { status: 500 }
@@ -72,6 +79,7 @@ export async function GET(request: Request) {
 
   const total = count ?? entries.length;
   const hasMore = rangeStart + entries.length < total;
+  recordMetric('qr_tokens.success', 1, { total });
 
   return NextResponse.json(
     {
@@ -81,4 +89,4 @@ export async function GET(request: Request) {
     },
     { status: 200 }
   );
-}
+});
