@@ -162,7 +162,8 @@
 
 ### `/api/dashboard` supporting routes
 
-- `listLatestOrderEvents`, `listLatestWebhookErrors` use mock data for now.
+- `listLatestOrderEvents`, `listLatestWebhookErrors` now read from Supabase via
+  `/api/orders/events` and `/api/webhooks/errors`.
 
 ## Edge Function Bridges
 

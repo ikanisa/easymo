@@ -25,11 +25,11 @@ export function fetchDashboardSnapshot(): Promise<DashboardSnapshotResult> {
 }
 
 export function fetchDashboardOrderEvents(): Promise<OrderEvent[]> {
-  return Promise.resolve(listLatestOrderEvents());
+  return listLatestOrderEvents();
 }
 
 export function fetchDashboardWebhookErrors(): Promise<WebhookError[]> {
-  return Promise.resolve(listLatestWebhookErrors());
+  return listLatestWebhookErrors();
 }
 
 export function useDashboardSnapshotQuery(

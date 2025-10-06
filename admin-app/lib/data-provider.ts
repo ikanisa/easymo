@@ -2,6 +2,7 @@ import { NAV_ITEMS } from "@/components/layout/nav-items";
 import { z } from "zod";
 import { getSupabaseClient } from "./supabase-client";
 import { shouldUseMocks } from "./runtime-config";
+import { apiFetch } from "./api/client";
 import type {
   AssistantRun,
   AuditEvent,
@@ -860,72 +861,36 @@ export async function listMenuVersions(
     });
   };
 
-  if (!isServer) {
-    return paginateArray(applyFilter(mockMenuVersions), { offset, limit });
-  }
-
   if (useMocks) {
     return paginateArray(applyFilter(mockMenuVersions), { offset, limit });
   }
 
-  const { getSupabaseAdminClient } = await import("@/lib/server/supabase-admin");
-  const adminClient = getSupabaseAdminClient();
-  if (!adminClient) {
-    return paginateArray(applyFilter(mockMenuVersions), { offset, limit });
-  }
+  const searchParams = new URLSearchParams();
+  searchParams.set("limit", String(limit));
+  searchParams.set("offset", String(offset));
+  if (params.status) searchParams.set("status", params.status);
+  if (params.barId) searchParams.set("barId", params.barId);
 
-  const query = adminClient
-    .from("menus")
-    .select(
-      `id, bar_id, version, status, source, updated_at, created_at,
-       bars:bars(name),
-       categories:categories(count),
-       items:items(count)` ,
-      { count: "exact" }
-    )
-    .order("updated_at", { ascending: false })
-    .range(offset, offset + limit - 1);
+  const query = searchParams.toString();
+  const url = query ? `/api/menus?${query}` : "/api/menus";
 
-  if (params.status) {
-    query.eq("status", params.status);
-  }
-  if (params.barId) {
-    query.eq("bar_id", params.barId);
-  }
+  const response = await apiFetch<{
+    data: MenuVersion[];
+    total: number;
+    hasMore?: boolean;
+  }>(url);
 
-  const { data, error, count } = await query;
-
-  if (error || !data) {
-    console.error("Failed to fetch menu versions from Supabase", error);
-    return paginateArray(applyFilter(mockMenuVersions), { offset, limit });
-  }
-
-  const items = data.map((row) => {
-    const categoryCount = Array.isArray(row.categories) && row.categories.length
-      ? Number(row.categories[0]?.count ?? 0)
-      : 0;
-    const itemCount = Array.isArray(row.items) && row.items.length
-      ? Number(row.items[0]?.count ?? 0)
-      : 0;
-
+  if (response.ok) {
+    const { data, total, hasMore } = response.data;
     return {
-      id: row.id,
-      barId: row.bar_id,
-      barName: row.bars?.name ?? "Unknown bar",
-      version: `v${row.version ?? 1}`,
-      status: row.status ?? "draft",
-      source: row.source ?? "manual",
-      categories: categoryCount,
-      items: itemCount,
-      updatedAt: row.updated_at ?? row.created_at ?? new Date().toISOString(),
-    } satisfies MenuVersion;
-  });
+      data,
+      total,
+      hasMore: hasMore ?? (offset + data.length < total),
+    };
+  }
 
-  return {
-    data: items,
-    total: count ?? items.length,
-    hasMore: offset + items.length < (count ?? items.length),
-  };
+  console.error("Failed to fetch menu versions", response.error);
+  return paginateArray(applyFilter(mockMenuVersions), { offset, limit });
 }
 
 export async function listOcrJobs(
@@ -942,67 +907,36 @@ export async function listOcrJobs(
     });
   };
 
-  if (!isServer) {
-    return paginateArray(applyFilter(mockOcrJobs), { offset, limit });
-  }
-
   if (useMocks) {
     return paginateArray(applyFilter(mockOcrJobs), { offset, limit });
   }
 
-  const { getSupabaseAdminClient } = await import("@/lib/server/supabase-admin");
-  const adminClient = getSupabaseAdminClient();
-  if (!adminClient) {
-    return paginateArray(applyFilter(mockOcrJobs), { offset, limit });
-  }
+  const searchParams = new URLSearchParams();
+  searchParams.set("limit", String(limit));
+  searchParams.set("offset", String(offset));
+  if (params.status) searchParams.set("status", params.status);
+  if (params.barId) searchParams.set("barId", params.barId);
 
-  const query = adminClient
-    .from("ocr_jobs")
-    .select(
-      `id, bar_id, menu_id, source_file_id, status, error_message, attempts, created_at, updated_at,
-       bars:bars(name)` ,
-      { count: "exact" }
-    )
-    .order("created_at", { ascending: false })
-    .range(offset, offset + limit - 1);
+  const query = searchParams.toString();
+  const url = query ? `/api/ocr/jobs?${query}` : "/api/ocr/jobs";
 
-  if (params.status) {
-    query.eq("status", params.status);
-  }
-  if (params.barId) {
-    query.eq("bar_id", params.barId);
-  }
+  const response = await apiFetch<{
+    data: OcrJob[];
+    total: number;
+    hasMore?: boolean;
+  }>(url);
 
-  const { data, error, count } = await query;
-
-  if (error || !data) {
-    console.error("Failed to fetch OCR jobs from Supabase", error);
-    return paginateArray(applyFilter(mockOcrJobs), { offset, limit });
-  }
-
-  const items = data.map((row) => {
-    const fileName = row.source_file_id ?? "menu";
-    const extension = fileName.split(".").pop()?.toLowerCase();
-    const type: OcrJob["type"] = extension === "pdf" ? "pdf" : "image";
-
+  if (response.ok) {
+    const { data, total, hasMore } = response.data;
     return {
-      id: row.id,
-      barId: row.bar_id,
-      barName: row.bars?.name ?? "Unknown bar",
-      fileName,
-      type,
-      status: row.status ?? "queued",
-      durationSeconds: null,
-      retries: row.attempts ?? 0,
-      submittedAt: row.created_at ?? row.updated_at ?? new Date().toISOString(),
-    } satisfies OcrJob;
-  });
+      data,
+      total,
+      hasMore: hasMore ?? (offset + data.length < total),
+    };
+  }
 
-  return {
-    data: items,
-    total: count ?? items.length,
-    hasMore: offset + items.length < (count ?? items.length),
-  };
+  console.error("Failed to fetch OCR jobs", response.error);
+  return paginateArray(applyFilter(mockOcrJobs), { offset, limit });
 }
 
 export async function listOrders(
@@ -1045,12 +979,34 @@ export async function listOrders(
   });
 }
 
-export function listLatestOrderEvents(limit = 10): OrderEvent[] {
-  return mockOrderEvents.slice(0, limit);
+export async function listLatestOrderEvents(limit = 10): Promise<OrderEvent[]> {
+  if (useMocks) {
+    return mockOrderEvents.slice(0, limit);
+  }
+
+  const url = `/api/orders/events?limit=${limit}`;
+  const response = await apiFetch<{ data: OrderEvent[] }>(url);
+  if (response.ok) {
+    return response.data.data;
+  }
+
+  console.error("Failed to fetch order events", response.error);
+  return [];
 }
 
-export function listLatestWebhookErrors(limit = 10): WebhookError[] {
-  return mockWebhookErrors.slice(0, limit);
+export async function listLatestWebhookErrors(limit = 10): Promise<WebhookError[]> {
+  if (useMocks) {
+    return mockWebhookErrors.slice(0, limit);
+  }
+
+  const url = `/api/webhooks/errors?limit=${limit}`;
+  const response = await apiFetch<{ data: WebhookError[] }>(url);
+  if (response.ok) {
+    return response.data.data;
+  }
+
+  console.error("Failed to fetch webhook errors", response.error);
+  return [];
 }
 
 export async function listStaffNumbers(
@@ -1096,20 +1052,37 @@ export async function listStaffNumbers(
 export async function listQrTokens(
   params: Pagination = {},
 ): Promise<PaginatedResult<QrToken>> {
-  if (!isServer && useMocks) {
-    return paginateArray(mockQrTokens, params);
-  }
-
-  if (!isServer) {
-    return paginateArray(mockQrTokens, params);
-  }
-
   if (useMocks) {
     return paginateArray(mockQrTokens, params);
   }
 
-  const { fetchQrTokens } = await import('@/lib/queries/qr');
-  return fetchQrTokens({ limit: params.limit ?? 100, offset: params.offset ?? 0 });
+  const limit = params.limit ?? 100;
+  const offset = params.offset ?? 0;
+
+  const searchParams = new URLSearchParams();
+  searchParams.set("limit", String(limit));
+  searchParams.set("offset", String(offset));
+
+  const query = searchParams.toString();
+  const url = query ? `/api/qr?${query}` : "/api/qr";
+
+  const response = await apiFetch<{
+    data: QrToken[];
+    total: number;
+    hasMore?: boolean;
+  }>(url);
+
+  if (response.ok) {
+    const { data, total, hasMore } = response.data;
+    return {
+      data,
+      total,
+      hasMore: hasMore ?? (offset + data.length < total),
+    };
+  }
+
+  console.error("Failed to fetch QR tokens", response.error);
+  return paginateArray(mockQrTokens, params);
 }
 
 export async function listTemplates(
@@ -1133,20 +1106,37 @@ export async function listFlows(
 export async function listNotifications(
   params: Pagination = {},
 ): Promise<PaginatedResult<NotificationOutbox>> {
-  if (!isServer && useMocks) {
-    return paginateArray(mockNotifications, params);
-  }
-
-  if (!isServer) {
-    return paginateArray(mockNotifications, params);
-  }
-
   if (useMocks) {
     return paginateArray(mockNotifications, params);
   }
 
-  const { fetchNotifications } = await import('@/lib/queries/notifications');
-  return fetchNotifications({ limit: params.limit ?? 100, offset: params.offset ?? 0 });
+  const limit = params.limit ?? 100;
+  const offset = params.offset ?? 0;
+
+  const searchParams = new URLSearchParams();
+  searchParams.set("limit", String(limit));
+  searchParams.set("offset", String(offset));
+
+  const query = searchParams.toString();
+  const url = query ? `/api/notifications?${query}` : "/api/notifications";
+
+  const response = await apiFetch<{
+    data: NotificationOutbox[];
+    total: number;
+    hasMore?: boolean;
+  }>(url);
+
+  if (response.ok) {
+    const { data, total, hasMore } = response.data;
+    return {
+      data,
+      total,
+      hasMore: hasMore ?? (offset + data.length < total),
+    };
+  }
+
+  console.error("Failed to fetch notifications", response.error);
+  return paginateArray(mockNotifications, params);
 }
 
 export async function listAuditEvents(
