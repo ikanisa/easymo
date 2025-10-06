@@ -1,0 +1,26 @@
+{
+  "version": "6.3",
+  "screens": [
+    {
+      "id": "s_alerts",
+      "title": "Alerts",
+      "layout": { "type": "single_column" },
+      "widgets": [
+        { "type": "list", "id": "w_alerts", "options_data_binding": "alerts" },
+        {
+          "type": "footer_buttons",
+          "buttons": [
+            {
+              "id": "BTN_ALERTS_REFRESH",
+              "title": "Refresh",
+              "action": {
+                "type": "data_exchange",
+                "id": "a_admin_alert_refresh"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

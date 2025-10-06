@@ -1,0 +1,105 @@
+{
+  "version": "6.3",
+  "screens": [
+    {
+      "id": "s_staff_list",
+      "title": "Staff numbers",
+      "layout": { "type": "single_column" },
+      "widgets": [
+        {
+          "type": "text_block",
+          "id": "w_staff_text",
+          "text": "${data.staff_text}"
+        },
+        {
+          "type": "footer_buttons",
+          "buttons": [
+            {
+              "id": "BTN_ADD",
+              "title": "Add",
+              "action": { "type": "navigate", "next": "s_add_staff" }
+            },
+            {
+              "id": "BTN_REMOVE",
+              "title": "Remove",
+              "action": { "type": "navigate", "next": "s_remove_staff" }
+            },
+            {
+              "id": "BTN_REFRESH",
+              "title": "Refresh",
+              "action": { "type": "data_exchange", "id": "a_staff_refresh" }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "s_add_staff",
+      "title": "Add staff",
+      "layout": { "type": "single_column" },
+      "data_exchange": { "submit": { "action": { "id": "a_staff_add" } } },
+      "widgets": [
+        {
+          "type": "text_input",
+          "id": "phone",
+          "label": "WhatsApp number",
+          "required": true
+        },
+        {
+          "type": "dropdown",
+          "id": "role",
+          "label": "Role",
+          "options": [
+            { "id": "manager", "title": "Manager" },
+            { "id": "staff", "title": "Staff" }
+          ]
+        },
+        {
+          "type": "footer_buttons",
+          "buttons": [
+            {
+              "id": "BTN_SAVE",
+              "title": "Save",
+              "action": {
+                "type": "data_exchange",
+                "id": "a_staff_add",
+                "fields": {
+                  "phone": "${widgets.phone.value}",
+                  "role": "${widgets.role.value}"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "s_remove_staff",
+      "title": "Remove staff",
+      "layout": { "type": "single_column" },
+      "data_exchange": { "submit": { "action": { "id": "a_staff_remove" } } },
+      "widgets": [
+        {
+          "type": "dropdown",
+          "id": "phone",
+          "label": "Number",
+          "options_data_binding": "staff_options"
+        },
+        {
+          "type": "footer_buttons",
+          "buttons": [
+            {
+              "id": "BTN_REMOVE_CONFIRM",
+              "title": "Remove",
+              "action": {
+                "type": "data_exchange",
+                "id": "a_staff_remove",
+                "fields": { "phone": "${widgets.phone.value}" }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

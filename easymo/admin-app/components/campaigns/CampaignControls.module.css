@@ -1,0 +1,32 @@
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.selectLabel {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.wrapper select {
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(148, 163, 184, 0.4);
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+}
+
+.status {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.message {
+  font-size: 0.85rem;
+  color: rgba(249, 115, 22, 0.9);
+}

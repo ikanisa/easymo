@@ -1,0 +1,16 @@
+.status {
+  margin-bottom: 16px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: rgba(249, 115, 22, 0.12);
+  color: #ea580c;
+  font-size: 0.9rem;
+}
+
+.downloadLink {
+  display: inline-block;
+  margin-top: 12px;
+  color: var(--accent);
+  font-weight: 600;
+  text-decoration: underline;
+}

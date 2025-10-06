@@ -1,0 +1,25 @@
+{
+  "info": {
+    "name": "Flow Exchange Smoke",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Customer Bar Browser",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": {
+          "raw": "{{FLOW_EXCHANGE_URL}}",
+          "host": ["{{FLOW_EXCHANGE_URL}}"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"flow_id\": \"flow.cust.bar_browser.v1\",\n  \"screen_id\": \"s_find_bar\",\n  \"action_id\": \"a_show_results\",\n  \"wa_id\": \"+250788000000\",\n  \"session_id\": \"demo-session\",\n  \"fields\": {\"q\": \"demo\"}\n}"
+        }
+      }
+    }
+  ]
+}
