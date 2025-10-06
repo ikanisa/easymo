@@ -1,26 +1,26 @@
-const SHELL_CACHE = "easymo-shell-v1";
-const RUNTIME_CACHE = "easymo-runtime-v1";
-const SHELL_ASSETS = [
+const SHELL_CACHE = "easymo-shell-v2";
+const RUNTIME_CACHE = "easymo-runtime-v2";
+const STATIC_CACHE = "easymo-static-v2";
+const PRECACHE_URLS = [
   "/",
   "/manifest.webmanifest",
   "/icons/icon-192.png",
   "/icons/icon-512.png",
   "/icons/icon-maskable-512.png",
+  "/offline.html",
 ];
 
 const STATIC_PREFIXES = ["/_next/static/", "/icons/", "/screenshots/", "/fonts/"];
-const NETWORK_FIRST_PATTERNS = [
-  /^\/_next\/data\//,
-  /^\/api\//,
-  /^\/notifications/,
-  /^\/settings/,
-  /^\/vouchers/,
-];
+const NETWORK_FIRST_PATTERNS = [/^\/_next\/data\//, /^\/api\//, /^\/notifications/, /^\/settings/, /^\/vouchers/];
+const SYNC_TAG = "admin-offline-sync";
+const BG_SYNC_DB = "admin-offline-queue";
+const BG_SYNC_STORE = "requests";
+const OFFLINE_POST_TARGETS = [/^\/api\/orders/, /^\/api\/notifications/, /^\/api\/vouchers/];
 
 self.addEventListener("install", (event) => {
   event.waitUntil((async () => {
     const cache = await caches.open(SHELL_CACHE);
-    await cache.addAll(SHELL_ASSETS);
+    await cache.addAll(PRECACHE_URLS);
     await self.skipWaiting();
   })());
 });
@@ -29,16 +29,13 @@ self.addEventListener("activate", (event) => {
   event.waitUntil((async () => {
     const keys = await caches.keys();
     await Promise.all(
-      keys.filter((key) => key !== SHELL_CACHE && key !== RUNTIME_CACHE).map((key) =>
+      keys.filter((key) => ![SHELL_CACHE, RUNTIME_CACHE, STATIC_CACHE].includes(key)).map((key) =>
         caches.delete(key)
       ),
     );
     await self.clients.claim();
 
-    const clients = await self.clients.matchAll({
-      type: "window",
-      includeUncontrolled: true,
-    });
+    const clients = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
     for (const client of clients) {
       client.postMessage({ type: "SW_ACTIVATED" });
     }
@@ -49,19 +46,29 @@ self.addEventListener("message", (event) => {
   if (event.data?.type === "SKIP_WAITING") {
     self.skipWaiting();
   }
+  if (event.data?.type === "SW_FLUSH_QUEUE") {
+    event.waitUntil(replayQueuedRequests());
+  }
 });
 
 self.addEventListener("fetch", (event) => {
   const { request } = event;
-  if (request.method !== "GET") return;
-
   const url = new URL(request.url);
-  if (url.origin !== self.location.origin) return;
 
-  if (SHELL_ASSETS.includes(url.pathname) || STATIC_PREFIXES.some((prefix) =>
-    url.pathname.startsWith(prefix)
-  )) {
+  if (request.method === "POST" && shouldQueue(request)) {
+    event.respondWith(handleOfflinePost(event, request));
+    return;
+  }
+
+  if (request.method !== "GET" || url.origin !== self.location.origin) return;
+
+  if (PRECACHE_URLS.includes(url.pathname)) {
     event.respondWith(cacheFirst(request, SHELL_CACHE));
+    return;
+  }
+
+  if (STATIC_PREFIXES.some((prefix) => url.pathname.startsWith(prefix))) {
+    event.respondWith(cacheFirst(request, STATIC_CACHE));
     return;
   }
 
@@ -77,6 +84,13 @@ self.addEventListener("fetch", (event) => {
 
   if (url.pathname.startsWith("/_next/image")) {
     event.respondWith(staleWhileRevalidate(request));
+    return;
+  }
+});
+
+self.addEventListener("sync", (event) => {
+  if (event.tag === SYNC_TAG) {
+    event.waitUntil(replayQueuedRequests());
   }
 });
 
@@ -103,10 +117,12 @@ async function networkFirst(request) {
     if (request.mode === "navigate") {
       const shell = await caches.match("/");
       if (shell) return shell;
+      const offline = await caches.match("/offline.html");
+      if (offline) return offline;
     }
     if (request.headers.get("accept")?.includes("application/json")) {
       return new Response(
-        JSON.stringify({ error: "offline", message: "Request intercepted offline." }),
+        JSON.stringify({ error: "offline", message: "Request queued while offline." }),
         {
           status: 503,
           headers: { "Content-Type": "application/json" },
@@ -131,4 +147,160 @@ async function staleWhileRevalidate(request) {
 
   const cached = await cachedPromise;
   return cached ?? await networkPromise ?? new Response("", { status: 503 });
+}
+
+function shouldQueue(request) {
+  return OFFLINE_POST_TARGETS.some((pattern) => pattern.test(new URL(request.url).pathname));
+}
+
+async function handleOfflinePost(event, request) {
+  try {
+    return await fetch(request.clone());
+  } catch (_error) {
+    if (!('sync' in self.registration)) {
+      throw _error;
+    }
+
+    const id = await queueRequest(request);
+    try {
+      await self.registration.sync.register(SYNC_TAG);
+    } catch (syncError) {
+      console.warn('sw.sync_register_failed', syncError);
+    }
+    await notifyClients({
+      type: 'SW_BACKGROUND_SYNC_QUEUED',
+      requestId: id,
+      url: request.url,
+      method: request.method,
+    });
+
+    return new Response(
+      JSON.stringify({
+        queued: true,
+        message: 'Request saved offline and will retry automatically when connectivity is restored.',
+      }),
+      {
+        status: 202,
+        headers: { 'Content-Type': 'application/json' },
+      },
+    );
+  }
+}
+
+async function openQueueDb() {
+  return await new Promise((resolve, reject) => {
+    const request = indexedDB.open(BG_SYNC_DB, 1);
+    request.onupgradeneeded = () => {
+      request.result.createObjectStore(BG_SYNC_STORE, { keyPath: 'id' });
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+async function queueRequest(request) {
+  const db = await openQueueDb();
+  const tx = db.transaction(BG_SYNC_STORE, 'readwrite');
+  const store = tx.objectStore(BG_SYNC_STORE);
+  const id = crypto.randomUUID();
+  const cloned = request.clone();
+  let body = null;
+  try {
+    body = await cloned.text();
+  } catch (error) {
+    console.warn('sw.queue_body_read_failed', error);
+  }
+  const headers = Array.from(request.headers.entries());
+  const record = {
+    id,
+    url: request.url,
+    method: request.method,
+    headers,
+    body,
+    credentials: request.credentials,
+    timestamp: Date.now(),
+  };
+  store.put(record);
+  await new Promise((resolve, reject) => {
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+    tx.onabort = () => reject(tx.error);
+  }).catch((error) => console.warn('sw.queue_transaction_failed', error));
+  db.close();
+  return id;
+}
+
+async function readQueuedRequests() {
+  const db = await openQueueDb();
+  const tx = db.transaction(BG_SYNC_STORE, 'readonly');
+  const store = tx.objectStore(BG_SYNC_STORE);
+  const items = await store.getAll();
+  await new Promise((resolve, reject) => {
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+    tx.onabort = () => reject(tx.error);
+  }).catch((error) => console.warn('sw.queue_read_failed', error));
+  db.close();
+  return items ?? [];
+}
+
+async function removeQueuedRequest(id) {
+  const db = await openQueueDb();
+  const tx = db.transaction(BG_SYNC_STORE, 'readwrite');
+  const store = tx.objectStore(BG_SYNC_STORE);
+  store.delete(id);
+  await new Promise((resolve, reject) => {
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+    tx.onabort = () => reject(tx.error);
+  }).catch((error) => console.warn('sw.queue_delete_failed', error));
+  db.close();
+}
+
+async function replayQueuedRequests() {
+  const items = await readQueuedRequests();
+  if (!items.length) return;
+
+  for (const item of items) {
+    const headers = new Headers(item.headers ?? []);
+    const init = {
+      method: item.method,
+      headers,
+      body: item.body,
+      credentials: item.credentials,
+    };
+    try {
+      const response = await fetch(item.url, init);
+      if (response.ok) {
+        await removeQueuedRequest(item.id);
+        await notifyClients({
+          type: 'SW_BACKGROUND_SYNC_SUCCESS',
+          requestId: item.id,
+          status: response.status,
+        });
+      } else if (response.status >= 500) {
+        await notifyClients({
+          type: 'SW_BACKGROUND_SYNC_RETRY',
+          requestId: item.id,
+          status: response.status,
+        });
+      } else {
+        await removeQueuedRequest(item.id);
+        await notifyClients({
+          type: 'SW_BACKGROUND_SYNC_DROPPED',
+          requestId: item.id,
+          status: response.status,
+        });
+      }
+    } catch (error) {
+      console.warn('sw.queue_replay_failed', error);
+    }
+  }
+}
+
+async function notifyClients(message) {
+  const clients = await self.clients.matchAll({ type: 'window' });
+  for (const client of clients) {
+    client.postMessage(message);
+  }
 }

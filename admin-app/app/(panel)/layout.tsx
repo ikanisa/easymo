@@ -5,6 +5,7 @@ import { ToastProvider } from "@/components/ui/ToastProvider";
 import { GradientBackground } from "@/components/layout/GradientBackground";
 import { OfflineBanner } from "@/components/system/OfflineBanner";
 import { ServiceWorkerToast } from "@/components/system/ServiceWorkerToast";
+import { ServiceWorkerToasts } from "@/components/system/ServiceWorkerToasts";
 import { AssistantPanel } from "@/components/assistant/AssistantPanel";
 
 export default function PanelLayout({ children }: { children: ReactNode }) {
@@ -15,6 +16,7 @@ export default function PanelLayout({ children }: { children: ReactNode }) {
   return (
     <ToastProvider>
       <ServiceWorkerToast />
+      <ServiceWorkerToasts />
       <OfflineBanner />
       <GradientBackground variant="surface" className="min-h-screen">
         <div className="layout">
