@@ -1,17 +1,5 @@
 import { QRCode } from "https://deno.land/x/qrcode@v2.0.0/mod.ts";
-import initWasm, { Resvg } from "https://deno.land/x/resvg_wasm@0.1.13/mod.ts";
-import wasm from "https://deno.land/x/resvg_wasm@0.1.13/libresvg.wasm" with {
-  type: "binary",
-};
-
-let resvgReady = false;
-
-async function ensureResvg() {
-  if (!resvgReady) {
-    await initWasm(wasm);
-    resvgReady = true;
-  }
-}
+import { Image } from "https://deno.land/x/imagescript@1.3.0/mod.ts";
 
 function formatCurrency(amountMinor: number, currency: string): string {
   const amount = amountMinor / 1;
@@ -57,8 +45,6 @@ export type RenderVoucherParams = {
 export async function renderVoucherPng(
   params: RenderVoucherParams,
 ): Promise<Uint8Array> {
-  await ensureResvg();
-
   const amountText = formatCurrency(params.amountMinor, params.currency);
   const issuedDate = formatDate(params.issuedAt).toUpperCase();
   const { inner: qrInner, size: qrSize } = renderQrSvg(params.qrPayload);
@@ -125,12 +111,8 @@ export async function renderVoucherPng(
     <text x="940" y="315" font-size="48" text-anchor="middle" font-family="'Poppins', 'Helvetica', sans-serif" fill="#ffffff" font-weight="600">ENGEN</text>
   </svg>`;
 
-  const resvg = new Resvg(svg, {
-    background: "#00000000",
-    fitTo: { mode: "width", value: 1080 },
-  });
-  const rendered = resvg.render();
-  return rendered.asPng();
+  const image = Image.renderSVG(svg, 1080, Image.SVG_MODE_WIDTH);
+  return await image.encode();
 }
 
 function escapeXml(value: string): string {
