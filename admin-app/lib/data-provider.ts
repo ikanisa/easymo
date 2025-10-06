@@ -1,6 +1,7 @@
 import { NAV_ITEMS } from "@/components/layout/nav-items";
 import { z } from "zod";
 import { getSupabaseClient } from "./supabase-client";
+import { shouldUseMocks } from "./runtime-config";
 import type {
   AssistantRun,
   AuditEvent,
@@ -96,7 +97,7 @@ export type AssistantDecisionPayload = {
   notes?: string;
 };
 
-const useMocks = process.env.NEXT_PUBLIC_USE_MOCKS === "true";
+const useMocks = shouldUseMocks();
 const isServer = typeof window === "undefined";
 
 function paginateArray<T>(
@@ -121,7 +122,7 @@ function matchesSearch(haystack: string, needle?: string): boolean {
 }
 
 export async function getAdminHubSnapshot(): Promise<AdminHubSnapshot> {
-  if (useMocks || isServer) {
+  if (useMocks) {
     return mockAdminHubSnapshot;
   }
 
@@ -145,7 +146,7 @@ export async function getAdminHubSnapshot(): Promise<AdminHubSnapshot> {
 }
 
 export async function getAdminVoucherRecent(): Promise<AdminVoucherList> {
-  if (useMocks || isServer) {
+  if (useMocks) {
     return mockAdminVoucherList;
   }
 
@@ -175,7 +176,7 @@ export async function getAdminVoucherRecent(): Promise<AdminVoucherList> {
 export async function getAdminVoucherDetail(
   voucherId: string,
 ): Promise<AdminVoucherDetail> {
-  if (useMocks || isServer) {
+  if (useMocks) {
     return mockAdminVoucherDetail;
   }
 
@@ -203,7 +204,7 @@ export async function getAdminVoucherDetail(
 }
 
 export async function getAdminDiagnostics(): Promise<AdminDiagnosticsSnapshot> {
-  if (useMocks || isServer) {
+  if (useMocks) {
     return mockAdminDiagnostics;
   }
 
@@ -240,7 +241,7 @@ export async function getAdminDiagnostics(): Promise<AdminDiagnosticsSnapshot> {
 export async function getAdminDiagnosticsMatch(
   tripId: string,
 ): Promise<AdminDiagnosticsMatch> {
-  if (useMocks || isServer) {
+  if (useMocks) {
     return mockAdminDiagnosticsMatch;
   }
 

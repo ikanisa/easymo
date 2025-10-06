@@ -35,12 +35,12 @@ remain additive-only.
 
 ### Mock Data
 
-- By default the shell loads descriptive mock datasets (bars, menus, orders,
-  vouchers, campaigns, OCR jobs, etc.) so every page renders without Supabase
-  credentials.
-- Set `NEXT_PUBLIC_USE_MOCKS=false` once real data access helpers are
-  implemented; until then the app will gracefully fall back to mocks and log a
-  warning in the server console.
+- Mocks are opt-in. Set `NEXT_PUBLIC_USE_MOCKS=true` only when you need the
+  fixture dataset without connecting to Supabase.
+- When mocks are disabled (default), the runtime expects
+  `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and the
+  server-side credentials to be present. Missing values now throw during
+  requests so misconfiguration is detected early.
 
 ### Environment
 
