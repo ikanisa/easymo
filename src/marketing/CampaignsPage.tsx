@@ -9,6 +9,7 @@ import {
 } from "./api";
 import { parseRecipients, prettyJSON } from "./utils";
 import type { QPayload, SendLogRow, SendQueueRow, QueueStatus } from "./types";
+import AdminLayout from "@/components/AdminLayout";
 
 /** Tailwind-based admin surface
  *  Drop this page into your admin router, e.g. /admin/marketing
@@ -428,13 +429,15 @@ const SettingsPanel: React.FC = () => {
 /** ========== Page Shell ========== */
 const CampaignsPage: React.FC = () => {
   return (
-    <div className="max-w-6xl mx-auto p-6 space-y-6">
-      <h1 className="text-2xl font-bold">WhatsApp Campaigns</h1>
-      <QuickSend />
-      <QueueTable />
-      <LogsTable />
-      <SettingsPanel />
-    </div>
+    <AdminLayout>
+      <div className="max-w-6xl mx-auto space-y-6">
+        <h1 className="text-2xl font-bold">WhatsApp Campaigns</h1>
+        <QuickSend />
+        <QueueTable />
+        <LogsTable />
+        <SettingsPanel />
+      </div>
+    </AdminLayout>
   );
 };
 

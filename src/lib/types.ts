@@ -194,3 +194,68 @@ export type SendLogRow = {
   delivery_status: string | null;
   error: string | null;
 };
+
+// Baskets Types
+export interface Basket {
+  id: string;
+  name: string;
+  description?: string;
+  type: 'public' | 'private';
+  status: 'draft' | 'active' | 'closed';
+  goal_minor?: number;
+  currency: string;
+  momo_target?: string;
+  owner_profile_id?: string;
+  owner_whatsapp?: string;
+  created_at: string;
+  updated_at: string;
+  share_token?: string;
+  join_token?: string;
+}
+
+export interface BasketMember {
+  basket_id: string;
+  user_id: string;
+  profile_id?: string;
+  whatsapp?: string;
+  role: 'member' | 'admin';
+  joined_at: string;
+  total_contributed?: number;
+}
+
+export interface BasketContribution {
+  id: string;
+  basket_id: string;
+  contributor_user_id: string;
+  amount_minor: number;
+  currency: string;
+  status: 'pending' | 'approved' | 'rejected';
+  created_at: string;
+  approved_at?: string;
+}
+
+// Marketplace Types
+export interface MarketplaceCategory {
+  id: string;
+  slug: string;
+  label: string;
+  description?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Business {
+  id: string;
+  name: string;
+  description?: string;
+  category_id?: number;
+  owner_whatsapp: string;
+  owner_user_id?: string;
+  catalog_url?: string;
+  location_text?: string;
+  lat?: number;
+  lng?: number;
+  is_active: boolean;
+  status?: string;
+  created_at: string;
+}
