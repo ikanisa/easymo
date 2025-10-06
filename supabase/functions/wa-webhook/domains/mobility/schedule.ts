@@ -404,17 +404,30 @@ async function createTripAndDeliverMatches(
         ? error.message
         : String(error ?? "unknown"),
     });
-    await sendButtonsMessage(
-      ctx,
-      "⚠️ Matching service is unavailable right now. Please try again in a few minutes.",
-      buildButtons({ id: IDS.BACK_MENU, title: "↩️ Menu" }),
-    );
     if (tripId) {
-      await ctx.supabase.from("trips").update({ status: "expired" }).eq(
-        "id",
-        tripId,
+      const followUp = [
+        "✅ Trip saved!",
+        "We didn't find live matches yet, but your trip is now visible to nearby riders.",
+        "You can explore nearby options anytime from the menu.",
+      ].join("\n");
+
+      const browseButton: ButtonSpec = state.role === "passenger"
+        ? { id: IDS.SEE_DRIVERS, title: "🚗 Nearby drivers" }
+        : { id: IDS.SEE_PASSENGERS, title: "🧍 Nearby passengers" };
+
+      await sendButtonsMessage(
+        ctx,
+        followUp,
+        [browseButton, { id: IDS.BACK_MENU, title: "↩️ Menu" }],
+      );
+    } else {
+      await sendButtonsMessage(
+        ctx,
+        "⚠️ Matching service is unavailable right now. Please try again in a few minutes.",
+        buildButtons({ id: IDS.BACK_MENU, title: "↩️ Menu" }),
       );
     }
+
     await clearState(ctx.supabase, ctx.profileId!);
     return true;
   }
