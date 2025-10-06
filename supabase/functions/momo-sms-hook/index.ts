@@ -1,7 +1,8 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ??
+  "";
 const HMAC_SECRET = Deno.env.get("MOMO_SMS_HMAC_SECRET") ?? "";
 const ALLOWED_IPS = (Deno.env.get("MOMO_SMS_ALLOWED_IPS") ?? "")
   .split(",")
@@ -10,7 +11,9 @@ const ALLOWED_IPS = (Deno.env.get("MOMO_SMS_ALLOWED_IPS") ?? "")
 const DEFAULT_SOURCE = Deno.env.get("MOMO_SMS_DEFAULT_SOURCE") ?? "gateway";
 
 if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-  throw new Error("SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be configured for momo-sms-hook");
+  throw new Error(
+    "SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be configured for momo-sms-hook",
+  );
 }
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
@@ -19,7 +22,8 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "content-type, authorization, x-signature, x-api-key",
+  "Access-Control-Allow-Headers":
+    "content-type, authorization, x-signature, x-api-key",
   "Access-Control-Allow-Methods": "POST,OPTIONS",
 };
 
@@ -31,9 +35,14 @@ type SmsPayload = {
   metadata?: Record<string, unknown> | null;
 };
 
-type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue };
+type JsonValue = string | number | boolean | null | JsonValue[] | {
+  [key: string]: JsonValue;
+};
 
-function jsonResponse(body: JsonValue | Record<string, JsonValue>, status = 200): Response {
+function jsonResponse(
+  body: JsonValue | Record<string, JsonValue>,
+  status = 200,
+): Response {
   return new Response(JSON.stringify(body), {
     status,
     headers: {
@@ -59,7 +68,10 @@ function isIpAllowed(request: Request): boolean {
   return ALLOWED_IPS.includes(clientIp);
 }
 
-async function computeHmacHex(secret: string, payload: string): Promise<string> {
+async function computeHmacHex(
+  secret: string,
+  payload: string,
+): Promise<string> {
   const key = await crypto.subtle.importKey(
     "raw",
     new TextEncoder().encode(secret),
@@ -67,11 +79,18 @@ async function computeHmacHex(secret: string, payload: string): Promise<string> 
     false,
     ["sign"],
   );
-  const signature = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(payload));
+  const signature = await crypto.subtle.sign(
+    "HMAC",
+    key,
+    new TextEncoder().encode(payload),
+  );
   return bufferToHex(signature);
 }
 
-async function verifySignature(body: string, headerSignature: string | null): Promise<boolean> {
+async function verifySignature(
+  body: string,
+  headerSignature: string | null,
+): Promise<boolean> {
   if (!HMAC_SECRET) return true;
   if (!headerSignature) return false;
   const expected = await computeHmacHex(HMAC_SECRET, body);
@@ -97,7 +116,10 @@ function timingSafeEquals(a: string, b: string): boolean {
 }
 
 async function sha256Hex(value: string): Promise<string> {
-  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
+  const digest = await crypto.subtle.digest(
+    "SHA-256",
+    new TextEncoder().encode(value),
+  );
   return bufferToHex(digest);
 }
 
@@ -109,16 +131,23 @@ function parsePayload(text: string): SmsPayload {
     throw new Error("invalid_json");
   }
   const payload = parsed as Record<string, unknown>;
-  const message = typeof payload.message === "string" ? payload.message.trim() : "";
+  const message = typeof payload.message === "string"
+    ? payload.message.trim()
+    : "";
   if (!message) throw new Error("message_required");
-  const msisdn = typeof payload.msisdn === "string" ? payload.msisdn.trim() : null;
-  const receivedAt = typeof payload.receivedAt === "string" ? payload.receivedAt.trim() : null;
+  const msisdn = typeof payload.msisdn === "string"
+    ? payload.msisdn.trim()
+    : null;
+  const receivedAt = typeof payload.receivedAt === "string"
+    ? payload.receivedAt.trim()
+    : null;
   const ingestSource = typeof payload.ingestSource === "string"
     ? payload.ingestSource.trim()
     : null;
-  const metadata = typeof payload.metadata === "object" && payload.metadata !== null
-    ? payload.metadata as Record<string, unknown>
-    : null;
+  const metadata =
+    typeof payload.metadata === "object" && payload.metadata !== null
+      ? payload.metadata as Record<string, unknown>
+      : null;
   return { message, msisdn, receivedAt, ingestSource, metadata };
 }
 
@@ -146,9 +175,9 @@ Deno.serve(async (request) => {
 
   const rawBody = await request.text();
 
-  const headerSignature = request.headers.get("x-signature")
-    ?? request.headers.get("authorization")?.replace(/^Bearer\s+/i, "")
-    ?? request.headers.get("x-api-key");
+  const headerSignature = request.headers.get("x-signature") ??
+    request.headers.get("authorization")?.replace(/^Bearer\s+/i, "") ??
+    request.headers.get("x-api-key");
 
   const signatureValid = await verifySignature(rawBody, headerSignature);
   if (!signatureValid) {
@@ -187,6 +216,9 @@ Deno.serve(async (request) => {
     return jsonResponse({ ok: false, error: "inbox_insert_failed" }, 500);
   }
 
-  console.log("momo_sms_hook.inserted", { inboxId: data.id, source: payload.ingestSource ?? DEFAULT_SOURCE });
+  console.log("momo_sms_hook.inserted", {
+    inboxId: data.id,
+    source: payload.ingestSource ?? DEFAULT_SOURCE,
+  });
   return jsonResponse({ ok: true, duplicate: false, inboxId: data.id });
 });

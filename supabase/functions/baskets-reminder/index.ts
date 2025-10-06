@@ -9,7 +9,8 @@ const BATCH_SIZE = Math.max(
   Number(Deno.env.get("BASKETS_REMINDER_BATCH_SIZE") ?? "20") || 20,
   1,
 );
-const THROTTLE_DEFAULT = Number(Deno.env.get("BASKETS_REMINDER_MAX_PER_HOUR") ?? "30") || 30;
+const THROTTLE_DEFAULT =
+  Number(Deno.env.get("BASKETS_REMINDER_MAX_PER_HOUR") ?? "30") || 30;
 const CRON_EXPR = "*/5 * * * *";
 const denoWithCron = Deno as typeof Deno & {
   cron?: (
@@ -18,7 +19,9 @@ const denoWithCron = Deno as typeof Deno & {
     handler: () => void | Promise<void>,
   ) => void;
 };
-const CRON_ENABLED = (Deno.env.get("BASKETS_REMINDER_CRON_ENABLED") ?? "false").toLowerCase() === "true";
+const CRON_ENABLED =
+  (Deno.env.get("BASKETS_REMINDER_CRON_ENABLED") ?? "false").toLowerCase() ===
+    "true";
 
 interface ReminderRow {
   id: string;
@@ -66,12 +69,16 @@ async function fetchSettings(client: SupabaseClient) {
   }
 
   const templates = map.get("baskets.templates") as TemplateConfig | undefined;
-  const quietHours = map.get("baskets.quiet_hours") as QuietHoursConfig | undefined;
+  const quietHours = map.get("baskets.quiet_hours") as
+    | QuietHoursConfig
+    | undefined;
   const throttleSetting = map.get("baskets.reminder_throttle");
   const throttle = typeof throttleSetting === "number"
     ? throttleSetting
     : typeof throttleSetting === "object" && throttleSetting !== null
-    ? Number((throttleSetting as { per_hour?: number }).per_hour ?? THROTTLE_DEFAULT)
+    ? Number(
+      (throttleSetting as { per_hour?: number }).per_hour ?? THROTTLE_DEFAULT,
+    )
     : THROTTLE_DEFAULT;
 
   return {
@@ -148,7 +155,9 @@ async function logReminderEvent(
     reason: reason ?? null,
     context: context ?? {},
   };
-  const { error } = await client.from("baskets_reminder_events").insert(payload);
+  const { error } = await client.from("baskets_reminder_events").insert(
+    payload,
+  );
   if (error) {
     console.error("reminder.event_log_failed", { reminderId, event, error });
   }
@@ -168,7 +177,9 @@ async function updateReminder(
   }
 }
 
-async function countRecentReminderSends(client: SupabaseClient): Promise<number> {
+async function countRecentReminderSends(
+  client: SupabaseClient,
+): Promise<number> {
   const windowStart = new Date(Date.now() - 60 * 60 * 1000).toISOString();
   const { count, error } = await client
     .from("notifications")
@@ -220,7 +231,9 @@ async function runReminderWorker(trigger: "http" | "cron") {
 
     for (const reminder of reminders) {
       summary.processed += 1;
-      const nextAttempt = reminder.next_attempt_at ? new Date(reminder.next_attempt_at) : null;
+      const nextAttempt = reminder.next_attempt_at
+        ? new Date(reminder.next_attempt_at)
+        : null;
       if (nextAttempt && nextAttempt.getTime() > now.getTime()) {
         continue;
       }
@@ -229,13 +242,19 @@ async function runReminderWorker(trigger: "http" | "cron") {
         if (isWithinQuietHours(settings.quietHours, now)) {
           const resumeAt = nextQuietWindowEnd(settings.quietHours, now);
           await updateReminder(supabase, reminder.id, {
-            status: 'blocked',
-            blocked_reason: 'quiet_hours',
+            status: "blocked",
+            blocked_reason: "quiet_hours",
             next_attempt_at: resumeAt.toISOString(),
           });
-          await logReminderEvent(supabase, reminder.id, 'blocked', 'quiet_hours', {
-            resume_at: resumeAt.toISOString(),
-          });
+          await logReminderEvent(
+            supabase,
+            reminder.id,
+            "blocked",
+            "quiet_hours",
+            {
+              resume_at: resumeAt.toISOString(),
+            },
+          );
           summary.blocked += 1;
           continue;
         }
@@ -243,14 +262,20 @@ async function runReminderWorker(trigger: "http" | "cron") {
         if (throttleLedger >= settings.throttle) {
           const retryAt = new Date(now.getTime() + 30 * 60 * 1000);
           await updateReminder(supabase, reminder.id, {
-            status: 'blocked',
-            blocked_reason: 'throttled',
+            status: "blocked",
+            blocked_reason: "throttled",
             next_attempt_at: retryAt.toISOString(),
           });
-          await logReminderEvent(supabase, reminder.id, 'blocked', 'throttled', {
-            resume_at: retryAt.toISOString(),
-            throttle_limit: settings.throttle,
-          });
+          await logReminderEvent(
+            supabase,
+            reminder.id,
+            "blocked",
+            "throttled",
+            {
+              resume_at: retryAt.toISOString(),
+              throttle_limit: settings.throttle,
+            },
+          );
           summary.blocked += 1;
           continue;
         }
@@ -258,10 +283,15 @@ async function runReminderWorker(trigger: "http" | "cron") {
         const template = settings.templates?.[reminder.reminder_type];
         if (!template) {
           await updateReminder(supabase, reminder.id, {
-            status: 'skipped',
-            blocked_reason: 'template_missing',
+            status: "skipped",
+            blocked_reason: "template_missing",
           });
-          await logReminderEvent(supabase, reminder.id, 'skipped', 'template_missing');
+          await logReminderEvent(
+            supabase,
+            reminder.id,
+            "skipped",
+            "template_missing",
+          );
           summary.skipped += 1;
           continue;
         }
@@ -269,10 +299,15 @@ async function runReminderWorker(trigger: "http" | "cron") {
         const waId = recipientWa(reminder);
         if (!waId) {
           await updateReminder(supabase, reminder.id, {
-            status: 'skipped',
-            blocked_reason: 'missing_msisdn',
+            status: "skipped",
+            blocked_reason: "missing_msisdn",
           });
-          await logReminderEvent(supabase, reminder.id, 'skipped', 'missing_msisdn');
+          await logReminderEvent(
+            supabase,
+            reminder.id,
+            "skipped",
+            "missing_msisdn",
+          );
           summary.skipped += 1;
           continue;
         }
@@ -281,27 +316,30 @@ async function runReminderWorker(trigger: "http" | "cron") {
         throttleLedger += 1;
 
         await updateReminder(supabase, reminder.id, {
-          status: 'queued',
+          status: "queued",
           blocked_reason: null,
           next_attempt_at: null,
           attempts: reminder.attempts + 1,
           last_attempt_at: new Date().toISOString(),
           notification_id: notificationId,
         });
-        await logReminderEvent(supabase, reminder.id, 'queued', undefined, {
+        await logReminderEvent(supabase, reminder.id, "queued", undefined, {
           template,
           to: waId,
         });
         summary.queued += 1;
       } catch (error) {
         console.error("reminder.process_failed", { id: reminder.id, error });
-        const reason = error instanceof Error ? error.message : 'unexpected_error';
+        const reason = error instanceof Error
+          ? error.message
+          : "unexpected_error";
         await updateReminder(supabase, reminder.id, {
-          status: 'blocked',
+          status: "blocked",
           blocked_reason: reason,
-          next_attempt_at: new Date(now.getTime() + 60 * 60 * 1000).toISOString(),
+          next_attempt_at: new Date(now.getTime() + 60 * 60 * 1000)
+            .toISOString(),
         });
-        await logReminderEvent(supabase, reminder.id, 'blocked', reason);
+        await logReminderEvent(supabase, reminder.id, "blocked", reason);
         summary.errors += 1;
       }
     }
@@ -312,7 +350,9 @@ async function runReminderWorker(trigger: "http" | "cron") {
     console.error("reminder.worker_failed", error);
     await emitAlert("REMINDER_WORKER_ERROR", {
       trigger,
-      error: error instanceof Error ? error.message : String(error ?? 'unknown_error'),
+      error: error instanceof Error
+        ? error.message
+        : String(error ?? "unknown_error"),
     });
     throw error;
   }
@@ -326,7 +366,9 @@ serve(async (_request) => {
       status: 200,
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error ?? 'unknown_error');
+    const message = error instanceof Error
+      ? error.message
+      : String(error ?? "unknown_error");
     return new Response(message, { status: 500 });
   }
 });
@@ -339,7 +381,9 @@ if (typeof denoWithCron.cron === "function" && CRON_ENABLED) {
       console.error("reminder.cron_failed", error);
       await emitAlert("REMINDER_CRON_ERROR", {
         schedule: CRON_EXPR,
-        error: error instanceof Error ? error.message : String(error ?? 'unknown'),
+        error: error instanceof Error
+          ? error.message
+          : String(error ?? "unknown"),
       });
     }
   });

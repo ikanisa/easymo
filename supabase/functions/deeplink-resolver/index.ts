@@ -79,10 +79,13 @@ serve(async (req) => {
       );
     }
   } else {
-    return new Response(JSON.stringify({ ok: false, error: "method_not_allowed" }), {
-      status: 405,
-      headers: { ...corsHeaders, "content-type": "application/json" },
-    });
+    return new Response(
+      JSON.stringify({ ok: false, error: "method_not_allowed" }),
+      {
+        status: 405,
+        headers: { ...corsHeaders, "content-type": "application/json" },
+      },
+    );
   }
 
   const token = normalizeToken(rawToken);

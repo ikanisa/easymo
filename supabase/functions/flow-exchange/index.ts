@@ -261,10 +261,6 @@ async function handleRequest(req: Request): Promise<Response> {
       status: 400,
       headers: { "Content-Type": "application/json" },
     });
-    return new Response(JSON.stringify({ error: "invalid_payload" }), {
-      status: 400,
-      headers: { "Content-Type": "application/json" },
-    });
   }
 
   const isEncrypted = isEncryptedEnvelope(body);
@@ -329,11 +325,6 @@ async function handleRequest(req: Request): Promise<Response> {
         headers: { "Content-Type": "application/json" },
       });
     }
-    logFlow("response", { status: 400, duration_ms: Date.now() - started });
-    return new Response(JSON.stringify({ error: "invalid_payload" }), {
-      status: 400,
-      headers: { "Content-Type": "application/json" },
-    });
   }
 
   let payload: ActionPayload;

@@ -185,31 +185,36 @@ async function fetchActiveMembership(
   };
 }
 
-async function fetchIkiminaQuorum(client: SupabaseClient, ikiminaId: string): Promise<LoanQuorum> {
+async function fetchIkiminaQuorum(
+  client: SupabaseClient,
+  ikiminaId: string,
+): Promise<LoanQuorum> {
   const { data, error } = await client
-    .from('ibimina_settings')
-    .select('quorum')
-    .eq('ikimina_id', ikiminaId)
+    .from("ibimina_settings")
+    .select("quorum")
+    .eq("ikimina_id", ikiminaId)
     .maybeSingle();
   if (error) {
-    console.error('baskets.quorum_fetch_failed', error);
+    console.error("baskets.quorum_fetch_failed", error);
     return { threshold: null, roles: [] };
   }
   return parseLoanQuorum(data?.quorum ?? null);
 }
 
 function parseLoanQuorum(value: unknown): LoanQuorum {
-  if (!value || typeof value !== 'object') {
+  if (!value || typeof value !== "object") {
     return { threshold: null, roles: [] };
   }
   const record = value as { threshold?: unknown; roles?: unknown };
-  const threshold = typeof record.threshold === 'number'
+  const threshold = typeof record.threshold === "number"
     ? record.threshold
     : record.threshold != null && Number.isFinite(Number(record.threshold))
     ? Number(record.threshold)
     : null;
   const roles = Array.isArray(record.roles)
-    ? record.roles.filter((role): role is string => typeof role === 'string' && role.trim().length > 0).map((role) => role.trim())
+    ? record.roles.filter((role): role is string =>
+      typeof role === "string" && role.trim().length > 0
+    ).map((role) => role.trim())
     : [];
   return { threshold, roles };
 }
@@ -217,13 +222,21 @@ function parseLoanQuorum(value: unknown): LoanQuorum {
 function approvalsSatisfied(
   endorsements: Array<{ vote: string; role?: string | null }>,
   quorum: LoanQuorum,
-): { approvalsMet: boolean; rolesMet: boolean; pending: number; approvals: number; rejections: number } {
-  const approvals = endorsements.filter((row) => row.vote === 'approve').length;
-  const rejections = endorsements.filter((row) => row.vote === 'reject').length;
-  const pending = endorsements.filter((row) => row.vote === 'pending').length;
+): {
+  approvalsMet: boolean;
+  rolesMet: boolean;
+  pending: number;
+  approvals: number;
+  rejections: number;
+} {
+  const approvals = endorsements.filter((row) => row.vote === "approve").length;
+  const rejections = endorsements.filter((row) => row.vote === "reject").length;
+  const pending = endorsements.filter((row) => row.vote === "pending").length;
   const requiredThreshold = quorum.threshold ?? endorsements.length;
-  const rolesMet = quorum.roles.length === 0
-    || quorum.roles.every((role) => endorsements.some((row) => row.role === role && row.vote === 'approve'));
+  const rolesMet = quorum.roles.length === 0 ||
+    quorum.roles.every((role) =>
+      endorsements.some((row) => row.role === role && row.vote === "approve")
+    );
   const approvalsMet = approvals >= requiredThreshold;
   return { approvalsMet, rolesMet, pending, approvals, rejections };
 }
@@ -245,7 +258,7 @@ async function isLoansFeatureEnabled(client: SupabaseClient): Promise<boolean> {
 }
 
 function parseNumeric(input: string): number | null {
-  const numeric = input.replace(/[^0-9.,]/g, '').replace(/,/g, '');
+  const numeric = input.replace(/[^0-9.,]/g, "").replace(/,/g, "");
   if (!numeric) return null;
   const value = Number.parseFloat(numeric);
   return Number.isFinite(value) ? value : null;
@@ -312,14 +325,17 @@ export async function startBaskets(
   const menuKey = hasMembership ? MENU_KEYS.MEMBER : MENU_KEYS.NON_MEMBER;
   const dynamicRows = await loadMenuEntries(ctx.supabase, menuKey);
 
-  const rows = (dynamicRows.length
-    ? dynamicRows
-    : hasMembership ? FALLBACK_MEMBER_ROWS : FALLBACK_NON_MEMBER_ROWS)
-    .map<MenuEntry>((entry) => ({
-      id: entry.id,
-      title: entry.title,
-      description: entry.description,
-    }));
+  const rows =
+    (dynamicRows.length
+      ? dynamicRows
+      : hasMembership
+      ? FALLBACK_MEMBER_ROWS
+      : FALLBACK_NON_MEMBER_ROWS)
+      .map<MenuEntry>((entry) => ({
+        id: entry.id,
+        title: entry.title,
+        description: entry.description,
+      }));
 
   await setState(ctx.supabase, ctx.profileId, {
     key: STATES.MENU,
@@ -391,17 +407,23 @@ export async function handleBasketButton(
       return true;
     case IDS.BASKET_LOAN_APPROVE_VOTE:
       if (state.key === STATES.LOAN_APPROVAL_DECISION) {
-        return await submitLoanVote(ctx, state, 'approve');
+        return await submitLoanVote(ctx, state, "approve");
       }
       return false;
     case IDS.BASKET_LOAN_REJECT_VOTE:
       if (state.key === STATES.LOAN_APPROVAL_DECISION) {
-        return await submitLoanVote(ctx, state, 'reject');
+        return await submitLoanVote(ctx, state, "reject");
       }
       return false;
     case IDS.BASKET_LOAN_BACK:
-      if (state.key === STATES.LOAN_APPROVAL_DECISION || state.key === STATES.LOAN_APPROVAL_SELECT) {
-        return await startLoanApprovals(ctx, { key: STATES.LOAN_APPROVAL_SELECT, data: state.data });
+      if (
+        state.key === STATES.LOAN_APPROVAL_DECISION ||
+        state.key === STATES.LOAN_APPROVAL_SELECT
+      ) {
+        return await startLoanApprovals(ctx, {
+          key: STATES.LOAN_APPROVAL_SELECT,
+          data: state.data,
+        });
       }
       if (ctx.profileId) {
         await clearState(ctx.supabase, ctx.profileId);
@@ -1316,7 +1338,9 @@ async function handleLoanAmount(
 
   await sendButtonsMessage(
     ctx,
-    `Purpose of the loan request for ${formatLoanAmount(amount, updated.currency ?? 'RWF')}?`,
+    `Purpose of the loan request for ${
+      formatLoanAmount(amount, updated.currency ?? "RWF")
+    }?`,
     [{ id: IDS.BASKET_LOAN_CANCEL, title: "Cancel" }],
     { emoji: "📝" },
   );
@@ -1392,8 +1416,8 @@ async function handleLoanTenure(
   };
 
   const summary = [
-    `Amount: ${formatLoanAmount(updated.amount!, updated.currency ?? 'RWF')}`,
-    `Purpose: ${updated.purpose ?? '—'}`,
+    `Amount: ${formatLoanAmount(updated.amount!, updated.currency ?? "RWF")}`,
+    `Purpose: ${updated.purpose ?? "—"}`,
     `Tenure: ${tenure} month(s)`,
   ].join("\n");
 
@@ -1414,7 +1438,10 @@ async function handleLoanTenure(
   return true;
 }
 
-async function submitLoanRequest(ctx: RouterContext, state: BasketState): Promise<boolean> {
+async function submitLoanRequest(
+  ctx: RouterContext,
+  state: BasketState,
+): Promise<boolean> {
   if (!ctx.profileId || state.key !== STATES.LOAN_CONFIRM) return false;
   const request = state.data as LoanRequestState | undefined;
   if (!request?.membershipId || !request.amount || !request.tenure) {
@@ -1459,7 +1486,7 @@ async function submitLoanRequest(ctx: RouterContext, state: BasketState): Promis
         loan_id: inserted.id,
         committee_member_id: member.member_id,
         role: member.role,
-        vote: 'pending',
+        vote: "pending",
       }));
 
       const { error: endorsementError } = await ctx.supabase
@@ -1467,7 +1494,10 @@ async function submitLoanRequest(ctx: RouterContext, state: BasketState): Promis
         .upsert(payload, { onConflict: "loan_id,committee_member_id" });
 
       if (endorsementError) {
-        console.error("baskets.loan_endorsements_upsert_failed", endorsementError);
+        console.error(
+          "baskets.loan_endorsements_upsert_failed",
+          endorsementError,
+        );
       }
     }
 
@@ -1475,7 +1505,9 @@ async function submitLoanRequest(ctx: RouterContext, state: BasketState): Promis
 
     await sendButtonsMessage(
       ctx,
-      `Loan request submitted for ${formatLoanAmount(request.amount, currency)}. Committee members will review and the SACCO will follow up soon.`,
+      `Loan request submitted for ${
+        formatLoanAmount(request.amount, currency)
+      }. Committee members will review and the SACCO will follow up soon.`,
       [{ id: IDS.BASKET_MY, title: "📋 My baskets" }],
     );
     return true;
@@ -1514,9 +1546,12 @@ async function showLoanStatus(ctx: RouterContext): Promise<boolean> {
     }
 
     const lines = data.map((loan) => {
-      const amount = formatLoanAmount(Number(loan.principal ?? 0), loan.currency ?? 'RWF');
-      const status = loan.status ?? 'pending';
-      const reason = loan.status_reason ? ` — ${loan.status_reason}` : '';
+      const amount = formatLoanAmount(
+        Number(loan.principal ?? 0),
+        loan.currency ?? "RWF",
+      );
+      const status = loan.status ?? "pending";
+      const reason = loan.status_reason ? ` — ${loan.status_reason}` : "";
       return `${amount}: ${status}${reason}`;
     });
 
@@ -1590,7 +1625,9 @@ async function startLoanApprovals(
 
     if (error) throw error;
 
-    const pending = (data ?? []).filter((row) => row.vote === 'pending' && row.sacco_loans);
+    const pending = (data ?? []).filter((row) =>
+      row.vote === "pending" && row.sacco_loans
+    );
 
     if (!pending.length) {
       await sendButtonsMessage(
@@ -1610,18 +1647,28 @@ async function startLoanApprovals(
           | undefined;
         const loan = Array.isArray(rawLoan) ? rawLoan[0] : rawLoan;
         if (!loan) return null;
-        const principal = Number((loan as { principal?: unknown }).principal ?? 0);
-        const currency = (loan as { currency?: unknown }).currency as string | null;
-        const purpose = (loan as { purpose?: unknown }).purpose as string | null;
-        const member = (loan as { member?: { profile?: { display_name?: string | null } | null } }).member;
-        const displayName = member?.profile?.display_name ?? 'Member';
+        const principal = Number(
+          (loan as { principal?: unknown }).principal ?? 0,
+        );
+        const currency = (loan as { currency?: unknown }).currency as
+          | string
+          | null;
+        const purpose = (loan as { purpose?: unknown }).purpose as
+          | string
+          | null;
+        const member = (loan as {
+          member?: { profile?: { display_name?: string | null } | null };
+        }).member;
+        const displayName = member?.profile?.display_name ?? "Member";
         return {
           id: `loan:${(loan as { id?: string }).id}`,
-          title: formatLoanAmount(principal, currency ?? 'RWF'),
-          description: `${displayName} • ${purpose ?? 'General use'}`,
+          title: formatLoanAmount(principal, currency ?? "RWF"),
+          description: `${displayName} • ${purpose ?? "General use"}`,
         };
       })
-      .filter(Boolean) as Array<{ id: string; title: string; description: string }>;
+      .filter(Boolean) as Array<
+        { id: string; title: string; description: string }
+      >;
 
     if (!rows.length) {
       await sendButtonsMessage(
@@ -1668,7 +1715,7 @@ async function startLoanApprovals(
 async function submitLoanVote(
   ctx: RouterContext,
   state: BasketState,
-  vote: 'approve' | 'reject',
+  vote: "approve" | "reject",
 ): Promise<boolean> {
   if (!ctx.profileId) return false;
   if (state.key !== STATES.LOAN_APPROVAL_DECISION) return false;
@@ -1686,7 +1733,7 @@ async function submitLoanVote(
       .from("sacco_loan_endorsements")
       .update({
         vote,
-        notes: vote === 'reject' ? 'Committee rejection via WhatsApp' : null,
+        notes: vote === "reject" ? "Committee rejection via WhatsApp" : null,
       })
       .eq("loan_id", loanId)
       .eq("committee_member_id", membershipId);
@@ -1698,44 +1745,46 @@ async function submitLoanVote(
 
     if (error) throw error;
 
-    const quorum = data.quorum ?? await fetchIkiminaQuorum(ctx.supabase, data.ikiminaId);
+    const quorum = data.quorum ??
+      await fetchIkiminaQuorum(ctx.supabase, data.ikiminaId);
     data.quorum = quorum;
 
     const evaluation = approvalsSatisfied(endorsements ?? [], quorum);
-    const { approvalsMet, rolesMet, pending, approvals, rejections } = evaluation;
+    const { approvalsMet, rolesMet, pending, approvals, rejections } =
+      evaluation;
 
     const { data: currentLoan } = await ctx.supabase
-      .from('sacco_loans')
-      .select('status')
-      .eq('id', loanId)
+      .from("sacco_loans")
+      .select("status")
+      .eq("id", loanId)
       .maybeSingle();
 
     if (rejections > 0) {
       await ctx.supabase
         .from("sacco_loans")
         .update({
-          status: 'rejected',
-          status_reason: 'Committee rejection',
+          status: "rejected",
+          status_reason: "Committee rejection",
           committee_completed_at: new Date().toISOString(),
         })
         .eq("id", loanId);
     } else {
-      if (currentLoan?.status === 'pending' && approvals > 0) {
+      if (currentLoan?.status === "pending" && approvals > 0) {
         await ctx.supabase
-          .from('sacco_loans')
+          .from("sacco_loans")
           .update({
-            status: 'endorsing',
-            status_reason: 'Committee review in progress',
+            status: "endorsing",
+            status_reason: "Committee review in progress",
           })
-          .eq('id', loanId);
+          .eq("id", loanId);
       }
 
       if (rolesMet && approvalsMet && pending === 0) {
         await ctx.supabase
           .from("sacco_loans")
           .update({
-            status: 'endorsing',
-            status_reason: 'Committee endorsed',
+            status: "endorsing",
+            status_reason: "Committee endorsed",
             committee_completed_at: new Date().toISOString(),
           })
           .eq("id", loanId);
@@ -1744,7 +1793,7 @@ async function submitLoanVote(
 
     await sendButtonsMessage(
       ctx,
-      vote === 'approve'
+      vote === "approve"
         ? "Approval recorded. Thank you for voting."
         : "Rejection recorded. SACCO staff will review the decision.",
       [{ id: IDS.BASKET_LOAN_APPROVALS, title: "Next loan" }],

@@ -1,20 +1,27 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 import {
-  normalizeE164,
   buildNumberLookupCandidates,
+  normalizeE164,
 } from "../_shared/phone.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ??
+  "";
 const BATCH_SIZE = (() => {
   const value = Number(Deno.env.get("MOMO_ALLOCATOR_BATCH_SIZE") ?? "10");
   return Number.isFinite(value) && value > 0 ? Math.min(value, 50) : 10;
 })();
-const REQUIRE_TXN_ID = (Deno.env.get("MOMO_ALLOCATOR_REQUIRE_TXN_ID") ?? "true").toLowerCase() !== "false";
-const MIN_CONFIDENCE_FOR_AUTO = Number(Deno.env.get("MOMO_ALLOCATOR_MIN_CONFIDENCE") ?? "0.6");
+const REQUIRE_TXN_ID =
+  (Deno.env.get("MOMO_ALLOCATOR_REQUIRE_TXN_ID") ?? "true").toLowerCase() !==
+    "false";
+const MIN_CONFIDENCE_FOR_AUTO = Number(
+  Deno.env.get("MOMO_ALLOCATOR_MIN_CONFIDENCE") ?? "0.6",
+);
 
 if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-  throw new Error("SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be configured for momo-allocator");
+  throw new Error(
+    "SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be configured for momo-allocator",
+  );
 }
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
@@ -129,7 +136,9 @@ Deno.serve(async (request) => {
           break;
       }
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error ?? "unknown_error");
+      const message = error instanceof Error
+        ? error.message
+        : String(error ?? "unknown_error");
       summary.errors.push({ inboxId: inboxRow.id, message });
       await markInboxFailure(inboxRow, message);
     }
@@ -141,7 +150,9 @@ Deno.serve(async (request) => {
 async function fetchPending(limit: number): Promise<InboxRow[] | Error> {
   const { data, error } = await supabase
     .from("momo_sms_inbox")
-    .select("id, raw_text, msisdn_raw, received_at, ingest_source, attempts, last_error")
+    .select(
+      "id, raw_text, msisdn_raw, received_at, ingest_source, attempts, last_error",
+    )
     .is("processed_at", null)
     .order("received_at", { ascending: true })
     .limit(limit);
@@ -154,7 +165,9 @@ async function fetchPending(limit: number): Promise<InboxRow[] | Error> {
   return (data ?? []) as InboxRow[];
 }
 
-async function processInboxRow(inboxRow: InboxRow): Promise<"allocated" | "unmatched" | "duplicate" | "skipped"> {
+async function processInboxRow(
+  inboxRow: InboxRow,
+): Promise<"allocated" | "unmatched" | "duplicate" | "skipped"> {
   const parsed = parseMomoMessage(inboxRow);
 
   const parsedInsert = await insertParsedTransaction(inboxRow, parsed);
@@ -211,7 +224,12 @@ async function processInboxRow(inboxRow: InboxRow): Promise<"allocated" | "unmat
     return "unmatched";
   }
 
-  const ledgerResult = await allocateContribution(inboxRow, parsed, parsedId, membership);
+  const ledgerResult = await allocateContribution(
+    inboxRow,
+    parsed,
+    parsedId,
+    membership,
+  );
   if (ledgerResult === "duplicate") {
     await markInboxSuccess(inboxRow, "duplicate_txn");
     return "duplicate";
@@ -265,7 +283,10 @@ function parseMomoMessage(inboxRow: InboxRow): ParsedResult {
   };
 }
 
-function normalizeFromInputs(rawText: string, fallback: string | null): string | null {
+function normalizeFromInputs(
+  rawText: string,
+  fallback: string | null,
+): string | null {
   const candidates: string[] = [];
   if (fallback) candidates.push(fallback);
   const extracted = extractMsisdn(rawText);
@@ -278,7 +299,8 @@ function normalizeFromInputs(rawText: string, fallback: string | null): string |
 }
 
 function extractAmount(text: string): number | null {
-  const amountRegex = /(?:RWF|FRW|FR|RFr|UGX|KES|USD)\s*([0-9]{1,3}(?:[,\s][0-9]{3})*(?:\.[0-9]+)?|[0-9]+(?:\.[0-9]+)?)/i;
+  const amountRegex =
+    /(?:RWF|FRW|FR|RFr|UGX|KES|USD)\s*([0-9]{1,3}(?:[,\s][0-9]{3})*(?:\.[0-9]+)?|[0-9]+(?:\.[0-9]+)?)/i;
   const match = text.match(amountRegex);
   if (!match) return null;
   const numeric = match[1].replace(/[\s,]/g, "");
@@ -293,12 +315,16 @@ function extractCurrency(text: string): string | null {
 }
 
 function extractTxnId(text: string): string | null {
-  const match = text.match(/(?:TxnID|Transaction ID|Trans ID|Ref[:\s]|Reference[:\s])\s*([A-Za-z0-9-]+)/i);
+  const match = text.match(
+    /(?:TxnID|Transaction ID|Trans ID|Ref[:\s]|Reference[:\s])\s*([A-Za-z0-9-]+)/i,
+  );
   return match ? match[1].toUpperCase() : null;
 }
 
 function extractSenderName(text: string): string | null {
-  const match = text.match(/from\s+([A-Za-z][A-Za-z\s'.-]{2,})\s+(?:\+?\d|account|Acct)/i);
+  const match = text.match(
+    /from\s+([A-Za-z][A-Za-z\s'.-]{2,})\s+(?:\+?\d|account|Acct)/i,
+  );
   if (!match) return null;
   return match[1].trim();
 }
@@ -310,7 +336,9 @@ function extractMsisdn(text: string): string | null {
 
 function extractTimestamp(text: string, fallback: string): Date {
   const dateMatch = text.match(/on\s*(\d{1,2}[\/-]\d{1,2}[\/-]\d{2,4})/i);
-  const timeMatch = text.match(/(?:at|@)\s*(\d{1,2}:\d{2}(?::\d{2})?\s*(?:AM|PM)?)/i);
+  const timeMatch = text.match(
+    /(?:at|@)\s*(\d{1,2}:\d{2}(?::\d{2})?\s*(?:AM|PM)?)/i,
+  );
   if (dateMatch) {
     const rawDate = dateMatch[1].replace(/-/g, "/");
     const dateParts = rawDate.split("/");
@@ -320,7 +348,9 @@ function extractTimestamp(text: string, fallback: string): Date {
         year = `${year < "50" ? "20" : "19"}${year}`;
       }
       const time = timeMatch ? normalizeTime(timeMatch[1]) : "00:00:00";
-      const isoCandidate = `${year.padStart(4, "0")}-${month.padStart(2, "0")}-${day.padStart(2, "0") }T${time}Z`;
+      const isoCandidate = `${year.padStart(4, "0")}-${
+        month.padStart(2, "0")
+      }-${day.padStart(2, "0")}T${time}Z`;
       const parsed = new Date(isoCandidate);
       if (!Number.isNaN(parsed.getTime())) {
         return parsed;
@@ -336,7 +366,9 @@ function extractTimestamp(text: string, fallback: string): Date {
 
 function normalizeTime(raw: string): string {
   const trimmed = raw.trim();
-  const ampmMatch = trimmed.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(AM|PM)$/i);
+  const ampmMatch = trimmed.match(
+    /^(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(AM|PM)$/i,
+  );
   if (ampmMatch) {
     let hours = Number(ampmMatch[1]) % 12;
     const minutes = ampmMatch[2];
@@ -357,7 +389,9 @@ function normalizeTime(raw: string): string {
 async function insertParsedTransaction(
   inboxRow: InboxRow,
   parsed: ParsedResult,
-): Promise<{ status: "duplicate" | "skipped" | "inserted"; parsedId?: string }> {
+): Promise<
+  { status: "duplicate" | "skipped" | "inserted"; parsedId?: string }
+> {
   if (parsed.amount === null && !parsed.txnId) {
     parsed.reason = "parse_incomplete";
     return { status: "skipped" };
@@ -376,71 +410,91 @@ async function insertParsedTransaction(
   };
 
   const { data, error } = await supabase
-    .from('momo_parsed_txns')
+    .from("momo_parsed_txns")
     .insert(insertPayload)
-    .select('id')
+    .select("id")
     .single();
 
   if (error) {
-    if (error.code === '23505') {
-      return { status: 'duplicate' };
+    if (error.code === "23505") {
+      return { status: "duplicate" };
     }
-    console.error('momo_allocator.parsed_insert_failed', { inboxId: inboxRow.id, error });
-    throw new Error('parsed_insert_failed');
+    console.error("momo_allocator.parsed_insert_failed", {
+      inboxId: inboxRow.id,
+      error,
+    });
+    throw new Error("parsed_insert_failed");
   }
 
-  return { status: 'inserted', parsedId: data?.id };
+  return { status: "inserted", parsedId: data?.id };
 }
 
-async function createUnmatched(parsedId: string | undefined, reason: string, suggestedMemberId: string | null) {
+async function createUnmatched(
+  parsedId: string | undefined,
+  reason: string,
+  suggestedMemberId: string | null,
+) {
   if (!parsedId) return;
   const payload = {
     parsed_id: parsedId,
     reason,
     suggested_member_id: suggestedMemberId,
-    status: 'open',
+    status: "open",
   };
   const { error } = await supabase
-    .from('momo_unmatched')
+    .from("momo_unmatched")
     .insert(payload);
   if (error) {
-    console.error('momo_allocator.unmatched_insert_failed', { parsedId, error });
+    console.error("momo_allocator.unmatched_insert_failed", {
+      parsedId,
+      error,
+    });
   }
 }
 
-async function findProfileByMsisdn(msisdn: string): Promise<{ user_id: string; whatsapp_e164: string } | null> {
+async function findProfileByMsisdn(
+  msisdn: string,
+): Promise<{ user_id: string; whatsapp_e164: string } | null> {
   const candidates = buildNumberLookupCandidates(msisdn);
   const { data, error } = await supabase
-    .from('profiles')
-    .select('user_id, whatsapp_e164')
-    .in('whatsapp_e164', candidates)
+    .from("profiles")
+    .select("user_id, whatsapp_e164")
+    .in("whatsapp_e164", candidates)
     .limit(5);
   if (error) {
-    console.error('momo_allocator.profile_lookup_failed', error);
+    console.error("momo_allocator.profile_lookup_failed", error);
     return null;
   }
   if (!data || data.length === 0) return null;
   if (data.length > 1) {
-    console.warn('momo_allocator.profile_multiple_matches', { msisdn, count: data.length });
+    console.warn("momo_allocator.profile_multiple_matches", {
+      msisdn,
+      count: data.length,
+    });
     return null;
   }
   return data[0] as { user_id: string; whatsapp_e164: string };
 }
 
-async function findActiveMembership(userId: string): Promise<{ id: string; ikimina_id: string } | null> {
+async function findActiveMembership(
+  userId: string,
+): Promise<{ id: string; ikimina_id: string } | null> {
   const { data, error } = await supabase
-    .from('ibimina_members')
-    .select('id, ikimina_id, status')
-    .eq('user_id', userId)
-    .in('status', ['active'])
+    .from("ibimina_members")
+    .select("id, ikimina_id, status")
+    .eq("user_id", userId)
+    .in("status", ["active"])
     .limit(5);
   if (error) {
-    console.error('momo_allocator.membership_lookup_failed', error);
+    console.error("momo_allocator.membership_lookup_failed", error);
     return null;
   }
   if (!data || data.length === 0) return null;
   if (data.length > 1) {
-    console.warn('momo_allocator.membership_multiple', { userId, count: data.length });
+    console.warn("momo_allocator.membership_multiple", {
+      userId,
+      count: data.length,
+    });
     return null;
   }
   return data[0] as { id: string; ikimina_id: string };
@@ -449,7 +503,7 @@ async function findActiveMembership(userId: string): Promise<{ id: string; ikimi
 function computeCycle(date: Date | null): string {
   const effective = date ?? new Date();
   const year = effective.getUTCFullYear();
-  const month = (effective.getUTCMonth() + 1).toString().padStart(2, '0');
+  const month = (effective.getUTCMonth() + 1).toString().padStart(2, "0");
   return `${year}${month}`;
 }
 
@@ -458,7 +512,7 @@ async function allocateContribution(
   parsed: ParsedResult,
   parsedId: string,
   membership: { id: string; ikimina_id: string },
-): Promise<'success' | 'duplicate'> {
+): Promise<"success" | "duplicate"> {
   const cycle = computeCycle(parsed.txnTimestamp);
   const amount = parsed.amount ?? 0;
 
@@ -469,8 +523,10 @@ async function allocateContribution(
     currency: parsed.currency,
     cycle_yyyymm: cycle,
     txn_id: parsed.txnId,
-    allocated_at: parsed.txnTimestamp ? parsed.txnTimestamp.toISOString() : new Date().toISOString(),
-    source: 'sms',
+    allocated_at: parsed.txnTimestamp
+      ? parsed.txnTimestamp.toISOString()
+      : new Date().toISOString(),
+    source: "sms",
     meta: {
       inbox_id: inboxRow.id,
       parsed_id: parsedId,
@@ -482,20 +538,23 @@ async function allocateContribution(
   };
 
   const { data, error } = await supabase
-    .from('contributions_ledger')
+    .from("contributions_ledger")
     .insert(ledgerPayload)
-    .select('id')
+    .select("id")
     .single();
 
   if (error) {
-    if (error.code === '23505') {
-      return 'duplicate';
+    if (error.code === "23505") {
+      return "duplicate";
     }
-    console.error('momo_allocator.ledger_insert_failed', { inboxId: inboxRow.id, error });
-    throw new Error('ledger_insert_failed');
+    console.error("momo_allocator.ledger_insert_failed", {
+      inboxId: inboxRow.id,
+      error,
+    });
+    throw new Error("ledger_insert_failed");
   }
 
-  await supabase.rpc('upsert_contribution_cycle', {
+  await supabase.rpc("upsert_contribution_cycle", {
     _ikimina_id: membership.ikimina_id,
     _yyyymm: cycle,
     _amount: amount,
@@ -506,40 +565,46 @@ async function allocateContribution(
     ledger_id: data?.id ?? null,
   };
   await supabase
-    .from('momo_parsed_txns')
+    .from("momo_parsed_txns")
     .update({
       parsed_json: updatedMeta,
     })
-    .eq('id', parsedId);
+    .eq("id", parsedId);
 
-  return 'success';
+  return "success";
 }
 
 async function markInboxSuccess(inboxRow: InboxRow, note: string | null) {
   const attempts = (inboxRow.attempts ?? 0) + 1;
   const { error } = await supabase
-    .from('momo_sms_inbox')
+    .from("momo_sms_inbox")
     .update({
       processed_at: new Date().toISOString(),
       last_error: note,
       attempts,
     })
-    .eq('id', inboxRow.id);
+    .eq("id", inboxRow.id);
   if (error) {
-    console.error('momo_allocator.mark_success_failed', { inboxId: inboxRow.id, error });
+    console.error("momo_allocator.mark_success_failed", {
+      inboxId: inboxRow.id,
+      error,
+    });
   }
 }
 
 async function markInboxFailure(inboxRow: InboxRow, note: string) {
   const attempts = (inboxRow.attempts ?? 0) + 1;
   const { error } = await supabase
-    .from('momo_sms_inbox')
+    .from("momo_sms_inbox")
     .update({
       last_error: note,
       attempts,
     })
-    .eq('id', inboxRow.id);
+    .eq("id", inboxRow.id);
   if (error) {
-    console.error('momo_allocator.mark_failure_failed', { inboxId: inboxRow.id, error });
+    console.error("momo_allocator.mark_failure_failed", {
+      inboxId: inboxRow.id,
+      error,
+    });
   }
 }

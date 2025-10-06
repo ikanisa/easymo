@@ -1,10 +1,15 @@
-import { createClient, type SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
+import {
+  createClient,
+  type SupabaseClient,
+} from "https://esm.sh/@supabase/supabase-js@2.45.4";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ??
+  "";
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY") ?? "";
 const OPENAI_MODEL = Deno.env.get("OPENAI_VISION_MODEL") ?? "gpt-4o-mini";
-const OPENAI_BASE_URL = Deno.env.get("OPENAI_BASE_URL") ?? "https://api.openai.com/v1";
+const OPENAI_BASE_URL = Deno.env.get("OPENAI_BASE_URL") ??
+  "https://api.openai.com/v1";
 const OCR_API_KEY = Deno.env.get("IBIMINA_OCR_API_KEY") ?? "";
 const STORAGE_BUCKET = Deno.env.get("KYC_STORAGE_BUCKET") ?? "kyc-documents";
 const SIGNED_URL_TTL_SECONDS = (() => {
@@ -17,7 +22,9 @@ if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
   throw new Error("SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required");
 }
 if (!OPENAI_API_KEY) {
-  console.warn("OPENAI_API_KEY is not set; ibimina-ocr will fail until configured");
+  console.warn(
+    "OPENAI_API_KEY is not set; ibimina-ocr will fail until configured",
+  );
 }
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
@@ -126,9 +133,11 @@ async function uploadImage(
 
   const extension = guessExtension(image.mimeType);
   const safeUserSegment = normaliseUserSegment(userId);
-  const fileName = image.filename?.replace(/[^a-zA-Z0-9_.-]/g, "") || `${suffix}.${extension}`;
+  const fileName = image.filename?.replace(/[^a-zA-Z0-9_.-]/g, "") ||
+    `${suffix}.${extension}`;
   const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-  const path = `${safeUserSegment}/${timestamp}-${suffix}-${crypto.randomUUID()}.${extension}`;
+  const path =
+    `${safeUserSegment}/${timestamp}-${suffix}-${crypto.randomUUID()}.${extension}`;
 
   const { error: uploadError } = await client.storage
     .from(STORAGE_BUCKET)
@@ -149,8 +158,9 @@ async function uploadImage(
     throw new Error(`storage_signed_url_failed_${suffix}`);
   }
 
-  const signedUrl = (signed as { signedUrl?: string; signedURL?: string }).signedUrl
-    ?? (signed as { signedUrl?: string; signedURL?: string }).signedURL;
+  const signedUrl =
+    (signed as { signedUrl?: string; signedURL?: string }).signedUrl ??
+      (signed as { signedUrl?: string; signedURL?: string }).signedURL;
   if (!signedUrl) {
     throw new Error(`storage_signed_url_missing_${suffix}`);
   }
@@ -169,7 +179,8 @@ async function runOpenAiExtraction(
   const userContent: Array<Record<string, unknown>> = [
     {
       type: "input_text",
-      text: "Extract the requested fields from this national identification card.",
+      text:
+        "Extract the requested fields from this national identification card.",
     },
     {
       type: "input_image",
@@ -218,13 +229,23 @@ async function runOpenAiExtraction(
             properties: {
               full_name: { type: "string" },
               id_number: { type: "string" },
-              date_of_birth: { type: ["string", "null"], description: "YYYY-MM-DD" },
+              date_of_birth: {
+                type: ["string", "null"],
+                description: "YYYY-MM-DD",
+              },
               place_of_issue: { type: ["string", "null"] },
-              expiry_date: { type: ["string", "null"], description: "YYYY-MM-DD" },
+              expiry_date: {
+                type: ["string", "null"],
+                description: "YYYY-MM-DD",
+              },
               confidence: { type: ["number", "null"], minimum: 0, maximum: 1 },
               field_confidence: {
                 type: ["object", "null"],
-                additionalProperties: { type: "number", minimum: 0, maximum: 1 },
+                additionalProperties: {
+                  type: "number",
+                  minimum: 0,
+                  maximum: 1,
+                },
               },
             },
             required: ["full_name", "id_number"],
@@ -237,7 +258,9 @@ async function runOpenAiExtraction(
 
   if (!response.ok) {
     const errorPayload = await response.text();
-    throw new Error(`openai_http_${response.status}_${truncate(errorPayload, 200)}`);
+    throw new Error(
+      `openai_http_${response.status}_${truncate(errorPayload, 200)}`,
+    );
   }
 
   const json = await response.json();
@@ -262,10 +285,15 @@ function extractJsonPayload(responseJson: Record<string, unknown>): string {
       if (Array.isArray(content)) {
         for (const entry of content) {
           const entryRecord = entry as Record<string, unknown>;
-          if (entryRecord.type === "output_text" && typeof entryRecord.text === "string") {
+          if (
+            entryRecord.type === "output_text" &&
+            typeof entryRecord.text === "string"
+          ) {
             return entryRecord.text;
           }
-          if (entryRecord.type === "text" && typeof entryRecord.text === "string") {
+          if (
+            entryRecord.type === "text" && typeof entryRecord.text === "string"
+          ) {
             return entryRecord.text;
           }
         }
@@ -311,7 +339,10 @@ function normaliseDate(value: unknown): Nullable<string> {
     const match = candidate.match(/^(\d{4})[-/](\d{2})[-/](\d{2})$/);
     if (match) {
       const [_, y, m, d] = match;
-      if (Number(y) > 1900 && Number(m) >= 1 && Number(m) <= 12 && Number(d) >= 1 && Number(d) <= 31) {
+      if (
+        Number(y) > 1900 && Number(m) >= 1 && Number(m) <= 12 &&
+        Number(d) >= 1 && Number(d) <= 31
+      ) {
         return `${y}-${m}-${d}`;
       }
     }
@@ -329,8 +360,8 @@ Deno.serve(async (request) => {
   }
 
   if (OCR_API_KEY) {
-    const supplied = request.headers.get("x-api-key")
-      ?? request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
+    const supplied = request.headers.get("x-api-key") ??
+      request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
     if (supplied !== OCR_API_KEY) {
       return jsonResponse({ ok: false, error: "unauthorized" }, 401);
     }
@@ -351,16 +382,28 @@ Deno.serve(async (request) => {
   if (!front) {
     return jsonResponse({ ok: false, error: "invalid_front_image" }, 400);
   }
-  const back = payload.backImage ? resolveImagePayload(payload.backImage, "back") : null;
+  const back = payload.backImage
+    ? resolveImagePayload(payload.backImage, "back")
+    : null;
   if (payload.backImage && !back) {
     return jsonResponse({ ok: false, error: "invalid_back_image" }, 400);
   }
 
   try {
-    const frontUpload = await uploadImage(supabase, front, payload.userId, "front");
-    const backUpload = back ? await uploadImage(supabase, back, payload.userId, "back") : null;
+    const frontUpload = await uploadImage(
+      supabase,
+      front,
+      payload.userId,
+      "front",
+    );
+    const backUpload = back
+      ? await uploadImage(supabase, back, payload.userId, "back")
+      : null;
 
-    const { extracted, raw } = await runOpenAiExtraction(front, back ?? undefined);
+    const { extracted, raw } = await runOpenAiExtraction(
+      front,
+      back ?? undefined,
+    );
     const normalised = normaliseResult(extracted);
 
     const recordPayload: Record<string, unknown> = {
@@ -409,13 +452,18 @@ Deno.serve(async (request) => {
     });
   } catch (error) {
     console.error("ibimina_ocr.error", error);
-    const message = error instanceof Error ? error.message : String(error ?? "unknown_error");
+    const message = error instanceof Error
+      ? error.message
+      : String(error ?? "unknown_error");
     const status = message.startsWith("openai_http_") ? 502 : 500;
     return jsonResponse({ ok: false, error: message }, status);
   }
 });
 
-function resolveImagePayload(image: ImagePayload, label: string): { base64: string; mimeType: string; filename?: string } | null {
+function resolveImagePayload(
+  image: ImagePayload,
+  label: string,
+): { base64: string; mimeType: string; filename?: string } | null {
   if (image.base64 && image.mimeType) {
     const cleaned = stripDataUrlPrefix(image.base64);
     if (!isBase64(cleaned)) return null;

@@ -124,9 +124,7 @@ function createProfilesQuery() {
         profiles.set(number, {
           user_id: `user-${profiles.size + 1}`,
           whatsapp_e164: number,
-          locale: typeof record.locale === "string"
-            ? record.locale
-            : null,
+          locale: typeof record.locale === "string" ? record.locale : null,
         });
       } else if (typeof record.locale === "string") {
         const existing = profiles.get(number)!;
