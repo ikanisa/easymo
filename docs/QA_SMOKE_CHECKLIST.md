@@ -26,6 +26,8 @@
 - [ ] Vendor receives text when customer places order.
 - [ ] Customer receives text for paid / served / cancelled transitions.
 - [ ] `notifications` table records status transitions (queued → sent).
+- [ ] `/api/notifications/retry` re-queues a failed notification in staging;
+      admin UI surfaces success toast and audit entry appears.
 
 ## Webhook & Exchange
 
@@ -39,8 +41,19 @@
       order_events, notifications.
 - [ ] RLS enforced: vendor can only see own bar; customer only own orders.
 - [ ] `menu_items_snapshot` refreshes when publishing menu.
+- [ ] `order_events` includes `vendor_nudge` rows after reminder job runs.
 
 ## QR Deep Link
 
 - [ ] Generate QR via `bar_tables` row; scanning opens browser deep link to
       WhatsApp with tokens parsed.
+
+## Reminder Workers
+
+- [ ] Confirm Supabase cron shows `order-pending-reminder` and `cart-reminder`
+      enabled with recent success run.
+- [ ] Manually invoke HTTP endpoint for each worker and verify `summary` in
+      response plus `logStructuredEvent` entries.
+- [ ] Check alert webhook receives `ORDER_PENDING_REMINDER_*` or
+      `CART_REMINDER_*` payload when forcing a failure (e.g., remove staff
+      numbers, run job).

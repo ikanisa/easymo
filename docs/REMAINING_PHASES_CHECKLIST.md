@@ -11,7 +11,7 @@
 - Insert `order_events` entry (`vendor_nudge`) for audit.
 - Configurable threshold via `platform_settings` table (future).
 
-**Status:** Pending — implement once reminder policy confirmed.
+**Status:** Complete — job runs via `supabase/functions/order-pending-reminder` and queues `order_pending_vendor` notifications.
 
 ### 2. Cart Reminder
 
@@ -19,14 +19,14 @@
 - Send `cart_reminder_customer` template to customer WA ID.
 - Respect quiet hours (reuse policy evaluation).
 
-**Status:** Deferred — run after quiet-hours policy is finalised.
+**Status:** Complete — `supabase/functions/cart-reminder` queues `cart_reminder_customer` with quiet-hours safeguards.
 
 ### 3. Admin Notification Retry API
 
 - Add Next.js API route `/api/notifications/retry`.
 - Verify failure status, resend via notification helper, update row.
 
-**Status:** Pending — implement alongside admin UI actions.
+**Status:** Complete — `/api/notifications/retry` re-queues failed notifications with outbound policy checks.
 
 ## Phase 6 – QA & Runbooks
 
@@ -36,7 +36,7 @@
   updates, and notification side-effects.
 - Validate OCR pipeline by uploading sample PDF via `wa-webhook` endpoint.
 
-**Status:** Pending.
+**Status:** Complete — Vitest e2e suite (`admin-app/tests/e2e/admin-flows.test.ts`) covers order journeys, OCR job review, and notification retry flows.
 
 ### 2. Runbooks & Monitoring
 

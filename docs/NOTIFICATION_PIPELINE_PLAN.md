@@ -55,10 +55,15 @@
    - Hook into existing handlers where order events are created (customer place
      order, vendor paid/served/cancel). After DB transaction, call
      `sendTemplateNotification` for each recipient using the helper.
-   - Ensure calls happen after `order_events` insert so notifications reflect
-     final state.
-   - Catch errors; if send fails, add an `order_events` note with status
-     `degraded` and return integration info to flow UI.
+ - Ensure calls happen after `order_events` insert so notifications reflect
+   final state.
+ - Catch errors; if send fails, add an `order_events` note with status
+    `degraded` and return integration info to flow UI.
+  - Scheduled job `supabase/functions/order-pending-reminder` (Phase 5) scans
+    `orders` for aged `pending` rows, queues `order_pending_vendor`, and records
+    a `vendor_nudge` event for auditability.
+  - Scheduled job `supabase/functions/cart-reminder` queues
+    `cart_reminder_customer` for stale open carts after quiet-hours checks.
 
 3. **Admin retry endpoint (future)**
    - Expose API route `/api/notifications/retry` to allow manual resend (not in

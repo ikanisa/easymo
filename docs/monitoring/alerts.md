@@ -9,6 +9,10 @@ whenever critical flows fail:
   origin/dropoff/refresh).
 - `NOTIFY_SEND_FAIL` – notification queue exhausted retries.
 - `NOTIFY_CRON_*` – cron disabled, unsupported, or failed.
+- `ORDER_PENDING_REMINDER_*` – vendor pending reminder worker partial/total
+  failures.
+- `CART_REMINDER_*` – customer cart reminder worker errors or quiet-hours
+  violations.
 
 Payload example:
 
