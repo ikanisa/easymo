@@ -1,0 +1,67 @@
+import { NextResponse } from "next/server";
+import { z } from "zod";
+import { getSupabaseAdminClient } from "@/lib/server/supabase-admin";
+import { parseAdminDiagnosticsMatch } from "@/lib/flow-exchange/admin-diagnostics";
+import { mockAdminDiagnosticsMatch } from "@/lib/mock-data";
+
+const requestSchema = z.object({
+  tripId: z.string().min(1, "Trip id required"),
+});
+
+function errorResponse(message: string) {
+  return NextResponse.json(
+    {
+      trip: mockAdminDiagnosticsMatch.trip,
+      messages: [...mockAdminDiagnosticsMatch.messages, message],
+    },
+    { status: 200 },
+  );
+}
+
+export async function POST(request: Request) {
+  let body: { tripId: string };
+  try {
+    const json = await request.json();
+    body = requestSchema.parse(json);
+  } catch (error) {
+    return NextResponse.json(
+      { error: "invalid_request", details: String(error) },
+      { status: 400 },
+    );
+  }
+
+  const adminClient = getSupabaseAdminClient();
+  const adminWaId = process.env.ADMIN_FLOW_WA_ID;
+
+  if (!adminClient || !adminWaId) {
+    return errorResponse(
+      "Diagnostics match bridge not configured. Set SUPABASE credentials and ADMIN_FLOW_WA_ID.",
+    );
+  }
+
+  try {
+    const { data, error } = await adminClient.functions.invoke("flow-exchange", {
+      body: {
+        flow_id: "flow.admin.diag.v1",
+        action_id: "a_admin_diag_match",
+        wa_id: adminWaId,
+        fields: { trip_id: body.tripId },
+      },
+    });
+
+    if (error) {
+      console.error("Diagnostics match invocation failed", error);
+      return errorResponse(
+        "Failed to load trip diagnostics. Showing mock data instead.",
+      );
+    }
+
+    const result = parseAdminDiagnosticsMatch(data);
+    return NextResponse.json(result, { status: 200 });
+  } catch (error) {
+    console.error("Diagnostics match API error", error);
+    return errorResponse(
+      "Unexpected error while loading trip diagnostics. Showing mock data instead.",
+    );
+  }
+}
