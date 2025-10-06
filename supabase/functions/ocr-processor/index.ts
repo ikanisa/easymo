@@ -1,4 +1,5 @@
 import { IDS } from "../wa-webhook/wa/ids.ts";
+import { SupabaseRest } from "./supabase_rest.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ??
@@ -29,7 +30,7 @@ const MAX_MENU_ITEMS = parsePositiveInteger(
 
 export type JobStatus = "queued" | "processing" | "succeeded" | "failed";
 
-type SupabaseClient = any;
+type SupabaseClient = SupabaseRest;
 
 interface OcrJob {
   id: string;
@@ -63,15 +64,12 @@ interface OcrWorkerDeps {
     extraction: MenuExtraction,
   ) => Promise<string>;
   notifyMenuReady: (barId: string) => Promise<void>;
+  publishMenu: (barId: string, menuId: string) => Promise<void>;
 }
 
 const globalFlags = globalThis as { __DISABLE_OCR_SERVER__?: boolean };
 
 let defaultDeps: OcrWorkerDeps | null = null;
-
-const SUPABASE_MODULE = globalFlags.__DISABLE_OCR_SERVER__
-  ? "./supabase_client_stub.ts"
-  : "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 function bytesToBase64(bytes: Uint8Array): string {
   if (bytes.length === 0) return "";
@@ -106,6 +104,7 @@ function createDefaultDeps(client: SupabaseClient): OcrWorkerDeps {
     upsertMenuFromExtraction: (job, extraction) =>
       upsertMenuFromExtraction(client, job, extraction),
     notifyMenuReady: (barId) => sendMenuReadyNotification(client, barId),
+    publishMenu: (barId, menuId) => publishMenu(client, barId, menuId),
   };
 }
 
@@ -140,6 +139,7 @@ export async function processNextJob(
       resultPath,
       menuId,
     });
+    await activeDeps.publishMenu(job.bar_id, menuId);
     console.log("ocr.job_succeeded", { jobId: job.id, resultPath, menuId });
     await activeDeps.notifyMenuReady(job.bar_id);
     return { status: "processed", jobId: job.id };
@@ -154,13 +154,17 @@ export async function processNextJob(
 }
 
 if (!globalFlags.__DISABLE_OCR_SERVER__) {
-  const { createClient } = await import(SUPABASE_MODULE) as {
-    createClient: (url: string, key: string) => SupabaseClient;
-  };
-  const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+  const supabase = new SupabaseRest(
+    SUPABASE_URL,
+    SUPABASE_SERVICE_ROLE_KEY,
+  );
   defaultDeps = createDefaultDeps(supabase);
 
   Deno.serve(async () => {
+    if (!SUPABASE_SERVICE_ROLE_KEY) {
+      console.error("Missing SUPABASE_SERVICE_ROLE_KEY");
+      return new Response("Missing SUPABASE_SERVICE_ROLE_KEY", { status: 500 });
+    }
     if (!OPENAI_API_KEY) {
       console.error("Missing OPENAI_API_KEY");
       return new Response("Missing OPENAI_API_KEY", { status: 500 });
@@ -176,57 +180,65 @@ if (!globalFlags.__DISABLE_OCR_SERVER__) {
       return new Response("Job processed", { status: 200 });
     } catch (error) {
       console.error("ocr.job_failed", error);
-      return new Response("Job failed", { status: 500 });
+      const message = error instanceof Error
+        ? `${error.name ?? "Error"}: ${error.message}`
+        : String(error ?? "unknown_error");
+      return new Response(message, { status: 500 });
     }
   });
 }
 
 async function claimNextJob(client: SupabaseClient): Promise<OcrJob | null> {
-  const { data: candidates, error } = await client
-    .from("ocr_jobs")
-    .select("id, bar_id, source_file_id, attempts")
-    .eq("status", "queued")
-    .order("created_at", { ascending: true })
-    .limit(CLAIM_CANDIDATE_LIMIT);
-  if (error) throw error;
+  const { data, error } = await client.select<OcrJob>("ocr_jobs", {
+    columns: "id, bar_id, source_file_id, attempts",
+    filters: [{ column: "status", operator: "eq", value: "queued" }],
+    order: { column: "created_at", ascending: true },
+    limit: CLAIM_CANDIDATE_LIMIT,
+  });
+  if (error) throw new Error(error.message);
 
+  const candidates = Array.isArray(data) ? data : [];
   const now = new Date().toISOString();
-  for (const candidate of candidates ?? []) {
+
+  for (const candidate of candidates) {
     const attempts = (candidate as { attempts?: number }).attempts ?? 0;
     if (attempts >= MAX_JOB_ATTEMPTS) {
-      const { error: failError } = await client
-        .from("ocr_jobs")
-        .update({
-          status: "failed",
-          updated_at: now,
-          last_attempt_at: now,
-          error_message:
-            `Exceeded max attempts (${MAX_JOB_ATTEMPTS}) without successful processing`,
-        })
-        .eq("id", candidate.id)
-        .eq("status", "queued");
-      if (failError) throw failError;
+      const failResult = await client.update("ocr_jobs", {
+        status: "failed",
+        updated_at: now,
+        last_attempt_at: now,
+        error_message:
+          `Exceeded max attempts (${MAX_JOB_ATTEMPTS}) without successful processing`,
+      }, {
+        filters: [
+          { column: "id", operator: "eq", value: candidate.id },
+          { column: "status", operator: "eq", value: "queued" },
+        ],
+      });
+      if (failResult.error) throw new Error(failResult.error.message);
       continue;
     }
 
-    const { data: updatedRows, error: updateError } = await client
-      .from("ocr_jobs")
-      .update({
-        status: "processing",
-        updated_at: now,
-        last_attempt_at: now,
-        attempts: attempts + 1,
-      })
-      .eq("id", candidate.id)
-      .eq("status", "queued")
-      .select("id, bar_id, source_file_id")
-      .limit(1);
-    if (updateError) throw updateError;
-    if (updatedRows && updatedRows.length > 0) {
-      const row = updatedRows[0] as OcrJob;
-      return row;
+    const claimed = await client.update<OcrJob>("ocr_jobs", {
+      status: "processing",
+      updated_at: now,
+      last_attempt_at: now,
+      attempts: attempts + 1,
+    }, {
+      filters: [
+        { column: "id", operator: "eq", value: candidate.id },
+        { column: "status", operator: "eq", value: "queued" },
+      ],
+      returning: true,
+      single: true,
+    });
+
+    if (claimed.error) throw new Error(claimed.error.message);
+    if (claimed.data) {
+      return claimed.data as OcrJob;
     }
   }
+
   return null;
 }
 
@@ -245,18 +257,18 @@ async function updateJobStatus(
   }
   if ("resultPath" in options) update.result_path = options.resultPath ?? null;
   if ("menuId" in options) update.menu_id = options.menuId ?? null;
-  const { error } = await client.from("ocr_jobs").update(update).eq("id", id);
-  if (error) throw error;
+  const { error } = await client.update("ocr_jobs", update, {
+    filters: [{ column: "id", operator: "eq", value: id }],
+  });
+  if (error) throw new Error(error.message);
 }
 
 async function downloadSourceFile(client: SupabaseClient, path: string) {
-  const { data, error } = await client.storage.from(MENU_MEDIA_BUCKET).download(
+  const { bytes, contentType } = await client.storageDownload(
+    MENU_MEDIA_BUCKET,
     path,
   );
-  if (error) throw error;
-  const arrayBuffer = await data.arrayBuffer();
-  const base64Data = bytesToBase64(new Uint8Array(arrayBuffer));
-  const contentType = data.type ?? "application/octet-stream";
+  const base64Data = bytesToBase64(bytes);
   return { base64Data, contentType };
 }
 
@@ -318,15 +330,10 @@ async function storeExtractionResult(
   raw: string,
 ) {
   const path = `results/${jobId}.json`;
-  const { error } = await client.storage.from(OCR_RESULT_BUCKET).upload(
-    path,
-    raw,
-    {
-      upsert: true,
-      contentType: "application/json",
-    },
-  );
-  if (error) throw error;
+  await client.storageUpload(OCR_RESULT_BUCKET, path, raw, {
+    contentType: "application/json",
+    upsert: true,
+  });
   return path;
 }
 
@@ -336,76 +343,84 @@ async function upsertMenuFromExtraction(
   extraction: MenuExtraction,
 ): Promise<string> {
   const barId = job.bar_id;
-  const { data: latestVersionRow, error: versionError } = await client
-    .from("menus")
-    .select("version")
-    .eq("bar_id", barId)
-    .order("version", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  if (versionError) throw versionError;
-
-  const nextVersion =
-    ((latestVersionRow as { version?: number } | null)?.version ?? 0) + 1;
+  const latestVersion = await client.select<{ version?: number }>(
+    "menus",
+    {
+      columns: "version",
+      filters: [{ column: "bar_id", operator: "eq", value: barId }],
+      order: { column: "version", ascending: false },
+      limit: 1,
+      single: "maybe",
+    },
+  );
+  if (latestVersion.error) throw new Error(latestVersion.error.message);
+  const nextVersion = ((latestVersion.data?.version) ?? 0) + 1;
 
   const currency = sanitizeCurrency(extraction.currency ?? undefined);
   let menuId: string | null = null;
 
   try {
-    const { data: menu, error: menuError } = await client
-      .from("menus")
-      .insert({
+    const menuInsert = await client.insert<{ id: string }>(
+      "menus",
+      {
         bar_id: barId,
         status: "draft",
         version: nextVersion,
         source: "ocr",
         source_file_ids: job.source_file_id ? [job.source_file_id] : [],
-      })
-      .select("id")
-      .single();
-    if (menuError) throw menuError;
-
-    menuId = (menu as { id: string }).id;
+      },
+      { returning: true, single: true },
+    );
+    if (menuInsert.error || !menuInsert.data) {
+      throw new Error(menuInsert.error?.message ?? "Failed to create menu");
+    }
+    menuId = menuInsert.data.id;
 
     let categoryOrder = 0;
     for (const category of extraction.categories ?? []) {
-      const { data: categoryRow, error: categoryError } = await client
-        .from("categories")
-        .insert({
+      const categoryInsert = await client.insert<{ id: string }>(
+        "categories",
+        {
           bar_id: barId,
           menu_id: menuId,
           parent_category_id: null,
           name: category.name,
           sort_order: categoryOrder,
-        })
-        .select("id")
-        .single();
-      if (categoryError) throw categoryError;
-
-      const categoryId = (categoryRow as { id: string }).id;
-      let itemOrder = 0;
-      for (const item of category.items ?? []) {
-        const priceMinor = normalizePrice(item.price);
-        const flags = Array.isArray(item.flags) ? item.flags : [];
-        const { error: itemError } = await client
-          .from("items")
-          .insert({
-            bar_id: barId,
-            menu_id: menuId,
-            category_id: categoryId,
-            name: item.name,
-            short_description: item.description ?? null,
-            price_minor: priceMinor,
-            currency,
-            flags,
-            is_available: true,
-            sort_order: itemOrder,
-          });
-        if (itemError) throw itemError;
-        itemOrder += 1;
+        },
+        { returning: true, single: true },
+      );
+      if (categoryInsert.error || !categoryInsert.data) {
+        throw new Error(
+          categoryInsert.error?.message ?? "Failed to create category",
+        );
       }
+      const categoryId = categoryInsert.data.id;
+
+      const itemsPayload = (category.items ?? []).map((item, index) => ({
+        bar_id: barId,
+        menu_id: menuId,
+        category_id: categoryId,
+        name: item.name,
+        short_description: item.description ?? null,
+        price_minor: normalizePrice(item.price),
+        currency,
+        flags: Array.isArray(item.flags) ? item.flags : [],
+        is_available: true,
+        sort_order: index,
+      }));
+
+      if (itemsPayload.length) {
+        const itemsInsert = await client.insert("items", itemsPayload, {
+          returning: false,
+        });
+        if (itemsInsert.error) {
+          throw new Error(itemsInsert.error.message);
+        }
+      }
+
       categoryOrder += 1;
     }
+
     return menuId;
   } catch (error) {
     if (menuId) {
@@ -413,6 +428,45 @@ async function upsertMenuFromExtraction(
     }
     throw error;
   }
+}
+
+async function publishMenu(
+  client: SupabaseClient,
+  barId: string,
+  menuId: string,
+): Promise<void> {
+  const nowIso = new Date().toISOString();
+
+  const archiveResult = await client.update("menus", {
+    status: "archived",
+  }, {
+    filters: [
+      { column: "bar_id", operator: "eq", value: barId },
+      { column: "source", operator: "eq", value: "ocr" },
+      { column: "id", operator: "ne" as any, value: menuId },
+    ],
+  });
+  if (archiveResult.error) {
+    console.error("ocr.publish.archive_fail", archiveResult.error);
+  }
+
+  const publishResult = await client.update("menus", {
+    status: "published",
+    published_at: nowIso,
+  }, {
+    filters: [{ column: "id", operator: "eq", value: menuId }],
+  });
+  if (publishResult.error) {
+    console.error("ocr.publish.publish_fail", publishResult.error);
+    throw new Error(publishResult.error.message);
+  }
+
+  await client.update("bars", {
+    is_active: true,
+    updated_at: nowIso,
+  }, {
+    filters: [{ column: "id", operator: "eq", value: barId }],
+  });
 }
 
 const VALID_FLAGS = new Set([
@@ -568,10 +622,16 @@ function normalizeExtractionPayload(payload: unknown): MenuExtraction {
 
 async function cleanupMenuDraft(client: SupabaseClient, menuId: string) {
   await Promise.allSettled([
-    client.from("items").delete().eq("menu_id", menuId),
-    client.from("categories").delete().eq("menu_id", menuId),
+    client.delete("items", {
+      filters: [{ column: "menu_id", operator: "eq", value: menuId }],
+    }),
+    client.delete("categories", {
+      filters: [{ column: "menu_id", operator: "eq", value: menuId }],
+    }),
   ]);
-  await client.from("menus").delete().eq("id", menuId);
+  await client.delete("menus", {
+    filters: [{ column: "id", operator: "eq", value: menuId }],
+  });
 }
 
 async function sendMenuReadyNotification(
@@ -579,22 +639,25 @@ async function sendMenuReadyNotification(
   barId: string,
 ): Promise<void> {
   try {
-    const { queueNotification } = await import(
-      "../wa-webhook/services/notifications/queue.ts"
+    const recipientsResult = await client.select<{ number_e164?: string }>(
+      "bar_numbers",
+      {
+        columns: "number_e164",
+        filters: [
+          { column: "bar_id", operator: "eq", value: barId },
+          { column: "is_active", operator: "eq", value: "true" },
+          { column: "role", operator: "in", value: ["manager", "staff"] },
+        ],
+      },
     );
-    const { data: numbers, error: numbersError } = await client
-      .from("bar_numbers")
-      .select("number_e164, role")
-      .eq("bar_id", barId)
-      .eq("is_active", true)
-      .in("role", ["manager", "staff"]);
-    if (numbersError) throw numbersError;
+    if (recipientsResult.error) {
+      throw new Error(recipientsResult.error.message);
+    }
 
-    const recipients = (numbers ?? [])
-      .map((row: { number_e164?: string | null }) => row.number_e164)
-      .filter((value: unknown): value is string =>
-        typeof value === "string" && value.length > 0
-      );
+    const recipients =
+      (Array.isArray(recipientsResult.data) ? recipientsResult.data : [])
+        .map((row) => row.number_e164)
+        .filter((value): value is string => typeof value === "string" && value);
     if (!recipients.length) {
       console.warn("ocr.notify_menu_ready_skip", {
         barId,
@@ -603,14 +666,16 @@ async function sendMenuReadyNotification(
       return;
     }
 
-    const { data: barRow, error: barError } = await client
-      .from("bars")
-      .select("name")
-      .eq("id", barId)
-      .maybeSingle();
-    if (barError && barError.code !== "PGRST116") throw barError;
+    const barResult = await client.select<{ name?: string }>("bars", {
+      columns: "name",
+      filters: [{ column: "id", operator: "eq", value: barId }],
+      single: "maybe",
+    });
+    if (barResult.error) {
+      throw new Error(barResult.error.message);
+    }
 
-    const headerText = barRow?.name ?? undefined;
+    const headerText = barResult.data?.name ?? undefined;
     const bodyText =
       "Menu added successfully ✅\nItems are now live.\nNote: Ranked alphabetically first; later, most ordered will move to the top.";
     const rows = [
@@ -626,25 +691,33 @@ async function sendMenuReadyNotification(
       recipients,
     });
 
-    await Promise.allSettled(
-      recipients.map((to: string) =>
-        queueNotification({
-          to,
-          interactive: {
-            type: "list",
-            headerText,
-            bodyText,
-            buttonText: "View",
-            sectionTitle: "Manager console",
-            rows,
-          },
-        }, {
-          supabase: client,
-          type: "menu_ready",
-          bar_id: barId,
-        })
-      ),
+    const notificationsPayload = recipients.map((to) => ({
+      to_wa_id: to,
+      notification_type: "menu_ready",
+      template_name: null,
+      order_id: null,
+      channel: "freeform",
+      payload: {
+        interactive: {
+          type: "list",
+          headerText,
+          bodyText,
+          buttonText: "View",
+          sectionTitle: "Manager console",
+          rows,
+        },
+      },
+      status: "queued",
+      retry_count: 0,
+    }));
+
+    const insertResult = await client.insert(
+      "notifications",
+      notificationsPayload,
     );
+    if (insertResult.error) {
+      throw new Error(insertResult.error.message);
+    }
     console.log("ocr.notify_menu_ready_done", { barId });
   } catch (error) {
     console.error("ocr.notify_menu_ready_fail", error, { barId });

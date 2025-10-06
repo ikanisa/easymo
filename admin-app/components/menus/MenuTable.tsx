@@ -3,10 +3,14 @@
 import { useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "@/components/data-table/DataTable";
+import { LoadMoreButton } from "@/components/ui/LoadMoreButton";
 import type { MenuVersion } from "@/lib/schemas";
 
 interface MenuTableProps {
   data: MenuVersion[];
+  hasMore?: boolean;
+  onLoadMore?: () => void;
+  loadingMore?: boolean;
 }
 
 const columns: ColumnDef<MenuVersion>[] = [
@@ -41,7 +45,7 @@ const columns: ColumnDef<MenuVersion>[] = [
   },
 ];
 
-export function MenuTable({ data }: MenuTableProps) {
+export function MenuTable({ data, hasMore, onLoadMore, loadingMore }: MenuTableProps) {
   const [filters, setFilters] = useState<
     { status?: MenuVersion["status"]; bar?: string }
   >({});
@@ -57,7 +61,7 @@ export function MenuTable({ data }: MenuTableProps) {
   }, [data, filters]);
 
   return (
-    <div className="stack">
+    <div className="space-y-4">
       <div className="filters">
         <label>
           <span>Status</span>
@@ -99,6 +103,13 @@ export function MenuTable({ data }: MenuTableProps) {
         searchPlaceholder="Search menus"
         downloadFileName="menus.csv"
       />
+      <LoadMoreButton
+        hasMore={hasMore}
+        loading={loadingMore}
+        onClick={onLoadMore}
+      >
+        Load more menus
+      </LoadMoreButton>
     </div>
   );
 }

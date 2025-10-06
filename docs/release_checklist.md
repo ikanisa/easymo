@@ -1,11 +1,27 @@
-# Release Checklist — WA Legacy Features
+# Release Checklist — Baskets Module (Skeleton)
 
-- [ ] Apply migrations through `20251003160000_phase_a_legacy.sql` in staging.
-- [ ] Verify baskets create/join/share flows via WA sandbox numbers.
-- [ ] Exercise marketplace browse + add to confirm Supabase writes.
-- [ ] Generate MoMo QR and confirm `momo_qr_requests` audit row.
-- [ ] Upload insurance doc and confirm storage object + admin alert.
-- [ ] Run wallet menu (earn/transactions/redeem/top) for fixture profile.
-- [ ] Validate `/sub` admin commands log to `admin_audit_log` and update status.
-- [ ] Inspect `webhook_logs` for new event scopes (MOMO_QR, OCR_STATUS,
-      ADMIN_ACTION).
+## Pre-Launch Gates
+- Schema migrations applied (staging → production).
+- RLS policies verified with role-based tests.
+- Edge functions deployed and smoke-tested.
+- Admin UI end-to-end walkthrough (SACCO staff + committee + member journeys).
+- WhatsApp flows QA (create, join, contribute, loan request).
+
+## Feature Flags / Toggles
+- Baskets module navigation
+- SMS allocator activation
+- Loan workflow
+
+## Observability
+- Dashboards configured (deposits, allocation success, loans).
+- Alerts for unmatched SMS, allocator failures, loan coverage.
+
+## Support Runbooks
+- Allocation runbook published.
+- Loan policy & KYC SOPs shared with operations.
+
+## Go/No-Go Criteria
+- Zero unmatched SMS backlog > threshold
+- Quiet hours compliance in staging dry-run
+- Committee endorsements & SACCO decisions validated for sample data
+

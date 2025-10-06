@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/Button";
 
 interface TopBarProps {
   environmentLabel: string;
+  onOpenAssistant?: () => void;
 }
 
 const alertsSummary = {
@@ -10,7 +11,7 @@ const alertsSummary = {
   ocr: 0,
 };
 
-export function TopBar({ environmentLabel }: TopBarProps) {
+export function TopBar({ environmentLabel, onOpenAssistant }: TopBarProps) {
   return (
     <header
       role="banner"
@@ -52,6 +53,16 @@ export function TopBar({ environmentLabel }: TopBarProps) {
           "flex items-center gap-3 justify-end",
         )}
       >
+        <Button
+          type="button"
+          variant="default"
+          className="topbar__assistant inline-flex items-center gap-2 px-4"
+          aria-label="Open assistant"
+          onClick={onOpenAssistant}
+          offlineBehavior="allow"
+        >
+          Assistant
+        </Button>
         <Button
           type="button"
           variant="outline"

@@ -56,6 +56,7 @@ import {
   type FlowEncryptionContext,
   isEncryptedEnvelope,
 } from "../_shared/flow_crypto.ts";
+import { handleAdminAction } from "./admin.ts";
 
 const REQUIRED_ENVS = ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"];
 
@@ -598,6 +599,9 @@ async function routeAction(
   payload: ActionPayload,
   supabase: SupabaseClient,
 ): Promise<HandlerResult> {
+  if (payload.flow_id?.startsWith("flow.admin.")) {
+    return await handleAdminAction(payload, supabase);
+  }
   const handler = ROUTES[payload.action_id] ?? unsupported;
   if (handler === unsupported) {
     console.warn("Unhandled action_id", payload.action_id);

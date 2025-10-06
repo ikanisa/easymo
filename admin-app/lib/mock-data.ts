@@ -1,5 +1,6 @@
 import { addDays, formatISO, subDays } from "./time-utils";
 import type {
+  AssistantRun,
   AuditEvent,
   Bar,
   Campaign,
@@ -21,6 +22,11 @@ import type {
   User,
   Voucher,
   WebhookError,
+  AdminHubSnapshot,
+  AdminVoucherList,
+  AdminVoucherDetail,
+  AdminDiagnosticsSnapshot,
+  AdminDiagnosticsMatch,
 } from "./schemas";
 
 const now = new Date();
@@ -180,6 +186,7 @@ export const mockCampaigns: Campaign[] = [
     templateId: "voucher_october_promo",
     createdAt: formatISO(subDays(now, 14)),
     startedAt: formatISO(subDays(now, 10)),
+    finishedAt: null,
     metadata: { dailyTarget: 100 },
   },
   {
@@ -190,6 +197,7 @@ export const mockCampaigns: Campaign[] = [
     templateId: "welcome_messaging_v1",
     createdAt: formatISO(subDays(now, 4)),
     startedAt: null,
+    finishedAt: null,
     metadata: { note: "Pending compliance review" },
   },
 ];
@@ -387,6 +395,7 @@ export const mockStaffNumbers: StaffNumber[] = mockBars.flatMap((bar, idx) => [
 
 export const mockQrTokens: QrToken[] = Array.from({ length: 10 }, (_, idx) => ({
   id: `qr-${idx + 1}`,
+  stationId: mockBars[idx % mockBars.length].id,
   barName: mockBars[idx % mockBars.length].name,
   tableLabel: `Table ${(idx % 6) + 1}`,
   token: `TOKEN-${idx + 100}`,
@@ -532,3 +541,237 @@ export const mockStorageObjects: StorageObject[] = [
     updatedAt: formatISO(subDays(now, 4)),
   },
 ];
+
+export const mockAssistantRuns: AssistantRun[] = [
+  {
+    promptId: "summary.last24h",
+    suggestion: {
+      id: "assistant-summary-24h",
+      title: "Last 24 hours — vouchers + notifications",
+      summary:
+        "Voucher sends held steady (62 issued, 58 delivered). Two numbers hit the opt-out list and five sends were delayed during quiet hours. Matching RPC latency dipped at 03:00 but recovered after the cache warm-up run.",
+      generatedAt: formatISO(now),
+      actions: [
+        {
+          id: "action-retry-quiet",
+          label: "Schedule quiet-hour retries",
+          summary: "Queue the five blocked vouchers for 07:05 with a compliance note in the incident channel.",
+          impact: "medium",
+          recommended: true,
+        },
+        {
+          id: "action-followup-optout",
+          label: "Flag opt-out contacts",
+          summary: "Append the two numbers to the suppression matrix and confirm marketing has the latest export.",
+          impact: "low",
+        },
+      ],
+      references: [
+        "Notifications → Outbox (filtered: failed)",
+        "Vouchers → Events (last 24h)",
+        "Logs → matching_latency_warn",
+      ],
+      limitations: ["Data sampled from staging fixtures. Validate in Supabase before running follow-up."],
+    },
+    messages: [
+      {
+        id: "assistant-summary-24h-msg",
+        role: "assistant",
+        content:
+          "Here's what happened in the last 24 hours. Voucher throughput held, but quiet hours blocked five sends and two new opt-outs appeared in Rwanda. Matching RPCs spiked for 6 minutes around 03:00 UTC before the cache run restored performance.",
+        createdAt: formatISO(now),
+      },
+    ],
+  },
+  {
+    promptId: "policy.explainBlock",
+    suggestion: {
+      id: "assistant-policy-explain",
+      title: "Why was the voucher send blocked?",
+      summary:
+        "The contact +250780000099 is in the opt-out list (`opt_out.list`). Policy enforcement returned `policy_blocked` with reason `opt_out`. No retries were attempted because the last consent refresh was under 24 hours old.",
+      generatedAt: formatISO(addDays(now, -1)),
+      actions: [
+        {
+          id: "action-notify-support",
+          label: "Notify support queue",
+          summary: "Drop a template response into the support queue so the agent can confirm the opt-out and record the reason.",
+          impact: "low",
+          recommended: true,
+        },
+        {
+          id: "action-consent-check",
+          label: "Trigger consent check",
+          summary: "Create a follow-up task to re-confirm marketing consent if this contact re-opts in via the station app.",
+          impact: "medium",
+        },
+      ],
+      references: [
+        "Settings → Policies → opt_out.list",
+        "Notifications → notification notif-3",
+      ],
+      limitations: ["Only checks cached policy state. Confirm with live Supabase before overriding."],
+    },
+    messages: [
+      {
+        id: "assistant-policy-msg",
+        role: "assistant",
+        content:
+          "The send failed because the recipient is on the opt-out list. The policy engine exits early; there's no throttle or quiet-hour involvement this time.",
+        createdAt: formatISO(addDays(now, -1)),
+      },
+    ],
+  },
+  {
+    promptId: "briefing.opsStandup",
+    suggestion: {
+      id: "assistant-standup",
+      title: "Stand-up briefing draft",
+      summary:
+        "1) WhatsApp sends: 58/60 succeeded — two opt-outs. 2) OCR: 3 jobs processed, one pending manual review. 3) Stations: ENG-003 flagged low stock. No customer escalations overnight.",
+      generatedAt: formatISO(now),
+      actions: [
+        {
+          id: "action-share-briefing",
+          label: "Copy talking points",
+          summary: "Send summary to #ops-daily so hosts have context before the stand-up.",
+          impact: "medium",
+          recommended: true,
+        },
+      ],
+      references: [
+        "Dashboard KPIs",
+        "Menus → OCR jobs",
+        "Stations → ENG-003",
+      ],
+    },
+    messages: [
+      {
+        id: "assistant-standup-msg",
+        role: "assistant",
+        content:
+          "Here's a stand-up outline focusing on sends, OCR, and station alerts. Call out ENG-003 needing a restock nudge.",
+        createdAt: formatISO(now),
+      },
+    ],
+  },
+  {
+    promptId: "freeform.query",
+    suggestion: {
+      id: "assistant-freeform",
+      title: "Assistant response",
+      summary:
+        "I used the mock dataset to answer the custom query. Replace me with the live bridge once the endpoint is available.",
+      generatedAt: formatISO(now),
+      actions: [
+        {
+          id: "action-document-followup",
+          label: "Document request",
+          summary: "Capture this freeform ask so we can wire a real workflow later.",
+          impact: "low",
+        },
+      ],
+      references: ["Mock data only"],
+      limitations: ["Freeform prompts rely on fixtures right now."],
+    },
+    messages: [
+      {
+        id: "assistant-freeform-msg",
+        role: "assistant",
+        content:
+          "This is a placeholder response. Swap in the API client when the assistant endpoint ships.",
+        createdAt: formatISO(now),
+      },
+    ],
+  },
+];
+
+export const mockAdminHubSnapshot: AdminHubSnapshot = {
+  sections: {
+    operations: [
+      { id: "ADMIN::OPS_TRIPS", title: "Trips (live)" },
+      { id: "ADMIN::OPS_BASKETS", title: "Baskets" },
+      { id: "ADMIN::OPS_MARKETPLACE", title: "Marketplace" },
+      { id: "ADMIN::OPS_WALLET", title: "Wallet & tokens" },
+      { id: "ADMIN::OPS_MOMO", title: "MoMo QR" },
+      { id: "ADMIN::OPS_VOUCHERS", title: "Fuel vouchers" },
+    ],
+    growth: [
+      { id: "ADMIN::GROW_PROMOTERS", title: "Promoters" },
+      { id: "ADMIN::GROW_BROADCAST", title: "Broadcast" },
+      { id: "ADMIN::GROW_TEMPLATES", title: "Templates" },
+    ],
+    trust: [
+      { id: "ADMIN::TRUST_REFERRALS", title: "Referrals" },
+      { id: "ADMIN::TRUST_FREEZE", title: "Freeze account" },
+    ],
+    diagnostics: [
+      { id: "ADMIN::DIAG_MATCH", title: "Match diagnostics" },
+      { id: "ADMIN::DIAG_INSURANCE", title: "Insurance diagnostics" },
+      { id: "ADMIN::DIAG_HEALTH", title: "System health" },
+      { id: "ADMIN::DIAG_LOGS", title: "Logs" },
+    ],
+  },
+  messages: [
+    "Mock admin hub data. Configure Supabase credentials to load live sections.",
+  ],
+};
+
+export const mockAdminVoucherList: AdminVoucherList = {
+  vouchers: Array.from({ length: 6 }, (_, index) => ({
+    id: `voucher-${index + 1}`,
+    title: `VCHR${1000 + index} · RWF ${(index + 1) * 5000}`,
+    description: index % 2 === 0
+      ? `Issued ${formatISO(subDays(now, index))}`
+      : `Redeemed ${formatISO(subDays(now, index / 2))}`,
+  })),
+  messages: [
+    "Mock voucher list. Flow-exchange bridge not yet connected to Supabase.",
+  ],
+};
+
+export const mockAdminVoucherDetail: AdminVoucherDetail = {
+  id: "voucher-1",
+  code5: "12345",
+  amountText: "RWF 5,000",
+  policyNumber: "POLICY-001",
+  whatsappE164: "+250780000001",
+  status: "issued",
+  issuedAt: formatISO(subDays(now, 1)),
+  redeemedAt: null,
+  messages: [
+    "Mock voucher detail. Configure ADMIN_FLOW_WA_ID for live lookups.",
+  ],
+};
+
+export const mockAdminDiagnostics: AdminDiagnosticsSnapshot = {
+  health: {
+    config: {
+      admin_numbers: ["+250700000001", "+250700000002"],
+      insurance_admin_numbers: ["+250780000123"],
+      admin_pin_required: true,
+    },
+    messages: [
+      "Mock diagnostics health. Flow-exchange bridge not connected.",
+    ],
+  },
+  logs: {
+    logs: Array.from({ length: 4 }, (_, index) => ({
+      id: `log-${index + 1}`,
+      endpoint: index % 2 === 0 ? "wa-webhook" : "flow-exchange",
+      status_code: index % 2 === 0 ? 500 : 200,
+      received_at: formatISO(subDays(now, index / 4)),
+    })),
+    messages: ["Mock webhook logs. Configure Supabase for live data."],
+  },
+};
+
+export const mockAdminDiagnosticsMatch: AdminDiagnosticsMatch = {
+  trip: {
+    id: "trip-123",
+    role: "driver",
+    vehicleType: "car",
+    status: "matched",
+  },
+  messages: ["Mock diagnostics trip data. Configure Supabase for live lookup."],
+};

@@ -1,62 +1,69 @@
-import { NextResponse } from "next/server";
-import { z } from "zod";
-import { getSupabaseAdminClient } from "@/lib/server/supabase-admin";
+import { NextResponse } from 'next/server';
+import { z } from 'zod';
+import { getSupabaseAdminClient } from '@/lib/server/supabase-admin';
+import { logStructured } from '@/lib/server/logger';
 
-const querySchema = z.object({
+const allowedBuckets = new Set(['vouchers', 'qr', 'campaign-media', 'docs']);
+
+const requestSchema = z.object({
   bucket: z.string().min(1),
-  path: z.string().min(1),
+  path: z.string().min(1)
 });
 
-export const dynamic = "force-dynamic";
-
 export async function GET(request: Request) {
+  const adminClient = getSupabaseAdminClient();
+  if (!adminClient) {
+    return NextResponse.json(
+      { error: 'supabase_unavailable', message: 'Supabase credentials missing.' },
+      { status: 503 }
+    );
+  }
+
+  const url = new URL(request.url);
+  let payload: z.infer<typeof requestSchema>;
   try {
-    const { searchParams } = new URL(request.url);
-    const { bucket, path } = querySchema.parse({
-      bucket: searchParams.get("bucket"),
-      path: searchParams.get("path"),
-    });
-
-    const adminClient = getSupabaseAdminClient();
-    if (adminClient) {
-      try {
-        const { data, error } = await adminClient.storage
-          .from(bucket)
-          .createSignedUrl(path, 60);
-        if (!error && data?.signedUrl) {
-          return NextResponse.json({
-            url: data.signedUrl,
-            expiresIn: 60,
-            integration: { target: "storageSignedUrl", status: "ok" as const },
-          });
-        }
-        console.error("Supabase signed URL failed", error);
-      } catch (err) {
-        console.error("Supabase storage error", err);
-      }
-    }
-
-    // Fallback mock URL
-    return NextResponse.json({
-      url: `https://example.com/mock/${encodeURIComponent(path)}`,
-      expiresIn: 0,
-      message: "Signed URLs require Supabase credentials.",
-      integration: {
-        target: "storageSignedUrl",
-        status: "degraded",
-        reason: "mock_signed_url",
-        message:
-          "Returning mock URL because storage credentials are not configured.",
-      },
+    payload = requestSchema.parse({
+      bucket: url.searchParams.get('bucket'),
+      path: url.searchParams.get('path')
     });
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json({
-        error: "invalid_query",
-        details: error.flatten(),
-      }, { status: 400 });
-    }
-    console.error("Signed URL generation failed", error);
-    return NextResponse.json({ error: "signed_url_failed" }, { status: 500 });
+    return NextResponse.json(
+      { error: 'invalid_query', message: error instanceof z.ZodError ? error.flatten() : 'Invalid query parameters.' },
+      { status: 400 }
+    );
   }
+
+  if (!allowedBuckets.has(payload.bucket)) {
+    return NextResponse.json(
+      { error: 'bucket_not_allowed', message: 'Bucket not in allowlist.' },
+      { status: 403 }
+    );
+  }
+
+  const { data, error } = await adminClient
+    .storage
+    .from(payload.bucket)
+    .createSignedUrl(payload.path, 60);
+
+  if (error || !data?.signedUrl) {
+    logStructured({
+      event: 'storage_signed_url_failed',
+      target: 'storage',
+      status: 'error',
+      message: error?.message ?? 'Unable to generate signed URL.',
+      details: { bucket: payload.bucket, path: payload.path }
+    });
+    return NextResponse.json(
+      { error: 'signed_url_failed', message: 'Unable to generate signed URL.' },
+      { status: 500 }
+    );
+  }
+
+  return NextResponse.json(
+    {
+      url: data.signedUrl,
+      expiresIn: 60
+    },
+    { status: 200 }
+  );
 }

@@ -1,5 +1,9 @@
 import type { RouterContext } from "../../types.ts";
-import { sendImageUrl } from "../../wa/client.ts";
+import {
+  sendImageUrl,
+  sendText,
+  WhatsAppClientError,
+} from "../../wa/client.ts";
 import { IDS } from "../../wa/ids.ts";
 import { clearState, setState } from "../../state/store.ts";
 import { buildMomoUssd } from "../../utils/momo.ts";
@@ -105,6 +109,17 @@ export async function handleMomoButton(
       await promptAmount(ctx, display);
       return true;
     }
+    case IDS.MOMO_QR_SKIP:
+      if (state.key === STATES.AMOUNT_INPUT) {
+        const data = (state.data ?? {}) as MomoData;
+        if (!ctx.profileId || !data?.target || !data?.targetType) {
+          await startMomoQr(ctx, state);
+          return true;
+        }
+        await deliverMomoQr(ctx, data, null);
+        return true;
+      }
+      return false;
     case IDS.MOMO_QR_NUMBER:
       await setState(ctx.supabase, ctx.profileId, {
         key: STATES.NUMBER_INPUT,
@@ -238,7 +253,10 @@ async function handleAmountInput(
     await sendButtonsMessage(
       ctx,
       "⚠️ Enter an amount like 12000 or tap Skip.",
-      buildButtons({ id: IDS.MOMO_QR, title: "↩️ Menu" }),
+      buildButtons(
+        { id: IDS.MOMO_QR_SKIP, title: "Skip" },
+        { id: IDS.MOMO_QR, title: "↩️ Menu" },
+      ),
     );
     return true;
   }
@@ -271,12 +289,39 @@ async function deliverMomoQr(
   if (shareLink) {
     lines.push(`Share: ${shareLink}`);
   }
-  await sendImageUrl(ctx.from, qrUrl, `Scan to pay ${data.display}`);
-  await sendButtonsMessage(
-    ctx,
-    lines.join("\n"),
-    buildButtons({ id: IDS.MOMO_QR, title: "🔁 New QR" }),
-  );
+  const messageBody = lines.join("\n");
+  const fallbackBody = `${messageBody}\nQR link: ${qrUrl}`;
+
+  let fallbackNeeded = false;
+
+  try {
+    await sendImageUrl(ctx.from, qrUrl, `Scan to pay ${data.display}`);
+  } catch (error) {
+    fallbackNeeded = true;
+    const message = error instanceof Error ? error.message : String(error);
+    console.error("momo.qr.send_image_fail", message);
+  }
+
+  try {
+    await sendButtonsMessage(
+      ctx,
+      messageBody,
+      buildButtons({ id: IDS.MOMO_QR, title: "🔁 New QR" }),
+    );
+  } catch (error) {
+    fallbackNeeded = true;
+    const message = error instanceof Error ? error.message : String(error);
+    console.error("momo.qr.send_buttons_fail", message);
+  }
+
+  if (fallbackNeeded) {
+    try {
+      await sendText(ctx.from, fallbackBody);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.error("momo.qr.send_text_fail", message);
+    }
+  }
   const loggedTarget = data.targetType === "msisdn"
     ? data.e164 ?? localToE164(targetValue)
     : targetValue;
@@ -339,8 +384,8 @@ async function promptAmount(
 ): Promise<void> {
   await sendButtonsMessage(
     ctx,
-    `💰 Enter amount in RWF for ${display} (or reply Skip).`,
-    buildButtons({ id: IDS.MOMO_QR, title: "↩️ Menu" }),
+    `💰 Enter amount in RWF for ${display} (or tap Skip).`,
+    buildButtons({ id: IDS.MOMO_QR_SKIP, title: "Skip" }),
   );
 }
 

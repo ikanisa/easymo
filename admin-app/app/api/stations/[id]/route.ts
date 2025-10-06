@@ -1,180 +1,146 @@
-import { NextResponse } from "next/server";
-import { z } from "zod";
-import { recordAudit } from "@/lib/server/audit";
-import {
-  bridgeDegraded,
-  bridgeHealthy,
-  callBridge,
-} from "@/lib/server/edge-bridges";
+import { headers } from 'next/headers';
+import { NextResponse } from 'next/server';
+import { z } from 'zod';
+import { getSupabaseAdminClient } from '@/lib/server/supabase-admin';
+import { logStructured } from '@/lib/server/logger';
+import { recordAudit } from '@/lib/server/audit';
 
-const paramsSchema = z.object({
-  id: z.string().min(1),
-});
+const paramsSchema = z.object({ id: z.string().uuid() });
 
 const updateSchema = z.object({
-  name: z.string().optional(),
-  engencode: z.string().optional(),
-  ownerContact: z.string().nullable().optional(),
-  status: z.enum(["active", "inactive"]).optional(),
+  name: z.string().min(1).optional(),
+  engencode: z.string().min(1).optional(),
+  ownerContact: z.string().optional().nullable(),
+  status: z.enum(['active', 'inactive']).optional()
+}).refine((payload) => Object.keys(payload).length > 0, {
+  message: 'Provide at least one field to update.'
 });
-
-export const dynamic = "force-dynamic";
 
 export async function PATCH(
   request: Request,
-  context: { params: { id: string } },
+  { params }: { params: { id: string } }
 ) {
-  try {
-    const { id } = paramsSchema.parse(context.params);
-    const payload = updateSchema.parse(await request.json());
-    const { getSupabaseAdminClient } = await import(
-      "@/lib/server/supabase-admin"
+  const parseParams = paramsSchema.safeParse(params);
+  if (!parseParams.success) {
+    return NextResponse.json({ error: 'invalid_station_id' }, { status: 400 });
+  }
+  const stationId = parseParams.data.id;
+
+  const adminClient = getSupabaseAdminClient();
+  if (!adminClient) {
+    return NextResponse.json(
+      { error: 'supabase_unavailable', message: 'Supabase credentials missing.' },
+      { status: 503 }
     );
-    const adminClient = getSupabaseAdminClient();
+  }
 
-    if (adminClient) {
-      const { data, error } = await adminClient
-        .from("stations")
-        .update({
-          name: payload.name,
-          engencode: payload.engencode,
-          owner_contact: payload.ownerContact,
-          status: payload.status,
-        })
-        .eq("id", id)
-        .select("id, name, engencode, owner_contact, status, updated_at");
-
-      if (!error && data?.[0]) {
-        const bridgeResult = await callBridge("stationDirectory", {
-          action: "update",
-          station: {
-            id,
-            name: data[0].name,
-            engencode: data[0].engencode,
-            ownerContact: data[0].owner_contact,
-            status: data[0].status,
-          },
-        });
-
-        await recordAudit({
-          actor: "admin:mock",
-          action: "station_update",
-          targetTable: "stations",
-          targetId: id,
-          summary: "Station updated",
-        });
-
-        return NextResponse.json(
-          {
-            station: data[0],
-            integration: bridgeResult.ok
-              ? bridgeHealthy("stationDirectory")
-              : bridgeDegraded("stationDirectory", bridgeResult),
-          },
-          { status: 200 },
-        );
-      }
-
-      console.error("Supabase station update failed", error);
-    }
-
-    const bridgeResult = await callBridge("stationDirectory", {
-      action: "update",
-      station: {
-        id,
-        name: payload.name ?? undefined,
-        engencode: payload.engencode ?? undefined,
-        ownerContact: payload.ownerContact ?? null,
-        status: payload.status ?? undefined,
-      },
-    });
-
-    await recordAudit({
-      actor: "admin:mock",
-      action: "station_update",
-      targetTable: "stations",
-      targetId: id,
-      summary: "Station updated (mock)",
-    });
+  let payload: z.infer<typeof updateSchema>;
+  try {
+    payload = updateSchema.parse(await request.json());
+  } catch (error) {
     return NextResponse.json(
       {
-        station: { id, ...payload, updated_at: new Date().toISOString() },
-        integration: bridgeResult.ok
-          ? bridgeHealthy("stationDirectory")
-          : bridgeDegraded("stationDirectory", bridgeResult),
+        error: 'invalid_payload',
+        message: error instanceof z.ZodError ? error.flatten() : 'Invalid JSON payload.'
       },
-      { status: 200 },
+      { status: 400 }
     );
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json({
-        error: "invalid_payload",
-        details: error.flatten(),
-      }, { status: 400 });
-    }
-    console.error("Failed to update station", error);
-    return NextResponse.json({ error: "station_update_failed" }, {
-      status: 500,
-    });
   }
+
+  const updates: Record<string, unknown> = {};
+  if (payload.name !== undefined) updates.name = payload.name;
+  if (payload.engencode !== undefined) updates.engencode = payload.engencode;
+  if (payload.ownerContact !== undefined) updates.owner_contact = payload.ownerContact;
+  if (payload.status !== undefined) updates.status = payload.status;
+
+  const { data, error } = await adminClient
+    .from('stations')
+    .update(updates)
+    .eq('id', stationId)
+    .select('id, name, engencode, owner_contact, status, created_at')
+    .maybeSingle();
+
+  if (error || !data) {
+    logStructured({
+      event: 'station_update_failed',
+      target: 'stations',
+      status: 'error',
+      message: error?.message ?? 'Station not found',
+      details: { stationId }
+    });
+    return NextResponse.json(
+      { error: 'station_update_failed', message: 'Unable to update station.' },
+      { status: 500 }
+    );
+  }
+
+  await recordAudit({
+    actorId: headers().get('x-actor-id'),
+    action: 'station_update',
+    targetTable: 'stations',
+    targetId: stationId,
+    diff: updates
+  });
+
+  return NextResponse.json(
+    {
+      data: {
+        id: data.id,
+        name: data.name,
+        engencode: data.engencode,
+        ownerContact: data.owner_contact,
+        status: data.status,
+        createdAt: data.created_at
+      }
+    },
+    { status: 200 }
+  );
 }
 
 export async function DELETE(
   _request: Request,
-  context: { params: { id: string } },
+  { params }: { params: { id: string } }
 ) {
-  try {
-    const { id } = paramsSchema.parse(context.params);
-    const { getSupabaseAdminClient } = await import(
-      "@/lib/server/supabase-admin"
+  const parseParams = paramsSchema.safeParse(params);
+  if (!parseParams.success) {
+    return NextResponse.json({ error: 'invalid_station_id' }, { status: 400 });
+  }
+  const stationId = parseParams.data.id;
+
+  const adminClient = getSupabaseAdminClient();
+  if (!adminClient) {
+    return NextResponse.json(
+      { error: 'supabase_unavailable', message: 'Supabase credentials missing.' },
+      { status: 503 }
     );
-    const adminClient = getSupabaseAdminClient();
+  }
 
-    if (adminClient) {
-      const { error } = await adminClient.from("stations").delete().eq(
-        "id",
-        id,
-      );
-      if (error) {
-        console.error("Supabase station delete failed", error);
-      }
-    }
+  const { error } = await adminClient
+    .from('stations')
+    .delete()
+    .eq('id', stationId);
 
-    const bridgeResult = await callBridge("stationDirectory", {
-      action: "delete",
-      station: { id },
-    });
-
-    await recordAudit({
-      actor: "admin:mock",
-      action: "station_delete",
-      targetTable: "stations",
-      targetId: id,
-      summary: "Station deleted",
+  if (error) {
+    logStructured({
+      event: 'station_delete_failed',
+      target: 'stations',
+      status: 'error',
+      message: error.message,
+      details: { stationId }
     });
     return NextResponse.json(
-      {
-        id,
-        integration: bridgeResult.ok
-          ? bridgeHealthy("stationDirectory")
-          : bridgeDegraded("stationDirectory", bridgeResult),
-      },
-      {
-        status: bridgeResult.ok || bridgeResult.reason === "missing_endpoint"
-          ? 200
-          : 502,
-      },
+      { error: 'station_delete_failed', message: 'Unable to delete station.' },
+      { status: 500 }
     );
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json({
-        error: "invalid_params",
-        details: error.flatten(),
-      }, { status: 400 });
-    }
-    console.error("Failed to delete station", error);
-    return NextResponse.json({ error: "station_delete_failed" }, {
-      status: 500,
-    });
   }
+
+  await recordAudit({
+    actorId: headers().get('x-actor-id'),
+    action: 'station_delete',
+    targetTable: 'stations',
+    targetId: stationId,
+    diff: {}
+  });
+
+  return NextResponse.json({ status: 'deleted' }, { status: 200 });
 }

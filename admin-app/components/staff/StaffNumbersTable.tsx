@@ -3,10 +3,14 @@
 import { useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "@/components/data-table/DataTable";
+import { LoadMoreButton } from "@/components/ui/LoadMoreButton";
 import type { StaffNumber } from "@/lib/schemas";
 
 interface StaffNumbersTableProps {
   data: StaffNumber[];
+  hasMore?: boolean;
+  onLoadMore?: () => void;
+  loadingMore?: boolean;
 }
 
 const columns: ColumnDef<StaffNumber>[] = [
@@ -43,7 +47,7 @@ const columns: ColumnDef<StaffNumber>[] = [
   },
 ];
 
-export function StaffNumbersTable({ data }: StaffNumbersTableProps) {
+export function StaffNumbersTable({ data, hasMore, onLoadMore, loadingMore }: StaffNumbersTableProps) {
   const [filters, setFilters] = useState<{ role?: string; active?: string }>(
     {},
   );
@@ -59,7 +63,7 @@ export function StaffNumbersTable({ data }: StaffNumbersTableProps) {
   }, [data, filters]);
 
   return (
-    <div className="stack">
+    <div className="space-y-4">
       <div className="filters">
         <label>
           <span>Role</span>
@@ -99,6 +103,13 @@ export function StaffNumbersTable({ data }: StaffNumbersTableProps) {
           )}
         downloadFileName="staff-numbers.csv"
       />
+      <LoadMoreButton
+        hasMore={hasMore}
+        loading={loadingMore}
+        onClick={onLoadMore}
+      >
+        Load more staff
+      </LoadMoreButton>
     </div>
   );
 }

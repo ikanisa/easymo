@@ -10,6 +10,7 @@ import {
   type NotificationsQueryParams,
   useNotificationsQuery,
 } from "@/lib/queries/notifications";
+import { PolicyDetails } from "@/components/policy/PolicyDetails";
 
 const STATUS_FILTERS = ["queued", "sent", "failed"] as const;
 
@@ -41,6 +42,7 @@ export function NotificationsClient(
         title="Notifications"
         description="Monitor WhatsApp send status and manage resends or cancellations."
       />
+      <PolicyDetails />
       <SectionCard
         title="Outbox"
         description="Resend or cancel notifications. Actions persist when Supabase credentials are present."

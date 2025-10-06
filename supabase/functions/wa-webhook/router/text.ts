@@ -34,6 +34,15 @@ import {
   handleReviewEditText,
 } from "../domains/dinein/manager.ts";
 import { handleDineBack } from "../domains/dinein/navigation.ts";
+import {
+  handleVehiclePlateInput,
+  normalizePlate,
+  parsePlateState,
+  vehiclePlateStateKey,
+} from "../domains/mobility/vehicle_plate.ts";
+import { handleScheduleRole } from "../domains/mobility/schedule.ts";
+import { handleSeePassengers } from "../domains/mobility/nearby.ts";
+import { sendText } from "../wa/client.ts";
 
 export async function handleText(
   ctx: RouterContext,
@@ -42,6 +51,29 @@ export async function handleText(
 ): Promise<boolean> {
   const body = (msg.text?.body ?? "").trim();
   if (!body) return false;
+  if (state.key === vehiclePlateStateKey) {
+    const resume = parsePlateState(state.data);
+    if (!resume) {
+      await sendHomeMenu(ctx);
+      return true;
+    }
+    const error = await handleVehiclePlateInput(ctx, resume, body);
+    if (error) {
+      await sendText(
+        ctx.from,
+        `${error} Reply with your vehicle plate to continue.`,
+      );
+      return true;
+    }
+    const saved = normalizePlate(body) ?? body.trim();
+    await sendText(ctx.from, `✅ Plate saved: ${saved}`);
+    if (resume.type === "schedule_role") {
+      await handleScheduleRole(ctx, resume.roleId);
+    } else if (resume.type === "nearby_passengers") {
+      await handleSeePassengers(ctx);
+    }
+    return true;
+  }
   const referralMatch = body.match(/^ref[:：]\s*([a-z0-9]{4,32})$/i);
   if (referralMatch) {
     const code = referralMatch[1];
@@ -60,6 +92,7 @@ export async function handleText(
     "momo_qr_number",
     "momo_qr_code",
     "momo_qr_amount",
+    "basket_create_momo",
   ]);
   const dineOnboardingStates = new Set<string>([
     DINE_STATE.ONBOARD_IDENTITY,

@@ -1,191 +1,186 @@
-import { headers } from "next/headers";
-import { NextResponse } from "next/server";
-import { z } from "zod";
-import { listCampaigns } from "@/lib/data-provider";
-import { campaignSchema } from "@/lib/schemas";
-import { getSupabaseAdminClient } from "@/lib/server/supabase-admin";
-import { recordAudit } from "@/lib/server/audit";
-import {
-  bridgeDegraded,
-  bridgeHealthy,
-  callBridge,
-} from "@/lib/server/edge-bridges";
-import { withIdempotency } from "@/lib/server/idempotency";
+import { NextResponse } from 'next/server';
+import { z } from 'zod';
+import { getSupabaseAdminClient } from '@/lib/server/supabase-admin';
+import { logStructured } from '@/lib/server/logger';
+import { recordAudit } from '@/lib/server/audit';
 
-const listQuerySchema = z.object({
-  status: z.enum(["draft", "running", "paused", "done"]).optional(),
-  offset: z.coerce.number().int().min(0).optional(),
-  limit: z.coerce.number().int().min(1).max(200).optional(),
+const getSchema = z.object({
+  status: z.string().optional(),
+  limit: z.coerce.number().int().min(1).max(500).optional(),
+  offset: z.coerce.number().int().min(0).optional()
 });
 
-const listResponseSchema = z.object({
-  data: z.array(campaignSchema),
-  total: z.number().int().nonnegative(),
-  hasMore: z.boolean(),
-});
-
-const draftInputSchema = z.object({
+const upsertSchema = z.object({
+  id: z.string().uuid().optional(),
   name: z.string().min(1),
-  type: z.enum(["promo", "voucher"]),
+  type: z.enum(['promo', 'voucher']),
   templateId: z.string().min(1),
-  metadata: z.record(z.any()).optional(),
+  status: z.enum(['draft', 'running', 'paused', 'done']).optional(),
+  metadata: z.record(z.any()).optional()
 });
-
-export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
-  try {
-    const { searchParams } = new URL(request.url);
-    const parsedQuery = listQuerySchema.parse({
-      status: (searchParams.get("status") as z.infer<
-        typeof listQuerySchema
-      >["status"]) ?? undefined,
-      offset: searchParams.get("offset") ?? undefined,
-      limit: searchParams.get("limit") ?? undefined,
-    });
-
-    const result = await listCampaigns(parsedQuery);
-    const payload = listResponseSchema.parse(result);
-    return NextResponse.json(payload, { status: 200 });
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json({
-        error: "invalid_query",
-        details: error.flatten(),
-      }, { status: 400 });
-    }
-    console.error("Failed to list campaigns", error);
-    return NextResponse.json({ error: "campaigns_list_failed" }, {
-      status: 500,
-    });
+  const adminClient = getSupabaseAdminClient();
+  if (!adminClient) {
+    return NextResponse.json(
+      {
+        error: 'supabase_unavailable',
+        message: 'Supabase credentials missing. Unable to fetch campaigns.'
+      },
+      { status: 503 }
+    );
   }
+
+  let query: z.infer<typeof getSchema>;
+  try {
+    query = getSchema.parse(Object.fromEntries(new URL(request.url).searchParams));
+  } catch (error) {
+    return NextResponse.json(
+      {
+        error: 'invalid_query',
+        message: error instanceof z.ZodError ? error.flatten() : 'Invalid query parameters.'
+      },
+      { status: 400 }
+    );
+  }
+
+  const offset = query.offset ?? 0;
+  const limit = query.limit ?? 50;
+
+  const supabaseQuery = adminClient
+    .from('campaigns')
+    .select('id, name, type, status, template_id, created_at, started_at, finished_at, metadata', { count: 'exact' })
+    .order('created_at', { ascending: false })
+    .range(offset, offset + limit - 1);
+
+  if (query.status) {
+    supabaseQuery.eq('status', query.status);
+  }
+
+  const { data, error, count } = await supabaseQuery;
+  if (error) {
+    logStructured({
+      event: 'campaign_fetch_failed',
+      target: 'campaigns',
+      status: 'error',
+      message: error.message
+    });
+    return NextResponse.json(
+      { error: 'campaign_fetch_failed', message: 'Unable to load campaigns.' },
+      { status: 500 }
+    );
+  }
+
+  const rows = data ?? [];
+  const total = count ?? rows.length;
+  const hasMore = offset + rows.length < total;
+
+  return NextResponse.json(
+    {
+      data: rows.map((row) => ({
+        id: row.id,
+        name: row.name,
+        type: row.type,
+        status: row.status,
+        templateId: row.template_id,
+        createdAt: row.created_at,
+        startedAt: row.started_at,
+        finishedAt: row.finished_at,
+        metadata: row.metadata ?? {}
+      })),
+      total,
+      hasMore
+    },
+    { status: 200 }
+  );
 }
 
 export async function POST(request: Request) {
-  try {
-    const body = await request.json();
-    const parsed = draftInputSchema.parse(body);
-    const now = new Date().toISOString();
-    const idempotencyKey = headers().get("x-idempotency-key") ?? undefined;
-
-    const result = await withIdempotency(idempotencyKey, async () => {
-      const adminClient = getSupabaseAdminClient();
-
-      if (adminClient) {
-        const { data, error } = await adminClient
-          .from("campaigns")
-          .insert({
-            name: parsed.name,
-            type: parsed.type,
-            status: "draft",
-            template_id: parsed.templateId,
-            metadata: parsed.metadata ?? {},
-            created_at: now,
-          })
-          .select("id, name, type, status, template_id, created_at");
-
-        if (!error && data) {
-          const campaignBridgePayload = {
-            id: data[0].id,
-            name: data[0].name,
-            type: data[0].type,
-            templateId: data[0].template_id,
-            metadata: parsed.metadata ?? {},
-          };
-
-          const bridgeResult = await callBridge("campaignDispatch", {
-            action: "create",
-            campaign: campaignBridgePayload,
-          });
-
-          await recordAudit({
-            actor: "admin:mock",
-            action: "campaign_create",
-            targetTable: "campaigns",
-            targetId: data[0].id,
-            summary: `Campaign ${parsed.name} created`,
-          });
-
-          return {
-            status: 201,
-            payload: {
-              campaign: {
-                id: data[0].id,
-                name: data[0].name,
-                type: data[0].type,
-                status: data[0].status,
-                templateId: data[0].template_id,
-                createdAt: data[0].created_at,
-                startedAt: null,
-                metadata: parsed.metadata ?? {},
-              },
-              message: "Draft saved.",
-              integration: bridgeResult.ok
-                ? bridgeHealthy("campaignDispatch")
-                : bridgeDegraded("campaignDispatch", bridgeResult),
-            },
-          };
-        }
-
-        console.error(
-          "Supabase campaign insert failed, falling back to mock",
-          error,
-        );
-      }
-
-      const draft = {
-        id: `draft-${Math.random().toString(36).slice(2, 10)}`,
-        name: parsed.name,
-        type: parsed.type,
-        status: "draft" as const,
-        templateId: parsed.templateId,
-        createdAt: now,
-        startedAt: null,
-        metadata: parsed.metadata ?? {},
-      };
-
-      const bridgeResult = await callBridge("campaignDispatch", {
-        action: "create",
-        campaign: {
-          id: draft.id,
-          name: draft.name,
-          type: draft.type,
-          templateId: draft.templateId,
-          metadata: draft.metadata,
-        },
-      });
-
-      await recordAudit({
-        actor: "admin:mock",
-        action: "campaign_create",
-        targetTable: "campaigns",
-        targetId: draft.id,
-        summary: `Campaign ${parsed.name} created (mock)`,
-      });
-
-      return {
-        status: 201,
-        payload: {
-          campaign: draft,
-          message: "Draft saved (mock).",
-          integration: bridgeResult.ok
-            ? bridgeHealthy("campaignDispatch")
-            : bridgeDegraded("campaignDispatch", bridgeResult),
-        },
-      };
-    });
-
-    return NextResponse.json(result.payload, { status: result.status });
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json({
-        error: "invalid_payload",
-        details: error.flatten(),
-      }, { status: 400 });
-    }
-    console.error("Failed to create campaign draft", error);
-    return NextResponse.json({ error: "campaign_create_failed" }, {
-      status: 500,
-    });
+  const adminClient = getSupabaseAdminClient();
+  if (!adminClient) {
+    return NextResponse.json(
+      {
+        error: 'supabase_unavailable',
+        message: 'Supabase credentials missing. Unable to persist campaigns.'
+      },
+      { status: 503 }
+    );
   }
+
+  let payload: z.infer<typeof upsertSchema>;
+  try {
+    payload = upsertSchema.parse(await request.json());
+  } catch (error) {
+    return NextResponse.json(
+      {
+        error: 'invalid_payload',
+        message: error instanceof z.ZodError ? error.flatten() : 'Invalid JSON payload.'
+      },
+      { status: 400 }
+    );
+  }
+
+  const actorId = request.headers.get('x-actor-id');
+  const record = {
+    id: payload.id,
+    name: payload.name,
+    type: payload.type,
+    template_id: payload.templateId,
+    status: payload.status ?? 'draft',
+    metadata: payload.metadata ?? {}
+  };
+
+  const { data, error } = await adminClient
+    .from('campaigns')
+    .upsert(record)
+    .select('id, name, type, status, template_id, created_at, started_at, finished_at, metadata')
+    .single();
+
+  if (error || !data) {
+    logStructured({
+      event: 'campaign_upsert_failed',
+      target: 'campaigns',
+      status: 'error',
+      message: error?.message ?? 'Unknown error'
+    });
+    return NextResponse.json(
+      {
+        error: 'campaign_upsert_failed',
+        message: 'Unable to save campaign.'
+      },
+      { status: 500 }
+    );
+  }
+
+  await recordAudit({
+    actorId,
+    action: payload.id ? 'campaign_update' : 'campaign_create',
+    targetTable: 'campaigns',
+    targetId: data.id,
+    diff: record
+  });
+
+  logStructured({
+    event: 'campaign_upsert',
+    target: 'campaigns',
+    status: 'ok',
+    details: { campaignId: data.id, status: data.status }
+  });
+
+  return NextResponse.json(
+    {
+      data: {
+        id: data.id,
+        name: data.name,
+        type: data.type,
+        status: data.status,
+        templateId: data.template_id,
+        createdAt: data.created_at,
+        startedAt: data.started_at,
+        finishedAt: data.finished_at,
+        metadata: data.metadata ?? {}
+      }
+    },
+    { status: 200 }
+  );
 }

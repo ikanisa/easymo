@@ -1,151 +1,186 @@
-import { headers } from "next/headers";
-import { NextResponse } from "next/server";
-import { z } from "zod";
-import { listStations } from "@/lib/data-provider";
-import { recordAudit } from "@/lib/server/audit";
-import {
-  bridgeDegraded,
-  bridgeHealthy,
-  callBridge,
-} from "@/lib/server/edge-bridges";
-import { withIdempotency } from "@/lib/server/idempotency";
+import { headers } from 'next/headers';
+import { NextResponse } from 'next/server';
+import { z } from 'zod';
+import { getSupabaseAdminClient } from '@/lib/server/supabase-admin';
+import { logStructured } from '@/lib/server/logger';
+import { recordAudit } from '@/lib/server/audit';
 
-const stationListResponse = z.object({
-  data: z.array(
-    z.object({
-      id: z.string(),
-      name: z.string(),
-      engencode: z.string(),
-      ownerContact: z.string().nullable(),
-      status: z.string(),
-      updatedAt: z.string(),
-    }),
-  ),
-  total: z.number().int().nonnegative(),
-  hasMore: z.boolean(),
+const listQuerySchema = z.object({
+  status: z.string().optional(),
+  search: z.string().optional(),
+  limit: z.coerce.number().int().min(1).max(200).optional(),
+  offset: z.coerce.number().int().min(0).optional()
 });
 
-const createStationSchema = z.object({
+const createSchema = z.object({
   name: z.string().min(1),
   engencode: z.string().min(1),
-  ownerContact: z.string().nullable().optional(),
-  status: z.enum(["active", "inactive"]).default("active"),
+  ownerContact: z.string().optional().nullable(),
+  status: z.enum(['active', 'inactive']).default('active')
 });
 
-export const dynamic = "force-dynamic";
+export async function GET(request: Request) {
+  const adminClient = getSupabaseAdminClient();
+  if (!adminClient) {
+    return NextResponse.json(
+      {
+        error: 'supabase_unavailable',
+        message: 'Supabase credentials missing. Unable to fetch stations.'
+      },
+      { status: 503 }
+    );
+  }
 
-export async function GET() {
-  const result = await listStations({ limit: 500 });
-  return NextResponse.json(stationListResponse.parse(result));
+  let query: z.infer<typeof listQuerySchema>;
+  try {
+    query = listQuerySchema.parse(Object.fromEntries(new URL(request.url).searchParams));
+  } catch (error) {
+    return NextResponse.json(
+      {
+        error: 'invalid_query',
+        message: error instanceof z.ZodError ? error.flatten() : 'Invalid query parameters.'
+      },
+      { status: 400 }
+    );
+  }
+
+  const rangeStart = query.offset ?? 0;
+  const rangeEnd = rangeStart + (query.limit ?? 100) - 1;
+
+  const offset = query.offset ?? 0;
+  const limit = query.limit ?? 100;
+
+  const supabaseQuery = adminClient
+    .from('stations')
+    .select('id, name, engencode, owner_contact, status, created_at', { count: 'exact' })
+    .order('created_at', { ascending: false })
+    .range(offset, offset + limit - 1);
+
+  if (query.status) {
+    supabaseQuery.eq('status', query.status);
+  }
+  if (query.search) {
+    supabaseQuery.ilike('name', `%${query.search}%`);
+  }
+
+  const { data, error, count } = await supabaseQuery;
+  if (error) {
+    logStructured({
+      event: 'stations_fetch_failed',
+      target: 'stations',
+      status: 'error',
+      message: error.message
+    });
+    return NextResponse.json(
+      {
+        error: 'stations_fetch_failed',
+        message: 'Unable to load stations.'
+      },
+      { status: 500 }
+    );
+  }
+
+  const rows = data ?? [];
+  const total = count ?? rows.length;
+  const hasMore = offset + rows.length < total;
+
+  return NextResponse.json(
+    {
+      data: rows.map((row) => ({
+        id: row.id,
+        name: row.name,
+        engencode: row.engencode,
+        ownerContact: row.owner_contact,
+        status: row.status,
+        createdAt: row.created_at
+      })),
+      total,
+      hasMore
+    },
+    { status: 200 }
+  );
 }
 
 export async function POST(request: Request) {
-  try {
-    const payload = createStationSchema.parse(await request.json());
-    const idempotencyKey = headers().get("x-idempotency-key") ?? undefined;
-
-    const result = await withIdempotency(idempotencyKey, async () => {
-      const { getSupabaseAdminClient } = await import(
-        "@/lib/server/supabase-admin"
-      );
-      const adminClient = getSupabaseAdminClient();
-
-      if (adminClient) {
-        const { data, error } = await adminClient
-          .from("stations")
-          .insert({
-            name: payload.name,
-            engencode: payload.engencode,
-            owner_contact: payload.ownerContact ?? null,
-            status: payload.status,
-          })
-          .select("id, name, engencode, owner_contact, status, updated_at");
-
-        if (!error && data?.[0]) {
-          const stationForBridge = {
-            id: data[0].id,
-            name: data[0].name,
-            engencode: data[0].engencode,
-            ownerContact: data[0].owner_contact,
-            status: data[0].status,
-          };
-
-          const bridgeResult = await callBridge("stationDirectory", {
-            action: "create",
-            station: stationForBridge,
-          });
-
-          await recordAudit({
-            actor: "admin:mock",
-            action: "station_create",
-            targetTable: "stations",
-            targetId: data[0].id,
-            summary: `Station ${payload.name} created`,
-          });
-
-          return {
-            status: 201,
-            payload: {
-              station: data[0],
-              integration: bridgeResult.ok
-                ? bridgeHealthy("stationDirectory")
-                : bridgeDegraded("stationDirectory", bridgeResult),
-            },
-          };
-        }
-
-        console.error("Supabase station insert failed", error);
-      }
-
-      const fallbackId = `station-mock-${Date.now()}`;
-      const bridgeResult = await callBridge("stationDirectory", {
-        action: "create",
-        station: {
-          id: fallbackId,
-          name: payload.name,
-          engencode: payload.engencode,
-          ownerContact: payload.ownerContact ?? null,
-          status: payload.status,
-        },
-      });
-
-      await recordAudit({
-        actor: "admin:mock",
-        action: "station_create",
-        targetTable: "stations",
-        targetId: fallbackId,
-        summary: `Station ${payload.name} created (mock)`,
-      });
-
-      return {
-        status: 201,
-        payload: {
-          station: {
-            id: fallbackId,
-            name: payload.name,
-            engencode: payload.engencode,
-            owner_contact: payload.ownerContact ?? null,
-            status: payload.status,
-            updated_at: new Date().toISOString(),
-          },
-          integration: bridgeResult.ok
-            ? bridgeHealthy("stationDirectory")
-            : bridgeDegraded("stationDirectory", bridgeResult),
-        },
-      };
-    });
-
-    return NextResponse.json(result.payload, { status: result.status });
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json({
-        error: "invalid_payload",
-        details: error.flatten(),
-      }, { status: 400 });
-    }
-    console.error("Failed to create station", error);
-    return NextResponse.json({ error: "station_create_failed" }, {
-      status: 500,
-    });
+  const adminClient = getSupabaseAdminClient();
+  if (!adminClient) {
+    return NextResponse.json(
+      {
+        error: 'supabase_unavailable',
+        message: 'Supabase credentials missing. Unable to create station.'
+      },
+      { status: 503 }
+    );
   }
+
+  let payload: z.infer<typeof createSchema>;
+  try {
+    payload = createSchema.parse(await request.json());
+  } catch (error) {
+    return NextResponse.json(
+      {
+        error: 'invalid_payload',
+        message: error instanceof z.ZodError ? error.flatten() : 'Invalid JSON payload.'
+      },
+      { status: 400 }
+    );
+  }
+
+  const actorId = headers().get('x-actor-id');
+
+  const { data, error } = await adminClient
+    .from('stations')
+    .insert({
+      name: payload.name,
+      engencode: payload.engencode,
+      owner_contact: payload.ownerContact ?? null,
+      status: payload.status
+    })
+    .select('id, name, engencode, owner_contact, status, created_at')
+    .single();
+
+  if (error || !data) {
+    logStructured({
+      event: 'station_create_failed',
+      target: 'stations',
+      status: 'error',
+      message: error?.message ?? 'Unknown error'
+    });
+    return NextResponse.json(
+      {
+        error: 'station_create_failed',
+        message: 'Unable to create station.'
+      },
+      { status: 500 }
+    );
+  }
+
+  await recordAudit({
+    actorId,
+    action: 'station_create',
+    targetTable: 'stations',
+    targetId: data.id,
+    diff: payload
+  });
+
+  logStructured({
+    event: 'station_created',
+    target: 'stations',
+    status: 'ok',
+    details: { stationId: data.id }
+  });
+
+  return NextResponse.json(
+    {
+      data: {
+        id: data.id,
+        name: data.name,
+        engencode: data.engencode,
+        ownerContact: data.owner_contact,
+        status: data.status,
+        createdAt: data.created_at
+      }
+    },
+    { status: 201 }
+  );
 }

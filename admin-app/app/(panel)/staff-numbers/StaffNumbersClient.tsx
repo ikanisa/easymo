@@ -18,9 +18,11 @@ interface StaffNumbersClientProps {
 export function StaffNumbersClient(
   { initialParams = { limit: 200 } }: StaffNumbersClientProps,
 ) {
-  const [params] = useState(initialParams);
+  const [params, setParams] = useState(initialParams);
   const staffNumbersQuery = useStaffNumbersQuery(params);
   const staffNumbers = staffNumbersQuery.data?.data ?? [];
+  const hasMore = staffNumbersQuery.data?.hasMore;
+  const isLoadingMore = staffNumbersQuery.isFetching && !staffNumbersQuery.isLoading;
 
   return (
     <div className="admin-page">
@@ -40,7 +42,18 @@ export function StaffNumbersClient(
             />
           )
           : staffNumbers.length
-          ? <StaffNumbersTable data={staffNumbers} />
+          ? (
+            <StaffNumbersTable
+              data={staffNumbers}
+              hasMore={hasMore}
+              loadingMore={isLoadingMore}
+              onLoadMore={() =>
+                setParams((prev) => ({
+                  ...prev,
+                  limit: (prev.limit ?? 200) + 50,
+                }))}
+            />
+          )
           : (
             <EmptyState
               title="No staff numbers yet"

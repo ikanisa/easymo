@@ -6,10 +6,12 @@ import { SectionCard } from "@/components/ui/SectionCard";
 import { StorageTable } from "@/components/files/StorageTable";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { LoadingState } from "@/components/ui/LoadingState";
+import { IntegrationStatusChip } from "@/components/ui/IntegrationStatusChip";
 import {
   type StorageQueryParams,
   useStorageObjectsQuery,
 } from "@/lib/queries/files";
+import { useIntegrationStatusQuery } from "@/lib/queries/integrations";
 
 const BUCKET_OPTIONS = ["vouchers", "qr", "campaign-media", "docs"];
 
@@ -22,10 +24,13 @@ export function FilesClient(
 ) {
   const [params, setParams] = useState<StorageQueryParams>(initialParams);
   const storageQuery = useStorageObjectsQuery(params);
+  const integrationStatus = useIntegrationStatusQuery();
 
   const storageObjects = useMemo(() => storageQuery.data?.data ?? [], [
     storageQuery.data?.data,
   ]);
+  const hasMore = storageQuery.data?.hasMore;
+  const loadingMore = storageQuery.isFetching && !storageQuery.isLoading;
 
   const derivedCounts = useMemo(() => {
     const counts = new Map<string, number>();
@@ -41,6 +46,13 @@ export function FilesClient(
       <PageHeader
         title="Files"
         description="Browse Supabase storage buckets for vouchers, QR codes, campaign media, and insurance documents."
+        meta={
+          <IntegrationStatusChip
+            label="Signed URLs"
+            status={integrationStatus.data?.storageSignedUrl}
+            isLoading={integrationStatus.isLoading}
+          />
+        }
       />
 
       <SectionCard
@@ -56,6 +68,8 @@ export function FilesClient(
                   setParams((prev) => ({
                     ...prev,
                     bucket: event.target.value || undefined,
+                    limit: initialParams.limit ?? 200,
+                    offset: 0,
                   }))}
                 className="ml-2 rounded-lg border border-[color:var(--color-border)]/40 bg-white/90 px-3 py-1 text-sm"
               >
@@ -75,6 +89,8 @@ export function FilesClient(
                   setParams((prev) => ({
                     ...prev,
                     search: event.target.value || undefined,
+                    limit: initialParams.limit ?? 200,
+                    offset: 0,
                   }))}
                 placeholder="filename.png"
                 className="ml-2 rounded-lg border border-[color:var(--color-border)]/40 bg-white/90 px-3 py-1 text-sm"
@@ -91,7 +107,18 @@ export function FilesClient(
             />
           )
           : storageObjects.length
-          ? <StorageTable data={storageObjects} />
+          ? (
+            <StorageTable
+              data={storageObjects}
+              hasMore={hasMore}
+              loadingMore={loadingMore}
+              onLoadMore={() =>
+                setParams((prev) => ({
+                  ...prev,
+                  limit: (prev.limit ?? initialParams.limit ?? 200) + 100,
+                }))}
+            />
+          )
           : (
             <EmptyState
               title="Storage empty"

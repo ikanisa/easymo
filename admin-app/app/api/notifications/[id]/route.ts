@@ -1,98 +1,133 @@
-import { NextResponse } from "next/server";
-import { z } from "zod";
-import { recordAudit } from "@/lib/server/audit";
+import { NextResponse } from 'next/server';
+import { z } from 'zod';
+import { getSupabaseAdminClient } from '@/lib/server/supabase-admin';
+import { logStructured } from '@/lib/server/logger';
+import { recordAudit } from '@/lib/server/audit';
+import { callBridge } from '@/lib/server/edge-bridges';
+import { headers } from 'next/headers';
 
-const paramsSchema = z.object({
-  id: z.string().min(1),
+const paramsSchema = z.object({ id: z.string().uuid() });
+
+const actionSchema = z.object({
+  action: z.enum(['resend', 'cancel'])
 });
-
-const bodySchema = z.object({
-  action: z.enum(["resend", "cancel"]),
-});
-
-export const dynamic = "force-dynamic";
 
 export async function POST(
   request: Request,
-  context: { params: { id: string } },
+  { params }: { params: { id: string } }
 ) {
-  try {
-    const { id } = paramsSchema.parse(context.params);
-    const { action } = bodySchema.parse(await request.json());
-    const { getSupabaseAdminClient } = await import(
-      "@/lib/server/supabase-admin"
+  const adminClient = getSupabaseAdminClient();
+  if (!adminClient) {
+    return NextResponse.json(
+      { error: 'supabase_unavailable', message: 'Supabase credentials missing.' },
+      { status: 503 }
     );
-    const adminClient = getSupabaseAdminClient();
-    let message = "";
-    let integration: {
-      target: string;
-      status: "ok" | "degraded";
-      reason?: string;
-      message?: string;
-    } = {
-      target: "notifications",
-      status: "degraded",
-      reason: "mock_store",
-      message: "Supabase not configured; returning mock acknowledgement.",
-    };
+  }
 
-    if (adminClient) {
-      if (action === "cancel") {
-        const { error } = await adminClient
-          .from("notifications")
-          .update({ status: "cancelled" })
-          .eq("id", id);
-        if (error) {
-          console.error("Supabase notification cancel failed", error);
-        } else {
-          message = "Notification cancelled.";
-          integration = { target: "notifications", status: "ok" };
-        }
-      }
-      if (action === "resend") {
-        const { error } = await adminClient
-          .from("notifications")
-          .update({ status: "queued", retry_count: (Math.random() * 3) | 0 })
-          .eq("id", id);
-        if (error) {
-          console.error("Supabase notification resend failed", error);
-        } else {
-          message = "Notification queued for resend.";
-          integration = { target: "notifications", status: "ok" };
-        }
-      }
-    }
+  const paramsParsed = paramsSchema.safeParse(params);
+  if (!paramsParsed.success) {
+    return NextResponse.json(
+      { error: 'invalid_notification_id', message: 'Invalid notification ID.' },
+      { status: 400 }
+    );
+  }
+  const notificationId = paramsParsed.data.id;
 
-    if (!message) {
-      message = action === "cancel"
-        ? "Notification cancelled (mock)."
-        : "Notification queued (mock).";
+  let payload: z.infer<typeof actionSchema>;
+  try {
+    payload = actionSchema.parse(await request.json());
+  } catch (error) {
+    return NextResponse.json(
+      {
+        error: 'invalid_payload',
+        message: error instanceof z.ZodError ? error.flatten() : 'Invalid JSON payload.'
+      },
+      { status: 400 }
+    );
+  }
+
+  const { data, error } = await adminClient
+    .from('notifications')
+    .select('id, msisdn, status')
+    .eq('id', notificationId)
+    .maybeSingle();
+
+  if (error || !data) {
+    logStructured({
+      event: 'notification_fetch_failed',
+      target: 'notifications',
+      status: 'error',
+      message: error?.message ?? 'Notification not found',
+      details: { notificationId }
+    });
+    return NextResponse.json(
+      { error: 'not_found', message: 'Notification not found.' },
+      { status: 404 }
+    );
+  }
+
+  const actorId = headers().get('x-actor-id');
+
+  if (payload.action === 'cancel') {
+    const { error: updateError } = await adminClient
+      .from('notifications')
+      .update({ status: 'cancelled' })
+      .eq('id', notificationId);
+
+    if (updateError) {
+      logStructured({
+        event: 'notification_cancel_failed',
+        target: 'notifications',
+        status: 'error',
+        message: updateError.message,
+        details: { notificationId }
+      });
+      return NextResponse.json(
+        { error: 'cancel_failed', message: 'Unable to cancel notification.' },
+        { status: 500 }
+      );
     }
 
     await recordAudit({
-      actor: "admin:mock",
-      action: `notification_${action}`,
-      targetTable: "notifications",
-      targetId: id,
-      summary: message,
+      actorId,
+      action: 'notification_cancel',
+      targetTable: 'notifications',
+      targetId: notificationId,
+      diff: { status: 'cancelled' }
     });
 
-    return NextResponse.json({
-      notificationId: id,
-      status: action,
-      message,
-      integration,
-    }, { status: 200 });
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json({
-        error: "invalid_request",
-        details: error.flatten(),
-      }, { status: 400 });
-    }
-    console.error("Notification action failed", error);
-    return NextResponse.json({ error: "notification_action_failed" }, {
-      status: 500,
-    });
+    return NextResponse.json({ status: 'cancelled' }, { status: 200 });
   }
+
+  const bridgeResult = await callBridge('voucherSend', {
+    notificationId,
+    msisdn: data.msisdn,
+    action: 'resend'
+  });
+
+  const integration = bridgeResult.ok
+    ? { status: 'ok' as const, target: 'notification_resend' }
+    : { status: 'degraded' as const, target: 'notification_resend', message: bridgeResult.message };
+
+  if (!bridgeResult.ok) {
+    return NextResponse.json(
+      { error: 'resend_failed', message: bridgeResult.message, integration },
+      { status: bridgeResult.status ?? 503 }
+    );
+  }
+
+  await adminClient
+    .from('notifications')
+    .update({ status: 'queued', sent_at: null })
+    .eq('id', notificationId);
+
+  await recordAudit({
+    actorId,
+    action: 'notification_resend',
+    targetTable: 'notifications',
+    targetId: notificationId,
+    diff: { status: 'queued' }
+  });
+
+  return NextResponse.json({ status: 'queued', integration }, { status: 200 });
 }

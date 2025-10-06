@@ -28,13 +28,15 @@ export function SettingsClient({
   initialTemplateParams = { limit: 100 },
 }: SettingsClientProps) {
   const [previewParams] = useState(initialPreviewParams);
-  const [templateParams] = useState(initialTemplateParams);
+  const [templateParams, setTemplateParams] = useState(initialTemplateParams);
 
   const previewQuery = useSettingsPreviewQuery(previewParams);
   const templatesQuery = useTemplatesQuery(templateParams);
 
   const preview = previewQuery.data?.data ?? [];
   const templates = templatesQuery.data?.data ?? [];
+  const templatesHasMore = templatesQuery.data?.hasMore;
+  const templatesLoadingMore = templatesQuery.isFetching && !templatesQuery.isLoading;
 
   return (
     <div className="admin-page">
@@ -83,7 +85,25 @@ export function SettingsClient({
             />
           )
           : templates.length
-          ? <TemplatesTable data={templates} />
+          ? (
+            <TemplatesTable
+              data={templates}
+              statusFilter={templateParams.status ?? ""}
+              hasMore={templatesHasMore}
+              loadingMore={templatesLoadingMore}
+              onStatusChange={(value) =>
+                setTemplateParams((prev) => ({
+                  ...prev,
+                  status: value || undefined,
+                  limit: initialTemplateParams.limit ?? 100,
+                }))}
+              onLoadMore={() =>
+                setTemplateParams((prev) => ({
+                  ...prev,
+                  limit: (prev.limit ?? initialTemplateParams.limit ?? 100) + 50,
+                }))}
+            />
+          )
           : (
             <EmptyState
               title="Templates unavailable"

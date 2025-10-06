@@ -12,14 +12,24 @@ import { Button } from "@/components/ui/Button";
 
 export type ToastVariant = "info" | "success" | "error";
 
+type ToastOptions = {
+  variant?: ToastVariant;
+  actionLabel?: string;
+  onAction?: () => void;
+  duration?: number | null;
+};
+
 interface Toast {
   id: string;
   message: string;
   variant: ToastVariant;
+  actionLabel?: string;
+  onAction?: () => void;
+  duration?: number | null;
 }
 
 interface ToastContextValue {
-  pushToast: (message: string, variant?: ToastVariant) => void;
+  pushToast: (message: string, options?: ToastVariant | ToastOptions) => void;
   dismissToast: (id: string) => void;
 }
 
@@ -33,10 +43,26 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const pushToast = useCallback(
-    (message: string, variant: ToastVariant = "info") => {
+    (message: string, options?: ToastVariant | ToastOptions) => {
       const id = crypto.randomUUID();
-      setToasts((prev) => [...prev, { id, message, variant }]);
-      setTimeout(() => dismissToast(id), 4000);
+      const normalized: ToastOptions = typeof options === "string"
+        ? { variant: options }
+        : options ?? {};
+      const toast: Toast = {
+        id,
+        message,
+        variant: normalized.variant ?? "info",
+        actionLabel: normalized.actionLabel,
+        onAction: normalized.onAction,
+        duration: normalized.duration ?? undefined,
+      };
+
+      setToasts((prev) => [...prev, toast]);
+
+      const delay = normalized.duration ?? 4000;
+      if (typeof window !== "undefined" && delay > 0) {
+        window.setTimeout(() => dismissToast(id), delay);
+      }
     },
     [dismissToast],
   );
@@ -55,7 +81,24 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
             key={toast.id}
             className={`${styles.toast} ${styles[`toast_${toast.variant}`]}`}
           >
-            <span>{toast.message}</span>
+            <span className={styles.message}>{toast.message}</span>
+            {toast.onAction && toast.actionLabel
+              ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    toast.onAction?.();
+                    dismissToast(toast.id);
+                  }}
+                  offlineBehavior="allow"
+                  className={styles.actionButton}
+                >
+                  {toast.actionLabel}
+                </Button>
+              )
+              : null}
             <Button
               type="button"
               onClick={() => dismissToast(toast.id)}

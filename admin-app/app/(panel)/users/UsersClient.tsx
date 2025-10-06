@@ -15,10 +15,12 @@ interface UsersClientProps {
 export function UsersClient(
   { initialParams = { limit: 200 } }: UsersClientProps,
 ) {
-  const [params] = useState<UsersQueryParams>(initialParams);
+  const [params, setParams] = useState<UsersQueryParams>(initialParams);
   const usersQuery = useUsersQuery(params);
 
   const users = usersQuery.data?.data ?? [];
+  const hasMore = usersQuery.data?.hasMore;
+  const loadingMore = usersQuery.isFetching && !usersQuery.isLoading;
 
   return (
     <div className="admin-page">
@@ -38,7 +40,18 @@ export function UsersClient(
             />
           )
           : users.length
-          ? <UsersTable data={users} />
+          ? (
+            <UsersTable
+              data={users}
+              hasMore={hasMore}
+              loadingMore={loadingMore}
+              onLoadMore={() =>
+                setParams((prev) => ({
+                  ...prev,
+                  limit: (prev.limit ?? initialParams.limit ?? 200) + 50,
+                }))}
+            />
+          )
           : (
             <EmptyState
               title="No users yet"

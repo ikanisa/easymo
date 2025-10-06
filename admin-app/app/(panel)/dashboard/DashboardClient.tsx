@@ -14,11 +14,15 @@ import {
   useDashboardWebhookErrorsQuery,
 } from "@/lib/queries/dashboard";
 import { LoadingState } from "@/components/ui/LoadingState";
+import { useAdminHubSnapshotQuery } from "@/lib/queries/adminHub";
+import { AdminHubSectionGrid } from "@/components/dashboard/AdminHubSectionGrid";
+import { AdminDiagnosticsCard } from "@/components/dashboard/AdminDiagnosticsCard";
 
 export function DashboardClient() {
   const snapshotQuery = useDashboardSnapshotQuery();
   const orderEventsQuery = useDashboardOrderEventsQuery();
   const webhookErrorsQuery = useDashboardWebhookErrorsQuery();
+  const adminHubQuery = useAdminHubSnapshotQuery();
 
   if (snapshotQuery.isLoading) {
     return (
@@ -32,6 +36,7 @@ export function DashboardClient() {
   const snapshot = snapshotQuery.data ?? { kpis: [], timeseries: [] };
   const orderEvents = orderEventsQuery.data ?? [];
   const webhookErrors = webhookErrorsQuery.data ?? [];
+  const adminHub = adminHubQuery.data;
 
   return (
     <div className="dashboard-grid space-y-6">
@@ -39,6 +44,32 @@ export function DashboardClient() {
         title="Dashboard"
         description="Operations control centre with KPIs, service health, and quick insights. Real data will appear once Supabase credentials are configured."
       />
+      <SectionCard
+        title="Admin hub quick links"
+        description="Surface the WhatsApp admin hub sections that the flow-exchange bridge currently exposes. Configure ADMIN_FLOW_WA_ID to hydrate live data."
+      >
+        {adminHub
+          ? (
+            <AdminHubSectionGrid
+              sections={adminHub.sections}
+              messages={adminHub.messages}
+            />
+          )
+          : adminHubQuery.isLoading
+          ? (
+            <LoadingState
+              title="Loading admin hub sections"
+              description="Fetching live hub definitions via flow-exchange."
+            />
+          )
+          : (
+            <EmptyState
+              title="Admin hub unavailable"
+              description="We could not load admin hub sections. Check the flow-exchange bridge configuration."
+            />
+          )}
+      </SectionCard>
+      <AdminDiagnosticsCard />
       <section
         aria-label="Key performance indicators"
         className="grid gap-4 md:grid-cols-2 xl:grid-cols-4"

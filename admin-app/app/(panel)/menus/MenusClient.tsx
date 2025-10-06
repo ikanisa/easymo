@@ -43,6 +43,10 @@ export function MenusClient({
 
   const menus = menusQuery.data?.data ?? [];
   const ocrJobs = ocrQuery.data?.data ?? [];
+  const menusHasMore = menusQuery.data?.hasMore;
+  const ocrHasMore = ocrQuery.data?.hasMore;
+  const menusLoadingMore = menusQuery.isFetching && !menusQuery.isLoading;
+  const ocrLoadingMore = ocrQuery.isFetching && !ocrQuery.isLoading;
 
   return (
     <div className="admin-page">
@@ -63,6 +67,7 @@ export function MenusClient({
                 setMenuParams((prev) => ({
                   ...prev,
                   status: event.target.value || undefined,
+                  limit: initialMenuParams.limit ?? 100,
                 }))}
               className="ml-2 rounded-lg border border-[color:var(--color-border)]/40 bg-white/90 px-3 py-1 text-sm"
             >
@@ -84,7 +89,18 @@ export function MenusClient({
             />
           )
           : menus.length
-          ? <MenuTable data={menus} />
+          ? (
+            <MenuTable
+              data={menus}
+              hasMore={menusHasMore}
+              loadingMore={menusLoadingMore}
+              onLoadMore={() =>
+                setMenuParams((prev) => ({
+                  ...prev,
+                  limit: (prev.limit ?? 100) + 50,
+                }))}
+            />
+          )
           : (
             <EmptyState
               title="No menus yet"
@@ -105,6 +121,7 @@ export function MenusClient({
                 setOcrParams((prev) => ({
                   ...prev,
                   status: event.target.value || undefined,
+                  limit: initialOcrParams.limit ?? 50,
                 }))}
               className="ml-2 rounded-lg border border-[color:var(--color-border)]/40 bg-white/90 px-3 py-1 text-sm"
             >
@@ -126,7 +143,18 @@ export function MenusClient({
             />
           )
           : ocrJobs.length
-          ? <OcrJobsTable data={ocrJobs} />
+          ? (
+            <OcrJobsTable
+              data={ocrJobs}
+              hasMore={ocrHasMore}
+              loadingMore={ocrLoadingMore}
+              onLoadMore={() =>
+                setOcrParams((prev) => ({
+                  ...prev,
+                  limit: (prev.limit ?? 50) + 25,
+                }))}
+            />
+          )
           : (
             <EmptyState
               title="Queue is empty"

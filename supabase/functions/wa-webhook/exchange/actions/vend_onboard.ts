@@ -7,6 +7,7 @@ import {
   promoteDraftToPublished,
 } from "../helpers.ts";
 import type { OcrJobSummary } from "../helpers.ts";
+import { toE164 } from "../../utils/phone.ts";
 
 export async function handleVendorOnboard(
   req: FlowExchangeRequest,
@@ -181,7 +182,20 @@ async function saveContacts(
   const numbers = numbersCsv.split(/[\s,]+/).map((n) => n.trim()).filter(
     Boolean,
   );
+  const normalizedNumbers = new Set<string>();
   for (const number of numbers) {
+    const normalized = toE164(number);
+    const digits = normalized.replace(/[^0-9]/g, "");
+    if (!digits) continue;
+    normalizedNumbers.add(normalized);
+  }
+  if (!normalizedNumbers.size) {
+    return {
+      next_screen_id: req.screen_id,
+      messages: [{ level: "error", text: "Numbers required" }],
+    };
+  }
+  for (const number of normalizedNumbers) {
     await supabase
       .from("bar_numbers")
       .insert({ bar_id: barId, number_e164: number, role: "manager" })

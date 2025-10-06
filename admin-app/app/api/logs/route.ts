@@ -1,61 +1,149 @@
-import { NextResponse } from "next/server";
-import { z } from "zod";
-import { recordAudit } from "@/lib/server/audit";
-import { mockAuditEvents, mockOrderEvents } from "@/lib/mock-data";
+import { NextResponse } from 'next/server';
+import { z } from 'zod';
+import { getSupabaseAdminClient } from '@/lib/server/supabase-admin';
+import { logStructured } from '@/lib/server/logger';
+import { mockAuditEvents } from '@/lib/mock-data';
 
 const querySchema = z.object({
   limit: z.coerce.number().int().min(1).max(200).optional(),
+  offset: z.coerce.number().int().min(0).optional(),
+  actor: z.string().optional(),
+  targetTable: z.string().optional(),
+  type: z.enum(['audit', 'voucher']).optional()
 });
 
-export const dynamic = "force-dynamic";
+function mockResponse(message: string, filters?: z.infer<typeof querySchema>) {
+  const filtered = mockAuditEvents.filter((entry) => {
+    const actorMatch = filters?.actor
+      ? entry.actor.toLowerCase().includes(filters.actor.toLowerCase())
+      : true;
+    const targetMatch = filters?.targetTable
+      ? entry.targetTable.toLowerCase().includes(filters.targetTable.toLowerCase())
+      : true;
+    return actorMatch && targetMatch;
+  });
+
+  return NextResponse.json(
+    {
+      audit: filtered.map((entry) => ({
+        id: entry.id,
+        actor: entry.actor,
+        action: entry.action,
+        target_table: entry.targetTable,
+        target_id: entry.targetId,
+        created_at: entry.createdAt,
+        diff: entry.summary ? { summary: entry.summary } : null
+      })),
+      events: [],
+      integration: {
+        status: 'degraded' as const,
+        target: 'logs',
+        message
+      }
+    },
+    { status: 200 }
+  );
+}
 
 export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const { limit } = querySchema.parse({
-    limit: searchParams.get("limit") ?? undefined,
-  });
-  const limitValue = limit ?? 100;
-  let integration: {
-    target: string;
-    status: "ok" | "degraded";
-    reason?: string;
-    message?: string;
-  } = {
-    target: "logs",
-    status: "degraded",
-    reason: "mock_data",
-    message: "Supabase audit log unavailable; returning mock entries.",
-  };
-
+  let query: z.infer<typeof querySchema>;
   try {
-    const { getSupabaseAdminClient } = await import(
-      "@/lib/server/supabase-admin"
-    );
-    const adminClient = getSupabaseAdminClient();
-
-    if (adminClient) {
-      const { data: audit } = await adminClient
-        .from("audit_log")
-        .select("id, actor, action, target_table, target_id, diff, created_at")
-        .order("created_at", { ascending: false })
-        .limit(limitValue);
-
-      if (audit) {
-        integration = { target: "logs", status: "ok" };
-        return NextResponse.json({
-          audit,
-          events: mockOrderEvents.slice(0, limitValue),
-          integration,
-        });
-      }
-    }
+    query = querySchema.parse(Object.fromEntries(new URL(request.url).searchParams));
   } catch (error) {
-    console.error("Logs fetch failed, using mocks", error);
+    return NextResponse.json(
+      { error: 'invalid_query', message: error instanceof z.ZodError ? error.flatten() : 'Invalid query parameters.' },
+      { status: 400 }
+    );
   }
 
-  return NextResponse.json({
-    audit: mockAuditEvents.slice(0, limitValue),
-    events: mockOrderEvents.slice(0, limitValue),
-    integration,
-  });
+  const adminClient = getSupabaseAdminClient();
+  if (!adminClient) {
+    return mockResponse('Supabase credentials missing. Showing mock audit log.', query);
+  }
+
+  const limit = query.limit ?? 50;
+  const offset = query.offset ?? 0;
+
+  const auditQuery = adminClient
+    .from('audit_log')
+    .select('id, actor_id, action, target_table, target_id, diff, created_at', { count: 'exact' })
+    .order('created_at', { ascending: false })
+    .range(offset, offset + limit - 1);
+
+  if (query.actor) {
+    auditQuery.eq('actor_id', query.actor);
+  }
+  if (query.targetTable) {
+    auditQuery.eq('target_table', query.targetTable);
+  }
+
+  const voucherQuery = adminClient
+    .from('voucher_events')
+    .select('id, voucher_id, event_type, actor_id, station_id, context, created_at', { count: 'exact' })
+    .order('created_at', { ascending: false })
+    .range(offset, offset + limit - 1);
+
+  try {
+    const [audit, voucher] = await Promise.all([
+      query.type && query.type !== 'audit' ? { data: [], count: 0 } : auditQuery,
+      query.type && query.type !== 'voucher' ? { data: [], count: 0 } : voucherQuery
+    ]);
+
+    const integrationMessages: string[] = [];
+
+    const auditEntries = (audit.data ?? []).map((row) => ({
+      id: row.id,
+      actor: row.actor_id ?? 'unknown',
+      action: row.action,
+      target_table: row.target_table,
+      target_id: row.target_id ?? 'unknown',
+      created_at: row.created_at,
+      diff: row.diff ?? null
+    }));
+
+    const voucherEntries = (voucher.data ?? []).map((row) => ({
+      id: row.id,
+      orderId: row.voucher_id,
+      type: row.event_type,
+      createdAt: row.created_at,
+      actorId: row.actor_id ?? null,
+      stationId: row.station_id ?? null,
+      context: row.context ?? null
+    }));
+
+    if (!auditEntries.length && (audit.count ?? 0) > 0) {
+      integrationMessages.push('Audit log returned empty results.');
+    }
+
+    if (!voucherEntries.length && (voucher.count ?? 0) > 0) {
+      integrationMessages.push('Voucher events returned empty results.');
+    }
+
+    const responseBody: Record<string, unknown> = {
+      audit: auditEntries,
+      events: voucherEntries,
+      totals: {
+        audit: audit.count ?? auditEntries.length,
+        voucher: voucher.count ?? voucherEntries.length
+      }
+    };
+
+    if (integrationMessages.length) {
+      responseBody.integration = {
+        status: 'degraded' as const,
+        target: 'logs',
+        message: integrationMessages.join(' ')
+      };
+    }
+
+    return NextResponse.json(responseBody, { status: 200 });
+  } catch (error) {
+    logStructured({
+      event: 'logs_fetch_failed',
+      target: 'logs',
+      status: 'error',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
+    return mockResponse('Supabase logs query failed. Showing mock audit log.', query);
+  }
 }

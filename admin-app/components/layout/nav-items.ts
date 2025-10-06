@@ -1,4 +1,9 @@
-export type NavGroup = "Overview" | "Operations" | "Messaging" | "Platform";
+export type NavGroup =
+  | "Overview"
+  | "Operations"
+  | "Messaging"
+  | "Platform"
+  | "Baskets";
 
 export type NavItem = {
   label: string;
@@ -109,5 +114,11 @@ export const NAV_ITEMS: NavItem[] = [
     href: "/logs",
     description: "Unified audit and voucher events",
     group: "Platform",
+  },
+  {
+    label: "Baskets (SACCOs)",
+    href: "/baskets",
+    description: "SACCO branches, Ibimina, contributions, and loans",
+    group: "Baskets",
   },
 ];

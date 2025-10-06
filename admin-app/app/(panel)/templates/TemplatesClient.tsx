@@ -22,14 +22,18 @@ export function TemplatesClient({
   initialTemplateParams = { limit: 100 },
   initialFlowParams = { limit: 100 },
 }: TemplatesClientProps) {
-  const [templateParams] = useState(initialTemplateParams);
-  const [flowParams] = useState(initialFlowParams);
+  const [templateParams, setTemplateParams] = useState(initialTemplateParams);
+  const [flowParams, setFlowParams] = useState(initialFlowParams);
 
   const templatesQuery = useTemplatesQuery(templateParams);
   const flowsQuery = useFlowsQuery(flowParams);
 
   const templates = templatesQuery.data?.data ?? [];
   const flows = flowsQuery.data?.data ?? [];
+  const templatesHasMore = templatesQuery.data?.hasMore;
+  const templatesLoadingMore = templatesQuery.isFetching && !templatesQuery.isLoading;
+  const flowsHasMore = flowsQuery.data?.hasMore;
+  const flowsLoadingMore = flowsQuery.isFetching && !flowsQuery.isLoading;
 
   return (
     <div className="admin-page">
@@ -50,7 +54,25 @@ export function TemplatesClient({
             />
           )
           : templates.length
-          ? <TemplatesTable data={templates} />
+          ? (
+            <TemplatesTable
+              data={templates}
+              statusFilter={templateParams.status ?? ""}
+              hasMore={templatesHasMore}
+              loadingMore={templatesLoadingMore}
+              onStatusChange={(value) =>
+                setTemplateParams((prev) => ({
+                  ...prev,
+                  status: value || undefined,
+                  limit: initialTemplateParams.limit ?? 100,
+                }))}
+              onLoadMore={() =>
+                setTemplateParams((prev) => ({
+                  ...prev,
+                  limit: (prev.limit ?? initialTemplateParams.limit ?? 100) + 50,
+                }))}
+            />
+          )
           : (
             <EmptyState
               title="No templates"
@@ -71,7 +93,26 @@ export function TemplatesClient({
             />
           )
           : flows.length
-          ? <FlowsTable data={flows} />
+          ? (
+            <FlowsTable
+              data={flows}
+              statusFilter={flowParams.status ?? ""}
+              hasMore={flowsHasMore}
+              loadingMore={flowsLoadingMore}
+              onStatusChange={(value) =>
+                setFlowParams((prev) => ({
+                  ...prev,
+                  status: value || undefined,
+                  limit: initialFlowParams.limit ?? 100,
+                  offset: 0,
+                }))}
+              onLoadMore={() =>
+                setFlowParams((prev) => ({
+                  ...prev,
+                  limit: (prev.limit ?? initialFlowParams.limit ?? 100) + 25,
+                }))}
+            />
+          )
           : (
             <EmptyState
               title="No flows"

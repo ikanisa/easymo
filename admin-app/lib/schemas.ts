@@ -68,6 +68,7 @@ export const campaignSchema = z.object({
   templateId: z.string(),
   createdAt: z.string().datetime(),
   startedAt: z.string().datetime().nullable(),
+  finishedAt: z.string().datetime().nullable().optional(),
   metadata: z.record(z.any()).optional(),
 });
 
@@ -150,6 +151,7 @@ export const staffNumberSchema = z.object({
 
 export const qrTokenSchema = z.object({
   id: z.string(),
+  stationId: z.string().uuid().optional(),
   barName: z.string(),
   tableLabel: z.string(),
   token: z.string(),
@@ -227,6 +229,117 @@ export const timeseriesPointSchema = z.object({
   redeemed: z.number(),
 });
 
+export const assistantActionSchema = z.object({
+  id: z.string(),
+  label: z.string(),
+  summary: z.string(),
+  impact: z.enum(["low", "medium", "high"]),
+  recommended: z.boolean().optional(),
+});
+
+export const assistantSuggestionSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  summary: z.string(),
+  generatedAt: z.string().datetime(),
+  actions: z.array(assistantActionSchema),
+  references: z.array(z.string()),
+  limitations: z.array(z.string()).optional(),
+});
+
+export const assistantMessageSchema = z.object({
+  id: z.string(),
+  role: z.enum(["assistant", "user"]),
+  content: z.string(),
+  createdAt: z.string().datetime(),
+});
+
+export const assistantRunSchema = z.object({
+  promptId: z.string(),
+  suggestion: assistantSuggestionSchema,
+  messages: z.array(assistantMessageSchema),
+});
+
+export const adminHubSectionSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+});
+
+export const adminHubSectionsSchema = z.object({
+  operations: z.array(adminHubSectionSchema).default([]),
+  growth: z.array(adminHubSectionSchema).default([]),
+  trust: z.array(adminHubSectionSchema).default([]),
+  diagnostics: z.array(adminHubSectionSchema).default([]),
+});
+
+export const adminHubSnapshotSchema = z.object({
+  sections: adminHubSectionsSchema,
+  messages: z.array(z.string()).default([]),
+});
+
+export const adminVoucherListItemSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  description: z.string().optional().nullable(),
+});
+
+export const adminVoucherListSchema = z.object({
+  vouchers: z.array(adminVoucherListItemSchema),
+  messages: z.array(z.string()).default([]),
+});
+
+export const adminVoucherDetailSchema = z.object({
+  id: z.string(),
+  code5: z.string(),
+  amountText: z.string(),
+  policyNumber: z.string().nullable(),
+  whatsappE164: z.string().nullable(),
+  status: z.string(),
+  issuedAt: z.string(),
+  redeemedAt: z.string().nullable(),
+  messages: z.array(z.string()).default([]),
+});
+
+const diagnosticsConfigSchema = z.object({
+  admin_numbers: z.array(z.string()).nullable().optional(),
+  insurance_admin_numbers: z.array(z.string()).nullable().optional(),
+  admin_pin_required: z.boolean().nullable().optional(),
+}).nullable();
+
+export const adminDiagnosticsHealthSchema = z.object({
+  config: diagnosticsConfigSchema,
+  messages: z.array(z.string()).default([]),
+});
+
+export const adminDiagnosticsLogSchema = z.object({
+  id: z.string(),
+  endpoint: z.string().optional().nullable(),
+  status_code: z.number().nullable().optional(),
+  received_at: z.string().nullable().optional(),
+});
+
+export const adminDiagnosticsLogsSchema = z.object({
+  logs: z.array(adminDiagnosticsLogSchema),
+  messages: z.array(z.string()).default([]),
+});
+
+export const adminDiagnosticsSnapshotSchema = z.object({
+  health: adminDiagnosticsHealthSchema,
+  logs: adminDiagnosticsLogsSchema,
+});
+
+export const adminDiagnosticsMatchTripSchema = z.object({
+  id: z.string(),
+  role: z.string().nullable().optional(),
+  vehicleType: z.string().nullable().optional(),
+  status: z.string().nullable().optional(),
+});
+
+export const adminDiagnosticsMatchSchema = z.object({
+  trip: adminDiagnosticsMatchTripSchema.nullable(),
+  messages: z.array(z.string()).default([]),
+});
+
 export type User = z.infer<typeof userSchema>;
 export type Station = z.infer<typeof stationSchema>;
 export type Bar = z.infer<typeof barSchema>;
@@ -248,3 +361,18 @@ export type SettingEntry = z.infer<typeof settingEntrySchema>;
 export type StorageObject = z.infer<typeof storageObjectSchema>;
 export type DashboardKpi = z.infer<typeof dashboardKpiSchema>;
 export type TimeseriesPoint = z.infer<typeof timeseriesPointSchema>;
+export type AssistantAction = z.infer<typeof assistantActionSchema>;
+export type AssistantSuggestion = z.infer<typeof assistantSuggestionSchema>;
+export type AssistantMessage = z.infer<typeof assistantMessageSchema>;
+export type AssistantRun = z.infer<typeof assistantRunSchema>;
+export type AdminHubSection = z.infer<typeof adminHubSectionSchema>;
+export type AdminHubSections = z.infer<typeof adminHubSectionsSchema>;
+export type AdminHubSnapshot = z.infer<typeof adminHubSnapshotSchema>;
+export type AdminVoucherListItem = z.infer<typeof adminVoucherListItemSchema>;
+export type AdminVoucherList = z.infer<typeof adminVoucherListSchema>;
+export type AdminVoucherDetail = z.infer<typeof adminVoucherDetailSchema>;
+export type AdminDiagnosticsHealth = z.infer<typeof adminDiagnosticsHealthSchema>;
+export type AdminDiagnosticsLogs = z.infer<typeof adminDiagnosticsLogsSchema>;
+export type AdminDiagnosticsSnapshot = z.infer<typeof adminDiagnosticsSnapshotSchema>;
+export type AdminDiagnosticsMatchTrip = z.infer<typeof adminDiagnosticsMatchTripSchema>;
+export type AdminDiagnosticsMatch = z.infer<typeof adminDiagnosticsMatchSchema>;

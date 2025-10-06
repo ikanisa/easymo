@@ -1,0 +1,228 @@
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.headerRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.counter {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.tableContainer {
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--color-surface, #ffffff);
+}
+
+.filtersRow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.02);
+}
+
+.filtersRow label span {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+
+.filtersRow select,
+.filtersRow input {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+}
+
+.searchField {
+  grid-column: 1 / -1;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th,
+.table td {
+  padding: 12px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+  text-align: left;
+}
+
+.table th {
+  background: rgba(241, 245, 249, 0.9);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
+}
+
+.slugCell {
+  font-family: var(--font-mono, "Fira Code", monospace);
+  font-size: 0.85rem;
+}
+
+.statusSelect {
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: rgba(148, 163, 184, 0.08);
+  font-size: 0.82rem;
+}
+
+.committeeCell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 0.85rem;
+}
+
+.committeeMissing {
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+}
+
+.committeeMeta {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.editCard {
+  border: 1px dashed rgba(148, 163, 184, 0.4);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: rgba(15, 23, 42, 0.02);
+}
+
+.editTitle {
+  font-weight: 600;
+}
+
+.editGrid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.fullWidth {
+  grid-column: 1 / -1;
+}
+
+.editGrid label span {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+
+.editGrid input,
+.editGrid select,
+.editGrid textarea {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: #ffffff;
+}
+
+.editGrid textarea {
+  resize: vertical;
+}
+
+.editActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.invitePanel {
+  border-top: 1px dashed rgba(148, 163, 184, 0.3);
+  padding-top: 12px;
+  margin-top: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.inviteFields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.inviteFields label span {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+
+.inviteFields input {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+}
+
+.inviteActions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.inviteToken {
+  font-family: var(--font-mono, "Fira Code", monospace);
+  font-size: 0.85rem;
+}
+
+.inviteResults {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  font-size: 0.85rem;
+}
+
+.inviteRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.inviteRow span {
+  display: inline-flex;
+  flex: 1;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.inviteRow a {
+  color: var(--color-accent, #2563eb);
+}
+
+.inviteRow a:hover {
+  text-decoration: underline;
+}
+
+.inviteRowMuted {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}

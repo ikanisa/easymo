@@ -3,10 +3,14 @@
 import { useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "@/components/data-table/DataTable";
+import { LoadMoreButton } from "@/components/ui/LoadMoreButton";
 import type { Bar } from "@/lib/schemas";
 
 interface BarsTableProps {
   data: Bar[];
+  hasMore?: boolean;
+  onLoadMore?: () => void;
+  loadingMore?: boolean;
 }
 
 const columns: ColumnDef<Bar>[] = [
@@ -43,7 +47,7 @@ const columns: ColumnDef<Bar>[] = [
   },
 ];
 
-export function BarsTable({ data }: BarsTableProps) {
+export function BarsTable({ data, hasMore, onLoadMore, loadingMore }: BarsTableProps) {
   const [filters, setFilters] = useState<{ active?: string; search?: string }>(
     {},
   );
@@ -105,6 +109,13 @@ export function BarsTable({ data }: BarsTableProps) {
         searchPlaceholder="Search bars"
         downloadFileName="bars.csv"
       />
+      <LoadMoreButton
+        hasMore={hasMore}
+        loading={loadingMore}
+        onClick={onLoadMore}
+      >
+        Load more bars
+      </LoadMoreButton>
     </div>
   );
 }

@@ -2,10 +2,14 @@
 
 import type { ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "@/components/data-table/DataTable";
+import { LoadMoreButton } from "@/components/ui/LoadMoreButton";
 import type { OcrJob } from "@/lib/schemas";
 
 interface OcrJobsTableProps {
   data: OcrJob[];
+  hasMore?: boolean;
+  onLoadMore?: () => void;
+  loadingMore?: boolean;
 }
 
 const columns: ColumnDef<OcrJob>[] = [
@@ -41,17 +45,26 @@ const columns: ColumnDef<OcrJob>[] = [
   },
 ];
 
-export function OcrJobsTable({ data }: OcrJobsTableProps) {
+export function OcrJobsTable({ data, hasMore, onLoadMore, loadingMore }: OcrJobsTableProps) {
   return (
-    <DataTable
-      data={data}
-      columns={columns}
-      searchPlaceholder="Search OCR jobs"
-      globalFilterFn={(row, value) =>
-        `${row.barName} ${row.fileName}`.toLowerCase().includes(
-          value.toLowerCase(),
-        )}
-      downloadFileName="ocr-jobs.csv"
-    />
+    <div className="space-y-3">
+      <DataTable
+        data={data}
+        columns={columns}
+        searchPlaceholder="Search OCR jobs"
+        globalFilterFn={(row, value) =>
+          `${row.barName} ${row.fileName}`.toLowerCase().includes(
+            value.toLowerCase(),
+          )}
+        downloadFileName="ocr-jobs.csv"
+      />
+      <LoadMoreButton
+        hasMore={hasMore}
+        loading={loadingMore}
+        onClick={onLoadMore}
+      >
+        Load more jobs
+      </LoadMoreButton>
+    </div>
   );
 }

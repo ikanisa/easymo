@@ -1,4 +1,5 @@
 import { z } from "https://deno.land/x/zod@v3.23.8/mod.ts";
+import { toE164 } from "../_shared/phone.ts";
 import { buildErrorResponse, buildInfoResponse } from "./utils.ts";
 import type { SupabaseClient } from "./types.ts";
 
@@ -96,15 +97,22 @@ export async function handleOnboardContacts(
     .split(",")
     .map((entry) => entry.trim())
     .filter(Boolean);
+  const normalizedNumbers = new Set<string>();
+  for (const number of numbers) {
+    const normalized = toE164(number);
+    const digits = normalized.replace(/[^0-9]/g, "");
+    if (!digits) continue;
+    normalizedNumbers.add(normalized);
+  }
 
-  if (!numbers.length) {
+  if (!normalizedNumbers.size) {
     return buildErrorResponse(
       "s_contact_payment",
       "Please provide at least one WhatsApp number.",
     );
   }
 
-  for (const number of numbers) {
+  for (const number of normalizedNumbers) {
     await upsertBarNumber(supabase, parsed.bar_id, number, "staff");
   }
 
@@ -115,7 +123,7 @@ export async function handleOnboardContacts(
 
   return buildInfoResponse("s_upload_menu_info", {
     bar_id: parsed.bar_id,
-    receiving_numbers: numbers,
+    receiving_numbers: Array.from(normalizedNumbers),
   });
 }
 
@@ -207,13 +215,15 @@ async function upsertBarNumber(
   number: string,
   role: "manager" | "staff",
 ) {
-  const cleaned = number.replace(/\s+/g, "");
+  const normalized = toE164(number);
+  const digits = normalized.replace(/[^0-9]/g, "");
+  if (!digits) return;
   await supabase
     .from("bar_numbers")
     .upsert(
       {
         bar_id: barId,
-        number_e164: cleaned,
+        number_e164: normalized,
         role,
         is_active: true,
       },

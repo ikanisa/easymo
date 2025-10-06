@@ -20,6 +20,7 @@ import {
   sendButtonsMessage,
   sendListMessage,
 } from "../../utils/reply.ts";
+import { ensureVehiclePlate } from "./vehicle_plate.ts";
 
 const DEFAULT_WINDOW_DAYS = 30;
 const MIN_RADIUS_METERS = 1000;
@@ -142,6 +143,8 @@ export async function handleSeePassengers(
   ctx: RouterContext,
 ): Promise<boolean> {
   if (!ctx.profileId) return false;
+  const ready = await ensureVehiclePlate(ctx, { type: "nearby_passengers" });
+  if (!ready) return true;
   await setState(ctx.supabase, ctx.profileId, {
     key: "mobility_nearby_select",
     data: { mode: "passengers" },

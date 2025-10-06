@@ -12,8 +12,20 @@ export interface LogsPayload {
     diff?: unknown;
   }>;
   events: Array<
-    { id: string; orderId: string; type: string; createdAt: string }
+    {
+      id: string;
+      orderId: string;
+      type: string;
+      createdAt: string;
+      actorId?: string | null;
+      stationId?: string | null;
+      context?: unknown;
+    }
   >;
+  totals?: {
+    audit: number;
+    voucher: number;
+  };
   integration?: {
     target: string;
     status: "ok" | "degraded";

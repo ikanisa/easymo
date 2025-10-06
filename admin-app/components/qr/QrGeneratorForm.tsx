@@ -13,10 +13,13 @@ interface QrGeneratorFormProps {
 
 interface TokenResult {
   id: string;
+  stationId: string;
   barName: string;
   tableLabel: string;
   token: string;
   createdAt: string;
+  printed: boolean;
+  lastScanAt: string | null;
 }
 
 export function QrGeneratorForm({ bars }: QrGeneratorFormProps) {
@@ -54,7 +57,7 @@ export function QrGeneratorForm({ bars }: QrGeneratorFormProps) {
           "x-idempotency-key": `qr-${Date.now()}`,
         },
         body: JSON.stringify({
-          barName: selectedBar.name,
+          stationId: selectedBar.id,
           tableLabels: tableLabels
             .split(",")
             .map((label) => label.trim())

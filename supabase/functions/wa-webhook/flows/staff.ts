@@ -2,6 +2,7 @@ import type { RouterContext } from "../types.ts";
 import { sendText } from "../wa/client.ts";
 import { ensureSession } from "../exchange/helpers.ts";
 import { hashStaffVerificationCode } from "../utils/staff_verification.ts";
+import { loadActiveBarNumbers } from "../utils/bar_numbers.ts";
 
 const CODE_REGEX = /(code|join|verify)?\s*(\d{6})/i;
 
@@ -15,23 +16,20 @@ export async function handleStaffVerification(
   const code = match[2] ?? match[0];
   if (!code || code.length !== 6) return false;
 
-  const { data, error } = await ctx.supabase
-    .from("bar_numbers")
-    .select(
-      "id, bar_id, role, is_active, verified_at, verification_code_hash, verification_expires_at, verification_attempts",
-    )
-    .eq("number_e164", ctx.from)
-    .eq("is_active", true)
-    .order("invited_at", { ascending: false })
-    .order("updated_at", { ascending: false });
-  if (error) {
+  let rows;
+  try {
+    rows = await loadActiveBarNumbers(
+      ctx.supabase,
+      ctx.from,
+      "bar_id, role, is_active, verified_at, verification_code_hash, verification_expires_at, verification_attempts, invited_at, updated_at",
+    );
+  } catch (error) {
     await sendText(
       ctx.from,
       "Something went wrong verifying your code. Please try again in a moment.",
     );
     return true;
   }
-  const rows = data ?? [];
   if (!rows.length) {
     await sendText(
       ctx.from,

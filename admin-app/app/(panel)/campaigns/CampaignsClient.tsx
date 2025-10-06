@@ -8,6 +8,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { CampaignWizardMock } from "@/components/campaigns/CampaignWizardMock";
 import { CampaignControls } from "@/components/campaigns/CampaignControls";
 import { LoadingState } from "@/components/ui/LoadingState";
+import { IntegrationStatusChip } from "@/components/ui/IntegrationStatusChip";
 import {
   type CampaignsQueryParams,
   useCampaignsQuery,
@@ -16,6 +17,7 @@ import {
   type TemplatesQueryParams,
   useTemplatesQuery,
 } from "@/lib/queries/templates";
+import { useIntegrationStatusQuery } from "@/lib/queries/integrations";
 
 interface CampaignsClientProps {
   initialCampaignParams?: CampaignsQueryParams;
@@ -26,7 +28,7 @@ export function CampaignsClient({
   initialCampaignParams = { limit: 100 },
   initialTemplateParams = { limit: 20 },
 }: CampaignsClientProps) {
-  const [campaignParams] = useState<CampaignsQueryParams>(
+  const [campaignParams, setCampaignParams] = useState<CampaignsQueryParams>(
     initialCampaignParams,
   );
   const [templateParams] = useState<TemplatesQueryParams>(
@@ -35,15 +37,26 @@ export function CampaignsClient({
 
   const campaignsQuery = useCampaignsQuery(campaignParams);
   const templatesQuery = useTemplatesQuery(templateParams);
+  const integrationStatus = useIntegrationStatusQuery();
 
   const campaigns = campaignsQuery.data?.data ?? [];
   const templates = templatesQuery.data?.data ?? [];
+  const campaignsHasMore = campaignsQuery.data?.hasMore;
+  const campaignsLoadingMore = campaignsQuery.isFetching && !campaignsQuery.isLoading;
+  const statusFilter = campaignParams.status ?? "";
 
   return (
     <div className="admin-page">
       <PageHeader
         title="Campaigns"
         description="Create, monitor, and control WhatsApp campaigns with template management and dispatcher bridges. Wizard and dispatcher actions will arrive in later milestones."
+        meta={
+          <IntegrationStatusChip
+            label="Dispatcher"
+            status={integrationStatus.data?.campaignDispatcher}
+            isLoading={integrationStatus.isLoading}
+          />
+        }
       />
       <SectionCard
         title="Campaigns"
@@ -57,7 +70,26 @@ export function CampaignsClient({
             />
           )
           : campaigns.length
-          ? <CampaignsTable data={campaigns} />
+          ? (
+            <CampaignsTable
+              data={campaigns}
+              statusFilter={statusFilter}
+              hasMore={campaignsHasMore}
+              loadingMore={campaignsLoadingMore}
+              onStatusChange={(value) =>
+                setCampaignParams((prev) => ({
+                  ...prev,
+                  status: value || undefined,
+                  limit: initialCampaignParams.limit ?? 100,
+                  offset: 0,
+                }))}
+              onLoadMore={() =>
+                setCampaignParams((prev) => ({
+                  ...prev,
+                  limit: (prev.limit ?? initialCampaignParams.limit ?? 100) + 50,
+                }))}
+            />
+          )
           : (
             <EmptyState
               title="No campaigns"

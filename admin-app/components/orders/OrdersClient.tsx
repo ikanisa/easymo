@@ -8,15 +8,26 @@ import { OrderOverrideModal } from "./OrderOverrideModal";
 
 interface OrdersClientProps {
   orders: Order[];
+  hasMore?: boolean;
+  onLoadMore?: () => void;
+  loadingMore?: boolean;
 }
 
-export function OrdersClient({ orders }: OrdersClientProps) {
+export function OrdersClient({ orders, hasMore, onLoadMore, loadingMore }: OrdersClientProps) {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
   return (
     <>
       {orders.length
-        ? <OrdersTable data={orders} onSelectOrder={setSelectedOrder} />
+        ? (
+          <OrdersTable
+            data={orders}
+            hasMore={hasMore}
+            onLoadMore={onLoadMore}
+            loadingMore={loadingMore}
+            onSelectOrder={setSelectedOrder}
+          />
+        )
         : (
           <EmptyState
             title="No orders yet"

@@ -30,6 +30,8 @@ export function BarsClient({
   const bars = useMemo(() => barsQuery.data?.data ?? [], [
     barsQuery.data?.data,
   ]);
+  const hasMoreBars = barsQuery.data?.hasMore;
+  const isLoadingMoreBars = barsQuery.isFetching && !barsQuery.isLoading;
   const staffNumbers = useMemo(() => staffNumbersQuery.data?.data ?? [], [
     staffNumbersQuery.data?.data,
   ]);
@@ -50,10 +52,11 @@ export function BarsClient({
               Status
               <select
                 value={barParams.status ?? ""}
-                onChange={(event) =>
+               onChange={(event) =>
                   setBarParams((prev) => ({
                     ...prev,
                     status: event.target.value || undefined,
+                    limit: initialBarParams.limit ?? 100,
                   }))}
                 className="ml-2 rounded-lg border border-[color:var(--color-border)]/40 bg-white/90 px-3 py-1 text-sm"
               >
@@ -69,10 +72,11 @@ export function BarsClient({
               Search
               <input
                 value={barParams.search ?? ""}
-                onChange={(event) =>
+               onChange={(event) =>
                   setBarParams((prev) => ({
                     ...prev,
                     search: event.target.value || undefined,
+                    limit: initialBarParams.limit ?? 100,
                   }))}
                 placeholder="Chez Lando"
                 className="ml-2 rounded-lg border border-[color:var(--color-border)]/40 bg-white/90 px-3 py-1 text-sm"
@@ -89,7 +93,18 @@ export function BarsClient({
             />
           )
           : bars.length
-          ? <BarsTable data={bars} />
+          ? (
+            <BarsTable
+              data={bars}
+              hasMore={hasMoreBars}
+              onLoadMore={() =>
+                setBarParams((prev) => ({
+                  ...prev,
+                  limit: (prev.limit ?? 100) + 50,
+                }))}
+              loadingMore={isLoadingMoreBars}
+            />
+          )
           : (
             <EmptyState
               title="No bars available"

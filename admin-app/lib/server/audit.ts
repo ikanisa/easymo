@@ -5,11 +5,11 @@ import { getSupabaseAdminClient } from "@/lib/server/supabase-admin";
 import { logStructured } from "@/lib/server/logger";
 
 interface AuditContext {
-  actor: string;
+  actorId: string | null;
   action: string;
   targetTable: string;
   targetId: string;
-  summary?: string;
+  diff?: Record<string, unknown>;
 }
 
 export async function recordAudit(context: AuditContext) {
@@ -17,11 +17,11 @@ export async function recordAudit(context: AuditContext) {
   if (adminClient) {
     try {
       await adminClient.from("audit_log").insert({
-        actor: context.actor,
+        actor_id: context.actorId,
         action: context.action,
         target_table: context.targetTable,
         target_id: context.targetId,
-        summary: context.summary ?? null,
+        diff: context.diff ?? {},
       });
       return;
     } catch (error) {
@@ -37,11 +37,11 @@ export async function recordAudit(context: AuditContext) {
 
   mockAuditEvents.unshift({
     id: `audit-mock-${Date.now()}`,
-    actor: context.actor,
+    actor: context.actorId ?? "unknown",
     action: context.action,
     targetTable: context.targetTable,
     targetId: context.targetId,
     createdAt: new Date().toISOString(),
-    summary: context.summary ?? null,
+    summary: JSON.stringify(context.diff ?? {}),
   });
 }

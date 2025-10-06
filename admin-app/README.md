@@ -48,6 +48,26 @@ remain additive-only.
   `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
 - Server-side reads (and future writes) expect `SUPABASE_SERVICE_ROLE_KEY`. When
   unset, the app falls back to mock datasets automatically.
+- Admin API requests require an actor identifier. In development set
+  `NEXT_PUBLIC_DEFAULT_ACTOR_ID` (exposed to the browser) and
+  `ADMIN_DEFAULT_ACTOR_ID` (server-side) to the UUID of a trusted staff user.
+  Reverse proxies in production must inject a valid `x-actor-id` header per
+  request; otherwise the middleware returns `401`.
+- Mocks are now opt-in. Set `NEXT_PUBLIC_USE_MOCKS=true` if you need the fixture
+  dataset without connecting to Supabase.
+
+## PWA & Offline Behaviour
+
+- The app ships a full Web App Manifest (`public/manifest.webmanifest`) with
+  icons, shortcuts, and install metadata. Browsers will prompt to install once a
+  user visits `/` twice.
+- A service worker (`public/sw.js`) precaches the shell, caches runtime GET
+  requests with network-first semantics, and posts `SW_ACTIVATED` to the client
+  when a new bundle is ready. The UI raises a "Refresh" toast so operators can
+  reload on their schedule.
+- When `navigator.onLine` reports offline, an overlay banner appears and write
+  buttons are disabled globally. Lists remain readable from cache, but actions
+  resume only after connectivity returns.
 
 ## Resources
 

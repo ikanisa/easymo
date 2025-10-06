@@ -57,6 +57,7 @@ tables, columns, or indexes delivered through timestamped migrations.
 ### `campaigns`
 
 - `id UUID PK DEFAULT gen_random_uuid()`.
+- `legacy_id BIGINT` retained for historical references (read-only mirror of legacy ids).
 - `name TEXT NOT NULL`.
 - `type TEXT CHECK (type IN ('promo','voucher')) NOT NULL`.
 - `template_id TEXT NOT NULL`.

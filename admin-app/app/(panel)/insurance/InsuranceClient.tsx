@@ -18,10 +18,13 @@ interface InsuranceClientProps {
 export function InsuranceClient(
   { initialParams = { limit: 100 } }: InsuranceClientProps,
 ) {
-  const [params] = useState<InsuranceQueryParams>(initialParams);
+  const [params, setParams] = useState<InsuranceQueryParams>(initialParams);
   const quotesQuery = useInsuranceQuotesQuery(params);
 
   const quotes = quotesQuery.data?.data ?? [];
+  const hasMore = quotesQuery.data?.hasMore;
+  const loadingMore = quotesQuery.isFetching && !quotesQuery.isLoading;
+  const statusValue = params.status ?? "";
 
   return (
     <div className="admin-page">
@@ -41,7 +44,26 @@ export function InsuranceClient(
             />
           )
           : quotes.length
-          ? <InsuranceTable data={quotes} />
+          ? (
+            <InsuranceTable
+              data={quotes}
+              hasMore={hasMore}
+              loadingMore={loadingMore}
+              statusFilter={statusValue}
+              onStatusChange={(value) =>
+                setParams((prev) => ({
+                  ...prev,
+                  status: value || undefined,
+                  limit: initialParams.limit ?? 100,
+                  offset: 0,
+                }))}
+              onLoadMore={() =>
+                setParams((prev) => ({
+                  ...prev,
+                  limit: (prev.limit ?? initialParams.limit ?? 100) + 25,
+                }))}
+            />
+          )
           : (
             <EmptyState
               title="No quotes pending"

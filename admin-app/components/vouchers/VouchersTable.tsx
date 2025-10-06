@@ -3,13 +3,23 @@
 import { useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "@/components/data-table/DataTable";
+import { Button } from "@/components/ui/Button";
+import { LoadMoreButton } from "@/components/ui/LoadMoreButton";
+import { VoucherDrawer } from "@/components/vouchers/VoucherDrawer";
 import type { Voucher } from "@/lib/schemas";
 
 interface VouchersTableProps {
   data: Voucher[];
+  statusFilter?: string;
+  onStatusChange?: (value: string) => void;
+  searchFilter?: string;
+  onSearchChange?: (value: string) => void;
+  hasMore?: boolean;
+  onLoadMore?: () => void;
+  loadingMore?: boolean;
 }
 
-const columns: ColumnDef<Voucher>[] = [
+const baseColumns: ColumnDef<Voucher>[] = [
   {
     header: "Voucher",
     accessorKey: "id",
@@ -54,37 +64,83 @@ const columns: ColumnDef<Voucher>[] = [
   },
 ];
 
-export function VouchersTable({ data }: VouchersTableProps) {
-  const [filters, setFilters] = useState<{ status?: string; search?: string }>(
-    {},
-  );
+export function VouchersTable({
+  data,
+  statusFilter,
+  onStatusChange,
+  searchFilter,
+  onSearchChange,
+  hasMore,
+  onLoadMore,
+  loadingMore,
+}: VouchersTableProps) {
+  const [localFilters, setLocalFilters] = useState<
+    { status?: string; search?: string }
+  >({});
+  const [selectedVoucher, setSelectedVoucher] = useState<Voucher | null>(null);
+
+  const statusValue = onStatusChange ? statusFilter ?? "" : localFilters.status ?? "";
+  const searchValue = onSearchChange ? searchFilter ?? "" : localFilters.search ?? "";
+
+  const handleStatusChange = (value: string) => {
+    if (onStatusChange) {
+      onStatusChange(value);
+    } else {
+      setLocalFilters((prev) => ({ ...prev, status: value || undefined }));
+    }
+  };
+
+  const handleSearchChange = (value: string) => {
+    if (onSearchChange) {
+      onSearchChange(value);
+    } else {
+      setLocalFilters((prev) => ({ ...prev, search: value || undefined }));
+    }
+  };
 
   const filteredData = useMemo(() => {
+    const normalizedSearch = searchValue.toLowerCase();
     return data.filter((voucher) => {
-      const statusMatch = filters.status
-        ? voucher.status === filters.status
+      const statusMatch = statusValue
+        ? voucher.status === statusValue
         : true;
-      const searchMatch = filters.search
-        ? `${voucher.id} ${voucher.msisdn}`.toLowerCase().includes(
-          filters.search.toLowerCase(),
+      const searchMatch = searchValue
+        ? `${voucher.id} ${voucher.msisdn ?? ""}`.toLowerCase().includes(
+          normalizedSearch,
         )
         : true;
       return statusMatch && searchMatch;
     });
-  }, [data, filters]);
+  }, [data, statusValue, searchValue]);
+
+  const columns = useMemo<ColumnDef<Voucher>[]>(() => {
+    return [
+      ...baseColumns,
+      {
+        header: "",
+        id: "actions",
+        cell: ({ row }) => (
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            onClick={() => setSelectedVoucher(row.original)}
+          >
+            View
+          </Button>
+        ),
+      },
+    ];
+  }, []);
 
   return (
-    <div className="stack">
+    <div className="space-y-4">
       <div className="filters">
         <label>
           <span>Status</span>
           <select
-            value={filters.status ?? ""}
-            onChange={(event) =>
-              setFilters((prev) => ({
-                ...prev,
-                status: event.target.value || undefined,
-              }))}
+            value={statusValue}
+            onChange={(event) => handleStatusChange(event.target.value)}
           >
             <option value="">All</option>
             <option value="issued">Issued</option>
@@ -97,12 +153,8 @@ export function VouchersTable({ data }: VouchersTableProps) {
         <label>
           <span>Search</span>
           <input
-            value={filters.search ?? ""}
-            onChange={(event) =>
-              setFilters((prev) => ({
-                ...prev,
-                search: event.target.value || undefined,
-              }))}
+            value={searchValue}
+            onChange={(event) => handleSearchChange(event.target.value)}
             placeholder="Voucher ID or MSISDN"
           />
         </label>
@@ -115,6 +167,17 @@ export function VouchersTable({ data }: VouchersTableProps) {
             .includes(value.toLowerCase())}
         searchPlaceholder="Search vouchers"
         downloadFileName="vouchers.csv"
+      />
+      <LoadMoreButton
+        hasMore={hasMore}
+        loading={loadingMore}
+        onClick={onLoadMore}
+      >
+        Load more vouchers
+      </LoadMoreButton>
+      <VoucherDrawer
+        voucher={selectedVoucher}
+        onClose={() => setSelectedVoucher(null)}
       />
     </div>
   );

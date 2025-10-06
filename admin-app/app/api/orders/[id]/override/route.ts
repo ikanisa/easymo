@@ -1,109 +1,128 @@
-import { NextResponse } from "next/server";
-import { z } from "zod";
-import { recordAudit } from "@/lib/server/audit";
+import { headers } from 'next/headers';
+import { NextResponse } from 'next/server';
+import { z } from 'zod';
+import { getSupabaseAdminClient } from '@/lib/server/supabase-admin';
+import { logStructured } from '@/lib/server/logger';
+import { recordAudit } from '@/lib/server/audit';
 
-const paramsSchema = z.object({
-  id: z.string().min(1),
+const paramsSchema = z.object({ id: z.string().uuid() });
+
+const requestSchema = z.object({
+  action: z.enum(['cancel', 'nudge', 'reopen']),
+  reason: z.string().min(1)
 });
-
-const bodySchema = z.object({
-  action: z.enum(["cancel", "nudge", "reopen"]),
-  reason: z.string().min(1).optional(),
-});
-
-export const dynamic = "force-dynamic";
 
 export async function POST(
   request: Request,
-  context: { params: { id: string } },
+  { params }: { params: { id: string } }
 ) {
-  try {
-    const { id } = paramsSchema.parse(context.params);
-    const payload = bodySchema.parse(await request.json());
-    const { getSupabaseAdminClient } = await import(
-      "@/lib/server/supabase-admin"
+  const adminClient = getSupabaseAdminClient();
+  if (!adminClient) {
+    return NextResponse.json(
+      { error: 'supabase_unavailable', message: 'Supabase credentials missing.' },
+      { status: 503 }
     );
-    const adminClient = getSupabaseAdminClient();
-    let message = "";
-    let integration: {
-      target: string;
-      status: "ok" | "degraded";
-      reason?: string;
-      message?: string;
-    } = {
-      target: "orderOverride",
-      status: "degraded",
-      reason: "mock_store",
-      message: "Order override stored locally; Supabase connection missing.",
-    };
-
-    if (adminClient) {
-      if (payload.action === "cancel") {
-        const { error } = await adminClient
-          .from("orders")
-          .update({
-            status: "cancelled",
-            cancelled_reason: payload.reason ?? "Admin cancelled",
-          })
-          .eq("id", id);
-        if (error) {
-          console.error("Supabase order cancel failed", error);
-        } else {
-          message = "Order cancelled.";
-          integration = { target: "orderOverride", status: "ok" };
-        }
-      }
-      if (payload.action === "reopen") {
-        const { error } = await adminClient.from("orders").update({
-          status: "pending",
-        }).eq("id", id);
-        if (error) {
-          console.error("Supabase order reopen failed", error);
-        } else {
-          message = "Order reopened.";
-          integration = { target: "orderOverride", status: "ok" };
-        }
-      }
-    }
-
-    if (!message) {
-      message = payload.action === "nudge"
-        ? "Vendor nudged (mock)."
-        : `Order ${payload.action}ed (mock).`;
-      if (payload.action === "nudge") {
-        integration = {
-          target: "orderOverride",
-          status: "degraded",
-          reason: "mock_store",
-          message: "Nudge stored for manual follow-up.",
-        };
-      }
-    }
-
-    await recordAudit({
-      actor: "admin:mock",
-      action: `order_${payload.action}`,
-      targetTable: "orders",
-      targetId: id,
-      summary: payload.reason ?? message,
-    });
-
-    return NextResponse.json({
-      orderId: id,
-      status: payload.action,
-      message,
-      integration,
-    }, { status: 200 });
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json({
-        error: "invalid_request",
-        details: error.flatten(),
-      }, { status: 400 });
-    }
-    console.error("Order override failed", error);
-    return NextResponse.json({ error: "order_override_failed" }, {
-      status: 500,
-    });
   }
+
+  const parseParams = paramsSchema.safeParse(params);
+  if (!parseParams.success) {
+    return NextResponse.json(
+      { error: 'invalid_order_id', message: 'Invalid order ID.' },
+      { status: 400 }
+    );
+  }
+  const orderId = parseParams.data.id;
+
+  let payload: z.infer<typeof requestSchema>;
+  try {
+    payload = requestSchema.parse(await request.json());
+  } catch (error) {
+    return NextResponse.json(
+      {
+        error: 'invalid_payload',
+        message: error instanceof z.ZodError ? error.flatten() : 'Invalid JSON payload.'
+      },
+      { status: 400 }
+    );
+  }
+
+  const updates: Record<string, unknown> = {};
+  if (payload.action === 'cancel') {
+    updates.status = 'cancelled';
+  } else if (payload.action === 'reopen') {
+    updates.status = 'pending';
+  }
+
+  const { data, error } = await adminClient
+    .from('orders')
+    .update({
+      ...(Object.keys(updates).length ? updates : {}),
+      override_reason: payload.reason,
+      override_at: new Date().toISOString()
+    })
+    .eq('id', orderId)
+    .select('id, status')
+    .maybeSingle();
+
+  if (error || !data) {
+    logStructured({
+      event: 'order_override_failed',
+      target: 'orders',
+      status: 'error',
+      message: error?.message ?? 'Order not found',
+      details: { orderId }
+    });
+    return NextResponse.json(
+      {
+        error: 'override_failed',
+        message: 'Unable to apply override.'
+      },
+      { status: 500 }
+    );
+  }
+
+  await adminClient.from('order_events').insert({
+    order_id: orderId,
+    type: `override_${payload.action}`,
+    note: payload.reason
+  }).catch(() => {
+    // Best-effort; log but do not fail the response.
+    logStructured({
+      event: 'order_event_insert_failed',
+      target: 'order_events',
+      status: 'degraded',
+      message: 'Failed to record override event.',
+      details: { orderId }
+    });
+  });
+
+  await recordAudit({
+    actorId: headers().get('x-actor-id'),
+    action: `order_override_${payload.action}`,
+    targetTable: 'orders',
+    targetId: orderId,
+    diff: {
+      status: data.status,
+      reason: payload.reason
+    }
+  });
+
+  logStructured({
+    event: 'order_override',
+    target: 'orders',
+    status: 'ok',
+    details: {
+      orderId,
+      action: payload.action,
+      status: data.status
+    }
+  });
+
+  return NextResponse.json(
+    {
+      status: data.status,
+      message: 'Override applied.'
+    },
+    { status: 200 }
+  );
 }

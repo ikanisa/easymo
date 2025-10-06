@@ -1,22 +1,32 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { Station } from "@/lib/schemas";
 import { StationForm } from "./StationForm";
 import styles from "./StationListWithActions.module.css";
 import { useToast } from "@/components/ui/ToastProvider";
 import { Button } from "@/components/ui/Button";
+import { LoadMoreButton } from "@/components/ui/LoadMoreButton";
+import { StationDrawer } from "@/components/stations/StationDrawer";
 
 interface StationListWithActionsProps {
   stations: Station[];
+  hasMore?: boolean;
+  onLoadMore?: () => void;
+  loadingMore?: boolean;
 }
 
 export function StationListWithActions(
-  { stations }: StationListWithActionsProps,
+  { stations, hasMore, onLoadMore, loadingMore }: StationListWithActionsProps,
 ) {
   const [items, setItems] = useState(stations);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [selectedStation, setSelectedStation] = useState<Station | null>(null);
   const { pushToast } = useToast();
+
+  useEffect(() => {
+    setItems(stations);
+  }, [stations]);
 
   const refresh = async () => {
     const response = await fetch("/api/stations", { cache: "no-store" });
@@ -93,6 +103,14 @@ export function StationListWithActions(
                 <div className={styles.actions}>
                   <Button
                     type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setSelectedStation(station)}
+                  >
+                    View
+                  </Button>
+                  <Button
+                    type="button"
                     onClick={() =>
                       updateStatus(
                         station.id,
@@ -119,6 +137,18 @@ export function StationListWithActions(
           ))}
         </tbody>
       </table>
+      <LoadMoreButton
+        hasMore={hasMore}
+        loading={loadingMore}
+        onClick={onLoadMore}
+        className="flex justify-center"
+      >
+        Load more stations
+      </LoadMoreButton>
+      <StationDrawer
+        station={selectedStation}
+        onClose={() => setSelectedStation(null)}
+      />
     </div>
   );
 }

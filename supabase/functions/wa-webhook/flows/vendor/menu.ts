@@ -2,7 +2,9 @@ import type { RouterContext } from "../../types.ts";
 import type { SupabaseClient } from "../../deps.ts";
 import { MENU_MEDIA_BUCKET } from "../../config.ts";
 import { fetchWhatsAppMedia } from "../../utils/media.ts";
-import { logEvent } from "../../observe/log.ts";
+import { logEvent, logStructuredEvent } from "../../observe/log.ts";
+import { sendText } from "../../wa/client.ts";
+import { findActiveBarNumber } from "../../utils/bar_numbers.ts";
 
 const DEFAULT_FILENAME = "upload.bin";
 
@@ -16,20 +18,39 @@ export async function handleVendorMenuMedia(
   const mediaId = (msg[msg.type] as { id?: string } | undefined)?.id;
   if (!mediaId) return false;
 
-  const { data: record, error } = await ctx.supabase
-    .from("bar_numbers")
-    .select("bar_id")
-    .eq("number_e164", ctx.from)
-    .eq("is_active", true)
-    .maybeSingle();
-
-  if (error && error.code !== "PGRST116") {
+  let record;
+  try {
+    record = await findActiveBarNumber(ctx.supabase, ctx.from);
+  } catch (error) {
     console.error("vendor.menu.lookup_fail", error, { from: ctx.from });
+    await sendText(
+      ctx.from,
+      "We couldn't look up your bar. Please try again in a moment or contact support.",
+    );
+    await logStructuredEvent("VENDOR_MENU_UPLOAD_FAIL", {
+      wa_id: `***${ctx.from.slice(-4)}`,
+      reason: "lookup_error",
+      code: error instanceof Error && "code" in error
+        ? (error as { code?: string }).code
+        : undefined,
+    });
     return true; // consider handled to avoid duplicate processing
   }
 
   if (!record?.bar_id) {
-    return false;
+    console.warn("vendor.menu.no_bar_mapping", {
+      from: ctx.from,
+      tried: ctx.from,
+    });
+    await sendText(
+      ctx.from,
+      'We couldn\'t match this WhatsApp number to a bar. Add the number in the manager menu under "Add WhatsApp numbers" and try again.',
+    );
+    await logStructuredEvent("VENDOR_MENU_UPLOAD_SKIPPED", {
+      wa_id: `***${ctx.from.slice(-4)}`,
+      reason: "no_bar_mapping",
+    });
+    return true;
   }
 
   try {
@@ -61,9 +82,22 @@ export async function handleVendorMenuMedia(
       storage_path: path,
     });
 
+    await sendText(
+      ctx.from,
+      "Menu received! We’re processing it now and will notify you when it’s ready.",
+    );
+
     await triggerOcrProcessing(ctx.supabase);
   } catch (err) {
     console.error("vendor.menu.store_fail", err, { mediaId, from: ctx.from });
+    await logStructuredEvent("VENDOR_MENU_UPLOAD_FAIL", {
+      wa_id: `***${ctx.from.slice(-4)}`,
+      reason: err instanceof Error ? err.message : String(err ?? "unknown"),
+    });
+    await sendText(
+      ctx.from,
+      "Sorry, we couldn’t process that file. Please try again in a moment.",
+    );
   }
 
   return true;
@@ -75,11 +109,27 @@ async function triggerOcrProcessing(client: SupabaseClient): Promise<void> {
     const { error } = await client.functions.invoke("ocr-processor");
     if (error) throw error;
     console.log("vendor.menu.ocr_trigger_processor_ok");
-    const notify = await client.functions.invoke("notification-worker");
-    if (notify.error) throw notify.error;
-    console.log("vendor.menu.ocr_trigger_notifier_ok");
+    console.log("vendor.menu.ocr_trigger_notifier_skipped");
   } catch (error) {
-    console.error("vendor.menu.ocr_trigger_fail", error);
+    if (
+      error && typeof error === "object" &&
+      "context" in error && error.context && typeof error.context === "object"
+    ) {
+      const response = error.context as Response;
+      let bodyText: string | null = null;
+      try {
+        bodyText = await response.text();
+      } catch (_) {
+        bodyText = null;
+      }
+      console.error("vendor.menu.ocr_trigger_fail", {
+        status: response.status,
+        statusText: response.statusText,
+        body: bodyText,
+      });
+    } else {
+      console.error("vendor.menu.ocr_trigger_fail", error);
+    }
   }
 }
 

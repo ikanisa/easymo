@@ -4,11 +4,15 @@ import { useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/Button";
 import { DataTable } from "@/components/data-table/DataTable";
+import { LoadMoreButton } from "@/components/ui/LoadMoreButton";
 import type { Order } from "@/lib/schemas";
 
 interface OrdersTableProps {
   data: Order[];
   onSelectOrder?: (order: Order) => void;
+  hasMore?: boolean;
+  onLoadMore?: () => void;
+  loadingMore?: boolean;
 }
 
 const baseColumns: ColumnDef<Order>[] = [
@@ -46,7 +50,7 @@ const baseColumns: ColumnDef<Order>[] = [
   },
 ];
 
-export function OrdersTable({ data, onSelectOrder }: OrdersTableProps) {
+export function OrdersTable({ data, onSelectOrder, hasMore, onLoadMore, loadingMore }: OrdersTableProps) {
   const [filters, setFilters] = useState<
     { status?: string; bar?: string; stuck?: boolean }
   >({});
@@ -87,7 +91,7 @@ export function OrdersTable({ data, onSelectOrder }: OrdersTableProps) {
   }, [data, filters]);
 
   return (
-    <div className="stack">
+    <div className="space-y-4">
       <div className="filters">
         <label>
           <span>Status</span>
@@ -138,6 +142,13 @@ export function OrdersTable({ data, onSelectOrder }: OrdersTableProps) {
         searchPlaceholder="Search orders"
         downloadFileName="orders.csv"
       />
+      <LoadMoreButton
+        hasMore={hasMore}
+        loading={loadingMore}
+        onClick={onLoadMore}
+      >
+        Load more orders
+      </LoadMoreButton>
     </div>
   );
 }

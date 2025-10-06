@@ -1,16 +1,19 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { SectionCard } from "@/components/ui/SectionCard";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { LoadingState } from "@/components/ui/LoadingState";
 import { IntegrationStatusBadge } from "@/components/ui/IntegrationStatusBadge";
 import { useLogsQuery } from "@/lib/queries/logs";
+import { LoadMoreButton } from "@/components/ui/LoadMoreButton";
 
 export function LogsClient() {
   const { data, isLoading, isError } = useLogsQuery();
   const [actorFilter, setActorFilter] = useState("");
   const [targetFilter, setTargetFilter] = useState("");
+  const [auditLimit, setAuditLimit] = useState(20);
+  const [eventLimit, setEventLimit] = useState(20);
 
   const filteredAudit = useMemo(() => {
     const audit = data?.audit ?? [];
@@ -26,6 +29,26 @@ export function LogsClient() {
       return actorMatch && targetMatch;
     });
   }, [actorFilter, targetFilter, data?.audit]);
+
+  const voucherEvents = useMemo(() => data?.events ?? [], [data?.events]);
+
+  useEffect(() => {
+    setAuditLimit(20);
+  }, [actorFilter, targetFilter, data?.audit]);
+
+  useEffect(() => {
+    setEventLimit(20);
+  }, [data?.events]);
+
+  const slicedAudit = useMemo(
+    () => filteredAudit.slice(0, auditLimit),
+    [filteredAudit, auditLimit],
+  );
+
+  const slicedEvents = useMemo(
+    () => voucherEvents.slice(0, eventLimit),
+    [voucherEvents, eventLimit],
+  );
 
   if (isLoading) {
     return (
@@ -79,10 +102,10 @@ export function LogsClient() {
             />
           </label>
         </div>
-        {filteredAudit.length
+        {slicedAudit.length
           ? (
             <ul className="mt-6 space-y-3 text-sm">
-              {filteredAudit.map((entry) => (
+              {slicedAudit.map((entry) => (
                 <li
                   key={entry.id}
                   className="rounded-xl border border-[color:var(--color-border)]/40 bg-[color:var(--color-surface)]/60 px-4 py-3"
@@ -105,16 +128,23 @@ export function LogsClient() {
               description="Adjust the filters to see more results."
             />
           )}
+        <LoadMoreButton
+          hasMore={filteredAudit.length > slicedAudit.length}
+          onClick={() => setAuditLimit((current) => current + 20)}
+          loading={false}
+        >
+          Load more audit entries
+        </LoadMoreButton>
       </SectionCard>
 
       <SectionCard
         title="Voucher events"
         description="Recent order events (mock)."
       >
-        {data.events.length
+        {slicedEvents.length
           ? (
             <ul className="space-y-2 text-sm">
-              {data.events.map((event) => (
+              {slicedEvents.map((event) => (
                 <li
                   key={event.id}
                   className="rounded-xl border border-[color:var(--color-border)]/40 bg-[color:var(--color-surface)]/50 px-4 py-3"
@@ -133,6 +163,13 @@ export function LogsClient() {
               description="Voucher events will populate once Supabase data is connected."
             />
           )}
+        <LoadMoreButton
+          hasMore={voucherEvents.length > slicedEvents.length}
+          onClick={() => setEventLimit((current) => current + 20)}
+          loading={false}
+        >
+          Load more events
+        </LoadMoreButton>
       </SectionCard>
     </div>
   );

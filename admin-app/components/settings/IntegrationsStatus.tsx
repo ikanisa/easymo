@@ -1,54 +1,44 @@
 "use client";
 
-import useSWR from "swr";
+import {
+  IntegrationTarget,
+  useIntegrationStatusQuery,
+} from "@/lib/queries/integrations";
 import styles from "./IntegrationsStatus.module.css";
 
-interface IntegrationStatus {
-  status: "green" | "amber" | "red";
-  message: string;
-}
+const PANEL_TARGETS: IntegrationTarget[] = [
+  "voucherPreview",
+  "whatsappSend",
+  "campaignDispatcher",
+  "storageSignedUrl",
+];
 
-interface StatusResponse {
-  voucherPreview: IntegrationStatus;
-  whatsappSend: IntegrationStatus;
-  campaignDispatcher: IntegrationStatus;
-}
-
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
-
-const LABELS: Record<keyof StatusResponse, string> = {
+const LABELS: Record<IntegrationTarget, string> = {
   voucherPreview: "Voucher preview",
-  whatsappSend: "WhatsApp send",
+  whatsappSend: "Voucher send",
   campaignDispatcher: "Campaign dispatcher",
+  storageSignedUrl: "Storage signed URLs",
 };
 
 export function IntegrationsStatus() {
-  const { data, error, isLoading } = useSWR<StatusResponse>(
-    "/api/integrations/status",
-    fetcher,
-    {
-      refreshInterval: 60000,
-    },
-  );
+  const { data, isLoading, isError } = useIntegrationStatusQuery();
 
   if (isLoading) {
     return <p>Checking integrations…</p>;
   }
 
-  if (error || !data) {
+  if (isError || !data) {
     return <p>Unable to load integrations status.</p>;
   }
 
   return (
-    <div className={styles.grid}>
-      {(Object.keys(LABELS) as Array<keyof StatusResponse>).map((key) => {
-        const entry = data[key];
+    <div className={styles.grid} role="status" aria-live="polite">
+      {PANEL_TARGETS.map((target) => {
+        const entry = data[target];
+        const cardClass = `${styles.card} ${styles[`card_${entry.status}`]}`;
         return (
-          <div
-            key={key}
-            className={`${styles.card} ${styles[`card_${entry.status}`]}`}
-          >
-            <span className={styles.label}>{LABELS[key]}</span>
+          <div key={target} className={cardClass} title={entry.message}>
+            <span className={styles.label}>{LABELS[target]}</span>
             <span className={styles.message}>{entry.message}</span>
           </div>
         );

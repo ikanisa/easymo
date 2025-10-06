@@ -18,10 +18,12 @@ interface StationsClientProps {
 export function StationsClient(
   { initialParams = { limit: 200 } }: StationsClientProps,
 ) {
-  const [params] = useState<StationsQueryParams>(initialParams);
+  const [params, setParams] = useState<StationsQueryParams>(initialParams);
   const stationsQuery = useStationsQuery(params);
 
   const stations = stationsQuery.data?.data ?? [];
+  const hasMore = stationsQuery.data?.hasMore;
+  const loadingMore = stationsQuery.isFetching && !stationsQuery.isLoading;
 
   return (
     <div className="admin-page">
@@ -41,7 +43,18 @@ export function StationsClient(
             />
           )
           : stations.length
-          ? <StationListWithActions stations={stations} />
+          ? (
+            <StationListWithActions
+              stations={stations}
+              hasMore={hasMore}
+              loadingMore={loadingMore}
+              onLoadMore={() =>
+                setParams((prev) => ({
+                  ...prev,
+                  limit: (prev.limit ?? initialParams.limit ?? 200) + 50,
+                }))}
+            />
+          )
           : (
             <EmptyState
               title="No stations"

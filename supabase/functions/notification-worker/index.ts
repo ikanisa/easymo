@@ -34,25 +34,36 @@ async function runNotificationWorker(trigger: "http" | "cron") {
       duration_ms: Date.now() - started,
     });
   } catch (error) {
+    const message = error instanceof Error
+      ? error.message
+      : String(error ?? "unknown_error");
     console.error("notification-worker.run_failed", error);
     await emitAlert("NOTIFY_WORKER_ERROR", {
       trigger,
-      error: error instanceof Error
-        ? error.message
-        : String(error ?? "unknown"),
+      error: message,
     });
-    throw error;
+    throw new Error(message);
   } finally {
     running = false;
   }
 }
 
 serve(async (_req) => {
-  await runNotificationWorker("http");
-  return new Response(JSON.stringify({ ok: true, cronEnabled: CRON_ENABLED }), {
-    status: 200,
-    headers: { "content-type": "application/json; charset=utf-8" },
-  });
+  try {
+    await runNotificationWorker("http");
+    return new Response(
+      JSON.stringify({ ok: true, cronEnabled: CRON_ENABLED }),
+      {
+        status: 200,
+        headers: { "content-type": "application/json; charset=utf-8" },
+      },
+    );
+  } catch (error) {
+    const message = error instanceof Error
+      ? error.message
+      : String(error ?? "unknown_error");
+    return new Response(message, { status: 500 });
+  }
 });
 
 if (typeof denoWithCron.cron === "function") {

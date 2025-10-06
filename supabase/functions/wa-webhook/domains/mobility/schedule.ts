@@ -15,12 +15,16 @@ import { waChatLink } from "../../utils/links.ts";
 import { maskPhone } from "../../flows/support.ts";
 import { logStructuredEvent } from "../../observe/log.ts";
 import { timeAgo } from "../../utils/text.ts";
+import { sendText } from "../../wa/client.ts";
 import {
+  buildButtons,
   ButtonSpec,
   sendButtonsMessage,
   sendListMessage,
   sendListWithActions,
 } from "../../utils/reply.ts";
+import { emitAlert } from "../../observe/alert.ts";
+import { ensureVehiclePlate } from "./vehicle_plate.ts";
 
 const ROLE_ROWS = [
   {
@@ -102,6 +106,13 @@ export async function handleScheduleRole(
     ? "passenger"
     : null;
   if (!role) return false;
+  if (role === "driver") {
+    const ready = await ensureVehiclePlate(ctx, {
+      type: "schedule_role",
+      roleId: id,
+    });
+    if (!ready) return true;
+  }
   await setState(ctx.supabase, ctx.profileId, {
     key: "schedule_vehicle",
     data: { role },
@@ -120,6 +131,16 @@ export async function handleScheduleRole(
     sharePickupButtons(),
   );
   return true;
+}
+
+export async function handleScheduleSkipDropoff(
+  ctx: RouterContext,
+  state: ScheduleState,
+): Promise<boolean> {
+  if (!ctx.profileId || !state.role || !state.vehicle || !state.origin) {
+    return false;
+  }
+  return await createTripAndDeliverMatches(ctx, state, { dropoff: null });
 }
 
 export async function handleScheduleVehicle(
@@ -150,85 +171,24 @@ export async function handleScheduleLocation(
   coords: { lat: number; lng: number },
 ): Promise<boolean> {
   if (!ctx.profileId || !state.role || !state.vehicle) return false;
-  const config = await getAppConfig(ctx.supabase);
-  const radiusMeters = kmToMeters(config.search_radius_km ?? 10);
-  const max = config.max_results ?? 9;
-
-  if (state.role === "driver") {
-    const gate = await gateProFeature(ctx.supabase, ctx.profileId);
-    if (!gate.access) {
-      await sendButtonsMessage(
-        ctx,
-        "🚫 Driver scheduling requires Pro. Dial the wallet MoMo menu to upgrade.",
-        sharePickupButtons(),
-      );
-      await clearState(ctx.supabase, ctx.profileId);
-      return true;
-    }
-  }
-
-  let tripId: string | null = null;
-  try {
-    tripId = await insertTrip(ctx.supabase, {
-      userId: ctx.profileId,
-      role: state.role,
-      vehicleType: state.vehicle,
-      lat: coords.lat,
-      lng: coords.lng,
-      radiusMeters,
-    });
-
-    const context: ScheduleState = {
+  await setState(ctx.supabase, ctx.profileId, {
+    key: "schedule_dropoff",
+    data: {
       role: state.role,
       vehicle: state.vehicle,
-      tripId,
       origin: coords,
-      dropoff: null,
-    };
+    },
+  });
 
-    const matches = await fetchMatches(ctx, context, {
-      preferDropoff: false,
-      limit: max,
-      radiusMeters,
-    });
-
-    await deliverMatches(ctx, context, matches, {
-      messagePrefix: "Trip created!",
-      radiusMeters,
-    });
-    return true;
-  } catch (error) {
-    console.error("mobility.schedule_origin_fail", error);
-    await logStructuredEvent("MATCHES_ERROR", {
-      flow: "schedule",
-      stage: "origin",
-      role: state.role,
-      vehicle: state.vehicle,
-      wa_id: maskPhone(ctx.from),
-    });
-    await emitAlert("MATCHES_ERROR", {
-      flow: "schedule",
-      stage: "origin",
-      role: state.role,
-      vehicle: state.vehicle,
-      error: error instanceof Error
-        ? error.message
-        : String(error ?? "unknown"),
-    });
-    await sendButtonsMessage(
-      ctx,
-      "⚠️ Matching service is unavailable right now. Please try again in a few minutes.",
-      sharePickupButtons(),
-    );
-    if (tripId) {
-      await ctx.supabase.from("trips").update({ status: "expired" }).eq(
-        "id",
-        tripId,
-      );
-    }
-    await clearState(ctx.supabase, ctx.profileId);
-    return true;
-  }
+  await sendButtonsMessage(
+    ctx,
+    "📍 Share drop-off location (optional).",
+    buildButtons(
+      { id: IDS.SCHEDULE_SKIP_DROPOFF, title: "Skip" },
+      { id: IDS.BACK_MENU, title: "↩️ Menu" },
+    ),
+  );
+  return true;
 }
 
 export async function handleScheduleDropoff(
@@ -236,8 +196,18 @@ export async function handleScheduleDropoff(
   state: ScheduleState,
   coords: { lat: number; lng: number },
 ): Promise<boolean> {
-  if (!ctx.profileId || !state.tripId || !state.role || !state.vehicle) {
+  if (!ctx.profileId || !state.role || !state.vehicle) {
     return false;
+  }
+  if (!state.tripId) {
+    await createTripAndDeliverMatches(ctx, {
+      role: state.role,
+      vehicle: state.vehicle,
+      origin: state.origin,
+    }, {
+      dropoff: coords,
+    });
+    return true;
   }
   try {
     await updateTripDropoff(ctx.supabase, {
@@ -351,7 +321,7 @@ export async function requestScheduleDropoff(
   ctx: RouterContext,
   state: ScheduleState,
 ): Promise<boolean> {
-  if (!ctx.profileId || !state.tripId || !state.role || !state.vehicle) {
+  if (!ctx.profileId || !state.role || !state.vehicle) {
     return false;
   }
   await setState(ctx.supabase, ctx.profileId, {
@@ -360,10 +330,94 @@ export async function requestScheduleDropoff(
   });
   await sendButtonsMessage(
     ctx,
-    "📍 Share drop-off location (tap ➕ → Location). We will prioritise matches on that route.",
+    "📍 Share drop-off location (tap ➕ → Location). It’s optional—tap Skip if you’re not sure.",
     shareDropoffButtons(),
   );
   return true;
+}
+
+async function createTripAndDeliverMatches(
+  ctx: RouterContext,
+  state: ScheduleState,
+  options: { dropoff: { lat: number; lng: number } | null },
+): Promise<boolean> {
+  if (!state.origin) throw new Error("Missing pickup location");
+  const config = await getAppConfig(ctx.supabase);
+  const radiusMeters = kmToMeters(config.search_radius_km ?? 10);
+  const max = config.max_results ?? 9;
+  let tripId: string | null = null;
+  const stage = options.dropoff ? "dropoff" : "origin";
+
+  try {
+    tripId = await insertTrip(ctx.supabase, {
+      userId: ctx.profileId!,
+      role: state.role!,
+      vehicleType: state.vehicle!,
+      lat: state.origin.lat,
+      lng: state.origin.lng,
+      radiusMeters,
+    });
+
+    if (options.dropoff) {
+      await updateTripDropoff(ctx.supabase, {
+        tripId,
+        lat: options.dropoff.lat,
+        lng: options.dropoff.lng,
+        radiusMeters: null,
+      });
+    }
+
+    const context: ScheduleState = {
+      role: state.role,
+      vehicle: state.vehicle,
+      tripId,
+      origin: state.origin,
+      dropoff: options.dropoff,
+    };
+
+    const matches = await fetchMatches(ctx, context, {
+      preferDropoff: Boolean(options.dropoff),
+      limit: max,
+      radiusMeters,
+    });
+
+    await deliverMatches(ctx, context, matches, {
+      messagePrefix: "Trip created!",
+      radiusMeters,
+    });
+    return true;
+  } catch (error) {
+    console.error("mobility.schedule_create_fail", error);
+    await logStructuredEvent("MATCHES_ERROR", {
+      flow: "schedule",
+      stage,
+      role: state.role,
+      vehicle: state.vehicle,
+      wa_id: maskPhone(ctx.from),
+    });
+    await emitAlert("MATCHES_ERROR", {
+      flow: "schedule",
+      stage,
+      role: state.role,
+      vehicle: state.vehicle,
+      error: error instanceof Error
+        ? error.message
+        : String(error ?? "unknown"),
+    });
+    await sendButtonsMessage(
+      ctx,
+      "⚠️ Matching service is unavailable right now. Please try again in a few minutes.",
+      buildButtons({ id: IDS.BACK_MENU, title: "↩️ Menu" }),
+    );
+    if (tripId) {
+      await ctx.supabase.from("trips").update({ status: "expired" }).eq(
+        "id",
+        tripId,
+      );
+    }
+    await clearState(ctx.supabase, ctx.profileId!);
+    return true;
+  }
 }
 
 export async function handleScheduleResultSelection(
@@ -406,6 +460,7 @@ function sharePickupButtons(): ButtonSpec[] {
 
 function shareDropoffButtons(): ButtonSpec[] {
   return [
+    { id: IDS.SCHEDULE_SKIP_DROPOFF, title: "Skip" },
     { id: IDS.SCHEDULE_ADD_DROPOFF, title: "➕ Add drop-off" },
   ];
 }
@@ -472,13 +527,9 @@ async function deliverMatches(
     : `${meta.messagePrefix}\nNo matches yet. We’ll keep looking.`;
 
   if (!matches.length) {
-    await sendButtonsMessage(
-      ctx,
-      `${body}\nShare your drop-off or refresh in a moment to try again!`,
-      [
-        { id: IDS.SCHEDULE_REFRESH_RESULTS, title: "🔄 Refresh" },
-        { id: IDS.SCHEDULE_ADD_DROPOFF, title: "➕ Drop-off" },
-      ],
+    await sendText(
+      ctx.from,
+      `${body}\nWe\'ll keep looking and update you soon.`,
     );
     return;
   }
@@ -499,13 +550,7 @@ async function deliverMatches(
 }
 
 function matchActionButtons(state: ScheduleState): ButtonSpec[] {
-  const buttons: ButtonSpec[] = [
-    { id: IDS.SCHEDULE_REFRESH_RESULTS, title: "🔄 Refresh" },
-  ];
-  if (!state.dropoff) {
-    buttons.unshift({ id: IDS.SCHEDULE_ADD_DROPOFF, title: "➕ Drop-off" });
-  }
-  return buttons;
+  return [];
 }
 
 function buildScheduleRow(match: MatchResult): {

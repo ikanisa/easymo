@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import useSWR from "swr";
+import useSWRInfinite from "swr/infinite";
 import { DataTable } from "@/components/data-table/DataTable";
 import type { NotificationOutbox } from "@/lib/schemas";
 import styles from "./NotificationsTable.module.css";
@@ -10,6 +10,8 @@ import { useToast } from "@/components/ui/ToastProvider";
 import { IntegrationStatusBadge } from "@/components/ui/IntegrationStatusBadge";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { Button } from "@/components/ui/Button";
+import { LoadMoreButton } from "@/components/ui/LoadMoreButton";
+import { PolicyBanner } from "@/components/ui/PolicyBanner";
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
@@ -17,27 +19,40 @@ interface NotificationsTableProps {
   initialData: NotificationOutbox[];
 }
 
+const PAGE_SIZE = 100;
+
 export function NotificationsTable({ initialData }: NotificationsTableProps) {
-  const { data, error, mutate } = useSWR<
-    {
-      data: NotificationOutbox[];
-      integration?: {
-        target: string;
-        status: "ok" | "degraded";
-        reason?: string;
-        message?: string;
-      };
+  const [statusFilter, setStatusFilter] = useState<string>("");
+
+  const getKey = (pageIndex: number, previousPageData: { data: NotificationOutbox[] } | null) => {
+    if (previousPageData && previousPageData.data.length === 0) {
+      return null;
     }
-  >(
-    "/api/notifications?limit=200",
+    const searchParams = new URLSearchParams();
+    searchParams.set("limit", String(PAGE_SIZE));
+    searchParams.set("offset", String(pageIndex * PAGE_SIZE));
+    if (statusFilter) {
+      searchParams.set("status", statusFilter);
+    }
+    return `/api/notifications?${searchParams.toString()}`;
+  };
+
+  const {
+    data,
+    error,
+    size,
+    setSize,
+    mutate: mutatePages,
+  } = useSWRInfinite(
+    getKey,
     fetcher,
     {
-      fallbackData: { data: initialData },
+      fallbackData: initialData.length ? [{ data: initialData }] : undefined,
       refreshInterval: 30000,
+      revalidateFirstPage: false,
     },
   );
 
-  const [statusFilter, setStatusFilter] = useState<string>("");
   const [feedback, setFeedback] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [integration, setIntegration] = useState<
@@ -48,29 +63,51 @@ export function NotificationsTable({ initialData }: NotificationsTableProps) {
       message?: string;
     } | null
   >(null);
+  const [policyNotice, setPolicyNotice] = useState<
+    { reason: string; message?: string | null } | null
+  >(null);
   const [pendingAction, setPendingAction] = useState<
     { id: string; action: "cancel" } | null
   >(null);
   const { pushToast } = useToast();
 
+  const pages = useMemo(() => data ?? [], [data]);
+
   useEffect(() => {
-    if (data?.integration) {
-      setIntegration(data.integration);
-    }
-  }, [data?.integration]);
+    const latestIntegration = (() => {
+      for (let i = pages.length - 1; i >= 0; i -= 1) {
+        const candidate = pages[i]?.integration;
+        if (candidate) return candidate;
+      }
+      return null;
+    })();
+    setIntegration(latestIntegration);
+  }, [pages]);
+
+  useEffect(() => {
+    setSize(1);
+  }, [statusFilter, setSize]);
+
+  useEffect(() => {
+    mutatePages();
+  }, [statusFilter, mutatePages]);
 
   const notifications = useMemo(
-    () =>
-      (data?.data ?? []).filter((
-        notification,
-      ) => (statusFilter ? notification.status === statusFilter : true)),
-    [data?.data, statusFilter],
+    () => pages.flatMap((page) => page?.data ?? []),
+    [pages],
   );
+
+  const isLoadingInitial = !data && !error;
+  const isLoadingMore = isLoadingInitial
+    || (size > 0 && data && typeof data[size - 1] === "undefined");
+  const lastPage = pages[pages.length - 1];
+  const hasMore = Boolean(lastPage && (lastPage.data?.length ?? 0) === PAGE_SIZE);
 
   const runAction = useCallback(
     async (id: string, action: "resend" | "cancel") => {
       setIsProcessing(true);
       setFeedback(null);
+      setPolicyNotice(null);
       try {
         const response = await fetch(`/api/notifications/${id}`, {
           method: "POST",
@@ -80,14 +117,27 @@ export function NotificationsTable({ initialData }: NotificationsTableProps) {
         const payload = await response.json();
         setIntegration((current) => payload?.integration ?? current);
         if (!response.ok) {
-          const text = payload?.error ?? `${action} failed`;
-          setFeedback(text);
-          pushToast(text, "error");
+          if (payload?.reason) {
+            setPolicyNotice({
+              reason: payload.reason,
+              message: payload.message,
+            });
+            pushToast(
+              payload?.message ?? "Action blocked by outbound policy.",
+              "info",
+            );
+            setFeedback(null);
+          } else {
+            const text = payload?.error ?? `${action} failed`;
+            setFeedback(text);
+            pushToast(text, "error");
+          }
         } else {
           const text = payload.message ?? `${action} applied.`;
           setFeedback(text);
+          setPolicyNotice(null);
           pushToast(text, "success");
-          mutate();
+          mutatePages();
         }
       } catch (err) {
         console.error("Notification action failed", err);
@@ -96,7 +146,7 @@ export function NotificationsTable({ initialData }: NotificationsTableProps) {
         setIsProcessing(false);
       }
     },
-    [mutate, pushToast],
+    [mutatePages, pushToast],
   );
 
   const columns = useMemo<ColumnDef<NotificationOutbox>[]>(
@@ -164,7 +214,7 @@ export function NotificationsTable({ initialData }: NotificationsTableProps) {
   }
 
   return (
-    <div className="stack">
+    <div className="space-y-4">
       <div className="filters">
         <label>
           <span>Status</span>
@@ -189,12 +239,28 @@ export function NotificationsTable({ initialData }: NotificationsTableProps) {
             value.toLowerCase(),
           )}
         downloadFileName="notifications.csv"
+        isLoading={isLoadingInitial}
       />
+      <LoadMoreButton
+        hasMore={hasMore}
+        loading={isLoadingMore}
+        onClick={() => setSize(size + 1)}
+      >
+        Load more notifications
+      </LoadMoreButton>
       {integration
         ? (
           <IntegrationStatusBadge
             integration={integration}
             label="Notifications dispatcher"
+          />
+        )
+        : null}
+      {policyNotice
+        ? (
+          <PolicyBanner
+            reason={policyNotice.reason}
+            message={policyNotice.message}
           />
         )
         : null}

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useToast } from "@/components/ui/ToastProvider";
 import { IntegrationStatusBadge } from "@/components/ui/IntegrationStatusBadge";
 import { Button } from "@/components/ui/Button";
+import { PolicyBanner } from "@/components/ui/PolicyBanner";
 import styles from "./VoucherGenerationForm.module.css";
 
 interface ResultEntry {
@@ -28,6 +29,9 @@ export function VoucherGenerationForm() {
     } | null
   >(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [policyNotice, setPolicyNotice] = useState<
+    { reason: string; message?: string | null } | null
+  >(null);
   const { pushToast } = useToast();
 
   const parseRecipients = () => {
@@ -46,6 +50,7 @@ export function VoucherGenerationForm() {
     setFeedback(null);
     setResults(null);
     setIntegration(null);
+    setPolicyNotice(null);
 
     const parsedRecipients = parseRecipients();
     if (!parsedRecipients.length) {
@@ -74,14 +79,24 @@ export function VoucherGenerationForm() {
       const data = await response.json();
       setIntegration(data?.integration ?? null);
       if (!response.ok) {
-        const text = data?.message ?? "Unable to generate voucher.";
-        setFeedback(text);
-        pushToast(text, "error");
+        if (data?.reason) {
+          setPolicyNotice({ reason: data.reason, message: data?.message });
+          pushToast(
+            data?.message ?? "Action blocked by outbound policy.",
+            "info",
+          );
+          setFeedback(null);
+        } else {
+          const text = data?.message ?? "Unable to generate voucher.";
+          setFeedback(text);
+          pushToast(text, "error");
+        }
       } else {
         const text = data.message ?? "Voucher generated.";
         setFeedback(text);
         setResults(data.vouchers ?? []);
         pushToast(text, "success");
+        setPolicyNotice(null);
       }
     } catch (error) {
       console.error("Voucher generation failed", error);
@@ -147,6 +162,14 @@ export function VoucherGenerationForm() {
           <IntegrationStatusBadge
             integration={integration}
             label="Voucher issuance"
+          />
+        )
+        : null}
+      {policyNotice
+        ? (
+          <PolicyBanner
+            reason={policyNotice.reason}
+            message={policyNotice.message}
           />
         )
         : null}

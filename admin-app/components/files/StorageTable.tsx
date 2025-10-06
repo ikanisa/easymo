@@ -7,12 +7,16 @@ import type { StorageObject } from "@/lib/schemas";
 import { useToast } from "@/components/ui/ToastProvider";
 import styles from "./StorageTable.module.css";
 import { Button } from "@/components/ui/Button";
+import { LoadMoreButton } from "@/components/ui/LoadMoreButton";
 
 interface StorageTableProps {
   data: StorageObject[];
+  hasMore?: boolean;
+  onLoadMore?: () => void;
+  loadingMore?: boolean;
 }
 
-export function StorageTable({ data }: StorageTableProps) {
+export function StorageTable({ data, hasMore, onLoadMore, loadingMore }: StorageTableProps) {
   const { pushToast } = useToast();
 
   const handleSignedUrl = useCallback(async (object: StorageObject) => {
@@ -87,13 +91,22 @@ export function StorageTable({ data }: StorageTableProps) {
   );
 
   return (
-    <DataTable
-      data={data}
-      columns={columns}
-      searchPlaceholder="Search storage objects"
-      globalFilterFn={(row, value) =>
-        `${row.bucket} ${row.path}`.toLowerCase().includes(value.toLowerCase())}
-      downloadFileName="storage-objects.csv"
-    />
+    <div className="space-y-3">
+      <DataTable
+        data={data}
+        columns={columns}
+        searchPlaceholder="Search storage objects"
+        globalFilterFn={(row, value) =>
+          `${row.bucket} ${row.path}`.toLowerCase().includes(value.toLowerCase())}
+        downloadFileName="storage-objects.csv"
+      />
+      <LoadMoreButton
+        hasMore={hasMore}
+        loading={loadingMore}
+        onClick={onLoadMore}
+      >
+        Load more files
+      </LoadMoreButton>
+    </div>
   );
 }

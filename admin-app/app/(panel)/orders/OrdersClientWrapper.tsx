@@ -18,6 +18,8 @@ export function OrdersClientWrapper(
   const [params] = useState(initialOrdersParams);
   const ordersQuery = useOrdersQuery(params);
   const events = listLatestOrderEvents();
+  const hasMore = ordersQuery.data?.hasMore;
+  const isLoadingMore = ordersQuery.isFetching && !ordersQuery.isLoading;
 
   return (
     <div className="space-y-6">
@@ -32,7 +34,18 @@ export function OrdersClientWrapper(
               description="Fetching latest order roster."
             />
           )
-          : <OrdersClient orders={ordersQuery.data?.data ?? []} />}
+          : (
+            <OrdersClient
+              orders={ordersQuery.data?.data ?? []}
+              hasMore={hasMore}
+              loadingMore={isLoadingMore}
+              onLoadMore={() =>
+                setParams((prev) => ({
+                  ...prev,
+                  limit: (prev.limit ?? 200) + 50,
+                }))}
+            />
+          )}
       </SectionCard>
 
       <SectionCard

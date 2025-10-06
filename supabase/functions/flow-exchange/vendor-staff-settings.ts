@@ -1,4 +1,5 @@
 import { z } from "https://deno.land/x/zod@v3.23.8/mod.ts";
+import { buildNumberLookupCandidates, toE164 } from "../_shared/phone.ts";
 import { buildErrorResponse, buildInfoResponse } from "./utils.ts";
 import type { SupabaseClient } from "./types.ts";
 
@@ -72,12 +73,13 @@ export async function handleStaffAdd(
     return buildErrorResponse("s_add_staff", "Phone required.");
   }
 
+  const normalized = toE164(parsed.phone);
   await supabase
     .from("bar_numbers")
     .upsert(
       {
         bar_id: parsed.bar_id,
-        number_e164: parsed.phone.replace(/\s+/g, ""),
+        number_e164: normalized,
         role: parsed.role,
         is_active: true,
       },
@@ -99,11 +101,18 @@ export async function handleStaffRemove(
     return buildErrorResponse("s_remove_staff", "Select a number to remove.");
   }
 
+  const candidates = buildNumberLookupCandidates(parsed.phone);
+  if (!candidates.length) {
+    return buildErrorResponse(
+      "s_remove_staff",
+      "Enter a valid number to remove.",
+    );
+  }
   await supabase
     .from("bar_numbers")
     .delete()
     .eq("bar_id", parsed.bar_id)
-    .eq("number_e164", parsed.phone.replace(/\s+/g, ""));
+    .in("number_e164", candidates);
 
   return handleStaffList(payload, supabase);
 }

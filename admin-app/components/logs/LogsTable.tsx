@@ -54,7 +54,7 @@ export function LogsTable({ data }: LogsTableProps) {
   }, [data, filters]);
 
   return (
-    <div className="stack">
+    <div className="space-y-4">
       <div className="filters">
         <label>
           <span>Actor</span>

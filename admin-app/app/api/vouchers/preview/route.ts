@@ -1,93 +1,76 @@
-import { NextResponse } from "next/server";
-import { z } from "zod";
-import {
-  bridgeDegraded,
-  bridgeHealthy,
-  callBridge,
-} from "@/lib/server/edge-bridges";
+import { headers } from 'next/headers';
+import { NextResponse } from 'next/server';
+import { z } from 'zod';
+import { callBridge } from '@/lib/server/edge-bridges';
+import { logStructured } from '@/lib/server/logger';
 
-const previewInputSchema = z.object({
-  voucherId: z.string().min(1),
+const requestSchema = z.object({
+  voucherId: z.string().uuid().optional(),
+  amount: z.number().positive().optional(),
+  currency: z.string().min(1).optional(),
+  code: z.string().optional(),
+  expiresAt: z.string().datetime().optional(),
+  barName: z.string().optional()
 });
 
-const bridgePayloadSchema = z
-  .object({
-    status: z.enum(["ready", "pending", "degraded"]).default("ready"),
-    message: z.string().optional(),
-    imageUrl: z.string().url().optional(),
-    pdfUrl: z.string().url().optional(),
-    expiresAt: z.string().datetime().optional(),
-  })
-  .passthrough();
-
-export const dynamic = "force-dynamic";
-
 export async function POST(request: Request) {
+  let payload: z.infer<typeof requestSchema>;
   try {
-    const body = await request.json();
-    const { voucherId } = previewInputSchema.parse(body);
-
-    const bridgeResult = await callBridge("voucherPreview", { voucherId });
-
-    if (bridgeResult.ok) {
-      const parsed = bridgePayloadSchema.safeParse(bridgeResult.data);
-      if (parsed.success) {
-        return NextResponse.json(
-          {
-            voucherId,
-            status: parsed.data.status,
-            message: parsed.data.message ?? "Voucher preview ready.",
-            imageUrl: parsed.data.imageUrl ?? null,
-            pdfUrl: parsed.data.pdfUrl ?? null,
-            expiresAt: parsed.data.expiresAt ?? null,
-            integration: bridgeHealthy("voucherPreview"),
-          },
-          { status: 200 },
-        );
-      }
-
-      console.error(
-        "Voucher preview bridge returned unexpected payload",
-        parsed.error,
-      );
-      return NextResponse.json(
-        {
-          voucherId,
-          status: "degraded",
-          message:
-            "Voucher preview response invalid. Showing design mock instead.",
-          integration: {
-            target: "voucherPreview",
-            status: "degraded",
-            reason: "http_error",
-            message: "Voucher preview bridge returned unexpected payload.",
-          },
-        },
-        { status: 502 },
-      );
-    }
-
+    const json = await request.json();
+    payload = requestSchema.parse(json);
+  } catch (error) {
     return NextResponse.json(
       {
-        voucherId,
-        status: bridgeResult.reason === "missing_endpoint"
-          ? "not_configured"
-          : "degraded",
-        message: bridgeResult.message,
-        integration: bridgeDegraded("voucherPreview", bridgeResult),
+        error: 'invalid_payload',
+        message: error instanceof z.ZodError ? error.flatten() : 'Invalid JSON payload.'
       },
-      { status: bridgeResult.reason === "missing_endpoint" ? 200 : 502 },
+      { status: 400 }
     );
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json({
-        error: "invalid_payload",
-        details: error.flatten(),
-      }, { status: 400 });
-    }
-    console.error("Failed to preview voucher", error);
-    return NextResponse.json({ error: "voucher_preview_failed" }, {
-      status: 500,
-    });
   }
+
+  const idempotencyKey = headers().get('x-idempotency-key') ?? undefined;
+
+  const bridgeResult = await callBridge<{ imageUrl?: string | null; pdfUrl?: string | null; expiresAt?: string | null }>(
+    'voucherPreview',
+    payload,
+    {
+      idempotencyKey
+    }
+  );
+
+  if (!bridgeResult.ok) {
+    const status = bridgeResult.status ?? 503;
+    return NextResponse.json(
+      {
+        integration: {
+          status: 'degraded' as const,
+          target: 'voucher_preview',
+          message: bridgeResult.message
+        }
+      },
+      { status }
+    );
+  }
+
+  logStructured({
+    event: 'voucher_preview_success',
+    target: 'voucher_preview',
+    status: 'ok',
+    details: {
+      voucherId: payload.voucherId ?? null
+    }
+  });
+
+  return NextResponse.json(
+    {
+      imageUrl: bridgeResult.data?.imageUrl ?? null,
+      pdfUrl: bridgeResult.data?.pdfUrl ?? null,
+      expiresAt: bridgeResult.data?.expiresAt ?? payload.expiresAt ?? null,
+      integration: {
+        status: 'ok' as const,
+        target: 'voucher_preview'
+      }
+    },
+    { status: 200 }
+  );
 }
