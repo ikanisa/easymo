@@ -17,9 +17,10 @@ export interface DriverPresence {
   user_id: string;
   vehicle_type: VehicleType;
   last_seen: string;      // ISO string
-  // Phase 1 simulator only:
-  lat: number; 
-  lng: number;
+  ref_code?: string;
+  whatsapp_e164?: string;
+  lat?: number; 
+  lng?: number;
 }
 
 export interface Trip {
@@ -29,9 +30,10 @@ export interface Trip {
   vehicle_type: VehicleType;
   created_at: string;     // ISO string, used for "most recent first"
   status?: 'open' | 'expired'; // compatibility
-  // Phase 1 sim only:
-  lat: number; 
-  lng: number; // pickup location
+  ref_code?: string;
+  whatsapp_e164?: string;
+  lat?: number; 
+  lng?: number; // pickup location (if known)
 }
 
 export type SubStatus = 'pending_review' | 'active' | 'expired' | 'rejected';
@@ -75,13 +77,15 @@ export interface Settings {
 }
 
 export interface AdminStats {
-  total_users: number;
-  active_subscribers: number;
-  pending_subscriptions: number;
-  total_trips: number;
   drivers_online: number;
-  open_passenger_trips: number;
-  // Compatibility fields
+  open_trips: number;
+  active_subscriptions: number;
+  // Optional fields populated by extended telemetry
+  total_users?: number;
+  active_subscribers?: number;
+  pending_subscriptions?: number;
+  total_trips?: number;
+  open_passenger_trips?: number;
   completed_trips_today?: number;
   revenue_this_month?: number;
 }

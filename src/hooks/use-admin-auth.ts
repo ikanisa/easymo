@@ -3,7 +3,7 @@
  * Handles unauthorized states and token management
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { AdminAPI, isUnauthorized } from '@/lib/api';
 
 export function useAdminAuth() {
@@ -14,12 +14,7 @@ export function useAdminAuth() {
            '';
   });
 
-  // Check authorization on mount and when token changes
-  useEffect(() => {
-    checkAuth();
-  }, [adminToken]);
-
-  const checkAuth = async () => {
+  const checkAuth = useCallback(async () => {
     if (!adminToken) {
       setIsAuthorized(false);
       return;
@@ -40,7 +35,7 @@ export function useAdminAuth() {
         setIsAuthorized(!!adminToken);
       }
     }
-  };
+  }, [adminToken]);
 
   const updateToken = (newToken: string) => {
     setAdminToken(newToken);
@@ -48,6 +43,11 @@ export function useAdminAuth() {
     // Force reload to pick up new token
     setTimeout(() => window.location.reload(), 100);
   };
+
+  // Check authorization on mount and when token changes
+  useEffect(() => {
+    void checkAuth();
+  }, [checkAuth]);
 
   return {
     isAuthorized,

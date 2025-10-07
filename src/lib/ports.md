@@ -42,11 +42,18 @@ simulateSeeNearbyPassengers(params: {
 
 // Trip Creation
 simulateScheduleTripPassenger(params: {
-  vehicle_type: VehicleType, lat: number, lng: number
+  vehicle_type: VehicleType,
+  lat: number,
+  lng: number,
+  refCode?: string,            // Required in Phase-2 (Supabase)
 }): Promise<Trip>
 
 simulateScheduleTripDriver(params: {
-  vehicle_type: VehicleType, lat: number, lng: number, hasAccess: boolean
+  vehicle_type: VehicleType,
+  lat: number,
+  lng: number,
+  hasAccess: boolean,
+  refCode?: string,             // Required in Phase-2 (Supabase)
 }): Promise<Trip | 'NO_ACCESS'>
 
 // Utility

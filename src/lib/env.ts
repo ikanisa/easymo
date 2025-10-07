@@ -7,7 +7,7 @@ export function isDev(): boolean {
   return import.meta.env.DEV;
 }
 
-export function useMock(): boolean {
+export function shouldUseMock(): boolean {
   return import.meta.env.VITE_USE_MOCK === '1' || import.meta.env.VITE_USE_MOCK === 'true';
 }
 

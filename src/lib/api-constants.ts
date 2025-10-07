@@ -3,7 +3,8 @@
  * Single source of truth for API configuration
  */
 
-export const API_BASE = 'https://ezrriefbmhiiqfoxgjgz.supabase.co/functions/v1';
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://ezrriefbmhiiqfoxgjgz.supabase.co';
+export const API_BASE = import.meta.env.VITE_API_BASE || `${SUPABASE_URL}/functions/v1`;
 
 export const ADMIN_HEADERS = () => ({
   'Content-Type': 'application/json',
@@ -11,12 +12,21 @@ export const ADMIN_HEADERS = () => ({
 });
 
 function getAdminToken(): string {
-  return import.meta.env.VITE_ADMIN_TOKEN || 
-         localStorage.getItem('admin_token') || 
+  return import.meta.env.VITE_ADMIN_TOKEN ||
+         localStorage.getItem('admin_token') ||
          '';
 }
 
-export const SUPABASE_PROJECT_ID = 'ezrriefbmhiiqfoxgjgz';
+const projectIdFromEnv = (() => {
+  if (import.meta.env.VITE_SUPABASE_PROJECT_ID) return import.meta.env.VITE_SUPABASE_PROJECT_ID;
+  try {
+    const hostname = new URL(SUPABASE_URL).hostname;
+    return hostname.split('.')[0];
+  } catch {
+    return undefined;
+  }
+})();
+export const SUPABASE_PROJECT_ID = projectIdFromEnv ?? 'ezrriefbmhiiqfoxgjgz';
 
 // Deep links to Supabase Studio
 export const SUPABASE_LINKS = {

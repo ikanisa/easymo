@@ -86,11 +86,40 @@ In Phase-2, the backend will:
 - Update database and reply to admin with success/failure
 - Use webhook at `/functions/v1/wa-webhook`
 
+### Simulator (Live Mode)
+
+- Provide a driver ref code before fetching passenger requests so Supabase can enforce subscription/credit gating.
+- Provide the relevant passenger/driver ref codes before saving trips so new rows can be written to Supabase.
+- Tokens navigation and tooling remain available only when `VITE_USE_MOCK=1`; in live mode those screens surface read-only notices.
+- Geospatial lookups call the Supabase RPCs and reuse the `app_config` radius/max settings.
+
+### WhatsApp Webhook
+
+- Deploy the bundled Edge Function with `supabase functions deploy wa-webhook --no-verify-jwt` after setting:
+  - `WA_PHONE_ID` / `WHATSAPP_PHONE_NUMBER_ID`
+  - `WA_TOKEN` / `WHATSAPP_ACCESS_TOKEN`
+  - `WA_APP_SECRET` / `WHATSAPP_APP_SECRET`
+  - `WA_VERIFY_TOKEN` / `WHATSAPP_VERIFY_TOKEN`
+  - `WA_BOT_NUMBER_E164`
+- The webhook validates Meta signatures, enforces admin phone allow-lists, consumes driver credits, and routes messages through the same flows the simulator exercises.
+
+- **Health checks**: Deploy the `/admin-health` function and run `npm run health` (requires `VITE_ADMIN_TOKEN` and optional `HEALTH_URL`) to verify Edge Function connectivity.
+
 ## Environment Variables
 
-- `VITE_USE_MOCK=1` - Use mock data (Phase-1 default)
-- `VITE_DEV_TOOLS=1` - Enable developer tools (WA Console, Reset Data)
-- `VITE_ADMIN_TOKEN` - Admin authentication token (future use)
+Copy the template and populate it with your project values:
+
+```bash
+cp .env.example .env.local
+```
+
+- `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` – Supabase project URL and anon key (required once you flip off mock mode)
+- `VITE_API_BASE` – Edge Function base path; defaults to `/functions/v1`
+- `VITE_ADMIN_TOKEN` – Shared secret for admin Edge Functions
+- `VITE_USE_MOCK` – Set to `1` to stay on the Phase‑1 mock adapter, `0` to use live Supabase
+- `VITE_DEV_TOOLS` – Enable developer tooling (WA Console, Reset Data)
+- `WA_PHONE_ID`, `WA_TOKEN`, `WA_APP_SECRET`, `WA_VERIFY_TOKEN`, `WA_BOT_NUMBER_E164` – Required to enable the WhatsApp webhook Edge Function
+- `HEALTH_URL` – Optional override for `npm run health` (defaults to local Supabase Functions URL)
 
 ## Can I connect a custom domain to my Lovable project?
 

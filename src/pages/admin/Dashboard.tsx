@@ -88,21 +88,21 @@ export default function Dashboard() {
   const cards = stats ? [
     {
       title: "Drivers Online",
-      value: stats.drivers_online,
+      value: stats.drivers_online ?? 0,
       icon: Users,
       description: "Active drivers (last 30min)",
       color: "text-whatsapp",
     },
     {
       title: "Open Trips",
-      value: stats.open_passenger_trips,
+      value: stats.open_passenger_trips ?? stats.open_trips ?? 0,
       icon: Route,
       description: "Pending passenger requests",
       color: "text-info",
     },
     {
       title: "Active Subscriptions", 
-      value: stats.active_subscribers,
+      value: stats.active_subscribers ?? stats.active_subscriptions ?? 0,
       icon: CreditCard,
       description: "Paid driver subscriptions",
       color: "text-success",
@@ -173,21 +173,21 @@ export default function Dashboard() {
                     <div className="h-2 w-2 bg-success rounded-full"></div>
                     <span className="text-sm">Total Users</span>
                   </div>
-                  <span className="text-sm font-medium">{stats.total_users}</span>
+                  <span className="text-sm font-medium">{(stats.total_users ?? 0).toLocaleString()}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
                     <div className="h-2 w-2 bg-info rounded-full"></div>
                     <span className="text-sm">Total Trips</span>
                   </div>
-                  <span className="text-sm font-medium">{stats.total_trips}</span>
+                  <span className="text-sm font-medium">{(stats.total_trips ?? stats.open_trips ?? 0).toLocaleString()}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
                     <div className="h-2 w-2 bg-warning rounded-full"></div>
                     <span className="text-sm">Pending Subscriptions</span>
                   </div>
-                  <span className="text-sm font-medium">{stats.pending_subscriptions}</span>
+                  <span className="text-sm font-medium">{(stats.pending_subscriptions ?? 0).toLocaleString()}</span>
                 </div>
               </>
             )}

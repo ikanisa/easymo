@@ -81,24 +81,72 @@ export class RealAdapter {
     lng: number;
     vehicle_type: VehicleType;
   }): Promise<DriverPresence[]> {
-    throw new Error("Phase 2 not implemented - Real adapter requires Supabase PostGIS");
+    const drivers = await AdminAPI.simulatorDrivers({
+      lat: params.lat,
+      lng: params.lng,
+      vehicle_type: params.vehicle_type,
+    });
+
+    return drivers.map((driver) => ({
+      user_id: driver.user_id,
+      vehicle_type: driver.vehicle_type ?? params.vehicle_type,
+      last_seen: driver.last_seen,
+      ref_code: driver.ref_code,
+      whatsapp_e164: driver.whatsapp_e164,
+      lat: driver.lat,
+      lng: driver.lng,
+    }));
   }
 
   async simulateSeeNearbyPassengers(params: {
     lat: number;
     lng: number;
     vehicle_type: VehicleType;
-    hasAccess: boolean;
+    hasAccess?: boolean;
+    driver_ref_code?: string;
   }): Promise<Trip[] | 'NO_ACCESS'> {
-    throw new Error("Phase 2 not implemented - Real adapter requires Supabase PostGIS");
+    const response = await AdminAPI.simulatorPassengers({
+      lat: params.lat,
+      lng: params.lng,
+      vehicle_type: params.vehicle_type,
+      driver_ref_code: params.driver_ref_code,
+      force_access: params.hasAccess,
+    });
+
+    if (!response.access) {
+      return 'NO_ACCESS';
+    }
+
+    return (response.trips ?? []).map((trip) => ({
+      id: trip.id,
+      creator_user_id: trip.creator_user_id,
+      role: trip.role ?? 'passenger',
+      vehicle_type: trip.vehicle_type ?? params.vehicle_type,
+      created_at: trip.created_at,
+      status: trip.status,
+      ref_code: trip.ref_code,
+      whatsapp_e164: trip.whatsapp_e164,
+      lat: trip.lat,
+      lng: trip.lng,
+    }));
   }
 
   async simulateScheduleTripPassenger(params: {
     vehicle_type: VehicleType;
     lat: number;
     lng: number;
+    refCode?: string;
   }): Promise<Trip> {
-    throw new Error("Phase 2 not implemented - Real adapter requires Supabase");
+    if (!params.refCode) {
+      throw new Error('Passenger ref code required in live mode');
+    }
+
+    return AdminAPI.simulatorSchedulePassenger({
+      lat: params.lat,
+      lng: params.lng,
+      vehicle_type: params.vehicle_type,
+      ref_code: params.refCode,
+    });
   }
 
   async simulateScheduleTripDriver(params: {
@@ -106,13 +154,30 @@ export class RealAdapter {
     lat: number;
     lng: number;
     hasAccess: boolean;
+    refCode?: string;
   }): Promise<Trip | 'NO_ACCESS'> {
-    throw new Error("Phase 2 not implemented - Real adapter requires Supabase");
+    if (!params.refCode) {
+      throw new Error('Driver ref code required in live mode');
+    }
+
+    const result = await AdminAPI.simulatorScheduleDriver({
+      lat: params.lat,
+      lng: params.lng,
+      vehicle_type: params.vehicle_type,
+      ref_code: params.refCode,
+      force_access: params.hasAccess,
+    });
+
+    if (!result.access) {
+      return 'NO_ACCESS';
+    }
+
+    return result.trip;
   }
 
   // Get profiles by ref codes (for simulator lookups)
   async getProfileByRefCode(refCode: string): Promise<Profile | null> {
-    throw new Error("Phase 2 not implemented - Real adapter requires Supabase");
+    return AdminAPI.simulatorProfile(refCode);
   }
 
   // Dev utility (no-op in real)

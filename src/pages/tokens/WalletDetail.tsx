@@ -9,39 +9,42 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { TokensApi } from "@/lib/tokensApi";
+import { shouldUseMock } from "@/lib/env";
 import { Wallet2, ArrowLeft, Plus, Copy, ExternalLink, Snowflake, RotateCcw, Activity, Store } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import type { Wallet, Transaction, Shop } from "@/lib/types";
 
 export default function TokensWalletDetail() {
   const { id } = useParams<{ id: string }>();
-  
-  if (!id) {
-    return <div>Wallet ID not found</div>;
-  }
+  const walletId = id ?? '';
+  const isMock = shouldUseMock();
 
   // Fetch wallet details
   const { data: wallet, isLoading: walletLoading } = useQuery<Wallet>({
-    queryKey: ["wallet", id],
-    queryFn: () => TokensApi.getWallet(id),
+    queryKey: ["wallet", walletId],
+    queryFn: () => TokensApi.getWallet(walletId),
+    enabled: isMock && Boolean(id),
   });
 
   // Fetch wallet balance
   const { data: balance = 0, isLoading: balanceLoading } = useQuery<number>({
-    queryKey: ["wallet-balance", id],
-    queryFn: () => TokensApi.getBalance(id),
+    queryKey: ["wallet-balance", walletId],
+    queryFn: () => TokensApi.getBalance(walletId),
+    enabled: isMock && Boolean(id),
   });
 
   // Fetch transactions
   const { data: transactions = [], isLoading: txLoading } = useQuery<Transaction[]>({
-    queryKey: ["wallet-transactions", id],
-    queryFn: () => TokensApi.listTx({ wallet_id: id, limit: 50 }),
+    queryKey: ["wallet-transactions", walletId],
+    queryFn: () => TokensApi.listTx({ wallet_id: walletId, limit: 50 }),
+    enabled: isMock && Boolean(id),
   });
 
   // Fetch shops for allowed shops display
   const { data: shops = [] } = useQuery<Shop[]>({
     queryKey: ["shops"],
     queryFn: TokensApi.listShops,
+    enabled: isMock,
   });
 
   const getStatusBadge = (status: string) => {
@@ -74,7 +77,8 @@ export default function TokensWalletDetail() {
   };
 
   const copyWalletId = () => {
-    navigator.clipboard.writeText(id);
+    if (!walletId) return;
+    navigator.clipboard.writeText(walletId);
     toast({
       title: "Copied",
       description: "Wallet ID copied to clipboard",
@@ -84,6 +88,38 @@ export default function TokensWalletDetail() {
   const allowedShops = wallet?.allowed_shop_ids 
     ? shops.filter(shop => wallet.allowed_shop_ids?.includes(shop.id))
     : [];
+
+  if (!isMock) {
+    return (
+      <AdminLayout>
+        <Card>
+          <CardHeader>
+            <CardTitle>Tokens module unavailable</CardTitle>
+            <CardDescription>
+              Wallet details are only accessible in the mock testing environment.
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      </AdminLayout>
+    );
+  }
+
+  if (!id) {
+    return (
+      <AdminLayout>
+        <div className="text-center py-8">
+          <Wallet2 className="h-12 w-12 mx-auto mb-4 opacity-50" />
+          <p className="text-muted-foreground">Wallet ID not found</p>
+          <Button variant="outline" asChild className="mt-2">
+            <Link to="/tokens/wallets">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Wallets
+            </Link>
+          </Button>
+        </div>
+      </AdminLayout>
+    );
+  }
 
   if (walletLoading) {
     return (

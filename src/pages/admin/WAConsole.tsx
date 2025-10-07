@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -21,11 +21,7 @@ export default function WAConsole() {
 
   const adminNumbers = settings?.admin_whatsapp_numbers?.split(',') || [];
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       const [subs, config] = await Promise.all([
         ADAPTER.getSubscriptions(),
@@ -39,7 +35,11 @@ export default function WAConsole() {
     } catch (error) {
       console.error('Failed to load data:', error);
     }
-  };
+  }, [fromNumber]);
+
+  useEffect(() => {
+    void loadData();
+  }, [loadData]);
 
   const loadSubscriptions = async () => {
     try {

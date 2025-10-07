@@ -11,11 +11,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import { TokensApi } from "@/lib/tokensApi";
+import { shouldUseMock } from "@/lib/env";
 import { Copy, Coins, Loader2, ExternalLink } from "lucide-react";
 import { QRGenerator } from "@/components/QRGenerator";
 import type { Shop, IssueTokensRequest, IssueTokensResponse } from "@/lib/types";
 
 export default function TokensIssue() {
+  const isMock = shouldUseMock();
   const [formData, setFormData] = useState<IssueTokensRequest>({
     whatsapp: "",
     user_code: "",
@@ -31,6 +33,7 @@ export default function TokensIssue() {
   const { data: shops = [] } = useQuery<Shop[]>({
     queryKey: ["shops"],
     queryFn: TokensApi.listShops,
+    enabled: isMock,
   });
 
   // Issue tokens mutation
@@ -69,6 +72,15 @@ export default function TokensIssue() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!isMock) {
+      toast({
+        title: "Feature unavailable",
+        description: "Token issuance requires mock mode.",
+        variant: "destructive",
+      });
+      return;
+    }
     
     // Validation
     if (!formData.whatsapp.startsWith("+") || formData.whatsapp.length < 10) {
@@ -118,6 +130,14 @@ export default function TokensIssue() {
   };
 
   const copyLink = () => {
+    if (!isMock) {
+      toast({
+        title: "Feature unavailable",
+        description: "Token issuance requires mock mode.",
+        variant: "destructive",
+      });
+      return;
+    }
     if (issuedResult?.link) {
       navigator.clipboard.writeText(issuedResult.link);
       toast({
@@ -126,6 +146,21 @@ export default function TokensIssue() {
       });
     }
   };
+
+  if (!isMock) {
+    return (
+      <AdminLayout>
+        <Card>
+          <CardHeader>
+            <CardTitle>Tokens module unavailable</CardTitle>
+            <CardDescription>
+              Token issuance is supported only in the mock environment. Re-enable mock mode to issue wallets for testing.
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      </AdminLayout>
+    );
+  }
 
   return (
     <AdminLayout>

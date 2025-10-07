@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import AdminLayout from "@/components/AdminLayout";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,10 +12,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
 import { TokensApi } from "@/lib/tokensApi";
+import { shouldUseMock } from "@/lib/env";
 import { Store, Plus, Edit, Trash2 } from "lucide-react";
 import type { Shop } from "@/lib/types";
 
 export default function TokensShops() {
+  const isMock = shouldUseMock();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingShop, setEditingShop] = useState<Shop | null>(null);
   const [formData, setFormData] = useState({
@@ -30,6 +32,7 @@ export default function TokensShops() {
   const { data: shops = [], isLoading } = useQuery<Shop[]>({
     queryKey: ["shops"],
     queryFn: TokensApi.listShops,
+    enabled: isMock,
   });
 
   const resetForm = () => {
@@ -66,6 +69,21 @@ export default function TokensShops() {
       variant: "destructive",
     });
   };
+
+  if (!isMock) {
+    return (
+      <AdminLayout>
+        <Card>
+          <CardHeader>
+            <CardTitle>Tokens module unavailable</CardTitle>
+            <CardDescription>
+              Shop management is only available when running against the mock adapter.
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      </AdminLayout>
+    );
+  }
 
   return (
     <AdminLayout>

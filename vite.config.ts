@@ -17,13 +17,15 @@ export default defineConfig(({ mode }) => ({
   },
   define: {
     // Phase 1 environment defaults
-    'import.meta.env.VITE_USE_MOCK': JSON.stringify(process.env.VITE_USE_MOCK || '1'),
-    'import.meta.env.VITE_DEV_TOOLS': JSON.stringify(process.env.VITE_DEV_TOOLS || '1'),
+    'import.meta.env.VITE_USE_MOCK': JSON.stringify(process.env.VITE_USE_MOCK ?? '0'),
+    'import.meta.env.VITE_DEV_TOOLS': JSON.stringify(process.env.VITE_DEV_TOOLS ?? '0'),
   },
   // Add test configuration for Vitest
   test: {
     globals: true,
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
+    include: ['src/**/*.{test,spec}.{ts,tsx}'],
+    exclude: ['easymo/**', 'node_modules/**'],
   },
 }));

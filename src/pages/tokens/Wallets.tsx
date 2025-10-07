@@ -10,10 +10,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TokensApi } from "@/lib/tokensApi";
-import { Wallet2, Search, Plus, ChevronLeft, ChevronRight, Loader2, Eye } from "lucide-react";
-import type { Wallet, WalletBalance } from "@/lib/types";
+import { shouldUseMock } from "@/lib/env";
+import { Wallet2, Search, Plus, ChevronLeft, ChevronRight, Eye } from "lucide-react";
+import type { Wallet } from "@/lib/types";
 
 export default function TokensWallets() {
+  const isMock = shouldUseMock();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(0);
@@ -31,6 +33,7 @@ export default function TokensWallets() {
         limit: pageSize,
         offset: currentPage * pageSize,
       }),
+    enabled: isMock,
   });
 
   // Fetch balances for current page
@@ -38,7 +41,7 @@ export default function TokensWallets() {
   const { data: balances = {} } = useQuery<Record<string, number>>({
     queryKey: ["wallet-balances", walletIds],
     queryFn: () => TokensApi.getBatchBalances(walletIds),
-    enabled: walletIds.length > 0,
+    enabled: isMock && walletIds.length > 0,
   });
 
   // Filter wallets client-side for search
@@ -71,6 +74,21 @@ export default function TokensWallets() {
     }
     return <span className="font-mono">{balance.toLocaleString()} RWF</span>;
   };
+
+  if (!isMock) {
+    return (
+      <AdminLayout>
+        <Card>
+          <CardHeader>
+            <CardTitle>Tokens module unavailable</CardTitle>
+            <CardDescription>
+              Token wallet management is only enabled in the Phase‑1 mock environment. Switch back to mock mode to use this tool.
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      </AdminLayout>
+    );
+  }
 
   return (
     <AdminLayout>

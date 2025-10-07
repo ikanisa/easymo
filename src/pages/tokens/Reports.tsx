@@ -11,10 +11,12 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/hooks/use-toast";
 import { TokensApi } from "@/lib/tokensApi";
+import { shouldUseMock } from "@/lib/env";
 import { FileBarChart, Download, Filter, RefreshCw } from "lucide-react";
 import type { Transaction, Shop, Wallet } from "@/lib/types";
 
 export default function TokensReports() {
+  const isMock = shouldUseMock();
   const [filters, setFilters] = useState({
     startDate: "",
     endDate: "",
@@ -26,12 +28,14 @@ export default function TokensReports() {
   const { data: shops = [] } = useQuery<Shop[]>({
     queryKey: ["shops"],
     queryFn: TokensApi.listShops,
+    enabled: isMock,
   });
 
   // Fetch wallets for filter dropdown (just get first page)
   const { data: wallets = [] } = useQuery<Wallet[]>({
     queryKey: ["wallets-for-filter"],
     queryFn: () => TokensApi.listWallets({ limit: 100 }),
+    enabled: isMock,
   });
 
   // Fetch transactions based on filters
@@ -45,6 +49,7 @@ export default function TokensReports() {
         to: filters.endDate || undefined,
         limit: 1000, // Get more for reports
       }),
+    enabled: isMock,
   });
 
   // Calculate totals
@@ -139,6 +144,21 @@ export default function TokensReports() {
       </Badge>
     );
   };
+
+  if (!isMock) {
+    return (
+      <AdminLayout>
+        <Card>
+          <CardHeader>
+            <CardTitle>Tokens module unavailable</CardTitle>
+            <CardDescription>
+              Token analytics are not yet available when connected to the live Supabase backend.
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      </AdminLayout>
+    );
+  }
 
   return (
     <AdminLayout>

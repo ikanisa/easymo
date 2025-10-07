@@ -2,7 +2,7 @@
  *  Accepts +2507..., 2507..., 02507..., or 07...
  */
 export function normalizeE164(raw: string) {
-  let s = raw.trim();
+  const s = raw.trim();
   if (!s) return "";
   if (s.startsWith("+")) return s;
   if (s.startsWith("0250")) return "+250" + s.slice(4);

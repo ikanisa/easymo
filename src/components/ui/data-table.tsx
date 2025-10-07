@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -30,6 +30,52 @@ export interface DataTableProps<T> {
   className?: string;
 }
 
+function extractTextFromReactNode(node: React.ReactNode): string {
+  if (typeof node === "string" || typeof node === "number") {
+    return String(node);
+  }
+  if (React.isValidElement(node) && node.props.children) {
+    return extractTextFromReactNode(node.props.children);
+  }
+  if (Array.isArray(node)) {
+    return node.map(extractTextFromReactNode).join(" ");
+  }
+  return "";
+}
+
+function calculateSimilarity(str1: string, str2: string): number {
+  const longer = str1.length > str2.length ? str1 : str2;
+  const shorter = str1.length > str2.length ? str2 : str1;
+
+  if (longer.length === 0) return 1;
+
+  const editDistance = levenshteinDistance(longer, shorter);
+  return (longer.length - editDistance) / longer.length;
+}
+
+function levenshteinDistance(str1: string, str2: string): number {
+  const matrix = Array.from({ length: str2.length + 1 }, () => Array(str1.length + 1).fill(0));
+
+  for (let i = 0; i <= str1.length; i += 1) matrix[0][i] = i;
+  for (let j = 0; j <= str2.length; j += 1) matrix[j][0] = j;
+
+  for (let j = 1; j <= str2.length; j += 1) {
+    for (let i = 1; i <= str1.length; i += 1) {
+      if (str1[i - 1] === str2[j - 1]) {
+        matrix[j][i] = matrix[j - 1][i - 1];
+      } else {
+        matrix[j][i] = Math.min(
+          matrix[j - 1][i - 1] + 1,
+          matrix[j][i - 1] + 1,
+          matrix[j - 1][i] + 1,
+        );
+      }
+    }
+  }
+
+  return matrix[str2.length][str1.length];
+}
+
 export function DataTable<T extends Record<string, any>>({
   data,
   columns,
@@ -49,7 +95,7 @@ export function DataTable<T extends Record<string, any>>({
   const [showFilters, setShowFilters] = useState(false);
 
   // Smart search function with semantic matching
-  const smartSearch = (item: T, searchTerm: string): number => {
+  const smartSearch = useCallback((item: T, searchTerm: string): number => {
     if (!searchTerm.trim()) return 1;
     
     const searchTerms = searchTerm.toLowerCase().split(/\s+/);
@@ -108,56 +154,7 @@ export function DataTable<T extends Record<string, any>>({
     });
 
     return maxPossibleScore > 0 ? totalScore / maxPossibleScore : 0;
-  };
-
-  // Helper function to extract text from React nodes
-  const extractTextFromReactNode = (node: React.ReactNode): string => {
-    if (typeof node === "string" || typeof node === "number") {
-      return String(node);
-    }
-    if (React.isValidElement(node) && node.props.children) {
-      return extractTextFromReactNode(node.props.children);
-    }
-    if (Array.isArray(node)) {
-      return node.map(extractTextFromReactNode).join(" ");
-    }
-    return "";
-  };
-
-  // Simple similarity calculation
-  const calculateSimilarity = (str1: string, str2: string): number => {
-    const longer = str1.length > str2.length ? str1 : str2;
-    const shorter = str1.length > str2.length ? str2 : str1;
-    
-    if (longer.length === 0) return 1;
-    
-    const editDistance = levenshteinDistance(longer, shorter);
-    return (longer.length - editDistance) / longer.length;
-  };
-
-  // Levenshtein distance for fuzzy matching
-  const levenshteinDistance = (str1: string, str2: string): number => {
-    const matrix = Array(str2.length + 1).fill(null).map(() => Array(str1.length + 1).fill(null));
-    
-    for (let i = 0; i <= str1.length; i++) matrix[0][i] = i;
-    for (let j = 0; j <= str2.length; j++) matrix[j][0] = j;
-    
-    for (let j = 1; j <= str2.length; j++) {
-      for (let i = 1; i <= str1.length; i++) {
-        if (str1[i - 1] === str2[j - 1]) {
-          matrix[j][i] = matrix[j - 1][i - 1];
-        } else {
-          matrix[j][i] = Math.min(
-            matrix[j - 1][i - 1] + 1,
-            matrix[j][i - 1] + 1,
-            matrix[j - 1][i] + 1
-          );
-        }
-      }
-    }
-    
-    return matrix[str2.length][str1.length];
-  };
+  }, [columns]);
 
   // Filter and sort data
   const processedData = useMemo(() => {
@@ -215,7 +212,7 @@ export function DataTable<T extends Record<string, any>>({
     }
 
     return filtered;
-  }, [data, globalSearch, columnFilters, sorting, columns, enableGlobalSearch, enableFilters]);
+  }, [data, globalSearch, columnFilters, sorting, columns, enableGlobalSearch, enableFilters, smartSearch]);
 
   const handleSort = (columnId: string) => {
     const column = columns.find(col => col.id === columnId);

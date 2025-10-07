@@ -64,14 +64,18 @@ const SEED_DATA: MockData = {
       vehicle_type: 'moto',
       last_seen: new Date(Date.now() - 600000).toISOString(), // 10min ago
       lat: -1.9441,
-      lng: 30.0619
+      lng: 30.0619,
+      ref_code: '234567',
+      whatsapp_e164: '+250788222222'
     },
     {
       user_id: 'user-003',
       vehicle_type: 'cab',
       last_seen: new Date(Date.now() - 1800000).toISOString(), // 30min ago
       lat: -1.9536,
-      lng: 30.0606
+      lng: 30.0606,
+      ref_code: '345678',
+      whatsapp_e164: '+250788333333'
     }
   ],
   trips: [
@@ -278,7 +282,8 @@ class MockAdapter {
     lat: number;
     lng: number;
     vehicle_type: VehicleType;
-    hasAccess: boolean;
+    hasAccess?: boolean;
+    driver_ref_code?: string;
   }): Promise<Trip[] | 'NO_ACCESS'> {
     if (!params.hasAccess) {
       return 'NO_ACCESS';
@@ -296,6 +301,7 @@ class MockAdapter {
     vehicle_type: VehicleType;
     lat: number;
     lng: number;
+    refCode?: string;
   }): Promise<Trip> {
     const trip: Trip = {
       id: Date.now(), // Simple ID generation
@@ -318,6 +324,7 @@ class MockAdapter {
     lat: number;
     lng: number;
     hasAccess: boolean;
+    refCode?: string;
   }): Promise<Trip | 'NO_ACCESS'> {
     if (!params.hasAccess) {
       return 'NO_ACCESS';

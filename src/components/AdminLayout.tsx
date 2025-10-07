@@ -2,14 +2,15 @@ import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { MessageCircle, BarChart3, CreditCard, Settings, Users, Route, Menu, X, Terminal, Smartphone, Wallet, Coins } from "lucide-react";
-import { showDevTools } from "@/lib/env";
+import { showDevTools, shouldUseMock } from "@/lib/env";
 
+const isMockMode = shouldUseMock();
 const baseNavigation = [
   { name: "Dashboard", href: "/", icon: BarChart3 },
   { name: "Subscriptions", href: "/subscriptions", icon: CreditCard },
   { name: "Users", href: "/users", icon: Users },
   { name: "Trips", href: "/trips", icon: Route },
-  { name: "Tokens", href: "/tokens", icon: Wallet },
+  ...(isMockMode ? [{ name: "Tokens", href: "/tokens", icon: Wallet }] : []),
   { name: "Campaigns", href: "/campaigns", icon: MessageCircle },
   { name: "Baskets", href: "/baskets", icon: Coins },
   { name: "Marketplace", href: "/marketplace", icon: CreditCard },

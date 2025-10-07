@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { isDev, useMock, showDevTools, getAdminToken, getApiBase } from './env';
+import { isDev, shouldUseMock, showDevTools, getAdminToken, getApiBase } from './env';
 
 describe('Environment configuration', () => {
   describe('isDev', () => {
@@ -9,9 +9,9 @@ describe('Environment configuration', () => {
     });
   });
 
-  describe('useMock', () => {
+  describe('shouldUseMock', () => {
     it('should return true for default mock mode', () => {
-      const result = useMock();
+      const result = shouldUseMock();
       expect(typeof result).toBe('boolean');
     });
   });
