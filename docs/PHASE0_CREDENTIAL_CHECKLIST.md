@@ -98,6 +98,7 @@ Supabase storage buckets (create via Supabase dashboard or migrations):
 - `TEST_VENDOR_WA_ID` – WhatsApp ID for a staging vendor user.
 
 > ✅ **Gate**: Do not proceed to Phase 1 until every required secret above is
-> collected and securely stored in your deployment environment (Vercel/Supabase
-> Edge/Secrets Manager). Update `.env.sample` values locally only with
-> non-secret placeholders.
+> collected and securely stored in your deployment environment (for example,
+> Supabase Edge secrets, a managed secrets manager, or your hosting provider’s
+> vault). Update `.env.sample` values locally only with non-secret
+> placeholders.

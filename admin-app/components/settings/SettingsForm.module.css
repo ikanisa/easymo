@@ -4,14 +4,17 @@
   max-width: 520px;
 }
 
-.form label span {
-  display: block;
-  font-size: 0.8rem;
-  color: var(--text-secondary);
-  margin-bottom: 6px;
+.field {
+  display: grid;
+  gap: 6px;
 }
 
-.form input {
+.fieldLabel {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.fieldInput {
   width: 100%;
   padding: 8px 10px;
   border-radius: 8px;

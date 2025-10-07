@@ -102,18 +102,20 @@ export function SettingsForm() {
 
   return (
     <form className={styles.form} onSubmit={handleSave}>
-      <label>
-        <span>Quiet hours (start – end)</span>
+      <label className={styles.field}>
+        <span className={styles.fieldLabel}>Quiet hours (start – end)</span>
         <input
+          className={styles.fieldInput}
           value={form.quietHours}
           onChange={(event) =>
             setForm((prev) => ({ ...prev, quietHours: event.target.value }))}
           placeholder="22:00 – 06:00"
         />
       </label>
-      <label>
-        <span>WhatsApp throttle per minute</span>
+      <label className={styles.field}>
+        <span className={styles.fieldLabel}>WhatsApp throttle per minute</span>
         <input
+          className={styles.fieldInput}
           type="number"
           min={0}
           value={form.throttlePerMinute}
@@ -124,9 +126,10 @@ export function SettingsForm() {
             }))}
         />
       </label>
-      <label>
-        <span>Opt-out list (comma separated)</span>
+      <label className={styles.field}>
+        <span className={styles.fieldLabel}>Opt-out list (comma separated)</span>
         <input
+          className={styles.fieldInput}
           value={form.optOutList.join(", ")}
           onChange={(event) =>
             setForm((prev) => ({
