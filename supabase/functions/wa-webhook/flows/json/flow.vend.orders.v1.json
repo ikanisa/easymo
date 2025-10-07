@@ -1,0 +1,209 @@
+{
+  "version": "6.4",
+  "screens": [
+    {
+      "id": "s_order_queues",
+      "title": "Order queues",
+      "layout": { "type": "single_column" },
+      "widgets": [
+        {
+          "type": "radio_list",
+          "id": "w_queue",
+          "options": [
+            { "id": "pending", "title": "Pending" },
+            { "id": "paid", "title": "Paid" },
+            { "id": "served", "title": "Served" },
+            { "id": "cancelled", "title": "Cancelled" }
+          ]
+        },
+        {
+          "type": "footer_buttons",
+          "buttons": [
+            {
+              "id": "BTN_VIEW_QUEUE",
+              "title": "View",
+              "action": {
+                "type": "data_exchange",
+                "id": "a_view_queue",
+                "fields": { "queue": "${widgets.w_queue.value}" }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "s_orders_list",
+      "title": "Orders",
+      "layout": { "type": "single_column" },
+      "widgets": [
+        {
+          "type": "text_block",
+          "id": "w_queue_title",
+          "text": "${data.queue_title} orders"
+        },
+        {
+          "type": "radio_list",
+          "id": "w_orders",
+          "options_data_binding": "orders"
+        },
+        {
+          "type": "footer_buttons",
+          "buttons": [
+            {
+              "id": "BTN_ORDERS_REFRESH",
+              "title": "Refresh",
+              "action": {
+                "type": "data_exchange",
+                "id": "a_refresh",
+                "fields": { "queue": "${data.queue}" }
+              }
+            }
+          ]
+        }
+      ],
+      "events": {
+        "on_item_select": {
+          "widget_id": "w_orders",
+          "action": {
+            "type": "data_exchange",
+            "id": "a_open_order_detail",
+            "fields": {
+              "order_id": "${selected.id}",
+              "order_updated_at": "${selected.data.order_updated_at}",
+              "queue": "${data.queue}"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "s_order_detail",
+      "title": "Order detail",
+      "layout": { "type": "single_column" },
+      "widgets": [
+        {
+          "type": "text_block",
+          "id": "w_order_header",
+          "text": "${data.order_header_text}"
+        },
+        {
+          "type": "text_block",
+          "id": "w_order_meta",
+          "text": "${data.order_meta_text}"
+        },
+        {
+          "type": "text_block",
+          "id": "w_order_summary",
+          "text": "${data.summary_text}"
+        },
+        {
+          "type": "text_block",
+          "id": "w_order_timeline",
+          "text": "${data.timeline_text}"
+        },
+        {
+          "type": "footer_buttons",
+          "buttons": [
+            {
+              "id": "BTN_REFRESH_DETAIL",
+              "title": "Refresh",
+              "action": {
+                "type": "data_exchange",
+                "id": "a_refresh_order_detail",
+                "fields": {
+                  "order_id": "${data.order_id}",
+                  "queue": "${data.queue}"
+                }
+              }
+            },
+            {
+              "id": "BTN_MARK_PAID",
+              "title": "Mark paid",
+              "action": {
+                "type": "data_exchange",
+                "id": "a_mark_paid",
+                "fields": {
+                  "order_id": "${data.order_id}",
+                  "order_updated_at": "${data.order_updated_at}",
+                  "queue": "${data.queue}"
+                }
+              }
+            },
+            {
+              "id": "BTN_MARK_SERVED",
+              "title": "Serve",
+              "action": {
+                "type": "data_exchange",
+                "id": "a_mark_served",
+                "fields": {
+                  "order_id": "${data.order_id}",
+                  "order_updated_at": "${data.order_updated_at}",
+                  "queue": "${data.queue}"
+                }
+              }
+            },
+            {
+              "id": "BTN_CANCEL",
+              "title": "Cancel",
+              "action": {
+                "type": "navigate",
+                "next": "s_cancel_reason",
+                "params": {
+                  "order_id": "${data.order_id}",
+                  "order_updated_at": "${data.order_updated_at}",
+                  "queue": "${data.queue}"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "s_cancel_reason",
+      "title": "Cancel order",
+      "layout": { "type": "single_column" },
+      "data_exchange": {
+        "submit": {
+          "action": {
+            "id": "a_confirm_cancel",
+            "fields": {
+              "order_id": "${params.order_id}",
+              "order_updated_at": "${params.order_updated_at}",
+              "queue": "${params.queue}",
+              "reason": "${widgets.reason.value}"
+            }
+          }
+        }
+      },
+      "widgets": [
+        {
+          "type": "text_input",
+          "id": "reason",
+          "label": "Reason",
+          "required": true
+        },
+        {
+          "type": "footer_buttons",
+          "buttons": [
+            {
+              "id": "BTN_CONFIRM_CANCEL",
+              "title": "Confirm",
+              "action": {
+                "type": "data_exchange",
+                "id": "a_confirm_cancel",
+                "fields": {
+                  "order_id": "${params.order_id}",
+                  "order_updated_at": "${params.order_updated_at}",
+                  "queue": "${params.queue}",
+                  "reason": "${widgets.reason.value}"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
