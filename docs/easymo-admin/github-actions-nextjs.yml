@@ -1,0 +1,99 @@
+# Copy this file to `.github/workflows/ci.yml` in the new repository.
+# It runs linting, tests, a production build, and Supabase migration checks using PNPM on Node 18.
+# Adjust the individual commands to match the scripts that exist in your package.json.
+
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  install-and-test:
+    runs-on: ubuntu-latest
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+      SUPABASE_EDGE_FUNCTIONS_REGION: ${{ secrets.SUPABASE_EDGE_FUNCTIONS_REGION }}
+      VERCEL_ENV: ${{ github.ref == 'refs/heads/main' && 'production' || 'preview' }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up PNPM
+        uses: pnpm/action-setup@v4
+        with:
+          version: 8
+          run_install: false
+
+      - name: Set up Node.js 18
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm run lint --if-present
+
+      - name: Run unit tests
+        run: pnpm run test -- --passWithNoTests
+
+      - name: Build Next.js application
+        run: pnpm run build
+
+      - name: Upload .vercel/output artifact (optional)
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vercel-output
+          path: .vercel/output
+          if-no-files-found: ignore
+
+  verify-migrations:
+    # Runs Supabase migration checks separately to keep feedback clear even if the build fails.
+    runs-on: ubuntu-latest
+    needs: install-and-test
+    if: ${{ always() }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up PNPM (required for Supabase CLI via devDependencies)
+        uses: pnpm/action-setup@v4
+        with:
+          version: 8
+          run_install: false
+
+      - name: Set up Node.js 18
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: 'pnpm'
+
+      - name: Install Supabase CLI dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Validate Supabase migrations
+        # Swap this command for `pnpm supabase db push --dry-run` if you
+        # maintain a script alias in package.json.
+        run: pnpm exec supabase db lint
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
