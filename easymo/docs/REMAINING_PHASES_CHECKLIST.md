@@ -44,9 +44,7 @@
   real telemetry integrated.
 - Configure Supabase log drains or Sentry DSN to capture Edge Function errors.
 
-**Status:** Complete — Supabase log drain now aggregates structured logs,
-`admin-health` probe + `scripts/health-check.mjs` documented in the tabletop
-plan, and open gaps tracked in `OBSERVABILITY_GAPS.md`.
+**Status:** Pending – blocked on env instrumentation.
 
 ### 3. Deployment Smoke Checklist
 
@@ -55,6 +53,4 @@ plan, and open gaps tracked in `OBSERVABILITY_GAPS.md`.
 - Validate template sends against sandbox numbers.
 - Trigger OCR job manually via profiling worker.
 
-**Status:** Complete — migrations synced to project `ezrriefbmhiiqfoxgjgz`, all
-Edge Functions redeployed via `easymo/tools/deploy_supabase_functions.sh`, and
-`admin-health` smoke tested with `npm run health`.
+**Status:** Pending.
