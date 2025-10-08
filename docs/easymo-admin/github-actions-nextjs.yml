@@ -1,5 +1,5 @@
 # Copy this file to `.github/workflows/ci.yml` in the new repository.
-# It runs linting, tests, a production build, and Supabase migration checks using PNPM on Node 18.
+# It runs linting, tests, a production build, and Supabase migration checks using the detected package manager on Node 18.
 # Adjust the individual commands to match the scripts that exist in your package.json.
 
 name: CI
@@ -29,41 +29,79 @@ jobs:
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
       SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
       SUPABASE_EDGE_FUNCTIONS_REGION: ${{ secrets.SUPABASE_EDGE_FUNCTIONS_REGION }}
-      VERCEL_ENV: ${{ github.ref == 'refs/heads/main' && 'production' || 'preview' }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Detect package manager
+        id: pkg
+        run: |
+          if [ -f pnpm-lock.yaml ]; then
+            echo "manager=pnpm" >>"$GITHUB_OUTPUT"
+            echo "install=pnpm install --frozen-lockfile" >>"$GITHUB_OUTPUT"
+            echo "run=pnpm run" >>"$GITHUB_OUTPUT"
+            echo "exec=pnpm exec" >>"$GITHUB_OUTPUT"
+            echo "cache=pnpm" >>"$GITHUB_OUTPUT"
+          elif [ -f yarn.lock ]; then
+            echo "manager=yarn" >>"$GITHUB_OUTPUT"
+            echo "install=yarn install --frozen-lockfile" >>"$GITHUB_OUTPUT"
+            echo "run=yarn" >>"$GITHUB_OUTPUT"
+            echo "exec=yarn" >>"$GITHUB_OUTPUT"
+            echo "cache=yarn" >>"$GITHUB_OUTPUT"
+          else
+            echo "manager=npm" >>"$GITHUB_OUTPUT"
+            echo "install=npm ci" >>"$GITHUB_OUTPUT"
+            echo "run=npm run" >>"$GITHUB_OUTPUT"
+            echo "exec=npx" >>"$GITHUB_OUTPUT"
+            echo "cache=npm" >>"$GITHUB_OUTPUT"
+          fi
+
       - name: Set up PNPM
+        if: steps.pkg.outputs.manager == 'pnpm'
         uses: pnpm/action-setup@v4
         with:
           version: 8
           run_install: false
 
+      - name: Enable Corepack
+        if: steps.pkg.outputs.manager != 'pnpm'
+        run: corepack enable
+
       - name: Set up Node.js 18
         uses: actions/setup-node@v4
         with:
           node-version: 18
-          cache: 'pnpm'
+          cache: ${{ steps.pkg.outputs.cache }}
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: ${{ steps.pkg.outputs.install }}
 
       - name: Lint
-        run: pnpm run lint --if-present
+        run: |
+          if node -e "const pkg=require('./package.json'); process.exit(pkg.scripts?.lint ? 0 : 1)"; then
+            ${{ steps.pkg.outputs.run }} lint
+          else
+            echo "No lint script defined; skipping."
+          fi
 
       - name: Run unit tests
-        run: pnpm run test -- --passWithNoTests
+        run: |
+          if node -e "const pkg=require('./package.json'); process.exit(pkg.scripts?.test ? 0 : 1)"; then
+            ${{ steps.pkg.outputs.run }} test -- --passWithNoTests
+          else
+            echo "No test script defined; skipping."
+          fi
 
       - name: Build Next.js application
-        run: pnpm run build
+        run: ${{ steps.pkg.outputs.run }} build
 
-      - name: Upload .vercel/output artifact (optional)
+      - name: Upload build artifact (optional)
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: vercel-output
-          path: .vercel/output
+          name: next-build
+          path: |
+            .next
           if-no-files-found: ignore
 
   verify-migrations:
@@ -75,25 +113,50 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Detect package manager
+        id: pkg
+        run: |
+          if [ -f pnpm-lock.yaml ]; then
+            echo "manager=pnpm" >>"$GITHUB_OUTPUT"
+            echo "install=pnpm install --frozen-lockfile" >>"$GITHUB_OUTPUT"
+            echo "exec=pnpm exec" >>"$GITHUB_OUTPUT"
+            echo "cache=pnpm" >>"$GITHUB_OUTPUT"
+          elif [ -f yarn.lock ]; then
+            echo "manager=yarn" >>"$GITHUB_OUTPUT"
+            echo "install=yarn install --frozen-lockfile" >>"$GITHUB_OUTPUT"
+            echo "exec=yarn" >>"$GITHUB_OUTPUT"
+            echo "cache=yarn" >>"$GITHUB_OUTPUT"
+          else
+            echo "manager=npm" >>"$GITHUB_OUTPUT"
+            echo "install=npm ci" >>"$GITHUB_OUTPUT"
+            echo "exec=npx" >>"$GITHUB_OUTPUT"
+            echo "cache=npm" >>"$GITHUB_OUTPUT"
+          fi
+
       - name: Set up PNPM (required for Supabase CLI via devDependencies)
+        if: steps.pkg.outputs.manager == 'pnpm'
         uses: pnpm/action-setup@v4
         with:
           version: 8
           run_install: false
 
+      - name: Enable Corepack
+        if: steps.pkg.outputs.manager != 'pnpm'
+        run: corepack enable
+
       - name: Set up Node.js 18
         uses: actions/setup-node@v4
         with:
           node-version: 18
-          cache: 'pnpm'
+          cache: ${{ steps.pkg.outputs.cache }}
 
       - name: Install Supabase CLI dependencies
-        run: pnpm install --frozen-lockfile
+        run: ${{ steps.pkg.outputs.install }}
 
       - name: Validate Supabase migrations
         # Swap this command for `pnpm supabase db push --dry-run` if you
         # maintain a script alias in package.json.
-        run: pnpm exec supabase db lint
+        run: ${{ steps.pkg.outputs.exec }} supabase db lint
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
