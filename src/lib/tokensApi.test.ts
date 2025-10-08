@@ -24,6 +24,12 @@ describe('TokensApi mock implementation', () => {
     expect(balances['wallet-002']).toBe(6000);
   });
 
+  it('filters transactions by merchant id', async () => {
+    const transactions = await TokensApi.listTx({ merchant_id: 'shop-001' });
+    expect(transactions.length).toBeGreaterThan(0);
+    expect(transactions.every((tx) => tx.merchant_id === 'shop-001')).toBe(true);
+  });
+
   it('issues new wallet tokens and persists them', async () => {
     const startWallets = await TokensApi.listWallets({});
 
@@ -46,5 +52,20 @@ describe('TokensApi mock implementation', () => {
 
     const balance = await TokensApi.getBalance(response.wallet_id);
     expect(balance).toBe(2500);
+  });
+
+  it('never allows spend transactions to exceed current balance', async () => {
+    const { wallet_id } = await TokensApi.issue({
+      whatsapp: '+250788555555',
+      user_code: 'BALTEST',
+      amount: 300,
+      allow_any_shop: true,
+    });
+
+    const spend = await TokensApi.spend(wallet_id, 'shop-002');
+    expect(spend.amount).toBe(300);
+
+    const remaining = await TokensApi.getBalance(wallet_id);
+    expect(remaining).toBe(0);
   });
 });

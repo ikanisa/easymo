@@ -95,6 +95,7 @@ const DEFAULT_STATE: TokensState = {
       type: "spend",
       amount: 1500,
       created_at: daysAgo(9),
+      merchant_id: "shop-002",
       shops: { name: "Downtown Eatery", short_code: "DIN-014" },
     },
     {
@@ -117,6 +118,7 @@ const DEFAULT_STATE: TokensState = {
       type: "spend",
       amount: 2000,
       created_at: daysAgo(15),
+      merchant_id: "shop-001",
       shops: { name: "Kimironko Supermarket", short_code: "SHOP-001" },
     },
     {
@@ -132,6 +134,7 @@ const DEFAULT_STATE: TokensState = {
       type: "settlement",
       amount: 4000,
       created_at: daysAgo(5),
+      merchant_id: "shop-003",
     },
   ],
 };
@@ -311,11 +314,14 @@ export const TokensApi = {
     offset?: number;
   }): Promise<Transaction[]> {
     const state = readState();
-    const { wallet_id, from, to } = params;
+    const { wallet_id, merchant_id, from, to } = params;
 
     const filtered = state.transactions
       .filter((tx) => {
         if (wallet_id && tx.wallet_id !== wallet_id) {
+          return false;
+        }
+        if (merchant_id && tx.merchant_id !== merchant_id) {
           return false;
         }
         if (from && new Date(tx.created_at) < new Date(from)) {
@@ -331,7 +337,7 @@ export const TokensApi = {
     return paginate(filtered, params.limit, params.offset).map((tx) => cloneState(tx));
   },
 
-  async spend(walletId: string, spentBy?: string): Promise<Transaction> {
+  async spend(walletId: string, merchantId?: string): Promise<Transaction> {
     const state = readState();
     const wallet = state.wallets.find((item) => item.id === walletId);
     if (!wallet) {
@@ -343,14 +349,17 @@ export const TokensApi = {
       throw new Error("insufficient_balance");
     }
 
+    const amount = Math.min(500, currentBalance);
+
     const tx: Transaction & { wallet_id: string } = {
       id: generateId("tx"),
       wallet_id: walletId,
       type: "spend",
-      amount: 500,
+      amount,
       created_at: new Date().toISOString(),
-      shops: spentBy
-        ? { name: spentBy, short_code: spentBy.slice(0, 8).toUpperCase() }
+      merchant_id: merchantId,
+      shops: merchantId
+        ? { name: merchantId, short_code: merchantId.slice(0, 8).toUpperCase() }
         : undefined,
     };
 
