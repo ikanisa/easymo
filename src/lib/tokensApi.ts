@@ -1,157 +1,375 @@
 /**
- * Tokens/Wallets API Client (Frontend Only)
- * Calls existing Edge Function endpoints
+ * Tokens/Wallets mock API client
+ * Phase-1 keeps data local so the admin UI works without backend support
  */
 
-import { API_BASE, ADMIN_HEADERS } from "./api-constants";
-import { supabase } from "@/integrations/supabase/client";
+import type {
+  IssueTokensRequest,
+  IssueTokensResponse,
+  Shop,
+  Transaction,
+  Wallet,
+} from "./types";
 
-async function j(res: Response) { 
-  if (!res.ok) throw new Error(await res.text()); 
-  return res.json(); 
+const STORAGE_KEY = "tokens_mock_state";
+
+interface TokensState {
+  wallets: Wallet[];
+  transactions: Array<Transaction & { wallet_id: string }>;
+  shops: Shop[];
+}
+
+let memoryState: TokensState | null = null;
+
+function daysAgo(days: number): string {
+  return new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+}
+
+function cloneState<T>(value: T): T {
+  return JSON.parse(JSON.stringify(value));
+}
+
+const DEFAULT_STATE: TokensState = {
+  shops: [
+    {
+      id: "shop-001",
+      name: "Kimironko Supermarket",
+      short_code: "SHOP-001",
+      is_active: true,
+      created_at: daysAgo(30),
+    },
+    {
+      id: "shop-002",
+      name: "Downtown Eatery",
+      short_code: "DIN-014",
+      is_active: true,
+      created_at: daysAgo(21),
+    },
+    {
+      id: "shop-003",
+      name: "Nyamirambo Market",
+      short_code: "NYA-221",
+      is_active: false,
+      created_at: daysAgo(14),
+    },
+  ],
+  wallets: [
+    {
+      id: "wallet-001",
+      user_code: "USER001",
+      whatsapp: "+250788111111",
+      status: "active",
+      allow_any_shop: true,
+      created_at: daysAgo(10),
+    },
+    {
+      id: "wallet-002",
+      user_code: "USER002",
+      whatsapp: "+250788222222",
+      status: "frozen",
+      allow_any_shop: false,
+      allowed_shop_ids: ["shop-001", "shop-002"],
+      created_at: daysAgo(20),
+    },
+    {
+      id: "wallet-003",
+      user_code: "USER003",
+      whatsapp: "+250788333333",
+      status: "expired",
+      allow_any_shop: false,
+      allowed_shop_ids: ["shop-003"],
+      created_at: daysAgo(28),
+    },
+  ],
+  transactions: [
+    {
+      id: "tx-001",
+      wallet_id: "wallet-001",
+      type: "issue",
+      amount: 5000,
+      created_at: daysAgo(10),
+    },
+    {
+      id: "tx-002",
+      wallet_id: "wallet-001",
+      type: "spend",
+      amount: 1500,
+      created_at: daysAgo(9),
+      shops: { name: "Downtown Eatery", short_code: "DIN-014" },
+    },
+    {
+      id: "tx-003",
+      wallet_id: "wallet-001",
+      type: "issue",
+      amount: 3000,
+      created_at: daysAgo(3),
+    },
+    {
+      id: "tx-004",
+      wallet_id: "wallet-002",
+      type: "issue",
+      amount: 8000,
+      created_at: daysAgo(18),
+    },
+    {
+      id: "tx-005",
+      wallet_id: "wallet-002",
+      type: "spend",
+      amount: 2000,
+      created_at: daysAgo(15),
+      shops: { name: "Kimironko Supermarket", short_code: "SHOP-001" },
+    },
+    {
+      id: "tx-006",
+      wallet_id: "wallet-003",
+      type: "issue",
+      amount: 4000,
+      created_at: daysAgo(25),
+    },
+    {
+      id: "tx-007",
+      wallet_id: "wallet-003",
+      type: "settlement",
+      amount: 4000,
+      created_at: daysAgo(5),
+    },
+  ],
+};
+
+function readState(): TokensState {
+  if (memoryState) {
+    return cloneState(memoryState);
+  }
+
+  try {
+    if (typeof window !== "undefined" && window.localStorage) {
+      const raw = window.localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        memoryState = JSON.parse(raw) as TokensState;
+        return cloneState(memoryState);
+      }
+    }
+  } catch (error) {
+    console.warn("TokensApi.readState_failed", error);
+  }
+
+  memoryState = cloneState(DEFAULT_STATE);
+  try {
+    if (typeof window !== "undefined" && window.localStorage) {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(memoryState));
+    }
+  } catch (error) {
+    console.warn("TokensApi.persist_default_failed", error);
+  }
+  return cloneState(memoryState);
+}
+
+function writeState(state: TokensState): void {
+  memoryState = cloneState(state);
+  try {
+    if (typeof window !== "undefined" && window.localStorage) {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(memoryState));
+    }
+  } catch (error) {
+    console.warn("TokensApi.writeState_failed", error);
+  }
+}
+
+let sequence = 0;
+function generateId(prefix: string): string {
+  sequence += 1;
+  return `${prefix}-${Date.now()}-${sequence}`;
+}
+
+function calculateBalance(transactions: TokensState["transactions"], walletId: string): number {
+  const multiplier: Record<Transaction["type"], number> = {
+    issue: 1,
+    spend: -1,
+    reversal: 1,
+    settlement: -1,
+  };
+
+  return transactions
+    .filter((tx) => tx.wallet_id === walletId)
+    .reduce((total, tx) => total + tx.amount * (multiplier[tx.type] ?? 0), 0);
+}
+
+function paginate<T>(items: T[], limit?: number, offset?: number): T[] {
+  if (limit === undefined && offset === undefined) {
+    return items;
+  }
+
+  const start = Math.max(offset ?? 0, 0);
+  const end = limit !== undefined ? start + Math.max(limit, 0) : items.length;
+  return items.slice(start, end);
 }
 
 export const TokensApi = {
-  // Issue tokens via existing endpoint - correct function name
-  issue: async (payload: {
-    whatsapp: string;
-    user_code: string;
-    amount: number;
-    allow_any_shop: boolean;
-    allowed_shop_ids?: string[];
-  }) => {
-    const { data, error } = await supabase.functions.invoke('issue_token', {
-      body: {
-        amount: payload.amount,
-        currency: 'RWF',
-        memo: `Token for ${payload.user_code}`
-      }
-    });
-    
-    if (error) throw new Error(error.message);
-    
-    // Return properly formatted response
+  async issue(payload: IssueTokensRequest): Promise<IssueTokensResponse> {
+    const state = readState();
+    const walletId = generateId("wallet");
+    const createdAt = new Date().toISOString();
+
+    const wallet: Wallet = {
+      id: walletId,
+      user_code: payload.user_code.trim().toUpperCase(),
+      whatsapp: payload.whatsapp.trim(),
+      status: "active",
+      allow_any_shop: payload.allow_any_shop,
+      allowed_shop_ids: payload.allow_any_shop ? [] : payload.allowed_shop_ids ?? [],
+      created_at: createdAt,
+    };
+
+    const issueTx: Transaction & { wallet_id: string } = {
+      id: generateId("tx"),
+      wallet_id: walletId,
+      type: "issue",
+      amount: payload.amount,
+      created_at: createdAt,
+    };
+
+    state.wallets = [wallet, ...state.wallets];
+    state.transactions = [issueTx, ...state.transactions];
+    writeState(state);
+
+    const link = `https://wallet.example.com/claim/${walletId}`;
+
     return {
-      wallet_id: data.token_id,
-      token_id: data.token_id,
-      qr_secret: data.token_id,
-      link: data.claim_url || `https://wallet.example.com/claim?token_id=${data.token_id}`,
-      ...data
+      ok: true,
+      wallet_id: walletId,
+      qr_secret: walletId,
+      link,
     };
   },
 
-  // Use qr_info edge function to get token information (simulates wallet list)
-  listWallets: async (query: { 
-    q?: string; 
-    status?: string; 
-    limit?: number; 
-    offset?: number 
-  }) => {
-    // Since there's no wallets table, return empty array
-    // Real implementation would query actual wallet database
-    console.warn("TokensApi.listWallets: No wallet database - use tokens via qr_info");
-    return [];
-  },
+  async listWallets(query: {
+    q?: string;
+    status?: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<Wallet[]> {
+    const state = readState();
+    const search = query.q?.trim().toLowerCase() ?? "";
+    const statusFilter = query.status && query.status !== "all" ? query.status : undefined;
 
-  getWallet: async (id: string) => {
-    try {
-      const { data, error } = await supabase.functions.invoke('qr_info', {
-        body: { token_id: id }
-      });
-      if (error) throw error;
-      return data;
-    } catch (error) {
-      console.error("TokensApi.getWallet error:", error);
-      return null;
-    }
-  },
-
-  getBalance: async (wallet_id: string) => {
-    try {
-      const wallet = await TokensApi.getWallet(wallet_id);
-      return wallet?.amount || 0;
-    } catch (error) {
-      console.error("TokensApi.getBalance error:", error);
-      return 0;
-    }
-  },
-
-  getBatchBalances: async (wallet_ids: string[]) => {
-    const balances: Record<string, number> = {};
-    
-    // Get balances for each wallet (in real app, this would be a batch API)
-    await Promise.all(
-      wallet_ids.map(async (id) => {
-        try {
-          const balance = await TokensApi.getBalance(id);
-          balances[id] = balance;
-        } catch (error) {
-          console.error(`Failed to get balance for ${id}:`, error);
-          balances[id] = 0;
+    const filtered = state.wallets
+      .filter((wallet) => {
+        if (statusFilter && wallet.status !== statusFilter) {
+          return false;
         }
+        if (!search) {
+          return true;
+        }
+        return (
+          wallet.user_code.toLowerCase().includes(search) ||
+          wallet.whatsapp.toLowerCase().includes(search)
+        );
       })
-    );
-    
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+    return paginate(filtered, query.limit, query.offset).map((wallet) => cloneState(wallet));
+  },
+
+  async getWallet(id: string): Promise<Wallet | null> {
+    const state = readState();
+    const wallet = state.wallets.find((item) => item.id === id);
+    return wallet ? cloneState(wallet) : null;
+  },
+
+  async getBalance(walletId: string): Promise<number> {
+    const state = readState();
+    return calculateBalance(state.transactions, walletId);
+  },
+
+  async getBatchBalances(walletIds: string[]): Promise<Record<string, number>> {
+    const state = readState();
+    const balances: Record<string, number> = {};
+
+    walletIds.forEach((walletId) => {
+      balances[walletId] = calculateBalance(state.transactions, walletId);
+    });
+
     return balances;
   },
 
-  listShops: async () => {
-    const { data, error } = await (supabase as any)
-      .from('shops')
-      .select('*')
-      .order('created_at', { ascending: false });
-    
-    if (error) throw error;
-    return data || [];
+  async listShops(): Promise<Shop[]> {
+    const state = readState();
+    return state.shops.map((shop) => cloneState(shop));
   },
 
-  checkUserCodeExists: async (user_code: string) => {
-    // Since no user_codes table exists, always return false
-    console.warn("TokensApi.checkUserCodeExists: No user_codes table - allowing all codes");
-    return false;
+  async checkUserCodeExists(userCode: string): Promise<boolean> {
+    const state = readState();
+    return state.wallets.some((wallet) => wallet.user_code.toLowerCase() === userCode.trim().toLowerCase());
   },
 
-  listTx: async (params: { 
-    wallet_id?: string; 
-    merchant_id?: string; 
-    from?: string; 
-    to?: string; 
-    limit?: number; 
-    offset?: number 
-  }) => {
-    // No transactions table in current schema - return empty
-    console.warn("TokensApi.listTx: No transactions table in current schema");
-    return [];
-  },
+  async listTx(params: {
+    wallet_id?: string;
+    merchant_id?: string;
+    from?: string;
+    to?: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<Transaction[]> {
+    const state = readState();
+    const { wallet_id, from, to } = params;
 
-  // Spend token using spend edge function
-  spend: async (token_id: string, spent_by?: string) => {
-    try {
-      const { data, error } = await supabase.functions.invoke('spend', {
-        body: { 
-          token_id,
-          by: spent_by 
+    const filtered = state.transactions
+      .filter((tx) => {
+        if (wallet_id && tx.wallet_id !== wallet_id) {
+          return false;
         }
-      });
-      if (error) throw error;
-      return data;
-    } catch (error) {
-      console.error("TokensApi.spend error:", error);
-      throw error;
-    }
+        if (from && new Date(tx.created_at) < new Date(from)) {
+          return false;
+        }
+        if (to && new Date(tx.created_at) > new Date(to)) {
+          return false;
+        }
+        return true;
+      })
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+    return paginate(filtered, params.limit, params.offset).map((tx) => cloneState(tx));
   },
 
-  // Get token info using qr_info edge function  
-  getTokenInfo: async (token_id: string) => {
-    try {
-      const { data, error } = await supabase.functions.invoke('qr_info', {
-        body: { token_id }
-      });
-      if (error) throw error;
-      return data;
-    } catch (error) {
-      console.error("TokensApi.getTokenInfo error:", error);
-      throw error;
+  async spend(walletId: string, spentBy?: string): Promise<Transaction> {
+    const state = readState();
+    const wallet = state.wallets.find((item) => item.id === walletId);
+    if (!wallet) {
+      throw new Error("wallet_not_found");
     }
+
+    const currentBalance = calculateBalance(state.transactions, walletId);
+    if (currentBalance <= 0) {
+      throw new Error("insufficient_balance");
+    }
+
+    const tx: Transaction & { wallet_id: string } = {
+      id: generateId("tx"),
+      wallet_id: walletId,
+      type: "spend",
+      amount: 500,
+      created_at: new Date().toISOString(),
+      shops: spentBy
+        ? { name: spentBy, short_code: spentBy.slice(0, 8).toUpperCase() }
+        : undefined,
+    };
+
+    state.transactions = [tx, ...state.transactions];
+    writeState(state);
+    return cloneState(tx);
+  },
+
+  async getTokenInfo(tokenId: string): Promise<{ ok: boolean; wallet: Wallet | null; balance: number }> {
+    const wallet = await this.getWallet(tokenId);
+    if (!wallet) {
+      return { ok: false, wallet: null, balance: 0 };
+    }
+    const balance = await this.getBalance(tokenId);
+    return { ok: true, wallet, balance };
   },
 };
+
+export function __resetTokensState(): void {
+  memoryState = cloneState(DEFAULT_STATE);
+  writeState(memoryState);
+}
