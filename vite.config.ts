@@ -26,6 +26,6 @@ export default defineConfig(({ mode }) => ({
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
     include: ['src/**/*.{test,spec}.{ts,tsx}'],
-    exclude: ['easymo/**', 'easymo000/**', 'node_modules/**'],
+    exclude: ['easymo/**', 'node_modules/**'],
   },
 }));
