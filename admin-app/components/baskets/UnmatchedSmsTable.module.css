@@ -1,0 +1,140 @@
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.headerRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.counter {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.filtersRow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.02);
+}
+
+.filtersRow label span {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+
+.filtersRow select,
+.filtersRow input {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+}
+
+.searchField {
+  grid-column: 1 / -1;
+}
+
+.tableContainer {
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--color-surface, #ffffff);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th,
+.table td {
+  padding: 12px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+  text-align: left;
+  vertical-align: top;
+}
+
+.table th {
+  background: rgba(241, 245, 249, 0.9);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
+}
+
+.senderCell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.senderMsisdn {
+  font-weight: 600;
+}
+
+.senderName {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.txnId {
+  font-family: var(--font-mono, "Fira Code", monospace);
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.reasonCell {
+  max-width: 320px;
+  font-size: 0.85rem;
+}
+
+.statusBadge {
+  text-transform: capitalize;
+  font-size: 0.85rem;
+}
+
+.allocateCard {
+  border: 1px dashed rgba(148, 163, 184, 0.4);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: rgba(15, 23, 42, 0.02);
+}
+
+.allocateRow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.allocateRow label span {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+
+.allocateRow input {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+}
+
+.allocateActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}

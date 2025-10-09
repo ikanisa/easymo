@@ -1,0 +1,37 @@
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  line-height: 1.4;
+  background: rgba(148, 163, 184, 0.15);
+  color: var(--color-muted);
+}
+
+.icon {
+  display: inline-flex;
+  align-items: center;
+}
+
+.info {
+  background: rgba(59, 130, 246, 0.15);
+  color: rgb(37, 99, 235);
+}
+
+.success {
+  background: rgba(16, 185, 129, 0.18);
+  color: rgb(16, 118, 92);
+}
+
+.warning {
+  background: rgba(251, 191, 36, 0.2);
+  color: rgb(202, 138, 4);
+}
+
+.danger {
+  background: rgba(248, 113, 113, 0.2);
+  color: rgb(220, 38, 38);
+}

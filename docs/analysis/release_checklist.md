@@ -1,0 +1,18 @@
+- [ ] Function `wa-webhook` deployed with admin routing, logging, and
+      notifications configured.
+- [ ] `/flow/exchange`, `/notification-worker`, and `/qr-resolve` functions
+      deployed.
+- [ ] `app_config` row populated with admin numbers, insurance admins, PIN hash
+      (if used), QR token secret.
+- [ ] Secrets set: WA_TOKEN, WA_PHONE_ID, WA_VERIFY_TOKEN, WA_APP_SECRET,
+      SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, OPENAI_API_KEY, QR_TOKEN_SECRET.
+- [ ] Buckets `menu-source-files`, `insurance-docs` exist and accessible.
+- [ ] Customer/vendor/admin Flow JSON published in WhatsApp Manager; Data
+      Channel URI set.
+- [ ] Notification worker scheduled to run periodically (cron).
+- [ ] Order events produce notifications (created, paid, served, cancelled) –
+      verify in `notifications` table.
+- [ ] Mobility matching returns pickup-first results after location share.
+- [ ] Admin audit log entries appear for trips, baskets, insurance, wallet
+      adjustments.
+- [ ] QR resolve returns bar_id/table_label and stores `qr_session` state.

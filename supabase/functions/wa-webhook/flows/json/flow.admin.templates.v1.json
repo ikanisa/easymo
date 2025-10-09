@@ -1,0 +1,117 @@
+{
+  "version": "6.3",
+  "screens": [
+    {
+      "id": "s_templates_list",
+      "title": "Templates",
+      "layout": { "type": "single_column" },
+      "widgets": [
+        {
+          "type": "text_block",
+          "id": "w_summary",
+          "text": "${data.summary_text}"
+        },
+        {
+          "type": "radio_list",
+          "id": "w_templates",
+          "options_data_binding": "templates"
+        },
+        {
+          "type": "footer_buttons",
+          "buttons": [
+            {
+              "id": "BTN_REFRESH",
+              "title": "Refresh",
+              "action": {
+                "type": "data_exchange",
+                "id": "a_admin_templates_refresh"
+              }
+            }
+          ]
+        }
+      ],
+      "events": {
+        "on_item_select": {
+          "widget_id": "w_templates",
+          "action": {
+            "type": "data_exchange",
+            "id": "a_admin_template_open",
+            "fields": { "template": "${selected.id}" }
+          }
+        }
+      }
+    },
+    {
+      "id": "s_template_detail",
+      "title": "Template detail",
+      "layout": { "type": "single_column" },
+      "widgets": [
+        {
+          "type": "text_block",
+          "id": "w_template_label",
+          "text": "${data.template.label}"
+        },
+        {
+          "type": "text_block",
+          "id": "w_template_summary",
+          "text": "${data.template.summary}"
+        },
+        {
+          "type": "text_block",
+          "id": "w_variables",
+          "text": "Vars: ${data.variables_text}"
+        },
+        {
+          "type": "text_block",
+          "id": "w_sample",
+          "text": "Sample: ${data.sample_components_preview}"
+        },
+        {
+          "type": "text_block",
+          "id": "w_detail_summary",
+          "text": "${data.detail_summary_text}"
+        },
+        {
+          "type": "list",
+          "id": "w_recent",
+          "options_data_binding": "recent_notifications"
+        },
+        {
+          "type": "text_input",
+          "id": "test_to",
+          "label": "Test send to",
+          "placeholder": "Defaults to you"
+        },
+        {
+          "type": "text_input",
+          "id": "components_json",
+          "label": "Components JSON (optional)",
+          "placeholder": "Override components array"
+        },
+        {
+          "type": "footer_buttons",
+          "buttons": [
+            {
+              "id": "BTN_TEST",
+              "title": "Send test",
+              "action": {
+                "type": "data_exchange",
+                "id": "a_admin_template_send_test",
+                "fields": {
+                  "template": "${data.template.name}",
+                  "test_to": "${widgets.test_to.value}",
+                  "components_json": "${widgets.components_json.value}"
+                }
+              }
+            },
+            {
+              "id": "BTN_BACK",
+              "title": "Back",
+              "action": { "type": "navigate", "next": "s_templates_list" }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

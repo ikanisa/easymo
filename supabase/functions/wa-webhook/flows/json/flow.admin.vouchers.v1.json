@@ -1,0 +1,289 @@
+{
+  "version": "6.3",
+  "screens": [
+    {
+      "id": "s_voucher_menu",
+      "title": "Fuel vouchers",
+      "layout": { "type": "single_column" },
+      "widgets": [
+        {
+          "type": "list",
+          "id": "w_menu",
+          "options": [
+            {
+              "id": "ISSUE",
+              "title": "Issue voucher",
+              "action": { "type": "navigate", "next": "s_voucher_issue" }
+            },
+            {
+              "id": "REDEEM",
+              "title": "Redeem voucher",
+              "action": { "type": "navigate", "next": "s_voucher_redeem" }
+            },
+            {
+              "id": "RECENT",
+              "title": "Recent vouchers",
+              "action": {
+                "type": "data_exchange",
+                "id": "a_admin_voucher_recent"
+              }
+            },
+            {
+              "id": "SEARCH",
+              "title": "Search",
+              "action": { "type": "navigate", "next": "s_voucher_search" }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "s_voucher_issue",
+      "title": "Issue voucher",
+      "layout": { "type": "single_column" },
+      "widgets": [
+        {
+          "type": "text_input",
+          "id": "whatsapp_e164",
+          "label": "Client WhatsApp",
+          "placeholder": "+25078...",
+          "required": true
+        },
+        {
+          "type": "text_input",
+          "id": "policy_number",
+          "label": "Policy number",
+          "required": true
+        },
+        { "type": "text_input", "id": "plate", "label": "Plate (optional)" },
+        {
+          "type": "footer_buttons",
+          "buttons": [
+            {
+              "id": "BTN_ISSUE",
+              "title": "Generate",
+              "action": {
+                "type": "data_exchange",
+                "id": "a_admin_voucher_issue",
+                "fields": {
+                  "whatsapp_e164": "${widgets.whatsapp_e164.value}",
+                  "policy_number": "${widgets.policy_number.value}",
+                  "plate": "${widgets.plate.value}"
+                }
+              }
+            },
+            {
+              "id": "BTN_BACK_MENU",
+              "title": "Back",
+              "action": { "type": "navigate", "next": "s_voucher_menu" }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "s_voucher_redeem",
+      "title": "Redeem voucher",
+      "layout": { "type": "single_column" },
+      "widgets": [
+        {
+          "type": "text_input",
+          "id": "code_5",
+          "label": "Voucher code",
+          "placeholder": "12345",
+          "required": true,
+          "input_type": "number"
+        },
+        {
+          "type": "footer_buttons",
+          "buttons": [
+            {
+              "id": "BTN_CHECK",
+              "title": "Check",
+              "action": {
+                "type": "data_exchange",
+                "id": "a_admin_voucher_check",
+                "fields": { "code_5": "${widgets.code_5.value}" }
+              }
+            },
+            {
+              "id": "BTN_REDEEM_BACK",
+              "title": "Back",
+              "action": { "type": "navigate", "next": "s_voucher_menu" }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "s_voucher_confirm",
+      "title": "Confirm redemption",
+      "layout": { "type": "single_column" },
+      "widgets": [
+        {
+          "type": "text_block",
+          "id": "w_summary",
+          "text": "Code ${data.voucher.code_5} · ${data.voucher.amount_text}\nPolicy ${data.voucher.policy_number}"
+        },
+        {
+          "type": "text_input",
+          "id": "reason",
+          "label": "Reason",
+          "placeholder": "Filled 2000 RWF"
+        },
+        {
+          "type": "footer_buttons",
+          "buttons": [
+            {
+              "id": "BTN_CONFIRM",
+              "title": "Confirm",
+              "action": {
+                "type": "data_exchange",
+                "id": "a_admin_voucher_redeem_confirm",
+                "fields": {
+                  "code_5": "${data.voucher.code_5}",
+                  "reason": "${widgets.reason.value}",
+                  "voucher_id": "${data.voucher.id}"
+                }
+              }
+            },
+            {
+              "id": "BTN_CANCEL",
+              "title": "Cancel",
+              "action": { "type": "navigate", "next": "s_voucher_menu" }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "s_voucher_recent",
+      "title": "Recent vouchers",
+      "layout": { "type": "single_column" },
+      "widgets": [
+        {
+          "type": "list",
+          "id": "w_recent",
+          "options_data_binding": "vouchers"
+        },
+        {
+          "type": "footer_buttons",
+          "buttons": [
+            {
+              "id": "BTN_REFRESH",
+              "title": "Refresh",
+              "action": {
+                "type": "data_exchange",
+                "id": "a_admin_voucher_recent"
+              }
+            },
+            {
+              "id": "BTN_BACK",
+              "title": "Back",
+              "action": { "type": "navigate", "next": "s_voucher_menu" }
+            }
+          ]
+        }
+      ],
+      "events": {
+        "on_item_select": {
+          "widget_id": "w_recent",
+          "action": {
+            "type": "data_exchange",
+            "id": "a_admin_voucher_detail",
+            "fields": { "voucher_id": "${selected.id}" }
+          }
+        }
+      }
+    },
+    {
+      "id": "s_voucher_search",
+      "title": "Search vouchers",
+      "layout": { "type": "single_column" },
+      "widgets": [
+        { "type": "text_input", "id": "code_5", "label": "Voucher code" },
+        {
+          "type": "text_input",
+          "id": "policy_number",
+          "label": "Policy number"
+        },
+        {
+          "type": "footer_buttons",
+          "buttons": [
+            {
+              "id": "BTN_SEARCH",
+              "title": "Search",
+              "action": {
+                "type": "data_exchange",
+                "id": "a_admin_voucher_search",
+                "fields": {
+                  "code_5": "${widgets.code_5.value}",
+                  "policy_number": "${widgets.policy_number.value}"
+                }
+              }
+            },
+            {
+              "id": "BTN_SEARCH_BACK",
+              "title": "Back",
+              "action": { "type": "navigate", "next": "s_voucher_menu" }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "s_voucher_search_results",
+      "title": "Search results",
+      "layout": { "type": "single_column" },
+      "widgets": [
+        {
+          "type": "list",
+          "id": "w_search",
+          "options_data_binding": "vouchers"
+        },
+        {
+          "type": "footer_buttons",
+          "buttons": [
+            {
+              "id": "BTN_BACK_RESULTS",
+              "title": "Back",
+              "action": { "type": "navigate", "next": "s_voucher_search" }
+            }
+          ]
+        }
+      ],
+      "events": {
+        "on_item_select": {
+          "widget_id": "w_search",
+          "action": {
+            "type": "data_exchange",
+            "id": "a_admin_voucher_detail",
+            "fields": { "voucher_id": "${selected.id}" }
+          }
+        }
+      }
+    },
+    {
+      "id": "s_voucher_detail",
+      "title": "Voucher detail",
+      "layout": { "type": "single_column" },
+      "widgets": [
+        {
+          "type": "text_block",
+          "id": "w_detail",
+          "text": "Code ${data.voucher.code_5} · ${data.voucher.amount_text}\nPolicy ${data.voucher.policy_number}\nStatus ${data.voucher.status}\nIssued ${data.voucher.issued_at}\nRedeemed ${data.voucher.redeemed_at}"
+        },
+        {
+          "type": "footer_buttons",
+          "buttons": [
+            {
+              "id": "BTN_DETAIL_BACK",
+              "title": "Back",
+              "action": { "type": "navigate", "next": "s_voucher_menu" }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
