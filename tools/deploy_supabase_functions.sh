@@ -5,6 +5,7 @@ PROJECT_REF="${PROJECT_REF:-ezrriefbmhiiqfoxgjgz}"
 FUNCTIONS=(
   "wa-webhook"
   "ocr-processor"
+  "insurance-ocr"
   "notification-worker"
   "campaign-dispatch"
   "qr_info"
