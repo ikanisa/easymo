@@ -1,0 +1,10 @@
+# Default owner
+* @ikanisa
+
+# Protected paths (require explicit review)
+supabase/functions/wa-webhook/ @ikanisa @jeanbosco
+supabase/functions/ @ikanisa @jeanbosco
+supabase/migrations/ @ikanisa @jeanbosco
+
+# Policy docs
+ADD_ONLY_RULES.md @ikanisa @jeanbosco

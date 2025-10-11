@@ -1,0 +1,71 @@
+{
+  "version": "6.3",
+  "screens": [
+    {
+      "id": "s_promoters",
+      "title": "Top promoters",
+      "layout": { "type": "single_column" },
+      "widgets": [
+        {
+          "type": "radio_list",
+          "id": "w_top9",
+          "options_data_binding": "top9"
+        },
+        {
+          "type": "footer_buttons",
+          "buttons": [
+            {
+              "id": "BTN_PROMOTERS_REFRESH",
+              "title": "Refresh",
+              "action": {
+                "type": "data_exchange",
+                "id": "a_admin_promoters_window"
+              }
+            }
+          ]
+        }
+      ],
+      "events": {
+        "on_item_select": {
+          "widget_id": "w_top9",
+          "action": {
+            "type": "navigate",
+            "next": "s_promoter_detail",
+            "params": { "wa_id": "${selected.wa_id}" }
+          }
+        }
+      }
+    },
+    {
+      "id": "s_promoter_detail",
+      "title": "Promoter",
+      "layout": { "type": "single_column" },
+      "widgets": [
+        { "type": "text_block", "id": "w_promoter", "text": "${params.wa_id}" },
+        {
+          "type": "footer_buttons",
+          "buttons": [
+            {
+              "id": "BTN_REWARD",
+              "title": "Reward 10",
+              "action": {
+                "type": "data_exchange",
+                "id": "a_admin_promoters_reward",
+                "fields": {
+                  "wa_id": "${params.wa_id}",
+                  "tokens": 10,
+                  "reason": "Reward"
+                }
+              }
+            },
+            {
+              "id": "BTN_PROMOTER_BACK",
+              "title": "Back",
+              "action": { "type": "navigate", "next": "s_promoters" }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

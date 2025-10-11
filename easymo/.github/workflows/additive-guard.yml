@@ -1,0 +1,60 @@
+name: Additive Guard
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - develop
+
+jobs:
+  enforce:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Collect changed files
+        id: diff
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = "pull_request" ]; then
+            base_sha="${{ github.event.pull_request.base.sha }}"
+          else
+            base_sha="$(git rev-parse HEAD^)"
+          fi
+          echo "base_sha=$base_sha" >> "$GITHUB_ENV"
+          git diff --name-only "$base_sha" HEAD > changed_files.txt
+          cat changed_files.txt
+
+      - name: Enforce forbidden paths
+        env:
+          BASE_SHA: ${{ env.base_sha }}
+        run: |
+          status=0
+          while IFS= read -r file; do
+            case "$file" in
+              supabase/functions/wa-webhook/*|supabase/functions/*)
+                echo "::error file=$file::Forbidden path violation.";
+                status=1
+                ;;
+              supabase/migrations/*)
+                if git ls-tree --name-only "$BASE_SHA" -- "$file" >/dev/null 2>&1; then
+                  echo "::error file=$file::Existing migration cannot be modified.";
+                  status=1
+                fi
+                ;;
+              *)
+                ;;
+            esac
+          done < changed_files.txt
+
+          if [ $status -ne 0 ]; then
+            echo "Additive-only guard failed." >&2
+            exit 1
+          fi
+
+      - name: Summary
+        run: |
+          echo "Additive-only guard passed: no forbidden paths touched."

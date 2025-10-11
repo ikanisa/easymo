@@ -1,0 +1,74 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.form label span {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+
+.form input,
+.form select {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: var(--color-surface, #ffffff);
+}
+
+.form input::placeholder {
+  color: var(--text-secondary);
+  opacity: 0.6;
+}
+
+.form button {
+  width: fit-content;
+}
+
+.userColumn {
+  position: relative;
+}
+
+.suggestions {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 10;
+  margin: 0;
+  padding: 6px 0;
+  list-style: none;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.12);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.suggestions li button {
+  width: 100%;
+  text-align: left;
+  padding: 6px 12px;
+  font-size: 0.85rem;
+  color: var(--text-primary);
+}
+
+.suggestions li button:hover {
+  background: rgba(148, 163, 184, 0.12);
+}
+
+.helper {
+  display: block;
+  margin-top: 6px;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
