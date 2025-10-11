@@ -1,8 +1,8 @@
-import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createHandler } from "@/app/api/withObservability";
 import { logStructured } from "@/lib/server/logger";
 import { getSupabaseAdminClient } from "@/lib/server/supabase-admin";
+import { jsonOk, jsonError, zodValidationError } from "@/lib/api/http";
 
 const querySchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).optional(),
@@ -12,13 +12,7 @@ export const GET = createHandler('admin_api.webhook_errors.list', async (request
   const adminClient = getSupabaseAdminClient();
   if (!adminClient) {
     recordMetric('webhook_errors.supabase_unavailable', 1);
-    return NextResponse.json(
-      {
-        error: "supabase_unavailable",
-        message: "Supabase credentials missing. Unable to fetch webhook errors.",
-      },
-      { status: 503 },
-    );
+    return jsonError({ error: "supabase_unavailable", message: "Supabase credentials missing. Unable to fetch webhook errors." }, 503);
   }
 
   let query: z.infer<typeof querySchema>;
@@ -26,13 +20,7 @@ export const GET = createHandler('admin_api.webhook_errors.list', async (request
     query = querySchema.parse(Object.fromEntries(new URL(request.url).searchParams));
   } catch (error) {
     recordMetric('webhook_errors.invalid_query', 1);
-    return NextResponse.json(
-      {
-        error: "invalid_query",
-        message: error instanceof z.ZodError ? error.flatten() : "Invalid query parameters.",
-      },
-      { status: 400 },
-    );
+    return zodValidationError(error);
   }
 
   const limit = query.limit ?? 10;
@@ -51,10 +39,7 @@ export const GET = createHandler('admin_api.webhook_errors.list', async (request
       message: error.message,
     });
     recordMetric('webhook_errors.supabase_error', 1, { message: error.message });
-    return NextResponse.json(
-      { error: "webhook_errors_fetch_failed", message: "Unable to load webhook errors." },
-      { status: 500 },
-    );
+    return jsonError({ error: "webhook_errors_fetch_failed", message: "Unable to load webhook errors." }, 500);
   }
 
   const rows = (data ?? []).map((row) => ({
@@ -66,5 +51,5 @@ export const GET = createHandler('admin_api.webhook_errors.list', async (request
   }));
 
   recordMetric('webhook_errors.success', 1, { count: rows.length });
-  return NextResponse.json({ data: rows }, { status: 200 });
+  return jsonOk({ data: rows });
 });

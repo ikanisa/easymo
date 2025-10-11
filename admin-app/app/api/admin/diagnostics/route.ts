@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { jsonOk } from "@/lib/api/http";
 import { getSupabaseAdminClient } from "@/lib/server/supabase-admin";
 import {
   composeDiagnosticsSnapshot,
@@ -6,6 +6,7 @@ import {
   parseAdminDiagnosticsLogs,
 } from "@/lib/flow-exchange/admin-diagnostics";
 import { mockAdminDiagnostics } from "@/lib/mock-data";
+import { createHandler } from "@/app/api/withObservability";
 
 function withMessage(message: string) {
   return {
@@ -20,16 +21,15 @@ function withMessage(message: string) {
   };
 }
 
-export async function GET() {
+export const GET = createHandler("admin_api.admin_diagnostics.get", async () => {
   const adminClient = getSupabaseAdminClient();
   const adminWaId = process.env.ADMIN_FLOW_WA_ID;
 
   if (!adminClient || !adminWaId) {
-    return NextResponse.json(
+    return jsonOk(
       withMessage(
         "Diagnostics bridge not configured. Set SUPABASE credentials and ADMIN_FLOW_WA_ID for live data.",
       ),
-      { status: 200 },
     );
   }
 
@@ -53,25 +53,20 @@ export async function GET() {
 
     if (healthResult.error || logsResult.error) {
       console.error("Diagnostics invocation failed", healthResult.error, logsResult.error);
-      return NextResponse.json(
+      return jsonOk(
         withMessage(
           "Failed to load diagnostics from flow-exchange. Showing mock data instead.",
         ),
-        { status: 502 },
+        502,
       );
     }
 
     const health = parseAdminDiagnosticsHealth(healthResult.data);
     const logs = parseAdminDiagnosticsLogs(logsResult.data);
     const snapshot = composeDiagnosticsSnapshot(health, logs);
-    return NextResponse.json(snapshot, { status: 200 });
+    return jsonOk(snapshot);
   } catch (error) {
     console.error("Diagnostics API error", error);
-    return NextResponse.json(
-      withMessage(
-        "Unexpected diagnostics error. Showing mock data instead.",
-      ),
-      { status: 500 },
-    );
+    return jsonOk(withMessage("Unexpected diagnostics error. Showing mock data instead."));
   }
-}
+});

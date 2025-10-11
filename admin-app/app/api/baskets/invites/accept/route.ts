@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { jsonOk, jsonError, zodValidationError } from '@/lib/api/http';
 import { z } from 'zod';
 import { getSupabaseAdminClient } from '@/lib/server/supabase-admin';
 import { logStructured } from '@/lib/server/logger';
@@ -21,37 +21,19 @@ const acceptSchema = z.object({
 export async function POST(request: Request) {
   const adminClient = getSupabaseAdminClient();
   if (!adminClient) {
-    return NextResponse.json(
-      {
-        error: 'supabase_unavailable',
-        message: 'Supabase credentials missing. Unable to accept invite.',
-      },
-      { status: 503 },
-    );
+    return jsonError({ error: 'supabase_unavailable', message: 'Supabase credentials missing. Unable to accept invite.' }, 503);
   }
 
   let payload: z.infer<typeof acceptSchema>;
   try {
     payload = acceptSchema.parse(await request.json());
   } catch (error) {
-    return NextResponse.json(
-      {
-        error: 'invalid_payload',
-        message: error instanceof z.ZodError ? error.flatten() : 'Invalid JSON payload.',
-      },
-      { status: 400 },
-    );
+    return zodValidationError(error);
   }
 
   const cleanedToken = normalizeInviteToken(payload.token);
   if (!cleanedToken) {
-    return NextResponse.json(
-      {
-        error: 'invalid_token',
-        message: 'Provide a valid invite token.',
-      },
-      { status: 400 },
-    );
+    return jsonError({ error: 'invalid_token', message: 'Provide a valid invite token.' }, 400);
   }
 
   const { data: invite, error: inviteError } = await adminClient
@@ -62,13 +44,7 @@ export async function POST(request: Request) {
     .maybeSingle();
 
   if (inviteError || !invite) {
-    return NextResponse.json(
-      {
-        error: 'invalid_token',
-        message: 'Invite not found or already used.',
-      },
-      { status: 404 },
-    );
+    return jsonError({ error: 'invalid_token', message: 'Invite not found or already used.' }, 404);
   }
 
   if (new Date(invite.expires_at) < new Date()) {
@@ -76,13 +52,7 @@ export async function POST(request: Request) {
       .from('basket_invites')
       .update({ status: 'expired' })
       .eq('id', invite.id);
-    return NextResponse.json(
-      {
-        error: 'invite_expired',
-        message: 'Invite has expired.',
-      },
-      { status: 410 },
-    );
+    return jsonError({ error: 'invite_expired', message: 'Invite has expired.' }, 410);
   }
 
   const { data: existingMembership, error: membershipLookupError } = await adminClient
@@ -93,23 +63,11 @@ export async function POST(request: Request) {
     .maybeSingle();
 
   if (membershipLookupError) {
-    return NextResponse.json(
-      {
-        error: 'membership_lookup_failed',
-        message: 'Unable to determine existing memberships.',
-      },
-      { status: 500 },
-    );
+    return jsonError({ error: 'membership_lookup_failed', message: 'Unable to determine existing memberships.' }, 500);
   }
 
   if (existingMembership && existingMembership.ikimina_id !== invite.ikimina_id) {
-    return NextResponse.json(
-      {
-        error: 'already_member',
-        message: 'User already has an active Ikimina membership.',
-      },
-      { status: 409 },
-    );
+    return jsonError({ error: 'already_member', message: 'User already has an active Ikimina membership.' }, 409);
   }
 
   const upsertResult = await adminClient
@@ -125,13 +83,7 @@ export async function POST(request: Request) {
   if (upsertResult.error || !upsertResult.data) {
     const err = upsertResult.error;
     if (err?.message?.includes('idx_ibimina_members_active_user')) {
-      return NextResponse.json(
-        {
-          error: 'already_member',
-          message: 'User already has an active Ikimina membership.',
-        },
-        { status: 409 },
-      );
+      return jsonError({ error: 'already_member', message: 'User already has an active Ikimina membership.' }, 409);
     }
     logStructured({
       event: 'ibimina_member_upsert_failed',
@@ -139,13 +91,7 @@ export async function POST(request: Request) {
       status: 'error',
       message: err?.message ?? 'Unknown error',
     });
-    return NextResponse.json(
-      {
-        error: 'membership_upsert_failed',
-        message: 'Unable to activate membership.',
-      },
-      { status: 500 },
-    );
+    return jsonError({ error: 'membership_upsert_failed', message: 'Unable to activate membership.' }, 500);
   }
 
   await adminClient
@@ -165,10 +111,10 @@ export async function POST(request: Request) {
     },
   });
 
-  return NextResponse.json({
+  return jsonOk({
     membershipId: upsertResult.data.id,
     ikiminaId: invite.ikimina_id,
     status: upsertResult.data.status,
     shareCode: formatShareCode(cleanedToken),
-  }, { status: 200 });
+  });
 }

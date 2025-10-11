@@ -1,9 +1,11 @@
 import { headers } from 'next/headers';
-import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getSupabaseAdminClient } from '@/lib/server/supabase-admin';
 import { logStructured } from '@/lib/server/logger';
 import { recordAudit } from '@/lib/server/audit';
+import { jsonOk, jsonError, zodValidationError } from '@/lib/api/http';
+import { requireActorId, UnauthorizedError } from '@/lib/server/auth';
+import { createHandler } from '@/app/api/withObservability';
 
 const paramsSchema = z.object({ id: z.string().uuid() });
 
@@ -16,35 +18,36 @@ const updateSchema = z.object({
   message: 'Provide at least one field to update.'
 });
 
-export async function PATCH(
+export const PATCH = createHandler('admin_api.stations.update', async (
   request: Request,
   { params }: { params: { id: string } }
-) {
+) => {
   const parseParams = paramsSchema.safeParse(params);
   if (!parseParams.success) {
-    return NextResponse.json({ error: 'invalid_station_id' }, { status: 400 });
+    return jsonError({ error: 'invalid_station_id' }, 400);
   }
   const stationId = parseParams.data.id;
 
   const adminClient = getSupabaseAdminClient();
   if (!adminClient) {
-    return NextResponse.json(
-      { error: 'supabase_unavailable', message: 'Supabase credentials missing.' },
-      { status: 503 }
-    );
+    return jsonError({ error: 'supabase_unavailable', message: 'Supabase credentials missing.' }, 503);
   }
 
   let payload: z.infer<typeof updateSchema>;
   try {
     payload = updateSchema.parse(await request.json());
   } catch (error) {
-    return NextResponse.json(
-      {
-        error: 'invalid_payload',
-        message: error instanceof z.ZodError ? error.flatten() : 'Invalid JSON payload.'
-      },
-      { status: 400 }
-    );
+    return zodValidationError(error);
+  }
+
+  let actorId: string;
+  try {
+    actorId = requireActorId();
+  } catch (err) {
+    if (err instanceof UnauthorizedError) {
+      return jsonError({ error: 'unauthorized', message: err.message }, 401);
+    }
+    throw err;
   }
 
   const updates: Record<string, unknown> = {};
@@ -68,51 +71,52 @@ export async function PATCH(
       message: error?.message ?? 'Station not found',
       details: { stationId }
     });
-    return NextResponse.json(
-      { error: 'station_update_failed', message: 'Unable to update station.' },
-      { status: 500 }
-    );
+    return jsonError({ error: 'station_update_failed', message: 'Unable to update station.' }, 500);
   }
 
   await recordAudit({
-    actorId: headers().get('x-actor-id'),
+    actorId,
     action: 'station_update',
     targetTable: 'stations',
     targetId: stationId,
     diff: updates
   });
 
-  return NextResponse.json(
-    {
-      data: {
-        id: data.id,
-        name: data.name,
-        engencode: data.engencode,
-        ownerContact: data.owner_contact,
-        status: data.status,
-        createdAt: data.created_at
-      }
+  return jsonOk({
+    data: {
+      id: data.id,
+      name: data.name,
+      engencode: data.engencode,
+      ownerContact: data.owner_contact,
+      status: data.status,
+      createdAt: data.created_at,
     },
-    { status: 200 }
-  );
-}
+  });
+});
 
-export async function DELETE(
+export const DELETE = createHandler('admin_api.stations.delete', async (
   _request: Request,
   { params }: { params: { id: string } }
-) {
+) => {
   const parseParams = paramsSchema.safeParse(params);
   if (!parseParams.success) {
-    return NextResponse.json({ error: 'invalid_station_id' }, { status: 400 });
+    return jsonError({ error: 'invalid_station_id' }, 400);
   }
   const stationId = parseParams.data.id;
 
   const adminClient = getSupabaseAdminClient();
   if (!adminClient) {
-    return NextResponse.json(
-      { error: 'supabase_unavailable', message: 'Supabase credentials missing.' },
-      { status: 503 }
-    );
+    return jsonError({ error: 'supabase_unavailable', message: 'Supabase credentials missing.' }, 503);
+  }
+
+  let actorIdDel: string;
+  try {
+    actorIdDel = requireActorId();
+  } catch (err) {
+    if (err instanceof UnauthorizedError) {
+      return jsonError({ error: 'unauthorized', message: err.message }, 401);
+    }
+    throw err;
   }
 
   const { error } = await adminClient
@@ -128,19 +132,16 @@ export async function DELETE(
       message: error.message,
       details: { stationId }
     });
-    return NextResponse.json(
-      { error: 'station_delete_failed', message: 'Unable to delete station.' },
-      { status: 500 }
-    );
+    return jsonError({ error: 'station_delete_failed', message: 'Unable to delete station.' }, 500);
   }
 
   await recordAudit({
-    actorId: headers().get('x-actor-id'),
+    actorId: actorIdDel,
     action: 'station_delete',
     targetTable: 'stations',
     targetId: stationId,
     diff: {}
   });
 
-  return NextResponse.json({ status: 'deleted' }, { status: 200 });
-}
+  return jsonOk({ status: 'deleted' });
+});

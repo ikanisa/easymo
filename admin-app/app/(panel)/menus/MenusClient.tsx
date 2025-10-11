@@ -63,12 +63,14 @@ export function MenusClient({
             Status
             <select
               value={menuParams.status ?? ""}
-              onChange={(event) =>
+              onChange={(event) => {
+                const v = event.target.value as '' | typeof MENU_STATUS_FILTERS[number];
                 setMenuParams((prev) => ({
                   ...prev,
-                  status: event.target.value || undefined,
+                  status: v || undefined,
                   limit: initialMenuParams.limit ?? 100,
-                }))}
+                }));
+              }}
               className="ml-2 rounded-lg border border-[color:var(--color-border)]/40 bg-white/90 px-3 py-1 text-sm"
             >
               <option value="">All</option>
@@ -117,12 +119,14 @@ export function MenusClient({
             Status
             <select
               value={ocrParams.status ?? ""}
-              onChange={(event) =>
+              onChange={(event) => {
+                const v = event.target.value as '' | typeof OCR_STATUS_FILTERS[number];
                 setOcrParams((prev) => ({
                   ...prev,
-                  status: event.target.value || undefined,
+                  status: v || undefined,
                   limit: initialOcrParams.limit ?? 50,
-                }))}
+                }));
+              }}
               className="ml-2 rounded-lg border border-[color:var(--color-border)]/40 bg-white/90 px-3 py-1 text-sm"
             >
               <option value="">All</option>

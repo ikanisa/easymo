@@ -1,13 +1,12 @@
 import { QueryKey, useQuery, UseQueryOptions } from "@tanstack/react-query";
-import { listVouchers, type PaginatedResult } from "@/lib/data-provider";
 import type { Voucher } from "@/lib/schemas";
+import type { PaginatedResult } from "@/lib/shared/pagination";
+import {
+  listVouchers,
+  type VoucherListParams,
+} from "@/lib/vouchers/vouchers-service";
 
-export type VouchersQueryParams = {
-  status?: Voucher["status"];
-  search?: string;
-  offset?: number;
-  limit?: number;
-};
+export type VouchersQueryParams = VoucherListParams;
 
 const vouchersKey = (params: VouchersQueryParams) =>
   ["vouchers", params] satisfies QueryKey;

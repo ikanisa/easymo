@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { listVouchers } from "@/lib/data-provider";
+import { listVouchers } from "@/lib/vouchers/vouchers-service";
 import { voucherSchema } from "@/lib/schemas";
+import { jsonOk, jsonError, zodValidationError } from "@/lib/api/http";
+import { createHandler } from "@/app/api/withObservability";
 
 const querySchema = z.object({
   status: z.enum(["issued", "sent", "redeemed", "expired", "void"]).optional(),
@@ -18,7 +20,7 @@ const responseSchema = z.object({
 
 export const dynamic = "force-dynamic";
 
-export async function GET(request: Request) {
+export const GET = createHandler("admin_api.vouchers.list", async (request: Request) => {
   try {
     const { searchParams } = new URL(request.url);
     const parsedQuery = querySchema.parse({
@@ -32,17 +34,12 @@ export async function GET(request: Request) {
 
     const result = await listVouchers(parsedQuery);
     const payload = responseSchema.parse(result);
-    return NextResponse.json(payload, { status: 200 });
+    return jsonOk(payload);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({
-        error: "invalid_query",
-        details: error.flatten(),
-      }, { status: 400 });
+      return jsonError({ error: "invalid_query", details: error.flatten() }, 400);
     }
     console.error("Failed to list vouchers", error);
-    return NextResponse.json({ error: "vouchers_list_failed" }, {
-      status: 500,
-    });
+    return jsonError({ error: "vouchers_list_failed" }, 500);
   }
-}
+});

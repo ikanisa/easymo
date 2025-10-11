@@ -1,7 +1,7 @@
-import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getSupabaseAdminClient } from '@/lib/server/supabase-admin';
 import { logStructured } from '@/lib/server/logger';
+import { jsonOk, jsonError, zodValidationError } from '@/lib/api/http';
 
 const listQuerySchema = z.object({
   status: z.string().optional(),
@@ -30,26 +30,14 @@ function parseQuorum(value: unknown): { threshold: number | null; roles: string[
 export async function GET(request: Request) {
   const adminClient = getSupabaseAdminClient();
   if (!adminClient) {
-    return NextResponse.json(
-      {
-        error: 'supabase_unavailable',
-        message: 'Supabase credentials missing. Unable to fetch Ibimina.',
-      },
-      { status: 503 },
-    );
+    return jsonError({ error: 'supabase_unavailable', message: 'Supabase credentials missing. Unable to fetch Ibimina.' }, 503);
   }
 
   let query: z.infer<typeof listQuerySchema>;
   try {
     query = listQuerySchema.parse(Object.fromEntries(new URL(request.url).searchParams));
   } catch (error) {
-    return NextResponse.json(
-      {
-        error: 'invalid_query',
-        message: error instanceof z.ZodError ? error.flatten() : 'Invalid query parameters.',
-      },
-      { status: 400 },
-    );
+    return zodValidationError(error);
   }
 
   const offset = query.offset ?? 0;
@@ -90,23 +78,16 @@ export async function GET(request: Request) {
       status: 'error',
       message: error.message,
     });
-    return NextResponse.json(
-      {
-        error: 'ibimina_fetch_failed',
-        message: 'Unable to load Ibimina.',
-      },
-      { status: 500 },
-    );
+    return jsonError({ error: 'ibimina_fetch_failed', message: 'Unable to load Ibimina.' }, 500);
   }
 
-  const rows = data ?? [];
+  const rows = (data ?? []) as any[];
   const total = count ?? rows.length;
   const hasMore = offset + rows.length < total;
 
-  return NextResponse.json(
-    {
-      data: rows.map((row) => ({
-        id: row.id,
+  return jsonOk({
+    data: rows.map((row) => ({
+      id: row.id,
         name: row.name,
         description: row.description,
         slug: row.slug,
@@ -127,10 +108,8 @@ export async function GET(request: Request) {
         quorum: Array.isArray(row.settings)
           ? parseQuorum(row.settings[0]?.quorum ?? null)
           : parseQuorum((row as { settings?: { quorum?: unknown } | null }).settings?.quorum ?? null),
-      })),
-      total,
-      hasMore,
-    },
-    { status: 200 },
-  );
+    })),
+    total,
+    hasMore,
+  });
 }

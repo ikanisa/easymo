@@ -1,9 +1,11 @@
 import { headers } from 'next/headers';
-import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { jsonOk, jsonError, zodValidationError } from '@/lib/api/http';
 import { getSupabaseAdminClient } from '@/lib/server/supabase-admin';
 import { logStructured } from '@/lib/server/logger';
 import { recordAudit } from '@/lib/server/audit';
+import { requireActorId, UnauthorizedError } from '@/lib/server/auth';
+import { createHandler } from '@/app/api/withObservability';
 
 const listQuerySchema = z.object({
   status: z.string().optional(),
@@ -19,29 +21,17 @@ const createSchema = z.object({
   status: z.enum(['active', 'inactive']).default('active')
 });
 
-export async function GET(request: Request) {
+export const GET = createHandler('admin_api.stations.list', async (request: Request) => {
   const adminClient = getSupabaseAdminClient();
   if (!adminClient) {
-    return NextResponse.json(
-      {
-        error: 'supabase_unavailable',
-        message: 'Supabase credentials missing. Unable to fetch stations.'
-      },
-      { status: 503 }
-    );
+    return jsonError({ error: 'supabase_unavailable', message: 'Supabase credentials missing. Unable to fetch stations.' }, 503);
   }
 
   let query: z.infer<typeof listQuerySchema>;
   try {
     query = listQuerySchema.parse(Object.fromEntries(new URL(request.url).searchParams));
   } catch (error) {
-    return NextResponse.json(
-      {
-        error: 'invalid_query',
-        message: error instanceof z.ZodError ? error.flatten() : 'Invalid query parameters.'
-      },
-      { status: 400 }
-    );
+    return zodValidationError(error);
   }
 
   const rangeStart = query.offset ?? 0;
@@ -71,62 +61,49 @@ export async function GET(request: Request) {
       status: 'error',
       message: error.message
     });
-    return NextResponse.json(
-      {
-        error: 'stations_fetch_failed',
-        message: 'Unable to load stations.'
-      },
-      { status: 500 }
-    );
+    return jsonError({ error: 'stations_fetch_failed', message: 'Unable to load stations.' }, 500);
   }
 
   const rows = data ?? [];
   const total = count ?? rows.length;
   const hasMore = offset + rows.length < total;
 
-  return NextResponse.json(
-    {
-      data: rows.map((row) => ({
-        id: row.id,
-        name: row.name,
-        engencode: row.engencode,
-        ownerContact: row.owner_contact,
-        status: row.status,
-        createdAt: row.created_at
-      })),
-      total,
-      hasMore
-    },
-    { status: 200 }
-  );
-}
+  return jsonOk({
+    data: rows.map((row) => ({
+      id: row.id,
+      name: row.name,
+      engencode: row.engencode,
+      ownerContact: row.owner_contact,
+      status: row.status,
+      createdAt: row.created_at
+    })),
+    total,
+    hasMore
+  });
+});
 
-export async function POST(request: Request) {
+export const POST = createHandler('admin_api.stations.create', async (request: Request) => {
   const adminClient = getSupabaseAdminClient();
   if (!adminClient) {
-    return NextResponse.json(
-      {
-        error: 'supabase_unavailable',
-        message: 'Supabase credentials missing. Unable to create station.'
-      },
-      { status: 503 }
-    );
+    return jsonError({ error: 'supabase_unavailable', message: 'Supabase credentials missing. Unable to create station.' }, 503);
   }
 
   let payload: z.infer<typeof createSchema>;
   try {
     payload = createSchema.parse(await request.json());
   } catch (error) {
-    return NextResponse.json(
-      {
-        error: 'invalid_payload',
-        message: error instanceof z.ZodError ? error.flatten() : 'Invalid JSON payload.'
-      },
-      { status: 400 }
-    );
+    return zodValidationError(error);
   }
 
-  const actorId = headers().get('x-actor-id');
+  let actorId: string;
+  try {
+    actorId = requireActorId();
+  } catch (err) {
+    if (err instanceof UnauthorizedError) {
+      return jsonError({ error: 'unauthorized', message: err.message }, 401);
+    }
+    throw err;
+  }
 
   const { data, error } = await adminClient
     .from('stations')
@@ -146,13 +123,7 @@ export async function POST(request: Request) {
       status: 'error',
       message: error?.message ?? 'Unknown error'
     });
-    return NextResponse.json(
-      {
-        error: 'station_create_failed',
-        message: 'Unable to create station.'
-      },
-      { status: 500 }
-    );
+    return jsonError({ error: 'station_create_failed', message: 'Unable to create station.' }, 500);
   }
 
   await recordAudit({
@@ -170,17 +141,14 @@ export async function POST(request: Request) {
     details: { stationId: data.id }
   });
 
-  return NextResponse.json(
-    {
-      data: {
-        id: data.id,
-        name: data.name,
-        engencode: data.engencode,
-        ownerContact: data.owner_contact,
-        status: data.status,
-        createdAt: data.created_at
-      }
-    },
-    { status: 201 }
-  );
-}
+  return jsonOk({
+    data: {
+      id: data.id,
+      name: data.name,
+      engencode: data.engencode,
+      ownerContact: data.owner_contact,
+      status: data.status,
+      createdAt: data.created_at
+    }
+  }, 201);
+});

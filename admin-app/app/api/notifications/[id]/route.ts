@@ -1,5 +1,4 @@
 import { headers } from 'next/headers';
-import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { recordAudit } from '@/lib/server/audit';
@@ -7,6 +6,9 @@ import { callBridge } from '@/lib/server/edge-bridges';
 import { logStructured } from '@/lib/server/logger';
 import { evaluateOutboundPolicy } from '@/lib/server/policy';
 import { getSupabaseAdminClient } from '@/lib/server/supabase-admin';
+import { jsonOk, jsonError, zodValidationError } from '@/lib/api/http';
+import { requireActorId, UnauthorizedError } from '@/lib/server/auth';
+import { createHandler } from '@/app/api/withObservability';
 
 const paramsSchema = z.object({ id: z.string().uuid() });
 
@@ -14,24 +16,18 @@ const actionSchema = z.object({
   action: z.enum(['resend', 'cancel'])
 });
 
-export async function POST(
+export const POST = createHandler('admin_api.notifications.id.action', async (
   request: Request,
   { params }: { params: { id: string } }
-) {
+) => {
   const adminClient = getSupabaseAdminClient();
   if (!adminClient) {
-    return NextResponse.json(
-      { error: 'supabase_unavailable', message: 'Supabase credentials missing.' },
-      { status: 503 }
-    );
+    return jsonError({ error: 'supabase_unavailable', message: 'Supabase credentials missing.' }, 503);
   }
 
   const paramsParsed = paramsSchema.safeParse(params);
   if (!paramsParsed.success) {
-    return NextResponse.json(
-      { error: 'invalid_notification_id', message: 'Invalid notification ID.' },
-      { status: 400 }
-    );
+    return jsonError({ error: 'invalid_notification_id', message: 'Invalid notification ID.' }, 400);
   }
   const notificationId = paramsParsed.data.id;
 
@@ -39,13 +35,7 @@ export async function POST(
   try {
     payload = actionSchema.parse(await request.json());
   } catch (error) {
-    return NextResponse.json(
-      {
-        error: 'invalid_payload',
-        message: error instanceof z.ZodError ? error.flatten() : 'Invalid JSON payload.'
-      },
-      { status: 400 }
-    );
+    return zodValidationError(error);
   }
 
   const { data, error } = await adminClient
@@ -62,33 +52,26 @@ export async function POST(
       message: error?.message ?? 'Notification not found',
       details: { notificationId }
     });
-    return NextResponse.json(
-      { error: 'not_found', message: 'Notification not found.' },
-      { status: 404 }
-    );
+    return jsonError({ error: 'not_found', message: 'Notification not found.' }, 404);
   }
 
-  const actorHeader = headers().get('x-actor-id');
-  const actorId = actorHeader && z.string().uuid().safeParse(actorHeader).success
-    ? actorHeader
-    : null;
+  let actorId: string;
+  try {
+    actorId = requireActorId();
+  } catch (err) {
+    if (err instanceof UnauthorizedError) {
+      return jsonError({ error: 'unauthorized', message: err.message }, 401);
+    }
+    throw err;
+  }
 
   if (payload.action === 'cancel') {
     if (data.status === 'sent') {
-      return NextResponse.json(
-        { error: 'invalid_status', message: 'Sent notifications cannot be cancelled.' },
-        { status: 409 }
-      );
+      return jsonError({ error: 'invalid_status', message: 'Sent notifications cannot be cancelled.' }, 409);
     }
 
     if (data.status !== 'queued') {
-      return NextResponse.json(
-        {
-          error: 'invalid_status',
-          message: 'Only queued notifications can be cancelled.',
-        },
-        { status: 409 }
-      );
+      return jsonError({ error: 'invalid_status', message: 'Only queued notifications can be cancelled.' }, 409);
     }
 
     const { error: updateError } = await adminClient
@@ -104,10 +87,7 @@ export async function POST(
         message: updateError.message,
         details: { notificationId }
       });
-      return NextResponse.json(
-        { error: 'cancel_failed', message: 'Unable to cancel notification.' },
-        { status: 500 }
-      );
+      return jsonError({ error: 'cancel_failed', message: 'Unable to cancel notification.' }, 500);
     }
 
     await recordAudit({
@@ -125,37 +105,19 @@ export async function POST(
       details: { notificationId }
     });
 
-    return NextResponse.json({ status: 'cancelled' }, { status: 200 });
+    return jsonOk({ status: 'cancelled' });
   }
 
   if (!data.msisdn) {
-    return NextResponse.json(
-      {
-        error: 'missing_recipient',
-        message: 'Recipient MSISDN is missing; unable to resend.',
-      },
-      { status: 422 }
-    );
+    return jsonError({ error: 'missing_recipient', message: 'Recipient MSISDN is missing; unable to resend.' }, 422);
   }
 
   if (data.status === 'sent') {
-    return NextResponse.json(
-      {
-        status: 'sent',
-        message: 'Notification already marked as sent.',
-      },
-      { status: 200 }
-    );
+    return jsonOk({ status: 'sent', message: 'Notification already marked as sent.' });
   }
 
   if (data.status === 'queued') {
-    return NextResponse.json(
-      {
-        status: 'queued',
-        message: 'Notification already queued for delivery.',
-      },
-      { status: 200 }
-    );
+    return jsonOk({ status: 'queued', message: 'Notification already queued for delivery.' });
   }
 
   const policy = await evaluateOutboundPolicy(data.msisdn);
@@ -172,14 +134,7 @@ export async function POST(
       },
     });
 
-    return NextResponse.json(
-      {
-        error: 'policy_blocked',
-        reason: policy.reason,
-        message: policy.message ?? 'Send blocked by outbound policy.',
-      },
-      { status: 409 }
-    );
+    return jsonError({ error: 'policy_blocked', reason: policy.reason, message: policy.message ?? 'Send blocked by outbound policy.' }, 409);
   }
 
   const bridgeResult = await callBridge('voucherSend', {
@@ -193,10 +148,7 @@ export async function POST(
     : { status: 'degraded' as const, target: 'notification_resend', message: bridgeResult.message };
 
   if (!bridgeResult.ok) {
-    return NextResponse.json(
-      { error: 'resend_failed', message: bridgeResult.message, integration },
-      { status: bridgeResult.status ?? 503 }
-    );
+    return jsonError({ error: 'resend_failed', message: bridgeResult.message, integration }, bridgeResult.status ?? 503);
   }
 
   const { error: resendUpdateError } = await adminClient
@@ -219,10 +171,7 @@ export async function POST(
       message: resendUpdateError.message,
       details: { notificationId }
     });
-    return NextResponse.json(
-      { error: 'resend_update_failed', message: 'Notification queued but status update failed.' },
-      { status: 500 }
-    );
+    return jsonError({ error: 'resend_update_failed', message: 'Notification queued but status update failed.' }, 500);
   }
 
   await recordAudit({
@@ -248,5 +197,6 @@ export async function POST(
     }
   });
 
-  return NextResponse.json({ status: 'queued', integration }, { status: 200 });
-}
+  return jsonOk({ status: 'queued', integration });
+});
+ 

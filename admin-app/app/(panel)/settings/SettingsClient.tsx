@@ -4,19 +4,16 @@ import { useState } from "react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { SectionCard } from "@/components/ui/SectionCard";
 import { SettingsForm } from "@/components/settings/SettingsForm";
-import { SettingsTable } from "@/components/settings/SettingsTable";
-import { TemplatesTable } from "@/components/templates/TemplatesTable";
-import { EmptyState } from "@/components/ui/EmptyState";
-import { IntegrationsStatus } from "@/components/settings/IntegrationsStatus";
-import { LoadingState } from "@/components/ui/LoadingState";
+import { AlertPreferences } from "@/components/settings/AlertPreferences";
 import {
   type SettingsPreviewParams,
   useSettingsPreviewQuery,
 } from "@/lib/queries/settings";
-import {
-  type TemplatesQueryParams,
-  useTemplatesQuery,
-} from "@/lib/queries/templates";
+import { type TemplatesQueryParams } from "@/lib/queries/templates";
+import { SettingsPreviewSection } from "@/components/settings/SettingsPreviewSection";
+import { TemplatesSection } from "@/components/settings/TemplatesSection";
+import { IntegrationsSection } from "@/components/settings/IntegrationsSection";
+import { useTemplatesListing } from "@/lib/templates/useTemplatesListing";
 
 interface SettingsClientProps {
   initialPreviewParams?: SettingsPreviewParams;
@@ -28,15 +25,14 @@ export function SettingsClient({
   initialTemplateParams = { limit: 100 },
 }: SettingsClientProps) {
   const [previewParams] = useState(initialPreviewParams);
-  const [templateParams, setTemplateParams] = useState(initialTemplateParams);
-
   const previewQuery = useSettingsPreviewQuery(previewParams);
-  const templatesQuery = useTemplatesQuery(templateParams);
+  const templatesListing = useTemplatesListing({
+    initialParams: initialTemplateParams,
+    loadStep: 50,
+  });
 
   const preview = previewQuery.data?.data ?? [];
-  const templates = templatesQuery.data?.data ?? [];
-  const templatesHasMore = templatesQuery.data?.hasMore;
-  const templatesLoadingMore = templatesQuery.isFetching && !templatesQuery.isLoading;
+  const templates = templatesListing.templates;
 
   return (
     <div className="admin-page">
@@ -53,71 +49,28 @@ export function SettingsClient({
       </SectionCard>
 
       <SectionCard
-        title="Current values"
-        description="Snapshot of settings from the data provider."
+        title="Alert preferences"
+        description="Control which operational alerts notify the admin team across channels."
       >
-        {previewQuery.isLoading
-          ? (
-            <LoadingState
-              title="Loading settings"
-              description="Reading saved configuration."
-            />
-          )
-          : preview.length
-          ? <SettingsTable data={preview} />
-          : (
-            <EmptyState
-              title="Settings preview unavailable"
-              description="Connect to Supabase to view saved settings."
-            />
-          )}
+        <AlertPreferences />
       </SectionCard>
 
-      <SectionCard
-        title="Template library"
-        description="Manage template metadata and variables without leaving the settings screen."
-      >
-        {templatesQuery.isLoading
-          ? (
-            <LoadingState
-              title="Loading templates"
-              description="Fetching template metadata."
-            />
-          )
-          : templates.length
-          ? (
-            <TemplatesTable
-              data={templates}
-              statusFilter={templateParams.status ?? ""}
-              hasMore={templatesHasMore}
-              loadingMore={templatesLoadingMore}
-              onStatusChange={(value) =>
-                setTemplateParams((prev) => ({
-                  ...prev,
-                  status: value || undefined,
-                  limit: initialTemplateParams.limit ?? 100,
-                }))}
-              onLoadMore={() =>
-                setTemplateParams((prev) => ({
-                  ...prev,
-                  limit: (prev.limit ?? initialTemplateParams.limit ?? 100) + 50,
-                }))}
-            />
-          )
-          : (
-            <EmptyState
-              title="Templates unavailable"
-              description="Connect to Supabase to view template configuration."
-            />
-          )}
-      </SectionCard>
+      <SettingsPreviewSection
+        isLoading={previewQuery.isLoading}
+        data={preview}
+      />
 
-      <SectionCard
-        title="Integrations status"
-        description="Voucher preview, media send, and dispatcher probes refresh every 60 seconds."
-      >
-        <IntegrationsStatus />
-      </SectionCard>
+      <TemplatesSection
+        isLoading={templatesListing.query.isLoading}
+        templates={templates}
+        statusFilter={templatesListing.statusFilter}
+        hasMore={templatesListing.hasMore}
+        loadingMore={templatesListing.loadingMore}
+        onStatusChange={templatesListing.handleStatusChange}
+        onLoadMore={templatesListing.handleLoadMore}
+      />
+
+      <IntegrationsSection />
     </div>
   );
 }

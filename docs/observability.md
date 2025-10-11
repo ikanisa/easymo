@@ -1,52 +1,32 @@
-# Observability Notes
+Observability
+=============
 
-## Logging
+This project wires lightweight observability for the admin app without introducing mandatory runtime dependencies. The following components are available:
 
-- Inbound WhatsApp payloads stored via `logInbound` into `webhook_logs`
-  (`endpoint = 'wa_inbound'`).
-- Domain events use `logEvent(scope, payload)` with scopes `MOBILITY_MATCH`,
-  `OCR_STATUS`, `WALLET_ADJUST`, `ADMIN_ACTION`, `MOMO_QR`.
-- Insurance uploads log via `logOcrStatus`, MoMo QR via
-  `logEvent('MOMO_QR', …)`, admin commands via `logAdminAction`.
+- Structured logs: `logStructured` emits JSON to stdout and can optionally forward to a log drain via `LOG_DRAIN_URL`.
+- API observability wrapper: All API routes can be wrapped with `createHandler(name, handler)` to gain basic metrics hooks and unified error handling.
+- Error boundary: `app/error.tsx` captures unhandled UI errors and reports to the console and (optionally) Sentry.
+- Sentry (optional): Client and server helpers lazily import `@sentry/nextjs` when DSN env vars are present.
+- Synthetic checks: `tools/monitoring/admin-synthetic-checks.ts` performs HEAD/GET/POST pings to critical endpoints.
 
-## Metrics TODO
+Environment variables
+---------------------
 
-- Add Supabase function instrumentation for basket RPC latencies.
-- Publish queue depth for `insurance_media_queue` to monitoring dashboard.
+- `LOG_DRAIN_URL`: If set, server logs are forwarded as JSON POSTs (fire-and-forget).
+- `SENTRY_DSN`: Enables server-side Sentry capture via lazy imports.
+- `NEXT_PUBLIC_SENTRY_DSN`: Enables client-side Sentry capture in the error boundary.
+- `ADMIN_BASE_URL`, `ADMIN_API_TOKEN`: Used by the synthetic checks workflow.
 
-## Dashboards (Phase 4)
+Usage
+-----
 
-- **Notification Health** — Supabase log drain → Grafana dashboard tracking
-  `notifications.status` counts (`tests/sql/claim_notifications.sql` mirrors
-  queue behaviour).
-- **Mobility Matching** — Materialized view `mv_trip_match_latency` (see
-  `docs/refactor/phase2/test_plan.md`) feeding pickup/dropoff latency charts.
-- **Data Quality** — Daily job runs `tools/sql/data_quality_checks.sql` (see
-  below) and exports anomalies to Slack.
+- Wrap new API routes with `createHandler('namespace.route', async (req, ctx, { recordMetric, log }) => { ... })`.
+- Emit logs via `logStructured({ event, target, status, message, details })`.
+- Add critical endpoints to `tools/monitoring/admin-synthetic-checks.ts` to expand monitoring coverage.
 
-### Data Quality Queries
+Notes
+-----
 
-Store the following snippet as `tools/sql/data_quality_checks.sql` and schedule
-via Supabase cron or GitHub Actions:
+- Sentry is optional. No imports are executed unless DSN variables are set. Lazy dynamic import is used to avoid bundle impact in tests.
+- You can later replace `recordMetric` no-ops with a StatsD/OTel emitter.
 
-```sql
-SELECT 'notifications_stuck', count(*)
-FROM public.notifications
-WHERE status = 'queued'
-  AND created_at < timezone('utc', now()) - interval '2 hours';
-
-SELECT 'menus_without_items', count(*)
-FROM public.menus m
-LEFT JOIN public.items i ON i.menu_id = m.id
-WHERE m.status = 'published'
-GROUP BY m.id
-HAVING count(i.id) = 0;
-```
-
-Feed the output into Grafana/Looker as threshold panels (CI job `db` ensures
-queries stay green).
-
-## Alerts
-
-- Admin alerts toggled with `/sub` commands should propagate to
-  `admin_alert_prefs`; integrate with Ops channel in Phase C follow-up.

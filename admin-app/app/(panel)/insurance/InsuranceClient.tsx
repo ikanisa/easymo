@@ -53,7 +53,7 @@ export function InsuranceClient(
               onStatusChange={(value) =>
                 setParams((prev) => ({
                   ...prev,
-                  status: value || undefined,
+                  status: (value as InsuranceQueryParams['status'] | '') || undefined,
                   limit: initialParams.limit ?? 100,
                   offset: 0,
                 }))}

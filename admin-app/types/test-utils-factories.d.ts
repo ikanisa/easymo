@@ -1,0 +1,30 @@
+declare module '@/lib/test-utils/factories' {
+  export const createVoucher: any;
+  export const createCampaign: any;
+  export const createInsuranceQuote: any;
+  export const createDashboardKpi: any;
+  export const createTimeseriesPoint: any;
+  export const createMenuVersion: any;
+  export const createOcrJob: any;
+  export const createOrder: any;
+  export const createOrderEvent: any;
+  export const createWebhookError: any;
+  export const createStaffNumber: any;
+  export const createQrToken: any;
+  export const createTemplateMeta: any;
+  export const createAssistantRun: any;
+  export const createAuditEvent: any;
+  export const createAdminAlertPreference: any;
+  export const createAdminDiagnosticsMatch: any;
+  export const createAdminDiagnosticsSnapshot: any;
+  export const createAdminVoucherDetail: any;
+  export const createAdminVoucherList: any;
+  export const createSettingEntry: any;
+  export const createAdminHubSnapshot: any;
+  export const createFlowMeta: any;
+  export const createNotification: any;
+  export const createStorageObject: any;
+  export const createBar: any;
+  export const createStation: any;
+  export const createUser: any;
+}

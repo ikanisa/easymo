@@ -12,6 +12,17 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  const headers = new Headers(request.headers);
+  if (!headers.get('x-request-id')) {
+    try {
+      // Edge runtime has Web Crypto API
+      const rid = (globalThis.crypto as any)?.randomUUID?.() || `${Date.now()}-${Math.random()}`;
+      headers.set('x-request-id', rid);
+    } catch {
+      headers.set('x-request-id', `${Date.now()}-${Math.random()}`);
+    }
+  }
+
   let actorId = request.headers.get('x-actor-id')
     ?? request.cookies.get('admin_actor_id')?.value
     ?? ((process.env.NODE_ENV !== 'production') ? DEV_FALLBACK_ACTOR : null);
@@ -36,10 +47,9 @@ export function middleware(request: NextRequest) {
     );
   }
 
-  const requestHeaders = new Headers(request.headers);
-  requestHeaders.set('x-actor-id', actorId);
+  headers.set('x-actor-id', actorId);
 
-  const response = NextResponse.next({ request: { headers: requestHeaders } });
+  const response = NextResponse.next({ request: { headers } });
 
   if (!request.cookies.get('admin_actor_id')) {
     response.cookies.set('admin_actor_id', actorId, {

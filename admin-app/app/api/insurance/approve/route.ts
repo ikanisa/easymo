@@ -5,37 +5,34 @@ import { getSupabaseAdminClient } from '@/lib/server/supabase-admin';
 import { logStructured } from '@/lib/server/logger';
 import { recordAudit } from '@/lib/server/audit';
 import { callBridge } from '@/lib/server/edge-bridges';
+import { createHandler } from '@/app/api/withObservability';
 
 const requestSchema = z.object({
   quoteId: z.string().uuid()
 });
 
-export async function POST(request: Request) {
+export const POST = createHandler('admin_api.insurance.approve', async (request: Request) => {
   const adminClient = getSupabaseAdminClient();
   if (!adminClient) {
-    return NextResponse.json(
-      {
-        error: 'supabase_unavailable',
-        message: 'Supabase credentials missing. Unable to approve insurance.'
-      },
-      { status: 503 }
-    );
+    return jsonError({ error: 'supabase_unavailable', message: 'Supabase credentials missing. Unable to approve insurance.' }, 503);
   }
 
   let payload: z.infer<typeof requestSchema>;
   try {
     payload = requestSchema.parse(await request.json());
   } catch (error) {
-    return NextResponse.json(
-      {
-        error: 'invalid_payload',
-        message: error instanceof z.ZodError ? error.flatten() : 'Invalid JSON payload.'
-      },
-      { status: 400 }
-    );
+    return zodValidationError(error);
   }
 
-  const actorId = headers().get('x-actor-id');
+  let actorId: string;
+  try {
+    actorId = requireActorId();
+  } catch (err) {
+    if (err instanceof UnauthorizedError) {
+      return jsonError({ error: 'unauthorized', message: err.message }, 401);
+    }
+    throw err;
+  }
   const timestamp = new Date().toISOString();
 
   const { data, error } = await adminClient
@@ -53,13 +50,7 @@ export async function POST(request: Request) {
       message: error?.message ?? 'Quote not found',
       details: { quoteId: payload.quoteId }
     });
-    return NextResponse.json(
-      {
-        error: 'approve_failed',
-        message: 'Unable to approve insurance quote.'
-      },
-      { status: 500 }
-    );
+    return jsonError({ error: 'approve_failed', message: 'Unable to approve insurance quote.' }, 500);
   }
 
   const bridgeResult = await callBridge('insuranceWorkflow', {
@@ -83,11 +74,9 @@ export async function POST(request: Request) {
         message: bridgeResult.message
       };
 
-  return NextResponse.json(
-    {
-      status: 'approved',
-      integration
-    },
-    { status: bridgeResult.ok ? 200 : bridgeResult.status ?? 503 }
-  );
-}
+  return (bridgeResult.ok
+    ? jsonOk({ status: 'approved', integration })
+    : jsonError({ status: 'approved', integration } as any, bridgeResult.status ?? 503));
+});
+import { jsonOk, jsonError, zodValidationError } from '@/lib/api/http';
+import { requireActorId, UnauthorizedError } from '@/lib/server/auth';

@@ -6,6 +6,7 @@ import { evaluateOutboundPolicy } from '@/lib/server/policy';
 import { callBridge } from '@/lib/server/edge-bridges';
 import { logStructured } from '@/lib/server/logger';
 import { recordAudit } from '@/lib/server/audit';
+import { createHandler } from '@/app/api/withObservability';
 
 const requestSchema = z.object({
   voucherId: z.string().uuid(),
@@ -13,47 +14,31 @@ const requestSchema = z.object({
   message: z.string().optional()
 });
 
-export async function POST(request: Request) {
+export const POST = createHandler('admin_api.vouchers.send', async (request: Request) => {
   let parsed: z.infer<typeof requestSchema>;
   try {
     const json = await request.json();
     parsed = requestSchema.parse(json);
   } catch (error) {
-    return NextResponse.json(
-      {
-        error: 'invalid_payload',
-        message: error instanceof z.ZodError ? error.flatten() : 'Invalid JSON payload.'
-      },
-      { status: 400 }
-    );
+    return zodValidationError(error);
   }
 
   const adminClient = getSupabaseAdminClient();
   if (!adminClient) {
-    return NextResponse.json(
-      {
-        error: 'supabase_unavailable',
-        message: 'Supabase service role not configured. Unable to send vouchers.',
-        integration: {
-          status: 'degraded' as const,
-          target: 'voucher_send',
-          message: 'Voucher send bridge unavailable until Supabase credentials are provided.'
-        }
-      },
-      { status: 503 }
-    );
+    return jsonError({
+      error: 'supabase_unavailable',
+      message: 'Supabase service role not configured. Unable to send vouchers.',
+      integration: {
+        status: 'degraded' as const,
+        target: 'voucher_send',
+        message: 'Voucher send bridge unavailable until Supabase credentials are provided.'
+      }
+    }, 503);
   }
 
   const policy = await evaluateOutboundPolicy(parsed.msisdn);
   if (!policy.allowed) {
-    return NextResponse.json(
-      {
-        error: 'policy_blocked',
-        reason: policy.reason,
-        message: policy.message ?? 'Send blocked by outbound policy.'
-      },
-      { status: 409 }
-    );
+    return jsonError({ error: 'policy_blocked', reason: policy.reason, message: policy.message ?? 'Send blocked by outbound policy.' }, 409);
   }
 
   const { data: voucher, error: voucherError } = await adminClient
@@ -70,32 +55,27 @@ export async function POST(request: Request) {
       message: voucherError.message,
       details: { voucherId: parsed.voucherId }
     });
-    return NextResponse.json(
-      { error: 'voucher_lookup_failed', message: 'Unable to load voucher.' },
-      { status: 500 }
-    );
+    return jsonError({ error: 'voucher_lookup_failed', message: 'Unable to load voucher.' }, 500);
   }
 
   if (!voucher) {
-    return NextResponse.json(
-      { error: 'not_found', message: 'Voucher not found.' },
-      { status: 404 }
-    );
+    return jsonError({ error: 'not_found', message: 'Voucher not found.' }, 404);
   }
 
   if (voucher.status === 'sent') {
-    return NextResponse.json(
-      {
-        status: 'sent',
-        message: 'Voucher already marked as sent.'
-      },
-      { status: 200 }
-    );
+    return jsonOk({ status: 'sent', message: 'Voucher already marked as sent.' });
   }
 
   const idempotencyKey = headers().get('x-idempotency-key') ?? undefined;
-  const actorIdHeader = headers().get('x-actor-id');
-  const actorId = actorIdHeader && z.string().uuid().safeParse(actorIdHeader).success ? actorIdHeader : null;
+  let actorId: string;
+  try {
+    actorId = requireActorId();
+  } catch (err) {
+    if (err instanceof UnauthorizedError) {
+      return jsonError({ error: 'unauthorized', message: err.message }, 401);
+    }
+    throw err;
+  }
 
   const bridgeResult = await callBridge<{ messageId?: string }>('voucherSend', {
     voucherId: parsed.voucherId,
@@ -112,14 +92,7 @@ export async function POST(request: Request) {
       };
 
   if (!bridgeResult.ok) {
-    return NextResponse.json(
-      {
-        error: 'send_failed',
-        message: bridgeResult.message,
-        integration
-      },
-      { status: bridgeResult.status ?? 503 }
-    );
+    return jsonError({ error: 'send_failed', message: bridgeResult.message, integration }, bridgeResult.status ?? 503);
   }
 
   const updateResult = await adminClient
@@ -137,14 +110,7 @@ export async function POST(request: Request) {
       message: updateResult.error.message,
       details: { voucherId: parsed.voucherId }
     });
-    return NextResponse.json(
-      {
-        error: 'voucher_update_failed',
-        message: 'Voucher send succeeded but status update failed. Manual review required.',
-        integration
-      },
-      { status: 500 }
-    );
+    return jsonError({ error: 'voucher_update_failed', message: 'Voucher send succeeded but status update failed. Manual review required.', integration }, 500);
   }
 
   await adminClient.from('voucher_events').insert({
@@ -180,11 +146,7 @@ export async function POST(request: Request) {
     }
   });
 
-  return NextResponse.json(
-    {
-      status: 'sent',
-      integration
-    },
-    { status: 200 }
-  );
-}
+  return jsonOk({ status: 'sent', integration });
+});
+import { jsonOk, jsonError, zodValidationError } from '@/lib/api/http';
+import { requireActorId, UnauthorizedError } from '@/lib/server/auth';

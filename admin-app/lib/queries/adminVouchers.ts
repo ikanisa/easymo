@@ -1,5 +1,5 @@
 import { QueryKey, useQuery, UseQueryOptions } from "@tanstack/react-query";
-import { getAdminVoucherRecent } from "@/lib/data-provider";
+import { getAdminVoucherRecent } from "@/lib/admin/admin-vouchers-service";
 import type { AdminVoucherList } from "@/lib/schemas";
 
 const ADMIN_VOUCHER_RECENT_KEY: QueryKey = ["admin", "vouchers", "recent"];

@@ -1,8 +1,9 @@
 import { randomUUID } from 'crypto';
-import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getSupabaseAdminClient } from '@/lib/server/supabase-admin';
 import { logStructured } from '@/lib/server/logger';
+import { jsonOk, jsonError, zodValidationError } from '@/lib/api/http';
+import { requireActorId, UnauthorizedError } from '@/lib/server/auth';
 
 const RESOLVER_BASE_OVERRIDE = process.env.BASKET_DEEPLINK_BASE_URL
   ?? process.env.NEXT_PUBLIC_BASKET_DEEPLINK_BASE_URL
@@ -41,26 +42,26 @@ const createSchema = z.object({
 export async function POST(request: Request) {
   const adminClient = getSupabaseAdminClient();
   if (!adminClient) {
-    return NextResponse.json(
-      {
-        error: 'supabase_unavailable',
-        message: 'Supabase credentials missing. Unable to create invite.',
-      },
-      { status: 503 },
-    );
+    return jsonError({
+      error: 'supabase_unavailable',
+      message: 'Supabase credentials missing. Unable to create invite.',
+    }, 503);
   }
 
   let payload: z.infer<typeof createSchema>;
   try {
     payload = createSchema.parse(await request.json());
   } catch (error) {
-    return NextResponse.json(
-      {
-        error: 'invalid_payload',
-        message: error instanceof z.ZodError ? error.flatten() : 'Invalid JSON payload.',
-      },
-      { status: 400 },
-    );
+    return zodValidationError(error);
+  }
+
+  try {
+    requireActorId();
+  } catch (err) {
+    if (err instanceof UnauthorizedError) {
+      return jsonError({ error: 'unauthorized', message: err.message }, 401);
+    }
+    throw err;
   }
 
   const token = generateInviteToken();
@@ -86,13 +87,7 @@ export async function POST(request: Request) {
       status: 'error',
       message: error?.message ?? 'Unknown error',
     });
-    return NextResponse.json(
-      {
-        error: 'basket_invite_create_failed',
-        message: 'Unable to create invite.',
-      },
-      { status: 500 },
-    );
+    return jsonError({ error: 'basket_invite_create_failed', message: 'Unable to create invite.' }, 500);
   }
 
   const shareCode = formatShareCode(data.token);
@@ -105,12 +100,12 @@ export async function POST(request: Request) {
   logStructured({
     event: 'basket_invite_created',
     target: 'basket_invites',
-    status: 'success',
+    status: 'ok',
     invite_id: data.id,
     resolver_available: Boolean(deepLinkUrl),
   });
 
-  return NextResponse.json({
+  return jsonOk({
     id: data.id,
     token: data.token,
     shareCode,
@@ -118,5 +113,5 @@ export async function POST(request: Request) {
     waShareUrl,
     expiresAt: data.expires_at,
     status: data.status,
-  }, { status: 201 });
+  }, 201);
 }

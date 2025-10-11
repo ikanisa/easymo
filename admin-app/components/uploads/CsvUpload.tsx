@@ -25,17 +25,17 @@ export function CsvUpload<T = Record<string, unknown>>({
     setFileName(file.name);
     setError(null);
 
-    Papa.parse<T>(file, {
+    Papa.parse(file, {
       header: true,
       skipEmptyLines: true,
-      complete: (result) => {
+      complete: (result: any) => {
         if (result.errors.length) {
-          setError(result.errors.map((err) => err.message).join(", "));
+          setError(result.errors.map((err: any) => err.message).join(", "));
           return;
         }
-        onPreview(result.data);
+        onPreview(result.data as T[]);
       },
-      error: (parseError) => {
+      error: (parseError: any) => {
         setError(parseError.message);
       },
     });

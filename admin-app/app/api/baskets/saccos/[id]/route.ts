@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { jsonOk, jsonError, zodValidationError } from '@/lib/api/http';
 import { z } from 'zod';
 import { getSupabaseAdminClient } from '@/lib/server/supabase-admin';
 import { logStructured } from '@/lib/server/logger';
@@ -23,57 +23,30 @@ export async function PATCH(
 ) {
   const adminClient = getSupabaseAdminClient();
   if (!adminClient) {
-    return NextResponse.json(
-      {
-        error: 'supabase_unavailable',
-        message: 'Supabase credentials missing. Unable to update SACCO.',
-      },
-      { status: 503 },
-    );
+    return jsonError({ error: 'supabase_unavailable', message: 'Supabase credentials missing. Unable to update SACCO.' }, 503);
   }
 
   const saccoId = params.id;
   if (!saccoId) {
-    return NextResponse.json(
-      { error: 'missing_id', message: 'SACCO id is required.' },
-      { status: 400 },
-    );
+    return jsonError({ error: 'missing_id', message: 'SACCO id is required.' }, 400);
   }
 
   let payload: UpdatePayload;
   try {
     payload = updateSchema.parse(await request.json());
   } catch (error) {
-    return NextResponse.json(
-      {
-        error: 'invalid_payload',
-        message: error instanceof z.ZodError ? error.flatten() : 'Invalid JSON payload.',
-      },
-      { status: 400 },
-    );
+    return zodValidationError(error);
   }
 
   if (!Object.keys(payload).length) {
-    return NextResponse.json(
-      {
-        error: 'empty_update',
-        message: 'Provide at least one field to update.',
-      },
-      { status: 400 },
-    );
+    return jsonError({ error: 'empty_update', message: 'Provide at least one field to update.' }, 400);
   }
 
   let actorId: string;
   try {
     actorId = requireActorId();
   } catch (error) {
-    return NextResponse.json(
-      {
-        error: 'unauthorized',
-        message: error instanceof Error ? error.message : 'Unauthorized',
-      },
-      { status: 401 },
-    );
+    return jsonError({ error: 'unauthorized', message: error instanceof Error ? error.message : 'Unauthorized' }, 401);
   }
 
   const updateBody = {
@@ -101,13 +74,7 @@ export async function PATCH(
       message: error?.message ?? 'Unknown error',
       details: { saccoId },
     });
-    return NextResponse.json(
-      {
-        error: 'saccos_update_failed',
-        message: 'Unable to update SACCO.',
-      },
-      { status: error?.code === 'PGRST116' ? 404 : 500 },
-    );
+    return jsonError({ error: 'saccos_update_failed', message: 'Unable to update SACCO.' }, error?.code === 'PGRST116' ? 404 : 500);
   }
 
   await recordAudit({
@@ -118,7 +85,7 @@ export async function PATCH(
     diff: updateBody,
   });
 
-  return NextResponse.json({
+  return jsonOk({
     id: data.id,
     name: data.name,
     branchCode: data.branch_code,

@@ -1,9 +1,11 @@
 import { headers } from 'next/headers';
-import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getSupabaseAdminClient } from '@/lib/server/supabase-admin';
 import { logStructured } from '@/lib/server/logger';
 import { recordAudit } from '@/lib/server/audit';
+import { jsonOk, jsonError, zodValidationError } from '@/lib/api/http';
+import { requireActorId, UnauthorizedError } from '@/lib/server/auth';
+import { createHandler } from '@/app/api/withObservability';
 
 const paramsSchema = z.object({ id: z.string().uuid() });
 
@@ -12,24 +14,18 @@ const requestSchema = z.object({
   reason: z.string().min(1)
 });
 
-export async function POST(
+export const POST = createHandler('admin_api.orders.override', async (
   request: Request,
   { params }: { params: { id: string } }
-) {
+) => {
   const adminClient = getSupabaseAdminClient();
   if (!adminClient) {
-    return NextResponse.json(
-      { error: 'supabase_unavailable', message: 'Supabase credentials missing.' },
-      { status: 503 }
-    );
+    return jsonError({ error: 'supabase_unavailable', message: 'Supabase credentials missing.' }, 503);
   }
 
   const parseParams = paramsSchema.safeParse(params);
   if (!parseParams.success) {
-    return NextResponse.json(
-      { error: 'invalid_order_id', message: 'Invalid order ID.' },
-      { status: 400 }
-    );
+    return jsonError({ error: 'invalid_order_id', message: 'Invalid order ID.' }, 400);
   }
   const orderId = parseParams.data.id;
 
@@ -37,13 +33,17 @@ export async function POST(
   try {
     payload = requestSchema.parse(await request.json());
   } catch (error) {
-    return NextResponse.json(
-      {
-        error: 'invalid_payload',
-        message: error instanceof z.ZodError ? error.flatten() : 'Invalid JSON payload.'
-      },
-      { status: 400 }
-    );
+    return zodValidationError(error);
+  }
+
+  let actorId: string;
+  try {
+    actorId = requireActorId();
+  } catch (err) {
+    if (err instanceof UnauthorizedError) {
+      return jsonError({ error: 'unauthorized', message: err.message }, 401);
+    }
+    throw err;
   }
 
   const updates: Record<string, unknown> = {};
@@ -72,13 +72,7 @@ export async function POST(
       message: error?.message ?? 'Order not found',
       details: { orderId }
     });
-    return NextResponse.json(
-      {
-        error: 'override_failed',
-        message: 'Unable to apply override.'
-      },
-      { status: 500 }
-    );
+    return jsonError({ error: 'override_failed', message: 'Unable to apply override.' }, 500);
   }
 
   await adminClient.from('order_events').insert({
@@ -97,7 +91,7 @@ export async function POST(
   });
 
   await recordAudit({
-    actorId: headers().get('x-actor-id'),
+    actorId,
     action: `order_override_${payload.action}`,
     targetTable: 'orders',
     targetId: orderId,
@@ -118,11 +112,5 @@ export async function POST(
     }
   });
 
-  return NextResponse.json(
-    {
-      status: data.status,
-      message: 'Override applied.'
-    },
-    { status: 200 }
-  );
-}
+  return jsonOk({ status: data.status, message: 'Override applied.' });
+});

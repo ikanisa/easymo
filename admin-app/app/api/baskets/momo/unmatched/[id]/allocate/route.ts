@@ -1,9 +1,10 @@
 import { headers } from 'next/headers';
-import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getSupabaseAdminClient } from '@/lib/server/supabase-admin';
 import { logStructured } from '@/lib/server/logger';
 import { recordAudit } from '@/lib/server/audit';
+import { jsonOk, jsonError, zodValidationError } from '@/lib/api/http';
+import { requireActorId, UnauthorizedError } from '@/lib/server/auth';
 
 const allocateSchema = z.object({
   memberId: z.string().uuid(),
@@ -16,37 +17,33 @@ export async function POST(
 ) {
   const adminClient = getSupabaseAdminClient();
   if (!adminClient) {
-    return NextResponse.json(
-      {
-        error: 'supabase_unavailable',
-        message: 'Supabase credentials missing. Unable to allocate SMS.',
-      },
-      { status: 503 },
-    );
+    return jsonError({
+      error: 'supabase_unavailable',
+      message: 'Supabase credentials missing. Unable to allocate SMS.',
+    }, 503);
   }
 
   const unmatchedId = params.id;
   if (!unmatchedId) {
-    return NextResponse.json(
-      { error: 'missing_id', message: 'Unmatched id is required.' },
-      { status: 400 },
-    );
+    return jsonError({ error: 'missing_id', message: 'Unmatched id is required.' }, 400);
   }
 
   let payload: z.infer<typeof allocateSchema>;
   try {
     payload = allocateSchema.parse(await request.json());
   } catch (error) {
-    return NextResponse.json(
-      {
-        error: 'invalid_payload',
-        message: error instanceof z.ZodError ? error.flatten() : 'Invalid JSON payload.',
-      },
-      { status: 400 },
-    );
+    return zodValidationError(error);
   }
 
-  const actorId = headers().get('x-actor-id');
+  let actorId: string;
+  try {
+    actorId = requireActorId();
+  } catch (err) {
+    if (err instanceof UnauthorizedError) {
+      return jsonError({ error: 'unauthorized', message: err.message }, 401);
+    }
+    throw err;
+  }
 
   const { data: unmatched, error: unmatchedError } = await adminClient
     .from('momo_unmatched')
@@ -59,35 +56,17 @@ export async function POST(
     .single();
 
   if (unmatchedError || !unmatched) {
-    return NextResponse.json(
-      {
-        error: 'unmatched_not_found',
-        message: 'Unmatched SMS not found.',
-      },
-      { status: unmatchedError?.code === 'PGRST116' ? 404 : 500 },
-    );
+    return jsonError({ error: 'unmatched_not_found', message: 'Unmatched SMS not found.' }, unmatchedError?.code === 'PGRST116' ? 404 : 500);
   }
 
   if (!unmatched.momo_parsed_txns) {
-    return NextResponse.json(
-      {
-        error: 'missing_parsed_txn',
-        message: 'Unable to allocate. Parsed transaction not available.',
-      },
-      { status: 409 },
-    );
+    return jsonError({ error: 'missing_parsed_txn', message: 'Unable to allocate. Parsed transaction not available.' }, 409);
   }
 
   const parsed = unmatched.momo_parsed_txns;
   const amount = parsed.amount ?? 0;
   if (!amount) {
-    return NextResponse.json(
-      {
-        error: 'missing_amount',
-        message: 'Parsed transaction lacks an amount.',
-      },
-      { status: 409 },
-    );
+    return jsonError({ error: 'missing_amount', message: 'Parsed transaction lacks an amount.' }, 409);
   }
 
   const txnId = parsed.txn_id ?? `unmatched-${unmatched.id}`;
@@ -121,13 +100,7 @@ export async function POST(
       status: 'error',
       message: err?.message ?? 'Unknown error',
     });
-    return NextResponse.json(
-      {
-        error: 'ledger_insert_failed',
-        message: err?.message ?? 'Unable to allocate contribution.',
-      },
-      { status: 500 },
-    );
+    return jsonError({ error: 'ledger_insert_failed', message: err?.message ?? 'Unable to allocate contribution.' }, 500);
   }
 
   const ledgerId = insertResult.data?.id ?? null;
@@ -151,13 +124,7 @@ export async function POST(
       status: 'error',
       message: updateError.message,
     });
-    return NextResponse.json(
-      {
-        error: 'unmatched_update_failed',
-        message: 'Unable to update unmatched record.',
-      },
-      { status: 500 },
-    );
+    return jsonError({ error: 'unmatched_update_failed', message: 'Unable to update unmatched record.' }, 500);
   }
 
   await recordAudit({
@@ -172,7 +139,7 @@ export async function POST(
     },
   });
 
-  return NextResponse.json({ success: true, ledgerId });
+  return jsonOk({ success: true, ledgerId });
 }
 
 async function getIkiminaId(adminClient: any, memberId: string) {

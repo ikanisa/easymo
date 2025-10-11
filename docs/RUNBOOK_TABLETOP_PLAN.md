@@ -57,6 +57,8 @@ new reminder workers and notification retry flow.
 - Confirm Supabase cron status for pending/cart reminders in dashboard.
 - Keep mock data fixtures (`tests/e2e/admin-flows.test.ts`) in sync with prod
   schema to reuse during tabletop simulations.
+- Verify `INSURANCE_OCR_METRICS_WEBHOOK_URL` is routed to observability sink so
+  queue depth signals surface during exercises.
 
 ## Post-Exercise Actions
 

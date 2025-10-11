@@ -1,5 +1,5 @@
 import { QueryKey, useQuery, UseQueryOptions } from "@tanstack/react-query";
-import { getAdminHubSnapshot } from "@/lib/data-provider";
+import { getAdminHubSnapshot } from "@/lib/admin/admin-hub-service";
 import type { AdminHubSnapshot } from "@/lib/schemas";
 
 const ADMIN_HUB_SNAPSHOT_KEY: QueryKey = ["admin", "hub", "snapshot"];

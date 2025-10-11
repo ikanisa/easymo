@@ -1,8 +1,11 @@
 import { logStructured } from "./logger";
+import { emitMetric } from "./metrics";
+import { randomUUID } from "crypto";
 
 export type ObservabilityContext = {
   log: typeof logStructured;
   recordMetric: (name: string, value: number, tags?: Record<string, unknown>) => void;
+  requestId: string;
 };
 
 export async function withApiObservability<T>(
@@ -11,11 +14,13 @@ export async function withApiObservability<T>(
   handler: (ctx: ObservabilityContext) => Promise<T>,
 ): Promise<T> {
   const start = Date.now();
+  const requestId = (request.headers as any)?.get?.('x-request-id') || randomUUID();
   const ctx: ObservabilityContext = {
-    log: (payload) => logStructured({ target: name, ...payload }),
-    recordMetric: (_name, _value, _tags) => {
-      // TODO: wire metrics emitter (e.g. StatsD/Prometheus exporter)
+    log: (payload) => logStructured({ target: name, tags: { request_id: requestId }, ...payload }),
+    recordMetric: (metricName, metricValue, metricTags) => {
+      emitMetric(metricName, metricValue, { request_id: requestId, ...(metricTags ?? {}) });
     },
+    requestId,
   };
 
   try {
@@ -23,10 +28,7 @@ export async function withApiObservability<T>(
     ctx.log({
       event: `${name}.success`,
       status: 'ok',
-      tags: {
-        method: request.method,
-        duration_ms: Date.now() - start,
-      },
+      details: { method: request.method, duration_ms: Date.now() - start },
     });
     return result;
   } catch (error) {
@@ -34,10 +36,7 @@ export async function withApiObservability<T>(
       event: `${name}.error`,
       status: 'error',
       message: error instanceof Error ? error.message : String(error),
-      tags: {
-        method: request.method,
-        duration_ms: Date.now() - start,
-      },
+      details: { method: request.method, duration_ms: Date.now() - start },
     });
     throw error;
   }

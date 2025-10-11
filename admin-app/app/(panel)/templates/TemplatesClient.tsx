@@ -7,11 +7,10 @@ import { TemplatesTable } from "@/components/templates/TemplatesTable";
 import { FlowsTable } from "@/components/templates/FlowsTable";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { LoadingState } from "@/components/ui/LoadingState";
-import {
-  type TemplatesQueryParams,
-  useTemplatesQuery,
-} from "@/lib/queries/templates";
-import { type FlowsQueryParams, useFlowsQuery } from "@/lib/queries/flows";
+import { type TemplatesQueryParams } from "@/lib/queries/templates";
+import { type FlowsQueryParams } from "@/lib/queries/flows";
+import { useTemplatesListing } from "@/lib/templates/useTemplatesListing";
+import { useFlowsListing } from "@/lib/flows/useFlowsListing";
 
 interface TemplatesClientProps {
   initialTemplateParams?: TemplatesQueryParams;
@@ -22,18 +21,22 @@ export function TemplatesClient({
   initialTemplateParams = { limit: 100 },
   initialFlowParams = { limit: 100 },
 }: TemplatesClientProps) {
-  const [templateParams, setTemplateParams] = useState(initialTemplateParams);
-  const [flowParams, setFlowParams] = useState(initialFlowParams);
+  const templatesListing = useTemplatesListing({
+    initialParams: initialTemplateParams,
+    loadStep: 50,
+  });
 
-  const templatesQuery = useTemplatesQuery(templateParams);
-  const flowsQuery = useFlowsQuery(flowParams);
+  const flowsListing = useFlowsListing({
+    initialParams: initialFlowParams,
+    loadStep: 25,
+  });
 
-  const templates = templatesQuery.data?.data ?? [];
-  const flows = flowsQuery.data?.data ?? [];
-  const templatesHasMore = templatesQuery.data?.hasMore;
-  const templatesLoadingMore = templatesQuery.isFetching && !templatesQuery.isLoading;
-  const flowsHasMore = flowsQuery.data?.hasMore;
-  const flowsLoadingMore = flowsQuery.isFetching && !flowsQuery.isLoading;
+  const templates = templatesListing.templates;
+  const flows = flowsListing.flows;
+  const templatesHasMore = templatesListing.hasMore;
+  const templatesLoadingMore = templatesListing.loadingMore;
+  const flowsHasMore = flowsListing.hasMore;
+  const flowsLoadingMore = flowsListing.loadingMore;
 
   return (
     <div className="admin-page">
@@ -46,7 +49,7 @@ export function TemplatesClient({
         title="Templates catalog"
         description="Send tests, duplicate, and manage template variables once write APIs are available."
       >
-        {templatesQuery.isLoading
+        {templatesListing.query.isLoading
           ? (
             <LoadingState
               title="Loading templates"
@@ -57,20 +60,11 @@ export function TemplatesClient({
           ? (
             <TemplatesTable
               data={templates}
-              statusFilter={templateParams.status ?? ""}
+              statusFilter={templatesListing.statusFilter as any}
               hasMore={templatesHasMore}
               loadingMore={templatesLoadingMore}
-              onStatusChange={(value) =>
-                setTemplateParams((prev) => ({
-                  ...prev,
-                  status: value || undefined,
-                  limit: initialTemplateParams.limit ?? 100,
-                }))}
-              onLoadMore={() =>
-                setTemplateParams((prev) => ({
-                  ...prev,
-                  limit: (prev.limit ?? initialTemplateParams.limit ?? 100) + 50,
-                }))}
+              onStatusChange={(value) => templatesListing.handleStatusChange(value as any)}
+              onLoadMore={templatesListing.handleLoadMore}
             />
           )
           : (
@@ -85,7 +79,7 @@ export function TemplatesClient({
         title="Flows catalog"
         description="Publish, toggle test mode, and ping endpoints from this directory."
       >
-        {flowsQuery.isLoading
+        {flowsListing.query.isLoading
           ? (
             <LoadingState
               title="Loading flows"
@@ -96,21 +90,11 @@ export function TemplatesClient({
           ? (
             <FlowsTable
               data={flows}
-              statusFilter={flowParams.status ?? ""}
+              statusFilter={flowsListing.statusFilter as any}
               hasMore={flowsHasMore}
               loadingMore={flowsLoadingMore}
-              onStatusChange={(value) =>
-                setFlowParams((prev) => ({
-                  ...prev,
-                  status: value || undefined,
-                  limit: initialFlowParams.limit ?? 100,
-                  offset: 0,
-                }))}
-              onLoadMore={() =>
-                setFlowParams((prev) => ({
-                  ...prev,
-                  limit: (prev.limit ?? initialFlowParams.limit ?? 100) + 25,
-                }))}
+              onStatusChange={(value) => flowsListing.handleStatusChange(value as any)}
+              onLoadMore={flowsListing.handleLoadMore}
             />
           )
           : (

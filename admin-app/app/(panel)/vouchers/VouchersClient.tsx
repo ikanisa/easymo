@@ -108,7 +108,7 @@ export function VouchersClient(
               onStatusChange={(value) =>
                 setParams((prev) => ({
                   ...prev,
-                  status: value || undefined,
+                  status: (value as VouchersQueryParams['status'] | '') || undefined,
                   limit: initialParams.limit ?? 200,
                   offset: 0,
                 }))}

@@ -1,5 +1,6 @@
 import { handleAction } from '@/lib/server/campaign-actions';
+import { createHandler } from '@/app/api/withObservability';
 
-export async function POST(request: Request) {
+export const POST = createHandler('admin_api.campaigns.stop', async (request: Request) => {
   return handleAction(request, 'stop');
-}
+});

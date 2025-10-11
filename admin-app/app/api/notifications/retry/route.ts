@@ -7,6 +7,8 @@ import { evaluateOutboundPolicy } from '@/lib/server/policy';
 import { recordAudit } from '@/lib/server/audit';
 import { logStructured } from '@/lib/server/logger';
 import { getSupabaseAdminClient } from '@/lib/server/supabase-admin';
+import { jsonOk, jsonError, zodValidationError } from '@/lib/api/http';
+import { requireActorId, UnauthorizedError } from '@/lib/server/auth';
 
 const payloadSchema = z.object({
   ids: z.array(z.string().uuid()).min(1).max(50),
@@ -16,32 +18,25 @@ export const POST = createHandler('admin_api.notifications.retry', async (reques
   const adminClient = getSupabaseAdminClient();
   if (!adminClient) {
     recordMetric('notifications.retry.supabase_unavailable', 1);
-    return NextResponse.json(
-      {
-        error: 'supabase_unavailable',
-        message: 'Supabase credentials missing. Unable to retry notifications.',
-      },
-      { status: 503 },
-    );
+    return jsonError({ error: 'supabase_unavailable', message: 'Supabase credentials missing. Unable to retry notifications.' }, 503);
   }
 
   let payload: z.infer<typeof payloadSchema>;
   try {
     payload = payloadSchema.parse(await request.json());
   } catch (error) {
-    return NextResponse.json(
-      {
-        error: 'invalid_payload',
-        message: error instanceof z.ZodError ? error.flatten() : 'Invalid JSON payload.',
-      },
-      { status: 400 },
-    );
+    return zodValidationError(error);
   }
 
-  const actorHeader = headers().get('x-actor-id');
-  const actorId = actorHeader && z.string().uuid().safeParse(actorHeader).success
-    ? actorHeader
-    : null;
+  let actorId: string;
+  try {
+    actorId = requireActorId();
+  } catch (err) {
+    if (err instanceof UnauthorizedError) {
+      return jsonError({ error: 'unauthorized', message: err.message }, 401);
+    }
+    throw err;
+  }
 
   const selection = await adminClient
     .from('notifications')
@@ -58,10 +53,7 @@ export const POST = createHandler('admin_api.notifications.retry', async (reques
     recordMetric('notifications.retry.supabase_error', 1, {
       message: selection.error.message,
     });
-    return NextResponse.json(
-      { error: 'fetch_failed', message: 'Unable to load notifications for retry.' },
-      { status: 500 },
-    );
+    return jsonError({ error: 'fetch_failed', message: 'Unable to load notifications for retry.' }, 500);
   }
 
   const rows = selection.data ?? [];
@@ -164,12 +156,5 @@ export const POST = createHandler('admin_api.notifications.retry', async (reques
     missing: missing.length,
   });
 
-  return NextResponse.json(
-    {
-      queued,
-      blocked,
-      missing,
-    },
-    { status: 200 },
-  );
+  return jsonOk({ queued, blocked, missing });
 });

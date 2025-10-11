@@ -1,10 +1,11 @@
 import { headers } from 'next/headers';
-import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getSupabaseAdminClient } from '@/lib/server/supabase-admin';
 import { bridgeDegraded, bridgeHealthy, callBridge } from '@/lib/server/edge-bridges';
 import { logStructured } from '@/lib/server/logger';
 import { recordAudit } from '@/lib/server/audit';
+import { jsonOk, jsonError, zodValidationError } from '@/lib/api/http';
+import { requireActorId, UnauthorizedError } from '@/lib/server/auth';
 
 const requestSchema = z.object({
   campaignId: z.string().uuid()
@@ -15,16 +16,13 @@ export type CampaignAction = 'start' | 'pause' | 'stop';
 async function updateCampaignState(
   campaignId: string,
   action: CampaignAction
-): Promise<NextResponse | { id: string; status: string | null }> {
+): Promise<Response | { id: string; status: string | null }> {
   const adminClient = getSupabaseAdminClient();
   if (!adminClient) {
-    return NextResponse.json(
-      {
-        error: 'supabase_unavailable',
-        message: 'Supabase credentials missing. Unable to update campaign state.'
-      },
-      { status: 503 }
-    );
+    return jsonError({
+      error: 'supabase_unavailable',
+      message: 'Supabase credentials missing. Unable to update campaign state.',
+    }, 503);
   }
 
   const now = new Date().toISOString();
@@ -54,13 +52,7 @@ async function updateCampaignState(
       message: error?.message ?? 'Campaign not found',
       details: { campaignId }
     });
-    return NextResponse.json(
-      {
-        error: 'campaign_update_failed',
-        message: 'Failed to update campaign state.'
-      },
-      { status: 500 }
-    );
+    return jsonError({ error: 'campaign_update_failed', message: 'Failed to update campaign state.' }, 500);
   }
 
   return data;
@@ -76,32 +68,31 @@ async function invokeDispatcher(campaignId: string, action: CampaignAction) {
 export async function handleAction(request: Request, action: CampaignAction) {
   const adminClient = getSupabaseAdminClient();
   if (!adminClient) {
-    return NextResponse.json(
-      {
-        error: 'supabase_unavailable',
-        message: 'Supabase credentials missing. Unable to update campaign state.'
-      },
-      { status: 503 }
-    );
+    return jsonError({
+      error: 'supabase_unavailable',
+      message: 'Supabase credentials missing. Unable to update campaign state.',
+    }, 503);
   }
 
   let payload: z.infer<typeof requestSchema>;
   try {
     payload = requestSchema.parse(await request.json());
   } catch (error) {
-    return NextResponse.json(
-      {
-        error: 'invalid_payload',
-        message: error instanceof z.ZodError ? error.flatten() : 'Invalid JSON payload.'
-      },
-      { status: 400 }
-    );
+    return zodValidationError(error);
   }
 
-  const actorId = headers().get('x-actor-id');
+  let actorId: string;
+  try {
+    actorId = requireActorId();
+  } catch (err) {
+    if (err instanceof UnauthorizedError) {
+      return jsonError({ error: 'unauthorized', message: err.message }, 401);
+    }
+    throw err;
+  }
 
   const updateResult = await updateCampaignState(payload.campaignId, action);
-  if (updateResult instanceof NextResponse) {
+  if (updateResult instanceof Response) {
     return updateResult; // error response
   }
 
@@ -122,13 +113,13 @@ export async function handleAction(request: Request, action: CampaignAction) {
   let responseState = updateResult.status ?? stateByAction[action];
   let responseMessage = successMessages[action];
   let statusCode = 200;
-  let integration = bridgeHealthy('campaignDispatch');
+  let integration: { target: string; status: 'ok' | 'degraded'; message?: string; reason?: string } = bridgeHealthy('campaignDispatch');
 
   if (!dispatcherResult.ok) {
     statusCode = dispatcherResult.reason === 'missing_endpoint'
       ? 200
       : dispatcherResult.status ?? 503;
-    integration = bridgeDegraded('campaignDispatch', dispatcherResult);
+    integration = bridgeDegraded('campaignDispatch', dispatcherResult) as any;
     responseMessage = dispatcherResult.message ?? successMessages[action];
   } else {
     const dispatcherState = dispatcherResult.data?.state;
@@ -170,13 +161,10 @@ export async function handleAction(request: Request, action: CampaignAction) {
     }
   });
 
-  return NextResponse.json(
-    {
-      id: payload.campaignId,
-      state: responseState,
-      message: responseMessage,
-      integration
-    },
-    { status: statusCode }
-  );
+  return jsonOk({
+    id: payload.campaignId,
+    state: responseState,
+    message: responseMessage,
+    integration,
+  }, statusCode);
 }

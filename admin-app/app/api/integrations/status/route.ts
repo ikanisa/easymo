@@ -1,5 +1,6 @@
-import { NextResponse } from "next/server";
 import { z } from "zod";
+import { jsonOk } from "@/lib/api/http";
+import { createHandler } from "@/app/api/withObservability";
 
 const targetSchema = z.object({
   name: z.enum(["voucherPreview", "whatsappSend", "campaignDispatcher"]),
@@ -61,33 +62,36 @@ async function probe(url: string, method: "HEAD" | "GET" | "POST") {
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
-  const targets = buildTargets();
-  if (!targets.length) {
-    return NextResponse.json({
+export const GET = createHandler(
+  "admin_api.integrations.status",
+  async () => {
+    const targets = buildTargets();
+    if (!targets.length) {
+      return jsonOk({
+        voucherPreview: { status: "red", message: "Endpoint not configured" },
+        whatsappSend: { status: "red", message: "Endpoint not configured" },
+        campaignDispatcher: { status: "red", message: "Endpoint not configured" },
+      });
+    }
+
+    const results: Record<string, { status: string; message: string }> = {
       voucherPreview: { status: "red", message: "Endpoint not configured" },
       whatsappSend: { status: "red", message: "Endpoint not configured" },
       campaignDispatcher: { status: "red", message: "Endpoint not configured" },
-    });
-  }
+    };
 
-  const results: Record<string, { status: string; message: string }> = {
-    voucherPreview: { status: "red", message: "Endpoint not configured" },
-    whatsappSend: { status: "red", message: "Endpoint not configured" },
-    campaignDispatcher: { status: "red", message: "Endpoint not configured" },
-  };
+    await Promise.all(
+      targets.map(async (target) => {
+        const parsed = targetSchema.safeParse(target);
+        if (!parsed.success) {
+          return;
+        }
+        const { name, url, method } = parsed.data;
+        const outcome = await probe(url, method as "HEAD" | "GET" | "POST");
+        results[name] = outcome;
+      }),
+    );
 
-  await Promise.all(
-    targets.map(async (target) => {
-      const parsed = targetSchema.safeParse(target);
-      if (!parsed.success) {
-        return;
-      }
-      const { name, url, method } = parsed.data;
-      const outcome = await probe(url, method as "HEAD" | "GET" | "POST");
-      results[name] = outcome;
-    }),
-  );
-
-  return NextResponse.json(results);
-}
+    return jsonOk(results);
+  },
+);

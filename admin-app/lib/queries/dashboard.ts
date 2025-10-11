@@ -1,9 +1,12 @@
 import { QueryKey, useQuery, UseQueryOptions } from "@tanstack/react-query";
 import {
   getDashboardSnapshot,
+  type DashboardSnapshot,
+} from "@/lib/dashboard/dashboard-service";
+import {
   listLatestOrderEvents,
   listLatestWebhookErrors,
-} from "@/lib/data-provider";
+} from "@/lib/orders/orders-service";
 import type {
   DashboardKpi,
   OrderEvent,
@@ -15,10 +18,7 @@ const DASHBOARD_SNAPSHOT_KEY: QueryKey = ["dashboard", "snapshot"];
 const DASHBOARD_ORDER_EVENTS_KEY: QueryKey = ["dashboard", "order-events"];
 const DASHBOARD_WEBHOOK_ERRORS_KEY: QueryKey = ["dashboard", "webhook-errors"];
 
-export type DashboardSnapshotResult = {
-  kpis: DashboardKpi[];
-  timeseries: TimeseriesPoint[];
-};
+export type DashboardSnapshotResult = DashboardSnapshot;
 
 export function fetchDashboardSnapshot(): Promise<DashboardSnapshotResult> {
   return getDashboardSnapshot();

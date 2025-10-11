@@ -1,6 +1,7 @@
 import { QueryKey, useQuery, UseQueryOptions } from "@tanstack/react-query";
-import { listUsers, type PaginatedResult } from "@/lib/data-provider";
+import { listUsers } from "@/lib/users/users-service";
 import type { User } from "@/lib/schemas";
+import type { PaginatedResult } from "@/lib/shared/pagination";
 
 export type UsersQueryParams = {
   search?: string;

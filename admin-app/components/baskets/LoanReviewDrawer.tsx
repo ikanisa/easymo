@@ -1,11 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Drawer } from "@/components/ui/Drawer";
-import { Button } from "@/components/ui/Button";
-import { EmptyState } from "@/components/ui/EmptyState";
-import { LoadingState } from "@/components/ui/LoadingState";
 import { useToast } from "@/components/ui/ToastProvider";
 import {
   addLoanCollateral,
@@ -17,34 +14,20 @@ import {
   updateLoan,
 } from "@/lib/queries/baskets";
 import styles from "./LoanReviewDrawer.module.css";
+import { LoanSummarySection } from "./loan-review/LoanSummarySection";
+import { LoanDecisionSection } from "./loan-review/LoanDecisionSection";
+import { LoanCollateralSection } from "./loan-review/LoanCollateralSection";
+import { LoanTimelineSection } from "./loan-review/LoanTimelineSection";
+import {
+  formatCurrency,
+  toIsoString,
+  toLocalDateTimeInput,
+} from "./loan-review/utils";
 
 interface LoanReviewDrawerProps {
   loan: LoanRow | null;
   onClose: () => void;
   onUpdated: () => void | Promise<void>;
-}
-
-function formatCurrency(amount: number, currency: string) {
-  return new Intl.NumberFormat("en-KE", {
-    style: "currency",
-    currency,
-    maximumFractionDigits: 0,
-  }).format(amount);
-}
-
-function toLocalInputValue(iso: string | null): string {
-  if (!iso) return "";
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return "";
-  const pad = (value: number) => String(value).padStart(2, "0");
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
-}
-
-function toIsoString(value: string | null): string | null {
-  if (!value) return null;
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) return null;
-  return parsed.toISOString();
 }
 
 export function LoanReviewDrawer(
@@ -55,7 +38,9 @@ export function LoanReviewDrawer(
   const [status, setStatus] = useState<string>(loan?.status ?? "pending");
   const [statusReason, setStatusReason] = useState<string>(loan?.statusReason ?? "");
   const [decisionNotes, setDecisionNotes] = useState<string>(loan?.saccoDecisionNotes ?? "");
-  const [scheduledAt, setScheduledAt] = useState<string>(toLocalInputValue(loan?.disbursementScheduledAt ?? null));
+  const [scheduledAt, setScheduledAt] = useState<string>(
+    toLocalDateTimeInput(loan?.disbursementScheduledAt ?? null),
+  );
 
   const [collateralSource, setCollateralSource] = useState<string>("group_savings");
   const [collateralAmount, setCollateralAmount] = useState<string>("");
@@ -67,7 +52,7 @@ export function LoanReviewDrawer(
     setStatus(loan.status);
     setStatusReason(loan.statusReason ?? "");
     setDecisionNotes(loan.saccoDecisionNotes ?? "");
-    setScheduledAt(toLocalInputValue(loan.disbursementScheduledAt ?? null));
+    setScheduledAt(toLocalDateTimeInput(loan.disbursementScheduledAt ?? null));
   }, [loan]);
 
   const eventsQuery = useQuery<LoanEvent[]>({
@@ -164,7 +149,7 @@ export function LoanReviewDrawer(
     });
   };
 
-  const handleCollateralSubmit = (event: React.FormEvent) => {
+  const handleCollateralSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!collateralAmount) {
       pushToast('Enter an amount to pledge.', 'error');
@@ -173,267 +158,72 @@ export function LoanReviewDrawer(
     collateralMutation.mutate();
   };
 
+  const handleApprove = () => handleStatusSubmit("approved");
+  const handleReject = () => handleStatusSubmit("rejected");
+  const handleDisburse = () =>
+    updateMutation.mutate({ disbursedAt: new Date().toISOString() });
+
   return (
     <Drawer
       title={`Loan review — ${loan.member?.profile?.displayName ?? loan.id.substring(0, 8)}`}
       onClose={onClose}
     >
       <div className={styles.drawerContent}>
-        <section className={styles.section}>
-          <div className={styles.sectionHeader}>
-            <h3>Summary</h3>
-            <span className={styles.badge}>{loan.status}</span>
-          </div>
-          <div className={styles.summaryGrid}>
-            <div className={styles.summaryItem}>
-              <span>Principal</span>
-              <div className={styles.summaryValue}>{principalText}</div>
-            </div>
-            <div className={styles.summaryItem}>
-              <span>Tenure</span>
-              <div className={styles.summaryValue}>{loan.tenureMonths} months</div>
-            </div>
-            <div className={styles.summaryItem}>
-              <span>Rate APR</span>
-              <div className={styles.summaryValue}>
-                {loan.rateApr != null ? `${loan.rateApr}%` : '—'}
-              </div>
-            </div>
-            <div className={styles.summaryItem}>
-              <span>Collateral pledged</span>
-              <div className={styles.summaryValue}>{collateralText}</div>
-            </div>
-            <div className={styles.summaryItem}>
-              <span>LTV coverage</span>
-              <div className={styles.summaryValue}>{ltvDisplay}</div>
-            </div>
-            {minLtv != null ? (
-              <div className={styles.summaryItem}>
-                <span>Min required LTV</span>
-                <div className={styles.summaryValue}>{minLtv.toFixed(2)}x</div>
-              </div>
-            ) : null}
-          </div>
-          {belowCoverage ? (
-            <p className={styles.alert}>Collateral below required coverage. Gather additional collateral or reject.</p>
-          ) : null}
-          {loan.purpose ? (
-            <p className={styles.summaryValue}>Purpose: {loan.purpose}</p>
-          ) : null}
-        </section>
+        <LoanSummarySection
+          loan={loan}
+          principalText={principalText}
+          collateralText={collateralText}
+          ltvDisplay={ltvDisplay}
+          minLtv={minLtv}
+          belowCoverage={belowCoverage}
+        />
 
-        <section className={styles.section}>
-          <div className={styles.sectionHeader}>
-            <h3>SACCO decision</h3>
-          </div>
-          <div className={`${styles.fieldGroup} ${styles.inline}`}>
-            <label className={styles.field}>
-              <span>Status</span>
-              <select value={status} onChange={(event) => setStatus(event.target.value)}>
-                <option value="pending">Pending</option>
-                <option value="endorsing">Endorsing</option>
-                <option value="approved">Approved</option>
-                <option value="rejected">Rejected</option>
-                <option value="disbursed">Disbursed</option>
-                <option value="closed">Closed</option>
-              </select>
-            </label>
-            <label className={styles.field}>
-              <span>Disbursement scheduled</span>
-              <input
-                type="datetime-local"
-                value={scheduledAt}
-                onChange={(event) => setScheduledAt(event.target.value)}
-              />
-            </label>
-          </div>
-          <label className={styles.field}>
-            <span>Status reason</span>
-            <textarea
-              className={styles.small}
-              value={statusReason}
-              onChange={(event) => setStatusReason(event.target.value)}
-              placeholder="Internal reason or borrower-facing note"
-            />
-          </label>
-          <label className={styles.field}>
-            <span>Decision notes</span>
-            <textarea
-              className={styles.small}
-              value={decisionNotes}
-              onChange={(event) => setDecisionNotes(event.target.value)}
-              placeholder="Optional notes shown in audit trail"
-            />
-          </label>
-          <div className={styles.actionsRow}>
-            <Button
-              size="sm"
-              onClick={() => handleStatusSubmit(status as LoanRow['status'])}
-              disabled={updateMutation.isLoading}
-            >
-              Save status
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={handleScheduleSubmit}
-              disabled={updateMutation.isLoading}
-            >
-              Update schedule
-            </Button>
-            {canApprove && (
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => handleStatusSubmit('approved')}
-                disabled={updateMutation.isLoading}
-              >
-                Approve
-              </Button>
-            )}
-            {canReject && (
-              <Button
-                size="sm"
-                variant="danger"
-                onClick={() => handleStatusSubmit('rejected')}
-                disabled={updateMutation.isLoading}
-              >
-                Reject
-              </Button>
-            )}
-            {canDisburse && (
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => updateMutation.mutate({ disbursedAt: new Date().toISOString() })}
-                disabled={updateMutation.isLoading}
-              >
-                Mark disbursed
-              </Button>
-            )}
-          </div>
-        </section>
+        <LoanDecisionSection
+          status={status}
+          statusReason={statusReason}
+          decisionNotes={decisionNotes}
+          scheduledAt={scheduledAt}
+          canApprove={canApprove}
+          canReject={canReject}
+          canDisburse={canDisburse}
+          isBusy={updateMutation.isLoading}
+          onStatusChange={(value) => setStatus(value)}
+          onStatusReasonChange={(value) => setStatusReason(value)}
+          onDecisionNotesChange={(value) => setDecisionNotes(value)}
+          onScheduledAtChange={(value) => setScheduledAt(value)}
+          onSaveStatus={handleStatusSubmit}
+          onUpdateSchedule={handleScheduleSubmit}
+          onApprove={handleApprove}
+          onReject={handleReject}
+          onDisburse={handleDisburse}
+        />
 
-        <section className={styles.section}>
-          <div className={styles.sectionHeader}>
-            <h3>Collateral</h3>
-          </div>
-          {collateralItems.length
-            ? (
-              <div className={styles.collateralList}>
-                {collateralItems.map((item) => (
-                  <div key={item.id} className={styles.collateralItem}>
-                    <div>
-                      <div className={styles.summaryValue}>
-                        {formatCurrency(item.amount, currency)} • {item.source.replace('_', ' ')}
-                      </div>
-                      <div className={styles.collateralMeta}>
-                        Coverage: {item.coverageRatio != null ? `${(item.coverageRatio * 100).toFixed(1)}%` : '—'}
-                      </div>
-                      {item.valuation != null ? (
-                        <div className={styles.collateralMeta}>
-                          Valuation: {formatCurrency(item.valuation, currency)}
-                        </div>
-                      ) : null}
-                    </div>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => removeCollateralMutation.mutate(item.id)}
-                      disabled={removeCollateralMutation.isLoading}
-                    >
-                      Remove
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            )
-            : (
-              <p className={styles.emptyText}>No collateral pledged yet.</p>
-            )}
+        <LoanCollateralSection
+          currency={currency}
+          items={collateralItems}
+          form={{
+            source: collateralSource,
+            amount: collateralAmount,
+            valuation: collateralValuation,
+            coverage: collateralCoverage,
+          }}
+          onFormChange={{
+            source: (value) => setCollateralSource(value),
+            amount: (value) => setCollateralAmount(value),
+            valuation: (value) => setCollateralValuation(value),
+            coverage: (value) => setCollateralCoverage(value),
+          }}
+          onSubmit={handleCollateralSubmit}
+          onRemove={(collateralId) =>
+            removeCollateralMutation.mutate(collateralId)}
+          isSubmitting={collateralMutation.isLoading}
+          isRemoving={removeCollateralMutation.isLoading}
+        />
 
-          <form className={styles.fieldGroup} onSubmit={handleCollateralSubmit}>
-            <div className={styles.fieldGroup + ' ' + styles.inline}>
-              <label className={styles.field}>
-                <span>Source</span>
-                <select
-                  value={collateralSource}
-                  onChange={(event) => setCollateralSource(event.target.value)}
-                >
-                  <option value="group_savings">Group savings</option>
-                  <option value="member_savings">Member savings</option>
-                  <option value="guarantor">Guarantor pledge</option>
-                  <option value="asset">Asset</option>
-                </select>
-              </label>
-              <label className={styles.field}>
-                <span>Amount ({currency})</span>
-                <input
-                  required
-                  value={collateralAmount}
-                  onChange={(event) => setCollateralAmount(event.target.value)}
-                  type="number"
-                  min="0"
-                  step="0.01"
-                />
-              </label>
-              <label className={styles.field}>
-                <span>Valuation ({currency})</span>
-                <input
-                  value={collateralValuation}
-                  onChange={(event) => setCollateralValuation(event.target.value)}
-                  type="number"
-                  min="0"
-                  step="0.01"
-                />
-              </label>
-              <label className={styles.field}>
-                <span>Coverage ratio</span>
-                <input
-                  value={collateralCoverage}
-                  onChange={(event) => setCollateralCoverage(event.target.value)}
-                  type="number"
-                  min="0"
-                  step="0.01"
-                />
-              </label>
-            </div>
-            <div className={styles.actionsRow}>
-              <Button
-                type="submit"
-                size="sm"
-                disabled={collateralMutation.isLoading}
-              >
-                Add collateral
-              </Button>
-            </div>
-          </form>
-        </section>
-
-        <section className={styles.section}>
-          <div className={styles.sectionHeader}>
-            <h3>Timeline</h3>
-          </div>
-          {eventsQuery.isLoading ? (
-            <LoadingState title="Loading timeline" description="Fetching loan events." />
-          ) : eventsQuery.data && eventsQuery.data.length ? (
-            <div className={styles.timeline}>
-              {eventsQuery.data.map((event) => (
-                <div key={event.id} className={styles.timelineItem}>
-                  <strong>{event.toStatus}</strong>
-                  <div className={styles.timelineMeta}>
-                    {new Date(event.createdAt).toLocaleString()} — {event.actorRole ?? 'system'}
-                  </div>
-                  {event.notes ? (
-                    <div className={styles.timelineMeta}>{event.notes}</div>
-                  ) : null}
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className={styles.emptyText}>No timeline events recorded yet.</p>
-          )}
-        </section>
+        <LoanTimelineSection
+          events={eventsQuery.data}
+          isLoading={eventsQuery.isLoading}
+        />
       </div>
     </Drawer>
   );

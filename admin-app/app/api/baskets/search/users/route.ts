@@ -1,6 +1,6 @@
-import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getSupabaseAdminClient } from '@/lib/server/supabase-admin';
+import { jsonOk, jsonError, zodValidationError } from '@/lib/api/http';
 
 const querySchema = z.object({
   q: z.string().min(1),
@@ -10,26 +10,14 @@ const querySchema = z.object({
 export async function GET(request: Request) {
   const adminClient = getSupabaseAdminClient();
   if (!adminClient) {
-    return NextResponse.json(
-      {
-        error: 'supabase_unavailable',
-        message: 'Supabase credentials missing. Unable to search users.',
-      },
-      { status: 503 },
-    );
+    return jsonError({ error: 'supabase_unavailable', message: 'Supabase credentials missing. Unable to search users.' }, 503);
   }
 
   let query: z.infer<typeof querySchema>;
   try {
     query = querySchema.parse(Object.fromEntries(new URL(request.url).searchParams));
   } catch (error) {
-    return NextResponse.json(
-      {
-        error: 'invalid_query',
-        message: error instanceof z.ZodError ? error.flatten() : 'Invalid query parameters.',
-      },
-      { status: 400 },
-    );
+    return zodValidationError(error);
   }
 
   const term = `%${query.q}%`;
@@ -42,16 +30,10 @@ export async function GET(request: Request) {
     .limit(limit);
 
   if (error) {
-    return NextResponse.json(
-      {
-        error: 'user_search_failed',
-        message: 'Unable to search profiles.',
-      },
-      { status: 500 },
-    );
+    return jsonError({ error: 'user_search_failed', message: 'Unable to search profiles.' }, 500);
   }
 
-  return NextResponse.json({
+  return jsonOk({
     data: (data ?? []).map((row) => ({
       userId: row.user_id,
       displayName: row.display_name,
@@ -59,4 +41,3 @@ export async function GET(request: Request) {
     })),
   });
 }
-

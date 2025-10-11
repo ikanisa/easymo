@@ -6,6 +6,7 @@ import { withIdempotency } from '@/lib/server/idempotency';
 import { callBridge } from '@/lib/server/edge-bridges';
 import { logStructured } from '@/lib/server/logger';
 import { recordAudit } from '@/lib/server/audit';
+import { createHandler } from '@/app/api/withObservability';
 
 const requestSchema = z.object({
   amount: z.number().positive(),
@@ -26,21 +27,18 @@ function generateVoucherCode(): string {
   return `K${Math.random().toString(36).slice(-5).toUpperCase()}`;
 }
 
-export async function POST(request: Request) {
+export const POST = createHandler('admin_api.vouchers.generate', async (request: Request) => {
   const adminClient = getSupabaseAdminClient();
   if (!adminClient) {
-    return NextResponse.json(
-      {
-        error: 'supabase_unavailable',
-        message: 'Supabase service role not configured. Unable to issue real vouchers.',
-        integration: {
-          status: 'degraded' as const,
-          target: 'voucher_generate',
-          message: 'Voucher issuance bridge unavailable. Configure SUPABASE_SERVICE_ROLE_KEY.'
-        }
-      },
-      { status: 503 }
-    );
+    return jsonError({
+      error: 'supabase_unavailable',
+      message: 'Supabase service role not configured. Unable to issue real vouchers.',
+      integration: {
+        status: 'degraded' as const,
+        target: 'voucher_generate',
+        message: 'Voucher issuance bridge unavailable. Configure SUPABASE_SERVICE_ROLE_KEY.'
+      }
+    }, 503);
   }
 
   let parsed: z.infer<typeof requestSchema>;
@@ -48,18 +46,19 @@ export async function POST(request: Request) {
     const json = await request.json();
     parsed = requestSchema.parse(json);
   } catch (error) {
-    return NextResponse.json(
-      {
-        error: 'invalid_payload',
-        message: error instanceof z.ZodError ? error.flatten() : 'Invalid JSON payload.'
-      },
-      { status: 400 }
-    );
+    return zodValidationError(error);
   }
 
   const idempotencyKey = headers().get('x-idempotency-key') ?? undefined;
-  const actorIdHeader = headers().get('x-actor-id');
-  const actorId = actorIdHeader && z.string().uuid().safeParse(actorIdHeader).success ? actorIdHeader : null;
+  let actorId: string | null = null;
+  try {
+    actorId = requireActorId();
+  } catch (err) {
+    if (err instanceof UnauthorizedError) {
+      return jsonError({ error: 'unauthorized', message: err.message }, 401);
+    }
+    throw err;
+  }
 
   try {
     const result = await withIdempotency(idempotencyKey, async () => {
@@ -151,15 +150,11 @@ export async function POST(request: Request) {
       };
     });
 
-    return NextResponse.json(result, { status: 200 });
+    return jsonOk(result);
   } catch (error) {
     const status = error instanceof Error && error.message === 'failed_to_insert_vouchers' ? 500 : 500;
-    return NextResponse.json(
-      {
-        error: 'voucher_generate_failed',
-        message: 'Unable to issue vouchers. Try again later.'
-      },
-      { status }
-    );
+    return jsonError({ error: 'voucher_generate_failed', message: 'Unable to issue vouchers. Try again later.' }, status);
   }
-}
+});
+import { jsonOk, jsonError, zodValidationError } from '@/lib/api/http';
+import { requireActorId, UnauthorizedError } from '@/lib/server/auth';

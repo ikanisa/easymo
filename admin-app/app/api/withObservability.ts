@@ -1,6 +1,7 @@
-import { NextResponse } from "next/server";
 import type { ObservabilityContext } from "@/lib/server/observability";
 import { withApiObservability } from "@/lib/server/observability";
+import { jsonError } from "@/lib/api/http";
+import { captureException } from "@/lib/server/sentry";
 
 export type ApiHandler<T extends unknown = unknown> = (
   request: Request,
@@ -18,7 +19,8 @@ export function createHandler<TContext = unknown>(
       return await withApiObservability(name, request, (obs) => handler(request, ctxValue, obs));
     } catch (error) {
       console.error(`${name}.unhandled`, error);
-      return NextResponse.json({ error: "unexpected_error" }, { status: 500 });
+      captureException(error as Error, { route: name, path: (request as any)?.url });
+      return jsonError({ error: "unexpected_error", message: "Unhandled server error." }, 500);
     }
   };
 }

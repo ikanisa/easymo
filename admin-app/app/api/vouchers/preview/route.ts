@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { callBridge } from '@/lib/server/edge-bridges';
 import { logStructured } from '@/lib/server/logger';
+import { createHandler } from '@/app/api/withObservability';
 
 const requestSchema = z.object({
   voucherId: z.string().uuid().optional(),
@@ -13,19 +14,13 @@ const requestSchema = z.object({
   barName: z.string().optional()
 });
 
-export async function POST(request: Request) {
+export const POST = createHandler('admin_api.vouchers.preview', async (request: Request) => {
   let payload: z.infer<typeof requestSchema>;
   try {
     const json = await request.json();
     payload = requestSchema.parse(json);
   } catch (error) {
-    return NextResponse.json(
-      {
-        error: 'invalid_payload',
-        message: error instanceof z.ZodError ? error.flatten() : 'Invalid JSON payload.'
-      },
-      { status: 400 }
-    );
+    return zodValidationError(error);
   }
 
   const idempotencyKey = headers().get('x-idempotency-key') ?? undefined;
@@ -40,16 +35,7 @@ export async function POST(request: Request) {
 
   if (!bridgeResult.ok) {
     const status = bridgeResult.status ?? 503;
-    return NextResponse.json(
-      {
-        integration: {
-          status: 'degraded' as const,
-          target: 'voucher_preview',
-          message: bridgeResult.message
-        }
-      },
-      { status }
-    );
+    return jsonError({ integration: { status: 'degraded' as const, target: 'voucher_preview', message: bridgeResult.message } }, status);
   }
 
   logStructured({
@@ -61,16 +47,11 @@ export async function POST(request: Request) {
     }
   });
 
-  return NextResponse.json(
-    {
-      imageUrl: bridgeResult.data?.imageUrl ?? null,
-      pdfUrl: bridgeResult.data?.pdfUrl ?? null,
-      expiresAt: bridgeResult.data?.expiresAt ?? payload.expiresAt ?? null,
-      integration: {
-        status: 'ok' as const,
-        target: 'voucher_preview'
-      }
-    },
-    { status: 200 }
-  );
-}
+  return jsonOk({
+    imageUrl: bridgeResult.data?.imageUrl ?? null,
+    pdfUrl: bridgeResult.data?.pdfUrl ?? null,
+    expiresAt: bridgeResult.data?.expiresAt ?? payload.expiresAt ?? null,
+    integration: { status: 'ok' as const, target: 'voucher_preview' }
+  });
+});
+import { jsonOk, jsonError, zodValidationError } from '@/lib/api/http';

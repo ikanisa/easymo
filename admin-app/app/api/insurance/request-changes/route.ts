@@ -5,38 +5,35 @@ import { getSupabaseAdminClient } from '@/lib/server/supabase-admin';
 import { logStructured } from '@/lib/server/logger';
 import { recordAudit } from '@/lib/server/audit';
 import { callBridge } from '@/lib/server/edge-bridges';
+import { createHandler } from '@/app/api/withObservability';
 
 const requestSchema = z.object({
   quoteId: z.string().uuid(),
   comment: z.string().min(1)
 });
 
-export async function POST(request: Request) {
+export const POST = createHandler('admin_api.insurance.request_changes', async (request: Request) => {
   const adminClient = getSupabaseAdminClient();
   if (!adminClient) {
-    return NextResponse.json(
-      {
-        error: 'supabase_unavailable',
-        message: 'Supabase credentials missing. Unable to request changes.'
-      },
-      { status: 503 }
-    );
+    return jsonError({ error: 'supabase_unavailable', message: 'Supabase credentials missing. Unable to request changes.' }, 503);
   }
 
   let payload: z.infer<typeof requestSchema>;
   try {
     payload = requestSchema.parse(await request.json());
   } catch (error) {
-    return NextResponse.json(
-      {
-        error: 'invalid_payload',
-        message: error instanceof z.ZodError ? error.flatten() : 'Invalid JSON payload.'
-      },
-      { status: 400 }
-    );
+    return zodValidationError(error);
   }
 
-  const actorId = headers().get('x-actor-id');
+  let actorId: string;
+  try {
+    actorId = requireActorId();
+  } catch (err) {
+    if (err instanceof UnauthorizedError) {
+      return jsonError({ error: 'unauthorized', message: err.message }, 401);
+    }
+    throw err;
+  }
 
   const { error } = await adminClient
     .from('insurance_quotes')
@@ -51,13 +48,7 @@ export async function POST(request: Request) {
       message: error.message,
       details: { quoteId: payload.quoteId }
     });
-    return NextResponse.json(
-      {
-        error: 'request_changes_failed',
-        message: 'Unable to update insurance quote.'
-      },
-      { status: 500 }
-    );
+    return jsonError({ error: 'request_changes_failed', message: 'Unable to update insurance quote.' }, 500);
   }
 
   const bridgeResult = await callBridge('insuranceWorkflow', {
@@ -82,11 +73,9 @@ export async function POST(request: Request) {
         message: bridgeResult.message
       };
 
-  return NextResponse.json(
-    {
-      status: 'needs_changes',
-      integration
-    },
-    { status: bridgeResult.ok ? 200 : bridgeResult.status ?? 503 }
-  );
-}
+  return (bridgeResult.ok
+    ? jsonOk({ status: 'needs_changes', integration })
+    : jsonError({ status: 'needs_changes', integration } as any, bridgeResult.status ?? 503));
+});
+import { jsonOk, jsonError, zodValidationError } from '@/lib/api/http';
+import { requireActorId, UnauthorizedError } from '@/lib/server/auth';

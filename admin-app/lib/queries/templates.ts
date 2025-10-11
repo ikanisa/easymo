@@ -1,11 +1,12 @@
 import { QueryKey, useQuery, UseQueryOptions } from "@tanstack/react-query";
-import { listTemplates, type PaginatedResult } from "@/lib/data-provider";
 import type { TemplateMeta } from "@/lib/schemas";
+import type { PaginatedResult } from "@/lib/shared/pagination";
+import {
+  listTemplates,
+  type TemplateListParams,
+} from "@/lib/templates/templates-service";
 
-export type TemplatesQueryParams = {
-  limit?: number;
-  status?: TemplateMeta["status"];
-};
+export type TemplatesQueryParams = TemplateListParams;
 
 const templatesKey = (params: TemplatesQueryParams) =>
   ["templates", params] satisfies QueryKey;

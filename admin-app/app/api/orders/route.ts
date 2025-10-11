@@ -15,13 +15,7 @@ export const GET = createHandler('admin_api.orders.list', async (request, _conte
   const adminClient = getSupabaseAdminClient();
   if (!adminClient) {
     recordMetric('orders.supabase_unavailable', 1);
-    return NextResponse.json(
-      {
-        error: 'supabase_unavailable',
-        message: 'Supabase credentials missing. Unable to fetch orders.'
-      },
-      { status: 503 }
-    );
+    return jsonError({ error: 'supabase_unavailable', message: 'Supabase credentials missing. Unable to fetch orders.' }, 503);
   }
 
   let query: z.infer<typeof querySchema>;
@@ -29,13 +23,7 @@ export const GET = createHandler('admin_api.orders.list', async (request, _conte
     query = querySchema.parse(Object.fromEntries(new URL(request.url).searchParams));
   } catch (error) {
     recordMetric('orders.invalid_query', 1);
-    return NextResponse.json(
-      {
-        error: 'invalid_query',
-        message: error instanceof z.ZodError ? error.flatten() : 'Invalid query parameters.'
-      },
-      { status: 400 }
-    );
+    return zodValidationError(error);
   }
 
   const rangeStart = query.offset ?? 0;
@@ -63,10 +51,7 @@ export const GET = createHandler('admin_api.orders.list', async (request, _conte
       message: error.message
     });
     recordMetric('orders.supabase_error', 1, { message: error.message });
-    return NextResponse.json(
-      { error: 'orders_fetch_failed', message: 'Unable to load orders.' },
-      { status: 500 }
-    );
+    return jsonError({ error: 'orders_fetch_failed', message: 'Unable to load orders.' }, 500);
   }
 
   const orders = (data ?? []).map((row) => ({
@@ -86,12 +71,6 @@ export const GET = createHandler('admin_api.orders.list', async (request, _conte
 
   recordMetric('orders.success', 1, { total });
 
-  return NextResponse.json(
-    {
-      data: orders,
-      total,
-      hasMore
-    },
-    { status: 200 }
-  );
+  return jsonOk({ data: orders, total, hasMore });
 });
+import { jsonOk, jsonError, zodValidationError } from '@/lib/api/http';

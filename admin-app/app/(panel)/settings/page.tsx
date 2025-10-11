@@ -11,6 +11,10 @@ import {
   templatesQueryKeys,
   type TemplatesQueryParams,
 } from "@/lib/queries/templates";
+import {
+  fetchAdminAlertPreferences,
+  alertPreferencesQueryKeys,
+} from "@/lib/queries/alertPreferences";
 
 const DEFAULT_PREVIEW_PARAMS: SettingsPreviewParams = { limit: 100 };
 const DEFAULT_TEMPLATE_PARAMS: TemplatesQueryParams = { limit: 100 };
@@ -22,6 +26,10 @@ export default async function SettingsPage() {
     queryClient.prefetchQuery({
       queryKey: settingsQueryKeys.preview(DEFAULT_PREVIEW_PARAMS),
       queryFn: () => fetchSettingsPreview(DEFAULT_PREVIEW_PARAMS),
+    }),
+    queryClient.prefetchQuery({
+      queryKey: alertPreferencesQueryKeys.all(),
+      queryFn: fetchAdminAlertPreferences,
     }),
     queryClient.prefetchQuery({
       queryKey: templatesQueryKeys.list(DEFAULT_TEMPLATE_PARAMS),

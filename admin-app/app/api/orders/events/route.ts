@@ -12,13 +12,7 @@ export const GET = createHandler('admin_api.order_events.list', async (request, 
   const adminClient = getSupabaseAdminClient();
   if (!adminClient) {
     recordMetric('order_events.supabase_unavailable', 1);
-    return NextResponse.json(
-      {
-        error: "supabase_unavailable",
-        message: "Supabase credentials missing. Unable to fetch order events.",
-      },
-      { status: 503 },
-    );
+    return jsonError({ error: 'supabase_unavailable', message: 'Supabase credentials missing. Unable to fetch order events.' }, 503);
   }
 
   let query: z.infer<typeof querySchema>;
@@ -26,13 +20,7 @@ export const GET = createHandler('admin_api.order_events.list', async (request, 
     query = querySchema.parse(Object.fromEntries(new URL(request.url).searchParams));
   } catch (error) {
     recordMetric('order_events.invalid_query', 1);
-    return NextResponse.json(
-      {
-        error: "invalid_query",
-        message: error instanceof z.ZodError ? error.flatten() : "Invalid query parameters.",
-      },
-      { status: 400 },
-    );
+    return zodValidationError(error);
   }
 
   const limit = query.limit ?? 10;
@@ -51,10 +39,7 @@ export const GET = createHandler('admin_api.order_events.list', async (request, 
       message: error.message,
     });
     recordMetric('order_events.supabase_error', 1, { message: error.message });
-    return NextResponse.json(
-      { error: "order_events_fetch_failed", message: "Unable to load order events." },
-      { status: 500 },
-    );
+    return jsonError({ error: 'order_events_fetch_failed', message: 'Unable to load order events.' }, 500);
   }
 
   const rows = (data ?? []).map((row) => ({
@@ -68,5 +53,6 @@ export const GET = createHandler('admin_api.order_events.list', async (request, 
   }));
 
   recordMetric('order_events.success', 1, { count: rows.length });
-  return NextResponse.json({ data: rows }, { status: 200 });
+  return jsonOk({ data: rows });
 });
+import { jsonOk, jsonError, zodValidationError } from "@/lib/api/http";

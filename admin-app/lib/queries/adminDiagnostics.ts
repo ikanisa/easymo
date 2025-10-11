@@ -1,5 +1,5 @@
 import { QueryKey, useQuery, UseQueryOptions } from "@tanstack/react-query";
-import { getAdminDiagnostics } from "@/lib/data-provider";
+import { getAdminDiagnostics } from "@/lib/admin/diagnostics-service";
 import type { AdminDiagnosticsSnapshot } from "@/lib/schemas";
 
 const ADMIN_DIAGNOSTICS_KEY: QueryKey = ["admin", "diagnostics", "snapshot"];

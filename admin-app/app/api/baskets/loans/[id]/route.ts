@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { jsonOk, jsonError, zodValidationError } from '@/lib/api/http';
 import { z } from 'zod';
 import { getSupabaseAdminClient } from '@/lib/server/supabase-admin';
 import { recordAudit } from '@/lib/server/audit';
@@ -59,54 +59,30 @@ export async function PATCH(
 ) {
   const adminClient = getSupabaseAdminClient();
   if (!adminClient) {
-    return NextResponse.json(
-      {
-        error: 'supabase_unavailable',
-        message: 'Supabase credentials missing. Unable to update loan.',
-      },
-      { status: 503 },
-    );
+    return jsonError({ error: 'supabase_unavailable', message: 'Supabase credentials missing. Unable to update loan.' }, 503);
   }
 
   const loanId = params.id;
   if (!loanId) {
-    return NextResponse.json(
-      { error: 'missing_id', message: 'Loan id is required.' },
-      { status: 400 },
-    );
+    return jsonError({ error: 'missing_id', message: 'Loan id is required.' }, 400);
   }
 
   let payload: UpdatePayload;
   try {
     payload = updateSchema.parse(await request.json());
   } catch (error) {
-    return NextResponse.json(
-      {
-        error: 'invalid_payload',
-        message: error instanceof z.ZodError ? error.flatten() : 'Invalid JSON payload.',
-      },
-      { status: 400 },
-    );
+    return zodValidationError(error);
   }
 
   if (!Object.keys(payload).length) {
-    return NextResponse.json(
-      { error: 'empty_update', message: 'Provide at least one field to update.' },
-      { status: 400 },
-    );
+    return jsonError({ error: 'empty_update', message: 'Provide at least one field to update.' }, 400);
   }
 
   let actorId: string;
   try {
     actorId = requireActorId();
   } catch (error) {
-    return NextResponse.json(
-      {
-        error: 'unauthorized',
-        message: error instanceof Error ? error.message : 'Unauthorized',
-      },
-      { status: 401 },
-    );
+    return jsonError({ error: 'unauthorized', message: error instanceof Error ? error.message : 'Unauthorized' }, 401);
   }
 
   const updatePayload = buildLoanUpdate(payload, actorId);
@@ -127,13 +103,7 @@ export async function PATCH(
         message: error?.message ?? 'Unknown error',
         details: { loanId },
       });
-      return NextResponse.json(
-        {
-          error: 'loan_update_failed',
-          message: error?.message ?? 'Unable to update loan.',
-        },
-        { status: error?.code === 'PGRST116' ? 404 : 500 },
-      );
+      return jsonError({ error: 'loan_update_failed', message: error?.message ?? 'Unable to update loan.' }, error?.code === 'PGRST116' ? 404 : 500);
     }
 
     await recordAudit({
@@ -144,17 +114,11 @@ export async function PATCH(
       diff: updatePayload,
     });
 
-    return NextResponse.json({ success: true, status: data.status });
+    return jsonOk({ success: true, status: data.status });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error ?? 'unknown_error');
     if (message.includes('BKT_LTV_EXCEEDED')) {
-      return NextResponse.json(
-        {
-          error: 'ltv_enforced',
-          message: 'Loan collateral coverage below required threshold.',
-        },
-        { status: 409 },
-      );
+      return jsonError({ error: 'ltv_enforced', message: 'Loan collateral coverage below required threshold.' }, 409);
     }
     logStructured({
       event: 'sacco_loan_update_exception',
@@ -163,12 +127,6 @@ export async function PATCH(
       message,
       details: { loanId },
     });
-    return NextResponse.json(
-      {
-        error: 'loan_update_failed',
-        message,
-      },
-      { status: 500 },
-    );
+    return jsonError({ error: 'loan_update_failed', message }, 500);
   }
 }

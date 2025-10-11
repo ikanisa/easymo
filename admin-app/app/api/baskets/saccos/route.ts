@@ -1,9 +1,9 @@
-import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getSupabaseAdminClient } from '@/lib/server/supabase-admin';
 import { logStructured } from '@/lib/server/logger';
 import { recordAudit } from '@/lib/server/audit';
 import { requireActorId } from '@/lib/server/auth';
+import { jsonOk, jsonError, zodValidationError } from '@/lib/api/http';
 
 const listQuerySchema = z.object({
   status: z.string().optional(),
@@ -25,26 +25,14 @@ const createSchema = z.object({
 export async function GET(request: Request) {
   const adminClient = getSupabaseAdminClient();
   if (!adminClient) {
-    return NextResponse.json(
-      {
-        error: 'supabase_unavailable',
-        message: 'Supabase credentials missing. Unable to fetch SACCO branches.',
-      },
-      { status: 503 },
-    );
+    return jsonError({ error: 'supabase_unavailable', message: 'Supabase credentials missing. Unable to fetch SACCO branches.' }, 503);
   }
 
   let query: z.infer<typeof listQuerySchema>;
   try {
     query = listQuerySchema.parse(Object.fromEntries(new URL(request.url).searchParams));
   } catch (error) {
-    return NextResponse.json(
-      {
-        error: 'invalid_query',
-        message: error instanceof z.ZodError ? error.flatten() : 'Invalid query parameters.',
-      },
-      { status: 400 },
-    );
+    return zodValidationError(error);
   }
 
   const offset = query.offset ?? 0;
@@ -75,75 +63,48 @@ export async function GET(request: Request) {
       status: 'error',
       message: error.message,
     });
-    return NextResponse.json(
-      {
-        error: 'saccos_fetch_failed',
-        message: 'Unable to load SACCO branches.',
-      },
-      { status: 500 },
-    );
+    return jsonError({ error: 'saccos_fetch_failed', message: 'Unable to load SACCO branches.' }, 500);
   }
 
   const rows = data ?? [];
   const total = count ?? rows.length;
   const hasMore = offset + rows.length < total;
 
-  return NextResponse.json(
-    {
-      data: rows.map((row) => ({
-        id: row.id,
-        name: row.name,
-        branchCode: row.branch_code,
-        umurengeName: row.umurenge_name,
-        district: row.district,
-        contactPhone: row.contact_phone,
-        status: row.status,
-        createdAt: row.created_at,
-        ltvMinRatio: Number(row.ltv_min_ratio ?? 1),
-      })),
-      total,
-      hasMore,
-    },
-    { status: 200 },
-  );
+  return jsonOk({
+    data: rows.map((row) => ({
+      id: row.id,
+      name: row.name,
+      branchCode: row.branch_code,
+      umurengeName: row.umurenge_name,
+      district: row.district,
+      contactPhone: row.contact_phone,
+      status: row.status,
+      createdAt: row.created_at,
+      ltvMinRatio: Number(row.ltv_min_ratio ?? 1),
+    })),
+    total,
+    hasMore,
+  });
 }
 
 export async function POST(request: Request) {
   const adminClient = getSupabaseAdminClient();
   if (!adminClient) {
-    return NextResponse.json(
-      {
-        error: 'supabase_unavailable',
-        message: 'Supabase credentials missing. Unable to create SACCO.',
-      },
-      { status: 503 },
-    );
+    return jsonError({ error: 'supabase_unavailable', message: 'Supabase credentials missing. Unable to create SACCO.' }, 503);
   }
 
   let payload: z.infer<typeof createSchema>;
   try {
     payload = createSchema.parse(await request.json());
   } catch (error) {
-    return NextResponse.json(
-      {
-        error: 'invalid_payload',
-        message: error instanceof z.ZodError ? error.flatten() : 'Invalid JSON payload.',
-      },
-      { status: 400 },
-    );
+    return zodValidationError(error);
   }
 
   let actorId: string;
   try {
     actorId = requireActorId();
   } catch (error) {
-    return NextResponse.json(
-      {
-        error: 'unauthorized',
-        message: error instanceof Error ? error.message : 'Unauthorized',
-      },
-      { status: 401 },
-    );
+    return jsonError({ error: 'unauthorized', message: error instanceof Error ? error.message : 'Unauthorized' }, 401);
   }
 
   const { data, error } = await adminClient
@@ -167,13 +128,7 @@ export async function POST(request: Request) {
       status: 'error',
       message: error?.message ?? 'Unknown error',
     });
-    return NextResponse.json(
-      {
-        error: 'saccos_create_failed',
-        message: 'Unable to create SACCO.',
-      },
-      { status: 500 },
-    );
+    return jsonError({ error: 'saccos_create_failed', message: 'Unable to create SACCO.' }, 500);
   }
 
   await recordAudit({
@@ -184,7 +139,7 @@ export async function POST(request: Request) {
     diff: data,
   });
 
-  return NextResponse.json({
+  return jsonOk({
     id: data.id,
     name: data.name,
     branchCode: data.branch_code,
@@ -194,5 +149,5 @@ export async function POST(request: Request) {
     status: data.status,
     createdAt: data.created_at,
     ltvMinRatio: Number(data.ltv_min_ratio ?? 1),
-  }, { status: 201 });
+  }, 201);
 }

@@ -1,8 +1,9 @@
-import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getSupabaseAdminClient } from '@/lib/server/supabase-admin';
 import { logStructured } from '@/lib/server/logger';
 import { mockAuditEvents } from '@/lib/mock-data';
+import { jsonOk, jsonError, zodValidationError } from '@/lib/api/http';
+import { createHandler } from '@/app/api/withObservability';
 
 const querySchema = z.object({
   limit: z.coerce.number().int().min(1).max(200).optional(),
@@ -23,37 +24,31 @@ function mockResponse(message: string, filters?: z.infer<typeof querySchema>) {
     return actorMatch && targetMatch;
   });
 
-  return NextResponse.json(
-    {
-      audit: filtered.map((entry) => ({
-        id: entry.id,
-        actor: entry.actor,
-        action: entry.action,
-        target_table: entry.targetTable,
-        target_id: entry.targetId,
-        created_at: entry.createdAt,
-        diff: entry.summary ? { summary: entry.summary } : null
-      })),
-      events: [],
-      integration: {
-        status: 'degraded' as const,
-        target: 'logs',
-        message
-      }
-    },
-    { status: 200 }
-  );
+  return jsonOk({
+    audit: filtered.map((entry) => ({
+      id: entry.id,
+      actor: entry.actor,
+      action: entry.action,
+      target_table: entry.targetTable,
+      target_id: entry.targetId,
+      created_at: entry.createdAt,
+      diff: entry.summary ? { summary: entry.summary } : null
+    })),
+    events: [],
+    integration: {
+      status: 'degraded' as const,
+      target: 'logs',
+      message
+    }
+  });
 }
 
-export async function GET(request: Request) {
+export const GET = createHandler('admin_api.logs.list', async (request: Request) => {
   let query: z.infer<typeof querySchema>;
   try {
     query = querySchema.parse(Object.fromEntries(new URL(request.url).searchParams));
   } catch (error) {
-    return NextResponse.json(
-      { error: 'invalid_query', message: error instanceof z.ZodError ? error.flatten() : 'Invalid query parameters.' },
-      { status: 400 }
-    );
+    return zodValidationError(error);
   }
 
   const adminClient = getSupabaseAdminClient();
@@ -136,7 +131,7 @@ export async function GET(request: Request) {
       };
     }
 
-    return NextResponse.json(responseBody, { status: 200 });
+    return jsonOk(responseBody);
   } catch (error) {
     logStructured({
       event: 'logs_fetch_failed',
@@ -146,4 +141,4 @@ export async function GET(request: Request) {
     });
     return mockResponse('Supabase logs query failed. Showing mock audit log.', query);
   }
-}
+});

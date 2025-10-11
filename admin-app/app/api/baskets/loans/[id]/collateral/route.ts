@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { jsonOk, jsonError, zodValidationError } from '@/lib/api/http';
 import { z } from 'zod';
 import { getSupabaseAdminClient } from '@/lib/server/supabase-admin';
 import { logStructured } from '@/lib/server/logger';
@@ -19,34 +19,19 @@ export async function POST(
 ) {
   const adminClient = getSupabaseAdminClient();
   if (!adminClient) {
-    return NextResponse.json(
-      {
-        error: 'supabase_unavailable',
-        message: 'Supabase credentials missing. Unable to add collateral.',
-      },
-      { status: 503 },
-    );
+    return jsonError({ error: 'supabase_unavailable', message: 'Supabase credentials missing. Unable to add collateral.' }, 503);
   }
 
   const loanId = params.id;
   if (!loanId) {
-    return NextResponse.json(
-      { error: 'missing_id', message: 'Loan id is required.' },
-      { status: 400 },
-    );
+    return jsonError({ error: 'missing_id', message: 'Loan id is required.' }, 400);
   }
 
   let payload: z.infer<typeof createSchema>;
   try {
     payload = createSchema.parse(await request.json());
   } catch (error) {
-    return NextResponse.json(
-      {
-        error: 'invalid_payload',
-        message: error instanceof z.ZodError ? error.flatten() : 'Invalid JSON payload.',
-      },
-      { status: 400 },
-    );
+    return zodValidationError(error);
   }
 
   const { data: loanExists, error: loanError } = await adminClient
@@ -63,17 +48,11 @@ export async function POST(
       message: loanError.message,
       details: { loanId },
     });
-    return NextResponse.json(
-      { error: 'loan_lookup_failed', message: 'Unable to find loan.' },
-      { status: 500 },
-    );
+    return jsonError({ error: 'loan_lookup_failed', message: 'Unable to find loan.' }, 500);
   }
 
   if (!loanExists) {
-    return NextResponse.json(
-      { error: 'not_found', message: 'Loan not found.' },
-      { status: 404 },
-    );
+    return jsonError({ error: 'not_found', message: 'Loan not found.' }, 404);
   }
 
   const insertPayload: Record<string, unknown> = {
@@ -89,13 +68,7 @@ export async function POST(
   try {
     actorId = requireActorId();
   } catch (error) {
-    return NextResponse.json(
-      {
-        error: 'unauthorized',
-        message: error instanceof Error ? error.message : 'Unauthorized',
-      },
-      { status: 401 },
-    );
+    return jsonError({ error: 'unauthorized', message: error instanceof Error ? error.message : 'Unauthorized' }, 401);
   }
 
   const { data, error } = await adminClient
@@ -112,13 +85,7 @@ export async function POST(
       message: error?.message ?? 'Unknown error',
       details: { loanId },
     });
-    return NextResponse.json(
-      {
-        error: 'collateral_insert_failed',
-        message: error?.message ?? 'Unable to add collateral.',
-      },
-      { status: 500 },
-    );
+    return jsonError({ error: 'collateral_insert_failed', message: error?.message ?? 'Unable to add collateral.' }, 500);
   }
 
   await recordAudit({
@@ -129,7 +96,7 @@ export async function POST(
     diff: insertPayload,
   });
 
-  return NextResponse.json({
+  return jsonOk({
     id: data.id,
     source: data.source,
     amount: Number(data.amount_pledged ?? 0),

@@ -1,11 +1,11 @@
 import { useMutation } from "@tanstack/react-query";
+import type { AssistantRun } from "@/lib/schemas";
 import {
   logAssistantDecision,
   requestAssistantSuggestion,
   type AssistantDecisionPayload,
   type AssistantRequest,
-} from "@/lib/data-provider";
-import type { AssistantRun } from "@/lib/schemas";
+} from "@/lib/assistant/assistant-service";
 
 export function useAssistantSuggestMutation() {
   return useMutation<AssistantRun, unknown, AssistantRequest>({

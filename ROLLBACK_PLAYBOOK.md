@@ -18,6 +18,13 @@ forbidden paths.
 4. **Freeze Station Redeems (if required)**
    - Toggle feature flag in settings `station_redeem_enabled = false` (additive
      config).
+5. **Suspend OCR Queue Processing**
+   - Pause the Supabase scheduled job invoking `insurance-ocr` or set
+     `OCR_QUEUE_SCAN_LIMIT=0` via environment override to stop further document
+     ingestion.
+6. **Fallback Alert Preferences to Mocks**
+   - Set `NEXT_PUBLIC_USE_MOCKS=true` (and redeploy Admin app) so `/api/settings/alerts`
+     serves degraded mock data while Supabase issues are resolved.
 
 ## Data Integrity Safeguards
 
@@ -36,8 +43,10 @@ forbidden paths.
 1. Identify root cause using incident runbooks.
 2. Restore settings (throttle, quiet hours) to previous values.
 3. Re-enable `station_redeem_enabled` and dispatcher once healthy.
-4. Run smoke subset: vouchers preview/send, campaign start, station redeem.
-5. Communicate recovery confirmation and document in incident tracker.
+4. Resume `insurance-ocr` schedule and return `NEXT_PUBLIC_USE_MOCKS` to its
+   previous value after verifying Supabase connectivity.
+5. Run smoke subset: vouchers preview/send, campaign start, station redeem.
+6. Communicate recovery confirmation and document in incident tracker.
 
 ## Follow-Up
 

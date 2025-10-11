@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { getSupabaseAdminClient } from '@/lib/server/supabase-admin';
 import { logStructured } from '@/lib/server/logger';
 import { recordAudit } from '@/lib/server/audit';
+import { createHandler } from '@/app/api/withObservability';
 
 const requestSchema = z.object({
   stationId: z.string().uuid(),
@@ -16,29 +17,17 @@ function generateToken() {
   return `QR-${randomBytes(4).toString('hex').toUpperCase()}`;
 }
 
-export async function POST(request: Request) {
+export const POST = createHandler('admin_api.qr.generate', async (request: Request) => {
   const adminClient = getSupabaseAdminClient();
   if (!adminClient) {
-    return NextResponse.json(
-      {
-        error: 'supabase_unavailable',
-        message: 'Supabase credentials missing. Unable to generate QR tokens.'
-      },
-      { status: 503 }
-    );
+    return jsonError({ error: 'supabase_unavailable', message: 'Supabase credentials missing. Unable to generate QR tokens.' }, 503);
   }
 
   let payload: z.infer<typeof requestSchema>;
   try {
     payload = requestSchema.parse(await request.json());
   } catch (error) {
-    return NextResponse.json(
-      {
-        error: 'invalid_payload',
-        message: error instanceof z.ZodError ? error.flatten() : 'Invalid JSON payload.'
-      },
-      { status: 400 }
-    );
+    return zodValidationError(error);
   }
 
   // Verify station exists
@@ -49,10 +38,7 @@ export async function POST(request: Request) {
     .maybeSingle();
 
   if (stationError || !station) {
-    return NextResponse.json(
-      { error: 'station_not_found', message: 'Station not found.' },
-      { status: 404 }
-    );
+    return jsonError({ error: 'station_not_found', message: 'Station not found.' }, 404);
   }
 
   const rows = [] as {
@@ -96,10 +82,7 @@ export async function POST(request: Request) {
       message: error?.message ?? 'Insert failed',
       details: { stationId: payload.stationId }
     });
-    return NextResponse.json(
-      { error: 'qr_generate_failed', message: 'Unable to generate QR tokens.' },
-      { status: 500 }
-    );
+    return jsonError({ error: 'qr_generate_failed', message: 'Unable to generate QR tokens.' }, 500);
   }
 
   for (const row of data) {
@@ -115,8 +98,18 @@ export async function POST(request: Request) {
     });
   }
 
+  let actor: string | null = null;
+  try {
+    actor = requireActorId();
+  } catch (err) {
+    if (err instanceof UnauthorizedError) {
+      return jsonError({ error: 'unauthorized', message: err.message }, 401);
+    }
+    throw err;
+  }
+
   await recordAudit({
-    actorId: headers().get('x-actor-id'),
+    actorId: actor,
     action: 'qr_generate',
     targetTable: 'qr_tokens',
     targetId: station.id,
@@ -133,14 +126,10 @@ export async function POST(request: Request) {
     }
   });
 
-  return NextResponse.json(
-    {
-      tokens: responseTokens,
-      integration: {
-        status: "ok" as const,
-        target: "qr_generate"
-      }
-    },
-    { status: 201 }
-  );
-}
+  return jsonOk({
+    tokens: responseTokens,
+    integration: { status: 'ok' as const, target: 'qr_generate' }
+  }, 201);
+});
+import { jsonOk, jsonError, zodValidationError } from '@/lib/api/http';
+import { requireActorId, UnauthorizedError } from '@/lib/server/auth';

@@ -3,6 +3,9 @@ import { z } from 'zod';
 import { getSupabaseAdminClient } from '@/lib/server/supabase-admin';
 import { logStructured } from '@/lib/server/logger';
 import { recordAudit } from '@/lib/server/audit';
+import { jsonOk, jsonError, zodValidationError } from '@/lib/api/http';
+import { requireActorId, UnauthorizedError } from '@/lib/server/auth';
+import { createHandler } from '@/app/api/withObservability';
 
 const getSchema = z.object({
   status: z.string().optional(),
@@ -19,29 +22,17 @@ const upsertSchema = z.object({
   metadata: z.record(z.any()).optional()
 });
 
-export async function GET(request: Request) {
+export const GET = createHandler('admin_api.campaigns.list', async (request: Request) => {
   const adminClient = getSupabaseAdminClient();
   if (!adminClient) {
-    return NextResponse.json(
-      {
-        error: 'supabase_unavailable',
-        message: 'Supabase credentials missing. Unable to fetch campaigns.'
-      },
-      { status: 503 }
-    );
+    return jsonError({ error: 'supabase_unavailable', message: 'Supabase credentials missing. Unable to fetch campaigns.' }, 503);
   }
 
   let query: z.infer<typeof getSchema>;
   try {
     query = getSchema.parse(Object.fromEntries(new URL(request.url).searchParams));
   } catch (error) {
-    return NextResponse.json(
-      {
-        error: 'invalid_query',
-        message: error instanceof z.ZodError ? error.flatten() : 'Invalid query parameters.'
-      },
-      { status: 400 }
-    );
+    return zodValidationError(error);
   }
 
   const offset = query.offset ?? 0;
@@ -65,62 +56,52 @@ export async function GET(request: Request) {
       status: 'error',
       message: error.message
     });
-    return NextResponse.json(
-      { error: 'campaign_fetch_failed', message: 'Unable to load campaigns.' },
-      { status: 500 }
-    );
+    return jsonError({ error: 'campaign_fetch_failed', message: 'Unable to load campaigns.' }, 500);
   }
 
   const rows = data ?? [];
   const total = count ?? rows.length;
   const hasMore = offset + rows.length < total;
 
-  return NextResponse.json(
-    {
-      data: rows.map((row) => ({
-        id: row.id,
-        name: row.name,
-        type: row.type,
-        status: row.status,
-        templateId: row.template_id,
-        createdAt: row.created_at,
-        startedAt: row.started_at,
-        finishedAt: row.finished_at,
-        metadata: row.metadata ?? {}
-      })),
-      total,
-      hasMore
-    },
-    { status: 200 }
-  );
-}
+  return jsonOk({
+    data: rows.map((row) => ({
+      id: row.id,
+      name: row.name,
+      type: row.type,
+      status: row.status,
+      templateId: row.template_id,
+      createdAt: row.created_at,
+      startedAt: row.started_at,
+      finishedAt: row.finished_at,
+      metadata: row.metadata ?? {}
+    })),
+    total,
+    hasMore
+  });
+});
 
-export async function POST(request: Request) {
+export const POST = createHandler('admin_api.campaigns.upsert', async (request: Request) => {
   const adminClient = getSupabaseAdminClient();
   if (!adminClient) {
-    return NextResponse.json(
-      {
-        error: 'supabase_unavailable',
-        message: 'Supabase credentials missing. Unable to persist campaigns.'
-      },
-      { status: 503 }
-    );
+    return jsonError({ error: 'supabase_unavailable', message: 'Supabase credentials missing. Unable to persist campaigns.' }, 503);
   }
 
   let payload: z.infer<typeof upsertSchema>;
   try {
     payload = upsertSchema.parse(await request.json());
   } catch (error) {
-    return NextResponse.json(
-      {
-        error: 'invalid_payload',
-        message: error instanceof z.ZodError ? error.flatten() : 'Invalid JSON payload.'
-      },
-      { status: 400 }
-    );
+    return zodValidationError(error);
   }
 
-  const actorId = request.headers.get('x-actor-id');
+  let actorId: string;
+  try {
+    actorId = requireActorId();
+  } catch (err) {
+    if (err instanceof UnauthorizedError) {
+      return jsonError({ error: 'unauthorized', message: err.message }, 401);
+    }
+    throw err;
+  }
   const record = {
     id: payload.id,
     name: payload.name,
@@ -143,13 +124,7 @@ export async function POST(request: Request) {
       status: 'error',
       message: error?.message ?? 'Unknown error'
     });
-    return NextResponse.json(
-      {
-        error: 'campaign_upsert_failed',
-        message: 'Unable to save campaign.'
-      },
-      { status: 500 }
-    );
+    return jsonError({ error: 'campaign_upsert_failed', message: 'Unable to save campaign.' }, 500);
   }
 
   await recordAudit({
@@ -167,20 +142,17 @@ export async function POST(request: Request) {
     details: { campaignId: data.id, status: data.status }
   });
 
-  return NextResponse.json(
-    {
-      data: {
-        id: data.id,
-        name: data.name,
-        type: data.type,
-        status: data.status,
-        templateId: data.template_id,
-        createdAt: data.created_at,
-        startedAt: data.started_at,
-        finishedAt: data.finished_at,
-        metadata: data.metadata ?? {}
-      }
-    },
-    { status: 200 }
-  );
-}
+  return jsonOk({
+    data: {
+      id: data.id,
+      name: data.name,
+      type: data.type,
+      status: data.status,
+      templateId: data.template_id,
+      createdAt: data.created_at,
+      startedAt: data.started_at,
+      finishedAt: data.finished_at,
+      metadata: data.metadata ?? {}
+    }
+  });
+});

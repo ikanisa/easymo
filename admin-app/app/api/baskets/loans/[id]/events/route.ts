@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { jsonOk, jsonError } from '@/lib/api/http';
 import { getSupabaseAdminClient } from '@/lib/server/supabase-admin';
 import { logStructured } from '@/lib/server/logger';
 
@@ -8,21 +8,12 @@ export async function GET(
 ) {
   const adminClient = getSupabaseAdminClient();
   if (!adminClient) {
-    return NextResponse.json(
-      {
-        error: 'supabase_unavailable',
-        message: 'Supabase credentials missing. Unable to fetch loan events.',
-      },
-      { status: 503 },
-    );
+    return jsonError({ error: 'supabase_unavailable', message: 'Supabase credentials missing. Unable to fetch loan events.' }, 503);
   }
 
   const loanId = params.id;
   if (!loanId) {
-    return NextResponse.json(
-      { error: 'missing_id', message: 'Loan id is required.' },
-      { status: 400 },
-    );
+    return jsonError({ error: 'missing_id', message: 'Loan id is required.' }, 400);
   }
 
   const { data, error } = await adminClient
@@ -39,13 +30,7 @@ export async function GET(
       message: error.message,
       details: { loanId },
     });
-    return NextResponse.json(
-      {
-        error: 'loan_events_fetch_failed',
-        message: 'Unable to load loan timeline.',
-      },
-      { status: 500 },
-    );
+    return jsonError({ error: 'loan_events_fetch_failed', message: 'Unable to load loan timeline.' }, 500);
   }
 
   const events = (data ?? []).map((row) => ({
@@ -59,6 +44,5 @@ export async function GET(
     createdAt: row.created_at,
   }));
 
-  return NextResponse.json({ data: events });
+  return jsonOk({ data: events });
 }
-

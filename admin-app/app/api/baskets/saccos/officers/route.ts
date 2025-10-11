@@ -1,9 +1,10 @@
 import { headers } from 'next/headers';
-import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getSupabaseAdminClient } from '@/lib/server/supabase-admin';
 import { logStructured } from '@/lib/server/logger';
 import { recordAudit } from '@/lib/server/audit';
+import { jsonOk, jsonError, zodValidationError } from '@/lib/api/http';
+import { requireActorId, UnauthorizedError } from '@/lib/server/auth';
 
 const listQuerySchema = z.object({
   saccoId: z.string().uuid().optional(),
@@ -20,26 +21,17 @@ const createSchema = z.object({
 export async function GET(request: Request) {
   const adminClient = getSupabaseAdminClient();
   if (!adminClient) {
-    return NextResponse.json(
-      {
-        error: 'supabase_unavailable',
-        message: 'Supabase credentials missing. Unable to fetch officers.',
-      },
-      { status: 503 },
-    );
+    return jsonError({
+      error: 'supabase_unavailable',
+      message: 'Supabase credentials missing. Unable to fetch officers.',
+    }, 503);
   }
 
   let query: z.infer<typeof listQuerySchema>;
   try {
     query = listQuerySchema.parse(Object.fromEntries(new URL(request.url).searchParams));
   } catch (error) {
-    return NextResponse.json(
-      {
-        error: 'invalid_query',
-        message: error instanceof z.ZodError ? error.flatten() : 'Invalid query parameters.',
-      },
-      { status: 400 },
-    );
+    return zodValidationError(error);
   }
 
   const offset = query.offset ?? 0;
@@ -70,71 +62,61 @@ export async function GET(request: Request) {
       status: 'error',
       message: error.message,
     });
-    return NextResponse.json(
-      {
-        error: 'sacco_officers_fetch_failed',
-        message: 'Unable to load SACCO officers.',
-      },
-      { status: 500 },
-    );
+    return jsonError({ error: 'sacco_officers_fetch_failed', message: 'Unable to load SACCO officers.' }, 500);
   }
 
   const rows = data ?? [];
   const total = count ?? rows.length;
   const hasMore = offset + rows.length < total;
 
-  return NextResponse.json(
-    {
-      data: rows.map((row) => ({
-        id: row.id,
-        saccoId: row.sacco_id,
-        userId: row.user_id,
-        role: row.role,
-        createdAt: row.created_at,
-        sacco: row.saccos ? {
-          id: row.saccos.id,
-          name: row.saccos.name,
-          branchCode: row.saccos.branch_code,
-        } : null,
-        profile: row.profiles ? {
-          userId: row.profiles.user_id,
-          displayName: row.profiles.display_name ?? null,
-          msisdn: row.profiles.msisdn ?? null,
-        } : null,
-      })),
-      total,
-      hasMore,
-    },
-    { status: 200 },
-  );
+  return jsonOk({
+    data: rows.map((row) => ({
+      id: row.id,
+      saccoId: row.sacco_id,
+      userId: row.user_id,
+      role: row.role,
+      createdAt: row.created_at,
+      sacco: row.saccos ? {
+        id: row.saccos.id,
+        name: row.saccos.name,
+        branchCode: row.saccos.branch_code,
+      } : null,
+      profile: row.profiles ? {
+        userId: row.profiles.user_id,
+        displayName: row.profiles.display_name ?? null,
+        msisdn: row.profiles.msisdn ?? null,
+      } : null,
+    })),
+    total,
+    hasMore,
+  });
 }
 
 export async function POST(request: Request) {
   const adminClient = getSupabaseAdminClient();
   if (!adminClient) {
-    return NextResponse.json(
-      {
-        error: 'supabase_unavailable',
-        message: 'Supabase credentials missing. Unable to create officer.',
-      },
-      { status: 503 },
-    );
+    return jsonError({
+      error: 'supabase_unavailable',
+      message: 'Supabase credentials missing. Unable to create officer.',
+    }, 503);
   }
 
   let payload: z.infer<typeof createSchema>;
   try {
     payload = createSchema.parse(await request.json());
   } catch (error) {
-    return NextResponse.json(
-      {
-        error: 'invalid_payload',
-        message: error instanceof z.ZodError ? error.flatten() : 'Invalid JSON payload.',
-      },
-      { status: 400 },
-    );
+    return zodValidationError(error);
   }
 
-  const actorId = headers().get('x-actor-id');
+  let actorId: string;
+  try {
+    actorId = requireActorId();
+  } catch (err) {
+    if (err instanceof UnauthorizedError) {
+      return jsonError({ error: 'unauthorized', message: err.message }, 401);
+    }
+    throw err;
+  }
 
   const { data, error } = await adminClient
     .from('sacco_officers')
@@ -157,13 +139,7 @@ export async function POST(request: Request) {
       status: 'error',
       message: error?.message ?? 'Unknown error',
     });
-    return NextResponse.json(
-      {
-        error: 'sacco_officers_create_failed',
-        message: 'Unable to create SACCO officer.',
-      },
-      { status: 500 },
-    );
+    return jsonError({ error: 'sacco_officers_create_failed', message: 'Unable to create SACCO officer.' }, 500);
   }
 
   await recordAudit({
@@ -178,7 +154,7 @@ export async function POST(request: Request) {
     },
   });
 
-  return NextResponse.json({
+  return jsonOk({
     id: data.id,
     saccoId: data.sacco_id,
     userId: data.user_id,
@@ -194,5 +170,5 @@ export async function POST(request: Request) {
       displayName: data.profiles.display_name ?? null,
       msisdn: data.profiles.msisdn ?? null,
     } : null,
-  }, { status: 201 });
+  }, 201);
 }

@@ -1,9 +1,9 @@
-import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getSupabaseAdminClient } from '@/lib/server/supabase-admin';
 import { logStructured } from '@/lib/server/logger';
 import { mockBars } from '@/lib/mock-data';
 import { createHandler } from '@/app/api/withObservability';
+import { jsonOk, zodValidationError } from '@/lib/api/http';
 
 const querySchema = z.object({
   status: z.enum(['active', 'inactive']).optional(),
@@ -34,17 +34,14 @@ function selectMock(params: z.infer<typeof querySchema>) {
 
 function fromMocks(params: z.infer<typeof querySchema>, message: string) {
   const result = selectMock(params);
-  return NextResponse.json(
-    {
-      ...result,
-      integration: {
-        status: 'degraded' as const,
-        target: 'bars',
-        message
-      }
+  return jsonOk({
+    ...result,
+    integration: {
+      status: 'degraded' as const,
+      target: 'bars',
+      message,
     },
-    { status: 200 }
-  );
+  });
 }
 
 export const GET = createHandler('admin_api.bars.list', async (request, _context, { recordMetric }) => {
@@ -53,10 +50,7 @@ export const GET = createHandler('admin_api.bars.list', async (request, _context
     params = querySchema.parse(Object.fromEntries(new URL(request.url).searchParams));
   } catch (error) {
     recordMetric('bars.invalid_query', 1);
-    return NextResponse.json(
-      { error: 'invalid_query', message: error instanceof z.ZodError ? error.flatten() : 'Invalid query parameters.' },
-      { status: 400 }
-    );
+    return zodValidationError(error);
   }
 
   const adminClient = getSupabaseAdminClient();
@@ -123,7 +117,9 @@ export const GET = createHandler('admin_api.bars.list', async (request, _context
       createdAt: row.created_at ?? row.updated_at ?? new Date().toISOString(),
       momoCode: row.momo_code ?? null,
       serviceCharge: row.service_charge ?? null,
-      directChatEnabled: Boolean(row.bar_settings?.allow_direct_customer_chat),
+      directChatEnabled: Array.isArray((row as any).bar_settings)
+        ? Boolean((row as any).bar_settings[0]?.allow_direct_customer_chat)
+        : Boolean((row as any).bar_settings?.allow_direct_customer_chat),
       defaultPrepMinutes: row.default_prep_minutes ?? null,
       paymentInstructions: row.payment_instructions ?? null
     };
@@ -131,12 +127,5 @@ export const GET = createHandler('admin_api.bars.list', async (request, _context
 
   recordMetric('bars.success', 1, { total });
 
-  return NextResponse.json(
-    {
-      data: payload,
-      total,
-      hasMore
-    },
-    { status: 200 }
-  );
+  return jsonOk({ data: payload, total, hasMore });
 });

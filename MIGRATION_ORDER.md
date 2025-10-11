@@ -36,6 +36,21 @@ migrations.
 
 - Add SQL under `supabase/seed/fixtures/` referencing the above tables.
 
+13. **Insurance Media Queue Enhancements**
+
+- Apply `supabase/migrations/20251031151500_insurance_media_queue_enhancements.sql`
+  to backfill queue metadata (attempt counters, error tracking, signed URL index).
+
+14. **Admin Alert Preferences RLS**
+
+- Apply `supabase/migrations/20251031152000_admin_alert_prefs_rls.sql` to enforce
+  row-level security policies for global and per-admin alert subscriptions.
+
+15. **Wallet RLS Policies**
+
+- Apply `supabase/migrations/20251031152500_wallet_rls_policies.sql` to align
+  wallet domain tables with service-role and self-read access scopes.
+
 ## Dependencies & Constraints
 
 - Each migration must be reversible via `DROP TABLE` or

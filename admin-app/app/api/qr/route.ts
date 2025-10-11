@@ -15,13 +15,7 @@ export const GET = createHandler('admin_api.qr_tokens.list', async (request, _co
   const adminClient = getSupabaseAdminClient();
   if (!adminClient) {
     recordMetric('qr_tokens.supabase_unavailable', 1);
-    return NextResponse.json(
-      {
-        error: 'supabase_unavailable',
-        message: 'Supabase credentials missing. Unable to fetch QR tokens.'
-      },
-      { status: 503 }
-    );
+    return jsonError({ error: 'supabase_unavailable', message: 'Supabase credentials missing. Unable to fetch QR tokens.' }, 503);
   }
 
   let query: z.infer<typeof querySchema>;
@@ -29,10 +23,7 @@ export const GET = createHandler('admin_api.qr_tokens.list', async (request, _co
     query = querySchema.parse(Object.fromEntries(new URL(request.url).searchParams));
   } catch (error) {
     recordMetric('qr_tokens.invalid_query', 1);
-    return NextResponse.json(
-      { error: 'invalid_query', message: error instanceof z.ZodError ? error.flatten() : 'Invalid query parameters.' },
-      { status: 400 }
-    );
+    return zodValidationError(error);
   }
 
   const rangeStart = query.offset ?? 0;
@@ -60,16 +51,13 @@ export const GET = createHandler('admin_api.qr_tokens.list', async (request, _co
       message: error.message
     });
     recordMetric('qr_tokens.supabase_error', 1, { message: error.message });
-    return NextResponse.json(
-      { error: 'qr_tokens_fetch_failed', message: 'Unable to load QR tokens.' },
-      { status: 500 }
-    );
+    return jsonError({ error: 'qr_tokens_fetch_failed', message: 'Unable to load QR tokens.' }, 500);
   }
 
-  const entries = (data ?? []).map((row) => ({
+  const entries = (data ?? []).map((row: any) => ({
     id: row.id,
     stationId: row.station_id,
-    barName: row.station?.name ?? 'Unknown station',
+    barName: (row.station as any)?.name ?? 'Unknown station',
     tableLabel: row.table_label,
     token: row.token,
     printed: row.printed ?? false,
@@ -81,12 +69,6 @@ export const GET = createHandler('admin_api.qr_tokens.list', async (request, _co
   const hasMore = rangeStart + entries.length < total;
   recordMetric('qr_tokens.success', 1, { total });
 
-  return NextResponse.json(
-    {
-      data: entries,
-      total,
-      hasMore
-    },
-    { status: 200 }
-  );
+  return jsonOk({ data: entries, total, hasMore });
 });
+import { jsonOk, jsonError, zodValidationError } from '@/lib/api/http';

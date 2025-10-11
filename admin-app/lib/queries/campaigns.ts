@@ -1,12 +1,12 @@
 import { QueryKey, useQuery, UseQueryOptions } from "@tanstack/react-query";
-import { listCampaigns, type PaginatedResult } from "@/lib/data-provider";
 import type { Campaign } from "@/lib/schemas";
+import type { PaginatedResult } from "@/lib/shared/pagination";
+import { listCampaigns } from "@/lib/campaigns/campaigns-service";
+import type { Pagination } from "@/lib/shared/pagination";
 
-export type CampaignsQueryParams = {
+export type CampaignsQueryParams = Pagination & {
   status?: Campaign["status"];
   search?: string;
-  offset?: number;
-  limit?: number;
 };
 
 const campaignsKey = (params: CampaignsQueryParams) =>

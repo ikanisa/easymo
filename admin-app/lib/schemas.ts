@@ -206,6 +206,17 @@ export const settingEntrySchema = z.object({
   valuePreview: z.string(),
 });
 
+export const adminAlertPreferenceSchema = z.object({
+  key: z.string(),
+  label: z.string(),
+  description: z.string().optional(),
+  enabled: z.boolean(),
+  channels: z.array(z.string()).default([]),
+  severity: z.enum(["critical", "high", "medium", "low"]).default("high"),
+  updatedAt: z.string().datetime().nullable().optional(),
+  availableChannels: z.array(z.string()).optional(),
+});
+
 export const storageObjectSchema = z.object({
   id: z.string(),
   bucket: z.string(),
@@ -358,6 +369,7 @@ export type FlowMeta = z.infer<typeof flowMetaSchema>;
 export type NotificationOutbox = z.infer<typeof notificationSchema>;
 export type AuditEvent = z.infer<typeof auditEventSchema>;
 export type SettingEntry = z.infer<typeof settingEntrySchema>;
+export type AdminAlertPreference = z.infer<typeof adminAlertPreferenceSchema>;
 export type StorageObject = z.infer<typeof storageObjectSchema>;
 export type DashboardKpi = z.infer<typeof dashboardKpiSchema>;
 export type TimeseriesPoint = z.infer<typeof timeseriesPointSchema>;

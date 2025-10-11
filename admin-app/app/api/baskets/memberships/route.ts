@@ -1,7 +1,7 @@
-import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getSupabaseAdminClient } from '@/lib/server/supabase-admin';
 import { logStructured } from '@/lib/server/logger';
+import { jsonOk, jsonError, zodValidationError } from '@/lib/api/http';
 
 const listQuerySchema = z.object({
   status: z.string().optional(),
@@ -14,26 +14,14 @@ const listQuerySchema = z.object({
 export async function GET(request: Request) {
   const adminClient = getSupabaseAdminClient();
   if (!adminClient) {
-    return NextResponse.json(
-      {
-        error: 'supabase_unavailable',
-        message: 'Supabase credentials missing. Unable to fetch memberships.',
-      },
-      { status: 503 },
-    );
+    return jsonError({ error: 'supabase_unavailable', message: 'Supabase credentials missing. Unable to fetch memberships.' }, 503);
   }
 
   let query: z.infer<typeof listQuerySchema>;
   try {
     query = listQuerySchema.parse(Object.fromEntries(new URL(request.url).searchParams));
   } catch (error) {
-    return NextResponse.json(
-      {
-        error: 'invalid_query',
-        message: error instanceof z.ZodError ? error.flatten() : 'Invalid query parameters.',
-      },
-      { status: 400 },
-    );
+    return zodValidationError(error);
   }
 
   const offset = query.offset ?? 0;
@@ -73,23 +61,16 @@ export async function GET(request: Request) {
       status: 'error',
       message: error.message,
     });
-    return NextResponse.json(
-      {
-        error: 'ibimina_members_fetch_failed',
-        message: 'Unable to load memberships.',
-      },
-      { status: 500 },
-    );
+    return jsonError({ error: 'ibimina_members_fetch_failed', message: 'Unable to load memberships.' }, 500);
   }
 
   const rows = data ?? [];
   const total = count ?? rows.length;
   const hasMore = offset + rows.length < total;
 
-  return NextResponse.json(
-    {
-      data: rows.map((row) => ({
-        id: row.id,
+  return jsonOk({
+    data: rows.map((row) => ({
+      id: row.id,
         ikiminaId: row.ikimina_id,
         userId: row.user_id,
         status: row.status,
@@ -111,10 +92,8 @@ export async function GET(request: Request) {
           displayName: row.profiles.display_name ?? null,
           msisdn: row.profiles.msisdn ?? null,
         } : null,
-      })),
-      total,
-      hasMore,
-    },
-    { status: 200 },
-  );
+    })),
+    total,
+    hasMore,
+  });
 }

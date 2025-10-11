@@ -1,8 +1,9 @@
-import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getSupabaseAdminClient } from '@/lib/server/supabase-admin';
 import { logStructured } from '@/lib/server/logger';
 import { mockStorageObjects } from '@/lib/mock-data';
+import { jsonOk, jsonError, zodValidationError } from '@/lib/api/http';
+import { createHandler } from '@/app/api/withObservability';
 
 const allowedBuckets = new Set(['vouchers', 'qr', 'campaign-media', 'docs']);
 
@@ -73,40 +74,28 @@ function fromMocks(
     offset
   });
 
-  return NextResponse.json(
-    {
-      ...result,
-      integration: {
-        status: 'degraded' as const,
-        target: 'storage_browser',
-        message: options.message ?? 'Supabase credentials missing. Showing mock storage objects.'
-      }
+  return jsonOk({
+    ...result,
+    integration: {
+      status: 'degraded' as const,
+      target: 'storage_browser',
+      message: options.message ?? 'Supabase credentials missing. Showing mock storage objects.',
     },
-    { status: 200 }
-  );
+  });
 }
 
-export async function GET(request: Request) {
+export const GET = createHandler('admin_api.storage.list', async (request: Request) => {
   const url = new URL(request.url);
 
   let params: z.infer<typeof querySchema>;
   try {
     params = querySchema.parse(Object.fromEntries(url.searchParams));
   } catch (error) {
-    return NextResponse.json(
-      {
-        error: 'invalid_query',
-        message: error instanceof z.ZodError ? error.flatten() : 'Invalid query parameters.'
-      },
-      { status: 400 }
-    );
+    return zodValidationError(error);
   }
 
   if (params.bucket && !allowedBuckets.has(params.bucket)) {
-    return NextResponse.json(
-      { error: 'bucket_not_allowed', message: 'Bucket not in allowlist.' },
-      { status: 403 }
-    );
+    return jsonError({ error: 'bucket_not_allowed', message: 'Bucket not in allowlist.' }, 403);
   }
 
   const limit = params.limit ?? 200;
@@ -195,7 +184,7 @@ export async function GET(request: Request) {
       };
     }
 
-    return NextResponse.json(body, { status: 200 });
+    return jsonOk(body);
   }
 
   collected.sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1));
@@ -221,5 +210,5 @@ export async function GET(request: Request) {
     };
   }
 
-  return NextResponse.json(responseBody, { status: 200 });
-}
+  return jsonOk(responseBody);
+});

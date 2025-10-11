@@ -1,7 +1,8 @@
-import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getSupabaseAdminClient } from '@/lib/server/supabase-admin';
 import { logStructured } from '@/lib/server/logger';
+import { jsonOk, jsonError, zodValidationError } from '@/lib/api/http';
+import { createHandler } from '@/app/api/withObservability';
 
 const querySchema = z.object({
   status: z.string().optional(),
@@ -10,37 +11,28 @@ const querySchema = z.object({
   search: z.string().optional()
 });
 
-export async function GET(
+export const GET = createHandler('admin_api.campaigns.id.targets', async (
   request: Request,
   { params }: { params: { id: string } }
-) {
+) => {
   const adminClient = getSupabaseAdminClient();
   if (!adminClient) {
-    return NextResponse.json(
-      {
-        error: 'supabase_unavailable',
-        message: 'Supabase credentials missing. Unable to fetch campaign targets.'
-      },
-      { status: 503 }
-    );
+    return jsonError({
+      error: 'supabase_unavailable',
+      message: 'Supabase credentials missing. Unable to fetch campaign targets.',
+    }, 503);
   }
 
   const campaignId = params.id;
   if (!z.string().uuid().safeParse(campaignId).success) {
-    return NextResponse.json(
-      { error: 'invalid_campaign_id', message: 'Invalid campaign ID.' },
-      { status: 400 }
-    );
+    return jsonError({ error: 'invalid_campaign_id', message: 'Invalid campaign ID.' }, 400);
   }
 
   let query: z.infer<typeof querySchema>;
   try {
     query = querySchema.parse(Object.fromEntries(new URL(request.url).searchParams));
   } catch (error) {
-    return NextResponse.json(
-      { error: 'invalid_query', message: error instanceof z.ZodError ? error.flatten() : 'Invalid query parameters.' },
-      { status: 400 }
-    );
+    return zodValidationError(error);
   }
 
   const rangeStart = query.offset ?? 0;
@@ -69,26 +61,20 @@ export async function GET(
       message: error.message,
       details: { campaignId }
     });
-    return NextResponse.json(
-      { error: 'campaign_targets_fetch_failed', message: 'Unable to load campaign targets.' },
-      { status: 500 }
-    );
+    return jsonError({ error: 'campaign_targets_fetch_failed', message: 'Unable to load campaign targets.' }, 500);
   }
 
-  return NextResponse.json(
-    {
-      data: data?.map((row) => ({
-        id: row.id,
-        msisdn: row.msisdn,
-        userId: row.user_id,
-        personalizedVars: row.personalized_vars,
-        status: row.status,
-        errorCode: row.error_code,
-        messageId: row.message_id,
-        lastUpdateAt: row.last_update_at
-      })) ?? [],
-      total: count ?? 0
-    },
-    { status: 200 }
-  );
-}
+  return jsonOk({
+    data: data?.map((row) => ({
+      id: row.id,
+      msisdn: row.msisdn,
+      userId: row.user_id,
+      personalizedVars: row.personalized_vars,
+      status: row.status,
+      errorCode: row.error_code,
+      messageId: row.message_id,
+      lastUpdateAt: row.last_update_at,
+    })) ?? [],
+    total: count ?? 0,
+  });
+});

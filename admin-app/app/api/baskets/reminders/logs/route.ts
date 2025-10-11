@@ -1,17 +1,14 @@
-import { NextResponse } from 'next/server';
 import { getSupabaseAdminClient } from '@/lib/server/supabase-admin';
 import { logStructured } from '@/lib/server/logger';
+import { jsonOk, jsonError } from '@/lib/api/http';
 
 export async function GET() {
   const adminClient = getSupabaseAdminClient();
   if (!adminClient) {
-    return NextResponse.json(
-      {
-        error: 'supabase_unavailable',
-        message: 'Supabase credentials missing. Unable to load reminder logs.',
-      },
-      { status: 503 },
-    );
+    return jsonError({
+      error: 'supabase_unavailable',
+      message: 'Supabase credentials missing. Unable to load reminder logs.',
+    }, 503);
   }
 
   const { data, error } = await adminClient
@@ -42,13 +39,7 @@ export async function GET() {
       status: 'error',
       message: error.message,
     });
-    return NextResponse.json(
-      {
-        error: 'reminder_logs_fetch_failed',
-        message: 'Unable to load reminder logs.',
-      },
-      { status: 500 },
-    );
+    return jsonError({ error: 'reminder_logs_fetch_failed', message: 'Unable to load reminder logs.' }, 500);
   }
 
   const logs = (data ?? []).map((row) => {
@@ -67,6 +58,5 @@ export async function GET() {
     };
   });
 
-  return NextResponse.json({ data: logs });
+  return jsonOk({ data: logs });
 }
-

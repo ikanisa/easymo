@@ -1,5 +1,5 @@
 import { QueryKey, useQuery, UseQueryOptions } from "@tanstack/react-query";
-import { getAdminVoucherDetail } from "@/lib/data-provider";
+import { getAdminVoucherDetail } from "@/lib/admin/admin-vouchers-service";
 import type { AdminVoucherDetail } from "@/lib/schemas";
 
 const adminVoucherDetailKey = (voucherId: string): QueryKey => [
@@ -20,7 +20,9 @@ export function useAdminVoucherDetailQuery(
   options?: UseQueryOptions<AdminVoucherDetail, unknown, AdminVoucherDetail>,
 ) {
   return useQuery({
-    queryKey: voucherId ? adminVoucherDetailKey(voucherId) : adminVoucherDetailKey("pending"),
+    queryKey: voucherId
+      ? adminVoucherDetailKey(voucherId)
+      : adminVoucherDetailKey("pending"),
     queryFn: () => {
       if (!voucherId) {
         throw new Error("Voucher ID required");

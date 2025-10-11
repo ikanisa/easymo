@@ -52,11 +52,13 @@ export function NotificationsClient(
               Status
               <select
                 value={params.status ?? ""}
-                onChange={(event) =>
+                onChange={(event) => {
+                  const v = event.target.value as '' | typeof STATUS_FILTERS[number];
                   setParams((prev) => ({
                     ...prev,
-                    status: event.target.value || undefined,
-                  }))}
+                    status: v || undefined,
+                  }));
+                }}
                 className="ml-2 rounded-lg border border-[color:var(--color-border)]/40 bg-white/90 px-3 py-1 text-sm"
               >
                 <option value="">All</option>

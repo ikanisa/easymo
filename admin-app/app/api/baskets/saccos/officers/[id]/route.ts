@@ -1,8 +1,9 @@
 import { headers } from 'next/headers';
-import { NextResponse } from 'next/server';
 import { getSupabaseAdminClient } from '@/lib/server/supabase-admin';
 import { logStructured } from '@/lib/server/logger';
 import { recordAudit } from '@/lib/server/audit';
+import { jsonOk, jsonError } from '@/lib/api/http';
+import { requireActorId, UnauthorizedError } from '@/lib/server/auth';
 
 export async function DELETE(
   _request: Request,
@@ -10,24 +11,26 @@ export async function DELETE(
 ) {
   const adminClient = getSupabaseAdminClient();
   if (!adminClient) {
-    return NextResponse.json(
-      {
-        error: 'supabase_unavailable',
-        message: 'Supabase credentials missing. Unable to remove officer.',
-      },
-      { status: 503 },
-    );
+    return jsonError({
+      error: 'supabase_unavailable',
+      message: 'Supabase credentials missing. Unable to remove officer.',
+    }, 503);
   }
 
   const officerId = params.id;
   if (!officerId) {
-    return NextResponse.json(
-      { error: 'missing_id', message: 'Officer id is required.' },
-      { status: 400 },
-    );
+    return jsonError({ error: 'missing_id', message: 'Officer id is required.' }, 400);
   }
 
-  const actorId = headers().get('x-actor-id');
+  let actorId: string;
+  try {
+    actorId = requireActorId();
+  } catch (err) {
+    if (err instanceof UnauthorizedError) {
+      return jsonError({ error: 'unauthorized', message: err.message }, 401);
+    }
+    throw err;
+  }
 
   const { data, error } = await adminClient
     .from('sacco_officers')
@@ -44,13 +47,7 @@ export async function DELETE(
       message: error?.message ?? 'Unknown error',
       details: { officerId },
     });
-    return NextResponse.json(
-      {
-        error: 'sacco_officer_delete_failed',
-        message: 'Unable to remove SACCO officer.',
-      },
-      { status: error?.code === 'PGRST116' ? 404 : 500 },
-    );
+    return jsonError({ error: 'sacco_officer_delete_failed', message: 'Unable to remove SACCO officer.' }, error?.code === 'PGRST116' ? 404 : 500);
   }
 
   await recordAudit({
@@ -61,6 +58,5 @@ export async function DELETE(
     diff: data,
   });
 
-  return NextResponse.json({ success: true }, { status: 200 });
+  return jsonOk({ success: true });
 }
-

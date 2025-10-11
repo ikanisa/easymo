@@ -1,9 +1,10 @@
 import { headers } from 'next/headers';
-import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getSupabaseAdminClient } from '@/lib/server/supabase-admin';
 import { logStructured } from '@/lib/server/logger';
 import { recordAudit } from '@/lib/server/audit';
+import { jsonOk, jsonError, zodValidationError } from '@/lib/api/http';
+import { requireActorId, UnauthorizedError } from '@/lib/server/auth';
 
 const updateSchema = z.object({
   status: z.enum(['pending', 'active', 'removed']),
@@ -15,37 +16,33 @@ export async function PATCH(
 ) {
   const adminClient = getSupabaseAdminClient();
   if (!adminClient) {
-    return NextResponse.json(
-      {
-        error: 'supabase_unavailable',
-        message: 'Supabase credentials missing. Unable to update membership.',
-      },
-      { status: 503 },
-    );
+    return jsonError({
+      error: 'supabase_unavailable',
+      message: 'Supabase credentials missing. Unable to update membership.',
+    }, 503);
   }
 
   const memberId = params.id;
   if (!memberId) {
-    return NextResponse.json(
-      { error: 'missing_id', message: 'Membership id is required.' },
-      { status: 400 },
-    );
+    return jsonError({ error: 'missing_id', message: 'Membership id is required.' }, 400);
   }
 
   let payload: z.infer<typeof updateSchema>;
   try {
     payload = updateSchema.parse(await request.json());
   } catch (error) {
-    return NextResponse.json(
-      {
-        error: 'invalid_payload',
-        message: error instanceof z.ZodError ? error.flatten() : 'Invalid JSON payload.',
-      },
-      { status: 400 },
-    );
+    return zodValidationError(error);
   }
 
-  const actorId = headers().get('x-actor-id');
+  let actorId: string;
+  try {
+    actorId = requireActorId();
+  } catch (err) {
+    if (err instanceof UnauthorizedError) {
+      return jsonError({ error: 'unauthorized', message: err.message }, 401);
+    }
+    throw err;
+  }
 
   const { data, error } = await adminClient
     .from('ibimina_members')
@@ -62,13 +59,7 @@ export async function PATCH(
       message: error?.message ?? 'Unknown error',
       details: { memberId },
     });
-    return NextResponse.json(
-      {
-        error: 'ibimina_member_update_failed',
-        message: 'Unable to update membership.',
-      },
-      { status: error?.code === 'PGRST116' ? 404 : 500 },
-    );
+    return jsonError({ error: 'ibimina_member_update_failed', message: 'Unable to update membership.' }, error?.code === 'PGRST116' ? 404 : 500);
   }
 
   await recordAudit({
@@ -79,6 +70,5 @@ export async function PATCH(
     diff: { status: payload.status },
   });
 
-  return NextResponse.json({ success: true });
+  return jsonOk({ success: true });
 }
-

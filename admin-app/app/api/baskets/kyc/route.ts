@@ -1,7 +1,7 @@
-import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getSupabaseAdminClient } from '@/lib/server/supabase-admin';
 import { logStructured } from '@/lib/server/logger';
+import { jsonOk, jsonError, zodValidationError } from '@/lib/api/http';
 
 const KYC_STORAGE_BUCKET = process.env.KYC_STORAGE_BUCKET ?? 'kyc-documents';
 const KYC_SIGNED_URL_TTL_SECONDS = (() => {
@@ -19,26 +19,14 @@ const listQuerySchema = z.object({
 export async function GET(request: Request) {
   const adminClient = getSupabaseAdminClient();
   if (!adminClient) {
-    return NextResponse.json(
-      {
-        error: 'supabase_unavailable',
-        message: 'Supabase credentials missing. Unable to fetch KYC documents.',
-      },
-      { status: 503 },
-    );
+    return jsonError({ error: 'supabase_unavailable', message: 'Supabase credentials missing. Unable to fetch KYC documents.' }, 503);
   }
 
   let query: z.infer<typeof listQuerySchema>;
   try {
     query = listQuerySchema.parse(Object.fromEntries(new URL(request.url).searchParams));
   } catch (error) {
-    return NextResponse.json(
-      {
-        error: 'invalid_query',
-        message: error instanceof z.ZodError ? error.flatten() : 'Invalid query parameters.',
-      },
-      { status: 400 },
-    );
+    return zodValidationError(error);
   }
 
   const offset = query.offset ?? 0;
@@ -70,17 +58,11 @@ export async function GET(request: Request) {
       status: 'error',
       message: error.message,
     });
-    return NextResponse.json(
-      {
-        error: 'kyc_fetch_failed',
-        message: 'Unable to load KYC documents.',
-      },
-      { status: 500 },
-    );
+    return jsonError({ error: 'kyc_fetch_failed', message: 'Unable to load KYC documents.' }, 500);
   }
 
   const rows = data ?? [];
-  const enriched = await Promise.all(rows.map(async (row) => ({
+  const enriched = await Promise.all(rows.map(async (row: any) => ({
     id: row.id,
     userId: row.user_id,
     docType: row.doc_type,
@@ -91,21 +73,14 @@ export async function GET(request: Request) {
     createdAt: row.created_at,
     reviewedAt: row.reviewed_at,
     profile: row.profiles ? {
-      displayName: row.profiles.display_name ?? null,
-      msisdn: row.profiles.msisdn ?? null,
+      displayName: (row.profiles as any).display_name ?? null,
+      msisdn: (row.profiles as any).msisdn ?? null,
     } : null,
   })));
   const total = count ?? rows.length;
   const hasMore = offset + rows.length < total;
 
-  return NextResponse.json(
-    {
-      data: enriched,
-      total,
-      hasMore,
-    },
-    { status: 200 },
-  );
+  return jsonOk({ data: enriched, total, hasMore });
 }
 
 async function createSignedDocumentUrl(path: string | null): Promise<string | null> {

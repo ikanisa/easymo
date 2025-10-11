@@ -1,8 +1,9 @@
-import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getSupabaseAdminClient } from '@/lib/server/supabase-admin';
 import { logStructured } from '@/lib/server/logger';
 import { mockStaffNumbers } from '@/lib/mock-data';
+import { jsonOk, jsonError, zodValidationError } from '@/lib/api/http';
+import { createHandler } from '@/app/api/withObservability';
 
 const querySchema = z.object({
   role: z.string().optional(),
@@ -28,30 +29,24 @@ function fromMocks(params: z.infer<typeof querySchema>) {
   const slice = filtered.slice(offset, offset + limit);
   const hasMore = offset + slice.length < filtered.length;
 
-  return NextResponse.json(
-    {
-      data: slice,
-      total: filtered.length,
-      hasMore,
-      integration: {
-        status: 'degraded' as const,
-        target: 'staff_numbers',
-        message: 'Supabase credentials missing. Showing mock staff numbers.'
-      }
+  return jsonOk({
+    data: slice,
+    total: filtered.length,
+    hasMore,
+    integration: {
+      status: 'degraded' as const,
+      target: 'staff_numbers',
+      message: 'Supabase credentials missing. Showing mock staff numbers.',
     },
-    { status: 200 }
-  );
+  });
 }
 
-export async function GET(request: Request) {
+export const GET = createHandler('admin_api.staff.list', async (request: Request) => {
   let params: z.infer<typeof querySchema>;
   try {
     params = querySchema.parse(Object.fromEntries(new URL(request.url).searchParams));
   } catch (error) {
-    return NextResponse.json(
-      { error: 'invalid_query', message: error instanceof z.ZodError ? error.flatten() : 'Invalid query parameters.' },
-      { status: 400 }
-    );
+    return zodValidationError(error);
   }
 
   const adminClient = getSupabaseAdminClient();
@@ -97,21 +92,18 @@ export async function GET(request: Request) {
   const total = count ?? rows.length;
   const hasMore = offset + rows.length < total;
 
-  return NextResponse.json(
-    {
-      data: rows.map((row) => ({
-        id: row.id,
-        barName: row.bar?.name ?? 'Unknown bar',
-        number: row.number_e164 ?? 'Unknown',
-        role: row.role ?? 'staff',
-        active: row.is_active ?? false,
-        verified: Boolean(row.verified_at),
-        addedBy: row.created_by ?? null,
-        lastSeenAt: row.last_seen_at ?? null
-      })),
-      total,
-      hasMore
-    },
-    { status: 200 }
-  );
-}
+  return jsonOk({
+    data: rows.map((row) => ({
+      id: row.id,
+      barName: row.bar?.name ?? 'Unknown bar',
+      number: row.number_e164 ?? 'Unknown',
+      role: row.role ?? 'staff',
+      active: row.is_active ?? false,
+      verified: Boolean(row.verified_at),
+      addedBy: row.created_by ?? null,
+      lastSeenAt: row.last_seen_at ?? null,
+    })),
+    total,
+    hasMore,
+  });
+});

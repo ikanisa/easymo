@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { listUsers } from "@/lib/data-provider";
+import { listUsers } from "@/lib/users/users-service";
 import { userSchema } from "@/lib/schemas";
+import { jsonOk, jsonError, zodValidationError } from "@/lib/api/http";
+import { createHandler } from "@/app/api/withObservability";
 
 const querySchema = z.object({
   search: z.string().optional(),
@@ -17,7 +19,7 @@ const responseSchema = z.object({
 
 export const dynamic = "force-dynamic";
 
-export async function GET(request: Request) {
+export const GET = createHandler("admin_api.users.list", async (request: Request) => {
   try {
     const { searchParams } = new URL(request.url);
     const parsedQuery = querySchema.parse({
@@ -28,15 +30,12 @@ export async function GET(request: Request) {
 
     const result = await listUsers(parsedQuery);
     const payload = responseSchema.parse(result);
-    return NextResponse.json(payload, { status: 200 });
+    return jsonOk(payload);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({
-        error: "invalid_query",
-        details: error.flatten(),
-      }, { status: 400 });
+      return jsonError({ error: "invalid_query", details: error.flatten() }, 400);
     }
     console.error("Failed to list users", error);
-    return NextResponse.json({ error: "users_list_failed" }, { status: 500 });
+    return jsonError({ error: "users_list_failed" }, 500);
   }
-}
+});

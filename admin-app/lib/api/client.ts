@@ -60,6 +60,8 @@ export type ApiResponse<T> =
     requestId: string;
   };
 
+type NextFetchInit = RequestInit & { next?: { revalidate?: number | false; tags?: string[] } };
+
 export async function apiFetch<TResponse, TBody = unknown>(
   input: string,
   options: FetchOptions<TBody> = {},
@@ -101,7 +103,7 @@ export async function apiFetch<TResponse, TBody = unknown>(
         revalidate: options.revalidate,
         tags: options.tags,
       },
-    });
+    } as NextFetchInit);
 
     const status = response.status;
     const text = await response.text();

@@ -1,9 +1,10 @@
 import { headers } from 'next/headers';
-import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getSupabaseAdminClient } from '@/lib/server/supabase-admin';
 import { logStructured } from '@/lib/server/logger';
 import { recordAudit } from '@/lib/server/audit';
+import { jsonOk, jsonError, zodValidationError } from '@/lib/api/http';
+import { requireActorId, UnauthorizedError } from '@/lib/server/auth';
 
 const updateSchema = z.object({
   status: z.enum(['pending', 'verified', 'rejected']),
@@ -16,37 +17,33 @@ export async function PATCH(
 ) {
   const adminClient = getSupabaseAdminClient();
   if (!adminClient) {
-    return NextResponse.json(
-      {
-        error: 'supabase_unavailable',
-        message: 'Supabase credentials missing. Unable to update KYC document.',
-      },
-      { status: 503 },
-    );
+    return jsonError({
+      error: 'supabase_unavailable',
+      message: 'Supabase credentials missing. Unable to update KYC document.',
+    }, 503);
   }
 
   const docId = params.id;
   if (!docId) {
-    return NextResponse.json(
-      { error: 'missing_id', message: 'KYC document id is required.' },
-      { status: 400 },
-    );
+    return jsonError({ error: 'missing_id', message: 'KYC document id is required.' }, 400);
   }
 
   let payload: z.infer<typeof updateSchema>;
   try {
     payload = updateSchema.parse(await request.json());
   } catch (error) {
-    return NextResponse.json(
-      {
-        error: 'invalid_payload',
-        message: error instanceof z.ZodError ? error.flatten() : 'Invalid JSON payload.',
-      },
-      { status: 400 },
-    );
+    return zodValidationError(error);
   }
 
-  const actorId = headers().get('x-actor-id');
+  let actorId: string;
+  try {
+    actorId = requireActorId();
+  } catch (err) {
+    if (err instanceof UnauthorizedError) {
+      return jsonError({ error: 'unauthorized', message: err.message }, 401);
+    }
+    throw err;
+  }
 
   const { data, error } = await adminClient
     .from('kyc_documents')
@@ -67,13 +64,7 @@ export async function PATCH(
       message: error?.message ?? 'Unknown error',
       details: { docId },
     });
-    return NextResponse.json(
-      {
-        error: 'kyc_update_failed',
-        message: 'Unable to update KYC document.',
-      },
-      { status: error?.code === 'PGRST116' ? 404 : 500 },
-    );
+    return jsonError({ error: 'kyc_update_failed', message: 'Unable to update KYC document.' }, error?.code === 'PGRST116' ? 404 : 500);
   }
 
   await recordAudit({
@@ -84,6 +75,5 @@ export async function PATCH(
     diff: { status: payload.status, notes: payload.notes ?? null },
   });
 
-  return NextResponse.json({ success: true });
+  return jsonOk({ success: true });
 }
-

@@ -1,10 +1,10 @@
 import { QueryKey, useQuery, UseQueryOptions } from "@tanstack/react-query";
-import { listSettingsPreview, type PaginatedResult } from "@/lib/data-provider";
-import type { SettingEntry, TemplateMeta } from "@/lib/schemas";
+import type { SettingEntry } from "@/lib/schemas";
+import type { PaginatedResult } from "@/lib/shared/pagination";
+import { listSettingsPreview } from "@/lib/settings/settings-preview-service";
+import type { Pagination } from "@/lib/shared/pagination";
 
-export type SettingsPreviewParams = {
-  limit?: number;
-};
+export type SettingsPreviewParams = Pagination;
 
 const settingsPreviewKey = (params: SettingsPreviewParams) =>
   ["settings-preview", params] satisfies QueryKey;

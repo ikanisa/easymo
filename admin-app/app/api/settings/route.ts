@@ -1,10 +1,12 @@
 import { headers } from 'next/headers';
-import { NextResponse } from 'next/server';
+import { jsonOk, jsonError, zodValidationError } from '@/lib/api/http';
+import { createHandler } from '@/app/api/withObservability';
 import { z } from 'zod';
 import { getSupabaseAdminClient } from '@/lib/server/supabase-admin';
 import { logStructured } from '@/lib/server/logger';
 import { recordAudit } from '@/lib/server/audit';
 import { mockSettingsEntries } from '@/lib/mock-data';
+import { requireActorId, UnauthorizedError } from '@/lib/server/auth';
 
 const settingsResponseSchema = z.object({
   quietHours: z.object({ start: z.string(), end: z.string() }),
@@ -19,7 +21,7 @@ const settingsMutationSchema = z.object({
 });
 
 function buildDegradedResponse(message: string, status = 503) {
-  return NextResponse.json(
+  return jsonOk(
     {
       integration: {
         status: 'degraded' as const,
@@ -27,7 +29,7 @@ function buildDegradedResponse(message: string, status = 503) {
         target: 'settings_store'
       }
     },
-    { status }
+    status,
   );
 }
 
@@ -66,7 +68,7 @@ function fallbackSettings() {
   };
 }
 
-export async function GET() {
+export const GET = createHandler('admin_api.settings.get', async () => {
   const supabaseSettings = await fetchSettingsFromSupabase();
   if (supabaseSettings) {
     const quiet = supabaseSettings.get('quiet_hours.rw') as { start: string; end: string } | null;
@@ -81,26 +83,23 @@ export async function GET() {
         typeof throttleValue === 'number' ? throttleValue : throttleValue?.value ?? 60,
       optOutList: Array.isArray(optOut) ? optOut : []
     } satisfies z.infer<typeof settingsResponseSchema>;
-    return NextResponse.json(payload, { status: 200 });
+    return jsonOk(payload);
   }
 
   const fallback = fallbackSettings();
-  return NextResponse.json(
-    {
-      quietHours: fallback.quietHours(),
-      throttlePerMinute: fallback.throttlePerMinute,
-      optOutList: fallback.optOutList,
-      integration: {
-        status: 'degraded' as const,
-        message: 'Using mock settings because Supabase credentials are not configured.',
-        target: 'settings_store'
-      }
-    },
-    { status: 200 }
-  );
-}
+  return jsonOk({
+    quietHours: fallback.quietHours(),
+    throttlePerMinute: fallback.throttlePerMinute,
+    optOutList: fallback.optOutList,
+    integration: {
+      status: 'degraded' as const,
+      message: 'Using mock settings because Supabase credentials are not configured.',
+      target: 'settings_store'
+    }
+  });
+});
 
-export async function POST(request: Request) {
+export const POST = createHandler('admin_api.settings.post', async (request: Request) => {
   const adminClient = getSupabaseAdminClient();
   if (!adminClient) {
     return buildDegradedResponse('Supabase service role not available. Configure environment variables to persist settings.');
@@ -111,13 +110,17 @@ export async function POST(request: Request) {
     const json = await request.json();
     parsed = settingsMutationSchema.parse(json);
   } catch (error) {
-    return NextResponse.json(
-      {
-        error: 'invalid_payload',
-        message: error instanceof z.ZodError ? error.flatten() : 'Invalid JSON payload.'
-      },
-      { status: 400 }
-    );
+    return zodValidationError(error);
+  }
+
+  let actorId: string;
+  try {
+    actorId = requireActorId();
+  } catch (err) {
+    if (err instanceof UnauthorizedError) {
+      return jsonError({ error: 'unauthorized', message: err.message }, 401);
+    }
+    throw err;
   }
 
   try {
@@ -128,7 +131,6 @@ export async function POST(request: Request) {
       { key: 'opt_out.list', value: parsed.optOutList, updated_at: timestamp }
     ]);
 
-    const actorId = headers().get('x-actor-id');
     await recordAudit({
       actorId,
       action: 'settings_update',
@@ -151,16 +153,10 @@ export async function POST(request: Request) {
       }
     });
 
-    return NextResponse.json(
-      {
-        message: 'Settings saved.',
-        integration: {
-          status: 'ok' as const,
-          target: 'settings_store'
-        }
-      },
-      { status: 200 }
-    );
+    return jsonOk({
+      message: 'Settings saved.',
+      integration: { status: 'ok' as const, target: 'settings_store' }
+    });
   } catch (error) {
     logStructured({
       event: 'settings_update_failed',
@@ -169,12 +165,7 @@ export async function POST(request: Request) {
       message: 'Failed to upsert settings in Supabase.',
       details: { error: error instanceof Error ? error.message : 'unknown' }
     });
-    return NextResponse.json(
-      {
-        error: 'settings_update_failed',
-        message: 'Unable to persist settings. Try again later.'
-      },
-      { status: 500 }
-    );
+    return jsonError({ error: 'settings_update_failed', message: 'Unable to persist settings. Try again later.' }, 500);
   }
-}
+});
+ 

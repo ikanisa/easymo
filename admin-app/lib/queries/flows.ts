@@ -1,12 +1,9 @@
 import { QueryKey, useQuery, UseQueryOptions } from "@tanstack/react-query";
-import { listFlows, type PaginatedResult } from "@/lib/data-provider";
 import type { FlowMeta } from "@/lib/schemas";
+import type { PaginatedResult } from "@/lib/shared/pagination";
+import { type FlowListParams, listFlows } from "@/lib/flows/flows-service";
 
-export type FlowsQueryParams = {
-  limit?: number;
-  offset?: number;
-  status?: FlowMeta["status"];
-};
+export type FlowsQueryParams = FlowListParams;
 
 const flowsKey = (params: FlowsQueryParams) =>
   ["flows", params] satisfies QueryKey;

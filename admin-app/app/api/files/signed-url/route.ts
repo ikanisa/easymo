@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getSupabaseAdminClient } from '@/lib/server/supabase-admin';
 import { logStructured } from '@/lib/server/logger';
+import { jsonOk, jsonError, zodValidationError } from '@/lib/api/http';
+import { createHandler } from '@/app/api/withObservability';
 
 const allowedBuckets = new Set(['vouchers', 'qr', 'campaign-media', 'docs']);
 
@@ -10,13 +12,10 @@ const requestSchema = z.object({
   path: z.string().min(1)
 });
 
-export async function GET(request: Request) {
+export const GET = createHandler('admin_api.files.signed_url', async (request: Request) => {
   const adminClient = getSupabaseAdminClient();
   if (!adminClient) {
-    return NextResponse.json(
-      { error: 'supabase_unavailable', message: 'Supabase credentials missing.' },
-      { status: 503 }
-    );
+    return jsonError({ error: 'supabase_unavailable', message: 'Supabase credentials missing.' }, 503);
   }
 
   const url = new URL(request.url);
@@ -27,17 +26,11 @@ export async function GET(request: Request) {
       path: url.searchParams.get('path')
     });
   } catch (error) {
-    return NextResponse.json(
-      { error: 'invalid_query', message: error instanceof z.ZodError ? error.flatten() : 'Invalid query parameters.' },
-      { status: 400 }
-    );
+    return zodValidationError(error);
   }
 
   if (!allowedBuckets.has(payload.bucket)) {
-    return NextResponse.json(
-      { error: 'bucket_not_allowed', message: 'Bucket not in allowlist.' },
-      { status: 403 }
-    );
+    return jsonError({ error: 'bucket_not_allowed', message: 'Bucket not in allowlist.' }, 403);
   }
 
   const { data, error } = await adminClient
@@ -53,17 +46,8 @@ export async function GET(request: Request) {
       message: error?.message ?? 'Unable to generate signed URL.',
       details: { bucket: payload.bucket, path: payload.path }
     });
-    return NextResponse.json(
-      { error: 'signed_url_failed', message: 'Unable to generate signed URL.' },
-      { status: 500 }
-    );
+    return jsonError({ error: 'signed_url_failed', message: 'Unable to generate signed URL.' }, 500);
   }
 
-  return NextResponse.json(
-    {
-      url: data.signedUrl,
-      expiresIn: 60
-    },
-    { status: 200 }
-  );
-}
+  return jsonOk({ url: data.signedUrl, expiresIn: 60 });
+});

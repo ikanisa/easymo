@@ -52,12 +52,14 @@ export function BarsClient({
               Status
               <select
                 value={barParams.status ?? ""}
-               onChange={(event) =>
+                onChange={(event) => {
+                  const v = event.target.value as '' | typeof BAR_STATUS_FILTERS[number];
                   setBarParams((prev) => ({
                     ...prev,
-                    status: event.target.value || undefined,
+                    status: v || undefined,
                     limit: initialBarParams.limit ?? 100,
-                  }))}
+                  }));
+                }}
                 className="ml-2 rounded-lg border border-[color:var(--color-border)]/40 bg-white/90 px-3 py-1 text-sm"
               >
                 <option value="">All</option>

@@ -79,7 +79,7 @@ export function CampaignsClient({
               onStatusChange={(value) =>
                 setCampaignParams((prev) => ({
                   ...prev,
-                  status: value || undefined,
+                  status: (value as CampaignsQueryParams['status'] | '') || undefined,
                   limit: initialCampaignParams.limit ?? 100,
                   offset: 0,
                 }))}

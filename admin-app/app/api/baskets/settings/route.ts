@@ -1,9 +1,10 @@
 import { headers } from 'next/headers';
-import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getSupabaseAdminClient } from '@/lib/server/supabase-admin';
 import { logStructured } from '@/lib/server/logger';
 import { recordAudit } from '@/lib/server/audit';
+import { jsonOk, jsonError, zodValidationError } from '@/lib/api/http';
+import { requireActorId, UnauthorizedError } from '@/lib/server/auth';
 
 const updateSchema = z.object({
   quietHours: z.object({ start: z.string(), end: z.string() }).optional(),
@@ -19,13 +20,10 @@ const updateSchema = z.object({
 export async function GET() {
   const adminClient = getSupabaseAdminClient();
   if (!adminClient) {
-    return NextResponse.json(
-      {
-        error: 'supabase_unavailable',
-        message: 'Supabase credentials missing. Unable to fetch settings.',
-      },
-      { status: 503 },
-    );
+    return jsonError({
+      error: 'supabase_unavailable',
+      message: 'Supabase credentials missing. Unable to fetch settings.',
+    }, 503);
   }
 
   const { data, error } = await adminClient
@@ -40,13 +38,7 @@ export async function GET() {
       status: 'error',
       message: error.message,
     });
-    return NextResponse.json(
-      {
-        error: 'settings_fetch_failed',
-        message: 'Unable to load Baskets settings.',
-      },
-      { status: 500 },
-    );
+    return jsonError({ error: 'settings_fetch_failed', message: 'Unable to load Baskets settings.' }, 500);
   }
 
   const map = new Map((data ?? []).map((row) => [row.key, row.value]));
@@ -60,7 +52,7 @@ export async function GET() {
     reminderThrottle = perHour != null ? Number(perHour) : null;
   }
 
-  return NextResponse.json({
+  return jsonOk({
     quietHours: map.get('baskets.quiet_hours') ?? null,
     templates: map.get('baskets.templates') ?? null,
     featureFlags: map.get('baskets.feature_flags') ?? null,
@@ -71,36 +63,32 @@ export async function GET() {
 export async function PATCH(request: Request) {
   const adminClient = getSupabaseAdminClient();
   if (!adminClient) {
-    return NextResponse.json(
-      {
-        error: 'supabase_unavailable',
-        message: 'Supabase credentials missing. Unable to update settings.',
-      },
-      { status: 503 },
-    );
+    return jsonError({
+      error: 'supabase_unavailable',
+      message: 'Supabase credentials missing. Unable to update settings.',
+    }, 503);
   }
 
   let payload: z.infer<typeof updateSchema>;
   try {
     payload = updateSchema.parse(await request.json());
   } catch (error) {
-    return NextResponse.json(
-      {
-        error: 'invalid_payload',
-        message: error instanceof z.ZodError ? error.flatten() : 'Invalid JSON payload.',
-      },
-      { status: 400 },
-    );
+    return zodValidationError(error);
   }
 
   if (!payload.quietHours && !payload.templates && !payload.featureFlags && payload.reminderThrottle === undefined) {
-    return NextResponse.json(
-      { error: 'empty_update', message: 'Provide at least one settings group to update.' },
-      { status: 400 },
-    );
+    return jsonError({ error: 'empty_update', message: 'Provide at least one settings group to update.' }, 400);
   }
 
-  const actorId = headers().get('x-actor-id');
+  let actorId: string;
+  try {
+    actorId = requireActorId();
+  } catch (err) {
+    if (err instanceof UnauthorizedError) {
+      return jsonError({ error: 'unauthorized', message: err.message }, 401);
+    }
+    throw err;
+  }
 
   const updates: Array<{ key: string; value: unknown }> = [];
   if (payload.quietHours) updates.push({ key: 'baskets.quiet_hours', value: payload.quietHours });
@@ -120,13 +108,7 @@ export async function PATCH(request: Request) {
         message: error.message,
         details: { key: entry.key },
       });
-      return NextResponse.json(
-        {
-          error: 'settings_update_failed',
-          message: `Unable to update ${entry.key}.`,
-        },
-        { status: 500 },
-      );
+      return jsonError({ error: 'settings_update_failed', message: `Unable to update ${entry.key}.` }, 500);
     }
   }
 
@@ -138,5 +120,5 @@ export async function PATCH(request: Request) {
     diff: payload,
   });
 
-  return NextResponse.json({ success: true });
+  return jsonOk({ success: true });
 }

@@ -13,6 +13,10 @@
   - [ ] Audit logs capturing writes and policy blocks.
   - [ ] Incident runbooks reviewed by Ops.
   - [ ] Rollback toggles documented in settings.
+  - [ ] `/api/settings/alerts` served from Supabase with RLS policies enabled;
+        degraded mock messaging captured when credentials absent.
+  - [ ] `tools/monitoring/admin-synthetic-checks.ts` running against staging `ADMIN_BASE_URL`
+        (fails the job on non-2xx responses).
 
 ## Phase 2: Pilot
 
@@ -38,6 +42,9 @@
   - [ ] Rollback plan rehearsed (disable campaigns, re-enable legacy tooling).
   - [ ] Monitoring/alerting connected to Ops channel.
   - [ ] Go/No-Go meeting sign-off recorded.
+  - [ ] Insurance OCR queue worker deployed (`insurance-ocr` function) and
+        processing metrics (attempts/retries) monitored via `insurance_media_queue`.
+  - [ ] Synthetic check script wired into production monitoring with alert routing.
 
 ## Rollback Signals
 

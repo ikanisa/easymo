@@ -5,6 +5,7 @@ import Papa from 'papaparse';
 import { getSupabaseAdminClient } from '@/lib/server/supabase-admin';
 import { logStructured } from '@/lib/server/logger';
 import { recordAudit } from '@/lib/server/audit';
+import { createHandler } from '@/app/api/withObservability';
 
 const requestSchema = z.object({
   campaignId: z.string().uuid(),
@@ -29,49 +30,39 @@ function csvToTargets(csv: string) {
   return targets;
 }
 
-export async function POST(request: Request) {
+export const POST = createHandler('admin_api.campaigns.import_targets', async (request: Request) => {
   const adminClient = getSupabaseAdminClient();
   if (!adminClient) {
-    return NextResponse.json(
-      {
-        error: 'supabase_unavailable',
-        message: 'Supabase credentials missing. Unable to import campaign targets.'
-      },
-      { status: 503 }
-    );
+    return jsonError({ error: 'supabase_unavailable', message: 'Supabase credentials missing. Unable to import campaign targets.' }, 503);
   }
 
   let payload: z.infer<typeof requestSchema>;
   try {
     payload = requestSchema.parse(await request.json());
   } catch (error) {
-    return NextResponse.json(
-      { error: 'invalid_payload', message: error instanceof z.ZodError ? error.flatten() : 'Invalid JSON payload.' },
-      { status: 400 }
-    );
+    return zodValidationError(error);
   }
 
   let targets: { msisdn: string; userId?: string; vars: Record<string, unknown> }[];
   try {
     targets = csvToTargets(payload.csv);
   } catch (error) {
-    return NextResponse.json(
-      {
-        error: 'csv_parse_failed',
-        message: error instanceof Error ? error.message : 'Failed to parse CSV.'
-      },
-      { status: 400 }
-    );
+    return jsonError({ error: 'csv_parse_failed', message: error instanceof Error ? error.message : 'Failed to parse CSV.' }, 400);
   }
 
   if (!targets.length) {
-    return NextResponse.json(
-      { error: 'empty_targets', message: 'No valid targets found in CSV.' },
-      { status: 400 }
-    );
+    return jsonError({ error: 'empty_targets', message: 'No valid targets found in CSV.' }, 400);
   }
 
-  const actorId = headers().get('x-actor-id');
+  let actorId: string;
+  try {
+    actorId = requireActorId();
+  } catch (err) {
+    if (err instanceof UnauthorizedError) {
+      return jsonError({ error: 'unauthorized', message: err.message }, 401);
+    }
+    throw err;
+  }
 
   const { error } = await adminClient.from('campaign_targets').upsert(
     targets.map((target) => ({
@@ -90,13 +81,7 @@ export async function POST(request: Request) {
       status: 'error',
       message: error.message
     });
-    return NextResponse.json(
-      {
-        error: 'campaign_import_failed',
-        message: 'Unable to import campaign targets.'
-      },
-      { status: 500 }
-    );
+    return jsonError({ error: 'campaign_import_failed', message: 'Unable to import campaign targets.' }, 500);
   }
 
   await recordAudit({
@@ -114,10 +99,7 @@ export async function POST(request: Request) {
     details: { campaignId: payload.campaignId, count: targets.length }
   });
 
-  return NextResponse.json(
-    {
-      imported: targets.length
-    },
-    { status: 200 }
-  );
-}
+  return jsonOk({ imported: targets.length });
+});
+import { jsonOk, jsonError, zodValidationError } from '@/lib/api/http';
+import { requireActorId, UnauthorizedError } from '@/lib/server/auth';

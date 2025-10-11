@@ -1,7 +1,10 @@
-import { NextResponse } from "next/server";
 import { z } from "zod";
-import { getDashboardSnapshot } from "@/lib/data-provider";
+import {
+  type DashboardSnapshot,
+  getDashboardSnapshot,
+} from "@/lib/dashboard/dashboard-service";
 import { dashboardKpiSchema, timeseriesPointSchema } from "@/lib/schemas";
+import { createHandler } from "@/app/api/withObservability";
 
 const responseSchema = z.object({
   kpis: z.array(dashboardKpiSchema),
@@ -10,15 +13,14 @@ const responseSchema = z.object({
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export const GET = createHandler("admin_api.dashboard.get", async () => {
   try {
-    const snapshot = await getDashboardSnapshot();
+    const snapshot: DashboardSnapshot = await getDashboardSnapshot();
     const payload = responseSchema.parse(snapshot);
-    return NextResponse.json(payload, { status: 200 });
+    return jsonOk(payload);
   } catch (error) {
     console.error("Failed to build dashboard snapshot", error);
-    return NextResponse.json({ error: "dashboard_snapshot_failed" }, {
-      status: 500,
-    });
+    return jsonError({ error: "dashboard_snapshot_failed", message: "Unable to compute dashboard snapshot." }, 500);
   }
-}
+});
+import { jsonOk, jsonError } from "@/lib/api/http";

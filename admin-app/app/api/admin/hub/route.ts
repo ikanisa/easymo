@@ -1,7 +1,8 @@
-import { NextResponse } from "next/server";
+import { jsonOk } from "@/lib/api/http";
 import { getSupabaseAdminClient } from "@/lib/server/supabase-admin";
 import { parseAdminHubSnapshotFromFlowExchange } from "@/lib/flow-exchange/admin-hub";
 import { mockAdminHubSnapshot } from "@/lib/mock-data";
+import { createHandler } from "@/app/api/withObservability";
 
 function withMessage(message: string) {
   return {
@@ -10,16 +11,15 @@ function withMessage(message: string) {
   };
 }
 
-export async function GET() {
+export const GET = createHandler("admin_api.admin_hub.get", async () => {
   const adminClient = getSupabaseAdminClient();
   const adminWaId = process.env.ADMIN_FLOW_WA_ID;
 
   if (!adminClient || !adminWaId) {
-    return NextResponse.json(
+    return jsonOk(
       withMessage(
         "Admin flow bridge not configured. Set SUPABASE credentials and ADMIN_FLOW_WA_ID to load live sections.",
       ),
-      { status: 200 },
     );
   }
 
@@ -34,23 +34,18 @@ export async function GET() {
 
     if (error) {
       console.error("Admin hub flow invoke failed", error);
-      return NextResponse.json(
+      return jsonOk(
         withMessage(
           "Failed to load live admin hub sections. Showing mock snapshot instead.",
         ),
-        { status: 502 },
+        502,
       );
     }
 
     const snapshot = parseAdminHubSnapshotFromFlowExchange(data);
-    return NextResponse.json(snapshot, { status: 200 });
+    return jsonOk(snapshot);
   } catch (error) {
     console.error("Admin hub API error", error);
-    return NextResponse.json(
-      withMessage(
-        "Unexpected error loading admin hub sections. Showing mock snapshot instead.",
-      ),
-      { status: 500 },
-    );
+    return jsonOk(withMessage("Unexpected error loading admin hub sections. Showing mock snapshot instead."));
   }
-}
+});

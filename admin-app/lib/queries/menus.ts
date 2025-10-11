@@ -1,18 +1,15 @@
 import { QueryKey, useQuery, UseQueryOptions } from "@tanstack/react-query";
-import { listMenuVersions, listOcrJobs, type PaginatedResult } from "@/lib/data-provider";
 import type { MenuVersion, OcrJob } from "@/lib/schemas";
+import type { PaginatedResult } from "@/lib/shared/pagination";
+import {
+  listMenuVersions,
+  type MenuVersionListParams,
+} from "@/lib/menus/menu-versions-service";
+import { listOcrJobs, type OcrJobListParams } from "@/lib/ocr/ocr-jobs-service";
 
-export type MenuQueryParams = {
-  status?: MenuVersion["status"];
-  limit?: number;
-  offset?: number;
-};
+export type MenuQueryParams = MenuVersionListParams;
 
-export type OcrJobQueryParams = {
-  status?: OcrJob["status"];
-  limit?: number;
-  offset?: number;
-};
+export type OcrJobQueryParams = OcrJobListParams;
 
 const menuKey = (params: MenuQueryParams) =>
   ["menu-versions", params] satisfies QueryKey;

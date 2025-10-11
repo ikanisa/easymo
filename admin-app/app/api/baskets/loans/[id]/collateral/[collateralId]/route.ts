@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { jsonOk, jsonError } from '@/lib/api/http';
 import { getSupabaseAdminClient } from '@/lib/server/supabase-admin';
 import { logStructured } from '@/lib/server/logger';
 import { recordAudit } from '@/lib/server/audit';
@@ -10,22 +10,13 @@ export async function DELETE(
 ) {
   const adminClient = getSupabaseAdminClient();
   if (!adminClient) {
-    return NextResponse.json(
-      {
-        error: 'supabase_unavailable',
-        message: 'Supabase credentials missing. Unable to remove collateral.',
-      },
-      { status: 503 },
-    );
+    return jsonError({ error: 'supabase_unavailable', message: 'Supabase credentials missing. Unable to remove collateral.' }, 503);
   }
 
   const loanId = params.id;
   const collateralId = params.collateralId;
   if (!loanId || !collateralId) {
-    return NextResponse.json(
-      { error: 'missing_id', message: 'Loan id and collateral id are required.' },
-      { status: 400 },
-    );
+    return jsonError({ error: 'missing_id', message: 'Loan id and collateral id are required.' }, 400);
   }
 
   const { data: row, error: fetchError } = await adminClient
@@ -42,17 +33,11 @@ export async function DELETE(
       message: fetchError.message,
       details: { collateralId, loanId },
     });
-    return NextResponse.json(
-      { error: 'collateral_lookup_failed', message: 'Unable to find collateral.' },
-      { status: 500 },
-    );
+    return jsonError({ error: 'collateral_lookup_failed', message: 'Unable to find collateral.' }, 500);
   }
 
   if (!row || row.loan_id !== loanId) {
-    return NextResponse.json(
-      { error: 'not_found', message: 'Collateral not found for this loan.' },
-      { status: 404 },
-    );
+    return jsonError({ error: 'not_found', message: 'Collateral not found for this loan.' }, 404);
   }
 
   const { error } = await adminClient
@@ -68,26 +53,14 @@ export async function DELETE(
       message: error.message,
       details: { collateralId, loanId },
     });
-    return NextResponse.json(
-      {
-        error: 'collateral_delete_failed',
-        message: 'Unable to remove collateral.',
-      },
-      { status: 500 },
-    );
+    return jsonError({ error: 'collateral_delete_failed', message: 'Unable to remove collateral.' }, 500);
   }
 
   let actorId: string;
   try {
     actorId = requireActorId();
   } catch (error) {
-    return NextResponse.json(
-      {
-        error: 'unauthorized',
-        message: error instanceof Error ? error.message : 'Unauthorized',
-      },
-      { status: 401 },
-    );
+    return jsonError({ error: 'unauthorized', message: error instanceof Error ? error.message : 'Unauthorized' }, 401);
   }
 
   await recordAudit({
@@ -98,5 +71,5 @@ export async function DELETE(
     diff: { loanId },
   });
 
-  return NextResponse.json({ success: true });
+  return jsonOk({ success: true });
 }

@@ -43,8 +43,12 @@
 - Update `docs/RUNBOOK_TABLETOP_PLAN.md` and `docs/OBSERVABILITY_GAPS.md` once
   real telemetry integrated.
 - Configure Supabase log drains or Sentry DSN to capture Edge Function errors.
+- `insurance-ocr` function publishes queue/processing metrics when
+  `INSURANCE_OCR_METRICS_WEBHOOK_URL` is provided; wire webhook to ops dashboards.
+- Schedule synthetic checks via `tools/monitoring/admin-synthetic-checks.ts`
+  with `ADMIN_BASE_URL` to detect API auth/config regressions.
 
-**Status:** Pending – blocked on env instrumentation.
+**Status:** Deferred — environment wiring (log drains, webhook, synthetic cron) will be handled post-next phase.
 
 ### 3. Deployment Smoke Checklist
 
@@ -53,4 +57,4 @@
 - Validate template sends against sandbox numbers.
 - Trigger OCR job manually via profiling worker.
 
-**Status:** Pending.
+**Status:** Deferred — execute after next phase deliverables land.

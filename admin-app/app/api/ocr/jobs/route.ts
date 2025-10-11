@@ -1,8 +1,8 @@
-import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createHandler } from "@/app/api/withObservability";
 import { logStructured } from "@/lib/server/logger";
 import { getSupabaseAdminClient } from "@/lib/server/supabase-admin";
+import { jsonOk, jsonError, zodValidationError } from "@/lib/api/http";
 
 const querySchema = z.object({
   status: z.enum(["queued", "processing", "success", "error"]).optional(),
@@ -15,13 +15,7 @@ export const GET = createHandler('admin_api.ocr_jobs.list', async (request, _con
   const adminClient = getSupabaseAdminClient();
   if (!adminClient) {
     recordMetric('ocr_jobs.supabase_unavailable', 1);
-    return NextResponse.json(
-      {
-        error: "supabase_unavailable",
-        message: "Supabase credentials missing. Unable to fetch OCR jobs.",
-      },
-      { status: 503 },
-    );
+    return jsonError({ error: "supabase_unavailable", message: "Supabase credentials missing. Unable to fetch OCR jobs." }, 503);
   }
 
   let query: z.infer<typeof querySchema>;
@@ -29,13 +23,7 @@ export const GET = createHandler('admin_api.ocr_jobs.list', async (request, _con
     query = querySchema.parse(Object.fromEntries(new URL(request.url).searchParams));
   } catch (error) {
     recordMetric('ocr_jobs.invalid_query', 1);
-    return NextResponse.json(
-      {
-        error: "invalid_query",
-        message: error instanceof z.ZodError ? error.flatten() : "Invalid query parameters.",
-      },
-      { status: 400 },
-    );
+    return zodValidationError(error);
   }
 
   const offset = query.offset ?? 0;
@@ -67,10 +55,7 @@ export const GET = createHandler('admin_api.ocr_jobs.list', async (request, _con
       message: error.message,
     });
     recordMetric('ocr_jobs.supabase_error', 1, { message: error.message });
-    return NextResponse.json(
-      { error: "ocr_jobs_fetch_failed", message: "Unable to load OCR jobs." },
-      { status: 500 },
-    );
+    return jsonError({ error: "ocr_jobs_fetch_failed", message: "Unable to load OCR jobs." }, 500);
   }
 
   const items = (data ?? []).map((row) => {
@@ -95,5 +80,5 @@ export const GET = createHandler('admin_api.ocr_jobs.list', async (request, _con
   const hasMore = offset + items.length < total;
   recordMetric('ocr_jobs.success', 1, { total });
 
-  return NextResponse.json({ data: items, total, hasMore }, { status: 200 });
+  return jsonOk({ data: items, total, hasMore });
 });

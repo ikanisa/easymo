@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen } from "./utils/react-testing";
 import { IntegrationStatusBadge } from "@/components/ui/IntegrationStatusBadge";
 
 describe("IntegrationStatusBadge", () => {

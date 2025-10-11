@@ -1,12 +1,12 @@
 import { QueryKey, useQuery, UseQueryOptions } from "@tanstack/react-query";
-import { listInsuranceQuotes, type PaginatedResult } from "@/lib/data-provider";
 import type { InsuranceQuote } from "@/lib/schemas";
+import type { PaginatedResult } from "@/lib/shared/pagination";
+import {
+  type InsuranceQuoteListParams,
+  listInsuranceQuotes,
+} from "@/lib/insurance/insurance-quotes-service";
 
-export type InsuranceQueryParams = {
-  status?: InsuranceQuote["status"];
-  offset?: number;
-  limit?: number;
-};
+export type InsuranceQueryParams = InsuranceQuoteListParams;
 
 const insuranceKey = (params: InsuranceQueryParams) =>
   ["insurance-quotes", params] satisfies QueryKey;

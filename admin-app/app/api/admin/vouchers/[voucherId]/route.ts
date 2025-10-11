@@ -1,7 +1,8 @@
-import { NextResponse } from "next/server";
+import { jsonOk } from "@/lib/api/http";
 import { getSupabaseAdminClient } from "@/lib/server/supabase-admin";
 import { parseAdminVoucherDetailFromFlowExchange } from "@/lib/flow-exchange/admin-vouchers";
 import { mockAdminVoucherDetail } from "@/lib/mock-data";
+import { createHandler } from "@/app/api/withObservability";
 
 function withMessage(message: string) {
   return {
@@ -10,19 +11,18 @@ function withMessage(message: string) {
   };
 }
 
-export async function GET(
+export const GET = createHandler("admin_api.admin_vouchers.detail", async (
   _request: Request,
   { params }: { params: { voucherId: string } },
-) {
+) => {
   const adminClient = getSupabaseAdminClient();
   const adminWaId = process.env.ADMIN_FLOW_WA_ID;
 
   if (!adminClient || !adminWaId) {
-    return NextResponse.json(
+    return jsonOk(
       withMessage(
         "Admin flow bridge not configured. Set SUPABASE credentials and ADMIN_FLOW_WA_ID to load live voucher detail.",
       ),
-      { status: 200 },
     );
   }
 
@@ -38,23 +38,23 @@ export async function GET(
 
     if (error) {
       console.error("Admin voucher detail invocation failed", error);
-      return NextResponse.json(
+      return jsonOk(
         withMessage(
           "Failed to load live voucher detail. Showing mock data instead.",
         ),
-        { status: 502 },
+        502,
       );
     }
 
     const snapshot = parseAdminVoucherDetailFromFlowExchange(data);
-    return NextResponse.json(snapshot, { status: 200 });
+    return jsonOk(snapshot);
   } catch (error) {
     console.error("Admin voucher detail API error", error);
-    return NextResponse.json(
+    return jsonOk(
       withMessage(
         "Unexpected error while loading voucher detail. Showing mock data instead.",
       ),
-      { status: 500 },
+      500,
     );
   }
-}
+});

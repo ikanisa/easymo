@@ -1,0 +1,48 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "paths": {
+      "@/*": [
+        "./*"
+      ],
+      "@/lib/test-utils/factories": [
+        "types/test-utils-factories.d.ts"
+      ],
+      "@/lib/test-utils/mock-base": [
+        "types/test-utils-mock-base.d.ts"
+      ]
+    }
+  },
+  "include": [
+    "app/api/settings/**/*.ts",
+    "app/api/settings/**/*.tsx",
+    "app/api/notifications/**/*.ts",
+    "app/api/notifications/**/*.tsx",
+    "app/api/stations/**/*.ts",
+    "app/api/stations/**/*.tsx",
+    "app/api/campaigns/**/*.ts",
+    "app/api/campaigns/**/*.tsx",
+    "app/api/logs/**/*.ts",
+    "app/api/logs/**/*.tsx",
+    "app/api/qr/**/*.ts",
+    "app/api/qr/**/*.tsx",
+    "app/api/admin/**/*.ts",
+    "app/api/admin/**/*.tsx",
+    "app/api/storage/**/*.ts",
+    "app/api/storage/**/*.tsx",
+    "app/api/users/**/*.ts",
+    "app/api/users/**/*.tsx",
+    "lib/**/*.ts",
+    "lib/**/*.tsx",
+    "middleware.ts",
+    "types/**/*.d.ts",
+    "app/(panel)/**/*.tsx"
+  ],
+  "exclude": [
+    "node_modules",
+    "tests",
+    "app/(panel)/**/page.tsx",
+    "app/(panel)/layout.tsx",
+    "lib/test-utils"
+  ]
+}
