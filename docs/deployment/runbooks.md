@@ -24,7 +24,7 @@ The following runbooks provide repeatable, auditable steps for operating the Git
 
 1. Identify the last known good Vercel deployment in the dashboard and click **Promote to Production**.
 2. Revert the offending Git commit locally (`git revert <sha>`) and push to the default branch.
-3. If database changes were applied, execute the corresponding down migration: `supabase migration up --env prod --down`.
+3. If database changes were applied, execute the corresponding down migration: `supabase migration down --env prod`.
 4. Notify incident contacts with summary and next steps.
 
 ## 4. Link Repository to Supabase (Initial Setup)
