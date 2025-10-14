@@ -24,6 +24,10 @@ coverage/
 .pnpm-state/
 *.local
 
+# Editor / IDE
+.vscode/
+.idea/
+
 # Env & local config
 .env
 .env.*
