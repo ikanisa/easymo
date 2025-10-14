@@ -20,14 +20,16 @@ export function SettingsForm() {
       <label>
         <span>Quiet hours (start – end)</span>
         <input
+          className={styles.fieldInput}
           value={form.quietHours}
           onChange={(event) => handlers.handleQuietHoursChange(event.target.value)}
           placeholder="22:00 – 06:00"
         />
       </label>
-      <label>
-        <span>WhatsApp throttle per minute</span>
+      <label className={styles.field}>
+        <span className={styles.fieldLabel}>WhatsApp throttle per minute</span>
         <input
+          className={styles.fieldInput}
           type="number"
           min={0}
           value={form.throttlePerMinute}
@@ -35,8 +37,8 @@ export function SettingsForm() {
             handlers.handleThrottleChange(Number(event.target.value))}
         />
       </label>
-      <label>
-        <span>Opt-out list (comma separated)</span>
+      <label className={styles.field}>
+        <span className={styles.fieldLabel}>Opt-out list (comma separated)</span>
         <input
           value={optOutListInput}
           onChange={(event) => handlers.handleOptOutChange(event.target.value)}
