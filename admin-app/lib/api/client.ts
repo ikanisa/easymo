@@ -1,5 +1,3 @@
-import { randomUUID } from "crypto";
-
 type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
 type FetchOptions<TBody> = {
@@ -10,40 +8,19 @@ type FetchOptions<TBody> = {
   signal?: AbortSignal;
   revalidate?: number | false;
   tags?: string[];
+  credentials?: RequestCredentials;
 };
 
-const CLIENT_ACTOR_STORAGE_KEY = 'admin:actorId';
-
-function getClientActorId(): string | null {
-  if (typeof window === 'undefined') {
-    return null;
+function generateRequestId(): string {
+  try {
+    const cryptoRef = globalThis.crypto as { randomUUID?: () => string } | undefined;
+    if (cryptoRef?.randomUUID) {
+      return cryptoRef.randomUUID();
+    }
+  } catch (_) {
+    // ignore and fall back
   }
-
-  const cookieMatch = document.cookie
-    ?.split(';')
-    .map((entry) => entry.trim())
-    .find((entry) => entry.startsWith('admin_actor_id='));
-
-  if (cookieMatch) {
-    const [, value] = cookieMatch.split('=');
-    if (value) return decodeURIComponent(value);
-  }
-
-  const stored = window.sessionStorage?.getItem(CLIENT_ACTOR_STORAGE_KEY);
-  if (stored) return stored;
-
-  const fallback = process.env.NEXT_PUBLIC_DEFAULT_ACTOR_ID ?? null;
-  if (fallback) {
-    window.sessionStorage?.setItem(CLIENT_ACTOR_STORAGE_KEY, fallback);
-  }
-  return fallback ?? null;
-}
-
-function resolveActorId(): string | null {
-  if (typeof window === 'undefined') {
-    return process.env.ADMIN_DEFAULT_ACTOR_ID ?? null;
-  }
-  return getClientActorId();
+  return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
 export type ApiResponse<T> =
@@ -66,15 +43,10 @@ export async function apiFetch<TResponse, TBody = unknown>(
   input: string,
   options: FetchOptions<TBody> = {},
 ): Promise<ApiResponse<TResponse>> {
-  const requestId = randomUUID();
+  const requestId = generateRequestId();
   const headers = new Headers(options.headers ?? {});
   headers.set("x-request-id", requestId);
   headers.set("Accept", "application/json");
-
-  const actorId = resolveActorId();
-  if (actorId && !headers.has('x-actor-id')) {
-    headers.set('x-actor-id', actorId);
-  }
 
   let url = input;
   if (!/^https?:/i.test(input)) {
@@ -99,6 +71,7 @@ export async function apiFetch<TResponse, TBody = unknown>(
       headers,
       cache: options.cache,
       signal: options.signal,
+      credentials: options.credentials ?? 'same-origin',
       next: {
         revalidate: options.revalidate,
         tags: options.tags,

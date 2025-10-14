@@ -1,42 +1,29 @@
-import { ReactNode, useState } from "react";
-import { SidebarNav } from "@/components/layout/SidebarNav";
-import { TopBar } from "@/components/layout/TopBar";
-import { ToastProvider } from "@/components/ui/ToastProvider";
-import { GradientBackground } from "@/components/layout/GradientBackground";
-import { OfflineBanner } from "@/components/system/OfflineBanner";
-import { ServiceWorkerToast } from "@/components/system/ServiceWorkerToast";
-import { ServiceWorkerToasts } from "@/components/system/ServiceWorkerToasts";
-import { AssistantPanel } from "@/components/assistant/AssistantPanel";
+import { ReactNode } from "react";
+import { redirect } from "next/navigation";
+import { PanelShell } from "@/components/layout/PanelShell";
+import { readSessionFromCookies } from "@/lib/server/session";
 
-export default function PanelLayout({ children }: { children: ReactNode }) {
-  const environmentLabel = process.env.NEXT_PUBLIC_ENVIRONMENT_LABEL ??
-    "Staging";
-  const [assistantOpen, setAssistantOpen] = useState(false);
+interface PanelLayoutProps {
+  children: ReactNode;
+}
+
+export default async function PanelLayout({ children }: PanelLayoutProps) {
+  const session = await readSessionFromCookies();
+  if (!session) {
+    redirect("/login");
+  }
+
+  const environmentLabel = process.env.NEXT_PUBLIC_ENVIRONMENT_LABEL ?? "Staging";
+  const assistantEnabled = (process.env.NEXT_PUBLIC_ASSISTANT_ENABLED ?? "")
+    .toLowerCase() === "true";
 
   return (
-    <ToastProvider>
-      <ServiceWorkerToast />
-      <ServiceWorkerToasts />
-      <OfflineBanner />
-      <GradientBackground variant="surface" className="min-h-screen">
-        <div className="layout">
-          <SidebarNav />
-          <div className="layout__main">
-            <TopBar
-              environmentLabel={environmentLabel}
-              onOpenAssistant={() => setAssistantOpen(true)}
-            />
-            <main
-              id="main-content"
-              className="layout__content"
-              aria-live="polite"
-            >
-              {children}
-            </main>
-          </div>
-        </div>
-        <AssistantPanel open={assistantOpen} onClose={() => setAssistantOpen(false)} />
-      </GradientBackground>
-    </ToastProvider>
+    <PanelShell
+      environmentLabel={environmentLabel}
+      assistantEnabled={assistantEnabled}
+      session={{ actorId: session.sub, label: session.label }}
+    >
+      {children}
+    </PanelShell>
   );
 }

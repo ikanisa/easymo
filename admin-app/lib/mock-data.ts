@@ -18,6 +18,7 @@ import type {
   OcrJob,
   Order,
   OrderEvent,
+  QrPreview,
   QrToken,
   SettingEntry,
   StaffNumber,
@@ -51,6 +52,7 @@ import {
   createOcrJob,
   createOrder,
   createOrderEvent,
+  createQrPreview,
   createQrToken,
   createSettingEntry,
   createStaffNumber,
@@ -331,6 +333,20 @@ export const mockQrTokens: QrToken[] = Array.from(
       lastScanAt: idx % 2 === 0 ? formatISO(subDays(now, idx / 2)) : null,
     }),
 );
+
+export const mockQrPreview: QrPreview = createQrPreview({
+  metadata: {
+    barId: mockBars[0]?.id ?? "mock-bar",
+    barName: mockBars[0]?.name ?? "Sunset Bar",
+    barSlug: mockBars[0]?.slug ?? "sunset-bar",
+    barLocation: mockBars[0]?.location ?? "Kigali",
+    shareLink: "https://wa.me/250700000010?text=B%3Asunset-bar%20T%3ATable%201%20K%3Amock",
+    sampleTable: {
+      label: "Table 1",
+      qrPayload: "B:sunset-bar T:Table 1 K:mock",
+    },
+  },
+});
 
 export const mockTemplates: TemplateMeta[] = [
   createTemplateMeta({

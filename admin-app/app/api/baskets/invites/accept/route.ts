@@ -5,7 +5,10 @@ import { logStructured } from '@/lib/server/logger';
 import { recordAudit } from '@/lib/server/audit';
 
 function normalizeInviteToken(raw: string): string {
-  const match = raw.trim().toUpperCase().match(/(?:JB[:\-])?([A-Z0-9]{4,})/);
+  const match = raw
+    .trim()
+    .toUpperCase()
+    .match(/(?:JB(?::|-))?([A-Z0-9]{4,})/);
   return match ? match[1] : '';
 }
 

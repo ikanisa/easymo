@@ -25,16 +25,6 @@ export function AppProviders({ children }: AppProvidersProps) {
     return () => mediaQuery.removeEventListener("change", update);
   }, []);
 
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const defaultActorId = process.env.NEXT_PUBLIC_DEFAULT_ACTOR_ID;
-    if (!defaultActorId) return;
-    const hasCookie = document.cookie.split(";").some((entry) => entry.trim().startsWith("admin_actor_id="));
-    if (!hasCookie) {
-      document.cookie = `admin_actor_id=${defaultActorId}; path=/; SameSite=Lax`;
-    }
-  }, []);
-
   return (
     <ThemeProvider>
       <QueryProvider>

@@ -12,6 +12,14 @@ export type NavItem = {
   group: NavGroup;
 };
 
+export const NAV_GROUPS: NavGroup[] = [
+  "Overview",
+  "Operations",
+  "Messaging",
+  "Platform",
+  "Baskets",
+];
+
 export const NAV_ITEMS: NavItem[] = [
   {
     label: "Dashboard",

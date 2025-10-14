@@ -16,10 +16,47 @@ export type DashboardSnapshot = {
   timeseries: TimeseriesPoint[];
 };
 
-export async function getDashboardSnapshot(): Promise<DashboardSnapshot> {
+export type DashboardSnapshotIntegration = {
+  status: "ok" | "degraded";
+  target: "dashboard_snapshot";
+  message?: string;
+  remediation?: string;
+};
+
+export type DashboardSnapshotResult = {
+  data: DashboardSnapshot;
+  integration: DashboardSnapshotIntegration;
+};
+
+function degraded(
+  message: string,
+  remediation?: string,
+): DashboardSnapshotIntegration {
+  return {
+    status: "degraded",
+    target: "dashboard_snapshot",
+    message,
+    remediation,
+  };
+}
+
+function fallbackResult(
+  message: string,
+  remediation?: string,
+): DashboardSnapshotResult {
+  return {
+    data: fallbackSnapshot(),
+    integration: degraded(message, remediation),
+  };
+}
+
+export async function getDashboardSnapshot(): Promise<DashboardSnapshotResult> {
   if (!isServer) {
     if (useMocks) {
-      return fallbackSnapshot();
+      return fallbackResult(
+        "Runtime configured to use mock dashboard fixtures.",
+        "Disable NEXT_PUBLIC_USE_MOCKS before production deploys.",
+      );
     }
     try {
       const response = await fetch("/api/dashboard", { cache: "no-store" });
@@ -27,15 +64,27 @@ export async function getDashboardSnapshot(): Promise<DashboardSnapshot> {
         throw new Error("Failed to fetch dashboard snapshot from API");
       }
       const json = await response.json();
-      return parseSnapshot(json);
+      return {
+        data: parseSnapshot(json),
+        integration: {
+          status: "ok",
+          target: "dashboard_snapshot",
+        },
+      };
     } catch (error) {
       console.error("Client dashboard fetch failed", error);
-      return fallbackSnapshot();
+      return fallbackResult(
+        "Dashboard API request failed. Showing safe fixtures instead.",
+        "Ensure /api/dashboard is reachable and Supabase credentials are valid.",
+      );
     }
   }
 
   if (useMocks) {
-    return fallbackSnapshot();
+    return fallbackResult(
+      "Runtime configured to use mock dashboard fixtures.",
+      "Disable NEXT_PUBLIC_USE_MOCKS before production deploys.",
+    );
   }
 
   const { getSupabaseAdminClient } = await import(
@@ -43,17 +92,37 @@ export async function getDashboardSnapshot(): Promise<DashboardSnapshot> {
   );
   const adminClient = getSupabaseAdminClient();
   if (!adminClient) {
-    return fallbackSnapshot();
+    return fallbackResult(
+      "Supabase admin credentials missing. Dashboard is using fixtures.",
+      "Add SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY to the environment.",
+    );
   }
 
   const { data, error } = await adminClient.rpc("dashboard_snapshot");
 
   if (error || !data) {
     console.error("Failed to fetch dashboard snapshot from Supabase", error);
-    return fallbackSnapshot();
+    return fallbackResult(
+      "Supabase RPC dashboard_snapshot returned an error.",
+      "Verify the RPC exists and that the service role can execute it.",
+    );
   }
 
-  return data as DashboardSnapshot;
+  try {
+    return {
+      data: parseSnapshot(data),
+      integration: {
+        status: "ok",
+        target: "dashboard_snapshot",
+      },
+    };
+  } catch (parseError) {
+    console.error("Failed to parse dashboard snapshot", parseError);
+    return fallbackResult(
+      "Supabase returned an unexpected dashboard payload.",
+      "Align the dashboard_snapshot RPC output with the dashboard schemas.",
+    );
+  }
 }
 
 function parseSnapshot(input: unknown): DashboardSnapshot {
