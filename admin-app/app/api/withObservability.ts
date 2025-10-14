@@ -3,7 +3,7 @@ import { withApiObservability } from "@/lib/server/observability";
 import { jsonError } from "@/lib/api/http";
 import { captureException } from "@/lib/server/sentry";
 
-export type ApiHandler<T extends unknown = unknown> = (
+export type ApiHandler<T = unknown> = (
   request: Request,
   context: T,
   observability: ObservabilityContext,

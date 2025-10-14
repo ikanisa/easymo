@@ -48,11 +48,18 @@ remain additive-only.
   `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
 - Server-side reads (and future writes) expect `SUPABASE_SERVICE_ROLE_KEY`. When
   unset, the app falls back to mock datasets automatically.
-- Admin API requests require an actor identifier. In development set
-  `NEXT_PUBLIC_DEFAULT_ACTOR_ID` (exposed to the browser) and
-  `ADMIN_DEFAULT_ACTOR_ID` (server-side) to the UUID of a trusted staff user.
-  Reverse proxies in production must inject a valid `x-actor-id` header per
-  request; otherwise the middleware returns `401`.
+- Admin API requests now require an authenticated session. Define
+  `ADMIN_SESSION_SECRET` (minimum 16 characters) and provide at least one entry
+  in `ADMIN_ACCESS_CREDENTIALS`, for example:
+
+  ```bash
+  ADMIN_SESSION_SECRET="super-secret-key"
+  ADMIN_ACCESS_CREDENTIALS='[{"actorId":"00000000-0000-0000-0000-000000000001","token":"paste-token-here","label":"Ops"}]'
+  ```
+
+  Operators visit `/login` and submit the shared token to obtain a secure,
+  HttpOnly session cookie. Middleware verifies the cookie and injects the
+  `x-actor-id` header automatically for API requests.
 - Mocks are now opt-in. Set `NEXT_PUBLIC_USE_MOCKS=true` if you need the fixture
   dataset without connecting to Supabase.
 

@@ -15,9 +15,14 @@ function buildPolyline(points: number[][]): string {
 export function TimeseriesChart({ data }: TimeseriesChartProps) {
   if (!data.length) {
     return (
-      <div className="placeholder-card">
+      <div className="placeholder-card" role="status" aria-live="polite">
         <strong>Time-series unavailable</strong>
-        <p>No data points returned for this range.</p>
+        <p>
+          We could not load voucher activity from Supabase. Confirm the
+          <code className="ml-1 rounded bg-slate-100 px-1 py-0.5">dashboard_snapshot</code>
+          RPC returns issued and redeemed metrics, then redeploy with fresh
+          credentials.
+        </p>
       </div>
     );
   }

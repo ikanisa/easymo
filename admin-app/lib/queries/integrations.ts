@@ -32,19 +32,19 @@ export type IntegrationStatusMap = Record<
 const FALLBACK_STATUSES: IntegrationStatusMap = {
   voucherPreview: {
     status: "amber",
-    message: "Preview bridge awaiting health check.",
+    message: "Configure NEXT_PUBLIC_VOUCHER_PREVIEW_ENDPOINT to enable previews.",
   },
   whatsappSend: {
     status: "amber",
-    message: "Send bridge uses mock acknowledgements in this environment.",
+    message: "Set NEXT_PUBLIC_WHATSAPP_SEND_ENDPOINT for live sends.",
   },
   campaignDispatcher: {
     status: "amber",
-    message: "Dispatcher bridge not configured for this build.",
+    message: "Set NEXT_PUBLIC_CAMPAIGN_DISPATCHER_ENDPOINT to enable dispatching.",
   },
   storageSignedUrl: {
     status: "amber",
-    message: "Storage signed URL probe not available yet.",
+    message: "Provide Supabase credentials to sign storage URLs.",
   },
 };
 

@@ -2,6 +2,7 @@ import { serve } from "../wa-webhook/deps.ts";
 import { processNotificationQueue } from "../wa-webhook/notify/sender.ts";
 import { logStructuredEvent } from "../wa-webhook/observe/log.ts";
 import { emitAlert } from "../wa-webhook/observe/alert.ts";
+import { claimWorkerLease, releaseWorkerLease } from "./lease.ts";
 
 const BATCH_SIZE = 20;
 const CRON_EXPR = "*/1 * * * *"; // once per minute
@@ -24,8 +25,14 @@ async function runNotificationWorker(trigger: "http" | "cron") {
     return;
   }
   running = true;
+  let leaseAcquired = false;
   const started = Date.now();
   try {
+    const hasLease = await claimWorkerLease(trigger);
+    if (!hasLease) {
+      return;
+    }
+    leaseAcquired = true;
     await logStructuredEvent("NOTIFY_WORKER_START", { trigger });
     const results = await processNotificationQueue(BATCH_SIZE);
     await logStructuredEvent("NOTIFY_WORKER_DONE", {
@@ -44,6 +51,13 @@ async function runNotificationWorker(trigger: "http" | "cron") {
     });
     throw new Error(message);
   } finally {
+    if (leaseAcquired) {
+      try {
+        await releaseWorkerLease();
+      } catch (releaseError) {
+        console.error("notification-worker.release_failed", releaseError);
+      }
+    }
     running = false;
   }
 }

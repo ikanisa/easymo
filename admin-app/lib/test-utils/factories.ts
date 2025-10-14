@@ -17,6 +17,7 @@ import type {
   OcrJob,
   Order,
   OrderEvent,
+  QrPreview,
   QrToken,
   SettingEntry,
   StaffNumber,
@@ -184,6 +185,34 @@ export function createQrToken(overrides: Partial<QrToken> = {}): QrToken {
     createdAt: new Date().toISOString(),
     printed: false,
     lastScanAt: null,
+    ...overrides,
+  };
+}
+
+export function createQrPreview(overrides: Partial<QrPreview> = {}): QrPreview {
+  return {
+    interactive: {
+      header: "Choose a bar",
+      body: "Sunset Bar — Kigali\nTap View menu to order.",
+      buttonLabel: "Select",
+      sectionTitle: "Choose what to do next",
+      rows: [
+        { id: "DINE_MENU", title: "View menu", description: "Browse the menu and order instantly." },
+        { id: "back_menu", title: "🏠 Home", description: "Return to the main menu." },
+      ],
+    },
+    fallback: ["1. View menu", "0. Main menu"],
+    metadata: {
+      barId: "bar-id",
+      barName: "Sunset Bar",
+      barSlug: "sunset-bar",
+      barLocation: "Kigali",
+      shareLink: "https://wa.me/250700000010?text=B:sunset-bar%20T:T1%20K:seed",
+      sampleTable: {
+        label: "Table 1",
+        qrPayload: "B:sunset-bar T:Table 1 K:seed",
+      },
+    },
     ...overrides,
   };
 }

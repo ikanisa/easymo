@@ -33,17 +33,39 @@ export function DashboardClient() {
     );
   }
 
-  const snapshot = snapshotQuery.data ?? { kpis: [], timeseries: [] };
+  const snapshotResult = snapshotQuery.data;
+  const snapshot = snapshotResult?.data ?? { kpis: [], timeseries: [] };
   const orderEvents = orderEventsQuery.data ?? [];
   const webhookErrors = webhookErrorsQuery.data ?? [];
   const adminHub = adminHubQuery.data;
+  const integrationNotice = snapshotResult?.integration;
+  const dashboardDescription = integrationNotice?.status === "degraded"
+    ? "Live KPIs are unavailable until Supabase credentials are configured."
+    : "Operations control centre with KPIs, service health, and quick insights.";
 
   return (
     <div className="dashboard-grid space-y-6">
       <PageHeader
         title="Dashboard"
-        description="Operations control centre with KPIs, service health, and quick insights. Real data will appear once Supabase credentials are configured."
+        description={dashboardDescription}
       />
+      {integrationNotice?.status === "degraded" && (
+        <div
+          className="rounded-2xl border border-amber-200/80 bg-amber-50/80 px-5 py-4 text-sm text-amber-900"
+          role="status"
+          aria-live="polite"
+        >
+          <p className="font-semibold">Dashboard is using fallback data.</p>
+          {integrationNotice.message && (
+            <p className="mt-2">{integrationNotice.message}</p>
+          )}
+          {integrationNotice.remediation && (
+            <p className="mt-3 font-medium">
+              Remediation: {integrationNotice.remediation} Refer to docs/PHASE0_CREDENTIAL_CHECKLIST.md for the full credential matrix.
+            </p>
+          )}
+        </div>
+      )}
       <SectionCard
         title="Admin hub quick links"
         description="Surface the WhatsApp admin hub sections that the flow-exchange bridge currently exposes. Configure ADMIN_FLOW_WA_ID to hydrate live data."

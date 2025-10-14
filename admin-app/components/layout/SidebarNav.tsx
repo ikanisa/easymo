@@ -3,14 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import classNames from "classnames";
-import { NAV_ITEMS, NavGroup } from "./nav-items";
-
-const GROUP_ORDER: NavGroup[] = [
-  "Overview",
-  "Operations",
-  "Messaging",
-  "Platform",
-];
+import { NAV_GROUPS, NAV_ITEMS } from "./nav-items";
 
 export function SidebarNav() {
   const pathname = usePathname();
@@ -27,7 +20,7 @@ export function SidebarNav() {
       <div className="text-xs font-semibold uppercase tracking-[0.3em] text-[color:var(--color-muted)]">
         Admin Panel
       </div>
-      {GROUP_ORDER.map((group) => {
+      {NAV_GROUPS.map((group) => {
         const groupItems = NAV_ITEMS.filter((item) => item.group === group);
         return (
           <div key={group} className="space-y-3">

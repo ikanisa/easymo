@@ -4,11 +4,12 @@ import { useState } from "react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { SectionCard } from "@/components/ui/SectionCard";
 import { QrTokenTable } from "@/components/qr/QrTokenTable";
-import { EmptyState } from "@/components/ui/EmptyState";
 import { QrGeneratorForm } from "@/components/qr/QrGeneratorForm";
 import { LoadingState } from "@/components/ui/LoadingState";
 import { type QrTokensQueryParams, useQrTokensQuery } from "@/lib/queries/qr";
 import { type BarsQueryParams, useBarsQuery } from "@/lib/queries/bars";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { QrPreviewPanel } from "@/components/qr/QrPreviewPanel";
 
 interface QrClientProps {
   initialTokenParams?: QrTokensQueryParams;
@@ -115,12 +116,23 @@ export function QrClient({
 
       <SectionCard
         title="Deep-link preview"
-        description="Preview the exact WhatsApp message and flow button that the QR triggers."
+        description="Preview the WhatsApp payload triggered by QR scans and optionally send yourself a test message."
       >
-        <EmptyState
-          title="Preview placeholder"
-          description="API bridge to fetch and send test messages will be added in Phase 3."
-        />
+        {barsQuery.isLoading
+          ? (
+            <LoadingState
+              title="Loading bars"
+              description="Fetching bar directory."
+            />
+          )
+          : bars.length
+          ? <QrPreviewPanel bars={bars} />
+          : (
+            <EmptyState
+              title="No bars available"
+              description="Create a bar first to preview QR deep links."
+            />
+          )}
       </SectionCard>
     </div>
   );

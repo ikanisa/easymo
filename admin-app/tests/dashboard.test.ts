@@ -29,19 +29,27 @@ describe("dashboard snapshot", () => {
     ) as {
       getSupabaseAdminClient: ReturnType<typeof vi.fn>;
     };
-    const expected = {
-      kpis: [{ label: "Active trips", value: "12", delta: "+8%" }],
+    const snapshot = {
+      kpis: [{
+        label: "Active trips",
+        primaryValue: "12",
+        secondaryValue: "+8%",
+        trend: "up",
+      }],
       timeseries: [{ date: "2025-01-01T00:00:00Z", issued: 5, redeemed: 2 }],
     };
     getSupabaseAdminClient.mockReturnValue({
-      rpc: vi.fn().mockResolvedValue({ data: expected, error: null }),
+      rpc: vi.fn().mockResolvedValue({ data: snapshot, error: null }),
     });
 
     const { getDashboardSnapshot } = await import(
       "@/lib/dashboard/dashboard-service"
     );
     const result = await getDashboardSnapshot();
-    expect(result).toEqual(expected);
+    expect(result).toEqual({
+      data: snapshot,
+      integration: { status: "ok", target: "dashboard_snapshot" },
+    });
 
     (globalThis as unknown as { window?: unknown }).window = originalWindow;
   });
@@ -64,8 +72,9 @@ describe("dashboard snapshot", () => {
       "@/lib/dashboard/dashboard-service"
     );
     const result = await getDashboardSnapshot();
-    expect(result.kpis.length).toBe(mockDashboardKpis.length);
-    expect(result.timeseries.length).toBe(mockTimeseries.length);
+    expect(result.integration.status).toBe("degraded");
+    expect(result.data.kpis.length).toBe(mockDashboardKpis.length);
+    expect(result.data.timeseries.length).toBe(mockTimeseries.length);
 
     (globalThis as unknown as { window?: unknown }).window = originalWindow;
   });

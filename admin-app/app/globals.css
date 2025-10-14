@@ -84,6 +84,36 @@
     padding: 24px;
   }
 
+  .placeholder-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 1.5rem;
+    border-radius: 1.25rem;
+    border: 1px dashed rgba(148, 163, 184, 0.45);
+    background: rgba(248, 250, 252, 0.7);
+    color: rgba(30, 41, 59, 0.8);
+  }
+
+  .placeholder-card strong {
+    font-size: 1rem;
+    font-weight: 600;
+    color: rgba(15, 23, 42, 0.9);
+  }
+
+  .placeholder-card p {
+    margin: 0;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    color: rgba(51, 65, 85, 0.85);
+  }
+
+  .placeholder-card code {
+    font-family: var(--font-mono, "JetBrains Mono", monospace);
+    font-size: 0.8rem;
+    color: rgba(15, 23, 42, 0.95);
+  }
+
   .page-header {
     display: flex;
     flex-direction: column;
@@ -218,10 +248,10 @@
 
   .topbar {
     display: grid;
-    grid-template-columns: minmax(180px, 220px) 1fr auto;
+    grid-template-columns: 1fr;
     align-items: center;
     gap: 16px;
-    padding: 16px 24px;
+    padding: 16px 16px;
     border-bottom: 1px solid rgba(148, 163, 184, 0.2);
     background: rgba(248, 250, 252, 0.85);
     backdrop-filter: blur(18px);
@@ -269,12 +299,30 @@
     color: var(--color-foreground);
     font-size: 0.85rem;
   }
+
+  .topbar__actions--no-assistant .topbar__alerts {
+    margin-left: 0;
+  }
+
+  .topbar__actions button:focus-visible,
+  .topbar__actions a:focus-visible {
+    outline: 3px solid var(--color-outline, rgba(37, 99, 235, 0.6));
+    outline-offset: 2px;
+  }
 }
 
-@media (max-width: 1024px) {
-  .layout {
-    grid-template-columns: 1fr;
+  @media (min-width: 768px) {
+    .topbar {
+      grid-template-columns: minmax(200px, 240px) 1fr auto;
+      padding-left: 24px;
+      padding-right: 24px;
+    }
   }
+
+  @media (max-width: 1024px) {
+    .layout {
+      grid-template-columns: 1fr;
+    }
 
   .sidebar {
     display: none;

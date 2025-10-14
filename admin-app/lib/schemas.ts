@@ -160,6 +160,37 @@ export const qrTokenSchema = z.object({
   lastScanAt: z.string().datetime().nullable(),
 });
 
+export const qrPreviewRowSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  description: z.string().nullable().optional(),
+});
+
+export const qrPreviewSchema = z.object({
+  interactive: z.object({
+    header: z.string(),
+    body: z.string(),
+    buttonLabel: z.string(),
+    sectionTitle: z.string(),
+    rows: z.array(qrPreviewRowSchema),
+  }),
+  fallback: z.array(z.string()),
+  metadata: z.object({
+    barId: z.string(),
+    barName: z.string(),
+    barSlug: z.string().nullable(),
+    barLocation: z.string().nullable(),
+    shareLink: z.string().nullable(),
+    sampleTable: z
+      .object({
+        label: z.string(),
+        qrPayload: z.string(),
+      })
+      .nullable()
+      .optional(),
+  }),
+});
+
 export const templateMetaSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -364,6 +395,7 @@ export type MenuVersion = z.infer<typeof menuVersionSchema>;
 export type OcrJob = z.infer<typeof ocrJobSchema>;
 export type StaffNumber = z.infer<typeof staffNumberSchema>;
 export type QrToken = z.infer<typeof qrTokenSchema>;
+export type QrPreview = z.infer<typeof qrPreviewSchema>;
 export type TemplateMeta = z.infer<typeof templateMetaSchema>;
 export type FlowMeta = z.infer<typeof flowMetaSchema>;
 export type NotificationOutbox = z.infer<typeof notificationSchema>;
