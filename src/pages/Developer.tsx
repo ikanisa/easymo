@@ -26,23 +26,41 @@ import {
   Eye,
   EyeOff
 } from 'lucide-react';
-import { AdminAPI } from '@/lib/api';
-import { API_BASE } from '@/lib/api-constants';
-import { SUPABASE_LINKS } from '@/lib/api-constants';
+import { AdminAPI, type HealthCheckResult } from '@/lib/api';
+import { API_BASE, SUPABASE_LINKS, HAS_SUPABASE_PROJECT } from '@/lib/api-constants';
+import { getAdminToken, isDev, shouldUseMock } from '@/lib/env';
 import { useToast } from '@/hooks/use-toast';
 
 export default function Developer() {
   const [showToken, setShowToken] = useState(false);
   const { toast } = useToast();
 
-  const { data: healthData, isLoading, error, refetch } = useQuery({
+  const { data: healthData, isLoading, refetch } = useQuery<HealthCheckResult>({
     queryKey: ['dev-health-check'],
     queryFn: AdminAPI.healthCheck,
+    retry: false,
+    refetchOnWindowFocus: false,
   });
 
-  const adminToken = import.meta.env.VITE_ADMIN_TOKEN || localStorage.getItem('admin_token') || '';
-  const useMock = import.meta.env.VITE_USE_MOCK;
-  const devMode = import.meta.env.DEV;
+  const envAdminToken = import.meta.env.VITE_ADMIN_TOKEN?.trim();
+  const storedAdminToken = typeof window !== 'undefined' ? window.localStorage.getItem('admin_token') : null;
+  const hasCustomToken = Boolean(envAdminToken || storedAdminToken);
+  const adminToken = hasCustomToken ? getAdminToken() : '';
+  const tokenHint = hasCustomToken
+    ? envAdminToken
+      ? 'Loaded from VITE_ADMIN_TOKEN'
+      : 'Loaded from browser storage'
+    : 'Using fallback demo token. Set VITE_ADMIN_TOKEN for production environments.';
+  const useMock = shouldUseMock();
+  const devMode = isDev();
+  const supabaseDisabledMessage = 'Configure VITE_SUPABASE_URL or VITE_SUPABASE_PROJECT_ID to enable these links.';
+  const isError = healthData?.status === 'error';
+  const isSuccess = healthData?.status === 'ok';
+
+  const openSupabaseLink = (url?: string) => {
+    if (!url) return;
+    window.open(url, '_blank');
+  };
 
   const copyToClipboard = (text: string, label: string) => {
     navigator.clipboard.writeText(text).then(() => {
@@ -127,7 +145,7 @@ export default function Developer() {
                   </Button>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Set via VITE_ADMIN_TOKEN or stored in localStorage
+                  {tokenHint}
                 </p>
               </div>
 
@@ -140,8 +158,8 @@ export default function Developer() {
                 </div>
                 <div className="space-y-1">
                   <Label className="text-xs">Data Source</Label>
-                  <Badge variant={useMock === '1' ? "outline" : "default"}>
-                    {useMock === '1' ? "Mock" : "Real API"}
+                  <Badge variant={useMock ? "outline" : "default"}>
+                    {useMock ? "Mock API" : "Real API"}
                   </Badge>
                 </div>
               </div>
@@ -158,7 +176,7 @@ export default function Developer() {
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
                 <span className="text-sm">Connection Status</span>
-                {error ? (
+                {isError ? (
                   <Badge variant="destructive" className="flex items-center space-x-1">
                     <AlertTriangle className="h-3 w-3" />
                     <span>Error</span>
@@ -166,9 +184,12 @@ export default function Developer() {
                 ) : isLoading ? (
                   <Badge variant="secondary">Testing...</Badge>
                 ) : (
-                  <Badge variant="default" className="bg-success text-success-foreground flex items-center space-x-1">
+                  <Badge
+                    variant={isSuccess ? "default" : "secondary"}
+                    className={`flex items-center space-x-1 ${isSuccess ? 'bg-success text-success-foreground' : ''}`}
+                  >
                     <CheckCircle2 className="h-3 w-3" />
-                    <span>Connected</span>
+                    <span>{isSuccess ? 'Connected' : 'Not Tested'}</span>
                   </Badge>
                 )}
               </div>
@@ -190,14 +211,24 @@ export default function Developer() {
                       })}
                     </span>
                   </div>
+                  {healthData.fallback && (
+                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                      <span>Fallback Probe</span>
+                      <span className="font-mono">
+                        {healthData.fallback.status === 'ok'
+                          ? `OK (${healthData.fallback.round_trip_ms}ms)`
+                          : `Error${healthData.fallback.message ? `: ${healthData.fallback.message}` : ''}`}
+                      </span>
+                    </div>
+                  )}
                 </>
               )}
 
-              {error && (
+              {isError && (
                 <Alert variant="destructive">
                   <AlertTriangle className="h-4 w-4" />
                   <AlertDescription className="text-sm">
-                    {error instanceof Error ? error.message : 'Connection test failed'}
+                    {healthData?.message ?? 'Connection test failed'}
                   </AlertDescription>
                 </Alert>
               )}
@@ -224,56 +255,73 @@ export default function Developer() {
             </CardTitle>
           </CardHeader>
           <CardContent>
+            {!HAS_SUPABASE_PROJECT && (
+              <p className="mb-3 text-xs text-muted-foreground">
+                {supabaseDisabledMessage}
+              </p>
+            )}
             <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
               <Button
                 variant="outline"
-                onClick={() => window.open(SUPABASE_LINKS.dashboard, '_blank')}
+                onClick={() => openSupabaseLink(SUPABASE_LINKS.dashboard)}
                 className="justify-start"
+                disabled={!SUPABASE_LINKS.dashboard}
+                title={!SUPABASE_LINKS.dashboard ? supabaseDisabledMessage : undefined}
               >
                 <ExternalLink className="h-4 w-4 mr-2" />
                 Dashboard
               </Button>
-              
+
               <Button
                 variant="outline"
-                onClick={() => window.open(SUPABASE_LINKS.tables, '_blank')}
+                onClick={() => openSupabaseLink(SUPABASE_LINKS.tables)}
                 className="justify-start"
+                disabled={!SUPABASE_LINKS.tables}
+                title={!SUPABASE_LINKS.tables ? supabaseDisabledMessage : undefined}
               >
                 <ExternalLink className="h-4 w-4 mr-2" />
                 Table Editor
               </Button>
-              
+
               <Button
                 variant="outline"
-                onClick={() => window.open(SUPABASE_LINKS.functions, '_blank')}
+                onClick={() => openSupabaseLink(SUPABASE_LINKS.functions)}
                 className="justify-start"
+                disabled={!SUPABASE_LINKS.functions}
+                title={!SUPABASE_LINKS.functions ? supabaseDisabledMessage : undefined}
               >
                 <ExternalLink className="h-4 w-4 mr-2" />
                 Edge Functions
               </Button>
-              
+
               <Button
                 variant="outline"
-                onClick={() => window.open(SUPABASE_LINKS.storage, '_blank')}
+                onClick={() => openSupabaseLink(SUPABASE_LINKS.storage)}
                 className="justify-start"
+                disabled={!SUPABASE_LINKS.storage}
+                title={!SUPABASE_LINKS.storage ? supabaseDisabledMessage : undefined}
               >
                 <ExternalLink className="h-4 w-4 mr-2" />
                 Storage
               </Button>
-              
+
               <Button
                 variant="outline"
-                onClick={() => window.open(SUPABASE_LINKS.logs, '_blank')}
+                onClick={() => openSupabaseLink(SUPABASE_LINKS.logs)}
                 className="justify-start"
+                disabled={!SUPABASE_LINKS.logs}
+                title={!SUPABASE_LINKS.logs ? supabaseDisabledMessage : undefined}
               >
                 <ExternalLink className="h-4 w-4 mr-2" />
                 Function Logs
               </Button>
-              
+
               <Button
                 variant="outline"
-                onClick={() => window.open(SUPABASE_LINKS.auth, '_blank')}
+                onClick={() => openSupabaseLink(SUPABASE_LINKS.auth)}
                 className="justify-start"
+                disabled={!SUPABASE_LINKS.auth}
+                title={!SUPABASE_LINKS.auth ? supabaseDisabledMessage : undefined}
               >
                 <ExternalLink className="h-4 w-4 mr-2" />
                 Auth Users

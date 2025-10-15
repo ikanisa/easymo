@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Users, Route, CreditCard, MessageCircle, TrendingUp, ExternalLink, RefreshCw, Info } from "lucide-react";
 import { AdminAPI } from "@/lib/api";
-import { SUPABASE_LINKS } from "@/lib/api-constants";
+import { SUPABASE_LINKS, HAS_SUPABASE_PROJECT } from "@/lib/api-constants";
 import type { AdminStats } from "@/lib/types";
 
 export default function Dashboard() {
@@ -36,6 +36,13 @@ export default function Dashboard() {
 
   const handleRefresh = () => {
     refetch();
+  };
+
+  const supabaseDisabledMessage = 'Configure VITE_SUPABASE_URL or VITE_SUPABASE_PROJECT_ID to enable Supabase links.';
+  const supabaseLinksEnabled = HAS_SUPABASE_PROJECT;
+  const openSupabaseLink = (url?: string) => {
+    if (!url) return;
+    window.open(url, '_blank');
   };
 
   const formatTime = (date: Date) => {
@@ -202,31 +209,42 @@ export default function Dashboard() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <Button 
-              variant="outline" 
-              size="sm" 
+            {!supabaseLinksEnabled && (
+              <p className="text-xs text-muted-foreground">
+                {supabaseDisabledMessage}
+              </p>
+            )}
+            <Button
+              variant="outline"
+              size="sm"
               className="w-full justify-start"
-              onClick={() => window.open(SUPABASE_LINKS.tables, '_blank')}
+              onClick={() => openSupabaseLink(SUPABASE_LINKS.tables)}
+              disabled={!SUPABASE_LINKS.tables}
+              title={!SUPABASE_LINKS.tables ? supabaseDisabledMessage : undefined}
             >
               <ExternalLink className="h-4 w-4 mr-2" />
               DB → Tables
             </Button>
-            
-            <Button 
-              variant="outline" 
-              size="sm" 
+
+            <Button
+              variant="outline"
+              size="sm"
               className="w-full justify-start"
-              onClick={() => window.open(SUPABASE_LINKS.logs, '_blank')}
+              onClick={() => openSupabaseLink(SUPABASE_LINKS.logs)}
+              disabled={!SUPABASE_LINKS.logs}
+              title={!SUPABASE_LINKS.logs ? supabaseDisabledMessage : undefined}
             >
               <ExternalLink className="h-4 w-4 mr-2" />
               Logs → Edge Functions
             </Button>
-            
-            <Button 
-              variant="outline" 
-              size="sm" 
+
+            <Button
+              variant="outline"
+              size="sm"
               className="w-full justify-start"
-              onClick={() => window.open(SUPABASE_LINKS.proofs, '_blank')}
+              onClick={() => openSupabaseLink(SUPABASE_LINKS.proofs)}
+              disabled={!SUPABASE_LINKS.proofs}
+              title={!SUPABASE_LINKS.proofs ? supabaseDisabledMessage : undefined}
             >
               <ExternalLink className="h-4 w-4 mr-2" />
               Storage → Proofs

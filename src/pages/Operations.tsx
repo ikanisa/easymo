@@ -22,8 +22,8 @@ import {
   AlertTriangle,
   Info
 } from 'lucide-react';
-import { AdminAPI } from '@/lib/api';
-import { SUPABASE_LINKS } from '@/lib/api-constants';
+import { AdminAPI, type HealthCheckResult } from '@/lib/api';
+import { SUPABASE_LINKS, HAS_SUPABASE_PROJECT } from '@/lib/api-constants';
 
 const EDGE_FUNCTIONS = [
   { name: 'wa-webhook', description: 'WhatsApp webhook handler' },
@@ -39,7 +39,7 @@ const EDGE_FUNCTIONS = [
 export default function Operations() {
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
 
-  const { data: healthData, isLoading, error, refetch } = useQuery({
+  const { data: healthData, isLoading, refetch } = useQuery<HealthCheckResult>({
     queryKey: ['health-check'],
     queryFn: async () => {
       const result = await AdminAPI.healthCheck();
@@ -47,11 +47,24 @@ export default function Operations() {
       return result;
     },
     refetchInterval: 60000, // Check every minute
+    retry: false,
+    refetchOnWindowFocus: false,
   });
 
   const handleRefresh = () => {
     refetch();
   };
+
+  const isError = healthData?.status === 'error';
+  const isSuccess = healthData?.status === 'ok';
+  const supabaseDisabledMessage = 'Configure VITE_SUPABASE_URL or VITE_SUPABASE_PROJECT_ID to enable Supabase links.';
+  const supabaseLinksEnabled = HAS_SUPABASE_PROJECT;
+  const showSupabaseWarning = !supabaseLinksEnabled;
+  const openSupabaseLink = (url?: string) => {
+    if (!url) return;
+    window.open(url, '_blank');
+  };
+  const functionsBase = SUPABASE_LINKS.functions;
 
   const formatTime = (date: Date) => {
     return date.toLocaleString('en-GB', {
@@ -91,7 +104,7 @@ export default function Operations() {
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
                 <span className="text-sm">API Status</span>
-                {error ? (
+                {isError ? (
                   <Badge variant="destructive" className="flex items-center space-x-1">
                     <AlertTriangle className="h-3 w-3" />
                     <span>Error</span>
@@ -99,9 +112,12 @@ export default function Operations() {
                 ) : isLoading ? (
                   <Badge variant="secondary">Checking...</Badge>
                 ) : (
-                  <Badge variant="default" className="bg-success text-success-foreground flex items-center space-x-1">
+                  <Badge
+                    variant={isSuccess ? "default" : "secondary"}
+                    className={`flex items-center space-x-1 ${isSuccess ? 'bg-success text-success-foreground' : ''}`}
+                  >
                     <CheckCircle2 className="h-3 w-3" />
-                    <span>Online</span>
+                    <span>{isSuccess ? 'Online' : 'Not Tested'}</span>
                   </Badge>
                 )}
               </div>
@@ -118,14 +134,29 @@ export default function Operations() {
                       {lastRefresh ? formatTime(lastRefresh) : 'Never'}
                     </span>
                   </div>
+                  {healthData.fallback && (
+                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                      <span>Fallback Probe</span>
+                      <span className="font-mono">
+                        {healthData.fallback.status === 'ok'
+                          ? `OK (${healthData.fallback.round_trip_ms}ms)`
+                          : `Error${healthData.fallback.message ? `: ${healthData.fallback.message}` : ''}`}
+                      </span>
+                    </div>
+                  )}
                 </>
               )}
 
-              {error && (
+              {isError && (
                 <Alert variant="destructive">
                   <AlertTriangle className="h-4 w-4" />
                   <AlertDescription className="text-sm">
-                    {error instanceof Error ? error.message : 'Unknown error occurred'}
+                    {healthData?.message ?? 'Unknown error occurred'}
+                    {healthData?.fallback && healthData.fallback.status !== 'ok' && (
+                      <span className="mt-2 block text-xs text-muted-foreground">
+                        Fallback: {healthData.fallback.message ?? 'Unavailable'}
+                      </span>
+                    )}
                   </AlertDescription>
                 </Alert>
               )}
@@ -151,12 +182,20 @@ export default function Operations() {
                   </ul>
                 </AlertDescription>
               </Alert>
-              
-              <Button 
-                variant="outline" 
-                size="sm" 
+
+              {showSupabaseWarning && (
+                <p className="text-xs text-muted-foreground">
+                  {supabaseDisabledMessage}
+                </p>
+              )}
+
+              <Button
+                variant="outline"
+                size="sm"
                 className="w-full"
-                onClick={() => window.open(SUPABASE_LINKS.cron, '_blank')}
+                onClick={() => openSupabaseLink(SUPABASE_LINKS.cron)}
+                disabled={!SUPABASE_LINKS.cron}
+                title={!SUPABASE_LINKS.cron ? supabaseDisabledMessage : undefined}
               >
                 <ExternalLink className="h-4 w-4 mr-2" />
                 View Cron Jobs
@@ -174,9 +213,14 @@ export default function Operations() {
             </CardTitle>
           </CardHeader>
           <CardContent>
+            {showSupabaseWarning && (
+              <p className="mb-3 text-xs text-muted-foreground">
+                {supabaseDisabledMessage}
+              </p>
+            )}
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {EDGE_FUNCTIONS.map((func) => (
-                <div 
+                <div
                   key={func.name}
                   className="flex items-center justify-between p-3 border rounded-lg"
                 >
@@ -187,7 +231,9 @@ export default function Operations() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => window.open(`${SUPABASE_LINKS.functions}/${func.name}/logs`, '_blank')}
+                    onClick={() => openSupabaseLink(functionsBase ? `${functionsBase}/${func.name}/logs` : undefined)}
+                    disabled={!functionsBase}
+                    title={!functionsBase ? supabaseDisabledMessage : undefined}
                   >
                     <ExternalLink className="h-3 w-3" />
                   </Button>
@@ -196,9 +242,11 @@ export default function Operations() {
             </div>
             
             <div className="mt-4 pt-4 border-t">
-              <Button 
-                variant="outline" 
-                onClick={() => window.open(SUPABASE_LINKS.functions, '_blank')}
+              <Button
+                variant="outline"
+                onClick={() => openSupabaseLink(SUPABASE_LINKS.functions)}
+                disabled={!SUPABASE_LINKS.functions}
+                title={!SUPABASE_LINKS.functions ? supabaseDisabledMessage : undefined}
               >
                 <ExternalLink className="h-4 w-4 mr-2" />
                 View All Functions
@@ -224,18 +272,28 @@ export default function Operations() {
               </AlertDescription>
             </Alert>
 
+            {showSupabaseWarning && (
+              <p className="text-xs text-muted-foreground">
+                {supabaseDisabledMessage}
+              </p>
+            )}
+
             <div className="flex space-x-2">
-              <Button 
-                variant="outline" 
-                onClick={() => window.open(SUPABASE_LINKS.proofs, '_blank')}
+              <Button
+                variant="outline"
+                onClick={() => openSupabaseLink(SUPABASE_LINKS.proofs)}
+                disabled={!SUPABASE_LINKS.proofs}
+                title={!SUPABASE_LINKS.proofs ? supabaseDisabledMessage : undefined}
               >
                 <ExternalLink className="h-4 w-4 mr-2" />
                 Browse Proofs
               </Button>
-              
-              <Button 
+
+              <Button
                 variant="outline"
-                onClick={() => window.open(SUPABASE_LINKS.storage, '_blank')}
+                onClick={() => openSupabaseLink(SUPABASE_LINKS.storage)}
+                disabled={!SUPABASE_LINKS.storage}
+                title={!SUPABASE_LINKS.storage ? supabaseDisabledMessage : undefined}
               >
                 <ExternalLink className="h-4 w-4 mr-2" />
                 All Storage
