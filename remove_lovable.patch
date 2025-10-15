@@ -1,0 +1,31 @@
+--- a/index.html
++++ b/index.html
+@@
+-    <meta name="author" content="Lovable" />
++    <meta name="author" content="easymo" />
+@@
+-    <meta property="og:title" content="8a9cef98-9082-4ef0-b978-fe23200a4c8a" />
+-    <meta property="og:description" content="Lovable Generated Project" />
+-    <meta property="og:type" content="website" />
+-    <meta property="og:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
++    <meta property="og:title" content="WhatsApp Mobility Admin" />
++    <meta property="og:description" content="Admin interface for WhatsApp-based mobility platform" />
++    <meta property="og:type" content="website" />
++    <!-- Removed external OpenGraph image referencing lovable.dev -->
+@@
+-    <meta name="twitter:card" content="summary_large_image" />
+-    <meta name="twitter:site" content="@lovable_dev" />
+-    <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
++    <meta name="twitter:card" content="summary_large_image" />
+--- a/vite.config.ts
++++ b/vite.config.ts
+@@
+-import { componentTagger } from "lovable-tagger";
++// Removed lovable-tagger plugin import
+@@
+-  plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
++  plugins: [react()].filter(Boolean),
+--- a/package.json
++++ b/package.json
+@@
+-    "lovable-tagger": "^1.1.9",
