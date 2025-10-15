@@ -15,11 +15,11 @@ jobs:
       - name: Setup Deno
         uses: denoland/setup-deno@v2
         with:
-          deno-version: v1.x
+          deno-version: v2.x
 
       - name: Run synthetic checks
         env:
           ADMIN_BASE_URL: ${{ secrets.ADMIN_BASE_URL }}
           ADMIN_API_TOKEN: ${{ secrets.ADMIN_API_TOKEN }}
-        run: deno run --allow-env --allow-net tools/monitoring/admin-synthetic-checks.ts
+        run: deno run --allow-env --allow-net tools/monitoring/admin/synthetic-checks.ts
 

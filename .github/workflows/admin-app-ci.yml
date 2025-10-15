@@ -1,9 +1,7 @@
 name: Admin App CI
-
 on:
   push:
   pull_request:
-
 permissions:
   contents: read
 
@@ -17,26 +15,20 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v5
-
       - name: Setup Node
         uses: actions/setup-node@v5
         with:
           node-version: 18
           cache: 'npm'
           cache-dependency-path: admin-app/package-lock.json
-
       - name: Install dependencies
         run: npm ci
-
       - name: Typecheck (API + lib)
         run: npx tsc -p tsconfig.ci.json --noEmit
-
       - name: Lint
         run: npm run lint --no-update-notifier --no --max-warnings=0
-
       - name: Run tests
         run: npm test -- --run
-
       - name: Build
         env:
           # Ensure mocks are off for production-like builds
@@ -49,12 +41,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v5
-
       - name: Setup Deno
         uses: denoland/setup-deno@v2
         with:
-          deno-version: v1.x
-
+          deno-version: v2.x
       - name: Check migration formatting
         run: deno run --allow-read tools/sql/check_migrations.ts
 
@@ -67,7 +57,7 @@ jobs:
       - name: Setup Deno
         uses: denoland/setup-deno@v2
         with:
-          deno-version: v1.x
+          deno-version: v2.x
       - name: Audit RLS policies
         run: deno run --allow-read tools/sql/policy_audit.ts
 
@@ -78,14 +68,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v5
-
       - name: Setup Deno
         uses: denoland/setup-deno@v2
         with:
-          deno-version: v1.x
-
+          deno-version: v2.x
       - name: Run synthetic checks
         env:
           ADMIN_BASE_URL: ${{ secrets.ADMIN_BASE_URL }}
           ADMIN_API_TOKEN: ${{ secrets.ADMIN_API_TOKEN }}
-        run: deno run --allow-env --allow-net tools/monitoring/admin-synthetic-checks.ts
+        run: deno run --allow-env --allow-net tools/monitoring/admin/synthetic-checks.ts
