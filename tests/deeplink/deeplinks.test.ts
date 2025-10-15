@@ -78,5 +78,16 @@ describe('deeplink signing', () => {
     );
     expect(insuranceBootstrap.flowState).toMatchObject({ step: 'attach_certificate' });
     expect(insuranceBootstrap.firstPrompt.acceptMimeTypes).toContain('image/*');
+
+    const qrBootstrap = buildBootstrap(
+      'generate_qr',
+      { amount: 2000, currency: 'RWF', note: 'Moto fare Kimironko → CBD' },
+      'https://easymo.link/flow/qr?t=test',
+    );
+    expect(qrBootstrap.flowState).toMatchObject({ flow: 'qr', amount: 2000, currency: 'RWF' });
+    expect(qrBootstrap.firstPrompt.text).toContain('MoMo QR Generator.');
+    expect(qrBootstrap.firstPrompt.text).toContain('Amount: 2000 RWF');
+    expect(qrBootstrap.firstPrompt.text).toContain('Note: Moto fare Kimironko → CBD');
+    expect(qrBootstrap.firstPrompt.text).toContain('Confirm to generate your QR code.');
   });
 });
