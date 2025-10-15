@@ -1,2 +1,2 @@
--- Placeholder so local migrations match remote history for 20251014120000.
--- The original migration was disabled and will be rewritten later.
+-- Placeholder so local migrations match remote version 20251014120000.
+-- Original migration was disabled; will be re-implemented later if needed.
