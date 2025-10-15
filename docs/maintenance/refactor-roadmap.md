@@ -19,7 +19,7 @@ additive-only guardrails and can be delivered as focused PRs.
   |   498 | `admin-app/components/baskets/IbiminaRegistryTable.tsx` |
   |   440 | `admin-app/components/baskets/LoanReviewDrawer.tsx`     |
   |   376 | `admin-app/components/assistant/AssistantPanel.tsx`     |
-- **Debt tracking:** Wire `tools/monitoring/admin-synthetic-checks.ts` into CI
+- **Debt tracking:** Wire `tools/monitoring/admin/synthetic-checks.ts` into CI
   (nightly GitHub Action) so regressions are caught early.
 - **Instrumentation:** Promote `insurance-ocr` metrics webhook and extend
   logging helpers to other queues (`order-pending-reminder`, `cart-reminder`).

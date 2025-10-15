@@ -5,7 +5,7 @@
  * Usage:
  *   ADMIN_BASE_URL=https://admin.example.com \
  *   ADMIN_API_TOKEN=xyz \
- *   deno run --allow-env --allow-net tools/monitoring/admin-synthetic-checks.ts
+ *   deno run --allow-env --allow-net tools/monitoring/admin/synthetic-checks.ts
  *
  * The script reports non-2xx/3xx responses or network failures and exits with
  * code 1 so it can be wired into cron/GitHub Actions.

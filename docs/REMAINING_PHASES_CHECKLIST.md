@@ -45,7 +45,7 @@
 - Configure Supabase log drains or Sentry DSN to capture Edge Function errors.
 - `insurance-ocr` function publishes queue/processing metrics when
   `INSURANCE_OCR_METRICS_WEBHOOK_URL` is provided; wire webhook to ops dashboards.
-- Schedule synthetic checks via `tools/monitoring/admin-synthetic-checks.ts`
+- Schedule synthetic checks via `tools/monitoring/admin/synthetic-checks.ts`
   with `ADMIN_BASE_URL` to detect API auth/config regressions.
 
 **Status:** Deferred — environment wiring (log drains, webhook, synthetic cron) will be handled post-next phase.

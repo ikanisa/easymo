@@ -15,7 +15,7 @@
   - [ ] Rollback toggles documented in settings.
   - [ ] `/api/settings/alerts` served from Supabase with RLS policies enabled;
         degraded mock messaging captured when credentials absent.
-  - [ ] `tools/monitoring/admin-synthetic-checks.ts` running against staging `ADMIN_BASE_URL`
+  - [ ] `tools/monitoring/admin/synthetic-checks.ts` running against staging `ADMIN_BASE_URL`
         (fails the job on non-2xx responses).
 
 ## Phase 2: Pilot

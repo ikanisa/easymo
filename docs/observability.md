@@ -7,7 +7,7 @@ This project wires lightweight observability for the admin app without introduci
 - API observability wrapper: All API routes can be wrapped with `createHandler(name, handler)` to gain basic metrics hooks and unified error handling.
 - Error boundary: `app/error.tsx` captures unhandled UI errors and reports to the console and (optionally) Sentry.
 - Sentry (optional): Client and server helpers lazily import `@sentry/nextjs` when DSN env vars are present.
-- Synthetic checks: `tools/monitoring/admin-synthetic-checks.ts` performs HEAD/GET/POST pings to critical endpoints.
+- Synthetic checks: `tools/monitoring/admin/synthetic-checks.ts` performs HEAD/GET/POST pings to critical endpoints.
 
 Environment variables
 ---------------------
@@ -22,7 +22,7 @@ Usage
 
 - Wrap new API routes with `createHandler('namespace.route', async (req, ctx, { recordMetric, log }) => { ... })`.
 - Emit logs via `logStructured({ event, target, status, message, details })`.
-- Add critical endpoints to `tools/monitoring/admin-synthetic-checks.ts` to expand monitoring coverage.
+- Add critical endpoints to `tools/monitoring/admin/synthetic-checks.ts` to expand monitoring coverage.
 
 Notes
 -----
