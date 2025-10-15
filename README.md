@@ -37,7 +37,7 @@ guides go-live hardening efforts.
 
 ## Monitoring Helpers
 
-- `tools/monitoring/admin-synthetic-checks.ts` performs simple HTTP probes
+- `tools/monitoring/admin/synthetic-checks.ts` performs simple HTTP probes
   against critical Admin APIs. Set `ADMIN_BASE_URL` (and optionally
   `ADMIN_API_TOKEN`) before running; the script exits non-zero on failure so it
   can back GitHub Actions or cron alerts.
