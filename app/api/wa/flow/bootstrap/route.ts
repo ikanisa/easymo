@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { getServiceSupabaseClient } from '../../../_lib/supabase-admin';
-import { jsonError, jsonOk } from '../../../_lib/http';
+import { jsonError, jsonOk, jsonResponse } from '../../../_lib/http';
+import { enforceRateLimit } from '../../../_lib/rate-limit';
 import {
   buildBootstrap,
   buildDeepLinkUrl,
@@ -16,12 +17,49 @@ const payloadSchema = z.object({
   user_msisdn: z.string().min(5),
 });
 
+const RATE_LIMIT_KEY_PREFIX = 'deeplink:bootstrap';
+const RATE_LIMIT_WINDOW_MS = 60_000; // 60 seconds
+const RATE_LIMIT_MAX_REQUESTS = 60;
+
+function extractClientIp(request: Request) {
+  const forwarded = request.headers.get('x-forwarded-for');
+  if (forwarded) {
+    const [first] = forwarded.split(',');
+    if (first) {
+      return first.trim();
+    }
+  }
+  const realIp = request.headers.get('x-real-ip');
+  if (realIp) {
+    return realIp.trim();
+  }
+  return 'unknown';
+}
+
 function normalizeMsisdn(msisdn: string) {
   return msisdn.replace(/\s+/g, '');
 }
 
 export async function POST(request: Request) {
   const supabase = getServiceSupabaseClient();
+
+  const ip = extractClientIp(request);
+  const ipRateLimit = enforceRateLimit(
+    `${RATE_LIMIT_KEY_PREFIX}:ip:${ip}`,
+    RATE_LIMIT_MAX_REQUESTS,
+    RATE_LIMIT_WINDOW_MS,
+  );
+
+  if (!ipRateLimit.ok) {
+    const retryAfterSeconds = Math.max(1, Math.ceil(ipRateLimit.retryAfterMs / 1000));
+    return jsonResponse(
+      { error: 'rate_limited', scope: 'ip', retryAfterSeconds },
+      {
+        status: 429,
+        headers: { 'retry-after': `${retryAfterSeconds}` },
+      },
+    );
+  }
 
   let raw: unknown;
   try {
@@ -38,6 +76,23 @@ export async function POST(request: Request) {
 
   const token = parsed.data.token.trim();
   const userMsisdn = normalizeMsisdn(parsed.data.user_msisdn);
+
+  const userRateLimit = enforceRateLimit(
+    `${RATE_LIMIT_KEY_PREFIX}:user:${userMsisdn}`,
+    RATE_LIMIT_MAX_REQUESTS,
+    RATE_LIMIT_WINDOW_MS,
+  );
+
+  if (!userRateLimit.ok) {
+    const retryAfterSeconds = Math.max(1, Math.ceil(userRateLimit.retryAfterMs / 1000));
+    return jsonResponse(
+      { error: 'rate_limited', scope: 'user', retryAfterSeconds },
+      {
+        status: 429,
+        headers: { 'retry-after': `${retryAfterSeconds}` },
+      },
+    );
+  }
 
   let decoded:
     | {
@@ -76,6 +131,11 @@ export async function POST(request: Request) {
     return jsonError({ error: 'token_flow_mismatch' }, 409);
   }
 
+  const tokenExpiry = decoded.payload.exp ? new Date(decoded.payload.exp) : null;
+  if (!tokenExpiry || Number.isNaN(tokenExpiry.getTime())) {
+    return jsonError({ error: 'token_expiry_invalid' }, 500);
+  }
+
   const storedNonce = (data.payload as Record<string, unknown> | null)?.nonce;
   if (typeof storedNonce === 'string' && storedNonce !== decoded.payload.nonce) {
     console.error('deeplink.bootstrap.nonce_mismatch', {
@@ -90,10 +150,11 @@ export async function POST(request: Request) {
   if (Number.isNaN(expiresAt.getTime())) {
     return jsonError({ error: 'token_expiry_invalid' }, 500);
   }
-  if (expiresAt.getTime() <= Date.now()) {
+  if (tokenExpiry.getTime() <= Date.now() || expiresAt.getTime() <= Date.now()) {
     await recordDeeplinkEvent(supabase, data.id, 'expired', {
       flow,
       reason: 'expired_on_bootstrap',
+      nonce: decoded.payload.nonce,
     });
     return jsonError({ error: 'token_expired' }, 410);
   }
@@ -108,7 +169,7 @@ export async function POST(request: Request) {
       supabase,
       data.id,
       'denied',
-      { flow, reason: 'msisdn_mismatch', expected: data.msisdn_e164, actual: userMsisdn },
+      { flow, reason: 'msisdn_mismatch', expected: data.msisdn_e164, actual: userMsisdn, nonce: decoded.payload.nonce },
       userMsisdn,
     );
     return jsonError({ error: 'token_denied', reason: 'msisdn_mismatch' }, 403);
@@ -151,7 +212,7 @@ export async function POST(request: Request) {
     supabase,
     data.id,
     'opened',
-    { flow, via: 'bootstrap' },
+    { flow, via: 'bootstrap', nonce: decoded.payload.nonce },
     userMsisdn,
   );
 
@@ -200,5 +261,17 @@ export async function POST(request: Request) {
     msisdnBound: data.msisdn_e164 ?? null,
     multiUse: Boolean(data.multi_use),
     expiresAt: data.expires_at,
+    rateLimit: {
+      ip: {
+        limit: ipRateLimit.limit,
+        remaining: ipRateLimit.remaining,
+        resetAt: new Date(ipRateLimit.resetAt).toISOString(),
+      },
+      user: {
+        limit: userRateLimit.limit,
+        remaining: userRateLimit.remaining,
+        resetAt: new Date(userRateLimit.resetAt).toISOString(),
+      },
+    },
   });
 }

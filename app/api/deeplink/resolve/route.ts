@@ -1,7 +1,9 @@
 import { z } from 'zod';
 import { getServiceSupabaseClient } from '../../_lib/supabase-admin';
-import { jsonError, jsonOk } from '../../_lib/http';
+import { jsonError, jsonOk, jsonResponse } from '../../_lib/http';
+import { enforceRateLimit } from '../../_lib/rate-limit';
 import {
+  buildDeepLinkUrl,
   DeeplinkFlow,
   ensureFlowEnabled,
   getFlowConfig,
@@ -14,9 +16,47 @@ const querySchema = z.object({
   t: z.string().min(10),
 });
 
+const RATE_LIMIT_KEY_PREFIX = 'deeplink:resolve';
+const RATE_LIMIT_WINDOW_MS = 60_000; // 60 seconds
+const RATE_LIMIT_MAX_REQUESTS = 60;
+
+function extractClientIp(request: Request) {
+  const forwarded = request.headers.get('x-forwarded-for');
+  if (forwarded) {
+    const [first] = forwarded.split(',');
+    if (first) {
+      return first.trim();
+    }
+  }
+  const realIp = request.headers.get('x-real-ip');
+  if (realIp) {
+    return realIp.trim();
+  }
+  return 'unknown';
+}
+
 export async function GET(request: Request) {
   const supabase = getServiceSupabaseClient();
   const url = new URL(request.url);
+
+  const ip = extractClientIp(request);
+  const rateLimitResult = enforceRateLimit(
+    `${RATE_LIMIT_KEY_PREFIX}:${ip}`,
+    RATE_LIMIT_MAX_REQUESTS,
+    RATE_LIMIT_WINDOW_MS,
+  );
+
+  if (!rateLimitResult.ok) {
+    const retryAfterSeconds = Math.max(1, Math.ceil(rateLimitResult.retryAfterMs / 1000));
+    return jsonResponse(
+      { error: 'rate_limited', retryAfterSeconds },
+      {
+        status: 429,
+        headers: { 'retry-after': `${retryAfterSeconds}` },
+      },
+    );
+  }
+
   const parsed = querySchema.safeParse(Object.fromEntries(url.searchParams));
   if (!parsed.success) {
     return jsonError({ error: 'invalid_token', details: parsed.error.flatten() }, 400);
@@ -62,6 +102,11 @@ export async function GET(request: Request) {
 
   const flow = data.flow as DeeplinkFlow;
 
+  const tokenExpiry = decoded.payload.exp ? new Date(decoded.payload.exp) : null;
+  if (!tokenExpiry || Number.isNaN(tokenExpiry.getTime())) {
+    return jsonError({ error: 'token_expiry_invalid' }, 500);
+  }
+
   const storedNonce = (data.payload as Record<string, unknown> | null)?.nonce;
   if (typeof storedNonce === 'string' && storedNonce !== decoded.payload.nonce) {
     console.error('deeplink.resolve.nonce_mismatch', {
@@ -77,12 +122,12 @@ export async function GET(request: Request) {
     return jsonError({ error: 'token_expiry_invalid' }, 500);
   }
 
-  if (expiresAt.getTime() <= Date.now()) {
+  if (tokenExpiry.getTime() <= Date.now() || expiresAt.getTime() <= Date.now()) {
     await recordDeeplinkEvent(
       supabase,
       data.id,
       'expired',
-      { flow, reason: 'expired_on_resolve' },
+      { flow, reason: 'expired_on_resolve', nonce: decoded.payload.nonce },
     );
     return jsonError({ error: 'token_expired' }, 410);
   }
@@ -92,11 +137,14 @@ export async function GET(request: Request) {
     return jsonError({ error: 'flow_disabled' }, 403);
   }
 
+  const viewUrl = buildDeepLinkUrl(flow, token);
+
   await recordDeeplinkEvent(
     supabase,
     data.id,
     'opened',
-    { flow, via: 'resolver' },
+    { flow, via: 'resolver', nonce: decoded.payload.nonce },
+    decoded.payload.msisdn ?? null,
   );
 
   const payloadWithoutNonce = stripNonce(data.payload as Record<string, unknown> | null);
@@ -111,5 +159,11 @@ export async function GET(request: Request) {
     msisdnBound: data.msisdn_e164 ?? null,
     nextStepHint: config?.nextStepHint,
     multiUse: Boolean(data.multi_use),
+    viewUrl,
+    rateLimit: {
+      limit: rateLimitResult.limit,
+      remaining: rateLimitResult.remaining,
+      resetAt: new Date(rateLimitResult.resetAt).toISOString(),
+    },
   });
 }

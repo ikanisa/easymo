@@ -200,9 +200,46 @@ export function buildBootstrap(flow: DeeplinkFlow, payload: Record<string, unkno
     }
     case 'generate_qr': {
       const amountValue = payloadRecord['amount'];
-      const amount = typeof amountValue === 'number' || typeof amountValue === 'string'
-        ? ` (Amount: ${amountValue})`
-        : '';
+      const currencyValue = payloadRecord['currency'];
+      const noteValue = payloadRecord['note'];
+      const merchantCodeValue = payloadRecord['merchant_code'];
+
+      const details: string[] = [];
+      let amountText: string | null = null;
+
+      if (typeof amountValue === 'number' && Number.isFinite(amountValue)) {
+        amountText = amountValue.toString();
+      } else if (typeof amountValue === 'string' && amountValue.trim().length > 0) {
+        amountText = amountValue.trim();
+      }
+
+      const currencyText =
+        typeof currencyValue === 'string' && currencyValue.trim().length > 0
+          ? currencyValue.trim()
+          : null;
+
+      if (amountText) {
+        const amountDetail = currencyText ? `${amountText} ${currencyText}` : amountText;
+        details.push(`Amount: ${amountDetail}`);
+      } else if (currencyText) {
+        details.push(`Currency: ${currencyText}`);
+      }
+
+      if (typeof noteValue === 'string' && noteValue.trim().length > 0) {
+        details.push(`Note: ${noteValue.trim()}`);
+      }
+
+      if (typeof merchantCodeValue === 'string' && merchantCodeValue.trim().length > 0) {
+        details.push(`Merchant code: ${merchantCodeValue.trim()}`);
+      }
+
+      const detailsText =
+        details.length > 0 ? `\n${details.map((entry) => `• ${entry}`).join('\n')}` : '';
+      const suffix = 'Confirm to generate your QR code.';
+      const promptText = details.length > 0
+        ? `MoMo QR Generator.${detailsText}\n${suffix}`
+        : 'MoMo QR Generator. Share an amount or note then confirm to generate your QR code.';
+
       return {
         flowState: {
           flow: 'qr',
@@ -211,7 +248,7 @@ export function buildBootstrap(flow: DeeplinkFlow, payload: Record<string, unkno
         },
         firstPrompt: {
           type: 'text',
-          text: `MoMo QR Generator${amount}. Share details or update the amount then confirm to generate your QR code.`,
+          text: promptText,
         },
       } satisfies FlowBootstrapResult;
     }
