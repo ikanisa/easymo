@@ -50,19 +50,19 @@ BEGIN
   ) INTO dropoff_lng_exists;
 
   IF pickup_lat_exists AND pickup_lng_exists THEN
-    EXECUTE $$
+    EXECUTE format($mv$
       UPDATE rides_offers
       SET pickup_geog = ST_SetSRID(ST_MakePoint(pickup_lng, pickup_lat), 4326)::geography
       WHERE pickup_lat IS NOT NULL AND pickup_lng IS NOT NULL AND pickup_geog IS NULL
-    $$;
+    $mv$);
   END IF;
 
   IF dropoff_lat_exists AND dropoff_lng_exists THEN
-    EXECUTE $$
+    EXECUTE format($mv$
       UPDATE rides_offers
       SET dropoff_geog = ST_SetSRID(ST_MakePoint(dropoff_lng, dropoff_lat), 4326)::geography
       WHERE dropoff_lat IS NOT NULL AND dropoff_lng IS NOT NULL AND dropoff_geog IS NULL
-    $$;
+    $mv$);
   END IF;
 
   SELECT EXISTS (
@@ -83,19 +83,19 @@ BEGIN
   ) INTO dropoff_lng_exists;
 
   IF pickup_lat_exists AND pickup_lng_exists THEN
-    EXECUTE $$
+    EXECUTE format($mv$
       UPDATE rides_requests
       SET pickup_geog = ST_SetSRID(ST_MakePoint(pickup_lng, pickup_lat), 4326)::geography
       WHERE pickup_lat IS NOT NULL AND pickup_lng IS NOT NULL AND pickup_geog IS NULL
-    $$;
+    $mv$);
   END IF;
 
   IF dropoff_lat_exists AND dropoff_lng_exists THEN
-    EXECUTE $$
+    EXECUTE format($mv$
       UPDATE rides_requests
       SET dropoff_geog = ST_SetSRID(ST_MakePoint(dropoff_lng, dropoff_lat), 4326)::geography
       WHERE dropoff_lat IS NOT NULL AND dropoff_lng IS NOT NULL AND dropoff_geog IS NULL
-    $$;
+    $mv$);
   END IF;
 END$$;
 
