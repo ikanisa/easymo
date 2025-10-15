@@ -76,6 +76,12 @@ export const NAV_ITEMS: NavItem[] = [
     group: "Operations",
   },
   {
+    label: "Deep Links",
+    href: "/deep-links",
+    description: "Issue Insurance, Basket, and QR entry links",
+    group: "Operations",
+  },
+  {
     label: "Vouchers",
     href: "/vouchers",
     description: "Issuance, preview, and lifecycle",
