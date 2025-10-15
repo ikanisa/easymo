@@ -43,6 +43,18 @@ async function apiPost<T>(path: string, body: any): Promise<T> {
   return response.json();
 }
 
+export type HealthCheckResult = {
+  status: 'ok' | 'error';
+  timestamp: string;
+  round_trip_ms: number;
+  message?: string;
+  fallback?: {
+    status: 'ok' | 'error';
+    round_trip_ms: number;
+    message?: string;
+  };
+};
+
 export const AdminAPI = {
   // Settings / Flags
   getSettings: async (): Promise<Settings & { pro_enabled?: boolean }> => {
@@ -295,13 +307,66 @@ export const AdminAPI = {
     apiPost('/media-fetch', { media_id, subscription_id }),
 
   // Health check
-  healthCheck: (): Promise<{ status: 'ok', timestamp: string, round_trip_ms: number }> => {
+  healthCheck: async (): Promise<HealthCheckResult> => {
+    const timestamp = new Date().toISOString();
     const start = Date.now();
-    return apiGet('/admin-stats').then(data => ({
-      status: 'ok' as const,
-      timestamp: new Date().toISOString(),
-      round_trip_ms: Date.now() - start
-    }));
+
+    try {
+      await apiGet('/admin-stats');
+      return {
+        status: 'ok',
+        timestamp,
+        round_trip_ms: Date.now() - start,
+      };
+    } catch (primaryError) {
+      const message = primaryError instanceof Error ? primaryError.message : String(primaryError);
+      const fallbackStart = Date.now();
+
+      try {
+        const fallbackResponse = await fetch('/api/integrations/status');
+        const fallbackRoundTrip = Date.now() - fallbackStart;
+
+        if (fallbackResponse.ok) {
+          return {
+            status: 'error',
+            timestamp,
+            round_trip_ms: Date.now() - start,
+            message,
+            fallback: {
+              status: 'ok',
+              round_trip_ms: fallbackRoundTrip,
+            },
+          };
+        }
+
+        const fallbackBody = await fallbackResponse.text().catch(() => '');
+        return {
+          status: 'error',
+          timestamp,
+          round_trip_ms: Date.now() - start,
+          message,
+          fallback: {
+            status: 'error',
+            round_trip_ms: fallbackRoundTrip,
+            message: fallbackBody
+              ? `Fallback responded with ${fallbackResponse.status}: ${fallbackBody}`
+              : `Fallback responded with ${fallbackResponse.status}`,
+          },
+        };
+      } catch (fallbackError) {
+        return {
+          status: 'error',
+          timestamp,
+          round_trip_ms: Date.now() - start,
+          message,
+          fallback: {
+            status: 'error',
+            round_trip_ms: Date.now() - fallbackStart,
+            message: fallbackError instanceof Error ? fallbackError.message : String(fallbackError),
+          },
+        };
+      }
+    }
   }
 };
 
