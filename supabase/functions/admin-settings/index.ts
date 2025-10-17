@@ -33,47 +33,87 @@ serve(async (req) => {
   // Enforce admin token
   const apiKey = req.headers.get('x-api-key');
   if (apiKey !== ADMIN_TOKEN) {
-    return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403 });
+    return new Response(JSON.stringify({ error: 'Forbidden' }), {
+      status: 403,
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
+
   if (req.method === 'GET') {
     const { data, error } = await supabase
       .from('settings')
       .select('*')
       .limit(1)
       .maybeSingle();
+
     if (error) {
-      return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+      return new Response(JSON.stringify({ error: error.message }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
-    return new Response(JSON.stringify({ config: data }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+
+    return new Response(JSON.stringify({ config: data }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
+
   if (req.method === 'POST') {
     const body = await req.json().catch(() => ({}));
     const result = SettingsPatch.safeParse(body);
+
     if (!result.success) {
-      return new Response(JSON.stringify({ error: 'Invalid payload', details: result.error.errors }), { status: 400 });
+      return new Response(
+        JSON.stringify({ error: 'Invalid payload', details: result.error.errors }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } },
+      );
     }
+
     // Find the single settings row
     const { data: existing, error: fetchErr } = await supabase
       .from('settings')
       .select('id')
       .limit(1)
       .maybeSingle();
+
     if (fetchErr) {
-      return new Response(JSON.stringify({ error: fetchErr.message }), { status: 500 });
+      return new Response(JSON.stringify({ error: fetchErr.message }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
+
     if (!existing) {
-      return new Response(JSON.stringify({ error: 'Settings row does not exist' }), { status: 404 });
+      return new Response(JSON.stringify({ error: 'Settings row does not exist' }), {
+        status: 404,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
+
     const { data: updated, error: updateErr } = await supabase
       .from('settings')
       .update(result.data)
       .eq('id', existing.id)
       .select('*')
       .maybeSingle();
+
     if (updateErr) {
-      return new Response(JSON.stringify({ error: updateErr.message }), { status: 500 });
+      return new Response(JSON.stringify({ error: updateErr.message }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
-    return new Response(JSON.stringify({ config: updated }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+
+    return new Response(JSON.stringify({ config: updated }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
-  return new Response(JSON.stringify({ error: 'Method not allowed' }), { status: 405 });
+
+  return new Response(JSON.stringify({ error: 'Method not allowed' }), {
+    status: 405,
+    headers: { 'Content-Type': 'application/json' },
+  });
 });
+

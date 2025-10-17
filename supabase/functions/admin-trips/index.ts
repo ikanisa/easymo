@@ -19,39 +19,52 @@ if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
 const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 
 serve(async (req) => {
+  const json = (body: unknown, status = 200) =>
+    new Response(JSON.stringify(body), {
+      status,
+      headers: { 'Content-Type': 'application/json' },
+    });
+
   const apiKey = req.headers.get('x-api-key');
   if (apiKey !== ADMIN_TOKEN) {
-    return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403 });
+    return json({ error: 'Forbidden' }, 403);
   }
+
   const url = new URL(req.url);
   const action = url.searchParams.get('action') ?? 'list';
+
   try {
     if (action === 'close' && req.method === 'POST') {
       const body = await req.json().catch(() => ({}));
-      const id = Number(body.id);
+      const id = Number((body as { id?: unknown }).id);
       if (!id) {
-        return new Response(JSON.stringify({ error: 'id is required' }), { status: 400 });
+        return json({ error: 'id is required' }, 400);
       }
+
       const { error } = await supabase
         .from('trips')
         .update({ status: 'expired' })
         .eq('id', id);
+
       if (error) {
-        return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+        return json({ error: error.message }, 500);
       }
-      return new Response(JSON.stringify({ ok: true }), { status: 200 });
+      return json({ ok: true }, 200);
     }
-    // Default: list trips
+
+    // Default: list trips (GET or otherwise)
     const { data, error } = await supabase
       .from('trips')
       .select('*')
       .order('created_at', { ascending: false });
+
     if (error) {
-      return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+      return json({ error: error.message }, 500);
     }
-    return new Response(JSON.stringify({ trips: data ?? [] }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+
+    return json({ trips: data ?? [] }, 200);
   } catch (e) {
     const message = e instanceof Error ? e.message : String(e);
-    return new Response(JSON.stringify({ error: message }), { status: 500 });
+    return json({ error: message }, 500);
   }
 });

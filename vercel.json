@@ -5,11 +5,13 @@
     { "source": "/admin-users", "destination": "/api/admin-users" },
     { "source": "/admin-trips", "destination": "/api/admin-trips" },
     { "source": "/admin-subscriptions", "destination": "/api/admin-subscriptions" },
-    { "source": "/simulator", "destination": "/api/simulator" }
+    { "source": "/simulator", "destination": "/api/simulator" },
+    { "source": "/(.*)", "destination": "/" }
   ],
+  "regions": ["fra1"],
   "functions": {
     "api/**/*.{ts,js}": {
-      "runtime": "edge"
+      "runtime": "nodejs20.x"
     }
   }
 }

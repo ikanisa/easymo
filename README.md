@@ -1,51 +1,72 @@
-# easymo
+# EasyMO Phase 2 Implementation
 
-This repo follows a standard blueprint to help our Dev Agent (Codex-style) work
-better.
+This repository contains the implementation for Phase 2 of the EasyMO admin panel
+and WhatsApp mobility backend.  The goal of this phase is to replace the
+mocked API used during Phase 1 with Supabase Edge Functions backed by a
+relational database with row‑level security.  The admin panel runs as a
+Vite React app and communicates with those Edge Functions through the
+`RealAdapter` class.
 
-- `app/` – app code
-- `packages/` – shared libs
-- `supabase/` – database, migrations, seeds
-- `agent/` – Dev Agent tools + policies
-- `.github/workflows/` – CI jobs
-- `docs/` – decisions & notes
+## Key Features
 
-See `docs/maintenance/refactor-roadmap.md` for the staged cleanup plan that
-guides go-live hardening efforts.
+- **RealAdapter** (`src/lib/adapter.real.ts`): delegates to the `AdminAPI`
+  helper which calls Supabase Edge Functions secured by an admin token.
+  This keeps the Supabase service role key server-side while exposing a
+  simple asynchronous API for settings, users, trips, subscriptions and
+  simulator workflows.
+- **Supabase Edge Functions**: located under `supabase/functions`, these
+  functions handle admin API requests.  Each function verifies an
+  `x-api-key` header against `EASYMO_ADMIN_TOKEN` and uses the service
+  role key to bypass RLS for writes.  Functions include:
+  - `admin-settings`: get/update settings
+  - `admin-stats`: compute operational metrics
+  - `admin-users`: list users and derive subscription status
+  - `admin-trips`: list trips or close a trip
+  - `admin-subscriptions`: list, approve or reject subscriptions
+  - `simulator`: simulate driver/passenger operations
+- **Database Schema & Migrations**: see
+  `supabase/migrations/20251112100000_phase2_init.sql` for the Phase 2
+  schema.  New tables include `settings`, `profiles`, `driver_presence`,
+  `trips` and `subscriptions`.  Row level security is enabled on all
+  tables with permissive read policies and restrictive write policies.
+- **Seeding**: a development seed file (`supabase/seeders/phase2_seed.sql`)
+  inserts example settings, profiles, driver presence rows, trips and
+  subscriptions for local testing.
+- **Environment Variables**: `.env.example` documents all required
+  variables such as `VITE_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` and
+  `EASYMO_ADMIN_TOKEN`.
+- **Vercel Configuration**: `vercel.json` rewrites API routes to the
+  corresponding edge functions and configures them to run on Vercel’s
+  Edge Runtime.
 
-## Phase-2 Supabase Integration
+## Development Notes
 
-The Vite admin panel now calls Supabase directly via the service client defined
-in `src/lib/adapter.real.ts`. The adapter issues SQL queries and RPC calls for
-settings, users, trips, subscriptions and simulator flows – the legacy REST shim
-has been removed.
+1. Copy `.env.example` to `.env` and fill in your Supabase and admin
+   credentials.  Never commit your service role key to version control.
+2. Run `pnpm install` (or `npm install`) to install dependencies.
+3. Start the development server with `pnpm dev`.  The admin panel will
+   communicate with your Supabase project via the RealAdapter and Edge
+   Functions.
+4. To apply the database schema locally, install the Supabase CLI and run
+   `supabase db push` inside the `easymo` directory.  Then execute the
+   seed file via `supabase db query < supabase/seeders/phase2_seed.sql`.
+5. Deploy edge functions via `supabase functions deploy --project-ref <ref>`,
+   or let Vercel handle deployment if configured.
 
-### Local setup
+## Testing
 
-1. Apply the mobility schema and RLS policies:
-   ```bash
-   supabase db reset --schema public \
-     --file easymo/supabase/migrations/20251112090000_phase2_mobility_core.sql \
-     --file easymo/supabase/migrations/20251112091000_phase2_mobility_rls.sql
-   ```
-2. Seed fixtures for simulator testing:
-   ```bash
-   supabase db remote commit --file easymo/supabase/seed/fixtures/phase_b_seed.sql
-   ```
-3. Copy `docs/env/env.sample` to `.env.local` and populate the Supabase,
-   WhatsApp, simulator and monitoring secrets.
-4. Run the app with `npm run dev`.
+Vitest is used for unit tests.  Example tests for the `RealAdapter` are
+provided in `src/lib/adapter.real.test.ts`.  Run `pnpm test` to execute
+tests.
 
-### Required environment
+## Next Steps
 
-- `VITE_SUPABASE_URL`
-- `VITE_SUPABASE_ANON_KEY`
-- `VITE_SUPABASE_SERVICE_ROLE_KEY` (injected only into trusted admin builds)
-- `SIMULATOR_DEFAULT_RADIUS_KM` / `SIMULATOR_MAX_RESULTS`
-- `ADMIN_TOKEN` for securing the Supabase edge functions
+This Phase 2 implementation lays the groundwork for a fully integrated
+WhatsApp mobility platform.  Future enhancements could include:
 
-### Tests
-
-- `npm test` runs the Vitest suite, including adapter coverage.
-- `npm run test:functions` executes Deno-based integration tests for the new
-  edge functions (admin settings + simulator flows).
+- Adding tables and functions for campaigns, vouchers, stations,
+  insurance quotes and audit logging.
+- Implementing PostGIS geospatial queries for precise distance calculations.
+- Extending the simulator to enforce credit usage and subscription
+  expiration rules.
+- Improving error handling and logging with structured outputs.
