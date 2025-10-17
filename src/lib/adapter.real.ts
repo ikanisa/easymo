@@ -10,6 +10,7 @@
  */
 
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { getSupabaseServiceRoleKey, getSupabaseUrl } from './env';
 import type {
   AdminStats,
   DriverPresence,
@@ -24,12 +25,12 @@ import type {
 /**
  * Read Supabase configuration from environment variables.  These values
  * should be provided at build time (e.g. VITE_SUPABASE_URL and
- * SUPABASE_SERVICE_ROLE_KEY).  If they are missing the adapter will
+ * VITE_SUPABASE_SERVICE_ROLE_KEY).  If they are missing the adapter will
  * throw at runtime.  See `.env.example` for required keys.
  */
 function createSupabaseClient(): SupabaseClient {
-  const url = import.meta.env.VITE_SUPABASE_URL || import.meta.env.SUPABASE_URL;
-  const key = import.meta.env.SUPABASE_SERVICE_ROLE_KEY;
+  const url = getSupabaseUrl() ?? import.meta.env.SUPABASE_URL?.trim();
+  const key = getSupabaseServiceRoleKey() ?? import.meta.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
   if (!url || !key) {
     throw new Error('Supabase URL or service role key is not configured');
   }
@@ -337,11 +338,19 @@ export class RealAdapter {
     hasAccess?: boolean;
     driver_ref_code?: string;
   }): Promise<Trip[] | 'NO_ACCESS'> {
-    // Check access: in phase‑2 you would verify the driver subscription
-    if (!params.hasAccess) {
-      // Without forced access this returns no access.  Extend this logic by
-      // querying subscriptions for the driver when implementing credits.
-      return 'NO_ACCESS';
+    let hasAccess = params.hasAccess ?? false;
+    if (!hasAccess) {
+      if (!params.driver_ref_code) {
+        return 'NO_ACCESS';
+      }
+      const profile = await this.getProfileByRefCode(params.driver_ref_code);
+      if (!profile) {
+        return 'NO_ACCESS';
+      }
+      hasAccess = await this.hasActiveSubscription(profile.user_id);
+      if (!hasAccess) {
+        return 'NO_ACCESS';
+      }
     }
     const settings = await this.getSettings();
     const radiusKm = settings.search_radius_km;
@@ -388,13 +397,18 @@ export class RealAdapter {
     lng: number;
     refCode: string;
   }): Promise<Trip> {
+    const profile = await this.getProfileByRefCode(params.refCode);
+    if (!profile) {
+      throw new Error('Passenger profile not found for provided ref code');
+    }
     // Insert a new trip with role=passenger
     const { data, error } = await this.supabase
       .from('trips')
       .insert({
-        creator_user_id: params.refCode, // In phase‑2 map refCode -> user_id via profiles
+        creator_user_id: profile.user_id,
         role: 'passenger',
         vehicle_type: params.vehicle_type,
+        status: 'active',
         lat: params.lat,
         lng: params.lng,
       })
@@ -427,15 +441,24 @@ export class RealAdapter {
     hasAccess: boolean;
     refCode: string;
   }): Promise<Trip | 'NO_ACCESS'> {
-    if (!params.hasAccess) {
+    const profile = await this.getProfileByRefCode(params.refCode);
+    if (!profile) {
+      return 'NO_ACCESS';
+    }
+    let hasAccess = params.hasAccess;
+    if (!hasAccess) {
+      hasAccess = await this.hasActiveSubscription(profile.user_id);
+    }
+    if (!hasAccess) {
       return 'NO_ACCESS';
     }
     const { data, error } = await this.supabase
       .from('trips')
       .insert({
-        creator_user_id: params.refCode, // Map ref code to user id via profiles
+        creator_user_id: profile.user_id,
         role: 'driver',
         vehicle_type: params.vehicle_type,
+        status: 'active',
         lat: params.lat,
         lng: params.lng,
       })
@@ -469,6 +492,21 @@ export class RealAdapter {
       .maybeSingle();
     if (error) throw error;
     return data ?? null;
+  }
+
+  private async hasActiveSubscription(userId: string): Promise<boolean> {
+    const { data, error } = await this.supabase
+      .from('subscriptions')
+      .select('expires_at, status')
+      .eq('user_id', userId)
+      .eq('status', 'active')
+      .order('expires_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (error) throw error;
+    if (!data) return false;
+    if (!data.expires_at) return true;
+    return new Date(data.expires_at).getTime() > Date.now();
   }
 
   /**
