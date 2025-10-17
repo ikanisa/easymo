@@ -1,4 +1,4 @@
--- Seed data for Phase‑2 development environment.  These inserts provide
+-- Seed data for Phase-2 development environment.  These inserts provide
 -- a basic set of rows so that the admin panel and simulator can be
 -- exercised locally.  Do not run this in production.
 
