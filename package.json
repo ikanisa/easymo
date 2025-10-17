@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --port 8080",
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
@@ -14,7 +14,9 @@
     "test:ui": "vitest --ui",
     "preview": "vite preview --port 5000",
     "analyze:pwa": "lighthouse http://localhost:5000 --only-categories=pwa --preset=desktop || true",
-    "health": "node ./scripts/health-check.mjs"
+    "health": "node ./scripts/health-check.mjs",
+    "seed:remote": "supabase db query --file supabase/seeders/phase2_seed.sql",
+    "functions:deploy": "supabase functions deploy admin-settings admin-stats admin-users admin-trips admin-subscriptions simulator"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
@@ -94,6 +96,7 @@
     "vite": "^5.4.19"
   },
   "engines": {
-    "node": ">=18.18.0"
+    "node": ">=18.18.0",
+    "pnpm": ">=8"
   }
 }
