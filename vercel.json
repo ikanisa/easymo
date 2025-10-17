@@ -42,7 +42,7 @@
   "regions": ["fra1"],
   "functions": {
     "api/**/*.{ts,js}": {
-      "runtime": "edge"
+      "runtime": "nodejs20.x"
     }
   }
 }
