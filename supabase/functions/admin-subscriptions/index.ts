@@ -1,145 +1,79 @@
-import { z } from "https://deno.land/x/zod@v3.23.8/mod.ts";
-import {
-  createServiceRoleClient,
-  handleOptions,
-  json,
-  logRequest,
-  logResponse,
-  requireAdminAuth,
-  withCors,
-} from "../_shared/admin.ts";
+// Supabase Edge Function: admin-subscriptions
+//
+// Lists subscriptions or approves/rejects them based on the `action`
+// query parameter.  Supported actions:
+//   - list (default, GET): returns all subscriptions
+//   - approve (POST): activate a subscription by id and optional txn_id
+//   - reject (POST): reject a subscription by id with optional reason
 
-const supabase = createServiceRoleClient();
+import { serve } from 'https://deno.land/std@0.202.0/http/server.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.5.0';
 
-const querySchema = z.object({
-  action: z.string().optional().default("list"),
-  limit: z.coerce.number().int().min(1).max(200).default(200),
-});
+const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
+const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+const ADMIN_TOKEN = Deno.env.get('EASYMO_ADMIN_TOKEN') ?? '';
 
-const approveSchema = z.object({
-  id: z.number().int().positive(),
-  txn_id: z.string().max(64).optional(),
-}).strict();
-
-const rejectSchema = z.object({
-  id: z.number().int().positive(),
-}).strict();
-
-async function listSubscriptions(limit: number) {
-  const { data, error } = await supabase.from("subscriptions").select(
-    "id,user_id,status,started_at,expires_at,amount,proof_url,created_at",
-  ).order("created_at", { ascending: false }).limit(limit);
-  if (error) throw new Error(error.message);
-
-  const entries = data ?? [];
-
-  const signedResults = await Promise.all(entries.map(async (sub) => {
-    if (!sub.proof_url) return { id: sub.id, signedUrl: null };
-    const { data: signed, error: signErr } = await supabase.storage
-      .from("proofs")
-      .createSignedUrl(sub.proof_url, 60 * 60 * 24 * 7);
-    if (signErr) {
-      console.warn("admin-subscriptions.sign_failed", {
-        id: sub.id,
-        error: signErr.message,
-      });
-      return { id: sub.id, signedUrl: null };
-    }
-    return { id: sub.id, signedUrl: signed.signedUrl };
-  }));
-
-  const signedMap = new Map(signedResults.map((r) => [r.id, r.signedUrl]));
-
-  return entries.map((sub) => ({
-    ...sub,
-    proof_url_signed: signedMap.get(sub.id) ?? null,
-  }));
+if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
+  throw new Error('Supabase credentials are not configured');
 }
 
-async function approveSubscription(id: number, txnId?: string) {
-  const now = new Date();
-  const expires = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
-  const update = {
-    status: "active",
-    started_at: now.toISOString(),
-    expires_at: expires.toISOString(),
-    txn_id: txnId ?? null,
-    updated_at: now.toISOString(),
-  };
-  const { error } = await supabase.from("subscriptions")
-    .update(update)
-    .eq("id", id)
-    .in("status", ["pending", "review"])
-    .select("id");
-  if (error) throw new Error(error.message);
-}
+const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 
-async function rejectSubscription(id: number) {
-  const { error } = await supabase.from("subscriptions")
-    .update({ status: "rejected", updated_at: new Date().toISOString() })
-    .eq("id", id)
-    .in("status", ["pending", "review"])
-    .select("id");
-  if (error) throw new Error(error.message);
-}
-
-Deno.serve(async (req) => {
-  logRequest("admin-subscriptions", req);
-
-  if (req.method === "OPTIONS") {
-    return handleOptions();
+serve(async (req) => {
+  const apiKey = req.headers.get('x-api-key');
+  if (apiKey !== ADMIN_TOKEN) {
+    return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403 });
   }
-
-  const authResponse = requireAdminAuth(req);
-  if (authResponse) return authResponse;
-
+  const url = new URL(req.url);
+  const action = url.searchParams.get('action') ?? 'list';
   try {
-    if (req.method === "GET") {
-      const query = querySchema.parse(
-        Object.fromEntries(new URL(req.url).searchParams),
-      );
-      if (query.action !== "list") {
-        return json({ error: "invalid_action" }, 400);
+    if (action === 'approve' && req.method === 'POST') {
+      const body = await req.json().catch(() => ({}));
+      const id = Number(body.id);
+      const txn_id = body.txn_id as string | undefined;
+      if (!id) {
+        return new Response(JSON.stringify({ error: 'id is required' }), { status: 400 });
       }
-      const subscriptions = await listSubscriptions(query.limit);
-      logResponse("admin-subscriptions", 200, { count: subscriptions.length });
-      return new Response(
-        JSON.stringify({ subscriptions }),
-        withCors({ status: 200 }),
-      );
-    }
-
-    if (req.method === "POST") {
-      const action = (new URL(req.url).searchParams.get("action") ?? "")
-        .toLowerCase();
-      const payload = await req.json().catch(() => {
-        throw new Error("invalid_json");
-      });
-
-      if (action === "approve") {
-        const { id, txn_id } = approveSchema.parse(payload);
-        await approveSubscription(id, txn_id);
-        logResponse("admin-subscriptions", 200, { action, id });
-        return json({ success: true });
+      const updates: any = { status: 'active' };
+      if (txn_id) updates.txn_id = txn_id;
+      const { error } = await supabase
+        .from('subscriptions')
+        .update(updates)
+        .eq('id', id);
+      if (error) {
+        return new Response(JSON.stringify({ error: error.message }), { status: 500 });
       }
-      if (action === "reject") {
-        const { id } = rejectSchema.parse(payload);
-        await rejectSubscription(id);
-        logResponse("admin-subscriptions", 200, { action, id });
-        return json({ success: true });
+      return new Response(JSON.stringify({ ok: true }), { status: 200 });
+    }
+    if (action === 'reject' && req.method === 'POST') {
+      const body = await req.json().catch(() => ({}));
+      const id = Number(body.id);
+      const reason = body.reason as string | undefined;
+      if (!id) {
+        return new Response(JSON.stringify({ error: 'id is required' }), { status: 400 });
       }
-      return json({ error: "invalid_action" }, 400);
+      const updates: any = { status: 'rejected' };
+      if (reason) updates.rejection_reason = reason;
+      const { error } = await supabase
+        .from('subscriptions')
+        .update(updates)
+        .eq('id', id);
+      if (error) {
+        return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+      }
+      return new Response(JSON.stringify({ ok: true }), { status: 200 });
     }
-
-    return json({ error: "method_not_allowed" }, 405);
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return json({ error: "invalid_payload" }, 400);
+    // Default: list subscriptions
+    const { data, error } = await supabase
+      .from('subscriptions')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (error) {
+      return new Response(JSON.stringify({ error: error.message }), { status: 500 });
     }
-    if (error instanceof Error && error.message === "invalid_json") {
-      return json({ error: "invalid_json" }, 400);
-    }
-    console.error("admin-subscriptions.unhandled", error);
-    return json({ error: "internal_error" }, 500);
+    return new Response(JSON.stringify({ subscriptions: data ?? [] }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+  } catch (e) {
+    const message = e instanceof Error ? e.message : String(e);
+    return new Response(JSON.stringify({ error: message }), { status: 500 });
   }
 });

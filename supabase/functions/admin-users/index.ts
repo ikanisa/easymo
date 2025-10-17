@@ -1,75 +1,62 @@
-import { z } from "https://deno.land/x/zod@v3.23.8/mod.ts";
-import {
-  createServiceRoleClient,
-  handleOptions,
-  json,
-  logRequest,
-  logResponse,
-  requireAdminAuth,
-  withCors,
-} from "../_shared/admin.ts";
+// Supabase Edge Function: admin-users
+//
+// Returns an array of user objects for the admin panel.  Each user
+// includes subscription status calculated from the subscriptions table.
 
-const supabase = createServiceRoleClient();
+import { serve } from 'https://deno.land/std@0.202.0/http/server.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.5.0';
 
-const querySchema = z.object({
-  limit: z.coerce.number().int().min(1).max(1000).default(500),
-  cursor: z.string().optional(),
-});
+const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
+const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+const ADMIN_TOKEN = Deno.env.get('EASYMO_ADMIN_TOKEN') ?? '';
 
-Deno.serve(async (req) => {
-  logRequest("admin-users", req);
+if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
+  throw new Error('Supabase credentials are not configured');
+}
 
-  if (req.method === "OPTIONS") {
-    return handleOptions();
+const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+
+serve(async (req) => {
+  const apiKey = req.headers.get('x-api-key');
+  if (apiKey !== ADMIN_TOKEN) {
+    return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403 });
   }
-
-  const authResponse = requireAdminAuth(req);
-  if (authResponse) {
-    return authResponse;
+  if (req.method !== 'GET') {
+    return new Response(JSON.stringify({ error: 'Method not allowed' }), { status: 405 });
   }
-
-  if (req.method !== "GET") {
-    return json({ error: "method_not_allowed" }, 405);
-  }
-
-  let query;
   try {
-    const url = new URL(req.url);
-    query = querySchema.parse(Object.fromEntries(url.searchParams));
-  } catch (error) {
-    console.warn("admin-users.query_invalid", { error: String(error) });
-    return json({ error: "invalid_query" }, 400);
-  }
-
-  try {
-    let builder = supabase.from("profiles").select(
-      "user_id, whatsapp_e164, ref_code, credits_balance, created_at",
-    ).order("created_at", { ascending: false }).limit(query.limit);
-
-    if (query.cursor) {
-      builder = builder.lt("created_at", query.cursor);
-    }
-
-    const { data, error } = await builder;
+    const { data, error } = await supabase
+      .from('profiles')
+      .select(
+        `user_id, whatsapp_e164, ref_code, credits_balance, created_at,
+         subscriptions:subscriptions(status, expires_at)`
+      );
     if (error) {
-      console.error("admin-users.query_failed", { error: error.message });
-      return json({ error: "query_failed" }, 500);
+      return new Response(JSON.stringify({ error: error.message }), { status: 500 });
     }
-
-    logResponse("admin-users", 200, { count: data?.length ?? 0 });
-    return new Response(
-      JSON.stringify({
-        users: data ?? [],
-        next_cursor: data?.length === query.limit
-          ? data[data.length - 1]?.created_at ?? null
-          : null,
-      }),
-      withCors({
-        status: 200,
-      }),
-    );
-  } catch (error) {
-    console.error("admin-users.unhandled", error);
-    return json({ error: "internal_error" }, 500);
+    const users = (data ?? []).map((row: any) => {
+      let subscription_status: 'active' | 'expired' | 'none' = 'none';
+      const sub = row.subscriptions?.[0];
+      if (sub) {
+        const now = Date.now();
+        if (sub.status === 'active' && sub.expires_at && new Date(sub.expires_at).getTime() >= now) {
+          subscription_status = 'active';
+        } else {
+          subscription_status = 'expired';
+        }
+      }
+      return {
+        user_id: row.user_id,
+        whatsapp_e164: row.whatsapp_e164,
+        ref_code: row.ref_code,
+        credits_balance: row.credits_balance ?? 0,
+        subscription_status,
+        created_at: row.created_at,
+      };
+    });
+    return new Response(JSON.stringify({ users }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+  } catch (e) {
+    const message = e instanceof Error ? e.message : String(e);
+    return new Response(JSON.stringify({ error: message }), { status: 500 });
   }
 });

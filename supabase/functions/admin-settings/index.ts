@@ -1,84 +1,79 @@
-import { z } from "https://deno.land/x/zod@v3.23.8/mod.ts";
-import {
-  createServiceRoleClient,
-  handleOptions,
-  json,
-  logRequest,
-  logResponse,
-  requireAdminAuth,
-} from "../_shared/admin.ts";
+// Supabase Edge Function: admin-settings
+//
+// Provides read and update operations on the `settings` table.  This
+// function requires callers to supply an `x-api-key` header that matches
+// the EASYMO_ADMIN_TOKEN environment variable.  Use a service role key
+// for Supabase to bypass Row Level Security when updating settings.
 
-const supabase = createServiceRoleClient();
+import { serve } from 'https://deno.land/std@0.202.0/http/server.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.5.0';
+import { z } from 'https://esm.sh/zod@3.22.2';
 
-const patchSchema = z.object({
-  subscription_price: z.number().nonnegative().optional(),
-  search_radius_km: z.number().int().nonnegative().optional(),
-  max_results: z.number().int().positive().optional(),
-  momo_payee_number: z.string().min(5).max(32).optional(),
-  support_phone_e164: z.string().min(5).max(32).optional(),
-  admin_whatsapp_numbers: z.array(z.string()).optional(),
-  pro_enabled: z.boolean().optional(),
-}).strict();
+const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
+const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+const ADMIN_TOKEN = Deno.env.get('EASYMO_ADMIN_TOKEN') ?? '';
 
-Deno.serve(async (req) => {
-  logRequest("admin-settings", req);
+if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
+  throw new Error('Supabase credentials are not configured');
+}
 
-  if (req.method === "OPTIONS") {
-    return handleOptions();
+const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+
+// Define a schema for settings updates.  Only allow defined fields.
+const SettingsPatch = z.object({
+  subscription_price: z.number().optional(),
+  search_radius_km: z.number().optional(),
+  max_results: z.number().optional(),
+  momo_payee_number: z.string().optional(),
+  support_phone_e164: z.string().optional(),
+  admin_whatsapp_numbers: z.string().optional(),
+});
+
+serve(async (req) => {
+  // Enforce admin token
+  const apiKey = req.headers.get('x-api-key');
+  if (apiKey !== ADMIN_TOKEN) {
+    return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403 });
   }
-
-  const authResponse = requireAdminAuth(req);
-  if (authResponse) return authResponse;
-
-  const method = req.method.toUpperCase();
-
-  if (method === "GET") {
-    try {
-      const { data, error } = await supabase.from("app_config")
-        .select("*")
-        .single();
-      if (error) {
-        console.error("admin-settings.get_failed", error);
-        return json({ error: "query_failed" }, 500);
-      }
-      logResponse("admin-settings", 200);
-      return json({ config: data });
-    } catch (error) {
-      console.error("admin-settings.get_unhandled", error);
-      return json({ error: "internal_error" }, 500);
+  if (req.method === 'GET') {
+    const { data, error } = await supabase
+      .from('settings')
+      .select('*')
+      .limit(1)
+      .maybeSingle();
+    if (error) {
+      return new Response(JSON.stringify({ error: error.message }), { status: 500 });
     }
+    return new Response(JSON.stringify({ config: data }), { status: 200, headers: { 'Content-Type': 'application/json' } });
   }
-
-  if (method === "POST") {
-    let payload: unknown;
-    try {
-      payload = await req.json();
-    } catch {
-      return json({ error: "invalid_json" }, 400);
+  if (req.method === 'POST') {
+    const body = await req.json().catch(() => ({}));
+    const result = SettingsPatch.safeParse(body);
+    if (!result.success) {
+      return new Response(JSON.stringify({ error: 'Invalid payload', details: result.error.errors }), { status: 400 });
     }
-
-    const parseResult = patchSchema.safeParse(payload);
-    if (!parseResult.success || Object.keys(parseResult.data).length === 0) {
-      return json({ error: "invalid_payload" }, 400);
+    // Find the single settings row
+    const { data: existing, error: fetchErr } = await supabase
+      .from('settings')
+      .select('id')
+      .limit(1)
+      .maybeSingle();
+    if (fetchErr) {
+      return new Response(JSON.stringify({ error: fetchErr.message }), { status: 500 });
     }
-
-    try {
-      const { error } = await supabase.from("app_config")
-        .update({ ...parseResult.data, updated_at: new Date().toISOString() })
-        .eq("id", true);
-      if (error) {
-        console.error("admin-settings.update_failed", error);
-        return json({ error: "update_failed" }, 500);
-      }
-      logResponse("admin-settings", 200, {
-        fields: Object.keys(parseResult.data).length,
-      });
-      return json({ success: true });
-    } catch (error) {
-      console.error("admin-settings.update_unhandled", error);
-      return json({ error: "internal_error" }, 500);
+    if (!existing) {
+      return new Response(JSON.stringify({ error: 'Settings row does not exist' }), { status: 404 });
     }
+    const { data: updated, error: updateErr } = await supabase
+      .from('settings')
+      .update(result.data)
+      .eq('id', existing.id)
+      .select('*')
+      .maybeSingle();
+    if (updateErr) {
+      return new Response(JSON.stringify({ error: updateErr.message }), { status: 500 });
+    }
+    return new Response(JSON.stringify({ config: updated }), { status: 200, headers: { 'Content-Type': 'application/json' } });
   }
-
-  return json({ error: "method_not_allowed" }, 405);
+  return new Response(JSON.stringify({ error: 'Method not allowed' }), { status: 405 });
 });
