@@ -1,20 +1,13 @@
-import type { SupabaseClient } from '@supabase/supabase-js';
-import {
-  approveSubscription,
-  fetchAdminStats,
-  fetchSettings,
-  getProfileByRefCode,
-  listSubscriptions,
-  listTrips,
-  listUsers,
-  rejectSubscription,
-  simulateScheduleTripDriver,
-  simulateScheduleTripPassenger,
-  simulateSeeNearbyDrivers,
-  simulateSeeNearbyPassengers,
-  updateSettings,
-} from './supabase-admin-service';
-import { getSupabaseServiceClient } from './supabase-client';
+/**
+ * ULTRA-MINIMAL WhatsApp Mobility – Real Adapter (Phase 2)
+ *
+ * This adapter delegates to the AdminAPI helpers which proxy requests
+ * through Supabase Edge Functions. The edge layer enforces the admin
+ * token and performs privileged Supabase access server-side so that
+ * sensitive credentials (service role key) never reach the browser.
+ */
+
+import { AdminAPI } from './api';
 import type {
   AdminStats,
   DriverPresence,
@@ -26,45 +19,91 @@ import type {
   VehicleType,
 } from './types';
 
-export class RealAdapter {
-  constructor(private readonly supabase: SupabaseClient = getSupabaseServiceClient()) {}
+function normalizeSettings(config: Settings & { admin_whatsapp_numbers?: string | string[] | null }): Settings {
+  let adminWhatsappNumbers: string | undefined;
+  if (Array.isArray(config.admin_whatsapp_numbers)) {
+    adminWhatsappNumbers = config.admin_whatsapp_numbers.join(',');
+  } else if (typeof config.admin_whatsapp_numbers === 'string') {
+    adminWhatsappNumbers = config.admin_whatsapp_numbers;
+  }
 
+  return {
+    subscription_price: config.subscription_price,
+    search_radius_km: config.search_radius_km,
+    max_results: config.max_results,
+    momo_payee_number: config.momo_payee_number,
+    support_phone_e164: config.support_phone_e164,
+    admin_whatsapp_numbers: adminWhatsappNumbers,
+  };
+}
+
+export class RealAdapter {
+  constructor(private readonly _apiBase: string, private readonly _adminToken: string) {}
+
+  // ---------------------------------------------------------------------------
+  // Settings
+  // ---------------------------------------------------------------------------
   async getSettings(): Promise<Settings> {
-    return fetchSettings(this.supabase);
+    const config = await AdminAPI.getSettings();
+    return normalizeSettings(config);
   }
 
   async updateSettings(patch: Partial<Settings>): Promise<Settings> {
-    return updateSettings(patch, this.supabase);
+    const config = await AdminAPI.saveSettings(patch);
+    return normalizeSettings(config);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Users
+  // ---------------------------------------------------------------------------
+  async getUsers(): Promise<User[]> {
+    return AdminAPI.getUsers();
   }
 
   async listUsers(): Promise<User[]> {
-    return listUsers(this.supabase);
+    return this.getUsers();
   }
 
-  async getUsers(): Promise<User[]> {
-    return this.listUsers();
-  }
-
+  // ---------------------------------------------------------------------------
+  // Trips
+  // ---------------------------------------------------------------------------
   async getTrips(): Promise<Trip[]> {
-    return listTrips(this.supabase);
+    return AdminAPI.listTrips();
   }
 
+  async updateTripStatus(id: number, status: Trip['status']): Promise<void> {
+    if (status === 'expired' || status === 'closed') {
+      await AdminAPI.closeTrip(id);
+      return;
+    }
+    throw new Error(`updateTripStatus: unsupported status "${status}"`);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Subscriptions
+  // ---------------------------------------------------------------------------
   async getSubscriptions(): Promise<Subscription[]> {
-    return listSubscriptions(this.supabase);
+    return AdminAPI.listSubs();
   }
 
   async approveSubscription(id: number, txnId?: string): Promise<void> {
-    await approveSubscription(id, txnId, this.supabase);
+    await AdminAPI.approveSub(id, txnId);
   }
 
   async rejectSubscription(id: number, reason?: string): Promise<void> {
-    await rejectSubscription(id, reason, this.supabase);
+    await AdminAPI.rejectSub(id, reason);
   }
 
+  // ---------------------------------------------------------------------------
+  // Admin Metrics
+  // ---------------------------------------------------------------------------
   async getAdminStats(): Promise<AdminStats> {
-    return fetchAdminStats(this.supabase);
+    return AdminAPI.getStats();
   }
 
+  // ---------------------------------------------------------------------------
+  // Simulator Operations
+  // ---------------------------------------------------------------------------
   async simulateSeeNearbyDrivers(params: {
     lat: number;
     lng: number;
@@ -72,7 +111,7 @@ export class RealAdapter {
     radius_km?: number;
     max?: number;
   }): Promise<DriverPresence[]> {
-    return simulateSeeNearbyDrivers(params, this.supabase);
+    return AdminAPI.simulatorDrivers(params);
   }
 
   async simulateSeeNearbyPassengers(params: {
@@ -84,39 +123,43 @@ export class RealAdapter {
     radius_km?: number;
     max?: number;
   }): Promise<Trip[] | 'NO_ACCESS'> {
-    const response = await simulateSeeNearbyPassengers({
+    const response = await AdminAPI.simulatorPassengers({
       lat: params.lat,
       lng: params.lng,
       vehicle_type: params.vehicle_type,
-      force_access: params.hasAccess,
       driver_ref_code: params.driver_ref_code,
+      force_access: params.hasAccess,
       radius_km: params.radius_km,
       max: params.max,
-    }, this.supabase);
+    });
 
     if (!response.access) {
       return 'NO_ACCESS';
     }
 
-    return response.trips ?? [];
+    return (response.trips ?? []).map((trip) => ({
+      ...trip,
+      lat: trip.lat ?? params.lat,
+      lng: trip.lng ?? params.lng,
+    }));
   }
 
   async simulateScheduleTripPassenger(params: {
     vehicle_type: VehicleType;
     lat: number;
     lng: number;
-    refCode?: string;
+    refCode: string;
   }): Promise<Trip> {
     if (!params.refCode) {
       throw new Error('Passenger ref code required in live mode');
     }
 
-    return simulateScheduleTripPassenger({
+    return AdminAPI.simulatorSchedulePassenger({
       lat: params.lat,
       lng: params.lng,
       vehicle_type: params.vehicle_type,
       ref_code: params.refCode,
-    }, this.supabase);
+    });
   }
 
   async simulateScheduleTripDriver(params: {
@@ -124,19 +167,19 @@ export class RealAdapter {
     lat: number;
     lng: number;
     hasAccess: boolean;
-    refCode?: string;
+    refCode: string;
   }): Promise<Trip | 'NO_ACCESS'> {
     if (!params.refCode) {
       throw new Error('Driver ref code required in live mode');
     }
 
-    const result = await simulateScheduleTripDriver({
+    const result = await AdminAPI.simulatorScheduleDriver({
       lat: params.lat,
       lng: params.lng,
       vehicle_type: params.vehicle_type,
       ref_code: params.refCode,
       force_access: params.hasAccess,
-    }, this.supabase);
+    });
 
     if (!result.access) {
       return 'NO_ACCESS';
@@ -146,7 +189,7 @@ export class RealAdapter {
   }
 
   async getProfileByRefCode(refCode: string): Promise<Profile | null> {
-    return getProfileByRefCode(refCode, this.supabase);
+    return AdminAPI.simulatorProfile(refCode);
   }
 
   async resetMockData(): Promise<void> {
