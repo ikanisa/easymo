@@ -117,7 +117,6 @@ export class RealAdapter {
     lng: number;
     vehicle_type: VehicleType;
   }): Promise<DriverPresence[]> {
-    // Ensure radius/max are provided to the API using current settings
     const settings = await this.getSettings();
     const response = await AdminAPI.simulatorDrivers({
       lat: params.lat,
@@ -142,14 +141,13 @@ export class RealAdapter {
       lng: params.lng,
       vehicle_type: params.vehicle_type,
       driver_ref_code: params.driver_ref_code,
-      force_access: params.hasAccess, // optional override
+      force_access: params.hasAccess, // optional override; server enforces rules
       radius_km: settings.search_radius_km,
       max: settings.max_results,
     });
 
     if (!response?.access) return 'NO_ACCESS';
 
-    // Backfill lat/lng if API omits them
     return (response.trips ?? []).map((trip) => ({
       ...trip,
       lat: trip.lat ?? params.lat,
@@ -201,6 +199,10 @@ export class RealAdapter {
     return AdminAPI.simulatorProfile(refCode);
   }
 
+  /**
+   * resetMockData is not supported on the real adapter.  The method exists
+   * for API compatibility with the mock adapter used in development.
+   */
   async resetMockData(): Promise<void> {
     throw new Error('resetMockData not available in real adapter');
   }
