@@ -1,6 +1,9 @@
 -- Phase 1: automatic contact/profile linking + rollup view
 BEGIN;
 
+ALTER TABLE public.profiles
+  ADD COLUMN IF NOT EXISTS locale text DEFAULT 'en';
+
 CREATE OR REPLACE FUNCTION public.normalize_e164(msisdn text)
 RETURNS text
 LANGUAGE plpgsql
@@ -73,16 +76,12 @@ SELECT
   p.locale,
   p.created_at AS profile_created_at,
   p.metadata AS profile_metadata,
-  c.id AS contact_id,
+  c.msisdn_e164 AS contact_msisdn,
+  c.profile_id AS contact_profile_id,
   c.opted_in,
-  c.opt_in_source,
   c.opt_in_ts,
   c.opted_out,
   c.opt_out_ts,
-  c.tags,
-  c.sector,
-  c.city,
-  c.attributes,
   c.last_inbound_at,
   c.updated_at AS contact_updated_at
 FROM public.profiles p

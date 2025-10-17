@@ -17,7 +17,9 @@ RETURNS TABLE(
     ref_code text,
     distance_km numeric,
     drop_bonus_m numeric,
-    created_at timestamptz
+    pickup_text text,
+    dropoff_text text,
+    matched_at timestamptz
 )
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -52,7 +54,9 @@ BEGIN
         THEN ST_Distance(t.dropoff, base_trip.dropoff)
       ELSE NULL
     END AS drop_bonus_m,
-    t.created_at
+    NULL::text AS pickup_text,
+    NULL::text AS dropoff_text,
+    t.created_at AS matched_at
   FROM public.trips t
   JOIN public.profiles p ON p.user_id = t.creator_user_id
   WHERE t.status = 'open'
@@ -90,7 +94,9 @@ RETURNS TABLE(
     ref_code text,
     distance_km numeric,
     drop_bonus_m numeric,
-    created_at timestamptz
+    pickup_text text,
+    dropoff_text text,
+    matched_at timestamptz
 )
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -125,7 +131,9 @@ BEGIN
         THEN ST_Distance(t.dropoff, base_trip.dropoff)
       ELSE NULL
     END AS drop_bonus_m,
-    t.created_at
+    NULL::text AS pickup_text,
+    NULL::text AS dropoff_text,
+    t.created_at AS matched_at
   FROM public.trips t
   JOIN public.profiles p ON p.user_id = t.creator_user_id
   WHERE t.status = 'open'

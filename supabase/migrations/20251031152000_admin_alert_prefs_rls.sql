@@ -24,12 +24,28 @@ CREATE POLICY admin_alert_prefs_owner_select
 
 CREATE POLICY admin_alert_prefs_owner_modify
   ON public.admin_alert_prefs
-  FOR INSERT, UPDATE, DELETE
+  FOR UPDATE
   USING (
     auth.role() = 'service_role'
     OR (auth.uid() IS NOT NULL AND admin_user_id = auth.uid())
   )
   WITH CHECK (
+    auth.role() = 'service_role'
+    OR (auth.uid() IS NOT NULL AND admin_user_id = auth.uid())
+  );
+
+CREATE POLICY admin_alert_prefs_owner_insert
+  ON public.admin_alert_prefs
+  FOR INSERT
+  WITH CHECK (
+    auth.role() = 'service_role'
+    OR (auth.uid() IS NOT NULL AND admin_user_id = auth.uid())
+  );
+
+CREATE POLICY admin_alert_prefs_owner_delete
+  ON public.admin_alert_prefs
+  FOR DELETE
+  USING (
     auth.role() = 'service_role'
     OR (auth.uid() IS NOT NULL AND admin_user_id = auth.uid())
   );

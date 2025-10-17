@@ -62,8 +62,13 @@ UPDATE public.baskets
 SET join_token = COALESCE(join_token, share_token)
 WHERE join_token IS NULL AND share_token IS NOT NULL;
 
-ALTER TABLE public.baskets
-  ADD CONSTRAINT baskets_status_check CHECK (status::text IN ('open', 'locked', 'closed', 'archived')) NOT VALID;
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'baskets_status_check') THEN
+    ALTER TABLE public.baskets
+      ADD CONSTRAINT baskets_status_check CHECK (status::text IN ('open', 'locked', 'closed', 'archived')) NOT VALID;
+  END IF;
+END $$;
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_baskets_join_token ON public.baskets (join_token) WHERE join_token IS NOT NULL;
 

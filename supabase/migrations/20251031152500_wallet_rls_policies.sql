@@ -62,10 +62,7 @@ CREATE POLICY wallet_accounts_self_select
   ON public.wallet_accounts
   FOR SELECT
   USING (
-    auth.uid() IS NOT NULL AND (
-      auth.uid() = profile_id
-      OR auth.uid() = user_id
-    )
+    auth.uid() IS NOT NULL AND auth.uid() = profile_id
   );
 
 CREATE POLICY wallet_transactions_service_all

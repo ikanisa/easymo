@@ -5,36 +5,56 @@ create extension if not exists postgis;
 create table if not exists profiles (
   user_id uuid primary key default gen_random_uuid(),
   whatsapp_e164 text unique not null,
-  ref_code char(6) unique not null,
+  ref_code char(6) unique,
+  display_name text,
   credits_balance integer default 10,
-  created_at timestamptz default now()
+  metadata jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default timezone('utc', now()),
+  updated_at timestamptz not null default timezone('utc', now())
 );
 
 -- Driver live presence (recency-first listing)
 create table if not exists driver_status (
   user_id uuid primary key references profiles(user_id) on delete cascade,
-  vehicle_type text check (vehicle_type in ('moto','cab','lifan','truck','others')),
+  vehicle_type text not null,
+  lat double precision,
+  lng double precision,
   location geography(Point,4326),
-  last_seen timestamptz default now(),
-  online boolean default false
+  last_seen timestamptz not null default timezone('utc', now()),
+  online boolean not null default true,
+  updated_at timestamptz not null default timezone('utc', now())
 );
 create index if not exists idx_driver_loc on driver_status using gist (location);
 
--- Trips (pickup only)
+-- Trips (pickup/dropoff geospatial metadata)
 create table if not exists trips (
-  id bigserial primary key,
-  creator_user_id uuid not null references profiles(user_id) on delete cascade,
-  role text check (role in ('passenger','driver')) not null,
-  vehicle_type text check (vehicle_type in ('moto','cab','lifan','truck','others')) not null,
-  pickup geography(Point,4326) not null,
-  status text default 'open',
-  created_at timestamptz default now()
+  id uuid primary key default gen_random_uuid(),
+  creator_user_id uuid references profiles(user_id) on delete set null,
+  role text not null,
+  vehicle_type text not null,
+  pickup_lat double precision,
+  pickup_lng double precision,
+  dropoff_lat double precision,
+  dropoff_lng double precision,
+  pickup geography(Point,4326),
+  dropoff geography(Point,4326),
+  pickup_text text,
+  dropoff_text text,
+  pickup_radius_m integer not null default 200,
+  dropoff_radius_m integer not null default 200,
+  status text not null default 'open',
+  created_at timestamptz not null default timezone('utc', now()),
+  updated_at timestamptz not null default timezone('utc', now())
 );
 create index if not exists idx_trips_pickup on trips using gist (pickup);
 create index if not exists idx_trips_created on trips (created_at);
 
--- Subscriptions
-create type if not exists sub_status as enum ('pending_review','active','expired','rejected');
+do $$
+begin
+  if not exists (select 1 from pg_type where typname = 'sub_status') then
+    create type sub_status as enum ('pending_review', 'active', 'expired', 'rejected');
+  end if;
+end $$;
 create table if not exists subscriptions (
   id bigserial primary key,
   user_id uuid not null references profiles(user_id) on delete cascade,
@@ -50,22 +70,27 @@ create index if not exists idx_sub_user on subscriptions (user_id);
 
 -- Config (single row)
 create table if not exists app_config (
-  id boolean primary key default true,
-  subscription_price integer default 5000,
-  search_radius_km numeric default 5.0,
-  max_results integer default 10,
+  id integer primary key,
+  search_radius_km double precision default 10,
+  max_results integer default 9,
+  subscription_price numeric(10,2) default 0,
+  wa_bot_number_e164 text,
+  admin_numbers text[] default array[]::text[],
+  insurance_admin_numbers text[] default array[]::text[],
   momo_payee_number text default '0788123456',
   support_phone_e164 text default '+250788654321',
-  admin_whatsapp_numbers text
+  admin_whatsapp_numbers text,
+  created_at timestamptz not null default timezone('utc', now()),
+  updated_at timestamptz not null default timezone('utc', now())
 );
-insert into app_config(id) values(true) on conflict do nothing;
+insert into app_config(id) values(1) on conflict do nothing;
 
 -- Chat state (simple state machine persistence)
 create table if not exists chat_state (
   user_id uuid primary key references profiles(user_id) on delete cascade,
-  state text,
-  data jsonb,
-  updated_at timestamptz default now()
+  state_key text,
+  state jsonb not null default '{}'::jsonb,
+  updated_at timestamptz not null default timezone('utc', now())
 );
 
 -- Idempotency for WA events
@@ -177,7 +202,7 @@ $$;
 create or replace function recent_passenger_trips_near(
   in_lat double precision, in_lng double precision,
   in_vehicle_type text, in_radius_km numeric, in_max integer
-) returns table (trip_id bigint, creator_user_id uuid, created_at timestamptz)
+) returns table (trip_id uuid, creator_user_id uuid, created_at timestamptz)
 language sql stable as $$
   select t.id, t.creator_user_id, t.created_at
   from trips t

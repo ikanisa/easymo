@@ -19,7 +19,7 @@ RETURNS TABLE(
     drop_bonus_m numeric,
     pickup_text text,
     dropoff_text text,
-    created_at timestamptz
+    matched_at timestamptz
 )
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -58,7 +58,7 @@ BEGIN
     END AS drop_bonus_m,
     t.pickup_text,
     t.dropoff_text,
-    t.created_at
+    t.created_at AS matched_at
   FROM public.trips t
   JOIN public.profiles p ON p.user_id = t.creator_user_id
   WHERE t.status = 'open'
@@ -98,7 +98,7 @@ RETURNS TABLE(
     drop_bonus_m numeric,
     pickup_text text,
     dropoff_text text,
-    created_at timestamptz
+    matched_at timestamptz
 )
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -137,7 +137,7 @@ BEGIN
     END AS drop_bonus_m,
     t.pickup_text,
     t.dropoff_text,
-    t.created_at
+    t.created_at AS matched_at
   FROM public.trips t
   JOIN public.profiles p ON p.user_id = t.creator_user_id
   WHERE t.status = 'open'
