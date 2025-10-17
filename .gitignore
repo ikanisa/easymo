@@ -50,3 +50,4 @@ supabase/.branches/
 *.sln
 *.sw?
 *.swp
+.vercel

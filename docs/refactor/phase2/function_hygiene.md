@@ -47,7 +47,7 @@
 
 Data sources:
 
-- `information_schema.routines` and `pg_proc` (project ezrriefbmhiiqfoxgjgz,
+- `information_schema.routines` and `pg_proc` (project lhbowpbcpwoiparwnwgt,
   2025-09-25)
 - `pg_stat_statements` sample (calls = 3 for removed `increment_profile_credits`
   prior to drop)

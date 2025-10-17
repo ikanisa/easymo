@@ -2,7 +2,7 @@
 
 ## Snapshot Source
 
-- Remote DB: `ezrriefbmhiiqfoxgjgz` (Supabase)
+- Remote DB: `lhbowpbcpwoiparwnwgt` (Supabase)
 - Snapshot time: 2025-09-25 (see `supabase/snapshots/phase0/`)
 
 ## Candidate Overlaps
