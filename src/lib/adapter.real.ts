@@ -1,101 +1,78 @@
-/**
- * ULTRA-MINIMAL WhatsApp Mobility - Real Adapter (Phase-2 Production)
- * Calls Edge Function APIs for production admin operations
- */
-
-import { AdminAPI } from './api';
-import type { 
-  Profile, 
-  DriverPresence, 
-  Trip, 
-  Subscription, 
-  Settings, 
-  AdminStats, 
+import type { SupabaseClient } from '@supabase/supabase-js';
+import {
+  approveSubscription,
+  fetchAdminStats,
+  fetchSettings,
+  getProfileByRefCode,
+  listSubscriptions,
+  listTrips,
+  listUsers,
+  rejectSubscription,
+  simulateScheduleTripDriver,
+  simulateScheduleTripPassenger,
+  simulateSeeNearbyDrivers,
+  simulateSeeNearbyPassengers,
+  updateSettings,
+} from './supabase-admin-service';
+import { getSupabaseServiceClient } from './supabase-client';
+import type {
+  AdminStats,
+  DriverPresence,
+  Profile,
+  Settings,
+  Subscription,
+  Trip,
   User,
-  VehicleType 
+  VehicleType,
 } from './types';
 
 export class RealAdapter {
-  constructor(private apiBase: string, private adminToken: string) {}
+  constructor(private readonly supabase: SupabaseClient = getSupabaseServiceClient()) {}
 
-  // Settings
   async getSettings(): Promise<Settings> {
-    const data = await AdminAPI.getSettings();
-    return {
-      subscription_price: data.subscription_price,
-      search_radius_km: data.search_radius_km,
-      max_results: data.max_results,
-      momo_payee_number: data.momo_payee_number,
-      support_phone_e164: data.support_phone_e164,
-      admin_whatsapp_numbers: data.admin_whatsapp_numbers,
-    };
+    return fetchSettings(this.supabase);
   }
 
   async updateSettings(patch: Partial<Settings>): Promise<Settings> {
-    const data = await AdminAPI.saveSettings(patch);
-    return {
-      subscription_price: data.subscription_price,
-      search_radius_km: data.search_radius_km,
-      max_results: data.max_results,
-      momo_payee_number: data.momo_payee_number,
-      support_phone_e164: data.support_phone_e164,
-      admin_whatsapp_numbers: data.admin_whatsapp_numbers,
-    };
+    return updateSettings(patch, this.supabase);
   }
 
-  // Users (compatibility)
   async listUsers(): Promise<User[]> {
-    return AdminAPI.getUsers();
+    return listUsers(this.supabase);
   }
 
   async getUsers(): Promise<User[]> {
     return this.listUsers();
   }
 
-  // Trips
   async getTrips(): Promise<Trip[]> {
-    return AdminAPI.listTrips();
+    return listTrips(this.supabase);
   }
 
-  // Subscriptions  
   async getSubscriptions(): Promise<Subscription[]> {
-    return AdminAPI.listSubs();
+    return listSubscriptions(this.supabase);
   }
 
   async approveSubscription(id: number, txnId?: string): Promise<void> {
-    await AdminAPI.approveSub(id, txnId);
+    await approveSubscription(id, txnId, this.supabase);
   }
 
-  async rejectSubscription(id: number): Promise<void> {
-    await AdminAPI.rejectSub(id);
+  async rejectSubscription(id: number, reason?: string): Promise<void> {
+    await rejectSubscription(id, reason, this.supabase);
   }
 
-  // Admin Stats
   async getAdminStats(): Promise<AdminStats> {
-    return AdminAPI.getStats();
+    return fetchAdminStats(this.supabase);
   }
 
-  // Simulator Operations (Phase-2 will use real geospatial queries)
   async simulateSeeNearbyDrivers(params: {
     lat: number;
     lng: number;
     vehicle_type: VehicleType;
+    radius_km?: number;
+    max?: number;
   }): Promise<DriverPresence[]> {
-    const drivers = await AdminAPI.simulatorDrivers({
-      lat: params.lat,
-      lng: params.lng,
-      vehicle_type: params.vehicle_type,
-    });
-
-    return drivers.map((driver) => ({
-      user_id: driver.user_id,
-      vehicle_type: driver.vehicle_type ?? params.vehicle_type,
-      last_seen: driver.last_seen,
-      ref_code: driver.ref_code,
-      whatsapp_e164: driver.whatsapp_e164,
-      lat: driver.lat,
-      lng: driver.lng,
-    }));
+    return simulateSeeNearbyDrivers(params, this.supabase);
   }
 
   async simulateSeeNearbyPassengers(params: {
@@ -104,31 +81,24 @@ export class RealAdapter {
     vehicle_type: VehicleType;
     hasAccess?: boolean;
     driver_ref_code?: string;
+    radius_km?: number;
+    max?: number;
   }): Promise<Trip[] | 'NO_ACCESS'> {
-    const response = await AdminAPI.simulatorPassengers({
+    const response = await simulateSeeNearbyPassengers({
       lat: params.lat,
       lng: params.lng,
       vehicle_type: params.vehicle_type,
-      driver_ref_code: params.driver_ref_code,
       force_access: params.hasAccess,
-    });
+      driver_ref_code: params.driver_ref_code,
+      radius_km: params.radius_km,
+      max: params.max,
+    }, this.supabase);
 
     if (!response.access) {
       return 'NO_ACCESS';
     }
 
-    return (response.trips ?? []).map((trip) => ({
-      id: trip.id,
-      creator_user_id: trip.creator_user_id,
-      role: trip.role ?? 'passenger',
-      vehicle_type: trip.vehicle_type ?? params.vehicle_type,
-      created_at: trip.created_at,
-      status: trip.status,
-      ref_code: trip.ref_code,
-      whatsapp_e164: trip.whatsapp_e164,
-      lat: trip.lat,
-      lng: trip.lng,
-    }));
+    return response.trips ?? [];
   }
 
   async simulateScheduleTripPassenger(params: {
@@ -141,12 +111,12 @@ export class RealAdapter {
       throw new Error('Passenger ref code required in live mode');
     }
 
-    return AdminAPI.simulatorSchedulePassenger({
+    return simulateScheduleTripPassenger({
       lat: params.lat,
       lng: params.lng,
       vehicle_type: params.vehicle_type,
       ref_code: params.refCode,
-    });
+    }, this.supabase);
   }
 
   async simulateScheduleTripDriver(params: {
@@ -160,13 +130,13 @@ export class RealAdapter {
       throw new Error('Driver ref code required in live mode');
     }
 
-    const result = await AdminAPI.simulatorScheduleDriver({
+    const result = await simulateScheduleTripDriver({
       lat: params.lat,
       lng: params.lng,
       vehicle_type: params.vehicle_type,
       ref_code: params.refCode,
       force_access: params.hasAccess,
-    });
+    }, this.supabase);
 
     if (!result.access) {
       return 'NO_ACCESS';
@@ -175,13 +145,11 @@ export class RealAdapter {
     return result.trip;
   }
 
-  // Get profiles by ref codes (for simulator lookups)
   async getProfileByRefCode(refCode: string): Promise<Profile | null> {
-    return AdminAPI.simulatorProfile(refCode);
+    return getProfileByRefCode(refCode, this.supabase);
   }
 
-  // Dev utility (no-op in real)
   async resetMockData(): Promise<void> {
-    throw new Error("resetMockData not available in real adapter");
+    throw new Error('resetMockData not available in real adapter');
   }
 }

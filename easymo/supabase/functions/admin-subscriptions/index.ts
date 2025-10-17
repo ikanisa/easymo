@@ -9,7 +9,19 @@ import {
   withCors,
 } from "../_shared/admin.ts";
 
-const supabase = createServiceRoleClient();
+type SupabaseLike = ReturnType<typeof createServiceRoleClient>;
+
+let cachedClient: SupabaseLike | null = null;
+
+export function setSupabaseClientForTesting(client: SupabaseLike | null) {
+  cachedClient = client;
+}
+
+function getSupabase(): SupabaseLike {
+  if (cachedClient) return cachedClient;
+  cachedClient = createServiceRoleClient();
+  return cachedClient;
+}
 
 const querySchema = z.object({
   action: z.string().optional().default("list"),
@@ -23,11 +35,13 @@ const approveSchema = z.object({
 
 const rejectSchema = z.object({
   id: z.number().int().positive(),
+  reason: z.string().max(140).optional(),
 }).strict();
 
 async function listSubscriptions(limit: number) {
+  const supabase = getSupabase();
   const { data, error } = await supabase.from("subscriptions").select(
-    "id,user_id,status,started_at,expires_at,amount,proof_url,created_at",
+    "id,user_id,status,started_at,expires_at,amount,proof_url,created_at,txn_id,profiles(ref_code,whatsapp_e164)",
   ).order("created_at", { ascending: false }).limit(limit);
   if (error) throw new Error(error.message);
 
@@ -35,17 +49,22 @@ async function listSubscriptions(limit: number) {
 
   const signedResults = await Promise.all(entries.map(async (sub) => {
     if (!sub.proof_url) return { id: sub.id, signedUrl: null };
-    const { data: signed, error: signErr } = await supabase.storage
-      .from("proofs")
-      .createSignedUrl(sub.proof_url, 60 * 60 * 24 * 7);
-    if (signErr) {
-      console.warn("admin-subscriptions.sign_failed", {
-        id: sub.id,
-        error: signErr.message,
-      });
+    try {
+      const { data: signed, error: signErr } = await supabase.storage
+        .from("proofs")
+        .createSignedUrl(sub.proof_url, 60 * 60 * 24 * 7);
+      if (signErr) {
+        console.warn("admin-subscriptions.sign_failed", {
+          id: sub.id,
+          error: signErr.message,
+        });
+        return { id: sub.id, signedUrl: null };
+      }
+      return { id: sub.id, signedUrl: signed.signedUrl };
+    } catch (error) {
+      console.warn("admin-subscriptions.sign_unhandled", { id: sub.id, error });
       return { id: sub.id, signedUrl: null };
     }
-    return { id: sub.id, signedUrl: signed.signedUrl };
   }));
 
   const signedMap = new Map(signedResults.map((r) => [r.id, r.signedUrl]));
@@ -57,6 +76,7 @@ async function listSubscriptions(limit: number) {
 }
 
 async function approveSubscription(id: number, txnId?: string) {
+  const supabase = getSupabase();
   const now = new Date();
   const expires = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
   const update = {
@@ -69,21 +89,26 @@ async function approveSubscription(id: number, txnId?: string) {
   const { error } = await supabase.from("subscriptions")
     .update(update)
     .eq("id", id)
-    .in("status", ["pending", "review"])
+    .in("status", ["pending", "review", "pending_review"])
     .select("id");
   if (error) throw new Error(error.message);
 }
 
-async function rejectSubscription(id: number) {
+async function rejectSubscription(id: number, reason?: string) {
+  const supabase = getSupabase();
   const { error } = await supabase.from("subscriptions")
-    .update({ status: "rejected", updated_at: new Date().toISOString() })
+    .update({
+      status: "rejected",
+      rejection_reason: reason ?? null,
+      updated_at: new Date().toISOString(),
+    })
     .eq("id", id)
-    .in("status", ["pending", "review"])
+    .in("status", ["pending", "review", "pending_review"])
     .select("id");
   if (error) throw new Error(error.message);
 }
 
-Deno.serve(async (req) => {
+export async function handler(req: Request): Promise<Response> {
   logRequest("admin-subscriptions", req);
 
   if (req.method === "OPTIONS") {
@@ -123,8 +148,8 @@ Deno.serve(async (req) => {
         return json({ success: true });
       }
       if (action === "reject") {
-        const { id } = rejectSchema.parse(payload);
-        await rejectSubscription(id);
+        const { id, reason } = rejectSchema.parse(payload);
+        await rejectSubscription(id, reason);
         logResponse("admin-subscriptions", 200, { action, id });
         return json({ success: true });
       }
@@ -142,4 +167,6 @@ Deno.serve(async (req) => {
     console.error("admin-subscriptions.unhandled", error);
     return json({ error: "internal_error" }, 500);
   }
-});
+}
+
+Deno.serve(handler);

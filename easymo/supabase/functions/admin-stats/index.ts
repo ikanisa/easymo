@@ -7,9 +7,55 @@ import {
   requireAdminAuth,
 } from "../_shared/admin.ts";
 
-const supabase = createServiceRoleClient();
+type SupabaseLike = ReturnType<typeof createServiceRoleClient>;
 
-Deno.serve(async (req) => {
+let cachedClient: SupabaseLike | null = null;
+
+export function setSupabaseClientForTesting(client: SupabaseLike | null) {
+  cachedClient = client;
+}
+
+function getSupabase(): SupabaseLike {
+  if (cachedClient) return cachedClient;
+  cachedClient = createServiceRoleClient();
+  return cachedClient;
+}
+
+async function fetchStats() {
+  const supabase = getSupabase();
+  const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+  const nowIso = new Date().toISOString();
+
+  const [drivers, trips, subs] = await Promise.all([
+    supabase.from("driver_presence")
+      .select("user_id", { count: "exact", head: true })
+      .gt("last_seen", tenMinutesAgo),
+    supabase.from("trips")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "active"),
+    supabase.from("subscriptions")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "active")
+      .gt("expires_at", nowIso),
+  ]);
+
+  const firstError = drivers.error ?? trips.error ?? subs.error;
+  if (firstError) {
+    console.error("admin-stats.query_failed", firstError);
+    return json({ error: "query_failed" }, 500);
+  }
+
+  const stats = {
+    drivers_online: drivers.count ?? 0,
+    open_trips: trips.count ?? 0,
+    active_subscriptions: subs.count ?? 0,
+  };
+
+  logResponse("admin-stats", 200, stats);
+  return json(stats);
+}
+
+export async function handler(req: Request): Promise<Response> {
   logRequest("admin-stats", req);
 
   if (req.method === "OPTIONS") {
@@ -24,38 +70,11 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const nowIso = new Date().toISOString();
-
-    const [driversRes, tripsRes, subsRes] = await Promise.all([
-      supabase.from("driver_status").select("count", { count: "exact" }).eq(
-        "online",
-        true,
-      ),
-      supabase.from("trips").select("count", { count: "exact" }).eq(
-        "status",
-        "open",
-      ),
-      supabase.from("subscriptions").select("count", { count: "exact" })
-        .eq("status", "active")
-        .gt("expires_at", nowIso),
-    ]);
-
-    const firstError = driversRes.error ?? tripsRes.error ?? subsRes.error;
-    if (firstError) {
-      console.error("admin-stats.query_failed", firstError);
-      return json({ error: "query_failed" }, 500);
-    }
-
-    const stats = {
-      drivers_online: driversRes.count ?? 0,
-      open_trips: tripsRes.count ?? 0,
-      active_subscriptions: subsRes.count ?? 0,
-    };
-
-    logResponse("admin-stats", 200, stats);
-    return json(stats);
+    return await fetchStats();
   } catch (error) {
     console.error("admin-stats.unhandled", error);
     return json({ error: "internal_error" }, 500);
   }
-});
+}
+
+Deno.serve(handler);

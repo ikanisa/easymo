@@ -1,41 +1,69 @@
 # easyMO Operational Runbook
 
-## WhatsApp Webhook outage
+## Supabase Phase-2 Operations
 
-- **Detection:** Monitoring sees `SIG_VERIFY_FAIL` spike or 5xx from
-  `/functions/v1/wa-webhook`.
-- **Mitigation:** Check Meta App credentials (`WA_APP_SECRET`, `WA_TOKEN`).
-  Redeploy function with `supabase functions deploy wa-webhook`. Review
-  `webhook_logs` table for request payloads.
+### Database migrations
+1. Pull the latest repo changes.
+2. Authenticate with Supabase CLI (`supabase login`).
+3. Apply mobility migrations in order:
+   ```bash
+   supabase db push --file easymo/supabase/migrations/20251112090000_phase2_mobility_core.sql
+   supabase db push --file easymo/supabase/migrations/20251112091000_phase2_mobility_rls.sql
+   ```
+4. Confirm `settings`, `profiles`, `driver_presence`, `trips`, `subscriptions`,
+   `vouchers`, and related tables exist via `supabase db dump --schema public`.
 
-## Flow binding failure
+### Seed fixtures
+- Populate local/staging data with:
+  ```bash
+  supabase db remote commit --file easymo/supabase/seed/fixtures/phase_b_seed.sql
+  ```
+- The script is idempotent; rerun when you need fresh simulator presence or
+  sample subscriptions.
 
-- **Detection:** Flow exchange logs `Unknown flow` or action.
-- **Mitigation:** Re-publish Flow JSON in WhatsApp Manager and ensure Data
-  Channel URI points to `/flow/exchange`. Verify requests using Postman
-  collection.
+### Edge function deployment
+1. Export the required environment secrets (`SUPABASE_URL`,
+   `SERVICE_ROLE_KEY`, `ADMIN_TOKEN`).
+2. Deploy each function:
+   ```bash
+   supabase functions deploy admin-settings
+   supabase functions deploy admin-stats
+   supabase functions deploy admin-users
+   supabase functions deploy admin-trips
+   supabase functions deploy admin-subscriptions
+   supabase functions deploy simulator
+   ```
+3. Verify functions with:
+   ```bash
+   curl -H "x-admin-token: $ADMIN_TOKEN" \
+     "$SUPABASE_URL/functions/v1/admin-settings"
+   ```
 
-## OCR backlog
+### Monitoring & logging
+- Use Supabase dashboard → Functions → Logs to monitor invocations.
+- Edge functions emit structured logs via `logRequest`/`logResponse`; filter on
+  the scope (e.g. `simulator`).
+- Front-end errors bubble through toast notifications; enable Sentry by setting
+  `SENTRY_DSN` and `SENTRY_ENVIRONMENT` in the environment file.
 
-- **Detection:** `ocr_jobs` remains in `queued` status for >15 minutes.
-- **Mitigation:** Trigger `/notification-worker` manually (if OCR worker
-  pending) or run the OCR edge function once built. Check OpenAI credentials.
+## Support playbooks
 
-## Notification template rejection
+### Simulator access denied
+1. Confirm the driver profile exists via `/functions/v1/simulator?action=profile&ref_code=XXX`.
+2. Ensure an active subscription record exists for the driver (`status = active`
+   and `expires_at > now()`).
+3. If necessary, approve the subscription in the admin UI or call the
+   `/functions/v1/admin-subscriptions?action=approve` endpoint.
 
-- **Detection:** Notifications rows with status `failed` and error text from
-  Meta.
-- **Mitigation:** Adjust template variables, ensure template name matches;
-  requeue by resetting status to queued and clearing error message.
+### Settings changes not persisting
+1. Confirm the admin panel is using the real adapter (`VITE_USE_MOCK` is unset).
+2. Check the edge function logs for `admin-settings.update_failed`.
+3. Re-run the migrations to ensure the `settings` table exists and RLS policies
+   allow admin updates.
 
-## Vendor double-update conflicts
-
-- **Detection:** Order events show repeated status toggles or race conditions.
-- **Mitigation:** Review `order_events` and audit logs. Consider locking order
-  rows on update.
-
-## MoMo dialer fallback
-
-- **Detection:** Users report tel URI failing.
-- **Mitigation:** Provide human-readable USSD string (`formatUssdText`) and
-  manual instructions. Update `buildMomoUssd` if format changes.
+### Trip closures failing
+1. Inspect `/functions/v1/admin-trips?action=list` for the target trip.
+2. Confirm the trip `status` is `active`; closed trips are ignored.
+3. Retry the close action; if it fails, check Supabase logs for
+   `admin-trips.close_failed` and verify the RLS policy `trips_admin_manage` is
+   applied.
