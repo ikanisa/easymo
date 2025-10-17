@@ -9,7 +9,19 @@ import {
   withCors,
 } from "../_shared/admin.ts";
 
-const supabase = createServiceRoleClient();
+type SupabaseLike = ReturnType<typeof createServiceRoleClient>;
+
+let cachedClient: SupabaseLike | null = null;
+
+export function setSupabaseClientForTesting(client: SupabaseLike | null) {
+  cachedClient = client;
+}
+
+function getSupabase(): SupabaseLike {
+  if (cachedClient) return cachedClient;
+  cachedClient = createServiceRoleClient();
+  return cachedClient;
+}
 
 const listQuerySchema = z.object({
   action: z.string().optional().default("list"),
@@ -21,7 +33,52 @@ const closeBodySchema = z.object({
   id: z.number().int().positive(),
 }).strict();
 
-Deno.serve(async (req) => {
+async function listTrips(query: z.infer<typeof listQuerySchema>) {
+  const supabase = getSupabase();
+  let builder = supabase.from("trips").select(
+    "id, creator_user_id, role, vehicle_type, status, created_at, lat, lng, profiles(ref_code,whatsapp_e164)",
+  ).order("created_at", { ascending: false }).limit(query.limit);
+
+  if (query.cursor) {
+    builder = builder.lt("created_at", query.cursor);
+  }
+
+  const { data, error } = await builder;
+  if (error) {
+    console.error("admin-trips.list_failed", error);
+    return json({ error: "query_failed" }, 500);
+  }
+
+  const trips = data ?? [];
+  logResponse("admin-trips", 200, { count: trips.length });
+  return new Response(
+    JSON.stringify({
+      trips,
+      next_cursor: trips.length === query.limit
+        ? trips[trips.length - 1]?.created_at ?? null
+        : null,
+    }),
+    withCors({ status: 200 }),
+  );
+}
+
+async function closeTrip(id: number) {
+  const supabase = getSupabase();
+  const { error } = await supabase.from("trips").update({
+    status: "closed",
+    updated_at: new Date().toISOString(),
+  }).eq("id", id).eq("status", "active");
+
+  if (error) {
+    console.error("admin-trips.close_failed", error);
+    return json({ error: "update_failed" }, 500);
+  }
+
+  logResponse("admin-trips", 200, { id });
+  return json({ success: true });
+}
+
+export async function handler(req: Request): Promise<Response> {
   logRequest("admin-trips", req);
 
   if (req.method === "OPTIONS") {
@@ -46,30 +103,7 @@ Deno.serve(async (req) => {
     }
 
     try {
-      let builder = supabase.from("trips").select(
-        "id, creator_user_id, role, vehicle_type, status, created_at",
-      ).order("created_at", { ascending: false }).limit(query.limit);
-
-      if (query.cursor) {
-        builder = builder.lt("created_at", query.cursor);
-      }
-
-      const { data, error } = await builder;
-      if (error) {
-        console.error("admin-trips.list_failed", error);
-        return json({ error: "query_failed" }, 500);
-      }
-
-      logResponse("admin-trips", 200, { count: data?.length ?? 0 });
-      return new Response(
-        JSON.stringify({
-          trips: data ?? [],
-          next_cursor: data && data.length === query.limit
-            ? data[data.length - 1]?.created_at ?? null
-            : null,
-        }),
-        withCors({ status: 200 }),
-      );
+      return await listTrips(query);
     } catch (error) {
       console.error("admin-trips.list_unhandled", error);
       return json({ error: "internal_error" }, 500);
@@ -95,18 +129,7 @@ Deno.serve(async (req) => {
     }
 
     try {
-      const { error } = await supabase.from("trips").update({
-        status: "closed",
-        updated_at: new Date().toISOString(),
-      }).eq("id", parseResult.data.id).eq("status", "open");
-
-      if (error) {
-        console.error("admin-trips.close_failed", error);
-        return json({ error: "update_failed" }, 500);
-      }
-
-      logResponse("admin-trips", 200, { id: parseResult.data.id });
-      return json({ success: true });
+      return await closeTrip(parseResult.data.id);
     } catch (error) {
       console.error("admin-trips.close_unhandled", error);
       return json({ error: "internal_error" }, 500);
@@ -114,4 +137,6 @@ Deno.serve(async (req) => {
   }
 
   return json({ error: "method_not_allowed" }, 405);
-});
+}
+
+Deno.serve(handler);

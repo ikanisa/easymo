@@ -57,3 +57,15 @@ export function getSupabaseProjectId(): string | undefined {
 
   return undefined;
 }
+
+export function getSupabaseAnonKey(): string | undefined {
+  const key = import.meta.env.VITE_SUPABASE_ANON_KEY?.trim();
+  return key ? key : undefined;
+}
+
+export function getSupabaseServiceRoleKey(): string | undefined {
+  const key = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY?.trim()
+    || import.meta.env.VITE_SUPABASE_SERVICE_KEY?.trim()
+    || import.meta.env.VITE_SERVICE_ROLE_KEY?.trim();
+  return key ? key : undefined;
+}

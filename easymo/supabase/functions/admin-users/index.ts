@@ -9,14 +9,36 @@ import {
   withCors,
 } from "../_shared/admin.ts";
 
-const supabase = createServiceRoleClient();
+type SupabaseLike = ReturnType<typeof createServiceRoleClient>;
+
+let cachedClient: SupabaseLike | null = null;
+
+export function setSupabaseClientForTesting(client: SupabaseLike | null) {
+  cachedClient = client;
+}
+
+function getSupabase(): SupabaseLike {
+  if (cachedClient) return cachedClient;
+  cachedClient = createServiceRoleClient();
+  return cachedClient;
+}
 
 const querySchema = z.object({
   limit: z.coerce.number().int().min(1).max(1000).default(500),
   cursor: z.string().optional(),
 });
 
-Deno.serve(async (req) => {
+function computeSubscriptionStatus(rows: Array<{ status: string; expires_at: string | null }> = []) {
+  if (rows.length === 0) return "none";
+  const active = rows.find((row) => {
+    if (row.status !== "active") return false;
+    if (!row.expires_at) return true;
+    return new Date(row.expires_at).getTime() > Date.now();
+  });
+  return active ? "active" : "expired";
+}
+
+export async function handler(req: Request): Promise<Response> {
   logRequest("admin-users", req);
 
   if (req.method === "OPTIONS") {
@@ -42,8 +64,9 @@ Deno.serve(async (req) => {
   }
 
   try {
+    const supabase = getSupabase();
     let builder = supabase.from("profiles").select(
-      "user_id, whatsapp_e164, ref_code, credits_balance, created_at",
+      "user_id, whatsapp_e164, ref_code, credits_balance, created_at, subscriptions(status,expires_at)",
     ).order("created_at", { ascending: false }).limit(query.limit);
 
     if (query.cursor) {
@@ -56,12 +79,17 @@ Deno.serve(async (req) => {
       return json({ error: "query_failed" }, 500);
     }
 
-    logResponse("admin-users", 200, { count: data?.length ?? 0 });
+    const users = (data ?? []).map((row) => ({
+      ...row,
+      subscription_status: computeSubscriptionStatus(row.subscriptions ?? []),
+    }));
+
+    logResponse("admin-users", 200, { count: users.length });
     return new Response(
       JSON.stringify({
-        users: data ?? [],
-        next_cursor: data?.length === query.limit
-          ? data[data.length - 1]?.created_at ?? null
+        users,
+        next_cursor: users.length === query.limit
+          ? users[users.length - 1]?.created_at ?? null
           : null,
       }),
       withCors({
@@ -72,4 +100,6 @@ Deno.serve(async (req) => {
     console.error("admin-users.unhandled", error);
     return json({ error: "internal_error" }, 500);
   }
-});
+}
+
+Deno.serve(handler);

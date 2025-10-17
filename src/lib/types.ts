@@ -36,7 +36,7 @@ export interface Trip {
   lng?: number; // pickup location (if known)
 }
 
-export type SubStatus = 'pending_review' | 'active' | 'expired' | 'rejected';
+export type SubStatus = 'pending_review' | 'pending' | 'review' | 'active' | 'expired' | 'rejected';
 
 export interface Subscription {
   id: number;
