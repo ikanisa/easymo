@@ -1,5 +1,5 @@
 /**
- * ULTRA-MINIMAL WhatsApp Mobility – Real Adapter (Phase 2)
+ * ULTRA-MINIMAL WhatsApp Mobility – Real Adapter (Phase 2, Edge-Proxy)
  *
  * This adapter delegates to the AdminAPI helpers which proxy requests
  * through Supabase Edge Functions. The edge layer enforces the admin
@@ -19,7 +19,9 @@ import type {
   VehicleType,
 } from './types';
 
-function normalizeSettings(config: Settings & { admin_whatsapp_numbers?: string | string[] | null }): Settings {
+function normalizeSettings(
+  config: Settings & { admin_whatsapp_numbers?: string | string[] | null }
+): Settings {
   let adminWhatsappNumbers: string | undefined;
   if (Array.isArray(config.admin_whatsapp_numbers)) {
     adminWhatsappNumbers = config.admin_whatsapp_numbers.join(',');
@@ -38,7 +40,12 @@ function normalizeSettings(config: Settings & { admin_whatsapp_numbers?: string 
 }
 
 export class RealAdapter {
-  constructor(private readonly _apiBase: string, private readonly _adminToken: string) {}
+  /**
+   * Kept for backwards compatibility if callers pass apiBase/adminToken,
+   * but this client delegates to AdminAPI which already knows how to
+   * send requests to Edge Functions with auth.
+   */
+  constructor(private readonly _apiBase: string = '', private readonly _adminToken: string = '') {}
 
   // ---------------------------------------------------------------------------
   // Settings
@@ -60,6 +67,7 @@ export class RealAdapter {
     return AdminAPI.getUsers();
   }
 
+  // Alias kept for callers that used listUsers()
   async listUsers(): Promise<User[]> {
     return this.getUsers();
   }
@@ -108,10 +116,17 @@ export class RealAdapter {
     lat: number;
     lng: number;
     vehicle_type: VehicleType;
-    radius_km?: number;
-    max?: number;
   }): Promise<DriverPresence[]> {
-    return AdminAPI.simulatorDrivers(params);
+    // Ensure radius/max are provided to the API using current settings
+    const settings = await this.getSettings();
+    const response = await AdminAPI.simulatorDrivers({
+      lat: params.lat,
+      lng: params.lng,
+      vehicle_type: params.vehicle_type,
+      radius_km: settings.search_radius_km,
+      max: settings.max_results,
+    });
+    return response ?? [];
   }
 
   async simulateSeeNearbyPassengers(params: {
@@ -120,23 +135,21 @@ export class RealAdapter {
     vehicle_type: VehicleType;
     hasAccess?: boolean;
     driver_ref_code?: string;
-    radius_km?: number;
-    max?: number;
   }): Promise<Trip[] | 'NO_ACCESS'> {
+    const settings = await this.getSettings();
     const response = await AdminAPI.simulatorPassengers({
       lat: params.lat,
       lng: params.lng,
       vehicle_type: params.vehicle_type,
       driver_ref_code: params.driver_ref_code,
-      force_access: params.hasAccess,
-      radius_km: params.radius_km,
-      max: params.max,
+      force_access: params.hasAccess, // optional override
+      radius_km: settings.search_radius_km,
+      max: settings.max_results,
     });
 
-    if (!response.access) {
-      return 'NO_ACCESS';
-    }
+    if (!response?.access) return 'NO_ACCESS';
 
+    // Backfill lat/lng if API omits them
     return (response.trips ?? []).map((trip) => ({
       ...trip,
       lat: trip.lat ?? params.lat,
@@ -153,7 +166,6 @@ export class RealAdapter {
     if (!params.refCode) {
       throw new Error('Passenger ref code required in live mode');
     }
-
     return AdminAPI.simulatorSchedulePassenger({
       lat: params.lat,
       lng: params.lng,
@@ -181,10 +193,7 @@ export class RealAdapter {
       force_access: params.hasAccess,
     });
 
-    if (!result.access) {
-      return 'NO_ACCESS';
-    }
-
+    if (!result?.access) return 'NO_ACCESS';
     return result.trip;
   }
 
