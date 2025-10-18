@@ -15,7 +15,7 @@
     "preview": "vite preview --port 5000",
     "analyze:pwa": "lighthouse http://localhost:5000 --only-categories=pwa --preset=desktop || true",
     "health": "node ./scripts/health-check.mjs",
-    "seed:remote": "supabase db query --file supabase/seeders/phase2_seed.sql",
+    "seed:remote": "bash ./scripts/seed-remote.sh",
     "functions:deploy": "supabase functions deploy admin-settings admin-stats admin-users admin-trips admin-subscriptions simulator"
   },
   "dependencies": {
