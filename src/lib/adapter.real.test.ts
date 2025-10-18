@@ -62,6 +62,14 @@ describe('RealAdapter (Edge Function delegation)', () => {
   });
 
   it('returns NO_ACCESS when simulator passengers deny access', async () => {
+    mockApi.getSettings.mockResolvedValueOnce({
+      subscription_price: 5000,
+      search_radius_km: 5,
+      max_results: 10,
+      momo_payee_number: '0780000000',
+      support_phone_e164: '+250780000000',
+      admin_whatsapp_numbers: ['+250780000001'],
+    });
     mockApi.simulatorPassengers.mockResolvedValueOnce({ access: false, reason: 'no_subscription' });
 
     const adapter = new RealAdapter('/functions/v1', 'token');
@@ -78,8 +86,8 @@ describe('RealAdapter (Edge Function delegation)', () => {
       vehicle_type: 'moto',
       driver_ref_code: undefined,
       force_access: undefined,
-      radius_km: undefined,
-      max: undefined,
+      radius_km: 5,
+      max: 10,
     });
   });
 });
