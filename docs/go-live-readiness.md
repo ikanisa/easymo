@@ -1,6 +1,6 @@
 # Go-Live Readiness Baseline (Phase 0)
 
-_Generated: 2025-10-18_
+_Generated: 2025-10-18 (phase 0); updated after Phase 1 alignment_
 
 This note captures the current state of the EasyMO repository and the configuration artefacts we can audit locally. It serves as the starting point for the multi-phase go-live plan.
 
@@ -37,12 +37,19 @@ From `supabase/config.toml`:
 - Cron schedules (e.g., for reminder functions) cannot be listed without `SUPABASE_ACCESS_TOKEN`/`SUPABASE_DB_URL`. Phase 1 should explicitly run `supabase cron list` and capture the current configuration.
 - Edge functions are present in the repo (`supabase/functions/*`), but we haven’t exercised them yet. Testing will happen in Phase 3.
 
-## 5. Outstanding Information (to collect in Phase 1)
+## 5. Phase 1 Adjustments Completed
+
+- Replaced the tracked `.env` with a sanitized template targeting the active Supabase project (`lhbowpbcpwoiparwnwgt`) and documented every required variable. `.env.example` mirrors the new structure.
+- Added `docs/env/phase2-env-alignment.md` with a full checklist for synchronising Vercel, Supabase edge function secrets, and admin session tokens.
+- Updated `supabase/config.toml` so that the local auth configuration mirrors the desired production Site URL (`https://easymo.vercel.app`) and includes preview/local redirect URLs.
+- Confirmed that `.env.local` still holds the live secrets; these should be rotated into the secret manager when ready.
+
+## 6. Outstanding Information (Phase 2+ follow-up)
 
 | Area                | Action                                                                                              |
 |---------------------|-----------------------------------------------------------------------------------------------------|
 | Vercel environment  | Export current env vars (especially admin tokens, dispatcher URL) and reconcile with `.env.local`. |
-| Supabase auth       | Update Site URL & Redirect URLs directly in the Supabase dashboard.                                 |
+| Supabase auth       | Update Site URL & Redirect URLs directly in the Supabase dashboard (pending access).               |
 | Storage             | List existing buckets and create missing ones (`vouchers`, `kyc-documents`, etc.).                 |
 | Cron jobs           | Use `supabase cron list` to confirm reminder/notification schedules.                                |
 | RLS verification    | Run policy audits against the live database (e.g., `supabase db remote commit` or custom queries). |
