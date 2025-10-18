@@ -62,4 +62,12 @@ From `supabase/config.toml`:
 | Cron jobs           | Use `supabase cron list` to confirm reminder/notification schedules.                                |
 | RLS verification    | Run policy audits against the live database (e.g., `supabase db remote commit` or custom queries). |
 
+## 8. Phase 3 Progress (Edge Functions & Cron)
+
+- Secret alignment: `EASYMO_ADMIN_TOKEN` and `ADMIN_TOKEN` now carry the same value on Supabase (via `supabase secrets set`), Vercel, and `.env.local`.
+- Redeployed `admin-*` functions plus `campaign-dispatch` so every endpoint accepts `Authorization: Bearer <service-role>` and `x-admin-token` (or `x-api-key`) headers.
+- Added `scripts/test-functions.sh` to automate the curl smoke-tests used during verification; it checks `admin-health`, `admin-settings`, `admin-stats`, `admin-users`, `admin-subscriptions`, `admin-trips`, and `campaign-dispatch`.
+- Remote tests confirm all endpoints return HTTP 200 with meaningful payloads when called with the new header contract.
+- Cron schedules still require a manual dashboard review—CLI access is not yet available.
+
 This baseline completes Phase 0: we have the current artefacts catalogued and gaps identified so that Phase 1 can focus on aligning environment variables and authentication.
