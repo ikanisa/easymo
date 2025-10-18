@@ -35,8 +35,8 @@ on conflict (user_id, vehicle_type) do update set
 
 insert into public.trips (id, creator_user_id, role, vehicle_type, pickup_lat, pickup_lng, status, created_at)
 values
-  ('00000000-0000-0000-0000-0000000T1001', '00000000-0000-0000-0000-000000000001', 'passenger', 'moto', -1.9510, 30.0607, 'open', now() - interval '10 minutes'),
-  ('00000000-0000-0000-0000-0000000T1002', '00000000-0000-0000-0000-000000000002', 'driver', 'cab', -1.9550, 30.0700, 'completed', now() - interval '3 hours')
+  ('00000000-0000-0000-0000-000000000101', '00000000-0000-0000-0000-000000000001', 'passenger', 'moto', -1.9510, 30.0607, 'open', now() - interval '10 minutes'),
+  ('00000000-0000-0000-0000-000000000102', '00000000-0000-0000-0000-000000000002', 'driver', 'cab', -1.9550, 30.0700, 'matched', now() - interval '3 hours')
 on conflict (id) do update set
   creator_user_id = excluded.creator_user_id,
   role = excluded.role,
