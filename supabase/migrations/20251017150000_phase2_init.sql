@@ -89,18 +89,41 @@ alter table public.trips enable row level security;
 alter table public.subscriptions enable row level security;
 
 -- Read policies: allow all clients to read
-create policy if not exists "settings_read" on public.settings for select using (true);
-create policy if not exists "profiles_read" on public.profiles for select using (true);
-create policy if not exists "driver_presence_read" on public.driver_presence for select using (true);
-create policy if not exists "trips_read" on public.trips for select using (true);
-create policy if not exists "subscriptions_read" on public.subscriptions for select using (true);
+do $$
+begin
+  if not exists (select 1 from pg_policies where policyname = 'settings_read' and schemaname = 'public' and tablename = 'settings') then
+    create policy "settings_read" on public.settings for select using (true);
+  end if;
+  if not exists (select 1 from pg_policies where policyname = 'profiles_read' and schemaname = 'public' and tablename = 'profiles') then
+    create policy "profiles_read" on public.profiles for select using (true);
+  end if;
+  if not exists (select 1 from pg_policies where policyname = 'driver_presence_read' and schemaname = 'public' and tablename = 'driver_presence') then
+    create policy "driver_presence_read" on public.driver_presence for select using (true);
+  end if;
+  if not exists (select 1 from pg_policies where policyname = 'trips_read' and schemaname = 'public' and tablename = 'trips') then
+    create policy "trips_read" on public.trips for select using (true);
+  end if;
+  if not exists (select 1 from pg_policies where policyname = 'subscriptions_read' and schemaname = 'public' and tablename = 'subscriptions') then
+    create policy "subscriptions_read" on public.subscriptions for select using (true);
+  end if;
 
--- Write policies: deny updates/inserts/deletes from anon/regular users.  Service role
--- keys bypass RLS automatically.
-create policy if not exists "no_settings_mod" on public.settings for all using (false) with check (false);
-create policy if not exists "no_profiles_mod" on public.profiles for all using (false) with check (false);
-create policy if not exists "no_driver_presence_mod" on public.driver_presence for all using (false) with check (false);
-create policy if not exists "no_trips_mod" on public.trips for all using (false) with check (false);
-create policy if not exists "no_subscriptions_mod" on public.subscriptions for all using (false) with check (false);
+  -- Write policies: deny updates/inserts/deletes from anon/regular users.  Service role keys bypass RLS automatically.
+  if not exists (select 1 from pg_policies where policyname = 'no_settings_mod' and schemaname = 'public' and tablename = 'settings') then
+    create policy "no_settings_mod" on public.settings for all using (false) with check (false);
+  end if;
+  if not exists (select 1 from pg_policies where policyname = 'no_profiles_mod' and schemaname = 'public' and tablename = 'profiles') then
+    create policy "no_profiles_mod" on public.profiles for all using (false) with check (false);
+  end if;
+  if not exists (select 1 from pg_policies where policyname = 'no_driver_presence_mod' and schemaname = 'public' and tablename = 'driver_presence') then
+    create policy "no_driver_presence_mod" on public.driver_presence for all using (false) with check (false);
+  end if;
+  if not exists (select 1 from pg_policies where policyname = 'no_trips_mod' and schemaname = 'public' and tablename = 'trips') then
+    create policy "no_trips_mod" on public.trips for all using (false) with check (false);
+  end if;
+  if not exists (select 1 from pg_policies where policyname = 'no_subscriptions_mod' and schemaname = 'public' and tablename = 'subscriptions') then
+    create policy "no_subscriptions_mod" on public.subscriptions for all using (false) with check (false);
+  end if;
+end;
+$$;
 
 commit;

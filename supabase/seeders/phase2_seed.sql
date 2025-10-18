@@ -7,7 +7,7 @@ begin;
 -- Settings ---------------------------------------------------------------
 insert into public.settings (id, subscription_price, search_radius_km, max_results, momo_payee_number, support_phone_e164, admin_whatsapp_numbers)
 values
-  (true, 5000, 6, 12, '0788000111', '+250780000444', '250780000111,250780000222')
+  (1, 5000, 6, 12, '0788000111', '+250780000444', '250780000111,250780000222')
 on conflict (id) do update
 set subscription_price = excluded.subscription_price,
     search_radius_km = excluded.search_radius_km,
