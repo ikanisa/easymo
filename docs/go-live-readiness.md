@@ -44,7 +44,13 @@ From `supabase/config.toml`:
 - Updated `supabase/config.toml` so that the local auth configuration mirrors the desired production Site URL (`https://easymo.vercel.app`) and includes preview/local redirect URLs.
 - Confirmed that `.env.local` still holds the live secrets; these should be rotated into the secret manager when ready.
 
-## 6. Outstanding Information (Phase 2+ follow-up)
+## 6. Phase 2 Progress (Data & Storage)
+
+- Added `supabase/migrations/20251018143000_storage_bucket_setup.sql` to ensure the buckets required by the admin panel (`insurance-docs`, `kyc-documents`, `menu-source-files`, `ocr-json-cache`, `vouchers`) are created automatically during migration.
+- Expanded `supabase/seeders/phase2_seed.sql` with transactional inserts that cover stations, vouchers, campaigns, campaign targets, notifications, trips, orders, order events, and subscriptions. This seed gives the admin dashboard meaningful data for smoke tests.
+- Seeding script is idempotent (`ON CONFLICT DO UPDATE`) so it can be safely re-run via `pnpm seed:remote`.
+
+## 7. Outstanding Information (Phase 3 follow-up)
 
 | Area                | Action                                                                                              |
 |---------------------|-----------------------------------------------------------------------------------------------------|
