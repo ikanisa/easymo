@@ -39,6 +39,24 @@ export type ApiResponse<T> =
 
 type NextFetchInit = RequestInit & { next?: { revalidate?: number | false; tags?: string[] } };
 
+function resolveInternalApiBaseUrl(): string | undefined {
+  const configuredBase =
+    process.env.INTERNAL_API_BASE_URL ??
+    process.env.NEXT_PUBLIC_APP_URL ??
+    (process.env.VERCEL_BRANCH_URL ? `https://${process.env.VERCEL_BRANCH_URL}` : undefined) ??
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined);
+
+  if (configuredBase) {
+    return configuredBase;
+  }
+
+  if (process.env.NODE_ENV !== "production") {
+    return "http://localhost:3000";
+  }
+
+  return undefined;
+}
+
 export async function apiFetch<TResponse, TBody = unknown>(
   input: string,
   options: FetchOptions<TBody> = {},
@@ -48,14 +66,22 @@ export async function apiFetch<TResponse, TBody = unknown>(
   headers.set("x-request-id", requestId);
   headers.set("Accept", "application/json");
 
+  const isRelativeRequest = !/^https?:/i.test(input);
   let url = input;
-  if (!/^https?:/i.test(input)) {
-    const base = typeof window === 'undefined'
-      ? process.env.INTERNAL_API_BASE_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
-      : '';
-    if (base) {
-      url = base.replace(/\/$/, '') + (input.startsWith('/') ? input : `/${input}`);
+
+  if (isRelativeRequest && typeof window === "undefined") {
+    const base = resolveInternalApiBaseUrl();
+
+    if (!base) {
+      return {
+        ok: false,
+        status: 0,
+        error: new Error("Internal API base URL is not configured for server-side fetches."),
+        requestId,
+      };
     }
+
+    url = base.replace(/\/$/, "") + (input.startsWith("/") ? input : `/${input}`);
   }
 
   let body: BodyInit | undefined;
