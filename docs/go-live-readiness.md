@@ -49,6 +49,8 @@ From `supabase/config.toml`:
 - Added `supabase/migrations/20251018143000_storage_bucket_setup.sql` to ensure the buckets required by the admin panel (`insurance-docs`, `kyc-documents`, `menu-source-files`, `ocr-json-cache`, `vouchers`) are created automatically during migration.
 - Expanded `supabase/seeders/phase2_seed.sql` with transactional inserts that cover stations, vouchers, campaigns, campaign targets, notifications, trips, orders, order events, and subscriptions. This seed gives the admin dashboard meaningful data for smoke tests.
 - Seeding script is idempotent (`ON CONFLICT DO UPDATE`) so it can be safely re-run via `pnpm seed:remote`.
+- Using the service-role connection string, `supabase db push` (with `--include-all`) was executed against the remote project to bring Phase 2 migrations online; the placeholder migration was archived to eliminate duplicate-version warnings.
+- `pnpm seed:remote` now completes successfully against the remote database—verified counts: bars (2), petrol_stations (1), vouchers (1), campaigns (2), campaign_recipients (1), notifications (1), orders (1).
 
 ## 7. Outstanding Information (Phase 3 follow-up)
 
