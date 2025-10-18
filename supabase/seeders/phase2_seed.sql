@@ -14,15 +14,17 @@ on conflict (id) do update set
   support_phone_e164 = excluded.support_phone_e164,
   admin_whatsapp_numbers = excluded.admin_whatsapp_numbers;
 
-insert into public.profiles (user_id, whatsapp_e164, metadata, locale)
+insert into public.profiles (user_id, whatsapp_e164, metadata, locale, ref_code, credits_balance)
 values
-  ('00000000-0000-0000-0000-000000000001', '+250780001001', '{"role":"passenger"}'::jsonb, 'en'),
-  ('00000000-0000-0000-0000-000000000002', '+250780001002', '{"role":"driver"}'::jsonb, 'fr'),
-  ('00000000-0000-0000-0000-000000000003', '+250780001003', '{"role":"admin"}'::jsonb, 'en')
+  ('00000000-0000-0000-0000-000000000001', '+250780001001', '{"role":"passenger"}'::jsonb, 'en', 'EMO101', 10),
+  ('00000000-0000-0000-0000-000000000002', '+250780001002', '{"role":"driver"}'::jsonb, 'fr', 'EMO102', 5),
+  ('00000000-0000-0000-0000-000000000003', '+250780001003', '{"role":"admin"}'::jsonb, 'en', 'OPS001', 0)
 on conflict (user_id) do update set
   whatsapp_e164 = excluded.whatsapp_e164,
   metadata = excluded.metadata,
-  locale = excluded.locale;
+  locale = excluded.locale,
+  ref_code = excluded.ref_code,
+  credits_balance = excluded.credits_balance;
 
 insert into public.driver_presence (user_id, vehicle_type, lat, lng, last_seen, ref_code, whatsapp_e164)
 values
@@ -171,16 +173,10 @@ begin
     profile_id = excluded.profile_id
   returning id into order_seed;
 
-  if not exists (select 1 from public.notifications where order_id = order_seed and notification_type = 'order_status') then
-    insert into public.notifications (order_id, to_wa_id, template_name, notification_type, channel, status, payload, sent_at)
-    values (order_seed, '+250780001001', 'loyalty_template', 'order_status', 'template', 'sent', '{"order_code":"ORD-SEED-1"}'::jsonb, now());
-  else
-    update public.notifications
-    set payload = '{"order_code":"ORD-SEED-1"}'::jsonb,
-        status = 'sent',
-        sent_at = now()
-    where order_id = order_seed and notification_type = 'order_status';
-  end if;
+  delete from public.notifications
+  where order_id = order_seed and notification_type = 'order_status';
+  insert into public.notifications (order_id, to_wa_id, template_name, notification_type, channel, status, payload, sent_at)
+  values (order_seed, '+250780001001', 'loyalty_template', 'order_status', 'template', 'sent', '{"order_code":"ORD-SEED-1"}'::jsonb, now());
 
   if exists (select 1 from public.vouchers where code_5 = '12345') then
     update public.vouchers
