@@ -21,8 +21,7 @@ export function logStructured(context: LogContext) {
     const drainUrl = process.env.LOG_DRAIN_URL;
     if (drainUrl) {
       // Fire-and-forget; do not block request lifecycle.
-      // eslint-disable-next-line @typescript-eslint/no-floating-promises
-      fetch(drainUrl, {
+      void fetch(drainUrl, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify(payload),

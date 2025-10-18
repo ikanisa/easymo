@@ -63,7 +63,7 @@ export function IbiminaEditPanel({
     setIssuerMemberId("");
     setInviteTtl(DEFAULT_INVITE_TTL);
     setInviteResult(null);
-  }, [row.id]);
+  }, [row]);
 
   const updateMutation = useMutation({
     mutationFn: (payload: IkiminaUpdatePayload) => updateIkimina(row.id, payload),

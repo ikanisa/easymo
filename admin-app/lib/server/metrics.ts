@@ -18,8 +18,7 @@ export function emitMetric(name: string, value: number, tags?: Record<string, un
       ts: Date.now(),
     };
     // fire-and-forget
-    // eslint-disable-next-line @typescript-eslint/no-floating-promises
-    fetch(url, {
+    void fetch(url, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify(body),
@@ -28,4 +27,3 @@ export function emitMetric(name: string, value: number, tags?: Record<string, un
     // swallow
   }
 }
-

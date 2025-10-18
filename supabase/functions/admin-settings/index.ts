@@ -5,16 +5,16 @@
 // the EASYMO_ADMIN_TOKEN environment variable.  Use a service role key
 // for Supabase to bypass Row Level Security when updating settings.
 
-import { serve } from 'https://deno.land/std@0.202.0/http/server.ts';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.5.0';
-import { z } from 'https://esm.sh/zod@3.22.2';
+import { serve } from "https://deno.land/std@0.202.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.5.0";
+import { z } from "https://esm.sh/zod@3.22.2";
 
-const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
-const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
-const ADMIN_TOKEN = Deno.env.get('EASYMO_ADMIN_TOKEN') ?? '';
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
+const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+const ADMIN_TOKEN = Deno.env.get("EASYMO_ADMIN_TOKEN") ?? "";
 
 if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
-  throw new Error('Supabase credentials are not configured');
+  throw new Error("Supabase credentials are not configured");
 }
 
 const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
@@ -31,89 +31,94 @@ const SettingsPatch = z.object({
 
 serve(async (req) => {
   // Enforce admin token
-  const apiKey = req.headers.get('x-api-key');
+  const apiKey = req.headers.get("x-api-key");
   if (apiKey !== ADMIN_TOKEN) {
-    return new Response(JSON.stringify({ error: 'Forbidden' }), {
+    return new Response(JSON.stringify({ error: "Forbidden" }), {
       status: 403,
-      headers: { 'Content-Type': 'application/json' },
+      headers: { "Content-Type": "application/json" },
     });
   }
 
-  if (req.method === 'GET') {
+  if (req.method === "GET") {
     const { data, error } = await supabase
-      .from('settings')
-      .select('*')
+      .from("settings")
+      .select("*")
       .limit(1)
       .maybeSingle();
 
     if (error) {
       return new Response(JSON.stringify({ error: error.message }), {
         status: 500,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { "Content-Type": "application/json" },
       });
     }
 
     return new Response(JSON.stringify({ config: data }), {
       status: 200,
-      headers: { 'Content-Type': 'application/json' },
+      headers: { "Content-Type": "application/json" },
     });
   }
 
-  if (req.method === 'POST') {
+  if (req.method === "POST") {
     const body = await req.json().catch(() => ({}));
     const result = SettingsPatch.safeParse(body);
 
     if (!result.success) {
       return new Response(
-        JSON.stringify({ error: 'Invalid payload', details: result.error.errors }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } },
+        JSON.stringify({
+          error: "Invalid payload",
+          details: result.error.errors,
+        }),
+        { status: 400, headers: { "Content-Type": "application/json" } },
       );
     }
 
     // Find the single settings row
     const { data: existing, error: fetchErr } = await supabase
-      .from('settings')
-      .select('id')
+      .from("settings")
+      .select("id")
       .limit(1)
       .maybeSingle();
 
     if (fetchErr) {
       return new Response(JSON.stringify({ error: fetchErr.message }), {
         status: 500,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { "Content-Type": "application/json" },
       });
     }
 
     if (!existing) {
-      return new Response(JSON.stringify({ error: 'Settings row does not exist' }), {
-        status: 404,
-        headers: { 'Content-Type': 'application/json' },
-      });
+      return new Response(
+        JSON.stringify({ error: "Settings row does not exist" }),
+        {
+          status: 404,
+          headers: { "Content-Type": "application/json" },
+        },
+      );
     }
 
     const { data: updated, error: updateErr } = await supabase
-      .from('settings')
+      .from("settings")
       .update(result.data)
-      .eq('id', existing.id)
-      .select('*')
+      .eq("id", existing.id)
+      .select("*")
       .maybeSingle();
 
     if (updateErr) {
       return new Response(JSON.stringify({ error: updateErr.message }), {
         status: 500,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { "Content-Type": "application/json" },
       });
     }
 
     return new Response(JSON.stringify({ config: updated }), {
       status: 200,
-      headers: { 'Content-Type': 'application/json' },
+      headers: { "Content-Type": "application/json" },
     });
   }
 
-  return new Response(JSON.stringify({ error: 'Method not allowed' }), {
+  return new Response(JSON.stringify({ error: "Method not allowed" }), {
     status: 405,
-    headers: { 'Content-Type': 'application/json' },
+    headers: { "Content-Type": "application/json" },
   });
 });
-

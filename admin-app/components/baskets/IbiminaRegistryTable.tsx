@@ -50,7 +50,10 @@ export function IbiminaRegistryTable({ params }: IbiminaRegistryTableProps) {
   const ibiminaQuery = useIbiminaQuery(queryParams, { keepPreviousData: true });
   const saccoOptionsQuery = useSaccosQuery(SACCO_OPTIONS_PARAMS);
 
-  const rows = ibiminaQuery.data?.data ?? [];
+  const rows = useMemo(
+    () => ibiminaQuery.data?.data ?? [],
+    [ibiminaQuery.data],
+  );
   const total = ibiminaQuery.data?.total ?? 0;
   const saccoOptions = saccoOptionsQuery.data?.data ?? [];
 

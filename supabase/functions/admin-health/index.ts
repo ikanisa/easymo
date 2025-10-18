@@ -1,4 +1,11 @@
-import { createServiceRoleClient, handleOptions, json, logRequest, logResponse, requireAdminAuth } from "../_shared/admin.ts";
+import {
+  createServiceRoleClient,
+  handleOptions,
+  json,
+  logRequest,
+  logResponse,
+  requireAdminAuth,
+} from "../_shared/admin.ts";
 
 const supabase = createServiceRoleClient();
 
