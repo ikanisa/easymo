@@ -1,7 +1,23 @@
 -- Marketplace categories enhancements (add columns + seed required rows)
 
--- Add metadata columns for slugs, descriptions, and icons.
 BEGIN;
+
+CREATE TABLE IF NOT EXISTS public.marketplace_categories (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  name text UNIQUE NOT NULL,
+  slug text,
+  description text,
+  icon text,
+  sort_order integer DEFAULT 0,
+  is_active boolean NOT NULL DEFAULT true,
+  created_at timestamptz NOT NULL DEFAULT timezone('utc', now()),
+  updated_at timestamptz NOT NULL DEFAULT timezone('utc', now())
+);
+
+ALTER TABLE public.businesses
+  ADD COLUMN IF NOT EXISTS category_id uuid REFERENCES public.marketplace_categories(id) ON DELETE SET NULL;
+
+-- Add metadata columns for slugs, descriptions, and icons.
 ALTER TABLE public.marketplace_categories
   ADD COLUMN IF NOT EXISTS slug text,
   ADD COLUMN IF NOT EXISTS description text,
@@ -70,4 +86,12 @@ SET description = COALESCE(description,
 UPDATE public.marketplace_categories
 SET slug = regexp_replace(lower(name), '[^a-z0-9]+', '_', 'g')
 WHERE slug IS NULL OR slug = '';
+
+-- Backfill business category_id from legacy text column when possible.
+UPDATE public.businesses AS b
+SET category_id = mc.id
+FROM public.marketplace_categories AS mc
+WHERE b.category_id IS NULL
+  AND lower(coalesce(b.category, '')) = lower(mc.name);
+
 COMMIT;

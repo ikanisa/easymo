@@ -37,9 +37,25 @@ BEGIN
   END IF;
 END $$;
 
-INSERT INTO public.app_config (id, search_radius_km, max_results, subscription_price, wa_bot_number_e164)
-VALUES (1, 10, 9, 0, '+250780000000')
-ON CONFLICT (id) DO NOTHING;
+DO $$
+DECLARE
+  _id public.app_config.id%TYPE;
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM public.app_config) THEN
+    SELECT CASE
+             WHEN atttypid = 'bool'::regtype THEN TRUE::public.app_config.id%TYPE
+             ELSE 1::public.app_config.id%TYPE
+           END
+    INTO _id
+    FROM pg_attribute
+    WHERE attrelid = 'public.app_config'::regclass
+      AND attname = 'id';
+
+    INSERT INTO public.app_config (id, search_radius_km, max_results, subscription_price, wa_bot_number_e164)
+    VALUES (_id, 10, 9, 0, '+250780000000')
+    ON CONFLICT (id) DO NOTHING;
+  END IF;
+END $$;
 
 ALTER TABLE public.profiles
   ADD COLUMN IF NOT EXISTS metadata jsonb NOT NULL DEFAULT '{}'::jsonb;

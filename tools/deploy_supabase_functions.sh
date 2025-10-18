@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-PROJECT_REF="${PROJECT_REF:-ezrriefbmhiiqfoxgjgz}"
+PROJECT_REF="${PROJECT_REF:-lhbowpbcpwoiparwnwgt}"
 FUNCTIONS=(
   "wa-webhook"
   "ocr-processor"
@@ -21,14 +21,20 @@ FUNCTIONS=(
   "flow-exchange"
 )
 
-if [[ -z "${SUPABASE_ACCESS_TOKEN:-}" ]]; then
-  echo "SUPABASE_ACCESS_TOKEN is not set. Export it before running this script." >&2
-  exit 1
-fi
-
 if ! command -v supabase >/dev/null 2>&1; then
   echo "Supabase CLI is not installed or not on PATH." >&2
   exit 1
+fi
+
+if [[ -n "${SUPABASE_ACCESS_TOKEN:-}" ]]; then
+  export SUPABASE_ACCESS_TOKEN
+else
+  if supabase projects list --output json >/dev/null 2>&1; then
+    echo "Using Supabase CLI profile credentials for project ${PROJECT_REF}"
+  else
+    echo "Supabase CLI is not authenticated. Run 'supabase login' or export SUPABASE_ACCESS_TOKEN." >&2
+    exit 1
+  fi
 fi
 
 printf 'Deploying %d Supabase Edge Functions to project %s\n\n' "${#FUNCTIONS[@]}" "${PROJECT_REF}"

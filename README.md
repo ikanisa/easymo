@@ -53,6 +53,29 @@ Vite React app and communicates with those Edge Functions through the
 5. Deploy edge functions via `supabase functions deploy --project-ref <ref>`,
    or let Vercel handle deployment if configured.
 
+## Package Manager
+
+- Use `pnpm` (>=8) for all workspace installs and scripts. `npm install` / `npm audit fix` reintroduce TypeScript peer dependency conflicts between `typescript@5.9.x` and `typescript-eslint@8.x`.
+- Install dependencies with `pnpm install` and run workspace scripts via `pnpm <script>`.
+
+## Database Seeding (Remote)
+
+1. Fetch the service-role connection string from Supabase Dashboard → Settings → Database and export it:
+   ```bash
+   export SUPABASE_DB_URL="postgresql://postgres:<password>@db.lhbowpbcpwoiparwnwgt.supabase.co:5432/postgres"
+   ```
+2. Run the Phase-2 seed fixture:
+   ```bash
+   pnpm seed:remote
+   ```
+   The script pipes `supabase/seeders/phase2_seed.sql` through `psql` with `ON_ERROR_STOP`, so it will fail fast if anything breaks.
+3. If `psql` is not available, use the same SQL file inside the Supabase SQL editor or run:
+   ```bash
+   PGPASSWORD=<password> psql "postgresql://postgres@db.lhbowpbcpwoiparwnwgt.supabase.co:5432/postgres" \
+     -v ON_ERROR_STOP=1 \
+     -f supabase/seeders/phase2_seed.sql
+   ```
+
 ## Testing
 
 Vitest is used for unit tests.  Example tests for the `RealAdapter` are

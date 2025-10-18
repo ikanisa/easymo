@@ -5,15 +5,21 @@
 
 import { getAdminToken, getApiBase, getSupabaseProjectId, getSupabaseUrl } from './env';
 
-export const API_BASE = getApiBase();
+const DEFAULT_SUPABASE_URL = 'https://lhbowpbcpwoiparwnwgt.supabase.co';
+const DEFAULT_PROJECT_ID = 'lhbowpbcpwoiparwnwgt';
+
+const resolvedSupabaseUrl = getSupabaseUrl() ?? DEFAULT_SUPABASE_URL;
+const resolvedProjectId = getSupabaseProjectId() ?? DEFAULT_PROJECT_ID;
+
+export const API_BASE = getApiBase() || `${resolvedSupabaseUrl}/functions/v1`;
 
 export const ADMIN_HEADERS = () => ({
   'Content-Type': 'application/json',
   'x-admin-token': getAdminToken(),
 });
 
-const SUPABASE_URL = getSupabaseUrl();
-export const SUPABASE_PROJECT_ID = getSupabaseProjectId();
+const SUPABASE_URL = resolvedSupabaseUrl;
+export const SUPABASE_PROJECT_ID = resolvedProjectId;
 
 const withProjectLink = (path: string): string | undefined =>
   SUPABASE_PROJECT_ID ? `https://supabase.com/dashboard/project/${SUPABASE_PROJECT_ID}${path}` : undefined;
