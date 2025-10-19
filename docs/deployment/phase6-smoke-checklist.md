@@ -23,6 +23,10 @@ marketplace, and OCR surfaces introduced in Phase 4/5.
    pnpm --filter @easymo/db prisma:migrate:deploy
    pnpm --filter @easymo/db seed
    ```
+4. Verify environment config is in place before deploy:
+   - Admin app: `ADMIN_SESSION_TTL_SECONDS`, `ADMIN_FLOW_WA_ID`, `WHATSAPP_SEND_*`, `ALERT_WEBHOOK_URL`, observability drains (`LOG_DRAIN_URL`, `METRICS_DRAIN_URL`, `SENTRY_DSN`, `NEXT_PUBLIC_SENTRY_DSN`).
+   - Supabase functions: `EASYMO_ADMIN_TOKEN`, `SUPABASE_SERVICE_ROLE_KEY`, `ALERT_WEBHOOK_URL`, OCR/WhatsApp tokens.
+   - GitHub repo secrets: `ADMIN_BASE_URL`, `ADMIN_API_TOKEN`, `SUPABASE_API_BASE`, `EASYMO_ADMIN_TOKEN` (used by the synthetic checks workflow).
 
 ## 2. Edge Functions
 
@@ -81,6 +85,7 @@ The response should be `Job processed`. If you see `No jobs`, enqueue a test job
    ledger metrics).
 3. Check the metrics collector receives `notifications.*`, `ocr.*`, and
    `marketplace.*` streams when you exercise the flows above.
+4. In GitHub → Actions, confirm the latest **Synthetic Checks** run succeeded with both the admin API probes and Supabase health check (secrets populated above).
 
 Document every failure in `docs/go-live-readiness.md` along with remediation
 notes before approving the deployment.

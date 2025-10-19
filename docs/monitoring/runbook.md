@@ -85,3 +85,12 @@ Use these as a baseline when validating dashboards.
   - `whatsapp.inbound`, `whatsapp.outbound`
   - `broker.outbound`, `broker.retry`
 - Review retention policies (`cleanup.policy`, `retention.ms`) before production rollout. Update dashboards if you adjust partition counts.
+
+## 9. GitHub Synthetic Checks Secrets
+
+- Populate the following repository secrets so `.github/workflows/synthetic-checks.yml` can exercise staging/prod endpoints:
+  - `ADMIN_BASE_URL`
+  - `ADMIN_API_TOKEN`
+  - `SUPABASE_API_BASE`
+  - `EASYMO_ADMIN_TOKEN`
+- The workflow skips steps when these are unset or malformed (non-HTTP URL). After updating secrets, re-run “Synthetic Checks” to confirm the probes succeed.
