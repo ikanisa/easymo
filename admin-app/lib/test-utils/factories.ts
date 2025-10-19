@@ -28,6 +28,11 @@ import type {
   User,
   Voucher,
   WebhookError,
+  Lead,
+  LiveCall,
+  VendorRanking,
+  MarketplaceIntent,
+  MarketplacePurchase,
 } from "@/lib/schemas";
 
 export function createDashboardKpi(
@@ -467,6 +472,92 @@ export function createAssistantRun(
       limitations: [],
     },
     messages: [],
+    ...overrides,
+  };
+}
+
+export function createLiveCall(overrides: Partial<LiveCall> = {}): LiveCall {
+  return {
+    callSid: "CA123",
+    tenantId: "a4a8cf2d-0a4f-446c-8bf2-28509641158f",
+    leadName: "Fixture Rider One",
+    leadPhone: "+250780010001",
+    agentRegion: "rw-kigali",
+    startedAt: new Date().toISOString(),
+    lastMediaAt: new Date().toISOString(),
+    status: "active",
+    direction: "outbound",
+    warmTransferQueue: null,
+    optOutDetected: false,
+    transcriptPreview: null,
+    durationSeconds: 45,
+    ...overrides,
+  };
+}
+
+export function createLead(overrides: Partial<Lead> = {}): Lead {
+  return {
+    id: "lead-id",
+    tenantId: "a4a8cf2d-0a4f-446c-8bf2-28509641158f",
+    phoneE164: "+250780010000",
+    name: "Fixture Lead",
+    tags: [],
+    optIn: true,
+    locale: "rw",
+    lastContactAt: new Date().toISOString(),
+    createdAt: new Date().toISOString(),
+    lastCallAt: null,
+    ...overrides,
+  };
+}
+
+export function createVendorRanking(
+  overrides: Partial<VendorRanking> = {},
+): VendorRanking {
+  return {
+    vendorId: "vendor-id",
+    name: "Vendor Name",
+    region: "rw-kigali",
+    categories: ["mobility"],
+    score: 0.75,
+    rating: 4.5,
+    fulfilmentRate: 0.9,
+    avgResponseMs: 1500,
+    totalTrips: 120,
+    recentTrips: 12,
+    balance: 320,
+    ...overrides,
+  };
+}
+
+export function createMarketplaceIntent(
+  overrides: Partial<MarketplaceIntent> = {},
+): MarketplaceIntent {
+  return {
+    id: "intent-id",
+    buyerName: "Buyer",
+    channel: "whatsapp",
+    status: "pending",
+    createdAt: new Date().toISOString(),
+    expiresAt: null,
+    recentQuotes: 0,
+    ...overrides,
+  };
+}
+
+export function createMarketplacePurchase(
+  overrides: Partial<MarketplacePurchase> = {},
+): MarketplacePurchase {
+  return {
+    id: "purchase-id",
+    quoteId: "quote-id",
+    vendorName: "Vendor",
+    buyerName: "Buyer",
+    status: "completed",
+    createdAt: new Date().toISOString(),
+    fulfilledAt: new Date().toISOString(),
+    amount: 25,
+    currency: "USD",
     ...overrides,
   };
 }

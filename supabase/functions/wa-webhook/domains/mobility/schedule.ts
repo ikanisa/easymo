@@ -24,7 +24,11 @@ import {
   sendListWithActions,
 } from "../../utils/reply.ts";
 import { emitAlert } from "../../observe/alert.ts";
-import { ensureVehiclePlate } from "./vehicle_plate.ts";
+import {
+  ensureVehiclePlate,
+  getStoredVehicleType,
+  updateStoredVehicleType,
+} from "./vehicle_plate.ts";
 
 const ROLE_ROWS = [
   {
@@ -112,24 +116,24 @@ export async function handleScheduleRole(
       roleId: id,
     });
     if (!ready) return true;
+    const storedVehicle = await getStoredVehicleType(
+      ctx.supabase,
+      ctx.profileId,
+    );
+    if (storedVehicle) {
+      await setState(ctx.supabase, ctx.profileId, {
+        key: "schedule_location",
+        data: { role, vehicle: storedVehicle },
+      });
+      await sendButtonsMessage(
+        ctx,
+        "📍 Share pickup location (tap ➕ → Location → Share).",
+        sharePickupButtons(role, { allowChange: true }),
+      );
+      return true;
+    }
   }
-  await setState(ctx.supabase, ctx.profileId, {
-    key: "schedule_vehicle",
-    data: { role },
-  });
-  await sendListWithActions(
-    ctx,
-    {
-      title: role === "driver"
-        ? "🚗 You are a driver"
-        : "🧍 You are a passenger",
-      body: "Choose your vehicle type.",
-      sectionTitle: "Vehicle",
-      rows: VEHICLE_OPTIONS,
-      buttonText: "Select",
-    },
-    sharePickupButtons(),
-  );
+  await promptScheduleVehicleSelection(ctx, role);
   return true;
 }
 
@@ -150,6 +154,9 @@ export async function handleScheduleVehicle(
 ): Promise<boolean> {
   if (!ctx.profileId || !state.role) return false;
   const vehicleType = vehicleFromId(vehicleId);
+  if (state.role === "driver") {
+    await updateStoredVehicleType(ctx.supabase, ctx.profileId, vehicleType);
+  }
   await setState(ctx.supabase, ctx.profileId, {
     key: "schedule_location",
     data: {
@@ -160,8 +167,26 @@ export async function handleScheduleVehicle(
   await sendButtonsMessage(
     ctx,
     "📍 Share pickup location (tap ➕ → Location → Share).",
-    sharePickupButtons(),
+    sharePickupButtons(state.role, {
+      allowChange: state.role === "driver",
+    }),
   );
+  return true;
+}
+
+export async function handleScheduleChangeVehicle(
+  ctx: RouterContext,
+  data: Record<string, unknown> | undefined,
+): Promise<boolean> {
+  if (!ctx.profileId) return false;
+  const roleValue = typeof data?.role === "string" ? data.role : null;
+  const role = roleValue === "driver"
+    ? "driver"
+    : roleValue === "passenger"
+    ? "passenger"
+    : null;
+  if (!role) return false;
+  await promptScheduleVehicleSelection(ctx, role);
   return true;
 }
 
@@ -214,7 +239,7 @@ export async function handleScheduleDropoff(
       tripId: state.tripId,
       lat: coords.lat,
       lng: coords.lng,
-      radiusMeters: null,
+      radiusMeters: undefined,
     });
 
     const context: ScheduleState = {
@@ -326,7 +351,7 @@ export async function requestScheduleDropoff(
   }
   await setState(ctx.supabase, ctx.profileId, {
     key: "schedule_dropoff",
-    data: state,
+    data: { ...state },
   });
   await sendButtonsMessage(
     ctx,
@@ -363,7 +388,7 @@ async function createTripAndDeliverMatches(
         tripId,
         lat: options.dropoff.lat,
         lng: options.dropoff.lng,
-        radiusMeters: null,
+        radiusMeters: undefined,
       });
     }
 
@@ -467,8 +492,40 @@ export function isScheduleResult(id: string): boolean {
   return id.startsWith("MTCH::");
 }
 
-function sharePickupButtons(): ButtonSpec[] {
+function sharePickupButtons(
+  role?: "driver" | "passenger",
+  options: { allowChange?: boolean } = {},
+): ButtonSpec[] {
+  if (role === "driver" && options.allowChange) {
+    return buildButtons(
+      { id: IDS.MOBILITY_CHANGE_VEHICLE, title: "Change vehicle" },
+    );
+  }
   return [];
+}
+
+async function promptScheduleVehicleSelection(
+  ctx: RouterContext,
+  role: "driver" | "passenger",
+): Promise<void> {
+  if (!ctx.profileId) return;
+  await setState(ctx.supabase, ctx.profileId, {
+    key: "schedule_vehicle",
+    data: { role },
+  });
+  await sendListWithActions(
+    ctx,
+    {
+      title: role === "driver"
+        ? "🚗 You are a driver"
+        : "🧍 You are a passenger",
+      body: "Choose your vehicle type.",
+      sectionTitle: "Vehicle",
+      rows: VEHICLE_OPTIONS,
+      buttonText: "Select",
+    },
+    sharePickupButtons(role),
+  );
 }
 
 function shareDropoffButtons(): ButtonSpec[] {

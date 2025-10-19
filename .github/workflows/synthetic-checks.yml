@@ -17,9 +17,19 @@ jobs:
         with:
           deno-version: v2.x
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
       - name: Run synthetic checks
         env:
           ADMIN_BASE_URL: ${{ secrets.ADMIN_BASE_URL }}
           ADMIN_API_TOKEN: ${{ secrets.ADMIN_API_TOKEN }}
         run: deno run --allow-env --allow-net tools/monitoring/admin/synthetic-checks.ts
 
+      - name: Run Supabase health check
+        env:
+          VITE_API_BASE: ${{ secrets.SUPABASE_API_BASE }}
+          ADMIN_TOKEN: ${{ secrets.EASYMO_ADMIN_TOKEN }}
+        run: node scripts/health-check.mjs

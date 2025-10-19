@@ -78,6 +78,26 @@ tables, columns, or indexes delivered through timestamped migrations.
 - `status TEXT CHECK (status IN ('queued','queued_throttled','sent','delivered','read','failed','opted_out')) DEFAULT 'queued'`.
 - `error_code TEXT`.
 - `message_id TEXT`.
+
+### `agent_chat_sessions`
+
+- `id UUID PK DEFAULT gen_random_uuid()`.
+- `profile_id UUID NULL REFERENCES profiles(user_id)` for driver/customer linkage.
+- `agent_kind TEXT NOT NULL` (`broker`, `support`, `sales`, `marketing` previews).
+- `status TEXT NOT NULL DEFAULT 'open'`.
+- `metadata JSONB DEFAULT '{}'::jsonb`.
+- `last_user_message TEXT`, `last_agent_message TEXT`.
+- `created_at TIMESTAMPTZ DEFAULT now()`, `updated_at TIMESTAMPTZ DEFAULT now()`.
+- RLS enabled with a deny-all policy (service role bypass only).
+
+### `agent_chat_messages`
+
+- `id UUID PK DEFAULT gen_random_uuid()`.
+- `session_id UUID REFERENCES agent_chat_sessions(id) ON DELETE CASCADE`.
+- `role TEXT CHECK (role IN ('user','agent','system'))`.
+- `content JSONB NOT NULL` (stores message body and stub metadata).
+- `created_at TIMESTAMPTZ DEFAULT now()`.
+- Indexed by `(session_id, created_at)` for chronological retrieval.
 - `last_update_at TIMESTAMPTZ DEFAULT now()`.
 - Indexes: `(campaign_id,status)`, `(msisdn)`.
 
@@ -151,3 +171,103 @@ tables, columns, or indexes delivered through timestamped migrations.
 - Admin roles bypass bar-level RLS via role claim `role = 'admin'`.
 - Station operators restricted to vouchers redeemed at their station.
 - Campaign targets visible only to Super Admin and Support roles.
+
+## Phase 4 Additions – Agent-Core Schema
+
+These tables live in the Agent-Core Postgres database managed through
+`packages/db/prisma/schema.prisma`. Migrations are additive and executed with
+`pnpm --filter @easymo/db prisma:migrate:dev`.
+
+### `Tenant`
+
+- `id UUID PK DEFAULT uuid_generate_v4()`.
+- `name TEXT NOT NULL`.
+- `countries TEXT[] DEFAULT '{}'::text[]`.
+- Relationships to `AgentConfig`, `Lead`, `Call`, `WalletAccount`,
+  `CommissionSchedule`, `VendorProfile`, `BuyerProfile`, `Intent`,
+  `WalletTransaction`.
+
+### `AgentConfig`
+
+- Ties agent personas to tenants (`tenant_id UUID` FK).
+- Stores `product`, supported `languages`, `system_prompt`, `tools`/`policy`
+  JSON payloads.
+
+### `Lead`
+
+- Scoped by tenant; unique on (`tenant_id`, `phone_e164`).
+- Tracks `tags`, `opt_in` flag, `locale`, and `last_contact_at` timestamp.
+- Relates to `Call`.
+
+### `Call`
+
+- Captures realtime sessions: `direction` (`inbound`/`outbound`),
+  `platform` (`pstn`/`sip`), `started_at`/`ended_at`, `recording_url`,
+  `summary` JSON, `handoff_to`, `region`.
+- Links back to `Lead` when available and aggregates `Disposition`.
+
+### `Disposition`
+
+- One-to-many with `Call`; records feedback codes and notes.
+
+### `OptOut`
+
+- Deduplicated by `phone_e164`; stores opt-out `reason` and timestamp `ts`.
+- Shared across WhatsApp bot and voice orchestrator.
+
+## Phase 5 Additions – Wallet & Marketplace Schema
+
+### `WalletAccount`
+
+- `id UUID PK`, `tenant_id` FK, `owner_type` enum (`vendor`, `buyer`, `platform`,
+  `commission`), `owner_id`, `currency`, `status`, `balance NUMERIC(18,4)`.
+- Optional one-to-one with `VendorProfile`/`BuyerProfile`.
+
+### `WalletTransaction`
+
+- Represents immutable double-entry containers; `type` (purchase, payout,
+  commission, adjustment), optional `reference`, `metadata JSONB`.
+
+### `WalletEntry`
+
+- Split ledger entries: `amount NUMERIC(18,4)`, `direction` (`debit`/`credit`),
+  indexes on `account_id` and `transaction_id` for reconciliation queries.
+
+### `CommissionSchedule`
+
+- Per-tenant commission rules: `product`, percentage `rate NUMERIC(5,4)`,
+  optional `flat_fee`, `effective_at`.
+
+### `VendorProfile`
+
+- Vendor catalog surface: `region`, `categories TEXT[]`, `rating NUMERIC(4,2)`,
+  `fulfilment_rate NUMERIC(5,4)`, `avg_response_ms`, `total_trips`.
+- Optional `wallet_account_id` link; drives ranking inputs.
+
+### `BuyerProfile`
+
+- Buyer metadata with optional attached wallet; `segment` tagging for
+  behavioural routing.
+
+### `Intent`
+
+- Represents marketplace demand: `channel` (WhatsApp, voice, lead form),
+  JSON `payload`, `status` enum (`pending`, `matched`, `expired`, `cancelled`),
+  optional `expires_at`.
+
+### `Quote`
+
+- Candidate vendor offers: `price NUMERIC(18,4)`, `currency`, `eta_minutes`,
+  `status` (`pending`, `accepted`, `rejected`, `expired`), optional `accepted_at`.
+
+### `Purchase`
+
+- Finalised bookings: one-to-one with `Quote`, optional `transaction_id`
+  referencing wallet transaction, `status` (`pending`, `completed`, `cancelled`,
+  `failed`), optional `fulfilled_at`.
+
+### Enum Updates
+
+- `wallet_owner_type`, `wallet_entry_direction`, `intent_status`, `quote_status`,
+  `purchase_status`, `call_direction`, and `call_platform` underpin the Prisma
+  schema and map to Postgres enums for validation.

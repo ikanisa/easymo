@@ -1,0 +1,23 @@
+{
+  "title": "Messaging & Orchestrator",
+  "panels": [
+    {
+      "type": "graph",
+      "title": "Kafka Lag",
+      "targets": [
+        {
+          "expr": "max(kafka_consumer_group_lag{group=\"broker-orchestrator-group\"})"
+        }
+      ]
+    },
+    {
+      "type": "table",
+      "title": "Retry Volume",
+      "targets": [
+        {
+          "expr": "sum(rate(broker_retry_events_total[5m])) by (topic)"
+        }
+      ]
+    }
+  ]
+}

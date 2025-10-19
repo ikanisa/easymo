@@ -70,6 +70,18 @@ export const NAV_ITEMS: NavItem[] = [
     group: "Operations",
   },
   {
+    label: "Live Calls",
+    href: "/live-calls",
+    description: "Realtime call monitoring and warm transfers",
+    group: "Operations",
+  },
+  {
+    label: "Leads",
+    href: "/leads",
+    description: "Lead search, tagging, and opt-in management",
+    group: "Operations",
+  },
+  {
     label: "QR & Deep Links",
     href: "/qr",
     description: "QR token batches and deep-link previews",
@@ -115,6 +127,12 @@ export const NAV_ITEMS: NavItem[] = [
     label: "Files",
     href: "/files",
     description: "Storage browser for vouchers and docs",
+    group: "Platform",
+  },
+  {
+    label: "Marketplace",
+    href: "/marketplace",
+    description: "Intent pipeline, vendor ranking, and purchases",
     group: "Platform",
   },
   {

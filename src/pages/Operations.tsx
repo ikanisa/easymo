@@ -24,6 +24,8 @@ import {
 } from 'lucide-react';
 import { AdminAPI, type HealthCheckResult } from '@/lib/api';
 import { SUPABASE_LINKS, HAS_SUPABASE_PROJECT } from '@/lib/api-constants';
+import AgentChatPanel from '@/components/AgentChatPanel';
+import { isAgentChatEnabled } from '@/lib/env';
 
 const EDGE_FUNCTIONS = [
   { name: 'wa-webhook', description: 'WhatsApp webhook handler' },
@@ -38,6 +40,7 @@ const EDGE_FUNCTIONS = [
 
 export default function Operations() {
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
+  const agentChatEnabled = isAgentChatEnabled();
 
   const { data: healthData, isLoading, refetch } = useQuery<HealthCheckResult>({
     queryKey: ['health-check'],
@@ -302,6 +305,46 @@ export default function Operations() {
           </CardContent>
         </Card>
       </div>
+
+      {agentChatEnabled ? (
+        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+          <AgentChatPanel
+            agentKind="support"
+            title="Customer Support Assistant"
+            description="Triage customer issues and capture context before handing off to a human."
+            featureEnabled={agentChatEnabled}
+            allowProfileRef
+          />
+          <AgentChatPanel
+            agentKind="sales"
+            title="Sales Assistant"
+            description="Log outbound follow-ups, recap calls, and prepare talking points."
+            featureEnabled={agentChatEnabled}
+            allowProfileRef
+          />
+          <AgentChatPanel
+            agentKind="marketing"
+            title="Marketing Assistant"
+            description="Brainstorm campaign ideas and track marketing actions."
+            featureEnabled={agentChatEnabled}
+            allowProfileRef
+          />
+        </div>
+      ) : (
+        <Card>
+          <CardHeader>
+            <CardTitle>AI Agents (Preview)</CardTitle>
+          </CardHeader>
+          <CardContent className="text-sm text-muted-foreground space-y-2">
+            <p>
+              AI chat surfaces are disabled. Flip <code>VITE_ENABLE_AGENT_CHAT</code> in the admin UI
+              and <code>ENABLE_AGENT_CHAT</code> for the Supabase Edge function to experiment with the
+              broker, support, sales, and marketing assistants.
+            </p>
+            <p>All responses are stubbed until the agent-core orchestration service is shipped.</p>
+          </CardContent>
+        </Card>
+      )}
     </AdminLayout>
   );
 }

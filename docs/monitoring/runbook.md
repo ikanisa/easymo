@@ -69,3 +69,19 @@ Use these as a baseline when validating dashboards.
 - Set `ALERT_WEBHOOK_URL` if you want Supabase functions to POST incident notifications.
 - Vercel offers log drains and analytics; enable if production monitoring is required.
 
+## 7. Grafana Dashboards
+
+- Import the Phase 4 dashboards:
+  - `dashboards/phase4/voice_bridge.json`
+  - `dashboards/phase4/messaging_overview.json`
+- Assign the Prometheus datasource used by the Agent-Core stack. Panels expect metrics from voice-bridge, sip-ingress, broker-orchestrator, and wallet/ranking services.
+- Verify `voice.contact.events` and `broker.outbound` topic lag panels remain below alerting thresholds during smoke tests.
+
+## 8. Kafka Topics
+
+- Apply the manifest in `infrastructure/kafka/topics.yaml` via the provided helper script or your Kafka admin tooling.
+- Required topics:
+  - `voice.contact.events`, `voice.media.events`, `voice.sip.events`
+  - `whatsapp.inbound`, `whatsapp.outbound`
+  - `broker.outbound`, `broker.retry`
+- Review retention policies (`cleanup.policy`, `retention.ms`) before production rollout. Update dashboards if you adjust partition counts.

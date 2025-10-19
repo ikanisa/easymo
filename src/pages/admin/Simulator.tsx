@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,8 @@ import {
   selectLocation,
   selectListItem,
   selectRole,
+  submitDriverPlate,
+  restartDriverVehicleSelection,
   type FlowData
 } from "@/lib/waSimFlows";
 import { showDevTools, shouldUseMock } from "@/lib/env";
@@ -35,6 +37,7 @@ export default function Simulator() {
   const [simError, setSimError] = useState<string | null>(null);
   const [driverRefCode, setDriverRefCode] = useState('');
   const [passengerRefCode, setPassengerRefCode] = useState('');
+  const [driverPlateInput, setDriverPlateInput] = useState('');
   const isMock = shouldUseMock();
   const { toast } = useToast();
 
@@ -45,6 +48,29 @@ export default function Simulator() {
     setPassengers([]);
     setSimError(null);
     setSimLoading(false);
+    setDriverPlateInput('');
+  };
+
+  useEffect(() => {
+    if (flowData.state === 'driver_onboarding_plate') {
+      setDriverPlateInput(flowData.driverProfile.vehiclePlate ?? '');
+    }
+  }, [flowData.state, flowData.driverProfile.vehiclePlate]);
+
+  const handleDriverPlateSubmit = () => {
+    if (driverPlateInput.trim().length < 4) {
+      toast({
+        title: 'Invalid plate',
+        description: 'Enter a valid plate (min 4 characters).',
+        variant: 'destructive',
+      });
+      return;
+    }
+    updateFlow(submitDriverPlate(flowData, driverPlateInput));
+  };
+
+  const handleChangeVehicle = (target: 'see_passengers' | 'schedule_driver') => {
+    updateFlow(restartDriverVehicleSelection(flowData, target));
   };
 
   const renderHomeButtons = () => (
@@ -66,19 +92,50 @@ export default function Simulator() {
 
   const renderVehicleSelection = () => (
     <div className="space-y-3">
-      <p className="text-sm text-muted-foreground">Select vehicle type:</p>
+      <p className="text-sm text-muted-foreground">
+        {flowData.state === 'driver_onboarding_vehicle'
+          ? 'Select your vehicle type to finish driver setup.'
+          : 'Select vehicle type:'}
+      </p>
       {VEHICLE_OPTIONS.map(({ type, label }) => (
-        <Button key={type} className="w-full justify-start" variant="outline" 
-          onClick={() => updateFlow(selectVehicle(flowData, type))}>
+        <Button
+          key={type}
+          className="w-full justify-start"
+          variant="outline"
+          onClick={() => updateFlow(selectVehicle(flowData, type))}
+        >
           {label}
         </Button>
       ))}
     </div>
   );
 
+  const renderDriverPlatePrompt = () => (
+    <div className="space-y-3">
+      <p className="text-sm text-muted-foreground">
+        Enter your vehicle plate once to unlock driver features.
+      </p>
+      <Input
+        placeholder="e.g. RAA123C"
+        value={driverPlateInput}
+        onChange={(event) => setDriverPlateInput(event.target.value.toUpperCase())}
+      />
+      <Button className="w-full" onClick={handleDriverPlateSubmit}>
+        Continue
+      </Button>
+    </div>
+  );
+
   const renderLocationSelection = () => (
     <div className="space-y-3">
-      <p className="text-sm text-muted-foreground">Share your location:</p>
+      <div className="space-y-1">
+        <p className="text-sm text-muted-foreground">Share your location:</p>
+        {(flowData.state === 'see_passengers_location' || flowData.state === 'schedule_driver_location') && (
+          <p className="text-xs text-muted-foreground">
+            Registered vehicle: {flowData.driverProfile.vehicleType ?? '—'} • Plate: {flowData.driverProfile.vehiclePlate ?? '—'}
+          </p>
+        )}
+      </div>
       {PRESET_LOCATIONS.map((location) => (
         <Button
           key={location.name}
@@ -90,6 +147,15 @@ export default function Simulator() {
           {location.name}
         </Button>
       ))}
+      {(flowData.state === 'see_passengers_location' || flowData.state === 'schedule_driver_location') && (
+        <Button
+          className="w-full justify-start"
+          variant="secondary"
+          onClick={() => handleChangeVehicle(flowData.state === 'see_passengers_location' ? 'see_passengers' : 'schedule_driver')}
+        >
+          Change vehicle type
+        </Button>
+      )}
     </div>
   );
 
@@ -168,7 +234,10 @@ export default function Simulator() {
       case 'see_passengers_vehicle':
       case 'schedule_passenger_vehicle':
       case 'schedule_driver_vehicle':
+      case 'driver_onboarding_vehicle':
         return renderVehicleSelection();
+      case 'driver_onboarding_plate':
+        return renderDriverPlatePrompt();
       case 'see_drivers_location':
       case 'see_passengers_location':
       case 'schedule_passenger_location':
@@ -315,8 +384,8 @@ export default function Simulator() {
         });
 
         updateFlow({
+          ...flowData,
           state: 'success',
-          selectedVehicle: flowData.selectedVehicle,
           selectedLocation: location,
           chatUrl: null,
           successMessage: `✅ Passenger trip saved (ID ${trip.id}).`,
@@ -361,8 +430,8 @@ export default function Simulator() {
         }
 
         updateFlow({
+          ...flowData,
           state: 'success',
-          selectedVehicle: flowData.selectedVehicle,
           selectedLocation: location,
           chatUrl: null,
           successMessage: `✅ Driver trip saved (ID ${trip.id}).`,

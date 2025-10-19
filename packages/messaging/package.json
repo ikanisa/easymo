@@ -1,0 +1,31 @@
+{
+  "name": "@easymo/messaging",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "pnpm exec tsc -p tsconfig.json",
+    "lint": "eslint \"src/**/*.ts\""
+  },
+  "dependencies": {
+    "kafkajs": "^2.2.4",
+    "lodash.merge": "^4.6.2",
+    "pino": "^9.5.0",
+    "ioredis": "^5.4.1",
+    "ulid": "^2.3.0",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "@types/ioredis": "^5.0.0",
+    "@types/node": "^22.16.5",
+    "@types/lodash.merge": "^4.6.7",
+    "ts-jest": "^29.3.4",
+    "jest": "^29.7.0",
+    "@types/jest": "^29.5.14"
+  }
+}

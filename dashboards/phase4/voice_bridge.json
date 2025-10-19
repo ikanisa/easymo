@@ -1,0 +1,23 @@
+{
+  "title": "Voice Bridge Overview",
+  "panels": [
+    {
+      "type": "stat",
+      "title": "Active Sessions",
+      "targets": [
+        {
+          "expr": "sum(rate(voice_bridge_sessions_active[1m]))"
+        }
+      ]
+    },
+    {
+      "type": "graph",
+      "title": "Media Samples",
+      "targets": [
+        {
+          "expr": "sum(rate(voice_bridge_media_samples_total[5m])) by (topic)"
+        }
+      ]
+    }
+  ]
+}

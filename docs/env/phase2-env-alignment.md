@@ -6,7 +6,10 @@ This note accompanies the Phase 1 tasks. It lists every environment variable a
 
 ## 1. Environment Variables
 
-The repository root `.env` now mirrors the structure we expect in Vercel. Every value prefixed with `CHANGEME_` must be replaced with the actual secret and then copied to:
+The repository root `.env` now mirrors the structure we expect in Vercel and
+documents the live Supabase project (`lhbowpbcpwoiparwnwgt`). Every value
+prefixed with `CHANGEME_` must be replaced with the actual secret and then
+copied to:
 
 - `.env.local` (for local development)  
 - Vercel project environment variables  
@@ -24,6 +27,7 @@ The repository root `.env` now mirrors the structure we expect in Vercel. Every 
 | Reminder / notification toggles (`CART_REMINDER_*`, `ORDER_PENDING_REMINDER_*`, `BASKETS_REMINDER_*`, `NOTIFY_*`) | Non-secret; tune according to production requirements. |
 | Storage buckets (`MENU_MEDIA_BUCKET`, `KYC_STORAGE_BUCKET`, etc.) | Must exist in Supabase Storage or pages will fail. |
 | `DISPATCHER_FUNCTION_URL` | Should resolve to `https://lhbowpbcpwoiparwnwgt.supabase.co/functions/v1/campaign-dispatch`. |
+| `VITE_ENABLE_AGENT_CHAT`, `ENABLE_AGENT_CHAT` | Feature flag for Marketplace broker/support chat previews. Enable when the agent surfaces should be visible. |
 | Integrations (`OPENAI_API_KEY`, `WA_*`, `INSURANCE_OCR_METRICS_*`, `QR_SALT`) | Secrets – provide production versions. |
 
 ## 2. Supabase Auth Configuration

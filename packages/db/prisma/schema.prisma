@@ -1,0 +1,266 @@
+generator client {
+  provider = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Tenant {
+  id         String   @id @default(uuid()) @db.Uuid
+  name       String
+  countries  String[] @default([])
+  createdAt  DateTime @default(now())
+  agentConfigs AgentConfig[]
+  leads      Lead[]
+  calls      Call[]
+  walletAccounts WalletAccount[]
+  commissionSchedules CommissionSchedule[]
+  buyerProfiles BuyerProfile[]
+  vendorProfiles VendorProfile[]
+  intents Intent[]
+  walletTransactions WalletTransaction[]
+}
+
+model AgentConfig {
+  id          String   @id @default(uuid()) @db.Uuid
+  tenantId    String   @db.Uuid
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  product     String
+  languages   String[] @default(["en"])
+  voice       String   @default("Cedar")
+  objective   String
+  systemPrompt String
+  tools       Json     @default("[]")
+  policy      Json     @default("[]")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now())
+}
+
+model Lead {
+  id            String   @id @default(uuid()) @db.Uuid
+  tenantId      String   @db.Uuid
+  tenant        Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  phoneE164     String
+  name          String?
+  tags          String[] @default([])
+  optIn         Boolean  @default(false)
+  locale        String   @default("en")
+  lastContactAt DateTime?
+  createdAt     DateTime @default(now())
+  calls         Call[]
+
+  @@unique([tenantId, phoneE164])
+}
+
+model Call {
+  id          String   @id @default(uuid()) @db.Uuid
+  tenantId    String   @db.Uuid
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  leadId      String?  @db.Uuid
+  lead        Lead?    @relation(fields: [leadId], references: [id], onDelete: SetNull)
+  direction   CallDirection
+  platform    CallPlatform
+  startedAt   DateTime @default(now())
+  endedAt     DateTime?
+  status      String?
+  recordingUrl String?
+  transcript   String?
+  summary      Json?
+  agentMetrics Json?
+  handoffTo    String?
+  region       String?
+  createdAt    DateTime @default(now())
+  dispositions Disposition[]
+}
+
+model Disposition {
+  id        String   @id @default(uuid()) @db.Uuid
+  callId    String   @db.Uuid
+  call      Call     @relation(fields: [callId], references: [id], onDelete: Cascade)
+  code      String
+  notes     String?
+  createdAt DateTime @default(now())
+}
+
+model OptOut {
+  phoneE164 String  @id
+  reason    String?
+  ts        DateTime @default(now())
+}
+
+model WalletAccount {
+  id         String   @id @default(uuid()) @db.Uuid
+  tenantId   String   @db.Uuid
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  ownerType  WalletOwnerType
+  ownerId    String
+  currency   String
+  status     String   @default("active")
+  balance    Decimal  @default(0) @db.Decimal(18, 4)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @default(now())
+  entries    WalletEntry[]
+  vendorProfile VendorProfile? @relation("VendorWallet")
+  buyerProfile BuyerProfile? @relation("BuyerWallet")
+}
+
+model WalletTransaction {
+  id         String   @id @default(uuid()) @db.Uuid
+  tenantId   String   @db.Uuid
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  type       String
+  reference  String?
+  metadata   Json?
+  createdAt  DateTime @default(now())
+  entries    WalletEntry[]
+}
+
+model WalletEntry {
+  id            String   @id @default(uuid()) @db.Uuid
+  transactionId String   @db.Uuid
+  accountId     String   @db.Uuid
+  amount        Decimal  @db.Decimal(18, 4)
+  direction     WalletEntryDirection
+  createdAt     DateTime @default(now())
+  transaction   WalletTransaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  account       WalletAccount     @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@index([accountId])
+  @@index([transactionId])
+}
+
+model CommissionSchedule {
+  id         String   @id @default(uuid()) @db.Uuid
+  tenantId   String   @db.Uuid
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  product    String
+  rate       Decimal  @db.Decimal(5, 4)
+  flatFee    Decimal? @db.Decimal(18, 4)
+  active     Boolean  @default(true)
+  effectiveAt DateTime @default(now())
+  createdAt  DateTime @default(now())
+}
+
+model VendorProfile {
+  id              String   @id @default(uuid()) @db.Uuid
+  tenantId        String   @db.Uuid
+  tenant          Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name            String
+  region          String
+  categories      String[]
+  rating          Decimal? @db.Decimal(4, 2)
+  fulfilmentRate  Decimal? @db.Decimal(5, 4)
+  avgResponseMs   Int?
+  totalTrips      Int      @default(0)
+  walletAccountId String?  @db.Uuid @unique
+  walletAccount   WalletAccount? @relation("VendorWallet", fields: [walletAccountId], references: [id], onDelete: SetNull)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @default(now())
+  quotes          Quote[]
+
+  @@index([tenantId, region])
+}
+
+model BuyerProfile {
+  id              String   @id @default(uuid()) @db.Uuid
+  tenantId        String   @db.Uuid
+  tenant          Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name            String
+  segment         String?
+  walletAccountId String?  @db.Uuid @unique
+  walletAccount   WalletAccount? @relation("BuyerWallet", fields: [walletAccountId], references: [id], onDelete: SetNull)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @default(now())
+  intents         Intent[]
+
+  @@index([tenantId, segment])
+}
+
+model Intent {
+  id         String   @id @default(uuid()) @db.Uuid
+  tenantId   String   @db.Uuid
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  buyerId    String   @db.Uuid
+  buyer      BuyerProfile @relation(fields: [buyerId], references: [id], onDelete: Cascade)
+  channel    String
+  payload    Json
+  status     IntentStatus @default(pending)
+  expiresAt  DateTime?
+  createdAt  DateTime @default(now())
+  quotes     Quote[]
+
+  @@index([tenantId, status])
+}
+
+model Quote {
+  id         String   @id @default(uuid()) @db.Uuid
+  intentId   String   @db.Uuid
+  vendorId   String   @db.Uuid
+  price      Decimal  @db.Decimal(18, 4)
+  currency   String
+  etaMinutes Int?
+  status     QuoteStatus @default(pending)
+  createdAt  DateTime @default(now())
+  acceptedAt DateTime?
+  intent     Intent   @relation(fields: [intentId], references: [id], onDelete: Cascade)
+  vendor     VendorProfile @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  purchase   Purchase?
+
+  @@index([intentId, status])
+}
+
+model Purchase {
+  id             String   @id @default(uuid()) @db.Uuid
+  quoteId        String   @db.Uuid @unique
+  quote          Quote    @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  transactionId  String?  @db.Uuid
+  status         PurchaseStatus @default(pending)
+  createdAt      DateTime @default(now())
+  fulfilledAt    DateTime?
+}
+
+enum WalletOwnerType {
+  vendor
+  buyer
+  platform
+  commission
+}
+
+enum WalletEntryDirection {
+  debit
+  credit
+}
+
+enum IntentStatus {
+  pending
+  matched
+  expired
+  cancelled
+}
+
+enum QuoteStatus {
+  pending
+  accepted
+  rejected
+  expired
+}
+
+enum PurchaseStatus {
+  pending
+  completed
+  cancelled
+  failed
+}
+
+enum CallDirection {
+  inbound
+  outbound
+}
+
+enum CallPlatform {
+  pstn
+  sip
+}

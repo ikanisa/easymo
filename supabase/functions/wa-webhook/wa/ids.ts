@@ -133,6 +133,7 @@ export const IDS = {
   ROLE_DRIVER: "role_driver",
   ROLE_PASSENGER: "role_passenger",
   MOBILITY_SHARE_LOCATION: "mobility_share_location",
+  MOBILITY_CHANGE_VEHICLE: "mobility_change_vehicle",
   SCHEDULE_ADD_DROPOFF: "schedule_add_dropoff",
   SCHEDULE_SKIP_DROPOFF: "schedule_skip_dropoff",
   SCHEDULE_REFRESH_RESULTS: "schedule_refresh_results",

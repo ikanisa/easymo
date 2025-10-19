@@ -51,6 +51,30 @@ new reminder workers and notification retry flow.
      and rerun API call with single ID to isolate.
   4. Capture log snippet + API payload for follow-up.
 
+### 4. Synthetic Checks Failing
+
+- **Trigger:** GitHub Action `Synthetic Admin Checks` fails or on-call pager receives notification.
+- **Detection:**
+  - Workflow logs show non-2xx status from `tools/monitoring/admin/synthetic-checks.ts`.
+  - `synthetic_checks.failures` metric spikes in the metrics collector.
+- **Response:**
+  1. Re-run the workflow manually to confirm the failure is reproducible.
+  2. Inspect affected endpoint manually (`curl` with `ADMIN_API_TOKEN`) to rule out auth drift.
+  3. If the endpoint returns 5xx, check Supabase function logs and recent deploys; roll back if needed.
+  4. Update `docs/go-live-readiness.md` with the incident, including root cause and remediation.
+
+### 5. Metrics Drain Unreachable
+
+- **Trigger:** Ops sees missing datapoints in Grafana metrics panels.
+- **Detection:**
+  - Metrics collector alerts on HTTP 4xx/5xx for the drain endpoint.
+  - `logs drain_error` entries appear in the collector or `fetch` rejects in the app logs.
+- **Response:**
+  1. Verify `METRICS_DRAIN_URL` configuration in Vercel (`vercel env ls`) and Supabase function secrets.
+  2. Use `curl -X POST $METRICS_DRAIN_URL` locally with a sample payload to validate reachability.
+  3. If the collector is down, fail over to secondary endpoint or disable the drain temporarily.
+  4. Document the outage; schedule resilience improvements (retry/backoff) if repeated.
+
 ## Pre-Exercise Checklist
 
 - Ensure alert webhook configured (`ALERT_WEBHOOK_URL`).
@@ -59,6 +83,8 @@ new reminder workers and notification retry flow.
   schema to reuse during tabletop simulations.
 - Verify `INSURANCE_OCR_METRICS_WEBHOOK_URL` is routed to observability sink so
   queue depth signals surface during exercises.
+- Confirm Vercel log drain and metrics drain URLs (`LOG_DRAIN_URL`, `METRICS_DRAIN_URL`) are populated and reachable.
+- Ensure GitHub Actions workflow `Synthetic Admin Checks` is scheduled and has valid secrets (`ADMIN_BASE_URL`, `ADMIN_API_TOKEN`).
 
 ## Post-Exercise Actions
 

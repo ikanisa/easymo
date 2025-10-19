@@ -4,14 +4,16 @@ import https from 'node:https';
 import http from 'node:http';
 
 const DEFAULT_URL = 'http://localhost:54321/functions/v1/admin-health';
-const url = process.env.HEALTH_URL || process.env.VITE_API_BASE?.replace(/\/$/, '') + '/admin-health' || DEFAULT_URL;
+const apiBase = process.env.VITE_API_BASE ? process.env.VITE_API_BASE.replace(/\/$/, '') : undefined;
+const url = process.env.HEALTH_URL || (apiBase ? `${apiBase}/admin-health` : DEFAULT_URL);
+const adminToken = process.env.VITE_ADMIN_TOKEN || process.env.ADMIN_TOKEN || process.env.EASYMO_ADMIN_TOKEN || '';
 
 function request(url) {
   return new Promise((resolve, reject) => {
     const client = url.startsWith('https') ? https : http;
     const req = client.get(url, {
       headers: {
-        'x-admin-token': process.env.VITE_ADMIN_TOKEN || '',
+        'x-admin-token': adminToken,
       },
     }, (res) => {
       let data = '';

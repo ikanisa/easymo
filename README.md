@@ -39,19 +39,57 @@ Vite React app and communicates with those Edge Functions through the
   corresponding edge functions and configures them to run on Vercel’s
   Edge Runtime.
 
+## Phase 4 & 5 Highlights
+
+- **Realtime bridges**: `services/voice-bridge` ingests Twilio Media Streams,
+  relays audio to the OpenAI Realtime API, emits Kafka telemetry, and exposes a
+  `/analytics/live-calls` snapshot consumed by the admin console. `services/sip-ingress`
+  normalises SIP webhook events with Redis-backed idempotency.
+- **Marketplace & wallet services**: new microservices (`wallet-service`,
+  `ranking-service`, `vendor-service`, `buyer-service`, `broker-orchestrator`)
+  coordinate intents → quotes → purchases and double-entry ledger postings.
+- **Admin console upgrades**: the Next.js panel now ships dedicated surfaces for
+  live call monitoring, lead management (opt-in/tag updates via Agent-Core), and
+  marketplace oversight (vendor ranking, intent pipeline, purchase audits). The
+  UI remains PWA-ready with offline awareness and CSV exports.
+- **Testing & observability**: acceptance tests cover ledger invariants,
+  payment helpers (MoMo USSD / Revolut), opt-out flows, and ranking logic. New
+  Grafana-ready dashboards (`dashboards/phase4/*.json`) and Kafka topic manifests
+  document the expanded footprint.
+
 ## Development Notes
 
 1. Copy `.env.example` to `.env` and fill in your Supabase and admin
    credentials.  Never commit your service role key to version control.
-2. Run `pnpm install` (or `npm install`) to install dependencies.
-3. Start the development server with `pnpm dev`.  The admin panel will
-   communicate with your Supabase project via the RealAdapter and Edge
-   Functions.
-4. To apply the database schema locally, install the Supabase CLI and run
-   `supabase db push` inside the `easymo` directory.  Then execute the
-   seed file via `supabase db query < supabase/seeders/phase2_seed.sql`.
-5. Deploy edge functions via `supabase functions deploy --project-ref <ref>`,
-   or let Vercel handle deployment if configured.
+2. Run `pnpm install` to install workspace dependencies (`pnpm-workspace.yaml`
+   wires `services/*` and `packages/*`).
+3. Start the admin panel with `pnpm dev`.  The app talks to Supabase through
+   the RealAdapter and Edge Functions once environment variables are present.
+4. Apply the Supabase schema with `supabase db push`, then load the additive
+   fixtures from `supabase/seed/fixtures/admin_panel_core.sql` and
+   `supabase/seed/fixtures/admin_panel_marketing.sql`.  The legacy
+   `supabase/seeders/phase2_seed.sql` remains available for quick smoke runs.
+5. Bootstrap the Phase 4/5 workspace: `pnpm --filter @easymo/db prisma:migrate:dev`
+   against the Agent-Core Postgres URL, then `pnpm --filter @easymo/db seed` to
+   generate tenants, agent configs, leads, intents, wallet accounts, and sample
+   quotes/purchases.
+6. Bring up dependencies with `docker compose -f docker-compose.agent-core.yml up`.
+   This runs Postgres, Redis, Kafka, and dev instances for voice bridge, SIP
+   ingress, wallet, ranking, vendor, buyer, WhatsApp bot, broker orchestrator,
+   and Agent-Core.  Each service can also be launched individually via
+   `pnpm --filter @easymo/<service> start:dev`.
+7. Run the acceptance suites when wiring integrations:  
+   `pnpm --filter @easymo/wallet-service test`,  
+   `pnpm --filter @easymo/ranking-service test`,  
+   `pnpm --filter @easymo/vendor-service test`,  
+   `pnpm --filter @easymo/buyer-service test`, and  
+   `pnpm --filter @easymo/agent-core test`.  Tests cover payment helpers
+   (MoMo USSD / Revolut), opt-out flows, intent/quote ranking, and ledger
+   invariants.
+8. Deploy Supabase edge functions via `supabase functions deploy --project-ref <ref>`,
+   or let Vercel handle deployment if configured.  Import the Grafana dashboards
+   in `dashboards/phase4/*.json` and provision Kafka topics per
+   `infrastructure/kafka/topics.yaml` during staging cut-overs.
 
 ## Package Manager
 
@@ -78,9 +116,9 @@ Vite React app and communicates with those Edge Functions through the
 
 ## Testing
 
-Vitest is used for unit tests.  Example tests for the `RealAdapter` are
-provided in `src/lib/adapter.real.test.ts`.  Run `pnpm test` to execute
-tests.
+Vitest is used for admin panel unit tests (`src/lib/adapter.real.test.ts`, etc.).
+Run `pnpm test` for the SPA, and rely on the per-package Jest suites noted above
+for the realtime and marketplace services.
 
 ## Next Steps
 

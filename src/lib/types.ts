@@ -1,9 +1,42 @@
+import type { AgentKind } from "@easymo/commons";
+
 /**
  * ULTRA-MINIMAL WhatsApp Mobility - Types
  * Clean, focused types for Phase-1 mock and Phase-2 real implementation
  */
 
 export type VehicleType = 'moto' | 'cab' | 'lifan' | 'truck' | 'others';
+
+export type AgentKind = 'broker' | 'support' | 'sales' | 'marketing';
+
+export interface AgentChatSession {
+  id: string;
+  agent_kind: AgentKind;
+  status: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface AgentChatMessage {
+  id: string;
+  role: 'user' | 'agent' | 'system';
+  text: string;
+  created_at: string;
+  payload?: Record<string, unknown>;
+}
+
+export interface AgentChatResponse {
+  session: AgentChatSession;
+  messages: AgentChatMessage[];
+  suggestions?: string[];
+}
+
+export interface AgentChatRequest {
+  agentKind: AgentKind;
+  message: string;
+  sessionId?: string;
+  profileRef?: string;
+}
 
 export interface Profile {
   user_id: string;

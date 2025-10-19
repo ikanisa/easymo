@@ -34,6 +34,47 @@ Station PWA screens without exposing PII.
   - `voucher_events` covering issued, sent, redeemed transitions.
   - `audit_log` entries for voucher creation, campaign draft save, quote review
     actions.
+- **Agent-Core Tenant (1)**
+  - ID `a4a8cf2d-0a4f-446c-8bf2-28509641158f` matching the defaults in `.env`.
+  - Countries array `["RW","MT"]` to exercise multi-region logic.
+- **Agent Configs (3)**
+  - Broker, support, and marketplace assistants with distinct prompts, tool
+    chains, and policy JSON.
+- **Leads (18)**
+  - Mix of opt-in/opt-out statuses, locales (`en`, `rw`), and tags
+    (`["pilot","kw"]`, `["high-value"]`). Ensure at least four leads share a
+    tenant + tag combination to demo filtering.
+- **Opt-Out Registry (6)**
+  - Include both WhatsApp and voice entries (`reason` hints like `manual_block`,
+    `regulatory_optout`).
+- **Calls (12)**
+  - Spread across `inbound`/`outbound`, `pstn`/`sip`, assorted durations, and
+    with/without linked leads. Half should include dispositions (`no_answer`,
+    `handoff`, `converted`).
+- **Wallet Accounts (6)**
+  - Platform, commission, two vendors, two buyers. Prefill balances to showcase
+    statement math.
+- **Wallet Transactions / Entries (10)**
+  - Double-entry postings for intent reservations, completed purchases, refunds,
+    and commission sweeps. Include at least one failed purchase to drill the
+    reversal helpers.
+- **Commission Schedules (2)**
+  - Percent + flat fee combinations so the ranking service can resolve
+    effective commissions.
+- **Vendors (6)**
+  - Regions (`Kigali`, `Musanze`, `Kirehe`), categories arrays (bike, car,
+    delivery), SLA metrics (response ms, fulfilment rate) to seed ranking data.
+- **Buyers (4)**
+  - Segment mix (`enterprise`, `retail`), wallet linkage for payouts.
+- **Marketplace Intents (8)**
+  - Status mix: pending, matched, expired, cancelled. Payload JSON should
+    include pickup/dropoff coordinates and trip metadata.
+- **Quotes (14)**
+  - At least three accepted, the rest pending/rejected/expired. Provide varied
+    pricing for ranking comparisons.
+- **Purchases (5)**
+  - Completed, pending, cancelled, failed, with timestamps to validate ledger
+    reconciliation.
 
 ## Relationships
 
@@ -62,6 +103,16 @@ Station PWA screens without exposing PII.
   preview testing.
 - **Logs**: Combined feed surfaces audit entries and voucher events with
   timestamps over the last 48 hours.
+- **Live Calls**: `/live-calls` shows current sessions, matches opt-outs when
+  applicable, and surfaces disposition history.
+- **Leads**: `/leads` list filters by tag/opt-in, CSV export includes agent-core
+  metadata, and inline updates persist via Agent-Core APIs.
+- **Marketplace**: `/marketplace` summary charts ranking weights, intents,
+  quotes and ledger movements; verify acceptance tests cover these fixtures.
+- **Observability**: Import `dashboards/phase4/voice_bridge.json` and
+  `dashboards/phase4/messaging_overview.json` into Grafana. Create Kafka topics
+  defined in `infrastructure/kafka/topics.yaml` so the dashboards have data to
+  query.
 
 ## Data Hygiene
 
@@ -75,6 +126,17 @@ Station PWA screens without exposing PII.
 ## Loading Strategy
 
 - Provide SQL insert scripts or Supabase seed JSON under
-  `supabase/seed/fixtures/` (net-new files only).
+  `supabase/seed/fixtures/` (net-new files only). Use
+  `supabase/seed/fixtures/admin_panel_core.sql` for the baseline profiles,
+  subscriptions, settings, driver presence, and trips required by the Admin
+  Panel, and `supabase/seed/fixtures/admin_panel_marketing.sql` for campaigns,
+  vouchers, voucher events, orders, and insurance leads.
+- Agent-Core preview data lives in the Prisma seed at `packages/db/src/seed.ts`.
+  Run it after migrations with `pnpm --filter @easymo/db seed` to materialise
+  tenants, agent configs, and pilot leads.
+- Wallet and marketplace fixtures also come from the Prisma seed; rerun it after
+  adjusting balances or commission rates so double-entry invariants stay in sync.
+- Acceptance tests expect Kafka topics to exist; use `infrastructure/kafka/topics.yaml`
+  alongside `docker-compose.agent-core.yml` before running suites locally.
 - Wrap insert scripts in transactions so the fixture load is atomic.
 - Include `ON CONFLICT DO NOTHING` to keep fixture loads idempotent.

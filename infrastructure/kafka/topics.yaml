@@ -1,0 +1,30 @@
+# Phase 4 Kafka Topics
+
+topics:
+  - name: voice.contact.events
+    partitions: 3
+    replicationFactor: 1
+    config:
+      cleanup.policy: compact
+      retention.ms: 604800000
+      min.insync.replicas: 1
+  - name: voice.media.events
+    partitions: 6
+    replicationFactor: 1
+    config:
+      retention.ms: 86400000
+  - name: voice.sip.events
+    partitions: 3
+    replicationFactor: 1
+  - name: whatsapp.inbound
+    partitions: 6
+    replicationFactor: 1
+  - name: whatsapp.outbound
+    partitions: 3
+    replicationFactor: 1
+  - name: broker.outbound
+    partitions: 3
+    replicationFactor: 1
+  - name: broker.retry
+    partitions: 3
+    replicationFactor: 1

@@ -1,11 +1,14 @@
 Observability Gaps
-=================
+==================
 
-Short-term gaps and recommended follow-ups:
+## Resolved in Phase 6
 
-- Metrics emitter: `recordMetric` is a no-op. Replace with a real client (StatsD, Prometheus, or OTEL) and configure sample rates.
-- Tracing: Consider adding `@sentry/nextjs` (or OTEL) transactions via `instrumentation.ts` to capture request/DB spans.
-- Log correlation: Plumb `x-request-id` across all API calls (client/server) and include in `logStructured` calls.
-- Alerting: Wire synthetic check outputs to a notifier (Slack, email) and add dashboards for failure counts.
-- Edge functions: Add similar logging/capture helpers for Supabase/Deno functions and align JSON shapes.
+- **Metrics emitter**: `recordMetric` posts JSON payloads to `METRICS_DRAIN_URL`. Deploy your collector at that address (Redpanda Console, OTEL collector, etc.) and ensure it returns 2xx.
+- **Synthetic checks**: The GitHub Action `Synthetic Admin Checks` wraps `tools/monitoring/admin/synthetic-checks.ts` and fails fast when `/api/*` endpoints regress.
+- **Log forwarding**: `logStructured` now mirrors events to `LOG_DRAIN_URL`, enabling external aggregation.
 
+## Remaining Follow-Ups
+
+- **Tracing**: Add distributed tracing (OpenTelemetry or `@sentry/nextjs` transactions) for cross-service latency visibility.
+- **End-to-end correlation**: Propagate `x-request-id` from browser → Supabase → downstream services so dashboards can link spans/logs.
+- **Edge function parity**: Port the logging/metrics helpers to Supabase/Deno functions so payloads share a schema with the admin panel.

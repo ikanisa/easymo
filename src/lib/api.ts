@@ -13,6 +13,8 @@ import type {
   DriverPresence,
   Profile,
   VehicleType,
+  AgentChatResponse,
+  AgentChatRequest,
 } from './types';
 
 async function apiGet<T>(path: string): Promise<T> {
@@ -42,6 +44,52 @@ async function apiPost<T>(path: string, body: unknown): Promise<T> {
 
   return response.json();
 }
+
+const randomId = () =>
+  typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+    ? crypto.randomUUID()
+    : Math.random().toString(36).slice(2);
+
+const toAgentChatResponse = (payload: unknown): AgentChatResponse => {
+  if (!payload || typeof payload !== 'object') {
+    return {
+      session: { id: '', agent_kind: 'broker', status: 'open' },
+      messages: [],
+      suggestions: [],
+    };
+  }
+
+  const raw = payload as {
+    session?: Partial<AgentChatResponse['session']>;
+    messages?: Array<Partial<AgentChatResponse['messages'][number]>>;
+    suggestions?: string[];
+  };
+
+  const session = raw.session ?? {};
+  const messages = (raw.messages ?? []).map((msg) => ({
+    id: msg.id ?? randomId(),
+    role: msg.role === 'agent' || msg.role === 'system' ? msg.role : 'user',
+    text: typeof msg.text === 'string'
+      ? msg.text
+      : typeof (msg as any)?.payload?.text === 'string'
+        ? (msg as any).payload.text
+        : '',
+    created_at: msg.created_at ?? new Date().toISOString(),
+    payload: (msg as any)?.payload ?? undefined,
+  }));
+
+  return {
+    session: {
+      id: session.id ?? randomId(),
+      agent_kind: session.agent_kind ?? 'broker',
+      status: session.status ?? 'open',
+      created_at: session.created_at,
+      updated_at: session.updated_at,
+    },
+    messages,
+    suggestions: raw.suggestions ?? [],
+  };
+};
 
 export type HealthCheckResult = {
   status: 'ok' | 'error';
@@ -304,6 +352,34 @@ export const AdminAPI = {
       credits_left: tripPayload.credits_left,
       used_credit: tripPayload.used_credit,
     };
+  },
+
+  agentChatSend: async (request: AgentChatRequest): Promise<AgentChatResponse> => {
+    const payload = await apiPost<unknown>('/agent-chat', {
+      agent_kind: request.agentKind,
+      message: request.message,
+      session_id: request.sessionId,
+      profile_ref: request.profileRef,
+    });
+    return toAgentChatResponse(payload);
+  },
+
+  agentChatHistory: async (sessionId: string): Promise<AgentChatResponse | null> => {
+    const response = await fetch(`${API_BASE}/agent-chat?session_id=${encodeURIComponent(sessionId)}`, {
+      headers: ADMIN_HEADERS(),
+    });
+
+    if (response.status === 404) {
+      return null;
+    }
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`API Error (${response.status}): ${errorText}`);
+    }
+
+    const payload = await response.json();
+    return toAgentChatResponse(payload);
   },
 
   // Storage ingestion

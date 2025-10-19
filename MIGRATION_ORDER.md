@@ -51,6 +51,21 @@ migrations.
 - Apply `supabase/migrations/20251031152500_wallet_rls_policies.sql` to align
   wallet domain tables with service-role and self-read access scopes.
 
+16. **Marketing Fixture Alignment**
+   - Run `supabase/migrations/20251205100000_admin_marketing_fixture_support.sql`
+     to enforce `campaign_targets`/`vouchers` uniqueness and initialise the
+     `campaigns_legacy_id_seq` required by the marketplace seeds.
+
+17. **Driver Vehicle Defaults**
+   - Apply `supabase/migrations/20251206090000_driver_vehicle_defaults.sql` so
+     the WhatsApp driver flows can persist preferred vehicle metadata and the
+     simulator stays in sync.
+
+18. **Agent Chat Tables**
+   - Apply `supabase/migrations/20251206103000_agent_chat_tables.sql` to create
+     `agent_chat_sessions` and `agent_chat_messages` used by the admin chat
+     preview and future Agent-Core integrations.
+
 ## Dependencies & Constraints
 
 - Each migration must be reversible via `DROP TABLE` or
@@ -61,6 +76,23 @@ migrations.
   minimal.
 - Wrap seeding steps in `BEGIN/COMMIT` and mark them idempotent with
   `ON CONFLICT DO NOTHING`.
+
+### Recent Additions
+
+- `20251205100000_admin_marketing_fixture_support.sql` — keeps campaign/voucher
+  fixtures idempotent and bootstraps the legacy sequence.
+- `20251206090000_driver_vehicle_defaults.sql` — captures driver vehicle defaults
+  for WhatsApp & simulator parity.
+- `20251206103000_agent_chat_tables.sql` — introduces `agent_chat_sessions` and
+  `agent_chat_messages` for the Agent-Core preview.
+
+### Agent-Core / Prisma Migrations
+
+- The Phase 4/5 services rely on the Prisma migration history bundled with
+  `packages/db`. Execute `pnpm --filter @easymo/db prisma:migrate:dev` before
+  running Agent-Core, wallet, ranking, vendor, buyer, or broker services so
+  their tables (`tenants`, `leads`, `calls`, `wallet_*`, `vendor_profiles`,
+  `buyer_profiles`, `intents`, `quotes`, `purchases`) exist.
 
 ## Deployment Notes
 

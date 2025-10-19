@@ -1,0 +1,201 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:15
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: agent_core
+    ports:
+      - "5435:5432"
+    volumes:
+      - agent_core_pg:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7
+    restart: unless-stopped
+    ports:
+      - "6380:6379"
+
+  kafka:
+    image: redpandadata/redpanda:v23.2.1
+    command: >-
+      redpanda start --overprovisioned --smp 1 --memory 1G --reserve-memory 0M --node-id 0
+    ports:
+      - "19092:19092"
+      - "9644:9644"
+
+  agent-core:
+    build: ./services/agent-core
+    command: pnpm start:dev
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/agent_core
+      REDIS_URL: redis://redis:6379
+      KAFKA_BROKERS: kafka:19092
+      PORT: 4000
+    volumes:
+      - ./services/agent-core:/usr/src/app
+    depends_on:
+      - postgres
+      - redis
+      - kafka
+    ports:
+      - "4000:4000"
+
+  voice-bridge:
+    build: ./services/voice-bridge
+    command: pnpm start:dev
+    environment:
+      PORT: 4100
+      LOG_LEVEL: debug
+      TWILIO_MEDIA_AUTH_TOKEN: dev-token
+      OPENAI_REALTIME_URL: wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview
+      OPENAI_REALTIME_API_KEY: sk-test
+      KAFKA_BROKERS: kafka:19092
+      KAFKA_CLIENT_ID: voice-bridge
+      REDIS_URL: redis://redis:6379
+      CONTACT_TOPIC: voice.contact.events
+      MEDIA_TOPIC: voice.media.events
+    volumes:
+      - ./services/voice-bridge:/usr/src/app
+    depends_on:
+      - kafka
+      - redis
+    ports:
+      - "4100:4100"
+
+  sip-ingress:
+    build: ./services/sip-ingress
+    command: pnpm start:dev
+    environment:
+      PORT: 4200
+      LOG_LEVEL: debug
+      KAFKA_BROKERS: kafka:19092
+      KAFKA_CLIENT_ID: sip-ingress
+      EVENT_TOPIC: voice.sip.events
+      CONTACT_TOPIC: voice.contact.events
+      REDIS_URL: redis://redis:6379
+    volumes:
+      - ./services/sip-ingress:/usr/src/app
+    depends_on:
+      - kafka
+      - redis
+    ports:
+      - "4200:4200"
+
+  wallet-service:
+    build: ./services/wallet-service
+    command: pnpm start:dev
+    environment:
+      PORT: 4400
+      LOG_LEVEL: debug
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/agent_core
+      DEFAULT_TENANT_ID: a4a8cf2d-0a4f-446c-8bf2-28509641158f
+      COMMISSION_ACCOUNT_ID: c6e2c9b9-0b32-46e8-90d6-1b3edc1820f8
+      PLATFORM_ACCOUNT_ID: 5c8c42d7-9b5a-4f2a-a730-1b15219a0b3b
+      FEATURE_WALLET_SERVICE: "1"
+    volumes:
+      - ./services/wallet-service:/usr/src/app
+    depends_on:
+      - postgres
+    ports:
+      - "4400:4400"
+
+  ranking-service:
+    build: ./services/ranking-service
+    command: pnpm start:dev
+    environment:
+      PORT: 4500
+      LOG_LEVEL: debug
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/agent_core
+      DEFAULT_TENANT_ID: a4a8cf2d-0a4f-446c-8bf2-28509641158f
+    volumes:
+      - ./services/ranking-service:/usr/src/app
+    depends_on:
+      - postgres
+    ports:
+      - "4500:4500"
+
+  vendor-service:
+    build: ./services/vendor-service
+    command: pnpm start:dev
+    environment:
+      PORT: 4600
+      LOG_LEVEL: debug
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/agent_core
+      DEFAULT_TENANT_ID: a4a8cf2d-0a4f-446c-8bf2-28509641158f
+      FEATURE_MARKETPLACE_VENDOR: "1"
+    volumes:
+      - ./services/vendor-service:/usr/src/app
+    depends_on:
+      - postgres
+    ports:
+      - "4600:4600"
+
+  buyer-service:
+    build: ./services/buyer-service
+    command: pnpm start:dev
+    environment:
+      PORT: 4700
+      LOG_LEVEL: debug
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/agent_core
+      DEFAULT_TENANT_ID: a4a8cf2d-0a4f-446c-8bf2-28509641158f
+      WALLET_SERVICE_URL: http://wallet-service:4400
+      FEATURE_MARKETPLACE_BUYER: "1"
+      EASYMO_ADMIN_API_BASE: http://localhost:54321/functions/v1
+    volumes:
+      - ./services/buyer-service:/usr/src/app
+    depends_on:
+      - postgres
+      - wallet-service
+    ports:
+      - "4700:4700"
+
+  whatsapp-bot:
+    build: ./services/whatsapp-bot
+    command: pnpm start:dev
+    environment:
+      PORT: 4800
+      LOG_LEVEL: debug
+      META_VERIFY_TOKEN: verify-token
+      META_PAGE_TOKEN: page-token
+      KAFKA_BROKERS: kafka:19092
+      KAFKA_CLIENT_ID: whatsapp-bot
+      INBOUND_TOPIC: whatsapp.inbound
+      OUTBOUND_TOPIC: whatsapp.outbound
+      REDIS_URL: redis://redis:6379
+      FEATURE_MARKETPLACE_VENDOR: "1"
+    volumes:
+      - ./services/whatsapp-bot:/usr/src/app
+    depends_on:
+      - kafka
+      - redis
+    ports:
+      - "4800:4800"
+
+  broker-orchestrator:
+    build: ./services/broker-orchestrator
+    command: pnpm start:dev
+    environment:
+      LOG_LEVEL: debug
+      KAFKA_BROKERS: kafka:19092
+      KAFKA_CLIENT_ID: broker-orchestrator
+      WHATSAPP_TOPIC: whatsapp.inbound
+      VOICE_CONTACT_TOPIC: voice.contact.events
+      SIP_TOPIC: voice.sip.events
+      BROKER_OUTBOUND_TOPIC: broker.outbound
+      REDIS_URL: redis://redis:6379
+      AGENT_CORE_URL: http://agent-core:4000
+      WALLET_SERVICE_URL: http://wallet-service:4400
+      FEATURE_MARKETPLACE_RANKING: "1"
+    volumes:
+      - ./services/broker-orchestrator:/usr/src/app
+    depends_on:
+      - kafka
+      - redis
+      - wallet-service
+
+volumes:
+  agent_core_pg:

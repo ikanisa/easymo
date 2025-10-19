@@ -8,10 +8,5 @@
     { "source": "/simulator", "destination": "/api/simulator" },
     { "source": "/(.*)", "destination": "/" }
   ],
-  "regions": ["fra1"],
-  "functions": {
-    "api/**/*.{ts,js}": {
-      "runtime": "nodejs20.x"
-    }
-  }
+  "regions": ["fra1"]
 }

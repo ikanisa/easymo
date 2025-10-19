@@ -3,18 +3,28 @@
  * In-memory + localStorage implementation for frontend-only testing
  */
 
-import type { 
-  Profile, 
-  DriverPresence, 
-  Trip, 
-  Subscription, 
-  Settings, 
-  AdminStats, 
+import type {
+  Profile,
+  DriverPresence,
+  Trip,
+  Subscription,
+  Settings,
+  AdminStats,
   User,
-  VehicleType 
+  VehicleType,
+  AgentChatResponse,
+  AgentChatRequest,
+  AgentChatMessage,
+  AgentChatSession,
+  AgentKind,
 } from './types';
 
 const STORAGE_KEY = 'mobility_mock_data';
+
+const randomId = () =>
+  typeof globalThis.crypto !== 'undefined' && typeof globalThis.crypto.randomUUID === 'function'
+    ? globalThis.crypto.randomUUID()
+    : Math.random().toString(36).slice(2);
 
 interface MockData {
   profiles: Profile[];
@@ -23,7 +33,13 @@ interface MockData {
   subscriptions: Subscription[];
   settings: Settings;
   users: User[]; // compatibility
+  agentChats: Record<string, MockAgentSession>;
 }
+
+type MockAgentSession = {
+  session: AgentChatSession;
+  messages: AgentChatMessage[];
+};
 
 const DEFAULT_SETTINGS: Settings = {
   subscription_price: 5000,
@@ -167,7 +183,8 @@ const SEED_DATA: MockData = {
       profile_pic: null,
     }
   ],
-  settings: DEFAULT_SETTINGS
+  settings: DEFAULT_SETTINGS,
+  agentChats: {},
 };
 
 class MockAdapter {
@@ -183,17 +200,69 @@ class MockAdapter {
       try {
         this.data = JSON.parse(stored);
       } catch {
-        this.data = SEED_DATA;
+        this.data = JSON.parse(JSON.stringify(SEED_DATA));
         this.saveData();
       }
     } else {
-      this.data = SEED_DATA;
+      this.data = JSON.parse(JSON.stringify(SEED_DATA));
       this.saveData();
+    }
+    if (!this.data.agentChats) {
+      this.data.agentChats = {};
     }
   }
 
   private saveData(): void {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(this.data));
+  }
+
+  private ensureAgentChats(): Record<string, MockAgentSession> {
+    if (!this.data.agentChats) {
+      this.data.agentChats = {};
+    }
+    return this.data.agentChats;
+  }
+
+  private stubAgentReply(kind: AgentKind, userMessage: string) {
+    const cleaned = userMessage.trim();
+    switch (kind) {
+      case 'broker':
+        return {
+          text: `Broker assistant queued your request: “${cleaned}”. This is a mock response while the AI broker is provisioning.`,
+          suggestions: [
+            'Show next steps',
+            'Share vendor summary',
+            'Escalate to human agent',
+          ],
+        };
+      case 'support':
+        return {
+          text: `Support assistant logged the issue: “${cleaned}”. We will follow up shortly. (mock)`,
+          suggestions: [
+            'Provide troubleshooting checklist',
+            'Escalate to L2',
+            'Mark ticket resolved',
+          ],
+        };
+      case 'sales':
+        return {
+          text: `Sales assistant noted: “${cleaned}”. A follow-up call will be scheduled. (mock)`,
+          suggestions: [
+            'Schedule call',
+            'Send pricing summary',
+            'Set reminder',
+          ],
+        };
+      case 'marketing':
+        return {
+          text: `Marketing assistant drafting ideas for “${cleaned}”. Expect campaign notes soon. (mock)`,
+          suggestions: [
+            'Share campaign outline',
+            'Summarise metrics',
+            'Ping marketing lead',
+          ],
+        };
+    }
   }
 
   // Settings
@@ -344,6 +413,67 @@ class MockAdapter {
     this.data.trips.push(trip);
     this.saveData();
     return trip;
+  }
+
+  async sendAgentMessage(request: AgentChatRequest): Promise<AgentChatResponse> {
+    const chats = this.ensureAgentChats();
+    const now = new Date().toISOString();
+    const session = request.sessionId ? chats[request.sessionId] : undefined;
+    const agentSession: MockAgentSession = session ?? {
+      session: {
+        id: randomId(),
+        agent_kind: request.agentKind,
+        status: 'open',
+        created_at: now,
+        updated_at: now,
+      },
+      messages: [],
+    };
+
+    if (!session) {
+      chats[agentSession.session.id] = agentSession;
+    }
+
+    const userMessage: AgentChatMessage = {
+      id: randomId(),
+      role: 'user',
+      text: request.message,
+      created_at: now,
+      payload: { text: request.message },
+    };
+
+    const reply = this.stubAgentReply(request.agentKind, request.message);
+    const agentMessage: AgentChatMessage = {
+      id: randomId(),
+      role: 'agent',
+      text: reply.text,
+      created_at: new Date().toISOString(),
+      payload: { text: reply.text, stub: true },
+    };
+
+    agentSession.messages.push(userMessage, agentMessage);
+    agentSession.session.updated_at = agentMessage.created_at;
+
+    this.saveData();
+
+    return {
+      session: agentSession.session,
+      messages: [userMessage, agentMessage],
+      suggestions: reply.suggestions,
+    };
+  }
+
+  async getAgentSession(sessionId: string): Promise<AgentChatResponse | null> {
+    const chats = this.ensureAgentChats();
+    const record = chats[sessionId];
+    if (!record) return null;
+    return {
+      session: record.session,
+      messages: [...record.messages].sort(
+        (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
+      ),
+      suggestions: [],
+    };
   }
 
   // Get profiles by ref codes (for simulator lookups)

@@ -17,6 +17,8 @@ import type {
   Trip,
   User,
   VehicleType,
+  AgentChatResponse,
+  AgentChatRequest,
 } from './types';
 
 function normalizeSettings(
@@ -193,6 +195,14 @@ export class RealAdapter {
 
     if (!result?.access) return 'NO_ACCESS';
     return result.trip;
+  }
+
+  async sendAgentMessage(request: AgentChatRequest): Promise<AgentChatResponse> {
+    return AdminAPI.agentChatSend(request);
+  }
+
+  async getAgentSession(sessionId: string): Promise<AgentChatResponse | null> {
+    return AdminAPI.agentChatHistory(sessionId);
   }
 
   async getProfileByRefCode(refCode: string): Promise<Profile | null> {

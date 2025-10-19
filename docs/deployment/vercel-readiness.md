@@ -34,9 +34,16 @@ Additional steps below will ensure Vercel deployment as a Progressive Web App.
 
 ## Environment Variables
 
-- Added `.env.example` capturing required `VITE_*` settings for Supabase and runtime toggles.
-- `.gitignore` now keeps `.env` files private while allowing `.env.example` to be tracked.
-- In Vercel: Settings → Environment Variables → add each key for Development, Preview, and Production. Use `VERCEL_REGION` if you need a region override.
+- Added `.env.example` capturing required settings for the Supabase project `lhbowpbcpwoiparwnwgt`.
+- `.gitignore` keeps local `.env` files private while allowing `.env.example` and `docs/env/env.sample` to be tracked.
+- In Vercel: Settings → Environment Variables → add the following keys for Development, Preview, and Production:
+  - `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_SUPABASE_PROJECT_ID`, `VITE_API_BASE`
+  - `VITE_SUPABASE_SERVICE_ROLE_KEY` *(server only; keep out of the browser)*
+  - `VITE_ADMIN_TOKEN` / `ADMIN_TOKEN` / `EASYMO_ADMIN_TOKEN`
+  - `ADMIN_SESSION_SECRET`, `ADMIN_ACCESS_CREDENTIALS`
+  - `DISPATCHER_FUNCTION_URL`
+  - Optional toggles (`NEXT_PUBLIC_USE_MOCKS`, `VITE_ENABLE_AGENT_CHAT`, reminder cron variables, etc.)
+- Redeploy after updating secrets so both the public app and the admin panel pick up the new configuration.
 
 ## Local Verification
 
@@ -52,10 +59,26 @@ Additional steps below will ensure Vercel deployment as a Progressive Web App.
 2. In Vercel, select **New Project** → import this GitHub repository.
 3. Framework detection: choose **Vite** (Build Command `pnpm run build`, Output Directory `dist`).
 4. Configure Environment Variables (Development/Preview/Production):
-   - `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_SUPABASE_PROJECT_ID`, `VITE_API_BASE`, `VITE_ADMIN_TOKEN`, `VITE_USE_MOCK`, `VITE_DEV_TOOLS`, optional `VERCEL_REGION`.
+   - `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_SUPABASE_PROJECT_ID`, `VITE_API_BASE`
+   - `VITE_SUPABASE_SERVICE_ROLE_KEY`
+   - `VITE_ADMIN_TOKEN` / `ADMIN_TOKEN` / `EASYMO_ADMIN_TOKEN`
+   - `ADMIN_SESSION_SECRET`, `ADMIN_ACCESS_CREDENTIALS`
+   - `DISPATCHER_FUNCTION_URL`
+   - Optional toggles (`NEXT_PUBLIC_USE_MOCKS`, `VITE_USE_MOCK`, `VITE_DEV_TOOLS`, `VERCEL_REGION`, etc.)
 5. Deploy. Static assets receive immutable caching; `manifest.json` and `service-worker.js` have tailored headers.
 6. (Optional) Add a custom domain under **Settings → Domains**. HTTPS is automatic.
 7. Rollback by selecting any deployment in Vercel → **Promote to Production**.
+
+### Monorepo deployment tips
+
+- Deploy the public SPA and the admin panel from their respective directories:
+  - `cd app && vercel deploy --prod`
+  - `cd admin-app && vercel deploy --prod`
+- The repository root should **not** be deployed directly; doing so causes the
+  CLI to inspect `supabase/functions/` and fails with “Function Runtimes must
+  have a valid version” errors.
+- Keep `vercel.json` at the root for shared rewrites/headers, but override any
+  app-specific configuration inside each subproject as needed.
 
 ## Acceptance Checklist
 
@@ -65,6 +88,7 @@ Additional steps below will ensure Vercel deployment as a Progressive Web App.
 - [ ] Lighthouse PWA score ≥ 90 (`pnpm run analyze:pwa`)
 - [ ] Vercel project uses `vercel.json` headers/rewrites
 - [ ] Environment variables configured in Vercel
+- [ ] Admin login succeeds on production (`/login` → `/dashboard`, cookie present)
 
 ## Troubleshooting
 

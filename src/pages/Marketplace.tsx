@@ -14,6 +14,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Plus, Store, Edit, Trash2, ExternalLink, MessageSquare, Folder } from "lucide-react";
+import AgentChatPanel from "@/components/AgentChatPanel";
+import { isAgentChatEnabled } from "@/lib/env";
 
 interface MarketplaceCategory {
   id: number;
@@ -43,6 +45,8 @@ export default function Marketplace() {
     is_active: true,
     sort_order: 0,
   });
+
+  const agentChatEnabled = isAgentChatEnabled();
 
   const queryClient = useQueryClient();
 
@@ -237,6 +241,7 @@ export default function Marketplace() {
           <TabsList>
             <TabsTrigger value="categories">Categories</TabsTrigger>
             <TabsTrigger value="businesses">Businesses</TabsTrigger>
+            <TabsTrigger value="agents">AI Broker</TabsTrigger>
           </TabsList>
 
           <TabsContent value="categories" className="space-y-6">
@@ -424,6 +429,16 @@ export default function Marketplace() {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="agents" className="space-y-6">
+            <AgentChatPanel
+              agentKind="broker"
+              title="Broker AI Chat"
+              description="Preview the autonomous broker conversation. Responses are currently stubbed while the agent-core service is prepared."
+              featureEnabled={agentChatEnabled}
+              allowProfileRef
+            />
           </TabsContent>
         </Tabs>
 

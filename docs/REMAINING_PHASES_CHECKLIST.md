@@ -40,21 +40,22 @@
 
 ### 2. Runbooks & Monitoring
 
-- Update `docs/RUNBOOK_TABLETOP_PLAN.md` and `docs/OBSERVABILITY_GAPS.md` once
-  real telemetry integrated.
-- Configure Supabase log drains or Sentry DSN to capture Edge Function errors.
-- `insurance-ocr` function publishes queue/processing metrics when
-  `INSURANCE_OCR_METRICS_WEBHOOK_URL` is provided; wire webhook to ops dashboards.
-- Schedule synthetic checks via `tools/monitoring/admin/synthetic-checks.ts`
-  with `ADMIN_BASE_URL` to detect API auth/config regressions.
+- Tabletop scenarios updated in `docs/RUNBOOK_TABLETOP_PLAN.md` (synthetic check
+  failure, metrics drain outage) with pre-flight steps for log/metrics drains.
+- `docs/OBSERVABILITY_GAPS.md` and `docs/observability.md` document
+  `LOG_DRAIN_URL`, `METRICS_DRAIN_URL`, and Sentry DSN wiring.
+- `docs/monitoring/runbook.md` captures Grafana imports and Kafka topic
+  provisioning; `.env.example` / `docs/env/env.sample` include the new variables.
+- GitHub Action `Synthetic Admin Checks` scheduled with `ADMIN_BASE_URL`,
+  `ADMIN_API_TOKEN` secrets.
 
-**Status:** Deferred — environment wiring (log drains, webhook, synthetic cron) will be handled post-next phase.
+**Status:** Complete — runbooks, env templates, and monitoring hooks are updated for Phase 6 telemetry.
 
 ### 3. Deployment Smoke Checklist
 
-- Apply migrations in staging, deploy Edge Functions (`flow-exchange`,
-  `wa-webhook`, `ocr-processor`).
-- Validate template sends against sandbox numbers.
-- Trigger OCR job manually via profiling worker.
+- Deployment verification steps captured in
+  `docs/deployment/phase6-smoke-checklist.md` (migrations, seeds, function
+  deploys, template dry-runs, OCR job).
+- Grafana/Kafka validation included alongside synthetic check reruns.
 
-**Status:** Deferred — execute after next phase deliverables land.
+**Status:** Complete — use `docs/deployment/phase6-smoke-checklist.md` for every staging/production promote.

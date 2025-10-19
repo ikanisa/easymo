@@ -20,7 +20,11 @@ import {
   sendButtonsMessage,
   sendListMessage,
 } from "../../utils/reply.ts";
-import { ensureVehiclePlate } from "./vehicle_plate.ts";
+import {
+  ensureVehiclePlate,
+  getStoredVehicleType,
+  updateStoredVehicleType,
+} from "./vehicle_plate.ts";
 
 const DEFAULT_WINDOW_DAYS = 30;
 const MIN_RADIUS_METERS = 1000;
@@ -145,6 +149,20 @@ export async function handleSeePassengers(
   if (!ctx.profileId) return false;
   const ready = await ensureVehiclePlate(ctx, { type: "nearby_passengers" });
   if (!ready) return true;
+
+  const storedVehicle = await getStoredVehicleType(
+    ctx.supabase,
+    ctx.profileId,
+  );
+  if (storedVehicle) {
+    await setState(ctx.supabase, ctx.profileId, {
+      key: "mobility_nearby_location",
+      data: { mode: "passengers", vehicle: storedVehicle },
+    });
+    await promptShareLocation(ctx, { allowVehicleChange: true });
+    return true;
+  }
+
   await setState(ctx.supabase, ctx.profileId, {
     key: "mobility_nearby_select",
     data: { mode: "passengers" },
@@ -160,11 +178,16 @@ export async function handleVehicleSelection(
 ): Promise<boolean> {
   if (!ctx.profileId) return false;
   const vehicleType = vehicleFromId(id);
+  if (state.mode === "passengers") {
+    await updateStoredVehicleType(ctx.supabase, ctx.profileId, vehicleType);
+  }
   await setState(ctx.supabase, ctx.profileId, {
     key: "mobility_nearby_location",
     data: { mode: state.mode, vehicle: vehicleType },
   });
-  await promptShareLocation(ctx);
+  await promptShareLocation(ctx, {
+    allowVehicleChange: state.mode === "passengers",
+  });
   return true;
 }
 
@@ -364,12 +387,40 @@ async function sendVehicleSelector(ctx: RouterContext, title: string) {
   );
 }
 
-async function promptShareLocation(ctx: RouterContext): Promise<void> {
+async function promptShareLocation(
+  ctx: RouterContext,
+  options: { allowVehicleChange?: boolean } = {},
+): Promise<void> {
+  const buttons: ButtonSpec[] = [];
+  if (options.allowVehicleChange) {
+    buttons.push({
+      id: IDS.MOBILITY_CHANGE_VEHICLE,
+      title: "Change vehicle",
+    });
+  }
   await sendButtonsMessage(
     ctx,
     "📍 Share your live location (tap ➕ → Location → Share).",
-    [],
+    buttons,
   );
+}
+
+export async function handleChangeVehicleRequest(
+  ctx: RouterContext,
+  data: Record<string, unknown> | undefined,
+): Promise<boolean> {
+  if (!ctx.profileId) return false;
+  const modeRaw = typeof data?.mode === "string" ? data.mode : null;
+  const mode: NearbyMode = modeRaw === "drivers" ? "drivers" : "passengers";
+  await setState(ctx.supabase, ctx.profileId, {
+    key: "mobility_nearby_select",
+    data: { mode },
+  });
+  await sendVehicleSelector(
+    ctx,
+    mode === "drivers" ? "🚖 Nearby drivers" : "🧍‍♀️ Nearby passengers",
+  );
+  return true;
 }
 
 function sortMatches(a: MatchResult, b: MatchResult): number {

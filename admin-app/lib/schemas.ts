@@ -319,6 +319,71 @@ export const adminHubSnapshotSchema = z.object({
   messages: z.array(z.string()).default([]),
 });
 
+export const liveCallSchema = z.object({
+  callSid: z.string(),
+  tenantId: z.string().uuid().optional(),
+  leadName: z.string().nullable(),
+  leadPhone: z.string(),
+  agentRegion: z.string().nullable(),
+  startedAt: z.string().datetime(),
+  lastMediaAt: z.string().datetime().nullable(),
+  status: z.enum(["active", "handoff", "ended"]),
+  direction: z.enum(["inbound", "outbound"]),
+  warmTransferQueue: z.string().nullable(),
+  optOutDetected: z.boolean().default(false),
+  transcriptPreview: z.string().nullable(),
+  durationSeconds: z.number().nullable(),
+});
+
+export const leadSchema = z.object({
+  id: z.string().uuid(),
+  tenantId: z.string().uuid(),
+  phoneE164: z.string(),
+  name: z.string().nullable(),
+  tags: z.array(z.string()).default([]),
+  optIn: z.boolean(),
+  locale: z.string(),
+  lastContactAt: z.string().datetime().nullable(),
+  createdAt: z.string().datetime(),
+  lastCallAt: z.string().datetime().nullable().optional(),
+});
+
+export const vendorRankingSchema = z.object({
+  vendorId: z.string().uuid(),
+  name: z.string(),
+  region: z.string(),
+  categories: z.array(z.string()),
+  score: z.number(),
+  rating: z.number().nullable(),
+  fulfilmentRate: z.number().nullable(),
+  avgResponseMs: z.number().nullable(),
+  totalTrips: z.number(),
+  recentTrips: z.number(),
+  balance: z.number().nullable(),
+});
+
+export const marketplaceIntentSchema = z.object({
+  id: z.string().uuid(),
+  buyerName: z.string(),
+  channel: z.string(),
+  status: z.enum(["pending", "matched", "expired", "cancelled"]),
+  createdAt: z.string().datetime(),
+  expiresAt: z.string().datetime().nullable(),
+  recentQuotes: z.number().default(0),
+});
+
+export const marketplacePurchaseSchema = z.object({
+  id: z.string().uuid(),
+  quoteId: z.string().uuid(),
+  vendorName: z.string(),
+  buyerName: z.string(),
+  status: z.enum(["pending", "completed", "cancelled", "failed"]),
+  createdAt: z.string().datetime(),
+  fulfilledAt: z.string().datetime().nullable(),
+  amount: z.number().nullable(),
+  currency: z.string().nullable(),
+});
+
 export const adminVoucherListItemSchema = z.object({
   id: z.string(),
   title: z.string(),
@@ -420,3 +485,8 @@ export type AdminDiagnosticsLogs = z.infer<typeof adminDiagnosticsLogsSchema>;
 export type AdminDiagnosticsSnapshot = z.infer<typeof adminDiagnosticsSnapshotSchema>;
 export type AdminDiagnosticsMatchTrip = z.infer<typeof adminDiagnosticsMatchTripSchema>;
 export type AdminDiagnosticsMatch = z.infer<typeof adminDiagnosticsMatchSchema>;
+export type LiveCall = z.infer<typeof liveCallSchema>;
+export type Lead = z.infer<typeof leadSchema>;
+export type VendorRanking = z.infer<typeof vendorRankingSchema>;
+export type MarketplaceIntent = z.infer<typeof marketplaceIntentSchema>;
+export type MarketplacePurchase = z.infer<typeof marketplacePurchaseSchema>;

@@ -57,3 +57,37 @@ export function requireServiceSupabaseConfig(): SupabaseServiceConfig | null {
 
   return { url, serviceRoleKey };
 }
+
+function envOrNull(value: string | undefined) {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : null;
+}
+
+export function getVoiceBridgeApiUrl(): string | null {
+  return envOrNull(
+    process.env.VOICE_BRIDGE_API_URL ?? process.env.NEXT_PUBLIC_VOICE_BRIDGE_API_URL,
+  );
+}
+
+export function getAgentCoreUrl(): string | null {
+  return envOrNull(
+    process.env.AGENT_CORE_URL ?? process.env.NEXT_PUBLIC_AGENT_CORE_URL,
+  );
+}
+
+export function getMarketplaceServiceUrls() {
+  return {
+    ranking: envOrNull(
+      process.env.MARKETPLACE_RANKING_URL ?? process.env.NEXT_PUBLIC_MARKETPLACE_RANKING_URL,
+    ),
+    vendor: envOrNull(
+      process.env.MARKETPLACE_VENDOR_URL ?? process.env.NEXT_PUBLIC_MARKETPLACE_VENDOR_URL,
+    ),
+    buyer: envOrNull(
+      process.env.MARKETPLACE_BUYER_URL ?? process.env.NEXT_PUBLIC_MARKETPLACE_BUYER_URL,
+    ),
+    wallet: envOrNull(
+      process.env.WALLET_SERVICE_URL ?? process.env.NEXT_PUBLIC_WALLET_SERVICE_URL,
+    ),
+  };
+}

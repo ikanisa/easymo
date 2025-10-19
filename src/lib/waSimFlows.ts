@@ -19,6 +19,8 @@ export type FlowState =
   | 'schedule_passenger_location'
   | 'schedule_driver_vehicle' 
   | 'schedule_driver_location'
+  | 'driver_onboarding_plate'
+  | 'driver_onboarding_vehicle'
   | 'support'
   | 'cta_driver'
   | 'chat_link'
@@ -30,6 +32,11 @@ export interface FlowData {
   selectedLocation: SimLocation | null;
   chatUrl: string | null;
   successMessage: string | null;
+  driverProfile: {
+    vehiclePlate: string | null;
+    vehicleType: VehicleType | null;
+  };
+  driverOnboardingTarget: 'see_passengers' | 'schedule_driver' | null;
 }
 
 export const INITIAL_FLOW_DATA: FlowData = {
@@ -37,7 +44,12 @@ export const INITIAL_FLOW_DATA: FlowData = {
   selectedVehicle: null,
   selectedLocation: null,
   chatUrl: null,
-  successMessage: null
+  successMessage: null,
+  driverProfile: {
+    vehiclePlate: null,
+    vehicleType: null,
+  },
+  driverOnboardingTarget: null,
 };
 
 export const PRESET_LOCATIONS: SimLocation[] = [
@@ -74,7 +86,19 @@ export function startSeeDrivers(data: FlowData): FlowData {
  * Start "See Nearby Passengers" flow
  */
 export function startSeePassengers(data: FlowData): FlowData {
-  return { ...data, state: 'see_passengers_vehicle' };
+  if (data.driverProfile.vehicleType && data.driverProfile.vehiclePlate) {
+    return {
+      ...data,
+      state: 'see_passengers_location',
+      selectedVehicle: data.driverProfile.vehicleType,
+      driverOnboardingTarget: null,
+    };
+  }
+  return {
+    ...data,
+    state: 'driver_onboarding_plate',
+    driverOnboardingTarget: 'see_passengers',
+  };
 }
 
 /**
@@ -106,6 +130,30 @@ export function selectVehicle(data: FlowData, vehicle: VehicleType): FlowData {
       return { ...newData, state: 'schedule_passenger_location' };
     case 'schedule_driver_vehicle':
       return { ...newData, state: 'schedule_driver_location' };
+    case 'driver_onboarding_vehicle': {
+      const updated = {
+        ...newData,
+        driverProfile: {
+          ...newData.driverProfile,
+          vehicleType: vehicle,
+        },
+      };
+      if (data.driverOnboardingTarget === 'see_passengers') {
+        return {
+          ...updated,
+          state: 'see_passengers_location',
+          driverOnboardingTarget: null,
+        };
+      }
+      if (data.driverOnboardingTarget === 'schedule_driver') {
+        return {
+          ...updated,
+          state: 'schedule_driver_location',
+          driverOnboardingTarget: null,
+        };
+      }
+      return updated;
+    }
     default:
       return newData;
   }
@@ -160,7 +208,19 @@ export function selectRole(data: FlowData, role: 'passenger' | 'driver'): FlowDa
   if (role === 'passenger') {
     return { ...data, state: 'schedule_passenger_vehicle' };
   } else {
-    return { ...data, state: 'schedule_driver_vehicle' };
+    if (data.driverProfile.vehicleType && data.driverProfile.vehiclePlate) {
+      return {
+        ...data,
+        state: 'schedule_driver_location',
+        selectedVehicle: data.driverProfile.vehicleType,
+        driverOnboardingTarget: null,
+      };
+    }
+    return {
+      ...data,
+      state: 'driver_onboarding_plate',
+      driverOnboardingTarget: 'schedule_driver',
+    };
   }
 }
 
@@ -176,6 +236,30 @@ export function showDriverCTA(data: FlowData): FlowData {
  */
 export function buildSupportChatLink(supportPhone: string): string {
   return chatLink(supportPhone, 'Hello I need help');
+}
+
+export function submitDriverPlate(data: FlowData, plate: string): FlowData {
+  const normalized = plate.trim().toUpperCase();
+  return {
+    ...data,
+    driverProfile: {
+      ...data.driverProfile,
+      vehiclePlate: normalized || null,
+    },
+    state: 'driver_onboarding_vehicle',
+  };
+}
+
+export function restartDriverVehicleSelection(
+  data: FlowData,
+  target: 'see_passengers' | 'schedule_driver',
+): FlowData {
+  return {
+    ...data,
+    driverOnboardingTarget: target,
+    state: 'driver_onboarding_vehicle',
+    selectedVehicle: null,
+  };
 }
 
 /**

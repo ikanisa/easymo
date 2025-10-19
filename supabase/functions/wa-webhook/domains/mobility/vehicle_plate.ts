@@ -103,3 +103,35 @@ export async function handleVehiclePlateInput(
   await updateVehiclePlate(ctx.supabase, ctx.profileId, normalized);
   return null;
 }
+
+export async function getStoredVehicleType(
+  client: SupabaseClient,
+  profileId: string,
+): Promise<string | null> {
+  const { data, error } = await client
+    .from("profiles")
+    .select("vehicle_type")
+    .eq("user_id", profileId)
+    .maybeSingle();
+  if (error && error.code !== "PGRST116") throw error;
+  const value = data?.vehicle_type;
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim().toLowerCase();
+  return trimmed.length > 0 ? trimmed : null;
+}
+
+export async function updateStoredVehicleType(
+  client: SupabaseClient,
+  profileId: string,
+  vehicleType: string,
+): Promise<void> {
+  const normalized = vehicleType.trim().toLowerCase();
+  if (!normalized) {
+    throw new Error("Invalid vehicle type");
+  }
+  const { error } = await client
+    .from("profiles")
+    .update({ vehicle_type: normalized })
+    .eq("user_id", profileId);
+  if (error) throw error;
+}

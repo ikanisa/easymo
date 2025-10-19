@@ -15,6 +15,11 @@ export function showDevTools(): boolean {
   return import.meta.env.VITE_DEV_TOOLS === '1';
 }
 
+export function isAgentChatEnabled(): boolean {
+  const raw = (import.meta.env.VITE_ENABLE_AGENT_CHAT ?? 'false').toString().toLowerCase();
+  return raw === '1' || raw === 'true' || raw === 'yes';
+}
+
 export function getAdminToken(): string {
   if (import.meta.env.VITE_ADMIN_TOKEN) {
     return import.meta.env.VITE_ADMIN_TOKEN;

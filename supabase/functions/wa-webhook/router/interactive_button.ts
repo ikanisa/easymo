@@ -1,10 +1,12 @@
 import type { RouterContext } from "../types.ts";
 import { IDS } from "../wa/ids.ts";
 import {
+  handleChangeVehicleRequest,
   handleSeeDrivers,
   handleSeePassengers,
 } from "../domains/mobility/nearby.ts";
 import {
+  handleScheduleChangeVehicle,
   handleScheduleRefresh,
   handleScheduleRole,
   handleScheduleSkipDropoff,
@@ -182,6 +184,20 @@ export async function handleButton(
       return await handleScheduleSkipDropoff(ctx, (state.data ?? {}) as any);
     case IDS.SCHEDULE_REFRESH_RESULTS:
       return await handleScheduleRefresh(ctx, (state.data ?? {}) as any);
+    case IDS.MOBILITY_CHANGE_VEHICLE:
+      if (
+        state.key === "mobility_nearby_location" ||
+        state.key === "mobility_nearby_select"
+      ) {
+        return await handleChangeVehicleRequest(ctx, state.data);
+      }
+      if (
+        state.key === "schedule_location" ||
+        state.key === "schedule_dropoff"
+      ) {
+        return await handleScheduleChangeVehicle(ctx, state.data);
+      }
+      return false;
     case IDS.DINEIN_BARS:
       await showBarsEntry(ctx, managerCtx);
       return true;
