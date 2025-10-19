@@ -119,7 +119,7 @@ export async function GET(request: Request) {
           } : null,
         } : null,
         collateral: Array.isArray(row.collateral)
-          ? row.collateral.map((item) => ({
+          ? row.collateral.map((item: any) => ({
             id: item.id,
             source: item.source,
             amount: Number(item.amount_pledged ?? 0),

@@ -71,7 +71,9 @@ export const POST = createHandler('matching.dual_constraint_search', async (requ
     require_dual: dualConstraintEnabled,
   };
 
-  const { data, error } = await adminClient.rpc<MatchRow[]>('match_search_candidates', rpcPayload);
+  const rpcResult = await adminClient.rpc('match_search_candidates', rpcPayload);
+  const data = rpcResult.data as MatchRow[] | null;
+  const error = rpcResult.error;
 
   if (error) {
     logStructured({

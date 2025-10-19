@@ -25,7 +25,7 @@ export function LiveCallsClient() {
       <PageHeader
         title="Live calls"
         description="Monitor active conversations, warm transfers, and opt-outs in real time."
-        actions={
+        meta={
           <Button type="button" variant="outline" size="sm" onClick={() => liveCallsQuery.refetch()}>
             Refresh
           </Button>

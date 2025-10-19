@@ -11,6 +11,27 @@ const listQuerySchema = z.object({
   offset: z.coerce.number().int().min(0).optional(),
 });
 
+type CommitteeMemberRow = {
+  role: string | null;
+  member_id: string | null;
+};
+
+type IbiminaRawRow = {
+  id: string;
+  name: string;
+  description: string | null;
+  slug: string;
+  status: string;
+  created_at: string;
+  sacco_id: string | null;
+  saccos: { id: string; name: string; branch_code: string | null } | null;
+  committee: CommitteeMemberRow[] | null;
+  settings:
+    | Array<{ quorum?: unknown }>
+    | { quorum?: unknown }
+    | null;
+};
+
 function parseQuorum(value: unknown): { threshold: number | null; roles: string[] } | null {
   if (!value || typeof value !== 'object') return null;
   const quorum = value as { threshold?: unknown; roles?: unknown };
@@ -81,33 +102,35 @@ export async function GET(request: Request) {
     return jsonError({ error: 'ibimina_fetch_failed', message: 'Unable to load Ibimina.' }, 500);
   }
 
-  const rows = (data ?? []) as any[];
+  const rows = (data ?? []) as unknown as IbiminaRawRow[];
   const total = count ?? rows.length;
   const hasMore = offset + rows.length < total;
 
   return jsonOk({
     data: rows.map((row) => ({
       id: row.id,
-        name: row.name,
-        description: row.description,
-        slug: row.slug,
-        status: row.status,
-        createdAt: row.created_at,
-        saccoId: row.sacco_id,
-        sacco: row.saccos ? {
+      name: row.name,
+      description: row.description,
+      slug: row.slug,
+      status: row.status,
+      createdAt: row.created_at,
+      saccoId: row.sacco_id,
+      sacco: row.saccos
+        ? {
           id: row.saccos.id,
           name: row.saccos.name,
           branchCode: row.saccos.branch_code,
-        } : null,
-        committee: Array.isArray(row.committee)
-          ? row.committee.map((member) => ({
-            role: member.role,
-            memberId: member.member_id,
-          }))
-          : [],
-        quorum: Array.isArray(row.settings)
-          ? parseQuorum(row.settings[0]?.quorum ?? null)
-          : parseQuorum((row as { settings?: { quorum?: unknown } | null }).settings?.quorum ?? null),
+        }
+        : null,
+      committee: Array.isArray(row.committee)
+        ? row.committee.map((member) => ({
+          role: member.role ?? null,
+          memberId: member.member_id ?? null,
+        }))
+        : [],
+      quorum: Array.isArray(row.settings)
+        ? parseQuorum(row.settings[0]?.quorum ?? null)
+        : parseQuorum((row.settings as { quorum?: unknown } | null)?.quorum ?? null),
     })),
     total,
     hasMore,

@@ -7,6 +7,7 @@ interface LogContext {
   message?: string;
   details?: Record<string, unknown>;
   tags?: Record<string, unknown>;
+  [key: string]: unknown;
 }
 
 export function logStructured(context: LogContext) {

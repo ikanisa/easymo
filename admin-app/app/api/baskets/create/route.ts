@@ -87,16 +87,18 @@ export const POST = createHandler('baskets.create', async (request, _context, { 
   }
 
   const ttlInterval = tokenTtlMinutes ? `${tokenTtlMinutes} minutes` : undefined;
-  const { data: tokenRow, error: tokenError } = await adminClient.rpc<{
-    id: string;
-    basket_id: string;
-    token: string;
-    expires_at: string;
-  }>('issue_basket_invite_token', {
+  const tokenResult = await adminClient.rpc('issue_basket_invite_token', {
     _basket_id: basket.id,
     _created_by: creatorId,
     _ttl: ttlInterval ?? null,
   });
+  const tokenRow = tokenResult.data as {
+    id: string;
+    basket_id: string;
+    token: string;
+    expires_at: string;
+  } | null;
+  const tokenError = tokenResult.error;
 
   if (tokenError || !tokenRow) {
     logStructured({

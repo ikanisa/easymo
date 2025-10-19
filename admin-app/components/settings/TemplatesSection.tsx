@@ -7,10 +7,10 @@ import type { TemplateMeta } from "@/lib/schemas";
 type TemplatesSectionProps = {
   isLoading: boolean;
   templates: TemplateMeta[];
-  statusFilter: string;
+  statusFilter: TemplateMeta["status"] | "";
   hasMore?: boolean;
   loadingMore?: boolean;
-  onStatusChange: (value: string) => void;
+  onStatusChange: (value: TemplateMeta["status"] | "") => void;
   onLoadMore: () => void;
 };
 

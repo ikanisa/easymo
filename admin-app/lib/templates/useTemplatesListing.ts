@@ -19,7 +19,7 @@ export function useTemplatesListing(
   const templates = query.data?.data ?? [];
   const hasMore = query.data?.hasMore;
   const loadingMore = query.isFetching && !query.isLoading;
-  const statusFilter = params.status ?? "";
+  const statusFilter = (params.status ?? "") as TemplateMeta["status"] | "";
 
   const resetLimit = useMemo(() => initialParams.limit ?? 100, [initialParams.limit]);
 

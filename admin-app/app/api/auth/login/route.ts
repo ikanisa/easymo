@@ -59,7 +59,7 @@ export const POST = createHandler("admin_auth.login", async (request) => {
   if (!match) {
     logStructured({
       event: "admin_auth.login_denied",
-      status: "warn",
+      status: "error",
       details: { reason: "invalid_token" },
     });
     return NextResponse.json(

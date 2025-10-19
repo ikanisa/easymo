@@ -64,7 +64,7 @@ export async function GET(request: Request) {
     return jsonError({ error: 'ibimina_members_fetch_failed', message: 'Unable to load memberships.' }, 500);
   }
 
-  const rows = data ?? [];
+  const rows = (data ?? []) as any[];
   const total = count ?? rows.length;
   const hasMore = offset + rows.length < total;
 

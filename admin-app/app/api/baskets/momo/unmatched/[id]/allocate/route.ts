@@ -63,7 +63,12 @@ export async function POST(
     return jsonError({ error: 'missing_parsed_txn', message: 'Unable to allocate. Parsed transaction not available.' }, 409);
   }
 
-  const parsed = unmatched.momo_parsed_txns;
+  const parsed = Array.isArray(unmatched.momo_parsed_txns)
+    ? unmatched.momo_parsed_txns[0]
+    : unmatched.momo_parsed_txns;
+  if (!parsed) {
+    return jsonError({ error: 'missing_parsed_txn', message: 'Unable to allocate. Parsed transaction not available.' }, 409);
+  }
   const amount = parsed.amount ?? 0;
   if (!amount) {
     return jsonError({ error: 'missing_amount', message: 'Parsed transaction lacks an amount.' }, 409);
