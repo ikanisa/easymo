@@ -8,6 +8,11 @@ on:
 jobs:
   run:
     runs-on: ubuntu-latest
+    env:
+      ADMIN_BASE_URL: ${{ secrets.ADMIN_BASE_URL }}
+      ADMIN_API_TOKEN: ${{ secrets.ADMIN_API_TOKEN }}
+      SUPABASE_API_BASE: ${{ secrets.SUPABASE_API_BASE }}
+      EASYMO_ADMIN_TOKEN: ${{ secrets.EASYMO_ADMIN_TOKEN }}
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -23,13 +28,20 @@ jobs:
           node-version: '20'
 
       - name: Run synthetic checks
-        env:
-          ADMIN_BASE_URL: ${{ secrets.ADMIN_BASE_URL }}
-          ADMIN_API_TOKEN: ${{ secrets.ADMIN_API_TOKEN }}
+        if: ${{ env.ADMIN_BASE_URL != '' && env.ADMIN_API_TOKEN != '' }}
         run: deno run --allow-env --allow-net tools/monitoring/admin/synthetic-checks.ts
 
+      - name: Skip synthetic checks (missing secrets)
+        if: ${{ !(env.ADMIN_BASE_URL != '' && env.ADMIN_API_TOKEN != '') }}
+        run: echo "Skipping synthetic checks; ADMIN_BASE_URL/ADMIN_API_TOKEN not configured."
+
       - name: Run Supabase health check
+        if: ${{ env.SUPABASE_API_BASE != '' && env.EASYMO_ADMIN_TOKEN != '' && startsWith(env.SUPABASE_API_BASE, 'http') }}
         env:
-          VITE_API_BASE: ${{ secrets.SUPABASE_API_BASE }}
-          ADMIN_TOKEN: ${{ secrets.EASYMO_ADMIN_TOKEN }}
+          VITE_API_BASE: ${{ env.SUPABASE_API_BASE }}
+          ADMIN_TOKEN: ${{ env.EASYMO_ADMIN_TOKEN }}
         run: node scripts/health-check.mjs
+
+      - name: Skip Supabase health check (missing secrets)
+        if: ${{ !(env.SUPABASE_API_BASE != '' && env.EASYMO_ADMIN_TOKEN != '' && startsWith(env.SUPABASE_API_BASE, 'http')) }}
+        run: echo "Skipping Supabase health check; SUPABASE_API_BASE/EASYMO_ADMIN_TOKEN not configured or invalid."
