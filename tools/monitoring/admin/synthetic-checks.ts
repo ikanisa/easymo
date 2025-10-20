@@ -79,7 +79,7 @@ const failures = results.filter((result) => !result.ok);
 
 for (const result of results) {
   if (result.ok) {
-    console.log(`✅ ${result.path} -> ${result.status}`);
+    console.warn(`✅ ${result.path} -> ${result.status}`);
   } else {
     if (result.status) {
       console.error(`❌ ${result.path} -> HTTP ${result.status}`);

@@ -86,19 +86,8 @@ export function startSeeDrivers(data: FlowData): FlowData {
  * Start "See Nearby Passengers" flow
  */
 export function startSeePassengers(data: FlowData): FlowData {
-  if (data.driverProfile.vehicleType && data.driverProfile.vehiclePlate) {
-    return {
-      ...data,
-      state: 'see_passengers_location',
-      selectedVehicle: data.driverProfile.vehicleType,
-      driverOnboardingTarget: null,
-    };
-  }
-  return {
-    ...data,
-    state: 'driver_onboarding_plate',
-    driverOnboardingTarget: 'see_passengers',
-  };
+  // For simulator simplicity, always begin by selecting vehicle
+  return { ...data, state: 'see_passengers_vehicle' };
 }
 
 /**
@@ -208,19 +197,8 @@ export function selectRole(data: FlowData, role: 'passenger' | 'driver'): FlowDa
   if (role === 'passenger') {
     return { ...data, state: 'schedule_passenger_vehicle' };
   } else {
-    if (data.driverProfile.vehicleType && data.driverProfile.vehiclePlate) {
-      return {
-        ...data,
-        state: 'schedule_driver_location',
-        selectedVehicle: data.driverProfile.vehicleType,
-        driverOnboardingTarget: null,
-      };
-    }
-    return {
-      ...data,
-      state: 'driver_onboarding_plate',
-      driverOnboardingTarget: 'schedule_driver',
-    };
+    // For simulator simplicity, always begin by selecting vehicle
+    return { ...data, state: 'schedule_driver_vehicle' };
   }
 }
 

@@ -10,7 +10,7 @@
     "lint": "eslint .",
     "type-check": "tsc --noEmit",
     "test": "vitest run",
-    "test:functions": "deno test --allow-env --allow-read easymo/supabase/functions/tests",
+    "test:functions": "deno test --allow-env --allow-read --allow-net easymo/supabase/functions/tests",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
     "preview": "vite preview --port 5000",

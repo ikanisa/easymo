@@ -118,4 +118,6 @@ export async function handler(req: Request): Promise<Response> {
   return json({ error: "method_not_allowed" }, 405);
 }
 
-Deno.serve(handler);
+if (import.meta.main) {
+  Deno.serve(handler);
+}

@@ -19,9 +19,9 @@ if (!res.ok) {
 }
 
 const body = await res.json();
-console.log("notification-worker response", body);
+console.warn("notification-worker response", body);
 if (body?.cronEnabled === true) {
-  console.log(
+  console.warn(
     "Cron scheduling is enabled (NOTIFICATION_WORKER_CRON_ENABLED=true).",
   );
 } else {

@@ -51,7 +51,7 @@ export class BrokerOrchestrator {
     });
   }
 
-  private async handleWhatsapp(payload: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
+  private async handleWhatsapp(payload: any) {
     logger.info({ msg: "broker.orchestrator.whatsapp", payload });
     if (payload.optOut) {
       await this.producer.send({
@@ -76,7 +76,7 @@ export class BrokerOrchestrator {
     });
   }
 
-  private async handleVoice(payload: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
+  private async handleVoice(payload: any) {
     logger.info({ msg: "broker.orchestrator.voice", payload });
     if (payload.type === "call.opt_out") {
       await this.producer.send({
@@ -86,7 +86,7 @@ export class BrokerOrchestrator {
     }
   }
 
-  private async handleSip(payload: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
+  private async handleSip(payload: any) {
     if (payload.event === "connected") {
       await this.producer.send({
         topic: settings.kafka.topics.brokerOutbound,

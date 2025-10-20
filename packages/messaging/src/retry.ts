@@ -22,7 +22,6 @@ export class RetryPolicy {
   async execute<T>(fn: () => Promise<T>): Promise<T> {
     let attempt = 0;
     let delay = this.options.backoffMs;
-    // eslint-disable-next-line no-constant-condition
     while (true) {
       try {
         return await fn();

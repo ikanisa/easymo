@@ -38,5 +38,4 @@ if (errors.length) {
   Deno.exit(1);
 }
 
-console.log('Policy audit passed: RLS enabled for required tables.');
-
+console.warn('Policy audit passed: RLS enabled for required tables.');
