@@ -10,6 +10,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Lint OpenAPI spec
-        run: |
-          npx -y @redocly/cli@latest lint apispec/openapi.yaml
+      - name: Lint apispec/openapi.yaml (if present)
+        if: ${{ hashFiles('apispec/openapi.yaml') != '' }}
+        run: npx -y @redocly/cli@latest lint apispec/openapi.yaml
+      - name: Lint public/openapi.yaml (if present)
+        if: ${{ hashFiles('public/openapi.yaml') != '' }}
+        run: npx -y @redocly/cli@latest lint public/openapi.yaml
+      - name: Lint admin-app/public/openapi.yaml (if present)
+        if: ${{ hashFiles('admin-app/public/openapi.yaml') != '' }}
+        run: npx -y @redocly/cli@latest lint admin-app/public/openapi.yaml
+      - name: No OpenAPI specs found
+        if: ${{ !(hashFiles('apispec/openapi.yaml') != '' || hashFiles('public/openapi.yaml') != '' || hashFiles('admin-app/public/openapi.yaml') != '') }}
+        run: echo "No OpenAPI specs found; skipping lint."

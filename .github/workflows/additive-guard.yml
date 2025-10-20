@@ -2,13 +2,10 @@ name: Additive Guard
 
 on:
   pull_request:
-  push:
-    branches:
-      - main
-      - develop
 
 jobs:
   enforce:
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout

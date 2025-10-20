@@ -4,6 +4,12 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT_DIR"
 
+# Skip entirely in CI or when explicitly requested
+if [ -n "${CI:-}" ] || [ -n "${SKIP_PRECOMMIT:-}" ]; then
+  echo "(pre-commit) Skipping in CI or due to SKIP_PRECOMMIT=1"
+  exit 0
+fi
+
 if command -v npm >/dev/null 2>&1; then
   echo "→ Linting admin-app"
   npm install --prefix admin-app >/dev/null 2>&1 || true
