@@ -1,0 +1,43 @@
+openapi: 3.0.3
+info:
+  title: Broker AI API
+  version: 1.0.0
+servers:
+  - url: https://easymo.vercel.app
+paths:
+  /api/buyer/intents:
+    post:
+      summary: Create intent (alias)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                tenantId: { type: string }
+                buyerId: { type: string }
+                channel: { type: string }
+                payload: { type: object }
+      responses:
+        '201': { description: Created }
+  /api/buyer/purchases/{id}/confirm:
+    post:
+      summary: Confirm purchase
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                actor: { type: string, enum: [VENDOR, BUYER] }
+                amount: { type: number }
+                currency: { type: string }
+      responses:
+        '200': { description: OK }

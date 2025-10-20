@@ -1,0 +1,245 @@
+openapi: 3.0.3
+info:
+  title: Broker AI API
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080
+    description: Gateway (future)
+  - url: http://localhost:4700
+    description: Buyer Service
+  - url: http://localhost:4600
+    description: Vendor Service
+  - url: http://localhost:4500
+    description: Ranking Service
+  - url: http://localhost:4400
+    description: Wallet Service
+  - url: http://localhost:4800
+    description: WhatsApp Bot
+  - url: http://localhost:4900
+    description: Attribution Service
+  - url: http://localhost:5000
+    description: Reconciliation Service
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+paths:
+  /intents:
+    post:
+      summary: Create intent (alias to /buyers/{id}/intents)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                tenantId: { type: string }
+                buyerId: { type: string }
+                channel: { type: string }
+                payload: { type: object }
+                expiresAt: { type: string }
+      responses:
+        '201': { description: Created }
+  /purchases/{id}/confirm:
+    post:
+      summary: Vendor or buyer confirms purchase
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                actor: { type: string, enum: [VENDOR, BUYER] }
+                amount: { type: number }
+                currency: { type: string }
+      responses:
+        '200': { description: OK }
+  /vendors/{id}/quotes:
+    post:
+      summary: Vendor issues quote for intent
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                tenantId: { type: string }
+                intentId: { type: string }
+                price: { type: number }
+                currency: { type: string }
+                etaMinutes: { type: integer }
+      responses:
+        '201': { description: Created }
+  /ranking/vendors:
+    get:
+      summary: Ranked vendor recommendations
+      parameters:
+        - in: query
+          name: tenantId
+          required: true
+          schema: { type: string }
+        - in: query
+          name: categories
+          schema: { type: string, description: 'comma-separated' }
+        - in: query
+          name: region
+          schema: { type: string }
+      responses:
+        '200': { description: OK }
+  /ranking/feedback:
+    post:
+      summary: Update vendor quality metrics from feedback
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                tenantId: { type: string }
+                vendorId: { type: string }
+                scores: { type: object }
+      responses:
+        '200': { description: OK }
+  /wallet/transfer:
+    post:
+      summary: Post double-entry transfer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                tenantId: { type: string }
+                sourceAccountId: { type: string }
+                destinationAccountId: { type: string }
+                amount: { type: number }
+                currency: { type: string }
+                reference: { type: string }
+      responses:
+        '201': { description: Created }
+  /wallet/accounts/provision:
+    post:
+      summary: Create or fetch wallet for owner
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                tenantId: { type: string }
+                ownerType: { type: string, enum: [vendor, buyer, platform, commission, agent, endorser] }
+                ownerId: { type: string }
+                currency: { type: string }
+      responses:
+        '201': { description: Created }
+        '200': { description: Existing }
+  /wallet/accounts/lookup:
+    get:
+      summary: Lookup wallet by owner
+      parameters:
+        - in: query
+          name: tenantId
+          schema: { type: string }
+        - in: query
+          name: ownerType
+          required: true
+          schema: { type: string }
+        - in: query
+          name: ownerId
+          required: true
+          schema: { type: string }
+        - in: query
+          name: currency
+          schema: { type: string }
+      responses:
+        '200': { description: OK }
+  /outbound/messages:
+    post:
+      summary: Send WhatsApp text or template
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                to: { type: string }
+                text: { type: string }
+                template: { type: object }
+      responses:
+        '202': { description: Accepted }
+  /reconciliation/mobile-money:
+    post:
+      summary: Reconcile mobile-money CSV
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file: { type: string, format: binary }
+      responses:
+        '202': { description: Accepted }
+  /attribution/evaluate:
+    post:
+      summary: Evaluate attribution
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                quoteId: { type: string }
+                referrals: { type: array, items: { type: object } }
+                events: { type: array, items: { type: object } }
+      responses:
+        '200': { description: OK }
+  /attribution/evidence:
+    post:
+      summary: Store attribution evidence artifacts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                quoteId: { type: string }
+                artifacts: { type: array, items: { type: object } }
+      responses:
+        '202': { description: Accepted }
+  /attribution/disputes:
+    post:
+      summary: Open a dispute for a quote
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                quoteId: { type: string }
+                reason: { type: string }
+                actor: { type: string }
+      responses:
+        '202': { description: Accepted }

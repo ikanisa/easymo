@@ -1,0 +1,15 @@
+name: OpenAPI Lint
+
+on:
+  pull_request:
+  push:
+    branches: [ main, master ]
+
+jobs:
+  lint-openapi:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Lint OpenAPI spec
+        run: |
+          npx -y @redocly/cli@latest lint apispec/openapi.yaml
