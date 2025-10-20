@@ -21,6 +21,7 @@ class MockSupabaseClient {
     user_id: string;
     vehicle_plate?: string | null;
     vehicle_type?: string | null;
+    metadata?: Record<string, unknown>;
   };
   stateHistory: Array<{ key: string; data?: Record<string, unknown> }> = [];
 
@@ -33,6 +34,7 @@ class MockSupabaseClient {
       user_id: "user-1",
       vehicle_plate: profile.vehicle_plate ?? null,
       vehicle_type: profile.vehicle_type ?? null,
+      metadata: {},
     };
   }
 
@@ -45,6 +47,7 @@ class MockSupabaseClient {
           data: {
             vehicle_plate: this.profile.vehicle_plate ?? null,
             vehicle_type: this.profile.vehicle_type ?? null,
+            metadata: this.profile.metadata ?? {},
           },
           error: null,
         }),

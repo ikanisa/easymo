@@ -25,6 +25,7 @@ import {
   getStoredVehicleType,
   updateStoredVehicleType,
 } from "./vehicle_plate.ts";
+import { getRecentNearbyIntent, storeNearbyIntent } from "./intent_cache.ts";
 
 const DEFAULT_WINDOW_DAYS = 30;
 const MIN_RADIUS_METERS = 1000;
@@ -135,6 +136,26 @@ function buildNearbyRow(
 
 export async function handleSeeDrivers(ctx: RouterContext): Promise<boolean> {
   if (!ctx.profileId) return false;
+  try {
+    const cached = await getRecentNearbyIntent(
+      ctx.supabase,
+      ctx.profileId,
+      "drivers",
+    );
+    if (cached) {
+      await setState(ctx.supabase, ctx.profileId, {
+        key: "mobility_nearby_location",
+        data: { mode: "drivers", vehicle: cached.vehicle },
+      });
+      return await handleNearbyLocation(
+        ctx,
+        { mode: "drivers", vehicle: cached.vehicle },
+        { lat: cached.lat, lng: cached.lng },
+      );
+    }
+  } catch (error) {
+    console.error("mobility.nearby_cache_read_fail", error);
+  }
   await setState(ctx.supabase, ctx.profileId, {
     key: "mobility_nearby_select",
     data: { mode: "drivers" },
@@ -149,6 +170,27 @@ export async function handleSeePassengers(
   if (!ctx.profileId) return false;
   const ready = await ensureVehiclePlate(ctx, { type: "nearby_passengers" });
   if (!ready) return true;
+
+  try {
+    const cached = await getRecentNearbyIntent(
+      ctx.supabase,
+      ctx.profileId,
+      "passengers",
+    );
+    if (cached) {
+      await setState(ctx.supabase, ctx.profileId, {
+        key: "mobility_nearby_location",
+        data: { mode: "passengers", vehicle: cached.vehicle },
+      });
+      return await handleNearbyLocation(
+        ctx,
+        { mode: "passengers", vehicle: cached.vehicle },
+        { lat: cached.lat, lng: cached.lng },
+      );
+    }
+  } catch (error) {
+    console.error("mobility.nearby_cache_read_fail", error);
+  }
 
   const storedVehicle = await getStoredVehicleType(
     ctx.supabase,
@@ -197,6 +239,15 @@ export async function handleNearbyLocation(
   coords: { lat: number; lng: number },
 ): Promise<boolean> {
   if (!ctx.profileId || !state.vehicle || !state.mode) return false;
+  try {
+    await storeNearbyIntent(ctx.supabase, ctx.profileId, state.mode, {
+      vehicle: state.vehicle,
+      lat: coords.lat,
+      lng: coords.lng,
+    });
+  } catch (error) {
+    console.error("mobility.nearby_cache_write_fail", error);
+  }
   const config = await getAppConfig(ctx.supabase);
   const radiusMeters = kmToMeters(config.search_radius_km ?? 10);
   const max = config.max_results ?? 9;

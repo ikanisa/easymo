@@ -19,5 +19,18 @@
       "tests/edge",
       "tools"
     ]
+  },
+  "test": {
+    "include": [
+      "./supabase/functions/**/*.test.ts",
+      "./supabase/functions/**/*.test.tsx",
+      "./tests/edge/**/*.test.ts"
+    ],
+    "exclude": [
+      "admin-app/**",
+      "angular/**",
+      "app/**",
+      "packages/**"
+    ]
   }
 }
