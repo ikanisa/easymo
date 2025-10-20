@@ -12,6 +12,8 @@ export type LiveCallRecord = {
   optOutDetected: boolean;
   transcriptPreview: string | null;
   durationSeconds: number | null;
+  callId: string | null;
+  agentProfile: string | null;
 };
 
 class LiveCallRegistry {
@@ -24,6 +26,8 @@ class LiveCallRegistry {
     leadName?: string | null,
     region?: string | null,
     tenantId?: string,
+    callId?: string | null,
+    agentProfile?: string | null,
   ) {
     this.calls.set(callSid, {
       callSid,
@@ -39,6 +43,8 @@ class LiveCallRegistry {
       optOutDetected: false,
       transcriptPreview: null,
       durationSeconds: null,
+      callId: callId ?? null,
+      agentProfile: agentProfile ?? null,
     });
   }
 
@@ -101,6 +107,10 @@ class LiveCallRegistry {
       generatedAt: new Date().toISOString(),
       calls,
     };
+  }
+
+  reset() {
+    this.calls.clear();
   }
 }
 

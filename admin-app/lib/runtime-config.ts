@@ -14,7 +14,6 @@ export type SupabaseServiceConfig = {
 export function shouldUseMocks(): boolean {
   if (process.env.NODE_ENV === "production" && useMocksFlag) {
     if (typeof window === "undefined") {
-      // eslint-disable-next-line no-console
       console.error(
         "NEXT_PUBLIC_USE_MOCKS=true is not allowed in production; falling back to live services.",
       );

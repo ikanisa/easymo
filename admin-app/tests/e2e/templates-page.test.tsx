@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent } from '../utils/react-testing';
 import { TemplatesClient } from '@/app/(panel)/templates/TemplatesClient';
 
 const flowsListing = {
@@ -70,4 +70,3 @@ describe('TemplatesClient', () => {
     expect(templatesListing.handleLoadMore).toHaveBeenCalledTimes(loadMoreTemplates ? 1 : 0);
   });
 });
-

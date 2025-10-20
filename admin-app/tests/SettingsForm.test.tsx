@@ -53,10 +53,8 @@ describe("SettingsForm", () => {
     render(<SettingsForm />);
 
     await waitFor(() => expect(fetchPlatformSettings).toHaveBeenCalled());
-    expect(
-      screen.getByDisplayValue("08:00 – 18:00"),
-    ).toBeInTheDocument();
-    expect(screen.getByDisplayValue("120")).toBeInTheDocument();
+    expect(screen.getAllByDisplayValue("08:00 – 18:00")[0]).toBeInTheDocument();
+    expect(screen.getAllByDisplayValue("120")[0]).toBeInTheDocument();
     expect(screen.getByText("Policy storage")).toBeInTheDocument();
   });
 
@@ -88,7 +86,7 @@ describe("SettingsForm", () => {
     render(<SettingsForm />);
     await waitFor(() => expect(fetchPlatformSettings).toHaveBeenCalled());
 
-    fireEvent.change(screen.getByDisplayValue("08:00 – 18:00"), {
+    fireEvent.change(screen.getAllByDisplayValue("08:00 – 18:00")[0], {
       target: { value: "invalid quiet hours" },
     });
     fireEvent.submit(screen.getByRole("button", { name: /save settings/i }));
@@ -115,10 +113,10 @@ describe("SettingsForm", () => {
     render(<SettingsForm />);
     await waitFor(() => expect(fetchPlatformSettings).toHaveBeenCalled());
 
-    fireEvent.change(screen.getByDisplayValue("08:00 – 18:00"), {
+    fireEvent.change(screen.getAllByDisplayValue("08:00 – 18:00")[0], {
       target: { value: "21:00 – 05:00" },
     });
-    fireEvent.change(screen.getByDisplayValue("120"), {
+    fireEvent.change(screen.getAllByDisplayValue("120")[0], {
       target: { value: "90" },
     });
     fireEvent.change(screen.getByPlaceholderText("+2507..."), {

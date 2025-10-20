@@ -20,21 +20,19 @@ export class RetryPolicy {
   }
 
   async execute<T>(fn: () => Promise<T>): Promise<T> {
-    let attempt = 0;
     let delay = this.options.backoffMs;
-    // eslint-disable-next-line no-constant-condition
-    while (true) {
+    for (let attempt = 0; attempt < this.options.attempts; attempt += 1) {
       try {
         return await fn();
       } catch (error) {
-        attempt += 1;
-        if (attempt >= this.options.attempts) {
-          throw new RetryExhaustedError(`Retry exhausted after ${attempt} attempts: ${(error as Error).message}`);
+        if (attempt === this.options.attempts - 1) {
+          throw new RetryExhaustedError(`Retry exhausted after ${this.options.attempts} attempts: ${(error as Error).message}`);
         }
         const jitter = Math.random() * this.options.jitterMs;
         await new Promise((resolve) => setTimeout(resolve, delay + jitter));
         delay *= this.options.backoffMultiplier;
       }
     }
+    throw new RetryExhaustedError("Retry exhausted without executing function");
   }
 }

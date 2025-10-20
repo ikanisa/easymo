@@ -1,14 +1,11 @@
 import { act } from "react";
-import { createRoot, type Root } from "react-dom/client";
 import {
-  fireEvent as domFireEvent,
-  waitFor as domWaitFor,
+  render as rtlRender,
+  fireEvent as rtlFireEvent,
+  waitFor as rtlWaitFor,
+  cleanup as rtlCleanup,
   screen,
-  getQueriesForElement,
-  queries,
-} from "@testing-library/dom";
-
-type WaitFor = typeof domWaitFor;
+} from "@testing-library/react";
 
 if (typeof globalThis !== "undefined") {
   (globalThis as typeof globalThis & {
@@ -16,37 +13,34 @@ if (typeof globalThis !== "undefined") {
   }).IS_REACT_ACT_ENVIRONMENT = true;
 }
 
-type MountedRoot = {
-  root: Root;
-  container: HTMLElement;
-};
-
-const mountedRoots = new Set<MountedRoot>();
-
-function cleanupEntry(entry: MountedRoot) {
-  const { root, container } = entry;
+export function render(ui: React.ReactElement) {
+  let result: ReturnType<typeof rtlRender>;
   act(() => {
-    root.unmount();
+    result = rtlRender(ui);
   });
-  if (container.parentNode) {
-    container.parentNode.removeChild(container);
-  }
+  const { rerender, unmount, ...rest } = result!;
+  return {
+    ...rest,
+    rerender(next: React.ReactElement) {
+      act(() => {
+        rerender(next);
+      });
+    },
+    unmount() {
+      act(() => {
+        unmount();
+      });
+    },
+  };
 }
 
-export function cleanup() {
-  for (const entry of Array.from(mountedRoots)) {
-    mountedRoots.delete(entry);
-    cleanupEntry(entry);
-  }
-}
-
-export const fireEvent = new Proxy(domFireEvent, {
-  apply(target, thisArg, argArray) {
-    let result: unknown;
+export const fireEvent = new Proxy(rtlFireEvent, {
+  apply(target, thisArg, argArray: Parameters<typeof rtlFireEvent>) {
+    let value: unknown;
     act(() => {
-      result = Reflect.apply(target, thisArg, argArray);
+      value = Reflect.apply(target, thisArg, argArray);
     });
-    return result;
+    return value;
   },
   get(target, property, receiver) {
     const value = Reflect.get(target, property, receiver);
@@ -54,51 +48,25 @@ export const fireEvent = new Proxy(domFireEvent, {
       return (...args: unknown[]) => {
         let result: unknown;
         act(() => {
-          result = (value as (...fnArgs: unknown[]) => unknown)(...args);
+          result = (value as (...methodArgs: unknown[]) => unknown)(...args);
         });
         return result;
       };
     }
     return value;
   },
-}) as typeof domFireEvent;
+}) as typeof rtlFireEvent;
 
-export const waitFor: WaitFor = (async (callback, options) => {
+export const waitFor: typeof rtlWaitFor = (async (callback, options) => {
   let result: Awaited<ReturnType<typeof callback>>;
   await act(async () => {
-    result = await domWaitFor(callback, options);
+    result = await rtlWaitFor(callback, options);
   });
   return result!;
-}) as WaitFor;
+}) as typeof rtlWaitFor;
 
-export function render(ui: React.ReactElement) {
-  const container = document.createElement("div");
-  document.body.appendChild(container);
-
-  const root = createRoot(container);
-  const entry: MountedRoot = { root, container };
-  mountedRoots.add(entry);
-
-  act(() => {
-    root.render(ui);
-  });
-
-  const boundQueries = getQueriesForElement(container, queries);
-
-  return {
-    container,
-    ...boundQueries,
-    rerender(next: React.ReactElement) {
-      act(() => {
-        root.render(next);
-      });
-    },
-    unmount() {
-      if (!mountedRoots.has(entry)) return;
-      mountedRoots.delete(entry);
-      cleanupEntry(entry);
-    },
-  };
+export function cleanup() {
+  rtlCleanup();
 }
 
 export { screen };

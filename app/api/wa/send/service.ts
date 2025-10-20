@@ -38,6 +38,5 @@ export async function sendWhatsAppMessage(payload: WhatsAppMessagePayload): Prom
     return { ok: false, status: response.status, error: text || 'send_failed' };
   }
 
-  console.info('wa.send.success', { to: payload.to, type: payload.type });
   return { ok: true, status: response.status };
 }
