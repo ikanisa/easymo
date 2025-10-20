@@ -12,17 +12,7 @@ export default () => ({
     agentId: process.env.OPENAI_AGENT_ID ?? "",
     baseUrl: process.env.OPENAI_BASE_URL ?? "",
   },
-  voiceBridgeUrl: process.env.VOICE_BRIDGE_URL ?? "",
-  agentApi: {
-    baseUrl: process.env.AGENT_API_URL ?? "",
-  },
-  tasks: {
-    pollIntervalMs: Number(process.env.TASK_POLL_INTERVAL_MS ?? "60000"),
-  },
   featureFlags: {
     agentChat: process.env.FEATURE_AGENT_CHAT ?? "1",
-  },
-  serviceAuth: {
-    audience: process.env.SERVICE_AUTH_AUDIENCE ?? "agent-core",
   },
 });

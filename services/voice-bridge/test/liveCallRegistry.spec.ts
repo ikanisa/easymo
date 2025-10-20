@@ -1,8 +1,10 @@
+import { describe, expect, it, beforeEach } from "@jest/globals";
 import { liveCallRegistry } from "../src/liveCallRegistry";
 
 describe("liveCallRegistry", () => {
   beforeEach(() => {
-    liveCallRegistry.reset();
+    // @ts-ignore access private map for tests
+    liveCallRegistry.calls?.clear?.();
   });
 
   it("tracks start, media, and teardown lifecycle", () => {

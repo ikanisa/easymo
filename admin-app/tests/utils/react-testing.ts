@@ -1,11 +1,14 @@
 import { act } from "react";
+import { createRoot, type Root } from "react-dom/client";
 import {
-  render as rtlRender,
-  fireEvent as rtlFireEvent,
-  waitFor as rtlWaitFor,
-  cleanup as rtlCleanup,
+  fireEvent as domFireEvent,
+  waitFor as domWaitFor,
   screen,
-} from "@testing-library/react";
+  getQueriesForElement,
+  queries,
+} from "@testing-library/dom";
+
+type WaitFor = typeof domWaitFor;
 
 if (typeof globalThis !== "undefined") {
   (globalThis as typeof globalThis & {
@@ -13,34 +16,37 @@ if (typeof globalThis !== "undefined") {
   }).IS_REACT_ACT_ENVIRONMENT = true;
 }
 
-export function render(ui: React.ReactElement) {
-  let result: ReturnType<typeof rtlRender>;
+type MountedRoot = {
+  root: Root;
+  container: HTMLElement;
+};
+
+const mountedRoots = new Set<MountedRoot>();
+
+function cleanupEntry(entry: MountedRoot) {
+  const { root, container } = entry;
   act(() => {
-    result = rtlRender(ui);
+    root.unmount();
   });
-  const { rerender, unmount, ...rest } = result!;
-  return {
-    ...rest,
-    rerender(next: React.ReactElement) {
-      act(() => {
-        rerender(next);
-      });
-    },
-    unmount() {
-      act(() => {
-        unmount();
-      });
-    },
-  };
+  if (container.parentNode) {
+    container.parentNode.removeChild(container);
+  }
 }
 
-export const fireEvent = new Proxy(rtlFireEvent, {
-  apply(target, thisArg, argArray: Parameters<typeof rtlFireEvent>) {
-    let value: unknown;
+export function cleanup() {
+  for (const entry of Array.from(mountedRoots)) {
+    mountedRoots.delete(entry);
+    cleanupEntry(entry);
+  }
+}
+
+export const fireEvent = new Proxy(domFireEvent, {
+  apply(target, thisArg, argArray) {
+    let result: unknown;
     act(() => {
-      value = Reflect.apply(target, thisArg, argArray);
+      result = Reflect.apply(target, thisArg, argArray);
     });
-    return value;
+    return result;
   },
   get(target, property, receiver) {
     const value = Reflect.get(target, property, receiver);
@@ -48,25 +54,51 @@ export const fireEvent = new Proxy(rtlFireEvent, {
       return (...args: unknown[]) => {
         let result: unknown;
         act(() => {
-          result = (value as (...methodArgs: unknown[]) => unknown)(...args);
+          result = (value as (...fnArgs: unknown[]) => unknown)(...args);
         });
         return result;
       };
     }
     return value;
   },
-}) as typeof rtlFireEvent;
+}) as typeof domFireEvent;
 
-export const waitFor: typeof rtlWaitFor = (async (callback, options) => {
+export const waitFor: WaitFor = (async (callback, options) => {
   let result: Awaited<ReturnType<typeof callback>>;
   await act(async () => {
-    result = await rtlWaitFor(callback, options);
+    result = await domWaitFor(callback, options);
   });
   return result!;
-}) as typeof rtlWaitFor;
+}) as WaitFor;
 
-export function cleanup() {
-  rtlCleanup();
+export function render(ui: React.ReactElement) {
+  const container = document.createElement("div");
+  document.body.appendChild(container);
+
+  const root = createRoot(container);
+  const entry: MountedRoot = { root, container };
+  mountedRoots.add(entry);
+
+  act(() => {
+    root.render(ui);
+  });
+
+  const boundQueries = getQueriesForElement(container, queries);
+
+  return {
+    container,
+    ...boundQueries,
+    rerender(next: React.ReactElement) {
+      act(() => {
+        root.render(next);
+      });
+    },
+    unmount() {
+      if (!mountedRoots.has(entry)) return;
+      mountedRoots.delete(entry);
+      cleanupEntry(entry);
+    },
+  };
 }
 
 export { screen };

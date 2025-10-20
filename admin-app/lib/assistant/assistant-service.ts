@@ -109,6 +109,6 @@ export async function logAssistantDecision(
   }
 
   await delay(200);
-  console.warn("assistant.log_mock", payload);
+  console.info("assistant.log_mock", payload);
   return { status: "ok" };
 }

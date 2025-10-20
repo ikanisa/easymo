@@ -11,6 +11,7 @@ type ErrorProps = {
 export default function GlobalError({ error, reset }: ErrorProps) {
   useEffect(() => {
     // Surface the error for observability tools; console is a baseline.
+    // eslint-disable-next-line no-console
     console.error("global_error_boundary", {
       message: error?.message,
       stack: error?.stack,

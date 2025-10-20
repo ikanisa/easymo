@@ -108,7 +108,7 @@ export async function verifySessionToken(token: string): Promise<SessionClaims |
     const candidate = secrets[index];
     if (await verifyHmacSha256(encodedPayload, signature, candidate)) {
       if (index > 0) {
-        console.warn("session.secret_fallback_used");
+        console.info("session.secret_fallback_used");
       }
       verified = true;
       break;

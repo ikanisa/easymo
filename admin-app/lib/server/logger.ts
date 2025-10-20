@@ -15,7 +15,7 @@ export function logStructured(context: LogContext) {
     timestamp: new Date().toISOString(),
     ...context,
   };
-  process.stdout.write(`${JSON.stringify(payload)}\n`);
+  console.log(JSON.stringify(payload));
 
   // Optional: forward logs to an external drain if configured.
   try {

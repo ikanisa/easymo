@@ -54,8 +54,7 @@ describe("TripDiagnosticsSection", () => {
 
     render(<TripDiagnosticsSection />);
 
-    const input = screen.getAllByPlaceholderText(/trip id/i)[0];
-    fireEvent.change(input, {
+    fireEvent.change(screen.getByPlaceholderText(/trip id/i), {
       target: { value: " trip-123 " },
     });
     fireEvent.submit(screen.getByRole("button", { name: /check/i }));
@@ -74,8 +73,7 @@ describe("TripDiagnosticsSection", () => {
 
     render(<TripDiagnosticsSection />);
 
-    const input = screen.getAllByPlaceholderText(/trip id/i)[0];
-    fireEvent.change(input, {
+    fireEvent.change(screen.getByPlaceholderText(/trip id/i), {
       target: { value: "trip-404" },
     });
     fireEvent.submit(screen.getByRole("button", { name: /check/i }));

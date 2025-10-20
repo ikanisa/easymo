@@ -1,4 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { mockDashboardKpis, mockTimeseries } from "@/lib/mock-data";
+
 const originalEnv = { ...process.env };
 
 vi.mock("@/lib/server/supabase-admin", () => ({
@@ -52,7 +54,7 @@ describe("dashboard snapshot", () => {
     (globalThis as unknown as { window?: unknown }).window = originalWindow;
   });
 
-  it("throws when Supabase RPC fails", async () => {
+  it("falls back to mocks when RPC fails", async () => {
     const originalWindow =
       (globalThis as unknown as { window?: unknown }).window;
     delete (globalThis as unknown as { window?: unknown }).window;
@@ -69,9 +71,10 @@ describe("dashboard snapshot", () => {
     const { getDashboardSnapshot } = await import(
       "@/lib/dashboard/dashboard-service"
     );
-    await expect(getDashboardSnapshot()).rejects.toThrow(
-      "Supabase RPC dashboard_snapshot returned an error",
-    );
+    const result = await getDashboardSnapshot();
+    expect(result.integration.status).toBe("degraded");
+    expect(result.data.kpis.length).toBe(mockDashboardKpis.length);
+    expect(result.data.timeseries.length).toBe(mockTimeseries.length);
 
     (globalThis as unknown as { window?: unknown }).window = originalWindow;
   });

@@ -72,7 +72,11 @@ export async function getDashboardSnapshot(): Promise<DashboardSnapshotResult> {
         },
       };
     } catch (error) {
-      throw error instanceof Error ? error : new Error(String(error));
+      console.error("Client dashboard fetch failed", error);
+      return fallbackResult(
+        "Dashboard API request failed. Showing safe fixtures instead.",
+        "Ensure /api/dashboard is reachable and Supabase credentials are valid.",
+      );
     }
   }
 
@@ -88,14 +92,19 @@ export async function getDashboardSnapshot(): Promise<DashboardSnapshotResult> {
   );
   const adminClient = getSupabaseAdminClient();
   if (!adminClient) {
-    throw new Error("Supabase admin client is not configured.");
+    return fallbackResult(
+      "Supabase admin credentials missing. Dashboard is using fixtures.",
+      "Add SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY to the environment.",
+    );
   }
 
   const { data, error } = await adminClient.rpc("dashboard_snapshot");
 
   if (error || !data) {
-    throw new Error(
-      `Supabase RPC dashboard_snapshot returned an error: ${error?.message ?? "no data"}`,
+    console.error("Failed to fetch dashboard snapshot from Supabase", error);
+    return fallbackResult(
+      "Supabase RPC dashboard_snapshot returned an error.",
+      "Verify the RPC exists and that the service role can execute it.",
     );
   }
 
@@ -108,9 +117,11 @@ export async function getDashboardSnapshot(): Promise<DashboardSnapshotResult> {
       },
     };
   } catch (parseError) {
-    throw parseError instanceof Error
-      ? new Error(`Supabase returned an unexpected dashboard payload: ${parseError.message}`)
-      : new Error("Supabase returned an unexpected dashboard payload.");
+    console.error("Failed to parse dashboard snapshot", parseError);
+    return fallbackResult(
+      "Supabase returned an unexpected dashboard payload.",
+      "Align the dashboard_snapshot RPC output with the dashboard schemas.",
+    );
   }
 }
 

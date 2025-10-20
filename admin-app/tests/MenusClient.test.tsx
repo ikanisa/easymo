@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, fireEvent } from "./utils/react-testing";
+import { render, screen, fireEvent } from '@testing-library/react';
 import { MenusClient } from '@/app/(panel)/menus/MenusClient';
 
 vi.mock('@/lib/queries/menus', () => ({
@@ -32,3 +32,4 @@ describe('MenusClient', () => {
     expect(screen.getByText('Menu versions')).toBeInTheDocument();
   });
 });
+
