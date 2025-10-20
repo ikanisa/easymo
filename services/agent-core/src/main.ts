@@ -33,7 +33,6 @@ async function bootstrap() {
 }
 
 bootstrap().catch((error) => {
-  // eslint-disable-next-line no-console
   console.error("agent-core bootstrap failed", error);
   process.exit(1);
 });
