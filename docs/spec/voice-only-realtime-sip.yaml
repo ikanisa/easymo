@@ -1,0 +1,463 @@
+version: 1.0
+updated: 2025-10-20
+owners:
+  - name: "Codex (world-class CTO ownership rule)"
+product: "VoiceSalesAgent (Rwanda + Malta)"
+compliance:
+  consent_recording: required
+  pii_handling: "minimal retention, encryption at rest + transit"
+  call_recording_law_hint: "announce + obtain verbal consent with opt-out"
+references:
+  openai_realtime_intro: "Realtime API GA incl. SIP + remote MCP"
+  openai_realtime_concepts: "Realtime API concepts & low-latency voice"
+  openai_realtime_server_controls: "SIP/WebRTC + server-side controls & webhooks"
+  responses_api_mcp: "Responses API + remote MCP tools"
+  agents_sdk: "OpenAI Agents SDK for orchestration"
+  twilio_sip_trunking: "Connect Twilio Elastic SIP Trunking to OpenAI Realtime"
+  twilio_warm_transfer: "Warm transfer from Realtime to human via Programmable SIP"
+  twilio_voice_resources_hub: "Twilio + OpenAI Realtime resource hub"
+global_rules:
+  additive_only_changes: true
+  maximize_openai_agent_sdk_and_tools: true
+regions:
+  - Rwanda
+  - Malta
+payments:
+  Rwanda: "MoMo USSD only (launcher link); no payment APIs"
+  Malta: "Revolut link stored in DB; no payment APIs"
+channels:
+  - "PSTN via Twilio Elastic SIP Trunk"
+  - "WhatsApp follow-ups via WABA"
+voice_only: true
+HITL_handoff: "warm transfer to human agent (SIP) when requested or confidence < threshold"
+stack:
+  runtime:
+    - "node: 20.x"
+    - "framework: NestJS (backend services)"
+    - "db: Supabase (Postgres + Storage + RLS)"
+    - "cache: optional Redis (rate-limit + call state)"
+  openai:
+    realtime_api: "gpt-realtime-* (SIP session)"
+    responses_api: "tool use + structured outcomes"
+    agents_sdk: "multi-agent orchestration + memory"
+  telephony:
+    twilio_elastic_sip_trunk: "Inbound/Outbound PSTN ↔ SIP"
+  mcp:
+    remote_servers:
+      - crm-mcp
+      - kyc-mcp
+      - pricing-mcp
+env:
+  required:
+    - OPENAI_API_KEY
+    - OPENAI_PROJECT_ID
+    - OPENAI_REALTIME_SIP_WEBHOOK_SECRET
+    - SUPABASE_URL
+    - SUPABASE_SERVICE_ROLE_KEY
+    - TWILIO_ACCOUNT_SID
+    - TWILIO_AUTH_TOKEN
+    - TWILIO_SIP_TRUNK_SID
+    - TWILIO_SIP_DOMAIN
+    - WABA_VERIFY_TOKEN
+    - WABA_ACCESS_TOKEN
+    - WABA_PHONE_NUMBER_ID
+    - REGION_DEFAULTS="RW,MT"
+    - REVOLUT_PAYMENT_LINK_MT
+    - MOMO_USSD_PREFIX_RW="1821*"
+    - TRACE_SAMPLING="0.1"
+supabase:
+  schema_sql: |
+    -- Core call ledger
+    create table if not exists voice_calls (
+    id uuid primary key default gen_random_uuid(),
+    direction text check (direction in ('inbound','outbound')) not null,
+    from_e164 text,
+    to_e164 text,
+    twilio_call_sid text unique,
+    sip_session_id text,
+    project_id text,
+    locale text default 'en',
+    started_at timestamptz default now(),
+    ended_at timestamptz,
+    duration_seconds int,
+    consent_obtained boolean default false,
+    outcome text,
+    handoff boolean default false,
+    handoff_target text,
+    country text, -- RW or MT
+    metadata jsonb default '{}'::jsonb
+    );
+
+    -- Transcript + events
+    create table if not exists voice_events (
+      id uuid primary key default gen_random_uuid(),
+      call_id uuid references voice_calls(id) on delete cascade,
+      t timestamptz default now(),
+      type text,                    -- 'asr','tts','tool_call','state','handoff'
+      payload jsonb
+    );
+
+    create table if not exists transcripts (
+      id uuid primary key default gen_random_uuid(),
+      call_id uuid references voice_calls(id) on delete cascade,
+      role text check (role in ('user','assistant','system')),
+      content text,
+      t timestamptz default now(),
+      lang text
+    );
+
+    -- Consent artifacts (audio + transcript summary)
+    create table if not exists call_consents (
+      id uuid primary key default gen_random_uuid(),
+      call_id uuid references voice_calls(id) on delete cascade,
+      consent_text text,
+      consent_result boolean,
+      audio_url text,               -- if recorded
+      t timestamptz default now()
+    );
+
+    -- Tool/MCP actions
+    create table if not exists mcp_tool_calls (
+      id uuid primary key default gen_random_uuid(),
+      call_id uuid references voice_calls(id) on delete cascade,
+      server text,
+      tool text,
+      args jsonb,
+      result jsonb,
+      t timestamptz default now(),
+      success boolean
+    );
+
+    -- WhatsApp follow-ups / threads
+    create table if not exists wa_threads (
+      id uuid primary key default gen_random_uuid(),
+      call_id uuid references voice_calls(id) on delete cascade,
+      wa_conversation_id text,
+      customer_msisdn text,
+      state text,
+      last_message_at timestamptz default now()
+    );
+
+    -- Minimal per-user memory (opt-in)
+    create table if not exists voice_memories (
+      id uuid primary key default gen_random_uuid(),
+      msisdn text,
+      country text,
+      prefs jsonb,
+      last_seen_at timestamptz default now()
+    );
+  rls:
+    enable: true
+    policies: |
+      alter table voice_calls enable row level security;
+      create policy svc_rw on voice_calls
+      for all using (auth.role() = 'service_role') with check (true);
+      -- Repeat analogous service_role policies for other tables.
+  storage:
+    buckets:
+      - name: call-audio
+        public: false
+  edges:
+    functions:
+      - name: wa-webhook
+        path: supabase/functions/wa-webhook/index.ts
+      - name: wa-send
+        path: supabase/functions/wa-send/index.ts
+      - name: call-audit-export
+        path: supabase/functions/call-audit-export/index.ts
+services:
+  - name: api-gateway
+    kind: nestjs
+    routes:
+      - "POST /realtime/webhook # Verify + answer realtime.call.incoming"
+      - "POST /realtime/events # Sideband events from OpenAI Realtime"
+      - "POST /twilio/status # Call status callbacks"
+      - "POST /dialer/outbound # Trigger outbound call campaign"
+      - "POST /handoff/warm # Escalate to human agent (SIP)"
+      - "POST /whatsapp/webhook # WABA inbound"
+      - "POST /payment/confirm # Store SMS proof hash (RW) or Revolut link ping (MT)"
+  - name: dialer-worker
+    kind: worker
+    tasks:
+      - "queue outbound"
+      - "rate limit"
+      - "retry rules"
+  - name: observability
+    exporters:
+      - "OTLP traces"
+      - "structured logs"
+security:
+  verify_incoming_realtime_webhook_signature: true
+  verify_twilio_request_signature: true
+  auth_between_services: "JWT (short-lived) + IP allowlist"
+  pii_redaction: "mask MSISDN in logs; store full in DB only"
+  encryption_at_rest: "Supabase default + KMS for sensitive columns"
+localization:
+  locales:
+    rw:
+      - kin
+      - en
+    mt:
+      - en
+      - mt
+  tts_voice_map:
+    kin: africa_female_1
+    en: alloy
+    mt: europe_male_1
+  consent_prompts:
+    kin: "Iyi ni serivisi y’amasaha yo guhamagara yifashisha AI..."
+    en: "This call is recorded to improve service and verify payments..."
+    mt: "Din il-sejħa qed tiġi rreġistrata..."
+openai:
+  realtime_session_template: |
+    {
+    "instructions": "You are VoiceSalesAgent for {{country}}. Always start by obtaining recording consent, then identify intent, verify identity if needed, and solve. Offer WhatsApp recap. Trigger warm transfer if user asks or confidence < {{handoff_threshold}}. Use tools via MCP for CRM/KYC/Inventory. NEVER take payment over phone.",
+    "voice": "{{voice_by_locale}}",
+    "modalities": ["audio"],
+    "input_audio_format": "g711_ulaw",
+    "turn_detection": {"type":"server_vad"},
+    "tools": [
+    {"type":"mcp", "server":"crm-mcp"},
+    {"type":"mcp", "server":"kyc-mcp"},
+    {"type":"mcp", "server":"pricing-mcp"},
+    {"type":"function", "name":"create_whatsapp_followup", "parameters":{"type":"object","properties":{"msisdn":{"type":"string"},"summary":{"type":"string"}},"required":["msisdn","summary"]}},
+    {"type":"function", "name":"initiate_warm_transfer", "parameters":{"type":"object","properties":{"queue":{"type":"string"},"reason":{"type":"string"}},"required":["queue"]}}
+    ]
+    }
+responses_orchestrator:
+  description: "Agents SDK coordinator supervises the Realtime session, tool calls, and HITL handoffs."
+  policies:
+    - fallback_to_responses_api_on_tool_heavy_turns: true
+    - trim_allowed_tools_per_turn: true
+    - structured_outputs_for_quotes: true
+mcp_servers:
+  - label: crm-mcp
+    url: "https://api.example.com/mcp/crm"
+    auth: "Bearer {{CRM_MCP_TOKEN}}"
+    allowed_tools:
+      - findLead
+      - createTicket
+      - logInteraction
+  - label: kyc-mcp
+    url: "https://api.example.com/mcp/kyc"
+    auth: "Bearer {{KYC_MCP_TOKEN}}"
+    allowed_tools:
+      - verifyPolicy
+      - checkCustomer
+  - label: pricing-mcp
+    url: "https://api.example.com/mcp/pricing"
+    auth: "Bearer {{PRICING_MCP_TOKEN}}"
+    allowed_tools:
+      - quoteMotor
+      - quoteHealth
+      - quoteTravel
+twilio_sip_trunking:
+  steps:
+    - "Create Elastic SIP Trunk, add Termination SIP Domain + Credentials."
+    - "Point Origination URI to OpenAI Realtime SIP Connector per guide."
+    - "Configure TwiML/App for status callbacks to /twilio/status."
+    - "Whitelist codecs: PCMU (G.711 u-law), 8kHz."
+    - "Enable call recording if policy allows; otherwise record only consent."
+warm_transfer:
+  method: "Programmable SIP warm transfer to human queue"
+  triggers:
+    - "user says: agent / human / manager"
+    - "intent: complaint / retention / high value"
+    - "low ASR confidence or risk flags"
+number_assignment:
+  inbound_dids:
+    - "+2507XXXXXXX (RW)"
+    - "+3562XXXXXXX (MT)"
+  outbound_caller_id_policies: "per-country compliance"
+workflows:
+  inbound_call:
+    - "event: realtime.call.incoming (OpenAI → /realtime/webhook)"
+    - "action: Verify signature; create voice_calls row; reply with session config template (voice, tools, locale)."
+    - "agent_flow:"
+    - "1: Greeting + consent"
+    - "2: Intent capture + disambiguation"
+    - "3: If pricing: call pricing-mcp tool; if support: crm-mcp ticket; if KYC: kyc-mcp verify"
+    - "4: Offer WhatsApp recap; create follow-up via function tool"
+    - "5: If escalation: initiate_warm_transfer tool → /handoff/warm"
+    - "post_call: Persist durations, transcript summary, consent status; emit analytics."
+  outbound_dialer:
+    - "input: list of MSISDN + country; cadence rules; do-not-call list"
+    - "dialer_worker: Create OpenAI SIP session via Twilio origination; attach campaign metadata"
+    - "same_agent_flow_as_inbound: true"
+  whatsapp_followup:
+    - "trigger: create_whatsapp_followup tool"
+    - "content: summary, links (MoMo USSD RW or Revolut MT), next steps"
+    - "storage: wa_threads with wa_conversation_id"
+payments_policy:
+  Rwanda: "Reply with MoMo USSD launcher {{MOMO_USSD_PREFIX_RW}}{{amount}}# in WhatsApp; mark payment pending."
+  Malta: "Send Revolut link from REVOLUT_PAYMENT_LINK_MT; mark pending."
+  confirmation: "User sends SMS proof or Revolut confirmation → /payment/confirm → attach to call record."
+human_handoff:
+  warm_transfer_path: "API invokes Twilio SIP transfer to human queue; update voice_calls.handoff=true"
+  context: "Pass last N transcript lines + CRM ticket id to human via screen-pop"
+observability:
+  metrics:
+    - consent_rate
+    - asr_confidence_avg
+    - mcp_success_rate
+    - warm_transfer_rate
+    - first_call_resolution
+    - avg_latency_ms
+  logs:
+    - session_id
+    - tool_calls
+    - errors
+    - redacted_msisdn
+  traces:
+    - "OpenTelemetry OTLP; sample via TRACE_SAMPLING"
+call_recordings:
+  policy: "store URI only; access-controlled via Storage signed URLs"
+rate_limits:
+  dialer:
+    rw:
+      cpm: 10
+    mt:
+      cpm: 10
+  mcp_tool_calls_per_turn: 3
+  realtime_latency_budget_ms: 900
+test_plan:
+  unit:
+    - tool schemas validate
+    - locale routing
+  integration:
+    - "Twilio → Realtime incoming happy path"
+    - "MCP failure fallback → Responses API"
+    - "warm transfer path"
+    - "WhatsApp recap"
+  load:
+    - "50 cps burst, 10 sustained"
+qa_scripts: "fixtures/voice/*.wav (consent variants, accents Kinyarwanda/English/Maltese)"
+templates:
+  nest_controller_realtime_webhook.ts: |
+    import { Controller, Post, Headers, Body, Res } from '@nestjs/common';
+    import { Response } from 'express';
+    import { SupabaseService } from '../supabase';
+    import { sign, verify } from '../crypto';
+    @Controller('/realtime')
+    export class RealtimeController {
+    constructor(private readonly db: SupabaseService) {}
+    @Post('webhook')
+    async answer(@Headers() hdrs: any, @Body() body: any, @Res() res: Response) {
+    // 1) Verify OpenAI Realtime webhook signature
+    if (!verify(hdrs['x-openai-signature'], body, process.env.OPENAI_REALTIME_SIP_WEBHOOK_SECRET)) {
+    return res.status(401).send('bad sig');
+    }
+    // 2) Create call record
+    const { from, to, locale, project_id, sip_session_id } = body;
+    const { data: call } = await this.db.createCall({ from, to, locale, project_id, sip_session_id, direction:'inbound' });
+    // 3) Respond with session config (tools + voice + policies)
+    const config = {
+    instructions: You are VoiceSalesAgent for ${body.country ?? 'RW'}. Obtain consent first...,
+    voice: locale === 'kin' ? 'africa_female_1' : 'alloy',
+    modalities: ['audio'],
+    input_audio_format: 'g711_ulaw',
+    turn_detection: { type: 'server_vad' },
+    tools: [
+    { type:'mcp', server:'crm-mcp' },
+    { type:'mcp', server:'kyc-mcp' },
+    { type:'mcp', server:'pricing-mcp' },
+    { type:'function', name:'create_whatsapp_followup',
+    parameters:{type:'object',properties:{msisdn:{type:'string'},summary:{type:'string'}},required:['msisdn','summary']} },
+    { type:'function', name:'initiate_warm_transfer',
+    parameters:{type:'object',properties:{queue:{type:'string'},reason:{type:'string'}},required:['queue']} }
+    ],
+    sideband: { url: process.env.BACKEND_BASE_URL + '/realtime/events', bearer: await sign({ call_id: call.id }) }
+    };
+    return res.json(config);
+    }
+    @Post('events')
+    async events(@Headers() hdrs:any, @Body() evt:any, @Res() res:Response) {
+    // persist tool calls, transcripts, state, etc.
+    await this.db.persistRealtimeEvent(evt);
+    // Handle function tools
+    if (evt.type === 'response.function.call') {
+    const { name, arguments: args } = evt.data;
+    if (name === 'create_whatsapp_followup') { /* call WA edge fn */ }
+    if (name === 'initiate_warm_transfer') { /* call Twilio transfer */ }
+    }
+    res.json({ ok: true });
+    }
+    }
+
+  twilio_status_controller.ts: |
+    @Controller('/twilio')
+    export class TwilioController {
+    @Post('status')
+    status(@Headers() h:any, @Body() b:any) {
+    // Verify Twilio signature (X-Twilio-Signature)
+    // Update voice_calls with duration, end reason
+    }
+    }
+
+  supabase_edge_wa_send.ts: |
+    import 'https://deno.land/x/xhr@0.3.0/mod.ts
+    ';
+    Deno.serve(async (req) => {
+    const { msisdn, text } = await req.json();
+    const token = Deno.env.get('WABA_ACCESS_TOKEN')!;
+    const phoneId = Deno.env.get('WABA_PHONE_NUMBER_ID')!;
+    const r = await fetch('https://graph.facebook.com/v20.0/${phoneId}/messages', {
+    method:'POST',
+    headers:{ 'Content-Type':'application/json', 'Authorization':`Bearer ${token}` },
+    body: JSON.stringify({ messaging_product:'whatsapp', to: msisdn, type:'text', text:{ body: text }})
+    });
+    return new Response(JSON.stringify(await r.json()), { status: r.status });
+    });
+
+  warm_transfer_service.ts: |
+    import twilio from 'twilio';
+    const client = twilio(process.env.TWILIO_ACCOUNT_SID!, process.env.TWILIO_AUTH_TOKEN!);
+    export async function warmTransfer(callSid: string, queue: string) {
+    // Example: connect to a SIP URI where human agents are waiting
+    return client.calls(callSid).update({
+    method: 'POST',
+    url: ${process.env.BACKEND_BASE_URL}/twiml/warm-transfer?queue=${encodeURIComponent(queue)}
+    });
+    }
+
+  twiml_warm_transfer.xml.ts: |
+    import { Controller, Get, Query, Res } from '@nestjs/common';
+    import { Response } from 'express';
+    @Controller('/twiml')
+    export class TwiML {
+    @Get('warm-transfer')
+    warm(@Query('queue') queue:string, @Res() res:Response) {
+    const xml = <?xml version="1.0" encoding="UTF-8"?> <Response> <Dial> <Sip>sip:${queue}@${process.env.TWILIO_SIP_DOMAIN}</Sip> </Dial> </Response>;
+    res.set('Content-Type','text/xml').send(xml);
+    }
+    }
+
+  consent_prompt.md: |
+    EN: "This call is recorded to improve service and verify payments. Do you agree?"
+    KIN: "Iyi njyana irimo gufatwamo ijwi..."
+    MT: "Din il-sejħa qed tiġi rreġistrata..."
+
+  dialer_outbound_example.ts: |
+    export async function placeOutbound(msisdn:string, country:'RW'|'MT') {
+    // Use Twilio to originate a call into OpenAI Realtime SIP Connector per Twilio guide.
+    // Attach campaign metadata via 'SipHeader' or Twilio 'StatusCallbackEvent'.
+    }
+ci_cd:
+  checks:
+    - lint
+    - typecheck
+    - unit
+    - migration_guard: "no destructive ops"
+  secrets_scan: true
+rollout:
+  stages:
+    - dev: "single DID, RW only"
+    - staging: "RW + MT, low CPS"
+    - production: "geo split trunks, failover"
+playbooks:
+  incident_voice_quality:
+    - "Twilio media codec, jitter"
+    - "Realtime VAD thresholds, turn timeouts"
+    - "fall back to text-only Responses API if audio path impaired"
+  incident_tool_outage:
+    - "disable affected MCP via allowed_tools filter; continue core script"

@@ -45,7 +45,27 @@ if command -v deno >/dev/null 2>&1; then
   else
     echo "(no staged Deno files for lint)"
   fi
-  echo "→ Deno tests"
+  echo "→ Deno tests (only if Deno files staged)"
+  if ((${#DENO_LINT_FILES[@]})) || ((${#DENO_FMT_FILES[@]})); then
+    SUPABASE_URL=http://localhost \
+    SUPABASE_SERVICE_ROLE_KEY=test \
+    WA_PHONE_ID=1 \
+    WA_TOKEN=1 \
+    WA_APP_SECRET=1 \
+    WA_VERIFY_TOKEN=1 \
+    VOUCHER_SIGNING_SECRET=test \
+    deno test --allow-env --no-check supabase/functions/_shared/flow_crypto.test.ts
+    SUPABASE_URL=http://localhost \
+    SUPABASE_SERVICE_ROLE_KEY=test \
+    WA_PHONE_ID=1 \
+    WA_TOKEN=1 \
+    WA_APP_SECRET=1 \
+    WA_VERIFY_TOKEN=1 \
+    VOUCHER_SIGNING_SECRET=test \
+    deno test --allow-env --no-check supabase/functions/wa-webhook/notify/sender.test.ts
+  else
+    echo "(no staged Deno files; skipping Deno unit tests)"
+  fi
   SUPABASE_URL=http://localhost \
   SUPABASE_SERVICE_ROLE_KEY=test \
   WA_PHONE_ID=1 \

@@ -1,5 +1,6 @@
 import type { RouterContext } from "../../types.ts";
 import { sendButtons, sendList } from "../../wa/client.ts";
+import { t } from "../../i18n/translator.ts";
 
 type SendAttemptState = {
   sent: boolean;
@@ -48,7 +49,10 @@ export async function sendAdminViewButton(
 ): Promise<void> {
   const body = withEmoji(options.body, options.emoji);
   await withSendGuard(ctx, `button:${options.id}`, async () => {
-    await sendButtons(ctx.from, body, [{ id: options.id, title: "View" }]);
+    await sendButtons(ctx.from, body, [{
+      id: options.id,
+      title: t(ctx.locale, "common.buttons.view"),
+    }]);
   });
 }
 
@@ -68,7 +72,7 @@ export async function sendAdminList(
       body: withEmoji(list.body, options.emoji),
       sectionTitle: list.sectionTitle,
       rows: list.rows,
-      buttonText: "View",
+      buttonText: t(ctx.locale, "common.buttons.view"),
     });
   });
 }

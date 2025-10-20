@@ -70,7 +70,7 @@ if (typeof window !== "undefined") {
 // indirectly use legacy helpers in third-party libs.
 const originalError = console.error;
 const originalWarn = console.warn;
-const SUPPRESSED = /ReactDOMTestUtils\.act is deprecated/i;
+const SUPPRESSED = /ReactDOMTestUtils\.act is deprecated|not wrapped in act\(|When testing, code that causes React state updates should be wrapped into act\(\)/i;
 console.error = (...args: unknown[]) => {
   if (typeof args[0] === 'string' && SUPPRESSED.test(args[0])) return;
   // @ts-expect-error forwarding console args preserves variadic signature

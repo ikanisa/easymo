@@ -1,5 +1,6 @@
 import type { RouterContext } from "../../types.ts";
 import { sendText } from "../../wa/client.ts";
+import { t } from "../../i18n/translator.ts";
 import { IDS } from "../../wa/ids.ts";
 import { isAdminNumber } from "./auth.ts";
 
@@ -8,7 +9,7 @@ export async function handleAdminQuickAction(
   id: string,
 ): Promise<void> {
   if (!(await isAdminNumber(ctx))) {
-    await sendText(ctx.from, "Admin tools are restricted.");
+    await sendText(ctx.from, t(ctx.locale, "admin.tools.restricted"));
     return;
   }
   switch (id) {

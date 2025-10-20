@@ -43,6 +43,7 @@ import {
 import { handleScheduleRole } from "../domains/mobility/schedule.ts";
 import { handleSeePassengers } from "../domains/mobility/nearby.ts";
 import { sendText } from "../wa/client.ts";
+import { t } from "../i18n/translator.ts";
 
 export async function handleText(
   ctx: RouterContext,
@@ -61,12 +62,15 @@ export async function handleText(
     if (error) {
       await sendText(
         ctx.from,
-        `${error} Reply with your vehicle plate to continue.`,
+        `${error} ${t(ctx.locale, "vehicle.plate.reply_with_plate")}`,
       );
       return true;
     }
     const saved = normalizePlate(body) ?? body.trim();
-    await sendText(ctx.from, `✅ Plate saved: ${saved}`);
+    await sendText(
+      ctx.from,
+      t(ctx.locale, "vehicle.plate.saved", { plate: saved }),
+    );
     if (resume.type === "schedule_role") {
       await handleScheduleRole(ctx, resume.roleId);
     } else if (resume.type === "nearby_passengers") {
