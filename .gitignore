@@ -24,6 +24,9 @@ coverage/
 .pnpm-state/
 *.local
 
+# TypeScript
+*.tsbuildinfo
+
 # Editor / IDE
 .vscode/
 .idea/
