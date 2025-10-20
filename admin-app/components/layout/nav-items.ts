@@ -136,6 +136,12 @@ export const NAV_ITEMS: NavItem[] = [
     group: "Platform",
   },
   {
+    label: "Agents",
+    href: "/agents",
+    description: "Trigger orchestrator and settlement runs",
+    group: "Platform",
+  },
+  {
     label: "Settings",
     href: "/settings",
     description: "Quiet hours, throttles, templates",

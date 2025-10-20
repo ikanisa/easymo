@@ -75,14 +75,6 @@ export async function POST(request: Request) {
 
   const deepLink = buildDeepLink(token);
 
-  console.info('basket_create_success', {
-    basket_id: basketId,
-    created_by: payload.creatorUserId,
-  });
-  console.info('basket_invite_token_issued', {
-    basket_id: basketId,
-    token,
-  });
 
   const confirmationFlag = await getFeatureFlag(
     supabase,
@@ -111,11 +103,13 @@ export async function POST(request: Request) {
     } as const;
 
     const sendResult = await sendWhatsAppMessage(message);
-    console.info('wa_message_sent', {
-      basket_id: basketId,
-      ok: sendResult.ok,
-      status: sendResult.status,
-    });
+    if (!sendResult.ok) {
+      console.error('wa_message_send_failed', {
+        basket_id: basketId,
+        status: sendResult.status,
+        error: sendResult.error,
+      });
+    }
   }
 
   return jsonOk({

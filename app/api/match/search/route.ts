@@ -61,7 +61,7 @@ export async function POST(request: Request) {
     created_at: row.created_at,
   }));
 
-  console.info('match.search.completed', {
+  console.warn('match.search.completed', {
     actor_kind: body.actor_kind,
     radius_km: body.radius_km,
     has_dropoff: hasDropoff,
