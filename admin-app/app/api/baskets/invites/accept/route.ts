@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { jsonOk, jsonError, zodValidationError } from '@/lib/api/http';
 import { z } from 'zod';
 import { getSupabaseAdminClient } from '@/lib/server/supabase-admin';

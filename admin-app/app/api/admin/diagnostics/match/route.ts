@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { z } from "zod";
 import { getSupabaseAdminClient } from "@/lib/server/supabase-admin";
 import { parseAdminDiagnosticsMatch } from "@/lib/flow-exchange/admin-diagnostics";

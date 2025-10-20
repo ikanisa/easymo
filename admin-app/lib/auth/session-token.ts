@@ -24,6 +24,26 @@ function getSessionSecret(): string {
   return secret;
 }
 
+function resolveVerificationSecrets(): string[] {
+  const secrets: string[] = [];
+  try {
+    secrets.push(getSessionSecret());
+  } catch (error) {
+    console.error("session.secret_missing", error);
+  }
+
+  const fallback = process.env.ADMIN_SESSION_SECRET_FALLBACK;
+  if (fallback) {
+    if (fallback.length < 16) {
+      console.warn("session.secret_fallback_invalid_length");
+    } else if (!secrets.includes(fallback)) {
+      secrets.push(fallback);
+    }
+  }
+
+  return secrets;
+}
+
 function resolveTtlSeconds(): number {
   const raw = process.env.ADMIN_SESSION_TTL_SECONDS;
   if (!raw) return DEFAULT_SESSION_TTL_SECONDS;
@@ -78,19 +98,24 @@ export async function verifySessionToken(token: string): Promise<SessionClaims |
   const [encodedPayload, signature] = token.split(".");
   if (!encodedPayload || !signature) return null;
 
-  const secret = (() => {
-    try {
-      return getSessionSecret();
-    } catch (error) {
-      console.error("session.secret_missing", error);
-      return null;
+  const secrets = resolveVerificationSecrets();
+  if (secrets.length === 0) {
+    return null;
+  }
+
+  let verified = false;
+  for (let index = 0; index < secrets.length; index += 1) {
+    const candidate = secrets[index];
+    if (await verifyHmacSha256(encodedPayload, signature, candidate)) {
+      if (index > 0) {
+        console.info("session.secret_fallback_used");
+      }
+      verified = true;
+      break;
     }
-  })();
+  }
 
-  if (!secret) return null;
-
-  const signatureValid = await verifyHmacSha256(encodedPayload, signature, secret);
-  if (!signatureValid) {
+  if (!verified) {
     return null;
   }
 

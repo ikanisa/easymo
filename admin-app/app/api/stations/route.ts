@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { headers } from 'next/headers';
 import { z } from 'zod';
 import { jsonOk, jsonError, zodValidationError } from '@/lib/api/http';

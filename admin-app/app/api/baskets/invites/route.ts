@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { randomUUID } from 'crypto';
 import { z } from 'zod';
 import { getSupabaseAdminClient } from '@/lib/server/supabase-admin';

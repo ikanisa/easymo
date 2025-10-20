@@ -1,17 +1,73 @@
 import { serve } from "./deps.ts";
-import { supabase, WA_VERIFY_TOKEN } from "./config.ts";
+import {
+  supabase,
+  WA_BOT_NUMBER_E164,
+  WA_PHONE_ID,
+  WA_VERIFY_TOKEN,
+} from "./config.ts";
 import { verifySignature } from "./wa/verify.ts";
 import { handleMessage } from "./router/router.ts";
 import { claimEvent, releaseEvent } from "./state/idempotency.ts";
-import { ensureProfile, getState } from "./state/store.ts";
+import {
+  ensureProfile,
+  getState,
+  InvalidWhatsAppNumberError,
+} from "./state/store.ts";
+import { maybeRunRetention } from "./state/retention.ts";
 import { logEvent, logInbound, logStructuredEvent } from "./observe/log.ts";
 import { logMetric } from "./observe/logging.ts";
 import { coerceToSupportedLanguage, resolveLanguage } from "./i18n/language.ts";
 
 type ChangeRecord = { value?: { contacts?: unknown[] } };
 
+const MAX_REQUEST_BYTES = Math.max(
+  Number(Deno.env.get("WA_WEBHOOK_MAX_BYTES") ?? "262144") || 262144,
+  1024,
+);
+
+class PayloadTooLargeError extends Error {
+  constructor(readonly bytes: number) {
+    super("payload_too_large");
+  }
+}
+
 function normalizeWaId(id: string): string {
   return id.startsWith("+") ? id : `+${id}`;
+}
+
+function normalizeDisplayNumber(number: string): string {
+  const trimmed = number.trim();
+  if (!trimmed) return trimmed;
+  const digits = trimmed.replace(/[^\d+]/g, "");
+  return digits.startsWith("+") ? digits : `+${digits}`;
+}
+
+async function readRequestBodyWithLimit(
+  request: Request,
+  limit: number,
+): Promise<string> {
+  const body = request.body;
+  if (!body) return "";
+  const reader = body.getReader();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  while (true) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    if (!value) continue;
+    total += value.byteLength;
+    if (total > limit) {
+      throw new PayloadTooLargeError(total);
+    }
+    chunks.push(value);
+  }
+  const merged = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    merged.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return new TextDecoder().decode(merged);
 }
 
 function buildContactLocaleIndex(changes: ChangeRecord[]): Map<string, string> {
@@ -89,6 +145,32 @@ function detectMessageLanguage(
     null;
 }
 
+function isTargetPhoneNumber(change: any): boolean {
+  const metadata = change?.value?.metadata;
+  if (!metadata || typeof metadata !== "object") {
+    return false;
+  }
+  const phoneId = typeof metadata.phone_number_id === "string"
+    ? metadata.phone_number_id.trim()
+    : "";
+  if (phoneId && phoneId !== WA_PHONE_ID) {
+    return false;
+  }
+  const displayRaw = typeof metadata.display_phone_number === "string"
+    ? metadata.display_phone_number
+    : "";
+  if (displayRaw) {
+    const displayNormalized = normalizeDisplayNumber(displayRaw);
+    const configured = WA_BOT_NUMBER_E164
+      ? normalizeDisplayNumber(WA_BOT_NUMBER_E164)
+      : "";
+    if (configured && displayNormalized !== configured) {
+      return false;
+    }
+  }
+  return true;
+}
+
 serve(async (req: Request): Promise<Response> => {
   await logStructuredEvent("WEBHOOK_REQUEST_RECEIVED", {
     method: req.method,
@@ -114,7 +196,28 @@ serve(async (req: Request): Promise<Response> => {
   }
 
   const requestStart = Date.now();
-  const rawBody = await req.text();
+  const declaredLength = Number(req.headers.get("content-length") ?? "");
+  if (Number.isFinite(declaredLength) && declaredLength > MAX_REQUEST_BYTES) {
+    await logStructuredEvent("WEBHOOK_BODY_TOO_LARGE", {
+      declared_bytes: declaredLength,
+      limit: MAX_REQUEST_BYTES,
+    });
+    return new Response("payload_too_large", { status: 413 });
+  }
+
+  let rawBody: string;
+  try {
+    rawBody = await readRequestBodyWithLimit(req, MAX_REQUEST_BYTES);
+  } catch (err) {
+    if (err instanceof PayloadTooLargeError) {
+      await logStructuredEvent("WEBHOOK_BODY_TOO_LARGE", {
+        read_bytes: err.bytes,
+        limit: MAX_REQUEST_BYTES,
+      });
+      return new Response("payload_too_large", { status: 413 });
+    }
+    throw err;
+  }
   await logStructuredEvent("WEBHOOK_BODY_READ", { bytes: rawBody.length });
 
   if (!(await verifySignature(req, rawBody))) {
@@ -135,14 +238,22 @@ serve(async (req: Request): Promise<Response> => {
 
   await logInbound(payload);
 
-  const changes = payload?.entry?.flatMap((entry: any) =>
+  const allChanges = payload?.entry?.flatMap((entry: any) =>
     entry?.changes ?? []
   ) ??
     [];
-  const messages = changes.flatMap((change: any) =>
+  const filteredChanges = allChanges.filter(isTargetPhoneNumber);
+  const ignoredChanges = allChanges.length - filteredChanges.length;
+  if (ignoredChanges > 0) {
+    await logStructuredEvent("WEBHOOK_PHONE_MISMATCH_IGNORED", {
+      ignored: ignoredChanges,
+      total: allChanges.length,
+    });
+  }
+  const messages = filteredChanges.flatMap((change: any) =>
     change?.value?.messages ?? []
   );
-  const contactLocales = buildContactLocaleIndex(changes);
+  const contactLocales = buildContactLocaleIndex(filteredChanges);
 
   if (!messages.length) {
     await logStructuredEvent("WEBHOOK_NO_MESSAGE", {
@@ -161,11 +272,21 @@ serve(async (req: Request): Promise<Response> => {
     const from = msg.from?.startsWith("+") ? msg.from : `+${msg.from}`;
     const candidateLanguage = detectMessageLanguage(msg, contactLocales);
     const messageLanguage = coerceToSupportedLanguage(candidateLanguage);
-    const profile = await ensureProfile(
-      supabase,
-      from,
-      messageLanguage ?? undefined,
-    );
+    let profile;
+    try {
+      profile = await ensureProfile(
+        supabase,
+        from,
+        messageLanguage ?? undefined,
+      );
+    } catch (error) {
+      if (error instanceof InvalidWhatsAppNumberError) {
+        await logMetric("wa_message_invalid_sender", 1, {});
+        continue;
+      }
+      throw error;
+    }
+    const normalizedFrom = profile.whatsapp_e164 ?? from;
     const state = await getState(supabase, profile.user_id);
     const resolvedLocale = resolveLanguage(
       messageLanguage ?? undefined,
@@ -174,7 +295,12 @@ serve(async (req: Request): Promise<Response> => {
     const messageStart = Date.now();
     try {
       await handleMessage(
-        { supabase, from, profileId: profile.user_id, locale: resolvedLocale },
+        {
+          supabase,
+          from: normalizedFrom,
+          profileId: profile.user_id,
+          locale: resolvedLocale,
+        },
         msg,
         state,
       );
@@ -199,7 +325,14 @@ serve(async (req: Request): Promise<Response> => {
     }
   }
 
-  await logEvent("wa-webhook", payload, { statusCode: 200 });
+  const entryCount = Array.isArray(payload?.entry) ? payload.entry.length : 0;
+  await logEvent("wa-webhook", {
+    status_code: 200,
+    entry_count: entryCount,
+    message_count: messages.length,
+    object: typeof payload?.object === "string" ? payload.object : null,
+    processing_ms: Date.now() - requestStart,
+  });
   await logStructuredEvent("WEBHOOK_RESPONSE", {
     status: 200,
     messageCount: messages.length,
@@ -207,6 +340,8 @@ serve(async (req: Request): Promise<Response> => {
   await logMetric("wa_webhook_request_ms", Date.now() - requestStart, {
     messageCount: messages.length,
   });
+
+  await maybeRunRetention();
 
   return new Response("ok", { status: 200 });
 });

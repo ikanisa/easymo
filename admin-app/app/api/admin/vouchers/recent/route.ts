@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { jsonOk } from "@/lib/api/http";
 import { getSupabaseAdminClient } from "@/lib/server/supabase-admin";
 import { parseAdminVoucherListFromFlowExchange } from "@/lib/flow-exchange/admin-vouchers";

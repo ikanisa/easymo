@@ -29,3 +29,5 @@ Payload example:
 
 Use this hook to integrate with Slack, PagerDuty, or any monitoring system. If
 the webhook is omitted, alerts degrade gracefully to console + structured logs.
+The optional `ALERT_WEBHOOK_TIMEOUT_MS` (default 5000) defines the network
+timeout used for alert dispatches.

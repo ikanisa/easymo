@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { jsonOk, jsonError } from '@/lib/api/http';
 import { getSupabaseAdminClient } from '@/lib/server/supabase-admin';
 import { logStructured } from '@/lib/server/logger';

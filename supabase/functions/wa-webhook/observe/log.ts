@@ -1,11 +1,14 @@
 import { supabase } from "../config.ts";
 
 const INBOUND_SAMPLE_RATE = clamp01(
-  Number(Deno.env.get("WA_INBOUND_LOG_SAMPLE_RATE") ?? "0.02") || 0,
+  Number(Deno.env.get("WA_INBOUND_LOG_SAMPLE_RATE") ?? "0") || 0,
 );
 const INBOUND_SNAPSHOT_LIMIT = Math.max(
-  Number(Deno.env.get("WA_INBOUND_SNAPSHOT_LIMIT_BYTES") ?? "4096") || 0,
+  Number(Deno.env.get("WA_INBOUND_SNAPSHOT_LIMIT_BYTES") ?? "512") || 0,
   0,
+);
+const INBOUND_DEBUG_SNAPSHOT = ["1", "true"].includes(
+  (Deno.env.get("WA_INBOUND_DEBUG_SNAPSHOT") ?? "").toLowerCase(),
 );
 
 type LogMeta = Record<string, unknown> & {
@@ -53,7 +56,7 @@ async function insertLog(
 
 export async function logInbound(payload: unknown): Promise<void> {
   const summary = buildInboundSummary(payload);
-  if (shouldSampleInbound()) {
+  if (INBOUND_DEBUG_SNAPSHOT && shouldSampleInbound()) {
     const snapshot = safeStringify(payload);
     if (snapshot) {
       summary.sampled = true;

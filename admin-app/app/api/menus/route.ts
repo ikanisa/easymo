@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { z } from "zod";
 import { logStructured } from "@/lib/server/logger";
 import { getSupabaseAdminClient } from "@/lib/server/supabase-admin";

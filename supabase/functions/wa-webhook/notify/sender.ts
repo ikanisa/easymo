@@ -6,6 +6,7 @@ import {
 } from "../config.ts";
 import { logStructuredEvent } from "../observe/log.ts";
 import { emitAlert } from "../observe/alert.ts";
+import { delay, fetchWithTimeout } from "../utils/http.ts";
 
 const WHATSAPP_API_BASE_URL = Deno.env.get("WHATSAPP_API_BASE_URL") ??
   "https://graph.facebook.com/v20.0";
@@ -44,6 +45,15 @@ export const TEMPLATE_CART_REMINDER =
 
 const WA_MESSAGES_ENDPOINT = `${WHATSAPP_API_BASE_URL}/${WA_PHONE_ID}/messages`;
 const DEFAULT_NOTIFICATION_TYPE = "generic";
+const STATUS_RETRY_CODES = new Set([408, 425, 429, 500, 502, 503, 504]);
+const STATUS_RETRIES = Math.max(
+  Number(Deno.env.get("WA_HTTP_STATUS_RETRIES") ?? "2") || 2,
+  0,
+);
+const STATUS_RETRY_DELAY_MS = Math.max(
+  Number(Deno.env.get("WA_HTTP_STATUS_RETRY_DELAY_MS") ?? "400") || 400,
+  0,
+);
 
 export type MediaPayload = {
   type: "image" | "document" | "audio" | "video" | "sticker";
@@ -349,19 +359,33 @@ async function deliverNotification(
   }
 
   const body = buildWhatsAppPayload(row.to_wa_id, message, row.channel);
-  const response = await fetch(WA_MESSAGES_ENDPOINT, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${WA_TOKEN}`,
-    },
-    body: JSON.stringify(body),
-  });
+  let attempt = 0;
+  let response: Response | null = null;
+  let responseJson: unknown = null;
+  while (attempt <= STATUS_RETRIES) {
+    response = await fetchWithTimeout(WA_MESSAGES_ENDPOINT, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${WA_TOKEN}`,
+      },
+      body: JSON.stringify(body),
+    });
+    responseJson = await safeJson(response);
+    if (
+      response.ok || !STATUS_RETRY_CODES.has(response.status) ||
+      attempt >= STATUS_RETRIES
+    ) {
+      break;
+    }
+    if (STATUS_RETRY_DELAY_MS > 0) {
+      await delay(STATUS_RETRY_DELAY_MS * Math.max(attempt, 1));
+    }
+    attempt += 1;
+  }
 
-  const responseJson = await safeJson(response);
-
-  if (!response.ok) {
-    throw new WhatsAppSendError(response.status, responseJson);
+  if (!response?.ok) {
+    throw new WhatsAppSendError(response?.status ?? 500, responseJson);
   }
 
   const updatePayload = {

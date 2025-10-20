@@ -1,4 +1,5 @@
 import { WA_PHONE_ID, WA_TOKEN } from "../config.ts";
+import { delay, fetchWithTimeout } from "../utils/http.ts";
 
 export class WhatsAppClientError extends Error {
   readonly status: number;
@@ -13,20 +14,40 @@ export class WhatsAppClientError extends Error {
 import { safeButtonTitle, safeRowDesc, safeRowTitle } from "../utils/text.ts";
 
 const GRAPH_BASE = "https://graph.facebook.com/v20.0";
+const STATUS_RETRY_CODES = new Set([408, 425, 429, 500, 502, 503, 504]);
+const STATUS_RETRIES = Math.max(
+  Number(Deno.env.get("WA_HTTP_STATUS_RETRIES") ?? "2") || 2,
+  0,
+);
+const STATUS_RETRY_DELAY_MS = Math.max(
+  Number(Deno.env.get("WA_HTTP_STATUS_RETRY_DELAY_MS") ?? "400") || 400,
+  0,
+);
 
 async function post(payload: unknown): Promise<void> {
-  const res = await fetch(`${GRAPH_BASE}/${WA_PHONE_ID}/messages`, {
-    method: "POST",
-    headers: {
-      "Authorization": `Bearer ${WA_TOKEN}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(payload),
-  });
-  if (!res.ok) {
+  let attempt = 0;
+  while (attempt <= STATUS_RETRIES) {
+    const res = await fetchWithTimeout(
+      `${GRAPH_BASE}/${WA_PHONE_ID}/messages`,
+      {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${WA_TOKEN}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      },
+    );
+    if (res.ok) return;
     const text = await res.text();
     console.error("wa_client.send_fail", res.status, text);
-    throw new WhatsAppClientError(res.status, text);
+    if (attempt >= STATUS_RETRIES || !STATUS_RETRY_CODES.has(res.status)) {
+      throw new WhatsAppClientError(res.status, text);
+    }
+    if (STATUS_RETRY_DELAY_MS > 0) {
+      await delay(STATUS_RETRY_DELAY_MS * Math.max(attempt, 1));
+    }
+    attempt += 1;
   }
 }
 

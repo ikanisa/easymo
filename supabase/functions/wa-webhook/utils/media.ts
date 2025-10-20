@@ -1,16 +1,20 @@
 import { WA_TOKEN } from "../config.ts";
+import { fetchWithTimeout } from "./http.ts";
 
 export async function fetchWhatsAppMedia(
   metaId: string,
 ): Promise<{ bytes: Uint8Array; mime: string; filename?: string }> {
-  const metaRes = await fetch(`https://graph.facebook.com/v20.0/${metaId}`, {
-    headers: { Authorization: `Bearer ${WA_TOKEN}` },
-  });
+  const metaRes = await fetchWithTimeout(
+    `https://graph.facebook.com/v20.0/${metaId}`,
+    {
+      headers: { Authorization: `Bearer ${WA_TOKEN}` },
+    },
+  );
   if (!metaRes.ok) {
     throw new Error(`media_meta_fail ${metaRes.status}`);
   }
   const meta = await metaRes.json();
-  const downloadRes = await fetch(meta.url, {
+  const downloadRes = await fetchWithTimeout(meta.url, {
     headers: { Authorization: `Bearer ${WA_TOKEN}` },
   });
   if (!downloadRes.ok) {

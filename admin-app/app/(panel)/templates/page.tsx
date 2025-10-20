@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import { createQueryClient } from "@/lib/api/queryClient";
 import { TemplatesClient } from "./TemplatesClient";

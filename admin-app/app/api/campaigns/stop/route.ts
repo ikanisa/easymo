@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { handleAction } from '@/lib/server/campaign-actions';
 import { createHandler } from '@/app/api/withObservability';
 
