@@ -13,9 +13,38 @@ else
 fi
 
 if command -v deno >/dev/null 2>&1; then
-  echo "→ Deno fmt + lint"
-  deno fmt --config deno.json --check supabase/functions tests/edge
-  deno lint --config deno.json
+  echo "→ Deno fmt + lint (staged)"
+  # Collect staged files and filter to Deno-relevant paths
+  DENO_FMT_FILES=()
+  DENO_LINT_FILES=()
+  while IFS= read -r f; do
+    case "$f" in
+      supabase/functions/*|tests/edge/*)
+        case "$f" in
+          *.ts|*.tsx|*.json|*.md|*.yaml|*.yml)
+            DENO_FMT_FILES+=("$f")
+            ;;
+        esac
+        case "$f" in
+          *.ts|*.tsx)
+            DENO_LINT_FILES+=("$f")
+            ;;
+        esac
+        ;;
+    esac
+  done < <(git diff --cached --name-only --diff-filter=ACM || true)
+
+  if ((${#DENO_FMT_FILES[@]})); then
+    deno fmt --config deno.json --check "${DENO_FMT_FILES[@]}"
+  else
+    echo "(no staged Deno files for fmt)"
+  fi
+
+  if ((${#DENO_LINT_FILES[@]})); then
+    deno lint --config deno.json "${DENO_LINT_FILES[@]}"
+  else
+    echo "(no staged Deno files for lint)"
+  fi
   echo "→ Deno tests"
   SUPABASE_URL=http://localhost \
   SUPABASE_SERVICE_ROLE_KEY=test \
