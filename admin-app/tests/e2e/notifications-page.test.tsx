@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { render, screen, fireEvent } from '../utils/react-testing';
+import { render, screen } from '../utils/react-testing';
+import userEvent from '@testing-library/user-event';
 import { NotificationsClient } from '@/app/(panel)/notifications/NotificationsClient';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ToastProvider } from '@/components/ui/ToastProvider';
@@ -24,7 +25,7 @@ vi.mock('@/lib/queries/notifications', () => ({
 describe('NotificationsClient', () => {
   afterEach(() => vi.clearAllMocks());
 
-  it('renders and filters by status', () => {
+  it('renders and filters by status', async () => {
     const qc = new QueryClient();
     render(
       <QueryClientProvider client={qc}>
@@ -35,7 +36,7 @@ describe('NotificationsClient', () => {
     );
     expect(screen.getByText('Notifications')).toBeInTheDocument();
     const select = screen.getAllByRole('combobox')[0];
-    fireEvent.change(select, { target: { value: 'failed' } });
+    await userEvent.selectOptions(select, 'failed');
     // No assertion on data mutation; ensure UI remains present
     expect(screen.getByText('Status summary')).toBeInTheDocument();
   });

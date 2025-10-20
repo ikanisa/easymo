@@ -1,4 +1,5 @@
-import { render, screen, fireEvent, waitFor } from "./utils/react-testing";
+import { render, screen, waitFor } from "./utils/react-testing";
+import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { AdminDiagnosticsContent } from "@/components/dashboard/admin-diagnostics/AdminDiagnosticsContent";
 import type { AdminDiagnosticsSnapshot } from "@/lib/schemas";
@@ -60,10 +61,10 @@ describe("AdminDiagnosticsContent", () => {
 
     render(<AdminDiagnosticsContent snapshot={snapshot} />);
 
-    fireEvent.change(screen.getByPlaceholderText(/trip id/i), {
-      target: { value: "trip-123" },
-    });
-    fireEvent.submit(screen.getByRole("button", { name: /check/i }));
+    const input = screen.getByPlaceholderText(/trip id/i);
+    await userEvent.clear(input);
+    await userEvent.type(input, "trip-123");
+    await userEvent.click(screen.getByRole("button", { name: /check/i }));
 
     await waitFor(() =>
       expect(getAdminDiagnosticsMatch).toHaveBeenCalledWith("trip-123"),
