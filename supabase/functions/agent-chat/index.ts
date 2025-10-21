@@ -15,7 +15,7 @@ const ENABLE_AGENT_CHAT = (Deno.env.get("ENABLE_AGENT_CHAT") ?? "true")
 
 const supabase = getServiceClient();
 
-const AgentKind = z.enum(["broker", "support", "sales", "marketing"]);
+const AgentKind = z.enum(["broker", "support", "sales", "marketing", "mobility"]);
 
 const PostPayload = z.object({
   agent_kind: AgentKind,
@@ -23,6 +23,33 @@ const PostPayload = z.object({
   session_id: z.string().uuid().optional(),
   profile_ref: z.string().min(1).optional(),
 });
+
+const ToolkitRowSchema = z.object({
+  agent_kind: AgentKind,
+  model: z.string().default("gpt-5"),
+  reasoning_effort: z.enum(["minimal", "low", "medium", "high"]).default("medium"),
+  text_verbosity: z.enum(["low", "medium", "high"]).default("medium"),
+  web_search_enabled: z.boolean().default(false),
+  web_search_allowed_domains: z.array(z.string()).nullable().optional(),
+  web_search_user_location: z.record(z.any()).nullable().optional(),
+  file_search_enabled: z.boolean().default(false),
+  file_vector_store_id: z.string().nullable().optional(),
+  file_search_max_results: z.number().int().nullable().optional(),
+  retrieval_enabled: z.boolean().default(false),
+  retrieval_vector_store_id: z.string().nullable().optional(),
+  retrieval_max_results: z.number().int().nullable().optional(),
+  retrieval_rewrite: z.boolean().optional(),
+  image_generation_enabled: z.boolean().default(false),
+  image_preset: z.record(z.any()).nullable().optional(),
+  allowed_tools: z.array(z.record(z.any())).nullable().optional(),
+  suggestions: z.array(z.string()).nullable().optional(),
+  streaming_partial_images: z.number().int().nullable().optional(),
+  metadata: z.record(z.any()).nullable().optional(),
+  created_at: z.string().optional(),
+  updated_at: z.string().optional(),
+});
+
+type ToolkitRow = z.infer<typeof ToolkitRowSchema>;
 
 const headers = {
   "Content-Type": "application/json",
@@ -76,6 +103,16 @@ function buildStubResponse(kind: z.infer<typeof AgentKind>, message: string) {
           "Escalate to marketing lead",
         ],
       };
+    case "mobility":
+      return {
+        text:
+          `Mobility assistant acknowledged “${friendly}”. I'll coordinate drivers and send updated ETAs soon. (Stub response)`,
+        suggestions: [
+          "Dispatch next driver",
+          "Share rider ETA",
+          "Escalate to dispatcher",
+        ],
+      };
   }
 }
 
@@ -93,6 +130,28 @@ async function lookupProfileId(
     return null;
   }
   return data?.user_id ?? null;
+}
+
+async function fetchToolkit(agentKind: z.infer<typeof AgentKind>): Promise<ToolkitRow | null> {
+  const { data, error } = await supabase
+    .from("agent_toolkits")
+    .select("*")
+    .eq("agent_kind", agentKind)
+    .maybeSingle();
+
+  if (error) {
+    console.error("agent-chat.toolkit_fetch_failed", error);
+    return null;
+  }
+
+  if (!data) return null;
+
+  const parsed = ToolkitRowSchema.safeParse(data);
+  if (!parsed.success) {
+    console.warn("agent-chat.toolkit_parse_failed", parsed.error.flatten());
+    return null;
+  }
+  return parsed.data;
 }
 
 async function ensureSession(params: {
@@ -162,7 +221,7 @@ async function appendMessages(
   return data ?? [];
 }
 
-async function fetchHistory(sessionId: string) {
+async function fetchHistory(sessionId: string, limit = 200) {
   const { data: session, error } = await supabase
     .from("agent_chat_sessions")
     .select("id, agent_kind, status, metadata, created_at, updated_at")
@@ -180,7 +239,7 @@ async function fetchHistory(sessionId: string) {
     .select("id, role, content, created_at")
     .eq("session_id", sessionId)
     .order("created_at", { ascending: true })
-    .limit(200);
+    .limit(limit);
 
   if (msgErr) {
     throw new Error(msgErr.message);
@@ -195,6 +254,87 @@ async function fetchHistory(sessionId: string) {
   }));
 
   return { session, messages };
+}
+
+type StoredMessage = {
+  id: string;
+  role: "user" | "agent" | "system";
+  text: string;
+  created_at: string;
+  payload?: Record<string, unknown>;
+};
+
+function mapHistoryForAgent(messages: StoredMessage[]) {
+  return messages.map((msg) => ({
+    role: msg.role,
+    text: msg.text,
+    payload: msg.payload ?? {},
+    created_at: msg.created_at,
+  }));
+}
+
+async function callAgentCore(params: {
+  sessionId: string;
+  agentKind: z.infer<typeof AgentKind>;
+  message: string;
+  profileRef?: string | null;
+  history: StoredMessage[];
+  toolkit: ToolkitRow | null;
+}) {
+  const coreUrl = CONFIG.AGENT_CORE_URL?.replace(/\/$/, "");
+  if (!coreUrl) return null;
+
+  try {
+    const response = await fetch(`${coreUrl}/respond`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        ...(CONFIG.AGENT_CORE_TOKEN
+          ? { authorization: `Bearer ${CONFIG.AGENT_CORE_TOKEN}` }
+          : {}),
+      },
+      body: JSON.stringify({
+        session_id: params.sessionId,
+        agent_kind: params.agentKind,
+        message: params.message,
+        profile_ref: params.profileRef ?? null,
+        history: mapHistoryForAgent(params.history),
+        toolkit: params.toolkit,
+      }),
+    });
+
+    const text = await response.text();
+    if (!response.ok) {
+      console.error("agent-chat.core_failed", {
+        status: response.status,
+        body: text,
+      });
+      return null;
+    }
+
+    if (!text) return null;
+
+    try {
+      const parsed = JSON.parse(text);
+      if (parsed && typeof parsed.reply === "string") {
+        return parsed as {
+          reply: string;
+          suggestions?: string[];
+          citations?: unknown;
+          sources?: unknown;
+          tool_calls?: unknown;
+          images?: Array<{ data: string; format?: string; alt?: string }>;
+          retrieval_context?: string;
+        };
+      }
+    } catch (parseError) {
+      console.error("agent-chat.core_parse_failed", parseError);
+    }
+  } catch (error) {
+    console.error("agent-chat.core_request_failed", error);
+  }
+
+  return null;
 }
 
 serve(async (req) => {
@@ -255,41 +395,71 @@ serve(async (req) => {
         profileRef: result.data.profile_ref,
       });
 
-      // Attempt Agent-Core integration, fallback to stub
-      let agentText: string | null = null;
-      const coreUrl = CONFIG.AGENT_CORE_URL?.replace(/\/$/, "");
-      if (coreUrl) {
-        try {
-          const resp = await fetch(`${coreUrl}/respond`, {
-            method: "POST",
-            headers: {
-              "content-type": "application/json",
-              ...(CONFIG.AGENT_CORE_TOKEN
-                ? { authorization: `Bearer ${CONFIG.AGENT_CORE_TOKEN}` }
-                : {}),
-            },
-            body: JSON.stringify({
-              session_id: session.id,
-              agent_kind: result.data.agent_kind,
-              message: result.data.message,
-              profile_ref: result.data.profile_ref ?? null,
-            }),
-          });
-          const coreJson = await resp.json().catch(() => ({}));
-          if (resp.ok && typeof coreJson?.text === "string") {
-            agentText = coreJson.text as string;
-          }
-        } catch (_err) {
-          // swallow and fallback
-        }
-      }
+      const toolkit = await fetchToolkit(result.data.agent_kind);
+      const historyForAgent = await fetchHistory(session.id, 50);
+      const historyMessages = (historyForAgent?.messages ?? []) as StoredMessage[];
 
-      const stub = agentText
-        ? {
-          text: agentText,
-          suggestions: ["Thanks!", "What next?", "Escalate"],
+      const agentResult = await callAgentCore({
+        sessionId: session.id,
+        agentKind: result.data.agent_kind,
+        message: result.data.message,
+        profileRef: result.data.profile_ref ?? null,
+        history: historyMessages,
+        toolkit,
+      });
+
+      const fallback = buildStubResponse(result.data.agent_kind, result.data.message);
+      const replyText = agentResult?.reply && agentResult.reply.trim().length > 0
+        ? agentResult.reply.trim()
+        : fallback.text;
+
+      const candidateSuggestions = (agentResult?.suggestions ?? [])
+        .map((item) => (typeof item === "string" ? item.trim() : ""))
+        .filter((item): item is string => item.length > 0);
+
+      const defaultSuggestions = toolkit?.suggestions?.length
+        ? toolkit.suggestions
+        : fallback.suggestions;
+
+      const suggestions = candidateSuggestions.length > 0
+        ? candidateSuggestions
+        : defaultSuggestions;
+
+      const agentPayload: Record<string, unknown> = {
+        text: replyText,
+        stub: !agentResult,
+      };
+      if (toolkit) {
+        const metadataSummary: Record<string, unknown> = {};
+        const rawMeta = (toolkit.metadata ?? {}) as Record<string, unknown>;
+        if (typeof rawMeta.system_prompt === "string" && rawMeta.system_prompt.trim().length > 0) {
+          metadataSummary.system_prompt = rawMeta.system_prompt;
         }
-        : buildStubResponse(result.data.agent_kind, result.data.message);
+        if (Array.isArray(rawMeta.instructions)) {
+          const instructions = rawMeta.instructions
+            .filter((item): item is string => typeof item === "string" && item.trim().length > 0)
+            .map((item) => item.trim());
+          if (instructions.length > 0) {
+            metadataSummary.instructions = instructions;
+          }
+        }
+        const summary: Record<string, unknown> = {
+          agent_kind: toolkit.agent_kind,
+          model: toolkit.model,
+          reasoning_effort: toolkit.reasoning_effort,
+          text_verbosity: toolkit.text_verbosity,
+        };
+        if (Object.keys(metadataSummary).length > 0) {
+          summary.metadata = metadataSummary;
+        }
+        agentPayload.toolkit = summary;
+      }
+      if (agentResult?.citations) agentPayload.citations = agentResult.citations;
+      if (agentResult?.sources) agentPayload.sources = agentResult.sources;
+      if (agentResult?.tool_calls) agentPayload.tool_calls = agentResult.tool_calls;
+      if (agentResult?.images?.length) agentPayload.images = agentResult.images;
+      if (agentResult?.retrieval_context) agentPayload.retrieval_context = agentResult.retrieval_context;
+
       const inserted = await appendMessages(session.id, [
         {
           role: "user",
@@ -297,7 +467,7 @@ serve(async (req) => {
         },
         {
           role: "agent",
-          content: { text: stub.text, stub: true },
+          content: agentPayload,
         },
       ]);
 
@@ -305,7 +475,7 @@ serve(async (req) => {
         .from("agent_chat_sessions")
         .update({
           last_user_message: result.data.message,
-          last_agent_message: stub.text,
+          last_agent_message: replyText,
           updated_at: new Date().toISOString(),
         })
         .eq("id", session.id);
@@ -321,7 +491,7 @@ serve(async (req) => {
       return respond(200, {
         session,
         messages,
-        suggestions: stub.suggestions,
+        suggestions,
       });
     } catch (error) {
       console.error("agent-chat.post_failed", error);

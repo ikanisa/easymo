@@ -7,14 +7,86 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "13.0.4"
   }
   public: {
     Tables: {
-      [_ in never]: never
+      agent_toolkits: {
+        Row: {
+          agent_kind: string;
+          model: string;
+          reasoning_effort: "minimal" | "low" | "medium" | "high";
+          text_verbosity: "low" | "medium" | "high";
+          web_search_enabled: boolean;
+          web_search_allowed_domains: string[] | null;
+          web_search_user_location: Json | null;
+          file_search_enabled: boolean;
+          file_vector_store_id: string | null;
+          file_search_max_results: number | null;
+          retrieval_enabled: boolean;
+          retrieval_vector_store_id: string | null;
+          retrieval_max_results: number | null;
+          retrieval_rewrite: boolean | null;
+          image_generation_enabled: boolean;
+          image_preset: Json | null;
+          allowed_tools: Json | null;
+          suggestions: string[] | null;
+          streaming_partial_images: number | null;
+          metadata: Json;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          agent_kind: string;
+          model?: string;
+          reasoning_effort?: "minimal" | "low" | "medium" | "high";
+          text_verbosity?: "low" | "medium" | "high";
+          web_search_enabled?: boolean;
+          web_search_allowed_domains?: string[] | null;
+          web_search_user_location?: Json | null;
+          file_search_enabled?: boolean;
+          file_vector_store_id?: string | null;
+          file_search_max_results?: number | null;
+          retrieval_enabled?: boolean;
+          retrieval_vector_store_id?: string | null;
+          retrieval_max_results?: number | null;
+          retrieval_rewrite?: boolean | null;
+          image_generation_enabled?: boolean;
+          image_preset?: Json | null;
+          allowed_tools?: Json | null;
+          suggestions?: string[] | null;
+          streaming_partial_images?: number | null;
+          metadata?: Json;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          agent_kind?: string;
+          model?: string;
+          reasoning_effort?: "minimal" | "low" | "medium" | "high";
+          text_verbosity?: "low" | "medium" | "high";
+          web_search_enabled?: boolean;
+          web_search_allowed_domains?: string[] | null;
+          web_search_user_location?: Json | null;
+          file_search_enabled?: boolean;
+          file_vector_store_id?: string | null;
+          file_search_max_results?: number | null;
+          retrieval_enabled?: boolean;
+          retrieval_vector_store_id?: string | null;
+          retrieval_max_results?: number | null;
+          retrieval_rewrite?: boolean | null;
+          image_generation_enabled?: boolean;
+          image_preset?: Json | null;
+          allowed_tools?: Json | null;
+          suggestions?: string[] | null;
+          streaming_partial_images?: number | null;
+          metadata?: Json;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
     }
     Views: {
       [_ in never]: never

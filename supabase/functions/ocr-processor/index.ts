@@ -1,4 +1,5 @@
 import { IDS } from "../wa-webhook/wa/ids.ts";
+import { resolveOpenAiResponseText } from "../lib/openai_responses.ts";
 import { SupabaseRest } from "./supabase_rest.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ??
@@ -278,7 +279,7 @@ async function runOpenAiExtraction(imageBase64: string, contentType: string) {
     throw new Error(`Unsupported content type: ${contentType}`);
   }
   const prompt = buildMenuPrompt();
-  const response = await fetch(`${OPENAI_BASE_URL}/chat/completions`, {
+  const response = await fetch(`${OPENAI_BASE_URL}/responses`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -286,20 +287,31 @@ async function runOpenAiExtraction(imageBase64: string, contentType: string) {
     },
     body: JSON.stringify({
       model: OPENAI_MODEL,
-      response_format: { type: "json_object" },
-      messages: [
+      input: [
         { role: "system", content: prompt.system },
         {
           role: "user",
           content: [
-            { type: "text", text: prompt.user },
+            { type: "input_text", text: prompt.user },
             {
-              type: "image_url",
+              type: "input_image",
               image_url: { url: `data:${contentType};base64,${imageBase64}` },
             },
           ],
         },
       ],
+      text: {
+        format: {
+          type: "json_schema",
+          json_schema: {
+            name: "menu_extraction_result",
+            schema: {
+              type: "object",
+              additionalProperties: true,
+            },
+          },
+        },
+      },
     }),
   });
 
@@ -308,21 +320,72 @@ async function runOpenAiExtraction(imageBase64: string, contentType: string) {
     throw new Error(`OpenAI request failed: ${text}`);
   }
   const json = await response.json();
-  const content = json.choices?.[0]?.message?.content;
-  if (!content || typeof content !== "string") {
+  const helperContent = resolveOpenAiResponseText(json);
+  if (helperContent && helperContent.trim().length) {
+    let parsed;
+    try {
+      const cleanedHelper = stripJsonFence(helperContent);
+      parsed = JSON.parse(cleanedHelper);
+    } catch (_error) {
+      throw new Error("Failed to parse OpenAI JSON response");
+    }
+
+    const normalizedHelper = normalizeExtractionPayload(parsed);
+    return { raw: helperContent, data: normalizedHelper };
+  }
+  const content = typeof json?.output_text === "string" &&
+      json.output_text.trim().length
+    ? json.output_text
+    : json.output?.[0]?.content ?? json.choices?.[0]?.message?.content;
+  const resolvedContent =
+    typeof content === "string" ? content : extractOutputText(content);
+  if (!resolvedContent) {
     throw new Error("OpenAI response lacked content");
   }
 
   let parsed;
   try {
-    const cleaned = stripJsonFence(content);
+    const cleaned = stripJsonFence(resolvedContent);
     parsed = JSON.parse(cleaned);
   } catch (_error) {
     throw new Error("Failed to parse OpenAI JSON response");
   }
 
   const normalized = normalizeExtractionPayload(parsed);
-  return { raw: content, data: normalized };
+  return { raw: resolvedContent, data: normalized };
+}
+
+function extractOutputText(content: unknown): string | null {
+  if (!content) return null;
+  if (typeof content === "string") return content;
+  if (Array.isArray(content)) {
+    for (const part of content) {
+      if (!part || typeof part !== "object") continue;
+      const textCandidate = (part as { text?: unknown; data?: unknown }).text;
+      if (typeof textCandidate === "string" && textCandidate.trim().length) {
+        return textCandidate;
+      }
+      const dataCandidate = (part as { data?: unknown }).data;
+      if (typeof dataCandidate === "string" && dataCandidate.trim().length) {
+        return dataCandidate;
+      }
+    }
+  }
+  if (typeof content === "object") {
+    if (
+      "text" in (content as Record<string, unknown>) &&
+      typeof (content as { text?: unknown }).text === "string"
+    ) {
+      return (content as { text: string }).text;
+    }
+    if (
+      "data" in (content as Record<string, unknown>) &&
+      typeof (content as { data?: unknown }).data === "string"
+    ) {
+      return (content as { data: string }).data;
+    }
+  }
+  return null;
 }
 
 async function storeExtractionResult(

@@ -23,13 +23,43 @@ export function useCreateAgent() {
   });
 }
 
+type AgentDetailsResponse = {
+  agent: Record<string, unknown> | null;
+  versions: any[];
+  documents: {
+    id: string;
+    title: string;
+    created_at: string;
+    embedding_status?: string | null;
+    source_url?: string | null;
+    storage_path?: string | null;
+  }[];
+  deployments?: any[];
+  knowledgeStats?: {
+    total: number;
+    ready: number;
+    processing: number;
+    pending: number;
+    failed: number;
+    other: number;
+  };
+};
+
 export function useAgentDetails(id: string) {
-  return useQuery({
+  return useQuery<AgentDetailsResponse>({
     queryKey: ["agents", id],
     queryFn: async () => {
       const res = await fetch(`/api/agents/${id}`);
       if (!res.ok) throw new Error("failed_to_load_agent");
       return res.json();
+    },
+    refetchInterval: (data) => {
+      const documents = data?.documents ?? [];
+      const hasPending = documents.some((doc) => {
+        const status = (doc.embedding_status ?? "pending").toLowerCase();
+        return status !== "ready";
+      });
+      return hasPending ? 5000 : false;
     },
   });
 }
@@ -49,7 +79,7 @@ export function useCreateVersion(id: string) {
 export function useDeployVersion(id: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (body: { version: number }) => {
+    mutationFn: async (body: { version: number; environment?: "staging" | "production" }) => {
       const res = await fetch(`/api/agents/${id}/deploy`, { method: "POST", body: JSON.stringify(body) });
       if (!res.ok) throw new Error("failed_to_deploy");
       return res.json();
