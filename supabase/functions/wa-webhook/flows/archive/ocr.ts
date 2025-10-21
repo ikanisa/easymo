@@ -11,6 +11,7 @@ import {
   homeOnly,
   sendButtonsMessage,
 } from "../../utils/reply.ts";
+import { resolveOpenAiResponseText } from "../../../lib/openai_responses.ts";
 
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY") ?? "";
 const OPENAI_MODEL = Deno.env.get("OPENAI_VISION_MODEL") ?? "gpt-4o-mini";
@@ -348,7 +349,7 @@ async function performInsuranceOcr(
   mime: string,
 ): Promise<{ raw: unknown; summary: InsuranceSummary }> {
   const base64 = btoa(String.fromCharCode(...bytes));
-  const response = await fetch(`${OPENAI_BASE_URL}/chat/completions`, {
+  const response = await fetch(`${OPENAI_BASE_URL}/responses`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -356,19 +357,18 @@ async function performInsuranceOcr(
     },
     body: JSON.stringify({
       model: OPENAI_MODEL,
-      response_format: { type: "json_object" },
-      messages: [
+      input: [
         { role: "system", content: OCR_PROMPT },
         {
           role: "user",
           content: [
             {
-              type: "text",
+              type: "input_text",
               text:
                 "Extract the policy details from this insurance certificate.",
             },
             {
-              type: "image_url",
+              type: "input_image",
               image_url: {
                 url: `data:${
                   mime || "application/octet-stream"
@@ -378,6 +378,18 @@ async function performInsuranceOcr(
           ],
         },
       ],
+      text: {
+        format: {
+          type: "json_schema",
+          json_schema: {
+            name: "insurance_certificate_payload",
+            schema: {
+              type: "object",
+              additionalProperties: true,
+            },
+          },
+        },
+      },
     }),
   });
 
@@ -387,7 +399,19 @@ async function performInsuranceOcr(
   }
 
   const payload = await response.json();
-  const raw = payload.choices?.[0]?.message?.content ?? payload;
+  const helperContent = resolveOpenAiResponseText(payload);
+  if (helperContent && helperContent.trim().length) {
+    const parsedHelper = safeJson(helperContent) ?? {};
+    return {
+      raw: helperContent,
+      summary: normalizeSummary(parsedHelper),
+    };
+  }
+  const raw = typeof payload?.output_text === "string" &&
+      payload.output_text.trim().length
+    ? payload.output_text
+    : payload.output?.[0]?.content ?? payload.choices?.[0]?.message?.content ??
+      payload;
   const parsed = safeJson(raw);
   return {
     raw,
