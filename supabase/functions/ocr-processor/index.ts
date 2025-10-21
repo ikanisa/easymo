@@ -1,9 +1,10 @@
 import { IDS } from "../wa-webhook/wa/ids.ts";
 import { SupabaseRest } from "./supabase_rest.ts";
 
-const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ??
+  Deno.env.get("SERVICE_URL") ?? "";
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ??
-  "";
+  Deno.env.get("SERVICE_ROLE_KEY") ?? "";
 const MENU_MEDIA_BUCKET = Deno.env.get("MENU_MEDIA_BUCKET") ??
   "menu-source-files";
 const OCR_RESULT_BUCKET = Deno.env.get("OCR_RESULT_BUCKET") ?? "ocr-json-cache";

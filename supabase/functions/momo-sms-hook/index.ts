@@ -1,8 +1,11 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
+const SERVICE_URL = Deno.env.get("SERVICE_URL") ?? "";
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ??
   "";
+const SERVICE_ROLE_KEY = Deno.env.get("SERVICE_ROLE_KEY") ??
+  Deno.env.get("WA_SUPABASE_SERVICE_ROLE_KEY") ?? "";
 const HMAC_SECRET = Deno.env.get("MOMO_SMS_HMAC_SECRET") ?? "";
 const ALLOWED_IPS = (Deno.env.get("MOMO_SMS_ALLOWED_IPS") ?? "")
   .split(",")
@@ -10,13 +13,15 @@ const ALLOWED_IPS = (Deno.env.get("MOMO_SMS_ALLOWED_IPS") ?? "")
   .filter((value) => value.length > 0);
 const DEFAULT_SOURCE = Deno.env.get("MOMO_SMS_DEFAULT_SOURCE") ?? "gateway";
 
-if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+const SB_URL = SUPABASE_URL || SERVICE_URL;
+const SB_KEY = SUPABASE_SERVICE_ROLE_KEY || SERVICE_ROLE_KEY;
+if (!SB_URL || !SB_KEY) {
   throw new Error(
-    "SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be configured for momo-sms-hook",
+    "Supabase service credentials must be configured for momo-sms-hook",
   );
 }
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+const supabase = createClient(SB_URL, SB_KEY, {
   auth: { persistSession: false },
 });
 

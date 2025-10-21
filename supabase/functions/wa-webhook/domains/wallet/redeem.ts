@@ -90,10 +90,16 @@ export async function handleWalletRedeemSelection(
     );
     return true;
   }
-  const lines: string[] = [match.title ?? t(ctx.locale, "wallet.redeem.reward")];
+  const lines: string[] = [
+    match.title ?? t(ctx.locale, "wallet.redeem.reward"),
+  ];
   if (match.description) lines.push(match.description);
   if (typeof match.cost_tokens === "number") {
-    lines.push(t(ctx.locale, "wallet.redeem.cost_tokens", { cost: String(match.cost_tokens) }));
+    lines.push(
+      t(ctx.locale, "wallet.redeem.cost_tokens", {
+        cost: String(match.cost_tokens),
+      }),
+    );
   }
   if (match.instructions) lines.push(match.instructions);
   await setState(ctx.supabase, ctx.profileId, {
@@ -104,7 +110,10 @@ export async function handleWalletRedeemSelection(
     ctx,
     lines.join("\n"),
     [
-      { id: IDS.WALLET_REDEEM_CONFIRM, title: t(ctx.locale, "common.buttons.confirm") },
+      {
+        id: IDS.WALLET_REDEEM_CONFIRM,
+        title: t(ctx.locale, "common.buttons.confirm"),
+      },
       { id: IDS.WALLET_REDEEM, title: t(ctx.locale, "common.buttons.cancel") },
     ],
   );
@@ -136,7 +145,9 @@ export async function handleWalletRedeemConfirm(
     cost: option.cost_tokens ?? 0,
   });
   const summary = [
-    t(ctx.locale, "wallet.redeem.requested", { title: option.title ?? t(ctx.locale, "wallet.redeem.reward") }),
+    t(ctx.locale, "wallet.redeem.requested", {
+      title: option.title ?? t(ctx.locale, "wallet.redeem.reward"),
+    }),
     t(ctx.locale, "wallet.redeem.notify_once_ready"),
   ].join("\n\n");
   await sendButtonsMessage(

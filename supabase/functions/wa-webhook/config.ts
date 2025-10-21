@@ -20,10 +20,11 @@ function mustGetOne(...names: string[]): string {
   return value;
 }
 
-export const SUPABASE_URL = mustGetOne("SUPABASE_URL");
+export const SUPABASE_URL = mustGetOne("SUPABASE_URL", "SERVICE_URL");
 export const SUPABASE_SERVICE_ROLE_KEY = mustGetOne(
   "WA_SUPABASE_SERVICE_ROLE_KEY",
   "SUPABASE_SERVICE_ROLE_KEY",
+  "SERVICE_ROLE_KEY",
 );
 if (!getEnv("WA_SUPABASE_SERVICE_ROLE_KEY")) {
   console.warn("wa_webhook.service_key_fallback");
@@ -66,8 +67,12 @@ export const supabase: SupabaseClient = clientFactory(
 
 export function assertRuntimeReady(): void {
   const required = [
-    ["SUPABASE_URL"],
-    ["SUPABASE_SERVICE_ROLE_KEY"],
+    ["SUPABASE_URL", "SERVICE_URL"],
+    [
+      "SUPABASE_SERVICE_ROLE_KEY",
+      "SERVICE_ROLE_KEY",
+      "WA_SUPABASE_SERVICE_ROLE_KEY",
+    ],
     ["WA_PHONE_ID", "WHATSAPP_PHONE_NUMBER_ID"],
     ["WA_TOKEN", "WHATSAPP_ACCESS_TOKEN"],
     ["WA_APP_SECRET", "WHATSAPP_APP_SECRET"],

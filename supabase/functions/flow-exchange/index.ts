@@ -225,8 +225,9 @@ const responseSchema = z.object({
 });
 
 function getSupabaseClient(req: Request) {
-  const url = Deno.env.get("SUPABASE_URL");
-  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  const url = Deno.env.get("SUPABASE_URL") ?? Deno.env.get("SERVICE_URL");
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ??
+    Deno.env.get("SERVICE_ROLE_KEY");
   if (!url || !serviceKey) {
     throw new Error("Missing Supabase service credentials");
   }

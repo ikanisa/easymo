@@ -1,5 +1,5 @@
 import { assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
-import { formatMoney, formatDateTime, formatNumber } from "./format.ts";
+import { formatDateTime, formatMoney, formatNumber } from "./format.ts";
 
 Deno.test("formatMoney handles RWF (0 decimals)", () => {
   const out = formatMoney(12345, "RWF", "en", { isMinor: true });
@@ -26,4 +26,3 @@ Deno.test("formatDateTime stable fields", () => {
   });
   assertEquals(typeof out, "string");
 });
-

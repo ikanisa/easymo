@@ -50,7 +50,11 @@ export async function promptDriverSubscription(
     t(ctx.locale, "mobility.sub.required"),
   ];
   if (creditsLeft > 0) {
-    lines.push(t(ctx.locale, "mobility.sub.passes_remaining", { left: String(creditsLeft) }));
+    lines.push(
+      t(ctx.locale, "mobility.sub.passes_remaining", {
+        left: String(creditsLeft),
+      }),
+    );
   } else {
     lines.push(t(ctx.locale, "mobility.sub.passes_used_all"));
   }
@@ -59,19 +63,27 @@ export async function promptDriverSubscription(
     ctx,
     lines.join("\n"),
     [
-      { id: IDS.DRIVER_SUB_PAY, title: t(ctx.locale, "mobility.sub.pay_4_tok") },
+      {
+        id: IDS.DRIVER_SUB_PAY,
+        title: t(ctx.locale, "mobility.sub.pay_4_tok"),
+      },
       { id: IDS.WALLET, title: t(ctx.locale, "common.wallet") },
       { id: IDS.BACK_MENU, title: t(ctx.locale, "common.menu_back") },
     ],
   );
 }
 
-export async function handleDriverSubscriptionPay(ctx: RouterContext): Promise<boolean> {
+export async function handleDriverSubscriptionPay(
+  ctx: RouterContext,
+): Promise<boolean> {
   if (!ctx.profileId) return false;
   try {
-    const { data, error } = await ctx.supabase.rpc("mobility_buy_subscription", {
-      _user_id: ctx.profileId,
-    });
+    const { data, error } = await ctx.supabase.rpc(
+      "mobility_buy_subscription",
+      {
+        _user_id: ctx.profileId,
+      },
+    );
     if (error) throw error;
     const result = Array.isArray(data) ? data[0] : data;
     if (!result?.success) {
@@ -94,7 +106,10 @@ export async function handleDriverSubscriptionPay(ctx: RouterContext): Promise<b
       return true;
     }
     const expires = result?.expires_at
-      ? new Date(result.expires_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })
+      ? new Date(result.expires_at).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+      })
       : null;
     const lines = [
       t(ctx.locale, "mobility.sub.active"),

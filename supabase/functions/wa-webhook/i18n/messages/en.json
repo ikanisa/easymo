@@ -33,8 +33,7 @@
   "home.extras.back.description": "See the previous services.",
   "home.extras.more.title": "➡️ More services",
   "home.extras.more.description": "View additional easyMO services.",
-  "insurance.blocked": "This feature isn’t available in your country."
-  ,
+  "insurance.blocked": "This feature isn’t available in your country.",
   "common.options": "Options",
   "common.menu_back": "↩️ Menu",
   "common.back_to_menu.description": "Return to the main menu.",
@@ -61,8 +60,7 @@
   "momo.summary.share": "Share:",
   "momo.summary.scanCaption": "Scan to pay {{display}}",
   "momo.summary.shareText": "Pay via MoMo {{display}}: {{ussd}}",
-  "momo.buttons.newQr": "🔁 New QR"
-  ,
+  "momo.buttons.newQr": "🔁 New QR",
   "home.resume.prompt": "Pick up where you left off?",
   "home.resume.body": "Resume at {{bar}} or choose another bar.",
   "home.buttons.resume": "Resume {{bar}}",
@@ -117,25 +115,20 @@
   "manager.access.denied": "🔒 Manager tools for {{bar}} are limited to verified staff.",
   "manager.fallback.manage": "{{num}}. Manager tools",
   "error.retry": "We hit a snag. Try again.",
-  "error.expired": "Oops, that option expired. Let’s start again."
-  ,
+  "error.expired": "Oops, that option expired. Let’s start again.",
   "bars.section": "Bars",
   "dine.browse.menu.description": "Browse the menu and order instantly.",
   "dine.browse.qr.description": "Generate a QR code that links to this menu.",
   "dine.browse.manager.tools.title": "Manager tools",
-  "dine.browse.manager.description": "Open the staff toolkit for this bar."
-  ,
+  "dine.browse.manager.description": "Open the staff toolkit for this bar.",
   "menu.section": "Menu",
   "menu.more.title": "More dishes ▶️",
   "common.buttons.ok": "OK",
   "common.tap": "Tap:",
   "manager.tools.title": "Manager tools",
-  "common.actions": "Actions"
-  ,
-  "dine.manager.return_customer_menu": "Return to the customer menu."
-  ,
-  "dine.menu.scan_to_open": "Scan to open this menu in WhatsApp."
-  ,
+  "common.actions": "Actions",
+  "dine.manager.return_customer_menu": "Return to the customer menu.",
+  "dine.menu.scan_to_open": "Scan to open this menu in WhatsApp.",
   "common.buttons.view": "View",
   "common.buttons.back": "← Back",
   "common.buttons.done": "Done",
@@ -193,8 +186,7 @@
   "dine.manager.item.err_price_invalid": "Enter a valid price",
   "dine.manager.item.err_category_required": "Category required",
   "dine.manager.item.err_cannot_resolve_menu": "Unable to resolve menu for item",
-  "common.updated_ok": "Updated. ✅"
-  ,
+  "common.updated_ok": "Updated. ✅",
   "dine.entry.title": "Bars & restaurants",
   "dine.entry.body": "Bars & restaurants",
   "dine.entry.view_bars": "View bars & restaurants",
@@ -209,36 +201,28 @@
   "dine.manager.section_manage": "Manage",
   "dine.manager.managing": "Managing: {{bar}}",
   "dine.manager.onboard_to_unlock": "Onboard your bar to unlock tools.",
-  "dine.manager.no_vendor_access": "You don’t have vendor access."
-  ,
+  "dine.manager.no_vendor_access": "You don’t have vendor access.",
   "dine.onboard.identity.step1": "Bar identity — Step 1/4\nPlease reply with Bar/Restaurant name.",
   "dine.onboard.identity.step2": "Bar identity — Step 2/4\nSend your Location/Address.\nTip: tap '+' -> Share location (or type the address).",
   "dine.onboard.payment.step3": "Payments — Step 3/4\nPlease reply with your MoMo code or MOMO number (07xxx).",
   "dine.onboard.contacts.step4": "Orders — Step 4/4\nReply with the WhatsApp number(s) to receive orders (comma-separated).\nExample: +2507xxxxxxx, +2507yyyyyyy",
-  "dine.onboard.upload.prompt": "Upload menu\nSend your PDF of the menu in this chat now.\nWe will read and structure it automatically."
-  ,
+  "dine.onboard.upload.prompt": "Upload menu\nSend your PDF of the menu in this chat now.\nWe will read and structure it automatically.",
   "dine.manager.already_vendor": "You already have vendor access.",
   "dine.manager.menu.upload_update.prompt": "Upload/Update menu\nSend PDF/images now. New items will be added automatically.",
-  "common.update_failed_try_again": "Update failed. Try again."
-  ,
+  "common.update_failed_try_again": "Update failed. Try again.",
   "dine.manager.publish.review_and_publish": "Review & publish\nConfirm details and publish when ready.",
-  "common.buttons.publish": "Publish"
-  ,
+  "common.buttons.publish": "Publish",
   "dine.manager.numbers.view": "View numbers",
   "dine.manager.numbers.remove_prompt_list": "Remove number\nReply with the number to remove (E.164), as listed.\n{{list}}",
   "dine.manager.numbers.remove_prompt": "Remove number\nReply with the number to remove (E.164), as listed.",
-  "dine.manager.numbers.remove_reply_missing": "Reply with numbers to remove."
-  ,
+  "dine.manager.numbers.remove_reply_missing": "Reply with numbers to remove.",
   "dine.manager.orders.none": "No recent orders yet.",
-  "dine.manager.orders.not_found": "Order not found."
-  ,
-  "dine.manager.numbers.add_at_least_one": "Add at least one number."
-  ,
+  "dine.manager.orders.not_found": "Order not found.",
+  "dine.manager.numbers.add_at_least_one": "Add at least one number.",
   "dine.manager.numbers.remove_failed": "Failed to remove numbers.",
   "dine.manager.upload.thanks_reading_menu": "Thanks. Reading your menu…",
   "dine.manager.publish.requested": "Publish requested. We'll confirm once the menu is live.",
-  "dine.manager.back_to_manager": "Back to manager"
-  ,
+  "dine.manager.back_to_manager": "Back to manager",
   "vehicle.plate.reply_with_plate": "Reply with your vehicle plate to continue.",
   "vehicle.plate.saved": "✅ Plate saved: {{plate}}",
   "vendor.menu.lookup_fail": "We couldn't look up your bar. Please try again in a moment or contact support.",
@@ -246,8 +230,7 @@
   "vendor.menu.received_processing": "Menu received! We’re processing it now and will notify you when it’s ready.",
   "vendor.menu.process_fail": "Sorry, we couldn’t process that file. Please try again in a moment.",
   "admin.module.coming_soon": "Admin module coming online soon.",
-  "admin.tools.restricted": "Admin tools are restricted."
-  ,
+  "admin.tools.restricted": "Admin tools are restricted.",
   "baskets.menu.title": "🧺 Baskets",
   "baskets.menu.body": "Manage shared savings circles for your friends or team.",
   "baskets.buttons.join_with_code": "🔑 Join with code",
@@ -291,8 +274,7 @@
   "wallet.redeem.reward": "Reward",
   "wallet.redeem.cost_tokens": "Cost: {{cost}} tokens",
   "wallet.redeem.requested": "✅ {{title}} requested!",
-  "wallet.redeem.notify_once_ready": "We'll notify you once it's processed."
-  ,
+  "wallet.redeem.notify_once_ready": "We'll notify you once it's processed.",
   "marketplace.menu.title": "🛍️ Marketplace",
   "marketplace.menu.body": "Discover nearby sellers or list your own business.",
   "marketplace.buttons.browse": "Browse businesses",

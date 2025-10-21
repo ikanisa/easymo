@@ -2,10 +2,12 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 /** ========= ENV (reuse existing secrets) ========= */ const SUPABASE_URL =
   Deno.env.get("SUPABASE_URL");
-const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+const SERVICE_URL = Deno.env.get("SERVICE_URL");
+const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ??
+  Deno.env.get("SERVICE_ROLE_KEY");
 const WA_TOKEN = Deno.env.get("WA_TOKEN");
 const WA_PHONE_ID = Deno.env.get("WA_PHONE_ID");
-const sb = createClient(SUPABASE_URL, SERVICE_KEY, {
+const sb = createClient(SUPABASE_URL ?? SERVICE_URL, SERVICE_KEY, {
   auth: { persistSession: false },
 });
 const WA_BASE = `https://graph.facebook.com/v20.0/${WA_PHONE_ID}`;

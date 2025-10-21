@@ -8,16 +8,19 @@ import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
-const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+const SERVICE_URL = Deno.env.get("SERVICE_URL") ?? "";
+const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ??
+  Deno.env.get("SERVICE_ROLE_KEY") ?? "";
 const ADMIN_TOKEN = Deno.env.get("EASYMO_ADMIN_TOKEN") ?? "";
 const ENABLE_AGENT_CHAT = (Deno.env.get("ENABLE_AGENT_CHAT") ?? "true")
   .toLowerCase() in ["1", "true", "yes"];
 
-if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
+const SB_URL = SUPABASE_URL || SERVICE_URL;
+if (!SB_URL || !SERVICE_ROLE_KEY) {
   throw new Error("Supabase credentials are not configured");
 }
 
-const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+const supabase = createClient(SB_URL, SERVICE_ROLE_KEY);
 
 const AgentKind = z.enum(["broker", "support", "sales", "marketing"]);
 

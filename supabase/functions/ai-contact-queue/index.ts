@@ -16,22 +16,31 @@ const DEFAULT_TENANT_ID = Deno.env.get("AGENT_CORE_TENANT_ID");
 
 serve(async (req: Request) => {
   if (!AGENT_CORE_URL) {
-    return new Response(JSON.stringify({ error: "AGENT_CORE_URL not configured" }), { status: 500 });
+    return new Response(
+      JSON.stringify({ error: "AGENT_CORE_URL not configured" }),
+      { status: 500 },
+    );
   }
 
   if (req.method !== "POST") {
     return new Response("Method not allowed", { status: 405 });
   }
 
-  const body = (await req.json().catch(() => ({}))) as { contact?: ContactPayload };
+  const body = (await req.json().catch(() => ({}))) as {
+    contact?: ContactPayload;
+  };
   const contact = body.contact;
   if (!contact?.id) {
-    return new Response(JSON.stringify({ error: "Missing contact payload" }), { status: 400 });
+    return new Response(JSON.stringify({ error: "Missing contact payload" }), {
+      status: 400,
+    });
   }
 
   const msisdn = contact.msisdn ?? contact.phone;
   if (!msisdn) {
-    return new Response(JSON.stringify({ error: "Contact missing phone" }), { status: 400 });
+    return new Response(JSON.stringify({ error: "Contact missing phone" }), {
+      status: 400,
+    });
   }
 
   const schedulePayload = {
@@ -47,14 +56,19 @@ serve(async (req: Request) => {
     },
   };
 
-  const response = await fetch(`${AGENT_CORE_URL.replace(/\/$/, "")}/ai/tasks/schedule`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...(AGENT_CORE_TOKEN ? { Authorization: `Bearer ${AGENT_CORE_TOKEN}` } : {}),
+  const response = await fetch(
+    `${AGENT_CORE_URL.replace(/\/$/, "")}/ai/tasks/schedule`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(AGENT_CORE_TOKEN
+          ? { Authorization: `Bearer ${AGENT_CORE_TOKEN}` }
+          : {}),
+      },
+      body: JSON.stringify(schedulePayload),
     },
-    body: JSON.stringify(schedulePayload),
-  });
+  );
 
   const data = await response.json().catch(() => ({}));
   return new Response(JSON.stringify({ ok: response.ok, data }), {
@@ -62,4 +76,3 @@ serve(async (req: Request) => {
     status: response.ok ? 200 : 500,
   });
 });
-

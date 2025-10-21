@@ -167,8 +167,14 @@ export async function showBarsEntry(
     sectionTitle: t(ctx.locale, "common.options"),
     buttonText: t(ctx.locale, "common.buttons.view"),
     rows: [
-      { id: IDS.DINEIN_BARS_VIEW_LIST, title: t(ctx.locale, "dine.entry.view_bars") },
-      { id: IDS.DINEIN_BARS_MANAGE, title: t(ctx.locale, "dine.entry.bar_manager") },
+      {
+        id: IDS.DINEIN_BARS_VIEW_LIST,
+        title: t(ctx.locale, "dine.entry.view_bars"),
+      },
+      {
+        id: IDS.DINEIN_BARS_MANAGE,
+        title: t(ctx.locale, "dine.entry.bar_manager"),
+      },
       { id: IDS.BACK_MENU, title: t(ctx.locale, "common.buttons.back") },
     ],
   });
@@ -188,8 +194,14 @@ export async function showBarsMenu(
     sectionTitle: t(ctx.locale, "common.options"),
     buttonText: t(ctx.locale, "common.buttons.view"),
     rows: [
-      { id: IDS.DINEIN_BARS_VIEW_LIST, title: t(ctx.locale, "dine.entry.view_bars") },
-      { id: IDS.DINEIN_BARS_MANAGE, title: t(ctx.locale, "dine.entry.bar_manager") },
+      {
+        id: IDS.DINEIN_BARS_VIEW_LIST,
+        title: t(ctx.locale, "dine.entry.view_bars"),
+      },
+      {
+        id: IDS.DINEIN_BARS_MANAGE,
+        title: t(ctx.locale, "dine.entry.bar_manager"),
+      },
       { id: IDS.BACK_MENU, title: t(ctx.locale, "common.buttons.back") },
     ],
   });
@@ -223,7 +235,10 @@ export async function showManagerMenu(
   const rows = resolved.hasManagedBar
     ? [
       { id: IDS.DINEIN_BARS_MANAGE_ORDERS, title: "Manage orders" },
-      { id: IDS.DINEIN_BARS_UPLOAD, title: t(ctx.locale, "dine.manager.upload_update_menu") },
+      {
+        id: IDS.DINEIN_BARS_UPLOAD,
+        title: t(ctx.locale, "dine.manager.upload_update_menu"),
+      },
       { id: IDS.DINEIN_BARS_REVIEW, title: "Review & edit menu" },
       { id: IDS.DINEIN_BARS_NUMBERS_MENU, title: "Add WhatsApp numbers" },
       { id: IDS.BACK_MENU, title: "← Back" },
@@ -654,7 +669,10 @@ export async function showOnboardUpload(
   await sendButtons(
     ctx.from,
     t(ctx.locale, "dine.onboard.upload.prompt"),
-    [{ id: IDS.DINEIN_BARS_MANAGER_VIEW, title: t(ctx.locale, "common.buttons.back") }],
+    [{
+      id: IDS.DINEIN_BARS_MANAGER_VIEW,
+      title: t(ctx.locale, "common.buttons.back"),
+    }],
   );
 }
 
@@ -687,7 +705,10 @@ export async function showUploadInstruction(
   await sendButtons(
     ctx.from,
     t(ctx.locale, "dine.manager.menu.upload_update.prompt"),
-    [{ id: IDS.DINEIN_BARS_MANAGER_VIEW, title: t(ctx.locale, "common.buttons.back") }],
+    [{
+      id: IDS.DINEIN_BARS_MANAGER_VIEW,
+      title: t(ctx.locale, "common.buttons.back"),
+    }],
   );
 }
 
@@ -721,10 +742,14 @@ export async function showManageOrders(
   });
 
   if (!orders.length) {
-    await sendButtons(ctx.from, `${INFO_EMOJI} ${t(ctx.locale, "dine.manager.orders.none")}`, [{
-      id: IDS.DINEIN_BARS_MANAGER_VIEW,
-      title: t(ctx.locale, "common.buttons.done"),
-    }]);
+    await sendButtons(
+      ctx.from,
+      `${INFO_EMOJI} ${t(ctx.locale, "dine.manager.orders.none")}`,
+      [{
+        id: IDS.DINEIN_BARS_MANAGER_VIEW,
+        title: t(ctx.locale, "common.buttons.done"),
+      }],
+    );
     return;
   }
 
@@ -746,10 +771,15 @@ export async function showManageOrders(
       title: t(ctx.locale, "common.buttons.prev_page"),
     });
   }
-  rows.push({ id: IDS.DINEIN_BARS_MANAGER_VIEW, title: t(ctx.locale, "common.buttons.back") });
+  rows.push({
+    id: IDS.DINEIN_BARS_MANAGER_VIEW,
+    title: t(ctx.locale, "common.buttons.back"),
+  });
 
   await sendList(ctx.from, {
-    title: t(ctx.locale, "dine.manager.orders.recent_title", { page: String(page) }),
+    title: t(ctx.locale, "dine.manager.orders.recent_title", {
+      page: String(page),
+    }),
     body: t(ctx.locale, "dine.manager.orders.recent_body"),
     sectionTitle: t(ctx.locale, "dine.manager.orders.section"),
     buttonText: t(ctx.locale, "common.buttons.view"),
@@ -771,10 +801,22 @@ export async function showNumbersMenu(
     sectionTitle: t(ctx.locale, "common.actions"),
     buttonText: t(ctx.locale, "common.buttons.view"),
     rows: [
-      { id: IDS.DINEIN_BARS_NUMBERS_VIEW, title: t(ctx.locale, "dine.manager.numbers.current") },
-      { id: IDS.DINEIN_BARS_NUMBERS_ADD, title: t(ctx.locale, "dine.manager.numbers.add") },
-      { id: IDS.DINEIN_BARS_NUMBERS_REMOVE, title: t(ctx.locale, "dine.manager.numbers.remove") },
-      { id: IDS.DINEIN_BARS_MANAGER_VIEW, title: t(ctx.locale, "common.buttons.back") },
+      {
+        id: IDS.DINEIN_BARS_NUMBERS_VIEW,
+        title: t(ctx.locale, "dine.manager.numbers.current"),
+      },
+      {
+        id: IDS.DINEIN_BARS_NUMBERS_ADD,
+        title: t(ctx.locale, "dine.manager.numbers.add"),
+      },
+      {
+        id: IDS.DINEIN_BARS_NUMBERS_REMOVE,
+        title: t(ctx.locale, "dine.manager.numbers.remove"),
+      },
+      {
+        id: IDS.DINEIN_BARS_MANAGER_VIEW,
+        title: t(ctx.locale, "common.buttons.back"),
+      },
     ],
   });
 }
@@ -853,18 +895,29 @@ export async function showEditMenu(
   await sendList(ctx.from, {
     title: t(ctx.locale, "dine.manager.menu.maintenance.title"),
     body: ensured.barName
-      ? t(ctx.locale, "dine.manager.menu.maintenance.managing", { bar: ensured.barName })
+      ? t(ctx.locale, "dine.manager.menu.maintenance.managing", {
+        bar: ensured.barName,
+      })
       : t(ctx.locale, "dine.manager.menu.maintenance.choose"),
     sectionTitle: t(ctx.locale, "common.actions"),
     buttonText: t(ctx.locale, "common.buttons.view"),
     rows: [
-      { id: IDS.DINEIN_BARS_EDIT_UPLOAD, title: t(ctx.locale, "dine.manager.menu.upload_pdf") },
-      { id: IDS.DINEIN_BARS_EDIT_DELETE, title: t(ctx.locale, "dine.manager.menu.delete_all") },
+      {
+        id: IDS.DINEIN_BARS_EDIT_UPLOAD,
+        title: t(ctx.locale, "dine.manager.menu.upload_pdf"),
+      },
+      {
+        id: IDS.DINEIN_BARS_EDIT_DELETE,
+        title: t(ctx.locale, "dine.manager.menu.delete_all"),
+      },
       {
         id: IDS.DINEIN_BARS_EDIT_REMOVE_CATEGORIES,
         title: t(ctx.locale, "dine.manager.menu.remove_categories"),
       },
-      { id: IDS.DINEIN_BARS_MANAGER_VIEW, title: t(ctx.locale, "common.buttons.back") },
+      {
+        id: IDS.DINEIN_BARS_MANAGER_VIEW,
+        title: t(ctx.locale, "common.buttons.back"),
+      },
     ],
   });
 }
@@ -1008,15 +1061,26 @@ export async function showReviewList(
   }));
 
   if (page < totalPages) {
-    rows.push({ id: IDS.DINEIN_BARS_REVIEW_NEXT_PAGE, title: t(ctx.locale, "common.buttons.next_page") });
+    rows.push({
+      id: IDS.DINEIN_BARS_REVIEW_NEXT_PAGE,
+      title: t(ctx.locale, "common.buttons.next_page"),
+    });
   }
   if (page > 1) {
-    rows.push({ id: IDS.DINEIN_BARS_REVIEW_PREV_PAGE, title: t(ctx.locale, "common.buttons.prev_page") });
+    rows.push({
+      id: IDS.DINEIN_BARS_REVIEW_PREV_PAGE,
+      title: t(ctx.locale, "common.buttons.prev_page"),
+    });
   }
-  rows.push({ id: IDS.DINEIN_BARS_MANAGER_VIEW, title: t(ctx.locale, "common.buttons.back") });
+  rows.push({
+    id: IDS.DINEIN_BARS_MANAGER_VIEW,
+    title: t(ctx.locale, "common.buttons.back"),
+  });
 
   await sendList(ctx.from, {
-    title: t(ctx.locale, "dine.manager.menu.items.title", { page: String(page) }),
+    title: t(ctx.locale, "dine.manager.menu.items.title", {
+      page: String(page),
+    }),
     body: t(ctx.locale, "dine.manager.menu.items.body_hint"),
     sectionTitle: t(ctx.locale, "dine.manager.menu.items.section"),
     buttonText: t(ctx.locale, "common.buttons.view"),
@@ -1124,7 +1188,7 @@ export async function handleReviewEditText(
       await ctx.supabase.from("items").update({ name: value }).eq("id", itemId);
       await sendButtons(ctx.from, "Updated. ✅", [{
         id: IDS.DINEIN_BARS_REVIEW,
-      title: copy("buttons.viewMenu", {}, ctx.locale),
+        title: copy("buttons.viewMenu", {}, ctx.locale),
       }]);
       return true;
     }
@@ -1237,10 +1301,14 @@ export async function handleOrderRowSelection(
     : [];
   const match = orders.find((order) => order.order_id === orderId);
   if (!match) {
-    await sendButtons(ctx.from, `${WARNING_EMOJI} ${t(ctx.locale, "dine.manager.orders.not_found")}`, [{
-      id: IDS.DINEIN_BARS_MANAGER_VIEW,
-      title: t(ctx.locale, "common.buttons.done"),
-    }]);
+    await sendButtons(
+      ctx.from,
+      `${WARNING_EMOJI} ${t(ctx.locale, "dine.manager.orders.not_found")}`,
+      [{
+        id: IDS.DINEIN_BARS_MANAGER_VIEW,
+        title: t(ctx.locale, "common.buttons.done"),
+      }],
+    );
     return;
   }
   const summary = formatOrderSummary(match);
@@ -1296,7 +1364,9 @@ export async function handleNumbersAddSubmit(
   if (!numbers.length) {
     await sendButtons(
       ctx.from,
-      `${WARNING_EMOJI} ${t(ctx.locale, "dine.manager.numbers.add_at_least_one")}`,
+      `${WARNING_EMOJI} ${
+        t(ctx.locale, "dine.manager.numbers.add_at_least_one")
+      }`,
       [{
         id: IDS.DINEIN_BARS_NUMBERS_MENU,
         title: t(ctx.locale, "common.buttons.back"),
@@ -1322,7 +1392,7 @@ export async function handleNumbersAddSubmit(
       successMessage,
       [{
         id: IDS.DINEIN_BARS_NUMBERS_VIEW,
-      title: t(ctx.locale, "dine.manager.numbers.view"),
+        title: t(ctx.locale, "dine.manager.numbers.view"),
       }],
     );
     await showCurrentNumbers(ctx, ensured);

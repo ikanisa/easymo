@@ -151,7 +151,10 @@ export async function handleMarketplaceButton(
       await sendButtonsMessage(
         ctx,
         t(ctx.locale, "marketplace.prompts.enter_name"),
-        buildButtons({ id: IDS.MARKETPLACE_MENU, title: t(ctx.locale, "marketplace.buttons.back_menu") }),
+        buildButtons({
+          id: IDS.MARKETPLACE_MENU,
+          title: t(ctx.locale, "marketplace.buttons.back_menu"),
+        }),
       );
       return true;
     }
@@ -223,7 +226,10 @@ export async function handleMarketplaceLocation(
       await sendButtonsMessage(
         ctx,
         t(ctx.locale, "marketplace.errors.name_missing"),
-        buildButtons({ id: IDS.MARKETPLACE_MENU, title: t(ctx.locale, "marketplace.buttons.back_menu") }),
+        buildButtons({
+          id: IDS.MARKETPLACE_MENU,
+          title: t(ctx.locale, "marketplace.buttons.back_menu"),
+        }),
       );
       await clearState(ctx.supabase, ctx.profileId);
       await startMarketplace(ctx, state);
@@ -244,8 +250,14 @@ export async function handleMarketplaceLocation(
         ctx,
         t(ctx.locale, "marketplace.status.published"),
         buildButtons(
-          { id: IDS.MARKETPLACE_ADD, title: t(ctx.locale, "marketplace.buttons.add_another") },
-          { id: IDS.MARKETPLACE_BROWSE, title: t(ctx.locale, "marketplace.buttons.browse_nearby") },
+          {
+            id: IDS.MARKETPLACE_ADD,
+            title: t(ctx.locale, "marketplace.buttons.add_another"),
+          },
+          {
+            id: IDS.MARKETPLACE_BROWSE,
+            title: t(ctx.locale, "marketplace.buttons.browse_nearby"),
+          },
         ),
       );
     } catch (error) {
@@ -254,8 +266,14 @@ export async function handleMarketplaceLocation(
         ctx,
         t(ctx.locale, "marketplace.errors.save_fail"),
         buildButtons(
-          { id: IDS.MARKETPLACE_ADD, title: t(ctx.locale, "common.buttons.retry") },
-          { id: IDS.MARKETPLACE_MENU, title: t(ctx.locale, "marketplace.buttons.back_menu") },
+          {
+            id: IDS.MARKETPLACE_ADD,
+            title: t(ctx.locale, "common.buttons.retry"),
+          },
+          {
+            id: IDS.MARKETPLACE_MENU,
+            title: t(ctx.locale, "marketplace.buttons.back_menu"),
+          },
         ),
       );
     }
@@ -626,7 +644,9 @@ function formatListDescription(
       parts.push(
         km >= 1
           ? t(ctx.locale, "marketplace.row.distance_km", { km: km.toFixed(1) })
-          : t(ctx.locale, "marketplace.row.distance_m", { m: String(Math.round(km * 1000)) }),
+          : t(ctx.locale, "marketplace.row.distance_m", {
+            m: String(Math.round(km * 1000)),
+          }),
       );
     }
   }
@@ -655,7 +675,9 @@ async function sendBusinessDetail(
   );
   lines.push(`💬 Chat: ${waLink}`);
   if (entry.catalog_url) {
-    lines.push(t(ctx.locale, "marketplace.detail.catalog", { url: entry.catalog_url }));
+    lines.push(
+      t(ctx.locale, "marketplace.detail.catalog", { url: entry.catalog_url }),
+    );
   }
   lines.push(t(ctx.locale, "marketplace.detail.tip_save_contact"));
 
@@ -663,8 +685,14 @@ async function sendBusinessDetail(
     ctx,
     lines.join("\n"),
     buildButtons(
-      { id: IDS.MARKETPLACE_REFRESH, title: t(ctx.locale, "marketplace.buttons.more_nearby") },
-      { id: IDS.MARKETPLACE_ADD, title: t(ctx.locale, "marketplace.buttons.add") },
+      {
+        id: IDS.MARKETPLACE_REFRESH,
+        title: t(ctx.locale, "marketplace.buttons.more_nearby"),
+      },
+      {
+        id: IDS.MARKETPLACE_ADD,
+        title: t(ctx.locale, "marketplace.buttons.add"),
+      },
     ),
   );
 }

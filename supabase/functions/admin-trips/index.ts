@@ -9,14 +9,18 @@ import { serve } from "$std/http/server.ts";
 import { createClient } from "@supabase/supabase-js";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
-const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-const ADMIN_TOKEN = Deno.env.get("EASYMO_ADMIN_TOKEN") ?? "";
+const SERVICE_URL = Deno.env.get("SERVICE_URL") ?? "";
+const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ??
+  Deno.env.get("SERVICE_ROLE_KEY") ?? "";
+const ADMIN_TOKEN = Deno.env.get("EASYMO_ADMIN_TOKEN") ??
+  Deno.env.get("ADMIN_TOKEN") ?? "";
 
-if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
+const SB_URL = SUPABASE_URL || SERVICE_URL;
+if (!SB_URL || !SERVICE_ROLE_KEY) {
   throw new Error("Supabase credentials are not configured");
 }
 
-const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+const supabase = createClient(SB_URL, SERVICE_ROLE_KEY);
 
 serve(async (req) => {
   const json = (body: unknown, status = 200) =>

@@ -1,8 +1,5 @@
 import type { RouterContext } from "../../types.ts";
-import {
-  sendButtonsMessage,
-  sendListMessage,
-} from "../../utils/reply.ts";
+import { sendButtonsMessage, sendListMessage } from "../../utils/reply.ts";
 import { IDS } from "../../wa/ids.ts";
 import { logWalletAdjust } from "../../observe/log.ts";
 import { fmtCurrency, timeAgo } from "../../utils/text.ts";
@@ -21,14 +18,16 @@ type WalletVendorSummary = {
   tokens: number | null;
   pending_commissions_tokens: number | null;
   pending_commissions_count: number | null;
-  recent: Array<{
-    id: string;
-    amount: number | null;
-    currency: string | null;
-    direction: string | null;
-    description: string | null;
-    occurred_at: string | null;
-  }> | null;
+  recent:
+    | Array<{
+      id: string;
+      amount: number | null;
+      currency: string | null;
+      direction: string | null;
+      description: string | null;
+      occurred_at: string | null;
+    }>
+    | null;
 };
 
 type VendorCommissionRow = {
@@ -214,8 +213,10 @@ export async function handleVendorCommissionSelection(
         );
         return true;
       }
-      if (reason === "wallet_transfer_invalid_amount" ||
-        reason === "wallet_insufficient_tokens") {
+      if (
+        reason === "wallet_transfer_invalid_amount" ||
+        reason === "wallet_insufficient_tokens"
+      ) {
         await sendButtonsMessage(
           ctx,
           "Not enough tokens. Please top up first.",

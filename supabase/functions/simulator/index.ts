@@ -10,7 +10,8 @@ import { createClient } from "@supabase/supabase-js";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-const ADMIN_TOKEN = Deno.env.get("EASYMO_ADMIN_TOKEN") ?? "";
+const ADMIN_TOKEN = Deno.env.get("EASYMO_ADMIN_TOKEN") ??
+  Deno.env.get("ADMIN_TOKEN") ?? "";
 
 if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
   throw new Error("Supabase credentials are not configured");

@@ -45,8 +45,9 @@ let cachedClient: SupabaseClient | null = null;
 
 function getSupabaseClient(): SupabaseClient {
   if (cachedClient) return cachedClient;
-  const url = Deno.env.get("SUPABASE_URL");
-  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  const url = Deno.env.get("SUPABASE_URL") ?? Deno.env.get("SERVICE_URL");
+  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ??
+    Deno.env.get("SERVICE_ROLE_KEY");
   if (!url || !serviceRoleKey) {
     throw new Error("insurance-ocr.missing_supabase_config");
   }

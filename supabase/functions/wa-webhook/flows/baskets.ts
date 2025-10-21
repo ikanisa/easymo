@@ -380,8 +380,14 @@ export async function handleBasketButton(
         ctx,
         "Nearby basket discovery is disabled. Use an invite code to join.",
         [
-        { id: IDS.BASKET_JOIN, title: t(ctx.locale, "baskets.buttons.join_with_code") },
-        { id: IDS.BASKET_CREATE, title: t(ctx.locale, "baskets.buttons.create") },
+          {
+            id: IDS.BASKET_JOIN,
+            title: t(ctx.locale, "baskets.buttons.join_with_code"),
+          },
+          {
+            id: IDS.BASKET_CREATE,
+            title: t(ctx.locale, "baskets.buttons.create"),
+          },
         ],
       );
       return true;
@@ -501,9 +507,18 @@ export async function handleBasketListSelection(
       ctx,
       "Approve or reject this loan request?",
       [
-        { id: IDS.BASKET_LOAN_APPROVE_VOTE, title: t(ctx.locale, "baskets.buttons.approve") },
-        { id: IDS.BASKET_LOAN_REJECT_VOTE, title: t(ctx.locale, "baskets.buttons.reject") },
-        { id: IDS.BASKET_LOAN_BACK, title: t(ctx.locale, "common.buttons.back") },
+        {
+          id: IDS.BASKET_LOAN_APPROVE_VOTE,
+          title: t(ctx.locale, "baskets.buttons.approve"),
+        },
+        {
+          id: IDS.BASKET_LOAN_REJECT_VOTE,
+          title: t(ctx.locale, "baskets.buttons.reject"),
+        },
+        {
+          id: IDS.BASKET_LOAN_BACK,
+          title: t(ctx.locale, "common.buttons.back"),
+        },
       ],
     );
     return true;
@@ -643,8 +658,14 @@ async function handleCreateDescription(
     ctx,
     t(ctx.locale, "baskets.prompts.public_or_private"),
     [
-      { id: IDS.BASKET_CREATE_PUBLIC, title: t(ctx.locale, "baskets.buttons.public") },
-      { id: IDS.BASKET_CREATE_PRIVATE, title: t(ctx.locale, "baskets.buttons.private") },
+      {
+        id: IDS.BASKET_CREATE_PUBLIC,
+        title: t(ctx.locale, "baskets.buttons.public"),
+      },
+      {
+        id: IDS.BASKET_CREATE_PRIVATE,
+        title: t(ctx.locale, "baskets.buttons.private"),
+      },
     ],
   );
   return true;
@@ -724,8 +745,14 @@ async function handleCreateSkip(
         ctx,
         t(ctx.locale, "baskets.prompts.public_or_private"),
         [
-          { id: IDS.BASKET_CREATE_PUBLIC, title: t(ctx.locale, "baskets.buttons.public") },
-          { id: IDS.BASKET_CREATE_PRIVATE, title: t(ctx.locale, "baskets.buttons.private") },
+          {
+            id: IDS.BASKET_CREATE_PUBLIC,
+            title: t(ctx.locale, "baskets.buttons.public"),
+          },
+          {
+            id: IDS.BASKET_CREATE_PRIVATE,
+            title: t(ctx.locale, "baskets.buttons.private"),
+          },
         ],
       );
       return true;
@@ -1060,7 +1087,10 @@ async function showBasketDetail(
     await sendButtonsMessage(
       ctx,
       "⚠️ Couldn't load basket details. Try again.",
-      [{ id: IDS.BASKET_MY, title: t(ctx.locale, "baskets.buttons.my_baskets") }],
+      [{
+        id: IDS.BASKET_MY,
+        title: t(ctx.locale, "baskets.buttons.my_baskets"),
+      }],
     );
     return true;
   }
