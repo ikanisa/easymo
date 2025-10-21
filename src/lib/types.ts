@@ -296,3 +296,45 @@ export interface Business {
   status?: string;
   created_at: string;
 }
+
+export interface RetrievalSearchChunk {
+  type?: string;
+  text?: string;
+  [key: string]: unknown;
+}
+
+export interface RetrievalSearchResult {
+  file_id?: string;
+  filename?: string;
+  score?: number;
+  attributes?: Record<string, unknown>;
+  content?: RetrievalSearchChunk[];
+  [key: string]: unknown;
+}
+
+export interface RetrievalSearchResponse {
+  status: 'ok' | 'error';
+  query?: {
+    original?: string;
+    rewritten?: string;
+    vector_store_id?: string;
+  };
+  results: RetrievalSearchResult[];
+  usage?: Record<string, unknown>;
+  meta?: {
+    took_ms?: number;
+    has_more?: boolean;
+    [key: string]: unknown;
+  };
+  error?: string;
+  message?: string;
+  [key: string]: unknown;
+}
+
+export interface RetrievalSearchRequest {
+  query: string;
+  vectorStoreId?: string;
+  maxResults?: number;
+  rewriteQuery?: boolean;
+  attributeFilter?: Record<string, unknown> | string;
+}
