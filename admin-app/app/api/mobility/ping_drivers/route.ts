@@ -8,13 +8,15 @@ export async function POST(req: NextRequest) {
   await Promise.all(
     (driver_ids as string[]).map(async (to) => {
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL ?? ''}/api/wa/outbound/messages`, {
-          method: 'POST',
-          headers: { 'Content-Type':'application/json' },
-          body: JSON.stringify({ to, template, text, type: 'mobility_invite' }),
+        const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL ?? ""}/api/wa/outbound/messages`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ to, template, text, type: "mobility_invite" }),
         });
         if (res.ok) queued++;
-      } catch (_) {}
+      } catch (error) {
+        console.error("Failed to queue driver ping", { to, error });
+      }
     })
   );
   return NextResponse.json({ ride_id, queued, reqId }, { status: 202 });

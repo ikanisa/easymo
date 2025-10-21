@@ -1,6 +1,6 @@
 "use client";
 export const dynamic = 'force-dynamic';
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 
 export default function TripsPage() {
   const [data, setData] = useState<{ data: any[]; total: number } | null>(null);
@@ -8,7 +8,7 @@ export default function TripsPage() {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
 
-  async function load(params?: { search?: string }) {
+  const load = useCallback(async (params?: { search?: string }) => {
     setLoading(true);
     setError(null);
     try {
@@ -24,12 +24,11 @@ export default function TripsPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
 
   useEffect(() => {
     void load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [load]);
 
   return (
     <div className="space-y-4">
