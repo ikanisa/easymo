@@ -1,0 +1,37 @@
+{
+  "name": "purchase_and_commission",
+  "description": "Confirm purchase amounts, compute commission, and post double-entry with invariants.",
+  "states": ["PENDING","VENDOR_CONFIRMED","BUYER_CONFIRMED","PAYOUT_READY","SETTLED"],
+  "initial_state": "PENDING",
+  "transitions": [
+    {
+      "from": "PENDING",
+      "to": "VENDOR_CONFIRMED",
+      "actions": [
+        { "tool": "purchase.confirm", "params": {"id": "${PURCHASE_ID}", "actor": "VENDOR", "amount": "${AMOUNT}", "currency": "${CURRENCY}"} }
+      ]
+    },
+    {
+      "from": "VENDOR_CONFIRMED",
+      "to": "BUYER_CONFIRMED",
+      "actions": [
+        { "tool": "purchase.confirm", "params": {"id": "${PURCHASE_ID}", "actor": "BUYER", "amount": "${AMOUNT}", "currency": "${CURRENCY}"} }
+      ]
+    },
+    {
+      "from": "BUYER_CONFIRMED",
+      "to": "PAYOUT_READY",
+      "actions": [
+        { "tool": "wallet.post_journal", "params": {"tenantId": "${TENANT_ID}", "sourceAccountId": "${VENDOR_WALLET_ID}", "destinationAccountId": "${COMMISSION_RESERVE_ID}", "amount": "${COMMISSION_AMOUNT}", "currency": "USD", "product": "commission", "reference": "${PURCHASE_ID}"} }
+      ]
+    },
+    {
+      "from": "PAYOUT_READY",
+      "to": "SETTLED",
+      "actions": [
+        { "tool": "wallet.post_journal", "fan_out": true, "items": "${PAYEES}", "params_template": {"tenantId": "${TENANT_ID}", "sourceAccountId": "${COMMISSION_RESERVE_ID}", "destinationAccountId": "${item.accountId}", "amount": "${item.amount}", "currency": "USD", "product": "commission_payout", "reference": "${PURCHASE_ID}"}, "max_parallel": 3 }
+      ]
+    }
+  ]
+}
+

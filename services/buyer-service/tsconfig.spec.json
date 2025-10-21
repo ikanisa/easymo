@@ -1,0 +1,25 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "baseUrl": ".",
+    "moduleResolution": "node",
+    "types": ["node", "jest"],
+    "typeRoots": ["../../node_modules/.pnpm/node_modules/@types", "../../node_modules/@types"],
+    "paths": {
+      "@jest/globals": ["../../node_modules/.pnpm/node_modules/@jest/globals"],
+      "@prisma/client": ["../../node_modules/.pnpm/node_modules/@prisma/client"],
+      "@easymo/db": ["../../packages/db/src/index.ts"],
+      "@easymo/commons": ["../../packages/commons/src/index.ts"],
+      "axios": ["../../node_modules/.pnpm/node_modules/axios/index.d.ts"],
+      "*": [
+        "*",
+        "../../node_modules/.pnpm/node_modules/*",
+        "../../node_modules/.pnpm/node_modules/@types/*",
+        "../../node_modules/*"
+      ]
+    }
+  },
+  "include": ["src/**/*", "test/**/*"],
+  "exclude": ["dist", "node_modules"]
+}

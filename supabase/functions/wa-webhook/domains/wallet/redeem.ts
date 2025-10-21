@@ -1,5 +1,6 @@
 import type { RouterContext } from "../../types.ts";
 import { sendButtonsMessage, sendListMessage } from "../../utils/reply.ts";
+import { t } from "../../i18n/translator.ts";
 import {
   listWalletRedeemOptions,
   type WalletRedeemOption,
@@ -27,11 +28,11 @@ export async function showWalletRedeem(ctx: RouterContext): Promise<boolean> {
       await sendListMessage(
         ctx,
         {
-          title: "🎁 Redeem tokens",
-          body: "No redeem options available yet.",
-          sectionTitle: "Rewards",
+          title: t(ctx.locale, "wallet.redeem.title"),
+          body: t(ctx.locale, "wallet.redeem.none"),
+          sectionTitle: t(ctx.locale, "wallet.redeem.section"),
           rows: navRows,
-          buttonText: "Open",
+          buttonText: t(ctx.locale, "common.buttons.open"),
         },
         { emoji: "🎁" },
       );
@@ -41,18 +42,18 @@ export async function showWalletRedeem(ctx: RouterContext): Promise<boolean> {
       key: STATES.LIST,
       data: { options },
     });
-    const prompt = "Pick a reward.";
+    const prompt = t(ctx.locale, "wallet.redeem.pick_reward");
     await sendListMessage(
       ctx,
       {
-        title: "🎁 Redeem tokens",
+        title: t(ctx.locale, "wallet.redeem.title"),
         body: prompt,
-        sectionTitle: "Rewards",
+        sectionTitle: t(ctx.locale, "wallet.redeem.section"),
         rows: [
           ...options.slice(0, 7).map((opt) => buildRedeemRow(opt)),
           ...navRows,
         ].slice(0, 10),
-        buttonText: "View",
+        buttonText: t(ctx.locale, "common.buttons.view"),
       },
       { emoji: "🎁" },
     );
@@ -61,11 +62,11 @@ export async function showWalletRedeem(ctx: RouterContext): Promise<boolean> {
     await sendListMessage(
       ctx,
       {
-        title: "🎁 Redeem tokens",
-        body: "⚠️ Couldn't load rewards. Try again later.",
-        sectionTitle: "Rewards",
+        title: t(ctx.locale, "wallet.redeem.title"),
+        body: t(ctx.locale, "wallet.redeem.load_fail"),
+        sectionTitle: t(ctx.locale, "wallet.redeem.section"),
         rows: buildWalletNavRows(IDS.WALLET_REDEEM),
-        buttonText: "Open",
+        buttonText: t(ctx.locale, "common.buttons.open"),
       },
       { emoji: "🎁" },
     );
@@ -84,15 +85,15 @@ export async function handleWalletRedeemSelection(
   if (!match) {
     await sendButtonsMessage(
       ctx,
-      "⚠️ Reward not found.",
-      [{ id: IDS.WALLET_REDEEM, title: "Done" }],
+      t(ctx.locale, "wallet.redeem.not_found"),
+      [{ id: IDS.WALLET_REDEEM, title: t(ctx.locale, "common.buttons.done") }],
     );
     return true;
   }
-  const lines: string[] = [match.title ?? "Reward"];
+  const lines: string[] = [match.title ?? t(ctx.locale, "wallet.redeem.reward")];
   if (match.description) lines.push(match.description);
   if (typeof match.cost_tokens === "number") {
-    lines.push(`Cost: ${match.cost_tokens} tokens`);
+    lines.push(t(ctx.locale, "wallet.redeem.cost_tokens", { cost: String(match.cost_tokens) }));
   }
   if (match.instructions) lines.push(match.instructions);
   await setState(ctx.supabase, ctx.profileId, {
@@ -103,8 +104,8 @@ export async function handleWalletRedeemSelection(
     ctx,
     lines.join("\n"),
     [
-      { id: IDS.WALLET_REDEEM_CONFIRM, title: "Confirm" },
-      { id: IDS.WALLET_REDEEM, title: "Cancel" },
+      { id: IDS.WALLET_REDEEM_CONFIRM, title: t(ctx.locale, "common.buttons.confirm") },
+      { id: IDS.WALLET_REDEEM, title: t(ctx.locale, "common.buttons.cancel") },
     ],
   );
   await logWalletAdjust({
@@ -135,8 +136,8 @@ export async function handleWalletRedeemConfirm(
     cost: option.cost_tokens ?? 0,
   });
   const summary = [
-    `✅ ${option.title ?? "Reward"} requested!`,
-    "We'll notify you once it's processed.",
+    t(ctx.locale, "wallet.redeem.requested", { title: option.title ?? t(ctx.locale, "wallet.redeem.reward") }),
+    t(ctx.locale, "wallet.redeem.notify_once_ready"),
   ].join("\n\n");
   await sendButtonsMessage(
     ctx,

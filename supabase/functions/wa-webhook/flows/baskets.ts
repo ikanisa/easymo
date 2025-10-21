@@ -23,6 +23,7 @@ import { fmtCurrency, timeAgo, truncate } from "../utils/text.ts";
 import { maskPhone } from "./support.ts";
 import { sendHomeMenu } from "./home.ts";
 import { sendImageUrl, sendText } from "../wa/client.ts";
+import { t } from "../i18n/translator.ts";
 
 const STATES = {
   MENU: "basket_menu",
@@ -345,11 +346,11 @@ export async function startBaskets(
   await sendListMessage(
     ctx,
     {
-      title: "🧺 Baskets",
-      body: "Manage shared savings circles for your friends or team.",
-      sectionTitle: "Actions",
+      title: t(ctx.locale, "baskets.menu.title"),
+      body: t(ctx.locale, "baskets.menu.body"),
+      sectionTitle: t(ctx.locale, "common.actions"),
       rows,
-      buttonText: "View",
+      buttonText: t(ctx.locale, "common.buttons.view"),
     },
     { emoji: "🧺" },
   );
@@ -379,8 +380,8 @@ export async function handleBasketButton(
         ctx,
         "Nearby basket discovery is disabled. Use an invite code to join.",
         [
-          { id: IDS.BASKET_JOIN, title: "🔑 Join with code" },
-          { id: IDS.BASKET_CREATE, title: "➕ Create" },
+        { id: IDS.BASKET_JOIN, title: t(ctx.locale, "baskets.buttons.join_with_code") },
+        { id: IDS.BASKET_CREATE, title: t(ctx.locale, "baskets.buttons.create") },
         ],
       );
       return true;
@@ -500,9 +501,9 @@ export async function handleBasketListSelection(
       ctx,
       "Approve or reject this loan request?",
       [
-        { id: IDS.BASKET_LOAN_APPROVE_VOTE, title: "✅ Approve" },
-        { id: IDS.BASKET_LOAN_REJECT_VOTE, title: "✖ Reject" },
-        { id: IDS.BASKET_LOAN_BACK, title: "← Back" },
+        { id: IDS.BASKET_LOAN_APPROVE_VOTE, title: t(ctx.locale, "baskets.buttons.approve") },
+        { id: IDS.BASKET_LOAN_REJECT_VOTE, title: t(ctx.locale, "baskets.buttons.reject") },
+        { id: IDS.BASKET_LOAN_BACK, title: t(ctx.locale, "common.buttons.back") },
       ],
     );
     return true;
@@ -606,8 +607,8 @@ async function handleCreateName(
   if (value.length < 2 || value.length > 60) {
     await sendButtonsMessage(
       ctx,
-      "⚠️ Name must be between 2 and 60 characters.",
-      [{ id: IDS.BASKET_BACK, title: "↩️ Back" }],
+      t(ctx.locale, "baskets.errors.name_length"),
+      [{ id: IDS.BASKET_BACK, title: t(ctx.locale, "common.menu_back") }],
     );
     return true;
   }
@@ -617,8 +618,8 @@ async function handleCreateName(
   });
   await sendButtonsMessage(
     ctx,
-    "Add a short description (or tap Skip).",
-    [{ id: IDS.BASKET_SKIP, title: "Skip" }],
+    t(ctx.locale, "baskets.prompts.enter_description"),
+    [{ id: IDS.BASKET_SKIP, title: t(ctx.locale, "common.buttons.skip") }],
   );
   return true;
 }
@@ -640,10 +641,10 @@ async function handleCreateDescription(
   });
   await sendButtonsMessage(
     ctx,
-    "Should the basket be public (anyone can find it) or private?",
+    t(ctx.locale, "baskets.prompts.public_or_private"),
     [
-      { id: IDS.BASKET_CREATE_PUBLIC, title: "🌍 Public" },
-      { id: IDS.BASKET_CREATE_PRIVATE, title: "🔒 Private" },
+      { id: IDS.BASKET_CREATE_PUBLIC, title: t(ctx.locale, "baskets.buttons.public") },
+      { id: IDS.BASKET_CREATE_PRIVATE, title: t(ctx.locale, "baskets.buttons.private") },
     ],
   );
   return true;
@@ -662,8 +663,8 @@ async function setCreateType(
   });
   await sendButtonsMessage(
     ctx,
-    "Enter the MoMo number or code that should receive contributions.",
-    [{ id: IDS.BASKET_SKIP, title: "Skip" }],
+    t(ctx.locale, "baskets.prompts.enter_momo"),
+    [{ id: IDS.BASKET_SKIP, title: t(ctx.locale, "common.buttons.skip") }],
   );
   return true;
 }
@@ -693,8 +694,8 @@ async function handleCreateMomo(
   if (!isPhone && !isCode) {
     await sendButtonsMessage(
       ctx,
-      "MoMo must be a number starting with 07… or a 4–9 digit code.",
-      [{ id: IDS.BASKET_SKIP, title: "Skip" }],
+      t(ctx.locale, "baskets.errors.momo_format"),
+      [{ id: IDS.BASKET_SKIP, title: t(ctx.locale, "common.buttons.skip") }],
     );
     return true;
   }
@@ -721,10 +722,10 @@ async function handleCreateSkip(
       });
       await sendButtonsMessage(
         ctx,
-        "Should the basket be public (anyone can find it) or private?",
+        t(ctx.locale, "baskets.prompts.public_or_private"),
         [
-          { id: IDS.BASKET_CREATE_PUBLIC, title: "🌍 Public" },
-          { id: IDS.BASKET_CREATE_PRIVATE, title: "🔒 Private" },
+          { id: IDS.BASKET_CREATE_PUBLIC, title: t(ctx.locale, "baskets.buttons.public") },
+          { id: IDS.BASKET_CREATE_PRIVATE, title: t(ctx.locale, "baskets.buttons.private") },
         ],
       );
       return true;
@@ -1059,7 +1060,7 @@ async function showBasketDetail(
     await sendButtonsMessage(
       ctx,
       "⚠️ Couldn't load basket details. Try again.",
-      [{ id: IDS.BASKET_MY, title: "📋 My baskets" }],
+      [{ id: IDS.BASKET_MY, title: t(ctx.locale, "baskets.buttons.my_baskets") }],
     );
     return true;
   }

@@ -1,0 +1,22 @@
+{
+  "name": "feedback_loop",
+  "description": "Collect post-purchase feedback via WhatsApp flow and update vendor quality metrics.",
+  "states": ["REQUESTED","SUBMITTED","SCORES_UPDATED"],
+  "initial_state": "REQUESTED",
+  "transitions": [
+    {
+      "from": "REQUESTED",
+      "to": "SUBMITTED",
+      "actions": [
+        { "tool": "broker.send_wa_template", "params": {"to": "${BUYER_MSISDN}", "template": {"name": "FEEDBACK_REQUEST", "language": "en", "components": "${FLOW_COMPONENTS}"}} }
+      ]
+    },
+    {
+      "from": "SUBMITTED",
+      "to": "SCORES_UPDATED",
+      "actions": [
+        { "tool": "ranking.update_metrics", "params": {"tenantId": "${TENANT_ID}", "vendorId": "${VENDOR_ID}", "scores": "${FEEDBACK_SCORES}"} }
+      ]
+    }
+  ]
+}

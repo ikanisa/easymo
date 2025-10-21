@@ -162,14 +162,14 @@ export async function showBarsEntry(
     data: contextData(context),
   });
   await sendList(ctx.from, {
-    title: "Bars & restaurants",
-    body: "Bars & restaurants",
-    sectionTitle: "Options",
-    buttonText: "View",
+    title: t(ctx.locale, "dine.entry.title"),
+    body: t(ctx.locale, "dine.entry.body"),
+    sectionTitle: t(ctx.locale, "common.options"),
+    buttonText: t(ctx.locale, "common.buttons.view"),
     rows: [
-      { id: IDS.DINEIN_BARS_VIEW_LIST, title: "View bars & restaurants" },
-      { id: IDS.DINEIN_BARS_MANAGE, title: "Bar manager" },
-      { id: IDS.BACK_MENU, title: "← Back" },
+      { id: IDS.DINEIN_BARS_VIEW_LIST, title: t(ctx.locale, "dine.entry.view_bars") },
+      { id: IDS.DINEIN_BARS_MANAGE, title: t(ctx.locale, "dine.entry.bar_manager") },
+      { id: IDS.BACK_MENU, title: t(ctx.locale, "common.buttons.back") },
     ],
   });
 }
@@ -183,14 +183,14 @@ export async function showBarsMenu(
     data: contextData(context),
   });
   await sendList(ctx.from, {
-    title: "Bars & restaurants",
-    body: "Bars & restaurants",
-    sectionTitle: "Options",
-    buttonText: "View",
+    title: t(ctx.locale, "dine.entry.title"),
+    body: t(ctx.locale, "dine.entry.body"),
+    sectionTitle: t(ctx.locale, "common.options"),
+    buttonText: t(ctx.locale, "common.buttons.view"),
     rows: [
-      { id: IDS.DINEIN_BARS_VIEW_LIST, title: "View bars & restaurants" },
-      { id: IDS.DINEIN_BARS_MANAGE, title: "Bar manager" },
-      { id: IDS.BACK_MENU, title: "← Back" },
+      { id: IDS.DINEIN_BARS_VIEW_LIST, title: t(ctx.locale, "dine.entry.view_bars") },
+      { id: IDS.DINEIN_BARS_MANAGE, title: t(ctx.locale, "dine.entry.bar_manager") },
+      { id: IDS.BACK_MENU, title: t(ctx.locale, "common.buttons.back") },
     ],
   });
 }
@@ -204,9 +204,9 @@ export async function showManagerEntry(
     back: DINE_STATE.MENU,
     data: contextData(resolved.context),
   });
-  await sendButtons(ctx.from, "Bar manager", [{
+  await sendButtons(ctx.from, t(ctx.locale, "dine.manager.title"), [{
     id: IDS.DINEIN_BARS_MANAGER_VIEW,
-    title: "View",
+    title: t(ctx.locale, "common.buttons.view"),
   }]);
 }
 
@@ -223,7 +223,7 @@ export async function showManagerMenu(
   const rows = resolved.hasManagedBar
     ? [
       { id: IDS.DINEIN_BARS_MANAGE_ORDERS, title: "Manage orders" },
-      { id: IDS.DINEIN_BARS_UPLOAD, title: "Upload/Update menu" },
+      { id: IDS.DINEIN_BARS_UPLOAD, title: t(ctx.locale, "dine.manager.upload_update_menu") },
       { id: IDS.DINEIN_BARS_REVIEW, title: "Review & edit menu" },
       { id: IDS.DINEIN_BARS_NUMBERS_MENU, title: "Add WhatsApp numbers" },
       { id: IDS.BACK_MENU, title: "← Back" },
@@ -236,10 +236,10 @@ export async function showManagerMenu(
     ? [`Managing: ${nextContext.barName}`]
     : ["Onboard your bar to unlock tools."];
   await sendList(ctx.from, {
-    title: "Bar manager",
+    title: t(ctx.locale, "dine.manager.title"),
     body: bodyLines.join("\n"),
-    sectionTitle: "Manage",
-    buttonText: "View",
+    sectionTitle: t(ctx.locale, "dine.manager.section_manage"),
+    buttonText: t(ctx.locale, "common.buttons.view"),
     rows,
   });
 }
@@ -653,8 +653,8 @@ export async function showOnboardUpload(
   });
   await sendButtons(
     ctx.from,
-    "Upload menu\nSend your PDF of the menu in this chat now.\nWe will read and structure it automatically.",
-    [{ id: IDS.DINEIN_BARS_MANAGER_VIEW, title: "← Back" }],
+    t(ctx.locale, "dine.onboard.upload.prompt"),
+    [{ id: IDS.DINEIN_BARS_MANAGER_VIEW, title: t(ctx.locale, "common.buttons.back") }],
   );
 }
 
@@ -686,8 +686,8 @@ export async function showUploadInstruction(
   });
   await sendButtons(
     ctx.from,
-    "Upload/Update menu\nSend PDF/images now. New items will be added automatically.",
-    [{ id: IDS.DINEIN_BARS_MANAGER_VIEW, title: "← Back" }],
+    t(ctx.locale, "dine.manager.menu.upload_update.prompt"),
+    [{ id: IDS.DINEIN_BARS_MANAGER_VIEW, title: t(ctx.locale, "common.buttons.back") }],
   );
 }
 
@@ -696,11 +696,7 @@ export async function showManageOrders(
   context: ManagerContext = {},
   options: { page?: number } = {},
 ): Promise<void> {
-  const ensured = await ensureBarContext(
-    ctx,
-    context,
-    "Select a bar first via View bars & restaurants before viewing orders.",
-  );
+  const ensured = await ensureBarContext(ctx, context);
   const page = Math.max(1, options.page ?? 1);
   await setDineState(ctx, DINE_STATE.MANAGE_ORDERS, {
     back: DINE_STATE.MANAGER_MENU,
@@ -725,9 +721,9 @@ export async function showManageOrders(
   });
 
   if (!orders.length) {
-    await sendButtons(ctx.from, `${INFO_EMOJI} No recent orders yet.`, [{
+    await sendButtons(ctx.from, `${INFO_EMOJI} ${t(ctx.locale, "dine.manager.orders.none")}`, [{
       id: IDS.DINEIN_BARS_MANAGER_VIEW,
-      title: "Done",
+      title: t(ctx.locale, "common.buttons.done"),
     }]);
     return;
   }
@@ -741,22 +737,22 @@ export async function showManageOrders(
   if (page < totalPages) {
     rows.push({
       id: IDS.DINEIN_BARS_MANAGE_ORDERS_NEXT,
-      title: "Next page",
+      title: t(ctx.locale, "common.buttons.next_page"),
     });
   }
   if (page > 1) {
     rows.push({
       id: IDS.DINEIN_BARS_MANAGE_ORDERS_PREV,
-      title: "Previous page",
+      title: t(ctx.locale, "common.buttons.prev_page"),
     });
   }
-  rows.push({ id: IDS.DINEIN_BARS_MANAGER_VIEW, title: "← Back" });
+  rows.push({ id: IDS.DINEIN_BARS_MANAGER_VIEW, title: t(ctx.locale, "common.buttons.back") });
 
   await sendList(ctx.from, {
-    title: `Orders — Recent (page ${page})`,
-    body: "View-only list of recent orders.",
-    sectionTitle: "Orders",
-    buttonText: "View",
+    title: t(ctx.locale, "dine.manager.orders.recent_title", { page: String(page) }),
+    body: t(ctx.locale, "dine.manager.orders.recent_body"),
+    sectionTitle: t(ctx.locale, "dine.manager.orders.section"),
+    buttonText: t(ctx.locale, "common.buttons.view"),
     rows,
   });
 }
@@ -770,15 +766,15 @@ export async function showNumbersMenu(
     data: contextData(context),
   });
   await sendList(ctx.from, {
-    title: "Receiving numbers",
-    body: "Choose what to do.",
-    sectionTitle: "Actions",
-    buttonText: "View",
+    title: t(ctx.locale, "dine.manager.numbers.title"),
+    body: t(ctx.locale, "dine.manager.choose_what_to_do"),
+    sectionTitle: t(ctx.locale, "common.actions"),
+    buttonText: t(ctx.locale, "common.buttons.view"),
     rows: [
-      { id: IDS.DINEIN_BARS_NUMBERS_VIEW, title: "Current numbers" },
-      { id: IDS.DINEIN_BARS_NUMBERS_ADD, title: "Add number" },
-      { id: IDS.DINEIN_BARS_NUMBERS_REMOVE, title: "Remove number" },
-      { id: IDS.DINEIN_BARS_MANAGER_VIEW, title: "← Back" },
+      { id: IDS.DINEIN_BARS_NUMBERS_VIEW, title: t(ctx.locale, "dine.manager.numbers.current") },
+      { id: IDS.DINEIN_BARS_NUMBERS_ADD, title: t(ctx.locale, "dine.manager.numbers.add") },
+      { id: IDS.DINEIN_BARS_NUMBERS_REMOVE, title: t(ctx.locale, "dine.manager.numbers.remove") },
+      { id: IDS.DINEIN_BARS_MANAGER_VIEW, title: t(ctx.locale, "common.buttons.back") },
     ],
   });
 }
@@ -787,11 +783,7 @@ export async function showCurrentNumbers(
   ctx: RouterContext,
   context: ManagerContext = {},
 ): Promise<void> {
-  const ensured = await ensureBarContext(
-    ctx,
-    context,
-    "Select a bar first via View bars & restaurants before viewing numbers.",
-  );
+  const ensured = await ensureBarContext(ctx, context);
   await setDineState(ctx, DINE_STATE.NUMBERS_VIEW, {
     back: DINE_STATE.NUMBERS_MENU,
     data: contextData(context),
@@ -807,10 +799,10 @@ export async function showCurrentNumbers(
     : "No numbers yet.";
   await sendButtons(
     ctx.from,
-    `Current numbers\n${summary}`,
+    `${t(ctx.locale, "dine.manager.numbers.current_header")}\n${summary}`,
     [{
       id: IDS.DINEIN_BARS_NUMBERS_MENU,
-      title: "← Back",
+      title: t(ctx.locale, "common.buttons.back"),
     }],
   );
 }
@@ -819,11 +811,7 @@ export async function promptAddNumber(
   ctx: RouterContext,
   context: ManagerContext = {},
 ): Promise<void> {
-  const ensured = await ensureBarContext(
-    ctx,
-    context,
-    "Select a bar first via View bars & restaurants before adding numbers.",
-  );
+  const ensured = await ensureBarContext(ctx, context);
   await setDineState(ctx, DINE_STATE.NUMBERS_ADD, {
     back: DINE_STATE.NUMBERS_MENU,
     data: contextData(context, { numbers: [] }),
@@ -843,11 +831,7 @@ export async function showReviewIntro(
   ctx: RouterContext,
   context: ManagerContext = {},
 ): Promise<void> {
-  const ensured = await ensureBarContext(
-    ctx,
-    context,
-    "Select a bar first via View bars & restaurants before reviewing menu items.",
-  );
+  const ensured = await ensureBarContext(ctx, context);
   await setDineState(ctx, DINE_STATE.REVIEW_LIST, {
     back: DINE_STATE.MANAGER_MENU,
     data: contextData(context),
@@ -860,31 +844,27 @@ export async function showEditMenu(
   ctx: RouterContext,
   context: ManagerContext = {},
 ): Promise<void> {
-  const ensured = await ensureBarContext(
-    ctx,
-    context,
-    "Select a bar first via View bars & restaurants before editing menu settings.",
-  );
+  const ensured = await ensureBarContext(ctx, context);
   await setDineState(ctx, DINE_STATE.EDIT_MENU, {
     back: DINE_STATE.MANAGER_MENU,
     data: contextData(context),
   });
   if (!ensured) return;
   await sendList(ctx.from, {
-    title: "Menu maintenance",
+    title: t(ctx.locale, "dine.manager.menu.maintenance.title"),
     body: ensured.barName
-      ? `Managing: ${ensured.barName}`
-      : "Choose how to update the menu.",
-    sectionTitle: "Actions",
-    buttonText: "View",
+      ? t(ctx.locale, "dine.manager.menu.maintenance.managing", { bar: ensured.barName })
+      : t(ctx.locale, "dine.manager.menu.maintenance.choose"),
+    sectionTitle: t(ctx.locale, "common.actions"),
+    buttonText: t(ctx.locale, "common.buttons.view"),
     rows: [
-      { id: IDS.DINEIN_BARS_EDIT_UPLOAD, title: "Upload new PDF" },
-      { id: IDS.DINEIN_BARS_EDIT_DELETE, title: "Delete entire menu" },
+      { id: IDS.DINEIN_BARS_EDIT_UPLOAD, title: t(ctx.locale, "dine.manager.menu.upload_pdf") },
+      { id: IDS.DINEIN_BARS_EDIT_DELETE, title: t(ctx.locale, "dine.manager.menu.delete_all") },
       {
         id: IDS.DINEIN_BARS_EDIT_REMOVE_CATEGORIES,
-        title: "Remove categories",
+        title: t(ctx.locale, "dine.manager.menu.remove_categories"),
       },
-      { id: IDS.DINEIN_BARS_MANAGER_VIEW, title: "← Back" },
+      { id: IDS.DINEIN_BARS_MANAGER_VIEW, title: t(ctx.locale, "common.buttons.back") },
     ],
   });
 }
@@ -930,11 +910,7 @@ export async function handleDeleteMenuConfirm(
   state: { data?: Record<string, unknown> },
 ): Promise<void> {
   const context = extractManagerContext(state);
-  const ensured = await ensureBarContext(
-    ctx,
-    context,
-    "Select a bar first via View bars & restaurants before deleting menus.",
-  );
+  const ensured = await ensureBarContext(ctx, context);
   if (!ensured) return;
   try {
     await ctx.supabase
@@ -947,7 +923,7 @@ export async function handleDeleteMenuConfirm(
       .eq("bar_id", ensured.barId);
     await sendButtons(ctx.from, "All items deleted. ✅", [{
       id: IDS.DINEIN_BARS_REVIEW,
-      title: "View menu",
+      title: copy("buttons.viewMenu", {}, ctx.locale),
     }]);
   } catch (error) {
     console.error("dine.menu.delete_fail", error);
@@ -967,11 +943,7 @@ export async function handleRemoveCategoriesConfirm(
   state: { data?: Record<string, unknown> },
 ): Promise<void> {
   const context = extractManagerContext(state);
-  const ensured = await ensureBarContext(
-    ctx,
-    context,
-    "Select a bar first via View bars & restaurants before updating categories.",
-  );
+  const ensured = await ensureBarContext(ctx, context);
   if (!ensured) return;
   try {
     await ctx.supabase
@@ -980,7 +952,7 @@ export async function handleRemoveCategoriesConfirm(
       .eq("bar_id", ensured.barId);
     await sendButtons(ctx.from, "Categories removed. ✅", [{
       id: IDS.DINEIN_BARS_REVIEW,
-      title: "View menu",
+      title: copy("buttons.viewMenu", {}, ctx.locale),
     }]);
     await showEditMenu(ctx, ensured);
   } catch (error) {
@@ -1001,11 +973,7 @@ export async function showReviewList(
   context: ManagerContext,
   options: { page?: number } = {},
 ): Promise<void> {
-  const ensured = await ensureBarContext(
-    ctx,
-    context,
-    "Select a bar first via View bars & restaurants before reviewing menu items.",
-  );
+  const ensured = await ensureBarContext(ctx, context);
   const page = Math.max(1, options.page ?? 1);
   await setDineState(ctx, DINE_STATE.REVIEW_LIST, {
     back: DINE_STATE.MANAGER_MENU,
@@ -1028,7 +996,7 @@ export async function showReviewList(
   if (!items.length) {
     await sendButtons(ctx.from, `${INFO_EMOJI} No menu items published yet.`, [{
       id: IDS.DINEIN_BARS_UPLOAD,
-      title: "Upload menu",
+      title: t(ctx.locale, "dine.manager.menu.upload_menu"),
     }]);
     return;
   }
@@ -1040,19 +1008,18 @@ export async function showReviewList(
   }));
 
   if (page < totalPages) {
-    rows.push({ id: IDS.DINEIN_BARS_REVIEW_NEXT_PAGE, title: "Next page" });
+    rows.push({ id: IDS.DINEIN_BARS_REVIEW_NEXT_PAGE, title: t(ctx.locale, "common.buttons.next_page") });
   }
   if (page > 1) {
-    rows.push({ id: IDS.DINEIN_BARS_REVIEW_PREV_PAGE, title: "Previous page" });
+    rows.push({ id: IDS.DINEIN_BARS_REVIEW_PREV_PAGE, title: t(ctx.locale, "common.buttons.prev_page") });
   }
-  rows.push({ id: IDS.DINEIN_BARS_MANAGER_VIEW, title: "← Back" });
+  rows.push({ id: IDS.DINEIN_BARS_MANAGER_VIEW, title: t(ctx.locale, "common.buttons.back") });
 
   await sendList(ctx.from, {
-    title: `Menu — Items (page ${page})`,
-    body:
-      "9 items per page · Sorted A→Z, shifts to most ordered on top over time.",
-    sectionTitle: "Items",
-    buttonText: "View",
+    title: t(ctx.locale, "dine.manager.menu.items.title", { page: String(page) }),
+    body: t(ctx.locale, "dine.manager.menu.items.body_hint"),
+    sectionTitle: t(ctx.locale, "dine.manager.menu.items.section"),
+    buttonText: t(ctx.locale, "common.buttons.view"),
     rows,
   });
 }
@@ -1091,7 +1058,7 @@ export async function showReviewItemMenu(
     title: `Item: ${detail.name}`,
     body: formatItemDescription(detail),
     sectionTitle: "Actions",
-    buttonText: "View",
+    buttonText: t(ctx.locale, "common.buttons.view"),
     rows: [
       { id: IDS.DINEIN_BARS_REVIEW_EDIT_NAME, title: "Change name" },
       { id: IDS.DINEIN_BARS_REVIEW_EDIT_PRICE, title: "Change price" },
@@ -1157,7 +1124,7 @@ export async function handleReviewEditText(
       await ctx.supabase.from("items").update({ name: value }).eq("id", itemId);
       await sendButtons(ctx.from, "Updated. ✅", [{
         id: IDS.DINEIN_BARS_REVIEW,
-        title: "View menu",
+      title: copy("buttons.viewMenu", {}, ctx.locale),
       }]);
       return true;
     }
@@ -1170,7 +1137,7 @@ export async function handleReviewEditText(
       );
       await sendButtons(ctx.from, "Updated. ✅", [{
         id: IDS.DINEIN_BARS_REVIEW,
-        title: "View menu",
+        title: copy("buttons.viewMenu", {}, ctx.locale),
       }]);
       return true;
     }
@@ -1181,7 +1148,7 @@ export async function handleReviewEditText(
       }).eq("id", itemId);
       await sendButtons(ctx.from, "Updated. ✅", [{
         id: IDS.DINEIN_BARS_REVIEW,
-        title: "View menu",
+        title: copy("buttons.viewMenu", {}, ctx.locale),
       }]);
       return true;
     }
@@ -1206,14 +1173,14 @@ export async function handleReviewEditText(
     );
     await sendButtons(ctx.from, "Updated. ✅", [{
       id: IDS.DINEIN_BARS_REVIEW,
-      title: "View menu",
+      title: copy("buttons.viewMenu", {}, ctx.locale),
     }]);
     return true;
   } catch (error) {
     console.error("dine.review.edit_fail", error);
     await sendButtons(ctx.from, `${WARNING_EMOJI} Update failed. Try again.`, [{
       id: IDS.DINEIN_BARS_REVIEW,
-      title: "View menu",
+      title: copy("buttons.viewMenu", {}, ctx.locale),
     }]);
     return true;
   } finally {
@@ -1245,7 +1212,7 @@ export async function handleToggleAvailability(
     });
     await sendButtons(ctx.from, "Availability updated. ✅", [{
       id: IDS.DINEIN_BARS_REVIEW,
-      title: "View menu",
+      title: copy("buttons.viewMenu", {}, ctx.locale),
     }]);
   } catch (error) {
     console.error("dine.review.toggle_fail", error);
@@ -1254,7 +1221,7 @@ export async function handleToggleAvailability(
       `${WARNING_EMOJI} Update failed. Try again.`,
       [{
         id: IDS.DINEIN_BARS_REVIEW,
-        title: "View menu",
+        title: copy("buttons.viewMenu", {}, ctx.locale),
       }],
     );
   }
@@ -1270,9 +1237,9 @@ export async function handleOrderRowSelection(
     : [];
   const match = orders.find((order) => order.order_id === orderId);
   if (!match) {
-    await sendButtons(ctx.from, `${WARNING_EMOJI} Order not found.`, [{
+    await sendButtons(ctx.from, `${WARNING_EMOJI} ${t(ctx.locale, "dine.manager.orders.not_found")}`, [{
       id: IDS.DINEIN_BARS_MANAGER_VIEW,
-      title: "Done",
+      title: t(ctx.locale, "common.buttons.done"),
     }]);
     return;
   }
@@ -1282,7 +1249,7 @@ export async function handleOrderRowSelection(
     summary,
     [{
       id: IDS.DINEIN_BARS_MANAGER_VIEW,
-      title: "Done",
+      title: t(ctx.locale, "common.buttons.done"),
     }],
   );
 }
@@ -1321,11 +1288,7 @@ export async function handleNumbersAddSubmit(
   state: { data?: Record<string, unknown> },
 ): Promise<void> {
   const context = extractManagerContext(state);
-  const ensured = await ensureBarContext(
-    ctx,
-    context,
-    "Select a bar first via View bars & restaurants before saving numbers.",
-  );
+  const ensured = await ensureBarContext(ctx, context);
   const numbers = Array.isArray(state.data?.numbers)
     ? state.data?.numbers as string[]
     : [];
@@ -1333,10 +1296,10 @@ export async function handleNumbersAddSubmit(
   if (!numbers.length) {
     await sendButtons(
       ctx.from,
-      `${WARNING_EMOJI} Add at least one number.`,
+      `${WARNING_EMOJI} ${t(ctx.locale, "dine.manager.numbers.add_at_least_one")}`,
       [{
         id: IDS.DINEIN_BARS_NUMBERS_MENU,
-        title: "← Back",
+        title: t(ctx.locale, "common.buttons.back"),
       }],
     );
     return;
@@ -1359,7 +1322,7 @@ export async function handleNumbersAddSubmit(
       successMessage,
       [{
         id: IDS.DINEIN_BARS_NUMBERS_VIEW,
-        title: "View numbers",
+      title: t(ctx.locale, "dine.manager.numbers.view"),
       }],
     );
     await showCurrentNumbers(ctx, ensured);
@@ -1380,11 +1343,7 @@ export async function promptRemoveNumber(
   ctx: RouterContext,
   context: ManagerContext = {},
 ): Promise<void> {
-  const ensured = await ensureBarContext(
-    ctx,
-    context,
-    "Select a bar first via View bars & restaurants before removing numbers.",
-  );
+  const ensured = await ensureBarContext(ctx, context);
   await setDineState(ctx, DINE_STATE.NUMBERS_REMOVE, {
     back: DINE_STATE.NUMBERS_MENU,
     data: contextData(context, { numbers: [] }),
@@ -1446,11 +1405,7 @@ export async function handleNumbersRemoveSubmit(
   state: { data?: Record<string, unknown> },
 ): Promise<void> {
   const context = extractManagerContext(state);
-  const ensured = await ensureBarContext(
-    ctx,
-    context,
-    "Select a bar first via View bars & restaurants before removing numbers.",
-  );
+  const ensured = await ensureBarContext(ctx, context);
   if (!ensured) return;
   const remove = Array.isArray(state.data?.remove)
     ? state.data?.remove as string[]
@@ -1480,7 +1435,7 @@ export async function handleNumbersRemoveSubmit(
       successMessage,
       [{
         id: IDS.DINEIN_BARS_NUMBERS_VIEW,
-        title: "View numbers",
+        title: t(ctx.locale, "dine.manager.numbers.view"),
       }],
     );
     await showCurrentNumbers(ctx, ensured);
@@ -1488,10 +1443,10 @@ export async function handleNumbersRemoveSubmit(
     console.error("dine.numbers.remove_fail", error);
     await sendButtons(
       ctx.from,
-      `${WARNING_EMOJI} Failed to remove numbers.`,
+      `${WARNING_EMOJI} ${t(ctx.locale, "dine.manager.numbers.remove_failed")}`,
       [{
         id: IDS.DINEIN_BARS_NUMBERS_MENU,
-        title: "← Back",
+        title: t(ctx.locale, "common.buttons.back"),
       }],
     );
   }
@@ -1524,7 +1479,7 @@ export async function handleUploadDone(
   state: { data?: Record<string, unknown> },
 ): Promise<void> {
   const context = extractManagerContext(state);
-  const message = "Thanks. Reading your menu…";
+  const message = t(ctx.locale, "dine.manager.upload.thanks_reading_menu");
   await sendText(ctx.from, message);
   await setDineState(ctx, DINE_STATE.MANAGER_MENU, {
     back: DINE_STATE.MANAGER_ENTRY,
@@ -1535,10 +1490,10 @@ export async function handleUploadDone(
 export async function handlePublish(ctx: RouterContext): Promise<void> {
   await sendButtons(
     ctx.from,
-    `${MANAGER_EMOJI} Publish requested. We'll confirm once the menu is live.`,
+    `${MANAGER_EMOJI} ${t(ctx.locale, "dine.manager.publish.requested")}`,
     [{
       id: IDS.DINEIN_BARS_MANAGER_VIEW,
-      title: "Back to manager",
+      title: t(ctx.locale, "dine.manager.back_to_manager"),
     }],
   );
 }

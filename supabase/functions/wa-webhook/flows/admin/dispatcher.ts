@@ -45,7 +45,8 @@ export async function handleAdminRow(
     case ADMIN_ROW_IDS.DIAG_INSURANCE:
     case ADMIN_ROW_IDS.DIAG_HEALTH:
     case ADMIN_ROW_IDS.DIAG_LOGS:
-      await sendText(ctx.from, "Admin module coming online soon.");
+      const { t } = await import("../../i18n/translator.ts");
+      await sendText(ctx.from, t(ctx.locale, "admin.module.coming_soon"));
       return true;
     default:
       return false;

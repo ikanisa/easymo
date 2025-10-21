@@ -1,0 +1,20 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": "./",
+    "baseUrl": ".",
+    "types": ["node", "jest"],
+    "typeRoots": ["../../node_modules/.pnpm/node_modules/@types", "../../node_modules/@types"],
+    "esModuleInterop": true,
+    "module": "commonjs",
+    "paths": {
+      "@easymo/commons": ["../../packages/commons/src/index.ts"],
+      "@easymo/db": ["../../packages/db/src/index.ts"],
+      "@prisma/client": ["../../node_modules/.pnpm/node_modules/@prisma/client"],
+      "*": ["*", "../../node_modules/.pnpm/node_modules/*", "../../node_modules/.pnpm/node_modules/@types/*", "../../node_modules/*"]
+    }
+  },
+  "include": ["src/**/*", "test/**/*"],
+  "exclude": ["dist", "node_modules"]
+}

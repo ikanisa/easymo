@@ -4,6 +4,7 @@ import { MENU_MEDIA_BUCKET } from "../../config.ts";
 import { fetchWhatsAppMedia } from "../../utils/media.ts";
 import { logEvent, logStructuredEvent } from "../../observe/log.ts";
 import { sendText } from "../../wa/client.ts";
+import { t } from "../../i18n/translator.ts";
 import { findActiveBarNumber } from "../../utils/bar_numbers.ts";
 
 const DEFAULT_FILENAME = "upload.bin";
@@ -25,7 +26,7 @@ export async function handleVendorMenuMedia(
     console.error("vendor.menu.lookup_fail", error, { from: ctx.from });
     await sendText(
       ctx.from,
-      "We couldn't look up your bar. Please try again in a moment or contact support.",
+      t(ctx.locale, "vendor.menu.lookup_fail"),
     );
     await logStructuredEvent("VENDOR_MENU_UPLOAD_FAIL", {
       wa_id: `***${ctx.from.slice(-4)}`,
@@ -44,7 +45,7 @@ export async function handleVendorMenuMedia(
     });
     await sendText(
       ctx.from,
-      'We couldn\'t match this WhatsApp number to a bar. Add the number in the manager menu under "Add WhatsApp numbers" and try again.',
+      t(ctx.locale, "vendor.menu.no_bar_mapping"),
     );
     await logStructuredEvent("VENDOR_MENU_UPLOAD_SKIPPED", {
       wa_id: `***${ctx.from.slice(-4)}`,
@@ -84,7 +85,7 @@ export async function handleVendorMenuMedia(
 
     await sendText(
       ctx.from,
-      "Menu received! We’re processing it now and will notify you when it’s ready.",
+      t(ctx.locale, "vendor.menu.received_processing"),
     );
 
     await triggerOcrProcessing(ctx.supabase);
@@ -96,7 +97,7 @@ export async function handleVendorMenuMedia(
     });
     await sendText(
       ctx.from,
-      "Sorry, we couldn’t process that file. Please try again in a moment.",
+      t(ctx.locale, "vendor.menu.process_fail"),
     );
   }
 

@@ -7,6 +7,7 @@ import {
 } from "../../utils/reply.ts";
 import { IDS } from "../../wa/ids.ts";
 import { createBusiness, listBusinesses } from "../../rpc/marketplace.ts";
+import { t } from "../../i18n/translator.ts";
 import { waChatLink } from "../../utils/links.ts";
 import { sendHomeMenu } from "../../flows/home.ts";
 import type { MarketplaceCategoryDef } from "./categories.ts";
@@ -79,27 +80,27 @@ export async function startMarketplace(
   await sendListMessage(
     ctx,
     {
-      title: "🛍️ Marketplace",
-      body: "Discover nearby sellers or list your own business.",
-      sectionTitle: "Actions",
+      title: t(ctx.locale, "marketplace.menu.title"),
+      body: t(ctx.locale, "marketplace.menu.body"),
+      sectionTitle: t(ctx.locale, "common.actions"),
       rows: [
         {
           id: IDS.MARKETPLACE_BROWSE,
-          title: "Browse businesses",
-          description: "Share location to see sellers near you.",
+          title: t(ctx.locale, "marketplace.buttons.browse"),
+          description: t(ctx.locale, "marketplace.desc.share_location"),
         },
         {
           id: IDS.MARKETPLACE_ADD,
-          title: "Add business",
-          description: "List your shop so others can find you.",
+          title: t(ctx.locale, "marketplace.buttons.add"),
+          description: t(ctx.locale, "marketplace.desc.add_business"),
         },
         {
           id: IDS.BACK_MENU,
-          title: "← Back",
-          description: "Return to the main menu.",
+          title: t(ctx.locale, "common.home_button"),
+          description: t(ctx.locale, "common.back_to_menu.description"),
         },
       ],
-      buttonText: "Open",
+      buttonText: t(ctx.locale, "common.buttons.open"),
     },
     { emoji: "🛍️" },
   );
@@ -124,18 +125,18 @@ export async function handleMarketplaceButton(
           ...buildCategoryRows(categoryDefs),
           {
             id: IDS.MARKETPLACE_MENU,
-            title: "← Back",
-            description: "Return to the marketplace menu.",
+            title: t(ctx.locale, "common.home_button"),
+            description: t(ctx.locale, "marketplace.desc.back_menu"),
           },
         ];
         await sendListMessage(
           ctx,
           {
-            title: "🛍️ Browse marketplace",
-            body: "Pick a business type to continue.",
-            sectionTitle: "Categories",
+            title: t(ctx.locale, "marketplace.browse.title"),
+            body: t(ctx.locale, "marketplace.browse.body"),
+            sectionTitle: t(ctx.locale, "marketplace.browse.section"),
             rows,
-            buttonText: "Choose",
+            buttonText: t(ctx.locale, "common.buttons.choose"),
           },
           { emoji: "🛍️" },
         );
@@ -149,8 +150,8 @@ export async function handleMarketplaceButton(
       });
       await sendButtonsMessage(
         ctx,
-        "🏪 Send your business name (max 60 characters).",
-        buildButtons({ id: IDS.MARKETPLACE_MENU, title: "↩️ Back" }),
+        t(ctx.locale, "marketplace.prompts.enter_name"),
+        buildButtons({ id: IDS.MARKETPLACE_MENU, title: t(ctx.locale, "marketplace.buttons.back_menu") }),
       );
       return true;
     }
@@ -221,8 +222,8 @@ export async function handleMarketplaceLocation(
     if (!name) {
       await sendButtonsMessage(
         ctx,
-        "⚠️ Business name missing. Restarting marketplace setup.",
-        buildButtons({ id: IDS.MARKETPLACE_MENU, title: "↩️ Marketplace" }),
+        t(ctx.locale, "marketplace.errors.name_missing"),
+        buildButtons({ id: IDS.MARKETPLACE_MENU, title: t(ctx.locale, "marketplace.buttons.back_menu") }),
       );
       await clearState(ctx.supabase, ctx.profileId);
       await startMarketplace(ctx, state);
@@ -241,20 +242,20 @@ export async function handleMarketplaceLocation(
       await clearState(ctx.supabase, ctx.profileId);
       await sendButtonsMessage(
         ctx,
-        "✅ Business published! Nearby shoppers can now discover you.",
+        t(ctx.locale, "marketplace.status.published"),
         buildButtons(
-          { id: IDS.MARKETPLACE_ADD, title: "➕ Add another" },
-          { id: IDS.MARKETPLACE_BROWSE, title: "🗺️ Browse nearby" },
+          { id: IDS.MARKETPLACE_ADD, title: t(ctx.locale, "marketplace.buttons.add_another") },
+          { id: IDS.MARKETPLACE_BROWSE, title: t(ctx.locale, "marketplace.buttons.browse_nearby") },
         ),
       );
     } catch (error) {
       console.error("marketplace.create_fail", error);
       await sendButtonsMessage(
         ctx,
-        "⚠️ Could not save your business right now. Please try again in a moment.",
+        t(ctx.locale, "marketplace.errors.save_fail"),
         buildButtons(
-          { id: IDS.MARKETPLACE_ADD, title: "🔁 Retry" },
-          { id: IDS.MARKETPLACE_MENU, title: "↩️ Marketplace" },
+          { id: IDS.MARKETPLACE_ADD, title: t(ctx.locale, "common.buttons.retry") },
+          { id: IDS.MARKETPLACE_MENU, title: t(ctx.locale, "marketplace.buttons.back_menu") },
         ),
       );
     }
@@ -577,11 +578,11 @@ async function renderBrowsePage(
   await sendListMessage(
     ctx,
     {
-      title: "🛍️ Nearby businesses",
+      title: t(ctx.locale, "marketplace.results.nearby_title"),
       body,
-      sectionTitle: "Results",
+      sectionTitle: t(ctx.locale, "marketplace.results.section"),
       rows,
-      buttonText: "Open",
+      buttonText: t(ctx.locale, "common.buttons.open"),
     },
     { emoji: "🛍️" },
   );
@@ -624,8 +625,8 @@ function formatListDescription(
     if (Number.isFinite(km)) {
       parts.push(
         km >= 1
-          ? `${km.toFixed(1)} km away`
-          : `${Math.round(km * 1000)} m away`,
+          ? t(ctx.locale, "marketplace.row.distance_km", { km: km.toFixed(1) })
+          : t(ctx.locale, "marketplace.row.distance_m", { m: String(Math.round(km * 1000)) }),
       );
     }
   }
@@ -650,20 +651,20 @@ async function sendBusinessDetail(
   if (entry.description) lines.push(entry.description);
   const waLink = waChatLink(
     entry.owner_whatsapp,
-    "Hi! I'm interested in your products.",
+    t(ctx.locale, "marketplace.detail.chat_prefill"),
   );
   lines.push(`💬 Chat: ${waLink}`);
   if (entry.catalog_url) {
-    lines.push(`🛒 Catalog: ${entry.catalog_url}`);
+    lines.push(t(ctx.locale, "marketplace.detail.catalog", { url: entry.catalog_url }));
   }
-  lines.push("Tip: Save the contact to keep ordering easily.");
+  lines.push(t(ctx.locale, "marketplace.detail.tip_save_contact"));
 
   await sendButtonsMessage(
     ctx,
     lines.join("\n"),
     buildButtons(
-      { id: IDS.MARKETPLACE_REFRESH, title: "🔄 More nearby" },
-      { id: IDS.MARKETPLACE_ADD, title: "➕ Add business" },
+      { id: IDS.MARKETPLACE_REFRESH, title: t(ctx.locale, "marketplace.buttons.more_nearby") },
+      { id: IDS.MARKETPLACE_ADD, title: t(ctx.locale, "marketplace.buttons.add") },
     ),
   );
 }

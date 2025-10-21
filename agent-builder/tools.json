@@ -1,0 +1,141 @@
+{
+  "version": "1.0",
+  "tools": [
+    {
+      "name": "fetchLead",
+      "description": "Lookup lead by E.164; get opt-in status and tags",
+      "input_schema": { "type": "object", "properties": { "tenantId": {"type":"string"}, "phone": { "type": "string" } }, "required": ["tenantId","phone"] },
+      "http": { "method": "POST", "url": "${AGENT_CORE_URL}/tools/fetch-lead" },
+      "headers": { "x-agent-jwt": "${AGENT_CORE_INTERNAL_TOKEN}", "x-request-id": "${REQUEST_ID}", "Idempotency-Key": "${IDEMPOTENCY_KEY}" }
+    },
+    {
+      "name": "attribution.store_evidence",
+      "description": "Store attribution evidence artifacts",
+      "input_schema": { "type": "object", "properties": { "quoteId": {"type":"string"}, "artifacts": {"type":"array"} }, "required": ["quoteId","artifacts"] },
+      "http": { "method": "POST", "url": "${ATTRIBUTION_SERVICE_URL}/attribution/evidence" },
+      "headers": { "x-request-id": "${REQUEST_ID}", "Idempotency-Key": "${IDEMPOTENCY_KEY}" }
+    },
+    {
+      "name": "dispute.open",
+      "description": "Open a dispute for a quote",
+      "input_schema": { "type": "object", "properties": { "quoteId": {"type":"string"}, "reason": {"type":"string"}, "actor": {"type":"string"} }, "required": ["quoteId","reason","actor"] },
+      "http": { "method": "POST", "url": "${ATTRIBUTION_SERVICE_URL}/attribution/disputes" },
+      "headers": { "x-request-id": "${REQUEST_ID}", "Idempotency-Key": "${IDEMPOTENCY_KEY}" }
+    },
+    {
+      "name": "ranking.update_metrics",
+      "description": "Update vendor quality metrics based on feedback",
+      "input_schema": { "type": "object", "properties": { "tenantId": {"type":"string"}, "vendorId": {"type":"string"}, "scores": {"type":"object"} }, "required": ["tenantId","vendorId","scores"] },
+      "http": { "method": "POST", "url": "${MARKETPLACE_RANKING_URL}/ranking/feedback" },
+      "headers": { "x-request-id": "${REQUEST_ID}", "Idempotency-Key": "${IDEMPOTENCY_KEY}" }
+    },
+    {
+      "name": "logLead",
+      "description": "Create/update lead with tags",
+      "input_schema": { "type": "object", "properties": { "tenantId": {"type":"string"}, "phone": {"type":"string"}, "name": {"type":"string"}, "tags": {"type":"array","items":{"type":"string"}}, "optIn": {"type":"boolean"} }, "required": ["tenantId","phone"] },
+      "http": { "method": "POST", "url": "${AGENT_CORE_URL}/tools/log-lead" },
+      "headers": { "x-agent-jwt": "${AGENT_CORE_INTERNAL_TOKEN}", "x-request-id": "${REQUEST_ID}", "Idempotency-Key": "${IDEMPOTENCY_KEY}" }
+    },
+    {
+      "name": "createCall",
+      "description": "Open a call row",
+      "input_schema": { "type": "object", "properties": { "tenantId": {"type":"string"}, "leadId": {"type":"string"}, "direction": {"type":"string","enum":["inbound","outbound"]}, "platform": {"type":"string","enum":["pstn","sip"]}, "region": {"type":"string"} }, "required": ["tenantId","direction","platform"] },
+      "http": { "method": "POST", "url": "${AGENT_CORE_URL}/tools/create-call" },
+      "headers": { "x-agent-jwt": "${AGENT_CORE_INTERNAL_TOKEN}", "x-request-id": "${REQUEST_ID}" }
+    },
+    {
+      "name": "setDisposition",
+      "description": "Finalize call outcome",
+      "input_schema": { "type": "object", "properties": { "callId": {"type":"string"}, "code": {"type":"string"}, "notes": {"type":"string"} }, "required": ["callId","code"] },
+      "http": { "method": "POST", "url": "${AGENT_CORE_URL}/tools/set-disposition" },
+      "headers": { "x-agent-jwt": "${AGENT_CORE_INTERNAL_TOKEN}", "x-request-id": "${REQUEST_ID}" }
+    },
+    {
+      "name": "registerOptOut",
+      "description": "Add number to suppression list",
+      "input_schema": { "type": "object", "properties": { "phone": {"type":"string"}, "reason": {"type":"string"} }, "required": ["phone"] },
+      "http": { "method": "POST", "url": "${AGENT_CORE_URL}/tools/register-opt-out" },
+      "headers": { "x-agent-jwt": "${AGENT_CORE_INTERNAL_TOKEN}", "x-request-id": "${REQUEST_ID}" }
+    },
+    {
+      "name": "collectPayment",
+      "description": "Return MoMo USSD or Revolut link based on region",
+      "input_schema": { "type": "object", "properties": { "region": {"type":"string"}, "amount": {"type":"number"}, "currency": {"type":"string"} }, "required": ["region","amount","currency"] },
+      "http": { "method": "POST", "url": "${AGENT_CORE_URL}/tools/collect-payment" },
+      "headers": { "x-agent-jwt": "${AGENT_CORE_INTERNAL_TOKEN}", "x-request-id": "${REQUEST_ID}" }
+    },
+    {
+      "name": "warmTransfer",
+      "description": "Transfer to human agent",
+      "input_schema": { "type": "object", "properties": { "queue": {"type":"string"} }, "required": ["queue"] },
+      "http": { "method": "POST", "url": "${AGENT_CORE_URL}/tools/warm-transfer" },
+      "headers": { "x-agent-jwt": "${AGENT_CORE_INTERNAL_TOKEN}", "x-request-id": "${REQUEST_ID}" }
+    },
+    {
+      "name": "marketplace.create_intent",
+      "description": "Create marketplace intent",
+      "input_schema": { "type": "object", "properties": { "tenantId": {"type":"string"}, "buyerId": {"type":"string"}, "channel": {"type":"string"}, "payload": {"type":"object"}, "expiresAt": {"type":"string"} }, "required": ["tenantId","buyerId","channel","payload"] },
+      "http": { "method": "POST", "url": "${MARKETPLACE_BUYER_URL}/intents" },
+      "headers": { "x-request-id": "${REQUEST_ID}", "Idempotency-Key": "${IDEMPOTENCY_KEY}" }
+    },
+    {
+      "name": "vendor.create_quote",
+      "description": "Vendor issues quote for intent",
+      "input_schema": { "type": "object", "properties": { "tenantId": {"type":"string"}, "vendorId": {"type":"string"}, "intentId": {"type":"string"}, "price": {"type":"number"}, "currency": {"type":"string"}, "etaMinutes": {"type":"integer"} }, "required": ["tenantId","vendorId","intentId","price","currency"] },
+      "http": { "method": "POST", "url": "${MARKETPLACE_VENDOR_URL}/vendors/{vendorId}/quotes" },
+      "headers": { "x-request-id": "${REQUEST_ID}", "Idempotency-Key": "${IDEMPOTENCY_KEY}" },
+      "path_params": ["vendorId"]
+    },
+    {
+      "name": "ranking.list_candidates",
+      "description": "Ranked vendor recommendations",
+      "input_schema": { "type": "object", "properties": { "tenantId": {"type":"string"}, "categories": {"type":"array","items":{"type":"string"}}, "region": {"type":"string"} }, "required": ["tenantId"] },
+      "http": { "method": "GET", "url": "${MARKETPLACE_RANKING_URL}/ranking/vendors" },
+      "headers": { "x-request-id": "${REQUEST_ID}" },
+      "query_params": ["tenantId","region","categories"]
+    },
+    {
+      "name": "purchase.record",
+      "description": "Record purchase (will attempt wallet transfer if enabled)",
+      "input_schema": { "type": "object", "properties": { "tenantId": {"type":"string"}, "quoteId": {"type":"string"}, "amount": {"type":"number"}, "currency": {"type":"string"} }, "required": ["tenantId","quoteId","amount","currency"] },
+      "http": { "method": "POST", "url": "${MARKETPLACE_BUYER_URL}/purchases" },
+      "headers": { "x-request-id": "${REQUEST_ID}", "Idempotency-Key": "${IDEMPOTENCY_KEY}" }
+    },
+    {
+      "name": "purchase.confirm",
+      "description": "Confirm purchase amount by vendor or buyer",
+      "input_schema": { "type": "object", "properties": { "id": {"type":"string"}, "actor": {"type":"string","enum":["VENDOR","BUYER"]}, "amount": {"type":"number"}, "currency": {"type":"string"} }, "required": ["id","actor","amount","currency"] },
+      "http": { "method": "POST", "url": "${MARKETPLACE_BUYER_URL}/purchases/{id}/confirm" },
+      "headers": { "x-request-id": "${REQUEST_ID}", "Idempotency-Key": "${IDEMPOTENCY_KEY}" },
+      "path_params": ["id"]
+    },
+    {
+      "name": "wallet.post_journal",
+      "description": "Post double‑entry transfer (with optional commission)",
+      "input_schema": { "type": "object", "properties": { "tenantId": {"type":"string"}, "sourceAccountId": {"type":"string"}, "destinationAccountId": {"type":"string"}, "amount": {"type":"number"}, "currency": {"type":"string"}, "reference": {"type":"string"}, "product": {"type":"string"}, "commissionAccountId": {"type":"string"} }, "required": ["tenantId","sourceAccountId","destinationAccountId","amount","currency"] },
+      "http": { "method": "POST", "url": "${WALLET_SERVICE_URL}/wallet/transfer" },
+      "headers": { "x-request-id": "${REQUEST_ID}", "Idempotency-Key": "${IDEMPOTENCY_KEY}" }
+    },
+    {
+      "name": "broker.send_wa_template",
+      "description": "Send WhatsApp text or template",
+      "input_schema": { "type": "object", "properties": { "to": {"type":"string"}, "text": {"type":"string"}, "template": {"type":"object", "properties": { "name": {"type":"string"}, "language": {"type":"string"}, "components": {"type":"array"} } } }, "required": ["to"] },
+      "http": { "method": "POST", "url": "${WHATSAPP_BOT_URL}/outbound/messages" },
+      "headers": { "x-request-id": "${REQUEST_ID}", "Idempotency-Key": "${IDEMPOTENCY_KEY}" }
+    },
+    {
+      "name": "attribution.evaluate",
+      "description": "Evaluate attribution for quote decision",
+      "input_schema": { "type": "object", "properties": { "quoteId": {"type":"string"}, "referrals": {"type":"array"}, "events": {"type":"array"} }, "required": ["quoteId"] },
+      "http": { "method": "POST", "url": "${ATTRIBUTION_SERVICE_URL}/attribution/evaluate" },
+      "headers": { "x-request-id": "${REQUEST_ID}", "Idempotency-Key": "${IDEMPOTENCY_KEY}" }
+    },
+    {
+      "name": "reconciliation.parse_csv",
+      "description": "Parse mobile‑money CSV and enqueue credits",
+      "input_schema": { "type": "object", "properties": { "file": {"type":"string","format":"binary"} }, "required": ["file"] },
+      "http": { "method": "POST", "url": "${RECONCILIATION_SERVICE_URL}/reconciliation/mobile-money" },
+      "headers": { "x-request-id": "${REQUEST_ID}" }
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+Pending Staging Plan
+====================
+Features to keep:
+1. Voice Bridge outbound/Twilio integration (services/voice-bridge).
+2. Admin panel hardening (admin-app, app/api, tests).
+3. Metrics + observability updates (easymo/admin-app/lib/server/observability.ts, services/agent-core/src/common/metrics.ts, etc.).
+4. CI workflow (.github/workflows/ci.yml).
+5. Prisma/Supabase baseline documentation/script.
+6. Supporting lint/test harness updates (eslint.config.js, pnpm-workspace.yaml additions, test utils deprecation fixes).
+
+Out of scope (leave untouched):
+- New directories in "apps/", "agent-builder/", "infra/", etc.
+- Additional supabase migrations beyond voice/admin changes.
+- Unrelated microservice modifications (buyer-service, ranking-service, etc.).
+
+Next steps:
+- Stage files for features 1-6 only.
+- Verify no files from out-of-scope areas are staged.
+- Create logical commits per feature group.
+- Leave heavy, unrelated directories as future work.
