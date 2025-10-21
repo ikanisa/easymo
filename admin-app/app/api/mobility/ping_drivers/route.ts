@@ -39,14 +39,14 @@ export async function POST(req: NextRequest) {
     driverTargets.map(async (to) => {
       const fanOutStartedAt = Date.now();
       try {
-        const res = await fetch(`${origin}/api/wa/outbound/messages`, {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL ?? ""}/api/wa/outbound/messages`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ to, template, text, type: "mobility_invite", ride_id }),
+          body: JSON.stringify({ to, template, text, type: "mobility_invite" }),
         });
         if (res.ok) queued++;
-      } catch (_) {
-        // Ignore network errors; monitoring captures failures separately.
+      } catch (error) {
+        console.error("Failed to queue driver ping", { to, error });
       }
     })
   );

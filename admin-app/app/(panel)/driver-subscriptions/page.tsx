@@ -1,6 +1,6 @@
 "use client";
 export const dynamic = 'force-dynamic';
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 
 export default function DriverSubscriptionsPage() {
   const [data, setData] = useState<{ data: any[]; total: number } | null>(null);
@@ -8,7 +8,7 @@ export default function DriverSubscriptionsPage() {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
 
-  async function load(params?: { search?: string }) {
+  const load = useCallback(async (params?: { search?: string }) => {
     setLoading(true);
     setError(null);
     try {
@@ -24,11 +24,11 @@ export default function DriverSubscriptionsPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
 
   useEffect(() => {
     void load();
-  }, []);
+  }, [load]);
 
   const rows = data?.data ?? [];
   const pending = rows.filter((r:any)=>r.status==='pending').length;
