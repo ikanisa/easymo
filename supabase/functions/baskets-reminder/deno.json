@@ -1,3 +1,7 @@
 {
-  "importMap": "../import_map.json"
+  "imports": {
+    "$std/": "https://deno.land/std@0.202.0/",
+    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2.5.0",
+    "zod": "https://esm.sh/zod@3.22.2"
+  }
 }
