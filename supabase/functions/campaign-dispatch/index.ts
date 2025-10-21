@@ -1,15 +1,11 @@
 // deno-lint-ignore-file no-explicit-any
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
-/** ========= ENV (reuse existing secrets) ========= */ const SUPABASE_URL =
-  Deno.env.get("SUPABASE_URL");
-const SERVICE_URL = Deno.env.get("SERVICE_URL");
-const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ??
-  Deno.env.get("SERVICE_ROLE_KEY");
+import { serve } from "$std/http/server.ts";
+import { getServiceClient } from "shared/supabase.ts";
+import { ok, serverError } from "shared/http.ts";
+/** ========= ENV (reuse existing secrets) ========= */
 const WA_TOKEN = Deno.env.get("WA_TOKEN");
 const WA_PHONE_ID = Deno.env.get("WA_PHONE_ID");
-const sb = createClient(SUPABASE_URL ?? SERVICE_URL, SERVICE_KEY, {
-  auth: { persistSession: false },
-});
+const sb = getServiceClient();
 const WA_BASE = `https://graph.facebook.com/v20.0/${WA_PHONE_ID}`;
 /** ========= WhatsApp send helpers ========= */ async function waSendMessages(
   body,
@@ -182,28 +178,12 @@ async function fetchCandidates(limit: number) {
     retry_scheduled: scheduled,
   };
 }
-/** ========= HTTP handler (cron or manual) ========= */ Deno.serve(
-  async (_req) => {
-    try {
-      const result = await processBatch(40);
-      return new Response(JSON.stringify(result), {
-        status: 200,
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-    } catch (e) {
-      return new Response(
-        JSON.stringify({
-          error: String(e),
-        }),
-        {
-          status: 500,
-          headers: {
-            "Content-Type": "application/json",
-          },
-        },
-      );
-    }
-  },
-);
+/** ========= HTTP handler (cron or manual) ========= */
+serve(async (_req) => {
+  try {
+    const result = await processBatch(40);
+    return ok(result);
+  } catch (e) {
+    return serverError("campaign_dispatch_failed", { error: String(e) });
+  }
+});
