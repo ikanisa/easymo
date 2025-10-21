@@ -25,3 +25,26 @@ export async function getFeatureFlag(client: SupabaseClient, key: string, fallba
   CACHE.set(key, { value, fetchedAt: now });
   return value;
 }
+
+export function resolveFeatureEnabled(value: unknown, fallback = false): boolean {
+  if (typeof value === 'boolean') {
+    return value;
+  }
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLowerCase();
+    if (normalized === 'true') return true;
+    if (normalized === 'false') return false;
+  }
+  if (value && typeof value === 'object') {
+    const record = value as { enabled?: unknown };
+    if (typeof record.enabled === 'boolean') {
+      return record.enabled;
+    }
+    if (typeof record.enabled === 'string') {
+      const normalized = record.enabled.trim().toLowerCase();
+      if (normalized === 'true') return true;
+      if (normalized === 'false') return false;
+    }
+  }
+  return fallback;
+}
