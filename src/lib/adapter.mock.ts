@@ -262,6 +262,15 @@ class MockAdapter {
             'Ping marketing lead',
           ],
         };
+      case 'mobility':
+        return {
+          text: `Mobility dispatcher recorded “${cleaned}”. Dispatch updates will follow shortly. (mock)`,
+          suggestions: [
+            'Share ETA update',
+            'Reassign driver',
+            'Escalate to operations lead',
+          ],
+        };
     }
   }
 

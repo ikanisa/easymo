@@ -180,6 +180,205 @@ export default function AgentChatPanel({
     mutation.mutate({ message: input.trim() });
   };
 
+  const renderMetadata = (payload?: Record<string, unknown>) => {
+    if (!payload) return null;
+
+    const blocks: JSX.Element[] = [];
+    if (payload.toolkit && typeof payload.toolkit === "object") {
+      const toolkit = payload.toolkit as Record<string, unknown>;
+      const summary: Array<{ label: string; value: string }> = [];
+      if (typeof toolkit.model === "string") {
+        summary.push({ label: "Model", value: toolkit.model });
+      }
+      if (typeof toolkit.reasoning_effort === "string") {
+        summary.push({ label: "Reasoning", value: toolkit.reasoning_effort });
+      }
+      if (typeof toolkit.text_verbosity === "string") {
+        summary.push({ label: "Verbosity", value: toolkit.text_verbosity });
+      }
+      const metadata = toolkit.metadata && typeof toolkit.metadata === "object"
+        ? (toolkit.metadata as Record<string, unknown>)
+        : null;
+      const systemPrompt = metadata && typeof metadata.system_prompt === "string"
+        ? metadata.system_prompt
+        : "";
+      const instructionList = metadata && Array.isArray(metadata.instructions)
+        ? metadata.instructions.filter((item): item is string => typeof item === "string" && item.trim().length > 0)
+        : [];
+
+      blocks.push(
+        <div key="toolkit" className="space-y-2">
+          <p className="text-[10px] font-semibold uppercase text-muted-foreground">Toolkit configuration</p>
+          {summary.length > 0 && (
+            <div className="grid grid-cols-2 gap-2 text-[11px]">
+              {summary.map((row) => (
+                <div key={row.label} className="rounded border bg-muted/40 px-2 py-1">
+                  <p className="text-[9px] uppercase text-muted-foreground">{row.label}</p>
+                  <p className="font-medium">{row.value}</p>
+                </div>
+              ))}
+            </div>
+          )}
+          {systemPrompt && (
+            <div className="rounded border bg-muted/30 p-2 text-[11px]">
+              <p className="text-[9px] uppercase text-muted-foreground">System prompt override</p>
+              <p>{systemPrompt}</p>
+            </div>
+          )}
+          {instructionList.length > 0 && (
+            <div className="rounded border bg-muted/30 p-2 text-[11px] space-y-1">
+              <p className="text-[9px] uppercase text-muted-foreground">Additional instructions</p>
+              <ul className="list-disc pl-4 space-y-1">
+                {instructionList.map((instruction, idx) => (
+                  <li key={`instruction-${idx}`}>{instruction}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>,
+      );
+    }
+    const citations = Array.isArray(payload.citations) ? payload.citations : [];
+    if (citations.length > 0) {
+      blocks.push(
+        <div key="citations" className="space-y-1">
+          <p className="text-[10px] font-semibold uppercase text-muted-foreground">Citations</p>
+          <ul className="list-disc pl-4 space-y-1 text-[11px]">
+            {citations.map((item, idx) => {
+              const citation = item as Record<string, unknown>;
+              if (citation?.type === "url_citation" && typeof citation.url === "string") {
+                return (
+                  <li key={`citation-${idx}`}>
+                    <a
+                      href={citation.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="underline decoration-dotted"
+                    >
+                      {typeof citation.title === "string" && citation.title.trim().length > 0
+                        ? citation.title
+                        : citation.url}
+                    </a>
+                  </li>
+                );
+              }
+              if (citation?.type === "file_citation" && typeof citation.filename === "string") {
+                return (
+                  <li key={`citation-${idx}`}>
+                    File: {citation.filename}
+                  </li>
+                );
+              }
+              return (
+                <li key={`citation-${idx}`} className="text-[10px]">
+                  {JSON.stringify(citation)}
+                </li>
+              );
+            })}
+          </ul>
+        </div>,
+      );
+    }
+
+    const sources = Array.isArray(payload.sources) ? payload.sources : [];
+    if (sources.length > 0) {
+      blocks.push(
+        <div key="sources" className="space-y-1">
+          <p className="text-[10px] font-semibold uppercase text-muted-foreground">Sources consulted</p>
+          <ul className="list-disc pl-4 space-y-1 text-[11px]">
+            {sources.map((source, idx) => {
+              const item = source as Record<string, unknown>;
+              if (typeof item.url === "string") {
+                return (
+                  <li key={`source-${idx}`}>
+                    <a
+                      href={item.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="underline decoration-dotted"
+                    >
+                      {typeof item.title === "string" && item.title.trim().length > 0
+                        ? item.title
+                        : item.url}
+                    </a>
+                  </li>
+                );
+              }
+              return (
+                <li key={`source-${idx}`} className="text-[10px]">
+                  {JSON.stringify(item)}
+                </li>
+              );
+            })}
+          </ul>
+        </div>,
+      );
+    }
+
+    const images = Array.isArray(payload.images) ? payload.images : [];
+    if (images.length > 0) {
+      blocks.push(
+        <div key="images" className="space-y-2">
+          <p className="text-[10px] font-semibold uppercase text-muted-foreground">Generated imagery</p>
+          <div className="flex flex-wrap gap-3">
+            {images.map((raw, idx) => {
+              const image = raw as Record<string, unknown>;
+              const data = typeof image.data === "string" ? image.data : "";
+              if (!data) return null;
+              const format = typeof image.format === "string" ? image.format : "png";
+              const src = data.startsWith("data:") ? data : `data:image/${format};base64,${data}`;
+              const alt = typeof image.revised_prompt === "string"
+                ? image.revised_prompt
+                : `Generated asset ${idx + 1}`;
+              return (
+                <img
+                  key={`image-${idx}`}
+                  src={src}
+                  alt={alt}
+                  className="max-h-32 rounded border"
+                />
+              );
+            })}
+          </div>
+        </div>,
+      );
+    }
+
+    const toolCalls = Array.isArray(payload.tool_calls) ? payload.tool_calls : [];
+    if (toolCalls.length > 0) {
+      blocks.push(
+        <div key="tool-calls" className="space-y-1">
+          <p className="text-[10px] font-semibold uppercase text-muted-foreground">Tool activity</p>
+          <pre className="max-h-48 overflow-x-auto whitespace-pre-wrap rounded border bg-muted/60 p-2 text-[10px]">
+            {JSON.stringify(toolCalls, null, 2)}
+          </pre>
+        </div>,
+      );
+    }
+
+    if (typeof payload.retrieval_context === "string" && payload.retrieval_context.trim().length > 0) {
+      blocks.push(
+        <div key="retrieval" className="space-y-1">
+          <p className="text-[10px] font-semibold uppercase text-muted-foreground">Retrieval context</p>
+          <pre className="max-h-48 overflow-x-auto whitespace-pre-wrap rounded border bg-muted/40 p-2 text-[10px]">
+            {payload.retrieval_context}
+          </pre>
+        </div>,
+      );
+    }
+
+    if (payload.stub) {
+      blocks.push(
+        <div key="stub" className="text-[10px] uppercase text-muted-foreground">
+          Stubbed response
+        </div>,
+      );
+    }
+
+    if (blocks.length === 0) return null;
+    return <div className="mt-2 space-y-3">{blocks}</div>;
+  };
+
   const handleSuggestion = (suggestion: string) => {
     setInput(suggestion);
   };
@@ -241,7 +440,8 @@ export default function AgentChatPanel({
                         : "bg-white text-foreground border"
                     }`}
                   >
-                    {msg.text}
+                    <p>{msg.text}</p>
+                    {renderMetadata(msg.payload)}
                   </div>
                   <span className="mt-1 text-[10px] text-muted-foreground">
                     {new Date(msg.created_at).toLocaleTimeString()}

@@ -25,6 +25,138 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
+  schemas:
+    Conversation:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the conversation.
+        object:
+          type: string
+          description: Object type identifier.
+          example: conversation
+        created_at:
+          type: integer
+          format: int64
+          description: Unix timestamp of when the conversation was created.
+        metadata:
+          type: object
+          additionalProperties:
+            type: string
+          description: Optional key-value metadata pairs associated with the conversation.
+      required: [id, object, created_at]
+    ConversationDeleteResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        object:
+          type: string
+          example: conversation.deleted
+        deleted:
+          type: boolean
+      required: [id, object, deleted]
+    ConversationItem:
+      type: object
+      properties:
+        type:
+          type: string
+          description: Item type indicator, e.g. message.
+        id:
+          type: string
+        status:
+          type: string
+        role:
+          type: string
+          description: Role associated with the message item.
+        content:
+          type: array
+          description: Ordered list of content parts in the item.
+          items:
+            $ref: '#/components/schemas/ConversationItemContentPart'
+      required: [type, id]
+    ConversationItemContentPart:
+      type: object
+      properties:
+        type:
+          type: string
+          description: Content part type, e.g. input_text.
+        text:
+          type: string
+          description: Text payload for text content parts.
+        image_url:
+          type: string
+          format: uri
+          description: URL of an image for image content parts.
+      required: [type]
+    ConversationItemList:
+      type: object
+      properties:
+        object:
+          type: string
+          description: List identifier, usually "list".
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConversationItem'
+        first_id:
+          type: string
+        last_id:
+          type: string
+        has_more:
+          type: boolean
+      required: [object, data, has_more]
+    ConversationItemCreate:
+      type: object
+      description: Definition for creating a new conversation item.
+      properties:
+        type:
+          type: string
+          description: Type of item to create, typically message.
+        role:
+          type: string
+          description: Role of the author (user, assistant, system, etc.).
+        status:
+          type: string
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConversationItemContentPart'
+      required: [type]
+    ConversationCreateRequest:
+      type: object
+      properties:
+        metadata:
+          type: object
+          additionalProperties:
+            type: string
+        items:
+          type: array
+          maxItems: 20
+          items:
+            $ref: '#/components/schemas/ConversationItemCreate'
+      additionalProperties: false
+    ConversationItemsCreateRequest:
+      type: object
+      properties:
+        items:
+          type: array
+          minItems: 1
+          maxItems: 20
+          items:
+            $ref: '#/components/schemas/ConversationItemCreate'
+      required: [items]
+      additionalProperties: false
+    ConversationUpdateRequest:
+      type: object
+      properties:
+        metadata:
+          type: object
+          additionalProperties:
+            type: string
+      required: [metadata]
+      additionalProperties: false
 paths:
   /intents:
     post:
@@ -243,3 +375,175 @@ paths:
                 actor: { type: string }
       responses:
         '202': { description: Accepted }
+  /conversations:
+    post:
+      summary: Create a conversation
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConversationCreateRequest'
+      responses:
+        '200':
+          description: Created conversation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Conversation'
+  /conversations/{conversation_id}:
+    get:
+      summary: Retrieve a conversation
+      parameters:
+        - in: path
+          name: conversation_id
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Conversation details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Conversation'
+    post:
+      summary: Update a conversation
+      parameters:
+        - in: path
+          name: conversation_id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConversationUpdateRequest'
+      responses:
+        '200':
+          description: Updated conversation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Conversation'
+    delete:
+      summary: Delete a conversation
+      parameters:
+        - in: path
+          name: conversation_id
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Deletion result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConversationDeleteResponse'
+  /conversations/{conversation_id}/items:
+    get:
+      summary: List conversation items
+      parameters:
+        - in: path
+          name: conversation_id
+          required: true
+          schema: { type: string }
+        - in: query
+          name: after
+          schema: { type: string }
+        - in: query
+          name: include
+          schema:
+            type: array
+            items: { type: string }
+          style: form
+          explode: false
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+        - in: query
+          name: order
+          schema:
+            type: string
+            enum: [asc, desc]
+      responses:
+        '200':
+          description: Conversation items
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConversationItemList'
+    post:
+      summary: Create conversation items
+      parameters:
+        - in: path
+          name: conversation_id
+          required: true
+          schema: { type: string }
+        - in: query
+          name: include
+          schema:
+            type: array
+            items: { type: string }
+          style: form
+          explode: false
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConversationItemsCreateRequest'
+      responses:
+        '200':
+          description: Added conversation items
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConversationItemList'
+  /conversations/{conversation_id}/items/{item_id}:
+    get:
+      summary: Retrieve a conversation item
+      parameters:
+        - in: path
+          name: conversation_id
+          required: true
+          schema: { type: string }
+        - in: path
+          name: item_id
+          required: true
+          schema: { type: string }
+        - in: query
+          name: include
+          schema:
+            type: array
+            items: { type: string }
+          style: form
+          explode: false
+      responses:
+        '200':
+          description: Conversation item details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConversationItem'
+    delete:
+      summary: Delete a conversation item
+      parameters:
+        - in: path
+          name: conversation_id
+          required: true
+          schema: { type: string }
+        - in: path
+          name: item_id
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Updated conversation after deletion
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Conversation'
