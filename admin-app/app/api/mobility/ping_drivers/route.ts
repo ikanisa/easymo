@@ -14,7 +14,9 @@ export async function POST(req: NextRequest) {
           body: JSON.stringify({ to, template, text, type: 'mobility_invite' }),
         });
         if (res.ok) queued++;
-      } catch (_) {}
+      } catch (_) {
+        // Ignore network errors; monitoring captures failures separately.
+      }
     })
   );
   return NextResponse.json({ ride_id, queued, reqId }, { status: 202 });
