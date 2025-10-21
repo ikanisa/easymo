@@ -30,6 +30,7 @@ import { AdminAPI, type HealthCheckResult } from '@/lib/api';
 import { API_BASE, SUPABASE_LINKS, HAS_SUPABASE_PROJECT } from '@/lib/api-constants';
 import { getAdminToken, isDev, shouldUseMock } from '@/lib/env';
 import { useToast } from '@/hooks/use-toast';
+import { RetrievalPlayground } from '@/components/developer/RetrievalPlayground';
 
 export default function Developer() {
   const [showToken, setShowToken] = useState(false);
@@ -380,6 +381,9 @@ export default function Developer() {
             </div>
           </CardContent>
         </Card>
+
+        <RetrievalPlayground />
+
       </div>
     </AdminLayout>
   );
