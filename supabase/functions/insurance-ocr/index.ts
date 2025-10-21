@@ -1,7 +1,7 @@
 import {
   createClient,
   type SupabaseClient,
-} from "https://esm.sh/@supabase/supabase-js@2.45.4";
+} from "https://esm.sh/@supabase/supabase-js@2.76.1";
 import {
   MissingOpenAIKeyError,
   runInsuranceOCR,

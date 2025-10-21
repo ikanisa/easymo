@@ -1,4 +1,4 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.76.1";
 import type { SupabaseClient } from "../flow-exchange/types.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ??
