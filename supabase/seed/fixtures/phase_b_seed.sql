@@ -1,5 +1,5 @@
 -- Phase B seed data for mobility admin and simulator flows
--- Usage: supabase db remote commit --file easymo/supabase/seed/fixtures/phase_b_seed.sql
+-- Usage: supabase db remote commit --file supabase/seed/fixtures/phase_b_seed.sql
 
 with upsert_profiles as (
   insert into public.profiles (user_id, whatsapp_e164, ref_code, credits_balance)
