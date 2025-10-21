@@ -148,3 +148,53 @@ Deno.test("filters messages for configured phone number and normalises payload",
     __resetPipelineTestOverrides();
   }
 });
+
+Deno.test("deduplicates repeated messages and logs ignored duplicates", async () => {
+  const hooks = installTestHooks();
+  try {
+    const payload = {
+      object: "whatsapp_business_account",
+      entry: [
+        {
+          id: "entry-1",
+          changes: [
+            {
+              value: {
+                metadata: {
+                  phone_number_id: "12345",
+                  display_phone_number: "+250 700 000 000",
+                },
+                messages: [
+                  { id: "wamid.1", from: "250700000001", type: "text" },
+                  { id: "wamid.1", from: "250700000001", type: "text" },
+                  { id: "wamid.2", from: "250700000001", type: "text" },
+                ],
+              },
+            },
+          ],
+        },
+      ],
+    };
+    const res = await processWebhookRequest(
+      new Request("https://example.com/webhook", {
+        method: "POST",
+        body: JSON.stringify(payload),
+        headers: {
+          "content-type": "application/json",
+          "content-length": String(JSON.stringify(payload).length),
+        },
+      }),
+    );
+    assertEquals(res.type, "messages");
+    assertEquals(res.messages.length, 2);
+    const duplicateEvent = hooks.events.find((event) =>
+      event.event === "WEBHOOK_DUPLICATE_MESSAGES_IGNORED"
+    );
+    assertEquals(duplicateEvent, {
+      event: "WEBHOOK_DUPLICATE_MESSAGES_IGNORED",
+      payload: { duplicates: 1, total: 3 },
+    });
+  } finally {
+    __resetPipelineTestOverrides();
+  }
+});

@@ -121,6 +121,17 @@ function coerceMessages(
   return messages;
 }
 
+function dedupeMessages(messages: WhatsAppMessage[]): WhatsAppMessage[] {
+  const seen = new Set<string>();
+  const result: WhatsAppMessage[] = [];
+  for (const msg of messages) {
+    if (seen.has(msg.id)) continue;
+    seen.add(msg.id);
+    result.push(msg);
+  }
+  return result;
+}
+
 export type PreparedWebhook = {
   type: "messages";
   payload: WhatsAppWebhookPayload;
@@ -234,9 +245,17 @@ export async function processWebhookRequest(
       total: allChanges.length,
     });
   }
-  const messages = filteredChanges.flatMap((change) =>
+  const normalizedMessages = filteredChanges.flatMap((change) =>
     coerceMessages(change?.value?.messages)
   );
+  const messages = dedupeMessages(normalizedMessages);
+  const duplicateCount = normalizedMessages.length - messages.length;
+  if (duplicateCount > 0) {
+    await hooks.logStructuredEvent("WEBHOOK_DUPLICATE_MESSAGES_IGNORED", {
+      duplicates: duplicateCount,
+      total: normalizedMessages.length,
+    });
+  }
   const contactLocales = buildContactLocaleIndex(filteredChanges);
 
   if (!messages.length) {
