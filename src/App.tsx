@@ -28,6 +28,7 @@ import QuickActionsPage from "./pages/QuickActions";
 import DriverParkingPage from "./pages/DriverParking";
 import DriverAvailabilityPage from "./pages/DriverAvailability";
 import MatchesPage from "./pages/Matches";
+import Realtime from "./pages/Realtime";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -57,6 +58,7 @@ const App = () => (
             <Route path="/driver-parking" element={<DriverParkingPage />} />
             <Route path="/driver-availability" element={<DriverAvailabilityPage />} />
             <Route path="/matches" element={<MatchesPage />} />
+            <Route path="/agent-tooling" element={<AgentTooling />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/tokens" element={<TokensWallets />} />
             <Route path="/tokens/issue" element={<TokensIssue />} />
@@ -68,6 +70,7 @@ const App = () => (
             <Route path="/baskets" element={<Baskets />} />
             <Route path="/marketplace" element={<Marketplace />} />
             <Route path="/operations" element={<Operations />} />
+            <Route path="/realtime" element={<Realtime />} />
             <Route path="/developer" element={<Developer />} />
             <Route path="/admin/wa-console" element={<WAConsole />} />
             <Route path="/admin/simulator" element={<Simulator />} />

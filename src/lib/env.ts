@@ -90,3 +90,8 @@ export function getMobilityUserRoles(): string {
       ?? 'admin'
   ).toString();
 }
+
+export function getOpenAiVectorStoreId(): string | undefined {
+  const raw = import.meta.env.VITE_OPENAI_VECTOR_STORE_ID?.toString().trim();
+  return raw && raw.length > 0 ? raw : undefined;
+}

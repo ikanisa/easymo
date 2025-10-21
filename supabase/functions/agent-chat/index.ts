@@ -15,7 +15,7 @@ const ENABLE_AGENT_CHAT = (Deno.env.get("ENABLE_AGENT_CHAT") ?? "true")
 
 const supabase = getServiceClient();
 
-const AgentKind = z.enum(["broker", "support", "sales", "marketing"]);
+const AgentKind = z.enum(["broker", "support", "sales", "marketing", "mobility"]);
 
 const PostPayload = z.object({
   agent_kind: AgentKind,
@@ -23,6 +23,33 @@ const PostPayload = z.object({
   session_id: z.string().uuid().optional(),
   profile_ref: z.string().min(1).optional(),
 });
+
+const ToolkitRowSchema = z.object({
+  agent_kind: AgentKind,
+  model: z.string().default("gpt-5"),
+  reasoning_effort: z.enum(["minimal", "low", "medium", "high"]).default("medium"),
+  text_verbosity: z.enum(["low", "medium", "high"]).default("medium"),
+  web_search_enabled: z.boolean().default(false),
+  web_search_allowed_domains: z.array(z.string()).nullable().optional(),
+  web_search_user_location: z.record(z.any()).nullable().optional(),
+  file_search_enabled: z.boolean().default(false),
+  file_vector_store_id: z.string().nullable().optional(),
+  file_search_max_results: z.number().int().nullable().optional(),
+  retrieval_enabled: z.boolean().default(false),
+  retrieval_vector_store_id: z.string().nullable().optional(),
+  retrieval_max_results: z.number().int().nullable().optional(),
+  retrieval_rewrite: z.boolean().optional(),
+  image_generation_enabled: z.boolean().default(false),
+  image_preset: z.record(z.any()).nullable().optional(),
+  allowed_tools: z.array(z.record(z.any())).nullable().optional(),
+  suggestions: z.array(z.string()).nullable().optional(),
+  streaming_partial_images: z.number().int().nullable().optional(),
+  metadata: z.record(z.any()).nullable().optional(),
+  created_at: z.string().optional(),
+  updated_at: z.string().optional(),
+});
+
+type ToolkitRow = z.infer<typeof ToolkitRowSchema>;
 
 const headers = {
   "Content-Type": "application/json",
@@ -76,6 +103,16 @@ function buildStubResponse(kind: z.infer<typeof AgentKind>, message: string) {
           "Escalate to marketing lead",
         ],
       };
+    case "mobility":
+      return {
+        text:
+          `Mobility assistant acknowledged “${friendly}”. I'll coordinate drivers and send updated ETAs soon. (Stub response)`,
+        suggestions: [
+          "Dispatch next driver",
+          "Share rider ETA",
+          "Escalate to dispatcher",
+        ],
+      };
   }
 }
 
@@ -93,6 +130,28 @@ async function lookupProfileId(
     return null;
   }
   return data?.user_id ?? null;
+}
+
+async function fetchToolkit(agentKind: z.infer<typeof AgentKind>): Promise<ToolkitRow | null> {
+  const { data, error } = await supabase
+    .from("agent_toolkits")
+    .select("*")
+    .eq("agent_kind", agentKind)
+    .maybeSingle();
+
+  if (error) {
+    console.error("agent-chat.toolkit_fetch_failed", error);
+    return null;
+  }
+
+  if (!data) return null;
+
+  const parsed = ToolkitRowSchema.safeParse(data);
+  if (!parsed.success) {
+    console.warn("agent-chat.toolkit_parse_failed", parsed.error.flatten());
+    return null;
+  }
+  return parsed.data;
 }
 
 async function ensureSession(params: {
@@ -162,7 +221,7 @@ async function appendMessages(
   return data ?? [];
 }
 
-async function fetchHistory(sessionId: string) {
+async function fetchHistory(sessionId: string, limit = 200) {
   const { data: session, error } = await supabase
     .from("agent_chat_sessions")
     .select("id, agent_kind, status, metadata, created_at, updated_at")
@@ -180,7 +239,7 @@ async function fetchHistory(sessionId: string) {
     .select("id, role, content, created_at")
     .eq("session_id", sessionId)
     .order("created_at", { ascending: true })
-    .limit(200);
+    .limit(limit);
 
   if (msgErr) {
     throw new Error(msgErr.message);
@@ -195,6 +254,87 @@ async function fetchHistory(sessionId: string) {
   }));
 
   return { session, messages };
+}
+
+type StoredMessage = {
+  id: string;
+  role: "user" | "agent" | "system";
+  text: string;
+  created_at: string;
+  payload?: Record<string, unknown>;
+};
+
+function mapHistoryForAgent(messages: StoredMessage[]) {
+  return messages.map((msg) => ({
+    role: msg.role,
+    text: msg.text,
+    payload: msg.payload ?? {},
+    created_at: msg.created_at,
+  }));
+}
+
+async function callAgentCore(params: {
+  sessionId: string;
+  agentKind: z.infer<typeof AgentKind>;
+  message: string;
+  profileRef?: string | null;
+  history: StoredMessage[];
+  toolkit: ToolkitRow | null;
+}) {
+  const coreUrl = CONFIG.AGENT_CORE_URL?.replace(/\/$/, "");
+  if (!coreUrl) return null;
+
+  try {
+    const response = await fetch(`${coreUrl}/respond`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        ...(CONFIG.AGENT_CORE_TOKEN
+          ? { authorization: `Bearer ${CONFIG.AGENT_CORE_TOKEN}` }
+          : {}),
+      },
+      body: JSON.stringify({
+        session_id: params.sessionId,
+        agent_kind: params.agentKind,
+        message: params.message,
+        profile_ref: params.profileRef ?? null,
+        history: mapHistoryForAgent(params.history),
+        toolkit: params.toolkit,
+      }),
+    });
+
+    const text = await response.text();
+    if (!response.ok) {
+      console.error("agent-chat.core_failed", {
+        status: response.status,
+        body: text,
+      });
+      return null;
+    }
+
+    if (!text) return null;
+
+    try {
+      const parsed = JSON.parse(text);
+      if (parsed && typeof parsed.reply === "string") {
+        return parsed as {
+          reply: string;
+          suggestions?: string[];
+          citations?: unknown;
+          sources?: unknown;
+          tool_calls?: unknown;
+          images?: Array<{ data: string; format?: string; alt?: string }>;
+          retrieval_context?: string;
+        };
+      }
+    } catch (parseError) {
+      console.error("agent-chat.core_parse_failed", parseError);
+    }
+  } catch (error) {
+    console.error("agent-chat.core_request_failed", error);
+  }
+
+  return null;
 }
 
 serve(async (req) => {
@@ -302,10 +442,23 @@ serve(async (req) => {
                 : {}),
             };
           }
-        } catch (_err) {
-          // swallow and fallback
         }
+        const summary: Record<string, unknown> = {
+          agent_kind: toolkit.agent_kind,
+          model: toolkit.model,
+          reasoning_effort: toolkit.reasoning_effort,
+          text_verbosity: toolkit.text_verbosity,
+        };
+        if (Object.keys(metadataSummary).length > 0) {
+          summary.metadata = metadataSummary;
+        }
+        agentPayload.toolkit = summary;
       }
+      if (agentResult?.citations) agentPayload.citations = agentResult.citations;
+      if (agentResult?.sources) agentPayload.sources = agentResult.sources;
+      if (agentResult?.tool_calls) agentPayload.tool_calls = agentResult.tool_calls;
+      if (agentResult?.images?.length) agentPayload.images = agentResult.images;
+      if (agentResult?.retrieval_context) agentPayload.retrieval_context = agentResult.retrieval_context;
 
       const assistantSuggestions = Array.isArray(agentMetadata.suggestions)
         ? (agentMetadata.suggestions as string[])
