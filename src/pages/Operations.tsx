@@ -307,7 +307,7 @@ export default function Operations() {
       </div>
 
       {agentChatEnabled ? (
-        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
           <AgentChatPanel
             agentKind="support"
             title="Customer Support Assistant"
@@ -326,6 +326,13 @@ export default function Operations() {
             agentKind="marketing"
             title="Marketing Assistant"
             description="Brainstorm campaign ideas and track marketing actions."
+            featureEnabled={agentChatEnabled}
+            allowProfileRef
+          />
+          <AgentChatPanel
+            agentKind="mobility"
+            title="Mobility Dispatcher"
+            description="Coordinate drivers, dispatch replacements, and share ETA updates with riders."
             featureEnabled={agentChatEnabled}
             allowProfileRef
           />

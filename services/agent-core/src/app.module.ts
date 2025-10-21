@@ -7,6 +7,7 @@ import { HealthModule } from "./modules/health/health.module.js";
 import { LoggerModule } from "nestjs-pino";
 import { AgentsModule } from "./modules/agents/agents.module.js";
 import { AgentAdminModule } from "./modules/agent-admin/agent-admin.module.js";
+import { ChatModule } from "./modules/chat/chat.module.js";
 import { getRequestId } from "@easymo/commons";
 
 @Module({
@@ -26,6 +27,7 @@ import { getRequestId } from "@easymo/commons";
     PrismaModule,
     HealthModule,
     AgentsModule,
+    ChatModule,
     ToolsModule,
     AgentAdminModule,
   ],
