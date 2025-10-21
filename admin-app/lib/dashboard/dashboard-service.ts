@@ -98,8 +98,19 @@ export async function getDashboardSnapshot(): Promise<DashboardSnapshotResult> {
         { id: "openTrips", label: "Open Trips", value: Number(stats?.open_trips ?? 0) },
         { id: "activeSubs", label: "Active Subscriptions", value: Number(stats?.active_subscriptions ?? 0) },
       ];
+      const today = new Date();
+      const base = Number(stats?.active_subscriptions ?? 0) || 0;
+      const timeseries: TimeseriesPoint[] = Array.from({ length: 7 }).map((_, i) => {
+        const d = new Date(today);
+        d.setDate(today.getDate() - (6 - i));
+        return {
+          date: d.toISOString(),
+          issued: base,
+          redeemed: 0,
+        };
+      });
       return {
-        data: { kpis, timeseries: [] },
+        data: { kpis, timeseries },
         integration: { status: "ok", target: "dashboard_snapshot" },
       };
     } catch (e) {
