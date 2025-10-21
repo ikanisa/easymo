@@ -6,22 +6,18 @@
 // for Supabase to bypass Row Level Security when updating settings.
 
 import { serve } from "$std/http/server.ts";
-import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
+import { getServiceClient } from "shared/supabase.ts";
+import { requireAdmin } from "shared/auth.ts";
+import {
+  badRequest,
+  methodNotAllowed,
+  notFound,
+  ok,
+  serverError,
+} from "shared/http.ts";
 
-const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
-const SERVICE_URL = Deno.env.get("SERVICE_URL") ?? "";
-const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ??
-  Deno.env.get("SERVICE_ROLE_KEY") ?? "";
-const ADMIN_TOKEN = Deno.env.get("EASYMO_ADMIN_TOKEN") ??
-  Deno.env.get("ADMIN_TOKEN") ?? "";
-
-const SB_URL = SUPABASE_URL || SERVICE_URL;
-if (!SB_URL || !SERVICE_ROLE_KEY) {
-  throw new Error("Supabase credentials are not configured");
-}
-
-const supabase = createClient(SB_URL, SERVICE_ROLE_KEY);
+const supabase = getServiceClient();
 
 // Define a schema for settings updates.  Only allow defined fields.
 const SettingsPatch = z.object({
@@ -34,14 +30,8 @@ const SettingsPatch = z.object({
 });
 
 serve(async (req) => {
-  // Enforce admin token
-  const apiKey = req.headers.get("x-api-key");
-  if (apiKey !== ADMIN_TOKEN) {
-    return new Response(JSON.stringify({ error: "Forbidden" }), {
-      status: 403,
-      headers: { "Content-Type": "application/json" },
-    });
-  }
+  const guard = requireAdmin(req);
+  if (guard) return guard;
 
   if (req.method === "GET") {
     const { data, error } = await supabase
@@ -50,17 +40,8 @@ serve(async (req) => {
       .limit(1)
       .maybeSingle();
 
-    if (error) {
-      return new Response(JSON.stringify({ error: error.message }), {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
-      });
-    }
-
-    return new Response(JSON.stringify({ config: data }), {
-      status: 200,
-      headers: { "Content-Type": "application/json" },
-    });
+    if (error) return serverError(error.message);
+    return ok({ config: data });
   }
 
   if (req.method === "POST") {
@@ -68,13 +49,7 @@ serve(async (req) => {
     const result = SettingsPatch.safeParse(body);
 
     if (!result.success) {
-      return new Response(
-        JSON.stringify({
-          error: "Invalid payload",
-          details: result.error.errors,
-        }),
-        { status: 400, headers: { "Content-Type": "application/json" } },
-      );
+      return badRequest("invalid_payload", { details: result.error.errors });
     }
 
     // Find the single settings row
@@ -84,22 +59,9 @@ serve(async (req) => {
       .limit(1)
       .maybeSingle();
 
-    if (fetchErr) {
-      return new Response(JSON.stringify({ error: fetchErr.message }), {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
-      });
-    }
+    if (fetchErr) return serverError(fetchErr.message);
 
-    if (!existing) {
-      return new Response(
-        JSON.stringify({ error: "Settings row does not exist" }),
-        {
-          status: 404,
-          headers: { "Content-Type": "application/json" },
-        },
-      );
-    }
+    if (!existing) return notFound("settings_missing");
 
     const { data: updated, error: updateErr } = await supabase
       .from("settings")
@@ -108,21 +70,8 @@ serve(async (req) => {
       .select("*")
       .maybeSingle();
 
-    if (updateErr) {
-      return new Response(JSON.stringify({ error: updateErr.message }), {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
-      });
-    }
-
-    return new Response(JSON.stringify({ config: updated }), {
-      status: 200,
-      headers: { "Content-Type": "application/json" },
-    });
+    if (updateErr) return serverError(updateErr.message);
+    return ok({ config: updated });
   }
-
-  return new Response(JSON.stringify({ error: "Method not allowed" }), {
-    status: 405,
-    headers: { "Content-Type": "application/json" },
-  });
+  return methodNotAllowed(["GET", "POST"]);
 });

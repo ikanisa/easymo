@@ -1,11 +1,6 @@
 import { serve } from "$std/http/server.ts";
-import { CONFIG } from "../_shared/env.ts";
-import {
-  badRequest,
-  methodNotAllowed,
-  ok,
-  serverError,
-} from "../_shared/http.ts";
+import { CONFIG } from "shared/env.ts";
+import { badRequest, methodNotAllowed, ok, serverError } from "shared/http.ts";
 
 type ContactPayload = {
   id: string;

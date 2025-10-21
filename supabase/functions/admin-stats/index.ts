@@ -5,33 +5,16 @@
 // Supabase service role key to perform unrestricted reads.
 
 import { serve } from "$std/http/server.ts";
-import { createClient } from "@supabase/supabase-js";
+import { getServiceClient } from "shared/supabase.ts";
+import { requireAdmin } from "shared/auth.ts";
+import { methodNotAllowed, ok, serverError } from "shared/http.ts";
 
-const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
-const SERVICE_URL = Deno.env.get("SERVICE_URL") ?? "";
-const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ??
-  Deno.env.get("SERVICE_ROLE_KEY") ?? "";
-const ADMIN_TOKEN = Deno.env.get("EASYMO_ADMIN_TOKEN") ?? "";
-
-const SB_URL = SUPABASE_URL || SERVICE_URL;
-if (!SB_URL || !SERVICE_ROLE_KEY) {
-  throw new Error("Supabase credentials are not configured");
-}
-
-const supabase = createClient(SB_URL, SERVICE_ROLE_KEY);
+const supabase = getServiceClient();
 
 serve(async (req) => {
-  const apiKey = req.headers.get("x-api-key");
-  if (apiKey !== ADMIN_TOKEN) {
-    return new Response(JSON.stringify({ error: "Forbidden" }), {
-      status: 403,
-    });
-  }
-  if (req.method !== "GET") {
-    return new Response(JSON.stringify({ error: "Method not allowed" }), {
-      status: 405,
-    });
-  }
+  const guard = requireAdmin(req);
+  if (guard) return guard;
+  if (req.method !== "GET") return methodNotAllowed(["GET"]);
   try {
     // Count drivers online (last seen within 15 minutes)
     const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000)
@@ -56,17 +39,14 @@ serve(async (req) => {
     const { count: totalUsers } = await supabase
       .from("profiles")
       .select("user_id", { count: "exact" });
-    return new Response(
-      JSON.stringify({
-        drivers_online: driversOnline ?? 0,
-        open_trips: openTrips ?? 0,
-        active_subscriptions: activeSubs ?? 0,
-        total_users: totalUsers ?? 0,
-      }),
-      { status: 200, headers: { "Content-Type": "application/json" } },
-    );
+    return ok({
+      drivers_online: driversOnline ?? 0,
+      open_trips: openTrips ?? 0,
+      active_subscriptions: activeSubs ?? 0,
+      total_users: totalUsers ?? 0,
+    });
   } catch (e) {
     const message = e instanceof Error ? e.message : String(e);
-    return new Response(JSON.stringify({ error: message }), { status: 500 });
+    return serverError(message);
   }
 });

@@ -6,21 +6,11 @@
 //   - close (POST): mark a trip as closed/expired by id
 
 import { serve } from "$std/http/server.ts";
-import { createClient } from "@supabase/supabase-js";
+import { getServiceClient } from "shared/supabase.ts";
+import { requireAdmin } from "shared/auth.ts";
+import { badRequest, methodNotAllowed, ok, serverError } from "shared/http.ts";
 
-const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
-const SERVICE_URL = Deno.env.get("SERVICE_URL") ?? "";
-const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ??
-  Deno.env.get("SERVICE_ROLE_KEY") ?? "";
-const ADMIN_TOKEN = Deno.env.get("EASYMO_ADMIN_TOKEN") ??
-  Deno.env.get("ADMIN_TOKEN") ?? "";
-
-const SB_URL = SUPABASE_URL || SERVICE_URL;
-if (!SB_URL || !SERVICE_ROLE_KEY) {
-  throw new Error("Supabase credentials are not configured");
-}
-
-const supabase = createClient(SB_URL, SERVICE_ROLE_KEY);
+const supabase = getServiceClient();
 
 serve(async (req) => {
   const json = (body: unknown, status = 200) =>
@@ -29,10 +19,8 @@ serve(async (req) => {
       headers: { "Content-Type": "application/json" },
     });
 
-  const apiKey = req.headers.get("x-api-key");
-  if (apiKey !== ADMIN_TOKEN) {
-    return json({ error: "Forbidden" }, 403);
-  }
+  const guard = requireAdmin(req);
+  if (guard) return guard;
 
   const url = new URL(req.url);
   const action = url.searchParams.get("action") ?? "list";
@@ -41,19 +29,15 @@ serve(async (req) => {
     if (action === "close" && req.method === "POST") {
       const body = await req.json().catch(() => ({}));
       const id = Number((body as { id?: unknown }).id);
-      if (!id) {
-        return json({ error: "id is required" }, 400);
-      }
+      if (!id) return badRequest("id_required");
 
       const { error } = await supabase
         .from("trips")
         .update({ status: "expired" })
         .eq("id", id);
 
-      if (error) {
-        return json({ error: error.message }, 500);
-      }
-      return json({ ok: true }, 200);
+      if (error) return serverError(error.message);
+      return ok({ ok: true });
     }
 
     // Default: list trips (GET or otherwise)
@@ -62,13 +46,10 @@ serve(async (req) => {
       .select("*")
       .order("created_at", { ascending: false });
 
-    if (error) {
-      return json({ error: error.message }, 500);
-    }
-
-    return json({ trips: data ?? [] }, 200);
+    if (error) return serverError(error.message);
+    return ok({ trips: data ?? [] });
   } catch (e) {
     const message = e instanceof Error ? e.message : String(e);
-    return json({ error: message }, 500);
+    return serverError(message);
   }
 });

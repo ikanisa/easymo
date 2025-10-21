@@ -7,29 +7,15 @@
 //   - reject (POST): reject a subscription by id with optional reason
 
 import { serve } from "$std/http/server.ts";
-import { createClient } from "@supabase/supabase-js";
+import { getServiceClient } from "shared/supabase.ts";
+import { requireAdmin } from "shared/auth.ts";
+import { badRequest, methodNotAllowed, ok, serverError } from "shared/http.ts";
 
-const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
-const SERVICE_URL = Deno.env.get("SERVICE_URL") ?? "";
-const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ??
-  Deno.env.get("SERVICE_ROLE_KEY") ?? "";
-const ADMIN_TOKEN = Deno.env.get("EASYMO_ADMIN_TOKEN") ??
-  Deno.env.get("ADMIN_TOKEN") ?? "";
-
-const SB_URL = SUPABASE_URL || SERVICE_URL;
-if (!SB_URL || !SERVICE_ROLE_KEY) {
-  throw new Error("Supabase credentials are not configured");
-}
-
-const supabase = createClient(SB_URL, SERVICE_ROLE_KEY);
+const supabase = getServiceClient();
 
 serve(async (req) => {
-  const apiKey = req.headers.get("x-api-key");
-  if (apiKey !== ADMIN_TOKEN) {
-    return new Response(JSON.stringify({ error: "Forbidden" }), {
-      status: 403,
-    });
-  }
+  const guard = requireAdmin(req);
+  if (guard) return guard;
   const url = new URL(req.url);
   const action = url.searchParams.get("action") ?? "list";
   try {
@@ -37,62 +23,39 @@ serve(async (req) => {
       const body = await req.json().catch(() => ({}));
       const id = Number(body.id);
       const txn_id = body.txn_id as string | undefined;
-      if (!id) {
-        return new Response(JSON.stringify({ error: "id is required" }), {
-          status: 400,
-        });
-      }
+      if (!id) return badRequest("id_required");
       const updates: any = { status: "active" };
       if (txn_id) updates.txn_id = txn_id;
       const { error } = await supabase
         .from("subscriptions")
         .update(updates)
         .eq("id", id);
-      if (error) {
-        return new Response(JSON.stringify({ error: error.message }), {
-          status: 500,
-        });
-      }
-      return new Response(JSON.stringify({ ok: true }), { status: 200 });
+      if (error) return serverError(error.message);
+      return ok({ ok: true });
     }
     if (action === "reject" && req.method === "POST") {
       const body = await req.json().catch(() => ({}));
       const id = Number(body.id);
       const reason = body.reason as string | undefined;
-      if (!id) {
-        return new Response(JSON.stringify({ error: "id is required" }), {
-          status: 400,
-        });
-      }
+      if (!id) return badRequest("id_required");
       const updates: any = { status: "rejected" };
       if (reason) updates.rejection_reason = reason;
       const { error } = await supabase
         .from("subscriptions")
         .update(updates)
         .eq("id", id);
-      if (error) {
-        return new Response(JSON.stringify({ error: error.message }), {
-          status: 500,
-        });
-      }
-      return new Response(JSON.stringify({ ok: true }), { status: 200 });
+      if (error) return serverError(error.message);
+      return ok({ ok: true });
     }
     // Default: list subscriptions
     const { data, error } = await supabase
       .from("subscriptions")
       .select("*")
       .order("created_at", { ascending: false });
-    if (error) {
-      return new Response(JSON.stringify({ error: error.message }), {
-        status: 500,
-      });
-    }
-    return new Response(JSON.stringify({ subscriptions: data ?? [] }), {
-      status: 200,
-      headers: { "Content-Type": "application/json" },
-    });
+    if (error) return serverError(error.message);
+    return ok({ subscriptions: data ?? [] });
   } catch (e) {
     const message = e instanceof Error ? e.message : String(e);
-    return new Response(JSON.stringify({ error: message }), { status: 500 });
+    return serverError(message);
   }
 });

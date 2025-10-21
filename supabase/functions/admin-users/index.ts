@@ -4,34 +4,16 @@
 // includes subscription status calculated from the subscriptions table.
 
 import { serve } from "$std/http/server.ts";
-import { createClient } from "@supabase/supabase-js";
+import { getServiceClient } from "shared/supabase.ts";
+import { requireAdmin } from "shared/auth.ts";
+import { methodNotAllowed, ok, serverError } from "shared/http.ts";
 
-const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
-const SERVICE_URL = Deno.env.get("SERVICE_URL") ?? "";
-const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ??
-  Deno.env.get("SERVICE_ROLE_KEY") ?? "";
-const ADMIN_TOKEN = Deno.env.get("EASYMO_ADMIN_TOKEN") ??
-  Deno.env.get("ADMIN_TOKEN") ?? "";
-
-const SB_URL = SUPABASE_URL || SERVICE_URL;
-if (!SB_URL || !SERVICE_ROLE_KEY) {
-  throw new Error("Supabase credentials are not configured");
-}
-
-const supabase = createClient(SB_URL, SERVICE_ROLE_KEY);
+const supabase = getServiceClient();
 
 serve(async (req) => {
-  const apiKey = req.headers.get("x-api-key");
-  if (apiKey !== ADMIN_TOKEN) {
-    return new Response(JSON.stringify({ error: "Forbidden" }), {
-      status: 403,
-    });
-  }
-  if (req.method !== "GET") {
-    return new Response(JSON.stringify({ error: "Method not allowed" }), {
-      status: 405,
-    });
-  }
+  const guard = requireAdmin(req);
+  if (guard) return guard;
+  if (req.method !== "GET") return methodNotAllowed(["GET"]);
   try {
     const { data, error } = await supabase
       .from("profiles")
@@ -39,11 +21,7 @@ serve(async (req) => {
         `user_id, whatsapp_e164, ref_code, credits_balance, created_at,
          subscriptions:subscriptions(status, expires_at)`,
       );
-    if (error) {
-      return new Response(JSON.stringify({ error: error.message }), {
-        status: 500,
-      });
-    }
+    if (error) return serverError(error.message);
     const users = (data ?? []).map((row: any) => {
       let subscription_status: "active" | "expired" | "none" = "none";
       const sub = row.subscriptions?.[0];
@@ -67,12 +45,9 @@ serve(async (req) => {
         created_at: row.created_at,
       };
     });
-    return new Response(JSON.stringify({ users }), {
-      status: 200,
-      headers: { "Content-Type": "application/json" },
-    });
+    return ok({ users });
   } catch (e) {
     const message = e instanceof Error ? e.message : String(e);
-    return new Response(JSON.stringify({ error: message }), { status: 500 });
+    return serverError(message);
   }
 });
