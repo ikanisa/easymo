@@ -19,6 +19,7 @@ model Tenant {
   walletAccounts WalletAccount[]
   commissionSchedules CommissionSchedule[]
   marketplaceSettings MarketplaceSettings[]
+  agents     Agent[]
   buyerProfiles BuyerProfile[]
   vendorProfiles VendorProfile[]
   intents Intent[]
@@ -271,6 +272,70 @@ enum PurchaseStatus {
 enum CallDirection {
   inbound
   outbound
+}
+
+// ===== Agent Management =====
+
+model Agent {
+  id                String   @id @default(uuid()) @db.Uuid
+  tenantId          String   @db.Uuid
+  tenant            Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name              String
+  slug              String
+  persona           String   @default("general")
+  status            String   @default("active")
+  currentRevisionId String?  @db.Uuid
+  currentRevision   AgentRevision? @relation(fields: [currentRevisionId], references: [id], onDelete: SetNull)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @default(now())
+  revisions         AgentRevision[]
+  documents         AgentDocument[]
+  tasks             AgentTask[]
+
+  @@index([tenantId, slug], map: "agents_tenant_slug_idx")
+  @@unique([tenantId, slug], map: "agents_tenant_slug_unique")
+}
+
+model AgentRevision {
+  id          String   @id @default(uuid()) @db.Uuid
+  agentId     String   @db.Uuid
+  agent       Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  version     Int      @default(1)
+  instructions String
+  tools       Json     @default("[]")
+  metadata    Json     @default("{}")
+  published   Boolean  @default(false)
+  createdBy   String?
+  createdAt   DateTime @default(now())
+
+  @@index([agentId, version], map: "agent_revisions_agent_version_idx")
+}
+
+model AgentDocument {
+  id        String   @id @default(uuid()) @db.Uuid
+  agentId   String   @db.Uuid
+  agent     Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  title     String
+  source    String   @default("text") // text|url|file
+  url       String?
+  content   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+
+  @@index([agentId], map: "agent_docs_agent_idx")
+}
+
+model AgentTask {
+  id           String   @id @default(uuid()) @db.Uuid
+  agentId      String   @db.Uuid
+  agent        Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  title        String
+  description  String?
+  payloadSchema Json    @default("{}")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @default(now())
+
+  @@index([agentId], map: "agent_tasks_agent_idx")
 }
 
 enum CallPlatform {

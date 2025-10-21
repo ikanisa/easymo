@@ -58,3 +58,33 @@ export function useDeployVersion(id: string) {
   });
 }
 
+export function useUploadAgentDocument(id: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (file: File) => {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch(`/api/agents/${id}/documents/upload`, {
+        method: "POST",
+        body: fd,
+      });
+      if (!res.ok) throw new Error("failed_to_upload_document");
+      return res.json();
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["agents", id] }),
+  });
+}
+
+export function useDeleteAgentDocument(id: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (docId: string) => {
+      const res = await fetch(`/api/agents/${id}/documents/${docId}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) throw new Error("failed_to_delete_document");
+      return res.json();
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["agents", id] }),
+  });
+}

@@ -1,6 +1,6 @@
 "use client";
 import { useParams } from "next/navigation";
-import { useAgentDetails, useCreateVersion, useDeployVersion } from "@/lib/queries/agents";
+import { useAgentDetails, useCreateVersion, useDeployVersion, useUploadAgentDocument, useDeleteAgentDocument } from "@/lib/queries/agents";
 import { useState } from "react";
 
 export default function AgentDetailsPage() {
@@ -10,6 +10,8 @@ export default function AgentDetailsPage() {
   const createVersion = useCreateVersion(id);
   const deploy = useDeployVersion(id);
   const [instructions, setInstructions] = useState("");
+  const upload = useUploadAgentDocument(id);
+  const delDoc = useDeleteAgentDocument(id);
 
   if (!id) return <div className="p-6">Invalid agent id</div>;
   if (isLoading) return <div className="p-6">Loading…</div>;
@@ -66,11 +68,16 @@ export default function AgentDetailsPage() {
 
       <section className="space-y-2">
         <h2 className="text-xl font-medium">Documents</h2>
+        <div className="flex items-center gap-2">
+          <input type="file" onChange={(e) => { const f = e.target.files?.[0]; if (f) upload.mutate(f); }} />
+          {upload.isPending && <span>Uploading…</span>}
+        </div>
         <table className="w-full text-sm border">
           <thead>
             <tr className="bg-gray-50">
               <th className="text-left p-2">Title</th>
               <th className="text-left p-2">Created</th>
+              <th className="text-left p-2">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -78,6 +85,9 @@ export default function AgentDetailsPage() {
               <tr key={d.id} className="border-t">
                 <td className="p-2">{d.title}</td>
                 <td className="p-2">{new Date(d.created_at).toLocaleString()}</td>
+                <td className="p-2">
+                  <button className="px-2 py-1 border rounded" onClick={() => delDoc.mutate(d.id)}>Delete</button>
+                </td>
               </tr>
             ))}
           </tbody>
@@ -86,4 +96,3 @@ export default function AgentDetailsPage() {
     </div>
   );
 }
-

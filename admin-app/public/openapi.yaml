@@ -304,3 +304,42 @@ paths:
     post:
       summary: Update driver availability from WA location
       responses: { '201': { description: Created } }
+  /api/agents:
+    get:
+      summary: List agent personas
+      responses: { '200': { description: OK } }
+    post:
+      summary: Create agent persona
+      responses: { '201': { description: Created } }
+  /api/agents/{id}:
+    get:
+      summary: Get agent persona
+      responses: { '200': { description: OK } }
+    patch:
+      summary: Update agent persona
+      responses: { '200': { description: OK } }
+  /api/agents/{id}/versions:
+    get:
+      summary: List versions of an agent
+      responses: { '200': { description: OK } }
+    post:
+      summary: Create new agent version
+      responses: { '201': { description: Created } }
+  /api/agents/{id}/versions/{versionId}/publish:
+    post:
+      summary: Publish version to default environment
+      responses: { '200': { description: OK } }
+  /api/agents/{id}/documents:
+    get:
+      summary: List knowledge documents for an agent
+      responses: { '200': { description: OK } }
+    post:
+      summary: Add knowledge document to an agent
+      responses: { '201': { description: Created } }
+  /api/agents/{id}/tasks:
+    get:
+      summary: List tasks for an agent
+      responses: { '200': { description: OK } }
+    post:
+      summary: Create task for an agent
+      responses: { '201': { description: Created } }

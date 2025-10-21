@@ -5,6 +5,7 @@
 
 import { serve } from "$std/http/server.ts";
 import { getServiceClient } from "shared/supabase.ts";
+import { CONFIG } from "shared/env.ts";
 import { requireAdmin } from "shared/auth.ts";
 import { z } from "zod";
 
@@ -254,10 +255,41 @@ serve(async (req) => {
         profileRef: result.data.profile_ref,
       });
 
-      const stub = buildStubResponse(
-        result.data.agent_kind,
-        result.data.message,
-      );
+      // Attempt Agent-Core integration, fallback to stub
+      let agentText: string | null = null;
+      const coreUrl = CONFIG.AGENT_CORE_URL?.replace(/\/$/, "");
+      if (coreUrl) {
+        try {
+          const resp = await fetch(`${coreUrl}/respond`, {
+            method: "POST",
+            headers: {
+              "content-type": "application/json",
+              ...(CONFIG.AGENT_CORE_TOKEN
+                ? { authorization: `Bearer ${CONFIG.AGENT_CORE_TOKEN}` }
+                : {}),
+            },
+            body: JSON.stringify({
+              session_id: session.id,
+              agent_kind: result.data.agent_kind,
+              message: result.data.message,
+              profile_ref: result.data.profile_ref ?? null,
+            }),
+          });
+          const coreJson = await resp.json().catch(() => ({}));
+          if (resp.ok && typeof coreJson?.text === "string") {
+            agentText = coreJson.text as string;
+          }
+        } catch (_err) {
+          // swallow and fallback
+        }
+      }
+
+      const stub = agentText
+        ? {
+          text: agentText,
+          suggestions: ["Thanks!", "What next?", "Escalate"],
+        }
+        : buildStubResponse(result.data.agent_kind, result.data.message);
       const inserted = await appendMessages(session.id, [
         {
           role: "user",

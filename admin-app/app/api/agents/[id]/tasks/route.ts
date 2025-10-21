@@ -5,23 +5,20 @@ export async function GET(_: Request, { params }: { params: { id: string } }) {
   const admin = getSupabaseAdminClient();
   if (!admin) return NextResponse.json({ error: "supabase_unavailable" }, { status: 503 });
   const { id } = params;
-  const { data, error } = await admin.from("agent_documents").select("*").eq("agent_id", id).order("created_at", { ascending: false });
+  const { data, error } = await admin.from("agent_tasks").select("*").eq("agent_id", id).order("created_at", { ascending: false });
   if (error) return NextResponse.json({ error }, { status: 400 });
-  return NextResponse.json({ documents: data ?? [] });
+  return NextResponse.json({ tasks: data ?? [] });
 }
 
 export async function POST(req: Request, { params }: { params: { id: string } }) {
   const admin = getSupabaseAdminClient();
   if (!admin) return NextResponse.json({ error: "supabase_unavailable" }, { status: 503 });
   const { id } = params;
-  // Allow JSON posting of remote source (source_url) as a simple path
-  const body = await req.json().catch(() => ({} as any));
-  const title = typeof body.title === "string" ? body.title : null;
-  const source_url = typeof body.source_url === "string" ? body.source_url : null;
-  const storage_path = typeof body.storage_path === "string" ? body.storage_path : null;
+  const body = await req.json().catch(() => ({}));
+  const { title, payload = {}, assigned_to = null, due_at = null } = body || {};
   if (!title) return NextResponse.json({ error: "title_required" }, { status: 400 });
-  const insert = { agent_id: id, title, source_url, storage_path } as any;
-  const { data, error } = await admin.from("agent_documents").insert(insert).select("*").single();
+  const { data, error } = await admin.from("agent_tasks").insert({ agent_id: id, title, payload, assigned_to, due_at }).select().single();
   if (error) return NextResponse.json({ error }, { status: 400 });
-  return NextResponse.json({ document: data }, { status: 201 });
+  return NextResponse.json({ task: data }, { status: 201 });
 }
+

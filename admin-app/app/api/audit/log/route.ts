@@ -1,30 +1,32 @@
-export const dynamic = 'force-dynamic';
-import { NextResponse } from 'next/server';
-import { z } from 'zod';
-import { recordAudit } from '@/lib/server/audit';
+import { z } from "zod";
+import { createHandler } from "@/app/api/withObservability";
+import { getSupabaseAdminClient } from "@/lib/server/supabase-admin";
+import { jsonError, jsonOk, zodValidationError } from "@/lib/api/http";
 
-const schema = z.object({
-  source: z.string().min(1),
-  suggestionId: z.string().optional().nullable(),
-  action: z.enum(['apply','dismiss','other']).default('other'),
-  actionId: z.string().optional().nullable(),
-  notes: z.string().optional().nullable(),
+const Body = z.object({
+  agentId: z.string().uuid(),
+  action: z.string().min(2),
+  meta: z.record(z.any()).optional(),
+  actor: z.string().optional(),
 });
 
-export async function POST(request: Request) {
+export const POST = createHandler("api.audit.log", async (req) => {
+  const db = getSupabaseAdminClient();
+  if (!db) return jsonError({ error: "supabase_unavailable" }, 503);
+  const payload = await req.json().catch(() => ({}));
   try {
-    const body = await request.json();
-    const payload = schema.parse(body);
-    await recordAudit({
-      actorId: process.env.ADMIN_TEST_ACTOR_ID || null,
-      action: `assistant_${payload.action}`,
-      targetTable: 'assistant_suggestions',
-      targetId: payload.suggestionId || 'n/a',
-      diff: { source: payload.source, actionId: payload.actionId, notes: payload.notes },
-    });
-    return NextResponse.json({ ok: true });
-  } catch (error) {
-    return NextResponse.json({ error: 'bad_request', message: (error as Error).message }, { status: 400 });
+    const input = Body.parse(payload);
+    const { error } = await db
+      .from("agent_audit")
+      .insert({
+        agent_id: input.agentId,
+        actor: input.actor ?? "admin",
+        action: input.action,
+        meta: input.meta ?? {},
+      });
+    if (error) return jsonError({ error: error.message }, 500);
+    return jsonOk({ ok: true }, 201);
+  } catch (err) {
+    return zodValidationError(err);
   }
-}
-
+});
