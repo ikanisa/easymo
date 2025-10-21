@@ -1,4 +1,7 @@
 {
+  "builds": [
+    { "src": "admin-app/next.config.mjs", "use": "@vercel/next" }
+  ],
   "env": {
     "API_HEALTH_PROBES_ENABLED": "true"
   },
