@@ -17,6 +17,8 @@ import type {
   AgentChatRequest,
 } from './types';
 
+import type { RetrievalSearchRequest, RetrievalSearchResponse } from './types';
+
 async function apiGet<T>(path: string): Promise<T> {
   const response = await fetch(`${API_BASE}${path}`, {
     headers: ADMIN_HEADERS(),
@@ -88,6 +90,95 @@ const toAgentChatResponse = (payload: unknown): AgentChatResponse => {
     },
     messages,
     suggestions: raw.suggestions ?? [],
+  };
+};
+
+const toRetrievalSearchResponse = (payload: unknown): RetrievalSearchResponse => {
+  if (!payload || typeof payload !== 'object') {
+    return { status: 'error', results: [], message: 'invalid_response' };
+  }
+
+  const raw = payload as Record<string, unknown>;
+  const statusValue = raw.status === 'error' ? 'error' : 'ok';
+
+  const queryPart = raw.query && typeof raw.query === 'object' && !Array.isArray(raw.query)
+    ? {
+        original: typeof (raw.query as Record<string, unknown>).original === 'string'
+          ? (raw.query as Record<string, unknown>).original as string
+          : undefined,
+        rewritten: typeof (raw.query as Record<string, unknown>).rewritten === 'string'
+          ? (raw.query as Record<string, unknown>).rewritten as string
+          : undefined,
+        vector_store_id: typeof (raw.query as Record<string, unknown>).vector_store_id === 'string'
+          ? (raw.query as Record<string, unknown>).vector_store_id as string
+          : undefined,
+      }
+    : undefined;
+
+  const resultsRaw = Array.isArray((raw as Record<string, unknown>).results)
+    ? (raw as Record<string, unknown>).results as unknown[]
+    : [];
+
+  const results = resultsRaw.map((item) => {
+    if (!item || typeof item !== 'object') {
+      return {} as RetrievalSearchResult;
+    }
+
+    const record = item as Record<string, unknown>;
+
+    const contentRaw = Array.isArray(record.content)
+      ? record.content as unknown[]
+      : [];
+
+    const content = contentRaw
+      .filter((chunk): chunk is Record<string, unknown> => Boolean(chunk) && typeof chunk === 'object')
+      .map((chunk) => {
+        const normalized: RetrievalSearchChunk = {};
+        if (typeof chunk.type === 'string') {
+          normalized.type = chunk.type;
+        }
+        if (typeof chunk.text === 'string') {
+          normalized.text = chunk.text;
+        }
+        for (const [key, value] of Object.entries(chunk)) {
+          if (key === 'type' || key === 'text') continue;
+          normalized[key] = value;
+        }
+        return normalized;
+      });
+
+    const normalizedResult: RetrievalSearchResult = {
+      file_id: typeof record.file_id === 'string' ? record.file_id : undefined,
+      filename: typeof record.filename === 'string' ? record.filename : undefined,
+      score: typeof record.score === 'number' ? record.score : undefined,
+      attributes: record.attributes && typeof record.attributes === 'object' && !Array.isArray(record.attributes)
+        ? record.attributes as Record<string, unknown>
+        : undefined,
+    };
+
+    if (content.length > 0) {
+      normalizedResult.content = content;
+    }
+
+    return normalizedResult;
+  });
+
+  const usage = raw.usage && typeof raw.usage === 'object' && !Array.isArray(raw.usage)
+    ? raw.usage as Record<string, unknown>
+    : undefined;
+
+  const meta = raw.meta && typeof raw.meta === 'object' && !Array.isArray(raw.meta)
+    ? raw.meta as Record<string, unknown>
+    : undefined;
+
+  return {
+    status: statusValue,
+    query: queryPart,
+    results,
+    usage,
+    meta,
+    error: typeof raw.error === 'string' ? raw.error : undefined,
+    message: typeof raw.message === 'string' ? raw.message : undefined,
   };
 };
 
@@ -380,6 +471,12 @@ export const AdminAPI = {
 
     const payload = await response.json();
     return toAgentChatResponse(payload);
+  },
+
+  // Retrieval search
+  searchRetrieval: async (request: RetrievalSearchRequest): Promise<RetrievalSearchResponse> => {
+    const payload = await apiPost<unknown>('/retrieval-search', request);
+    return toRetrievalSearchResponse(payload);
   },
 
   // Storage ingestion

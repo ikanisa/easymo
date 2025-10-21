@@ -21,6 +21,7 @@ export default () => ({
   },
   featureFlags: {
     agentChat: process.env.FEATURE_AGENT_CHAT ?? "1",
+    agentWebSearch: process.env.FEATURE_AGENT_WEB_SEARCH ?? "0",
   },
   serviceAuth: {
     audience: process.env.SERVICE_AUTH_AUDIENCE ?? "agent-core",

@@ -70,6 +70,7 @@ const App = () => (
             <Route path="/baskets" element={<Baskets />} />
             <Route path="/marketplace" element={<Marketplace />} />
             <Route path="/operations" element={<Operations />} />
+            <Route path="/realtime" element={<Realtime />} />
             <Route path="/developer" element={<Developer />} />
             <Route path="/agent-patterns" element={<AgentPatternsPage />} />
             <Route path="/admin/wa-console" element={<WAConsole />} />
