@@ -7,8 +7,7 @@ set -euo pipefail
 #   PROJECT_REF=xxxx tools/deploy_supabase_functions.sh [--debug] [fn1 fn2 ...]
 #
 # If no function names are provided, this script discovers functions under
-#   - supabase/functions/*
-#   - easymo/supabase/functions/*
+#   - supabase/functions/* (canonical)
 # A function directory is considered valid if it contains either an index.ts
 # or a function.json file.
 
@@ -61,11 +60,6 @@ else
     SEEN[$f]=1
     FUNCS+=("$f")
   done < <(discover_functions "supabase/functions")
-  while read -r f; do
-    if [[ -n "${SEEN[$f]:-}" ]]; then continue; fi
-    SEEN[$f]=1
-    FUNCS+=("$f")
-  done < <(discover_functions "easymo/supabase/functions")
 fi
 
 if (( ${#FUNCS[@]} == 0 )); then
@@ -90,4 +84,3 @@ for fn in "${FUNCS[@]}"; do
 done
 
 echo "All functions deployed successfully."
-

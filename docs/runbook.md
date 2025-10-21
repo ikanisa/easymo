@@ -7,8 +7,8 @@
 2. Authenticate with Supabase CLI (`supabase login`).
 3. Apply mobility migrations in order:
    ```bash
-   supabase db push --file easymo/supabase/migrations/20251112090000_phase2_mobility_core.sql
-   supabase db push --file easymo/supabase/migrations/20251112091000_phase2_mobility_rls.sql
+   supabase db push --file supabase/migrations/20251112090000_phase2_mobility_core.sql
+   supabase db push --file supabase/migrations/20251112091000_phase2_mobility_rls.sql
    ```
 4. Confirm `settings`, `profiles`, `driver_presence`, `trips`, `subscriptions`,
    `vouchers`, and related tables exist via `supabase db dump --schema public`.
@@ -16,7 +16,7 @@
 ### Seed fixtures
 - Populate local/staging data with:
   ```bash
-  supabase db remote commit --file easymo/supabase/seed/fixtures/phase_b_seed.sql
+  supabase db remote commit --file supabase/seed/fixtures/phase_b_seed.sql
   ```
 - The script is idempotent; rerun when you need fresh simulator presence or
   sample subscriptions.
