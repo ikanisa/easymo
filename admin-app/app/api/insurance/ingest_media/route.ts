@@ -32,6 +32,8 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
+  const enabled = (process.env.API_HEALTH_PROBES_ENABLED ?? "false").toLowerCase() === "true";
+  if (!enabled) return NextResponse.json({ error: "not_found" }, { status: 404 });
   const reqId = req.headers.get("x-request-id") || crypto.randomUUID();
   return NextResponse.json({ route: "insurance.ingest_media", status: "ok", reqId }, { status: 200 });
 }

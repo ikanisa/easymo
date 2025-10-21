@@ -66,6 +66,20 @@ async function bootstrap() {
     }
   });
 
+  app.get("/vendors/:id/entitlements", async (req, res) => {
+    if (!isFeatureEnabled("marketplace.vendor")) {
+      return res.status(403).json({ error: "Vendor service disabled" });
+    }
+    try {
+      const tenantId = (req.query.tenantId as string) ?? settings.defaultTenantId;
+      const result = await vendors.getEntitlements(tenantId, req.params.id);
+      res.json(result);
+    } catch (error) {
+      logger.error({ msg: "vendor.entitlements.error", error });
+      res.status(400).json({ error: (error as Error).message });
+    }
+  });
+
   app.post("/vendors/:id/quotes", async (req, res) => {
     if (!isFeatureEnabled("marketplace.vendor")) {
       return res.status(403).json({ error: "Vendor service disabled" });

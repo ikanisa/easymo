@@ -192,8 +192,28 @@ export class AiService {
     );
     const candidates: any[] = rankingResp.data?.vendors ?? [];
 
+    // 2b) Filter candidates by entitlements: 30 free contacts or active subscription
+    const entitlementChecks = await Promise.allSettled(
+      candidates.map(async (v: any) => {
+        try {
+          const resp = await this.http.get(`${this.vendorBase}/vendors/${v.id}/entitlements`, {
+            params: { tenantId: input.tenantId },
+            headers: this.reqHeaders(),
+          });
+          const ent = resp.data as { allowed: boolean };
+          return ent.allowed ? v : null;
+        } catch {
+          return null;
+        }
+      }),
+    );
+    const eligible = entitlementChecks
+      .filter((r): r is PromiseFulfilledResult<any> => r.status === "fulfilled")
+      .map((r) => r.value)
+      .filter(Boolean);
+
     // 3) Fan-out vendor quotes (cap 5)
-    const top = candidates.slice(0, 5);
+    const top = eligible.slice(0, 5);
     const quotes = await Promise.allSettled(
       top.map((v) =>
         this.http.post(
