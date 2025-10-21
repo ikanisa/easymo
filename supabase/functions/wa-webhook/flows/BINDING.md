@@ -2,7 +2,7 @@
 
 For each Flow below, set the Data Channel URI to the deployed `flows/exchange`
 Edge Function URL (e.g.
-`https://<project>.functions.supabase.co/flow-exchange`).
+`https://<project>.supabase.co/functions/v1/flow-exchange`).
 
 1. `flow.cust.bar_browser.v1`
 2. `flow.cust.bar_menu.v1`

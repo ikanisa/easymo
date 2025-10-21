@@ -414,7 +414,7 @@ const SettingsPanel: React.FC = () => {
       <div className="space-y-2">
         <label className="text-sm text-gray-600">Dispatcher Function URL</label>
         <TextInput
-          placeholder="https://<your-ref>.functions.supabase.co/campaign-dispatch"
+          placeholder="https://<your-ref>.supabase.co/functions/v1/campaign-dispatch"
           value={fnUrl}
           onChange={(e) => setFnUrl(e.target.value)}
         />

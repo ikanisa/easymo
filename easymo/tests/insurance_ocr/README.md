@@ -10,7 +10,7 @@ WhatsApp webhook delivery while the chat state is `ins_wait_doc`.
 curl -X POST \
   -H "Content-Type: application/json" \
   -d @payload.image.json \
-  https://<project-ref>.functions.supabase.co/wa-webhook
+  https://<project-ref>.supabase.co/functions/v1/wa-webhook
 ```
 
 Expected:

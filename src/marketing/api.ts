@@ -77,7 +77,7 @@ export async function listLogs(params?: {
 /**
  * Run the dispatcher once (manual kick).
  * Store the function URL in Settings UI (localStorage).
- * Example: https://<ref>.functions.supabase.co/campaign-dispatch
+ * Example: https://<ref>.supabase.co/functions/v1/campaign-dispatch
  */
 export async function runDispatcherOnce(functionUrl: string) {
   const res = await fetch(functionUrl, { method: "GET" });

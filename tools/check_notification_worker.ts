@@ -1,7 +1,7 @@
 /**
  * Usage:
  *   deno run --allow-env --allow-net tools/check_notification_worker.ts \
- *     https://<project-ref>.functions.supabase.co/notification-worker
+ *     https://<project-ref>.supabase.co/functions/v1/notification-worker
  */
 
 const endpoint = Deno.args[0];

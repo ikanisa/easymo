@@ -14,7 +14,7 @@
 2. Call the function manually:
    ```bash
    deno run --allow-env --allow-net tools/check_notification_worker.ts \
-     https://<project-ref>.functions.supabase.co/notification-worker
+     https://<project-ref>.supabase.co/functions/v1/notification-worker
    ```
    The JSON response includes `cronEnabled` to confirm the flag.
 3. Review structured logs (`NOTIFY_CRON_STATUS`, `NOTIFY_CRON_FAIL`) or your

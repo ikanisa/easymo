@@ -28,7 +28,7 @@ handled in staging/production before relying on the updated OCR worker.
 3. Trigger the edge function (replace URL with staging endpoint):
 
    ```bash
-   curl -X POST "https://<project>.functions.supabase.co/ocr-processor" \
+  curl -X POST "https://<project>.supabase.co/functions/v1/ocr-processor" \
      -H "Authorization: Bearer ${SUPABASE_ANON_KEY}"
    ```
 

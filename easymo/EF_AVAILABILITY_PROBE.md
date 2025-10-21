@@ -7,14 +7,14 @@ then surface graceful degraded states in the Admin Panel.
 
 1. **Voucher PNG Generator**
    - **Expected URL**:
-     `POST https://<project-ref>.functions.supabase.co/voucher-preview`
+     `POST https://<project-ref>.supabase.co/functions/v1/voucher-preview`
    - **Request Body**: `{ "voucher_id": string, "format": "png" }`
    - **Success Response**: `200 OK` with
      `{ "signed_url": string, "expires_in": number }`
    - **Failure Handling**: Treat `404` or network failure as "not configured".
 2. **WhatsApp Media Send**
    - **Expected URL**:
-     `POST https://<project-ref>.functions.supabase.co/wa-send-media`
+     `POST https://<project-ref>.supabase.co/functions/v1/wa-send-media`
    - **Request Body**:
      `{ "msisdn": string, "template_id": string, "media_url": string, "context": object }`
    - **Success Response**: `202 Accepted` with `{ "message_id": string }`
@@ -22,7 +22,7 @@ then surface graceful degraded states in the Admin Panel.
      should bubble a user-readable error.
 3. **Campaign Dispatcher**
    - **Expected URL**:
-     `POST https://<project-ref>.functions.supabase.co/campaign-dispatcher/<action>`
+     `POST https://<project-ref>.supabase.co/functions/v1/campaign-dispatcher/<action>`
      where `<action>` ∈ `start|pause|stop|status`.
    - **Request Body**: `{ "campaign_id": string }`
    - **Success Response**: `200 OK` with

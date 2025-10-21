@@ -45,7 +45,7 @@ Update the Supabase project settings (Dashboard → Authentication → Settings)
 ## 3. Vercel Environment Variables
 
 1. Run `vercel env ls` (requires Vercel CLI login) and export the current values.  
-2. Ensure every key listed in `.env` exists; remove keys for the old project (`ezrriefbmhiiqfoxgjgz`).  
+2. Ensure every key listed in `.env` exists and references the official project (`lhbowpbcpwoiparwnwgt`).  
 3. Set `VITE_ADMIN_TOKEN`, `ADMIN_SESSION_SECRET`, `ADMIN_ACCESS_CREDENTIALS`, `DISPATCHER_FUNCTION_URL`, and the Supabase keys to their production values.  
 4. Redeploy both the root project and the admin panel after updating secrets (`vercel --prod` from the appropriate directories).
 
