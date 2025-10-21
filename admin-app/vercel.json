@@ -1,7 +1,23 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "nextjs",
+  "buildCommand": "pnpm build",
+  "installCommand": "corepack enable && pnpm install --frozen-lockfile",
+  "outputDirectory": ".next",
   "env": {
     "API_HEALTH_PROBES_ENABLED": "true"
-  }
+  },
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/$1" },
+    { "source": "/api/insurance/(.*)", "destination": "/api/insurance/$1" },
+    { "source": "/api/mobility/(.*)", "destination": "/api/mobility/$1" },
+    { "source": "/openapi.yaml", "destination": "/openapi.yaml" },
+    { "source": "/admin-settings", "destination": "/api/admin-settings" },
+    { "source": "/admin-stats", "destination": "/api/admin-stats" },
+    { "source": "/admin-users", "destination": "/api/admin-users" },
+    { "source": "/admin-trips", "destination": "/api/admin-trips" },
+    { "source": "/admin-subscriptions", "destination": "/api/admin-subscriptions" },
+    { "source": "/simulator", "destination": "/api/simulator" }
+  ],
+  "regions": ["fra1"]
 }
-

@@ -1,7 +1,6 @@
+import { env } from "../env.server";
 import { encodeBase64UrlFromString, decodeBase64UrlToString } from "./base64";
 import { signHmacSha256, verifyHmacSha256 } from "./hmac";
-
-const DEFAULT_SESSION_TTL_SECONDS = 60 * 60 * 12; // 12 hours
 
 export const SESSION_COOKIE_NAME = "admin_session";
 
@@ -13,45 +12,24 @@ export type SessionClaims = {
   nonce: string;
 };
 
-function getSessionSecret(): string {
-  const secret = process.env.ADMIN_SESSION_SECRET;
-  if (!secret) {
-    throw new Error("ADMIN_SESSION_SECRET is not configured");
-  }
-  if (secret.length < 16) {
-    throw new Error("ADMIN_SESSION_SECRET must be at least 16 characters long");
-  }
-  return secret;
-}
-
 function resolveVerificationSecrets(): string[] {
   const secrets: string[] = [];
   try {
-    secrets.push(getSessionSecret());
+    secrets.push(env.admin.sessionSecret);
   } catch (error) {
     console.error("session.secret_missing", error);
   }
 
-  const fallback = process.env.ADMIN_SESSION_SECRET_FALLBACK;
-  if (fallback) {
-    if (fallback.length < 16) {
-      console.warn("session.secret_fallback_invalid_length");
-    } else if (!secrets.includes(fallback)) {
-      secrets.push(fallback);
-    }
+  const fallback = env.admin.sessionSecretFallback;
+  if (fallback && !secrets.includes(fallback)) {
+    secrets.push(fallback);
   }
 
   return secrets;
 }
 
 function resolveTtlSeconds(): number {
-  const raw = process.env.ADMIN_SESSION_TTL_SECONDS;
-  if (!raw) return DEFAULT_SESSION_TTL_SECONDS;
-  const parsed = Number.parseInt(raw, 10);
-  if (Number.isNaN(parsed) || parsed <= 0) {
-    return DEFAULT_SESSION_TTL_SECONDS;
-  }
-  return parsed;
+  return env.admin.sessionTtlSeconds;
 }
 
 function nowSeconds(): number {
@@ -84,7 +62,7 @@ export async function createSessionToken(actorId: string): Promise<{ token: stri
 
   const payload = JSON.stringify(claims);
   const encoded = encodeBase64UrlFromString(payload);
-  const secret = getSessionSecret();
+  const secret = env.admin.sessionSecret;
   const signature = await signHmacSha256(encoded, secret);
 
   return {

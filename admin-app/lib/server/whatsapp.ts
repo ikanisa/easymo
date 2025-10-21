@@ -1,3 +1,4 @@
+import { env } from "../env.server";
 import { logStructured } from './logger';
 
 export type WhatsAppPayload = Record<string, unknown>;
@@ -7,10 +8,8 @@ export type WhatsAppSendOptions = {
   maxRetries?: number;
 };
 
-const DEFAULT_TIMEOUT_MS = Number.parseInt(process.env.WHATSAPP_SEND_TIMEOUT_MS ?? '', 10);
-const TIMEOUT_MS = Number.isNaN(DEFAULT_TIMEOUT_MS) || DEFAULT_TIMEOUT_MS <= 0 ? 10_000 : DEFAULT_TIMEOUT_MS;
-const DEFAULT_MAX_RETRIES = Number.parseInt(process.env.WHATSAPP_SEND_RETRIES ?? '', 10);
-const MAX_RETRIES = Number.isNaN(DEFAULT_MAX_RETRIES) || DEFAULT_MAX_RETRIES < 0 ? 2 : DEFAULT_MAX_RETRIES;
+const TIMEOUT_MS = env.whatsapp.timeoutMs ?? 10_000;
+const MAX_RETRIES = env.whatsapp.maxRetries ?? 2;
 
 export class WhatsAppSendError extends Error {
   constructor(message: string, readonly code: string, readonly status?: number) {
@@ -20,12 +19,7 @@ export class WhatsAppSendError extends Error {
 }
 
 function resolveEndpoint(): string | null {
-  return (
-    process.env.WHATSAPP_SEND_ENDPOINT ??
-    process.env.NEXT_PUBLIC_WHATSAPP_SEND_ENDPOINT ??
-    process.env.NEXT_PUBLIC_WHATSAPP_SEND_API ??
-    null
-  );
+  return env.whatsapp.endpoint;
 }
 
 function safePreview(payload: WhatsAppPayload): string {

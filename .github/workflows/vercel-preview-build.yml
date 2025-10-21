@@ -1,0 +1,47 @@
+name: Vercel Preview Build
+
+on:
+  pull_request:
+    paths-ignore:
+      - 'README.md'
+      - 'docs/**'
+      - 'audits/**'
+      - 'audit/**'
+      - '.github/ISSUE_TEMPLATE/**'
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    env:
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'pnpm'
+
+      - name: Enable corepack
+        run: corepack enable
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Pull Vercel env
+        run: pnpm dlx vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+        working-directory: admin-app
+
+      - name: Build Vercel preview bundle
+        run: pnpm dlx vercel build --token=${{ secrets.VERCEL_TOKEN }}
+        working-directory: admin-app
+
+      - name: Upload build logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vercel-build-logs
+          path: admin-app/.vercel/output/logs
+          if-no-files-found: ignore

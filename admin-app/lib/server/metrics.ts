@@ -1,9 +1,11 @@
+import { env } from "../env.server";
+
 let inited = false;
 let url: string | null = null;
 
 function ensureInit() {
   if (inited) return;
-  url = process.env.METRICS_DRAIN_URL ?? null;
+  url = env.logging.metricsUrl;
   inited = true;
 }
 

@@ -1,16 +1,15 @@
+import { env } from "../env.server";
 import "server-only";
 
 let initialized = false;
 
 function shouldEnable(): boolean {
-  const dsn = process.env.SENTRY_DSN;
-  return Boolean(dsn && dsn.trim().length > 0);
+  return Boolean(env.sentry.serverDsn);
 }
 
 function initIfNeeded(S: any) {
   if (initialized) return;
-  const dsn = process.env.SENTRY_DSN;
-  S.init({ dsn, tracesSampleRate: 0.1 });
+  S.init({ dsn: env.sentry.serverDsn ?? undefined, tracesSampleRate: 0.1 });
   initialized = true;
 }
 

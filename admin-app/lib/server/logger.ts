@@ -1,3 +1,5 @@
+import { env } from "../env.server";
+
 interface LogContext {
   event: string;
   target?: string;
@@ -19,7 +21,7 @@ export function logStructured(context: LogContext) {
 
   // Optional: forward logs to an external drain if configured.
   try {
-    const drainUrl = process.env.LOG_DRAIN_URL;
+    const drainUrl = env.logging.drainUrl ?? undefined;
     if (drainUrl) {
       // Fire-and-forget; do not block request lifecycle.
       void fetch(drainUrl, {

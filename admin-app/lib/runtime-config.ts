@@ -1,5 +1,6 @@
-const rawUseMocks = process.env.NEXT_PUBLIC_USE_MOCKS ?? "false";
-const useMocksFlag = rawUseMocks.trim().toLowerCase() === "true";
+import { env } from "./env.server";
+
+const useMocksFlag = env.useMocks;
 
 export type SupabaseClientConfig = {
   url: string;
@@ -12,7 +13,7 @@ export type SupabaseServiceConfig = {
 };
 
 export function shouldUseMocks(): boolean {
-  if (process.env.NODE_ENV === "production" && useMocksFlag) {
+  if (env.nodeEnv === "production" && useMocksFlag) {
     if (typeof window === "undefined") {
       console.error(
         "NEXT_PUBLIC_USE_MOCKS=true is not allowed in production; falling back to live services.",
@@ -28,8 +29,8 @@ export function requireClientSupabaseConfig(): SupabaseClientConfig | null {
     return null;
   }
 
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const url = env.supabase.client.url;
+  const anonKey = env.supabase.client.anonKey;
 
   if (!url || !anonKey) {
     throw new Error(
@@ -45,15 +46,8 @@ export function requireServiceSupabaseConfig(): SupabaseServiceConfig | null {
     return null;
   }
 
-  // Allow fallbacks to SERVICE_URL / SERVICE_ROLE_KEY to align with
-  // Supabase secrets policy (env names starting with SUPABASE_ are blocked).
-  const url =
-    process.env.SUPABASE_URL ||
-    process.env.SERVICE_URL ||
-    process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceRoleKey =
-    process.env.SUPABASE_SERVICE_ROLE_KEY ||
-    process.env.SERVICE_ROLE_KEY;
+  const url = env.supabase.service.url ?? env.supabase.client.url;
+  const serviceRoleKey = env.supabase.service.serviceRoleKey;
 
   if (!url || !serviceRoleKey) {
     throw new Error(
@@ -64,36 +58,14 @@ export function requireServiceSupabaseConfig(): SupabaseServiceConfig | null {
   return { url, serviceRoleKey };
 }
 
-function envOrNull(value: string | undefined) {
-  const trimmed = value?.trim();
-  return trimmed ? trimmed : null;
-}
-
 export function getVoiceBridgeApiUrl(): string | null {
-  return envOrNull(
-    process.env.VOICE_BRIDGE_API_URL ?? process.env.NEXT_PUBLIC_VOICE_BRIDGE_API_URL,
-  );
+  return env.serviceUrls.voiceBridge;
 }
 
 export function getAgentCoreUrl(): string | null {
-  return envOrNull(
-    process.env.AGENT_CORE_URL ?? process.env.NEXT_PUBLIC_AGENT_CORE_URL,
-  );
+  return env.serviceUrls.agentCore;
 }
 
 export function getMarketplaceServiceUrls() {
-  return {
-    ranking: envOrNull(
-      process.env.MARKETPLACE_RANKING_URL ?? process.env.NEXT_PUBLIC_MARKETPLACE_RANKING_URL,
-    ),
-    vendor: envOrNull(
-      process.env.MARKETPLACE_VENDOR_URL ?? process.env.NEXT_PUBLIC_MARKETPLACE_VENDOR_URL,
-    ),
-    buyer: envOrNull(
-      process.env.MARKETPLACE_BUYER_URL ?? process.env.NEXT_PUBLIC_MARKETPLACE_BUYER_URL,
-    ),
-    wallet: envOrNull(
-      process.env.WALLET_SERVICE_URL ?? process.env.NEXT_PUBLIC_WALLET_SERVICE_URL,
-    ),
-  };
+  return env.serviceUrls.marketplace;
 }

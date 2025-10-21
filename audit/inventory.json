@@ -1,0 +1,201 @@
+{
+  "packageManager": {
+    "preferred": "pnpm",
+    "lockfiles": {
+      "pnpm": "pnpm-lock.yaml",
+      "npm": ["package-lock.json", "admin-app/package-lock.json"],
+      "notes": "Normalize on pnpm and delete npm lockfiles once pnpm install passes across workspaces."
+    }
+  },
+  "node": {
+    "requiredVersion": "18.x",
+    "sources": [
+      "package.json#engines.node",
+      "admin-app/package.json#engines.node"
+    ]
+  },
+  "apps": [
+    {
+      "name": "marketing-web",
+      "path": ".",
+      "framework": "Vite + React",
+      "scripts": {
+        "dev": "pnpm dev",
+        "build": "pnpm build",
+        "preview": "pnpm preview"
+      },
+      "output": "dist",
+      "notes": "Static SPA served via Vercel static output."
+    },
+    {
+      "name": "admin-app",
+      "path": "admin-app",
+      "framework": "Next.js 14 (App Router)",
+      "scripts": {
+        "dev": "pnpm dev",
+        "build": "pnpm build",
+        "start": "pnpm start",
+        "lint": "pnpm lint"
+      },
+      "output": ".next",
+      "notes": "Primary Vercel target with edge/serverless route handlers."
+    },
+    {
+      "name": "agent-core",
+      "path": "apps/agent-core",
+      "framework": "NestJS",
+      "scripts": {
+        "dev": "pnpm dev",
+        "build": "pnpm build",
+        "start": "pnpm start"
+      },
+      "deployment": "Node server (Express adapter)"
+    },
+    {
+      "name": "api",
+      "path": "apps/api",
+      "framework": "NestJS",
+      "scripts": {
+        "dev": "pnpm dev",
+        "build": "pnpm build",
+        "start": "pnpm start"
+      },
+      "deployment": "Node server (Express adapter)"
+    },
+    {
+      "name": "sip-webhook",
+      "path": "apps/sip-webhook",
+      "framework": "NestJS",
+      "scripts": {
+        "dev": "pnpm dev",
+        "build": "pnpm build",
+        "start": "pnpm start"
+      },
+      "deployment": "Node server (Express adapter)"
+    },
+    {
+      "name": "voice-bridge",
+      "path": "apps/voice-bridge",
+      "framework": "Node WS bridge",
+      "scripts": {
+        "dev": "pnpm dev",
+        "build": "pnpm build",
+        "start": "pnpm start"
+      },
+      "deployment": "Node WebSocket service"
+    }
+  ],
+  "services": [
+    {
+      "name": "agent-core",
+      "path": "services/agent-core",
+      "framework": "NestJS",
+      "scripts": {
+        "dev": "pnpm start:dev",
+        "build": "pnpm build",
+        "start": "pnpm start"
+      }
+    },
+    {
+      "name": "attribution-service",
+      "path": "services/attribution-service",
+      "framework": "NestJS",
+      "scripts": {
+        "dev": "pnpm start:dev",
+        "build": "pnpm build",
+        "start": "pnpm start"
+      }
+    },
+    {
+      "name": "buyer-service",
+      "path": "services/buyer-service",
+      "framework": "NestJS",
+      "scripts": {
+        "dev": "pnpm start:dev",
+        "build": "pnpm build",
+        "start": "pnpm start"
+      }
+    },
+    {
+      "name": "broker-orchestrator",
+      "path": "services/broker-orchestrator",
+      "framework": "NestJS",
+      "scripts": {
+        "dev": "pnpm start:dev",
+        "build": "pnpm build",
+        "start": "pnpm start"
+      }
+    },
+    {
+      "name": "ranking-service",
+      "path": "services/ranking-service",
+      "framework": "NestJS",
+      "scripts": {
+        "dev": "pnpm start:dev",
+        "build": "pnpm build",
+        "start": "pnpm start"
+      }
+    },
+    {
+      "name": "reconciliation-service",
+      "path": "services/reconciliation-service",
+      "framework": "NestJS",
+      "scripts": {
+        "dev": "pnpm start:dev",
+        "build": "pnpm build",
+        "start": "pnpm start"
+      }
+    },
+    {
+      "name": "sip-ingress",
+      "path": "services/sip-ingress",
+      "framework": "NestJS",
+      "scripts": {
+        "dev": "pnpm start:dev",
+        "build": "pnpm build",
+        "start": "pnpm start"
+      }
+    },
+    {
+      "name": "vendor-service",
+      "path": "services/vendor-service",
+      "framework": "NestJS",
+      "scripts": {
+        "dev": "pnpm start:dev",
+        "build": "pnpm build",
+        "start": "pnpm start"
+      }
+    },
+    {
+      "name": "voice-bridge",
+      "path": "services/voice-bridge",
+      "framework": "Node WebSocket",
+      "scripts": {
+        "dev": "pnpm start:dev",
+        "build": "pnpm build",
+        "start": "pnpm start"
+      }
+    },
+    {
+      "name": "wallet-service",
+      "path": "services/wallet-service",
+      "framework": "Express + Prisma",
+      "scripts": {
+        "dev": "pnpm start:dev",
+        "build": "pnpm build",
+        "start": "pnpm start"
+      },
+      "postinstall": "prisma generate"
+    },
+    {
+      "name": "whatsapp-bot",
+      "path": "services/whatsapp-bot",
+      "framework": "NestJS",
+      "scripts": {
+        "dev": "pnpm start:dev",
+        "build": "pnpm build",
+        "start": "pnpm start"
+      }
+    }
+  ]
+}

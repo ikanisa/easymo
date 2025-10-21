@@ -1,28 +1,29 @@
+import { env } from '../env';
+
 /**
  * Environment configuration for ULTRA-MINIMAL WhatsApp Mobility
  * Single source of truth for environment variables
  */
 
 export function isDev(): boolean {
-  return import.meta.env.DEV;
+  return Boolean(env.DEV ?? env.MODE === 'development');
 }
 
 export function shouldUseMock(): boolean {
-  return import.meta.env.VITE_USE_MOCK === '1' || import.meta.env.VITE_USE_MOCK === 'true';
+  return env.flags.useMocks;
 }
 
 export function showDevTools(): boolean {
-  return import.meta.env.VITE_DEV_TOOLS === '1';
+  return env.flags.devTools;
 }
 
 export function isAgentChatEnabled(): boolean {
-  const raw = (import.meta.env.VITE_ENABLE_AGENT_CHAT ?? 'false').toString().toLowerCase();
-  return raw === '1' || raw === 'true' || raw === 'yes';
+  return env.flags.agentChat;
 }
 
 export function getAdminToken(): string {
-  if (import.meta.env.VITE_ADMIN_TOKEN) {
-    return import.meta.env.VITE_ADMIN_TOKEN;
+  if (env.VITE_ADMIN_TOKEN) {
+    return env.VITE_ADMIN_TOKEN;
   }
 
   if (typeof window !== 'undefined') {
@@ -36,16 +37,16 @@ export function getAdminToken(): string {
 }
 
 export function getApiBase(): string {
-  return import.meta.env.VITE_API_BASE || '/functions/v1';
+  return env.VITE_API_BASE;
 }
 
 export function getSupabaseUrl(): string | undefined {
-  const url = import.meta.env.VITE_SUPABASE_URL?.trim();
+  const url = env.VITE_SUPABASE_URL?.trim();
   return url ? url : undefined;
 }
 
 export function getSupabaseProjectId(): string | undefined {
-  const explicit = import.meta.env.VITE_SUPABASE_PROJECT_ID?.trim();
+  const explicit = env.VITE_SUPABASE_PROJECT_ID?.trim();
   if (explicit) {
     return explicit;
   }
@@ -64,29 +65,29 @@ export function getSupabaseProjectId(): string | undefined {
 }
 
 export function getSupabaseAnonKey(): string | undefined {
-  const key = import.meta.env.VITE_SUPABASE_ANON_KEY?.trim()
-    || import.meta.env.SUPABASE_ANON_KEY?.trim();
+  const key = env.VITE_SUPABASE_ANON_KEY?.trim()
+    || env.SUPABASE_ANON_KEY?.trim();
   return key ? key : undefined;
 }
 
 export function getSupabaseServiceRoleKey(): string | undefined {
-  const key = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY?.trim()
-    || import.meta.env.VITE_SUPABASE_SERVICE_KEY?.trim()
-    || import.meta.env.VITE_SERVICE_ROLE_KEY?.trim()
-    || import.meta.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
+  const key = env.VITE_SUPABASE_SERVICE_ROLE_KEY?.trim()
+    || env.VITE_SUPABASE_SERVICE_KEY?.trim()
+    || env.VITE_SERVICE_ROLE_KEY?.trim()
+    || env.SUPABASE_SERVICE_ROLE_KEY?.trim();
   return key ? key : undefined;
 }
 
 export function getMobilityUserId(): string {
   return (
-    import.meta.env.VITE_MOBILITY_USER_ID
+    env.VITE_MOBILITY_USER_ID
       ?? '00000000-0000-4000-8000-000000000001'
   ).toString();
 }
 
 export function getMobilityUserRoles(): string {
   return (
-    import.meta.env.VITE_MOBILITY_USER_ROLES
+    env.VITE_MOBILITY_USER_ROLES
       ?? 'admin'
   ).toString();
 }
