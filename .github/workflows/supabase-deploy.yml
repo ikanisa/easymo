@@ -10,8 +10,30 @@ permissions:
   contents: read
 
 jobs:
+  gate:
+    name: Check secrets
+    runs-on: ubuntu-latest
+    outputs:
+      can_deploy: ${{ steps.check.outputs.can_deploy }}
+    steps:
+      - name: Evaluate required secrets
+        id: check
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: |
+          if [ -n "${SUPABASE_ACCESS_TOKEN}" ] && [ -n "${SUPABASE_PROJECT_REF}" ] && [ -n "${SUPABASE_DB_PASSWORD}" ]; then
+            echo "can_deploy=true" >> $GITHUB_OUTPUT
+            echo "Secrets present: proceeding with deploy."
+          else
+            echo "can_deploy=false" >> $GITHUB_OUTPUT
+            echo "Required secrets missing: skipping deploy." >&2
+          fi
+
   migrate:
-    if: ${{ secrets.SUPABASE_ACCESS_TOKEN != '' && secrets.SUPABASE_PROJECT_REF != '' && secrets.SUPABASE_DB_PASSWORD != '' }}
+    if: ${{ needs.gate.outputs.can_deploy == 'true' }}
+    needs: gate
     name: Apply DB migrations (remote)
     runs-on: ubuntu-latest
     steps:
@@ -54,8 +76,8 @@ jobs:
   functions:
     name: Deploy Edge Functions
     runs-on: ubuntu-latest
-    needs: migrate
-    if: ${{ secrets.SUPABASE_ACCESS_TOKEN != '' && secrets.SUPABASE_PROJECT_REF != '' }}
+    needs: [gate, migrate]
+    if: ${{ needs.gate.outputs.can_deploy == 'true' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v5
