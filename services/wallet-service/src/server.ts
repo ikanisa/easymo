@@ -65,6 +65,71 @@ async function bootstrap() {
     }
   });
 
+  app.post("/wallet/subscribe", async (req, res) => {
+    if (!isFeatureEnabled("wallet.service")) {
+      return res.status(403).json({ error: "Wallet service is disabled" });
+    }
+    try {
+      const payload = z.object({
+        tenantId: z.string().uuid().default(settings.defaultTenantId),
+        vendorId: z.string().uuid().optional(),
+        accountId: z.string().uuid().optional(),
+        tokens: z.number().positive().default(4),
+      }).parse(req.body);
+
+      const prisma = new PrismaService();
+      await prisma.$connect();
+      try {
+        // Resolve vendor wallet account
+        let vendorAccountId: string | null = payload.accountId ?? null;
+        if (!vendorAccountId && payload.vendorId) {
+          const vendor = await prisma.vendorProfile.findUnique({ where: { id: payload.vendorId } });
+          vendorAccountId = vendor?.walletAccountId ?? null;
+        }
+        if (!vendorAccountId) {
+          return res.status(400).json({ error: "missing_vendor_account" });
+        }
+        const vendorAcc = await prisma.walletAccount.findUnique({ where: { id: vendorAccountId } });
+        if (!vendorAcc || vendorAcc.tenantId !== payload.tenantId) {
+          return res.status(400).json({ error: "invalid_vendor_account" });
+        }
+        if (vendorAcc.currency !== "USD") {
+          return res.status(400).json({ error: "unsupported_currency", message: "Vendor wallet must be USD (token-pegged)." });
+        }
+
+        const platformAcc = await prisma.walletAccount.findFirst({ where: { tenantId: payload.tenantId, ownerType: "platform" } });
+        if (!platformAcc) {
+          return res.status(400).json({ error: "platform_account_missing" });
+        }
+        if (platformAcc.currency !== vendorAcc.currency) {
+          return res.status(400).json({ error: "currency_mismatch" });
+        }
+
+        const result = await wallet.transfer({
+          tenantId: payload.tenantId,
+          sourceAccountId: vendorAcc.id,
+          destinationAccountId: platformAcc.id,
+          amount: payload.tokens,
+          currency: vendorAcc.currency,
+          product: "subscription",
+          reference: `subscription/${new Date().toISOString().slice(0, 10)}`,
+          metadata: { tokens: payload.tokens },
+        } as TransferRequest);
+
+        res.status(201).json({
+          transactionId: result.transaction.id,
+          tokensCharged: payload.tokens,
+          currency: vendorAcc.currency,
+        });
+      } finally {
+        await prisma.$disconnect();
+      }
+    } catch (error) {
+      logger.error({ msg: "wallet.subscribe.failed", error });
+      res.status(400).json({ error: (error as Error).message });
+    }
+  });
+
   app.get("/fx/convert", async (req, res) => {
     try {
       const amount = Number(req.query.amount ?? 0);
