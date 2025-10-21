@@ -44,6 +44,7 @@ import { handleScheduleRole } from "../domains/mobility/schedule.ts";
 import { handleSeePassengers } from "../domains/mobility/nearby.ts";
 import { sendText } from "../wa/client.ts";
 import { t } from "../i18n/translator.ts";
+import { maybeHandleDriverText } from "../observe/driver_parser.ts";
 
 export async function handleText(
   ctx: RouterContext,
@@ -52,6 +53,10 @@ export async function handleText(
 ): Promise<boolean> {
   const body = (msg.text?.body ?? "").trim();
   if (!body) return false;
+  // Best-effort driver offer parsing (non-blocking)
+  try {
+    await maybeHandleDriverText(ctx, msg);
+  } catch (_) { /* noop */ }
   if (state.key === vehiclePlateStateKey) {
     const resume = parsePlateState(state.data);
     if (!resume) {
