@@ -28,7 +28,7 @@ import QuickActionsPage from "./pages/QuickActions";
 import DriverParkingPage from "./pages/DriverParking";
 import DriverAvailabilityPage from "./pages/DriverAvailability";
 import MatchesPage from "./pages/Matches";
-import AgentTooling from "./pages/AgentTooling";
+import Realtime from "./pages/Realtime";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -70,6 +70,7 @@ const App = () => (
             <Route path="/baskets" element={<Baskets />} />
             <Route path="/marketplace" element={<Marketplace />} />
             <Route path="/operations" element={<Operations />} />
+            <Route path="/realtime" element={<Realtime />} />
             <Route path="/developer" element={<Developer />} />
             <Route path="/admin/wa-console" element={<WAConsole />} />
             <Route path="/admin/simulator" element={<Simulator />} />
