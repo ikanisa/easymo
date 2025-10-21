@@ -58,6 +58,12 @@ export const NAV_ITEMS: NavItem[] = [
     group: "Operations",
   },
   {
+    label: "Trips",
+    href: "/trips",
+    description: "Platform trips and statuses",
+    group: "Operations",
+  },
+  {
     label: "Staff Numbers",
     href: "/staff-numbers",
     description: "Receiving numbers and verification",
@@ -151,6 +157,12 @@ export const NAV_ITEMS: NavItem[] = [
     label: "Subscriptions",
     href: "/subscriptions",
     description: "Vendor entitlements and monthly subscription",
+    group: "Platform",
+  },
+  {
+    label: "Driver Subscriptions",
+    href: "/driver-subscriptions",
+    description: "Manage driver subscription payments",
     group: "Platform",
   },
   {

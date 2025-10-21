@@ -1,0 +1,71 @@
+export const dynamic = 'force-dynamic';
+import { useState, useEffect } from "react";
+
+export default function DriverSubscriptionsPage() {
+  const [data, setData] = useState<{ data: any[]; total: number } | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        const res = await fetch(`/api/subscriptions?limit=200`, { cache: "no-store" });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const json = await res.json();
+        if (active) setData(json);
+      } catch (e: any) {
+        if (active) setError(e?.message ?? String(e));
+      }
+    })();
+    return () => { active = false; };
+  }, []);
+
+  const rows = data?.data ?? [];
+  const pending = rows.filter((r:any)=>r.status==='pending').length;
+  const activeCount = rows.filter((r:any)=>r.status==='active').length;
+  const expired = rows.filter((r:any)=>r.status==='expired').length;
+
+  return (
+    <div className="space-y-4">
+      <h1 className="text-2xl font-semibold">Driver Subscriptions</h1>
+      <div className="text-sm text-slate-600">Manage driver subscription payments</div>
+      {error && (<div className="text-red-600 text-sm">Failed to load subscriptions: {error}</div>)}
+      <div className="grid grid-cols-4 gap-3">
+        <div className="p-3 border rounded">Pending Review<br/><b>{pending}</b></div>
+        <div className="p-3 border rounded">Active<br/><b>{activeCount}</b></div>
+        <div className="p-3 border rounded">Expired<br/><b>{expired}</b></div>
+        <div className="p-3 border rounded">Total Revenue<br/><b>{0}</b> <span className="text-xs">RWF</span></div>
+      </div>
+      <div className="overflow-auto border rounded">
+        <table className="min-w-full text-sm">
+          <thead className="bg-slate-50">
+            <tr>
+              <th className="text-left p-2">User</th>
+              <th className="text-left p-2">Status</th>
+              <th className="text-left p-2">Amount</th>
+              <th className="text-left p-2">Transaction ID</th>
+              <th className="text-left p-2">Created</th>
+              <th className="text-left p-2">Expires</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((s: any, i: number) => (
+              <tr key={String(s.id ?? i)} className="border-t">
+                <td className="p-2 text-xs">{String(s.user_id ?? '')}</td>
+                <td className="p-2 text-xs">{String(s.status ?? '')}</td>
+                <td className="p-2 text-xs">{String(s.amount ?? '')}</td>
+                <td className="p-2 text-xs">{String(s.txn_id ?? '')}</td>
+                <td className="p-2 text-xs">{String(s.created_at ?? '')}</td>
+                <td className="p-2 text-xs">{String(s.expires_at ?? '')}</td>
+              </tr>
+            ))}
+            {!rows.length && (
+              <tr><td className="p-4 text-slate-500" colSpan={6}>No subscriptions found</td></tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
