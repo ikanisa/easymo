@@ -313,7 +313,7 @@ paths:
       responses: { '201': { description: Created } }
   /api/agents/{id}:
     get:
-      summary: Get agent persona
+      summary: Get agent persona with knowledge documents, versions, and deployments
       responses: { '200': { description: OK } }
     patch:
       summary: Update agent persona
@@ -328,6 +328,10 @@ paths:
   /api/agents/{id}/versions/{versionId}/publish:
     post:
       summary: Publish version to default environment
+      responses: { '200': { description: OK } }
+  /api/agents/{id}/deploy:
+    post:
+      summary: Deploy an agent version to staging or production
       responses: { '200': { description: OK } }
   /api/agents/{id}/documents:
     get:
