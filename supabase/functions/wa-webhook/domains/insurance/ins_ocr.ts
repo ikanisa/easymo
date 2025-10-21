@@ -1,3 +1,5 @@
+import { resolveOpenAiResponseText } from "../../../../lib/openai_responses.ts";
+
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY") ?? "";
 const OPENAI_VISION_MODEL = Deno.env.get("OPENAI_VISION_MODEL") ??
   "gpt-4o-mini";
@@ -79,11 +81,7 @@ export async function runInsuranceOCR(
 
   const payload = {
     model: OPENAI_VISION_MODEL,
-    response_format: {
-      type: "json_schema",
-      json_schema: OCR_JSON_SCHEMA,
-    },
-    messages: [
+    input: [
       {
         role: "system",
         content: "You are an expert insurance document parser.",
@@ -91,14 +89,20 @@ export async function runInsuranceOCR(
       {
         role: "user",
         content: [
-          { type: "text", text: OCR_PROMPT },
+          { type: "input_text", text: OCR_PROMPT },
           {
-            type: "image_url",
+            type: "input_image",
             image_url: { url: signedUrl },
           },
         ],
       },
     ],
+    text: {
+      format: {
+        type: "json_schema",
+        json_schema: OCR_JSON_SCHEMA,
+      },
+    },
   } as const;
 
   let lastError: unknown = null;
@@ -107,7 +111,7 @@ export async function runInsuranceOCR(
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), OCR_TIMEOUT_MS);
     try {
-      const response = await fetch(`${OPENAI_BASE_URL}/chat/completions`, {
+      const response = await fetch(`${OPENAI_BASE_URL}/responses`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -129,9 +133,16 @@ export async function runInsuranceOCR(
       }
 
       const json = await response.json();
-      const content = json?.choices?.[0]?.message?.content ??
-        json?.output?.[0]?.content;
-      const resolved = extractContentText(content);
+      const helperContent = resolveOpenAiResponseText(json);
+      if (helperContent && helperContent.trim().length) {
+        return JSON.parse(helperContent);
+      }
+      const resolved =
+        typeof json?.output_text === "string" && json.output_text.trim().length
+          ? json.output_text
+          : extractContentText(
+            json?.output?.[0]?.content ?? json?.choices?.[0]?.message?.content,
+          );
       if (!resolved) {
         throw new Error("OpenAI response missing content");
       }
