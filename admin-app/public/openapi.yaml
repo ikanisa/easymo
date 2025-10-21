@@ -238,7 +238,25 @@ paths:
   /api/mobility/ping_drivers:
     post:
       summary: Send WhatsApp invites to candidate drivers
-      responses: { '202': { description: Accepted } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MobilityPingDriversRequest'
+      responses:
+        '202':
+          description: All fan-out requests accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MobilityPingDriversResponse'
+        '207':
+          description: Partial fan-out failures
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MobilityPingDriversResponse'
 
   /api/mobility/book:
     post:
@@ -291,7 +309,25 @@ paths:
   /api/mobility/ping_drivers:
     post:
       summary: Fan-out messages to drivers
-      responses: { '202': { description: Accepted } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MobilityPingDriversRequest'
+      responses:
+        '202':
+          description: All fan-out requests accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MobilityPingDriversResponse'
+        '207':
+          description: Partial fan-out failures
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MobilityPingDriversResponse'
   /api/mobility/collect_offer:
     post:
       summary: Record driver offer
@@ -313,7 +349,7 @@ paths:
       responses: { '201': { description: Created } }
   /api/agents/{id}:
     get:
-      summary: Get agent persona
+      summary: Get agent persona with knowledge documents, versions, and deployments
       responses: { '200': { description: OK } }
     patch:
       summary: Update agent persona
@@ -328,6 +364,10 @@ paths:
   /api/agents/{id}/versions/{versionId}/publish:
     post:
       summary: Publish version to default environment
+      responses: { '200': { description: OK } }
+  /api/agents/{id}/deploy:
+    post:
+      summary: Deploy an agent version to staging or production
       responses: { '200': { description: OK } }
   /api/agents/{id}/documents:
     get:
@@ -347,3 +387,38 @@ paths:
     post:
       summary: Create task for an agent
       responses: { '201': { description: Created } }
+
+components:
+  schemas:
+    MobilityPingDriversRequest:
+      type: object
+      properties:
+        ride_id: { type: string }
+        driver_ids:
+          type: array
+          items: { type: string }
+        template: { type: object, additionalProperties: true, nullable: true }
+        text: { type: string, nullable: true }
+      required: [ride_id, driver_ids]
+    MobilityPingDriversResponse:
+      type: object
+      properties:
+        ride_id: { type: string }
+        total: { type: integer, minimum: 0 }
+        queued: { type: integer, minimum: 0 }
+        failed: { type: integer, minimum: 0 }
+        reqId: { type: string, nullable: true }
+        duration_ms: { type: integer, minimum: 0 }
+        failures:
+          type: array
+          items:
+            type: object
+            properties:
+              to: { type: string }
+              error: { type: string }
+              status: { type: integer, nullable: true }
+              body: { type: string, nullable: true }
+              duration_ms: { type: integer, nullable: true, minimum: 0 }
+            required: [to, error]
+      required: [ride_id, total, queued, failed]
+

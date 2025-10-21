@@ -40,6 +40,7 @@ const baseNavigation = [
   { name: "Campaigns", href: "/campaigns", icon: MessageCircle },
   { name: "Baskets", href: "/baskets", icon: Coins },
   { name: "Marketplace", href: "/marketplace", icon: CreditCard },
+  { name: "Agent Tooling", href: "/agent-tooling", icon: BrainCircuit },
   { name: "Settings", href: "/settings", icon: Settings },
   { name: "Operations", href: "/operations", icon: Terminal },
   { name: "Voice Ops", href: "/voice-ops", icon: Mic },

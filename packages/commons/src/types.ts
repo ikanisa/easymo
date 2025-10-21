@@ -1,4 +1,4 @@
-export type AgentKind = "broker" | "support" | "sales" | "marketing";
+export type AgentKind = "broker" | "support" | "sales" | "marketing" | "mobility";
 
 export type AgentPermission =
   | "lead.read"

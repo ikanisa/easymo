@@ -58,6 +58,7 @@ const App = () => (
             <Route path="/driver-parking" element={<DriverParkingPage />} />
             <Route path="/driver-availability" element={<DriverAvailabilityPage />} />
             <Route path="/matches" element={<MatchesPage />} />
+            <Route path="/agent-tooling" element={<AgentTooling />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/tokens" element={<TokensWallets />} />
             <Route path="/tokens/issue" element={<TokensIssue />} />
