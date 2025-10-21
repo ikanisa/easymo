@@ -1,7 +1,26 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Card } from "@/components/ui/card";
-import { MessageCircle, BarChart3, CreditCard, Settings, Users, Route, Menu, X, Terminal, Smartphone, Wallet, Coins } from "lucide-react";
+import {
+  MessageCircle,
+  BarChart3,
+  CreditCard,
+  Settings,
+  Users,
+  Route,
+  Menu,
+  X,
+  Terminal,
+  Smartphone,
+  Wallet,
+  Coins,
+  Heart,
+  CalendarClock,
+  Bolt,
+  MapPin,
+  Clock4,
+  Radar,
+} from "lucide-react";
 import { showDevTools, shouldUseMock } from "@/lib/env";
 
 const isMockMode = shouldUseMock();
@@ -10,6 +29,12 @@ const baseNavigation = [
   { name: "Subscriptions", href: "/subscriptions", icon: CreditCard },
   { name: "Users", href: "/users", icon: Users },
   { name: "Trips", href: "/trips", icon: Route },
+  { name: "Favorites", href: "/favorites", icon: Heart },
+  { name: "Schedule Trip", href: "/schedule-trip", icon: CalendarClock },
+  { name: "Quick Actions", href: "/quick-actions", icon: Bolt },
+  { name: "Driver Parking", href: "/driver-parking", icon: MapPin },
+  { name: "Driver Availability", href: "/driver-availability", icon: Clock4 },
+  { name: "Matches", href: "/matches", icon: Radar },
   ...(isMockMode ? [{ name: "Tokens", href: "/tokens", icon: Wallet }] : []),
   { name: "Campaigns", href: "/campaigns", icon: MessageCircle },
   { name: "Baskets", href: "/baskets", icon: Coins },

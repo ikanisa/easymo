@@ -76,3 +76,17 @@ export function getSupabaseServiceRoleKey(): string | undefined {
     || import.meta.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
   return key ? key : undefined;
 }
+
+export function getMobilityUserId(): string {
+  return (
+    import.meta.env.VITE_MOBILITY_USER_ID
+      ?? '00000000-0000-4000-8000-000000000001'
+  ).toString();
+}
+
+export function getMobilityUserRoles(): string {
+  return (
+    import.meta.env.VITE_MOBILITY_USER_ROLES
+      ?? 'admin'
+  ).toString();
+}

@@ -22,6 +22,12 @@ import CampaignsPage from "./marketing/CampaignsPage";
 import Baskets from "./pages/Baskets";
 import Marketplace from "./pages/Marketplace";
 import NotFound from "./pages/NotFound";
+import FavoritesPage from "./pages/Favorites";
+import ScheduleTripPage from "./pages/ScheduleTrip";
+import QuickActionsPage from "./pages/QuickActions";
+import DriverParkingPage from "./pages/DriverParking";
+import DriverAvailabilityPage from "./pages/DriverAvailability";
+import MatchesPage from "./pages/Matches";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -45,6 +51,12 @@ const App = () => (
             <Route path="/subscriptions" element={<Subscriptions />} />
             <Route path="/users" element={<Users />} />
             <Route path="/trips" element={<Trips />} />
+            <Route path="/favorites" element={<FavoritesPage />} />
+            <Route path="/schedule-trip" element={<ScheduleTripPage />} />
+            <Route path="/quick-actions" element={<QuickActionsPage />} />
+            <Route path="/driver-parking" element={<DriverParkingPage />} />
+            <Route path="/driver-availability" element={<DriverAvailabilityPage />} />
+            <Route path="/matches" element={<MatchesPage />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/tokens" element={<TokensWallets />} />
             <Route path="/tokens/issue" element={<TokensIssue />} />
