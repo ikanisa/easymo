@@ -17,7 +17,8 @@
     "analyze:pwa": "lighthouse http://localhost:5000 --only-categories=pwa --preset=desktop || true",
     "health": "node ./scripts/health-check.mjs",
     "seed:remote": "bash ./scripts/seed-remote.sh",
-    "functions:deploy": "supabase functions deploy admin-settings admin-stats admin-users admin-trips admin-subscriptions simulator"
+    "functions:deploy": "supabase functions deploy admin-settings admin-stats admin-users admin-trips admin-subscriptions simulator",
+    "embeddings:sync": "node ./scripts/embeddings/ingest-documents.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
@@ -63,6 +64,7 @@
     "jsdom": "^26.1.0",
     "lucide-react": "^0.462.0",
     "next-themes": "^0.3.0",
+    "openai": "^4.104.0",
     "qrcode": "^1.5.3",
     "react": "^18.3.1",
     "react-day-picker": "^8.10.1",

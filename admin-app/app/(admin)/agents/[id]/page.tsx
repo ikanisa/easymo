@@ -134,6 +134,12 @@ function AgentDocuments({ id }: { id: string }) {
         </div>
       ))}
       {docs.length === 0 && <div className="text-gray-600">No documents.</div>}
+      <a
+        href={`/agents/${id}/search`}
+        className="text-xs text-blue-600 underline"
+      >
+        Open semantic search (beta)
+      </a>
     </div>
   );
 }
