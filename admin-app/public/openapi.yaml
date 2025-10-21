@@ -192,3 +192,35 @@ paths:
                 events: { type: array, items: { type: object } }
       responses:
         '200': { description: OK }
+  /api/insurance/ingest_media:
+    post:
+      summary: Ingest WhatsApp media for insurance
+      responses: { '201': { description: Created } }
+  /api/insurance/ocr:
+    post:
+      summary: Run OCR
+      responses: { '200': { description: OK } }
+  /api/insurance/notify_backoffice:
+    post:
+      summary: Handoff to back office
+      responses: { '202': { description: Accepted } }
+  /api/mobility/match:
+    post:
+      summary: Find nearby drivers
+      responses: { '200': { description: OK } }
+  /api/mobility/ping_drivers:
+    post:
+      summary: Fan-out messages to drivers
+      responses: { '202': { description: Accepted } }
+  /api/mobility/collect_offer:
+    post:
+      summary: Record driver offer
+      responses: { '201': { description: Created } }
+  /api/mobility/book:
+    post:
+      summary: Book selected driver
+      responses: { '200': { description: OK } }
+  /api/mobility/driver_location:
+    post:
+      summary: Update driver availability from WA location
+      responses: { '201': { description: Created } }

@@ -45,8 +45,15 @@ export function requireServiceSupabaseConfig(): SupabaseServiceConfig | null {
     return null;
   }
 
-  const url = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  // Allow fallbacks to SERVICE_URL / SERVICE_ROLE_KEY to align with
+  // Supabase secrets policy (env names starting with SUPABASE_ are blocked).
+  const url =
+    process.env.SUPABASE_URL ||
+    process.env.SERVICE_URL ||
+    process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceRoleKey =
+    process.env.SUPABASE_SERVICE_ROLE_KEY ||
+    process.env.SERVICE_ROLE_KEY;
 
   if (!url || !serviceRoleKey) {
     throw new Error(

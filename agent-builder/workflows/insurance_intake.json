@@ -1,16 +1,15 @@
 {
   "name": "insurance_intake",
-  "description": "Collect docs over WhatsApp, OCR, structure, back-office handoff",
+  "description": "Collect docs via WhatsApp, OCR, handoff",
   "states": ["INTENT_CREATED","DOCUMENTS_COLLECTING","OCR_RUNNING","READY_REVIEW","HANDOFF_DONE"],
   "initial_state": "INTENT_CREATED",
   "transitions": [
-    { "from": "INTENT_CREATED", "to": "DOCUMENTS_COLLECTING", "actions": [
-      { "tool": "insurance.ingest_media", "params": { "intent_id": "${INTENT_ID}", "kind": "logbook", "wa_media_id": "${LAST_WA_MEDIA_ID}" } }
-    ]},
-    { "from": "DOCUMENTS_COLLECTING", "to": "OCR_RUNNING", "guard": { "type": "min_docs_or_timeout", "min": 2, "timeout_ms": 300000 },
-      "actions": [ { "tool": "insurance.ocr", "params": { "document_ids": "${COLLECTED_DOCUMENT_IDS}" } } ] },
-    { "from": "OCR_RUNNING", "to": "READY_REVIEW", "actions": [] },
-    { "from": "READY_REVIEW", "to": "HANDOFF_DONE", "actions": [ { "tool": "insurance.notify_backoffice", "params": { "intent_id": "${INTENT_ID}" } } ] }
+    { "from":"INTENT_CREATED","to":"DOCUMENTS_COLLECTING","actions":[
+      { "tool":"insurance.ingest_media","params":{"intent_id":"${INTENT_ID}","kind":"logbook","wa_media_id":"${LAST_WA_MEDIA_ID}"}} ]},
+    { "from":"DOCUMENTS_COLLECTING","to":"OCR_RUNNING","guard":{"type":"min_docs_or_timeout","min":2,"timeout_ms":300000},
+      "actions":[{ "tool":"insurance.ocr","params":{"document_ids":"${COLLECTED_DOCUMENT_IDS}"}}] },
+    { "from":"OCR_RUNNING","to":"READY_REVIEW","actions":[ ]},
+    { "from":"READY_REVIEW","to":"HANDOFF_DONE","actions":[{ "tool":"insurance.notify_backoffice","params":{"intent_id":"${INTENT_ID}"}}]}
   ]
 }
 
