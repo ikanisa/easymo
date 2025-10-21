@@ -8,20 +8,16 @@ ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT_DIR"
 
 ALLOWLIST_FILE="supabase/migrations/.hygiene_allowlist"
-declare -A ALLOW
-if [[ -f "$ALLOWLIST_FILE" ]]; then
-  while IFS= read -r line; do
-    [[ -n "$line" ]] || continue
-    [[ "$line" =~ ^# ]] && continue
-    ALLOW["$line"]=1
-  done < "$ALLOWLIST_FILE"
-fi
+is_allowlisted() {
+  [[ -f "$ALLOWLIST_FILE" ]] || return 1
+  grep -Fxq "$1" "$ALLOWLIST_FILE"
+}
 
 fail=0
 while IFS= read -r -d '' file; do
   base="$(basename "$file")"
   [[ "$base" == ".keep" ]] && continue
-  if [[ -n "${ALLOW[$base]:-}" ]]; then
+  if is_allowlisted "$base"; then
     continue
   fi
   if ! grep -qiE '^\s*BEGIN;' "$file" || ! grep -qiE '^\s*COMMIT;' "$file"; then
@@ -36,4 +32,3 @@ if (( fail != 0 )); then
 fi
 
 echo "Migration hygiene OK."
-
