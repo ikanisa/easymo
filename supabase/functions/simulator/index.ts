@@ -6,18 +6,11 @@
 // matching EASYMO_ADMIN_TOKEN.
 
 import { serve } from "$std/http/server.ts";
-import { createClient } from "@supabase/supabase-js";
+import { getServiceClient } from "shared/supabase.ts";
+import { requireAdmin } from "shared/auth.ts";
+import { badRequest, ok, serverError } from "shared/http.ts";
 
-const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
-const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-const ADMIN_TOKEN = Deno.env.get("EASYMO_ADMIN_TOKEN") ??
-  Deno.env.get("ADMIN_TOKEN") ?? "";
-
-if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
-  throw new Error("Supabase credentials are not configured");
-}
-
-const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+const supabase = getServiceClient();
 
 async function getSettings() {
   const { data, error } = await supabase
@@ -30,20 +23,12 @@ async function getSettings() {
 }
 
 serve(async (req) => {
-  const apiKey = req.headers.get("x-api-key");
-  if (apiKey !== ADMIN_TOKEN) {
-    return new Response(JSON.stringify({ error: "Forbidden" }), {
-      status: 403,
-    });
-  }
+  const guard = requireAdmin(req);
+  if (guard) return guard;
   const url = new URL(req.url);
   const action = url.searchParams.get("action");
   try {
-    if (!action) {
-      return new Response(JSON.stringify({ error: "Action required" }), {
-        status: 400,
-      });
-    }
+    if (!action) return badRequest("action_required");
     if (action === "drivers" && req.method === "GET") {
       // Nearby drivers
       const lat = Number(url.searchParams.get("lat"));
@@ -52,10 +37,7 @@ serve(async (req) => {
       const radiusParam = url.searchParams.get("radius_km");
       const maxParam = url.searchParams.get("max");
       if (isNaN(lat) || isNaN(lng) || !vehicleType) {
-        return new Response(
-          JSON.stringify({ error: "lat, lng and vehicle_type are required" }),
-          { status: 400 },
-        );
+        return badRequest("required_params_missing");
       }
       const settings = await getSettings();
       const radiusKm = radiusParam
@@ -75,10 +57,7 @@ serve(async (req) => {
         .order("last_seen", { ascending: false })
         .limit(max);
       if (error) throw error;
-      return new Response(JSON.stringify({ drivers: data ?? [] }), {
-        status: 200,
-        headers: { "Content-Type": "application/json" },
-      });
+      return ok({ drivers: data ?? [] });
     }
     if (action === "passengers" && req.method === "GET") {
       // Nearby passenger trips.  If force_access is not provided return no access.
@@ -88,17 +67,9 @@ serve(async (req) => {
       const forceAccess = url.searchParams.get("force_access") === "1";
       const driverRefCode = url.searchParams.get("driver_ref_code") ??
         undefined;
-      if (!forceAccess) {
-        return new Response(
-          JSON.stringify({ access: false, reason: "no_access" }),
-          { status: 200, headers: { "Content-Type": "application/json" } },
-        );
-      }
+      if (!forceAccess) return ok({ access: false, reason: "no_access" });
       if (isNaN(lat) || isNaN(lng) || !vehicleType) {
-        return new Response(
-          JSON.stringify({ error: "lat, lng and vehicle_type are required" }),
-          { status: 400 },
-        );
+        return badRequest("required_params_missing");
       }
       const settings = await getSettings();
       const radiusKm = settings?.search_radius_km ?? 5;
@@ -117,28 +88,18 @@ serve(async (req) => {
         .order("created_at", { ascending: false })
         .limit(max);
       if (error) throw error;
-      return new Response(JSON.stringify({ access: true, trips: data ?? [] }), {
-        status: 200,
-        headers: { "Content-Type": "application/json" },
-      });
+      return ok({ access: true, trips: data ?? [] });
     }
     if (action === "profile" && req.method === "GET") {
       const ref = url.searchParams.get("ref");
-      if (!ref) {
-        return new Response(JSON.stringify({ error: "ref is required" }), {
-          status: 400,
-        });
-      }
+      if (!ref) return badRequest("ref_required");
       const { data, error } = await supabase
         .from("profiles")
         .select("*")
         .eq("ref_code", ref)
         .maybeSingle();
       if (error) throw error;
-      return new Response(JSON.stringify({ profile: data }), {
-        status: 200,
-        headers: { "Content-Type": "application/json" },
-      });
+      return ok({ profile: data });
     }
     if (action === "schedule_passenger" && req.method === "POST") {
       const body = await req.json().catch(() => ({}));
@@ -147,12 +108,7 @@ serve(async (req) => {
       const vehicleType = body.vehicle_type as string;
       const refCode = body.ref_code as string;
       if (isNaN(lat) || isNaN(lng) || !vehicleType || !refCode) {
-        return new Response(
-          JSON.stringify({
-            error: "lat, lng, vehicle_type and ref_code are required",
-          }),
-          { status: 400 },
-        );
+        return badRequest("required_params_missing");
       }
       const { data, error } = await supabase
         .from("trips")
@@ -166,10 +122,7 @@ serve(async (req) => {
         .select("*")
         .maybeSingle();
       if (error) throw error;
-      return new Response(JSON.stringify({ trip: data }), {
-        status: 200,
-        headers: { "Content-Type": "application/json" },
-      });
+      return ok({ trip: data });
     }
     if (action === "schedule_driver" && req.method === "POST") {
       const body = await req.json().catch(() => ({}));
@@ -178,19 +131,9 @@ serve(async (req) => {
       const vehicleType = body.vehicle_type as string;
       const refCode = body.ref_code as string;
       const forceAccess = body.force_access === true;
-      if (!forceAccess) {
-        return new Response(
-          JSON.stringify({ access: false, reason: "no_access" }),
-          { status: 200, headers: { "Content-Type": "application/json" } },
-        );
-      }
+      if (!forceAccess) return ok({ access: false, reason: "no_access" });
       if (isNaN(lat) || isNaN(lng) || !vehicleType || !refCode) {
-        return new Response(
-          JSON.stringify({
-            error: "lat, lng, vehicle_type and ref_code are required",
-          }),
-          { status: 400 },
-        );
+        return badRequest("required_params_missing");
       }
       const { data, error } = await supabase
         .from("trips")
@@ -204,16 +147,11 @@ serve(async (req) => {
         .select("*")
         .maybeSingle();
       if (error) throw error;
-      return new Response(JSON.stringify({ access: true, trip: data }), {
-        status: 200,
-        headers: { "Content-Type": "application/json" },
-      });
+      return ok({ access: true, trip: data });
     }
-    return new Response(JSON.stringify({ error: "Unknown action" }), {
-      status: 400,
-    });
+    return badRequest("unknown_action");
   } catch (e) {
     const message = e instanceof Error ? e.message : String(e);
-    return new Response(JSON.stringify({ error: message }), { status: 500 });
+    return serverError(message);
   }
 });

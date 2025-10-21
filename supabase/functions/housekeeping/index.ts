@@ -1,16 +1,15 @@
 // deno-lint-ignore-file no-explicit-any
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
+import { serve } from "$std/http/server.ts";
+import { getServiceClient } from "shared/supabase.ts";
+import { ok, serverError } from "shared/http.ts";
 /*
  * housekeeping
  *
  * Marks stale drivers offline, expires past-due subscriptions,
  * and expires old open trips. Intended for cron.
- */ const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ??
-  Deno.env.get("SERVICE_URL");
-const SUPABASE_SERVICE_KEY = Deno.env.get("SERVICE_ROLE_KEY") ??
-  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
-Deno.serve(async (_req) => {
+ */
+const supabase = getServiceClient();
+serve(async (_req) => {
   try {
     const now = new Date();
     const thirtyMinsAgo = new Date(now.getTime() - 30 * 60 * 1000)
@@ -43,51 +42,20 @@ Deno.serve(async (_req) => {
       tripErr?.message,
     ].filter(Boolean);
     if (errs.length) {
-      return new Response(
-        JSON.stringify({
-          ok: false,
-          error: errs.join("; "),
-        }),
-        {
-          status: 500,
-          headers: {
-            "Content-Type": "application/json",
-          },
-        },
-      );
+      return serverError("housekeeping_failed", { error: errs.join("; ") });
     }
     console.info("housekeeping.completed", {
       drivers_marked_offline: driversMarked ?? 0,
       subscriptions_expired: subsExpired ?? 0,
       trips_expired: tripsExpired ?? 0,
     });
-    return new Response(
-      JSON.stringify({
-        ok: true,
-        drivers_marked_offline: driversMarked ?? 0,
-        subscriptions_expired: subsExpired ?? 0,
-        trips_expired: tripsExpired ?? 0,
-      }),
-      {
-        status: 200,
-        headers: {
-          "Content-Type": "application/json",
-        },
-      },
-    );
+    return ok({
+      drivers_marked_offline: driversMarked ?? 0,
+      subscriptions_expired: subsExpired ?? 0,
+      trips_expired: tripsExpired ?? 0,
+    });
   } catch (e) {
     console.error("housekeeping error:", e);
-    return new Response(
-      JSON.stringify({
-        ok: false,
-        error: "internal error",
-      }),
-      {
-        status: 500,
-        headers: {
-          "Content-Type": "application/json",
-        },
-      },
-    );
+    return serverError("internal_error");
   }
 });

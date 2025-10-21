@@ -18,6 +18,7 @@ model Tenant {
   calls      Call[]
   walletAccounts WalletAccount[]
   commissionSchedules CommissionSchedule[]
+  marketplaceSettings MarketplaceSettings[]
   buyerProfiles BuyerProfile[]
   vendorProfiles VendorProfile[]
   intents Intent[]
@@ -142,6 +143,18 @@ model CommissionSchedule {
   active     Boolean  @default(true)
   effectiveAt DateTime @default(now())
   createdAt  DateTime @default(now())
+}
+
+model MarketplaceSettings {
+  id                 String   @id @default(uuid()) @db.Uuid
+  tenantId           String   @db.Uuid
+  tenant             Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  freeContacts       Int      @default(30)
+  windowDays         Int      @default(30)
+  subscriptionTokens Int      @default(4)
+  updatedAt          DateTime @default(now())
+
+  @@unique([tenantId])
 }
 
 model VendorProfile {

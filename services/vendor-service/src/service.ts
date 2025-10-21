@@ -22,6 +22,15 @@ export type QuoteInput = {
 export class VendorService {
   constructor(private readonly prisma: PrismaService) {}
 
+  private async getSettings(tenantId: string) {
+    const row = await this.prisma.marketplaceSettings.findUnique({ where: { tenantId } });
+    return {
+      freeContacts: row?.freeContacts ?? 30,
+      windowDays: row?.windowDays ?? 30,
+      subscriptionTokens: row?.subscriptionTokens ?? 4,
+    };
+  }
+
   private async hasActiveSubscription(walletAccountId: string | null): Promise<boolean> {
     if (!walletAccountId) return false;
     const since = new Date();
@@ -36,14 +45,15 @@ export class VendorService {
   }
 
   async getEntitlements(tenantId: string, vendorId: string) {
+    const cfg = await this.getSettings(tenantId);
     const vendor = await this.prisma.vendorProfile.findUnique({ where: { id: vendorId } });
     if (!vendor || vendor.tenantId !== tenantId) {
       throw new Error("Vendor not found for tenant");
     }
     const since = new Date();
-    since.setDate(since.getDate() - 30);
+    since.setDate(since.getDate() - cfg.windowDays);
     const recentQuotes = await this.prisma.quote.count({ where: { vendorId, createdAt: { gte: since } } });
-    const freeRemaining = Math.max(30 - recentQuotes, 0);
+    const freeRemaining = Math.max(cfg.freeContacts - recentQuotes, 0);
     const subscribed = await this.hasActiveSubscription(vendor.walletAccountId ?? null);
     const allowed = freeRemaining > 0 || subscribed;
     return { freeRemaining, subscribed, allowed, windowStart: since.toISOString() };
