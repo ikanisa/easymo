@@ -14,7 +14,7 @@
     "test": "vitest"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.58.0",
+    "@supabase/supabase-js": "^2.76.1",
     "@tanstack/react-table": "8.16.0",
     "@tanstack/react-virtual": "3.5.0",
     "classnames": "2.5.1",

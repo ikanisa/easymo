@@ -8,7 +8,7 @@
     "start": "node dist/server.js"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.45.5",
+    "@supabase/supabase-js": "^2.76.1",
     "dotenv": "^16.4.5",
     "ws": "^8.18.0"
   },
