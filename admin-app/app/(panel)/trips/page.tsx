@@ -1,23 +1,34 @@
+"use client";
 export const dynamic = 'force-dynamic';
 import { useState, useEffect } from "react";
 
 export default function TripsPage() {
   const [data, setData] = useState<{ data: any[]; total: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  async function load(params?: { search?: string }) {
+    setLoading(true);
+    setError(null);
+    try {
+      const sp = new URLSearchParams();
+      sp.set("limit", "50");
+      if (params?.search) sp.set("search", params.search);
+      const res = await fetch(`/api/trips?${sp.toString()}`, { cache: "no-store" });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = await res.json();
+      setData(json);
+    } catch (e: any) {
+      setError(e?.message ?? String(e));
+    } finally {
+      setLoading(false);
+    }
+  }
 
   useEffect(() => {
-    let active = true;
-    (async () => {
-      try {
-        const res = await fetch(`/api/trips?limit=50`, { cache: "no-store" });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const json = await res.json();
-        if (active) setData(json);
-      } catch (e: any) {
-        if (active) setError(e?.message ?? String(e));
-      }
-    })();
-    return () => { active = false; };
+    void load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
@@ -27,6 +38,26 @@ export default function TripsPage() {
         <div className="text-red-600 text-sm">Failed to load trips: {error}</div>
       )}
       <div className="text-sm text-slate-600">Platform trips (most recent first)</div>
+      <form
+        className="flex gap-2 items-center"
+        onSubmit={(e) => {
+          e.preventDefault();
+          void load({ search });
+        }}
+      >
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search by trip id, user, vehicle..."
+          className="border px-2 py-1 rounded w-64"
+        />
+        <button type="submit" className="bg-slate-700 text-white px-3 py-1 rounded disabled:opacity-50" disabled={loading}>
+          {loading ? 'Searching...' : 'Search'}
+        </button>
+        <button type="button" onClick={() => { setSearch(""); void load(); }} className="px-3 py-1 rounded border">
+          Refresh
+        </button>
+      </form>
       <div className="grid grid-cols-3 gap-3">
         <div className="p-3 border rounded">Open Trips<br/><b>{data?.data?.filter((t:any)=>t?.status===null||t?.status==='open').length ?? 0}</b></div>
         <div className="p-3 border rounded">Expired<br/><b>{data?.data?.filter((t:any)=>t?.status==='expired').length ?? 0}</b></div>
@@ -62,4 +93,3 @@ export default function TripsPage() {
     </div>
   );
 }
-

@@ -1,23 +1,34 @@
+"use client";
 export const dynamic = 'force-dynamic';
 import { useState, useEffect } from "react";
 
 export default function DriverSubscriptionsPage() {
   const [data, setData] = useState<{ data: any[]; total: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  async function load(params?: { search?: string }) {
+    setLoading(true);
+    setError(null);
+    try {
+      const sp = new URLSearchParams();
+      sp.set("limit", "200");
+      if (params?.search) sp.set("search", params.search);
+      const res = await fetch(`/api/subscriptions?${sp.toString()}`, { cache: "no-store" });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = await res.json();
+      setData(json);
+    } catch (e: any) {
+      setError(e?.message ?? String(e));
+    } finally {
+      setLoading(false);
+    }
+  }
 
   useEffect(() => {
-    let active = true;
-    (async () => {
-      try {
-        const res = await fetch(`/api/subscriptions?limit=200`, { cache: "no-store" });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const json = await res.json();
-        if (active) setData(json);
-      } catch (e: any) {
-        if (active) setError(e?.message ?? String(e));
-      }
-    })();
-    return () => { active = false; };
+    void load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const rows = data?.data ?? [];
@@ -36,7 +47,24 @@ export default function DriverSubscriptionsPage() {
         <div className="p-3 border rounded">Expired<br/><b>{expired}</b></div>
         <div className="p-3 border rounded">Total Revenue<br/><b>{0}</b> <span className="text-xs">RWF</span></div>
       </div>
-      <div className="overflow-auto border rounded">
+      <form
+        className="flex gap-2 items-center"
+        onSubmit={(e) => { e.preventDefault(); void load({ search }); }}
+      >
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search by user, txn id, status..."
+          className="border px-2 py-1 rounded w-80"
+        />
+        <button type="submit" className="bg-slate-700 text-white px-3 py-1 rounded disabled:opacity-50" disabled={loading}>
+          {loading ? 'Searching...' : 'Search'}
+        </button>
+        <button type="button" onClick={() => { setSearch(""); void load(); }} className="px-3 py-1 rounded border">
+          Refresh
+        </button>
+      </form>
+      <div className="overflow-auto border rounded mt-2">
         <table className="min-w-full text-sm">
           <thead className="bg-slate-50">
             <tr>
@@ -68,4 +96,3 @@ export default function DriverSubscriptionsPage() {
     </div>
   );
 }
-
