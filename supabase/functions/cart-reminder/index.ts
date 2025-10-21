@@ -1,4 +1,5 @@
 import { serve } from "../wa-webhook/deps.ts";
+import { json } from "shared/http.ts";
 import type { SupabaseClient } from "../wa-webhook/deps.ts";
 import { supabase } from "../wa-webhook/config.ts";
 import {
@@ -266,15 +267,12 @@ if (!DISABLE_SERVER) {
   serve(async () => {
     try {
       const summary = await runCartReminder("http");
-      return new Response(
-        JSON.stringify({ ok: true, summary }),
-        { status: 200, headers: { "content-type": "application/json" } },
-      );
+      return json({ ok: true, summary });
     } catch (error) {
       const message = error instanceof Error
         ? error.message
         : String(error ?? "unknown_error");
-      return new Response(message, { status: 500 });
+      return json({ ok: false, error: message }, { status: 500 });
     }
   });
 
