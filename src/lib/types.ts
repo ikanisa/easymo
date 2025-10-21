@@ -17,12 +17,37 @@ export interface AgentChatSession {
   updated_at?: string;
 }
 
+export interface AgentCitation {
+  id: string;
+  url: string;
+  title?: string | null;
+  startIndex?: number;
+  endIndex?: number;
+}
+
+export interface AgentWebSearchCallSummary {
+  id: string;
+  status?: string;
+  query?: string;
+  domains?: string[];
+}
+
+export interface AgentChatPayload {
+  stub?: boolean;
+  citations?: AgentCitation[];
+  web_search_calls?: AgentWebSearchCallSummary[];
+  sources?: Array<{ url?: string; title?: string | null }>;
+  raw?: unknown;
+  usage?: unknown;
+  [key: string]: unknown;
+}
+
 export interface AgentChatMessage {
   id: string;
   role: 'user' | 'agent' | 'system';
   text: string;
   created_at: string;
-  payload?: Record<string, unknown>;
+  payload?: AgentChatPayload;
 }
 
 export interface AgentChatResponse {
@@ -295,4 +320,46 @@ export interface Business {
   is_active: boolean;
   status?: string;
   created_at: string;
+}
+
+export interface RetrievalSearchChunk {
+  type?: string;
+  text?: string;
+  [key: string]: unknown;
+}
+
+export interface RetrievalSearchResult {
+  file_id?: string;
+  filename?: string;
+  score?: number;
+  attributes?: Record<string, unknown>;
+  content?: RetrievalSearchChunk[];
+  [key: string]: unknown;
+}
+
+export interface RetrievalSearchResponse {
+  status: 'ok' | 'error';
+  query?: {
+    original?: string;
+    rewritten?: string;
+    vector_store_id?: string;
+  };
+  results: RetrievalSearchResult[];
+  usage?: Record<string, unknown>;
+  meta?: {
+    took_ms?: number;
+    has_more?: boolean;
+    [key: string]: unknown;
+  };
+  error?: string;
+  message?: string;
+  [key: string]: unknown;
+}
+
+export interface RetrievalSearchRequest {
+  query: string;
+  vectorStoreId?: string;
+  maxResults?: number;
+  rewriteQuery?: boolean;
+  attributeFilter?: Record<string, unknown> | string;
 }

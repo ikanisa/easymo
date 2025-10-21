@@ -395,52 +395,52 @@ serve(async (req) => {
         profileRef: result.data.profile_ref,
       });
 
-      const toolkit = await fetchToolkit(result.data.agent_kind);
-      const historyForAgent = await fetchHistory(session.id, 50);
-      const historyMessages = (historyForAgent?.messages ?? []) as StoredMessage[];
-
-      const agentResult = await callAgentCore({
-        sessionId: session.id,
-        agentKind: result.data.agent_kind,
-        message: result.data.message,
-        profileRef: result.data.profile_ref ?? null,
-        history: historyMessages,
-        toolkit,
-      });
-
-      const fallback = buildStubResponse(result.data.agent_kind, result.data.message);
-      const replyText = agentResult?.reply && agentResult.reply.trim().length > 0
-        ? agentResult.reply.trim()
-        : fallback.text;
-
-      const candidateSuggestions = (agentResult?.suggestions ?? [])
-        .map((item) => (typeof item === "string" ? item.trim() : ""))
-        .filter((item): item is string => item.length > 0);
-
-      const defaultSuggestions = toolkit?.suggestions?.length
-        ? toolkit.suggestions
-        : fallback.suggestions;
-
-      const suggestions = candidateSuggestions.length > 0
-        ? candidateSuggestions
-        : defaultSuggestions;
-
-      const agentPayload: Record<string, unknown> = {
-        text: replyText,
-        stub: !agentResult,
-      };
-      if (toolkit) {
-        const metadataSummary: Record<string, unknown> = {};
-        const rawMeta = (toolkit.metadata ?? {}) as Record<string, unknown>;
-        if (typeof rawMeta.system_prompt === "string" && rawMeta.system_prompt.trim().length > 0) {
-          metadataSummary.system_prompt = rawMeta.system_prompt;
-        }
-        if (Array.isArray(rawMeta.instructions)) {
-          const instructions = rawMeta.instructions
-            .filter((item): item is string => typeof item === "string" && item.trim().length > 0)
-            .map((item) => item.trim());
-          if (instructions.length > 0) {
-            metadataSummary.instructions = instructions;
+      // Attempt Agent-Core integration, fallback to stub
+      let agentText: string | null = null;
+      let agentMetadata: Record<string, unknown> = {};
+      const coreUrl = CONFIG.AGENT_CORE_URL?.replace(/\/$/, "");
+      if (coreUrl) {
+        try {
+          const resp = await fetch(`${coreUrl}/respond`, {
+            method: "POST",
+            headers: {
+              "content-type": "application/json",
+              ...(CONFIG.AGENT_CORE_TOKEN
+                ? { authorization: `Bearer ${CONFIG.AGENT_CORE_TOKEN}` }
+                : {}),
+            },
+            body: JSON.stringify({
+              session_id: session.id,
+              agent_kind: result.data.agent_kind,
+              message: result.data.message,
+              profile_ref: result.data.profile_ref ?? null,
+            }),
+          });
+          const coreJson = await resp.json().catch(() => ({}));
+          if (resp.ok && coreJson && typeof coreJson === "object") {
+            if (typeof (coreJson as Record<string, unknown>).text === "string") {
+              agentText = (coreJson as Record<string, unknown>).text as string;
+            }
+            agentMetadata = {
+              ...(Array.isArray((coreJson as any).citations)
+                ? { citations: (coreJson as any).citations }
+                : {}),
+              ...(Array.isArray((coreJson as any).web_search_calls)
+                ? { web_search_calls: (coreJson as any).web_search_calls }
+                : {}),
+              ...(Array.isArray((coreJson as any).sources)
+                ? { sources: (coreJson as any).sources }
+                : {}),
+              ...(coreJson && "usage" in (coreJson as Record<string, unknown>)
+                ? { usage: (coreJson as Record<string, unknown>).usage }
+                : {}),
+              ...(coreJson && "raw" in (coreJson as Record<string, unknown>)
+                ? { raw: (coreJson as Record<string, unknown>).raw }
+                : {}),
+              ...(Array.isArray((coreJson as any).suggestions)
+                ? { suggestions: (coreJson as any).suggestions }
+                : {}),
+            };
           }
         }
         const summary: Record<string, unknown> = {
@@ -460,6 +460,23 @@ serve(async (req) => {
       if (agentResult?.images?.length) agentPayload.images = agentResult.images;
       if (agentResult?.retrieval_context) agentPayload.retrieval_context = agentResult.retrieval_context;
 
+      const assistantSuggestions = Array.isArray(agentMetadata.suggestions)
+        ? (agentMetadata.suggestions as string[])
+        : ["Thanks!", "What next?", "Escalate"];
+
+      const assistant = agentText
+        ? {
+          text: agentText,
+          suggestions: assistantSuggestions,
+        }
+        : buildStubResponse(result.data.agent_kind, result.data.message);
+
+      const agentContent: Record<string, unknown> = {
+        text: assistant.text,
+        ...(agentText ? {} : { stub: true }),
+        ...agentMetadata,
+      };
+      delete agentContent.suggestions;
       const inserted = await appendMessages(session.id, [
         {
           role: "user",
@@ -467,7 +484,7 @@ serve(async (req) => {
         },
         {
           role: "agent",
-          content: agentPayload,
+          content: agentContent,
         },
       ]);
 
@@ -475,7 +492,7 @@ serve(async (req) => {
         .from("agent_chat_sessions")
         .update({
           last_user_message: result.data.message,
-          last_agent_message: replyText,
+          last_agent_message: assistant.text,
           updated_at: new Date().toISOString(),
         })
         .eq("id", session.id);
@@ -491,7 +508,7 @@ serve(async (req) => {
       return respond(200, {
         session,
         messages,
-        suggestions,
+        suggestions: assistant.suggestions,
       });
     } catch (error) {
       console.error("agent-chat.post_failed", error);

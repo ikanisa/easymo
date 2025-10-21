@@ -39,56 +39,14 @@ export async function POST(req: NextRequest) {
     driverTargets.map(async (to) => {
       const fanOutStartedAt = Date.now();
       try {
-        const res = await fetch(`${origin}/api/wa/outbound/messages`, {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL ?? ""}/api/wa/outbound/messages`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ to, template, text, type: "mobility_invite", ride_id }),
+          body: JSON.stringify({ to, template, text, type: "mobility_invite" }),
         });
-
-        if (res.ok) {
-          queued++;
-          return;
-        }
-
-        const body = await readErrorSnippet(res);
-        const failure: FailureDetail = {
-          to,
-          error: `http_${res.status}`,
-          status: res.status,
-          body: body ?? null,
-          duration_ms: Date.now() - fanOutStartedAt,
-        };
-        failures.push(failure);
-        logStructured({
-          event: "mobility.ping_drivers.forward_failed",
-          status: "error",
-          ride_id,
-          reqId,
-          target: to,
-          details: {
-            http_status: res.status,
-            http_status_text: res.statusText,
-            body,
-            duration_ms: failure.duration_ms,
-          },
-        });
+        if (res.ok) queued++;
       } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        const failure: FailureDetail = {
-          to,
-          error: message,
-          duration_ms: Date.now() - fanOutStartedAt,
-        };
-        failures.push(failure);
-        logStructured({
-          event: "mobility.ping_drivers.forward_failed",
-          status: "error",
-          ride_id,
-          reqId,
-          target: to,
-          message,
-          details: { duration_ms: failure.duration_ms },
-        });
+        console.error("Failed to queue driver ping", { to, error });
       }
     })
   );

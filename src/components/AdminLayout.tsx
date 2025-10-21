@@ -20,7 +20,7 @@ import {
   MapPin,
   Clock4,
   Radar,
-  BrainCircuit,
+  Bot,
 } from "lucide-react";
 import { showDevTools, shouldUseMock } from "@/lib/env";
 
@@ -43,6 +43,7 @@ const baseNavigation = [
   { name: "Agent Tooling", href: "/agent-tooling", icon: BrainCircuit },
   { name: "Settings", href: "/settings", icon: Settings },
   { name: "Operations", href: "/operations", icon: Terminal },
+  { name: "Agent Patterns", href: "/agent-patterns", icon: Bot },
   { name: "Developer", href: "/developer", icon: Smartphone },
 ];
 
