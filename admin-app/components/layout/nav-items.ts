@@ -150,7 +150,7 @@ export const NAV_ITEMS: NavItem[] = [
   {
     label: "Agents",
     href: "/agents",
-    description: "Trigger orchestrator and settlement runs",
+    description: "Configure AI personas, prompts, and deployments",
     group: "Platform",
   },
   {
