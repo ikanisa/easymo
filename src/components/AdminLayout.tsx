@@ -20,6 +20,7 @@ import {
   MapPin,
   Clock4,
   Radar,
+  Waves,
 } from "lucide-react";
 import { showDevTools, shouldUseMock } from "@/lib/env";
 
@@ -41,6 +42,7 @@ const baseNavigation = [
   { name: "Marketplace", href: "/marketplace", icon: CreditCard },
   { name: "Settings", href: "/settings", icon: Settings },
   { name: "Operations", href: "/operations", icon: Terminal },
+  { name: "Realtime", href: "/realtime", icon: Waves },
   { name: "Developer", href: "/developer", icon: Smartphone },
 ];
 
