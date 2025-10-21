@@ -114,6 +114,56 @@ paths:
                 template: { type: object }
       responses:
         '202': { description: Accepted }
+  /api/insurance/ingest_media:
+    post:
+      summary: Ingest WhatsApp media for insurance
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                wa_media_id: { type: string }
+                wa_media_url: { type: string }
+                intent_id: { type: string }
+                kind: { type: string, enum: [logbook,yellow_card,old_policy,id_card,other] }
+              required: [intent_id, kind]
+      responses: { '201': { description: Created } }
+
+  /api/insurance/ocr:
+    post:
+      summary: Run OCR on uploaded documents
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                document_ids: { type: array, items: { type: string } }
+              required: [document_ids]
+      responses: { '200': { description: OK } }
+
+  /api/insurance/notify_backoffice:
+    post:
+      summary: Notify back office to issue/validate policy
+      responses: { '202': { description: Accepted } }
+
+  /api/mobility/match:
+    post:
+      summary: Find nearby drivers for a ride
+      responses: { '200': { description: OK } }
+
+  /api/mobility/ping_drivers:
+    post:
+      summary: Send WhatsApp invites to candidate drivers
+      responses: { '202': { description: Accepted } }
+
+  /api/mobility/book:
+    post:
+      summary: Book selected driver and notify both sides
+      responses: { '200': { description: OK } }
   /api/recon/reconciliation/mobile-money:
     post:
       summary: Reconcile mobile-money CSV

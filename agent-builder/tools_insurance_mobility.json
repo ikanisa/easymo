@@ -1,0 +1,57 @@
+{
+  "version": "1.0",
+  "tools": [
+    {
+      "name": "insurance.ingest_media",
+      "description": "Persist WhatsApp document to storage and DB",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "wa_media_id": { "type": "string" },
+          "wa_media_url": { "type": "string" },
+          "intent_id": { "type": "string" },
+          "kind": { "type": "string", "enum": ["logbook","yellow_card","old_policy","id_card","other"] }
+        },
+        "required": ["intent_id","kind"]
+      },
+      "http": { "method": "POST", "url": "https://easymo.vercel.app/api/insurance/ingest_media" },
+      "headers": { "x-request-id": "${REQUEST_ID}", "Idempotency-Key": "${IDEMPOTENCY_KEY}" }
+    },
+    {
+      "name": "insurance.ocr",
+      "description": "Run OCR",
+      "input_schema": { "type": "object", "properties": { "document_ids": { "type": "array", "items": { "type": "string" } } }, "required": ["document_ids"] },
+      "http": { "method": "POST", "url": "https://easymo.vercel.app/api/insurance/ocr" },
+      "headers": { "x-request-id": "${REQUEST_ID}", "Idempotency-Key": "${IDEMPOTENCY_KEY}" }
+    },
+    {
+      "name": "insurance.notify_backoffice",
+      "description": "Back-office handoff",
+      "input_schema": { "type": "object", "properties": { "intent_id": { "type": "string" } }, "required": ["intent_id"] },
+      "http": { "method": "POST", "url": "https://easymo.vercel.app/api/insurance/notify_backoffice" },
+      "headers": { "x-request-id": "${REQUEST_ID}" }
+    },
+    {
+      "name": "mobility.match",
+      "description": "Find nearby drivers",
+      "input_schema": { "type": "object", "properties": { "ride_id": { "type": "string" }, "vehicle_type": { "type": "string" }, "pickup": { "type": "object" } }, "required": ["ride_id","vehicle_type","pickup"] },
+      "http": { "method": "POST", "url": "https://easymo.vercel.app/api/mobility/match" },
+      "headers": { "x-request-id": "${REQUEST_ID}" }
+    },
+    {
+      "name": "mobility.ping_drivers",
+      "description": "Fan-out to drivers",
+      "input_schema": { "type": "object", "properties": { "ride_id": { "type": "string" }, "driver_ids": { "type": "array", "items": { "type": "string" } }, "template": { "type": "object" } }, "required": ["ride_id","driver_ids"] },
+      "http": { "method": "POST", "url": "https://easymo.vercel.app/api/mobility/ping_drivers" },
+      "headers": { "x-request-id": "${REQUEST_ID}" }
+    },
+    {
+      "name": "mobility.book",
+      "description": "Book selected driver",
+      "input_schema": { "type": "object", "properties": { "ride_id": { "type": "string" }, "driver_id": { "type": "string" } }, "required": ["ride_id","driver_id"] },
+      "http": { "method": "POST", "url": "https://easymo.vercel.app/api/mobility/book" },
+      "headers": { "x-request-id": "${REQUEST_ID}" }
+    }
+  ]
+}
+

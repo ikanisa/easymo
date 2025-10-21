@@ -1,0 +1,17 @@
+{
+  "name": "mobility_booking",
+  "description": "Ping drivers concurrently, collect offers, shortlist, book",
+  "states": ["RIDE_CREATED","DRIVER_PINGING","OFFERS_COLLECTED","SHORTLIST_READY","BOOKED"],
+  "initial_state": "RIDE_CREATED",
+  "transitions": [
+    { "from": "RIDE_CREATED", "to": "DRIVER_PINGING", "actions": [
+      { "tool": "mobility.match", "params": { "ride_id": "${RIDE_ID}", "vehicle_type": "${VEHICLE_TYPE}", "pickup": "${PICKUP}" } }
+    ]},
+    { "from": "DRIVER_PINGING", "to": "OFFERS_COLLECTED", "guard": { "type": "min_responses_or_timeout", "min": 2, "timeout_ms": 180000 }, "actions": [
+      { "tool": "mobility.ping_drivers", "params": { "ride_id": "${RIDE_ID}", "driver_ids": "${MATCHED_DRIVER_IDS}", "template": { "name": "DRIVER_PING" } } }
+    ]},
+    { "from": "OFFERS_COLLECTED", "to": "SHORTLIST_READY", "actions": [] },
+    { "from": "SHORTLIST_READY", "to": "BOOKED", "actions": [ { "tool": "mobility.book", "params": { "ride_id": "${RIDE_ID}", "driver_id": "${SELECTED_DRIVER_ID}" } } ] }
+  ]
+}
+
