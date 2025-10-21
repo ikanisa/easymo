@@ -1,4 +1,11 @@
-import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
+import { serve } from "$std/http/server.ts";
+import { CONFIG } from "../_shared/env.ts";
+import {
+  badRequest,
+  methodNotAllowed,
+  ok,
+  serverError,
+} from "../_shared/http.ts";
 
 type ContactPayload = {
   id: string;
@@ -10,38 +17,22 @@ type ContactPayload = {
   intent_payload?: Record<string, unknown>;
 };
 
-const AGENT_CORE_URL = Deno.env.get("AGENT_CORE_URL");
-const AGENT_CORE_TOKEN = Deno.env.get("AGENT_CORE_TOKEN" ?? "");
-const DEFAULT_TENANT_ID = Deno.env.get("AGENT_CORE_TENANT_ID");
+const AGENT_CORE_URL = CONFIG.AGENT_CORE_URL;
+const AGENT_CORE_TOKEN = CONFIG.AGENT_CORE_TOKEN;
+const DEFAULT_TENANT_ID = CONFIG.DEFAULT_TENANT_ID;
 
 serve(async (req: Request) => {
-  if (!AGENT_CORE_URL) {
-    return new Response(
-      JSON.stringify({ error: "AGENT_CORE_URL not configured" }),
-      { status: 500 },
-    );
-  }
-
-  if (req.method !== "POST") {
-    return new Response("Method not allowed", { status: 405 });
-  }
+  if (!AGENT_CORE_URL) return serverError("AGENT_CORE_URL not configured");
+  if (req.method !== "POST") return methodNotAllowed(["POST"]);
 
   const body = (await req.json().catch(() => ({}))) as {
     contact?: ContactPayload;
   };
   const contact = body.contact;
-  if (!contact?.id) {
-    return new Response(JSON.stringify({ error: "Missing contact payload" }), {
-      status: 400,
-    });
-  }
+  if (!contact?.id) return badRequest("missing_contact_payload");
 
   const msisdn = contact.msisdn ?? contact.phone;
-  if (!msisdn) {
-    return new Response(JSON.stringify({ error: "Contact missing phone" }), {
-      status: 400,
-    });
-  }
+  if (!msisdn) return badRequest("contact_missing_phone");
 
   const schedulePayload = {
     tenantId: contact.tenant_id ?? DEFAULT_TENANT_ID,
@@ -71,8 +62,7 @@ serve(async (req: Request) => {
   );
 
   const data = await response.json().catch(() => ({}));
-  return new Response(JSON.stringify({ ok: response.ok, data }), {
-    headers: { "Content-Type": "application/json" },
-    status: response.ok ? 200 : 500,
-  });
+  return response.ok
+    ? ok({ data })
+    : serverError("agent_core_schedule_failed", { data });
 });

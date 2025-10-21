@@ -56,6 +56,9 @@ jobs:
       - name: Unit tests
         run: pnpm test -- --runInBand
 
+      - name: Deno unit tests (Supabase functions)
+        run: deno test --allow-env --allow-read --allow-net supabase/functions
+
       - name: Build shared messaging package
         run: pnpm --filter @easymo/messaging build
 
