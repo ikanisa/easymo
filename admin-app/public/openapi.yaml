@@ -99,6 +99,86 @@ paths:
                 reference: { type: string }
       responses:
         '201': { description: Created }
+  /api/subscriptions/entitlements:
+    get:
+      summary: Get vendor entitlements (free contacts and subscription status)
+      parameters:
+        - in: query
+          name: tenantId
+          schema: { type: string }
+        - in: query
+          name: vendorId
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: OK }
+  /api/subscriptions/subscribe:
+    post:
+      summary: Charge vendor monthly subscription (tokens)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                tenantId: { type: string }
+                vendorId: { type: string }
+                accountId: { type: string }
+                tokens: { type: number, default: 4 }
+      responses:
+        '201': { description: Created }
+  /api/wallet/platform/provision:
+    post:
+      summary: Provision tenant platform wallet account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                tenantId: { type: string }
+      responses:
+        '201': { description: Created }
+  /api/fx/convert:
+    get:
+      summary: Convert local currency amount to token (USD) amount
+      parameters:
+        - in: query
+          name: amount
+          required: true
+          schema: { type: number }
+        - in: query
+          name: currency
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: OK }
+  /api/marketplace/settings:
+    get:
+      summary: Get marketplace settings for a tenant
+      parameters:
+        - in: query
+          name: tenantId
+          schema: { type: string }
+      responses:
+        '200': { description: OK }
+    post:
+      summary: Update marketplace settings for a tenant
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                tenantId: { type: string }
+                freeContacts: { type: integer }
+                windowDays: { type: integer }
+                subscriptionTokens: { type: integer }
+      responses:
+        '200': { description: OK }
   /api/wa/outbound/messages:
     post:
       summary: Send WhatsApp text or template

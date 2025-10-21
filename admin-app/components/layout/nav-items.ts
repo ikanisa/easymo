@@ -136,6 +136,12 @@ export const NAV_ITEMS: NavItem[] = [
     group: "Platform",
   },
   {
+    label: "Marketplace Settings",
+    href: "/marketplace/settings",
+    description: "Free contacts, window, subscription tokens",
+    group: "Platform",
+  },
+  {
     label: "Agents",
     href: "/agents",
     description: "Trigger orchestrator and settlement runs",

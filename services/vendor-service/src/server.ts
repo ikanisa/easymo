@@ -24,10 +24,9 @@ const QuoteSchema = z.object({
   etaMinutes: z.number().int().positive().optional(),
 });
 
-async function bootstrap() {
-  const prisma = new PrismaService();
-  await prisma.$connect();
-  const vendors = new VendorService(prisma);
+export function buildApp(deps?: { prisma?: PrismaService; vendors?: VendorService }) {
+  const prisma = deps?.prisma ?? new PrismaService();
+  const vendors = deps?.vendors ?? new VendorService(prisma);
 
   const app = express();
   app.use(express.json());
@@ -100,6 +99,57 @@ async function bootstrap() {
       res.status(400).json({ error: (error as Error).message });
     }
   });
+
+  app.get("/marketplace/settings", async (req, res) => {
+    try {
+      const tenantId = (req.query.tenantId as string) ?? settings.defaultTenantId;
+      const svc: any = vendors;
+      const cfg = svc.getSettings ? await svc.getSettings(tenantId) : { freeContacts: 30, windowDays: 30, subscriptionTokens: 4 };
+      res.json(cfg);
+    } catch (error) {
+      logger.error({ msg: "vendor.settings.get_failed", error });
+      res.status(400).json({ error: (error as Error).message });
+    }
+  });
+
+  app.post("/marketplace/settings", async (req, res) => {
+    try {
+      const payload = z.object({
+        tenantId: z.string().uuid().default(settings.defaultTenantId),
+        freeContacts: z.coerce.number().int().min(0).default(30),
+        windowDays: z.coerce.number().int().min(1).default(30),
+        subscriptionTokens: z.coerce.number().int().min(1).default(4),
+      }).parse(req.body);
+      const row = await prisma.marketplaceSettings.upsert({
+        where: { tenantId: payload.tenantId },
+        update: {
+          freeContacts: payload.freeContacts,
+          windowDays: payload.windowDays,
+          subscriptionTokens: payload.subscriptionTokens,
+          updatedAt: new Date(),
+        },
+        create: {
+          tenantId: payload.tenantId,
+          freeContacts: payload.freeContacts,
+          windowDays: payload.windowDays,
+          subscriptionTokens: payload.subscriptionTokens,
+        },
+      });
+      res.status(200).json({ ok: true, settings: row });
+    } catch (error) {
+      logger.error({ msg: "vendor.settings.update_failed", error });
+      res.status(400).json({ error: (error as Error).message });
+    }
+  });
+
+  return app;
+}
+
+async function bootstrap() {
+  const prisma = new PrismaService();
+  await prisma.$connect();
+  const vendors = new VendorService(prisma);
+  const app = buildApp({ prisma, vendors });
 
   const server = app.listen(settings.port, () => {
     logger.info({ msg: "vendor-service.listen", port: settings.port });
