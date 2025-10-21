@@ -10,13 +10,13 @@ interface VendorRankingTableProps {
 }
 
 export function VendorRankingTable({ data }: VendorRankingTableProps) {
-  function EntitlementBadge({ tenantId, vendorId }: { tenantId: string; vendorId: string }) {
+  function EntitlementBadge({ vendorId }: { vendorId: string }) {
     const [info, setInfo] = useState<{ freeRemaining: number; subscribed: boolean } | null>(null);
     useEffect(() => {
       let active = true;
       (async () => {
         try {
-          const res = await fetch(`/api/subscriptions/entitlements?tenantId=${encodeURIComponent(tenantId)}&vendorId=${encodeURIComponent(vendorId)}`);
+          const res = await fetch(`/api/subscriptions/entitlements?vendorId=${encodeURIComponent(vendorId)}`);
           const json = await res.json();
           if (active && json?.ok && json.data) setInfo({ freeRemaining: json.data.freeRemaining, subscribed: json.data.subscribed });
         } catch (_) {
@@ -24,7 +24,7 @@ export function VendorRankingTable({ data }: VendorRankingTableProps) {
         }
       })();
       return () => { active = false; };
-    }, [tenantId, vendorId]);
+    }, [vendorId]);
     if (!info) return <span className="text-xs text-[color:var(--color-muted)]">…</span>;
     return (
       <span className="text-xs px-2 py-0.5 rounded-full border" title={info.subscribed ? "Subscribed" : "Free quota"}>
@@ -44,7 +44,7 @@ export function VendorRankingTable({ data }: VendorRankingTableProps) {
       header: "Entitlement",
       accessorKey: "entitlement",
       cell: ({ row }) => (
-        <EntitlementBadge tenantId={row.original.tenantId} vendorId={row.original.vendorId} />
+        <EntitlementBadge vendorId={row.original.vendorId} />
       ),
     },
     {

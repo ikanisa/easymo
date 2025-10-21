@@ -14,11 +14,8 @@ export default function WalletTopupPage() {
     e.preventDefault();
     setStatus(null);
     setFx(null);
-    const { wallet } = await (await fetch('/api/runtime')).json().catch(() => ({ wallet: null }));
     try {
-      const base = (wallet as string) || process.env.NEXT_PUBLIC_WALLET_SERVICE_URL;
-      if (!base) throw new Error('Wallet URL not configured');
-      const res = await fetch(`${base}/fx/convert?amount=${encodeURIComponent(amount)}&currency=${encodeURIComponent(currency)}`);
+      const res = await fetch(`/api/fx/convert?amount=${encodeURIComponent(amount)}&currency=${encodeURIComponent(currency)}`);
       const json = await res.json();
       if (res.ok) setFx(json);
       else setStatus(`FX failed: ${json.error || res.status}`);
@@ -88,4 +85,3 @@ export default function WalletTopupPage() {
     </div>
   );
 }
-
