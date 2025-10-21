@@ -1,4 +1,7 @@
 import { supabase } from "../../config.ts";
+import { normalizeWaId as normalizeWaIdInternal } from "../../utils/locale.ts";
+
+export { normalizeWaId } from "../../utils/locale.ts";
 
 const ADMIN_CACHE_TTL_MS = 5 * 60 * 1000;
 const PIN_SESSION_MINUTES = 30;
@@ -31,14 +34,6 @@ export class AdminPinRequiredError extends Error {
   }
 }
 
-export function normalizeWaId(raw: string): string {
-  const trimmed = raw.trim();
-  if (!trimmed.startsWith("+")) {
-    return `+${trimmed.replace(/^\++/, "")}`;
-  }
-  return trimmed.replace(/^\++/, "+");
-}
-
 async function getAdminConfig(): Promise<AdminConfig> {
   const now = Date.now();
   if (cache && now - cache.loadedAt < ADMIN_CACHE_TTL_MS) {
@@ -68,12 +63,12 @@ export async function requireAdmin(
   { normalized: string; config: AdminConfig; isInsuranceAdmin: boolean }
 > {
   const config = await getAdminConfig();
-  const normalized = normalizeWaId(waId);
+  const normalized = normalizeWaIdInternal(waId);
   const inAdmins = config.admin_numbers.some((value) =>
-    normalizeWaId(value) === normalized
+    normalizeWaIdInternal(value) === normalized
   );
   const inInsurance = config.insurance_admin_numbers.some((value) =>
-    normalizeWaId(value) === normalized
+    normalizeWaIdInternal(value) === normalized
   );
   if (!inAdmins && !inInsurance) {
     throw new AdminForbiddenError();
@@ -86,7 +81,7 @@ export async function ensurePinSession(
   config: AdminConfig,
 ): Promise<void> {
   if (!config.admin_pin_required) return;
-  const normalized = normalizeWaId(waId);
+  const normalized = normalizeWaIdInternal(waId);
   const { data, error } = await supabase
     .from("admin_sessions")
     .select("pin_ok_until")
@@ -100,7 +95,7 @@ export async function ensurePinSession(
 }
 
 export async function markPinSession(waId: string): Promise<void> {
-  const normalized = normalizeWaId(waId);
+  const normalized = normalizeWaIdInternal(waId);
   const expiry = new Date(Date.now() + PIN_SESSION_MINUTES * 60 * 1000)
     .toISOString();
   const { error } = await supabase

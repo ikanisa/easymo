@@ -1,4 +1,5 @@
-import type { RouterContext } from "../types.ts";
+import type { RouterContext, WhatsAppMessage } from "../types.ts";
+import { getTextBody, isLocationMessage, isTextMessage } from "../utils/messages.ts";
 
 function appBase(): string {
   return Deno.env.get("BROKER_APP_BASE_URL") ??
@@ -16,10 +17,10 @@ function buildHeaders(msgId?: string) {
 
 export async function maybeHandleDriverText(
   ctx: RouterContext,
-  msg: any,
+  msg: WhatsAppMessage,
 ): Promise<boolean> {
-  if (msg?.type !== "text") return false;
-  const body: string = (msg?.text?.body ?? "").trim();
+  if (!isTextMessage(msg)) return false;
+  const body = getTextBody(msg);
   if (!body) return false;
 
   // Pattern: OK <eta_minutes> <offer_price>
@@ -43,7 +44,7 @@ export async function maybeHandleDriverText(
     try {
       await fetch(`${appBase()}/api/mobility/collect_offer`, {
         method: "POST",
-        headers: buildHeaders(msg?.id),
+        headers: buildHeaders(msg.id),
         body: JSON.stringify(payload),
       });
     } catch (_) {
@@ -70,7 +71,7 @@ export async function maybeHandleDriverText(
     try {
       await fetch(`${appBase()}/api/mobility/collect_offer`, {
         method: "POST",
-        headers: buildHeaders(msg?.id),
+        headers: buildHeaders(msg.id),
         body: JSON.stringify(payload),
       });
     } catch (_) {
@@ -84,11 +85,21 @@ export async function maybeHandleDriverText(
 
 export async function maybeHandleDriverLocation(
   ctx: RouterContext,
-  msg: any,
+  msg: WhatsAppMessage,
 ): Promise<boolean> {
-  if (msg?.type !== "location") return false;
-  const lat = Number(msg?.location?.latitude ?? NaN);
-  const lng = Number(msg?.location?.longitude ?? NaN);
+  if (!isLocationMessage(msg)) return false;
+  const rawLat = msg.location?.latitude;
+  const rawLng = msg.location?.longitude;
+  const lat = typeof rawLat === "number"
+    ? rawLat
+    : typeof rawLat === "string"
+    ? Number.parseFloat(rawLat)
+    : Number.NaN;
+  const lng = typeof rawLng === "number"
+    ? rawLng
+    : typeof rawLng === "string"
+    ? Number.parseFloat(rawLng)
+    : Number.NaN;
   if (!Number.isFinite(lat) || !Number.isFinite(lng)) return false;
   const payload = {
     driver_phone_e164: ctx.from,
@@ -99,7 +110,7 @@ export async function maybeHandleDriverLocation(
   try {
     await fetch(`${appBase()}/api/mobility/driver_location`, {
       method: "POST",
-      headers: buildHeaders(msg?.id),
+      headers: buildHeaders(msg.id),
       body: JSON.stringify(payload),
     });
   } catch (_) {

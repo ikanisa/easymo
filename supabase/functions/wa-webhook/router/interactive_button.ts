@@ -1,4 +1,5 @@
-import type { RouterContext } from "../types.ts";
+import type { RouterContext, WhatsAppInteractiveButtonMessage } from "../types.ts";
+import { getButtonReplyId } from "../utils/messages.ts";
 import { IDS } from "../wa/ids.ts";
 import {
   handleChangeVehicleRequest,
@@ -91,10 +92,10 @@ import {
 
 export async function handleButton(
   ctx: RouterContext,
-  msg: any,
+  msg: WhatsAppInteractiveButtonMessage,
   state: { key: string; data?: Record<string, unknown> },
 ): Promise<boolean> {
-  const id = msg.interactive?.button_reply?.id;
+  const id = getButtonReplyId(msg);
   if (!id) return false;
   const managerCtx = managerContextFromState(state);
   const currentItemId = typeof state.data?.itemId === "string"

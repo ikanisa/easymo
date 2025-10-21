@@ -1,4 +1,12 @@
-import type { RouterContext } from "../types.ts";
+import type {
+  RouterContext,
+  WhatsAppInteractiveButtonMessage,
+  WhatsAppInteractiveListMessage,
+  WhatsAppLocationMessage,
+  WhatsAppMediaMessage,
+  WhatsAppMessage,
+  WhatsAppTextMessage,
+} from "../types.ts";
 import type { ChatState } from "../state/store.ts";
 import { handleMedia } from "./media.ts";
 import { handleList } from "./interactive_list.ts";
@@ -8,14 +16,45 @@ import { handleText } from "./text.ts";
 import { runGuards } from "./guards.ts";
 import { logError } from "../observe/log.ts";
 import { logUnhandled } from "../observe/logging.ts";
+import {
+  isInteractiveButtonMessage,
+  isInteractiveListMessage,
+  isLocationMessage,
+  isMediaMessage,
+  isTextMessage,
+} from "../utils/messages.ts";
 
 type RouterHooks = {
-  runGuards: typeof runGuards;
-  handleMedia: typeof handleMedia;
-  handleList: typeof handleList;
-  handleButton: typeof handleButton;
-  handleLocation: typeof handleLocation;
-  handleText: typeof handleText;
+  runGuards: (
+    ctx: RouterContext,
+    msg: WhatsAppMessage,
+    state: ChatState,
+  ) => Promise<boolean>;
+  handleMedia: (
+    ctx: RouterContext,
+    msg: WhatsAppMediaMessage,
+    state: ChatState,
+  ) => Promise<boolean>;
+  handleList: (
+    ctx: RouterContext,
+    msg: WhatsAppInteractiveListMessage,
+    state: ChatState,
+  ) => Promise<boolean>;
+  handleButton: (
+    ctx: RouterContext,
+    msg: WhatsAppInteractiveButtonMessage,
+    state: ChatState,
+  ) => Promise<boolean>;
+  handleLocation: (
+    ctx: RouterContext,
+    msg: WhatsAppLocationMessage,
+    state: ChatState,
+  ) => Promise<boolean>;
+  handleText: (
+    ctx: RouterContext,
+    msg: WhatsAppTextMessage,
+    state: ChatState,
+  ) => Promise<boolean>;
   logUnhandled: typeof logUnhandled;
 };
 
@@ -43,26 +82,25 @@ export function __resetRouterTestOverrides(): void {
 
 export async function handleMessage(
   ctx: RouterContext,
-  msg: any,
+  msg: WhatsAppMessage,
   state: ChatState,
 ): Promise<void> {
   try {
     if (await hooks.runGuards(ctx, msg, state)) return;
-    if (await hooks.handleMedia(ctx, msg, state)) return;
-    if (msg.type === "interactive" && msg.interactive?.type === "list_reply") {
-      if (await hooks.handleList(ctx, msg, state)) return;
+    if (isMediaMessage(msg) && await hooks.handleMedia(ctx, msg, state)) return;
+    if (isInteractiveListMessage(msg) && await hooks.handleList(ctx, msg, state)) {
+      return;
     }
     if (
-      msg.type === "interactive" && msg.interactive?.type === "button_reply"
+      isInteractiveButtonMessage(msg) &&
+      await hooks.handleButton(ctx, msg, state)
     ) {
-      if (await hooks.handleButton(ctx, msg, state)) return;
+      return;
     }
-    if (msg.type === "location") {
-      if (await hooks.handleLocation(ctx, msg, state)) return;
+    if (isLocationMessage(msg) && await hooks.handleLocation(ctx, msg, state)) {
+      return;
     }
-    if (msg.type === "text") {
-      if (await hooks.handleText(ctx, msg, state)) return;
-    }
+    if (isTextMessage(msg) && await hooks.handleText(ctx, msg, state)) return;
     await hooks.logUnhandled(msg.type);
   } catch (err) {
     logError("wa_router.handleMessage", err, { msg });
