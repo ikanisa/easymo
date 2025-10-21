@@ -5,6 +5,7 @@ import { settings } from "./config";
 import { logger } from "./logger";
 import { PrismaService } from "@easymo/db";
 import { WalletService, TransferRequest } from "./service";
+import { FXService } from "./fx";
 import { isFeatureEnabled } from "@easymo/commons";
 
 const TransferSchema = z.object({
@@ -23,6 +24,7 @@ async function bootstrap() {
   const prisma = new PrismaService();
   await prisma.$connect();
   const wallet = new WalletService(prisma);
+  const fx = new FXService(process.env.EXCHANGE_RATES_API);
 
   const app = express();
   app.use(express.json());
@@ -60,6 +62,21 @@ async function bootstrap() {
     } catch (error) {
       logger.error({ msg: "wallet.account.fetch_failed", error });
       res.status(404).json({ error: (error as Error).message });
+    }
+  });
+
+  app.get("/fx/convert", async (req, res) => {
+    try {
+      const amount = Number(req.query.amount ?? 0);
+      const currency = String(req.query.currency ?? "USD");
+      if (!(amount > 0)) {
+        return res.status(400).json({ error: "invalid_amount" });
+      }
+      const tokens = await fx.convertToUsdTokens(amount, currency);
+      res.json({ amount, currency, tokens, usd: tokens });
+    } catch (error) {
+      logger.error({ msg: "wallet.fx.failed", error });
+      res.status(500).json({ error: "fx_error" });
     }
   });
 

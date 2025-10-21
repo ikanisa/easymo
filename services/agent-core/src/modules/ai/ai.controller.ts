@@ -22,7 +22,6 @@ const SettlementSchema = z.object({
 
 const AttributionSchema = z.object({
   quoteId: z.string().uuid(),
-  referrals: z.array(z.any()).optional(),
   events: z.array(z.any()).optional(),
   persist: z.boolean().default(true),
   evidence: z.array(z.object({ kind: z.string(), ref: z.string().optional(), data: z.any().optional() })).optional(),

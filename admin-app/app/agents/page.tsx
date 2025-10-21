@@ -69,7 +69,6 @@ export default function AgentsPage() {
 
       const payload = {
         quoteId: String(form.get("quoteId")),
-        referrals: parseJson(String(form.get("referrals") || "")) ?? [],
         events: parseJson(String(form.get("events") || "")) ?? [],
         persist: form.get("persist") === "on",
         evidence: parseJson(String(form.get("evidence") || "")),
@@ -167,8 +166,7 @@ export default function AgentsPage() {
         <h2 className="text-xl font-medium">Attribution</h2>
         <form onSubmit={runAttribution} className="grid gap-2 max-w-xl">
           <input name="quoteId" placeholder="Quote ID (uuid)" className="border p-2" required />
-          <textarea name="referrals" placeholder='Referrals JSON (optional)
-Example: ["ctwa:endorser-99"]' className="border p-2 min-h-[80px]" />
+          {/* Referrals removed: broker AI handles all brokerage and referrals */}
           <textarea name="events" placeholder='Events JSON (optional)
 Example: [{"type":"CONTACT_ENDORSER","actorId":"endorser-99","timestamp":"2025-01-01T10:00:00Z"}]' className="border p-2 min-h-[100px]" />
           <label className="inline-flex items-center gap-2 text-sm">
@@ -202,4 +200,3 @@ Example: [{"kind":"whatsapp_message","ref":"abc"}]' className="border p-2 min-h-
     </div>
   );
 }
-

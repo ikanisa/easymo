@@ -12,6 +12,7 @@ export type TransferRequest = {
   reference?: string;
   metadata?: Record<string, unknown>;
   product?: string;
+  // Commission-based postings removed; retained for backward compatibility but ignored
   commissionAccountId?: string;
 };
 
@@ -23,9 +24,6 @@ export class WalletService {
 
     return await this.prisma.$transaction(async (tx) => {
       const accountIds = [request.sourceAccountId, request.destinationAccountId];
-      if (request.commissionAccountId) {
-        accountIds.push(request.commissionAccountId);
-      }
 
       const accounts = await tx.walletAccount.findMany({ where: { id: { in: accountIds } } });
       if (accounts.length !== accountIds.length) {
@@ -41,30 +39,8 @@ export class WalletService {
         }
       });
 
-      let commission: {
-        accountId: string;
-        rate?: Prisma.Decimal;
-        flatFee?: Prisma.Decimal;
-      } | undefined = request.commissionAccountId ? { accountId: request.commissionAccountId } : undefined;
-      if (request.product) {
-        const schedule = await tx.commissionSchedule.findFirst({
-          where: {
-            tenantId: request.tenantId,
-            product: request.product,
-            active: true,
-          },
-          orderBy: {
-            effectiveAt: "desc",
-          },
-        });
-        if (schedule) {
-          commission = {
-            accountId: commission?.accountId ?? request.commissionAccountId ?? accounts.find((acc) => acc.ownerType === "commission")?.id ?? accounts.find((acc) => acc.ownerType === "platform")?.id ?? request.destinationAccountId,
-            rate: schedule.rate,
-            flatFee: schedule.flatFee ?? undefined,
-          };
-        }
-      }
+      // Commission decommissioned: no commission applied to transfers
+      const commission = undefined;
 
       const plan = buildTransferPlan({
         amount: amountDecimal,

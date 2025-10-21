@@ -28,7 +28,6 @@ type SettlementInput = {
 
 type AttributionInput = {
   quoteId: string;
-  referrals?: any[];
   events?: any[];
   persist?: boolean;
   evidence?: Array<{ kind: string; ref?: string; data?: any }>;
@@ -270,7 +269,7 @@ export class AiService {
   async runAttribution(input: AttributionInput) {
     const evalResp = await this.http.post(
       `${this.attribBase}/attribution/evaluate`,
-      { quoteId: input.quoteId, referrals: input.referrals, events: input.events, persist: input.persist ?? true },
+      { quoteId: input.quoteId, events: input.events, persist: input.persist ?? true },
       { headers: this.reqHeaders() },
     );
 

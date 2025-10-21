@@ -76,9 +76,30 @@ export class VendorService {
 
     const vendor = await this.prisma.vendorProfile.findUnique({
       where: { id: input.vendorId },
+      include: { walletAccount: true },
     });
     if (!vendor || vendor.tenantId !== input.tenantId) {
       throw new Error("Vendor not found for tenant");
+    }
+
+    // Enforce entitlements: first 30 contacts (quotes) free within rolling 30 days; thereafter require active subscription
+    const since = new Date();
+    since.setDate(since.getDate() - 30);
+    const recentQuotes = await this.prisma.quote.count({ where: { vendorId: vendor.id, createdAt: { gte: since } } });
+    if (recentQuotes >= 30) {
+      // Check recent subscription transaction on vendor wallet within last 30 days
+      const subscribed = vendor.walletAccountId
+        ? await this.prisma.walletEntry.findFirst({
+            where: {
+              accountId: vendor.walletAccountId,
+              transaction: { type: "subscription", createdAt: { gte: since } },
+            },
+            include: { transaction: true },
+          })
+        : null;
+      if (!subscribed) {
+        throw new Error("subscription_required");
+      }
     }
 
     const quote = await this.prisma.quote.create({
