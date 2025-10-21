@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getSupabaseAdminClient } from "@/lib/server/supabase-admin";
+import { AgentVersionForm } from "@/components/agents/AgentVersionForm";
 
 async function fetchAgentDetail(id: string) {
   const supabase = getSupabaseAdminClient();
@@ -25,7 +26,7 @@ async function fetchAgentDetail(id: string) {
   const [{ data: versions }, { data: deployments }] = await Promise.all([
     supabase
       .from("agent_versions")
-      .select("id,version_no,created_at,created_by,updated_at")
+      .select("id,version_no,instructions,created_at,created_by,updated_at")
       .eq("persona_id", id)
       .order("version_no", { ascending: false }),
     supabase
@@ -81,25 +82,34 @@ export default async function AgentDetailPage({ params }: { params: { id: string
         </dl>
       </section>
 
-      <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-        <h2 className="text-lg font-semibold">Versions</h2>
-        {versions.length === 0 ? (
-          <p className="mt-2 text-sm text-slate-500">No versions published yet.</p>
-        ) : (
-          <ul className="mt-3 space-y-2 text-sm text-slate-700">
-            {versions.map((version) => (
-              <li key={version.id} className="rounded border border-slate-200 px-3 py-2">
-                <div className="flex items-center justify-between">
-                  <span className="font-medium">Version {version.version_no}</span>
-                  <span className="text-xs text-slate-500">
-                    {new Date(version.created_at).toLocaleString()}
-                  </span>
-                </div>
-                <p className="text-xs text-slate-500">Created by {version.created_by ?? "unknown"}</p>
-              </li>
-            ))}
-          </ul>
-        )}
+      <section className="space-y-4 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+        <AgentVersionForm personaId={persona.id} />
+
+        <div>
+          <h2 className="text-lg font-semibold">Versions</h2>
+          {versions.length === 0 ? (
+            <p className="mt-2 text-sm text-slate-500">No versions published yet.</p>
+          ) : (
+            <ul className="mt-3 space-y-2 text-sm text-slate-700">
+              {versions.map((version) => (
+                <li key={version.id} className="rounded border border-slate-200 px-3 py-2">
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium">Version {version.version_no}</span>
+                    <span className="text-xs text-slate-500">
+                      {new Date(version.created_at).toLocaleString()}
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500">Created by {version.created_by ?? "unknown"}</p>
+                  <p className="mt-2 text-sm text-slate-600 whitespace-pre-wrap">
+                    {version.instructions.length > 320
+                      ? `${version.instructions.slice(0, 320)}…`
+                      : version.instructions}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </section>
 
       <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">

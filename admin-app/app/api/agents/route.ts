@@ -84,5 +84,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
 
+  if (data) {
+    await supabase.from("agent_audit_log").insert({
+      persona_id: data.id,
+      actor,
+      action: "persona.created",
+      payload: { name, slug, status: data.status },
+    });
+  }
+
   return NextResponse.json({ persona: data }, { status: 201 });
 }

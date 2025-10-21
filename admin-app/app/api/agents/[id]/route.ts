@@ -150,5 +150,14 @@ export async function PATCH(
     return NextResponse.json({ error: "not_found" }, { status: 404 });
   }
 
+  if (data) {
+    await supabase.from("agent_audit_log").insert({
+      persona_id: data.id,
+      actor: fields.updated_by,
+      action: "persona.updated",
+      payload: fields,
+    });
+  }
+
   return NextResponse.json({ persona: data });
 }
