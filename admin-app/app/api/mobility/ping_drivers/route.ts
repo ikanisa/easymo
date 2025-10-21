@@ -1,11 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
 
-// Fan-out to drivers via existing WA sender /api/wa/outbound/messages
+// Fan-out via internal WA sender route
 export async function POST(req: NextRequest) {
   const reqId = req.headers.get("x-request-id") || undefined;
-  const { ride_id, driver_ids = [], template } = await req.json();
-  // TODO: for each driver phone, call your WA outbound sender with the template
-  return NextResponse.json({ queued: driver_ids.length, reqId }, { status: 202 });
+  const { ride_id, driver_ids = [], template, text } = await req.json();
+  let queued = 0;
+  await Promise.all(
+    (driver_ids as string[]).map(async (to) => {
+      try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL ?? ''}/api/wa/outbound/messages`, {
+          method: 'POST',
+          headers: { 'Content-Type':'application/json' },
+          body: JSON.stringify({ to, template, text, type: 'mobility_invite' }),
+        });
+        if (res.ok) queued++;
+      } catch (_) {}
+    })
+  );
+  return NextResponse.json({ ride_id, queued, reqId }, { status: 202 });
 }
 
 export async function GET(req: NextRequest) {

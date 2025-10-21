@@ -6,6 +6,7 @@ import { ToolsModule } from "./modules/tools/tools.module.js";
 import { HealthModule } from "./modules/health/health.module.js";
 import { LoggerModule } from "nestjs-pino";
 import { AgentsModule } from "./modules/agents/agents.module.js";
+import { AgentAdminModule } from "./modules/agent-admin/agent-admin.module.js";
 import { getRequestId } from "@easymo/commons";
 
 @Module({
@@ -26,6 +27,7 @@ import { getRequestId } from "@easymo/commons";
     HealthModule,
     AgentsModule,
     ToolsModule,
+    AgentAdminModule,
   ],
 })
 export class AppModule {}

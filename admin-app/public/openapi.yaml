@@ -336,6 +336,10 @@ paths:
     post:
       summary: Add knowledge document to an agent
       responses: { '201': { description: Created } }
+  /api/agents/{id}/documents/upload:
+    post:
+      summary: Upload knowledge document (multipart/form-data)
+      responses: { '201': { description: Created } }
   /api/agents/{id}/tasks:
     get:
       summary: List tasks for an agent

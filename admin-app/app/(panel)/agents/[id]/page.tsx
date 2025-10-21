@@ -1,6 +1,6 @@
 "use client";
 import { useParams } from "next/navigation";
-import { useAgentDetails, useCreateVersion, useDeployVersion, useUploadAgentDocument, useDeleteAgentDocument } from "@/lib/queries/agents";
+import { useAgentDetails, useCreateVersion, useDeployVersion, useUploadAgentDocument, useDeleteAgentDocument, useAgentTasks, useAgentRuns } from "@/lib/queries/agents";
 import { useState } from "react";
 
 export default function AgentDetailsPage() {
@@ -12,6 +12,8 @@ export default function AgentDetailsPage() {
   const [instructions, setInstructions] = useState("");
   const upload = useUploadAgentDocument(id);
   const delDoc = useDeleteAgentDocument(id);
+  const tasksQ = useAgentTasks(id);
+  const runsQ = useAgentRuns(id);
 
   if (!id) return <div className="p-6">Invalid agent id</div>;
   if (isLoading) return <div className="p-6">Loading…</div>;
@@ -83,11 +85,71 @@ export default function AgentDetailsPage() {
           <tbody>
             {documents.map((d: any) => (
               <tr key={d.id} className="border-t">
-                <td className="p-2">{d.title}</td>
+                <td className="p-2">
+                  {d.title}
+                  <button
+                    className="ml-2 px-2 py-0.5 border rounded text-xs"
+                    onClick={async () => {
+                      const res = await fetch(`/api/agents/${agent.id}/documents/${d.id}/signed`);
+                      if (res.ok) {
+                        const json = await res.json();
+                        if (json.url) window.open(json.url, "_blank");
+                      }
+                    }}
+                  >Open</button>
+                </td>
                 <td className="p-2">{new Date(d.created_at).toLocaleString()}</td>
                 <td className="p-2">
                   <button className="px-2 py-1 border rounded" onClick={() => delDoc.mutate(d.id)}>Delete</button>
                 </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </section>
+
+      <section className="space-y-2">
+        <h2 className="text-xl font-medium">Tasks</h2>
+        <table className="w-full text-sm border">
+          <thead>
+            <tr className="bg-gray-50">
+              <th className="text-left p-2">Type</th>
+              <th className="text-left p-2">Status</th>
+              <th className="text-left p-2">Scheduled</th>
+              <th className="text-left p-2">Started</th>
+              <th className="text-left p-2">Completed</th>
+            </tr>
+          </thead>
+          <tbody>
+            {(tasksQ.data?.tasks ?? []).map((t: any) => (
+              <tr key={t.id} className="border-t">
+                <td className="p-2">{t.type}</td>
+                <td className="p-2">{t.status}</td>
+                <td className="p-2">{t.scheduled_at ?? "-"}</td>
+                <td className="p-2">{t.started_at ?? "-"}</td>
+                <td className="p-2">{t.completed_at ?? "-"}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </section>
+
+      <section className="space-y-2">
+        <h2 className="text-xl font-medium">Runs</h2>
+        <table className="w-full text-sm border">
+          <thead>
+            <tr className="bg-gray-50">
+              <th className="text-left p-2">Status</th>
+              <th className="text-left p-2">Started</th>
+              <th className="text-left p-2">Completed</th>
+            </tr>
+          </thead>
+          <tbody>
+            {(runsQ.data?.runs ?? []).map((r: any) => (
+              <tr key={r.id} className="border-t">
+                <td className="p-2">{r.status}</td>
+                <td className="p-2">{r.started_at}</td>
+                <td className="p-2">{r.completed_at ?? "-"}</td>
               </tr>
             ))}
           </tbody>

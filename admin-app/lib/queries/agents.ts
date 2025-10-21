@@ -88,3 +88,27 @@ export function useDeleteAgentDocument(id: string) {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["agents", id] }),
   });
 }
+
+export function useAgentTasks(id: string, params?: { status?: string }) {
+  const qs = params?.status ? `?status=${encodeURIComponent(params.status)}` : "";
+  return useQuery({
+    queryKey: ["agents", id, "tasks", params?.status ?? "all"],
+    queryFn: async () => {
+      const res = await fetch(`/api/agents/${id}/tasks${qs}`);
+      if (!res.ok) throw new Error("failed_to_load_tasks");
+      return res.json();
+    },
+  });
+}
+
+export function useAgentRuns(id: string, params?: { status?: string }) {
+  const qs = params?.status ? `?status=${encodeURIComponent(params.status)}` : "";
+  return useQuery({
+    queryKey: ["agents", id, "runs", params?.status ?? "all"],
+    queryFn: async () => {
+      const res = await fetch(`/api/agents/${id}/runs${qs}`);
+      if (!res.ok) throw new Error("failed_to_load_runs");
+      return res.json();
+    },
+  });
+}
