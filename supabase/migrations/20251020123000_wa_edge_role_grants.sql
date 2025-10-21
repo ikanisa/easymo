@@ -1,4 +1,5 @@
 -- Ensure the scoped WhatsApp service role can execute mobility matching RPCs.
+BEGIN;
 DO $$
 BEGIN
   IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'wa_edge_role') THEN
@@ -53,3 +54,4 @@ BEGIN
   END IF;
 END
 $$;
+COMMIT;

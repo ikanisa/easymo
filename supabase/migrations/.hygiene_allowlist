@@ -1,0 +1,6 @@
+# List migration filenames that are allowed to violate BEGIN/COMMIT hygiene.
+# These are already applied on remote and were generated/imported from remote schema snapshots.
+
+20250907104112_bb1041f4-1b8a-4bce-b154-b8a3e8eb8462.sql
+20251017220824_remote_schema.sql
+

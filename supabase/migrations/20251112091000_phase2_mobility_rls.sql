@@ -1,3 +1,4 @@
+BEGIN;
 -- Enable row level security for new mobility tables
 alter table if exists public.settings enable row level security;
 alter table if exists public.profiles enable row level security;
@@ -123,3 +124,4 @@ create policy audit_log_admin_select on public.audit_log
 
 create policy audit_log_admin_insert on public.audit_log
   for insert with check (public.is_admin());
+COMMIT;

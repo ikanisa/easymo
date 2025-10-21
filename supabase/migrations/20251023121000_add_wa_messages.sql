@@ -1,3 +1,4 @@
+BEGIN;
 create table if not exists wa_messages (
   id uuid primary key default gen_random_uuid(),
   thread_id uuid references wa_threads(id) on delete cascade,
@@ -25,3 +26,4 @@ begin
       for all using (auth.role() = 'service_role') with check (true);
   end if;
 end $$;
+COMMIT;

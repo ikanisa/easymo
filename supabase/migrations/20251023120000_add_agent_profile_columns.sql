@@ -1,3 +1,4 @@
+BEGIN;
 alter table voice_calls
   add column if not exists agent_profile text,
   add column if not exists agent_profile_confidence text,
@@ -11,3 +12,4 @@ alter table wa_threads
   add column if not exists agent_profile text,
   add column if not exists agent_display_name text,
   add column if not exists metadata jsonb default '{}'::jsonb;
+COMMIT;

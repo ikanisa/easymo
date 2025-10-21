@@ -1,0 +1,20 @@
+name: Validate
+
+on:
+  pull_request:
+  push:
+    branches: [ main ]
+
+jobs:
+  hygiene:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check migration hygiene
+        run: bash scripts/check-migration-hygiene.sh
+
+      - name: Check Supabase functions lockfiles
+        run: bash scripts/check-deno-lockfiles.sh
+

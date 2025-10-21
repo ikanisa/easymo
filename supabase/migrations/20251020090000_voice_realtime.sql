@@ -1,3 +1,4 @@
+BEGIN;
 create extension if not exists pgcrypto;
 create extension if not exists "uuid-ossp";
 
@@ -88,6 +89,7 @@ begin
       for all using (auth.role() = 'service_role') with check (true);
   end if;
 end $$;
+COMMIT;
 
 alter table voice_events enable row level security;
 do $$

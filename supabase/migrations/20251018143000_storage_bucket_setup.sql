@@ -1,6 +1,7 @@
 -- Ensure required storage buckets exist for Phase 2 features.
 -- Buckets: insurance-docs, kyc-documents, menu-source-files, ocr-json-cache, vouchers
 
+BEGIN;
 do $$
 begin
   if not exists (select 1 from storage.buckets where id = 'insurance-docs') then
@@ -24,3 +25,4 @@ begin
   end if;
 end;
 $$;
+COMMIT;
