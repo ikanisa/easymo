@@ -142,6 +142,18 @@ export const NAV_ITEMS: NavItem[] = [
     group: "Platform",
   },
   {
+    label: "Subscriptions",
+    href: "/subscriptions",
+    description: "Vendor entitlements and monthly subscription",
+    group: "Platform",
+  },
+  {
+    label: "Wallet Top-up",
+    href: "/wallet/topup",
+    description: "Convert FX and credit vendor tokens",
+    group: "Platform",
+  },
+  {
     label: "Settings",
     href: "/settings",
     description: "Quiet hours, throttles, templates",
