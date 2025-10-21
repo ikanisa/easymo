@@ -4,23 +4,15 @@
 // canned responses until the OpenAI agent-core service is ready.
 
 import { serve } from "$std/http/server.ts";
-import { createClient } from "@supabase/supabase-js";
+import { getServiceClient } from "shared/supabase.ts";
+import { requireAdmin } from "shared/auth.ts";
 import { z } from "zod";
 
-const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
-const SERVICE_URL = Deno.env.get("SERVICE_URL") ?? "";
-const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ??
-  Deno.env.get("SERVICE_ROLE_KEY") ?? "";
 const ADMIN_TOKEN = Deno.env.get("EASYMO_ADMIN_TOKEN") ?? "";
 const ENABLE_AGENT_CHAT = (Deno.env.get("ENABLE_AGENT_CHAT") ?? "true")
   .toLowerCase() in ["1", "true", "yes"];
 
-const SB_URL = SUPABASE_URL || SERVICE_URL;
-if (!SB_URL || !SERVICE_ROLE_KEY) {
-  throw new Error("Supabase credentials are not configured");
-}
-
-const supabase = createClient(SB_URL, SERVICE_ROLE_KEY);
+const supabase = getServiceClient();
 
 const AgentKind = z.enum(["broker", "support", "sales", "marketing"]);
 
@@ -216,10 +208,8 @@ serve(async (req) => {
     });
   }
 
-  const apiKey = req.headers.get("x-admin-token");
-  if (!apiKey || apiKey !== ADMIN_TOKEN) {
-    return respond(403, { error: "Forbidden" });
-  }
+  const guard = requireAdmin(req);
+  if (guard) return guard;
 
   if (!ENABLE_AGENT_CHAT) {
     return respond(503, {

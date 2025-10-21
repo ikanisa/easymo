@@ -1,13 +1,6 @@
-import {
-  createClient,
-  type SupabaseClient,
-} from "https://esm.sh/@supabase/supabase-js@2.45.4";
+import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
+import { getServiceClient } from "shared/supabase.ts";
 
-const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ??
-  Deno.env.get("SERVICE_URL") ?? "";
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ??
-  Deno.env.get("SERVICE_ROLE_KEY") ??
-  "";
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY") ?? "";
 const OPENAI_MODEL = Deno.env.get("OPENAI_VISION_MODEL") ?? "gpt-4o-mini";
 const OPENAI_BASE_URL = Deno.env.get("OPENAI_BASE_URL") ??
@@ -20,18 +13,12 @@ const SIGNED_URL_TTL_SECONDS = (() => {
 })();
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024; // 8MB safety cap per image
 
-if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-  throw new Error("SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required");
-}
 if (!OPENAI_API_KEY) {
   console.warn(
     "OPENAI_API_KEY is not set; ibimina-ocr will fail until configured",
   );
 }
-
-const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-  auth: { persistSession: false },
-});
+const supabase = getServiceClient();
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",

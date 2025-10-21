@@ -1,12 +1,10 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
+import { serve } from "$std/http/server.ts";
+import { getServiceClient } from "shared/supabase.ts";
 import {
   buildNumberLookupCandidates,
   normalizeE164,
 } from "../_shared/phone.ts";
 
-const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ??
-  "";
 const BATCH_SIZE = (() => {
   const value = Number(Deno.env.get("MOMO_ALLOCATOR_BATCH_SIZE") ?? "10");
   return Number.isFinite(value) && value > 0 ? Math.min(value, 50) : 10;
@@ -18,15 +16,7 @@ const MIN_CONFIDENCE_FOR_AUTO = Number(
   Deno.env.get("MOMO_ALLOCATOR_MIN_CONFIDENCE") ?? "0.6",
 );
 
-if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-  throw new Error(
-    "SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be configured for momo-allocator",
-  );
-}
-
-const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-  auth: { persistSession: false },
-});
+const supabase = getServiceClient();
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -75,7 +65,7 @@ function jsonResponse(body: Record<string, unknown>, status = 200): Response {
   });
 }
 
-Deno.serve(async (request) => {
+serve(async (request) => {
   if (request.method === "OPTIONS") {
     return new Response(null, { status: 204, headers: corsHeaders });
   }
