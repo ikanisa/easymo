@@ -45,6 +45,7 @@ import { handleSeePassengers } from "../domains/mobility/nearby.ts";
 import { sendText } from "../wa/client.ts";
 import { t } from "../i18n/translator.ts";
 import { maybeHandleDriverText } from "../observe/driver_parser.ts";
+import { recordInbound } from "../observe/conv_audit.ts";
 
 export async function handleText(
   ctx: RouterContext,
@@ -53,6 +54,10 @@ export async function handleText(
 ): Promise<boolean> {
   const body = (msg.text?.body ?? "").trim();
   if (!body) return false;
+  // Record inbound for correlation (best-effort)
+  try {
+    await recordInbound(ctx, msg);
+  } catch (_) { /* noop */ }
   // Best-effort driver offer parsing (non-blocking)
   try {
     await maybeHandleDriverText(ctx, msg);

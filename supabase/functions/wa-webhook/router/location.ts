@@ -7,6 +7,7 @@ import {
 import { handleMarketplaceLocation } from "../domains/marketplace/index.ts";
 import { handleOnboardLocationCoordinates } from "../domains/dinein/manager.ts";
 import { maybeHandleDriverLocation } from "../observe/driver_parser.ts";
+import { recordInbound } from "../observe/conv_audit.ts";
 
 export async function handleLocation(
   ctx: RouterContext,
@@ -14,6 +15,10 @@ export async function handleLocation(
   state: { key: string; data?: Record<string, unknown> },
 ): Promise<boolean> {
   if (msg.type !== "location") return false;
+  // Record inbound for correlation (best-effort)
+  try {
+    await recordInbound(ctx, msg);
+  } catch (_) { /* noop */ }
   // Best-effort driver location collection (non-blocking)
   try {
     await maybeHandleDriverLocation(ctx, msg);
