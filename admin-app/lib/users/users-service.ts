@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { shouldUseMocks } from "@/lib/runtime-config";
+import { callAdminFunction } from "@/lib/server/functions-client";
 import { mockUsers } from "@/lib/mock-data";
 import { type User, userSchema } from "@/lib/schemas";
 import {
@@ -65,12 +66,30 @@ export async function listUsers(
     return paginateArray(filtered, params);
   }
 
-  const { getSupabaseAdminClient } = await import(
-    "@/lib/server/supabase-admin"
-  );
+  const { getSupabaseAdminClient } = await import("@/lib/server/supabase-admin");
   const adminClient = getSupabaseAdminClient();
   if (!adminClient) {
-    throw new Error("Supabase admin client is not configured.");
+    // Fallback: use Edge Function admin-users via admin token if available
+    try {
+      const json = await callAdminFunction<{ users: Array<Record<string, unknown>> }>("admin-users");
+      const rows = Array.isArray(json?.users) ? json.users : [];
+      const mapped = rows.map((row: any) => ({
+        id: String(row.user_id ?? row.id ?? ""),
+        msisdn: String(row.whatsapp_e164 ?? row.msisdn ?? ""),
+        displayName: row.display_name ?? row.user_name ?? undefined,
+        locale: (row.locale as string | undefined) ?? "rw-RW",
+        roles: Array.isArray(row.roles) ? row.roles : [],
+        status: (row.subscription_status as any) ?? "active",
+        createdAt: String(row.created_at ?? new Date().toISOString()),
+        lastSeenAt: (row.last_seen_at as string | null | undefined) ?? null,
+      }));
+      return paginateArray(
+        mapped.filter((u) => params.search ? matchesSearch(`${u.displayName ?? ""} ${u.msisdn}`, params.search!) : true),
+        params,
+      );
+    } catch (e) {
+      throw new Error("Supabase admin client is not configured.");
+    }
   }
 
   const query = adminClient
