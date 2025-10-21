@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { shouldUseMocks } from "@/lib/runtime-config";
 import { mockDashboardKpis, mockTimeseries } from "@/lib/mock-data";
+import { callAdminFunction } from "@/lib/server/functions-client";
 import {
   type DashboardKpi,
   dashboardKpiSchema,
@@ -88,7 +89,22 @@ export async function getDashboardSnapshot(): Promise<DashboardSnapshotResult> {
   );
   const adminClient = getSupabaseAdminClient();
   if (!adminClient) {
-    throw new Error("Supabase admin client is not configured.");
+    // Fallback to Edge Function admin-stats if service-role envs are missing
+    try {
+      const stats = await callAdminFunction<any>("admin-stats");
+      const kpis: DashboardKpi[] = [
+        { id: "totalUsers", label: "Total Users", value: Number(stats?.total_users ?? 0) },
+        { id: "driversOnline", label: "Drivers Online", value: Number(stats?.drivers_online ?? 0) },
+        { id: "openTrips", label: "Open Trips", value: Number(stats?.open_trips ?? 0) },
+        { id: "activeSubs", label: "Active Subscriptions", value: Number(stats?.active_subscriptions ?? 0) },
+      ];
+      return {
+        data: { kpis, timeseries: [] },
+        integration: { status: "ok", target: "dashboard_snapshot" },
+      };
+    } catch (e) {
+      throw new Error("Supabase admin client is not configured.");
+    }
   }
 
   const { data, error } = await adminClient.rpc("dashboard_snapshot");
