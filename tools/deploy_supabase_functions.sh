@@ -12,8 +12,13 @@ set -euo pipefail
 # or a function.json file.
 
 DEBUG=""
+PRUNE=""
 if [[ "${1:-}" == "--debug" ]]; then
   DEBUG=1
+  shift || true
+fi
+if [[ "${1:-}" == "--prune" ]]; then
+  PRUNE=1
   shift || true
 fi
 
@@ -34,7 +39,8 @@ cd "$ROOT_DIR"
 discover_functions() {
   local base="$1"
   if [[ -d "$base" ]]; then
-    find "$base" -maxdepth 1 -mindepth 1 -type d -not -name "_shared" | while read -r dir; do
+    find "$base" -maxdepth 1 -mindepth 1 -type d \
+      -not -name "_shared" -not -name "tests" | while read -r dir; do
       local name
       name="$(basename "$dir")"
       # Skip non-function folders like tests/i18n/utils under wa-webhook
@@ -45,31 +51,24 @@ discover_functions() {
   fi
 }
 
-declare -A SEEN
-FUNCS=()
-
+# Build function list
 if (( "$#" > 0 )); then
-  for name in "$@"; do
-    if [[ -n "${SEEN[$name]:-}" ]]; then continue; fi
-    SEEN[$name]=1
-    FUNCS+=("$name")
-  done
+  FUNCS="$*"
 else
-  while read -r f; do
-    if [[ -n "${SEEN[$f]:-}" ]]; then continue; fi
-    SEEN[$f]=1
-    FUNCS+=("$f")
-  done < <(discover_functions "supabase/functions")
+  FUNCS="$(discover_functions "supabase/functions")"
 fi
 
-if (( ${#FUNCS[@]} == 0 )); then
+if [[ -z "$FUNCS" ]]; then
   echo "No functions discovered to deploy." >&2
   exit 0
 fi
 
 echo "Deploying functions to project: $PROJECT_REF"
-for fn in "${FUNCS[@]}"; do
-  echo "→ Deploying $fn"
+idx=0
+while read -r fn; do
+  [[ -n "$fn" ]] || continue
+  idx=$((idx+1))
+  echo "→ [$idx] Deploying $fn"
   if [[ -n "$DEBUG" ]]; then
     supabase functions deploy "$fn" --project-ref "$PROJECT_REF" --debug || {
       echo "Deployment failed for $fn" >&2
@@ -81,6 +80,11 @@ for fn in "${FUNCS[@]}"; do
       exit 1
     }
   fi
-done
+done <<< "$FUNCS"
+
+if [[ -n "$PRUNE" ]]; then
+  echo "Pruning remote functions not present locally..."
+  supabase functions deploy --project-ref "$PROJECT_REF" --prune ${DEBUG:+--debug}
+fi
 
 echo "All functions deployed successfully."

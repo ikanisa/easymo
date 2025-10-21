@@ -7,11 +7,11 @@
   flows.
 - ✅ **Edge functions:** Supabase edge functions for admin settings, stats,
   users, trips, subscriptions and the simulator are implemented under
-  `easymo/supabase/functions/` with shared auth helpers.
+  `supabase/functions/` with shared auth helpers.
 - ✅ **Database migrations:** `20251112090000_phase2_mobility_core.sql` and
   `20251112091000_phase2_mobility_rls.sql` provision the mobility schema,
   PostGIS helpers and RLS policies.
-- ✅ **Seed data:** `easymo/supabase/seed/fixtures/phase_b_seed.sql` provides
+- ✅ **Seed data:** `supabase/seed/fixtures/phase_b_seed.sql` provides
   idempotent fixtures for profiles, subscriptions, vouchers and simulator
   presence.
 - ✅ **Environment template:** `docs/env/env.sample` documents Supabase,
@@ -20,7 +20,7 @@
 - ✅ **Error handling & logging:** Front-end adapter calls surface friendly
   errors, while edge functions centralise logging via `_shared/admin.ts`.
 - ✅ **Tests:** Vitest coverage exercises the adapter; Deno tests in
-  `easymo/supabase/functions/tests/` cover edge-function request handling.
+  `supabase/functions/tests/` cover edge-function request handling.
 - ✅ **Documentation:** README, runbooks and this checklist now reference the
   Supabase-first architecture. CI hooks should be reviewed separately when
   deployment automation resumes.

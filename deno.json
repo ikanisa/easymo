@@ -1,4 +1,5 @@
 {
+  "importMap": "./supabase/functions/import_map.json",
   "fmt": {
     "exclude": [
       "supabase/functions/wa-webhook/flows/json"
