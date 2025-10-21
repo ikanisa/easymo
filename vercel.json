@@ -6,6 +6,7 @@
     "API_HEALTH_PROBES_ENABLED": "true"
   },
   "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/$1" },
     { "source": "/api/insurance/(.*)", "destination": "/api/insurance/$1" },
     { "source": "/api/mobility/(.*)",  "destination": "/api/mobility/$1" },
     { "source": "/openapi.yaml",       "destination": "/openapi.yaml" },
