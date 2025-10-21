@@ -257,6 +257,7 @@ serve(async (req) => {
 
       // Attempt Agent-Core integration, fallback to stub
       let agentText: string | null = null;
+      let agentMetadata: Record<string, unknown> = {};
       const coreUrl = CONFIG.AGENT_CORE_URL?.replace(/\/$/, "");
       if (coreUrl) {
         try {
@@ -276,20 +277,53 @@ serve(async (req) => {
             }),
           });
           const coreJson = await resp.json().catch(() => ({}));
-          if (resp.ok && typeof coreJson?.text === "string") {
-            agentText = coreJson.text as string;
+          if (resp.ok && coreJson && typeof coreJson === "object") {
+            if (typeof (coreJson as Record<string, unknown>).text === "string") {
+              agentText = (coreJson as Record<string, unknown>).text as string;
+            }
+            agentMetadata = {
+              ...(Array.isArray((coreJson as any).citations)
+                ? { citations: (coreJson as any).citations }
+                : {}),
+              ...(Array.isArray((coreJson as any).web_search_calls)
+                ? { web_search_calls: (coreJson as any).web_search_calls }
+                : {}),
+              ...(Array.isArray((coreJson as any).sources)
+                ? { sources: (coreJson as any).sources }
+                : {}),
+              ...(coreJson && "usage" in (coreJson as Record<string, unknown>)
+                ? { usage: (coreJson as Record<string, unknown>).usage }
+                : {}),
+              ...(coreJson && "raw" in (coreJson as Record<string, unknown>)
+                ? { raw: (coreJson as Record<string, unknown>).raw }
+                : {}),
+              ...(Array.isArray((coreJson as any).suggestions)
+                ? { suggestions: (coreJson as any).suggestions }
+                : {}),
+            };
           }
         } catch (_err) {
           // swallow and fallback
         }
       }
 
-      const stub = agentText
+      const assistantSuggestions = Array.isArray(agentMetadata.suggestions)
+        ? (agentMetadata.suggestions as string[])
+        : ["Thanks!", "What next?", "Escalate"];
+
+      const assistant = agentText
         ? {
           text: agentText,
-          suggestions: ["Thanks!", "What next?", "Escalate"],
+          suggestions: assistantSuggestions,
         }
         : buildStubResponse(result.data.agent_kind, result.data.message);
+
+      const agentContent: Record<string, unknown> = {
+        text: assistant.text,
+        ...(agentText ? {} : { stub: true }),
+        ...agentMetadata,
+      };
+      delete agentContent.suggestions;
       const inserted = await appendMessages(session.id, [
         {
           role: "user",
@@ -297,7 +331,7 @@ serve(async (req) => {
         },
         {
           role: "agent",
-          content: { text: stub.text, stub: true },
+          content: agentContent,
         },
       ]);
 
@@ -305,7 +339,7 @@ serve(async (req) => {
         .from("agent_chat_sessions")
         .update({
           last_user_message: result.data.message,
-          last_agent_message: stub.text,
+          last_agent_message: assistant.text,
           updated_at: new Date().toISOString(),
         })
         .eq("id", session.id);
@@ -321,7 +355,7 @@ serve(async (req) => {
       return respond(200, {
         session,
         messages,
-        suggestions: stub.suggestions,
+        suggestions: assistant.suggestions,
       });
     } catch (error) {
       console.error("agent-chat.post_failed", error);

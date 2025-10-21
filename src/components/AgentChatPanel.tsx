@@ -8,9 +8,14 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { ADAPTER } from "@/lib/adapter";
-import type { AgentChatMessage, AgentChatResponse, AgentChatSession } from "@/lib/types";
+import type {
+  AgentChatMessage,
+  AgentChatPayload,
+  AgentChatResponse,
+  AgentChatSession,
+} from "@/lib/types";
 import type { AgentKind } from "@easymo/commons";
-import { Loader2, MessageSquare } from "lucide-react";
+import { ExternalLink, Loader2, MessageSquare } from "lucide-react";
 
 type AgentChatPanelProps = {
   agentKind: AgentKind;
@@ -229,25 +234,56 @@ export default function AgentChatPanel({
                 No messages yet. Start the conversation below.
               </div>
             ) : (
-              messages.map((msg) => (
-                <div
-                  key={msg.id}
-                  className={`flex flex-col ${msg.role === "user" ? "items-end" : "items-start"}`}
-                >
+              messages.map((msg) => {
+                const isUser = msg.role === "user";
+                const payload = (msg.payload ?? {}) as AgentChatPayload;
+                const citations = Array.isArray(payload.citations) ? payload.citations : [];
+                const usedSearch = Array.isArray(payload.web_search_calls) && payload.web_search_calls.length > 0;
+                return (
                   <div
-                    className={`rounded-lg px-3 py-2 max-w-[90%] ${
-                      msg.role === "user"
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-white text-foreground border"
-                    }`}
+                    key={msg.id}
+                    className={`flex flex-col ${isUser ? "items-end" : "items-start"}`}
                   >
-                    {msg.text}
+                    <div
+                      className={`rounded-lg px-3 py-2 max-w-[90%] space-y-2 ${
+                        isUser
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-white text-foreground border"
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="whitespace-pre-wrap text-sm leading-relaxed">{msg.text}</p>
+                        {!isUser && usedSearch && (
+                          <Badge variant="outline" className="ml-auto text-[10px] uppercase tracking-wide">
+                            Web search
+                          </Badge>
+                        )}
+                      </div>
+                      {!isUser && citations.length > 0 && (
+                        <ol className="space-y-1 text-xs text-muted-foreground">
+                          {citations.map((citation, index) => (
+                            <li key={citation.id ?? `${msg.id}-citation-${index}`} className="flex items-start gap-1">
+                              <span className="font-semibold">{index + 1}.</span>
+                              <a
+                                href={citation.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 text-primary hover:underline"
+                              >
+                                <span>{citation.title ?? citation.url}</span>
+                                <ExternalLink className="h-3 w-3" />
+                              </a>
+                            </li>
+                          ))}
+                        </ol>
+                      )}
+                    </div>
+                    <span className="mt-1 text-[10px] text-muted-foreground">
+                      {new Date(msg.created_at).toLocaleTimeString()}
+                    </span>
                   </div>
-                  <span className="mt-1 text-[10px] text-muted-foreground">
-                    {new Date(msg.created_at).toLocaleTimeString()}
-                  </span>
-                </div>
-              ))
+                );
+              })
             )}
             <div ref={scrollRef} />
           </div>
