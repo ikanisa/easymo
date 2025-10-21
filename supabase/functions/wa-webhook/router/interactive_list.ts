@@ -1,4 +1,5 @@
-import type { RouterContext } from "../types.ts";
+import type { RouterContext, WhatsAppInteractiveListMessage } from "../types.ts";
+import { getListReplyId } from "../utils/messages.ts";
 import {
   handleNearbyResultSelection,
   handleSeeDrivers,
@@ -93,10 +94,10 @@ import { copy } from "../domains/dinein/copy.ts";
 
 export async function handleList(
   ctx: RouterContext,
-  msg: any,
+  msg: WhatsAppInteractiveListMessage,
   state: { key: string; data?: Record<string, unknown> },
 ): Promise<boolean> {
-  const id = msg.interactive?.list_reply?.id;
+  const id = getListReplyId(msg);
   if (!id) return false;
   const managerCtx = managerContextFromState(state);
   if (id === IDS.DINEIN_BARS_VIEW_LIST) {

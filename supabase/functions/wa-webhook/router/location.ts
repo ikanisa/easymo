@@ -1,4 +1,4 @@
-import type { RouterContext } from "../types.ts";
+import type { RouterContext, WhatsAppLocationMessage } from "../types.ts";
 import { handleNearbyLocation } from "../domains/mobility/nearby.ts";
 import {
   handleScheduleDropoff,
@@ -11,10 +11,9 @@ import { recordInbound } from "../observe/conv_audit.ts";
 
 export async function handleLocation(
   ctx: RouterContext,
-  msg: any,
+  msg: WhatsAppLocationMessage,
   state: { key: string; data?: Record<string, unknown> },
 ): Promise<boolean> {
-  if (msg.type !== "location") return false;
   // Record inbound for correlation (best-effort)
   try {
     await recordInbound(ctx, msg);
@@ -23,8 +22,18 @@ export async function handleLocation(
   try {
     await maybeHandleDriverLocation(ctx, msg);
   } catch (_) { /* noop */ }
-  const lat = parseFloat(msg.location?.latitude ?? "0");
-  const lng = parseFloat(msg.location?.longitude ?? "0");
+  const rawLat = msg.location?.latitude;
+  const rawLng = msg.location?.longitude;
+  const lat = typeof rawLat === "number"
+    ? rawLat
+    : typeof rawLat === "string"
+    ? parseFloat(rawLat)
+    : Number.NaN;
+  const lng = typeof rawLng === "number"
+    ? rawLng
+    : typeof rawLng === "string"
+    ? parseFloat(rawLng)
+    : Number.NaN;
   if (!Number.isFinite(lat) || !Number.isFinite(lng)) return false;
   if (state.key === "mobility_nearby_location") {
     return await handleNearbyLocation(ctx, (state.data ?? {}) as any, {

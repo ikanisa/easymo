@@ -1,4 +1,4 @@
-import type { RouterContext } from "../types.ts";
+import type { RouterContext, WhatsAppTextMessage } from "../types.ts";
 import { sendHomeMenu } from "../flows/home.ts";
 import { handleBasketText } from "../flows/baskets.ts";
 import { handleMarketplaceText } from "../domains/marketplace/index.ts";
@@ -46,13 +46,14 @@ import { sendText } from "../wa/client.ts";
 import { t } from "../i18n/translator.ts";
 import { maybeHandleDriverText } from "../observe/driver_parser.ts";
 import { recordInbound } from "../observe/conv_audit.ts";
+import { getTextBody } from "../utils/messages.ts";
 
 export async function handleText(
   ctx: RouterContext,
-  msg: any,
+  msg: WhatsAppTextMessage,
   state: { key: string; data?: Record<string, unknown> },
 ): Promise<boolean> {
-  const body = (msg.text?.body ?? "").trim();
+  const body = getTextBody(msg);
   if (!body) return false;
   // Record inbound for correlation (best-effort)
   try {

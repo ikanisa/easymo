@@ -1,9 +1,16 @@
-import type { RouterContext } from "../types.ts";
+import type { RouterContext, WhatsAppMessage } from "../types.ts";
 import { sendText } from "../wa/client.ts";
 import { clearState } from "../state/store.ts";
+import type { ChatState } from "../state/store.ts";
 import { sendHomeMenu } from "../flows/home.ts";
 import { DINE_STATE } from "../domains/dinein/state.ts";
 import { t } from "../i18n/translator.ts";
+import {
+  getButtonReplyId,
+  getTextBody,
+  isInteractiveButtonMessage,
+  isTextMessage,
+} from "../utils/messages.ts";
 
 const STOP_REGEX = /^\s*(stop|unsubscribe)\s*$/i;
 const START_REGEX = /^\s*start\s*$/i;
@@ -11,12 +18,12 @@ const HOME_REGEX = /^\s*(home|menu)\s*$/i;
 
 export async function runGuards(
   ctx: RouterContext,
-  msg: any,
-  state?: { key?: string },
+  msg: WhatsAppMessage,
+  state: ChatState,
 ): Promise<boolean> {
-  if (msg.type === "text") {
-    const body: string = msg.text?.body ?? "";
-    const inDineOnboarding = state?.key
+  if (isTextMessage(msg)) {
+    const body = getTextBody(msg) ?? "";
+    const inDineOnboarding = state.key
       ? [
         DINE_STATE.ONBOARD_IDENTITY,
         DINE_STATE.ONBOARD_LOCATION,
@@ -72,11 +79,9 @@ export async function runGuards(
       return true;
     }
   }
-  if (
-    msg.interactive?.type === "button_reply" &&
-    msg.interactive.button_reply?.id === "back_home"
-  ) {
-    const key = state?.key;
+  if (isInteractiveButtonMessage(msg) &&
+    getButtonReplyId(msg) === "back_home") {
+    const key = state.key;
     if (
       key && [
         DINE_STATE.ONBOARD_IDENTITY,
