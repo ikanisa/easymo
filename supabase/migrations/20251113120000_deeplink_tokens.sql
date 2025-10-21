@@ -1,3 +1,5 @@
+BEGIN;
+
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 CREATE TABLE IF NOT EXISTS deeplink_tokens (
@@ -26,3 +28,5 @@ CREATE TABLE IF NOT EXISTS deeplink_events (
   meta jsonb,
   created_at timestamptz NOT NULL DEFAULT now()
 );
+
+COMMIT;

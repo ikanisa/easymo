@@ -1,3 +1,4 @@
+BEGIN;
 -- Phase 2 mobility core tables and helpers
 -- Enables extensions required for geospatial queries and UUID generation
 create extension if not exists "uuid-ossp";
@@ -198,6 +199,7 @@ create trigger driver_presence_touch_updated_at
 create trigger trips_touch_updated_at
   before update on public.trips
   for each row execute function public.touch_updated_at();
+COMMIT;
 
 create trigger subscriptions_touch_updated_at
   before update on public.subscriptions

@@ -1,3 +1,4 @@
+BEGIN;
 -- Align profile columns with admin edge function expectations.
 
 alter table public.profiles
@@ -6,3 +7,4 @@ alter table public.profiles
 
 update public.profiles
 set credits_balance = coalesce(credits_balance, 0);
+COMMIT;
