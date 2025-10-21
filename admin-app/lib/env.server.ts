@@ -10,7 +10,7 @@ const rawEnvSchema = z
     SERVICE_URL: z.string().optional(),
     SUPABASE_SERVICE_ROLE_KEY: z.string().optional(),
     SERVICE_ROLE_KEY: z.string().optional(),
-    ADMIN_SESSION_SECRET: z.string(),
+    ADMIN_SESSION_SECRET: z.string().optional(),
     ADMIN_SESSION_SECRET_FALLBACK: z.string().optional(),
     ADMIN_SESSION_TTL_SECONDS: z.string().optional(),
     ADMIN_ACCESS_CREDENTIALS: z.string().optional(),
