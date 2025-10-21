@@ -12,3 +12,8 @@ export async function POST(req: NextRequest) {
   // TODO: notify both sides via WhatsApp
   return NextResponse.json({ booked: true, ride_id, driver_id, reqId }, { status: 200 });
 }
+
+export async function GET(req: NextRequest) {
+  const reqId = req.headers.get("x-request-id") || undefined;
+  return NextResponse.json({ route: "mobility.book", status: "ok", reqId }, { status: 200 });
+}

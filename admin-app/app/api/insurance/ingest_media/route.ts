@@ -30,3 +30,8 @@ export async function POST(req: NextRequest) {
   if (error) return NextResponse.json({ error, reqId }, { status: 400 });
   return NextResponse.json({ document: data, reqId, idempotencyKey: idem }, { status: 201 });
 }
+
+export async function GET(req: NextRequest) {
+  const reqId = req.headers.get("x-request-id") || crypto.randomUUID();
+  return NextResponse.json({ route: "insurance.ingest_media", status: "ok", reqId }, { status: 200 });
+}

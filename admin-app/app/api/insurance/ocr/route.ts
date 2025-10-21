@@ -8,7 +8,12 @@ export async function POST(req: NextRequest) {
   const supabase = getSupabaseAdminClient();
   if (!supabase) {
     return NextResponse.json({ error: "supabase_unavailable", reqId }, { status: 503 });
-  }
+}
+
+export async function GET(req: NextRequest) {
+  const reqId = req.headers.get("x-request-id") || undefined;
+  return NextResponse.json({ route: "insurance.ocr", status: "ok", reqId }, { status: 200 });
+}
 
   // Placeholder OCR: replace with LLM vision or Tesseract call
   const extract = { policy: { insurer: "PLACEHOLDER", policy_number: "POL-123" }, vehicle: { plate: "RAB123C" }, confidence: 0.85 };

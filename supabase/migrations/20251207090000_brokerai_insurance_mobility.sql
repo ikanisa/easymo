@@ -123,22 +123,30 @@ ALTER TABLE public.conversations      ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.messages           ENABLE ROW LEVEL SECURITY;
 
 -- Optional: nearest driver RPC (KNN by point)
-CREATE OR REPLACE FUNCTION public.nearest_drivers(
-  p_lat double precision,
-  p_lng double precision,
-  p_vehicle text,
-  p_limit int DEFAULT 8
-)
-RETURNS TABLE(driver_id uuid, distance_m double precision, eta_guess int)
-LANGUAGE sql STABLE AS $$
-  SELECT da.driver_id,
-         ST_DistanceSphere(da.loc, ST_SetSRID(ST_MakePoint(p_lng, p_lat), 4326)) AS distance_m,
-         CEIL(ST_DistanceSphere(da.loc, ST_SetSRID(ST_MakePoint(p_lng, p_lat), 4326)) / 250)::int AS eta_guess
-  FROM public.driver_availability da
-  JOIN public.drivers d ON d.id = da.driver_id
-  WHERE da.available = true AND (p_vehicle IS NULL OR d.vehicle_type::text = p_vehicle)
-  ORDER BY da.loc <-> ST_SetSRID(ST_MakePoint(p_lng, p_lat), 4326)
-  LIMIT COALESCE(p_limit, 8)
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_proc WHERE proname = 'nearest_drivers'
+  ) THEN
+    CREATE FUNCTION public.nearest_drivers(
+      p_lat double precision,
+      p_lng double precision,
+      p_vehicle text,
+      p_limit int DEFAULT 8
+    )
+    RETURNS TABLE(driver_id uuid, distance_m double precision, eta_guess int)
+    LANGUAGE sql STABLE AS $fn$
+      SELECT da.driver_id,
+             ST_DistanceSphere(da.loc, ST_SetSRID(ST_MakePoint(p_lng, p_lat), 4326)) AS distance_m,
+             CEIL(ST_DistanceSphere(da.loc, ST_SetSRID(ST_MakePoint(p_lng, p_lat), 4326)) / 250)::int AS eta_guess
+      FROM public.driver_availability da
+      JOIN public.drivers d ON d.id = da.driver_id
+      WHERE da.available = true AND (p_vehicle IS NULL OR d.vehicle_type::text = p_vehicle)
+      ORDER BY da.loc <-> ST_SetSRID(ST_MakePoint(p_lng, p_lat), 4326)
+      LIMIT COALESCE(p_limit, 8)
+    $fn$;
+  END IF;
+END;
 $$;
 
 -- Storage bucket for insurance uploads
@@ -151,4 +159,3 @@ END;
 $$;
 
 COMMIT;
-

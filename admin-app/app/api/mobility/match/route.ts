@@ -12,3 +12,8 @@ export async function POST(req: NextRequest) {
   if (error) return NextResponse.json({ error, reqId }, { status: 400 });
   return NextResponse.json({ ride_id, drivers: data, reqId }, { status: 200 });
 }
+
+export async function GET(req: NextRequest) {
+  const reqId = req.headers.get("x-request-id") || undefined;
+  return NextResponse.json({ route: "mobility.match", status: "ok", reqId }, { status: 200 });
+}

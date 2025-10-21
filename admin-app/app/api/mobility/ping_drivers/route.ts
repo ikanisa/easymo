@@ -8,3 +8,7 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({ queued: driver_ids.length, reqId }, { status: 202 });
 }
 
+export async function GET(req: NextRequest) {
+  const reqId = req.headers.get("x-request-id") || crypto.randomUUID();
+  return NextResponse.json({ route: "mobility.ping_drivers", status: "ok", reqId }, { status: 200 });
+}
