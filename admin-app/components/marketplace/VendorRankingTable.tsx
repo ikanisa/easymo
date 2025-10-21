@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "@/components/data-table/DataTable";
 import type { VendorRanking } from "@/lib/schemas";
@@ -10,12 +10,42 @@ interface VendorRankingTableProps {
 }
 
 export function VendorRankingTable({ data }: VendorRankingTableProps) {
+  function EntitlementBadge({ tenantId, vendorId }: { tenantId: string; vendorId: string }) {
+    const [info, setInfo] = useState<{ freeRemaining: number; subscribed: boolean } | null>(null);
+    useEffect(() => {
+      let active = true;
+      (async () => {
+        try {
+          const res = await fetch(`/api/subscriptions/entitlements?tenantId=${encodeURIComponent(tenantId)}&vendorId=${encodeURIComponent(vendorId)}`);
+          const json = await res.json();
+          if (active && json?.ok && json.data) setInfo({ freeRemaining: json.data.freeRemaining, subscribed: json.data.subscribed });
+        } catch (_) {
+          // ignore
+        }
+      })();
+      return () => { active = false; };
+    }, [tenantId, vendorId]);
+    if (!info) return <span className="text-xs text-[color:var(--color-muted)]">…</span>;
+    return (
+      <span className="text-xs px-2 py-0.5 rounded-full border" title={info.subscribed ? "Subscribed" : "Free quota"}>
+        {info.subscribed ? "Sub" : `Free ${info.freeRemaining}`}
+      </span>
+    );
+  }
+
   const columns = useMemo<ColumnDef<VendorRanking>[]>(() => [
     {
       header: "#",
       accessorKey: "rank",
       cell: ({ row }) => <span className="font-semibold">{row.index + 1}</span>,
       meta: { width: "80px" },
+    },
+    {
+      header: "Entitlement",
+      accessorKey: "entitlement",
+      cell: ({ row }) => (
+        <EntitlementBadge tenantId={row.original.tenantId} vendorId={row.original.vendorId} />
+      ),
     },
     {
       header: "Vendor",

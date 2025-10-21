@@ -65,6 +65,34 @@ async function bootstrap() {
     }
   });
 
+  app.post("/wallet/platform/provision", async (req, res) => {
+    try {
+      const payload = z.object({ tenantId: z.string().uuid().default(settings.defaultTenantId) }).parse(req.body);
+      const prisma = new PrismaService();
+      await prisma.$connect();
+      try {
+        let account = await prisma.walletAccount.findFirst({ where: { tenantId: payload.tenantId, ownerType: "platform" } });
+        if (!account) {
+          account = await prisma.walletAccount.create({
+            data: {
+              tenantId: payload.tenantId,
+              ownerType: "platform",
+              ownerId: "platform",
+              currency: "USD",
+              status: "active",
+            },
+          });
+        }
+        res.status(201).json({ account });
+      } finally {
+        await prisma.$disconnect();
+      }
+    } catch (error) {
+      logger.error({ msg: "wallet.platform.provision_failed", error });
+      res.status(400).json({ error: (error as Error).message });
+    }
+  });
+
   app.post("/wallet/subscribe", async (req, res) => {
     if (!isFeatureEnabled("wallet.service")) {
       return res.status(403).json({ error: "Wallet service is disabled" });
