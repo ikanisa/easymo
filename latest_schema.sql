@@ -110,3 +110,138 @@ COMMENT ON EXTENSION postgis_topology IS 'PostGIS topology spatial types and fun
 -- PostgreSQL database dump complete
 --
 
+
+--
+-- Name: EXTENSION vector; Type: EXTENSION; Schema: -; Owner: -
+--
+
+CREATE EXTENSION IF NOT EXISTS vector WITH SCHEMA public;
+
+
+--
+-- Name: agent_document_chunks; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE IF NOT EXISTS public.agent_document_chunks (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    document_id uuid NOT NULL,
+    chunk_index integer NOT NULL,
+    content text NOT NULL,
+    embedding vector(1536),
+    token_count integer,
+    metadata jsonb DEFAULT '{}'::jsonb NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: agent_document_chunks_document_id_chunk_index_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.agent_document_chunks
+    ADD CONSTRAINT agent_document_chunks_document_id_chunk_index_key UNIQUE (document_id, chunk_index);
+
+
+--
+-- Name: agent_document_chunks_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.agent_document_chunks
+    ADD CONSTRAINT agent_document_chunks_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: agent_document_chunks_document_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX IF NOT EXISTS agent_document_chunks_document_idx ON public.agent_document_chunks USING btree (document_id);
+
+
+--
+-- Name: agent_document_chunks_embedding_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX IF NOT EXISTS agent_document_chunks_embedding_idx ON public.agent_document_chunks USING ivfflat (embedding vector_cosine_ops) WITH (lists='100');
+
+
+--
+-- Name: agent_document_chunks_created_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX IF NOT EXISTS agent_document_chunks_created_idx ON public.agent_document_chunks USING btree (created_at DESC);
+
+
+--
+-- Name: agent_document_chunks_document_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.agent_document_chunks
+    ADD CONSTRAINT agent_document_chunks_document_id_fkey FOREIGN KEY (document_id) REFERENCES public.agent_documents(id) ON DELETE CASCADE;
+
+
+--
+-- Name: agent_document_chunks; Type: POLICY; Schema: public; Owner: -
+--
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'agent_document_chunks' AND policyname = 'agent_document_chunks_admin_manage'
+  ) THEN
+    IF EXISTS (
+      SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+      WHERE p.proname = 'is_admin' AND n.nspname = 'public'
+    ) THEN
+      EXECUTE 'CREATE POLICY agent_document_chunks_admin_manage ON public.agent_document_chunks FOR ALL USING (public.is_admin()) WITH CHECK (public.is_admin())';
+    ELSE
+      EXECUTE 'CREATE POLICY agent_document_chunks_admin_manage ON public.agent_document_chunks FOR ALL USING (auth.role() = ''service_role'') WITH CHECK (auth.role() = ''service_role'')';
+    END IF;
+  END IF;
+END;
+$$;
+
+
+--
+-- Name: agent_document_chunks; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.agent_document_chunks ENABLE ROW LEVEL SECURITY;
+
+
+--
+-- Name: agent_document_chunks_updated; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER agent_document_chunks_updated BEFORE UPDATE ON public.agent_document_chunks FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
+
+--
+-- Name: match_agent_document_chunks; Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE OR REPLACE FUNCTION public.match_agent_document_chunks(query_embedding vector(1536), match_count integer DEFAULT 5, agent_id uuid, min_similarity double precision DEFAULT 0)
+ RETURNS TABLE(chunk_id uuid, document_id uuid, agent_id uuid, document_title text, chunk_index integer, content text, similarity double precision)
+ LANGUAGE plpgsql
+ STABLE
+AS $$
+BEGIN
+  RETURN QUERY
+  SELECT
+    c.id AS chunk_id,
+    c.document_id,
+    d.agent_id,
+    d.title AS document_title,
+    c.chunk_index,
+    c.content,
+    1 - (c.embedding <=> query_embedding) AS similarity
+  FROM public.agent_document_chunks c
+  JOIN public.agent_documents d ON d.id = c.document_id
+  WHERE d.agent_id = agent_id
+    AND c.embedding IS NOT NULL
+    AND (1 - (c.embedding <=> query_embedding)) >= COALESCE(min_similarity, 0)
+  ORDER BY c.embedding <-> query_embedding
+  LIMIT LEAST(GREATEST(COALESCE(match_count, 5), 1), 50);
+END;
+$$;
+

@@ -28,7 +28,6 @@ export default function DriverSubscriptionsPage() {
 
   useEffect(() => {
     void load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const rows = data?.data ?? [];

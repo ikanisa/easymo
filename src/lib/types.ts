@@ -7,7 +7,7 @@ import type { AgentKind } from "@easymo/commons";
 
 export type VehicleType = 'moto' | 'cab' | 'lifan' | 'truck' | 'others';
 
-export type AgentKind = 'broker' | 'support' | 'sales' | 'marketing';
+export type AgentKind = 'broker' | 'support' | 'sales' | 'marketing' | 'mobility';
 
 export interface AgentChatSession {
   id: string;
