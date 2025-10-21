@@ -190,3 +190,12 @@ export const NAV_ITEMS: NavItem[] = [
     group: "Baskets",
   },
 ];
+const AI_NAV_GROUP = "AI" as NavGroup;
+
+NAV_GROUPS.push(AI_NAV_GROUP);
+NAV_ITEMS.push({
+  label: "Chat Completions",
+  href: "/ai/chat-completions",
+  description: "Exercise OpenAI prompts and review response metadata",
+  group: AI_NAV_GROUP,
+});
