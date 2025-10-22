@@ -260,6 +260,36 @@ serve(async (req) => {
       let agentMetadata: Record<string, unknown> = {};
       const coreUrl = CONFIG.AGENT_CORE_URL?.replace(/\/$/, "");
       if (coreUrl) {
+        let historyMessages: Array<{ role: "user" | "assistant" | "system"; content: string }> = [];
+        try {
+          const history = await fetchHistory(session.id);
+          if (history?.messages) {
+            historyMessages = history.messages
+              .map((msg) => {
+                const role =
+                  msg.role === "agent"
+                    ? "assistant"
+                    : msg.role === "user" || msg.role === "system"
+                      ? msg.role
+                      : null;
+                if (!role) return null;
+                const payload = msg.payload as Record<string, unknown> | undefined;
+                const payloadText =
+                  typeof payload?.["text"] === "string"
+                    ? (payload["text"] as string)
+                    : undefined;
+                const content = payloadText ?? (typeof msg.text === "string" ? msg.text : null);
+                if (!content) return null;
+                return { role, content };
+              })
+              .filter((msg): msg is { role: "user" | "assistant" | "system"; content: string } => Boolean(msg));
+          }
+        } catch (err) {
+          console.error("agent-chat.history_for_core_failed", err);
+        }
+
+        historyMessages.push({ role: "user", content: result.data.message });
+
         try {
           const resp = await fetch(`${coreUrl}/respond`, {
             method: "POST",
@@ -272,8 +302,8 @@ serve(async (req) => {
             body: JSON.stringify({
               session_id: session.id,
               agent_kind: result.data.agent_kind,
-              message: result.data.message,
               profile_ref: result.data.profile_ref ?? null,
+              messages: historyMessages,
             }),
           });
           const coreJson = await resp.json().catch(() => ({}));
