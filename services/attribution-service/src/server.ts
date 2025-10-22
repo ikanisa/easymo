@@ -1,11 +1,18 @@
-import express, { type Express } from "express";
+import express, { type Express, type RequestHandler } from "express";
 import pinoHttp from "pino-http";
 import { z } from "zod";
 import { settings } from "./config";
 import { logger } from "./logger";
 import { PrismaService } from "@easymo/db";
 import { evaluateAttribution } from "./evaluator";
-import { createRateLimiter, expressRequestContext, expressServiceAuth } from "@easymo/commons";
+import {
+  createRateLimiter,
+  expressRequestContext,
+  expressServiceAuth,
+  getAttributionServiceRoutePath,
+  getAttributionServiceRouteRequiredScopes,
+  type AttributionServiceRouteKey,
+} from "@easymo/commons";
 
 const prisma = new PrismaService();
 
@@ -27,86 +34,106 @@ export function buildApp(deps: { prisma: PrismaService }): Express {
     );
   }
 
-  const requireAuth = (scopes: string[]) =>
-    expressServiceAuth({ audience: settings.auth.audience, requiredScopes: scopes });
-
-const EvaluateSchema = z.object({
-  quoteId: z.string().uuid().optional(),
-  timeboxDays: z.coerce.number().default(7),
-  referrals: z.array(z.any()).optional(),
-  events: z.array(z.any()).optional(),
-  persist: z.boolean().default(true)
-});
-
-  app.post("/attribution/evaluate", requireAuth(["attribution:write"]), async (req, res) => {
-    try {
-      const payload = EvaluateSchema.parse(req.body);
-      // Extract candidates from referrals/events
-      const { type, entityId } = evaluateAttribution({ referrals: payload.referrals, events: payload.events, timeboxDays: payload.timeboxDays });
-
-      // Persist to Quote if requested and quoteId provided
-      if (payload.persist && payload.quoteId) {
-      await deps.prisma.quote.update({
-        where: { id: payload.quoteId },
-        data: {
-          attributionType: type.toLowerCase() as any,
-          attributionEntityId: entityId,
-        },
-      });
+  const requireAuthForRoute = (route: AttributionServiceRouteKey): RequestHandler => {
+    const scopes = getAttributionServiceRouteRequiredScopes(route);
+    if (scopes.length === 0) {
+      return (_req, _res, next) => next();
     }
+    return expressServiceAuth({ audience: settings.auth.audience, requiredScopes: [...scopes] });
+  };
 
-    res.json({ attribution: { type, entityId, evaluatedAt: new Date().toISOString() } });
-  } catch (error) {
-    logger.error({ msg: "attribution.evaluate.error", error });
-    res.status(400).json({ error: (error as Error).message });
-  }
-});
+  const EvaluateSchema = z.object({
+    quoteId: z.string().uuid().optional(),
+    timeboxDays: z.coerce.number().default(7),
+    referrals: z.array(z.any()).optional(),
+    events: z.array(z.any()).optional(),
+    persist: z.boolean().default(true),
+  });
 
-const EvidenceSchema = z.object({
-  quoteId: z.string().uuid(),
-  artifacts: z.array(z.object({ kind: z.string(), ref: z.string().optional(), data: z.any().optional() })),
-});
+  app.post(
+    getAttributionServiceRoutePath("evaluate"),
+    requireAuthForRoute("evaluate"),
+    async (req, res) => {
+      try {
+        const payload = EvaluateSchema.parse(req.body);
 
-  app.post("/attribution/evidence", requireAuth(["attribution:write"]), async (req, res) => {
-    try {
-      const payload = EvidenceSchema.parse(req.body);
-    const created = await deps.prisma.attributionEvidence.create({
-      data: {
-        quoteId: payload.quoteId,
-        artifacts: payload.artifacts as any,
-      },
-    });
-    res.status(202).json({ stored: true, id: created.id, count: payload.artifacts.length });
-  } catch (error) {
-    logger.error({ msg: "attribution.evidence.error", error });
-    res.status(400).json({ error: (error as Error).message });
-  }
-});
+        const { type, entityId } = evaluateAttribution({
+          referrals: payload.referrals,
+          events: payload.events,
+          timeboxDays: payload.timeboxDays,
+        });
 
-const DisputeSchema = z.object({
-  quoteId: z.string().uuid(),
-  reason: z.string(),
-  actor: z.string(),
-});
+        if (payload.persist && payload.quoteId) {
+          await deps.prisma.quote.update({
+            where: { id: payload.quoteId },
+            data: {
+              attributionType: type.toLowerCase() as any,
+              attributionEntityId: entityId,
+            },
+          });
+        }
 
-  app.post("/attribution/disputes", requireAuth(["attribution:write"]), async (req, res) => {
-    try {
-      const payload = DisputeSchema.parse(req.body);
-    const dispute = await deps.prisma.dispute.create({
-      data: {
-        quoteId: payload.quoteId,
-        reason: payload.reason,
-        actor: payload.actor,
-      },
-    });
-    res.status(202).json({ disputeId: dispute.id, ...payload });
-  } catch (error) {
-    logger.error({ msg: "attribution.dispute.error", error });
-    res.status(400).json({ error: (error as Error).message });
-  }
-});
+        res.json({ attribution: { type, entityId, evaluatedAt: new Date().toISOString() } });
+      } catch (error) {
+        logger.error({ msg: "attribution.evaluate.error", error });
+        res.status(400).json({ error: (error as Error).message });
+      }
+    },
+  );
 
-  app.get("/health", (_req, res) => {
+  const EvidenceSchema = z.object({
+    quoteId: z.string().uuid(),
+    artifacts: z.array(z.object({ kind: z.string(), ref: z.string().optional(), data: z.any().optional() })),
+  });
+
+  app.post(
+    getAttributionServiceRoutePath("evidence"),
+    requireAuthForRoute("evidence"),
+    async (req, res) => {
+      try {
+        const payload = EvidenceSchema.parse(req.body);
+        const created = await deps.prisma.attributionEvidence.create({
+          data: {
+            quoteId: payload.quoteId,
+            artifacts: payload.artifacts as any,
+          },
+        });
+        res.status(202).json({ stored: true, id: created.id, count: payload.artifacts.length });
+      } catch (error) {
+        logger.error({ msg: "attribution.evidence.error", error });
+        res.status(400).json({ error: (error as Error).message });
+      }
+    },
+  );
+
+  const DisputeSchema = z.object({
+    quoteId: z.string().uuid(),
+    reason: z.string(),
+    actor: z.string(),
+  });
+
+  app.post(
+    getAttributionServiceRoutePath("disputes"),
+    requireAuthForRoute("disputes"),
+    async (req, res) => {
+      try {
+        const payload = DisputeSchema.parse(req.body);
+        const dispute = await deps.prisma.dispute.create({
+          data: {
+            quoteId: payload.quoteId,
+            reason: payload.reason,
+            actor: payload.actor,
+          },
+        });
+        res.status(202).json({ disputeId: dispute.id, ...payload });
+      } catch (error) {
+        logger.error({ msg: "attribution.dispute.error", error });
+        res.status(400).json({ error: (error as Error).message });
+      }
+    },
+  );
+
+  app.get(getAttributionServiceRoutePath("health"), (_req, res) => {
     res.json({ status: "ok" });
   });
 

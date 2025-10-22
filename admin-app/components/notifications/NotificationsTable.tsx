@@ -12,6 +12,7 @@ import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { Button } from "@/components/ui/Button";
 import { LoadMoreButton } from "@/components/ui/LoadMoreButton";
 import { PolicyBanner } from "@/components/ui/PolicyBanner";
+import { getAdminApiPath } from "@/lib/routes";
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
@@ -34,7 +35,7 @@ export function NotificationsTable({ initialData }: NotificationsTableProps) {
     if (statusFilter) {
       searchParams.set("status", statusFilter);
     }
-    return `/api/notifications?${searchParams.toString()}`;
+    return `${getAdminApiPath("notifications")}?${searchParams.toString()}`;
   };
 
   const {
@@ -109,7 +110,7 @@ export function NotificationsTable({ initialData }: NotificationsTableProps) {
       setFeedback(null);
       setPolicyNotice(null);
       try {
-        const response = await fetch(`/api/notifications/${id}`, {
+        const response = await fetch(getAdminApiPath("notifications", id), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ action }),

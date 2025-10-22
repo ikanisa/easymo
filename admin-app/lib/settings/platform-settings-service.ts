@@ -1,4 +1,5 @@
 import { apiFetch } from "@/lib/api/client";
+import { getAdminApiPath } from "@/lib/routes";
 
 export type PlatformSettingsIntegration = {
   status: "ok" | "degraded";
@@ -31,7 +32,7 @@ type PlatformSettingsSaveError = {
 };
 
 export async function fetchPlatformSettings(): Promise<PlatformSettingsResponse> {
-  const response = await apiFetch<PlatformSettingsResponse>("/api/settings", {
+  const response = await apiFetch<PlatformSettingsResponse>(getAdminApiPath("settings"), {
     cache: "no-store",
   });
 
@@ -60,7 +61,7 @@ export async function savePlatformSettings(
   payload: PlatformSettingsData,
 ): Promise<SavePlatformSettingsResult> {
   const response = await apiFetch<PlatformSettingsSaveSuccess>(
-    "/api/settings",
+    getAdminApiPath("settings"),
     {
       method: "POST",
       body: payload,

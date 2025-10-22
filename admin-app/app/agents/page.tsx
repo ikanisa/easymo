@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { getAdminApiPath } from "@/lib/routes";
 
 type JsonValue = unknown;
 
@@ -29,7 +30,7 @@ export default function AgentsPage() {
         .filter(Boolean),
       intentPayload: {},
     };
-    const res = await fetch("/api/ai/orchestrate", {
+    const res = await fetch(getAdminApiPath("ai", "orchestrate"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
@@ -46,7 +47,7 @@ export default function AgentsPage() {
       amount: Number(form.get("amount")),
       currency: String(form.get("currency")),
     };
-    const res = await fetch("/api/ai/settlement", {
+    const res = await fetch(getAdminApiPath("ai", "settlement"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
@@ -80,7 +81,7 @@ export default function AgentsPage() {
         })(),
       };
 
-      const res = await fetch("/api/ai/attribution", {
+      const res = await fetch(getAdminApiPath("ai", "attribution"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -110,7 +111,7 @@ export default function AgentsPage() {
       let binary = "";
       for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
       const base64 = typeof btoa === "function" ? btoa(binary) : Buffer.from(binary, "binary").toString("base64");
-      const res = await fetch("/api/ai/reconciliation", {
+      const res = await fetch(getAdminApiPath("ai", "reconciliation"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ fileBase64: base64 }),

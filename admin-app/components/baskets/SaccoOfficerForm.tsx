@@ -8,6 +8,7 @@ import {
   useSaccosQuery,
   basketsQueryKeys,
 } from "@/lib/queries/baskets";
+import { getAdminApiPath } from "@/lib/routes";
 import styles from "./SaccoOfficerForm.module.css";
 
 const SACCO_OPTIONS_PARAMS = { limit: 200, status: 'active' } as const;
@@ -49,10 +50,13 @@ export function SaccoOfficerForm({ onCreated }: SaccoOfficerFormProps) {
     const timeout = setTimeout(async () => {
       setIsSearching(true);
       try {
-        const response = await fetch(`/api/baskets/search/users?q=${encodeURIComponent(searchTerm)}&limit=8`, {
-          cache: 'no-store',
-          signal: controller.signal,
-        });
+        const response = await fetch(
+          `${getAdminApiPath("baskets", "search", "users")}?q=${encodeURIComponent(searchTerm)}&limit=8`,
+          {
+            cache: 'no-store',
+            signal: controller.signal,
+          },
+        );
         if (!response.ok) {
           setSuggestions([]);
           return;
@@ -91,7 +95,7 @@ export function SaccoOfficerForm({ onCreated }: SaccoOfficerFormProps) {
 
     setIsSubmitting(true);
     try {
-      const response = await fetch("/api/baskets/saccos/officers", {
+      const response = await fetch(getAdminApiPath("baskets", "saccos", "officers"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ saccoId, userId, role }),

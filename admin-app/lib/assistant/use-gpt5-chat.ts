@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from "react";
+import { getAdminApiPath } from "@/lib/routes";
 
 type ChatRole = "user" | "assistant";
 
@@ -32,7 +33,7 @@ type SendMessageOverrides = Partial<Omit<UseGpt5ChatOptions, "endpoint">> & {
 
 const ENV_GPT5_ENABLED = (process.env.NEXT_PUBLIC_GPT5_ENABLED ?? "false").toLowerCase() === "true";
 
-const DEFAULT_ENDPOINT = "/api/gpt5-chat";
+const DEFAULT_ENDPOINT = getAdminApiPath("gpt5-chat");
 
 export function useGpt5Chat(options: UseGpt5ChatOptions = {}) {
   const endpoint = options.endpoint ?? DEFAULT_ENDPOINT;

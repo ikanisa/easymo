@@ -5,6 +5,7 @@ import {
   marketplaceIntentSchema,
   marketplacePurchaseSchema,
 } from "@/lib/schemas";
+import { getAdminApiPath } from "@/lib/routes";
 
 const MARKETPLACE_KEY = ["marketplace", "summary"] as const;
 
@@ -20,7 +21,7 @@ const marketplaceResponseSchema = z.object({
 export type MarketplaceSummary = z.infer<typeof marketplaceResponseSchema>;
 
 export async function fetchMarketplaceSummary(): Promise<MarketplaceSummary> {
-  const response = await fetch("/api/marketplace", { cache: "no-store" });
+  const response = await fetch(getAdminApiPath("marketplace"), { cache: "no-store" });
   if (!response.ok) {
     throw new Error("Failed to load marketplace summary");
   }

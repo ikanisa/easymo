@@ -6,6 +6,7 @@ import {
   adminVoucherListSchema,
 } from "@/lib/schemas";
 import { mockAdminVoucherDetail, mockAdminVoucherList } from "@/lib/mock-data";
+import { getAdminApiPath } from "@/lib/routes";
 
 const useMocks = shouldUseMocks();
 
@@ -15,7 +16,7 @@ export async function getAdminVoucherRecent(): Promise<AdminVoucherList> {
   }
 
   try {
-    const response = await fetch("/api/admin/vouchers/recent", {
+    const response = await fetch(getAdminApiPath("admin", "vouchers", "recent"), {
       cache: "no-store",
     });
     if (!response.ok) {
@@ -45,7 +46,7 @@ export async function getAdminVoucherDetail(
   }
 
   try {
-    const response = await fetch(`/api/admin/vouchers/${voucherId}`, {
+    const response = await fetch(getAdminApiPath("admin", "vouchers", voucherId), {
       cache: "no-store",
     });
     if (!response.ok) {

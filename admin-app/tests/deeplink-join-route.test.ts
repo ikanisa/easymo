@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { getAdminApiUrl } from './utils/api';
 
 vi.mock('@/lib/server/supabase-admin', () => ({
   getSupabaseAdminClient: vi.fn(),
@@ -66,7 +67,7 @@ describe('deeplink join route', () => {
 
     const { GET } = await import('@/app/api/deeplink/join/route');
 
-    const response = await GET(new Request('http://localhost/api/deeplink/join?t=abc123'));
+    const response = await GET(new Request(getAdminApiUrl(['deeplink', 'join'], 't=abc123')));
     expect(response.status).toBe(200);
     const payload = await response.json();
     expect(payload).toMatchObject({
@@ -108,7 +109,7 @@ describe('deeplink join route', () => {
 
     const { GET } = await import('@/app/api/deeplink/join/route');
 
-    const response = await GET(new Request('http://localhost/api/deeplink/join?t=expired'));
+    const response = await GET(new Request(getAdminApiUrl(['deeplink', 'join'], 't=expired')));
     expect(response.status).toBe(410);
   });
 });

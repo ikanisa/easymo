@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
 import { leadSchema } from "@/lib/schemas";
+import { getAdminApiPath } from "@/lib/routes";
 
 const LEADS_KEY = ["leads"] as const;
 
@@ -24,7 +25,7 @@ export async function fetchLeads(search?: string) {
   const params = new URLSearchParams();
   if (search) params.set("search", search);
   const query = params.toString();
-  const response = await fetch(`/api/leads${query ? `?${query}` : ""}`, {
+  const response = await fetch(`${getAdminApiPath("leads")}${query ? `?${query}` : ""}`, {
     cache: "no-store",
   });
   if (!response.ok) {
@@ -52,7 +53,7 @@ export function useLeadUpdateMutation() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (payload: UpdateLeadInput) => {
-      const response = await fetch("/api/leads", {
+      const response = await fetch(getAdminApiPath("leads"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

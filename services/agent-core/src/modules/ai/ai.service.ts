@@ -2,6 +2,7 @@ import { Injectable, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import axios, { AxiosInstance } from "axios";
 import { OpenAI } from "openai";
+import { getApiEndpointPath } from "@easymo/commons";
 
 type AgentPersona = "broker" | "sales" | "marketing" | "cold_caller";
 type AgentSendResult = {
@@ -54,6 +55,7 @@ export class AiService {
   private readonly logger = new Logger(AiService.name);
   private readonly http: AxiosInstance;
   private readonly client: OpenAI | null;
+  private readonly agentWhatsappStartPath = getApiEndpointPath("whatsappAgents", "start");
 
   private buyerBase?: string;
   private vendorBase?: string;
@@ -113,7 +115,7 @@ export class AiService {
     if (this.agentApiBase) {
       try {
         const response = await this.http.post(
-          `${this.agentApiBase}/wa/agents/start`,
+          `${this.agentApiBase}${this.agentWhatsappStartPath}`,
           {
             msisdn,
             profile,

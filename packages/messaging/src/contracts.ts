@@ -29,10 +29,17 @@ export const webhookTopics = Object.freeze(
   controllerEntries.reduce((acc, [controller, definition]) => {
     type Controller = typeof controller;
     const endpoints = Object.keys(definition.endpoints) as Array<ControllerEndpoint<Controller>>;
-    acc[controller] = endpoints.map((endpoint) => ({
-      endpoint,
-      topic: getWebhookTopic(controller, endpoint),
-    }));
+    acc[controller] = endpoints
+      .filter((endpoint) => definition.endpoints[endpoint]?.method === "POST")
+      .map((endpoint) => ({
+        endpoint,
+        topic: getWebhookTopic(controller, endpoint),
+      }));
     return acc;
   }, {} as ControllerTopics),
 );
+
+export type WebhookTopicName = ControllerTopics[ApiControllerKey][number]["topic"];
+
+export const getWebhookTopicsForController = <Controller extends ApiControllerKey>(controller: Controller) =>
+  webhookTopics[controller];

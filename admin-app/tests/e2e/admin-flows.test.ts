@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { createAdminApiRequest, getAdminApiUrl } from './utils/api';
 
 vi.mock('@/lib/server/supabase-admin', () => ({
   getSupabaseAdminClient: vi.fn(),
@@ -132,7 +133,7 @@ describe('admin journeys', () => {
     });
 
     const { GET: listOrders } = await import('@/app/api/orders/route');
-    const ordersResponse = await listOrders(new Request('http://localhost/api/orders'));
+    const ordersResponse = await listOrders(createAdminApiRequest(['orders']));
     expect(ordersResponse.status).toBe(200);
     const ordersPayload = await ordersResponse.json();
     expect(ordersPayload.data).toHaveLength(1);
@@ -140,7 +141,7 @@ describe('admin journeys', () => {
     expect(ordersPayload.data[0].status).toBe('pending');
 
     const { GET: listEvents } = await import('@/app/api/orders/events/route');
-    const eventsResponse = await listEvents(new Request('http://localhost/api/orders/events'));
+    const eventsResponse = await listEvents(createAdminApiRequest(['orders', 'events']));
     expect(eventsResponse.status).toBe(200);
     const eventsPayload = await eventsResponse.json();
     expect(eventsPayload.data).toHaveLength(2);
@@ -171,7 +172,7 @@ describe('admin journeys', () => {
     );
 
     const { POST: retryNotifications } = await import('@/app/api/notifications/retry/route');
-    const response = await retryNotifications(new Request('http://localhost/api/notifications/retry', {
+    const response = await retryNotifications(createAdminApiRequest(['notifications', 'retry'], {
       method: 'POST',
       body: JSON.stringify({ ids: [notificationId] }),
     }));
@@ -210,7 +211,7 @@ describe('admin journeys', () => {
     });
 
     const { POST: retryNotifications } = await import('@/app/api/notifications/retry/route');
-    const response = await retryNotifications(new Request('http://localhost/api/notifications/retry', {
+    const response = await retryNotifications(createAdminApiRequest(['notifications', 'retry'], {
       method: 'POST',
       body: JSON.stringify({ ids: [notificationId] }),
     }));
@@ -258,7 +259,7 @@ describe('admin journeys', () => {
     });
 
     const { GET: listOcrJobs } = await import('@/app/api/ocr/jobs/route');
-    const response = await listOcrJobs(new Request('http://localhost/api/ocr/jobs?status=processing'));
+    const response = await listOcrJobs(new Request(getAdminApiUrl(['ocr', 'jobs'], 'status=processing')));
     expect(response.status).toBe(200);
     const payload = await response.json();
     expect(payload.data).toHaveLength(2);

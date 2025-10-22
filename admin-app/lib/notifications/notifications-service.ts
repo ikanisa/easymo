@@ -1,4 +1,5 @@
 import { apiFetch } from "@/lib/api/client";
+import { getAdminApiPath } from "@/lib/routes";
 import { shouldUseMocks } from "@/lib/runtime-config";
 import { mockNotifications } from "@/lib/mock-data";
 import type { NotificationOutbox } from "@/lib/schemas";
@@ -35,7 +36,9 @@ export async function listNotifications(
   }
 
   const query = searchParams.toString();
-  const url = query ? `/api/notifications?${query}` : "/api/notifications";
+  const url = query
+    ? `${getAdminApiPath("notifications")}?${query}`
+    : getAdminApiPath("notifications");
 
   const response = await apiFetch<{
     data: NotificationOutbox[];

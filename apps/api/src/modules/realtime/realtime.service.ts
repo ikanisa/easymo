@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { getApiEndpointPath } from '@easymo/commons';
 import { SupabaseService } from '../supabase/supabase.service';
 import { signJwt, verifyOpenAIWebhook } from '../../common/crypto';
 import { env } from '../../common/env';
@@ -171,7 +172,7 @@ export class RealtimeService {
         },
       ],
       sideband: {
-        url: `${env.baseUrl}/realtime/events`,
+        url: new URL(getApiEndpointPath('realtime', 'events'), env.baseUrl).toString(),
         bearer: await signJwt({ call_id: callRecord.id }, env.jwtSigningKey),
       },
     };

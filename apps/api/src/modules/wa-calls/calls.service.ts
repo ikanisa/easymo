@@ -30,9 +30,8 @@ export class WaCallsService {
   }
 
   async onEvents(body: WaCallEvent) {
-    const entries = body?.entry ?? [];
-    for (const entry of entries) {
-      for (const change of entry.changes ?? []) {
+    for (const entry of body.entry) {
+      for (const change of entry.changes) {
         const call = change.value?.call;
         if (!call) {
           continue;
