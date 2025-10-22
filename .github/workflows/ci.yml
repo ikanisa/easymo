@@ -59,6 +59,9 @@ jobs:
       - name: Deno unit tests (Supabase functions)
         run: deno test --no-check --allow-env --allow-read --allow-net supabase/functions/_shared supabase/functions/wa-webhook
 
+      - name: Deno unit tests (Agent chat)
+        run: deno test --allow-env supabase/functions/tests/agent-chat.test.ts
+
       - name: Build shared messaging package
         run: pnpm --filter @easymo/messaging build
 
