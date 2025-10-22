@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/ToastProvider";
+import { getAdminApiPath } from "@/lib/routes";
 import styles from "./SaccoOfficersTable.module.css";
 import {
   basketsQueryKeys,
@@ -29,7 +30,7 @@ export function SaccoOfficersTable({ params }: SaccoOfficersTableProps) {
 
   const removeMutation = useMutation({
     mutationFn: async (id: string) => {
-      const response = await fetch(`/api/baskets/saccos/officers/${id}`, {
+      const response = await fetch(getAdminApiPath("baskets", "saccos", "officers", id), {
         method: 'DELETE',
       });
       if (!response.ok) {

@@ -1,4 +1,5 @@
 import { apiFetch } from "@/lib/api/client";
+import { getAdminApiPath } from "@/lib/routes";
 import { shouldUseMocks } from "@/lib/runtime-config";
 import {
   mockOrderEvents,
@@ -56,7 +57,7 @@ export async function listLatestOrderEvents(
     return mockOrderEvents.slice(0, limit);
   }
 
-  const url = `/api/orders/events?limit=${limit}`;
+  const url = `${getAdminApiPath("orders", "events")}?limit=${limit}`;
   const response = await apiFetch<{ data: OrderEvent[] }>(url);
   if (response.ok) {
     return response.data.data;
@@ -73,7 +74,7 @@ export async function listLatestWebhookErrors(
     return mockWebhookErrors.slice(0, limit);
   }
 
-  const url = `/api/webhooks/errors?limit=${limit}`;
+  const url = `${getAdminApiPath("webhooks", "errors")}?limit=${limit}`;
   const response = await apiFetch<{ data: WebhookError[] }>(url);
   if (response.ok) {
     return response.data.data;
@@ -110,7 +111,7 @@ async function fetchOrdersApi(params: RequiredOrderParams) {
   if (params.search) searchParams.set("search", params.search);
 
   const response = await apiFetch<OrdersApiResponse>(
-    `/api/orders?${searchParams.toString()}`,
+    `${getAdminApiPath("orders")}?${searchParams.toString()}`,
   );
 
   if (response.ok) {

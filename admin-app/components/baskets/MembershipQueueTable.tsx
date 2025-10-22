@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/ToastProvider";
+import { getAdminApiPath } from "@/lib/routes";
 import {
   basketsQueryKeys,
   type BasketsQueryParams,
@@ -46,7 +47,7 @@ export function MembershipQueueTable({ params }: MembershipQueueTableProps) {
 
   const updateMutation = useMutation({
     mutationFn: async (input: { id: string; status: IbiminaMemberRow['status'] }) => {
-      const response = await fetch(`/api/baskets/memberships/${input.id}`, {
+      const response = await fetch(getAdminApiPath("baskets", "memberships", input.id), {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: input.status }),

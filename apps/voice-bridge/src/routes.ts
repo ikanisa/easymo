@@ -1,8 +1,13 @@
 export {
+  getVoiceBridgeHttpRouteMethod,
   getVoiceBridgeRouteKind,
   getVoiceBridgeRoutePath,
   voiceBridgeRoutes,
-}
-  from "@easymo/commons";
+} from "@easymo/commons";
 
-export type { VoiceBridgeRouteKey, VoiceBridgeRoutes } from "@easymo/commons";
+export type {
+  VoiceBridgeHttpRouteKey,
+  VoiceBridgeRouteKey,
+  VoiceBridgeRoutes,
+  VoiceBridgeWebsocketRouteKey,
+} from "@easymo/commons";

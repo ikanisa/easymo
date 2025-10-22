@@ -1,4 +1,5 @@
 import request from "supertest";
+import { getReconciliationServiceRoutePath } from "@easymo/commons";
 
 describe("reconciliation-service auth", () => {
   beforeEach(() => {
@@ -38,7 +39,7 @@ describe("reconciliation-service auth", () => {
   it("rejects missing token", async () => {
     const { app } = getApp();
     const response = await request(app)
-      .post("/reconciliation/mobile-money")
+      .post(getReconciliationServiceRoutePath("mobileMoney"))
       .attach("file", csvBuffer, { filename: "sample.csv" });
     expect(response.status).toBe(401);
     expect(response.body.error).toBe("missing_token");
@@ -48,7 +49,7 @@ describe("reconciliation-service auth", () => {
     const { app } = getApp();
     const token = await sign(["reconciliation:read"]);
     const response = await request(app)
-      .post("/reconciliation/mobile-money")
+      .post(getReconciliationServiceRoutePath("mobileMoney"))
       .set("Authorization", `Bearer ${token}`)
       .attach("file", csvBuffer, { filename: "sample.csv" });
     expect(response.status).toBe(403);
@@ -59,7 +60,7 @@ describe("reconciliation-service auth", () => {
     const { app, store, httpClient } = getApp();
     const token = await sign(["reconciliation:write"]);
     const response = await request(app)
-      .post("/reconciliation/mobile-money")
+      .post(getReconciliationServiceRoutePath("mobileMoney"))
       .set("Authorization", `Bearer ${token}`)
       .attach("file", csvBuffer, { filename: "sample.csv" });
     expect(response.status).toBe(202);

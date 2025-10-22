@@ -8,6 +8,7 @@ import { useToast } from "@/components/ui/ToastProvider";
 import styles from "./StorageTable.module.css";
 import { Button } from "@/components/ui/Button";
 import { LoadMoreButton } from "@/components/ui/LoadMoreButton";
+import { getAdminApiPath } from "@/lib/routes";
 
 interface StorageTableProps {
   data: StorageObject[];
@@ -22,7 +23,7 @@ export function StorageTable({ data, hasMore, onLoadMore, loadingMore }: Storage
   const handleSignedUrl = useCallback(async (object: StorageObject) => {
     try {
       const response = await fetch(
-        `/api/files/signed-url?bucket=${
+        `${getAdminApiPath("files", "signed-url")}?bucket=${
           encodeURIComponent(object.bucket)
         }&path=${encodeURIComponent(object.path)}`,
       );

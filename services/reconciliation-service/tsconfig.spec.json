@@ -10,7 +10,7 @@
     "baseUrl": "./",
     "paths": {
       "@easymo/commons": ["../../packages/commons/src/index.ts"],
-      "@easymo/messaging": ["../../packages/messaging/src/index.ts"],
+      "@easymo/messaging": ["./test/mocks/messaging.ts"],
       "*": ["*", "../../node_modules/.pnpm/node_modules/*", "../../node_modules/.pnpm/node_modules/@types/*", "../../node_modules/*"]
     }
   },
