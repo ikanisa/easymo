@@ -36,9 +36,9 @@ directly with Supabase Edge Functions and the database through the
 - **Environment Variables**: `.env.example` documents all required
   variables such as `VITE_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` and
   `EASYMO_ADMIN_TOKEN`.
-- **Vercel Configuration**: `vercel.json` rewrites API routes to the
-  corresponding edge functions and configures them to run on Vercel’s
-  Edge Runtime.
+- **Deployment Configuration**: Supabase edge functions drive API routing;
+  ensure your hosting environment forwards `/api/*` traffic to the Supabase
+  functions layer.
 
 ## Development Notes
 
@@ -51,7 +51,7 @@ directly with Supabase Edge Functions and the database through the
    `supabase db push` inside the `easymo` directory.  Then execute the
    seed file via `supabase db query < supabase/seeders/phase2_seed.sql`.
 5. Deploy edge functions via `supabase functions deploy --project-ref <ref>`,
-   or let Vercel handle deployment if configured.
+   then publish the updated build through your hosting provider.
 
 ## Testing
 

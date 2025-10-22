@@ -35,9 +35,9 @@ Vite React app and communicates with those Edge Functions through the
 - **Environment Variables**: `.env.example` documents all required
   variables such as `VITE_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` and
   `EASYMO_ADMIN_TOKEN`.
-- **Vercel Configuration**: `vercel.json` rewrites API routes to the
-  corresponding edge functions and configures them to run on Vercel’s
-  Edge Runtime.
+- **Deployment Configuration**: the admin APIs are exposed through Supabase
+  edge functions; ensure your hosting platform forwards `/api/*` requests to
+  the Supabase functions layer.
 
 ## Phase 4 & 5 Highlights
 
@@ -87,7 +87,7 @@ Vite React app and communicates with those Edge Functions through the
    (MoMo USSD / Revolut), opt-out flows, intent/quote ranking, and ledger
    invariants.
 8. Deploy Supabase edge functions via `supabase functions deploy --project-ref <ref>`,
-   or let Vercel handle deployment if configured.  Import the Grafana dashboards
+   then promote the updated container/image through your hosting platform. Import the Grafana dashboards
    in `dashboards/phase4/*.json` and provision Kafka topics per
    `infrastructure/kafka/topics.yaml` during staging cut-overs.
 

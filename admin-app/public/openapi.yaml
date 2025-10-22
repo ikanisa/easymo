@@ -3,7 +3,7 @@ info:
   title: Broker AI API
   version: 1.0.0
 servers:
-  - url: https://easymo.vercel.app
+  - url: https://admin.easymo.dev
     description: Vercel proxy with path prefixes
 paths:
   /api/buyer/intents:
