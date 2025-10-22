@@ -24,12 +24,9 @@ file_size_limit = 52428800
 port = 55317
 
 [auth]
-site_url = "https://easymo.vercel.app"
+site_url = "http://localhost:8080"
 additional_redirect_urls = [
-  "https://easymo.vercel.app",
-  "https://easymo-git-main.vercel.app",
-  "https://easymo-git-phase2-setup.vercel.app",
-  "http://localhost:5173",
-  "http://localhost:8080"
+  "http://localhost:8080",
+  "http://localhost:5173"
 ]
 jwt_expiry = 3600

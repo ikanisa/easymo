@@ -3,8 +3,8 @@ info:
   title: Broker AI API
   version: 1.0.0
 servers:
-  - url: https://easymo.vercel.app
-    description: Vercel proxy with path prefixes
+  - url: http://localhost:8080
+    description: Self-hosted proxy with path prefixes
 paths:
   /api/buyer/intents:
     post:

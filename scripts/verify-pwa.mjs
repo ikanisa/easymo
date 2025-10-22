@@ -10,7 +10,7 @@ const icon192Path = path.join(projectRoot, 'public', 'icons', 'icon-192.png');
 const icon512Path = path.join(projectRoot, 'public', 'icons', 'icon-512.png');
 const indexPath = path.join(projectRoot, 'index.html');
 const mainEntryPath = path.join(projectRoot, 'src', 'main.tsx');
-const docPath = path.join(projectRoot, 'docs', 'deployment', 'vercel-readiness.md');
+const docPath = path.join(projectRoot, 'docs', 'deployment', 'local-hosting-readiness.md');
 
 const checks = [];
 

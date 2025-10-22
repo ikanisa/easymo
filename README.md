@@ -32,12 +32,11 @@ Vite React app and communicates with those Edge Functions through the
 - **Seeding**: a development seed file (`supabase/seeders/phase2_seed.sql`)
   inserts example settings, profiles, driver presence rows, trips and
   subscriptions for local testing.
-- **Environment Variables**: `.env.example` now focuses on local hosting
-  values including `APP_ENV`, `PORT`, `NEXT_PUBLIC_SUPABASE_URL`,
-  `NEXT_PUBLIC_SUPABASE_ANON_KEY` and `SUPABASE_SERVICE_ROLE_KEY`.
-- **Vercel Configuration**: `vercel.json` rewrites API routes to the
-  corresponding edge functions and configures them to run on Vercel’s
-  Edge Runtime.
+- **Environment Variables**: `.env.example` documents all required
+  variables such as `VITE_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` and
+  `EASYMO_ADMIN_TOKEN`.  The app expects these values during local and
+  containerised deployments, so keep `.env` in sync with Supabase
+  secrets.
 
 ## Phase 4 & 5 Highlights
 
@@ -56,72 +55,6 @@ Vite React app and communicates with those Edge Functions through the
   payment helpers (MoMo USSD / Revolut), opt-out flows, and ranking logic. New
   Grafana-ready dashboards (`dashboards/phase4/*.json`) and Kafka topic manifests
   document the expanded footprint.
-
-## Local Setup (MacBook)
-
-1. Install prerequisites via Homebrew: `brew install node pnpm supabase/tap/supabase`,
-   then install local reverse proxy tooling by running `brew bundle --file=./Brewfile`
-   from within `infra/mac`.
-2. Clone this repository, then run `pnpm install` from the workspace root.
-3. Duplicate `.env.example` to `.env` (shared defaults) and `.env.local`
-   (Next.js-only overrides). Update every `CHANGEME_*` placeholder with your
-   Supabase project reference and credentials.
-4. Start Supabase locally with `supabase start` **or** configure the CLI to use
-   a remote project (`supabase link --project-ref <ref>`). See [docs/local-hosting.md](docs/local-hosting.md)
-   for the full workflow, including reverse proxy notes.
-5. Launch the admin app with `pnpm dev` (Next.js) or `pnpm start` after a build
-   to emulate the production bundle.
-
-## Environment Variables
-
-- `.env` holds settings shared by Node processes (Edge Functions, CLI tooling).
-- `.env.local` is read only by Next.js at runtime—keep it out of version control
-  to protect secrets during local development.
-- Required values:
-  - `APP_ENV` and `PORT` configure the admin runtime name and local port.
-  - `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` drive browser
-    calls to Supabase.
-  - `SUPABASE_SERVICE_ROLE_KEY` allows Edge Functions to bypass RLS; keep it on
-    the server side.
-  - `EASYMO_ADMIN_TOKEN` secures Supabase Edge Function routes.
-  - `ADMIN_SESSION_SECRET` must be at least 16 characters to encrypt cookies.
-- Optional helpers (`SUPABASE_DB_URL`, `DISPATCHER_FUNCTION_URL`, cron toggles,
-  etc.) remain in `.env.example` for services that need them.
-
-## Run Commands
-
-- Install deps: `pnpm install`
-- Local dev server with hot reload: `pnpm dev`
-- Production build: `pnpm build`
-- Serve the compiled build: `pnpm start`
-- Additional scripts for packages/services are documented in
-  `docs/local-hosting.md` and individual service READMEs.
-
-## Supabase Notes
-
-- Add `http://localhost:3000` (or whatever `PORT` you set) to **Auth → URL
-  configuration → Redirect URLs** and **API → Allowed CORS origins** in the
-  Supabase dashboard. Include your tunnel/proxy hostnames if you expose the app
-  beyond localhost.
-- When using the local Supabase stack, the CLI injects matching service role and
-  anon keys. For remote projects, create a `.env.local` using the dashboard’s
-  `Project API` tab.
-- Edge Functions expect the `EASYMO_ADMIN_TOKEN` header. Update the secret in
-  both Supabase (project secrets) and your `.env`/`.env.local` files.
-- The Supabase CLI stores credentials in `~/.config/supabase`. Run `supabase login`
-  before `supabase link` to manage multiple environments.
-
-## What Changed from Vercel
-
-- Removed `VERCEL_*` environment variables from `.env.example`; local hosting
-  now depends on explicit Supabase and runtime values instead of platform
-  defaults.
-- The deployment flow no longer assumes Vercel-provided URLs—configure
-  `NEXT_PUBLIC_APP_URL` (or rely on `localhost`) and update Supabase CORS origins
-  manually.
-- Added `.env.local` guidance plus [docs/local-hosting.md](docs/local-hosting.md)
-  for pnpm-based builds (`pnpm install`, `pnpm build`, `pnpm start`) and reverse
-  proxy placeholders to support self-hosting.
 
 ## Development Notes
 
@@ -152,9 +85,11 @@ Vite React app and communicates with those Edge Functions through the
    `pnpm --filter @easymo/agent-core test`.  Tests cover payment helpers
    (MoMo USSD / Revolut), opt-out flows, intent/quote ranking, and ledger
    invariants.
-8. Deploy Supabase edge functions via `supabase functions deploy --project-ref <ref>`,
-   or let Vercel handle deployment if configured.  Import the Grafana dashboards
-   in `dashboards/phase4/*.json` and provision Kafka topics per
+8. Deploy Supabase edge functions via `supabase functions deploy --project-ref <ref>`
+   and expose the admin panel through your chosen hosting provider (for
+   local rollouts we ship a Dockerfile and nginx site config under
+   `infrastructure/`).  Import the Grafana dashboards in
+   `dashboards/phase4/*.json` and provision Kafka topics per
    `infrastructure/kafka/topics.yaml` during staging cut-overs.
 
 ## Package Manager

@@ -1,6 +1,6 @@
 # easyMO Deployment Final Report Template
 
-Use this template to capture evidence that the GitHub → Supabase → Vercel pipeline has been executed successfully. Store the completed report in `docs/deployment/status/` with a date-based filename (e.g., `2025-10-07.md`).
+Use this template to capture evidence that the GitHub → Supabase → self-hosted pipeline has been executed successfully. Store the completed report in `docs/deployment/status/` with a date-based filename (e.g., `2025-10-07.md`).
 
 ## 1. Repository & Branch Protection
 - Repository URL:
@@ -22,7 +22,7 @@ Use this template to capture evidence that the GitHub → Supabase → Vercel pi
 - Edge Functions deployed (if any):
 - Smoke test evidence (command output / logs):
 
-## 4. Vercel
+## 4. Hosting Platform
 - Team / project URL:
 - Preview deployment URL + ID:
 - Production deployment URL + ID:
@@ -41,7 +41,7 @@ Use this template to capture evidence that the GitHub → Supabase → Vercel pi
 - [ ] Preview deployment validated with staging credentials
 
 ## 7. Rollback Preparedness
-- Last verified Vercel rollback point:
+- Last verified rollback point:
 - Git commit hash ready for revert:
 - Supabase backup / PITR reference:
 - Incident contacts notified of deployment:

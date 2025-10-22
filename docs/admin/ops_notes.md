@@ -13,7 +13,7 @@ accurate.
 - Action items:
   1. Decide whether to use a GitHub App or personal access token (Fine-grained
      PAT with read-only repo scope is sufficient).
-  2. Store the token in Vercel under `GITHUB_API_TOKEN` (or similar).
+  2. Store the token in the hosting secret store (`docker compose` env, Kubernetes secret, etc.) under `GITHUB_API_TOKEN` (or similar).
   3. Update the API tool backend to read the token and authenticate outbound
      requests.
   4. Test fetching a file via the tool and record the success in
