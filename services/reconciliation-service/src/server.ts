@@ -1,4 +1,4 @@
-import express from "express";
+import express, { type RequestHandler } from "express";
 import pinoHttp from "pino-http";
 import multer from "multer";
 import { parse } from "csv-parse/sync";
@@ -7,7 +7,14 @@ import axios, { type AxiosInstance } from "axios";
 import { settings } from "./config.js";
 import { logger } from "./logger.js";
 import { IdempotencyStore } from "@easymo/messaging";
-import { createRateLimiter, expressRequestContext, expressServiceAuth } from "@easymo/commons";
+import {
+  createRateLimiter,
+  expressRequestContext,
+  expressServiceAuth,
+  getReconciliationServiceRoutePath,
+  getReconciliationServiceRouteRequiredScopes,
+  type ReconciliationServiceRouteKey,
+} from "@easymo/commons";
 
 const upload = multer();
 
@@ -45,8 +52,13 @@ function processCsv(buffer: Buffer): CsvResult[] {
 export function buildApp({ store, httpClient }: Deps) {
   const app = express();
   const client = httpClient ?? axios;
-  const requireAuth = (scopes: string[]) =>
-    expressServiceAuth({ audience: settings.auth.audience, requiredScopes: scopes });
+  const requireAuthForRoute = (route: ReconciliationServiceRouteKey): RequestHandler => {
+    const scopes = getReconciliationServiceRouteRequiredScopes(route);
+    if (scopes.length === 0) {
+      return (_req, _res, next) => next();
+    }
+    return expressServiceAuth({ audience: settings.auth.audience, requiredScopes: [...scopes] });
+  };
 
   app.use(express.json({ limit: "2mb" }));
   app.use(expressRequestContext({ generateIfMissing: true }));
@@ -64,78 +76,94 @@ export function buildApp({ store, httpClient }: Deps) {
     );
   }
 
-  app.post("/reconciliation/mobile-money", requireAuth(["reconciliation:write"]), upload.single("file"), async (req, res) => {
-    try {
-      let buffer: Buffer | null = null;
-      if (req.file) {
-        buffer = req.file.buffer;
-      } else if (req.is("application/json")) {
-        const payload = AcceptJsonSchema.parse(req.body);
-        buffer = Buffer.from(payload.file, "base64");
-      }
-      if (!buffer) return res.status(400).json({ error: "CSV file is required" });
+  app.post(
+    getReconciliationServiceRoutePath("mobileMoney"),
+    requireAuthForRoute("mobileMoney"),
+    upload.single("file"),
+    async (req, res) => {
+      try {
+        let buffer: Buffer | null = null;
+        if (req.file) {
+          buffer = req.file.buffer;
+        } else if (req.is("application/json")) {
+          const payload = AcceptJsonSchema.parse(req.body);
+          buffer = Buffer.from(payload.file, "base64");
+        }
+        if (!buffer) {
+          return res.status(400).json({ error: "CSV file is required" });
+        }
 
-      const items = processCsv(buffer);
-      let credited = 0;
-      let manual = 0;
-      for (const item of items) {
-        if (item.status === "credit") {
-          let destAccountId: string | undefined;
-          const uuidMatch = /WALLET:([0-9a-fA-F-]{36})/.exec(item.narration);
-          if (uuidMatch) {
-            destAccountId = uuidMatch[1];
-          } else {
-            const codeMatch = /WALLET:(VENDOR|AGENT|ENDORSER)-([A-Za-z0-9_-]+)/i.exec(item.narration);
-            if (codeMatch) {
-              const ownerType = codeMatch[1].toLowerCase();
-              const ownerId = codeMatch[2];
-              try {
-                const resp = await client.get(`${settings.walletServiceUrl}/wallet/accounts/lookup`, {
-                  params: { tenantId: settings.defaultTenantId, ownerType, ownerId, currency: item.currency },
-                  timeout: 5000,
-                });
-                destAccountId = resp.data?.id;
-              } catch (err) {
-                logger.warn({ msg: "reconciliation.lookup.failed", ownerType, ownerId, error: err });
+        const items = processCsv(buffer);
+        let credited = 0;
+        let manual = 0;
+        for (const item of items) {
+          if (item.status === "credit") {
+            let destAccountId: string | undefined;
+            const uuidMatch = /WALLET:([0-9a-fA-F-]{36})/.exec(item.narration);
+            if (uuidMatch) {
+              destAccountId = uuidMatch[1];
+            } else {
+              const codeMatch = /WALLET:(VENDOR|AGENT|ENDORSER)-([A-Za-z0-9_-]+)/i.exec(item.narration);
+              if (codeMatch) {
+                const ownerType = codeMatch[1].toLowerCase();
+                const ownerId = codeMatch[2];
+                try {
+                  const resp = await client.get(`${settings.walletServiceUrl}/wallet/accounts/lookup`, {
+                    params: {
+                      tenantId: settings.defaultTenantId,
+                      ownerType,
+                      ownerId,
+                      currency: item.currency,
+                    },
+                    timeout: 5000,
+                  });
+                  destAccountId = resp.data?.id;
+                } catch (err) {
+                  logger.warn({ msg: "reconciliation.lookup.failed", ownerType, ownerId, error: err });
+                }
               }
             }
-          }
-          if (!destAccountId) {
+            if (!destAccountId) {
+              manual++;
+              continue;
+            }
+            const key = `csv:${item.reference}`;
+            try {
+              await store.execute(key, async () => {
+                await client.post(
+                  `${settings.walletServiceUrl}/wallet/transfer`,
+                  {
+                    tenantId: settings.defaultTenantId,
+                    sourceAccountId: settings.reconSourceAccountId,
+                    destinationAccountId: destAccountId,
+                    amount: item.amount,
+                    currency: item.currency,
+                    product: "topup",
+                    reference: item.reference,
+                    metadata: { narration: item.narration },
+                  },
+                  { timeout: 8000 },
+                );
+                return {};
+              });
+              credited++;
+            } catch (err) {
+              logger.warn({ msg: "reconciliation.credit.failed", reference: item.reference, error: err });
+              manual++;
+            }
+          } else {
             manual++;
-            continue;
           }
-          const key = `csv:${item.reference}`;
-          try {
-            await store.execute(key, async () => {
-              await client.post(`${settings.walletServiceUrl}/wallet/transfer`, {
-                tenantId: settings.defaultTenantId,
-                sourceAccountId: settings.reconSourceAccountId,
-                destinationAccountId: destAccountId,
-                amount: item.amount,
-                currency: item.currency,
-                product: "topup",
-                reference: item.reference,
-                metadata: { narration: item.narration },
-              }, { timeout: 8000 });
-              return {};
-            });
-            credited++;
-          } catch (err) {
-            logger.warn({ msg: "reconciliation.credit.failed", reference: item.reference, error: err });
-            manual++;
-          }
-        } else {
-          manual++;
         }
+        res.status(202).json({ accepted: true, total: items.length, credited, manual });
+      } catch (error) {
+        logger.error({ msg: "reconciliation.parse.error", error });
+        res.status(400).json({ error: (error as Error).message });
       }
-      res.status(202).json({ accepted: true, total: items.length, credited, manual });
-    } catch (error) {
-      logger.error({ msg: "reconciliation.parse.error", error });
-      res.status(400).json({ error: (error as Error).message });
-    }
-  });
+    },
+  );
 
-  app.get("/health", (_req, res) => {
+  app.get(getReconciliationServiceRoutePath("health"), (_req, res) => {
     res.json({ status: "ok" });
   });
 

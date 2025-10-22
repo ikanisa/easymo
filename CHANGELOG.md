@@ -2,6 +2,19 @@
 
 All notable changes to this repository are documented here.
 
+## 2025-10-22 – WhatsApp calling API alignment
+
+- Added `waCalls` controller metadata to `@easymo/commons` so helper utilities resolve `/wa/webhook` (GET) and `/wa/events` (POST).
+- Published reusable WhatsApp calling event schema + parser under `@va/shared/wa-calls`.
+- Updated Nest controller to rely on shared helpers and validate incoming call events.
+- Filtered webhook messaging topics to POST-only endpoints to avoid emitting verification paths.
+- Documentation now references the `/wa/events` route for realtime call updates.
+
+Migration notes
+- Update any outbound integrations to post call events to `POST /wa/events` and consume the `webhooks.waCalls.events` topic.
+- If you ingest WhatsApp call events, switch to `parseWaCallEvent` (from `@va/shared/wa-calls`) for validation before invoking business logic.
+- Regenerate service endpoint caches/seeds if you mirror `ServiceEndpointRecord` data — new entries exist for the `waCalls` controller.
+
 ## 2025-10-21 – Supabase consolidation
 
 - Breaking: Consolidated duplicate Supabase trees. The canonical tree is now `supabase/`.

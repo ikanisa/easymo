@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { shouldUseMocks } from "@/lib/runtime-config";
+import { getAdminApiPath } from "@/lib/routes";
 import { callAdminFunction } from "@/lib/server/functions-client";
 import { mockUsers } from "@/lib/mock-data";
 import { type User, userSchema } from "@/lib/schemas";
@@ -38,7 +39,7 @@ export async function listUsers(
       searchParams.set("limit", String(params.limit));
     }
 
-    const response = await fetch(`/api/users?${searchParams.toString()}`, {
+    const response = await fetch(`${getAdminApiPath("users")}?${searchParams.toString()}`, {
       cache: "no-store",
     });
     if (!response.ok) {

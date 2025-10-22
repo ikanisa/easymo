@@ -1,5 +1,6 @@
 "use client";
 import { useState } from 'react';
+import { getAdminApiRoutePath } from "@/lib/routes";
 
 export default function WalletTopupPage() {
   const [tenantId, setTenantId] = useState("");
@@ -15,7 +16,10 @@ export default function WalletTopupPage() {
     setStatus(null);
     setFx(null);
     try {
-      const res = await fetch(`/api/fx/convert?amount=${encodeURIComponent(amount)}&currency=${encodeURIComponent(currency)}`);
+      const convertUrl = getAdminApiRoutePath("fxConvert");
+      const res = await fetch(
+        `${convertUrl}?amount=${encodeURIComponent(amount)}&currency=${encodeURIComponent(currency)}`,
+      );
       const json = await res.json();
       if (res.ok) setFx(json);
       else setStatus(`FX failed: ${json.error || res.status}`);
@@ -27,7 +31,7 @@ export default function WalletTopupPage() {
   async function provisionPlatform(e: React.FormEvent) {
     e.preventDefault();
     setStatus(null);
-    const res = await fetch('/api/wallet/platform/provision', {
+    const res = await fetch(getAdminApiRoutePath("walletPlatformProvision"), {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ tenantId }),
     });
@@ -43,7 +47,7 @@ export default function WalletTopupPage() {
     setStatus(null);
     if (!platformAccount) { setStatus('Provision platform wallet first.'); return; }
     if (!fx?.tokens) { setStatus('Fetch FX first.'); return; }
-    const res = await fetch('/api/wallet/transfer', {
+    const res = await fetch(getAdminApiRoutePath("walletTransfer"), {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         tenantId,

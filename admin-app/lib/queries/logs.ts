@@ -1,5 +1,6 @@
 import { QueryKey, useQuery, UseQueryOptions } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api/client";
+import { getAdminApiPath } from "@/lib/routes";
 
 export interface LogsPayload {
   audit: Array<{
@@ -37,7 +38,7 @@ export interface LogsPayload {
 const LOGS_KEY: QueryKey = ["logs"];
 
 export async function fetchLogs(): Promise<LogsPayload> {
-  const response = await apiFetch<LogsPayload>("/api/logs", {
+  const response = await apiFetch<LogsPayload>(getAdminApiPath("logs"), {
     method: "GET",
     revalidate: 30,
   });

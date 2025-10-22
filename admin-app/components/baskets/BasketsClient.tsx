@@ -11,7 +11,7 @@ import {
   useIbiminaQuery,
   type BasketsQueryParams,
 } from "@/lib/queries/baskets";
-import { adminRoutePaths, type NavigableAdminRouteKey } from "@/lib/routes";
+import { adminRoutePaths, toAdminRoute, type NavigableAdminRouteKey } from "@/lib/routes";
 
 type BasketsClientProps = {
   saccoParams: BasketsQueryParams;
@@ -58,7 +58,7 @@ export function BasketsClient({ saccoParams, ibiminaParams }: BasketsClientProps
         actions={[
           <Link
             key="view-all"
-            href={adminRoutePaths.panelBasketsSaccoBranches}
+            href={toAdminRoute(adminRoutePaths.panelBasketsSaccoBranches)}
             className="text-sm font-medium text-primary hover:underline"
           >
             View all
@@ -103,7 +103,7 @@ export function BasketsClient({ saccoParams, ibiminaParams }: BasketsClientProps
         actions={[
           <Link
             key="view-ibimina"
-            href={adminRoutePaths.panelBasketsIbimina}
+            href={toAdminRoute(adminRoutePaths.panelBasketsIbimina)}
             className="text-sm font-medium text-primary hover:underline"
           >
             Inspect registry
@@ -158,7 +158,7 @@ export function BasketsClient({ saccoParams, ibiminaParams }: BasketsClientProps
             <li key={link.route}>
               <Link
                 className="block rounded-lg border border-dashed border-foreground/20 px-4 py-3 text-sm font-medium hover:border-primary hover:bg-primary/5"
-                href={adminRoutePaths[link.route]}
+                href={toAdminRoute(adminRoutePaths[link.route])}
               >
                 {link.label}
               </Link>

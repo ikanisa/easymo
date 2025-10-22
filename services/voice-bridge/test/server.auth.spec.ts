@@ -1,5 +1,6 @@
 import request from "supertest";
 import type { CallListInstanceCreateOptions } from "twilio/lib/rest/api/v2010/account/call";
+import { getVoiceBridgeRoutePath } from "@easymo/commons";
 
 const twilioCreateMock = jest.fn<Promise<{ sid: string }>, [CallListInstanceCreateOptions]>();
 
@@ -22,7 +23,7 @@ jest.mock("@easymo/messaging", () => ({
 }));
 
 describe("voice-bridge authentication", () => {
-beforeEach(() => {
+  beforeEach(() => {
     jest.clearAllMocks();
     jest.resetModules();
     process.env.NODE_ENV = "test";
@@ -62,7 +63,7 @@ beforeEach(() => {
 
   it("rejects missing token", async () => {
     const app = getApp();
-    const response = await request(app).get("/analytics/live-calls");
+    const response = await request(app).get(getVoiceBridgeRoutePath("analyticsLiveCalls"));
     expect(response.status).toBe(401);
     expect(response.body.error).toBe("missing_token");
   });
@@ -71,7 +72,7 @@ beforeEach(() => {
     const app = getApp();
     const token = await sign(["voice:outbound.write"]);
     const response = await request(app)
-      .get("/analytics/live-calls")
+      .get(getVoiceBridgeRoutePath("analyticsLiveCalls"))
       .set("Authorization", `Bearer ${token}`);
     expect(response.status).toBe(403);
     expect(response.body.error).toBe("invalid_scope");
@@ -81,7 +82,7 @@ beforeEach(() => {
     const app = getApp();
     const token = await sign(["voice:read"]);
     const response = await request(app)
-      .get("/analytics/live-calls")
+      .get(getVoiceBridgeRoutePath("analyticsLiveCalls"))
       .set("Authorization", `Bearer ${token}`);
     expect(response.status).toBe(200);
   });
@@ -90,7 +91,7 @@ beforeEach(() => {
     const app = getApp();
     const token = await sign(["voice:outbound.write"]);
     const response = await request(app)
-      .post("/calls/outbound")
+      .post(getVoiceBridgeRoutePath("callsOutbound"))
       .set("Authorization", `Bearer ${token}`)
       .send({
         to: "+14155552671",

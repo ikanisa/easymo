@@ -2,6 +2,7 @@ import { z } from "zod";
 import { shouldUseMocks } from "@/lib/runtime-config";
 import { mockCampaigns } from "@/lib/mock-data";
 import { type Campaign, campaignSchema } from "@/lib/schemas";
+import { getAdminApiPath } from "@/lib/routes";
 import {
   paginateArray,
   type PaginatedResult,
@@ -29,7 +30,7 @@ export async function listCampaigns(
       }
 
       const response = await fetch(
-        `/api/campaigns?${searchParams.toString()}`,
+        `${getAdminApiPath("campaigns")}?${searchParams.toString()}`,
         {
           cache: "no-store",
         },

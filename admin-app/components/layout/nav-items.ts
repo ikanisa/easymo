@@ -1,4 +1,9 @@
-import { adminRoutePaths, type NavigableAdminRouteKey } from "@/lib/routes";
+import {
+  adminRoutePaths,
+  toAdminRoute,
+  type AdminNavigableRoute,
+  type NavigableAdminRouteKey,
+} from "@/lib/routes";
 
 export type NavGroup =
   | "Overview"
@@ -202,10 +207,10 @@ const NAV_ITEM_DEFINITIONS = [
 ] as const satisfies ReadonlyArray<NavItemDefinition>;
 
 export type NavItem = (typeof NAV_ITEM_DEFINITIONS)[number] & {
-  href: string;
+  href: AdminNavigableRoute;
 };
 
 export const NAV_ITEMS: NavItem[] = NAV_ITEM_DEFINITIONS.map((definition) => ({
   ...definition,
-  href: adminRoutePaths[definition.route],
+  href: toAdminRoute(adminRoutePaths[definition.route]),
 }));

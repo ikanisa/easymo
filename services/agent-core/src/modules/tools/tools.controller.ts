@@ -6,7 +6,12 @@ import { AgentCtx } from "../../common/decorators/agent.decorator.js";
 import { RequirePermissions } from "../../common/decorators/permissions.decorator.js";
 import { RequireFeatureFlag } from "../../common/decorators/feature-flag.decorator.js";
 import { FeatureFlagGuard } from "../../common/guards/feature-flag.guard.js";
-import type { AgentContext } from "@easymo/commons";
+import {
+  getAgentCoreControllerBasePath,
+  getAgentCoreRoutePermissions,
+  getAgentCoreRouteSegment,
+  type AgentContext,
+} from "@easymo/commons";
 import { CallDirection, CallPlatform } from "@prisma/client";
 
 const fetchLeadSchema = z.object({
@@ -57,7 +62,7 @@ const listLeadsQuerySchema = z.object({
   limit: z.coerce.number().min(1).max(200).default(50),
 });
 
-@Controller("tools")
+@Controller(getAgentCoreControllerBasePath("tools"))
 @UseGuards(ServiceAuthGuard, FeatureFlagGuard)
 export class ToolsController {
   constructor(private readonly service: ToolsService) {}
@@ -68,8 +73,8 @@ export class ToolsController {
     }
   }
 
-  @Get("leads")
-  @RequirePermissions("lead.read")
+  @Get(getAgentCoreRouteSegment("toolsListLeads"))
+  @RequirePermissions(...getAgentCoreRoutePermissions("toolsListLeads"))
   async listLeads(
     @AgentCtx() agent: AgentContext,
     @Query() rawQuery: Record<string, string>,
@@ -87,16 +92,16 @@ export class ToolsController {
     });
   }
 
-  @Post("fetch-lead")
-  @RequirePermissions("lead.read")
+  @Post(getAgentCoreRouteSegment("toolsFetchLead"))
+  @RequirePermissions(...getAgentCoreRoutePermissions("toolsFetchLead"))
   async fetchLead(@AgentCtx() agent: AgentContext, @Body() body: unknown) {
     const payload = fetchLeadSchema.parse(body);
     this.assertTenant(agent, payload.tenantId);
     return await this.service.fetchLead(agent, { phone: payload.phone });
   }
 
-  @Post("log-lead")
-  @RequirePermissions("lead.write")
+  @Post(getAgentCoreRouteSegment("toolsLogLead"))
+  @RequirePermissions(...getAgentCoreRoutePermissions("toolsLogLead"))
   async logLead(@AgentCtx() agent: AgentContext, @Body() body: unknown) {
     const payload = logLeadSchema.parse(body);
     this.assertTenant(agent, payload.tenantId);
@@ -108,8 +113,8 @@ export class ToolsController {
     });
   }
 
-  @Post("create-call")
-  @RequirePermissions("call.write")
+  @Post(getAgentCoreRouteSegment("toolsCreateCall"))
+  @RequirePermissions(...getAgentCoreRoutePermissions("toolsCreateCall"))
   async createCall(@AgentCtx() agent: AgentContext, @Body() body: unknown) {
     const payload = createCallSchema.parse(body);
     this.assertTenant(agent, payload.tenantId);
@@ -121,8 +126,8 @@ export class ToolsController {
     });
   }
 
-  @Post("set-disposition")
-  @RequirePermissions("disposition.write")
+  @Post(getAgentCoreRouteSegment("toolsSetDisposition"))
+  @RequirePermissions(...getAgentCoreRoutePermissions("toolsSetDisposition"))
   async setDisposition(@AgentCtx() agent: AgentContext, @Body() body: unknown) {
     const payload = setDispositionSchema.parse(body);
     return await this.service.setDisposition(agent, {
@@ -132,8 +137,8 @@ export class ToolsController {
     });
   }
 
-  @Post("register-opt-out")
-  @RequirePermissions("lead.optOut")
+  @Post(getAgentCoreRouteSegment("toolsRegisterOptOut"))
+  @RequirePermissions(...getAgentCoreRoutePermissions("toolsRegisterOptOut"))
   async registerOptOut(@AgentCtx() agent: AgentContext, @Body() body: unknown) {
     const payload = registerOptOutSchema.parse(body);
     return await this.service.registerOptOut(agent, {
@@ -142,8 +147,8 @@ export class ToolsController {
     });
   }
 
-  @Post("collect-payment")
-  @RequirePermissions("payment.collect")
+  @Post(getAgentCoreRouteSegment("toolsCollectPayment"))
+  @RequirePermissions(...getAgentCoreRoutePermissions("toolsCollectPayment"))
   @RequireFeatureFlag("agent.collectPayment")
   async collectPayment(@AgentCtx() agent: AgentContext, @Body() body: unknown) {
     const payload = collectPaymentSchema.parse(body);
@@ -154,8 +159,8 @@ export class ToolsController {
     });
   }
 
-  @Post("warm-transfer")
-  @RequirePermissions("call.transfer")
+  @Post(getAgentCoreRouteSegment("toolsWarmTransfer"))
+  @RequirePermissions(...getAgentCoreRoutePermissions("toolsWarmTransfer"))
   @RequireFeatureFlag("agent.warmTransfer")
   async warmTransfer(@AgentCtx() agent: AgentContext, @Body() body: unknown) {
     const payload = warmTransferSchema.parse(body);

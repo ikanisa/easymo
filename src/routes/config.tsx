@@ -101,6 +101,7 @@ const routeLoaderMap = {
   baskets: () => import("@/pages/Baskets"),
   marketplace: () => import("@/pages/Marketplace"),
   operations: () => import("@/pages/Operations"),
+  voiceOps: () => import("@/pages/VoiceOps"),
   realtime: () => import("@/pages/Realtime"),
   developer: () => import("@/pages/Developer"),
   agentPatterns: () => import("@/pages/AgentPatterns"),

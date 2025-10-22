@@ -9,7 +9,9 @@
   ],
   "scripts": {
     "build": "pnpm exec tsc -p tsconfig.json",
-    "lint": "eslint \"src/**/*.ts\""
+    "lint": "eslint \"src/**/*.ts\"",
+    "type-check": "tsc -p tsconfig.json --noEmit",
+    "test": "jest"
   },
   "dependencies": {
     "@easymo/commons": "workspace:*",

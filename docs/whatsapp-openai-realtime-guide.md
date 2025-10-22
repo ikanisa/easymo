@@ -64,7 +64,7 @@ OpenAI Realtime (gpt-5-realtime-preview) ←→ Responses API (gpt-5, tools)
 ## 5. Webhook Handling
 
 - **GET `/wa/webhook`**: Echo `hub.challenge` after verifying `hub.verify_token`.
-- **POST `/wa/webhook`**:
+- **POST `/wa/events`**:
   - Parse entries and filter for calling events.
   - Verify `X-Hub-Signature-256` via HMAC SHA-256 with `WA_APP_SECRET`.
   - On SDP offer/answer events, invoke mediasoup/Janus helpers to create/consume transports.

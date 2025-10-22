@@ -6,6 +6,6 @@ module.exports = {
   transform: { '^.+\\.(ts|tsx)$': ['ts-jest', { tsconfig: '<rootDir>/tsconfig.spec.json' }] },
   moduleNameMapper: {
     '^@easymo/commons$': '<rootDir>/../../packages/commons/src/index.ts',
-    '^@easymo/db$': '<rootDir>/../../packages/db/src/index.ts',
+    '^@easymo/db$': '<rootDir>/test/mocks/db.ts',
   },
 };
