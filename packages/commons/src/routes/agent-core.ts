@@ -70,6 +70,7 @@ const controllerDefinitions = defineHttpControllers({
 export type AgentCoreRoutes = typeof controllerDefinitions;
 export type AgentCoreControllerKey = keyof AgentCoreRoutes;
 export type AgentCoreEndpointKey<Controller extends AgentCoreControllerKey> = keyof AgentCoreRoutes[Controller]["endpoints"];
+export type AgentCoreRouteKey = AgentCoreEndpointKey<"chat">;
 
 export const agentCoreRoutes = controllerDefinitions;
 
