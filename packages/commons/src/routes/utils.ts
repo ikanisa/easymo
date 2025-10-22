@@ -16,13 +16,38 @@ export type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 export type EndpointDefinition = {
   method: HttpMethod;
   segment: string;
+  description?: string;
+  notes?: string;
 };
 
 export type ControllerDefinition<Endpoints extends Record<string, EndpointDefinition>> = {
   basePath: string;
   endpoints: Endpoints;
+  description?: string;
 };
 
 export const defineHttpControllers = <
   Controllers extends Record<string, ControllerDefinition<Record<string, EndpointDefinition>>>
 >(controllers: Controllers) => Object.freeze(controllers);
+
+export type WebSocketRouteDefinition = {
+  path: string;
+  protocols?: ReadonlyArray<string>;
+  description?: string;
+  notes?: string;
+};
+
+export const defineWebSocketRoutes = <Routes extends Record<string, WebSocketRouteDefinition>>(routes: Routes) =>
+  Object.freeze(routes);
+
+export type KafkaBackgroundTrigger = {
+  kind: "kafka";
+  topic: string;
+  role: "consumer" | "producer";
+  description?: string;
+};
+
+export type BackgroundTriggerDefinition = KafkaBackgroundTrigger;
+
+export const defineBackgroundTriggers = <Triggers extends Record<string, BackgroundTriggerDefinition>>(triggers: Triggers) =>
+  Object.freeze(triggers);
