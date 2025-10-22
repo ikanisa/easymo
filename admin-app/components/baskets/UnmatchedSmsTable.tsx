@@ -176,15 +176,16 @@ export function UnmatchedSmsTable({ params }: UnmatchedSmsTableProps) {
             }
             try {
               const response = await fetch(
-                getAdminApiPath("baskets", "momo", "unmatched", allocatingId, "allocate"),
+                getAdminApiPath('baskets', 'momo', 'unmatched', allocatingId, 'allocate'),
                 {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  memberId: allocationMemberId,
-                  notes: allocationNotes || undefined,
-                }),
-              },
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    memberId: allocationMemberId,
+                    notes: allocationNotes || undefined,
+                  }),
+                },
+              );
               if (!response.ok) {
                 const data = await response.json().catch(() => null);
                 pushToast(data?.message ?? 'Failed to allocate contribution.', 'error');
