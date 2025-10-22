@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import type { AdminHubSections } from "@/lib/schemas";
-import { adminRoutePaths, type NavigableAdminRouteKey } from "@/lib/routes";
+import { adminRoutePaths, toAdminRoute, type NavigableAdminRouteKey } from "@/lib/routes";
 
 const SECTION_LINKS: Record<
   string,
@@ -111,7 +111,7 @@ function SectionGroup({
                 </div>
                 {meta?.route && (
                   <Link
-                    href={adminRoutePaths[meta.route]}
+                    href={toAdminRoute(adminRoutePaths[meta.route])}
                     className="text-xs font-semibold text-primary hover:underline"
                   >
                     Open

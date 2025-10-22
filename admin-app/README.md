@@ -56,7 +56,7 @@ The admin panel assumes every deployment targets the Supabase project
 | --- | --- |
 | `NEXT_PUBLIC_SUPABASE_URL` / `VITE_SUPABASE_URL` | Should equal `https://lhbowpbcpwoiparwnwgt.supabase.co`. |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` / `VITE_SUPABASE_ANON_KEY` | Browser-safe anonymous key for client fetches. |
-| `SUPABASE_SERVICE_ROLE_KEY` / `VITE_SUPABASE_SERVICE_ROLE_KEY` | Service-role key used exclusively on the server. Never expose to browsers. |
+| `SUPABASE_SERVICE_ROLE_KEY` / `SERVICE_ROLE_KEY` | Service-role key used exclusively on the server. Never expose to browsers. |
 | `VITE_ADMIN_TOKEN` / `ADMIN_TOKEN` / `EASYMO_ADMIN_TOKEN` | Shared secret used to call Supabase edge functions (`x-api-key` / `x-admin-token`). Store the same value in Supabase function secrets. |
 | `ADMIN_SESSION_SECRET` | Minimum 16 characters; signs the HttpOnly session cookie. |
 | `ADMIN_ACCESS_CREDENTIALS` | JSON array of operator tokens (`[{"actorId":"...","token":"...","label":"Ops"}]`). |

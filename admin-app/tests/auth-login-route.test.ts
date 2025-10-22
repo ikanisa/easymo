@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { createAdminApiRequest } from './utils/api';
 
 vi.mock('@/lib/server/logger', () => ({
   logStructured: vi.fn(),
@@ -17,7 +18,7 @@ describe('admin auth login route', () => {
     process.env.ADMIN_ACCESS_CREDENTIALS = '';
 
     const { POST } = await import('@/app/api/auth/login/route');
-    const request = new Request('http://localhost/api/auth/login', {
+    const request = createAdminApiRequest(['auth', 'login'], {
       method: 'POST',
       body: JSON.stringify({ token: 'missing' }),
     });
@@ -33,7 +34,7 @@ describe('admin auth login route', () => {
     ]);
 
     const { POST } = await import('@/app/api/auth/login/route');
-    const request = new Request('http://localhost/api/auth/login', {
+    const request = createAdminApiRequest(['auth', 'login'], {
       method: 'POST',
       body: JSON.stringify({ token: 'wrong-token' }),
     });
@@ -49,7 +50,7 @@ describe('admin auth login route', () => {
     ]);
 
     const { POST } = await import('@/app/api/auth/login/route');
-    const request = new Request('http://localhost/api/auth/login', {
+    const request = createAdminApiRequest(['auth', 'login'], {
       method: 'POST',
       body: JSON.stringify({ token: 'valid-token' }),
     });

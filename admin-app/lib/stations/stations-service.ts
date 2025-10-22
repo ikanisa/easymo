@@ -1,4 +1,5 @@
 import { apiFetch } from "@/lib/api/client";
+import { getAdminApiPath } from "@/lib/routes";
 import { shouldUseMocks } from "@/lib/runtime-config";
 import { mockStations } from "@/lib/mock-data";
 import { matchesSearch } from "@/lib/shared/search";
@@ -74,7 +75,7 @@ async function fetchStationsApi(params: StationApiParams) {
   if (params.search) searchParams.set("search", params.search);
 
   const response = await apiFetch<StationsApiResponse>(
-    `/api/stations?${searchParams.toString()}`,
+    `${getAdminApiPath("stations")}?${searchParams.toString()}`,
   );
 
   if (response.ok) {

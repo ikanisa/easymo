@@ -8,6 +8,7 @@ import { useToast } from "@/components/ui/ToastProvider";
 import { Button } from "@/components/ui/Button";
 import { LoadMoreButton } from "@/components/ui/LoadMoreButton";
 import { StationDrawer } from "@/components/stations/StationDrawer";
+import { getAdminApiPath } from "@/lib/routes";
 
 interface StationListWithActionsProps {
   stations: Station[];
@@ -29,7 +30,7 @@ export function StationListWithActions(
   }, [stations]);
 
   const refresh = async () => {
-    const response = await fetch("/api/stations", { cache: "no-store" });
+    const response = await fetch(getAdminApiPath("stations"), { cache: "no-store" });
     if (response.ok) {
       const data = await response.json();
       setItems(data.data || []);
@@ -39,7 +40,7 @@ export function StationListWithActions(
   const updateStatus = async (id: string, status: "active" | "inactive") => {
     setIsProcessing(true);
     try {
-      const response = await fetch(`/api/stations/${id}`, {
+      const response = await fetch(getAdminApiPath("stations", id), {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status }),
@@ -63,7 +64,7 @@ export function StationListWithActions(
     if (!confirm("Delete this station?")) return;
     setIsProcessing(true);
     try {
-      const response = await fetch(`/api/stations/${id}`, { method: "DELETE" });
+      const response = await fetch(getAdminApiPath("stations", id), { method: "DELETE" });
       if (!response.ok) {
         const data = await response.json();
         pushToast(data?.error ?? "Failed to delete station.", "error");

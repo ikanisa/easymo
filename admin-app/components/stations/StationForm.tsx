@@ -3,6 +3,7 @@
 import { useState } from "react";
 import styles from "./StationForm.module.css";
 import { useToast } from "@/components/ui/ToastProvider";
+import { getAdminApiPath } from "@/lib/routes";
 
 interface StationFormProps {
   onCreated: () => void;
@@ -20,7 +21,7 @@ export function StationForm({ onCreated }: StationFormProps) {
     event.preventDefault();
     setIsSubmitting(true);
     try {
-      const response = await fetch("/api/stations", {
+      const response = await fetch(getAdminApiPath("stations"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
