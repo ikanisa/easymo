@@ -1,4 +1,5 @@
 import { apiFetch } from "@/lib/api/client";
+import { getAdminApiPath } from "@/lib/routes";
 import {
   QueryKey,
   useQuery,
@@ -62,7 +63,7 @@ const integrationStatusKey: QueryKey = ["integration-status"];
 export async function fetchIntegrationStatus(): Promise<IntegrationStatusMap> {
   const response = await apiFetch<Partial<Record<IntegrationTarget,
     IntegrationStatusEntry
-  >>>("/api/integrations/status", {
+  >>>(getAdminApiPath("integrations", "status"), {
     cache: "no-store",
   });
 

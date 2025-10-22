@@ -1,5 +1,6 @@
 "use client";
 import { useState } from 'react';
+import { getAdminApiPath } from "@/lib/routes";
 
 export default function SubscriptionsPage() {
   const [tenantId, setTenantId] = useState("");
@@ -10,7 +11,9 @@ export default function SubscriptionsPage() {
   async function checkEntitlements(e: React.FormEvent) {
     e.preventDefault();
     setStatus(null);
-    const res = await fetch(`/api/subscriptions/entitlements?tenantId=${encodeURIComponent(tenantId)}&vendorId=${encodeURIComponent(vendorId)}`);
+    const res = await fetch(
+      `${getAdminApiPath("subscriptions", "entitlements")}?tenantId=${encodeURIComponent(tenantId)}&vendorId=${encodeURIComponent(vendorId)}`,
+    );
     const json = await res.json();
     if (json?.ok) setEntitlements(json.data);
     else setStatus(`Failed: ${json?.data?.error || json?.error || res.status}`);
@@ -19,7 +22,7 @@ export default function SubscriptionsPage() {
   async function subscribe(e: React.FormEvent) {
     e.preventDefault();
     setStatus(null);
-    const res = await fetch(`/api/subscriptions/subscribe`, {
+    const res = await fetch(getAdminApiPath("subscriptions", "subscribe"), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ tenantId, vendorId, tokens: 4 }),

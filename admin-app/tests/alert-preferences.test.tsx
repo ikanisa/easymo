@@ -1,11 +1,14 @@
+import React from "react";
 import {
   fireEvent,
   render,
   screen,
   waitFor,
 } from "./utils/react-testing";
-import { vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import "@testing-library/jest-dom/vitest";
 import { AlertPreferences } from "@/components/settings/AlertPreferences";
+import { getAdminApiPath } from "@/lib/routes";
 
 const pushToast = vi.fn();
 const useAdminAlertPreferencesQuery = vi.fn();
@@ -61,14 +64,15 @@ describe("AlertPreferences", () => {
 
     render(<AlertPreferences />);
 
-    expect(
-      screen.getByText("Insurance OCR failures"),
-    ).toBeInTheDocument();
+    expect(screen.getByText("Insurance OCR failures")).toBeTruthy();
 
     const toggle = screen.getByLabelText("Toggle Insurance OCR failures");
     fireEvent.click(toggle);
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(
+      getAdminApiPath("settings", "alerts"),
+    );
     expect(pushToast).toHaveBeenCalledWith("Alert preference saved.", "success");
 
     const request = fetchMock.mock.calls[0]?.[1];
@@ -106,11 +110,11 @@ describe("AlertPreferences", () => {
 
     fireEvent.click(screen.getByLabelText("Toggle Notification cron disabled"));
 
-    await waitFor(() =>
+    await waitFor(() => {
       expect(
         screen.getByText("Select at least one channel or disable the alert."),
-      ).toBeInTheDocument()
-    );
+      ).toBeTruthy();
+    });
     expect(pushToast).toHaveBeenCalledWith(
       "Select at least one channel or disable the alert.",
       "error",

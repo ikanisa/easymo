@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/ToastProvider";
+import { getAdminApiPath } from "@/lib/routes";
 import { SaccoBranchForm } from "./SaccoBranchForm";
 import styles from "./SaccoBranchesTable.module.css";
 import {
@@ -34,7 +35,7 @@ export function SaccoBranchesTable({ params }: SaccoBranchesTableProps) {
 
   const statusMutation = useMutation({
     mutationFn: async (input: { id: string; status: SaccoRow['status'] }) => {
-      const response = await fetch(`/api/baskets/saccos/${input.id}`, {
+      const response = await fetch(getAdminApiPath("baskets", "saccos", input.id), {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: input.status }),
@@ -56,7 +57,7 @@ export function SaccoBranchesTable({ params }: SaccoBranchesTableProps) {
 
   const updateMutation = useMutation({
     mutationFn: async (input: EditableSacco) => {
-      const response = await fetch(`/api/baskets/saccos/${input.id}`, {
+      const response = await fetch(getAdminApiPath("baskets", "saccos", input.id), {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

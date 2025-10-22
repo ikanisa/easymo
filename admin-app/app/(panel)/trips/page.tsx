@@ -1,6 +1,7 @@
 "use client";
 export const dynamic = 'force-dynamic';
 import { useState, useEffect, useCallback } from "react";
+import { getAdminApiPath } from "@/lib/routes";
 
 export default function TripsPage() {
   const [data, setData] = useState<{ data: any[]; total: number } | null>(null);
@@ -15,7 +16,7 @@ export default function TripsPage() {
       const sp = new URLSearchParams();
       sp.set("limit", "50");
       if (params?.search) sp.set("search", params.search);
-      const res = await fetch(`/api/trips?${sp.toString()}`, { cache: "no-store" });
+      const res = await fetch(`${getAdminApiPath("trips")}?${sp.toString()}`, { cache: "no-store" });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json = await res.json();
       setData(json);
