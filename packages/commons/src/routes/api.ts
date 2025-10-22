@@ -15,6 +15,13 @@ const apiRouteDefinitions = defineHttpControllers({
       session: { method: "POST" as const, segment: "session" as const },
     },
   },
+  waCalls: {
+    basePath: "wa" as const,
+    endpoints: {
+      webhook: { method: "GET" as const, segment: "webhook" as const },
+      events: { method: "POST" as const, segment: "events" as const },
+    },
+  },
   whatsappAgents: {
     basePath: "wa/agents" as const,
     endpoints: {
