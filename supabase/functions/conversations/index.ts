@@ -312,11 +312,7 @@ async function listItems(
   const rows = (data ?? []) as MessageRow[];
   const hasMore = rows.length > limit;
   if (hasMore) {
-    if (order === "asc") {
-      rows.splice(0, rows.length - limit);
-    } else {
-      rows.splice(limit);
-    }
+    rows.splice(limit);
   }
   if (order === "desc") rows.sort((a, b) => b.id - a.id);
   return { rows, hasMore };
