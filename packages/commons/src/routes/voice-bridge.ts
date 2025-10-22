@@ -1,63 +1,96 @@
-import type { HttpMethod } from "./utils";
+import {
+  buildEndpointPath,
+  createWebsocketRouteSelectors,
+  defineBackgroundTriggers,
+  defineHttpControllers,
+  defineWebsocketRoutes,
+  type ControllerDefinition,
+  type EndpointDefinition,
+  type WebSocketRouteDefinition,
+} from "./utils";
 
-type VoiceBridgeHttpRouteDefinition<
-  Path extends string = string,
-  Method extends HttpMethod = HttpMethod,
-> = {
-  kind: "http";
-  method: Method;
-  path: Path;
-};
-
-type VoiceBridgeWebsocketRouteDefinition<Path extends string = string> = {
-  kind: "websocket";
-  path: Path;
-};
-
-type VoiceBridgeRouteDefinition =
-  | VoiceBridgeHttpRouteDefinition
-  | VoiceBridgeWebsocketRouteDefinition;
-
-const routeDefinitions = Object.freeze({
-  health: { kind: "http", method: "GET", path: "/health" },
-  analyticsLiveCalls: {
-    kind: "http",
-    method: "GET",
-    path: "/analytics/live-calls",
+const httpControllerDefinitions = defineHttpControllers({
+  analytics: {
+    basePath: "analytics" as const,
+    endpoints: {
+      liveCalls: { method: "GET" as const, segment: "live-calls" as const },
+    },
   },
-  outboundCalls: {
-    kind: "http",
-    method: "POST",
-    path: "/calls/outbound",
+  calls: {
+    basePath: "calls" as const,
+    endpoints: {
+      outbound: { method: "POST" as const, segment: "outbound" as const },
+    },
   },
-  mediaStream: { kind: "websocket", path: "/media" },
-  twilioMediaStream: { kind: "websocket", path: "/twilio-media" },
-} as const satisfies Record<string, VoiceBridgeRouteDefinition>);
+  health: {
+    basePath: "health" as const,
+    endpoints: {
+      status: { method: "GET" as const, segment: "" as const },
+    },
+  },
+} as const satisfies Record<string, ControllerDefinition<Record<string, EndpointDefinition>>>);
 
-export type VoiceBridgeRoutes = typeof routeDefinitions;
-export type VoiceBridgeRouteKey = keyof VoiceBridgeRoutes;
-export type VoiceBridgeRouteRecord<Key extends VoiceBridgeRouteKey = VoiceBridgeRouteKey> =
-  VoiceBridgeRoutes[Key];
+const websocketRouteDefinitions = defineWebsocketRoutes({
+  mediaStream: { path: "/twilio-media" as const, description: "Twilio Media Stream ingress" },
+} as const satisfies Record<string, WebSocketRouteDefinition>);
 
-type ExtractRouteKeys<Kind extends VoiceBridgeRouteRecord["kind"]> = {
-  [Key in VoiceBridgeRouteKey]: VoiceBridgeRouteRecord<Key>["kind"] extends Kind ? Key : never;
-}[VoiceBridgeRouteKey];
+const websocketSelectors = createWebsocketRouteSelectors(websocketRouteDefinitions);
 
-export type VoiceBridgeHttpRouteKey = ExtractRouteKeys<"http">;
-export type VoiceBridgeWebsocketRouteKey = ExtractRouteKeys<"websocket">;
+export type VoiceBridgeHttpRoutes = typeof httpControllerDefinitions;
+export type VoiceBridgeHttpControllerKey = keyof VoiceBridgeHttpRoutes;
+export type VoiceBridgeHttpEndpointKey<Controller extends VoiceBridgeHttpControllerKey> = keyof VoiceBridgeHttpRoutes[Controller]["endpoints"];
 
-export const voiceBridgeRoutes = routeDefinitions;
+export type VoiceBridgeWebsocketRoutes = typeof websocketRouteDefinitions;
+export type VoiceBridgeWebsocketRouteKey = keyof VoiceBridgeWebsocketRoutes;
 
-export const getVoiceBridgeRoutePath = <Key extends VoiceBridgeRouteKey>(key: Key) =>
-  voiceBridgeRoutes[key].path;
+export const voiceBridgeHttpRoutes = httpControllerDefinitions;
+export const voiceBridgeWebsocketRoutes = websocketRouteDefinitions;
 
-export const getVoiceBridgeRouteKind = <Key extends VoiceBridgeRouteKey>(key: Key) =>
-  voiceBridgeRoutes[key].kind;
+export const getVoiceBridgeHttpControllerBasePath = <
+  Controller extends VoiceBridgeHttpControllerKey,
+>(controller: Controller) => voiceBridgeHttpRoutes[controller].basePath;
 
-export const getVoiceBridgeHttpRouteMethod = <Key extends VoiceBridgeHttpRouteKey>(key: Key) => {
-  const route = voiceBridgeRoutes[key];
-  if (route.kind !== "http") {
-    throw new Error(`Route ${String(key)} is not an HTTP route`);
-  }
-  return route.method;
+export const getVoiceBridgeHttpEndpointSegment = <
+  Controller extends VoiceBridgeHttpControllerKey,
+  Endpoint extends VoiceBridgeHttpEndpointKey<Controller>,
+>(controller: Controller, endpoint: Endpoint) => {
+  const controllerRoutes = voiceBridgeHttpRoutes[controller] as ControllerDefinition<Record<string, EndpointDefinition>>;
+  const endpoints = controllerRoutes.endpoints as Record<string, EndpointDefinition>;
+  return endpoints[endpoint as string].segment;
 };
+
+export const getVoiceBridgeHttpEndpointMethod = <
+  Controller extends VoiceBridgeHttpControllerKey,
+  Endpoint extends VoiceBridgeHttpEndpointKey<Controller>,
+>(controller: Controller, endpoint: Endpoint) => {
+  const controllerRoutes = voiceBridgeHttpRoutes[controller] as ControllerDefinition<Record<string, EndpointDefinition>>;
+  const endpoints = controllerRoutes.endpoints as Record<string, EndpointDefinition>;
+  return endpoints[endpoint as string].method;
+};
+
+export const getVoiceBridgeHttpEndpointPath = <
+  Controller extends VoiceBridgeHttpControllerKey,
+  Endpoint extends VoiceBridgeHttpEndpointKey<Controller>,
+>(controller: Controller, endpoint: Endpoint) => {
+  const base = getVoiceBridgeHttpControllerBasePath(controller);
+  const segment = getVoiceBridgeHttpEndpointSegment(controller, endpoint);
+  return buildEndpointPath(base, segment);
+};
+
+export const getVoiceBridgeWebsocketRoutePath = <Key extends VoiceBridgeWebsocketRouteKey>(key: Key) =>
+  websocketSelectors.getRoutePath(key);
+
+export const getVoiceBridgeWebsocketRouteDefinition = <Key extends VoiceBridgeWebsocketRouteKey>(key: Key) =>
+  websocketSelectors.getRouteDefinition(key);
+
+export const voiceBridgeBackgroundTriggers = defineBackgroundTriggers({} as const);
+
+/**
+ * @deprecated Prefer {@link getVoiceBridgeWebsocketRoutePath}.
+ */
+export const getVoiceBridgeRoutePath = getVoiceBridgeWebsocketRoutePath;
+
+/**
+ * @deprecated Voice bridge only exposes WebSocket routes; this helper remains for backwards compatibility.
+ */
+export const getVoiceBridgeRouteKind = <Key extends VoiceBridgeWebsocketRouteKey>(_key: Key) => "websocket" as const;
