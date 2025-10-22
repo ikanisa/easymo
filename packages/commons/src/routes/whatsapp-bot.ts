@@ -3,7 +3,7 @@ import {
   defineHttpControllers,
   type ControllerDefinition,
   type EndpointDefinition,
-} from "./utils";
+} from "./http-utils.js";
 
 const whatsappBotRouteDefinitions = defineHttpControllers({
   webhook: {

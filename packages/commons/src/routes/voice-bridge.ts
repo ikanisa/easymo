@@ -5,7 +5,7 @@ import {
   type ControllerDefinition,
   type EndpointDefinition,
   type WebSocketRouteDefinition,
-} from "./utils";
+} from "./http-utils.js";
 
 const voiceBridgeHttpRouteDefinitions = defineHttpControllers({
   health: {
@@ -21,6 +21,7 @@ const voiceBridgeHttpRouteDefinitions = defineHttpControllers({
         method: "GET" as const,
         segment: "live-calls" as const,
         notes: "Requires service auth scope voice:read",
+        requiredScopes: ["voice:read"],
       },
     },
   },
@@ -31,28 +32,31 @@ const voiceBridgeHttpRouteDefinitions = defineHttpControllers({
         method: "POST" as const,
         segment: "outbound" as const,
         notes: "Requires service auth scope voice:outbound.write",
+        requiredScopes: ["voice:outbound.write"],
       },
     },
   },
 } as const satisfies Record<string, ControllerDefinition<Record<string, EndpointDefinition>>>);
 
-const websocketRouteDefinitions = defineWebsocketRoutes({
+const voiceBridgeWebSocketRouteDefinitions = defineWebSocketRoutes({
   mediaStream: { path: "/twilio-media" as const, description: "Twilio Media Stream ingress" },
   twilioMediaStream: { path: "/twilio-media" as const, description: "Twilio Media Stream ingress" },
 } as const satisfies Record<string, WebSocketRouteDefinition>);
 
 export type VoiceBridgeHttpRoutes = typeof voiceBridgeHttpRouteDefinitions;
 export type VoiceBridgeHttpControllerKey = keyof VoiceBridgeHttpRoutes;
-export type VoiceBridgeHttpEndpointKey<Controller extends VoiceBridgeHttpControllerKey> = keyof VoiceBridgeHttpRoutes[Controller]["endpoints"];
+export type VoiceBridgeHttpEndpointKey<Controller extends VoiceBridgeHttpControllerKey> =
+  keyof VoiceBridgeHttpRoutes[Controller]["endpoints"];
 
-export const voiceBridgeHttpRoutes = httpControllerDefinitions;
-export const voiceBridgeWebsocketRoutes = websocketRouteDefinitions;
-export type VoiceBridgeWebsocketRoutes = typeof websocketRouteDefinitions;
+export const voiceBridgeHttpRoutes = voiceBridgeHttpRouteDefinitions;
+export const voiceBridgeWebSocketRoutes = voiceBridgeWebSocketRouteDefinitions;
+export type VoiceBridgeWebSocketRoutes = typeof voiceBridgeWebSocketRouteDefinitions;
 
-type LegacyHttpRouteDefinition<Path extends string = string, Method extends string = string> = {
+type LegacyHttpRouteDefinition<Path extends string = string> = {
   kind: "http";
-  method: Method;
+  method: EndpointDefinition["method"];
   path: Path;
+  requiredScopes: ReadonlyArray<string>;
 };
 
 type LegacyWebsocketRouteDefinition<Path extends string = string> = {
@@ -70,6 +74,7 @@ export const voiceBridgeRoutes = Object.freeze({
       voiceBridgeHttpRoutes.health.basePath,
       voiceBridgeHttpRoutes.health.endpoints.status.segment,
     ),
+    requiredScopes: [...(voiceBridgeHttpRoutes.health.endpoints.status.requiredScopes ?? [])],
   },
   analyticsLiveCalls: {
     kind: "http" as const,
@@ -78,6 +83,7 @@ export const voiceBridgeRoutes = Object.freeze({
       voiceBridgeHttpRoutes.analytics.basePath,
       voiceBridgeHttpRoutes.analytics.endpoints.liveCalls.segment,
     ),
+    requiredScopes: [...(voiceBridgeHttpRoutes.analytics.endpoints.liveCalls.requiredScopes ?? [])],
   },
   outboundCalls: {
     kind: "http" as const,
@@ -86,14 +92,15 @@ export const voiceBridgeRoutes = Object.freeze({
       voiceBridgeHttpRoutes.calls.basePath,
       voiceBridgeHttpRoutes.calls.endpoints.outbound.segment,
     ),
+    requiredScopes: [...(voiceBridgeHttpRoutes.calls.endpoints.outbound.requiredScopes ?? [])],
   },
   mediaStream: {
     kind: "websocket" as const,
-    path: voiceBridgeWebsocketRoutes.mediaStream.path,
+    path: voiceBridgeWebSocketRoutes.mediaStream.path,
   },
   twilioMediaStream: {
     kind: "websocket" as const,
-    path: voiceBridgeWebsocketRoutes.twilioMediaStream.path,
+    path: voiceBridgeWebSocketRoutes.twilioMediaStream.path,
   },
 } as const satisfies Record<string, LegacyRouteDefinition>);
 
@@ -108,58 +115,90 @@ type ExtractRouteKeys<Kind extends VoiceBridgeRouteRecord["kind"]> = {
 export type VoiceBridgeHttpRouteKey = ExtractRouteKeys<"http">;
 export type VoiceBridgeWebsocketRouteKey = ExtractRouteKeys<"websocket">;
 
-export const getVoiceBridgeControllerBasePath = <Controller extends VoiceBridgeHttpControllerKey>(controller: Controller) =>
+export const getVoiceBridgeHttpControllerBasePath = <Controller extends VoiceBridgeHttpControllerKey>(controller: Controller) =>
   voiceBridgeHttpRoutes[controller].basePath;
 
-export const getVoiceBridgeEndpointSegment = <
+/** @deprecated Prefer {@link getVoiceBridgeHttpControllerBasePath}. */
+export const getVoiceBridgeControllerBasePath = getVoiceBridgeHttpControllerBasePath;
+
+export const getVoiceBridgeHttpEndpointSegment = <
   Controller extends VoiceBridgeHttpControllerKey,
   Endpoint extends VoiceBridgeHttpEndpointKey<Controller>,
 >(controller: Controller, endpoint: Endpoint) => {
   const controllerRoutes = voiceBridgeHttpRoutes[controller] as VoiceBridgeHttpRoutes[Controller];
-  const endpoints = controllerRoutes.endpoints as Record<VoiceBridgeHttpEndpointKey<Controller>, EndpointDefinition>;
+  const endpoints = controllerRoutes.endpoints as Record<
+    VoiceBridgeHttpEndpointKey<Controller>,
+    EndpointDefinition
+  >;
   return endpoints[endpoint].segment;
 };
 
-export const getVoiceBridgeEndpointMethod = <
+/** @deprecated Prefer {@link getVoiceBridgeHttpEndpointSegment}. */
+export const getVoiceBridgeEndpointSegment = getVoiceBridgeHttpEndpointSegment;
+
+export const getVoiceBridgeHttpEndpointMethod = <
   Controller extends VoiceBridgeHttpControllerKey,
   Endpoint extends VoiceBridgeHttpEndpointKey<Controller>,
 >(controller: Controller, endpoint: Endpoint) => {
   const controllerRoutes = voiceBridgeHttpRoutes[controller] as VoiceBridgeHttpRoutes[Controller];
-  const endpoints = controllerRoutes.endpoints as Record<VoiceBridgeHttpEndpointKey<Controller>, EndpointDefinition>;
+  const endpoints = controllerRoutes.endpoints as Record<
+    VoiceBridgeHttpEndpointKey<Controller>,
+    EndpointDefinition
+  >;
   return endpoints[endpoint].method;
 };
 
-export const getVoiceBridgeEndpointPath = <
+/** @deprecated Prefer {@link getVoiceBridgeHttpEndpointMethod}. */
+export const getVoiceBridgeEndpointMethod = getVoiceBridgeHttpEndpointMethod;
+
+export const getVoiceBridgeHttpEndpointRequiredScopes = <
   Controller extends VoiceBridgeHttpControllerKey,
   Endpoint extends VoiceBridgeHttpEndpointKey<Controller>,
 >(controller: Controller, endpoint: Endpoint) => {
-  const base = getVoiceBridgeControllerBasePath(controller);
-  const segment = getVoiceBridgeEndpointSegment(controller, endpoint);
+  const controllerRoutes = voiceBridgeHttpRoutes[controller] as VoiceBridgeHttpRoutes[Controller];
+  const endpoints = controllerRoutes.endpoints as Record<
+    VoiceBridgeHttpEndpointKey<Controller>,
+    EndpointDefinition
+  >;
+  return [...(endpoints[endpoint].requiredScopes ?? [])];
+};
+
+export const getVoiceBridgeHttpEndpointPath = <
+  Controller extends VoiceBridgeHttpControllerKey,
+  Endpoint extends VoiceBridgeHttpEndpointKey<Controller>,
+>(controller: Controller, endpoint: Endpoint) => {
+  const base = getVoiceBridgeHttpControllerBasePath(controller);
+  const segment = getVoiceBridgeHttpEndpointSegment(controller, endpoint);
   return buildEndpointPath(base, segment);
 };
 
-export type VoiceBridgeWebSocketRoutes = typeof voiceBridgeWebSocketRouteDefinitions;
-export type VoiceBridgeWebSocketRouteKey = keyof VoiceBridgeWebSocketRoutes;
+/** @deprecated Prefer {@link getVoiceBridgeHttpEndpointPath}. */
+export const getVoiceBridgeEndpointPath = getVoiceBridgeHttpEndpointPath;
 
-export const voiceBridgeWebSocketRoutes = voiceBridgeWebSocketRouteDefinitions;
-
-/**
- * @deprecated Prefer {@link getVoiceBridgeWebsocketRoutePath}.
- */
 export const getVoiceBridgeRoutePath = <Key extends VoiceBridgeRouteKey>(key: Key) => voiceBridgeRoutes[key].path;
 
-/**
- * @deprecated Legacy helper retained for backwards compatibility with {@link voiceBridgeRoutes}.
- */
 export const getVoiceBridgeRouteKind = <Key extends VoiceBridgeRouteKey>(key: Key) => voiceBridgeRoutes[key].kind;
 
-/**
- * @deprecated Prefer {@link getVoiceBridgeHttpEndpointMethod}.
- */
+export const getVoiceBridgeRouteRequiredScopes = <Key extends VoiceBridgeRouteKey>(key: Key) => {
+  const route = voiceBridgeRoutes[key];
+  if (route.kind !== "http") {
+    return [] as ReadonlyArray<string>;
+  }
+  return [...route.requiredScopes];
+};
+
 export const getVoiceBridgeHttpRouteMethod = <Key extends VoiceBridgeHttpRouteKey>(key: Key) => {
   const route = voiceBridgeRoutes[key];
   if (route.kind !== "http") {
     throw new Error(`Route ${String(key)} is not an HTTP route`);
   }
   return route.method;
+};
+
+export const getVoiceBridgeHttpRouteRequiredScopes = <Key extends VoiceBridgeHttpRouteKey>(key: Key) => {
+  const route = voiceBridgeRoutes[key];
+  if (route.kind !== "http") {
+    throw new Error(`Route ${String(key)} is not an HTTP route`);
+  }
+  return [...route.requiredScopes];
 };

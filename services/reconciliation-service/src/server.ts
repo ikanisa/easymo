@@ -1,4 +1,4 @@
-import express, { type RequestHandler } from "express";
+import express from "express";
 import pinoHttp from "pino-http";
 import multer from "multer";
 import { parse } from "csv-parse/sync";
@@ -11,9 +11,10 @@ import {
   createRateLimiter,
   expressRequestContext,
   expressServiceAuth,
-  getReconciliationServiceRoutePath,
-  getReconciliationServiceRouteRequiredScopes,
-  type ReconciliationServiceRouteKey,
+  getReconciliationServiceEndpointPath,
+  getReconciliationServiceEndpointRequiredScopes,
+  type ReconciliationServiceControllerKey,
+  type ReconciliationServiceEndpointKey,
 } from "@easymo/commons";
 
 const upload = multer();
@@ -52,13 +53,18 @@ function processCsv(buffer: Buffer): CsvResult[] {
 export function buildApp({ store, httpClient }: Deps) {
   const app = express();
   const client = httpClient ?? axios;
-  const requireAuthForRoute = (route: ReconciliationServiceRouteKey): RequestHandler => {
-    const scopes = getReconciliationServiceRouteRequiredScopes(route);
-    if (scopes.length === 0) {
-      return (_req, _res, next) => next();
-    }
-    return expressServiceAuth({ audience: settings.auth.audience, requiredScopes: [...scopes] });
-  };
+
+  const requireAuth = <
+    Controller extends ReconciliationServiceControllerKey,
+    Endpoint extends ReconciliationServiceEndpointKey<Controller>,
+  >(
+    controller: Controller,
+    endpoint: Endpoint,
+  ) =>
+    expressServiceAuth({
+      audience: settings.auth.audience,
+      requiredScopes: getReconciliationServiceEndpointRequiredScopes(controller, endpoint),
+    });
 
   app.use(express.json({ limit: "2mb" }));
   app.use(expressRequestContext({ generateIfMissing: true }));
@@ -77,8 +83,8 @@ export function buildApp({ store, httpClient }: Deps) {
   }
 
   app.post(
-    getReconciliationServiceRoutePath("mobileMoney"),
-    requireAuthForRoute("mobileMoney"),
+    getReconciliationServiceEndpointPath("reconciliation", "mobileMoney"),
+    requireAuth("reconciliation", "mobileMoney"),
     upload.single("file"),
     async (req, res) => {
       try {
@@ -89,6 +95,7 @@ export function buildApp({ store, httpClient }: Deps) {
           const payload = AcceptJsonSchema.parse(req.body);
           buffer = Buffer.from(payload.file, "base64");
         }
+
         if (!buffer) {
           return res.status(400).json({ error: "CSV file is required" });
         }
@@ -109,12 +116,7 @@ export function buildApp({ store, httpClient }: Deps) {
                 const ownerId = codeMatch[2];
                 try {
                   const resp = await client.get(`${settings.walletServiceUrl}/wallet/accounts/lookup`, {
-                    params: {
-                      tenantId: settings.defaultTenantId,
-                      ownerType,
-                      ownerId,
-                      currency: item.currency,
-                    },
+                    params: { tenantId: settings.defaultTenantId, ownerType, ownerId, currency: item.currency },
                     timeout: 5000,
                   });
                   destAccountId = resp.data?.id;
@@ -123,10 +125,12 @@ export function buildApp({ store, httpClient }: Deps) {
                 }
               }
             }
+
             if (!destAccountId) {
               manual++;
               continue;
             }
+
             const key = `csv:${item.reference}`;
             try {
               await store.execute(key, async () => {
@@ -155,6 +159,7 @@ export function buildApp({ store, httpClient }: Deps) {
             manual++;
           }
         }
+
         res.status(202).json({ accepted: true, total: items.length, credited, manual });
       } catch (error) {
         logger.error({ msg: "reconciliation.parse.error", error });
@@ -163,7 +168,7 @@ export function buildApp({ store, httpClient }: Deps) {
     },
   );
 
-  app.get(getReconciliationServiceRoutePath("health"), (_req, res) => {
+  app.get(getReconciliationServiceEndpointPath("health", "status"), (_req, res) => {
     res.json({ status: "ok" });
   });
 
@@ -172,7 +177,11 @@ export function buildApp({ store, httpClient }: Deps) {
 
 if (process.env.NODE_ENV !== "test") {
   (async () => {
-    const store = new IdempotencyStore({ redisUrl: settings.redisUrl, namespace: "recon", ttlSeconds: 7 * 24 * 3600 });
+    const store = new IdempotencyStore({
+      redisUrl: settings.redisUrl,
+      namespace: "recon",
+      ttlSeconds: 7 * 24 * 3600,
+    });
     await store.connect();
     const app = buildApp({ store, httpClient: axios });
 

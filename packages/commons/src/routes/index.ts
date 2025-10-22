@@ -11,4 +11,5 @@ export * from "./vendor-service.js";
 export * from "./voice-bridge.js";
 export * from "./wallet-service.js";
 export * from "./whatsapp-bot.js";
+export * from "./http-utils.js";
 export * from "./utils.js";

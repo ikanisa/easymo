@@ -3,7 +3,7 @@ import {
   defineHttpControllers,
   type ControllerDefinition,
   type EndpointDefinition,
-} from "./utils";
+} from "./http-utils.js";
 
 const attributionServiceRouteDefinitions = defineHttpControllers({
   attribution: {
@@ -14,16 +14,19 @@ const attributionServiceRouteDefinitions = defineHttpControllers({
         method: "POST" as const,
         segment: "evaluate" as const,
         notes: "Requires service scope attribution:write",
+        requiredScopes: ["attribution:write"],
       },
       evidence: {
         method: "POST" as const,
         segment: "evidence" as const,
         notes: "Requires service scope attribution:write",
+        requiredScopes: ["attribution:write"],
       },
       disputes: {
         method: "POST" as const,
         segment: "disputes" as const,
         notes: "Requires service scope attribution:write",
+        requiredScopes: ["attribution:write"],
       },
     },
   },
@@ -51,7 +54,10 @@ export const getAttributionServiceEndpointSegment = <
   Endpoint extends AttributionServiceEndpointKey<Controller>,
 >(controller: Controller, endpoint: Endpoint) => {
   const controllerRoutes = attributionServiceRoutes[controller] as AttributionServiceRoutes[Controller];
-  const endpoints = controllerRoutes.endpoints as Record<AttributionServiceEndpointKey<Controller>, EndpointDefinition>;
+  const endpoints = controllerRoutes.endpoints as Record<
+    AttributionServiceEndpointKey<Controller>,
+    EndpointDefinition
+  >;
   return endpoints[endpoint].segment;
 };
 
@@ -60,8 +66,23 @@ export const getAttributionServiceEndpointMethod = <
   Endpoint extends AttributionServiceEndpointKey<Controller>,
 >(controller: Controller, endpoint: Endpoint) => {
   const controllerRoutes = attributionServiceRoutes[controller] as AttributionServiceRoutes[Controller];
-  const endpoints = controllerRoutes.endpoints as Record<AttributionServiceEndpointKey<Controller>, EndpointDefinition>;
+  const endpoints = controllerRoutes.endpoints as Record<
+    AttributionServiceEndpointKey<Controller>,
+    EndpointDefinition
+  >;
   return endpoints[endpoint].method;
+};
+
+export const getAttributionServiceEndpointRequiredScopes = <
+  Controller extends AttributionServiceControllerKey,
+  Endpoint extends AttributionServiceEndpointKey<Controller>,
+>(controller: Controller, endpoint: Endpoint) => {
+  const controllerRoutes = attributionServiceRoutes[controller] as AttributionServiceRoutes[Controller];
+  const endpoints = controllerRoutes.endpoints as Record<
+    AttributionServiceEndpointKey<Controller>,
+    EndpointDefinition
+  >;
+  return [...(endpoints[endpoint].requiredScopes ?? [])];
 };
 
 export const getAttributionServiceEndpointPath = <

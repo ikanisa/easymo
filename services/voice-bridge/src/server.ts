@@ -1,4 +1,4 @@
-import express, { type RequestHandler } from "express";
+import express from "express";
 import http from "http";
 import WebSocket, { WebSocketServer } from "ws";
 import pinoHttp from "pino-http";
@@ -13,9 +13,11 @@ import {
   createRateLimiter,
   expressRequestContext,
   expressServiceAuth,
+  getVoiceBridgeHttpEndpointPath,
+  getVoiceBridgeHttpEndpointRequiredScopes,
   getVoiceBridgeRoutePath,
-  getVoiceBridgeRouteRequiredScopes,
-  type VoiceBridgeRouteKey,
+  type VoiceBridgeHttpControllerKey,
+  type VoiceBridgeHttpEndpointKey,
 } from "@easymo/commons";
 
 export const app = express();
@@ -35,103 +37,103 @@ if (settings.rateLimit.redisUrl) {
   );
 }
 
-const requireAuthForRoute = (route: VoiceBridgeRouteKey): RequestHandler => {
-  const scopes = getVoiceBridgeRouteRequiredScopes(route);
-  if (scopes.length === 0) {
-    return (_req, _res, next) => next();
-  }
-  return expressServiceAuth({ audience: settings.auth.audience, requiredScopes: [...scopes] });
-};
+const requireAuth = <
+  Controller extends VoiceBridgeHttpControllerKey,
+  Endpoint extends VoiceBridgeHttpEndpointKey<Controller>,
+>(controller: Controller, endpoint: Endpoint) =>
+  expressServiceAuth({
+    audience: settings.auth.audience,
+    requiredScopes: getVoiceBridgeHttpEndpointRequiredScopes(controller, endpoint),
+  });
 
 const twilioClient = twilio(settings.twilio.accountSid, settings.twilio.authToken);
 
-app.get(getVoiceBridgeRoutePath("health"), (_req, res) => {
+app.get(getVoiceBridgeHttpEndpointPath("health", "status"), (_req, res) => {
   res.json({ status: "ok" });
 });
 
 app.get(
-  getVoiceBridgeRoutePath("analyticsLiveCalls"),
-  requireAuthForRoute("analyticsLiveCalls"),
+  getVoiceBridgeHttpEndpointPath("analytics", "liveCalls"),
+  requireAuth("analytics", "liveCalls"),
   (_req, res) => {
     res.json(liveCallRegistry.snapshot());
   },
 );
 
 app.post(
-  getVoiceBridgeRoutePath("callsOutbound"),
-  requireAuthForRoute("callsOutbound"),
+  getVoiceBridgeHttpEndpointPath("calls", "outbound"),
+  requireAuth("calls", "outbound"),
   async (req, res) => {
     const { to, tenantId, contactName, region, profile } = req.body ?? {};
     if (!to) {
       return res.status(400).json({ error: "Missing 'to' number" });
-  }
-
-  try {
-    const streamUrl = new URL(settings.twilio.mediaStreamWss);
-    streamUrl.searchParams.set("callSid", "{{CallSid}}");
-    streamUrl.searchParams.set("leadPhone", String(to));
-    streamUrl.searchParams.set("direction", "outbound");
-    if (tenantId) streamUrl.searchParams.set("tenantId", String(tenantId));
-    if (contactName) streamUrl.searchParams.set("leadName", String(contactName));
-    if (region) streamUrl.searchParams.set("region", String(region));
-    if (profile) streamUrl.searchParams.set("profile", String(profile));
-
-    const parameterLines = [
-      tenantId ? `      <Parameter name="tenantId" value="${tenantId}"/>` : null,
-      region ? `      <Parameter name="region" value="${region}"/>` : null,
-      profile ? `      <Parameter name="profile" value="${profile}"/>` : null,
-    ]
-      .filter((line): line is string => Boolean(line));
-
-    const twiml = [
-      "<Response>",
-      "  <Start>",
-      `    <Stream url="${streamUrl.toString()}">`,
-      ...parameterLines,
-      "    </Stream>",
-      "  </Start>",
-      "  <Pause length=\"3600\"/>",
-      "</Response>",
-    ].join("\n");
-
-    const payload: CallListInstanceCreateOptions = {
-      to,
-      from: settings.twilio.outboundCallerId,
-      twiml,
-    };
-
-    if (settings.twilio.statusCallbackUrl) {
-      payload.statusCallback = settings.twilio.statusCallbackUrl;
-      payload.statusCallbackEvent = ["initiated", "ringing", "answered", "completed"];
-      payload.statusCallbackMethod = "POST";
     }
 
-    logger.info({
-      msg: "voice.outbound.initiating",
-      to,
-      tenantId,
-      contactName,
-      region,
-      profile,
-    });
+    try {
+      const streamUrl = new URL(settings.twilio.mediaStreamWss);
+      streamUrl.searchParams.set("callSid", "{{CallSid}}");
+      streamUrl.searchParams.set("leadPhone", String(to));
+      streamUrl.searchParams.set("direction", "outbound");
+      if (tenantId) streamUrl.searchParams.set("tenantId", String(tenantId));
+      if (contactName) streamUrl.searchParams.set("leadName", String(contactName));
+      if (region) streamUrl.searchParams.set("region", String(region));
+      if (profile) streamUrl.searchParams.set("profile", String(profile));
 
-    const call = await twilioClient.calls.create(payload);
+      const parameterLines = [
+        tenantId ? `      <Parameter name="tenantId" value="${tenantId}"/>` : null,
+        region ? `      <Parameter name="region" value="${region}"/>` : null,
+        profile ? `      <Parameter name="profile" value="${profile}"/>` : null,
+      ].filter((line): line is string => Boolean(line));
 
-    return res.status(202).json({
-      status: "queued",
-      to,
-      tenantId: tenantId ?? null,
-      contactName: contactName ?? null,
-      region: region ?? null,
-      profile: profile ?? null,
-      sid: call.sid,
-    });
-  } catch (error) {
-    const message =
-      (error as { message?: string })?.message ?? (typeof error === "string" ? error : "Unknown Twilio error");
-    logger.error({ msg: "voice.outbound.failed", error: message, to, tenantId, region, profile });
-    return res.status(502).json({ error: "Failed to initiate outbound call", message });
-  }
+      const twiml = [
+        "<Response>",
+        "  <Start>",
+        `    <Stream url="${streamUrl.toString()}">`,
+        ...parameterLines,
+        "    </Stream>",
+        "  </Start>",
+        "  <Pause length=\"3600\"/>",
+        "</Response>",
+      ].join("\n");
+
+      const payload: CallListInstanceCreateOptions = {
+        to,
+        from: settings.twilio.outboundCallerId,
+        twiml,
+      };
+
+      if (settings.twilio.statusCallbackUrl) {
+        payload.statusCallback = settings.twilio.statusCallbackUrl;
+        payload.statusCallbackEvent = ["initiated", "ringing", "answered", "completed"];
+        payload.statusCallbackMethod = "POST";
+      }
+
+      logger.info({
+        msg: "voice.outbound.initiating",
+        to,
+        tenantId,
+        contactName,
+        region,
+        profile,
+      });
+
+      const call = await twilioClient.calls.create(payload);
+
+      return res.status(202).json({
+        status: "queued",
+        to,
+        tenantId: tenantId ?? null,
+        contactName: contactName ?? null,
+        region: region ?? null,
+        profile: profile ?? null,
+        sid: call.sid,
+      });
+    } catch (error) {
+      const message =
+        (error as { message?: string })?.message ?? (typeof error === "string" ? error : "Unknown Twilio error");
+      logger.error({ msg: "voice.outbound.failed", error: message, to, tenantId, region, profile });
+      return res.status(502).json({ error: "Failed to initiate outbound call", message });
+    }
   },
 );
 
