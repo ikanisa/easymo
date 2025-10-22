@@ -2,15 +2,16 @@ import { Body, Controller, Headers, Post, Req, UnauthorizedException } from '@ne
 import { Request } from 'express';
 import { SupabaseService } from '../supabase/supabase.service';
 import { TwilioService } from './twilio.service';
+import { getApiControllerBasePath, getApiEndpointSegment } from '@easymo/commons';
 
-@Controller('/twilio')
+@Controller(getApiControllerBasePath('twilio'))
 export class TwilioController {
   constructor(
     private readonly db: SupabaseService,
     private readonly twilio: TwilioService,
   ) {}
 
-  @Post('status')
+  @Post(getApiEndpointSegment('twilio', 'status'))
   async status(
     @Headers('x-twilio-signature') signature: string | undefined,
     @Req() req: Request,

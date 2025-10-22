@@ -3,9 +3,11 @@ import 'reflect-metadata';
 import { Body, Controller, Module, Post } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import OpenAI from 'openai';
+import type { ResponseIncludable } from 'openai/resources/responses/responses';
 import { createClient } from '@supabase/supabase-js';
 import { randomUUID } from 'crypto';
 import type { LeadInput } from '@va/shared';
+import { agentCoreControllerBasePath, getAgentCoreRouteSegment } from '@easymo/commons';
 
 type WebSearchCallSummary = {
   id: string;
@@ -136,9 +138,9 @@ const buildLeadTool = () => ({
   },
 });
 
-@Controller()
+@Controller(agentCoreControllerBasePath)
 class AgentController {
-  @Post('respond')
+  @Post(getAgentCoreRouteSegment('respond'))
   async respond(
     @Body()
     body: {
@@ -160,17 +162,20 @@ class AgentController {
       toolset.push(searchTool);
     }
 
-    const include = webSearchEnabled && includeRawSources ? ['web_search_call.action.sources'] : undefined;
+    const include = webSearchEnabled && includeRawSources
+      ? (['web_search_call.action.sources'] as unknown as ResponseIncludable[])
+      : undefined;
+
+    const metadata: Record<string, string> = {};
+    if (body.call_id) metadata.call_id = body.call_id;
+    if (body.session_id) metadata.session_id = body.session_id;
+    if (body.agent_kind) metadata.agent_kind = body.agent_kind;
 
     const response = await openai.responses.create({
       model: process.env.OPENAI_RESPONSES_MODEL || 'gpt-5',
       input: body.messages,
       tools: toolset,
-      metadata: {
-        call_id: body.call_id,
-        session_id: body.session_id,
-        agent_kind: body.agent_kind,
-      },
+      ...(Object.keys(metadata).length > 0 ? { metadata } : {}),
       ...(include ? { include } : {}),
     });
 

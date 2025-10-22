@@ -1,16 +1,12 @@
+import { adminRoutePaths, type NavigableAdminRouteKey } from "@/lib/routes";
+
 export type NavGroup =
   | "Overview"
   | "Operations"
   | "Messaging"
   | "Platform"
-  | "Baskets";
-
-export type NavItem = {
-  label: string;
-  href: string;
-  description: string;
-  group: NavGroup;
-};
+  | "Baskets"
+  | "AI";
 
 export const NAV_GROUPS: NavGroup[] = [
   "Overview",
@@ -18,184 +14,198 @@ export const NAV_GROUPS: NavGroup[] = [
   "Messaging",
   "Platform",
   "Baskets",
+  "AI",
 ];
 
-export const NAV_ITEMS: NavItem[] = [
+type NavItemDefinition<RouteKey extends NavigableAdminRouteKey = NavigableAdminRouteKey> = {
+  label: string;
+  route: RouteKey;
+  description: string;
+  group: NavGroup;
+};
+
+const NAV_ITEM_DEFINITIONS = [
   {
     label: "Dashboard",
-    href: "/dashboard",
+    route: "panelDashboard",
     description: "KPIs and operational health",
     group: "Overview",
   },
   {
     label: "Users",
-    href: "/users",
+    route: "panelUsers",
     description: "Customer and staff profiles",
     group: "Overview",
   },
   {
     label: "Insurance",
-    href: "/insurance",
+    route: "panelInsurance",
     description: "HITL reviews and OCR data",
     group: "Overview",
   },
   {
     label: "Bars",
-    href: "/bars",
+    route: "panelBars",
     description: "Vendor profile management and overrides",
     group: "Operations",
   },
   {
     label: "Menus & OCR",
-    href: "/menus",
+    route: "panelMenus",
     description: "Menu drafts, publications, and OCR queue",
     group: "Operations",
   },
   {
     label: "Orders",
-    href: "/orders",
+    route: "panelOrders",
     description: "Order status monitoring and safe overrides",
     group: "Operations",
   },
   {
     label: "Trips",
-    href: "/trips",
+    route: "panelTrips",
     description: "Platform trips and statuses",
     group: "Operations",
   },
   {
     label: "Staff Numbers",
-    href: "/staff-numbers",
+    route: "panelStaffNumbers",
     description: "Receiving numbers and verification",
     group: "Operations",
   },
   {
     label: "Stations",
-    href: "/stations",
+    route: "panelStations",
     description: "Station directory and redemptions",
     group: "Operations",
   },
   {
     label: "Live Calls",
-    href: "/live-calls",
+    route: "panelLiveCalls",
     description: "Realtime call monitoring and warm transfers",
     group: "Operations",
   },
   {
     label: "Leads",
-    href: "/leads",
+    route: "panelLeads",
     description: "Lead search, tagging, and opt-in management",
     group: "Operations",
   },
   {
     label: "QR & Deep Links",
-    href: "/qr",
+    route: "panelQr",
     description: "QR token batches and deep-link previews",
     group: "Operations",
   },
   {
     label: "Deep Links",
-    href: "/deep-links",
+    route: "panelDeepLinks",
     description: "Issue Insurance, Basket, and QR entry links",
     group: "Operations",
   },
   {
     label: "Vouchers",
-    href: "/vouchers",
+    route: "panelVouchers",
     description: "Issuance, preview, and lifecycle",
     group: "Messaging",
   },
   {
     label: "Campaigns",
-    href: "/campaigns",
+    route: "panelCampaigns",
     description: "WhatsApp campaign orchestration",
     group: "Messaging",
   },
   {
     label: "Templates & Flows",
-    href: "/templates",
+    route: "panelTemplates",
     description: "Template catalog and flow references",
     group: "Messaging",
   },
   {
     label: "WhatsApp Health",
-    href: "/whatsapp-health",
+    route: "panelWhatsAppHealth",
     description: "Delivery metrics and webhook logs",
     group: "Messaging",
   },
   {
     label: "Notifications",
-    href: "/notifications",
+    route: "panelNotifications",
     description: "Outbox status and resend controls",
     group: "Messaging",
   },
   {
     label: "Files",
-    href: "/files",
+    route: "panelFiles",
     description: "Storage browser for vouchers and docs",
     group: "Platform",
   },
   {
     label: "Marketplace",
-    href: "/marketplace",
+    route: "panelMarketplace",
     description: "Intent pipeline, vendor ranking, and purchases",
     group: "Platform",
   },
   {
     label: "Marketplace Settings",
-    href: "/marketplace/settings",
+    route: "panelMarketplaceSettings",
     description: "Free contacts, window, subscription tokens",
     group: "Platform",
   },
   {
     label: "Agents",
-    href: "/agents",
+    route: "panelAgents",
     description: "Configure AI personas, prompts, and deployments",
     group: "Platform",
   },
   {
     label: "Subscriptions",
-    href: "/subscriptions",
+    route: "panelSubscriptions",
     description: "Vendor entitlements and monthly subscription",
     group: "Platform",
   },
   {
     label: "Driver Subscriptions",
-    href: "/driver-subscriptions",
+    route: "panelDriverSubscriptions",
     description: "Manage driver subscription payments",
     group: "Platform",
   },
   {
     label: "Wallet Top-up",
-    href: "/wallet/topup",
+    route: "panelWalletTopUp",
     description: "Convert FX and credit vendor tokens",
     group: "Platform",
   },
   {
     label: "Settings",
-    href: "/settings",
+    route: "panelSettings",
     description: "Quiet hours, throttles, templates",
     group: "Platform",
   },
   {
     label: "Logs",
-    href: "/logs",
+    route: "panelLogs",
     description: "Unified audit and voucher events",
     group: "Platform",
   },
   {
     label: "Baskets (SACCOs)",
-    href: "/baskets",
+    route: "panelBaskets",
     description: "SACCO branches, Ibimina, contributions, and loans",
     group: "Baskets",
   },
-];
-const AI_NAV_GROUP = "AI" as NavGroup;
+  {
+    label: "Chat Completions",
+    route: "panelAiChatCompletions",
+    description: "Exercise OpenAI prompts and review response metadata",
+    group: "AI",
+  },
+] as const satisfies ReadonlyArray<NavItemDefinition>;
 
-NAV_GROUPS.push(AI_NAV_GROUP);
-NAV_ITEMS.push({
-  label: "Chat Completions",
-  href: "/ai/chat-completions",
-  description: "Exercise OpenAI prompts and review response metadata",
-  group: AI_NAV_GROUP,
-});
+export type NavItem = (typeof NAV_ITEM_DEFINITIONS)[number] & {
+  href: string;
+};
+
+export const NAV_ITEMS: NavItem[] = NAV_ITEM_DEFINITIONS.map((definition) => ({
+  ...definition,
+  href: adminRoutePaths[definition.route],
+}));

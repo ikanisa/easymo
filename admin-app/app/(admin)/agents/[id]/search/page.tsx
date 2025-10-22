@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { getAdminRoutePath } from "@/lib/routes";
 
 interface SearchResult {
   chunk_id: string;
@@ -74,7 +75,10 @@ export default function AgentDocumentSearch({ params }: { params: { id: string }
             Query embedded knowledge across all documents linked to this agent.
           </p>
         </div>
-        <Link href={`/agents/${agentId}`} className="text-sm text-blue-600 hover:underline">
+        <Link
+          href={getAdminRoutePath("adminAgentDetail", { agentId })}
+          className="text-sm text-blue-600 hover:underline"
+        >
           ← Back to agent overview
         </Link>
       </div>

@@ -1,13 +1,18 @@
 import { Body, Controller, Post } from '@nestjs/common';
 import twilio from 'twilio';
 import { createClient } from '@supabase/supabase-js';
+import {
+  getSipWebhookControllerBasePath,
+  getSipWebhookEndpointPath,
+  getSipWebhookEndpointSegment,
+} from '@easymo/commons';
 
 const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
 const client = twilio(process.env.TWILIO_ACCOUNT_SID!, process.env.TWILIO_AUTH_TOKEN!);
 
-@Controller('dial')
+@Controller(getSipWebhookControllerBasePath('dial'))
 export class DialController {
-  @Post('outbound')
+  @Post(getSipWebhookEndpointSegment('dial', 'outbound'))
   async outbound(@Body() body: { to?: string; agent_id?: string }) {
     const to = body?.to ?? process.env.OUTBOUND_SIP_URI!;
     const agentId =
@@ -37,13 +42,14 @@ export class DialController {
       '</Response>'
     ].join('');
 
-    const statusCallbackBase = process.env.PUBLIC_BASE_URL!;
+    const statusCallbackBase = process.env.PUBLIC_BASE_URL!.replace(/\/+$/, '');
+    const statusCallbackPath = getSipWebhookEndpointPath('voice', 'status');
 
     const result = await client.calls.create({
       to,
       from: process.env.OUTBOUND_CALLER_ID!,
       twiml,
-      statusCallback: `${statusCallbackBase}/voice/status`,
+      statusCallback: `${statusCallbackBase}${statusCallbackPath}`,
       statusCallbackEvent: ['initiated', 'ringing', 'answered', 'completed'],
       statusCallbackMethod: 'POST'
     });

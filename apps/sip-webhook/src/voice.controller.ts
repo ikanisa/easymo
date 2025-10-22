@@ -1,12 +1,13 @@
 import { Body, Controller, Post, Res } from '@nestjs/common';
 import type { Response } from 'express';
 import { createClient } from '@supabase/supabase-js';
+import { getSipWebhookControllerBasePath, getSipWebhookEndpointSegment } from '@easymo/commons';
 
 const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
 
-@Controller('voice')
+@Controller(getSipWebhookControllerBasePath('voice'))
 export class VoiceController {
-  @Post('inbound')
+  @Post(getSipWebhookEndpointSegment('voice', 'incoming'))
   async inbound(@Body() body: any, @Res() res: Response) {
     const { From, To, CallSid } = body;
     const { data: agent } = await supabase.from('agents').select('*').limit(1).maybeSingle();
@@ -34,7 +35,7 @@ export class VoiceController {
     return res.type('text/xml').send(twiml);
   }
 
-  @Post('status')
+  @Post(getSipWebhookEndpointSegment('voice', 'status'))
   async status(@Body() body: any) {
     const statusMap: Record<string, string> = {
       initiated: 'queued',

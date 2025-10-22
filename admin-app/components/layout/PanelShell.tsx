@@ -12,6 +12,7 @@ import { ServiceWorkerToasts } from "@/components/system/ServiceWorkerToasts";
 import { AssistantPanel } from "@/components/assistant/AssistantPanel";
 import { MobileNav } from "@/components/layout/MobileNav";
 import { SessionProvider } from "@/components/providers/SessionProvider";
+import { getAdminRoutePath } from "@/lib/routes";
 
 interface PanelShellProps {
   children: ReactNode;
@@ -69,7 +70,7 @@ export function PanelShell({
       console.error("panel.logout_failed", error);
     } finally {
       setSigningOut(false);
-      router.replace("/login");
+      router.replace(getAdminRoutePath("login"));
       router.refresh();
     }
   };

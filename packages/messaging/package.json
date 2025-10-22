@@ -12,6 +12,7 @@
     "lint": "eslint \"src/**/*.ts\""
   },
   "dependencies": {
+    "@easymo/commons": "workspace:*",
     "kafkajs": "^2.2.4",
     "lodash.merge": "^4.6.2",
     "pino": "^9.5.0",

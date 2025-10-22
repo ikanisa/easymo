@@ -4,6 +4,7 @@ import { FormEvent, useState } from "react";
 import classNames from "classnames";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
+import { getAdminRoutePath } from "@/lib/routes";
 import styles from "./LoginForm.module.css";
 
 interface LoginFormProps {
@@ -40,7 +41,7 @@ export function LoginForm({ environmentLabel }: LoginFormProps) {
         return;
       }
 
-      router.replace("/dashboard");
+      router.replace(getAdminRoutePath("panelDashboard"));
       router.refresh();
     } catch (submitError) {
       console.error("login.submit_failed", submitError);

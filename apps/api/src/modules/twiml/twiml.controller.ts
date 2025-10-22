@@ -1,10 +1,11 @@
 import { Controller, Get, Query, Res } from '@nestjs/common';
 import { Response } from 'express';
 import { env } from '../../common/env';
+import { getApiControllerBasePath, getApiEndpointSegment } from '@easymo/commons';
 
-@Controller('/twiml')
+@Controller(getApiControllerBasePath('twiml'))
 export class TwiMLController {
-  @Get('warm-transfer')
+  @Get(getApiEndpointSegment('twiml', 'warmTransfer'))
   warm(@Query('queue') queue: string, @Res() res: Response) {
     const safeQueue = queue ?? 'default';
     const xml = `<?xml version="1.0" encoding="UTF-8"?>

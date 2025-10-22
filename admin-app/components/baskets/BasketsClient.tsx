@@ -11,22 +11,23 @@ import {
   useIbiminaQuery,
   type BasketsQueryParams,
 } from "@/lib/queries/baskets";
+import { adminRoutePaths, type NavigableAdminRouteKey } from "@/lib/routes";
 
 type BasketsClientProps = {
   saccoParams: BasketsQueryParams;
   ibiminaParams: BasketsQueryParams;
 };
 
-const QUICK_LINKS = [
-  { label: "Branches & Officers", href: "/baskets/saccos/branches" },
-  { label: "Ibimina Registry", href: "/baskets/ibimina" },
-  { label: "KYC Queue", href: "/baskets/kyc" },
-  { label: "Membership Management", href: "/baskets/memberships" },
-  { label: "Contribution Rules & Cycles", href: "/baskets/contributions/rules" },
-  { label: "Contributions Ledger", href: "/baskets/contributions" },
-  { label: "Unmatched SMS", href: "/baskets/reconciliation" },
-  { label: "Loan Requests", href: "/baskets/loans" },
-  { label: "Settings", href: "/baskets/settings" },
+const QUICK_LINKS: Array<{ label: string; route: NavigableAdminRouteKey }> = [
+  { label: "Branches & Officers", route: "panelBasketsSaccoBranches" },
+  { label: "Ibimina Registry", route: "panelBasketsIbimina" },
+  { label: "KYC Queue", route: "panelBasketsKyc" },
+  { label: "Membership Management", route: "panelBasketsMemberships" },
+  { label: "Contribution Rules & Cycles", route: "panelBasketsContributionRules" },
+  { label: "Contributions Ledger", route: "panelBasketsContributions" },
+  { label: "Unmatched SMS", route: "panelBasketsReconciliation" },
+  { label: "Loan Requests", route: "panelBasketsLoans" },
+  { label: "Settings", route: "panelBasketsSettings" },
 ];
 
 export function BasketsClient({ saccoParams, ibiminaParams }: BasketsClientProps) {
@@ -57,7 +58,7 @@ export function BasketsClient({ saccoParams, ibiminaParams }: BasketsClientProps
         actions={[
           <Link
             key="view-all"
-            href="/baskets/saccos/branches"
+            href={adminRoutePaths.panelBasketsSaccoBranches}
             className="text-sm font-medium text-primary hover:underline"
           >
             View all
@@ -102,7 +103,7 @@ export function BasketsClient({ saccoParams, ibiminaParams }: BasketsClientProps
         actions={[
           <Link
             key="view-ibimina"
-            href="/baskets/ibimina"
+            href={adminRoutePaths.panelBasketsIbimina}
             className="text-sm font-medium text-primary hover:underline"
           >
             Inspect registry
@@ -154,10 +155,10 @@ export function BasketsClient({ saccoParams, ibiminaParams }: BasketsClientProps
       >
         <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {QUICK_LINKS.map((link) => (
-            <li key={link.href}>
+            <li key={link.route}>
               <Link
                 className="block rounded-lg border border-dashed border-foreground/20 px-4 py-3 text-sm font-medium hover:border-primary hover:bg-primary/5"
-                href={link.href}
+                href={adminRoutePaths[link.route]}
               >
                 {link.label}
               </Link>

@@ -33,7 +33,7 @@ export function MobileNav({ open, onClose }: MobileNavProps) {
                 {groupItems.map((item) => {
                   const isActive = pathname === item.href || pathname?.startsWith(`${item.href}/`);
                   return (
-                    <li key={item.href}>
+                    <li key={item.route}>
                       <Link
                         href={item.href}
                         className={classNames(

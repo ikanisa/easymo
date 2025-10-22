@@ -1,6 +1,7 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { getAdminRoutePath } from "@/lib/routes";
 
 export default function NewAgent() {
   const router = useRouter();
@@ -15,7 +16,9 @@ export default function NewAgent() {
     const res = await fetch('/api/agents', { method: 'POST', headers: { 'Content-Type':'application/json' }, body: JSON.stringify({ name, summary }) });
     if (res.ok) {
       const json = await res.json();
-      router.push(`/agents/${json.agent.id}`);
+      router.push(
+        getAdminRoutePath("adminAgentDetail", { agentId: String(json.agent.id) }),
+      );
     } else {
       setLoading(false);
     }
