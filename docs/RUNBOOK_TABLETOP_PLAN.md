@@ -70,7 +70,7 @@ new reminder workers and notification retry flow.
   - Metrics collector alerts on HTTP 4xx/5xx for the drain endpoint.
   - `logs drain_error` entries appear in the collector or `fetch` rejects in the app logs.
 - **Response:**
-  1. Verify `METRICS_DRAIN_URL` configuration in Vercel (`vercel env ls`) and Supabase function secrets.
+  1. Verify `METRICS_DRAIN_URL` configuration in the nginx site/env configuration and Supabase function secrets.
   2. Use `curl -X POST $METRICS_DRAIN_URL` locally with a sample payload to validate reachability.
   3. If the collector is down, fail over to secondary endpoint or disable the drain temporarily.
   4. Document the outage; schedule resilience improvements (retry/backoff) if repeated.
@@ -83,7 +83,7 @@ new reminder workers and notification retry flow.
   schema to reuse during tabletop simulations.
 - Verify `INSURANCE_OCR_METRICS_WEBHOOK_URL` is routed to observability sink so
   queue depth signals surface during exercises.
-- Confirm Vercel log drain and metrics drain URLs (`LOG_DRAIN_URL`, `METRICS_DRAIN_URL`) are populated and reachable.
+- Confirm the log drain and metrics drain URLs (`LOG_DRAIN_URL`, `METRICS_DRAIN_URL`) are populated in the host configuration and reachable.
 - Ensure GitHub Actions workflow `Synthetic Admin Checks` is scheduled and has valid secrets (`ADMIN_BASE_URL`, `ADMIN_API_TOKEN`).
 
 ## Post-Exercise Actions

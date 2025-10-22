@@ -2,24 +2,24 @@
 
 _Last updated: 2025-10-18_
 
-This note accompanies the Phase 1 tasks. It lists every environment variable and platform setting that must be aligned across local `.env`, Vercel, and Supabase before we begin functional testing.
+This note accompanies the Phase 1 tasks. It lists every environment variable and platform setting that must be aligned across local `.env`, the hosting stack (nginx or equivalent), and Supabase before we begin functional testing.
 
 ## 1. Environment Variables
 
-The repository root `.env` now mirrors the structure we expect in Vercel and
+The repository root `.env` now mirrors the structure we expect in the host configuration and
 documents the live Supabase project (`lhbowpbcpwoiparwnwgt`). Every value
 prefixed with `CHANGEME_` must be replaced with the actual secret and then
 copied to:
 
 - `.env.local` (for local development)  
-- Vercel project environment variables  
+- Hosting environment variables (nginx, container secrets, or equivalent)
 - Supabase Edge Function secrets (where applicable)
 
 | Variable | Notes / Where Used |
 | --- | --- |
 | `VITE_SUPABASE_URL`, `VITE_SUPABASE_PROJECT_ID` | Non-secret; points to `https://lhbowpbcpwoiparwnwgt.supabase.co`. |
 | `VITE_SUPABASE_ANON_KEY` | Anonymous key exposed to client. |
-| `VITE_SUPABASE_SERVICE_ROLE_KEY` / `SUPABASE_SERVICE_ROLE_KEY` | Service role key. **Never** expose to browsers. Only Vercel functions / Supabase functions. |
+| `VITE_SUPABASE_SERVICE_ROLE_KEY` / `SUPABASE_SERVICE_ROLE_KEY` | Service role key. **Never** expose to browsers. Only server-side hosts / Supabase functions. |
 | `VITE_ADMIN_TOKEN` / `EASYMO_ADMIN_TOKEN` / `ADMIN_TOKEN` | Shared secret used by admin panel to call edge functions. Must match Supabase function secret `EASYMO_ADMIN_TOKEN`. |
 | `ADMIN_ACCESS_CREDENTIALS` | JSON array of operator tokens. Required for admin login. |
 | `ADMIN_SESSION_SECRET` | Used to sign the session cookie. |
@@ -36,18 +36,18 @@ Update the Supabase project settings (Dashboard → Authentication → Settings)
 
 | Setting | Value |
 | --- | --- |
-| **Site URL** | `https://easymo.vercel.app` (matches `supabase/config.toml`) |
-| **Redirect URLs** | Add `https://easymo.vercel.app`, Git/preview URLs (`https://easymo-git-*.vercel.app`), and local dev hosts (`http://localhost:5173`, `http://localhost:8080`). |
+| **Site URL** | `http://localhost:8080` (matches `supabase/config.toml`). Update to your production host when deploying externally. |
+| **Redirect URLs** | Add `http://localhost:8080`, additional preview hosts you manage, and local dev hosts (`http://localhost:5173`). |
 | **Email OTP / Providers** | Decide whether email magic links or social providers are needed and configure them now. |
 
 > After updating the dashboard, run a complete login flow in production to confirm Supabase redirects back to the admin panel with a valid session cookie.
 
-## 3. Vercel Environment Variables
+## 3. Hosting Environment Variables
 
-1. Run `vercel env ls` (requires Vercel CLI login) and export the current values.  
-2. Ensure every key listed in `.env` exists and references the official project (`lhbowpbcpwoiparwnwgt`).  
-3. Set `VITE_ADMIN_TOKEN`, `ADMIN_SESSION_SECRET`, `ADMIN_ACCESS_CREDENTIALS`, `DISPATCHER_FUNCTION_URL`, and the Supabase keys to their production values.  
-4. Redeploy both the root project and the admin panel after updating secrets (`vercel --prod` from the appropriate directories).
+1. Export the active configuration from your hosting stack (e.g., `docker compose config`, Kubernetes secrets, or nginx `env` files).
+2. Ensure every key listed in `.env` exists and references the official project (`lhbowpbcpwoiparwnwgt`).
+3. Set `VITE_ADMIN_TOKEN`, `ADMIN_SESSION_SECRET`, `ADMIN_ACCESS_CREDENTIALS`, `DISPATCHER_FUNCTION_URL`, and the Supabase keys to their production values.
+4. Redeploy both the root project and the admin panel after updating secrets (e.g., rebuild the SPA with `pnpm build` and reload nginx/systemd units).
 
 ## 4. Supabase Edge Function Secrets
 
@@ -63,7 +63,7 @@ From the Supabase dashboard (Functions → Secrets) verify the following entries
 
 Once the variables are aligned:
 
-1. **Admin login** – Log into `https://easymo.vercel.app/login` using one of the tokens defined in `ADMIN_ACCESS_CREDENTIALS`. Confirm the session cookie is created and persists between pages.  
+1. **Admin login** – Log into `http://localhost:8080/login` (or your deployed host) using one of the tokens defined in `ADMIN_ACCESS_CREDENTIALS`. Confirm the session cookie is created and persists between pages.
 2. **Edge function call** – From a logged-in browser, hit `/admin-stats` (or use `curl` with the `x-admin-token` header) to confirm HTTP 200.  
 3. **Campaign dispatcher** – Trigger a test campaign (or call the function with a dry-run flag) to validate `DISPATCHER_FUNCTION_URL`.  
 4. **Reminder toggles** – Temporarily enable/disable cron variables and ensure the functions respect the new settings (requires Phase 3 cron verification).

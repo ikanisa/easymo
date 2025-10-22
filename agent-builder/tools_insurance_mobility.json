@@ -14,28 +14,28 @@
         },
         "required": ["intent_id","kind"]
       },
-      "http": { "method": "POST", "url": "https://easymo.vercel.app/api/insurance/ingest_media" },
+      "http": { "method": "POST", "url": "http://localhost:8080/api/insurance/ingest_media" },
       "headers": { "x-request-id": "${REQUEST_ID}", "Idempotency-Key": "${IDEMPOTENCY_KEY}" }
     },
     {
       "name": "insurance.ocr",
       "description": "Run OCR",
       "input_schema": { "type": "object", "properties": { "document_ids": { "type": "array", "items": { "type": "string" } } }, "required": ["document_ids"] },
-      "http": { "method": "POST", "url": "https://easymo.vercel.app/api/insurance/ocr" },
+      "http": { "method": "POST", "url": "http://localhost:8080/api/insurance/ocr" },
       "headers": { "x-request-id": "${REQUEST_ID}", "Idempotency-Key": "${IDEMPOTENCY_KEY}" }
     },
     {
       "name": "insurance.notify_backoffice",
       "description": "Back-office handoff",
       "input_schema": { "type": "object", "properties": { "intent_id": { "type": "string" } }, "required": ["intent_id"] },
-      "http": { "method": "POST", "url": "https://easymo.vercel.app/api/insurance/notify_backoffice" },
+      "http": { "method": "POST", "url": "http://localhost:8080/api/insurance/notify_backoffice" },
       "headers": { "x-request-id": "${REQUEST_ID}" }
     },
     {
       "name": "mobility.match",
       "description": "Find nearby drivers",
       "input_schema": { "type": "object", "properties": { "ride_id": { "type": "string" }, "vehicle_type": { "type": "string" }, "pickup": { "type": "object" } }, "required": ["ride_id","vehicle_type","pickup"] },
-      "http": { "method": "POST", "url": "https://easymo.vercel.app/api/mobility/match" },
+      "http": { "method": "POST", "url": "http://localhost:8080/api/mobility/match" },
       "headers": { "x-request-id": "${REQUEST_ID}" }
     },
     {
@@ -43,14 +43,14 @@
       "description": "Fan-out to drivers",
       "input_schema": { "type": "object", "properties": { "ride_id": { "type": "string" }, "driver_ids": { "type": "array", "items": { "type": "string" } }, "template": { "type": "object" } }, "required": ["ride_id","driver_ids"] },
       "output_schema": { "type": "object", "properties": { "ride_id": { "type": "string" }, "total": { "type": "integer", "minimum": 0 }, "queued": { "type": "integer", "minimum": 0 }, "failed": { "type": "integer", "minimum": 0 }, "reqId": { "type": "string" }, "duration_ms": { "type": "integer", "minimum": 0 }, "failures": { "type": "array", "items": { "type": "object", "properties": { "to": { "type": "string" }, "error": { "type": "string" }, "status": { "type": "integer" }, "body": { "type": ["string","null"] }, "duration_ms": { "type": "integer", "minimum": 0 } }, "required": ["to","error"] } } }, "required": ["ride_id","total","queued","failed"] },
-      "http": { "method": "POST", "url": "https://easymo.vercel.app/api/mobility/ping_drivers" },
+      "http": { "method": "POST", "url": "http://localhost:8080/api/mobility/ping_drivers" },
       "headers": { "x-request-id": "${REQUEST_ID}" }
     },
     {
       "name": "mobility.book",
       "description": "Book selected driver",
       "input_schema": { "type": "object", "properties": { "ride_id": { "type": "string" }, "driver_id": { "type": "string" } }, "required": ["ride_id","driver_id"] },
-      "http": { "method": "POST", "url": "https://easymo.vercel.app/api/mobility/book" },
+      "http": { "method": "POST", "url": "http://localhost:8080/api/mobility/book" },
       "headers": { "x-request-id": "${REQUEST_ID}" }
     }
   ]

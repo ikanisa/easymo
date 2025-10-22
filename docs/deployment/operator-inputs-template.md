@@ -19,7 +19,7 @@ Collect the following information *before* executing the deployment workflow. St
 - Migration / restore policy:
 - Supabase dashboard URL:
 
-## Vercel
+## Hosting Platform
 - Team / scope:
 - Project name:
 - Root directory (e.g., `admin-app`):
@@ -33,7 +33,7 @@ Collect the following information *before* executing the deployment workflow. St
 - Package manager & version:
 - Node.js runtime requirement:
 - Supabase CLI version:
-- Vercel CLI version:
+- Deployment tooling / CLI version:
 
 ## Compliance & Operations
 - OSS license:

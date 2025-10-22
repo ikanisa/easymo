@@ -50,7 +50,7 @@ remain additive-only.
 
 The admin panel assumes every deployment targets the Supabase project
 `lhbowpbcpwoiparwnwgt`. Keep the following variables aligned across
-`.env.local`, Vercel, and Supabase Edge Functions:
+`.env.local`, hosting secrets, and Supabase Edge Functions:
 
 | Variable | Purpose |
 | --- | --- |
@@ -78,11 +78,11 @@ fixture dataset without Supabase connectivity.
 #### Production login verification
 
 1. Deploy the latest branch and ensure the variables above are present in
-   Vercel (`vercel env ls`).
-2. Visit `https://easymo.vercel.app/login`, submit a valid operator token, and
+   your hosting stack (docker compose env, Kubernetes secrets, etc.).
+2. Visit `http://localhost:8080/login` (or the deployed host), submit a valid operator token, and
    confirm you are redirected to `/dashboard`.
 3. Open DevTools → Application → Cookies and verify `admin_session` is set for
-   the `easymo.vercel.app` domain (HttpOnly, Secure, SameSite=Lax).
+   the deployed domain (HttpOnly, Secure, SameSite=Lax).
 4. Navigate across a handful of pages; the session cookie should persist and the
    top-right avatar should display the operator label initials.
 5. Sign out from the top bar and ensure the cookie is cleared and the app

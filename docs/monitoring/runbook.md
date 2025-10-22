@@ -2,11 +2,11 @@
 
 This runbook aggregates the Phase 4 readiness items: log inspection, cron verification, notifications, and rotating admin credentials.
 
-## 1. Vercel Runtime Logs
+## 1. Hosting Runtime Logs
 
-- **Admin app**: `vercel logs easymo-admin --scope ikanisa`
-- **Frontend app**: `vercel logs easymo --scope ikanisa`
-  - The CLI requires an active deployment; if the default alias fails, use the deployment URL returned by `vercel projects ls`.
+- **Admin app**: `docker compose logs -f admin-app` (or review the systemd journal if running on a VM).
+- **Frontend app**: `docker compose logs -f web` or tail the nginx access/error logs in `infrastructure/nginx/logs`.
+  - Ensure log rotation is configured; see `infrastructure/logging/README.md` for rsyslog/fluent-bit examples.
   - Logs include Supabase function invocations; errors bubble up as 4xx/5xx.
 
 ## 2. Supabase Edge Function Smoke Tests
@@ -31,7 +31,7 @@ There is no `supabase cron list` command yet. Verify schedules in **Supabase Das
 - `baskets-reminder`
 - `notification-worker`
 
-Ensure the schedule matches the environment variables in Supabase/Vercel (`CART_REMINDER_CRON`, `ORDER_PENDING_REMINDER_CRON`, etc.).
+Ensure the schedule matches the environment variables in Supabase/hosting stack (`CART_REMINDER_CRON`, `ORDER_PENDING_REMINDER_CRON`, etc.).
 
 ## 4. Admin Token Rollovers
 
@@ -42,7 +42,7 @@ EASYMO_ADMIN_TOKEN
 ADMIN_TOKEN
 ```
 
-Update Vercel env vars and redeploy after rotating the token. All admin edge functions rely on this value for `x-admin-token` / `x-api-key` headers.
+Update the host environment variables (nginx/docker/Kubernetes) and redeploy after rotating the token. All admin edge functions rely on this value for `x-admin-token` / `x-api-key` headers.
 
 ## 5. Data Checks
 
@@ -67,7 +67,7 @@ Use these as a baseline when validating dashboards.
 ## 6. Alerts
 
 - Set `ALERT_WEBHOOK_URL` if you want Supabase functions to POST incident notifications.
-- Vercel offers log drains and analytics; enable if production monitoring is required.
+- Configure log drains or forwarders (e.g., Fluent Bit to Loki) if production monitoring is required.
 
 ## 7. Grafana Dashboards
 

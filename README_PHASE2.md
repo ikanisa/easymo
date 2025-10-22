@@ -35,10 +35,8 @@ directly with Supabase Edge Functions and the database through the
   subscriptions for local testing.
 - **Environment Variables**: `.env.example` documents all required
   variables such as `VITE_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` and
-  `EASYMO_ADMIN_TOKEN`.
-- **Vercel Configuration**: `vercel.json` rewrites API routes to the
-  corresponding edge functions and configures them to run on Vercel’s
-  Edge Runtime.
+  `EASYMO_ADMIN_TOKEN`.  Keep the local `.env` aligned with Supabase
+  secrets before launching the SPA.
 
 ## Development Notes
 
@@ -50,8 +48,9 @@ directly with Supabase Edge Functions and the database through the
 4. To apply the database schema locally, install the Supabase CLI and run
    `supabase db push` inside the `easymo` directory.  Then execute the
    seed file via `supabase db query < supabase/seeders/phase2_seed.sql`.
-5. Deploy edge functions via `supabase functions deploy --project-ref <ref>`,
-   or let Vercel handle deployment if configured.
+5. Deploy edge functions via `supabase functions deploy --project-ref <ref>`
+   and serve the built SPA using the nginx site definition under
+   `infrastructure/nginx/easymo.conf` (or your preferred host).
 
 ## Testing
 

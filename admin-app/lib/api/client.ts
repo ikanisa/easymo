@@ -42,16 +42,14 @@ type NextFetchInit = RequestInit & { next?: { revalidate?: number | false; tags?
 function resolveInternalApiBaseUrl(): string | undefined {
   const configuredBase =
     process.env.INTERNAL_API_BASE_URL ??
-    process.env.NEXT_PUBLIC_APP_URL ??
-    (process.env.VERCEL_BRANCH_URL ? `https://${process.env.VERCEL_BRANCH_URL}` : undefined) ??
-    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined);
+    process.env.NEXT_PUBLIC_APP_URL;
 
   if (configuredBase) {
     return configuredBase;
   }
 
   if (process.env.NODE_ENV !== "production") {
-    return "http://localhost:3000";
+    return "http://localhost:8080";
   }
 
   return undefined;
