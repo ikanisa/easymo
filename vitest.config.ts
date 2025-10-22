@@ -9,6 +9,7 @@ export default defineConfig({
     alias: {
       '@': resolve(rootDir, 'admin-app'),
       '@va/shared': resolve(rootDir, 'packages/shared/src/index.ts'),
+      'server-only': resolve(rootDir, 'tests/stubs/server-only.ts'),
     },
   },
   esbuild: {

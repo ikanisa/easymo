@@ -1,4 +1,5 @@
 import { render, screen } from "./utils/react-testing";
+import { describe, expect, it } from "vitest";
 import { IntegrationStatusBadge } from "@/components/ui/IntegrationStatusBadge";
 
 describe("IntegrationStatusBadge", () => {
