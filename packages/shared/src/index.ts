@@ -15,3 +15,4 @@ export interface LeadInput {
 }
 
 export * from "./routes/index.js";
+export * from "./wa-calls/index.js";

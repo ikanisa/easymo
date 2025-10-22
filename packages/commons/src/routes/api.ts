@@ -23,6 +23,13 @@ const apiRouteDefinitions = defineHttpControllers({
       customerMessage: { method: "POST" as const, segment: ":threadId/customer" as const },
     },
   },
+  waCalls: {
+    basePath: "wa" as const,
+    endpoints: {
+      webhookVerify: { method: "GET" as const, segment: "webhook" as const },
+      events: { method: "POST" as const, segment: "events" as const },
+    },
+  },
   twilio: {
     basePath: "twilio" as const,
     endpoints: {
