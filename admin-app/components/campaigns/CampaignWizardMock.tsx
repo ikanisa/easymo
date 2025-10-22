@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { getAdminApiPath } from "@/lib/routes";
 import type { TemplateMeta } from "@/lib/schemas";
 import { TemplatePicker } from "@/components/templates/TemplatePicker";
 import { CsvUpload } from "@/components/uploads/CsvUpload";
@@ -50,7 +51,7 @@ export function CampaignWizardMock({ templates }: CampaignWizardMockProps) {
     setIntegration(null);
     setResultMessage(null);
     try {
-      const response = await fetch("/api/campaigns", {
+      const response = await fetch(getAdminApiPath("campaigns"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

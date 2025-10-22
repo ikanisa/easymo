@@ -1,5 +1,6 @@
 import type { Mock } from "vitest";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { createAdminApiRequest } from "./utils/api";
 
 vi.mock("@/lib/server/supabase-admin", () => ({
   getSupabaseAdminClient: vi.fn(),
@@ -60,14 +61,17 @@ describe("qr preview route", () => {
     const { POST } = await import("@/app/api/qr/preview/route");
 
     const response = await POST(
-      new Request("http://localhost/api/qr/preview", {
-        method: "POST",
-        body: JSON.stringify({
-          barId: "11111111-1111-1111-1111-111111111111",
-          phone: "+250780000000",
-          sendTest: true,
-        }),
-      }),
+      createAdminApiRequest(
+        ["qr", "preview"],
+        {
+          method: "POST",
+          body: JSON.stringify({
+            barId: "11111111-1111-1111-1111-111111111111",
+            phone: "+250780000000",
+            sendTest: true,
+          }),
+        },
+      ),
     );
 
     expect(response.status).toBe(200);
@@ -108,10 +112,13 @@ describe("qr preview route", () => {
     const { POST } = await import("@/app/api/qr/preview/route");
 
     const response = await POST(
-      new Request("http://localhost/api/qr/preview", {
-        method: "POST",
-        body: JSON.stringify({ barId: "22222222-2222-2222-2222-222222222222" }),
-      }),
+      createAdminApiRequest(
+        ["qr", "preview"],
+        {
+          method: "POST",
+          body: JSON.stringify({ barId: "22222222-2222-2222-2222-222222222222" }),
+        },
+      ),
     );
 
     expect(response.status).toBe(200);

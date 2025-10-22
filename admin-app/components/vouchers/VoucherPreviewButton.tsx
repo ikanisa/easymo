@@ -7,6 +7,7 @@ import type { Voucher } from "@/lib/schemas";
 import styles from "./VoucherPreviewButton.module.css";
 import { IntegrationStatusBadge } from "@/components/ui/IntegrationStatusBadge";
 import { Button } from "@/components/ui/Button";
+import { getAdminApiPath } from "@/lib/routes";
 
 interface VoucherPreviewButtonProps {
   voucher: Voucher;
@@ -36,7 +37,7 @@ export function VoucherPreviewButton({ voucher }: VoucherPreviewButtonProps) {
     setStatusMessage(null);
     setIntegration(null);
     try {
-      const response = await fetch("/api/vouchers/preview", {
+      const response = await fetch(getAdminApiPath("vouchers", "preview"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ voucherId: voucher.id }),

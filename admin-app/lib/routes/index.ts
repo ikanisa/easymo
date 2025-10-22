@@ -25,3 +25,5 @@ export type {
   NavigableAdminApiRouteKey,
   NavigableAdminApiRoutePath,
 } from "@va/shared";
+
+export { ADMIN_API_BASE_PATH, getAdminApiPath } from "./api";

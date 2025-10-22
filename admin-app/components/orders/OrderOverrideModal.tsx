@@ -8,6 +8,7 @@ import { useToast } from "@/components/ui/ToastProvider";
 import { IntegrationStatusBadge } from "@/components/ui/IntegrationStatusBadge";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { Button } from "@/components/ui/Button";
+import { getAdminApiPath } from "@/lib/routes";
 
 interface OrderOverrideModalProps {
   order: Order;
@@ -38,7 +39,7 @@ export function OrderOverrideModal(
     setMessage(null);
     setIntegration(null);
     try {
-      const response = await fetch(`/api/orders/${order.id}/override`, {
+      const response = await fetch(getAdminApiPath("orders", order.id, "override"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action, reason }),

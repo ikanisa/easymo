@@ -1,4 +1,5 @@
 import { shouldUseMocks } from "@/lib/runtime-config";
+import { getAdminApiPath } from "@/lib/routes";
 import { paginateArray, type PaginatedResult, type Pagination } from "@/lib/shared/pagination";
 import { matchesSearch } from "@/lib/shared/search";
 import { callAdminFunction } from "@/lib/server/functions-client";

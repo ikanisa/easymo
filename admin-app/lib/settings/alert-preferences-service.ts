@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { apiFetch } from "@/lib/api/client";
+import { getAdminApiPath } from "@/lib/routes";
 import { shouldUseMocks } from "@/lib/runtime-config";
 import {
   adminAlertPreferenceSchema,
@@ -43,7 +44,7 @@ export async function listAdminAlertPreferences(): Promise<
   const response = await apiFetch<{
     data: unknown;
     integration?: unknown;
-  }>("/api/settings/alerts");
+  }>(getAdminApiPath("settings", "alerts"));
 
   if (response.ok) {
     const parsed = z.object({

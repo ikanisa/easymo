@@ -1,4 +1,5 @@
 import { apiFetch } from "@/lib/api/client";
+import { getAdminApiPath } from "@/lib/routes";
 import { shouldUseMocks } from "@/lib/runtime-config";
 import { mockStorageObjects } from "@/lib/mock-data";
 import {
@@ -35,7 +36,7 @@ export async function listStorageObjects(
     data: StorageObject[];
     total: number;
     hasMore?: boolean;
-  }>(`/api/storage?${searchParams.toString()}`);
+  }>(`${getAdminApiPath("storage")}?${searchParams.toString()}`);
 
   if (response.ok) {
     const { data, total, hasMore } = response.data;

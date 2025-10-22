@@ -1,4 +1,5 @@
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { createAdminApiRequest } from './utils/api';
 
 vi.mock('@/lib/server/logger', () => ({
   logStructured: vi.fn(),
@@ -33,15 +34,18 @@ describe('mobility ping drivers route', () => {
     const { POST } = await import('@/app/api/mobility/ping_drivers/route');
 
     const response = await POST(
-      new Request('http://localhost/api/mobility/ping_drivers', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          ride_id: 'ride-1',
-          driver_ids: ['driver-a', 'driver-b'],
-          template: { name: 'DRIVER_PING' },
-        }),
-      }) as any,
+      createAdminApiRequest(
+        ['mobility', 'ping_drivers'],
+        {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            ride_id: 'ride-1',
+            driver_ids: ['driver-a', 'driver-b'],
+            template: { name: 'DRIVER_PING' },
+          }),
+        },
+      ) as any,
     );
 
     expect(response.status).toBe(202);
@@ -77,11 +81,14 @@ describe('mobility ping drivers route', () => {
     const { POST } = await import('@/app/api/mobility/ping_drivers/route');
 
     const response = await POST(
-      new Request('http://localhost/api/mobility/ping_drivers', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ ride_id: 'ride-2', driver_ids: ['driver-x', 'driver-y'] }),
-      }) as any,
+      createAdminApiRequest(
+        ['mobility', 'ping_drivers'],
+        {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ ride_id: 'ride-2', driver_ids: ['driver-x', 'driver-y'] }),
+        },
+      ) as any,
     );
 
     expect(response.status).toBe(207);

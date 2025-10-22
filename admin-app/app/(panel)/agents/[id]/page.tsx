@@ -10,6 +10,7 @@ import {
   useAgentTasks,
   useAgentRuns,
 } from "@/lib/queries/agents";
+import { getAdminApiPath } from "@/lib/routes";
 import { AgentKnowledgeStatusBanner } from "@/components/agents/AgentKnowledgeStatusBanner";
 import { useToast } from "@/components/ui/ToastProvider";
 import { useEffect, useRef, useState } from "react";
