@@ -1,3 +1,5 @@
+import { z } from 'zod';
+
 function parseRecord(input: string | undefined): Record<string, string> {
   if (!input) {
     return {};
@@ -32,29 +34,69 @@ function parseStringArray(input: string | undefined): string[] {
   return [];
 }
 
+function readEnv(name: string): string | undefined {
+  const raw = process.env[name];
+  if (typeof raw !== 'string') {
+    return undefined;
+  }
+  const trimmed = raw.trim();
+  return trimmed.length > 0 ? trimmed : undefined;
+}
+
+const SupabaseConfigSchema = z.object({
+  url: z.string().url(),
+  serviceRoleKey: z.string().min(1),
+});
+
+function resolveSupabaseConfig() {
+  const url =
+    readEnv('SUPABASE_URL') ??
+    readEnv('SERVICE_URL') ??
+    readEnv('NEXT_PUBLIC_SUPABASE_URL');
+  const serviceRoleKey =
+    readEnv('SUPABASE_SERVICE_ROLE_KEY') ??
+    readEnv('SERVICE_ROLE_KEY');
+
+  const parsed = SupabaseConfigSchema.safeParse({ url, serviceRoleKey });
+  if (!parsed.success) {
+    throw new Error(
+      'Missing Supabase configuration. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY (or provide SERVICE_URL/SERVICE_ROLE_KEY).',
+    );
+  }
+
+  return parsed.data;
+}
+
+const supabaseConfig = resolveSupabaseConfig();
+
+const port = z.coerce.number().int().nonnegative().catch(4000).parse(readEnv('PORT'));
+
 export const env = {
-  port: parseInt(process.env.PORT ?? '4000', 10),
-  baseUrl: process.env.BACKEND_BASE_URL ?? 'http://localhost:4000',
-  supabaseUrl: process.env.SUPABASE_URL ?? '',
-  supabaseKey: process.env.SUPABASE_SERVICE_ROLE_KEY ?? '',
-  waToken: process.env.WABA_ACCESS_TOKEN ?? '',
-  waPhoneId: process.env.WABA_PHONE_NUMBER_ID ?? '',
-  waVerifyToken: process.env.WA_VERIFY_TOKEN ?? process.env.WHATSAPP_VERIFY_TOKEN ?? '',
-  waGraphApiBaseUrl: process.env.WHATSAPP_API_BASE_URL ?? process.env.WHATSAPP_API_URL ?? 'https://graph.facebook.com/v21.0',
-  twilioSid: process.env.TWILIO_ACCOUNT_SID ?? '',
-  twilioAuth: process.env.TWILIO_AUTH_TOKEN ?? '',
-  twilioSipDomain: process.env.TWILIO_SIP_DOMAIN ?? '',
-  openaiWebhookSecret: process.env.OPENAI_REALTIME_SIP_WEBHOOK_SECRET ?? '',
-  openaiApiKey: process.env.OPENAI_API_KEY ?? '',
-  realtimeModel: process.env.REALTIME_MODEL ?? 'gpt-realtime',
-  realtimeWsUrl: process.env.REALTIME_WS_URL ?? '',
-  jwtSigningKey: process.env.JWT_SIGNING_KEY ?? 'dev',
-  voiceAgentDefault: process.env.VOICE_AGENT_DEFAULT ?? 'sales',
-  voiceAgentProjectMap: parseRecord(process.env.VOICE_AGENT_PROJECT_MAP),
-  voiceAgentNumberMap: parseRecord(process.env.VOICE_AGENT_NUMBER_MAP),
-  bridgeSharedSecret: process.env.BRIDGE_SHARED_SECRET ?? '',
-  turnServers: parseStringArray(process.env.TURN_URIS),
-  turnUsername: process.env.TURN_USERNAME ?? '',
-  turnPassword: process.env.TURN_PASSWORD ?? '',
-  redisUrl: process.env.REDIS_URL ?? '',
+  port,
+  baseUrl: readEnv('BACKEND_BASE_URL') ?? 'http://localhost:4000',
+  supabaseUrl: supabaseConfig.url,
+  supabaseKey: supabaseConfig.serviceRoleKey,
+  waToken: readEnv('WABA_ACCESS_TOKEN') ?? '',
+  waPhoneId: readEnv('WABA_PHONE_NUMBER_ID') ?? '',
+  waVerifyToken: readEnv('WA_VERIFY_TOKEN') ?? readEnv('WHATSAPP_VERIFY_TOKEN') ?? '',
+  waGraphApiBaseUrl:
+    readEnv('WHATSAPP_API_BASE_URL') ??
+    readEnv('WHATSAPP_API_URL') ??
+    'https://graph.facebook.com/v21.0',
+  twilioSid: readEnv('TWILIO_ACCOUNT_SID') ?? '',
+  twilioAuth: readEnv('TWILIO_AUTH_TOKEN') ?? '',
+  twilioSipDomain: readEnv('TWILIO_SIP_DOMAIN') ?? '',
+  openaiWebhookSecret: readEnv('OPENAI_REALTIME_SIP_WEBHOOK_SECRET') ?? '',
+  openaiApiKey: readEnv('OPENAI_API_KEY') ?? '',
+  realtimeModel: readEnv('REALTIME_MODEL') ?? 'gpt-realtime',
+  realtimeWsUrl: readEnv('REALTIME_WS_URL') ?? '',
+  jwtSigningKey: readEnv('JWT_SIGNING_KEY') ?? 'dev',
+  voiceAgentDefault: readEnv('VOICE_AGENT_DEFAULT') ?? 'sales',
+  voiceAgentProjectMap: parseRecord(readEnv('VOICE_AGENT_PROJECT_MAP')),
+  voiceAgentNumberMap: parseRecord(readEnv('VOICE_AGENT_NUMBER_MAP')),
+  bridgeSharedSecret: readEnv('BRIDGE_SHARED_SECRET') ?? '',
+  turnServers: parseStringArray(readEnv('TURN_URIS')),
+  turnUsername: readEnv('TURN_USERNAME') ?? '',
+  turnPassword: readEnv('TURN_PASSWORD') ?? '',
+  redisUrl: readEnv('REDIS_URL') ?? '',
 };

@@ -38,7 +38,7 @@ Additional steps below will ensure Vercel deployment as a Progressive Web App.
 - `.gitignore` keeps local `.env` files private while allowing `.env.example` and `docs/env/env.sample` to be tracked.
 - In Vercel: Settings → Environment Variables → add the following keys for Development, Preview, and Production:
   - `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_SUPABASE_PROJECT_ID`, `VITE_API_BASE`
-  - `VITE_SUPABASE_SERVICE_ROLE_KEY` *(server only; keep out of the browser)*
+  - `SUPABASE_SERVICE_ROLE_KEY` *(server only; keep out of the browser; do not prefix with `VITE_`)*
   - `VITE_ADMIN_TOKEN` / `ADMIN_TOKEN` / `EASYMO_ADMIN_TOKEN`
   - `ADMIN_SESSION_SECRET`, `ADMIN_ACCESS_CREDENTIALS`
   - `DISPATCHER_FUNCTION_URL`
@@ -60,7 +60,7 @@ Additional steps below will ensure Vercel deployment as a Progressive Web App.
 3. Framework detection: choose **Vite** (Build Command `pnpm run build`, Output Directory `dist`).
 4. Configure Environment Variables (Development/Preview/Production):
    - `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_SUPABASE_PROJECT_ID`, `VITE_API_BASE`
-   - `VITE_SUPABASE_SERVICE_ROLE_KEY`
+   - `SUPABASE_SERVICE_ROLE_KEY`
    - `VITE_ADMIN_TOKEN` / `ADMIN_TOKEN` / `EASYMO_ADMIN_TOKEN`
    - `ADMIN_SESSION_SECRET`, `ADMIN_ACCESS_CREDENTIALS`
    - `DISPATCHER_FUNCTION_URL`

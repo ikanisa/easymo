@@ -19,7 +19,7 @@ copied to:
 | --- | --- |
 | `VITE_SUPABASE_URL`, `VITE_SUPABASE_PROJECT_ID` | Non-secret; points to `https://lhbowpbcpwoiparwnwgt.supabase.co`. |
 | `VITE_SUPABASE_ANON_KEY` | Anonymous key exposed to client. |
-| `VITE_SUPABASE_SERVICE_ROLE_KEY` / `SUPABASE_SERVICE_ROLE_KEY` | Service role key. **Never** expose to browsers. Only Vercel functions / Supabase functions. |
+| `SUPABASE_SERVICE_ROLE_KEY` / `SERVICE_ROLE_KEY` | Service role key. **Never** expose to browsers. Only Vercel functions / Supabase functions. |
 | `VITE_ADMIN_TOKEN` / `EASYMO_ADMIN_TOKEN` / `ADMIN_TOKEN` | Shared secret used by admin panel to call edge functions. Must match Supabase function secret `EASYMO_ADMIN_TOKEN`. |
 | `ADMIN_ACCESS_CREDENTIALS` | JSON array of operator tokens. Required for admin login. |
 | `ADMIN_SESSION_SECRET` | Used to sign the session cookie. |
