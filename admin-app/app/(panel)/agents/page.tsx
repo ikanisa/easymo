@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { useAgentsList, useCreateAgent } from "@/lib/queries/agents";
 import { useState } from "react";
+import { getAdminRoutePath } from "@/lib/routes";
 
 export default function AgentsPage() {
   const { data, isLoading, error } = useAgentsList();
@@ -46,7 +47,14 @@ export default function AgentsPage() {
         <tbody>
           {data?.agents?.map((a: any) => (
             <tr key={a.id} className="border-t">
-              <td className="p-2"><Link className="underline" href={`/agents/${a.id}`}>{a.name}</Link></td>
+              <td className="p-2">
+                <Link
+                  className="underline"
+                  href={getAdminRoutePath("panelAgentDetail", { agentId: String(a.id) })}
+                >
+                  {a.name}
+                </Link>
+              </td>
               <td className="p-2">{a.status}</td>
               <td className="p-2">{new Date(a.updated_at).toLocaleString()}</td>
             </tr>

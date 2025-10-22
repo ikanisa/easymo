@@ -10,13 +10,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { TokensApi } from "@/lib/tokensApi";
 import { shouldUseMock } from "@/lib/env";
+import { appRoutePaths, getAppRoutePath, type AppRouteParams } from "@/routes/config";
 import { Wallet2, ArrowLeft, Plus, Copy, ExternalLink, Snowflake, RotateCcw, Activity, Store } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import type { Wallet, Transaction, Shop } from "@/lib/types";
 
 export default function TokensWalletDetail() {
-  const { id } = useParams<{ id: string }>();
-  const walletId = id ?? '';
+  const { id } = useParams<AppRouteParams<"tokensWalletDetail">>();
+  const walletId = id ?? "";
   const isMock = shouldUseMock();
 
   // Fetch wallet details
@@ -111,7 +112,7 @@ export default function TokensWalletDetail() {
           <Wallet2 className="h-12 w-12 mx-auto mb-4 opacity-50" />
           <p className="text-muted-foreground">Wallet ID not found</p>
           <Button variant="outline" asChild className="mt-2">
-            <Link to="/tokens/wallets">
+            <Link to={appRoutePaths.tokensWallets}>
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Wallets
             </Link>
@@ -144,7 +145,7 @@ export default function TokensWalletDetail() {
           <Wallet2 className="h-12 w-12 mx-auto mb-4 opacity-50" />
           <p className="text-muted-foreground">Wallet not found</p>
           <Button variant="outline" asChild className="mt-2">
-            <Link to="/tokens/wallets">
+            <Link to={appRoutePaths.tokensWallets}>
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Wallets
             </Link>
@@ -163,7 +164,7 @@ export default function TokensWalletDetail() {
             description={`User ${wallet.user_code} • ${wallet.whatsapp}`}
           />
           <Button variant="outline" asChild>
-            <Link to="/tokens/wallets">
+            <Link to={appRoutePaths.tokensWallets}>
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Wallets
             </Link>
@@ -203,7 +204,7 @@ export default function TokensWalletDetail() {
                     className="tooltip"
                     title="Backend endpoint required"
                   >
-                    <Link to={`/tokens/issue?prefill=${wallet.id}`}>
+                    <Link to={`${getAppRoutePath("tokensIssue")}?prefill=${wallet.id}`}>
                       <Plus className="h-4 w-4 mr-2" />
                       Top-up
                     </Link>

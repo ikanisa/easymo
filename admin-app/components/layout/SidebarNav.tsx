@@ -32,7 +32,7 @@ export function SidebarNav() {
                 const isActive = pathname === item.href ||
                   pathname?.startsWith(`${item.href}/`);
                 return (
-                  <li key={item.href}>
+                  <li key={item.route}>
                     <Link
                       href={item.href}
                       className={classNames(

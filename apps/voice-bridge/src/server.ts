@@ -1,7 +1,9 @@
 import 'dotenv/config';
 import http from 'http';
 import WebSocket, { WebSocketServer } from 'ws';
+import type { RawData } from 'ws';
 import { createClient } from '@supabase/supabase-js';
+import { getVoiceBridgeRoutePath } from '@easymo/commons';
 
 const PORT = Number(process.env.VOICE_BRIDGE_PORT || 8080);
 const REALTIME_URL = process.env.OPENAI_REALTIMEL_URL!;
@@ -94,9 +96,9 @@ function connectOpenAI(): Promise<WebSocket> {
 }
 
 const server = http.createServer();
-const wss = new WebSocketServer({ server, path: '/media' });
+const wss = new WebSocketServer({ server, path: getVoiceBridgeRoutePath('mediaStream') });
 
-wss.on('connection', async (twilio) => {
+wss.on('connection', async (twilio: WebSocket) => {
   const openai = await connectOpenAI();
   pairs.set(twilio, { twilio, openai });
 
@@ -113,7 +115,7 @@ wss.on('connection', async (twilio) => {
     await supabase.from('call_events').insert({ call_id: callId, kind, payload });
   };
 
-  twilio.on('message', async (raw) => {
+  twilio.on('message', async (raw: RawData) => {
     try {
       const msg = JSON.parse(raw.toString());
       if (msg.event === 'start') {
@@ -136,7 +138,7 @@ wss.on('connection', async (twilio) => {
     }
   });
 
-  openai.on('message', async (raw) => {
+  openai.on('message', async (raw: RawData) => {
     try {
       const evt = JSON.parse(raw.toString());
 

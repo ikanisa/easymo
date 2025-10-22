@@ -13,3 +13,5 @@ export interface LeadInput {
   notes?: string;
   call_id?: string;
 }
+
+export * from "./routes/index.js";

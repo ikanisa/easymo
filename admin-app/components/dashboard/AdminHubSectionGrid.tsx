@@ -2,66 +2,70 @@
 
 import Link from "next/link";
 import type { AdminHubSections } from "@/lib/schemas";
+import { adminRoutePaths, type NavigableAdminRouteKey } from "@/lib/routes";
 
-const SECTION_LINKS: Record<string, { href: string; description: string }> = {
+const SECTION_LINKS: Record<
+  string,
+  { route: NavigableAdminRouteKey; description: string }
+> = {
   "ADMIN::OPS_TRIPS": {
-    href: "/orders",
+    route: "panelOrders",
     description: "Monitor live trip matching and manual overrides.",
   },
   "ADMIN::OPS_BASKETS": {
-    href: "/orders",
+    route: "panelOrders",
     description: "Inspect customer baskets and resolve stuck checkouts.",
   },
   "ADMIN::OPS_MARKETPLACE": {
-    href: "/bars",
+    route: "panelBars",
     description: "Vendor marketplace roster and inventory status.",
   },
   "ADMIN::OPS_WALLET": {
-    href: "/settings",
+    route: "panelSettings",
     description: "Wallet balances, tokens, and reconciliation controls.",
   },
   "ADMIN::OPS_MOMO": {
-    href: "/qr",
+    route: "panelQr",
     description: "Manage MoMo QR payloads and deep links.",
   },
   "ADMIN::OPS_VOUCHERS": {
-    href: "/vouchers",
+    route: "panelVouchers",
     description: "Issue, preview, and redeem vouchers.",
   },
   "ADMIN::GROW_PROMOTERS": {
-    href: "/campaigns",
+    route: "panelCampaigns",
     description: "Promoter tooling and growth actions.",
   },
   "ADMIN::GROW_BROADCAST": {
-    href: "/campaigns",
+    route: "panelCampaigns",
     description: "Broadcast orchestration and targeting lists.",
   },
   "ADMIN::GROW_TEMPLATES": {
-    href: "/templates",
+    route: "panelTemplates",
     description: "Template catalogue and flow JSON references.",
   },
   "ADMIN::TRUST_REFERRALS": {
-    href: "/users",
+    route: "panelUsers",
     description: "Referral audits and customer resolution actions.",
   },
   "ADMIN::TRUST_FREEZE": {
-    href: "/users",
+    route: "panelUsers",
     description: "Freeze / unfreeze accounts during incidents.",
   },
   "ADMIN::DIAG_MATCH": {
-    href: "/logs",
+    route: "panelLogs",
     description: "Matching diagnostics and RPC latency monitors.",
   },
   "ADMIN::DIAG_INSURANCE": {
-    href: "/insurance",
+    route: "panelInsurance",
     description: "OCR queue health and manual review backlog.",
   },
   "ADMIN::DIAG_HEALTH": {
-    href: "/dashboard",
+    route: "panelDashboard",
     description: "System health KPIs and alert feed.",
   },
   "ADMIN::DIAG_LOGS": {
-    href: "/logs",
+    route: "panelLogs",
     description: "Unified audit and voucher events log.",
   },
 };
@@ -105,9 +109,9 @@ function SectionGroup({
                     </p>
                   )}
                 </div>
-                {meta?.href && (
+                {meta?.route && (
                   <Link
-                    href={meta.href}
+                    href={adminRoutePaths[meta.route]}
                     className="text-xs font-semibold text-primary hover:underline"
                   >
                     Open

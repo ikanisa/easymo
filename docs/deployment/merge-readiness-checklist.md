@@ -14,6 +14,7 @@ This checklist records the blockers that previously prevented the deployment pla
 
 - [ ] Confirm `.env.example` aligns with Supabase and Vercel dashboards (names only, no values).
 - [ ] Ensure branch protection requirements match the CI workflow name (`ci`) and Vercel checks.
+- [ ] Verify the PR targets the canonical `main` branch and plan to fast-forward `work` after merge to keep both histories aligned.
 - [ ] Verify Supabase CLI configuration (`supabase/config.toml`) is linked or pending operator input.
 - [ ] Collect operator inputs using the template and attach to the PR description.
 - [ ] Populate final report template draft with current repository / project URLs (redact secrets) for reviewer context.

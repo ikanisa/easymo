@@ -2,6 +2,7 @@ import { BadRequestException, Body, Controller, NotFoundException, Param, Post }
 import { WhatsAppAgentService } from './wa-agent.service';
 import { DEFAULT_AGENT_PROFILE, AGENT_PROFILES, AgentProfileKey, isAgentProfileKey } from '../realtime/agent-profiles';
 import { SupabaseService } from '../supabase/supabase.service';
+import { getApiControllerBasePath, getApiEndpointSegment } from '@easymo/commons';
 
 interface StartBody {
   msisdn?: string;
@@ -21,14 +22,14 @@ interface CustomerMessageBody {
   text?: string;
 }
 
-@Controller('/wa/agents')
+@Controller(getApiControllerBasePath('whatsappAgents'))
 export class WhatsAppAgentController {
   constructor(
     private readonly agent: WhatsAppAgentService,
     private readonly db: SupabaseService,
   ) {}
 
-  @Post('start')
+  @Post(getApiEndpointSegment('whatsappAgents', 'start'))
   async startConversation(@Body() body: StartBody) {
     const msisdn = body?.msisdn;
     if (!msisdn) {
@@ -53,7 +54,7 @@ export class WhatsAppAgentController {
     };
   }
 
-  @Post(':threadId/message')
+  @Post(getApiEndpointSegment('whatsappAgents', 'sendMessage'))
   async sendMessage(@Param('threadId') threadId: string, @Body() body: SendMessageBody) {
     const text = body?.text;
     if (!text) {
@@ -75,7 +76,7 @@ export class WhatsAppAgentController {
     return { ok: true };
   }
 
-  @Post(':threadId/customer')
+  @Post(getApiEndpointSegment('whatsappAgents', 'customerMessage'))
   async customerMessage(@Param('threadId') threadId: string, @Body() body: CustomerMessageBody) {
     const text = body?.text;
     if (!text) {

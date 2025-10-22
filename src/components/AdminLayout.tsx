@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Card } from "@/components/ui/card";
+import type { LucideIcon } from "lucide-react";
 import {
   MessageCircle,
   BarChart3,
@@ -21,38 +22,93 @@ import {
   Clock4,
   Radar,
   Bot,
+  BrainCircuit,
 } from "lucide-react";
 import { showDevTools, shouldUseMock } from "@/lib/env";
+import {
+  appRoutePaths,
+  getAppRouteComponent,
+  type NavigableAppRouteKey,
+  type NavigableAppRoutePath,
+} from "@/routes/config";
 
 const isMockMode = shouldUseMock();
-const baseNavigation = [
-  { name: "Dashboard", href: "/", icon: BarChart3 },
-  { name: "Subscriptions", href: "/subscriptions", icon: CreditCard },
-  { name: "Users", href: "/users", icon: Users },
-  { name: "Trips", href: "/trips", icon: Route },
-  { name: "Favorites", href: "/favorites", icon: Heart },
-  { name: "Schedule Trip", href: "/schedule-trip", icon: CalendarClock },
-  { name: "Quick Actions", href: "/quick-actions", icon: Bolt },
-  { name: "Driver Parking", href: "/driver-parking", icon: MapPin },
-  { name: "Driver Availability", href: "/driver-availability", icon: Clock4 },
-  { name: "Matches", href: "/matches", icon: Radar },
-  ...(isMockMode ? [{ name: "Tokens", href: "/tokens", icon: Wallet }] : []),
-  { name: "Campaigns", href: "/campaigns", icon: MessageCircle },
-  { name: "Baskets", href: "/baskets", icon: Coins },
-  { name: "Marketplace", href: "/marketplace", icon: CreditCard },
-  { name: "Agent Tooling", href: "/agent-tooling", icon: BrainCircuit },
-  { name: "Settings", href: "/settings", icon: Settings },
-  { name: "Operations", href: "/operations", icon: Terminal },
-  { name: "Agent Patterns", href: "/agent-patterns", icon: Bot },
-  { name: "Developer", href: "/developer", icon: Smartphone },
+
+const preloadedRoutes = new Set<NavigableAppRoutePath>();
+
+const preloadRouteComponent = (path: NavigableAppRoutePath) => {
+  if (preloadedRoutes.has(path)) {
+    return;
+  }
+
+  preloadedRoutes.add(path);
+  getAppRouteComponent(path)
+    .preload()
+    .catch(() => {
+      preloadedRoutes.delete(path);
+    });
+};
+
+type NavigationBlueprintItem = {
+  name: string;
+  routeKey: NavigableAppRouteKey;
+  icon: LucideIcon;
+  devOnly?: boolean;
+  requiresMock?: boolean;
+};
+
+type NavigationItem = {
+  name: string;
+  href: NavigableAppRoutePath;
+  icon: LucideIcon;
+};
+
+const navigationBlueprint: ReadonlyArray<NavigationBlueprintItem> = [
+  { name: "Dashboard", routeKey: "dashboard", icon: BarChart3 },
+  { name: "Subscriptions", routeKey: "subscriptions", icon: CreditCard },
+  { name: "Users", routeKey: "users", icon: Users },
+  { name: "Trips", routeKey: "trips", icon: Route },
+  { name: "Favorites", routeKey: "favorites", icon: Heart },
+  { name: "Schedule Trip", routeKey: "scheduleTrip", icon: CalendarClock },
+  { name: "Quick Actions", routeKey: "quickActions", icon: Bolt },
+  { name: "Driver Parking", routeKey: "driverParking", icon: MapPin },
+  { name: "Driver Availability", routeKey: "driverAvailability", icon: Clock4 },
+  { name: "Matches", routeKey: "matches", icon: Radar },
+  { name: "Tokens", routeKey: "tokens", icon: Wallet, requiresMock: true },
+  { name: "Campaigns", routeKey: "campaigns", icon: MessageCircle },
+  { name: "Baskets", routeKey: "baskets", icon: Coins },
+  { name: "Marketplace", routeKey: "marketplace", icon: CreditCard },
+  { name: "Agent Tooling", routeKey: "agentTooling", icon: BrainCircuit },
+  { name: "Settings", routeKey: "settings", icon: Settings },
+  { name: "Operations", routeKey: "operations", icon: Terminal },
+  { name: "Agent Patterns", routeKey: "agentPatterns", icon: Bot },
+  { name: "Developer", routeKey: "developer", icon: Smartphone },
+  { name: "WA Console", routeKey: "adminWaConsole", icon: Terminal, devOnly: true },
+  { name: "Flow Simulator", routeKey: "adminSimulator", icon: Smartphone, devOnly: true },
 ];
 
-const devNavigation = [
-  { name: "WA Console", href: "/admin/wa-console", icon: Terminal, devOnly: true },
-  { name: "Flow Simulator", href: "/admin/simulator", icon: Smartphone, devOnly: true },
-];
+const shouldShowDevTools = showDevTools();
 
-const navigation = showDevTools() ? [...baseNavigation, ...devNavigation] : baseNavigation;
+const createNavigation = (): NavigationItem[] =>
+  navigationBlueprint
+    .filter((item) => {
+      if (item.requiresMock && !isMockMode) {
+        return false;
+      }
+
+      if (item.devOnly && !shouldShowDevTools) {
+        return false;
+      }
+
+      return true;
+    })
+    .map(({ name, routeKey, icon }) => ({
+      name,
+      href: appRoutePaths[routeKey] as NavigableAppRoutePath,
+      icon,
+    }));
+
+const navigation: ReadonlyArray<NavigationItem> = createNavigation();
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -75,6 +131,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               : "hover:bg-muted"
           }`}
           onClick={onItemClick}
+          onPointerEnter={() => preloadRouteComponent(item.href)}
+          onFocus={() => preloadRouteComponent(item.href)}
         >
           <item.icon className="h-4 w-4" />
           <span>{item.name}</span>

@@ -16,6 +16,7 @@
     "seed": "tsx ./src/seed.ts"
   },
   "dependencies": {
+    "@easymo/commons": "workspace:*",
     "@prisma/client": "^5.22.0"
   },
   "devDependencies": {

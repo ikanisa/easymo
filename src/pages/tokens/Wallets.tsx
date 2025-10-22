@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TokensApi } from "@/lib/tokensApi";
 import { shouldUseMock } from "@/lib/env";
+import { appRoutePaths, getAppRoutePath } from "@/routes/config";
 import { Wallet2, Search, Plus, ChevronLeft, ChevronRight, Eye } from "lucide-react";
 import type { Wallet } from "@/lib/types";
 
@@ -99,7 +100,7 @@ export default function TokensWallets() {
             description="Manage user wallets and balances"
           />
           <Button asChild>
-            <Link to="/tokens/issue">
+            <Link to={appRoutePaths.tokensIssue}>
               <Plus className="h-4 w-4 mr-2" />
               Issue Tokens
             </Link>
@@ -181,41 +182,37 @@ export default function TokensWallets() {
                 </div>
 
                 {/* Rows */}
-                {filteredWallets.map((wallet) => (
-                  <div
-                    key={wallet.id}
-                    className="grid grid-cols-12 gap-4 py-3 border-b hover:bg-muted/50 cursor-pointer"
-                    onClick={() => navigate(`/tokens/wallets/${wallet.id}`)}
-                  >
-                    <div className="col-span-2 font-mono text-sm">
-                      {wallet.user_code}
+                {filteredWallets.map((wallet) => {
+                  const walletDetailPath = getAppRoutePath("tokensWalletDetail", { id: wallet.id });
+
+                  return (
+                    <div
+                      key={wallet.id}
+                      className="grid grid-cols-12 gap-4 py-3 border-b hover:bg-muted/50 cursor-pointer"
+                      onClick={() => navigate(walletDetailPath)}
+                    >
+                      <div className="col-span-2 font-mono text-sm">{wallet.user_code}</div>
+                      <div className="col-span-3 text-sm">{wallet.whatsapp}</div>
+                      <div className="col-span-2">{getStatusBadge(wallet.status)}</div>
+                      <div className="col-span-2 text-sm">{formatBalance(wallet.id)}</div>
+                      <div className="col-span-2 text-sm text-muted-foreground">
+                        {new Date(wallet.created_at).toLocaleDateString()}
+                      </div>
+                      <div className="col-span-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(walletDetailPath);
+                          }}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
-                    <div className="col-span-3 text-sm">
-                      {wallet.whatsapp}
-                    </div>
-                    <div className="col-span-2">
-                      {getStatusBadge(wallet.status)}
-                    </div>
-                    <div className="col-span-2 text-sm">
-                      {formatBalance(wallet.id)}
-                    </div>
-                    <div className="col-span-2 text-sm text-muted-foreground">
-                      {new Date(wallet.created_at).toLocaleDateString()}
-                    </div>
-                    <div className="col-span-1">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          navigate(`/tokens/wallets/${wallet.id}`);
-                        }}
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
 

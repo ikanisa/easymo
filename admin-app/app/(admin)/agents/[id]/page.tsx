@@ -1,6 +1,8 @@
 "use client";
+import Link from "next/link";
 import useSWR from "swr";
 import { useRouter } from "next/navigation";
+import { getAdminRoutePath } from "@/lib/routes";
 
 export default function AgentDetail({ params }: { params: { id: string } }) {
   const { id } = params;
@@ -134,12 +136,12 @@ function AgentDocuments({ id }: { id: string }) {
         </div>
       ))}
       {docs.length === 0 && <div className="text-gray-600">No documents.</div>}
-      <a
-        href={`/agents/${id}/search`}
+      <Link
+        href={getAdminRoutePath("adminAgentSearch", { agentId: id })}
         className="text-xs text-blue-600 underline"
       >
         Open semantic search (beta)
-      </a>
+      </Link>
     </div>
   );
 }
