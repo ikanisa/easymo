@@ -252,18 +252,20 @@ async function fetchHistory(sessionId: string, limit = 200) {
 
   if (!session) return null;
 
-  const { data: rows, error: msgErr } = await supabase
+  const { data: rowsDesc, error: msgErr } = await supabase
     .from("agent_chat_messages")
     .select("id, role, content, created_at")
     .eq("session_id", sessionId)
-    .order("created_at", { ascending: true })
+    .order("created_at", { ascending: false })
     .limit(limit);
 
   if (msgErr) {
     throw new Error(msgErr.message);
   }
 
-  const messages = (rows ?? []).map((row) => ({
+  const rows = rowsDesc ? [...rowsDesc].reverse() : [];
+
+  const messages = rows.map((row) => ({
     id: row.id,
     role: row.role,
     text: typeof row.content?.text === "string" ? row.content.text : "",
