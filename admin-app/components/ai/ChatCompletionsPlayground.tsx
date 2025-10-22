@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { getAdminApiPath } from "@/lib/routes";
 import { Button } from "@/components/ui/Button";
 import { SectionCard } from "@/components/ui/SectionCard";
 import {
@@ -113,7 +114,7 @@ export function ChatCompletionsPlayground() {
     };
 
     try {
-      const res = await fetch("/api/openai/chat", {
+      const res = await fetch(getAdminApiPath("openai", "chat"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

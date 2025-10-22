@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite --port 8080",
-    "build": "vite build",
+    "start": "node ./scripts/start-preview.mjs",
+    "build": "pnpm --filter @va/shared build && vite build",
     "build:dev": "vite build --mode development",
     "lint": "pnpm run lint:root && pnpm run lint:workspaces",
     "lint:root": "eslint .",

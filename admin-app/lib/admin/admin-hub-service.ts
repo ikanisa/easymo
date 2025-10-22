@@ -1,6 +1,7 @@
 import { shouldUseMocks } from "@/lib/runtime-config";
 import { type AdminHubSnapshot, adminHubSnapshotSchema } from "@/lib/schemas";
 import { mockAdminHubSnapshot } from "@/lib/mock-data";
+import { getAdminApiPath } from "@/lib/routes";
 
 const useMocks = shouldUseMocks();
 
@@ -10,7 +11,7 @@ export async function getAdminHubSnapshot(): Promise<AdminHubSnapshot> {
   }
 
   try {
-    const response = await fetch("/api/admin/hub", { cache: "no-store" });
+    const response = await fetch(getAdminApiPath("admin", "hub"), { cache: "no-store" });
     if (!response.ok) {
       throw new Error(`Admin hub request failed with ${response.status}`);
     }

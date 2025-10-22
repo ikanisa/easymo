@@ -1,4 +1,5 @@
 import { apiFetch } from "@/lib/api/client";
+import { getAdminApiPath } from "@/lib/routes";
 import { shouldUseMocks } from "@/lib/runtime-config";
 import { mockMenuVersions } from "@/lib/mock-data";
 import {
@@ -39,7 +40,9 @@ export async function listMenuVersions(
   if (params.barId) searchParams.set("barId", params.barId);
 
   const query = searchParams.toString();
-  const url = query ? `/api/menus?${query}` : "/api/menus";
+  const url = query
+    ? `${getAdminApiPath("menus")}?${query}`
+    : getAdminApiPath("menus");
 
   const response = await apiFetch<{
     data: MenuVersion[];

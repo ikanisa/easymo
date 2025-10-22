@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { getAdminApiPath } from "@/lib/routes";
 import type { Campaign } from "@/lib/schemas";
 import { Button } from "@/components/ui/Button";
 import styles from "./CampaignControls.module.css";
@@ -20,7 +21,7 @@ export function CampaignControls({ campaigns }: CampaignControlsProps) {
     setIsSubmitting(true);
     setMessage(null);
     try {
-      const response = await fetch(`/api/campaigns/${selected}/${action}`, {
+      const response = await fetch(getAdminApiPath("campaigns", selected, action), {
         method: "POST",
       });
       const data = await response.json();

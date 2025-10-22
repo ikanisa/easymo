@@ -1,4 +1,5 @@
 import { apiFetch } from "@/lib/api/client";
+import { getAdminApiPath } from "@/lib/routes";
 import { shouldUseMocks } from "@/lib/runtime-config";
 import { mockBars } from "@/lib/mock-data";
 import { matchesSearch } from "@/lib/shared/search";
@@ -37,7 +38,7 @@ export async function listBars(
     data: Bar[];
     total: number;
     hasMore?: boolean;
-  }>(`/api/bars?${searchParams.toString()}`);
+  }>(`${getAdminApiPath("bars")}?${searchParams.toString()}`);
 
   if (response.ok) {
     const { data, total, hasMore } = response.data;
