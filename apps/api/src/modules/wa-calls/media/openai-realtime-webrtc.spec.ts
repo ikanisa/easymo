@@ -14,6 +14,7 @@ class MockRTCPeerConnection {
   public remoteDescription: any = null;
   public configuration: any = null;
   public ontrack: ((event: any) => void) | null = null;
+  public transceivers: any[] = [];
 
   constructor() {
     pcInstances.push(this);
@@ -35,6 +36,20 @@ class MockRTCPeerConnection {
 
   addTrack(): any {
     return {};
+  }
+
+  addTransceiver(): any {
+    const transceiver = {
+      sender: {
+        track: null,
+        setStreams: jest.fn(),
+        replaceTrack: jest.fn(async (track: any) => {
+          transceiver.sender.track = track;
+        }),
+      },
+    };
+    this.transceivers.push(transceiver);
+    return transceiver;
   }
 
   close() {
