@@ -1,5 +1,6 @@
 "use client";
 import { useParams } from "next/navigation";
+import { getAdminApiRoutePath } from "@/lib/routes";
 import {
   useAgentDetails,
   useCreateVersion,
@@ -210,7 +211,12 @@ export default function AgentDetailsPage() {
                   <button
                     className="ml-2 px-2 py-0.5 border rounded text-xs"
                     onClick={async () => {
-                      const res = await fetch(`/api/agents/${agent.id}/documents/${d.id}/signed`);
+                      const res = await fetch(
+                        getAdminApiRoutePath("agentDocumentSigned", {
+                          agentId: String(agent.id),
+                          documentId: String(d.id),
+                        }),
+                      );
                       if (res.ok) {
                         const json = await res.json();
                         if (json.url) window.open(json.url, "_blank");

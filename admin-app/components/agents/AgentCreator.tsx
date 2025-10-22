@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
+import { getAdminApiRoutePath } from "@/lib/routes";
 
 export function AgentCreator() {
   const router = useRouter();
@@ -20,7 +21,7 @@ export function AgentCreator() {
     }
     setSubmitting(true);
     try {
-      const response = await fetch("/api/agents", {
+      const response = await fetch(getAdminApiRoutePath("agents"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, slug: slug.trim() || undefined, description }),
