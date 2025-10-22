@@ -216,7 +216,7 @@ class AgentController {
     const webSearchCalls = summariseWebSearchCalls(plainResponse);
 
     if (webSearchCalls.length > 0) {
-      console.log('agent-core.web-search', {
+      console.warn('agent-core.web-search', {
         call_id: body.call_id,
         session_id: body.session_id,
         agent_kind: body.agent_kind,

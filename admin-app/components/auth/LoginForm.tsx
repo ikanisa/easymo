@@ -4,7 +4,7 @@ import { FormEvent, useState } from "react";
 import classNames from "classnames";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
-import { getAdminRoutePath } from "@/lib/routes";
+import { getAdminApiPath, getAdminRoutePath } from "@/lib/routes";
 import styles from "./LoginForm.module.css";
 
 interface LoginFormProps {
@@ -24,7 +24,7 @@ export function LoginForm({ environmentLabel }: LoginFormProps) {
     try {
       setIsSubmitting(true);
       setError(null);
-      const response = await fetch("/api/auth/login", {
+      const response = await fetch(getAdminApiPath("auth", "login"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token }),

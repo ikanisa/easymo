@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useToast } from "@/components/ui/ToastProvider";
 import { Button } from "@/components/ui/Button";
+import { getAdminApiPath } from "@/lib/routes";
 import styles from "./SaccoBranchForm.module.css";
 
 interface SaccoBranchFormProps {
@@ -26,7 +27,7 @@ export function SaccoBranchForm({ onCreated }: SaccoBranchFormProps) {
 
     setIsSubmitting(true);
     try {
-      const response = await fetch("/api/baskets/saccos", {
+      const response = await fetch(getAdminApiPath("baskets", "saccos"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

@@ -1,5 +1,6 @@
 import type { Mock } from 'vitest';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { createAdminApiRequest } from './utils/api';
 
 vi.mock('@/lib/server/supabase-admin', () => ({
   getSupabaseAdminClient: vi.fn(),
@@ -71,14 +72,17 @@ describe('basket create route', () => {
     const { POST } = await import('@/app/api/baskets/create/route');
 
     const response = await POST(
-      new Request('http://localhost/api/baskets/create', {
-        method: 'POST',
-        body: JSON.stringify({
-          name: 'My Basket',
-          creatorId: creatorUuid,
-          creatorMsisdn: '+250780000000',
-        }),
-      }),
+      createAdminApiRequest(
+        ['baskets', 'create'],
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            name: 'My Basket',
+            creatorId: creatorUuid,
+            creatorMsisdn: '+250780000000',
+          }),
+        },
+      ),
     );
 
     expect(response.status).toBe(201);

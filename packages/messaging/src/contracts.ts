@@ -38,3 +38,8 @@ export const webhookTopics = Object.freeze(
     return acc;
   }, {} as ControllerTopics),
 );
+
+export type WebhookTopicName = ControllerTopics[ApiControllerKey][number]["topic"];
+
+export const getWebhookTopicsForController = <Controller extends ApiControllerKey>(controller: Controller) =>
+  webhookTopics[controller];
