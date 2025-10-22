@@ -218,9 +218,22 @@ export async function getVoiceCallDetails(callId: string): Promise<VoiceCallDeta
         .order('t', { ascending: true }),
     ]);
 
-    if (callRes.error) {
-      throw new VoiceDataError(`Failed to load call ${callId}: ${callRes.error.message}`, { cause: callRes.error });
-    }
+    const assertNoError = (
+      response: { error: { message: string } | null },
+      resource: string,
+    ) => {
+      if (response.error) {
+        throw new VoiceDataError(`Failed to load ${resource} for call ${callId}: ${response.error.message}`, {
+          cause: response.error,
+        });
+      }
+    };
+
+    assertNoError(callRes, 'call');
+    assertNoError(transcriptsRes, 'transcripts');
+    assertNoError(eventsRes, 'events');
+    assertNoError(toolRes, 'tool calls');
+    assertNoError(consentsRes, 'consents');
 
     if (!callRes.data) {
       throw new VoiceDataError(`Voice call ${callId} not found`);
