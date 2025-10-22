@@ -1,4 +1,5 @@
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
+import { createAdminApiRequest } from './utils/api';
 
 vi.mock('@/lib/server/supabase-admin', () => ({
   getSupabaseAdminClient: vi.fn(),
@@ -61,7 +62,7 @@ describe('voucher generate API', () => {
     getSupabaseAdminClient.mockReturnValue({ from });
 
     const { POST } = await import('@/app/api/vouchers/generate/route');
-    const request = new Request('http://localhost/api/vouchers/generate', {
+    const request = createAdminApiRequest(['vouchers', 'generate'], {
       method: 'POST',
       body: JSON.stringify({
         amount: 2500,
@@ -85,7 +86,7 @@ describe('voucher generate API', () => {
     getSupabaseAdminClient.mockReturnValue(null);
 
     const { POST } = await import('@/app/api/vouchers/generate/route');
-    const request = new Request('http://localhost/api/vouchers/generate', {
+    const request = createAdminApiRequest(['vouchers', 'generate'], {
       method: 'POST',
       body: JSON.stringify({
         amount: 2500,

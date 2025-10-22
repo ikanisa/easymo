@@ -2,6 +2,29 @@
 
 All notable changes to this repository are documented here.
 
+## 2025-12-07 – Voice agent ops routes & contracts
+
+- Added `/voice-ops` admin route, lazy loader, and navigation entry to expose the
+  Voice Agent Ops dashboard.
+- Expanded shared voice DTOs and validation schemas (Zod) to cover voice call
+  telemetry, dialer requests, warm handoffs, payment confirmations, and WhatsApp
+  webhook envelopes.
+- Extended API route registry to include new dialer, handoff, payment, and
+  WhatsApp webhook endpoints and surfaced typed Kafka webhook topics for all
+  controllers.
+- Normalised voice Supabase helpers to validate responses against the shared
+  schemas when listing calls or loading details.
+
+Migration notes
+
+- Update consumers that import `VoiceCall` (and related types) to pull from
+  `@va/shared` or the new `voice` DTO exports instead of bespoke definitions.
+- Downstream services should regenerate service endpoint caches to pick up the
+  new `/dialer/outbound`, `/handoff/warm`, `/payment/confirm`, and
+  `/whatsapp/webhook` endpoints.
+- Messaging consumers can subscribe to the new webhook topics by referencing
+  `getWebhookTopicsForController('dialer' | 'handoff' | 'payment' | 'whatsapp')`.
+
 ## 2025-10-21 – Supabase consolidation
 
 - Breaking: Consolidated duplicate Supabase trees. The canonical tree is now `supabase/`.

@@ -4,6 +4,7 @@ import { FormEvent, useMemo, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/ToastProvider";
 import { apiFetch } from "@/lib/api/client";
+import { getAdminApiPath } from "@/lib/routes";
 import {
   AdminDeeplinkFlow,
   DEFAULT_TTL_DAYS,
@@ -144,7 +145,9 @@ export function IssueDeepLinkForm() {
       requestBody.msisdn_e164 = normaliseMsisdn(msisdnClean);
     }
 
-    const response = await apiFetch<IssueResponse, typeof requestBody>("/api/deeplink/issue", {
+    const response = await apiFetch<IssueResponse, typeof requestBody>(
+      getAdminApiPath("deeplink", "issue"),
+      {
       method: "POST",
       body: requestBody,
     });
@@ -202,7 +205,7 @@ export function IssueDeepLinkForm() {
     setError(null);
 
     const message = buildWhatsAppMessage(definition, result.url, target);
-    const response = await apiFetch("/api/wa/send", {
+    const response = await apiFetch(getAdminApiPath("wa", "send"), {
       method: "POST",
       body: message,
     });

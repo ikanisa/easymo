@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from 'react';
+import { getAdminApiRoutePath } from "@/lib/routes";
 
 export default function MarketplaceSettingsPage() {
   const [tenantId, setTenantId] = useState("");
@@ -15,7 +16,8 @@ export default function MarketplaceSettingsPage() {
   async function load(e: React.FormEvent) {
     e.preventDefault();
     setStatus(null);
-    const res = await fetch(`/api/marketplace/settings?tenantId=${encodeURIComponent(tenantId)}`);
+    const settingsUrl = getAdminApiRoutePath("marketplaceSettings");
+    const res = await fetch(`${settingsUrl}?tenantId=${encodeURIComponent(tenantId)}`);
     const json = await res.json();
     if (json?.ok) {
       const d = json.data;
@@ -29,7 +31,7 @@ export default function MarketplaceSettingsPage() {
   async function save(e: React.FormEvent) {
     e.preventDefault();
     setStatus(null);
-    const res = await fetch('/api/marketplace/settings', {
+    const res = await fetch(getAdminApiRoutePath("marketplaceSettings"), {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ tenantId, freeContacts, windowDays, subscriptionTokens }),
     });

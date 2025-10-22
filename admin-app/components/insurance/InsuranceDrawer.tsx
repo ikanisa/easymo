@@ -7,6 +7,7 @@ import styles from "./InsuranceDrawer.module.css";
 import { IntegrationStatusBadge } from "@/components/ui/IntegrationStatusBadge";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { Button } from "@/components/ui/Button";
+import { getAdminApiPath } from "@/lib/routes";
 
 interface InsuranceDrawerProps {
   quote: InsuranceQuote;
@@ -32,7 +33,7 @@ export function InsuranceDrawer({ quote, onClose }: InsuranceDrawerProps) {
     setStatusMessage(null);
     setIntegration(null);
     try {
-      const response = await fetch(`/api/insurance/${quote.id}/approve`, {
+      const response = await fetch(getAdminApiPath("insurance", quote.id, "approve"), {
         method: "POST",
       });
       const data = await response.json();
@@ -60,7 +61,7 @@ export function InsuranceDrawer({ quote, onClose }: InsuranceDrawerProps) {
     setIntegration(null);
     try {
       const response = await fetch(
-        `/api/insurance/${quote.id}/request-changes`,
+        getAdminApiPath("insurance", quote.id, "request-changes"),
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

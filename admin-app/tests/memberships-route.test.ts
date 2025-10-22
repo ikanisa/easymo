@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { createAdminApiRequest } from './utils/api';
 
 vi.mock('@/lib/server/supabase-admin', () => ({
   getSupabaseAdminClient: vi.fn(),
@@ -36,7 +37,7 @@ describe('memberships PATCH route', () => {
     getSupabaseAdminClient.mockReturnValue({ from });
 
     const { PATCH } = await import('@/app/api/baskets/memberships/[id]/route');
-    const req = new Request('http://localhost/api/baskets/memberships/abc', {
+    const req = createAdminApiRequest(['baskets', 'memberships', 'abc'], {
       method: 'PATCH',
       body: JSON.stringify({ status: 'active' }),
     });

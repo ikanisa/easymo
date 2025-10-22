@@ -9,7 +9,12 @@ import { logger } from "./logger";
 import { TwilioMediaSession } from "./twilioSession";
 import { KafkaFactory } from "@easymo/messaging";
 import { liveCallRegistry } from "./liveCallRegistry";
-import { createRateLimiter, expressRequestContext, expressServiceAuth } from "@easymo/commons";
+import {
+  createRateLimiter,
+  expressRequestContext,
+  expressServiceAuth,
+  getVoiceBridgeRoutePath,
+} from "@easymo/commons";
 
 export const app = express();
 app.use(express.json());
@@ -33,19 +38,22 @@ const requireAuth = (scopes: string[]) =>
 
 const twilioClient = twilio(settings.twilio.accountSid, settings.twilio.authToken);
 
-app.get("/health", (_req, res) => {
+app.get(getVoiceBridgeRoutePath("health"), (_req, res) => {
   res.json({ status: "ok" });
 });
 
-app.get("/analytics/live-calls", requireAuth(["voice:read"]), (_req, res) => {
+app.get(getVoiceBridgeRoutePath("analyticsLiveCalls"), requireAuth(["voice:read"]), (_req, res) => {
   res.json(liveCallRegistry.snapshot());
 });
 
-app.post("/calls/outbound", requireAuth(["voice:outbound.write"]), async (req, res) => {
-  const { to, tenantId, contactName, region, profile } = req.body ?? {};
-  if (!to) {
-    return res.status(400).json({ error: "Missing 'to' number" });
-  }
+app.post(
+  getVoiceBridgeRoutePath("outboundCalls"),
+  requireAuth(["voice:outbound.write"]),
+  async (req, res) => {
+    const { to, tenantId, contactName, region, profile } = req.body ?? {};
+    if (!to) {
+      return res.status(400).json({ error: "Missing 'to' number" });
+    }
 
   try {
     const streamUrl = new URL(settings.twilio.mediaStreamWss);
@@ -113,11 +121,12 @@ app.post("/calls/outbound", requireAuth(["voice:outbound.write"]), async (req, r
     logger.error({ msg: "voice.outbound.failed", error: message, to, tenantId, region, profile });
     return res.status(502).json({ error: "Failed to initiate outbound call", message });
   }
-});
+  },
+);
 
 if (process.env.NODE_ENV !== "test") {
   const server = http.createServer(app);
-  const wss = new WebSocketServer({ server, path: "/twilio-media" });
+  const wss = new WebSocketServer({ server, path: getVoiceBridgeRoutePath("twilioMediaStream") });
 
   const kafkaFactory = new KafkaFactory({
     clientId: settings.kafka.clientId,

@@ -6,6 +6,7 @@ import { IntegrationStatusBadge } from "@/components/ui/IntegrationStatusBadge";
 import { Button } from "@/components/ui/Button";
 import { PolicyBanner } from "@/components/ui/PolicyBanner";
 import styles from "./VoucherGenerationForm.module.css";
+import { getAdminApiPath } from "@/lib/routes";
 
 interface ResultEntry {
   voucherId: string;
@@ -62,7 +63,7 @@ export function VoucherGenerationForm() {
     }
 
     try {
-      const response = await fetch("/api/vouchers/generate", {
+      const response = await fetch(getAdminApiPath("vouchers", "generate"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

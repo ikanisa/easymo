@@ -2,6 +2,7 @@ import { shouldUseMocks } from "@/lib/runtime-config";
 import { mockAssistantRuns } from "@/lib/mock-data";
 import { assistantRunSchema } from "@/lib/schemas";
 import type { AssistantRun } from "@/lib/schemas";
+import { getAdminApiPath } from "@/lib/routes";
 
 export type AssistantRequest = {
   promptId: string;
@@ -32,7 +33,7 @@ export async function requestAssistantSuggestion(
 
   if (!isServer && !useMocks) {
     try {
-      const response = await fetch("/api/assistant/suggestions", {
+      const response = await fetch(getAdminApiPath("assistant", "suggestions"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -89,7 +90,7 @@ export async function logAssistantDecision(
 ): Promise<{ status: "ok" }> {
   if (!isServer && !useMocks) {
     try {
-      const response = await fetch("/api/audit/log", {
+      const response = await fetch(getAdminApiPath("audit", "log"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

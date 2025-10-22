@@ -8,6 +8,7 @@ import {
   type TimeseriesPoint,
   timeseriesPointSchema,
 } from "@/lib/schemas";
+import { getAdminApiPath } from "@/lib/routes";
 
 const useMocks = shouldUseMocks();
 const isServer = typeof window === "undefined";
@@ -60,7 +61,7 @@ export async function getDashboardSnapshot(): Promise<DashboardSnapshotResult> {
       );
     }
     try {
-      const response = await fetch("/api/dashboard", { cache: "no-store" });
+      const response = await fetch(getAdminApiPath("dashboard"), { cache: "no-store" });
       if (!response.ok) {
         throw new Error("Failed to fetch dashboard snapshot from API");
       }
