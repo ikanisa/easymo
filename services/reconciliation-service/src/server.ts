@@ -7,7 +7,15 @@ import axios, { type AxiosInstance } from "axios";
 import { settings } from "./config.js";
 import { logger } from "./logger.js";
 import { IdempotencyStore } from "@easymo/messaging";
-import { createRateLimiter, expressRequestContext, expressServiceAuth } from "@easymo/commons";
+import {
+  createRateLimiter,
+  expressRequestContext,
+  expressServiceAuth,
+  getReconciliationServiceEndpointPath,
+  getReconciliationServiceEndpointRequiredScopes,
+  type ReconciliationServiceControllerKey,
+  type ReconciliationServiceEndpointKey,
+} from "@easymo/commons";
 
 const upload = multer();
 
@@ -45,8 +53,14 @@ function processCsv(buffer: Buffer): CsvResult[] {
 export function buildApp({ store, httpClient }: Deps) {
   const app = express();
   const client = httpClient ?? axios;
-  const requireAuth = (scopes: string[]) =>
-    expressServiceAuth({ audience: settings.auth.audience, requiredScopes: scopes });
+  const requireAuth = <
+    Controller extends ReconciliationServiceControllerKey,
+    Endpoint extends ReconciliationServiceEndpointKey<Controller>,
+  >(controller: Controller, endpoint: Endpoint) =>
+    expressServiceAuth({
+      audience: settings.auth.audience,
+      requiredScopes: getReconciliationServiceEndpointRequiredScopes(controller, endpoint),
+    });
 
   app.use(express.json({ limit: "2mb" }));
   app.use(expressRequestContext({ generateIfMissing: true }));
@@ -64,7 +78,11 @@ export function buildApp({ store, httpClient }: Deps) {
     );
   }
 
-  app.post("/reconciliation/mobile-money", requireAuth(["reconciliation:write"]), upload.single("file"), async (req, res) => {
+  app.post(
+    getReconciliationServiceEndpointPath("reconciliation", "mobileMoney"),
+    requireAuth("reconciliation", "mobileMoney"),
+    upload.single("file"),
+    async (req, res) => {
     try {
       let buffer: Buffer | null = null;
       if (req.file) {
@@ -133,9 +151,10 @@ export function buildApp({ store, httpClient }: Deps) {
       logger.error({ msg: "reconciliation.parse.error", error });
       res.status(400).json({ error: (error as Error).message });
     }
-  });
+    },
+  );
 
-  app.get("/health", (_req, res) => {
+  app.get(getReconciliationServiceEndpointPath("health", "status"), (_req, res) => {
     res.json({ status: "ok" });
   });
 

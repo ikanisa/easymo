@@ -9,7 +9,16 @@ import { logger } from "./logger";
 import { TwilioMediaSession } from "./twilioSession";
 import { KafkaFactory } from "@easymo/messaging";
 import { liveCallRegistry } from "./liveCallRegistry";
-import { createRateLimiter, expressRequestContext, expressServiceAuth } from "@easymo/commons";
+import {
+  createRateLimiter,
+  expressRequestContext,
+  expressServiceAuth,
+  getVoiceBridgeHttpEndpointPath,
+  getVoiceBridgeHttpEndpointRequiredScopes,
+  getVoiceBridgeRoutePath,
+  type VoiceBridgeHttpControllerKey,
+  type VoiceBridgeHttpEndpointKey,
+} from "@easymo/commons";
 
 export const app = express();
 app.use(express.json());
@@ -28,23 +37,36 @@ if (settings.rateLimit.redisUrl) {
   );
 }
 
-const requireAuth = (scopes: string[]) =>
-  expressServiceAuth({ audience: settings.auth.audience, requiredScopes: scopes });
+const requireAuth = <
+  Controller extends VoiceBridgeHttpControllerKey,
+  Endpoint extends VoiceBridgeHttpEndpointKey<Controller>,
+>(controller: Controller, endpoint: Endpoint) =>
+  expressServiceAuth({
+    audience: settings.auth.audience,
+    requiredScopes: getVoiceBridgeHttpEndpointRequiredScopes(controller, endpoint),
+  });
 
 const twilioClient = twilio(settings.twilio.accountSid, settings.twilio.authToken);
 
-app.get("/health", (_req, res) => {
+app.get(getVoiceBridgeHttpEndpointPath("health", "status"), (_req, res) => {
   res.json({ status: "ok" });
 });
 
-app.get("/analytics/live-calls", requireAuth(["voice:read"]), (_req, res) => {
-  res.json(liveCallRegistry.snapshot());
-});
+app.get(
+  getVoiceBridgeHttpEndpointPath("analytics", "liveCalls"),
+  requireAuth("analytics", "liveCalls"),
+  (_req, res) => {
+    res.json(liveCallRegistry.snapshot());
+  },
+);
 
-app.post("/calls/outbound", requireAuth(["voice:outbound.write"]), async (req, res) => {
-  const { to, tenantId, contactName, region, profile } = req.body ?? {};
-  if (!to) {
-    return res.status(400).json({ error: "Missing 'to' number" });
+app.post(
+  getVoiceBridgeHttpEndpointPath("calls", "outbound"),
+  requireAuth("calls", "outbound"),
+  async (req, res) => {
+    const { to, tenantId, contactName, region, profile } = req.body ?? {};
+    if (!to) {
+      return res.status(400).json({ error: "Missing 'to' number" });
   }
 
   try {
@@ -113,11 +135,12 @@ app.post("/calls/outbound", requireAuth(["voice:outbound.write"]), async (req, r
     logger.error({ msg: "voice.outbound.failed", error: message, to, tenantId, region, profile });
     return res.status(502).json({ error: "Failed to initiate outbound call", message });
   }
-});
+  },
+);
 
 if (process.env.NODE_ENV !== "test") {
   const server = http.createServer(app);
-  const wss = new WebSocketServer({ server, path: "/twilio-media" });
+  const wss = new WebSocketServer({ server, path: getVoiceBridgeRoutePath("mediaStream") });
 
   const kafkaFactory = new KafkaFactory({
     clientId: settings.kafka.clientId,

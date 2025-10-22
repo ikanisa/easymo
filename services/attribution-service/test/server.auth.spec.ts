@@ -1,7 +1,17 @@
 import request from "supertest";
-import { signServiceJwt } from "@easymo/commons";
+import { getAttributionServiceEndpointPath, signServiceJwt } from "@easymo/commons";
 import type { PrismaService } from "@easymo/db";
 import type { evaluateAttribution as evaluateAttributionType } from "../src/evaluator";
+
+jest.mock("@easymo/db", () => ({
+  PrismaService: class {},
+}));
+
+type PrismaMock = {
+  quote: { update: jest.Mock };
+  attributionEvidence: { create: jest.Mock };
+  dispute: { create: jest.Mock };
+};
 
 jest.mock("../src/evaluator", () => ({
   evaluateAttribution: jest.fn().mockReturnValue({ type: "ENDORER", entityId: "agent-1" }),
@@ -9,9 +19,7 @@ jest.mock("../src/evaluator", () => ({
 
 const evaluateAttribution = require("../src/evaluator").evaluateAttribution as jest.MockedFunction<typeof evaluateAttributionType>;
 
-async function setupApp(overrides?: {
-  prisma?: Partial<Pick<PrismaService, "quote" | "attributionEvidence" | "dispute">>;
-}) {
+async function setupApp(overrides?: { prisma?: Partial<PrismaMock> }) {
   jest.clearAllMocks();
   process.env.NODE_ENV = "test";
   process.env.SERVICE_JWT_KEYS = "test-secret";
@@ -20,7 +28,7 @@ async function setupApp(overrides?: {
   process.env.SERVICE_AUTH_AUDIENCE = "attribution-service";
   delete process.env.RATE_LIMIT_REDIS_URL;
 
-  const prismaMock = {
+  const prismaMock: PrismaMock = {
     quote: {
       update: jest.fn().mockResolvedValue({ id: "quote-1" }),
     },
@@ -47,7 +55,7 @@ describe("attribution-service authentication", () => {
     const { app } = await setupApp();
 
     const response = await request(app)
-      .post("/attribution/evaluate")
+      .post(getAttributionServiceEndpointPath("attribution", "evaluate"))
       .send({ referrals: [], events: [] });
 
     expect(response.status).toBe(401);
@@ -62,7 +70,7 @@ describe("attribution-service authentication", () => {
     });
 
     const response = await request(app)
-      .post("/attribution/evaluate")
+      .post(getAttributionServiceEndpointPath("attribution", "evaluate"))
       .set("Authorization", `Bearer ${token}`)
       .send({ referrals: [], events: [] });
 
@@ -78,7 +86,7 @@ describe("attribution-service authentication", () => {
     });
 
     const response = await request(app)
-      .post("/attribution/evaluate")
+      .post(getAttributionServiceEndpointPath("attribution", "evaluate"))
       .set("Authorization", `Bearer ${token}`)
       .send({ quoteId: "1f8fe6a0-ef67-4a6d-8285-829af6f7dabe", persist: true });
 

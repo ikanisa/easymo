@@ -3,8 +3,7 @@ import {
   defineHttpControllers,
   type ControllerDefinition,
   type EndpointDefinition,
-  type HttpMethod,
-} from "./utils";
+} from "./http-utils.js";
 
 const apiRouteDefinitions = defineHttpControllers({
   realtime: {
@@ -73,4 +72,4 @@ export const getApiEndpointPath = <Controller extends ApiControllerKey, Endpoint
   return buildEndpointPath(base, segment);
 };
 
-export type { ControllerDefinition as ApiControllerDefinition, EndpointDefinition as ApiEndpointDefinition, HttpMethod };
+export type { ControllerDefinition as ApiControllerDefinition, EndpointDefinition as ApiEndpointDefinition };

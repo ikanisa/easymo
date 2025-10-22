@@ -1,4 +1,4 @@
-import { buildEndpointPath } from "./utils";
+import { buildEndpointPath } from "./http-utils.js";
 
 const controllerBasePath = "" as const;
 

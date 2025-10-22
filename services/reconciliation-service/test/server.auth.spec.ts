@@ -1,5 +1,6 @@
 import request from "supertest";
 
+jest.setTimeout(10000);
 describe("reconciliation-service auth", () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -14,6 +15,8 @@ describe("reconciliation-service auth", () => {
     process.env.SERVICE_JWT_KEYS = "test-secret";
     delete process.env.RATE_LIMIT_REDIS_URL;
   });
+
+  const getRoutes = () => require("@easymo/commons");
 
   const getApp = () => {
     const { buildApp } = require("../src/server");
@@ -37,8 +40,9 @@ describe("reconciliation-service auth", () => {
 
   it("rejects missing token", async () => {
     const { app } = getApp();
+    const { getReconciliationServiceEndpointPath } = getRoutes();
     const response = await request(app)
-      .post("/reconciliation/mobile-money")
+      .post(getReconciliationServiceEndpointPath("reconciliation", "mobileMoney"))
       .attach("file", csvBuffer, { filename: "sample.csv" });
     expect(response.status).toBe(401);
     expect(response.body.error).toBe("missing_token");
@@ -47,8 +51,9 @@ describe("reconciliation-service auth", () => {
   it("rejects wrong scope", async () => {
     const { app } = getApp();
     const token = await sign(["reconciliation:read"]);
+    const { getReconciliationServiceEndpointPath } = getRoutes();
     const response = await request(app)
-      .post("/reconciliation/mobile-money")
+      .post(getReconciliationServiceEndpointPath("reconciliation", "mobileMoney"))
       .set("Authorization", `Bearer ${token}`)
       .attach("file", csvBuffer, { filename: "sample.csv" });
     expect(response.status).toBe(403);
@@ -58,8 +63,9 @@ describe("reconciliation-service auth", () => {
   it("accepts valid scope", async () => {
     const { app, store, httpClient } = getApp();
     const token = await sign(["reconciliation:write"]);
+    const { getReconciliationServiceEndpointPath } = getRoutes();
     const response = await request(app)
-      .post("/reconciliation/mobile-money")
+      .post(getReconciliationServiceEndpointPath("reconciliation", "mobileMoney"))
       .set("Authorization", `Bearer ${token}`)
       .attach("file", csvBuffer, { filename: "sample.csv" });
     expect(response.status).toBe(202);

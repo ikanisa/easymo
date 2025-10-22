@@ -1,3 +1,5 @@
+import type { Scope } from "../service-auth.js";
+
 const trimSlashes = (value: string) => value.replace(/^\/+|\/+$/g, "");
 
 export const joinPathSegments = (...segments: ReadonlyArray<string>) =>
@@ -16,6 +18,7 @@ export type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 export type EndpointDefinition = {
   method: HttpMethod;
   segment: string;
+  requiredScopes?: ReadonlyArray<Scope>;
 };
 
 export type ControllerDefinition<Endpoints extends Record<string, EndpointDefinition>> = {
