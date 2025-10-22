@@ -81,8 +81,14 @@ export class WaCallsService {
     waPeer = await createWaPeer({
       callId,
       remoteOfferSdp: whatsappOffer,
-      onRemoteTrack: (track, streams) => {
-        realtime.addInboundTrack(track, streams?.[0]);
+      onRemoteTrack: async (track, streams) => {
+        try {
+          await realtime.addInboundTrack(track, streams?.[0]);
+        } catch (error) {
+          this.logger.warn(
+            `Failed to forward inbound audio for ${callId}: ${this.describeError(error)}`,
+          );
+        }
       },
       onIceCandidate: async (candidate) => {
         try {

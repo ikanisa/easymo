@@ -1,5 +1,11 @@
 import { Logger } from '@nestjs/common';
-import type { MediaStream, MediaStreamTrack, RTCIceServer, RTCPeerConnection } from 'wrtc';
+import type {
+  MediaStream,
+  MediaStreamTrack,
+  RTCIceServer,
+  RTCPeerConnection,
+  RTCRtpTransceiver,
+} from 'wrtc';
 import { fetch } from 'undici';
 import { env } from '../../../common/env';
 
@@ -13,9 +19,24 @@ type CreateRealtimePeerArgs = {
 };
 
 export class RealtimePeer {
-  constructor(public readonly pc: RTCPeerConnection) {}
+  constructor(
+    public readonly pc: RTCPeerConnection,
+    private readonly outboundTransceivers: RTCRtpTransceiver[] = [],
+  ) {}
 
-  addInboundTrack(track: MediaStreamTrack, stream?: MediaStream) {
+  async addInboundTrack(track: MediaStreamTrack, stream?: MediaStream) {
+    const targetTransceiver =
+      this.outboundTransceivers.find((candidate) => !candidate.sender.track) ??
+      this.outboundTransceivers[0];
+
+    if (targetTransceiver) {
+      if (stream) {
+        targetTransceiver.sender.setStreams?.(stream);
+      }
+      await targetTransceiver.sender.replaceTrack(track);
+      return;
+    }
+
     if (stream) {
       this.pc.addTrack(track, stream);
     } else {
@@ -45,6 +66,8 @@ export async function createRealtimePeer(args: CreateRealtimePeerArgs): Promise<
   }
   const { RTCPeerConnection } = await loadWrtc();
   const pc = new RTCPeerConnection();
+
+  const audioTransceiver = pc.addTransceiver('audio', { direction: 'sendrecv' });
 
   if (args.onRemoteTrack) {
     pc.ontrack = (event) => {
@@ -111,7 +134,7 @@ export async function createRealtimePeer(args: CreateRealtimePeerArgs): Promise<
 
   await pc.setRemoteDescription({ type: 'answer', sdp: payload.sdp });
 
-  return new RealtimePeer(pc);
+  return new RealtimePeer(pc, [audioTransceiver]);
 }
 
 type WrtcModule = typeof import('wrtc');
