@@ -1,4 +1,5 @@
 import { apiFetch } from "@/lib/api/client";
+import { getAdminApiPath } from "@/lib/routes";
 import { shouldUseMocks } from "@/lib/runtime-config";
 import { mockBars, mockQrPreview } from "@/lib/mock-data";
 import type { QrPreview } from "@/lib/schemas";
@@ -57,7 +58,7 @@ export async function requestQrPreview(payload: QrPreviewRequest): Promise<QrPre
     return buildMockPreview(payload.barId);
   }
 
-  const response = await apiFetch<QrPreviewResponse, QrPreviewRequest>("/api/qr/preview", {
+  const response = await apiFetch<QrPreviewResponse, QrPreviewRequest>(getAdminApiPath("qr", "preview"), {
     method: "POST",
     body: payload,
     headers: {

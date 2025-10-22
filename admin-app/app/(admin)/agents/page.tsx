@@ -1,10 +1,13 @@
 "use client";
 import useSWR from "swr";
 import Link from "next/link";
-import { getAdminRoutePath } from "@/lib/routes";
+import { getAdminApiPath, getAdminRoutePath } from "@/lib/routes";
 
 export default function AgentsIndex() {
-  const { data, error, isLoading } = useSWR("/api/agents", (url) => fetch(url).then(r => r.json()));
+  const { data, error, isLoading } = useSWR(
+    getAdminApiPath("agents"),
+    (url) => fetch(url).then((r) => r.json()),
+  );
   if (error) return <div className="p-4 text-red-600">Failed to load agents</div>;
   if (isLoading) return <div className="p-4">Loading agents…</div>;
   const agents = data?.agents ?? [];

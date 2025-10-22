@@ -1,4 +1,5 @@
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
+import { createAdminApiRequest } from './utils/api';
 
 vi.mock('@/lib/server/supabase-admin', () => ({
   getSupabaseAdminClient: vi.fn(),
@@ -56,7 +57,7 @@ describe('orders override API', () => {
     getSupabaseAdminClient.mockReturnValue({ from });
 
     const { POST } = await import('@/app/api/orders/[id]/override/route');
-    const request = new Request('http://localhost/api/orders/override', {
+    const request = createAdminApiRequest(['orders', 'override'], {
       method: 'POST',
       body: JSON.stringify({ action: 'cancel', reason: 'Customer request' }),
     });
@@ -89,7 +90,7 @@ describe('orders override API', () => {
     getSupabaseAdminClient.mockReturnValue({ from });
 
     const { POST } = await import('@/app/api/orders/[id]/override/route');
-    const request = new Request('http://localhost/api/orders/override', {
+    const request = createAdminApiRequest(['orders', 'override'], {
       method: 'POST',
       body: JSON.stringify({ action: 'cancel', reason: 'Customer request' }),
     });

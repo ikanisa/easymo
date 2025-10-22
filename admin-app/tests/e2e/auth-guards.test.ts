@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { createAdminApiRequest } from './utils/api';
 
 vi.mock('@/lib/server/supabase-admin', () => ({
   getSupabaseAdminClient: vi.fn(() => ({
@@ -27,7 +28,7 @@ describe('auth guards', () => {
 
   it('allows settings update with default test actor id', async () => {
     const { POST } = await import('@/app/api/settings/route');
-    const response = await POST(new Request('http://localhost/api/settings', {
+    const response = await POST(createAdminApiRequest(['settings'], {
       method: 'POST',
       body: JSON.stringify({
         quietHours: { start: '22:00', end: '06:00' },

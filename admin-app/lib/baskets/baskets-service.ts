@@ -1,4 +1,5 @@
 import { apiFetch } from "@/lib/api/client";
+import { getAdminApiPath } from "@/lib/routes";
 
 export type BasketsQueryParams = {
   status?: string;
@@ -251,7 +252,7 @@ export async function fetchSaccos(
 ): Promise<PaginatedResponse<SaccoRow>> {
   const query = buildQueryString(params);
   const response = await apiFetch<PaginatedResponse<SaccoRow>>(
-    `/api/baskets/saccos${query}`,
+    `${getAdminApiPath("baskets", "saccos")}${query}`,
   );
   if (!response.ok) {
     throw new Error("Failed to fetch SACCO branches");
@@ -264,7 +265,7 @@ export async function fetchIbimina(
 ): Promise<PaginatedResponse<IbiminaRow>> {
   const query = buildQueryString(params);
   const response = await apiFetch<PaginatedResponse<IbiminaRow>>(
-    `/api/baskets/ibimina${query}`,
+    `${getAdminApiPath("baskets", "ibimina")}${query}`,
   );
   if (!response.ok) {
     throw new Error("Failed to fetch Ibimina");
@@ -277,7 +278,7 @@ export async function updateIkimina(
   payload: IkiminaUpdatePayload,
 ): Promise<IkiminaUpdateResponse> {
   const response = await apiFetch<IkiminaUpdateResponse>(
-    `/api/baskets/ibimina/${ikiminaId}`,
+    getAdminApiPath("baskets", "ibimina", ikiminaId),
     {
       method: "PATCH",
       body: payload,
@@ -318,7 +319,7 @@ export async function createIkiminaInvite(
   payload: IkiminaInvitePayload,
 ): Promise<IkiminaInviteResult> {
   const response = await apiFetch<IkiminaInviteResult>(
-    "/api/baskets/invites",
+    getAdminApiPath("baskets", "invites"),
     {
       method: "POST",
       body: payload,
@@ -337,7 +338,7 @@ export async function fetchSaccoOfficers(
 ): Promise<PaginatedResponse<SaccoOfficerRow>> {
   const query = buildQueryString(params);
   const response = await apiFetch<PaginatedResponse<SaccoOfficerRow>>(
-    `/api/baskets/saccos/officers${query}`,
+    `${getAdminApiPath("baskets", "saccos", "officers")}${query}`,
   );
   if (!response.ok) {
     throw new Error("Failed to fetch SACCO officers");
@@ -350,7 +351,7 @@ export async function fetchMemberships(
 ): Promise<PaginatedResponse<IbiminaMemberRow>> {
   const query = buildQueryString(params);
   const response = await apiFetch<PaginatedResponse<IbiminaMemberRow>>(
-    `/api/baskets/memberships${query}`,
+    `${getAdminApiPath("baskets", "memberships")}${query}`,
   );
   if (!response.ok) {
     throw new Error("Failed to fetch memberships");
@@ -363,7 +364,7 @@ export async function fetchUnmatchedSms(
 ): Promise<PaginatedResponse<MomoUnmatchedRow>> {
   const query = buildQueryString(params);
   const response = await apiFetch<PaginatedResponse<MomoUnmatchedRow>>(
-    `/api/baskets/momo/unmatched${query}`,
+    `${getAdminApiPath("baskets", "momo", "unmatched")}${query}`,
   );
   if (!response.ok) {
     throw new Error("Failed to fetch unmatched SMS");
@@ -376,7 +377,7 @@ export async function fetchContributions(
 ): Promise<PaginatedResponse<ContributionRow>> {
   const query = buildQueryString(params);
   const response = await apiFetch<PaginatedResponse<ContributionRow>>(
-    `/api/baskets/contributions${query}`,
+    `${getAdminApiPath("baskets", "contributions")}${query}`,
   );
   if (!response.ok) {
     throw new Error("Failed to fetch contributions ledger");
@@ -389,7 +390,7 @@ export async function fetchKycDocuments(
 ): Promise<PaginatedResponse<KycDocumentRow>> {
   const query = buildQueryString(params);
   const response = await apiFetch<PaginatedResponse<KycDocumentRow>>(
-    `/api/baskets/kyc${query}`,
+    `${getAdminApiPath("baskets", "kyc")}${query}`,
   );
   if (!response.ok) {
     throw new Error("Failed to fetch KYC documents");
@@ -398,7 +399,7 @@ export async function fetchKycDocuments(
 }
 
 export async function fetchBasketsSettings(): Promise<BasketsSettings> {
-  const response = await apiFetch<BasketsSettings>(`/api/baskets/settings`);
+  const response = await apiFetch<BasketsSettings>(getAdminApiPath("baskets", "settings"));
   if (!response.ok) {
     throw new Error("Failed to fetch Baskets settings");
   }
@@ -410,7 +411,7 @@ export async function fetchLoans(
 ): Promise<PaginatedResponse<LoanRow>> {
   const query = buildQueryString(params);
   const response = await apiFetch<PaginatedResponse<LoanRow>>(
-    `/api/baskets/loans${query}`,
+    `${getAdminApiPath("baskets", "loans")}${query}`,
   );
   if (!response.ok) {
     throw new Error("Failed to fetch loans");
@@ -423,7 +424,7 @@ export async function updateLoan(
   payload: LoanUpdatePayload,
 ): Promise<void> {
   const response = await apiFetch<{ success: boolean }>(
-    `/api/baskets/loans/${loanId}`,
+    getAdminApiPath("baskets", "loans", loanId),
     {
       method: "PATCH",
       body: payload,
@@ -441,7 +442,7 @@ export async function addLoanCollateral(
   payload: CollateralInput,
 ): Promise<LoanRow["collateral"][number]> {
   const response = await apiFetch<LoanRow["collateral"][number]>(
-    `/api/baskets/loans/${loanId}/collateral`,
+    getAdminApiPath("baskets", "loans", loanId, "collateral"),
     {
       method: "POST",
       body: payload,
@@ -460,7 +461,7 @@ export async function deleteLoanCollateral(
   collateralId: string,
 ): Promise<void> {
   const response = await apiFetch<{ success: boolean }>(
-    `/api/baskets/loans/${loanId}/collateral/${collateralId}`,
+    getAdminApiPath("baskets", "loans", loanId, "collateral", collateralId),
     { method: "DELETE" },
   );
   if (!response.ok) {
@@ -472,7 +473,7 @@ export async function deleteLoanCollateral(
 
 export async function fetchLoanEvents(loanId: string): Promise<LoanEvent[]> {
   const response = await apiFetch<{ data: LoanEvent[] }>(
-    `/api/baskets/loans/${loanId}/events`,
+    getAdminApiPath("baskets", "loans", loanId, "events"),
   );
   if (!response.ok) {
     const message = (response.error as { message?: string })?.message ??
@@ -484,7 +485,7 @@ export async function fetchLoanEvents(loanId: string): Promise<LoanEvent[]> {
 
 export async function fetchReminderLogs(): Promise<ReminderLog[]> {
   const response = await apiFetch<{ data: ReminderLog[] }>(
-    `/api/baskets/reminders/logs`,
+    getAdminApiPath("baskets", "reminders", "logs"),
   );
   if (!response.ok) {
     const message = (response.error as { message?: string })?.message ??

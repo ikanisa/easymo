@@ -1,4 +1,5 @@
 import { shouldUseMocks } from "@/lib/runtime-config";
+import { getAdminApiPath } from "@/lib/routes";
 import { paginateArray, type PaginatedResult, type Pagination } from "@/lib/shared/pagination";
 import { matchesSearch } from "@/lib/shared/search";
 import { callAdminFunction } from "@/lib/server/functions-client";
@@ -14,7 +15,7 @@ export async function listSubscriptions(params: { search?: string } & Pagination
     if (params.search) sp.set("search", params.search);
     if (params.offset !== undefined) sp.set("offset", String(params.offset));
     if (params.limit !== undefined) sp.set("limit", String(params.limit));
-    const res = await fetch(`/api/subscriptions?${sp.toString()}`, { cache: "no-store" });
+    const res = await fetch(`${getAdminApiPath("subscriptions")}?${sp.toString()}`, { cache: "no-store" });
     if (!res.ok) throw new Error("subscriptions_api_failed");
     return await res.json();
   }

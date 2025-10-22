@@ -10,6 +10,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { Pill } from "@/components/ui/Pill";
 import { useToast } from "@/components/ui/ToastProvider";
 import { IntegrationStatusBadge } from "@/components/ui/IntegrationStatusBadge";
+import { getAdminApiPath } from "@/lib/routes";
 
 function formatUpdatedAt(timestamp?: string | null) {
   if (!timestamp) return null;
@@ -88,7 +89,7 @@ export function AlertPreferences() {
     );
 
     try {
-      const response = await fetch("/api/settings/alerts", {
+      const response = await fetch(getAdminApiPath("settings", "alerts"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/ToastProvider";
+import { getAdminApiPath } from "@/lib/routes";
 import {
   basketsQueryKeys,
   useBasketsSettings,
@@ -41,7 +42,7 @@ export function BasketsSettingsForm() {
 
   const mutation = useMutation({
     mutationFn: async (payload: Partial<BasketsSettings>) => {
-      const response = await fetch('/api/baskets/settings', {
+      const response = await fetch(getAdminApiPath('baskets', 'settings'), {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),

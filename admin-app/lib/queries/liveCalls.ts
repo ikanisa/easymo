@@ -1,6 +1,7 @@
 import { QueryKey, useMutation, useQuery } from "@tanstack/react-query";
 import { z } from "zod";
 import { liveCallSchema } from "@/lib/schemas";
+import { getAdminApiPath } from "@/lib/routes";
 
 const LIVE_CALLS_KEY: QueryKey = ["live-calls"];
 
@@ -21,7 +22,7 @@ export type LiveCallsResponse = z.infer<typeof liveCallsResponseSchema> & {
 };
 
 export async function fetchLiveCalls(): Promise<LiveCallsResponse> {
-  const response = await fetch("/api/live-calls", { cache: "no-store" });
+  const response = await fetch(getAdminApiPath("live-calls"), { cache: "no-store" });
   if (!response.ok) {
     throw new Error("Failed to load live calls");
   }

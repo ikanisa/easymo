@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { getAdminRoutePath } from "@/lib/routes";
+import { getAdminApiPath, getAdminRoutePath } from "@/lib/routes";
 
 interface SearchResult {
   chunk_id: string;
@@ -42,7 +42,7 @@ export default function AgentDocumentSearch({ params }: { params: { id: string }
     setError(null);
     setIsLoading(true);
     try {
-      const response = await fetch(`/api/agents/${agentId}/search`, {
+      const response = await fetch(getAdminApiPath("agents", agentId, "search"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ query, limit, minSimilarity }),
@@ -169,7 +169,7 @@ export default function AgentDocumentSearch({ params }: { params: { id: string }
                     </div>
                   </div>
                   <Link
-                    href={`/api/agents/${agentId}/documents/${match.document_id}/signed`}
+                    href={getAdminApiPath("agents", agentId, "documents", match.document_id, "signed")}
                     className="text-xs text-blue-600 underline"
                     prefetch={false}
                   >

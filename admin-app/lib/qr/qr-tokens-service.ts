@@ -1,4 +1,5 @@
 import { apiFetch } from "@/lib/api/client";
+import { getAdminApiPath } from "@/lib/routes";
 import { shouldUseMocks } from "@/lib/runtime-config";
 import { mockQrTokens } from "@/lib/mock-data";
 import {
@@ -35,7 +36,7 @@ export async function listQrTokens(
     searchParams.set("stationId", params.stationId);
   }
 
-  const url = `/api/qr?${searchParams.toString()}`;
+  const url = `${getAdminApiPath("qr")}?${searchParams.toString()}`;
   const response = await apiFetch<{
     data: QrToken[];
     total: number;

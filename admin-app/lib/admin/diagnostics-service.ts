@@ -6,6 +6,7 @@ import {
 } from "@/lib/schemas";
 import { mockAdminDiagnostics, mockAdminDiagnosticsMatch } from "@/lib/mock-data";
 import { shouldUseMocks } from "@/lib/runtime-config";
+import { getAdminApiPath } from "@/lib/routes";
 
 const useMocks = shouldUseMocks();
 
@@ -15,7 +16,7 @@ export async function getAdminDiagnostics(): Promise<AdminDiagnosticsSnapshot> {
   }
 
   try {
-    const response = await fetch("/api/admin/diagnostics", { cache: "no-store" });
+    const response = await fetch(getAdminApiPath("admin", "diagnostics"), { cache: "no-store" });
     if (!response.ok) {
       throw new Error(
         `Admin diagnostics request failed with ${response.status}`,
@@ -52,7 +53,7 @@ export async function getAdminDiagnosticsMatch(
   }
 
   try {
-    const response = await fetch("/api/admin/diagnostics/match", {
+    const response = await fetch(getAdminApiPath("admin", "diagnostics", "match"), {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ tripId }),

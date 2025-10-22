@@ -9,6 +9,7 @@ import {
   useAgentTasks,
   useAgentRuns,
 } from "@/lib/queries/agents";
+import { getAdminApiPath } from "@/lib/routes";
 import { AgentKnowledgeStatusBanner } from "@/components/agents/AgentKnowledgeStatusBanner";
 import { useToast } from "@/components/ui/ToastProvider";
 import { useEffect, useRef, useState } from "react";
@@ -210,7 +211,9 @@ export default function AgentDetailsPage() {
                   <button
                     className="ml-2 px-2 py-0.5 border rounded text-xs"
                     onClick={async () => {
-                      const res = await fetch(`/api/agents/${agent.id}/documents/${d.id}/signed`);
+                      const res = await fetch(
+                        getAdminApiPath("agents", agent.id, "documents", d.id, "signed"),
+                      );
                       if (res.ok) {
                         const json = await res.json();
                         if (json.url) window.open(json.url, "_blank");

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/ToastProvider";
+import { getAdminApiPath } from "@/lib/routes";
 import {
   basketsQueryKeys,
   useKycDocumentsQuery,
@@ -31,7 +32,7 @@ export function KycReviewTable({ params }: KycReviewTableProps) {
 
   const mutation = useMutation({
     mutationFn: async (input: { id: string; status: 'pending' | 'verified' | 'rejected'; notes?: string }) => {
-      const response = await fetch(`/api/baskets/kyc/${input.id}`, {
+      const response = await fetch(getAdminApiPath("baskets", "kyc", input.id), {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: input.status, notes: input.notes }),
