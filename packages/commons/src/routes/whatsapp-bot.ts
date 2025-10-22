@@ -1,17 +1,21 @@
 import {
   buildEndpointPath,
-  defineBackgroundTriggers,
   defineHttpControllers,
   type ControllerDefinition,
   type EndpointDefinition,
 } from "./utils";
 
-const controllerDefinitions = defineHttpControllers({
+const whatsappBotRouteDefinitions = defineHttpControllers({
   webhook: {
     basePath: "webhook" as const,
+    description: "Meta WhatsApp webhook handler",
     endpoints: {
-      verify: { method: "GET" as const, segment: "" as const },
-      inbound: { method: "POST" as const, segment: "" as const },
+      verify: {
+        method: "GET" as const,
+        segment: "" as const,
+        notes: "Expects hub.verify_token and hub.challenge query params",
+      },
+      ingest: { method: "POST" as const, segment: "" as const, notes: "Parses Meta webhook payloads" },
     },
   },
   health: {
@@ -22,11 +26,12 @@ const controllerDefinitions = defineHttpControllers({
   },
 } as const satisfies Record<string, ControllerDefinition<Record<string, EndpointDefinition>>>);
 
-export type WhatsappBotRoutes = typeof controllerDefinitions;
+export type WhatsappBotRoutes = typeof whatsappBotRouteDefinitions;
 export type WhatsappBotControllerKey = keyof WhatsappBotRoutes;
-export type WhatsappBotEndpointKey<Controller extends WhatsappBotControllerKey> = keyof WhatsappBotRoutes[Controller]["endpoints"];
+export type WhatsappBotEndpointKey<Controller extends WhatsappBotControllerKey> =
+  keyof WhatsappBotRoutes[Controller]["endpoints"];
 
-export const whatsappBotRoutes = controllerDefinitions;
+export const whatsappBotRoutes = whatsappBotRouteDefinitions;
 
 export const getWhatsappBotControllerBasePath = <Controller extends WhatsappBotControllerKey>(controller: Controller) =>
   whatsappBotRoutes[controller].basePath;
@@ -35,18 +40,18 @@ export const getWhatsappBotEndpointSegment = <
   Controller extends WhatsappBotControllerKey,
   Endpoint extends WhatsappBotEndpointKey<Controller>,
 >(controller: Controller, endpoint: Endpoint) => {
-  const controllerRoutes = whatsappBotRoutes[controller] as ControllerDefinition<Record<string, EndpointDefinition>>;
-  const endpoints = controllerRoutes.endpoints as Record<string, EndpointDefinition>;
-  return endpoints[endpoint as string].segment;
+  const controllerRoutes = whatsappBotRoutes[controller] as WhatsappBotRoutes[Controller];
+  const endpoints = controllerRoutes.endpoints as Record<WhatsappBotEndpointKey<Controller>, EndpointDefinition>;
+  return endpoints[endpoint].segment;
 };
 
 export const getWhatsappBotEndpointMethod = <
   Controller extends WhatsappBotControllerKey,
   Endpoint extends WhatsappBotEndpointKey<Controller>,
 >(controller: Controller, endpoint: Endpoint) => {
-  const controllerRoutes = whatsappBotRoutes[controller] as ControllerDefinition<Record<string, EndpointDefinition>>;
-  const endpoints = controllerRoutes.endpoints as Record<string, EndpointDefinition>;
-  return endpoints[endpoint as string].method;
+  const controllerRoutes = whatsappBotRoutes[controller] as WhatsappBotRoutes[Controller];
+  const endpoints = controllerRoutes.endpoints as Record<WhatsappBotEndpointKey<Controller>, EndpointDefinition>;
+  return endpoints[endpoint].method;
 };
 
 export const getWhatsappBotEndpointPath = <
@@ -57,10 +62,3 @@ export const getWhatsappBotEndpointPath = <
   const segment = getWhatsappBotEndpointSegment(controller, endpoint);
   return buildEndpointPath(base, segment);
 };
-
-export const whatsappBotBackgroundTriggers = defineBackgroundTriggers({
-  /**
-   * Outbound messaging currently flows through Kafka topics and is not exposed via HTTP.
-   * Only webhook ingestion and health checks are represented here.
-   */
-} as const);

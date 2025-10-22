@@ -1,37 +1,37 @@
-import { defineBackgroundTriggers } from "./utils";
+// Broker orchestrator operates solely via Kafka topics; no HTTP endpoints are exposed.
+import { defineBackgroundTriggers, type BackgroundTriggerDefinition } from "./utils";
 
-export type BrokerOrchestratorInterface = {
-  transport: "kafka";
-  inboundTopics: {
-    whatsapp: string;
-    voiceContact: string;
-    sip: string;
-  };
-  outboundTopics: {
-    brokerOutbound: string;
-    retry: string;
-  };
-  notes: string;
-};
+const brokerOrchestratorBackgroundDefinitions = defineBackgroundTriggers({
+  whatsappInbound: {
+    kind: "kafka" as const,
+    topic: "whatsapp.inbound" as const,
+    role: "consumer" as const,
+    description: "Consumes WhatsApp inbound events for orchestration",
+  },
+  voiceContactEvents: {
+    kind: "kafka" as const,
+    topic: "voice.contact.events" as const,
+    role: "consumer" as const,
+    description: "Consumes real-time voice contact updates",
+  },
+  sipEvents: {
+    kind: "kafka" as const,
+    topic: "voice.sip.events" as const,
+    role: "consumer" as const,
+    description: "Consumes SIP ingress events for orchestration hooks",
+  },
+  brokerOutbound: {
+    kind: "kafka" as const,
+    topic: "broker.outbound" as const,
+    role: "producer" as const,
+    description: "Emits downstream events for agent follow-up actions",
+  },
+} as const satisfies Record<string, BackgroundTriggerDefinition>);
 
-export const brokerOrchestratorInterface = Object.freeze({
-  transport: "kafka" as const,
-  inboundTopics: {
-    whatsapp: "whatsapp.inbound" as const,
-    voiceContact: "voice.contact.events" as const,
-    sip: "voice.sip.events" as const,
-  },
-  outboundTopics: {
-    brokerOutbound: "broker.outbound" as const,
-    retry: "broker.retry" as const,
-  },
-  notes:
-    "Consumes channel events and emits broker orchestration results; there is no HTTP surface area for this service.",
-} satisfies BrokerOrchestratorInterface);
+export type BrokerOrchestratorBackgroundTriggers = typeof brokerOrchestratorBackgroundDefinitions;
+export type BrokerOrchestratorBackgroundKey = keyof BrokerOrchestratorBackgroundTriggers;
 
-export const brokerOrchestratorBackgroundTriggers = defineBackgroundTriggers({
-  kafkaConsumers: {
-    type: "queue",
-    description: "Continuous Kafka consumer pipelines for WhatsApp, voice contact, and SIP events.",
-  },
-} as const);
+export const brokerOrchestratorBackgroundTriggers = brokerOrchestratorBackgroundDefinitions;
+
+export const getBrokerOrchestratorBackgroundTrigger = <Key extends BrokerOrchestratorBackgroundKey>(key: Key) =>
+  brokerOrchestratorBackgroundTriggers[key];
