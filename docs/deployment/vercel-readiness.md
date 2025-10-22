@@ -74,6 +74,11 @@ Additional steps below will ensure Vercel deployment as a Progressive Web App.
 - Deploy the public SPA and the admin panel from their respective directories:
   - `cd app && vercel deploy --prod`
   - `cd admin-app && vercel deploy --prod`
+-
+> 2025-02-17 update: the Mobility Admin SPA now lives at the repository root.
+> Point the Vercel project at `.` (or run `vercel --cwd .`) so the Vite build
+> output under `dist/` is published. Keep the separate `admin-app` project for
+> the Next.js surface.
 - The repository root should **not** be deployed directly; doing so causes the
   CLI to inspect `supabase/functions/` and fails with “Function Runtimes must
   have a valid version” errors.
