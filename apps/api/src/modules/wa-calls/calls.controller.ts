@@ -4,20 +4,19 @@ import { WaCallsService } from './calls.service';
 import { WaWebhookGuard } from './common/guards/wa-webhook.guard';
 import { parseWaCallEvent } from './common/dto/wa-calling.dto';
 
-@Controller(getApiControllerBasePath('waCalls'))
+@Controller(getApiControllerBasePath('whatsappCalls'))
 export class WaCallsController {
   constructor(private readonly calls: WaCallsService) {}
 
-  @Get(getApiEndpointSegment('waCalls', 'webhookVerify'))
+  @Get(getApiEndpointSegment('whatsappCalls', 'webhook'))
   verify(@Query() query: Record<string, unknown>) {
     return this.calls.verifyWebhook(query);
   }
 
   @UseGuards(WaWebhookGuard)
-  @Post(getApiEndpointSegment('waCalls', 'events'))
-  async events(@Body() body: unknown) {
-    const event = parseWaCallEvent(body);
-    await this.calls.onEvents(event);
+  @Post(getApiEndpointSegment('whatsappCalls', 'events'))
+  async events(@Body() body: WaCallEvent) {
+    await this.calls.onEvents(body);
     return { ok: true };
   }
 }
