@@ -2,6 +2,8 @@
   "builds": [
     { "src": "admin-app/next.config.mjs", "use": "@vercel/next" }
   ],
+  "installCommand": "pnpm install --frozen-lockfile",
+  "buildCommand": "pnpm --filter @easymo/admin-app... build",
   "env": {
     "API_HEALTH_PROBES_ENABLED": "true"
   },
@@ -19,5 +21,12 @@
     { "source": "/retrieval-search", "destination": "/api/retrieval-search" },
     { "source": "/(.*)", "destination": "/" }
   ],
-  "regions": ["fra1"]
+  "regions": ["fra1"],
+  "git": {
+    "productionBranch": "main",
+    "deploymentEnabled": {
+      "main": true,
+      "preview": true
+    }
+  }
 }
