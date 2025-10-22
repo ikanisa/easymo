@@ -1,4 +1,5 @@
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
+import { createAdminApiRequest, getAdminApiUrl } from './utils/api';
 
 vi.mock('@/lib/server/supabase-admin', () => ({
   getSupabaseAdminClient: vi.fn(),
@@ -49,7 +50,7 @@ describe('notifications API', () => {
     getSupabaseAdminClient.mockReturnValue(null);
 
     const { GET } = await import('@/app/api/notifications/route');
-    const response = await GET(new Request('http://localhost/api/notifications'), {} as unknown as { params: Record<string, never> });
+    const response = await GET(createAdminApiRequest(['notifications']), {} as unknown as { params: Record<string, never> });
     expect(response.status).toBe(503);
   });
 
@@ -83,7 +84,7 @@ describe('notifications API', () => {
     getSupabaseAdminClient.mockReturnValue({ from });
 
     const { GET } = await import('@/app/api/notifications/route');
-    const response = await GET(new Request('http://localhost/api/notifications'), {} as unknown as { params: Record<string, never> });
+    const response = await GET(createAdminApiRequest(['notifications']), {} as unknown as { params: Record<string, never> });
     expect(response.status).toBe(200);
     const payload = await response.json();
     expect(payload.data).toHaveLength(1);
@@ -132,7 +133,7 @@ describe('notifications API', () => {
     );
 
     const { POST } = await import('@/app/api/notifications/[id]/route');
-    const request = new Request('http://localhost/api/notifications/4c3f4b21-7b98-4a52-8c3f-9937b4c1f111', {
+    const request = createAdminApiRequest(['notifications', '4c3f4b21-7b98-4a52-8c3f-9937b4c1f111'], {
       method: 'POST',
       body: JSON.stringify({ action: 'resend' }),
     });
@@ -203,7 +204,7 @@ describe('notifications API', () => {
     getSupabaseAdminClient.mockReturnValue({ from });
 
     const { POST } = await import('@/app/api/notifications/[id]/route');
-    const request = new Request('http://localhost/api/notifications/d40e28fb-b185-4d70-9f0c-74dbb83b5f5e', {
+    const request = createAdminApiRequest(['notifications', 'd40e28fb-b185-4d70-9f0c-74dbb83b5f5e'], {
       method: 'POST',
       body: JSON.stringify({ action: 'resend' }),
     });
@@ -250,7 +251,7 @@ describe('notifications API', () => {
     getSupabaseAdminClient.mockReturnValue({ from });
 
     const { POST } = await import('@/app/api/notifications/[id]/route');
-    const request = new Request('http://localhost/api/notifications/5e4674f4-6de6-49a6-9ac4-58a3c3d1c111', {
+    const request = createAdminApiRequest(['notifications', '5e4674f4-6de6-49a6-9ac4-58a3c3d1c111'], {
       method: 'POST',
       body: JSON.stringify({ action: 'cancel' }),
     });
@@ -292,7 +293,7 @@ describe('notifications API', () => {
     getSupabaseAdminClient.mockReturnValue({ from });
 
     const { POST } = await import('@/app/api/notifications/[id]/route');
-    const request = new Request('http://localhost/api/notifications/8e5fd38d-3d40-4b53-8c43-d4b895d0cb31', {
+    const request = createAdminApiRequest(['notifications', '8e5fd38d-3d40-4b53-8c43-d4b895d0cb31'], {
       method: 'POST',
       body: JSON.stringify({ action: 'resend' }),
     });
@@ -314,7 +315,7 @@ describe('notifications API', () => {
     getSupabaseAdminClient.mockReturnValue(null);
 
     const { POST } = await import('@/app/api/notifications/retry/route');
-    const request = new Request('http://localhost/api/notifications/retry', {
+    const request = createAdminApiRequest(['notifications', 'retry'], {
       method: 'POST',
       body: JSON.stringify({ ids: ['089b2468-3e5e-4037-93dc-5fca4c9de121'] }),
     });
@@ -360,7 +361,7 @@ describe('notifications API', () => {
     );
 
     const { POST } = await import('@/app/api/notifications/retry/route');
-    const request = new Request('http://localhost/api/notifications/retry', {
+    const request = createAdminApiRequest(['notifications', 'retry'], {
       method: 'POST',
       body: JSON.stringify({ ids: ['2b9fae9a-2c5c-4e86-9a9b-e90c0dc2f8a1'] }),
     });
@@ -411,7 +412,7 @@ describe('notifications API', () => {
     getSupabaseAdminClient.mockReturnValue({ from });
 
     const { POST } = await import('@/app/api/notifications/retry/route');
-    const request = new Request('http://localhost/api/notifications/retry', {
+    const request = createAdminApiRequest(['notifications', 'retry'], {
       method: 'POST',
       body: JSON.stringify({ ids: ['a67375c9-87a0-4104-85c1-74223e6a5886'] }),
     });

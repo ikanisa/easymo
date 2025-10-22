@@ -1,4 +1,5 @@
 import { apiFetch } from "@/lib/api/client";
+import { getAdminApiPath } from "@/lib/routes";
 import { shouldUseMocks } from "@/lib/runtime-config";
 import { mockStaffNumbers } from "@/lib/mock-data";
 import {
@@ -83,7 +84,7 @@ async function fetchStaffNumbersApi(
   }
 
   const response = await apiFetch<StaffApiResponse>(
-    `/api/staff?${searchParams.toString()}`,
+    `${getAdminApiPath("staff")}?${searchParams.toString()}`,
   );
 
   if (response.ok) {

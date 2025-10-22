@@ -24,5 +24,12 @@
     { "source": "/retrieval-search", "destination": "/api/retrieval-search" },
     { "source": "/(.*)", "destination": "/" }
   ],
-  "regions": ["fra1"]
+  "regions": ["fra1"],
+  "git": {
+    "productionBranch": "main",
+    "deploymentEnabled": {
+      "main": true,
+      "preview": true
+    }
+  }
 }

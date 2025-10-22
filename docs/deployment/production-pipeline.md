@@ -26,6 +26,18 @@ Document any missing inputs in the "Open items" section before proceeding. Track
 
 Update this section after validating each assumption.
 
+### 2025-02-17 Repository inventory update
+
+- The repository now hosts two active front-end roots: the Mobility Admin SPA
+  at the repo root (`./`) and the Next.js admin control panel under
+  `admin-app/`. Both consume shared typed route helpers from `@va/shared`.
+- Historical scaffolds such as `angular/` and the pending `station-app/`
+  remain out of scope for production until their roadmaps resume. Typed
+  routing is deferred there because no concrete routes exist yet (see
+  `docs/deployment/root-application-inventory.md`).
+- Backend services live under `apps/` and `services/`; they deploy outside of
+  Vercel and are tracked separately in service-specific runbooks.
+
 ## B. GitHub Repository Setup
 1. **Repository creation/linking**
    - If a new repo is needed: create under the supplied org, import this codebase, and set the default branch (e.g., `main`).

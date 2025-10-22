@@ -1,22 +1,8 @@
-export type WaCallStatus = 'offer' | 'connect' | 'update' | 'end';
+export {
+  parseWaCallEvent,
+  waCallEventSchema,
+  waCallStatusSchema,
+  waCallStatusValues,
+} from '@va/shared/wa-calls';
 
-export interface WaCallEvent {
-  object: 'whatsapp_business_account';
-  entry: Array<{
-    id: string;
-    changes: Array<{
-      value: {
-        call?: {
-          call_id: string;
-          from: string;
-          to: string;
-          status: WaCallStatus;
-          sdp?: string;
-          ice?: unknown;
-          timestamp: string;
-        };
-      };
-      field: string;
-    }>;
-  }>;
-}
+export type { WaCallEvent, WaCallStatus } from '@va/shared/wa-calls';

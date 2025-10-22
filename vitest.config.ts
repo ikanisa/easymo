@@ -8,7 +8,12 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': resolve(rootDir, 'admin-app'),
+      '@va/shared': resolve(rootDir, 'packages/shared/src/index.ts'),
     },
+  },
+  esbuild: {
+    jsx: 'automatic',
+    jsxImportSource: 'react',
   },
   test: {
     include: [
@@ -17,5 +22,6 @@ export default defineConfig({
       'tests/api/**/*.{test,spec}.{ts,tsx}',
     ],
     environment: 'jsdom',
+    setupFiles: ['admin-app/tests/setupTests.ts'],
   },
 });

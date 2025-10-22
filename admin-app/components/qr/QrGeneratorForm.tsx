@@ -6,6 +6,7 @@ import styles from "./QrGeneratorForm.module.css";
 import { useToast } from "@/components/ui/ToastProvider";
 import { IntegrationStatusBadge } from "@/components/ui/IntegrationStatusBadge";
 import { Button } from "@/components/ui/Button";
+import { getAdminApiPath } from "@/lib/routes";
 
 interface QrGeneratorFormProps {
   bars: Bar[];
@@ -50,7 +51,7 @@ export function QrGeneratorForm({ bars }: QrGeneratorFormProps) {
     setIntegration(null);
 
     try {
-      const response = await fetch("/api/qr/generate", {
+      const response = await fetch(getAdminApiPath("qr", "generate"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

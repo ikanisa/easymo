@@ -10,7 +10,7 @@
     "module": "commonjs",
     "paths": {
       "@easymo/commons": ["../../packages/commons/src/index.ts"],
-      "@easymo/db": ["../../packages/db/src/index.ts"],
+      "@easymo/db": ["./test/mocks/db.ts"],
       "@prisma/client": ["../../node_modules/.pnpm/node_modules/@prisma/client"],
       "*": ["*", "../../node_modules/.pnpm/node_modules/*", "../../node_modules/.pnpm/node_modules/@types/*", "../../node_modules/*"]
     }

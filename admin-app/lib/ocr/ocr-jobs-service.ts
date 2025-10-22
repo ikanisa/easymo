@@ -1,4 +1,5 @@
 import { apiFetch } from "@/lib/api/client";
+import { getAdminApiPath } from "@/lib/routes";
 import { shouldUseMocks } from "@/lib/runtime-config";
 import { mockOcrJobs } from "@/lib/mock-data";
 import {
@@ -39,7 +40,9 @@ export async function listOcrJobs(
   if (params.barId) searchParams.set("barId", params.barId);
 
   const query = searchParams.toString();
-  const url = query ? `/api/ocr/jobs?${query}` : "/api/ocr/jobs";
+  const url = query
+    ? `${getAdminApiPath("ocr", "jobs")}?${query}`
+    : getAdminApiPath("ocr", "jobs");
 
   const response = await apiFetch<{
     data: OcrJob[];

@@ -5,7 +5,9 @@
     "dev": "NODE_ENV=development ts-node-dev --transpile-only src/main.ts",
     "start": "node dist/main.js",
     "build": "tsc -p tsconfig.json",
-    "test": "jest"
+    "lint": "eslint \"src/**/*.ts\"",
+    "type-check": "tsc -p tsconfig.json --noEmit",
+    "test": "pnpm --filter @easymo/commons run build && pnpm --filter @va/shared run build && jest"
   },
   "dependencies": {
     "@easymo/commons": "workspace:*",
