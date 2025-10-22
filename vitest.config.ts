@@ -20,7 +20,6 @@ export default defineConfig({
       'src/**/*.{test,spec}.{ts,tsx}',
       'tests/deeplink/**/*.{test,spec}.{ts,tsx}',
       'tests/api/**/*.{test,spec}.{ts,tsx}',
-      'admin-app/tests/**/*.{test,spec}.{ts,tsx}',
     ],
     environment: 'jsdom',
     setupFiles: ['admin-app/tests/setupTests.ts'],

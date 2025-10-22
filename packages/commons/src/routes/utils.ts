@@ -8,7 +8,10 @@ export const joinPathSegments = (...segments: ReadonlyArray<string>) =>
 
 export const buildEndpointPath = (basePath: string, segment: string) => {
   const joined = joinPathSegments(basePath, segment);
-  return joined.length > 0 ? `/${joined}` : "/";
+  if (!joined) {
+    return "/";
+  }
+  return `/${joined}`;
 };
 
 export type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";

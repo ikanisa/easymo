@@ -2,8 +2,11 @@
   "builds": [
     { "src": "admin-app/next.config.mjs", "use": "@vercel/next" }
   ],
-  "installCommand": "pnpm install --frozen-lockfile",
-  "buildCommand": "pnpm --filter @easymo/admin-app... build",
+  "git": {
+    "productionBranch": "main"
+  },
+  "installCommand": "pnpm install --filter @easymo/admin-app... --filter @va/shared... --frozen-lockfile",
+  "buildCommand": "pnpm --filter @va/shared... build && pnpm --filter @easymo/admin-app... build",
   "env": {
     "API_HEALTH_PROBES_ENABLED": "true"
   },
