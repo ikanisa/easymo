@@ -2,15 +2,13 @@
 import Link from "next/link";
 import useSWR from "swr";
 import { useRouter } from "next/navigation";
-import { getAdminApiPath, getAdminRoutePath } from "@/lib/routes";
+import { getAdminApiRoutePath, getAdminRoutePath } from "@/lib/routes";
 
 export default function AgentDetail({ params }: { params: { id: string } }) {
   const { id } = params;
   const router = useRouter();
-  const { data, mutate } = useSWR(
-    getAdminApiPath("agents", id),
-    (url) => fetch(url).then((r) => r.json()),
-  );
+  const agentUrl = getAdminApiRoutePath("agentDetail", { agentId: id });
+  const { data, mutate } = useSWR(agentUrl, (url) => fetch(url).then((r) => r.json()));
   const agent = data?.agent;
   if (!agent) return <div className="p-4">Loading…</div>;
 
@@ -19,7 +17,7 @@ export default function AgentDetail({ params }: { params: { id: string } }) {
     const form = e.currentTarget;
     const formData = new FormData(form);
     const payload = Object.fromEntries(formData.entries());
-    await fetch(getAdminApiPath("agents", id), {
+    await fetch(agentUrl, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
@@ -28,7 +26,7 @@ export default function AgentDetail({ params }: { params: { id: string } }) {
   }
 
   async function addVersion() {
-    await fetch(getAdminApiPath("agents", id, "versions"), {
+    await fetch(getAdminApiRoutePath("agentVersions", { agentId: id }), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ instructions: '', tools: {} }),
@@ -81,13 +79,14 @@ export default function AgentDetail({ params }: { params: { id: string } }) {
 }
 
 function AgentVersions({ id }: { id: string }) {
-  const { data, mutate } = useSWR(
-    getAdminApiPath("agents", id, "versions"),
-    (url) => fetch(url).then((r) => r.json()),
-  );
+  const versionsUrl = getAdminApiRoutePath("agentVersions", { agentId: id });
+  const { data, mutate } = useSWR(versionsUrl, (url) => fetch(url).then((r) => r.json()));
   const versions = data?.versions ?? [];
   async function publish(versionId: string) {
-    await fetch(getAdminApiPath("agents", id, "versions", versionId, "publish"), { method: 'POST' });
+    await fetch(
+      getAdminApiRoutePath("agentVersionPublish", { agentId: id, versionId }),
+      { method: 'POST' },
+    );
     await mutate();
   }
   return (
@@ -101,10 +100,8 @@ function AgentVersions({ id }: { id: string }) {
 }
 
 function VersionRow({ v, agentId, onPublish }: { v: any; agentId: string; onPublish: () => Promise<void> }) {
-  const { mutate } = useSWR(
-    getAdminApiPath("agents", agentId, "versions"),
-    (url) => fetch(url).then((r) => r.json()),
-  );
+  const versionsUrl = getAdminApiRoutePath("agentVersions", { agentId });
+  const { mutate } = useSWR(versionsUrl, (url) => fetch(url).then((r) => r.json()));
   async function save(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const form = e.currentTarget;
@@ -113,7 +110,7 @@ function VersionRow({ v, agentId, onPublish }: { v: any; agentId: string; onPubl
     const toolsRaw = String(data.get('tools') || '{}');
     let tools: any = {};
     try { tools = JSON.parse(toolsRaw || '{}'); } catch { tools = {}; }
-    await fetch(getAdminApiPath("agents", agentId, "versions", v.id), {
+    await fetch(getAdminApiRoutePath("agentVersion", { agentId, versionId: v.id }), {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ instructions, tools }),
@@ -144,10 +141,8 @@ function VersionRow({ v, agentId, onPublish }: { v: any; agentId: string; onPubl
 }
 
 function AgentDocuments({ id }: { id: string }) {
-  const { data } = useSWR(
-    getAdminApiPath("agents", id, "documents"),
-    (url) => fetch(url).then((r) => r.json()),
-  );
+  const documentsUrl = getAdminApiRoutePath("agentDocuments", { agentId: id });
+  const { data } = useSWR(documentsUrl, (url) => fetch(url).then((r) => r.json()));
   const docs = data?.documents ?? [];
   return (
     <div className="grid gap-2">
@@ -171,15 +166,13 @@ function AgentDocuments({ id }: { id: string }) {
 }
 
 function UploadDocument({ agentId }: { agentId: string }) {
-  const { mutate } = useSWR(
-    getAdminApiPath("agents", agentId, "documents"),
-    (url) => fetch(url).then((r) => r.json()),
-  );
+  const documentsUrl = getAdminApiRoutePath("agentDocuments", { agentId });
+  const { mutate } = useSWR(documentsUrl, (url) => fetch(url).then((r) => r.json()));
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const form = e.currentTarget;
     const data = new FormData(form);
-    const res = await fetch(getAdminApiPath("agents", agentId, "documents", "upload"), {
+    const res = await fetch(getAdminApiRoutePath("agentDocumentsUpload", { agentId }), {
       method: 'POST',
       body: data,
     });
@@ -196,10 +189,8 @@ function UploadDocument({ agentId }: { agentId: string }) {
 }
 
 function AgentTasks({ id }: { id: string }) {
-  const { data } = useSWR(
-    getAdminApiPath("agents", id, "tasks"),
-    (url) => fetch(url).then((r) => r.json()),
-  );
+  const tasksUrl = getAdminApiRoutePath("agentTasks", { agentId: id });
+  const { data } = useSWR(tasksUrl, (url) => fetch(url).then((r) => r.json()));
   const tasks = data?.tasks ?? [];
   return (
     <div className="grid gap-2">
@@ -215,17 +206,15 @@ function AgentTasks({ id }: { id: string }) {
 }
 
 function NewTask({ agentId }: { agentId: string }) {
-  const { mutate } = useSWR(
-    getAdminApiPath("agents", agentId, "tasks"),
-    (url) => fetch(url).then((r) => r.json()),
-  );
+  const tasksUrl = getAdminApiRoutePath("agentTasks", { agentId });
+  const { mutate } = useSWR(tasksUrl, (url) => fetch(url).then((r) => r.json()));
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const form = e.currentTarget;
     const data = new FormData(form);
     const title = data.get('title');
     if (!title) return;
-    await fetch(getAdminApiPath("agents", agentId, "tasks"), {
+    await fetch(tasksUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ title }),

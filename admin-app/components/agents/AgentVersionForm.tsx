@@ -2,7 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getAdminApiPath } from "@/lib/routes";
+import { getAdminApiRoutePath } from "@/lib/routes";
 
 type Props = {
   personaId: string;
@@ -48,7 +48,7 @@ export function AgentVersionForm({ personaId }: Props) {
 
     setSubmitting(true);
     try {
-      const response = await fetch(getAdminApiPath("agents", personaId, "versions"), {
+      const response = await fetch(getAdminApiRoutePath("agentVersions", { agentId: personaId }), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

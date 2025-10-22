@@ -1,13 +1,14 @@
 "use client";
 export const dynamic = 'force-dynamic';
 import { useState, useEffect, useCallback } from "react";
-import { getAdminApiPath } from "@/lib/routes";
+import { getAdminApiRoutePath } from "@/lib/routes";
 
 export default function DriverSubscriptionsPage() {
   const [data, setData] = useState<{ data: any[]; total: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
+  const subscriptionsUrl = getAdminApiRoutePath("subscriptions");
 
   const load = useCallback(async (params?: { search?: string }) => {
     setLoading(true);
@@ -16,7 +17,7 @@ export default function DriverSubscriptionsPage() {
       const sp = new URLSearchParams();
       sp.set("limit", "200");
       if (params?.search) sp.set("search", params.search);
-      const res = await fetch(`${getAdminApiPath("subscriptions")}?${sp.toString()}`, { cache: "no-store" });
+      const res = await fetch(`${subscriptionsUrl}?${sp.toString()}`, { cache: "no-store" });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json = await res.json();
       setData(json);
@@ -25,7 +26,7 @@ export default function DriverSubscriptionsPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [subscriptionsUrl]);
 
   useEffect(() => {
     void load();

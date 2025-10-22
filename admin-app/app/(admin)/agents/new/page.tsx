@@ -1,7 +1,7 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { getAdminApiPath, getAdminRoutePath } from "@/lib/routes";
+import { getAdminApiRoutePath, getAdminRoutePath } from "@/lib/routes";
 
 export default function NewAgent() {
   const router = useRouter();
@@ -13,7 +13,7 @@ export default function NewAgent() {
     const data = new FormData(form);
     const name = data.get('name');
     const summary = data.get('summary');
-    const res = await fetch(getAdminApiPath("agents"), {
+    const res = await fetch(getAdminApiRoutePath("agents"), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name, summary }),

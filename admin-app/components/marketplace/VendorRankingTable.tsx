@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "@/components/data-table/DataTable";
 import type { VendorRanking } from "@/lib/schemas";
-import { getAdminApiPath } from "@/lib/routes";
+import { getAdminApiRoutePath } from "@/lib/routes";
 
 interface VendorRankingTableProps {
   data: VendorRanking[];
@@ -17,9 +17,8 @@ export function VendorRankingTable({ data }: VendorRankingTableProps) {
       let active = true;
       (async () => {
         try {
-          const res = await fetch(
-            `${getAdminApiPath("subscriptions", "entitlements")}?vendorId=${encodeURIComponent(vendorId)}`,
-          );
+          const entitlementsUrl = getAdminApiRoutePath("subscriptionEntitlements");
+          const res = await fetch(`${entitlementsUrl}?vendorId=${encodeURIComponent(vendorId)}`);
           const json = await res.json();
           if (active && json?.ok && json.data) setInfo({ freeRemaining: json.data.freeRemaining, subscribed: json.data.subscribed });
         } catch (_) {
