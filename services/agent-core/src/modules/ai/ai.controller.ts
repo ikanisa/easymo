@@ -3,6 +3,11 @@ import { z } from "zod";
 import { AiService } from "./ai.service.js";
 import { ServiceTokenGuard } from "../../common/guards/service-token.guard.js";
 import { ServiceScopes } from "../../common/decorators/service-scopes.decorator.js";
+import {
+  getAgentCoreControllerBasePath,
+  getAgentCoreRouteSegment,
+  getAgentCoreRouteServiceScopes,
+} from "@easymo/commons";
 
 const OrchestrateSchema = z.object({
   tenantId: z.string().uuid(),
@@ -39,41 +44,41 @@ const SupportSchema = z.object({
   timestamp: z.number().optional(),
 });
 
-@Controller("ai")
+@Controller(getAgentCoreControllerBasePath("ai"))
 @UseGuards(ServiceTokenGuard)
 export class AiController {
   constructor(private readonly ai: AiService) {}
 
-  @Post("broker/orchestrate")
-  @ServiceScopes("ai:broker.orchestrate")
+  @Post(getAgentCoreRouteSegment("aiBrokerOrchestrate"))
+  @ServiceScopes(...getAgentCoreRouteServiceScopes("aiBrokerOrchestrate"))
   async orchestrate(@Body() body: unknown) {
     const payload = OrchestrateSchema.parse(body) as Parameters<AiService["runBrokerOrchestrator"]>[0];
     return await this.ai.runBrokerOrchestrator(payload);
   }
 
-  @Post("settlement/run")
-  @ServiceScopes("ai:settlement")
+  @Post(getAgentCoreRouteSegment("aiSettlementRun"))
+  @ServiceScopes(...getAgentCoreRouteServiceScopes("aiSettlementRun"))
   async settlement(@Body() body: unknown) {
     const payload = SettlementSchema.parse(body) as Parameters<AiService["runSettlement"]>[0];
     return await this.ai.runSettlement(payload);
   }
 
-  @Post("attribution/run")
-  @ServiceScopes("ai:attribution")
+  @Post(getAgentCoreRouteSegment("aiAttributionRun"))
+  @ServiceScopes(...getAgentCoreRouteServiceScopes("aiAttributionRun"))
   async attribution(@Body() body: unknown) {
     const payload = AttributionSchema.parse(body) as Parameters<AiService["runAttribution"]>[0];
     return await this.ai.runAttribution(payload);
   }
 
-  @Post("reconciliation/run")
-  @ServiceScopes("ai:reconciliation")
+  @Post(getAgentCoreRouteSegment("aiReconciliationRun"))
+  @ServiceScopes(...getAgentCoreRouteServiceScopes("aiReconciliationRun"))
   async reconciliation(@Body() body: unknown) {
     const payload = ReconciliationSchema.parse(body) as Parameters<AiService["runReconciliation"]>[0];
     return await this.ai.runReconciliation(payload);
   }
 
-  @Post("support/run")
-  @ServiceScopes("ai:support")
+  @Post(getAgentCoreRouteSegment("aiSupportRun"))
+  @ServiceScopes(...getAgentCoreRouteServiceScopes("aiSupportRun"))
   async support(@Body() body: unknown) {
     const payload = SupportSchema.parse(body) as Parameters<AiService["runSupport"]>[0];
     return await this.ai.runSupport(payload);
