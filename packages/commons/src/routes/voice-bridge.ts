@@ -51,7 +51,9 @@ const routeDefinitions = Object.freeze({
 export type VoiceBridgeRoutes = typeof routeDefinitions;
 export type VoiceBridgeRouteKey = keyof VoiceBridgeRoutes;
 
-export const voiceBridgeRoutes = routeDefinitions;
+const websocketRouteDefinitions = defineWebsocketRoutes({
+  mediaStream: { path: "/twilio-media" as const, description: "Twilio Media Stream ingress" },
+} as const satisfies Record<string, WebSocketRouteDefinition>);
 
 export const getVoiceBridgeControllerBasePath = <Key extends VoiceBridgeControllerKey>(key: Key) =>
   controllerDefinitions[key].basePath;

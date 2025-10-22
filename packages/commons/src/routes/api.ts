@@ -15,12 +15,37 @@ const apiRouteDefinitions = defineHttpControllers({
       session: { method: "POST" as const, segment: "session" as const },
     },
   },
+  waCalls: {
+    basePath: "wa" as const,
+    endpoints: {
+      webhook: { method: "GET" as const, segment: "webhook" as const },
+      events: { method: "POST" as const, segment: "events" as const },
+    },
+  },
   whatsappAgents: {
     basePath: "wa/agents" as const,
     endpoints: {
       start: { method: "POST" as const, segment: "start" as const },
       sendMessage: { method: "POST" as const, segment: ":threadId/message" as const },
       customerMessage: { method: "POST" as const, segment: ":threadId/customer" as const },
+    },
+  },
+  dialer: {
+    basePath: "dialer" as const,
+    endpoints: {
+      outbound: { method: "POST" as const, segment: "outbound" as const },
+    },
+  },
+  handoff: {
+    basePath: "handoff" as const,
+    endpoints: {
+      warm: { method: "POST" as const, segment: "warm" as const },
+    },
+  },
+  whatsapp: {
+    basePath: "whatsapp" as const,
+    endpoints: {
+      webhook: { method: "POST" as const, segment: "webhook" as const },
     },
   },
   twilio: {
@@ -33,6 +58,12 @@ const apiRouteDefinitions = defineHttpControllers({
     basePath: "twiml" as const,
     endpoints: {
       warmTransfer: { method: "GET" as const, segment: "warm-transfer" as const },
+    },
+  },
+  payment: {
+    basePath: "payment" as const,
+    endpoints: {
+      confirm: { method: "POST" as const, segment: "confirm" as const },
     },
   },
 } as const satisfies Record<string, ControllerDefinition<Record<string, EndpointDefinition>>>);

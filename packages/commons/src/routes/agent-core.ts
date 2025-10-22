@@ -112,7 +112,7 @@ export type AgentCoreRouteKey = keyof AgentCoreRoutes;
 
 export const agentCoreControllerBasePath = controllerDefinitions.chat.basePath;
 
-export const agentCoreRoutes = routeDefinitions;
+export const agentCoreControllerBasePath = "" as const;
 
 export const getAgentCoreControllerBasePath = <Key extends AgentCoreControllerKey>(key: Key) =>
   controllerDefinitions[key].basePath;
@@ -123,8 +123,8 @@ export const getAgentCoreRouteController = <Key extends AgentCoreRouteKey>(key: 
 export const getAgentCoreRouteSegment = <Key extends AgentCoreRouteKey>(key: Key) =>
   agentCoreRoutes[key].segment;
 
-export const getAgentCoreRouteMethod = <Key extends AgentCoreRouteKey>(key: Key) =>
-  agentCoreRoutes[key].method;
+export const getAgentCoreRouteMethod = <Key extends AgentCoreEndpointKey<"chat">>(key: Key) =>
+  getAgentCoreEndpointMethod("chat", key);
 
 export const getAgentCoreRoutePath = <Key extends AgentCoreRouteKey>(key: Key) => {
   const definition = agentCoreRoutes[key];

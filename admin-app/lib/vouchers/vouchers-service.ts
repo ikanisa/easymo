@@ -2,6 +2,7 @@ import { z } from "zod";
 import { shouldUseMocks } from "@/lib/runtime-config";
 import { mockVouchers } from "@/lib/mock-data";
 import { type Voucher, voucherSchema } from "@/lib/schemas";
+import { getAdminApiPath } from "@/lib/routes";
 import {
   paginateArray,
   type PaginatedResult,
@@ -37,7 +38,7 @@ export async function listVouchers(
         searchParams.set("limit", String(params.limit));
       }
 
-      const response = await fetch(`/api/vouchers?${searchParams.toString()}`, {
+      const response = await fetch(`${getAdminApiPath("vouchers")}?${searchParams.toString()}`, {
         cache: "no-store",
       });
       if (!response.ok) {

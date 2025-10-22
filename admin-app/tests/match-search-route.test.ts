@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { createAdminApiRequest } from './utils/api';
 
 vi.mock('@/lib/server/supabase-admin', () => ({
   getSupabaseAdminClient: vi.fn(),
@@ -46,15 +47,18 @@ describe('match search route', () => {
     const { POST } = await import('@/app/api/match/search/route');
 
     const response = await POST(
-      new Request('http://localhost/api/match/search', {
-        method: 'POST',
-        body: JSON.stringify({
-          actor_kind: 'driver',
-          pickup: { lat: 0.1, lng: 32.5 },
-          dropoff: { lat: 0.2, lng: 32.6 },
-          radius_km: 10,
-        }),
-      }),
+      createAdminApiRequest(
+        ['match', 'search'],
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            actor_kind: 'driver',
+            pickup: { lat: 0.1, lng: 32.5 },
+            dropoff: { lat: 0.2, lng: 32.6 },
+            radius_km: 10,
+          }),
+        },
+      ),
     );
 
     expect(response.status).toBe(200);
@@ -77,13 +81,16 @@ describe('match search route', () => {
     const { POST } = await import('@/app/api/match/search/route');
 
     const response = await POST(
-      new Request('http://localhost/api/match/search', {
-        method: 'POST',
-        body: JSON.stringify({
-          actor_kind: 'passenger',
-          pickup: { lat: -1.9, lng: 30.1 },
-        }),
-      }),
+      createAdminApiRequest(
+        ['match', 'search'],
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            actor_kind: 'passenger',
+            pickup: { lat: -1.9, lng: 30.1 },
+          }),
+        },
+      ),
     );
 
     expect(response.status).toBe(200);

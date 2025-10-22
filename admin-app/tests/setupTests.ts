@@ -21,6 +21,14 @@ vi.mock("next/headers", () => {
   return { headers, cookies };
 });
 
+vi.mock("@va/shared", () => ({
+  adminRouteDefinitions: {},
+  adminRoutePaths: {},
+  adminRouteSegments: {},
+  getAdminRoutePath: (...segments: string[]) => `/${segments.join("/")}`,
+  isAdminRoutePath: () => true,
+}));
+
 afterEach(() => {
   cleanup();
 });

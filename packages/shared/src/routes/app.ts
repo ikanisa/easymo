@@ -23,6 +23,7 @@ const appRouteDefinitions = [
   { key: "baskets", path: "/baskets" },
   { key: "marketplace", path: "/marketplace" },
   { key: "operations", path: "/operations" },
+  { key: "voiceOps", path: "/voice-ops" },
   { key: "realtime", path: "/realtime" },
   { key: "developer", path: "/developer" },
   { key: "agentPatterns", path: "/agent-patterns" },

@@ -4,6 +4,7 @@ import { useState, useMemo } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/ToastProvider";
+import { getAdminApiPath } from "@/lib/routes";
 import {
   basketsQueryKeys,
   useUnmatchedSmsQuery,
@@ -38,7 +39,7 @@ export function UnmatchedSmsTable({ params }: UnmatchedSmsTableProps) {
 
   const resolveMutation = useMutation({
     mutationFn: async (input: { id: string; reason?: string }) => {
-      const response = await fetch(`/api/baskets/momo/unmatched/${input.id}`, {
+      const response = await fetch(getAdminApiPath("baskets", "momo", "unmatched", input.id), {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: 'resolved', reason: input.reason }),
@@ -174,14 +175,16 @@ export function UnmatchedSmsTable({ params }: UnmatchedSmsTableProps) {
               return;
             }
             try {
-              const response = await fetch(`/api/baskets/momo/unmatched/${allocatingId}/allocate`, {
+              const response = await fetch(
+                getAdminApiPath("baskets", "momo", "unmatched", allocatingId, "allocate"),
+                {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                   memberId: allocationMemberId,
                   notes: allocationNotes || undefined,
                 }),
-              });
+              },
               if (!response.ok) {
                 const data = await response.json().catch(() => null);
                 pushToast(data?.message ?? 'Failed to allocate contribution.', 'error');
