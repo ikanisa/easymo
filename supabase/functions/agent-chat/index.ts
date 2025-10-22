@@ -449,17 +449,111 @@ export async function handler(req: Request): Promise<Response> {
         profileRef: result.data.profile_ref,
       });
 
-      const historyData = await fetchHistory(session.id);
-      const previousMessages = historyData?.messages ?? [];
-      const toolkit = await fetchToolkit(result.data.agent_kind);
-      const agentResult = await callAgentCore({
-        sessionId: session.id,
-        agentKind: result.data.agent_kind,
-        message: result.data.message,
-        profileRef: result.data.profile_ref ?? null,
-        history: previousMessages as StoredMessage[],
-        toolkit,
-      });
+      // Attempt Agent-Core integration, fallback to stub
+      let agentText: string | null = null;
+      let agentMetadata: Record<string, unknown> = {};
+      const coreUrl = CONFIG.AGENT_CORE_URL?.replace(/\/$/, "");
+      if (coreUrl) {
+        let historyMessages: Array<{ role: "user" | "assistant" | "system"; content: string }> = [];
+        try {
+          const history = await fetchHistory(session.id);
+          if (history?.messages) {
+            historyMessages = history.messages
+              .map((msg) => {
+                const role =
+                  msg.role === "agent"
+                    ? "assistant"
+                    : msg.role === "user" || msg.role === "system"
+                      ? msg.role
+                      : null;
+                if (!role) return null;
+                const payload = msg.payload as Record<string, unknown> | undefined;
+                const payloadText =
+                  typeof payload?.["text"] === "string"
+                    ? (payload["text"] as string)
+                    : undefined;
+                const content = payloadText ?? (typeof msg.text === "string" ? msg.text : null);
+                if (!content) return null;
+                return { role, content };
+              })
+              .filter((msg): msg is { role: "user" | "assistant" | "system"; content: string } => Boolean(msg));
+          }
+        } catch (err) {
+          console.error("agent-chat.history_for_core_failed", err);
+        }
+
+        historyMessages.push({ role: "user", content: result.data.message });
+
+        try {
+          const resp = await fetch(`${coreUrl}/respond`, {
+            method: "POST",
+            headers: {
+              "content-type": "application/json",
+              ...(CONFIG.AGENT_CORE_TOKEN
+                ? { authorization: `Bearer ${CONFIG.AGENT_CORE_TOKEN}` }
+                : {}),
+            },
+            body: JSON.stringify({
+              session_id: session.id,
+              agent_kind: result.data.agent_kind,
+              profile_ref: result.data.profile_ref ?? null,
+              messages: historyMessages,
+            }),
+          });
+          const coreJson = await resp.json().catch(() => ({}));
+          if (resp.ok && coreJson && typeof coreJson === "object") {
+            if (typeof (coreJson as Record<string, unknown>).text === "string") {
+              agentText = (coreJson as Record<string, unknown>).text as string;
+            }
+            agentMetadata = {
+              ...(Array.isArray((coreJson as any).citations)
+                ? { citations: (coreJson as any).citations }
+                : {}),
+              ...(Array.isArray((coreJson as any).web_search_calls)
+                ? { web_search_calls: (coreJson as any).web_search_calls }
+                : {}),
+              ...(Array.isArray((coreJson as any).sources)
+                ? { sources: (coreJson as any).sources }
+                : {}),
+              ...(coreJson && "usage" in (coreJson as Record<string, unknown>)
+                ? { usage: (coreJson as Record<string, unknown>).usage }
+                : {}),
+              ...(coreJson && "raw" in (coreJson as Record<string, unknown>)
+                ? { raw: (coreJson as Record<string, unknown>).raw }
+                : {}),
+              ...(Array.isArray((coreJson as any).suggestions)
+                ? { suggestions: (coreJson as any).suggestions }
+                : {}),
+            };
+          }
+        }
+        const summary: Record<string, unknown> = {
+          agent_kind: toolkit.agent_kind,
+          model: toolkit.model,
+          reasoning_effort: toolkit.reasoning_effort,
+          text_verbosity: toolkit.text_verbosity,
+        };
+        if (Object.keys(metadataSummary).length > 0) {
+          summary.metadata = metadataSummary;
+        }
+        agentPayload.toolkit = summary;
+      }
+      if (agentResult?.citations) agentPayload.citations = agentResult.citations;
+      if (agentResult?.sources) agentPayload.sources = agentResult.sources;
+      if (agentResult?.tool_calls) agentPayload.tool_calls = agentResult.tool_calls;
+      if (agentResult?.images?.length) agentPayload.images = agentResult.images;
+      if (agentResult?.retrieval_context) agentPayload.retrieval_context = agentResult.retrieval_context;
+
+      const assistantSuggestions = Array.isArray(agentMetadata.suggestions)
+        ? (agentMetadata.suggestions as string[])
+        : ["Thanks!", "What next?", "Escalate"];
+
+      const assistant = agentText
+        ? {
+          text: agentText,
+          suggestions: assistantSuggestions,
+        }
+        : buildStubResponse(result.data.agent_kind, result.data.message);
 
       const stub = buildStubResponse(result.data.agent_kind, result.data.message);
       const agentText = agentResult?.reply ?? null;
