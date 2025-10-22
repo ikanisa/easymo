@@ -240,7 +240,7 @@ BEGIN
   WHERE d.agent_id = agent_id
     AND c.embedding IS NOT NULL
     AND (1 - (c.embedding <=> query_embedding)) >= COALESCE(min_similarity, 0)
-  ORDER BY c.embedding <-> query_embedding
+  ORDER BY c.embedding <=> query_embedding
   LIMIT LEAST(GREATEST(COALESCE(match_count, 5), 1), 50);
 END;
 $$;
