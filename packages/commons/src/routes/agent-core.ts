@@ -1,122 +1,143 @@
-import {
-  buildEndpointPath,
-  defineBackgroundTriggers,
-  defineHttpControllers,
-  type ControllerDefinition,
-  type EndpointDefinition,
-} from "./utils";
+import { buildEndpointPath, type HttpMethod } from "./utils";
+import type { AgentPermission } from "../types";
 
-const controllerDefinitions = defineHttpControllers({
-  chat: {
-    basePath: "" as const,
-    endpoints: {
-      respond: { method: "POST" as const, segment: "respond" as const },
-    },
+const controllerDefinitions = Object.freeze({
+  chat: { basePath: "" as const },
+  tools: { basePath: "tools" as const },
+  health: { basePath: "health" as const },
+  agentAdmin: { basePath: "admin/agents" as const },
+  ai: { basePath: "ai" as const },
+  aiTasks: { basePath: "ai/tasks" as const },
+});
+
+export type AgentCoreControllers = typeof controllerDefinitions;
+export type AgentCoreControllerKey = keyof AgentCoreControllers;
+
+const routeDefinitions = Object.freeze({
+  respond: { controller: "chat", method: "POST", segment: "respond" },
+  toolsListLeads: { controller: "tools", method: "GET", segment: "leads", permissions: ["lead.read"] as const },
+  toolsFetchLead: { controller: "tools", method: "POST", segment: "fetch-lead", permissions: ["lead.read"] as const },
+  toolsLogLead: { controller: "tools", method: "POST", segment: "log-lead", permissions: ["lead.write"] as const },
+  toolsCreateCall: { controller: "tools", method: "POST", segment: "create-call", permissions: ["call.write"] as const },
+  toolsSetDisposition: {
+    controller: "tools",
+    method: "POST",
+    segment: "set-disposition",
+    permissions: ["disposition.write"] as const,
   },
-  health: {
-    basePath: "health" as const,
-    endpoints: {
-      status: { method: "GET" as const, segment: "" as const },
-    },
+  toolsRegisterOptOut: {
+    controller: "tools",
+    method: "POST",
+    segment: "register-opt-out",
+    permissions: ["lead.optOut"] as const,
   },
-  ai: {
-    basePath: "ai" as const,
-    endpoints: {
-      brokerOrchestrate: { method: "POST" as const, segment: "broker/orchestrate" as const },
-      settlementRun: { method: "POST" as const, segment: "settlement/run" as const },
-      attributionRun: { method: "POST" as const, segment: "attribution/run" as const },
-      reconciliationRun: { method: "POST" as const, segment: "reconciliation/run" as const },
-      supportRun: { method: "POST" as const, segment: "support/run" as const },
-    },
+  toolsCollectPayment: {
+    controller: "tools",
+    method: "POST",
+    segment: "collect-payment",
+    permissions: ["payment.collect"] as const,
   },
-  aiTasks: {
-    basePath: "ai/tasks" as const,
-    endpoints: {
-      schedule: { method: "POST" as const, segment: "schedule" as const },
-      runDue: { method: "POST" as const, segment: "run-due" as const },
-    },
+  toolsWarmTransfer: {
+    controller: "tools",
+    method: "POST",
+    segment: "warm-transfer",
+    permissions: ["call.transfer"] as const,
   },
-  agentAdmin: {
-    basePath: "admin/agents" as const,
-    endpoints: {
-      list: { method: "GET" as const, segment: "" as const },
-      create: { method: "POST" as const, segment: "" as const },
-      get: { method: "GET" as const, segment: ":id" as const },
-      update: { method: "PATCH" as const, segment: ":id" as const },
-      listRevisions: { method: "GET" as const, segment: ":id/revisions" as const },
-      createRevision: { method: "POST" as const, segment: ":id/revisions" as const },
-      publish: { method: "POST" as const, segment: ":id/publish" as const },
-      listDocuments: { method: "GET" as const, segment: ":id/documents" as const },
-      createDocument: { method: "POST" as const, segment: ":id/documents" as const },
-      listTasks: { method: "GET" as const, segment: ":id/tasks" as const },
-      createTask: { method: "POST" as const, segment: ":id/tasks" as const },
-    },
+  health: { controller: "health", method: "GET", segment: "" },
+  agentAdminList: { controller: "agentAdmin", method: "GET", segment: "" },
+  agentAdminCreate: { controller: "agentAdmin", method: "POST", segment: "" },
+  agentAdminGet: { controller: "agentAdmin", method: "GET", segment: ":id" },
+  agentAdminUpdate: { controller: "agentAdmin", method: "PATCH", segment: ":id" },
+  agentAdminListRevisions: { controller: "agentAdmin", method: "GET", segment: ":id/revisions" },
+  agentAdminCreateRevision: { controller: "agentAdmin", method: "POST", segment: ":id/revisions" },
+  agentAdminPublishRevision: { controller: "agentAdmin", method: "POST", segment: ":id/publish" },
+  agentAdminListDocuments: { controller: "agentAdmin", method: "GET", segment: ":id/documents" },
+  agentAdminCreateDocument: { controller: "agentAdmin", method: "POST", segment: ":id/documents" },
+  agentAdminListTasks: { controller: "agentAdmin", method: "GET", segment: ":id/tasks" },
+  agentAdminCreateTask: { controller: "agentAdmin", method: "POST", segment: ":id/tasks" },
+  aiBrokerOrchestrate: {
+    controller: "ai",
+    method: "POST",
+    segment: "broker/orchestrate",
+    serviceScopes: ["ai:broker.orchestrate"] as const,
   },
-  tools: {
-    basePath: "tools" as const,
-    endpoints: {
-      listLeads: { method: "GET" as const, segment: "leads" as const },
-      fetchLead: { method: "POST" as const, segment: "fetch-lead" as const },
-      logLead: { method: "POST" as const, segment: "log-lead" as const },
-      createCall: { method: "POST" as const, segment: "create-call" as const },
-      setDisposition: { method: "POST" as const, segment: "set-disposition" as const },
-      registerOptOut: { method: "POST" as const, segment: "register-opt-out" as const },
-      collectPayment: { method: "POST" as const, segment: "collect-payment" as const },
-      warmTransfer: { method: "POST" as const, segment: "warm-transfer" as const },
-    },
+  aiSettlementRun: {
+    controller: "ai",
+    method: "POST",
+    segment: "settlement/run",
+    serviceScopes: ["ai:settlement"] as const,
   },
-} as const satisfies Record<string, ControllerDefinition<Record<string, EndpointDefinition>>>);
+  aiAttributionRun: {
+    controller: "ai",
+    method: "POST",
+    segment: "attribution/run",
+    serviceScopes: ["ai:attribution"] as const,
+  },
+  aiReconciliationRun: {
+    controller: "ai",
+    method: "POST",
+    segment: "reconciliation/run",
+    serviceScopes: ["ai:reconciliation"] as const,
+  },
+  aiSupportRun: {
+    controller: "ai",
+    method: "POST",
+    segment: "support/run",
+    serviceScopes: ["ai:support"] as const,
+  },
+  aiTasksSchedule: {
+    controller: "aiTasks",
+    method: "POST",
+    segment: "schedule",
+    serviceScopes: ["tasks:schedule"] as const,
+  },
+  aiTasksRunDue: {
+    controller: "aiTasks",
+    method: "POST",
+    segment: "run-due",
+    serviceScopes: ["tasks:run"] as const,
+  },
+} as const satisfies Record<
+  string,
+  {
+    controller: AgentCoreControllerKey;
+    method: HttpMethod;
+    segment: string;
+    permissions?: readonly AgentPermission[];
+    serviceScopes?: readonly string[];
+  }
+>);
+export type AgentCoreRoutes = typeof routeDefinitions;
+export type AgentCoreRouteKey = keyof AgentCoreRoutes;
 
-export type AgentCoreRoutes = typeof controllerDefinitions;
-export type AgentCoreControllerKey = keyof AgentCoreRoutes;
-export type AgentCoreEndpointKey<Controller extends AgentCoreControllerKey> = keyof AgentCoreRoutes[Controller]["endpoints"];
-
-export const agentCoreRoutes = controllerDefinitions;
-
-export const getAgentCoreControllerBasePath = <Controller extends AgentCoreControllerKey>(controller: Controller) =>
-  agentCoreRoutes[controller].basePath;
-
-export const getAgentCoreEndpointSegment = <
-  Controller extends AgentCoreControllerKey,
-  Endpoint extends AgentCoreEndpointKey<Controller>,
->(controller: Controller, endpoint: Endpoint) => {
-  const controllerRoutes = agentCoreRoutes[controller] as ControllerDefinition<Record<string, EndpointDefinition>>;
-  const endpoints = controllerRoutes.endpoints as Record<string, EndpointDefinition>;
-  return endpoints[endpoint as string].segment;
-};
-
-export const getAgentCoreEndpointMethod = <
-  Controller extends AgentCoreControllerKey,
-  Endpoint extends AgentCoreEndpointKey<Controller>,
->(controller: Controller, endpoint: Endpoint) => {
-  const controllerRoutes = agentCoreRoutes[controller] as ControllerDefinition<Record<string, EndpointDefinition>>;
-  const endpoints = controllerRoutes.endpoints as Record<string, EndpointDefinition>;
-  return endpoints[endpoint as string].method;
-};
-
-export const getAgentCoreEndpointPath = <
-  Controller extends AgentCoreControllerKey,
-  Endpoint extends AgentCoreEndpointKey<Controller>,
->(controller: Controller, endpoint: Endpoint) => {
-  const base = getAgentCoreControllerBasePath(controller);
-  const segment = getAgentCoreEndpointSegment(controller, endpoint);
-  return buildEndpointPath(base, segment);
-};
-
-export const agentCoreBackgroundTriggers = defineBackgroundTriggers({
-  /**
-   * Tasks are executed via explicit HTTP calls. This placeholder exists to document
-   * that there is no dedicated background trigger beyond the HTTP surface.
-   */
-} as const);
+export const agentCoreControllerBasePath = controllerDefinitions.chat.basePath;
 
 export const agentCoreControllerBasePath = "" as const;
 
-export const getAgentCoreRouteSegment = <Key extends AgentCoreEndpointKey<"chat">>(key: Key) =>
-  getAgentCoreEndpointSegment("chat", key);
+export const getAgentCoreControllerBasePath = <Key extends AgentCoreControllerKey>(key: Key) =>
+  controllerDefinitions[key].basePath;
+
+export const getAgentCoreRouteController = <Key extends AgentCoreRouteKey>(key: Key) =>
+  agentCoreRoutes[key].controller;
+
+export const getAgentCoreRouteSegment = <Key extends AgentCoreRouteKey>(key: Key) =>
+  agentCoreRoutes[key].segment;
 
 export const getAgentCoreRouteMethod = <Key extends AgentCoreEndpointKey<"chat">>(key: Key) =>
   getAgentCoreEndpointMethod("chat", key);
 
-export const getAgentCoreRoutePath = <Key extends AgentCoreEndpointKey<"chat">>(key: Key) =>
-  buildEndpointPath(agentCoreControllerBasePath, controllerDefinitions.chat.endpoints[key].segment);
+export const getAgentCoreRoutePath = <Key extends AgentCoreRouteKey>(key: Key) => {
+  const definition = agentCoreRoutes[key];
+  const basePath = getAgentCoreControllerBasePath(definition.controller);
+  return buildEndpointPath(basePath, definition.segment);
+};
+
+export const getAgentCoreRoutePermissions = <Key extends AgentCoreRouteKey>(key: Key) => {
+  const definition = agentCoreRoutes[key];
+  return "permissions" in definition ? definition.permissions ?? [] : [];
+};
+
+export const getAgentCoreRouteServiceScopes = <Key extends AgentCoreRouteKey>(key: Key) => {
+  const definition = agentCoreRoutes[key];
+  return "serviceScopes" in definition ? definition.serviceScopes ?? [] : [];
+};

@@ -1,60 +1,41 @@
-import {
-  buildEndpointPath,
-  defineBackgroundTriggers,
-  defineHttpControllers,
-  type ControllerDefinition,
-  type EndpointDefinition,
-} from "./utils";
+import { buildEndpointPath, type HttpMethod } from "./utils";
 
-const controllerDefinitions = defineHttpControllers({
-  sip: {
-    basePath: "sip" as const,
-    endpoints: {
-      events: { method: "POST" as const, segment: "events" as const },
-    },
-  },
-  health: {
-    basePath: "health" as const,
-    endpoints: {
-      status: { method: "GET" as const, segment: "" as const },
-    },
-  },
-} as const satisfies Record<string, ControllerDefinition<Record<string, EndpointDefinition>>>);
+const controllerDefinitions = Object.freeze({
+  sip: { basePath: "sip" as const },
+  health: { basePath: "health" as const },
+});
 
-export type SipIngressRoutes = typeof controllerDefinitions;
-export type SipIngressControllerKey = keyof SipIngressRoutes;
-export type SipIngressEndpointKey<Controller extends SipIngressControllerKey> = keyof SipIngressRoutes[Controller]["endpoints"];
+export type SipIngressControllers = typeof controllerDefinitions;
+export type SipIngressControllerKey = keyof SipIngressControllers;
 
-export const sipIngressRoutes = controllerDefinitions;
+const routeDefinitions = Object.freeze({
+  events: { controller: "sip", method: "POST" as HttpMethod, segment: "events" },
+  health: { controller: "health", method: "GET" as HttpMethod, segment: "" },
+} as const satisfies Record<
+  string,
+  {
+    controller: SipIngressControllerKey;
+    method: HttpMethod;
+    segment: string;
+  }
+>);
 
-export const getSipIngressControllerBasePath = <Controller extends SipIngressControllerKey>(controller: Controller) =>
-  sipIngressRoutes[controller].basePath;
+export type SipIngressRoutes = typeof routeDefinitions;
+export type SipIngressRouteKey = keyof SipIngressRoutes;
 
-export const getSipIngressEndpointSegment = <
-  Controller extends SipIngressControllerKey,
-  Endpoint extends SipIngressEndpointKey<Controller>,
->(controller: Controller, endpoint: Endpoint) => {
-  const controllerRoutes = sipIngressRoutes[controller] as ControllerDefinition<Record<string, EndpointDefinition>>;
-  const endpoints = controllerRoutes.endpoints as Record<string, EndpointDefinition>;
-  return endpoints[endpoint as string].segment;
+export const sipIngressRoutes = routeDefinitions;
+
+export const getSipIngressControllerBasePath = <Key extends SipIngressControllerKey>(key: Key) =>
+  controllerDefinitions[key].basePath;
+
+export const getSipIngressRouteSegment = <Key extends SipIngressRouteKey>(key: Key) =>
+  sipIngressRoutes[key].segment;
+
+export const getSipIngressRouteMethod = <Key extends SipIngressRouteKey>(key: Key) =>
+  sipIngressRoutes[key].method;
+
+export const getSipIngressRoutePath = <Key extends SipIngressRouteKey>(key: Key) => {
+  const definition = sipIngressRoutes[key];
+  const basePath = getSipIngressControllerBasePath(definition.controller);
+  return buildEndpointPath(basePath, definition.segment);
 };
-
-export const getSipIngressEndpointMethod = <
-  Controller extends SipIngressControllerKey,
-  Endpoint extends SipIngressEndpointKey<Controller>,
->(controller: Controller, endpoint: Endpoint) => {
-  const controllerRoutes = sipIngressRoutes[controller] as ControllerDefinition<Record<string, EndpointDefinition>>;
-  const endpoints = controllerRoutes.endpoints as Record<string, EndpointDefinition>;
-  return endpoints[endpoint as string].method;
-};
-
-export const getSipIngressEndpointPath = <
-  Controller extends SipIngressControllerKey,
-  Endpoint extends SipIngressEndpointKey<Controller>,
->(controller: Controller, endpoint: Endpoint) => {
-  const base = getSipIngressControllerBasePath(controller);
-  const segment = getSipIngressEndpointSegment(controller, endpoint);
-  return buildEndpointPath(base, segment);
-};
-
-export const sipIngressBackgroundTriggers = defineBackgroundTriggers({} as const);
