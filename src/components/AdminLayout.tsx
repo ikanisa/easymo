@@ -23,6 +23,7 @@ import {
   Radar,
   Bot,
   BrainCircuit,
+  PhoneCall,
 } from "lucide-react";
 import { showDevTools, shouldUseMock } from "@/lib/env";
 import {
@@ -81,6 +82,7 @@ const navigationBlueprint: ReadonlyArray<NavigationBlueprintItem> = [
   { name: "Agent Tooling", routeKey: "agentTooling", icon: BrainCircuit },
   { name: "Settings", routeKey: "settings", icon: Settings },
   { name: "Operations", routeKey: "operations", icon: Terminal },
+  { name: "Voice Ops", routeKey: "voiceOps", icon: PhoneCall },
   { name: "Agent Patterns", routeKey: "agentPatterns", icon: Bot },
   { name: "Developer", routeKey: "developer", icon: Smartphone },
   { name: "WA Console", routeKey: "adminWaConsole", icon: Terminal, devOnly: true },

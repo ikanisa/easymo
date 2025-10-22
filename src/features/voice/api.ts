@@ -1,12 +1,13 @@
 import { supabase } from '@/integrations/supabase/client';
-import type {
-  VoiceCall,
-  VoiceCallDetails,
-  VoiceConsent,
-  VoiceEvent,
-  VoiceToolCall,
-  VoiceTranscript,
-} from './types';
+import {
+  voiceCallDetailsSchema,
+  voiceCallSchema,
+  voiceConsentSchema,
+  voiceEventSchema,
+  voiceToolCallSchema,
+  voiceTranscriptSchema,
+} from '@va/shared';
+import type { VoiceCall, VoiceCallDetails, VoiceConsent, VoiceEvent, VoiceToolCall, VoiceTranscript } from './types';
 
 export class VoiceDataError extends Error {
   public readonly cause?: unknown;
@@ -103,7 +104,7 @@ const toVoiceCall = (row: RawVoiceCall): VoiceCall => {
     return null;
   };
 
-  return {
+  return voiceCallSchema.parse({
     id: row.id,
     direction: row.direction === 'outbound' ? 'outbound' : 'inbound',
     fromE164: row.from_e164 ?? null,
@@ -125,41 +126,45 @@ const toVoiceCall = (row: RawVoiceCall): VoiceCall => {
     agentProfileConfidence: row.agent_profile_confidence ?? null,
     channel: row.channel ?? null,
     campaignTags: Array.isArray(row.campaign_tags) ? row.campaign_tags : null,
-  };
+  });
 };
 
-const toTranscript = (row: RawTranscript): VoiceTranscript => ({
-  id: row.id,
-  role: row.role === 'assistant' || row.role === 'system' ? (row.role as 'assistant' | 'system') : 'user',
-  content: row.content ?? '',
-  timestamp: row.t,
-  lang: row.lang ?? null,
-});
+const toTranscript = (row: RawTranscript): VoiceTranscript =>
+  voiceTranscriptSchema.parse({
+    id: row.id,
+    role: row.role === 'assistant' || row.role === 'system' ? (row.role as 'assistant' | 'system') : 'user',
+    content: row.content ?? '',
+    timestamp: row.t,
+    lang: row.lang ?? null,
+  });
 
-const toEvent = (row: RawEvent): VoiceEvent => ({
-  id: row.id,
-  type: row.type ?? null,
-  payload: row.payload ?? null,
-  timestamp: row.t,
-});
+const toEvent = (row: RawEvent): VoiceEvent =>
+  voiceEventSchema.parse({
+    id: row.id,
+    type: row.type ?? null,
+    payload: row.payload ?? null,
+    timestamp: row.t,
+  });
 
-const toToolCall = (row: RawToolCall): VoiceToolCall => ({
-  id: row.id,
-  server: row.server ?? null,
-  tool: row.tool ?? null,
-  args: row.args ?? null,
-  result: row.result ?? null,
-  timestamp: row.t,
-  success: row.success ?? false,
-});
+const toToolCall = (row: RawToolCall): VoiceToolCall =>
+  voiceToolCallSchema.parse({
+    id: row.id,
+    server: row.server ?? null,
+    tool: row.tool ?? null,
+    args: row.args ?? null,
+    result: row.result ?? null,
+    timestamp: row.t,
+    success: row.success ?? false,
+  });
 
-const toConsent = (row: RawConsent): VoiceConsent => ({
-  id: row.id,
-  consentText: row.consent_text ?? null,
-  consentResult: typeof row.consent_result === 'boolean' ? row.consent_result : null,
-  audioUrl: row.audio_url ?? null,
-  timestamp: row.t,
-});
+const toConsent = (row: RawConsent): VoiceConsent =>
+  voiceConsentSchema.parse({
+    id: row.id,
+    consentText: row.consent_text ?? null,
+    consentResult: typeof row.consent_result === 'boolean' ? row.consent_result : null,
+    audioUrl: row.audio_url ?? null,
+    timestamp: row.t,
+  });
 
 export async function listVoiceCalls(options?: { limit?: number; profile?: string | null }): Promise<VoiceCall[]> {
   try {
@@ -239,13 +244,15 @@ export async function getVoiceCallDetails(callId: string): Promise<VoiceCallDeta
       throw new VoiceDataError(`Voice call ${callId} not found`);
     }
 
-    return {
+    const details = {
       call: toVoiceCall(callRes.data as RawVoiceCall),
       transcripts: (transcriptsRes.data ?? []).map((row) => toTranscript(row as RawTranscript)),
       events: (eventsRes.data ?? []).map((row) => toEvent(row as RawEvent)),
       toolCalls: (toolRes.data ?? []).map((row) => toToolCall(row as RawToolCall)),
       consents: (consentsRes.data ?? []).map((row) => toConsent(row as RawConsent)),
-    };
+    } satisfies VoiceCallDetails;
+
+    return voiceCallDetailsSchema.parse(details);
   } catch (err) {
     if (err instanceof VoiceDataError) {
       throw err;
