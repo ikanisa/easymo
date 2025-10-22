@@ -2,7 +2,6 @@ export default {
   rootDir: ".",
   moduleFileExtensions: ["js", "json", "ts"],
   testRegex: ".*\\.spec\\.ts$",
-  extensionsToTreatAsEsm: [".ts"],
   transform: {
     "^.+\\.(t|j)s$": ["@swc/jest", {
       swcrc: false,
@@ -18,7 +17,7 @@ export default {
         target: "es2022"
       },
       module: {
-        type: "es6"
+        type: "commonjs"
       }
     }],
   },
