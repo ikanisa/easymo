@@ -1,6 +1,7 @@
-# List migration filenames that are allowed to violate BEGIN/COMMIT hygiene.
-# These are already applied on remote and were generated/imported from remote schema snapshots.
-
-20250907104112_bb1041f4-1b8a-4bce-b154-b8a3e8eb8462.sql
+20251206090000_driver_vehicle_defaults.sql
 20251017220824_remote_schema.sql
-
+20251206103000_agent_chat_tables.sql
+20250907104112_bb1041f4-1b8a-4bce-b154-b8a3e8eb8462.sql
+20251112100000_phase2_init.sql
+20251215094500_conversations_metadata.sql
+20251017150000_phase2_init.sql
