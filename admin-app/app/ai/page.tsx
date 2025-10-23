@@ -145,9 +145,9 @@ export default function AgentsPage() {
           <input name="categories" placeholder="Categories (comma separated)" className="border p-2" />
           <button type="submit" className="bg-black text-white px-4 py-2 rounded">Run Orchestrate</button>
         </form>
-        {orchestrateResp && (
+        {orchestrateResp ? (
           <pre className="bg-gray-100 p-3 text-xs overflow-x-auto border">{pretty(orchestrateResp)}</pre>
-        )}
+        ) : null}
       </section>
 
       <section className="space-y-3">
@@ -158,9 +158,9 @@ export default function AgentsPage() {
           <input name="currency" placeholder="Currency (e.g., USD)" className="border p-2" defaultValue="USD" required />
           <button type="submit" className="bg-black text-white px-4 py-2 rounded">Run Settlement</button>
         </form>
-        {settleResp && (
+        {settleResp ? (
           <pre className="bg-gray-100 p-3 text-xs overflow-x-auto border">{pretty(settleResp)}</pre>
-        )}
+        ) : null}
       </section>
 
       <section className="space-y-3">
@@ -182,9 +182,9 @@ Example: [{"kind":"whatsapp_message","ref":"abc"}]' className="border p-2 min-h-
           <button type="submit" className="bg-black text-white px-4 py-2 rounded">Evaluate Attribution</button>
         </form>
         {attribError && <p className="text-sm text-red-600">{attribError}</p>}
-        {attribResp && (
+        {attribResp ? (
           <pre className="bg-gray-100 p-3 text-xs overflow-x-auto border">{pretty(attribResp)}</pre>
-        )}
+        ) : null}
       </section>
 
       <section className="space-y-3">
@@ -194,9 +194,9 @@ Example: [{"kind":"whatsapp_message","ref":"abc"}]' className="border p-2 min-h-
           <button type="submit" className="bg-black text-white px-4 py-2 rounded">Process CSV</button>
         </form>
         {reconError && <p className="text-sm text-red-600">{reconError}</p>}
-        {reconResp && (
+        {reconResp ? (
           <pre className="bg-gray-100 p-3 text-xs overflow-x-auto border">{pretty(reconResp)}</pre>
-        )}
+        ) : null}
       </section>
     </div>
   );

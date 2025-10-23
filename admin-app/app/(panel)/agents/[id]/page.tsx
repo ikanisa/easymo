@@ -121,6 +121,7 @@ export default function AgentDetailsPage() {
   if (!id) return <div className="p-6">Invalid agent id</div>;
   if (isLoading) return <div className="p-6">Loading…</div>;
   if (error) return <div className="p-6 text-red-600">Failed to load agent</div>;
+  if (!agent) return <div className="p-6">Agent not found</div>;
 
   return (
     <div className="p-6 space-y-6">

@@ -1,9 +1,11 @@
 {
   "extends": "./tsconfig.json",
   "include": [
-    "app/**/*",
-    "components/**/*",
-    "lib/**/*",
+    "app/admin/**/*",
+    "app/ai/**/*",
+    "components/layout/**/*",
+    "lib/routes/**/*",
+    "types/**/*",
     "next-env.d.ts"
   ],
   "exclude": [
