@@ -59,8 +59,12 @@ export class RealtimeService {
     return definition.defaultVoice;
   }
 
-  private buildInstructions(definition: AgentProfileDefinition, countryCode: string) {
-    const blocks = [
+  private async buildInstructionsAsync(
+    definition: AgentProfileDefinition,
+    countryCode: string,
+    userId?: string,
+  ) {
+    const blocks: string[] = [
       `You are the ${definition.displayName} for ${countryCode}.`,
       ...definition.instructionBlocks,
       'Always obtain recording consent referencing local policy before continuing.',
@@ -68,6 +72,30 @@ export class RealtimeService {
       'Offer WhatsApp follow-up summaries when the caller agrees; never take payment details over voice.',
       'Trigger a warm transfer if the caller requests a human or your confidence is low.',
     ];
+    try {
+      if (userId) {
+        const { data } = await this.db.client
+          .from('assistant_memory')
+          .select('key,value')
+          .eq('user_id', userId)
+          .in('key', ['region', 'preferences', 'likes'])
+          .limit(10);
+        if (Array.isArray(data) && data.length) {
+          const prefs: Record<string, any> = Object.fromEntries(
+            data.map((row: any) => [row.key, row.value]),
+          );
+          const likes = Array.isArray(prefs.likes) ? prefs.likes : prefs.preferences?.likes;
+          if (likes && Array.isArray(likes) && likes.length) {
+            blocks.push(`User preferences include: ${likes.join(', ')}.`);
+          }
+          if (typeof prefs.region === 'string' && prefs.region) {
+            blocks.push(`User region: ${prefs.region}. Prefer relevant local options.`);
+          }
+        }
+      }
+    } catch {
+      // non-fatal
+    }
     return blocks.join(' ');
   }
 
@@ -144,8 +172,9 @@ export class RealtimeService {
 
     const voice = this.pickVoice(agent.definition, locale, countryCode);
 
+    const instructions = await this.buildInstructionsAsync(agent.definition, countryCode, body?.user_id);
     const config = {
-      instructions: this.buildInstructions(agent.definition, countryCode),
+      instructions,
       voice,
       modalities: ['audio'],
       input_audio_format: 'g711_ulaw',
