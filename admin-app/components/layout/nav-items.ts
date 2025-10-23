@@ -127,6 +127,12 @@ const NAV_ITEM_DEFINITIONS = [
     group: "Messaging",
   },
   {
+    label: "WhatsApp QR Sender",
+    route: "adminWhatsappSendQrTemplate",
+    description: "Send QR via image or template URL button",
+    group: "Messaging",
+  },
+  {
     label: "WhatsApp Health",
     route: "panelWhatsAppHealth",
     description: "Delivery metrics and webhook logs",
