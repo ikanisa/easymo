@@ -205,6 +205,12 @@ const NAV_ITEM_DEFINITIONS = [
     group: "AI",
   },
   {
+    label: "Embed Suggestions",
+    route: "adminSuggestions", // route key not added; direct path hardcoded below
+    description: "Create/update embeddings for businesses",
+    group: "AI",
+  },
+  {
     label: "Settings",
     route: "panelSettings",
     description: "Quiet hours, throttles, templates",
@@ -236,5 +242,5 @@ export type NavItem = (typeof NAV_ITEM_DEFINITIONS)[number] & {
 
 export const NAV_ITEMS: NavItem[] = NAV_ITEM_DEFINITIONS.map((definition) => ({
   ...definition,
-  href: toAdminRoute(adminRoutePaths[definition.route]),
+  href: toAdminRoute(adminRoutePaths[definition.route] ?? '/admin/suggestions/embed' as any),
 }));
