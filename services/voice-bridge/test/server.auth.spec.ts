@@ -1,6 +1,6 @@
 import request from "supertest";
 import type { CallListInstanceCreateOptions } from "twilio/lib/rest/api/v2010/account/call";
-import { getVoiceBridgeRoutePath } from "@easymo/commons";
+import { getVoiceBridgeHttpEndpointPath } from "@easymo/commons";
 
 const twilioCreateMock = jest.fn<Promise<{ sid: string }>, [CallListInstanceCreateOptions]>();
 
@@ -63,7 +63,7 @@ describe("voice-bridge authentication", () => {
 
   it("rejects missing token", async () => {
     const app = getApp();
-    const response = await request(app).get(getVoiceBridgeRoutePath("analyticsLiveCalls"));
+    const response = await request(app).get(getVoiceBridgeHttpEndpointPath("analytics", "liveCalls"));
     expect(response.status).toBe(401);
     expect(response.body.error).toBe("missing_token");
   });
@@ -72,7 +72,7 @@ describe("voice-bridge authentication", () => {
     const app = getApp();
     const token = await sign(["voice:outbound.write"]);
     const response = await request(app)
-      .get(getVoiceBridgeRoutePath("analyticsLiveCalls"))
+      .get(getVoiceBridgeHttpEndpointPath("analytics", "liveCalls"))
       .set("Authorization", `Bearer ${token}`);
     expect(response.status).toBe(403);
     expect(response.body.error).toBe("invalid_scope");
@@ -82,7 +82,7 @@ describe("voice-bridge authentication", () => {
     const app = getApp();
     const token = await sign(["voice:read"]);
     const response = await request(app)
-      .get(getVoiceBridgeRoutePath("analyticsLiveCalls"))
+      .get(getVoiceBridgeHttpEndpointPath("analytics", "liveCalls"))
       .set("Authorization", `Bearer ${token}`);
     expect(response.status).toBe(200);
   });
@@ -91,7 +91,7 @@ describe("voice-bridge authentication", () => {
     const app = getApp();
     const token = await sign(["voice:outbound.write"]);
     const response = await request(app)
-      .post(getVoiceBridgeRoutePath("callsOutbound"))
+      .post(getVoiceBridgeHttpEndpointPath("calls", "outbound"))
       .set("Authorization", `Bearer ${token}`)
       .send({
         to: "+14155552671",

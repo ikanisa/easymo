@@ -3,7 +3,7 @@ import {
   defineHttpControllers,
   type ControllerDefinition,
   type EndpointDefinition,
-} from "./utils";
+} from "./http-utils.js";
 
 const reconciliationServiceRouteDefinitions = defineHttpControllers({
   reconciliation: {
@@ -14,6 +14,7 @@ const reconciliationServiceRouteDefinitions = defineHttpControllers({
         method: "POST" as const,
         segment: "mobile-money" as const,
         notes: "Accepts multipart/form-data or application/json payloads",
+        requiredScopes: ["reconciliation:write"],
       },
     },
   },
@@ -32,16 +33,19 @@ export type ReconciliationServiceEndpointKey<Controller extends ReconciliationSe
 
 export const reconciliationServiceRoutes = reconciliationServiceRouteDefinitions;
 
-export const getReconciliationServiceControllerBasePath = <Controller extends ReconciliationServiceControllerKey>(
-  controller: Controller,
-) => reconciliationServiceRoutes[controller].basePath;
+export const getReconciliationServiceControllerBasePath = <
+  Controller extends ReconciliationServiceControllerKey,
+>(controller: Controller) => reconciliationServiceRoutes[controller].basePath;
 
 export const getReconciliationServiceEndpointSegment = <
   Controller extends ReconciliationServiceControllerKey,
   Endpoint extends ReconciliationServiceEndpointKey<Controller>,
 >(controller: Controller, endpoint: Endpoint) => {
   const controllerRoutes = reconciliationServiceRoutes[controller] as ReconciliationServiceRoutes[Controller];
-  const endpoints = controllerRoutes.endpoints as Record<ReconciliationServiceEndpointKey<Controller>, EndpointDefinition>;
+  const endpoints = controllerRoutes.endpoints as Record<
+    ReconciliationServiceEndpointKey<Controller>,
+    EndpointDefinition
+  >;
   return endpoints[endpoint].segment;
 };
 
@@ -50,8 +54,23 @@ export const getReconciliationServiceEndpointMethod = <
   Endpoint extends ReconciliationServiceEndpointKey<Controller>,
 >(controller: Controller, endpoint: Endpoint) => {
   const controllerRoutes = reconciliationServiceRoutes[controller] as ReconciliationServiceRoutes[Controller];
-  const endpoints = controllerRoutes.endpoints as Record<ReconciliationServiceEndpointKey<Controller>, EndpointDefinition>;
+  const endpoints = controllerRoutes.endpoints as Record<
+    ReconciliationServiceEndpointKey<Controller>,
+    EndpointDefinition
+  >;
   return endpoints[endpoint].method;
+};
+
+export const getReconciliationServiceEndpointRequiredScopes = <
+  Controller extends ReconciliationServiceControllerKey,
+  Endpoint extends ReconciliationServiceEndpointKey<Controller>,
+>(controller: Controller, endpoint: Endpoint) => {
+  const controllerRoutes = reconciliationServiceRoutes[controller] as ReconciliationServiceRoutes[Controller];
+  const endpoints = controllerRoutes.endpoints as Record<
+    ReconciliationServiceEndpointKey<Controller>,
+    EndpointDefinition
+  >;
+  return [...(endpoints[endpoint].requiredScopes ?? [])];
 };
 
 export const getReconciliationServiceEndpointPath = <

@@ -1,15 +1,16 @@
 export default {
   rootDir: "./",
-  moduleFileExtensions: ["ts", "js", "json"],
+  moduleFileExtensions: ["js", "json", "ts"],
   testRegex: "test/.*\\.spec\\.ts$",
   transform: {
-    "^.+\\.(t|j)s$": ["ts-jest", { tsconfig: "tsconfig.spec.json" }],
-  },
-  moduleNameMapper: {
-    "^@easymo/commons$": "<rootDir>/../../packages/commons/src/index.ts",
-    "^@easymo/messaging$": "<rootDir>/test/mocks/messaging.ts",
-    "^\\.\\/config\\.js$": "<rootDir>/src/config.ts",
-    "^\\.\\/logger\\.js$": "<rootDir>/src/logger.ts",
+    "^.+\\.(t|j)s$": ["ts-jest", { tsconfig: "tsconfig.spec.json", diagnostics: false }],
   },
   testEnvironment: "node",
+  moduleNameMapper: {
+    "^@easymo/commons$": "<rootDir>/../../packages/commons/src/index.ts",
+    "^@easymo/commons/(.*?)(?:\\.js)?$": "<rootDir>/../../packages/commons/src/$1.ts",
+    "^@easymo/db$": "<rootDir>/../../packages/db/src/index.ts",
+    "^@easymo/db/(.*?)(?:\\.js)?$": "<rootDir>/../../packages/db/src/$1.ts",
+    "^\\./routes/(.*?)(?:\\.js)?$": "<rootDir>/../../packages/commons/src/routes/$1.ts",
+  },
 };

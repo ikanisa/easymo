@@ -1,4 +1,4 @@
-import express, { type Express, type RequestHandler } from "express";
+import express, { type Express } from "express";
 import pinoHttp from "pino-http";
 import { z } from "zod";
 import { settings } from "./config";
@@ -9,9 +9,10 @@ import {
   createRateLimiter,
   expressRequestContext,
   expressServiceAuth,
-  getAttributionServiceRoutePath,
-  getAttributionServiceRouteRequiredScopes,
-  type AttributionServiceRouteKey,
+  getAttributionServiceEndpointPath,
+  getAttributionServiceEndpointRequiredScopes,
+  type AttributionServiceControllerKey,
+  type AttributionServiceEndpointKey,
 } from "@easymo/commons";
 
 const prisma = new PrismaService();
@@ -34,13 +35,17 @@ export function buildApp(deps: { prisma: PrismaService }): Express {
     );
   }
 
-  const requireAuthForRoute = (route: AttributionServiceRouteKey): RequestHandler => {
-    const scopes = getAttributionServiceRouteRequiredScopes(route);
-    if (scopes.length === 0) {
-      return (_req, _res, next) => next();
-    }
-    return expressServiceAuth({ audience: settings.auth.audience, requiredScopes: [...scopes] });
-  };
+  const requireAuth = <
+    Controller extends AttributionServiceControllerKey,
+    Endpoint extends AttributionServiceEndpointKey<Controller>,
+  >(
+    controller: Controller,
+    endpoint: Endpoint,
+  ) =>
+    expressServiceAuth({
+      audience: settings.auth.audience,
+      requiredScopes: getAttributionServiceEndpointRequiredScopes(controller, endpoint),
+    });
 
   const EvaluateSchema = z.object({
     quoteId: z.string().uuid().optional(),
@@ -51,12 +56,11 @@ export function buildApp(deps: { prisma: PrismaService }): Express {
   });
 
   app.post(
-    getAttributionServiceRoutePath("evaluate"),
-    requireAuthForRoute("evaluate"),
+    getAttributionServiceEndpointPath("attribution", "evaluate"),
+    requireAuth("attribution", "evaluate"),
     async (req, res) => {
       try {
         const payload = EvaluateSchema.parse(req.body);
-
         const { type, entityId } = evaluateAttribution({
           referrals: payload.referrals,
           events: payload.events,
@@ -87,8 +91,8 @@ export function buildApp(deps: { prisma: PrismaService }): Express {
   });
 
   app.post(
-    getAttributionServiceRoutePath("evidence"),
-    requireAuthForRoute("evidence"),
+    getAttributionServiceEndpointPath("attribution", "evidence"),
+    requireAuth("attribution", "evidence"),
     async (req, res) => {
       try {
         const payload = EvidenceSchema.parse(req.body);
@@ -113,8 +117,8 @@ export function buildApp(deps: { prisma: PrismaService }): Express {
   });
 
   app.post(
-    getAttributionServiceRoutePath("disputes"),
-    requireAuthForRoute("disputes"),
+    getAttributionServiceEndpointPath("attribution", "disputes"),
+    requireAuth("attribution", "disputes"),
     async (req, res) => {
       try {
         const payload = DisputeSchema.parse(req.body);
@@ -133,7 +137,7 @@ export function buildApp(deps: { prisma: PrismaService }): Express {
     },
   );
 
-  app.get(getAttributionServiceRoutePath("health"), (_req, res) => {
+  app.get(getAttributionServiceEndpointPath("health", "status"), (_req, res) => {
     res.json({ status: "ok" });
   });
 
