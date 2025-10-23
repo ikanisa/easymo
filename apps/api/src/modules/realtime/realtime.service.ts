@@ -253,6 +253,29 @@ export class RealtimeService {
         await this.db.addTranscript(callId, 'user', text, event?.data?.language ?? 'en');
         if (userId) {
           await this.db.upsertAssistantMemory(userId, 'last_user_message', { text, at: new Date().toISOString() }).catch(() => undefined);
+          // Extract coarse preferences from user text (e.g., live music, pharmacy, bar)
+          try {
+            const likes: string[] = [];
+            const t = text.toLowerCase();
+            if (/(live\s*music)/.test(t)) likes.push('live music');
+            if (/(pharmacy|medic|clinic|hospital)/.test(t)) likes.push('pharmacy');
+            if (/(bar|drink|beer|wine|pub)/.test(t)) likes.push('bar');
+            if (likes.length) {
+              // Merge with existing likes
+              const { data } = await this.db.client
+                .from('assistant_memory')
+                .select('value')
+                .eq('user_id', userId)
+                .eq('key', 'likes')
+                .single();
+              const current = Array.isArray((data as any)?.value) ? (data as any).value : [];
+              const merged = Array.from(new Set([...
+                (current as any[]).map((s) => String(s).toLowerCase()),
+                ...likes,
+              ]));
+              await this.db.upsertAssistantMemory(userId, 'likes', merged).catch(() => undefined);
+            }
+          } catch {}
         }
       }
     }

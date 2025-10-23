@@ -58,6 +58,33 @@ export class SuggestionsController {
     if (category === 'general') query = query.ilike('name', `%${text.split(' ')[0]}%`);
     const { data, error } = await query;
     if (error) return { items: [], error: error.message };
-    return { items: data ?? [] };
+    let items = Array.isArray(data) ? data : [];
+
+    // Simple personalization: if likes mention 'live music', prefer items with tags containing 'live'
+    try {
+      if (body?.user_id) {
+        const { data: mem } = await this.supabase
+          .from('assistant_memory')
+          .select('value')
+          .eq('user_id', body.user_id)
+          .in('key', ['likes', 'preferences'])
+          .order('updated_at', { ascending: false })
+          .limit(1);
+        const pref = Array.isArray(mem) && mem.length ? (mem[0] as any).value : null;
+        const likes = Array.isArray(pref?.likes) ? pref.likes.map((s: any) => String(s).toLowerCase()) : [];
+        const prefersLive = likes.some((l: string) => l.includes('live'));
+        if (prefersLive) {
+          items = items.sort((a: any, b: any) => {
+            const aLive = JSON.stringify(a?.tags ?? '').toLowerCase().includes('live') ? 1 : 0;
+            const bLive = JSON.stringify(b?.tags ?? '').toLowerCase().includes('live') ? 1 : 0;
+            return bLive - aLive;
+          });
+        }
+      }
+    } catch {
+      // ignore personalization errors
+    }
+
+    return { items };
   }
 }
