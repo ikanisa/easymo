@@ -14,6 +14,22 @@
   - Typecheck Packages & Apps
   - Lint Monorepo
 
+## Supabase Deployment
+
+Automated via GitHub Actions (manual or on push to `main`).
+
+- Workflow: .github/workflows/supabase-deploy.yml
+- Required repo secrets:
+  - `SUPABASE_ACCESS_TOKEN` – personal access token from Supabase Cloud (Org → Tokens)
+  - `SUPABASE_PROJECT_REF` – Supabase project ref (e.g., `abcd1234`)
+
+Manual trigger steps
+- In the Actions tab, run "Supabase Deploy" and choose whether to apply DB migrations and/or deploy Edge Functions.
+
+Notes
+- DB migrations use `supabase db push` against the linked project.
+- Edge Functions deploy all subfolders in `supabase/functions` (excluding `_shared`, `tests`).
+
 
 This repository contains the implementation for Phase 2 of the EasyMO admin panel
 and WhatsApp mobility backend.  The goal of this phase is to replace the
