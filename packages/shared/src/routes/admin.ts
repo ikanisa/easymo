@@ -60,7 +60,9 @@ const adminRouteDefinitions = [
   { key: "adminPayments", path: "/admin/payments", segment: "admin" },
   { key: "adminPaymentsList", path: "/admin/payments/list", segment: "admin" },
   { key: "adminMemory", path: "/admin/memory", segment: "admin" },
+  { key: "adminMemoryEmbed", path: "/admin/memory/embed", segment: "admin" },
   { key: "adminSuggestions", path: "/admin/suggestions", segment: "admin" },
+  { key: "adminSuggestionsEmbed", path: "/admin/suggestions/embed", segment: "admin" },
 ] as const satisfies ReadonlyArray<AdminRouteDefinition>;
 
 type AdminRouteDefinitions = typeof adminRouteDefinitions;
