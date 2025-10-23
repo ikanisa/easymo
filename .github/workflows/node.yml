@@ -178,6 +178,19 @@ jobs:
           else
             echo "Insert denied as expected by RLS";
           fi
+      - name: Assert RLS denies inserts to assistant_memory for limited role
+        run: |
+          url="${STAGING_DB_LIMITED_URL:-$STAGING_DATABASE_URL}"
+          if [ -z "$url" ]; then echo "No URL; skipping"; exit 0; fi
+          set +e
+          psql -v ON_ERROR_STOP=1 "$url" -c "INSERT INTO public.assistant_memory (user_id, key, value) VALUES (gen_random_uuid(), 'test', '{"k":"v"}');"
+          status=$?
+          set -e
+          if [ $status -eq 0 ]; then
+            echo "::error::RLS did not deny insert into assistant_memory for limited role"; exit 1;
+          else
+            echo "Memory insert denied as expected by RLS";
+          fi
 
   typecheck:
     name: Typecheck Packages & Apps

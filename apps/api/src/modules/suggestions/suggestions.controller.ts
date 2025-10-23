@@ -50,16 +50,48 @@ export class SuggestionsController {
       }
     }
 
-    let query = this.supabase.from('businesses').select('*').limit(limit);
-    if (category === 'pharmacy') query = query.eq('category', 'pharmacy');
-    if (category === 'bar') query = query.eq('category', 'bar');
-    if (region) query = query.ilike('region', `%${region}%`);
-    // fallback: fuzzy name search
-    if (category === 'general') query = query.ilike('name', `%${text.split(' ')[0]}%`);
-    const { data, error } = await query;
-    if (error) return { items: [], error: error.message };
-    let items = Array.isArray(data) ? data : [];
+    // Try vector-based personalization if businesses.embedding & vector_memory exist
+    let items: any[] = [];
+    let vectorTried = false;
+    try {
+      if (body?.user_id) {
+        const { data: vm } = await this.supabase
+          .from('vector_memory')
+          .select('embedding')
+          .eq('user_id', body.user_id)
+          .order('updated_at', { ascending: false })
+          .limit(1);
+        const queryEmbedding = Array.isArray(vm) && vm.length ? (vm[0] as any).embedding : null;
+        if (queryEmbedding && Array.isArray(queryEmbedding)) {
+          vectorTried = true;
+          const catParam = category === 'general' ? null : category;
+          const { data: matched } = await this.supabase.rpc('match_businesses', {
+            p_query: queryEmbedding,
+            p_category: catParam,
+            p_region: region || null,
+            p_limit: limit,
+          });
+          if (Array.isArray(matched)) {
+            items = matched;
+          }
+        }
+      }
+    } catch {
+      // ignore vector path failures
+    }
 
+    if (!vectorTried || items.length === 0) {
+      let query = this.supabase.from('businesses').select('*').limit(limit);
+      if (category === 'pharmacy') query = query.eq('category', 'pharmacy');
+      if (category === 'bar') query = query.eq('category', 'bar');
+      if (region) query = query.ilike('region', `%${region}%`);
+      // fallback: fuzzy name search
+      if (category === 'general') query = query.ilike('name', `%${text.split(' ')[0]}%`);
+      const { data, error } = await query;
+      if (error) return { items: [], error: error.message };
+      items = Array.isArray(data) ? data : [];
+    }
+    if (error) return { items: [], error: error.message };
     // Simple personalization: if likes mention 'live music', prefer items with tags containing 'live'
     try {
       if (body?.user_id) {
