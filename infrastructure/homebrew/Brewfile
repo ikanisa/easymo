@@ -1,0 +1,3 @@
+tap "cloudflare/cloudflared"
+brew "caddy"
+brew "cloudflare/cloudflared/cloudflared"
