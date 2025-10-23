@@ -52,12 +52,17 @@ jobs:
         with:
           version: latest
 
+      - name: Authenticate Supabase CLI
+        run: supabase login --token "$SUPABASE_ACCESS_TOKEN"
+
       - name: Link project
-        run: supabase link --project-ref "$SUPABASE_PROJECT_REF"
+        run: |
+          # Try modern flag first, fall back to alternative if needed
+          supabase link --project-ref "$SUPABASE_PROJECT_REF" || supabase link --ref "$SUPABASE_PROJECT_REF"
 
       - name: Apply DB migrations (supabase db push)
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.apply_migrations == 'true' || github.event_name == 'push' }}
-        run: supabase db push
+        run: supabase db push --workdir supabase
 
       - name: Deploy Edge Functions
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.deploy_functions == 'true' || github.event_name == 'push' }}
@@ -76,4 +81,3 @@ jobs:
             echo "Deploying function: $dir"
             supabase functions deploy "$dir" --project-ref "$PROJECT_REF"
           done
-
