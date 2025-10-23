@@ -78,6 +78,7 @@ const agentCoreRouteDefinitions = defineHttpControllers({
 export type AgentCoreRoutes = typeof agentCoreRouteDefinitions;
 export type AgentCoreControllerKey = keyof AgentCoreRoutes;
 export type AgentCoreEndpointKey<Controller extends AgentCoreControllerKey> = keyof AgentCoreRoutes[Controller]["endpoints"];
+export type AgentCoreRouteKey = AgentCoreEndpointKey<"chat">;
 
 export const agentCoreRoutes = agentCoreRouteDefinitions;
 
