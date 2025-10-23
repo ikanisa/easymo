@@ -132,6 +132,34 @@ export async function sendImageUrl(
   });
 }
 
+// Sends a template message with a single URL button.
+// Requires that the template is pre-approved in Meta with a URL button at index 0.
+// Example: template name "open_qr" with CTA URL button.
+export async function sendTemplateUrlButton(
+  to: string,
+  templateName: string,
+  url: string,
+  languageCode = "en",
+): Promise<void> {
+  await post({
+    messaging_product: "whatsapp",
+    to,
+    type: "template",
+    template: {
+      name: templateName,
+      language: { code: languageCode },
+      components: [
+        {
+          type: "button",
+          sub_type: "url",
+          index: "0",
+          parameters: [{ type: "text", text: url }],
+        },
+      ],
+    },
+  });
+}
+
 export async function sendFlowMessage(
   to: string,
   flowId: string,

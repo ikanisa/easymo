@@ -50,7 +50,8 @@ jobs:
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v1
         with:
-          version: latest
+          # Pin to a recent stable to avoid flag drift (e.g. --project-ref)
+          version: 1.179.6
 
       - name: Authenticate Supabase CLI
         run: supabase login --token "$SUPABASE_ACCESS_TOKEN"
@@ -62,7 +63,20 @@ jobs:
 
       - name: Apply DB migrations (supabase db push)
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.apply_migrations == 'true' || github.event_name == 'push' }}
-        run: supabase db push --workdir supabase
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          set -euo pipefail
+          echo "Attempting supabase db push (linked project)"
+          if supabase db push --workdir supabase; then
+            echo "db push (linked) succeeded"; exit 0;
+          fi
+          if [ -n "${DATABASE_URL:-}" ]; then
+            echo "Linked push failed; retrying with explicit --db-url"
+            supabase db push --db-url "$DATABASE_URL" --workdir supabase
+          else
+            echo "::error::db push failed and no DATABASE_URL fallback provided"; exit 1;
+          fi
 
       - name: Deploy Edge Functions
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.deploy_functions == 'true' || github.event_name == 'push' }}
