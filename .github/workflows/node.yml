@@ -151,18 +151,33 @@ jobs:
     needs: packages
     env:
       STAGING_DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
+      STAGING_DB_LIMITED_URL: ${{ secrets.STAGING_DB_LIMITED_URL }}
     steps:
       - name: Check staging URL
         run: |
-          if [ -z "${STAGING_DATABASE_URL}" ]; then
-            echo "No staging DB URL; skipping policy smoke."; exit 0;
+          if [ -z "${STAGING_DATABASE_URL}" ] && [ -z "${STAGING_DB_LIMITED_URL}" ]; then
+            echo "No staging DB URLs; skipping policy smoke."; exit 0;
           fi
       - name: Install psql
         run: sudo apt-get update && sudo apt-get install -y postgresql-client
-      - name: Verify RLS (read only)
+      - name: Verify connectivity
         run: |
-          if [ -z "${STAGING_DATABASE_URL}" ]; then exit 0; fi
-          psql "$STAGING_DATABASE_URL" -c 'SELECT 1;' -tA
+          url="${STAGING_DB_LIMITED_URL:-$STAGING_DATABASE_URL}"
+          if [ -z "$url" ]; then exit 0; fi
+          psql "$url" -c 'SELECT 1;' -tA
+      - name: Assert RLS denies inserts to payments for limited role
+        run: |
+          url="${STAGING_DB_LIMITED_URL:-$STAGING_DATABASE_URL}"
+          if [ -z "$url" ]; then echo "No URL; skipping"; exit 0; fi
+          set +e
+          psql -v ON_ERROR_STOP=1 "$url" -c "INSERT INTO public.payments (user_id, amount, currency) VALUES (gen_random_uuid(), 1000, 'RWF');"
+          status=$?
+          set -e
+          if [ $status -eq 0 ]; then
+            echo "::error::RLS did not deny insert into payments for limited role"; exit 1;
+          else
+            echo "Insert denied as expected by RLS";
+          fi
 
   typecheck:
     name: Typecheck Packages & Apps
