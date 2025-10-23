@@ -1,5 +1,8 @@
 # EasyMO Phase 2 Implementation
 
+[![Node CI](https://github.com/ikanisa/easymo/actions/workflows/node.yml/badge.svg)](https://github.com/ikanisa/easymo/actions/workflows/node.yml)
+
+
 This repository contains the implementation for Phase 2 of the EasyMO admin panel
 and WhatsApp mobility backend.  The goal of this phase is to replace the
 mocked API used during Phase 1 with Supabase Edge Functions backed by a
