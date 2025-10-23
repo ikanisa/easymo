@@ -40,18 +40,21 @@ export default async function handler(req: Request) {
   let limit = 10;
   let region: string | undefined;
   let reembed = false;
+  let businessId: string | undefined;
   try {
     const payload = await req.json();
     if (payload && typeof payload === 'object') {
       if (payload.limit) limit = Math.max(1, Math.min(200, Number(payload.limit)));
       if (typeof payload.region === 'string') region = payload.region;
       if (payload.reembed === true) reembed = true;
+      if (typeof payload.business_id === 'string') businessId = payload.business_id;
     }
   } catch { /* allow empty */ }
 
   // Select businesses missing embeddings (or forced reembed)
   let q = supabase.from('businesses').select('*').limit(limit);
-  if (!reembed) q = q.is('embedding', null);
+  if (businessId) q = q.eq('id', businessId);
+  if (!reembed && !businessId) q = q.is('embedding', null);
   if (region) q = q.ilike('region', `%${region}%`);
   const { data: rows, error } = await q as any;
   if (error) return new Response(`select_failed: ${error.message}`, { status: 500 });
@@ -81,4 +84,3 @@ export default async function handler(req: Request) {
 
 // @ts-ignore
 addEventListener('fetch', (e: FetchEvent) => e.respondWith(handler(e.request)));
-

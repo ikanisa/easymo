@@ -1,4 +1,4 @@
-import { describe, it, expect } from '@jest/globals';
+import { describe, it, expect } from 'vitest';
 import { classify } from './suggestions.controller';
 
 describe('suggestions classify()', () => {
@@ -17,4 +17,3 @@ describe('suggestions classify()', () => {
     expect(classify('looking for something')).toBe('general');
   });
 });
-

@@ -1,4 +1,4 @@
-import { apiRoutes, type ApiControllerKey, type ApiEndpointKey } from "@easymo/commons";
+import { apiRoutes, type ApiControllerKey, type ApiEndpointKey, type ApiEndpointDefinition } from "@easymo/commons";
 
 type ControllerEndpoint<Controller extends ApiControllerKey> = Extract<ApiEndpointKey<Controller>, string>;
 
@@ -20,21 +20,19 @@ export const getWebhookTopic = <
 >(controller: Controller, endpoint: Endpoint): WebhookTopic<Controller, Endpoint> =>
   `webhooks.${controller}.${endpoint}` as WebhookTopic<Controller, Endpoint>;
 
-const controllerEntries = Object.entries(apiRoutes) as Array<[
-  ApiControllerKey,
-  (typeof apiRoutes)[ApiControllerKey],
-]>;
+const controllerEntries = Object.entries(apiRoutes) as Array<[ApiControllerKey, any]>;
 
 export const webhookTopics = Object.freeze(
   controllerEntries.reduce((acc, [controller, definition]) => {
-    type Controller = typeof controller;
-    const endpoints = Object.keys(definition.endpoints) as Array<ControllerEndpoint<Controller>>;
-    acc[controller] = endpoints
-      .filter((endpoint) => definition.endpoints[endpoint]?.method === "POST")
+    const endpoints = Object.keys(definition.endpoints) as string[];
+    const endpointsRecord = definition.endpoints as Record<string, ApiEndpointDefinition>;
+    const items = endpoints
+      .filter((endpoint) => endpointsRecord[endpoint]?.method === "POST")
       .map((endpoint) => ({
-        endpoint,
-        topic: getWebhookTopic(controller, endpoint),
+        endpoint: endpoint as any,
+        topic: getWebhookTopic(controller as any, endpoint as any),
       }));
+    (acc as any)[controller] = items;
     return acc;
   }, {} as ControllerTopics),
 );

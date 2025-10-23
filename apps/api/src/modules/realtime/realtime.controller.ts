@@ -1,6 +1,7 @@
 import { Body, Controller, Headers, Post, Req, Res, UnauthorizedException } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { RealtimeService } from './realtime.service';
+import { MemoryController } from '../memory/memory.controller';
 import { verifyJwt } from '../../common/crypto';
 import { env } from '../../common/env';
 import { getApiControllerBasePath, getApiEndpointSegment } from '@easymo/commons';

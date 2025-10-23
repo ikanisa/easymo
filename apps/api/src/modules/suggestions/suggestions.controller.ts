@@ -91,7 +91,6 @@ export class SuggestionsController {
       if (error) return { items: [], error: error.message };
       items = Array.isArray(data) ? data : [];
     }
-    if (error) return { items: [], error: error.message };
     // Simple personalization: if likes mention 'live music', prefer items with tags containing 'live'
     try {
       if (body?.user_id) {
