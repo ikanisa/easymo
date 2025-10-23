@@ -1,7 +1,9 @@
-name: Admin App CI
+name: Admin App CI (push-only)
 on:
   push:
-  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
   workflow_dispatch:
 permissions:
   contents: read
