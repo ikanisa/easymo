@@ -81,7 +81,7 @@ describe('RealtimeController (integration)', () => {
     await request(app.getHttpServer())
       .post('/realtime/webhook')
       .send({ hello: 'world' })
-      .expect(201, config);
+      .expect(200, config);
 
     expect(service.onIncomingWebhook).toHaveBeenCalledWith({ hello: 'world' });
   });
@@ -104,7 +104,7 @@ describe('RealtimeController (integration)', () => {
       .post('/realtime/events')
       .set('authorization', 'Bearer valid')
       .send({ type: 'response.output_text.delta' })
-      .expect(201)
+      .expect(200)
       .expect({ ok: true });
 
     expect(service.handleSidebandEvent).toHaveBeenCalledWith('call-123', {
