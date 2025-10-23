@@ -284,11 +284,11 @@ model Agent {
   slug              String
   persona           String   @default("general")
   status            String   @default("active")
-  currentRevisionId String?  @db.Uuid
-  currentRevision   AgentRevision? @relation(fields: [currentRevisionId], references: [id], onDelete: SetNull)
+  currentRevisionId String?  @unique @db.Uuid
+  currentRevision   AgentRevision? @relation(name: "CurrentAgentRevision", fields: [currentRevisionId], references: [id], onDelete: SetNull)
   createdAt         DateTime @default(now())
   updatedAt         DateTime @default(now())
-  revisions         AgentRevision[]
+  revisions         AgentRevision[] @relation(name: "AllAgentRevisions")
   documents         AgentDocument[]
   tasks             AgentTask[]
 
@@ -299,7 +299,8 @@ model Agent {
 model AgentRevision {
   id          String   @id @default(uuid()) @db.Uuid
   agentId     String   @db.Uuid
-  agent       Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  agent       Agent    @relation(name: "AllAgentRevisions", fields: [agentId], references: [id], onDelete: Cascade)
+  currentOf   Agent?   @relation(name: "CurrentAgentRevision")
   version     Int      @default(1)
   instructions String
   tools       Json     @default("[]")
