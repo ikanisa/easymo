@@ -1,4 +1,4 @@
-# Integration Report – $(date -u +"%Y-%m-%d %H:%M UTC")
+# Integration Report – 2025-10-23 17:07 UTC
 
 ## Base
 - Default branch: main
