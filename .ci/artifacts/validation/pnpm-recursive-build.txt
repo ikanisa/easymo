@@ -1,0 +1,12 @@
+Scope: 20 of 21 workspace projects
+packages/commons build$ pnpm exec tsc -p tsconfig.json
+packages/shared build$ tsc -p tsconfig.json
+packages/shared build: Done
+packages/commons build: src/routes/voice-bridge.ts(39,35): error TS2552: Cannot find name 'defineWebsocketRoutes'. Did you mean 'defineWebSocketRoutes'?
+packages/commons build: src/routes/voice-bridge.ts(48,38): error TS2304: Cannot find name 'httpControllerDefinitions'.
+packages/commons build: src/routes/voice-bridge.ts(141,49): error TS2552: Cannot find name 'voiceBridgeWebSocketRouteDefinitions'. Did you mean 'voiceBridgeWebSocketRoutes'?
+packages/commons build: src/routes/voice-bridge.ts(144,43): error TS2552: Cannot find name 'voiceBridgeWebSocketRouteDefinitions'. Did you mean 'voiceBridgeWebSocketRoutes'?
+packages/commons build: Failed
+/workspace/easymo/packages/commons:
+ ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @easymo/commons@0.1.0 build: `pnpm exec tsc -p tsconfig.json`
+Exit status 2
