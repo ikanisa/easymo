@@ -59,7 +59,9 @@ Vite React app and communicates with those Edge Functions through the
 
 ## Local Setup (MacBook)
 
-1. Install prerequisites via Homebrew: `brew install node pnpm supabase/tap/supabase`.
+1. Install prerequisites via Homebrew: `brew install node pnpm supabase/tap/supabase`,
+   then install local reverse proxy tooling by running `brew bundle --file=./Brewfile`
+   from within `infra/mac`.
 2. Clone this repository, then run `pnpm install` from the workspace root.
 3. Duplicate `.env.example` to `.env` (shared defaults) and `.env.local`
    (Next.js-only overrides). Update every `CHANGEME_*` placeholder with your
