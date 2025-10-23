@@ -191,6 +191,33 @@ jobs:
           else
             echo "Memory insert denied as expected by RLS";
           fi
+      - name: Assert RLS denies inserts to vector_memory for limited role
+        run: |
+          url="${STAGING_DB_LIMITED_URL:-$STAGING_DATABASE_URL}"
+          if [ -z "$url" ]; then echo "No URL; skipping"; exit 0; fi
+          set +e
+          psql -v ON_ERROR_STOP=1 "$url" -c "INSERT INTO public.vector_memory (user_id, embedding) VALUES (gen_random_uuid(), ARRAY[0.1,0.2,0.3]);"
+          status=$?
+          set -e
+          if [ $status -eq 0 ]; then
+            echo "::error::RLS did not deny insert into vector_memory for limited role"; exit 1;
+          else
+            echo "Vector insert denied as expected by RLS";
+          fi
+
+      - name: Assert RLS denies inserts to assistant_sessions for limited role
+        run: |
+          url="${STAGING_DB_LIMITED_URL:-$STAGING_DATABASE_URL}"
+          if [ -z "$url" ]; then echo "No URL; skipping"; exit 0; fi
+          set +e
+          psql -v ON_ERROR_STOP=1 "$url" -c "INSERT INTO public.assistant_sessions (user_id, last_user_message) VALUES (gen_random_uuid(), 'hi');"
+          status=$?
+          set -e
+          if [ $status -eq 0 ]; then
+            echo "::error::RLS did not deny insert into assistant_sessions for limited role"; exit 1;
+          else
+            echo "Sessions insert denied as expected by RLS";
+          fi
 
   typecheck:
     name: Typecheck Packages & Apps

@@ -4,7 +4,13 @@
 // - WABA_PHONE_NUMBER_ID (Sender phone number ID)
 // Payload: { to: string; qr_url: string; caption?: string }
 
-type SendPayload = { to: string; qr_url: string; caption?: string };
+type SendPayload = {
+  to: string;
+  qr_url: string;
+  caption?: string;
+  template?: string; // optional template name for URL button
+  languageCode?: string; // optional language code for template
+};
 
 function json(status: number, body: unknown) {
   return new Response(JSON.stringify(body), {
@@ -36,6 +42,45 @@ async function sendImage(to: string, link: string, caption?: string) {
   }
 }
 
+async function sendTemplateUrl(
+  to: string,
+  templateName: string,
+  url: string,
+  languageCode = "en",
+) {
+  const token = Deno.env.get("WABA_ACCESS_TOKEN");
+  const phoneId = Deno.env.get("WABA_PHONE_NUMBER_ID");
+  if (!token || !phoneId) throw new Error("waba_env_missing");
+  const res = await fetch(`https://graph.facebook.com/v20.0/${phoneId}/messages`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      messaging_product: "whatsapp",
+      to,
+      type: "template",
+      template: {
+        name: templateName,
+        language: { code: languageCode },
+        components: [
+          {
+            type: "button",
+            sub_type: "url",
+            index: "0",
+            parameters: [{ type: "text", text: url }],
+          },
+        ],
+      },
+    }),
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`waba_template_failed:${res.status}:${text}`);
+  }
+}
+
 export default async function handler(req: Request): Promise<Response> {
   if (req.method !== "POST") return json(405, { error: "method_not_allowed" });
   let payload: SendPayload | null = null;
@@ -47,10 +92,16 @@ export default async function handler(req: Request): Promise<Response> {
   const to = (payload?.to ?? "").trim();
   const qrUrl = (payload?.qr_url ?? "").trim();
   const caption = payload?.caption ?? "";
+  const template = (payload?.template ?? "").trim();
+  const languageCode = (payload?.languageCode ?? "en").trim() || "en";
   if (!to || !qrUrl) return json(400, { error: "missing_to_or_qr_url" });
 
   try {
-    await sendImage(to, qrUrl, caption);
+    if (template) {
+      await sendTemplateUrl(to, template, qrUrl, languageCode);
+    } else {
+      await sendImage(to, qrUrl, caption);
+    }
     return json(200, { ok: true });
   } catch (err) {
     return json(500, { error: String(err?.message ?? err) });
@@ -60,4 +111,3 @@ export default async function handler(req: Request): Promise<Response> {
 // Edge entrypoint
 // @ts-ignore
 addEventListener("fetch", (e: FetchEvent) => e.respondWith(handler(e.request)));
-

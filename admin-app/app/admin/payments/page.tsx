@@ -10,6 +10,7 @@ export default function PaymentsPage() {
   const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [templateName, setTemplateName] = useState("");
 
   async function onInitiate(e: React.FormEvent) {
     e.preventDefault();
@@ -51,6 +52,10 @@ export default function PaymentsPage() {
           <span className="text-sm">WhatsApp Number (E.164, e.g. +2507…)</span>
           <input className="border p-2 rounded" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+2507XXXXXXXX" />
         </label>
+        <label className="grid gap-1">
+          <span className="text-sm">Template Name (optional; uses URL button)</span>
+          <input className="border p-2 rounded" value={templateName} onChange={(e) => setTemplateName(e.target.value)} placeholder="e.g. open_qr" />
+        </label>
         <button disabled={loading} className="bg-black text-white px-4 py-2 rounded" type="submit">
           {loading ? "Generating…" : "Generate QR"}
         </button>
@@ -72,7 +77,9 @@ export default function PaymentsPage() {
                   const supabase = getSupabaseClient();
                   if (!supabase) throw new Error("Supabase client not configured");
                   const { error } = await supabase.functions.invoke("svc-whatsapp-send-qr", {
-                    body: { to: phone, qr_url: qrUrl },
+                    body: templateName
+                      ? { to: phone, qr_url: qrUrl, template: templateName }
+                      : { to: phone, qr_url: qrUrl },
                   });
                   if (error) throw error;
                   alert("Sent QR via WhatsApp");
@@ -81,7 +88,7 @@ export default function PaymentsPage() {
                 }
               }}
             >
-              Send via WhatsApp
+              {templateName ? "Send via Template Button" : "Send via WhatsApp"}
             </button>
           </div>
         </div>
