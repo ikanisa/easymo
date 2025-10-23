@@ -12,6 +12,7 @@ const nextConfig = {
   experimental: {
     typedRoutes: true,
   },
+  transpilePackages: ["@va/shared"],
   typescript: {
     ignoreBuildErrors: true,
   },

@@ -11,7 +11,7 @@ type AdminRouteDefinition<Path extends string = string, Key extends string = str
 const adminRouteDefinitions = [
   { key: "rootIndex", path: "/", segment: "root" },
   { key: "login", path: "/login", segment: "root" },
-  { key: "rootAgentsPlayground", path: "/agents", segment: "root" },
+  { key: "rootAgentsPlayground", path: "/ai", segment: "root" },
   { key: "panelDashboard", path: "/dashboard", segment: "panel" },
   { key: "panelUsers", path: "/users", segment: "panel" },
   { key: "panelInsurance", path: "/insurance", segment: "panel" },
@@ -51,12 +51,12 @@ const adminRouteDefinitions = [
   { key: "panelBasketsLoans", path: "/baskets/loans", segment: "panel" },
   { key: "panelBasketsReconciliation", path: "/baskets/reconciliation", segment: "panel" },
   { key: "panelBasketsSettings", path: "/baskets/settings", segment: "panel" },
-  { key: "adminAgents", path: "/agents", segment: "admin" },
-  { key: "adminAgentNew", path: "/agents/new", segment: "admin" },
-  { key: "adminAgentDetail", path: "/agents/:agentId", segment: "admin" },
-  { key: "adminAgentSearch", path: "/agents/:agentId/search", segment: "admin" },
-  { key: "adminInsuranceQueue", path: "/insurance/queue", segment: "admin" },
-  { key: "adminMobilityDispatch", path: "/mobility/dispatch", segment: "admin" },
+  { key: "adminAgents", path: "/admin/agents", segment: "admin" },
+  { key: "adminAgentNew", path: "/admin/agents/new", segment: "admin" },
+  { key: "adminAgentDetail", path: "/admin/agents/:agentId", segment: "admin" },
+  { key: "adminAgentSearch", path: "/admin/agents/:agentId/search", segment: "admin" },
+  { key: "adminInsuranceQueue", path: "/admin/insurance/queue", segment: "admin" },
+  { key: "adminMobilityDispatch", path: "/admin/mobility/dispatch", segment: "admin" },
 ] as const satisfies ReadonlyArray<AdminRouteDefinition>;
 
 type AdminRouteDefinitions = typeof adminRouteDefinitions;
