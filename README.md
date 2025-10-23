@@ -2,6 +2,18 @@
 
 [![Node CI](https://github.com/ikanisa/easymo/actions/workflows/node.yml/badge.svg)](https://github.com/ikanisa/easymo/actions/workflows/node.yml)
 
+## CI & Integration
+
+- Integration Report: [.ci/INTEGRATION_REPORT.md](.ci/INTEGRATION_REPORT.md)
+- Integration PR: https://github.com/ikanisa/easymo/pull/113
+- CI Jobs (required checks recommended):
+  - Validate + Build Packages
+  - Build Backend Apps
+  - Build + Test Admin App
+  - Monorepo Build (reduced concurrency)
+  - Typecheck Packages & Apps
+  - Lint Monorepo
+
 
 This repository contains the implementation for Phase 2 of the EasyMO admin panel
 and WhatsApp mobility backend.  The goal of this phase is to replace the
