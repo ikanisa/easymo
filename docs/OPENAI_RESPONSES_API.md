@@ -265,7 +265,7 @@ Errors follow the standard OpenAI API structure:
 2. Include `metadata.workflow_id`, `metadata.tenant_id`, and `metadata.region` so observability dashboards can segment usage.
 3. Store raw responses in the analytics warehouse when `store: true`; otherwise persist the `id` and fetch-on-demand.
 4. When invoking background runs, enqueue the `response_id` into the async worker queue and gate retries on the fetch status.
-5. For Vercel deployments, whitelist `api.openai.com` in the outgoing network policy and confirm environment variables in the project dashboard.
+5. For self-hosted deployments, whitelist `api.openai.com` in the outgoing network policy and confirm environment variables in the operations dashboard.
 
 ## Conversation & Session Management
 
@@ -317,7 +317,7 @@ Wrap this helper in EasyMO's service layer so React/Next.js clients issue typed 
 
 ## Streaming from the Browser
 
-When running on Vercel edge or the browser, consume Server Sent Events to progressively render assistant output:
+When running on self-hosted edge infrastructure or the browser, consume Server Sent Events to progressively render assistant output:
 
 ```ts
 export async function streamResponse(signal?: AbortSignal) {

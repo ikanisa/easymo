@@ -130,7 +130,7 @@ See `filesystem-example.ts` in the SDK for a full demonstration and refer to the
 - Use `errorFunction` sparingly to transform internal errors into user-friendly strings without triggering side effects.
 - Configure `tool_choice` and `toolUseBehavior` in the agent to enforce or limit tool usage when business rules demand it.
 
-These patterns provide the foundation for integrating hosted and bespoke tools into Easymo agents while keeping deployments compatible with Vercel hosting and the broader platform architecture.
+These patterns provide the foundation for integrating hosted and bespoke tools into Easymo agents while keeping deployments compatible with self-hosted infrastructure and the broader platform architecture.
 
 ## 5. Tool selection and fallbacks in Easymo
 
@@ -146,11 +146,11 @@ These patterns provide the foundation for integrating hosted and bespoke tools i
 | Schema evolution | Run shared contract tests against mock tool inputs | Catch breaking parameter changes before deployment. |
 | Latency budgets | Capture end-to-end traces with the observability adapter | Use budgets in `toolUseBehavior` to prevent slow tools from blocking user flows. |
 | Error handling | Simulate invalid payloads through `errorFunction` | Ensure human-readable responses without leaking stack traces. |
-| Deployment preview | Exercise agent flows on the Vercel preview URL | Confirm that hosted tools are reachable from Vercel edge and that environment variables are wired correctly. |
+| Deployment preview | Exercise agent flows on the staging URL | Confirm that hosted tools are reachable from the ingress layer and that environment variables are wired correctly. |
 
-## 7. Deployment checklist for Vercel rollouts
+## 7. Deployment checklist for self-hosted rollouts
 
-1. Confirm that the agent environment variables for tool authentication are stored in Vercel project settings (Production & Preview).
+1. Confirm that the agent environment variables for tool authentication are stored in the hosting secret store (staging & production).
 2. Validate that `tool_choice` defaults align with the feature flag configuration for the target release cohort.
 3. Run the full conversation regression suite (`pnpm test agent:tools`) against the preview deployment and store the results in the release ticket.
 4. Ensure observability dashboards include the new tool metrics (latency, success rate, fallback rate) before promoting to production.

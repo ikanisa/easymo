@@ -3,7 +3,7 @@ info:
   title: Broker AI API
   version: 1.0.0
 servers:
-  - url: https://easymo.vercel.app
+  - url: http://localhost:8080
 paths:
   /api/buyer/intents:
     post:

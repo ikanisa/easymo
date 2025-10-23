@@ -118,7 +118,7 @@ Deep research models do not currently respect the location hint.
 
 - Always render inline citations when displaying content derived from web search.
 - Tool calls incur additional cost; budget usage accordingly for agentic and deep research flows.
-- For production deployments (e.g., Vercel), ensure environment variables containing API keys allow the Responses API to access the `web_search` tool.
+- For production deployments, ensure environment variables containing API keys allow the Responses API to access the `web_search` tool.
 - Monitor latency when enabling agentic or deep research modes—consider background execution paths if responses may take minutes.
 
 By following this guide, Easymo agents can safely enrich their responses with live web context while keeping observability, compliance, and deployment requirements in check.
@@ -142,12 +142,12 @@ agent logic and the user interface remain compliant with OpenAI's requirements:
    - Document how citations are surfaced in the trust-and-safety checklist (`audits/data_provenance.md`).
    - Coordinate with legal/compliance stakeholders if new domains are added to the allow list.
 
-## 9. Vercel Deployment Notes
+## 9. Self-Hosted Deployment Notes
 
-Teams deploying Easymo's front-end on Vercel should keep the following best practices in mind when shipping web search support:
+Teams deploying Easymo's front-end on self-hosted infrastructure should keep the following best practices in mind when shipping web search support:
 
-- **Environment variables:** Define `OPENAI_API_KEY`, `EASYMO_WEB_SEARCH_ENABLED`, and any domain allow-lists in the Vercel Project Settings. Mark secrets as `Encrypted` and re-trigger builds after changes.
-- **Edge vs. serverless functions:** Web search calls can increase cold-start times. For latency-sensitive experiences, pin the chat API routes to Vercel Edge Functions and pre-warm them through synthetic traffic.
-- **Incremental rollouts:** Use Vercel environments (`Preview`, `Production`) to stage updates. Validate citation rendering in `Preview` before promoting.
-- **Monitoring hooks:** Configure Vercel's built-in analytics and connect them with Easymo's observability stack (e.g., send metrics to DataDog or Grafana) so search-related regressions surface quickly.
-- **Incident response:** Update the Vercel rollback playbook (`ROLLOUT_PLAN.md`) with search-specific mitigations, including toggling off the feature flag if web search outages occur.
+- **Environment variables:** Define `OPENAI_API_KEY`, `EASYMO_WEB_SEARCH_ENABLED`, and any domain allow-lists in the hosting secret store. Mark secrets as encrypted and restart services after changes.
+- **Edge vs. serverless functions:** Web search calls can increase cold-start times. For latency-sensitive experiences, dedicate lightweight Node workers or Supabase Edge Functions and pre-warm them through synthetic traffic.
+- **Incremental rollouts:** Use staging/prod environments to validate citation rendering before promoting.
+- **Monitoring hooks:** Forward logs to the central observability stack (Grafana, Loki, DataDog) so search-related regressions surface quickly.
+- **Incident response:** Update the rollback playbook (`ROLLOUT_PLAN.md`) with search-specific mitigations, including toggling off the feature flag if web search outages occur.

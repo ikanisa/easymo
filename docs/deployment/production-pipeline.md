@@ -1,179 +1,105 @@
-# easyMO Production Deployment Playbook
+# Production Deployment Pipeline (GitHub → Supabase → Self-Hosted)
 
-This document describes an idempotent, end-to-end deployment workflow that connects GitHub, Supabase, and Vercel for the easyMO admin application. Execute the sections in order and re-run the steps as needed—each step is safe to repeat because it either updates configuration in place or verifies previously completed work.
+This document describes an idempotent deployment workflow that connects GitHub, Supabase, and the self-hosted runtime for the EasyMO admin application. Execute the sections in order; each step is safe to repeat because it either updates configuration in place or verifies previously completed work.
 
-## Operator Inputs (collect before executing changes)
-| Domain | Required details | Notes |
+## A. Source Control Hygiene
+
+- Default branch: `main`.
+- Require PR reviews with status checks (`ci` workflow running lint/test/build).
+- Protect `main` with `Require status checks` and `Require signed commits` (optional but recommended).
+- Use `chore/*`, `feat/*`, `fix/*` prefixes for topic branches.
+
+## B. Secrets Matrix
+
+Track secrets in three locations:
+
+| Location | What lives there | Notes |
 | --- | --- | --- |
-| **GitHub** | Organization / account name, repository name & visibility, default branch, required PR checks, whether to create a new repo or reuse `easymo`, code owners & review rules | Branch protection and Actions permissions require org admin rights. |
-| **Supabase** | Existing project reference ID or desired project name, region, preferred RLS baseline (on/off by default), need for Edge Functions, database migration / restore policy | Access to the Supabase dashboard is required to retrieve the anon/service keys. |
-| **Vercel** | Team / scope, project name, production domain, preview domain policy, analytics preference | Ensure the GitHub app is installed for the chosen org/user. |
-| **Application** | Framework confirmation (Next.js 13), package manager, build command overrides (if any), Node.js runtime | `admin-app` contains the Next.js source; confirm `npm` or `pnpm`. |
-| **Compliance & Ops** | OSS license (e.g., MIT), security policy URL, incident contacts (on-call emails / Slack), rollback contacts | Capture escalation paths before go-live. |
+| **GitHub Actions** | `SUPABASE_ACCESS_TOKEN`, `SUPABASE_DB_URL`, `REGISTRY_TOKEN`, `REGISTRY_USER`, `ADMIN_API_TOKEN` | Used for migrations, smoke tests, and container publishing. |
+| **Supabase** | `EASYMO_ADMIN_TOKEN`, `SERVICE_ROLE_KEY`, `DISPATCHER_FUNCTION_URL`, WhatsApp/OCR tokens | Managed via `supabase secrets set`. |
+| **Hosting stack** | `.env`, docker-compose overrides, Kubernetes secrets, nginx env files | Mirror GitHub/Supabase values so runtime stays aligned. |
 
-Document any missing inputs in the "Open items" section before proceeding. Track collection status in [`operator-inputs-template.md`](./operator-inputs-template.md) so the information can be surfaced during review using the merge-readiness checklist.
+Environment variables are documented in `.env.example`. Populate real values only inside GitHub/Supabase/hosting secrets. The matrix below defines scope and consumers.
 
-## A. Discovery Summary
-- **Repo layout**: Single repository with two top-level folders: `admin-app` (Next.js 13 app router client) and `supabase` (CLI project scaffold). No other packages detected → treat as *polyrepo-style single app*.
-- **App root**: `admin-app`; set as the working directory for package scripts and Vercel builds.
-- **Framework defaults**: Next.js 13+, Node.js 18 runtime, build command `npm run build`, dev server `npm run dev`, output `.next`. Static assets served from Vercel Edge by default.
-- **Data layer**: Supabase (PostgreSQL + Auth). CLI metadata lives in `supabase` folder; migrations belong in `supabase/migrations`.
-- **Assumptions requiring confirmation**:
-  1. Package manager is `npm` (update if `pnpm` or `yarn` is standard).
-  2. Supabase Edge Functions are not yet used (create scaffolding only if requested).
-  3. Environment variable names follow Supabase defaults (see matrix below).
-  4. No custom Next.js server runtime beyond default Node 18.
+| Variable | Purpose | Consumers |
+| --- | --- | --- |
+| `NEXT_PUBLIC_SUPABASE_URL` | HTTPS endpoint for Supabase project | SPA + admin app |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Public anon key for browser access | SPA |
+| `SUPABASE_SERVICE_ROLE_KEY` | Service role key for server operations | Admin app, Supabase Edge Functions |
+| `NEXT_PUBLIC_APP_URL` | Canonical URL used for redirects and meta tags | SPA/admin app |
+| `VITE_ADMIN_TOKEN` / `ADMIN_TOKEN` / `EASYMO_ADMIN_TOKEN` | Shared admin secret for Supabase functions | SPA/admin app/Edge Functions |
+| `ADMIN_SESSION_SECRET`, `ADMIN_ACCESS_CREDENTIALS` | Cookie/session + operator access | Admin app |
+| `DISPATCHER_FUNCTION_URL` | Campaign dispatch endpoint | SPA + cron workers |
 
-Update this section after validating each assumption.
+## C. Build Artifacts
 
-### 2025-02-17 Repository inventory update
+- SPA (`app/`): `pnpm run build` → `dist/`
+- Admin app (`admin-app/`): `pnpm --filter admin-app build` → `.next/`
+- Supabase migrations: `supabase/migrations/*`
+- Supabase Edge Functions: `supabase/functions/*`
 
-- The repository now hosts two active front-end roots: the Mobility Admin SPA
-  at the repo root (`./`) and the Next.js admin control panel under
-  `admin-app/`. Both consume shared typed route helpers from `@va/shared`.
-- Historical scaffolds such as `angular/` and the pending `station-app/`
-  remain out of scope for production until their roadmaps resume. Typed
-  routing is deferred there because no concrete routes exist yet (see
-  `docs/deployment/root-application-inventory.md`).
-- Backend services live under `apps/` and `services/`; they deploy outside of
-  Vercel and are tracked separately in service-specific runbooks.
+Publish Docker images via GitHub Actions:
 
-## B. GitHub Repository Setup
-1. **Repository creation/linking**
-   - If a new repo is needed: create under the supplied org, import this codebase, and set the default branch (e.g., `main`).
-   - If reusing `easymo`: ensure local repo is pointed at the GitHub remote and branch history matches.
-2. **Metadata**
-   - Add/confirm `README.md` with project overview, `LICENSE`, and ensure `.gitignore` (already present) matches Next.js defaults.
-   - Enable GitHub Issues and Actions in repository settings.
-3. **Branch protections** (apply to default branch; idempotent via GitHub UI or `gh api`):
-   - Require pull request before merge with ≥1 approving review (increase count per operator input).
-   - Dismiss stale approvals on new commits.
-   - Require status checks: `ci` workflow (lint/test/build) and Vercel preview check (see section F).
-   - Restrict who can push (allow only admins/bots). Disallow force pushes and deletions.
-4. **Pull request hygiene**
-   - `.github/pull_request_template.md` now codifies testing + deployment sign-off and conventional commits.
-   - Share branch naming convention (`type/scope-description`).
-5. **CI secrets registry** (names only; values stored in repo settings → Secrets and variables → Actions):
-   - `VERCEL_TOKEN` – Vercel personal/token with deployments scope for GitHub Actions (if manual deploys required).
-   - `SUPABASE_ACCESS_TOKEN` – For Supabase CLI automation.
-   - `SUPABASE_DB_PASSWORD` – Optional for running migrations locally in CI.
-   - `NEXT_PUBLIC_APP_URL` – Stored as Actions variable (non-secret) for e2e tests.
-   - `SUPABASE_SERVICE_ROLE_KEY` – Only if server-side scripts are executed in CI (protect via environments).
-   - Document in repo settings description that secrets must also be added to Vercel/Supabase dashboards.
+1. `docker build -f app/Dockerfile -t ghcr.io/<org>/easymo-spa:<sha> app`
+2. `docker build -f admin-app/Dockerfile -t ghcr.io/<org>/easymo-admin:<sha> admin-app`
+3. Push both images using the `REGISTRY_USER`/`REGISTRY_TOKEN` secrets.
 
-Record the GitHub repository URL for inclusion in the final report. Use the [merge readiness checklist](./merge-readiness-checklist.md) to confirm branch protections and CI signals before requesting review.
+## D. Continuous Integration
 
-## C. Environment Variable Matrix
-Environment variables are tracked in `.env.example` (no secrets). Populate real values only inside Vercel and Supabase. The matrix below defines scope and consumers.
+`.github/workflows/ci.yml` should run:
 
-| Name | Description | Consumer(s) | Scope | Source of truth |
-| --- | --- | --- | --- | --- |
-| `NEXT_PUBLIC_SUPABASE_URL` | HTTPS endpoint for Supabase project | Next.js (client + server) | Preview + Production | Vercel Project Environment (Preview & Production) |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Public anon key for browser access | Next.js client | Preview + Production | Vercel Project Environment |
-| `SUPABASE_SERVICE_ROLE_KEY` | Service role key for server-only operations | Next.js server components / API routes, Supabase CLI | Production only by default; add Preview if edge functions require | Vercel Environment (encrypted secret) + GitHub Actions secret (if migrations run in CI) |
-| `SUPABASE_JWT_SECRET` | JWT signing secret used by Supabase Auth | Supabase API + Next.js server for token validation | Production (match Supabase project); replicate to Preview if staging auth needs validation | Supabase Settings → API (primary) |
-| `NEXT_PUBLIC_APP_URL` | Canonical URL used for redirects and meta tags | Next.js client/server | Environment-specific | Vercel → Preview uses auto-generated URL; Production uses custom domain |
+1. `pnpm install --frozen-lockfile`
+2. `pnpm lint`
+3. `pnpm test`
+4. `pnpm build`
+5. `pnpm --filter admin-app build`
+6. `supabase db lint` (optional) or schema validation scripts
+7. Publish Docker images on successful builds (only for `main`)
 
-**Vercel mapping**
-- Preview Environment: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, optional staging variants of server-side secrets.
-- Production Environment: all variables above with production values.
-- Development (local): developers copy `.env.example` to `.env.local` and fill with Supabase staging credentials.
+Require the workflow check before merge. Attach artifacts (build logs, container digests) to the run for traceability.
 
-**Supabase config**
-- Store `SUPABASE_JWT_SECRET` and service role rotation plan inside Supabase Dashboard.
-- If Edge Functions require secrets, place them in `supabase/functions/<function>/.env.example` (versioned) and configure using Supabase secrets CLI.
+## E. Hosting Configuration
 
-## D. Supabase Integration
-1. **Project link**
-   - Run `supabase link --project-ref <ref>` inside the `supabase` folder once the project ref is available. This updates `.supabase/config.toml`; re-running the command is idempotent.
-2. **Migrations workflow**
-   - Use `supabase migration new <name>` to create SQL migrations under `supabase/migrations`.
-   - Commit migrations and require review via PR template checklist.
-   - In CI, run `supabase db push --dry-run` against a temporary database (requires `SUPABASE_ACCESS_TOKEN`).
-   - Before production deploys, run migrations against staging → verify → promote to production using Supabase dashboard or `supabase db push` with `--env prod`.
-3. **Edge Functions (optional)**
-   - Directory: `supabase/functions/<function-name>/`.
-   - Deploy order: Preview (via `supabase functions deploy <name> --project-ref <preview ref>`) → Production after validation.
-   - Environment names follow pattern `<FUNCTION_NAME>_SERVICE_ROLE_KEY` etc.; document per function.
-4. **Row Level Security (RLS)**
-   - Enable RLS globally, then define policies per table using migrations.
-   - Document default policies (e.g., admin users only). Include them in migrations for idempotency.
-5. **Post-deploy smoke test**
-   - Script a Next.js API route or CLI task that: (a) fetches `/rest/v1/<table>` with anon key, (b) performs insert/update via service role (if allowed), (c) validates response codes.
+- Reverse proxy: nginx (see `infrastructure/nginx/easymo.conf`).
+- Containers: use `docker-compose.prod.yml` or Kubernetes manifests under `infrastructure/k8s/`.
+- Mount configuration via environment variables referenced in Section B.
+- Enable HTTPS with Let’s Encrypt/Certbot or the platform’s certificate manager.
+- Configure log shipping (Fluent Bit → Loki/Elasticsearch) and metrics exporters (Prometheus node exporter + Supabase telemetry).
 
-Record Supabase dashboard URL and project ref for the final report and capture them in the [final report template](./final-report-template.md).
+## F. Deployment Steps
 
-## E. Vercel Project Configuration
-1. **Project linking**
-   - Use `vercel link` locally or connect via the Vercel dashboard. Target the specified team scope and select the GitHub repository.
-   - For monorepo detection, set **Root Directory** to `admin-app`.
-2. **Build settings**
-   - Framework preset: **Next.js**.
-   - Install command: `npm install` (override if another package manager is confirmed).
-   - Build command: `npm run build`.
-   - Output directory: `.next` (handled automatically by preset).
-   - Node.js version: 18.x.
-3. **Environment variables**
-   - Add variables from the matrix using the Vercel dashboard or `vercel env pull`. No secret values should appear in version control.
-   - Use Preview values that point to Supabase staging resources if available.
-4. **Domains & analytics**
-   - Production domain: add custom domain (e.g., `admin.easymo.example`). Verify DNS or request operator to configure.
-   - Preview URLs: use Vercel-generated `*.vercel.app` links; share in PR template.
-   - Analytics: opt-in to Vercel Web Analytics if desired; otherwise disable (document operator decision).
-5. **Zero-secret exposure**
-   - Confirm Next.js does not expose server-only secrets by ensuring only `NEXT_PUBLIC_*` variables are referenced in client bundles. Use `npm run build` output to verify warnings.
+1. Merge PR into `main` once CI passes.
+2. GitHub Actions builds/pushes new SPA and admin images.
+3. The pipeline runs `supabase db push --project-ref <ref>` and `supabase functions deploy` using service tokens.
+4. On the host:
+   - Pull new container images (`docker compose pull && docker compose up -d`).
+   - Run database migrations if not handled in CI (`pnpm run db:migrate` or `supabase db push`).
+   - Reload nginx.
+5. Execute smoke tests:
+   - `scripts/smoke-brokerai.sh http://<host>`
+   - `pnpm exec node scripts/health-check.mjs`
+6. Update `docs/go-live-readiness.md` with deployment details (image digest, timestamp, operator).
 
-Record the Vercel project URL plus latest Preview & Production deployment URLs. Include deployment IDs in the [final report template](./final-report-template.md).
+## G. Rollback
 
-## F. CI / CD Policy
-1. **GitHub Actions**
-   - Create `.github/workflows/ci.yml` (follow-up task) running: `npm ci`, `npm run lint`, `npm run test`, `npm run build` within `admin-app`.
-   - Gate migrations: optional job running Supabase CLI commands using the secrets listed above.
-   - Cache Node modules with Actions cache to keep runs idempotent.
-2. **Deployment flow**
-   - Vercel GitHub integration automatically builds Preview deployments for every PR. Require the `Vercel (Preview)` check to pass before merge.
-   - Merge into default branch triggers Production deployment. Require the `Vercel (Production)` check after merge (monitored via branch protections).
-   - Document manual promotion path (Vercel supports promoting a Preview to Production if needed).
-3. **Status checks in branch protections**
-   - `ci` (GitHub Actions pipeline).
-   - `Vercel (Preview)`.
-   - Optional: `Supabase Migration Dry Run` if implemented.
+1. Pull the previous container tags (`docker compose pull <service>@<old-tag>`).
+2. Re-run `docker compose up -d`.
+3. If migrations introduced regressions, run `supabase db remote commit --rollback <sha>` or apply the rollback script under `supabase/migrations`.
+4. Update runbook with rollback reason and remediation steps.
 
-## G. Verification Checklist
-After each deployment, capture evidence (screenshots/notes) that:
-- Production URL (`https://admin.easymo.example` placeholder) responds 200 and renders dashboard shell.
-- Static assets load without console errors (check `/.next/static/*`).
-- Supabase anon client initializes successfully (look for `supabase.auth.getSession()` returning status 200).
-- Critical API routes (e.g., `/api/v1/users`) return expected schema.
-- Preview deployment replicates above using staging credentials.
-- Record Vercel deployment IDs (Preview & Production) for auditing and file the evidence in `docs/deployment/status/` alongside the final report.
+## H. Audit Trail
 
-## H. Rollback Playbook
-1. **Vercel**
-   - Use the Vercel dashboard → Deployments → Production → "Promote Previous" to instantly roll back to a known-good deployment.
-   - Alternatively, redeploy a specific commit with `vercel deploy --prod --archive <deployment-id>`.
-2. **GitHub**
-   - Revert the offending commit/PR on the default branch (`git revert <sha>`), push, and allow CI + Vercel to redeploy.
-   - Document revert in incident notes.
-3. **Supabase**
-   - Maintain down migrations for every change (`supabase migration new --down`).
-   - To restore data, follow Supabase PITR or backup restore policy defined in operator inputs.
-   - Notify database owners before executing destructive rollbacks.
-4. **Incident contacts**
-   - Populate security/ops contact list (emails/Slack handles) once provided.
+- Record container digests, Supabase migration hashes, and deployment timestamps in `docs/deployment/status/`.
+- Store CI build logs for 30 days.
+- Ensure access logs (nginx + Supabase) are retained per compliance requirements.
 
-## I. Final Report Template
-After executing the steps above, copy [`final-report-template.md`](./final-report-template.md) into `docs/deployment/status/<date>.md` and populate it with the following evidence:
-- GitHub repository URL & default branch.
-- Vercel project URL, latest Preview URL, Production URL.
-- Supabase dashboard link & project ref.
-- Environment variable matrix snapshot (names + scopes only).
-- Verification evidence (links to PR, deployment checks, Supabase smoke test logs).
-- Runbooks:
-  - **Add environment variable**: update `.env.example`, add to Vercel Preview/Production, add to Supabase secrets if relevant, document in PR.
-  - **Redeploy**: trigger Vercel rebuild via commit or `vercel deploy`, confirm GitHub Actions success, update report.
-  - **Rollback**: follow section H, record incident timeline, notify contacts.
-- Open items awaiting operator input (e.g., missing secrets, DNS setup, analytics opt-in, incident contacts, license selection).
-- Confirmed assumptions vs outstanding questions.
+## I. Change Management Checklist
 
-Keeping this report updated ensures the deployment remains auditable and repeatable.
+- [ ] Branch merged with required reviews
+- [ ] CI build artifacts stored
+- [ ] Supabase migrations applied
+- [ ] Supabase Edge Functions deployed
+- [ ] Containers redeployed
+- [ ] Smoke tests passed
+- [ ] Documentation updated
+- [ ] Rollback plan validated

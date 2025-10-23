@@ -20,8 +20,8 @@
 ## Rollback Steps
 
 1. **Code Rollback:**
-   - Revert Admin Panel/Station PWA to last known good deployment (git tag /
-     Vercel rollback).
+    - Revert Admin Panel/Station PWA to last known good deployment (git tag /
+      container rollback).
    - Re-deploy Edge Functions from previous version (Supabase CLI
      `functions deploy --import <tag>`).
 2. **Config Reset:**

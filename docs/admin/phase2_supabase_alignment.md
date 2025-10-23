@@ -126,7 +126,7 @@ Expect HTTP 200 with KPI counts > 0 after seeding.
 
 ## 5. Post-Seed Smoke Tests
 
-1. **Login flow** – Visit `https://easymo.vercel.app/login`, submit an operator
+1. **Login flow** – Visit `http://localhost:8080/login` (or your deployed host), submit an operator
    token from `ADMIN_ACCESS_CREDENTIALS`, and confirm redirect to `/dashboard`
    with the `admin_session` cookie present.
 2. **Dashboard** – KPIs show counts > 0 and the webhook error list is populated.
@@ -152,7 +152,7 @@ when the environment is ready for QA.
 - Re-run the seed script after each schema change or create an updated version
   alongside the migration to keep fixtures in sync.
 - If you rotate the `EASYMO_ADMIN_TOKEN`, update **all** locations simultaneously:
-  `.env.local`, Vercel Project → Environment Variables, Supabase secrets, and
+  `.env.local`, the nginx site configuration (or other host), Supabase secrets, and
   the CLI used for local testing.
 - Add automated checks in CI to run `node scripts/health-check.mjs` with the
   admin token to catch regressions early.
