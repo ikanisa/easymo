@@ -3,6 +3,7 @@ import {
   sendImageUrl,
   sendText,
   WhatsAppClientError,
+  sendTemplateUrlButton,
 } from "../../wa/client.ts";
 import { IDS } from "../../wa/ids.ts";
 import { clearState, setState } from "../../state/store.ts";
@@ -292,34 +293,47 @@ async function deliverMomoQr(
   const messageBody = lines.join("\n");
   const fallbackBody = `${messageBody}\nQR link: ${qrUrl}`;
 
-  let fallbackNeeded = false;
-
-  try {
-    await sendImageUrl(ctx.from, qrUrl, `Scan to pay ${data.display}`);
-  } catch (error) {
-    fallbackNeeded = true;
-    const message = error instanceof Error ? error.message : String(error);
-    console.error("momo.qr.send_image_fail", message);
-  }
-
-  try {
-    await sendButtonsMessage(
-      ctx,
-      messageBody,
-      buildButtons({ id: IDS.MOMO_QR, title: "🔁 New QR" }),
-    );
-  } catch (error) {
-    fallbackNeeded = true;
-    const message = error instanceof Error ? error.message : String(error);
-    console.error("momo.qr.send_buttons_fail", message);
-  }
-
-  if (fallbackNeeded) {
+  // Preferred: use template with a single URL button (no extra text)
+  const templateName = Deno.env.get("WA_OPEN_QR_TEMPLATE");
+  let delivered = false;
+  if (templateName) {
     try {
-      await sendText(ctx.from, fallbackBody);
+      await sendTemplateUrlButton(ctx.from, templateName, qrUrl);
+      delivered = true;
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      console.error("momo.qr.send_text_fail", message);
+      console.error("momo.qr.send_template_fail", message);
+    }
+  }
+
+  if (!delivered) {
+    // Fallback: send image and a minimal button/menu
+    let fallbackNeeded = false;
+    try {
+      await sendImageUrl(ctx.from, qrUrl, `Scan to pay ${data.display}`);
+    } catch (error) {
+      fallbackNeeded = true;
+      const message = error instanceof Error ? error.message : String(error);
+      console.error("momo.qr.send_image_fail", message);
+    }
+    try {
+      await sendButtonsMessage(
+        ctx,
+        messageBody,
+        buildButtons({ id: IDS.MOMO_QR, title: "🔁 New QR" }),
+      );
+    } catch (error) {
+      fallbackNeeded = true;
+      const message = error instanceof Error ? error.message : String(error);
+      console.error("momo.qr.send_buttons_fail", message);
+    }
+    if (fallbackNeeded) {
+      try {
+        await sendText(ctx.from, fallbackBody);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        console.error("momo.qr.send_text_fail", message);
+      }
     }
   }
   const loggedTarget = data.targetType === "msisdn"

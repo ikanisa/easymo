@@ -7,6 +7,7 @@ export default function PaymentsPage() {
   const [currency, setCurrency] = useState("RWF");
   const [userId, setUserId] = useState("");
   const [qrUrl, setQrUrl] = useState<string | null>(null);
+  const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -46,6 +47,10 @@ export default function PaymentsPage() {
           <span className="text-sm">User ID (optional for demo)</span>
           <input className="border p-2 rounded" value={userId} onChange={(e) => setUserId(e.target.value)} placeholder="uuid of the user" />
         </label>
+        <label className="grid gap-1">
+          <span className="text-sm">WhatsApp Number (E.164, e.g. +2507…)</span>
+          <input className="border p-2 rounded" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+2507XXXXXXXX" />
+        </label>
         <button disabled={loading} className="bg-black text-white px-4 py-2 rounded" type="submit">
           {loading ? "Generating…" : "Generate QR"}
         </button>
@@ -57,9 +62,30 @@ export default function PaymentsPage() {
           <div className="border p-3 inline-block">
             <img src={qrUrl} alt="Payment QR" className="w-64 h-64 object-contain" />
           </div>
+          <div>
+            <button
+              className="bg-green-600 text-white px-4 py-2 rounded disabled:opacity-50"
+              disabled={!phone}
+              onClick={async () => {
+                setError(null);
+                try {
+                  const supabase = getSupabaseClient();
+                  if (!supabase) throw new Error("Supabase client not configured");
+                  const { error } = await supabase.functions.invoke("svc-whatsapp-send-qr", {
+                    body: { to: phone, qr_url: qrUrl },
+                  });
+                  if (error) throw error;
+                  alert("Sent QR via WhatsApp");
+                } catch (err: any) {
+                  setError(err?.message ?? String(err));
+                }
+              }}
+            >
+              Send via WhatsApp
+            </button>
+          </div>
         </div>
       )}
     </div>
   );
 }
-
