@@ -137,3 +137,67 @@ jobs:
         env:
           CI: "1"
         run: pnpm -r build --workspace-concurrency=1
+
+  typecheck:
+    name: Typecheck Packages & Apps
+    runs-on: ubuntu-latest
+    needs: packages
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.18.3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck shared packages
+        run: |
+          pnpm -C packages/shared exec tsc -p tsconfig.json --noEmit
+          pnpm -C packages/commons exec tsc -p tsconfig.json --noEmit
+          pnpm -C packages/messaging exec tsc -p tsconfig.json --noEmit
+          pnpm -C packages/db exec tsc -p tsconfig.json --noEmit
+
+      - name: Typecheck backend apps
+        run: |
+          pnpm -C apps/agent-core exec tsc -p tsconfig.json --noEmit
+          pnpm -C apps/voice-bridge exec tsc -p tsconfig.json --noEmit
+          pnpm -C apps/sip-webhook exec tsc -p tsconfig.json --noEmit
+          pnpm -C apps/api exec tsc -p tsconfig.json --noEmit
+
+      - name: Typecheck admin-app
+        run: pnpm -F @easymo/admin-app run type-check
+
+  lint:
+    name: Lint Monorepo
+    runs-on: ubuntu-latest
+    needs: packages
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.18.3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
