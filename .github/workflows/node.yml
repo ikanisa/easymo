@@ -36,3 +36,12 @@ jobs:
 
       - name: Build
         run: pnpm build
+
+      - name: Build shared package for admin
+        run: pnpm -F @va/shared build
+
+      - name: Build admin-app (Next)
+        run: pnpm -F @easymo/admin-app build
+
+      - name: Test admin-app
+        run: pnpm -F @easymo/admin-app test -- --run
