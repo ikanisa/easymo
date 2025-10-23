@@ -189,10 +189,19 @@ export class RealtimeService {
     const eventType = event?.type ?? 'unknown';
     await this.db.logEvent(callId, eventType, event);
 
+    // Attempt to pull a user_id from sideband context for session/memory updates
+    const userId = (event?.data?.user_id ?? event?.data?.context?.user_id) as string | undefined;
+    if (userId && typeof userId === 'string') {
+      await this.db.touchAssistantSession(userId).catch(() => undefined);
+    }
+
     if (eventType === 'conversation.item.input_audio_transcription.completed') {
       const text = event?.data?.text;
       if (text) {
         await this.db.addTranscript(callId, 'user', text, event?.data?.language ?? 'en');
+        if (userId) {
+          await this.db.upsertAssistantMemory(userId, 'last_user_message', { text, at: new Date().toISOString() }).catch(() => undefined);
+        }
       }
     }
 
@@ -200,6 +209,9 @@ export class RealtimeService {
       const text = event?.data?.text;
       if (text) {
         await this.db.addTranscript(callId, 'assistant', text, event?.data?.language ?? 'en');
+        if (userId) {
+          await this.db.upsertAssistantMemory(userId, 'last_assistant_message', { text, at: new Date().toISOString() }).catch(() => undefined);
+        }
       }
     }
 
