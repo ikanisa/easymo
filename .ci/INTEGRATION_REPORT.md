@@ -36,6 +36,12 @@
 - Messaging/Commons/API/Agent-Core builds: green after compatibility/type fixes
 - Monorepo smoke build: introduced as a CI job with reduced concurrency to limit peak disk usage
 
+## Feature Additions in Integration Branch
+- Payments: Added `svc-payment-initiate` Edge Function (QR generation/upload) and Admin UI page to initiate and open QR.
+- WhatsApp Delivery: Added `svc-whatsapp-send-qr` Edge Function (image or template URL button). Admin payments page can send QR directly; standalone admin page added at `admin-app/app/admin/whatsapp/send-qr-template/page.tsx`.
+- MoMo Flow: Prefers template URL button (via `WA_OPEN_QR_TEMPLATE`) with graceful fallbacks to image and plain text.
+- CI: Supabase Deploy job pinned CLI, added `DATABASE_URL` fallback; Policy Smoke includes denies for `payments`, `assistant_memory`, `vector_memory`, and `assistant_sessions`.
+
 ## Conflict Resolution Policies Applied
 - Env/Secrets: not applicable in this set
 - package.json/lockfiles: no manual edits; installed once, no lockfile change committed

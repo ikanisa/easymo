@@ -1,23 +1,9 @@
-# Code ownership for critical areas; adjust handles/teams as needed.
+# Protect critical areas with required reviews.
+# Replace the sample handles with your team slugs or users (e.g., @Loansert-Organization/platform-team).
 
-# Database & Supabase
-/packages/db/**          @ikanisa
-/supabase/**             @ikanisa
-
-# Backend services
-/apps/api/**             @ikanisa
-/apps/voice-bridge/**    @ikanisa
-/apps/agent-core/**      @ikanisa
-/apps/sip-webhook/**     @ikanisa
-
-# Admin panel
-/admin-app/**            @ikanisa
-
-# Shared libraries
-/packages/commons/**     @ikanisa
-/packages/shared/**      @ikanisa
-/packages/messaging/**   @ikanisa
-
-# Fallback
-*                        @ikanisa
+/supabase/**              @repo-admins @platform-team
+/apps/**                   @backend-team @platform-team
+/packages/db/**            @db-team @platform-team
+/admin-app/**              @frontend-team @platform-team
+.github/workflows/**       @devx-team @platform-team
 
