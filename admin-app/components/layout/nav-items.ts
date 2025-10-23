@@ -181,6 +181,30 @@ const NAV_ITEM_DEFINITIONS = [
     group: "Platform",
   },
   {
+    label: "Payments (QR)",
+    route: "adminPayments",
+    description: "Generate QR codes for user payments",
+    group: "Platform",
+  },
+  {
+    label: "Payments List",
+    route: "adminPaymentsList",
+    description: "Recent payments and QR links",
+    group: "Platform",
+  },
+  {
+    label: "Assistant Memory",
+    route: "adminMemory",
+    description: "Upsert memory and touch sessions",
+    group: "AI",
+  },
+  {
+    label: "Suggestions",
+    route: "adminSuggestions",
+    description: "Search businesses by intent and region",
+    group: "AI",
+  },
+  {
     label: "Settings",
     route: "panelSettings",
     description: "Quiet hours, throttles, templates",
