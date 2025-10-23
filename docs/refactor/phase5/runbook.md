@@ -31,7 +31,7 @@
 
 ## Rollback
 
-- Use `supabase db remote commit --rollback` or restore from the latest snapshot
+ - Use `supabase db push --workdir supabase`; for rollback, apply an explicit down migration or restore from the latest snapshot
   in `supabase/snapshots/phase4/` if Phase 5 deploy introduces regressions.
 - Notification queue rollback: revert to previous function bundle via
   `supabase functions deploy wa-webhook@<tag>`.

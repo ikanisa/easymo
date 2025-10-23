@@ -16,7 +16,7 @@
 ### Seed fixtures
 - Populate local/staging data with:
   ```bash
-  supabase db remote commit --file supabase/seed/fixtures/phase_b_seed.sql
+  supabase db push --workdir supabase && psql "$DATABASE_URL" -f supabase/seed/fixtures/phase_b_seed.sql
   ```
 - The script is idempotent; rerun when you need fresh simulator presence or
   sample subscriptions.

@@ -1,10 +1,23 @@
-# Default owner
-* @ikanisa
+# Code ownership for critical areas; adjust handles/teams as needed.
 
-# Protected paths (require explicit review)
-supabase/functions/wa-webhook/ @ikanisa @jeanbosco
-supabase/functions/ @ikanisa @jeanbosco
-supabase/migrations/ @ikanisa @jeanbosco
+# Database & Supabase
+/packages/db/**          @ikanisa
+/supabase/**             @ikanisa
 
-# Policy docs
-ADD_ONLY_RULES.md @ikanisa @jeanbosco
+# Backend services
+/apps/api/**             @ikanisa
+/apps/voice-bridge/**    @ikanisa
+/apps/agent-core/**      @ikanisa
+/apps/sip-webhook/**     @ikanisa
+
+# Admin panel
+/admin-app/**            @ikanisa
+
+# Shared libraries
+/packages/commons/**     @ikanisa
+/packages/shared/**      @ikanisa
+/packages/messaging/**   @ikanisa
+
+# Fallback
+*                        @ikanisa
+

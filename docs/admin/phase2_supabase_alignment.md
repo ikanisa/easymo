@@ -74,10 +74,10 @@ checks, so you do not need a dedicated “admin” JWT.
 Run the new fixture scripts after applying migrations:
 
 ```bash
-supabase db remote commit --file supabase/seed/fixtures/admin_panel_core.sql
+supabase db push --workdir supabase && psql "$DATABASE_URL" -f supabase/seed/fixtures/admin_panel_core.sql
 # or paste the contents into the Supabase SQL editor.
 
-supabase db remote commit --file supabase/seed/fixtures/admin_panel_marketing.sql
+supabase db push --workdir supabase && psql "$DATABASE_URL" -f supabase/seed/fixtures/admin_panel_marketing.sql
 # optional, but recommended for campaigns/vouchers/orders coverage
 ```
 

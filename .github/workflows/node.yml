@@ -80,6 +80,12 @@ jobs:
           pnpm -C apps/voice-bridge build
           pnpm -C apps/sip-webhook build
           pnpm -C apps/api build
+      - name: Test backend apps (if present)
+        run: |
+          pnpm -C apps/agent-core test --if-present
+          pnpm -C apps/voice-bridge test --if-present
+          pnpm -C apps/sip-webhook test --if-present
+          pnpm -C apps/api test --if-present
 
   admin:
     name: Build + Test Admin App

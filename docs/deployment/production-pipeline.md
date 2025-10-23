@@ -84,7 +84,7 @@ Require the workflow check before merge. Attach artifacts (build logs, container
 
 1. Pull the previous container tags (`docker compose pull <service>@<old-tag>`).
 2. Re-run `docker compose up -d`.
-3. If migrations introduced regressions, run `supabase db remote commit --rollback <sha>` or apply the rollback script under `supabase/migrations`.
+3. If migrations introduced regressions, apply an explicit down migration or restore from snapshot; locally test with `supabase db reset` before rolling back in production.
 4. Update runbook with rollback reason and remediation steps.
 
 ## H. Audit Trail

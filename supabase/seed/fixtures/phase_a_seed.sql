@@ -1,5 +1,5 @@
 -- Seed data for Phase A legacy features
--- Run with `supabase db remote commit` or in SQL editor after applying migrations.
+-- Run with `supabase db push --workdir supabase` then apply this seed via psql or Supabase SQL editor.
 BEGIN;
 
 -- Profiles & wallet

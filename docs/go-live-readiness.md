@@ -60,7 +60,7 @@ From `supabase/config.toml`:
 | Supabase auth       | Update Site URL & Redirect URLs directly in the Supabase dashboard (pending access).               |
 | Storage             | List existing buckets and create missing ones (`vouchers`, `kyc-documents`, etc.).                 |
 | Cron jobs           | Supabase CLI v2.51 does not expose `functions schedule list`; confirm reminder/notification schedules via the Supabase dashboard and record the results. |
-| RLS verification    | Run policy audits against the live database (e.g., `supabase db remote commit` or custom queries). |
+| RLS verification    | Run policy audits against the live database (e.g., `supabase db push` then query via limited tokens). |
 
 ## 8. Phase 3 Progress (Edge Functions & Cron)
 
