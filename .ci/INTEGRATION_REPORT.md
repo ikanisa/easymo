@@ -30,8 +30,11 @@
 
 ## Tests & Builds
 - Admin-app build (Next 14): succeeded
-- Admin-app tests (Vitest): 34 passed, 1 test file skipped (3 tests) due to missing optional SQL fixtures; see below
-- Admin-app type-check (scoped to UI/routes): known pre-existing typing issues (React Query API, component prop typings); not introduced by this integration
+- Admin-app tests (Vitest): 34 passed, 1 test file skipped (3 tests) due to missing optional SQL fixtures; guarded in test
+- Admin-app type-check (scoped): now clean after targeted fixes
+- Prisma validate/generate: clean after relation-name updates in packages/db
+- Messaging/Commons/API/Agent-Core builds: green after compatibility/type fixes
+- Monorepo smoke build: introduced as a CI job with reduced concurrency to limit peak disk usage
 
 ## Conflict Resolution Policies Applied
 - Env/Secrets: not applicable in this set
@@ -45,6 +48,9 @@
 - Next build: `transpilePackages` and shared build ensure resolution of `@va/shared`
 
 ## TODOs / Follow-ups
-- Admin UI typing clean-up (React Query typings, component props) — tracked for a dedicated typing/infra pass
-- Optional: remove temporary JSX typing shim if not needed after UI typing cleanup
-
+- Configure branch protection on `main` to require the following CI jobs:
+  - Validate + Build Packages
+  - Build Backend Apps
+  - Build + Test Admin App
+  - Monorepo Build (reduced concurrency)
+- Monitor new CI split on the PR and make any job-level adjustments if runners show resource pressure

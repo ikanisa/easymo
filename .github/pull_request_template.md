@@ -1,18 +1,25 @@
-## Summary
-- _Provide a short description of the change and link to related issues or tickets._
+Title: Merge: Reconcile active branches into main
 
-## Testing
-- [ ] `npm run lint`
-- [ ] `npm run test`
-- [ ] `npm run build`
-- [ ] Other (add commands run)
+Please review the attached Integration Report for full context:
 
-## Deployment
-- [ ] Preview deployment link added in PR description
-- [ ] I confirm that any new environment variables are documented and populated in Vercel/Supabase dashboards
+- Report: .ci/INTEGRATION_REPORT.md
+- Key areas:
+  - Branches rebased/merged and conflict policies applied
+  - Dependency actions and shared package builds
+  - Admin-app typecheck/build/test results
+  - Prisma validation status
+  - CI jobs and required checks
 
-## Additional Context
-- _Call out migrations, feature flags, rollouts, or follow-up tasks._
+Acceptance checklist
+- [ ] CI green for jobs:
+  - [ ] Validate + Build Packages
+  - [ ] Build Backend Apps
+  - [ ] Build + Test Admin App
+  - [ ] Monorepo Build (reduced concurrency)
+- [ ] Prisma validate passes
+- [ ] Lockfiles and package.json in sync (no manual edits)
+- [ ] No force pushes to `main`
 
----
-Please follow [Conventional Commits](https://www.conventionalcommits.org/) for branch names and commit messages.
+Post-merge follow-ups
+- Enable branch protection on `main` to require the four jobs above.
+- Monitor CI for resource usage and adjust concurrency if needed.
