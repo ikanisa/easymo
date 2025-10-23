@@ -17,6 +17,14 @@ declare module '@easymo/commons' {
       events: ApiEndpointDefinition;
       session: ApiEndpointDefinition;
     }>;
+    waCalls: ApiControllerDefinition<{
+      webhook: ApiEndpointDefinition;
+      events: ApiEndpointDefinition;
+    }>;
+    whatsappCalls: ApiControllerDefinition<{
+      webhook: ApiEndpointDefinition;
+      events: ApiEndpointDefinition;
+    }>;
     whatsappAgents: ApiControllerDefinition<{
       start: ApiEndpointDefinition;
       sendMessage: ApiEndpointDefinition;

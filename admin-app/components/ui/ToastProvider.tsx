@@ -10,7 +10,7 @@ import {
 import styles from "./ToastProvider.module.css";
 import { Button } from "@/components/ui/Button";
 
-export type ToastVariant = "info" | "success" | "error";
+export type ToastVariant = "info" | "success" | "warning" | "error";
 
 type ToastOptions = {
   variant?: ToastVariant;
@@ -35,7 +35,7 @@ interface ToastContextValue {
 
 const ToastContext = createContext<ToastContextValue | undefined>(undefined);
 
-export function ToastProvider({ children }: { children: React.ReactNode }) {
+export function ToastProvider({ children }: { children?: any }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
 
   const dismissToast = useCallback((id: string) => {

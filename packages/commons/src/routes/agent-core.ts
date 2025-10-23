@@ -111,3 +111,67 @@ export const getAgentCoreEndpointPath = <
   const segment = getAgentCoreEndpointSegment(controller, endpoint);
   return buildEndpointPath(base, segment);
 };
+
+/**
+ * @deprecated Prefer {@link getAgentCoreControllerBasePath}.
+ */
+export const agentCoreControllerBasePath: string = getAgentCoreControllerBasePath(
+  "chat" as AgentCoreControllerKey,
+);
+
+/**
+ * @deprecated Prefer {@link getAgentCoreEndpointSegment}.
+ */
+export const getAgentCoreRouteSegment = ((
+  a: unknown,
+  b?: unknown,
+) => {
+  if (typeof b === "undefined") {
+    return getAgentCoreEndpointSegment(
+      "chat" as AgentCoreControllerKey,
+      a as AgentCoreEndpointKey<AgentCoreControllerKey>,
+    );
+  }
+  return getAgentCoreEndpointSegment(
+    a as AgentCoreControllerKey,
+    b as AgentCoreEndpointKey<AgentCoreControllerKey>,
+  );
+}) as unknown as (...args: any[]) => string;
+
+/**
+ * @deprecated Prefer {@link getAgentCoreEndpointMethod}.
+ */
+export const getAgentCoreRouteMethod = ((
+  a: unknown,
+  b?: unknown,
+) => {
+  if (typeof b === "undefined") {
+    return getAgentCoreEndpointMethod(
+      "chat" as AgentCoreControllerKey,
+      a as AgentCoreEndpointKey<AgentCoreControllerKey>,
+    );
+  }
+  return getAgentCoreEndpointMethod(
+    a as AgentCoreControllerKey,
+    b as AgentCoreEndpointKey<AgentCoreControllerKey>,
+  );
+}) as unknown as (...args: any[]) => EndpointDefinition["method"];
+
+/**
+ * @deprecated Prefer {@link getAgentCoreEndpointPath}.
+ */
+export const getAgentCoreRoutePath = ((
+  a: unknown,
+  b?: unknown,
+) => {
+  if (typeof b === "undefined") {
+    return getAgentCoreEndpointPath(
+      "chat" as AgentCoreControllerKey,
+      a as AgentCoreEndpointKey<AgentCoreControllerKey>,
+    );
+  }
+  return getAgentCoreEndpointPath(
+    a as AgentCoreControllerKey,
+    b as AgentCoreEndpointKey<AgentCoreControllerKey>,
+  );
+}) as unknown as (...args: any[]) => string;

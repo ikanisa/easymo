@@ -5,7 +5,6 @@
     "app/ai/**/*",
     "components/layout/**/*",
     "lib/routes/**/*",
-    "types/**/*",
     "next-env.d.ts"
   ],
   "exclude": [

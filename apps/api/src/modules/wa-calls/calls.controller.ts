@@ -3,6 +3,7 @@ import { getApiControllerBasePath, getApiEndpointSegment } from '@easymo/commons
 import { WaCallsService } from './calls.service';
 import { WaWebhookGuard } from './common/guards/wa-webhook.guard';
 import { parseWaCallEvent } from './common/dto/wa-calling.dto';
+import type { WaCallEvent } from '@va/shared';
 
 @Controller(getApiControllerBasePath('whatsappCalls'))
 export class WaCallsController {

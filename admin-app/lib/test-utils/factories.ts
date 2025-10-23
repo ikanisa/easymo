@@ -359,16 +359,16 @@ export function createVoucher(overrides: Partial<Voucher> = {}): Voucher {
   return {
     id: "voucher-1",
     userId: "user-1",
+    msisdn: "+250780000000",
     stationScope: null,
     campaignId: null,
     amount: 0,
     currency: "RWF",
     code: "ABCDE",
-    qrUrl: null,
-    pngUrl: null,
     status: "issued",
     issuedAt: new Date().toISOString(),
     redeemedAt: null,
+    expiresAt: null,
     ...overrides,
   };
 }

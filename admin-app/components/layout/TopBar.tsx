@@ -47,9 +47,8 @@ export function TopBar(
       };
     }
 
-    const degraded = Object.values(integrationStatusQuery.data).filter(
-      (entry) => entry.status !== "green",
-    ).length;
+    const dataMap = integrationStatusQuery.data as unknown as import("@/lib/queries/integrations").IntegrationStatusMap;
+    const degraded = Object.values(dataMap ?? {}).filter((entry) => (entry as any).status !== "green").length;
 
     return {
       badgeValue: String(degraded),

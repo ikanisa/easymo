@@ -5,6 +5,7 @@ import {
   useQuery,
   UseQueryOptions,
   useQueryClient,
+  type UseQueryResult,
 } from "@tanstack/react-query";
 import { useCallback } from "react";
 
@@ -85,9 +86,9 @@ export async function fetchIntegrationStatus(): Promise<IntegrationStatusMap> {
 }
 
 export function useIntegrationStatusQuery(
-  options?: UseQueryOptions<IntegrationStatusMap>,
-) {
-  return useQuery({
+  options?: Omit<UseQueryOptions<IntegrationStatusMap, Error, IntegrationStatusMap, QueryKey>, "queryKey" | "queryFn">,
+): UseQueryResult<IntegrationStatusMap, Error> {
+  return useQuery<IntegrationStatusMap, Error, IntegrationStatusMap, QueryKey>({
     queryKey: integrationStatusKey,
     queryFn: fetchIntegrationStatus,
     staleTime: 60_000,

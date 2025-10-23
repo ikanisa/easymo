@@ -3,6 +3,6 @@ export {
   waCallEventSchema,
   waCallStatusSchema,
   waCallStatusValues,
-} from '@va/shared/wa-calls';
+} from '@va/shared';
 
-export type { WaCallEvent, WaCallStatus } from '@va/shared/wa-calls';
+export type { WaCallEvent, WaCallStatus } from '@va/shared';

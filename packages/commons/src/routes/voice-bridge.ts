@@ -74,7 +74,9 @@ export const voiceBridgeRoutes = Object.freeze({
       voiceBridgeHttpRoutes.health.basePath,
       voiceBridgeHttpRoutes.health.endpoints.status.segment,
     ),
-    requiredScopes: [...(voiceBridgeHttpRoutes.health.endpoints.status.requiredScopes ?? [])],
+    requiredScopes: [
+      ...(((voiceBridgeHttpRoutes.health.endpoints.status as unknown) as EndpointDefinition).requiredScopes ?? []),
+    ],
   },
   analyticsLiveCalls: {
     kind: "http" as const,
@@ -83,7 +85,9 @@ export const voiceBridgeRoutes = Object.freeze({
       voiceBridgeHttpRoutes.analytics.basePath,
       voiceBridgeHttpRoutes.analytics.endpoints.liveCalls.segment,
     ),
-    requiredScopes: [...(voiceBridgeHttpRoutes.analytics.endpoints.liveCalls.requiredScopes ?? [])],
+    requiredScopes: [
+      ...(((voiceBridgeHttpRoutes.analytics.endpoints.liveCalls as unknown) as EndpointDefinition).requiredScopes ?? []),
+    ],
   },
   outboundCalls: {
     kind: "http" as const,
@@ -92,7 +96,9 @@ export const voiceBridgeRoutes = Object.freeze({
       voiceBridgeHttpRoutes.calls.basePath,
       voiceBridgeHttpRoutes.calls.endpoints.outbound.segment,
     ),
-    requiredScopes: [...(voiceBridgeHttpRoutes.calls.endpoints.outbound.requiredScopes ?? [])],
+    requiredScopes: [
+      ...(((voiceBridgeHttpRoutes.calls.endpoints.outbound as unknown) as EndpointDefinition).requiredScopes ?? []),
+    ],
   },
   mediaStream: {
     kind: "websocket" as const,
