@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { getSupabaseClient } from "@/lib/supabase-client";
+import { useToast } from "@/components/ui/ToastProvider";
 
 export default function PaymentsPage() {
   const [amount, setAmount] = useState(1000);
@@ -11,6 +12,7 @@ export default function PaymentsPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [templateName, setTemplateName] = useState("");
+  const { pushToast } = useToast();
 
   async function onInitiate(e: React.FormEvent) {
     e.preventDefault();
@@ -82,7 +84,7 @@ export default function PaymentsPage() {
                       : { to: phone, qr_url: qrUrl },
                   });
                   if (error) throw error;
-                  alert("Sent QR via WhatsApp");
+                  pushToast("Sent QR via WhatsApp", "success");
                 } catch (err: any) {
                   setError(err?.message ?? String(err));
                 }
