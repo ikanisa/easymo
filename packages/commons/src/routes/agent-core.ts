@@ -1,43 +1,44 @@
 import {
   buildEndpointPath,
-  defineBackgroundTriggers,
   defineHttpControllers,
   type ControllerDefinition,
   type EndpointDefinition,
 } from "./utils";
 
-const controllerDefinitions = defineHttpControllers({
+const agentCoreRouteDefinitions = defineHttpControllers({
   chat: {
     basePath: "" as const,
+    description: "Chat interface used by frontline agents",
     endpoints: {
-      respond: { method: "POST" as const, segment: "respond" as const },
-    },
-  },
-  health: {
-    basePath: "health" as const,
-    endpoints: {
-      status: { method: "GET" as const, segment: "" as const },
+      respond: { method: "POST" as const, segment: "respond" as const, description: "Generate an agent reply" },
     },
   },
   ai: {
     basePath: "ai" as const,
+    description: "AI workflows exposed for orchestrators",
     endpoints: {
-      brokerOrchestrate: { method: "POST" as const, segment: "broker/orchestrate" as const },
-      settlementRun: { method: "POST" as const, segment: "settlement/run" as const },
-      attributionRun: { method: "POST" as const, segment: "attribution/run" as const },
-      reconciliationRun: { method: "POST" as const, segment: "reconciliation/run" as const },
-      supportRun: { method: "POST" as const, segment: "support/run" as const },
+      brokerOrchestrate: {
+        method: "POST" as const,
+        segment: "broker/orchestrate" as const,
+        description: "Kick off the broker orchestrator flow",
+      },
+      settlement: { method: "POST" as const, segment: "settlement/run" as const },
+      attribution: { method: "POST" as const, segment: "attribution/run" as const },
+      reconciliation: { method: "POST" as const, segment: "reconciliation/run" as const },
+      support: { method: "POST" as const, segment: "support/run" as const },
     },
   },
-  aiTasks: {
+  tasks: {
     basePath: "ai/tasks" as const,
+    description: "Task scheduler for deferred agent actions",
     endpoints: {
       schedule: { method: "POST" as const, segment: "schedule" as const },
       runDue: { method: "POST" as const, segment: "run-due" as const },
     },
   },
-  agentAdmin: {
+  admin: {
     basePath: "admin/agents" as const,
+    description: "Administrative endpoints for agent management",
     endpoints: {
       list: { method: "GET" as const, segment: "" as const },
       create: { method: "POST" as const, segment: "" as const },
@@ -45,7 +46,7 @@ const controllerDefinitions = defineHttpControllers({
       update: { method: "PATCH" as const, segment: ":id" as const },
       listRevisions: { method: "GET" as const, segment: ":id/revisions" as const },
       createRevision: { method: "POST" as const, segment: ":id/revisions" as const },
-      publish: { method: "POST" as const, segment: ":id/publish" as const },
+      publishRevision: { method: "POST" as const, segment: ":id/publish" as const },
       listDocuments: { method: "GET" as const, segment: ":id/documents" as const },
       createDocument: { method: "POST" as const, segment: ":id/documents" as const },
       listTasks: { method: "GET" as const, segment: ":id/tasks" as const },
@@ -54,6 +55,7 @@ const controllerDefinitions = defineHttpControllers({
   },
   tools: {
     basePath: "tools" as const,
+    description: "Operational tooling for live agents",
     endpoints: {
       listLeads: { method: "GET" as const, segment: "leads" as const },
       fetchLead: { method: "POST" as const, segment: "fetch-lead" as const },
@@ -65,14 +67,20 @@ const controllerDefinitions = defineHttpControllers({
       warmTransfer: { method: "POST" as const, segment: "warm-transfer" as const },
     },
   },
+  health: {
+    basePath: "health" as const,
+    endpoints: {
+      status: { method: "GET" as const, segment: "" as const },
+    },
+  },
 } as const satisfies Record<string, ControllerDefinition<Record<string, EndpointDefinition>>>);
 
-export type AgentCoreRoutes = typeof controllerDefinitions;
+export type AgentCoreRoutes = typeof agentCoreRouteDefinitions;
 export type AgentCoreControllerKey = keyof AgentCoreRoutes;
 export type AgentCoreEndpointKey<Controller extends AgentCoreControllerKey> = keyof AgentCoreRoutes[Controller]["endpoints"];
 export type AgentCoreRouteKey = AgentCoreEndpointKey<"chat">;
 
-export const agentCoreRoutes = controllerDefinitions;
+export const agentCoreRoutes = agentCoreRouteDefinitions;
 
 export const getAgentCoreControllerBasePath = <Controller extends AgentCoreControllerKey>(controller: Controller) =>
   agentCoreRoutes[controller].basePath;
@@ -81,18 +89,18 @@ export const getAgentCoreEndpointSegment = <
   Controller extends AgentCoreControllerKey,
   Endpoint extends AgentCoreEndpointKey<Controller>,
 >(controller: Controller, endpoint: Endpoint) => {
-  const controllerRoutes = agentCoreRoutes[controller] as ControllerDefinition<Record<string, EndpointDefinition>>;
-  const endpoints = controllerRoutes.endpoints as Record<string, EndpointDefinition>;
-  return endpoints[endpoint as string].segment;
+  const controllerRoutes = agentCoreRoutes[controller] as AgentCoreRoutes[Controller];
+  const endpoints = controllerRoutes.endpoints as Record<AgentCoreEndpointKey<Controller>, EndpointDefinition>;
+  return endpoints[endpoint].segment;
 };
 
 export const getAgentCoreEndpointMethod = <
   Controller extends AgentCoreControllerKey,
   Endpoint extends AgentCoreEndpointKey<Controller>,
 >(controller: Controller, endpoint: Endpoint) => {
-  const controllerRoutes = agentCoreRoutes[controller] as ControllerDefinition<Record<string, EndpointDefinition>>;
-  const endpoints = controllerRoutes.endpoints as Record<string, EndpointDefinition>;
-  return endpoints[endpoint as string].method;
+  const controllerRoutes = agentCoreRoutes[controller] as AgentCoreRoutes[Controller];
+  const endpoints = controllerRoutes.endpoints as Record<AgentCoreEndpointKey<Controller>, EndpointDefinition>;
+  return endpoints[endpoint].method;
 };
 
 export const getAgentCoreEndpointPath = <
@@ -103,21 +111,3 @@ export const getAgentCoreEndpointPath = <
   const segment = getAgentCoreEndpointSegment(controller, endpoint);
   return buildEndpointPath(base, segment);
 };
-
-export const agentCoreBackgroundTriggers = defineBackgroundTriggers({
-  /**
-   * Tasks are executed via explicit HTTP calls. This placeholder exists to document
-   * that there is no dedicated background trigger beyond the HTTP surface.
-   */
-} as const);
-
-export const agentCoreControllerBasePath = "" as const;
-
-export const getAgentCoreRouteSegment = <Key extends AgentCoreEndpointKey<"chat">>(key: Key) =>
-  getAgentCoreEndpointSegment("chat", key);
-
-export const getAgentCoreRouteMethod = <Key extends AgentCoreEndpointKey<"chat">>(key: Key) =>
-  getAgentCoreEndpointMethod("chat", key);
-
-export const getAgentCoreRoutePath = <Key extends AgentCoreEndpointKey<"chat">>(key: Key) =>
-  buildEndpointPath(agentCoreControllerBasePath, controllerDefinitions.chat.endpoints[key].segment);

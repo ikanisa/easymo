@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { getApiEndpointPath } from '@easymo/commons';
 import twilio from 'twilio';
 import { env } from '../../common/env';
 
@@ -14,9 +15,11 @@ export class TwilioService {
   }
 
   async warmTransfer(callSid: string, queue: string) {
+    const warmTransferUrl = new URL(getApiEndpointPath('twiml', 'warmTransfer'), env.baseUrl);
+    warmTransferUrl.searchParams.set('queue', queue);
     return this.client.calls(callSid).update({
       method: 'POST',
-      url: `${env.baseUrl}/twiml/warm-transfer?queue=${encodeURIComponent(queue)}`,
+      url: warmTransferUrl.toString(),
     });
   }
 }

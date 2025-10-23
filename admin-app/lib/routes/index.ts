@@ -1,14 +1,43 @@
+import {
+  adminRouteDefinitions,
+  adminRoutePaths,
+  adminRouteSegments,
+  getAdminRoutePath as baseGetAdminRoutePath,
+  isAdminRoutePath,
+  type AdminRouteKey,
+  type AdminRouteParams,
+  type AdminRoutePath,
+  type AdminRouteRecord,
+  type AdminRouteSegment,
+  type NavigableAdminRouteKey,
+  type NavigableAdminRoutePath,
+} from "@va/shared";
+import type { Route } from "next";
+
+export const getAdminRoutePath = <Key extends AdminRouteKey>(
+  key: Key,
+  ...params: AdminRouteParams<Key> extends Record<string, never>
+    ? []
+    : [AdminRouteParams<Key>]
+): Route => {
+  if (params.length === 0) {
+    return baseGetAdminRoutePath(key) as Route;
+  }
+
+  return baseGetAdminRoutePath(key, params[0]) as Route;
+};
+
+export type AdminNavigableRoute = Extract<NavigableAdminRoutePath, Route>;
+
+export const toAdminRoute = (path: NavigableAdminRoutePath): AdminNavigableRoute =>
+  path as AdminNavigableRoute;
+
 export {
   adminRouteDefinitions,
   adminRoutePaths,
   adminRouteSegments,
-  adminApiRouteDefinitions,
-  adminApiRoutePaths,
-  getAdminRoutePath,
-  getAdminApiRoutePath,
   isAdminRoutePath,
-  isAdminApiRoutePath,
-} from "@va/shared";
+};
 
 export type {
   AdminRouteKey,
@@ -18,12 +47,4 @@ export type {
   AdminRouteSegment,
   NavigableAdminRouteKey,
   NavigableAdminRoutePath,
-  AdminApiRouteKey,
-  AdminApiRouteParams,
-  AdminApiRoutePath,
-  AdminApiRouteRecord,
-  NavigableAdminApiRouteKey,
-  NavigableAdminApiRoutePath,
-} from "@va/shared";
-
-export { ADMIN_API_BASE_PATH, getAdminApiPath } from "./api";
+};

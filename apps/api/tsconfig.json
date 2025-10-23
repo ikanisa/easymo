@@ -7,6 +7,11 @@
     "moduleResolution": "Node",
     "target": "ES2022",
     "lib": ["ES2022"],
+    "baseUrl": ".",
+    "paths": {
+      "@easymo/commons": ["./types/easymo-commons"],
+      "@easymo/commons/*": ["./types/easymo-commons"]
+    },
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
     "experimentalDecorators": true,

@@ -1,6 +1,7 @@
 import { Controller, Get } from "@nestjs/common";
+import { getAgentCoreControllerBasePath } from "@easymo/commons";
 
-@Controller("health")
+@Controller(getAgentCoreControllerBasePath("health"))
 export class HealthController {
   @Get()
   ping() {

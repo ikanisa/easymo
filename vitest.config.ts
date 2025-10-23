@@ -9,6 +9,7 @@ export default defineConfig({
     alias: {
       '@': resolve(rootDir, 'admin-app'),
       '@va/shared': resolve(rootDir, 'packages/shared/src/index.ts'),
+      'server-only': resolve(rootDir, 'tests/stubs/server-only.ts'),
     },
   },
   esbuild: {
@@ -20,7 +21,6 @@ export default defineConfig({
       'src/**/*.{test,spec}.{ts,tsx}',
       'tests/deeplink/**/*.{test,spec}.{ts,tsx}',
       'tests/api/**/*.{test,spec}.{ts,tsx}',
-      'admin-app/tests/**/*.{test,spec}.{ts,tsx}',
     ],
     environment: 'jsdom',
     setupFiles: ['admin-app/tests/setupTests.ts'],

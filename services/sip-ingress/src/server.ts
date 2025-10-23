@@ -5,6 +5,7 @@ import { randomUUID } from "crypto";
 import { KafkaFactory, KafkaProducer, IdempotencyStore } from "@easymo/messaging";
 import { settings } from "./config";
 import { logger } from "./logger";
+import { getSipIngressRoutePath } from "@easymo/commons";
 
 const app = express();
 app.use(express.json({ limit: "1mb" }));
@@ -22,7 +23,7 @@ const SipEventSchema = z.object({
   idempotencyKey: z.string().optional(),
 });
 
-app.post("/sip/events", async (req, res) => {
+app.post(getSipIngressRoutePath("events"), async (req, res) => {
   try {
     const body = SipEventSchema.parse(req.body);
     const idempotencyKey = body.idempotencyKey ?? `${body.callId}:${body.event}:${body.timestamp}`;
@@ -59,7 +60,7 @@ app.post("/sip/events", async (req, res) => {
   }
 });
 
-app.get("/health", (_req, res) => {
+app.get(getSipIngressRoutePath("health"), (_req, res) => {
   res.json({ status: "ok" });
 });
 

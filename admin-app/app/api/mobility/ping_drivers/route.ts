@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
   const driverTargets = (Array.isArray(driver_ids) ? driver_ids : driver_ids ? [driver_ids] : [])
     .map((value) => String(value).trim())
     .filter((value) => value.length > 0);
-  const origin = process.env.NEXT_PUBLIC_APP_URL ?? new URL(req.url).origin;
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? new URL(req.url).origin;
 
   const startedAt = Date.now();
   let queued = 0;
@@ -39,14 +39,50 @@ export async function POST(req: NextRequest) {
     driverTargets.map(async (to) => {
       const fanOutStartedAt = Date.now();
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL ?? ""}/api/wa/outbound/messages`, {
+        const res = await fetch(`${baseUrl}/api/wa/outbound/messages`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ to, template, text, type: "mobility_invite" }),
         });
-        if (res.ok) queued++;
+
+        if (res.ok) {
+          queued++;
+          return;
+        }
+
+        const failure: FailureDetail = {
+          to,
+          error: `http_${res.status}`,
+          status: res.status,
+          body: await readErrorSnippet(res),
+          duration_ms: Date.now() - fanOutStartedAt,
+        };
+        failures.push(failure);
+        logStructured({
+          event: "mobility.ping_drivers.forward_failed",
+          status: "error",
+          ride_id,
+          reqId,
+          target: to,
+          details: failure,
+        });
       } catch (error) {
         console.error("Failed to queue driver ping", { to, error });
+        const failure: FailureDetail = {
+          to,
+          error: "network_error",
+          body: error instanceof Error ? error.message : String(error),
+          duration_ms: Date.now() - fanOutStartedAt,
+        };
+        failures.push(failure);
+        logStructured({
+          event: "mobility.ping_drivers.forward_failed",
+          status: "error",
+          ride_id,
+          reqId,
+          target: to,
+          details: failure,
+        });
       }
     })
   );

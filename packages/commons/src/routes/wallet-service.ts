@@ -1,19 +1,23 @@
 import {
   buildEndpointPath,
-  defineBackgroundTriggers,
   defineHttpControllers,
   type ControllerDefinition,
   type EndpointDefinition,
 } from "./utils";
 
-const controllerDefinitions = defineHttpControllers({
+const walletServiceRouteDefinitions = defineHttpControllers({
   wallet: {
     basePath: "wallet" as const,
+    description: "Wallet transfers and provisioning",
     endpoints: {
-      transfer: { method: "POST" as const, segment: "transfer" as const },
-      accountSummary: { method: "GET" as const, segment: "accounts/:id" as const },
+      transfer: {
+        method: "POST" as const,
+        segment: "transfer" as const,
+        notes: "Feature flag wallet.service",
+      },
+      getAccount: { method: "GET" as const, segment: "accounts/:id" as const, notes: "Feature flag wallet.service" },
       platformProvision: { method: "POST" as const, segment: "platform/provision" as const },
-      subscribe: { method: "POST" as const, segment: "subscribe" as const },
+      subscribe: { method: "POST" as const, segment: "subscribe" as const, notes: "Feature flag wallet.service" },
     },
   },
   fx: {
@@ -30,11 +34,12 @@ const controllerDefinitions = defineHttpControllers({
   },
 } as const satisfies Record<string, ControllerDefinition<Record<string, EndpointDefinition>>>);
 
-export type WalletServiceRoutes = typeof controllerDefinitions;
+export type WalletServiceRoutes = typeof walletServiceRouteDefinitions;
 export type WalletServiceControllerKey = keyof WalletServiceRoutes;
-export type WalletServiceEndpointKey<Controller extends WalletServiceControllerKey> = keyof WalletServiceRoutes[Controller]["endpoints"];
+export type WalletServiceEndpointKey<Controller extends WalletServiceControllerKey> =
+  keyof WalletServiceRoutes[Controller]["endpoints"];
 
-export const walletServiceRoutes = controllerDefinitions;
+export const walletServiceRoutes = walletServiceRouteDefinitions;
 
 export const getWalletServiceControllerBasePath = <Controller extends WalletServiceControllerKey>(controller: Controller) =>
   walletServiceRoutes[controller].basePath;
@@ -43,18 +48,18 @@ export const getWalletServiceEndpointSegment = <
   Controller extends WalletServiceControllerKey,
   Endpoint extends WalletServiceEndpointKey<Controller>,
 >(controller: Controller, endpoint: Endpoint) => {
-  const controllerRoutes = walletServiceRoutes[controller] as ControllerDefinition<Record<string, EndpointDefinition>>;
-  const endpoints = controllerRoutes.endpoints as Record<string, EndpointDefinition>;
-  return endpoints[endpoint as string].segment;
+  const controllerRoutes = walletServiceRoutes[controller] as WalletServiceRoutes[Controller];
+  const endpoints = controllerRoutes.endpoints as Record<WalletServiceEndpointKey<Controller>, EndpointDefinition>;
+  return endpoints[endpoint].segment;
 };
 
 export const getWalletServiceEndpointMethod = <
   Controller extends WalletServiceControllerKey,
   Endpoint extends WalletServiceEndpointKey<Controller>,
 >(controller: Controller, endpoint: Endpoint) => {
-  const controllerRoutes = walletServiceRoutes[controller] as ControllerDefinition<Record<string, EndpointDefinition>>;
-  const endpoints = controllerRoutes.endpoints as Record<string, EndpointDefinition>;
-  return endpoints[endpoint as string].method;
+  const controllerRoutes = walletServiceRoutes[controller] as WalletServiceRoutes[Controller];
+  const endpoints = controllerRoutes.endpoints as Record<WalletServiceEndpointKey<Controller>, EndpointDefinition>;
+  return endpoints[endpoint].method;
 };
 
 export const getWalletServiceEndpointPath = <
@@ -65,10 +70,3 @@ export const getWalletServiceEndpointPath = <
   const segment = getWalletServiceEndpointSegment(controller, endpoint);
   return buildEndpointPath(base, segment);
 };
-
-export const walletServiceBackgroundTriggers = defineBackgroundTriggers({
-  /**
-   * Wallet provisioning helpers currently expose only HTTP interfaces. Historical OpenAPI
-   * entries such as `/wallet/accounts/lookup` are not implemented and therefore omitted.
-   */
-} as const);

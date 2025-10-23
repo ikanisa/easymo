@@ -1,4 +1,4 @@
-import express from "express";
+import express, { type RequestHandler } from "express";
 import http from "http";
 import WebSocket, { WebSocketServer } from "ws";
 import pinoHttp from "pino-http";
@@ -14,6 +14,8 @@ import {
   expressRequestContext,
   expressServiceAuth,
   getVoiceBridgeRoutePath,
+  getVoiceBridgeRouteRequiredScopes,
+  type VoiceBridgeRouteKey,
 } from "@easymo/commons";
 
 export const app = express();
@@ -33,8 +35,13 @@ if (settings.rateLimit.redisUrl) {
   );
 }
 
-const requireAuth = (scopes: string[]) =>
-  expressServiceAuth({ audience: settings.auth.audience, requiredScopes: scopes });
+const requireAuthForRoute = (route: VoiceBridgeRouteKey): RequestHandler => {
+  const scopes = getVoiceBridgeRouteRequiredScopes(route);
+  if (scopes.length === 0) {
+    return (_req, _res, next) => next();
+  }
+  return expressServiceAuth({ audience: settings.auth.audience, requiredScopes: [...scopes] });
+};
 
 const twilioClient = twilio(settings.twilio.accountSid, settings.twilio.authToken);
 
@@ -42,18 +49,22 @@ app.get(getVoiceBridgeRoutePath("health"), (_req, res) => {
   res.json({ status: "ok" });
 });
 
-app.get(getVoiceBridgeRoutePath("analyticsLiveCalls"), requireAuth(["voice:read"]), (_req, res) => {
-  res.json(liveCallRegistry.snapshot());
-});
+app.get(
+  getVoiceBridgeRoutePath("analyticsLiveCalls"),
+  requireAuthForRoute("analyticsLiveCalls"),
+  (_req, res) => {
+    res.json(liveCallRegistry.snapshot());
+  },
+);
 
 app.post(
-  getVoiceBridgeRoutePath("outboundCalls"),
-  requireAuth(["voice:outbound.write"]),
+  getVoiceBridgeRoutePath("callsOutbound"),
+  requireAuthForRoute("callsOutbound"),
   async (req, res) => {
     const { to, tenantId, contactName, region, profile } = req.body ?? {};
     if (!to) {
       return res.status(400).json({ error: "Missing 'to' number" });
-    }
+  }
 
   try {
     const streamUrl = new URL(settings.twilio.mediaStreamWss);
@@ -126,7 +137,7 @@ app.post(
 
 if (process.env.NODE_ENV !== "test") {
   const server = http.createServer(app);
-  const wss = new WebSocketServer({ server, path: getVoiceBridgeRoutePath("twilioMediaStream") });
+  const wss = new WebSocketServer({ server, path: getVoiceBridgeRoutePath("mediaStream") });
 
   const kafkaFactory = new KafkaFactory({
     clientId: settings.kafka.clientId,

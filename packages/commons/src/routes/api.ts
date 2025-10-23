@@ -15,6 +15,13 @@ const apiRouteDefinitions = defineHttpControllers({
       session: { method: "POST" as const, segment: "session" as const },
     },
   },
+  waCalls: {
+    basePath: "wa" as const,
+    endpoints: {
+      webhook: { method: "GET" as const, segment: "webhook" as const },
+      events: { method: "POST" as const, segment: "events" as const },
+    },
+  },
   whatsappAgents: {
     basePath: "wa/agents" as const,
     endpoints: {
@@ -23,22 +30,11 @@ const apiRouteDefinitions = defineHttpControllers({
       customerMessage: { method: "POST" as const, segment: ":threadId/customer" as const },
     },
   },
-  dialer: {
-    basePath: "dialer" as const,
+  whatsappCalls: {
+    basePath: "wa" as const,
     endpoints: {
-      outbound: { method: "POST" as const, segment: "outbound" as const },
-    },
-  },
-  handoff: {
-    basePath: "handoff" as const,
-    endpoints: {
-      warm: { method: "POST" as const, segment: "warm" as const },
-    },
-  },
-  whatsapp: {
-    basePath: "whatsapp" as const,
-    endpoints: {
-      webhook: { method: "POST" as const, segment: "webhook" as const },
+      webhook: { method: "GET" as const, segment: "webhook" as const },
+      events: { method: "POST" as const, segment: "events" as const },
     },
   },
   twilio: {

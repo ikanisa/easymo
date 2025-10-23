@@ -1,16 +1,15 @@
 import {
   buildEndpointPath,
-  defineBackgroundTriggers,
   defineHttpControllers,
   type ControllerDefinition,
   type EndpointDefinition,
 } from "./utils";
 
-const controllerDefinitions = defineHttpControllers({
+const rankingServiceRouteDefinitions = defineHttpControllers({
   ranking: {
     basePath: "ranking" as const,
     endpoints: {
-      vendors: { method: "GET" as const, segment: "vendors" as const },
+      vendors: { method: "GET" as const, segment: "vendors" as const, notes: "Feature flag marketplace.ranking" },
     },
   },
   health: {
@@ -21,11 +20,12 @@ const controllerDefinitions = defineHttpControllers({
   },
 } as const satisfies Record<string, ControllerDefinition<Record<string, EndpointDefinition>>>);
 
-export type RankingServiceRoutes = typeof controllerDefinitions;
+export type RankingServiceRoutes = typeof rankingServiceRouteDefinitions;
 export type RankingServiceControllerKey = keyof RankingServiceRoutes;
-export type RankingServiceEndpointKey<Controller extends RankingServiceControllerKey> = keyof RankingServiceRoutes[Controller]["endpoints"];
+export type RankingServiceEndpointKey<Controller extends RankingServiceControllerKey> =
+  keyof RankingServiceRoutes[Controller]["endpoints"];
 
-export const rankingServiceRoutes = controllerDefinitions;
+export const rankingServiceRoutes = rankingServiceRouteDefinitions;
 
 export const getRankingServiceControllerBasePath = <Controller extends RankingServiceControllerKey>(controller: Controller) =>
   rankingServiceRoutes[controller].basePath;
@@ -34,18 +34,18 @@ export const getRankingServiceEndpointSegment = <
   Controller extends RankingServiceControllerKey,
   Endpoint extends RankingServiceEndpointKey<Controller>,
 >(controller: Controller, endpoint: Endpoint) => {
-  const controllerRoutes = rankingServiceRoutes[controller] as ControllerDefinition<Record<string, EndpointDefinition>>;
-  const endpoints = controllerRoutes.endpoints as Record<string, EndpointDefinition>;
-  return endpoints[endpoint as string].segment;
+  const controllerRoutes = rankingServiceRoutes[controller] as RankingServiceRoutes[Controller];
+  const endpoints = controllerRoutes.endpoints as Record<RankingServiceEndpointKey<Controller>, EndpointDefinition>;
+  return endpoints[endpoint].segment;
 };
 
 export const getRankingServiceEndpointMethod = <
   Controller extends RankingServiceControllerKey,
   Endpoint extends RankingServiceEndpointKey<Controller>,
 >(controller: Controller, endpoint: Endpoint) => {
-  const controllerRoutes = rankingServiceRoutes[controller] as ControllerDefinition<Record<string, EndpointDefinition>>;
-  const endpoints = controllerRoutes.endpoints as Record<string, EndpointDefinition>;
-  return endpoints[endpoint as string].method;
+  const controllerRoutes = rankingServiceRoutes[controller] as RankingServiceRoutes[Controller];
+  const endpoints = controllerRoutes.endpoints as Record<RankingServiceEndpointKey<Controller>, EndpointDefinition>;
+  return endpoints[endpoint].method;
 };
 
 export const getRankingServiceEndpointPath = <
@@ -56,5 +56,3 @@ export const getRankingServiceEndpointPath = <
   const segment = getRankingServiceEndpointSegment(controller, endpoint);
   return buildEndpointPath(base, segment);
 };
-
-export const rankingServiceBackgroundTriggers = defineBackgroundTriggers({} as const);

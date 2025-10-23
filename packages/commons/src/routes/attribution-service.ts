@@ -1,18 +1,30 @@
 import {
   buildEndpointPath,
-  defineBackgroundTriggers,
   defineHttpControllers,
   type ControllerDefinition,
   type EndpointDefinition,
 } from "./utils";
 
-const controllerDefinitions = defineHttpControllers({
+const attributionServiceRouteDefinitions = defineHttpControllers({
   attribution: {
     basePath: "attribution" as const,
+    description: "Attribution workflows secured by service-to-service auth",
     endpoints: {
-      evaluate: { method: "POST" as const, segment: "evaluate" as const },
-      evidence: { method: "POST" as const, segment: "evidence" as const },
-      disputes: { method: "POST" as const, segment: "disputes" as const },
+      evaluate: {
+        method: "POST" as const,
+        segment: "evaluate" as const,
+        notes: "Requires service scope attribution:write",
+      },
+      evidence: {
+        method: "POST" as const,
+        segment: "evidence" as const,
+        notes: "Requires service scope attribution:write",
+      },
+      disputes: {
+        method: "POST" as const,
+        segment: "disputes" as const,
+        notes: "Requires service scope attribution:write",
+      },
     },
   },
   health: {
@@ -23,32 +35,33 @@ const controllerDefinitions = defineHttpControllers({
   },
 } as const satisfies Record<string, ControllerDefinition<Record<string, EndpointDefinition>>>);
 
-export type AttributionServiceRoutes = typeof controllerDefinitions;
+export type AttributionServiceRoutes = typeof attributionServiceRouteDefinitions;
 export type AttributionServiceControllerKey = keyof AttributionServiceRoutes;
-export type AttributionServiceEndpointKey<Controller extends AttributionServiceControllerKey> = keyof AttributionServiceRoutes[Controller]["endpoints"];
+export type AttributionServiceEndpointKey<Controller extends AttributionServiceControllerKey> =
+  keyof AttributionServiceRoutes[Controller]["endpoints"];
 
-export const attributionServiceRoutes = controllerDefinitions;
+export const attributionServiceRoutes = attributionServiceRouteDefinitions;
 
-export const getAttributionServiceControllerBasePath = <
-  Controller extends AttributionServiceControllerKey,
->(controller: Controller) => attributionServiceRoutes[controller].basePath;
+export const getAttributionServiceControllerBasePath = <Controller extends AttributionServiceControllerKey>(
+  controller: Controller,
+) => attributionServiceRoutes[controller].basePath;
 
 export const getAttributionServiceEndpointSegment = <
   Controller extends AttributionServiceControllerKey,
   Endpoint extends AttributionServiceEndpointKey<Controller>,
 >(controller: Controller, endpoint: Endpoint) => {
-  const controllerRoutes = attributionServiceRoutes[controller] as ControllerDefinition<Record<string, EndpointDefinition>>;
-  const endpoints = controllerRoutes.endpoints as Record<string, EndpointDefinition>;
-  return endpoints[endpoint as string].segment;
+  const controllerRoutes = attributionServiceRoutes[controller] as AttributionServiceRoutes[Controller];
+  const endpoints = controllerRoutes.endpoints as Record<AttributionServiceEndpointKey<Controller>, EndpointDefinition>;
+  return endpoints[endpoint].segment;
 };
 
 export const getAttributionServiceEndpointMethod = <
   Controller extends AttributionServiceControllerKey,
   Endpoint extends AttributionServiceEndpointKey<Controller>,
 >(controller: Controller, endpoint: Endpoint) => {
-  const controllerRoutes = attributionServiceRoutes[controller] as ControllerDefinition<Record<string, EndpointDefinition>>;
-  const endpoints = controllerRoutes.endpoints as Record<string, EndpointDefinition>;
-  return endpoints[endpoint as string].method;
+  const controllerRoutes = attributionServiceRoutes[controller] as AttributionServiceRoutes[Controller];
+  const endpoints = controllerRoutes.endpoints as Record<AttributionServiceEndpointKey<Controller>, EndpointDefinition>;
+  return endpoints[endpoint].method;
 };
 
 export const getAttributionServiceEndpointPath = <
@@ -59,5 +72,3 @@ export const getAttributionServiceEndpointPath = <
   const segment = getAttributionServiceEndpointSegment(controller, endpoint);
   return buildEndpointPath(base, segment);
 };
-
-export const attributionServiceBackgroundTriggers = defineBackgroundTriggers({} as const);

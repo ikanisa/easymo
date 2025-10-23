@@ -65,6 +65,79 @@ export const AGENT_PERMISSIONS: readonly AgentPermission[] = [
   "payment.collect",
 ] as const;
 
+const controllerBasePaths: Record<string, string> = {
+  chat: "",
+  tools: "tools",
+  health: "health",
+  agentAdmin: "admin/agents",
+  ai: "ai",
+  aiTasks: "ai/tasks",
+};
+
+export const agentCoreControllerBasePath = controllerBasePaths.chat;
+
+export const getAgentCoreControllerBasePath = (key: string) => controllerBasePaths[key] ?? "";
+
+const routeSegments: Record<string, string> = {
+  respond: "respond",
+  toolsListLeads: "leads",
+  toolsFetchLead: "fetch-lead",
+  toolsLogLead: "log-lead",
+  toolsCreateCall: "create-call",
+  toolsSetDisposition: "set-disposition",
+  toolsRegisterOptOut: "register-opt-out",
+  toolsCollectPayment: "collect-payment",
+  toolsWarmTransfer: "warm-transfer",
+  health: "",
+  agentAdminList: "",
+  agentAdminCreate: "",
+  agentAdminGet: ":id",
+  agentAdminUpdate: ":id",
+  agentAdminListRevisions: ":id/revisions",
+  agentAdminCreateRevision: ":id/revisions",
+  agentAdminPublishRevision: ":id/publish",
+  agentAdminListDocuments: ":id/documents",
+  agentAdminCreateDocument: ":id/documents",
+  agentAdminListTasks: ":id/tasks",
+  agentAdminCreateTask: ":id/tasks",
+  aiBrokerOrchestrate: "broker/orchestrate",
+  aiSettlementRun: "settlement/run",
+  aiAttributionRun: "attribution/run",
+  aiReconciliationRun: "reconciliation/run",
+  aiSupportRun: "support/run",
+  aiTasksSchedule: "schedule",
+  aiTasksRunDue: "run-due",
+};
+
+const routePermissions: Record<string, AgentPermission[]> = {
+  toolsListLeads: ["lead.read"],
+  toolsFetchLead: ["lead.read"],
+  toolsLogLead: ["lead.write"],
+  toolsCreateCall: ["call.write"],
+  toolsSetDisposition: ["disposition.write"],
+  toolsRegisterOptOut: ["lead.optOut"],
+  toolsCollectPayment: ["payment.collect"],
+  toolsWarmTransfer: ["call.transfer"],
+};
+
+const routeServiceScopes: Record<string, string[]> = {
+  aiBrokerOrchestrate: ["ai:broker.orchestrate"],
+  aiSettlementRun: ["ai:settlement"],
+  aiAttributionRun: ["ai:attribution"],
+  aiReconciliationRun: ["ai:reconciliation"],
+  aiSupportRun: ["ai:support"],
+  aiTasksSchedule: ["tasks:schedule"],
+  aiTasksRunDue: ["tasks:run"],
+};
+
+export const getAgentCoreRouteSegment = (key: string) => routeSegments[key] ?? key;
+
+export const getAgentCoreRoutePermissions = (key: string): AgentPermission[] =>
+  routePermissions[key]?.slice() ?? [];
+
+export const getAgentCoreRouteServiceScopes = (key: string): string[] =>
+  routeServiceScopes[key]?.slice() ?? [];
+
 export type AgentContext = {
   agentId: string;
   tenantId: string;

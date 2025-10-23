@@ -7,7 +7,7 @@ export default {
   },
   moduleNameMapper: {
     "^@easymo/commons$": "<rootDir>/../../packages/commons/src/index.ts",
-    "^@easymo/messaging$": "<rootDir>/../../packages/messaging/src/index.ts",
+    "^@easymo/messaging$": "<rootDir>/test/mocks/messaging.ts",
     "^\\.\\/config\\.js$": "<rootDir>/src/config.ts",
     "^\\.\\/logger\\.js$": "<rootDir>/src/logger.ts",
   },
