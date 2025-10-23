@@ -9,31 +9,32 @@ jobs:
   admin-app:
     name: Build, Typecheck, Lint, Test (admin-app)
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: admin-app
     steps:
       - name: Checkout
         uses: actions/checkout@v5
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.18.3
       - name: Setup Node
         uses: actions/setup-node@v6
         with:
-          node-version: 18
-          cache: 'npm'
-          cache-dependency-path: admin-app/package-lock.json
-      - name: Install dependencies
-        run: npm ci
-      - name: Typecheck (API + lib)
-        run: npx tsc -p tsconfig.ci.json --noEmit
-      - name: Lint
-        run: npm run lint --no-update-notifier --no --max-warnings=0
-      - name: Run tests
-        run: npm test -- --run
-      - name: Build
+          node-version: 20
+          cache: 'pnpm'
+      - name: Install dependencies (workspace)
+        run: pnpm install --frozen-lockfile
+      - name: Typecheck admin-app (scoped)
+        run: pnpm -F @easymo/admin-app run type-check
+      - name: Lint admin-app
+        run: pnpm -F @easymo/admin-app run lint --no --max-warnings=0
+      - name: Test admin-app
+        run: pnpm -F @easymo/admin-app test -- --run
+      - name: Build shared package for admin
+        run: pnpm -F @va/shared build
+      - name: Build admin-app (Next)
         env:
-          # Ensure mocks are off for production-like builds
           NEXT_PUBLIC_USE_MOCKS: 'false'
-        run: npm run build
+        run: pnpm -F @easymo/admin-app build
 
   sql-migrations:
     name: SQL Migrations Lint
