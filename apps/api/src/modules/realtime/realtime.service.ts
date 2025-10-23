@@ -71,6 +71,14 @@ export class RealtimeService {
     return blocks.join(' ');
   }
 
+  private classifyIntent(text: string) {
+    const t = (text || '').toLowerCase();
+    if (/(pharmacy|medic|health|clinic|hospital)/.test(t)) return 'pharmacy';
+    if (/(bar|drink|beer|wine|pub)/.test(t)) return 'bar';
+    if (/(music|live)/.test(t)) return 'live-music';
+    return 'general';
+  }
+
   async onIncomingWebhook(body: any): Promise<SessionConfigResponse> {
     const {
       from,
@@ -170,6 +178,21 @@ export class RealtimeService {
             required: ['queue'],
           },
         },
+        {
+          type: 'function',
+          name: 'suggest_businesses',
+          parameters: {
+            type: 'object',
+            properties: {
+              text: { type: 'string' },
+              region: { type: 'string' },
+              limit: { type: 'number' },
+              msisdn: { type: 'string' },
+              user_id: { type: 'string' },
+            },
+            required: ['text'],
+          },
+        },
       ],
       sideband: {
         url: new URL(getApiEndpointPath('realtime', 'events'), env.baseUrl).toString(),
@@ -225,6 +248,27 @@ export class RealtimeService {
         const twilioCallSid = event?.data?.context?.twilio_call_sid ?? event?.twilio_call_sid;
         if (twilioCallSid) {
           await this.twilio.warmTransfer(twilioCallSid, args.queue);
+        }
+      }
+      if (name === 'suggest_businesses') {
+        try {
+          const limit = Math.max(1, Math.min(10, Number(args?.limit ?? 5)));
+          const text = String(args?.text ?? '');
+          const category = this.classifyIntent(text);
+          let query = this.db.client.from('businesses').select('*').limit(limit);
+          const region = typeof args?.region === 'string' ? args.region : undefined;
+          if (category === 'pharmacy') query = query.eq('category', 'pharmacy');
+          if (category === 'bar') query = query.eq('category', 'bar');
+          if (region) query = query.ilike('region', `%${region}%`);
+          if (category === 'general') query = query.ilike('name', `%${text.split(' ')[0]}%`);
+          const { data } = await query;
+          const items = Array.isArray(data) ? data.slice(0, limit) : [];
+          if (args?.msisdn && items.length) {
+            const lines = items.map((i: any, idx: number) => `${idx + 1}. ${i.name ?? i.id} — ${i.region ?? ''}`);
+            await this.wa.sendText(String(args.msisdn), `Suggestions:\n${lines.join('\n')}`);
+          }
+        } catch (err) {
+          await this.db.logEvent(callId, 'suggest_businesses.error', { error: String((err as any)?.message ?? err) });
         }
       }
     }

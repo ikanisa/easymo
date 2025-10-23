@@ -9,7 +9,7 @@ type SuggestPayload = {
   user_id?: string;
 };
 
-function classify(text: string) {
+export function classify(text: string) {
   const t = text.toLowerCase();
   if (/(pharmacy|medic|health|clinic|hospital)/.test(t)) return 'pharmacy';
   if (/(bar|drink|beer|wine|pub)/.test(t)) return 'bar';
