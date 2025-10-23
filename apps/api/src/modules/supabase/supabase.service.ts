@@ -98,6 +98,19 @@ export class SupabaseService {
       .insert([{ call_id: callId, server, tool, args, result, success }]);
   }
 
+  // Assistant memory/session helpers
+  async touchAssistantSession(userId: string) {
+    return this.client
+      .from('assistant_sessions')
+      .upsert({ user_id: userId, last_active_at: new Date().toISOString() }, { onConflict: 'user_id' });
+  }
+
+  async upsertAssistantMemory(userId: string, key: string, value: unknown) {
+    return this.client
+      .from('assistant_memory')
+      .upsert({ user_id: userId, key, value });
+  }
+
   async createWaThread(input: CreateWaThread) {
     return this.client
       .from('wa_threads')
