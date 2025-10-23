@@ -8,7 +8,7 @@ on:
 
 jobs:
   node:
-    name: Install, typecheck, lint, build
+    name: Install, cache, validate, build, test
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -24,6 +24,20 @@ jobs:
         with:
           node-version: 20
           cache: pnpm
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_ENV
+
+      - name: Cache pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -48,3 +62,19 @@ jobs:
 
       - name: Test admin-app
         run: pnpm -F @easymo/admin-app test -- --run
+      - name: Validate Prisma schema (packages/db)
+        run: pnpm -C packages/db exec prisma validate
+
+      - name: Build shared packages
+        run: |
+          pnpm -C packages/shared build
+          pnpm -C packages/commons build
+          pnpm -C packages/messaging build
+          pnpm -C packages/db build
+
+      - name: Build backend apps
+        run: |
+          pnpm -C apps/agent-core build
+          pnpm -C apps/voice-bridge build
+          pnpm -C apps/sip-webhook build
+          pnpm -C apps/api build
