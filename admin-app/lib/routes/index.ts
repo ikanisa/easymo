@@ -4,6 +4,8 @@ import {
   adminRouteSegments,
   getAdminRoutePath as baseGetAdminRoutePath,
   isAdminRoutePath,
+  // Admin API re‑exports (typed routes defined in shared)
+  getAdminApiRoutePath,
   type AdminRouteKey,
   type AdminRouteParams,
   type AdminRoutePath,
@@ -37,6 +39,8 @@ export {
   adminRoutePaths,
   adminRouteSegments,
   isAdminRoutePath,
+  // expose API route helper expected by app code
+  getAdminApiRoutePath,
 };
 
 export type {
@@ -48,3 +52,6 @@ export type {
   NavigableAdminRouteKey,
   NavigableAdminRoutePath,
 };
+
+// Also re-export REST-style path helper for backwards compatibility
+export * from "./api";
