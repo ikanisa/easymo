@@ -1,0 +1,46 @@
+Scope: 20 of 21 workspace projects
+admin-app test$ vitest
+apps/api test$ pnpm --filter @easymo/commons run build && pnpm --filter @va/shared run build && jest
+packages/messaging test$ jest
+admin-app test:  RUN  v3.2.4 /workspace/easymo/admin-app
+apps/api test: > @easymo/commons@0.1.0 build /workspace/easymo/packages/commons
+apps/api test: > pnpm exec tsc -p tsconfig.json
+admin-app test:  ❯ tests/e2e/admin-flows.test.ts (4 tests | 4 failed) 945ms
+admin-app test:    × admin journeys > lists orders and related events for a customer flow 599ms
+admin-app test:      → getAdminApiPath is not a function
+admin-app test:    × admin journeys > requeues failed notifications via retry API 132ms
+admin-app test:      → getAdminApiPath is not a function
+admin-app test:    × admin journeys > surfaces policy blocks when retrying notifications during quiet hours 92ms
+admin-app test:      → getAdminApiPath is not a function
+admin-app test:    × admin journeys > lists OCR jobs for admin review 119ms
+admin-app test:      → getAdminApiPath is not a function
+admin-app test:  ❯ tests/notifications-route.test.ts (9 tests | 9 failed) 1398ms
+admin-app test:    × notifications API > returns 503 when Supabase credentials missing 578ms
+admin-app test:      → getAdminApiPath is not a function
+admin-app test:    × notifications API > returns notifications when Supabase query succeeds 122ms
+admin-app test:      → getAdminApiPath is not a function
+admin-app test:    × notifications API > queues resend when policy allows 211ms
+admin-app test:      → getAdminApiPath is not a function
+admin-app test:    × notifications API > returns policy block when quiet hours active 77ms
+admin-app test:      → getAdminApiPath is not a function
+admin-app test:    × notifications API > cancels queued notification 117ms
+admin-app test:      → getAdminApiPath is not a function
+admin-app test:    × notifications API > returns 422 when msisdn missing on resend 56ms
+admin-app test:      → getAdminApiPath is not a function
+admin-app test:    × notifications API > returns 503 when retry Supabase client unavailable 109ms
+admin-app test:      → getAdminApiPath is not a function
+admin-app test:    × notifications API > queues retry for failed notification 15ms
+admin-app test:      → getAdminApiPath is not a function
+admin-app test:    × notifications API > blocks retry when policy disallows 110ms
+admin-app test:      → getAdminApiPath is not a function
+apps/api test: src/routes/voice-bridge.ts(39,35): error TS2552: Cannot find name 'defineWebsocketRoutes'. Did you mean 'defineWebSocketRoutes'?
+apps/api test: src/routes/voice-bridge.ts(48,38): error TS2304: Cannot find name 'httpControllerDefinitions'.
+apps/api test: src/routes/voice-bridge.ts(141,49): error TS2552: Cannot find name 'voiceBridgeWebSocketRouteDefinitions'. Did you mean 'voiceBridgeWebSocketRoutes'?
+apps/api test: src/routes/voice-bridge.ts(144,43): error TS2552: Cannot find name 'voiceBridgeWebSocketRouteDefinitions'. Did you mean 'voiceBridgeWebSocketRoutes'?
+apps/api test: /workspace/easymo/packages/commons:
+apps/api test:  ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @easymo/commons@0.1.0 build: `pnpm exec tsc -p tsconfig.json`
+apps/api test: Exit status 2
+apps/api test: Failed
+/workspace/easymo/apps/api:
+ ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  voice-api@ test: `pnpm --filter @easymo/commons run build && pnpm --filter @va/shared run build && jest`
+Exit status 2

@@ -1,0 +1,28 @@
+Scope: 20 of 21 workspace projects
+packages/commons lint$ eslint "src/**/*.ts"
+packages/shared lint$ eslint . --ext .ts
+packages/shared lint: Done
+packages/commons lint: Done
+admin-app lint$ next lint
+apps/agent-core lint$ eslint "src/**/*.ts"
+apps/api lint$ eslint "src/**/*.ts"
+apps/sip-webhook lint$ eslint "src/**/*.ts"
+apps/sip-webhook lint: Done
+apps/voice-bridge lint$ eslint "src/**/*.ts"
+apps/agent-core lint: Done
+packages/db lint$ eslint "src/**/*.ts"
+apps/api lint: Done
+packages/messaging lint$ eslint "src/**/*.ts"
+packages/db lint: Done
+apps/voice-bridge lint: Done
+packages/messaging lint: Done
+admin-app lint: Attention: Next.js now collects completely anonymous telemetry regarding usage.
+admin-app lint: This information is used to shape Next.js' roadmap and prioritize features.
+admin-app lint: You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
+admin-app lint: https://nextjs.org/telemetry
+admin-app lint: ✔ No ESLint warnings or errors
+admin-app lint: Done
+services/agent-core lint$ eslint src/**/*.ts
+services/voice-bridge lint$ eslint "src/**/*.ts"
+services/agent-core lint: Done
+services/voice-bridge lint: Done

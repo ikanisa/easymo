@@ -1,0 +1,41 @@
+vite_react_shadcn_ts@0.0.0 /workspace/easymo (PRIVATE)
+
+@easymo/admin-app@0.1.0 /workspace/easymo/admin-app (PRIVATE)
+
+@va/agent-core@0.1.0 /workspace/easymo/apps/agent-core
+
+voice-api /workspace/easymo/apps/api (PRIVATE)
+
+@va/sip-webhook@0.1.0 /workspace/easymo/apps/sip-webhook
+
+@va/voice-bridge@0.1.0 /workspace/easymo/apps/voice-bridge
+
+@easymo/commons@0.1.0 /workspace/easymo/packages/commons (PRIVATE)
+
+@easymo/db@0.1.0 /workspace/easymo/packages/db (PRIVATE)
+
+@easymo/messaging@0.1.0 /workspace/easymo/packages/messaging (PRIVATE)
+
+@va/shared@0.1.0 /workspace/easymo/packages/shared
+
+@easymo/agent-core@0.1.0 /workspace/easymo/services/agent-core (PRIVATE)
+
+@easymo/attribution-service@0.1.0 /workspace/easymo/services/attribution-service (PRIVATE)
+
+@easymo/broker-orchestrator@0.1.0 /workspace/easymo/services/broker-orchestrator (PRIVATE)
+
+@easymo/buyer-service@0.1.0 /workspace/easymo/services/buyer-service (PRIVATE)
+
+@easymo/ranking-service@0.1.0 /workspace/easymo/services/ranking-service (PRIVATE)
+
+@easymo/reconciliation-service@0.1.0 /workspace/easymo/services/reconciliation-service (PRIVATE)
+
+@easymo/sip-ingress@0.1.0 /workspace/easymo/services/sip-ingress (PRIVATE)
+
+@easymo/vendor-service@0.1.0 /workspace/easymo/services/vendor-service (PRIVATE)
+
+@easymo/voice-bridge@0.1.0 /workspace/easymo/services/voice-bridge (PRIVATE)
+
+@easymo/wallet-service@0.1.0 /workspace/easymo/services/wallet-service (PRIVATE)
+
+@easymo/whatsapp-bot@0.1.0 /workspace/easymo/services/whatsapp-bot (PRIVATE)
