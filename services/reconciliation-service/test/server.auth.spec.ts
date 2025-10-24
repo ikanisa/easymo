@@ -1,9 +1,8 @@
 import request from "supertest";
-import {
-  getReconciliationServiceEndpointPath,
-  signServiceJwt,
-} from "@easymo/commons";
-import { buildApp } from "../src/server";
+import { getReconciliationServiceEndpointPath } from "@easymo/commons/routes/reconciliation-service";
+import { signServiceJwt } from "@easymo/commons/service-auth";
+
+type BuildApp = (typeof import("../src/server"))["buildApp"];
 
 const mockExecute = jest.fn();
 
@@ -14,19 +13,30 @@ jest.mock("@easymo/messaging", () => ({
 }));
 
 describe("reconciliation-service authentication", () => {
-  beforeEach(() => {
+  let app: ReturnType<BuildApp>;
+
+  beforeEach(async () => {
     jest.clearAllMocks();
+    jest.resetModules();
     process.env.NODE_ENV = "test";
     process.env.SERVICE_JWT_KEYS = "test-secret";
     process.env.SERVICE_JWT_ISSUER = "test-issuer";
     process.env.SERVICE_NAME = "reconciliation-service";
     process.env.SERVICE_AUTH_AUDIENCE = "reconciliation-service";
+    process.env.WALLET_SERVICE_URL = "https://wallet.example.com";
+    process.env.REDIS_URL = "redis://localhost:6379";
+    process.env.RECON_SOURCE_ACCOUNT_ID = "00000000-0000-0000-0000-000000000000";
     delete process.env.RATE_LIMIT_REDIS_URL;
-  });
 
-  const app = buildApp({
-    store: { execute: mockExecute },
-    httpClient: { post: jest.fn().mockResolvedValue({}), get: jest.fn().mockResolvedValue({ data: { id: "wallet" } }) } as any,
+    const { buildApp } = await import("../src/server");
+
+    app = buildApp({
+      store: { execute: mockExecute },
+      httpClient: {
+        post: jest.fn().mockResolvedValue({}),
+        get: jest.fn().mockResolvedValue({ data: { id: "wallet" } }),
+      } as any,
+    });
   });
 
   it("rejects missing token", async () => {
