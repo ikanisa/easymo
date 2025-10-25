@@ -6,9 +6,9 @@ This document enumerates the applications that live at the root of the EasyMO mo
 
 | Application | Location | Tech stack | Typed routing status | Deployment target |
 | --- | --- | --- | --- | --- |
-| Admin SPA (Phase 2) | `/` (`package.json`, `src/`) | Vite + React + React Router | ✅ Uses shared `@va/shared` route definitions for strongly typed navigation helpers. | Not deployed from Vercel; consumed via local tooling and Supabase functions. |
-| Admin App (Phase 4/5) | `/admin-app` | Next.js 14 App Router | ✅ Next.js typed routes enabled and wrapped helpers expose `Route`-aware navigation utilities. | Vercel (`vercel.json` builds this app). |
-| Legacy Angular demo | `/angular` | Angular CLI 15 | ⚠️ Typed routing unavailable until the project upgrades to Angular ≥17; current router only exposes structural typings. | Not on Vercel; used for experiments only. |
+| Admin SPA (Phase 2) | `/` (`package.json`, `src/`) | Vite + React + React Router | ✅ Uses shared `@va/shared` route definitions for strongly typed navigation helpers. | Not deployed; consumed via local tooling and Supabase functions. |
+| Admin App (Phase 4/5) | `/admin-app` | Next.js 14 App Router | ✅ Next.js typed routes enabled and wrapped helpers expose `Route`-aware navigation utilities. | Deployed via the internal release pipeline. |
+| Legacy Angular demo | `/angular` | Angular CLI 15 | ⚠️ Typed routing unavailable until the project upgrades to Angular ≥17; current router only exposes structural typings. | Used for experiments only. |
 | Station PWA shell | `/station-app` | Planned PWA (no framework wired) | 🚧 No routes exist yet; typed routing will be introduced with the first navigable screen. | Not yet deployed. |
 
 ### Typed routing notes
@@ -30,6 +30,6 @@ This document enumerates the applications that live at the root of the EasyMO mo
 
 ## Deployment targets
 
-- **Vercel** builds the Next.js admin app exclusively. The root `vercel.json` points the Next builder at `admin-app/next.config.mjs`, ensuring other workspaces are not accidentally deployed as production frontends.【F:vercel.json†L1-L22】
+- **Release pipeline** builds the Next.js admin app exclusively. The infrastructure manifests point the builder at `admin-app/next.config.mjs`, ensuring other workspaces are not accidentally deployed as production frontends.
 - **Containerised services** (agent core, voice bridge, SIP ingress, marketplace stack) are orchestrated locally and in staging via `docker-compose.agent-core.yml`, clarifying which services form the production backend surface.【F:docker-compose.agent-core.yml†L1-L120】
 - Frontend experiments (`angular`, `station-app`) remain out of band and are not wired into any automated deployment target until their roadmaps resume.

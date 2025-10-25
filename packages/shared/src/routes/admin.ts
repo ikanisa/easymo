@@ -22,6 +22,7 @@ const adminRouteDefinitions = [
   { key: "panelStaffNumbers", path: "/staff-numbers", segment: "panel" },
   { key: "panelStations", path: "/stations", segment: "panel" },
   { key: "panelLiveCalls", path: "/live-calls", segment: "panel" },
+  { key: "panelVoiceAnalytics", path: "/voice-analytics", segment: "panel" },
   { key: "panelLeads", path: "/leads", segment: "panel" },
   { key: "panelQr", path: "/qr", segment: "panel" },
   { key: "panelDeepLinks", path: "/deep-links", segment: "panel" },

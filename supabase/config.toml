@@ -24,11 +24,10 @@ file_size_limit = 52428800
 port = 55317
 
 [auth]
-site_url = "https://easymo.vercel.app"
+site_url = "https://admin.easymo.dev"
 additional_redirect_urls = [
-  "https://easymo.vercel.app",
-  "https://easymo-git-main.vercel.app",
-  "https://easymo-git-phase2-setup.vercel.app",
+  "https://admin.easymo.dev",
+  "https://preview-admin.easymo.dev",
   "http://localhost:5173",
   "http://localhost:8080"
 ]

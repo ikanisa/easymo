@@ -1,7 +1,7 @@
 const PATH_PARAM_PATTERN = /:([A-Za-z0-9_]+)/g;
 
 export const compileRoutePath = (template: string, params: Record<string, string>) =>
-  template.replace(PATH_PARAM_PATTERN, (_, paramName: string) => {
+  template.replace(PATH_PARAM_PATTERN, (_: string, paramName: string) => {
     const value = params[paramName];
     if (value == null) {
       throw new Error(

@@ -20,7 +20,6 @@ coverage/
 .cache/
 .turbo/
 .next/
-.vercel/
 .pnp.*
 .pnpm-state/
 *.local
@@ -54,4 +53,3 @@ supabase/.branches/
 *.sln
 *.sw?
 *.swp
-.vercel

@@ -70,7 +70,7 @@ new reminder workers and notification retry flow.
   - Metrics collector alerts on HTTP 4xx/5xx for the drain endpoint.
   - `logs drain_error` entries appear in the collector or `fetch` rejects in the app logs.
 - **Response:**
-  1. Verify `METRICS_DRAIN_URL` configuration in Vercel (`vercel env ls`) and Supabase function secrets.
+  1. Verify `METRICS_DRAIN_URL` configuration in the shared secret manager (`gh secret list`/`doppler secrets get`) and Supabase function secrets.
   2. Use `curl -X POST $METRICS_DRAIN_URL` locally with a sample payload to validate reachability.
   3. If the collector is down, fail over to secondary endpoint or disable the drain temporarily.
   4. Document the outage; schedule resilience improvements (retry/backoff) if repeated.

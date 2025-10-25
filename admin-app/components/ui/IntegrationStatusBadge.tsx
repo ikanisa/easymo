@@ -1,4 +1,6 @@
 import styles from "./IntegrationStatusBadge.module.css";
+import { Badge } from "@/components/ui/Badge";
+import { Tooltip } from "@/components/ui/Tooltip";
 
 interface IntegrationStatus {
   target: string;
@@ -26,9 +28,9 @@ export function IntegrationStatusBadge(
 
   return (
     <div className={styles.wrapper} role="status" aria-live="polite">
-      <span className={isHealthy ? styles.badgeOk : styles.badgeDegraded}>
-        {badgeLabel}
-      </span>
+      <Tooltip label={isHealthy ? 'Integration healthy' : 'Running in degraded mode'}>
+        <Badge variant={isHealthy ? 'green' : 'yellow'}>{badgeLabel}</Badge>
+      </Tooltip>
       <span className={styles.message}>{description}</span>
       {!isHealthy && integration.reason
         ? <span className={styles.code}>({integration.reason})</span>

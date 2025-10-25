@@ -2,7 +2,6 @@
 import Link from "next/link";
 import { useAgentsList, useCreateAgent } from "@/lib/queries/agents";
 import { useState } from "react";
-import { getAdminRoutePath } from "@/lib/routes";
 
 export default function AgentsPage() {
   const { data, isLoading, error } = useAgentsList();
@@ -41,27 +40,26 @@ export default function AgentsPage() {
           <tr className="bg-gray-50">
             <th className="text-left p-2">Name</th>
             <th className="text-left p-2">Status</th>
+            <th className="text-left p-2">Docs</th>
+            <th className="text-left p-2">Chunks</th>
             <th className="text-left p-2">Updated</th>
           </tr>
         </thead>
         <tbody>
-          {data?.agents?.map((a: any) => (
+          {data?.agents?.map((a: any) => {
+            const stats = a.vector_stats ?? { totalDocs: 0, readyDocs: 0, jsonChunks: 0, vecChunks: 0 };
+            return (
             <tr key={a.id} className="border-t">
-              <td className="p-2">
-                <Link
-                  className="underline"
-                  href={getAdminRoutePath("panelAgentDetail", { agentId: String(a.id) })}
-                >
-                  {a.name}
-                </Link>
-              </td>
+              <td className="p-2"><Link className="underline" href={`/agents/${a.id}`}>{a.name}</Link></td>
               <td className="p-2">{a.status}</td>
+              <td className="p-2 text-xs">{stats.readyDocs}/{stats.totalDocs}</td>
+              <td className="p-2 text-xs">json {stats.jsonChunks} · vec {stats.vecChunks}</td>
               <td className="p-2">{new Date(a.updated_at).toLocaleString()}</td>
             </tr>
-          ))}
+            );
+          })}
         </tbody>
       </table>
     </div>
   );
 }
-

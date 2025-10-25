@@ -14,7 +14,6 @@ coverage/
 .cache/
 .turbo/
 .next/
-.vercel/
 
 # Env & local config
 .env

@@ -4,7 +4,7 @@ import { getTextBody, isLocationMessage, isTextMessage } from "../utils/messages
 function appBase(): string {
   return Deno.env.get("BROKER_APP_BASE_URL") ??
     Deno.env.get("NEXT_PUBLIC_APP_URL") ??
-    "https://easymo.vercel.app";
+    "https://admin.easymo.dev";
 }
 
 function buildHeaders(msgId?: string) {

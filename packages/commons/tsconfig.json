@@ -6,9 +6,11 @@
     "emitDeclarationOnly": false,
     "composite": true,
     "rootDir": "src",
-    "module": "CommonJS",
+    "module": "Node16",
     "target": "ES2021",
-    "esModuleInterop": true
+    "esModuleInterop": true,
+    "moduleResolution": "node16",
+    "types": ["node"]
   },
   "include": ["src/**/*"]
 }

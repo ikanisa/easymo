@@ -15,12 +15,20 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   if (!admin) return NextResponse.json({ error: "supabase_unavailable" }, { status: 503 });
   const { id } = params;
   // Allow JSON posting of remote source (source_url) as a simple path
-  const body = await req.json().catch(() => ({} as any));
+  const body = await req.json().catch(() => ({} as Record<string, unknown>));
   const title = typeof body.title === "string" ? body.title : null;
   const source_url = typeof body.source_url === "string" ? body.source_url : null;
   const storage_path = typeof body.storage_path === "string" ? body.storage_path : null;
   if (!title) return NextResponse.json({ error: "title_required" }, { status: 400 });
-  const insert = { agent_id: id, title, source_url, storage_path } as any;
+  const rawStatus = (body as { embedding_status?: unknown }).embedding_status;
+  const embedding_status = typeof rawStatus === "string" ? rawStatus : "pending";
+  const insert = {
+    agent_id: id,
+    title,
+    source_url,
+    storage_path,
+    embedding_status,
+  } as Record<string, unknown>;
   const { data, error } = await admin.from("agent_documents").insert(insert).select("*").single();
   if (error) return NextResponse.json({ error }, { status: 400 });
   return NextResponse.json({ document: data }, { status: 201 });

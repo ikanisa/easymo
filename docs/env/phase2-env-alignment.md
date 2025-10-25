@@ -36,18 +36,18 @@ Update the Supabase project settings (Dashboard → Authentication → Settings)
 
 | Setting | Value |
 | --- | --- |
-| **Site URL** | `https://easymo.vercel.app` (matches `supabase/config.toml`) |
-| **Redirect URLs** | Add `https://easymo.vercel.app`, Git/preview URLs (`https://easymo-git-*.vercel.app`), and local dev hosts (`http://localhost:5173`, `http://localhost:8080`). |
+| **Site URL** | `https://admin.easymo.dev` (matches `supabase/config.toml`) |
+| **Redirect URLs** | Add `https://admin.easymo.dev`, preview URLs such as `https://preview-admin.easymo.dev`, and local dev hosts (`http://localhost:5173`, `http://localhost:8080`). |
 | **Email OTP / Providers** | Decide whether email magic links or social providers are needed and configure them now. |
 
 > After updating the dashboard, run a complete login flow in production to confirm Supabase redirects back to the admin panel with a valid session cookie.
 
-## 3. Vercel Environment Variables
+## 3. Release Pipeline Environment Variables
 
-1. Run `vercel env ls` (requires Vercel CLI login) and export the current values.  
-2. Ensure every key listed in `.env` exists and references the official project (`lhbowpbcpwoiparwnwgt`).  
+1. Use the internal secret manager/CI pipeline (`.github/workflows/node.yml`) to list the current variables.  
+2. Ensure every key listed in `.env` exists in the shared secret store referencing the official project (`lhbowpbcpwoiparwnwgt`).  
 3. Set `VITE_ADMIN_TOKEN`, `ADMIN_SESSION_SECRET`, `ADMIN_ACCESS_CREDENTIALS`, `DISPATCHER_FUNCTION_URL`, and the Supabase keys to their production values.  
-4. Redeploy both the root project and the admin panel after updating secrets (`vercel --prod` from the appropriate directories).
+4. Redeploy the services through the release pipeline after updating secrets to propagate the new configuration.
 
 ## 4. Supabase Edge Function Secrets
 
@@ -63,7 +63,7 @@ From the Supabase dashboard (Functions → Secrets) verify the following entries
 
 Once the variables are aligned:
 
-1. **Admin login** – Log into `https://easymo.vercel.app/login` using one of the tokens defined in `ADMIN_ACCESS_CREDENTIALS`. Confirm the session cookie is created and persists between pages.  
+1. **Admin login** – Log into `https://admin.easymo.dev/login` using one of the tokens defined in `ADMIN_ACCESS_CREDENTIALS`. Confirm the session cookie is created and persists between pages.  
 2. **Edge function call** – From a logged-in browser, hit `/admin-stats` (or use `curl` with the `x-admin-token` header) to confirm HTTP 200.  
 3. **Campaign dispatcher** – Trigger a test campaign (or call the function with a dry-run flag) to validate `DISPATCHER_FUNCTION_URL`.  
 4. **Reminder toggles** – Temporarily enable/disable cron variables and ensure the functions respect the new settings (requires Phase 3 cron verification).

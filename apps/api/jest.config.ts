@@ -4,6 +4,7 @@ const config: Config = {
   rootDir: '.',
   testEnvironment: 'node',
   preset: 'ts-jest',
+  setupFiles: ['<rootDir>/jest.setup.ts'],
   transform: {
     '^.+\\.(t|j)s$': ['ts-jest', { tsconfig: 'tsconfig.json' }],
   },

@@ -298,7 +298,7 @@ Extend the earlier deployment checklist with specific Vercel integration steps:
 1. **Environment variables**: Configure `OPENAI_API_KEY`, `NEXT_PUBLIC_GPT5_ENABLED`, and `EASYMO_TRACE_ENDPOINT`.
 2. **Edge runtime**: Mark chat routes with `export const runtime = "edge";` when streaming support ships to minimize cold starts.
 3. **Prompt cache**: Enable Vercel Edge Config (or Supabase Config Sync) to store prompt templates so hotfixes avoid redeployments.
-4. **Monitoring**: Wire `observability.vercel.com` projects to receive GPT-5 latency + error metrics from Next.js logs.
+4. **Monitoring**: Wire the observability stack (Grafana/Prometheus per `ops/observability/*`) to receive GPT-5 latency + error metrics from Next.js logs.
 5. **Secrets rotation**: Schedule monthly key rotation through `scripts/rotate-openai-key.ts` to maintain compliance.
 6. **Smoke tests**: Run `pnpm test:e2e --filter gpt5` before every production promotion; tests seed Vercel preview data.
 7. **Rollback**: Keep `OPENAI_MODEL_FALLBACK=gpt-4o-mini` in the environment so the API route can degrade gracefully.

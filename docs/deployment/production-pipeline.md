@@ -105,7 +105,7 @@ Record Supabase dashboard URL and project ref for the final report and capture t
 
 ## E. Vercel Project Configuration
 1. **Project linking**
-   - Use `vercel link` locally or connect via the Vercel dashboard. Target the specified team scope and select the GitHub repository.
+   - Use the internal deployment tooling (`pnpm release:link` or the dashboard described in `docs/deployment/runbooks.md`). Target the specified team scope and select the GitHub repository.
    - For monorepo detection, set **Root Directory** to `admin-app`.
 2. **Build settings**
    - Framework preset: **Next.js**.
@@ -114,11 +114,11 @@ Record Supabase dashboard URL and project ref for the final report and capture t
    - Output directory: `.next` (handled automatically by preset).
    - Node.js version: 18.x.
 3. **Environment variables**
-   - Add variables from the matrix using the Vercel dashboard or `vercel env pull`. No secret values should appear in version control.
+   - Add variables from the matrix using the shared secret manager (`gh secret set`, `doppler secrets set`, etc.). No secret values should appear in version control.
    - Use Preview values that point to Supabase staging resources if available.
 4. **Domains & analytics**
    - Production domain: add custom domain (e.g., `admin.easymo.example`). Verify DNS or request operator to configure.
-   - Preview URLs: use Vercel-generated `*.vercel.app` links; share in PR template.
+   - Preview URLs: use the release-pipeline generated domains (for example `https://preview-admin.easymo.dev`); share in the PR template.
    - Analytics: opt-in to Vercel Web Analytics if desired; otherwise disable (document operator decision).
 5. **Zero-secret exposure**
    - Confirm Next.js does not expose server-only secrets by ensuring only `NEXT_PUBLIC_*` variables are referenced in client bundles. Use `npm run build` output to verify warnings.
@@ -151,7 +151,7 @@ After each deployment, capture evidence (screenshots/notes) that:
 ## H. Rollback Playbook
 1. **Vercel**
    - Use the Vercel dashboard → Deployments → Production → "Promote Previous" to instantly roll back to a known-good deployment.
-   - Alternatively, redeploy a specific commit with `vercel deploy --prod --archive <deployment-id>`.
+   - Alternatively, redeploy a specific commit with the `pnpm release:deploy --ref <commit>` helper.
 2. **GitHub**
    - Revert the offending commit/PR on the default branch (`git revert <sha>`), push, and allow CI + Vercel to redeploy.
    - Document revert in incident notes.
@@ -171,7 +171,7 @@ After executing the steps above, copy [`final-report-template.md`](./final-repor
 - Verification evidence (links to PR, deployment checks, Supabase smoke test logs).
 - Runbooks:
   - **Add environment variable**: update `.env.example`, add to Vercel Preview/Production, add to Supabase secrets if relevant, document in PR.
-  - **Redeploy**: trigger Vercel rebuild via commit or `vercel deploy`, confirm GitHub Actions success, update report.
+  - **Redeploy**: trigger the release pipeline via commit or `pnpm release:deploy`, confirm GitHub Actions success, update the report.
   - **Rollback**: follow section H, record incident timeline, notify contacts.
 - Open items awaiting operator input (e.g., missing secrets, DNS setup, analytics opt-in, incident contacts, license selection).
 - Confirmed assumptions vs outstanding questions.

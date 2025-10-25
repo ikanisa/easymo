@@ -1,5 +1,6 @@
 import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
 import { getApiControllerBasePath, getApiEndpointSegment } from '@easymo/commons';
+import type { WaCallEvent } from './common/dto/wa-calling.dto';
 import { WaCallsService } from './calls.service';
 import { WaWebhookGuard } from './common/guards/wa-webhook.guard';
 import { parseWaCallEvent } from './common/dto/wa-calling.dto';

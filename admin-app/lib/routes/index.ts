@@ -1,14 +1,24 @@
 import {
+  adminApiRouteDefinitions,
+  adminApiRoutePaths,
   adminRouteDefinitions,
   adminRoutePaths,
   adminRouteSegments,
+  getAdminApiRoutePath,
   getAdminRoutePath as baseGetAdminRoutePath,
+  isAdminApiRoutePath,
   isAdminRoutePath,
+  type AdminApiRouteKey,
+  type AdminApiRouteParams,
+  type AdminApiRoutePath,
+  type AdminApiRouteRecord,
   type AdminRouteKey,
   type AdminRouteParams,
   type AdminRoutePath,
   type AdminRouteRecord,
   type AdminRouteSegment,
+  type NavigableAdminApiRouteKey,
+  type NavigableAdminApiRoutePath,
   type NavigableAdminRouteKey,
   type NavigableAdminRoutePath,
 } from "@va/shared";
@@ -37,6 +47,10 @@ export {
   adminRoutePaths,
   adminRouteSegments,
   isAdminRoutePath,
+  adminApiRouteDefinitions,
+  adminApiRoutePaths,
+  isAdminApiRoutePath,
+  getAdminApiRoutePath,
 };
 
 export type {
@@ -47,4 +61,12 @@ export type {
   AdminRouteSegment,
   NavigableAdminRouteKey,
   NavigableAdminRoutePath,
+  AdminApiRouteKey,
+  AdminApiRouteParams,
+  AdminApiRoutePath,
+  AdminApiRouteRecord,
+  NavigableAdminApiRouteKey,
+  NavigableAdminApiRoutePath,
 };
+
+export { getAdminApiPath } from "./api";

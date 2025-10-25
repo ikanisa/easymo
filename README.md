@@ -35,9 +35,9 @@ Vite React app and communicates with those Edge Functions through the
 - **Environment Variables**: `.env.example` now focuses on local hosting
   values including `APP_ENV`, `PORT`, `NEXT_PUBLIC_SUPABASE_URL`,
   `NEXT_PUBLIC_SUPABASE_ANON_KEY` and `SUPABASE_SERVICE_ROLE_KEY`.
-- **Vercel Configuration**: `vercel.json` rewrites API routes to the
-  corresponding edge functions and configures them to run on Vercel’s
-  Edge Runtime.
+- **Deployment Profile**: the internal release pipeline applies the rewrites
+  and headers required for the admin panel and exposed API routes (see
+  `docs/deployment/production-pipeline.md` for the full process).
 
 ## Phase 4 & 5 Highlights
 

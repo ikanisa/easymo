@@ -20,7 +20,7 @@ Guardrails: additive changes only, no secret values, instructions must be idempo
 | GitHub repo setup (Section B) | Repo created/linked, protections enforced, PR template, branch policies applied | PR template exists; README/LICENSE/protections/CI configuration not implemented in code or automation | **Partial** |
 | Environment matrix (Section C) | Names-only table, `.env.example`, Vercel/Supabase mapping | `.env.example` present; matrix documented in `production-pipeline.md`; Vercel import/export scripts absent | **Partial** |
 | Supabase linkage (Section D) | `supabase link`, migrations workflow, RLS policies, Edge Functions scaffolding | Only narrative guidance; no CLI config, migrations, or policy files updated | **Not started** |
-| Vercel configuration (Section E) | Project linked, build settings set, env vars assigned, domain + analytics decisions tracked | Instructions only; no `vercel.json`, no automation, no recorded linkage | **Not started** |
+| Hosting configuration (Section E) | Project linked, build settings set, env vars assigned, domain + analytics decisions tracked | Instructions only; no deployment manifests, no automation, no recorded linkage | **Not started** |
 | CI/CD policy (Section F) | GitHub Actions workflow gating lint/test/build and verifying Vercel checks | Workflow referenced but not committed; branch protection automation absent | **Not started** |
 | Verification checklist (Section G) | Codified post-deploy checks with tooling/log capture | Checklist exists in prose; no scripts or automated tests | **Partial** |
 | Rollback plan (Section H) | Concrete steps for Vercel, Git, Supabase | Documented in prose; no runbook automation | **Partial** |
@@ -43,7 +43,7 @@ Guardrails: additive changes only, no secret values, instructions must be idempo
    - Use GitHub CLI (`gh api`) or Terraform to codify branch protections (required reviews, status checks, force-push restrictions).
    - Ensure README, LICENSE, and contributing guidelines reference the deployment workflow and branch policies.
 3. **Environment Management**
-   - Script environment propagation (e.g., `scripts/sync-env.ts`) that writes variable names to Vercel via `vercel env` commands and confirms Supabase secrets.
+   - Script environment propagation (e.g., `scripts/sync-env.ts`) that writes variable names to the release pipeline via the secret manager CLI and confirms Supabase secrets.
    - Extend `.env.example` with comments for staging vs. production values and include placeholders for additional Supabase keys (service, JWT).
 4. **Supabase Integration**
    - Run `supabase link --project-ref <ref>` and commit resulting `.supabase/config.toml`.
@@ -51,8 +51,8 @@ Guardrails: additive changes only, no secret values, instructions must be idempo
    - If Edge Functions required, scaffold `supabase/functions/<function>/` with example `index.ts` and `.env.example`.
    - Document smoke-test script (e.g., `admin-app/scripts/check-supabase.ts`) and wire into CI.
 5. **Vercel Configuration**
-   - Link project via `vercel link` and commit `.vercel/project.json` if available (exclude secrets).
-   - Add `vercel.json` if custom headers/redirects/build settings needed; otherwise confirm preset in documentation.
+   - Link the project via the internal deployment tooling and commit only the necessary metadata (exclude secrets).
+   - Store rewrites/headers/build settings alongside infrastructure manifests; confirm the documentation reflects the new location.
    - Map environment variables to Preview/Production via CLI and document domain configuration (custom + preview URLs).
 6. **CI/CD & Deployment Verification**
    - Update PR template checklist to require attached Vercel Preview URL and Supabase migration review.
