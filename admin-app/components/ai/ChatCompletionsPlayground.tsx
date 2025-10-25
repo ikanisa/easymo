@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { getAdminApiPath } from "@/lib/routes";
+import { getAdminApiRoutePath } from "@/lib/routes";
 import { Button } from "@/components/ui/Button";
 import { SectionCard } from "@/components/ui/SectionCard";
 import {
@@ -114,7 +114,7 @@ export function ChatCompletionsPlayground() {
     };
 
     try {
-      const res = await fetch(getAdminApiPath("openai", "chat"), {
+      const res = await fetch(getAdminApiRoutePath("openaiChat"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -127,25 +127,18 @@ export function ChatCompletionsPlayground() {
       if (!res.ok) {
         console.error("admin.openai_chat.error", data);
         setError(
-          typeof (data as { error?: string }).error === "string"
-            ? (data as { error: string }).error
-            : "OpenAI request failed. Check logs for details.",
+          typeof data === "object" && data && "error" in data
+            ? (data.error as string)
+            : "Request failed",
         );
         setTurns(previousTurns);
         return;
       }
 
-      const completion = (data as PlaygroundResponse).completion;
-      const firstChoice = completion.choices?.[0]?.message?.content ?? "";
-      if (firstChoice.trim().length > 0) {
-        setTurns([...nextTurns, { role: "assistant", content: firstChoice }]);
-      } else {
-        setTurns(nextTurns);
-      }
       setResponse(data as PlaygroundResponse);
     } catch (err) {
-      console.error("admin.openai_chat.network_error", err);
-      setError((err as Error)?.message ?? "Network error contacting OpenAI.");
+      console.error("admin.openai_chat.unexpected", err);
+      setError((err as Error)?.message ?? "Unexpected error");
       setTurns(previousTurns);
     } finally {
       setIsLoading(false);
@@ -156,90 +149,80 @@ export function ChatCompletionsPlayground() {
     setTurns([]);
     setResponse(null);
     setError(null);
-    setUserInput("");
   }
 
+  const lastTurn = conversationMessages[conversationMessages.length - 1];
   const usage = response?.completion.usage;
 
   return (
-    <div className="space-y-10">
-      <header className="space-y-3">
-        <h1 className="text-2xl font-semibold tracking-tight text-[color:var(--color-foreground)]">
-          Chat Completions Playground
-        </h1>
-        <p className="max-w-3xl text-sm text-[color:var(--color-muted)]">
-          Exercise the OpenAI Chat Completions API against Easymo prompts before wiring new automations. Configure the
-          system prompt, model, and sampling controls, then send live test conversations without leaving the admin
-          panel.
-        </p>
-      </header>
-
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,2fr),minmax(0,1fr)]">
-        <SectionCard
-          title="Conversation"
-          description="Messages are sent to the OpenAI Chat Completions endpoint via the Easymo proxy route."
-          actions={
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleResetConversation}
-              disabled={isLoading || turns.length === 0}
-            >
-              Reset conversation
-            </Button>
-          }
-        >
-          <div className="flex flex-col gap-6">
-            <div className="max-h-[420px] space-y-4 overflow-y-auto pr-1">
-              {conversationMessages.map((message, index) => (
-                <div
-                  key={`${message.role}-${index}`}
-                  className="rounded-2xl border border-[color:var(--color-border)]/40 bg-[color:var(--color-surface)]/70 px-4 py-3"
-                >
-                  <div className="mb-2 flex items-center justify-between text-xs uppercase tracking-[0.2em] text-[color:var(--color-muted)]">
-                    <span>{roleLabel(message.role)}</span>
-                    <span>#{index + 1}</span>
-                  </div>
-                  <p className="whitespace-pre-wrap text-sm leading-relaxed text-[color:var(--color-foreground)]/90">
-                    {message.content}
-                  </p>
+    <div className="space-y-6">
+      <SectionCard
+        title="Conversation"
+        description="Simulate operations prompts and review OpenAI responses via the Easymo proxy."
+        actions={
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={handleResetConversation}
+            disabled={!turns.length && !response}
+          >
+            Reset
+          </Button>
+        }
+      >
+        <div className="grid gap-4">
+          <div className="rounded-2xl border border-[color:var(--color-border)]/40 bg-[color:var(--color-surface)]/60 p-4">
+            {conversationMessages.map((message, idx) => (
+              <div key={idx} className="mb-4 last:mb-0">
+                <div className="text-xs uppercase tracking-[0.2em] text-[color:var(--color-muted)]">
+                  {idx === 0 ? "System prompt" : roleLabel(message.role)}
                 </div>
-              ))}
-            </div>
-
-            {error ? (
-              <div className="rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-200">
-                {error}
+                <div className="whitespace-pre-wrap text-sm text-[color:var(--color-foreground)]/85">
+                  {message.content}
+                </div>
               </div>
-            ) : null}
-
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <label className="flex flex-col gap-2 text-sm text-[color:var(--color-foreground)]/80">
-                <span>User message</span>
-                <textarea
-                  value={userInput}
-                  onChange={(event) => setUserInput(event.target.value)}
-                  placeholder="Ask the assistant to draft a response or summarise a ticket..."
-                  rows={4}
-                  className="min-h-[120px] w-full resize-y rounded-2xl border border-[color:var(--color-border)]/50 bg-[color:var(--color-surface)]/80 px-4 py-3 text-sm text-[color:var(--color-foreground)] focus:outline-none focus:ring-2 focus:ring-[color:var(--color-accent)]/60"
-                />
-              </label>
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <span className="text-xs text-[color:var(--color-muted)]">
-                  Messages send immediately to the upstream API; redact any sensitive customer data before testing.
-                </span>
-                <Button type="submit" disabled={isLoading || !pendingUserInput}>
-                  {isLoading ? "Sending…" : "Send to OpenAI"}
-                </Button>
-              </div>
-            </form>
+            ))}
           </div>
-        </SectionCard>
 
+          <form onSubmit={handleSubmit} className="grid gap-3">
+            <textarea
+              value={userInput}
+              onChange={(event) => setUserInput(event.target.value)}
+              disabled={isLoading}
+              placeholder="Enter the next user message…"
+              className="min-h-[120px] rounded-2xl border border-[color:var(--color-border)]/40 bg-[color:var(--color-surface)]/60 px-4 py-3 text-sm text-[color:var(--color-foreground)]/85 focus:outline-none focus:ring-2 focus:ring-[color:var(--color-accent)]/60"
+            />
+            {error ? (
+              <p className="text-sm text-red-500">{error}</p>
+            ) : lastTurn?.role === "assistant" ? (
+              <p className="text-sm text-[color:var(--color-muted)]">
+                Add more user context or reset the conversation to start over.
+              </p>
+            ) : null}
+            <div className="flex items-center gap-3">
+              <Button type="submit" disabled={isLoading || !pendingUserInput}>
+                {isLoading ? "Sending…" : "Send message"}
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setTurns((current) => current.slice(0, -1))}
+                disabled={isLoading || turns.length === 0}
+              >
+                Undo last turn
+              </Button>
+            </div>
+          </form>
+        </div>
+      </SectionCard>
+
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr),320px]">
         <div className="space-y-6">
           <SectionCard
-            title="Model configuration"
-            description="Tune the system prompt and generation parameters for quick experiments."
+            title="Prompt configuration"
+            description="Adjust system instructions, model, and advanced sampling options."
           >
             <div className="space-y-4">
               <label className="flex flex-col gap-2 text-sm text-[color:var(--color-foreground)]/80">
@@ -247,8 +230,7 @@ export function ChatCompletionsPlayground() {
                 <textarea
                   value={systemPrompt}
                   onChange={(event) => setSystemPrompt(event.target.value)}
-                  rows={5}
-                  className="w-full resize-y rounded-2xl border border-[color:var(--color-border)]/50 bg-[color:var(--color-surface)]/70 px-4 py-3 text-sm text-[color:var(--color-foreground)] focus:outline-none focus:ring-2 focus:ring-[color:var(--color-accent)]/60"
+                  className="min-h-[140px] rounded-2xl border border-[color:var(--color-border)]/50 bg-[color:var(--color-surface)]/70 px-4 py-2 text-sm text-[color:var(--color-foreground)] focus:outline-none focus:ring-2 focus:ring-[color:var(--color-accent)]/60"
                 />
               </label>
 
@@ -259,6 +241,7 @@ export function ChatCompletionsPlayground() {
                     value={model}
                     onChange={(event) => setModel(event.target.value)}
                     list="openai-model-suggestions"
+                    placeholder="gpt-4o-mini"
                     className="w-full rounded-2xl border border-[color:var(--color-border)]/50 bg-[color:var(--color-surface)]/70 px-4 py-2 text-sm text-[color:var(--color-foreground)] focus:outline-none focus:ring-2 focus:ring-[color:var(--color-accent)]/60"
                   />
                   <datalist id="openai-model-suggestions">
@@ -370,6 +353,25 @@ export function ChatCompletionsPlayground() {
             )}
           </SectionCard>
         </div>
+        <SectionCard
+          title="Turns"
+          description="Review each message in the conversation."
+        >
+          <ol className="space-y-4 text-sm text-[color:var(--color-foreground)]/85">
+            {turns.length === 0 ? (
+              <li className="text-[color:var(--color-muted)]">No turns yet. Send a message to start the conversation.</li>
+            ) : (
+              turns.map((turn, index) => (
+                <li key={index} className="rounded-xl border border-[color:var(--color-border)]/40 bg-[color:var(--color-surface)]/70 p-3">
+                  <div className="text-xs uppercase tracking-[0.2em] text-[color:var(--color-muted)]">
+                    {roleLabel(turn.role)}
+                  </div>
+                  <div className="whitespace-pre-wrap">{turn.content}</div>
+                </li>
+              ))
+            )}
+          </ol>
+        </SectionCard>
       </div>
     </div>
   );

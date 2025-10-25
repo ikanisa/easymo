@@ -12,7 +12,6 @@ import { ServiceWorkerToasts } from "@/components/system/ServiceWorkerToasts";
 import { AssistantPanel } from "@/components/assistant/AssistantPanel";
 import { MobileNav } from "@/components/layout/MobileNav";
 import { SessionProvider } from "@/components/providers/SessionProvider";
-import { getAdminApiPath, getAdminRoutePath } from "@/lib/routes";
 
 interface PanelShellProps {
   children: ReactNode;
@@ -62,7 +61,7 @@ export function PanelShell({
   const handleSignOut = async () => {
     try {
       setSigningOut(true);
-      await fetch(getAdminApiPath("auth", "logout"), {
+      await fetch("/api/auth/logout", {
         method: "POST",
         credentials: "same-origin",
       });
@@ -70,7 +69,7 @@ export function PanelShell({
       console.error("panel.logout_failed", error);
     } finally {
       setSigningOut(false);
-      router.replace(getAdminRoutePath("login"));
+      router.replace("/login");
       router.refresh();
     }
   };
