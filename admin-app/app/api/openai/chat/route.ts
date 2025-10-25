@@ -217,8 +217,8 @@ export async function POST(request: NextRequest) {
     completion,
     request: {
       model: requestBody.model,
-      temperature: requestBody.temperature ?? null,
-      maxCompletionTokens: requestBody.max_completion_tokens ?? null,
+      temperature: (requestBody as { temperature?: number }).temperature ?? null,
+      maxCompletionTokens: (requestBody as { max_completion_tokens?: number }).max_completion_tokens ?? null,
       messageCount: sanitizedMessages.length,
     },
     metadata: {

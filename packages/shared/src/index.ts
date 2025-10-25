@@ -14,6 +14,20 @@ export interface LeadInput {
   call_id?: string;
 }
 
-export * from "./routes/index.js";
-export * from "./wa-calls/index.js";
-export * from "./voice/dto.js";
+export interface ScheduleFollowUpInput {
+  call_id?: string;
+  when?: string;
+  channel?: string;
+  notes?: string;
+}
+
+export interface LogOutcomeInput {
+  call_id?: string;
+  status?: string;
+  notes?: string;
+  disposition?: string;
+}
+
+export * from "./routes";
+export * from "./wa-calls";
+export * from "./voice/dto";

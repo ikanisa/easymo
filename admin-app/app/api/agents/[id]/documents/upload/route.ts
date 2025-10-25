@@ -23,7 +23,7 @@ export async function POST(
   const bytes = Buffer.from(await file.arrayBuffer());
   const safeName = file.name?.replace(/[^a-zA-Z0-9_.-]/g, "_") ||
     `upload_${Date.now()}`;
-  const storagePath = `agent-docs/${id}/${Date.now()}_${safeName}`;
+  const storagePath = `${id}/${Date.now()}_${safeName}`;
   const { error: upErr } = await admin.storage.from("agent-docs").upload(
     storagePath,
     bytes,

@@ -25,6 +25,11 @@ const adminApiRouteDefinitions = [
   { key: "agentDocumentPreview", path: "/api/agents/:agentId/documents/:documentId/preview" },
   { key: "agentTasks", path: "/api/agents/:agentId/tasks" },
   { key: "agentRuns", path: "/api/agents/:agentId/runs" },
+  { key: "agentRunDetail", path: "/api/agents/:agentId/runs/:runId" },
+  { key: "agentAudit", path: "/api/agents/:agentId/audit" },
+  { key: "agentDetailAggregate", path: "/api/agents/:agentId/detail" },
+  { key: "agentVectorStats", path: "/api/agents/:agentId/vectors/stats" },
+  { key: "notifications", path: "/api/notifications" },
   { key: "subscriptions", path: "/api/subscriptions" },
   { key: "subscriptionEntitlements", path: "/api/subscriptions/entitlements" },
   { key: "subscriptionSubscribe", path: "/api/subscriptions/subscribe" },
@@ -33,6 +38,10 @@ const adminApiRouteDefinitions = [
   { key: "walletTransfer", path: "/api/wallet/transfer" },
   { key: "marketplaceSettings", path: "/api/marketplace/settings" },
   { key: "trips", path: "/api/trips" },
+  { key: "authLogout", path: "/api/auth/logout" },
+  { key: "voiceAnalytics", path: "/api/voice/analytics" },
+  { key: "voiceAnalyticsExport", path: "/api/voice/analytics/export" },
+  { key: "openaiChat", path: "/api/openai/chat" },
 ] as const satisfies ReadonlyArray<AdminApiRouteDefinition>;
 
 type AdminApiRouteDefinitions = typeof adminApiRouteDefinitions;

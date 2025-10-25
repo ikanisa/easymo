@@ -7,19 +7,24 @@ export async function POST(req: NextRequest) {
   const idem = req.headers.get("Idempotency-Key") || undefined;
   const { wa_media_id, wa_media_url, intent_id, kind } = await req.json();
 
-  // TODO: fetch bytes securely from WA Graph (wa_media_id or wa_media_url)
-  // const bytes = await fetchFromMeta(wa_media_id ?? wa_media_url);
+  // If WhatsApp media id provided, fetch via edge function and upload to storage
 
   const supabase = getSupabaseAdminClient();
   if (!supabase) {
     return NextResponse.json({ error: "supabase_unavailable", reqId }, { status: 503 });
   }
-  const fileKey = `${intent_id}/${Date.now()}_${kind || "other"}.jpg`;
+  const objectPath = `${intent_id}/${Date.now()}_${kind || "other"}.bin`;
 
-  // const { error: upErr } = await supabase.storage.from('insurance_uploads').upload(fileKey, bytes, { upsert: false });
-  // if (upErr) return NextResponse.json({ error: upErr, reqId }, { status: 400 });
+  if (wa_media_id) {
+    try {
+      const { error: fnErr } = await supabase.functions.invoke('insurance-media-fetch', { body: { media_id: wa_media_id, object_path: objectPath } });
+      if (fnErr) return NextResponse.json({ error: fnErr, reqId }, { status: 502 });
+    } catch (e: any) {
+      return NextResponse.json({ error: String(e?.message || e), reqId }, { status: 502 });
+    }
+  }
 
-  const storage_path = `insurance_uploads/${fileKey}`;
+  const storage_path = `insurance_uploads/${objectPath}`;
   const checksum = "sha256:placeholder";
   const { data, error } = await supabase
     .from("insurance_documents")
@@ -28,6 +33,21 @@ export async function POST(req: NextRequest) {
     .single();
 
   if (error) return NextResponse.json({ error, reqId }, { status: 400 });
+
+  // Also enqueue for OCR worker (if table exists)
+  try {
+    await supabase.from('insurance_media_queue').insert({
+      profile_id: null,
+      wa_id: null,
+      storage_path,
+      mime_type: 'image/jpeg',
+      caption: kind || 'other',
+      status: 'queued',
+    });
+  } catch (_) {
+    // non-blocking
+  }
+
   return NextResponse.json({ document: data, reqId, idempotencyKey: idem }, { status: 201 });
 }
 
