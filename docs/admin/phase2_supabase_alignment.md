@@ -126,7 +126,7 @@ Expect HTTP 200 with KPI counts > 0 after seeding.
 
 ## 5. Post-Seed Smoke Tests
 
-1. **Login flow** – Visit `https://easymo.vercel.app/login`, submit an operator
+1. **Login flow** – Visit `https://admin.easymo.dev/login`, submit an operator
    token from `ADMIN_ACCESS_CREDENTIALS`, and confirm redirect to `/dashboard`
    with the `admin_session` cookie present.
 2. **Dashboard** – KPIs show counts > 0 and the webhook error list is populated.

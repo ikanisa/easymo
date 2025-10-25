@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-BASE_URL="${1:-https://easymo.vercel.app}"
+BASE_URL="${1:-https://admin.easymo.dev}"
 
 echo "OpenAPI head:"
 curl -sS "${BASE_URL}/openapi.yaml" | head -n 120 || true
@@ -20,4 +20,3 @@ curl -sS -i -X POST "${BASE_URL}/api/mobility/match" \
 echo "---"
 
 echo "Done."
-

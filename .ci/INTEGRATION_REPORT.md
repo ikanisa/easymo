@@ -189,7 +189,7 @@ The table below summarizes each phase and links directly to the detailed instruc
 2. Record paths and owners for later conflict resolution and migration ordering.
    - _Status: ⏱️ Partial – config discovery blocked pending remote sync to confirm owner mapping; local search notes added below._
 
-> **Local discovery notes:** `next.config.js` (admin-app), `nest-cli.json` (packages/shared uses Nest-based tooling), `prisma/schema.prisma` detected under `packages/db/prisma/`, and multiple `vercel.json`/`vercel.*.json` files across apps. Owner attribution requires remote branch metadata.
+> **Local discovery notes:** `next.config.js` (admin-app), `nest-cli.json` (packages/shared uses Nest-based tooling), `prisma/schema.prisma` detected under `packages/db/prisma/`, plus several obsolete hosting rewrite configs that have since been removed. Owner attribution requires remote branch metadata.
 
 ### Phase 4 – Branch Reconciliation Loop
 [Start Task](#phase-4-task)
@@ -281,7 +281,7 @@ The table below summarizes each phase and links directly to the detailed instruc
 <a id="task-phase-6-secure-reviews"></a>
 ##### Task Phase 6.4 – Secure reviews and deployment readiness
 1. Ensure CI passes and request reviews from release managers and service owners.
-2. Coordinate Vercel deployment verification prior to merging the PR into `main`.
+2. Coordinate release-environment verification prior to merging the PR into `main`.
 
 ## Artifact Index
 | Path | Description |
@@ -296,7 +296,7 @@ The table below summarizes each phase and links directly to the detailed instruc
 2. Execute the phased plan above, updating this report with concrete results for each stage.
 3. Once the repository mirrors the full remote state, regenerate lockfiles exactly once and document results in an updated Integration Report.
 4. Unblock the TypeScript build by restoring the missing exports in `packages/commons/src/routes/voice-bridge.ts` and wiring `getAdminApiPath` into the admin-app test harness; rerun `pnpm -r build` / `pnpm -r test` to confirm green status before proceeding.
-5. Before requesting Vercel deployment reviews, run the production build commands defined in `vercel.json` locally: `pnpm --filter @va/shared... build` followed by `pnpm --filter @easymo/admin-app... build`. Capture logs for the release notes.
-6. After integration is ready, push the branch and create the PR so the Vercel preview deployment can be validated prior to merging into `main`.
+5. Before requesting deployment reviews, run the production build commands documented in `docs/deployment/production-pipeline.md` locally (`pnpm --filter @va/shared... build`, `pnpm --filter @easymo/admin-app... build`) and capture logs for the release notes.
+6. After integration is ready, push the branch and create the PR so the internal release pipeline can validate the preview prior to merging into `main`.
 
 > _This report is additive-only and serves as a placeholder until full remote synchronization is available._

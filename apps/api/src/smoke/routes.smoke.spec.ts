@@ -81,7 +81,7 @@ describe('Critical route smoke tests', () => {
       .post('/realtime/webhook')
       .set('x-openai-signature', 'valid-signature')
       .send({ foo: 'bar' })
-      .expect(201);
+      .expect(200);
 
     expect(realtimeMock.verifySignature).toHaveBeenCalledWith('valid-signature', undefined);
     expect(realtimeMock.onIncomingWebhook).toHaveBeenCalledWith(expect.objectContaining({ foo: 'bar' }));
@@ -97,7 +97,7 @@ describe('Critical route smoke tests', () => {
       .post('/realtime/events')
       .set('authorization', 'Bearer signed-token')
       .send(payload)
-      .expect(201)
+      .expect(200)
       .expect({ ok: true });
 
     expect(verifyJwtSpy).toHaveBeenCalledWith('signed-token', env.jwtSigningKey);

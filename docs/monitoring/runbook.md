@@ -2,11 +2,11 @@
 
 This runbook aggregates the Phase 4 readiness items: log inspection, cron verification, notifications, and rotating admin credentials.
 
-## 1. Vercel Runtime Logs
+## 1. Runtime Logs
 
-- **Admin app**: `vercel logs easymo-admin --scope ikanisa`
-- **Frontend app**: `vercel logs easymo --scope ikanisa`
-  - The CLI requires an active deployment; if the default alias fails, use the deployment URL returned by `vercel projects ls`.
+- **Admin app**: `kubectl logs deployment/admin-app -n easymo` (or use the Grafana Loki dashboard).
+- **Frontend app**: `kubectl logs deployment/frontend-app -n easymo`.
+  - The CLI requires the appropriate kubeconfig/permissions; otherwise, use the observability portal described in `ops/observability/README.md`.
   - Logs include Supabase function invocations; errors bubble up as 4xx/5xx.
 
 ## 2. Supabase Edge Function Smoke Tests
@@ -31,7 +31,7 @@ There is no `supabase cron list` command yet. Verify schedules in **Supabase Das
 - `baskets-reminder`
 - `notification-worker`
 
-Ensure the schedule matches the environment variables in Supabase/Vercel (`CART_REMINDER_CRON`, `ORDER_PENDING_REMINDER_CRON`, etc.).
+Ensure the schedule matches the environment variables in Supabase and the release pipeline (`CART_REMINDER_CRON`, `ORDER_PENDING_REMINDER_CRON`, etc.).
 
 ## 4. Admin Token Rollovers
 

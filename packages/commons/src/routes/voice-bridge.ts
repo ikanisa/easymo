@@ -36,7 +36,7 @@ const voiceBridgeHttpRouteDefinitions = defineHttpControllers({
   },
 } as const satisfies Record<string, ControllerDefinition<Record<string, EndpointDefinition>>>);
 
-const websocketRouteDefinitions = defineWebsocketRoutes({
+const voiceBridgeWebSocketRouteDefinitions = defineWebSocketRoutes({
   mediaStream: { path: "/twilio-media" as const, description: "Twilio Media Stream ingress" },
   twilioMediaStream: { path: "/twilio-media" as const, description: "Twilio Media Stream ingress" },
 } as const satisfies Record<string, WebSocketRouteDefinition>);
@@ -45,9 +45,10 @@ export type VoiceBridgeHttpRoutes = typeof voiceBridgeHttpRouteDefinitions;
 export type VoiceBridgeHttpControllerKey = keyof VoiceBridgeHttpRoutes;
 export type VoiceBridgeHttpEndpointKey<Controller extends VoiceBridgeHttpControllerKey> = keyof VoiceBridgeHttpRoutes[Controller]["endpoints"];
 
-export const voiceBridgeHttpRoutes = httpControllerDefinitions;
-export const voiceBridgeWebsocketRoutes = websocketRouteDefinitions;
-export type VoiceBridgeWebsocketRoutes = typeof websocketRouteDefinitions;
+export const voiceBridgeHttpRoutes = voiceBridgeHttpRouteDefinitions;
+export const voiceBridgeWebsocketRoutes = voiceBridgeWebSocketRouteDefinitions;
+export type VoiceBridgeWebsocketRoutes = typeof voiceBridgeWebsocketRoutes;
+export type VoiceBridgeWebSocketRoutes = VoiceBridgeWebsocketRoutes; // backwards-compatible alias
 
 type LegacyHttpRouteDefinition<Path extends string = string, Method extends string = string> = {
   kind: "http";
@@ -138,10 +139,7 @@ export const getVoiceBridgeEndpointPath = <
   return buildEndpointPath(base, segment);
 };
 
-export type VoiceBridgeWebSocketRoutes = typeof voiceBridgeWebSocketRouteDefinitions;
-export type VoiceBridgeWebSocketRouteKey = keyof VoiceBridgeWebSocketRoutes;
-
-export const voiceBridgeWebSocketRoutes = voiceBridgeWebSocketRouteDefinitions;
+export type VoiceBridgeWebSocketRouteKey = keyof VoiceBridgeWebsocketRoutes;
 
 /**
  * @deprecated Prefer {@link getVoiceBridgeWebsocketRoutePath}.

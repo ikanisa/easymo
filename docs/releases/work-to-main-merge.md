@@ -25,7 +25,7 @@
 
 ## Deployment Readiness
 - Local `pnpm build` should be executed once the lint issue is resolved to mirror Vercel's production build pipeline.
-- Vercel production deployment confirmation is currently **blocked** by the lint failure; once the error is fixed and the branch builds successfully, production deployment should pass automatically per the existing `vercel.json` configuration.
+- Production deployment confirmation is currently **blocked** by the lint failure; once the error is fixed and the branch builds successfully, the release pipeline should pass automatically per the existing deployment configuration.
 - Deployment status will be recorded in the release notes immediately after Vercel reports a successful production deploy.
 
 ## Next Steps
