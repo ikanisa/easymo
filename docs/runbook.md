@@ -67,3 +67,25 @@
 3. Retry the close action; if it fails, check Supabase logs for
    `admin-trips.close_failed` and verify the RLS policy `trips_admin_manage` is
    applied.
+
+### Storage retention rotation (voucher PNG/QR, insurance docs)
+1. Run `scripts/supabase-backup-restore.sh` or `supabase storage list --bucket`
+   to export an inventory for `voucher-png`, `voucher-qr`, and
+   `insurance-docs`.
+2. Verify AWS S3 lifecycle rules:
+   ```bash
+   aws s3api get-bucket-lifecycle-configuration --bucket $AWS_BACKUP_BUCKET \
+     --query "Rules[?contains(ID, 'voucher') || contains(ID, 'insurance')]"
+   ```
+   Ensure voucher buckets expire objects after 90 days and insurance documents
+   after 30 days.
+3. For manual rotations, list timestamped prefixes and delete folders older than
+   the retention window:
+   ```bash
+   aws s3 ls s3://$AWS_BACKUP_BUCKET/supabase/
+   aws s3 rm s3://$AWS_BACKUP_BUCKET/supabase/20240101T000000/storage/voucher-png/ --recursive
+   ```
+   (Always run with `--dryrun` first and only prune prefixes beyond 90 days for
+   voucher assets or 30 days for insurance documents.)
+4. Update the retention log (`backups/<timestamp>/backup.log`) with the
+   rotation window reviewed and any deletions executed.
