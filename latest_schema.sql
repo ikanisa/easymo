@@ -1,7 +1,7 @@
 --
 -- PostgreSQL database dump
 --
--- MIGRATIONS_CHECKSUM: b0ef33d76c624a1c8d0d7ce05e7a6df74e7ddc6ccc7eaaf7b3bc3bfd300a335d
+-- MIGRATIONS_CHECKSUM: 95c1c1286c164462da45425228173b938749813ea0371d7a3509f7fb1e3723f1
 
 -- Dumped from database version 15.8 (Debian 15.8-1.pgdg110+1)
 -- Dumped by pg_dump version 15.3

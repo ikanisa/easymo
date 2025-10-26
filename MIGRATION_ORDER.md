@@ -4,6 +4,12 @@ Execute migrations in the order below. Each file should use the naming
 convention `YYYYMMDDHHMMSS_description.sql` and avoid editing existing
 migrations.
 
+> **Schema dump gate**: after adding or editing migrations run
+> `supabase db dump --schema public > latest_schema.sql` and then
+> `pnpm schema:verify`. The checksum comment at the top of
+> `latest_schema.sql` must match the current contents of
+> `supabase/migrations/**/*.sql` or CI will fail.
+
 1. **Admin Roles**
    - Create `admin_roles` table and seed Super Admin for staging.
 2. **Stations**

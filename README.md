@@ -127,6 +127,9 @@ Vite React app and communicates with those Edge Functions through the
 
 1. Copy `.env.example` to `.env` and fill in your Supabase and admin
    credentials.  Never commit your service role key to version control.
+   - When enabling WhatsApp callbacks, set `WABA_PHONE_NUMBER_ID`,
+     `WABA_ACCESS_TOKEN`, and `WA_APP_SECRET`; the backend now fails fast if
+     these values are missing or left at defaults.
 2. Run `pnpm install` to install workspace dependencies (`pnpm-workspace.yaml`
    wires `services/*` and `packages/*`).
 3. Start the admin panel with `pnpm dev`.  The app talks to Supabase through

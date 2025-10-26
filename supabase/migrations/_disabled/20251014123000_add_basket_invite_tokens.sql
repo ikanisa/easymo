@@ -1,3 +1,4 @@
+BEGIN;
 CREATE TABLE IF NOT EXISTS basket_invite_tokens (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   basket_id uuid NOT NULL REFERENCES baskets(id) ON DELETE CASCADE,
@@ -39,3 +40,4 @@ BEGIN
   RETURN inserted;
 END;
 $$;
+COMMIT;

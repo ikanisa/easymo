@@ -1,3 +1,4 @@
+BEGIN;
 -- Requires: postgis
 CREATE EXTENSION IF NOT EXISTS postgis;
 
@@ -42,3 +43,5 @@ CREATE INDEX IF NOT EXISTS idx_live_market_mv_pickup
 
 CREATE INDEX IF NOT EXISTS idx_live_market_mv_dropoff
   ON public.live_market_mv USING GIST (dropoff_geog);
+
+COMMIT;

@@ -1,3 +1,4 @@
+BEGIN;
 -- Enable PostGIS if not enabled
 CREATE EXTENSION IF NOT EXISTS postgis;
 
@@ -208,3 +209,4 @@ ORDER BY
   m.created_at DESC
 LIMIT GREATEST(_limit_count, 1);
 $$;
+COMMIT;

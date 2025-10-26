@@ -87,8 +87,9 @@ begin
   ) then
     create policy svc_rw_voice_calls on voice_calls
       for all using (auth.role() = 'service_role') with check (true);
-  end if;
+end if;
 end $$;
+COMMIT;
 COMMIT;
 
 alter table voice_events enable row level security;
@@ -104,6 +105,7 @@ begin
       for all using (auth.role() = 'service_role') with check (true);
   end if;
 end $$;
+COMMIT;
 
 alter table transcripts enable row level security;
 do $$
@@ -174,3 +176,4 @@ begin
       for all using (auth.role() = 'service_role') with check (true);
   end if;
 end $$;
+COMMIT;

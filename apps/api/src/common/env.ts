@@ -71,6 +71,16 @@ const supabaseConfig = resolveSupabaseConfig();
 
 const port = z.coerce.number().int().nonnegative().catch(4000).parse(readEnv('PORT'));
 
+const jwtSigningKey = readEnv('JWT_SIGNING_KEY');
+if (!jwtSigningKey || jwtSigningKey === 'dev') {
+  throw new Error('JWT_SIGNING_KEY must be set to a non-default value.');
+}
+
+const metaAppSecret = readEnv('WA_APP_SECRET') ?? readEnv('META_APP_SECRET');
+if (!metaAppSecret) {
+  throw new Error('WA_APP_SECRET (or META_APP_SECRET) must be configured to validate WhatsApp callbacks.');
+}
+
 export const env = {
   port,
   baseUrl: readEnv('BACKEND_BASE_URL') ?? 'http://localhost:4000',
@@ -90,7 +100,8 @@ export const env = {
   openaiApiKey: readEnv('OPENAI_API_KEY') ?? '',
   realtimeModel: readEnv('REALTIME_MODEL') ?? 'gpt-realtime',
   realtimeWsUrl: readEnv('REALTIME_WS_URL') ?? '',
-  jwtSigningKey: readEnv('JWT_SIGNING_KEY') ?? 'dev',
+  jwtSigningKey,
+  metaAppSecret,
   voiceAgentDefault: readEnv('VOICE_AGENT_DEFAULT') ?? 'sales',
   voiceAgentProjectMap: parseRecord(readEnv('VOICE_AGENT_PROJECT_MAP')),
   voiceAgentNumberMap: parseRecord(readEnv('VOICE_AGENT_NUMBER_MAP')),

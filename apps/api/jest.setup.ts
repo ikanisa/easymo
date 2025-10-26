@@ -4,3 +4,6 @@ process.env.SERVICE_URL ??= process.env.SUPABASE_URL;
 process.env.SERVICE_ROLE_KEY ??= process.env.SUPABASE_SERVICE_ROLE_KEY;
 process.env.JWT_SIGNING_KEY ??= "test-signing-key";
 process.env.BRIDGE_SHARED_SECRET ??= "test-bridge-secret";
+process.env.WABA_PHONE_NUMBER_ID ??= "test-wa-phone";
+process.env.WABA_ACCESS_TOKEN ??= "test-wa-token";
+process.env.WA_APP_SECRET ??= "test-wa-secret";

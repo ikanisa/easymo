@@ -56,9 +56,10 @@ export function requireServiceSupabaseConfig(): SupabaseServiceConfig | null {
     process.env.SERVICE_ROLE_KEY;
 
   if (!url || !serviceRoleKey) {
-    throw new Error(
+    console.error(
       "Supabase service-role credentials are missing. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY (or enable NEXT_PUBLIC_USE_MOCKS=true).",
     );
+    return null;
   }
 
   return { url, serviceRoleKey };

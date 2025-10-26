@@ -1,3 +1,4 @@
+BEGIN;
 -- Phase 2: Core Schema + Pro Gating + Welcome Credits
 create extension if not exists postgis;
 
@@ -213,3 +214,4 @@ language sql stable as $$
   order by t.created_at desc
   limit greatest(in_max,1);
 $$;
+COMMIT;

@@ -15,6 +15,39 @@ const requestSchema = z.object({
   token: z.string().min(8, "token_required"),
 });
 
+const MAX_ATTEMPTS = Number.parseInt(process.env.ADMIN_LOGIN_MAX_ATTEMPTS ?? "5", 10);
+const WINDOW_MS = Number.parseInt(process.env.ADMIN_LOGIN_WINDOW_MS ?? "60000", 10);
+const loginBuckets = new Map<string, { count: number; resetAt: number }>();
+
+const now = () => Date.now();
+
+function clientKey(request: Request): string {
+  const forwarded = request.headers.get("x-forwarded-for");
+  if (forwarded) return forwarded.split(",")[0]?.trim() || "unknown";
+  return request.headers.get("cf-connecting-ip")
+    || request.headers.get("x-real-ip")
+    || "unknown";
+}
+
+function isRateLimited(key: string): boolean {
+  const bucket = loginBuckets.get(key);
+  if (!bucket) return false;
+  if (bucket.resetAt <= now()) {
+    loginBuckets.delete(key);
+    return false;
+  }
+  return bucket.count >= MAX_ATTEMPTS;
+}
+
+function recordFailedAttempt(key: string) {
+  const bucket = loginBuckets.get(key);
+  if (!bucket || bucket.resetAt <= now()) {
+    loginBuckets.set(key, { count: 1, resetAt: now() + WINDOW_MS });
+    return;
+  }
+  bucket.count += 1;
+}
+
 function toBuffer(value: string): Buffer {
   return Buffer.from(value.normalize());
 }
@@ -29,6 +62,14 @@ function constantTimeEquals(a: string, b: string): boolean {
 }
 
 export const POST = createHandler("admin_auth.login", async (request) => {
+  const key = clientKey(request);
+  if (isRateLimited(key)) {
+    return NextResponse.json(
+      { error: "rate_limited", message: "Too many login attempts. Try again later." },
+      { status: 429 },
+    );
+  }
+
   const credentials = getAdminAccessCredentials();
   if (!credentials.length) {
     return NextResponse.json(
@@ -58,6 +99,7 @@ export const POST = createHandler("admin_auth.login", async (request) => {
     ?? credentials.find((candidate) => constantTimeEquals(candidate.token, body.token));
 
   if (!match) {
+    recordFailedAttempt(key);
     logStructured({
       event: "admin_auth.login_denied",
       status: "error",
@@ -71,6 +113,8 @@ export const POST = createHandler("admin_auth.login", async (request) => {
       { status: 401 },
     );
   }
+
+  loginBuckets.delete(key);
 
   const { token, expiresAt } = await createSessionToken(match.actorId);
   const ttlRaw = process.env.ADMIN_SESSION_TTL_SECONDS;

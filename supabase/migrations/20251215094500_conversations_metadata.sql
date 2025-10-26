@@ -1,3 +1,4 @@
+BEGIN;
 -- Add metadata column for conversations to support API key-value pairs
 alter table if exists public.conversations
   add column if not exists metadata jsonb default '{}'::jsonb;
@@ -6,3 +7,4 @@ alter table if exists public.conversations
 create index if not exists conversations_metadata_gin
   on public.conversations
   using gin (metadata);
+COMMIT;

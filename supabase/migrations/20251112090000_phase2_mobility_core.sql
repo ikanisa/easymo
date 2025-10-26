@@ -315,3 +315,4 @@ begin
   return result;
 end;
 $$;
+COMMIT;

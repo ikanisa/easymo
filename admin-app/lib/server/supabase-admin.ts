@@ -2,18 +2,28 @@ import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { requireServiceSupabaseConfig } from "../runtime-config";
 
 let adminClient: SupabaseClient | null = null;
+let currentConfigKey: string | null = null;
 
 export function getSupabaseAdminClient(): SupabaseClient | null {
   const config = requireServiceSupabaseConfig();
-  if (!config) return null;
+  if (!config) {
+    return null;
+  }
 
-  if (!adminClient) {
+  const configKey = `${config.url}:${config.serviceRoleKey}`;
+  if (!adminClient || currentConfigKey !== configKey) {
     adminClient = createClient(config.url, config.serviceRoleKey, {
       auth: {
         persistSession: false,
       },
     });
+    currentConfigKey = configKey;
   }
 
   return adminClient;
+}
+
+export function resetSupabaseAdminClient() {
+  adminClient = null;
+  currentConfigKey = null;
 }

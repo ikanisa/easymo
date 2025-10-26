@@ -1,3 +1,5 @@
+BEGIN;
+
 create extension if not exists "fuzzystrmatch" with schema "public" version '1.2';
 
 create type "public"."basket_status" as enum ('draft', 'pending_review', 'approved', 'rejected', 'suspended', 'closed');
@@ -7195,5 +7197,5 @@ create type "topology"."validatetopology_returntype" as ("error" character varyi
 
 CREATE TRIGGER layer_integrity_checks BEFORE DELETE OR UPDATE ON topology.layer FOR EACH ROW EXECUTE FUNCTION layertrigger();
 
-
+COMMIT;
 
