@@ -1,15 +1,14 @@
--- SQL assertions for security.claim_notifications()
+\set ON_ERROR_STOP on
+CREATE EXTENSION IF NOT EXISTS pgtap;
+
 BEGIN;
 SET LOCAL search_path TO public, security;
 
-DO $$
-DECLARE
-  queued_id uuid;
-  locked_id uuid;
-  claimed RECORD;
-  attempt RECORD;
-  reopened RECORD;
-BEGIN
+SELECT plan(9);
+
+CREATE TEMP TABLE tmp_notifications(kind text PRIMARY KEY, id uuid);
+
+WITH queued AS (
   INSERT INTO public.notifications (
     to_wa_id,
     template_name,
@@ -32,8 +31,12 @@ BEGIN
     timezone('utc', now()) - interval '10 minutes',
     NULL
   )
-  RETURNING id INTO queued_id;
+  RETURNING id
+)
+INSERT INTO tmp_notifications
+SELECT 'queued', id FROM queued;
 
+WITH locked AS (
   INSERT INTO public.notifications (
     to_wa_id,
     template_name,
@@ -58,53 +61,74 @@ BEGIN
     timezone('utc', now()) - interval '5 minutes',
     NULL
   )
-  RETURNING id INTO locked_id;
+  RETURNING id
+)
+INSERT INTO tmp_notifications
+SELECT 'locked', id FROM locked;
 
-  -- First claim should lock queued_id
-  SELECT * INTO claimed FROM security.claim_notifications(1);
-  IF NOT FOUND THEN
-    RAISE EXCEPTION 'Expected one notification to be claimed';
-  END IF;
-  IF claimed.id IS DISTINCT FROM queued_id THEN
-    RAISE EXCEPTION 'Expected queued notification %, got %', queued_id, claimed.id;
-  END IF;
-  IF claimed.locked_at IS NULL THEN
-    RAISE EXCEPTION 'Claimed notification missing locked_at timestamp';
-  END IF;
+CREATE TEMP TABLE claimed AS
+SELECT *
+  FROM security.claim_notifications(1);
 
-  -- Second claim should yield no rows while other record remains within lock window
-  SELECT * INTO attempt FROM security.claim_notifications(1);
-  IF FOUND THEN
-    RAISE EXCEPTION 'Expected no additional notifications while lock window active';
-  END IF;
+SELECT is(
+  (SELECT count(*) FROM claimed),
+  1::bigint,
+  'claims exactly one notification when a queued row is available'
+);
 
-  -- Expire lock for second row and ensure it becomes claimable
-  UPDATE public.notifications
-     SET locked_at = timezone('utc', now()) - interval '20 minutes',
-         next_attempt_at = NULL
-   WHERE id = locked_id;
+SELECT is(
+  (SELECT id FROM claimed),
+  (SELECT id FROM tmp_notifications WHERE kind = 'queued'),
+  'returns the queued notification first'
+);
 
-  SELECT * INTO reopened FROM security.claim_notifications(1);
-  IF NOT FOUND OR reopened.id IS DISTINCT FROM locked_id THEN
-    RAISE EXCEPTION 'Expected locked notification % to be claimed after lock expiry', locked_id;
-  END IF;
+SELECT isnt_null(
+  (SELECT locked_at FROM claimed),
+  'sets locked_at timestamp on the claimed notification'
+);
 
-  DELETE FROM public.notifications WHERE id IN (queued_id, locked_id);
-END;
-$$;
+SELECT is(
+  (SELECT count(*) FROM security.claim_notifications(1)),
+  0::bigint,
+  'does not claim additional notifications while the lock window is active'
+);
 
-DO $$
-BEGIN
-  IF NOT has_function_privilege('service_role', 'security.claim_notifications(integer)', 'EXECUTE') THEN
-    RAISE EXCEPTION 'service_role must retain execute privilege on claim_notifications';
-  END IF;
-  IF has_function_privilege('authenticated', 'security.claim_notifications(integer)', 'EXECUTE') THEN
-    RAISE EXCEPTION 'authenticated role must not execute claim_notifications';
-  END IF;
-  IF has_function_privilege('anon', 'security.claim_notifications(integer)', 'EXECUTE') THEN
-    RAISE EXCEPTION 'anon role must not execute claim_notifications';
-  END IF;
-END;
-$$;
+UPDATE public.notifications
+   SET locked_at = timezone('utc', now()) - interval '20 minutes',
+       next_attempt_at = NULL
+ WHERE id = (SELECT id FROM tmp_notifications WHERE kind = 'locked');
+
+CREATE TEMP TABLE reopened AS
+SELECT *
+  FROM security.claim_notifications(1);
+
+SELECT is(
+  (SELECT count(*) FROM reopened),
+  1::bigint,
+  'reclaims the locked notification after the lock expires'
+);
+
+SELECT is(
+  (SELECT id FROM reopened),
+  (SELECT id FROM tmp_notifications WHERE kind = 'locked'),
+  'returns the previously locked notification after expiry'
+);
+
+SELECT ok(
+  has_function_privilege('service_role', 'security.claim_notifications(integer)', 'EXECUTE'),
+  'service_role retains EXECUTE on security.claim_notifications'
+);
+
+SELECT ok(
+  NOT has_function_privilege('authenticated', 'security.claim_notifications(integer)', 'EXECUTE'),
+  'authenticated role cannot execute security.claim_notifications'
+);
+
+SELECT ok(
+  NOT has_function_privilege('anon', 'security.claim_notifications(integer)', 'EXECUTE'),
+  'anon role cannot execute security.claim_notifications'
+);
+
+SELECT * FROM finish();
 
 ROLLBACK;

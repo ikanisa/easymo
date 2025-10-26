@@ -10,9 +10,36 @@ jobs:
   node:
     name: Install, typecheck, lint, build
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: supabase/postgres:15.1.1.0
+        ports:
+          - 5432:5432
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      PGHOST: localhost
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGDATABASE: easymo_ci
+      NODE_OPTIONS: --max_old_space_size=4096
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Install PostgreSQL client and pgTAP
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client pgtap
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -25,8 +52,40 @@ jobs:
           node-version: 20
           cache: pnpm
 
+      - name: Setup Deno
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: v1.x
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Prepare database schema
+        run: |
+          set -euo pipefail
+          psql postgresql://postgres:postgres@localhost:5432/postgres -v ON_ERROR_STOP=1 -c "CREATE DATABASE easymo_ci;"
+          psql postgresql://postgres:postgres@localhost:5432/easymo_ci -v ON_ERROR_STOP=1 <<'SQL'
+          CREATE EXTENSION IF NOT EXISTS pgcrypto;
+          CREATE EXTENSION IF NOT EXISTS postgis;
+          CREATE EXTENSION IF NOT EXISTS vector;
+          DO $$
+          BEGIN
+            IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'anon') THEN
+              CREATE ROLE anon NOLOGIN;
+            END IF;
+            IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'authenticated') THEN
+              CREATE ROLE authenticated NOLOGIN;
+            END IF;
+            IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'service_role') THEN
+              CREATE ROLE service_role NOLOGIN;
+            END IF;
+          END$$;
+          SQL
+          psql postgresql://postgres:postgres@localhost:5432/easymo_ci -v ON_ERROR_STOP=1 -f latest_schema.sql
+          psql postgresql://postgres:postgres@localhost:5432/easymo_ci -v ON_ERROR_STOP=1 -c "CREATE EXTENSION IF NOT EXISTS pgtap;"
+
+      - name: Run pgTAP regression tests
+        run: pg_prove --failures --recurse tests/sql
 
       - name: Typecheck
         run: pnpm typecheck
@@ -36,3 +95,14 @@ jobs:
 
       - name: Build
         run: pnpm build
+
+      - name: Run Flow Exchange Newman smoke tests
+        env:
+          FLOW_EXCHANGE_URL: http://127.0.0.1:8000
+        run: |
+          set -euo pipefail
+          deno run --allow-env --allow-net supabase/functions/flow-exchange-mock/index.ts &
+          MOCK_PID=$!
+          trap 'kill $MOCK_PID' EXIT
+          sleep 2
+          pnpm test:newman:flow-exchange

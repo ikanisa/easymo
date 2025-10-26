@@ -1,133 +1,194 @@
--- SQL assertions for menu_admin.promote_draft_menu()
+\set ON_ERROR_STOP on
+CREATE EXTENSION IF NOT EXISTS pgtap;
+
 BEGIN;
 SET LOCAL search_path TO public, menu_admin;
 
-DO $$
-DECLARE
-  v_bar_id uuid := gen_random_uuid();
-  v_slug text := 'test-bar-' || substring(gen_random_uuid()::text, 1, 8);
-  v_draft_menu_id uuid := gen_random_uuid();
-  v_category_id uuid := gen_random_uuid();
-  v_item_id uuid := gen_random_uuid();
-  v_modifier_id uuid := gen_random_uuid();
-  v_published uuid;
-  v_new_category uuid;
-  v_new_item uuid;
-  v_published_cnt int;
-  v_archived_cnt int;
-BEGIN
-  INSERT INTO public.bars (id, slug, name, currency, is_active, created_at, updated_at, location_text, country)
-  VALUES (v_bar_id, v_slug, 'Test Phase Menu', 'RWF', true, timezone('utc', now()), timezone('utc', now()), 'Kigali', 'RW');
+SELECT plan(10);
 
-  INSERT INTO public.menus (id, bar_id, version, status, source, source_file_ids, created_by)
-  VALUES (v_draft_menu_id, v_bar_id, 1, 'draft', 'manual', ARRAY['seed'], 'automation');
+SELECT set_config('promote.bar_id', gen_random_uuid()::text, true);
+SELECT set_config('promote.slug', 'test-bar-' || substring(gen_random_uuid()::text, 1, 8), true);
+SELECT set_config('promote.draft_menu_id', gen_random_uuid()::text, true);
+SELECT set_config('promote.category_id', gen_random_uuid()::text, true);
+SELECT set_config('promote.item_id', gen_random_uuid()::text, true);
+SELECT set_config('promote.modifier_id', gen_random_uuid()::text, true);
 
-  INSERT INTO public.categories (id, bar_id, menu_id, parent_category_id, name, sort_order, is_deleted)
-  VALUES (v_category_id, v_bar_id, v_draft_menu_id, NULL, 'Starters', 1, false);
+INSERT INTO public.bars (id, slug, name, currency, is_active, created_at, updated_at, location_text, country)
+VALUES (
+  current_setting('promote.bar_id')::uuid,
+  current_setting('promote.slug'),
+  'Test Phase Menu',
+  'RWF',
+  true,
+  timezone('utc', now()),
+  timezone('utc', now()),
+  'Kigali',
+  'RW'
+);
 
-  INSERT INTO public.items (
-    id,
-    bar_id,
-    menu_id,
-    category_id,
-    name,
-    short_description,
-    price_minor,
-    currency,
-    flags,
-    is_available,
-    sort_order,
-    metadata
-  )
-  VALUES (
-    v_item_id,
-    v_bar_id,
-    v_draft_menu_id,
-    v_category_id,
-    'Samosa',
-    'Crispy vegetarian samosa',
-    2500,
-    'RWF',
-    '[]'::jsonb,
-    true,
-    1,
-    '{}'::jsonb
-  );
+INSERT INTO public.menus (id, bar_id, version, status, source, source_file_ids, created_by)
+VALUES (
+  current_setting('promote.draft_menu_id')::uuid,
+  current_setting('promote.bar_id')::uuid,
+  1,
+  'draft',
+  'manual',
+  ARRAY['seed'],
+  'automation'
+);
 
-  INSERT INTO public.item_modifiers (id, item_id, name, modifier_type, is_required, options, sort_order)
-  VALUES (
-    v_modifier_id,
-    v_item_id,
-    'Sauce',
-    'single',
-    false,
-    '[{"label":"Chili","price_delta_minor":0}]'::jsonb,
-    1
-  );
+INSERT INTO public.categories (id, bar_id, menu_id, parent_category_id, name, sort_order, is_deleted)
+VALUES (
+  current_setting('promote.category_id')::uuid,
+  current_setting('promote.bar_id')::uuid,
+  current_setting('promote.draft_menu_id')::uuid,
+  NULL,
+  'Starters',
+  1,
+  false
+);
 
-  v_published := menu_admin.promote_draft_menu(v_bar_id, v_draft_menu_id);
-  IF v_published IS NULL THEN
-    RAISE EXCEPTION 'Expected promote_draft_menu to return new menu id';
-  END IF;
+INSERT INTO public.items (
+  id,
+  bar_id,
+  menu_id,
+  category_id,
+  name,
+  short_description,
+  price_minor,
+  currency,
+  flags,
+  is_available,
+  sort_order,
+  metadata
+)
+VALUES (
+  current_setting('promote.item_id')::uuid,
+  current_setting('promote.bar_id')::uuid,
+  current_setting('promote.draft_menu_id')::uuid,
+  current_setting('promote.category_id')::uuid,
+  'Samosa',
+  'Crispy vegetarian samosa',
+  2500,
+  'RWF',
+  '[]'::jsonb,
+  true,
+  1,
+  '{}'::jsonb
+);
 
-  SELECT count(*) INTO v_published_cnt
-  FROM public.menus
-  WHERE bar_id = v_bar_id AND status = 'published';
-  IF v_published_cnt <> 1 THEN
-    RAISE EXCEPTION 'Expected exactly one published menu, found %', v_published_cnt;
-  END IF;
+INSERT INTO public.item_modifiers (id, item_id, name, modifier_type, is_required, options, sort_order)
+VALUES (
+  current_setting('promote.modifier_id')::uuid,
+  current_setting('promote.item_id')::uuid,
+  'Sauce',
+  'single',
+  false,
+  '[{"label":"Chili","price_delta_minor":0}]'::jsonb,
+  1
+);
 
-  SELECT count(*) INTO v_archived_cnt
-  FROM public.menus
-  WHERE bar_id = v_bar_id AND status = 'archived';
-  IF v_archived_cnt <> 0 THEN
-    RAISE EXCEPTION 'Did not expect archived menus during first publish (found %)', v_archived_cnt;
-  END IF;
+SELECT set_config(
+  'promote.published_menu_id',
+  menu_admin.promote_draft_menu(
+    current_setting('promote.bar_id')::uuid,
+    current_setting('promote.draft_menu_id')::uuid
+  )::text,
+  true
+);
 
-  SELECT id INTO v_new_category
-  FROM public.categories
-  WHERE menu_id = v_published;
-  IF v_new_category IS NULL OR v_new_category = v_category_id THEN
-    RAISE EXCEPTION 'Expected published menu to have cloned category distinct from draft';
-  END IF;
+SELECT isnt_null(
+  current_setting('promote.published_menu_id', true),
+  'promote_draft_menu returns a published menu id'
+);
 
-  SELECT id INTO v_new_item
-  FROM public.items
-  WHERE menu_id = v_published;
-  IF v_new_item IS NULL OR v_new_item = v_item_id THEN
-    RAISE EXCEPTION 'Expected published menu to clone item with new id';
-  END IF;
+SELECT isnt(
+  current_setting('promote.published_menu_id')::uuid,
+  current_setting('promote.draft_menu_id')::uuid,
+  'published menu id differs from draft menu id'
+);
 
-  IF NOT EXISTS (
+SELECT is(
+  (
+    SELECT count(*)
+      FROM public.menus
+     WHERE bar_id = current_setting('promote.bar_id')::uuid
+       AND status = 'published'
+  ),
+  1::bigint,
+  'creates exactly one published menu'
+);
+
+SELECT is(
+  (
+    SELECT count(*)
+      FROM public.menus
+     WHERE bar_id = current_setting('promote.bar_id')::uuid
+       AND status = 'archived'
+  ),
+  0::bigint,
+  'does not archive menus during first publish'
+);
+
+SELECT set_config(
+  'promote.new_category_id',
+  (
+    SELECT id
+      FROM public.categories
+     WHERE menu_id = current_setting('promote.published_menu_id')::uuid
+     LIMIT 1
+  )::text,
+  true
+);
+
+SELECT isnt(
+  current_setting('promote.new_category_id')::uuid,
+  current_setting('promote.category_id')::uuid,
+  'cloned category has a new id'
+);
+
+SELECT set_config(
+  'promote.new_item_id',
+  (
+    SELECT id
+      FROM public.items
+     WHERE menu_id = current_setting('promote.published_menu_id')::uuid
+     LIMIT 1
+  )::text,
+  true
+);
+
+SELECT isnt(
+  current_setting('promote.new_item_id')::uuid,
+  current_setting('promote.item_id')::uuid,
+  'cloned item has a new id'
+);
+
+SELECT ok(
+  EXISTS (
     SELECT 1
-    FROM public.item_modifiers m
-    WHERE m.item_id = v_new_item
-      AND m.name = 'Sauce'
-  ) THEN
-    RAISE EXCEPTION 'Expected modifiers to be cloned for new menu item';
-  END IF;
+      FROM public.item_modifiers m
+     WHERE m.item_id = current_setting('promote.new_item_id')::uuid
+       AND m.name = 'Sauce'
+  ),
+  'modifiers are cloned for the published menu item'
+);
 
-  -- Clean up inserted seed data
-  DELETE FROM public.item_modifiers WHERE item_id IN (v_item_id, v_new_item);
-  DELETE FROM public.items WHERE id IN (v_item_id, v_new_item);
-  DELETE FROM public.categories WHERE id IN (v_category_id, v_new_category);
-  DELETE FROM public.menus WHERE bar_id = v_bar_id;
-  DELETE FROM public.bars WHERE id = v_bar_id;
-END;
-$$;
+SELECT ok(
+  has_function_privilege('service_role', 'menu_admin.promote_draft_menu(uuid, uuid)', 'EXECUTE'),
+  'service_role retains EXECUTE on menu_admin.promote_draft_menu'
+);
 
-DO $$
-BEGIN
-  IF NOT has_function_privilege('service_role', 'menu_admin.promote_draft_menu(uuid, uuid)', 'EXECUTE') THEN
-    RAISE EXCEPTION 'service_role must retain execute privilege on promote_draft_menu';
-  END IF;
-  IF has_function_privilege('authenticated', 'menu_admin.promote_draft_menu(uuid, uuid)', 'EXECUTE') THEN
-    RAISE EXCEPTION 'authenticated role must not execute promote_draft_menu';
-  END IF;
-  IF has_function_privilege('anon', 'menu_admin.promote_draft_menu(uuid, uuid)', 'EXECUTE') THEN
-    RAISE EXCEPTION 'anon role must not execute promote_draft_menu';
-  END IF;
-END;
-$$;
+SELECT ok(
+  NOT has_function_privilege('authenticated', 'menu_admin.promote_draft_menu(uuid, uuid)', 'EXECUTE'),
+  'authenticated role cannot execute menu_admin.promote_draft_menu'
+);
+
+SELECT ok(
+  NOT has_function_privilege('anon', 'menu_admin.promote_draft_menu(uuid, uuid)', 'EXECUTE'),
+  'anon role cannot execute menu_admin.promote_draft_menu'
+);
+
+SELECT * FROM finish();
 
 ROLLBACK;

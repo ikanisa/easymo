@@ -19,7 +19,60 @@
           "mode": "raw",
           "raw": "{\n  \"flow_id\": \"flow.cust.bar_browser.v1\",\n  \"screen_id\": \"s_find_bar\",\n  \"action_id\": \"a_show_results\",\n  \"wa_id\": \"+250788000000\",\n  \"session_id\": \"demo-session\",\n  \"fields\": {\"q\": \"demo\"}\n}"
         }
-      }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('responds with 200', function () { pm.response.to.have.status(200); });",
+              "const payload = pm.response.json();",
+              "pm.test('returns bar results screen', function () { pm.expect(payload.screen).to.eql('s_bar_results'); });",
+              "pm.test('returns at least one bar result', function () {",
+              "  pm.expect(payload.data.bars).to.be.an('array').that.is.not.empty;",
+              "});",
+              "pm.test('provides a pagination token for the next page', function () {",
+              "  pm.expect(payload.data).to.have.property('page_token_next');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Customer Bar Browser (Next Page)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": {
+          "raw": "{{FLOW_EXCHANGE_URL}}",
+          "host": ["{{FLOW_EXCHANGE_URL}}"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"flow_id\": \"flow.cust.bar_browser.v1\",\n  \"screen_id\": \"s_bar_results\",\n  \"action_id\": \"a_paged_bars\",\n  \"wa_id\": \"+250788000000\",\n  \"session_id\": \"demo-session\",\n  \"fields\": {\"page_token\": \"PAGE_2\", \"q\": \"demo\"},\n  \"filters\": {\"area\": \"all\"}\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('responds with 200', function () { pm.response.to.have.status(200); });",
+              "const payload = pm.response.json();",
+              "pm.test('stays on bar results screen', function () { pm.expect(payload.screen).to.eql('s_bar_results'); });",
+              "pm.test('returns the requested page token', function () {",
+              "  pm.expect(payload.data.page_token_prev).to.eql('PAGE_1');",
+              "  pm.expect(payload.data.page_token_next).to.be.oneOf([null, 'PAGE_2']);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
     }
   ]
 }
