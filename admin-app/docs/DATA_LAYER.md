@@ -13,11 +13,12 @@
 - `lib/api/client.ts` centralises fetch logic, injecting `x-request-id` headers
   for observability.
 - `lib/api/queryClient.ts` exports helpers for creating configured `QueryClient`
-  instances on server and browser.
+  instances on server and browser and is wired through
+  `app/providers/QueryProvider.tsx` for hydration.
 - Query keys follow the structure `[domain, scope?, params?]`, e.g.
   `['vouchers', { status, search }]`.
 - Server Components should use `react-query`'s `dehydrate`/`HydrationBoundary`
-  pattern (to be added in Phase 1 Step 2).
+  pattern (now available via `app/providers/QueryProvider`).
 - When an API route is unavailable, queries should surface degraded-state flags
   so the UI can respond gracefully.
 
@@ -40,15 +41,21 @@
 
 ## Offline Roadmap
 
+- Web App Manifest lives at `public/manifest.webmanifest` with placeholder icons
+  and deep-link shortcuts ready for refinement.
+- `app/sw/register.ts` registers `public/sw.js`, which currently ships a
+  scaffolded service worker focused on install/activate messaging and fetch
+  interception hooks. Offline queueing and cache warmers are stubbed for Phase 7
+  ownership.
 - Async storage persister package is installed but not yet initialised.
 - Background sync and cache persistence will be configured during Phase 7 (PWA &
-  Polish).
+  Polish) once ownership is assigned in the offline roadmap.
 
 ## TODOs
 
-- [ ] Create `app/providers/QueryProvider.tsx` to wrap the app with
+- [x] Create `app/providers/QueryProvider.tsx` to wrap the app with
       `QueryClientProvider` + `HydrationBoundary`.
-- [ ] Define domain-specific query modules (`lib/queries/vouchers.ts`, etc.).
+- [x] Define domain-specific query modules (`lib/queries/vouchers.ts`, etc.).
 - [ ] Wire policy engine responses into mutation error handling once APIs exist.
 - [ ] Document testing patterns for query-dependent components.
 

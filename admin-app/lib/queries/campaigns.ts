@@ -1,8 +1,7 @@
 import { QueryKey, useQuery, UseQueryOptions } from "@tanstack/react-query";
 import type { Campaign } from "@/lib/schemas";
-import type { PaginatedResult } from "@/lib/shared/pagination";
-import { listCampaigns } from "@/lib/campaigns/campaigns-service";
-import type { Pagination } from "@/lib/shared/pagination";
+import type { PaginatedResult, Pagination } from "@/lib/data-provider";
+import { listCampaigns } from "@/lib/data-provider";
 
 export type CampaignsQueryParams = Pagination & {
   status?: Campaign["status"];

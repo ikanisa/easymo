@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import "../styles/theme.css";
 import { AppProviders } from "@/components/providers/AppProviders";
+import { QueryProvider } from "@/app/providers/QueryProvider";
 
 export const metadata: Metadata = {
   title: "easyMO Admin Panel",
@@ -17,10 +18,12 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <a className="skip-link" href="#main-content">
-          Skip to main content
-        </a>
-        <AppProviders>{children}</AppProviders>
+        <QueryProvider>
+          <a className="skip-link" href="#main-content">
+            Skip to main content
+          </a>
+          <AppProviders>{children}</AppProviders>
+        </QueryProvider>
       </body>
     </html>
   );

@@ -1,5 +1,8 @@
 "use client";
 
+// Scaffolded registration hook for the admin service worker. Full offline
+// persistence (cache hydration, queue replay UI) will land during Phase 7 of the
+// roadmap.
 import { useEffect } from "react";
 
 export function useServiceWorkerRegistration() {

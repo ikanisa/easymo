@@ -73,9 +73,11 @@ additive-only and avoids forbidden paths.
      for consistent sizing and accessible labels.
 
 6. **PWA Scaffold (Foundation)**
-   - Generate `public/manifest.webmanifest` with placeholder metadata.
-   - Add `app/sw/register.ts` and `public/sw.js` placeholders with TODOs (full
-     implementation in Phase 7).
+   - `public/manifest.webmanifest` ships with placeholder metadata and icon
+     references that product can iterate on before launch.
+   - `app/sw/register.ts` and `public/sw.js` provide registration + lifecycle
+     scaffolds; background sync/cache persistence will remain TODOs for the Phase
+     7 polish owners.
    - Note: `next.config.mjs` update to reference SW will occur once
      implementation is ready.
 
@@ -92,7 +94,7 @@ additive-only and avoids forbidden paths.
 - [ ] Scaffold Tailwind config and PostCSS updates (add plugin while preserving
       defaults).
 - [ ] Create design token CSS and TypeScript helpers.
-- [ ] Wrap root layout with theme and query providers.
+- [x] Wrap root layout with theme and query providers.
 - [ ] Add motion provider and helper hooks.
 - [ ] Document component library usage and data layer patterns.
 - [ ] Verify existing mock-driven pages continue to render.

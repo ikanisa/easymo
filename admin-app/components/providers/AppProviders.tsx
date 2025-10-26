@@ -1,7 +1,6 @@
 "use client";
 
 import { ReactNode, useEffect, useState } from "react";
-import { QueryProvider } from "./QueryProvider";
 import { ThemeProvider } from "./ThemeProvider";
 import { MotionProviders } from "@/components/motion/MotionProviders";
 import { useServiceWorkerRegistration } from "@/app/sw/register";
@@ -27,13 +26,11 @@ export function AppProviders({ children }: AppProvidersProps) {
 
   return (
     <ThemeProvider>
-      <QueryProvider>
-        <ConnectivityProvider>
-          <MotionProviders reducedMotion={prefersReducedMotion}>
-            {children}
-          </MotionProviders>
-        </ConnectivityProvider>
-      </QueryProvider>
+      <ConnectivityProvider>
+        <MotionProviders reducedMotion={prefersReducedMotion}>
+          {children}
+        </MotionProviders>
+      </ConnectivityProvider>
     </ThemeProvider>
   );
 }
