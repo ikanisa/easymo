@@ -30,6 +30,19 @@ const snapshot: AdminDiagnosticsSnapshot = {
     ],
     messages: ["Mock log message"],
   },
+  matches: {
+    matchesLastHour: 2,
+    matchesLast24h: 10,
+    openTrips: 1,
+    errorCountLastHour: 0,
+    recentErrors: [],
+    messages: ["Mock match message"],
+  },
+  queues: {
+    notificationsQueued: 4,
+    ocrPending: 1,
+    mobilityOpenTrips: 2,
+  },
 };
 
 describe("AdminDiagnosticsContent", () => {
@@ -46,6 +59,8 @@ describe("AdminDiagnosticsContent", () => {
     expect(screen.getByText("Mock health message")).toBeInTheDocument();
     expect(screen.getByText("Admin numbers")).toBeInTheDocument();
     expect(screen.getByText("Mock log message")).toBeInTheDocument();
+    expect(screen.getByText("Mock match message")).toBeInTheDocument();
+    expect(screen.getByText("Notifications queued")).toBeInTheDocument();
   });
 
   it("handles trip lookup", async () => {

@@ -443,6 +443,19 @@ export function createAdminDiagnosticsSnapshot(
       logs: [],
       messages: [],
     },
+    matches: {
+      matchesLastHour: 0,
+      matchesLast24h: 0,
+      openTrips: 0,
+      errorCountLastHour: 0,
+      recentErrors: [],
+      messages: [],
+    },
+    queues: {
+      notificationsQueued: 0,
+      ocrPending: 0,
+      mobilityOpenTrips: 0,
+    },
     ...overrides,
   };
 }

@@ -430,9 +430,26 @@ export const adminDiagnosticsLogsSchema = z.object({
   messages: z.array(z.string()).default([]),
 });
 
+export const adminDiagnosticsMatchSummarySchema = z.object({
+  matchesLastHour: z.number().min(0).default(0),
+  matchesLast24h: z.number().min(0).default(0),
+  openTrips: z.number().min(0).default(0),
+  errorCountLastHour: z.number().min(0).default(0),
+  recentErrors: z.array(adminDiagnosticsLogSchema).default([]),
+  messages: z.array(z.string()).default([]),
+});
+
+export const adminDiagnosticsQueueSchema = z.object({
+  notificationsQueued: z.number().min(0).default(0),
+  ocrPending: z.number().min(0).default(0),
+  mobilityOpenTrips: z.number().min(0).default(0),
+});
+
 export const adminDiagnosticsSnapshotSchema = z.object({
   health: adminDiagnosticsHealthSchema,
   logs: adminDiagnosticsLogsSchema,
+  matches: adminDiagnosticsMatchSummarySchema,
+  queues: adminDiagnosticsQueueSchema,
 });
 
 export const adminDiagnosticsMatchTripSchema = z.object({
@@ -482,7 +499,11 @@ export type AdminVoucherList = z.infer<typeof adminVoucherListSchema>;
 export type AdminVoucherDetail = z.infer<typeof adminVoucherDetailSchema>;
 export type AdminDiagnosticsHealth = z.infer<typeof adminDiagnosticsHealthSchema>;
 export type AdminDiagnosticsLogs = z.infer<typeof adminDiagnosticsLogsSchema>;
+export type AdminDiagnosticsMatchSummary = z.infer<
+  typeof adminDiagnosticsMatchSummarySchema
+>;
 export type AdminDiagnosticsSnapshot = z.infer<typeof adminDiagnosticsSnapshotSchema>;
+export type AdminDiagnosticsQueues = z.infer<typeof adminDiagnosticsQueueSchema>;
 export type AdminDiagnosticsMatchTrip = z.infer<typeof adminDiagnosticsMatchTripSchema>;
 export type AdminDiagnosticsMatch = z.infer<typeof adminDiagnosticsMatchSchema>;
 export type LiveCall = z.infer<typeof liveCallSchema>;

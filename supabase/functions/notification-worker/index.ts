@@ -1,7 +1,13 @@
 import { serve } from "../wa-webhook/deps.ts";
+import { supabase as sharedSupabase } from "../wa-webhook/config.ts";
 import { processNotificationQueue } from "../wa-webhook/notify/sender.ts";
 import { logStructuredEvent } from "../wa-webhook/observe/log.ts";
 import { emitAlert } from "../wa-webhook/observe/alert.ts";
+import {
+  recordDurationMetric,
+  recordGauge,
+  recordMetric,
+} from "../wa-webhook/observe/metrics.ts";
 import { claimWorkerLease, releaseWorkerLease } from "./lease.ts";
 
 const BATCH_SIZE = 20;
@@ -35,11 +41,19 @@ async function runNotificationWorker(trigger: "http" | "cron") {
     leaseAcquired = true;
     await logStructuredEvent("NOTIFY_WORKER_START", { trigger });
     const results = await processNotificationQueue(BATCH_SIZE);
+    await recordMetric("notification_worker_processed_total", results.length, {
+      trigger,
+    });
     await logStructuredEvent("NOTIFY_WORKER_DONE", {
       trigger,
       processed: results.length,
       duration_ms: Date.now() - started,
     });
+    await recordDurationMetric("notification_worker_latency_ms", started, {
+      trigger,
+      processed: results.length,
+    });
+    await publishNotificationQueueDepth(trigger);
   } catch (error) {
     const message = error instanceof Error
       ? error.message
@@ -48,6 +62,10 @@ async function runNotificationWorker(trigger: "http" | "cron") {
     await emitAlert("NOTIFY_WORKER_ERROR", {
       trigger,
       error: message,
+    });
+    await recordMetric("notification_worker_failures_total", 1, {
+      trigger,
+      reason: message,
     });
     throw new Error(message);
   } finally {
@@ -59,6 +77,22 @@ async function runNotificationWorker(trigger: "http" | "cron") {
       }
     }
     running = false;
+  }
+}
+
+async function publishNotificationQueueDepth(trigger: "http" | "cron") {
+  try {
+    const { count, error } = await sharedSupabase
+      .from("notifications")
+      .select("id", { head: true, count: "exact" })
+      .eq("status", "queued");
+    if (error) {
+      console.error("notification-worker.queue_depth_fail", error);
+      return;
+    }
+    await recordGauge("notification_queue_depth", count ?? 0, { trigger });
+  } catch (error) {
+    console.error("notification-worker.queue_depth_error", error);
   }
 }
 

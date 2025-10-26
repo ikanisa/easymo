@@ -13,7 +13,7 @@
   "screens": [
     {
       "id": "s_find_bar",
-      "title": "Find a bar",
+      "title": "Find a Bar",
       "layout": {
         "type": "SingleColumnLayout",
         "children": [
@@ -35,7 +35,7 @@
               },
               {
                 "type": "Footer",
-                "label": "Show results",
+                "label": "View Results",
                 "on-click-action": {
                   "name": "data_exchange",
                   "payload": {
@@ -54,7 +54,7 @@
     },
     {
       "id": "s_bar_results",
-      "title": "Select a bar",
+      "title": "Select a Bar",
       "layout": {
         "type": "SingleColumnLayout",
         "children": [
@@ -111,7 +111,7 @@
               },
               {
                 "type": "Footer",
-                "label": "Back to search",
+                "label": "Back to Search",
                 "on-click-action": {
                   "name": "navigate",
                   "payload": {
