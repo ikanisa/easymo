@@ -1,9 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 describe('database schema guard', () => {
-  const repoRoot = process.cwd();
+  const cwd = process.cwd();
+  const repoRoot = existsSync(join(cwd, 'supabase')) ? cwd : join(cwd, '..');
   const adminCore = readFileSync(join(repoRoot, 'supabase/migrations/20251027120000_admin_core_schema.sql'), 'utf8');
   const coreSchema = readFileSync(join(repoRoot, 'supabase/migrations/20251002120000_core_schema.sql'), 'utf8');
 

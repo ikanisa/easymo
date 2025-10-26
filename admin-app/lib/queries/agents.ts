@@ -1,28 +1,18 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getAdminApiRoutePath } from "@/lib/routes";
+import { apiClient } from "@/lib/api/client";
 
 export function useAgentsList() {
   return useQuery({
     queryKey: ["agents"],
-    queryFn: async () => {
-      const res = await fetch(getAdminApiRoutePath("agents"));
-      if (!res.ok) throw new Error("failed_to_load_agents");
-      return res.json();
-    },
+    queryFn: ({ signal }) => apiClient.request("agents", { signal }),
   });
 }
 
 export function useCreateAgent() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (body: { name: string; key?: string; description?: string }) => {
-      const res = await fetch(getAdminApiRoutePath("agents"), {
-        method: "POST",
-        body: JSON.stringify(body),
-      });
-      if (!res.ok) throw new Error("failed_to_create_agent");
-      return res.json();
-    },
+    mutationFn: (body: { name: string; key?: string; description?: string }) =>
+      apiClient.request("agents", { method: "POST", body }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["agents"] }),
   });
 }
@@ -30,25 +20,20 @@ export function useCreateAgent() {
 export function useAgentDetails(id: string) {
   return useQuery({
     queryKey: ["agents", id],
-    queryFn: async () => {
-      const res = await fetch(getAdminApiRoutePath("agentDetail", { agentId: id }));
-      if (!res.ok) throw new Error("failed_to_load_agent");
-      return res.json();
-    },
+    queryFn: ({ signal }) =>
+      apiClient.request("agentDetail", { params: { agentId: id }, signal }),
   });
 }
 
 export function useCreateVersion(id: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (body: { instructions?: string; config?: Record<string, unknown> }) => {
-      const res = await fetch(
-        getAdminApiRoutePath("agentVersions", { agentId: id }),
-        { method: "POST", body: JSON.stringify(body) },
-      );
-      if (!res.ok) throw new Error("failed_to_create_version");
-      return res.json();
-    },
+    mutationFn: (body: { instructions?: string; config?: Record<string, unknown> }) =>
+      apiClient.request("agentVersions", {
+        params: { agentId: id },
+        method: "POST",
+        body,
+      }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["agents", id] });
       qc.invalidateQueries({ queryKey: ["agents", id, "versions"] });
@@ -60,14 +45,12 @@ export function useCreateVersion(id: string) {
 export function useDeployVersion(id: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (body: { version: number }) => {
-      const res = await fetch(
-        getAdminApiRoutePath("agentDeploy", { agentId: id }),
-        { method: "POST", body: JSON.stringify(body) },
-      );
-      if (!res.ok) throw new Error("failed_to_deploy");
-      return res.json();
-    },
+    mutationFn: (body: { version: number }) =>
+      apiClient.request("agentDeploy", {
+        params: { agentId: id },
+        method: "POST",
+        body,
+      }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["agents", id] });
       qc.invalidateQueries({ queryKey: ["agents", id, "versions"] });
@@ -82,12 +65,11 @@ export function useUploadAgentDocument(id: string) {
     mutationFn: async (file: File) => {
       const fd = new FormData();
       fd.append("file", file);
-      const res = await fetch(getAdminApiRoutePath("agentDocumentsUpload", { agentId: id }), {
+      return apiClient.request("agentDocumentsUpload", {
+        params: { agentId: id },
         method: "POST",
         body: fd,
       });
-      if (!res.ok) throw new Error("failed_to_upload_document");
-      return res.json();
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["agents", id] });
@@ -101,16 +83,11 @@ export function useUploadAgentDocument(id: string) {
 export function useDeleteAgentDocument(id: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (docId: string) => {
-      const res = await fetch(
-        getAdminApiRoutePath("agentDocument", { agentId: id, documentId: docId }),
-        {
-          method: "DELETE",
-        },
-      );
-      if (!res.ok) throw new Error("failed_to_delete_document");
-      return res.json();
-    },
+    mutationFn: (docId: string) =>
+      apiClient.request("agentDocument", {
+        params: { agentId: id, documentId: docId },
+        method: "DELETE",
+      }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["agents", id] });
       qc.invalidateQueries({ queryKey: ["agents", id, "documents"] });
@@ -121,28 +98,26 @@ export function useDeleteAgentDocument(id: string) {
 }
 
 export function useAgentTasks(id: string, params?: { status?: string }) {
-  const qs = params?.status ? `?status=${encodeURIComponent(params.status)}` : "";
   return useQuery({
     queryKey: ["agents", id, "tasks", params?.status ?? "all"],
-    queryFn: async () => {
-      const baseUrl = getAdminApiRoutePath("agentTasks", { agentId: id });
-      const res = await fetch(`${baseUrl}${qs}`);
-      if (!res.ok) throw new Error("failed_to_load_tasks");
-      return res.json();
-    },
+    queryFn: ({ signal }) =>
+      apiClient.request("agentTasks", {
+        params: { agentId: id },
+        query: { status: params?.status },
+        signal,
+      }),
   });
 }
 
 export function useAgentRuns(id: string, params?: { status?: string }) {
-  const qs = params?.status ? `?status=${encodeURIComponent(params.status)}` : "";
   return useQuery({
     queryKey: ["agents", id, "runs", params?.status ?? "all"],
-    queryFn: async () => {
-      const baseUrl = getAdminApiRoutePath("agentRuns", { agentId: id });
-      const res = await fetch(`${baseUrl}${qs}`);
-      if (!res.ok) throw new Error("failed_to_load_runs");
-      return res.json();
-    },
+    queryFn: ({ signal }) =>
+      apiClient.request("agentRuns", {
+        params: { agentId: id },
+        query: { status: params?.status },
+        signal,
+      }),
   });
 }
 
@@ -150,22 +125,19 @@ export function useAgentRunDetails(id: string, runId: string) {
   return useQuery({
     enabled: Boolean(id && runId),
     queryKey: ["agents", id, "runs", runId],
-    queryFn: async () => {
-      const res = await fetch(getAdminApiRoutePath("agentRunDetail", { agentId: id, runId }));
-      if (!res.ok) throw new Error("failed_to_load_run");
-      return res.json();
-    },
+    queryFn: ({ signal }) =>
+      apiClient.request("agentRunDetail", {
+        params: { agentId: id, runId },
+        signal,
+      }),
   });
 }
 
 export function useAgentAudit(id: string) {
   return useQuery({
     queryKey: ["agents", id, "audit"],
-    queryFn: async () => {
-      const res = await fetch(getAdminApiRoutePath("agentAudit", { agentId: id }));
-      if (!res.ok) throw new Error("failed_to_load_audit");
-      return res.json();
-    },
+    queryFn: ({ signal }) =>
+      apiClient.request("agentAudit", { params: { agentId: id }, signal }),
   });
 }
 
@@ -173,62 +145,56 @@ export function useAgentDetailAggregate(id: string) {
   return useQuery({
     enabled: Boolean(id),
     queryKey: ["agents", id, "detail"],
-    queryFn: async () => {
-      const res = await fetch(getAdminApiRoutePath("agentDetailAggregate", { agentId: id }));
-      if (!res.ok) throw new Error("failed_to_load_agent_detail");
-      return res.json();
-    },
+    queryFn: ({ signal }) =>
+      apiClient.request("agentDetailAggregate", {
+        params: { agentId: id },
+        signal,
+      }),
   });
 }
 
 export function useAgentVersions(id: string) {
   return useQuery({
     queryKey: ["agents", id, "versions"],
-    queryFn: async () => {
-      const res = await fetch(getAdminApiRoutePath("agentVersions", { agentId: id }));
-      if (!res.ok) throw new Error("failed_to_load_versions");
-      return res.json();
-    },
+    queryFn: ({ signal }) =>
+      apiClient.request("agentVersions", {
+        params: { agentId: id },
+        signal,
+      }),
   });
 }
 
 export function useAgentDocuments(id: string) {
   return useQuery({
     queryKey: ["agents", id, "documents"],
-    queryFn: async () => {
-      const res = await fetch(getAdminApiRoutePath("agentDocuments", { agentId: id }));
-      if (!res.ok) throw new Error("failed_to_load_documents");
-      return res.json();
-    },
+    queryFn: ({ signal }) =>
+      apiClient.request("agentDocuments", {
+        params: { agentId: id },
+        signal,
+      }),
   });
 }
 
 export function useAgentVectorStats(id: string) {
   return useQuery({
     queryKey: ["agents", id, "vectors", "stats"],
-    queryFn: async () => {
-      const res = await fetch(getAdminApiRoutePath("agentVectorStats", { agentId: id }));
-      if (!res.ok) throw new Error("failed_to_load_vector_stats");
-      return res.json();
-    },
+    queryFn: ({ signal }) =>
+      apiClient.request("agentVectorStats", {
+        params: { agentId: id },
+        signal,
+      }),
   });
 }
 
 export function useAddAgentDocUrl(id: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (body: { title?: string; url: string }) => {
-      const res = await fetch(
-        getAdminApiRoutePath("agentDocumentsUrl", { agentId: id }),
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-        },
-      );
-      if (!res.ok) throw new Error('failed_to_add_url');
-      return res.json();
-    },
+    mutationFn: (body: { title?: string; url: string }) =>
+      apiClient.request("agentDocumentsUrl", {
+        params: { agentId: id },
+        method: "POST",
+        body,
+      }),
     onMutate: async (body) => {
       await qc.cancelQueries({ queryKey: ["agents", id, "detail"] });
       const previous = qc.getQueryData(["agents", id, "detail"]);
@@ -263,18 +229,12 @@ export function useAddAgentDocUrl(id: string) {
 export function useEmbedAllAgentDocs(id: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (body: { include_ready?: boolean }) => {
-      const res = await fetch(
-        getAdminApiRoutePath("agentDocumentsEmbedAll", { agentId: id }),
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-        },
-      );
-      if (!res.ok) throw new Error('failed_to_embed_all');
-      return res.json();
-    },
+    mutationFn: (body: { include_ready?: boolean }) =>
+      apiClient.request("agentDocumentsEmbedAll", {
+        params: { agentId: id },
+        method: "POST",
+        body,
+      }),
     onMutate: async () => {
       await qc.cancelQueries({ queryKey: ["agents", id, "detail"] });
       const previous = qc.getQueryData(["agents", id, "detail"]);
@@ -301,18 +261,12 @@ export function useEmbedAllAgentDocs(id: string) {
 export function useDriveSyncAgentDocs(id: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (body: { folder: string; page_size?: number }) => {
-      const res = await fetch(
-        getAdminApiRoutePath("agentDocumentsDriveSync", { agentId: id }),
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-        },
-      );
-      if (!res.ok) throw new Error('failed_to_drive_sync');
-      return res.json();
-    },
+    mutationFn: (body: { folder: string; page_size?: number }) =>
+      apiClient.request("agentDocumentsDriveSync", {
+        params: { agentId: id },
+        method: "POST",
+        body,
+      }),
     onMutate: async (body) => {
       await qc.cancelQueries({ queryKey: ["agents", id, "detail"] });
       const previous = qc.getQueryData(["agents", id, "detail"]);
@@ -346,18 +300,12 @@ export function useDriveSyncAgentDocs(id: string) {
 export function useWebSearchImportAgentDocs(id: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (body: { query: string; top_n?: number; provider?: 'bing' | 'serpapi' }) => {
-      const res = await fetch(
-        getAdminApiRoutePath("agentDocumentsWebSearch", { agentId: id }),
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-        },
-      );
-      if (!res.ok) throw new Error('failed_to_web_import');
-      return res.json();
-    },
+    mutationFn: (body: { query: string; top_n?: number; provider?: "bing" | "serpapi" }) =>
+      apiClient.request("agentDocumentsWebSearch", {
+        params: { agentId: id },
+        method: "POST",
+        body,
+      }),
     onMutate: async (body) => {
       await qc.cancelQueries({ queryKey: ["agents", id, "detail"] });
       const previous = qc.getQueryData(["agents", id, "detail"]);
@@ -391,14 +339,11 @@ export function useWebSearchImportAgentDocs(id: string) {
 export function useEmbedAgentDocument(id: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (docId: string) => {
-      const res = await fetch(
-        getAdminApiRoutePath("agentDocumentEmbed", { agentId: id, documentId: docId }),
-        { method: "POST" },
-      );
-      if (!res.ok) throw new Error('failed_to_embed_doc');
-      return res.json();
-    },
+    mutationFn: (docId: string) =>
+      apiClient.request("agentDocumentEmbed", {
+        params: { agentId: id, documentId: docId },
+        method: "POST",
+      }),
     onMutate: async (docId: string) => {
       await qc.cancelQueries({ queryKey: ["agents", id, "detail"] });
       const previous = qc.getQueryData(["agents", id, "detail"]);
@@ -422,17 +367,11 @@ export function useEmbedAgentDocument(id: string) {
 
 export function useSearchAgentKnowledge(id: string) {
   return useMutation({
-    mutationFn: async (body: { query: string; top_k?: number }) => {
-      const res = await fetch(
-        getAdminApiRoutePath("agentSearch", { agentId: id }),
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-        },
-      );
-      if (!res.ok) throw new Error('failed_to_search');
-      return res.json();
-    },
+    mutationFn: (body: { query: string; top_k?: number }) =>
+      apiClient.request("agentSearch", {
+        params: { agentId: id },
+        method: "POST",
+        body,
+      }),
   });
 }

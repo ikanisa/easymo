@@ -4,6 +4,8 @@ import { RealtimeService } from './realtime.service';
 import { verifyJwt } from '../../common/crypto';
 import { env } from '../../common/env';
 import { getApiControllerBasePath, getApiEndpointSegment } from '@easymo/commons';
+import { RealtimeEventDto } from './dto/realtime-event.dto';
+import { RealtimeSessionDto } from './dto/realtime-session.dto';
 
 @Controller(getApiControllerBasePath('realtime'))
 export class RealtimeController {
@@ -14,19 +16,24 @@ export class RealtimeController {
   async webhook(
     @Headers('x-openai-signature') signature: string | undefined,
     @Req() request: Request & { rawBody?: Buffer },
-    @Body() body: any,
+    @Body() body: RealtimeSessionDto,
     @Res() res: Response,
   ) {
     if (!this.realtime.verifySignature(signature, request.rawBody)) {
       return res.status(401).send('invalid signature');
     }
-    const { config } = await this.realtime.onIncomingWebhook(body);
+    const normalized = body?.raw ?? body;
+    const { config } = await this.realtime.onIncomingWebhook(normalized);
     return res.json(config);
   }
 
   @Post(getApiEndpointSegment('realtime', 'events'))
   @HttpCode(HttpStatus.OK)
-  async events(@Headers('authorization') auth: string | undefined, @Body() event: any, @Res() res: Response) {
+  async events(
+    @Headers('authorization') auth: string | undefined,
+    @Body() event: RealtimeEventDto,
+    @Res() res: Response,
+  ) {
     const token = auth?.startsWith('Bearer ') ? auth.slice(7) : undefined;
     let payload: any;
     try {
@@ -38,19 +45,21 @@ export class RealtimeController {
     if (!callId) {
       return res.status(400).json({ error: 'missing call_id' });
     }
-    await this.realtime.handleSidebandEvent(callId, event);
+    const normalized = event?.raw ?? event;
+    await this.realtime.handleSidebandEvent(callId, normalized);
     return res.json({ ok: true });
   }
 
   @Post(getApiEndpointSegment('realtime', 'session'))
   async createSession(
     @Headers('authorization') auth: string | undefined,
-    @Body() body: any,
+    @Body() body: RealtimeSessionDto,
   ) {
     const token = auth?.startsWith('Bearer ') ? auth.slice(7) : undefined;
     if (!token || token !== env.bridgeSharedSecret) {
       throw new UnauthorizedException('unauthorized');
     }
-    return this.realtime.onIncomingWebhook(body);
+    const normalized = body?.raw ?? body;
+    return this.realtime.onIncomingWebhook(normalized);
   }
 }

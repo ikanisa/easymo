@@ -4,7 +4,7 @@ module.exports = {
   test: {
     environment: "jsdom",
     globals: true,
-    setupFiles: ["./tests/setupTests.ts"],
+    setupFiles: ["./tests/setupActShim.ts", "./tests/setupTests.ts"],
     coverage: {
       reporter: ["text", "json", "html"],
     },

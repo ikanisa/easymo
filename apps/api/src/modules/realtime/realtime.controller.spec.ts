@@ -1,4 +1,4 @@
-import { INestApplication } from '@nestjs/common';
+import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 
@@ -49,6 +49,13 @@ describe('RealtimeController (integration)', () => {
     }).compile();
 
     app = moduleRef.createNestApplication();
+    app.useGlobalPipes(
+      new ValidationPipe({
+        whitelist: true,
+        transform: true,
+        transformOptions: { enableImplicitConversion: true },
+      }),
+    );
     await app.init();
 
     verifyJwtSpy = jest.spyOn(crypto, 'verifyJwt');
@@ -110,6 +117,21 @@ describe('RealtimeController (integration)', () => {
     expect(service.handleSidebandEvent).toHaveBeenCalledWith('call-123', {
       type: 'response.output_text.delta',
     });
+  });
+
+  it('rejects realtime events that are missing the type', async () => {
+    verifyJwtSpy.mockResolvedValueOnce({ call_id: 'call-456' } as any);
+
+    await request(app.getHttpServer())
+      .post('/realtime/events')
+      .set('authorization', 'Bearer valid')
+      .send({ data: { text: 'hi' } })
+      .expect(400)
+      .expect(({ body }) => {
+        expect(body.message).toEqual(expect.arrayContaining(['type must be a string']));
+      });
+
+    expect(service.handleSidebandEvent).not.toHaveBeenCalled();
   });
 
   it('blocks realtime session creation without the shared secret', async () => {

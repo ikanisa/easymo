@@ -135,6 +135,9 @@ Vite React app and communicates with those Edge Functions through the
    fixtures from `supabase/seed/fixtures/admin_panel_core.sql` and
    `supabase/seed/fixtures/admin_panel_marketing.sql`.  The legacy
    `supabase/seeders/phase2_seed.sql` remains available for quick smoke runs.
+   After running new migrations or exporting the schema, run
+   `pnpm schema:verify` to ensure `latest_schema.sql` (with its checksum marker)
+   matches the contents of `supabase/migrations/**/*.sql`.
 5. Bootstrap the Phase 4/5 workspace: `pnpm --filter @easymo/db prisma:migrate:dev`
    against the Agent-Core Postgres URL, then `pnpm --filter @easymo/db seed` to
    generate tenants, agent configs, leads, intents, wallet accounts, and sample

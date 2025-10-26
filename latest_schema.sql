@@ -1,6 +1,7 @@
 --
 -- PostgreSQL database dump
 --
+-- MIGRATIONS_CHECKSUM: b0ef33d76c624a1c8d0d7ce05e7a6df74e7ddc6ccc7eaaf7b3bc3bfd300a335d
 
 -- Dumped from database version 15.8 (Debian 15.8-1.pgdg110+1)
 -- Dumped by pg_dump version 15.3
@@ -244,4 +245,3 @@ BEGIN
   LIMIT LEAST(GREATEST(COALESCE(match_count, 5), 1), 50);
 END;
 $$;
-

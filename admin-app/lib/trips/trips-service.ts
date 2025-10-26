@@ -2,7 +2,7 @@ import { shouldUseMocks } from "@/lib/runtime-config";
 import { paginateArray, type PaginatedResult, type Pagination } from "@/lib/shared/pagination";
 import { matchesSearch } from "@/lib/shared/search";
 import { callAdminFunction } from "@/lib/server/functions-client";
-import { getAdminApiRoutePath } from "@/lib/routes";
+import { apiClient } from "@/lib/api/client";
 
 const useMocks = shouldUseMocks();
 const isServer = typeof window === "undefined";
@@ -12,13 +12,13 @@ export type TripRow = Record<string, unknown>;
 export async function listTrips(params: { search?: string } & Pagination = {}): Promise<PaginatedResult<TripRow>> {
   if (!isServer) {
     // Client → call our API
-    const sp = new URLSearchParams();
-    if (params.search) sp.set("search", params.search);
-    if (params.offset !== undefined) sp.set("offset", String(params.offset));
-    if (params.limit !== undefined) sp.set("limit", String(params.limit));
-    const res = await fetch(`${getAdminApiRoutePath("trips")}?${sp.toString()}`, { cache: "no-store" });
-    if (!res.ok) throw new Error("trips_api_failed");
-    return await res.json();
+    return apiClient.request("trips", {
+      query: {
+        search: params.search,
+        offset: params.offset,
+        limit: params.limit,
+      },
+    });
   }
 
   if (useMocks) {
@@ -51,4 +51,3 @@ export async function listTrips(params: { search?: string } & Pagination = {}): 
       : false,
   };
 }
-
