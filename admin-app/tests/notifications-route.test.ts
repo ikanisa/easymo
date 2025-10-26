@@ -184,6 +184,7 @@ describe('notifications API', () => {
       allowed: false,
       reason: 'quiet_hours',
       message: 'Quiet hours in effect',
+      blockedAt: '2025-10-06T12:05:00Z',
     });
 
     const maybeSingle = vi.fn().mockResolvedValue({
@@ -216,10 +217,82 @@ describe('notifications API', () => {
     expect(response.status).toBe(409);
     const payload = await response.json();
     expect(payload.reason).toBe('quiet_hours');
+    expect(payload.blockedAt).toEqual(expect.any(String));
     expect(callBridge).not.toHaveBeenCalled();
     expect(recordAudit).toHaveBeenCalledWith(
       expect.objectContaining({ action: 'outbound_policy_check' })
     );
+    expect(recordAudit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        diff: expect.objectContaining({ blockedAt: expect.any(String) })
+      })
+    );
+  });
+
+  it('returns throttle metadata when policy throttles resend', async () => {
+    const {
+      getSupabaseAdminClient,
+    } = (await import('@/lib/server/supabase-admin')) as {
+      getSupabaseAdminClient: ReturnType<typeof vi.fn>;
+    };
+    const { evaluateOutboundPolicy } = (await import('@/lib/server/policy')) as {
+      evaluateOutboundPolicy: ReturnType<typeof vi.fn>;
+    };
+    const { callBridge } = (await import('@/lib/server/edge-bridges')) as {
+      callBridge: ReturnType<typeof vi.fn>;
+    };
+
+    evaluateOutboundPolicy.mockResolvedValue({
+      allowed: false,
+      reason: 'throttled',
+      message: 'Per-minute WhatsApp throttle reached.',
+      blockedAt: '2025-10-06T12:06:00Z',
+      throttle: {
+        count: 60,
+        limit: 60,
+        windowStart: '2025-10-06T12:06:00Z',
+        windowEnd: '2025-10-06T12:07:00Z',
+      },
+    });
+
+    const maybeSingle = vi.fn().mockResolvedValue({
+      data: {
+        id: 'dd0b4a7a-6ae0-4800-9e3e-3b3b5c3c4d4e',
+        msisdn: '+250780000003',
+        status: 'failed',
+        retry_count: 1,
+        type: 'order_pending_vendor',
+        to_role: 'vendor',
+      },
+      error: null,
+    });
+    const selectEq = vi.fn(() => ({ maybeSingle }));
+    const select = vi.fn(() => ({ eq: selectEq }));
+    const update = vi.fn();
+    const from = vi.fn(() => ({ select, update }));
+    getSupabaseAdminClient.mockReturnValue({ from });
+
+    const { POST } = await import('@/app/api/notifications/[id]/route');
+    const request = createAdminApiRequest(['notifications', 'dd0b4a7a-6ae0-4800-9e3e-3b3b5c3c4d4e'], {
+      method: 'POST',
+      body: JSON.stringify({ action: 'resend' }),
+    });
+
+    const response = await POST(request, {
+      params: { id: 'dd0b4a7a-6ae0-4800-9e3e-3b3b5c3c4d4e' },
+    });
+
+    expect(response.status).toBe(409);
+    const payload = await response.json();
+    expect(payload.reason).toBe('throttled');
+    expect(payload.blockedAt).toBe('2025-10-06T12:06:00Z');
+    expect(payload.throttle).toEqual({
+      count: 60,
+      limit: 60,
+      windowStart: '2025-10-06T12:06:00Z',
+      windowEnd: '2025-10-06T12:07:00Z',
+    });
+    expect(callBridge).not.toHaveBeenCalled();
   });
 
   it('cancels queued notification', async () => {
@@ -393,6 +466,7 @@ describe('notifications API', () => {
       allowed: false,
       reason: 'quiet_hours',
       message: 'Quiet hours in effect',
+      blockedAt: '2025-10-06T12:05:00Z',
     });
 
     const inFn = vi.fn().mockResolvedValue({
@@ -422,8 +496,14 @@ describe('notifications API', () => {
     const payload = await response.json();
     expect(payload.queued).toEqual([]);
     expect(payload.blocked[0].reason).toBe('quiet_hours');
+    expect(payload.blocked[0].blockedAt).toEqual('2025-10-06T12:05:00Z');
     expect(recordAudit).toHaveBeenCalledWith(
       expect.objectContaining({ action: 'notification_retry_blocked' })
+    );
+    expect(recordAudit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        diff: expect.objectContaining({ blockedAt: '2025-10-06T12:05:00Z' })
+      })
     );
   });
 });

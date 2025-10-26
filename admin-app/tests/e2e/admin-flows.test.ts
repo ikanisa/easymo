@@ -208,6 +208,7 @@ describe('admin journeys', () => {
       allowed: false,
       reason: 'quiet_hours',
       message: 'Quiet hours in effect',
+      blockedAt: '2025-10-06T12:05:00Z',
     });
 
     const { POST: retryNotifications } = await import('@/app/api/notifications/retry/route');
@@ -219,7 +220,7 @@ describe('admin journeys', () => {
     expect(response.status).toBe(200);
     const payload = await response.json();
     expect(payload.queued).toHaveLength(0);
-    expect(payload.blocked[0]).toMatchObject({ id: notificationId, reason: 'quiet_hours' });
+    expect(payload.blocked[0]).toMatchObject({ id: notificationId, reason: 'quiet_hours', blockedAt: '2025-10-06T12:05:00Z' });
     expect(recordAudit).toHaveBeenCalledWith(
       expect.objectContaining({ action: 'notification_retry_blocked', targetId: notificationId }),
     );

@@ -65,7 +65,17 @@ export function NotificationsTable({ initialData }: NotificationsTableProps) {
     } | null
   >(null);
   const [policyNotice, setPolicyNotice] = useState<
-    { reason: string; message?: string | null } | null
+    {
+      reason: string;
+      message?: string | null;
+      blockedAt?: string;
+      throttle?: {
+        count: number;
+        limit: number;
+        windowStart: string;
+        windowEnd: string;
+      };
+    } | null
   >(null);
   const [pendingAction, setPendingAction] = useState<
     { id: string; action: "cancel" } | null
@@ -122,6 +132,8 @@ export function NotificationsTable({ initialData }: NotificationsTableProps) {
             setPolicyNotice({
               reason: payload.reason,
               message: payload.message,
+              blockedAt: payload.blockedAt,
+              throttle: payload.throttle,
             });
             pushToast(
               payload?.message ?? "Action blocked by outbound policy.",
@@ -262,6 +274,8 @@ export function NotificationsTable({ initialData }: NotificationsTableProps) {
           <PolicyBanner
             reason={policyNotice.reason}
             message={policyNotice.message}
+            blockedAt={policyNotice.blockedAt}
+            throttle={policyNotice.throttle}
           />
         )
         : null}

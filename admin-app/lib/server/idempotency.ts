@@ -1,8 +1,7 @@
 "use server";
 
 import { getSupabaseAdminClient } from "@/lib/server/supabase-admin";
-
-const memoryStore = new Map<string, unknown>();
+import { enqueueReliabilityJob } from "@/lib/server/reliability-queue";
 
 export async function withIdempotency<T>(
   key: string | undefined,
@@ -13,40 +12,40 @@ export async function withIdempotency<T>(
   }
 
   const adminClient = getSupabaseAdminClient();
-  if (adminClient) {
-    try {
-      const { data } = await adminClient
-        .from("idempotency_keys")
-        .select("payload")
-        .eq("key", key)
-        .maybeSingle();
-      if (data?.payload) {
-        return data.payload as T;
-      }
-    } catch (error) {
-      console.error("Supabase idempotency lookup failed", error);
-    }
+  if (!adminClient) {
+    throw new Error("supabase_admin_unavailable");
   }
 
-  if (memoryStore.has(key)) {
-    return memoryStore.get(key) as T;
+  try {
+    const { data } = await adminClient
+      .from("idempotency_keys")
+      .select("payload")
+      .eq("key", key)
+      .maybeSingle();
+    if (data?.payload) {
+      return data.payload as T;
+    }
+  } catch (error) {
+    console.error("Supabase idempotency lookup failed", error);
   }
 
   const result = await action();
 
-  if (adminClient) {
-    try {
-      await adminClient
-        .from("idempotency_keys")
-        .upsert({ key, payload: result, created_at: new Date().toISOString() });
-    } catch (error) {
-      console.error(
-        "Supabase idempotency upsert failed, falling back to memory store",
-        error,
-      );
-    }
+  try {
+    await adminClient
+      .from("idempotency_keys")
+      .upsert({ key, payload: result, created_at: new Date().toISOString() });
+  } catch (error) {
+    console.error(
+      "Supabase idempotency upsert failed, enqueuing reliability job",
+      error,
+    );
+    await enqueueReliabilityJob("idempotency.persist", {
+      key,
+      payload: result,
+      error: error instanceof Error ? error.message : "unknown",
+    });
   }
 
-  memoryStore.set(key, result);
   return result;
 }
