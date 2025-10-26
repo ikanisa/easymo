@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { listVouchers } from "@/lib/vouchers/vouchers-service";
+import { listVouchers } from "@/lib/data-provider";
 import { voucherSchema } from "@/lib/schemas";
 import { jsonOk, jsonError, zodValidationError } from "@/lib/api/http";
 import { createHandler } from "@/app/api/withObservability";

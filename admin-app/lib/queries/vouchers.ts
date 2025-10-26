@@ -1,10 +1,7 @@
 import { QueryKey, useQuery, UseQueryOptions } from "@tanstack/react-query";
 import type { Voucher } from "@/lib/schemas";
-import type { PaginatedResult } from "@/lib/shared/pagination";
-import {
-  listVouchers,
-  type VoucherListParams,
-} from "@/lib/vouchers/vouchers-service";
+import type { PaginatedResult } from "@/lib/data-provider";
+import { listVouchers, type VoucherListParams } from "@/lib/data-provider";
 
 export type VouchersQueryParams = VoucherListParams;
 

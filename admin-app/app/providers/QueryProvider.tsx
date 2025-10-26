@@ -1,9 +1,10 @@
 "use client";
 
-import { ReactNode } from "react";
+import { ReactNode, useState } from "react";
 import {
   DehydratedState,
   HydrationBoundary,
+  QueryClient,
   QueryClientProvider,
 } from "@tanstack/react-query";
 import { getBrowserQueryClient } from "@/lib/api/queryClient";
@@ -14,7 +15,7 @@ interface QueryProviderProps {
 }
 
 export function QueryProvider({ children, state }: QueryProviderProps) {
-  const queryClient = getBrowserQueryClient();
+  const [queryClient] = useState<QueryClient>(() => getBrowserQueryClient());
 
   return (
     <QueryClientProvider client={queryClient}>

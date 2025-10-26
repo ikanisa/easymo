@@ -1,3 +1,5 @@
+// Scaffolded service worker for the admin offline roadmap. Detailed caching and
+// background sync policies will be finalised during Phase 7.
 const SHELL_CACHE = "easymo-shell-v2";
 const RUNTIME_CACHE = "easymo-runtime-v2";
 const STATIC_CACHE = "easymo-static-v2";
