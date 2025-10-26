@@ -12,6 +12,7 @@ import {
   type MomoUnmatchedRow,
 } from "@/lib/queries/baskets";
 import styles from "./UnmatchedSmsTable.module.css";
+import { maskMsisdn } from "@va/shared";
 
 interface UnmatchedSmsTableProps {
   params: BasketsQueryParams;
@@ -117,7 +118,7 @@ export function UnmatchedSmsTable({ params }: UnmatchedSmsTableProps) {
               <tr key={row.id}>
                 <td>
                   <div className={styles.senderCell}>
-                    <span className={styles.senderMsisdn}>{row.parsed?.msisdnE164 ?? 'Unknown number'}</span>
+                    <span className={styles.senderMsisdn}>{row.parsed?.msisdnE164 ? maskMsisdn(row.parsed.msisdnE164) : 'Unknown number'}</span>
                     {row.parsed?.senderName ? (
                       <span className={styles.senderName}>{row.parsed.senderName}</span>
                     ) : null}

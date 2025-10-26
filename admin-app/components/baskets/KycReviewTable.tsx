@@ -12,6 +12,7 @@ import {
   type KycDocumentRow,
 } from "@/lib/queries/baskets";
 import styles from "./KycReviewTable.module.css";
+import { maskMsisdn } from "@va/shared";
 
 interface KycReviewTableProps {
   params: BasketsQueryParams;
@@ -95,7 +96,7 @@ export function KycReviewTable({ params }: KycReviewTableProps) {
                 <td>
                   <div className={styles.profileCell}>
                     <span>{row.profile?.displayName ?? 'Unknown user'}</span>
-                    <span className={styles.profileMeta}>{row.profile?.msisdn ?? '—'}</span>
+                    <span className={styles.profileMeta}>{row.profile?.msisdn ? maskMsisdn(row.profile.msisdn) : '—'}</span>
                   </div>
                 </td>
                 <td>

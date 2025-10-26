@@ -13,6 +13,7 @@ import {
   useSaccosQuery,
 } from "@/lib/queries/baskets";
 import styles from "./MembershipQueueTable.module.css";
+import { maskMsisdn } from "@va/shared";
 
 const SACCO_OPTIONS_PARAMS = { limit: 200, status: 'active' } as const;
 
@@ -145,7 +146,7 @@ export function MembershipQueueTable({ params }: MembershipQueueTableProps) {
                     <span className={styles.memberName}>
                       {row.profile?.displayName ?? 'Unknown user'}
                     </span>
-                    <span className={styles.memberMsisdn}>{row.profile?.msisdn ?? '—'}</span>
+                    <span className={styles.memberMsisdn}>{row.profile?.msisdn ? maskMsisdn(row.profile.msisdn) : '—'}</span>
                     <span className={styles.memberId}>{row.userId}</span>
                   </div>
                 </td>

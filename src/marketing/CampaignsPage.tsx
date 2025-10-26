@@ -10,6 +10,7 @@ import {
 import { parseRecipients, prettyJSON } from "./utils";
 import type { QPayload, SendLogRow, SendQueueRow, QueueStatus } from "./types";
 import AdminLayout from "@/components/AdminLayout";
+import { maskMsisdn } from "@va/shared";
 
 /** Tailwind-based admin surface
  *  Drop this page into your admin router, e.g. /admin/marketing
@@ -312,7 +313,7 @@ const QueueTable: React.FC = () => {
                 return (
                   <tr key={r.id} className="border-t">
                     <td className="py-2 pr-4">{r.id}</td>
-                    <td className="py-2 pr-4">{r.msisdn_e164}</td>
+                    <td className="py-2 pr-4">{maskMsisdn(r.msisdn_e164)}</td>
                     <td className="py-2 pr-4">{kind}</td>
                     <td className="py-2 pr-4">{r.attempt}</td>
                     <td className="py-2 pr-4">{new Date(r.next_attempt_at).toLocaleString()}</td>
@@ -391,7 +392,7 @@ const LogsTable: React.FC = () => {
               rows.map((r) => (
                 <tr key={r.id} className="border-t">
                   <td className="py-2 pr-4">{r.id}</td>
-                  <td className="py-2 pr-4">{r.msisdn_e164}</td>
+                  <td className="py-2 pr-4">{maskMsisdn(r.msisdn_e164)}</td>
                   <td className="py-2 pr-4">{r.sent_at ? new Date(r.sent_at).toLocaleString() : "-"}</td>
                   <td className="py-2 pr-4">{r.delivery_status ?? "-"}</td>
                   <td className="py-2 pr-4 truncate max-w-[220px]">{r.provider_msg_id ?? "-"}</td>

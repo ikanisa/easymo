@@ -10,6 +10,7 @@ import {
 } from "@/lib/queries/baskets";
 import { getAdminApiPath } from "@/lib/routes";
 import styles from "./SaccoOfficerForm.module.css";
+import { maskMsisdn } from "@va/shared";
 
 const SACCO_OPTIONS_PARAMS = { limit: 200, status: 'active' } as const;
 
@@ -65,7 +66,7 @@ export function SaccoOfficerForm({ onCreated }: SaccoOfficerFormProps) {
         setSuggestions(
           (data?.data ?? []).map((entry: { userId: string; displayName?: string; msisdn?: string }) => ({
             userId: entry.userId,
-            label: [entry.displayName ?? '—', entry.msisdn ?? '—']
+            label: [entry.displayName ?? '—', entry.msisdn ? maskMsisdn(entry.msisdn) : '—']
               .filter(Boolean)
               .join(' • '),
           })),
