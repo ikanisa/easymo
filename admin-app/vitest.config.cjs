@@ -12,6 +12,8 @@ module.exports = {
   resolve: {
     alias: {
       "@": path.resolve(__dirname),
+      "@va/shared": path.resolve(__dirname, "../packages/shared/src/index.ts"),
+      "@va/shared/*": path.resolve(__dirname, "../packages/shared/src/*"),
       "server-only": path.resolve(__dirname, "tests/__mocks__/server-only.ts"),
     },
   },

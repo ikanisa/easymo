@@ -7,6 +7,8 @@ export type ProblemDetail = {
   details?: unknown;
   integration?: unknown;
   reason?: string;
+  blockedAt?: string;
+  throttle?: Record<string, unknown>;
 };
 
 export function jsonOk<T>(data: T, init?: number | ResponseInit) {

@@ -261,3 +261,59 @@ Priority (M = mandatory before release, N = nice-to-have).
 - Mandatory tests must pass before promoting a build beyond staging.
 - Nice-to-have tests should pass before production rollout unless blocked by
   known issues with documented mitigation.
+
+### Station PWA – Outdoor Release Updates (2025-02)
+
+21. **Login Flow (M)** — Updated for session caching and contrast
+   - Preconditions: Station operator account active with PIN.
+   - Steps: Launch `/station-app`, submit station code + PIN, reload while online/offline.
+   - Expected UI: High-contrast login card (AAA), keyboard focus visible, error copy "Incorrect station code or PIN" masked.
+   - Expected Data: `/api/station/login` returns token; session persisted in `localStorage` `station.session` only after success.
+
+22. **Home Screen Layout (N)** — Large action tiles
+   - Preconditions: Login complete.
+   - Steps: Inspect home on 5" device landscape + portrait.
+   - Expected UI: Four 20pt+ action cards (Scan QR, Enter Code, Balance, History) on dark gradient background.
+   - Expected Data: None (client-only state).
+
+23. **Redeem via QR (M)** — Scanner-ready input with retry queue
+   - Preconditions: Valid voucher, online.
+   - Steps: Toggle scanner ready → paste QR payload → confirm.
+   - Expected UI: "Scanner ready" state, helper copy, confirmation navigation to result with masked MSISDN.
+   - Expected Data: POST `/api/station/redeem` with `Idempotency-Key` header; Supabase `voucher_redemptions` row written once.
+
+24. **Redeem via Code – Happy Path (M)** — Offline-safe
+   - Preconditions: Valid code, intermittent connectivity.
+   - Steps: Disconnect network → enter code → reconnect; observe automatic retry.
+   - Expected UI: Form helper announces retry, success result once network returns.
+   - Expected Data: Local queue entry flushed once online; no duplicate redemption rows.
+
+25. **Redeem via Code – Wrong Code (M)**
+   - Preconditions: Unknown code.
+   - Steps: Submit 5-digit code.
+   - Expected UI: Inline error "Redeem failed. Check the code and try again." red (#FF4D4F) with 4.5:1 contrast.
+   - Expected Data: API responds 404; queue does not persist entry.
+
+26. **Redeem via Code – Replay (M)**
+   - Preconditions: Voucher already redeemed earlier.
+   - Steps: Resubmit code.
+   - Expected UI: Result screen headline "Voucher already redeemed" with previous timestamp + masked MSISDN.
+   - Expected Data: API returns status `already_redeemed`; queue removes entry without retries.
+
+27. **Balance View (N)**
+   - Preconditions: Station with pending + available totals.
+   - Steps: Open Balance, toggle offline → retry.
+   - Expected UI: Loading shimmer → totals in 48pt text, error card when offline.
+   - Expected Data: GET `/api/station/balance`; no writes.
+
+28. **History Pagination (N)**
+   - Preconditions: ≥30 redemptions in scope.
+   - Steps: Scroll list.
+   - Expected UI: High-contrast list rows with masked MSISDN, status chips, time stamps.
+   - Expected Data: `/api/station/history` returns paginated list (cursor respected on follow-up request).
+
+29. **Offline Handling (N)** — Queue resilience
+   - Preconditions: Login, disable network.
+   - Steps: Attempt QR + code redeem; re-enable network.
+   - Expected UI: Retry helper copy, queue badge clears after flush, no duplicate result screens.
+   - Expected Data: Local queue stored under `station.redeemQueue:<stationId>`; each entry flushed once when back online.

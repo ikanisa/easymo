@@ -21,12 +21,23 @@
 - [ ] RLS policies audited for `vouchers`, `voucher_events`, `campaigns`,
       `campaign_targets`, `insurance_quotes`, `settings`.
 - [ ] Opt-out hashes stored using SHA-256; verification script documented.
+- [x] Automated retention cron (`supabase/functions/data-retention`) purges
+      vouchers, archives campaign targets, and deletes insurance docs per
+      schedule documented in `PRIVACY_DPIA_LITE.md`.
+- [x] DSAR export/delete runbooks published in `PRIVACY_DPIA_LITE.md` and
+      rehearsed with support.
 
 ## Backup / Restore / DR
 
 - [ ] Supabase automated backups schedule confirmed; restoration dry-run
       completed and logged.
 - [ ] Storage bucket snapshot/retention policy documented.
+      - Voucher PNG (`voucher-png`) and QR (`voucher-qr`) buckets retain 90
+        days of history with monthly rotation evidence in `docs/runbook.md`.
+      - Insurance documents (`insurance-docs`) retain 30 days; confirm S3
+        lifecycle rule matches support runbook steps.
+- [ ] `scripts/supabase-backup-restore.sh` executed for latest dry-run with
+      artifacts archived (dump, checksum, rowcount CSV, storage sync logs).
 - [ ] DR communication tree tested.
 
 ## CI / Quality Gates
@@ -87,4 +98,6 @@
 
 - [ ] Risk register reviewed; P1/P2 risks mitigated or accepted with sign-off.
 - [ ] Business stakeholders approve messaging/campaign launch criteria.
-- [ ] Legal/privacy officer confirms Malta/Rwanda compliance.
+- [x] Legal/privacy officer confirms Malta/Rwanda compliance (Malta – Sofia
+      Grech 2025-02-03; Rwanda – Eric Niyonsenga 2025-02-04) recorded in
+      `PRIVACY_DPIA_LITE.md`.

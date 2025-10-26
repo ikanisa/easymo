@@ -19,10 +19,12 @@ const actionSchema = z.object({
 
 export const POST = createHandler('admin_api.notifications.id.action', async (
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string } },
+  observability,
 ) => {
   const adminClient = getSupabaseAdminClient();
   if (!adminClient) {
+    observability.recordMetric('notifications.supabase_unavailable', 1);
     return jsonError({ error: 'supabase_unavailable', message: 'Supabase credentials missing.' }, 503);
   }
 
@@ -121,7 +123,11 @@ export const POST = createHandler('admin_api.notifications.id.action', async (
     return jsonOk({ status: 'queued', message: 'Notification already queued for delivery.' });
   }
 
-  const policy = await evaluateOutboundPolicy(data.msisdn);
+  const policy = await evaluateOutboundPolicy(data.msisdn, {
+    observability,
+    channel: 'whatsapp',
+    context: { notification_id: notificationId },
+  });
   if (!policy.allowed) {
     await recordAudit({
       actorId,
@@ -132,10 +138,22 @@ export const POST = createHandler('admin_api.notifications.id.action', async (
         allowed: false,
         reason: policy.reason ?? 'unknown',
         msisdn: data.msisdn,
+        blockedAt: policy.blockedAt,
       },
     });
 
-    return jsonError({ error: 'policy_blocked', reason: policy.reason, message: policy.message ?? 'Send blocked by outbound policy.' }, 409);
+    return jsonError({
+      error: 'policy_blocked',
+      reason: policy.reason,
+      message: policy.message ?? 'Send blocked by outbound policy.',
+      blockedAt: policy.blockedAt,
+      throttle: policy.throttle ? {
+        count: policy.throttle.count,
+        limit: policy.throttle.limit,
+        windowStart: policy.throttle.windowStart,
+        windowEnd: policy.throttle.windowEnd,
+      } : undefined,
+    }, 409);
   }
 
   const bridgeResult = await callBridge('voucherSend', {

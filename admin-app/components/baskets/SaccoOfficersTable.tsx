@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/ToastProvider";
 import { getAdminApiPath } from "@/lib/routes";
 import styles from "./SaccoOfficersTable.module.css";
+import { maskMsisdn } from "@va/shared";
 import {
   basketsQueryKeys,
   type BasketsQueryParams,
@@ -92,7 +93,7 @@ export function SaccoOfficersTable({ params }: SaccoOfficersTableProps) {
                       {row.profile?.displayName ?? 'Unknown user'}
                     </span>
                     <span className={styles.officerMsisdn}>
-                      {row.profile?.msisdn ?? '—'}
+                      {row.profile?.msisdn ? maskMsisdn(row.profile.msisdn) : '—'}
                     </span>
                     <span className={styles.officerId}>{row.userId}</span>
                   </div>

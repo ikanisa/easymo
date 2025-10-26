@@ -20,7 +20,11 @@
     "health": "node ./scripts/health-check.mjs",
     "seed:remote": "bash ./scripts/seed-remote.sh",
     "functions:deploy": "supabase functions deploy admin-settings admin-stats admin-users admin-trips admin-subscriptions simulator",
-    "embeddings:sync": "node ./scripts/embeddings/ingest-documents.mjs"
+    "embeddings:sync": "node ./scripts/embeddings/ingest-documents.mjs",
+    "perf:seed": "node ./tests/perf/seed/perf_seed.mjs",
+    "perf:test:voucher": "k6 run tests/perf/k6/voucher_preview_spike.js",
+    "perf:test:redeem": "k6 run tests/perf/k6/station_redeem_peak.js",
+    "perf:test:campaign": "locust -f tests/perf/locust/campaign_bulk_send.py"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

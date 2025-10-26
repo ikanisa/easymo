@@ -9,6 +9,7 @@ import {
 import { Button } from "@/components/ui/Button";
 import { LoanReviewDrawer } from "./LoanReviewDrawer";
 import styles from "./LoansTable.module.css";
+import { maskMsisdn } from "@va/shared";
 
 const SACCO_OPTIONS_PARAMS = { limit: 200, status: 'active' } as const;
 
@@ -138,7 +139,7 @@ export function LoansTable({ params }: LoansTableProps) {
                 <td>
                   <div className={styles.memberCell}>
                     <span>{row.member?.profile?.displayName ?? 'Unknown'}</span>
-                    <span className={styles.memberMeta}>{row.member?.profile?.msisdn ?? '—'}</span>
+                    <span className={styles.memberMeta}>{row.member?.profile?.msisdn ? maskMsisdn(row.member.profile.msisdn) : '—'}</span>
                   </div>
                 </td>
                 <td className={styles.amountCell}>{formatCurrency(row.principal, row.currency)}</td>
