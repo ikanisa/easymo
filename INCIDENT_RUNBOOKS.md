@@ -64,36 +64,21 @@
 5. **Resolution**
    - Add incident note in Logs page and communicate to vendor support.
 
-## DR Tabletop Test – Backup/Restore Cutover
+## Supabase Credential Leak
 
-- **Cadence**: First Tuesday of each quarter at 14:00 UTC (next: 2025-01-07).
-- **Participants**: Incident Commander (on-call engineer), Data Platform Lead,
-  Support Manager, Stakeholder Communications (Customer Success lead).
-
-### Scenario Outline
-1. **Notification Drill**
-   - Trigger PagerDuty "DR-Tabletop" event; ensure all participants acknowledge
-     within 5 minutes.
-   - Support Manager posts customer-facing holding statement draft in
-     `#ops-status` for review.
-2. **Backup Execution**
-   - Run `scripts/supabase-backup-restore.sh` with staging project ref.
-   - Capture runtime, S3 destination, and row-count parity in the generated
-     `backup.log` and `rowcount.csv`.
-3. **Restore & Cutover Rehearsal**
-   - Validate staging smoke tests (voucher issue/redeem, campaign send, station
-     redeem) and log results in the tabletop report.
-   - Review DNS/env var cutover checklist without executing production change;
-     confirm rollback owner.
-4. **Stakeholder Comms**
-   - Draft status page update and escalation email template; store in
-     `docs/incidents/templates/` (create if missing and link in tabletop notes).
-5. **Findings & Follow-Up**
-   - File retro notes in this runbook section with action owners and due dates.
-   - Update `SYSTEM_CHECKLIST.md` if new controls are introduced.
-
-### Latest Findings (2024-10-01 Tabletop)
-- Snapshot manifest fetch initially failed (HTTP 401); resolved by rotating the
-  Supabase access token and re-running the script.
-- Storage sync took 11 minutes; action item to enable multipart uploads for
-  voucher PNG bucket before next exercise.
+1. **Detect**: Service-role key appears in logs/repos or an external party gains
+   access to Admin APIs without authorisation.
+2. **Immediate Actions**
+   - Notify the primary owner listed in
+     `docs/deployment/supabase-projects.md` (production or staging as
+     appropriate).
+   - Fetch a replacement key from AWS Secrets Manager
+     (`prod/easymo/supabase/service-role` or
+     `stg/easymo/supabase/service-role`) using the AWS CLI.
+3. **Mitigation**
+   - Update Vercel + Supabase Edge Function environments with the new key.
+   - Revoke the leaked key in the Supabase dashboard and invalidate Admin
+     sessions.
+4. **Resolution**
+   - Confirm Admin API access requires the new key only.
+   - Post an incident summary with rotation timestamp in #ops.

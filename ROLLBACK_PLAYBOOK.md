@@ -36,6 +36,11 @@ forbidden paths.
 ## Revert UI Access (if needed)
 
 - Rotate Supabase service role keys to invalidate Admin sessions.
+- Keys live in AWS Secrets Manager (`prod/easymo/supabase/service-role` and
+  `stg/easymo/supabase/service-role`). Use the project matrix
+  (`docs/deployment/supabase-projects.md`) to contact owners, fetch the secret
+  via `aws secretsmanager get-secret-value`, and update Vercel + Edge Function
+  environments before revoking the previous key in Supabase.
 - Provide fallback instructions (legacy tooling or manual support channel).
 
 ## Recovery Steps
