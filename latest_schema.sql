@@ -1,7 +1,7 @@
 --
 -- PostgreSQL database dump
 --
--- MIGRATIONS_CHECKSUM: 34ab40cd9b58e69d508b1ef87dbe53c1a64aa7b473c78092f566254713a9bff1
+-- MIGRATIONS_CHECKSUM: 4dfcda0b7e83b5c09179e336f6d75976ede4ce3bc47abd8e9a6168855029c03b
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -1268,27 +1268,97 @@ ALTER FUNCTION "public"."insurance_queue_media"("_profile_id" "uuid", "_wa_id" "
 
 
 CREATE OR REPLACE FUNCTION "public"."is_admin"() RETURNS boolean
-    LANGUAGE "plpgsql" STABLE
+    LANGUAGE "sql" STABLE
     AS $$
-DECLARE
-  claims jsonb;
-BEGIN
-  IF auth.role() = 'service_role' THEN
-    RETURN true;
-  END IF;
-
-  claims := auth.jwt();
-  RETURN coalesce(
-    claims ->> 'role' = 'admin'
-    OR claims -> 'app_metadata' ->> 'role' = 'admin'
-    OR claims -> 'user_roles' ? 'admin',
-    false
+  SELECT (
+    auth.role() = 'service_role'
+    OR COALESCE(auth.jwt() ->> 'role', '') = ANY (ARRAY['admin','super_admin','support','data_ops'])
+    OR COALESCE(auth.jwt() -> 'app_metadata' ->> 'role', '') = ANY (ARRAY['admin','super_admin','support','data_ops'])
+    OR EXISTS (
+      SELECT 1
+      FROM json_array_elements_text(COALESCE(auth.jwt() -> 'roles', '[]'::json)) AS role(value)
+      WHERE role.value = ANY (ARRAY['admin','super_admin','support','data_ops'])
+    )
+    OR EXISTS (
+      SELECT 1
+      FROM json_array_elements_text(COALESCE(auth.jwt() -> 'app_metadata' -> 'roles', '[]'::json)) AS role(value)
+      WHERE role.value = ANY (ARRAY['admin','super_admin','support','data_ops'])
+    )
+    OR COALESCE((auth.jwt() -> 'user_roles') ?| ARRAY['admin','super_admin','support','data_ops'], FALSE)
   );
-END;
 $$;
 
 
 ALTER FUNCTION "public"."is_admin"() OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."is_admin_reader"() RETURNS boolean
+    LANGUAGE "sql" STABLE
+    AS $$
+  SELECT (
+    public.is_admin()
+    OR COALESCE(auth.jwt() ->> 'role', '') = 'readonly'
+    OR COALESCE(auth.jwt() -> 'app_metadata' ->> 'role', '') = 'readonly'
+    OR EXISTS (
+      SELECT 1
+      FROM json_array_elements_text(COALESCE(auth.jwt() -> 'roles', '[]'::json)) AS role(value)
+      WHERE role.value = 'readonly'
+    )
+    OR EXISTS (
+      SELECT 1
+      FROM json_array_elements_text(COALESCE(auth.jwt() -> 'app_metadata' -> 'roles', '[]'::json)) AS role(value)
+      WHERE role.value = 'readonly'
+    )
+    OR COALESCE((auth.jwt() -> 'user_roles') ? 'readonly', FALSE)
+  );
+$$;
+
+
+ALTER FUNCTION "public"."is_admin_reader"() OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."safe_cast_uuid"(input text) RETURNS uuid
+    LANGUAGE "plpgsql" IMMUTABLE
+    AS $$
+DECLARE
+  result uuid;
+BEGIN
+  IF input IS NULL OR length(trim(input)) = 0 THEN
+    RETURN NULL;
+  END IF;
+  BEGIN
+    result := trim(input)::uuid;
+  EXCEPTION WHEN others THEN
+    RETURN NULL;
+  END;
+  RETURN result;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."safe_cast_uuid"(input text) OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."station_scope_matches"(target uuid) RETURNS boolean
+    LANGUAGE "sql" STABLE
+    AS $$
+  SELECT target IS NOT NULL AND (
+    public.safe_cast_uuid(auth.jwt() ->> 'station_id') = target
+    OR EXISTS (
+      SELECT 1
+      FROM json_array_elements_text(COALESCE(auth.jwt() -> 'station_ids', '[]'::json)) AS payload(value)
+      WHERE public.safe_cast_uuid(payload.value) = target
+    )
+    OR EXISTS (
+      SELECT 1
+      FROM json_array_elements_text(COALESCE(auth.jwt() -> 'stations', '[]'::json)) AS payload(value)
+      WHERE public.safe_cast_uuid(payload.value) = target
+    )
+  );
+$$;
+
+
+ALTER FUNCTION "public"."station_scope_matches"(target uuid) OWNER TO "postgres";
 
 
 CREATE OR REPLACE FUNCTION "public"."issue_basket_invite_token"("_basket_id" "uuid", "_created_by" "uuid", "_explicit_token" "text" DEFAULT NULL::"text", "_ttl" interval DEFAULT '14 days'::interval) RETURNS TABLE("id" "uuid", "basket_id" "uuid", "token" "text", "expires_at" timestamp with time zone, "created_at" timestamp with time zone, "created_by" "uuid", "used_at" timestamp with time zone)
@@ -6979,15 +7049,12 @@ ALTER TABLE ONLY "public"."wallets"
 
 
 
-CREATE POLICY "Enable insert for authenticated users only" ON "public"."vouchers" FOR INSERT TO "authenticated" WITH CHECK (true);
 
 
 
-CREATE POLICY "Enable read access for all users" ON "public"."campaigns" FOR SELECT USING (true);
 
 
 
-CREATE POLICY "Enable read access for all users" ON "public"."vouchers" FOR SELECT USING (true);
 
 
 
@@ -7079,21 +7146,29 @@ ALTER TABLE "public"."app_config" ENABLE ROW LEVEL SECURITY;
 
 
 ALTER TABLE "public"."audit_log" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE ONLY "public"."audit_log" FORCE ROW LEVEL SECURITY;
 
 
-CREATE POLICY "audit_log_delete" ON "public"."audit_log" FOR DELETE USING (("app"."current_role"() = 'admin'::"text"));
-
-
-
-CREATE POLICY "audit_log_insert" ON "public"."audit_log" FOR INSERT WITH CHECK (("app"."current_role"() = ANY (ARRAY['admin'::"text", 'ops'::"text"])));
-
-
-
-CREATE POLICY "audit_log_platform_full" ON "public"."audit_log" USING (("public"."auth_role"() = 'platform'::"text")) WITH CHECK (("public"."auth_role"() = 'platform'::"text"));
+CREATE POLICY "audit_log_admin_read" ON "public"."audit_log"
+    FOR SELECT
+    USING (public.is_admin_reader());
 
 
 
-CREATE POLICY "audit_log_select" ON "public"."audit_log" FOR SELECT USING (("app"."current_role"() = ANY (ARRAY['admin'::"text", 'ops'::"text"])));
+CREATE POLICY "audit_log_admin_append" ON "public"."audit_log"
+    FOR INSERT
+    WITH CHECK (public.is_admin());
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -7241,48 +7316,58 @@ ALTER TABLE "public"."call_consents" ENABLE ROW LEVEL SECURITY;
 
 
 ALTER TABLE "public"."campaign_targets" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE ONLY "public"."campaign_targets" FORCE ROW LEVEL SECURITY;
 
 
-CREATE POLICY "campaign_targets_delete" ON "public"."campaign_targets" FOR DELETE USING (("app"."current_role"() = 'admin'::"text"));
-
-
-
-CREATE POLICY "campaign_targets_insert" ON "public"."campaign_targets" FOR INSERT WITH CHECK (("app"."current_role"() = ANY (ARRAY['admin'::"text", 'ops'::"text"])));
-
-
-
-CREATE POLICY "campaign_targets_select" ON "public"."campaign_targets" FOR SELECT USING (("app"."current_role"() = ANY (ARRAY['admin'::"text", 'ops'::"text"])));
+CREATE POLICY "campaign_targets_admin_manage" ON "public"."campaign_targets"
+    FOR ALL
+    USING (public.is_admin())
+    WITH CHECK (public.is_admin());
 
 
 
-CREATE POLICY "campaign_targets_update" ON "public"."campaign_targets" FOR UPDATE USING (("app"."current_role"() = ANY (ARRAY['admin'::"text", 'ops'::"text"]))) WITH CHECK (("app"."current_role"() = ANY (ARRAY['admin'::"text", 'ops'::"text"])));
+
+
+
+
+
+
+
+
 
 
 
 ALTER TABLE "public"."campaigns" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE ONLY "public"."campaigns" FORCE ROW LEVEL SECURITY;
 
 
-CREATE POLICY "campaigns_block_writes" ON "public"."campaigns" USING (false) WITH CHECK (false);
-
-
-
-CREATE POLICY "campaigns_delete" ON "public"."campaigns" FOR DELETE USING (("app"."current_role"() = 'admin'::"text"));
-
-
-
-CREATE POLICY "campaigns_insert" ON "public"."campaigns" FOR INSERT WITH CHECK (("app"."current_role"() = ANY (ARRAY['admin'::"text", 'ops'::"text"])));
+CREATE POLICY "campaigns_admin_manage" ON "public"."campaigns"
+    FOR ALL
+    USING (public.is_admin())
+    WITH CHECK (public.is_admin());
 
 
 
-CREATE POLICY "campaigns_read_all" ON "public"."campaigns" FOR SELECT USING (true);
+CREATE POLICY "campaigns_admin_read" ON "public"."campaigns"
+    FOR SELECT
+    USING (public.is_admin_reader());
 
 
 
-CREATE POLICY "campaigns_select" ON "public"."campaigns" FOR SELECT USING (("app"."current_role"() = ANY (ARRAY['admin'::"text", 'ops'::"text"])));
 
 
 
-CREATE POLICY "campaigns_update" ON "public"."campaigns" FOR UPDATE USING (("app"."current_role"() = ANY (ARRAY['admin'::"text", 'ops'::"text"]))) WITH CHECK (("app"."current_role"() = ANY (ARRAY['admin'::"text", 'ops'::"text"])));
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -7416,7 +7501,6 @@ ALTER TABLE "public"."driver_status" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "public"."drivers" ENABLE ROW LEVEL SECURITY;
 
 
-CREATE POLICY "enable_insert_authenticated" ON "public"."campaigns" FOR INSERT TO "authenticated" WITH CHECK (true);
 
 
 
@@ -7459,21 +7543,36 @@ ALTER TABLE "public"."insurance_media" ENABLE ROW LEVEL SECURITY;
 
 
 ALTER TABLE "public"."insurance_quotes" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE ONLY "public"."insurance_quotes" FORCE ROW LEVEL SECURITY;
 
 
-CREATE POLICY "insurance_quotes_delete" ON "public"."insurance_quotes" FOR DELETE USING (("app"."current_role"() = 'admin'::"text"));
-
-
-
-CREATE POLICY "insurance_quotes_insert" ON "public"."insurance_quotes" FOR INSERT WITH CHECK (("app"."current_role"() = ANY (ARRAY['admin'::"text", 'ops'::"text"])));
-
-
-
-CREATE POLICY "insurance_quotes_select" ON "public"."insurance_quotes" FOR SELECT USING (("app"."current_role"() = ANY (ARRAY['admin'::"text", 'ops'::"text"])));
+CREATE POLICY "insurance_quotes_admin_manage" ON "public"."insurance_quotes"
+    FOR ALL
+    USING (public.is_admin())
+    WITH CHECK (public.is_admin());
 
 
 
-CREATE POLICY "insurance_quotes_update" ON "public"."insurance_quotes" FOR UPDATE USING (("app"."current_role"() = ANY (ARRAY['admin'::"text", 'ops'::"text"]))) WITH CHECK (("app"."current_role"() = ANY (ARRAY['admin'::"text", 'ops'::"text"])));
+CREATE POLICY "insurance_quotes_admin_read" ON "public"."insurance_quotes"
+    FOR SELECT
+    USING (public.is_admin_reader());
+
+
+
+CREATE POLICY "insurance_quotes_owner_read" ON "public"."insurance_quotes"
+    FOR SELECT
+    USING ((auth.uid() IS NOT NULL) AND (auth.uid() = "user_id"));
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -7543,7 +7642,6 @@ CREATE POLICY "no_profiles_mod" ON "public"."profiles" USING (false) WITH CHECK 
 
 
 
-CREATE POLICY "no_settings_mod" ON "public"."settings" USING (false) WITH CHECK (false);
 
 
 
@@ -7714,33 +7812,39 @@ CREATE POLICY "sessions_role_rw" ON "public"."sessions" USING ((("public"."auth_
 
 
 ALTER TABLE "public"."settings" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE ONLY "public"."settings" FORCE ROW LEVEL SECURITY;
 
 
-CREATE POLICY "settings_block_writes" ON "public"."settings" USING (false) WITH CHECK (false);
-
-
-
-CREATE POLICY "settings_delete" ON "public"."settings" FOR DELETE USING (("app"."current_role"() = 'admin'::"text"));
-
-
-
-CREATE POLICY "settings_modify" ON "public"."settings" FOR INSERT WITH CHECK (("app"."current_role"() = 'admin'::"text"));
+CREATE POLICY "settings_admin_manage" ON "public"."settings"
+    FOR ALL
+    USING (public.is_admin())
+    WITH CHECK (public.is_admin());
 
 
 
-CREATE POLICY "settings_read" ON "public"."settings" FOR SELECT USING (true);
+CREATE POLICY "settings_admin_read" ON "public"."settings"
+    FOR SELECT
+    USING (public.is_admin_reader());
 
 
 
-CREATE POLICY "settings_read_all" ON "public"."settings" FOR SELECT USING (true);
 
 
 
-CREATE POLICY "settings_select" ON "public"."settings" FOR SELECT USING (("app"."current_role"() = ANY (ARRAY['admin'::"text", 'ops'::"text"])));
 
 
 
-CREATE POLICY "settings_update" ON "public"."settings" FOR UPDATE USING (("app"."current_role"() = 'admin'::"text")) WITH CHECK (("app"."current_role"() = 'admin'::"text"));
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -7748,21 +7852,36 @@ ALTER TABLE "public"."shops" ENABLE ROW LEVEL SECURITY;
 
 
 ALTER TABLE "public"."stations" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE ONLY "public"."stations" FORCE ROW LEVEL SECURITY;
 
 
-CREATE POLICY "stations_delete" ON "public"."stations" FOR DELETE USING (("app"."current_role"() = 'admin'::"text"));
-
-
-
-CREATE POLICY "stations_insert" ON "public"."stations" FOR INSERT WITH CHECK (("app"."current_role"() = ANY (ARRAY['admin'::"text", 'ops'::"text"])));
-
-
-
-CREATE POLICY "stations_select" ON "public"."stations" FOR SELECT USING (("app"."current_role"() = ANY (ARRAY['admin'::"text", 'ops'::"text", 'station'::"text"])));
+CREATE POLICY "stations_admin_manage" ON "public"."stations"
+    FOR ALL
+    USING (public.is_admin())
+    WITH CHECK (public.is_admin());
 
 
 
-CREATE POLICY "stations_update" ON "public"."stations" FOR UPDATE USING (("app"."current_role"() = ANY (ARRAY['admin'::"text", 'ops'::"text"]))) WITH CHECK (("app"."current_role"() = ANY (ARRAY['admin'::"text", 'ops'::"text"])));
+CREATE POLICY "stations_admin_read" ON "public"."stations"
+    FOR SELECT
+    USING (public.is_admin_reader());
+
+
+
+CREATE POLICY "stations_operator_read" ON "public"."stations"
+    FOR SELECT
+    USING (public.station_scope_matches("id"));
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -7866,44 +7985,58 @@ ALTER TABLE "public"."voice_memories" ENABLE ROW LEVEL SECURITY;
 
 
 ALTER TABLE "public"."voucher_events" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE ONLY "public"."voucher_events" FORCE ROW LEVEL SECURITY;
 
 
-CREATE POLICY "voucher_events_delete" ON "public"."voucher_events" FOR DELETE USING (("app"."current_role"() = 'admin'::"text"));
+CREATE POLICY "voucher_events_admin_manage" ON "public"."voucher_events"
+    FOR ALL
+    USING (public.is_admin())
+    WITH CHECK (public.is_admin());
 
 
 
-CREATE POLICY "voucher_events_insert" ON "public"."voucher_events" FOR INSERT WITH CHECK (("app"."current_role"() = ANY (ARRAY['admin'::"text", 'ops'::"text"])));
+CREATE POLICY "voucher_events_admin_read" ON "public"."voucher_events"
+    FOR SELECT
+    USING (public.is_admin_reader());
 
 
 
-CREATE POLICY "voucher_events_select" ON "public"."voucher_events" FOR SELECT USING (("app"."current_role"() = ANY (ARRAY['admin'::"text", 'ops'::"text", 'station'::"text"])));
+CREATE POLICY "voucher_events_station_read" ON "public"."voucher_events"
+    FOR SELECT
+    USING (public.station_scope_matches("station_id"));
+
+
 
 
 
 ALTER TABLE "public"."vouchers" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE ONLY "public"."vouchers" FORCE ROW LEVEL SECURITY;
 
 
-CREATE POLICY "vouchers_block_writes" ON "public"."vouchers" USING (false) WITH CHECK (false);
-
-
-
-CREATE POLICY "vouchers_delete" ON "public"."vouchers" FOR DELETE USING (("app"."current_role"() = 'admin'::"text"));
-
-
-
-CREATE POLICY "vouchers_insert" ON "public"."vouchers" FOR INSERT WITH CHECK (("app"."current_role"() = ANY (ARRAY['admin'::"text", 'ops'::"text"])));
+CREATE POLICY "vouchers_admin_manage" ON "public"."vouchers"
+    FOR ALL
+    USING (public.is_admin())
+    WITH CHECK (public.is_admin());
 
 
 
-CREATE POLICY "vouchers_read_all" ON "public"."vouchers" FOR SELECT USING (true);
+CREATE POLICY "vouchers_admin_read" ON "public"."vouchers"
+    FOR SELECT
+    USING (public.is_admin_reader());
 
 
 
-CREATE POLICY "vouchers_select" ON "public"."vouchers" FOR SELECT USING (("app"."current_role"() = ANY (ARRAY['admin'::"text", 'ops'::"text", 'station'::"text"])));
+CREATE POLICY "vouchers_owner_read" ON "public"."vouchers"
+    FOR SELECT
+    USING ((auth.uid() IS NOT NULL) AND (auth.uid() = "user_id"));
 
 
 
-CREATE POLICY "vouchers_update" ON "public"."vouchers" FOR UPDATE USING (("app"."current_role"() = ANY (ARRAY['admin'::"text", 'ops'::"text"]))) WITH CHECK (("app"."current_role"() = ANY (ARRAY['admin'::"text", 'ops'::"text"])));
+CREATE POLICY "vouchers_station_read" ON "public"."vouchers"
+    FOR SELECT
+    USING ((public.station_scope_matches("station_scope")) OR (public.station_scope_matches("redeemed_by_station_id")));
+
+
 
 
 
@@ -8182,6 +8315,18 @@ GRANT ALL ON FUNCTION "public"."is_admin"() TO "anon";
 GRANT ALL ON FUNCTION "public"."is_admin"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."is_admin"() TO "service_role";
 GRANT ALL ON FUNCTION "public"."is_admin"() TO "wa_edge_role";
+GRANT ALL ON FUNCTION "public"."is_admin_reader"() TO "anon";
+GRANT ALL ON FUNCTION "public"."is_admin_reader"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_admin_reader"() TO "service_role";
+GRANT ALL ON FUNCTION "public"."is_admin_reader"() TO "wa_edge_role";
+GRANT ALL ON FUNCTION "public"."safe_cast_uuid"("input" text) TO "anon";
+GRANT ALL ON FUNCTION "public"."safe_cast_uuid"("input" text) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."safe_cast_uuid"("input" text) TO "service_role";
+GRANT ALL ON FUNCTION "public"."safe_cast_uuid"("input" text) TO "wa_edge_role";
+GRANT ALL ON FUNCTION "public"."station_scope_matches"("target" uuid) TO "anon";
+GRANT ALL ON FUNCTION "public"."station_scope_matches"("target" uuid) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."station_scope_matches"("target" uuid) TO "service_role";
+GRANT ALL ON FUNCTION "public"."station_scope_matches"("target" uuid) TO "wa_edge_role";
 
 
 

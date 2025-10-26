@@ -63,3 +63,22 @@
    - Notify Data Ops if OCR mapping produced wrong station scope.
 5. **Resolution**
    - Add incident note in Logs page and communicate to vendor support.
+
+## Supabase Credential Leak
+
+1. **Detect**: Service-role key appears in logs/repos or an external party gains
+   access to Admin APIs without authorisation.
+2. **Immediate Actions**
+   - Notify the primary owner listed in
+     `docs/deployment/supabase-projects.md` (production or staging as
+     appropriate).
+   - Fetch a replacement key from AWS Secrets Manager
+     (`prod/easymo/supabase/service-role` or
+     `stg/easymo/supabase/service-role`) using the AWS CLI.
+3. **Mitigation**
+   - Update Vercel + Supabase Edge Function environments with the new key.
+   - Revoke the leaked key in the Supabase dashboard and invalidate Admin
+     sessions.
+4. **Resolution**
+   - Confirm Admin API access requires the new key only.
+   - Post an incident summary with rotation timestamp in #ops.

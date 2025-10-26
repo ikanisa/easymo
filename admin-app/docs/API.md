@@ -5,6 +5,24 @@ They currently return mock-backed responses but already validate input/output
 with Zod so that wiring real Supabase queries and Edge Function bridges is
 straightforward.
 
+## Supabase Access & Secrets
+
+- Production and staging project owners plus secret locations live in
+  [`docs/deployment/supabase-projects.md`](../../docs/deployment/supabase-projects.md).
+- Service-role keys are no longer committed to `.env` files. Pull them from AWS
+  Secrets Manager using the documented paths and inject them into Vercel or
+  Supabase Edge Function environments at deploy time:
+
+  ```bash
+  aws secretsmanager get-secret-value \
+    --secret-id prod/easymo/supabase/service-role \
+    --query 'SecretString' --output text
+  ```
+
+- For staging replace the secret id with
+  `stg/easymo/supabase/service-role`. Rotate keys quarterly per the rotation
+  checklist and update the runbooks when ownership changes.
+
 > Integration envelope: most write endpoints now include an optional
 > `integration` object in their JSON responses. The shape is
 > `{ target: string, status: 'ok' | 'degraded', reason?: string, message?: string }`

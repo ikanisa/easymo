@@ -2,10 +2,10 @@
 
 ## Environment & Access
 
-- [ ] Production vs staging Supabase projects documented with owners and access
-      controls.
-- [ ] Service role keys stored in secrets manager; never present in client
-      bundles (`admin-app/docs/API.md`).
+- [x] Production vs staging Supabase projects documented with owners and access
+      controls (see `docs/deployment/supabase-projects.md`).
+- [x] Service role keys stored in secrets manager; never present in client
+      bundles (`admin-app/docs/API.md` – Supabase Access & Secrets).
 - [ ] Admin roles assigned via `admin_roles` table with audit trail.
 
 ## Secrets & Config
