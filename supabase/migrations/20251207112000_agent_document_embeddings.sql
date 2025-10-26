@@ -52,8 +52,8 @@ $$;
 
 CREATE OR REPLACE FUNCTION public.match_agent_document_chunks(
   query_embedding vector(1536),
+  target_agent_id uuid,
   match_count int DEFAULT 5,
-  agent_id uuid,
   min_similarity double precision DEFAULT 0
 )
 RETURNS TABLE (
@@ -80,7 +80,7 @@ BEGIN
     1 - (c.embedding <=> query_embedding) AS similarity
   FROM public.agent_document_chunks c
   JOIN public.agent_documents d ON d.id = c.document_id
-  WHERE d.agent_id = agent_id
+  WHERE d.agent_id = target_agent_id
     AND c.embedding IS NOT NULL
     AND (1 - (c.embedding <=> query_embedding)) >= COALESCE(min_similarity, 0)
   ORDER BY c.embedding <=> query_embedding

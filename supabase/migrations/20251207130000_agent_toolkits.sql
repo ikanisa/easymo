@@ -34,8 +34,21 @@ FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
 
 ALTER TABLE public.agent_toolkits ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY agent_toolkits_admin_manage ON public.agent_toolkits
-  FOR ALL USING (public.is_admin()) WITH CHECK (public.is_admin());
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM pg_proc p
+    JOIN pg_namespace n ON n.oid = p.pronamespace
+    WHERE p.proname = 'is_admin' AND n.nspname = 'public'
+  ) THEN
+    EXECUTE 'CREATE POLICY agent_toolkits_admin_manage ON public.agent_toolkits
+      FOR ALL USING (public.is_admin()) WITH CHECK (public.is_admin())';
+  ELSE
+    EXECUTE 'CREATE POLICY agent_toolkits_admin_manage ON public.agent_toolkits
+      FOR ALL USING (auth.role() = ''service_role'') WITH CHECK (auth.role() = ''service_role'')';
+  END IF;
+END;
+$$;
 
 -- Seed defaults for core personas. Vector store identifiers and allowed tools
 -- can be updated from the admin console once provisioned.
