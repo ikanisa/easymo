@@ -41,6 +41,8 @@ export async function getAdminDiagnostics(): Promise<AdminDiagnosticsSnapshot> {
           "Diagnostics logs fallback to mock data.",
         ],
       },
+      matches: mockAdminDiagnostics.matches,
+      queues: mockAdminDiagnostics.queues,
     });
   }
 }

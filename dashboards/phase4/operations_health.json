@@ -1,0 +1,105 @@
+{
+  "title": "Operations Health",
+  "grafana": {
+    "panels": [
+      {
+        "type": "stat",
+        "title": "Notification worker latency",
+        "targets": [
+          {
+            "expr": "p95_over_time(notification_worker_latency_ms{trigger=\"cron\"}[5m])"
+          }
+        ],
+        "description": "p95 processing latency for the Supabase notification worker."
+      },
+      {
+        "type": "graph",
+        "title": "Notification queue depth",
+        "targets": [
+          {
+            "expr": "notification_queue_depth"
+          }
+        ],
+        "description": "Queued WhatsApp notifications awaiting send."
+      },
+      {
+        "type": "stat",
+        "title": "Mobility matches (1h)",
+        "targets": [
+          {
+            "expr": "sum(rate(admin_diagnostics_matches_last_hour[5m]))"
+          }
+        ],
+        "description": "Supabase RPC derived match counts emitted by the admin diagnostics API."
+      },
+      {
+        "type": "stat",
+        "title": "Data-quality backlog",
+        "targets": [
+          {
+            "expr": "admin_diagnostics_queue_ocr"
+          }
+        ],
+        "description": "OCR jobs queued or processing."
+      }
+    ]
+  },
+  "looker": {
+    "dashboards": [
+      {
+        "title": "Notification Throughput",
+        "tiles": [
+          {
+            "type": "single_value",
+            "name": "Queued Notifications",
+            "model": "operations",
+            "explore": "notification_metrics",
+            "fields": ["notification_queue_depth.value"],
+            "filters": {
+              "time": "last 15 minutes"
+            }
+          },
+          {
+            "type": "line",
+            "name": "Worker Latency",
+            "model": "operations",
+            "explore": "notification_metrics",
+            "fields": ["notification_worker_latency_ms.p95"],
+            "filters": {
+              "time": "last 24 hours"
+            }
+          }
+        ]
+      },
+      {
+        "title": "Mobility & Data Quality",
+        "tiles": [
+          {
+            "type": "single_value",
+            "name": "Matches last hour",
+            "model": "operations",
+            "explore": "mobility_metrics",
+            "fields": ["admin_diagnostics_matches_last_hour.value"],
+            "filters": {
+              "time": "last 60 minutes"
+            }
+          },
+          {
+            "type": "bar",
+            "name": "Backlog comparison",
+            "model": "operations",
+            "explore": "queue_metrics",
+            "fields": [
+              "admin_diagnostics_queue_notifications.value",
+              "admin_diagnostics_queue_mobility.value",
+              "admin_diagnostics_queue_ocr.value"
+            ],
+            "filters": {
+              "time": "last 60 minutes"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

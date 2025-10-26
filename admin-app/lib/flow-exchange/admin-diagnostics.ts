@@ -6,10 +6,14 @@ import {
   adminDiagnosticsLogSchema,
   adminDiagnosticsMatchSchema,
   adminDiagnosticsMatchTripSchema,
+  adminDiagnosticsMatchSummarySchema,
+  adminDiagnosticsQueueSchema,
   type AdminDiagnosticsHealth,
   type AdminDiagnosticsLogs,
   type AdminDiagnosticsSnapshot,
   type AdminDiagnosticsMatch,
+  type AdminDiagnosticsMatchSummary,
+  type AdminDiagnosticsQueues,
 } from "@/lib/schemas";
 
 const messageSchema = z.object({
@@ -108,9 +112,13 @@ export function parseAdminDiagnosticsMatch(
 export function composeDiagnosticsSnapshot(
   health: AdminDiagnosticsHealth,
   logs: AdminDiagnosticsLogs,
+  matches?: Partial<AdminDiagnosticsMatchSummary>,
+  queues?: Partial<AdminDiagnosticsQueues>,
 ): AdminDiagnosticsSnapshot {
   return adminDiagnosticsSnapshotSchema.parse({
     health,
     logs,
+    matches: adminDiagnosticsMatchSummarySchema.parse(matches ?? {}),
+    queues: adminDiagnosticsQueueSchema.parse(queues ?? {}),
   });
 }

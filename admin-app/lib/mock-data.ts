@@ -840,6 +840,28 @@ export const mockAdminDiagnostics: AdminDiagnosticsSnapshot =
       })),
       messages: ["Mock webhook logs. Configure Supabase for live data."],
     },
+    matches: {
+      matchesLastHour: 6,
+      matchesLast24h: 42,
+      openTrips: 3,
+      errorCountLastHour: 1,
+      recentErrors: [
+        {
+          id: "error-1",
+          endpoint: "MOBILITY_MATCH",
+          status_code: 500,
+          received_at: formatISO(subDays(now, 0.05)),
+        },
+      ],
+      messages: [
+        "Mock mobility diagnostics. Configure Supabase for live telemetry.",
+      ],
+    },
+    queues: {
+      notificationsQueued: 18,
+      ocrPending: 5,
+      mobilityOpenTrips: 7,
+    },
   });
 
 export const mockAdminDiagnosticsMatch: AdminDiagnosticsMatch =
