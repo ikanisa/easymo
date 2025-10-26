@@ -15,7 +15,7 @@ const requestSchema = z.object({
   message: z.string().optional()
 });
 
-export const POST = createHandler('admin_api.vouchers.send', async (request: Request) => {
+export const POST = createHandler('admin_api.vouchers.send', async (request: Request, _context, observability) => {
   let parsed: z.infer<typeof requestSchema>;
   try {
     const json = await request.json();
@@ -26,6 +26,7 @@ export const POST = createHandler('admin_api.vouchers.send', async (request: Req
 
   const adminClient = getSupabaseAdminClient();
   if (!adminClient) {
+    observability.recordMetric('vouchers.supabase_unavailable', 1);
     return jsonError({
       error: 'supabase_unavailable',
       message: 'Supabase service role not configured. Unable to send vouchers.',
@@ -37,9 +38,24 @@ export const POST = createHandler('admin_api.vouchers.send', async (request: Req
     }, 503);
   }
 
-  const policy = await evaluateOutboundPolicy(parsed.msisdn);
+  const policy = await evaluateOutboundPolicy(parsed.msisdn, {
+    observability,
+    channel: 'whatsapp',
+    context: { voucher_id: parsed.voucherId },
+  });
   if (!policy.allowed) {
-    return jsonError({ error: 'policy_blocked', reason: policy.reason, message: policy.message ?? 'Send blocked by outbound policy.' }, 409);
+    return jsonError({
+      error: 'policy_blocked',
+      reason: policy.reason,
+      message: policy.message ?? 'Send blocked by outbound policy.',
+      blockedAt: policy.blockedAt,
+      throttle: policy.throttle ? {
+        count: policy.throttle.count,
+        limit: policy.throttle.limit,
+        windowStart: policy.throttle.windowStart,
+        windowEnd: policy.throttle.windowEnd,
+      } : undefined,
+    }, 409);
   }
 
   const { data: voucher, error: voucherError } = await adminClient

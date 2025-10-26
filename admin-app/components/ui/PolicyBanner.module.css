@@ -33,6 +33,24 @@
   line-height: 1.4;
 }
 
+.meta {
+  margin: 4px 0 0;
+  padding: 6px 10px;
+  border-radius: 10px;
+  background: rgba(120, 53, 15, 0.08);
+  color: #7c2d12;
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.meta p {
+  margin: 0;
+}
+
+.meta strong {
+  font-weight: 700;
+}
+
 @media (max-width: 640px) {
   .banner {
     grid-template-columns: 1fr;

@@ -1,8 +1,8 @@
 "use server";
 
-import { mockAuditEvents } from "@/lib/mock-data";
 import { getSupabaseAdminClient } from "@/lib/server/supabase-admin";
 import { logStructured } from "@/lib/server/logger";
+import { enqueueReliabilityJob } from "@/lib/server/reliability-queue";
 
 interface AuditContext {
   actorId: string | null;
@@ -29,19 +29,38 @@ export async function recordAudit(context: AuditContext) {
         event: "audit_insert_failed",
         target: "audit_log",
         status: "degraded",
-        message: "Supabase audit insert failed, using in-memory fallback.",
+        message: "Supabase audit insert failed; queuing for retry.",
         details: { error: error instanceof Error ? error.message : "unknown" },
       });
+      await enqueueReliabilityJob("audit.persist", {
+        actorId: context.actorId,
+        action: context.action,
+        targetTable: context.targetTable,
+        targetId: context.targetId,
+        diff: context.diff ?? {},
+        error: error instanceof Error ? error.message : "unknown",
+      });
+      return;
     }
   }
 
-  mockAuditEvents.unshift({
-    id: `audit-mock-${Date.now()}`,
-    actor: context.actorId ?? "unknown",
+  logStructured({
+    event: "audit_persist_skipped",
+    target: "audit_log",
+    status: "degraded",
+    message: "Supabase admin client unavailable; audit event queued for retry.",
+    details: {
+      action: context.action,
+      targetTable: context.targetTable,
+      targetId: context.targetId,
+    },
+  });
+  await enqueueReliabilityJob("audit.persist", {
+    actorId: context.actorId,
     action: context.action,
     targetTable: context.targetTable,
     targetId: context.targetId,
-    createdAt: new Date().toISOString(),
-    summary: JSON.stringify(context.diff ?? {}),
+    diff: context.diff ?? {},
+    error: "supabase_admin_unavailable",
   });
 }

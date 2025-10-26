@@ -15,7 +15,8 @@ const payloadSchema = z.object({
   ids: z.array(z.string().uuid()).min(1).max(50),
 });
 
-export const POST = createHandler('admin_api.notifications.retry', async (request, _context, { recordMetric }) => {
+export const POST = createHandler('admin_api.notifications.retry', async (request, _context, observability) => {
+  const { recordMetric } = observability;
   const adminClient = getSupabaseAdminClient();
   if (!adminClient) {
     recordMetric('notifications.retry.supabase_unavailable', 1);
@@ -61,7 +62,7 @@ export const POST = createHandler('admin_api.notifications.retry', async (reques
   const rowMap = new Map(rows.map((row) => [row.id, row]));
 
   const queued: string[] = [];
-  const blocked: Array<{ id: string; reason: string; message?: string }> = [];
+  const blocked: Array<{ id: string; reason: string; message?: string; blockedAt?: string; throttle?: Record<string, unknown> }> = [];
   const missing: string[] = [];
 
   for (const id of payload.ids) {
@@ -86,9 +87,26 @@ export const POST = createHandler('admin_api.notifications.retry', async (reques
       continue;
     }
 
-    const policy = await evaluateOutboundPolicy(row.msisdn);
+    const policy = await evaluateOutboundPolicy(row.msisdn, {
+      observability,
+      channel: 'whatsapp',
+      context: { notification_id: id },
+    });
     if (!policy.allowed) {
-      blocked.push({ id, reason: policy.reason ?? 'policy_blocked', message: policy.message });
+      blocked.push({
+        id,
+        reason: policy.reason ?? 'policy_blocked',
+        message: policy.message,
+        blockedAt: policy.blockedAt,
+        throttle: policy.throttle
+          ? {
+              count: policy.throttle.count,
+              limit: policy.throttle.limit,
+              windowStart: policy.throttle.windowStart,
+              windowEnd: policy.throttle.windowEnd,
+            }
+          : undefined,
+      });
       await recordAudit({
         actorId,
         action: 'notification_retry_blocked',
@@ -98,6 +116,7 @@ export const POST = createHandler('admin_api.notifications.retry', async (reques
           status: row.status,
           msisdn: row.msisdn,
           reason: policy.reason ?? 'policy_blocked',
+          blockedAt: policy.blockedAt,
         },
       });
       continue;

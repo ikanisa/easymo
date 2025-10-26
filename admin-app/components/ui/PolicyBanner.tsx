@@ -31,9 +31,16 @@ const REASON_COPY: Record<
 export interface PolicyBannerProps {
   reason: string;
   message?: string | null;
+  blockedAt?: string;
+  throttle?: {
+    count: number;
+    limit: number;
+    windowStart: string;
+    windowEnd: string;
+  };
 }
 
-export function PolicyBanner({ reason, message }: PolicyBannerProps) {
+export function PolicyBanner({ reason, message, blockedAt, throttle }: PolicyBannerProps) {
   const normalized = (reason ?? "").toLowerCase();
   const copy = (REASON_COPY as Record<string, typeof REASON_COPY.opt_out>)[
     normalized
@@ -55,6 +62,23 @@ export function PolicyBanner({ reason, message }: PolicyBannerProps) {
       <div className={styles.content}>
         <p className={styles.title}>{title}</p>
         <p className={styles.message}>{body}</p>
+        {(blockedAt || throttle)
+          ? (
+            <div className={styles.meta}>
+              {blockedAt
+                ? <p>Blocked at <strong>{new Date(blockedAt).toLocaleString()}</strong></p>
+                : null}
+              {throttle
+                ? (
+                  <p>
+                    Window {new Date(throttle.windowStart).toLocaleTimeString()} – {new Date(throttle.windowEnd).toLocaleTimeString()} ·
+                    {` ${throttle.count}/${throttle.limit} sends`}
+                  </p>
+                )
+                : null}
+            </div>
+          )
+          : null}
       </div>
     </div>
   );
