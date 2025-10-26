@@ -1,4 +1,7 @@
--- Convenience runner to execute all SQL regression scripts
-\ir claim_notifications.sql
-\ir promote_draft_menu.sql
-\ir matching_v2.sql
+-- Legacy entrypoint retained for local workflows.
+-- The pgTAP suites now emit TAP output individually; this file simply
+-- communicates that there are no standalone assertions here.
+\set ON_ERROR_STOP on
+CREATE EXTENSION IF NOT EXISTS pgtap;
+SELECT plan(0);
+SELECT * FROM finish();

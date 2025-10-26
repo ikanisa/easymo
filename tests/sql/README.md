@@ -1,22 +1,22 @@
 ## SQL Regression Scripts
 
-This folder contains plain-SQL regression checks for critical functions. Each
-script seeds its own fixtures inside a transaction and rolls back automatically
-so you can run them against staging snapshots without leaving residue.
+This folder now contains pgTAP regression checks for critical database
+functions. Each script seeds its own fixtures inside a transaction and rolls
+back automatically, so you can run them against staging snapshots without
+leaving residue.
 
-### Scripts
+### Suites
 
 - `claim_notifications.sql` — verifies queue locking semantics and privilege
-  grants for `security.claim_notifications`.
+granularities for `security.claim_notifications`.
 - `promote_draft_menu.sql` — promotes a draft menu and asserts cloned
-  categories/items/modifiers.
-- `matching_v2.sql` — seeds minimal mobility data to validate `match_*_v2`
-  proximity filters.
+categories/items/modifiers.
+- `matching_v2.sql` — seeds minimal mobility data to validate
+  `match_*_v2` proximity filters.
 
 ### Running
 
-1. Start a Supabase instance (local or remote) with PostGIS enabled.
-2. From the repo root execute `psql -f tests/sql/run_all.sql` (or `cd tests/sql`
-   then `psql -f run_all.sql`).
-3. Scripts raise exceptions when assertions fail; on success you will only see
-   the final `ROLLBACK`.
+1. Start a Supabase instance (local or remote) with PostGIS, pgcrypto, vector,
+   and pgTAP extensions available.
+2. From the repo root execute `pnpm test:sql` (or `pg_prove --recurse tests/sql` when running outside the workspace).
+3. Suites emit TAP output; failures are surfaced as individual failed tests.

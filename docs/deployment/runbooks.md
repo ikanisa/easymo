@@ -12,7 +12,7 @@ The following runbooks provide repeatable, auditable steps for operating the Git
 
 ## 2. Redeploy the Application
 
-1. Ensure the `ci` GitHub Actions workflow is green on the target branch.
+1. Ensure both the monorepo `ci` workflow and the `Node CI` workflow (which now runs pg_prove and the Flow Exchange Newman smoke) are green on the target branch.
 2. Trigger a deployment via the release pipeline:
    - Preview: push to a feature branch, or run `pnpm release:deploy --env preview`.
    - Production: merge to default branch or run `pnpm release:deploy --env prod`.
@@ -43,11 +43,16 @@ The following runbooks provide repeatable, auditable steps for operating the Git
      --method PUT \
      -H "Accept: application/vnd.github+json" \
      /repos/<org>/<repo>/branches/<default-branch>/protection \
-     -f required_status_checks='{"strict":true,"contexts":["ci","Vercel (Preview)"]}' \
+     -f required_status_checks='{"strict":true,"contexts":["ci","Node CI / Install, typecheck, lint, build","Vercel (Preview)"]}' \
      -f required_pull_request_reviews='{"required_approving_review_count":1,"dismiss_stale_reviews":true}' \
      -f enforce_admins=true \
      -F restrictions='null'
    ```
 3. Record the applied policy in the final report.
+
+### Vercel Preview Gate
+
+- In Vercel → Project → Git, set *Automatic Deployments → Preview* to **When checks pass** and select the `Node CI / Install, typecheck, lint, build` status.
+- This ensures preview deploys only start after pgTAP and Newman checks succeed, matching the required GitHub statuses.
 
 These runbooks are idempotent; running them multiple times maintains or refreshes configuration without duplication.
