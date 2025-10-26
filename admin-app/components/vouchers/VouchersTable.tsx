@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/Button";
 import { LoadMoreButton } from "@/components/ui/LoadMoreButton";
 import { VoucherDrawer } from "@/components/vouchers/VoucherDrawer";
 import type { Voucher } from "@/lib/schemas";
+import { maskMsisdn } from "@va/shared";
 
 interface VouchersTableProps {
   data: Voucher[];
@@ -27,7 +28,7 @@ const baseColumns: ColumnDef<Voucher>[] = [
   {
     header: "User",
     accessorKey: "userName",
-    cell: ({ row }) => row.original.userName ?? row.original.msisdn,
+    cell: ({ row }) => row.original.userName ?? maskMsisdn(row.original.msisdn),
   },
   {
     header: "Status",

@@ -5,6 +5,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/Button";
 import { useContributionsQuery, useSaccosQuery, type BasketsQueryParams } from "@/lib/queries/baskets";
 import styles from "./ContributionsLedgerTable.module.css";
+import { maskMsisdn } from "@va/shared";
 
 const SACCO_OPTIONS_PARAMS = { limit: 200, status: 'active' } as const;
 
@@ -138,7 +139,7 @@ export function ContributionsLedgerTable({ params }: ContributionsLedgerTablePro
                 <td>
                   <div className={styles.memberCell}>
                     <span>{row.member?.profile?.displayName ?? 'Unknown'}</span>
-                    <span className={styles.memberMeta}>{row.member?.profile?.msisdn ?? '—'}</span>
+                    <span className={styles.memberMeta}>{row.member?.profile?.msisdn ? maskMsisdn(row.member.profile.msisdn) : '—'}</span>
                   </div>
                 </td>
                 <td className={styles.amountCell}>{Number(row.amount ?? 0).toLocaleString()} {row.currency}</td>
@@ -161,7 +162,7 @@ export function ContributionsLedgerTable({ params }: ContributionsLedgerTablePro
               row.id,
               row.ikimina?.name ?? '',
               row.member?.profile?.displayName ?? '',
-              row.member?.profile?.msisdn ?? '',
+              row.member?.profile?.msisdn ? maskMsisdn(row.member.profile.msisdn) : '',
               row.amount,
               row.currency,
               row.cycle,

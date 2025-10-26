@@ -4,6 +4,7 @@ import { Drawer } from "@/components/ui/Drawer";
 import { useMemo } from "react";
 import type { Voucher } from "@/lib/schemas";
 import styles from "./VoucherDrawer.module.css";
+import { maskMsisdn } from "@va/shared";
 
 interface VoucherDrawerProps {
   voucher: Voucher | null;
@@ -23,7 +24,7 @@ export function VoucherDrawer({ voucher, onClose }: VoucherDrawerProps) {
       },
       {
         label: "User",
-        value: voucher.userName ?? voucher.msisdn,
+        value: voucher.userName ?? maskMsisdn(voucher.msisdn),
       },
       {
         label: "Station scope",

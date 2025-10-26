@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { User } from "@/lib/schemas";
 import styles from "./UserDrawer.module.css";
 import { Drawer } from "@/components/ui/Drawer";
+import { maskMsisdn } from "@va/shared";
 
 interface UserDrawerProps {
   user: User | null;
@@ -11,11 +12,11 @@ interface UserDrawerProps {
 }
 
 export function UserDrawer({ user, onClose }: UserDrawerProps) {
-  const title = user?.displayName ?? user?.msisdn ?? "User details";
+  const title = user?.displayName ?? maskMsisdn(user?.msisdn) ?? "User details";
 
   return (
     <Drawer title={title} onClose={onClose}>
-      <p className={styles.subtitle}>{user?.msisdn}</p>
+      <p className={styles.subtitle}>{maskMsisdn(user?.msisdn)}</p>
       {user
         ? (
           <div className={styles.content}>

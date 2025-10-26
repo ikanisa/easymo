@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/ToastProvider";
 import { apiFetch } from "@/lib/api/client";
 import { getAdminApiPath } from "@/lib/routes";
+import { maskMsisdn } from "@va/shared";
 import {
   AdminDeeplinkFlow,
   DEFAULT_TTL_DAYS,
@@ -338,7 +339,7 @@ export function IssueDeepLinkForm() {
             </div>
             <div>
               <dt>Bound MSISDN</dt>
-              <dd>{result.msisdnBound ?? 'Any user'}</dd>
+              <dd>{result.msisdnBound ? maskMsisdn(result.msisdnBound) : 'Any user'}</dd>
             </div>
             <div>
               <dt>Multi-use</dt>

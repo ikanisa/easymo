@@ -31,3 +31,4 @@ export interface LogOutcomeInput {
 export * from "./routes";
 export * from "./wa-calls";
 export * from "./voice/dto";
+export * from "./msisdn";

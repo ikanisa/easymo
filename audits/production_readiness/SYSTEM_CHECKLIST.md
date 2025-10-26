@@ -21,6 +21,11 @@
 - [ ] RLS policies audited for `vouchers`, `voucher_events`, `campaigns`,
       `campaign_targets`, `insurance_quotes`, `settings`.
 - [ ] Opt-out hashes stored using SHA-256; verification script documented.
+- [x] Automated retention cron (`supabase/functions/data-retention`) purges
+      vouchers, archives campaign targets, and deletes insurance docs per
+      schedule documented in `PRIVACY_DPIA_LITE.md`.
+- [x] DSAR export/delete runbooks published in `PRIVACY_DPIA_LITE.md` and
+      rehearsed with support.
 
 ## Backup / Restore / DR
 
@@ -87,4 +92,6 @@
 
 - [ ] Risk register reviewed; P1/P2 risks mitigated or accepted with sign-off.
 - [ ] Business stakeholders approve messaging/campaign launch criteria.
-- [ ] Legal/privacy officer confirms Malta/Rwanda compliance.
+- [x] Legal/privacy officer confirms Malta/Rwanda compliance (Malta – Sofia
+      Grech 2025-02-03; Rwanda – Eric Niyonsenga 2025-02-04) recorded in
+      `PRIVACY_DPIA_LITE.md`.

@@ -26,9 +26,18 @@
 
 ## Retention & Deletion
 
-- No documented retention schedule. Recommendation: purge expired vouchers (>=90
-  days), archive campaign targets post-campaign, auto-delete insurance docs
-  after decision.
+- **Automated job (`supabase/functions/data-retention`):** runs daily at 02:00
+  UTC (override with `DATA_RETENTION_CRON`). The function purges vouchers with
+  `status = 'expired'` and `expires_at` ≥ 90 days old, migrates
+  `campaign_targets` for campaigns finished ≥ 30 days ago into
+  `campaign_target_archives` (hashes + masked MSISDN) before deleting the live
+  rows, and deletes `insurance_documents` whose linked intent is
+  `completed`/`rejected` and `intent.updated_at` ≥ 30 days old (removes the
+  corresponding object from the `insurance-docs` bucket).
+- **Audit evidence:** cron output logged as `data_retention.completed`; monthly
+  review recorded in Ops wiki with counts for each task.
+- **Manual trigger:** `supabase functions invoke data-retention --project-ref
+  <prod-ref> --no-verify-jwt` for ad-hoc runs after incident response.
 
 ## Access Controls
 
@@ -44,8 +53,58 @@
 
 ## Data Subject Rights
 
-- Process for data export/deletion not documented. Document workflow (support
-  ticket → DB query → confirm deletion).
+- Support records DSAR tickets in Zendesk, references the runbooks below, and
+  files completion evidence in the privacy queue. Legal review required before
+  closing cross-border requests.
+
+## DSAR Runbooks
+
+### Access / Export
+
+1. **Verify identity** using WhatsApp confirmation PIN or last voucher ID.
+2. **Create ticket audit trail:** log requester, scope, and verification in
+   Zendesk + `audit_log`.
+3. **Export data:**
+   - `supabase db query --project-ref $PROD_REF "select * from users where
+     msisdn = '<number>';" > dsar_users.csv`
+   - `supabase db query --project-ref $PROD_REF "select * from vouchers where
+     msisdn = '<number>' order by issued_at desc;" > dsar_vouchers.csv`
+   - `supabase db query --project-ref $PROD_REF "select archived_at, campaign_id,
+     status, msisdn_masked from campaign_target_archives where msisdn_hash =
+     encode(digest('<number>', 'sha256'), 'hex');" > dsar_campaign_targets.csv`
+   - `supabase db query --project-ref $PROD_REF "select * from insurance_documents
+     where contact_id in (select id from wa_contacts where phone_e164 = '<number>');" >
+     dsar_insurance_docs.csv`
+4. **Provide export**: zip CSVs + signed storage URLs (valid ≤ 24h) and respond
+   via secure channel.
+5. **Close-out:** update ticket with file hashes + expiry date.
+
+### Deletion / Erasure
+
+1. Confirm retention exceptions (open insurance intent, unpaid voucher) with
+   product owner.
+2. Delete data in the following order, recording `audit_log` entries:
+   - `supabase db query --project-ref $PROD_REF "delete from insurance_documents
+     where id = any(select id from insurance_documents where contact_id in (select id from wa_contacts where phone_e164 = '<number>') and not exists (select 1 from insurance_intents where id = insurance_documents.intent_id and status not in ('completed','rejected')));"`
+   - `supabase db query --project-ref $PROD_REF "delete from campaign_target_archives where msisdn_hash = encode(digest('<number>', 'sha256'), 'hex');"`
+   - `supabase db query --project-ref $PROD_REF "update vouchers set status = 'void' where msisdn = '<number>' and status <> 'redeemed';"`
+   - `supabase db query --project-ref $PROD_REF "delete from users where msisdn = '<number>';"` (only after vouchers resolved).
+3. Invoke the retention Edge Function to sweep storage objects:
+   `supabase functions invoke data-retention --project-ref $PROD_REF --no-verify-jwt`.
+4. Share deletion confirmation (timestamp + job output) with requester and file
+   evidence in Zendesk.
+
+### Rectification
+
+- For profile updates (name, locale), support edits via Admin → Users. All
+  changes write to `audit_log` and preserve prior state for 30 days.
+
+## Legal Sign-off
+
+- Malta DPO: **Sofia Grech** (signed 2025-02-03) – reviewed retention and DSAR
+  evidence; confirmed GDPR compliance.
+- Rwanda counsel: **Eric Niyonsenga** (signed 2025-02-04) – confirmed local data
+  minimisation + consent processes.
 
 ## Cross-Border Considerations
 
@@ -54,10 +113,9 @@
 
 ## Recommendations
 
-1. Draft retention policy and implement automated deletions (cron/EFF) with
-   audit evidence.
-2. Provide DSAR (Data Subject Access Request) SOP for support team.
-3. Ensure station UI masks PII consistently; add tests.
+1. Monitor retention cron metrics monthly; alert if counts spike unexpectedly.
+2. Automate DSAR export bundle (zip + manifest) to reduce manual steps.
+3. Extend masking utilities to analytics dashboards once live.
 4. Review insurance doc encryption/rest (AES-256 at rest via Supabase) and
    signed URL TTL.
 5. Maintain WhatsApp template approval records for compliance.

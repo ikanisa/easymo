@@ -21,13 +21,17 @@ vi.mock("next/headers", () => {
   return { headers, cookies };
 });
 
-vi.mock("@va/shared", () => ({
-  adminRouteDefinitions: {},
-  adminRoutePaths: {},
-  adminRouteSegments: {},
-  getAdminRoutePath: (...segments: string[]) => `/${segments.join("/")}`,
-  isAdminRoutePath: () => true,
-}));
+vi.mock("@va/shared", async () => {
+  const actual = await vi.importActual<typeof import("@va/shared")>("@va/shared");
+  return {
+    ...actual,
+    adminRouteDefinitions: {},
+    adminRoutePaths: {},
+    adminRouteSegments: {},
+    getAdminRoutePath: (...segments: string[]) => `/${segments.join("/")}`,
+    isAdminRoutePath: () => true,
+  };
+});
 
 afterEach(() => {
   cleanup();

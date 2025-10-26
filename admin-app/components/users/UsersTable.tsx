@@ -5,6 +5,7 @@ import { LoadMoreButton } from "@/components/ui/LoadMoreButton";
 import type { User } from "@/lib/schemas";
 import type { ColumnDef } from "@tanstack/react-table";
 import { UserDrawerTrigger } from "./UserDrawer";
+import { maskMsisdn } from "@va/shared";
 
 interface UsersTableProps {
   data: User[];
@@ -19,13 +20,14 @@ const columns: ColumnDef<User>[] = [
     accessorKey: "displayName",
     cell: ({ row }) => (
       <UserDrawerTrigger user={row.original}>
-        {row.original.displayName ?? row.original.msisdn}
+        {row.original.displayName ?? maskMsisdn(row.original.msisdn)}
       </UserDrawerTrigger>
     ),
   },
   {
     header: "MSISDN",
     accessorKey: "msisdn",
+    cell: ({ row }) => maskMsisdn(row.original.msisdn),
   },
   {
     header: "Locale",

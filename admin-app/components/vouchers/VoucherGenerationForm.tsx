@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/Button";
 import { PolicyBanner } from "@/components/ui/PolicyBanner";
 import styles from "./VoucherGenerationForm.module.css";
 import { getAdminApiPath } from "@/lib/routes";
+import { maskMsisdn } from "@va/shared";
 
 interface ResultEntry {
   voucherId: string;
@@ -182,7 +183,7 @@ export function VoucherGenerationForm() {
             <ul>
               {results.map((entry) => (
                 <li key={entry.voucherId}>
-                  <strong>{entry.voucherId}</strong> → {entry.msisdn}{" "}
+                  <strong>{entry.voucherId}</strong> → {maskMsisdn(entry.msisdn)}{" "}
                   ({entry.status})
                 </li>
               ))}
