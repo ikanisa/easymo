@@ -1,0 +1,106 @@
+.redeem-result {
+  display: flex;
+  justify-content: center;
+  padding: 2rem 1rem;
+}
+
+.redeem-result__card {
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.45);
+  border-radius: 1.75rem;
+  padding: 2.5rem;
+  max-width: 640px;
+  text-align: center;
+  color: #f4f6fb;
+  box-shadow: 0 24px 48px rgba(11, 13, 23, 0.55);
+}
+
+.redeem-result__card--error {
+  background: rgba(255, 77, 79, 0.12);
+  border-color: rgba(255, 77, 79, 0.55);
+}
+
+.redeem-result__icon {
+  width: 104px;
+  height: 104px;
+  margin: 0 auto 1rem;
+  border-radius: 999px;
+  background: rgba(16, 185, 129, 0.4);
+  display: grid;
+  place-items: center;
+  font-size: 3rem;
+  color: #0b0d17;
+}
+
+.redeem-result__amount {
+  font-size: 3rem;
+  font-weight: 800;
+  margin: 1rem 0 0.5rem;
+}
+
+.redeem-result__msisdn {
+  font-size: 1.5rem;
+  letter-spacing: 0.2em;
+  margin-bottom: 2rem;
+}
+
+.redeem-result__meta {
+  display: grid;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  text-align: left;
+}
+
+.redeem-result__meta dt {
+  font-size: 0.95rem;
+  color: rgba(244, 246, 251, 0.7);
+}
+
+.redeem-result__meta dd {
+  margin: 0.25rem 0 0;
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.redeem-result__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.redeem-result__actions button {
+  padding: 1rem 1.25rem;
+  border-radius: 0.95rem;
+  border: none;
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.redeem-result__actions button:nth-child(1) {
+  background: #f4f6fb;
+  color: #0b0d17;
+}
+
+.redeem-result__actions button:nth-child(2) {
+  background: rgba(244, 246, 251, 0.15);
+  color: #f4f6fb;
+  border: 1px solid rgba(244, 246, 251, 0.25);
+}
+
+.redeem-result__actions button:nth-child(3) {
+  background: rgba(244, 246, 251, 0.1);
+  color: #f4f6fb;
+  border: 1px solid rgba(244, 246, 251, 0.2);
+}
+
+@media (min-width: 960px) {
+  .redeem-result__actions {
+    flex-direction: row;
+    justify-content: center;
+  }
+
+  .redeem-result__actions button {
+    flex: 1;
+  }
+}

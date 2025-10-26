@@ -1,0 +1,72 @@
+.form-card {
+  background: rgba(17, 20, 37, 0.8);
+  border-radius: 1.5rem;
+  padding: 2rem;
+  border: 1px solid rgba(244, 246, 251, 0.15);
+  max-width: 520px;
+  margin: 0 auto;
+  box-shadow: 0 20px 40px rgba(11, 13, 23, 0.6);
+}
+
+.form-card__title {
+  font-size: 2rem;
+  margin-bottom: 0.75rem;
+}
+
+.form-card__subtitle {
+  font-size: 1.1rem;
+  color: rgba(244, 246, 251, 0.75);
+  margin-bottom: 1.5rem;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.form-label {
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.form-input {
+  padding: 1rem 1.25rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(244, 246, 251, 0.25);
+  background: rgba(11, 13, 23, 0.6);
+  color: inherit;
+  font-size: 1.25rem;
+  letter-spacing: 0.08em;
+}
+
+.form-input::placeholder {
+  color: rgba(244, 246, 251, 0.4);
+}
+
+.form-error {
+  color: #ff4d4f;
+  font-size: 1rem;
+  margin-top: -1rem;
+  margin-bottom: 1rem;
+}
+
+.form-button {
+  width: 100%;
+  background: #f4f6fb;
+  color: #0b0d17;
+  border: none;
+  border-radius: 1rem;
+  padding: 1.25rem;
+  font-size: 1.35rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.form-helper {
+  font-size: 0.95rem;
+  color: rgba(244, 246, 251, 0.65);
+  text-align: center;
+  margin-top: 1rem;
+}
