@@ -27,6 +27,12 @@
 - [ ] Supabase automated backups schedule confirmed; restoration dry-run
       completed and logged.
 - [ ] Storage bucket snapshot/retention policy documented.
+      - Voucher PNG (`voucher-png`) and QR (`voucher-qr`) buckets retain 90
+        days of history with monthly rotation evidence in `docs/runbook.md`.
+      - Insurance documents (`insurance-docs`) retain 30 days; confirm S3
+        lifecycle rule matches support runbook steps.
+- [ ] `scripts/supabase-backup-restore.sh` executed for latest dry-run with
+      artifacts archived (dump, checksum, rowcount CSV, storage sync logs).
 - [ ] DR communication tree tested.
 
 ## CI / Quality Gates

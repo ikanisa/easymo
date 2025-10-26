@@ -60,6 +60,20 @@ production readiness audit.
 - AWS CLI for storage sync.
 - KMS for secret management.
 
+## Automation
+
+- `scripts/supabase-backup-restore.sh` orchestrates the logical dump, snapshot
+  verification, storage bucket sync, and staging restore.
+  - Requires `SUPABASE_ACCESS_TOKEN`, project refs for production and staging,
+    Postgres connection strings, and an `AWS_BACKUP_BUCKET` destination.
+  - Outputs timestamped artifacts under `backups/<UTC timestamp>/` including
+    the SQL dump, checksum, snapshot manifest, row-count comparison CSV, and a
+    consolidated `backup.log`.
+  - Uploads the dump and bucket exports to
+    `s3://$AWS_BACKUP_BUCKET/supabase/<timestamp>/` and records row deltas for
+    `vouchers`, `voucher_events`, and `insurance_documents` as part of the dry
+    run evidence.
+
 ## Metrics
 
 - RPO (Recovery Point Objective): ≤ 15 minutes using logical dump + WAL shipping

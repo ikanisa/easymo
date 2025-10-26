@@ -63,3 +63,37 @@
    - Notify Data Ops if OCR mapping produced wrong station scope.
 5. **Resolution**
    - Add incident note in Logs page and communicate to vendor support.
+
+## DR Tabletop Test – Backup/Restore Cutover
+
+- **Cadence**: First Tuesday of each quarter at 14:00 UTC (next: 2025-01-07).
+- **Participants**: Incident Commander (on-call engineer), Data Platform Lead,
+  Support Manager, Stakeholder Communications (Customer Success lead).
+
+### Scenario Outline
+1. **Notification Drill**
+   - Trigger PagerDuty "DR-Tabletop" event; ensure all participants acknowledge
+     within 5 minutes.
+   - Support Manager posts customer-facing holding statement draft in
+     `#ops-status` for review.
+2. **Backup Execution**
+   - Run `scripts/supabase-backup-restore.sh` with staging project ref.
+   - Capture runtime, S3 destination, and row-count parity in the generated
+     `backup.log` and `rowcount.csv`.
+3. **Restore & Cutover Rehearsal**
+   - Validate staging smoke tests (voucher issue/redeem, campaign send, station
+     redeem) and log results in the tabletop report.
+   - Review DNS/env var cutover checklist without executing production change;
+     confirm rollback owner.
+4. **Stakeholder Comms**
+   - Draft status page update and escalation email template; store in
+     `docs/incidents/templates/` (create if missing and link in tabletop notes).
+5. **Findings & Follow-Up**
+   - File retro notes in this runbook section with action owners and due dates.
+   - Update `SYSTEM_CHECKLIST.md` if new controls are introduced.
+
+### Latest Findings (2024-10-01 Tabletop)
+- Snapshot manifest fetch initially failed (HTTP 401); resolved by rotating the
+  Supabase access token and re-running the script.
+- Storage sync took 11 minutes; action item to enable multipart uploads for
+  voucher PNG bucket before next exercise.
