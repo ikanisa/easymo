@@ -30,6 +30,12 @@ const apiRouteDefinitions = defineHttpControllers({
       customerMessage: { method: "POST" as const, segment: ":threadId/customer" as const },
     },
   },
+  whatsappFlow: {
+    basePath: "wa/flow" as const,
+    endpoints: {
+      bootstrap: { method: "POST" as const, segment: "bootstrap" as const },
+    },
+  },
   whatsappCalls: {
     basePath: "wa" as const,
     endpoints: {
