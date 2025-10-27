@@ -1,5 +1,6 @@
 import { Injectable, UnauthorizedException, GoneException, ForbiddenException } from '@nestjs/common';
 import { signJwt, verifyJwt } from '../../common/crypto';
+import * as jose from 'jose';
 import { env } from '../../common/env';
 import { IssueTokenDto } from './dto/issue-token.dto';
 import { ResolveTokenDto } from './dto/resolve-token.dto';
@@ -46,7 +47,7 @@ export class DeeplinkService {
       };
     } catch (error: any) {
       // Check if token is expired
-      if (error.code === 'ERR_JWT_EXPIRED' || error.message?.includes('exp')) {
+      if (error instanceof jose.errors.JWTExpired) {
         throw new GoneException('Token expired');
       }
       

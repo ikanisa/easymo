@@ -41,7 +41,7 @@ export class FlowBootstrapController {
       case 'insurance_attach':
         return {
           type: 'text',
-          content: 'Welcome! Let\'s help you attach your insurance. Please provide your policy number.',
+          content: "Welcome! Let's help you attach your insurance. Please provide your policy number.",
         };
 
       case 'basket_open':
@@ -49,13 +49,13 @@ export class FlowBootstrapController {
           type: 'text',
           content: payload?.basketId 
             ? `Opening your basket (ID: ${payload.basketId}). What would you like to do?`
-            : 'Welcome! Let\'s open your shopping basket. What would you like to order?',
+            : "Welcome! Let's open your shopping basket. What would you like to order?",
         };
 
       case 'generate_qr':
         return {
           type: 'text',
-          content: 'I\'ll help you generate a QR code. Please provide the details you\'d like to encode.',
+          content: "I'll help you generate a QR code. Please provide the details you'd like to encode.",
         };
 
       default:
