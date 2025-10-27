@@ -110,4 +110,5 @@ export const env = {
   turnUsername: readEnv('TURN_USERNAME') ?? '',
   turnPassword: readEnv('TURN_PASSWORD') ?? '',
   redisUrl: readEnv('REDIS_URL') ?? '',
+  deeplinkSecret: readEnv('DEEPLINK_SIGNING_SECRET') ?? readEnv('DEEPLINK_SECRET') ?? jwtSigningKey,
 };
