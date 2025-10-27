@@ -34,6 +34,7 @@ export const useRedeemQueue = () => {
   useEffect(() => {
     if (!queue) {
       setEntries([]);
+      setLastResult(null);
       return;
     }
     setEntries(queue.list());
@@ -43,6 +44,7 @@ export const useRedeemQueue = () => {
     if (!queue) {
       throw new Error("redeem_queue_unavailable");
     }
+    setLastResult(null);
     const entry = queue.enqueue(request);
     setEntries(queue.list());
     await queue.flush();
