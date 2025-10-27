@@ -105,7 +105,7 @@ async function archiveCampaignTargets(now: Date): Promise<number> {
       metadata: { archived_by: "data-retention" },
     }));
 
-    const { error: insertErr } = await supabase
+    const { error: upsertErr } = await supabase
       .from("campaign_target_archives")
       .upsert(records, { onConflict: "target_id" });
     if (insertErr) {
