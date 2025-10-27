@@ -30,6 +30,12 @@ const apiRouteDefinitions = defineHttpControllers({
       customerMessage: { method: "POST" as const, segment: ":threadId/customer" as const },
     },
   },
+  whatsappFlow: {
+    basePath: "wa/flow" as const,
+    endpoints: {
+      bootstrap: { method: "POST" as const, segment: "bootstrap" as const },
+    },
+  },
   whatsappCalls: {
     basePath: "wa" as const,
     endpoints: {
@@ -53,6 +59,13 @@ const apiRouteDefinitions = defineHttpControllers({
     basePath: "payment" as const,
     endpoints: {
       confirm: { method: "POST" as const, segment: "confirm" as const },
+    },
+  },
+  deeplink: {
+    basePath: "deeplink" as const,
+    endpoints: {
+      issue: { method: "POST" as const, segment: "issue" as const },
+      resolve: { method: "POST" as const, segment: "resolve" as const },
     },
   },
 } as const satisfies Record<string, ControllerDefinition<Record<string, EndpointDefinition>>>);
