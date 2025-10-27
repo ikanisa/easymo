@@ -2,7 +2,7 @@
 
 This guide documents the concrete steps required to make the easyMO Admin Panel
 (`admin-app/`) load real data from the Supabase project
-`lhbowpbcpwoiparwnwgt`. It expands on the Phase 1 environment refresh by
+`vacltfdslodqybxojytc`. It expands on the Phase 1 environment refresh by
 covering table ownership, row-level security (RLS), seed scripts, and smoke
 tests once the data is in place.
 
@@ -117,7 +117,7 @@ idempotent; it updates existing rows where appropriate.
    ```bash
    curl \
      -H "x-api-key: $EASYMO_ADMIN_TOKEN" \
-     https://lhbowpbcpwoiparwnwgt.supabase.co/functions/v1/admin-stats
+     https://vacltfdslodqybxojytc.supabase.co/functions/v1/admin-stats
    ```
 
 Expect HTTP 200 with KPI counts > 0 after seeding.

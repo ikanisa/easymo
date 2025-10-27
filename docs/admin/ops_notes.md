@@ -24,14 +24,14 @@ accurate.
 - We now rely on `scripts/health-check.mjs` to verify edge function health.
 - GitHub Actions now runs the script as part of `.github/workflows/synthetic-checks.yml`
   (`Run Supabase health check`). Populate the following secrets before enabling the schedule:
-  - `SUPABASE_API_BASE` → `https://lhbowpbcpwoiparwnwgt.supabase.co/functions/v1`
+  - `SUPABASE_API_BASE` → `https://vacltfdslodqybxojytc.supabase.co/functions/v1`
   - `EASYMO_ADMIN_TOKEN` → service token with `admin-health` access
 - The job executes daily via the existing `schedule` trigger, so add alerts/webhooks
   if the step fails.
 - Local command reference:
 
   ```bash
-  VITE_API_BASE=https://lhbowpbcpwoiparwnwgt.supabase.co/functions/v1 \
+  VITE_API_BASE=https://vacltfdslodqybxojytc.supabase.co/functions/v1 \
   ADMIN_TOKEN=${EASYMO_ADMIN_TOKEN} \
   node scripts/health-check.mjs
   ```
@@ -42,7 +42,7 @@ accurate.
 
   ```bash
   curl -s -H "x-api-key: $EASYMO_ADMIN_TOKEN" \
-    https://lhbowpbcpwoiparwnwgt.supabase.co/functions/v1/admin-stats
+    https://vacltfdslodqybxojytc.supabase.co/functions/v1/admin-stats
   ```
 
 ## Deployment Hygiene

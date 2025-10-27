@@ -8,7 +8,7 @@
 -- Usage:
 --   supabase db connect            # optional: open psql shell
 --   \i supabase/seed/fixtures/admin_panel_core.sql
--- or paste into the Supabase SQL editor for project lhbowpbcpwoiparwnwgt.
+-- or paste into the Supabase SQL editor for project vacltfdslodqybxojytc.
 --
 -- All secrets / credentials remain placeholders.  Replace the fixture emails,
 -- tokens, and WhatsApp numbers with anonymised staging-only values if needed.

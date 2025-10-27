@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-PROJECT_REF="${PROJECT_REF:-lhbowpbcpwoiparwnwgt}"
+PROJECT_REF="${PROJECT_REF:-vacltfdslodqybxojytc}"
 FUNCTIONS=(
   "wa-webhook"
   "ocr-processor"

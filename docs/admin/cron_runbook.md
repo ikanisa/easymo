@@ -1,7 +1,7 @@
 # Supabase Cron Runbook
 
 This note captures everything we know about the cron-driven edge functions in
-project `lhbowpbcpwoiparwnwgt` and the steps required to confirm they are
+project `vacltfdslodqybxojytc` and the steps required to confirm they are
 running in staging/production. Attach the results of each verification to
 `docs/go-live-readiness.md` before signing off Phase 3.
 
@@ -24,7 +24,7 @@ schedule.
 
 ## 2. Creating / Inspecting Schedules
 
-Supabase CLI commands (requires `supabase login --token …` and `--project-ref lhbowpbcpwoiparwnwgt`):
+Supabase CLI commands (requires `supabase login --token …` and `--project-ref vacltfdslodqybxojytc`):
 
 ```bash
 # List existing schedules

@@ -7,14 +7,14 @@ marketplace, and OCR surfaces introduced in Phase 4/5.
 
 1. Apply Supabase migrations:
    ```bash
-   supabase db push --project-ref lhbowpbcpwoiparwnwgt
+   supabase db push --project-ref vacltfdslodqybxojytc
    ```
 2. Seed/refresh fixtures if required (safe to re-run thanks to `ON CONFLICT` guards):
    ```bash
-   PGPASSWORD=<db-password> psql "postgresql://postgres@db.lhbowpbcpwoiparwnwgt.supabase.co:5432/postgres" \
+   PGPASSWORD=<db-password> psql "postgresql://postgres@db.vacltfdslodqybxojytc.supabase.co:5432/postgres" \
      -v ON_ERROR_STOP=1 \
      -f supabase/seed/fixtures/admin_panel_core.sql
-   PGPASSWORD=<db-password> psql "postgresql://postgres@db.lhbowpbcpwoiparwnwgt.supabase.co:5432/postgres" \
+   PGPASSWORD=<db-password> psql "postgresql://postgres@db.vacltfdslodqybxojytc.supabase.co:5432/postgres" \
      -v ON_ERROR_STOP=1 \
      -f supabase/seed/fixtures/admin_panel_marketing.sql
    ```
@@ -34,14 +34,14 @@ Deploy the realtime and OCR functions with verification disabled (they guard
 themselves via admin tokens):
 
 ```bash
-supabase functions deploy flow-exchange --project-ref lhbowpbcpwoiparwnwgt --no-verify-jwt
-supabase functions deploy wa-webhook --project-ref lhbowpbcpwoiparwnwgt --no-verify-jwt
-supabase functions deploy ocr-processor --project-ref lhbowpbcpwoiparwnwgt --no-verify-jwt
+supabase functions deploy flow-exchange --project-ref vacltfdslodqybxojytc --no-verify-jwt
+supabase functions deploy wa-webhook --project-ref vacltfdslodqybxojytc --no-verify-jwt
+supabase functions deploy ocr-processor --project-ref vacltfdslodqybxojytc --no-verify-jwt
 ```
 
 Confirm the functions are live:
 ```bash
-supabase functions list --project-ref lhbowpbcpwoiparwnwgt
+supabase functions list --project-ref vacltfdslodqybxojytc
 ```
 
 ## 3. Notification Templates
@@ -53,7 +53,7 @@ ADMIN_TOKEN=<admin-token> \
 curl -s -X POST \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${ADMIN_TOKEN}" \
-  "https://lhbowpbcpwoiparwnwgt.supabase.co/functions/v1/order-pending-reminder" \
+  "https://vacltfdslodqybxojytc.supabase.co/functions/v1/order-pending-reminder" \
   -d '{"dryRun":true,"msisdn":"+250780000000"}'
 ```
 
@@ -66,7 +66,7 @@ Trigger the OCR processor once to ensure queue → extraction → publish succee
 
 ```bash
 supabase functions invoke ocr-processor \
-  --project-ref lhbowpbcpwoiparwnwgt \
+  --project-ref vacltfdslodqybxojytc \
   --no-verify-jwt
 ```
 

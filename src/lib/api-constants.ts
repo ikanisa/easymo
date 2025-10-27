@@ -5,8 +5,8 @@
 
 import { getAdminToken, getApiBase, getSupabaseProjectId, getSupabaseUrl } from './env';
 
-const DEFAULT_SUPABASE_URL = 'https://lhbowpbcpwoiparwnwgt.supabase.co';
-const DEFAULT_PROJECT_ID = 'lhbowpbcpwoiparwnwgt';
+const DEFAULT_SUPABASE_URL = 'https://vacltfdslodqybxojytc.supabase.co';
+const DEFAULT_PROJECT_ID = 'vacltfdslodqybxojytc';
 
 const resolvedSupabaseUrl = getSupabaseUrl() ?? DEFAULT_SUPABASE_URL;
 const resolvedProjectId = getSupabaseProjectId() ?? DEFAULT_PROJECT_ID;

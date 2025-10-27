@@ -14,7 +14,7 @@ This runbook aggregates the Phase 4 readiness items: log inspection, cron verifi
 Use the provided script:
 
 ```bash
-SUPABASE_URL="https://lhbowpbcpwoiparwnwgt.supabase.co" \
+SUPABASE_URL="https://vacltfdslodqybxojytc.supabase.co" \
 SUPABASE_SERVICE_ROLE_KEY="<service-role>" \
 EASYMO_ADMIN_TOKEN="<admin-token>" \
 bash scripts/test-functions.sh

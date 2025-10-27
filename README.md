@@ -172,7 +172,7 @@ Vite React app and communicates with those Edge Functions through the
 
 1. Fetch the service-role connection string from Supabase Dashboard → Settings → Database and export it:
    ```bash
-   export SUPABASE_DB_URL="postgresql://postgres:<password>@db.lhbowpbcpwoiparwnwgt.supabase.co:5432/postgres"
+   export SUPABASE_DB_URL="postgresql://postgres:<password>@db.vacltfdslodqybxojytc.supabase.co:5432/postgres"
    ```
 2. Run the Phase-2 seed fixture:
    ```bash
@@ -181,7 +181,7 @@ Vite React app and communicates with those Edge Functions through the
    The script pipes `supabase/seeders/phase2_seed.sql` through `psql` with `ON_ERROR_STOP`, so it will fail fast if anything breaks.
 3. If `psql` is not available, use the same SQL file inside the Supabase SQL editor or run:
    ```bash
-   PGPASSWORD=<password> psql "postgresql://postgres@db.lhbowpbcpwoiparwnwgt.supabase.co:5432/postgres" \
+   PGPASSWORD=<password> psql "postgresql://postgres@db.vacltfdslodqybxojytc.supabase.co:5432/postgres" \
      -v ON_ERROR_STOP=1 \
      -f supabase/seeders/phase2_seed.sql
    ```

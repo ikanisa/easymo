@@ -14,7 +14,7 @@ if [[ -z "${SUPABASE_DB_URL:-}" ]]; then
 SUPABASE_DB_URL is not set.
 Export a Postgres connection string with service-role privileges, for example:
 
-  export SUPABASE_DB_URL="postgresql://postgres:<password>@db.lhbowpbcpwoiparwnwgt.supabase.co:5432/postgres"
+  export SUPABASE_DB_URL="postgresql://postgres:<password>@db.vacltfdslodqybxojytc.supabase.co:5432/postgres"
 
 You can copy the password from Supabase Dashboard → Settings → Database.
 EOF

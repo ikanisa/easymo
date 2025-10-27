@@ -7,7 +7,7 @@ This note accompanies the Phase 1 tasks. It lists every environment variable a
 ## 1. Environment Variables
 
 The repository root `.env` now mirrors the structure we expect in Vercel and
-documents the live Supabase project (`lhbowpbcpwoiparwnwgt`). Every value
+documents the live Supabase project (`vacltfdslodqybxojytc`). Every value
 prefixed with `CHANGEME_` must be replaced with the actual secret and then
 copied to:
 
@@ -17,7 +17,7 @@ copied to:
 
 | Variable | Notes / Where Used |
 | --- | --- |
-| `VITE_SUPABASE_URL`, `VITE_SUPABASE_PROJECT_ID` | Non-secret; points to `https://lhbowpbcpwoiparwnwgt.supabase.co`. |
+| `VITE_SUPABASE_URL`, `VITE_SUPABASE_PROJECT_ID` | Non-secret; points to `https://vacltfdslodqybxojytc.supabase.co`. |
 | `VITE_SUPABASE_ANON_KEY` | Anonymous key exposed to client. |
 | `SUPABASE_SERVICE_ROLE_KEY` / `SERVICE_ROLE_KEY` | Service role key. **Never** expose to browsers. Only Vercel functions / Supabase functions. |
 | `VITE_ADMIN_TOKEN` / `EASYMO_ADMIN_TOKEN` / `ADMIN_TOKEN` | Shared secret used by admin panel to call edge functions. Must match Supabase function secret `EASYMO_ADMIN_TOKEN`. |
@@ -26,7 +26,7 @@ copied to:
 | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Mirror of the Vite variables for Next.js compatibility. |
 | Reminder / notification toggles (`CART_REMINDER_*`, `ORDER_PENDING_REMINDER_*`, `BASKETS_REMINDER_*`, `NOTIFY_*`) | Non-secret; tune according to production requirements. |
 | Storage buckets (`MENU_MEDIA_BUCKET`, `KYC_STORAGE_BUCKET`, etc.) | Must exist in Supabase Storage or pages will fail. |
-| `DISPATCHER_FUNCTION_URL` | Should resolve to `https://lhbowpbcpwoiparwnwgt.supabase.co/functions/v1/campaign-dispatch`. |
+| `DISPATCHER_FUNCTION_URL` | Should resolve to `https://vacltfdslodqybxojytc.supabase.co/functions/v1/campaign-dispatch`. |
 | `VITE_ENABLE_AGENT_CHAT`, `ENABLE_AGENT_CHAT` | Feature flag for Marketplace broker/support chat previews. Enable when the agent surfaces should be visible. |
 | Integrations (`OPENAI_API_KEY`, `WA_*`, `INSURANCE_OCR_METRICS_*`, `QR_SALT`) | Secrets – provide production versions. |
 
@@ -45,7 +45,7 @@ Update the Supabase project settings (Dashboard → Authentication → Settings)
 ## 3. Release Pipeline Environment Variables
 
 1. Use the internal secret manager/CI pipeline (`.github/workflows/node.yml`) to list the current variables.  
-2. Ensure every key listed in `.env` exists in the shared secret store referencing the official project (`lhbowpbcpwoiparwnwgt`).  
+2. Ensure every key listed in `.env` exists in the shared secret store referencing the official project (`vacltfdslodqybxojytc`).  
 3. Set `VITE_ADMIN_TOKEN`, `ADMIN_SESSION_SECRET`, `ADMIN_ACCESS_CREDENTIALS`, `DISPATCHER_FUNCTION_URL`, and the Supabase keys to their production values.  
 4. Redeploy the services through the release pipeline after updating secrets to propagate the new configuration.
 
