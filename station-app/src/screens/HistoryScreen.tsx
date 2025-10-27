@@ -5,12 +5,18 @@ import { maskMsisdn } from "@station/utils/msisdn";
 import "@station/styles/history.css";
 
 export const HistoryScreen = () => {
-  const { client } = useStationSession();
+  const { session, client } = useStationSession();
+  const stationId = session?.stationId;
   const { data, isLoading, isError } = useQuery({
-    queryKey: ["station-history"],
+    queryKey: ["station-history", stationId],
     queryFn: () => client.history(),
     staleTime: 30_000,
+    enabled: Boolean(stationId),
   });
+
+  if (!stationId) {
+    return null;
+  }
 
   if (isLoading) {
     return (
