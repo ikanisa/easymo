@@ -61,11 +61,28 @@ const apiRouteDefinitions = defineHttpControllers({
       confirm: { method: "POST" as const, segment: "confirm" as const },
     },
   },
-  deeplink: {
-    basePath: "deeplink" as const,
+  driverParking: {
+    basePath: "driver/parking" as const,
     endpoints: {
-      issue: { method: "POST" as const, segment: "issue" as const },
-      resolve: { method: "POST" as const, segment: "resolve" as const },
+      list: { method: "GET" as const, segment: "" as const },
+      create: { method: "POST" as const, segment: "" as const },
+      update: { method: "PUT" as const, segment: ":id" as const },
+      delete: { method: "DELETE" as const, segment: ":id" as const },
+    },
+  },
+  driverAvailability: {
+    basePath: "driver/availability" as const,
+    endpoints: {
+      list: { method: "GET" as const, segment: "" as const },
+      create: { method: "POST" as const, segment: "" as const },
+      update: { method: "PUT" as const, segment: ":id" as const },
+      delete: { method: "DELETE" as const, segment: ":id" as const },
+    },
+  },
+  broker: {
+    basePath: "broker" as const,
+    endpoints: {
+      candidates: { method: "POST" as const, segment: "candidates" as const },
     },
   },
 } as const satisfies Record<string, ControllerDefinition<Record<string, EndpointDefinition>>>);
