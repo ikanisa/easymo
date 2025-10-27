@@ -105,11 +105,11 @@ async function archiveCampaignTargets(now: Date): Promise<number> {
       metadata: { archived_by: "data-retention" },
     }));
 
-    const { error: insertErr } = await supabase
+    const { error: upsertErr } = await supabase
       .from("campaign_target_archives")
-      .insert(records);
-    if (insertErr) {
-      throw new Error(`campaign_targets_archive_insert_failed: ${insertErr.message}`);
+      .upsert(records, { onConflict: "target_id" });
+    if (upsertErr) {
+      throw new Error(`campaign_targets_archive_upsert_failed: ${upsertErr.message}`);
     }
 
     const ids = data.map((row) => row.id);
