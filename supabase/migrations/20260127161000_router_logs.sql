@@ -71,6 +71,6 @@ CREATE POLICY router_logs_authenticated_read
 
 -- Grant necessary permissions
 GRANT SELECT ON public.router_logs TO authenticated;
-GRANT INSERT ON public.router_logs TO service_role;
+GRANT ALL ON public.router_logs TO service_role;
 
 COMMIT;
