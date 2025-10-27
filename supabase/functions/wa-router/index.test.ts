@@ -1,5 +1,15 @@
 import { assertEquals } from "https://deno.land/std@0.208.0/assert/mod.ts";
 
+Deno.env.set("WA_VERIFY_TOKEN", "test_verify_token");
+Deno.env.set("WA_APP_SECRET", "test_secret");
+Deno.env.set("DEST_EASYMO_URL", "https://example.com/easymo");
+Deno.env.set("DEST_INSURANCE_URL", "https://example.com/insurance");
+Deno.env.set("DEST_BASKET_URL", "https://example.com/basket");
+Deno.env.set("DEST_QR_URL", "https://example.com/qr");
+Deno.env.set("DEST_DINE_URL", "https://example.com/dine");
+
+const { handleWaRouterRequest } = await import("./index.ts");
+
 // Test helper to create mock WhatsApp payloads
 function createMockPayload(
   messageType: string,
@@ -59,37 +69,24 @@ async function createSignature(body: string, secret: string): Promise<string> {
 
 Deno.test("wa-router: GET request with valid token returns challenge", async () => {
   const WA_VERIFY_TOKEN = "test_verify_token";
-  Deno.env.set("WA_VERIFY_TOKEN", WA_VERIFY_TOKEN);
-
   const challenge = "test_challenge_123";
   const url = `http://localhost:8000?hub.mode=subscribe&hub.verify_token=${WA_VERIFY_TOKEN}&hub.challenge=${challenge}`;
 
   const req = new Request(url, { method: "GET" });
-  const response = await fetch(req.url);
+  const response = await handleWaRouterRequest(req);
+  const body = await response.text();
 
-  // Since we can't directly test the handler, we'll test the logic
-  const urlObj = new URL(url);
-  const mode = urlObj.searchParams.get("hub.mode");
-  const token = urlObj.searchParams.get("hub.verify_token");
-  const responseChallenge = urlObj.searchParams.get("hub.challenge");
-
-  assertEquals(mode, "subscribe");
-  assertEquals(token, WA_VERIFY_TOKEN);
-  assertEquals(responseChallenge, challenge);
+  assertEquals(response.status, 200);
+  assertEquals(body, challenge);
 });
 
 Deno.test("wa-router: GET request with invalid token fails", async () => {
-  const WA_VERIFY_TOKEN = "test_verify_token";
-  Deno.env.set("WA_VERIFY_TOKEN", WA_VERIFY_TOKEN);
-
   const url = `http://localhost:8000?hub.mode=subscribe&hub.verify_token=wrong_token&hub.challenge=test`;
 
-  const urlObj = new URL(url);
-  const mode = urlObj.searchParams.get("hub.mode");
-  const token = urlObj.searchParams.get("hub.verify_token");
+  const req = new Request(url, { method: "GET" });
+  const response = await handleWaRouterRequest(req);
 
-  assertEquals(mode, "subscribe");
-  assertEquals(token !== WA_VERIFY_TOKEN, true);
+  assertEquals(response.status, 403);
 });
 
 Deno.test("wa-router: signature verification works correctly", async () => {

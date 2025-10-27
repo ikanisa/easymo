@@ -139,7 +139,7 @@ function logEvent(event: string, data: Record<string, unknown>): void {
 }
 
 // Main handler
-Deno.serve(async (req: Request): Promise<Response> => {
+export async function handleWaRouterRequest(req: Request): Promise<Response> {
   const correlationId = crypto.randomUUID();
   try {
     // Handle GET requests for webhook verification
@@ -211,4 +211,8 @@ Deno.serve(async (req: Request): Promise<Response> => {
     // Return 200 even on error to prevent Meta from retrying
     return new Response("ok", { status: 200 });
   }
-});
+}
+
+if (import.meta.main) {
+  Deno.serve(handleWaRouterRequest);
+}
