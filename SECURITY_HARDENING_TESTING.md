@@ -73,7 +73,7 @@ NODE_ENV=production npm start
 # In production: Cookie should NOT auto-set from client code
 
 # Check the code logic:
-cat easymo/admin-app/components/providers/AppProviders.tsx | grep -A 10 "NODE_ENV"
+grep -A 10 "NODE_ENV" easymo/admin-app/components/providers/AppProviders.tsx
 ```
 
 ### 4. Secret Detection Script (`tools/scripts/check-client-secrets.mjs`)
@@ -145,6 +145,27 @@ ls -la .next/
 cat supabase/migrations/20251027073908_security_hardening_rls_client_settings.sql
 
 # DO NOT RUN automatically - DB owners must review first
+
+# DBAs can use these queries to review current policies:
+
+# 1. List all policies granting SELECT to anon role:
+SELECT schemaname, tablename, policyname, roles, cmd
+FROM pg_policies
+WHERE schemaname = 'public'
+  AND roles @> ARRAY['anon']
+  AND cmd IN ('SELECT', 'ALL')
+ORDER BY tablename, policyname;
+
+# 2. List all table grants to anon role:
+SELECT table_schema, table_name, privilege_type
+FROM information_schema.table_privileges
+WHERE grantee = 'anon'
+  AND table_schema = 'public'
+ORDER BY table_name;
+
+# 3. Test the client_settings view (after applying migration):
+SELECT * FROM public.client_settings;
+
 # The file includes:
 # - Documentation of current policies
 # - Template for revoking overly permissive policies
@@ -153,10 +174,11 @@ cat supabase/migrations/20251027073908_security_hardening_rls_client_settings.sq
 # - Rollback plan
 
 # DBA should:
-# 1. Review all policies granting SELECT to 'anon'
-# 2. Test in staging environment
-# 3. Uncomment and customize the revocation section as needed
-# 4. Apply to production with rollback plan ready
+# 1. Run the audit queries above in staging
+# 2. Review all policies granting SELECT to 'anon'
+# 3. Test in staging environment
+# 4. Uncomment and customize the revocation section as needed
+# 5. Apply to production with rollback plan ready
 ```
 
 ## Security Checklist
@@ -186,8 +208,13 @@ Before merging this PR, verify:
 2. Open browser DevTools → Application → Cookies
 3. Verify `admin_actor_id` cookie has:
    - HttpOnly flag set to ✓
-   - Secure flag set to ✓
+   - Secure flag set to ✓ (requires HTTPS - use local tunnel or reverse proxy for testing)
    - SameSite set to Lax
+
+**Note:** To properly test the Secure flag, you'll need to serve the app over HTTPS. Options:
+- Use ngrok or cloudflared tunnel: `npx cloudflared tunnel --url http://localhost:3000`
+- Set up local HTTPS with mkcert
+- Deploy to a staging environment with HTTPS
 
 ### Test 2: Development Convenience Still Works
 
@@ -218,14 +245,22 @@ Before merging this PR, verify:
 
 3. Test with intentional violation:
    ```bash
-   # Add a test file with a secret reference
-   echo "console.log(process.env.SUPABASE_SERVICE_ROLE_KEY)" > easymo/admin-app/components/test.tsx
+   # Create test directory and file outside source tree
+   mkdir -p /tmp/easymo-test
+   echo "console.log(process.env.SUPABASE_SERVICE_ROLE_KEY)" > /tmp/easymo-test/test-violation.tsx
+   
+   # Copy to admin-app (ensure cleanup)
+   cp /tmp/easymo-test/test-violation.tsx easymo/admin-app/components/test-violation.tsx
    
    # Run script - should fail
    node tools/scripts/check-client-secrets.mjs
    
-   # Clean up
-   rm easymo/admin-app/components/test.tsx
+   # Clean up - IMPORTANT: Always remove test file
+   rm easymo/admin-app/components/test-violation.tsx
+   rm -rf /tmp/easymo-test
+   
+   # Verify clean state
+   git status
    ```
 
 ## Rollback Plan
@@ -239,9 +274,9 @@ If issues are discovered after deployment:
 
 ## Notes for Reviewers
 
-- This is a **draft PR** and should not be merged without thorough testing
-- Database migration requires DBA review and approval
-- Test in staging environment before production
+- This PR contains security hardening changes ready for review and testing
+- Database migration requires DBA review and approval before applying
+- Test thoroughly in staging environment before production deployment
 - Monitor application logs for access denied errors after deployment
 - Consider gradual rollout with feature flags if available
 
