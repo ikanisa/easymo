@@ -168,10 +168,10 @@ async function notifyAdmins(
   const templateLang = Deno.env.get("INSURANCE_ADMIN_TEMPLATE_LANG") ?? "en";
   const templateEnabled = Boolean(templateName);
 
-  const queuedResults = await Promise.allSettled(
-    targets.map((to) =>
-      templateEnabled
-        ? queueNotification({
+  if (templateEnabled) {
+    const queuedResults = await Promise.allSettled(
+      targets.map((to) =>
+        queueNotification({
           to,
           template: {
             name: templateName!,
@@ -208,44 +208,71 @@ async function notifyAdmins(
           supabase: ctx.supabase,
           type: ADMIN_ALERT_TYPE,
         })
-        : queueNotification({ to, text: message }, {
-          supabase: ctx.supabase,
-          type: ADMIN_ALERT_TYPE,
-        })
-    ),
-  );
-
-  const notificationIds = queuedResults
-    .map((result) => result.status === "fulfilled" ? result.value.id : null)
-    .filter((value): value is string => Boolean(value));
-
-  const errors = queuedResults
-    .filter((result) => result.status === "rejected")
-    .map((result) => result.reason);
-
-  if (notificationIds.length) {
-    const sendResults = await Promise.allSettled(
-      notificationIds.map((id) => sendNotificationNow(id, ctx.supabase)),
+      ),
     );
-    sendResults
+
+    const notificationIds = queuedResults
+      .map((result) => result.status === "fulfilled" ? result.value.id : null)
+      .filter((value): value is string => Boolean(value));
+
+    const errors = queuedResults
       .filter((result) => result.status === "rejected")
-      .forEach((result) => errors.push(result.reason));
+      .map((result) => result.reason);
+
+    if (notificationIds.length) {
+      const sendResults = await Promise.allSettled(
+        notificationIds.map((id) => sendNotificationNow(id, ctx.supabase)),
+      );
+      sendResults
+        .filter((result) => result.status === "rejected")
+        .forEach((result) => errors.push(result.reason));
+    }
+
+    if (errors.length) {
+      await logStructuredEvent("INS_ADMIN_NOTIFY_FAIL", {
+        leadId,
+        count: targets.length,
+        error: errors.map((err) =>
+          err instanceof Error ? err.message : String(err ?? "unknown")
+        ),
+      });
+      await emitAlert("INS_ADMIN_NOTIFY_FAIL", {
+        leadId,
+        count: targets.length,
+        errors: errors.map((err) =>
+          err instanceof Error ? err.message : String(err ?? "unknown")
+        ),
+      });
+    } else {
+      await logStructuredEvent("INS_ADMIN_NOTIFY_OK", {
+        leadId,
+        count: targets.length,
+      });
+    }
+    return;
+  }
+
+  const errors: string[] = [];
+  for (const to of targets) {
+    try {
+      await sendText(to, message);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err ?? "unknown");
+      errors.push(msg);
+      console.error("INS_ADMIN_SEND_FAIL", { to, error: msg });
+    }
   }
 
   if (errors.length) {
     await logStructuredEvent("INS_ADMIN_NOTIFY_FAIL", {
       leadId,
       count: targets.length,
-      error: errors.map((err) =>
-        err instanceof Error ? err.message : String(err ?? "unknown")
-      ),
+      error: errors,
     });
     await emitAlert("INS_ADMIN_NOTIFY_FAIL", {
       leadId,
       count: targets.length,
-      errors: errors.map((err) =>
-        err instanceof Error ? err.message : String(err ?? "unknown")
-      ),
+      errors,
     });
   } else {
     await logStructuredEvent("INS_ADMIN_NOTIFY_OK", {
