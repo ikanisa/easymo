@@ -34,12 +34,22 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Install PostgreSQL client and pgTAP
         run: |
           sudo apt-get update
           sudo apt-get install -y postgresql-client pgtap
+
+      - name: Install pgTAP inside Postgres service container
+        run: |
+          set -euo pipefail
+          postgres_container_id=$(docker ps --filter "ancestor=supabase/postgres:15.1.1.0" --format "{{.ID}}")
+          if [ -z "$postgres_container_id" ]; then
+            echo "Could not find Postgres service container" >&2
+            exit 1
+          fi
+          docker exec "$postgres_container_id" bash -lc "apt-get update && apt-get install -y postgresql-15-pgtap"
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -53,7 +63,7 @@ jobs:
           cache: pnpm
 
       - name: Setup Deno
-        uses: denoland/setup-deno@v1
+        uses: denoland/setup-deno@v2
         with:
           deno-version: v1.x
 

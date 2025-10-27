@@ -34,15 +34,18 @@ export const useRedeemQueue = () => {
   useEffect(() => {
     if (!queue) {
       setEntries([]);
+      setLastResult(null);
       return;
     }
     setEntries(queue.list());
+    setLastResult(null);
   }, [queue]);
 
   const redeem = async (request: RedeemRequest) => {
     if (!queue) {
       throw new Error("redeem_queue_unavailable");
     }
+    setLastResult(null);
     const entry = queue.enqueue(request);
     setEntries(queue.list());
     await queue.flush();

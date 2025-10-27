@@ -116,6 +116,11 @@ export async function claimThrottleWindow(
       };
     }
 
+    if (!update.error && !update.data) {
+      // No row was updated, likely due to the optimistic concurrency check failing.
+      continue;
+    }
+
     if (update.error?.code === "PGRST116") {
       // Row changed since lookup; retry.
       continue;

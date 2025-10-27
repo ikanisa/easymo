@@ -9,7 +9,7 @@ jobs:
   lint-openapi:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Lint apispec/openapi.yaml (if present)
         if: ${{ hashFiles('apispec/openapi.yaml') != '' }}
         run: npx -y @redocly/cli@latest lint apispec/openapi.yaml
