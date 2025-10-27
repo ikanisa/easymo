@@ -31,19 +31,19 @@ STABLE
 AS $$
   SELECT (
     auth.role() = 'service_role'
-    OR coalesce(auth.jwt()->>'role', '') = ANY (ARRAY['admin','super_admin','support','data_ops'])
-    OR coalesce(auth.jwt()->'app_metadata'->>'role', '') = ANY (ARRAY['admin','super_admin','support','data_ops'])
+    OR coalesce(auth.jwt()->>'role', '') = ANY (ARRAY['admin','super_admin','support','data_ops','ops'])
+    OR coalesce(auth.jwt()->'app_metadata'->>'role', '') = ANY (ARRAY['admin','super_admin','support','data_ops','ops'])
     OR EXISTS (
       SELECT 1
       FROM json_array_elements_text(coalesce(auth.jwt()->'roles', '[]'::json)) AS role(value)
-      WHERE role.value = ANY (ARRAY['admin','super_admin','support','data_ops'])
+      WHERE role.value = ANY (ARRAY['admin','super_admin','support','data_ops','ops'])
     )
     OR EXISTS (
       SELECT 1
       FROM json_array_elements_text(coalesce(auth.jwt()->'app_metadata'->'roles', '[]'::json)) AS role(value)
-      WHERE role.value = ANY (ARRAY['admin','super_admin','support','data_ops'])
+      WHERE role.value = ANY (ARRAY['admin','super_admin','support','data_ops','ops'])
     )
-    OR COALESCE((auth.jwt()->'user_roles') ?| ARRAY['admin','super_admin','support','data_ops'], FALSE)
+    OR COALESCE((auth.jwt()->'user_roles') ?| ARRAY['admin','super_admin','support','data_ops','ops'], FALSE)
   );
 $$;
 GRANT EXECUTE ON FUNCTION public.is_admin() TO anon, authenticated, service_role;
