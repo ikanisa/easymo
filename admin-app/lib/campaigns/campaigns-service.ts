@@ -9,15 +9,22 @@ import {
   type Pagination,
 } from "@/lib/shared/pagination";
 
+type CampaignQueryParams = Pagination & {
+  status?: Campaign["status"];
+  search?: string;
+};
+
+export type { CampaignQueryParams as CampaignListParams };
+
 const useMocks = shouldUseMocks();
 const isServer = typeof window === "undefined";
 
 export async function listCampaigns(
-  params: Pagination = {},
+  params: CampaignQueryParams = {},
 ): Promise<PaginatedResult<Campaign>> {
   if (!isServer) {
     if (useMocks) {
-      return paginateArray(mockCampaigns, params);
+      return paginateArray(filterCampaigns(mockCampaigns, params), params);
     }
 
     try {
@@ -27,6 +34,12 @@ export async function listCampaigns(
       }
       if (params.limit !== undefined) {
         searchParams.set("limit", String(params.limit));
+      }
+      if (params.status) {
+        searchParams.set("status", params.status);
+      }
+      if (params.search) {
+        searchParams.set("search", params.search);
       }
 
       const response = await fetch(
@@ -48,12 +61,12 @@ export async function listCampaigns(
         .parse(json);
     } catch (error) {
       console.error("Client campaigns fetch failed", error);
-      return paginateArray(mockCampaigns, params);
+      return paginateArray(filterCampaigns(mockCampaigns, params), params);
     }
   }
 
   if (useMocks) {
-    return paginateArray(mockCampaigns, params);
+    return paginateArray(filterCampaigns(mockCampaigns, params), params);
   }
 
   const { getSupabaseAdminClient } = await import(
@@ -61,10 +74,10 @@ export async function listCampaigns(
   );
   const adminClient = getSupabaseAdminClient();
   if (!adminClient) {
-    return paginateArray(mockCampaigns, params);
+    return paginateArray(filterCampaigns(mockCampaigns, params), params);
   }
 
-  const query = adminClient
+  let query = adminClient
     .from("campaigns")
     .select(
       "id, name, type, status, template_id, created_at, started_at, finished_at, metadata",
@@ -73,11 +86,23 @@ export async function listCampaigns(
     .order("created_at", { ascending: false })
     .range(params.offset ?? 0, (params.offset ?? 0) + (params.limit ?? 25) - 1);
 
+  if (params.status) {
+    query = query.eq("status", params.status);
+  }
+
+  if (params.search) {
+    const trimmedSearch = params.search.trim();
+    if (trimmedSearch) {
+      const likeTerm = `%${trimmedSearch}%`;
+      query = query.or(`name.ilike.${likeTerm},id.eq.${trimmedSearch}`);
+    }
+  }
+
   const { data, error, count } = await query;
 
   if (error || !data) {
     console.error("Failed to fetch campaigns from Supabase", error);
-    return paginateArray(mockCampaigns, params);
+    return paginateArray(filterCampaigns(mockCampaigns, params), params);
   }
 
   return {
@@ -97,4 +122,22 @@ export async function listCampaigns(
       ? (params.offset + params.limit) < (count ?? data.length)
       : false,
   };
+}
+
+function filterCampaigns(
+  campaigns: Campaign[],
+  { status, search }: CampaignQueryParams,
+): Campaign[] {
+  const normalizedSearch = search?.toLowerCase();
+
+  return campaigns.filter((campaign) => {
+    const statusMatch = status ? campaign.status === status : true;
+    const searchMatch = normalizedSearch
+      ? `${campaign.name} ${campaign.id}`
+          .toLowerCase()
+          .includes(normalizedSearch)
+      : true;
+
+    return statusMatch && searchMatch;
+  });
 }
