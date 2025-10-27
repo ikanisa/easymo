@@ -130,16 +130,8 @@ aws s3 cp "${DB_DUMP_FILE}.sha256" "s3://${AWS_BACKUP_BUCKET}/${AWS_BACKUP_PATH_
 log "Restoring dump into staging environment (${STAGING_SUPABASE_PROJECT_REF})."
 psql "${STAGING_DATABASE_URL}" -v ON_ERROR_STOP=1 <<'SQL' >>"${LOG_FILE}" 2>&1
 DO $$
-DECLARE
-  r RECORD;
 BEGIN
-  FOR r IN (
-    SELECT 'DROP SCHEMA IF EXISTS "' || nspname || '" CASCADE;' AS stmt
-    FROM pg_namespace
-    WHERE nspname NOT IN ('pg_catalog', 'information_schema')
-  ) LOOP
-    EXECUTE r.stmt;
-  END LOOP;
+  EXECUTE 'DROP SCHEMA IF EXISTS public CASCADE;';
   EXECUTE 'CREATE SCHEMA public AUTHORIZATION postgres;';
   EXECUTE 'GRANT ALL ON SCHEMA public TO postgres;';
   EXECUTE 'GRANT ALL ON SCHEMA public TO public;';
