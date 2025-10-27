@@ -55,6 +55,9 @@ export function logStructuredEvent(
 /**
  * Log an error with context
  * 
+ * Stack traces are only included in development environment
+ * to prevent information leakage in production.
+ * 
  * @param scope - Error scope/category
  * @param error - Error object or message
  * @param context - Additional context data
@@ -71,7 +74,11 @@ export function logError(
   context: Record<string, unknown> = {},
 ): void {
   const message = error instanceof Error ? error.message : String(error);
-  const stack = error instanceof Error ? error.stack : undefined;
+  
+  // Only include stack traces in development to prevent information leakage
+  const isDevelopment = Deno.env.get("APP_ENV") === "development" ||
+                       Deno.env.get("NODE_ENV") === "development";
+  const stack = (isDevelopment && error instanceof Error) ? error.stack : undefined;
 
   logStructuredEvent(
     `ERROR_${scope.toUpperCase()}`,

@@ -121,6 +121,7 @@ Every API endpoint and job MUST log:
 - **Mask sensitive data** (PII, credentials) before logging
 - **Use consistent event names** following the pattern: `ENTITY_ACTION` (e.g., `USER_CREATED`, `PAYMENT_FAILED`)
 - **Add dimensions to metrics** for better filtering and aggregation
+- **Never expose stack traces in production** - `logError()` automatically filters stack traces based on environment
 - **Log at appropriate levels**:
   - `error`: System errors, failures requiring attention
   - `warn`: Degraded functionality, retryable errors

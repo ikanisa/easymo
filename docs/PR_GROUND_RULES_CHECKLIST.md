@@ -23,6 +23,7 @@ Use this checklist when reviewing pull requests to ensure compliance with EasyMO
 - [ ] Metric names use dot notation (e.g., `user.created`)
 - [ ] Appropriate log levels used (error/warn/info/debug)
 - [ ] No sensitive data in logs (tokens, passwords, raw PII)
+- [ ] Stack traces only exposed in development (not production)
 
 ## Security ✓
 
