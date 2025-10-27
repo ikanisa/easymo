@@ -47,6 +47,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Assert no service role in client env
+        run: node scripts/assert-no-service-role-in-client.mjs
+
       - name: Run lint
         run: pnpm lint
 
