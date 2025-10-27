@@ -41,6 +41,11 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y postgresql-client pgtap
 
+      - name: Install pgTAP in Postgres service container
+        run: |
+          set -euo pipefail
+          docker exec postgres sh -c "apt-get update && apt-get install -y postgresql-15-pgtap"
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
