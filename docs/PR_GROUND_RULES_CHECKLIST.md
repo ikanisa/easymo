@@ -108,13 +108,15 @@ Use this checklist when reviewing pull requests to ensure compliance with EasyMO
 
 **Anti-Patterns to Reject**
 
-❌ Plain string logging:
+❌ Unstructured logging (even with proper logger):
 ```typescript
-console.log("User created");  // WRONG
+logger.info("User created");  // WRONG - plain string
+logger.info(`User ${userId} created`);  // WRONG - string interpolation
 ```
 ✅ Structured logging:
 ```typescript
 logStructuredEvent("USER_CREATED", { userId });  // CORRECT
+logger.info({ event: "USER_CREATED", userId });  // CORRECT
 ```
 
 ❌ Secrets in client code:

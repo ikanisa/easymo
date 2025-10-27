@@ -29,6 +29,11 @@ Deno.serve(async (req) => {
     await logStructuredEvent("ACTION_COMPLETED", { correlationId });
     await recordMetric("action.success", 1);
     
+    // Record duration of the request
+    await recordDurationMetric("request.duration", startTime, {
+      endpoint: "my-endpoint"
+    });
+    
     logResponse("my-endpoint", 200, { correlationId });
     return json({ ok: true });
   } catch (error) {
@@ -145,6 +150,8 @@ logStructuredEvent("EVENT", { correlationId, ...data });
 import { maskPII } from "../_shared/observability.ts";
 
 const phone = "+250788123456";
+// maskPII(value, visibleStart, visibleEnd)
+// Keep first 7 chars visible, last 3 chars visible
 const masked = maskPII(phone, 7, 3);  // "+250788***456"
 
 logger.info({ 
