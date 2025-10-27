@@ -1,5 +1,13 @@
 # Observability & Alerting Plan — Baskets Module
 
+> **Note**: For comprehensive observability guidelines and utilities applicable to all modules, see [GROUND_RULES.md](GROUND_RULES.md).
+>
+> **Key Utilities**:
+> - Structured logging: `logStructuredEvent()` in `supabase/functions/_shared/observability.ts`
+> - Metrics: `recordMetric()`, `recordDurationMetric()`, `recordGauge()`
+> - Request tracking: `logRequest()`, `logResponse()` with correlation IDs
+> - PII masking: `maskPII()`
+
 ## Targets
 - **Allocations**: throughput, duplicates, unmatched backlog, allocator failures.
 - **Loans**: committee queue size, endorsement throughput, LTV violations, SACCO decision latency.

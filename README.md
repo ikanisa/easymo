@@ -186,6 +186,24 @@ Vite React app and communicates with those Edge Functions through the
      -f supabase/seeders/phase2_seed.sql
    ```
 
+## Development Ground Rules
+
+**All development MUST follow the ground rules for observability, security, and feature flags.**
+
+See [docs/GROUND_RULES.md](docs/GROUND_RULES.md) for comprehensive guidelines on:
+
+- **Observability**: Structured logging, event counters, and metrics for all APIs and jobs
+- **Security**: Secret management, webhook signature verification, and data protection
+- **Feature Flags**: Controlling feature rollout with flags that default to OFF in production
+
+Key principles:
+- Use structured logs (JSON format) with correlation IDs
+- Never expose secrets client-side (validated in `prebuild` script)
+- Verify webhook signatures (WhatsApp, Twilio, etc.)
+- Gate all new features behind feature flags
+- Record metrics for significant actions
+- Mask PII in all logs
+
 ## Testing
 
 Vitest is used for admin panel unit tests (`src/lib/adapter.real.test.ts`, etc.).
