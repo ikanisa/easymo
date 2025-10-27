@@ -107,7 +107,7 @@ async function archiveCampaignTargets(now: Date): Promise<number> {
 
     const { error: insertErr } = await supabase
       .from("campaign_target_archives")
-      .insert(records);
+      .upsert(records, { onConflict: "target_id" });
     if (insertErr) {
       throw new Error(`campaign_targets_archive_insert_failed: ${insertErr.message}`);
     }
