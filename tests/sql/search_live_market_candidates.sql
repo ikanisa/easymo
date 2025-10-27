@@ -32,11 +32,8 @@ BEGIN
     vehicle_type,
     pickup,
     dropoff,
-    pickup_text,
-    dropoff_text,
     status,
-    created_at,
-    updated_at
+    created_at
   )
   VALUES (
     trip_a,
@@ -45,10 +42,7 @@ BEGIN
     'car',
     ST_SetSRID(ST_MakePoint(30.0620, -1.9450), 4326)::geography,
     ST_SetSRID(ST_MakePoint(30.0635, -1.9485), 4326)::geography,
-    'Pickup A',
-    'Drop A',
     'open',
-    timezone('utc', now()) - interval '1 minute',
     timezone('utc', now()) - interval '1 minute'
   );
 
@@ -60,11 +54,8 @@ BEGIN
     vehicle_type,
     pickup,
     dropoff,
-    pickup_text,
-    dropoff_text,
     status,
-    created_at,
-    updated_at
+    created_at
   )
   VALUES (
     trip_b,
@@ -73,10 +64,7 @@ BEGIN
     'car',
     ST_SetSRID(ST_MakePoint(30.0605, -1.9460), 4326)::geography,
     ST_SetSRID(ST_MakePoint(30.1200, -1.9100), 4326)::geography,
-    'Pickup B',
-    'Drop B',
     'open',
-    timezone('utc', now()) - interval '5 minute',
     timezone('utc', now()) - interval '5 minute'
   );
 
@@ -88,11 +76,8 @@ BEGIN
     vehicle_type,
     pickup,
     dropoff,
-    pickup_text,
-    dropoff_text,
     status,
-    created_at,
-    updated_at
+    created_at
   )
   VALUES (
     trip_c,
@@ -101,10 +86,7 @@ BEGIN
     'car',
     ST_SetSRID(ST_MakePoint(30.1800, -1.9300), 4326)::geography,
     ST_SetSRID(ST_MakePoint(30.0630, -1.9480), 4326)::geography,
-    'Pickup C',
-    'Drop C',
     'open',
-    timezone('utc', now()) - interval '2 minute',
     timezone('utc', now()) - interval '2 minute'
   );
 

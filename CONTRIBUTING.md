@@ -37,6 +37,22 @@ npm run type-check # TypeScript check
 
 ## Code Standards
 
+### Ground Rules (MANDATORY)
+
+**All code MUST follow the Ground Rules for observability, security, and feature flags.**
+
+See [docs/GROUND_RULES.md](docs/GROUND_RULES.md) for complete documentation and [docs/GROUND_RULES_QUICK_REF.md](docs/GROUND_RULES_QUICK_REF.md) for quick reference.
+
+**Key Requirements**:
+- ✅ **Structured logging** with correlation IDs for all APIs/edge functions
+- ✅ **Event counters** for significant actions
+- ✅ **No secrets client-side** (validated by `prebuild` script)
+- ✅ **Verify webhook signatures** (WhatsApp, Twilio, etc.)
+- ✅ **Feature flags** for all new capabilities (default OFF)
+- ✅ **Mask PII** in all logs
+
+**Enforcement**: PRs without proper observability, security, or feature flag compliance will be rejected.
+
 ### TypeScript
 - **Strict mode enabled** - No implicit any, proper null checks
 - **Interface segregation** - Clean type definitions in `types.ts`

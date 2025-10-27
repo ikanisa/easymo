@@ -30,6 +30,12 @@ const apiRouteDefinitions = defineHttpControllers({
       customerMessage: { method: "POST" as const, segment: ":threadId/customer" as const },
     },
   },
+  whatsappFlow: {
+    basePath: "wa/flow" as const,
+    endpoints: {
+      bootstrap: { method: "POST" as const, segment: "bootstrap" as const },
+    },
+  },
   whatsappCalls: {
     basePath: "wa" as const,
     endpoints: {
@@ -53,6 +59,30 @@ const apiRouteDefinitions = defineHttpControllers({
     basePath: "payment" as const,
     endpoints: {
       confirm: { method: "POST" as const, segment: "confirm" as const },
+    },
+  },
+  driverParking: {
+    basePath: "driver/parking" as const,
+    endpoints: {
+      list: { method: "GET" as const, segment: "" as const },
+      create: { method: "POST" as const, segment: "" as const },
+      update: { method: "PUT" as const, segment: ":id" as const },
+      delete: { method: "DELETE" as const, segment: ":id" as const },
+    },
+  },
+  driverAvailability: {
+    basePath: "driver/availability" as const,
+    endpoints: {
+      list: { method: "GET" as const, segment: "" as const },
+      create: { method: "POST" as const, segment: "" as const },
+      update: { method: "PUT" as const, segment: ":id" as const },
+      delete: { method: "DELETE" as const, segment: ":id" as const },
+    },
+  },
+  broker: {
+    basePath: "broker" as const,
+    endpoints: {
+      candidates: { method: "POST" as const, segment: "candidates" as const },
     },
   },
 } as const satisfies Record<string, ControllerDefinition<Record<string, EndpointDefinition>>>);
