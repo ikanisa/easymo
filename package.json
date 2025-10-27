@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite --port 8080",
     "start": "node ./scripts/start-preview.mjs",
+    "prebuild": "node ./scripts/assert-no-service-role-in-client.mjs",
     "build": "pnpm --filter @va/shared build && vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint . && pnpm --filter @easymo/admin-app run lint",
