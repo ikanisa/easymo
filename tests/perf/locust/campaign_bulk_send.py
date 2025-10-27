@@ -5,6 +5,7 @@ import json
 import os
 import random
 import time
+import uuid
 from pathlib import Path
 from typing import List
 
@@ -112,7 +113,7 @@ class CampaignDispatchUser(HttpUser):
         batch = self._next_batch()
         payload = {
             "campaignId": CAMPAIGN_ID,
-            "batchReference": f"{BATCH_REFERENCE}-{self.environment.runner.stats.total.num_requests}",
+            "batchReference": f"{BATCH_REFERENCE}-{uuid.uuid4().hex}",
             "targets": batch,
             "throttle": {
                 "maxPerMinute": int(os.environ.get("PERF_CAMPAIGN_TARGETS_PER_MIN", "600")),
