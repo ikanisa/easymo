@@ -10,6 +10,7 @@ import { createHandler } from '@/app/api/withObservability';
 
 const getSchema = z.object({
   status: z.string().optional(),
+  search: z.string().trim().min(1).optional(),
   limit: z.coerce.number().int().min(1).max(500).optional(),
   offset: z.coerce.number().int().min(0).optional()
 });
@@ -47,6 +48,11 @@ export const GET = createHandler('admin_api.campaigns.list', async (request: Req
 
   if (query.status) {
     supabaseQuery.eq('status', query.status);
+  }
+
+  if (query.search) {
+    const likeTerm = `%${query.search}%`;
+    supabaseQuery.or(`name.ilike.${likeTerm},id.eq.${query.search}`);
   }
 
   const { data, error, count } = await supabaseQuery;
