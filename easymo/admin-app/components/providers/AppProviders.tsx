@@ -26,7 +26,8 @@ export function AppProviders({ children }: AppProvidersProps) {
   }, []);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    // Only set cookie automatically in development mode for convenience
+    if (typeof window === "undefined" || process.env.NODE_ENV === "production") return;
     const defaultActorId = process.env.NEXT_PUBLIC_DEFAULT_ACTOR_ID;
     if (!defaultActorId) return;
     const hasCookie = document.cookie.split(";").some((entry) => entry.trim().startsWith("admin_actor_id="));

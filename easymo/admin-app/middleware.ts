@@ -3,9 +3,9 @@ import type { NextRequest } from 'next/server';
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
-const DEV_FALLBACK_ACTOR = process.env.ADMIN_DEFAULT_ACTOR_ID
-  ?? process.env.NEXT_PUBLIC_DEFAULT_ACTOR_ID
-  ?? null;
+const DEV_FALLBACK_ACTOR = process.env.NODE_ENV === 'production' 
+  ? null 
+  : (process.env.ADMIN_DEFAULT_ACTOR_ID ?? null);
 
 export function middleware(request: NextRequest) {
   if (!request.nextUrl.pathname.startsWith('/api')) {
@@ -41,9 +41,12 @@ export function middleware(request: NextRequest) {
 
   const response = NextResponse.next({ request: { headers: requestHeaders } });
 
+  // Set secure httpOnly cookie in production
   if (!request.cookies.get('admin_actor_id')) {
+    const isProduction = process.env.NODE_ENV === 'production';
     response.cookies.set('admin_actor_id', actorId, {
-      httpOnly: false,
+      httpOnly: isProduction,
+      secure: isProduction,
       sameSite: 'lax',
       path: '/',
     });
