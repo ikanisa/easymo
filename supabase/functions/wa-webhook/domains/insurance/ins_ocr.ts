@@ -30,39 +30,46 @@ Return a single JSON object. No prose. Fields:
 }
 If unknown, return null. Dates must be ISO (YYYY-MM-DD). Do not add fields.`;
 
+const OCR_SCHEMA_NAME = "motor_insurance_certificate";
+
 const OCR_JSON_SCHEMA = {
-  name: "motor_insurance_certificate",
-  schema: {
-    type: "object",
-    additionalProperties: false,
-    properties: {
-      insurer_name: { type: "string" },
-      policy_number: { type: "string" },
-      certificate_number: { type: "string" },
-      policy_inception: { type: "string", pattern: "^\\d{4}-\\d{2}-\\d{2}$" },
-      policy_expiry: { type: "string", pattern: "^\\d{4}-\\d{2}-\\d{2}$" },
-      carte_jaune_number: { type: ["string", "null"] },
-      carte_jaune_expiry: {
-        type: ["string", "null"],
-        pattern: "^\\d{4}-\\d{2}-\\d{2}$",
-      },
-      make: { type: ["string", "null"] },
-      model: { type: ["string", "null"] },
-      vehicle_year: { type: ["integer", "null"] },
-      registration_plate: { type: "string" },
-      vin_chassis: { type: ["string", "null"] },
-      usage: { type: ["string", "null"] },
-      licensed_to_carry: { type: ["integer", "null"] },
+  type: "object",
+  additionalProperties: false,
+  properties: {
+    insurer_name: { type: "string" },
+    policy_number: { type: "string" },
+    certificate_number: { type: "string" },
+    policy_inception: { type: "string", pattern: "^\\d{4}-\\d{2}-\\d{2}$" },
+    policy_expiry: { type: "string", pattern: "^\\d{4}-\\d{2}-\\d{2}$" },
+    carte_jaune_number: { type: ["string", "null"] },
+    carte_jaune_expiry: {
+      type: ["string", "null"],
+      pattern: "^\\d{4}-\\d{2}-\\d{2}$",
     },
-    required: [
-      "insurer_name",
-      "policy_number",
-      "certificate_number",
-      "policy_inception",
-      "policy_expiry",
-      "registration_plate",
-    ],
+    make: { type: ["string", "null"] },
+    model: { type: ["string", "null"] },
+    vehicle_year: { type: ["integer", "null"] },
+    registration_plate: { type: "string" },
+    vin_chassis: { type: ["string", "null"] },
+    usage: { type: ["string", "null"] },
+    licensed_to_carry: { type: ["integer", "null"] },
   },
+  required: [
+    "insurer_name",
+    "policy_number",
+    "certificate_number",
+    "policy_inception",
+    "policy_expiry",
+    "carte_jaune_number",
+    "carte_jaune_expiry",
+    "make",
+    "model",
+    "vehicle_year",
+    "registration_plate",
+    "vin_chassis",
+    "usage",
+    "licensed_to_carry",
+  ],
 } as const;
 
 export class MissingOpenAIKeyError extends Error {
@@ -92,7 +99,7 @@ export async function runInsuranceOCR(
           { type: "input_text", text: OCR_PROMPT },
           {
             type: "input_image",
-            image_url: { url: signedUrl },
+            image_url: signedUrl,
           },
         ],
       },
@@ -100,7 +107,8 @@ export async function runInsuranceOCR(
     text: {
       format: {
         type: "json_schema",
-        json_schema: OCR_JSON_SCHEMA,
+        name: OCR_SCHEMA_NAME,
+        schema: OCR_JSON_SCHEMA,
       },
     },
   } as const;
@@ -111,6 +119,10 @@ export async function runInsuranceOCR(
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), OCR_TIMEOUT_MS);
     try {
+      console.info("INS_OCR_CALL", {
+        model: OPENAI_VISION_MODEL,
+        attempt: attempt + 1,
+      });
       const response = await fetch(`${OPENAI_BASE_URL}/responses`, {
         method: "POST",
         headers: {
@@ -123,17 +135,27 @@ export async function runInsuranceOCR(
       clearTimeout(timeout);
 
       if (response.status >= 500 && response.status < 600) {
+        console.warn("INS_OCR_RETRYABLE_STATUS", { status: response.status });
         lastError = new Error(`openai_${response.status}`);
         continue;
       }
 
       if (!response.ok) {
         const text = await response.text().catch(() => "");
+        console.error("INS_OCR_BAD_STATUS", {
+          status: response.status,
+          text: text?.slice(0, 200),
+        });
         throw new Error(`OpenAI request failed: ${response.status} ${text}`);
       }
 
       const json = await response.json();
       const helperContent = resolveOpenAiResponseText(json);
+      if (helperContent && helperContent.trim().length) {
+        console.info("INS_OCR_HELPER_OK", {
+          preview: helperContent.slice(0, 120),
+        });
+      }
       if (helperContent && helperContent.trim().length) {
         return JSON.parse(helperContent);
       }
@@ -144,8 +166,10 @@ export async function runInsuranceOCR(
             json?.output?.[0]?.content ?? json?.choices?.[0]?.message?.content,
           );
       if (!resolved) {
+        console.error("INS_OCR_NO_TEXT");
         throw new Error("OpenAI response missing content");
       }
+      console.info("INS_OCR_RESOLVED_OK", { preview: resolved.slice(0, 120) });
       const parsed = JSON.parse(resolved);
       return parsed;
     } catch (error) {
@@ -162,6 +186,11 @@ export async function runInsuranceOCR(
         (lastError instanceof Error) &&
         /openai_5/.test(lastError.message);
       if (!isRetryable) {
+        console.error("INS_OCR_ERROR", {
+          error: lastError instanceof Error
+            ? lastError.message
+            : String(lastError),
+        });
         throw lastError;
       }
     }

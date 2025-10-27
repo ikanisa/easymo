@@ -235,11 +235,14 @@ export async function handleScheduleDropoff(
     return true;
   }
   try {
+    // Use the same search radius we use for pickup to avoid NULL not-null violations
+    const config = await getAppConfig(ctx.supabase);
+    const radiusMetersForDropoff = kmToMeters(config.search_radius_km ?? 10);
     await updateTripDropoff(ctx.supabase, {
       tripId: state.tripId,
       lat: coords.lat,
       lng: coords.lng,
-      radiusMeters: undefined,
+      radiusMeters: radiusMetersForDropoff,
     });
 
     const context: ScheduleState = {
@@ -247,8 +250,7 @@ export async function handleScheduleDropoff(
       dropoff: coords,
     };
 
-    const config = await getAppConfig(ctx.supabase);
-    const radiusMeters = kmToMeters(config.search_radius_km ?? 10);
+    const radiusMeters = radiusMetersForDropoff;
     const max = config.max_results ?? 9;
 
     const matches = await fetchMatches(ctx, context, {
@@ -388,7 +390,8 @@ async function createTripAndDeliverMatches(
         tripId,
         lat: options.dropoff.lat,
         lng: options.dropoff.lng,
-        radiusMeters: undefined,
+        // Ensure dropoff radius is set to avoid NOT NULL violations
+        radiusMeters,
       });
     }
 

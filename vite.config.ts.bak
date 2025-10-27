@@ -17,8 +17,7 @@ export default defineConfig({
   },
   optimizeDeps: {
     include: ['react', 'react-dom'],
-    // 👉 limit scanning to this app only
-    entries: ['index.html'],
+    entries: ['index.html'],   // 👈 limit scan to this app only
     esbuildOptions: { target: 'es2020' }
   },
   server: {
@@ -28,7 +27,7 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     rollupOptions: {
-      // 👉 ensure single entry point
+      // ensure single entry (avoid picking up other HTML files in the repo)
       input: path.resolve(rootDir, 'index.html')
     }
   }

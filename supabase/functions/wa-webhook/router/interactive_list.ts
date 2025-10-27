@@ -1,4 +1,7 @@
-import type { RouterContext, WhatsAppInteractiveListMessage } from "../types.ts";
+import type {
+  RouterContext,
+  WhatsAppInteractiveListMessage,
+} from "../types.ts";
 import { getListReplyId } from "../utils/messages.ts";
 import {
   handleNearbyResultSelection,
@@ -26,6 +29,7 @@ import {
   handleMarketplaceResult,
   startMarketplace,
 } from "../domains/marketplace/index.ts";
+import { handleAddBusinessCategorySelection } from "../domains/marketplace/index.ts";
 import { sendHomeMenu } from "../flows/home.ts";
 import { handleWalletEarnSelection } from "../domains/wallet/earn.ts";
 import { handleWalletRedeemSelection } from "../domains/wallet/redeem.ts";
@@ -216,6 +220,9 @@ export async function handleList(
   if (state.key === "market_category" && id.startsWith("cat::")) {
     return await handleMarketplaceCategorySelection(ctx, id);
   }
+  if (state.key === "market_add_category" && id.startsWith("cat::")) {
+    return await handleAddBusinessCategorySelection(ctx, id, state);
+  }
   if (
     id === IDS.MARKETPLACE_PREV || id === IDS.MARKETPLACE_NEXT ||
     id === IDS.MARKETPLACE_REFRESH || id === IDS.MARKETPLACE_ADD ||
@@ -361,6 +368,11 @@ async function handleHomeMenuSelection(
       return await startBaskets(ctx, state);
     case IDS.MOTOR_INSURANCE: {
       const gate = await evaluateMotorInsuranceGate(ctx);
+      console.info("insurance.gate", {
+        allowed: gate.allowed,
+        rule: gate.rule,
+        country: gate.detectedCountry,
+      });
       if (!gate.allowed) {
         await recordMotorInsuranceHidden(ctx, gate, "command");
         await sendMotorInsuranceBlockedMessage(ctx);

@@ -22,6 +22,7 @@ import {
 const MARKETPLACE_STATES = {
   MENU: "market_menu",
   CATEGORY: "market_category",
+  ADD_CATEGORY: "market_add_category",
   ADD_NAME: "market_add_name",
   ADD_DESC: "market_add_desc",
   ADD_CATALOG: "market_add_catalog",
@@ -202,6 +203,8 @@ export async function handleMarketplaceText(
   switch (state.key) {
     case MARKETPLACE_STATES.CATEGORY:
       return await selectCategory(ctx, body);
+    case MARKETPLACE_STATES.ADD_CATEGORY:
+      return await selectAddCategory(ctx, body, state);
     case MARKETPLACE_STATES.ADD_NAME:
       return await captureBusinessName(ctx, state, trimmed);
     case MARKETPLACE_STATES.ADD_DESC:
@@ -359,14 +362,22 @@ async function captureBusinessCatalog(
   value: string,
 ): Promise<boolean> {
   if (!ctx.profileId) return false;
+  const nextData = { ...(state.data ?? {}), catalog: value.trim() };
   await setState(ctx.supabase, ctx.profileId, {
-    key: MARKETPLACE_STATES.ADD_LOCATION,
-    data: { ...(state.data ?? {}), catalog: value.trim() },
+    key: MARKETPLACE_STATES.ADD_CATEGORY,
+    data: nextData,
   });
-  await sendButtonsMessage(
+  const categoryDefs = await getMarketplaceCategoryDefs(ctx.supabase);
+  const rows = buildCategoryRows(categoryDefs);
+  await sendListMessage(
     ctx,
-    "📍 Share your shop location (tap ➕ → Location → Share).",
-    [],
+    {
+      title: "🏷️ Choose business category",
+      body: "Pick the most appropriate category for your business.",
+      sectionTitle: "Categories",
+      rows,
+      buttonText: "Choose",
+    },
   );
   return true;
 }
@@ -389,19 +400,97 @@ async function handleMarketplaceSkip(
       );
       return true;
     case MARKETPLACE_STATES.ADD_CATALOG:
+      // Skipping catalog still requires selecting a category before location
       await setState(ctx.supabase, ctx.profileId, {
-        key: MARKETPLACE_STATES.ADD_LOCATION,
+        key: MARKETPLACE_STATES.ADD_CATEGORY,
         data: state.data ?? {},
       });
-      await sendButtonsMessage(
-        ctx,
-        "📍 Share your shop location (tap ➕ → Location → Share).",
-        [],
-      );
+      {
+        const categoryDefs = await getMarketplaceCategoryDefs(ctx.supabase);
+        const rows = buildCategoryRows(categoryDefs);
+        await sendListMessage(
+          ctx,
+          {
+            title: "🏷️ Choose business category",
+            body: "Pick the most appropriate category for your business.",
+            sectionTitle: "Categories",
+            rows,
+            buttonText: "Choose",
+          },
+        );
+      }
       return true;
     default:
       return false;
   }
+}
+
+async function selectAddCategory(
+  ctx: RouterContext,
+  input: string,
+  state: { key: string; data?: Record<string, unknown> },
+): Promise<boolean> {
+  if (!ctx.profileId) return false;
+  const categoryDefs = await getMarketplaceCategoryDefs(ctx.supabase);
+  const normalized = normalizeMarketplaceCategoryInput(categoryDefs, input);
+  if (!normalized) {
+    const rows = buildCategoryRows(categoryDefs);
+    await sendListMessage(
+      ctx,
+      {
+        title: "🏷️ Choose business category",
+        body: "Please select a category from the list.",
+        sectionTitle: "Categories",
+        rows,
+        buttonText: "Choose",
+      },
+    );
+    return true;
+  }
+  await setState(ctx.supabase, ctx.profileId, {
+    key: MARKETPLACE_STATES.ADD_LOCATION,
+    data: { ...(state.data ?? {}), category: normalized },
+  });
+  await sendButtonsMessage(
+    ctx,
+    "📍 Share your shop location (tap ➕ → Location → Share).",
+    [],
+  );
+  return true;
+}
+
+export async function handleAddBusinessCategorySelection(
+  ctx: RouterContext,
+  id: string,
+  state: { key: string; data?: Record<string, unknown> },
+): Promise<boolean> {
+  if (!ctx.profileId) return false;
+  const categoryDefs = await getMarketplaceCategoryDefs(ctx.supabase);
+  const match = findCategoryById(categoryDefs, id);
+  if (!match) {
+    const rows = buildCategoryRows(categoryDefs);
+    await sendListMessage(
+      ctx,
+      {
+        title: "🏷️ Choose business category",
+        body: "Pick the most appropriate category for your business.",
+        sectionTitle: "Categories",
+        rows,
+        buttonText: "Choose",
+      },
+    );
+    return true;
+  }
+  await setState(ctx.supabase, ctx.profileId, {
+    key: MARKETPLACE_STATES.ADD_LOCATION,
+    data: { ...(state.data ?? {}), category: match.value },
+  });
+  await sendButtonsMessage(
+    ctx,
+    "📍 Share your shop location (tap ➕ → Location → Share).",
+    [],
+  );
+  return true;
 }
 
 async function fetchAndShowBusinesses(
@@ -557,7 +646,7 @@ async function renderBrowsePage(
   const businessRows = pageInfo.items.map((entry) => ({
     id: makeRowId(entry.id),
     title: formatListTitle(entry),
-    description: formatListDescription(entry, categoryDefs),
+    description: formatListDescription(ctx, entry, categoryDefs),
   }));
 
   const rows: Array<{ id: string; title: string; description?: string }> = [
@@ -631,6 +720,7 @@ function formatListTitle(entry: MarketplaceEntry): string {
 }
 
 function formatListDescription(
+  ctx: RouterContext,
   entry: MarketplaceEntry,
   categoryDefs: MarketplaceCategoryDef[],
 ): string | undefined {

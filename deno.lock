@@ -273,6 +273,7 @@
         "npm:input-otp@^1.4.2",
         "npm:jsdom@^26.1.0",
         "npm:lucide-react@0.462",
+        "npm:newman@^6.2.1",
         "npm:next-themes@0.3",
         "npm:openai@^4.104.0",
         "npm:postcss@^8.5.6",

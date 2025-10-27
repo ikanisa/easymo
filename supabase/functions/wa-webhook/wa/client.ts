@@ -12,6 +12,10 @@ export class WhatsAppClientError extends Error {
   }
 }
 import { safeButtonTitle, safeRowDesc, safeRowTitle } from "../utils/text.ts";
+import {
+  previewListPayload,
+  validateListMessage,
+} from "../utils/wa_validate.ts";
 
 const GRAPH_BASE = "https://graph.facebook.com/v20.0";
 const STATUS_RETRY_CODES = new Set([408, 425, 429, 500, 502, 503, 504]);
@@ -65,6 +69,16 @@ export async function sendButtons(
   body: string,
   buttons: Array<{ id: string; title: string }>,
 ): Promise<void> {
+  if ((Deno.env.get("LOG_LEVEL") ?? "").toLowerCase() === "debug") {
+    console.debug("wa.payload.buttons_preview", {
+      bodyPreview: body?.slice(0, 40),
+      count: buttons?.length ?? 0,
+      buttons: buttons.slice(0, 3).map((b) => ({
+        id: b.id,
+        title: b.title.slice(0, 20),
+      })),
+    });
+  }
   await post({
     messaging_product: "whatsapp",
     to,
@@ -92,6 +106,27 @@ export async function sendList(
     rows: Array<{ id: string; title: string; description?: string }>;
   },
 ): Promise<void> {
+  // Validate and optionally preview payload
+  const issues = validateListMessage({
+    title: opts.title,
+    body: opts.body,
+    buttonText: opts.buttonText,
+    sectionTitle: opts.sectionTitle,
+    rows: opts.rows,
+  });
+  if (issues.length) console.warn("wa_client.validate_warn", { issues });
+  if ((Deno.env.get("LOG_LEVEL") ?? "").toLowerCase() === "debug") {
+    console.debug(
+      "wa.payload.list_preview",
+      previewListPayload({
+        title: opts.title,
+        body: opts.body,
+        buttonText: opts.buttonText,
+        sectionTitle: opts.sectionTitle,
+        rows: opts.rows,
+      }),
+    );
+  }
   await post({
     messaging_product: "whatsapp",
     to,
@@ -104,7 +139,8 @@ export async function sendList(
         button: safeButtonTitle(opts.buttonText ?? "Choose"),
         sections: [
           {
-            title: safeRowTitle(opts.sectionTitle, 60),
+            // WhatsApp constraint: section title max 24 chars
+            title: safeRowTitle(opts.sectionTitle, 24),
             rows: opts.rows.slice(0, 10).map((row) => ({
               id: row.id,
               title: safeRowTitle(row.title),

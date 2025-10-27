@@ -11,6 +11,8 @@ export async function emitAlert(
   payload: Record<string, unknown> = {},
 ): Promise<void> {
   if (!ALERT_WEBHOOK_URL) return;
+  // Skip obvious placeholders
+  if (ALERT_WEBHOOK_URL.includes(".example")) return;
   try {
     await fetchWithTimeout(ALERT_WEBHOOK_URL, {
       method: "POST",
@@ -26,6 +28,7 @@ export async function emitAlert(
       retries: 0,
     });
   } catch (error) {
-    console.error("alert.emit_fail", error, { event });
+    // Best-effort only: never escalate alert delivery failures
+    console.warn("alert.emit_fail", String(error), { event });
   }
 }

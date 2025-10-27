@@ -30,8 +30,15 @@ export async function fetchInsuranceMedia(
   leadId: string,
 ): Promise<MediaFetchResult> {
   try {
+    console.info("INS_MEDIA_META_FETCH", { leadId, mediaId });
     const media = await fetchWhatsAppMedia(mediaId);
     const extension = resolveExtension(media.mime, media.filename);
+    console.info("INS_MEDIA_META_OK", {
+      leadId,
+      mime: media.mime,
+      filename: media.filename ?? null,
+      extension,
+    });
     await logStructuredEvent("INS_MEDIA_FETCH_OK", {
       leadId,
       mediaId,
@@ -40,6 +47,11 @@ export async function fetchInsuranceMedia(
     });
     return { ...media, extension };
   } catch (error) {
+    console.error("INS_MEDIA_META_FAIL", {
+      leadId,
+      mediaId,
+      error: error instanceof Error ? error.message : String(error),
+    });
     await logStructuredEvent("INS_MEDIA_FETCH_FAIL", {
       leadId,
       mediaId,
@@ -56,6 +68,12 @@ export async function uploadInsuranceBytes(
 ): Promise<{ path: string; signedUrl: string }> {
   const relativePath = `${leadId}/${crypto.randomUUID()}.${file.extension}`;
   try {
+    console.info("INS_MEDIA_UPLOAD_START", {
+      leadId,
+      path: relativePath,
+      mime: file.mime,
+      bytes: file.bytes.length,
+    });
     const { error } = await client.storage
       .from(INSURANCE_MEDIA_BUCKET)
       .upload(relativePath, file.bytes, {
@@ -66,13 +84,14 @@ export async function uploadInsuranceBytes(
 
     const { data: signed, error: signedError } = await client.storage
       .from(INSURANCE_MEDIA_BUCKET)
-      .createSignedUrl(relativePath, 60, {
+      .createSignedUrl(relativePath, 300, {
         transform: undefined,
       });
     if (signedError || !signed?.signedUrl) {
       throw signedError ?? new Error("signed_url_missing");
     }
 
+    console.info("INS_MEDIA_UPLOAD_OK", { leadId, path: relativePath });
     await logStructuredEvent("INS_UPLOAD_OK", {
       leadId,
       path: relativePath,
@@ -82,6 +101,11 @@ export async function uploadInsuranceBytes(
 
     return { path: relativePath, signedUrl: signed.signedUrl };
   } catch (error) {
+    console.error("INS_MEDIA_UPLOAD_FAIL", {
+      leadId,
+      path: relativePath,
+      error: error instanceof Error ? error.message : String(error),
+    });
     await logStructuredEvent("INS_UPLOAD_FAIL", {
       leadId,
       path: relativePath,

@@ -1,5 +1,5 @@
 import { IDS } from "../wa-webhook/wa/ids.ts";
-import { resolveOpenAiResponseText } from "../lib/openai_responses.ts";
+import { resolveOpenAiResponseText } from "../../lib/openai_responses.ts";
 import { SupabaseRest } from "./supabase_rest.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ??
@@ -337,8 +337,9 @@ async function runOpenAiExtraction(imageBase64: string, contentType: string) {
       json.output_text.trim().length
     ? json.output_text
     : json.output?.[0]?.content ?? json.choices?.[0]?.message?.content;
-  const resolvedContent =
-    typeof content === "string" ? content : extractOutputText(content);
+  const resolvedContent = typeof content === "string"
+    ? content
+    : extractOutputText(content);
   if (!resolvedContent) {
     throw new Error("OpenAI response lacked content");
   }
