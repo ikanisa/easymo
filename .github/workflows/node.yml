@@ -41,7 +41,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y postgresql-client pgtap
 
-      - name: Install pgTAP in Postgres service
+      - name: Install pgTAP in Postgres service container
         run: |
           set -euo pipefail
           docker exec -u root postgres bash -lc "apt-get update"
