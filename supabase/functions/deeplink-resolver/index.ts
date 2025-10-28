@@ -1,6 +1,14 @@
 import { serve } from "../wa-webhook/deps.ts";
 import { supabase, WA_BOT_NUMBER_E164 } from "../wa-webhook/config.ts";
 import { logStructuredEvent } from "../wa-webhook/observe/log.ts";
+import {
+  DeeplinkResolveSchema,
+  validateBody,
+  validationErrorResponse,
+  isRateLimited,
+  rateLimitErrorResponse,
+  getClientIP,
+} from "../_shared/validation.ts";
 
 const DEFAULT_ALLOWED_ORIGINS = (Deno.env.get("DEEPLINK_ALLOWED_ORIGINS") ?? "")
   .split(",")
@@ -56,19 +64,59 @@ async function incrementResolveStats(inviteId: string, current: number) {
 serve(async (req) => {
   const origin = req.headers.get("origin");
   const corsHeaders = buildCorsHeaders(origin);
+  const correlationId = crypto.randomUUID();
+
+  // Log request
+  await logStructuredEvent("DEEPLINK_REQUEST", {
+    correlationId,
+    method: req.method,
+    origin: origin || "unknown",
+  });
 
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 204, headers: corsHeaders });
   }
 
+  // Rate limiting: 10 requests per minute per IP
+  const clientIP = getClientIP(req);
+  const rateLimitKey = `deeplink:${clientIP}`;
+  const rateLimitResult = isRateLimited(rateLimitKey, {
+    windowMs: 60 * 1000, // 1 minute
+    maxRequests: 10,
+  });
+
+  if (rateLimitResult.limited) {
+    await logStructuredEvent("DEEPLINK_RATE_LIMITED", {
+      correlationId,
+      clientIP,
+      resetAt: rateLimitResult.resetAt,
+    });
+    return rateLimitErrorResponse(rateLimitResult.resetAt);
+  }
+
   let rawToken: unknown;
+  let msisdn: unknown;
+  
   if (req.method === "GET") {
     const url = new URL(req.url);
     rawToken = url.searchParams.get("token");
+    msisdn = url.searchParams.get("msisdn");
   } else if (req.method === "POST") {
     try {
       const body = await req.json();
-      rawToken = body?.token;
+      
+      // Validate request body with Zod
+      const validation = validateBody(DeeplinkResolveSchema, body);
+      if (!validation.success) {
+        await logStructuredEvent("DEEPLINK_VALIDATION_FAILED", {
+          correlationId,
+          errors: validation.error.errors,
+        });
+        return validationErrorResponse(validation.error);
+      }
+      
+      rawToken = validation.data.token;
+      msisdn = validation.data.msisdn;
     } catch (_error) {
       return new Response(
         JSON.stringify({ ok: false, error: "invalid_json" }),
@@ -163,8 +211,10 @@ serve(async (req) => {
   const waLink = buildWaLink(token);
 
   await logStructuredEvent("DEEPLINK_RESOLVED", {
+    correlationId,
     invite_id: invite.id,
     has_wa_link: Boolean(waLink),
+    msisdn_bound: Boolean(msisdn),
   });
 
   if (req.method === "POST") {
