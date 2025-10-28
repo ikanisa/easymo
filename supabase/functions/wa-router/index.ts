@@ -1,4 +1,6 @@
 // WhatsApp Router Edge Function - Verifies signatures, normalizes payloads, and routes to destination URLs
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+
 const encoder = new TextEncoder();
 const WA_VERIFY_TOKEN = Deno.env.get("WA_VERIFY_TOKEN") ?? "";
 const WA_APP_SECRET = Deno.env.get("WA_APP_SECRET") ?? "";
@@ -7,6 +9,23 @@ const DEST_INSURANCE_URL = Deno.env.get("DEST_INSURANCE_URL") ?? "";
 const DEST_BASKET_URL = Deno.env.get("DEST_BASKET_URL") ?? "";
 const DEST_QR_URL = Deno.env.get("DEST_QR_URL") ?? "";
 const DEST_DINE_URL = Deno.env.get("DEST_DINE_URL") ?? "";
+const ROUTER_ENABLED = Deno.env.get("ROUTER_ENABLED") !== "false"; // Feature flag, defaults to enabled
+
+// Initialize Supabase client for logging and idempotency
+const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+const supabase = supabaseUrl && supabaseServiceKey
+  ? createClient(supabaseUrl, supabaseServiceKey)
+  : null;
+
+// Allowlist of valid destination URLs
+const ALLOWED_DESTINATIONS = new Set([
+  DEST_EASYMO_URL,
+  DEST_INSURANCE_URL,
+  DEST_BASKET_URL,
+  DEST_QR_URL,
+  DEST_DINE_URL,
+].filter(Boolean));
 
 interface WhatsAppMessage {
   id: string; from: string; type: string;
@@ -116,7 +135,12 @@ function getDestinationUrl(keyword?: string): string | undefined {
     easymo: DEST_EASYMO_URL, insurance: DEST_INSURANCE_URL, basket: DEST_BASKET_URL,
     qr: DEST_QR_URL, dine: DEST_DINE_URL,
   };
-  return routes[keyword];
+  const url = routes[keyword];
+  // Enforce allowlist: only return URL if it's in the allowed set
+  if (url && ALLOWED_DESTINATIONS.has(url)) {
+    return url;
+  }
+  return undefined;
 }
 
 // Forward payload to destination URL
@@ -138,10 +162,67 @@ function logEvent(event: string, data: Record<string, unknown>): void {
   console.log(JSON.stringify({ event, timestamp: new Date().toISOString(), ...data }));
 }
 
+// Persist router log to database
+async function persistRouterLog(
+  messageId: string,
+  textSnippet: string | undefined,
+  routeKey: string | undefined,
+  statusCode: string,
+  metadata: Record<string, unknown>
+): Promise<void> {
+  if (!supabase) return; // Skip if Supabase not configured
+  
+  try {
+    // Truncate text snippet to 500 chars for privacy/storage
+    const snippet = textSnippet ? textSnippet.substring(0, 500) : null;
+    
+    await supabase.from("router_logs").insert({
+      message_id: messageId,
+      text_snippet: snippet,
+      route_key: routeKey,
+      status_code: statusCode,
+      metadata: metadata,
+    });
+  } catch (error) {
+    // Log error but don't fail the request
+    logEvent("ROUTER_LOG_PERSIST_FAILED", { messageId, error: String(error) });
+  }
+}
+
+// Check if message has already been processed (idempotency)
+async function isMessageProcessed(messageId: string): Promise<boolean> {
+  if (!supabase) return false; // Skip if Supabase not configured
+  
+  try {
+    const { data, error } = await supabase
+      .from("router_logs")
+      .select("message_id")
+      .eq("message_id", messageId)
+      .limit(1)
+      .maybeSingle();
+    
+    if (error) {
+      logEvent("IDEMPOTENCY_CHECK_FAILED", { messageId, error: String(error) });
+      return false; // On error, allow processing to continue
+    }
+    
+    return data !== null;
+  } catch (error) {
+    logEvent("IDEMPOTENCY_CHECK_ERROR", { messageId, error: String(error) });
+    return false; // On error, allow processing to continue
+  }
+}
+
 // Main handler
 Deno.serve(async (req: Request): Promise<Response> => {
   const correlationId = crypto.randomUUID();
   try {
+    // Check feature flag
+    if (!ROUTER_ENABLED) {
+      logEvent("ROUTER_DISABLED", { correlationId });
+      return new Response("Service Unavailable", { status: 503 });
+    }
+    
     // Handle GET requests for webhook verification
     if (req.method === "GET") {
       const url = new URL(req.url);
@@ -188,10 +269,35 @@ Deno.serve(async (req: Request): Promise<Response> => {
     // Route each message
     const routeResults: RouteResult[] = [];
     for (const msg of normalized) {
+      // Check idempotency
+      const alreadyProcessed = await isMessageProcessed(msg.messageId);
+      if (alreadyProcessed) {
+        logEvent("MESSAGE_ALREADY_PROCESSED", { 
+          correlationId, 
+          messageId: msg.messageId, 
+          from: msg.from 
+        });
+        await persistRouterLog(
+          msg.messageId,
+          msg.text,
+          msg.keyword,
+          "duplicate",
+          { correlationId, reason: "already_processed" }
+        );
+        continue;
+      }
+      
       const keyword = msg.keyword;
       const destinationUrl = getDestinationUrl(keyword);
       if (!destinationUrl) {
         logEvent("NO_ROUTE_FOUND", { correlationId, messageId: msg.messageId, keyword: keyword ?? "none", from: msg.from });
+        await persistRouterLog(
+          msg.messageId,
+          msg.text,
+          keyword,
+          "unmatched",
+          { correlationId, keyword: keyword ?? "none" }
+        );
         continue;
       }
       logEvent("ROUTING_MESSAGE", { correlationId, messageId: msg.messageId, keyword, destinationUrl });
@@ -202,6 +308,20 @@ Deno.serve(async (req: Request): Promise<Response> => {
         destinationUrl: result.destinationUrl, status: result.status,
         responseTime: result.responseTime, error: result.error,
       });
+      
+      // Persist router log
+      await persistRouterLog(
+        msg.messageId,
+        msg.text,
+        keyword,
+        result.error ? "error" : "routed",
+        {
+          correlationId,
+          targetStatus: result.status,
+          responseTime: result.responseTime,
+          error: result.error,
+        }
+      );
     }
     logEvent("REQUEST_COMPLETED", { correlationId, totalMessages: normalized.length, routedMessages: routeResults.length });
     // Always return 200 to Meta to acknowledge receipt

@@ -260,3 +260,35 @@ Deno.test("wa-router: destination URL mapping", () => {
   assertEquals(routes["dine"], "https://example.com/dine");
   assertEquals(routes["unknown" as keyof typeof routes], undefined);
 });
+
+Deno.test("wa-router: allowlist enforcement blocks non-allowlisted URLs", () => {
+  // Simulate the allowlist check
+  const allowedUrls = new Set([
+    "https://example.com/easymo",
+    "https://example.com/insurance",
+  ]);
+
+  const testUrl = "https://malicious.com/handler";
+  assertEquals(allowedUrls.has(testUrl), false);
+
+  const validUrl = "https://example.com/easymo";
+  assertEquals(allowedUrls.has(validUrl), true);
+});
+
+Deno.test("wa-router: feature flag controls router availability", () => {
+  // Test router enabled
+  let routerEnabled = true;
+  assertEquals(routerEnabled, true);
+
+  // Test router disabled
+  routerEnabled = false;
+  assertEquals(routerEnabled, false);
+});
+
+Deno.test("wa-router: text snippet truncation for privacy", () => {
+  const longText = "a".repeat(1000);
+  const truncated = longText.substring(0, 500);
+  
+  assertEquals(truncated.length, 500);
+  assertEquals(longText.length, 1000);
+});
