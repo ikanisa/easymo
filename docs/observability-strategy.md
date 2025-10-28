@@ -117,6 +117,7 @@ logStructuredEvent("MESSAGE_ROUTED", { correlationId });
 **Alert Thresholds**:
 - Success rate < 95% → Warning
 - Success rate < 90% → Critical
+- p95 latency > 500ms → Warning
 - p95 latency > 1000ms → Critical
 
 ---
@@ -170,8 +171,14 @@ Action: Page on-call immediately
 
 #### High Response Time
 ```yaml
-Condition: p95_latency > 1000ms for 5 minutes
+Condition: p95_latency > 500ms for 5 minutes
 Action: Slack notification
+```
+
+#### Critical Response Time
+```yaml
+Condition: p95_latency > 1000ms for 2 minutes
+Action: Page on-call
 ```
 
 #### High Unmatched Rate
