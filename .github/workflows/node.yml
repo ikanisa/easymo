@@ -44,8 +44,12 @@ jobs:
       - name: Install pgTAP in Postgres service
         run: |
           set -euo pipefail
-          docker exec postgres bash -lc "apt-get update"
-          docker exec postgres bash -lc "apt-get install -y postgresql-15-pgtap"
+          postgres_container_id=$(docker ps --filter "ancestor=supabase/postgres:15.1.1.0" --format "{{.ID}}")
+          if [ -z "$postgres_container_id" ]; then
+            echo "Could not find Postgres service container" >&2
+            exit 1
+          fi
+          docker exec "$postgres_container_id" bash -lc "apt-get update && apt-get install -y postgresql-15-pgtap"
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
