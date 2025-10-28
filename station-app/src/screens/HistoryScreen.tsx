@@ -13,6 +13,10 @@ export const HistoryScreen = () => {
     enabled: Boolean(session?.stationId),
   });
 
+  if (!stationId) {
+    return null;
+  }
+
   if (isLoading) {
     return (
       <section className="history" aria-busy="true">

@@ -12,6 +12,10 @@ export const BalanceScreen = () => {
     enabled: Boolean(session?.stationId),
   });
 
+  if (!stationId) {
+    return null;
+  }
+
   if (isLoading) {
     return (
       <section className="balance" aria-busy="true">

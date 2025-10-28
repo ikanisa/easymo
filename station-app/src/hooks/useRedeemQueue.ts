@@ -38,6 +38,7 @@ export const useRedeemQueue = () => {
       return;
     }
     setEntries(queue.list());
+    setLastResult(null);
   }, [queue]);
 
   const redeem = async (request: RedeemRequest) => {
