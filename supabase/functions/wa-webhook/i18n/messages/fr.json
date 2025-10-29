@@ -8,7 +8,7 @@
   "home.menu.title": "Services easyMO",
   "home.menu.section": "Actions rapides",
   "home.menu.button": "Ouvrir",
-  "home.menu.greeting": "Bonjour 👋 {{phone}}\nPage {{current}}/{{total}}",
+  "home.menu.greeting": "Bonjour 👋 Faites plus avec easyMO, Trajets, Boutiques, QR codes MOMO ..et plus.\nPage {{current}}/{{total}}",
   "home.rows.seeDrivers.title": "🚖 Chauffeurs à proximité",
   "home.rows.seeDrivers.description": "Trouvez des partenaires moto ou taxi proches de vous.",
   "home.rows.seePassengers.title": "🧍‍♀️ Passagers à proximité",
