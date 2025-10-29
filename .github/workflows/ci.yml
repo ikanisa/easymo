@@ -47,6 +47,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Build shared packages
+        run: pnpm --filter @va/shared build && pnpm --filter @easymo/commons build
+
       - name: Assert no service role in client env
         run: node scripts/assert-no-service-role-in-client.mjs
 
