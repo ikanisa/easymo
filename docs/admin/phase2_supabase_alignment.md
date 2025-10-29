@@ -152,7 +152,7 @@ when the environment is ready for QA.
 - Re-run the seed script after each schema change or create an updated version
   alongside the migration to keep fixtures in sync.
 - If you rotate the `EASYMO_ADMIN_TOKEN`, update **all** locations simultaneously:
-  `.env.local`, Vercel Project → Environment Variables, Supabase secrets, and
+  `.env.local`, local production `.env` files, Supabase secrets, and
   the CLI used for local testing.
 - Add automated checks in CI to run `node scripts/health-check.mjs` with the
   admin token to catch regressions early.

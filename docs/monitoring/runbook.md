@@ -42,7 +42,7 @@ EASYMO_ADMIN_TOKEN
 ADMIN_TOKEN
 ```
 
-Update Vercel env vars and redeploy after rotating the token. All admin edge functions rely on this value for `x-admin-token` / `x-api-key` headers.
+Update local environment variables and restart the application after rotating the token. All admin edge functions rely on this value for `x-admin-token` / `x-api-key` headers.
 
 ## 5. Data Checks
 
@@ -67,7 +67,7 @@ Use these as a baseline when validating dashboards.
 ## 6. Alerts
 
 - Set `ALERT_WEBHOOK_URL` if you want Supabase functions to POST incident notifications.
-- Vercel offers log drains and analytics; enable if production monitoring is required.
+- Configure `LOG_DRAIN_URL` and `METRICS_DRAIN_URL` if you want to forward logs and metrics to external monitoring services (optional).
 
 ## 7. Grafana Dashboards
 
