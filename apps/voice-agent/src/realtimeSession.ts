@@ -55,9 +55,20 @@ export async function createRealtimeSession(
   // Retry loop
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
-      // Step 1: Create ephemeral session token (if using session endpoint)
-      // For now, we'll connect directly with API key
-      // TODO: Implement ephemeral token creation via POST /v1/realtime/sessions
+      // Step 1: Create ephemeral session token
+      // TODO: For production, use ephemeral tokens via POST /v1/realtime/sessions
+      // This limits token exposure and improves security
+      // Example:
+      // const response = await fetch('https://api.openai.com/v1/realtime/sessions', {
+      //   method: 'POST',
+      //   headers: {
+      //     'Authorization': `Bearer ${OPENAI_API_KEY}`,
+      //     'Content-Type': 'application/json'
+      //   },
+      //   body: JSON.stringify({ model: REALTIME_MODEL })
+      // });
+      // const { client_secret } = await response.json();
+      // Use client_secret.value instead of API key for WebSocket connection
 
       // Step 2: Connect WebSocket
       const ws = await connectRealtimeWebSocket(correlationId);

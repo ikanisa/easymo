@@ -4,6 +4,7 @@ import http from "http";
 import { WebSocketServer } from "ws";
 import { logger } from "./logger.js";
 import { twilioInboundHandler, setupTwilioWebSocket } from "./twilioInbound.js";
+import { twilioOutboundHandler } from "./twilioOutbound.js";
 import { mcpServer } from "./mcpServer.js";
 
 // Configuration
@@ -66,8 +67,11 @@ app.get("/ready", (_req: Request, res: Response) => {
   }
 });
 
-// Twilio TwiML answer endpoint
+// Twilio TwiML answer endpoint (inbound calls)
 app.post("/twilio/answer", twilioInboundHandler);
+
+// Twilio outbound call endpoint
+app.post("/twilio/outbound", twilioOutboundHandler);
 
 // Error handling middleware
 app.use((err: Error, req: Request, res: Response, _next: NextFunction) => {

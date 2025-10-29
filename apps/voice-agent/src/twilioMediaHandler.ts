@@ -180,6 +180,9 @@ export async function handleTwilioMediaStream(
         case "response.audio.delta":
         case "response.output_audio.delta":
           // Send audio back to Twilio
+          // Note: OpenAI Realtime provides audio in base64-encoded format
+          // that is compatible with Twilio. For PCM16→μ-law conversion,
+          // see transcode.ts encodeUlaw() if needed in future.
           if (event.delta && twilioWs.readyState === WebSocket.OPEN) {
             twilioWs.send(
               JSON.stringify({

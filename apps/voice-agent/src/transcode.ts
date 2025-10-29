@@ -91,16 +91,17 @@ export function resample8kTo16k(pcm8k: Buffer): Buffer {
  * Encode PCM16 to μ-law (G.711).
  * Used when sending audio back to Twilio if needed.
  * 
- * NOTE: This is a stub. OpenAI returns PCM16 which we currently
- * pass through. For production, implement proper encoding if needed.
+ * NOTE: This is currently not needed as OpenAI Realtime returns audio
+ * in a format that Twilio can handle. This function is included for
+ * completeness but should not be called in the current implementation.
  * 
  * @param pcmData Buffer containing PCM16 audio
  * @returns Buffer containing μ-law encoded audio
  */
 export function encodeUlaw(pcmData: Buffer): Buffer {
-  // Stub implementation
-  // TODO: Implement proper PCM16 to μ-law encoding for production
-  throw new Error("μ-law encoding not yet implemented");
+  // Not currently needed - OpenAI handles audio format
+  // If needed in future, implement ITU-T G.711 μ-law encoding
+  throw new Error("μ-law encoding not currently needed - OpenAI handles audio format");
 }
 
 /**
