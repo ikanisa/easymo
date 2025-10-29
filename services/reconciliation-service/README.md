@@ -392,8 +392,8 @@ See [TROUBLESHOOTING.md](../../docs/TROUBLESHOOTING.md) for more help.
 1. **Always verify webhooks** - Never trust unverified requests
 2. **Log all reconciliations** - Maintain complete audit trail
 3. **Monitor confidence scores** - Alert on low confidence patterns
-4. **Handle edge cases** - Plan for ambiguous matches
-5. **Test with real data** - Use actual SMS samples for testing
+4. **Handle edge cases** - Plan for duplicate references, partial amounts, delayed SMS delivery, and multi-currency transactions
+5. **Test with real data** - Use actual SMS samples from all supported providers for testing
 
 ## Related Services
 
@@ -401,12 +401,13 @@ See [TROUBLESHOOTING.md](../../docs/TROUBLESHOOTING.md) for more help.
 - **Buyer Service**: Order status updates
 - **Vendor Service**: Payment notifications
 
-## Documentation
+## Additional Documentation
 
-- [Architecture Overview](../../docs/ARCHITECTURE.md)
-- [API Documentation](./docs/api.md)
-- [SMS Parsing Guide](./docs/sms-parsing.md)
-- [Matching Algorithm](./docs/matching.md)
+For more information, see:
+- [Repository Architecture](../../docs/ARCHITECTURE.md)
+- [Project Structure](../../docs/PROJECT_STRUCTURE.md)
+- [Troubleshooting Guide](../../docs/TROUBLESHOOTING.md)
+- [Ground Rules](../../docs/GROUND_RULES.md)
 
 ---
 

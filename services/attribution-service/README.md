@@ -169,7 +169,17 @@ pnpm test:watch
 
 ## Deployment
 
-The service is deployed as part of the microservices stack. See [deployment documentation](../../docs/deployment/) for details.
+The service is deployed as part of the microservices stack. 
+
+### Deployment Steps
+
+1. Build the service: `pnpm --filter attribution-service build`
+2. Run database migrations: `pnpm --filter @easymo/db prisma:migrate:deploy`
+3. Set environment variables in deployment platform
+4. Deploy container or start service
+5. Verify health endpoint: `GET /health`
+
+For complete deployment procedures, see the repository's deployment documentation.
 
 ## Monitoring
 
@@ -225,11 +235,13 @@ Follow the [GROUND_RULES.md](../../docs/GROUND_RULES.md) for:
 - **Buyer Service**: Conversion tracking
 - **Reconciliation Service**: Payment attribution
 
-## Documentation
+## Additional Documentation
 
-- [Architecture Overview](../../docs/ARCHITECTURE.md)
-- [API Documentation](./docs/api.md)
-- [Database Schema](./docs/schema.md)
+For more information, see:
+- [Repository Architecture](../../docs/ARCHITECTURE.md)
+- [Project Structure](../../docs/PROJECT_STRUCTURE.md)
+- [Troubleshooting Guide](../../docs/TROUBLESHOOTING.md)
+- [Ground Rules](../../docs/GROUND_RULES.md)
 
 ---
 
