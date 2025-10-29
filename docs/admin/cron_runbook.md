@@ -16,9 +16,7 @@ running in staging/production. Attach the results of each verification to
 | `baskets-reminder` | `BASKETS_REMINDER_CRON_ENABLED`, `BASKETS_REMINDER_BATCH_SIZE`, `BASKETS_REMINDER_MAX_PER_HOUR` | Reminds Ibimina members about contribution deadlines. |
 | `notification-worker` | `NOTIFICATION_WORKER_CRON_ENABLED`, `NOTIFY_*` backoff settings | Drains the notification outbox. |
 
-All variables live in the root `.env` template. Copy the values into Vercel
-(Production & Preview) **and** Supabase function secrets before enabling a
-schedule.
+All variables live in the root `.env` template. Copy the values into local `.env` files **and** Supabase function secrets before enabling a schedule.
 
 ---
 
@@ -74,10 +72,8 @@ Notes:
 
 For maintenance windows or incidents:
 
-1. Flip the `*_ENABLED` flag(s) to `"false"` in Vercel and redeploy (prevents
-   the function from processing any work during manual invocations).
-2. Delete the schedule via `supabase functions schedule delete <slug>` to stop
-   automatic triggers.
+1. Flip the `*_ENABLED` flag(s) to `"false"` in local `.env` files and restart the application (prevents the function from processing any work during manual invocations).
+2. Delete the schedule via `supabase functions schedule delete <slug>` to stop automatic triggers.
 3. After resolving the issue, recreate the schedule and re-enable the flag.
 
 ---

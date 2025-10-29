@@ -8,8 +8,8 @@
 - [ ] Other (add commands run)
 
 ## Deployment
-- [ ] Preview deployment link added in PR description
-- [ ] I confirm that any new environment variables are documented and populated in Vercel/Supabase dashboards
+- [ ] Preview deployment link added in PR description (if applicable)
+- [ ] I confirm that any new environment variables are documented and populated in Supabase dashboard and local .env files
 
 ## Additional Context
 - _Call out migrations, feature flags, rollouts, or follow-up tasks._

@@ -40,8 +40,7 @@ After the role is created:
 
 1. Generate a new service API key in the Supabase dashboard for
    `wa_edge_role`.
-2. Set `WA_SUPABASE_SERVICE_ROLE_KEY` to that key in the Vercel project as well
-   as `.env.local` / `.env.production.local`.
+2. Set `WA_SUPABASE_SERVICE_ROLE_KEY` to that key in local environment files (`.env.local` / `.env.production.local`).
 3. Remove the older all‑access service key from the environment once the new
    key is deployed.
 

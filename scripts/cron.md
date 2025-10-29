@@ -1,10 +1,10 @@
-# Cron Job Migration (Vercel → Manual Scheduling)
+# Cron Job Manual Scheduling
 
-Historically, several scheduled tasks in the EasyMO workspace relied on **Vercel Cron** to invoke Supabase Edge Functions. Those jobs are no longer dispatched by GitHub Actions or Vercel, so operators must schedule them manually when production automation is required.
+Several scheduled tasks in the EasyMO workspace need to invoke Supabase Edge Functions on a timer. Since the application is now hosted locally (no longer using Vercel), operators must schedule these jobs manually using system cron or similar scheduling tools when production automation is required.
 
-## Functions that previously ran via Vercel Cron
+## Functions that require scheduled execution
 
-The following Supabase Edge Functions were designed to run on a timer. They remain deployable, but now require an external scheduler:
+The following Supabase Edge Functions were designed to run on a timer. They remain deployable and now require an external scheduler (cron, systemd timers, etc.):
 
 - `availability-refresh`
 - `baskets-reminder`
@@ -29,7 +29,7 @@ Each function still accepts an HTTP trigger (see the respective handler in `supa
      -H "Content-Type: application/json" \
      "${SUPABASE_FUNCTION_URL}/availability-refresh"
    ```
-2. Register the script with `crontab -e` using the cadence that previously lived in Vercel Cron (refer to the `CRON_EXPR` constant inside each function).
+2. Register the script with `crontab -e` using the appropriate cadence (refer to the `CRON_EXPR` constant inside each function for guidance).
 
 ### macOS laptops (launchd)
 
