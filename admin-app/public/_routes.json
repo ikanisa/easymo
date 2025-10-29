@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "description": "Routing configuration for EasyMO Admin Panel on Cloudflare Pages",
+  "include": [
+    "/*"
+  ],
+  "exclude": [
+    "/icons/*",
+    "/screenshots/*",
+    "/_next/static/*",
+    "/manifest.webmanifest",
+    "/openapi.yaml"
+  ]
+}

@@ -28,6 +28,41 @@ remain additive-only.
   Agent-Core, and Marketplace aggregates ranking/intents/purchases from the new
   microservices.
 
+## Deployment
+
+### Cloudflare Pages (Production)
+
+The admin panel is deployed to Cloudflare Pages at `easymo.ikanisa.com`.
+
+**Quick Start:**
+- See [Cloudflare Pages Quick Start Guide](../docs/deployment/cloudflare-pages-quick-start.md)
+- Full deployment guide: [Cloudflare Pages Deployment](../docs/deployment/cloudflare-pages-deployment.md)
+- Prerequisites checklist: [Cloudflare Pages Prerequisites](../docs/deployment/cloudflare-pages-prerequisites-checklist.md)
+
+**Deploy via GitHub Actions:**
+```bash
+# Automatic deployment on push to main
+git push origin main
+```
+
+**Deploy manually via CLI:**
+```bash
+npm ci
+npm run build
+npx @cloudflare/next-on-pages
+npx wrangler pages deploy .vercel/output/static --project-name=easymo-admin
+```
+
+**Deploy via Cloudflare Dashboard:**
+Connect your GitHub repository in Cloudflare Pages dashboard with:
+- Build command: `cd admin-app && npm ci && npm run build && npx @cloudflare/next-on-pages`
+- Build output: `admin-app/.vercel/output/static`
+- Node version: 18
+
+### Local Development
+
+See [Getting Started](#getting-started) section below.
+
 ## Getting Started
 
 1. Install dependencies (see repo `DEV_SETUP.md`).
