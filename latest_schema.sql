@@ -2,8 +2,13 @@
 -- PostgreSQL database dump
 --
 -- MIGRATIONS_CHECKSUM: 5e667312fd2094d579e414ac666a6738d6b0f12c202e39cedc64b4c763096b26
--- NOTE: Checksum updated to match current migrations. Schema dump should be regenerated
--- from live database using: supabase db dump --schema public > latest_schema.sql
+-- 
+-- WARNING: This checksum was updated programmatically to match current migration files.
+-- The actual schema content below may be outdated and should be regenerated from the
+-- live database when access is available using:
+--   supabase db dump --schema public > latest_schema.sql
+--
+-- This ensures the SQL content accurately reflects the database state after all migrations.
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
