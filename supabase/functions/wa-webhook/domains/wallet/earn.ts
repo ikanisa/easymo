@@ -100,7 +100,7 @@ export async function handleWalletEarnSelection(
       await sendButtonsMessage(
         ctx,
         body,
-        [{ id: IDS.WALLET_SHARE_DONE, title: "Done" }],
+        [{ id: IDS.WALLET_SHARE_DONE, title: "Copy" }],
       );
       await logWalletAdjust({
         actor: ctx.from,
