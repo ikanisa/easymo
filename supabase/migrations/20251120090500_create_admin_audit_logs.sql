@@ -1,3 +1,5 @@
+BEGIN;
+
 -- Migration: Create admin_audit_logs table
 -- Purpose: Create admin_audit_logs table used by Edge Function audit entries.
 -- This table tracks administrative actions for accountability.
@@ -39,3 +41,5 @@ CREATE POLICY "authenticated_read_audit_logs"
 -- Grant necessary permissions
 GRANT SELECT ON public.admin_audit_logs TO authenticated;
 GRANT INSERT ON public.admin_audit_logs TO service_role;
+
+COMMIT;

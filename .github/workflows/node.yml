@@ -66,6 +66,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Build shared packages
+        run: pnpm --filter @va/shared build && pnpm --filter @easymo/commons build
+
       - name: Prepare database schema
         run: |
           set -euo pipefail

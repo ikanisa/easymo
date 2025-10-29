@@ -1,3 +1,5 @@
+BEGIN;
+
 -- Migration: Security Hardening - RLS Policies and Client Settings View
 -- Timestamp: 20251027073908
 -- Description: Revoke overly permissive public SELECT policies and create 
@@ -136,3 +138,5 @@ SELECT * FROM public.client_settings;
   - Test rollback in staging first
   - Have on-call DBA available during production deployment
 */
+
+COMMIT;

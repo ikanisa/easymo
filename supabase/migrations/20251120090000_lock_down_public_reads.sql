@@ -1,3 +1,5 @@
+BEGIN;
+
 -- Migration: Lock down public reads
 -- Purpose: Remove overly-permissive public SELECT policies, create authenticated-only 
 -- SELECT policies for profiles, driver_presence, trips, subscriptions; create a 
@@ -56,3 +58,5 @@ REVOKE SELECT ON public.settings FROM anon;
 GRANT SELECT ON public.client_settings TO public;
 GRANT SELECT ON public.client_settings TO anon;
 GRANT SELECT ON public.client_settings TO authenticated;
+
+COMMIT;

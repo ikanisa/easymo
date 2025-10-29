@@ -1,3 +1,5 @@
+BEGIN;
+
 -- Policy throttle counters for shared rate limiting state
 create table if not exists public.policy_throttle_counters (
   bucket_id text not null,
@@ -60,3 +62,5 @@ create policy reliability_jobs_service_role on public.reliability_jobs
   for all
   using (auth.role() = 'service_role')
   with check (auth.role() = 'service_role');
+
+COMMIT;
