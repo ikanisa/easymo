@@ -1,12 +1,279 @@
 # Ground Rules for EasyMO Development
 
-This document establishes foundational rules for observability, security, and feature flags that must be followed across all development tasks in the EasyMO platform.
+This document establishes foundational rules for observability, security, feature flags, and development requirements that must be followed across all development tasks in the EasyMO platform.
 
 ## Table of Contents
+- [Package Manager Requirements](#package-manager-requirements)
+- [Prebuild Security Checks](#prebuild-security-checks)
 - [Observability](#observability)
 - [Security](#security)
 - [Feature Flags](#feature-flags)
 - [Implementation Examples](#implementation-examples)
+
+---
+
+## Package Manager Requirements
+
+**CRITICAL RULE:** The EasyMO platform **MUST** use `pnpm` as the package manager. No other package managers (npm, yarn, etc.) are permitted.
+
+### Why pnpm?
+
+1. **Workspace Support**: pnpm has superior monorepo and workspace support
+2. **Disk Efficiency**: Content-addressable storage saves disk space
+3. **Strict Dependencies**: Prevents phantom dependencies
+4. **Performance**: Faster installs and better caching
+5. **Lockfile Integrity**: More reliable dependency resolution
+
+### Required Version
+
+```bash
+pnpm >= 8.0.0
+# Recommended: pnpm@10.18.3 (as specified in CI)
+```
+
+### Installation
+
+```bash
+# Via npm (one-time installation)
+npm install -g pnpm@10.18.3
+
+# Via corepack (Node 16+, recommended)
+corepack enable
+corepack prepare pnpm@10.18.3 --activate
+```
+
+### Enforcement
+
+The repository includes several mechanisms to enforce pnpm usage:
+
+1. **package.json engines field:**
+   ```json
+   {
+     "engines": {
+       "pnpm": ">=8"
+     }
+   }
+   ```
+
+2. **CI/CD workflows:** All GitHub Actions use pnpm exclusively
+3. **Makefile:** Default commands use pnpm
+4. **Documentation:** All examples use pnpm
+
+### Commands
+
+**DO:**
+```bash
+pnpm install                    # Install dependencies
+pnpm add package-name          # Add dependency
+pnpm build                     # Build workspace
+pnpm --filter service-name dev # Run service
+```
+
+**DON'T:**
+```bash
+npm install    # ❌ WRONG
+yarn install   # ❌ WRONG
+```
+
+### Troubleshooting
+
+If pnpm is not recognized:
+```bash
+# Check installation
+pnpm --version
+
+# Add to PATH
+export PATH="$HOME/.local/share/pnpm:$PATH"
+
+# Reinstall if needed
+npm uninstall -g pnpm
+npm install -g pnpm@10.18.3
+```
+
+---
+
+## Prebuild Security Checks
+
+**CRITICAL RULE:** All builds **MUST** pass security checks before bundling or deployment. These checks prevent accidental exposure of server-side secrets in client-side code.
+
+### Automated Checks
+
+The repository includes prebuild hooks that run automatically:
+
+1. **assert-no-service-role-in-client.mjs**
+   - Location: `scripts/assert-no-service-role-in-client.mjs`
+   - Runs: Before every build (`prebuild` script)
+   - Purpose: Prevents service role keys and secrets in client bundles
+
+2. **check-client-secrets.mjs**
+   - Location: `tools/scripts/check-client-secrets.mjs`
+   - Purpose: Additional secret scanning for client code
+
+### What Gets Checked
+
+The security checks scan for:
+
+**Forbidden Names in Public Environment Variables:**
+```javascript
+const forbiddenNames = [
+  'SERVICE_ROLE',
+  'SERVICE_KEY',
+  'SUPABASE_SERVICE_ROLE_KEY',
+  'SUPABASE_SERVICE_KEY',
+  'ADMIN_TOKEN',
+  'EASYMO_ADMIN_TOKEN',
+  'SECRET_KEY',
+  'PRIVATE_KEY',
+  'DATABASE_URL',
+  'DB_PASSWORD',
+  'MOMO_API_KEY',
+  'MOMO_SECRET',
+];
+```
+
+**Public Variable Prefixes:**
+- `NEXT_PUBLIC_*` - Next.js public variables
+- `VITE_*` - Vite public variables
+
+**Value Patterns:**
+- JWT tokens (long base64 strings starting with `eyJ`)
+- Service role keys
+- API keys and secrets
+
+### How It Works
+
+```bash
+# Automatically runs before build
+pnpm build
+# ↓ triggers
+# ↓ node scripts/assert-no-service-role-in-client.mjs
+# ↓ then runs vite build (if check passes)
+```
+
+**package.json:**
+```json
+{
+  "scripts": {
+    "prebuild": "node ./scripts/assert-no-service-role-in-client.mjs",
+    "build": "vite build"
+  }
+}
+```
+
+### Check Behavior
+
+**✅ Pass Example:**
+```bash
+$ node scripts/assert-no-service-role-in-client.mjs
+✅ No service role or sensitive keys detected in client-side environment variables.
+```
+
+**❌ Fail Example:**
+```bash
+$ node scripts/assert-no-service-role-in-client.mjs
+❌ SECURITY VIOLATION: Public env variable "NEXT_PUBLIC_ADMIN_TOKEN" contains forbidden name "ADMIN_TOKEN"
+❌ SECURITY VIOLATION in .env.local:42: Public env variable "VITE_SERVICE_ROLE" appears to contain a service role key
+
+❌ Build failed: Server-only secrets detected in client-side environment variables.
+⚠️  Remove sensitive values from NEXT_PUBLIC_* and VITE_* variables.
+```
+
+### Manual Verification
+
+Run checks manually before committing:
+
+```bash
+# Check for service role exposure
+node scripts/assert-no-service-role-in-client.mjs
+
+# Check for client secrets (if available)
+node tools/scripts/check-client-secrets.mjs
+```
+
+### CI/CD Integration
+
+All CI workflows include this check:
+
+```yaml
+- name: Assert no service role in client env
+  run: node scripts/assert-no-service-role-in-client.mjs
+```
+
+**Workflow:** `.github/workflows/ci.yml`, `.github/workflows/admin-app-ci.yml`
+
+### Fixing Violations
+
+If the check fails:
+
+1. **Identify the violating variable:**
+   ```bash
+   # Check environment variables
+   env | grep -E '^(NEXT_PUBLIC_|VITE_)'
+   
+   # Check .env files
+   cat .env .env.local | grep -E '^(NEXT_PUBLIC_|VITE_)'
+   ```
+
+2. **Remove public prefix from secrets:**
+   ```bash
+   # ❌ WRONG
+   NEXT_PUBLIC_ADMIN_TOKEN=secret-token
+   VITE_SERVICE_ROLE_KEY=eyJ...
+   
+   # ✅ CORRECT
+   ADMIN_TOKEN=secret-token
+   SUPABASE_SERVICE_ROLE_KEY=eyJ...
+   ```
+
+3. **Move to server-side:**
+   - Use in API routes, Edge Functions, or server components only
+   - Call server endpoints from client instead of direct access
+   - Use appropriate authentication mechanisms
+
+4. **Update .env.example:**
+   ```bash
+   # Ensure template doesn't have violations
+   ADMIN_TOKEN=CHANGEME_ADMIN_TOKEN  # Server-side only
+   NEXT_PUBLIC_API_URL=https://...    # Public is OK
+   ```
+
+### Best Practices
+
+1. **Use Environment Variable Naming Convention:**
+   ```bash
+   # Server-side secrets (NEVER public)
+   SECRET_NAME=value
+   SERVICE_ROLE_KEY=value
+   
+   # Public configuration (safe to expose)
+   NEXT_PUBLIC_API_URL=value
+   VITE_FEATURE_FLAG=value
+   ```
+
+2. **Validate at Development Time:**
+   - Run prebuild checks before committing
+   - Review environment variables regularly
+   - Use `.env.local` for local secrets (gitignored)
+
+3. **Document Secret Requirements:**
+   - Add to ENV_VARIABLES.md
+   - Mark as server-side only
+   - Explain usage context
+
+4. **Test in CI:**
+   - Security checks run automatically
+   - Violations block deployment
+   - Review CI logs for details
+
+### Exceptions
+
+There are **NO EXCEPTIONS** to this rule. If you believe a secret must be client-accessible:
+
+1. **Re-evaluate the architecture** - there's usually a better way
+2. **Use server-side proxy** - create an API endpoint
+3. **Consult security team** - discuss alternatives
+
+**Remember:** Even "public" Supabase anon keys are designed to be public and protected by Row Level Security (RLS). Service role keys bypass RLS and must **NEVER** be exposed.
 
 ---
 
