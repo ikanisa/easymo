@@ -58,3 +58,5 @@ wrangler.toml.local
 *.sln
 *.sw?
 *.swp
+
+.env
