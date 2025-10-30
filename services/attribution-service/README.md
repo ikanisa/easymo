@@ -238,7 +238,7 @@ Follow the [GROUND_RULES.md](../../docs/GROUND_RULES.md) for:
 ## Additional Documentation
 
 For more information, see:
-- [Repository Architecture](../../docs/ARCHITECTURE.md)
+- [Repository Architecture](../../docs/architecture.md)
 - [Project Structure](../../docs/PROJECT_STRUCTURE.md)
 - [Troubleshooting Guide](../../docs/TROUBLESHOOTING.md)
 - [Ground Rules](../../docs/GROUND_RULES.md)

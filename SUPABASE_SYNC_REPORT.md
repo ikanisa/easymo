@@ -174,7 +174,7 @@ The following functions are essential for core platform operations:
 
 ### 10. Documentation Review
 - **Ground Rules:** ✅ Comprehensive documentation in `docs/GROUND_RULES.md`
-- **Architecture:** ✅ Well-documented in `docs/ARCHITECTURE.md`
+- **Architecture:** ✅ Well-documented in `docs/architecture.md`
 - **Deployment Guides:** ✅ Multiple runbooks available
 - **Phase Alignment:** ✅ `docs/admin/phase2_supabase_alignment.md` provides clear deployment checklist
 
