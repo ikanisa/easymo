@@ -6,7 +6,7 @@ import {
 } from "../../wa/client.ts";
 import { IDS } from "../../wa/ids.ts";
 import { clearState, setState } from "../../state/store.ts";
-import { buildMomoUssd } from "../../utils/momo.ts";
+import { buildMomoUssd, buildMomoUssdForQr } from "../../utils/momo.ts";
 import { maskPhone } from "../support.ts";
 import { buildWaLink } from "../../utils/share.ts";
 import { logMomoQrRequest } from "../../rpc/momo.ts";
@@ -271,21 +271,31 @@ async function deliverMomoQr(
 ): Promise<void> {
   const isCode = data.targetType === "code";
   const targetValue = data.targetType === "msisdn" ? data.target : data.target;
-  const { ussd, telUri } = buildMomoUssd(
+  
+  // Use QR-optimized encoding for QR codes (unencoded * and # for Android compatibility)
+  const qrData = buildMomoUssdForQr(
     targetValue,
     isCode,
     amountRwf ?? undefined,
   );
-  const qrUrl = buildQrLink(telUri);
+  
+  // Use standard encoding for WhatsApp buttons/links (iOS requirement)
+  const buttonData = buildMomoUssd(
+    targetValue,
+    isCode,
+    amountRwf ?? undefined,
+  );
+  
+  const qrUrl = buildQrLink(qrData.telUri);
   const lines: string[] = [
     `Target: ${data.display}`,
-    `Dial: ${ussd}`,
-    `Tap: ${telUri}`,
+    `Dial: ${buttonData.ussd}`,
+    `Tap: ${buttonData.telUri}`,
   ];
   if (amountRwf && amountRwf > 0) {
     lines.splice(1, 0, `Amount: RWF ${amountRwf.toLocaleString("en-US")}`);
   }
-  const shareLink = buildWaLink(`Pay via MoMo ${data.display}: ${ussd}`);
+  const shareLink = buildWaLink(`Pay via MoMo ${data.display}: ${buttonData.ussd}`);
   if (shareLink) {
     lines.push(`Share: ${shareLink}`);
   }
@@ -331,8 +341,8 @@ async function deliverMomoQr(
     targetType: data.targetType,
     amountMinor: amountRwf && amountRwf > 0 ? amountRwf * 100 : null,
     qrUrl,
-    ussd,
-    telUri,
+    ussd: buttonData.ussd,
+    telUri: qrData.telUri,
   });
   await logEvent("MOMO_QR", {
     requester: ctx.from,

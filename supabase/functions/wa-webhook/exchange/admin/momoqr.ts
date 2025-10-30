@@ -1,7 +1,7 @@
 import type { FlowExchangeRequest, FlowExchangeResponse } from "../../types.ts";
 import { supabase } from "../../config.ts";
 import { recordAdminAudit } from "./audit.ts";
-import { encodeTelUri, formatUssdText } from "../../utils/ussd.ts";
+import { encodeTelUriForQr, formatUssdText } from "../../utils/ussd.ts";
 
 const LIMIT = 10;
 
@@ -64,9 +64,10 @@ async function generate(
       messages: [{ level: "error", text: "Enter target number or code." }],
     };
   }
-  const qrUrl = `https://quickchart.io/qr?text=${encodeURIComponent(target)}`;
   const humanUssd = `*182*8*1*${target}#`;
-  const telUri = encodeTelUri(humanUssd);
+  // Use QR-optimized encoding for better Android compatibility
+  const telUri = encodeTelUriForQr(humanUssd);
+  const qrUrl = `https://quickchart.io/qr?text=${encodeURIComponent(telUri)}`;
   await supabase
     .from("momo_qr_requests")
     .insert({
