@@ -735,7 +735,8 @@ Located in `docs/`:
 | `TROUBLESHOOTING.md` | Common issues and solutions |
 | `ENV_VARIABLES.md` | Environment variable reference |
 | `PROJECT_STRUCTURE.md` | This document |
-| `ARCHITECTURE.md` | System architecture overview |
+| `architecture.md` | System architecture overview |
+| `baskets-architecture.md` | Baskets (Ibimina) feature architecture |
 | `OBSERVABILITY_PLAN.md` | Logging and monitoring strategy |
 | `PRIVACY_SECURITY.md` | Security policies |
 
