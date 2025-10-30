@@ -221,3 +221,11 @@ WhatsApp mobility platform.  Future enhancements could include:
 - Extending the simulator to enforce credit usage and subscription
   expiration rules.
 - Improving error handling and logging with structured outputs.
+
+## Setup
+Copy env template:
+
+```
+cp .env.example .env
+```
+
