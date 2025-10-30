@@ -101,8 +101,9 @@ jobs:
           NEXT_PUBLIC_USE_MOCKS: false
           NEXT_PUBLIC_ENVIRONMENT_LABEL: Staging
           # Note: Real Supabase keys would be set in Cloudflare Pages project settings
+          # These are placeholder values for build testing only
           NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: fake-anon-key-for-build-testing-only
         run: bash admin-app/scripts/cloudflare/build.sh
 
       - name: Verify build output

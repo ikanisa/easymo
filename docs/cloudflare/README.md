@@ -166,12 +166,14 @@ This script handles building the Next.js admin app:
 
 1. **Ensures pnpm is available** (for shared packages)
 2. **Builds shared packages** from repository root
-3. **Installs admin-app dependencies** with `npm ci` (uses npm, not pnpm)
+3. **Verifies admin-app dependencies** are ready (installed via pnpm workspace at root)
 4. **Runs security guard** to prevent secret leaks
 5. **Lints and tests** the application (continues on failure)
 6. **Builds Next.js application** with production settings
-7. **Runs Cloudflare Pages adapter** (`@cloudflare/next-on-pages`)
+7. **Runs Cloudflare Pages adapter** (`@cloudflare/next-on-pages --skip-build`)
 8. **Verifies output** directory (`.vercel/output/static/`) exists
+
+**Note on Dependency Management**: The admin-app uses npm for running scripts (`npm run build`, `npm test`), but dependencies are installed via pnpm at the repository root level. This is because admin-app is part of the pnpm workspace and uses the `workspace:*` protocol for shared packages. The build script does not run `npm ci` - instead, it relies on `pnpm install --frozen-lockfile` run at the root.
 
 ## Security Considerations
 

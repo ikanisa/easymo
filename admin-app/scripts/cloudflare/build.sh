@@ -62,8 +62,11 @@ echo ""
 echo "Step 3: Verify admin-app dependencies (already installed via pnpm)"
 echo "-------------------------------------------------------------------"
 cd "${REPO_ROOT}/admin-app"
-# Dependencies are already installed by pnpm at the root level
-# The admin-app uses npm for running scripts, but dependencies are managed by pnpm
+# The admin-app is part of the pnpm workspace and dependencies were installed
+# at the repository root with 'pnpm install --frozen-lockfile' in Step 2.
+# While admin-app uses npm for running scripts (npm run build, npm test),
+# its dependencies (including workspace:* packages) are managed by pnpm.
+# This is intentional: pnpm handles installation, npm handles execution.
 echo "✓ Admin app dependencies ready (installed via pnpm workspace)"
 echo ""
 
