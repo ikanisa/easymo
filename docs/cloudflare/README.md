@@ -4,17 +4,43 @@ This repository deploys two Cloudflare Pages projects from a single monorepo:
 1. **easymo-web**: Root Vite SPA (main user-facing application)
 2. **easymo-admin**: Next.js 14 admin panel in `admin-app/`
 
-## Important: Admin App Deployment Method
+## Important: Package Manager Configuration
 
-⚠️ **Note on Admin App Builds**: The admin-app uses pnpm's `workspace:*` protocol for shared packages, which is not supported by npm. Since Cloudflare Pages' native build system uses npm, **the recommended deployment method for the admin app is via GitHub Actions** (see `.github/workflows/cloudflare-pages-deploy.yml`).
+⚠️ **CRITICAL: Force pnpm Usage in Cloudflare Pages**
+
+This repository contains multiple package manager lockfiles (`pnpm-lock.yaml`, `bun.lockb`, `package-lock.json`). Cloudflare Pages auto-detects package managers based on lockfiles and may incorrectly choose bun or npm, which do not support the pnpm workspace configuration properly.
+
+**Required Cloudflare Pages Environment Variable:**
+
+Add this environment variable to **BOTH** Cloudflare Pages projects (easymo-web and easymo-admin):
+
+```bash
+UNSTABLE_PRE_BUILD=asdf install pnpm 10.18.3 && asdf global pnpm 10.18.3
+```
+
+This forces Cloudflare Pages to use pnpm 10.18.3 instead of auto-detecting bun or npm.
+
+**Alternative Configuration (if UNSTABLE_PRE_BUILD doesn't work):**
+
+Set the package manager explicitly:
+```bash
+NPM_FLAGS=--version  # This disables npm
+SKIP_DEPENDENCY_INSTALL=false
+```
+
+Then ensure your build command starts with the pnpm installation as shown in the build scripts.
+
+### Admin App Deployment Method
+
+⚠️ **Note on Admin App Builds**: The admin-app uses pnpm's `workspace:*` protocol for shared packages, which is not supported by npm. Since Cloudflare Pages' native build system may default to npm or bun, **the recommended deployment method for the admin app is via GitHub Actions** (see `.github/workflows/cloudflare-pages-deploy.yml`).
 
 The build script `admin-app/scripts/cloudflare/build.sh` is provided for:
 - ✅ GitHub Actions CI/CD pipelines (where pnpm can manage dependencies)
 - ✅ Local development and testing
 - ✅ Wrangler CLI deployments
-- ❌ NOT for Cloudflare Pages dashboard "Connect to Git" builds (due to npm/workspace incompatibility)
+- ❌ NOT for Cloudflare Pages dashboard "Connect to Git" builds (due to package manager auto-detection issues)
 
-For the **Vite SPA** (easymo-web), both methods work fine.
+For the **Vite SPA** (easymo-web), the same considerations apply - ensure pnpm is used.
 
 ## Requirements
 
@@ -42,6 +68,9 @@ For the **Vite SPA** (easymo-web), both methods work fine.
 
 **Environment Variables (Production):**
 ```bash
+# REQUIRED: Force pnpm usage (prevents bun auto-detection)
+UNSTABLE_PRE_BUILD=asdf install pnpm 10.18.3 && asdf global pnpm 10.18.3
+
 # Public variables (client-safe)
 VITE_SUPABASE_URL=https://your-project.supabase.co
 VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
@@ -64,6 +93,9 @@ SUPABASE_SERVICE_ROLE_KEY=<service-role-key>
 
 **Environment Variables (Production):**
 ```bash
+# REQUIRED: Force pnpm usage (prevents bun auto-detection)
+UNSTABLE_PRE_BUILD=asdf install pnpm 10.18.3 && asdf global pnpm 10.18.3
+
 # Public variables (client-safe)
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
@@ -241,6 +273,27 @@ The repository includes a GitHub Action (`.github/workflows/cloudflare-pages-che
 ## Troubleshooting
 
 ### Build Failures
+
+#### Error: "Workspace dependency '@va/shared' not found" (Bun Install)
+**Cause**: Cloudflare Pages auto-detected `bun.lockb` and tried to use bun instead of pnpm. Bun doesn't properly support pnpm workspace configurations.
+
+**Solution**: Configure Cloudflare Pages to use pnpm:
+
+1. In Cloudflare Pages project settings, add environment variable:
+   ```bash
+   UNSTABLE_PRE_BUILD=asdf install pnpm 10.18.3 && asdf global pnpm 10.18.3
+   ```
+
+2. Verify the build command in Cloudflare Pages dashboard is:
+   ```bash
+   bash scripts/cloudflare/build-web.sh  # for Vite SPA
+   # OR
+   bash admin-app/scripts/cloudflare/build.sh  # for admin app
+   ```
+
+3. The build scripts will install pnpm if not available, but the UNSTABLE_PRE_BUILD ensures Cloudflare doesn't auto-select bun first.
+
+**Alternative**: If you don't need bun, consider removing `bun.lockb` from the repository to prevent auto-detection issues.
 
 #### Error: "workspace:* protocol not supported"
 **Cause**: Shared packages not built or npm used instead of pnpm
