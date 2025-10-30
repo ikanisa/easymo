@@ -7,6 +7,13 @@ import {
 import { logStructuredEvent } from "../observe/log.ts";
 import { emitAlert } from "../observe/alert.ts";
 import { delay, fetchWithTimeout } from "../utils/http.ts";
+import {
+  processNotificationWithFilters,
+  extractMetaErrorCode,
+  categorizeMetaError,
+  calculateRateLimitBackoff,
+  logDeliveryMetrics,
+} from "./processor.ts";
 
 const WHATSAPP_API_BASE_URL = Deno.env.get("WHATSAPP_API_BASE_URL") ??
   "https://graph.facebook.com/v20.0";
@@ -337,12 +344,35 @@ export async function processNotificationQueue(
 
   for (const row of claimed) {
     try {
+      // Apply filters (opt-out, quiet hours, rate limit)
+      const filterCheck = await processNotificationWithFilters(row, supa);
+      
+      if (!filterCheck.shouldDeliver) {
+        // Notification was deferred or blocked by filters
+        outcomes.push({
+          id: row.id,
+          status: filterCheck.deferUntil ? "queued" : "failed",
+          error: filterCheck.reason,
+        });
+        continue;
+      }
+
+      // Filters passed - deliver notification
       await deliverNotification(row, supa);
       outcomes.push({ id: row.id, status: "sent" });
+      
+      // Log success metrics
+      await logDeliveryMetrics(row, "sent");
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       const status = await handleDeliveryFailure(row, supa, error);
       outcomes.push({ id: row.id, status, error: message });
+      
+      // Log failure metrics
+      const errorCode = error instanceof WhatsAppSendError 
+        ? extractMetaErrorCode(error.detail) 
+        : null;
+      await logDeliveryMetrics(row, status === "failed" ? "failed" : "deferred", errorCode);
     }
   }
 
@@ -423,10 +453,28 @@ async function handleDeliveryFailure(
     ? row.retry_count
     : 0;
   const nextAttempts = currentAttempts + 1;
-  const shouldFail = nextAttempts >= MAX_RETRIES;
-  const backoffSeconds = shouldFail
-    ? null
-    : computeBackoffSeconds(nextAttempts);
+  
+  // Extract Meta error code for better categorization
+  const metaErrorCode = error instanceof WhatsAppSendError
+    ? extractMetaErrorCode(error.detail)
+    : null;
+  
+  // Categorize error to determine retry strategy
+  const errorCategory = categorizeMetaError(metaErrorCode);
+  
+  // Determine if should fail based on category and retry count
+  const shouldFail = errorCategory === "fail" || nextAttempts >= MAX_RETRIES;
+  
+  // Calculate backoff with special handling for rate limits
+  let backoffSeconds: number | null = null;
+  if (!shouldFail) {
+    if (errorCategory === "defer") {
+      backoffSeconds = calculateRateLimitBackoff(metaErrorCode, nextAttempts);
+    } else {
+      backoffSeconds = computeBackoffSeconds(nextAttempts);
+    }
+  }
+  
   const errorMessage = error instanceof Error
     ? error.message
     : String(error ?? "unknown_error");
@@ -435,6 +483,8 @@ async function handleDeliveryFailure(
     last_status: "failed",
     last_error_at: nowIso(),
     last_error_message: errorMessage,
+    last_error_code: metaErrorCode,
+    error_category: errorCategory,
   };
 
   if (error instanceof WhatsAppSendError) {
@@ -446,6 +496,7 @@ async function handleDeliveryFailure(
     retry_count: nextAttempts,
     status: shouldFail ? "failed" : "queued",
     error_message: errorMessage,
+    last_error_code: metaErrorCode,
     payload: mergeMeta(row.payload, metaPatch),
   };
 
