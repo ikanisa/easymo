@@ -10,6 +10,48 @@ export type ToolMetadata = {
 };
 
 /**
+ * Call a Supabase Edge Function
+ */
+async function callSupabaseFunction(
+  functionName: string,
+  args: any,
+  metadata: ToolMetadata
+): Promise<any> {
+  const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl || !supabaseKey) {
+    throw new Error("Supabase configuration missing");
+  }
+
+  const url = `${supabaseUrl}/functions/v1/${functionName}`;
+
+  console.log("ai.tool.call_function", {
+    correlation_id: metadata.correlation_id,
+    function_name: functionName,
+    url,
+    timestamp: new Date().toISOString(),
+  });
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${supabaseKey}`,
+      "x-correlation-id": metadata.correlation_id || "",
+    },
+    body: JSON.stringify(args),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Function call failed: ${response.status} ${errorText}`);
+  }
+
+  return await response.json();
+}
+
+/**
  * Call a tool by name with provided arguments
  * This is a central dispatcher that routes to specific implementations
  */
@@ -18,45 +60,39 @@ export async function callTool(
   args: any,
   metadata: ToolMetadata = {}
 ): Promise<any> {
-  // Dynamic import to avoid circular dependencies
-  // Actual implementations will be added in Phase 2
-  
   console.log("ai.tool.dispatch", {
     correlation_id: metadata.correlation_id,
     tool_name: name,
     timestamp: new Date().toISOString(),
   });
 
-  switch (name) {
-    case "create_voucher":
-      // Will be implemented with Supabase function
-      return {
-        success: false,
-        error: "create_voucher not yet implemented",
-      };
+  try {
+    switch (name) {
+      case "create_voucher":
+        return await callSupabaseFunction("ai-create-voucher", args, metadata);
 
-    case "lookup_customer":
-      // Will be implemented with Supabase function
-      return {
-        success: false,
-        error: "lookup_customer not yet implemented",
-      };
+      case "lookup_customer":
+        return await callSupabaseFunction("ai-lookup-customer", args, metadata);
 
-    case "redeem_voucher":
-      // Will be implemented with Supabase function
-      return {
-        success: false,
-        error: "redeem_voucher not yet implemented",
-      };
+      case "redeem_voucher":
+        return await callSupabaseFunction("ai-redeem-voucher", args, metadata);
 
-    case "void_voucher":
-      // Will be implemented with Supabase function
-      return {
-        success: false,
-        error: "void_voucher not yet implemented",
-      };
+      case "void_voucher":
+        return await callSupabaseFunction("ai-void-voucher", args, metadata);
 
-    default:
-      throw new Error(`Unknown tool: ${name}`);
+      default:
+        throw new Error(`Unknown tool: ${name}`);
+    }
+  } catch (error) {
+    console.error("ai.tool.call_error", {
+      correlation_id: metadata.correlation_id,
+      tool_name: name,
+      error: error instanceof Error ? error.message : String(error),
+    });
+
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : String(error),
+    };
   }
 }
