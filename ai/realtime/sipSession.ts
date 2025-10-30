@@ -111,6 +111,16 @@ export function getDefaultSessionConfig(): RealtimeSessionConfig {
 
 /**
  * Create a Realtime API session with SDP offer
+ * 
+ * NOTE: This is a placeholder implementation.
+ * The actual OpenAI Realtime API uses WebSocket connections, not HTTP POST.
+ * Production implementation should:
+ * 1. Establish WebSocket connection to wss://api.openai.com/v1/realtime
+ * 2. Send session.update event with config
+ * 3. Handle SDP offer/answer via WebRTC signaling
+ * 4. Process real-time audio streams
+ * 
+ * See: https://platform.openai.com/docs/guides/realtime
  */
 export async function createRealtimeSession(
   sdpOffer: string,
@@ -132,46 +142,12 @@ export async function createRealtimeSession(
     })
   );
 
-  // Note: This is a simplified implementation
-  // In production, you'd need to handle the WebRTC negotiation properly
-  // The actual Realtime API may use WebSocket connections
-  
-  const response = await fetch(
-    `https://api.openai.com/v1/realtime?model=${config.model}`,
-    {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${apiKey}`,
-        "Content-Type": "application/sdp",
-      },
-      body: sdpOffer,
-    }
+  // Placeholder: Return error indicating WebSocket implementation needed
+  throw new Error(
+    "Realtime API requires WebSocket implementation. " +
+    "This is a placeholder for HTTP-based SDP exchange. " +
+    "Use WebSocket connection to wss://api.openai.com/v1/realtime instead."
   );
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error(
-      JSON.stringify({
-        event: "ai.realtime.session.error",
-        correlation_id: correlationId,
-        status: response.status,
-        error: errorText,
-      })
-    );
-    throw new Error(`Realtime session creation failed: ${response.status}`);
-  }
-
-  const sdpAnswer = await response.text();
-
-  console.log(
-    JSON.stringify({
-      event: "ai.realtime.session.created",
-      correlation_id: correlationId,
-      timestamp: new Date().toISOString(),
-    })
-  );
-
-  return { sdpAnswer };
 }
 
 /**

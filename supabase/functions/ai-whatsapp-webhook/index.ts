@@ -36,7 +36,10 @@ interface WhatsAppWebhookPayload {
   }>;
 }
 
-// In-memory cache for idempotency (in production, use Redis/database)
+// Idempotency tracking
+// TODO: Replace with Redis or database-backed storage for production
+// In serverless environments, in-memory caches are not persistent across instances
+// For MVP, this provides basic deduplication within a single function instance
 const processedMessageIds = new Set<string>();
 const MESSAGE_CACHE_TTL = 3600000; // 1 hour
 
@@ -107,6 +110,12 @@ async function sendWhatsAppMessage(
 
 /**
  * Process message through OpenAI Responses API
+ * 
+ * Note: This is a simplified implementation that calls OpenAI directly.
+ * For production, consider using the full /ai package router which handles:
+ * - Multi-turn conversations with tool execution
+ * - Conversation history management
+ * - Proper error handling and retries
  */
 async function processWithAI(
   userMessage: string,
@@ -116,8 +125,15 @@ async function processWithAI(
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
   const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-  // For now, call a simple responses API endpoint
-  // In production, this would use the full conversation history
+  // TODO: Implement full tool execution loop
+  // This simplified version returns text responses only
+  // Full implementation should:
+  // 1. Call OpenAI with tools defined
+  // 2. Handle tool_calls in response
+  // 3. Execute tools via Supabase functions
+  // 4. Continue conversation with tool results
+  // 5. Return final assistant message
+  
   const openaiApiKey = Deno.env.get("OPENAI_API_KEY");
   const responsesModel = Deno.env.get("OPENAI_RESPONSES_MODEL") || "gpt-4o-mini";
 

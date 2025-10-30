@@ -187,7 +187,7 @@ supabase functions deploy ai-whatsapp-webhook
 psql $DATABASE_URL -c "
   SELECT status, COUNT(*) 
   FROM vouchers 
-  WHERE created_at > NOW() - INTERVAL '7 days'
+  WHERE issued_at > NOW() - INTERVAL '7 days'
   GROUP BY status;
 "
 
