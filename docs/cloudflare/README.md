@@ -4,6 +4,18 @@ This repository deploys two Cloudflare Pages projects from a single monorepo:
 1. **easymo-web**: Root Vite SPA (main user-facing application)
 2. **easymo-admin**: Next.js 14 admin panel in `admin-app/`
 
+## Important: Admin App Deployment Method
+
+⚠️ **Note on Admin App Builds**: The admin-app uses pnpm's `workspace:*` protocol for shared packages, which is not supported by npm. Since Cloudflare Pages' native build system uses npm, **the recommended deployment method for the admin app is via GitHub Actions** (see `.github/workflows/cloudflare-pages-deploy.yml`).
+
+The build script `admin-app/scripts/cloudflare/build.sh` is provided for:
+- ✅ GitHub Actions CI/CD pipelines (where pnpm can manage dependencies)
+- ✅ Local development and testing
+- ✅ Wrangler CLI deployments
+- ❌ NOT for Cloudflare Pages dashboard "Connect to Git" builds (due to npm/workspace incompatibility)
+
+For the **Vite SPA** (easymo-web), both methods work fine.
+
 ## Requirements
 
 ### System Requirements

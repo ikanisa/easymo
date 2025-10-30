@@ -70,13 +70,22 @@ cd "${REPO_ROOT}/admin-app"
 echo "✓ Admin app dependencies ready (installed via pnpm workspace)"
 echo ""
 
-echo "Step 4: Run security guard (assert no service role in client env)"
+echo "Step 4: Temporarily patch package.json for Cloudflare Pages compatibility"
+echo "---------------------------------------------------------------------------"
+# The workspace:* protocol is not supported by npm/Vercel build
+# Temporarily replace it with a file path for the @cloudflare/next-on-pages adapter
+cp package.json package.json.backup
+sed -i 's|"@va/shared": "workspace:\*"|"@va/shared": "file:../packages/shared"|g' package.json
+echo "✓ package.json patched (workspace:* → file:../packages/shared)"
+echo ""
+
+echo "Step 5: Run security guard (assert no service role in client env)"
 echo "------------------------------------------------------------------"
 node ../scripts/assert-no-service-role-in-client.mjs
 echo "✓ Security guard passed"
 echo ""
 
-echo "Step 5: Lint admin app (max-warnings=0)"
+echo "Step 6: Lint admin app (max-warnings=0)"
 echo "----------------------------------------"
 npm run lint -- --max-warnings=0 || {
   echo "⚠️  Lint warnings/errors found, but continuing build..."
@@ -107,12 +116,20 @@ echo ""
 echo "Step 8: Build for Cloudflare Pages (next-on-pages)"
 echo "---------------------------------------------------"
 # The @cloudflare/next-on-pages adapter creates the .vercel/output structure
-# We use --skip-build since we already ran npm run build above
-npx @cloudflare/next-on-pages --skip-build
+# Configure npm to use legacy peer deps to avoid conflicts
+npm config set legacy-peer-deps true
+npx @cloudflare/next-on-pages
+npm config delete legacy-peer-deps
 echo "✓ Cloudflare Pages adapter complete"
 echo ""
 
-echo "Step 9: Verify output directory exists"
+echo "Step 9: Restore original package.json"
+echo "---------------------------------------"
+mv package.json.backup package.json
+echo "✓ package.json restored"
+echo ""
+
+echo "Step 10: Verify output directory exists"
 echo "---------------------------------------"
 if [[ ! -d ".vercel/output" ]]; then
   echo "❌ ERROR: Build output directory '.vercel/output' not found"
