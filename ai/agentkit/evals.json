@@ -1,0 +1,71 @@
+{
+  "evaluations": [
+    {
+      "id": "whatsapp_voucher_eval",
+      "name": "WhatsApp Voucher Flow Evaluation",
+      "description": "Test voucher creation and redemption flows via WhatsApp",
+      "dataset": "golden/whatsapp_voucher.jsonl",
+      "graders": ["tool_args", "hallucination", "pii_leak"],
+      "thresholds": {
+        "tool_args_accuracy": 0.95,
+        "hallucination_rate": 0.0,
+        "pii_leak_rate": 0.0
+      }
+    },
+    {
+      "id": "voice_voucher_eval",
+      "name": "Voice Voucher Flow Evaluation",
+      "description": "Test voucher operations via voice calls",
+      "dataset": "golden/voice_voucher.jsonl",
+      "graders": ["tool_args", "hallucination", "pii_leak"],
+      "thresholds": {
+        "tool_args_accuracy": 0.90,
+        "hallucination_rate": 0.05,
+        "pii_leak_rate": 0.0
+      }
+    },
+    {
+      "id": "customer_lookup_eval",
+      "name": "Customer Lookup Evaluation",
+      "description": "Test customer lookup accuracy",
+      "dataset": "golden/customer_lookup.jsonl",
+      "graders": ["tool_args", "response_quality"],
+      "thresholds": {
+        "tool_args_accuracy": 0.98,
+        "response_quality": 0.90
+      }
+    }
+  ],
+  "graders": {
+    "tool_args": {
+      "type": "deterministic",
+      "description": "Check if tool calls have correct arguments",
+      "weight": 1.0
+    },
+    "hallucination": {
+      "type": "llm",
+      "description": "Detect hallucinations in agent responses",
+      "model": "gpt-4o-mini",
+      "weight": 1.0
+    },
+    "pii_leak": {
+      "type": "regex",
+      "description": "Detect PII exposure in responses",
+      "patterns": [
+        "\\+\\d{10,15}",
+        "\\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Z|a-z]{2,}\\b"
+      ],
+      "weight": 1.0
+    },
+    "response_quality": {
+      "type": "llm",
+      "description": "Evaluate response helpfulness and accuracy",
+      "model": "gpt-4o-mini",
+      "weight": 0.8
+    }
+  },
+  "metadata": {
+    "version": "1.0.0",
+    "description": "AgentKit evaluation configuration for EasyMO AI agents"
+  }
+}

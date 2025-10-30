@@ -356,6 +356,34 @@ importers:
         specifier: ^3.95.0
         version: 3.114.15
 
+  ai:
+    dependencies:
+      '@supabase/supabase-js':
+        specifier: ^2.76.1
+        version: 2.76.1
+      openai:
+        specifier: ^4.104.0
+        version: 4.104.0(ws@8.18.3)(zod@3.25.76)
+      zod:
+        specifier: ^3.25.76
+        version: 3.25.76
+      zod-to-json-schema:
+        specifier: ^3.23.5
+        version: 3.24.6(zod@3.25.76)
+    devDependencies:
+      '@types/node':
+        specifier: ^22.18.12
+        version: 22.18.12
+      eslint:
+        specifier: ^9.32.0
+        version: 9.38.0(jiti@1.21.7)
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+      vitest:
+        specifier: ^3.2.4
+        version: 3.2.4(@edge-runtime/vm@3.2.0)(@types/node@22.18.12)(@vitest/ui@3.2.4)(jsdom@26.1.0)(terser@5.44.0)
+
   apps/agent-core:
     dependencies:
       '@easymo/commons':
@@ -9946,6 +9974,11 @@ packages:
 
   youch@3.3.4:
     resolution: {integrity: sha512-UeVBXie8cA35DS6+nBkls68xaBBXCye0CNznrhszZjTbRVnJKQuNsyLKBTTL4ln1o1rh2PKtv35twV7irj5SEg==}
+
+  zod-to-json-schema@3.24.6:
+    resolution: {integrity: sha512-h/z3PKvcTcTetyjl1fkj79MHNEjm+HpD6NXheWjzOekY7kV+lwDYnHw+ivHkijnCSMz1yJaWBD9vu/Fcmk+vEg==}
+    peerDependencies:
+      zod: ^3.24.1
 
   zod@3.22.3:
     resolution: {integrity: sha512-EjIevzuJRiRPbVH4mGc8nApb/lVLKVpmUhAaR5R5doKGfAnGJ6Gr3CViAVjP+4FWSxCsybeWQdcgCtbX+7oZug==}
@@ -19882,6 +19915,10 @@ snapshots:
       cookie: 0.7.1
       mustache: 4.2.0
       stacktracey: 2.1.8
+
+  zod-to-json-schema@3.24.6(zod@3.25.76):
+    dependencies:
+      zod: 3.25.76
 
   zod@3.22.3: {}
 
