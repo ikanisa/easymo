@@ -60,3 +60,4 @@ wrangler.toml.local
 *.swp
 
 .env
+package.json.backup
