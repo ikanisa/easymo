@@ -405,12 +405,9 @@ export async function handleNearbyResultSelection(
   const baseMessage = state.mode === "drivers"
     ? "Hi, I need a ride"
     : "Hi, do you need a ride?";
-  const reference = match.ref && match.ref !== "---"
-    ? `Ref ${match.ref}`
-    : null;
   const link = waChatLink(
     match.whatsapp,
-    reference ? `${baseMessage}. ${reference}` : baseMessage,
+    `${baseMessage} (Ref ${match.ref})`,
   );
   await sendButtonsMessage(
     ctx,
