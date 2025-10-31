@@ -402,10 +402,16 @@ export async function handleNearbyResultSelection(
     trip_id: match.tripId,
     mode: state.mode,
   });
-  const prefilledMessage = state.mode === "drivers"
+  const baseMessage = state.mode === "drivers"
     ? "Hi, I need a ride"
     : "Hi, do you need a ride?";
-  const link = waChatLink(match.whatsapp, prefilledMessage);
+  const reference = match.ref && match.ref !== "---"
+    ? `Ref ${match.ref}`
+    : null;
+  const link = waChatLink(
+    match.whatsapp,
+    reference ? `${baseMessage}. ${reference}` : baseMessage,
+  );
   await sendButtonsMessage(
     ctx,
     `Chat on WhatsApp: ${link}`,
