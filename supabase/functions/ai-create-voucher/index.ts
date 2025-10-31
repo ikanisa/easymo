@@ -1,5 +1,9 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import {
+  isAgentVoucherFeatureEnabled,
+  verifyAgentToolAuth,
+} from "../_shared/agent-auth.ts";
 
 /**
  * AI Agent Tool: Create Voucher
@@ -20,6 +24,11 @@ interface CreateVoucherResponse {
   currency?: string;
   error?: string;
 }
+
+const JSON_HEADERS: Record<string, string> = {
+  "Content-Type": "application/json",
+  "Access-Control-Allow-Origin": "*",
+};
 
 // Generate a 5-digit voucher code
 function generateCode5(): string {
@@ -50,7 +59,37 @@ serve(async (req: Request): Promise<Response> => {
     if (req.method !== "POST") {
       return new Response(
         JSON.stringify({ success: false, error: "Method not allowed" }),
-        { status: 405, headers: { "Content-Type": "application/json" } }
+        { status: 405, headers: JSON_HEADERS }
+      );
+    }
+
+    if (!isAgentVoucherFeatureEnabled()) {
+      console.log(
+        JSON.stringify({
+          event: "ai.tool.create_voucher.feature_disabled",
+          correlation_id: correlationId,
+          timestamp: new Date().toISOString(),
+        })
+      );
+
+      return new Response(
+        JSON.stringify({ success: false, error: "feature_disabled" }),
+        { status: 403, headers: JSON_HEADERS }
+      );
+    }
+
+    if (!verifyAgentToolAuth(req, correlationId)) {
+      console.warn(
+        JSON.stringify({
+          event: "ai.tool.create_voucher.unauthorized",
+          correlation_id: correlationId,
+          timestamp: new Date().toISOString(),
+        })
+      );
+
+      return new Response(
+        JSON.stringify({ success: false, error: "unauthorized" }),
+        { status: 401, headers: JSON_HEADERS }
       );
     }
 
@@ -62,14 +101,14 @@ serve(async (req: Request): Promise<Response> => {
     if (!customer_msisdn || typeof customer_msisdn !== "string") {
       return new Response(
         JSON.stringify({ success: false, error: "Invalid customer_msisdn" }),
-        { status: 400, headers: { "Content-Type": "application/json" } }
+        { status: 400, headers: JSON_HEADERS }
       );
     }
 
     if (!amount || typeof amount !== "number" || amount <= 0) {
       return new Response(
         JSON.stringify({ success: false, error: "Invalid amount" }),
-        { status: 400, headers: { "Content-Type": "application/json" } }
+        { status: 400, headers: JSON_HEADERS }
       );
     }
 
@@ -135,7 +174,7 @@ serve(async (req: Request): Promise<Response> => {
           success: false,
           error: error.message,
         } as CreateVoucherResponse),
-        { status: 200, headers: { "Content-Type": "application/json" } }
+        { status: 200, headers: JSON_HEADERS }
       );
     }
 
@@ -159,10 +198,7 @@ serve(async (req: Request): Promise<Response> => {
 
     return new Response(JSON.stringify(response), {
       status: 200,
-      headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
-      },
+      headers: JSON_HEADERS,
     });
   } catch (err) {
     console.error(
@@ -178,7 +214,7 @@ serve(async (req: Request): Promise<Response> => {
         success: false,
         error: "Internal server error",
       } as CreateVoucherResponse),
-      { status: 500, headers: { "Content-Type": "application/json" } }
+      { status: 500, headers: JSON_HEADERS }
     );
   }
 });

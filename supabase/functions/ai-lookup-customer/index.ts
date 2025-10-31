@@ -1,5 +1,9 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import {
+  isAgentCustomerLookupEnabled,
+  verifyAgentToolAuth,
+} from "../_shared/agent-auth.ts";
 
 /**
  * AI Agent Tool: Lookup Customer
@@ -18,6 +22,11 @@ interface LookupCustomerResponse {
   customer_id?: string;
   error?: string;
 }
+
+const JSON_HEADERS: Record<string, string> = {
+  "Content-Type": "application/json",
+  "Access-Control-Allow-Origin": "*",
+};
 
 serve(async (req: Request): Promise<Response> => {
   const correlationId = crypto.randomUUID();
@@ -38,7 +47,37 @@ serve(async (req: Request): Promise<Response> => {
     if (req.method !== "POST") {
       return new Response(
         JSON.stringify({ success: false, error: "Method not allowed" }),
-        { status: 405, headers: { "Content-Type": "application/json" } }
+        { status: 405, headers: JSON_HEADERS }
+      );
+    }
+
+    if (!isAgentCustomerLookupEnabled()) {
+      console.log(
+        JSON.stringify({
+          event: "ai.tool.lookup_customer.feature_disabled",
+          correlation_id: correlationId,
+          timestamp: new Date().toISOString(),
+        })
+      );
+
+      return new Response(
+        JSON.stringify({ success: false, error: "feature_disabled" }),
+        { status: 403, headers: JSON_HEADERS }
+      );
+    }
+
+    if (!verifyAgentToolAuth(req, correlationId)) {
+      console.warn(
+        JSON.stringify({
+          event: "ai.tool.lookup_customer.unauthorized",
+          correlation_id: correlationId,
+          timestamp: new Date().toISOString(),
+        })
+      );
+
+      return new Response(
+        JSON.stringify({ success: false, error: "unauthorized" }),
+        { status: 401, headers: JSON_HEADERS }
       );
     }
 
@@ -49,7 +88,7 @@ serve(async (req: Request): Promise<Response> => {
     if (!msisdn || typeof msisdn !== "string") {
       return new Response(
         JSON.stringify({ success: false, error: "Invalid msisdn parameter" }),
-        { status: 400, headers: { "Content-Type": "application/json" } }
+        { status: 400, headers: JSON_HEADERS }
       );
     }
 
@@ -91,7 +130,7 @@ serve(async (req: Request): Promise<Response> => {
           msisdn,
           error: error.message,
         } as LookupCustomerResponse),
-        { status: 200, headers: { "Content-Type": "application/json" } }
+        { status: 200, headers: JSON_HEADERS }
       );
     }
 
@@ -116,10 +155,7 @@ serve(async (req: Request): Promise<Response> => {
 
     return new Response(JSON.stringify(response), {
       status: 200,
-      headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
-      },
+      headers: JSON_HEADERS,
     });
   } catch (err) {
     console.error(
@@ -137,7 +173,7 @@ serve(async (req: Request): Promise<Response> => {
         msisdn: "",
         error: "Internal server error",
       } as LookupCustomerResponse),
-      { status: 500, headers: { "Content-Type": "application/json" } }
+      { status: 500, headers: JSON_HEADERS }
     );
   }
 });
