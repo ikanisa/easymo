@@ -1,5 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { validateAgentToolRequest } from "shared/auth.ts";
+import { isFeatureEnabled } from "shared/feature-flags.ts";
 
 /**
  * AI Agent Tool: Redeem Voucher
@@ -19,6 +21,11 @@ interface RedeemVoucherResponse {
   error?: string;
 }
 
+const RESPONSE_HEADERS: HeadersInit = {
+  "Content-Type": "application/json",
+  "Access-Control-Allow-Origin": "*",
+};
+
 serve(async (req: Request): Promise<Response> => {
   const correlationId = crypto.randomUUID();
 
@@ -30,7 +37,8 @@ serve(async (req: Request): Promise<Response> => {
         headers: {
           "Access-Control-Allow-Origin": "*",
           "Access-Control-Allow-Methods": "POST, OPTIONS",
-          "Access-Control-Allow-Headers": "Content-Type, Authorization",
+          "Access-Control-Allow-Headers":
+            "Content-Type, Authorization, X-Agent-JWT, X-Agent-Token, X-Admin-Token",
         },
       });
     }
@@ -38,7 +46,41 @@ serve(async (req: Request): Promise<Response> => {
     if (req.method !== "POST") {
       return new Response(
         JSON.stringify({ success: false, error: "Method not allowed" }),
-        { status: 405, headers: { "Content-Type": "application/json" } }
+        { status: 405, headers: RESPONSE_HEADERS }
+      );
+    }
+
+    if (!isFeatureEnabled("agent.vouchers")) {
+      console.warn(
+        JSON.stringify({
+          event: "ai.tool.redeem_voucher.feature_disabled",
+          correlation_id: correlationId,
+        }),
+      );
+      return new Response(
+        JSON.stringify({ success: false, error: "Feature disabled" }),
+        { status: 403, headers: RESPONSE_HEADERS },
+      );
+    }
+
+    const authCheck = validateAgentToolRequest(req);
+    if (!authCheck.ok) {
+      const reason = authCheck.reason === "missing_token"
+        ? "agent_voucher_token_not_configured"
+        : "unauthorized";
+      console.error(
+        JSON.stringify({
+          event: "ai.tool.redeem_voucher.auth_failed",
+          correlation_id: correlationId,
+          reason,
+        }),
+      );
+      return new Response(
+        JSON.stringify({ success: false, error: reason }),
+        {
+          status: authCheck.reason === "missing_token" ? 500 : 401,
+          headers: RESPONSE_HEADERS,
+        },
       );
     }
 
@@ -50,14 +92,14 @@ serve(async (req: Request): Promise<Response> => {
     if (!voucher_id || typeof voucher_id !== "string") {
       return new Response(
         JSON.stringify({ success: false, error: "Invalid voucher_id" }),
-        { status: 400, headers: { "Content-Type": "application/json" } }
+        { status: 400, headers: RESPONSE_HEADERS }
       );
     }
 
     if (!customer_msisdn || typeof customer_msisdn !== "string") {
       return new Response(
         JSON.stringify({ success: false, error: "Invalid customer_msisdn" }),
-        { status: 400, headers: { "Content-Type": "application/json" } }
+        { status: 400, headers: RESPONSE_HEADERS }
       );
     }
 
@@ -98,7 +140,7 @@ serve(async (req: Request): Promise<Response> => {
           success: false,
           error: "Voucher not found",
         } as RedeemVoucherResponse),
-        { status: 200, headers: { "Content-Type": "application/json" } }
+        { status: 200, headers: RESPONSE_HEADERS }
       );
     }
 
@@ -117,7 +159,7 @@ serve(async (req: Request): Promise<Response> => {
           success: false,
           error: "Voucher does not belong to this customer",
         } as RedeemVoucherResponse),
-        { status: 200, headers: { "Content-Type": "application/json" } }
+        { status: 200, headers: RESPONSE_HEADERS }
       );
     }
 
@@ -137,7 +179,7 @@ serve(async (req: Request): Promise<Response> => {
           success: false,
           error: `Voucher cannot be redeemed (current status: ${voucher.status})`,
         } as RedeemVoucherResponse),
-        { status: 200, headers: { "Content-Type": "application/json" } }
+        { status: 200, headers: RESPONSE_HEADERS }
       );
     }
 
@@ -167,7 +209,7 @@ serve(async (req: Request): Promise<Response> => {
           success: false,
           error: error.message,
         } as RedeemVoucherResponse),
-        { status: 200, headers: { "Content-Type": "application/json" } }
+        { status: 200, headers: RESPONSE_HEADERS }
       );
     }
 
@@ -190,10 +232,7 @@ serve(async (req: Request): Promise<Response> => {
 
     return new Response(JSON.stringify(response), {
       status: 200,
-      headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
-      },
+      headers: RESPONSE_HEADERS,
     });
   } catch (err) {
     console.error(
@@ -209,7 +248,7 @@ serve(async (req: Request): Promise<Response> => {
         success: false,
         error: "Internal server error",
       } as RedeemVoucherResponse),
-      { status: 500, headers: { "Content-Type": "application/json" } }
+      { status: 500, headers: RESPONSE_HEADERS }
     );
   }
 });
