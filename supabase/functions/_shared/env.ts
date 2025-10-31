@@ -22,6 +22,12 @@ export function getAdminToken(): string | null {
   return getEnv("EASYMO_ADMIN_TOKEN") ?? getEnv("ADMIN_TOKEN");
 }
 
+export function getAgentToolToken(): string | null {
+  return getEnv("AGENT_CORE_INTERNAL_TOKEN") ??
+    getEnv("AGENT_INTERNAL_TOKEN") ??
+    getAdminToken();
+}
+
 export function getSupabaseServiceConfig(): {
   url: string;
   serviceRoleKey: string;

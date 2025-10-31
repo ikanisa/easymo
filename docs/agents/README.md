@@ -196,13 +196,13 @@ supabase start
 # Test lookup customer
 curl -X POST http://localhost:54321/functions/v1/ai-lookup-customer \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer YOUR_SERVICE_ROLE_KEY" \
+  -H "X-Agent-JWT: $AGENT_CORE_INTERNAL_TOKEN" \
   -d '{"msisdn": "+250788000000"}'
 
 # Test create voucher
 curl -X POST http://localhost:54321/functions/v1/ai-create-voucher \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer YOUR_SERVICE_ROLE_KEY" \
+  -H "X-Agent-JWT: $AGENT_CORE_INTERNAL_TOKEN" \
   -d '{"customer_msisdn": "+250788000000", "amount": 50000}'
 ```
 

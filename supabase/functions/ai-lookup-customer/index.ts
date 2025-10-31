@@ -1,5 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { validateAgentToolRequest } from "shared/auth.ts";
+import { isFeatureEnabled } from "shared/feature-flags.ts";
 
 /**
  * AI Agent Tool: Lookup Customer
@@ -19,6 +21,11 @@ interface LookupCustomerResponse {
   error?: string;
 }
 
+const RESPONSE_HEADERS: HeadersInit = {
+  "Content-Type": "application/json",
+  "Access-Control-Allow-Origin": "*",
+};
+
 serve(async (req: Request): Promise<Response> => {
   const correlationId = crypto.randomUUID();
 
@@ -30,7 +37,8 @@ serve(async (req: Request): Promise<Response> => {
         headers: {
           "Access-Control-Allow-Origin": "*",
           "Access-Control-Allow-Methods": "POST, OPTIONS",
-          "Access-Control-Allow-Headers": "Content-Type, Authorization",
+          "Access-Control-Allow-Headers":
+            "Content-Type, Authorization, X-Agent-JWT, X-Agent-Token, X-Admin-Token",
         },
       });
     }
@@ -38,7 +46,41 @@ serve(async (req: Request): Promise<Response> => {
     if (req.method !== "POST") {
       return new Response(
         JSON.stringify({ success: false, error: "Method not allowed" }),
-        { status: 405, headers: { "Content-Type": "application/json" } }
+        { status: 405, headers: RESPONSE_HEADERS }
+      );
+    }
+
+    if (!isFeatureEnabled("agent.vouchers")) {
+      console.warn(
+        JSON.stringify({
+          event: "ai.tool.lookup_customer.feature_disabled",
+          correlation_id: correlationId,
+        }),
+      );
+      return new Response(
+        JSON.stringify({ success: false, error: "Feature disabled" }),
+        { status: 403, headers: RESPONSE_HEADERS },
+      );
+    }
+
+    const authCheck = validateAgentToolRequest(req);
+    if (!authCheck.ok) {
+      const reason = authCheck.reason === "missing_token"
+        ? "agent_voucher_token_not_configured"
+        : "unauthorized";
+      console.error(
+        JSON.stringify({
+          event: "ai.tool.lookup_customer.auth_failed",
+          correlation_id: correlationId,
+          reason,
+        }),
+      );
+      return new Response(
+        JSON.stringify({ success: false, error: reason, exists: false, msisdn: "" }),
+        {
+          status: authCheck.reason === "missing_token" ? 500 : 401,
+          headers: RESPONSE_HEADERS,
+        },
       );
     }
 
@@ -49,7 +91,7 @@ serve(async (req: Request): Promise<Response> => {
     if (!msisdn || typeof msisdn !== "string") {
       return new Response(
         JSON.stringify({ success: false, error: "Invalid msisdn parameter" }),
-        { status: 400, headers: { "Content-Type": "application/json" } }
+        { status: 400, headers: RESPONSE_HEADERS }
       );
     }
 
@@ -91,7 +133,7 @@ serve(async (req: Request): Promise<Response> => {
           msisdn,
           error: error.message,
         } as LookupCustomerResponse),
-        { status: 200, headers: { "Content-Type": "application/json" } }
+        { status: 200, headers: RESPONSE_HEADERS }
       );
     }
 
@@ -116,10 +158,7 @@ serve(async (req: Request): Promise<Response> => {
 
     return new Response(JSON.stringify(response), {
       status: 200,
-      headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
-      },
+      headers: RESPONSE_HEADERS,
     });
   } catch (err) {
     console.error(
@@ -137,7 +176,7 @@ serve(async (req: Request): Promise<Response> => {
         msisdn: "",
         error: "Internal server error",
       } as LookupCustomerResponse),
-      { status: 500, headers: { "Content-Type": "application/json" } }
+      { status: 500, headers: RESPONSE_HEADERS }
     );
   }
 });
