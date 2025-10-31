@@ -51,7 +51,8 @@ serve(async (req: Request): Promise<Response> => {
         headers: {
           "Access-Control-Allow-Origin": "*",
           "Access-Control-Allow-Methods": "POST, OPTIONS",
-          "Access-Control-Allow-Headers": "Content-Type, Authorization",
+          "Access-Control-Allow-Headers":
+            "Content-Type, Authorization, X-Agent-JWT, X-Agent-Token, X-Admin-Token",
         },
       });
     }

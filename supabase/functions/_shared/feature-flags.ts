@@ -15,6 +15,7 @@
 export type FeatureFlag =
   | "agent.chat"
   | "agent.webSearch"
+  | "agent.vouchers"
   | "agent.collectPayment"
   | "agent.warmTransfer"
   | "wallet.service"
@@ -35,6 +36,7 @@ export type FeatureFlag =
 const DEFAULT_FLAGS: Record<FeatureFlag, boolean> = {
   "agent.chat": true,
   "agent.webSearch": false,
+  "agent.vouchers": false,
   "agent.collectPayment": false,
   "agent.warmTransfer": false,
   "wallet.service": false,
