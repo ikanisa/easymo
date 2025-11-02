@@ -1,0 +1,109 @@
+name: Preview deployments
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches:
+      - main
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  deployments: write
+
+jobs:
+  vercel-preview:
+    name: Vercel preview
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    if: ${{ github.event.pull_request.head.repo.full_name == github.repository &&
+      secrets.VERCEL_TOKEN != '' &&
+      secrets.VERCEL_ORG_ID != '' &&
+      secrets.VERCEL_PROJECT_ID != '' }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.1.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Pull Vercel environment
+        run: >-
+          npx vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+      - name: Build project
+        run: pnpm build
+
+      - name: Deploy preview
+        run: >-
+          npx vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+  supabase-preview:
+    name: Supabase Functions preview
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    if: ${{ github.event.pull_request.head.repo.full_name == github.repository &&
+      secrets.SUPABASE_ACCESS_TOKEN != '' &&
+      secrets.SUPABASE_PROJECT_REF != '' }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Write preview env file
+        shell: bash
+        run: |
+          if [[ -z "${SUPABASE_PREVIEW_ENV_FILE}" ]]; then
+            echo "No Supabase preview env secret provided. Skipping." >&2
+            exit 0
+          fi
+          mkdir -p supabase/.tmp
+          cat <<'ENV' > supabase/.tmp/preview.env
+${SUPABASE_PREVIEW_ENV_FILE}
+ENV
+        env:
+          SUPABASE_PREVIEW_ENV_FILE: ${{ secrets.SUPABASE_PREVIEW_ENV_FILE }}
+
+      - name: Deploy functions (preview)
+        if: ${{ success() && secrets.SUPABASE_PREVIEW_ENV_FILE != '' }}
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          supabase functions deploy admin-settings admin-stats admin-users admin-trips admin-subscriptions simulator \
+            --project-ref ${{ secrets.SUPABASE_PROJECT_REF }} \
+            --env-file supabase/.tmp/preview.env \
+            --no-verify-jwt
+
+      - name: Verify observability hooks (staging env)
+        if: ${{ secrets.STAGING_ENV_FILE != '' }}
+        run: |
+          mkdir -p infra/ci/.tmp
+          cat <<'ENV' > infra/ci/.tmp/staging.env
+${STAGING_ENV_FILE}
+ENV
+          node scripts/verify-observability-hooks.mjs infra/ci/.tmp/staging.env
+        env:
+          STAGING_ENV_FILE: ${{ secrets.STAGING_ENV_FILE }}
