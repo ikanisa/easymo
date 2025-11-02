@@ -53,6 +53,9 @@ jobs:
       - name: Assert no service role in client env
         run: node scripts/assert-no-service-role-in-client.mjs
 
+      - name: Check formatting
+        run: pnpm format:check
+
       - name: Run lint
         run: pnpm lint
 
