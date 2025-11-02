@@ -1,0 +1,30 @@
+{
+  "name": "@easymo/app-apis",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "test": "vitest run",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "next": "^14.2.3",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "zod": "^3.25.76",
+    "@supabase/supabase-js": "^2.76.1",
+    "@easymo/clients": "workspace:*",
+    "lru-cache": "^11.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.18.12",
+    "@types/react": "^18.3.23",
+    "@types/react-dom": "^18.3.7",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.4"
+  }
+}
