@@ -1,43 +1,40 @@
-import js from "@eslint/js";
-import globals from "globals";
-import reactHooks from "eslint-plugin-react-hooks";
-import reactRefresh from "eslint-plugin-react-refresh";
-import tseslint from "typescript-eslint";
+import baseConfig from "@easymo/config/eslint/base";
+import nodeConfig from "@easymo/config/eslint/node";
+import reactConfig from "@easymo/config/eslint/react";
 
-export default tseslint.config(
-  { ignores: ["dist", "**/dist/**", "easymo/**", "supabase/**", ".next/**", "admin-app/.next/**"] },
+export default [
+  ...baseConfig,
   {
-    extends: [js.configs.recommended, ...tseslint.configs.recommended],
-    files: ["**/*.{ts,tsx}"],
-    languageOptions: {
-      ecmaVersion: 2020,
-      globals: globals.browser,
-    },
-    plugins: {
-      "react-hooks": reactHooks,
-      "react-refresh": reactRefresh,
-    },
-    rules: {
-      ...reactHooks.configs.recommended.rules,
-      "react-hooks/rules-of-hooks": "warn",
-      "react-refresh/only-export-components": "off",
-      "@typescript-eslint/no-unused-vars": "off",
-      "@typescript-eslint/no-explicit-any": "off",
-      "@typescript-eslint/no-non-null-assertion": "off",
-      "@typescript-eslint/no-inferrable-types": "off",
-      "@typescript-eslint/array-type": "off",
-      "@typescript-eslint/consistent-type-definitions": "off",
-      "@typescript-eslint/no-empty-object-type": "off",
-      "@typescript-eslint/no-require-imports": "off",
-      "prefer-const": "warn",
-      "no-console": ["warn", { allow: ["warn", "error"] }],
-    },
+    ...reactConfig[2],
+    files: [
+      "admin-app/**/*.{js,jsx,ts,tsx}",
+      "src/**/*.{js,jsx,ts,tsx}",
+      "station-app/**/*.{js,jsx,ts,tsx}",
+    ],
   },
   {
-    files: ["apps/api/**/*.ts"],
-    languageOptions: {
-      ecmaVersion: 2020,
-      globals: globals.node,
-    },
+    ...reactConfig[3],
+    files: [
+      "admin-app/**/*.{test,spec}.{js,jsx,ts,tsx}",
+      "src/**/*.{test,spec}.{js,jsx,ts,tsx}",
+      "station-app/**/*.{test,spec}.{js,jsx,ts,tsx}",
+    ],
   },
-);
+  {
+    ...nodeConfig[2],
+    files: [
+      "apps/api/**/*.{ts,js}",
+      "scripts/**/*.{ts,js}",
+      "packages/**/scripts/**/*.{ts,js}",
+      "tools/**/*.{ts,js}",
+    ],
+  },
+  {
+    ...nodeConfig[3],
+    files: [
+      "apps/api/**/*.{test,spec}.{ts,js}",
+      "tests/**/*.{ts,js}",
+      "packages/**/tests/**/*.{ts,js}",
+    ],
+  },
+];
