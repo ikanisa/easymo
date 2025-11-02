@@ -26,6 +26,15 @@
     "paths": {
       "@/*": [
         "./*"
+      ],
+      "@easymo/ui": [
+        "../packages/ui/src/index.ts"
+      ],
+      "@easymo/ui/*": [
+        "../packages/ui/src/*"
+      ],
+      "@easymo/ui/tokens": [
+        "../packages/ui/tokens/index.ts"
       ]
     },
     "plugins": [
