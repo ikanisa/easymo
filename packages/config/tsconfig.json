@@ -1,0 +1,13 @@
+{
+  "extends": "../../tsconfig.strict.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": ".",
+    "declaration": true,
+    "declarationMap": true,
+    "emitDeclarationOnly": false,
+    "moduleResolution": "Bundler"
+  },
+  "include": ["env.ts"],
+  "exclude": ["dist"]
+}

@@ -1,0 +1,12 @@
+{
+  "extends": "../../../tsconfig.strict.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "outDir": "dist",
+    "declaration": true,
+    "declarationMap": true,
+    "moduleResolution": "Bundler"
+  },
+  "include": ["src/**/*.ts", "tests/**/*.ts", "vitest.config.ts"],
+  "exclude": ["dist"]
+}
