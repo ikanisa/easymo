@@ -15,9 +15,12 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const uiKitEnabled = (process.env.NEXT_PUBLIC_UI_V2_ENABLED ?? "false")
+    .toLowerCase()
+    .trim() === "true";
   return (
     <html lang="en">
-      <body>
+      <body data-ui-theme={uiKitEnabled ? "v2" : undefined}>
         <QueryProvider>
           <a className="skip-link" href="#main-content">
             Skip to main content

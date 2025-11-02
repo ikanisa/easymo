@@ -4,12 +4,24 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  KpiWidget,
+  TrendAreaChart,
+  DataTable,
+  TableHeader,
+  TableRow,
+  TableHead,
+  TableBody,
+  TableCell,
+  TableCaption,
+} from "@easymo/ui";
 import { Users, Route, CreditCard, MessageCircle, TrendingUp, ExternalLink, RefreshCw, Info } from "lucide-react";
 import { AdminAPI } from "@/lib/api";
 import { SUPABASE_LINKS, HAS_SUPABASE_PROJECT } from "@/lib/api-constants";
 import type { AdminStats } from "@/lib/types";
 
 export default function Dashboard() {
+  const uiKitEnabled = String(import.meta.env.VITE_UI_V2_ENABLED ?? "false").toLowerCase() === "true";
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
 
   const { 
@@ -118,8 +130,8 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-      <PageHeader 
-        title="Dashboard" 
+      <PageHeader
+        title="Dashboard"
         description="WhatsApp Mobility Platform Overview"
         action={{
           label: isLoading ? "Refreshing..." : "Refresh",
@@ -128,6 +140,54 @@ export default function Dashboard() {
           icon: RefreshCw,
         }}
       />
+
+      {uiKitEnabled && (
+        <div className="rounded-3xl border border-border/40 bg-background/50 p-6 shadow-lg">
+          <div className="flex flex-col gap-2">
+            <h2 className="text-lg font-semibold">UI kit preview</h2>
+            <p className="text-sm text-muted-foreground">
+              The new `@easymo/ui` primitives render below. Toggle with <code>VITE_UI_V2_ENABLED=true</code> to verify styling.
+            </p>
+          </div>
+          <div className="mt-4 grid gap-4 md:grid-cols-3">
+            <KpiWidget label="Active riders" value="312" changeLabel="+5%" trend="up" context="Past 24h" />
+            <KpiWidget label="Driver CSAT" value="4.6" changeLabel="Flat" trend="flat" context="Weekly average" />
+            <KpiWidget label="Escalations" value="8" changeLabel="-2" trend="down" context="Open incidents" />
+          </div>
+          <div className="mt-6 grid gap-6 lg:grid-cols-[320px_1fr]">
+            <DataTable compact>
+              <TableHeader>
+                <TableRow>
+                  <TableHead scope="col">Vendor</TableHead>
+                  <TableHead scope="col">Status</TableHead>
+                  <TableHead scope="col">SLA</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                <TableRow>
+                  <TableCell>Nyamirambo Riders</TableCell>
+                  <TableCell>Monitoring</TableCell>
+                  <TableCell>92%</TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell>Kimironko Logistics</TableCell>
+                  <TableCell>Active</TableCell>
+                  <TableCell>98%</TableCell>
+                </TableRow>
+              </TableBody>
+              <TableCaption>Operational snapshot shared with the copilot.</TableCaption>
+            </DataTable>
+            <TrendAreaChart
+              data={Array.from({ length: 8 }).map((_, index) => ({
+                name: `Day ${index + 1}`,
+                value: Math.round(40 + Math.sin(index) * 12 + index * 3),
+                secondaryValue: Math.round(32 + Math.cos(index) * 8 + index * 2),
+              }))}
+              ariaLabel="Dispatch throughput vs redemptions"
+            />
+          </div>
+        </div>
+      )}
 
       {/* Launch Mode Banner */}
       {settings && (

@@ -1,3 +1,5 @@
+@import "@easymo/ui/styles.css";
+
 :root {
   --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-mono:
@@ -84,6 +86,36 @@
   --gradient-secondary-end: #f472b6;
   --gradient-surface-start: rgba(15, 23, 42, 0.35);
   --gradient-surface-end: rgba(30, 41, 59, 0.18);
+}
+
+:root[data-ui-theme='v2'],
+body[data-ui-theme='v2'] {
+  --font-sans: var(--ui-typography-families-sans);
+  --font-mono: var(--ui-typography-families-mono);
+
+  --color-background: var(--ui-color-background);
+  --color-foreground: var(--ui-color-foreground);
+  --color-surface: var(--ui-color-surface);
+  --color-surface-muted: var(--ui-color-surface-muted);
+  --color-border: var(--ui-color-border);
+  --color-accent: var(--ui-color-accent);
+  --color-accent-foreground: var(--ui-color-accent-foreground);
+  --color-success: var(--ui-color-success);
+  --color-warning: var(--ui-color-warning);
+  --color-danger: var(--ui-color-danger);
+  --color-muted: var(--ui-color-muted);
+  --color-outline: var(--ui-color-outline);
+
+  --gradient-primary-start: var(--ui-color-accent);
+  --gradient-primary-end: color-mix(in srgb, var(--ui-color-accent) 55%, #22d3ee);
+  --gradient-secondary-start: color-mix(in srgb, #6366f1 70%, var(--ui-color-accent) 30%);
+  --gradient-secondary-end: color-mix(in srgb, #ec4899 80%, var(--ui-color-accent) 20%);
+  --gradient-surface-start: rgba(9, 16, 34, 0.28);
+  --gradient-surface-end: rgba(9, 16, 34, 0.12);
+
+  --elevation-high: 0 46px 120px rgba(7, 11, 26, 0.38);
+  --elevation-medium: var(--ui-glass-shadow);
+  --elevation-low: 0 12px 30px rgba(7, 11, 26, 0.22);
 }
 
 body {
