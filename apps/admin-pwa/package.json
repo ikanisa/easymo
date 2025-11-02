@@ -1,0 +1,12 @@
+{
+  "name": "@easymo/admin-pwa",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "echo 'admin-pwa placeholder build'",
+    "dev": "echo 'admin-pwa placeholder dev server'",
+    "lint": "echo 'admin-pwa lint placeholder'",
+    "type-check": "tsc -p tsconfig.json --noEmit"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "name": "@easymo/app-apis",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "echo 'app-apis placeholder build'",
+    "dev": "echo 'app-apis placeholder dev server'",
+    "lint": "echo 'app-apis lint placeholder'",
+    "type-check": "tsc -p tsconfig.json --noEmit"
+  }
+}

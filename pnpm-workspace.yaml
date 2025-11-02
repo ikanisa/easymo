@@ -1,6 +1,14 @@
 packages:
   - "services/*"
   - "packages/*"
+  # Explicit strangler workspaces (keeps tooling aware while directories are empty)
+  - "packages/config"
+  - "packages/ui"
+  - "packages/clients"
+  - "packages/utils"
   - "apps/*"
+  - "apps/admin-pwa"
+  - "apps/router-fn"
+  - "apps/app-apis"
   - "admin-app"
   - "ai"

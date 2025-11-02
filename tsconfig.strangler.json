@@ -1,0 +1,12 @@
+{
+  "files": [],
+  "references": [
+    { "path": "./apps/admin-pwa/tsconfig.json" },
+    { "path": "./apps/router-fn/tsconfig.json" },
+    { "path": "./apps/app-apis/tsconfig.json" },
+    { "path": "./packages/config/tsconfig.json" },
+    { "path": "./packages/ui/tsconfig.json" },
+    { "path": "./packages/clients/tsconfig.json" },
+    { "path": "./packages/utils/tsconfig.json" }
+  ]
+}
