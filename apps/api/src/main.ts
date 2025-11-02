@@ -1,5 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
+import { logger } from '@easymo/commons';
 import { AppModule } from './app.module';
 import { RawBodyMiddleware } from './common/raw-body.middleware';
 import { RequestLoggerMiddleware } from './common/request-logger.middleware';
@@ -18,8 +19,12 @@ async function bootstrap() {
   );
   app.enableCors({ origin: true, credentials: true });
   await app.listen(env.port);
-  // eslint-disable-next-line no-console
-  console.log(`Voice API listening on ${env.port}`);
+  logger.info({
+    event: 'voice-api.startup',
+    port: env.port,
+    target: 'api-router',
+    status: 'ok',
+  });
 }
 
 bootstrap();
