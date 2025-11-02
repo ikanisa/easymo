@@ -5,6 +5,10 @@
 supabase/functions/wa-webhook/ @ikanisa @jeanbosco
 supabase/functions/ @ikanisa @jeanbosco
 supabase/migrations/ @ikanisa @jeanbosco
+infra/ci/ @ikanisa @jeanbosco
+docs/ @ikanisa @jeanbosco
+scripts/check-remote-drift.mjs @ikanisa @jeanbosco
+scripts/verify-observability-hooks.mjs @ikanisa @jeanbosco
 
 # Policy docs
 ADD_ONLY_RULES.md @ikanisa @jeanbosco

@@ -1,405 +1,181 @@
-# Data Map & Privacy Documentation
+# Mobility Data Map & Retention Guide
 
-## Overview
+This document inventories the personally identifiable information (PII) handled by
+mobility-oriented Supabase tables, highlights retention commitments, and documents
+cleanup automations that enforce the stated policies.
 
-This document maps all Personally Identifiable Information (PII) and sensitive data stored in the easyMO platform, along with retention policies, access controls, and privacy safeguards.
+## Contents
 
-## Table of Contents
-
-1. [PII Data Inventory](#pii-data-inventory)
-2. [Retention Policies](#retention-policies)
-3. [Access Controls](#access-controls)
-4. [Data Masking & Anonymization](#data-masking--anonymization)
-5. [User Rights (GDPR-lite)](#user-rights-gdpr-lite)
-6. [Compliance Checklist](#compliance-checklist)
+1. [PII Inventory](#pii-inventory)
+2. [Access Controls](#access-controls)
+3. [Retention & Cleanup](#retention--cleanup)
+4. [Service Jobs](#service-jobs)
 
 ---
 
-## PII Data Inventory
+## PII Inventory
 
-### User Profiles
+### `public.user_favorites`
 
-**Table**: `profiles`
+User shortcuts for home/work pickups.
 
-| Field | Type | PII Level | Purpose | Retention |
-|-------|------|-----------|---------|-----------|
-| `id` | UUID | Low | User identifier | Permanent |
-| `msisdn` | Phone | **High** | User contact | Account lifetime |
-| `name` | Text | **High** | User identification | Account lifetime |
-| `email` | Email | **High** | Optional contact | Account lifetime |
-| `locale` | Text | Low | UI language preference | Account lifetime |
-| `role` | Enum | Low | Access level | Account lifetime |
-| `vehicle_plate` | Text | **Medium** | Driver identification | Account lifetime |
-| `created_at` | Timestamp | Low | Account creation | Permanent |
-| `updated_at` | Timestamp | Low | Last update | Permanent |
+| Column | Type | PII Classification | Notes |
+| --- | --- | --- | --- |
+| `id` | UUID | Low | Synthetic identifier |
+| `user_id` | UUID (FK → `profiles.id`) | Medium | Links to passenger account |
+| `kind` | Text enum | Low | `home`, `work`, `school`, `other` |
+| `label` | Text | Medium | Friendly name displayed in UI |
+| `address` | Text | Medium | Optional user-provided description |
+| `geog` | Geography(Point, 4326) | **High** | Exact home/work coordinates |
+| `is_default` | Boolean | Low | Whether shortcut is used by default |
+| `created_at` / `updated_at` | Timestamptz | Low | Audit metadata |
 
-**Access**:
-- RLS: Users can only access own profile
-- Admin: Full read access via service role
-- API: Authenticated endpoint with rate limiting
+**PII considerations**
 
----
+- Coordinates reveal sensitive location data; never expose raw `geog` in logs.
+- Labels are limited to 120 characters to reduce accidental leakage.
 
-### User Favorites
+### `public.driver_parking`
 
-**Table**: `user_favorites`
+Driver-designated waiting areas used for dispatch matching.
 
-| Field | Type | PII Level | Purpose | Retention |
-|-------|------|-----------|---------|-----------|
-| `id` | UUID | Low | Record identifier | Permanent |
-| `user_id` | UUID | Low | Profile reference | Account lifetime |
-| `label` | Text | **Medium** | Location name (Home, Work) | Account lifetime |
-| `location` | Geography | **High** | GPS coordinates | Account lifetime |
-| `created_at` | Timestamp | Low | Creation time | Permanent |
+| Column | Type | PII | Notes |
+| --- | --- | --- | --- |
+| `id` | UUID | Low | Primary key |
+| `driver_id` | UUID | Medium | References driver profile |
+| `label` | Text | Low | Human readable label |
+| `geog` | Geography(Point, 4326) | **High** | Exact standby location |
+| `notes` | Text | Low | Optional description |
+| `active` | Boolean | Low | Soft toggle |
+| `created_at` / `updated_at` | Timestamptz | Low | Audit trail |
 
-**Access**:
-- RLS: `user_id = auth.uid()`
-- Admin: Read-only via service role
-- Purpose: Ride booking shortcuts
+### `public.driver_availability`
 
-**Privacy Notes**:
-- Locations reveal home/work addresses
-- Masked in logs (show only label, not coordinates)
+Weekly recurrence metadata for when a driver is available.
 
----
+| Column | Type | PII | Notes |
+| --- | --- | --- | --- |
+| `id` | UUID | Low | Primary key |
+| `driver_id` | UUID | Medium | References driver profile |
+| `parking_id` | UUID | Medium | Optional FK → `driver_parking` |
+| `days_of_week` | `int[]` | Low | Day numbers (`1`=Mon ... `7`=Sun) |
+| `start_time_local` / `end_time_local` | `time` | Low | Local window |
+| `timezone` | Text | Low | Defaults to `Africa/Kigali` |
+| `active` | Boolean | Low | Soft toggle |
+| `created_at` / `updated_at` | Timestamptz | Low | Audit trail |
 
-### Driver Parking Locations
+### `public.recurring_trips`
 
-**Table**: `driver_parking`
+Recurring ride intents leveraging saved favorites.
 
-| Field | Type | PII Level | Purpose | Retention |
-|-------|------|-----------|---------|-----------|
-| `id` | UUID | Low | Record identifier | Permanent |
-| `driver_id` | UUID | Low | Profile reference | Account lifetime |
-| `location` | Geography | **High** | Current parking spot | 90 days |
-| `notes` | Text | Low | Optional description | 90 days |
-| `created_at` | Timestamp | Low | Creation time | Permanent |
-| `expires_at` | Timestamp | Low | TTL | N/A |
+| Column | Type | PII | Notes |
+| --- | --- | --- | --- |
+| `id` | UUID | Low | Primary key |
+| `user_id` | UUID | Medium | References passenger profile |
+| `origin_favorite_id` / `dest_favorite_id` | UUID | **High** | References user favorites (location) |
+| `days_of_week` | `int[]` | Low | Execution pattern |
+| `time_local` | `time` | Low | Trigger time |
+| `timezone` | Text | Low | Local timezone |
+| `radius_km` | Numeric | Low | Matching radius |
+| `active` | Boolean | Low | Soft toggle |
+| `last_triggered_at` | Timestamptz | Low | Scheduler bookkeeping |
+| `created_at` / `updated_at` | Timestamptz | Low | Audit trail |
 
-**Access**:
-- RLS: `driver_id = auth.uid()`
-- Admin: Read-only for matching
-- Purpose: Driver-passenger matching
+### `public.deeplink_tokens`
 
-**Retention**:
-- Auto-expire after 90 days
-- Deleted on driver request
-- Purged on account deletion
+Short-lived authentication surrogates powering WhatsApp deeplinks.
 
----
+| Column | Type | PII | Notes |
+| --- | --- | --- | --- |
+| `id` | UUID | Low | Primary key |
+| `flow` | Text enum | Low | `insurance_attach`, `basket_open`, `generate_qr` |
+| `token` | Text | Medium | Signed opaque string |
+| `payload` | JSONB | Low | Flow-specific metadata (nonce injected) |
+| `msisdn_e164` | Text | **High** | Optional phone binding |
+| `expires_at` / `used_at` | Timestamptz | Low | TTL + consumption state |
+| `multi_use` | Boolean | Low | Multi-claim tokens for flows like QR |
+| `created_by` | UUID | Medium | Optional actor ID for auditing |
+| `resolved_count` | Integer | Low | Usage counter |
+| `last_resolved_at` | Timestamptz | Low | Last redemption time |
+| `metadata` | JSONB | Low | System annotations |
+| `created_at` | Timestamptz | Low | Creation timestamp |
 
-### Driver Availability
+### `public.deeplink_events`
 
-**Table**: `driver_availability`
+Immutable audit trail referencing `deeplink_tokens`.
 
-| Field | Type | PII Level | Purpose | Retention |
-|-------|------|-----------|---------|-----------|
-| `id` | UUID | Low | Record identifier | Permanent |
-| `driver_id` | UUID | Low | Profile reference | Account lifetime |
-| `available_from` | Timestamp | Low | Schedule start | 180 days |
-| `available_to` | Timestamp | Low | Schedule end | 180 days |
-| `recurrence` | JSONB | Low | Repeat pattern | 180 days |
-| `created_at` | Timestamp | Low | Creation time | Permanent |
+| Column | Type | PII | Notes |
+| --- | --- | --- | --- |
+| `id` | UUID | Low | Primary key |
+| `token_id` | UUID | Medium | FK → `deeplink_tokens.id` |
+| `event` | Text enum | Low | `issued`, `opened`, `expired`, `denied`, `completed` |
+| `actor_msisdn` | Text | **High** | Optional phone captured when resolved |
+| `meta` | JSONB | Low | Structured event context |
+| `created_at` | Timestamptz | Low | Event timestamp |
 
-**Access**:
-- RLS: `driver_id = auth.uid()`
-- Admin: Read-only for scheduling
-- Purpose: Recurring availability patterns
+### `public.router_logs`
 
-**Retention**:
-- Kept for 180 days after last recurrence
-- Deleted on driver request
+Observability ledger for the WhatsApp router. Sensitive snippets are truncated before insert.
 
----
-
-### Recurring Trips
-
-**Table**: `recurring_trips`
-
-| Field | Type | PII Level | Purpose | Retention |
-|-------|------|-----------|---------|-----------|
-| `id` | UUID | Low | Record identifier | Permanent |
-| `user_id` | UUID | Low | Profile reference | Account lifetime |
-| `origin` | Geography | **High** | Pickup location | Account lifetime |
-| `destination` | Geography | **High** | Dropoff location | Account lifetime |
-| `schedule` | JSONB | Low | Recurrence pattern | Account lifetime |
-| `is_active` | Boolean | Low | Enabled status | N/A |
-| `created_at` | Timestamp | Low | Creation time | Permanent |
-
-**Access**:
-- RLS: `user_id = auth.uid()`
-- Admin: Read-only for matching
-- Purpose: Scheduled ride requests
-
-**Privacy Notes**:
-- Origin/destination may reveal home/work
-- Masked in logs (city/region only)
-
----
-
-### Deeplink Tokens
-
-**Table**: `deeplink_tokens`
-
-| Field | Type | PII Level | Purpose | Retention |
-|-------|------|-----------|---------|-----------|
-| `id` | UUID | Low | Record identifier | 14 days |
-| `token` | Text | Low | Short code | 14 days |
-| `flow_type` | Enum | Low | Target flow | 14 days |
-| `msisdn` | Phone | **High** | Optional binding | 14 days |
-| `expires_at` | Timestamp | Low | TTL | N/A |
-| `created_at` | Timestamp | Low | Creation time | 14 days |
-| `resolved_count` | Integer | Low | Usage count | 14 days |
-| `last_resolved_at` | Timestamp | Low | Last use | 14 days |
-
-**Access**:
-- No public SELECT policy
-- Service role only (issue/resolve operations)
-- Purpose: Deep-link flows (insurance, basket, etc.)
-
-**Retention**:
-- Hard delete after 14 days
-- Purged by `data-retention` cron job
-
----
-
-### Router Logs
-
-**Table**: `router_logs`
-
-| Field | Type | PII Level | Purpose | Retention |
-|-------|------|-----------|---------|-----------|
-| `id` | UUID | Low | Record identifier | 90 days |
-| `message_id` | Text | Low | WhatsApp message ID | 90 days |
-| `text_snippet` | Text | **Medium** | Truncated message (500 chars) | 90 days |
-| `route_key` | Text | Low | Matched route | 90 days |
-| `status_code` | Text | Low | Processing status | 90 days |
-| `metadata` | JSONB | Low | Context data | 90 days |
-| `created_at` | Timestamp | Low | Log time | 90 days |
-
-**Access**:
-- Service role: Full read/write
-- Authenticated: Read-only (for debugging)
-- Purpose: Routing audit and analytics
-
-**Privacy**:
-- Text snippet truncated to 500 chars
-- Never log full messages with sensitive data
-- Masked MSISDN in metadata (show last 4 digits only)
-
-**Retention**:
-- Auto-delete after 90 days
-- Purged by `data-retention` cron job
-
----
-
-### WhatsApp Messages
-
-**Table**: `wa_messages` (if stored)
-
-| Field | Type | PII Level | Purpose | Retention |
-|-------|------|-----------|---------|-----------|
-| `id` | UUID | Low | Record identifier | 30 days |
-| `message_id` | Text | Low | WhatsApp message ID | 30 days |
-| `from_msisdn` | Phone | **High** | Sender | 30 days |
-| `to_msisdn` | Phone | **High** | Recipient | 30 days |
-| `message_type` | Enum | Low | Type (text, image, etc.) | 30 days |
-| `content` | JSONB | **High** | Message payload | 30 days |
-| `created_at` | Timestamp | Low | Sent/received time | 30 days |
-
-**Access**:
-- Service role only
-- Purpose: Conversation history, compliance
-
-**Retention**:
-- Delete after 30 days
-- Export on user request
-- Purged by `data-retention` cron job
-
----
-
-## Retention Policies
-
-### Automatic Deletion
-
-Implemented via `supabase/functions/data-retention/index.ts`:
-
-```typescript
-// Cron job runs daily at 02:00 UTC
-// Deletes expired records based on TTL
-
-await supabase.from("deeplink_tokens")
-  .delete()
-  .lt("expires_at", new Date().toISOString());
-
-await supabase.from("router_logs")
-  .delete()
-  .lt("created_at", new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString());
-
-await supabase.from("wa_messages")
-  .delete()
-  .lt("created_at", new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString());
-```
-
-### Retention Schedule
-
-| Data Type | Retention Period | Deletion Method |
-|-----------|------------------|-----------------|
-| Deeplink tokens | 14 days | Auto-delete by cron |
-| Router logs | 90 days | Auto-delete by cron |
-| WA messages | 30 days | Auto-delete by cron |
-| Driver parking | 90 days | Auto-expire field |
-| Driver availability | 180 days | Manual cleanup |
-| User favorites | Account lifetime | On account deletion |
-| Recurring trips | Account lifetime | On account deletion |
-| User profiles | Account lifetime + 1 year | Manual deletion |
+| Column | Type | PII | Notes |
+| --- | --- | --- | --- |
+| `id` | UUID | Low | Primary key |
+| `message_id` | Text | Low | WhatsApp message identifier |
+| `text_snippet` | Text | Medium | First 500 chars of inbound text |
+| `route_key` | Text | Low | Matched handler key |
+| `status_code` | Text | Low | e.g. `routed`, `filtered`, `error` |
+| `metadata` | JSONB | Low | Parsed routing context (keyword, latency, etc.) |
+| `created_at` | Timestamptz | Low | Insert timestamp |
 
 ---
 
 ## Access Controls
 
-### Role-Based Access
+All tables participate in Supabase row-level security (RLS) with forced enforcement:
 
-| Role | Access Level | Tables |
-|------|--------------|--------|
-| `anon` | None | None |
-| `authenticated` | Own data only | profiles, user_favorites, driver_parking, driver_availability, recurring_trips |
-| `service_role` | Full access | All tables |
-| `admin` | Read-only (via service role) | All tables via Admin Panel |
+- **Owner-only mutations**: `user_favorites`, `driver_parking`, `driver_availability`, and
+  `recurring_trips` grant `authenticated` users access only when `auth.uid()` matches the
+  owning foreign key. Every table also exposes a `service_role` policy for automation.
+- **Service role only**: `deeplink_tokens` and `deeplink_events` are fully managed by the
+  backend service. Authenticated callers only receive read access to tokens they created.
+- **Operational visibility**: `router_logs` permit `service_role` reads/writes and
+  authenticated read-only access for support dashboards.
 
-### API Endpoints
-
-| Endpoint | Auth Required | Rate Limit | Purpose |
-|----------|---------------|------------|---------|
-| `/wa-router` | Signature verification | None | WhatsApp webhook |
-| `/deeplink-resolver` | None | 10/min per IP | Deep-link resolution |
-| `/admin-*` | Admin token | 100/min | Admin operations |
-| `/flow-exchange` | Session token | 20/min | Flow execution |
+Policies are codified in `infra/supabase/policies/20260214090500_mobility_rls.sql` and
+mirrored into Supabase migrations so that `latest_schema.sql` stays authoritative.
 
 ---
 
-## Data Masking & Anonymization
+## Retention & Cleanup
 
-### Log Masking
+| Dataset | Default Retention | Cleanup Mechanism |
+| --- | --- | --- |
+| `user_favorites` | Account lifetime | Hard-deleted when passenger profile is removed. |
+| `driver_parking` | Account lifetime | Cleared on driver deletion. |
+| `driver_availability` | Account lifetime | Scheduler resets windows when a driver is archived. |
+| `recurring_trips` | Account lifetime | Scheduler disables (`active = false`) after 90 days of inactivity; removed on user deletion. |
+| `deeplink_tokens` | 14 days | Purged by the `data-retention` edge function (see below). |
+| `deeplink_events` | 30 days | Same retention worker cascades delete via FK. |
+| `router_logs` | 90 days | `data-retention` function prunes records older than policy window. |
 
-All logs mask PII using the following rules:
-
-```typescript
-function maskMSISDN(msisdn: string): string {
-  // Show only last 4 digits: +250788123456 → ****3456
-  return msisdn.slice(0, -4).replace(/./g, "*") + msisdn.slice(-4);
-}
-
-function maskLocation(geog: { lat: number; lon: number }): string {
-  // Show only city/region, not exact coordinates
-  return `~${Math.floor(geog.lat)}, ${Math.floor(geog.lon)}`;
-}
-
-function maskToken(token: string): string {
-  // Show only first/last 2 chars: ABC123XYZ → AB****YZ
-  return token.slice(0, 2) + "****" + token.slice(-2);
-}
-```
-
-### Anonymization
-
-For analytics and testing:
-
-```sql
--- Anonymize user data for analytics export
-SELECT
-  id,
-  'user_' || substring(md5(msisdn), 1, 8) AS anon_id,
-  'anon_' || id AS anon_name,
-  NULL AS msisdn,
-  locale,
-  created_at
-FROM profiles;
-```
+The retention guarantees align with privacy commitments documented in
+`DATA_MODEL_DELTA.md` and the public privacy notice.
 
 ---
 
-## User Rights (GDPR-lite)
+## Service Jobs
 
-### Right to Access
+| Job | Location | Schedule | Responsibilities |
+| --- | --- | --- | --- |
+| `data-retention` | `supabase/functions/data-retention` | Hourly | Deletes expired deeplink tokens/events, truncates router logs older than 90 days, and prunes other transient artefacts. |
+| `recurring-trips-scheduler` | `supabase/functions/recurring-trips-scheduler` | 5 min | Evaluates active `recurring_trips` rows and creates trip intents; respects `active = false` and updates `last_triggered_at`. |
+| `availability-refresh` | `supabase/functions/availability-refresh` | Hourly | Syncs driver status back into `driver_availability` when remote systems change.
 
-Users can request their data via:
-1. **Admin Panel**: Self-service export (future)
-2. **API Endpoint**: `/api/data-export?user_id={id}`
-3. **Support Email**: Manual export by admin
-
-**Export Format**: JSON with all user data.
-
-### Right to Deletion
-
-Users can request account deletion:
-1. **In-App**: Settings → Delete Account
-2. **WhatsApp**: Send "DELETE MY ACCOUNT"
-3. **Support Email**: Manual deletion by admin
-
-**Deletion Process**:
-- Soft delete: Mark `deleted_at` timestamp
-- Grace period: 30 days (allow undo)
-- Hard delete: Purge all data after grace period
-
-**Cascade Delete**:
-```sql
--- On user deletion, cascade to related tables
-DELETE FROM user_favorites WHERE user_id = :user_id;
-DELETE FROM recurring_trips WHERE user_id = :user_id;
-DELETE FROM driver_parking WHERE driver_id = :user_id;
-DELETE FROM driver_availability WHERE driver_id = :user_id;
--- Finally delete profile
-DELETE FROM profiles WHERE id = :user_id;
-```
-
-### Right to Rectification
-
-Users can update their data via:
-1. **In-App**: Profile settings
-2. **WhatsApp**: Send "UPDATE MY {field}"
-3. **Admin Panel**: Admin can update on behalf
+Each job runs with the Supabase `service_role` key so RLS bypass policies apply where
+required. Logs generated by these jobs are retained in `router_logs` for 90 days,
+providing end-to-end traceability for privacy audits.
 
 ---
 
-## Compliance Checklist
-
-### Pre-Launch
-
-- [x] PII inventory documented
-- [x] Retention policies defined
-- [x] RLS policies enabled on all tables
-- [x] Logs mask sensitive data
-- [ ] Data export endpoint implemented
-- [ ] Account deletion flow implemented
-- [ ] Privacy policy published
-
-### Ongoing
-
-- [ ] Quarterly data audit
-- [ ] Annual privacy policy review
-- [ ] Retention policy enforcement monitoring
-- [ ] User access request handling (SLA: 7 days)
-- [ ] Deletion request handling (SLA: 30 days)
-
-### Regulatory
-
-- [ ] Rwanda Data Protection Law compliance
-- [ ] GDPR compliance (if applicable)
-- [ ] Consent collection for data processing
-- [ ] Third-party data processor agreements (Meta, Twilio, OpenAI)
-
----
-
-## References
-
-- [Rwanda Data Protection Law](https://risa.rw/data-protection/)
-- [GDPR Guidelines](https://gdpr.eu/)
-- [WhatsApp Business Data Policies](https://www.whatsapp.com/legal/business-policy)
-- [Supabase Security Best Practices](https://supabase.com/docs/guides/platform/security)
-
----
-
-**Last Updated**: 2025-10-28  
-**Owner**: easyMO Privacy & Compliance Team  
-**Review Cycle**: Quarterly
+**Questions?** Reach out in `#mobility-platform` or consult the retention runbook in
+`ROLLBACK_PLAYBOOK.md` for emergency data takedowns.
