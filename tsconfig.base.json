@@ -13,7 +13,15 @@
     "baseUrl": ".",
     "paths": {
       "@va/shared": ["packages/shared/src/index.ts"],
-      "@va/shared/*": ["packages/shared/src/*"]
+      "@va/shared/*": ["packages/shared/src/*"],
+      "@easymo/ui": ["packages/ui/src/index.ts"],
+      "@easymo/ui/*": ["packages/ui/src/*"],
+      "@easymo/clients": ["packages/clients/src/index.ts"],
+      "@easymo/clients/*": ["packages/clients/src/*"],
+      "@easymo/config": ["packages/config/src/index.ts"],
+      "@easymo/config/*": ["packages/config/src/*"],
+      "@easymo/utils": ["packages/utils/src/index.ts"],
+      "@easymo/utils/*": ["packages/utils/src/*"]
     }
   }
 }

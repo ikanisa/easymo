@@ -46,6 +46,34 @@
 - Front-end errors bubble through toast notifications; enable Sentry by setting
   `SENTRY_DSN` and `SENTRY_ENVIRONMENT` in the environment file.
 
+### WhatsApp router operations
+- Apply router migrations in sequence:
+  ```bash
+  supabase db push --file supabase/migrations/20260127160000_router_keyword_map.sql
+  supabase db push --file supabase/migrations/20260127161000_router_logs.sql
+  supabase db push --file supabase/migrations/20260131120000_router_infrastructure.sql
+  ```
+- Destinations live in `public.router_destinations`. Ensure the `slug` matches
+  entries in the runtime allowlist (`ROUTER_DEST_ALLOWLIST`) and update the
+  `url` column for each environment.
+- Keyword-to-destination bindings resolve through the
+  `public.router_keyword_destinations` view (join of keyword map + destinations).
+  Use `SELECT * FROM public.router_keyword_destinations ORDER BY keyword;` to
+  confirm expected routes.
+- Idempotency, rate limiting, and telemetry tables (`router_idempotency`,
+  `router_rate_limits`, `router_telemetry`) should be monitored for growth. The
+  router edge function writes telemetry records for `message_duplicate`,
+  `message_rate_limited`, `keyword_unmatched`, `message_routed`, and
+  `downstream_error` events.
+- Deployment target now lives under `apps/router-fn`. Build and test locally via:
+  ```bash
+  deno test -A apps/router-fn/src
+  supabase functions deploy wa-router
+  ```
+- Confirm allowlist enforcement by verifying that the destination slug or host
+  exists in `ROUTER_DEST_ALLOWLIST`. Requests to non-allowlisted endpoints are
+  silently ignored and logged as unmatched.
+
 ## Support playbooks
 
 ### Simulator access denied

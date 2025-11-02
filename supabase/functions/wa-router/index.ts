@@ -1,5 +1,4 @@
-// WhatsApp Router Edge Function - Verifies signatures, normalizes payloads, and routes to destination URLs
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { handleRequest } from "../../../apps/router-fn/src/router.ts";
 
 const encoder = new TextEncoder();
 const WA_VERIFY_TOKEN = Deno.env.get("WA_VERIFY_TOKEN") ?? "";

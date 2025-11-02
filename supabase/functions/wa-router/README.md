@@ -1,15 +1,18 @@
 # WhatsApp Router Edge Function
 
-A lightweight edge function that serves as a single webhook endpoint for WhatsApp Business API. It verifies webhook signatures, normalizes incoming messages, and routes them to target application URLs based on keyword matching.
+A lightweight edge function that serves as a single webhook endpoint for the WhatsApp Business API. It verifies webhook signatures,
+normalizes incoming messages, and fans the payload out to downstream applications based on keyword rules stored in Supabase.
 
 ## Features
 
 - **Webhook Verification**: Handles GET requests for Meta's webhook verification challenge
 - **Signature Verification**: Validates `X-Hub-Signature-256` headers using HMAC SHA-256
 - **Message Normalization**: Extracts and normalizes WhatsApp message envelopes into a consistent format
-- **Keyword-Based Routing**: Routes messages to destination URLs based on detected keywords
-- **Structured Logging**: Logs all events with correlation IDs for traceability
-- **Error Resilience**: Always returns 200 to Meta to prevent retry storms
+- **Keyword-Based Routing**: Routes messages using the `router_keyword_destinations` view backed by Supabase tables
+- **Structured Logging**: Writes durable traces to `router_logs`, `router_telemetry`, and emits JSON console logs with correlation IDs
+- **Error Resilience**: Always returns 200 to Meta to prevent retry storms while recording downstream failures
+- **Idempotency & Rate Limiting**: Prevents signature replay via `router_idempotency` and throttles noisy senders using the
+  `router_enforce_rate_limit` function
 
 ## Environment Variables
 
@@ -17,33 +20,26 @@ A lightweight edge function that serves as a single webhook endpoint for WhatsAp
 
 - `WA_VERIFY_TOKEN`: Token used for webhook verification (GET requests)
 - `WA_APP_SECRET`: WhatsApp App Secret for signature verification
+- `SUPABASE_URL` & `SUPABASE_SERVICE_ROLE_KEY`: Required for database-backed routing, idempotency, rate limiting, and telemetry
 
-### Destination URLs
+### Routing & controls
 
-Configure one or more destination URLs for routing:
+- `ROUTER_ENABLED`: Optional feature flag (defaults to `true`). Set to `false` to gracefully disable routing.
+- `ROUTER_DEST_ALLOWLIST`: Comma-separated list of destination slugs or hostnames permitted to receive fan-out requests (e.g.
+  `insurance-primary,router.internal.local`).
+- `ROUTER_RATE_LIMIT_MAX_MESSAGES`: Maximum messages per sender per window (defaults to `20`).
+- `ROUTER_RATE_LIMIT_WINDOW_SECONDS`: Size of the rate-limit window in seconds (defaults to `60`).
+- `ROUTER_DEST_TIMEOUT_MS`: Downstream fetch timeout in milliseconds (defaults to `7000`).
+- `ROUTER_KEYWORD_CACHE_TTL_MS`: Keyword + destination cache TTL in milliseconds (defaults to `30000`).
 
-- `DEST_EASYMO_URL`: URL for "easymo" keyword
-- `DEST_INSURANCE_URL`: URL for "insurance" keyword
-- `DEST_BASKET_URL`: URL for "basket" or "baskets" keywords
-- `DEST_QR_URL`: URL for "qr" keyword
-- `DEST_DINE_URL`: URL for "dine" keyword
+## Keyword management
 
-## Routing Logic
+Keywords live in `public.router_keyword_map`. Each keyword resolves to a route key which maps to one or more active destinations in
+`public.router_destinations`. The read-optimized view `public.router_keyword_destinations` powers the edge function. Example query:
 
-The router extracts keywords from:
-
-1. **Text messages**: The message body
-2. **Interactive buttons**: The button ID or title
-3. **Interactive lists**: The list item ID
-4. **Media messages**: The caption text
-
-### Supported Keywords
-
-- `easymo` → Routes to `DEST_EASYMO_URL`
-- `insurance` → Routes to `DEST_INSURANCE_URL`
-- `basket` or `baskets` → Routes to `DEST_BASKET_URL`
-- `qr` → Routes to `DEST_QR_URL`
-- `dine` → Routes to `DEST_DINE_URL`
+```sql
+SELECT * FROM public.router_keyword_destinations ORDER BY keyword;
+```
 
 ## Payload Format
 
@@ -81,19 +77,19 @@ supabase functions deploy wa-router
 ```bash
 supabase secrets set WA_VERIFY_TOKEN=your_verify_token
 supabase secrets set WA_APP_SECRET=your_app_secret
-supabase secrets set DEST_EASYMO_URL=https://your-app.com/easymo
-supabase secrets set DEST_INSURANCE_URL=https://your-app.com/insurance
-supabase secrets set DEST_BASKET_URL=https://your-app.com/basket
-supabase secrets set DEST_QR_URL=https://your-app.com/qr
-supabase secrets set DEST_DINE_URL=https://your-app.com/dine
+supabase secrets set SUPABASE_URL=$SUPABASE_URL
+supabase secrets set SUPABASE_SERVICE_ROLE_KEY=$SUPABASE_SERVICE_ROLE_KEY
+supabase secrets set ROUTER_DEST_ALLOWLIST=insurance-primary,basket-primary,qr-primary,dine-primary,easymo-primary
+supabase secrets set ROUTER_RATE_LIMIT_MAX_MESSAGES=20
+supabase secrets set ROUTER_RATE_LIMIT_WINDOW_SECONDS=60
 ```
 
 ## Testing
 
-Run the test suite:
+Run the test suite (new implementation lives in `apps/router-fn` but the Supabase wrapper re-exports the handler):
 
 ```bash
-deno test --allow-env supabase/functions/wa-router/index.test.ts
+deno test -A apps/router-fn/src
 ```
 
 ## Webhook Configuration
@@ -130,13 +126,13 @@ All events are logged in structured JSON format with correlation IDs:
 - `SIGNATURE_VERIFIED`: Signature validation passed
 - `SIGNATURE_VERIFICATION_FAILED`: Signature validation failed
 - `PAYLOAD_NORMALIZED`: Messages extracted and normalized
-- `NO_MESSAGES_FOUND`: No messages in payload
-- `NO_ROUTE_FOUND`: No matching keyword found
-- `ROUTING_MESSAGE`: Message being routed
-- `ROUTE_COMPLETED`: Routing completed (with status/timing)
+- `NO_ROUTE_FOUND` / `keyword_unmatched`: No matching keyword or allowlist failure
+- `MESSAGE_ALREADY_PROCESSED`: Message dropped due to idempotency replay
+- `ROUTE_COMPLETED` & `downstream_error`: Downstream success/failure with response metadata
 - `REQUEST_COMPLETED`: Full request processing completed
 - `UNHANDLED_ERROR`: Unexpected error occurred
 
 ## Code Size
 
-This implementation is under 300 lines and uses only the Deno standard library (no external dependencies).
+The core implementation lives in `apps/router-fn/src`. The Supabase edge function simply re-exports the shared handler via
+`import { handleRequest } from "../../../apps/router-fn/src/router.ts";`.
