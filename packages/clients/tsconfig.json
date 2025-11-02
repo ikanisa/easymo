@@ -3,8 +3,9 @@
   "compilerOptions": {
     "rootDir": "src",
     "outDir": "dist",
-    "baseUrl": "./src",
-    "noEmit": true
+    "composite": true,
+    "strict": true,
+    "tsBuildInfoFile": "tsconfig.tsbuildinfo"
   },
-  "include": ["src/**/*"]
+  "include": ["src"]
 }

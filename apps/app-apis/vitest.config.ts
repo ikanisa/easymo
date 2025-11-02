@@ -1,18 +1,27 @@
-import { defineConfig } from 'vitest/config'
-import { fileURLToPath } from 'node:url'
-import { dirname, resolve } from 'node:path'
-
-const rootDir = dirname(fileURLToPath(import.meta.url))
+import { defineConfig } from "vitest/config";
+import { resolve } from "node:path";
 
 export default defineConfig({
-  resolve: {
-    alias: {
-      '@easymo/clients': resolve(rootDir, '../../packages/clients/src/index.ts')
-    }
-  },
   test: {
-    environment: 'node',
     globals: true,
-    include: ['tests/**/*.test.ts']
-  }
-})
+    environment: "node",
+    include: ["tests/**/*.test.ts"],
+    coverage: {
+      provider: "v8",
+      reporter: ["text", "lcov"],
+    },
+  },
+  resolve: {
+    alias: [
+      { find: "@app-apis/tests", replacement: resolve(__dirname, "tests") },
+      { find: "@app-apis/tests/", replacement: `${resolve(__dirname, "tests")}/` },
+      { find: "@app-apis", replacement: resolve(__dirname, "src") },
+      { find: "@app-apis/", replacement: `${resolve(__dirname, "src")}/` },
+      { find: "@easymo/clients", replacement: resolve(__dirname, "../../packages/clients/src") },
+      {
+        find: "@easymo/clients/",
+        replacement: `${resolve(__dirname, "../../packages/clients/src")}/`,
+      },
+    ],
+  },
+});

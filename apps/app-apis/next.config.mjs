@@ -1,16 +1,22 @@
-/** @type {import('next').NextConfig} */
-const nextConfig = {
+import { createRequire } from "module";
+
+const require = createRequire(import.meta.url);
+const { version: appVersion } = require("./package.json");
+
+const config = {
   reactStrictMode: true,
-  experimental: {
-    instrumentationHook: true
-  },
   eslint: {
-    ignoreDuringBuilds: true
+    ignoreDuringBuilds: true,
   },
   typescript: {
-    ignoreBuildErrors: false
+    ignoreBuildErrors: false,
   },
-  transpilePackages: ["@easymo/clients"]
-}
+  experimental: {
+    instrumentationHook: true,
+  },
+  env: {
+    APP_VERSION: appVersion,
+  },
+};
 
-export default nextConfig
+export default config;

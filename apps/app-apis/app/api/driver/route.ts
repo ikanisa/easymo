@@ -1,8 +1,1 @@
-import { createRouteHandler } from '../../../lib/handler'
-import { driverQuerySchema, getDriver } from '../../../domain/driver'
-
-export const GET = createRouteHandler({
-  featureFlag: 'driver',
-  schema: driverQuerySchema,
-  handler: getDriver
-})
+export { GET } from "@app-apis/domains/driver/handler";

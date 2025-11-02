@@ -14,9 +14,8 @@
     "paths": {
       "@va/shared": ["packages/shared/src/index.ts"],
       "@va/shared/*": ["packages/shared/src/*"],
-      "@easymo/ui": ["packages/ui/src/index.ts"],
-      "@easymo/ui/*": ["packages/ui/src/*"],
-      "@easymo/ui/tokens": ["packages/ui/tokens/index.ts"]
+      "@easymo/clients": ["packages/clients/src/index.ts"],
+      "@easymo/clients/*": ["packages/clients/src/*"]
     }
   }
 }
