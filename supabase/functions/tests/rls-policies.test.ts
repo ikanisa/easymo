@@ -76,6 +76,46 @@ Deno.test("core messaging tables have enforced RLS policies", async () => {
   }
 });
 
+Deno.test("mobility domain tables enforce owner policies", async () => {
+  const schema = await loadSchema();
+  const tables: Record<string, string[]> = {
+    user_favorites: [
+      "user_favorites_owner_rw",
+      "user_favorites_service_rw",
+    ],
+    driver_parking: [
+      "driver_parking_owner_rw",
+      "driver_parking_service_rw",
+    ],
+    driver_availability: [
+      "driver_availability_owner_rw",
+      "driver_availability_service_rw",
+    ],
+    recurring_trips: [
+      "recurring_trips_owner_rw",
+      "recurring_trips_service_rw",
+    ],
+    deeplink_tokens: [
+      "deeplink_tokens_service_rw",
+      "deeplink_tokens_service_ro",
+    ],
+    deeplink_events: [
+      "deeplink_events_service_rw",
+    ],
+    router_logs: [
+      "router_logs_service_rw",
+      "router_logs_authenticated_read",
+    ],
+  };
+
+  for (const [table, policies] of Object.entries(tables)) {
+    expectForceRls(schema, table);
+    for (const policy of policies) {
+      expectPolicy(schema, table, policy);
+    }
+  }
+});
+
 Deno.test("admin helpers exist for RLS evaluation", async () => {
   const schema = await loadSchema();
   for (const fn of [

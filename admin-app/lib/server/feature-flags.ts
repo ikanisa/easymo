@@ -1,6 +1,7 @@
 const FLAG_DEFAULTS: Record<string, boolean> = {
   'dualConstraintMatching.enabled': true,
   'basket.confirmation.enabled': true,
+  'ui.kit.enabled': false,
 };
 
 const FLAG_ENV_MAP: Record<string, string | undefined> = {
@@ -12,6 +13,10 @@ const FLAG_ENV_MAP: Record<string, string | undefined> = {
     process.env.BASKET_CONFIRMATION_ENABLED ??
     process.env.NEXT_PUBLIC_BASKET_CONFIRMATION_ENABLED ??
     process.env.FEATURE_FLAG_BASKET_CONFIRMATION_ENABLED,
+  'ui.kit.enabled':
+    process.env.UI_KIT_ENABLED ??
+    process.env.NEXT_PUBLIC_UI_KIT_ENABLED ??
+    process.env.FEATURE_FLAG_UI_KIT_ENABLED,
 };
 
 function parseBoolean(value: string | undefined): boolean | null {
