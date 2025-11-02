@@ -1,109 +1,87 @@
-name: Preview deployments
+name: Preview Deployments
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened]
     branches:
       - main
-  workflow_dispatch: {}
+  workflow_dispatch:
 
 permissions:
   contents: read
   deployments: write
+  id-token: write
 
 jobs:
-  vercel-preview:
-    name: Vercel preview
+  preview:
+    name: Deploy preview to Vercel and Supabase Functions
     runs-on: ubuntu-latest
-    timeout-minutes: 30
-    if: ${{ github.event.pull_request.head.repo.full_name == github.repository &&
-      secrets.VERCEL_TOKEN != '' &&
-      secrets.VERCEL_ORG_ID != '' &&
-      secrets.VERCEL_PROJECT_ID != '' }}
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_FUNCTIONS_PREVIEW_REF: ${{ secrets.SUPABASE_FUNCTIONS_PREVIEW_REF }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup pnpm
+      - name: Set up pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 10.1.0
+          version: 9
 
-      - name: Setup Node.js
+      - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'pnpm'
+          cache: pnpm
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Pull Vercel environment
-        run: >-
-          npx vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
-        env:
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-
-      - name: Build project
+      - name: Generate preview build
         run: pnpm build
 
-      - name: Deploy preview
-        run: >-
-          npx vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }}
-        env:
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      - name: Deploy Vercel preview
+        if: env.VERCEL_TOKEN != '' && env.VERCEL_ORG_ID != '' && env.VERCEL_PROJECT_ID != ''
+        id: vercel
+        uses: vercel/action@v3
+        with:
+          token: ${{ secrets.VERCEL_TOKEN }}
+          scope: ${{ secrets.VERCEL_ORG_ID }}
+          project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          working-directory: .
+          build-command: pnpm build
+          install-command: pnpm install --frozen-lockfile
+          vercel-args: --prebuilt --yes
+          github-comment: false
 
-  supabase-preview:
-    name: Supabase Functions preview
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    if: ${{ github.event.pull_request.head.repo.full_name == github.repository &&
-      secrets.SUPABASE_ACCESS_TOKEN != '' &&
-      secrets.SUPABASE_PROJECT_REF != '' }}
+      - name: Summarise Vercel preview URL
+        if: steps.vercel.outputs.preview-url != ''
+        run: |
+          echo "### Vercel Preview" >> "$GITHUB_STEP_SUMMARY"
+          echo "${{ steps.vercel.outputs.preview-url }}" >> "$GITHUB_STEP_SUMMARY"
 
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Install Supabase CLI
+      - name: Set up Supabase CLI
+        if: env.SUPABASE_ACCESS_TOKEN != '' && env.SUPABASE_FUNCTIONS_PREVIEW_REF != ''
         uses: supabase/setup-cli@v1
         with:
           version: latest
 
-      - name: Write preview env file
-        shell: bash
+      - name: Link Supabase preview project
+        if: env.SUPABASE_ACCESS_TOKEN != '' && env.SUPABASE_FUNCTIONS_PREVIEW_REF != ''
+        working-directory: supabase
         run: |
-          if [[ -z "${SUPABASE_PREVIEW_ENV_FILE}" ]]; then
-            echo "No Supabase preview env secret provided. Skipping." >&2
-            exit 0
-          fi
-          mkdir -p supabase/.tmp
-          cat <<'ENV' > supabase/.tmp/preview.env
-${SUPABASE_PREVIEW_ENV_FILE}
-ENV
-        env:
-          SUPABASE_PREVIEW_ENV_FILE: ${{ secrets.SUPABASE_PREVIEW_ENV_FILE }}
+          supabase link --project-ref "$SUPABASE_FUNCTIONS_PREVIEW_REF" --access-token "$SUPABASE_ACCESS_TOKEN"
 
-      - name: Deploy functions (preview)
-        if: ${{ success() && secrets.SUPABASE_PREVIEW_ENV_FILE != '' }}
-        env:
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      - name: Deploy Supabase functions to preview
+        if: env.SUPABASE_ACCESS_TOKEN != '' && env.SUPABASE_FUNCTIONS_PREVIEW_REF != ''
         run: |
-          supabase functions deploy admin-settings admin-stats admin-users admin-trips admin-subscriptions simulator \
-            --project-ref ${{ secrets.SUPABASE_PROJECT_REF }} \
-            --env-file supabase/.tmp/preview.env \
-            --no-verify-jwt
+          pnpm run functions:deploy
 
-      - name: Verify observability hooks (staging env)
-        if: ${{ secrets.STAGING_ENV_FILE != '' }}
+      - name: Summarise Supabase functions deployment
+        if: env.SUPABASE_ACCESS_TOKEN != '' && env.SUPABASE_FUNCTIONS_PREVIEW_REF != ''
         run: |
-          mkdir -p infra/ci/.tmp
-          cat <<'ENV' > infra/ci/.tmp/staging.env
-${STAGING_ENV_FILE}
-ENV
-          node scripts/verify-observability-hooks.mjs infra/ci/.tmp/staging.env
-        env:
-          STAGING_ENV_FILE: ${{ secrets.STAGING_ENV_FILE }}
+          echo "### Supabase Functions" >> "$GITHUB_STEP_SUMMARY"
+          echo "Linked project: $SUPABASE_FUNCTIONS_PREVIEW_REF" >> "$GITHUB_STEP_SUMMARY"

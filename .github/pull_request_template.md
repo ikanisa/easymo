@@ -8,9 +8,11 @@
 - [ ] `pnpm build`
 - [ ] Other (add commands run)
 
-## Deployment
-- [ ] Preview deployment link added in PR description (if applicable)
-- [ ] I confirm that any new environment variables are documented and populated in Supabase/Vercel env files (no plaintext secrets in git)
+## Deployment & Observability
+- [ ] Preview deployment link from Vercel is added to the PR description (if applicable)
+- [ ] Supabase migration drift report reviewed or noted as not applicable
+- [ ] Staging log drains and telemetry dashboards verified (link to dashboard or `N/A`)
+- [ ] Any new secrets are stored in environment files only (local `.env`, Supabase, Vercel) and documented in the repo templates
 
 ## Additional Context
 - _Call out migrations, feature flags, rollouts, or follow-up tasks._

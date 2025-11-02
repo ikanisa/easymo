@@ -12,3 +12,14 @@ scripts/verify-observability-hooks.mjs @ikanisa @jeanbosco
 
 # Policy docs
 ADD_ONLY_RULES.md @ikanisa @jeanbosco
+
+# Observability and CI ownership
+infra/ci/ @ikanisa @jeanbosco
+app/api/_lib/observability.ts @ikanisa @jeanbosco
+src/lib/observability/ @ikanisa @jeanbosco
+
+# Architecture and security documentation
+docs/architecture.md @ikanisa @jeanbosco
+docs/security.md @ikanisa @jeanbosco
+docs/runbook.md @ikanisa @jeanbosco
+docs/rollout.md @ikanisa @jeanbosco
