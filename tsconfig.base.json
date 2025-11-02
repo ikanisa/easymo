@@ -13,7 +13,9 @@
     "baseUrl": ".",
     "paths": {
       "@va/shared": ["packages/shared/src/index.ts"],
-      "@va/shared/*": ["packages/shared/src/*"]
+      "@va/shared/*": ["packages/shared/src/*"],
+      "@easymo/clients": ["packages/clients/src/index.ts"],
+      "@easymo/clients/*": ["packages/clients/src/*"]
     }
   }
 }

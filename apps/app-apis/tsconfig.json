@@ -1,0 +1,27 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "strict": true,
+    "moduleResolution": "Bundler",
+    "allowJs": false,
+    "esModuleInterop": true,
+    "types": ["node"],
+    "noEmit": true,
+    "baseUrl": ".",
+    "paths": {
+      "@easymo/app-apis/*": ["src/*"],
+      "@easymo/app-apis": ["src/index.ts"],
+      "@easymo/clients": ["../../packages/clients/src/index.ts"],
+      "@app-apis/*": ["src/*"]
+    }
+  },
+  "include": [
+    "next-env.d.ts",
+    "app/**/*.ts",
+    "app/**/*.tsx",
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "tests/**/*.ts"
+  ],
+  "exclude": ["node_modules"]
+}
