@@ -1,8 +1,6 @@
-# easyMO Local Hosting Deployment Guide
+# easyMO Deployment Guide
 
-This document describes the deployment workflow for the easyMO admin application when hosting locally. The application connects to GitHub and Supabase for source control and backend services. Execute the sections in order and re-run the steps as needed—each step is safe to repeat because it either updates configuration in place or verifies previously completed work.
-
-**Note:** This application is designed for local hosting. Previous Vercel deployment references have been removed.
+This document describes the deployment workflow for the easyMO admin application when hosting locally **and** on Vercel. The application connects to GitHub and Supabase for source control, preview deployments, and backend services. Execute the sections in order and re-run the steps as needed—each step is safe to repeat because it either updates configuration in place or verifies previously completed work.
 
 ## Operator Inputs (collect before executing changes)
 | Domain | Required details | Notes |
@@ -10,6 +8,7 @@ This document describes the deployment workflow for the easyMO admin application
 | **GitHub** | Organization / account name, repository name & visibility, default branch, required PR checks, whether to create a new repo or reuse `easymo`, code owners & review rules | Branch protection and Actions permissions require org admin rights. |
 | **Supabase** | Existing project reference ID or desired project name, region, preferred RLS baseline (on/off by default), need for Edge Functions, database migration / restore policy | Access to the Supabase dashboard is required to retrieve the anon/service keys. |
 | **Local Hosting** | Server specifications, domain/port configuration, SSL certificate setup, reverse proxy configuration (nginx, caddy, etc.) | Ensure adequate resources for running Next.js and related services. |
+| **Vercel** | Team name, project ID, preview/production domains, log drain destinations | Required for automated preview deployments and observability wiring. |
 | **Application** | Framework confirmation (Next.js 14), package manager (pnpm recommended), build command overrides (if any), Node.js runtime (18+) | `admin-app` contains the Next.js source. |
 | **Compliance & Ops** | OSS license (e.g., MIT), security policy URL, incident contacts (on-call emails / Slack), rollback contacts | Capture escalation paths before go-live. |
 
@@ -52,14 +51,14 @@ Update this section after validating each assumption.
    - Require status checks: `ci` workflow (lint/test/build).
    - Restrict who can push (allow only admins/bots). Disallow force pushes and deletions.
 4. **Pull request hygiene**
-   - `.github/pull_request_template.md` now codifies testing + deployment sign-off and conventional commits.
+   - `.github/pull_request_template.md` codifies testing, deployment sign-off, observability verification, and conventional commits.
    - Share branch naming convention (`type/scope-description`).
 5. **CI secrets registry** (names only; values stored in repo settings → Secrets and variables → Actions):
-   - `SUPABASE_ACCESS_TOKEN` – For Supabase CLI automation.
+   - `SUPABASE_ACCESS_TOKEN` – For Supabase CLI automation (drift check + preview functions deploy).
    - `SUPABASE_DB_PASSWORD` – Optional for running migrations locally in CI.
-   - `NEXT_PUBLIC_APP_URL` – Stored as Actions variable (non-secret) for e2e tests.
-   - `SUPABASE_SERVICE_ROLE_KEY` – Only if server-side scripts are executed in CI (protect via environments).
-   - Document in repo settings description that secrets must also be added to Supabase dashboard and local .env files.
+   - `SUPABASE_FUNCTIONS_PREVIEW_REF` – Supabase project ref for preview deployments.
+   - `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID` – Required for automated preview deploys.
+   - Document in repo settings description that secrets must also be added to Supabase/Vercel dashboards and local `.env` files.
 
 Record the GitHub repository URL for inclusion in the final report. Use the [merge readiness checklist](./merge-readiness-checklist.md) to confirm branch protections and CI signals before requesting review.
 
@@ -129,16 +128,20 @@ Document the hosting setup and production URL in the [final report template](./f
 
 ## F. CI / CD Policy
 1. **GitHub Actions**
-   - Create `.github/workflows/ci.yml` running: `pnpm ci`, `pnpm run lint`, `pnpm run test`, `pnpm run build` within `admin-app`.
-   - Gate migrations: optional job running Supabase CLI commands using the secrets listed above.
-   - Cache Node modules with Actions cache to keep runs idempotent.
+   - `infra/ci/app-quality.yml` ensures linting, type-checking, tests, and builds pass on every push/PR.
+   - `infra/ci/supabase-migrations.yml` links to Supabase and fails if schema drift is detected.
+   - `infra/ci/lighthouse.yml` runs accessibility/performance audits against the built SPA.
+   - `infra/ci/preview-deploy.yml` pushes Vercel previews and Supabase Functions to the preview project.
 2. **Deployment flow**
    - Local hosting: Deploy by pulling latest code from the default branch, running build, and restarting the application process.
-   - Consider using GitHub Actions to automate deployment via SSH or deployment tools.
-   - Manual deployment: SSH to server, `git pull`, `pnpm install`, `pnpm run build`, restart service.
+   - Vercel: Allow the preview workflow to produce artefacts; promote to production once checks and manual QA pass.
+   - Supabase Functions: Use the preview workflow for staging, then redeploy to production via CLI or workflow after approval.
 3. **Status checks in branch protections**
-   - `ci` (GitHub Actions pipeline for lint/test/build).
-   - Optional: `Supabase Migration Dry Run` if implemented.
+   - `CI` (existing pipeline for monorepo builds/tests).
+   - `App Quality` (lint/type/test/build workflow).
+   - `Supabase Drift Check` (if secrets configured).
+   - `Lighthouse Audits` (optional but recommended).
+   - `Preview Deployments` (ensures previews succeed before merge).
 
 ## G. Verification Checklist
 After each deployment, capture evidence (screenshots/notes) that:
@@ -160,7 +163,10 @@ After each deployment, capture evidence (screenshots/notes) that:
    - Maintain down migrations for every change (`supabase migration new --down`).
    - To restore data, follow Supabase PITR or backup restore policy defined in operator inputs.
    - Notify database owners before executing destructive rollbacks.
-4. **Incident contacts**
+4. **Vercel**
+   - Use the Vercel dashboard to roll back to the previous preview/production deployment if web regressions ship.
+   - Confirm log drains resume streaming events after the rollback.
+5. **Incident contacts**
    - Populate security/ops contact list (emails/Slack handles) once provided.
 
 ## I. Final Report Template
