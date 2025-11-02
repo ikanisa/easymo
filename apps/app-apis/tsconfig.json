@@ -1,0 +1,27 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "strict": true,
+    "noEmit": true,
+    "moduleResolution": "Bundler",
+    "module": "ESNext",
+    "jsx": "preserve",
+    "types": ["node"],
+    "paths": {
+      "@app-apis/*": ["./*"],
+      "@easymo/clients": ["../../packages/clients/src/index.ts"],
+      "@easymo/clients/*": ["../../packages/clients/src/*"]
+    }
+  },
+  "include": [
+    "next-env.d.ts",
+    "app/**/*",
+    "domain/**/*",
+    "lib/**/*",
+    "tests/**/*",
+    "next.config.mjs",
+    "vitest.config.ts"
+  ],
+  "exclude": ["node_modules"]
+}
