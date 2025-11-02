@@ -3,7 +3,8 @@ Observability
 
 This project wires lightweight observability for the admin app without introducing mandatory runtime dependencies. The following components are available:
 
-- Structured logs: `logStructured` emits JSON to stdout and can optionally forward to a log drain via `LOG_DRAIN_URL`.
+- Structured logs: The shared `@easymo/commons` logger emits JSON to stdout and forwards to a log drain via `LOG_DRAIN_URL`. It
+  injects request/trace IDs automatically.
 - API observability wrapper: All API routes can be wrapped with `createHandler(name, handler)` to gain basic metrics hooks and unified error handling.
 - Metrics emitter: `recordMetric` publishes JSON payloads to `METRICS_DRAIN_URL` so Prometheus/OpenTelemetry collectors can scrape without modifying handlers.
 - Error boundary: `app/error.tsx` captures unhandled UI errors and reports to the console and (optionally) Sentry.
@@ -23,7 +24,8 @@ Usage
 -----
 
 - Wrap new API routes with `createHandler('namespace.route', async (req, ctx, { recordMetric, log }) => { ... })`.
-- Emit logs via `logStructured({ event, target, status, message, details })`.
+- Emit logs via `logStructured({ event, target, status, message, details })` or call `logger.info({...})` from
+  `@easymo/commons` in backend code.
 - Add critical endpoints to `tools/monitoring/admin/synthetic-checks.ts` to expand monitoring coverage.
 
 Notes

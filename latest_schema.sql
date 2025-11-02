@@ -9443,4 +9443,81 @@ ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TAB
 
 
 
+-- ---------------------------------------------------------------------------
+-- Mobility domain RLS synchronization (generated from infra/supabase/policies)
+-- ---------------------------------------------------------------------------
+ALTER TABLE "public"."user_favorites" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "public"."user_favorites" FORCE ROW LEVEL SECURITY;
+CREATE POLICY "user_favorites_owner_rw" ON "public"."user_favorites"
+  FOR ALL TO "authenticated"
+  USING ((user_id = auth.uid()))
+  WITH CHECK ((user_id = auth.uid()));
+CREATE POLICY "user_favorites_service_rw" ON "public"."user_favorites"
+  FOR ALL TO "service_role"
+  USING (true)
+  WITH CHECK (true);
+
+ALTER TABLE "public"."driver_parking" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "public"."driver_parking" FORCE ROW LEVEL SECURITY;
+CREATE POLICY "driver_parking_owner_rw" ON "public"."driver_parking"
+  FOR ALL TO "authenticated"
+  USING ((driver_id = auth.uid()))
+  WITH CHECK ((driver_id = auth.uid()));
+CREATE POLICY "driver_parking_service_rw" ON "public"."driver_parking"
+  FOR ALL TO "service_role"
+  USING (true)
+  WITH CHECK (true);
+
+ALTER TABLE "public"."driver_availability" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "public"."driver_availability" FORCE ROW LEVEL SECURITY;
+CREATE POLICY "driver_availability_owner_rw" ON "public"."driver_availability"
+  FOR ALL TO "authenticated"
+  USING ((driver_id = auth.uid()))
+  WITH CHECK ((driver_id = auth.uid()));
+CREATE POLICY "driver_availability_service_rw" ON "public"."driver_availability"
+  FOR ALL TO "service_role"
+  USING (true)
+  WITH CHECK (true);
+
+ALTER TABLE "public"."recurring_trips" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "public"."recurring_trips" FORCE ROW LEVEL SECURITY;
+CREATE POLICY "recurring_trips_owner_rw" ON "public"."recurring_trips"
+  FOR ALL TO "authenticated"
+  USING ((user_id = auth.uid()))
+  WITH CHECK ((user_id = auth.uid()));
+CREATE POLICY "recurring_trips_service_rw" ON "public"."recurring_trips"
+  FOR ALL TO "service_role"
+  USING (true)
+  WITH CHECK (true);
+
+ALTER TABLE "public"."deeplink_tokens" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "public"."deeplink_tokens" FORCE ROW LEVEL SECURITY;
+CREATE POLICY "deeplink_tokens_service_rw" ON "public"."deeplink_tokens"
+  FOR ALL TO "service_role"
+  USING (true)
+  WITH CHECK (true);
+CREATE POLICY "deeplink_tokens_service_ro" ON "public"."deeplink_tokens"
+  FOR SELECT TO "authenticated"
+  USING ((created_by = auth.uid()));
+
+ALTER TABLE "public"."deeplink_events" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "public"."deeplink_events" FORCE ROW LEVEL SECURITY;
+CREATE POLICY "deeplink_events_service_rw" ON "public"."deeplink_events"
+  FOR ALL TO "service_role"
+  USING (true)
+  WITH CHECK (true);
+
+ALTER TABLE "public"."router_logs" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "public"."router_logs" FORCE ROW LEVEL SECURITY;
+CREATE POLICY "router_logs_service_rw" ON "public"."router_logs"
+  FOR ALL TO "service_role"
+  USING (true)
+  WITH CHECK (true);
+CREATE POLICY "router_logs_authenticated_read" ON "public"."router_logs"
+  FOR SELECT TO "authenticated"
+  USING (true);
+CREATE POLICY "router_logs_support_ro" ON "public"."router_logs"
+  FOR SELECT TO "service_role"
+  USING (true);
+
 RESET ALL;

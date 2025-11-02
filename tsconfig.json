@@ -1,6 +1,16 @@
 {
   "files": [],
-  "references": [{ "path": "./tsconfig.app.json" }, { "path": "./tsconfig.node.json" }],
+  "references": [
+    { "path": "./tsconfig.app.json" },
+    { "path": "./tsconfig.node.json" },
+    { "path": "./apps/admin-pwa/tsconfig.json" },
+    { "path": "./apps/app-apis/tsconfig.json" },
+    { "path": "./apps/router-fn/tsconfig.json" },
+    { "path": "./packages/ui/tsconfig.json" },
+    { "path": "./packages/clients/tsconfig.json" },
+    { "path": "./packages/config/tsconfig.json" },
+    { "path": "./packages/utils/tsconfig.json" }
+  ],
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
