@@ -67,7 +67,7 @@ jobs:
           ls -lh dist/
 
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: vite-spa-dist
           path: dist/
@@ -129,7 +129,7 @@ jobs:
           ls -lh .vercel/output/static/ | head -20
 
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: nextjs-admin-output
           path: admin-app/.vercel/output/
