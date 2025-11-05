@@ -54,3 +54,7 @@ Remember to run Kafka/Redis if you plan to exercise Phase 4 messaging flows alon
 - `pnpm --filter @easymo/vendor-service test` ensures inventory, quote generation, and MoMo payout hooks remain additive.
 - `pnpm --filter @easymo/buyer-service test` verifies opt-in, intent lifecycle, Revolut settlement, and purchase persistence.
 - Import `dashboards/phase4/*.json` into Grafana and monitor Kafka topics defined in `infrastructure/kafka/topics.yaml` while running end-to-end flows.
+
+## Transition Resources
+
+- See [`phase0-5-transition-plan.md`](./phase0-5-transition-plan.md) for the cross-phase inventory, staged enablement runbook, rollback toggles, and go-live checklist tying together Phases 0–5.

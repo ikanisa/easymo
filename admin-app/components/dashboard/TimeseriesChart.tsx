@@ -1,4 +1,6 @@
 import type { TimeseriesPoint } from "@/lib/schemas";
+import { SparklineChart } from "@easymo/ui";
+import { isUiKitEnabled } from "@/lib/ui-kit";
 
 interface TimeseriesChartProps {
   data: TimeseriesPoint[];
@@ -24,6 +26,32 @@ export function TimeseriesChart({ data }: TimeseriesChartProps) {
           credentials.
         </p>
       </div>
+    );
+  }
+
+  if (isUiKitEnabled()) {
+    const format = new Intl.DateTimeFormat("en-ZA", {
+      month: "short",
+      day: "numeric",
+    });
+    const sparklineData = data.map((point) => {
+      const safeIssued = point.issued <= 0 ? 1 : point.issued;
+      const redemptionRate = Number(
+        ((point.redeemed / safeIssued) * 100).toFixed(2),
+      );
+      return {
+        label: format.format(new Date(point.date)),
+        value: redemptionRate,
+      };
+    });
+
+    return (
+      <SparklineChart
+        aria-label="Voucher redemption rate"
+        description="Percentage of vouchers redeemed per day"
+        data={sparklineData}
+        className="w-full"
+      />
     );
   }
 

@@ -98,3 +98,7 @@ export function getMarketplaceServiceUrls() {
     ),
   };
 }
+
+export function isUiKitEnabled(): boolean {
+  return (process.env.NEXT_PUBLIC_UI_V2_ENABLED ?? "false").trim().toLowerCase() === "true";
+}
