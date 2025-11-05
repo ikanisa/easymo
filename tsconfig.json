@@ -3,7 +3,6 @@
   "references": [
     { "path": "./tsconfig.app.json" },
     { "path": "./tsconfig.node.json" },
-    { "path": "./apps/admin-pwa/tsconfig.json" },
     { "path": "./apps/app-apis/tsconfig.json" },
     { "path": "./apps/router-fn/tsconfig.json" },
     { "path": "./packages/ui/tsconfig.json" },

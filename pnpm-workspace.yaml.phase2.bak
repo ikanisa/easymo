@@ -6,6 +6,7 @@ packages:
   - "packages/config"
   - "packages/utils"
   - "apps/*"
+  - "apps/admin-pwa"
   - "apps/app-apis"
   - "apps/router-fn"
   - "admin-app"
