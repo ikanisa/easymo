@@ -1,40 +1,25 @@
-import baseConfig from "@easymo/config/eslint/base";
-import nodeConfig from "@easymo/config/eslint/node";
-import reactConfig from "@easymo/config/eslint/react";
+import js from "@eslint/js";
+import tseslint from "typescript-eslint";
 
 export default [
-  ...baseConfig,
+  js.configs.recommended,
+  ...tseslint.configs.recommended,
   {
-    ...reactConfig[2],
-    files: [
-      "admin-app/**/*.{js,jsx,ts,tsx}",
-      "src/**/*.{js,jsx,ts,tsx}",
-      "station-app/**/*.{js,jsx,ts,tsx}",
-    ],
+    files: ["**/*.{js,jsx,ts,tsx}"],
+    rules: {
+      "@typescript-eslint/no-explicit-any": "warn",
+      "@typescript-eslint/no-unused-vars": ["warn", { argsIgnorePattern: "^_" }],
+    },
   },
   {
-    ...reactConfig[3],
-    files: [
-      "admin-app/**/*.{test,spec}.{js,jsx,ts,tsx}",
-      "src/**/*.{test,spec}.{js,jsx,ts,tsx}",
-      "station-app/**/*.{test,spec}.{js,jsx,ts,tsx}",
-    ],
-  },
-  {
-    ...nodeConfig[2],
-    files: [
-      "apps/api/**/*.{ts,js}",
-      "scripts/**/*.{ts,js}",
-      "packages/**/scripts/**/*.{ts,js}",
-      "tools/**/*.{ts,js}",
-    ],
-  },
-  {
-    ...nodeConfig[3],
-    files: [
-      "apps/api/**/*.{test,spec}.{ts,js}",
-      "tests/**/*.{ts,js}",
-      "packages/**/tests/**/*.{ts,js}",
+    ignores: [
+      "node_modules/**",
+      "dist/**",
+      "build/**",
+      ".next/**",
+      "coverage/**",
+      "**/*.config.js",
+      "**/generated/**",
     ],
   },
 ];
