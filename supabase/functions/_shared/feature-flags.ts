@@ -17,6 +17,10 @@ export type FeatureFlag =
   | "agent.webSearch"
   | "agent.collectPayment"
   | "agent.warmTransfer"
+  | "agent.negotiation"
+  | "agent.scheduling"
+  | "agent.marketplace"
+  | "agent.waiter"
   | "wallet.service"
   | "marketplace.ranking"
   | "marketplace.vendor"
@@ -37,6 +41,10 @@ const DEFAULT_FLAGS: Record<FeatureFlag, boolean> = {
   "agent.webSearch": false,
   "agent.collectPayment": false,
   "agent.warmTransfer": false,
+  "agent.negotiation": false,
+  "agent.scheduling": false,
+  "agent.marketplace": false,
+  "agent.waiter": false,
   "wallet.service": false,
   "marketplace.ranking": false,
   "marketplace.vendor": false,
