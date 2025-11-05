@@ -1,17 +1,16 @@
 {
-  "$schema": "https://deno.land/x/deno/cli/schemas/config-file.v1.json",
-  "importMap": "./import_map.json",
-  "compilerOptions": {
-    "strict": true
-  },
+  "importMap": "../../supabase/functions/import_map.json",
   "lint": {
+    "include": ["./src", "./tests"],
     "rules": {
-      "tags": ["recommended"]
+      "exclude": ["no-explicit-any", "require-await", "no-unused-vars"]
     }
   },
-  "fmt": {
-    "useTabs": false,
-    "indentWidth": 2,
-    "lineWidth": 100
+  "test": {
+    "include": ["./tests/**/*.test.ts"],
+    "coverage": true
+  },
+  "compilerOptions": {
+    "strict": true
   }
 }

@@ -5,8 +5,8 @@ export interface WhatsAppMessage {
   text?: { body: string };
   interactive?: {
     type: string;
-    button_reply?: { id: string; title: string };
-    list_reply?: { id: string };
+    button_reply?: { id: string; title?: string };
+    list_reply?: { id: string; title?: string };
   };
   image?: { id: string; caption?: string };
   document?: { id: string; caption?: string };
@@ -28,43 +28,62 @@ export interface WhatsAppWebhookPayload {
   }>;
 }
 
-export interface NormalizedPayload {
+export interface NormalizedMessage {
   from: string;
   messageId: string;
   type: string;
   text?: string;
-  keyword?: string;
+  keywordCandidate?: string;
   interactive?: { type: string; id: string; title?: string };
   media?: { type: string; id: string; caption?: string };
   metadata?: { phoneNumberId?: string; displayPhoneNumber?: string };
 }
 
-export interface DestinationRecord {
-  keyword: string;
-  destinationSlug: string;
+export interface RouteDestination {
+  routeKey: string;
   destinationUrl: string;
+  priority: number;
 }
 
-export interface RouteResult {
+export interface KeywordMapping {
   keyword: string;
-  destinationUrl: string;
-  destinationSlug: string;
-  status: number;
-  responseTime: number;
+  routeKey: string;
+}
+
+export interface ProcessedMessageResult {
+  messageId: string;
+  outcome: "routed" | "duplicate" | "rate_limited" | "unmatched" | "error";
+  routeKey?: string;
+  destinations?: string[];
   error?: string;
 }
 
-export type TelemetryEvent =
-  | "message_accepted"
-  | "message_duplicate"
-  | "message_rate_limited"
-  | "keyword_unmatched"
-  | "message_routed"
-  | "downstream_error";
+export interface RouterLogPayload {
+  messageId: string;
+  routeKey?: string;
+  status: string;
+  textSnippet?: string;
+  metadata: Record<string, unknown>;
+}
 
-export interface TelemetryRecord {
-  event: TelemetryEvent;
-  messageId?: string;
-  keyword?: string;
-  metadata?: Record<string, unknown>;
+export interface RateLimitResult {
+  allowed: boolean;
+  currentCount: number;
+}
+
+export interface RouterRepository {
+  loadKeywordMappings(): Promise<KeywordMapping[]>;
+  loadDestinations(): Promise<RouteDestination[]>;
+  claimMessage(
+    messageId: string,
+    waFrom: string,
+    routeKey: string,
+    metadata?: Record<string, unknown>,
+  ): Promise<boolean>;
+  checkRateLimit(
+    waFrom: string,
+    windowSeconds: number,
+    maxMessages: number,
+  ): Promise<RateLimitResult>;
+  recordRouterLog(payload: RouterLogPayload): Promise<void>;
 }

@@ -1,194 +1,143 @@
-import { createClient, SupabaseClient } from "@supabase/supabase-js";
-import { DestinationRecord, TelemetryRecord } from "./types.ts";
-import { truncate } from "./utils.ts";
+import { createClient } from "@supabase/supabase-js";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type {
+  KeywordMapping,
+  RateLimitResult,
+  RouteDestination,
+  RouterLogPayload,
+  RouterRepository,
+} from "./types.ts";
 
-export type AnySupabaseClient = SupabaseClient<any, "public", any>;
+const CACHE_TTL_MS = 60_000;
 
-interface DestinationCacheEntry {
+interface CacheState<T> {
   expiresAt: number;
-  records: DestinationRecord[];
+  data: T;
 }
 
-export interface RouterRepositoryPort {
-  loadDestinations(allowlist: Set<string>): Promise<DestinationRecord[]>;
-  persistRouterLog(
-    messageId: string,
-    textSnippet: string | undefined,
-    routeKey: string | undefined,
-    statusCode: string,
-    metadata: Record<string, unknown>,
-  ): Promise<void>;
-  recordTelemetry(record: TelemetryRecord): Promise<void>;
-  upsertIdempotency(messageId: string, from: string): Promise<{ inserted: boolean } | null>;
-  enforceRateLimit(
-    sender: string,
-    limit: number,
-    windowSeconds: number,
-  ): Promise<{ allowed: boolean; count: number } | null>;
+function isCacheValid<T>(cache: CacheState<T> | null): cache is CacheState<T> {
+  return cache !== null && cache.expiresAt > Date.now();
 }
 
-export class RouterRepository implements RouterRepositoryPort {
-  #client: AnySupabaseClient | null;
-  #cache: DestinationCacheEntry | null = null;
-  #cacheTtl: number;
+export interface SupabaseRouterRepositoryOptions {
+  supabaseUrl?: string;
+  serviceKey?: string;
+}
 
-  constructor(client: AnySupabaseClient | null, cacheTtl: number) {
-    this.#client = client;
-    this.#cacheTtl = cacheTtl;
+export class SupabaseRouterRepository implements RouterRepository {
+  private client: SupabaseClient;
+  private keywordCache: CacheState<KeywordMapping[]> | null = null;
+  private destinationCache: CacheState<RouteDestination[]> | null = null;
+
+  constructor(options: SupabaseRouterRepositoryOptions = {}) {
+    const supabaseUrl = options.supabaseUrl ?? Deno.env.get("SUPABASE_URL") ?? "";
+    const serviceKey = options.serviceKey ?? Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+    this.client = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false } });
   }
 
-  static fromEnv(
-    supabaseUrl: string | undefined,
-    supabaseServiceRoleKey: string | undefined,
-    cacheTtl: number,
-  ): RouterRepository {
-    if (!supabaseUrl || !supabaseServiceRoleKey) {
-      return new RouterRepository(null, cacheTtl);
+  async loadKeywordMappings(): Promise<KeywordMapping[]> {
+    if (isCacheValid(this.keywordCache)) {
+      return this.keywordCache.data;
     }
-    const client = createClient(supabaseUrl, supabaseServiceRoleKey, {
-      auth: { persistSession: false },
-    });
-    return new RouterRepository(client, cacheTtl);
-  }
-
-  async loadDestinations(allowlist: Set<string>): Promise<DestinationRecord[]> {
-    if (!this.#client) return [];
-    const now = Date.now();
-    if (this.#cache && this.#cache.expiresAt > now) {
-      return this.filterAllowlist(this.#cache.records, allowlist);
-    }
-
-    const { data, error } = await this.#client
-      .from("router_keyword_destinations")
-      .select("keyword, destination_slug, destination_url");
-
+    const { data, error } = await this.client
+      .from("router_keyword_map")
+      .select("keyword, route_key")
+      .eq("is_active", true);
     if (error) {
-      console.error(JSON.stringify({ event: "DESTINATION_FETCH_FAILED", error: String(error) }));
+      console.error(JSON.stringify({ event: "KEYWORD_FETCH_FAILED", error: error.message }));
       return [];
     }
-    const mapped: DestinationRecord[] = (data ?? []).map((row: any) => ({
+    const mappings: KeywordMapping[] = (data ?? []).map((row) => ({
       keyword: String(row.keyword).toLowerCase(),
-      destinationSlug: String(row.destination_slug),
-      destinationUrl: String(row.destination_url),
+      routeKey: String(row.route_key),
     }));
-
-    this.#cache = { records: mapped, expiresAt: now + this.#cacheTtl };
-    return this.filterAllowlist(mapped, allowlist);
+    this.keywordCache = { data: mappings, expiresAt: Date.now() + CACHE_TTL_MS };
+    return mappings;
   }
 
-  private filterAllowlist(records: DestinationRecord[], allowlist: Set<string>): DestinationRecord[] {
-    if (allowlist.size === 0) return records;
-    const normalized = Array.from(allowlist).map((value) => value.toLowerCase());
-    const allowedHosts = new Set(
-      normalized
-        .map((value) => {
-          try {
-            const url = new URL(value.includes("://") ? value : `https://${value}`);
-            return url.host;
-          } catch {
-            return undefined;
-          }
-        })
-        .filter((value): value is string => Boolean(value)),
-    );
-    return records.filter((record) => {
-      const slugMatch = normalized.includes(record.destinationSlug.toLowerCase());
-      if (slugMatch) return true;
-      try {
-        const { host } = new URL(record.destinationUrl);
-        return allowedHosts.size === 0 ? false : allowedHosts.has(host.toLowerCase());
-      } catch {
-        return false;
-      }
-    });
+  async loadDestinations(): Promise<RouteDestination[]> {
+    if (isCacheValid(this.destinationCache)) {
+      return this.destinationCache.data;
+    }
+    const { data, error } = await this.client
+      .from("router_destinations")
+      .select("route_key, destination_url, priority")
+      .eq("is_active", true);
+    if (error) {
+      console.error(JSON.stringify({ event: "DESTINATION_FETCH_FAILED", error: error.message }));
+      return [];
+    }
+    const destinations: RouteDestination[] = (data ?? []).map((row) => ({
+      routeKey: String(row.route_key),
+      destinationUrl: String(row.destination_url),
+      priority: Number(row.priority ?? 0) || 0,
+    }));
+    this.destinationCache = { data: destinations, expiresAt: Date.now() + CACHE_TTL_MS };
+    return destinations;
   }
 
-  async persistRouterLog(
+  async claimMessage(
     messageId: string,
-    textSnippet: string | undefined,
-    routeKey: string | undefined,
-    statusCode: string,
-    metadata: Record<string, unknown>,
-  ): Promise<void> {
-    if (!this.#client) return;
-    const snippet = truncate(textSnippet, 500) ?? null;
-    const safeMetadata = metadata ?? {};
-    try {
-      const { error } = await this.#client.from("router_logs").insert({
-        message_id: messageId,
-        text_snippet: snippet,
-        route_key: routeKey,
-        status_code: statusCode,
-        metadata: safeMetadata,
-      });
-      if (error) {
-        console.error(JSON.stringify({ event: "ROUTER_LOG_PERSIST_FAILED", messageId, error: String(error) }));
-      }
-    } catch (err) {
-      console.error(JSON.stringify({ event: "ROUTER_LOG_PERSIST_ERROR", messageId, error: String(err) }));
+    waFrom: string,
+    routeKey: string,
+    metadata: Record<string, unknown> = {},
+  ): Promise<boolean> {
+    const { data, error } = await this.client.rpc("router_claim_message", {
+      p_message_id: messageId,
+      p_wa_from: waFrom,
+      p_route_key: routeKey,
+      p_metadata: metadata,
+    });
+    if (error) {
+      console.error(JSON.stringify({ event: "IDEMPOTENCY_RPC_FAILED", messageId, error: error.message }));
+      return false;
     }
+    if (typeof data === "boolean") {
+      return data;
+    }
+    if (Array.isArray(data) && data.length > 0 && typeof data[0] === "boolean") {
+      return Boolean(data[0]);
+    }
+    if (data && typeof data === "object" && "claimed" in data) {
+      return Boolean((data as { claimed: boolean }).claimed);
+    }
+    return Boolean(data);
   }
 
-  async recordTelemetry(record: TelemetryRecord): Promise<void> {
-    if (!this.#client) return;
-    try {
-      const { error } = await this.#client.from("router_telemetry").insert({
-        event: record.event,
-        message_id: record.messageId ?? null,
-        keyword: record.keyword ?? null,
-        metadata: record.metadata ?? {},
-      });
-      if (error) {
-        console.error(JSON.stringify({ event: "TELEMETRY_PERSIST_FAILED", error: String(error) }));
-      }
-    } catch (err) {
-      console.error(JSON.stringify({ event: "TELEMETRY_PERSIST_ERROR", error: String(err) }));
+  async checkRateLimit(waFrom: string, windowSeconds: number, maxMessages: number): Promise<RateLimitResult> {
+    const { data, error } = await this.client.rpc("router_check_rate_limit", {
+      p_wa_from: waFrom,
+      p_window_seconds: windowSeconds,
+      p_max_messages: maxMessages,
+    });
+    if (error) {
+      console.error(JSON.stringify({ event: "RATE_LIMIT_RPC_FAILED", waFrom, error: error.message }));
+      return { allowed: true, currentCount: 0 };
     }
+    if (Array.isArray(data) && data.length > 0) {
+      const entry = data[0] as { allowed: boolean; current_count: number };
+      return { allowed: Boolean(entry.allowed), currentCount: Number(entry.current_count ?? 0) };
+    }
+    if (data && typeof data === "object") {
+      const obj = data as { allowed?: boolean; current_count?: number };
+      return { allowed: Boolean(obj.allowed ?? true), currentCount: Number(obj.current_count ?? 0) };
+    }
+    if (typeof data === "boolean") {
+      return { allowed: data, currentCount: data ? 1 : maxMessages };
+    }
+    return { allowed: true, currentCount: 0 };
   }
 
-  async upsertIdempotency(messageId: string, from: string): Promise<{ inserted: boolean } | null> {
-    if (!this.#client) return null;
-    try {
-      const { data, error } = await this.#client
-        .from("router_idempotency")
-        .upsert({ message_id: messageId, from_number: from }, { onConflict: "message_id", ignoreDuplicates: true })
-        .select("message_id");
-      if (error) {
-        console.error(JSON.stringify({ event: "IDEMPOTENCY_WRITE_FAILED", messageId, error: String(error) }));
-        return null;
-      }
-      const inserted = Array.isArray(data) && data.length > 0;
-      return { inserted };
-    } catch (err) {
-      console.error(JSON.stringify({ event: "IDEMPOTENCY_WRITE_ERROR", messageId, error: String(err) }));
-      return null;
-    }
-  }
-
-  async enforceRateLimit(
-    sender: string,
-    limit: number,
-    windowSeconds: number,
-  ): Promise<{ allowed: boolean; count: number } | null> {
-    if (!this.#client) return null;
-    try {
-      const { data, error } = await this.#client.rpc("router_enforce_rate_limit", {
-        p_sender: sender,
-        p_limit: limit,
-        p_window_seconds: windowSeconds,
-      });
-      if (error) {
-        console.error(JSON.stringify({ event: "RATE_LIMIT_RPC_FAILED", sender, error: String(error) }));
-        return null;
-      }
-      if (!data || typeof data.allowed !== "boolean" || typeof data.current_count !== "number") {
-        console.error(JSON.stringify({ event: "RATE_LIMIT_RPC_MALFORMED", sender, data }));
-        return null;
-      }
-      return { allowed: data.allowed, count: data.current_count };
-    } catch (err) {
-      console.error(JSON.stringify({ event: "RATE_LIMIT_RPC_ERROR", sender, error: String(err) }));
-      return null;
+  async recordRouterLog(payload: RouterLogPayload): Promise<void> {
+    const { error } = await this.client.from("router_logs").insert({
+      message_id: payload.messageId,
+      route_key: payload.routeKey ?? null,
+      status_code: payload.status,
+      text_snippet: payload.textSnippet?.slice(0, 500) ?? null,
+      metadata: payload.metadata,
+    });
+    if (error) {
+      console.error(JSON.stringify({ event: "ROUTER_LOG_FAILED", error: error.message }));
     }
   }
 }
