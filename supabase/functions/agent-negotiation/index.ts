@@ -53,7 +53,7 @@ interface AddQuoteRequest {
 async function startNegotiation(req: Request): Promise<Response> {
   const startTime = Date.now();
 
-  // Check feature flag
+  // Check feature flags
   if (!isFeatureEnabled("agent.negotiation")) {
     return json({ error: "feature_disabled", message: "Agent negotiation is not enabled" }, 403);
   }
@@ -68,6 +68,12 @@ async function startNegotiation(req: Request): Promise<Response> {
   // Validate required fields
   if (!payload.userId || !payload.flowType || !payload.requestData) {
     return json({ error: "missing_required_fields" }, 400);
+  }
+  
+  // Check marketplace feature flag for marketplace flows
+  const isMarketplaceFlow = ["nearby_pharmacies", "nearby_quincailleries", "nearby_shops"].includes(payload.flowType);
+  if (isMarketplaceFlow && !isFeatureEnabled("agent.marketplace")) {
+    return json({ error: "feature_disabled", message: "Marketplace agent is not enabled" }, 403);
   }
 
   const windowMinutes = payload.windowMinutes ?? 5;
@@ -97,6 +103,11 @@ async function startNegotiation(req: Request): Promise<Response> {
     // For nearby_drivers flow, find matching drivers
     if (payload.flowType === "nearby_drivers" && payload.requestData.pickup) {
       await findAndContactDrivers(session.id, payload);
+    }
+    
+    // For marketplace flows, find matching vendors
+    if (["nearby_pharmacies", "nearby_quincailleries", "nearby_shops"].includes(payload.flowType)) {
+      await findAndContactMarketplaceVendors(session.id, payload);
     }
 
     await logStructuredEvent("AGENT_SESSION_CREATED", {
@@ -209,6 +220,98 @@ async function findAndContactDrivers(
       .update({ 
         status: "timeout",
         result_data: { reason: "no_drivers_found" },
+      })
+      .eq("id", sessionId);
+  }
+}
+
+/**
+ * Find matching marketplace vendors and send quote requests
+ */
+async function findAndContactMarketplaceVendors(
+  sessionId: string,
+  request: StartNegotiationRequest,
+): Promise<void> {
+  const { requestData, flowType } = request;
+
+  if (!requestData.pickup) {
+    throw new Error("Location required for marketplace vendor matching");
+  }
+
+  // Determine category based on flow type
+  const categoryMap: Record<string, string> = {
+    "nearby_pharmacies": "pharmacies",
+    "nearby_quincailleries": "quincailleries",
+    "nearby_shops": "shops",
+  };
+  
+  const category = categoryMap[flowType] || null;
+  const vendorTypeMap: Record<string, string> = {
+    "nearby_pharmacies": "pharmacy",
+    "nearby_quincailleries": "quincaillerie",
+    "nearby_shops": "shop",
+  };
+  const vendorType = vendorTypeMap[flowType] || "other";
+
+  // Find nearby businesses using RPC
+  const { data: vendors, error: vendorsError } = await supabase.rpc(
+    "nearby_businesses_v2",
+    {
+      _lat: requestData.pickup.lat,
+      _lng: requestData.pickup.lng,
+      _viewer: "",
+      _category_slug: category,
+      _limit: 10,
+    },
+  );
+
+  if (vendorsError) {
+    console.error("Marketplace vendor matching failed:", vendorsError);
+    throw vendorsError;
+  }
+
+  await logStructuredEvent("MARKETPLACE_VENDORS_MATCHED", {
+    sessionId,
+    category,
+    vendorCount: vendors?.length ?? 0,
+  });
+
+  // Send quote requests to vendors
+  if (vendors && vendors.length > 0) {
+    // Update session status to negotiating
+    await supabase
+      .from("agent_sessions")
+      .update({ status: "negotiating" })
+      .eq("id", sessionId);
+
+    // Log vendor contacts and create pending quotes
+    for (const vendor of vendors) {
+      logVendorContact(sessionId, vendor.id, vendorType, "whatsapp");
+      
+      // Create pending quotes
+      await supabase.from("agent_quotes").insert({
+        session_id: sessionId,
+        vendor_id: vendor.id,
+        vendor_type: vendorType,
+        vendor_name: vendor.name,
+        vendor_phone: vendor.owner_whatsapp,
+        status: "pending",
+        offer_data: {
+          distance_km: vendor.distance_km,
+          category: vendor.category,
+          description: requestData.description || null,
+        },
+        sent_at: new Date().toISOString(),
+        expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString(), // 10 min expiry
+      });
+    }
+  } else {
+    // No vendors found, move to timeout
+    await supabase
+      .from("agent_sessions")
+      .update({ 
+        status: "timeout",
+        result_data: { reason: "no_vendors_found", category },
       })
       .eq("id", sessionId);
   }
