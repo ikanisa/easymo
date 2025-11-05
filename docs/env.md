@@ -1,57 +1,71 @@
 # Environment Configuration
 
-The shared environment contract for EasyMO services lives in `packages/config/env.ts`. Every runtime
-should load configuration through the exported helpers to guarantee consistent validation across
-development, staging, and production deployments.
+EasyMO centralizes environment validation in [`packages/config/env.ts`](../packages/config/env.ts). The module exposes Zod schemas for every deployment stage and runtime feature flags so applications can fail fast when configuration is missing.
 
-## Schema overview
+## Stage Detection
 
-`loadEnv` inspects `process.env` (or a provided `source`) and returns a strongly-typed object with
-three key components:
+`loadEnvironment()` inspects the following variables (first non-empty wins) to determine the active stage:
 
-- `APP_ENV`: Normalised deployment tier (`development`, `staging`, or `production`). Both `NODE_ENV`
-  and `APP_ENV` inputs are supported—`stage`/`prod` aliases are automatically mapped to the canonical
-  values.
-- Shared configuration fields such as `API_BASE_URL`, `SUPABASE_URL`, and `SUPABASE_ANON_KEY`. These
-  values remain optional for local development but can be enforced per-service if needed by merging
-  additional Zod schemas.
-- `featureFlags`: A record of runtime feature toggles derived from environment variables prefixed
-  with `FEATURE_` (for example `FEATURE_ADMIN_DASHBOARD=true`). Boolean strings such as `"1"`,
-  `"yes"`, and `"enabled"` are accepted; invalid values raise a descriptive error during start-up.
+1. `DEPLOYMENT_ENV`
+2. `APP_ENV`
+3. `STAGE`
+4. `ENVIRONMENT`
+5. `NODE_ENV`
 
-Each environment tier inherits from the same strict TypeScript defaults and introduces opinionated
-settings:
+Values beginning with `prod` map to **production**, values beginning with `stage` or the literal `preview` map to **staging**, and all others default to **development**.
 
-| Environment | Defaults                                                                   |
-| ----------- | -------------------------------------------------------------------------- |
-| development | `ENABLE_DEV_TOOLS=true`, `LOG_LEVEL=debug`                                 |
-| staging     | `RELEASE_CHANNEL="staging"`, `LOG_LEVEL=info`                              |
-| production  | `ENABLE_DEV_TOOLS=false`, `RELEASE_CHANNEL="production"`, `LOG_LEVEL=warn` |
+## Base Schema
 
-Because the schemas are defined with Zod, downstream code receives parsed types (for example,
-booleans instead of strings). Any missing or malformed values throw immediately, preventing the
-application from booting with partial configuration.
+All stages share the core schema below:
 
-## Usage
+| Variable | Description |
+| --- | --- |
+| `SUPABASE_URL` | URL to the Supabase project. |
+| `SUPABASE_ANON_KEY` | Anonymous Supabase key used by clients. |
+| `SUPABASE_SERVICE_ROLE_KEY` | Service-role key for secure server-side calls. |
+| `OPENAI_API_KEY` | API key for OpenAI integrations. |
+| `DATABASE_URL` | Connection string for Postgres (optional in development). |
+| `API_BASE_URL` | Base URL for HTTP clients. |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | OpenTelemetry collector endpoint (optional). |
+| `SENTRY_DSN` | Sentry DSN for error tracking (optional). |
+| `LOG_LEVEL` | One of `debug`, `info`, `warn`, or `error` (defaults to `info`). |
+
+## Stage-Specific Rules
+
+- **Development**: Supplies defaults for `DATABASE_URL` (`postgresql://postgres:postgres@localhost:5432/postgres`) and `API_BASE_URL` (`http://localhost:3000`).
+- **Staging**: Requires a valid `DATABASE_URL` and constrains `VERCEL_ENV` to `preview` or `production` (default `preview`).
+- **Production**: Inherits staging requirements and forces `VERCEL_ENV` to `production`.
+
+Retrieve the schema for a specific stage via `getEnvironmentSchema(stage)` if you need to validate configuration manually.
+
+## Runtime Feature Flags
+
+`parseRuntimeFeatureFlags()` reads the boolean feature flags listed below. Truthy values include `true`, `1`, `yes`, and `on` (case insensitive).
+
+| Flag | Environment Variable | Description |
+| --- | --- | --- |
+| `agentChat` | `FEATURE_AGENT_CHAT` | Enable WhatsApp chat capabilities. |
+| `agentVoice` | `FEATURE_AGENT_VOICE` | Enable realtime voice agents. |
+| `agentVouchers` | `FEATURE_AGENT_VOUCHERS` | Allow voucher operations through agents. |
+| `agentCustomerLookup` | `FEATURE_AGENT_CUSTOMER_LOOKUP` | Permit customer lookup workflows. |
+| `otelTracing` | `ENABLE_OTEL_TRACING` | Toggle OpenTelemetry exporters. |
+| `costDashboard` | `ENABLE_COST_DASHBOARD` | Surface the internal cost dashboard. |
+
+The returned object exposes `flags`, an `enabled` array, and `isEnabled(flag)` for ergonomic checks at runtime.
+
+## Usage Example
 
 ```ts
-import { loadEnv } from "@easymo/config/env";
+import { loadEnvironment } from "@easymo/config-env";
 
-const env = loadEnv();
+const { stage, values, featureFlags } = loadEnvironment();
 
-if (env.featureFlags["admin_dashboard"]) {
-  // Enable the dashboard code path for this request
+console.log(`Running in ${stage}`);
+console.log(`API base URL: ${values.API_BASE_URL}`);
+
+if (featureFlags.isEnabled("agentVoice")) {
+  enableVoicePipelines();
 }
 ```
 
-Use the optional `{ featureFlagPrefix: "MY_FLAG_" }` parameter when integrating with legacy naming
-conventions, or pass a custom `source` object to unit-test environment logic without mutating
-`process.env`.
-
-## Feature-flag hygiene
-
-- Prefer short, descriptive names (e.g. `FEATURE_AGENT_BETA`). The parser lowercases and converts
-  double underscores (`__`) into dot notation for nested segments.
-- Remove retired flags from infrastructure and code paths to keep `featureFlags` compact.
-- Feature toggles are designed for runtime checks. Long-lived configuration values should instead be
-  promoted to first-class schema fields within `packages/config/env.ts`.
+Always call `loadEnvironment()` (or at least `parseRuntimeFeatureFlags()`) during service start-up so misconfiguration is caught during deploys instead of at runtime.

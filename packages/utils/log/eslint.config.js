@@ -1,18 +1,11 @@
-import nodeConfig from "@easymo/config/eslint/node";
+import { createStrictConfig } from "../../config/eslint/eslint.config.js";
 
-export default [
-  ...nodeConfig,
-  {
-    files: ["tests/**/*.{ts,js}", "vitest.config.ts"],
-    languageOptions: {
-      parserOptions: {
-        projectService: {
-          allowDefaultProject: ["tests/*.test.ts", "vitest.config.ts"],
-        },
-      },
-    },
-    rules: {
-      "@typescript-eslint/no-explicit-any": "off",
-    },
-  },
-];
+export default createStrictConfig({
+  targetGlobs: [
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "vitest.config.ts",
+  ],
+  typedGlobs: ["src/**/*.ts"],
+  projectConfigs: ["./tsconfig.json"],
+});

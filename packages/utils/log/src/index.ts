@@ -1,208 +1,231 @@
 export type LogLevel = "debug" | "info" | "warn" | "error";
 
-export interface SerializedError {
-  name: string;
-  message: string;
-  stack?: string;
-  cause?: unknown;
-  details?: Record<string, unknown>;
-}
+export type LogMetadata = {
+  requestId?: string;
+  error?: unknown;
+} & Record<string, unknown>;
 
-export interface LogEntry {
+export type LogRecord = {
   level: LogLevel;
   message: string;
   timestamp: string;
+  service: string;
   requestId?: string;
-  metadata?: Record<string, unknown>;
-  error?: SerializedError;
-}
-
-export type LogEmitter = (entry: LogEntry) => void;
-export type ErrorTrackingHook = (error: SerializedError, entry: LogEntry) => void;
-
-export interface LoggerOptions {
-  requestId?: string;
-  defaultMetadata?: Record<string, unknown>;
-  emitter?: LogEmitter;
-  errorTrackingHook?: ErrorTrackingHook;
-}
-
-export type LoggerChildOptions = LoggerOptions;
-
-export type LogMetadata = Record<string, unknown> & {
-  error?: unknown;
-  requestId?: string;
+  context?: Record<string, unknown>;
+  error?: {
+    name: string;
+    message: string;
+    stack?: string;
+  };
 };
 
-export interface Logger {
-  readonly requestId?: string;
-  child(options?: LoggerChildOptions): Logger;
-  log(level: LogLevel, message: string, metadata?: LogMetadata): void;
-  debug(message: string, metadata?: LogMetadata): void;
-  info(message: string, metadata?: LogMetadata): void;
-  warn(message: string, metadata?: LogMetadata): void;
-  error(message: string, metadata?: LogMetadata): void;
-  error(message: string, error: unknown, metadata?: LogMetadata): void;
-}
-
-interface LoggerContext {
+export type LoggerContext = {
   requestId?: string;
-  defaultMetadata: Record<string, unknown>;
-  emitter: LogEmitter;
-  errorTrackingHook?: ErrorTrackingHook;
-}
+} & Record<string, unknown>;
 
-/* eslint-disable no-console */
-const defaultEmitter: LogEmitter = (entry) => {
-  const payload = JSON.stringify(entry);
+export type LogEmitter = (record: LogRecord) => void;
+export type ErrorTracker = (error: unknown, record: LogRecord) => void;
 
-  switch (entry.level) {
-    case "error":
-      console.error(payload);
-      break;
-    case "warn":
-      console.warn(payload);
-      break;
-    case "debug":
-      console.debug(payload);
-      break;
-    default:
-      console.info(payload);
-      break;
+export type LoggerOptions = {
+  service: string;
+  requestId?: string;
+  defaultContext?: Record<string, unknown>;
+  onLog?: LogEmitter;
+  trackError?: ErrorTracker;
+};
+
+export type Logger = {
+  child: (context: LoggerContext) => Logger;
+  withRequest: (requestId: string) => Logger;
+  debug: (message: string, metadata?: LogMetadata) => void;
+  info: (message: string, metadata?: LogMetadata) => void;
+  warn: (message: string, metadata?: LogMetadata) => void;
+  error: (message: string, metadata?: LogMetadata) => void;
+};
+
+const LEVEL_WRITERS: Record<LogLevel, (payload: string) => void> = {
+  debug: (payload: string) => console.debug(payload),
+  info: (payload: string) => console.log(payload),
+  warn: (payload: string) => console.warn(payload),
+  error: (payload: string) => console.error(payload),
+};
+
+const defaultEmitter: LogEmitter = (record) => {
+  const payload = JSON.stringify(record);
+  LEVEL_WRITERS[record.level](payload);
+};
+
+const serializeError = (error: unknown): LogRecord["error"] | undefined => {
+  if (!error) {
+    return undefined;
   }
-};
-/* eslint-enable no-console */
 
-function serializeError(error: unknown): SerializedError {
   if (error instanceof Error) {
-    const base: SerializedError = {
+    return {
       name: error.name,
       message: error.message,
-      stack: error.stack ?? undefined,
+      stack: error.stack,
     };
-
-    const cause = (error as Error & { cause?: unknown }).cause;
-    if (cause !== undefined) {
-      base.cause = cause;
-    }
-
-    const enumerable = Object.fromEntries(
-      Object.entries(error).filter(([key]) => !["name", "message", "stack", "cause"].includes(key)),
-    );
-
-    if (Object.keys(enumerable).length > 0) {
-      base.details = enumerable;
-    }
-
-    return base;
   }
 
-  if (typeof error === "object" && error !== null) {
+  if (typeof error === "object") {
+    const nonNullError = error as Record<string, unknown> | null;
+    if (!nonNullError) {
+      return undefined;
+    }
+
+    const name = (nonNullError as { name?: string }).name ?? "Error";
+    const message = "message" in nonNullError
+      ? String((nonNullError as { message?: unknown }).message)
+      : JSON.stringify(nonNullError);
+
     return {
-      name: "UnknownError",
-      message: "Non-Error object thrown",
-      details: error as Record<string, unknown>,
+      name,
+      message,
+    };
+  }
+
+  if (typeof error === "symbol" || typeof error === "function") {
+    return {
+      name: "Error",
+      message: error.toString(),
     };
   }
 
   return {
-    name: "UnknownError",
-    message: String(error),
+    name: "Error",
+    message: String(error as string | number | boolean | bigint),
   };
-}
+};
 
-function isLogMetadata(value: unknown): value is LogMetadata {
-  return typeof value === "object" && value !== null;
-}
+type InternalLoggerState = {
+  service: string;
+  requestId?: string;
+  defaultContext: Record<string, unknown>;
+  emit: LogEmitter;
+  trackError?: ErrorTracker;
+};
 
-function createLoggerInstance(context: LoggerContext): Logger {
-  const write = (
-    level: LogLevel,
-    message: string,
-    metadata?: LogMetadata,
-    explicitError?: unknown,
-  ): void => {
-    const timestamp = new Date().toISOString();
-    const combinedMetadata: LogMetadata = {
-      ...context.defaultMetadata,
-      ...(metadata ?? {}),
-    };
+const buildContext = (
+  baseContext: Record<string, unknown>,
+  metadata?: LogMetadata,
+): { context?: Record<string, unknown>; requestId?: string; error?: unknown } => {
+  if (!metadata) {
+    return { context: Object.keys(baseContext).length > 0 ? { ...baseContext } : undefined };
+  }
 
-    const { error, requestId, ...rest } = combinedMetadata;
-    const entry: LogEntry = {
-      level,
-      message,
-      timestamp,
-      requestId: typeof requestId === "string" ? requestId : context.requestId,
-      metadata: Object.keys(rest).length > 0 ? rest : undefined,
-    };
+  const { requestId, error, ...rest } = metadata;
+  const mergedContext = { ...baseContext, ...rest };
+  const hasContext = Object.keys(mergedContext).length > 0;
 
-    const normalizedError = explicitError ?? error;
-    if (normalizedError !== undefined) {
-      entry.error = serializeError(normalizedError);
+  return {
+    requestId,
+    error,
+    context: hasContext ? mergedContext : undefined,
+  };
+};
+
+const createLogRecord = (
+  state: InternalLoggerState,
+  level: LogLevel,
+  message: string,
+  metadata?: LogMetadata,
+): LogRecord => {
+  const { context, requestId, error } = buildContext(state.defaultContext, metadata);
+  const resolvedRequestId = requestId ?? state.requestId;
+  const record: LogRecord = {
+    level,
+    message,
+    timestamp: new Date().toISOString(),
+    service: state.service,
+  };
+
+  if (resolvedRequestId) {
+    record.requestId = resolvedRequestId;
+  }
+
+  if (context) {
+    record.context = context;
+  }
+
+  const serializedError = serializeError(error);
+  if (serializedError) {
+    record.error = serializedError;
+  }
+
+  return record;
+};
+
+const dispatchRecord = (
+  state: InternalLoggerState,
+  level: LogLevel,
+  message: string,
+  metadata?: LogMetadata,
+): void => {
+  const record = createLogRecord(state, level, message, metadata);
+  state.emit(record);
+
+  if (level === "error" && state.trackError) {
+    const explicitError = metadata?.error;
+    const structured = record.error
+      ? Object.assign(new Error(record.error.message), {
+          name: record.error.name,
+          stack: record.error.stack,
+        })
+      : undefined;
+    const errorForTracking = explicitError ?? structured ?? new Error(message);
+    state.trackError(errorForTracking, record);
+  }
+};
+
+export const createLogger = ({
+  service,
+  requestId,
+  defaultContext = {},
+  onLog = defaultEmitter,
+  trackError,
+}: LoggerOptions): Logger => {
+  const state: InternalLoggerState = {
+    service,
+    requestId,
+    defaultContext,
+    emit: onLog,
+    trackError,
+  };
+
+  const child = (context: LoggerContext): Logger => {
+    const nextContext: Record<string, unknown> = { ...state.defaultContext };
+    const { requestId: childRequestId, ...rest } = context;
+
+    for (const [key, value] of Object.entries(rest)) {
+      nextContext[key] = value;
     }
 
-    context.emitter(entry);
-
-    if (entry.error && context.errorTrackingHook) {
-      context.errorTrackingHook(entry.error, entry);
-    }
+    return createLogger({
+      service: state.service,
+      requestId: childRequestId ?? state.requestId,
+      defaultContext: nextContext,
+      onLog: state.emit,
+      trackError: state.trackError,
+    });
   };
 
-  const logger: Logger = {
-    get requestId() {
-      return context.requestId;
+  return {
+    child,
+    withRequest(nextRequestId: string) {
+      return child({ requestId: nextRequestId });
     },
-    child(options?: LoggerChildOptions): Logger {
-      const nextContext: LoggerContext = {
-        requestId: options?.requestId ?? context.requestId,
-        defaultMetadata: {
-          ...context.defaultMetadata,
-          ...(options?.defaultMetadata ?? {}),
-        },
-        emitter: options?.emitter ?? context.emitter,
-        errorTrackingHook: options?.errorTrackingHook ?? context.errorTrackingHook,
-      };
-
-      return createLoggerInstance(nextContext);
+    debug(message: string, metadata?: LogMetadata) {
+      dispatchRecord(state, "debug", message, metadata);
     },
-    log(level, message, metadata) {
-      write(level, message, metadata);
+    info(message: string, metadata?: LogMetadata) {
+      dispatchRecord(state, "info", message, metadata);
     },
-    debug(message, metadata) {
-      write("debug", message, metadata);
+    warn(message: string, metadata?: LogMetadata) {
+      dispatchRecord(state, "warn", message, metadata);
     },
-    info(message, metadata) {
-      write("info", message, metadata);
-    },
-    warn(message, metadata) {
-      write("warn", message, metadata);
-    },
-    error(message: string, arg2?: unknown, arg3?: LogMetadata) {
-      if (isLogMetadata(arg2) && arg3 === undefined) {
-        write("error", message, arg2);
-        return;
-      }
-
-      if (isLogMetadata(arg3)) {
-        write("error", message, arg3, arg2);
-        return;
-      }
-
-      write("error", message, undefined, arg2);
+    error(message: string, metadata?: LogMetadata) {
+      dispatchRecord(state, "error", message, metadata);
     },
   };
-
-  return logger;
-}
-
-export function createLogger(options: LoggerOptions = {}): Logger {
-  const context: LoggerContext = {
-    requestId: options.requestId,
-    defaultMetadata: options.defaultMetadata ? { ...options.defaultMetadata } : {},
-    emitter: options.emitter ?? defaultEmitter,
-    errorTrackingHook: options.errorTrackingHook,
-  };
-
-  return createLoggerInstance(context);
-}
+};

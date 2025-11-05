@@ -1,159 +1,162 @@
 import { z } from "zod";
 
-export const appEnvironmentSchema = z.enum(["development", "staging", "production"]);
+const STAGE_KEYS = ["DEPLOYMENT_ENV", "APP_ENV", "STAGE", "ENVIRONMENT", "NODE_ENV"] as const;
+const BOOLEAN_TRUTHY = new Set(["true", "1", "yes", "on"]);
+const LOG_LEVELS = ["debug", "info", "warn", "error"] as const;
 
-export type AppEnvironment = z.infer<typeof appEnvironmentSchema>;
-
-const logLevelSchema = z.enum(["debug", "info", "warn", "error"]);
-
-const baseEnvSchema = z.object({
+const baseEnvironmentSchema = z.object({
+  NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
+  LOG_LEVEL: z.enum(LOG_LEVELS).default("info"),
+  SUPABASE_URL: z.string({ required_error: "SUPABASE_URL is required" }).url(),
+  SUPABASE_ANON_KEY: z.string({ required_error: "SUPABASE_ANON_KEY is required" }).min(1),
+  SUPABASE_SERVICE_ROLE_KEY: z
+    .string({ required_error: "SUPABASE_SERVICE_ROLE_KEY is required" })
+    .min(1),
+  OPENAI_API_KEY: z.string({ required_error: "OPENAI_API_KEY is required" }).min(1),
+  DATABASE_URL: z.string().url().optional(),
   API_BASE_URL: z.string().url().optional(),
-  SUPABASE_URL: z.string().url().optional(),
-  SUPABASE_ANON_KEY: z.string().min(1).optional(),
-  SUPABASE_SERVICE_ROLE_KEY: z.string().min(1).optional(),
-  DATABASE_URL: z.string().min(1).optional(),
-  LOG_LEVEL: logLevelSchema.default("info"),
+  OTEL_EXPORTER_OTLP_ENDPOINT: z.string().url().optional(),
+  SENTRY_DSN: z.string().url().optional(),
+  VERCEL_ENV: z.enum(["development", "preview", "production"]).optional(),
 });
 
-const developmentEnvSchema = baseEnvSchema
-  .extend({
-    APP_ENV: z.literal("development"),
-    ENABLE_DEV_TOOLS: z.boolean().default(true),
-  })
-  .extend({
-    LOG_LEVEL: logLevelSchema.default("debug"),
-  });
-
-const stagingEnvSchema = baseEnvSchema.extend({
-  APP_ENV: z.literal("staging"),
-  RELEASE_CHANNEL: z.literal("staging"),
+const developmentEnvironmentSchema = baseEnvironmentSchema.extend({
+  DATABASE_URL: z
+    .string()
+    .url()
+    .default("postgresql://postgres:postgres@localhost:5432/postgres"),
+  API_BASE_URL: z.string().url().default("http://localhost:3000"),
 });
 
-const productionEnvSchema = baseEnvSchema
-  .extend({
-    APP_ENV: z.literal("production"),
-    RELEASE_CHANNEL: z.literal("production"),
-    ENABLE_DEV_TOOLS: z.boolean().default(false),
-  })
-  .extend({
-    LOG_LEVEL: logLevelSchema.default("warn"),
-  });
+const stagingEnvironmentSchema = baseEnvironmentSchema.extend({
+  DATABASE_URL: z
+    .string({ required_error: "DATABASE_URL is required in staging" })
+    .url({ message: "DATABASE_URL must be a valid URL" }),
+  VERCEL_ENV: z.enum(["preview", "production"]).default("preview"),
+});
 
-export const environmentSchemas = {
-  development: developmentEnvSchema,
-  staging: stagingEnvSchema,
-  production: productionEnvSchema,
-} as const satisfies Record<AppEnvironment, z.ZodTypeAny>;
+const productionEnvironmentSchema = stagingEnvironmentSchema.extend({
+  VERCEL_ENV: z.literal("production"),
+});
 
-export type DevelopmentEnv = z.infer<typeof developmentEnvSchema>;
-export type StagingEnv = z.infer<typeof stagingEnvSchema>;
-export type ProductionEnv = z.infer<typeof productionEnvSchema>;
+const environmentSchemas = {
+  development: developmentEnvironmentSchema,
+  staging: stagingEnvironmentSchema,
+  production: productionEnvironmentSchema,
+} as const;
 
-export const featureFlagValueSchema = z
-  .union([
-    z.literal(true),
-    z.literal(false),
-    z.string().transform((value, ctx) => {
-      const normalized = value.trim().toLowerCase();
-      if (["1", "true", "yes", "on", "enabled"].includes(normalized)) {
-        return true;
-      }
+type EnvironmentSchemaMap = typeof environmentSchemas;
+export type EnvironmentStage = keyof EnvironmentSchemaMap;
+export type EnvironmentValuesMap = {
+  [Stage in EnvironmentStage]: z.infer<EnvironmentSchemaMap[Stage]>;
+};
+export type EnvironmentValues = EnvironmentValuesMap[EnvironmentStage];
 
-      if (["0", "false", "no", "off", "disabled"].includes(normalized)) {
-        return false;
-      }
+const featureFlagKeyMap = {
+  agentChat: "FEATURE_AGENT_CHAT",
+  agentVoice: "FEATURE_AGENT_VOICE",
+  agentVouchers: "FEATURE_AGENT_VOUCHERS",
+  agentCustomerLookup: "FEATURE_AGENT_CUSTOMER_LOOKUP",
+  otelTracing: "ENABLE_OTEL_TRACING",
+  costDashboard: "ENABLE_COST_DASHBOARD",
+} as const;
 
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: `Unsupported boolean value: ${value}`,
-      });
-      return z.NEVER;
-    }),
-  ])
-  .transform((value) => value);
+const featureFlagEnvSchema = z.object({
+  FEATURE_AGENT_CHAT: z.string().optional(),
+  FEATURE_AGENT_VOICE: z.string().optional(),
+  FEATURE_AGENT_VOUCHERS: z.string().optional(),
+  FEATURE_AGENT_CUSTOMER_LOOKUP: z.string().optional(),
+  ENABLE_OTEL_TRACING: z.string().optional(),
+  ENABLE_COST_DASHBOARD: z.string().optional(),
+});
 
-export const featureFlagSchema = z.record(z.boolean());
+export type RuntimeFeatureFlagName = keyof typeof featureFlagKeyMap;
+export type RuntimeFeatureFlagState = Record<RuntimeFeatureFlagName, boolean>;
 
-export type FeatureFlags = z.infer<typeof featureFlagSchema>;
+export type RuntimeFeatureFlags = {
+  readonly flags: RuntimeFeatureFlagState;
+  readonly enabled: RuntimeFeatureFlagName[];
+  isEnabled: (flag: RuntimeFeatureFlagName) => boolean;
+};
 
-export interface LoadEnvOptions {
-  featureFlagPrefix?: string;
-  source?: NodeJS.ProcessEnv;
-}
-
-function normalizeEnvironment(value: string | undefined | null): AppEnvironment {
-  if (!value) {
+const normalizeStage = (rawValue: string | undefined): EnvironmentStage => {
+  if (!rawValue) {
     return "development";
   }
 
-  const normalized = value.toLowerCase();
-
-  if (["production", "prod"].includes(normalized)) {
+  const normalized = rawValue.toLowerCase();
+  if (normalized.startsWith("prod")) {
     return "production";
   }
 
-  if (["staging", "stage"].includes(normalized)) {
+  if (normalized.startsWith("stage") || normalized === "preview") {
     return "staging";
   }
 
   return "development";
-}
+};
 
-function coerceBoolean(value: string | boolean | undefined): boolean {
-  if (typeof value === "boolean") {
-    return value;
-  }
-
-  if (value === undefined) {
+const coerceBoolean = (value: string | undefined): boolean => {
+  if (!value) {
     return false;
   }
 
-  const normalized = value.trim().toLowerCase();
+  return BOOLEAN_TRUTHY.has(value.toLowerCase());
+};
 
-  if (["1", "true", "yes", "on", "enabled"].includes(normalized)) {
-    return true;
+export const detectStage = (env: NodeJS.ProcessEnv = process.env): EnvironmentStage => {
+  for (const key of STAGE_KEYS) {
+    const value = env[key];
+    if (value) {
+      return normalizeStage(value);
+    }
   }
 
-  if (["0", "false", "no", "off", "disabled"].includes(normalized)) {
-    return false;
-  }
+  return "development";
+};
 
-  throw new Error(`Cannot coerce "${value}" to boolean`);
-}
+export const parseRuntimeFeatureFlags = (
+  env: NodeJS.ProcessEnv = process.env,
+): RuntimeFeatureFlags => {
+  const raw = featureFlagEnvSchema.parse(env) as Record<string, string | undefined>;
+  const flagsEntries = Object.entries(featureFlagKeyMap).map(([name, envKey]) => [
+    name,
+    coerceBoolean(raw[envKey]),
+  ]);
 
-export function collectFeatureFlags(env: NodeJS.ProcessEnv, prefix = "FEATURE_"): FeatureFlags {
-  const entries = Object.entries(env)
-    .filter(([key]) => key.startsWith(prefix))
-    .map(
-      ([key, value]) =>
-        [
-          key.slice(prefix.length).toLowerCase().replace(/__+/g, "."),
-          coerceBoolean(value),
-        ] as const,
-    );
-
-  return featureFlagSchema.parse(Object.fromEntries(entries));
-}
-
-export type RuntimeEnv =
-  | (DevelopmentEnv & { featureFlags: FeatureFlags })
-  | (StagingEnv & { featureFlags: FeatureFlags })
-  | (ProductionEnv & { featureFlags: FeatureFlags });
-
-export function loadEnv(options: LoadEnvOptions = {}): RuntimeEnv {
-  const source = options.source ?? process.env;
-  const featureFlagPrefix = options.featureFlagPrefix ?? "FEATURE_";
-  const targetEnv = normalizeEnvironment(source["APP_ENV"] ?? source["NODE_ENV"]);
-  const schema = environmentSchemas[targetEnv];
-  const resolved = schema.parse({ ...source, APP_ENV: targetEnv });
-  const featureFlags = collectFeatureFlags(source, featureFlagPrefix);
+  const flags = Object.fromEntries(flagsEntries) as RuntimeFeatureFlagState;
+  const enabled = flagsEntries
+    .filter(([, isEnabled]) => isEnabled)
+    .map(([name]) => name as RuntimeFeatureFlagName);
 
   return {
-    ...resolved,
-    featureFlags,
-  } as RuntimeEnv;
-}
+    flags,
+    enabled,
+    isEnabled: (flag: RuntimeFeatureFlagName) => flags[flag],
+  };
+};
 
-export function resolveEnvName(value: string | undefined | null): AppEnvironment {
-  return normalizeEnvironment(value);
-}
+export type LoadedEnvironment = {
+  stage: EnvironmentStage;
+  values: EnvironmentValues;
+  featureFlags: RuntimeFeatureFlags;
+};
+
+export const loadEnvironment = (
+  env: NodeJS.ProcessEnv = process.env,
+): LoadedEnvironment => {
+  const stage = detectStage(env);
+  const schema = environmentSchemas[stage];
+  const values = schema.parse(env) as EnvironmentValues;
+  const featureFlags = parseRuntimeFeatureFlags(env);
+
+  return {
+    stage,
+    values,
+    featureFlags,
+  };
+};
+
+export const getEnvironmentSchema = (
+  stage: EnvironmentStage,
+): EnvironmentSchemaMap[EnvironmentStage] => environmentSchemas[stage];
