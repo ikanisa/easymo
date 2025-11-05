@@ -6,126 +6,272 @@ cleanup automations that enforce the stated policies.
 
 ## Contents
 
-1. [PII Inventory](#pii-inventory)
-2. [Access Controls](#access-controls)
-3. [Retention & Cleanup](#retention--cleanup)
-4. [Service Jobs](#service-jobs)
+## Table of Contents
+
+1. [PII Data Inventory](#pii-data-inventory)
+2. [Retention Policies](#retention-policies)
+3. [Access Controls](#access-controls)
+4. [Data Masking & Anonymization](#data-masking--anonymization)
+5. [User Rights (GDPR-lite)](#user-rights-gdpr-lite)
+6. [Compliance Checklist](#compliance-checklist)
 
 ---
 
-## PII Inventory
+## PII Data Inventory
 
-### `public.user_favorites`
+### User Profiles
 
-User shortcuts for home/work pickups.
+**Table**: `profiles`
 
-| Column | Type | PII Classification | Notes |
-| --- | --- | --- | --- |
-| `id` | UUID | Low | Synthetic identifier |
-| `user_id` | UUID (FK → `profiles.id`) | Medium | Links to passenger account |
-| `kind` | Text enum | Low | `home`, `work`, `school`, `other` |
-| `label` | Text | Medium | Friendly name displayed in UI |
-| `address` | Text | Medium | Optional user-provided description |
-| `geog` | Geography(Point, 4326) | **High** | Exact home/work coordinates |
-| `is_default` | Boolean | Low | Whether shortcut is used by default |
-| `created_at` / `updated_at` | Timestamptz | Low | Audit metadata |
+| Field | Type | PII Level | Purpose | Retention |
+|-------|------|-----------|---------|-----------|
+| `id` | UUID | Low | User identifier | Permanent |
+| `msisdn` | Phone | **High** | User contact | Account lifetime |
+| `name` | Text | **High** | User identification | Account lifetime |
+| `email` | Email | **High** | Optional contact | Account lifetime |
+| `locale` | Text | Low | UI language preference | Account lifetime |
+| `role` | Enum | Low | Access level | Account lifetime |
+| `vehicle_plate` | Text | **Medium** | Driver identification | Account lifetime |
+| `created_at` | Timestamp | Low | Account creation | Permanent |
+| `updated_at` | Timestamp | Low | Last update | Permanent |
 
-**PII considerations**
+**Access**:
+- RLS: Users can only access own profile
+- Admin: Full read access via service role
+- API: Authenticated endpoint with rate limiting
 
-- Coordinates reveal sensitive location data; never expose raw `geog` in logs.
-- Labels are limited to 120 characters to reduce accidental leakage.
+---
 
-### `public.driver_parking`
+### User Favorites
 
-Driver-designated waiting areas used for dispatch matching.
+**Table**: `user_favorites`
 
-| Column | Type | PII | Notes |
-| --- | --- | --- | --- |
-| `id` | UUID | Low | Primary key |
-| `driver_id` | UUID | Medium | References driver profile |
-| `label` | Text | Low | Human readable label |
-| `geog` | Geography(Point, 4326) | **High** | Exact standby location |
-| `notes` | Text | Low | Optional description |
-| `active` | Boolean | Low | Soft toggle |
-| `created_at` / `updated_at` | Timestamptz | Low | Audit trail |
+| Field | Type | PII Level | Purpose | Retention |
+|-------|------|-----------|---------|-----------|
+| `id` | UUID | Low | Record identifier | Account lifetime |
+| `user_id` | UUID | Low | Profile reference | Account lifetime |
+| `kind` | Enum (`home`,`work`,`school`,`other`) | Low | Classification | Account lifetime |
+| `label` | Text | **Medium** | Friendly name ("Home", "School") | Account lifetime |
+| `address` | Text | **Medium** | Optional formatted address | Account lifetime |
+| `geog` | Geography(Point, 4326) | **High** | Exact latitude/longitude | Account lifetime |
+| `is_default` | Boolean | Low | Preferred favorite per kind | Account lifetime |
+| `created_at` | Timestamp | Low | Creation time | Permanent |
+| `updated_at` | Timestamp | Low | Audit trail | Permanent |
 
-### `public.driver_availability`
+**Access**:
+- RLS: authenticated users can `SELECT/INSERT/UPDATE/DELETE` where `user_id = auth.uid()`.
+- Service role: unrestricted for support automations.
+- Helper indexes: `user_id`, `(user_id, kind)`, GIST on `geog`, unique default per kind.
 
-Weekly recurrence metadata for when a driver is available.
+**Privacy Notes**:
+- Coordinates expose sensitive addresses; UI and logs must redact to neighbourhood granularity.
+- Retained until passenger account deletion. Cleaned automatically by `supabase/functions/data-retention`.
 
-| Column | Type | PII | Notes |
-| --- | --- | --- | --- |
-| `id` | UUID | Low | Primary key |
-| `driver_id` | UUID | Medium | References driver profile |
-| `parking_id` | UUID | Medium | Optional FK → `driver_parking` |
-| `days_of_week` | `int[]` | Low | Day numbers (`1`=Mon ... `7`=Sun) |
-| `start_time_local` / `end_time_local` | `time` | Low | Local window |
-| `timezone` | Text | Low | Defaults to `Africa/Kigali` |
-| `active` | Boolean | Low | Soft toggle |
-| `created_at` / `updated_at` | Timestamptz | Low | Audit trail |
+---
 
-### `public.recurring_trips`
+### Driver Parking Locations
 
-Recurring ride intents leveraging saved favorites.
+**Table**: `driver_parking`
 
-| Column | Type | PII | Notes |
-| --- | --- | --- | --- |
-| `id` | UUID | Low | Primary key |
-| `user_id` | UUID | Medium | References passenger profile |
-| `origin_favorite_id` / `dest_favorite_id` | UUID | **High** | References user favorites (location) |
-| `days_of_week` | `int[]` | Low | Execution pattern |
-| `time_local` | `time` | Low | Trigger time |
-| `timezone` | Text | Low | Local timezone |
-| `radius_km` | Numeric | Low | Matching radius |
-| `active` | Boolean | Low | Soft toggle |
-| `last_triggered_at` | Timestamptz | Low | Scheduler bookkeeping |
-| `created_at` / `updated_at` | Timestamptz | Low | Audit trail |
+| Field | Type | PII Level | Purpose | Retention |
+|-------|------|-----------|---------|-----------|
+| `id` | UUID | Low | Record identifier | Account lifetime |
+| `driver_id` | UUID | Low | Driver profile reference | Account lifetime |
+| `label` | Text | **Medium** | Parking nickname | Account lifetime |
+| `geog` | Geography(Point, 4326) | **High** | Standing spot coordinates | 90 days rolling |
+| `active` | Boolean | Low | Availability toggle | Account lifetime |
+| `created_at` | Timestamp | Low | Creation time | Permanent |
+| `updated_at` | Timestamp | Low | Last modification | Permanent |
 
-### `public.deeplink_tokens`
+**Access**:
+- RLS: `driver_id = auth.uid()` for authenticated writes/reads.
+- Service role: full access to orchestrate dispatch.
+- Spatial queries accelerated via GIST index on `geog`.
 
-Short-lived authentication surrogates powering WhatsApp deeplinks.
+**Retention**:
+- `data-retention` cron archives inactive rows older than 90 days and purges upon account deletion.
+- Drivers may deactivate instead of delete to keep historical accuracy.
 
-| Column | Type | PII | Notes |
-| --- | --- | --- | --- |
-| `id` | UUID | Low | Primary key |
-| `flow` | Text enum | Low | `insurance_attach`, `basket_open`, `generate_qr` |
-| `token` | Text | Medium | Signed opaque string |
-| `payload` | JSONB | Low | Flow-specific metadata (nonce injected) |
-| `msisdn_e164` | Text | **High** | Optional phone binding |
-| `expires_at` / `used_at` | Timestamptz | Low | TTL + consumption state |
-| `multi_use` | Boolean | Low | Multi-claim tokens for flows like QR |
-| `created_by` | UUID | Medium | Optional actor ID for auditing |
-| `resolved_count` | Integer | Low | Usage counter |
-| `last_resolved_at` | Timestamptz | Low | Last redemption time |
-| `metadata` | JSONB | Low | System annotations |
-| `created_at` | Timestamptz | Low | Creation timestamp |
+---
 
-### `public.deeplink_events`
+### Driver Availability
 
-Immutable audit trail referencing `deeplink_tokens`.
+**Table**: `driver_availability`
 
-| Column | Type | PII | Notes |
-| --- | --- | --- | --- |
-| `id` | UUID | Low | Primary key |
-| `token_id` | UUID | Medium | FK → `deeplink_tokens.id` |
-| `event` | Text enum | Low | `issued`, `opened`, `expired`, `denied`, `completed` |
-| `actor_msisdn` | Text | **High** | Optional phone captured when resolved |
-| `meta` | JSONB | Low | Structured event context |
-| `created_at` | Timestamptz | Low | Event timestamp |
+| Field | Type | PII Level | Purpose | Retention |
+|-------|------|-----------|---------|-----------|
+| `id` | UUID | Low | Record identifier | Account lifetime |
+| `driver_id` | UUID | Low | Driver profile reference | Account lifetime |
+| `parking_id` | UUID | Low | Optional link to parking spot | Account lifetime |
+| `days_of_week` | smallint[] | Low | Recurring weekday mask (0=Sun) | Account lifetime |
+| `start_time_local` | Time | Low | Local start time | Account lifetime |
+| `end_time_local` | Time | Low | Local end time | Account lifetime |
+| `timezone` | Text | Low | Olson timezone identifier | Account lifetime |
+| `active` | Boolean | Low | Toggle availability | Account lifetime |
+| `created_at` | Timestamp | Low | Creation time | Permanent |
+| `updated_at` | Timestamp | Low | Last modification | Permanent |
 
-### `public.router_logs`
+**Access**:
+- RLS: `driver_id = auth.uid()` for CRUD operations.
+- Service role: unrestricted to power scheduling automation.
+- Indices on `(driver_id)`, `(driver_id, active)`, and GIN on `days_of_week` for planner queries.
 
-Observability ledger for the WhatsApp router. Sensitive snippets are truncated before insert.
+**Retention**:
+- Managed via the same `data-retention` function when driver accounts are closed.
+- Drivers can toggle `active` instead of deletion to preserve scheduling history.
 
-| Column | Type | PII | Notes |
-| --- | --- | --- | --- |
-| `id` | UUID | Low | Primary key |
-| `message_id` | Text | Low | WhatsApp message identifier |
-| `text_snippet` | Text | Medium | First 500 chars of inbound text |
-| `route_key` | Text | Low | Matched handler key |
-| `status_code` | Text | Low | e.g. `routed`, `filtered`, `error` |
-| `metadata` | JSONB | Low | Parsed routing context (keyword, latency, etc.) |
-| `created_at` | Timestamptz | Low | Insert timestamp |
+---
+
+### Recurring Trips
+
+**Table**: `recurring_trips`
+
+| Field | Type | PII Level | Purpose | Retention |
+|-------|------|-----------|---------|-----------|
+| `id` | UUID | Low | Record identifier | Account lifetime |
+| `user_id` | UUID | Low | Passenger profile reference | Account lifetime |
+| `origin_favorite_id` | UUID | **Medium** | Link to saved origin | Account lifetime |
+| `dest_favorite_id` | UUID | **Medium** | Link to saved destination | Account lifetime |
+| `days_of_week` | smallint[] | Low | Recurring weekday mask | Account lifetime |
+| `time_local` | Time | Low | Departure time | Account lifetime |
+| `timezone` | Text | Low | Olson timezone identifier | Account lifetime |
+| `radius_km` | Numeric | Low | Matching radius | Account lifetime |
+| `active` | Boolean | Low | Toggle schedule | Account lifetime |
+| `last_triggered_at` | Timestamp | Low | Last automation run | 12 months |
+| `created_at` | Timestamp | Low | Creation time | Permanent |
+| `updated_at` | Timestamp | Low | Last modification | Permanent |
+
+**Access**:
+- RLS: passengers limited to their own schedules via `user_id = auth.uid()`.
+- Service role: unlimited for scheduler job.
+- GIN index on `days_of_week` + `(user_id, active)` accelerate matching queries.
+
+**Privacy Notes**:
+- Location linkage via favorites inherits the same safeguards—UI only surfaces labels.
+- Cleaned when favorites are deleted or on account closure.
+
+---
+
+### Deeplink Tokens
+
+**Table**: `deeplink_tokens`
+
+| Field | Type | PII Level | Purpose | Retention |
+|-------|------|-----------|---------|-----------|
+| `id` | UUID | Low | Record identifier | 14 days |
+| `token` | Text | Low | Short-lived code | 14 days |
+| `flow` | Text | Low | Target flow namespace | 14 days |
+| `msisdn` | Phone | **High** | Optional binding to passenger | 14 days |
+| `max_uses` | Integer | Low | Safety limit | 14 days |
+| `remaining_uses` | Integer | Low | Remaining redemptions | 14 days |
+| `expires_at` | Timestamp | Low | Hard TTL | 14 days |
+| `metadata` | JSONB | Low | Additional context | 14 days |
+| `created_by` | UUID | Low | Creator profile | 14 days |
+| `created_at` | Timestamp | Low | Creation time | 14 days |
+| `updated_at` | Timestamp | Low | Audit trail | 14 days |
+
+**Access**:
+- RLS restricts authenticated users to rows where `created_by = auth.uid()`.
+- Service role can issue/revoke tokens system-wide.
+- Helper view `my_deeplink_events` exposes event history scoped to the owner.
+
+**Retention & Cleanup**:
+- `data-retention` cron job deletes expired tokens and associated `deeplink_events` nightly.
+- TTL defaults to 7–14 days depending on flow, enforced by application when inserting.
+
+---
+
+### Router Logs
+
+**Table**: `router_logs`
+
+| Field | Type | PII Level | Purpose | Retention |
+|-------|------|-----------|---------|-----------|
+| `id` | UUID | Low | Record identifier | 90 days |
+| `tenant_id` | UUID | **Medium** | Scoped profile/account | 90 days |
+| `message_id` | Text | Low | WhatsApp message ID | 90 days |
+| `text_snippet` | Text | **Medium** | Sanitised 500-char snippet | 90 days |
+| `route_key` | Text | Low | Matched router branch | 90 days |
+| `status_code` | Text | Low | Processing status | 90 days |
+| `metadata` | JSONB | Low | Diagnostic payload | 90 days |
+| `created_at` | Timestamp | Low | Log time | 90 days |
+| `expires_at` | Timestamp | Low | Automatic purge date | 90 days |
+
+**Access**:
+- RLS: authenticated users may read where `tenant_id = auth.uid()`.
+- Service role: read/write for ingestion and analytics.
+- Indices on `(tenant_id, message_id)` and `(tenant_id, created_at)` for timeline queries.
+
+**Privacy**:
+- Snippets truncated and PII masked at source (MSISDN hashed except last four digits).
+- `metadata` must exclude raw payloads; only derived aggregates permitted.
+
+**Retention & Cleanup**:
+- `expires_at` pre-computes a 90-day deletion horizon.
+- `data-retention` function prunes expired rows nightly to control storage.
+
+---
+
+### WhatsApp Messages
+
+**Table**: `wa_messages` (if stored)
+
+| Field | Type | PII Level | Purpose | Retention |
+|-------|------|-----------|---------|-----------|
+| `id` | UUID | Low | Record identifier | 30 days |
+| `message_id` | Text | Low | WhatsApp message ID | 30 days |
+| `from_msisdn` | Phone | **High** | Sender | 30 days |
+| `to_msisdn` | Phone | **High** | Recipient | 30 days |
+| `message_type` | Enum | Low | Type (text, image, etc.) | 30 days |
+| `content` | JSONB | **High** | Message payload | 30 days |
+| `created_at` | Timestamp | Low | Sent/received time | 30 days |
+
+**Access**:
+- Service role only
+- Purpose: Conversation history, compliance
+
+**Retention**:
+- Delete after 30 days
+- Export on user request
+- Purged by `data-retention` cron job
+
+---
+
+## Retention Policies
+
+### Automatic Deletion
+
+Implemented via `supabase/functions/data-retention/index.ts`:
+
+```typescript
+// Cron job runs daily at 02:00 UTC
+// Deletes expired records based on TTL
+
+await supabase.from("deeplink_tokens")
+  .delete()
+  .lt("expires_at", new Date().toISOString());
+
+await supabase.from("router_logs")
+  .delete()
+  .lt("created_at", new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString());
+
+await supabase.from("wa_messages")
+  .delete()
+  .lt("created_at", new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString());
+```
+
+### Retention Schedule
+
+| Data Type | Retention Period | Deletion Method |
+|-----------|------------------|-----------------|
+| Deeplink tokens | 14 days | Auto-delete by cron |
+| Router logs | 90 days | Auto-delete by cron |
+| WA messages | 30 days | Auto-delete by cron |
+| Driver parking | 90 days | Auto-expire field |
+| Driver availability | 180 days | Manual cleanup |
+| User favorites | Account lifetime | On account deletion |
+| Recurring trips | Account lifetime | On account deletion |
+| User profiles | Account lifetime + 1 year | Manual deletion |
 
 ---
 
