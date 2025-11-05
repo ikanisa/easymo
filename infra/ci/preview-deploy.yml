@@ -1,0 +1,87 @@
+name: Preview Deployments
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  deployments: write
+  id-token: write
+
+jobs:
+  preview:
+    name: Deploy preview to Vercel and Supabase Functions
+    runs-on: ubuntu-latest
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_FUNCTIONS_PREVIEW_REF: ${{ secrets.SUPABASE_FUNCTIONS_PREVIEW_REF }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate preview build
+        run: pnpm build
+
+      - name: Deploy Vercel preview
+        if: env.VERCEL_TOKEN != '' && env.VERCEL_ORG_ID != '' && env.VERCEL_PROJECT_ID != ''
+        id: vercel
+        uses: vercel/action@v3
+        with:
+          token: ${{ secrets.VERCEL_TOKEN }}
+          scope: ${{ secrets.VERCEL_ORG_ID }}
+          project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          working-directory: .
+          build-command: pnpm build
+          install-command: pnpm install --frozen-lockfile
+          vercel-args: --prebuilt --yes
+          github-comment: false
+
+      - name: Summarise Vercel preview URL
+        if: steps.vercel.outputs.preview-url != ''
+        run: |
+          echo "### Vercel Preview" >> "$GITHUB_STEP_SUMMARY"
+          echo "${{ steps.vercel.outputs.preview-url }}" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Set up Supabase CLI
+        if: env.SUPABASE_ACCESS_TOKEN != '' && env.SUPABASE_FUNCTIONS_PREVIEW_REF != ''
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Link Supabase preview project
+        if: env.SUPABASE_ACCESS_TOKEN != '' && env.SUPABASE_FUNCTIONS_PREVIEW_REF != ''
+        working-directory: supabase
+        run: |
+          supabase link --project-ref "$SUPABASE_FUNCTIONS_PREVIEW_REF" --access-token "$SUPABASE_ACCESS_TOKEN"
+
+      - name: Deploy Supabase functions to preview
+        if: env.SUPABASE_ACCESS_TOKEN != '' && env.SUPABASE_FUNCTIONS_PREVIEW_REF != ''
+        run: |
+          pnpm run functions:deploy
+
+      - name: Summarise Supabase functions deployment
+        if: env.SUPABASE_ACCESS_TOKEN != '' && env.SUPABASE_FUNCTIONS_PREVIEW_REF != ''
+        run: |
+          echo "### Supabase Functions" >> "$GITHUB_STEP_SUMMARY"
+          echo "Linked project: $SUPABASE_FUNCTIONS_PREVIEW_REF" >> "$GITHUB_STEP_SUMMARY"

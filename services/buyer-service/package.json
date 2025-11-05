@@ -13,7 +13,7 @@
     "@easymo/db": "workspace:*",
     "@easymo/commons": "workspace:*",
     "@prisma/client": "^5.22.0",
-    "axios": "^1.7.9",
+    "axios": "^1.13.1",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "pino": "^9.5.0",

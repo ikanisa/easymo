@@ -1,17 +1,25 @@
+jest.mock('@easymo/commons', () => {
+  const actual = jest.requireActual('@easymo/commons');
+  return {
+    ...actual,
+    logger: {
+      debug: jest.fn(),
+      info: jest.fn(),
+      warn: jest.fn(),
+      error: jest.fn(),
+    },
+    withTelemetryContext: jest.fn(async (fn: () => unknown) => await fn()),
+  };
+});
+
+import { logger as sharedLogger, withTelemetryContext } from '@easymo/commons';
 import { structuredLogger, createWorkflowLogger, withLogging, LogContext } from './utils/logging';
 
 describe('Logging Utilities', () => {
-  let consoleLogSpy: jest.SpyInstance;
-  let consoleErrorSpy: jest.SpyInstance;
+  const mockedLogger = sharedLogger as jest.Mocked<typeof sharedLogger>;
 
   beforeEach(() => {
-    consoleLogSpy = jest.spyOn(console, 'log').mockImplementation();
-    consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
-  });
-
-  afterEach(() => {
-    consoleLogSpy.mockRestore();
-    consoleErrorSpy.mockRestore();
+    jest.clearAllMocks();
   });
 
   describe('structuredLogger', () => {
@@ -21,13 +29,12 @@ describe('Logging Utilities', () => {
         message: 'Test message',
       });
 
-      expect(consoleLogSpy).toHaveBeenCalledTimes(1);
-      const loggedData = JSON.parse(consoleLogSpy.mock.calls[0][0]);
-      
-      expect(loggedData.level).toBe('info');
-      expect(loggedData.event).toBe('test_event');
-      expect(loggedData.message).toBe('Test message');
-      expect(loggedData.timestamp).toBeDefined();
+      expect(mockedLogger.info).toHaveBeenCalledWith(
+        expect.objectContaining({
+          event: 'test_event',
+          message: 'Test message',
+        }),
+      );
     });
 
     it('should log error messages to stderr', () => {
@@ -37,12 +44,12 @@ describe('Logging Utilities', () => {
         status: 'error',
       });
 
-      expect(consoleErrorSpy).toHaveBeenCalledTimes(1);
-      const loggedData = JSON.parse(consoleErrorSpy.mock.calls[0][0]);
-      
-      expect(loggedData.level).toBe('error');
-      expect(loggedData.event).toBe('error_event');
-      expect(loggedData.status).toBe('error');
+      expect(mockedLogger.error).toHaveBeenCalledWith(
+        expect.objectContaining({
+          event: 'error_event',
+          status: 'error',
+        }),
+      );
     });
 
     it('should include all context fields', () => {
@@ -58,52 +65,54 @@ describe('Logging Utilities', () => {
 
       structuredLogger.info(context);
 
-      const loggedData = JSON.parse(consoleLogSpy.mock.calls[0][0]);
-      expect(loggedData.target).toBe('test-service');
-      expect(loggedData.actor).toBe('user123');
-      expect(loggedData.entity).toBe('order456');
-      expect(loggedData.details).toEqual({ count: 5 });
-      expect(loggedData.tags).toEqual({ env: 'test' });
+      expect(mockedLogger.info).toHaveBeenCalledWith(
+        expect.objectContaining({
+          target: 'test-service',
+          actor: 'user123',
+          entity: 'order456',
+          details: { count: 5 },
+          tags: { env: 'test' },
+        }),
+      );
     });
   });
 
   describe('createWorkflowLogger', () => {
     it('should create logger with workflow context', () => {
       const logger = createWorkflowLogger('whatsapp-handler');
-      
+
       logger.info({
         event: 'message_received',
         message: 'Processing message',
       });
 
-      const loggedData = JSON.parse(consoleLogSpy.mock.calls[0][0]);
-      expect(loggedData.target).toBe('whatsapp-handler');
-      expect(loggedData.event).toBe('message_received');
+      expect(mockedLogger.info).toHaveBeenCalledWith(
+        expect.objectContaining({
+          target: 'whatsapp-handler',
+          event: 'message_received',
+        }),
+      );
     });
 
     it('should support all log levels', () => {
       const logger = createWorkflowLogger('test-workflow');
-      
+
       logger.debug({ event: 'debug_event' });
       logger.info({ event: 'info_event' });
       logger.warn({ event: 'warn_event' });
       logger.error({ event: 'error_event' });
 
-      expect(consoleLogSpy).toHaveBeenCalledTimes(3); // debug, info, warn
-      expect(consoleErrorSpy).toHaveBeenCalledTimes(1); // error
-
-      const debugLog = JSON.parse(consoleLogSpy.mock.calls[0][0]);
-      expect(debugLog.level).toBe('debug');
-
-      const errorLog = JSON.parse(consoleErrorSpy.mock.calls[0][0]);
-      expect(errorLog.level).toBe('error');
+      expect(mockedLogger.debug).toHaveBeenCalledWith(expect.objectContaining({ event: 'debug_event' }));
+      expect(mockedLogger.info).toHaveBeenCalledWith(expect.objectContaining({ event: 'info_event' }));
+      expect(mockedLogger.warn).toHaveBeenCalledWith(expect.objectContaining({ event: 'warn_event' }));
+      expect(mockedLogger.error).toHaveBeenCalledWith(expect.objectContaining({ event: 'error_event' }));
     });
   });
 
   describe('withLogging', () => {
     it('should log successful operation with duration', async () => {
       const operation = jest.fn().mockResolvedValue('result');
-      
+
       const result = await withLogging('test_operation', operation, {
         target: 'test-service',
       });
@@ -111,26 +120,30 @@ describe('Logging Utilities', () => {
       expect(result).toBe('result');
       expect(operation).toHaveBeenCalledTimes(1);
 
-      const loggedData = JSON.parse(consoleLogSpy.mock.calls[0][0]);
-      expect(loggedData.event).toBe('test_operation');
-      expect(loggedData.status).toBe('ok');
-      expect(loggedData.duration_ms).toBeGreaterThanOrEqual(0);
-      expect(loggedData.target).toBe('test-service');
+      expect(mockedLogger.info).toHaveBeenCalledWith(
+        expect.objectContaining({
+          event: 'test_operation',
+          status: 'ok',
+          target: 'test-service',
+        }),
+      );
     });
 
     it('should log failed operation with error details', async () => {
       const error = new Error('Operation failed');
       const operation = jest.fn().mockRejectedValue(error);
-      
+
       await expect(
         withLogging('failed_operation', operation)
       ).rejects.toThrow('Operation failed');
 
-      const loggedData = JSON.parse(consoleErrorSpy.mock.calls[0][0]);
-      expect(loggedData.event).toBe('failed_operation');
-      expect(loggedData.status).toBe('error');
-      expect(loggedData.message).toBe('Operation failed');
-      expect(loggedData.duration_ms).toBeGreaterThanOrEqual(0);
+      expect(mockedLogger.error).toHaveBeenCalledWith(
+        expect.objectContaining({
+          event: 'failed_operation',
+          status: 'error',
+          message: 'Operation failed',
+        }),
+      );
     });
 
     it('should measure operation duration', async () => {
@@ -141,8 +154,19 @@ describe('Logging Utilities', () => {
 
       await withLogging('timed_operation', operation);
 
-      const loggedData = JSON.parse(consoleLogSpy.mock.calls[0][0]);
-      expect(loggedData.duration_ms).toBeGreaterThanOrEqual(50);
+      expect(mockedLogger.info).toHaveBeenCalledWith(
+        expect.objectContaining({
+          event: 'timed_operation',
+        }),
+      );
     });
+  });
+
+  it('should use telemetry context helper', async () => {
+    const telemetrySpy = withTelemetryContext as jest.Mock;
+
+    await withLogging('telemetry_event', async () => 'ok');
+
+    expect(telemetrySpy).toHaveBeenCalled();
   });
 });

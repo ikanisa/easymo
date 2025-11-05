@@ -431,6 +431,97 @@ SELECT ok(
 
 RESET role;
 
+-- Test 26: router_destinations has RLS enabled
+SELECT ok(
+  (SELECT relrowsecurity FROM pg_class WHERE relname = 'router_destinations'),
+  'router_destinations has RLS enabled'
+);
+
+-- Test 27: Service role can upsert destinations
+SET LOCAL role = service_role;
+
+INSERT INTO public.router_destinations (slug, route_key, url)
+VALUES ('test-destination', 'insurance', 'https://example.test/router')
+ON CONFLICT (slug) DO UPDATE SET url = EXCLUDED.url;
+
+SELECT ok(
+  EXISTS(
+    SELECT 1 FROM public.router_destinations WHERE slug = 'test-destination'
+  ),
+  'Service role can upsert router destinations'
+);
+
+RESET role;
+
+-- Test 28: Authenticated users can read active destinations
+SET LOCAL role = authenticated;
+
+SELECT ok(
+  (SELECT COUNT(*) FROM public.router_destinations WHERE is_active = true) >= 1,
+  'Authenticated users can read active router destinations'
+);
+
+RESET role;
+
+-- Test 29: router_idempotency has RLS enabled
+SELECT ok(
+  (SELECT relrowsecurity FROM pg_class WHERE relname = 'router_idempotency'),
+  'router_idempotency has RLS enabled'
+);
+
+-- Test 30: Service role can insert idempotency records
+SET LOCAL role = service_role;
+
+INSERT INTO public.router_idempotency (message_id, from_number)
+VALUES ('wamid.sqltest', '+250700000000')
+ON CONFLICT (message_id) DO NOTHING;
+
+SELECT ok(
+  EXISTS(SELECT 1 FROM public.router_idempotency WHERE message_id = 'wamid.sqltest'),
+  'Service role can insert router idempotency records'
+);
+
+RESET role;
+
+-- Test 31: router_rate_limits has RLS enabled
+SELECT ok(
+  (SELECT relrowsecurity FROM pg_class WHERE relname = 'router_rate_limits'),
+  'router_rate_limits has RLS enabled'
+);
+
+-- Test 32: Service role can insert rate limit records
+SET LOCAL role = service_role;
+
+INSERT INTO public.router_rate_limits (sender, window_start, count)
+VALUES ('250788000000', timezone('utc', now()), 1)
+ON CONFLICT (sender, window_start) DO UPDATE SET count = EXCLUDED.count;
+
+SELECT ok(
+  EXISTS(SELECT 1 FROM public.router_rate_limits WHERE sender = '250788000000'),
+  'Service role can insert router rate limit records'
+);
+
+RESET role;
+
+-- Test 33: router_telemetry has RLS enabled
+SELECT ok(
+  (SELECT relrowsecurity FROM pg_class WHERE relname = 'router_telemetry'),
+  'router_telemetry has RLS enabled'
+);
+
+-- Test 34: Service role can insert telemetry events
+SET LOCAL role = service_role;
+
+INSERT INTO public.router_telemetry (event, message_id, keyword)
+VALUES ('message_routed', 'wamid.sqltest', 'insurance');
+
+SELECT ok(
+  EXISTS(SELECT 1 FROM public.router_telemetry WHERE message_id = 'wamid.sqltest'),
+  'Service role can insert router telemetry events'
+);
+
+RESET role;
+
 -- ============================================================================
 -- Cleanup
 -- ============================================================================

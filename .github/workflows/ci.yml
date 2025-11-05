@@ -48,10 +48,16 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build shared packages
-        run: pnpm --filter @va/shared build && pnpm --filter @easymo/commons build
+        run: pnpm --filter @easymo/config build && pnpm --filter @va/shared build && pnpm --filter @easymo/commons build
+
+      - name: Format check
+        run: pnpm format:check
 
       - name: Assert no service role in client env
         run: node scripts/assert-no-service-role-in-client.mjs
+
+      - name: Check formatting
+        run: pnpm format:check
 
       - name: Run lint
         run: pnpm lint

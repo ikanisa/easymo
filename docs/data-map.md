@@ -1,8 +1,10 @@
-# Data Map & Privacy Documentation
+# Mobility Data Map & Retention Guide
 
-## Overview
+This document inventories the personally identifiable information (PII) handled by
+mobility-oriented Supabase tables, highlights retention commitments, and documents
+cleanup automations that enforce the stated policies.
 
-This document maps all Personally Identifiable Information (PII) and sensitive data stored in the easyMO platform, along with retention policies, access controls, and privacy safeguards.
+## Contents
 
 ## Table of Contents
 
@@ -275,148 +277,51 @@ await supabase.from("wa_messages")
 
 ## Access Controls
 
-### Role-Based Access
+All tables participate in Supabase row-level security (RLS) with forced enforcement:
 
-| Role | Access Level | Tables |
-|------|--------------|--------|
-| `anon` | None | None |
-| `authenticated` | Own data only | profiles, user_favorites, driver_parking, driver_availability, recurring_trips |
-| `service_role` | Full access | All tables |
-| `admin` | Read-only (via service role) | All tables via Admin Panel |
+- **Owner-only mutations**: `user_favorites`, `driver_parking`, `driver_availability`, and
+  `recurring_trips` grant `authenticated` users access only when `auth.uid()` matches the
+  owning foreign key. Every table also exposes a `service_role` policy for automation.
+- **Service role only**: `deeplink_tokens` and `deeplink_events` are fully managed by the
+  backend service. Authenticated callers only receive read access to tokens they created.
+- **Operational visibility**: `router_logs` permit `service_role` reads/writes and
+  authenticated read-only access for support dashboards.
 
-### API Endpoints
-
-| Endpoint | Auth Required | Rate Limit | Purpose |
-|----------|---------------|------------|---------|
-| `/wa-router` | Signature verification | None | WhatsApp webhook |
-| `/deeplink-resolver` | None | 10/min per IP | Deep-link resolution |
-| `/admin-*` | Admin token | 100/min | Admin operations |
-| `/flow-exchange` | Session token | 20/min | Flow execution |
+Policies are codified in `infra/supabase/policies/20260214090500_mobility_rls.sql` and
+mirrored into Supabase migrations so that `latest_schema.sql` stays authoritative.
 
 ---
 
-## Data Masking & Anonymization
+## Retention & Cleanup
 
-### Log Masking
+| Dataset | Default Retention | Cleanup Mechanism |
+| --- | --- | --- |
+| `user_favorites` | Account lifetime | Hard-deleted when passenger profile is removed. |
+| `driver_parking` | Account lifetime | Cleared on driver deletion. |
+| `driver_availability` | Account lifetime | Scheduler resets windows when a driver is archived. |
+| `recurring_trips` | Account lifetime | Scheduler disables (`active = false`) after 90 days of inactivity; removed on user deletion. |
+| `deeplink_tokens` | 14 days | Purged by the `data-retention` edge function (see below). |
+| `deeplink_events` | 30 days | Same retention worker cascades delete via FK. |
+| `router_logs` | 90 days | `data-retention` function prunes records older than policy window. |
 
-All logs mask PII using the following rules:
-
-```typescript
-function maskMSISDN(msisdn: string): string {
-  // Show only last 4 digits: +250788123456 → ****3456
-  return msisdn.slice(0, -4).replace(/./g, "*") + msisdn.slice(-4);
-}
-
-function maskLocation(geog: { lat: number; lon: number }): string {
-  // Show only city/region, not exact coordinates
-  return `~${Math.floor(geog.lat)}, ${Math.floor(geog.lon)}`;
-}
-
-function maskToken(token: string): string {
-  // Show only first/last 2 chars: ABC123XYZ → AB****YZ
-  return token.slice(0, 2) + "****" + token.slice(-2);
-}
-```
-
-### Anonymization
-
-For analytics and testing:
-
-```sql
--- Anonymize user data for analytics export
-SELECT
-  id,
-  'user_' || substring(md5(msisdn), 1, 8) AS anon_id,
-  'anon_' || id AS anon_name,
-  NULL AS msisdn,
-  locale,
-  created_at
-FROM profiles;
-```
+The retention guarantees align with privacy commitments documented in
+`DATA_MODEL_DELTA.md` and the public privacy notice.
 
 ---
 
-## User Rights (GDPR-lite)
+## Service Jobs
 
-### Right to Access
+| Job | Location | Schedule | Responsibilities |
+| --- | --- | --- | --- |
+| `data-retention` | `supabase/functions/data-retention` | Hourly | Deletes expired deeplink tokens/events, truncates router logs older than 90 days, and prunes other transient artefacts. |
+| `recurring-trips-scheduler` | `supabase/functions/recurring-trips-scheduler` | 5 min | Evaluates active `recurring_trips` rows and creates trip intents; respects `active = false` and updates `last_triggered_at`. |
+| `availability-refresh` | `supabase/functions/availability-refresh` | Hourly | Syncs driver status back into `driver_availability` when remote systems change.
 
-Users can request their data via:
-1. **Admin Panel**: Self-service export (future)
-2. **API Endpoint**: `/api/data-export?user_id={id}`
-3. **Support Email**: Manual export by admin
-
-**Export Format**: JSON with all user data.
-
-### Right to Deletion
-
-Users can request account deletion:
-1. **In-App**: Settings → Delete Account
-2. **WhatsApp**: Send "DELETE MY ACCOUNT"
-3. **Support Email**: Manual deletion by admin
-
-**Deletion Process**:
-- Soft delete: Mark `deleted_at` timestamp
-- Grace period: 30 days (allow undo)
-- Hard delete: Purge all data after grace period
-
-**Cascade Delete**:
-```sql
--- On user deletion, cascade to related tables
-DELETE FROM user_favorites WHERE user_id = :user_id;
-DELETE FROM recurring_trips WHERE user_id = :user_id;
-DELETE FROM driver_parking WHERE driver_id = :user_id;
-DELETE FROM driver_availability WHERE driver_id = :user_id;
--- Finally delete profile
-DELETE FROM profiles WHERE id = :user_id;
-```
-
-### Right to Rectification
-
-Users can update their data via:
-1. **In-App**: Profile settings
-2. **WhatsApp**: Send "UPDATE MY {field}"
-3. **Admin Panel**: Admin can update on behalf
+Each job runs with the Supabase `service_role` key so RLS bypass policies apply where
+required. Logs generated by these jobs are retained in `router_logs` for 90 days,
+providing end-to-end traceability for privacy audits.
 
 ---
 
-## Compliance Checklist
-
-### Pre-Launch
-
-- [x] PII inventory documented
-- [x] Retention policies defined
-- [x] RLS policies enabled on all tables
-- [x] Logs mask sensitive data
-- [ ] Data export endpoint implemented
-- [ ] Account deletion flow implemented
-- [ ] Privacy policy published
-
-### Ongoing
-
-- [ ] Quarterly data audit
-- [ ] Annual privacy policy review
-- [ ] Retention policy enforcement monitoring
-- [ ] User access request handling (SLA: 7 days)
-- [ ] Deletion request handling (SLA: 30 days)
-
-### Regulatory
-
-- [ ] Rwanda Data Protection Law compliance
-- [ ] GDPR compliance (if applicable)
-- [ ] Consent collection for data processing
-- [ ] Third-party data processor agreements (Meta, Twilio, OpenAI)
-
----
-
-## References
-
-- [Rwanda Data Protection Law](https://risa.rw/data-protection/)
-- [GDPR Guidelines](https://gdpr.eu/)
-- [WhatsApp Business Data Policies](https://www.whatsapp.com/legal/business-policy)
-- [Supabase Security Best Practices](https://supabase.com/docs/guides/platform/security)
-
----
-
-**Last Updated**: 2025-10-28  
-**Owner**: easyMO Privacy & Compliance Team  
-**Review Cycle**: Quarterly
+**Questions?** Reach out in `#mobility-platform` or consult the retention runbook in
+`ROLLBACK_PLAYBOOK.md` for emergency data takedowns.

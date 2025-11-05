@@ -46,6 +46,24 @@
 - Front-end errors bubble through toast notifications; enable Sentry by setting
   `SENTRY_DSN` and `SENTRY_ENVIRONMENT` in the environment file.
 
+### WhatsApp router fan-out (`apps/router-fn`)
+- Deploy the Deno application alongside edge functions: `supabase functions deploy router-fn` after exporting `WA_APP_SECRET`,
+  `WA_VERIFY_TOKEN`, `SUPABASE_URL`, and `SUPABASE_SERVICE_ROLE_KEY`.
+- Apply the router schema migration before deploying:
+  ```bash
+  supabase db push --file supabase/migrations/20260201090000_router_fn_foundation.sql
+  ```
+- Destination allowlists live in `router_destinations`. Update rows instead of changing environment variables, and keep URLs HTTPS.
+- Idempotency and rate limiting use `router_message_gate` and `router_rate_limits`. Empty the tables with `DELETE` statements if
+  you need to replay traffic in lower environments.
+- Structured telemetry is emitted as console JSON with the `ROUTER_TELEMETRY` event. Unknown keywords and downstream failures
+  are summarized in the payload.
+- Run regression tests locally with:
+  ```bash
+  deno test --config apps/router-fn/deno.json
+  ```
+  The suite covers signature replay, unknown keywords, and downstream error scenarios.
+
 ## Support playbooks
 
 ### Simulator access denied
