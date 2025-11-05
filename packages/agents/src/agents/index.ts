@@ -5,5 +5,4 @@
  */
 
 export { BookingAgent, runBookingAgent } from './booking';
-export { TokenRedemptionAgent, runTokenRedemptionAgent } from './redemption';
 export { TriageAgent, runTriageAgent, analyzeIntent } from './triage';
