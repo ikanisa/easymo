@@ -1,7 +1,8 @@
-/**
- * Placeholder exports for the future shared UI component library.
- *
- * This allows new code to import from "@easymo/ui" while we carve features
- * out of the legacy bundles via the strangler fig pattern.
- */
-export const uiStranglerPlaceholder = true;
+export * from "./components/Button";
+export * from "./components/Input";
+export * from "./components/Dialog";
+export * from "./tokens";
+export * from "./tokens/tailwind";
+export * from "./table/Table";
+export * from "./widgets/KpiWidget";
+export * from "./charts/TrendAreaChart";

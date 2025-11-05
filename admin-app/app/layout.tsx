@@ -17,16 +17,12 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const uiKitEnabled = isUiKitEnabled();
+  const uiKitEnabled = (process.env.NEXT_PUBLIC_UI_V2_ENABLED ?? "false")
+    .toLowerCase()
+    .trim() === "true";
   return (
     <html lang="en">
-      <body>
-        {uiKitEnabled ? (
-          <style
-            data-testid="ui-kit-token-sheet"
-            dangerouslySetInnerHTML={{ __html: cssVariableSheet }}
-          />
-        ) : null}
+      <body data-ui-theme={uiKitEnabled ? "v2" : undefined}>
         <QueryProvider>
           <a className="skip-link" href="#main-content">
             Skip to main content

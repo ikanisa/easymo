@@ -1,77 +1,44 @@
 "use client";
 
 import { forwardRef } from "react";
-import {
-  Button as LegacyButton,
-  buttonVariants as legacyVariants,
-  type ButtonProps as LegacyButtonProps,
-} from "@/components/ui/shadcn/button";
+import { Button as LegacyButton, buttonVariants, type ButtonProps as LegacyButtonProps } from "@/components/ui/shadcn/button";
+import { Button as UiButton, type ButtonProps as UiButtonProps } from "@easymo/ui";
 import { useConnectivity } from "@/components/providers/ConnectivityProvider";
-import {
-  Button as KitButton,
-  buttonRecipe as kitVariants,
-  type ButtonProps as KitButtonProps,
-} from "@easymo/ui";
-import { isUiKitEnabled } from "@/lib/ui-kit";
 
-const uiKitEnabled = isUiKitEnabled();
+const uiKitEnabled = (process.env.NEXT_PUBLIC_UI_V2_ENABLED ?? "false").trim().toLowerCase() === "true";
 
-export type ButtonProps = LegacyButtonProps;
+type FeatureButtonProps = LegacyButtonProps & Partial<UiButtonProps>;
 
-export const buttonVariants = uiKitEnabled
-  ? (kitVariants as typeof legacyVariants)
-  : legacyVariants;
+export const Button = forwardRef<HTMLButtonElement, FeatureButtonProps>(function FeatureFlaggedButton(
+  { offlineBehavior = "block", disabled, ...props },
+  ref,
+) {
+  const { isOnline } = useConnectivity();
+  const offlineBlocked = offlineBehavior === "block" && !isOnline;
+  const computedDisabled = disabled ?? offlineBlocked;
 
-export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ offlineBehavior = "block", disabled, className, variant = "default", size = "default", ...props }, ref) => {
-    if (!uiKitEnabled) {
-      return (
-        <LegacyButton
-          ref={ref}
-          offlineBehavior={offlineBehavior}
-          disabled={disabled}
-          className={className}
-          variant={variant}
-          size={size}
-          {...props}
-        />
-      );
-    }
-
-    const { isOnline } = useConnectivity();
-    const offlineBlocked = offlineBehavior === "block" && !isOnline;
-    const computedDisabled = disabled ?? offlineBlocked;
-    const kitVariantMap: Record<string, KitButtonProps["variant"]> = {
-      default: "primary",
-      outline: "secondary",
-      ghost: "ghost",
-      subtle: "secondary",
-      danger: "destructive",
-    };
-    const kitSizeMap: Record<string, KitButtonProps["size"]> = {
-      default: "md",
-      sm: "sm",
-      lg: "lg",
-      icon: "icon",
-    };
-    const mappedVariant = kitVariantMap[variant] ?? "primary";
-    const mappedSize = kitSizeMap[size] ?? "md";
-    const tone = variant === "outline" ? "outline" : undefined;
-    const kitProps = props as Omit<KitButtonProps, "variant" | "tone" | "size" | "className">;
-
+  if (uiKitEnabled) {
     return (
-      <KitButton
+      <UiButton
         ref={ref}
         disabled={computedDisabled}
         data-offline-disabled={offlineBlocked ? "true" : undefined}
-        className={className}
-        variant={mappedVariant}
-        size={mappedSize}
-        tone={tone}
-        {...kitProps}
+        offlineBehavior={offlineBehavior}
+        {...props}
       />
     );
-  },
-);
+  }
 
-Button.displayName = "Button";
+  return (
+    <LegacyButton
+      ref={ref}
+      disabled={computedDisabled}
+      data-offline-disabled={offlineBlocked ? "true" : undefined}
+      offlineBehavior={offlineBehavior}
+      {...props}
+    />
+  );
+});
+
+export type ButtonProps = FeatureButtonProps;
+export { buttonVariants };
