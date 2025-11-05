@@ -8,9 +8,6 @@ importers:
 
   .:
     dependencies:
-      '@easymo/config':
-        specifier: workspace:*
-        version: link:packages/config
       '@easymo/ui':
         specifier: workspace:*
         version: link:packages/ui
@@ -408,51 +405,6 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4(@edge-runtime/vm@3.2.0)(@types/node@22.18.12)(@vitest/ui@3.2.4)(jsdom@26.1.0)(terser@5.44.0)
 
-  apps/admin-pwa: {}
-
-  apps/agent-core:
-    dependencies:
-      '@easymo/commons':
-        specifier: workspace:*
-        version: link:../../packages/commons
-      '@nestjs/common':
-        specifier: ^10.4.7
-        version: 10.4.20(class-transformer@0.5.1)(class-validator@0.14.2)(reflect-metadata@0.2.2)(rxjs@7.8.2)
-      '@nestjs/core':
-        specifier: ^10.4.7
-        version: 10.4.20(@nestjs/common@10.4.20(class-transformer@0.5.1)(class-validator@0.14.2)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/platform-express@10.4.20)(reflect-metadata@0.2.2)(rxjs@7.8.2)
-      '@supabase/supabase-js':
-        specifier: ^2.76.1
-        version: 2.76.1
-      '@va/shared':
-        specifier: workspace:*
-        version: link:../../packages/shared
-      dotenv:
-        specifier: ^16.4.5
-        version: 16.6.1
-      express:
-        specifier: ^4.19.2
-        version: 4.21.2
-      openai:
-        specifier: ^4.64.0
-        version: 4.104.0(ws@8.18.3)(zod@3.25.76)
-      reflect-metadata:
-        specifier: ^0.2.2
-        version: 0.2.2
-      rxjs:
-        specifier: ^7.8.1
-        version: 7.8.2
-    devDependencies:
-      '@types/express':
-        specifier: ^4.17.21
-        version: 4.17.24
-      tsx:
-        specifier: ^4.19.1
-        version: 4.20.6
-      typescript:
-        specifier: ^5.6.3
-        version: 5.9.3
-
   apps/api:
     dependencies:
       '@easymo/commons':
@@ -705,8 +657,6 @@ importers:
         specifier: ^4.19.6
         version: 4.19.7
 
-  packages/config: {}
-
   packages/db:
     dependencies:
       '@easymo/commons':
@@ -836,8 +786,6 @@ importers:
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
-
-  packages/utils: {}
 
   services/agent-core:
     dependencies:
@@ -16363,7 +16311,7 @@ snapshots:
       '@typescript-eslint/parser': 8.46.2(eslint@8.57.0)(typescript@5.5.4)
       eslint: 8.57.0
       eslint-import-resolver-node: 0.3.9
-      eslint-import-resolver-typescript: 3.10.1(eslint-plugin-import@2.32.0)(eslint@8.57.0)
+      eslint-import-resolver-typescript: 3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.46.2(eslint@8.57.0)(typescript@5.5.4))(eslint@8.57.0))(eslint@8.57.0)
       eslint-plugin-import: 2.32.0(@typescript-eslint/parser@8.46.2(eslint@8.57.0)(typescript@5.5.4))(eslint-import-resolver-typescript@3.10.1)(eslint@8.57.0)
       eslint-plugin-jsx-a11y: 6.10.2(eslint@8.57.0)
       eslint-plugin-react: 7.37.5(eslint@8.57.0)
@@ -16387,7 +16335,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0)(eslint@8.57.0):
+  eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.46.2(eslint@8.57.0)(typescript@5.5.4))(eslint@8.57.0))(eslint@8.57.0):
     dependencies:
       '@nolyfill/is-core-module': 1.0.39
       debug: 4.4.3(supports-color@8.1.1)
@@ -16402,14 +16350,14 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  eslint-module-utils@2.12.1(@typescript-eslint/parser@8.46.2(eslint@8.57.0)(typescript@5.5.4))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.10.1)(eslint@8.57.0):
+  eslint-module-utils@2.12.1(@typescript-eslint/parser@8.46.2(eslint@8.57.0)(typescript@5.5.4))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.46.2(eslint@8.57.0)(typescript@5.5.4))(eslint@8.57.0))(eslint@8.57.0))(eslint@8.57.0):
     dependencies:
       debug: 3.2.7(supports-color@8.1.1)
     optionalDependencies:
       '@typescript-eslint/parser': 8.46.2(eslint@8.57.0)(typescript@5.5.4)
       eslint: 8.57.0
       eslint-import-resolver-node: 0.3.9
-      eslint-import-resolver-typescript: 3.10.1(eslint-plugin-import@2.32.0)(eslint@8.57.0)
+      eslint-import-resolver-typescript: 3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.46.2(eslint@8.57.0)(typescript@5.5.4))(eslint@8.57.0))(eslint@8.57.0)
     transitivePeerDependencies:
       - supports-color
 
@@ -16434,7 +16382,7 @@ snapshots:
       doctrine: 2.1.0
       eslint: 8.57.0
       eslint-import-resolver-node: 0.3.9
-      eslint-module-utils: 2.12.1(@typescript-eslint/parser@8.46.2(eslint@8.57.0)(typescript@5.5.4))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.10.1)(eslint@8.57.0)
+      eslint-module-utils: 2.12.1(@typescript-eslint/parser@8.46.2(eslint@8.57.0)(typescript@5.5.4))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.46.2(eslint@8.57.0)(typescript@5.5.4))(eslint@8.57.0))(eslint@8.57.0))(eslint@8.57.0)
       hasown: 2.0.2
       is-core-module: 2.16.1
       is-glob: 4.0.3

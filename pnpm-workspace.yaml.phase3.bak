@@ -3,6 +3,8 @@ packages:
   - "packages/*"
   - "packages/ui"
   - "packages/clients"
+  - "packages/config"
+  - "packages/utils"
   - "apps/*"
   - "apps/app-apis"
   - "apps/router-fn"
