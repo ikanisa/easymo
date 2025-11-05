@@ -1,10 +1,5 @@
 packages:
   - "services/*"
   - "packages/*"
-  - "packages/ui"
-  - "packages/clients"
-  - "apps/*"
-  - "apps/app-apis"
-  - "apps/router-fn"
   - "admin-app"
   - "ai"

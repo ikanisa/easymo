@@ -1,9 +1,0 @@
-{
-  "name": "Easymo Station",
-  "short_name": "Station",
-  "start_url": ".",
-  "display": "standalone",
-  "background_color": "#0B0D17",
-  "theme_color": "#0B0D17",
-  "icons": []
-}
