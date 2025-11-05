@@ -1,8 +1,12 @@
 import type { RouterContext, WhatsAppTextMessage } from "../types.ts";
 import { sendHomeMenu } from "../flows/home.ts";
+import { handleBasketText } from "../flows/baskets.ts";
+import { handleMarketplaceText } from "../domains/marketplace/index.ts";
 import { handleMomoText } from "../flows/momo/qr.ts";
+import { handleWalletText } from "../domains/wallet/home.ts";
 import { handleStaffVerification } from "../flows/staff.ts";
 import { handleAdminCommand } from "../flows/admin/commands.ts";
+import { applyReferralCodeFromMessage } from "../domains/wallet/referral.ts";
 import {
   handleBarRow as dineHandleBarRow,
   openBarBySlug,
