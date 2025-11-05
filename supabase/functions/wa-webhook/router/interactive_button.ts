@@ -14,37 +14,15 @@ import {
   requestScheduleDropoff,
   startScheduleTrip,
 } from "../domains/mobility/schedule.ts";
-import {
-  handleMarketplaceButton,
-  startMarketplace,
-} from "../domains/marketplace/index.ts";
 import { startInsurance } from "../domains/insurance/index.ts";
 import {
   evaluateMotorInsuranceGate,
   recordMotorInsuranceHidden,
   sendMotorInsuranceBlockedMessage,
 } from "../domains/insurance/gate.ts";
-import {
-  handleBasketButton,
-  handleBasketConfirmButton,
-  startBaskets,
-} from "../flows/baskets.ts";
 import { handleMomoButton, startMomoQr } from "../flows/momo/qr.ts";
-import { startWallet } from "../domains/wallet/home.ts";
-import {
-  handleWalletShareDone,
-  showWalletEarn,
-} from "../domains/wallet/earn.ts";
-import { showWalletTransactions } from "../domains/wallet/transactions.ts";
-import {
-  handleWalletRedeemConfirm,
-  showWalletRedeem,
-} from "../domains/wallet/redeem.ts";
-import { showWalletTop } from "../domains/wallet/top.ts";
 import { openAdminHub, showAdminHubList } from "../flows/admin/hub.ts";
 import { handleAdminQuickAction } from "../flows/admin/actions.ts";
-import { handleVoucherButton } from "../flows/admin/vouchers.ts";
-import { handleBasketButton as handleAdminBasketButton } from "../flows/admin/baskets.ts";
 import { handleInsuranceButton } from "../flows/admin/insurance.ts";
 import { homeOnly, sendButtonsMessage } from "../utils/reply.ts";
 import { DINE_IDS } from "../domains/dinein/ids.ts";
@@ -115,31 +93,6 @@ export async function handleButton(
       return await handleSeePassengers(ctx);
     case IDS.SCHEDULE_TRIP:
       return await startScheduleTrip(ctx, state);
-    case IDS.MARKETPLACE:
-      return await startMarketplace(ctx, state);
-    case IDS.MARKETPLACE_BROWSE:
-    case IDS.MARKETPLACE_ADD:
-    case IDS.MARKETPLACE_NEXT:
-    case IDS.MARKETPLACE_PREV:
-    case IDS.MARKETPLACE_REFRESH:
-    case IDS.MARKETPLACE_SKIP:
-    case IDS.MARKETPLACE_MENU:
-      return await handleMarketplaceButton(ctx, state, id);
-    case IDS.BASKETS:
-      return await startBaskets(ctx, state);
-    case IDS.BASKET_CREATE:
-    case IDS.BASKET_JOIN:
-    case IDS.BASKET_MY:
-    case IDS.BASKET_CREATE_PUBLIC:
-    case IDS.BASKET_CREATE_PRIVATE:
-    case IDS.BASKET_SHARE:
-    case IDS.BASKET_QR:
-    case IDS.BASKET_CLOSE:
-    case IDS.BASKET_LEAVE:
-    case IDS.BASKET_BACK:
-    case IDS.BASKET_SKIP:
-      if (await handleBasketButton(ctx, state, id)) return true;
-      return false;
     case IDS.MOTOR_INSURANCE:
     case IDS.MOTOR_INSURANCE_UPLOAD: {
       const gate = await evaluateMotorInsuranceGate(ctx);
@@ -157,25 +110,6 @@ export async function handleButton(
     case IDS.MOMO_QR_CODE:
     case IDS.MOMO_QR_SKIP:
       return await handleMomoButton(ctx, id, state);
-    case IDS.WALLET:
-      return await startWallet(ctx, state);
-    case IDS.WALLET_EARN:
-      return await showWalletEarn(ctx);
-    case IDS.WALLET_TRANSACTIONS:
-      return await showWalletTransactions(ctx);
-    case IDS.WALLET_REDEEM:
-      return await showWalletRedeem(ctx);
-    case IDS.WALLET_REDEEM_CONFIRM:
-      return await handleWalletRedeemConfirm(ctx, state as any);
-    case IDS.WALLET_TOP:
-      return await showWalletTop(ctx);
-    case IDS.WALLET_SHARE_DONE:
-      return await handleWalletShareDone(ctx);
-    case IDS.BASKET_CLOSE_CONFIRM:
-    case IDS.BASKET_CLOSE_CANCEL:
-    case IDS.BASKET_LEAVE_CONFIRM:
-    case IDS.BASKET_LEAVE_CANCEL:
-      return await handleBasketConfirmButton(ctx, id, state);
     case IDS.ROLE_DRIVER:
     case IDS.ROLE_PASSENGER:
       return await handleScheduleRole(ctx, id);
