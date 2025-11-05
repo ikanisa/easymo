@@ -20,6 +20,7 @@ export default defineConfig({
   test: {
     include: [
       'src/**/*.{test,spec}.{ts,tsx}',
+      'config/**/*.{test,spec}.{ts,tsx}',
       'tests/deeplink/**/*.{test,spec}.{ts,tsx}',
       'tests/api/**/*.{test,spec}.{ts,tsx}',
       'station-app/tests/**/*.{test,spec}.{ts,tsx}',
@@ -27,5 +28,28 @@ export default defineConfig({
     ],
     environment: 'jsdom',
     setupFiles: ['admin-app/tests/setupTests.ts'],
+    coverage: {
+      reporter: ['text', 'lcov'],
+      reportsDirectory: resolve(rootDir, 'coverage/vitest'),
+      thresholds: {
+        lines: 75,
+        statements: 75,
+        branches: 65,
+        functions: 75,
+      },
+      all: true,
+      include: [
+        'src/**/*.{ts,tsx}',
+        'config/**/*.{ts,tsx}',
+        'app/api/**/*.{ts,tsx}',
+      ],
+      exclude: [
+        '**/*.d.ts',
+        '**/node_modules/**',
+        '**/tests/**',
+        '**/*.test.ts',
+        '**/*.spec.ts',
+      ],
+    },
   },
 });

@@ -1,32 +1,58 @@
+@import "@easymo/ui/styles.css";
+
 :root {
-  --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-mono:
-    "JetBrains Mono", "SFMono-Regular", Menlo, Monaco, Consolas,
-    "Liberation Mono", "Courier New", monospace;
+  --font-sans: var(
+    --easymo-typography-fonts-sans,
+    "Inter",
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    sans-serif
+  );
+  --font-mono: var(
+    --easymo-typography-fonts-mono,
+    "JetBrains Mono",
+    "SFMono-Regular",
+    Menlo,
+    Monaco,
+    Consolas,
+    "Liberation Mono",
+    "Courier New",
+    monospace
+  );
 
-  --color-background: #f4f6fb;
-  --color-foreground: #0f172a;
-  --color-surface: rgba(255, 255, 255, 0.82);
-  --color-surface-muted: rgba(255, 255, 255, 0.65);
-  --color-border: rgba(15, 23, 42, 0.08);
-  --color-accent: #2563eb;
-  --color-accent-foreground: #f8fafc;
-  --color-success: #16a34a;
-  --color-warning: #f97316;
-  --color-danger: #dc2626;
-  --color-muted: #64748b;
-  --color-outline: rgba(37, 99, 235, 0.4);
+  --color-background: rgb(var(--easymo-colors-neutral-100, 244 246 251));
+  --color-foreground: rgb(var(--easymo-colors-neutral-900, 15 23 42));
+  --color-surface: rgba(var(--easymo-colors-neutral-50, 255 255 255), 0.82);
+  --color-surface-muted: rgba(var(--easymo-colors-neutral-50, 255 255 255), 0.65);
+  --color-border: rgba(var(--easymo-colors-neutral-900, 15 23 42), 0.08);
+  --color-accent: rgb(var(--easymo-colors-primary-600, 37 99 235));
+  --color-accent-foreground: rgb(var(--easymo-colors-neutral-50, 248 250 252));
+  --color-success: rgb(var(--easymo-colors-success-500, 22 163 74));
+  --color-warning: rgb(var(--easymo-colors-warning-500, 249 115 22));
+  --color-danger: rgb(var(--easymo-colors-danger-500, 220 38 38));
+  --color-muted: rgb(var(--easymo-colors-neutral-500, 100 116 139));
+  --color-outline: rgba(var(--easymo-colors-primary-500, 37 99 235), 0.4);
 
-  --gradient-primary-start: #2563eb;
-  --gradient-primary-end: #14b8a6;
-  --gradient-secondary-start: #8b5cf6;
-  --gradient-secondary-end: #ec4899;
-  --gradient-surface-start: rgba(15, 23, 42, 0.08);
-  --gradient-surface-end: rgba(15, 23, 42, 0.02);
+  --gradient-primary-start: rgb(var(--easymo-colors-primary-500, 37 99 235));
+  --gradient-primary-end: rgb(var(--easymo-colors-primary-300, 20 184 166));
+  --gradient-secondary-start: rgb(var(--easymo-colors-accent-400, 139 92 246));
+  --gradient-secondary-end: rgb(var(--easymo-colors-danger-400, 236 72 153));
+  --gradient-surface-start: rgba(var(--easymo-colors-neutral-900, 15 23 42), 0.08);
+  --gradient-surface-end: rgba(var(--easymo-colors-neutral-900, 15 23 42), 0.02);
 
-  --elevation-high: 0 42px 120px rgba(15, 23, 42, 0.25);
-  --elevation-medium: 0 24px 60px rgba(15, 23, 42, 0.18);
-  --elevation-low: 0 12px 30px rgba(15, 23, 42, 0.12);
+  --elevation-high: var(
+    --easymo-glass-frosted-shadow,
+    0 42px 120px rgba(15, 23, 42, 0.25)
+  );
+  --elevation-medium: var(
+    --easymo-glass-frosted-shadow,
+    0 24px 60px rgba(15, 23, 42, 0.18)
+  );
+  --elevation-low: var(
+    --easymo-glass-subtle-shadow,
+    0 12px 30px rgba(15, 23, 42, 0.12)
+  );
 
   background-color: var(--color-background);
   color: var(--color-foreground);
@@ -34,21 +60,21 @@
 
 @media (prefers-contrast: more) {
   :root {
-    --color-background: #ffffff;
-    --color-surface: #ffffff;
-    --color-surface-muted: #f1f5f9;
-    --color-border: #1e293b;
-    --color-muted: #334155;
-    --color-outline: rgba(30, 64, 175, 0.85);
+    --color-background: rgb(var(--easymo-colors-neutral-50, 255 255 255));
+    --color-surface: rgb(var(--easymo-colors-neutral-50, 255 255 255));
+    --color-surface-muted: rgb(var(--easymo-colors-neutral-100, 241 245 249));
+    --color-border: rgb(var(--easymo-colors-neutral-900, 30 41 59));
+    --color-muted: rgb(var(--easymo-colors-neutral-600, 51 65 85));
+    --color-outline: rgba(var(--easymo-colors-primary-700, 30 64 175), 0.85);
   }
 
   .dark {
-    --color-background: #020617;
-    --color-surface: #0f172a;
-    --color-surface-muted: #1e293b;
-    --color-border: #94a3b8;
-    --color-muted: #e2e8f0;
-    --color-outline: rgba(125, 211, 252, 0.9);
+    --color-background: rgb(var(--easymo-colors-neutral-900, 2 6 23));
+    --color-surface: rgba(var(--easymo-colors-neutral-900, 2 6 23), 0.78);
+    --color-surface-muted: rgba(var(--easymo-colors-neutral-900, 2 6 23), 0.6);
+    --color-border: rgba(var(--easymo-colors-neutral-300, 148 163 184), 0.5);
+    --color-muted: rgb(var(--easymo-colors-neutral-100, 226 232 240));
+    --color-outline: rgba(var(--easymo-colors-primary-200, 125 211 252), 0.9);
   }
 
   body {
@@ -65,25 +91,55 @@
 }
 
 .dark {
-  --color-background: #020617;
-  --color-foreground: #e2e8f0;
-  --color-surface: rgba(2, 6, 23, 0.78);
-  --color-surface-muted: rgba(2, 6, 23, 0.6);
-  --color-border: rgba(148, 163, 184, 0.22);
-  --color-accent: #38bdf8;
-  --color-accent-foreground: #020617;
-  --color-success: #4ade80;
-  --color-warning: #fb923c;
-  --color-danger: #f87171;
-  --color-muted: #cbd5f5;
-  --color-outline: rgba(56, 189, 248, 0.45);
+  --color-background: rgb(var(--easymo-colors-neutral-900, 2 6 23));
+  --color-foreground: rgb(var(--easymo-colors-neutral-100, 226 232 240));
+  --color-surface: rgba(var(--easymo-colors-neutral-900, 2 6 23), 0.78);
+  --color-surface-muted: rgba(var(--easymo-colors-neutral-900, 2 6 23), 0.6);
+  --color-border: rgba(var(--easymo-colors-neutral-300, 148 163 184), 0.22);
+  --color-accent: rgb(var(--easymo-colors-primary-300, 56 189 248));
+  --color-accent-foreground: rgb(var(--easymo-colors-neutral-900, 2 6 23));
+  --color-success: rgb(var(--easymo-colors-success-300, 74 222 128));
+  --color-warning: rgb(var(--easymo-colors-warning-300, 251 146 60));
+  --color-danger: rgb(var(--easymo-colors-danger-300, 248 113 113));
+  --color-muted: rgb(var(--easymo-colors-neutral-200, 203 213 225));
+  --color-outline: rgba(var(--easymo-colors-primary-300, 56 189 248), 0.45);
 
-  --gradient-primary-start: #38bdf8;
-  --gradient-primary-end: #0ea5e9;
-  --gradient-secondary-start: #a855f7;
-  --gradient-secondary-end: #f472b6;
-  --gradient-surface-start: rgba(15, 23, 42, 0.35);
-  --gradient-surface-end: rgba(30, 41, 59, 0.18);
+  --gradient-primary-start: rgb(var(--easymo-colors-primary-300, 56 189 248));
+  --gradient-primary-end: rgb(var(--easymo-colors-primary-500, 14 165 233));
+  --gradient-secondary-start: rgb(var(--easymo-colors-accent-400, 168 85 247));
+  --gradient-secondary-end: rgb(var(--easymo-colors-danger-400, 244 114 182));
+  --gradient-surface-start: rgba(var(--easymo-colors-neutral-900, 15 23 42), 0.35);
+  --gradient-surface-end: rgba(var(--easymo-colors-neutral-800, 30 41 59), 0.18);
+}
+
+:root[data-ui-theme='v2'],
+body[data-ui-theme='v2'] {
+  --font-sans: var(--ui-typography-families-sans);
+  --font-mono: var(--ui-typography-families-mono);
+
+  --color-background: var(--ui-color-background);
+  --color-foreground: var(--ui-color-foreground);
+  --color-surface: var(--ui-color-surface);
+  --color-surface-muted: var(--ui-color-surface-muted);
+  --color-border: var(--ui-color-border);
+  --color-accent: var(--ui-color-accent);
+  --color-accent-foreground: var(--ui-color-accent-foreground);
+  --color-success: var(--ui-color-success);
+  --color-warning: var(--ui-color-warning);
+  --color-danger: var(--ui-color-danger);
+  --color-muted: var(--ui-color-muted);
+  --color-outline: var(--ui-color-outline);
+
+  --gradient-primary-start: var(--ui-color-accent);
+  --gradient-primary-end: color-mix(in srgb, var(--ui-color-accent) 55%, #22d3ee);
+  --gradient-secondary-start: color-mix(in srgb, #6366f1 70%, var(--ui-color-accent) 30%);
+  --gradient-secondary-end: color-mix(in srgb, #ec4899 80%, var(--ui-color-accent) 20%);
+  --gradient-surface-start: rgba(9, 16, 34, 0.28);
+  --gradient-surface-end: rgba(9, 16, 34, 0.12);
+
+  --elevation-high: 0 46px 120px rgba(7, 11, 26, 0.38);
+  --elevation-medium: var(--ui-glass-shadow);
+  --elevation-low: 0 12px 30px rgba(7, 11, 26, 0.22);
 }
 
 body {

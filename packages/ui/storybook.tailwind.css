@@ -1,0 +1,13 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+
+  body {
+    @apply bg-[color:var(--ui-color-background)] text-[color:var(--ui-color-foreground)] font-sans;
+  }
+}

@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { getServiceSupabaseClient } from '../../_lib/supabase-admin';
 import { jsonError, jsonOk } from '../../_lib/http';
+import { withRouteInstrumentation } from '../../_lib/observability';
 import {
   buildDeepLinkUrl,
   createNonce,
@@ -57,100 +58,102 @@ const FLOW_PAYLOAD_SCHEMAS: Record<DeeplinkFlow, z.ZodTypeAny> = {
 };
 
 export async function POST(request: Request) {
-  const supabase = getServiceSupabaseClient();
+  return withRouteInstrumentation('deeplink.issue.POST', request, async ({ logger, traceId }) => {
+    const supabase = getServiceSupabaseClient();
 
-  let raw: unknown;
-  try {
-    raw = await request.json();
-  } catch (error) {
-    console.error('deeplink.issue.invalid_json', error);
-    return jsonError({ error: 'invalid_json' }, 400);
-  }
+    let raw: unknown;
+    try {
+      raw = await request.json();
+    } catch (error) {
+      logger.error({ event: 'deeplink.issue.invalid_json', err: error });
+      return jsonError({ error: 'invalid_json' }, 400);
+    }
 
-  const parsed = baseSchema.safeParse(raw);
-  if (!parsed.success) {
-    return jsonError({ error: 'invalid_payload', details: parsed.error.flatten() }, 400);
-  }
+    const parsed = baseSchema.safeParse(raw);
+    if (!parsed.success) {
+      return jsonError({ error: 'invalid_payload', details: parsed.error.flatten() }, 400);
+    }
 
-  const { flow, payload, msisdn_e164: msisdnRaw, ttl_minutes, multi_use = false, created_by } = parsed.data;
-  const payloadSchema = FLOW_PAYLOAD_SCHEMAS[flow];
-  const payloadParsed = payloadSchema.safeParse(payload);
-  if (!payloadParsed.success) {
-    return jsonError({ error: 'invalid_flow_payload', details: payloadParsed.error.flatten() }, 400);
-  }
+    const { flow, payload, msisdn_e164: msisdnRaw, ttl_minutes, multi_use = false, created_by } = parsed.data;
+    const payloadSchema = FLOW_PAYLOAD_SCHEMAS[flow];
+    const payloadParsed = payloadSchema.safeParse(payload);
+    if (!payloadParsed.success) {
+      return jsonError({ error: 'invalid_flow_payload', details: payloadParsed.error.flatten() }, 400);
+    }
 
-  const flowEnabled = await ensureFlowEnabled(supabase, flow);
-  if (!flowEnabled) {
-    return jsonError({ error: 'flow_disabled' }, 403);
-  }
+    const flowEnabled = await ensureFlowEnabled(supabase, flow);
+    if (!flowEnabled) {
+      return jsonError({ error: 'flow_disabled' }, 403);
+    }
 
-  const ttl = ttl_minutes ?? DEFAULT_TTL_MINUTES;
-  const expiresAt = computeExpiry(ttl);
-  const nonce = createNonce();
-  const msisdn = msisdnRaw ? msisdnRaw.replace(/\s+/g, '') : null;
+    const ttl = ttl_minutes ?? DEFAULT_TTL_MINUTES;
+    const expiresAt = computeExpiry(ttl);
+    const nonce = createNonce();
+    const msisdn = msisdnRaw ? msisdnRaw.replace(/\s+/g, '') : null;
 
-  let token: string;
-  try {
-    token = createSignedToken({
-      flow,
-      nonce,
-      exp: expiresAt.toISOString(),
+    let token: string;
+    try {
+      token = createSignedToken({
+        flow,
+        nonce,
+        exp: expiresAt.toISOString(),
+        msisdn,
+      });
+    } catch (error) {
+      logger.error({ event: 'deeplink.issue.token_sign_failed', err: error });
+      return jsonError({ error: 'token_sign_failed' }, 500);
+    }
+
+    const storedPayload = { ...payloadParsed.data, nonce };
+    const { data, error } = await supabase
+      .from('deeplink_tokens')
+      .insert({
+        flow,
+        token,
+        payload: storedPayload,
+        msisdn_e164: msisdn,
+        expires_at: expiresAt.toISOString(),
+        multi_use,
+        created_by: created_by ?? null,
+      })
+      .select('id')
+      .single();
+
+    if (error) {
+      logger.error({ event: 'deeplink.issue.insert_failed', err: error });
+      return jsonError({ error: 'token_persist_failed', detail: error.message }, 500);
+    }
+
+    if (!data?.id) {
+      return jsonError({ error: 'token_missing_id' }, 500);
+    }
+
+    await recordDeeplinkEvent(
+      supabase,
+      data.id,
+      'issued',
+      {
+        nonce,
+        flow,
+        expires_at: expiresAt.toISOString(),
+        multi_use,
+      },
       msisdn,
-    });
-  } catch (error) {
-    console.error('deeplink.issue.token_sign_failed', error);
-    return jsonError({ error: 'token_sign_failed' }, 500);
-  }
+    );
 
-  const storedPayload = { ...payloadParsed.data, nonce };
-  const { data, error } = await supabase
-    .from('deeplink_tokens')
-    .insert({
+    const url = buildDeepLinkUrl(flow, token);
+
+    return jsonOk({
+      ok: true,
       flow,
       token,
-      payload: storedPayload,
-      msisdn_e164: msisdn,
-      expires_at: expiresAt.toISOString(),
-      multi_use,
-      created_by: created_by ?? null,
-    })
-    .select('id')
-    .single();
-
-  if (error) {
-    console.error('deeplink.issue.insert_failed', error);
-    return jsonError({ error: 'token_persist_failed', detail: error.message }, 500);
-  }
-
-  if (!data?.id) {
-    return jsonError({ error: 'token_missing_id' }, 500);
-  }
-
-  await recordDeeplinkEvent(
-    supabase,
-    data.id,
-    'issued',
-    {
+      url,
+      expiresAt: expiresAt.toISOString(),
+      payload: payloadParsed.data,
+      msisdnBound: msisdn,
+      multiUse: multi_use,
       nonce,
-      flow,
-      expires_at: expiresAt.toISOString(),
-      multi_use,
-    },
-    msisdn,
-  );
-
-  const url = buildDeepLinkUrl(flow, token);
-
-  return jsonOk({
-    ok: true,
-    flow,
-    token,
-    url,
-    expiresAt: expiresAt.toISOString(),
-    payload: payloadParsed.data,
-    msisdnBound: msisdn,
-    multiUse: multi_use,
-    nonce,
-    ttlMinutes: ttl,
-  }, 201);
+      ttlMinutes: ttl,
+    }, 201);
+  });
 }
