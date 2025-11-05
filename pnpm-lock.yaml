@@ -483,8 +483,8 @@ importers:
         specifier: ^5.9.3
         version: 5.10.0
       twilio:
-        specifier: ^5.3.4
-        version: 5.10.3
+        specifier: ^5.10.4
+        version: 5.10.4
       undici:
         specifier: ^6.19.8
         version: 6.22.0
@@ -560,8 +560,8 @@ importers:
         specifier: ^7.8.1
         version: 7.8.2
       twilio:
-        specifier: ^5.3.4
-        version: 5.10.3
+        specifier: ^5.10.4
+        version: 5.10.4
     devDependencies:
       '@types/express':
         specifier: ^4.17.21
@@ -1335,8 +1335,8 @@ importers:
         specifier: ^2.8.1
         version: 2.8.1
       twilio:
-        specifier: ^5.5.0
-        version: 5.10.3
+        specifier: ^5.10.4
+        version: 5.10.4
       undici:
         specifier: ^6.19.8
         version: 6.22.0
@@ -5795,6 +5795,9 @@ packages:
   dayjs@1.11.18:
     resolution: {integrity: sha512-zFBQ7WFRvVRhKcWoUh+ZA1g2HVgUbsZm9sbddh8EC5iv93sui8DVVz1Npvz+r6meo9VKfa8NyLWBsQK1VvIKPA==}
 
+  dayjs@1.11.19:
+    resolution: {integrity: sha512-t5EcLVS6QPBNqM2z8fakk/NKel+Xzshgt8FFKAn+qwlD1pzZWxh0nVCrvFK7ZDb6XucZeF9z8C7CBWTRIVApAw==}
+
   debug@2.6.9:
     resolution: {integrity: sha512-bC7ElrdJaJnPbAP+1EotYvqZsb3ecl5wi6Bfi6BJTUcNowp6cvspg0jXznRTKDjm/E7AdgFBVeAPVMNcKGsHMA==}
     peerDependencies:
@@ -9723,8 +9726,8 @@ packages:
   tweetnacl@0.14.5:
     resolution: {integrity: sha512-KXXFFdAbFXY4geFIwoyNK+f5Z1b7swfXABfL7HXCmoIWMKU3dmS26672A4EeQtDzLKy7SXmfBu51JolvEKwtGA==}
 
-  twilio@5.10.3:
-    resolution: {integrity: sha512-msve3uADprpG+LRlthOxBUJWZDczGe+mdzotG7Wluaf8nn8fSIK0n2fX3INR26Xedeea/azmAdLK0c2rJhIHpQ==}
+  twilio@5.10.4:
+    resolution: {integrity: sha512-5dUsT3/O1+WxyJop2a6a4r92NAgtEQL7+oSU4t466NPhDaPOOBH/uomxnYHD5GWouYo7CZ/B7XSOwlhEUAHpWg==}
     engines: {node: '>=14.0'}
 
   type-check@0.4.0:
@@ -15077,6 +15080,8 @@ snapshots:
 
   dayjs@1.11.18: {}
 
+  dayjs@1.11.19: {}
+
   debug@2.6.9:
     dependencies:
       ms: 2.0.0
@@ -19836,10 +19841,10 @@ snapshots:
 
   tweetnacl@0.14.5: {}
 
-  twilio@5.10.3:
+  twilio@5.10.4:
     dependencies:
-      axios: 1.12.2
-      dayjs: 1.11.18
+      axios: 1.13.1
+      dayjs: 1.11.19
       https-proxy-agent: 5.0.1
       jsonwebtoken: 9.0.2
       qs: 6.14.0
