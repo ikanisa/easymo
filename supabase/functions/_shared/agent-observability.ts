@@ -245,7 +245,9 @@ export function maskPhone(phone: string): string {
  * Record agent session metrics
  * 
  * Helper to record common agent metrics with consistent dimensions.
- * Requires recordMetric from observability.ts to be implemented.
+ * 
+ * NOTE: This function is a placeholder for future implementation.
+ * The recordMetric function needs to be implemented in observability.ts first.
  * 
  * @param metricName - Metric name
  * @param value - Metric value
@@ -257,8 +259,11 @@ export function recordAgentMetric(
   dimensions: Record<string, string | number> = {},
 ): void {
   // TODO: Implement once recordMetric is available in observability.ts
-  // recordMetric(`agent.${metricName}`, value, {
-  //   category: "agent",
-  //   ...dimensions,
-  // });
+  // For now, log as structured event
+  logStructuredEvent(`AGENT_METRIC_${metricName.toUpperCase()}`, {
+    category: "agent",
+    metricName,
+    value,
+    ...dimensions,
+  }, "debug");
 }
