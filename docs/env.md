@@ -56,16 +56,18 @@ The returned object exposes `flags`, an `enabled` array, and `isEnabled(flag)` f
 ## Usage Example
 
 ```ts
-import { loadEnvironment } from "@easymo/config-env";
-
-const { stage, values, featureFlags } = loadEnvironment();
+// Environment variables are loaded from process.env
+const stage = process.env.NODE_ENV || 'development';
+const apiBaseUrl = process.env.API_BASE_URL || 'http://localhost:3000';
 
 console.log(`Running in ${stage}`);
-console.log(`API base URL: ${values.API_BASE_URL}`);
+console.log(`API base URL: ${apiBaseUrl}`);
 
-if (featureFlags.isEnabled("agentVoice")) {
+// Feature flags can be checked directly
+const agentVoiceEnabled = process.env.FEATURE_AGENT_VOICE === 'true';
+if (agentVoiceEnabled) {
   enableVoicePipelines();
 }
 ```
 
-Always call `loadEnvironment()` (or at least `parseRuntimeFeatureFlags()`) during service start-up so misconfiguration is caught during deploys instead of at runtime.
+Always validate required environment variables during service start-up so misconfiguration is caught during deploys instead of at runtime.

@@ -23,7 +23,7 @@ services:
     ports:
       - "8080:8080"
   agent-core:
-    build: ../../apps/agent-core
+    build: ../../services/agent-core
     environment:
       OPENAI_API_KEY: ${OPENAI_API_KEY}
       OPENAI_RESPONSES_MODEL: ${OPENAI_RESPONSES_MODEL}

@@ -51,9 +51,6 @@ easymo/
 │   ├── TROUBLESHOOTING.md # Common issues
 │   ├── ENV_VARIABLES.md   # Environment variables
 │   └── ...                # Additional docs
-├── easymo/                # Legacy monolith (being decomposed)
-│   ├── admin-app/         # Admin UI
-│   └── angular/           # Angular components
 ├── packages/              # Shared workspace packages
 │   ├── commons/           # Common utilities
 │   ├── db/                # Database client (Prisma)

@@ -37,7 +37,6 @@ Top-level workspace packages discovered via `pnpm -r list --depth -1`:
 | Workspace | Location |
 | --- | --- |
 | `@easymo/admin-app@0.1.0` | `admin-app/` |
-| `@va/agent-core@0.1.0` | `apps/agent-core/` |
 | `voice-api` | `apps/api/` |
 | `@va/voice-bridge@0.1.0` | `apps/voice-bridge/` |
 | `@easymo/commons@0.1.0` | `packages/commons/` |
@@ -45,7 +44,7 @@ Top-level workspace packages discovered via `pnpm -r list --depth -1`:
 | `@easymo/agent-core@0.1.0` | `services/agent-core/` |
 | `@easymo/voice-bridge@0.1.0` | `services/voice-bridge/` |
 
-> _Full inventory available in `.ci/artifacts/workspace-inventory.txt`._
+> _Note: apps/agent-core removed (duplicate of services/agent-core). Full inventory available in `.ci/artifacts/workspace-inventory.txt`._
 
 ## Phased Remediation Plan
 ### Suggested Quick-Start Tasks

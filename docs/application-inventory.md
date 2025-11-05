@@ -8,14 +8,12 @@ This document enumerates the applications that live at the root of the EasyMO mo
 | --- | --- | --- | --- | --- |
 | Admin SPA (Phase 2) | `/` (`package.json`, `src/`) | Vite + React + React Router | ✅ Uses shared `@va/shared` route definitions for strongly typed navigation helpers. | Not deployed; consumed via local tooling and Supabase functions. |
 | Admin App (Phase 4/5) | `/admin-app` | Next.js 14 App Router | ✅ Next.js typed routes enabled and wrapped helpers expose `Route`-aware navigation utilities. | Deployed via the internal release pipeline. |
-| Legacy Angular demo | `/angular` | Angular CLI 15 | ⚠️ Typed routing unavailable until the project upgrades to Angular ≥17; current router only exposes structural typings. | Used for experiments only. |
 | Station PWA shell | `/station-app` | Planned PWA (no framework wired) | 🚧 No routes exist yet; typed routing will be introduced with the first navigable screen. | Not yet deployed. |
 
 ### Typed routing notes
 
-- The Vite admin SPA consumes route keys and helpers exported from `packages/shared/src/routes/app.ts`, ensuring that navigation can only target known paths and that required params are enforced at compile time.【F:packages/shared/src/routes/app.ts†L1-L67】
-- The Next.js admin app now opts into framework-level typed routes and surfaces `toAdminRoute`/`getAdminRoutePath` helpers that return `Route`-compatible strings for `<Link>` usage and router redirects.【F:admin-app/next.config.mjs†L10-L18】【F:admin-app/lib/routes/index.ts†L1-L38】
-- The Angular sample remains on Angular 15, whose router lacks the typed route string inference introduced in Angular 17+. Upgrading would let us adopt the newer `Route` generics, but that is outside the scope of this audit.【F:angular/package.json†L1-L28】
+- The Vite admin SPA consumes route keys and helpers exported from `packages/shared/src/routes/app.ts`, ensuring that navigation can only target known paths and that required params are enforced at compile time.
+- The Next.js admin app now opts into framework-level typed routes and surfaces `toAdminRoute`/`getAdminRoutePath` helpers that return `Route`-compatible strings for `<Link>` usage and router redirects.
 - The station operator PWA does not expose navigable pages yet; once flows land we can either reuse the shared route utilities or adopt framework-native typed routing.
 
 ## Backend and realtime services
@@ -31,5 +29,5 @@ This document enumerates the applications that live at the root of the EasyMO mo
 ## Deployment targets
 
 - **Release pipeline** builds the Next.js admin app exclusively. The infrastructure manifests point the builder at `admin-app/next.config.mjs`, ensuring other workspaces are not accidentally deployed as production frontends.
-- **Containerised services** (agent core, voice bridge, SIP ingress, marketplace stack) are orchestrated locally and in staging via `docker-compose.agent-core.yml`, clarifying which services form the production backend surface.【F:docker-compose.agent-core.yml†L1-L120】
-- Frontend experiments (`angular`, `station-app`) remain out of band and are not wired into any automated deployment target until their roadmaps resume.
+- **Containerised services** (agent core, voice bridge, SIP ingress, marketplace stack) are orchestrated locally and in staging via `docker-compose.agent-core.yml`, clarifying which services form the production backend surface.
+- Frontend experiment (`station-app`) remains out of band and is not wired into any automated deployment target until its roadmap resumes.

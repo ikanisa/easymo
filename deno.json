@@ -29,7 +29,6 @@
     ],
     "exclude": [
       "admin-app/**",
-      "angular/**",
       "app/**",
       "packages/**"
     ]

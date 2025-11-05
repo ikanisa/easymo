@@ -13,10 +13,7 @@
     "baseUrl": ".",
     "paths": {
       "@va/shared": ["packages/shared/src/index.ts"],
-      "@va/shared/*": ["packages/shared/src/*"],
-      "@easymo/config-env": ["packages/config/env.ts"],
-      "@easymo/utils-log": ["packages/utils/log/src/index.ts"],
-      "@easymo/utils-log/*": ["packages/utils/log/src/*"]
+      "@va/shared/*": ["packages/shared/src/*"]
     }
   }
 }
