@@ -1,5 +1,4 @@
-// WhatsApp Router Edge Function - Verifies signatures, normalizes payloads, and routes to destination URLs
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { handleRequest } from "../../../apps/router-fn/src/router.ts";
 
 const encoder = new TextEncoder();
 const WA_VERIFY_TOKEN = Deno.env.get("WA_VERIFY_TOKEN") ?? "";
@@ -52,7 +51,7 @@ interface RouteResult {
 }
 
 // Verify HMAC SHA-256 signature
-async function verifySignature(req: Request, rawBody: string): Promise<boolean> {
+export async function verifySignature(req: Request, rawBody: string): Promise<boolean> {
   const header = req.headers.get("x-hub-signature-256") ?? "";
   if (!header.startsWith("sha256=")) return false;
   const theirHex = header.slice(7);
@@ -74,7 +73,7 @@ function hexToBytes(hex: string): Uint8Array {
 }
 
 // Extract and normalize WhatsApp messages from webhook payload
-function normalizePayload(payload: WhatsAppWebhookPayload): NormalizedPayload[] {
+export function normalizePayload(payload: WhatsAppWebhookPayload): NormalizedPayload[] {
   const normalized: NormalizedPayload[] = [];
   for (const entry of payload.entry ?? []) {
     for (const change of entry.changes ?? []) {
@@ -119,7 +118,7 @@ function normalizePayload(payload: WhatsAppWebhookPayload): NormalizedPayload[] 
 }
 
 // Extract keyword from text for routing
-function extractKeyword(text: string): string | undefined {
+export function extractKeyword(text: string): string | undefined {
   const cleaned = text.toLowerCase().trim();
   const keywords = ["easymo", "insurance", "basket", "baskets", "qr", "dine"];
   for (const keyword of keywords) {
@@ -129,7 +128,7 @@ function extractKeyword(text: string): string | undefined {
 }
 
 // Route message to destination URL based on keyword
-function getDestinationUrl(keyword?: string): string | undefined {
+export function getDestinationUrl(keyword?: string): string | undefined {
   if (!keyword) return undefined;
   const routes: Record<string, string> = {
     easymo: DEST_EASYMO_URL, insurance: DEST_INSURANCE_URL, basket: DEST_BASKET_URL,
@@ -144,7 +143,7 @@ function getDestinationUrl(keyword?: string): string | undefined {
 }
 
 // Forward payload to destination URL
-async function forwardToDestination(destinationUrl: string, payload: NormalizedPayload, originalPayload: WhatsAppWebhookPayload): Promise<RouteResult> {
+export async function forwardToDestination(destinationUrl: string, payload: NormalizedPayload, originalPayload: WhatsAppWebhookPayload): Promise<RouteResult> {
   const startTime = Date.now();
   try {
     const response = await fetch(destinationUrl, {

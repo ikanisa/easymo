@@ -1,4 +1,4 @@
-import { describe, expect, it, beforeEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
   buildBootstrap,
   buildDeepLinkUrl,
@@ -16,6 +16,11 @@ describe('deeplink signing', () => {
   beforeEach(() => {
     process.env.DEEPLINK_SIGNING_SECRET = SECRET;
     process.env.DEEPLINK_BASE_URL = 'https://easymo.link';
+  });
+
+  afterEach(() => {
+    delete process.env.DEEPLINK_SIGNING_SECRET;
+    delete process.env.DEEPLINK_BASE_URL;
   });
 
   it('creates and verifies a signed token', () => {
@@ -56,6 +61,12 @@ describe('deeplink signing', () => {
     ]);
   });
 
+  it('falls back to default deeplink host when env is unset', () => {
+    delete process.env.DEEPLINK_BASE_URL;
+    const url = buildDeepLinkUrl('basket_open', 'xyz');
+    expect(url).toBe('https://easymo.link/flow/basket?t=xyz');
+  });
+
   it('strips nonce from payload objects', () => {
     const payload = { nonce: 'abc', basket_id: 'bkt_123' };
     expect(stripNonce(payload)).toEqual({ basket_id: 'bkt_123' });
@@ -89,5 +100,23 @@ describe('deeplink signing', () => {
     expect(qrBootstrap.firstPrompt.text).toContain('Amount: 2000 RWF');
     expect(qrBootstrap.firstPrompt.text).toContain('Note: Moto fare Kimironko → CBD');
     expect(qrBootstrap.firstPrompt.text).toContain('Confirm to generate your QR code.');
+  });
+
+  it('creates nonce values with adequate entropy', () => {
+    const set = new Set<string>();
+    for (let i = 0; i < 5; i += 1) {
+      const nonce = createNonce();
+      expect(nonce).toMatch(/^[a-zA-Z0-9_-]{21,}$/);
+      set.add(nonce);
+    }
+    expect(set.size).toBeGreaterThanOrEqual(5);
+  });
+
+  it('strips secret-dependent fields before verifying payloads', () => {
+    const expiresAt = new Date(Date.now() + DEFAULT_TTL_MINUTES * 60 * 1000).toISOString();
+    const token = createSignedToken({ flow: 'insurance_attach', nonce: 'nonce', exp: expiresAt, meta: 'data' });
+    const verified = verifySignedToken(token);
+    expect(verified.payload).not.toHaveProperty('secret');
+    expect(verified.payload.flow).toBe('insurance_attach');
   });
 });

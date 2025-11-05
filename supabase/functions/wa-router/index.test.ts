@@ -1,6 +1,20 @@
-import { assertEquals } from "https://deno.land/std@0.208.0/assert/mod.ts";
+import { assertEquals, assertMatch } from "https://deno.land/std@0.208.0/assert/mod.ts";
 
-// Test helper to create mock WhatsApp payloads
+Deno.env.set("WA_APP_SECRET", "test_secret");
+Deno.env.set("DEST_EASYMO_URL", "https://api.easymo.app/chat");
+Deno.env.set("DEST_INSURANCE_URL", "https://api.easymo.app/insurance");
+Deno.env.set("DEST_BASKET_URL", "https://api.easymo.app/basket");
+Deno.env.set("DEST_QR_URL", "https://api.easymo.app/qr");
+Deno.env.set("DEST_DINE_URL", "https://api.easymo.app/dine");
+
+const {
+  extractKeyword,
+  forwardToDestination,
+  getDestinationUrl,
+  normalizePayload,
+  verifySignature,
+} = await import("./index.ts");
+
 function createMockPayload(
   messageType: string,
   content: Record<string, unknown>,
@@ -35,7 +49,6 @@ function createMockPayload(
   };
 }
 
-// Test helper to create HMAC signature
 async function createSignature(body: string, secret: string): Promise<string> {
   const encoder = new TextEncoder();
   const key = await crypto.subtle.importKey(
@@ -57,238 +70,106 @@ async function createSignature(body: string, secret: string): Promise<string> {
   return `sha256=${hex}`;
 }
 
-Deno.test("wa-router: GET request with valid token returns challenge", async () => {
-  const WA_VERIFY_TOKEN = "test_verify_token";
-  Deno.env.set("WA_VERIFY_TOKEN", WA_VERIFY_TOKEN);
-
-  const challenge = "test_challenge_123";
-  const url = `http://localhost:8000?hub.mode=subscribe&hub.verify_token=${WA_VERIFY_TOKEN}&hub.challenge=${challenge}`;
-
-  const req = new Request(url, { method: "GET" });
-  const response = await fetch(req.url);
-
-  // Since we can't directly test the handler, we'll test the logic
-  const urlObj = new URL(url);
-  const mode = urlObj.searchParams.get("hub.mode");
-  const token = urlObj.searchParams.get("hub.verify_token");
-  const responseChallenge = urlObj.searchParams.get("hub.challenge");
-
-  assertEquals(mode, "subscribe");
-  assertEquals(token, WA_VERIFY_TOKEN);
-  assertEquals(responseChallenge, challenge);
-});
-
-Deno.test("wa-router: GET request with invalid token fails", async () => {
-  const WA_VERIFY_TOKEN = "test_verify_token";
-  Deno.env.set("WA_VERIFY_TOKEN", WA_VERIFY_TOKEN);
-
-  const url = `http://localhost:8000?hub.mode=subscribe&hub.verify_token=wrong_token&hub.challenge=test`;
-
-  const urlObj = new URL(url);
-  const mode = urlObj.searchParams.get("hub.mode");
-  const token = urlObj.searchParams.get("hub.verify_token");
-
-  assertEquals(mode, "subscribe");
-  assertEquals(token !== WA_VERIFY_TOKEN, true);
-});
-
-Deno.test("wa-router: signature verification works correctly", async () => {
-  const secret = "test_secret";
-  const body = JSON.stringify({ test: "data" });
-
-  const signature = await createSignature(body, secret);
-
-  assertEquals(signature.startsWith("sha256="), true);
-  assertEquals(signature.length > 7, true);
-});
-
-Deno.test("wa-router: keyword extraction from text message", () => {
-  const testCases = [
-    { input: "easymo", expected: "easymo" },
-    { input: "I want to check my insurance", expected: "insurance" },
-    { input: "baskets", expected: "basket" },
-    { input: "basket", expected: "basket" },
-    { input: "Show me QR code", expected: "qr" },
-    { input: "dine menu", expected: "dine" },
-    { input: "random text", expected: undefined },
-  ];
-
-  for (const tc of testCases) {
-    const cleaned = tc.input.toLowerCase().trim();
-    const keywords = ["easymo", "insurance", "basket", "baskets", "qr", "dine"];
-    let result: string | undefined;
-
-    for (const keyword of keywords) {
-      if (cleaned.includes(keyword)) {
-        result = keyword === "baskets" ? "basket" : keyword;
-        break;
-      }
-    }
-
-    assertEquals(result, tc.expected, `Failed for input: "${tc.input}"`);
-  }
-});
-
-Deno.test("wa-router: payload normalization for text message", () => {
-  const payload = createMockPayload("text", {
-    text: { body: "I want insurance" },
+Deno.test("wa-router: signature verification succeeds and fails when tampered", async () => {
+  const body = JSON.stringify({ ping: "pong" });
+  const signature = await createSignature(body, Deno.env.get("WA_APP_SECRET") ?? "");
+  const request = new Request("http://localhost", {
+    method: "POST",
+    body,
+    headers: { "x-hub-signature-256": signature },
   });
+  const valid = await verifySignature(request, body);
+  assertEquals(valid, true);
 
-  const normalized = [];
-  for (const entry of (payload.entry as any[]) ?? []) {
-    for (const change of entry.changes ?? []) {
-      const value = change.value;
-      if (!value) continue;
-
-      const messages = value.messages ?? [];
-      for (const msg of messages) {
-        normalized.push({
-          from: msg.from,
-          messageId: msg.id,
-          type: msg.type,
-          text: msg.text?.body,
-        });
-      }
-    }
-  }
-
-  assertEquals(normalized.length, 1);
-  assertEquals(normalized[0].type, "text");
-  assertEquals(normalized[0].text, "I want insurance");
-  assertEquals(normalized[0].from, "250788000001");
+  const tampered = new Request("http://localhost", {
+    method: "POST",
+    body,
+    headers: { "x-hub-signature-256": signature.replace(/.$/, "0") },
+  });
+  const invalid = await verifySignature(tampered, body);
+  assertEquals(invalid, false);
 });
 
-Deno.test("wa-router: payload normalization for interactive button", () => {
+Deno.test("wa-router: payload normalization extracts keywords", () => {
+  const payload = createMockPayload("text", {
+    text: { body: "Need insurance help" },
+  });
+  const normalized = normalizePayload(payload as any);
+  assertEquals(normalized.length, 1);
+  const message = normalized[0];
+  assertEquals(message.type, "text");
+  assertEquals(message.keyword, "insurance");
+  assertEquals(message.metadata?.phoneNumberId, "123456789");
+});
+
+Deno.test("wa-router: extractKeyword normalizes plural forms", () => {
+  assertEquals(extractKeyword("Show me baskets"), "basket");
+  assertEquals(extractKeyword("random"), undefined);
+});
+
+Deno.test("wa-router: interactive payload preserves button metadata", () => {
   const payload = createMockPayload("interactive", {
     interactive: {
       type: "button_reply",
-      button_reply: {
-        id: "qr_start",
-        title: "QR Code",
-      },
+      button_reply: { id: "qr_start", title: "QR Code" },
     },
   });
-
-  const normalized = [];
-  for (const entry of (payload.entry as any[]) ?? []) {
-    for (const change of entry.changes ?? []) {
-      const value = change.value;
-      if (!value) continue;
-
-      const messages = value.messages ?? [];
-      for (const msg of messages) {
-        const norm: any = {
-          from: msg.from,
-          messageId: msg.id,
-          type: msg.type,
-        };
-
-        if (msg.type === "interactive" && msg.interactive?.button_reply) {
-          norm.interactive = {
-            type: "button_reply",
-            id: msg.interactive.button_reply.id,
-            title: msg.interactive.button_reply.title,
-          };
-        }
-
-        normalized.push(norm);
-      }
-    }
-  }
-
+  const normalized = normalizePayload(payload as any);
   assertEquals(normalized.length, 1);
-  assertEquals(normalized[0].type, "interactive");
-  assertEquals(normalized[0].interactive.type, "button_reply");
-  assertEquals(normalized[0].interactive.id, "qr_start");
-  assertEquals(normalized[0].interactive.title, "QR Code");
+  const message = normalized[0];
+  assertEquals(message.keyword, "qr");
+  assertEquals(message.interactive?.id, "qr_start");
 });
 
-Deno.test("wa-router: payload normalization for image with caption", () => {
+Deno.test("wa-router: media payload captures caption keywords", () => {
   const payload = createMockPayload("image", {
-    image: {
-      id: "1234567890",
-      caption: "insurance document",
-    },
+    image: { id: "img_1", caption: "basket info" },
   });
+  const normalized = normalizePayload(payload as any);
+  const message = normalized[0];
+  assertEquals(message.media?.type, "image");
+  assertEquals(message.keyword, "basket");
+});
 
-  const normalized = [];
-  for (const entry of (payload.entry as any[]) ?? []) {
-    for (const change of entry.changes ?? []) {
-      const value = change.value;
-      if (!value) continue;
+Deno.test("wa-router: routing honours configured destinations", () => {
+  assertEquals(getDestinationUrl("basket"), "https://api.easymo.app/basket");
+  assertEquals(getDestinationUrl("insurance"), "https://api.easymo.app/insurance");
+  assertEquals(getDestinationUrl("unknown"), undefined);
+});
 
-      const messages = value.messages ?? [];
-      for (const msg of messages) {
-        const norm: any = {
-          from: msg.from,
-          messageId: msg.id,
-          type: msg.type,
-        };
-
-        if (msg.type === "image" && msg.image) {
-          norm.media = {
-            type: "image",
-            id: msg.image.id,
-            caption: msg.image.caption,
-          };
-        }
-
-        normalized.push(norm);
-      }
+Deno.test("wa-router: forwardToDestination reports downstream errors", async () => {
+  const payload = normalizePayload(createMockPayload("text", { text: { body: "basket" } }) as any)[0];
+  const originalFetch = globalThis.fetch;
+  try {
+    globalThis.fetch = () => Promise.reject(new Error("connection refused"));
+    const result = await forwardToDestination("https://api.easymo.app/basket", payload, {} as any);
+    assertEquals(result.status, 0);
+    assertMatch(result.error ?? "", /connection refused/);
+  } finally {
+    if (originalFetch) {
+      globalThis.fetch = originalFetch;
     }
   }
-
-  assertEquals(normalized.length, 1);
-  assertEquals(normalized[0].type, "image");
-  assertEquals(normalized[0].media.type, "image");
-  assertEquals(normalized[0].media.caption, "insurance document");
 });
 
-Deno.test("wa-router: destination URL mapping", () => {
-  const routes = {
-    easymo: "https://example.com/easymo",
-    insurance: "https://example.com/insurance",
-    basket: "https://example.com/basket",
-    qr: "https://example.com/qr",
-    dine: "https://example.com/dine",
-  };
+Deno.test("wa-router: simulated webhook flow chooses correct destination", async () => {
+  const payload = createMockPayload("text", {
+    text: { body: "Hello, I want basket support" },
+  });
+  const normalized = normalizePayload(payload as any);
+  const message = normalized[0];
+  const destination = getDestinationUrl(message.keyword);
+  assertEquals(destination, "https://api.easymo.app/basket");
 
-  assertEquals(routes["easymo"], "https://example.com/easymo");
-  assertEquals(routes["insurance"], "https://example.com/insurance");
-  assertEquals(routes["basket"], "https://example.com/basket");
-  assertEquals(routes["qr"], "https://example.com/qr");
-  assertEquals(routes["dine"], "https://example.com/dine");
-  assertEquals(routes["unknown" as keyof typeof routes], undefined);
-});
-
-Deno.test("wa-router: allowlist enforcement blocks non-allowlisted URLs", () => {
-  // Simulate the allowlist check
-  const allowedUrls = new Set([
-    "https://example.com/easymo",
-    "https://example.com/insurance",
-  ]);
-
-  const testUrl = "https://malicious.com/handler";
-  assertEquals(allowedUrls.has(testUrl), false);
-
-  const validUrl = "https://example.com/easymo";
-  assertEquals(allowedUrls.has(validUrl), true);
-});
-
-Deno.test("wa-router: feature flag controls router availability", () => {
-  // Test router enabled
-  let routerEnabled = true;
-  assertEquals(routerEnabled, true);
-
-  // Test router disabled
-  routerEnabled = false;
-  assertEquals(routerEnabled, false);
-});
-
-Deno.test("wa-router: text snippet truncation for privacy", () => {
-  const longText = "a".repeat(1000);
-  const truncated = longText.substring(0, 500);
-  
-  assertEquals(truncated.length, 500);
-  assertEquals(longText.length, 1000);
+  const originalFetch = globalThis.fetch;
+  try {
+    globalThis.fetch = (_input, _init) => Promise.resolve(new Response(null, { status: 202 }));
+    const result = await forwardToDestination(destination!, message, payload as any);
+    assertEquals(result.status, 202);
+    assertEquals(result.keyword, "basket");
+  } finally {
+    if (originalFetch) {
+      globalThis.fetch = originalFetch;
+    }
+  }
 });

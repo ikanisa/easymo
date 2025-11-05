@@ -10,7 +10,8 @@
     "baseUrl": ".",
     "paths": {
       "@easymo/commons": ["./types/easymo-commons"],
-      "@easymo/commons/*": ["./types/easymo-commons"]
+      "@easymo/commons/*": ["./types/easymo-commons"],
+      "@va/shared/wa-calls": ["./types/va-shared"]
     },
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,

@@ -5,6 +5,17 @@ const config: Config = {
   testEnvironment: 'node',
   preset: 'ts-jest',
   setupFiles: ['<rootDir>/jest.setup.ts'],
+  collectCoverageFrom: ['<rootDir>/src/**/*.{ts,js}'],
+  coverageDirectory: '<rootDir>/coverage',
+  coverageReporters: ['text', 'lcov'],
+  coverageThreshold: {
+    global: {
+      statements: 70,
+      branches: 60,
+      lines: 70,
+      functions: 70,
+    },
+  },
   transform: {
     '^.+\\.(t|j)s$': ['ts-jest', { tsconfig: 'tsconfig.json' }],
   },
