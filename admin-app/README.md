@@ -49,13 +49,13 @@ git push origin main
 ```bash
 npm ci
 npm run build
-npx @cloudflare/next-on-pages
+pnpm exec @cloudflare/next-on-pages --skip-build
 npx wrangler pages deploy .vercel/output/static --project-name=easymo-admin
 ```
 
 **Deploy via Cloudflare Dashboard:**
 Connect your GitHub repository in Cloudflare Pages dashboard with:
-- Build command: `cd admin-app && npm ci && npm run build && npx @cloudflare/next-on-pages`
+- Build command: `cd admin-app && pnpm install --frozen-lockfile && pnpm run build && pnpm exec @cloudflare/next-on-pages --skip-build`
 - Build output: `admin-app/.vercel/output/static`
 - Node version: 18
 

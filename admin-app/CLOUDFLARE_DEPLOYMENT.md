@@ -12,7 +12,7 @@ The app uses `@cloudflare/next-on-pages` to adapt Next.js App Router for Cloudfl
 
 ### Build Settings
 
-- **Build Command**: `npm run pages:build`
+- **Build Command**: `pnpm run pages:build`
 - **Build Output Directory**: `.vercel/output/static`
 - **Node Version**: 18 or higher
 - **Root Directory**: `admin-app`
@@ -67,7 +67,7 @@ wrangler pages secret put ADMIN_SESSION_SECRET --project-name=easymo-admin-previ
    - Select your repository: `easymo-`
    - Configure build settings:
      - **Framework preset**: Next.js
-     - **Build command**: `pnpm -w --filter @va/shared build && pnpm -w --filter @easymo/commons build && pnpm -w --filter @easymo/ui build && cd admin-app && pnpm build && npx @cloudflare/next-on-pages@latest --skip-build`
+     - **Build command**: `pnpm -w --filter @va/shared build && pnpm -w --filter @easymo/commons build && pnpm -w --filter @easymo/ui build && cd admin-app && pnpm build && pnpm exec @cloudflare/next-on-pages --skip-build`
      - **Build output directory**: `admin-app/.vercel/output/static`
      - **Root directory**: Leave empty (or set to repo root)
      - **Environment variables**: Add `NODE_VERSION=20`
@@ -93,7 +93,7 @@ pnpm --filter @easymo/ui build
 
 # Build and deploy
 cd admin-app
-npm run pages:build
+pnpm run pages:build
 wrangler pages deploy .vercel/output/static --project-name=easymo-admin-production
 ```
 
@@ -136,7 +136,7 @@ jobs:
       - name: Build for Cloudflare Pages
         run: |
           cd admin-app
-          npm run pages:build
+          pnpm run pages:build
           
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3

@@ -1,6 +1,5 @@
 import { logStructured } from "./logger";
 import { emitMetric } from "./metrics";
-import { randomUUID } from "crypto";
 
 export type ObservabilityContext = {
   log: typeof logStructured;
@@ -14,7 +13,7 @@ export async function withApiObservability<T>(
   handler: (ctx: ObservabilityContext) => Promise<T>,
 ): Promise<T> {
   const start = Date.now();
-  const requestId = (request.headers as any)?.get?.('x-request-id') || randomUUID();
+  const requestId = (request.headers as any)?.get?.('x-request-id') || crypto.randomUUID();
   const ctx: ObservabilityContext = {
     log: (payload) => logStructured({ target: name, tags: { request_id: requestId }, ...payload }),
     recordMetric: (metricName, metricValue, metricTags) => {

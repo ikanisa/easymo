@@ -116,10 +116,7 @@ echo ""
 echo "Step 8: Build for Cloudflare Pages (next-on-pages)"
 echo "---------------------------------------------------"
 # The @cloudflare/next-on-pages adapter creates the .vercel/output structure
-# Configure npm to use legacy peer deps to avoid conflicts
-npm config set legacy-peer-deps true
-npx @cloudflare/next-on-pages
-npm config delete legacy-peer-deps
+pnpm exec @cloudflare/next-on-pages --skip-build
 echo "✓ Cloudflare Pages adapter complete"
 echo ""
 

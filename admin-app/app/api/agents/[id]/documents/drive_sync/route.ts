@@ -1,6 +1,85 @@
 import { NextRequest, NextResponse } from "next/server";
-import crypto from "crypto";
 import { getSupabaseAdminClient } from "@/lib/server/supabase-admin";
+
+const textEncoder = new TextEncoder();
+
+function base64UrlEncodeBytes(bytes: Uint8Array): string {
+  if (typeof btoa === "function") {
+    let binary = "";
+    for (let i = 0; i < bytes.length; i += 1) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+    return btoa(binary).replace(/=+$/g, "").replace(/\+/g, "-").replace(/\//g, "_");
+  }
+  if (typeof Buffer !== "undefined") {
+    return Buffer.from(bytes)
+      .toString("base64")
+      .replace(/=+$/g, "")
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_");
+  }
+  throw new Error("Base64 encoding is not supported in this environment.");
+}
+
+function pemToUint8Array(pem: string): Uint8Array {
+  const normalized = pem
+    .replace(/-----BEGIN [^-]+-----/g, "")
+    .replace(/-----END [^-]+-----/g, "")
+    .replace(/\s+/g, "");
+  if (typeof atob === "function") {
+    const binary = atob(normalized);
+    const output = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i += 1) {
+      output[i] = binary.charCodeAt(i);
+    }
+    return output;
+  }
+  if (typeof Buffer !== "undefined") {
+    return new Uint8Array(Buffer.from(normalized, "base64"));
+  }
+  throw new Error("Base64 decoding is not supported in this environment.");
+}
+
+async function importPrivateKey(pem: string): Promise<CryptoKey> {
+  const keyBytes = pemToUint8Array(pem);
+  const buffer = keyBytes.buffer.slice(
+    keyBytes.byteOffset,
+    keyBytes.byteOffset + keyBytes.byteLength,
+  );
+  return crypto.subtle.importKey(
+    "pkcs8",
+    buffer,
+    { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+}
+
+async function createServiceAccountAssertion(
+  header: Record<string, unknown>,
+  claim: Record<string, unknown>,
+  privateKey: string,
+): Promise<string | null> {
+  try {
+    const headerSegment = base64UrlEncodeBytes(
+      textEncoder.encode(JSON.stringify(header)),
+    );
+    const claimSegment = base64UrlEncodeBytes(
+      textEncoder.encode(JSON.stringify(claim)),
+    );
+    const toSign = `${headerSegment}.${claimSegment}`;
+    const key = await importPrivateKey(privateKey);
+    const signatureBuffer = await crypto.subtle.sign(
+      "RSASSA-PKCS1-v1_5",
+      key,
+      textEncoder.encode(toSign),
+    );
+    const signature = base64UrlEncodeBytes(new Uint8Array(signatureBuffer));
+    return `${toSign}.${signature}`;
+  } catch {
+    return null;
+  }
+}
 
 function parseFolderId(input: string): string | null {
   try {
@@ -28,14 +107,8 @@ async function getServiceAccountToken(): Promise<string | null> {
     exp: now + 3600,
     iat: now,
   };
-  function b64u(input: string) { return Buffer.from(input).toString('base64').replace(/=+$/,'').replace(/\+/g,'-').replace(/\//g,'_'); }
-  const headerB64 = b64u(JSON.stringify(header));
-  const claimB64 = b64u(JSON.stringify(claim));
-  const toSign = `${headerB64}.${claimB64}`;
-  const signer = crypto.createSign('RSA-SHA256'); signer.update(toSign); signer.end();
-  const signature = signer.sign(privateKey);
-  const sigB64 = signature.toString('base64').replace(/=+$/,'').replace(/\+/g,'-').replace(/\//g,'_');
-  const assertion = `${toSign}.${sigB64}`;
+  const assertion = await createServiceAccountAssertion(header, claim, privateKey);
+  if (!assertion) return null;
   const resp = await fetch('https://oauth2.googleapis.com/token', {
     method: 'POST',
     headers: { 'Content-Type':'application/x-www-form-urlencoded' },

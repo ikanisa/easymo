@@ -1,6 +1,5 @@
 export const dynamic = 'force-dynamic';
 import { NextResponse } from "next/server";
-import { timingSafeEqual } from "node:crypto";
 import { z } from "zod";
 
 import { createHandler } from "@/app/api/withObservability";
@@ -20,6 +19,7 @@ const WINDOW_MS = Number.parseInt(process.env.ADMIN_LOGIN_WINDOW_MS ?? "60000", 
 const loginBuckets = new Map<string, { count: number; resetAt: number }>();
 
 const now = () => Date.now();
+const textEncoder = new TextEncoder();
 
 function clientKey(request: Request): string {
   const forwarded = request.headers.get("x-forwarded-for");
@@ -48,17 +48,15 @@ function recordFailedAttempt(key: string) {
   bucket.count += 1;
 }
 
-function toBuffer(value: string): Buffer {
-  return Buffer.from(value.normalize());
-}
-
-export const runtime = "nodejs";
-
 function constantTimeEquals(a: string, b: string): boolean {
-  const left = toBuffer(a);
-  const right = toBuffer(b);
+  const left = textEncoder.encode(a.normalize());
+  const right = textEncoder.encode(b.normalize());
   if (left.length !== right.length) return false;
-  return timingSafeEqual(left, right);
+  let diff = 0;
+  for (let i = 0; i < left.length; i += 1) {
+    diff |= left[i] ^ right[i];
+  }
+  return diff === 0;
 }
 
 export const POST = createHandler("admin_auth.login", async (request) => {

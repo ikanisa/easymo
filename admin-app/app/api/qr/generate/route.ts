@@ -1,7 +1,6 @@
 export const dynamic = 'force-dynamic';
 import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
-import { randomBytes } from 'crypto';
 import { z } from 'zod';
 import { getSupabaseAdminClient } from '@/lib/server/supabase-admin';
 import { logStructured } from '@/lib/server/logger';
@@ -15,7 +14,13 @@ const requestSchema = z.object({
 });
 
 function generateToken() {
-  return `QR-${randomBytes(4).toString('hex').toUpperCase()}`;
+  const bytes = new Uint8Array(4);
+  crypto.getRandomValues(bytes);
+  let hex = "";
+  for (let i = 0; i < bytes.length; i += 1) {
+    hex += bytes[i].toString(16).padStart(2, "0");
+  }
+  return `QR-${hex.toUpperCase()}`;
 }
 
 export const POST = createHandler('admin_api.qr.generate', async (request: Request) => {
