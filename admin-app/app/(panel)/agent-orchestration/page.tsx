@@ -3,6 +3,7 @@
 import { SectionCard } from "@/components/ui/SectionCard";
 import { KpiCard } from "@/components/dashboard/KpiCard";
 import { useAgentRegistry, useAgentSessions, useAgentMetrics } from "@/lib/queries/agent-orchestration";
+import { SessionDrawer } from "@/components/agent-orchestration/SessionDrawer";
 import { useState } from "react";
 import type { DashboardKpi } from "@/lib/schemas";
 
@@ -12,6 +13,7 @@ export default function AgentOrchestrationPage() {
   const metricsQuery = useAgentMetrics({ days: 7 });
 
   const [selectedAgent, setSelectedAgent] = useState<string | undefined>();
+  const [selectedSessionId, setSelectedSessionId] = useState<string | undefined>();
 
   // Build KPIs
   const kpis: DashboardKpi[] = metricsQuery.data?.kpis
@@ -166,7 +168,11 @@ export default function AgentOrchestrationPage() {
                   const isUrgent = remainingMinutes < 1;
 
                   return (
-                    <tr key={session.id} className="border-b hover:bg-muted/50 transition-colors">
+                    <tr 
+                      key={session.id} 
+                      className="border-b hover:bg-muted/50 transition-colors cursor-pointer"
+                      onClick={() => setSelectedSessionId(session.id)}
+                    >
                       <td className="p-3 font-mono text-xs">
                         {session.id.slice(0, 8)}...
                       </td>
@@ -207,6 +213,14 @@ export default function AgentOrchestrationPage() {
           </div>
         )}
       </SectionCard>
+
+      {/* Session Detail Drawer */}
+      {selectedSessionId && (
+        <SessionDrawer
+          sessionId={selectedSessionId}
+          onClose={() => setSelectedSessionId(undefined)}
+        />
+      )}
     </div>
   );
 }
