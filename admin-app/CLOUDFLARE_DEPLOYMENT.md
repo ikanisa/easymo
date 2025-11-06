@@ -93,7 +93,7 @@ pnpm --filter @easymo/ui build
 
 # Build and deploy
 cd admin-app
-npm run pages:build
+pnpm run pages:build
 wrangler pages deploy .vercel/output/static --project-name=easymo-admin-production
 ```
 
@@ -136,7 +136,7 @@ jobs:
       - name: Build for Cloudflare Pages
         run: |
           cd admin-app
-          npm run pages:build
+          pnpm run pages:build
           
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3

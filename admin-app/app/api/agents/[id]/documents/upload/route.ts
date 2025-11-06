@@ -20,7 +20,7 @@ export async function POST(
   if (!(file instanceof File)) {
     return NextResponse.json({ error: "file_required" }, { status: 400 });
   }
-  const bytes = Buffer.from(await file.arrayBuffer());
+  const bytes = new Uint8Array(await file.arrayBuffer());
   const safeName = file.name?.replace(/[^a-zA-Z0-9_.-]/g, "_") ||
     `upload_${Date.now()}`;
   const storagePath = `${id}/${Date.now()}_${safeName}`;

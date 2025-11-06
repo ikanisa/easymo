@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdminClient } from "@/lib/server/supabase-admin";
-import crypto from "crypto";
 
 export async function POST(req: NextRequest) {
   const reqId = req.headers.get("x-request-id") || crypto.randomUUID();
