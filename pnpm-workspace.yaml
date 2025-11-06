@@ -1,5 +1,17 @@
 packages:
-  - "services/*"
-  - "packages/*"
-  - "admin-app"
-  - "ai"
+  - services/*
+  - packages/*
+  - admin-app
+  - ai
+
+onlyBuiltDependencies:
+  - '@nestjs/core'
+  - '@prisma/client'
+  - '@prisma/engines'
+  - '@swc/core'
+  - esbuild
+  - prisma
+  - protobufjs
+  - sharp
+  - unrs-resolver
+  - workerd

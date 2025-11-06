@@ -10,6 +10,8 @@ export const metadata: Metadata = {
   title: "easyMO Admin Panel",
   description:
     "Operations console for platform staff — dashboards, vouchers, campaigns, and support tools.",
+  manifest: "/manifest.webmanifest",
+  themeColor: "#2563eb",
 };
 
 export default function RootLayout({

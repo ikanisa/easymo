@@ -35,6 +35,9 @@
       ],
       "@easymo/ui/tokens": [
         "../packages/ui/tokens/index.ts"
+      ],
+      "@easymo/commons": [
+        "../packages/commons/src/index.ts"
       ]
     },
     "plugins": [
