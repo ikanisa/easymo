@@ -52,3 +52,5 @@ export const GET = createHandler('admin_api.files.signed_url', async (request: R
 
   return jsonOk({ url: data.signedUrl, expiresIn: 60 });
 });
+
+export const runtime = "edge";

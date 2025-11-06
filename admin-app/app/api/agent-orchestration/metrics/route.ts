@@ -88,3 +88,5 @@ export const GET = createHandler("admin_api.agent_metrics.get", async (req) => {
     return jsonError({ error: "internal_error", message: "Internal server error" }, 500);
   }
 });
+
+export const runtime = "edge";

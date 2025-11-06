@@ -143,3 +143,5 @@ export const GET = createHandler('admin_api.logs.list', async (request: Request)
     return mockResponse('Supabase logs query failed. Showing mock audit log.', query);
   }
 });
+
+export const runtime = "edge";

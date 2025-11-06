@@ -51,3 +51,5 @@ export async function GET() {
     return fallbackResponse();
   }
 }
+
+export const runtime = "edge";

@@ -18,3 +18,5 @@ export async function GET(_: Request, { params }: { params: { id: string; docId:
   return NextResponse.json({ url: signed?.signedUrl ?? null });
 }
 
+
+export const runtime = "edge";

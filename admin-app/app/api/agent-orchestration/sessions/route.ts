@@ -117,3 +117,5 @@ export const POST = createHandler("admin_api.agent_sessions.create", async (req)
     return jsonError({ error: "internal_error", message: "Internal server error" }, 500);
   }
 });
+
+export const runtime = "edge";

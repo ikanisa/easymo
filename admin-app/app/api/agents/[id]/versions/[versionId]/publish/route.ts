@@ -16,3 +16,5 @@ export async function POST(req: Request, { params }: { params: { id: string; ver
   if (error) return NextResponse.json({ error }, { status: 400 });
   return NextResponse.json({ published: true, environment: env });
 }
+
+export const runtime = "edge";

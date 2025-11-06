@@ -57,3 +57,5 @@ export const GET = createHandler('admin_api.order_events.list', async (request, 
   return jsonOk({ data: rows });
 });
 import { jsonOk, jsonError, zodValidationError } from "@/lib/api/http";
+
+export const runtime = "edge";

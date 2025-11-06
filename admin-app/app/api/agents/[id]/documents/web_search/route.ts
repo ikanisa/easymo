@@ -94,3 +94,5 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     return NextResponse.json({ error: String(e?.message || e) }, { status: 502 });
   }
 }
+
+export const runtime = "edge";

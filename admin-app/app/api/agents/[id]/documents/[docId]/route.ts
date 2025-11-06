@@ -37,3 +37,5 @@ export async function DELETE(
   }
   return NextResponse.json({ deleted: true });
 }
+
+export const runtime = "edge";

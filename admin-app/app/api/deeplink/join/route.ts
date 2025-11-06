@@ -110,3 +110,5 @@ export const GET = createHandler('deeplink.join', async (request) => {
     { status: 200 },
   );
 });
+
+export const runtime = "edge";

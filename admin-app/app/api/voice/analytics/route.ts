@@ -124,3 +124,5 @@ function percentile95(values: Array<number | null>) {
   const index = Math.floor(0.95 * (filtered.length - 1));
   return filtered[index];
 }
+
+export const runtime = "edge";

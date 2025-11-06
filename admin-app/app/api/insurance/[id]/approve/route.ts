@@ -112,3 +112,5 @@ export const POST = createHandler("admin_api.insurance.id.approve", async (
     return jsonError({ error: "insurance_approve_failed" }, 500);
   }
 });
+
+export const runtime = "edge";

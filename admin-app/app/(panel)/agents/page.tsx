@@ -63,3 +63,5 @@ export default function AgentsPage() {
     </div>
   );
 }
+
+export const runtime = "edge";

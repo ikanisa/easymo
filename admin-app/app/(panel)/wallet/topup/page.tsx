@@ -89,3 +89,5 @@ export default function WalletTopupPage() {
     </div>
   );
 }
+
+export const runtime = "edge";

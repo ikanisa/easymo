@@ -29,3 +29,5 @@ export async function POST(req: NextRequest) {
     idempotencyKey: idem,
   }, { status: 201 });
 }
+
+export const runtime = "edge";

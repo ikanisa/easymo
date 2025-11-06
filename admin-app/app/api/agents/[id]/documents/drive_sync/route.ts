@@ -195,3 +195,5 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const duplicatesDb = existingSet.size;
   return NextResponse.json({ imported, duplicates: duplicatesBatch + duplicatesDb });
 }
+
+export const runtime = "edge";

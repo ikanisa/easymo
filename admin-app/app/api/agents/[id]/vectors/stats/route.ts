@@ -27,3 +27,5 @@ export async function GET(_: NextRequest, { params }: { params: { id: string } }
 
   return NextResponse.json({ totalDocs: 0, readyDocs: 0, jsonChunks: 0, vecChunks: 0 });
 }
+
+export const runtime = "edge";

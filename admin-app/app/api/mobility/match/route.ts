@@ -19,3 +19,5 @@ export async function GET(req: NextRequest) {
   const reqId = req.headers.get("x-request-id") || undefined;
   return NextResponse.json({ route: "mobility.match", status: "ok", reqId }, { status: 200 });
 }
+
+export const runtime = "edge";

@@ -36,3 +36,5 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({ id: data.id }, { status: 202 });
 }
 
+
+export const runtime = "edge";

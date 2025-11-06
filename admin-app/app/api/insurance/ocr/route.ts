@@ -129,3 +129,5 @@ export async function GET(req: NextRequest) {
   const reqId = req.headers.get("x-request-id") || undefined;
   return NextResponse.json({ route: "insurance.ocr", status: "ok", reqId }, { status: 200 });
 }
+
+export const runtime = "edge";

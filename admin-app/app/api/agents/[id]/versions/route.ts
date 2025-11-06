@@ -22,3 +22,5 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   return NextResponse.json({ version: data }, { status: 201 });
 }
 
+
+export const runtime = "edge";

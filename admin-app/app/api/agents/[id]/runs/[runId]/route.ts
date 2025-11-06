@@ -14,3 +14,5 @@ export async function GET(_: Request, { params }: { params: { id: string; runId:
   return NextResponse.json({ run: data });
 }
 
+
+export const runtime = "edge";

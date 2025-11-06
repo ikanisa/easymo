@@ -27,3 +27,5 @@ export default async function UsersPage() {
     </HydrationBoundary>
   );
 }
+
+export const runtime = "edge";

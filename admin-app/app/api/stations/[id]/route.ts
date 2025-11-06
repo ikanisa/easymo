@@ -146,3 +146,5 @@ export const DELETE = createHandler('admin_api.stations.delete', async (
 
   return jsonOk({ status: 'deleted' });
 });
+
+export const runtime = "edge";

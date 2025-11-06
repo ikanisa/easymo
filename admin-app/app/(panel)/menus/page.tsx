@@ -40,3 +40,5 @@ export default async function MenusPage() {
     </HydrationBoundary>
   );
 }
+
+export const runtime = "edge";

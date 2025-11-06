@@ -14,3 +14,5 @@ export async function GET(_: Request, { params }: { params: { id: string } }) {
   return NextResponse.json({ events: data ?? [] });
 }
 
+
+export const runtime = "edge";

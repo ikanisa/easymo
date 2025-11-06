@@ -21,3 +21,5 @@ export default async function LoginPage() {
     </GradientBackground>
   );
 }
+
+export const runtime = "edge";

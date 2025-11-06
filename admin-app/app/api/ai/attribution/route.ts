@@ -13,3 +13,5 @@ export async function POST(req: NextRequest) {
   return NextResponse.json(data, { status: r.status });
 }
 
+
+export const runtime = "edge";

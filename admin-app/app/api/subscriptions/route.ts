@@ -30,3 +30,5 @@ export const GET = createHandler("admin_api.subscriptions.list", async (request:
   }
 });
 
+
+export const runtime = "edge";

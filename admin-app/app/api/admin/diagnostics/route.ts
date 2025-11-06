@@ -248,3 +248,5 @@ async function loadQueueSnapshot(
     return mockAdminDiagnostics.queues;
   }
 }
+
+export const runtime = "edge";

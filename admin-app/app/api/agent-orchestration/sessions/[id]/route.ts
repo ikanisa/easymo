@@ -137,3 +137,5 @@ export const PATCH = createHandler<{ params: Promise<{ id: string }> }>(
     return jsonError({ error: "internal_error", message: "Internal server error" }, 500);
   }
 });
+
+export const runtime = "edge";

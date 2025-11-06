@@ -91,3 +91,5 @@ export const GET = createHandler('admin_api.menus.list', async (request, _contex
 
   return jsonOk({ data: rows, total, hasMore });
 });
+
+export const runtime = "edge";

@@ -31,3 +31,5 @@ export const POST = createHandler("api.assistant.suggestions", async (req) => {
     return zodValidationError(err);
   }
 });
+
+export const runtime = "edge";

@@ -83,3 +83,5 @@ export async function POST(req: Request) {
   }
   return NextResponse.json({ agent: data }, { status: 201 });
 }
+
+export const runtime = "edge";

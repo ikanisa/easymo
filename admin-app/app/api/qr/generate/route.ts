@@ -139,3 +139,5 @@ export const POST = createHandler('admin_api.qr.generate', async (request: Reque
 });
 import { jsonOk, jsonError, zodValidationError } from '@/lib/api/http';
 import { requireActorId, UnauthorizedError } from '@/lib/server/auth';
+
+export const runtime = "edge";

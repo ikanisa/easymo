@@ -38,3 +38,5 @@ export async function POST(request: Request, context: { params: { id: string } }
   }
 }
 
+
+export const runtime = "edge";

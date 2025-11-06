@@ -27,3 +27,5 @@ export default async function FilesPage() {
     </HydrationBoundary>
   );
 }
+
+export const runtime = "edge";

@@ -27,3 +27,5 @@ export default async function InsurancePage() {
     </HydrationBoundary>
   );
 }
+
+export const runtime = "edge";

@@ -54,3 +54,5 @@ export const GET = createHandler('admin_api.webhook_errors.list', async (request
   recordMetric('webhook_errors.success', 1, { count: rows.length });
   return jsonOk({ data: rows });
 });
+
+export const runtime = "edge";

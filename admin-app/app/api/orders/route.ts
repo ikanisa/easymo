@@ -75,3 +75,5 @@ export const GET = createHandler('admin_api.orders.list', async (request, _conte
   return jsonOk({ data: orders, total, hasMore });
 });
 import { jsonOk, jsonError, zodValidationError } from '@/lib/api/http';
+
+export const runtime = "edge";

@@ -178,3 +178,5 @@ export const POST = createHandler('admin_api.notifications.retry', async (reques
 
   return jsonOk({ queued, blocked, missing });
 });
+
+export const runtime = "edge";

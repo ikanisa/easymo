@@ -13,3 +13,5 @@ export default async function MarketplacePage() {
     </HydrationBoundary>
   );
 }
+
+export const runtime = "edge";

@@ -18,3 +18,5 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   }
 }
 
+
+export const runtime = "edge";

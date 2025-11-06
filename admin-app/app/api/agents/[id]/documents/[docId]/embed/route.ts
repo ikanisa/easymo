@@ -13,3 +13,5 @@ export async function POST(_: Request, { params }: { params: { id: string; docId
   }
 }
 
+
+export const runtime = "edge";

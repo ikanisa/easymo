@@ -83,3 +83,5 @@ export const GET = createHandler('admin_api.ocr_jobs.list', async (request, _con
 
   return jsonOk({ data: items, total, hasMore });
 });
+
+export const runtime = "edge";

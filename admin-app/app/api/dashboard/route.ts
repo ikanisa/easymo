@@ -32,3 +32,5 @@ export const GET = createHandler("admin_api.dashboard.get", async () => {
     return jsonError({ error: "dashboard_snapshot_failed", message: "Unable to compute dashboard snapshot." }, 500);
   }
 });
+
+export const runtime = "edge";

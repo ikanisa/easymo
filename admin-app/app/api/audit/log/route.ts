@@ -30,3 +30,5 @@ export const POST = createHandler("api.audit.log", async (req) => {
     return zodValidationError(err);
   }
 });
+
+export const runtime = "edge";

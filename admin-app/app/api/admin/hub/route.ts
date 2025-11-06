@@ -50,3 +50,5 @@ export const GET = createHandler("admin_api.admin_hub.get", async () => {
     return jsonOk(withMessage("Unexpected error loading admin hub sections. Showing mock snapshot instead."));
   }
 });
+
+export const runtime = "edge";

@@ -94,3 +94,5 @@ export const PATCH = createHandler<{ params: Promise<{ agent_type: string }> }>(
     }
   }
 );
+
+export const runtime = "edge";

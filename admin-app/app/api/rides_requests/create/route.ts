@@ -108,3 +108,5 @@ export const POST = createHandler('rides_requests.create', async (request) => {
     { status: 201 },
   );
 });
+
+export const runtime = "edge";

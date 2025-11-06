@@ -115,3 +115,5 @@ export const POST = createHandler("admin_api.insurance.id.request_changes", asyn
     return jsonError({ error: "insurance_request_changes_failed" }, 500);
   }
 });
+
+export const runtime = "edge";

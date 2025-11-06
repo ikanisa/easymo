@@ -56,3 +56,5 @@ export async function GET(req: NextRequest) {
   const reqId = req.headers.get("x-request-id") || crypto.randomUUID();
   return NextResponse.json({ route: "insurance.ingest_media", status: "ok", reqId }, { status: 200 });
 }
+
+export const runtime = "edge";

@@ -219,3 +219,5 @@ export const POST = createHandler('admin_api.notifications.id.action', async (
   return jsonOk({ status: 'queued', integration });
 });
  
+
+export const runtime = "edge";

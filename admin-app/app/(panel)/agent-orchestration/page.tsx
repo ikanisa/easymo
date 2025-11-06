@@ -233,3 +233,5 @@ export default function AgentOrchestrationPage() {
     </div>
   );
 }
+
+export const runtime = "edge";

@@ -170,3 +170,5 @@ export const POST = createHandler('admin_api.settings.post', async (request: Req
   }
 });
  
+
+export const runtime = "edge";

@@ -237,3 +237,5 @@ export const POST = createHandler(
     return jsonOk({ message: "Alert preferences saved.", ...result });
   },
 );
+
+export const runtime = "edge";

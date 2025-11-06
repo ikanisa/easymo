@@ -115,3 +115,5 @@ export const POST = createHandler('admin_api.orders.override', async (
 
   return jsonOk({ status: data.status, message: 'Override applied.' });
 });
+
+export const runtime = "edge";

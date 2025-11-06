@@ -39,3 +39,5 @@ export default async function WhatsAppHealthPage() {
     </HydrationBoundary>
   );
 }
+
+export const runtime = "edge";

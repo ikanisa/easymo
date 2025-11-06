@@ -39,3 +39,5 @@ export const GET = createHandler("admin_api.users.list", async (request: Request
     return jsonError({ error: "users_list_failed" }, 500);
   }
 });
+
+export const runtime = "edge";

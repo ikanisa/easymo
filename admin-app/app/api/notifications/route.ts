@@ -72,3 +72,5 @@ export const GET = createHandler('admin_api.notifications.list', async (request,
     hasMore
   });
 });
+
+export const runtime = "edge";

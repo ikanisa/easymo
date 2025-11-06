@@ -145,3 +145,5 @@ export const GET = createHandler(
     return jsonOk(results);
   },
 );
+
+export const runtime = "edge";

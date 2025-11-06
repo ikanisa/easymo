@@ -42,3 +42,5 @@ export default async function QrPage() {
     </HydrationBoundary>
   );
 }
+
+export const runtime = "edge";

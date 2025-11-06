@@ -73,3 +73,5 @@ export const GET = createHandler('admin_api.qr_tokens.list', async (request, _co
   return jsonOk({ data: entries, total, hasMore });
 });
 import { jsonOk, jsonError, zodValidationError } from '@/lib/api/http';
+
+export const runtime = "edge";

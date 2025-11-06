@@ -36,3 +36,5 @@ export default async function DashboardPage() {
     </HydrationBoundary>
   );
 }
+
+export const runtime = "edge";

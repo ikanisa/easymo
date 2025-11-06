@@ -42,3 +42,5 @@ export default async function TemplatesPage() {
     </HydrationBoundary>
   );
 }
+
+export const runtime = "edge";

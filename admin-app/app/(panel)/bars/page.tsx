@@ -42,3 +42,5 @@ export default async function BarsPage() {
     </HydrationBoundary>
   );
 }
+
+export const runtime = "edge";
