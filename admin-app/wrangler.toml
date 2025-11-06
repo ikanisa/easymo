@@ -19,7 +19,7 @@ name = "easymo-admin-preview"
 
 # Node.js compatibility for API routes and middleware
 [build]
-command = "npm run pages:build"
+command = "pnpm run pages:build"
 
 # Public environment variables (non-secret)
 # Set secrets via Cloudflare Pages dashboard or: wrangler pages secret put <KEY>

@@ -8,11 +8,11 @@
 
 ## Build Configuration
 
-The app uses `@cloudflare/next-on-pages` to adapt Next.js App Router for Cloudflare Pages.
+The app uses `@opennextjs/cloudflare` (OpenNext adapter) to deploy Next.js App Router to Cloudflare Pages.
 
 ### Build Settings
 
-- **Build Command**: `npm run pages:build`
+- **Build Command**: `pnpm run pages:build`
 - **Build Output Directory**: `.vercel/output/static`
 - **Node Version**: 18 or higher
 - **Root Directory**: `admin-app`
@@ -67,7 +67,7 @@ wrangler pages secret put ADMIN_SESSION_SECRET --project-name=easymo-admin-previ
    - Select your repository: `easymo-`
    - Configure build settings:
      - **Framework preset**: Next.js
-     - **Build command**: `pnpm -w --filter @va/shared build && pnpm -w --filter @easymo/commons build && pnpm -w --filter @easymo/ui build && cd admin-app && pnpm build && npx @cloudflare/next-on-pages@latest --skip-build`
+     - **Build command**: `pnpm -w --filter @va/shared build && pnpm -w --filter @easymo/commons build && pnpm -w --filter @easymo/ui build && cd admin-app && pnpm build && npx @opennextjs/cloudflare@latest`
      - **Build output directory**: `admin-app/.vercel/output/static`
      - **Root directory**: Leave empty (or set to repo root)
      - **Environment variables**: Add `NODE_VERSION=20`
@@ -310,6 +310,6 @@ Current build output:
 ## Support & Resources
 
 - [Cloudflare Pages Docs](https://developers.cloudflare.com/pages/)
-- [@cloudflare/next-on-pages](https://github.com/cloudflare/next-on-pages)
+- [OpenNext Cloudflare Adapter](https://opennext.js.org/cloudflare)
 - [Next.js Edge Runtime](https://nextjs.org/docs/app/building-your-application/rendering/edge-and-nodejs-runtimes)
 - [Wrangler CLI](https://developers.cloudflare.com/workers/wrangler/)

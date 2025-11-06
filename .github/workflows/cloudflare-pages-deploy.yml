@@ -70,7 +70,7 @@ jobs:
           NEXT_PUBLIC_DEFAULT_ACTOR_ID: ${{ secrets.NEXT_PUBLIC_DEFAULT_ACTOR_ID }}
         run: |
           npm run build
-          npx @cloudflare/next-on-pages
+          npx @opennextjs/cloudflare@latest
 
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/pages-action@v1

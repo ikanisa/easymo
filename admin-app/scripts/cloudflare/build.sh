@@ -73,7 +73,7 @@ echo ""
 echo "Step 4: Temporarily patch package.json for Cloudflare Pages compatibility"
 echo "---------------------------------------------------------------------------"
 # The workspace:* protocol is not supported by npm/Vercel build
-# Temporarily replace it with a file path for the @cloudflare/next-on-pages adapter
+# Temporarily replace it with a file path for the OpenNext adapter
 cp package.json package.json.backup
 sed -i 's|"@va/shared": "workspace:\*"|"@va/shared": "file:../packages/shared"|g' package.json
 echo "✓ package.json patched (workspace:* → file:../packages/shared)"
@@ -113,12 +113,12 @@ npm run build
 echo "✓ Next.js build complete"
 echo ""
 
-echo "Step 8: Build for Cloudflare Pages (next-on-pages)"
-echo "---------------------------------------------------"
-# The @cloudflare/next-on-pages adapter creates the .vercel/output structure
+echo "Step 8: Build for Cloudflare Pages (OpenNext adapter)"
+echo "------------------------------------------------------"
+# The @opennextjs/cloudflare adapter creates the .vercel/output structure
 # Configure npm to use legacy peer deps to avoid conflicts
 npm config set legacy-peer-deps true
-npx @cloudflare/next-on-pages
+npx @opennextjs/cloudflare@latest
 npm config delete legacy-peer-deps
 echo "✓ Cloudflare Pages adapter complete"
 echo ""
