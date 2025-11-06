@@ -4,6 +4,7 @@ import { SectionCard } from "@/components/ui/SectionCard";
 import { KpiCard } from "@/components/dashboard/KpiCard";
 import { useAgentRegistry, useAgentSessions, useAgentMetrics } from "@/lib/queries/agent-orchestration";
 import { SessionDrawer } from "@/components/agent-orchestration/SessionDrawer";
+import { AgentConfigDrawer } from "@/components/agent-orchestration/AgentConfigDrawer";
 import { useState } from "react";
 import type { DashboardKpi } from "@/lib/schemas";
 
@@ -12,7 +13,7 @@ export default function AgentOrchestrationPage() {
   const sessionsQuery = useAgentSessions({ status: "searching", limit: 20 });
   const metricsQuery = useAgentMetrics({ days: 7 });
 
-  const [selectedAgent, setSelectedAgent] = useState<string | undefined>();
+  const [selectedAgentType, setSelectedAgentType] = useState<string | undefined>();
   const [selectedSessionId, setSelectedSessionId] = useState<string | undefined>();
 
   // Build KPIs
@@ -102,7 +103,7 @@ export default function AgentOrchestrationPage() {
                   <tr
                     key={agent.id}
                     className="border-b hover:bg-muted/50 cursor-pointer transition-colors"
-                    onClick={() => setSelectedAgent(agent.agent_type)}
+                    onClick={() => setSelectedAgentType(agent.agent_type)}
                   >
                     <td className="p-3 font-medium">{agent.name}</td>
                     <td className="p-3 text-muted-foreground">{agent.agent_type}</td>
@@ -219,6 +220,14 @@ export default function AgentOrchestrationPage() {
         <SessionDrawer
           sessionId={selectedSessionId}
           onClose={() => setSelectedSessionId(undefined)}
+        />
+      )}
+
+      {/* Agent Config Drawer */}
+      {selectedAgentType && (
+        <AgentConfigDrawer
+          agentType={selectedAgentType}
+          onClose={() => setSelectedAgentType(undefined)}
         />
       )}
     </div>

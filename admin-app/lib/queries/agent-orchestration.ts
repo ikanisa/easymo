@@ -162,6 +162,39 @@ export function useAgentRegistry() {
   });
 }
 
+export function useAgentConfig(agentType?: string) {
+  return useQuery({
+    queryKey: ["agent-orchestration", "registry", agentType],
+    queryFn: ({ signal }) => fetchAPI(`/registry/${agentType}`, { signal }),
+    enabled: Boolean(agentType),
+  });
+}
+
+export function useUpdateAgentConfig(agentType: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: {
+      enabled?: boolean;
+      sla_minutes?: number;
+      max_extensions?: number;
+      fan_out_limit?: number;
+      counter_offer_delta_pct?: number;
+      auto_negotiation?: boolean;
+      feature_flag_scope?: string;
+      system_prompt?: string;
+      enabled_tools?: string[];
+    }) =>
+      fetchAPI(`/registry/${agentType}`, {
+        method: "PATCH",
+        body: JSON.stringify(data),
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["agent-orchestration", "registry", agentType] });
+      qc.invalidateQueries({ queryKey: ["agent-orchestration", "registry"] });
+    },
+  });
+}
+
 // ============================================================================
 // Agent Metrics
 // ============================================================================
