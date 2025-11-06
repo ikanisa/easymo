@@ -128,5 +128,5 @@ For higher limits, consider Cloudflare Pages Pro.
 
 - [Cloudflare Pages Docs](https://developers.cloudflare.com/pages/)
 - [Next.js on Cloudflare](https://developers.cloudflare.com/pages/framework-guides/nextjs/)
+- [OpenNext GitHub](https://github.com/opennextjs/opennext)
 - [Community Discord](https://discord.cloudflare.com)
-- [GitHub Issues](https://github.com/cloudflare/next-on-pages/issues)

@@ -17,7 +17,7 @@ This checklist ensures all prerequisites are met before deploying the EasyMO Adm
 - [ ] Project connected to GitHub repository: `ikanisa/easymo`
 - [ ] Production branch set to: `main`
 - [ ] Build configuration set:
-  - [ ] Build command: `cd admin-app && npm ci && npm run build && npx @cloudflare/next-on-pages`
+  - [ ] Build command: `cd admin-app && npm ci && npm run build && npx @opennextjs/cloudflare@latest`
   - [ ] Build output directory: `admin-app/.vercel/output/static`
   - [ ] Root directory: `/`
   - [ ] Node version: `18`
@@ -130,7 +130,7 @@ This checklist ensures all prerequisites are met before deploying the EasyMO Adm
 - [ ] pnpm 10.18.3+ available
 - [ ] npm 9.8.1+ available
 - [ ] Wrangler CLI available
-- [ ] @cloudflare/next-on-pages installed
+- [ ] @opennextjs/cloudflare installed
 
 ### Build Process Verification
 - [ ] Shared packages build successfully
@@ -139,7 +139,7 @@ This checklist ensures all prerequisites are met before deploying the EasyMO Adm
 - [ ] Linting passes with max warnings = 0
 - [ ] Tests pass
 - [ ] Next.js build completes
-- [ ] @cloudflare/next-on-pages conversion succeeds
+- [ ] @opennextjs/cloudflare conversion succeeds
 - [ ] Output directory created: `.vercel/output/static`
 
 ### GitHub Actions Workflow

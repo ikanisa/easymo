@@ -167,7 +167,7 @@ Before deploying, ensure you have:
        ▼
 ┌──────────────────────────────┐
 │  Build with                   │
-│  @cloudflare/next-on-pages   │
+│  @opennextjs/cloudflare      │
 └──────┬───────────────────────┘
        │
        ▼
@@ -218,7 +218,7 @@ npm test -- --run
 
 # Build locally
 npm run build
-npx @cloudflare/next-on-pages
+npx @opennextjs/cloudflare@latest
 ```
 
 ### Post-Deployment

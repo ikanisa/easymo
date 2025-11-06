@@ -108,7 +108,7 @@ npm ci
 
 # Build for Cloudflare Pages
 npm run build
-npx @cloudflare/next-on-pages
+npx @opennextjs/cloudflare@latest
 ```
 
 ### Step 4: Deploy

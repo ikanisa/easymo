@@ -22,8 +22,8 @@ This document summarizes the complete implementation of Cloudflare Pages deploym
   - Build output directory configured
   
 - **package.json**: Dependencies and scripts
-  - @cloudflare/next-on-pages v1.13.5 (Next.js → Cloudflare adapter)
-  - wrangler v3.95.0 (Cloudflare CLI)
+  - @opennextjs/cloudflare v1.11.1 (Next.js → Cloudflare adapter)
+  - wrangler v4.46.0 (Cloudflare CLI)
   - vercel v37.0.0 (Build tooling)
   - New scripts: pages:build, preview, deploy, cf:dev
 
@@ -57,7 +57,7 @@ This document summarizes the complete implementation of Cloudflare Pages deploym
   2. Install dependencies (pnpm)
   3. Build shared packages (@va/shared, @easymo/commons)
   4. Security check (no service role in client vars)
-  5. Build with @cloudflare/next-on-pages
+  5. Build with OpenNext (@opennextjs/cloudflare)
   6. Deploy to Cloudflare Pages
   7. Post-deployment verification
 
@@ -179,8 +179,8 @@ cd admin-app
 npm ci
 npm run build  # Standard Next.js build
 
-# 3. Cloudflare Adapter
-npx @cloudflare/next-on-pages
+# 3. Cloudflare Adapter (OpenNext)
+npx @opennextjs/cloudflare@latest
 
 # Output: .vercel/output/static/
 # ├── _worker.js (Edge Worker)
@@ -244,7 +244,7 @@ NEXT_PUBLIC_DUAL_CONSTRAINT_MATCHING_ENABLED=false
 
 | # | Gap Identified | Solution Implemented | Status |
 |---|----------------|---------------------|--------|
-| 1 | Missing Cloudflare Pages Adapter | Added @cloudflare/next-on-pages v1.13.5 | ✅ |
+| 1 | Missing Cloudflare Pages Adapter | Added @opennextjs/cloudflare v1.11.1 | ✅ |
 | 2 | No wrangler.toml | Created complete configuration file | ✅ |
 | 3 | No Cloudflare-specific build | Added pages:build, preview, deploy scripts | ✅ |
 | 4 | No deployment workflow | Created cloudflare-pages-deploy.yml | ✅ |

@@ -1,5 +1,5 @@
 # Cloudflare Pages configuration for EasyMO Admin Panel
-# This configuration uses @cloudflare/next-on-pages for Next.js App Router support
+# This configuration uses OpenNext adapter for Next.js App Router support
 name = "easymo-admin"
 compatibility_date = "2024-01-01"
 compatibility_flags = ["nodejs_compat"]
