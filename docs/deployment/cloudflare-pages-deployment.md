@@ -82,7 +82,7 @@ npm ci
 
 # 5. Build for Cloudflare Pages
 npm run build
-npx @cloudflare/next-on-pages
+npx @opennextjs/cloudflare@latest
 
 # 6. Deploy to Cloudflare Pages
 npx wrangler pages deploy .vercel/output/static \
@@ -97,7 +97,7 @@ npx wrangler pages deploy .vercel/output/static \
 2. Navigate to Pages → Create a project
 3. Connect to GitHub repository `ikanisa/easymo`
 4. Configure build settings:
-   - **Build command:** `cd admin-app && npm ci && npm run build && npx @cloudflare/next-on-pages`
+   - **Build command:** `cd admin-app && npm ci && npm run build && npx @opennextjs/cloudflare@latest`
    - **Build output directory:** `admin-app/.vercel/output/static`
    - **Root directory:** `/`
    - **Node version:** 18

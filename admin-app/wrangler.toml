@@ -1,5 +1,5 @@
 # Cloudflare Pages configuration for EasyMO Admin Panel
-# This configuration uses @cloudflare/next-on-pages for Next.js App Router support
+# This configuration uses OpenNext adapter for Next.js App Router support
 name = "easymo-admin"
 compatibility_date = "2024-01-01"
 compatibility_flags = ["nodejs_compat"]
@@ -19,7 +19,7 @@ name = "easymo-admin-preview"
 
 # Node.js compatibility for API routes and middleware
 [build]
-command = "npm run pages:build"
+command = "pnpm run pages:build"
 
 # Public environment variables (non-secret)
 # Set secrets via Cloudflare Pages dashboard or: wrangler pages secret put <KEY>

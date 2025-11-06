@@ -40,7 +40,7 @@ npm run build
 npm run pages:build
 
 # Or manually
-npx @cloudflare/next-on-pages
+npx @opennextjs/cloudflare@latest
 ```
 
 **Expected Results:**

@@ -10,7 +10,7 @@
 
 **Build command**:
 ```bash
-pnpm -w --filter @va/shared build && pnpm -w --filter @easymo/commons build && pnpm -w --filter @easymo/ui build && cd admin-app && pnpm build && pnpm exec @cloudflare/next-on-pages --skip-build
+pnpm -w --filter @va/shared build && pnpm -w --filter @easymo/commons build && pnpm -w --filter @easymo/ui build && cd admin-app && pnpm build && npx @opennextjs/cloudflare@latest
 ```
 
 **Build output directory**:
@@ -50,7 +50,7 @@ _(Same as production, can use different Supabase project for testing)_
 For easy copy-paste into Cloudflare dashboard:
 
 ```
-pnpm -w --filter @va/shared build && pnpm -w --filter @easymo/commons build && pnpm -w --filter @easymo/ui build && cd admin-app && pnpm build && pnpm exec @cloudflare/next-on-pages --skip-build
+pnpm -w --filter @va/shared build && pnpm -w --filter @easymo/commons build && pnpm -w --filter @easymo/ui build && cd admin-app && pnpm build && npx @opennextjs/cloudflare@latest
 ```
 
 ## Troubleshooting
@@ -61,7 +61,7 @@ pnpm -w --filter @va/shared build && pnpm -w --filter @easymo/commons build && p
 2. Try adding `packageManager: "pnpm@10.11.1"` to root `package.json`
 
 ### Build Fails: "Could not read .vercel/output/config.json"
-**Solution**: Ensure build command includes `pnpm build` (Next.js build) BEFORE running `pnpm exec @cloudflare/next-on-pages --skip-build`
+**Solution**: Ensure build command includes `pnpm build` (Next.js build) BEFORE running `@opennextjs/cloudflare`
 
 ### Build Timeout
 **Solution**: 
@@ -128,5 +128,5 @@ For higher limits, consider Cloudflare Pages Pro.
 
 - [Cloudflare Pages Docs](https://developers.cloudflare.com/pages/)
 - [Next.js on Cloudflare](https://developers.cloudflare.com/pages/framework-guides/nextjs/)
+- [OpenNext GitHub](https://github.com/opennextjs/opennext)
 - [Community Discord](https://discord.cloudflare.com)
-- [GitHub Issues](https://github.com/cloudflare/next-on-pages/issues)
