@@ -1,5 +1,7 @@
 "use client";
 
+import { loadSentryModule } from "@/lib/sentry-loader";
+
 let initialized = false;
 
 function shouldEnable(): boolean {
@@ -16,10 +18,9 @@ function initIfNeeded(S: any) {
 
 export function captureException(error: unknown, context?: Record<string, unknown>) {
   if (!shouldEnable()) return;
-  // Dynamic import so tests and builds without Sentry remain unaffected
-  const moduleName = '@sentry' + '/nextjs';
-  // @vite-ignore
-  import(moduleName).then((S) => {
+  void (async () => {
+    const S = await loadSentryModule();
+    if (!S) return;
     initIfNeeded(S);
     try {
       S.captureException(error instanceof Error ? error : new Error(String(error)), {
@@ -28,5 +29,5 @@ export function captureException(error: unknown, context?: Record<string, unknow
     } catch {
       // swallow
     }
-  }).catch(() => {});
+  })();
 }

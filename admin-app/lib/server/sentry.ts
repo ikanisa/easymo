@@ -1,4 +1,5 @@
 import "server-only";
+import { loadSentryModule } from "@/lib/sentry-loader";
 
 let initialized = false;
 
@@ -16,11 +17,10 @@ function initIfNeeded(S: any) {
 
 export function captureException(error: unknown, context?: Record<string, unknown>) {
   if (!shouldEnable()) return;
-  const moduleName = '@sentry' + '/nextjs';
   void (async () => {
     try {
-      // @vite-ignore
-      const S = await import(moduleName);
+      const S = await loadSentryModule();
+      if (!S) return;
       initIfNeeded(S);
       S.captureException(error instanceof Error ? error : new Error(String(error)), {
         extra: context ?? {},
@@ -33,11 +33,10 @@ export function captureException(error: unknown, context?: Record<string, unknow
 
 export function captureMessage(message: string, context?: Record<string, unknown>) {
   if (!shouldEnable()) return;
-  const moduleName = '@sentry' + '/nextjs';
   void (async () => {
     try {
-      // @vite-ignore
-      const S = await import(moduleName);
+      const S = await loadSentryModule();
+      if (!S) return;
       initIfNeeded(S);
       S.captureMessage(message, { extra: context ?? {} });
     } catch {

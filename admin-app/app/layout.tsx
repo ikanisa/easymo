@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import "../styles/theme.css";
 import { AppProviders } from "@/components/providers/AppProviders";
@@ -11,6 +11,9 @@ export const metadata: Metadata = {
   description:
     "Operations console for platform staff — dashboards, vouchers, campaigns, and support tools.",
   manifest: "/manifest.webmanifest",
+};
+
+export const viewport: Viewport = {
   themeColor: "#2563eb",
 };
 

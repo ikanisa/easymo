@@ -1,5 +1,35 @@
-const rawUseMocks = process.env.NEXT_PUBLIC_USE_MOCKS ?? "false";
-const useMocksFlag = rawUseMocks.trim().toLowerCase() === "true";
+type Nullable<T> = T | null;
+
+function parseBoolean(value: string | undefined): boolean {
+  return (value ?? "false").trim().toLowerCase() === "true";
+}
+
+function hasClientSupabaseConfig(): boolean {
+  return Boolean(
+    (process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").trim() &&
+      (process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "").trim(),
+  );
+}
+
+function resolveServiceUrl(): Nullable<string> {
+  return (
+    process.env.SUPABASE_URL ||
+    process.env.SERVICE_URL ||
+    process.env.NEXT_PUBLIC_SUPABASE_URL ||
+    null
+  );
+}
+
+function resolveServiceRoleKey(): Nullable<string> {
+  return process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SERVICE_ROLE_KEY || null;
+}
+
+function hasServiceSupabaseConfig(): boolean {
+  return Boolean(resolveServiceUrl()?.trim() && resolveServiceRoleKey()?.trim());
+}
+
+let autoMockWarningShown = false;
+let serviceRoleWarningShown = false;
 
 export type SupabaseClientConfig = {
   url: string;
@@ -12,7 +42,20 @@ export type SupabaseServiceConfig = {
 };
 
 export function shouldUseMocks(): boolean {
-  if (process.env.NODE_ENV === "production" && useMocksFlag) {
+  const manualMockFlag = parseBoolean(process.env.NEXT_PUBLIC_USE_MOCKS);
+  const supabaseReady = hasClientSupabaseConfig() && hasServiceSupabaseConfig();
+
+  if (!manualMockFlag && !supabaseReady) {
+    if (!autoMockWarningShown && typeof window === "undefined") {
+      console.warn(
+        "Supabase environment variables are missing; enabling mock data for build output.",
+      );
+    }
+    autoMockWarningShown = true;
+    return true;
+  }
+
+  if (process.env.NODE_ENV === "production" && manualMockFlag) {
     if (typeof window === "undefined") {
       console.error(
         "NEXT_PUBLIC_USE_MOCKS=true is not allowed in production; falling back to live services.",
@@ -20,7 +63,8 @@ export function shouldUseMocks(): boolean {
     }
     return false;
   }
-  return useMocksFlag;
+
+  return manualMockFlag;
 }
 
 export function requireClientSupabaseConfig(): SupabaseClientConfig | null {
@@ -45,20 +89,16 @@ export function requireServiceSupabaseConfig(): SupabaseServiceConfig | null {
     return null;
   }
 
-  // Allow fallbacks to SERVICE_URL / SERVICE_ROLE_KEY to align with
-  // Supabase secrets policy (env names starting with SUPABASE_ are blocked).
-  const url =
-    process.env.SUPABASE_URL ||
-    process.env.SERVICE_URL ||
-    process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceRoleKey =
-    process.env.SUPABASE_SERVICE_ROLE_KEY ||
-    process.env.SERVICE_ROLE_KEY;
+  const url = resolveServiceUrl();
+  const serviceRoleKey = resolveServiceRoleKey();
 
   if (!url || !serviceRoleKey) {
-    console.error(
-      "Supabase service-role credentials are missing. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY (or enable NEXT_PUBLIC_USE_MOCKS=true).",
-    );
+    if (!serviceRoleWarningShown) {
+      serviceRoleWarningShown = true;
+      console.warn(
+        "Supabase service-role credentials are missing. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY (or enable NEXT_PUBLIC_USE_MOCKS=true).",
+      );
+    }
     return null;
   }
 
