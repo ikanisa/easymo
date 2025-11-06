@@ -9,7 +9,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "pages:build": "pnpm next build && pnpm dlx @opennextjs/cloudflare@latest",
+    "pages:build": "next build && pnpm dlx @opennextjs/cloudflare@latest",
     "pages:dev": "pnpm dlx @opennextjs/cloudflare@latest --compatibility-date=2024-01-01 --dev",
     "cf:build": "pnpm --filter @va/shared build && pnpm --filter @easymo/commons build && pnpm --filter @easymo/ui build && next build && pnpm dlx @opennextjs/cloudflare@latest",
     "preview": "pnpm run pages:build && wrangler pages dev",

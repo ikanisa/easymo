@@ -64,7 +64,7 @@ jobs:
         run: |
           cd admin-app
           pnpm build
-          npx @opennextjs/cloudflare@latest
+          npx @opennextjs/cloudflare@1.11.1
         env:
           NODE_ENV: production
 
