@@ -67,9 +67,10 @@ wrangler pages secret put ADMIN_SESSION_SECRET --project-name=easymo-admin-previ
    - Select your repository: `easymo-`
    - Configure build settings:
      - **Framework preset**: Next.js
-     - **Build command**: `cd admin-app && npm ci && npm run pages:build`
+     - **Build command**: `pnpm -w --filter @va/shared build && pnpm -w --filter @easymo/commons build && pnpm -w --filter @easymo/ui build && cd admin-app && pnpm build && npx @cloudflare/next-on-pages@latest --skip-build`
      - **Build output directory**: `admin-app/.vercel/output/static`
      - **Root directory**: Leave empty (or set to repo root)
+     - **Environment variables**: Add `NODE_VERSION=20`
 
 2. **Set Environment Variables** (see above)
 

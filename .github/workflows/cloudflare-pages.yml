@@ -63,7 +63,8 @@ jobs:
       - name: Build admin app for Cloudflare Pages
         run: |
           cd admin-app
-          npm run pages:build
+          pnpm build
+          npx @cloudflare/next-on-pages@latest --skip-build
         env:
           NODE_ENV: production
 

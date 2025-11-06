@@ -9,7 +9,8 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "pages:build": "npx @cloudflare/next-on-pages",
+    "pages:build": "next build && npx @cloudflare/next-on-pages@latest",
+    "cf:build": "pnpm --filter @va/shared build && pnpm --filter @easymo/commons build && pnpm --filter @easymo/ui build && next build && npx @cloudflare/next-on-pages@latest",
     "preview": "npm run pages:build && wrangler pages dev",
     "deploy": "npm run pages:build && wrangler pages deploy",
     "cf:dev": "wrangler pages dev .vercel/output/static --compatibility-flag=nodejs_compat",
