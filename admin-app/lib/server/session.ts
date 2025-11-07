@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 import type { SessionClaims } from "@/lib/auth/session-token";
 import { SESSION_COOKIE_NAME, verifySessionToken } from "@/lib/auth/session-token";
-import { getActorLabel, isActorAuthorized } from "@/lib/auth/credentials";
+import { isActorAuthorized } from "@/lib/auth/credentials";
 
 export type AdminSession = SessionClaims & { label: string | null };
 
@@ -21,5 +21,6 @@ export async function readSessionFromCookies(): Promise<AdminSession | null> {
     return null;
   }
 
-  return { ...claims, label: getActorLabel(claims.sub) };
+  const label = process.env.ADMIN_EMAIL || "Admin";
+  return { ...claims, label };
 }

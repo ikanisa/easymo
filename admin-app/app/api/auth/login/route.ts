@@ -1,160 +1,119 @@
 export const dynamic = 'force-dynamic';
 import { NextResponse } from "next/server";
-import { z } from "zod";
-
 import { createHandler } from "@/app/api/withObservability";
-import { logStructured } from "@/lib/server/logger";
 import { createSessionToken, SESSION_COOKIE_NAME } from "@/lib/auth/session-token";
-import { findCredentialByEmail, getAdminAccessCredentials } from "@/lib/auth/credentials";
 
-const requestSchema = z.object({
-  email: z.string().email("email_invalid"),
-  password: z.string().min(8, "password_required"),
-});
+// Simple admin credentials from environment
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "info@ikanisa.com";
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "";
+const ADMIN_ACTOR_ID = process.env.ADMIN_ACTOR_ID || "00000000-0000-0000-0000-000000000001";
 
-const MAX_ATTEMPTS = Number.parseInt(process.env.ADMIN_LOGIN_MAX_ATTEMPTS ?? "5", 10);
-const WINDOW_MS = Number.parseInt(process.env.ADMIN_LOGIN_WINDOW_MS ?? "60000", 10);
-const loginBuckets = new Map<string, { count: number; resetAt: number }>();
+// Simple rate limiting
+const loginAttempts = new Map<string, { count: number; resetAt: number }>();
+const MAX_ATTEMPTS = 5;
+const WINDOW_MS = 60000; // 1 minute
 
-const now = () => Date.now();
-const textEncoder = new TextEncoder();
-
-function clientKey(request: Request): string {
+function getClientIP(request: Request): string {
   const forwarded = request.headers.get("x-forwarded-for");
-  if (forwarded) return forwarded.split(",")[0]?.trim() || "unknown";
-  return request.headers.get("cf-connecting-ip")
-    || request.headers.get("x-real-ip")
-    || "unknown";
+  return forwarded?.split(",")[0]?.trim() || "unknown";
 }
 
-function isRateLimited(key: string): boolean {
-  const bucket = loginBuckets.get(key);
-  if (!bucket) return false;
-  if (bucket.resetAt <= now()) {
-    loginBuckets.delete(key);
+function isRateLimited(ip: string): boolean {
+  const bucket = loginAttempts.get(ip);
+  if (!bucket || bucket.resetAt <= Date.now()) {
+    loginAttempts.delete(ip);
     return false;
   }
   return bucket.count >= MAX_ATTEMPTS;
 }
 
-function recordFailedAttempt(key: string) {
-  const bucket = loginBuckets.get(key);
-  if (!bucket || bucket.resetAt <= now()) {
-    loginBuckets.set(key, { count: 1, resetAt: now() + WINDOW_MS });
-    return;
+function recordAttempt(ip: string) {
+  const bucket = loginAttempts.get(ip);
+  const now = Date.now();
+  if (!bucket || bucket.resetAt <= now) {
+    loginAttempts.set(ip, { count: 1, resetAt: now + WINDOW_MS });
+  } else {
+    bucket.count += 1;
   }
-  bucket.count += 1;
-}
-
-function constantTimeEquals(a: string, b: string): boolean {
-  const left = textEncoder.encode(a.normalize());
-  const right = textEncoder.encode(b.normalize());
-  if (left.length !== right.length) return false;
-  let diff = 0;
-  for (let i = 0; i < left.length; i += 1) {
-    diff |= left[i] ^ right[i];
-  }
-  return diff === 0;
 }
 
 export const POST = createHandler("admin_auth.login", async (request) => {
-  const key = clientKey(request);
-  if (isRateLimited(key)) {
+  // Check if admin credentials are configured
+  if (!ADMIN_PASSWORD) {
+    console.error("[admin-login] ADMIN_PASSWORD not configured");
+    return NextResponse.json(
+      { error: "auth_unconfigured", message: "Admin authentication not configured" },
+      { status: 503 },
+    );
+  }
+
+  // Rate limiting
+  const clientIP = getClientIP(request);
+  if (isRateLimited(clientIP)) {
     return NextResponse.json(
       { error: "rate_limited", message: "Too many login attempts. Try again later." },
       { status: 429 },
     );
   }
 
-  const credentials = getAdminAccessCredentials();
-  if (!credentials.length) {
-    return NextResponse.json(
-      {
-        error: "auth_unconfigured",
-        message:
-          "Admin access credentials are not configured. Set ADMIN_ACCESS_CREDENTIALS.",
-      },
-      { status: 503 },
-    );
-  }
-
-  let body: z.infer<typeof requestSchema>;
+  // Parse request body
+  let body: { email?: string; password?: string };
   try {
-    body = requestSchema.parse(await request.json());
-  } catch (error) {
+    body = await request.json();
+  } catch {
     return NextResponse.json(
-      {
-        error: "invalid_payload",
-        message: error instanceof z.ZodError ? error.flatten() : "Invalid payload.",
-      },
+      { error: "invalid_request", message: "Invalid request body" },
       { status: 400 },
     );
   }
 
-  const candidate = findCredentialByEmail(body.email);
-  let match: ReturnType<typeof getAdminAccessCredentials>[number] | null = null;
-  let failureReason: "invalid_password" = "invalid_password";
+  const { email, password } = body;
 
-  if (candidate && constantTimeEquals(candidate.password, body.password)) {
-    match = candidate;
+  // Validate input
+  if (!email || !password) {
+    recordAttempt(clientIP);
+    return NextResponse.json(
+      { error: "invalid_input", message: "Email and password required" },
+      { status: 400 },
+    );
   }
 
-  if (!match) {
-    recordFailedAttempt(key);
-    logStructured({
-      event: "admin_auth.login_denied",
-      status: "error",
-      details: { reason: failureReason },
-    });
+  // Simple authentication check
+  if (email.toLowerCase().trim() !== ADMIN_EMAIL.toLowerCase() || password !== ADMIN_PASSWORD) {
+    recordAttempt(clientIP);
+    console.warn("[admin-login] Failed login attempt", { email, ip: clientIP });
     return NextResponse.json(
-      {
-        error: failureReason,
-        message: "Invalid email or password.",
-      },
+      { error: "invalid_credentials", message: "Invalid email or password" },
       { status: 401 },
     );
   }
 
-  loginBuckets.delete(key);
+  // Clear rate limit on success
+  loginAttempts.delete(clientIP);
 
-  const { token, expiresAt } = await createSessionToken(match.actorId);
-  const ttlRaw = process.env.ADMIN_SESSION_TTL_SECONDS;
-  const ttlSeconds = Number.parseInt(ttlRaw ?? "", 10);
-  const maxAge = Number.isNaN(ttlSeconds) || ttlSeconds <= 0 ? 60 * 60 * 12 : ttlSeconds;
+  // Create session token
+  const { token, expiresAt } = await createSessionToken(ADMIN_ACTOR_ID);
+  const sessionTTL = 12 * 60 * 60; // 12 hours
 
-  const response = NextResponse.json(
-    {
-      ok: true,
-      actorId: match.actorId,
-      label: match.label ?? null,
-      expiresAt,
-    },
-    { status: 200 },
-  );
+  const response = NextResponse.json({
+    ok: true,
+    actorId: ADMIN_ACTOR_ID,
+    expiresAt,
+  });
 
+  // Set session cookie
   response.cookies.set(SESSION_COOKIE_NAME, token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "strict",
     path: "/",
-    maxAge,
-    priority: "high",
+    maxAge: sessionTTL,
   });
 
-  response.cookies.set("admin_actor_id", "", {
-    httpOnly: false,
-    sameSite: "lax",
-    path: "/",
-    maxAge: 0,
-  });
-
-  logStructured({
-    event: "admin_auth.login_success",
-    status: "ok",
-    details: { actorId: match.actorId },
-  });
+  console.log("[admin-login] Successful login", { email, actorId: ADMIN_ACTOR_ID });
 
   return response;
 });
 
 export const runtime = "nodejs";
+
