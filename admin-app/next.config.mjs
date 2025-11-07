@@ -11,6 +11,7 @@ const nextConfig = {
   reactStrictMode: true,
   experimental: {
     typedRoutes: true,
+    instrumentationHook: true,
   },
   typescript: {
     ignoreBuildErrors: true,
