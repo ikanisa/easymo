@@ -39,7 +39,7 @@ export async function claimThrottleWindow(
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt += 1) {
     const lookup = await adminClient
       .from("policy_throttle_counters")
-      .select("count, limit")
+      .select("count, limit_cap")
       .eq("bucket_id", bucketId)
       .eq("window_start", windowStart)
       .maybeSingle();
@@ -55,17 +55,17 @@ export async function claimThrottleWindow(
           bucket_id: bucketId,
           window_start: windowStart,
           count: 1,
-          limit,
+          limit_cap: limit,
           expires_at: windowEnd,
         })
-        .select("count, limit")
+        .select("count, limit_cap")
         .maybeSingle();
 
       if (!insert.error && insert.data) {
         return {
           allowed: true,
           count: insert.data.count ?? 1,
-          limit: insert.data.limit ?? limit,
+          limit: insert.data.limit_cap ?? limit,
           windowStart,
           windowEnd,
         };
@@ -80,7 +80,7 @@ export async function claimThrottleWindow(
     }
 
     const currentCount = lookup.data.count ?? 0;
-    const currentLimit = lookup.data.limit ?? limit;
+    const currentLimit = lookup.data.limit_cap ?? limit;
 
     if (currentLimit > 0 && currentCount >= currentLimit) {
       return {
@@ -97,20 +97,20 @@ export async function claimThrottleWindow(
       .from("policy_throttle_counters")
       .update({
         count: nextCount,
-        limit,
+        limit_cap: limit,
         expires_at: windowEnd,
       })
       .eq("bucket_id", bucketId)
       .eq("window_start", windowStart)
       .eq("count", currentCount)
-      .select("count, limit")
+      .select("count, limit_cap")
       .maybeSingle();
 
     if (!update.error && update.data) {
-      return {
-        allowed: true,
-        count: update.data.count ?? nextCount,
-        limit: update.data.limit ?? limit,
+        return {
+          allowed: true,
+          count: update.data.count ?? nextCount,
+          limit: update.data.limit_cap ?? limit,
         windowStart,
         windowEnd,
       };

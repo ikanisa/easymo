@@ -94,7 +94,7 @@ CREATE TRIGGER trigger_whatsapp_templates_updated_at
 
 CREATE TABLE IF NOT EXISTS public.contact_preferences (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  profile_id uuid REFERENCES public.profiles(id) ON DELETE CASCADE,
+  profile_id uuid REFERENCES public.profiles(user_id) ON DELETE CASCADE,
   wa_id text NOT NULL UNIQUE,
   preferred_locale text DEFAULT 'en',
   opted_out boolean DEFAULT false,

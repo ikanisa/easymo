@@ -3,12 +3,27 @@ BEGIN;
 CREATE EXTENSION IF NOT EXISTS postgis;
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
+-- Rename legacy driver_availability (lat/lng snapshot) so we can install the new schema safely.
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'driver_availability'
+      AND column_name = 'loc'
+  ) THEN
+    RAISE NOTICE 'Renaming legacy driver_availability table to driver_availability_legacy';
+    EXECUTE 'ALTER TABLE public.driver_availability RENAME TO driver_availability_legacy';
+  END IF;
+END $$;
+
 -- ---------------------------------------------------------------------------
 -- User favorites capture common pickup/dropoff shortcuts for passengers.
 -- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS public.user_favorites (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  user_id uuid NOT NULL REFERENCES public.profiles(user_id) ON DELETE CASCADE,
   kind text NOT NULL CHECK (kind IN ('home','work','school','other')),
   label text NOT NULL,
   address text,
@@ -37,7 +52,7 @@ CREATE TRIGGER trg_user_favorites_updated
 -- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS public.driver_parking (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  driver_id uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  driver_id uuid NOT NULL REFERENCES public.profiles(user_id) ON DELETE CASCADE,
   label text NOT NULL,
   geog geography(Point, 4326) NOT NULL,
   notes text,
@@ -63,7 +78,7 @@ CREATE TRIGGER trg_driver_parking_updated
 -- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS public.driver_availability (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  driver_id uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  driver_id uuid NOT NULL REFERENCES public.profiles(user_id) ON DELETE CASCADE,
   parking_id uuid REFERENCES public.driver_parking(id) ON DELETE SET NULL,
   days_of_week int[] NOT NULL,
   start_time_local time NOT NULL,
@@ -91,7 +106,7 @@ CREATE TRIGGER trg_driver_availability_updated
 -- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS public.recurring_trips (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  user_id uuid NOT NULL REFERENCES public.profiles(user_id) ON DELETE CASCADE,
   origin_favorite_id uuid NOT NULL REFERENCES public.user_favorites(id) ON DELETE CASCADE,
   dest_favorite_id uuid NOT NULL REFERENCES public.user_favorites(id) ON DELETE CASCADE,
   days_of_week int[] NOT NULL,

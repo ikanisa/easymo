@@ -3,17 +3,8 @@
 
 BEGIN;
 
-CREATE TABLE IF NOT EXISTS public.router_destinations (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  route_key text NOT NULL CHECK (route_key ~ '^[a-z][a-z0-9_]*$'),
-  destination_url text NOT NULL CHECK (destination_url ~ '^https://'),
-  priority integer NOT NULL DEFAULT 100,
-  is_active boolean NOT NULL DEFAULT true,
-  metadata jsonb NOT NULL DEFAULT '{}'::jsonb,
-  created_at timestamptz NOT NULL DEFAULT timezone('utc', now()),
-  updated_at timestamptz NOT NULL DEFAULT timezone('utc', now()),
-  CONSTRAINT router_destinations_unique UNIQUE (route_key, destination_url)
-);
+ALTER TABLE public.router_destinations
+  ADD COLUMN IF NOT EXISTS priority integer NOT NULL DEFAULT 100;
 
 CREATE INDEX IF NOT EXISTS idx_router_destinations_route_key
   ON public.router_destinations (route_key)
@@ -25,11 +16,12 @@ CREATE INDEX IF NOT EXISTS idx_router_destinations_priority
 
 COMMENT ON TABLE public.router_destinations IS 'Allowlisted HTTPS destinations for router fan-out. Populated by platform owners.';
 COMMENT ON COLUMN public.router_destinations.route_key IS 'Router key that maps to keywords (insurance, basket, etc).';
-COMMENT ON COLUMN public.router_destinations.destination_url IS 'HTTPS destination for downstream webhook. Must pass allowlist validation.';
+COMMENT ON COLUMN public.router_destinations.url IS 'HTTPS destination for downstream webhook. Must pass allowlist validation.';
 COMMENT ON COLUMN public.router_destinations.priority IS 'Smaller numbers are attempted first during fan-out.';
 
 ALTER TABLE public.router_destinations ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS router_destinations_service_rw ON public.router_destinations;
 CREATE POLICY router_destinations_service_rw
   ON public.router_destinations
   FOR ALL
@@ -37,25 +29,18 @@ CREATE POLICY router_destinations_service_rw
   USING (true)
   WITH CHECK (true);
 
+DROP POLICY IF EXISTS router_destinations_authenticated_read ON public.router_destinations;
 CREATE POLICY router_destinations_authenticated_read
   ON public.router_destinations
   FOR SELECT
   TO authenticated
   USING (is_active = true);
 
+DROP TRIGGER IF EXISTS trg_router_destinations_updated ON public.router_destinations;
 CREATE TRIGGER trg_router_destinations_updated
   BEFORE UPDATE ON public.router_destinations
   FOR EACH ROW
   EXECUTE FUNCTION public.set_updated_at();
-
-INSERT INTO public.router_destinations (route_key, destination_url, priority)
-VALUES
-  ('insurance', 'https://hooks.easymo.co/insurance', 10),
-  ('basket', 'https://hooks.easymo.co/basket', 10),
-  ('qr', 'https://hooks.easymo.co/qr', 10),
-  ('dine', 'https://hooks.easymo.co/dine', 10),
-  ('easymo', 'https://hooks.easymo.co/easymo', 10)
-ON CONFLICT (route_key, destination_url) DO NOTHING;
 
 CREATE TABLE IF NOT EXISTS public.router_message_gate (
   message_id text PRIMARY KEY,
@@ -86,10 +71,11 @@ CREATE POLICY router_message_gate_authenticated_read
   USING (true);
 
 CREATE TABLE IF NOT EXISTS public.router_rate_limits (
-  wa_from text NOT NULL,
+  sender text NOT NULL,
   window_start timestamptz NOT NULL,
-  message_count integer NOT NULL,
-  PRIMARY KEY (wa_from, window_start)
+  count integer NOT NULL DEFAULT 1 CHECK (count >= 0),
+  last_message_at timestamptz NOT NULL DEFAULT timezone('utc', now()),
+  PRIMARY KEY (sender, window_start)
 );
 
 CREATE INDEX IF NOT EXISTS idx_router_rate_limits_window
@@ -99,6 +85,7 @@ COMMENT ON TABLE public.router_rate_limits IS 'Per-sender rolling counters for e
 
 ALTER TABLE public.router_rate_limits ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS router_rate_limits_service_rw ON public.router_rate_limits;
 CREATE POLICY router_rate_limits_service_rw
   ON public.router_rate_limits
   FOR ALL
@@ -106,6 +93,7 @@ CREATE POLICY router_rate_limits_service_rw
   USING (true)
   WITH CHECK (true);
 
+DROP POLICY IF EXISTS router_rate_limits_authenticated_read ON public.router_rate_limits;
 CREATE POLICY router_rate_limits_authenticated_read
   ON public.router_rate_limits
   FOR SELECT
@@ -137,7 +125,7 @@ COMMENT ON FUNCTION public.router_claim_message(text, text, text, jsonb)
   IS 'Returns true if the router successfully claims a message_id for processing (idempotency guard).';
 
 CREATE OR REPLACE FUNCTION public.router_check_rate_limit(
-  p_wa_from text,
+  p_sender text,
   p_window_seconds integer DEFAULT 60,
   p_max_messages integer DEFAULT 20,
   p_now timestamptz DEFAULT timezone('utc', now())
@@ -151,11 +139,13 @@ DECLARE
 BEGIN
   bucket_start := p_now - make_interval(secs => mod(extract(epoch FROM p_now)::integer, greatest(p_window_seconds, 1)));
 
-  INSERT INTO public.router_rate_limits (wa_from, window_start, message_count)
-  VALUES (p_wa_from, bucket_start, 1)
-  ON CONFLICT (wa_from, window_start)
-  DO UPDATE SET message_count = router_rate_limits.message_count + 1
-  RETURNING router_rate_limits.message_count INTO latest_count;
+  INSERT INTO public.router_rate_limits (sender, window_start, count, last_message_at)
+  VALUES (p_sender, bucket_start, 1, p_now)
+  ON CONFLICT (sender, window_start)
+  DO UPDATE SET
+    count = public.router_rate_limits.count + 1,
+    last_message_at = excluded.last_message_at
+  RETURNING public.router_rate_limits.count INTO latest_count;
 
   allowed := latest_count <= p_max_messages;
   current_count := latest_count;

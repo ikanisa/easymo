@@ -22,6 +22,7 @@ end; $$;
 do $$
 declare
   t text;
+  target regclass;
   tables text[] := array[
     'public.settings',
     'public.admin_alert_prefs',
@@ -41,20 +42,25 @@ declare
   ];
 begin
   foreach t in array tables loop
+    target := to_regclass(t);
+    if target IS NULL then
+      RAISE NOTICE 'Skipping %, table does not exist', t;
+      continue;
+    end if;
     -- Enable RLS
-    execute format('alter table %s enable row level security', t);
+    execute format('alter table %s enable row level security', target);
 
     -- Clear any pre-existing generic policies we are about to set
-    perform public._drop_policy_if_exists(t::regclass, 'deny read');
-    perform public._drop_policy_if_exists(t::regclass, 'deny insert');
-    perform public._drop_policy_if_exists(t::regclass, 'deny update');
-    perform public._drop_policy_if_exists(t::regclass, 'deny delete');
+    perform public._drop_policy_if_exists(target, 'deny read');
+    perform public._drop_policy_if_exists(target, 'deny insert');
+    perform public._drop_policy_if_exists(target, 'deny update');
+    perform public._drop_policy_if_exists(target, 'deny delete');
 
     -- Deny-all default policies (authenticated users get no access; service role bypasses)
-    execute format('create policy %I on %s for select using (false)', 'deny read',   t);
-    execute format('create policy %I on %s for insert with check (false)', 'deny insert',  t);
-    execute format('create policy %I on %s for update using (false) with check (false)', 'deny update',  t);
-    execute format('create policy %I on %s for delete using (false)', 'deny delete', t);
+    execute format('create policy %I on %s for select using (false)', 'deny read',   target);
+    execute format('create policy %I on %s for insert with check (false)', 'deny insert',  target);
+    execute format('create policy %I on %s for update using (false) with check (false)', 'deny update',  target);
+    execute format('create policy %I on %s for delete using (false)', 'deny delete', target);
   end loop;
 end $$;
 

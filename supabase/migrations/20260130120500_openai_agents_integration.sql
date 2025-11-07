@@ -8,7 +8,7 @@ BEGIN;
 CREATE TABLE IF NOT EXISTS agent_traces (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   agent_name TEXT NOT NULL,
-  user_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+  user_id UUID REFERENCES public.profiles(user_id) ON DELETE CASCADE,
   session_id UUID,
   query TEXT NOT NULL,
   result JSONB NOT NULL DEFAULT '{}'::jsonb,

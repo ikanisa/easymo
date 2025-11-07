@@ -5,7 +5,7 @@ create table if not exists public.policy_throttle_counters (
   bucket_id text not null,
   window_start timestamptz not null,
   count integer not null default 0,
-  limit integer not null default 0,
+  limit_cap integer not null default 0,
   expires_at timestamptz not null,
   metadata jsonb not null default '{}'::jsonb,
   inserted_at timestamptz not null default now(),

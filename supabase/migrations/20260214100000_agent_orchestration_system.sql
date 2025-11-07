@@ -48,6 +48,17 @@ CREATE TABLE IF NOT EXISTS agent_sessions (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+ALTER TABLE agent_sessions
+  ADD COLUMN IF NOT EXISTS agent_type TEXT REFERENCES agent_registry(agent_type),
+  ADD COLUMN IF NOT EXISTS completed_at TIMESTAMPTZ,
+  ADD COLUMN IF NOT EXISTS extensions_count INTEGER DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS cancellation_reason TEXT,
+  ADD COLUMN IF NOT EXISTS metadata JSONB DEFAULT '{}'::jsonb;
+
+UPDATE agent_sessions
+SET agent_type = COALESCE(agent_type, 'driver_negotiation')
+WHERE agent_type IS NULL;
+
 -- Indexes for session queries
 CREATE INDEX IF NOT EXISTS idx_agent_sessions_user ON agent_sessions(user_id);
 CREATE INDEX IF NOT EXISTS idx_agent_sessions_status ON agent_sessions(status);
@@ -75,6 +86,12 @@ CREATE TABLE IF NOT EXISTS agent_quotes (
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+ALTER TABLE agent_quotes
+  ADD COLUMN IF NOT EXISTS responded_at TIMESTAMPTZ,
+  ADD COLUMN IF NOT EXISTS ranking_score DECIMAL(5,2),
+  ADD COLUMN IF NOT EXISTS counter_offer_data JSONB,
+  ADD COLUMN IF NOT EXISTS metadata JSONB DEFAULT '{}'::JSONB;
 
 -- Indexes for quote queries
 CREATE INDEX IF NOT EXISTS idx_agent_quotes_session ON agent_quotes(session_id);

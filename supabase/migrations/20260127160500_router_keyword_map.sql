@@ -50,6 +50,7 @@ COMMENT ON COLUMN public.router_keyword_map.metadata IS
 ALTER TABLE public.router_keyword_map ENABLE ROW LEVEL SECURITY;
 
 -- Service role can do everything
+DROP POLICY IF EXISTS router_keyword_map_service_rw ON public.router_keyword_map;
 CREATE POLICY router_keyword_map_service_rw
   ON public.router_keyword_map
   FOR ALL
@@ -58,6 +59,7 @@ CREATE POLICY router_keyword_map_service_rw
   WITH CHECK (true);
 
 -- Authenticated users can read active keywords
+DROP POLICY IF EXISTS router_keyword_map_authenticated_read ON public.router_keyword_map;
 CREATE POLICY router_keyword_map_authenticated_read
   ON public.router_keyword_map
   FOR SELECT
@@ -65,6 +67,7 @@ CREATE POLICY router_keyword_map_authenticated_read
   USING (is_active = true);
 
 -- Create trigger for updated_at
+DROP TRIGGER IF EXISTS trg_router_keyword_map_updated ON public.router_keyword_map;
 CREATE TRIGGER trg_router_keyword_map_updated
   BEFORE UPDATE ON public.router_keyword_map
   FOR EACH ROW

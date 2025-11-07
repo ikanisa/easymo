@@ -10,7 +10,7 @@ BEGIN;
 -- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS public.agent_sessions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES public.profiles(user_id) ON DELETE CASCADE,
   flow_type TEXT NOT NULL CHECK (flow_type IN (
     'nearby_drivers',
     'nearby_pharmacies',
@@ -90,7 +90,7 @@ CREATE POLICY agent_sessions_update_service
 CREATE TABLE IF NOT EXISTS public.agent_quotes (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   session_id UUID NOT NULL REFERENCES public.agent_sessions(id) ON DELETE CASCADE,
-  vendor_id UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
+  vendor_id UUID REFERENCES public.profiles(user_id) ON DELETE SET NULL,
   vendor_type TEXT NOT NULL CHECK (vendor_type IN (
     'driver',
     'pharmacy',

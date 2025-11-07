@@ -38,8 +38,9 @@ CREATE POLICY "authenticated_read_subscriptions"
   TO authenticated 
   USING (true);
 
+DROP VIEW IF EXISTS public.client_settings;
 -- Create sanitized view for client settings (non-sensitive fields only)
-CREATE OR REPLACE VIEW public.client_settings AS
+CREATE VIEW public.client_settings AS
 SELECT 
   id,
   subscription_price,
