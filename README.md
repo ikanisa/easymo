@@ -118,12 +118,12 @@ Vite React app and communicates with those Edge Functions through the
 - The Supabase CLI stores credentials in `~/.config/supabase`. Run `supabase login`
   before `supabase link` to manage multiple environments.
 
-## What Changed from Vercel
+## Platform Changes
 
 - Removed `VERCEL_*` environment variables from `.env.example`; local hosting
   now depends on explicit Supabase and runtime values instead of platform
   defaults.
-- The deployment flow no longer assumes Vercel-provided URLs—configure
+- We removed legacy hosting assumptions. Configure
   `NEXT_PUBLIC_APP_URL` (or rely on `localhost`) and update Supabase CORS origins
   manually.
 - Added `.env.local` guidance plus [docs/local-hosting.md](docs/local-hosting.md)
@@ -183,7 +183,7 @@ Vite React app and communicates with those Edge Functions through the
    (MoMo USSD / Revolut), opt-out flows, intent/quote ranking, and ledger
    invariants.
 8. Deploy Supabase edge functions via `supabase functions deploy --project-ref <ref>`,
-   or let Vercel handle deployment if configured.  Import the Grafana dashboards
+   or let Netlify handle deployment if configured.  Import the Grafana dashboards
    in `dashboards/phase4/*.json` and provision Kafka topics per
    `infrastructure/kafka/topics.yaml` during staging cut-overs.
 

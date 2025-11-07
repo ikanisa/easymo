@@ -13,7 +13,7 @@ mkdir -p "$RUN_DIR"
 
 require_caddy() {
   if ! command -v caddy >/dev/null 2>&1; then
-    echo "caddy command not found. Install it via scripts/install_caddy_cloudflared.sh" >&2
+    echo "caddy command not found. Install it via 'brew install caddy' or your preferred package manager." >&2
     exit 1
   fi
 }

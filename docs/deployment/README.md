@@ -1,357 +1,81 @@
-# Cloudflare Pages Deployment Documentation
+# Netlify Deployment Documentation
 
-## Quick Links
+Netlify now hosts every public admin surface. This guide captures the
+configuration, CI workflow, and operational expectations for the site at
+`https://easymo-admin.netlify.app` (production sites usually attach the custom
+domain `easymo.ikanisa.com`).
 
-- 🚀 **[Quick Start Guide](./cloudflare-pages-quick-start.md)** - Deploy in 20 minutes
-- 📖 **[Complete Deployment Guide](./cloudflare-pages-deployment.md)** - Comprehensive instructions
-- ✅ **[Prerequisites Checklist](./cloudflare-pages-prerequisites-checklist.md)** - Readiness verification
-- 🧪 **[Testing & Validation](./cloudflare-pages-testing.md)** - Quality assurance procedures
+## Build Overview
 
-## Overview
+| Setting | Value |
+| --- | --- |
+| Build command | `pnpm netlify:build` |
+| Publish directory | `admin-app/.next` |
+| Node version | `18.18.0` |
+| Package manager | `pnpm` (via `NETLIFY_USE_PNPM=true`) |
+| Next.js adapter | `@netlify/plugin-nextjs` |
 
-The EasyMO Admin Panel is deployed to **Cloudflare Pages** at:
-- **Production:** https://easymo.ikanisa.com
-
-This documentation covers the complete deployment lifecycle from initial setup to production rollout.
-
-## What's Included
-
-### Configuration Files
-- `admin-app/wrangler.toml` - Cloudflare Pages configuration
-- `admin-app/public/_headers` - Security headers (CSP, HSTS, etc.)
-- `admin-app/public/_routes.json` - Static asset routing
-- `.github/workflows/cloudflare-pages-deploy.yml` - Automated deployment
-
-### Documentation
-1. **Quick Start** (20 min) - Get deployed fast with GitHub Actions
-2. **Complete Guide** (9.6KB) - Detailed deployment procedures
-3. **Prerequisites Checklist** (10.7KB) - 100+ verification items
-4. **Testing Guide** (12.3KB) - Pre and post-deployment validation
-
-### Scripts
-- `scripts/setup-cloudflare-env.sh` - Environment variable configuration helper
-
-## Deployment Options
-
-### Option 1: GitHub Actions (Recommended)
-**Time:** ~20 minutes  
-**Best for:** Production deployments, CI/CD automation
-
-1. Configure GitHub secrets
-2. Create Cloudflare Pages project
-3. Push to main branch
-4. Automatic deployment
-
-[→ Quick Start Guide](./cloudflare-pages-quick-start.md#method-1-github-actions-recommended)
-
-### Option 2: Manual CLI Deployment
-**Time:** ~15 minutes  
-**Best for:** Testing, one-off deployments
-
-1. Install Wrangler CLI
-2. Build the application
-3. Deploy via command line
-
-[→ Quick Start Guide](./cloudflare-pages-quick-start.md#method-2-manual-cli-deployment)
-
-### Option 3: Cloudflare Dashboard
-**Time:** ~10 minutes  
-**Best for:** Initial setup, non-technical users
-
-1. Connect GitHub repository
-2. Configure build settings
-3. Deploy via dashboard
-
-[→ Complete Guide](./cloudflare-pages-deployment.md#method-3-cloudflare-dashboard-direct-connection)
-
-## Prerequisites
-
-Before deploying, ensure you have:
-
-### Accounts & Access
-- [ ] Cloudflare account with Pages enabled
-- [ ] GitHub repository access
-- [ ] Supabase project access
-- [ ] Domain management access
-
-### Configuration Items
-- [ ] Cloudflare API token
-- [ ] Supabase URL and keys
-- [ ] Admin session secret
-- [ ] Operator credentials
-- [ ] Environment variables documented
-
-### Technical Requirements
-- [ ] Node.js 18+
-- [ ] pnpm 10.18.3+
-- [ ] Wrangler CLI (for manual deployment)
-
-[→ Complete Prerequisites Checklist](./cloudflare-pages-prerequisites-checklist.md)
-
-## Architecture
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                     Cloudflare Network                       │
-│                                                               │
-│  ┌──────────────┐      ┌──────────────┐                     │
-│  │   DNS        │──────▶│  Pages CDN   │                     │
-│  │  ikanisa.com │      │              │                     │
-│  └──────────────┘      └───────┬──────┘                     │
-│                                 │                             │
-│                         ┌───────▼──────┐                     │
-│                         │  Edge Worker │                     │
-│                         │  (Next.js)   │                     │
-│                         └───────┬──────┘                     │
-└─────────────────────────────────┼───────────────────────────┘
-                                  │
-                  ┌───────────────┴───────────────┐
-                  │                               │
-         ┌────────▼─────────┐          ┌─────────▼────────┐
-         │   Supabase       │          │  Microservices   │
-         │   Database +     │          │  - Agent Core    │
-         │   Edge Functions │          │  - Voice Bridge  │
-         │                  │          │  - Wallet, etc.  │
-         └──────────────────┘          └──────────────────┘
-```
-
-## Key Features
-
-### Security ✅
-- HTTPS enforced with HSTS
-- Content Security Policy (CSP)
-- Secure session cookies (HttpOnly, Secure, SameSite)
-- No secrets in client bundles
-- Rate limiting (planned)
-
-### Performance ✅
-- Global CDN distribution
-- Edge-optimized Next.js
-- Static asset caching
-- Service worker for offline support
-- PWA capabilities
-
-### Reliability ✅
-- Zero-downtime deployments
-- Instant rollback capability
-- Health monitoring
-- Error tracking
-- 99.9% uptime SLA (Cloudflare)
-
-### Developer Experience ✅
-- Automated CI/CD
-- Preview deployments
-- Local development support
-- Comprehensive documentation
-- Testing procedures
-
-## Deployment Flow
-
-```
-┌──────────────┐
-│  Push to Git │
-└──────┬───────┘
-       │
-       ▼
-┌──────────────┐     ┌─────────────────┐
-│   GitHub     │────▶│  Build Shared   │
-│   Actions    │     │  Packages       │
-└──────┬───────┘     └─────────────────┘
-       │
-       ▼
-┌──────────────────┐  ┌─────────────────┐
-│  Security Check  │  │  Run Tests      │
-│  (No secrets)    │  │  + Lint         │
-└──────┬───────────┘  └─────────────────┘
-       │
-       ▼
-┌──────────────────────────────┐
-│  Build with                   │
-│  @opennextjs/cloudflare      │
-└──────┬───────────────────────┘
-       │
-       ▼
-┌──────────────────────────────┐
-│  Deploy to Cloudflare Pages  │
-│  (.vercel/output/static)     │
-└──────┬───────────────────────┘
-       │
-       ▼
-┌──────────────────┐
-│  Post-Deploy     │
-│  Verification    │
-└──────────────────┘
-```
+Before each build Netlify installs workspace dependencies, builds shared UI
+packages (`@va/shared`, `@easymo/commons`, `@easymo/ui`), and then executes
+`next build` inside `admin-app`.
 
 ## Environment Variables
 
-### Required Public Variables
-```bash
-NEXT_PUBLIC_SUPABASE_URL=https://vacltfdslodqybxojytc.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon-key>
-NEXT_PUBLIC_ENVIRONMENT_LABEL=Production
-NEXT_PUBLIC_USE_MOCKS=false
-NEXT_PUBLIC_DEFAULT_ACTOR_ID=<uuid>
-```
+Add the following site-level variables in the Netlify dashboard (Settings →
+Environment):
 
-### Required Server-Side Secrets
-```bash
-SUPABASE_SERVICE_ROLE_KEY=<service-role-key>
-ADMIN_SESSION_SECRET=<min-16-chars>
-ADMIN_TOKEN=<admin-token>
-EASYMO_ADMIN_TOKEN=<admin-token>
-ADMIN_ACCESS_CREDENTIALS=<json-array>
-```
+| Name | Description |
+| --- | --- |
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL used by the browser |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Public anon key |
+| `SUPABASE_SERVICE_ROLE_KEY` | Server-only key for API routes |
+| `ADMIN_SESSION_SECRET` | Signs the admin session cookie |
+| `ADMIN_ACCESS_CREDENTIALS` | JSON array with admin email/password pairs |
+| `EASYMO_ADMIN_TOKEN` | Shared token for Supabase Edge Functions |
+| `ADMIN_SESSION_TTL_SECONDS` | Session lifetime (default 43200) |
 
-[→ Complete Environment Variables Guide](../ENV_VARIABLES.md)
+Netlify separates Production/Deploy Preview/Branch Deploy contexts—mirror the
+values for each context or intentionally scope them when testing new secrets.
 
-## Testing
+## CI + Deploy Flow
 
-### Pre-Deployment
-```bash
-# Lint and type check
-npm run lint -- --max-warnings=0
-npm run type-check
+1. GitHub Actions run unit tests, linting, and type checks on every PR. The
+   workflows are Netlify-agnostic and simply guarantee that `pnpm build` works.
+2. When code merges to `main`, Netlify automatically creates a Deploy Preview
+   and production build. The preview URL is posted back to the PR.
+3. Production releases happen once the Netlify deploy promoting the custom
+   domain is marked successful. Rollbacks use Netlify's "Publish deploy" option.
 
-# Run tests
-npm test -- --run
+## Custom Domains
 
-# Build locally
-npm run build
-npx @opennextjs/cloudflare@latest
-```
+1. Add `easymo.ikanisa.com` under Site settings → Domain management.
+2. Point the `CNAME` record to `<site>.netlify.app`.
+3. Netlify issues certificates automatically through Let's Encrypt; no external
+   proxying or tunnels are required.
 
-### Post-Deployment
-```bash
-# Verify domain
-curl -I https://easymo.ikanisa.com
+## Headers & Redirects
 
-# Check security headers
-curl -I https://easymo.ikanisa.com | grep -E "CSP|HSTS"
+`admin-app/public/_headers` ships strict security headers (CSP, HSTS,
+Permissions Policy). Netlify reads this file automatically, so no extra settings
+are required in the dashboard.
 
-# Test login
-# Visit https://easymo.ikanisa.com/login
-```
+## Observability
 
-[→ Complete Testing Guide](./cloudflare-pages-testing.md)
-
-## Monitoring
-
-### Cloudflare Analytics
-- Real-time traffic metrics
-- Performance monitoring
-- Error tracking
-- Geographic distribution
-
-### Application Logs
-- Structured JSON logging
-- Correlation IDs for tracing
-- PII masking
-- Error aggregation
-
-### Alerts
-- Error rate > 5%
-- Response time > 3s
-- Uptime < 99%
-- Security anomalies
+- **Logs:** Netlify streams build/runtime logs in the dashboard. For permanent
+  storage, configure `LOG_DRAIN_URL` so the app forwards structured JSON to your
+  preferred sink.
+- **Health checks:** `admin-app` exposes `/api/health` which Netlify monitors
+  through Synthetic Monitoring (`synthetic-checks.yml`).
+- **Analytics:** Use Netlify Analytics or hook the existing `synthetic-checks`
+  job into your Grafana stack.
 
 ## Troubleshooting
 
-### Common Issues
+| Issue | Resolution |
+| --- | --- |
+| Build exceeds 15 minutes | Ensure workspace deps are cached (Netlify automatically caches `~/.pnpm-store`). If needed, split the Netlify build into two commands (`pnpm install && pnpm netlify:build`). |
+| 404s on dynamic routes | Confirm `@netlify/plugin-nextjs` is enabled and that `next build` completes without errors. |
+| Environment variable missing | Double-check the Environment tab for the correct context (Production vs. Deploy Preview). |
 
-**Build fails with "workspace:* not supported"**
-```bash
-# Solution: Build shared packages first
-pnpm --filter @va/shared build
-pnpm --filter @easymo/commons build
-```
-
-**Unauthorized on API routes**
-```bash
-# Solution: Verify server secrets in Cloudflare
-# Check ADMIN_SESSION_SECRET and ADMIN_ACCESS_CREDENTIALS
-```
-
-**Domain not resolving**
-```bash
-# Solution: Check DNS configuration
-dig easymo.ikanisa.com
-# Verify CNAME points to Cloudflare Pages
-```
-
-[→ Complete Troubleshooting Guide](./cloudflare-pages-deployment.md#troubleshooting)
-
-## Rollback
-
-### Quick Rollback (Dashboard)
-1. Go to Cloudflare Pages → easymo-admin → Deployments
-2. Find previous successful deployment
-3. Click "Rollback to this deployment"
-
-### Git-based Rollback
-```bash
-git revert <bad-commit>
-git push origin main
-```
-
-**Time to rollback:** < 5 minutes
-
-## Support
-
-### Documentation
-- Quick Start: [cloudflare-pages-quick-start.md](./cloudflare-pages-quick-start.md)
-- Complete Guide: [cloudflare-pages-deployment.md](./cloudflare-pages-deployment.md)
-- Prerequisites: [cloudflare-pages-prerequisites-checklist.md](./cloudflare-pages-prerequisites-checklist.md)
-- Testing: [cloudflare-pages-testing.md](./cloudflare-pages-testing.md)
-
-### External Resources
-- [Cloudflare Pages Docs](https://developers.cloudflare.com/pages/)
-- [Next.js on Cloudflare](https://developers.cloudflare.com/pages/framework-guides/nextjs/)
-- [Wrangler CLI](https://developers.cloudflare.com/workers/wrangler/)
-
-### Contact
-- DevOps Team: [Configure in CODEOWNERS]
-- On-call: [Configure PagerDuty/similar]
-- Slack: [Configure channel]
-
-## Change Log
-
-### Version 1.0.0 (2025-10-29)
-- Initial Cloudflare Pages deployment setup
-- Automated GitHub Actions workflow
-- Comprehensive documentation suite
-- Security headers configuration
-- Testing and validation procedures
-
-## Next Steps
-
-1. **First Deployment**
-   - Follow Quick Start Guide
-   - Configure all environment variables
-   - Deploy to production
-   - Verify deployment
-
-2. **Post-Deployment**
-   - Monitor for 24 hours
-   - Run full test suite
-   - Gather user feedback
-   - Document lessons learned
-
-3. **Optimization**
-   - Review performance metrics
-   - Optimize bundle size
-   - Fine-tune caching
-   - Implement rate limiting
-
-4. **Maintenance**
-   - Schedule regular reviews
-   - Update dependencies
-   - Security audits
-   - Performance testing
-
----
-
-**Documentation Version:** 1.0.0  
-**Last Updated:** 2025-10-29  
-**Maintained By:** DevOps Team  
-**Status:** Ready for Production
+For more operational procedures (release approvals, Supabase migrations, etc.)
+see `docs/deployment/production-pipeline.md`.

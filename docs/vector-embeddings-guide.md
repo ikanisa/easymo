@@ -132,9 +132,9 @@ export async function indexDocument(doc: { id: string; content: string }) {
 
 Supabase, PostgreSQL with pgvector, Pinecone, and Weaviate are all compatible vector stores. The key requirements are support for the embedding dimensionality you choose and fast approximate nearest-neighbor search.
 
-## Query-Time Retrieval API (Next.js / Vercel)
+## Query-Time Retrieval API (Next.js / Netlify)
 
-When deploying to Vercel, the API route should be stateless and edge-friendly. The following route performs a hybrid metadata + vector lookup and returns highlighted excerpts for display in a React client:
+When deploying to Netlify, the API route should be stateless and edge-friendly. The following route performs a hybrid metadata + vector lookup and returns highlighted excerpts for display in a React client:
 
 ```ts
 // app/api/search/route.ts
@@ -189,7 +189,7 @@ returns table (
 $$;
 ```
 
-This pattern keeps the API route lightweight and Vercel-friendly while letting the database enforce authorization.
+This pattern keeps the API route lightweight and Netlify-friendly while letting the database enforce authorization.
 
 ## Embedding Quality Checklist
 
@@ -207,11 +207,11 @@ Before promoting an embeddings-backed feature, validate the following:
 3. Gradually dial up traffic through a feature flag; fall back instantly by toggling the flag if anomaly detection alerts trigger.
 4. Document the on-call playbook so the feature can be safely supported after it ships.
 
-These steps align with our deployment checklist for Vercel-backed services and help guarantee smooth reviews and rollouts.
+These steps align with our deployment checklist for Netlify-backed services and help guarantee smooth reviews and rollouts.
 
 ## Implementation References
 
 * CLI worker: run `npm run embeddings:sync` to convert newly uploaded agent documents into chunked embeddings stored in `agent_document_chunks`.
 * Supabase migration `20251207112000_agent_document_embeddings.sql` provisions the `agent_document_chunks` table, IVFFlat index, and the `match_agent_document_chunks` RPC used at query time.
-* Admin API route `admin-app/app/api/agents/[id]/search/route.ts` exposes a semantic search endpoint tailored for Vercel deployments.
+* Admin API route `admin-app/app/api/agents/[id]/search/route.ts` exposes a semantic search endpoint tailored for Netlify deployments.
 * Admin UI page `admin-app/app/(admin)/agents/[id]/search/page.tsx` offers a fully client-side search workflow and token accounting dashboard for operator QA.

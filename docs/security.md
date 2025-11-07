@@ -5,14 +5,14 @@ while shipping easyMO across local, preview, and production environments.
 
 ## Secrets Management
 - **Environment files only.** Secrets are stored in `.env`-style files or the
-  respective platform secret stores (Vercel, Supabase, CI repository secrets).
+  respective platform secret stores (Netlify, Supabase, CI repository secrets).
   Never commit plaintext secrets to the repository.
 - **`.env.example` as the catalogue.** Update `.env.example` when introducing a
   new environment variable so developers can populate local `.env.local`
   without guesswork.
 - **Propagate changes consistently.** When adding a secret:
   1. Update `.env.example` (no values, names only).
-  2. Populate the secret in Vercel (`Project Settings → Environment Variables`)
+  2. Populate the secret in Netlify (`Project Settings → Environment Variables`)
      for both Preview and Production.
   3. Populate the secret in Supabase via `supabase secrets set` or the dashboard
      as required.
@@ -38,18 +38,18 @@ while shipping easyMO across local, preview, and production environments.
 ## Authentication and Authorisation
 - **Header-based auth for APIs.** App Router endpoints expect
   `x-user-id`/`x-user-roles` headers. These headers must be set by the upstream
-  proxy (Vercel Edge Middleware) after validating Supabase sessions.
+  proxy (Netlify Edge Middleware) after validating Supabase sessions.
 - **Supabase RLS.** Review migration diffs for new tables to ensure policies are
   defined. The CI drift check fails if migrations diverge from the linked
   project.
-- **Admin tooling.** Restrict access to Supabase dashboard, Vercel project, and
+- **Admin tooling.** Restrict access to Supabase dashboard, Netlify project, and
   GitHub Actions environments to the CODEOWNERS listed in `.github/CODEOWNERS`.
 
 ## Incident Response Links
 - **Runbooks.** `docs/runbook.md` covers log drain validation, SLO dashboards,
   and Supabase recovery steps.
 - **Rollout controls.** `docs/rollout.md` lists release gates and rollback steps
-  (including Vercel preview promotion and Supabase migration guardrails).
+  (including Netlify preview promotion and Supabase migration guardrails).
 
 Keep this document updated whenever secrets move platforms or new telemetry
 sinks are introduced.

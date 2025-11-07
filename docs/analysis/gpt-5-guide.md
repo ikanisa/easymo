@@ -158,7 +158,7 @@ curl --request POST \
 
 ## Deployment Checklist for Easymo
 
-1. Verify Vercel builds use GPT-5-compatible environment variables and SDK versions.
+1. Verify Netlify builds use GPT-5-compatible environment variables and SDK versions.
 2. Update backend services to call the Responses API with new parameters and without deprecated fields.
 3. Ensure QA smoke tests cover low-verbosity flows so trimmed responses still satisfy acceptance criteria.
 4. Capture latency metrics before and after enabling GPT-5 to validate minimal reasoning configurations.
@@ -206,7 +206,7 @@ export async function POST(req: NextRequest) {
 
 Key backend notes:
 
-- Store the GPT-5 API key in Vercel project settings (`OPENAI_API_KEY`) and never commit it locally.
+- Store the GPT-5 API key in Netlify project settings (`OPENAI_API_KEY`) and never commit it locally.
 - Capture `response.id` so the client can pass it back on the next turn to reuse GPT-5 reasoning.
 - Use `max_output_tokens` to stay within latency budgets; tune verbosity per UI needs.
 - Attach metadata for downstream observability (Axiom/Grafana dashboards).
@@ -291,16 +291,16 @@ Instrument both layers with distributed tracing so GPT-5 latency shows up alongs
 Start by forwarding the `request-id` header from the browser to the API route and into the Responses API metadata.
 This keeps error correlation intact during post-mortems.
 
-## Vercel Deployment Readiness Checklist
+## Netlify Deployment Readiness Checklist
 
-Extend the earlier deployment checklist with specific Vercel integration steps:
+Extend the earlier deployment checklist with specific Netlify integration steps:
 
 1. **Environment variables**: Configure `OPENAI_API_KEY`, `NEXT_PUBLIC_GPT5_ENABLED`, and `EASYMO_TRACE_ENDPOINT`.
 2. **Edge runtime**: Mark chat routes with `export const runtime = "edge";` when streaming support ships to minimize cold starts.
-3. **Prompt cache**: Enable Vercel Edge Config (or Supabase Config Sync) to store prompt templates so hotfixes avoid redeployments.
+3. **Prompt cache**: Enable Netlify Edge Config (or Supabase Config Sync) to store prompt templates so hotfixes avoid redeployments.
 4. **Monitoring**: Wire the observability stack (Grafana/Prometheus per `ops/observability/*`) to receive GPT-5 latency + error metrics from Next.js logs.
 5. **Secrets rotation**: Schedule monthly key rotation through `scripts/rotate-openai-key.ts` to maintain compliance.
-6. **Smoke tests**: Run `pnpm test:e2e --filter gpt5` before every production promotion; tests seed Vercel preview data.
+6. **Smoke tests**: Run `pnpm test:e2e --filter gpt5` before every production promotion; tests seed Netlify preview data.
 7. **Rollback**: Keep `OPENAI_MODEL_FALLBACK=gpt-4o-mini` in the environment so the API route can degrade gracefully.
 
 When these items pass, update the deployment notes in `ROLLUP_PLAN.md` and announce GA in the release Slack channel.

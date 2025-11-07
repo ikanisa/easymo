@@ -143,7 +143,7 @@ Chat Completions supports JSON schema-based tool definitions through the `tools`
 
 ## Authentication & Headers
 
-- Always pass a valid **secret key** via the `Authorization: Bearer <token>` header. Runtime environments should source this value from Vercel, Supabase, or local `.env` secrets rather than hard-coding keys.
+- Always pass a valid **secret key** via the `Authorization: Bearer <token>` header. Runtime environments should source this value from Netlify, Supabase, or local `.env` secrets rather than hard-coding keys.
 - Set `OpenAI-Beta: assistants=v2` only when targeting beta functionality. Leaving experimental headers enabled in production traffic may cause unexpected behavior when the beta program ends.
 - When working inside the browser (e.g., Next.js app routes), proxy requests through the Easymo API tier to avoid exposing private keys to clients.
 
@@ -158,7 +158,7 @@ Chat Completions supports JSON schema-based tool definitions through the `tools`
 | HTTP Status | Typical Cause | Recommended Remediation |
 | --- | --- | --- |
 | `400` | Invalid schema, missing `model`, malformed `messages` | Log validation errors, run schema tests in CI before deploy. |
-| `401` | Invalid API key or key missing required scope | Rotate credentials, check Vercel secret names. |
+| `401` | Invalid API key or key missing required scope | Rotate credentials, check Netlify secret names. |
 | `429` | Rate limit exceeded | Back off with exponential retry and monitor the `x-ratelimit-*` headers. |
 | `500/502/503` | Transient platform issue | Retry with jitter. Escalate to OpenAI support if outages persist > 5 minutes. |
 
@@ -196,7 +196,7 @@ export async function streamChatCompletion(req: Request) {
 }
 ```
 
-This pattern matches the Next.js App Router stream utilities we deploy to Vercel. Ensure the `Request` object above carries an `AbortController` so users can cancel long generations.
+This pattern matches the Next.js App Router stream utilities we deploy to Netlify. Ensure the `Request` object above carries an `AbortController` so users can cancel long generations.
 
 ## Observability & Logging
 
@@ -204,9 +204,9 @@ This pattern matches the Next.js App Router stream utilities we deploy to Vercel
 - Emit latency histograms and token usage counters to our Grafana dashboards. These numbers help finance forecast monthly OpenAI spend.
 - Capture the prompt **shape** (hash of prompt text and tool schema) rather than raw content to remain compliant with privacy requirements.
 
-## Rollout Checklist for Vercel Deploys
+## Rollout Checklist for Netlify Deploys
 
-1. Add or update `OPENAI_API_KEY` secrets in the Vercel dashboard for each environment (`preview`, `staging`, `production`).
+1. Add or update `OPENAI_API_KEY` secrets in the Netlify dashboard for each environment (`preview`, `staging`, `production`).
 2. Run integration tests (`pnpm test --filter @easymo/app --runInBand`) to confirm the UI still renders completion responses.
 3. Verify streaming endpoints locally with `pnpm dev` before promoting the commit to the main branch.
 4. Tag the release in `CHANGELOG.md` once smoke tests pass and the deployment is live.

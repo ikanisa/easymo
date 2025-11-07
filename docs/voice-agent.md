@@ -27,7 +27,7 @@ The EasyMO Voice Agent is a production-ready service that connects Twilio (SIP/M
 - ✅ WebSocket bridge: Twilio ⇄ OpenAI Realtime
 - ✅ MCP tool server with Supabase operations
 - ✅ Supabase Edge Function for call event capture
-- ✅ Docker + Cloudflare Tunnel for public exposure
+- ✅ Docker + HTTPS tunnel for public exposure
 - ✅ Structured logging with correlation IDs
 - ✅ Health and readiness checks
 - ✅ Feature flags for incremental rollout
@@ -48,7 +48,7 @@ The EasyMO Voice Agent is a production-ready service that connects Twilio (SIP/M
 - OpenAI API key with Realtime access
 - Twilio account with Media Streams enabled
 - Supabase project
-- Cloudflare Tunnel token (for public exposure)
+- HTTPS tunnel token (ngrok, inlets, or similar) for public exposure
 
 ### Installation
 
@@ -85,8 +85,8 @@ TWILIO_FROM_NUMBER=+1234567890
 SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=...
 
-# Public URL (from Cloudflare Tunnel)
-PUBLIC_WS_URL=wss://your-tunnel-url.trycloudflare.com/ws/twilio
+# Public URL (from your tunnel)
+PUBLIC_WS_URL=wss://your-tunnel-url.example.com/ws/twilio
 
 # Feature Flags
 VOICE_AGENT_ENABLED=true
@@ -123,7 +123,7 @@ docker compose logs -f voice-agent
 docker compose down
 ```
 
-The Cloudflare Tunnel will print the public hostname in the logs. Use this URL to configure your Twilio webhook.
+Your tunnel will print the public hostname in the logs. Use this URL to configure your Twilio webhook.
 
 ## Twilio Configuration
 
@@ -134,7 +134,7 @@ The Cloudflare Tunnel will print the public hostname in the logs. Use this URL t
 3. Select your number
 4. Under "Voice & Fax", set:
    - **A Call Comes In**: Webhook
-   - **URL**: `https://your-tunnel-url.trycloudflare.com/twilio/answer`
+   - **URL**: `https://your-tunnel-url.example.com/twilio/answer`
    - **Method**: POST
 5. Save
 
@@ -367,7 +367,7 @@ Key metrics:
 ### 400 Bad Request from Twilio
 
 - Check that `PUBLIC_WS_URL` is correctly set
-- Verify Cloudflare Tunnel is running
+- Verify the HTTPS tunnel is running
 - Ensure TwiML is valid XML
 
 ### WebSocket Connection Failures
@@ -423,7 +423,7 @@ pnpm test:integration
 ### Manual Testing
 
 1. Start the server: `pnpm dev`
-2. Start Cloudflare Tunnel separately
+2. Start the HTTPS tunnel separately
 3. Configure Twilio webhook
 4. Call your Twilio number
 5. Monitor logs

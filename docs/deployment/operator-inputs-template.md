@@ -1,6 +1,6 @@
 # easyMO Operator Inputs Template
 
-Collect the following information *before* executing the deployment workflow. Store the completed template in a secure location and reference it in the final report. Do not record secret values in Git history.
+Collect the following information *before* executing the deployment workflow. Store the completed template in a secure location and reference it in your deployment evidence log. Do not record secret values in Git history.
 
 ## GitHub
 - Organization / account:
@@ -19,7 +19,7 @@ Collect the following information *before* executing the deployment workflow. St
 - Migration / restore policy:
 - Supabase dashboard URL:
 
-## Vercel
+## Netlify
 - Team / scope:
 - Project name:
 - Root directory (e.g., `admin-app`):
@@ -33,7 +33,7 @@ Collect the following information *before* executing the deployment workflow. St
 - Package manager & version:
 - Node.js runtime requirement:
 - Supabase CLI version:
-- Vercel CLI version:
+- Netlify CLI version:
 
 ## Compliance & Operations
 - OSS license:

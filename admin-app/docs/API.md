@@ -10,7 +10,7 @@ straightforward.
 - Production and staging project owners plus secret locations live in
   [`docs/deployment/supabase-projects.md`](../../docs/deployment/supabase-projects.md).
 - Service-role keys are no longer committed to `.env` files. Pull them from AWS
-  Secrets Manager using the documented paths and inject them into Vercel or
+  Secrets Manager using the documented paths and inject them into Netlify or
   Supabase Edge Function environments at deploy time:
 
   ```bash

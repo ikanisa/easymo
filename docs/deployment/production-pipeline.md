@@ -1,6 +1,6 @@
 # easyMO Deployment Guide
 
-This document describes the deployment workflow for the easyMO admin application when hosting locally **and** on Vercel. The application connects to GitHub and Supabase for source control, preview deployments, and backend services. Execute the sections in order and re-run the steps as needed—each step is safe to repeat because it either updates configuration in place or verifies previously completed work.
+This document describes the deployment workflow for the easyMO admin application when hosting locally **and** on Netlify. The application connects to GitHub and Supabase for source control, preview deployments, and backend services. Execute the sections in order and re-run the steps as needed—each step is safe to repeat because it either updates configuration in place or verifies previously completed work.
 
 ## Operator Inputs (collect before executing changes)
 | Domain | Required details | Notes |
@@ -8,7 +8,7 @@ This document describes the deployment workflow for the easyMO admin application
 | **GitHub** | Organization / account name, repository name & visibility, default branch, required PR checks, whether to create a new repo or reuse `easymo`, code owners & review rules | Branch protection and Actions permissions require org admin rights. |
 | **Supabase** | Existing project reference ID or desired project name, region, preferred RLS baseline (on/off by default), need for Edge Functions, database migration / restore policy | Access to the Supabase dashboard is required to retrieve the anon/service keys. |
 | **Local Hosting** | Server specifications, domain/port configuration, SSL certificate setup, reverse proxy configuration (nginx, caddy, etc.) | Ensure adequate resources for running Next.js and related services. |
-| **Vercel** | Team name, project ID, preview/production domains, log drain destinations | Required for automated preview deployments and observability wiring. |
+| **Netlify** | Team name, project ID, preview/production domains, log drain destinations | Required for automated preview deployments and observability wiring. |
 | **Application** | Framework confirmation (Next.js 14), package manager (pnpm recommended), build command overrides (if any), Node.js runtime (18+) | `admin-app` contains the Next.js source. |
 | **Compliance & Ops** | OSS license (e.g., MIT), security policy URL, incident contacts (on-call emails / Slack), rollback contacts | Capture escalation paths before go-live. |
 
@@ -57,10 +57,10 @@ Update this section after validating each assumption.
    - `SUPABASE_ACCESS_TOKEN` – For Supabase CLI automation (drift check + preview functions deploy).
    - `SUPABASE_DB_PASSWORD` – Optional for running migrations locally in CI.
    - `SUPABASE_FUNCTIONS_PREVIEW_REF` – Supabase project ref for preview deployments.
-   - `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID` – Required for automated preview deploys.
-   - Document in repo settings description that secrets must also be added to Supabase/Vercel dashboards and local `.env` files.
+   - `NETLIFY_AUTH_TOKEN`, `NETLIFY_SITE_ID` – Required for automated preview deploys.
+   - Document in repo settings description that secrets must also be added to Supabase/Netlify dashboards and local `.env` files.
 
-Record the GitHub repository URL for inclusion in the final report. Use the [merge readiness checklist](./merge-readiness-checklist.md) to confirm branch protections and CI signals before requesting review.
+Record the GitHub repository URL for inclusion in deployment notes. Use the [merge readiness checklist](./merge-readiness-checklist.md) to confirm branch protections and CI signals before requesting review.
 
 ## C. Environment Variable Matrix
 Environment variables are tracked in `.env.example` (no secrets). Populate real values in local `.env` files and Supabase dashboard. The matrix below defines scope and consumers.
@@ -99,7 +99,7 @@ Environment variables are tracked in `.env.example` (no secrets). Populate real 
 5. **Post-deploy smoke test**
    - Script a Next.js API route or CLI task that: (a) fetches `/rest/v1/<table>` with anon key, (b) performs insert/update via service role (if allowed), (c) validates response codes.
 
-Record Supabase dashboard URL and project ref for the final report and capture them in the [final report template](./final-report-template.md).
+Capture the Supabase dashboard URL and project ref in your deployment notes so they remain easy to find.
 
 ## E. Local Hosting Setup
 1. **Build configuration**
@@ -124,17 +124,17 @@ Record Supabase dashboard URL and project ref for the final report and capture t
 5. **Zero-secret exposure**
    - Confirm Next.js does not expose server-only secrets by ensuring only `NEXT_PUBLIC_*` variables are referenced in client bundles. Use `pnpm run build` output to verify warnings.
 
-Document the hosting setup and production URL in the [final report template](./final-report-template.md).
+Document the hosting setup and production URL in the same deployment notes.
 
 ## F. CI / CD Policy
 1. **GitHub Actions**
    - `infra/ci/app-quality.yml` ensures linting, type-checking, tests, and builds pass on every push/PR.
    - `infra/ci/supabase-migrations.yml` links to Supabase and fails if schema drift is detected.
    - `infra/ci/lighthouse.yml` runs accessibility/performance audits against the built SPA.
-   - `infra/ci/preview-deploy.yml` pushes Vercel previews and Supabase Functions to the preview project.
+   - `infra/ci/preview-deploy.yml` pushes Netlify previews and Supabase Functions to the preview project.
 2. **Deployment flow**
    - Local hosting: Deploy by pulling latest code from the default branch, running build, and restarting the application process.
-   - Vercel: Allow the preview workflow to produce artefacts; promote to production once checks and manual QA pass.
+   - Netlify: Allow the preview workflow to produce artefacts; promote to production once checks and manual QA pass.
    - Supabase Functions: Use the preview workflow for staging, then redeploy to production via CLI or workflow after approval.
 3. **Status checks in branch protections**
    - `CI` (existing pipeline for monorepo builds/tests).
@@ -149,7 +149,7 @@ After each deployment, capture evidence (screenshots/notes) that:
 - Static assets load without console errors (check `/.next/static/*`).
 - Supabase anon client initializes successfully (look for `supabase.auth.getSession()` returning status 200).
 - Critical API routes (e.g., `/api/v1/users`) return expected schema.
-- Document deployment date, git commit hash, and hosting server details in `docs/deployment/status/` alongside the final report.
+- Document deployment date, git commit hash, and hosting server details in `docs/deployment/status/` or your preferred tracker.
 
 ## H. Rollback Playbook
 1. **Local hosting**
@@ -163,24 +163,17 @@ After each deployment, capture evidence (screenshots/notes) that:
    - Maintain down migrations for every change (`supabase migration new --down`).
    - To restore data, follow Supabase PITR or backup restore policy defined in operator inputs.
    - Notify database owners before executing destructive rollbacks.
-4. **Vercel**
-   - Use the Vercel dashboard to roll back to the previous preview/production deployment if web regressions ship.
+4. **Netlify**
+   - Use the Netlify dashboard to roll back to the previous preview/production deployment if web regressions ship.
    - Confirm log drains resume streaming events after the rollback.
 5. **Incident contacts**
    - Populate security/ops contact list (emails/Slack handles) once provided.
 
-## I. Final Report Template
-After executing the steps above, copy [`final-report-template.md`](./final-report-template.md) into `docs/deployment/status/<date>.md` and populate it with the following evidence:
+## I. Deployment Evidence
+Maintain a lightweight log in `docs/deployment/status/<date>.md` (or your preferred tracker) covering:
 - GitHub repository URL & default branch.
 - Production hosting details (server, domain, SSL configuration).
 - Supabase dashboard link & project ref.
 - Environment variable matrix snapshot (names + scopes only).
 - Verification evidence (links to PR, deployment checks, Supabase smoke test logs).
-- Runbooks:
-  - **Add environment variable**: update `.env.example`, add to local `.env` files, add to Supabase secrets if relevant, document in PR.
-  - **Redeploy**: pull latest code, rebuild, restart service, confirm application health.
-  - **Rollback**: follow section H, record incident timeline, notify contacts.
 - Open items awaiting operator input (e.g., missing secrets, DNS setup, incident contacts, license selection).
-- Confirmed assumptions vs outstanding questions.
-
-Keeping this report updated ensures the deployment remains auditable and repeatable.

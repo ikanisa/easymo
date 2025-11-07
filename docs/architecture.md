@@ -9,7 +9,7 @@ existing services.
 ```
 ┌────────────────────┐        ┌───────────────────────┐
 │ React + Vite SPA   │ <────> │ Next.js App Router    │
-│ (`src/`, Vercel)   │        │ (`app/`, Vercel)      │
+│ (`src/`, Netlify)   │        │ (`app/`, Netlify)      │
 └────────────────────┘        └─────────────┬─────────┘
                                             │
                                             │ Edge/API routes
@@ -36,9 +36,9 @@ existing services.
 
 ### Front-End Clients
 - **Mobility Admin SPA (`src/`)** – Built with Vite, React Router, and shared
-  design system packages. Deployed to Vercel or a static host.
+  design system packages. Deployed to Netlify or a static host.
 - **Next.js App Router (`app/`)** – Hosts authenticated admin APIs used by the
-  SPA and Supabase Functions. Runs on Vercel and reuses the shared logging
+  SPA and Supabase Functions. Runs on Netlify and reuses the shared logging
   helpers in `app/api/_lib/observability.ts`.
 
 ### Backend & Data Plane
@@ -79,7 +79,7 @@ existing services.
   sync with the linked preview project using Supabase CLI drift checks.
 - `infra/ci/lighthouse.yml` – Runs Lighthouse against the built SPA to spot
   regressions in accessibility, performance, best practices, and SEO.
-- `infra/ci/preview-deploy.yml` – Produces Vercel preview deployments and rolls
+- `infra/ci/preview-deploy.yml` – Produces Netlify preview deployments and rolls
   Supabase Functions to the preview project, posting links to the job summary.
 
 All workflows live under `infra/ci/` for discoverability and are symlinked into
@@ -97,11 +97,11 @@ These modules centralise telemetry concerns so handlers and components avoid
 copying logging boilerplate.
 
 ## Data Flows
-1. User requests are routed through Vercel to App Router handlers which
+1. User requests are routed through Netlify to App Router handlers which
    authenticate via Supabase headers and produce structured logs.
 2. Handlers interact with Supabase (`supabase-js` service clients) or edge
    functions and return JSON responses via `jsonOk/jsonError`.
-3. Logs fan out to console (for Vercel log drains) and optional HTTP drains
+3. Logs fan out to console (for Netlify log drains) and optional HTTP drains
    configured in environment variables.
 4. Front-end navigation instrumentation emits session-level metrics ensuring
    router performance regressions surface alongside API dashboards.
@@ -109,8 +109,8 @@ copying logging boilerplate.
 ## Environment Boundaries
 - **Local** – `.env.local` (not committed) drives local CLI runs. Observability
   drains can point to tools like `vector.dev` or `Grafana Loki`.
-- **Preview** – Vercel preview deployments and Supabase preview projects use
-  dedicated secrets managed through Vercel/Supabase dashboards. The preview
+- **Preview** – Netlify preview deployments and Supabase preview projects use
+  dedicated secrets managed through Netlify/Supabase dashboards. The preview
   workflow assumes `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`, and
   `SUPABASE_FUNCTIONS_PREVIEW_REF` are present.
 - **Production** – Deployments promote the preview artefact after sign-off,

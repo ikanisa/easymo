@@ -83,7 +83,7 @@ new reminder workers and notification retry flow.
   schema to reuse during tabletop simulations.
 - Verify `INSURANCE_OCR_METRICS_WEBHOOK_URL` is routed to observability sink so
   queue depth signals surface during exercises.
-- Confirm Vercel log drain and metrics drain URLs (`LOG_DRAIN_URL`, `METRICS_DRAIN_URL`) are populated and reachable.
+- Confirm Netlify log drain and metrics drain URLs (`LOG_DRAIN_URL`, `METRICS_DRAIN_URL`) are populated and reachable.
 - Ensure GitHub Actions workflow `Synthetic Admin Checks` is scheduled and has valid secrets (`ADMIN_BASE_URL`, `ADMIN_API_TOKEN`).
 
 ## Post-Exercise Actions

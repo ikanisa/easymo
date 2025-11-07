@@ -9,12 +9,6 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "pages:build": "next build && pnpm dlx @opennextjs/cloudflare@latest",
-    "pages:dev": "pnpm dlx @opennextjs/cloudflare@latest --compatibility-date=2024-01-01 --dev",
-    "cf:build": "pnpm --filter @va/shared build && pnpm --filter @easymo/commons build && pnpm --filter @easymo/ui build && next build && pnpm dlx @opennextjs/cloudflare@latest",
-    "preview": "pnpm run pages:build && wrangler pages dev",
-    "deploy": "pnpm run pages:build && wrangler pages deploy",
-    "cf:dev": "wrangler pages dev .vercel/output/static --compatibility-flag=nodejs_compat",
     "start": "next start",
     "lint": "next lint",
     "type-check": "tsc --noEmit",
@@ -46,7 +40,6 @@
   },
   "devDependencies": {
     "@netlify/plugin-nextjs": "^5.0.1",
-    "@opennextjs/cloudflare": "^1.11.1",
     "@testing-library/jest-dom": "6.4.2",
     "@testing-library/react": "14.2.1",
     "@testing-library/user-event": "14.6.1",
@@ -61,8 +54,6 @@
     "postcss": "^8.4.41",
     "tailwindcss": "^3.4.13",
     "typescript": "5.5.4",
-    "vercel": "^37.0.0",
-    "vitest": "^3.2.4",
-    "wrangler": "^4.46.0"
+    "vitest": "^3.2.4"
   }
 }

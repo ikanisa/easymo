@@ -9,7 +9,7 @@ before, during, and after promoting a build to production.
 - Ensure at least one CODEOWNER review is recorded for affected areas.
 
 ## Phase 1 – Preview Validation
-1. The `Preview Deployments` workflow posts a Vercel preview URL and confirms
+1. The `Preview Deployments` workflow posts a Netlify preview URL and confirms
    Supabase Functions deploy to the preview project.
 2. Product owners review the preview build, using the runbook to validate:
    - Router navigation SLOs within target.
@@ -24,7 +24,7 @@ before, during, and after promoting a build to production.
   PR comments or `docs/deployment/status/<date>.md`.
 
 ## Phase 3 – Production Promotion
-1. Promote the approved Vercel preview deployment to production once App Quality,
+1. Promote the approved Netlify preview deployment to production once App Quality,
    Lighthouse, and Supabase drift workflows are green.
 2. Apply database migrations (if any) using Supabase CLI against production.
 3. Trigger Supabase Functions deployment to the production project ref.
@@ -38,8 +38,8 @@ before, during, and after promoting a build to production.
 - File follow-up issues for any known gaps observed during rollout.
 
 ## Rollback Plan
-- **Vercel:** Use the Vercel dashboard to roll back to the previous deployment
-  (history tab) or redeploy the prior commit via `vercel deploy --prebuilt`.
+- **Netlify:** Use the Netlify dashboard to roll back to the previous deployment
+  (history tab) or redeploy the prior commit via `netlify deploy --prebuilt`.
 - **Supabase Migrations:** Run `supabase migration down <version>` or apply the
   relevant down migration scripts.
 - **Supabase Functions:** Deploy the last known-good function artefact using

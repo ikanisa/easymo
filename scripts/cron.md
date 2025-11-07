@@ -1,6 +1,6 @@
 # Cron Job Manual Scheduling
 
-Several scheduled tasks in the EasyMO workspace need to invoke Supabase Edge Functions on a timer. Since the application is now hosted locally (no longer using Vercel), operators must schedule these jobs manually using system cron or similar scheduling tools when production automation is required.
+Several scheduled tasks in the EasyMO workspace need to invoke Supabase Edge Functions on a timer. Since the application is now hosted locally (no longer using Netlify), operators must schedule these jobs manually using system cron or similar scheduling tools when production automation is required.
 
 ## Functions that require scheduled execution
 

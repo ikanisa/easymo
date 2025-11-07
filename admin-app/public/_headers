@@ -1,4 +1,4 @@
-# Security headers for Cloudflare Pages deployment
+# Security headers for Netlify deployment
 # These headers are applied to all routes
 
 /*

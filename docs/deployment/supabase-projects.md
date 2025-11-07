@@ -28,7 +28,7 @@ ownership or secrets rotate so that incident responders know whom to contact.
      --secret-id prod/easymo/supabase/service-role \
      --query 'SecretString' --output text
    ```
-3. Inject the value into the deployment environment (Vercel/Render secrets or
+3. Inject the value into the deployment environment (Netlify/Render secrets or
    GitHub Actions) instead of copying it into `.env` files.
 4. Repeat with the staging secret path when preparing test deployments.
 

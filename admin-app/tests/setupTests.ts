@@ -99,6 +99,9 @@ process.env.ADMIN_ACCESS_CREDENTIALS =
   JSON.stringify([
     {
       actorId: "00000000-0000-0000-0000-000000000001",
+      email: "info@ikanisa.com",
+      password: "MoMo!!0099",
+      username: "Admin",
       token: "test-token",
       label: "Test Operator",
     },

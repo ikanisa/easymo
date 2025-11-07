@@ -1,7 +1,7 @@
 # Local Hosting Guide
 
 This guide explains how to run the EasyMO admin app and Supabase-backed API
-without Vercel. It assumes macOS or Linux with Node.js 18+, pnpm 8+, and the
+without Netlify. It assumes macOS or Linux with Node.js 18+, pnpm 8+, and the
 Supabase CLI installed.
 
 ## Install dependencies
@@ -59,7 +59,7 @@ add the proxy hostname to Supabase’s allowed CORS origins and redirect URLs.
 
 ## Cron job alternatives
 
-Vercel’s scheduled functions are not available when self-hosting. Consider:
+Netlify’s scheduled functions are not available when self-hosting. Consider:
 
 - **Supabase Scheduled Functions** – define cron triggers via the Supabase CLI
   (`supabase functions deploy` + `supabase cron schedule`).

@@ -153,7 +153,7 @@ OpenAI Realtime (gpt-5-realtime-preview) ←→ Responses API (gpt-5, tools)
 - Expose gateway HTTP port (default 4000) plus mediasoup UDP/TCP ports.
 - Deploy to infrastructure close to both Meta and OpenAI POPs to minimise latency.
 - Ensure CI/CD enforces linting/tests for new gateway service.
-- For Vercel deployment of existing frontend, ensure backend endpoints remain accessible via secure networking (e.g., HTTPS tunnel or private connectivity).
+- For Netlify deployment of existing frontend, ensure backend endpoints remain accessible via secure networking (e.g., HTTPS tunnel or private connectivity).
 
 ## 14. Future Enhancements
 

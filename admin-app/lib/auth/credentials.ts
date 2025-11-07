@@ -1,6 +1,9 @@
 export type AdminAccessCredential = {
   actorId: string;
-  token: string;
+  token?: string;
+  email?: string;
+  password?: string;
+  username?: string;
   label?: string;
 };
 
@@ -11,12 +14,21 @@ function parseFromJson(raw: string): AdminAccessCredential[] {
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
     return parsed
-      .map((entry) => ({
-        actorId: String(entry.actorId ?? "").trim(),
-        token: String(entry.token ?? "").trim(),
-        label: entry.label ? String(entry.label) : undefined,
-      }))
-      .filter((entry) => entry.actorId.length > 0 && entry.token.length > 0);
+      .map((entry) => {
+        const actorId = String(entry.actorId ?? "").trim();
+        const token = entry.token ? String(entry.token).trim() : undefined;
+        const email = entry.email ? String(entry.email).trim().toLowerCase() : undefined;
+        const password = entry.password ? String(entry.password).trim() : undefined;
+        const username = entry.username ? String(entry.username).trim() : undefined;
+        const label = entry.label ? String(entry.label) : undefined;
+        const hasToken = Boolean(token && token.length > 0);
+        const hasPassword = Boolean(email && email.length > 0 && password && password.length > 0);
+        if (!actorId || (!hasToken && !hasPassword)) {
+          return null;
+        }
+        return { actorId, token, email, password, username, label };
+      })
+      .filter((entry): entry is AdminAccessCredential => Boolean(entry));
   } catch (error) {
     console.error("admin_auth.credentials_json_parse_failed", error);
     return [];
@@ -71,7 +83,16 @@ export function getAdminAccessCredentials(): AdminAccessCredential[] {
 
 export function findCredentialByToken(token: string): AdminAccessCredential | null {
   const credentials = getAdminAccessCredentials();
-  return credentials.find((entry) => entry.token === token) ?? null;
+  return credentials.find((entry) => entry.token && entry.token === token) ?? null;
+}
+
+export function findCredentialByEmail(email: string): AdminAccessCredential | null {
+  if (!email) return null;
+  const normalized = email.trim().toLowerCase();
+  if (!normalized) return null;
+  return (
+    getAdminAccessCredentials().find((entry) => entry.email && entry.email === normalized) ?? null
+  );
 }
 
 export function isActorAuthorized(actorId: string): boolean {
@@ -83,7 +104,8 @@ export function isActorAuthorized(actorId: string): boolean {
 
 export function getActorLabel(actorId: string): string | null {
   const credential = getAdminAccessCredentials().find((entry) => entry.actorId === actorId);
-  return credential?.label ?? null;
+  if (!credential) return null;
+  return credential.label ?? credential.username ?? credential.email ?? null;
 }
 
 export function clearCachedCredentials() {

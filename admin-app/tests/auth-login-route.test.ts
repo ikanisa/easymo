@@ -20,39 +20,49 @@ describe('admin auth login route', () => {
     const { POST } = await import('@/app/api/auth/login/route');
     const request = createAdminApiRequest(['auth', 'login'], {
       method: 'POST',
-      body: JSON.stringify({ token: 'missing' }),
+      body: JSON.stringify({ email: 'info@ikanisa.com', password: 'test-password' }),
     });
 
     const response = await POST(request);
     expect(response.status).toBe(503);
   });
 
-  it('rejects invalid tokens', async () => {
+  it('rejects invalid email/password combinations', async () => {
     process.env.ADMIN_SESSION_SECRET = 'integration-test-secret';
     process.env.ADMIN_ACCESS_CREDENTIALS = JSON.stringify([
-      { actorId: '00000000-0000-0000-0000-000000000001', token: 'valid-token' },
+      {
+        actorId: '00000000-0000-0000-0000-000000000001',
+        email: 'info@ikanisa.com',
+        password: 'MoMo!!0099',
+        username: 'Admin',
+      },
     ]);
 
     const { POST } = await import('@/app/api/auth/login/route');
     const request = createAdminApiRequest(['auth', 'login'], {
       method: 'POST',
-      body: JSON.stringify({ token: 'wrong-token' }),
+      body: JSON.stringify({ email: 'info@ikanisa.com', password: 'wrong-pass' }),
     });
 
     const response = await POST(request);
     expect(response.status).toBe(401);
   });
 
-  it('issues a session cookie on success', async () => {
+  it('issues a session cookie on success with email/password', async () => {
     process.env.ADMIN_SESSION_SECRET = 'integration-test-secret';
     process.env.ADMIN_ACCESS_CREDENTIALS = JSON.stringify([
-      { actorId: '00000000-0000-0000-0000-000000000001', token: 'valid-token', label: 'Ops' },
+      {
+        actorId: '00000000-0000-0000-0000-000000000001',
+        email: 'info@ikanisa.com',
+        password: 'MoMo!!0099',
+        username: 'Admin',
+      },
     ]);
 
     const { POST } = await import('@/app/api/auth/login/route');
     const request = createAdminApiRequest(['auth', 'login'], {
       method: 'POST',
-      body: JSON.stringify({ token: 'valid-token' }),
+      body: JSON.stringify({ email: 'info@ikanisa.com', password: 'MoMo!!0099' }),
     });
 
     const response = await POST(request);
@@ -62,10 +72,30 @@ describe('admin auth login route', () => {
     expect(setCookie).toContain('HttpOnly');
   });
 
+  it('supports legacy token logins for backward compatibility', async () => {
+    process.env.ADMIN_SESSION_SECRET = 'integration-test-secret';
+    process.env.ADMIN_ACCESS_CREDENTIALS = JSON.stringify([
+      { actorId: '00000000-0000-0000-0000-000000000002', token: 'legacy-token', label: 'Ops' },
+    ]);
+
+    const { POST } = await import('@/app/api/auth/login/route');
+    const request = createAdminApiRequest(['auth', 'login'], {
+      method: 'POST',
+      body: JSON.stringify({ token: 'legacy-token' }),
+    });
+
+    const response = await POST(request);
+    expect(response.status).toBe(200);
+  });
+
   it('rate limits repeated failed attempts', async () => {
     process.env.ADMIN_SESSION_SECRET = 'integration-test-secret';
     process.env.ADMIN_ACCESS_CREDENTIALS = JSON.stringify([
-      { actorId: '00000000-0000-0000-0000-000000000001', token: 'valid-token' },
+      {
+        actorId: '00000000-0000-0000-0000-000000000001',
+        email: 'info@ikanisa.com',
+        password: 'MoMo!!0099',
+      },
     ]);
     process.env.ADMIN_LOGIN_MAX_ATTEMPTS = '3';
     process.env.ADMIN_LOGIN_WINDOW_MS = '1000';
@@ -75,7 +105,7 @@ describe('admin auth login route', () => {
       createAdminApiRequest(['auth', 'login'], {
         method: 'POST',
         headers: { 'content-type': 'application/json', 'x-forwarded-for': '1.1.1.1' },
-        body: JSON.stringify({ token: 'wrong-token' }),
+        body: JSON.stringify({ email: 'info@ikanisa.com', password: 'wrong-password' }),
       });
 
     for (let index = 0; index < 3; index += 1) {

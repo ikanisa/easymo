@@ -6,13 +6,21 @@ import { createHandler } from "@/app/api/withObservability";
 import { logStructured } from "@/lib/server/logger";
 import { createSessionToken, SESSION_COOKIE_NAME } from "@/lib/auth/session-token";
 import {
+  findCredentialByEmail,
   findCredentialByToken,
   getAdminAccessCredentials,
 } from "@/lib/auth/credentials";
 
-const requestSchema = z.object({
+const tokenLoginSchema = z.object({
   token: z.string().min(8, "token_required"),
 });
+
+const passwordLoginSchema = z.object({
+  email: z.string().email("email_invalid"),
+  password: z.string().min(8, "password_required"),
+});
+
+const requestSchema = z.union([tokenLoginSchema, passwordLoginSchema]);
 
 const MAX_ATTEMPTS = Number.parseInt(process.env.ADMIN_LOGIN_MAX_ATTEMPTS ?? "5", 10);
 const WINDOW_MS = Number.parseInt(process.env.ADMIN_LOGIN_WINDOW_MS ?? "60000", 10);
@@ -93,20 +101,38 @@ export const POST = createHandler("admin_auth.login", async (request) => {
     );
   }
 
-  const match = findCredentialByToken(body.token)
-    ?? credentials.find((candidate) => constantTimeEquals(candidate.token, body.token));
+  let match: ReturnType<typeof getAdminAccessCredentials>[number] | null = null;
+  let failureReason: "invalid_token" | "invalid_password" = "invalid_token";
+
+  if ("email" in body) {
+    const candidate = findCredentialByEmail(body.email);
+    if (!candidate || !candidate.password) {
+      failureReason = "invalid_password";
+    } else if (!constantTimeEquals(candidate.password, body.password)) {
+      failureReason = "invalid_password";
+    } else {
+      match = candidate;
+    }
+  } else if ("token" in body) {
+    match =
+      findCredentialByToken(body.token) ??
+      credentials.find((candidate) => candidate.token && constantTimeEquals(candidate.token, body.token));
+  }
 
   if (!match) {
     recordFailedAttempt(key);
     logStructured({
       event: "admin_auth.login_denied",
       status: "error",
-      details: { reason: "invalid_token" },
+      details: { reason: failureReason },
     });
     return NextResponse.json(
       {
-        error: "invalid_token",
-        message: "Access token not recognized.",
+        error: failureReason,
+        message:
+          failureReason === "invalid_password"
+            ? "Invalid email or password."
+            : "Access token not recognized.",
       },
       { status: 401 },
     );

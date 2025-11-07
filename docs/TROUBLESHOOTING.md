@@ -778,7 +778,7 @@ Unauthorized request
 
 2. **Test webhook locally:**
    ```bash
-   # Use ngrok or cloudflare tunnel
+   # Use ngrok or another HTTPS tunnel
    npm run tunnel
    # Update Meta webhook URL
    ```

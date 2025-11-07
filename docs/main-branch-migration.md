@@ -7,6 +7,6 @@ This repository now tracks the long-lived `work` branch from the new `main` bran
    git push -u origin main
    ```
 2. Update the repository's default branch in the hosting provider (for example, GitHub) to `main`.
-3. Update the Vercel project settings to deploy from the `main` branch and trigger a new deployment.
+3. Update the Netlify project settings to deploy from the `main` branch and trigger a new deployment.
 
 Local history already contains the latest `work` changes on `main`, so no further merge work is required after the remote defaults are updated.

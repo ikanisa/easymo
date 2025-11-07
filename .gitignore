@@ -43,10 +43,8 @@ coverage/
 supabase/.temp/
 supabase/.branches/
 
-# Cloudflare build artifacts
-.vercel/
-.wrangler/
-wrangler.toml.local
+# Netlify build artifacts
+.netlify/
 
 # Editor directories and files
 .vscode/*

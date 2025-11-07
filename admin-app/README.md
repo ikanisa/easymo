@@ -30,34 +30,36 @@ remain additive-only.
 
 ## Deployment
 
-### Cloudflare Pages (Production)
+### Netlify (Production)
 
-The admin panel is deployed to Cloudflare Pages at `easymo.ikanisa.com`.
+The admin panel deploys to Netlify (`netlify.toml` lives at the repo root). The
+site typically binds to `https://easymo.ikanisa.com` once the custom domain is
+attached. See [`docs/deployment/README.md`](../docs/deployment/README.md) for the
+full runbook.
 
-**Quick Start:**
-- See [Cloudflare Pages Quick Start Guide](../docs/deployment/cloudflare-pages-quick-start.md)
-- Full deployment guide: [Cloudflare Pages Deployment](../docs/deployment/cloudflare-pages-deployment.md)
-- Prerequisites checklist: [Cloudflare Pages Prerequisites](../docs/deployment/cloudflare-pages-prerequisites-checklist.md)
+**Connect & build:**
 
-**Deploy via GitHub Actions:**
+1. In Netlify, create a new site from this GitHub repository.
+2. Netlify auto-detects the configuration from `netlify.toml`:
+   - Build command: `pnpm netlify:build`
+   - Publish directory: `admin-app/.next`
+   - Plugin: `@netlify/plugin-nextjs`
+   - Node: `18.18.0`
+
+**Environment variables:** add the values listed in the [Environment](#environment)
+section to Netlify → Site settings → Environment. Use Production/Deploy Preview
+contexts to test secret changes safely.
+
+**Manual deployment (optional):**
+
 ```bash
-# Automatic deployment on push to main
-git push origin main
+pnpm install
+pnpm netlify:build
+netlify deploy --prod --dir=admin-app/.next
 ```
 
-**Deploy manually via CLI:**
-```bash
-npm ci
-npm run build
-npx @opennextjs/cloudflare@latest
-npx wrangler pages deploy .vercel/output/static --project-name=easymo-admin
-```
-
-**Deploy via Cloudflare Dashboard:**
-Connect your GitHub repository in Cloudflare Pages dashboard with:
-- Build command: `cd admin-app && npm ci && npm run build && npx @opennextjs/cloudflare@latest`
-- Build output: `admin-app/.vercel/output/static`
-- Node version: 18
+`netlify deploy` requires the Netlify CLI (`npm install -g netlify-cli`) and an
+access token.
 
 ### Local Development
 
@@ -85,7 +87,7 @@ See [Getting Started](#getting-started) section below.
 
 The admin panel assumes every deployment targets the Supabase project
 `vacltfdslodqybxojytc`. Keep the following variables aligned across
-`.env.local`, Vercel, and Supabase Edge Functions:
+`.env.local`, Netlify, and Supabase Edge Functions:
 
 | Variable | Purpose |
 | --- | --- |
@@ -95,7 +97,7 @@ The admin panel assumes every deployment targets the Supabase project
 | `NEXT_PUBLIC_UI_V2_ENABLED` | Opt-in flag for the new `@easymo/ui` design system tokens and preview surfaces. |
 | `VITE_ADMIN_TOKEN` / `ADMIN_TOKEN` / `EASYMO_ADMIN_TOKEN` | Shared secret used to call Supabase edge functions (`x-api-key` / `x-admin-token`). Store the same value in Supabase function secrets. |
 | `ADMIN_SESSION_SECRET` | Minimum 16 characters; signs the HttpOnly session cookie. |
-| `ADMIN_ACCESS_CREDENTIALS` | JSON array of operator tokens (`[{"actorId":"...","token":"...","label":"Ops"}]`). |
+| `ADMIN_ACCESS_CREDENTIALS` | JSON array of admin credentials (`[{"actorId":"...","email":"info@ikanisa.com","password":"MoMo!!0099","username":"Admin"}]`). |
 | `DISPATCHER_FUNCTION_URL` | Defaults to `https://vacltfdslodqybxojytc.supabase.co/functions/v1/campaign-dispatch`. |
 | `AGENT_CORE_INTERNAL_TOKEN` | Shared token for internal calls to Agent-Core (matches `AGENT_INTERNAL_TOKEN` in the service). |
 | `AGENT_CORE_URL` | Base URL for Agent-Core (defaults to `http://localhost:4000`). |
@@ -103,7 +105,7 @@ The admin panel assumes every deployment targets the Supabase project
 | `WALLET_SERVICE_URL` | Wallet service base URL for marketplace purchases (`http://localhost:4400`). |
 | `MARKETPLACE_RANKING_URL` / `MARKETPLACE_VENDOR_URL` / `MARKETPLACE_BUYER_URL` | Base URLs for Phase 5 marketplace services. |
 
-Operators visit `/login`, paste an operator token from
+Operators visit `/login`, enter their admin email and password from
 `ADMIN_ACCESS_CREDENTIALS`, and receive a secure session cookie. Subsequent API
 requests include the actor id automatically and can forward the shared
 `VITE_ADMIN_TOKEN` when edge functions are invoked.
@@ -115,7 +117,7 @@ fixture dataset without Supabase connectivity.
 
 1. Deploy the latest branch and ensure the variables above are present in
    the shared secret manager (`gh secret list`, `doppler secrets get`, etc.).
-2. Visit `https://admin.easymo.dev/login`, submit a valid operator token, and
+2. Visit `https://admin.easymo.dev/login`, submit the configured admin email/password, and
    confirm you are redirected to `/dashboard`.
 3. Open DevTools → Application → Cookies and verify `admin_session` is set for
    the `admin.easymo.dev` domain (HttpOnly, Secure, SameSite=Lax).
