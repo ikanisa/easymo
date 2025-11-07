@@ -18,6 +18,11 @@ export function LoginForm({ environmentLabel }: LoginFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Debug: Log form state
+  if (typeof window !== 'undefined') {
+    console.log('[LoginForm] Rendered', { email, password, isSubmitting });
+  }
+
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!email || !password) return;
