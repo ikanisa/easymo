@@ -1,4 +1,9 @@
+# Netlify configuration for deploying the admin-app
+# Note: The 'docs' directory contains only documentation (markdown files), not a deployable app
+# The admin-app is a Next.js application that should be built and deployed
+
 [build]
+  base = "."
   command = "pnpm netlify:build"
   publish = "admin-app/.next"
 
