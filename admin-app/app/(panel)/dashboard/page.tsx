@@ -37,4 +37,3 @@ export default async function DashboardPage() {
   );
 }
 
-export const runtime = "edge";

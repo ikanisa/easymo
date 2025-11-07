@@ -51,4 +51,3 @@ export default async function SettingsPage() {
   );
 }
 
-export const runtime = "edge";

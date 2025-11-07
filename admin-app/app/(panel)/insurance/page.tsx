@@ -28,4 +28,3 @@ export default async function InsurancePage() {
   );
 }
 
-export const runtime = "edge";

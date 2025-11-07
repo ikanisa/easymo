@@ -40,4 +40,3 @@ export default async function WhatsAppHealthPage() {
   );
 }
 
-export const runtime = "edge";

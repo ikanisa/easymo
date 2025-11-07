@@ -64,4 +64,3 @@ export default function AgentsPage() {
   );
 }
 
-export const runtime = "edge";

@@ -22,4 +22,3 @@ export default async function LoginPage() {
   );
 }
 
-export const runtime = "edge";

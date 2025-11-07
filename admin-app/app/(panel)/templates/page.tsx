@@ -43,4 +43,3 @@ export default async function TemplatesPage() {
   );
 }
 
-export const runtime = "edge";

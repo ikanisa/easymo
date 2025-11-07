@@ -35,4 +35,3 @@ export default async function OrdersPage() {
   );
 }
 
-export const runtime = "edge";

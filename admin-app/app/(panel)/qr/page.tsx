@@ -43,4 +43,3 @@ export default async function QrPage() {
   );
 }
 
-export const runtime = "edge";

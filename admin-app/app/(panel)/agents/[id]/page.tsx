@@ -408,4 +408,3 @@ export default function AgentDetailsPage() {
   );
 }
 
-export const runtime = "edge";

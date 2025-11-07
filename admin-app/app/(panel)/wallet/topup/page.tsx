@@ -90,4 +90,3 @@ export default function WalletTopupPage() {
   );
 }
 
-export const runtime = "edge";

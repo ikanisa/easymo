@@ -10,4 +10,3 @@ export default async function HomePage() {
   redirect(getAdminRoutePath("panelDashboard"));
 }
 
-export const runtime = "edge";

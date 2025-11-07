@@ -28,4 +28,3 @@ export default async function UsersPage() {
   );
 }
 
-export const runtime = "edge";

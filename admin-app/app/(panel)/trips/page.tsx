@@ -95,4 +95,3 @@ export default function TripsPage() {
   );
 }
 
-export const runtime = "edge";

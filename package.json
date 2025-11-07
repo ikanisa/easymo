@@ -2,7 +2,7 @@
   "name": "@easymo/monorepo",
   "private": true,
   "version": "0.0.0",
-  "type": "module",
+  "type": "commonjs",
   "scripts": {
     "prebuild": "node ./scripts/assert-no-service-role-in-client.mjs",
     "build": "pnpm --filter @va/shared build && pnpm --filter @easymo/commons build && pnpm --filter @easymo/admin-app run build",

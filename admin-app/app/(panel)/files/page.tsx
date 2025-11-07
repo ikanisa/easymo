@@ -28,4 +28,3 @@ export default async function FilesPage() {
   );
 }
 
-export const runtime = "edge";

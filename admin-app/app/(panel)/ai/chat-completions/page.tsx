@@ -11,4 +11,3 @@ export default function ChatCompletionsPage() {
   return <ChatCompletionsPlayground />;
 }
 
-export const runtime = "edge";
