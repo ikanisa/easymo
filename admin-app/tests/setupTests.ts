@@ -102,7 +102,6 @@ process.env.ADMIN_ACCESS_CREDENTIALS =
       email: "info@ikanisa.com",
       password: "MoMo!!0099",
       username: "Admin",
-      token: "test-token",
       label: "Test Operator",
     },
   ]);

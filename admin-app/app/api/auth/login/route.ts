@@ -5,22 +5,12 @@ import { z } from "zod";
 import { createHandler } from "@/app/api/withObservability";
 import { logStructured } from "@/lib/server/logger";
 import { createSessionToken, SESSION_COOKIE_NAME } from "@/lib/auth/session-token";
-import {
-  findCredentialByEmail,
-  findCredentialByToken,
-  getAdminAccessCredentials,
-} from "@/lib/auth/credentials";
+import { findCredentialByEmail, getAdminAccessCredentials } from "@/lib/auth/credentials";
 
-const tokenLoginSchema = z.object({
-  token: z.string().min(8, "token_required"),
-});
-
-const passwordLoginSchema = z.object({
+const requestSchema = z.object({
   email: z.string().email("email_invalid"),
   password: z.string().min(8, "password_required"),
 });
-
-const requestSchema = z.union([tokenLoginSchema, passwordLoginSchema]);
 
 const MAX_ATTEMPTS = Number.parseInt(process.env.ADMIN_LOGIN_MAX_ATTEMPTS ?? "5", 10);
 const WINDOW_MS = Number.parseInt(process.env.ADMIN_LOGIN_WINDOW_MS ?? "60000", 10);
@@ -101,22 +91,12 @@ export const POST = createHandler("admin_auth.login", async (request) => {
     );
   }
 
+  const candidate = findCredentialByEmail(body.email);
   let match: ReturnType<typeof getAdminAccessCredentials>[number] | null = null;
-  let failureReason: "invalid_token" | "invalid_password" = "invalid_token";
+  let failureReason: "invalid_password" = "invalid_password";
 
-  if ("email" in body) {
-    const candidate = findCredentialByEmail(body.email);
-    if (!candidate || !candidate.password) {
-      failureReason = "invalid_password";
-    } else if (!constantTimeEquals(candidate.password, body.password)) {
-      failureReason = "invalid_password";
-    } else {
-      match = candidate;
-    }
-  } else if ("token" in body) {
-    match =
-      findCredentialByToken(body.token) ??
-      credentials.find((candidate) => candidate.token && constantTimeEquals(candidate.token, body.token));
+  if (candidate && constantTimeEquals(candidate.password, body.password)) {
+    match = candidate;
   }
 
   if (!match) {
@@ -129,10 +109,7 @@ export const POST = createHandler("admin_auth.login", async (request) => {
     return NextResponse.json(
       {
         error: failureReason,
-        message:
-          failureReason === "invalid_password"
-            ? "Invalid email or password."
-            : "Access token not recognized.",
+        message: "Invalid email or password.",
       },
       { status: 401 },
     );

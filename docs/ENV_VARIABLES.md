@@ -196,8 +196,6 @@ ADMIN_SESSION_TTL_SECONDS=43200
 
 # Admin access credentials (JSON array)
 ADMIN_ACCESS_CREDENTIALS='[{"actorId":"00000000-0000-0000-0000-000000000001","email":"info@ikanisa.com","password":"MoMo!!0099","username":"Admin"}]'
-# Legacy token-only entries are still supported for backward compatibility.
-ADMIN_ACCESS_TOKENS='[]'
 
 # Admin actor IDs
 ADMIN_ALLOW_ANY_ACTOR=false
