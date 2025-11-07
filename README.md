@@ -96,6 +96,7 @@ Vite React app and communicates with those Edge Functions through the
 
 - Install deps: `pnpm install`
 - Shared packages: `pnpm --filter @va/shared build && pnpm --filter @easymo/commons build`
+- Netlify build (same command used in CI): `pnpm netlify:build`
 - Local dev server with hot reload: `pnpm dev`
 - Production build: `pnpm build`
 - Serve the compiled build: `pnpm start`
@@ -128,6 +129,23 @@ Vite React app and communicates with those Edge Functions through the
 - Added `.env.local` guidance plus [docs/local-hosting.md](docs/local-hosting.md)
   for pnpm-based builds (`pnpm install`, `pnpm build`, `pnpm start`) and reverse
   proxy placeholders to support self-hosting.
+- Added first-class Netlify support via `netlify.toml` and the official Next.js
+  plugin so the admin app deploys on a Node runtime without extra config.
+
+## Deploying to Netlify
+
+1. Connect this repository in the Netlify UI (New site → Import from Git).
+2. Netlify reads `netlify.toml`; the important bits are:
+
+   - `command`: `pnpm netlify:build` (builds shared workspaces then the admin app).
+   - `publish`: `admin-app/.next`.
+   - `[[plugins]]`: `@netlify/plugin-nextjs` so API routes become Netlify Functions.
+   - `NETLIFY_USE_PNPM=true` and `NODE_VERSION=18.18.0` ensure the correct toolchain.
+
+3. Configure the required environment variables under Site settings → Environment
+   (mirrors the `.env` table above; never expose service-role keys in `NEXT_PUBLIC_*`).
+4. `netlify dev` can simulate the build locally if you install the CLI
+   (`npm install -g netlify-cli`).
 
 ## Development Notes
 

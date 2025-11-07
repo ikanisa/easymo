@@ -1,0 +1,14 @@
+[build]
+  command = "pnpm netlify:build"
+  publish = "admin-app/.next"
+
+[build.environment]
+  NETLIFY_USE_PNPM = "true"
+  NODE_VERSION = "18.18.0"
+  NEXTJS_APP_PATH = "admin-app"
+
+[functions]
+  node_bundler = "esbuild"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"

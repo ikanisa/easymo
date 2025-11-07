@@ -6,6 +6,7 @@
   "scripts": {
     "prebuild": "node ./scripts/assert-no-service-role-in-client.mjs",
     "build": "pnpm --filter @va/shared build && pnpm --filter @easymo/commons build && pnpm --filter @easymo/admin-app run build",
+    "netlify:build": "pnpm --filter @va/shared build && pnpm --filter @easymo/commons build && cd admin-app && pnpm build",
     "lint": "pnpm --filter @easymo/admin-app run lint",
     "lint:fix": "pnpm --filter @easymo/admin-app run lint -- --fix",
     "format": "prettier --write docs/ eslint.config.js prettier.config.js package.json .prettierignore",
