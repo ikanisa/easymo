@@ -109,4 +109,4 @@ export const GET = createHandler('admin_api.staff.list', async (request: Request
   });
 });
 
-export const runtime = "edge";
+export const runtime = "nodejs";

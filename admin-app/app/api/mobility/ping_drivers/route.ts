@@ -79,4 +79,4 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({ route: "mobility.ping_drivers", status: "ok", reqId }, { status: 200 });
 }
 
-export const runtime = "edge";
+export const runtime = "nodejs";

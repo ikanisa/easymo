@@ -81,4 +81,4 @@ export const POST = createHandler('admin_api.insurance.request_changes', async (
 import { jsonOk, jsonError, zodValidationError } from '@/lib/api/http';
 import { requireActorId, UnauthorizedError } from '@/lib/server/auth';
 
-export const runtime = "edge";
+export const runtime = "nodejs";

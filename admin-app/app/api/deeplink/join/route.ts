@@ -111,4 +111,4 @@ export const GET = createHandler('deeplink.join', async (request) => {
   );
 });
 
-export const runtime = "edge";
+export const runtime = "nodejs";

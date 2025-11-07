@@ -17,4 +17,4 @@ export async function POST(req: Request, { params }: { params: { id: string; ver
   return NextResponse.json({ published: true, environment: env });
 }
 
-export const runtime = "edge";
+export const runtime = "nodejs";

@@ -166,4 +166,4 @@ export const POST = createHandler("api.gpt5-chat", async (request, _ctx, observa
   }
 });
 
-export const runtime = "edge";
+export const runtime = "nodejs";

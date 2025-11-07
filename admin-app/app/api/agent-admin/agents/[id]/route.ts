@@ -39,4 +39,4 @@ export async function PATCH(request: Request, context: { params: { id: string } 
 }
 
 
-export const runtime = "edge";
+export const runtime = "nodejs";

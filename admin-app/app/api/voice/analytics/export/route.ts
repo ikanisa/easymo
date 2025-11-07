@@ -78,4 +78,4 @@ function formatCsvValue(value: unknown) {
   return text;
 }
 
-export const runtime = "edge";
+export const runtime = "nodejs";

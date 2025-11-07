@@ -23,4 +23,4 @@ export async function GET(req: NextRequest, { params }: { params: { id: string; 
   return NextResponse.json({ error: 'no_preview_available' }, { status: 404 });
 }
 
-export const runtime = "edge";
+export const runtime = "nodejs";

@@ -128,4 +128,4 @@ export const POST = createHandler('matching.dual_constraint_search', async (requ
   });
 });
 
-export const runtime = "edge";
+export const runtime = "nodejs";

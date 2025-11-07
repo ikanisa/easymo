@@ -33,4 +33,4 @@ export const GET = createHandler("admin_api.dashboard.get", async () => {
   }
 });
 
-export const runtime = "edge";
+export const runtime = "nodejs";

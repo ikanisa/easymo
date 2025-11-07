@@ -196,4 +196,4 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   return NextResponse.json({ imported, duplicates: duplicatesBatch + duplicatesDb });
 }
 
-export const runtime = "edge";
+export const runtime = "nodejs";

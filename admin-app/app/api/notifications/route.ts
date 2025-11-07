@@ -73,4 +73,4 @@ export const GET = createHandler('admin_api.notifications.list', async (request,
   });
 });
 
-export const runtime = "edge";
+export const runtime = "nodejs";

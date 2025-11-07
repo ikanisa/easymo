@@ -154,4 +154,4 @@ export const POST = createHandler("admin_auth.login", async (request) => {
   return response;
 });
 
-export const runtime = "edge";
+export const runtime = "nodejs";

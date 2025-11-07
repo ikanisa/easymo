@@ -31,4 +31,4 @@ export const POST = createHandler("api.audit.log", async (req) => {
   }
 });
 
-export const runtime = "edge";
+export const runtime = "nodejs";

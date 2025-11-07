@@ -249,4 +249,4 @@ async function loadQueueSnapshot(
   }
 }
 
-export const runtime = "edge";
+export const runtime = "nodejs";

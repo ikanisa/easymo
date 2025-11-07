@@ -35,4 +35,4 @@ export const GET = createHandler("admin_api.agent_registry.list", async () => {
   }
 });
 
-export const runtime = "edge";
+export const runtime = "nodejs";

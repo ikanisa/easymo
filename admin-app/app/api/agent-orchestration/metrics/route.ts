@@ -92,4 +92,4 @@ export const GET = createHandler("admin_api.agent_metrics.get", async (req) => {
   }
 });
 
-export const runtime = "edge";
+export const runtime = "nodejs";

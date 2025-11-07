@@ -200,4 +200,4 @@ export const POST = createHandler("admin_api.qr.preview", async (request, _conte
   return jsonOk({ preview, integration });
 });
 
-export const runtime = "edge";
+export const runtime = "nodejs";

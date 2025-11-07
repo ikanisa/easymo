@@ -113,4 +113,4 @@ export const POST = createHandler("admin_api.insurance.id.approve", async (
   }
 });
 
-export const runtime = "edge";
+export const runtime = "nodejs";

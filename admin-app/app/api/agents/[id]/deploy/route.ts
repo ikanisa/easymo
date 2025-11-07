@@ -17,4 +17,4 @@ export const POST = createHandler("api.agents.deploy", async (req, _ctx, obs) =>
 });
 
 
-export const runtime = "edge";
+export const runtime = "nodejs";

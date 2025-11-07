@@ -220,4 +220,4 @@ export const POST = createHandler('admin_api.notifications.id.action', async (
 });
  
 
-export const runtime = "edge";
+export const runtime = "nodejs";

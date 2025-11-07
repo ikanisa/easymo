@@ -55,4 +55,4 @@ export const GET = createHandler('admin_api.webhook_errors.list', async (request
   return jsonOk({ data: rows });
 });
 
-export const runtime = "edge";
+export const runtime = "nodejs";

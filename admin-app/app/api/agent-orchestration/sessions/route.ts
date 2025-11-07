@@ -127,4 +127,4 @@ export const POST = createHandler("admin_api.agent_sessions.create", async (req)
   }
 });
 
-export const runtime = "edge";
+export const runtime = "nodejs";

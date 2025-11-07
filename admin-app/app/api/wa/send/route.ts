@@ -38,4 +38,4 @@ export const POST = createHandler('wa.send', async (request) => {
   }
 });
 
-export const runtime = "edge";
+export const runtime = "nodejs";

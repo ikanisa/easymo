@@ -43,4 +43,4 @@ export async function POST(
   return NextResponse.json({ document: data }, { status: 201 });
 }
 
-export const runtime = "edge";
+export const runtime = "nodejs";

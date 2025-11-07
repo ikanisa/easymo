@@ -109,4 +109,4 @@ export const POST = createHandler('rides_requests.create', async (request) => {
   );
 });
 
-export const runtime = "edge";
+export const runtime = "nodejs";

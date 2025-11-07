@@ -214,4 +214,4 @@ export const GET = createHandler('admin_api.storage.list', async (request: Reque
   return jsonOk(responseBody);
 });
 
-export const runtime = "edge";
+export const runtime = "nodejs";

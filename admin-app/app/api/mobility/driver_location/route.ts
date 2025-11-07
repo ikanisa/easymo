@@ -27,4 +27,4 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({ ok: true, reqId }, { status: 201 });
 }
 
-export const runtime = "edge";
+export const runtime = "nodejs";

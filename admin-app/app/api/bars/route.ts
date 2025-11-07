@@ -131,4 +131,4 @@ export const GET = createHandler('admin_api.bars.list', async (request, _context
   return jsonOk({ data: payload, total, hasMore });
 });
 
-export const runtime = "edge";
+export const runtime = "nodejs";

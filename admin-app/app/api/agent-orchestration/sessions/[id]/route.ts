@@ -149,4 +149,4 @@ export const PATCH = createHandler<{ params: Promise<{ id: string }> }>(
   },
 );
 
-export const runtime = "edge";
+export const runtime = "nodejs";

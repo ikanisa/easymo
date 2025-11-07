@@ -130,4 +130,4 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({ route: "insurance.ocr", status: "ok", reqId }, { status: 200 });
 }
 
-export const runtime = "edge";
+export const runtime = "nodejs";

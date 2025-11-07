@@ -146,4 +146,4 @@ export const GET = createHandler(
   },
 );
 
-export const runtime = "edge";
+export const runtime = "nodejs";

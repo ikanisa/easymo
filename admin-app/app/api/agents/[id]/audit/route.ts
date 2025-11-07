@@ -15,4 +15,4 @@ export async function GET(_: Request, { params }: { params: { id: string } }) {
 }
 
 
-export const runtime = "edge";
+export const runtime = "nodejs";

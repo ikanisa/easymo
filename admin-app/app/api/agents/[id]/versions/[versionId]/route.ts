@@ -16,4 +16,4 @@ export async function PATCH(req: Request, { params }: { params: { id: string; ve
 }
 
 
-export const runtime = "edge";
+export const runtime = "nodejs";

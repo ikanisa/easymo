@@ -39,4 +39,4 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({ queued: rows.length }, { status: 200 });
 }
 
-export const runtime = "edge";
+export const runtime = "nodejs";

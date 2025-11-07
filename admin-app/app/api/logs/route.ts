@@ -144,4 +144,4 @@ export const GET = createHandler('admin_api.logs.list', async (request: Request)
   }
 });
 
-export const runtime = "edge";
+export const runtime = "nodejs";

@@ -58,4 +58,4 @@ export const GET = createHandler('admin_api.order_events.list', async (request, 
 });
 import { jsonOk, jsonError, zodValidationError } from "@/lib/api/http";
 
-export const runtime = "edge";
+export const runtime = "nodejs";

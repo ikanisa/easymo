@@ -116,4 +116,4 @@ export const POST = createHandler("admin_api.insurance.id.request_changes", asyn
   }
 });
 
-export const runtime = "edge";
+export const runtime = "nodejs";

@@ -76,4 +76,4 @@ export const POST = createHandler("admin_api.admin_diagnostics.match", async (re
   }
 });
 
-export const runtime = "edge";
+export const runtime = "nodejs";
