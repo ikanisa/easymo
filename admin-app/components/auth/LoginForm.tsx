@@ -15,13 +15,9 @@ export function LoginForm({ environmentLabel }: LoginFormProps) {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  // Debug: Log form state
-  if (typeof window !== 'undefined') {
-    console.log('[LoginForm] Rendered', { email, password, isSubmitting });
-  }
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -84,18 +80,28 @@ export function LoginForm({ environmentLabel }: LoginFormProps) {
         <label className={styles.label} htmlFor="admin-password">
           Password
         </label>
-        <input
-          id="admin-password"
-          name="password"
-          type="password"
-          autoComplete="current-password"
-          required
-          minLength={8}
-          value={password}
-          onChange={(event) => setPassword(event.target.value)}
-          className={styles.input}
-          placeholder="Enter secure password"
-        />
+        <div className={styles.passwordFieldWrapper}>
+          <input
+            id="admin-password"
+            name="password"
+            type={showPassword ? "text" : "password"}
+            autoComplete="current-password"
+            required
+            minLength={8}
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            className={styles.input}
+            placeholder="Enter secure password"
+          />
+          <button
+            type="button"
+            className={styles.togglePassword}
+            onClick={() => setShowPassword((v) => !v)}
+            aria-label={showPassword ? "Hide password" : "Show password"}
+          >
+            {showPassword ? "Hide" : "Show"}
+          </button>
+        </div>
         <div className={styles.actions}>
           {error ? (
             <div role="alert" className={styles.error}>

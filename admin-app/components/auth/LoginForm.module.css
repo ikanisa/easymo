@@ -1,10 +1,12 @@
 .root {
-  width: min(100%, 28rem);
+  width: 100%;
+  max-width: 28rem;
+  margin: 0 auto;
   border-radius: 1.5rem;
   border: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent);
   background: color-mix(in srgb, var(--color-surface) 85%, white 15%);
   box-shadow: var(--elevation-medium);
-  padding: 2.5rem;
+  padding: clamp(2rem, 4.5vw, 2.5rem);
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
@@ -102,4 +104,42 @@
   font-size: 0.8rem;
   color: color-mix(in srgb, var(--color-muted) 80%, transparent);
   line-height: 1.4;
+}
+
+.passwordFieldWrapper {
+  position: relative;
+}
+
+.togglePassword {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-accent);
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  transition: opacity 200ms ease;
+}
+
+.togglePassword:hover {
+  text-decoration: underline;
+  opacity: 0.8;
+}
+
+.togglePassword:focus {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  border-radius: 0.25rem;
+}
+
+/* Small-screen responsive adjustments */
+@media (max-width: 480px) {
+  .root {
+    padding: 1.5rem;
+    border-radius: 1rem;
+  }
 }
