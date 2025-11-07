@@ -4,7 +4,7 @@
 
 [build]
   base = "."
-  command = "pnpm --filter @va/shared build && pnpm --filter @easymo/commons build && cd admin-app && pnpm install && pnpm build"
+  command = "pnpm install --frozen-lockfile && pnpm --filter @va/shared build && pnpm --filter @easymo/commons build && pnpm --filter @easymo/admin-app build"
   publish = "admin-app/.next"
 
 [build.environment]
@@ -12,7 +12,11 @@
 
 [functions]
   node_bundler = "nft"
-  included_files = ["admin-app/node_modules/**", "**/styled-jsx/**"]
+  included_files = [
+    "admin-app/node_modules/**",
+    "node_modules/.pnpm/styled-jsx@*/node_modules/styled-jsx/**",
+    "node_modules/.pnpm/next@*/node_modules/next/**"
+  ]
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
