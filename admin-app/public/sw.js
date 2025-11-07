@@ -4,12 +4,10 @@ const SHELL_CACHE = "easymo-shell-v2";
 const RUNTIME_CACHE = "easymo-runtime-v2";
 const STATIC_CACHE = "easymo-static-v2";
 const PRECACHE_URLS = [
-  "/",
   "/manifest.webmanifest",
   "/icons/icon-192.png",
   "/icons/icon-512.png",
   "/icons/icon-maskable-512.png",
-  "/offline.html",
 ];
 
 const STATIC_PREFIXES = ["/_next/static/", "/icons/", "/screenshots/", "/fonts/"];
@@ -117,10 +115,13 @@ async function networkFirst(request) {
     const cached = await cache.match(request);
     if (cached) return cached;
     if (request.mode === "navigate") {
-      const shell = await caches.match("/");
-      if (shell) return shell;
-      const offline = await caches.match("/offline.html");
-      if (offline) return offline;
+      return new Response(
+        "Offline. Please reconnect and refresh.",
+        {
+          status: 503,
+          headers: { "Content-Type": "text/plain; charset=utf-8" },
+        },
+      );
     }
     if (request.headers.get("accept")?.includes("application/json")) {
       return new Response(

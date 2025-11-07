@@ -2,7 +2,7 @@
   "id": "/admin",
   "name": "easyMO / Kwigira Admin",
   "short_name": "easyMO Admin",
-  "start_url": "/?source=pwa",
+  "start_url": "/login?source=pwa",
   "scope": "/",
   "display": "standalone",
   "display_override": ["standalone", "browser"],
@@ -28,20 +28,6 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
-    }
-  ],
-  "screenshots": [
-    {
-      "src": "/screenshots/dashboard-mobile.png",
-      "sizes": "750x1334",
-      "type": "image/png",
-      "label": "Dashboard (Mobile)"
-    },
-    {
-      "src": "/screenshots/dashboard-desktop.png",
-      "sizes": "1440x900",
-      "type": "image/png",
-      "label": "Dashboard (Desktop)"
     }
   ],
   "categories": ["productivity", "business"],
