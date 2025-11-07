@@ -26,7 +26,7 @@
   "dependencies": {
     "@easymo/ui": "workspace:*",
     "@va/shared": "workspace:*",
-    "@supabase/supabase-js": "^2.76.1",
+    "@supabase/supabase-js": "^2.79.0",
     "vitest": "^3.2.4",
     "jsdom": "^26.1.0"
   },
