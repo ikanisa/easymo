@@ -1,10 +1,7 @@
 import { z } from "zod";
 import { jsonOk, jsonError } from "@/lib/api/http";
 import { createHandler } from "@/app/api/withObservability";
-import { createClient } from "@supabase/supabase-js";
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+import { getSupabaseAdminClient } from "@/lib/server/supabase-admin";
 
 export const dynamic = "force-dynamic";
 
@@ -22,13 +19,19 @@ export const GET = createHandler<{ params: Promise<{ id: string }> }>(
   async (req, context) => {
     try {
       const { id } = await context.params;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+      const supabase = getSupabaseAdminClient();
+      if (!supabase) {
+        return jsonError(
+          { error: "supabase_unavailable", message: "Supabase admin client is not configured." },
+          503,
+        );
+      }
 
-    const { data: session, error: sessionError } = await supabase
-      .from("agent_sessions")
-      .select("*")
-      .eq("id", id)
-      .single();
+      const { data: session, error: sessionError } = await supabase
+        .from("agent_sessions")
+        .select("*")
+        .eq("id", id)
+        .single();
 
     if (sessionError || !session) {
       return jsonError(
@@ -38,25 +41,26 @@ export const GET = createHandler<{ params: Promise<{ id: string }> }>(
     }
 
     // Fetch quotes for this session
-    const { data: quotes, error: quotesError } = await supabase
-      .from("agent_quotes")
-      .select("*")
-      .eq("session_id", id)
-      .order("responded_at", { ascending: false });
+      const { data: quotes, error: quotesError } = await supabase
+        .from("agent_quotes")
+        .select("*")
+        .eq("session_id", id)
+        .order("responded_at", { ascending: false });
 
     if (quotesError) {
       console.error("Failed to fetch quotes:", quotesError);
     }
 
-    return jsonOk({
-      session,
-      quotes: quotes || [],
-    });
-  } catch (error) {
-    console.error("Agent session detail error:", error);
-    return jsonError({ error: "internal_error", message: "Internal server error" }, 500);
-  }
-});
+      return jsonOk({
+        session,
+        quotes: quotes || [],
+      });
+    } catch (error) {
+      console.error("Agent session detail error:", error);
+      return jsonError({ error: "internal_error", message: "Internal server error" }, 500);
+    }
+  },
+);
 
 // PATCH /api/agent-orchestration/sessions/[id] - Update session
 export const PATCH = createHandler<{ params: Promise<{ id: string }> }>(
@@ -64,17 +68,23 @@ export const PATCH = createHandler<{ params: Promise<{ id: string }> }>(
   async (req, context) => {
     try {
       const { id } = await context.params;
-    const body = await req.json();
-    const validated = updateSessionSchema.parse(body);
+      const body = await req.json();
+      const validated = updateSessionSchema.parse(body);
 
-    const supabase = createClient(supabaseUrl, supabaseKey);
+      const supabase = getSupabaseAdminClient();
+      if (!supabase) {
+        return jsonError(
+          { error: "supabase_unavailable", message: "Supabase admin client is not configured." },
+          503,
+        );
+      }
 
-    // First, get the current session
-    const { data: currentSession, error: fetchError } = await supabase
-      .from("agent_sessions")
-      .select("*")
-      .eq("id", id)
-      .single();
+      // First, get the current session
+      const { data: currentSession, error: fetchError } = await supabase
+        .from("agent_sessions")
+        .select("*")
+        .eq("id", id)
+        .single();
 
     if (fetchError || !currentSession) {
       return jsonError(
@@ -83,9 +93,9 @@ export const PATCH = createHandler<{ params: Promise<{ id: string }> }>(
       );
     }
 
-    const updates: Record<string, unknown> = {
-      updated_at: new Date().toISOString(),
-    };
+      const updates: Record<string, unknown> = {
+        updated_at: new Date().toISOString(),
+      };
 
     if (validated.status) {
       updates.status = validated.status;
@@ -110,32 +120,33 @@ export const PATCH = createHandler<{ params: Promise<{ id: string }> }>(
       updates.extensions_count = currentSession.extensions_count + 1;
     }
 
-    const { data, error } = await supabase
-      .from("agent_sessions")
-      .update(updates)
-      .eq("id", id)
-      .select()
-      .single();
+      const { data, error } = await supabase
+        .from("agent_sessions")
+        .update(updates)
+        .eq("id", id)
+        .select()
+        .single();
 
-    if (error) {
-      console.error("Failed to update agent session:", error);
-      return jsonError(
-        { error: "update_failed", message: "Failed to update agent session" },
-        500
-      );
-    }
+      if (error) {
+        console.error("Failed to update agent session:", error);
+        return jsonError(
+          { error: "update_failed", message: "Failed to update agent session" },
+          500,
+        );
+      }
 
-    return jsonOk({ session: data });
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return jsonError(
-        { error: "invalid_payload", message: error.flatten() },
-        400
-      );
+      return jsonOk({ session: data });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return jsonError(
+          { error: "invalid_payload", message: error.flatten() },
+          400,
+        );
+      }
+      console.error("Agent session update error:", error);
+      return jsonError({ error: "internal_error", message: "Internal server error" }, 500);
     }
-    console.error("Agent session update error:", error);
-    return jsonError({ error: "internal_error", message: "Internal server error" }, 500);
-  }
-});
+  },
+);
 
 export const runtime = "edge";

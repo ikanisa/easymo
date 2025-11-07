@@ -81,6 +81,10 @@ Vite React app and communicates with those Edge Functions through the
   - `APP_ENV` and `PORT` configure the admin runtime name and local port.
   - `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` drive browser
     calls to Supabase.
+  - `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` mirror the `NEXT_PUBLIC_*`
+    values for tooling (Cypress/Vitest) and must never contain service-role keys.
+  - `VITE_SUPABASE_PROJECT_ID` stores the Supabase project ref (e.g.
+    `vacltfdslodqybxojytc`) for diagnostics scripts.
   - `SUPABASE_SERVICE_ROLE_KEY` allows Edge Functions to bypass RLS; keep it on
     the server side.
   - `EASYMO_ADMIN_TOKEN` secures Supabase Edge Function routes.
@@ -91,9 +95,11 @@ Vite React app and communicates with those Edge Functions through the
 ## Run Commands
 
 - Install deps: `pnpm install`
+- Shared packages: `pnpm --filter @va/shared build && pnpm --filter @easymo/commons build`
 - Local dev server with hot reload: `pnpm dev`
 - Production build: `pnpm build`
 - Serve the compiled build: `pnpm start`
+- Supabase connectivity check: `pnpm diagnostics:supabase [table_name]`
 - Additional scripts for packages/services are documented in
   `docs/local-hosting.md` and individual service READMEs.
 
@@ -228,4 +234,3 @@ Copy env template:
 ```
 cp .env.example .env
 ```
-

@@ -1,10 +1,7 @@
 import { z } from "zod";
 import { jsonOk, jsonError } from "@/lib/api/http";
 import { createHandler } from "@/app/api/withObservability";
-import { createClient } from "@supabase/supabase-js";
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+import { getSupabaseAdminClient } from "@/lib/server/supabase-admin";
 
 export const dynamic = "force-dynamic";
 
@@ -27,7 +24,13 @@ export const GET = createHandler<{ params: Promise<{ agent_type: string }> }>(
   async (req, context) => {
     try {
       const { agent_type } = await context.params;
-      const supabase = createClient(supabaseUrl, supabaseKey);
+      const supabase = getSupabaseAdminClient();
+      if (!supabase) {
+        return jsonError(
+          { error: "supabase_unavailable", message: "Supabase admin client is not configured." },
+          503,
+        );
+      }
 
       const { data, error } = await supabase
         .from("agent_registry")
@@ -59,7 +62,13 @@ export const PATCH = createHandler<{ params: Promise<{ agent_type: string }> }>(
       const body = await req.json();
       const validated = updateAgentConfigSchema.parse(body);
 
-      const supabase = createClient(supabaseUrl, supabaseKey);
+      const supabase = getSupabaseAdminClient();
+      if (!supabase) {
+        return jsonError(
+          { error: "supabase_unavailable", message: "Supabase admin client is not configured." },
+          503,
+        );
+      }
 
       const updates: Record<string, unknown> = {
         updated_at: new Date().toISOString(),
