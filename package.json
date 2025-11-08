@@ -4,9 +4,12 @@
   "version": "0.0.0",
   "type": "commonjs",
   "scripts": {
+    "dev": "pnpm --filter @easymo/admin-app run dev",
+    "dev:full": "pnpm --parallel --filter './admin-app' --filter './services/*' run dev",
     "prebuild": "node ./scripts/assert-no-service-role-in-client.mjs",
     "build": "pnpm --filter @va/shared build && pnpm --filter @easymo/commons build && pnpm --filter @easymo/admin-app run build",
     "netlify:build": "pnpm --filter @va/shared build && pnpm --filter @easymo/commons build && cd admin-app && pnpm build",
+    "start": "pnpm --filter @easymo/admin-app run start",
     "lint": "pnpm --filter @easymo/admin-app run lint",
     "lint:fix": "pnpm --filter @easymo/admin-app run lint -- --fix",
     "format": "prettier --write docs/ eslint.config.js prettier.config.js package.json .prettierignore",
@@ -20,6 +23,7 @@
     "health": "node ./scripts/health-check.mjs",
     "seed:remote": "bash ./scripts/seed-remote.sh",
     "functions:deploy": "supabase functions deploy admin-settings admin-stats admin-users admin-trips wa-webhook",
+    "functions:deploy:agents": "supabase functions deploy agents/nearby-drivers agents/pharmacy agents/property-rental agents/schedule-trip agents/quincaillerie agents/shops",
     "embeddings:sync": "node ./scripts/embeddings/ingest-documents.mjs",
     "diagnostics:supabase": "node ./scripts/test-supabase-connection.mjs"
   },

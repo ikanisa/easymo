@@ -4,6 +4,28 @@
  * Ensures required public environment variables are set before building.
  */
 
+// Load .env.local if it exists
+const fs = require('fs');
+const path = require('path');
+const envPath = path.join(__dirname, '..', '.env.local');
+
+if (fs.existsSync(envPath)) {
+  const envContent = fs.readFileSync(envPath, 'utf8');
+  envContent.split('\n').forEach(line => {
+    const trimmed = line.trim();
+    if (trimmed && !trimmed.startsWith('#')) {
+      const [key, ...valueParts] = trimmed.split('=');
+      if (key && valueParts.length > 0) {
+        const value = valueParts.join('=');
+        // Only set if not already set
+        if (!process.env[key]) {
+          process.env[key] = value;
+        }
+      }
+    }
+  });
+}
+
 const requiredAtBuild = [
   'NEXT_PUBLIC_SUPABASE_URL',
   'NEXT_PUBLIC_SUPABASE_ANON_KEY'
@@ -20,3 +42,4 @@ if (missing.length > 0) {
 }
 
 console.log('✅ Environment variables check passed');
+
