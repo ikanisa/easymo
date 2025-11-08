@@ -8,6 +8,8 @@ import { handleMarketplaceLocation } from "../domains/marketplace/index.ts";
 import { handleOnboardLocationCoordinates } from "../domains/dinein/manager.ts";
 import { maybeHandleDriverLocation } from "../observe/driver_parser.ts";
 import { recordInbound } from "../observe/conv_audit.ts";
+// AI Agents Integration
+import { handleAIAgentLocationUpdate } from "../domains/ai-agents/index.ts";
 
 export async function handleLocation(
   ctx: RouterContext,
@@ -35,6 +37,20 @@ export async function handleLocation(
     ? parseFloat(rawLng)
     : Number.NaN;
   if (!Number.isFinite(lat) || !Number.isFinite(lng)) return false;
+  
+  // Check if this is for an AI agent
+  const aiAgentStates = [
+    "ai_driver_waiting_locations",
+    "ai_pharmacy_waiting_location",
+    "ai_quincaillerie_waiting_location",
+    "ai_shops_waiting_location",
+    "ai_property_waiting_location",
+  ];
+  
+  if (aiAgentStates.includes(state.key)) {
+    return await handleAIAgentLocationUpdate(ctx, state, { latitude: lat, longitude: lng });
+  }
+  
   if (state.key === "mobility_nearby_location") {
     return await handleNearbyLocation(ctx, (state.data ?? {}) as any, {
       lat,

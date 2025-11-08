@@ -48,6 +48,16 @@ import { maybeHandleDriverText } from "../observe/driver_parser.ts";
 import { recordInbound } from "../observe/conv_audit.ts";
 import { getTextBody } from "../utils/messages.ts";
 
+// AI Agents Integration
+import {
+  handleAINearbyDrivers,
+  handleAINearbyPharmacies,
+  handleAINearbyQuincailleries,
+  handleAINearbyShops,
+  handleAIPropertyRental,
+  handleAIScheduleTrip,
+} from "../domains/ai-agents/index.ts";
+
 export async function handleText(
   ctx: RouterContext,
   msg: WhatsAppTextMessage,

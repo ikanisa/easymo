@@ -3,6 +3,8 @@ import type {
   WhatsAppInteractiveListMessage,
 } from "../types.ts";
 import { getListReplyId } from "../utils/messages.ts";
+// AI Agents Integration
+import { handleAIAgentOptionSelection } from "../domains/ai-agents/index.ts";
 import {
   handleNearbyResultSelection,
   handleSeeDrivers,
@@ -103,6 +105,12 @@ export async function handleList(
 ): Promise<boolean> {
   const id = getListReplyId(msg);
   if (!id) return false;
+  
+  // Check if this is an AI agent option selection
+  if (id.startsWith("agent_option_") && state.key === "ai_agent_selection") {
+    return await handleAIAgentOptionSelection(ctx, state, id);
+  }
+  
   const managerCtx = managerContextFromState(state);
   if (id === IDS.DINEIN_BARS_VIEW_LIST) {
     await startDineIn(ctx, state);

@@ -1,0 +1,460 @@
+/**
+ * AI Agent Handlers for WhatsApp Flows
+ * 
+ * Provides convenient handlers that can be called from the text router
+ * to initiate AI agent sessions for various use cases.
+ */
+
+import type { RouterContext, WhatsAppTextMessage, WhatsAppLocationMessage } from "../../types.ts";
+import type { ChatState } from "../../state/store.ts";
+import { routeToAIAgent, sendAgentOptions, handleAgentSelection } from "./integration.ts";
+import { sendText } from "../../wa/client.ts";
+import { t } from "../../i18n/translator.ts";
+import { setState } from "../../state/store.ts";
+
+/**
+ * Handle "Nearby Drivers" request with AI agent
+ */
+export async function handleAINearbyDrivers(
+  ctx: RouterContext,
+  vehicleType: string,
+  pickup?: { latitude: number; longitude: number; text?: string },
+  dropoff?: { latitude: number; longitude: number; text?: string },
+): Promise<boolean> {
+  try {
+    // If locations not provided, ask user
+    if (!pickup || !dropoff) {
+      await sendText(ctx.from, t(ctx.locale, "driver.provide_locations"));
+      await setState(ctx.from, "ai_driver_waiting_locations", {
+        vehicleType,
+        pickup,
+        dropoff,
+      });
+      return true;
+    }
+
+    await sendText(ctx.from, t(ctx.locale, "agent.searching_drivers"));
+
+    const response = await routeToAIAgent(ctx, {
+      userId: ctx.from,
+      agentType: "nearby_drivers",
+      flowType: "find_driver",
+      requestData: {
+        pickup,
+        dropoff,
+        vehicleType,
+        maxPrice: null,
+      },
+    });
+
+    if (response.success && response.options) {
+      await sendAgentOptions(
+        ctx,
+        response.sessionId,
+        response.options,
+        t(ctx.locale, "driver.options_found")
+      );
+      
+      await setState(ctx.from, "ai_agent_selection", {
+        sessionId: response.sessionId,
+        agentType: "nearby_drivers",
+      });
+    } else {
+      await sendText(ctx.from, response.message);
+    }
+
+    return true;
+  } catch (error) {
+    console.error("AI Nearby Drivers handler error:", error);
+    await sendText(ctx.from, t(ctx.locale, "agent.error_occurred"));
+    return false;
+  }
+}
+
+/**
+ * Handle "Nearby Pharmacies" request with AI agent
+ */
+export async function handleAINearbyPharmacies(
+  ctx: RouterContext,
+  location?: { latitude: number; longitude: number; text?: string },
+  medications?: string[],
+  prescriptionImage?: string,
+): Promise<boolean> {
+  try {
+    if (!location) {
+      await sendText(ctx.from, t(ctx.locale, "pharmacy.provide_location"));
+      await setState(ctx.from, "ai_pharmacy_waiting_location", {
+        medications,
+        prescriptionImage,
+      });
+      return true;
+    }
+
+    await sendText(ctx.from, t(ctx.locale, "agent.searching_pharmacies"));
+
+    const response = await routeToAIAgent(ctx, {
+      userId: ctx.from,
+      agentType: "pharmacy",
+      flowType: "find_medications",
+      location,
+      requestData: {
+        medications,
+        prescriptionImage,
+      },
+    });
+
+    if (response.success && response.options) {
+      await sendAgentOptions(
+        ctx,
+        response.sessionId,
+        response.options,
+        t(ctx.locale, "pharmacy.options_found")
+      );
+      
+      await setState(ctx.from, "ai_agent_selection", {
+        sessionId: response.sessionId,
+        agentType: "pharmacy",
+      });
+    } else {
+      await sendText(ctx.from, response.message);
+    }
+
+    return true;
+  } catch (error) {
+    console.error("AI Pharmacy handler error:", error);
+    await sendText(ctx.from, t(ctx.locale, "agent.error_occurred"));
+    return false;
+  }
+}
+
+/**
+ * Handle "Nearby Quincailleries" request with AI agent
+ */
+export async function handleAINearbyQuincailleries(
+  ctx: RouterContext,
+  location?: { latitude: number; longitude: number; text?: string },
+  items?: string[],
+  itemImage?: string,
+): Promise<boolean> {
+  try {
+    if (!location) {
+      await sendText(ctx.from, t(ctx.locale, "quincaillerie.provide_location"));
+      await setState(ctx.from, "ai_quincaillerie_waiting_location", {
+        items,
+        itemImage,
+      });
+      return true;
+    }
+
+    await sendText(ctx.from, t(ctx.locale, "agent.searching_hardware_stores"));
+
+    const response = await routeToAIAgent(ctx, {
+      userId: ctx.from,
+      agentType: "quincaillerie",
+      flowType: "find_items",
+      location,
+      requestData: {
+        items,
+        itemImage,
+      },
+    });
+
+    if (response.success && response.options) {
+      await sendAgentOptions(
+        ctx,
+        response.sessionId,
+        response.options,
+        t(ctx.locale, "quincaillerie.options_found")
+      );
+      
+      await setState(ctx.from, "ai_agent_selection", {
+        sessionId: response.sessionId,
+        agentType: "quincaillerie",
+      });
+    } else {
+      await sendText(ctx.from, response.message);
+    }
+
+    return true;
+  } catch (error) {
+    console.error("AI Quincaillerie handler error:", error);
+    await sendText(ctx.from, t(ctx.locale, "agent.error_occurred"));
+    return false;
+  }
+}
+
+/**
+ * Handle "Nearby Shops" request with AI agent
+ */
+export async function handleAINearbyShops(
+  ctx: RouterContext,
+  location?: { latitude: number; longitude: number; text?: string },
+  items?: string[],
+  itemImage?: string,
+  shopCategory?: string,
+): Promise<boolean> {
+  try {
+    if (!location) {
+      await sendText(ctx.from, t(ctx.locale, "shops.provide_location"));
+      await setState(ctx.from, "ai_shops_waiting_location", {
+        items,
+        itemImage,
+        shopCategory,
+      });
+      return true;
+    }
+
+    await sendText(ctx.from, t(ctx.locale, "agent.searching_shops"));
+
+    const response = await routeToAIAgent(ctx, {
+      userId: ctx.from,
+      agentType: "shops",
+      flowType: "find_products",
+      location,
+      requestData: {
+        action: "find",
+        items,
+        itemImage,
+        shopCategory,
+      },
+    });
+
+    if (response.success && response.options) {
+      await sendAgentOptions(
+        ctx,
+        response.sessionId,
+        response.options,
+        t(ctx.locale, "shops.options_found")
+      );
+      
+      await setState(ctx.from, "ai_agent_selection", {
+        sessionId: response.sessionId,
+        agentType: "shops",
+      });
+    } else {
+      await sendText(ctx.from, response.message);
+    }
+
+    return true;
+  } catch (error) {
+    console.error("AI Shops handler error:", error);
+    await sendText(ctx.from, t(ctx.locale, "agent.error_occurred"));
+    return false;
+  }
+}
+
+/**
+ * Handle "Property Rental" request with AI agent
+ */
+export async function handleAIPropertyRental(
+  ctx: RouterContext,
+  action: "find" | "add",
+  rentalType: "short_term" | "long_term",
+  location?: { latitude: number; longitude: number; text?: string },
+  requestData?: any,
+): Promise<boolean> {
+  try {
+    if (!location && action === "find") {
+      await sendText(ctx.from, t(ctx.locale, "property.provide_location"));
+      await setState(ctx.from, "ai_property_waiting_location", {
+        action,
+        rentalType,
+        requestData,
+      });
+      return true;
+    }
+
+    const searchingMessage = action === "find" 
+      ? t(ctx.locale, "agent.searching_properties")
+      : t(ctx.locale, "agent.adding_property");
+    
+    await sendText(ctx.from, searchingMessage);
+
+    const response = await routeToAIAgent(ctx, {
+      userId: ctx.from,
+      agentType: "property_rental",
+      flowType: action === "add" ? "add_property" : "find_property",
+      location,
+      requestData: {
+        action,
+        rentalType,
+        ...requestData,
+      },
+    });
+
+    if (response.success) {
+      if (response.options && response.options.length > 0) {
+        await sendAgentOptions(
+          ctx,
+          response.sessionId,
+          response.options,
+          t(ctx.locale, "property.options_found")
+        );
+        
+        await setState(ctx.from, "ai_agent_selection", {
+          sessionId: response.sessionId,
+          agentType: "property_rental",
+        });
+      } else {
+        await sendText(ctx.from, response.message);
+      }
+    } else {
+      await sendText(ctx.from, response.message);
+    }
+
+    return true;
+  } catch (error) {
+    console.error("AI Property Rental handler error:", error);
+    await sendText(ctx.from, t(ctx.locale, "agent.error_occurred"));
+    return false;
+  }
+}
+
+/**
+ * Handle "Schedule Trip" request with AI agent
+ */
+export async function handleAIScheduleTrip(
+  ctx: RouterContext,
+  action: "create" | "view" | "analyze_patterns",
+  requestData?: any,
+): Promise<boolean> {
+  try {
+    const actionMessages: Record<string, string> = {
+      "create": t(ctx.locale, "agent.scheduling_trip"),
+      "view": t(ctx.locale, "agent.fetching_scheduled_trips"),
+      "analyze_patterns": t(ctx.locale, "agent.analyzing_patterns"),
+    };
+
+    await sendText(ctx.from, actionMessages[action] || t(ctx.locale, "agent.processing"));
+
+    const response = await routeToAIAgent(ctx, {
+      userId: ctx.from,
+      agentType: "schedule_trip",
+      flowType: action,
+      requestData: {
+        action,
+        ...requestData,
+      },
+    });
+
+    if (response.success) {
+      await sendText(ctx.from, response.message);
+      
+      if (response.options && response.options.length > 0) {
+        await sendAgentOptions(
+          ctx,
+          response.sessionId,
+          response.options,
+          t(ctx.locale, "schedule.options_available")
+        );
+        
+        await setState(ctx.from, "ai_agent_selection", {
+          sessionId: response.sessionId,
+          agentType: "schedule_trip",
+        });
+      }
+    } else {
+      await sendText(ctx.from, response.message);
+    }
+
+    return true;
+  } catch (error) {
+    console.error("AI Schedule Trip handler error:", error);
+    await sendText(ctx.from, t(ctx.locale, "agent.error_occurred"));
+    return false;
+  }
+}
+
+/**
+ * Handle AI agent selection from interactive list
+ */
+export async function handleAIAgentOptionSelection(
+  ctx: RouterContext,
+  state: ChatState,
+  optionId: string,
+): Promise<boolean> {
+  const stateData = state.data as { sessionId?: string; agentType?: string };
+  
+  if (!stateData.sessionId) {
+    return false;
+  }
+
+  // Extract option index from ID (format: agent_option_{sessionId}_{index})
+  const match = optionId.match(/_(\d+)$/);
+  if (!match) {
+    return false;
+  }
+
+  const optionIndex = parseInt(match[1], 10);
+  
+  return await handleAgentSelection(ctx, stateData.sessionId, optionIndex);
+}
+
+/**
+ * Handle location update for pending AI agent request
+ */
+export async function handleAIAgentLocationUpdate(
+  ctx: RouterContext,
+  state: ChatState,
+  location: { latitude: number; longitude: number },
+): Promise<boolean> {
+  const stateKey = state.key;
+  const stateData = state.data as any;
+
+  // Route to appropriate handler based on waiting state
+  if (stateKey === "ai_driver_waiting_locations") {
+    // Update with location and continue
+    const { vehicleType, pickup, dropoff } = stateData;
+    
+    if (!pickup) {
+      await setState(ctx.from, "ai_driver_waiting_locations", {
+        ...stateData,
+        pickup: location,
+      });
+      await sendText(ctx.from, t(ctx.locale, "driver.now_provide_dropoff"));
+      return true;
+    } else if (!dropoff) {
+      return await handleAINearbyDrivers(ctx, vehicleType, pickup, location);
+    }
+  }
+
+  if (stateKey === "ai_pharmacy_waiting_location") {
+    return await handleAINearbyPharmacies(
+      ctx,
+      location,
+      stateData.medications,
+      stateData.prescriptionImage
+    );
+  }
+
+  if (stateKey === "ai_quincaillerie_waiting_location") {
+    return await handleAINearbyQuincailleries(
+      ctx,
+      location,
+      stateData.items,
+      stateData.itemImage
+    );
+  }
+
+  if (stateKey === "ai_shops_waiting_location") {
+    return await handleAINearbyShops(
+      ctx,
+      location,
+      stateData.items,
+      stateData.itemImage,
+      stateData.shopCategory
+    );
+  }
+
+  if (stateKey === "ai_property_waiting_location") {
+    return await handleAIPropertyRental(
+      ctx,
+      stateData.action,
+      stateData.rentalType,
+      location,
+      stateData.requestData
+    );
+  }
+
+  return false;
+}
