@@ -12,9 +12,21 @@ const nextConfig = {
   experimental: {
     typedRoutes: true,
     instrumentationHook: true,
+    serverComponentsExternalPackages: ['@easymo/commons'],
   },
   typescript: {
     ignoreBuildErrors: true,
+  },
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        'async_hooks': false,
+        'cls-hooked': false,
+        'crypto': false,
+      };
+    }
+    return config;
   },
 };
 
