@@ -40,6 +40,9 @@ jobs:
         env:
           # Ensure mocks are off for production-like builds
           NEXT_PUBLIC_USE_MOCKS: 'false'
+          # Required for Next.js build (inlined at build time)
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
         run: npm run build
 
 

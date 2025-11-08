@@ -1,3 +1,5 @@
+import "server-only";
+
 export function getFunctionsBaseUrl(): string | null {
   const base = process.env.SUPABASE_FUNCTIONS_URL
     || (process.env.SUPABASE_URL ? `${process.env.SUPABASE_URL.replace(/\/$/, '')}/functions/v1` : null)

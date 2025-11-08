@@ -1,7 +1,7 @@
 import "@testing-library/jest-dom/vitest";
 import { afterEach, beforeEach, vi } from "vitest";
 import { cleanup } from "./utils/react-testing";
-import { clearCachedCredentials } from "@/lib/auth/credentials";
+// import { clearCachedCredentials } from "@/lib/auth/credentials"; // REMOVED: Auth disabled
 import { webcrypto } from "node:crypto";
 
 vi.mock("next/headers", () => {
@@ -38,7 +38,7 @@ afterEach(() => {
 });
 
 beforeEach(() => {
-  clearCachedCredentials();
+  // clearCachedCredentials(); // REMOVED: Auth disabled
 });
 
 // Ensure Web Crypto APIs are available for session token signing in tests.
@@ -106,8 +106,9 @@ process.env.ADMIN_ACCESS_CREDENTIALS =
     },
   ]);
 
-process.env.ADMIN_SESSION_SECRET =
-  process.env.ADMIN_SESSION_SECRET || "test-session-secret-123456789";
+// REMOVED: Session secrets no longer needed (auth disabled)
+// process.env.ADMIN_SESSION_SECRET =
+//   process.env.ADMIN_SESSION_SECRET || "test-session-secret-123456789";
 
 process.env.ADMIN_ALLOW_ANY_ACTOR =
   process.env.ADMIN_ALLOW_ANY_ACTOR || "true";

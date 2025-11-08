@@ -2,7 +2,7 @@
   "id": "/admin",
   "name": "easyMO / Kwigira Admin",
   "short_name": "easyMO Admin",
-  "start_url": "/login?source=pwa",
+  "start_url": "/dashboard?source=pwa",
   "scope": "/",
   "display": "standalone",
   "display_override": ["standalone", "browser"],

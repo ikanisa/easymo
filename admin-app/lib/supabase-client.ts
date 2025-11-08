@@ -1,5 +1,5 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
-import { requireClientSupabaseConfig } from "./runtime-config";
+import { requireClientSupabaseConfig } from "./env-client";
 
 let browserClient: SupabaseClient | null = null;
 

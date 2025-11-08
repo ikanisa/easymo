@@ -1,5 +1,6 @@
+import "server-only";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
-import { requireServiceSupabaseConfig } from "../runtime-config";
+import { requireServiceSupabaseConfig } from "../env-server";
 
 let adminClient: SupabaseClient | null = null;
 let currentConfigKey: string | null = null;
