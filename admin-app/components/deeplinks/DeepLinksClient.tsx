@@ -9,7 +9,7 @@ export function DeepLinksClient() {
     <div className="admin-page">
       <PageHeader
         title="Deep Links"
-        description="Issue short-lived tokens that launch users directly into Insurance, Basket, or QR flows."
+        description="Issue short-lived tokens that launch users directly into Insurance or QR flows."
       />
 
       <SectionCard

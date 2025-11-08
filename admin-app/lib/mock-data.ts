@@ -764,7 +764,6 @@ export const mockAdminHubSnapshot: AdminHubSnapshot = createAdminHubSnapshot({
   sections: {
     operations: [
       { id: "ADMIN::OPS_TRIPS", title: "Trips (live)" },
-      { id: "ADMIN::OPS_BASKETS", title: "Baskets" },
       { id: "ADMIN::OPS_MARKETPLACE", title: "Marketplace" },
       { id: "ADMIN::OPS_WALLET", title: "Wallet & tokens" },
       { id: "ADMIN::OPS_MOMO", title: "MoMo QR" },

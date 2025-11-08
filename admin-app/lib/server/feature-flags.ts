@@ -1,6 +1,5 @@
 const FLAG_DEFAULTS: Record<string, boolean> = {
   'dualConstraintMatching.enabled': true,
-  'basket.confirmation.enabled': true,
   'ui.kit.enabled': false,
 };
 
@@ -9,10 +8,6 @@ const FLAG_ENV_MAP: Record<string, string | undefined> = {
     process.env.DUAL_CONSTRAINT_MATCHING_ENABLED ??
     process.env.NEXT_PUBLIC_DUAL_CONSTRAINT_MATCHING_ENABLED ??
     process.env.FEATURE_FLAG_DUALCONSTRAINTMATCHING_ENABLED,
-  'basket.confirmation.enabled':
-    process.env.BASKET_CONFIRMATION_ENABLED ??
-    process.env.NEXT_PUBLIC_BASKET_CONFIRMATION_ENABLED ??
-    process.env.FEATURE_FLAG_BASKET_CONFIRMATION_ENABLED,
   'ui.kit.enabled':
     process.env.UI_KIT_ENABLED ??
     process.env.NEXT_PUBLIC_UI_KIT_ENABLED ??

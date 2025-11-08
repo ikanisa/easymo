@@ -5,7 +5,6 @@ const baseNavItems = [
   { href: "/orders", title: "Orders" },
   { href: "/trips", title: "Trips" },
   { href: "/campaigns", title: "Campaigns" },
-  { href: "/baskets", title: "Baskets" },
   { href: "/marketplace", title: "Marketplace" },
   { href: "/leads", title: "Leads" },
   { href: "/live-calls", title: "Live calls" },

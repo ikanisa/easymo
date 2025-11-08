@@ -12,10 +12,6 @@ const SECTION_LINKS: Record<
     route: "panelOrders",
     description: "Monitor live trip matching and manual overrides.",
   },
-  "ADMIN::OPS_BASKETS": {
-    route: "panelOrders",
-    description: "Inspect customer baskets and resolve stuck checkouts.",
-  },
   "ADMIN::OPS_MARKETPLACE": {
     route: "panelBars",
     description: "Vendor marketplace roster and inventory status.",

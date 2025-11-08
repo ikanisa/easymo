@@ -1,4 +1,4 @@
-export type AdminDeeplinkFlow = 'insurance_attach' | 'basket_open' | 'generate_qr';
+export type AdminDeeplinkFlow = 'insurance_attach' | 'generate_qr';
 
 export type FlowFieldType = 'text' | 'number';
 
@@ -40,40 +40,6 @@ export const FLOW_DEFINITIONS: FlowDefinition[] = [
         label: 'Policy ID (optional)',
         type: 'text',
         placeholder: 'pol_abc123',
-      },
-      {
-        name: 'basket_id',
-        label: 'Basket ID (optional)',
-        type: 'text',
-        placeholder: 'bkt_abcde',
-      },
-    ],
-  },
-  {
-    flow: 'basket_open',
-    label: 'Open a basket',
-    description: 'Jump into an existing basket view with suggested next actions.',
-    buttonTitle: 'Open Basket',
-    previewMessage: 'Open your basket and manage members or contributions.',
-    fields: [
-      {
-        name: 'basket_id',
-        label: 'Basket ID',
-        type: 'text',
-        placeholder: 'bkt_abcde',
-        required: true,
-      },
-      {
-        name: 'basket_name',
-        label: 'Basket name (optional)',
-        type: 'text',
-        placeholder: 'Taxi Kimironko',
-      },
-      {
-        name: 'inviter_id',
-        label: 'Inviter user ID (optional)',
-        type: 'text',
-        placeholder: 'usr_xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
       },
     ],
   },
