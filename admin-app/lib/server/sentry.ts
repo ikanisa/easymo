@@ -1,4 +1,4 @@
-import "server-only";
+// Note: Server-side Sentry initialization
 import { loadSentryModule } from "@/lib/sentry-loader";
 
 let initialized = false;

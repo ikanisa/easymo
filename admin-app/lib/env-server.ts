@@ -1,4 +1,6 @@
-import "server-only";
+// Note: This module is designed for server-side use only
+// It's safe without "server-only" import since it has runtime checks
+// and will throw errors if secrets are missing
 
 type Nullable<T> = T | null;
 

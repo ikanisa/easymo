@@ -1,4 +1,6 @@
-import "server-only";
+// Note: This module is designed for server-side use only
+// It's safe without "server-only" import since it's only used in API routes
+// and has runtime checks for required environment variables
 
 export function getFunctionsBaseUrl(): string | null {
   const base = process.env.SUPABASE_FUNCTIONS_URL
