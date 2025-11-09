@@ -189,7 +189,7 @@ supabase db push
 
 #### Step 3: Configure Secrets (1 minute)
 ```bash
-export OPENAI_API_KEY="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"
+export OPENAI_API_KEY="YOUR_OPENAI_API_KEY"
 supabase secrets set OPENAI_API_KEY="$OPENAI_API_KEY"
 ```
 - [ ] OpenAI API key set in Supabase

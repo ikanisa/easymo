@@ -302,7 +302,7 @@ CREATE INDEX idx_quincailleries_location ON quincailleries USING GIST(location);
 
 ```bash
 # OpenAI API (Already configured)
-OPENAI_API_KEY=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
+OPENAI_API_KEY=YOUR_OPENAI_API_KEY
 
 # Supabase (From your project)
 SUPABASE_URL=<your-project>.supabase.co
@@ -335,7 +335,7 @@ supabase db push
 
 ```bash
 # Set OpenAI API key
-supabase secrets set OPENAI_API_KEY="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"
+supabase secrets set OPENAI_API_KEY="YOUR_OPENAI_API_KEY"
 ```
 
 ### Step 3: Deploy Functions

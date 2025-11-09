@@ -1131,10 +1131,10 @@ CREATE INDEX idx_agent_threads_activity ON agent_threads(last_activity DESC);
 1. **Set up production environment variables**: ✅
    ```bash
    # In admin-app/.env.local
-   NEXT_PUBLIC_SUPABASE_URL=https://lhbowpbcpwoiparwnwgt.supabase.co
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-   SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-   OPENAI_API_KEY=sk-proj-i8rbt0GJadnylFw1g7Dhu_...
+   NEXT_PUBLIC_SUPABASE_URL=https://YOUR_PROJECT.supabase.co
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=YOUR_SUPABASE_ANON_KEY
+   SUPABASE_SERVICE_ROLE_KEY=YOUR_SUPABASE_SERVICE_KEY
+   OPENAI_API_KEY=YOUR_OPENAI_API_KEY
    ```
 
 2. **Run pending migrations**:

@@ -381,7 +381,7 @@ export default function AgentLearningPage() {
    ```bash
    # Set environment variables
    export NEXT_PUBLIC_SUPABASE_URL="https://lhbowpbcpwoiparwnwgt.supabase.co"
-   export NEXT_PUBLIC_SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+   export NEXT_PUBLIC_SUPABASE_ANON_KEY="YOUR_SUPABASE_KEY."
    export OPENAI_API_KEY="sk-proj-i8rbt0GJadnylFw1g7Dhu..."
    
    # Rebuild admin-app
