@@ -48,17 +48,9 @@ jobs:
       - name: Supabase CLI version
         run: supabase --version
 
-      - name: Login to Supabase
-        env:
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-        run: |
-          if [ -z "${SUPABASE_ACCESS_TOKEN}" ]; then
-            echo "::error::Missing SUPABASE_ACCESS_TOKEN secret" && exit 1
-          fi
-          supabase login --token "$SUPABASE_ACCESS_TOKEN"
-
       - name: Run remote migrations
         env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
         run: |
@@ -68,15 +60,14 @@ jobs:
           if [ -z "${SUPABASE_DB_PASSWORD}" ]; then
             echo "::error::Missing SUPABASE_DB_PASSWORD secret" && exit 1
           fi
-          # Apply migrations to the remote project database
-          supabase db remote commit \
-            --project-ref "$SUPABASE_PROJECT_REF" \
-            --password "$SUPABASE_DB_PASSWORD"
+          # Link project and push migrations
+          supabase link --project-ref "$SUPABASE_PROJECT_REF"
+          supabase db push --password "$SUPABASE_DB_PASSWORD"
 
   functions:
-    name: Deploy Edge Functions
+    name: Deploy wa-webhook function
     runs-on: ubuntu-latest
-    needs: [gate, migrate]
+    needs: [gate]
     if: ${{ needs.gate.outputs.can_deploy == 'true' }}
     steps:
       - name: Checkout
@@ -87,7 +78,7 @@ jobs:
         with:
           version: latest
 
-      - name: Deploy all functions
+      - name: Deploy wa-webhook
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
@@ -95,4 +86,6 @@ jobs:
           if [ -z "${SUPABASE_ACCESS_TOKEN}" ] || [ -z "${PROJECT_REF}" ]; then
             echo "::error::Missing SUPABASE_ACCESS_TOKEN or SUPABASE_PROJECT_REF secrets" && exit 1
           fi
-          bash tools/deploy_supabase_functions.sh --debug
+          supabase functions deploy wa-webhook \
+            --project-ref "$PROJECT_REF" \
+            --no-verify-jwt
