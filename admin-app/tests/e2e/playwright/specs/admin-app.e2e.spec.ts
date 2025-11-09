@@ -22,7 +22,7 @@ test.describe('Admin PWA smoke flows', () => {
     await page.route('**/rest/v1/dashboard*', (route) => {
       route.fulfill({
         status: 200,
-        body: JSON.stringify({ totalTrips: 12, activeBaskets: 3, flags: { 'deeplinks.enabled': true } }),
+        body: JSON.stringify({ totalTrips: 12, flags: { 'deeplinks.enabled': true } }),
         headers: { 'content-type': 'application/json' },
       });
     });
@@ -53,14 +53,14 @@ test.describe('Admin PWA smoke flows', () => {
   test('supports CRUD operations for managed resources', async ({ page }) => {
     await page.goto('/records');
     await page.click(selectors.newRecordButton);
-    await page.fill('input[name="name"]', 'Test basket');
+    await page.fill('input[name="name"]', 'Test record');
     await page.click('button:has-text("Save")');
-    await expect(page.getByText('Test basket')).toBeVisible();
-    await page.click('button[aria-label="Edit Test basket"]');
-    await page.fill('input[name="name"]', 'Test basket updated');
+    await expect(page.getByText('Test record')).toBeVisible();
+    await page.click('button[aria-label="Edit Test record"]');
+    await page.fill('input[name="name"]', 'Test record updated');
     await page.click('button:has-text("Save")');
-    await expect(page.getByText('Test basket updated')).toBeVisible();
-    await page.click('button[aria-label="Delete Test basket updated"]');
+    await expect(page.getByText('Test record updated')).toBeVisible();
+    await page.click('button[aria-label="Delete Test record updated"]');
     await expect(page.getByText('record deleted')).toBeVisible();
   });
 

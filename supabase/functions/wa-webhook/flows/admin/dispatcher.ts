@@ -4,7 +4,6 @@ import { sendText } from "../../wa/client.ts";
 import { ADMIN_ROW_IDS } from "./hub.ts";
 import { ensureAdmin } from "./state.ts";
 import { handleAdminVoucherRow, showAdminVouchersEntry } from "./vouchers.ts";
-import { handleAdminBasketsRow, showAdminBasketsEntry } from "./baskets.ts";
 import {
   handleAdminInsuranceRow,
   showAdminInsuranceEntry,
@@ -16,7 +15,6 @@ export async function handleAdminRow(
   state: ChatState,
 ): Promise<boolean> {
   if (await handleAdminVoucherRow(ctx, id, state)) return true;
-  if (await handleAdminBasketsRow(ctx, id, state)) return true;
   if (await handleAdminInsuranceRow(ctx, id, state)) return true;
 
   const allowed = await ensureAdmin(ctx);
@@ -25,9 +23,6 @@ export async function handleAdminRow(
   switch (id) {
     case ADMIN_ROW_IDS.OPS_VOUCHERS:
       await showAdminVouchersEntry(ctx);
-      return true;
-    case ADMIN_ROW_IDS.OPS_BASKETS:
-      await showAdminBasketsEntry(ctx);
       return true;
     case ADMIN_ROW_IDS.OPS_INSURANCE:
       await showAdminInsuranceEntry(ctx);
