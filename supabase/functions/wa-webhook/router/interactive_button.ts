@@ -28,7 +28,6 @@ import {
   handleBasketButton,
   handleBasketConfirmButton,
   startBaskets,
-} from "../flows/baskets.ts";
 import { handleMomoButton, startMomoQr } from "../flows/momo/qr.ts";
 import { startWallet } from "../domains/wallet/home.ts";
 import {
@@ -44,7 +43,6 @@ import { showWalletTop } from "../domains/wallet/top.ts";
 import { openAdminHub, showAdminHubList } from "../flows/admin/hub.ts";
 import { handleAdminQuickAction } from "../flows/admin/actions.ts";
 import { handleVoucherButton } from "../flows/admin/vouchers.ts";
-import { handleBasketButton as handleAdminBasketButton } from "../flows/admin/baskets.ts";
 import { handleInsuranceButton } from "../flows/admin/insurance.ts";
 import { homeOnly, sendButtonsMessage } from "../utils/reply.ts";
 import { DINE_IDS } from "../domains/dinein/ids.ts";

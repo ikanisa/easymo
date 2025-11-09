@@ -8,13 +8,6 @@ import {
   showVoucherRecentEntry,
 } from "./vouchers.ts";
 import {
-  hydrateAdminBaskets,
-  showAdminBasketsEntry,
-  showAdminBasketsQueue,
-  showBasketDetailEntry,
-  showBasketDetailMenu,
-} from "./baskets.ts";
-import {
   hydrateInsuranceLeads,
   showAdminInsuranceEntry,
   showAdminInsuranceList,
@@ -52,38 +45,6 @@ export async function handleAdminBack(
     case ADMIN_STATE.VOUCHERS_RECENT_LIST:
       await showVoucherRecentEntry(ctx);
       return true;
-    case ADMIN_STATE.BASKETS_ENTRY:
-      await showAdminBasketsEntry(ctx);
-      return true;
-    case ADMIN_STATE.BASKETS_LIST: {
-      const baskets = Array.isArray(state.data?.baskets)
-        ? state.data?.baskets
-        : await hydrateAdminBaskets(ctx);
-      await showAdminBasketsQueue(ctx, baskets);
-      return true;
-    }
-    case ADMIN_STATE.BASKETS_DETAIL: {
-      const basketId = typeof state.data?.basketId === "string"
-        ? state.data.basketId
-        : null;
-      const title = typeof state.data?.title === "string"
-        ? state.data.title
-        : "Basket";
-      if (!basketId) {
-        await showAdminBasketsEntry(ctx);
-        return true;
-      }
-      await showBasketDetailEntry(ctx, basketId, title);
-      return true;
-    }
-    case ADMIN_STATE.BASKETS_DETAIL_MENU: {
-      await showBasketDetailMenu(ctx, state);
-      return true;
-    }
-    case ADMIN_STATE.BASKETS_CONFIRM: {
-      await showBasketDetailMenu(ctx, state);
-      return true;
-    }
     case ADMIN_STATE.INSURANCE_ENTRY:
       await showAdminInsuranceEntry(ctx);
       return true;

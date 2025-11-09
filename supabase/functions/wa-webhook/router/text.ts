@@ -1,6 +1,5 @@
 import type { RouterContext, WhatsAppTextMessage } from "../types.ts";
 import { sendHomeMenu } from "../flows/home.ts";
-import { handleBasketText } from "../flows/baskets.ts";
 import { handleMarketplaceText } from "../domains/marketplace/index.ts";
 import { handleMomoText } from "../flows/momo/qr.ts";
 import { handleWalletText } from "../domains/wallet/home.ts";

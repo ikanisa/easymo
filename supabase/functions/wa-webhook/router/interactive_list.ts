@@ -24,7 +24,6 @@ import {
   handleBasketButton,
   handleBasketListSelection,
   startBaskets,
-} from "../flows/baskets.ts";
 import {
   handleMarketplaceButton,
   handleMarketplaceCategorySelection,

@@ -137,7 +137,6 @@ async function handlePinSubmit(
 import { handleAdminHub } from "./hub.ts";
 import { handleAdminPlaceholder } from "./placeholder.ts";
 import { handleAdminTrips } from "./trips.ts";
-import { handleAdminBaskets } from "./baskets.ts";
 import { handleAdminMarketplace } from "./marketplace.ts";
 import { handleAdminWallet } from "./wallet.ts";
 import { handleAdminMomoQr } from "./momoqr.ts";
@@ -164,8 +163,6 @@ export async function handleAdminFlow(
         return await handleAdminHub(req, { waId: ctx.waId });
       case "flow.admin.trips.v1":
         return await handleAdminTrips(req, { waId: ctx.waId });
-      case "flow.admin.baskets.v1":
-        return await handleAdminBaskets(req, { waId: ctx.waId });
       case "flow.admin.insurance.v1":
       case "flow.admin.marketplace.v1":
         return await handleAdminMarketplace(req, { waId: ctx.waId });
