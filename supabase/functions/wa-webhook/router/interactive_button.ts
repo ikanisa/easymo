@@ -24,10 +24,6 @@ import {
   recordMotorInsuranceHidden,
   sendMotorInsuranceBlockedMessage,
 } from "../domains/insurance/gate.ts";
-import {
-  handleBasketButton,
-  handleBasketConfirmButton,
-  startBaskets,
 import { handleMomoButton, startMomoQr } from "../flows/momo/qr.ts";
 import { startWallet } from "../domains/wallet/home.ts";
 import {
