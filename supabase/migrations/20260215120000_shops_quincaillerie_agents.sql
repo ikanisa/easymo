@@ -242,6 +242,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS trigger_update_shop_rating ON shop_reviews;
 CREATE TRIGGER trigger_update_shop_rating
   AFTER INSERT OR UPDATE ON shop_reviews
   FOR EACH ROW
@@ -264,6 +265,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS trigger_update_vendor_rating ON vendor_reviews;
 CREATE TRIGGER trigger_update_vendor_rating
   AFTER INSERT OR UPDATE ON vendor_reviews
   FOR EACH ROW
@@ -277,53 +279,65 @@ ALTER TABLE vendor_reviews ENABLE ROW LEVEL SECURITY;
 ALTER TABLE product_inquiries ENABLE ROW LEVEL SECURITY;
 
 -- Shops policies
+DROP POLICY IF EXISTS "Anyone can view active shops" ON shops;
 CREATE POLICY "Anyone can view active shops"
   ON shops FOR SELECT
   USING (status = 'active');
 
+DROP POLICY IF EXISTS "Users can create own shops" ON shops;
 CREATE POLICY "Users can create own shops"
   ON shops FOR INSERT
   WITH CHECK (auth.uid()::TEXT = owner_id);
 
+DROP POLICY IF EXISTS "Users can update own shops" ON shops;
 CREATE POLICY "Users can update own shops"
   ON shops FOR UPDATE
   USING (auth.uid()::TEXT = owner_id);
 
 -- Vendors policies
+DROP POLICY IF EXISTS "Anyone can view active vendors" ON vendors;
 CREATE POLICY "Anyone can view active vendors"
   ON vendors FOR SELECT
   USING (status = 'active');
 
+DROP POLICY IF EXISTS "Users can create own vendors" ON vendors;
 CREATE POLICY "Users can create own vendors"
   ON vendors FOR INSERT
   WITH CHECK (auth.uid() = owner_id);
 
+DROP POLICY IF EXISTS "Users can update own vendors" ON vendors;
 CREATE POLICY "Users can update own vendors"
   ON vendors FOR UPDATE
   USING (auth.uid() = owner_id);
 
 -- Reviews policies
+DROP POLICY IF EXISTS "Anyone can view reviews" ON shop_reviews;
 CREATE POLICY "Anyone can view reviews"
   ON shop_reviews FOR SELECT
   USING (true);
 
+DROP POLICY IF EXISTS "Users can create reviews" ON shop_reviews;
 CREATE POLICY "Users can create reviews"
   ON shop_reviews FOR INSERT
   WITH CHECK (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can update own reviews" ON shop_reviews;
 CREATE POLICY "Users can update own reviews"
   ON shop_reviews FOR UPDATE
   USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Anyone can view vendor reviews" ON vendor_reviews;
 CREATE POLICY "Anyone can view vendor reviews"
   ON vendor_reviews FOR SELECT
   USING (true);
 
+DROP POLICY IF EXISTS "Users can create vendor reviews" ON vendor_reviews;
 CREATE POLICY "Users can create vendor reviews"
   ON vendor_reviews FOR INSERT
   WITH CHECK (auth.uid() = user_id);
 
 -- Product inquiries policies
+DROP POLICY IF EXISTS "Users can view own inquiries" ON product_inquiries;
 CREATE POLICY "Users can view own inquiries"
   ON product_inquiries FOR SELECT
   USING (
@@ -336,6 +350,7 @@ CREATE POLICY "Users can view own inquiries"
     )
   );
 
+DROP POLICY IF EXISTS "Users can create inquiries" ON product_inquiries;
 CREATE POLICY "Users can create inquiries"
   ON product_inquiries FOR INSERT
   WITH CHECK (auth.uid() = user_id);

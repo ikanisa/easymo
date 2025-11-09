@@ -26,12 +26,14 @@ ALTER TABLE public.admin_audit_logs ENABLE ROW LEVEL SECURITY;
 
 -- Only service role can write to audit logs
 -- Authenticated admins can read audit logs
+DROP POLICY IF EXISTS "service_role_insert_audit_logs" ON public.admin_audit_logs;
 CREATE POLICY "service_role_insert_audit_logs" 
   ON public.admin_audit_logs 
   FOR INSERT 
   TO service_role 
   WITH CHECK (true);
 
+DROP POLICY IF EXISTS "authenticated_read_audit_logs" ON public.admin_audit_logs;
 CREATE POLICY "authenticated_read_audit_logs" 
   ON public.admin_audit_logs 
   FOR SELECT 
