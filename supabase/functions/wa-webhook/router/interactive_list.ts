@@ -21,10 +21,6 @@ import {
   startScheduleTrip,
 } from "../domains/mobility/schedule.ts";
 import {
-  handleBasketButton,
-  handleBasketListSelection,
-  startBaskets,
-import {
   handleMarketplaceButton,
   handleMarketplaceCategorySelection,
   handleMarketplaceResult,
