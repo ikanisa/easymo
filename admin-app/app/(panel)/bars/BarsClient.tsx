@@ -11,6 +11,11 @@ import {
   type StaffNumbersQueryParams,
   useStaffNumbersQuery,
 } from "@/lib/queries/staffNumbers";
+import { useBarDashboardQuery } from "@/lib/queries/barDashboard";
+import { useMenuVersionsQuery } from "@/lib/queries/menus";
+import { BarFloorView } from "@/components/bars/BarFloorView";
+import { BarKitchenFeed } from "@/components/bars/BarKitchenFeed";
+import { BarThreadFeed } from "@/components/bars/BarThreadFeed";
 
 const BAR_STATUS_FILTERS = ["active", "inactive"] as const;
 
@@ -25,16 +30,30 @@ export function BarsClient({
 }: BarsClientProps) {
   const [barParams, setBarParams] = useState<BarsQueryParams>(initialBarParams);
   const barsQuery = useBarsQuery(barParams);
-  const staffNumbersQuery = useStaffNumbersQuery(staffNumbersParams);
+  const bars = useMemo(() => barsQuery.data?.data ?? [], [barsQuery.data?.data]);
+  const [activeBarId, setActiveBarId] = useState<string | undefined>(() => bars[0]?.id);
 
-  const bars = useMemo(() => barsQuery.data?.data ?? [], [
-    barsQuery.data?.data,
-  ]);
+  const dashboardQuery = useBarDashboardQuery(
+    { barId: activeBarId, limit: 15 },
+    {
+      enabled: Boolean(activeBarId),
+      refetchInterval: 5000,
+    },
+  );
+  const menuQuery = useMenuVersionsQuery(
+    { limit: 5, barId: activeBarId, status: "published" },
+    { enabled: Boolean(activeBarId) },
+  );
+
+  const staffNumbersQuery = useStaffNumbersQuery(staffNumbersParams);
   const hasMoreBars = barsQuery.data?.hasMore;
   const isLoadingMoreBars = barsQuery.isFetching && !barsQuery.isLoading;
   const staffNumbers = useMemo(() => staffNumbersQuery.data?.data ?? [], [
     staffNumbersQuery.data?.data,
   ]);
+
+  const dashboard = dashboardQuery.data;
+  const menus = menuQuery.data?.data ?? [];
 
   return (
     <div className="admin-page">
@@ -74,7 +93,7 @@ export function BarsClient({
               Search
               <input
                 value={barParams.search ?? ""}
-               onChange={(event) =>
+                onChange={(event) =>
                   setBarParams((prev) => ({
                     ...prev,
                     search: event.target.value || undefined,
@@ -84,72 +103,154 @@ export function BarsClient({
                 className="ml-2 rounded-lg border border-[color:var(--color-border)]/40 bg-white/90 px-3 py-1 text-sm"
               />
             </label>
+            {bars.length ? (
+              <label className="text-sm text-[color:var(--color-muted)]">
+                Active bar
+                <select
+                  value={activeBarId ?? bars[0]?.id ?? ""}
+                  onChange={(event) => setActiveBarId(event.target.value || undefined)}
+                  className="ml-2 rounded-lg border border-[color:var(--color-border)]/40 bg-white/90 px-3 py-1 text-sm"
+                >
+                  {bars.map((bar) => (
+                    <option key={bar.id} value={bar.id}>
+                      {bar.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : null}
           </div>
         }
       >
-        {barsQuery.isLoading
-          ? (
-            <LoadingState
-              title="Loading bars"
-              description="Fetching bar directory."
-            />
-          )
-          : bars.length
-          ? (
-            <BarsTable
-              data={bars}
-              hasMore={hasMoreBars}
-              onLoadMore={() =>
-                setBarParams((prev) => ({
-                  ...prev,
-                  limit: (prev.limit ?? 100) + 50,
-                }))}
-              loadingMore={isLoadingMoreBars}
-            />
-          )
-          : (
-            <EmptyState
-              title="No bars available"
-              description="Fixtures not loaded yet. Configure Supabase or load staging fixtures to view records."
-            />
-          )}
+        {barsQuery.isLoading ? (
+          <LoadingState
+            title="Loading bars"
+            description="Fetching bar directory."
+          />
+        ) : bars.length ? (
+          <BarsTable
+            data={bars}
+            hasMore={hasMoreBars}
+            onLoadMore={() =>
+              setBarParams((prev) => ({
+                ...prev,
+                limit: (prev.limit ?? 100) + 50,
+              }))}
+            loadingMore={isLoadingMoreBars}
+          />
+        ) : (
+          <EmptyState
+            title="No bars available"
+            description="Fixtures not loaded yet. Configure Supabase or load staging fixtures to view records."
+          />
+        )}
       </SectionCard>
 
       <SectionCard
         title="Common follow-up"
         description="Recent staff numbers give quick context while the detail drawer is under construction."
       >
-        {staffNumbersQuery.isLoading
-          ? (
-            <LoadingState
-              title="Loading staff numbers"
-              description="Fetching recent receiving numbers."
-            />
-          )
-          : staffNumbers.length
-          ? (
-            <ul className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-              {staffNumbers.map((number) => (
-                <li
-                  key={number.id}
-                  className="rounded-2xl border border-[color:var(--color-border)]/40 bg-[color:var(--color-surface)]/60 px-4 py-4"
-                >
-                  <strong className="text-[color:var(--color-foreground)]">
-                    {number.barName}
-                  </strong>
-                  <p className="text-sm text-[color:var(--color-muted)]">
-                    {number.number} • {number.role}
-                  </p>
-                </li>
-              ))}
-            </ul>
-          )
-          : (
-            <EmptyState
-              title="No staff numbers yet"
-              description="Once fixtures are loaded, the latest receiving numbers will appear here."
-            />
-          )}
+        {staffNumbersQuery.isLoading ? (
+          <LoadingState
+            title="Loading staff numbers"
+            description="Fetching recent receiving numbers."
+          />
+        ) : staffNumbers.length ? (
+          <ul className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+            {staffNumbers.map((number) => (
+              <li
+                key={number.id}
+                className="rounded-2xl border border-[color:var(--color-border)]/40 bg-[color:var(--color-surface)]/60 px-4 py-4"
+              >
+                <strong className="text-[color:var(--color-foreground)]">
+                  {number.barName}
+                </strong>
+                <p className="text-sm text-[color:var(--color-muted)]">
+                  {number.number} • {number.role}
+                </p>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <EmptyState
+            title="No staff numbers yet"
+            description="Once fixtures are loaded, the latest receiving numbers will appear here."
+          />
+        )}
+      </SectionCard>
+
+      <SectionCard
+        title="Floor view"
+        description="Realtime occupancy signals pulled from Supabase orders."
+      >
+        {dashboardQuery.isLoading ? (
+          <LoadingState title="Loading floor data" description="Fetching latest orders." />
+        ) : dashboard?.floor?.length ? (
+          <BarFloorView tables={dashboard.floor} />
+        ) : (
+          <EmptyState
+            title="No floor activity"
+            description="Create an order to visualise table status."
+          />
+        )}
+      </SectionCard>
+
+      <SectionCard
+        title="Menu manager"
+        description="Latest published menu versions for the active bar."
+      >
+        {menuQuery.isLoading ? (
+          <LoadingState title="Loading menus" description="Fetching menu versions." />
+        ) : menus.length ? (
+          <ul className="grid gap-3 md:grid-cols-2">
+            {menus.map((menu) => (
+              <li
+                key={menu.id}
+                className="rounded-2xl border border-[color:var(--color-border)] bg-white/70 px-4 py-3"
+              >
+                <div className="flex items-center justify-between text-sm text-[color:var(--color-muted)]">
+                  <span>{menu.barName}</span>
+                  <span>{menu.updatedAt ? new Date(menu.updatedAt).toLocaleDateString() : ""}</span>
+                </div>
+                <p className="mt-1 text-base font-semibold text-[color:var(--color-foreground)]">{menu.version}</p>
+                <p className="text-sm text-[color:var(--color-muted)]">
+                  {menu.items} items · {menu.categories} categories · {menu.status}
+                </p>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <EmptyState title="No menus" description="Publish a menu to populate this section." />
+        )}
+      </SectionCard>
+
+      <SectionCard
+        title="Kitchen feed"
+        description="Realtime tickets sourced from WhatsApp orders."
+      >
+        {dashboardQuery.isLoading ? (
+          <LoadingState title="Loading kitchen feed" description="Fetching order tickets." />
+        ) : dashboard?.kitchen?.length ? (
+          <BarKitchenFeed tickets={dashboard.kitchen} />
+        ) : (
+          <EmptyState title="No tickets" description="Kitchen queue is empty." />
+        )}
+      </SectionCard>
+
+      <SectionCard
+        title="WhatsApp threads"
+        description="Latest guest and agent interactions from wa_messages."
+      >
+        {dashboardQuery.isLoading ? (
+          <LoadingState title="Loading messages" description="Polling Supabase wa_messages." />
+        ) : dashboard?.threads?.length ? (
+          <BarThreadFeed events={dashboard.threads} />
+        ) : (
+          <EmptyState
+            title="No chat events"
+            description="AI waiter has not engaged guests yet."
+          />
+        )}
       </SectionCard>
     </div>
   );
