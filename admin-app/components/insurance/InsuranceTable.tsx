@@ -15,40 +15,24 @@ interface InsuranceTableProps {
   loadingMore?: boolean;
   statusFilter?: string;
   onStatusChange?: (value: string) => void;
+  onApprove?: (quoteId: string) => Promise<void>;
+  onRequestChanges?: (quoteId: string, comment: string) => Promise<void>;
+  onUpdateStatus?: (
+    quoteId: string,
+    status: string,
+    reviewerComment?: string | null,
+  ) => Promise<void>;
+  approvingId?: string | null;
+  requestingId?: string | null;
+  updatingId?: string | null;
 }
 
-const baseColumns: ColumnDef<InsuranceQuote>[] = [
-  {
-    header: "Quote ID",
-    accessorKey: "id",
-  },
-  {
-    header: "User ID",
-    accessorKey: "userId",
-  },
-  {
-    header: "Status",
-    accessorKey: "status",
-  },
-  {
-    header: "Premium",
-    accessorKey: "premium",
-    cell: (
-      { row },
-    ) => (row.original.premium
-      ? `${row.original.premium.toLocaleString()} RWF`
-      : "—"),
-  },
-  {
-    header: "Insurer",
-    accessorKey: "insurer",
-    cell: ({ row }) => row.original.insurer ?? "—",
-  },
-  {
-    header: "Created",
-    accessorKey: "createdAt",
-    cell: ({ row }) => new Date(row.original.createdAt).toLocaleString(),
-  },
+const STATUS_OPTIONS = [
+  "pending",
+  "approved",
+  "needs_changes",
+  "in_review",
+  "queued",
 ];
 
 export function InsuranceTable({
@@ -58,6 +42,12 @@ export function InsuranceTable({
   loadingMore,
   statusFilter,
   onStatusChange,
+  onApprove,
+  onRequestChanges,
+  onUpdateStatus,
+  approvingId,
+  requestingId,
+  updatingId,
 }: InsuranceTableProps) {
   const [selected, setSelected] = useState<InsuranceQuote | null>(null);
   const [localStatus, setLocalStatus] = useState("");
@@ -70,7 +60,48 @@ export function InsuranceTable({
   }, [data, statusValue]);
 
   const columns = useMemo<ColumnDef<InsuranceQuote>[]>(() => [
-    ...baseColumns,
+    {
+      header: "Quote ID",
+      accessorKey: "id",
+    },
+    {
+      header: "User ID",
+      accessorKey: "userId",
+      cell: ({ row }) => row.original.userId ?? "—",
+    },
+    {
+      header: "Status",
+      accessorKey: "status",
+      cell: ({ row }) => (
+        onUpdateStatus
+          ? (
+            <StatusSelect
+              quote={row.original}
+              disabled={updatingId === row.original.id}
+              onChange={(next) => onUpdateStatus(row.original.id, next)}
+            />
+          )
+          : row.original.status
+      ),
+    },
+    {
+      header: "Premium",
+      accessorKey: "premium",
+      cell: ({ row }) =>
+        row.original.premium
+          ? `${row.original.premium.toLocaleString()} RWF`
+          : "—",
+    },
+    {
+      header: "Insurer",
+      accessorKey: "insurer",
+      cell: ({ row }) => row.original.insurer ?? "—",
+    },
+    {
+      header: "Created",
+      accessorKey: "createdAt",
+      cell: ({ row }) => new Date(row.original.createdAt).toLocaleString(),
+    },
     {
       header: "",
       id: "actions",
@@ -85,7 +116,7 @@ export function InsuranceTable({
         </Button>
       ),
     },
-  ], []);
+  ], [onUpdateStatus, updatingId]);
 
   const handleStatusChange = (value: string) => {
     if (onStatusChange) {
@@ -129,8 +160,43 @@ export function InsuranceTable({
         Load more quotes
       </LoadMoreButton>
       {selected
-        ? <InsuranceDrawer quote={selected} onClose={() => setSelected(null)} />
+        ? (
+          <InsuranceDrawer
+            quote={selected}
+            onClose={() => setSelected(null)}
+            onApprove={onApprove}
+            onRequestChanges={onRequestChanges}
+            onUpdateStatus={onUpdateStatus}
+            approving={approvingId === selected.id}
+            requesting={requestingId === selected.id}
+            updating={updatingId === selected.id}
+          />
+        )
         : null}
     </>
+  );
+}
+
+function StatusSelect({
+  quote,
+  onChange,
+  disabled,
+}: {
+  quote: InsuranceQuote;
+  onChange: (status: string) => void;
+  disabled?: boolean;
+}) {
+  return (
+    <select
+      value={quote.status}
+      onChange={(event) => onChange(event.target.value)}
+      disabled={disabled}
+    >
+      {STATUS_OPTIONS.map((option) => (
+        <option key={option} value={option}>
+          {option}
+        </option>
+      ))}
+    </select>
   );
 }
