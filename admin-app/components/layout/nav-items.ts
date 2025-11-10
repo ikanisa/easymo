@@ -41,6 +41,7 @@ const marketingItems = [
   { href: "/leads", title: "Leads", icon: "🎯" },
   { href: "/live-calls", title: "Live Calls", icon: "📞" },
   { href: "/voice-analytics", title: "Voice Analytics", icon: "🎙️" },
+  { href: "/video/analytics", title: "Video Analytics", icon: "🎬" },
 ];
 
 // System & Settings
