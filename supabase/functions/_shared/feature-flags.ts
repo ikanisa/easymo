@@ -94,7 +94,8 @@ function getEnvFlag(flag: FeatureFlag): boolean | undefined {
  * 
  * Priority:
  * 1. Environment variable (FEATURE_*)
- * 2. Default value
+ * 2. Consolidated flag for agent.* features (FEATURE_AGENT_ALL)
+ * 3. Default value
  * 
  * @param flag - Feature flag to check
  * @returns true if feature is enabled
@@ -107,6 +108,17 @@ function getEnvFlag(flag: FeatureFlag): boolean | undefined {
 export function isFeatureEnabled(flag: FeatureFlag): boolean {
   const envValue = getEnvFlag(flag);
   if (envValue !== undefined) return envValue;
+  
+  // Check for consolidated agent flag
+  if (flag.startsWith("agent.")) {
+    const agentAllValue = Deno.env.get("FEATURE_AGENT_ALL");
+    if (agentAllValue) {
+      const normalized = agentAllValue.toLowerCase().trim();
+      if (["1", "true", "yes", "on"].includes(normalized)) {
+        return true;
+      }
+    }
+  }
   
   return DEFAULT_FLAGS[flag] ?? false;
 }
