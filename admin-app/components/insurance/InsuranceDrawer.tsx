@@ -7,14 +7,43 @@ import styles from "./InsuranceDrawer.module.css";
 import { IntegrationStatusBadge } from "@/components/ui/IntegrationStatusBadge";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { Button } from "@/components/ui/Button";
-import { getAdminApiPath } from "@/lib/routes";
 
 interface InsuranceDrawerProps {
   quote: InsuranceQuote;
   onClose: () => void;
+  onApprove?: (
+    quoteId: string,
+  ) => Promise<
+    | { status?: string; message?: string; integration?: unknown }
+    | void
+  >;
+  onRequestChanges?: (
+    quoteId: string,
+    comment: string,
+  ) => Promise<
+    | { status?: string; message?: string; integration?: unknown }
+    | void
+  >;
+  onUpdateStatus?: (
+    quoteId: string,
+    status: string,
+    reviewerComment?: string | null,
+  ) => Promise<unknown>;
+  approving?: boolean;
+  requesting?: boolean;
+  updating?: boolean;
 }
 
-export function InsuranceDrawer({ quote, onClose }: InsuranceDrawerProps) {
+export function InsuranceDrawer({
+  quote,
+  onClose,
+  onApprove,
+  onRequestChanges,
+  onUpdateStatus,
+  approving,
+  requesting,
+  updating,
+}: InsuranceDrawerProps) {
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [integration, setIntegration] = useState<
@@ -29,20 +58,18 @@ export function InsuranceDrawer({ quote, onClose }: InsuranceDrawerProps) {
   const [confirmApprove, setConfirmApprove] = useState(false);
 
   const approve = async () => {
+    if (!onApprove) {
+      setStatusMessage("Approval action unavailable.");
+      return;
+    }
     setIsSubmitting(true);
     setStatusMessage(null);
     setIntegration(null);
     try {
-      const response = await fetch(getAdminApiPath("insurance", quote.id, "approve"), {
-        method: "POST",
-      });
-      const data = await response.json();
-      setIntegration(data?.integration ?? null);
-      if (!response.ok) {
-        setStatusMessage(data?.message ?? "Approval failed.");
-      } else {
-        setStatusMessage(data.message ?? "Quote approved (mock).");
-      }
+      const result = await onApprove(quote.id);
+      const message = (result as any)?.message ?? "Quote approved.";
+      setStatusMessage(message);
+      setIntegration((result as any)?.integration ?? null);
     } catch (error) {
       console.error("Approve quote failed", error);
       setStatusMessage("Unexpected error while approving.");
@@ -52,6 +79,10 @@ export function InsuranceDrawer({ quote, onClose }: InsuranceDrawerProps) {
   };
 
   const requestChanges = async () => {
+    if (!onRequestChanges) {
+      setStatusMessage("Request changes action unavailable.");
+      return;
+    }
     if (!comment.trim()) {
       setStatusMessage("Provide a comment before requesting changes.");
       return;
@@ -60,22 +91,11 @@ export function InsuranceDrawer({ quote, onClose }: InsuranceDrawerProps) {
     setStatusMessage(null);
     setIntegration(null);
     try {
-      const response = await fetch(
-        getAdminApiPath("insurance", quote.id, "request-changes"),
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ comment }),
-        },
-      );
-      const data = await response.json();
-      setIntegration(data?.integration ?? null);
-      if (!response.ok) {
-        setStatusMessage(data?.message ?? "Request changes failed.");
-      } else {
-        setStatusMessage(data.message ?? "Change request recorded (mock).");
-        setComment("");
-      }
+      const result = await onRequestChanges(quote.id, comment);
+      const message = (result as any)?.message ?? "Change request recorded.";
+      setStatusMessage(message);
+      setIntegration((result as any)?.integration ?? null);
+      setComment("");
     } catch (error) {
       console.error("Request changes failed", error);
       setStatusMessage("Unexpected error while requesting changes.");
@@ -88,7 +108,31 @@ export function InsuranceDrawer({ quote, onClose }: InsuranceDrawerProps) {
     <Drawer title={`Insurance quote ${quote.id}`} onClose={onClose}>
       <div className={styles.section}>
         <h3>Status</h3>
-        <p>{quote.status}</p>
+          <p className="capitalize">{quote.status}</p>
+          {onUpdateStatus
+            ? (
+              <div className={styles.actions}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={isSubmitting || updating}
+                  onClick={() => onUpdateStatus(quote.id, "pending", comment || null)}
+                >
+                  Mark pending
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={isSubmitting || updating}
+                  onClick={() => onUpdateStatus(quote.id, "approved", comment || null)}
+                >
+                  Mark approved
+                </Button>
+              </div>
+            )
+            : null}
       </div>
       <div className={styles.section}>
         <h3>Premium</h3>
@@ -110,18 +154,18 @@ export function InsuranceDrawer({ quote, onClose }: InsuranceDrawerProps) {
           <Button
             type="button"
             onClick={() => setConfirmApprove(true)}
-            disabled={isSubmitting}
+            disabled={isSubmitting || approving}
             title="Approve this insurance quote"
           >
-            Approve
+            {approving ? "Approving…" : "Approve"}
           </Button>
           <Button
             type="button"
             onClick={requestChanges}
-            disabled={isSubmitting}
+            disabled={isSubmitting || requesting}
             variant="danger"
           >
-            Request changes
+            {requesting ? "Sending…" : "Request changes"}
           </Button>
         </div>
         <label className={styles.commentField}>
@@ -131,6 +175,7 @@ export function InsuranceDrawer({ quote, onClose }: InsuranceDrawerProps) {
             onChange={(event) => setComment(event.target.value)}
             placeholder="Explain what needs to change"
             rows={3}
+            disabled={isSubmitting}
           />
         </label>
       </div>
