@@ -12,8 +12,10 @@
 import type { RouterContext } from "../../types.ts";
 import { setState, clearState } from "../../state/store.ts";
 import { sendText } from "../../wa/client.ts";
+import { sendButtonsMessage, buildButtons } from "../../utils/reply.ts";
 import { isFeatureEnabled } from "../../../_shared/feature-flags.ts";
 import { handleAINearbyQuincailleries } from "../ai-agents/index.ts";
+import { IDS } from "../../wa/ids.ts";
 
 export async function startNearbyQuincailleries(ctx: RouterContext): Promise<boolean> {
   if (!ctx.profileId) return false;
@@ -23,11 +25,15 @@ export async function startNearbyQuincailleries(ctx: RouterContext): Promise<boo
     data: {},
   });
   
-  await sendText(
-    ctx.from,
+  await sendButtonsMessage(
+    ctx,
     "🔧 *Nearby Quincailleries*\n\n" +
     "Share your location to find hardware stores near you.\n\n" +
-    "📍 Tap the attachment icon → Location → Send your location"
+    "📍 Tap the button below to share your location, or use the attachment icon.",
+    buildButtons(
+      { id: "quincaillerie_share_location", title: "📍 Share Location" },
+      { id: IDS.BACK_HOME, title: "🏠 Back to Home" }
+    )
   );
   
   return true;
@@ -45,13 +51,15 @@ export async function handleQuincaillerieLocation(
     data: { location },
   });
   
-  await sendText(
-    ctx.from,
-    "📍 Location received!\n\n" +
-    "🔧 *Optional:* You can now:\n" +
-    "• Share a photo of the items you need\n" +
-    "• Type the item names you're looking for\n" +
-    "• Or just send \"search\" to search all hardware stores nearby"
+  await sendButtonsMessage(
+    ctx,
+    "📍 *Location received!*\n\n" +
+    "🔧 What would you like to do?",
+    buildButtons(
+      { id: "quincaillerie_search_all", title: "🔍 Search All Stores" },
+      { id: "quincaillerie_add_items", title: "🔧 Specify Items" },
+      { id: IDS.BACK_HOME, title: "🏠 Cancel" }
+    )
   );
   
   return true;

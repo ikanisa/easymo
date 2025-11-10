@@ -82,6 +82,9 @@ import {
   showReviewItemMenu,
   showUploadInstruction,
 } from "../domains/dinein/manager.ts";
+import { sendButtonsMessage, buildButtons } from "../utils/reply.ts";
+import { isFeatureEnabled } from "../../_shared/feature-flags.ts";
+import { handleAINearbyPharmacies, handleAINearbyQuincailleries } from "../domains/ai-agents/index.ts";
 
 export async function handleButton(
   ctx: RouterContext,
@@ -308,6 +311,37 @@ export async function handleButton(
     case IDS.ADMIN_INSURANCE_EXPORT_SUBMIT:
       if (await handleInsuranceButton(ctx, id, state)) return true;
       return false;
+    
+    // Pharmacy buttons
+    case "pharmacy_search_all":
+      if (!ctx.profileId) return false;
+      const pharmacyState = state.data as { location?: { lat: number; lng: number } };
+      if (pharmacyState.location && isFeatureEnabled("agent.pharmacy")) {
+        return await handleAINearbyPharmacies(ctx, pharmacyState.location, undefined);
+      }
+      return false;
+    case "pharmacy_add_medicine":
+      await sendButtonsMessage(ctx, 
+        "💊 Type the medicine names you need, or share a photo of your prescription.",
+        buildButtons({ id: IDS.BACK_HOME, title: "🏠 Cancel" })
+      );
+      return true;
+    
+    // Quincaillerie buttons
+    case "quincaillerie_search_all":
+      if (!ctx.profileId) return false;
+      const quincaillerieState = state.data as { location?: { lat: number; lng: number } };
+      if (quincaillerieState.location && isFeatureEnabled("agent.quincaillerie")) {
+        return await handleAINearbyQuincailleries(ctx, quincaillerieState.location, undefined);
+      }
+      return false;
+    case "quincaillerie_add_items":
+      await sendButtonsMessage(ctx,
+        "🔧 Type the item names you need, or share a photo of the items.",
+        buildButtons({ id: IDS.BACK_HOME, title: "🏠 Cancel" })
+      );
+      return true;
+    
     default:
       if (await handleMarketplaceButton(ctx, state, id)) return true;
       return await handleDineButtons(ctx, id, state);

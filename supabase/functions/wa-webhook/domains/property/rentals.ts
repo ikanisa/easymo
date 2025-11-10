@@ -8,7 +8,7 @@
 
 import type { RouterContext } from "../../types.ts";
 import { setState, clearState } from "../../state/store.ts";
-import { sendListMessage, sendButtonsMessage, homeOnly } from "../../utils/reply.ts";
+import { sendListMessage, sendButtonsMessage, buildButtons, homeOnly } from "../../utils/reply.ts";
 import { sendText } from "../../wa/client.ts";
 import { IDS } from "../../wa/ids.ts";
 import { isFeatureEnabled } from "../../../_shared/feature-flags.ts";
@@ -170,11 +170,14 @@ export async function handleFindPropertyBedrooms(
     data: { ...state, bedrooms },
   });
 
-  await sendText(
-    ctx.from,
+  await sendButtonsMessage(
+    ctx,
     "💰 What's your budget?\n\n" +
-    "Please type your monthly budget range.\n" +
-    "Example: 200-500 or just 300"
+    "Type your monthly budget range.\n" +
+    "Examples: 200-500 or 300",
+    buildButtons(
+      { id: IDS.BACK_HOME, title: "🏠 Cancel" }
+    )
   );
 
   return true;
@@ -192,11 +195,15 @@ export async function handleFindPropertyBudget(
     data: { ...state, budget },
   });
 
-  await sendText(
-    ctx.from,
+  await sendButtonsMessage(
+    ctx,
     "📍 Where would you like to rent?\n\n" +
     "Share your desired location.\n" +
-    "Tap: Attachment icon → Location → Send location"
+    "Tap the button or use the attachment icon.",
+    buildButtons(
+      { id: "property_share_location", title: "📍 Share Location" },
+      { id: IDS.BACK_HOME, title: "🏠 Cancel" }
+    )
   );
 
   return true;
@@ -284,11 +291,14 @@ export async function handleAddPropertyBedrooms(
     data: { ...state, bedrooms },
   });
 
-  await sendText(
-    ctx.from,
+  await sendButtonsMessage(
+    ctx,
     "💰 What's your monthly rent price?\n\n" +
-    "Please type the monthly rent amount.\n" +
-    "Example: 300 or 450"
+    "Type the monthly rent amount.\n" +
+    "Examples: 300 or 450",
+    buildButtons(
+      { id: IDS.BACK_HOME, title: "🏠 Cancel" }
+    )
   );
 
   return true;
@@ -306,11 +316,15 @@ export async function handleAddPropertyPrice(
     data: { ...state, price },
   });
 
-  await sendText(
-    ctx.from,
+  await sendButtonsMessage(
+    ctx,
     "📍 Where is your property located?\n\n" +
     "Share the property location.\n" +
-    "Tap: Attachment icon → Location → Send location"
+    "Tap the button or use the attachment icon.",
+    buildButtons(
+      { id: "property_add_share_location", title: "📍 Share Location" },
+      { id: IDS.BACK_HOME, title: "🏠 Cancel" }
+    )
   );
 
   return true;
@@ -324,19 +338,22 @@ export async function handleAddPropertyLocation(
   if (!ctx.profileId) return false;
 
   // TODO: Save to database
-  // For now, just acknowledge
-  await sendText(
-    ctx.from,
+  await clearState(ctx.supabase, ctx.profileId);
+  
+  await sendButtonsMessage(
+    ctx,
     "✅ *Property Added Successfully!*\n\n" +
     `📋 Details:\n` +
     `• Type: ${state.rentalType === "short_term" ? "Short-term" : "Long-term"}\n` +
     `• Bedrooms: ${state.bedrooms}\n` +
     `• Price: $${state.price}/month\n` +
     `• Location: ${location.lat.toFixed(4)}, ${location.lng.toFixed(4)}\n\n` +
-    "Your property is now listed and visible to people searching!"
+    "Your property is now listed and visible to people searching!",
+    buildButtons(
+      { id: IDS.PROPERTY_RENTALS, title: "🏠 View Property Rentals" },
+      { id: IDS.BACK_HOME, title: "🏠 Back to Home" }
+    )
   );
 
-  await clearState(ctx.supabase, ctx.profileId);
-  await sendHomeMenu(ctx);
   return true;
 }
