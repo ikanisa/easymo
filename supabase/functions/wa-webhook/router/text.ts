@@ -57,6 +57,10 @@ import {
   handleAIPropertyRental,
   handleAIScheduleTrip,
 } from "../domains/ai-agents/index.ts";
+import {
+  handleFindPropertyBudget,
+  handleAddPropertyPrice,
+} from "../domains/property/rentals.ts";
 
 export async function handleText(
   ctx: RouterContext,
@@ -173,6 +177,18 @@ export async function handleText(
       }
     }
     return true;
+  }
+  
+  // Handle property find budget input
+  if (state.key === "property_find_budget") {
+    const stateData = state.data as { rentalType: string; bedrooms: string };
+    return await handleFindPropertyBudget(ctx, stateData, body);
+  }
+  
+  // Handle property add price input
+  if (state.key === "property_add_price") {
+    const stateData = state.data as { rentalType: string; bedrooms: string };
+    return await handleAddPropertyPrice(ctx, stateData, body);
   }
   
   if (await handleMomoText(ctx, body, state)) {

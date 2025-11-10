@@ -30,7 +30,14 @@ import { handleAddBusinessCategorySelection } from "../domains/marketplace/index
 import { sendHomeMenu } from "../flows/home.ts";
 import { startNearbyPharmacies } from "../domains/healthcare/pharmacies.ts";
 import { startNearbyQuincailleries } from "../domains/healthcare/quincailleries.ts";
-import { startPropertyRentals } from "../domains/property/rentals.ts";
+import {
+  startPropertyRentals,
+  handlePropertyMenuSelection,
+  handleFindPropertyType,
+  handleFindPropertyBedrooms,
+  handleAddPropertyType,
+  handleAddPropertyBedrooms,
+} from "../domains/property/rentals.ts";
 import { handleWalletEarnSelection } from "../domains/wallet/earn.ts";
 import { handleWalletRedeemSelection } from "../domains/wallet/redeem.ts";
 import { ADMIN_ROW_IDS, openAdminHub } from "../flows/admin/hub.ts";
@@ -236,6 +243,26 @@ export async function handleList(
   ) {
     return await handleMarketplaceButton(ctx, state, id);
   }
+  
+  // Property Rentals flows
+  if (state.key === "property_menu") {
+    return await handlePropertyMenuSelection(ctx, id);
+  }
+  if (state.key === "property_find_type" && (id === "short_term" || id === "long_term")) {
+    return await handleFindPropertyType(ctx, id);
+  }
+  if (state.key === "property_find_bedrooms" && /^\d+$/.test(id)) {
+    const stateData = state.data as { rentalType: string };
+    return await handleFindPropertyBedrooms(ctx, stateData, id);
+  }
+  if (state.key === "property_add_type" && (id === "short_term" || id === "long_term")) {
+    return await handleAddPropertyType(ctx, id);
+  }
+  if (state.key === "property_add_bedrooms" && /^\d+$/.test(id)) {
+    const stateData = state.data as { rentalType: string };
+    return await handleAddPropertyBedrooms(ctx, stateData, id);
+  }
+  
   if (isVehicleOption(id) && state.key === "mobility_nearby_select") {
     return await handleVehicleSelection(ctx, (state.data ?? {}) as any, id);
   }

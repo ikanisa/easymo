@@ -12,6 +12,10 @@ import { recordInbound } from "../observe/conv_audit.ts";
 import { handleAIAgentLocationUpdate } from "../domains/ai-agents/index.ts";
 import { handlePharmacyLocation } from "../domains/healthcare/pharmacies.ts";
 import { handleQuincaillerieLocation } from "../domains/healthcare/quincailleries.ts";
+import {
+  handleFindPropertyLocation,
+  handleAddPropertyLocation,
+} from "../domains/property/rentals.ts";
 
 export async function handleLocation(
   ctx: RouterContext,
@@ -59,6 +63,16 @@ export async function handleLocation(
   
   if (state.key === "quincaillerie_awaiting_location") {
     return await handleQuincaillerieLocation(ctx, { lat, lng });
+  }
+  
+  if (state.key === "property_find_location") {
+    const stateData = state.data as { rentalType: string; bedrooms: string; budget: string };
+    return await handleFindPropertyLocation(ctx, stateData, { lat, lng });
+  }
+  
+  if (state.key === "property_add_location") {
+    const stateData = state.data as { rentalType: string; bedrooms: string; price: string };
+    return await handleAddPropertyLocation(ctx, stateData, { lat, lng });
   }
   
   if (state.key === "mobility_nearby_location") {
