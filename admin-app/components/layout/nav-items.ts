@@ -30,6 +30,7 @@ const operationsItems = [
   { href: "/sessions", title: "Active Sessions", icon: "🔄" },
   { href: "/negotiations", title: "Negotiations", icon: "🤝" },
   { href: "/vendor-responses", title: "Vendor Responses", icon: "📨" },
+  { href: "/video/jobs", title: "Video Jobs", icon: "🎬" },
 ];
 
 // Business modules
