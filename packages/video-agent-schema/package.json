@@ -8,4 +8,27 @@
     "build": "tsc -p tsconfig.json"
   },
   "license": "MIT"
+  "version": "0.1.0",
+  "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "require": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "pnpm exec tsc -p tsconfig.json",
+    "type-check": "pnpm exec tsc -p tsconfig.json --noEmit",
+    "lint": "eslint \"src/**/*.ts\""
+  },
+  "dependencies": {
+    "@sinclair/typebox": "^0.34.13",
+    "zod": "^3.25.76"
+  },
+  "sideEffects": false
 }

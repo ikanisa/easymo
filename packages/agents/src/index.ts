@@ -26,6 +26,7 @@ export {
   checkAvailabilityTool,
   createBookingTool,
   checkBalanceTool,
+  scriptPlannerTool,
 } from './tools';
 
 // Types
