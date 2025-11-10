@@ -1,5 +1,6 @@
 export const dynamic = 'force-dynamic';
 
+import { createPanelPageMetadata } from "@/components/layout/nav-items";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import { createQueryClient } from "@/lib/api/queryClient";
 import { FilesClient } from "./FilesClient";
@@ -8,6 +9,8 @@ import {
   storageQueryKeys,
   type StorageQueryParams,
 } from "@/lib/queries/files";
+
+export const metadata = createPanelPageMetadata("/files");
 
 const DEFAULT_PARAMS: StorageQueryParams = { limit: 200 };
 

@@ -1,13 +1,7 @@
-import { AgentsDashboardClient } from "./AgentsDashboardClient";
-import { createPanelPageMetadata } from "@/components/layout/nav-items";
+"use client";
 
-export const metadata = createPanelPageMetadata("/agents/dashboard");
-
-export default function AgentsDashboardPage() {
-  return <AgentsDashboardClient />;
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { getSupabaseClient } from "@/lib/supabase-client";
-import { subscribeWithMonitoring } from "@/lib/monitoring/realtime";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -33,7 +27,7 @@ interface ActiveSession {
   deadlineAt: string;
 }
 
-export default function AgentsDashboardPage() {
+export function AgentsDashboardClient() {
   const [agents, setAgents] = useState<AgentStatus[]>([]);
   const [activeSessions, setActiveSessions] = useState<ActiveSession[]>([]);
   const [loading, setLoading] = useState(true);
@@ -133,26 +127,23 @@ export default function AgentsDashboardPage() {
 
     loadDashboardData();
     
-    // Set up real-time subscription with monitoring hooks
-    const channel = subscribeWithMonitoring(supabase, {
-      channel: "agent-dashboard",
-      table: "agent_sessions",
-      onEvent: () => {
+    // Set up real-time subscription
+    const channel = supabase
+      .channel("agent-dashboard")
+      .on("postgres_changes", {
+        event: "*",
+        schema: "public",
+        table: "agent_sessions",
+      }, () => {
         loadDashboardData();
-      },
-      sla: {
-        deadlineField: "deadline_at",
-        statusField: "status",
-        completedStatuses: ["completed", "cancelled"],
-        channel: "agent_sessions_sla",
-      },
-    });
+      })
+      .subscribe();
 
     // Refresh every 10 seconds
     const interval = setInterval(loadDashboardData, 10000);
 
     return () => {
-      channel?.unsubscribe();
+      channel.unsubscribe();
       clearInterval(interval);
     };
   }, [supabase, loadDashboardData]);

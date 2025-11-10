@@ -1,5 +1,6 @@
 export const dynamic = 'force-dynamic';
 
+import { createPanelPageMetadata } from "@/components/layout/nav-items";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import { createQueryClient } from "@/lib/api/queryClient";
 import { SettingsClient } from "./SettingsClient";
@@ -12,6 +13,8 @@ import {
   fetchAdminAlertPreferences,
   alertPreferencesQueryKeys,
 } from "@/lib/queries/alertPreferences";
+
+export const metadata = createPanelPageMetadata("/settings");
 
 const DEFAULT_PREVIEW_PARAMS: SettingsPreviewParams = { limit: 100 };
 
