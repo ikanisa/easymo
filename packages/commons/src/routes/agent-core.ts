@@ -26,6 +26,11 @@ const agentCoreRouteDefinitions = defineHttpControllers({
       attribution: { method: "POST" as const, segment: "attribution/run" as const },
       reconciliation: { method: "POST" as const, segment: "reconciliation/run" as const },
       support: { method: "POST" as const, segment: "support/run" as const },
+      soraGenerate: {
+        method: "POST" as const,
+        segment: "sora/generate" as const,
+        description: "Queue a governed Sora generation job",
+      },
     },
   },
   tasks: {
@@ -111,3 +116,17 @@ export const getAgentCoreEndpointPath = <
   const segment = getAgentCoreEndpointSegment(controller, endpoint);
   return buildEndpointPath(base, segment);
 };
+
+const agentCoreServiceScopes = Object.freeze({
+  aiBrokerOrchestrate: ["ai:broker.orchestrate"],
+  aiSettlementRun: ["ai:settlement"],
+  aiAttributionRun: ["ai:attribution"],
+  aiReconciliationRun: ["ai:reconciliation"],
+  aiSupportRun: ["ai:support"],
+  aiSoraGenerate: ["ai:sora.generate"],
+  aiTasksSchedule: ["tasks:schedule"],
+  aiTasksRunDue: ["tasks:run"],
+} satisfies Record<string, readonly string[]>);
+
+export const getAgentCoreRouteServiceScopes = (key: string): readonly string[] =>
+  agentCoreServiceScopes[key] ?? [];
