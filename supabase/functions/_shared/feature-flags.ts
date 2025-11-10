@@ -21,6 +21,12 @@ export type FeatureFlag =
   | "agent.scheduling"
   | "agent.marketplace"
   | "agent.waiter"
+  | "agent.nearby_drivers"
+  | "agent.pharmacy"
+  | "agent.property_rental"
+  | "agent.schedule_trip"
+  | "agent.shops"
+  | "agent.quincaillerie"
   | "wallet.service"
   | "marketplace.ranking"
   | "marketplace.vendor"
@@ -45,6 +51,12 @@ const DEFAULT_FLAGS: Record<FeatureFlag, boolean> = {
   "agent.scheduling": false,
   "agent.marketplace": false,
   "agent.waiter": false,
+  "agent.nearby_drivers": false,
+  "agent.pharmacy": false,
+  "agent.property_rental": false,
+  "agent.schedule_trip": false,
+  "agent.shops": false,
+  "agent.quincaillerie": false,
   "wallet.service": false,
   "marketplace.ranking": false,
   "marketplace.vendor": false,

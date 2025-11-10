@@ -29,6 +29,8 @@ import {
   getStoredVehicleType,
   updateStoredVehicleType,
 } from "./vehicle_plate.ts";
+import { isFeatureEnabled } from "../../../_shared/feature-flags.ts";
+import { handleAIScheduleTrip } from "../ai-agents/index.ts";
 
 const ROLE_ROWS = [
   {
@@ -81,6 +83,14 @@ export async function startScheduleTrip(
   _state: { key: string; data?: Record<string, unknown> },
 ): Promise<boolean> {
   if (!ctx.profileId) return false;
+  
+  // Check if AI agent is enabled for schedule trip
+  if (isFeatureEnabled("agent.schedule_trip")) {
+    // Offer AI-powered scheduling options
+    return await handleAIScheduleTrip(ctx, "view");
+  }
+  
+  // Fall back to traditional role selection
   await setState(ctx.supabase, ctx.profileId, {
     key: "schedule_role",
     data: {},
