@@ -13,6 +13,7 @@ import { maskPhone } from "../../flows/support.ts";
 import { logStructuredEvent } from "../../observe/log.ts";
 import { emitAlert } from "../../observe/alert.ts";
 import { timeAgo } from "../../utils/text.ts";
+import { sendText } from "../../wa/client.ts";
 import {
   buildButtons,
   ButtonSpec,
@@ -26,6 +27,8 @@ import {
   updateStoredVehicleType,
 } from "./vehicle_plate.ts";
 import { getRecentNearbyIntent, storeNearbyIntent } from "./intent_cache.ts";
+import { isFeatureEnabled } from "../../../_shared/feature-flags.ts";
+import { routeToAIAgent, sendAgentOptions } from "../ai-agents/index.ts";
 
 const DEFAULT_WINDOW_DAYS = 30;
 const MIN_RADIUS_METERS = 1000;
@@ -74,6 +77,8 @@ type NearbyStateRow = {
 export type NearbyState = {
   mode: NearbyMode;
   vehicle?: string;
+  pickup?: { lat: number; lng: number };
+  dropoff?: { lat: number; lng: number };
   rows?: NearbyStateRow[];
 };
 
@@ -239,6 +244,85 @@ export async function handleNearbyLocation(
   coords: { lat: number; lng: number },
 ): Promise<boolean> {
   if (!ctx.profileId || !state.vehicle || !state.mode) return false;
+  
+  // For drivers mode, we need both pickup and dropoff
+  if (state.mode === "drivers") {
+    // If no pickup yet, save it and ask for dropoff
+    if (!state.pickup) {
+      await setState(ctx.supabase, ctx.profileId, {
+        key: "mobility_nearby_location",
+        data: {
+          mode: state.mode,
+          vehicle: state.vehicle,
+          pickup: coords,
+        },
+      });
+      await sendText(
+        ctx.from,
+        "📍 Pickup location received. Now share your dropoff/destination location."
+      );
+      return true;
+    }
+    
+    // We have pickup, now we got dropoff - check if AI agent is enabled
+    const dropoff = coords;
+    if (isFeatureEnabled("agent.nearby_drivers")) {
+      // Call AI agent with all the info
+      await sendText(ctx.from, "🤖 Searching for drivers and negotiating prices...");
+      
+      try {
+        const agentResponse = await routeToAIAgent(ctx, {
+          userId: ctx.from,
+          agentType: "nearby_drivers",
+          flowType: "find_driver",
+          requestData: {
+            pickup: state.pickup,
+            dropoff: dropoff,
+            vehicleType: state.vehicle,
+            maxPrice: null,
+          },
+        });
+        
+        if (agentResponse.success && agentResponse.options) {
+          await sendAgentOptions(
+            ctx,
+            agentResponse.sessionId,
+            agentResponse.options,
+            "🚗 Available drivers:"
+          );
+          
+          await setState(ctx.supabase, ctx.profileId, {
+            key: "ai_agent_selection",
+            data: {
+              sessionId: agentResponse.sessionId,
+              agentType: "nearby_drivers",
+            },
+          });
+        } else {
+          await sendText(ctx.from, agentResponse.message);
+        }
+        
+        return true;
+      } catch (error) {
+        console.error("AI agent error, falling back to traditional flow:", error);
+        // Fall through to traditional flow
+      }
+    }
+    
+    // Either AI disabled or AI failed - use traditional flow with pickup only
+    // (Traditional flow doesn't use dropoff currently)
+    try {
+      await storeNearbyIntent(ctx.supabase, ctx.profileId, state.mode, {
+        vehicle: state.vehicle,
+        lat: state.pickup.lat,
+        lng: state.pickup.lng,
+      });
+    } catch (error) {
+      console.error("mobility.nearby_cache_write_fail", error);
+    }
+  }
+  
+  // For passengers mode or fallback, use original logic
   try {
     await storeNearbyIntent(ctx.supabase, ctx.profileId, state.mode, {
       vehicle: state.vehicle,

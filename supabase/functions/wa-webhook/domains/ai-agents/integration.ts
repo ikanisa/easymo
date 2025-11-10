@@ -79,7 +79,7 @@ export async function routeToAIAgent(
     logAgentEvent("AGENT_ERROR", {
       userId: request.userId,
       agentType: request.agentType,
-      error: error.message,
+      error: error instanceof Error ? error.message : String(error),
     });
 
     return {
@@ -318,9 +318,11 @@ export async function sendAgentOptions(
   }];
 
   await sendList(ctx.from, {
-    text: headerText,
+    title: headerText,
+    body: "",
+    sectionTitle: headerText,
     buttonText: t(ctx.locale, "agent.select_option"),
-    sections: listSections,
+    rows: listSections[0].rows,
   });
 }
 

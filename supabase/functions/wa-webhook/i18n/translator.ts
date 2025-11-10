@@ -29,5 +29,3 @@ function applyParams(template: string, params: Params): string {
     return value === undefined ? "" : String(value);
   });
 }
-
-export type { TranslationKey };

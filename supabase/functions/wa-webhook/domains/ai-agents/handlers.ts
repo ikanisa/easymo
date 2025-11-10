@@ -25,10 +25,13 @@ export async function handleAINearbyDrivers(
     // If locations not provided, ask user
     if (!pickup || !dropoff) {
       await sendText(ctx.from, t(ctx.locale, "driver.provide_locations"));
-      await setState(ctx.from, "ai_driver_waiting_locations", {
-        vehicleType,
-        pickup,
-        dropoff,
+      await setState(ctx.supabase, ctx.profileId || ctx.from, {
+        key: "ai_driver_waiting_locations",
+        data: {
+          vehicleType,
+          pickup,
+          dropoff,
+        },
       });
       return true;
     }
@@ -55,9 +58,12 @@ export async function handleAINearbyDrivers(
         t(ctx.locale, "driver.options_found")
       );
       
-      await setState(ctx.from, "ai_agent_selection", {
-        sessionId: response.sessionId,
-        agentType: "nearby_drivers",
+      await setState(ctx.supabase, ctx.profileId || ctx.from, {
+        key: "ai_agent_selection",
+        data: {
+          sessionId: response.sessionId,
+          agentType: "nearby_drivers",
+        },
       });
     } else {
       await sendText(ctx.from, response.message);
@@ -83,9 +89,12 @@ export async function handleAINearbyPharmacies(
   try {
     if (!location) {
       await sendText(ctx.from, t(ctx.locale, "pharmacy.provide_location"));
-      await setState(ctx.from, "ai_pharmacy_waiting_location", {
-        medications,
-        prescriptionImage,
+      await setState(ctx.supabase, ctx.profileId || ctx.from, {
+        key: "ai_pharmacy_waiting_location",
+        data: {
+          medications,
+          prescriptionImage,
+        },
       });
       return true;
     }
@@ -111,9 +120,12 @@ export async function handleAINearbyPharmacies(
         t(ctx.locale, "pharmacy.options_found")
       );
       
-      await setState(ctx.from, "ai_agent_selection", {
-        sessionId: response.sessionId,
-        agentType: "pharmacy",
+      await setState(ctx.supabase, ctx.profileId || ctx.from, {
+        key: "ai_agent_selection",
+        data: {
+          sessionId: response.sessionId,
+          agentType: "pharmacy",
+        },
       });
     } else {
       await sendText(ctx.from, response.message);
@@ -139,9 +151,12 @@ export async function handleAINearbyQuincailleries(
   try {
     if (!location) {
       await sendText(ctx.from, t(ctx.locale, "quincaillerie.provide_location"));
-      await setState(ctx.from, "ai_quincaillerie_waiting_location", {
-        items,
-        itemImage,
+      await setState(ctx.supabase, ctx.profileId || ctx.from, {
+        key: "ai_quincaillerie_waiting_location",
+        data: {
+          items,
+          itemImage,
+        },
       });
       return true;
     }
@@ -167,9 +182,12 @@ export async function handleAINearbyQuincailleries(
         t(ctx.locale, "quincaillerie.options_found")
       );
       
-      await setState(ctx.from, "ai_agent_selection", {
-        sessionId: response.sessionId,
-        agentType: "quincaillerie",
+      await setState(ctx.supabase, ctx.profileId || ctx.from, {
+        key: "ai_agent_selection",
+        data: {
+          sessionId: response.sessionId,
+          agentType: "quincaillerie",
+        },
       });
     } else {
       await sendText(ctx.from, response.message);
@@ -196,10 +214,13 @@ export async function handleAINearbyShops(
   try {
     if (!location) {
       await sendText(ctx.from, t(ctx.locale, "shops.provide_location"));
-      await setState(ctx.from, "ai_shops_waiting_location", {
-        items,
-        itemImage,
-        shopCategory,
+      await setState(ctx.supabase, ctx.profileId || ctx.from, {
+        key: "ai_shops_waiting_location",
+        data: {
+          items,
+          itemImage,
+          shopCategory,
+        },
       });
       return true;
     }
@@ -227,9 +248,12 @@ export async function handleAINearbyShops(
         t(ctx.locale, "shops.options_found")
       );
       
-      await setState(ctx.from, "ai_agent_selection", {
-        sessionId: response.sessionId,
-        agentType: "shops",
+      await setState(ctx.supabase, ctx.profileId || ctx.from, {
+        key: "ai_agent_selection",
+        data: {
+          sessionId: response.sessionId,
+          agentType: "shops",
+        },
       });
     } else {
       await sendText(ctx.from, response.message);
@@ -256,10 +280,13 @@ export async function handleAIPropertyRental(
   try {
     if (!location && action === "find") {
       await sendText(ctx.from, t(ctx.locale, "property.provide_location"));
-      await setState(ctx.from, "ai_property_waiting_location", {
-        action,
-        rentalType,
-        requestData,
+      await setState(ctx.supabase, ctx.profileId || ctx.from, {
+        key: "ai_property_waiting_location",
+        data: {
+          action,
+          rentalType,
+          requestData,
+        },
       });
       return true;
     }
@@ -291,9 +318,12 @@ export async function handleAIPropertyRental(
           t(ctx.locale, "property.options_found")
         );
         
-        await setState(ctx.from, "ai_agent_selection", {
-          sessionId: response.sessionId,
-          agentType: "property_rental",
+        await setState(ctx.supabase, ctx.profileId || ctx.from, {
+          key: "ai_agent_selection",
+          data: {
+            sessionId: response.sessionId,
+            agentType: "property_rental",
+          },
         });
       } else {
         await sendText(ctx.from, response.message);
@@ -348,9 +378,12 @@ export async function handleAIScheduleTrip(
           t(ctx.locale, "schedule.options_available")
         );
         
-        await setState(ctx.from, "ai_agent_selection", {
-          sessionId: response.sessionId,
-          agentType: "schedule_trip",
+        await setState(ctx.supabase, ctx.profileId || ctx.from, {
+          key: "ai_agent_selection",
+          data: {
+            sessionId: response.sessionId,
+            agentType: "schedule_trip",
+          },
         });
       }
     } else {
@@ -407,9 +440,12 @@ export async function handleAIAgentLocationUpdate(
     const { vehicleType, pickup, dropoff } = stateData;
     
     if (!pickup) {
-      await setState(ctx.from, "ai_driver_waiting_locations", {
-        ...stateData,
-        pickup: location,
+      await setState(ctx.supabase, ctx.profileId || ctx.from, {
+        key: "ai_driver_waiting_locations",
+        data: {
+          ...stateData,
+          pickup: location,
+        },
       });
       await sendText(ctx.from, t(ctx.locale, "driver.now_provide_dropoff"));
       return true;
