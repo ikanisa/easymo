@@ -27,6 +27,8 @@
     "@opentelemetry/resources": "^1.18.1",
     "@opentelemetry/sdk-node": "^0.207.0",
     "@opentelemetry/semantic-conventions": "^1.38.0",
+    "@opentelemetry/sdk-node": "^0.208.0",
+    "@opentelemetry/semantic-conventions": "^1.27.0",
     "@prisma/client": "^5.22.0",
     "helmet": "^8.0.0",
     "nestjs-pino": "^4.0.0",
