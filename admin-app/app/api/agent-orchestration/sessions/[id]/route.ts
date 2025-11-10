@@ -2,6 +2,9 @@ import { z } from "zod";
 import { jsonOk, jsonError } from "@/lib/api/http";
 import { createHandler } from "@/app/api/withObservability";
 import { getSupabaseAdminClient } from "@/lib/server/supabase-admin";
+import { logStructured } from "@/lib/server/logger";
+import { recordAudit } from "@/lib/server/audit";
+import { headers } from "next/headers";
 
 export const dynamic = "force-dynamic";
 
@@ -50,6 +53,15 @@ export const GET = createHandler<{ params: Promise<{ id: string }> }>(
     if (quotesError) {
       console.error("Failed to fetch quotes:", quotesError);
     }
+
+      logStructured({
+        event: "agent_session_viewed",
+        target: id,
+        status: "ok",
+        details: {
+          hasQuotes: Boolean(quotes?.length),
+        },
+      });
 
       return jsonOk({
         session,
@@ -134,6 +146,42 @@ export const PATCH = createHandler<{ params: Promise<{ id: string }> }>(
           500,
         );
       }
+
+      const actorId = headers().get("x-actor-id");
+
+      await recordAudit({
+        actorId,
+        action: "agent_session_update",
+        targetTable: "agent_sessions",
+        targetId: id,
+        diff: updates,
+      });
+
+      if (currentSession.deadline_at) {
+        const deadline = new Date(currentSession.deadline_at);
+        if (!Number.isNaN(deadline.getTime()) && deadline.getTime() < Date.now()) {
+          logStructured({
+            event: "agent_session_sla_breach",
+            target: id,
+            status: "error",
+            details: {
+              status: currentSession.status,
+              deadline: currentSession.deadline_at,
+              actorId,
+            },
+          });
+        }
+      }
+
+      logStructured({
+        event: "agent_session_updated",
+        target: id,
+        status: "ok",
+        details: {
+          updates,
+          actorId,
+        },
+      });
 
       return jsonOk({ session: data });
     } catch (error) {

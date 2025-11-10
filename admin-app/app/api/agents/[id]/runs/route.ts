@@ -7,7 +7,14 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
   const { id } = params;
   const url = new URL(req.url);
   const status = url.searchParams.get("status");
-  let query = admin.from("agent_runs").select("*").eq("agent_id", id).order("started_at", { ascending: false });
+  const limitParam = url.searchParams.get("limit");
+  const limit = limitParam ? Math.max(1, Math.min(200, Number.parseInt(limitParam, 10) || 0)) : 100;
+  let query = admin
+    .from("agent_runs")
+    .select("*")
+    .eq("agent_id", id)
+    .order("started_at", { ascending: false })
+    .limit(limit);
   if (status) query = query.eq("status", status);
   const { data, error } = await query;
   if (error) return NextResponse.json({ error }, { status: 400 });

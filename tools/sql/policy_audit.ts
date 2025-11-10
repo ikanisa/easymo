@@ -19,6 +19,10 @@ const tables = [
   'kyc_documents',
   'notifications',
   'audit_log',
+  'agent_sessions',
+  'agent_quotes',
+  'agent_audit',
+  'agent_audit_log',
 ];
 
 const errors: string[] = [];
@@ -27,6 +31,15 @@ for (const t of tables) {
   const pattern = `ALTER TABLE PUBLIC.${t.toUpperCase()} ENABLE ROW LEVEL SECURITY`;
   if (!upper.includes(pattern)) {
     errors.push(`RLS not enabled for table: ${t}`);
+  }
+
+  const policyRegex = new RegExp(
+    `POLICY\\s+[\\w_]+\\s+ON\\s+PUBLIC\\.${t.toUpperCase()}`,
+    'g',
+  );
+
+  if (!policyRegex.test(upper)) {
+    errors.push(`No explicit policy found for table: ${t}`);
   }
 }
 

@@ -72,14 +72,21 @@ export async function listInsuranceQuotes(
   return {
     data: data.map((item) => ({
       id: item.id,
-      userId: item.user_id,
-      status: item.status as InsuranceQuote["status"],
-      premium: item.premium,
-      insurer: item.insurer,
+      userId: item.user_id ?? null,
+      intentId: (item as any).intent_id ?? null,
+      status: item.status ?? "pending",
+      premium: typeof item.premium === "number"
+        ? item.premium
+        : item.premium === null
+        ? null
+        : Number(item.premium ?? 0) || null,
+      insurer: item.insurer ?? null,
       uploadedDocs: item.uploaded_docs ?? [],
       createdAt: item.created_at,
       updatedAt: item.updated_at,
+      approvedAt: (item as any).approved_at ?? null,
       reviewerComment: item.reviewer_comment ?? null,
+      metadata: (item as any).metadata ?? null,
     })),
     total: count ?? data.length,
     hasMore: params.offset !== undefined && params.limit !== undefined

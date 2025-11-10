@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import classNames from "classnames";
 import { Copy, Trash2, Upload } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { LoadingState } from "@/components/ui/LoadingState";
@@ -8,8 +9,22 @@ import { runInsuranceSimulation } from "@/lib/insurance/insurance-workbench-serv
 import {
   type InsuranceSimulationResult,
   type InsuranceSimulationQuote,
+  type InsuranceRequest,
+  type InsuranceDocument,
+  type InsurancePolicy,
+  type InsurancePayment,
 } from "@/lib/schemas";
 import { getInsuranceServiceUrl } from "@/lib/env-client";
+import { getAdminApiPath } from "@/lib/routes";
+import { apiFetch } from "@/lib/api/client";
+import {
+  useInsuranceRequestsQuery,
+  useCreateInsuranceRequestMutation,
+  useInsuranceDocumentsQuery,
+  useInsurancePoliciesQuery,
+  useInsurancePaymentsQuery,
+  useInsuranceQuotesQuery as usePersistedQuotesQuery,
+} from "@/lib/queries/insurance";
 
 const COVER_OPTIONS = [
   { value: "COMPREHENSIVE", label: "Comprehensive (OD, Theft, Fire & TP)" },
@@ -52,6 +67,14 @@ const OCCUPANT_PLANS = [
   { value: 3, label: "Plan III – 3M RWF" },
   { value: 4, label: "Plan IV – 4M RWF" },
   { value: 5, label: "Plan V – 5M RWF" },
+];
+
+const DOCUMENT_KIND_OPTIONS = [
+  { value: "yellow_card", label: "Yellow card" },
+  { value: "logbook", label: "Logbook" },
+  { value: "renewal_certificate", label: "Renewal certificate" },
+  { value: "vehicle_photos", label: "Vehicle photos" },
+  { value: "other", label: "Other" },
 ];
 
 type InsuranceFormState = {
@@ -111,9 +134,51 @@ export function InsuranceWorkbench() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copiedValue, setCopiedValue] = useState<string | null>(null);
+  const [selectedRequestId, setSelectedRequestId] = useState<string | null>(null);
+  const [newRequest, setNewRequest] = useState({ contactId: "", vehiclePlate: "", notes: "" });
+  const [ingestUrl, setIngestUrl] = useState("");
+  const [ingestKind, setIngestKind] = useState("other");
+  const [ingestError, setIngestError] = useState<string | null>(null);
+  const [ingesting, setIngesting] = useState(false);
+  const [ocrMessage, setOcrMessage] = useState<string | null>(null);
+  const [persistMessage, setPersistMessage] = useState<string | null>(null);
+  const [persistError, setPersistError] = useState<string | null>(null);
+  const [requestMessage, setRequestMessage] = useState<string | null>(null);
+  const [requestError, setRequestError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const copyTimeoutRef = useRef<number | null>(null);
   const serviceReady = Boolean(getInsuranceServiceUrl());
+
+  const requestParams = useMemo(() => ({ limit: 25 }), []);
+  const requestsQuery = useInsuranceRequestsQuery(requestParams);
+  const createRequestMutation = useCreateInsuranceRequestMutation(requestParams, {
+    onSuccess: (response) => {
+      requestsQuery.refetch();
+      setSelectedRequestId(response.data.id);
+      setNewRequest({ contactId: "", vehiclePlate: "", notes: "" });
+      setRequestError(null);
+      setRequestMessage("Request created.");
+    },
+  });
+
+  const documentsParams = useMemo(
+    () => (selectedRequestId ? { intentId: selectedRequestId, limit: 50 } : { limit: 50 }),
+    [selectedRequestId],
+  );
+  const documentsQuery = useInsuranceDocumentsQuery(documentsParams);
+
+  const persistedQuotesParams = useMemo(
+    () => (selectedRequestId ? { intentId: selectedRequestId, limit: 25 } : { limit: 25 }),
+    [selectedRequestId],
+  );
+  const persistedQuotesQuery = usePersistedQuotesQuery(persistedQuotesParams);
+
+  const policiesQuery = useInsurancePoliciesQuery({ limit: 25 });
+  const paymentsParams = useMemo(
+    () => (selectedRequestId ? { intentId: selectedRequestId, limit: 25 } : { limit: 25 }),
+    [selectedRequestId],
+  );
+  const paymentsQuery = useInsurancePaymentsQuery(paymentsParams);
 
   useEffect(() => {
     return () => {
@@ -122,6 +187,92 @@ export function InsuranceWorkbench() {
       }
     };
   }, []);
+
+  useEffect(() => {
+    if (!selectedRequestId) {
+      const first = requestsQuery.data?.data?.[0]?.id;
+      if (first) {
+        setSelectedRequestId(first);
+      }
+    }
+  }, [requestsQuery.data, selectedRequestId]);
+
+  const handleSelectRequest = (id: string) => {
+    setSelectedRequestId(id);
+  };
+
+  const handleCreateRequest = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setRequestMessage(null);
+    setRequestError(null);
+    try {
+      await createRequestMutation.mutateAsync({
+        contactId: newRequest.contactId ? newRequest.contactId : undefined,
+        status: "collecting",
+        vehiclePlate: newRequest.vehiclePlate || null,
+        notes: newRequest.notes || null,
+      });
+    } catch (mutationError) {
+      const message = mutationError instanceof Error
+        ? mutationError.message
+        : "Failed to create request.";
+      setRequestError(message);
+    }
+  };
+
+  const handleIngestSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!selectedRequestId) {
+      setIngestError("Select a request to attach documents.");
+      return;
+    }
+    if (!ingestUrl.trim()) {
+      setIngestError("Provide a media URL to ingest.");
+      return;
+    }
+    setIngestError(null);
+    setIngesting(true);
+    try {
+      await apiFetch(getAdminApiPath("insurance", "ingest_media"), {
+        method: "POST",
+        body: {
+          intent_id: selectedRequestId,
+          wa_media_url: ingestUrl.trim(),
+          kind: ingestKind || "other",
+        },
+      });
+      setIngestUrl("");
+      documentsQuery.refetch();
+    } catch (ingestErr) {
+      const message = ingestErr instanceof Error
+        ? ingestErr.message
+        : "Failed to ingest document.";
+      setIngestError(message);
+    } finally {
+      setIngesting(false);
+    }
+  };
+
+  const handleQueueOcr = async () => {
+    const docs = documentsQuery.data?.data ?? [];
+    if (!docs.length) {
+      setOcrMessage("No documents ready for OCR.");
+      return;
+    }
+    try {
+      setOcrMessage(null);
+      await apiFetch(getAdminApiPath("insurance", "ocr"), {
+        method: "POST",
+        body: { document_ids: docs.map((doc) => doc.id) },
+      });
+      setOcrMessage("OCR run queued.");
+    } catch (queueError) {
+      const message = queueError instanceof Error
+        ? queueError.message
+        : "Failed to queue OCR.";
+      setOcrMessage(message);
+    }
+  };
 
   const handleFilesAdded = (event: React.ChangeEvent<HTMLInputElement>) => {
     const selected = event.target.files ? Array.from(event.target.files) : [];
@@ -154,6 +305,8 @@ export function InsuranceWorkbench() {
     event.preventDefault();
     setLoading(true);
     setError(null);
+    setPersistMessage(null);
+    setPersistError(null);
     try {
       const simulation = await runInsuranceSimulation({
         files,
@@ -178,6 +331,28 @@ export function InsuranceWorkbench() {
         },
       });
       setResult(simulation);
+      if (simulation.result.quotes.length) {
+        try {
+          const payload = simulation.result.quotes.map((quote) => ({
+            insurer: quote.providerName,
+            premium: quote.grossPremium,
+            status: "pending",
+            uploadedDocs: [],
+            reviewerComment: selectedRequestId ? `intent:${selectedRequestId}` : null,
+          }));
+          await apiFetch(getAdminApiPath("insurance", "quotes"), {
+            method: "POST",
+            body: { quotes: payload },
+          });
+          setPersistMessage("Simulation results saved to Supabase.");
+          await persistedQuotesQuery.refetch();
+        } catch (persistErr) {
+          const message = persistErr instanceof Error
+            ? persistErr.message
+            : "Failed to persist quotes.";
+          setPersistError(message);
+        }
+      }
     } catch (simulationError) {
       const message = simulationError instanceof Error
         ? simulationError.message
@@ -254,6 +429,22 @@ export function InsuranceWorkbench() {
   }, [result]);
 
   const quotes = result?.result.quotes ?? [];
+  const requestItems = requestsQuery.data?.data ?? [];
+  const documentItems = documentsQuery.data?.data ?? [];
+  const persistedQuotes = persistedQuotesQuery.data?.data ?? [];
+  const policyItems = policiesQuery.data?.data ?? [];
+  const paymentItems = paymentsQuery.data?.data ?? [];
+  const policiesDisabled = Boolean(policiesQuery.data?.disabled);
+  const paymentsDisabled = Boolean(paymentsQuery.data?.disabled);
+
+  const handleRefreshWorkflow = () => {
+    void persistedQuotesQuery.refetch();
+    void policiesQuery.refetch();
+    void paymentsQuery.refetch();
+  };
+
+  const workflowRefreshing =
+    persistedQuotesQuery.isFetching || policiesQuery.isFetching || paymentsQuery.isFetching;
 
   return (
     <div className="space-y-6">
@@ -264,6 +455,450 @@ export function InsuranceWorkbench() {
           </div>
         )
         : null}
+
+      <div className="grid gap-6 lg:grid-cols-3">
+        <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <h3 className="text-base font-semibold">Requests</h3>
+              <p className="text-sm text-slate-600">
+                Select the active intent to attach OCR, quotes, and payments.
+              </p>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                void requestsQuery.refetch();
+              }}
+              disabled={requestsQuery.isFetching}
+            >
+              {requestsQuery.isFetching ? "Refreshing…" : "Refresh"}
+            </Button>
+          </div>
+          <div className="mt-4 space-y-3">
+            {requestsQuery.isLoading
+              ? (
+                <p className="text-sm text-slate-500">Loading requests…</p>
+              )
+              : requestsQuery.isError
+                ? (
+                  <div className="space-y-2">
+                    <p className="text-sm text-red-600">
+                      {requestsQuery.error instanceof Error
+                        ? requestsQuery.error.message
+                        : "Failed to load requests."}
+                    </p>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        void requestsQuery.refetch();
+                      }}
+                    >
+                      Retry
+                    </Button>
+                  </div>
+                )
+                : requestItems.length
+                  ? (
+                    <ul className="space-y-2">
+                      {requestItems.map((request) => {
+                        const createdAt = new Date(request.createdAt).toLocaleString();
+                        return (
+                          <li key={request.id}>
+                            <button
+                              type="button"
+                              onClick={() => handleSelectRequest(request.id)}
+                              className={classNames(
+                                "w-full rounded border px-3 py-2 text-left transition",
+                                selectedRequestId === request.id
+                                  ? "border-slate-900 bg-slate-900 text-white shadow-sm"
+                                  : "border-slate-200 hover:border-slate-300",
+                              )}
+                            >
+                              <div className="flex items-center justify-between gap-3">
+                                <span className="text-xs font-semibold uppercase tracking-wide">
+                                  {request.status || "unknown"}
+                                </span>
+                                <span
+                                  className={classNames(
+                                    "text-xs",
+                                    selectedRequestId === request.id
+                                      ? "text-white/80"
+                                      : "text-slate-500",
+                                  )}
+                                >
+                                  {createdAt}
+                                </span>
+                              </div>
+                              <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+                                <span
+                                  className={classNames(
+                                    "font-medium",
+                                    selectedRequestId === request.id
+                                      ? "text-white"
+                                      : "text-slate-700",
+                                  )}
+                                >
+                                  {request.vehiclePlate ?? "Plate unknown"}
+                                </span>
+                                {request.contactId
+                                  ? (
+                                    <span className="rounded bg-slate-200 px-2 py-0.5 text-[11px] font-medium uppercase tracking-wide text-slate-700">
+                                      Contact
+                                    </span>
+                                  )
+                                  : null}
+                              </div>
+                              {request.notes
+                                ? (
+                                  <p
+                                    className={classNames(
+                                      "mt-1 text-xs",
+                                      selectedRequestId === request.id
+                                        ? "text-white/80"
+                                        : "text-slate-500",
+                                    )}
+                                  >
+                                    {request.notes}
+                                  </p>
+                                )
+                                : null}
+                            </button>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )
+                  : (
+                    <p className="text-sm text-slate-500">No insurance requests yet.</p>
+                  )}
+            {requestMessage
+              ? (
+                <p className="text-sm text-emerald-600">{requestMessage}</p>
+              )
+              : null}
+            {requestError
+              ? (
+                <p className="text-sm text-red-600">{requestError}</p>
+              )
+              : null}
+          </div>
+          <form className="mt-4 space-y-3 border-t border-slate-200 pt-4" onSubmit={handleCreateRequest}>
+            <h4 className="text-sm font-semibold text-slate-700">Create request</h4>
+            <label className="flex flex-col text-sm font-medium text-slate-700">
+              Contact ID (optional)
+              <input
+                value={newRequest.contactId}
+                onChange={(event) => setNewRequest((prev) => ({ ...prev, contactId: event.target.value }))}
+                placeholder="UUID for the contact"
+                className="mt-1 rounded border border-slate-300 px-3 py-2"
+              />
+            </label>
+            <label className="flex flex-col text-sm font-medium text-slate-700">
+              Vehicle plate (optional)
+              <input
+                value={newRequest.vehiclePlate}
+                onChange={(event) => setNewRequest((prev) => ({ ...prev, vehiclePlate: event.target.value }))}
+                placeholder="e.g. RAD123X"
+                className="mt-1 rounded border border-slate-300 px-3 py-2"
+              />
+            </label>
+            <label className="flex flex-col text-sm font-medium text-slate-700">
+              Notes for reviewers
+              <textarea
+                value={newRequest.notes}
+                onChange={(event) => setNewRequest((prev) => ({ ...prev, notes: event.target.value }))}
+                rows={2}
+                placeholder="Context or special instructions"
+                className="mt-1 rounded border border-slate-300 px-3 py-2"
+              />
+            </label>
+            <Button type="submit" disabled={createRequestMutation.isPending}>
+              {createRequestMutation.isPending ? "Creating…" : "Save request"}
+            </Button>
+          </form>
+        </div>
+
+        <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <h3 className="text-base font-semibold">Stored documents</h3>
+              <p className="text-sm text-slate-600">
+                Push WhatsApp uploads to Supabase storage, then queue them for OCR.
+              </p>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                void documentsQuery.refetch();
+              }}
+              disabled={documentsQuery.isFetching}
+            >
+              {documentsQuery.isFetching ? "Refreshing…" : "Refresh"}
+            </Button>
+          </div>
+          <form className="mt-4 space-y-3" onSubmit={handleIngestSubmit}>
+            <label className="flex flex-col text-sm font-medium text-slate-700">
+              Media URL
+              <input
+                value={ingestUrl}
+                onChange={(event) => setIngestUrl(event.target.value)}
+                placeholder="https://..."
+                className="mt-1 rounded border border-slate-300 px-3 py-2"
+              />
+            </label>
+            <label className="flex flex-col text-sm font-medium text-slate-700">
+              Document kind
+              <select
+                value={ingestKind}
+                onChange={(event) => setIngestKind(event.target.value)}
+                className="mt-1 rounded border border-slate-300 px-3 py-2"
+              >
+                {DOCUMENT_KIND_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            {ingestError
+              ? (
+                <p className="text-sm text-red-600">{ingestError}</p>
+              )
+              : null}
+            <Button type="submit" disabled={ingesting}>
+              {ingesting ? "Uploading…" : "Ingest media"}
+            </Button>
+          </form>
+          <div className="mt-4 space-y-3">
+            {documentItems.length
+              ? (
+                <ul className="space-y-2 text-sm">
+                  {documentItems.map((document) => (
+                    <li
+                      key={document.id}
+                      className="rounded border border-slate-200 px-3 py-2"
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="font-medium text-slate-800">{document.kind}</span>
+                        <span className="text-xs uppercase tracking-wide text-slate-500">
+                          {document.ocrState}
+                        </span>
+                      </div>
+                      <p className="mt-1 truncate text-xs text-slate-500">
+                        {document.storagePath}
+                      </p>
+                      <p className="mt-1 text-[11px] text-slate-400">
+                        {new Date(document.createdAt).toLocaleString()}
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              )
+              : (
+                <p className="text-sm text-slate-500">No stored documents for this intent yet.</p>
+              )}
+            <div className="flex flex-wrap items-center gap-3">
+              <Button type="button" variant="outline" size="sm" onClick={handleQueueOcr}>
+                Queue OCR run
+              </Button>
+              {ocrMessage
+                ? (
+                  <span className="text-sm text-slate-600">{ocrMessage}</span>
+                )
+                : null}
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <h3 className="text-base font-semibold">Persisted quotes & workflow</h3>
+              <p className="text-sm text-slate-600">
+                View Supabase rows for quotes, policies, and payments tied to this intent.
+              </p>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleRefreshWorkflow}
+              disabled={workflowRefreshing}
+            >
+              {workflowRefreshing ? "Refreshing…" : "Refresh"}
+            </Button>
+          </div>
+          <div className="mt-4 space-y-3 text-sm">
+            {persistMessage
+              ? (
+                <p className="text-emerald-600">{persistMessage}</p>
+              )
+              : null}
+            {persistError
+              ? (
+                <p className="text-red-600">{persistError}</p>
+              )
+              : null}
+            <section className="space-y-2">
+              <h4 className="text-sm font-semibold text-slate-700">Quotes</h4>
+              {persistedQuotesQuery.isLoading
+                ? (
+                  <p className="text-slate-500">Loading quotes…</p>
+                )
+                : persistedQuotesQuery.isError
+                  ? (
+                    <p className="text-red-600">
+                      {persistedQuotesQuery.error instanceof Error
+                        ? persistedQuotesQuery.error.message
+                        : "Failed to load quotes."}
+                    </p>
+                  )
+                  : persistedQuotes.length
+                    ? (
+                      <ul className="space-y-2">
+                        {persistedQuotes.map((quote) => (
+                          <li
+                            key={quote.id}
+                            className="rounded border border-slate-200 px-3 py-2"
+                          >
+                            <div className="flex items-center justify-between gap-3">
+                              <span className="font-medium text-slate-800">
+                                {quote.insurer ?? "Unknown insurer"}
+                              </span>
+                              <span className="text-xs uppercase tracking-wide text-slate-500">
+                                {quote.status}
+                              </span>
+                            </div>
+                            <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-slate-500">
+                              <span>
+                                {quote.premium
+                                  ? `${formatRwf(quote.premium)} premium`
+                                  : "Premium pending"}
+                              </span>
+                              {quote.reviewerComment
+                                ? (
+                                  <span className="truncate">
+                                    {quote.reviewerComment}
+                                  </span>
+                                )
+                                : null}
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    )
+                    : (
+                      <p className="text-slate-500">No quotes stored yet.</p>
+                    )}
+            </section>
+            <section className="space-y-2">
+              <h4 className="text-sm font-semibold text-slate-700">Policies</h4>
+              {policiesDisabled
+                ? (
+                  <p className="text-slate-500">Policies table unavailable in this environment.</p>
+                )
+                : policiesQuery.isLoading
+                  ? (
+                    <p className="text-slate-500">Loading policies…</p>
+                  )
+                  : policiesQuery.isError
+                    ? (
+                      <p className="text-red-600">
+                        {policiesQuery.error instanceof Error
+                          ? policiesQuery.error.message
+                          : "Failed to load policies."}
+                      </p>
+                    )
+                    : policyItems.length
+                      ? (
+                        <ul className="space-y-2">
+                          {policyItems.map((policy) => (
+                            <li
+                              key={policy.id}
+                              className="rounded border border-slate-200 px-3 py-2"
+                            >
+                              <div className="flex items-center justify-between gap-3">
+                                <span className="font-medium text-slate-800">
+                                  {policy.policyNumber}
+                                </span>
+                                <span className="text-xs uppercase tracking-wide text-slate-500">
+                                  {policy.status}
+                                </span>
+                              </div>
+                              <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-slate-500">
+                                <span>{policy.insurer ?? "Insurer pending"}</span>
+                                {policy.premium
+                                  ? (
+                                    <span>{formatRwf(policy.premium)} premium</span>
+                                  )
+                                  : null}
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
+                      )
+                      : (
+                        <p className="text-slate-500">No policies issued yet.</p>
+                      )}
+            </section>
+            <section className="space-y-2">
+              <h4 className="text-sm font-semibold text-slate-700">Payments</h4>
+              {paymentsDisabled
+                ? (
+                  <p className="text-slate-500">Payments table unavailable in this environment.</p>
+                )
+                : paymentsQuery.isLoading
+                  ? (
+                    <p className="text-slate-500">Loading payments…</p>
+                  )
+                  : paymentsQuery.isError
+                    ? (
+                      <p className="text-red-600">
+                        {paymentsQuery.error instanceof Error
+                          ? paymentsQuery.error.message
+                          : "Failed to load payments."}
+                      </p>
+                    )
+                    : paymentItems.length
+                      ? (
+                        <ul className="space-y-2">
+                          {paymentItems.map((payment) => (
+                            <li
+                              key={payment.id}
+                              className="rounded border border-slate-200 px-3 py-2"
+                            >
+                              <div className="flex items-center justify-between gap-3">
+                                <span className="font-medium text-slate-800">
+                                  {payment.currency && payment.currency !== "RWF"
+                                    ? `${payment.amount.toLocaleString()} ${payment.currency}`
+                                    : formatRwf(payment.amount)}
+                                </span>
+                                <span className="text-xs uppercase tracking-wide text-slate-500">
+                                  {payment.status}
+                                </span>
+                              </div>
+                              <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-slate-500">
+                                {payment.channel ? <span>{payment.channel}</span> : null}
+                                {payment.reference ? <span>Ref: {payment.reference}</span> : null}
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
+                      )
+                      : (
+                        <p className="text-slate-500">No payments recorded yet.</p>
+                      )}
+            </section>
+          </div>
+        </div>
+      </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">

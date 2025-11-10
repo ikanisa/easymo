@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { getSupabaseClient } from "@/lib/supabase-client";
+import { subscribeWithMonitoring } from "@/lib/monitoring/realtime";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -127,23 +128,26 @@ export default function AgentsDashboardPage() {
 
     loadDashboardData();
     
-    // Set up real-time subscription
-    const channel = supabase
-      .channel("agent-dashboard")
-      .on("postgres_changes", {
-        event: "*",
-        schema: "public",
-        table: "agent_sessions",
-      }, () => {
+    // Set up real-time subscription with monitoring hooks
+    const channel = subscribeWithMonitoring(supabase, {
+      channel: "agent-dashboard",
+      table: "agent_sessions",
+      onEvent: () => {
         loadDashboardData();
-      })
-      .subscribe();
+      },
+      sla: {
+        deadlineField: "deadline_at",
+        statusField: "status",
+        completedStatuses: ["completed", "cancelled"],
+        channel: "agent_sessions_sla",
+      },
+    });
 
     // Refresh every 10 seconds
     const interval = setInterval(loadDashboardData, 10000);
 
     return () => {
-      channel.unsubscribe();
+      channel?.unsubscribe();
       clearInterval(interval);
     };
   }, [supabase, loadDashboardData]);
