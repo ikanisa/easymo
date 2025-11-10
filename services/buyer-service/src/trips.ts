@@ -10,11 +10,20 @@ type Trip = {
 };
 
 export async function fetchBuyerTrips(buyerRef: string): Promise<Trip[]> {
-  if (!process.env.EASYMO_ADMIN_API_BASE) return [];
+  const adminBase = process.env.EASYMO_ADMIN_API_BASE;
+  if (!adminBase) return [];
   try {
-    const response = await axios.get(`${process.env.EASYMO_ADMIN_API_BASE}/admin-trips`, {
+    const headers: Record<string, string> = {};
+    if (process.env.EASYMO_ADMIN_TOKEN) {
+      headers["x-api-key"] = process.env.EASYMO_ADMIN_TOKEN;
+    }
+    const actorId =
+      process.env.EASYMO_ADMIN_ACTOR_ID || process.env.ADMIN_TEST_ACTOR_ID || "00000000-0000-0000-0000-000000000001";
+    headers["x-actor-id"] = actorId;
+
+    const response = await axios.get(`${adminBase}/admin-trips`, {
       params: { action: "list" },
-      headers: process.env.EASYMO_ADMIN_TOKEN ? { "x-api-key": process.env.EASYMO_ADMIN_TOKEN } : {},
+      headers,
     });
     const trips = response.data?.trips ?? [];
     return (Array.isArray(trips) ? trips : []).filter((trip) => trip.creator_user_id === buyerRef);

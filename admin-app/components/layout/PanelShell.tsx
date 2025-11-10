@@ -11,16 +11,12 @@ import { ServiceWorkerToast } from "@/components/system/ServiceWorkerToast";
 import { ServiceWorkerToasts } from "@/components/system/ServiceWorkerToasts";
 import { AssistantPanel } from "@/components/assistant/AssistantPanel";
 import { MobileNav } from "@/components/layout/MobileNav";
-import { SessionProvider } from "@/components/providers/SessionProvider";
+import { useAdminSession } from "@/components/providers/SessionProvider";
 
 interface PanelShellProps {
   children: ReactNode;
   environmentLabel: string;
   assistantEnabled: boolean;
-  session: {
-    actorId: string;
-    label: string | null;
-  };
 }
 
 function deriveInitials(label: string | null, actorId: string): string {
@@ -34,25 +30,24 @@ function deriveInitials(label: string | null, actorId: string): string {
   return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
 }
 
-export function PanelShell({
-  children,
-  environmentLabel,
-  assistantEnabled,
-  session,
-}: PanelShellProps) {
+export function PanelShell({ children, environmentLabel, assistantEnabled }: PanelShellProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const actorDisplayLabel = session.label?.trim() || `${session.actorId.slice(0, 8)}…`;
+  const { session, status, signOut } = useAdminSession();
   const [assistantOpen, setAssistantOpen] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
+  const actorDisplayLabel = session
+    ? session.label?.trim() || `${session.actorId.slice(0, 8)}…`
+    : "";
   const [avatarInitials, setAvatarInitials] = useState(() =>
-    deriveInitials(actorDisplayLabel, session.actorId),
+    deriveInitials(actorDisplayLabel || null, session?.actorId ?? "operator"),
   );
 
   useEffect(() => {
+    if (!session) return;
     setAvatarInitials(deriveInitials(actorDisplayLabel, session.actorId));
-  }, [actorDisplayLabel, session.actorId]);
+  }, [actorDisplayLabel, session]);
 
   useEffect(() => {
     setMobileNavOpen(false);
@@ -61,59 +56,55 @@ export function PanelShell({
   const handleSignOut = async () => {
     try {
       setSigningOut(true);
-      await fetch("/api/auth/logout", {
-        method: "POST",
-        credentials: "same-origin",
-      });
     } catch (error) {
       console.error("panel.logout_failed", error);
     } finally {
       setSigningOut(false);
-      router.replace("/login");
-      router.refresh();
+      await signOut();
     }
   };
 
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.replace("/login");
+    }
+  }, [router, status]);
+
+  if (!session) {
+    return null;
+  }
+
   return (
-    <SessionProvider session={session}>
-      <ToastProvider>
-        <ServiceWorkerToast />
-        <ServiceWorkerToasts />
-        <OfflineBanner />
-        <GradientBackground variant="surface" className="min-h-screen">
-          <div className="layout">
-            <SidebarNav />
-            <div className="layout__main">
-              <TopBar
-                environmentLabel={environmentLabel}
-                onOpenNavigation={() => setMobileNavOpen(true)}
-                assistantEnabled={assistantEnabled}
-                onOpenAssistant={assistantEnabled
-                  ? () => setAssistantOpen(true)
-                  : undefined}
-                actorLabel={actorDisplayLabel}
-                actorInitials={avatarInitials}
-                onSignOut={handleSignOut}
-                signingOut={signingOut}
-              />
-              <main
-                id="main-content"
-                className="layout__content"
-                aria-live="polite"
-              >
-                {children}
-              </main>
-            </div>
-          </div>
-          <MobileNav open={mobileNavOpen} onClose={() => setMobileNavOpen(false)} />
-          {assistantEnabled && (
-            <AssistantPanel
-              open={assistantOpen}
-              onClose={() => setAssistantOpen(false)}
+    <ToastProvider>
+      <ServiceWorkerToast />
+      <ServiceWorkerToasts />
+      <OfflineBanner />
+      <GradientBackground variant="surface" className="min-h-screen">
+        <div className="layout">
+          <SidebarNav />
+          <div className="layout__main">
+            <TopBar
+              environmentLabel={environmentLabel}
+              onOpenNavigation={() => setMobileNavOpen(true)}
+              assistantEnabled={assistantEnabled}
+              onOpenAssistant={assistantEnabled
+                ? () => setAssistantOpen(true)
+                : undefined}
+              actorLabel={actorDisplayLabel}
+              actorInitials={avatarInitials}
+              onSignOut={handleSignOut}
+              signingOut={signingOut}
             />
-          )}
-        </GradientBackground>
-      </ToastProvider>
-    </SessionProvider>
+            <main id="main-content" className="layout__content" aria-live="polite">
+              {children}
+            </main>
+          </div>
+        </div>
+        <MobileNav open={mobileNavOpen} onClose={() => setMobileNavOpen(false)} />
+        {assistantEnabled && (
+          <AssistantPanel open={assistantOpen} onClose={() => setAssistantOpen(false)} />
+        )}
+      </GradientBackground>
+    </ToastProvider>
   );
 }

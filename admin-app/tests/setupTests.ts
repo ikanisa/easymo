@@ -4,6 +4,8 @@ import { cleanup } from "./utils/react-testing";
 // import { clearCachedCredentials } from "@/lib/auth/credentials"; // REMOVED: Auth disabled
 import { webcrypto } from "node:crypto";
 
+const cookieStore = new Map<string, { value: string }>();
+
 vi.mock("next/headers", () => {
   const headers = () => ({
     get: (key: string) =>
@@ -13,9 +15,18 @@ vi.mock("next/headers", () => {
   });
 
   const cookies = () => ({
-    get: () => undefined,
-    set: () => undefined,
-    delete: () => undefined,
+    get: (name: string) => {
+      const entry = cookieStore.get(name);
+      return entry ? { name, value: entry.value } : undefined;
+    },
+    getAll: () => Array.from(cookieStore.entries()).map(([name, entry]) => ({ name, value: entry.value })),
+    set: (name: string, value: string | { value: string }) => {
+      const actual = typeof value === "string" ? value : value.value;
+      cookieStore.set(name, { value: actual });
+    },
+    delete: (name: string) => {
+      cookieStore.delete(name);
+    },
   });
 
   return { headers, cookies };
@@ -35,6 +46,7 @@ vi.mock("@va/shared", async () => {
 
 afterEach(() => {
   cleanup();
+  cookieStore.clear();
 });
 
 beforeEach(() => {
@@ -102,9 +114,8 @@ process.env.ADMIN_ACCESS_CREDENTIALS =
     },
   ]);
 
-// REMOVED: Session secrets no longer needed (auth disabled)
-// process.env.ADMIN_SESSION_SECRET =
-//   process.env.ADMIN_SESSION_SECRET || "test-session-secret-123456789";
+process.env.ADMIN_SESSION_SECRET =
+  process.env.ADMIN_SESSION_SECRET || "test-session-secret-123456789";
 
 process.env.ADMIN_ALLOW_ANY_ACTOR =
   process.env.ADMIN_ALLOW_ANY_ACTOR || "true";
