@@ -9,11 +9,14 @@ import type { RouterContext, WhatsAppTextMessage, WhatsAppLocationMessage } from
 import type { ChatState } from "../../state/store.ts";
 import { routeToAIAgent, sendAgentOptions, handleAgentSelection } from "./integration.ts";
 import { sendText } from "../../wa/client.ts";
+import { sendButtonsMessage, buildButtons } from "../../utils/reply.ts";
 import { t } from "../../i18n/translator.ts";
 import { setState } from "../../state/store.ts";
+import { IDS } from "../../wa/ids.ts";
 
 /**
  * Handle "Nearby Drivers" request with AI agent
+ * DATABASE SEARCH ONLY - No web search
  */
 export async function handleAINearbyDrivers(
   ctx: RouterContext,
@@ -36,7 +39,7 @@ export async function handleAINearbyDrivers(
       return true;
     }
 
-    await sendText(ctx.from, t(ctx.locale, "agent.searching_drivers"));
+    await sendText(ctx.from, "🚖 Searching for drivers in our database...");
 
     const response = await routeToAIAgent(ctx, {
       userId: ctx.from,
@@ -50,12 +53,12 @@ export async function handleAINearbyDrivers(
       },
     });
 
-    if (response.success && response.options) {
+    if (response.success && response.options && response.options.length > 0) {
       await sendAgentOptions(
         ctx,
         response.sessionId,
         response.options,
-        t(ctx.locale, "driver.options_found")
+        "🚖 Available Drivers"
       );
       
       await setState(ctx.supabase, ctx.profileId || ctx.from, {
@@ -66,13 +69,39 @@ export async function handleAINearbyDrivers(
         },
       });
     } else {
-      await sendText(ctx.from, response.message);
+      // Send fallback message with helpful info
+      await sendButtonsMessage(
+        ctx,
+        response.message || 
+        "🚖 No drivers found at this moment.\n\n" +
+        "This could be because:\n" +
+        "• No drivers are available in your area\n" +
+        "• Try the traditional 'See Drivers' option\n" +
+        "• Check back in a few minutes",
+        buildButtons(
+          { id: IDS.SEE_DRIVERS, title: "👀 See All Drivers" },
+          { id: IDS.BACK_HOME, title: "🏠 Home" }
+        )
+      );
     }
 
     return true;
   } catch (error) {
     console.error("AI Nearby Drivers handler error:", error);
-    await sendText(ctx.from, t(ctx.locale, "agent.error_occurred"));
+    
+    await sendButtonsMessage(
+      ctx,
+      "😔 Sorry, we encountered an error while searching for drivers.\n\n" +
+      "Please try:\n" +
+      "• Using the traditional driver search\n" +
+      "• Checking your connection\n" +
+      "• Trying again in a few minutes",
+      buildButtons(
+        { id: IDS.SEE_DRIVERS, title: "👀 See All Drivers" },
+        { id: IDS.BACK_HOME, title: "🏠 Home" }
+      )
+    );
+    
     return false;
   }
 }
