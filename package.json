@@ -20,6 +20,7 @@
     "test:functions": "deno test --allow-env --allow-read --allow-net supabase/functions/_shared",
     "test:watch": "vitest",
     "schema:verify": "node ./scripts/check-schema-alignment.mjs",
+    "env:check": "node ./scripts/check-env.mjs",
     "health": "node ./scripts/health-check.mjs",
     "seed:remote": "bash ./scripts/seed-remote.sh",
     "functions:deploy": "supabase functions deploy admin-settings admin-stats admin-users admin-trips wa-webhook",
