@@ -1,10 +1,12 @@
 // Core navigation sections
 const coreItems = [
   { href: "/dashboard", title: "Dashboard", icon: "📊" },
+  { href: "/analytics", title: "Analytics", icon: "📈" },
 ];
 
 // AI Agents section - Main focus of the platform
 const aiAgentsItems = [
+  { href: "/agents/overview", title: "Agent Overview", icon: "🧭" },
   { href: "/agents/dashboard", title: "Agents Dashboard", icon: "🤖" },
   { href: "/agents/driver-negotiation", title: "Driver Agent", icon: "🚗" },
   { href: "/agents/pharmacy", title: "Pharmacy Agent", icon: "💊" },
@@ -13,6 +15,7 @@ const aiAgentsItems = [
   { href: "/agents/property-rental", title: "Property Agent", icon: "🏠" },
   { href: "/agents/schedule-trip", title: "Schedule Agent", icon: "📅" },
   { href: "/agents/conversations", title: "Live Conversations", icon: "💬" },
+  { href: "/agents/instructions", title: "Playbooks", icon: "📘" },
   { href: "/agents/learning", title: "Agent Learning", icon: "🧠" },
   { href: "/agents/performance", title: "Performance", icon: "📈" },
   { href: "/agents/settings", title: "Agent Settings", icon: "⚙️" },
@@ -20,6 +23,7 @@ const aiAgentsItems = [
 
 // Operations section - Active sessions and monitoring
 const operationsItems = [
+  { href: "/tasks", title: "Tasks & Workflows", icon: "✅" },
   { href: "/sessions", title: "Active Sessions", icon: "🔄" },
   { href: "/negotiations", title: "Negotiations", icon: "🤝" },
   { href: "/vendor-responses", title: "Vendor Responses", icon: "📨" },
@@ -42,9 +46,11 @@ const marketingItems = [
 
 // System & Settings
 const systemItems = [
+  { href: "/tools", title: "Integrations", icon: "🔌" },
   { href: "/logs", title: "System Logs", icon: "📝" },
   { href: "/whatsapp-health", title: "WhatsApp Health", icon: "💚" },
   { href: "/settings", title: "Settings", icon: "⚙️" },
+  { href: "/settings/admin", title: "Admin Controls", icon: "🛡️" },
 ];
 
 const uiKitEnabled = (process.env.NEXT_PUBLIC_UI_V2_ENABLED ?? "false").trim().toLowerCase() === "true";
