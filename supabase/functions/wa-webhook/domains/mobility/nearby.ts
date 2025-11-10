@@ -26,8 +26,6 @@ import {
   updateStoredVehicleType,
 } from "./vehicle_plate.ts";
 import { getRecentNearbyIntent, storeNearbyIntent } from "./intent_cache.ts";
-import { isFeatureEnabled } from "../../../_shared/feature-flags.ts";
-import { handleAINearbyDrivers } from "../ai-agents/index.ts";
 
 const DEFAULT_WINDOW_DAYS = 30;
 const MIN_RADIUS_METERS = 1000;
@@ -138,14 +136,6 @@ function buildNearbyRow(
 
 export async function handleSeeDrivers(ctx: RouterContext): Promise<boolean> {
   if (!ctx.profileId) return false;
-  
-  // Check if AI agent is enabled for nearby drivers
-  if (isFeatureEnabled("agent.nearby_drivers")) {
-    // Use AI agent for driver search
-    return await handleAINearbyDrivers(ctx, "moto");
-  }
-  
-  // Fall back to traditional matching system
   try {
     const cached = await getRecentNearbyIntent(
       ctx.supabase,
