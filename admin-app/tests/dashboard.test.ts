@@ -34,7 +34,6 @@ describe("dashboard snapshot", () => {
         secondaryValue: "+8%",
         trend: "up",
       }],
-      timeseries: [{ date: "2025-01-01T00:00:00Z", issued: 5, redeemed: 2 }],
     };
     getSupabaseAdminClient.mockReturnValue({
       rpc: vi.fn().mockResolvedValue({ data: snapshot, error: null }),

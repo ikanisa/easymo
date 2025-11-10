@@ -4,11 +4,9 @@ import { recordAdminAudit } from "./audit.ts";
 const HUB_SECTIONS = {
   operations: [
     { id: "ADMIN::OPS_TRIPS", title: "Trips (live)" },
-    { id: "ADMIN::OPS_BASKETS", title: "Baskets" },
     { id: "ADMIN::OPS_MARKETPLACE", title: "Marketplace" },
     { id: "ADMIN::OPS_WALLET", title: "Wallet & tokens" },
     { id: "ADMIN::OPS_MOMO", title: "MoMo QR" },
-    { id: "ADMIN::OPS_VOUCHERS", title: "Fuel vouchers" },
   ],
   growth: [
     { id: "ADMIN::GROW_PROMOTERS", title: "Promoters" },
@@ -80,11 +78,9 @@ export async function handleAdminHub(
       });
       const mapping: Record<string, string> = {
         "ADMIN::OPS_TRIPS": "flow.admin.trips.v1",
-        "ADMIN::OPS_BASKETS": "flow.admin.baskets.v1",
         "ADMIN::OPS_MARKETPLACE": "flow.admin.marketplace.v1",
         "ADMIN::OPS_WALLET": "flow.admin.wallet.v1",
         "ADMIN::OPS_MOMO": "flow.admin.momoqr.v1",
-        "ADMIN::OPS_VOUCHERS": "flow.admin.vouchers.v1",
         "ADMIN::GROW_PROMOTERS": "flow.admin.promoters.v1",
         "ADMIN::GROW_BROADCAST": "flow.admin.broadcast.v1",
         "ADMIN::GROW_TEMPLATES": "flow.admin.templates.v1",

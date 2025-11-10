@@ -3,18 +3,7 @@
 This guide covers the day-to-day flows for support agents and on-call engineers
 using the Admin Panel.
 
-## 1. Voucher Issuance & Delivery
-
-1. Navigate to **Vouchers → Generate**.
-2. Paste recipient MSISDNs (one per line) and set amount/expiry.
-3. Submit and review the result list. A success toast plus a green integration
-   badge confirms Supabase + Edge Function writes.
-4. If the badge reports degraded mode, issue vouchers manually via the Ops
-   script and log the incident. See `docs/DEGRADED_STATES.md`.
-5. Use the preview modal to download the PNG. When degraded, share the design
-   mock until the bridge recovers.
-
-## 2. Campaign Drafting
+## 1. Campaign Drafting
 
 1. Go to **Campaigns → New draft**.
 2. Select a template, upload the CSV, and set the campaign metadata.
@@ -22,7 +11,7 @@ using the Admin Panel.
    dispatcher bridge acknowledged the draft.
 4. If degraded, coordinate with Growth before activating the campaign manually.
 
-## 3. Insurance Reviews
+## 2. Insurance Reviews
 
 1. From **Insurance**, open a pending quote drawer.
 2. Review documents, provide mandatory comments for request changes, and use the
@@ -31,7 +20,7 @@ using the Admin Panel.
 4. Monitor the badge. Degraded outcomes require manual follow-up with
    underwriting.
 
-## 4. Order Escalations
+## 3. Order Escalations
 
 1. In **Orders**, select an order to open the override modal.
 2. Provide a reason (required) and choose Nudge, Cancel, or Reopen.

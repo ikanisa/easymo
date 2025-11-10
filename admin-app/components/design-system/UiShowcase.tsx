@@ -41,11 +41,11 @@ export function UiShowcase() {
     <div className="space-y-10">
       <section className="grid gap-6 md:grid-cols-3">
         <KpiWidget
-          label="Live vouchers"
+          label="Live dispatches"
           value="42,108"
           changeLabel="+12% vs last week"
           trend="up"
-          context="Active voucher campaigns with redemptions in the last 24h."
+          context="Active dispatch workflows with completions in the last 24h."
         />
         <KpiWidget
           label="Support SLA"
@@ -86,13 +86,13 @@ export function UiShowcase() {
           </Dialog>
         </div>
         <div className="rounded-3xl border border-[color:var(--color-border)]/40 bg-[color:var(--color-surface)]/85 p-6 shadow-[var(--elevation-medium)]">
-          <h2 className="text-lg font-semibold text-[color:var(--color-foreground)]">Voucher redemption trend</h2>
+          <h2 className="text-lg font-semibold text-[color:var(--color-foreground)]">Dispatch completion trend</h2>
           <p className="mt-2 text-sm text-[color:var(--color-muted)]">
-            Track how issued vouchers compare to redemptions across Kigali markets. The series blends Supabase metrics and station
+            Track how triggered dispatches compare to completions across Kigali markets. The series blends Supabase metrics and station
             telemetry.
           </p>
           <div className="mt-6">
-            <TrendAreaChart data={chartData} ariaLabel="Voucher issuance versus redemption" />
+            <TrendAreaChart data={chartData} ariaLabel="Dispatch versus completion trend" />
           </div>
         </div>
       </section>

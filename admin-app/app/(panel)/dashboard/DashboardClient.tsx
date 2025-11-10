@@ -3,7 +3,6 @@
 import { Fragment } from "react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { KpiCard } from "@/components/dashboard/KpiCard";
-import { TimeseriesChart } from "@/components/dashboard/TimeseriesChart";
 import { SectionCard } from "@/components/ui/SectionCard";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { OrderEventsList } from "@/components/orders/OrderEventsList";
@@ -34,7 +33,7 @@ export function DashboardClient() {
   }
 
   const snapshotResult = snapshotQuery.data;
-  const snapshot = snapshotResult?.data ?? { kpis: [], timeseries: [] };
+  const snapshot = snapshotResult?.data ?? { kpis: [] };
   const orderEvents = orderEventsQuery.data ?? [];
   const webhookErrors = webhookErrorsQuery.data ?? [];
   const adminHub = adminHubQuery.data;
@@ -109,12 +108,6 @@ export function DashboardClient() {
             </Fragment>
           )}
       </section>
-      <SectionCard
-        title="Voucher activity"
-        description="Issued vs redeemed vouchers over the last 14 days."
-      >
-        <TimeseriesChart data={snapshot.timeseries} />
-      </SectionCard>
       <SectionCard
         title="Latest order events"
         description="Stay ahead of vendor SLAs with the latest 10 events."

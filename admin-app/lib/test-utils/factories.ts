@@ -3,8 +3,6 @@ import type {
   AdminDiagnosticsMatch,
   AdminDiagnosticsSnapshot,
   AdminHubSnapshot,
-  AdminVoucherDetail,
-  AdminVoucherList,
   AssistantRun,
   AuditEvent,
   Bar,
@@ -24,9 +22,7 @@ import type {
   Station,
   StorageObject,
   TemplateMeta,
-  TimeseriesPoint,
   User,
-  Voucher,
   WebhookError,
   Lead,
   LiveCall,
@@ -43,17 +39,6 @@ export function createDashboardKpi(
     primaryValue: "0",
     secondaryValue: null,
     trend: "flat",
-    ...overrides,
-  };
-}
-
-export function createTimeseriesPoint(
-  overrides: Partial<TimeseriesPoint> = {},
-): TimeseriesPoint {
-  return {
-    date: new Date().toISOString(),
-    issued: 0,
-    redeemed: 0,
     ...overrides,
   };
 }
@@ -355,24 +340,6 @@ export function createStation(overrides: Partial<Station> = {}): Station {
   };
 }
 
-export function createVoucher(overrides: Partial<Voucher> = {}): Voucher {
-  return {
-    id: "voucher-1",
-    userId: "user-1",
-    stationScope: null,
-    campaignId: null,
-    amount: 0,
-    currency: "RWF",
-    code: "ABCDE",
-    qrUrl: null,
-    pngUrl: null,
-    status: "issued",
-    issuedAt: new Date().toISOString(),
-    redeemedAt: null,
-    ...overrides,
-  };
-}
-
 export function createAdminAlertPreference(
   overrides: Partial<AdminAlertPreference> = {},
 ): AdminAlertPreference {
@@ -399,33 +366,6 @@ export function createAdminHubSnapshot(
       trust: [],
       diagnostics: [],
     },
-    messages: [],
-    ...overrides,
-  };
-}
-
-export function createAdminVoucherList(
-  overrides: Partial<AdminVoucherList> = {},
-): AdminVoucherList {
-  return {
-    vouchers: [],
-    messages: [],
-    ...overrides,
-  };
-}
-
-export function createAdminVoucherDetail(
-  overrides: Partial<AdminVoucherDetail> = {},
-): AdminVoucherDetail {
-  return {
-    id: "voucher-1",
-    code5: "12345",
-    amountText: "RWF 0",
-    policyNumber: "POLICY",
-    whatsappE164: "+250780000000",
-    status: "issued",
-    issuedAt: new Date().toISOString(),
-    redeemedAt: null,
     messages: [],
     ...overrides,
   };

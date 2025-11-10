@@ -46,7 +46,6 @@ Retrieve the schema for a specific stage via `getEnvironmentSchema(stage)` if yo
 | --- | --- | --- |
 | `agentChat` | `FEATURE_AGENT_CHAT` | Enable WhatsApp chat capabilities. |
 | `agentVoice` | `FEATURE_AGENT_VOICE` | Enable realtime voice agents. |
-| `agentVouchers` | `FEATURE_AGENT_VOUCHERS` | Allow voucher operations through agents. |
 | `agentCustomerLookup` | `FEATURE_AGENT_CUSTOMER_LOOKUP` | Permit customer lookup workflows. |
 | `otelTracing` | `ENABLE_OTEL_TRACING` | Toggle OpenTelemetry exporters. |
 | `costDashboard` | `ENABLE_COST_DASHBOARD` | Surface the internal cost dashboard. |

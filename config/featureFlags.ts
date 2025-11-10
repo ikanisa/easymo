@@ -21,12 +21,6 @@ export const AgentFeatureFlags = {
                       process.env.FEATURE_AGENT_VOICE === "1",
 
   /**
-   * Enable voucher operations via AI agent
-   */
-  ENABLE_AGENT_VOUCHERS: process.env.FEATURE_AGENT_VOUCHERS === "true" ||
-                         process.env.FEATURE_AGENT_VOUCHERS === "1",
-
-  /**
    * Enable customer lookup via AI agent
    */
   ENABLE_AGENT_CUSTOMER_LOOKUP: process.env.FEATURE_AGENT_CUSTOMER_LOOKUP === "true" ||

@@ -143,7 +143,6 @@ import { handleAdminMomoQr } from "./momoqr.ts";
 import { handleAdminPromoters } from "./promoters.ts";
 import { handleAdminBroadcast } from "./broadcast.ts";
 import { handleAdminTemplates } from "./templates.ts";
-import { handleAdminVouchers } from "./vouchers.ts";
 import { handleAdminReferrals } from "./referrals.ts";
 import { handleAdminFreeze } from "./freeze.ts";
 import { handleAdminDiagnostics } from "./diagnostics.ts";
@@ -176,8 +175,6 @@ export async function handleAdminFlow(
         return await handleAdminBroadcast(req, { waId: ctx.waId });
       case "flow.admin.templates.v1":
         return await handleAdminTemplates(req, { waId: ctx.waId });
-      case "flow.admin.vouchers.v1":
-        return await handleAdminVouchers(req, { waId: ctx.waId });
       case "flow.admin.referrals.v1":
         return await handleAdminReferrals(req, { waId: ctx.waId });
       case "flow.admin.freeze.v1":

@@ -3,11 +3,6 @@ import type { ChatState } from "../../state/store.ts";
 import { ADMIN_STATE, nextAdminBack } from "./state.ts";
 import { openAdminHub, showAdminHubList } from "./hub.ts";
 import {
-  showAdminVouchersEntry,
-  showAdminVouchersMenu,
-  showVoucherRecentEntry,
-} from "./vouchers.ts";
-import {
   hydrateInsuranceLeads,
   showAdminInsuranceEntry,
   showAdminInsuranceList,
@@ -29,21 +24,6 @@ export async function handleAdminBack(
       return true;
     case ADMIN_STATE.HUB_LIST:
       await showAdminHubList(ctx);
-      return true;
-    case ADMIN_STATE.VOUCHERS_ENTRY:
-      await showAdminVouchersEntry(ctx);
-      return true;
-    case ADMIN_STATE.VOUCHERS_LIST:
-      await showAdminVouchersMenu(ctx);
-      return true;
-    case ADMIN_STATE.VOUCHERS_FORM:
-      await showAdminVouchersMenu(ctx);
-      return true;
-    case ADMIN_STATE.VOUCHERS_RECENT_ENTRY:
-      await showVoucherRecentEntry(ctx);
-      return true;
-    case ADMIN_STATE.VOUCHERS_RECENT_LIST:
-      await showVoucherRecentEntry(ctx);
       return true;
     case ADMIN_STATE.INSURANCE_ENTRY:
       await showAdminInsuranceEntry(ctx);

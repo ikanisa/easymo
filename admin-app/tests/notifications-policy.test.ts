@@ -37,11 +37,11 @@ describe('enqueueNotification', () => {
 
     const { enqueueNotification } = await import('@/lib/server/notifications');
     await expect(
-      enqueueNotification({ template: 'voucher', toRole: 'ops', msisdn: '+250700000001' })
+      enqueueNotification({ template: 'campaign', toRole: 'ops', msisdn: '+250700000001' })
     ).resolves.toBe('notif-1');
 
     expect(insert).toHaveBeenCalledWith({
-      type: 'voucher',
+      type: 'campaign',
       to_role: 'ops',
       msisdn: '+250700000001',
       status: 'queued',
@@ -55,7 +55,7 @@ describe('enqueueNotification', () => {
       targetTable: 'notifications',
       targetId: 'notif-1',
       diff: {
-        template: 'voucher',
+        template: 'campaign',
         toRole: 'ops',
         msisdn: '+250700000001',
       },
@@ -74,7 +74,7 @@ describe('enqueueNotification', () => {
 
     const { enqueueNotification } = await import('@/lib/server/notifications');
     await enqueueNotification({
-      template: 'voucher',
+      template: 'campaign',
       toRole: 'ops',
       msisdn: '+250700000002',
       actorId: '00000000-0000-0000-0000-000000000123',
@@ -87,7 +87,7 @@ describe('enqueueNotification', () => {
       targetTable: 'notifications',
       targetId: 'notif-2',
       diff: {
-        template: 'voucher',
+        template: 'campaign',
         toRole: 'ops',
         msisdn: '+250700000002',
       },
@@ -101,6 +101,6 @@ describe('enqueueNotification', () => {
     getSupabaseAdminClient.mockReturnValue(null);
 
     const { enqueueNotification } = await import('@/lib/server/notifications');
-    await expect(enqueueNotification({ template: 'voucher', toRole: 'ops', msisdn: '+250700000001' })).rejects.toThrow('supabase_unavailable');
+    await expect(enqueueNotification({ template: 'campaign', toRole: 'ops', msisdn: '+250700000001' })).rejects.toThrow('supabase_unavailable');
   });
 });

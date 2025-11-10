@@ -1,9 +1,7 @@
 declare module '@/lib/test-utils/factories' {
-  export const createVoucher: any;
   export const createCampaign: any;
   export const createInsuranceQuote: any;
   export const createDashboardKpi: any;
-  export const createTimeseriesPoint: any;
   export const createMenuVersion: any;
   export const createOcrJob: any;
   export const createOrder: any;
@@ -17,8 +15,6 @@ declare module '@/lib/test-utils/factories' {
   export const createAdminAlertPreference: any;
   export const createAdminDiagnosticsMatch: any;
   export const createAdminDiagnosticsSnapshot: any;
-  export const createAdminVoucherDetail: any;
-  export const createAdminVoucherList: any;
   export const createSettingEntry: any;
   export const createAdminHubSnapshot: any;
   export const createFlowMeta: any;

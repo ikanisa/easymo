@@ -8,7 +8,6 @@ import { sendAdminList, sendAdminViewButton } from "./ui.ts";
 export const ADMIN_ROW_IDS = {
   OPS_TRIPS: "ADMIN::OPS::TRIPS",
   OPS_INSURANCE: "ADMIN::OPS::INSURANCE",
-  OPS_VOUCHERS: "ADMIN::OPS::VOUCHERS",
   OPS_MARKETPLACE: "ADMIN::OPS::MARKETPLACE",
   OPS_WALLET: "ADMIN::OPS::WALLET",
   OPS_MOMO: "ADMIN::OPS::MOMO",
@@ -21,10 +20,6 @@ export const ADMIN_ROW_IDS = {
   DIAG_INSURANCE: "ADMIN::DIAG::INSURANCE",
   DIAG_HEALTH: "ADMIN::DIAG::HEALTH",
   DIAG_LOGS: "ADMIN::DIAG::LOGS",
-  VOUCHERS_MENU_ISSUE: "ADMIN::VOUCHERS::MENU::ISSUE",
-  VOUCHERS_MENU_REDEEM: "ADMIN::VOUCHERS::MENU::REDEEM",
-  VOUCHERS_MENU_RECENT: "ADMIN::VOUCHERS::MENU::RECENT",
-  VOUCHERS_RECENT_PREFIX: "ADMIN::VOUCHERS::RECENT::",
   INSURANCE_LEAD_PREFIX: "ADMIN::INSURANCE::LEAD::",
   INSURANCE_DETAIL_DM: "ADMIN::INSURANCE::DETAIL::DM",
   INSURANCE_DETAIL_REVIEW: "ADMIN::INSURANCE::DETAIL::REVIEW",
@@ -58,7 +53,6 @@ export async function showAdminHubList(ctx: RouterContext): Promise<void> {
       sectionTitle: "Ops tools",
       rows: [
         { id: ADMIN_ROW_IDS.OPS_INSURANCE, title: "Insurance" },
-        { id: ADMIN_ROW_IDS.OPS_VOUCHERS, title: "Vouchers" },
         { id: IDS.BACK_MENU, title: "← Back" },
       ],
     },

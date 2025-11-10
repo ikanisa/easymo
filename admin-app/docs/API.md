@@ -62,32 +62,13 @@ straightforward.
 - **Notes:** Validates query params and response payload. The front-end data
   provider automatically calls this route when running in the browser.
 
-## `/api/vouchers`
-
-- **Method:** `GET`
-- **Query Params:**
-  - `status` _(optional)_ – `issued|sent|redeemed|expired|void`
-  - `search` _(optional)_ – voucher ID or msisdn
-  - `offset`, `limit` _(optional, same semantics as `/api/users`)_
-- **Response:**
-  ```json
-  {
-    "data": Voucher[],
-    "total": number,
-    "hasMore": boolean
-  }
-  ```
-- **Notes:** When the voucher preview/send bridges are implemented this route
-  will switch from mock data to Supabase
-  - Edge Function backed reads.
-
 ## `/api/campaigns`
 
 - **Method:** `GET`
 - **Query Params:** `status?`, `offset?`, `limit?`
 - **Method:** `POST`
 - **Body:**
-  `{ name: string, type: 'promo' | 'voucher', templateId: string, metadata?: object }`
+  `{ name: string, type: 'promo' | 'notification', templateId: string, metadata?: object }`
 - **Response:** list returns `{ data, total, hasMore }`. Create returns
   `{ campaign, message, integration? }`.
 - **Notes:** Draft creation inserts via Supabase when credentials are present
@@ -103,40 +84,6 @@ straightforward.
 - **Notes:** Each action updates Supabase (when available) and calls the
   campaign dispatcher bridge. Responses include the integration envelope to
   highlight degraded pathways when the dispatcher is unavailable.
-
-## `/api/vouchers/preview`
-
-- **Method:** `POST`
-- **Body:** `{ voucherId: string }`
-- **Response:**
-  `{ voucherId, status: 'ready'|'pending'|'degraded'|'not_configured', message?, imageUrl?, pdfUrl?, integration? }`
-- **Notes:** Calls the voucher preview Edge Function when configured. If the
-  bridge is missing or returns an unexpected payload the handler marks the
-  response as `degraded` and populates `integration` with context for the UI.
-
-## `/api/vouchers/generate`
-
-- **Method:** `POST`
-- **Headers:** `x-idempotency-key` _(optional)_
-- **Body:**
-  `{ amount, currency?, expiresAt?, stationScope?, recipients: [{ msisdn, userId? }] }`
-- **Response:** `{ issuedCount, vouchers, message, integration? }`
-- **Notes:** Attempts the voucher issuance bridge first, then falls back to
-  Supabase inserts or mock data while reporting the integration state.
-  Idempotency keys are persisted via Supabase where available and mirrored
-  in-memory.
-
-## `/api/vouchers/send`
-
-- **Method:** `POST`
-- **Headers:** `x-idempotency-key` _(optional)_
-- **Body:** `{ voucherId, msisdn, templateId? }`
-- **Response:** `{ voucherId, status, message, providerId?, integration? }` or
-  `{ status: 'blocked', reason, message }` if policy checks fail.
-- **Notes:** Applies outbound policy engine (opt-out → quiet hours → throttle)
-  before calling the send bridge. Errors or missing integration endpoints
-  surface as `integration.status = 'degraded'` so the UI can explain the
-  degraded path.
 
 ## `/api/insurance/:id/approve`
 
@@ -192,8 +139,7 @@ straightforward.
 - Add routes for campaign targets import/list, station CRUD, files signed URLs,
   logs search, settings updates, notifications resend.
 - Replace mock idempotency/audit/policy stores with Supabase-backed
-  implementations and ensure EF bridges are invoked for voucher preview/send and
-  campaign dispatch.
+  implementations and ensure EF bridges are invoked for campaign dispatch.
 
 ## `/api/qr/generate`
 

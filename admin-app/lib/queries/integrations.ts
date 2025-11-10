@@ -17,7 +17,6 @@ export interface IntegrationStatusEntry {
 }
 
 const INTEGRATION_TARGETS = [
-  "voucherPreview",
   "whatsappSend",
   "campaignDispatcher",
   "storageSignedUrl",
@@ -31,10 +30,6 @@ export type IntegrationStatusMap = Record<
 >;
 
 const FALLBACK_STATUSES: IntegrationStatusMap = {
-  voucherPreview: {
-    status: "amber",
-    message: "Configure NEXT_PUBLIC_VOUCHER_PREVIEW_ENDPOINT to enable previews.",
-  },
   whatsappSend: {
     status: "amber",
     message: "Set NEXT_PUBLIC_WHATSAPP_SEND_ENDPOINT for live sends.",

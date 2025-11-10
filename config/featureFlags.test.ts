@@ -25,18 +25,15 @@ describe('feature flags', () => {
       ...originalEnv,
       FEATURE_AGENT_CHAT: 'true',
       FEATURE_AGENT_VOICE: '1',
-      FEATURE_AGENT_VOUCHERS: 'true',
     };
 
     const { AgentFeatureFlags, isFeatureEnabled, getEnabledFeatures } = await importFlags();
     expect(AgentFeatureFlags.ENABLE_AGENT_CHAT).toBe(true);
     expect(isFeatureEnabled('ENABLE_AGENT_VOICE')).toBe(true);
-    expect(isFeatureEnabled('ENABLE_AGENT_VOUCHERS')).toBe(true);
     expect(getEnabledFeatures()).toEqual(
       expect.arrayContaining([
         'ENABLE_AGENT_CHAT',
         'ENABLE_AGENT_VOICE',
-        'ENABLE_AGENT_VOUCHERS',
       ]),
     );
   });

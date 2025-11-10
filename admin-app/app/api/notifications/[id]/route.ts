@@ -156,7 +156,7 @@ export const POST = createHandler('admin_api.notifications.id.action', async (
     }, 409);
   }
 
-  const bridgeResult = await callBridge('voucherSend', {
+  const bridgeResult = await callBridge('whatsappSend', {
     notificationId,
     msisdn: data.msisdn,
     action: 'resend'

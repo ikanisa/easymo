@@ -36,8 +36,6 @@ export async function handleAdminInsurance(
       return await assignOwner(req, ctx.waId);
     case "a_admin_lead_request_reupload":
       return await requestReupload(req, ctx.waId);
-    case "a_admin_lead_issue_voucher":
-      return await launchVoucherIssue(req);
     default:
       return {
         next_screen_id: req.screen_id,
@@ -181,58 +179,5 @@ async function requestReupload(
   return {
     next_screen_id: "s_lead_detail",
     messages: [{ level: "info", text: "Re-upload request noted." }],
-  };
-}
-
-async function launchVoucherIssue(
-  req: FlowExchangeRequest,
-): Promise<FlowExchangeResponse> {
-  const leadId = typeof req.fields?.lead_id === "string"
-    ? req.fields.lead_id
-    : undefined;
-  if (!leadId) {
-    return {
-      next_screen_id: req.screen_id,
-      messages: [{ level: "error", text: "Missing lead id." }],
-    };
-  }
-  const { data: lead, error } = await supabase
-    .from("insurance_leads")
-    .select("user_id, policy_number, extracted")
-    .eq("id", leadId)
-    .maybeSingle();
-  if (error || !lead) {
-    return {
-      next_screen_id: req.screen_id,
-      messages: [{ level: "error", text: "Lead not found." }],
-    };
-  }
-  const policyNumber: string | null = lead.policy_number ??
-    (typeof lead.extracted?.policy_number === "string"
-      ? lead.extracted.policy_number
-      : null);
-  const plate: string | null = typeof lead.extracted?.plate === "string"
-    ? lead.extracted.plate
-    : null;
-  let waId: string | null = null;
-  if (lead.user_id) {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("whatsapp_e164")
-      .eq("user_id", lead.user_id)
-      .maybeSingle();
-    waId = profile?.whatsapp_e164 ?? null;
-  }
-  return {
-    next_screen_id: req.screen_id,
-    messages: [{ level: "info", text: "Opening voucher flow." }],
-    data: {
-      launch_flow_id: "flow.admin.vouchers.v1",
-      prefill: {
-        whatsapp_e164: waId,
-        policy_number: policyNumber,
-        plate,
-      },
-    },
   };
 }

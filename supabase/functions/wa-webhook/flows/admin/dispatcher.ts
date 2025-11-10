@@ -3,7 +3,6 @@ import type { ChatState } from "../../state/store.ts";
 import { sendText } from "../../wa/client.ts";
 import { ADMIN_ROW_IDS } from "./hub.ts";
 import { ensureAdmin } from "./state.ts";
-import { handleAdminVoucherRow, showAdminVouchersEntry } from "./vouchers.ts";
 import {
   handleAdminInsuranceRow,
   showAdminInsuranceEntry,
@@ -14,16 +13,12 @@ export async function handleAdminRow(
   id: string,
   state: ChatState,
 ): Promise<boolean> {
-  if (await handleAdminVoucherRow(ctx, id, state)) return true;
   if (await handleAdminInsuranceRow(ctx, id, state)) return true;
 
   const allowed = await ensureAdmin(ctx);
   if (!allowed) return true;
 
   switch (id) {
-    case ADMIN_ROW_IDS.OPS_VOUCHERS:
-      await showAdminVouchersEntry(ctx);
-      return true;
     case ADMIN_ROW_IDS.OPS_INSURANCE:
       await showAdminInsuranceEntry(ctx);
       return true;

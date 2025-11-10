@@ -4,10 +4,10 @@ import { createHandler } from "@/app/api/withObservability";
 import { getSupabaseAdminClient } from "@/lib/server/supabase-admin";
 
 const STORAGE_HEALTH_BUCKET =
-  process.env.NEXT_PUBLIC_STORAGE_HEALTHCHECK_BUCKET ?? "vouchers";
+  process.env.NEXT_PUBLIC_STORAGE_HEALTHCHECK_BUCKET ?? "operations-health";
 
 const httpTargetSchema = z.object({
-  name: z.enum(["voucherPreview", "whatsappSend", "campaignDispatcher"]),
+  name: z.enum(["whatsappSend", "campaignDispatcher"]),
   url: z.string().url(),
   method: z.enum(["HEAD", "GET", "POST"]).default("HEAD"),
 });
@@ -16,14 +16,6 @@ type ProbeResult = { status: "green" | "amber" | "red"; message: string };
 
 function buildTargets() {
   const targets = [] as Array<z.infer<typeof httpTargetSchema>>;
-
-  if (process.env.NEXT_PUBLIC_VOUCHER_PREVIEW_ENDPOINT) {
-    targets.push({
-      name: "voucherPreview",
-      url: process.env.NEXT_PUBLIC_VOUCHER_PREVIEW_ENDPOINT,
-      method: "POST",
-    });
-  }
 
   if (process.env.NEXT_PUBLIC_WHATSAPP_SEND_ENDPOINT) {
     targets.push({
@@ -107,10 +99,6 @@ export const GET = createHandler(
   async () => {
     const targets = buildTargets();
     const results: Record<string, ProbeResult> = {
-      voucherPreview: {
-        status: "red",
-        message: "Set NEXT_PUBLIC_VOUCHER_PREVIEW_ENDPOINT to enable health checks",
-      },
       whatsappSend: {
         status: "red",
         message: "Set NEXT_PUBLIC_WHATSAPP_SEND_ENDPOINT to enable health checks",

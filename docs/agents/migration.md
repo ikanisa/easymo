@@ -43,7 +43,6 @@ supabase functions deploy ai-realtime-webhook
 supabase secrets set OPENAI_API_KEY="sk-..."
 supabase secrets set FEATURE_AGENT_CHAT="false"
 supabase secrets set FEATURE_AGENT_VOICE="false"
-supabase secrets set FEATURE_AGENT_VOUCHERS="false"
 ```
 
 **Validation:**
@@ -64,7 +63,6 @@ Enable features for internal testing only:
 ```bash
 # Set feature flags to true
 supabase secrets set FEATURE_AGENT_CHAT="true"
-supabase secrets set FEATURE_AGENT_VOUCHERS="true"
 supabase secrets set FEATURE_AGENT_CUSTOMER_LOOKUP="true"
 ```
 
@@ -84,7 +82,6 @@ supabase secrets set FEATURE_AGENT_CUSTOMER_LOOKUP="true"
 **Rollback:** Disable features:
 ```bash
 supabase secrets set FEATURE_AGENT_CHAT="false"
-supabase secrets set FEATURE_AGENT_VOUCHERS="false"
 ```
 
 ### Phase 3: Limited Rollout (Beta Users)
@@ -135,7 +132,6 @@ After successful beta (minimum 7 days):
 # Disable all features immediately
 supabase secrets set FEATURE_AGENT_CHAT="false"
 supabase secrets set FEATURE_AGENT_VOICE="false"
-supabase secrets set FEATURE_AGENT_VOUCHERS="false"
 ```
 
 **Effect:** 

@@ -63,7 +63,6 @@ WHATSAPP_API_URL=https://graph.facebook.com/v20.0
 # Feature Flags (enable as needed)
 FEATURE_AGENT_CHAT=false
 FEATURE_AGENT_VOICE=false
-FEATURE_AGENT_VOUCHERS=false
 FEATURE_AGENT_CUSTOMER_LOOKUP=false
 
 # Observability (optional)
@@ -288,7 +287,6 @@ Set both `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`.
 Enable the appropriate feature flag:
 - `FEATURE_AGENT_CHAT=true` for WhatsApp
 - `FEATURE_AGENT_VOICE=true` for voice calls
-- `FEATURE_AGENT_VOUCHERS=true` for voucher operations
 
 ### WhatsApp webhook not receiving messages
 

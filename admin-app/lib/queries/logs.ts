@@ -25,7 +25,7 @@ export interface LogsPayload {
   >;
   totals?: {
     audit: number;
-    voucher: number;
+    notifications: number;
   };
   integration?: {
     target: string;

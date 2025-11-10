@@ -11,11 +11,11 @@ const PRECACHE_URLS = [
 ];
 
 const STATIC_PREFIXES = ["/_next/static/", "/icons/", "/screenshots/", "/fonts/"];
-const NETWORK_FIRST_PATTERNS = [/^\/_next\/data\//, /^\/api\//, /^\/notifications/, /^\/settings/, /^\/vouchers/];
+const NETWORK_FIRST_PATTERNS = [/^\/_next\/data\//, /^\/api\//, /^\/notifications/, /^\/settings/];
 const SYNC_TAG = "admin-offline-sync";
 const BG_SYNC_DB = "admin-offline-queue";
 const BG_SYNC_STORE = "requests";
-const OFFLINE_POST_TARGETS = [/^\/api\/orders/, /^\/api\/notifications/, /^\/api\/vouchers/];
+const OFFLINE_POST_TARGETS = [/^\/api\/orders/, /^\/api\/notifications/];
 
 self.addEventListener("install", (event) => {
   event.waitUntil((async () => {

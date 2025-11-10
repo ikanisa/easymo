@@ -3,10 +3,8 @@ import { z } from "zod";
 import { logStructured } from "@/lib/server/logger";
 
 type BridgeTarget =
-  | "voucherPreview"
-  | "voucherGenerate"
-  | "voucherSend"
   | "campaignDispatch"
+  | "whatsappSend"
   | "insuranceWorkflow"
   | "stationDirectory";
 
@@ -37,26 +35,11 @@ interface BridgeConfig {
 }
 
 const TARGET_CONFIG: Record<BridgeTarget, BridgeConfig> = {
-  voucherPreview: {
-    method: "POST",
-    envKeys: [
-      "VOUCHER_PREVIEW_ENDPOINT",
-      "NEXT_PUBLIC_VOUCHER_PREVIEW_ENDPOINT",
-    ],
-    defaultMessage:
-      "Voucher preview service not configured. Set VOUCHER_PREVIEW_ENDPOINT to enable previews.",
-  },
-  voucherGenerate: {
-    method: "POST",
-    envKeys: ["VOUCHER_GENERATE_ENDPOINT"],
-    defaultMessage:
-      "Voucher issuance bridge unavailable. Configure VOUCHER_GENERATE_ENDPOINT to enable real issuance.",
-  },
-  voucherSend: {
+  whatsappSend: {
     method: "POST",
     envKeys: ["VOUCHER_SEND_ENDPOINT", "NEXT_PUBLIC_WHATSAPP_SEND_ENDPOINT"],
     defaultMessage:
-      "Voucher send bridge unavailable. Configure VOUCHER_SEND_ENDPOINT to dispatch WhatsApp messages.",
+      "WhatsApp send bridge unavailable. Configure VOUCHER_SEND_ENDPOINT to dispatch messages.",
   },
   campaignDispatch: {
     method: "POST",

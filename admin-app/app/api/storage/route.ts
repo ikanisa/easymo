@@ -6,7 +6,7 @@ import { mockStorageObjects } from '@/lib/mock-data';
 import { jsonOk, jsonError, zodValidationError } from '@/lib/api/http';
 import { createHandler } from '@/app/api/withObservability';
 
-const allowedBuckets = new Set(['vouchers', 'qr', 'campaign-media', 'docs']);
+const allowedBuckets = new Set(['operations', 'qr', 'campaign-media', 'docs']);
 
 const querySchema = z.object({
   bucket: z.string().optional(),

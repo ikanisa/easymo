@@ -6,10 +6,10 @@ describe("IntegrationStatusBadge", () => {
   it("renders healthy state copy", () => {
     render(
       <IntegrationStatusBadge
-        integration={{ target: "voucherSend", status: "ok" }}
+        integration={{ target: "whatsappSend", status: "ok" }}
       />,
     );
-    expect(screen.getByText("voucherSend")).toBeInTheDocument();
+    expect(screen.getByText("whatsappSend")).toBeInTheDocument();
     expect(screen.getByText("Integration healthy")).toBeInTheDocument();
   });
 
@@ -17,7 +17,7 @@ describe("IntegrationStatusBadge", () => {
     render(
       <IntegrationStatusBadge
         integration={{
-          target: "voucherSend",
+          target: "whatsappSend",
           status: "degraded",
           reason: "bridge_down",
           message: "Bridge offline.",

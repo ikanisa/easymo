@@ -1,12 +1,10 @@
 import { z } from "zod";
 import { shouldUseMocks } from "@/lib/runtime-config";
-import { mockDashboardKpis, mockTimeseries } from "@/lib/mock-data";
+import { mockDashboardKpis } from "@/lib/mock-data";
 import { callAdminFunction } from "@/lib/server/functions-client";
 import {
   type DashboardKpi,
   dashboardKpiSchema,
-  type TimeseriesPoint,
-  timeseriesPointSchema,
 } from "@/lib/schemas";
 import { getAdminApiPath } from "@/lib/routes";
 
@@ -15,7 +13,6 @@ const isServer = typeof window === "undefined";
 
 export type DashboardSnapshot = {
   kpis: DashboardKpi[];
-  timeseries: TimeseriesPoint[];
 };
 
 export type DashboardSnapshotIntegration = {
@@ -99,19 +96,8 @@ export async function getDashboardSnapshot(): Promise<DashboardSnapshotResult> {
         { id: "openTrips", label: "Open Trips", value: Number(stats?.open_trips ?? 0) },
         { id: "activeSubs", label: "Active Subscriptions", value: Number(stats?.active_subscriptions ?? 0) },
       ];
-      const today = new Date();
-      const base = Number(stats?.active_subscriptions ?? 0) || 0;
-      const timeseries: TimeseriesPoint[] = Array.from({ length: 7 }).map((_, i) => {
-        const d = new Date(today);
-        d.setDate(today.getDate() - (6 - i));
-        return {
-          date: d.toISOString(),
-          issued: base,
-          redeemed: 0,
-        };
-      });
       return {
-        data: { kpis, timeseries },
+        data: { kpis },
         integration: { status: "ok", target: "dashboard_snapshot" },
       };
     } catch (e) {
@@ -145,13 +131,11 @@ export async function getDashboardSnapshot(): Promise<DashboardSnapshotResult> {
 function parseSnapshot(input: unknown): DashboardSnapshot {
   return z.object({
     kpis: z.array(dashboardKpiSchema),
-    timeseries: z.array(timeseriesPointSchema),
   }).parse(input);
 }
 
 function fallbackSnapshot(): DashboardSnapshot {
   return {
     kpis: mockDashboardKpis,
-    timeseries: mockTimeseries,
   };
 }

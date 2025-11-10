@@ -10,7 +10,7 @@ const queryMock = {
   isFetching: false,
   data: {
     data: [
-      { id: 'n1', toRole: 'vendor', type: 'voucher', status: 'queued', createdAt: '2025-10-01', sentAt: null },
+      { id: 'n1', toRole: 'vendor', type: 'campaign', status: 'queued', createdAt: '2025-10-01', sentAt: null },
       { id: 'n2', toRole: 'customer', type: 'promo', status: 'failed', createdAt: '2025-10-02', sentAt: null },
     ],
     total: 2,

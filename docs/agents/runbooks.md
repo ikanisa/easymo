@@ -90,11 +90,7 @@ Search logs for these events:
    - Database connection issues
    - Invalid tool arguments
 
-3. Quick fix:
-   ```bash
-   # Disable problematic feature
-   supabase secrets set FEATURE_AGENT_VOUCHERS="false"
-   ```
+3. Quick fix: temporarily disable the affected agent feature flag in Supabase secrets until a fix is deployed.
 
 ### Slow Response Times
 

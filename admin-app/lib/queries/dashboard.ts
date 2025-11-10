@@ -10,7 +10,6 @@ import {
 import type {
   DashboardKpi,
   OrderEvent,
-  TimeseriesPoint,
   WebhookError,
 } from "@/lib/schemas";
 

@@ -44,26 +44,10 @@ export const barSchema = z.object({
   paymentInstructions: z.string().nullable(),
 });
 
-export const voucherSchema = z.object({
-  id: z.string().uuid().or(z.string()),
-  userId: z.string(),
-  userName: z.string().optional(),
-  msisdn: z.string(),
-  amount: z.number(),
-  currency: z.string(),
-  status: z.enum(["issued", "sent", "redeemed", "expired", "void"]),
-  campaignId: z.string().nullable(),
-  stationScope: z.string().nullable(),
-  code: z.string().optional(),
-  issuedAt: z.string().datetime(),
-  redeemedAt: z.string().datetime().nullable(),
-  expiresAt: z.string().datetime().nullable(),
-});
-
 export const campaignSchema = z.object({
   id: z.string().uuid().or(z.string()),
   name: z.string(),
-  type: z.enum(["promo", "voucher"]),
+  type: z.enum(["promo", "notification"]),
   status: z.enum(["draft", "running", "paused", "done"]),
   templateId: z.string(),
   createdAt: z.string().datetime(),
@@ -265,12 +249,6 @@ export const dashboardKpiSchema = z.object({
   helpText: z.string().optional(),
 });
 
-export const timeseriesPointSchema = z.object({
-  date: z.string().datetime(),
-  issued: z.number(),
-  redeemed: z.number(),
-});
-
 export const assistantActionSchema = z.object({
   id: z.string(),
   label: z.string(),
@@ -384,29 +362,6 @@ export const marketplacePurchaseSchema = z.object({
   currency: z.string().nullable(),
 });
 
-export const adminVoucherListItemSchema = z.object({
-  id: z.string(),
-  title: z.string(),
-  description: z.string().optional().nullable(),
-});
-
-export const adminVoucherListSchema = z.object({
-  vouchers: z.array(adminVoucherListItemSchema),
-  messages: z.array(z.string()).default([]),
-});
-
-export const adminVoucherDetailSchema = z.object({
-  id: z.string(),
-  code5: z.string(),
-  amountText: z.string(),
-  policyNumber: z.string().nullable(),
-  whatsappE164: z.string().nullable(),
-  status: z.string(),
-  issuedAt: z.string(),
-  redeemedAt: z.string().nullable(),
-  messages: z.array(z.string()).default([]),
-});
-
 const diagnosticsConfigSchema = z.object({
   admin_numbers: z.array(z.string()).nullable().optional(),
   insurance_admin_numbers: z.array(z.string()).nullable().optional(),
@@ -467,7 +422,6 @@ export const adminDiagnosticsMatchSchema = z.object({
 export type User = z.infer<typeof userSchema>;
 export type Station = z.infer<typeof stationSchema>;
 export type Bar = z.infer<typeof barSchema>;
-export type Voucher = z.infer<typeof voucherSchema>;
 export type Campaign = z.infer<typeof campaignSchema>;
 export type InsuranceQuote = z.infer<typeof insuranceQuoteSchema>;
 export type Order = z.infer<typeof orderSchema>;
@@ -486,7 +440,6 @@ export type SettingEntry = z.infer<typeof settingEntrySchema>;
 export type AdminAlertPreference = z.infer<typeof adminAlertPreferenceSchema>;
 export type StorageObject = z.infer<typeof storageObjectSchema>;
 export type DashboardKpi = z.infer<typeof dashboardKpiSchema>;
-export type TimeseriesPoint = z.infer<typeof timeseriesPointSchema>;
 export type AssistantAction = z.infer<typeof assistantActionSchema>;
 export type AssistantSuggestion = z.infer<typeof assistantSuggestionSchema>;
 export type AssistantMessage = z.infer<typeof assistantMessageSchema>;
@@ -494,9 +447,6 @@ export type AssistantRun = z.infer<typeof assistantRunSchema>;
 export type AdminHubSection = z.infer<typeof adminHubSectionSchema>;
 export type AdminHubSections = z.infer<typeof adminHubSectionsSchema>;
 export type AdminHubSnapshot = z.infer<typeof adminHubSnapshotSchema>;
-export type AdminVoucherListItem = z.infer<typeof adminVoucherListItemSchema>;
-export type AdminVoucherList = z.infer<typeof adminVoucherListSchema>;
-export type AdminVoucherDetail = z.infer<typeof adminVoucherDetailSchema>;
 export type AdminDiagnosticsHealth = z.infer<typeof adminDiagnosticsHealthSchema>;
 export type AdminDiagnosticsLogs = z.infer<typeof adminDiagnosticsLogsSchema>;
 export type AdminDiagnosticsMatchSummary = z.infer<

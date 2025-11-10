@@ -38,7 +38,6 @@ import {
 import { showWalletTop } from "../domains/wallet/top.ts";
 import { openAdminHub, showAdminHubList } from "../flows/admin/hub.ts";
 import { handleAdminQuickAction } from "../flows/admin/actions.ts";
-import { handleVoucherButton } from "../flows/admin/vouchers.ts";
 import { handleInsuranceButton } from "../flows/admin/insurance.ts";
 import { homeOnly, sendButtonsMessage } from "../utils/reply.ts";
 import { DINE_IDS } from "../domains/dinein/ids.ts";
@@ -319,22 +318,6 @@ export async function handleButton(
     case IDS.ADMIN_SETTINGS:
       await handleAdminQuickAction(ctx, id);
       return true;
-    case IDS.ADMIN_VOUCHERS_VIEW:
-    case IDS.ADMIN_VOUCHERS_RECENT_VIEW:
-    case IDS.ADMIN_VOUCHERS_ISSUE_SUBMIT:
-    case IDS.ADMIN_VOUCHERS_REDEEM_SUBMIT:
-      if (await handleVoucherButton(ctx, id)) return true;
-      return false;
-    case IDS.ADMIN_BASKETS_VIEW:
-    case IDS.ADMIN_BASKETS_DETAIL_VIEW:
-    case IDS.ADMIN_BASKETS_APPROVE_SUBMIT:
-    case IDS.ADMIN_BASKETS_REVOKE_SUBMIT:
-    case IDS.ADMIN_BASKETS_SHARE_SUBMIT:
-    case IDS.ADMIN_BASKETS_REGEN_SUBMIT:
-    case IDS.ADMIN_BASKETS_CLOSE_SUBMIT:
-    case IDS.ADMIN_BASKETS_DM_SUBMIT:
-      if (await handleAdminBasketButton(ctx, id, state)) return true;
-      return false;
     case IDS.ADMIN_INSURANCE_VIEW:
     case IDS.ADMIN_INSURANCE_DETAIL_VIEW:
     case IDS.ADMIN_INSURANCE_MORE_VIEW:

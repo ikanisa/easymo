@@ -24,10 +24,6 @@ const SECTION_LINKS: Record<
     route: "panelQr",
     description: "Manage MoMo QR payloads and deep links.",
   },
-  "ADMIN::OPS_VOUCHERS": {
-    route: "panelVouchers",
-    description: "Issue, preview, and redeem vouchers.",
-  },
   "ADMIN::GROW_PROMOTERS": {
     route: "panelCampaigns",
     description: "Promoter tooling and growth actions.",
@@ -62,7 +58,7 @@ const SECTION_LINKS: Record<
   },
   "ADMIN::DIAG_LOGS": {
     route: "panelLogs",
-    description: "Unified audit and voucher events log.",
+    description: "Unified audit and messaging events log.",
   },
 };
 

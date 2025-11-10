@@ -5,7 +5,7 @@ export function IntegrationsSection() {
   return (
     <SectionCard
       title="Integrations status"
-      description="Voucher preview, media send, and dispatcher probes refresh every 60 seconds."
+      description="Media send and dispatcher probes refresh every 60 seconds."
     >
       <IntegrationsStatus />
     </SectionCard>

@@ -63,7 +63,7 @@ describe('notifications API', () => {
       data: [{
         id: 'notif-1',
         to_role: 'ops',
-        type: 'voucher',
+        type: 'campaign',
         status: 'queued',
         created_at: '2025-10-06T12:00:00Z',
         sent_at: null,
@@ -144,7 +144,7 @@ describe('notifications API', () => {
 
     expect(response.status).toBe(200);
     expect(callBridge).toHaveBeenCalledWith(
-      'voucherSend',
+      'whatsappSend',
       expect.objectContaining({ notificationId: '4c3f4b21-7b98-4a52-8c3f-9937b4c1f111' })
     );
     expect(update).toHaveBeenCalledWith({
@@ -311,7 +311,7 @@ describe('notifications API', () => {
         msisdn: '+250780000005',
         status: 'queued',
         retry_count: 0,
-        type: 'voucher_issue_client',
+        type: 'campaign_client',
         to_role: 'customer',
       },
       error: null,

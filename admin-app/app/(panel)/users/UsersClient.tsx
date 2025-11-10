@@ -26,7 +26,7 @@ export function UsersClient(
     <div className="admin-page">
       <PageHeader
         title="Users"
-        description="Search, filter, and inspect user profiles. Drawers will surface voucher activity and insurance quotes soon."
+        description="Search, filter, and inspect user profiles. Drawers will surface messaging activity and insurance quotes soon."
       />
       <SectionCard
         title="Directory"
@@ -61,11 +61,11 @@ export function UsersClient(
       </SectionCard>
       <SectionCard
         title="Next steps"
-        description="Voucher history, insurance interactions, and quick actions will live in the drawer."
+        description="Messaging history, insurance interactions, and quick actions will live in the drawer."
       >
         <EmptyState
           title="Drawer enhancements pending"
-          description="Future milestones will add voucher timelines and insurance review data here."
+          description="Future milestones will add timeline views and insurance review data here."
         />
       </SectionCard>
     </div>

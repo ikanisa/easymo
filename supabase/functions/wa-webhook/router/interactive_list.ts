@@ -300,7 +300,7 @@ export async function handleList(
   }
   if (id.startsWith("ADMIN::")) {
     if (
-      id === ADMIN_ROW_IDS.OPS_TRIPS || id === ADMIN_ROW_IDS.OPS_BASKETS ||
+      id === ADMIN_ROW_IDS.OPS_TRIPS ||
       id === ADMIN_ROW_IDS.OPS_INSURANCE ||
       id === ADMIN_ROW_IDS.OPS_MARKETPLACE || id === ADMIN_ROW_IDS.OPS_WALLET ||
       id === ADMIN_ROW_IDS.OPS_MOMO || id === ADMIN_ROW_IDS.GROW_PROMOTERS ||

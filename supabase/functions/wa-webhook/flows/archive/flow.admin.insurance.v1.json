@@ -74,15 +74,6 @@
                 "id": "a_admin_lead_request_reupload",
                 "fields": { "lead_id": "${params.lead_id}" }
               }
-            },
-            {
-              "id": "BTN_ISSUE_VOUCHER",
-              "title": "Issue voucher",
-              "action": {
-                "type": "data_exchange",
-                "id": "a_admin_lead_issue_voucher",
-                "fields": { "lead_id": "${params.lead_id}" }
-              }
             }
           ]
         }

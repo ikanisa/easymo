@@ -7,15 +7,13 @@ import {
 import styles from "./IntegrationsStatus.module.css";
 
 const PANEL_TARGETS: IntegrationTarget[] = [
-  "voucherPreview",
   "whatsappSend",
   "campaignDispatcher",
   "storageSignedUrl",
 ];
 
 const LABELS: Record<IntegrationTarget, string> = {
-  voucherPreview: "Voucher preview",
-  whatsappSend: "Voucher send",
+  whatsappSend: "WhatsApp send",
   campaignDispatcher: "Campaign dispatcher",
   storageSignedUrl: "Storage signed URLs",
 };

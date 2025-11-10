@@ -34,11 +34,6 @@
   "lang": "en",
   "shortcuts": [
     {
-      "name": "Open vouchers",
-      "url": "/vouchers",
-      "description": "Jump directly to voucher oversight"
-    },
-    {
       "name": "Notifications outbox",
       "url": "/notifications",
       "description": "Review recent WhatsApp sends"

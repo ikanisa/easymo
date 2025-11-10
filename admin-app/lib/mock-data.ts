@@ -4,8 +4,6 @@ import type {
   AdminDiagnosticsMatch,
   AdminDiagnosticsSnapshot,
   AdminHubSnapshot,
-  AdminVoucherDetail,
-  AdminVoucherList,
   AssistantRun,
   AuditEvent,
   Bar,
@@ -25,9 +23,7 @@ import type {
   Station,
   StorageObject,
   TemplateMeta,
-  TimeseriesPoint,
   User,
-  Voucher,
   WebhookError,
   LiveCall,
   Lead,
@@ -45,8 +41,6 @@ import {
   createAdminDiagnosticsMatch,
   createAdminDiagnosticsSnapshot,
   createAdminHubSnapshot,
-  createAdminVoucherDetail,
-  createAdminVoucherList,
   createAssistantRun,
   createCampaign,
   createDashboardKpi,
@@ -63,8 +57,6 @@ import {
   createStaffNumber,
   createStorageObject,
   createTemplateMeta,
-  createTimeseriesPoint,
-  createVoucher,
   createWebhookError,
   createLiveCall,
   createLead,
@@ -77,45 +69,13 @@ export { mockBars, mockUsers, mockStations };
 
 const now = new Date();
 
-export const mockVouchers: Voucher[] = Array.from(
-  { length: 25 },
-  (_, index) => {
-    const statusCycle: Voucher["status"][] = [
-      "issued",
-      "sent",
-      "redeemed",
-      "expired",
-      "void",
-    ];
-    const status = statusCycle[index % statusCycle.length];
-    const issuedAt = subDays(now, Math.floor(Math.random() * 30));
-    const redeemedAt = status === "redeemed" ? addDays(issuedAt, 1) : null;
-    const user = mockUsers[index % mockUsers.length];
-    return createVoucher({
-      id: `voucher-${index + 1}`,
-      userId: user.id,
-      userName: user.displayName ?? undefined,
-      msisdn: user.msisdn,
-      code: `K${(10000 + index).toString().slice(-5)}`,
-      amount: 2000,
-      currency: "RWF",
-      status,
-      campaignId: index % 2 === 0 ? "campaign-1" : null,
-      stationScope: index % 3 === 0 ? mockStations[0].id : null,
-      issuedAt: formatISO(issuedAt),
-      redeemedAt: redeemedAt ? formatISO(redeemedAt) : null,
-      expiresAt: formatISO(addDays(issuedAt, 30)),
-    });
-  },
-);
-
 export const mockCampaigns: Campaign[] = [
   createCampaign({
     id: "campaign-1",
-    name: "October Fuel Promo",
-    type: "voucher",
+    name: "October Momentum Promo",
+    type: "promo",
     status: "running",
-    templateId: "voucher_october_promo",
+    templateId: "promo_october_momentum",
     createdAt: formatISO(subDays(now, 14)),
     startedAt: formatISO(subDays(now, 10)),
     finishedAt: null,
@@ -124,7 +84,7 @@ export const mockCampaigns: Campaign[] = [
   createCampaign({
     id: "campaign-2",
     name: "Welcome Broadcast",
-    type: "promo",
+    type: "notification",
     status: "draft",
     templateId: "welcome_messaging_v1",
     createdAt: formatISO(subDays(now, 4)),
@@ -176,11 +136,11 @@ export const mockDashboardKpis: DashboardKpi[] = [
     helpText: "Unique users who interacted with WhatsApp flows.",
   }),
   createDashboardKpi({
-    label: "Vouchers issued / sent / redeemed",
-    primaryValue: "92 / 88 / 74",
-    secondaryValue: "80% redemption rate",
+    label: "Driver dispatch SLA",
+    primaryValue: "88% < 3 min",
+    secondaryValue: "+5% vs last week",
     trend: "up",
-    helpText: "Rolling 7-day totals.",
+    helpText: "Rolling 7-day average for trip dispatch confirmations.",
   }),
   createDashboardKpi({
     label: "WhatsApp delivery rate",
@@ -196,18 +156,6 @@ export const mockDashboardKpis: DashboardKpi[] = [
     trend: "flat",
   }),
 ];
-
-export const mockTimeseries: TimeseriesPoint[] = Array.from(
-  { length: 14 },
-  (_, index) => {
-    const day = subDays(now, 13 - index);
-    return createTimeseriesPoint({
-      date: formatISO(day),
-      issued: Math.round(40 + Math.random() * 20),
-      redeemed: Math.round(30 + Math.random() * 18),
-    });
-  },
-);
 
 export const mockLiveCalls: LiveCall[] = [
   createLiveCall({
@@ -501,12 +449,12 @@ export const mockTemplates: TemplateMeta[] = [
     errorRate: 0.8,
   }),
   createTemplateMeta({
-    id: "voucher_issue",
-    name: "Voucher Issued",
-    purpose: "Send voucher ticket",
+    id: "dispatch_followup",
+    name: "Dispatch Follow-up",
+    purpose: "Send dispatch updates",
     locales: ["rw"],
     status: "approved",
-    variables: ["amount", "voucher_code"],
+    variables: ["customer_name", "trip_id"],
     lastUsedAt: formatISO(subDays(now, 0.5)),
     errorRate: 0.2,
   }),
@@ -559,8 +507,8 @@ export const mockAuditEvents: AuditEvent[] = Array.from(
     createAuditEvent({
       id: `audit-${idx + 1}`,
       actor: idx % 2 === 0 ? "admin:ops" : "system",
-      action: ["voucher_issue", "settings_update", "campaign_start"][idx % 3],
-      targetTable: ["vouchers", "settings", "campaigns"][idx % 3],
+      action: ["dispatch_override", "settings_update", "campaign_start"][idx % 3],
+      targetTable: ["dispatch_overrides", "settings", "campaigns"][idx % 3],
       targetId: `target-${idx + 1}`,
       createdAt: formatISO(subDays(now, idx / 5)),
       summary: idx % 3 === 1 ? "Quiet hours updated for Rwanda" : null,
@@ -611,8 +559,8 @@ export const mockAdminAlertPreferences: AdminAlertPreference[] =
 export const mockStorageObjects: StorageObject[] = [
   createStorageObject({
     id: "storage-1",
-    bucket: "vouchers",
-    path: "voucher-123.png",
+    bucket: "operations",
+    path: "dispatch-123.png",
     mimeType: "image/png",
     sizeKb: 240,
     updatedAt: formatISO(subDays(now, 1)),
@@ -648,16 +596,16 @@ export const mockAssistantRuns: AssistantRun[] = [
     promptId: "summary.last24h",
     suggestion: {
       id: "assistant-summary-24h",
-      title: "Last 24 hours — vouchers + notifications",
+      title: "Last 24 hours — notifications + dispatch",
       summary:
-        "Voucher throughput held steady (62 issued, 58 delivered). Two numbers hit the opt-out list and five sends were delayed during quiet hours. Matching RPC latency dipped at 03:00 but recovered after the cache warm-up run.",
+        "Notification throughput held steady (62 triggered, 58 delivered). Two numbers hit the opt-out list and five sends were delayed during quiet hours. Matching RPC latency dipped at 03:00 but recovered after the cache warm-up run.",
       generatedAt: formatISO(now),
       actions: [
         {
           id: "action-retry-quiet",
           label: "Schedule quiet-hour retries",
           summary:
-            "Queue the five blocked vouchers for 07:05 with a compliance note in the incident channel.",
+            "Queue the five blocked sends for 07:05 with a compliance note in the incident channel.",
           impact: "medium",
           recommended: true,
         },
@@ -671,7 +619,7 @@ export const mockAssistantRuns: AssistantRun[] = [
       ],
       references: [
         "Notifications → Outbox (filtered: failed)",
-        "Vouchers → Events (last 24h)",
+        "Dispatch → Events (last 24h)",
         "Logs → matching_latency_warn",
       ],
       limitations: [
@@ -683,7 +631,7 @@ export const mockAssistantRuns: AssistantRun[] = [
         id: "assistant-summary-24h-msg",
         role: "assistant",
         content:
-          "Here's what happened in the last 24 hours. Voucher throughput held, but quiet hours blocked five sends and two new opt-outs appeared in Rwanda. Matching RPCs spiked for 6 minutes around 03:00 UTC before the cache run restored performance.",
+          "Here's what happened in the last 24 hours. Dispatch throughput held, but quiet hours blocked five sends and two new opt-outs appeared in Rwanda. Matching RPCs spiked for 6 minutes around 03:00 UTC before the cache run restored performance.",
         createdAt: formatISO(now),
       },
     ],
@@ -692,7 +640,7 @@ export const mockAssistantRuns: AssistantRun[] = [
     promptId: "policy.explainBlock",
     suggestion: {
       id: "assistant-policy-explain",
-      title: "Why was the voucher send blocked?",
+      title: "Why was the send blocked?",
       summary:
         "The contact +250780000099 is in the opt-out list (`opt_out.list`). Policy enforcement returned `policy_blocked` with reason `opt_out`. No retries were attempted because the last consent refresh was under 24 hours old.",
       generatedAt: formatISO(addDays(now, -1)),
@@ -767,7 +715,6 @@ export const mockAdminHubSnapshot: AdminHubSnapshot = createAdminHubSnapshot({
       { id: "ADMIN::OPS_MARKETPLACE", title: "Marketplace" },
       { id: "ADMIN::OPS_WALLET", title: "Wallet & tokens" },
       { id: "ADMIN::OPS_MOMO", title: "MoMo QR" },
-      { id: "ADMIN::OPS_VOUCHERS", title: "Fuel vouchers" },
     ],
     growth: [
       { id: "ADMIN::GROW_PROMOTERS", title: "Promoters" },
@@ -789,34 +736,6 @@ export const mockAdminHubSnapshot: AdminHubSnapshot = createAdminHubSnapshot({
     "Mock admin hub data. Configure Supabase credentials to load live sections.",
   ],
 });
-
-export const mockAdminVoucherList: AdminVoucherList = createAdminVoucherList({
-  vouchers: Array.from({ length: 6 }, (_, index) => ({
-    id: `voucher-${index + 1}`,
-    title: `VCHR${1000 + index} · RWF ${(index + 1) * 5000}`,
-    description: index % 2 === 0
-      ? `Issued ${formatISO(subDays(now, index))}`
-      : `Redeemed ${formatISO(subDays(now, index / 2))}`,
-  })),
-  messages: [
-    "Mock voucher list. Flow-exchange bridge not yet connected to Supabase.",
-  ],
-});
-
-export const mockAdminVoucherDetail: AdminVoucherDetail =
-  createAdminVoucherDetail({
-    id: "voucher-1",
-    code5: "12345",
-    amountText: "RWF 5,000",
-    policyNumber: "POLICY-001",
-    whatsappE164: "+250780000001",
-    status: "issued",
-    issuedAt: formatISO(subDays(now, 1)),
-    redeemedAt: null,
-    messages: [
-      "Mock voucher detail. Configure ADMIN_FLOW_WA_ID for live lookups.",
-    ],
-  });
 
 export const mockAdminDiagnostics: AdminDiagnosticsSnapshot =
   createAdminDiagnosticsSnapshot({

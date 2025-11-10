@@ -16,10 +16,10 @@ Every API response that mutates state includes an optional `integration` object:
 ```json
 {
   "integration": {
-    "target": "voucherGenerate",
+    "target": "whatsappSend",
     "status": "degraded",
-    "reason": "mock_signed_url",
-    "message": "Voucher issuance bridge returned unexpected payload. Falling back to local generator."
+    "reason": "bridge_timeout",
+    "message": "WhatsApp send bridge returned unexpected payload. Falling back to local acknowledgement."
   }
 }
 ```
@@ -28,9 +28,7 @@ Every API response that mutates state includes an optional `integration` object:
 
 | Target              | When it turns degraded                            | Immediate action                                       |
 | ------------------- | ------------------------------------------------- | ------------------------------------------------------ |
-| `voucherGenerate`   | Edge Function missing or returned invalid payload | Check EF deploy, rerun job once bridge is healthy      |
-| `voucherSend`       | WhatsApp bridge offline                           | Pause campaigns, notify on-call communications         |
-| `voucherPreview`    | Preview EF missing/errored                        | Use design mock, inform design review chat             |
+| `whatsappSend`      | WhatsApp bridge offline                           | Pause campaigns, notify on-call communications         |
 | `campaignDispatch`  | Dispatcher call failed                            | Confirm campaign state in backend before communicating |
 | `insuranceWorkflow` | Insurance workflow bridge offline                 | Coordinate manually with underwriting, log follow-up   |
 | `stationDirectory`  | Station propagation bridge unavailable            | Ping infra to replay directory sync                    |
@@ -46,7 +44,7 @@ Every API response that mutates state includes an optional `integration` object:
    ops channel for visibility.
 2. **Diagnose** – Check Supabase status and the relevant Edge Function logs.
 3. **Mitigate** – If a bridge is offline, coordinate manual procedures (e.g.,
-   send vouchers through WhatsApp Business).
+   deliver notifications through WhatsApp Business).
 4. **Resolve** – Once the dependency is back, retry the action from the Admin
    Panel.
 5. **Log** – Record the incident in the ops log referencing the badge `target`

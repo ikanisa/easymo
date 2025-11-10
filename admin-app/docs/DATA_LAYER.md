@@ -16,7 +16,7 @@
   instances on server and browser and is wired through
   `app/providers/QueryProvider.tsx` for hydration.
 - Query keys follow the structure `[domain, scope?, params?]`, e.g.
-  `['vouchers', { status, search }]`.
+  `['notifications', { status, search }]`.
 - Server Components should use `react-query`'s `dehydrate`/`HydrationBoundary`
   pattern (now available via `app/providers/QueryProvider`).
 - When an API route is unavailable, queries should surface degraded-state flags
@@ -55,7 +55,7 @@
 
 - [x] Create `app/providers/QueryProvider.tsx` to wrap the app with
       `QueryClientProvider` + `HydrationBoundary`.
-- [x] Define domain-specific query modules (`lib/queries/vouchers.ts`, etc.).
+- [x] Define domain-specific query modules (`lib/queries/notifications.ts`, etc.).
 - [ ] Wire policy engine responses into mutation error handling once APIs exist.
 - [ ] Document testing patterns for query-dependent components.
 
