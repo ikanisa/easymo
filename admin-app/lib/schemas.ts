@@ -43,14 +43,72 @@ export const barSchema = z.object({
 
 export const insuranceQuoteSchema = z.object({
   id: z.string().uuid().or(z.string()),
-  userId: z.string(),
-  status: z.enum(["pending", "approved", "needs_changes"]),
+  userId: z.string().uuid().or(z.string()).nullable(),
+  intentId: z.string().uuid().or(z.string()).nullable().optional(),
+  status: z.string(),
   premium: z.number().nullable(),
   insurer: z.string().nullable(),
   uploadedDocs: z.array(z.string()).default([]),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime().nullable(),
+  approvedAt: z.string().datetime().nullable().optional(),
   reviewerComment: z.string().nullable(),
+  metadata: z.record(z.any()).nullable().optional(),
+});
+
+export const insuranceRequestSchema = z.object({
+  id: z.string().uuid().or(z.string()),
+  contactId: z.string().uuid().or(z.string()).nullable(),
+  status: z.string(),
+  vehicleType: z.string().nullable(),
+  vehiclePlate: z.string().nullable(),
+  insurerPreference: z.string().nullable(),
+  notes: z.string().nullable(),
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime().nullable(),
+});
+
+export const insuranceDocumentSchema = z.object({
+  id: z.string().uuid().or(z.string()),
+  intentId: z.string().uuid().or(z.string()).nullable(),
+  contactId: z.string().uuid().or(z.string()).nullable(),
+  kind: z.string(),
+  storagePath: z.string(),
+  checksum: z.string().nullable(),
+  ocrState: z.string(),
+  ocrJson: z.unknown().nullable(),
+  ocrConfidence: z.number().nullable(),
+  createdAt: z.string().datetime(),
+});
+
+export const insurancePolicySchema = z.object({
+  id: z.string().uuid().or(z.string()),
+  quoteId: z.string().uuid().or(z.string()).nullable(),
+  policyNumber: z.string(),
+  status: z.string(),
+  insurer: z.string().nullable(),
+  premium: z.number().nullable(),
+  currency: z.string().nullable(),
+  effectiveAt: z.string().datetime().nullable(),
+  expiresAt: z.string().datetime().nullable(),
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime().nullable(),
+  metadata: z.record(z.any()).nullable().optional(),
+});
+
+export const insurancePaymentSchema = z.object({
+  id: z.string().uuid().or(z.string()),
+  quoteId: z.string().uuid().or(z.string()).nullable(),
+  intentId: z.string().uuid().or(z.string()).nullable().optional(),
+  amount: z.number(),
+  currency: z.string(),
+  status: z.string(),
+  channel: z.string().nullable(),
+  reference: z.string().nullable(),
+  recordedAt: z.string().datetime().nullable(),
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime().nullable(),
+  metadata: z.record(z.any()).nullable().optional(),
 });
 
 export const insurerProfileSchema = z.object({
@@ -158,6 +216,162 @@ export const insuranceSimulationResultSchema = z.object({
     currency: z.string(),
     quotes: z.array(insuranceSimulationQuoteSchema),
   }),
+});
+
+export const insuranceRequestStatusSchema = z.enum([
+  "draft",
+  "intake",
+  "under_review",
+  "quoted",
+  "awaiting_payment",
+  "paid",
+  "issued",
+  "cancelled",
+]);
+
+export const insurancePolicyStatusSchema = z.enum([
+  "draft",
+  "pending_issue",
+  "active",
+  "expired",
+  "cancelled",
+]);
+
+export const insurancePaymentStatusSchema = z.enum([
+  "pending",
+  "in_review",
+  "completed",
+  "failed",
+  "refunded",
+]);
+
+export const insuranceTaskStatusSchema = z.enum([
+  "open",
+  "in_progress",
+  "blocked",
+  "completed",
+  "cancelled",
+]);
+
+export const insuranceComparisonQuoteSchema = z.object({
+  insurer: z.string(),
+  product: z.string(),
+  grossPremiumMinor: z.number(),
+  netPremiumMinor: z.number(),
+  feesMinor: z.number(),
+  taxesMinor: z.number(),
+  turnaroundHours: z.number().optional(),
+  notes: z.array(z.string()).default([]),
+});
+
+export const insuranceVehicleSchema = z.object({
+  id: z.string(),
+  requestId: z.string(),
+  plateNumber: z.string().nullable().optional(),
+  vin: z.string().nullable().optional(),
+  make: z.string().nullable().optional(),
+  model: z.string().nullable().optional(),
+  bodyType: z.string().nullable().optional(),
+  year: z.number().nullable().optional(),
+  usage: z.string().nullable().optional(),
+  coverType: z.string().nullable().optional(),
+  sumInsuredMinor: z.number().nullable().optional(),
+  seats: z.number().nullable().optional(),
+  comesaRequested: z.boolean().optional(),
+  extras: z.record(z.any()).optional(),
+});
+
+export const insurancePolicyBreakdownSchema = z.object({
+  id: z.string(),
+  policyId: z.string(),
+  label: z.string(),
+  amountMinor: z.number(),
+  metadata: z.record(z.any()).default({}),
+  sortOrder: z.number().default(0),
+});
+
+export const insurancePolicySchema = z.object({
+  id: z.string(),
+  requestId: z.string().nullable(),
+  policyNumber: z.string().nullable(),
+  insurer: z.string(),
+  status: insurancePolicyStatusSchema,
+  effectiveFrom: z.string().datetime().nullable().optional(),
+  effectiveTo: z.string().datetime().nullable().optional(),
+  premiumTotalMinor: z.number().nullable().optional(),
+  feesMinor: z.number().nullable().optional(),
+  issuedAt: z.string().datetime().nullable().optional(),
+  issuedBy: z.string().nullable().optional(),
+  breakdown: z.array(insurancePolicyBreakdownSchema).default([]),
+});
+
+export const insuranceDocumentSchema = z.object({
+  id: z.string(),
+  requestId: z.string().nullable(),
+  policyId: z.string().nullable(),
+  docType: z.string(),
+  storagePath: z.string(),
+  source: z.string().optional(),
+  ocrConfidence: z.number().nullable().optional(),
+  uploadedBy: z.string().nullable().optional(),
+  uploadedAt: z.string().datetime(),
+  verified: z.boolean().default(false),
+  ocrPayload: z.record(z.any()).default({}),
+});
+
+export const insuranceTaskSchema = z.object({
+  id: z.string(),
+  requestId: z.string().nullable(),
+  policyId: z.string().nullable(),
+  title: z.string(),
+  taskType: z.string().nullable().optional(),
+  status: insuranceTaskStatusSchema,
+  priority: z.number().default(2),
+  dueAt: z.string().datetime().nullable().optional(),
+  assignedTo: z.string().nullable().optional(),
+  createdBy: z.string().nullable().optional(),
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime().nullable().optional(),
+});
+
+export const insurancePaymentSchema = z.object({
+  id: z.string(),
+  requestId: z.string().nullable(),
+  policyId: z.string().nullable(),
+  amountMinor: z.number(),
+  currency: z.string(),
+  method: z.string().nullable().optional(),
+  status: insurancePaymentStatusSchema,
+  reference: z.string().nullable().optional(),
+  momoReference: z.string().nullable().optional(),
+  paidAt: z.string().datetime().nullable().optional(),
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime().nullable().optional(),
+});
+
+export const insuranceRequestSchema = z.object({
+  id: z.string(),
+  customerId: z.string().nullable().optional(),
+  customerName: z.string().nullable().optional(),
+  customerWaId: z.string().nullable().optional(),
+  customerMsisdn: z.string().nullable().optional(),
+  status: insuranceRequestStatusSchema,
+  source: z.string().default("whatsapp"),
+  preferredInsurer: z.string().nullable().optional(),
+  premiumTargetMinor: z.number().nullable().optional(),
+  ocrConfidence: z.number().nullable().optional(),
+  ocrSummary: z.record(z.any()).default({}),
+  documents: z.array(insuranceDocumentSchema).default([]),
+  assignedAgentId: z.string().nullable().optional(),
+  createdBy: z.string().nullable().optional(),
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime().nullable().optional(),
+  archivedAt: z.string().datetime().nullable().optional(),
+  vehicle: insuranceVehicleSchema.nullable().optional(),
+  comparison: z.array(insuranceComparisonQuoteSchema).default([]),
+  policy: insurancePolicySchema.nullable().optional(),
+  payments: z.array(insurancePaymentSchema).default([]),
+  tasks: z.array(insuranceTaskSchema).default([]),
 });
 
 export const webhookErrorSchema = z.object({
@@ -487,6 +701,10 @@ export type User = z.infer<typeof userSchema>;
 export type Station = z.infer<typeof stationSchema>;
 export type Bar = z.infer<typeof barSchema>;
 export type InsuranceQuote = z.infer<typeof insuranceQuoteSchema>;
+export type InsuranceRequest = z.infer<typeof insuranceRequestSchema>;
+export type InsuranceDocument = z.infer<typeof insuranceDocumentSchema>;
+export type InsurancePolicy = z.infer<typeof insurancePolicySchema>;
+export type InsurancePayment = z.infer<typeof insurancePaymentSchema>;
 export type InsuranceProviderProfile = z.infer<typeof insurerProfileSchema>;
 export type InsuranceInstallmentPlan = z.infer<typeof insuranceInstallmentPlanSchema>;
 export type InsuranceBreakdownItem = z.infer<typeof insuranceBreakdownItemSchema>;
@@ -496,6 +714,18 @@ export type OcrVehicleDoc = z.infer<typeof ocrVehicleDocSchema>;
 export type InsuranceSimulationInputs = z.infer<typeof insuranceSimulationInputsSchema>;
 export type InsuranceSimulationQuote = z.infer<typeof insuranceSimulationQuoteSchema>;
 export type InsuranceSimulationResult = z.infer<typeof insuranceSimulationResultSchema>;
+export type InsuranceRequestStatus = z.infer<typeof insuranceRequestStatusSchema>;
+export type InsurancePolicyStatus = z.infer<typeof insurancePolicyStatusSchema>;
+export type InsurancePaymentStatus = z.infer<typeof insurancePaymentStatusSchema>;
+export type InsuranceTaskStatus = z.infer<typeof insuranceTaskStatusSchema>;
+export type InsuranceComparisonQuote = z.infer<typeof insuranceComparisonQuoteSchema>;
+export type InsuranceVehicle = z.infer<typeof insuranceVehicleSchema>;
+export type InsurancePolicyBreakdown = z.infer<typeof insurancePolicyBreakdownSchema>;
+export type InsurancePolicy = z.infer<typeof insurancePolicySchema>;
+export type InsuranceDocument = z.infer<typeof insuranceDocumentSchema>;
+export type InsuranceTask = z.infer<typeof insuranceTaskSchema>;
+export type InsurancePayment = z.infer<typeof insurancePaymentSchema>;
+export type InsuranceRequest = z.infer<typeof insuranceRequestSchema>;
 export type WebhookError = z.infer<typeof webhookErrorSchema>;
 export type MenuVersion = z.infer<typeof menuVersionSchema>;
 export type OcrJob = z.infer<typeof ocrJobSchema>;

@@ -2,7 +2,9 @@
 
 import { ReactNode, useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
+import classNames from "classnames";
 import { SidebarNav } from "@/components/layout/SidebarNav";
+import { SidebarRail } from "@/components/layout/SidebarRail";
 import { TopBar } from "@/components/layout/TopBar";
 import { ToastProvider } from "@/components/ui/ToastProvider";
 import { GradientBackground } from "@/components/layout/GradientBackground";
@@ -12,6 +14,8 @@ import { ServiceWorkerToasts } from "@/components/system/ServiceWorkerToasts";
 import { AssistantPanel } from "@/components/assistant/AssistantPanel";
 import { MobileNav } from "@/components/layout/MobileNav";
 import { useAdminSession } from "@/components/providers/SessionProvider";
+import { SessionProvider } from "@/components/providers/SessionProvider";
+import { useFeatureFlag } from "@/lib/flags";
 
 interface PanelShellProps {
   children: ReactNode;
@@ -43,6 +47,15 @@ export function PanelShell({ children, environmentLabel, assistantEnabled }: Pan
   const [avatarInitials, setAvatarInitials] = useState(() =>
     deriveInitials(actorDisplayLabel || null, session?.actorId ?? "operator"),
   );
+  const adminHubV2Enabled = useFeatureFlag("adminHubV2");
+
+  const layoutClassName = classNames("layout", {
+    "layout--rail": adminHubV2Enabled,
+  });
+
+  const omniSearchPlaceholder = adminHubV2Enabled
+    ? "Search the admin hub — type '/' to launch Omnisearch"
+    : undefined;
 
   useEffect(() => {
     if (!session) return;
@@ -94,6 +107,43 @@ export function PanelShell({ children, environmentLabel, assistantEnabled }: Pan
               actorInitials={avatarInitials}
               onSignOut={handleSignOut}
               signingOut={signingOut}
+    <SessionProvider session={session}>
+      <ToastProvider>
+        <ServiceWorkerToast />
+        <ServiceWorkerToasts />
+        <OfflineBanner />
+        <GradientBackground variant="surface" className="min-h-screen">
+          <div className={layoutClassName}>
+            {adminHubV2Enabled ? <SidebarRail /> : <SidebarNav />}
+            <div className="layout__main">
+              <TopBar
+                environmentLabel={environmentLabel}
+                onOpenNavigation={() => setMobileNavOpen(true)}
+                assistantEnabled={assistantEnabled}
+                onOpenAssistant={assistantEnabled
+                  ? () => setAssistantOpen(true)
+                  : undefined}
+                actorLabel={actorDisplayLabel}
+                actorInitials={avatarInitials}
+                onSignOut={handleSignOut}
+                signingOut={signingOut}
+                omniSearchPlaceholder={omniSearchPlaceholder}
+                omniShortcutHint={adminHubV2Enabled ? "/" : undefined}
+              />
+              <main
+                id="main-content"
+                className="layout__content"
+                aria-live="polite"
+              >
+                {children}
+              </main>
+            </div>
+          </div>
+          <MobileNav open={mobileNavOpen} onClose={() => setMobileNavOpen(false)} />
+          {assistantEnabled && (
+            <AssistantPanel
+              open={assistantOpen}
+              onClose={() => setAssistantOpen(false)}
             />
             <main id="main-content" className="layout__content" aria-live="polite">
               {children}

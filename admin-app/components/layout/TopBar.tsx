@@ -14,6 +14,8 @@ interface TopBarProps {
   actorInitials?: string;
   signingOut?: boolean;
   onSignOut?: () => void;
+  omniSearchPlaceholder?: string;
+  omniShortcutHint?: string;
 }
 
 export function TopBar(
@@ -26,6 +28,8 @@ export function TopBar(
     actorInitials = "OP",
     signingOut = false,
     onSignOut,
+    omniSearchPlaceholder,
+    omniShortcutHint,
   }: TopBarProps,
 ) {
   const integrationStatusQuery = useIntegrationStatusQuery({
@@ -60,15 +64,19 @@ export function TopBar(
     };
   }, [integrationStatusQuery.data, integrationStatusQuery.isError, integrationStatusQuery.isLoading]);
 
+  const searchPlaceholder =
+    omniSearchPlaceholder ?? "Search customers, vendors, menus…";
+  const showShortcutHint = Boolean(omniShortcutHint);
+
   return (
     <header
       role="banner"
       aria-label="Admin panel top bar"
       className={classNames(
         "topbar",
-        "sticky top-0 z-40 grid items-center gap-4 border-b border-[color:var(--color-border)]/60",
-        "bg-[color:var(--color-surface)]/85 px-4 py-4 backdrop-blur-xl shadow-[var(--elevation-low)]",
-        "md:grid-cols-[auto_1fr_auto] md:px-6",
+        "sticky top-0 z-40 grid items-center gap-4 border-b border-[color:var(--color-border)]/50",
+        "bg-[color:var(--color-surface)]/80 px-4 py-4 backdrop-blur-xl shadow-[var(--shadow-ambient)]",
+        "md:grid-cols-[auto_minmax(0,1fr)_auto] md:px-6",
       )}
     >
       <div className="flex items-center gap-3">
@@ -102,10 +110,20 @@ export function TopBar(
         <input
           id="global-search"
           type="search"
-          placeholder="Search customers, vendors, menus…"
+          placeholder={searchPlaceholder}
           aria-label="Global search"
-          className="w-full rounded-full border border-[color:var(--color-border)]/50 bg-white/90 px-5 py-2 text-sm text-[color:var(--color-foreground)] shadow-sm outline-none transition focus:border-[color:var(--color-accent)] focus:ring-2 focus:ring-[color:var(--color-accent)]/40"
+          className="topbar__search-input"
+          autoComplete="off"
+          enterKeyHint="search"
+          title={
+            showShortcutHint ? `Press ${omniShortcutHint} to focus Omnisearch` : undefined
+          }
         />
+        {showShortcutHint && (
+          <span className="topbar__shortcut" aria-hidden="true">
+            {omniShortcutHint}
+          </span>
+        )}
       </div>
       <div
         className={classNames(
