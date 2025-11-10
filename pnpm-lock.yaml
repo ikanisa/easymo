@@ -392,6 +392,15 @@ importers:
         specifier: ^5.9.3
         version: 5.9.3
 
+  packages/video-agent-schema:
+    dependencies:
+      '@sinclair/typebox':
+        specifier: ^0.34.13
+        version: 0.34.41
+      zod:
+        specifier: ^3.25.76
+        version: 3.25.76
+
   services/agent-core:
     dependencies:
       '@easymo/commons':
@@ -10352,7 +10361,7 @@ snapshots:
       sirv: 3.0.2
       tinyglobby: 0.2.15
       tinyrainbow: 2.0.0
-      vitest: 3.2.4(@edge-runtime/vm@3.2.0)(@types/node@22.18.12)(@vitest/ui@3.2.4)(jsdom@24.1.0)(terser@5.44.1)
+      vitest: 3.2.4(@edge-runtime/vm@3.2.0)(@types/node@22.18.12)(@vitest/ui@3.2.4)(jsdom@26.1.0)(terser@5.44.1)
     optional: true
 
   '@vitest/utils@2.0.5':
