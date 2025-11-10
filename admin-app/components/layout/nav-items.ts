@@ -16,6 +16,7 @@ const aiAgentsItems = [
   { href: "/agents/learning", title: "Agent Learning", icon: "🧠" },
   { href: "/agents/performance", title: "Performance", icon: "📈" },
   { href: "/agents/settings", title: "Agent Settings", icon: "⚙️" },
+  { href: "/agents/tools", title: "Tools Registry", icon: "🧰" },
 ];
 
 // Operations section - Active sessions and monitoring

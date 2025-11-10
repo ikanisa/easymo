@@ -97,8 +97,38 @@ export function useDeleteAgentDocument(id: string) {
   });
 }
 
+export function useUpdateAgentDocument(id: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      documentId,
+      data,
+    }: {
+      documentId: string;
+      data: {
+        title?: string;
+        tags?: string[];
+        metadata?: Record<string, unknown>;
+        embedding_status?: string;
+      };
+    }) =>
+      apiClient.fetch("agentDocument", {
+        params: { agentId: id, documentId },
+        method: "PATCH",
+        body: data,
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["agents", id] });
+      qc.invalidateQueries({ queryKey: ["agents", id, "documents"] });
+      qc.invalidateQueries({ queryKey: ["agents", id, "vectors", "stats"] });
+      qc.invalidateQueries({ queryKey: ["agents", id, "detail"] });
+    },
+  });
+}
+
 export function useAgentTasks(id: string, params?: { status?: string }) {
   return useQuery({
+    enabled: Boolean(id),
     queryKey: ["agents", id, "tasks", params?.status ?? "all"],
     queryFn: ({ signal }) =>
       apiClient.fetch("agentTasks", {
@@ -109,13 +139,35 @@ export function useAgentTasks(id: string, params?: { status?: string }) {
   });
 }
 
-export function useAgentRuns(id: string, params?: { status?: string }) {
+export function useUpdateAgentTask(id: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      taskId,
+      data,
+    }: {
+      taskId: string;
+      data: { status?: string; payload?: Record<string, unknown>; note?: string };
+    }) =>
+      apiClient.fetch("agentTask", {
+        params: { agentId: id, taskId },
+        method: "PATCH",
+        body: data,
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["agents", id, "tasks"] });
+    },
+  });
+}
+
+export function useAgentRuns(id: string, params?: { status?: string; limit?: number }) {
   return useQuery({
-    queryKey: ["agents", id, "runs", params?.status ?? "all"],
+    enabled: Boolean(id),
+    queryKey: ["agents", id, "runs", params?.status ?? "all", params?.limit ?? "default"],
     queryFn: ({ signal }) =>
       apiClient.fetch("agentRuns", {
         params: { agentId: id },
-        query: { status: params?.status },
+        query: { status: params?.status, limit: params?.limit },
         signal,
       }),
   });
@@ -135,6 +187,7 @@ export function useAgentRunDetails(id: string, runId: string) {
 
 export function useAgentAudit(id: string) {
   return useQuery({
+    enabled: Boolean(id),
     queryKey: ["agents", id, "audit"],
     queryFn: ({ signal }) =>
       apiClient.fetch("agentAudit", { params: { agentId: id }, signal }),
@@ -155,6 +208,7 @@ export function useAgentDetailAggregate(id: string) {
 
 export function useAgentVersions(id: string) {
   return useQuery({
+    enabled: Boolean(id),
     queryKey: ["agents", id, "versions"],
     queryFn: ({ signal }) =>
       apiClient.fetch("agentVersions", {
@@ -166,6 +220,7 @@ export function useAgentVersions(id: string) {
 
 export function useAgentDocuments(id: string) {
   return useQuery({
+    enabled: Boolean(id),
     queryKey: ["agents", id, "documents"],
     queryFn: ({ signal }) =>
       apiClient.fetch("agentDocuments", {
@@ -177,6 +232,7 @@ export function useAgentDocuments(id: string) {
 
 export function useAgentVectorStats(id: string) {
   return useQuery({
+    enabled: Boolean(id),
     queryKey: ["agents", id, "vectors", "stats"],
     queryFn: ({ signal }) =>
       apiClient.fetch("agentVectorStats", {
