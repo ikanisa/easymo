@@ -2,6 +2,9 @@ import { z } from "zod";
 import { jsonOk, jsonError } from "@/lib/api/http";
 import { createHandler } from "@/app/api/withObservability";
 import { getSupabaseAdminClient } from "@/lib/server/supabase-admin";
+import { logStructured } from "@/lib/server/logger";
+import { recordAudit } from "@/lib/server/audit";
+import { headers } from "next/headers";
 
 export const dynamic = "force-dynamic";
 
@@ -63,12 +66,24 @@ export const GET = createHandler("admin_api.agent_sessions.list", async (req) =>
       );
     }
 
-    return jsonOk({
+    const responseBody = {
       sessions: data || [],
       total: count || 0,
       limit: params.limit,
       offset: params.offset,
+    };
+
+    logStructured({
+      event: "agent_sessions_listed",
+      target: "agent_sessions",
+      status: "ok",
+      details: {
+        filters: params,
+        count: responseBody.total,
+      },
     });
+
+    return jsonOk(responseBody);
   } catch (error) {
     console.error("Agent sessions list error:", error);
     return jsonError({ error: "internal_error", message: "Internal server error" }, 500);
@@ -113,6 +128,32 @@ export const POST = createHandler("admin_api.agent_sessions.create", async (req)
         500
       );
     }
+
+    const actorId = headers().get("x-actor-id");
+
+    await recordAudit({
+      actorId,
+      action: "agent_session_create",
+      targetTable: "agent_sessions",
+      targetId: data.id,
+      diff: {
+        agent_type: validated.agent_type,
+        flow_type: validated.flow_type,
+        sla_minutes: validated.sla_minutes,
+      },
+    });
+
+    logStructured({
+      event: "agent_session_created",
+      target: data.id,
+      status: "ok",
+      details: {
+        actorId,
+        agentType: validated.agent_type,
+        flowType: validated.flow_type,
+        deadline: data.deadline_at,
+      },
+    });
 
     return jsonOk({ session: data }, 201);
   } catch (error) {

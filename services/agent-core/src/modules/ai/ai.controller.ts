@@ -8,6 +8,7 @@ import {
   getAgentCoreRouteSegment,
   getAgentCoreRouteServiceScopes,
 } from "@easymo/commons";
+import { SoraOrchestratorService } from "./sora-orchestrator.service.js";
 
 const OrchestrateSchema = z.object({
   tenantId: z.string().uuid(),
@@ -44,10 +45,23 @@ const SupportSchema = z.object({
   timestamp: z.number().optional(),
 });
 
+const SoraGenerationSchema = z.object({
+  campaignId: z.string().uuid(),
+  figureId: z.string().uuid(),
+  prompt: z.string().min(1),
+  country: z.string().min(2).max(2).optional(),
+  region: z.string().min(2).optional(),
+  locale: z.string().min(2).optional(),
+  estimatedCostUsd: z.number().nonnegative(),
+  expectedOutputMb: z.number().nonnegative().optional(),
+  userId: z.string().uuid().optional(),
+  metadata: z.record(z.any()).optional(),
+});
+
 @Controller(getAgentCoreControllerBasePath("ai"))
 @UseGuards(ServiceTokenGuard)
 export class AiController {
-  constructor(private readonly ai: AiService) {}
+  constructor(private readonly ai: AiService, private readonly sora: SoraOrchestratorService) {}
 
   @Post(getAgentCoreRouteSegment("aiBrokerOrchestrate"))
   @ServiceScopes(...getAgentCoreRouteServiceScopes("aiBrokerOrchestrate"))
@@ -82,5 +96,12 @@ export class AiController {
   async support(@Body() body: unknown) {
     const payload = SupportSchema.parse(body) as Parameters<AiService["runSupport"]>[0];
     return await this.ai.runSupport(payload);
+  }
+
+  @Post(getAgentCoreRouteSegment("aiSoraGenerate"))
+  @ServiceScopes(...getAgentCoreRouteServiceScopes("aiSoraGenerate"))
+  async soraGenerate(@Body() body: unknown) {
+    const payload = SoraGenerationSchema.parse(body) as Parameters<SoraOrchestratorService["queueGeneration"]>[0];
+    return await this.sora.queueGeneration(payload);
   }
 }

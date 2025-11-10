@@ -24,6 +24,9 @@ model Tenant {
   vendorProfiles VendorProfile[]
   intents Intent[]
   walletTransactions WalletTransaction[]
+  brandGuides BrandGuide[]
+  figures Figure[]
+  campaigns Campaign[]
 }
 
 model AgentConfig {
@@ -284,11 +287,11 @@ model Agent {
   slug              String
   persona           String   @default("general")
   status            String   @default("active")
-  currentRevisionId String?  @db.Uuid
-  currentRevision   AgentRevision? @relation(fields: [currentRevisionId], references: [id], onDelete: SetNull)
+  currentRevisionId String?  @db.Uuid @unique
+  currentRevision   AgentRevision? @relation("AgentCurrentRevision", fields: [currentRevisionId], references: [id], onDelete: SetNull)
   createdAt         DateTime @default(now())
   updatedAt         DateTime @default(now())
-  revisions         AgentRevision[]
+  revisions         AgentRevision[] @relation("AgentRevisions")
   documents         AgentDocument[]
   tasks             AgentTask[]
 
@@ -299,7 +302,7 @@ model Agent {
 model AgentRevision {
   id          String   @id @default(uuid()) @db.Uuid
   agentId     String   @db.Uuid
-  agent       Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  agent       Agent    @relation("AgentRevisions", fields: [agentId], references: [id], onDelete: Cascade)
   version     Int      @default(1)
   instructions String
   tools       Json     @default("[]")
@@ -307,6 +310,7 @@ model AgentRevision {
   published   Boolean  @default(false)
   createdBy   String?
   createdAt   DateTime @default(now())
+  currentFor  Agent?   @relation("AgentCurrentRevision")
 
   @@index([agentId, version], map: "agent_revisions_agent_version_idx")
 }
@@ -336,6 +340,83 @@ model AgentTask {
   updatedAt    DateTime @default(now())
 
   @@index([agentId], map: "agent_tasks_agent_idx")
+}
+
+model BrandGuide {
+  id              String   @id @default(uuid()) @db.Uuid
+  tenantId        String   @db.Uuid
+  tenant          Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name            String
+  voiceTone       String?
+  legalDisclaimer String?
+  safetyGuidelines String?
+  brandPillars    String[] @default([])
+  forbiddenTerms  String[] @default([])
+  directives      Json     @default("{}")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @default(now())
+  figures         Figure[]
+  campaigns       Campaign[]
+
+  @@index([tenantId], map: "brand_guides_tenant_idx")
+}
+
+model Campaign {
+  id                   String   @id @default(uuid()) @db.Uuid
+  tenantId             String   @db.Uuid
+  tenant               Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  brandGuideId         String?  @db.Uuid
+  brandGuide           BrandGuide? @relation(fields: [brandGuideId], references: [id], onDelete: SetNull)
+  name                 String
+  status               String   @default("active")
+  generationKillSwitch Boolean  @default(false)
+  dailyCostCapUsd      Decimal? @db.Decimal(12, 2)
+  metadata             Json     @default("{}")
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @default(now())
+  figures              Figure[]
+  limits               GenerationLimit[]
+
+  @@index([tenantId], map: "campaigns_tenant_idx")
+  @@index([brandGuideId], map: "campaigns_brand_guide_idx")
+}
+
+model Figure {
+  id               String   @id @default(uuid()) @db.Uuid
+  tenantId         String   @db.Uuid
+  tenant           Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  campaignId       String?  @db.Uuid
+  campaign         Campaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  brandGuideId     String?  @db.Uuid
+  brandGuide       BrandGuide? @relation(fields: [brandGuideId], references: [id], onDelete: SetNull)
+  name             String
+  slug             String?
+  rightsStart      DateTime?
+  rightsEnd        DateTime?
+  allowedCountries String[] @default([])
+  allowedRegions   String[] @default([])
+  policyNotes      String?
+  legalNotes       String?
+  metadata         Json     @default("{}")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @default(now())
+
+  @@index([tenantId], map: "figures_tenant_idx")
+  @@index([campaignId], map: "figures_campaign_idx")
+  @@index([brandGuideId], map: "figures_brand_guide_idx")
+}
+
+model GenerationLimit {
+  id         String   @id @default(uuid()) @db.Uuid
+  campaignId String   @db.Uuid
+  campaign   Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  date       DateTime @db.Date
+  spendUsd   Decimal  @default(0) @db.Decimal(14, 2)
+  jobsCount  Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @default(now())
+
+  @@unique([campaignId, date], map: "generation_limits_campaign_date_key")
 }
 
 enum CallPlatform {

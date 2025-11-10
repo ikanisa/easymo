@@ -2,7 +2,9 @@
 
 import { ReactNode, useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
+import classNames from "classnames";
 import { SidebarNav } from "@/components/layout/SidebarNav";
+import { SidebarRail } from "@/components/layout/SidebarRail";
 import { TopBar } from "@/components/layout/TopBar";
 import { ToastProvider } from "@/components/ui/ToastProvider";
 import { GradientBackground } from "@/components/layout/GradientBackground";
@@ -13,6 +15,7 @@ import { AssistantPanel } from "@/components/assistant/AssistantPanel";
 import { MobileNav } from "@/components/layout/MobileNav";
 import { SessionProvider } from "@/components/providers/SessionProvider";
 import { PanelBreadcrumbs } from "@/components/layout/PanelBreadcrumbs";
+import { useFeatureFlag } from "@/lib/flags";
 
 interface PanelShellProps {
   children: ReactNode;
@@ -50,6 +53,15 @@ export function PanelShell({
   const [avatarInitials, setAvatarInitials] = useState(() =>
     deriveInitials(actorDisplayLabel, session.actorId),
   );
+  const adminHubV2Enabled = useFeatureFlag("adminHubV2");
+
+  const layoutClassName = classNames("layout", {
+    "layout--rail": adminHubV2Enabled,
+  });
+
+  const omniSearchPlaceholder = adminHubV2Enabled
+    ? "Search the admin hub — type '/' to launch Omnisearch"
+    : undefined;
 
   useEffect(() => {
     setAvatarInitials(deriveInitials(actorDisplayLabel, session.actorId));
@@ -82,8 +94,8 @@ export function PanelShell({
         <ServiceWorkerToasts />
         <OfflineBanner />
         <GradientBackground variant="surface" className="min-h-screen">
-          <div className="layout">
-            <SidebarNav />
+          <div className={layoutClassName}>
+            {adminHubV2Enabled ? <SidebarRail /> : <SidebarNav />}
             <div className="layout__main">
               <TopBar
                 environmentLabel={environmentLabel}
@@ -96,6 +108,8 @@ export function PanelShell({
                 actorInitials={avatarInitials}
                 onSignOut={handleSignOut}
                 signingOut={signingOut}
+                omniSearchPlaceholder={omniSearchPlaceholder}
+                omniShortcutHint={adminHubV2Enabled ? "/" : undefined}
               />
               <main
                 id="main-content"

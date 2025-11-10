@@ -9,7 +9,14 @@ import type {
   Bar,
   DashboardKpi,
   FlowMeta,
+  InsuranceComparisonQuote,
+  InsuranceDocument,
+  InsurancePayment,
+  InsurancePolicy,
   InsuranceQuote,
+  InsuranceRequest,
+  InsuranceTask,
+  InsuranceVehicle,
   MenuVersion,
   NotificationOutbox,
   OcrJob,
@@ -54,6 +61,15 @@ import { mockBars, mockStations, mockUsers } from "@/lib/test-utils/mock-base";
 export { mockBars, mockUsers, mockStations };
 
 const now = new Date();
+const currencyFormatter = new Intl.NumberFormat("en-RW", {
+  style: "currency",
+  currency: "RWF",
+  maximumFractionDigits: 0,
+});
+
+function formatCurrency(value: number) {
+  return currencyFormatter.format(Math.round(value));
+}
 
 export const mockInsuranceQuotes: InsuranceQuote[] = [
   createInsuranceQuote({
@@ -86,6 +102,743 @@ export const mockInsuranceQuotes: InsuranceQuote[] = [
     updatedAt: formatISO(subDays(now, 2)),
     reviewerComment: "Need higher-resolution invoice photo.",
   }),
+];
+
+const insuranceVehicles: InsuranceVehicle[] = [
+  {
+    id: "veh-req-2024-0001",
+    requestId: "req-2024-0001",
+    plateNumber: "RAB 123C",
+    vin: "JH4DA9350MS000001",
+    make: "Toyota",
+    model: "RAV4",
+    bodyType: "SUV",
+    year: 2019,
+    usage: "PRIVATE",
+    coverType: "Comprehensive",
+    sumInsuredMinor: 24_000_000,
+    seats: 5,
+    comesaRequested: true,
+    extras: { fuel: "Petrol", color: "Blue" },
+  },
+  {
+    id: "veh-req-2024-0002",
+    requestId: "req-2024-0002",
+    plateNumber: "RAD 987K",
+    vin: "WAUZZZ8V0JA000789",
+    make: "Audi",
+    model: "A3",
+    bodyType: "Hatchback",
+    year: 2021,
+    usage: "PRIVATE",
+    coverType: "Comprehensive",
+    sumInsuredMinor: 32_000_000,
+    seats: 5,
+    comesaRequested: false,
+    extras: { fuel: "Diesel", trim: "S-line" },
+  },
+  {
+    id: "veh-req-2024-0003",
+    requestId: "req-2024-0003",
+    plateNumber: "RAC 441T",
+    vin: "KM8JU3AG9EU000123",
+    make: "Hyundai",
+    model: "Tucson",
+    bodyType: "SUV",
+    year: 2017,
+    usage: "TAXI_PSV",
+    coverType: "Third party",
+    sumInsuredMinor: 12_000_000,
+    seats: 7,
+    comesaRequested: false,
+    extras: { cooperative: "CityTaxi", inspection: "due" },
+  },
+];
+
+const insurancePolicies: InsurancePolicy[] = [
+  {
+    id: "pol-2024-0101",
+    requestId: "req-2024-0002",
+    policyNumber: "RAD-987K/2024",
+    insurer: "Radiant",
+    status: "active",
+    effectiveFrom: formatISO(subDays(now, 15)),
+    effectiveTo: formatISO(addDays(now, 350)),
+    premiumTotalMinor: 428_000,
+    feesMinor: 18_000,
+    issuedAt: formatISO(subDays(now, 14)),
+    issuedBy: "uw.radiant",
+    breakdown: [
+      {
+        id: "pb-2024-0101-base",
+        policyId: "pol-2024-0101",
+        label: "Base premium",
+        amountMinor: 360_000,
+        metadata: { rate: "1.2%" },
+        sortOrder: 1,
+      },
+      {
+        id: "pb-2024-0101-taxes",
+        policyId: "pol-2024-0101",
+        label: "VAT",
+        amountMinor: 54_000,
+        metadata: { taxRate: "18%" },
+        sortOrder: 2,
+      },
+      {
+        id: "pb-2024-0101-fee",
+        policyId: "pol-2024-0101",
+        label: "Stamp duty",
+        amountMinor: 14_000,
+        metadata: { schedule: "A" },
+        sortOrder: 3,
+      },
+    ],
+  },
+  {
+    id: "pol-2024-0102",
+    requestId: "req-2024-0003",
+    policyNumber: "RAC-441T/2024",
+    insurer: "Prime Life",
+    status: "pending_issue",
+    effectiveFrom: null,
+    effectiveTo: null,
+    premiumTotalMinor: 186_000,
+    feesMinor: 9_000,
+    issuedAt: null,
+    issuedBy: null,
+    breakdown: [
+      {
+        id: "pb-2024-0102-base",
+        policyId: "pol-2024-0102",
+        label: "Third party premium",
+        amountMinor: 150_000,
+        metadata: { seatBand: "7-10" },
+        sortOrder: 1,
+      },
+      {
+        id: "pb-2024-0102-tax",
+        policyId: "pol-2024-0102",
+        label: "VAT",
+        amountMinor: 27_000,
+        metadata: { taxRate: "18%" },
+        sortOrder: 2,
+      },
+    ],
+  },
+];
+
+const insuranceDocuments: InsuranceDocument[] = [
+  {
+    id: "doc-req-2024-0001-logbook",
+    requestId: "req-2024-0001",
+    policyId: null,
+    docType: "logbook",
+    storagePath: "insurance/req-2024-0001/logbook.pdf",
+    source: "upload",
+    ocrConfidence: 0.66,
+    uploadedBy: "customer.jean",
+    uploadedAt: formatISO(subDays(now, 1)),
+    verified: false,
+    ocrPayload: { plateNumber: "RAB 123C", make: "Toyota" },
+  },
+  {
+    id: "doc-req-2024-0001-id",
+    requestId: "req-2024-0001",
+    policyId: null,
+    docType: "id_card",
+    storagePath: "insurance/req-2024-0001/id-card.png",
+    source: "upload",
+    ocrConfidence: 0.92,
+    uploadedBy: "ops.linda",
+    uploadedAt: formatISO(subDays(now, 1)),
+    verified: true,
+    ocrPayload: { idNumber: "1199770000001010" },
+  },
+  {
+    id: "doc-req-2024-0002-quote",
+    requestId: "req-2024-0002",
+    policyId: "pol-2024-0101",
+    docType: "quotation",
+    storagePath: "insurance/req-2024-0002/quote.pdf",
+    source: "upload",
+    ocrConfidence: 0.88,
+    uploadedBy: "ops.tuyishime",
+    uploadedAt: formatISO(subDays(now, 3)),
+    verified: true,
+    ocrPayload: { insurer: "Radiant", premium: 428000 },
+  },
+  {
+    id: "doc-req-2024-0003-ycard",
+    requestId: "req-2024-0003",
+    policyId: "pol-2024-0102",
+    docType: "yellow_card",
+    storagePath: "insurance/req-2024-0003/yellow-card.pdf",
+    source: "ocr",
+    ocrConfidence: 0.71,
+    uploadedBy: "ops.nadine",
+    uploadedAt: formatISO(subDays(now, 5)),
+    verified: false,
+    ocrPayload: { seats: 7, expiry: formatISO(addDays(now, 25)) },
+  },
+];
+
+const insurancePayments: InsurancePayment[] = [
+  {
+    id: "pay-req-2024-0001-1",
+    requestId: "req-2024-0001",
+    policyId: null,
+    amountMinor: 320_000,
+    currency: "RWF",
+    method: "momo",
+    status: "in_review",
+    reference: "REQ-2024-0001-DEP",
+    momoReference: "*182*8*1*123456#",
+    paidAt: null,
+    createdAt: formatISO(subDays(now, 0.5)),
+    updatedAt: formatISO(subDays(now, 0.1)),
+  },
+  {
+    id: "pay-pol-2024-0101",
+    requestId: "req-2024-0002",
+    policyId: "pol-2024-0101",
+    amountMinor: 428_000,
+    currency: "RWF",
+    method: "momo",
+    status: "completed",
+    reference: "RAD-987K-2024",
+    momoReference: "BK428000",
+    paidAt: formatISO(subDays(now, 13)),
+    createdAt: formatISO(subDays(now, 14)),
+    updatedAt: formatISO(subDays(now, 13)),
+  },
+  {
+    id: "pay-pol-2024-0102",
+    requestId: "req-2024-0003",
+    policyId: "pol-2024-0102",
+    amountMinor: 186_000,
+    currency: "RWF",
+    method: "cash",
+    status: "pending",
+    reference: "RAC-441T-2024",
+    momoReference: null,
+    paidAt: null,
+    createdAt: formatISO(subDays(now, 2)),
+    updatedAt: formatISO(subDays(now, 2)),
+  },
+];
+
+const insuranceTasks: InsuranceTask[] = [
+  {
+    id: "task-req-2024-0001-ocr",
+    requestId: "req-2024-0001",
+    policyId: null,
+    title: "Verify OCR discrepancies",
+    taskType: "ocr_review",
+    status: "in_progress",
+    priority: 1,
+    dueAt: formatISO(addDays(now, 1)),
+    assignedTo: "ops.linda@wa",
+    createdBy: "ops.linda@wa",
+    createdAt: formatISO(subDays(now, 1)),
+    updatedAt: formatISO(subDays(now, 0.2)),
+  },
+  {
+    id: "task-req-2024-0001-followup",
+    requestId: "req-2024-0001",
+    policyId: null,
+    title: "Call customer for plate confirmation",
+    taskType: "follow_up",
+    status: "open",
+    priority: 2,
+    dueAt: formatISO(addDays(now, 2)),
+    assignedTo: "ops.nadine@wa",
+    createdBy: "ops.linda@wa",
+    createdAt: formatISO(subDays(now, 0.5)),
+    updatedAt: formatISO(subDays(now, 0.5)),
+  },
+  {
+    id: "task-pol-2024-0101-issuance",
+    requestId: "req-2024-0002",
+    policyId: "pol-2024-0101",
+    title: "Upload signed cover note",
+    taskType: "issuance",
+    status: "completed",
+    priority: 1,
+    dueAt: formatISO(subDays(now, 12)),
+    assignedTo: "ops.tuyishime@wa",
+    createdBy: "ops.tuyishime@wa",
+    createdAt: formatISO(subDays(now, 15)),
+    updatedAt: formatISO(subDays(now, 12)),
+  },
+  {
+    id: "task-pol-2024-0102-payment",
+    requestId: "req-2024-0003",
+    policyId: "pol-2024-0102",
+    title: "Collect PSV endorsement payment",
+    taskType: "payment",
+    status: "open",
+    priority: 1,
+    dueAt: formatISO(addDays(now, 3)),
+    assignedTo: "ops.nadine@wa",
+    createdBy: "ops.nadine@wa",
+    createdAt: formatISO(subDays(now, 2)),
+    updatedAt: formatISO(subDays(now, 2)),
+  },
+];
+
+const insuranceComparisons: Record<string, InsuranceComparisonQuote[]> = {
+  "req-2024-0001": [
+    {
+      insurer: "BK Insurance",
+      product: "Motor Comprehensive",
+      grossPremiumMinor: 334_000,
+      netPremiumMinor: 308_000,
+      feesMinor: 12_000,
+      taxesMinor: 14_000,
+      turnaroundHours: 2,
+      notes: ["Includes roadside assistance"],
+    },
+    {
+      insurer: "Radiant",
+      product: "Comprehensive",
+      grossPremiumMinor: 352_000,
+      netPremiumMinor: 320_000,
+      feesMinor: 10_000,
+      taxesMinor: 22_000,
+      turnaroundHours: 4,
+      notes: ["Requires inspection"],
+    },
+    {
+      insurer: "Prime Life",
+      product: "Comprehensive",
+      grossPremiumMinor: 365_000,
+      netPremiumMinor: 330_000,
+      feesMinor: 15_000,
+      taxesMinor: 20_000,
+      turnaroundHours: 6,
+      notes: ["Offers two free endorsements"],
+    },
+  ],
+  "req-2024-0002": [
+    {
+      insurer: "Radiant",
+      product: "Executive Comprehensive",
+      grossPremiumMinor: 428_000,
+      netPremiumMinor: 384_000,
+      feesMinor: 18_000,
+      taxesMinor: 26_000,
+      turnaroundHours: 1,
+      notes: ["Instant issuance available"],
+    },
+    {
+      insurer: "BK Insurance",
+      product: "Executive Comprehensive",
+      grossPremiumMinor: 439_000,
+      netPremiumMinor: 392_000,
+      feesMinor: 16_000,
+      taxesMinor: 31_000,
+      turnaroundHours: 3,
+      notes: ["Requires valuation"],
+    },
+  ],
+  "req-2024-0003": [
+    {
+      insurer: "Prime Life",
+      product: "PSV Third Party",
+      grossPremiumMinor: 186_000,
+      netPremiumMinor: 150_000,
+      feesMinor: 9_000,
+      taxesMinor: 27_000,
+      turnaroundHours: 8,
+      notes: ["Yellow card included"],
+    },
+    {
+      insurer: "Radiant",
+      product: "PSV Third Party",
+      grossPremiumMinor: 192_000,
+      netPremiumMinor: 152_000,
+      feesMinor: 12_000,
+      taxesMinor: 28_000,
+      turnaroundHours: 10,
+      notes: ["Requires drivers list"],
+    },
+  ],
+};
+
+export const mockInsuranceVehicles = insuranceVehicles;
+export const mockInsurancePolicies = insurancePolicies;
+export const mockInsuranceDocuments = insuranceDocuments;
+export const mockInsurancePayments = insurancePayments;
+export const mockInsuranceTasks = insuranceTasks;
+export const mockInsuranceComparisons = insuranceComparisons;
+
+export const mockInsuranceRequests: InsuranceRequest[] = [
+  {
+    id: "req-2024-0001",
+    customerId: mockUsers[0].id,
+    customerName: "Jean Bosco",
+    customerWaId: "250780000101",
+    customerMsisdn: "+250780000101",
+    status: "under_review",
+    source: "whatsapp",
+    preferredInsurer: "BK Insurance",
+    premiumTargetMinor: 320_000,
+    ocrConfidence: 0.68,
+    ocrSummary: {
+      flaggedFields: ["VIN"],
+      remarks: "Plate number detected at 62% confidence.",
+    },
+    documents: insuranceDocuments.filter((doc) => doc.requestId === "req-2024-0001"),
+    assignedAgentId: "ops.linda@wa",
+    createdBy: "ops.linda@wa",
+    createdAt: formatISO(subDays(now, 1)),
+    updatedAt: formatISO(subDays(now, 0.1)),
+    archivedAt: null,
+    vehicle: insuranceVehicles.find((vehicle) => vehicle.requestId === "req-2024-0001") ?? null,
+    comparison: insuranceComparisons["req-2024-0001"],
+    policy: null,
+    payments: insurancePayments.filter((payment) => payment.requestId === "req-2024-0001"),
+    tasks: insuranceTasks.filter((task) => task.requestId === "req-2024-0001"),
+  },
+  {
+    id: "req-2024-0002",
+    customerId: mockUsers[1].id,
+    customerName: "Sandrine Tuyishime",
+    customerWaId: "250788888888",
+    customerMsisdn: "+250788888888",
+    status: "issued",
+    source: "web_form",
+    preferredInsurer: "Radiant",
+    premiumTargetMinor: 430_000,
+    ocrConfidence: 0.91,
+    ocrSummary: { highlights: ["Document quality excellent"] },
+    documents: insuranceDocuments.filter((doc) => doc.requestId === "req-2024-0002"),
+    assignedAgentId: "ops.tuyishime@wa",
+    createdBy: "ops.tuyishime@wa",
+    createdAt: formatISO(subDays(now, 16)),
+    updatedAt: formatISO(subDays(now, 12)),
+    archivedAt: null,
+    vehicle: insuranceVehicles.find((vehicle) => vehicle.requestId === "req-2024-0002") ?? null,
+    comparison: insuranceComparisons["req-2024-0002"],
+    policy: insurancePolicies.find((policy) => policy.requestId === "req-2024-0002") ?? null,
+    payments: insurancePayments.filter((payment) => payment.requestId === "req-2024-0002"),
+    tasks: insuranceTasks.filter((task) => task.requestId === "req-2024-0002"),
+  },
+  {
+    id: "req-2024-0003",
+    customerId: mockUsers[2].id,
+    customerName: "Aimable Habimana",
+    customerWaId: "250783333333",
+    customerMsisdn: "+250783333333",
+    status: "awaiting_payment",
+    source: "partner_portal",
+    preferredInsurer: "Prime Life",
+    premiumTargetMinor: 190_000,
+    ocrConfidence: 0.73,
+    ocrSummary: {
+      flaggedFields: ["Passenger seats"],
+      remarks: "PSV license expiring soon.",
+    },
+    documents: insuranceDocuments.filter((doc) => doc.requestId === "req-2024-0003"),
+    assignedAgentId: "ops.nadine@wa",
+    createdBy: "ops.nadine@wa",
+    createdAt: formatISO(subDays(now, 5)),
+    updatedAt: formatISO(subDays(now, 2)),
+    archivedAt: null,
+    vehicle: insuranceVehicles.find((vehicle) => vehicle.requestId === "req-2024-0003") ?? null,
+    comparison: insuranceComparisons["req-2024-0003"],
+    policy: insurancePolicies.find((policy) => policy.requestId === "req-2024-0003") ?? null,
+    payments: insurancePayments.filter((payment) => payment.requestId === "req-2024-0003"),
+    tasks: insuranceTasks.filter((task) => task.requestId === "req-2024-0003"),
+  },
+];
+
+const insuranceCustomerMap = new Map<
+  string,
+  {
+    id: string;
+    name: string;
+    msisdn: string;
+    status: InsuranceRequest["status"];
+    lastRequestAt: string;
+    preferredInsurer: string | null;
+    documents: number;
+    policies: number;
+    outstandingMinor: number;
+  }
+>();
+
+for (const request of mockInsuranceRequests) {
+  const key = request.customerId ?? request.customerWaId ?? request.id;
+  const existing = insuranceCustomerMap.get(key);
+  const outstandingMinor = request.payments
+    .filter((payment) => payment.status !== "completed")
+    .reduce((total, payment) => total + payment.amountMinor, 0);
+  const policyCount = mockInsurancePolicies.filter(
+    (policy) => policy.requestId === request.id,
+  ).length;
+  const newRecord = {
+    id: key ?? request.id,
+    name: request.customerName ?? "Walk-in customer",
+    msisdn: request.customerMsisdn ?? "",
+    status: request.status,
+    lastRequestAt: request.createdAt,
+    preferredInsurer: request.preferredInsurer ?? null,
+    documents: request.documents.length,
+    policies: policyCount,
+    outstandingMinor,
+  };
+
+  if (!existing) {
+    insuranceCustomerMap.set(key, newRecord);
+  } else {
+    insuranceCustomerMap.set(key, {
+      ...existing,
+      lastRequestAt: existing.lastRequestAt > request.createdAt
+        ? existing.lastRequestAt
+        : request.createdAt,
+      documents: existing.documents + request.documents.length,
+      policies: existing.policies + policyCount,
+      outstandingMinor: existing.outstandingMinor + outstandingMinor,
+      preferredInsurer: existing.preferredInsurer ?? request.preferredInsurer ?? null,
+      status: request.status,
+    });
+  }
+}
+
+export const mockInsuranceCustomers = Array.from(insuranceCustomerMap.values());
+
+export const mockWorkflowBoard = [
+  {
+    id: "wf-intake-1",
+    title: "Verify OCR discrepancies",
+    stage: "Intake",
+    owner: "Linda",
+    dueAt: formatISO(addDays(now, 1)),
+    status: "in_progress",
+    priority: "high",
+    relatedRequestId: "req-2024-0001",
+  },
+  {
+    id: "wf-quote-1",
+    title: "Finalize Prime Life quote",
+    stage: "Quote",
+    owner: "Nadine",
+    dueAt: formatISO(addDays(now, 2)),
+    status: "open",
+    priority: "medium",
+    relatedRequestId: "req-2024-0003",
+  },
+  {
+    id: "wf-payment-1",
+    title: "Match MoMo confirmation",
+    stage: "Payments",
+    owner: "Eric",
+    dueAt: formatISO(addDays(now, -1)),
+    status: "blocked",
+    priority: "high",
+    relatedRequestId: "req-2024-0002",
+  },
+  {
+    id: "wf-issuance-1",
+    title: "Upload cover note",
+    stage: "Issuance",
+    owner: "Sandrine",
+    dueAt: formatISO(addDays(now, 3)),
+    status: "open",
+    priority: "low",
+    relatedRequestId: "req-2024-0002",
+  },
+];
+
+export const mockIntegrationTools = [
+  {
+    id: "tool-supabase",
+    name: "Supabase",
+    category: "Data",
+    status: "connected",
+    lastSyncAt: formatISO(subDays(now, 0.1)),
+    description: "Primary source for policies, payments, and RLS enforcement.",
+  },
+  {
+    id: "tool-whatsapp",
+    name: "WhatsApp Business Platform",
+    category: "Channels",
+    status: "warning",
+    lastSyncAt: formatISO(subDays(now, 1)),
+    description: "Template send rate dipped below SLA—monitor retries.",
+  },
+  {
+    id: "tool-insurer-api",
+    name: "BK Insurance API",
+    category: "Partner",
+    status: "connected",
+    lastSyncAt: formatISO(subDays(now, 0.3)),
+    description: "Live issuance for comprehensive covers.",
+  },
+  {
+    id: "tool-flowdesk",
+    name: "Flowdesk",
+    category: "Automation",
+    status: "disconnected",
+    lastSyncAt: null,
+    description: "Pending credentials refresh for automated reminders.",
+  },
+];
+
+export const mockAgentOverviewMetrics = [
+  {
+    label: "Requests handled (7d)",
+    value: "142",
+    change: "+12%",
+    trend: "up",
+  },
+  {
+    label: "Average quote turnaround",
+    value: "2h 14m",
+    change: "-18m",
+    trend: "up",
+  },
+  {
+    label: "Policy issuance rate",
+    value: "78%",
+    change: "+4%",
+    trend: "up",
+  },
+  {
+    label: "Payments pending",
+    value: "6",
+    change: "-2",
+    trend: "down",
+  },
+];
+
+export const mockAgentPlaybooks = [
+  {
+    id: "playbook-intake",
+    title: "Intake triage",
+    audience: "Intake pod",
+    summary: "Checklist for validating OCR, customer intent, and regulatory docs.",
+    steps: [
+      "Confirm OCR confidence above 70% or escalate for manual review.",
+      "Capture preferred insurer and policy start date.",
+      "Assign tasks for missing documents and signature collection.",
+    ],
+  },
+  {
+    id: "playbook-payment",
+    title: "Payment reconciliation",
+    audience: "Finance",
+    summary: "Ensure MoMo confirmations match Supabase payments table before issuance.",
+    steps: [
+      "Check for duplicate references in `insurance_payments`.",
+      "Update status to completed with confirmation screenshot.",
+      "Notify issuance pod when payment clears.",
+    ],
+  },
+  {
+    id: "playbook-issuance",
+    title: "Issuance QA",
+    audience: "Issuance pod",
+    summary: "Double-check policy documents before sending to customer.",
+    steps: [
+      "Validate policy number and effective dates.",
+      "Attach signed cover note and yellow card (if COMESA).",
+      "Log issuance event in Supabase for audit.",
+    ],
+  },
+];
+
+export const mockLearningModules = [
+  {
+    id: "learning-ocr",
+    title: "OCR best practices",
+    durationMinutes: 18,
+    difficulty: "Beginner",
+    tags: ["ocr", "intake"],
+    summary: "How to interpret confidence scores, retrain prompts, and escalate low-quality scans.",
+  },
+  {
+    id: "learning-pricing",
+    title: "Rwanda motor pricing fundamentals",
+    durationMinutes: 25,
+    difficulty: "Intermediate",
+    tags: ["pricing", "agents"],
+    summary: "Compare BK, Radiant, Prime Life pricing curves and mandatory excess rules.",
+  },
+  {
+    id: "learning-issuance",
+    title: "Issuance SLAs",
+    durationMinutes: 15,
+    difficulty: "Beginner",
+    tags: ["issuance", "finance"],
+    summary: "How to coordinate cover notes, receipts, and Supabase policy records.",
+  },
+];
+
+export const mockAnalyticsDashboards = [
+  {
+    id: "analytics-conversion",
+    title: "Conversion funnel",
+    timeframe: "This week",
+    primary: "68% quote → issuance",
+    breakdown: [
+      { label: "Intake", value: "210" },
+      { label: "Quoted", value: "164" },
+      { label: "Paid", value: "132" },
+      { label: "Issued", value: "114" },
+    ],
+  },
+  {
+    id: "analytics-sla",
+    title: "SLA compliance",
+    timeframe: "24h",
+    primary: "92% within target",
+    breakdown: [
+      { label: "Intake triage", value: "15m avg" },
+      { label: "Quote turnaround", value: "2h 10m" },
+      { label: "Issuance", value: "6h 45m" },
+    ],
+  },
+  {
+    id: "analytics-revenue",
+    title: "Premium collected",
+    timeframe: "Month to date",
+    primary: formatCurrency(978_000),
+    breakdown: [
+      { label: "BK Insurance", value: formatCurrency(420_000) },
+      { label: "Radiant", value: formatCurrency(350_000) },
+      { label: "Prime Life", value: formatCurrency(208_000) },
+    ],
+  },
+];
+
+export const mockAdminPanels = [
+  {
+    id: "admin-rls",
+    title: "RLS policies",
+    owner: "Platform team",
+    description: "Review roles and access for `insurance_*` tables.",
+    lastUpdated: formatISO(subDays(now, 0.6)),
+    status: "healthy",
+  },
+  {
+    id: "admin-webhooks",
+    title: "Webhook routing",
+    owner: "Integrations",
+    description: "Monitor retries to insurer partners and WhatsApp notifications.",
+    lastUpdated: formatISO(subDays(now, 1.2)),
+    status: "warning",
+  },
+  {
+    id: "admin-risk",
+    title: "Risk & compliance",
+    owner: "Operations",
+    description: "Data retention, audit logs, and escalation guardrails.",
+    lastUpdated: formatISO(subDays(now, 3)),
+    status: "attention",
+  },
 ];
 
 export const mockDashboardKpis: DashboardKpi[] = [

@@ -13,21 +13,12 @@ import { InsuranceClient } from "./InsuranceClient";
 export const metadata = createPanelPageMetadata("/insurance");
 
 const DEFAULT_PARAMS: InsuranceQueryParams = { limit: 100 };
+import { type InsuranceQueryParams } from "@/lib/queries/insurance";
+import { InsuranceClient } from "./InsuranceClient";
 
-export default async function InsurancePage() {
-  const queryClient = createQueryClient();
+const DEFAULT_PARAMS: InsuranceQueryParams = { limit: 50 };
 
-  await queryClient.prefetchQuery({
-    queryKey: insuranceQueryKeys.list(DEFAULT_PARAMS),
-    queryFn: () => fetchInsuranceQuotes(DEFAULT_PARAMS),
-  });
-
-  const dehydratedState = dehydrate(queryClient);
-
-  return (
-    <HydrationBoundary state={dehydratedState}>
-      <InsuranceClient initialParams={DEFAULT_PARAMS} />
-    </HydrationBoundary>
-  );
+export default function InsurancePage() {
+  return <InsuranceClient initialParams={DEFAULT_PARAMS} />;
 }
 
