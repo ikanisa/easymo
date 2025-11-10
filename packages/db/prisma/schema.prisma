@@ -326,16 +326,116 @@ model AgentDocument {
 }
 
 model AgentTask {
-  id           String   @id @default(uuid()) @db.Uuid
-  agentId      String   @db.Uuid
-  agent        Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
-  title        String
-  description  String?
-  payloadSchema Json    @default("{}")
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @default(now())
+  id            String   @id @default(uuid()) @db.Uuid
+  agentId       String   @db.Uuid
+  agent         Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  title         String
+  description   String?
+  payloadSchema Json     @default("{}")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @default(now())
 
   @@index([agentId], map: "agent_tasks_agent_idx")
+}
+
+// ===== Video Studio =====
+
+model BrandGuide {
+  id        String   @id @default(uuid()) @db.Uuid
+  slug      String   @unique
+  title     String
+  summary   String?
+  tone      Json?    @map("tone_of_voice")
+  palette   Json?    @map("color_palette")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  products  Product[]
+  templates VideoTemplate[]
+}
+
+model Product {
+  id           String      @id @default(uuid()) @db.Uuid
+  slug         String      @unique
+  name         String
+  description  String?
+  keywords     String[]    @default([])
+  media        Json?       @map("media_assets")
+  brandGuideId String?     @db.Uuid @map("brand_guide_id")
+  brandGuide   BrandGuide? @relation(fields: [brandGuideId], references: [id], onDelete: SetNull)
+  createdAt    DateTime    @default(now()) @map("created_at")
+  updatedAt    DateTime    @updatedAt @map("updated_at")
+
+  @@index([brandGuideId], map: "products_brand_guide_idx")
+}
+
+model VideoTemplate {
+  id           String      @id @default(uuid()) @db.Uuid
+  slug         String      @unique
+  title        String
+  description  String?
+  rightsStart  DateTime?   @map("rights_start")
+  rightsEnd    DateTime?   @map("rights_end")
+  brandGuideId String?     @db.Uuid @map("brand_guide_id")
+  brandGuide   BrandGuide? @relation(fields: [brandGuideId], references: [id], onDelete: SetNull)
+  createdAt    DateTime    @default(now()) @map("created_at")
+  updatedAt    DateTime    @updatedAt @map("updated_at")
+  scripts      VideoScript[]
+}
+
+model VideoScript {
+  id            String        @id @default(uuid()) @db.Uuid
+  templateId    String        @db.Uuid @map("template_id")
+  template      VideoTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  profileId     String?       @map("profile_id")
+  whatsappMsisdn String?      @map("whatsapp_msisdn")
+  locale        String
+  synopsis      String?
+  metadata      Json?         @map("metadata_json")
+  prompt        Json?         @map("prompt_json")
+  plan          Json?         @map("plan_json")
+  status        String        @default("pending_planning")
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+  jobs          VideoJob[]
+
+  @@index([templateId], map: "video_scripts_template_idx")
+}
+
+model VideoJob {
+  id             String        @id @default(uuid()) @db.Uuid
+  scriptId       String        @db.Uuid @map("script_id")
+  script         VideoScript   @relation(fields: [scriptId], references: [id], onDelete: Cascade)
+  status         String        @default("queued")
+  queueStatus    String        @default("pending") @map("queue_status")
+  queueAttempts  Int           @default(0) @map("queue_attempts")
+  queuedAt       DateTime?     @map("queued_at")
+  soraRequestId  String?       @map("sora_request_id")
+  shotplanJson   Json?         @map("shotplan_json")
+  masterPath     String?       @map("master_path")
+  whatsappPath   String?       @map("whatsapp_path")
+  whatsappStatus String        @default("pending") @map("whatsapp_status")
+  provenance     Json?         @map("provenance_json")
+  createdAt      DateTime      @default(now()) @map("created_at")
+  updatedAt      DateTime      @updatedAt @map("updated_at")
+  queueEntries   SoraJobQueue[]
+
+  @@index([queueStatus], map: "video_jobs_queue_status_idx")
+  @@index([status], map: "video_jobs_status_idx")
+}
+
+model SoraJobQueue {
+  id        String   @id @default(uuid()) @db.Uuid
+  jobId     String   @db.Uuid @map("job_id")
+  job       VideoJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  status    String   @default("pending")
+  payload   Json     @default("{}")
+  visibleAt DateTime @default(now()) @map("visible_at")
+  attempts  Int      @default(0)
+  lastError String?  @map("last_error")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([status, visibleAt], map: "sora_job_queue_status_visible_idx")
 }
 
 enum CallPlatform {

@@ -9,6 +9,7 @@ import { AgentsModule } from "./modules/agents/agents.module.js";
 import { AgentAdminModule } from "./modules/agent-admin/agent-admin.module.js";
 import { ChatModule } from "./modules/chat/chat.module.js";
 import { getRequestId } from "@easymo/commons";
+import { VideoModule } from "./modules/video/video.module.js";
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { getRequestId } from "@easymo/commons";
     ChatModule,
     ToolsModule,
     AgentAdminModule,
+    VideoModule,
   ],
 })
 export class AppModule {}

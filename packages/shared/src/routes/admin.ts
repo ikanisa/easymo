@@ -32,6 +32,8 @@ const adminRouteDefinitions = [
   { key: "panelMarketplaceSettings", path: "/marketplace/settings", segment: "panel" },
   { key: "panelAgents", path: "/agents", segment: "panel" },
   { key: "panelAgentDetail", path: "/agents/:agentId", segment: "panel" },
+  { key: "panelVideoJobs", path: "/video/jobs", segment: "panel" },
+  { key: "panelVideoJobDetail", path: "/video/jobs/:jobId", segment: "panel" },
   { key: "panelDriverSubscriptions", path: "/driver-subscriptions", segment: "panel" },
   { key: "panelWalletTopUp", path: "/wallet/topup", segment: "panel" },
   { key: "panelSettings", path: "/settings", segment: "panel" },
