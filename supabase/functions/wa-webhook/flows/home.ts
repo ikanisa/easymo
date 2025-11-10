@@ -54,19 +54,19 @@ const BASE_ROW_DEFS: MenuRowDef[] = [
     descriptionKey: "home.rows.nearbyQuincailleries.description",
   },
   {
-    id: IDS.PROPERTY_RENTALS,
-    titleKey: "home.rows.propertyRentals.title",
-    descriptionKey: "home.rows.propertyRentals.description",
-  },
-  {
     id: IDS.MARKETPLACE,
     titleKey: "home.rows.marketplace.title",
     descriptionKey: "home.rows.marketplace.description",
   },
   {
-    id: IDS.MOTOR_INSURANCE,
-    titleKey: "home.rows.motorInsurance.title",
-    descriptionKey: "home.rows.motorInsurance.description",
+    id: IDS.DINEIN_BARS,
+    titleKey: "home.rows.dineIn.title",
+    descriptionKey: "home.rows.dineIn.description",
+  },
+  {
+    id: IDS.PROPERTY_RENTALS,
+    titleKey: "home.rows.propertyRentals.title",
+    descriptionKey: "home.rows.propertyRentals.description",
   },
   {
     id: IDS.MOMO_QR,
@@ -74,14 +74,9 @@ const BASE_ROW_DEFS: MenuRowDef[] = [
     descriptionKey: "home.rows.momoQr.description",
   },
   {
-    id: IDS.WALLET,
-    titleKey: "home.rows.wallet.title",
-    descriptionKey: "home.rows.wallet.description",
-  },
-  {
-    id: IDS.DINEIN_BARS,
-    titleKey: "home.rows.dineIn.title",
-    descriptionKey: "home.rows.dineIn.description",
+    id: IDS.MOTOR_INSURANCE,
+    titleKey: "home.rows.motorInsurance.title",
+    descriptionKey: "home.rows.motorInsurance.description",
   },
 ];
 
