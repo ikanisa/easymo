@@ -1,14 +1,14 @@
 import Module from "node:module";
 import * as React from "react";
 
-type LoadFn = typeof Module._load;
+type LoadFn = (request: string, parent: any, isMain: boolean) => any;
 
 const patched = Symbol.for("adminAppReactDomActPatched");
 
 if (!(globalThis as Record<symbol, boolean>)[patched]) {
-  const originalLoad: LoadFn = Module._load;
+  const originalLoad: LoadFn = (Module as any)._load;
 
-  Module._load = function patchedLoad(request, parent, isMain) {
+  (Module as any)._load = function patchedLoad(request: string, parent: any, isMain: boolean) {
     const exports = originalLoad.call(this, request, parent, isMain);
 
     if (request === "react-dom/test-utils" && exports && typeof exports === "object") {

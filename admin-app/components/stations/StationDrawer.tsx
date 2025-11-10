@@ -35,7 +35,7 @@ export function StationDrawer({ station, onClose }: StationDrawerProps) {
                 </div>
                 <div>
                   <dt>Created</dt>
-                  <dd>{new Date(station.createdAt).toLocaleString()}</dd>
+                  <dd>{new Date(station.updatedAt).toLocaleString()}</dd>
                 </div>
               </dl>
             </section>

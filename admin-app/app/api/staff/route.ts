@@ -18,7 +18,7 @@ function fromMocks(params: z.infer<typeof querySchema>) {
   const offset = params.offset ?? 0;
   const limit = params.limit ?? 200;
 
-  const filtered = mockStaffNumbers.filter((row) => {
+  const filtered = mockStaffNumbers.filter((row: any) => {
     const roleMatch = params.role ? row.role === params.role : true;
     const activeMatch = params.active ? String(row.active) === params.active : true;
     const searchMatch = params.search
@@ -94,16 +94,23 @@ export const GET = createHandler('admin_api.staff.list', async (request: Request
   const hasMore = offset + rows.length < total;
 
   return jsonOk({
-    data: rows.map((row) => ({
-      id: row.id,
-      barName: row.bar?.name ?? 'Unknown bar',
-      number: row.number_e164 ?? 'Unknown',
-      role: row.role ?? 'staff',
-      active: row.is_active ?? false,
-      verified: Boolean(row.verified_at),
-      addedBy: row.created_by ?? null,
-      lastSeenAt: row.last_seen_at ?? null,
-    })),
+    data: rows.map((row: any) => {
+      const bar = row.bar as any;
+      const barName = Array.isArray(bar) 
+        ? (bar[0]?.name ?? 'Unknown bar') 
+        : (bar?.name ?? 'Unknown bar');
+      
+      return {
+        id: row.id,
+        barName,
+        number: row.number_e164 ?? 'Unknown',
+        role: row.role ?? 'staff',
+        active: row.is_active ?? false,
+        verified: Boolean(row.verified_at),
+        addedBy: row.created_by ?? null,
+        lastSeenAt: row.last_seen_at ?? null,
+      };
+    }),
     total,
     hasMore,
   });

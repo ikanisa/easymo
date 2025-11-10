@@ -4,7 +4,7 @@ import { apiClient } from "@/lib/api/client";
 export function useAgentsList() {
   return useQuery({
     queryKey: ["agents"],
-    queryFn: ({ signal }) => apiClient.request("agents", { signal }),
+    queryFn: ({ signal }) => apiClient.fetch("agents", { signal }),
   });
 }
 
@@ -12,7 +12,7 @@ export function useCreateAgent() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (body: { name: string; key?: string; description?: string }) =>
-      apiClient.request("agents", { method: "POST", body }),
+      apiClient.fetch("agents", { method: "POST", body }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["agents"] }),
   });
 }
@@ -21,7 +21,7 @@ export function useAgentDetails(id: string) {
   return useQuery({
     queryKey: ["agents", id],
     queryFn: ({ signal }) =>
-      apiClient.request("agentDetail", { params: { agentId: id }, signal }),
+      apiClient.fetch("agentDetail", { params: { agentId: id }, signal }),
   });
 }
 
@@ -29,7 +29,7 @@ export function useCreateVersion(id: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (body: { instructions?: string; config?: Record<string, unknown> }) =>
-      apiClient.request("agentVersions", {
+      apiClient.fetch("agentVersions", {
         params: { agentId: id },
         method: "POST",
         body,
@@ -46,7 +46,7 @@ export function useDeployVersion(id: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (body: { version: number }) =>
-      apiClient.request("agentDeploy", {
+      apiClient.fetch("agentDeploy", {
         params: { agentId: id },
         method: "POST",
         body,
@@ -65,7 +65,7 @@ export function useUploadAgentDocument(id: string) {
     mutationFn: async (file: File) => {
       const fd = new FormData();
       fd.append("file", file);
-      return apiClient.request("agentDocumentsUpload", {
+      return apiClient.fetch("agentDocumentsUpload", {
         params: { agentId: id },
         method: "POST",
         body: fd,
@@ -84,7 +84,7 @@ export function useDeleteAgentDocument(id: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (docId: string) =>
-      apiClient.request("agentDocument", {
+      apiClient.fetch("agentDocument", {
         params: { agentId: id, documentId: docId },
         method: "DELETE",
       }),
@@ -101,7 +101,7 @@ export function useAgentTasks(id: string, params?: { status?: string }) {
   return useQuery({
     queryKey: ["agents", id, "tasks", params?.status ?? "all"],
     queryFn: ({ signal }) =>
-      apiClient.request("agentTasks", {
+      apiClient.fetch("agentTasks", {
         params: { agentId: id },
         query: { status: params?.status },
         signal,
@@ -113,7 +113,7 @@ export function useAgentRuns(id: string, params?: { status?: string }) {
   return useQuery({
     queryKey: ["agents", id, "runs", params?.status ?? "all"],
     queryFn: ({ signal }) =>
-      apiClient.request("agentRuns", {
+      apiClient.fetch("agentRuns", {
         params: { agentId: id },
         query: { status: params?.status },
         signal,
@@ -126,7 +126,7 @@ export function useAgentRunDetails(id: string, runId: string) {
     enabled: Boolean(id && runId),
     queryKey: ["agents", id, "runs", runId],
     queryFn: ({ signal }) =>
-      apiClient.request("agentRunDetail", {
+      apiClient.fetch("agentRunDetail", {
         params: { agentId: id, runId },
         signal,
       }),
@@ -137,7 +137,7 @@ export function useAgentAudit(id: string) {
   return useQuery({
     queryKey: ["agents", id, "audit"],
     queryFn: ({ signal }) =>
-      apiClient.request("agentAudit", { params: { agentId: id }, signal }),
+      apiClient.fetch("agentAudit", { params: { agentId: id }, signal }),
   });
 }
 
@@ -146,7 +146,7 @@ export function useAgentDetailAggregate(id: string) {
     enabled: Boolean(id),
     queryKey: ["agents", id, "detail"],
     queryFn: ({ signal }) =>
-      apiClient.request("agentDetailAggregate", {
+      apiClient.fetch("agentDetailAggregate", {
         params: { agentId: id },
         signal,
       }),
@@ -157,7 +157,7 @@ export function useAgentVersions(id: string) {
   return useQuery({
     queryKey: ["agents", id, "versions"],
     queryFn: ({ signal }) =>
-      apiClient.request("agentVersions", {
+      apiClient.fetch("agentVersions", {
         params: { agentId: id },
         signal,
       }),
@@ -168,7 +168,7 @@ export function useAgentDocuments(id: string) {
   return useQuery({
     queryKey: ["agents", id, "documents"],
     queryFn: ({ signal }) =>
-      apiClient.request("agentDocuments", {
+      apiClient.fetch("agentDocuments", {
         params: { agentId: id },
         signal,
       }),
@@ -179,7 +179,7 @@ export function useAgentVectorStats(id: string) {
   return useQuery({
     queryKey: ["agents", id, "vectors", "stats"],
     queryFn: ({ signal }) =>
-      apiClient.request("agentVectorStats", {
+      apiClient.fetch("agentVectorStats", {
         params: { agentId: id },
         signal,
       }),
@@ -190,7 +190,7 @@ export function useAddAgentDocUrl(id: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (body: { title?: string; url: string }) =>
-      apiClient.request("agentDocumentsUrl", {
+      apiClient.fetch("agentDocumentsUrl", {
         params: { agentId: id },
         method: "POST",
         body,
@@ -230,7 +230,7 @@ export function useEmbedAllAgentDocs(id: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (body: { include_ready?: boolean }) =>
-      apiClient.request("agentDocumentsEmbedAll", {
+      apiClient.fetch("agentDocumentsEmbedAll", {
         params: { agentId: id },
         method: "POST",
         body,
@@ -262,7 +262,7 @@ export function useDriveSyncAgentDocs(id: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (body: { folder: string; page_size?: number }) =>
-      apiClient.request("agentDocumentsDriveSync", {
+      apiClient.fetch("agentDocumentsDriveSync", {
         params: { agentId: id },
         method: "POST",
         body,
@@ -301,7 +301,7 @@ export function useWebSearchImportAgentDocs(id: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (body: { query: string; top_n?: number; provider?: "bing" | "serpapi" }) =>
-      apiClient.request("agentDocumentsWebSearch", {
+      apiClient.fetch("agentDocumentsWebSearch", {
         params: { agentId: id },
         method: "POST",
         body,
@@ -340,7 +340,7 @@ export function useEmbedAgentDocument(id: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (docId: string) =>
-      apiClient.request("agentDocumentEmbed", {
+      apiClient.fetch("agentDocumentEmbed", {
         params: { agentId: id, documentId: docId },
         method: "POST",
       }),
@@ -368,7 +368,7 @@ export function useEmbedAgentDocument(id: string) {
 export function useSearchAgentKnowledge(id: string) {
   return useMutation({
     mutationFn: (body: { query: string; top_k?: number }) =>
-      apiClient.request("agentSearch", {
+      apiClient.fetch("agentSearch", {
         params: { agentId: id },
         method: "POST",
         body,

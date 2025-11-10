@@ -4,7 +4,14 @@ import { useState } from "react";
 import type { User } from "@/lib/schemas";
 import styles from "./UserDrawer.module.css";
 import { Drawer } from "@/components/ui/Drawer";
-import { maskMsisdn } from "@va/shared";
+
+// Local utility to mask phone numbers
+function maskMsisdn(input?: string | null): string {
+  if (!input) return "••••••••";
+  const clean = input.replace(/\D/g, "");
+  if (clean.length < 4) return "••••••••";
+  return `•••• ${clean.slice(-4)}`;
+}
 
 interface UserDrawerProps {
   user: User | null;

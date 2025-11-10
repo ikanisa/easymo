@@ -37,7 +37,7 @@ export function ConfirmDialog({
         <Button
           type="button"
           onClick={onConfirm}
-          variant={destructive ? "danger" : "default"}
+          variant={destructive ? "danger" : "outline"}
           size="sm"
         >
           {confirmLabel}

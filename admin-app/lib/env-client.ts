@@ -71,6 +71,12 @@ export function getAgentCoreUrl(): string | null {
   );
 }
 
+export function getInsuranceServiceUrl(): string | null {
+  return envOrNull(
+    process.env.INSURANCE_SERVICE_URL ?? process.env.NEXT_PUBLIC_INSURANCE_SERVICE_URL,
+  );
+}
+
 export function getMarketplaceServiceUrls() {
   return {
     ranking: envOrNull(

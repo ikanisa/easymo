@@ -56,27 +56,25 @@ function isIntegrationStatusEntry(
 const integrationStatusKey: QueryKey = ["integration-status"];
 
 export async function fetchIntegrationStatus(): Promise<IntegrationStatusMap> {
-  const response = await apiFetch<Partial<Record<IntegrationTarget,
-    IntegrationStatusEntry
-  >>>(getAdminApiPath("integrations", "status"), {
-    cache: "no-store",
-  });
+  try {
+    const response = await apiFetch<Partial<Record<IntegrationTarget, IntegrationStatusEntry>>>(
+      getAdminApiPath("integrations", "status"), 
+      { cache: "no-store" }
+    );
 
-  if (!response.ok) {
+    const merged: Partial<IntegrationStatusMap> = {};
+
+    for (const target of INTEGRATION_TARGETS) {
+      const entry = response[target];
+      if (isIntegrationStatusEntry(entry)) {
+        merged[target] = entry;
+      }
+    }
+
+    return { ...FALLBACK_STATUSES, ...merged } as IntegrationStatusMap;
+  } catch {
     return { ...FALLBACK_STATUSES };
   }
-
-  const data = response.data ?? {};
-  const merged: Partial<IntegrationStatusMap> = {};
-
-  for (const target of INTEGRATION_TARGETS) {
-    const entry = data[target];
-    if (isIntegrationStatusEntry(entry)) {
-      merged[target] = entry;
-    }
-  }
-
-  return { ...FALLBACK_STATUSES, ...merged } as IntegrationStatusMap;
 }
 
 export function useIntegrationStatusQuery(

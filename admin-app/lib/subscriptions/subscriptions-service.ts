@@ -11,7 +11,7 @@ export type SubscriptionRow = Record<string, unknown>;
 
 export async function listSubscriptions(params: { search?: string } & Pagination = {}): Promise<PaginatedResult<SubscriptionRow>> {
   if (!isServer) {
-    return apiClient.request("subscriptions", {
+    return apiClient.fetch("subscriptions", {
       query: {
         search: params.search,
         offset: params.offset,

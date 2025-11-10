@@ -76,12 +76,14 @@ export const POST = createHandler('admin_api.orders.override', async (
     return jsonError({ error: 'override_failed', message: 'Unable to apply override.' }, 500);
   }
 
-  await adminClient.from('order_events').insert({
-    order_id: orderId,
-    type: `override_${payload.action}`,
-    note: payload.reason
-  }).catch(() => {
-    // Best-effort; log but do not fail the response.
+  // Best-effort: log order event
+  try {
+    await adminClient.from('order_events').insert({
+      order_id: orderId,
+      type: `override_${payload.action}`,
+      note: payload.reason
+    });
+  } catch {
     logStructured({
       event: 'order_event_insert_failed',
       target: 'order_events',
@@ -89,7 +91,7 @@ export const POST = createHandler('admin_api.orders.override', async (
       message: 'Failed to record override event.',
       details: { orderId }
     });
-  });
+  }
 
   await recordAudit({
     actorId,

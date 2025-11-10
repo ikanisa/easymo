@@ -103,6 +103,7 @@ The admin panel assumes every deployment targets the Supabase project
 | `AGENT_CORE_URL` | Base URL for Agent-Core (defaults to `http://localhost:4000`). |
 | `VOICE_BRIDGE_API_URL` | Base URL for Voice Bridge analytics (`http://localhost:4100`). |
 | `WALLET_SERVICE_URL` | Wallet service base URL for marketplace purchases (`http://localhost:4400`). |
+| `NEXT_PUBLIC_INSURANCE_SERVICE_URL` / `INSURANCE_SERVICE_URL` | Base URL for the insurance pricing workbench (points to the WhatsApp/USSD pricing service exposing `/simulate` and `/paylink`). |
 | `MARKETPLACE_RANKING_URL` / `MARKETPLACE_VENDOR_URL` / `MARKETPLACE_BUYER_URL` | Base URLs for Phase 5 marketplace services. |
 
 Operators visit `/login`, enter their admin email and password from

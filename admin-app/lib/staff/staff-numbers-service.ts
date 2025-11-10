@@ -83,19 +83,18 @@ async function fetchStaffNumbersApi(
     searchParams.set("active", params.active ? "true" : "false");
   }
 
-  const response = await apiFetch<StaffApiResponse>(
-    `${getAdminApiPath("staff")}?${searchParams.toString()}`,
-  );
+  try {
+    const response = await apiFetch<StaffApiResponse>(
+      `${getAdminApiPath("staff")}?${searchParams.toString()}`,
+    );
 
-  if (response.ok) {
-    const { data, total, hasMore } = response.data;
     return {
-      data,
-      total,
-      hasMore: hasMore ?? (params.offset + data.length < total),
+      data: response.data,
+      total: response.total,
+      hasMore: response.hasMore ?? (params.offset + response.data.length < response.total),
     };
+  } catch (error) {
+    console.error("Failed to fetch staff numbers", error);
+    return null;
   }
-
-  console.error("Failed to fetch staff numbers", response.error);
-  return null;
 }

@@ -59,7 +59,7 @@ function fromMocks(
   offset: number,
   options: { message?: string } = {}
 ) {
-  const rows: StorageRow[] = mockStorageObjects.map((object) => ({
+  const rows: StorageRow[] = mockStorageObjects.map((object: any) => ({
     id: object.id,
     bucket: object.bucket,
     path: object.path,

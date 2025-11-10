@@ -33,26 +33,27 @@ export function AtlasBlueprintPage({ config }: { config: AtlasPageConfig }) {
           </div>
           {config.hero.actions?.length ? (
             <div className="flex flex-col gap-2 sm:flex-row">
-              {config.hero.actions.map((action) => (
-                action.href ? (
+              {config.hero.actions.map((action) => {
+                const buttonVariant = action.variant === "ghost" ? "ghost" : "outline";
+                return action.href ? (
                   <Button
                     key={action.label}
                     asChild
-                    variant={action.variant === "ghost" ? "ghost" : "default"}
+                    variant={buttonVariant}
                     size="lg"
                   >
-                    <Link href={action.href}>{action.label}</Link>
+                    <Link href={action.href as any}>{action.label}</Link>
                   </Button>
                 ) : (
                   <Button
                     key={action.label}
-                    variant={action.variant === "ghost" ? "ghost" : "default"}
+                    variant={buttonVariant}
                     size="lg"
                   >
                     {action.label}
                   </Button>
-                )
-              ))}
+                );
+              })}
             </div>
           ) : null}
         </div>

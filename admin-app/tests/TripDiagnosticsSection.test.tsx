@@ -4,8 +4,8 @@ import type { AdminDiagnosticsMatch } from "@/lib/schemas";
 import { TripDiagnosticsSection } from "@/components/dashboard/admin-diagnostics/TripDiagnosticsSection";
 
 const getAdminDiagnosticsMatch = vi.fn<
-  Promise<AdminDiagnosticsMatch>,
-  [string]
+  [string],
+  Promise<AdminDiagnosticsMatch>
 >();
 
 vi.mock("@/lib/admin/diagnostics-service", () => ({

@@ -172,17 +172,18 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const existingSet = new Set((existingRows ?? []).map((r: any) => r.source_url));
   const newUrls = uniqueUrlsAll.filter((u) => !existingSet.has(u));
 
-  const mapByUrl: Record<string, any> = Object.fromEntries(files.map((f: any) => {
+  const mapByUrl = new Map<string, Record<string, unknown>>();
+  files.forEach((f: any) => {
     const url = f?.webViewLink || `https://drive.google.com/file/d/${f?.id}/view`;
-    return [url, f];
-  }));
-  const rows = newUrls.map((u) => {
-    const f = mapByUrl[u];
+    mapByUrl.set(url, f);
+  });
+  const rows = newUrls.map((u: string) => {
+    const f = mapByUrl.get(u);
     return {
       agent_id: id,
-      title: (f?.name || u),
+      title: String(f?.name || u),
       source_url: u,
-      embedding_status: 'pending',
+      embedding_status: 'pending' as const,
       metadata: { mimeType: f?.mimeType || null, driveId: f?.id }
     };
   });

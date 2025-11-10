@@ -51,7 +51,10 @@ export function VoiceCallsTable({ data }: VoiceCallsTableProps) {
       data={data}
       columns={columns}
       searchPlaceholder="Search calls"
-      globalFilterFn={(row, value) => JSON.stringify(row.original).toLowerCase().includes(value.toLowerCase())}
+      globalFilterFn={(row, value) => {
+        const searchString = JSON.stringify(row).toLowerCase();
+        return searchString.includes(value.toLowerCase());
+      }}
       downloadFileName="voice-calls.csv"
     />
   );

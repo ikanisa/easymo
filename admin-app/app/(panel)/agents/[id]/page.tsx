@@ -119,13 +119,13 @@ export default function AgentDetailsPage() {
         <div className="flex items-center gap-2 flex-wrap">
           <label className="flex items-center gap-2 text-sm">
             <span>Upload</span>
-            <input type="file" onChange={async (e) => { const f = e.target.files?.[0]; if (f) { try { await upload.mutateAsync(f); pushToast({ title: 'Upload complete', description: f.name }); } catch { pushToast({ title: 'Upload failed', kind: 'error' }); } } }} />
+          <input type="file" onChange={async (e) => { const f = e.target.files?.[0]; if (f) { try { await upload.mutateAsync(f); pushToast(`Upload complete: ${f.name}`, "success"); } catch { pushToast("Upload failed", "error"); } } }} />
           </label>
           {upload.isPending && <span>Uploading…</span>}
           <button
             className="px-2 py-1 border rounded disabled:opacity-50"
             disabled={embedAll.isPending}
-            onClick={() => embedAll.mutate({ include_ready: false }, { onSuccess: (r: any) => pushToast({ title: 'Re-embed triggered', description: `${r?.ok ?? 0} ok, ${r?.fail ?? 0} fail` }), onError: () => pushToast({ title: 'Embed all failed', kind: 'error' }) })}
+            onClick={() => embedAll.mutate({ include_ready: false }, { onSuccess: (r: any) => pushToast(`Re-embed triggered – ${r?.ok ?? 0} ok, ${r?.fail ?? 0} fail`, "success"), onError: () => pushToast("Embed all failed", "error") })}
           >{embedAll.isPending ? 'Embedding…' : 'Re-embed All'}</button>
         </div>
 
@@ -137,14 +137,14 @@ export default function AgentDetailsPage() {
             try {
               const res: any = await addUrl.mutateAsync({ title: String(fd.get('url_title') || ''), url: String(fd.get('url') || '') });
               if (res?.duplicate) {
-                pushToast({ title: 'URL already exists', description: 'Document was previously added' });
+                pushToast("URL already exists – Document was previously added");
               } else {
-                pushToast({ title: 'URL added' });
+                pushToast("URL added", "success");
               }
               (e.currentTarget as any).reset();
             } catch (err) {
               setUrlError(err instanceof Error ? err.message : String(err));
-              pushToast({ title: 'Add URL failed', description: String(err instanceof Error ? err.message : err), kind: 'error' });
+              pushToast(`Add URL failed – ${String(err instanceof Error ? err.message : err)}`, "error");
             } finally { setAddingUrl(false); }
           }}
         >
@@ -161,7 +161,7 @@ export default function AgentDetailsPage() {
             const fd = new FormData(e.currentTarget as HTMLFormElement);
             try {
               const res: any = await driveSync.mutateAsync({ folder: String(fd.get('drive_folder') || '') });
-              pushToast({ title: 'Drive sync started', description: `Imported ${res?.imported ?? 0}${typeof res?.duplicates === 'number' ? `, duplicates ${res.duplicates}` : ''}` });
+              pushToast(`Drive sync started – Imported ${res?.imported ?? 0}${typeof res?.duplicates === "number" ? `, duplicates ${res.duplicates}` : ""}`);
               (e.currentTarget as any).reset();
             } catch (err) { setIngestError(err instanceof Error ? err.message : String(err)); }
             finally { setDriveBusy(false); }
@@ -182,7 +182,7 @@ export default function AgentDetailsPage() {
               parts.push(`imported ${res?.imported ?? 0}`);
               if (typeof res?.duplicates === 'number') parts.push(`duplicates ${res.duplicates}`);
               if (typeof res?.skipped === 'number') parts.push(`skipped ${res.skipped}`);
-              pushToast({ title: 'Imported from web search', description: parts.join(', ') });
+              pushToast(`Imported from web search – ${parts.join(", ")}`);
               (e.currentTarget as any).reset();
             } catch (err) { setIngestError(err instanceof Error ? err.message : String(err)); }
             finally { setSearchBusy(false); }
@@ -241,12 +241,12 @@ export default function AgentDetailsPage() {
                 </td>
                 <td className="p-2">{new Date(d.created_at).toLocaleString()}</td>
                 <td className="p-2">
-                  <button className="px-2 py-1 border rounded" onClick={() => delDoc.mutate(d.id, { onSuccess: () => pushToast({ title: 'Deleted document' }), onError: () => pushToast({ title: 'Delete failed', kind: 'error' }) })}>Delete</button>
+                  <button className="px-2 py-1 border rounded" onClick={() => delDoc.mutate(d.id, { onSuccess: () => pushToast("Deleted document", "success"), onError: () => pushToast("Delete failed", "error") })}>Delete</button>
                   {d.embedding_status !== 'ready' && (
                     <button
                       className="ml-2 px-2 py-1 border rounded disabled:opacity-50"
                       disabled={embedDoc.isPending && embedDocId === d.id}
-                      onClick={async () => { setEmbedDocId(d.id); try { await embedDoc.mutateAsync(d.id); pushToast({ title: 'Embedding started', description: d.title }); } catch { pushToast({ title: 'Embed failed', kind: 'error' }); } finally { setEmbedDocId(null); } }}
+                      onClick={async () => { setEmbedDocId(d.id); try { await embedDoc.mutateAsync(d.id); pushToast(`Embedding started – ${d.title}`); } catch { pushToast("Embed failed", "error"); } finally { setEmbedDocId(null); } }}
                     >{(embedDoc.isPending && embedDocId === d.id) ? 'Embedding…' : (d.embedding_status === 'failed' ? 'Retry' : 'Embed')}</button>
                   )}
                 </td>
@@ -266,7 +266,7 @@ export default function AgentDetailsPage() {
             const fd = new FormData(e.currentTarget as HTMLFormElement);
             const query = String(fd.get('query') || '').trim();
             if (!query) return;
-            const json = await searchKnowledge.mutateAsync({ query, top_k: topK }).catch(() => ({} as any));
+            const json: any = await searchKnowledge.mutateAsync({ query, top_k: topK }).catch(() => ({} as any));
             setSearchResults(Array.isArray(json?.results) ? json.results : []);
           }}
         >
@@ -407,4 +407,3 @@ export default function AgentDetailsPage() {
     </div>
   );
 }
-

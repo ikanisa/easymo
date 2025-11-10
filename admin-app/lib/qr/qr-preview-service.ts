@@ -58,21 +58,21 @@ export async function requestQrPreview(payload: QrPreviewRequest): Promise<QrPre
     return buildMockPreview(payload.barId);
   }
 
-  const response = await apiFetch<QrPreviewResponse, QrPreviewRequest>(getAdminApiPath("qr", "preview"), {
-    method: "POST",
-    body: payload,
-    headers: {
-      "x-idempotency-key": `qr-preview-${Date.now()}`,
-    },
-  });
+  try {
+    const response = await apiFetch<QrPreviewResponse>(getAdminApiPath("qr", "preview"), {
+      method: "POST",
+      body: payload,
+      headers: {
+        "x-idempotency-key": `qr-preview-${Date.now()}`,
+      },
+    });
 
-  if (response.ok) {
-    return response.data;
+    return response;
+  } catch (error) {
+    console.error("Failed to fetch QR preview", error);
+    return {
+      preview: mockQrPreview,
+      integration: mockIntegration("Unable to load QR preview. Showing mock data."),
+    };
   }
-
-  console.error("Failed to fetch QR preview", response.error);
-  return {
-    preview: mockQrPreview,
-    integration: mockIntegration("Unable to load QR preview. Showing mock data."),
-  };
 }

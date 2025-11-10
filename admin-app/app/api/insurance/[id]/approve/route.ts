@@ -62,13 +62,13 @@ export const POST = createHandler("admin_api.insurance.id.approve", async (
     );
 
     await recordAudit({
-      actor: "admin:mock",
+      actorId: "admin:mock",
       action: "insurance_approve",
       targetTable: "insurance_quotes",
       targetId: id,
-      summary: bridgeResult.ok
-        ? "Quote approval dispatched"
-        : "Quote approved (degraded)",
+      diff: bridgeResult.ok
+        ? { summary: "Quote approval dispatched" }
+        : { summary: "Quote approved (degraded)" },
     });
 
     if (bridgeResult.ok) {

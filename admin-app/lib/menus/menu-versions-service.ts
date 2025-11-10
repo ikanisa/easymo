@@ -44,21 +44,20 @@ export async function listMenuVersions(
     ? `${getAdminApiPath("menus")}?${query}`
     : getAdminApiPath("menus");
 
-  const response = await apiFetch<{
-    data: MenuVersion[];
-    total: number;
-    hasMore?: boolean;
-  }>(url);
+  try {
+    const response = await apiFetch<{
+      data: MenuVersion[];
+      total: number;
+      hasMore?: boolean;
+    }>(url);
 
-  if (response.ok) {
-    const { data, total, hasMore } = response.data;
     return {
-      data,
-      total,
-      hasMore: hasMore ?? (offset + data.length < total),
+      data: response.data,
+      total: response.total,
+      hasMore: response.hasMore ?? (offset + response.data.length < response.total),
     };
+  } catch (error) {
+    console.error("Failed to fetch menu versions", error);
+    return paginateArray(applyFilter(mockMenuVersions), { offset, limit });
   }
-
-  console.error("Failed to fetch menu versions", response.error);
-  return paginateArray(applyFilter(mockMenuVersions), { offset, limit });
 }

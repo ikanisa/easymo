@@ -31,7 +31,7 @@ export function LoadMoreButton({
         disabled={loading}
         onClick={onClick}
       >
-        {loading ? "Loading…" : children ?? "Load more"}
+        {<>{loading ? "Loading…" : (children ?? "Load more")}</>}
       </Button>
     </div>
   );

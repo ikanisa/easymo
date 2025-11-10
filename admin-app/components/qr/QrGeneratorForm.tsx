@@ -125,7 +125,7 @@ export function QrGeneratorForm({ bars }: QrGeneratorFormProps) {
       <Button
         type="submit"
         disabled={isSubmitting || !selectedBar}
-        variant="default"
+        variant="outline"
       >
         {isSubmitting ? "Generating…" : "Generate tokens"}
       </Button>

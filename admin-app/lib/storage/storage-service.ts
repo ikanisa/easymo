@@ -32,21 +32,20 @@ export async function listStorageObjects(
   if (params.bucket) searchParams.set("bucket", params.bucket);
   if (params.search) searchParams.set("search", params.search);
 
-  const response = await apiFetch<{
-    data: StorageObject[];
-    total: number;
-    hasMore?: boolean;
-  }>(`${getAdminApiPath("storage")}?${searchParams.toString()}`);
+  try {
+    const response = await apiFetch<{
+      data: StorageObject[];
+      total: number;
+      hasMore?: boolean;
+    }>(`${getAdminApiPath("storage")}?${searchParams.toString()}`);
 
-  if (response.ok) {
-    const { data, total, hasMore } = response.data;
     return {
-      data,
-      total,
-      hasMore: hasMore ?? (offset + data.length < total),
+      data: response.data,
+      total: response.total,
+      hasMore: response.hasMore ?? (offset + response.data.length < response.total),
     };
+  } catch (error) {
+    console.error("Failed to fetch storage objects", error);
+    return paginateArray(mockStorageObjects, { offset, limit });
   }
-
-  console.error("Failed to fetch storage objects", response.error);
-  return paginateArray(mockStorageObjects, { offset, limit });
 }

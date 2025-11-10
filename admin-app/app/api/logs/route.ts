@@ -15,7 +15,7 @@ const querySchema = z.object({
 });
 
 function mockResponse(message: string, filters?: z.infer<typeof querySchema>) {
-  const filtered = mockAuditEvents.filter((entry) => {
+  const filtered = mockAuditEvents.filter((entry: any) => {
     const actorMatch = filters?.actor
       ? entry.actor.toLowerCase().includes(filters.actor.toLowerCase())
       : true;
@@ -26,7 +26,7 @@ function mockResponse(message: string, filters?: z.infer<typeof querySchema>) {
   });
 
   return jsonOk({
-    audit: filtered.map((entry) => ({
+    audit: filtered.map((entry: any) => ({
       id: entry.id,
       actor: entry.actor,
       action: entry.action,

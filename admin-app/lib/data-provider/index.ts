@@ -3,16 +3,23 @@ import type {
   PaginatedResult,
   Pagination,
 } from "@/lib/shared/pagination";
-import {
-  listCampaigns as listCampaignsFromService,
-  type CampaignListParams,
-} from "@/lib/campaigns/campaigns-service";
+import { mockCampaigns } from "@/lib/mock-data";
+import { paginateArray } from "@/lib/shared/pagination";
 
 export type { PaginatedResult, Pagination };
-export type { CampaignListParams };
+
+export interface CampaignListParams {
+  offset?: number;
+  limit?: number;
+  status?: string;
+}
 
 export async function listCampaigns(
   params: CampaignListParams = {},
 ): Promise<PaginatedResult<Campaign>> {
-  return listCampaignsFromService(params);
+  // Use mock data until campaigns service is implemented
+  return paginateArray(mockCampaigns, {
+    offset: params.offset ?? 0,
+    limit: params.limit ?? 20,
+  });
 }

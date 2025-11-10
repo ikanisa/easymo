@@ -69,7 +69,7 @@ const voiceAnalyticsQueryKeys = {
 } as const;
 
 export function useVoiceAnalyticsQuery(params?: URLSearchParams) {
-  return useQuery({
+  return useQuery<VoiceAnalyticsResponse>({
     queryKey: voiceAnalyticsQueryKeys.params(params),
     queryFn: () => fetchVoiceAnalytics(params),
     keepPreviousData: true,

@@ -44,21 +44,20 @@ export async function listOcrJobs(
     ? `${getAdminApiPath("ocr", "jobs")}?${query}`
     : getAdminApiPath("ocr", "jobs");
 
-  const response = await apiFetch<{
-    data: OcrJob[];
-    total: number;
-    hasMore?: boolean;
-  }>(url);
+  try {
+    const response = await apiFetch<{
+      data: OcrJob[];
+      total: number;
+      hasMore?: boolean;
+    }>(url);
 
-  if (response.ok) {
-    const { data, total, hasMore } = response.data;
     return {
-      data,
-      total,
-      hasMore: hasMore ?? (offset + data.length < total),
+      data: response.data,
+      total: response.total,
+      hasMore: response.hasMore ?? (offset + response.data.length < response.total),
     };
+  } catch (error) {
+    console.error("Failed to fetch OCR jobs", error);
+    return paginateArray(applyFilter(mockOcrJobs), { offset, limit });
   }
-
-  console.error("Failed to fetch OCR jobs", response.error);
-  return paginateArray(applyFilter(mockOcrJobs), { offset, limit });
 }

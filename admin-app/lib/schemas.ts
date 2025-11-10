@@ -68,6 +68,113 @@ export const insuranceQuoteSchema = z.object({
   reviewerComment: z.string().nullable(),
 });
 
+export const insurerProfileSchema = z.object({
+  providerName: z.string(),
+  slug: z.string(),
+  legalName: z.string(),
+  momoMerchantCode: z.string(),
+  momoReferencePrefix: z.string(),
+  momoChannelDescription: z.string(),
+  supportPhone: z.string(),
+  supportEmail: z.string(),
+  claimsEmail: z.string(),
+  headOfficeAddress: z.string(),
+  notes: z.array(z.string()).optional(),
+});
+
+export const insuranceInstallmentTrancheSchema = z.object({
+  atMonth: z.number(),
+  percent: z.number(),
+});
+
+export const insuranceInstallmentPlanSchema = z.object({
+  name: z.string(),
+  tranches: z.array(insuranceInstallmentTrancheSchema),
+});
+
+export const insuranceBreakdownItemSchema = z.object({
+  label: z.string(),
+  amount: z.number(),
+  meta: z.record(z.any()).optional(),
+});
+
+export const insuranceMandatoryExcessSchema = z.object({
+  md_percent_of_claim: z.number(),
+  theft_fire_percent_total_loss: z.number(),
+  minimum_rwf: z.number(),
+});
+
+export const insuranceMomoInstructionSchema = z.object({
+  ussd: z.string(),
+  tel: z.string(),
+  amount: z.number(),
+  reference: z.string(),
+});
+
+export const ocrVehicleDocSchema = z.object({
+  plateNumber: z.string().nullable().optional(),
+  vin: z.string().nullable().optional(),
+  make: z.string().nullable().optional(),
+  model: z.string().nullable().optional(),
+  bodyType: z.string().nullable().optional(),
+  year: z.number().nullable().optional(),
+  usageHint: z.string().nullable().optional(),
+  seats: z.number().nullable().optional(),
+  passengersAboveDriver: z.number().nullable().optional(),
+  engineCapacityCC: z.number().nullable().optional(),
+  grossWeightKg: z.number().nullable().optional(),
+  tonnage: z.number().nullable().optional(),
+  previousInsurer: z.string().nullable().optional(),
+  previousPolicyNumber: z.string().nullable().optional(),
+  sumInsuredHint: z.number().nullable().optional(),
+  ownerType: z.string().nullable().optional(),
+});
+
+export const insuranceSimulationInputsSchema = z.object({
+  sumInsured: z.number(),
+  vehicleCategory: z.string(),
+  usageType: z.string(),
+  seats: z.number(),
+  passengerSeatsAboveDriver: z.number(),
+  ownerType: z.string(),
+  vehicleAgeYears: z.number(),
+  coverSelection: z.string(),
+  wantsComesa: z.boolean(),
+  comesaPassengers: z.number(),
+  theftTerritorialExtension: z.boolean(),
+  periodDays: z.number(),
+  goodsAreFlammable: z.boolean(),
+  governmentExcessWaiver: z.boolean(),
+  occupantCover: z.object({
+    enabled: z.boolean(),
+    plan: z.number(),
+    occupants: z.number(),
+    vehicleIsMotorcycle: z.boolean(),
+    usageType: z.string(),
+  }).optional(),
+});
+
+export const insuranceSimulationQuoteSchema = z.object({
+  providerName: z.string(),
+  grossPremium: z.number(),
+  currency: z.string(),
+  breakdown: z.array(insuranceBreakdownItemSchema),
+  mandatoryExcessApplicable: insuranceMandatoryExcessSchema,
+  warnings: z.array(z.string()).optional(),
+  installmentOptions: z.array(insuranceInstallmentPlanSchema),
+  insurerProfile: insurerProfileSchema.optional(),
+  momo: insuranceMomoInstructionSchema.optional(),
+});
+
+export const insuranceSimulationResultSchema = z.object({
+  inputs: insuranceSimulationInputsSchema,
+  doc: ocrVehicleDocSchema,
+  result: z.object({
+    currency: z.string(),
+    quotes: z.array(insuranceSimulationQuoteSchema),
+  }),
+});
+
 export const orderSchema = z.object({
   id: z.string(),
   barId: z.string(),
@@ -249,6 +356,11 @@ export const dashboardKpiSchema = z.object({
   helpText: z.string().optional(),
 });
 
+export const timeseriesPointSchema = z.object({
+  timestamp: z.string().datetime(),
+  value: z.number(),
+});
+
 export const assistantActionSchema = z.object({
   id: z.string(),
   label: z.string(),
@@ -424,6 +536,15 @@ export type Station = z.infer<typeof stationSchema>;
 export type Bar = z.infer<typeof barSchema>;
 export type Campaign = z.infer<typeof campaignSchema>;
 export type InsuranceQuote = z.infer<typeof insuranceQuoteSchema>;
+export type InsuranceProviderProfile = z.infer<typeof insurerProfileSchema>;
+export type InsuranceInstallmentPlan = z.infer<typeof insuranceInstallmentPlanSchema>;
+export type InsuranceBreakdownItem = z.infer<typeof insuranceBreakdownItemSchema>;
+export type InsuranceMandatoryExcess = z.infer<typeof insuranceMandatoryExcessSchema>;
+export type InsuranceMomoInstruction = z.infer<typeof insuranceMomoInstructionSchema>;
+export type OcrVehicleDoc = z.infer<typeof ocrVehicleDocSchema>;
+export type InsuranceSimulationInputs = z.infer<typeof insuranceSimulationInputsSchema>;
+export type InsuranceSimulationQuote = z.infer<typeof insuranceSimulationQuoteSchema>;
+export type InsuranceSimulationResult = z.infer<typeof insuranceSimulationResultSchema>;
 export type Order = z.infer<typeof orderSchema>;
 export type OrderEvent = z.infer<typeof orderEventSchema>;
 export type WebhookError = z.infer<typeof webhookErrorSchema>;
@@ -440,6 +561,7 @@ export type SettingEntry = z.infer<typeof settingEntrySchema>;
 export type AdminAlertPreference = z.infer<typeof adminAlertPreferenceSchema>;
 export type StorageObject = z.infer<typeof storageObjectSchema>;
 export type DashboardKpi = z.infer<typeof dashboardKpiSchema>;
+export type TimeseriesPoint = z.infer<typeof timeseriesPointSchema>;
 export type AssistantAction = z.infer<typeof assistantActionSchema>;
 export type AssistantSuggestion = z.infer<typeof assistantSuggestionSchema>;
 export type AssistantMessage = z.infer<typeof assistantMessageSchema>;

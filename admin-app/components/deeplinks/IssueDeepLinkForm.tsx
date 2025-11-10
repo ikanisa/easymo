@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/ToastProvider";
 import { apiFetch } from "@/lib/api/client";
 import { getAdminApiPath } from "@/lib/routes";
-import { maskMsisdn } from "@va/shared";
 import {
   AdminDeeplinkFlow,
   DEFAULT_TTL_DAYS,
@@ -14,6 +13,14 @@ import {
   FlowField,
 } from "./config";
 import styles from "./IssueDeepLinkForm.module.css";
+
+// Local utility to mask phone numbers
+function maskMsisdn(input?: string | null): string {
+  if (!input) return "••••••••";
+  const clean = input.replace(/\D/g, "");
+  if (clean.length < 4) return "••••••••";
+  return `•••• ${clean.slice(-4)}`;
+}
 
 interface IssueResponse {
   ok: boolean;
@@ -146,28 +153,23 @@ export function IssueDeepLinkForm() {
       requestBody.msisdn_e164 = normaliseMsisdn(msisdnClean);
     }
 
-    const response = await apiFetch<IssueResponse, typeof requestBody>(
-      getAdminApiPath("deeplink", "issue"),
-      {
-      method: "POST",
-      body: requestBody,
-    });
+    try {
+      const response = await apiFetch<IssueResponse>(
+        getAdminApiPath("deeplink", "issue"),
+        {
+        method: "POST",
+        body: requestBody,
+      });
 
-    setSubmitting(false);
-
-    if (!response.ok) {
-      const problem = response.error as IssueErrorDetail;
-      const message =
-        typeof problem?.message === "string"
-          ? problem.message
-          : problem?.error ?? "Failed to issue deep link.";
+      setSubmitting(false);
+      setResult(response);
+      pushToast("Deep link issued.", "success");
+    } catch (err: any) {
+      setSubmitting(false);
+      const message = err?.message || "Failed to issue deep link.";
       setError(message);
       pushToast(message, "error");
-      return;
     }
-
-    setResult(response.data);
-    pushToast("Deep link issued.", "success");
   };
 
   const handleCopy = async () => {
@@ -205,26 +207,21 @@ export function IssueDeepLinkForm() {
     setSending(true);
     setError(null);
 
-    const message = buildWhatsAppMessage(definition, result.url, target);
-    const response = await apiFetch(getAdminApiPath("wa", "send"), {
-      method: "POST",
-      body: message,
-    });
+    try {
+      const message = buildWhatsAppMessage(definition, result.url, target);
+      await apiFetch(getAdminApiPath("wa", "send"), {
+        method: "POST",
+        body: message,
+      });
 
-    setSending(false);
-
-    if (!response.ok) {
-      const problem = response.error as IssueErrorDetail;
-      const messageText =
-        typeof problem?.message === "string"
-          ? problem.message
-          : problem?.error ?? "Failed to send WhatsApp message.";
+      setSending(false);
+      pushToast("WhatsApp message queued.", "success");
+    } catch (err: any) {
+      setSending(false);
+      const messageText = err?.message || "Failed to send WhatsApp message.";
       setError(messageText);
       pushToast(messageText, "error");
-      return;
     }
-
-    pushToast("WhatsApp message queued.", "success");
   };
 
   return (
@@ -309,7 +306,7 @@ export function IssueDeepLinkForm() {
         </Button>
         <Button
           type="button"
-          variant="secondary"
+          variant="outline"
           disabled={!result?.url || sending}
           onClick={handleSend}
         >

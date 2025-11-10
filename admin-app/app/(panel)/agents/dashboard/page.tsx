@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { useState, useEffect, useMemo, useCallback } from "react";
+import { getSupabaseClient } from "@/lib/supabase-client";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
+import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
 import Link from "next/link";
 
 interface AgentStatus {
@@ -37,32 +37,13 @@ export default function AgentsDashboardPage() {
     completedToday: 0,
     avgResponseTime: 0,
   });
+  const supabase = useMemo(() => getSupabaseClient(), []);
 
-  useEffect(() => {
-    loadDashboardData();
-    
-    // Set up real-time subscription
-    const channel = supabase
-      .channel('agent-dashboard')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'agent_sessions'
-      }, () => {
-        loadDashboardData();
-      })
-      .subscribe();
-
-    // Refresh every 10 seconds
-    const interval = setInterval(loadDashboardData, 10000);
-
-    return () => {
-      channel.unsubscribe();
-      clearInterval(interval);
-    };
-  }, []);
-
-  async function loadDashboardData() {
+  const loadDashboardData = useCallback(async () => {
+    if (!supabase) {
+      setLoading(false);
+      return;
+    }
     try {
       // Load agent registry
       const { data: agentRegistry } = await supabase
@@ -136,7 +117,36 @@ export default function AgentsDashboardPage() {
       console.error("Failed to load dashboard data:", error);
       setLoading(false);
     }
-  }
+  }, [supabase]);
+
+  useEffect(() => {
+    if (!supabase) {
+      setLoading(false);
+      return;
+    }
+
+    loadDashboardData();
+    
+    // Set up real-time subscription
+    const channel = supabase
+      .channel("agent-dashboard")
+      .on("postgres_changes", {
+        event: "*",
+        schema: "public",
+        table: "agent_sessions",
+      }, () => {
+        loadDashboardData();
+      })
+      .subscribe();
+
+    // Refresh every 10 seconds
+    const interval = setInterval(loadDashboardData, 10000);
+
+    return () => {
+      channel.unsubscribe();
+      clearInterval(interval);
+    };
+  }, [supabase, loadDashboardData]);
 
   const getAgentIcon = (agentType: string) => {
     const icons: Record<string, string> = {
@@ -256,7 +266,7 @@ export default function AgentsDashboardPage() {
               <CardContent className="space-y-2">
                 <div className="flex justify-between items-center text-sm">
                   <span className="text-gray-600">Active Sessions:</span>
-                  <Badge variant={agent.activeSessions > 0 ? "default" : "secondary"}>
+                  <Badge variant={agent.activeSessions > 0 ? "green" : "slate"}>
                     {agent.activeSessions}
                   </Badge>
                 </div>
@@ -322,7 +332,7 @@ export default function AgentsDashboardPage() {
                             {session.id.substring(0, 8)}...
                           </td>
                           <td className="p-3">
-                            <Badge variant={session.status === 'searching' ? 'default' : 'secondary'}>
+                            <Badge variant={session.status === "searching" ? "blue" : session.status === "negotiating" ? "yellow" : "gray"}>
                               {session.status}
                             </Badge>
                           </td>
@@ -336,7 +346,7 @@ export default function AgentsDashboardPage() {
                           </td>
                           <td className="p-3">
                             <Button asChild variant="ghost" size="sm">
-                              <Link href={`/sessions/${session.id}`}>
+                              <Link href={`/sessions/${session.id}` as any}>
                                 View
                               </Link>
                             </Button>

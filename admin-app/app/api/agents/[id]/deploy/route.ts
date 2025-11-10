@@ -5,8 +5,11 @@ import { zodValidationError } from "@/lib/api/http";
 
 const Body = z.object({ version: z.coerce.number().int().min(1) });
 
-export const POST = createHandler("api.agents.deploy", async (req, _ctx, obs) => {
-  const id = (obs.routeParams?.id as string) || (new URL(obs.requestUrl).pathname.split("/")[3] as string);
+type RouteContext = { params: { id: string } };
+
+export const POST = createHandler<RouteContext>("api.agents.deploy", async (req, ctx, _obs) => {
+  const url = new URL(req.url);
+  const id = ctx?.params?.id ?? url.pathname.split("/")[3] ?? "";
   const payload = await req.json().catch(() => ({}));
   try {
     const data = Body.parse(payload);

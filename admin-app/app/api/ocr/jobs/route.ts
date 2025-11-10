@@ -63,11 +63,15 @@ export const GET = createHandler('admin_api.ocr_jobs.list', async (request, _con
     const fileName = row.source_file_id ?? "menu";
     const extension = fileName.split(".").pop()?.toLowerCase();
     const type = extension === "pdf" ? "pdf" : "image";
+    const bars = row.bars as any;
+    const barName = Array.isArray(bars) 
+      ? (bars[0]?.name ?? "Unknown bar") 
+      : (bars?.name ?? "Unknown bar");
 
     return {
       id: row.id,
       barId: row.bar_id,
-      barName: row.bars?.name ?? "Unknown bar",
+      barName,
       fileName,
       type,
       status: row.status ?? "queued",

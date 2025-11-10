@@ -57,14 +57,14 @@ export async function listLatestOrderEvents(
     return mockOrderEvents.slice(0, limit);
   }
 
-  const url = `${getAdminApiPath("orders", "events")}?limit=${limit}`;
-  const response = await apiFetch<{ data: OrderEvent[] }>(url);
-  if (response.ok) {
-    return response.data.data;
+  try {
+    const url = `${getAdminApiPath("orders", "events")}?limit=${limit}`;
+    const response = await apiFetch<{ data: OrderEvent[] }>(url);
+    return response.data;
+  } catch (error) {
+    console.error("Failed to fetch order events", error);
+    return mockOrderEvents.slice(0, limit);
   }
-
-  console.error("Failed to fetch order events", response.error);
-  return mockOrderEvents.slice(0, limit);
 }
 
 export async function listLatestWebhookErrors(
@@ -74,14 +74,14 @@ export async function listLatestWebhookErrors(
     return mockWebhookErrors.slice(0, limit);
   }
 
-  const url = `${getAdminApiPath("webhooks", "errors")}?limit=${limit}`;
-  const response = await apiFetch<{ data: WebhookError[] }>(url);
-  if (response.ok) {
-    return response.data.data;
+  try {
+    const url = `${getAdminApiPath("webhooks", "errors")}?limit=${limit}`;
+    const response = await apiFetch<{ data: WebhookError[] }>(url);
+    return response.data;
+  } catch (error) {
+    console.error("Failed to fetch webhook errors", error);
+    return mockWebhookErrors.slice(0, limit);
   }
-
-  console.error("Failed to fetch webhook errors", response.error);
-  return mockWebhookErrors.slice(0, limit);
 }
 
 type OrdersApiResponse = {
@@ -110,24 +110,23 @@ async function fetchOrdersApi(params: RequiredOrderParams) {
   if (params.barId) searchParams.set("barId", params.barId);
   if (params.search) searchParams.set("search", params.search);
 
-  const response = await apiFetch<OrdersApiResponse>(
-    `${getAdminApiPath("orders")}?${searchParams.toString()}`,
-  );
+  try {
+    const response = await apiFetch<OrdersApiResponse>(
+      `${getAdminApiPath("orders")}?${searchParams.toString()}`,
+    );
 
-  if (response.ok) {
-    const { data, total, hasMore } = response.data;
     return {
       ok: true as const,
       value: {
-        data,
-        total,
-        hasMore: hasMore ?? (params.offset + data.length < total),
+        data: response.data,
+        total: response.total,
+        hasMore: response.hasMore ?? (params.offset + response.data.length < response.total),
       },
     };
+  } catch (error) {
+    console.error("Failed to fetch orders", error);
+    return { ok: false as const };
   }
-
-  console.error("Failed to fetch orders", response.error);
-  return { ok: false as const };
 }
 
 type RequiredOrderParams = OrderListParams & {

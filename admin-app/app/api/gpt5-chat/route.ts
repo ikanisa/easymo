@@ -6,7 +6,7 @@ import { getOpenAIClient } from "@/lib/server/openai";
 const RequestPayload = z.object({
   prompt: z.string().min(1, "Prompt is required"),
   previousResponseId: z.string().min(1).optional(),
-  reasoningEffort: z.enum(["minimal", "low", "medium", "high"]).default("low"),
+  reasoningEffort: z.enum(["low", "medium", "high"]).default("low"),
   verbosity: z.enum(["low", "medium", "high"]).default("medium"),
   maxOutputTokens: z.number().int().positive().max(4000).optional(),
   metadata: z
@@ -60,7 +60,6 @@ function buildOpenAIRequest(body: RequestBody, requestId: string) {
     model: "gpt-5" as const,
     input: body.prompt,
     reasoning: { effort: body.reasoningEffort },
-    text: { verbosity: body.verbosity },
     ...(body.previousResponseId ? { previous_response_id: body.previousResponseId } : {}),
     ...(body.maxOutputTokens ? { max_output_tokens: body.maxOutputTokens } : {}),
     metadata: {
@@ -139,7 +138,6 @@ export const POST = createHandler("api.gpt5-chat", async (request, _ctx, observa
       previousResponseId: (response as { id?: string }).id ?? null,
       usage: (response as { usage?: unknown }).usage ?? null,
       latencyMs,
-      fallbackModel: process.env.OPENAI_MODEL_FALLBACK?.trim() || null,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown OpenAI failure";
@@ -153,13 +151,10 @@ export const POST = createHandler("api.gpt5-chat", async (request, _ctx, observa
       },
     });
 
-    const fallbackModel = process.env.OPENAI_MODEL_FALLBACK?.trim() || null;
-
     return jsonError(
       {
         error: "openai_request_failed",
         message,
-        fallbackModel,
       },
       502,
     );

@@ -15,7 +15,7 @@ export function SidebarNav() {
         return (
           <Link
             key={item.href}
-            href={item.href}
+            href={item.href as any}
             className={classNames(
               "rounded-xl px-4 py-2 text-sm font-medium transition",
               active

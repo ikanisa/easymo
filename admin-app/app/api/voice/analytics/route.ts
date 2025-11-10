@@ -87,6 +87,12 @@ async function computeStats(
   admin: ReturnType<typeof getSupabaseAdminClient>,
   filters: { status?: string; channel?: string; from?: string; to?: string },
 ) {
+  if (!admin) {
+    return { total: 0, completedPct: 0, avgDurationSec: 0, avgTtaSec: 0 };
+  }
+  if (!admin) {
+    return { total: 0, completedPct: 0, avgDurationSec: 0, avgTtaSec: 0 };
+  }
   const base = admin.from("voice_calls").select("status, duration_seconds, first_time_to_assistant_seconds");
   if (filters.status) base.eq("status", filters.status);
   if (filters.channel) base.eq("channel", filters.channel);

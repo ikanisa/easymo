@@ -30,9 +30,9 @@ export function VoiceAnalyticsPage() {
     const query = params.toString();
     return `${getAdminApiRoutePath("voiceAnalyticsExport")}${query ? `?${query}` : ""}`;
   }, [params]);
-  const calls = analytics.data?.calls ?? [];
-  const followups = analytics.data?.followups ?? [];
-  const stats = analytics.data?.stats ?? null;
+  const calls = (analytics.data as any)?.calls ?? [];
+  const followups = (analytics.data as any)?.followups ?? [];
+  const stats = (analytics.data as any)?.stats ?? null;
 
   return (
     <div className="admin-page">

@@ -76,10 +76,9 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     const { data: existingRows } = await admin.from('agent_documents').select('source_url').eq('agent_id', id).in('source_url', uniqueUrlsAll);
     const existingSet = new Set((existingRows ?? []).map((r: any) => r.source_url));
     const newUrls = uniqueUrlsAll.filter((u) => !existingSet.has(u));
-    let cap = Number.isFinite(remaining as number) ? (remaining as number) : rowsAll.length;
+    let cap = Number.isFinite(remaining as number) ? (remaining as number) : newUrls.length;
     if (maxPerRequest > 0) cap = Math.min(cap, maxPerRequest);
     const chosenUrls = newUrls.slice(0, cap);
-    const rowsAll = uniqueUrlsAll.map((u) => ({ agent_id: id, title: (items.find((it) => it.url === u)?.title) || u, source_url: u, embedding_status: 'pending' }));
     const rows = chosenUrls.map((u) => ({ agent_id: id, title: (items.find((it) => it.url === u)?.title) || u, source_url: u, embedding_status: 'pending' }));
     const { data, error } = await admin
       .from('agent_documents')

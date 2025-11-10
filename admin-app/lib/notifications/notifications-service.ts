@@ -40,24 +40,23 @@ export async function listNotifications(
     ? `${getAdminApiPath("notifications")}?${query}`
     : getAdminApiPath("notifications");
 
-  const response = await apiFetch<{
-    data: NotificationOutbox[];
-    total: number;
-    hasMore?: boolean;
-  }>(url);
+  try {
+    const response = await apiFetch<{
+      data: NotificationOutbox[];
+      total: number;
+      hasMore?: boolean;
+    }>(url);
 
-  if (response.ok) {
-    const { data, total, hasMore } = response.data;
     return {
-      data,
-      total,
-      hasMore: hasMore ?? (offset + data.length < total),
+      data: response.data,
+      total: response.total,
+      hasMore: response.hasMore ?? (offset + response.data.length < response.total),
     };
+  } catch (error) {
+    console.error("Failed to fetch notifications", error);
+    const fallback = params.status
+      ? mockNotifications.filter((item) => item.status === params.status)
+      : mockNotifications;
+    return paginateArray(fallback, params);
   }
-
-  console.error("Failed to fetch notifications", response.error);
-  const fallback = params.status
-    ? mockNotifications.filter((item) => item.status === params.status)
-    : mockNotifications;
-  return paginateArray(fallback, params);
 }

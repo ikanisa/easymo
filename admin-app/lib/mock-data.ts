@@ -51,18 +51,12 @@ import {
   createOcrJob,
   createOrder,
   createOrderEvent,
-  createQrPreview,
   createQrToken,
   createSettingEntry,
   createStaffNumber,
   createStorageObject,
   createTemplateMeta,
   createWebhookError,
-  createLiveCall,
-  createLead,
-  createVendorRanking,
-  createMarketplaceIntent,
-  createMarketplacePurchase,
 } from "@/lib/test-utils/factories";
 import { mockBars, mockStations, mockUsers } from "@/lib/test-utils/mock-base";
 export { mockBars, mockUsers, mockStations };
@@ -157,136 +151,12 @@ export const mockDashboardKpis: DashboardKpi[] = [
   }),
 ];
 
-export const mockLiveCalls: LiveCall[] = [
-  createLiveCall({
-    callSid: "CA-active-1",
-    leadName: "Fixture Rider One",
-    warmTransferQueue: "Mobility Support",
-    durationSeconds: 185,
-  }),
-  createLiveCall({
-    callSid: "CA-handoff-2",
-    status: "handoff",
-    direction: "inbound",
-    leadName: "Prospect Driver",
-    leadPhone: "+250780020099",
-    agentRegion: "rw-south",
-    transcriptPreview: "I'm interested in onboarding next week…",
-    durationSeconds: 96,
-  }),
-  createLiveCall({
-    callSid: "CA-ended-3",
-    status: "ended",
-    optOutDetected: true,
-    leadName: "Sensitive Contact",
-    leadPhone: "+250780033333",
-    transcriptPreview: "STOP texting me, thanks.",
-    durationSeconds: 32,
-  }),
-];
-
-export const mockLeads: Lead[] = [
-  createLead({
-    id: "lead-001",
-    name: "Diane Umutesi",
-    phoneE164: "+250780010001",
-    tags: ["pilot", "rider"],
-    lastContactAt: formatISO(subDays(now, 1)),
-    lastCallAt: formatISO(subDays(now, 2)),
-  }),
-  createLead({
-    id: "lead-002",
-    name: "Eric Niyonsaba",
-    phoneE164: "+250780022222",
-    tags: ["fleet"],
-    optIn: false,
-    locale: "en",
-    lastContactAt: null,
-    lastCallAt: null,
-  }),
-  createLead({
-    id: "lead-003",
-    name: null,
-    phoneE164: "+250780033333",
-    tags: ["marketplace"],
-    lastContactAt: formatISO(subDays(now, 4)),
-    lastCallAt: formatISO(subDays(now, 5)),
-  }),
-];
-
-export const mockVendorRankings: VendorRanking[] = [
-  createVendorRanking({
-    vendorId: "vendor-1",
-    name: "Kigali Premier Rides",
-    score: 0.88,
-    recentTrips: 18,
-    balance: 420,
-  }),
-  createVendorRanking({
-    vendorId: "vendor-2",
-    name: "Nyamirambo Express",
-    region: "rw-kigali",
-    categories: ["mobility", "economy"],
-    rating: 4.1,
-    fulfilmentRate: 0.82,
-    avgResponseMs: 2400,
-    totalTrips: 86,
-    recentTrips: 9,
-    score: 0.72,
-  }),
-  createVendorRanking({
-    vendorId: "vendor-3",
-    name: "Rubavu Coastal",
-    region: "rw-west",
-    categories: ["mobility"],
-    rating: 4.6,
-    fulfilmentRate: 0.94,
-    avgResponseMs: 1100,
-    totalTrips: 310,
-    recentTrips: 14,
-    score: 0.9,
-  }),
-];
-
-export const mockMarketplaceIntents: MarketplaceIntent[] = [
-  createMarketplaceIntent({
-    id: "intent-1",
-    buyerName: "Diane Umutesi",
-    status: "pending",
-    recentQuotes: 2,
-  }),
-  createMarketplaceIntent({
-    id: "intent-2",
-    buyerName: "Eric Niyonsaba",
-    status: "matched",
-    recentQuotes: 3,
-  }),
-  createMarketplaceIntent({
-    id: "intent-3",
-    buyerName: "Station Ops",
-    status: "expired",
-    recentQuotes: 0,
-  }),
-];
-
-export const mockMarketplacePurchases: MarketplacePurchase[] = [
-  createMarketplacePurchase({
-    id: "purchase-1",
-    vendorName: "Kigali Premier Rides",
-    buyerName: "Diane Umutesi",
-    amount: 28.5,
-    currency: "USD",
-  }),
-  createMarketplacePurchase({
-    id: "purchase-2",
-    vendorName: "Nyamirambo Express",
-    buyerName: "Eric Niyonsaba",
-    status: "pending",
-    fulfilledAt: null,
-    amount: 19.25,
-    currency: "USD",
-  }),
-];
+// Simplified mocks - factory functions not available during build
+export const mockLiveCalls: LiveCall[] = [];
+export const mockLeads: Lead[] = [];
+export const mockVendorRankings: VendorRanking[] = [];
+export const mockMarketplaceIntents: MarketplaceIntent[] = [];
+export const mockMarketplacePurchases: MarketplacePurchase[] = [];
 
 export const mockMenuVersions: MenuVersion[] = mockBars.flatMap((
   bar,
@@ -423,7 +293,11 @@ export const mockQrTokens: QrToken[] = Array.from(
     }),
 );
 
-export const mockQrPreview: QrPreview = createQrPreview({
+export const mockQrPreview: QrPreview = {
+  id: "preview-1",
+  barId: mockBars[0]?.id ?? "mock-bar",
+  barName: mockBars[0]?.name ?? "Sunset Bar",
+  imageUrl: "https://example.com/qr-preview.png",
   metadata: {
     barId: mockBars[0]?.id ?? "mock-bar",
     barName: mockBars[0]?.name ?? "Sunset Bar",
@@ -435,7 +309,7 @@ export const mockQrPreview: QrPreview = createQrPreview({
       qrPayload: "B:sunset-bar T:Table 1 K:mock",
     },
   },
-});
+};
 
 export const mockTemplates: TemplateMeta[] = [
   createTemplateMeta({

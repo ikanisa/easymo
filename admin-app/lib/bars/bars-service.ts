@@ -34,24 +34,23 @@ export async function listBars(
   if (params.search) searchParams.set("search", params.search);
   if (params.status) searchParams.set("status", params.status);
 
-  const response = await apiFetch<{
-    data: Bar[];
-    total: number;
-    hasMore?: boolean;
-  }>(`${getAdminApiPath("bars")}?${searchParams.toString()}`);
+  try {
+    const response = await apiFetch<{
+      data: Bar[];
+      total: number;
+      hasMore?: boolean;
+    }>(`${getAdminApiPath("bars")}?${searchParams.toString()}`);
 
-  if (response.ok) {
-    const { data, total, hasMore } = response.data;
     return {
-      data,
-      total,
-      hasMore: hasMore ?? (offset + data.length < total),
+      data: response.data,
+      total: response.total,
+      hasMore: response.hasMore ?? (offset + response.data.length < response.total),
     };
+  } catch (error) {
+    console.error("Failed to fetch bars", error);
+    const fallback = filterBars(mockBars, params);
+    return paginateArray(fallback, { offset, limit });
   }
-
-  console.error("Failed to fetch bars", response.error);
-  const fallback = filterBars(mockBars, params);
-  return paginateArray(fallback, { offset, limit });
 }
 
 function filterBars(bars: Bar[], params: BarListParams) {

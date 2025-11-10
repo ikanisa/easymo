@@ -180,7 +180,12 @@ async function loadMatchSummary(
       matchesLast24h: dayCountResult.count ?? 0,
       openTrips: openTripsResult.count ?? 0,
       errorCountLastHour: errorCountResult.count ?? 0,
-      recentErrors: recentErrorsResult.data ?? [],
+      recentErrors: (recentErrorsResult.data ?? []).map((row) => ({
+        id: String(row.id ?? crypto.randomUUID()),
+        endpoint: row.endpoint ?? null,
+        status_code: row.status_code ?? null,
+        received_at: row.received_at ?? null,
+      })),
       messages,
     };
   } catch (error) {
@@ -192,7 +197,12 @@ async function loadMatchSummary(
       matchesLast24h: mockAdminDiagnostics.matches.matchesLast24h,
       openTrips: mockAdminDiagnostics.matches.openTrips,
       errorCountLastHour: mockAdminDiagnostics.matches.errorCountLastHour,
-      recentErrors: mockAdminDiagnostics.matches.recentErrors,
+      recentErrors: mockAdminDiagnostics.matches.recentErrors.map((err: any, idx: number) => ({
+        id: err.id ?? `mock-err-${idx}`,
+        endpoint: err.endpoint ?? '',
+        status_code: err.status_code ?? 0,
+        received_at: err.received_at ?? new Date().toISOString()
+      })),
       messages,
     };
   }

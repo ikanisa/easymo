@@ -12,7 +12,7 @@ export type TripRow = Record<string, unknown>;
 export async function listTrips(params: { search?: string } & Pagination = {}): Promise<PaginatedResult<TripRow>> {
   if (!isServer) {
     // Client → call our API
-    return apiClient.request("trips", {
+    return apiClient.fetch("trips", {
       query: {
         search: params.search,
         offset: params.offset,

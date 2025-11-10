@@ -4,6 +4,7 @@ import { useState } from "react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { SectionCard } from "@/components/ui/SectionCard";
 import { InsuranceTable } from "@/components/insurance/InsuranceTable";
+import { InsuranceWorkbench } from "@/components/insurance/InsuranceWorkbench";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { LoadingState } from "@/components/ui/LoadingState";
 import {
@@ -32,6 +33,12 @@ export function InsuranceClient(
         title="Insurance"
         description="Human-in-the-loop review of insurance quotes, OCR extracts, and approval workflows."
       />
+      <SectionCard
+        title="Pricing workbench"
+        description="Upload docs, run OCR, and compare BK, Old Mutual, Prime, and Radiant premiums before pushing to WhatsApp."
+      >
+        <InsuranceWorkbench />
+      </SectionCard>
       <SectionCard
         title="Review queue"
         description="Approve or request changes with audit logging once API routes are available."

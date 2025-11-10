@@ -91,10 +91,30 @@ export async function getDashboardSnapshot(): Promise<DashboardSnapshotResult> {
     try {
       const stats = await callAdminFunction<any>("admin-stats");
       const kpis: DashboardKpi[] = [
-        { id: "totalUsers", label: "Total Users", value: Number(stats?.total_users ?? 0) },
-        { id: "driversOnline", label: "Drivers Online", value: Number(stats?.drivers_online ?? 0) },
-        { id: "openTrips", label: "Open Trips", value: Number(stats?.open_trips ?? 0) },
-        { id: "activeSubs", label: "Active Subscriptions", value: Number(stats?.active_subscriptions ?? 0) },
+        { 
+          label: "Total Users", 
+          primaryValue: String(stats?.total_users ?? 0),
+          secondaryValue: null,
+          trend: "flat"
+        },
+        { 
+          label: "Drivers Online", 
+          primaryValue: String(stats?.drivers_online ?? 0),
+          secondaryValue: null,
+          trend: "flat"
+        },
+        { 
+          label: "Open Trips", 
+          primaryValue: String(stats?.open_trips ?? 0),
+          secondaryValue: null,
+          trend: "flat"
+        },
+        { 
+          label: "Active Subscriptions", 
+          primaryValue: String(stats?.active_subscriptions ?? 0),
+          secondaryValue: null,
+          trend: "flat"
+        },
       ];
       return {
         data: { kpis },

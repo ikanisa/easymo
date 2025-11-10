@@ -72,10 +72,15 @@ export const GET = createHandler('admin_api.menus.list', async (request, _contex
       ? Number(row.items[0]?.count ?? 0)
       : 0;
 
+    const bars = row.bars as any;
+    const barName = Array.isArray(bars) 
+      ? (bars[0]?.name ?? "Unknown bar") 
+      : (bars?.name ?? "Unknown bar");
+    
     return {
       id: row.id,
       barId: row.bar_id,
-      barName: row.bars?.name ?? "Unknown bar",
+      barName,
       version: `v${row.version ?? 1}`,
       status: row.status ?? "draft",
       source: row.source ?? "manual",

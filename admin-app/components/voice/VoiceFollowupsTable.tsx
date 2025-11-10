@@ -39,7 +39,10 @@ export function VoiceFollowupsTable({ data }: VoiceFollowupsTableProps) {
       data={data}
       columns={columns}
       searchPlaceholder="Search follow-ups"
-      globalFilterFn={(row, value) => JSON.stringify(row.original).toLowerCase().includes(value.toLowerCase())}
+      globalFilterFn={(row, value) => {
+        const searchString = JSON.stringify(row).toLowerCase();
+        return searchString.includes(value.toLowerCase());
+      }}
       downloadFileName="voice-followups.csv"
     />
   );

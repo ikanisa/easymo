@@ -45,7 +45,7 @@ export function SettingsForm() {
           placeholder="+2507..."
         />
       </label>
-      <Button type="submit" disabled={isSaving} variant="default">
+      <Button type="submit" disabled={isSaving} variant="outline">
         {isSaving ? "Saving…" : "Save settings"}
       </Button>
       {integration

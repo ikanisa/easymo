@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useToast } from "@/components/ui/ToastProvider";
 
-const EVENT_COPY: Record<string, { message: string; variant: 'info' | 'success' | 'warning' | 'error'; duration?: number; }> = {
+const EVENT_COPY: Record<string, { message: string; variant: 'info' | 'success' | 'error'; duration?: number; }> = {
   SW_BACKGROUND_SYNC_QUEUED: {
     message: "Request saved offline. We’ll retry automatically soon.",
     variant: "info",
@@ -15,7 +15,7 @@ const EVENT_COPY: Record<string, { message: string; variant: 'info' | 'success' 
   },
   SW_BACKGROUND_SYNC_RETRY: {
     message: "Retrying queued request. We’ll keep you posted.",
-    variant: "warning",
+    variant: "info",
   },
   SW_BACKGROUND_SYNC_DROPPED: {
     message: "We couldn’t deliver a queued request. Please resend manually.",

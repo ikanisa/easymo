@@ -30,7 +30,7 @@ export function TopBar(
 ) {
   const integrationStatusQuery = useIntegrationStatusQuery({
     refetchInterval: 120_000,
-  });
+  } as any);
 
   const { badgeLabel, badgeValue } = useMemo(() => {
     if (integrationStatusQuery.isLoading) {
@@ -117,7 +117,7 @@ export function TopBar(
         {assistantEnabled && (
           <Button
             type="button"
-            variant="default"
+            variant="outline"
             className="topbar__assistant inline-flex items-center gap-2 px-4"
             aria-label="Open assistant"
             onClick={onOpenAssistant}

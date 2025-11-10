@@ -56,9 +56,9 @@ async function fetchSettingsFromSupabase() {
 }
 
 function fallbackSettings() {
-  const quiet = mockSettingsEntries.find((entry) => entry.key === 'quiet_hours.rw');
-  const throttle = mockSettingsEntries.find((entry) => entry.key === 'send_throttle.whatsapp.per_minute');
-  const optOut = mockSettingsEntries.find((entry) => entry.key === 'opt_out.list');
+  const quiet = mockSettingsEntries.find((entry: any) => entry.key === 'quiet_hours.rw');
+  const throttle = mockSettingsEntries.find((entry: any) => entry.key === 'send_throttle.whatsapp.per_minute');
+  const optOut = mockSettingsEntries.find((entry: any) => entry.key === 'opt_out.list');
   return {
     quietHours: () => ({
       start: quiet ? quiet.valuePreview.split('–')[0].trim() : '22:00',

@@ -5,7 +5,14 @@ import { LoadMoreButton } from "@/components/ui/LoadMoreButton";
 import type { User } from "@/lib/schemas";
 import type { ColumnDef } from "@tanstack/react-table";
 import { UserDrawerTrigger } from "./UserDrawer";
-import { maskMsisdn } from "@va/shared";
+
+// Local utility to mask phone numbers
+function maskMsisdn(input?: string | null): string {
+  if (!input) return "••••••••";
+  const clean = input.replace(/\D/g, "");
+  if (clean.length < 4) return "••••••••";
+  return `•••• ${clean.slice(-4)}`;
+}
 
 interface UsersTableProps {
   data: User[];

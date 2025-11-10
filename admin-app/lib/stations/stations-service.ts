@@ -74,22 +74,21 @@ async function fetchStationsApi(params: StationApiParams) {
   if (params.status) searchParams.set("status", params.status);
   if (params.search) searchParams.set("search", params.search);
 
-  const response = await apiFetch<StationsApiResponse>(
-    `${getAdminApiPath("stations")}?${searchParams.toString()}`,
-  );
+  try {
+    const response = await apiFetch<StationsApiResponse>(
+      `${getAdminApiPath("stations")}?${searchParams.toString()}`,
+    );
 
-  if (response.ok) {
-    const { data, total, hasMore } = response.data;
     return {
       ok: true as const,
       value: {
-        data,
-        total,
-        hasMore: hasMore ?? (params.offset + data.length < total),
+        data: response.data,
+        total: response.total,
+        hasMore: response.hasMore ?? (params.offset + response.data.length < response.total),
       },
     };
+  } catch (error) {
+    console.error("Failed to fetch stations", error);
+    return { ok: false as const };
   }
-
-  console.error("Failed to fetch stations", response.error);
-  return { ok: false as const };
 }

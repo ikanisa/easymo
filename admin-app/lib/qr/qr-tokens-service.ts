@@ -37,21 +37,21 @@ export async function listQrTokens(
   }
 
   const url = `${getAdminApiPath("qr")}?${searchParams.toString()}`;
-  const response = await apiFetch<{
-    data: QrToken[];
-    total: number;
-    hasMore?: boolean;
-  }>(url);
+  
+  try {
+    const response = await apiFetch<{
+      data: QrToken[];
+      total: number;
+      hasMore?: boolean;
+    }>(url);
 
-  if (response.ok) {
-    const { data, total, hasMore } = response.data;
     return {
-      data,
-      total,
-      hasMore: hasMore ?? (offset + data.length < total),
+      data: response.data,
+      total: response.total,
+      hasMore: response.hasMore ?? (offset + response.data.length < response.total),
     };
+  } catch (error) {
+    console.error("Failed to fetch QR tokens", error);
+    return paginateArray(mockQrTokens, { offset, limit });
   }
-
-  console.error("Failed to fetch QR tokens", response.error);
-  return paginateArray(mockQrTokens, { offset, limit });
 }

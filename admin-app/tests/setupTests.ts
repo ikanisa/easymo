@@ -66,10 +66,8 @@ if (typeof window !== "undefined") {
     disconnect() {}
   }
 
-  // @ts-expect-error jsdom mock
   window.ResizeObserver = window.ResizeObserver || ResizeObserverMock;
 
-  // @ts-expect-error jsdom mock
   window.IntersectionObserver = window.IntersectionObserver || class {
     constructor() {}
     observe() {}
@@ -85,12 +83,10 @@ const originalWarn = console.warn;
 const SUPPRESSED = /ReactDOMTestUtils\.act is deprecated|not wrapped in act\(|When testing, code that causes React state updates should be wrapped into act\(|current testing environment is not configured to support act\(/i;
 console.error = (...args: unknown[]) => {
   if (typeof args[0] === 'string' && SUPPRESSED.test(args[0])) return;
-  // @ts-expect-error forwarding console args preserves variadic signature
   originalError(...args);
 };
 console.warn = (...args: unknown[]) => {
   if (typeof args[0] === 'string' && SUPPRESSED.test(args[0])) return;
-  // @ts-expect-error forwarding console args preserves variadic signature
   originalWarn(...args);
 };
 
