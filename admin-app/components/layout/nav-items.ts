@@ -1,3 +1,14 @@
+export {
+  panelNavigation as PANEL_NAVIGATION,
+  type PanelNavigation,
+  type PanelNavGroup,
+  type PanelNavItem,
+  type PanelNavGroupId,
+  type PanelBreadcrumb,
+  buildPanelBreadcrumbs,
+  createPanelPageMetadata,
+  getRouteMetadata,
+} from "@/lib/panel-navigation";
 import { isFeatureFlagEnabled } from "@/lib/flags";
 
 // Core navigation sections
@@ -30,6 +41,7 @@ const operationsItems = [
   { href: "/sessions", title: "Active Sessions", icon: "🔄" },
   { href: "/negotiations", title: "Negotiations", icon: "🤝" },
   { href: "/vendor-responses", title: "Vendor Responses", icon: "📨" },
+  { href: "/video/jobs", title: "Video Jobs", icon: "🎬" },
 ];
 
 // Business modules
@@ -38,6 +50,12 @@ const businessItems = [
   { href: "/trips", title: "Trips", icon: "🚕" },
   { href: "/insurance", title: "Insurance", icon: "🛡️" },
   { href: "/marketplace", title: "Marketplace", icon: "🏪" },
+  { href: "/pharmacies", title: "Pharmacies", icon: "💊" },
+  { href: "/quincailleries", title: "Quincailleries", icon: "🔧" },
+  { href: "/shops", title: "Shops", icon: "🛍️" },
+  { href: "/bars", title: "Bars & Restaurants", icon: "🍽️" },
+  { href: "/property-rentals", title: "Property Rentals", icon: "🏠" },
+  { href: "/qr", title: "MOMO QR & Tokens", icon: "💳" },
 ];
 
 // Marketing & Sales

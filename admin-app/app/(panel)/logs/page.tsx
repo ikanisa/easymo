@@ -1,10 +1,13 @@
 export const dynamic = 'force-dynamic';
 
+import { createPanelPageMetadata } from "@/components/layout/nav-items";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import { createQueryClient } from "@/lib/api/queryClient";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { LogsClient } from "@/components/logs/LogsClient";
 import { fetchLogs, logsQueryKeys } from "@/lib/queries/logs";
+
+export const metadata = createPanelPageMetadata("/logs");
 
 export default async function LogsPage() {
   const queryClient = createQueryClient();

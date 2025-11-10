@@ -1,5 +1,13 @@
 {
   "name": "@easymo/video-agent-schema",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json"
+  },
+  "license": "MIT"
   "version": "0.1.0",
   "private": true,
   "main": "./dist/index.js",

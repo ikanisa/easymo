@@ -13,7 +13,13 @@
     "baseUrl": ".",
     "paths": {
       "@va/shared": ["packages/shared/src/index.ts"],
-      "@va/shared/*": ["packages/shared/src/*"]
+      "@va/shared/*": ["packages/shared/src/*"],
+      "@easymo/video-agent-schema": [
+        "packages/video-agent-schema/src/index.ts"
+      ],
+      "@easymo/video-agent-schema/*": [
+        "packages/video-agent-schema/src/*"
+      ]
     }
   }
 }

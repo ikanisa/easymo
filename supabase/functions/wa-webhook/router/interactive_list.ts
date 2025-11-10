@@ -5,6 +5,8 @@ import type {
 import { getListReplyId } from "../utils/messages.ts";
 // AI Agents Integration
 import { handleAIAgentOptionSelection } from "../domains/ai-agents/index.ts";
+import { handleVideoTemplateSelection } from "../video-agent/index.ts";
+import type { ChatState } from "../state/store.ts";
 import {
   handleNearbyResultSelection,
   handleSeeDrivers,
@@ -72,10 +74,14 @@ export async function handleList(
     await sendDineInDisabledNotice(ctx);
     return true;
   }
-  
+
   // Check if this is an AI agent option selection
   if (id.startsWith("agent_option_") && state.key === "ai_agent_selection") {
     return await handleAIAgentOptionSelection(ctx, state, id);
+  }
+
+  if (await handleVideoTemplateSelection(ctx, state as ChatState, id)) {
+    return true;
   }
   
   if (await handleHomeMenuSelection(ctx, id, state)) {

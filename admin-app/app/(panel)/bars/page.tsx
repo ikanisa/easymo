@@ -1,5 +1,6 @@
 export const dynamic = 'force-dynamic';
 
+import { createPanelPageMetadata } from "@/components/layout/nav-items";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import { createQueryClient } from "@/lib/api/queryClient";
 import { BarsClient } from "./BarsClient";
@@ -13,6 +14,8 @@ import {
   staffNumbersQueryKeys,
   type StaffNumbersQueryParams,
 } from "@/lib/queries/staffNumbers";
+
+export const metadata = createPanelPageMetadata("/bars");
 
 const DEFAULT_BAR_PARAMS: BarsQueryParams = { limit: 100 };
 const DEFAULT_STAFF_PARAMS: StaffNumbersQueryParams = { limit: 6 };

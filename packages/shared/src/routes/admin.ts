@@ -33,6 +33,8 @@ const adminRouteDefinitions = [
   { key: "panelAgents", path: "/agents", segment: "panel" },
   { key: "panelAgentsTools", path: "/agents/tools", segment: "panel" },
   { key: "panelAgentDetail", path: "/agents/:agentId", segment: "panel" },
+  { key: "panelVideoJobs", path: "/video/jobs", segment: "panel" },
+  { key: "panelVideoJobDetail", path: "/video/jobs/:jobId", segment: "panel" },
   { key: "panelDriverSubscriptions", path: "/driver-subscriptions", segment: "panel" },
   { key: "panelWalletTopUp", path: "/wallet/topup", segment: "panel" },
   { key: "panelSettings", path: "/settings", segment: "panel" },

@@ -1,5 +1,6 @@
 export const dynamic = 'force-dynamic';
 
+import { createPanelPageMetadata } from "@/components/layout/nav-items";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import { createQueryClient } from "@/lib/api/queryClient";
 import { NotificationsClient } from "./NotificationsClient";
@@ -8,6 +9,8 @@ import {
   notificationsQueryKeys,
   type NotificationsQueryParams,
 } from "@/lib/queries/notifications";
+
+export const metadata = createPanelPageMetadata("/notifications");
 
 const DEFAULT_PARAMS: NotificationsQueryParams = { limit: 200 };
 
