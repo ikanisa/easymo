@@ -36,6 +36,12 @@
       "@easymo/ui/tokens": [
         "../packages/ui/tokens/index.ts"
       ],
+      "@easymo/video-agent-schema": [
+        "../packages/video-agent-schema/src/index.ts"
+      ],
+      "@easymo/video-agent-schema/*": [
+        "../packages/video-agent-schema/src/*"
+      ],
       "@easymo/commons": [
         "../packages/commons/src/index.ts"
       ]
