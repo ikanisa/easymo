@@ -9,6 +9,7 @@ const schema = z.object({
   DEFAULT_TENANT_ID: z.string().uuid().default("a4a8cf2d-0a4f-446c-8bf2-28509641158f"),
   EASYMO_ADMIN_API_BASE: z.string().url().optional(),
   EASYMO_ADMIN_TOKEN: z.string().optional(),
+  EASYMO_ADMIN_ACTOR_ID: z.string().uuid().optional(),
 });
 
 const parsed = schema.parse(process.env);
@@ -19,4 +20,5 @@ export const settings = {
   defaultTenantId: parsed.DEFAULT_TENANT_ID,
   easymoAdminApiBase: parsed.EASYMO_ADMIN_API_BASE,
   easymoAdminToken: parsed.EASYMO_ADMIN_TOKEN,
+  easymoAdminActorId: parsed.EASYMO_ADMIN_ACTOR_ID,
 };

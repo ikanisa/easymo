@@ -5,8 +5,26 @@
 // List of authorized actor IDs (admins/staff)
 const AUTHORIZED_ACTORS = new Set([
   '00000000-0000-0000-0000-000000000001', // Test actor for development
-  // Add more authorized actor IDs here from your Supabase auth.users table
+  // Additional actors hydrated from ADMIN_ACCESS_CREDENTIALS at runtime
 ]);
+
+function hydrateAuthorizedActorsFromEnv() {
+  const raw = process.env.ADMIN_ACCESS_CREDENTIALS;
+  if (!raw) return;
+  try {
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return;
+    for (const entry of parsed) {
+      if (entry && typeof entry === 'object' && typeof (entry as any).actorId === 'string') {
+        AUTHORIZED_ACTORS.add((entry as any).actorId);
+      }
+    }
+  } catch (error) {
+    console.warn('auth.credentials.env_parse_failed', error);
+  }
+}
+
+hydrateAuthorizedActorsFromEnv();
 
 /**
  * Check if an actor (user) is authorized to access admin functions

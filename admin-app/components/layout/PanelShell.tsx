@@ -13,6 +13,7 @@ import { ServiceWorkerToast } from "@/components/system/ServiceWorkerToast";
 import { ServiceWorkerToasts } from "@/components/system/ServiceWorkerToasts";
 import { AssistantPanel } from "@/components/assistant/AssistantPanel";
 import { MobileNav } from "@/components/layout/MobileNav";
+import { useAdminSession } from "@/components/providers/SessionProvider";
 import { SessionProvider } from "@/components/providers/SessionProvider";
 import { PanelBreadcrumbs } from "@/components/layout/PanelBreadcrumbs";
 import { CommandPalette } from "@/components/omnisearch/CommandPalette";
@@ -29,10 +30,6 @@ interface PanelShellProps {
   children: ReactNode;
   environmentLabel: string;
   assistantEnabled: boolean;
-  session: {
-    actorId: string;
-    label: string | null;
-  };
 }
 
 const CATEGORY_ALLOWED_TABS: Record<OmniSearchCategory, SidecarTab[]> = {
@@ -73,20 +70,18 @@ function deriveInitials(label: string | null, actorId: string): string {
   return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
 }
 
-export function PanelShell({
-  children,
-  environmentLabel,
-  assistantEnabled,
-  session,
-}: PanelShellProps) {
+export function PanelShell({ children, environmentLabel, assistantEnabled }: PanelShellProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const actorDisplayLabel = session.label?.trim() || `${session.actorId.slice(0, 8)}…`;
+  const { session, status, signOut } = useAdminSession();
   const [assistantOpen, setAssistantOpen] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
+  const actorDisplayLabel = session
+    ? session.label?.trim() || `${session.actorId.slice(0, 8)}…`
+    : "";
   const [avatarInitials, setAvatarInitials] = useState(() =>
-    deriveInitials(actorDisplayLabel, session.actorId),
+    deriveInitials(actorDisplayLabel || null, session?.actorId ?? "operator"),
   );
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const [sidecarState, setSidecarState] = useState<SidecarState>({
@@ -105,8 +100,9 @@ export function PanelShell({
     : undefined;
 
   useEffect(() => {
+    if (!session) return;
     setAvatarInitials(deriveInitials(actorDisplayLabel, session.actorId));
-  }, [actorDisplayLabel, session.actorId]);
+  }, [actorDisplayLabel, session]);
 
   useEffect(() => {
     setMobileNavOpen(false);
@@ -115,19 +111,23 @@ export function PanelShell({
   const handleSignOut = async () => {
     try {
       setSigningOut(true);
-      await fetch("/api/auth/logout", {
-        method: "POST",
-        credentials: "same-origin",
-      });
     } catch (error) {
       console.error("panel.logout_failed", error);
     } finally {
       setSigningOut(false);
-      router.replace("/login");
-      router.refresh();
+      await signOut();
     }
   };
 
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.replace("/login");
+    }
+  }, [router, status]);
+
+  if (!session) {
+    return null;
+  }
   const openCommandPalette = useCallback(() => setCommandPaletteOpen(true), []);
   const closeCommandPalette = useCallback(() => setCommandPaletteOpen(false), []);
 
@@ -208,6 +208,25 @@ export function PanelShell({
   );
 
   return (
+    <ToastProvider>
+      <ServiceWorkerToast />
+      <ServiceWorkerToasts />
+      <OfflineBanner />
+      <GradientBackground variant="surface" className="min-h-screen">
+        <div className="layout">
+          <SidebarNav />
+          <div className="layout__main">
+            <TopBar
+              environmentLabel={environmentLabel}
+              onOpenNavigation={() => setMobileNavOpen(true)}
+              assistantEnabled={assistantEnabled}
+              onOpenAssistant={assistantEnabled
+                ? () => setAssistantOpen(true)
+                : undefined}
+              actorLabel={actorDisplayLabel}
+              actorInitials={avatarInitials}
+              onSignOut={handleSignOut}
+              signingOut={signingOut}
     <SessionProvider session={session}>
       <PanelContextProvider value={panelContextValue}>
         <ToastProvider>
@@ -269,6 +288,24 @@ export function PanelShell({
                 {children}
               </main>
             </div>
+          </div>
+          <MobileNav open={mobileNavOpen} onClose={() => setMobileNavOpen(false)} />
+          {assistantEnabled && (
+            <AssistantPanel
+              open={assistantOpen}
+              onClose={() => setAssistantOpen(false)}
+            />
+            <main id="main-content" className="layout__content" aria-live="polite">
+              {children}
+            </main>
+          </div>
+        </div>
+        <MobileNav open={mobileNavOpen} onClose={() => setMobileNavOpen(false)} />
+        {assistantEnabled && (
+          <AssistantPanel open={assistantOpen} onClose={() => setAssistantOpen(false)} />
+        )}
+      </GradientBackground>
+    </ToastProvider>
             <MobileNav open={mobileNavOpen} onClose={() => setMobileNavOpen(false)} />
             {assistantEnabled && (
               <AssistantPanel
