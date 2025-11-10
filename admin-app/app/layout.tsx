@@ -9,7 +9,7 @@ import { isUiKitEnabled } from "@/lib/ui-kit";
 export const metadata: Metadata = {
   title: "easyMO Admin Panel",
   description:
-    "Operations console for platform staff — dashboards, campaigns, and support tools.",
+    "Operations console for platform staff — dashboards, automations, and support tools.",
   manifest: "/manifest.webmanifest",
 };
 

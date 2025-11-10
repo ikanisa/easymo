@@ -38,22 +38,7 @@ export const barSchema = z.object({
   lastUpdated: z.string().datetime(),
   createdAt: z.string().datetime(),
   momoCode: z.string().nullable(),
-  serviceCharge: z.number().nullable(),
   directChatEnabled: z.boolean().optional(),
-  defaultPrepMinutes: z.number().nullable(),
-  paymentInstructions: z.string().nullable(),
-});
-
-export const campaignSchema = z.object({
-  id: z.string().uuid().or(z.string()),
-  name: z.string(),
-  type: z.enum(["promo", "notification"]),
-  status: z.enum(["draft", "running", "paused", "done"]),
-  templateId: z.string(),
-  createdAt: z.string().datetime(),
-  startedAt: z.string().datetime().nullable(),
-  finishedAt: z.string().datetime().nullable().optional(),
-  metadata: z.record(z.any()).optional(),
 });
 
 export const insuranceQuoteSchema = z.object({
@@ -175,28 +160,6 @@ export const insuranceSimulationResultSchema = z.object({
   }),
 });
 
-export const orderSchema = z.object({
-  id: z.string(),
-  barId: z.string(),
-  barName: z.string(),
-  table: z.string().nullable(),
-  status: z.string(),
-  total: z.number(),
-  createdAt: z.string().datetime(),
-  updatedAt: z.string().datetime(),
-  staffNumber: z.string().nullable(),
-});
-
-export const orderEventSchema = z.object({
-  id: z.string(),
-  orderId: z.string(),
-  type: z.string(),
-  status: z.string().optional(),
-  actor: z.string().nullable(),
-  note: z.string().nullable(),
-  createdAt: z.string().datetime(),
-});
-
 export const webhookErrorSchema = z.object({
   id: z.string(),
   endpoint: z.string(),
@@ -280,17 +243,6 @@ export const qrPreviewSchema = z.object({
       .nullable()
       .optional(),
   }),
-});
-
-export const templateMetaSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  purpose: z.string(),
-  locales: z.array(z.string()),
-  status: z.enum(["approved", "draft"]),
-  variables: z.array(z.string()),
-  lastUsedAt: z.string().datetime().nullable(),
-  errorRate: z.number(),
 });
 
 export const flowMetaSchema = z.object({
@@ -534,7 +486,6 @@ export const adminDiagnosticsMatchSchema = z.object({
 export type User = z.infer<typeof userSchema>;
 export type Station = z.infer<typeof stationSchema>;
 export type Bar = z.infer<typeof barSchema>;
-export type Campaign = z.infer<typeof campaignSchema>;
 export type InsuranceQuote = z.infer<typeof insuranceQuoteSchema>;
 export type InsuranceProviderProfile = z.infer<typeof insurerProfileSchema>;
 export type InsuranceInstallmentPlan = z.infer<typeof insuranceInstallmentPlanSchema>;
@@ -545,15 +496,12 @@ export type OcrVehicleDoc = z.infer<typeof ocrVehicleDocSchema>;
 export type InsuranceSimulationInputs = z.infer<typeof insuranceSimulationInputsSchema>;
 export type InsuranceSimulationQuote = z.infer<typeof insuranceSimulationQuoteSchema>;
 export type InsuranceSimulationResult = z.infer<typeof insuranceSimulationResultSchema>;
-export type Order = z.infer<typeof orderSchema>;
-export type OrderEvent = z.infer<typeof orderEventSchema>;
 export type WebhookError = z.infer<typeof webhookErrorSchema>;
 export type MenuVersion = z.infer<typeof menuVersionSchema>;
 export type OcrJob = z.infer<typeof ocrJobSchema>;
 export type StaffNumber = z.infer<typeof staffNumberSchema>;
 export type QrToken = z.infer<typeof qrTokenSchema>;
 export type QrPreview = z.infer<typeof qrPreviewSchema>;
-export type TemplateMeta = z.infer<typeof templateMetaSchema>;
 export type FlowMeta = z.infer<typeof flowMetaSchema>;
 export type NotificationOutbox = z.infer<typeof notificationSchema>;
 export type AuditEvent = z.infer<typeof auditEventSchema>;

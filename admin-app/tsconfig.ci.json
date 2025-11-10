@@ -21,8 +21,6 @@
     "app/api/notifications/**/*.tsx",
     "app/api/stations/**/*.ts",
     "app/api/stations/**/*.tsx",
-    "app/api/campaigns/**/*.ts",
-    "app/api/campaigns/**/*.tsx",
     "app/api/logs/**/*.ts",
     "app/api/logs/**/*.tsx",
     "app/api/qr/**/*.ts",

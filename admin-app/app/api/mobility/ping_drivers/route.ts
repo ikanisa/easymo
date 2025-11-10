@@ -4,13 +4,15 @@ import { logStructured } from "@/lib/server/logger";
 
 export async function POST(req: NextRequest) {
   const reqId = req.headers.get("x-request-id") || undefined;
-  const { ride_id, driver_ids = [], template, text, delaySeconds } = await req.json();
+  const { ride_id, driver_ids = [], text, delaySeconds } = await req.json();
 
-  if (!ride_id || (!text && !template)) {
+  if (!ride_id || !text) {
     return NextResponse.json({ error: "invalid_request" }, { status: 400 });
   }
 
-  const recipients = Array.isArray(driver_ids) ? driver_ids.filter((value): value is string => typeof value === "string" && value.trim().length > 0) : [];
+  const recipients = Array.isArray(driver_ids)
+    ? driver_ids.filter((value): value is string => typeof value === "string" && value.trim().length > 0)
+    : [];
   if (recipients.length === 0) {
     return NextResponse.json({ ride_id, queued: 0, reqId }, { status: 202 });
   }
@@ -29,15 +31,13 @@ export async function POST(req: NextRequest) {
 
   const payloadBase = {
     type: "mobility_invite",
-    text: text ?? null,
-    template: template ?? null,
+    text,
   };
 
   const rows = recipients.map((to) => ({
     to_wa_id: to,
-    notification_type: template?.name ?? "mobility_ping",
-    template_name: template?.name ?? null,
-    channel: template ? "template" : "freeform",
+    notification_type: "mobility_ping",
+    channel: "freeform",
     payload: payloadBase,
     status: "queued",
     retry_count: 0,

@@ -188,7 +188,6 @@ deploy_functions() {
         "agent-runner"
         "agents/nearby-drivers"
         "agents/pharmacy"
-        "agents/waiter"
         "agent-property-rental"
         "agent-schedule-trip"
         "agent-quincaillerie"
@@ -350,7 +349,7 @@ generate_report() {
 - **Supabase Studio**: http://localhost:54323
 
 ### Deployed Functions
-$(supabase functions list 2>/dev/null | grep -v "No functions" || echo "- agent-runner\n- nearby-drivers\n- pharmacy\n- waiter\n- property-rental\n- schedule-trip\n- quincaillerie\n- shops\n- wa-webhook")
+$(supabase functions list 2>/dev/null | grep -v "No functions" || echo "- agent-runner\n- nearby-drivers\n- pharmacy\n- property-rental\n- schedule-trip\n- quincaillerie\n- shops\n- wa-webhook")
 
 ## Next Steps
 

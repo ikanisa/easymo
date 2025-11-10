@@ -39,49 +39,6 @@ import { showWalletTop } from "../domains/wallet/top.ts";
 import { openAdminHub, showAdminHubList } from "../flows/admin/hub.ts";
 import { handleAdminQuickAction } from "../flows/admin/actions.ts";
 import { handleInsuranceButton } from "../flows/admin/insurance.ts";
-import { homeOnly, sendButtonsMessage } from "../utils/reply.ts";
-import { DINE_IDS } from "../domains/dinein/ids.ts";
-import { DINE_STATE } from "../domains/dinein/state.ts";
-import {
-  handleBarsPagingButton,
-  openManagerPortal,
-  sendMenuQr,
-  startDineIn,
-} from "../domains/dinein/browse.ts";
-import { handleItemsPagingButton, openMenu } from "../domains/dinein/menu.ts";
-import { handleOrderMore, handlePayOrder } from "../domains/dinein/order.ts";
-import { copy } from "../domains/dinein/copy.ts";
-import {
-  continueOnboardContacts,
-  continueOnboardIdentity,
-  continueOnboardLocation,
-  continueOnboardPayment,
-  handleDeleteMenuConfirm,
-  handleNumbersAddSubmit,
-  handleNumbersRemoveSubmit,
-  handlePublish,
-  handleRemoveCategoriesConfirm,
-  handleToggleAvailability,
-  handleUploadDone,
-  managerContextFromState,
-  promptReviewEditField,
-  showBarsEntry,
-  showBarsMenu,
-  showCurrentNumbers,
-  showDeleteMenuConfirmation,
-  showEditMenu,
-  showManageOrders,
-  showManagerEntry,
-  showManagerMenu,
-  showNumbersMenu,
-  showOnboardContacts,
-  showOnboardIdentity,
-  showOnboardPublish,
-  showRemoveCategoriesConfirmation,
-  showReviewIntro,
-  showReviewItemMenu,
-  showUploadInstruction,
-} from "../domains/dinein/manager.ts";
 import { sendButtonsMessage, buildButtons } from "../utils/reply.ts";
 import { isFeatureEnabled } from "../../_shared/feature-flags.ts";
 import { handleAINearbyPharmacies, handleAINearbyQuincailleries } from "../domains/ai-agents/index.ts";
@@ -93,17 +50,10 @@ export async function handleButton(
 ): Promise<boolean> {
   const id = getButtonReplyId(msg);
   if (!id) return false;
-  const managerCtx = managerContextFromState(state);
-  const currentItemId = typeof state.data?.itemId === "string"
-    ? state.data.itemId
-    : null;
-  const currentItemName = typeof state.data?.itemName === "string"
-    ? state.data.itemName
-    : "Item";
-  const currentItemMenuId = typeof state.data?.itemMenuId === "string"
-    ? state.data.itemMenuId
-    : null;
-  const currentAvailable = state.data?.itemAvailable === true;
+  if (id.startsWith("dinein_")) {
+    await sendDineInDisabledNotice(ctx);
+    return true;
+  }
   switch (id) {
     case IDS.SEE_DRIVERS:
       return await handleSeeDrivers(ctx);
@@ -175,121 +125,6 @@ export async function handleButton(
         return await handleScheduleChangeVehicle(ctx, state.data);
       }
       return false;
-    case IDS.DINEIN_BARS:
-      await showBarsEntry(ctx, managerCtx);
-      return true;
-    case IDS.DINEIN_BARS_VIEW:
-      await showBarsMenu(ctx, managerCtx);
-      return true;
-    case IDS.DINEIN_BARS_MANAGER_VIEW:
-      await showManagerMenu(ctx, managerCtx);
-      return true;
-    case IDS.DINEIN_BARS_ONBOARD_CONTINUE:
-      if (state.key === DINE_STATE.ONBOARD_LOCATION) {
-        await continueOnboardLocation(ctx, state);
-      } else if (state.key === DINE_STATE.ONBOARD_PAYMENT) {
-        await continueOnboardPayment(ctx, state);
-      } else {
-        await continueOnboardIdentity(ctx, state);
-      }
-      return true;
-    case IDS.DINEIN_BARS_ONBOARD_CONTACTS_CONTINUE:
-      await continueOnboardContacts(ctx, state);
-      return true;
-    case IDS.DINEIN_BARS_ONBOARD_UPLOAD_DONE:
-      await handleUploadDone(ctx, state);
-      return true;
-    case IDS.DINEIN_BARS_ONBOARD_PUBLISH:
-      await handlePublish(ctx);
-      return true;
-    case IDS.DINEIN_BARS_NUMBERS_MENU:
-      await showNumbersMenu(ctx, managerCtx);
-      return true;
-    case IDS.DINEIN_BARS_NUMBERS_VIEW:
-      await showCurrentNumbers(ctx, managerCtx);
-      return true;
-    case IDS.DINEIN_BARS_NUMBERS_ADD:
-      await handleNumbersAddSubmit(ctx, state);
-      return true;
-    case IDS.DINEIN_BARS_NUMBERS_REMOVE:
-      await handleNumbersRemoveSubmit(ctx, state);
-      return true;
-    case IDS.DINEIN_BARS_EDIT_MENU:
-      await showEditMenu(ctx, managerCtx);
-      return true;
-    case IDS.DINEIN_BARS_EDIT_UPLOAD:
-      await showUploadInstruction(ctx, managerCtx);
-      return true;
-    case IDS.DINEIN_BARS_EDIT_DELETE:
-      await showDeleteMenuConfirmation(ctx, managerCtx);
-      return true;
-    case IDS.DINEIN_BARS_EDIT_REMOVE_CATEGORIES:
-      await showRemoveCategoriesConfirmation(ctx, managerCtx);
-      return true;
-    case IDS.DINEIN_BARS_EDIT_CONFIRM_DELETE:
-      await handleDeleteMenuConfirm(ctx, state);
-      return true;
-    case IDS.DINEIN_BARS_EDIT_CONFIRM_REMOVE_CATEGORIES:
-      await handleRemoveCategoriesConfirm(ctx, state);
-      return true;
-    case IDS.DINEIN_BARS_REVIEW_TOGGLE:
-      if (!currentItemId) return false;
-      await handleToggleAvailability(
-        ctx,
-        managerCtx,
-        currentItemId,
-        currentAvailable,
-        currentItemName,
-      );
-      return true;
-    case IDS.DINEIN_BARS_REVIEW_EDIT_NAME:
-      if (!currentItemId) return false;
-      await promptReviewEditField(
-        ctx,
-        managerCtx,
-        currentItemId,
-        currentItemName,
-        "name",
-        { itemMenuId: currentItemMenuId },
-      );
-      return true;
-    case IDS.DINEIN_BARS_REVIEW_EDIT_PRICE:
-      if (!currentItemId) return false;
-      await promptReviewEditField(
-        ctx,
-        managerCtx,
-        currentItemId,
-        currentItemName,
-        "price",
-        { itemMenuId: currentItemMenuId },
-      );
-      return true;
-    case IDS.DINEIN_BARS_REVIEW_EDIT_DESCRIPTION:
-      if (!currentItemId) return false;
-      await promptReviewEditField(
-        ctx,
-        managerCtx,
-        currentItemId,
-        currentItemName,
-        "description",
-        { itemMenuId: currentItemMenuId },
-      );
-      return true;
-    case IDS.DINEIN_BARS_REVIEW_EDIT_CATEGORY:
-      if (!currentItemId) return false;
-      await promptReviewEditField(
-        ctx,
-        managerCtx,
-        currentItemId,
-        currentItemName,
-        "category",
-        { itemMenuId: currentItemMenuId },
-      );
-      return true;
-    case IDS.DINEIN_BARS_REVIEW_ITEM_MENU:
-      if (!currentItemId) return false;
-      await showReviewItemMenu(ctx, managerCtx, currentItemId, state);
-      return true;
     case IDS.ADMIN_HUB:
       await openAdminHub(ctx);
       return true;
@@ -344,50 +179,15 @@ export async function handleButton(
     
     default:
       if (await handleMarketplaceButton(ctx, state, id)) return true;
-      return await handleDineButtons(ctx, id, state);
+      return false;
   }
 }
 
-async function handleDineButtons(
-  ctx: RouterContext,
-  id: string,
-  state: { key: string; data?: Record<string, unknown> },
-): Promise<boolean> {
-  if (id === DINE_IDS.BARS_NEXT || id === DINE_IDS.BARS_PREV) {
-    return await handleBarsPagingButton(ctx, id, state);
-  }
-  if (id === DINE_IDS.ITEMS_NEXT || id === DINE_IDS.ITEMS_PREV) {
-    return await handleItemsPagingButton(ctx, id, state);
-  }
-  if (id === DINE_IDS.MENU) {
-    if (state.key === "dine_bar" || state.key === "dine_items") {
-      return await openMenu(ctx, state);
-    }
-    return await startDineIn(ctx, state, { skipResume: true });
-  }
-  if (id === DINE_IDS.MENU_QR) {
-    return await sendMenuQr(ctx, state);
-  }
-  if (id === DINE_IDS.MANAGE_BAR) {
-    return await openManagerPortal(ctx, state);
-  }
-  if (id === DINE_IDS.ORDER_MORE) {
-    return await handleOrderMore(ctx, state);
-  }
-  if (id === DINE_IDS.PAY_ORDER) {
-    return await handlePayOrder(ctx, state);
-  }
-  if (id.startsWith("DINE_")) {
-    await sendButtonsMessage(
-      ctx,
-      copy("error.expired"),
-      [...homeOnly()],
-      { emoji: "⚠️" },
-    );
-    await startDineIn(ctx, { key: "dine_home", data: {} }, {
-      skipResume: true,
-    });
-    return true;
-  }
-  return false;
+async function sendDineInDisabledNotice(ctx: RouterContext): Promise<void> {
+  await sendButtonsMessage(
+    ctx,
+    "Dine-in workflows are handled outside WhatsApp. Please coordinate with your success manager.",
+    buildButtons({ id: IDS.BACK_HOME, title: "🏠 Back" }),
+    { emoji: "ℹ️" },
+  );
 }

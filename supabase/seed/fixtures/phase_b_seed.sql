@@ -58,21 +58,6 @@ from public.profiles where ref_code = 'PSG001'
     select 1 from public.subscriptions s where s.user_id = public.profiles.user_id and s.status = 'pending_review'
   );
 
--- Voucher sample campaign
-insert into public.campaigns (id, name, description, status)
-values ('11111111-1111-1111-1111-111111111111', 'Launch Incentive', 'Sample voucher campaign', 'active')
-on conflict (id) do update set status = excluded.status;
-
-insert into public.vouchers (id, user_id, campaign_id, code, status, value)
-select '22222222-2222-2222-2222-222222222222', user_id, '11111111-1111-1111-1111-111111111111', 'VOUCHER-001', 'issued', 3000
-from public.profiles where ref_code = 'PSG001'
-on conflict (id) do update set status = excluded.status;
-
-insert into public.voucher_events (voucher_id, event_type, actor_user_id, notes)
-select '22222222-2222-2222-2222-222222222222', 'issued', user_id, 'Seed issue'
-from public.profiles where ref_code = 'DRV001'
-limit 1;
-
 -- Insurance quote example
 insert into public.insurance_quotes (id, user_id, vehicle_type, premium, status, quote_number)
 select '33333333-3333-3333-3333-333333333333', user_id, 'moto', 18000, 'pending', 'QUOTE-001'

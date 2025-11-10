@@ -59,11 +59,6 @@ const BASE_ROW_DEFS: MenuRowDef[] = [
     descriptionKey: "home.rows.marketplace.description",
   },
   {
-    id: IDS.DINEIN_BARS,
-    titleKey: "home.rows.dineIn.title",
-    descriptionKey: "home.rows.dineIn.description",
-  },
-  {
     id: IDS.PROPERTY_RENTALS,
     titleKey: "home.rows.propertyRentals.title",
     descriptionKey: "home.rows.propertyRentals.description",

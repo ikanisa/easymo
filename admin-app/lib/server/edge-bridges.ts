@@ -3,7 +3,6 @@ import { z } from "zod";
 import { logStructured } from "@/lib/server/logger";
 
 type BridgeTarget =
-  | "campaignDispatch"
   | "whatsappSend"
   | "insuranceWorkflow"
   | "stationDirectory";
@@ -40,15 +39,6 @@ const TARGET_CONFIG: Record<BridgeTarget, BridgeConfig> = {
     envKeys: ["VOUCHER_SEND_ENDPOINT", "NEXT_PUBLIC_WHATSAPP_SEND_ENDPOINT"],
     defaultMessage:
       "WhatsApp send bridge unavailable. Configure VOUCHER_SEND_ENDPOINT to dispatch messages.",
-  },
-  campaignDispatch: {
-    method: "POST",
-    envKeys: [
-      "CAMPAIGN_DISPATCHER_ENDPOINT",
-      "NEXT_PUBLIC_CAMPAIGN_DISPATCHER_ENDPOINT",
-    ],
-    defaultMessage:
-      "Campaign dispatcher bridge unavailable. Configure CAMPAIGN_DISPATCHER_ENDPOINT to control campaign state.",
   },
   insuranceWorkflow: {
     method: "POST",

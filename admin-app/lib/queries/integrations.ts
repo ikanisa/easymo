@@ -18,7 +18,6 @@ export interface IntegrationStatusEntry {
 
 const INTEGRATION_TARGETS = [
   "whatsappSend",
-  "campaignDispatcher",
   "storageSignedUrl",
 ] as const;
 
@@ -33,10 +32,6 @@ const FALLBACK_STATUSES: IntegrationStatusMap = {
   whatsappSend: {
     status: "amber",
     message: "Set NEXT_PUBLIC_WHATSAPP_SEND_ENDPOINT for live sends.",
-  },
-  campaignDispatcher: {
-    status: "amber",
-    message: "Set NEXT_PUBLIC_CAMPAIGN_DISPATCHER_ENDPOINT to enable dispatching.",
   },
   storageSignedUrl: {
     status: "amber",

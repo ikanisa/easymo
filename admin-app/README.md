@@ -13,14 +13,13 @@ remain additive-only.
 
 - App Router layout implements top navigation, grouped left nav, and mock-backed
   read views for every planned surface (Dashboard, Users, Insurance, Bars, Menus
-  & OCR, Orders, Staff Numbers, QR & Deep Links, Stations, Vouchers, Campaigns,
-  Templates & Flows, WhatsApp Health, Notifications, Files, Settings, Logs).
+  & OCR, Staff Numbers, QR & Deep Links, Stations, Vouchers, WhatsApp Health,
+  Notifications, Files, Settings, Logs).
 - Shared UI components (virtualized `DataTable`, KPI cards, Section cards,
   empty/loading states, toast notifications) power the current previews while we
   wire real APIs.
-- Dashboard, Users, Vouchers, Campaigns, Orders, and other pages render
-  structured mock data with filtering so stakeholders can review scope before
-  server routes land.
+- Dashboard, Users, Vouchers, and other pages render structured mock data with
+  filtering so stakeholders can review scope before server routes land.
 - API integrations will call Supabase Edge Functions strictly via HTTP bridges
   once implemented.
 - Voice, leads, and marketplace surfaces are wired to Phase 4/5 services. The
@@ -98,7 +97,6 @@ The admin panel assumes every deployment targets the Supabase project
 | `VITE_ADMIN_TOKEN` / `ADMIN_TOKEN` / `EASYMO_ADMIN_TOKEN` | Shared secret used to call Supabase edge functions (`x-api-key` / `x-admin-token`). Store the same value in Supabase function secrets. |
 | `ADMIN_SESSION_SECRET` | Minimum 16 characters; signs the HttpOnly session cookie. |
 | `ADMIN_ACCESS_CREDENTIALS` | JSON array of admin credentials (`[{"actorId":"...","email":"info@ikanisa.com","password":"MoMo!!0099","username":"Admin"}]`). |
-| `DISPATCHER_FUNCTION_URL` | Defaults to `https://vacltfdslodqybxojytc.supabase.co/functions/v1/campaign-dispatch`. |
 | `AGENT_CORE_INTERNAL_TOKEN` | Shared token for internal calls to Agent-Core (matches `AGENT_INTERNAL_TOKEN` in the service). |
 | `AGENT_CORE_URL` | Base URL for Agent-Core (defaults to `http://localhost:4000`). |
 | `VOICE_BRIDGE_API_URL` | Base URL for Voice Bridge analytics (`http://localhost:4100`). |

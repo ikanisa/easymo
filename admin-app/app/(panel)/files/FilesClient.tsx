@@ -13,7 +13,7 @@ import {
 } from "@/lib/queries/files";
 import { useIntegrationStatusQuery } from "@/lib/queries/integrations";
 
-const BUCKET_OPTIONS = ["operations", "qr", "campaign-media", "docs"];
+const BUCKET_OPTIONS = ["operations", "qr", "docs"];
 
 interface FilesClientProps {
   initialParams?: StorageQueryParams;
@@ -45,7 +45,7 @@ export function FilesClient(
     <div className="admin-page">
       <PageHeader
         title="Files"
-        description="Browse Supabase storage buckets for operations assets, QR codes, campaign media, and insurance documents."
+        description="Browse Supabase storage buckets for operations assets, QR codes, and insurance documents."
         meta={
           <IntegrationStatusChip
             label="Signed URLs"

@@ -7,7 +7,7 @@ const STORAGE_HEALTH_BUCKET =
   process.env.NEXT_PUBLIC_STORAGE_HEALTHCHECK_BUCKET ?? "operations-health";
 
 const httpTargetSchema = z.object({
-  name: z.enum(["whatsappSend", "campaignDispatcher"]),
+  name: z.enum(["whatsappSend"]),
   url: z.string().url(),
   method: z.enum(["HEAD", "GET", "POST"]).default("HEAD"),
 });
@@ -21,14 +21,6 @@ function buildTargets() {
     targets.push({
       name: "whatsappSend",
       url: process.env.NEXT_PUBLIC_WHATSAPP_SEND_ENDPOINT,
-      method: "POST",
-    });
-  }
-
-  if (process.env.NEXT_PUBLIC_CAMPAIGN_DISPATCHER_ENDPOINT) {
-    targets.push({
-      name: "campaignDispatcher",
-      url: process.env.NEXT_PUBLIC_CAMPAIGN_DISPATCHER_ENDPOINT,
       method: "POST",
     });
   }
@@ -102,11 +94,6 @@ export const GET = createHandler(
       whatsappSend: {
         status: "red",
         message: "Set NEXT_PUBLIC_WHATSAPP_SEND_ENDPOINT to enable health checks",
-      },
-      campaignDispatcher: {
-        status: "red",
-        message:
-          "Set NEXT_PUBLIC_CAMPAIGN_DISPATCHER_ENDPOINT to enable health checks",
       },
       storageSignedUrl: {
         status: "amber",

@@ -18,13 +18,8 @@ type ClaimedRow = {
   id: string;
   to_wa_id: string;
   payload?: unknown;
-  channel?: string;
-  template_name?: string | null;
   notification_type?: string | null;
   retry_count?: number | null;
-  quiet_hours_override?: boolean;
-  correlation_id?: string | null;
-  domain?: string | null;
 };
 
 /**
@@ -37,14 +32,12 @@ export async function processNotificationWithFilters(
 ): Promise<{ shouldDeliver: boolean; reason?: string; deferUntil?: Date }> {
   // Ensure contact preferences exist (fail-safe)
   await ensureContactPreferences(supa, row.to_wa_id);
+  const payloadMeta = extractMeta(row.payload);
 
   // Apply core filters (opt-out, quiet hours)
   const filterResult = await applyNotificationFilters(supa, {
     to_wa_id: row.to_wa_id,
-    template_name: row.template_name,
-    notification_type: row.notification_type,
-    quiet_hours_override: row.quiet_hours_override ?? false,
-    correlation_id: row.correlation_id,
+    quiet_hours_override: Boolean(payloadMeta?.quiet_hours_override),
   });
 
   if (!filterResult.allowed) {
@@ -79,55 +72,57 @@ async function handleFilterBlock(
   result: FilterResult,
 ): Promise<void> {
   const updatePayload: Record<string, unknown> = {};
+  const metaPatch: Record<string, unknown> = {};
+  const domain = row.notification_type ?? "unknown";
 
   if (result.reason === "contact_opted_out") {
     // Permanently fail opted-out notifications
     updatePayload.status = "failed";
     updatePayload.error_message = "Contact has opted out";
-    updatePayload.last_error_code = "opted_out";
     updatePayload.next_attempt_at = null;
+    metaPatch.last_status = "failed";
+    metaPatch.last_error_code = "opted_out";
 
     await logStructuredEvent("NOTIFY_FAILED_OPTOUT", {
       id: row.id,
       to: maskWa(row.to_wa_id),
     });
-    await recordMetric("notification_blocked_optout", 1, {
-      domain: row.domain ?? "unknown",
-    });
+    await recordMetric("notification_blocked_optout", 1, { domain });
   } else if (result.reason === "quiet_hours" && result.defer_until) {
     // Defer to after quiet hours
     updatePayload.status = "queued";
     updatePayload.next_attempt_at = result.defer_until.toISOString();
     updatePayload.error_message = "Deferred due to quiet hours";
-    updatePayload.last_error_code = "quiet_hours";
+    metaPatch.last_status = "queued";
+    metaPatch.last_error_code = "quiet_hours";
 
     await logStructuredEvent("NOTIFY_DEFERRED_QUIET_HOURS", {
       id: row.id,
       to: maskWa(row.to_wa_id),
       defer_until: result.defer_until.toISOString(),
     });
-    await recordMetric("notification_deferred_quiet_hours", 1, {
-      domain: row.domain ?? "unknown",
-    });
+    await recordMetric("notification_deferred_quiet_hours", 1, { domain });
   } else if (result.reason === "rate_limit_exceeded") {
     // Defer by 1 hour for rate limit
     const deferUntil = new Date(Date.now() + 3600 * 1000);
     updatePayload.status = "queued";
     updatePayload.next_attempt_at = deferUntil.toISOString();
     updatePayload.error_message = "Rate limit exceeded";
-    updatePayload.last_error_code = "rate_limit";
+    metaPatch.last_status = "queued";
+    metaPatch.last_error_code = "rate_limit";
 
     await logStructuredEvent("NOTIFY_DEFERRED_RATE_LIMIT", {
       id: row.id,
       to: maskWa(row.to_wa_id),
       defer_until: deferUntil.toISOString(),
     });
-    await recordMetric("notification_deferred_rate_limit", 1, {
-      domain: row.domain ?? "unknown",
-    });
+    await recordMetric("notification_deferred_rate_limit", 1, { domain });
   }
 
   if (Object.keys(updatePayload).length > 0) {
+    if (Object.keys(metaPatch).length > 0) {
+      updatePayload.payload = mergeMeta(row.payload, metaPatch);
+    }
     await supa
       .from("notifications")
       .update(updatePayload)
@@ -218,6 +213,10 @@ export function calculateRateLimitBackoff(
   return Math.min(900, 30 * Math.pow(2, retryCount)); // Start at 30s, cap at 15 min
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
 /**
  * Mask WhatsApp ID for logging (PII protection)
  */
@@ -260,12 +259,10 @@ export async function logDeliveryMetrics(
   status: "sent" | "failed" | "deferred",
   errorCode?: string | null,
 ): Promise<void> {
-  const domain = row.domain ?? "unknown";
-  const template = row.template_name ?? "unknown";
+  const domain = row.notification_type ?? "unknown";
 
   await recordMetric(`notification_${status}`, 1, {
     domain,
-    template,
     error_code: errorCode ?? "none",
   });
 
@@ -275,4 +272,27 @@ export async function logDeliveryMetrics(
   } else if (status === "failed") {
     await recordMetric("notification_success_rate", 0, { domain });
   }
+}
+
+function extractMeta(
+  payload: unknown,
+): Record<string, unknown> | undefined {
+  if (!isRecord(payload)) return undefined;
+  if (isRecord(payload.meta)) return payload.meta;
+  if (isRecord(payload.message) && isRecord(payload.message.meta)) {
+    return payload.message.meta;
+  }
+  return undefined;
+}
+
+function mergeMeta(
+  payload: unknown,
+  patch: Record<string, unknown>,
+): Record<string, unknown> {
+  const base: Record<string, unknown> = isRecord(payload)
+    ? { ...(payload as Record<string, unknown>) }
+    : {};
+  const currentMeta = extractMeta(payload) ?? {};
+  base.meta = { ...currentMeta, ...patch };
+  return base;
 }

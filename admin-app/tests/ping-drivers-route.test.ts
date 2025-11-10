@@ -49,7 +49,7 @@ describe("mobility ping drivers route", () => {
           body: JSON.stringify({
             ride_id: "ride-1",
             driver_ids: ["driver-a", "driver-b"],
-            template: { name: "DRIVER_PING" },
+            text: "Please confirm dispatch readiness.",
           }),
         },
       ) as any,
@@ -65,8 +65,8 @@ describe("mobility ping drivers route", () => {
     expect(insertedRows).toHaveLength(2);
     expect(insertedRows[0]).toMatchObject({
       to_wa_id: "driver-a",
-      notification_type: "DRIVER_PING",
-      channel: "template",
+      notification_type: "mobility_ping",
+      channel: "freeform",
       metadata: { ride_id: "ride-1" },
     });
     expect(invokeMock).toHaveBeenCalledWith("notification-worker", { body: {} });

@@ -26,7 +26,6 @@ if (!baseUrl) {
 const token = Deno.env.get("ADMIN_API_TOKEN");
 
 const endpoints: EndpointCheck[] = [
-  { path: "/api/orders?limit=1" },
   { path: "/api/notifications/retry", method: "POST", expectBody: true },
   { path: "/api/notifications?limit=1" },
   { path: "/api/menus?limit=1" },

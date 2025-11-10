@@ -3,7 +3,7 @@ import { logStructured } from "@/lib/server/logger";
 import { recordAudit } from "@/lib/server/audit";
 
 type NotificationIntent = {
-  template: string;
+  type: string;
   toRole: string;
   msisdn: string;
   payload?: Record<string, unknown>;
@@ -20,7 +20,7 @@ export async function enqueueNotification(intent: NotificationIntent) {
   const { data, error } = await adminClient
     .from("notifications")
     .insert({
-      type: intent.template,
+      type: intent.type,
       to_role: intent.toRole,
       msisdn: intent.msisdn,
       status: "queued",
@@ -36,7 +36,7 @@ export async function enqueueNotification(intent: NotificationIntent) {
       target: "notifications",
       status: "error",
       message: error?.message ?? "insert_failed",
-      details: { template: intent.template, toRole: intent.toRole },
+      details: { notificationType: intent.type, toRole: intent.toRole },
     });
     throw error ?? new Error("insert_failed");
   }
@@ -47,7 +47,7 @@ export async function enqueueNotification(intent: NotificationIntent) {
     targetTable: "notifications",
     targetId: data.id,
     diff: {
-      template: intent.template,
+      type: intent.type,
       toRole: intent.toRole,
       msisdn: intent.msisdn,
     },
@@ -57,7 +57,7 @@ export async function enqueueNotification(intent: NotificationIntent) {
     event: "notification_enqueued",
     target: "notifications",
     status: "ok",
-    details: { template: intent.template, toRole: intent.toRole, notificationId: data.id },
+    details: { notificationType: intent.type, toRole: intent.toRole, notificationId: data.id },
   });
 
   return data.id;

@@ -19,7 +19,6 @@ const appRouteDefinitions = [
   { key: "tokensWalletDetail", path: "/tokens/wallets/:id" },
   { key: "tokensShops", path: "/tokens/shops" },
   { key: "tokensReports", path: "/tokens/reports" },
-  { key: "campaigns", path: "/campaigns" },
   { key: "baskets", path: "/baskets" },
   { key: "marketplace", path: "/marketplace" },
   { key: "operations", path: "/operations" },

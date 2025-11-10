@@ -62,47 +62,11 @@ on conflict (id) do update set
   proof_url = excluded.proof_url,
   created_at = excluded.created_at;
 
--- Extended domain data (bars, campaigns, vouchers, notifications)
+-- Minimal station data for downstream tests
 do $seed$
 declare
-  bar_kimironko uuid;
-  bar_downtown uuid;
-  template_loyalty bigint;
-  campaign_loyalty bigint;
-  contact_passenger bigint;
   station_kimironko uuid := '33333333-3333-3333-3333-333333333333';
-  order_seed uuid;
 begin
-  insert into public.bars (slug, name, location_text, country, city_area, currency, is_active)
-  values ('sunset-bar', 'Sunset Bar', 'Kigali City Tower', 'RW', 'Nyarugenge', 'RWF', true)
-  on conflict (slug) do update set
-    name = excluded.name,
-    location_text = excluded.location_text,
-    country = excluded.country,
-    city_area = excluded.city_area,
-    currency = excluded.currency,
-    is_active = excluded.is_active
-  returning id into bar_kimironko;
-
-  insert into public.bars (slug, name, location_text, country, city_area, currency, is_active)
-  values ('downtown-hub', 'Downtown Hub', 'KN 5 Ave', 'RW', 'Gasabo', 'RWF', true)
-  on conflict (slug) do update set
-    name = excluded.name,
-    location_text = excluded.location_text,
-    country = excluded.country,
-    city_area = excluded.city_area,
-    currency = excluded.currency,
-    is_active = excluded.is_active
-  returning id into bar_downtown;
-
-  insert into public.bar_numbers (bar_id, number_e164, role, is_active)
-  values
-    (bar_kimironko, '+250780000010', 'manager', true),
-    (bar_downtown, '+250780000020', 'manager', true)
-  on conflict (bar_id, number_e164) do update set
-    role = excluded.role,
-    is_active = excluded.is_active;
-
   insert into public.petrol_stations (id, name, city, owner_contact, status)
   values (station_kimironko, 'Kimironko Station', 'Kigali', '+250780010010', 'active')
   on conflict (id) do update set
@@ -116,91 +80,6 @@ begin
   on conflict (station_id, wa_e164) do update set
     role = excluded.role,
     active = excluded.active;
-
-  select id into template_loyalty from public.templates where name = 'loyalty_template';
-  if template_loyalty is null then
-    insert into public.templates (name, language_code, category, status, components)
-    values ('loyalty_template', 'en', 'MARKETING', 'APPROVED', '{"body":{"text":"Thanks {{name}} for supporting EasyMO!"}}'::jsonb)
-    returning id into template_loyalty;
-  else
-    update public.templates
-      set language_code = 'en',
-          category = 'MARKETING',
-          status = 'APPROVED',
-          components = '{"body":{"text":"Thanks {{name}} for supporting EasyMO!"}}'::jsonb
-    where id = template_loyalty;
-  end if;
-
-  if to_regclass('public.campaigns') is not null then
-    select id into campaign_loyalty from public.campaigns where title = 'Loyalty Revival';
-    if campaign_loyalty is null then
-      insert into public.campaigns (title, template_id, message_kind, payload, target_audience, status, time_zone)
-      values ('Loyalty Revival', template_loyalty, 'TEMPLATE', '{"button":"Join now"}'::jsonb, '{"segment":"loyal"}'::jsonb, 'SENDING', 'Africa/Kigali')
-      returning id into campaign_loyalty;
-    else
-      update public.campaigns
-        set template_id = template_loyalty,
-            message_kind = 'TEMPLATE',
-            payload = '{"button":"Join now"}'::jsonb,
-            target_audience = '{"segment":"loyal"}'::jsonb,
-            status = 'SENDING',
-            time_zone = 'Africa/Kigali'
-      where id = campaign_loyalty;
-    end if;
-  end if;
-
-  insert into public.contacts (msisdn_e164, full_name, attributes, opted_in, opt_in_source)
-  values ('+250780001001', 'Imena Passenger', '{"segment":"loyal"}'::jsonb, true, 'seed-data')
-  on conflict (msisdn_e164) do update set
-    full_name = excluded.full_name,
-    attributes = excluded.attributes,
-    opted_in = excluded.opted_in,
-    opt_in_source = excluded.opt_in_source
-  returning id into contact_passenger;
-
-  if campaign_loyalty is not null and to_regclass('public.campaign_recipients') is not null then
-    insert into public.campaign_recipients (campaign_id, contact_id, msisdn_e164, send_allowed, window_24h_open)
-    values (campaign_loyalty, contact_passenger, '+250780001001', true, true)
-    on conflict (campaign_id, contact_id) do update set
-      send_allowed = excluded.send_allowed,
-      window_24h_open = excluded.window_24h_open;
-  end if;
-
-  insert into public.orders (order_code, bar_id, table_label, status, subtotal_minor, service_charge_minor, total_minor, profile_id)
-  values ('ORD-SEED-1', bar_kimironko, 'T1', 'paid', 12000, 1200, 13200, '00000000-0000-0000-0000-000000000001')
-  on conflict (order_code) do update set
-    bar_id = excluded.bar_id,
-    status = excluded.status,
-    subtotal_minor = excluded.subtotal_minor,
-    service_charge_minor = excluded.service_charge_minor,
-    total_minor = excluded.total_minor,
-    profile_id = excluded.profile_id
-  returning id into order_seed;
-
-  delete from public.notifications
-  where order_id = order_seed and notification_type = 'order_status';
-  insert into public.notifications (order_id, to_wa_id, template_name, notification_type, channel, status, payload, sent_at)
-  values (order_seed, '+250780001001', 'loyalty_template', 'order_status', 'template', 'sent', '{"order_code":"ORD-SEED-1"}'::jsonb, now());
-
-  if to_regclass('public.vouchers') is not null then
-    if exists (select 1 from public.vouchers where code_5 = '12345') then
-      update public.vouchers
-        set status = 'issued',
-            amount_minor = 5000,
-            notes = 'Seed voucher for QA',
-            redeemed_by_station_id = station_kimironko,
-            policy_number = 'POL-001',
-            plate = 'RAE123A',
-            qr_payload = 'seed-qr-12345',
-            whatsapp_e164 = '+250780001001',
-            user_id = '00000000-0000-0000-0000-000000000001',
-            issued_by_admin = '00000000-0000-0000-0000-000000000003'
-      where code_5 = '12345';
-    else
-      insert into public.vouchers (id, code_5, amount_minor, currency, status, user_id, whatsapp_e164, policy_number, plate, qr_payload, issued_by_admin, issued_at, redeemed_by_station_id, notes)
-      values ('aaaa1111-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '12345', 5000, 'RWF', 'issued', '00000000-0000-0000-0000-000000000001', '+250780001001', 'POL-001', 'RAE123A', 'seed-qr-12345', '00000000-0000-0000-0000-000000000003', now() - interval '1 day', station_kimironko, 'Seed voucher for QA');
-    end if;
-  end if;
 end;
 $seed$;
 

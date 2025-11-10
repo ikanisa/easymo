@@ -10,8 +10,7 @@ export type FlowType =
   | "nearby_quincailleries"
   | "nearby_shops"
   | "scheduled_trip"
-  | "recurring_trip"
-  | "ai_waiter";
+  | "recurring_trip";
 
 export type SessionStatus =
   | "searching"

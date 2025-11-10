@@ -56,7 +56,7 @@ export function WhatsAppHealthClient(
     <div className="admin-page">
       <PageHeader
         title="WhatsApp Health"
-        description="Track delivery performance, webhook status, and pending retries across templates and flows."
+        description="Track delivery performance, webhook status, and pending retries across flows and automations."
       />
 
       <SectionCard

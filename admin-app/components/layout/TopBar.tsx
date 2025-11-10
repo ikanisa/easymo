@@ -102,7 +102,7 @@ export function TopBar(
         <input
           id="global-search"
           type="search"
-          placeholder="Search orders, customers, menus…"
+          placeholder="Search customers, vendors, menus…"
           aria-label="Global search"
           className="w-full rounded-full border border-[color:var(--color-border)]/50 bg-white/90 px-5 py-2 text-sm text-[color:var(--color-foreground)] shadow-sm outline-none transition focus:border-[color:var(--color-accent)] focus:ring-2 focus:ring-[color:var(--color-accent)]/40"
         />

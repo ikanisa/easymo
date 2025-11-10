@@ -15,7 +15,7 @@ const NETWORK_FIRST_PATTERNS = [/^\/_next\/data\//, /^\/api\//, /^\/notification
 const SYNC_TAG = "admin-offline-sync";
 const BG_SYNC_DB = "admin-offline-queue";
 const BG_SYNC_STORE = "requests";
-const OFFLINE_POST_TARGETS = [/^\/api\/orders/, /^\/api\/notifications/];
+const OFFLINE_POST_TARGETS = [/^\/api\/notifications/];
 
 self.addEventListener("install", (event) => {
   event.waitUntil((async () => {

@@ -105,7 +105,7 @@ export const POST = createHandler("admin_api.qr.preview", async (request, _conte
   if (!tableRow) {
     appendMessage(
       integrationMessages,
-      "No QR tables found for this bar. Using template preview without sample payload.",
+      "No QR tables found for this bar. Using default preview without sample payload.",
     );
   }
 

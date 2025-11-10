@@ -155,7 +155,6 @@ export default function AgentsDashboardPage() {
       'shops': '🛍️',
       'quincaillerie': '🔧',
       'property_rental': '🏠',
-      'waiter': '🍽️',
       'schedule_trip': '📅',
     };
     return icons[agentType] || '🤖';

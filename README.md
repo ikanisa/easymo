@@ -159,8 +159,7 @@ Vite React app and communicates with those Edge Functions through the
 3. Start the admin panel with `pnpm dev`.  The app talks to Supabase through
    the RealAdapter and Edge Functions once environment variables are present.
 4. Apply the Supabase schema with `supabase db push`, then load the additive
-   fixtures from `supabase/seed/fixtures/admin_panel_core.sql` and
-   `supabase/seed/fixtures/admin_panel_marketing.sql`.  The legacy
+   fixtures from `supabase/seed/fixtures/admin_panel_core.sql`.  The legacy
    `supabase/seeders/phase2_seed.sql` remains available for quick smoke runs.
    After running new migrations or exporting the schema, run
    `pnpm schema:verify` to ensure `latest_schema.sql` (with its checksum marker)
@@ -239,7 +238,7 @@ for the realtime and marketplace services.
 This Phase 2 implementation lays the groundwork for a fully integrated
 WhatsApp mobility platform.  Future enhancements could include:
 
-- Adding tables and functions for campaigns, vouchers, stations,
+- Adding tables and functions for vouchers, stations,
   insurance quotes and audit logging.
 - Implementing PostGIS geospatial queries for precise distance calculations.
 - Extending the simulator to enforce credit usage and subscription

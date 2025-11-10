@@ -14,8 +14,8 @@ npm test -- --run tests/e2e/admin-flows.test.ts
 
 ## Coverage
 
-- Order list endpoint with recent event feed (ensures pending orders and vendor
-  nudges surface together).
+- Mobility trip feed with recent events (ensures passenger + driver nudges stay
+  in sync for dispatchers).
 - OCR jobs listing for admin review.
 - Notification retry workflow, including policy blocks during quiet hours.
 

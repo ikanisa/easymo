@@ -17,8 +17,6 @@ const tables = [
   'momo_unmatched',
   'contributions_ledger',
   'kyc_documents',
-  'campaigns',
-  'campaign_targets',
   'notifications',
   'audit_log',
 ];

@@ -211,7 +211,7 @@ const atlasPageConfigs: Record<string, AtlasPageConfig> = {
         pill: "Ops visibility",
         title: "Unified merchant timeline",
         description:
-          "Combines orders, disputes, and payments so support reps can join a thread with full context.",
+          "Combines disputes, claims, and payments so support reps can join a thread with full context.",
       },
     ],
     roadmap: [
@@ -242,7 +242,7 @@ const atlasPageConfigs: Record<string, AtlasPageConfig> = {
       description:
         "Specialised for hardware and construction workflows—tracks measurements, BOM approvals, and multi-vendor sourcing.",
       actions: [
-        { label: "Open BOM workspace", href: "/orders" },
+        { label: "Open sourcing board", href: "/marketplace" },
         { label: "Share spec sheet", href: "/files", variant: "ghost" },
       ],
     },
@@ -268,7 +268,7 @@ const atlasPageConfigs: Record<string, AtlasPageConfig> = {
         pill: "Field mobility",
         title: "Offline-first bundles",
         description:
-          "Site supervisors can text specs from remote areas; the agent drafts orders once connectivity resumes.",
+          "Site supervisors can text specs from remote areas; the agent drafts sourcing bundles once connectivity resumes.",
       },
     ],
     roadmap: [
@@ -299,8 +299,8 @@ const atlasPageConfigs: Record<string, AtlasPageConfig> = {
       description:
         "Handles inquiries, bookings, and vetting for rentals while mirroring the conversational polish of ChatGPT Atlas.",
       actions: [
-        { label: "Open rental board", href: "/campaigns" },
-        { label: "Pipeline analytics", href: "/leads", variant: "ghost" },
+        { label: "Open rental board", href: "/leads" },
+        { label: "Pipeline analytics", href: "/voice-analytics", variant: "ghost" },
       ],
     },
     metrics: [
@@ -331,7 +331,7 @@ const atlasPageConfigs: Record<string, AtlasPageConfig> = {
     roadmap: [
       {
         label: "Instant lease drafting",
-        description: "Merges approved terms into the legal template ready for e-sign.",
+        description: "Merges approved terms into the legal packet ready for e-sign.",
         status: "live",
       },
       {
@@ -342,63 +342,6 @@ const atlasPageConfigs: Record<string, AtlasPageConfig> = {
       {
         label: "Dynamic collateral recommendations",
         description: "Suggests guarantees or insurance based on risk profile.",
-        status: "next",
-      },
-    ],
-    quickLinks: agentQuickLinks,
-  },
-  "agents/waiter": {
-    slug: "agents/waiter",
-    hero: {
-      icon: "🍽️",
-      badge: "Hospitality",
-      title: "Waiter & Table Service Agent",
-      description:
-        "Replicates a brilliant maître d', capturing orders, upsells, and dietary notes inside messaging apps or kiosks.",
-      actions: [
-        { label: "Launch dining console", href: "/menus" },
-        { label: "Review QA transcripts", href: "/agents/performance", variant: "ghost" },
-      ],
-    },
-    metrics: [
-      { label: "Tables covered", value: "182", helper: "Daily rolling" },
-      { label: "Average upsell", value: "+12%", helper: "Over server baseline" },
-      { label: "Error rate", value: "0.4%", helper: "Allergy or fulfilment issues" },
-    ],
-    highlights: [
-      {
-        pill: "Guest memory",
-        title: "Understands repeat diners",
-        description:
-          "Learns preferences and automatically recommends pairings referencing prior visits.",
-      },
-      {
-        pill: "Voice ready",
-        title: "Whisper-to-order",
-        description:
-          "Follows the Atlas voice stack to capture natural speech in noisy dining rooms.",
-      },
-      {
-        pill: "Kitchen sync",
-        title: "Expo board integration",
-        description:
-          "Pushes firing cues and pacing updates to kitchen prints, keeping FOH + BOH aligned.",
-      },
-    ],
-    roadmap: [
-      {
-        label: "Service pacing model",
-        description: "Generates check-ins when meals run long or guests need attention.",
-        status: "live",
-      },
-      {
-        label: "Auto-comp policies",
-        description: "Suggests recovery gestures when sentiment dips.",
-        status: "beta",
-      },
-      {
-        label: "Linked loyalty journeys",
-        description: "Enrolls guests into CRM automations after the bill.",
         status: "next",
       },
     ],
@@ -816,10 +759,10 @@ const atlasPageConfigs: Record<string, AtlasPageConfig> = {
     ],
     quickLinks: [
       {
-        pill: "Templates",
+        pill: "Playbooks",
         label: "Update reply macros",
         description: "Keep negotiation snippets fresh.",
-        href: "/templates",
+        href: "/agents/learning",
       },
       {
         pill: "Ops",
@@ -875,7 +818,7 @@ const atlasPageConfigs: Record<string, AtlasPageConfig> = {
       },
       {
         label: "Auto-generated POs",
-        description: "Drafts purchase orders straight from affirmative replies.",
+        description: "Drafts sourcing requests straight from affirmative replies.",
         status: "beta",
       },
       {
@@ -896,76 +839,6 @@ const atlasPageConfigs: Record<string, AtlasPageConfig> = {
         label: "Open performance view",
         description: "Benchmark vendors vs peers.",
         href: "/agents/performance",
-      },
-    ],
-  },
-  campaigns: {
-    slug: "campaigns",
-    hero: {
-      icon: "📢",
-      badge: "Growth",
-      title: "Campaigns",
-      description:
-        "Coordinate product launches, WhatsApp drips, and in-product nudges with an Atlas-grade planner.",
-      actions: [
-        { label: "Create campaign", href: "/campaigns" },
-        { label: "Sync audiences", href: "/leads", variant: "ghost" },
-      ],
-    },
-    metrics: [
-      { label: "Active campaigns", value: "12", helper: "4 in experimentation" },
-      { label: "Reach", value: "148k", helper: "Targeted customers" },
-      { label: "Conversion uplift", value: "+9%", helper: "Blended" },
-    ],
-    highlights: [
-      {
-        pill: "Journey builder",
-        title: "Canvas like Atlas",
-        description:
-          "Drag-and-drop steps with AI-generated copy suggestions and compliance tips.",
-      },
-      {
-        pill: "Experimentation",
-        title: "Holdout-friendly",
-        description:
-          "Define control groups, success metrics, and automated rollbacks.",
-      },
-      {
-        pill: "Insights",
-        title: "Narrative-ready reporting",
-        description:
-          "Charts plus generated summaries so you can paste results anywhere.",
-      },
-    ],
-    roadmap: [
-      {
-        label: "Realtime guardrails",
-        description: "Stop sends if opt-out rate spikes.",
-        status: "live",
-      },
-      {
-        label: "LLM-powered copy studio",
-        description: "Create multi-language variations in one click.",
-        status: "beta",
-      },
-      {
-        label: "Paid channel sync",
-        description: "Push segments to Meta + Google automatically.",
-        status: "next",
-      },
-    ],
-    quickLinks: [
-      {
-        pill: "Segments",
-        label: "Manage audiences",
-        description: "Keep cohorts fresh and deduplicated.",
-        href: "/users",
-      },
-      {
-        pill: "Playbooks",
-        label: "Review best practices",
-        description: "Lessons learned from top-performing campaigns.",
-        href: "/templates",
       },
     ],
   },
@@ -992,7 +865,7 @@ const atlasPageConfigs: Record<string, AtlasPageConfig> = {
         pill: "Scoring",
         title: "Signal-rich ranking",
         description:
-          "Blend behaviour, firmographics, and campaign source data.",
+          "Blend behaviour, firmographics, and channel source data.",
       },
       {
         pill: "Copilot",
@@ -1032,10 +905,10 @@ const atlasPageConfigs: Record<string, AtlasPageConfig> = {
         href: "/agents/performance",
       },
       {
-        pill: "Campaigns",
-        label: "Coordinate nurture",
-        description: "Plug qualified leads back into marketing.",
-        href: "/campaigns",
+        pill: "Nurture",
+        label: "Coordinate follow-ups",
+        description: "Plug qualified leads back into AI agents.",
+        href: "/agents/conversations",
       },
     ],
   },

@@ -7,22 +7,18 @@ import type {
   AssistantRun,
   AuditEvent,
   Bar,
-  Campaign,
   DashboardKpi,
   FlowMeta,
   InsuranceQuote,
   MenuVersion,
   NotificationOutbox,
   OcrJob,
-  Order,
-  OrderEvent,
   QrPreview,
   QrToken,
   SettingEntry,
   StaffNumber,
   Station,
   StorageObject,
-  TemplateMeta,
   User,
   WebhookError,
   LiveCall,
@@ -42,51 +38,22 @@ import {
   createAdminDiagnosticsSnapshot,
   createAdminHubSnapshot,
   createAssistantRun,
-  createCampaign,
   createDashboardKpi,
   createFlowMeta,
   createInsuranceQuote,
   createMenuVersion,
   createNotification,
   createOcrJob,
-  createOrder,
-  createOrderEvent,
   createQrToken,
   createSettingEntry,
   createStaffNumber,
   createStorageObject,
-  createTemplateMeta,
   createWebhookError,
 } from "@/lib/test-utils/factories";
 import { mockBars, mockStations, mockUsers } from "@/lib/test-utils/mock-base";
 export { mockBars, mockUsers, mockStations };
 
 const now = new Date();
-
-export const mockCampaigns: Campaign[] = [
-  createCampaign({
-    id: "campaign-1",
-    name: "October Momentum Promo",
-    type: "promo",
-    status: "running",
-    templateId: "promo_october_momentum",
-    createdAt: formatISO(subDays(now, 14)),
-    startedAt: formatISO(subDays(now, 10)),
-    finishedAt: null,
-    metadata: { dailyTarget: 100 },
-  }),
-  createCampaign({
-    id: "campaign-2",
-    name: "Welcome Broadcast",
-    type: "notification",
-    status: "draft",
-    templateId: "welcome_messaging_v1",
-    createdAt: formatISO(subDays(now, 4)),
-    startedAt: null,
-    finishedAt: null,
-    metadata: { note: "Pending compliance review" },
-  }),
-];
 
 export const mockInsuranceQuotes: InsuranceQuote[] = [
   createInsuranceQuote({
@@ -144,9 +111,9 @@ export const mockDashboardKpis: DashboardKpi[] = [
     helpText: "Successful sends divided by total attempts.",
   }),
   createDashboardKpi({
-    label: "Pending orders > 15m",
-    primaryValue: "4",
-    secondaryValue: "2 flagged for follow-up",
+    label: "Driver escalations (24h)",
+    primaryValue: "3",
+    secondaryValue: "1 awaiting vendor callback",
     trend: "flat",
   }),
 ];
@@ -206,50 +173,12 @@ export const mockOcrJobs: OcrJob[] = Array.from({ length: 6 }, (_, idx) => {
   });
 });
 
-export const mockOrders: Order[] = Array.from({ length: 18 }, (_, index) => {
-  const bar = mockBars[index % mockBars.length];
-  const createdAt = subDays(now, Math.floor(index / 4));
-  return createOrder({
-    id: `ORD-${1000 + index}`,
-    barId: bar.id,
-    barName: bar.name,
-    table: index % 2 === 0 ? `T${(index % 5) + 1}` : null,
-    status:
-      ["pending", "confirmed", "ready", "completed", "cancelled"][index % 5],
-    total: 18000 + index * 1200,
-    createdAt: formatISO(createdAt),
-    updatedAt: formatISO(addDays(createdAt, 0.1 * (index % 4))),
-    staffNumber: index % 3 === 0 ? "+25078000009" : null,
-  });
-});
-
-export const mockOrderEvents: OrderEvent[] = mockOrders.slice(0, 10).map((
-  order,
-  index,
-) =>
-  createOrderEvent({
-    id: `event-${order.id}`,
-    orderId: order.id,
-    type: [
-      "created",
-      "vendor_ack",
-      "preparing",
-      "completed",
-      "cancelled",
-    ][index % 5],
-    status: order.status,
-    actor: index % 2 === 0 ? "vendor" : "system",
-    note: index % 5 === 4 ? "Admin cancelled after vendor timeout." : null,
-    createdAt: formatISO(subDays(now, index / 5)),
-  })
-);
-
 export const mockWebhookErrors: WebhookError[] = Array.from(
   { length: 6 },
   (_, idx) =>
     createWebhookError({
       id: `webhook-${idx + 1}`,
-      endpoint: idx % 2 === 0 ? "wa-webhook/orders" : "wa-webhook/ocr",
+      endpoint: idx % 2 === 0 ? "wa-webhook/mobility" : "wa-webhook/ocr",
       failureReason: idx % 3 === 0 ? "Timeout" : "HTTP 500 from downstream",
       createdAt: formatISO(subDays(now, idx / 3)),
     }),
@@ -311,39 +240,6 @@ export const mockQrPreview: QrPreview = {
   },
 };
 
-export const mockTemplates: TemplateMeta[] = [
-  createTemplateMeta({
-    id: "promo_generic",
-    name: "Promo Generic",
-    purpose: "Broadcast promo",
-    locales: ["rw", "en"],
-    status: "approved",
-    variables: ["customer_name", "cta_link"],
-    lastUsedAt: formatISO(subDays(now, 1)),
-    errorRate: 0.8,
-  }),
-  createTemplateMeta({
-    id: "dispatch_followup",
-    name: "Dispatch Follow-up",
-    purpose: "Send dispatch updates",
-    locales: ["rw"],
-    status: "approved",
-    variables: ["customer_name", "trip_id"],
-    lastUsedAt: formatISO(subDays(now, 0.5)),
-    errorRate: 0.2,
-  }),
-  createTemplateMeta({
-    id: "feedback_request",
-    name: "Feedback Request",
-    purpose: "Collect feedback",
-    locales: ["en"],
-    status: "draft",
-    variables: ["customer_name"],
-    lastUsedAt: null,
-    errorRate: 0,
-  }),
-];
-
 export const mockFlows: FlowMeta[] = [
   createFlowMeta({
     id: "flow-onboarding",
@@ -369,7 +265,7 @@ export const mockNotifications: NotificationOutbox[] = Array.from({
   createNotification({
     id: `notif-${idx + 1}`,
     toRole: idx % 2 === 0 ? "vendor" : "customer",
-    type: idx % 3 === 0 ? "order_created_vendor" : "order_paid_customer",
+    type: idx % 3 === 0 ? "driver_ping_sent" : "trip_update_customer",
     status: (["queued", "sent", "failed"] as const)[idx % 3],
     createdAt: formatISO(subDays(now, idx / 4)),
     sentAt: idx % 3 === 0 ? null : formatISO(subDays(now, idx / 6)),
@@ -381,8 +277,8 @@ export const mockAuditEvents: AuditEvent[] = Array.from(
     createAuditEvent({
       id: `audit-${idx + 1}`,
       actor: idx % 2 === 0 ? "admin:ops" : "system",
-      action: ["dispatch_override", "settings_update", "campaign_start"][idx % 3],
-      targetTable: ["dispatch_overrides", "settings", "campaigns"][idx % 3],
+      action: ["dispatch_override", "settings_update", "driver_ping"][idx % 3],
+      targetTable: ["dispatch_overrides", "settings", "notifications"][idx % 3],
       targetId: `target-${idx + 1}`,
       createdAt: formatISO(subDays(now, idx / 5)),
       summary: idx % 3 === 1 ? "Quiet hours updated for Rwanda" : null,
@@ -401,12 +297,6 @@ export const mockSettingsEntries: SettingEntry[] = [
     description: "Per-minute WhatsApp send cap.",
     updatedAt: formatISO(subDays(now, 2)),
     valuePreview: "60",
-  }),
-  createSettingEntry({
-    key: "templates",
-    description: "Registered WhatsApp templates metadata.",
-    updatedAt: formatISO(subDays(now, 0.5)),
-    valuePreview: "3 templates",
   }),
   createSettingEntry({
     key: "opt_out.list",
@@ -449,8 +339,8 @@ export const mockStorageObjects: StorageObject[] = [
   }),
   createStorageObject({
     id: "storage-3",
-    bucket: "campaign-media",
-    path: "campaigns/october/hero.jpg",
+    bucket: "ops-briefings",
+    path: "briefings/october/hero.jpg",
     mimeType: "image/jpeg",
     sizeKb: 540,
     updatedAt: formatISO(subDays(now, 2)),
@@ -523,7 +413,7 @@ export const mockAssistantRuns: AssistantRun[] = [
           id: "action-notify-support",
           label: "Notify support queue",
           summary:
-            "Drop a template response into the support queue so the agent can confirm the opt-out and record the reason.",
+            "Drop a compliance note into the support queue so the agent can confirm the opt-out and record the reason.",
           impact: "low",
           recommended: true,
         },
@@ -585,16 +475,11 @@ export const mockAssistantRuns: AssistantRun[] = [
 export const mockAdminHubSnapshot: AdminHubSnapshot = createAdminHubSnapshot({
   sections: {
     operations: [
-      { id: "ADMIN::OPS_TRIPS", title: "Trips (live)" },
       { id: "ADMIN::OPS_MARKETPLACE", title: "Marketplace" },
       { id: "ADMIN::OPS_WALLET", title: "Wallet & tokens" },
       { id: "ADMIN::OPS_MOMO", title: "MoMo QR" },
     ],
-    growth: [
-      { id: "ADMIN::GROW_PROMOTERS", title: "Promoters" },
-      { id: "ADMIN::GROW_BROADCAST", title: "Broadcast" },
-      { id: "ADMIN::GROW_TEMPLATES", title: "Templates" },
-    ],
+    growth: [],
     trust: [
       { id: "ADMIN::TRUST_REFERRALS", title: "Referrals" },
       { id: "ADMIN::TRUST_FREEZE", title: "Freeze account" },

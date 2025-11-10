@@ -23,7 +23,6 @@ export const voiceCallSchema = z.object({
   agentProfile: z.string().min(1).nullable().optional().default(null),
   agentProfileConfidence: z.string().min(1).nullable().optional().default(null),
   channel: z.string().min(1).nullable().optional().default(null),
-  campaignTags: z.array(z.string().min(1)).nullable().optional().default(null),
 });
 
 export const voiceTranscriptSchema = z.object({
@@ -75,7 +74,6 @@ export const voiceDialerTargetSchema = z.object({
 
 export const voiceDialerRequestSchema = z.object({
   tenantId: z.string().min(1),
-  campaignId: z.string().min(1),
   scheduleAt: z.string().datetime().optional(),
   dryRun: z.boolean().optional(),
   targets: z.array(voiceDialerTargetSchema).min(1),

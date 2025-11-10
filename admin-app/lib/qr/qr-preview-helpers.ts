@@ -34,7 +34,7 @@ export function buildQrPreview({
   if (location) {
     bodyLines[0] = `${bar.name} — ${location}`;
   }
-  bodyLines.push("Tap View menu to order.");
+  bodyLines.push("Tap View menu to browse live offerings.");
 
   return {
     interactive: {
@@ -44,9 +44,9 @@ export function buildQrPreview({
       sectionTitle: "Choose what to do next",
       rows: [
         {
-          id: "DINE_MENU",
+          id: "MENU_VIEW",
           title: "View menu",
-          description: "Browse the menu and order instantly.",
+          description: "Browse the menu and request support.",
         },
         {
           id: "back_menu",

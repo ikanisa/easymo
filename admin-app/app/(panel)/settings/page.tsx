@@ -9,17 +9,11 @@ import {
   settingsQueryKeys,
 } from "@/lib/queries/settings";
 import {
-  fetchTemplates,
-  templatesQueryKeys,
-  type TemplatesQueryParams,
-} from "@/lib/queries/templates";
-import {
   fetchAdminAlertPreferences,
   alertPreferencesQueryKeys,
 } from "@/lib/queries/alertPreferences";
 
 const DEFAULT_PREVIEW_PARAMS: SettingsPreviewParams = { limit: 100 };
-const DEFAULT_TEMPLATE_PARAMS: TemplatesQueryParams = { limit: 100 };
 
 export default async function SettingsPage() {
   const queryClient = createQueryClient();
@@ -33,21 +27,13 @@ export default async function SettingsPage() {
       queryKey: alertPreferencesQueryKeys.all(),
       queryFn: fetchAdminAlertPreferences,
     }),
-    queryClient.prefetchQuery({
-      queryKey: templatesQueryKeys.list(DEFAULT_TEMPLATE_PARAMS),
-      queryFn: () => fetchTemplates(DEFAULT_TEMPLATE_PARAMS),
-    }),
   ]);
 
   const dehydratedState = dehydrate(queryClient);
 
   return (
     <HydrationBoundary state={dehydratedState}>
-      <SettingsClient
-        initialPreviewParams={DEFAULT_PREVIEW_PARAMS}
-        initialTemplateParams={DEFAULT_TEMPLATE_PARAMS}
-      />
+      <SettingsClient initialPreviewParams={DEFAULT_PREVIEW_PARAMS} />
     </HydrationBoundary>
   );
 }
-

@@ -5,10 +5,8 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { KpiCard } from "@/components/dashboard/KpiCard";
 import { SectionCard } from "@/components/ui/SectionCard";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { OrderEventsList } from "@/components/orders/OrderEventsList";
 import { WebhookErrorList } from "@/components/whatsapp/WebhookErrorList";
 import {
-  useDashboardOrderEventsQuery,
   useDashboardSnapshotQuery,
   useDashboardWebhookErrorsQuery,
 } from "@/lib/queries/dashboard";
@@ -19,7 +17,6 @@ import { AdminDiagnosticsCard } from "@/components/dashboard/AdminDiagnosticsCar
 
 export function DashboardClient() {
   const snapshotQuery = useDashboardSnapshotQuery();
-  const orderEventsQuery = useDashboardOrderEventsQuery();
   const webhookErrorsQuery = useDashboardWebhookErrorsQuery();
   const adminHubQuery = useAdminHubSnapshotQuery();
 
@@ -34,7 +31,6 @@ export function DashboardClient() {
 
   const snapshotResult = snapshotQuery.data;
   const snapshot = snapshotResult?.data ?? { kpis: [] };
-  const orderEvents = orderEventsQuery.data ?? [];
   const webhookErrors = webhookErrorsQuery.data ?? [];
   const adminHub = adminHubQuery.data;
   const integrationNotice = snapshotResult?.integration;
@@ -108,26 +104,6 @@ export function DashboardClient() {
             </Fragment>
           )}
       </section>
-      <SectionCard
-        title="Latest order events"
-        description="Stay ahead of vendor SLAs with the latest 10 events."
-      >
-        {orderEvents.length
-          ? <OrderEventsList events={orderEvents} />
-          : orderEventsQuery.isLoading
-          ? (
-            <LoadingState
-              title="Loading order events"
-              description="Pulling recent events."
-            />
-          )
-          : (
-            <EmptyState
-              title="No order events"
-              description="Events will appear here once orders start flowing."
-            />
-          )}
-      </SectionCard>
       <SectionCard
         title="Latest webhook errors"
         description="Failed webhooks bubble up here so you can retry quickly."

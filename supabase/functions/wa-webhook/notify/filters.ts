@@ -15,10 +15,7 @@ export type FilterResult = {
 
 export type NotificationFilter = {
   to_wa_id: string;
-  template_name?: string | null;
-  notification_type?: string | null;
   quiet_hours_override?: boolean;
-  correlation_id?: string | null;
 };
 
 /**

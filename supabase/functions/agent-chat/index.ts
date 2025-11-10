@@ -78,7 +78,7 @@ const DEFAULT_SUGGESTIONS: Record<z.infer<typeof AgentKind>, string[]> = {
   broker: ["What vendor options do I have?", "Share status update", "Request human follow-up"],
   support: ["Escalate to human", "Send troubleshooting steps", "Close ticket"],
   sales: ["Draft follow-up message", "Schedule call", "Log disposition"],
-  marketing: ["Share campaign outline", "Summarise performance", "Escalate to marketing lead"],
+  marketing: ["Share outreach outline", "Summarise performance", "Escalate to marketing lead"],
   mobility: ["Dispatch next driver", "Share rider ETA", "Escalate to dispatcher"],
 };
 
@@ -103,7 +103,7 @@ function buildStubResponse(kind: z.infer<typeof AgentKind>, message: string) {
       };
     case "marketing":
       return {
-        text: `Marketing assistant noted: “${friendly}”. I'll propose campaign ideas and metrics to track. (Stub response)`,
+        text: `Marketing assistant noted: “${friendly}”. I'll propose outreach ideas and metrics to track. (Stub response)`,
         suggestions,
       };
     case "mobility":

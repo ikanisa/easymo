@@ -67,8 +67,7 @@ export const GET = createHandler('admin_api.bars.list', async (request, _context
     .from('bars')
     .select(
       `id, slug, name, location_text, city_area, is_active, created_at, updated_at,
-       default_prep_minutes, momo_code, service_charge, payment_instructions,
-       published_menu_version,
+       momo_code, published_menu_version,
        bar_numbers(count),
        bar_settings:bar_settings(allow_direct_customer_chat)` ,
       { count: 'exact' }
@@ -117,12 +116,9 @@ export const GET = createHandler('admin_api.bars.list', async (request, _context
       lastUpdated: row.updated_at ?? row.created_at ?? new Date().toISOString(),
       createdAt: row.created_at ?? row.updated_at ?? new Date().toISOString(),
       momoCode: row.momo_code ?? null,
-      serviceCharge: row.service_charge ?? null,
       directChatEnabled: Array.isArray((row as any).bar_settings)
         ? Boolean((row as any).bar_settings[0]?.allow_direct_customer_chat)
         : Boolean((row as any).bar_settings?.allow_direct_customer_chat),
-      defaultPrepMinutes: row.default_prep_minutes ?? null,
-      paymentInstructions: row.payment_instructions ?? null
     };
   });
 

@@ -1,15 +1,11 @@
 declare module '@/lib/test-utils/factories' {
-  export const createCampaign: any;
   export const createInsuranceQuote: any;
   export const createDashboardKpi: any;
   export const createMenuVersion: any;
   export const createOcrJob: any;
-  export const createOrder: any;
-  export const createOrderEvent: any;
   export const createWebhookError: any;
   export const createStaffNumber: any;
   export const createQrToken: any;
-  export const createTemplateMeta: any;
   export const createAssistantRun: any;
   export const createAuditEvent: any;
   export const createAdminAlertPreference: any;

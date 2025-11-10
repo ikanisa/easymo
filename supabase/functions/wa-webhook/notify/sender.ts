@@ -8,17 +8,23 @@ import { logStructuredEvent } from "../observe/log.ts";
 import { emitAlert } from "../observe/alert.ts";
 import { delay, fetchWithTimeout } from "../utils/http.ts";
 import {
-  processNotificationWithFilters,
-  extractMetaErrorCode,
-  categorizeMetaError,
   calculateRateLimitBackoff,
+  categorizeMetaError,
+  extractMetaErrorCode,
   logDeliveryMetrics,
+  processNotificationWithFilters,
 } from "./processor.ts";
+
+type QueueOutcome = {
+  id: string;
+  status: "sent" | "queued" | "failed";
+  error?: string;
+};
 
 const WHATSAPP_API_BASE_URL = Deno.env.get("WHATSAPP_API_BASE_URL") ??
   "https://graph.facebook.com/v20.0";
-const DEFAULT_TEMPLATE_LANGUAGE =
-  Deno.env.get("WHATSAPP_TEMPLATE_DEFAULT_LANGUAGE") ?? "en";
+const WA_MESSAGES_ENDPOINT = `${WHATSAPP_API_BASE_URL}/${WA_PHONE_ID}/messages`;
+const DEFAULT_NOTIFICATION_TYPE = "generic";
 const MAX_RETRIES = Math.max(
   Number(Deno.env.get("NOTIFY_MAX_RETRIES") ?? "5") || 5,
   1,
@@ -35,23 +41,6 @@ const DEFAULT_DELAY_SECONDS = Math.max(
   Number(Deno.env.get("NOTIFY_DEFAULT_DELAY_SECONDS") ?? "0") || 0,
   0,
 );
-
-export const TEMPLATE_ORDER_CREATED_VENDOR =
-  Deno.env.get("TEMPLATE_ORDER_CREATED_VENDOR") ?? "order_created_vendor";
-export const TEMPLATE_ORDER_PENDING_VENDOR =
-  Deno.env.get("TEMPLATE_ORDER_PENDING_VENDOR") ?? "order_pending_vendor";
-export const TEMPLATE_ORDER_PAID_CUSTOMER =
-  Deno.env.get("TEMPLATE_ORDER_PAID_CUSTOMER") ?? "order_paid_customer";
-export const TEMPLATE_ORDER_SERVED_CUSTOMER =
-  Deno.env.get("TEMPLATE_ORDER_SERVED_CUSTOMER") ?? "order_served_customer";
-export const TEMPLATE_ORDER_CANCELLED_CUSTOMER =
-  Deno.env.get("TEMPLATE_ORDER_CANCELLED_CUSTOMER") ??
-    "order_cancelled_customer";
-export const TEMPLATE_CART_REMINDER =
-  Deno.env.get("TEMPLATE_CART_REMINDER_CUSTOMER") ?? "cart_reminder_customer";
-
-const WA_MESSAGES_ENDPOINT = `${WHATSAPP_API_BASE_URL}/${WA_PHONE_ID}/messages`;
-const DEFAULT_NOTIFICATION_TYPE = "generic";
 const STATUS_RETRY_CODES = new Set([408, 425, 429, 500, 502, 503, 504]);
 const STATUS_RETRIES = Math.max(
   Number(Deno.env.get("WA_HTTP_STATUS_RETRIES") ?? "2") || 2,
@@ -86,15 +75,8 @@ type InteractiveListPayload = {
 
 type InteractivePayload = InteractiveListPayload;
 
-export type TemplatePayload = {
-  name: string;
-  language?: string;
-  components?: unknown;
-};
-
 export type QueueNotificationMessage = {
   to: string;
-  template?: TemplatePayload;
   text?: string;
   media?: MediaPayload;
   interactive?: InteractivePayload;
@@ -102,63 +84,36 @@ export type QueueNotificationMessage = {
 
 export type QueueNotificationOptions = {
   supabase?: SupabaseClient;
-  orderId?: string;
   type?: string;
   delaySeconds?: number;
 } & Record<string, unknown>;
 
 export type QueueNotificationResult = { id: string };
 
-export type QueueVendorOrderCreatedParams = {
-  to: string;
-  orderCode: string;
-  totalText: string;
-  table?: string | null;
-  orderId?: string;
-  supabase?: SupabaseClient;
+type MessageEnvelope = {
+  text?: string;
+  media?: MediaPayload;
+  interactive?: InteractivePayload;
+  meta?: Record<string, unknown>;
 };
-
-export type QueueCustomerStatusParams = {
-  to: string;
-  status: "paid" | "served" | "cancelled";
-  orderCode: string;
-  totalMinor?: number;
-  currency?: string;
-  reason?: string;
-  orderId?: string;
-  supabase?: SupabaseClient;
-};
-
-export type QueueStaffInviteParams = {
-  to: string;
-  barName: string;
-  code: string;
-  expiresInHours?: number;
-  supabase?: SupabaseClient;
-};
-
-type NotificationChannel = "template" | "freeform" | "flow";
 
 type NotificationRow = {
   id: string;
   to_wa_id: string;
   payload?: unknown;
-  channel?: NotificationChannel;
-  template_name?: string | null;
   notification_type?: string | null;
   retry_count?: number | null;
 };
 
-type ClaimedRow = NotificationRow & {
-  status?: string;
-};
+type ClaimedRow = NotificationRow;
 
-type MessageEnvelope = {
-  template?: TemplatePayload;
-  text?: string;
-  media?: MediaPayload;
-  interactive?: InteractivePayload;
-  meta?: Record<string, unknown>;
+type WhatsAppPayload = {
+  messaging_product: "whatsapp";
+  to: string;
+  type: string;
+  text?: { body: string; preview_url?: boolean };
+  interactive?: Record<string, unknown>;
+  [key: string]: unknown;
 };
 
 class WhatsAppSendError extends Error {
@@ -166,10 +121,10 @@ class WhatsAppSendError extends Error {
   readonly detail: unknown;
 
   constructor(status: number, detail: unknown) {
-    const summary = typeof detail === "string" ? detail : JSON.stringify(
-      detail,
-      (_, value) => (typeof value === "bigint" ? value.toString() : value),
-    );
+    const summary = typeof detail === "string"
+      ? detail
+      : JSON.stringify(detail, (_, value) =>
+        typeof value === "bigint" ? value.toString() : value);
     super(`WhatsApp send failed (${status}): ${summary}`);
     this.status = status;
     this.detail = detail;
@@ -186,31 +141,23 @@ export async function queueNotification(
   const notificationType =
     typeof options.type === "string" && options.type.length
       ? options.type
-      : envelope.template?.name ?? DEFAULT_NOTIFICATION_TYPE;
-  const channel: NotificationChannel = envelope.template
-    ? "template"
-    : "freeform";
+      : DEFAULT_NOTIFICATION_TYPE;
   const meta = buildMeta(options, notificationType);
-  const delay = resolveDelay(options.delaySeconds);
+  const delaySeconds = resolveDelay(options.delaySeconds);
+
+  const payload = Object.keys(meta).length ? { ...envelope, meta } : envelope;
 
   const insertPayload: Record<string, unknown> = {
     to_wa_id: normalizedTo,
     notification_type: notificationType,
-    template_name: envelope.template?.name ?? null,
-    order_id: typeof options.orderId === "string" ? options.orderId : null,
-    channel,
-    payload: envelope,
+    payload,
     status: "queued",
     retry_count: 0,
   };
 
-  if (delay > 0) {
-    insertPayload.next_attempt_at = new Date(Date.now() + delay * 1000)
+  if (delaySeconds > 0) {
+    insertPayload.next_attempt_at = new Date(Date.now() + delaySeconds * 1000)
       .toISOString();
-  }
-
-  if (Object.keys(meta).length) {
-    insertPayload.payload = { ...envelope, meta };
   }
 
   const { data, error } = await supa
@@ -224,7 +171,6 @@ export async function queueNotification(
   await logStructuredEvent("NOTIFY_QUEUE", {
     id: data.id,
     to: maskWa(normalizedTo),
-    channel,
     type: notificationType,
   });
 
@@ -238,7 +184,7 @@ export async function sendNotificationNow(
   const supa = client ?? sharedSupabase;
   const { data, error } = await supa
     .from("notifications")
-    .select("id, to_wa_id, payload, channel, notification_type, retry_count")
+    .select("id, to_wa_id, payload, notification_type, retry_count")
     .eq("id", id)
     .single();
 
@@ -250,7 +196,6 @@ export async function sendNotificationNow(
     id: data.id,
     to_wa_id: data.to_wa_id,
     payload: data.payload,
-    channel: data.channel as NotificationChannel | undefined,
     notification_type: data.notification_type,
     retry_count: data.retry_count ?? 0,
   };
@@ -258,121 +203,46 @@ export async function sendNotificationNow(
   await deliverNotification(row, supa);
 }
 
-export async function queueVendorOrderCreated(
-  params: QueueVendorOrderCreatedParams,
-): Promise<QueueNotificationResult> {
-  const tableLabel = params.table && params.table.trim().length
-    ? params.table.trim()
-    : "Counter";
-  return await queueNotification(
-    {
-      to: params.to,
-      template: {
-        name: TEMPLATE_ORDER_CREATED_VENDOR,
-        language: DEFAULT_TEMPLATE_LANGUAGE,
-        components: [
-          {
-            type: "body",
-            parameters: [
-              { type: "text", text: params.orderCode },
-              { type: "text", text: tableLabel },
-              { type: "text", text: params.totalText },
-            ],
-          },
-        ],
-      },
-    },
-    {
-      supabase: params.supabase,
-      type: "order_created_vendor",
-      orderId: params.orderId,
-      table: tableLabel,
-      total_text: params.totalText,
-    },
-  );
-}
-
-export async function queueCustomerStatusTemplate(
-  params: QueueCustomerStatusParams,
-): Promise<QueueNotificationResult> {
-  const templateDef = buildCustomerTemplate(params);
-  return await queueNotification(
-    {
-      to: params.to,
-      template: {
-        name: templateDef.name,
-        language: DEFAULT_TEMPLATE_LANGUAGE,
-        components: templateDef.components,
-      },
-    },
-    {
-      supabase: params.supabase,
-      type: `order_${params.status}_customer`,
-      orderId: params.orderId,
-      reason: params.reason,
-    },
-  );
-}
-
-export async function queueStaffInvite(
-  params: QueueStaffInviteParams,
-): Promise<QueueNotificationResult> {
-  const text = buildStaffInviteText(params);
-  return await queueNotification(
-    { to: params.to, text },
-    {
-      supabase: params.supabase,
-      type: "staff_invite",
-      bar: params.barName,
-      expires_in_hours: params.expiresInHours ?? 24,
-    },
-  );
-}
-
 export async function processNotificationQueue(
   limit = 10,
   client?: SupabaseClient,
-): Promise<
-  Array<{ id: string; status: "sent" | "queued" | "failed"; error?: string }>
-> {
+): Promise<QueueOutcome[]> {
   const supa = client ?? sharedSupabase;
   const claimed = await claimNotifications(supa, limit);
   if (!claimed.length) return [];
-  const outcomes: Array<
-    { id: string; status: "sent" | "queued" | "failed"; error?: string }
-  > = [];
 
+  const outcomes: QueueOutcome[] = [];
   for (const row of claimed) {
     try {
-      // Apply filters (opt-out, quiet hours, rate limit)
       const filterCheck = await processNotificationWithFilters(row, supa);
-      
       if (!filterCheck.shouldDeliver) {
-        // Notification was deferred or blocked by filters
         outcomes.push({
           id: row.id,
           status: filterCheck.deferUntil ? "queued" : "failed",
           error: filterCheck.reason,
         });
+        await logDeliveryMetrics(
+          row,
+          filterCheck.deferUntil ? "deferred" : "failed",
+        );
         continue;
       }
 
-      // Filters passed - deliver notification
       await deliverNotification(row, supa);
       outcomes.push({ id: row.id, status: "sent" });
-      
-      // Log success metrics
       await logDeliveryMetrics(row, "sent");
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       const status = await handleDeliveryFailure(row, supa, error);
       outcomes.push({ id: row.id, status, error: message });
-      
-      // Log failure metrics
-      const errorCode = error instanceof WhatsAppSendError 
-        ? extractMetaErrorCode(error.detail) 
+      const metaCode = error instanceof WhatsAppSendError
+        ? extractMetaErrorCode(error.detail)
         : null;
-      await logDeliveryMetrics(row, status === "failed" ? "failed" : "deferred", errorCode);
+      await logDeliveryMetrics(
+        row,
+        status === "failed" ? "failed" : "deferred",
+        metaCode,
+      );
     }
   }
 
@@ -388,10 +258,11 @@ async function deliverNotification(
     throw new Error(`Notification ${row.id} payload is empty`);
   }
 
-  const body = buildWhatsAppPayload(row.to_wa_id, message, row.channel);
+  const body = buildWhatsAppPayload(row.to_wa_id, message);
   let attempt = 0;
   let response: Response | null = null;
   let responseJson: unknown = null;
+
   while (attempt <= STATUS_RETRIES) {
     response = await fetchWithTimeout(WA_MESSAGES_ENDPOINT, {
       method: "POST",
@@ -418,24 +289,22 @@ async function deliverNotification(
     throw new WhatsAppSendError(response?.status ?? 500, responseJson);
   }
 
+  const now = nowIso();
   const updatePayload = {
     status: "sent",
-    sent_at: nowIso(),
+    sent_at: now,
     retry_count: row.retry_count ?? 0,
     error_message: null as string | null,
     next_attempt_at: null as string | null,
     payload: mergeMeta(row.payload, {
       last_status: "sent",
-      last_sent_at: nowIso(),
+      last_sent_at: now,
       message_id: responseJson?.messages?.[0]?.id ?? null,
       last_response: responseJson,
     }),
   };
 
-  await supa
-    .from("notifications")
-    .update(updatePayload)
-    .eq("id", row.id);
+  await supa.from("notifications").update(updatePayload).eq("id", row.id);
 
   await logStructuredEvent("NOTIFY_SEND_OK", {
     id: row.id,
@@ -453,64 +322,41 @@ async function handleDeliveryFailure(
     ? row.retry_count
     : 0;
   const nextAttempts = currentAttempts + 1;
-  
-  // Extract Meta error code for better categorization
   const metaErrorCode = error instanceof WhatsAppSendError
     ? extractMetaErrorCode(error.detail)
     : null;
-  
-  // Categorize error to determine retry strategy
   const errorCategory = categorizeMetaError(metaErrorCode);
-  
-  // Determine if should fail based on category and retry count
   const shouldFail = errorCategory === "fail" || nextAttempts >= MAX_RETRIES;
-  
-  // Calculate backoff with special handling for rate limits
+
   let backoffSeconds: number | null = null;
   if (!shouldFail) {
-    if (errorCategory === "defer") {
-      backoffSeconds = calculateRateLimitBackoff(metaErrorCode, nextAttempts);
-    } else {
-      backoffSeconds = computeBackoffSeconds(nextAttempts);
-    }
+    backoffSeconds = errorCategory === "defer"
+      ? calculateRateLimitBackoff(metaErrorCode, nextAttempts)
+      : computeBackoffSeconds(nextAttempts);
   }
-  
+
   const errorMessage = error instanceof Error
     ? error.message
     : String(error ?? "unknown_error");
 
-  const metaPatch: Record<string, unknown> = {
-    last_status: "failed",
-    last_error_at: nowIso(),
-    last_error_message: errorMessage,
-    last_error_code: metaErrorCode,
-    error_category: errorCategory,
-  };
-
-  if (error instanceof WhatsAppSendError) {
-    metaPatch.last_error_status = error.status;
-    metaPatch.last_error_detail = error.detail;
-  }
-
+  const now = nowIso();
   const updatePayload: Record<string, unknown> = {
     retry_count: nextAttempts,
     status: shouldFail ? "failed" : "queued",
     error_message: errorMessage,
-    last_error_code: metaErrorCode,
-    payload: mergeMeta(row.payload, metaPatch),
+    next_attempt_at: backoffSeconds !== null
+      ? new Date(Date.now() + backoffSeconds * 1000).toISOString()
+      : null,
+    payload: mergeMeta(row.payload, {
+      last_status: shouldFail ? "failed" : "queued",
+      last_error_at: now,
+      last_error_message: errorMessage,
+      last_error_code: metaErrorCode,
+      error_category: errorCategory,
+    }),
   };
 
-  if (backoffSeconds !== null) {
-    updatePayload.next_attempt_at = new Date(Date.now() + backoffSeconds * 1000)
-      .toISOString();
-  } else {
-    updatePayload.next_attempt_at = null;
-  }
-
-  await supa
-    .from("notifications")
-    .update(updatePayload)
-    .eq("id", row.id);
+  await supa.from("notifications").update(updatePayload).eq("id", row.id);
 
   await logStructuredEvent("NOTIFY_SEND_FAIL", {
     id: row.id,
@@ -552,46 +398,22 @@ async function claimNotifications(
 function buildMessageEnvelope(
   message: QueueNotificationMessage,
 ): MessageEnvelope {
-  const hasTemplate = Boolean(message.template);
+  const hasText = typeof message.text === "string" && message.text.length > 0;
+  const hasMedia = Boolean(message.media);
   const hasInteractive = Boolean(message.interactive);
-  const hasFreeform = Boolean(message.text) || Boolean(message.media) ||
-    hasInteractive;
 
-  if (!hasTemplate && !hasFreeform) {
-    throw new Error("Provide template, text, media, or interactive payload");
+  if (!hasText && !hasMedia && !hasInteractive) {
+    throw new Error("Provide text, media, or interactive payload");
   }
-  if (hasTemplate && hasFreeform) {
-    throw new Error(
-      "Template notifications cannot include text, media, or interactive payload",
-    );
-  }
-  if (hasInteractive && (Boolean(message.text) || Boolean(message.media))) {
+  if (hasInteractive && (hasText || hasMedia)) {
     throw new Error(
       "Interactive notifications cannot include additional text or media payload",
     );
   }
 
-  const template = message.template
-    ? {
-      name: message.template.name,
-      language: message.template.language ?? DEFAULT_TEMPLATE_LANGUAGE,
-      components: message.template.components ?? [],
-    }
-    : undefined;
-
-  const media = message.media
-    ? {
-      type: message.media.type,
-      link: message.media.link,
-      caption: message.media.caption,
-      filename: message.media.filename,
-    }
-    : undefined;
-
   const envelope: MessageEnvelope = {};
-  if (template) envelope.template = template;
-  if (typeof message.text === "string") envelope.text = message.text;
-  if (media) envelope.media = media;
+  if (hasText) envelope.text = message.text;
+  if (message.media) envelope.media = message.media;
   if (message.interactive) envelope.interactive = message.interactive;
   return envelope;
 }
@@ -602,14 +424,10 @@ function buildMeta(
 ): Record<string, unknown> {
   const meta: Record<string, unknown> = { notification_type: notificationType };
   for (const [key, value] of Object.entries(options)) {
-    if (
-      key === "supabase" || key === "delaySeconds" || key === "orderId" ||
-      key === "type"
-    ) continue;
+    if (key === "supabase" || key === "delaySeconds" || key === "type") {
+      continue;
+    }
     meta[key] = value;
-  }
-  if (typeof options.orderId === "string") {
-    meta.order_id = options.orderId;
   }
   return meta;
 }
@@ -621,52 +439,68 @@ function resolveDelay(delaySeconds?: number): number {
   return DEFAULT_DELAY_SECONDS;
 }
 
-function buildCustomerTemplate(params: QueueCustomerStatusParams) {
-  switch (params.status) {
-    case "paid":
-      return {
-        name: TEMPLATE_ORDER_PAID_CUSTOMER,
-        components: [
-          {
-            type: "body",
-            parameters: [
-              { type: "text", text: params.orderCode },
-            ],
-          },
-        ],
-      };
-    case "served":
-      return {
-        name: TEMPLATE_ORDER_SERVED_CUSTOMER,
-        components: [
-          {
-            type: "body",
-            parameters: [
-              { type: "text", text: params.orderCode },
-            ],
-          },
-        ],
-      };
-    case "cancelled":
-    default:
-      return {
-        name: TEMPLATE_ORDER_CANCELLED_CUSTOMER,
-        components: [
-          {
-            type: "body",
-            parameters: [
-              { type: "text", text: params.orderCode },
-              { type: "text", text: params.reason ?? "Order cancelled" },
-            ],
-          },
-        ],
-      };
+function extractMessage(row: NotificationRow): QueueNotificationMessage | null {
+  if (!isRecord(row.payload)) {
+    return fallbackFromLegacy(row);
   }
+  const message = isRecord(row.payload.message)
+    ? row.payload.message
+    : row.payload;
+  const text = typeof message.text === "string" ? message.text : undefined;
+  const media =
+    isRecord(message.media) && typeof message.media.link === "string"
+      ? {
+        type: String(message.media.type ?? "image") as MediaPayload["type"],
+        link: message.media.link,
+        caption: typeof message.media.caption === "string"
+          ? message.media.caption
+          : undefined,
+        filename: typeof message.media.filename === "string"
+          ? message.media.filename
+          : undefined,
+      }
+      : undefined;
+  const interactive = isRecord(message.interactive)
+    ? normalizeInteractive(message.interactive)
+    : undefined;
+
+  const envelope: QueueNotificationMessage = { to: row.to_wa_id };
+  if (text) envelope.text = text;
+  if (media) envelope.media = media;
+  if (interactive) envelope.interactive = interactive;
+  return envelope.text || envelope.media || envelope.interactive
+    ? envelope
+    : null;
 }
 
-function buildStaffInviteText(params: QueueStaffInviteParams): string {
-  const expiresIn = params.expiresInHours ?? 24;
-  return `EasyMO invite to ${params.barName}: reply with CODE ${params.code} within ${expiresIn}h to activate your staff access.`;
+function fallbackFromLegacy(
+  row: NotificationRow,
+): QueueNotificationMessage | null {
+  if (!isRecord(row.payload)) return null;
+  const payload = row.payload as Record<string, unknown>;
+  const envelope: QueueNotificationMessage = { to: row.to_wa_id };
+  if (typeof payload.text === "string") {
+    envelope.text = payload.text;
+  }
+  if (isRecord(payload.media) && typeof payload.media.link === "string") {
+    envelope.media = {
+      type: String(payload.media.type ?? "image") as MediaPayload["type"],
+      link: payload.media.link,
+      caption: typeof payload.media.caption === "string"
+        ? payload.media.caption
+        : undefined,
+      filename: typeof payload.media.filename === "string"
+        ? payload.media.filename
+        : undefined,
+    };
+  }
+  if (isRecord(payload.interactive)) {
+    const interactive = normalizeInteractive(payload.interactive);
+    if (interactive) envelope.interactive = interactive;
+  }
+  return envelope.text || envelope.media || envelope.interactive
+    ? envelope
+    : null;
 }
 
 function normalizeInteractive(
@@ -711,15 +545,18 @@ function normalizeInteractive(
     }))
     .filter((row) => row.id.length && row.title.length)
     .slice(0, 10);
+
   if (!bodyCandidate || !buttonCandidate || !sectionCandidate || !rows.length) {
     return undefined;
   }
+
   const headerRecord = isRecord(value.header) ? value.header : {};
   const headerCandidate = typeof value.headerText === "string"
     ? value.headerText
     : typeof headerRecord.text === "string"
     ? headerRecord.text
     : undefined;
+
   return {
     type: "list",
     bodyText: bodyCandidate,
@@ -730,148 +567,53 @@ function normalizeInteractive(
   };
 }
 
-function extractMessage(row: NotificationRow): QueueNotificationMessage | null {
-  const payload = row.payload;
-  if (!isRecord(payload)) return fallbackFromLegacy(row);
-  const message = isRecord(payload.message) ? payload.message : payload;
-  const template = isRecord(message.template)
-    ? {
-      name: String(message.template.name ?? row.template_name ?? ""),
-      language: message.template.language as string | undefined,
-      components: message.template.components,
-    }
-    : undefined;
-  const text = typeof message.text === "string" ? message.text : undefined;
-  const media = isRecord(message.media)
-    ? {
-      type: String(message.media.type ?? "image") as MediaPayload["type"],
-      link: String(message.media.link ?? ""),
-      caption: typeof message.media.caption === "string"
-        ? message.media.caption
-        : undefined,
-      filename: typeof message.media.filename === "string"
-        ? message.media.filename
-        : undefined,
-    }
-    : undefined;
-  const interactive = isRecord(message.interactive)
-    ? normalizeInteractive(message.interactive)
-    : undefined;
-
-  const envelope: QueueNotificationMessage = { to: row.to_wa_id };
-  if (template) envelope.template = template;
-  if (text) envelope.text = text;
-  if (media && media.link) envelope.media = media;
-  if (interactive) envelope.interactive = interactive;
-  return envelope.template || envelope.text || envelope.media ||
-      envelope.interactive
-    ? envelope
-    : null;
-}
-
-function fallbackFromLegacy(
-  row: NotificationRow,
-): QueueNotificationMessage | null {
-  if (!isRecord(row.payload)) return null;
-  const payload = row.payload as Record<string, unknown>;
-  const envelope: QueueNotificationMessage = { to: row.to_wa_id };
-  if (isRecord(payload.template)) {
-    envelope.template = {
-      name: String(payload.template.name ?? row.template_name ?? ""),
-      language: payload.template.language as string | undefined,
-      components: payload.template.components,
-    };
-  }
-  if (typeof payload.text === "string") {
-    envelope.text = payload.text;
-  }
-  if (isRecord(payload.media) && typeof payload.media.link === "string") {
-    envelope.media = {
-      type: String(payload.media.type ?? "image") as MediaPayload["type"],
-      link: payload.media.link,
-      caption: typeof payload.media.caption === "string"
-        ? payload.media.caption
-        : undefined,
-      filename: typeof payload.media.filename === "string"
-        ? payload.media.filename
-        : undefined,
-    };
-  }
-  if (isRecord(payload.interactive)) {
-    const interactive = normalizeInteractive(payload.interactive);
-    if (interactive) envelope.interactive = interactive;
-  }
-  return envelope.template || envelope.text || envelope.media ||
-      envelope.interactive
-    ? envelope
-    : null;
-}
-
 function buildWhatsAppPayload(
   to: string,
   message: QueueNotificationMessage,
-  channel?: NotificationChannel,
-) {
-  const payload: Record<string, unknown> = {
+): WhatsAppPayload {
+  const payload: WhatsAppPayload = {
     messaging_product: "whatsapp",
     to,
+    type: "text",
   };
 
-  if ((channel === "template" || message.template) && message.template) {
-    payload.type = "template";
-    payload.template = {
-      name: message.template.name,
-      language: {
-        code: message.template.language ?? DEFAULT_TEMPLATE_LANGUAGE,
+  if (message.interactive) {
+    payload.type = "interactive";
+    payload.interactive = {
+      type: "list",
+      header: message.interactive.headerText
+        ? { type: "text", text: message.interactive.headerText }
+        : undefined,
+      body: { text: message.interactive.bodyText },
+      action: {
+        button: message.interactive.buttonText,
+        sections: [
+          {
+            title: message.interactive.sectionTitle,
+            rows: message.interactive.rows.map((row) => ({
+              id: row.id,
+              title: row.title,
+              description: row.description,
+            })),
+          },
+        ],
       },
-      components: message.template.components ?? [],
     };
     return payload;
   }
 
   if (message.media) {
-    const media = {
+    payload.type = message.media.type;
+    payload[message.media.type] = pruneUndefined({
       link: message.media.link,
       caption: message.media.caption,
-    };
-    if (message.media.filename && message.media.type === "document") {
-      (media as Record<string, unknown>).filename = message.media.filename;
-    }
-    payload.type = message.media.type;
-    payload[message.media.type] = pruneUndefined(media);
+      filename: message.media.type === "document"
+        ? message.media.filename
+        : undefined,
+    });
     return payload;
   }
 
-  if (message.interactive) {
-    if (message.interactive.type === "list") {
-      payload.type = "interactive";
-      payload.interactive = pruneUndefined({
-        type: "list",
-        header: message.interactive.headerText
-          ? { type: "text", text: message.interactive.headerText }
-          : undefined,
-        body: { text: message.interactive.bodyText },
-        action: {
-          button: message.interactive.buttonText,
-          sections: [
-            {
-              title: message.interactive.sectionTitle,
-              rows: message.interactive.rows.slice(0, 10).map((row) =>
-                pruneUndefined({
-                  id: row.id,
-                  title: row.title,
-                  description: row.description,
-                })
-              ),
-            },
-          ],
-        },
-      });
-      return payload;
-    }
-  }
-
-  payload.type = "text";
   payload.text = {
     body: message.text ?? "",
     preview_url: false,
@@ -918,6 +660,24 @@ function isRecord(value: unknown): value is Record<string, any> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
 
+function isMissingFunctionError(
+  error: { code?: string; message?: string } | null,
+): boolean {
+  if (!error) return false;
+  if (error.code === "42883") return true;
+  if (!error.message) return false;
+  return /function .* does not exist/i.test(error.message);
+}
+
+async function safeJson(response: Response | null): Promise<unknown> {
+  if (!response) return null;
+  try {
+    return await response.json();
+  } catch (_) {
+    return null;
+  }
+}
+
 function pruneUndefined(
   value: Record<string, unknown>,
 ): Record<string, unknown> {
@@ -926,22 +686,4 @@ function pruneUndefined(
     if (val !== undefined) result[key] = val;
   }
   return result;
-}
-
-function isMissingFunctionError(
-  error: { code?: string; message?: string },
-): boolean {
-  if (!error) return false;
-  if (error.code === "42883") return true;
-  if (!error.message) return false;
-  return error.message.includes("function") &&
-    error.message.includes("does not exist");
-}
-
-async function safeJson(response: Response): Promise<any> {
-  try {
-    return await response.json();
-  } catch (_) {
-    return null;
-  }
 }

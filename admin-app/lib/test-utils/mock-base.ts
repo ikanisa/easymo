@@ -53,11 +53,7 @@ export const mockBars: Bar[] = [
     lastUpdated: formatISO(subDays(now, 1)),
     createdAt: formatISO(subDays(now, 120)),
     momoCode: "*182*8*1*123456#",
-    serviceCharge: 0.1,
     directChatEnabled: true,
-    defaultPrepMinutes: 18,
-    paymentInstructions:
-      "Dial the MoMo code and confirm table number on ticket.",
   }),
   createBar({
     id: "bar-2",
@@ -70,10 +66,7 @@ export const mockBars: Bar[] = [
     lastUpdated: formatISO(subDays(now, 3)),
     createdAt: formatISO(subDays(now, 90)),
     momoCode: "*182*8*1*654321#",
-    serviceCharge: 0.08,
     directChatEnabled: false,
-    defaultPrepMinutes: 20,
-    paymentInstructions: "Customer pays after order confirmation.",
   }),
   createBar({
     id: "bar-3",

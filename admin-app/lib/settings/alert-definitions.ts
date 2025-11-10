@@ -55,22 +55,6 @@ export const ALERT_DEFINITIONS: AlertDefinition[] = [
     severity: "medium",
     defaultChannels: ["slack"],
   },
-  {
-    key: "ORDER_PENDING_REMINDER_FAIL",
-    label: "Pending order reminder failures",
-    description:
-      "Signal when vendor pending reminder jobs cannot enqueue follow-ups.",
-    severity: "medium",
-    defaultChannels: ["whatsapp"],
-  },
-  {
-    key: "CART_REMINDER_VIOLATION",
-    label: "Cart reminder quiet-hour violations",
-    description:
-      "Alert if cart reminder sends violate configured quiet hours.",
-    severity: "low",
-    defaultChannels: ["email"],
-  },
 ];
 
 export function definitionForAlert(key: string) {

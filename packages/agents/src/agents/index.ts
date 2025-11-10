@@ -12,10 +12,8 @@ export { TriageAgent, runTriageAgent, analyzeIntent } from './triage';
 export { BaseAgent } from './base/agent.base';
 export { NearbyDriversAgent } from './drivers/nearby-drivers.agent';
 export { PharmacyAgent } from './pharmacy/pharmacy.agent';
-export { WaiterAgent } from './waiter/waiter.agent';
 export { PropertyRentalAgent } from './property/property-rental.agent';
 export { ScheduleTripAgent } from './schedule/schedule-trip.agent';
 export { QuincaillerieAgent } from './quincaillerie/quincaillerie.agent';
 export { ShopsAgent } from './shops/shops.agent';
-
 

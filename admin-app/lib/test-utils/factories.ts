@@ -6,22 +6,18 @@ import type {
   AssistantRun,
   AuditEvent,
   Bar,
-  Campaign,
   DashboardKpi,
   FlowMeta,
   InsuranceQuote,
   MenuVersion,
   NotificationOutbox,
   OcrJob,
-  Order,
-  OrderEvent,
   QrPreview,
   QrToken,
   SettingEntry,
   StaffNumber,
   Station,
   StorageObject,
-  TemplateMeta,
   User,
   WebhookError,
   Lead,
@@ -92,43 +88,13 @@ export function createOcrJob(overrides: Partial<OcrJob> = {}): OcrJob {
   };
 }
 
-export function createOrder(overrides: Partial<Order> = {}): Order {
-  return {
-    id: "ORD-1",
-    barId: "bar-id",
-    barName: "Bar name",
-    table: null,
-    status: "pending",
-    total: 0,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    staffNumber: null,
-    ...overrides,
-  };
-}
-
-export function createOrderEvent(
-  overrides: Partial<OrderEvent> = {},
-): OrderEvent {
-  return {
-    id: "event-1",
-    orderId: "ORD-1",
-    type: "created",
-    status: "pending",
-    actor: "system",
-    note: null,
-    createdAt: new Date().toISOString(),
-    ...overrides,
-  };
-}
-
 export function createNotification(
   overrides: Partial<NotificationOutbox> = {},
 ): NotificationOutbox {
   return {
     id: "notif-1",
     toRole: "vendor",
-    type: "order_created_vendor",
+    type: "driver_ping_sent",
     status: "queued",
     createdAt: new Date().toISOString(),
     sentAt: null,
@@ -141,7 +107,7 @@ export function createWebhookError(
 ): WebhookError {
   return {
     id: "webhook-1",
-    endpoint: "wa-webhook/orders",
+    endpoint: "wa-webhook/mobility",
     failureReason: "Timeout",
     createdAt: new Date().toISOString(),
     retryUrl: "#",
@@ -183,11 +149,11 @@ export function createQrPreview(overrides: Partial<QrPreview> = {}): QrPreview {
   return {
     interactive: {
       header: "Choose a bar",
-      body: "Sunset Bar — Kigali\nTap View menu to order.",
+      body: "Sunset Bar — Kigali\nTap View menu to browse live offers.",
       buttonLabel: "Select",
       sectionTitle: "Choose what to do next",
       rows: [
-        { id: "DINE_MENU", title: "View menu", description: "Browse the menu and order instantly." },
+        { id: "MENU_VIEW", title: "View menu", description: "Browse the menu and request support." },
         { id: "back_menu", title: "🏠 Home", description: "Return to the main menu." },
       ],
     },
@@ -203,22 +169,6 @@ export function createQrPreview(overrides: Partial<QrPreview> = {}): QrPreview {
         qrPayload: "B:sunset-bar T:Table 1 K:seed",
       },
     },
-    ...overrides,
-  };
-}
-
-export function createTemplateMeta(
-  overrides: Partial<TemplateMeta> = {},
-): TemplateMeta {
-  return {
-    id: "template-1",
-    name: "Template",
-    purpose: "General",
-    locales: ["en"],
-    status: "draft",
-    variables: [],
-    lastUsedAt: null,
-    errorRate: 0,
     ...overrides,
   };
 }
@@ -278,21 +228,6 @@ export function createStorageObject(
   };
 }
 
-export function createCampaign(overrides: Partial<Campaign> = {}): Campaign {
-  return {
-    id: "campaign-1",
-    name: "Campaign",
-    type: "promo",
-    status: "draft",
-    templateId: "template-1",
-    createdAt: new Date().toISOString(),
-    startedAt: null,
-    finishedAt: null,
-    metadata: {},
-    ...overrides,
-  };
-}
-
 export function createUser(overrides: Partial<User> = {}): User {
   return {
     id: "user-1",
@@ -319,10 +254,7 @@ export function createBar(overrides: Partial<Bar> = {}): Bar {
     lastUpdated: new Date().toISOString(),
     createdAt: new Date().toISOString(),
     momoCode: null,
-    serviceCharge: null,
     directChatEnabled: false,
-    defaultPrepMinutes: null,
-    paymentInstructions: null,
     ...overrides,
   };
 }

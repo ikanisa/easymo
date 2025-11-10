@@ -8,12 +8,9 @@ The following Supabase Edge Functions were designed to run on a timer. They rema
 
 - `availability-refresh`
 - `baskets-reminder`
-- `cart-reminder`
 - `notification-worker`
-- `order-pending-reminder`
 - `recurring-trips-scheduler`
 - `housekeeping`
-- `campaign-dispatch`
 
 Each function still accepts an HTTP trigger (see the respective handler in `supabase/functions/<name>/index.ts`) so you can continue to run them ad-hoc with `curl` or the Supabase CLI.
 

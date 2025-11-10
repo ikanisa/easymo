@@ -167,17 +167,6 @@ CREATE TYPE "public"."menu_status" AS ENUM (
 ALTER TYPE "public"."menu_status" OWNER TO "postgres";
 
 
-CREATE TYPE "public"."notification_channel" AS ENUM (
-    'template',
-    'freeform',
-    'flow',
-    'media'
-);
-
-
-ALTER TYPE "public"."notification_channel" OWNER TO "postgres";
-
-
 CREATE TYPE "public"."notification_status" AS ENUM (
     'queued',
     'sent',
@@ -208,43 +197,6 @@ CREATE TYPE "public"."ocr_status" AS ENUM (
 
 
 ALTER TYPE "public"."ocr_status" OWNER TO "postgres";
-
-
-CREATE TYPE "public"."order_event_actor" AS ENUM (
-    'system',
-    'customer',
-    'vendor',
-    'admin'
-);
-
-
-ALTER TYPE "public"."order_event_actor" OWNER TO "postgres";
-
-
-CREATE TYPE "public"."order_event_type" AS ENUM (
-    'created',
-    'paid',
-    'served',
-    'cancelled',
-    'customer_paid_signal',
-    'vendor_nudge',
-    'admin_override'
-);
-
-
-ALTER TYPE "public"."order_event_type" OWNER TO "postgres";
-
-
-CREATE TYPE "public"."order_status" AS ENUM (
-    'pending',
-    'paid',
-    'served',
-    'cancelled'
-);
-
-
-ALTER TYPE "public"."order_status" OWNER TO "postgres";
-
 
 CREATE TYPE "public"."ride_status" AS ENUM (
     'searching',
@@ -1231,21 +1183,6 @@ $$;
 ALTER FUNCTION "public"."gate_pro_feature"("_user_id" "uuid") OWNER TO "postgres";
 
 
-CREATE OR REPLACE FUNCTION "public"."generate_order_code"() RETURNS "text"
-    LANGUAGE "plpgsql"
-    AS $$
-DECLARE
-  v_seq bigint;
-BEGIN
-  SELECT nextval('public.order_code_seq') INTO v_seq;
-  RETURN upper(lpad(to_hex(v_seq), 6, '0'));
-END;
-$$;
-
-
-ALTER FUNCTION "public"."generate_order_code"() OWNER TO "postgres";
-
-
 CREATE OR REPLACE FUNCTION "public"."haversine_km"("lat1" double precision, "lng1" double precision, "lat2" double precision, "lng2" double precision) RETURNS double precision
     LANGUAGE "sql" IMMUTABLE
     AS $$
@@ -1812,89 +1749,6 @@ $$;
 
 
 ALTER FUNCTION "public"."on_menu_publish_refresh"() OWNER TO "postgres";
-
-
-CREATE OR REPLACE FUNCTION "public"."order_events_sync_admin_columns"() RETURNS "trigger"
-    LANGUAGE "plpgsql"
-    AS $$
-DECLARE
-  has_event_type boolean := EXISTS (
-    SELECT 1
-    FROM information_schema.columns
-    WHERE table_schema = 'public'
-      AND table_name = 'order_events'
-      AND column_name = 'event_type'
-  );
-  has_actor_type boolean := EXISTS (
-    SELECT 1
-    FROM information_schema.columns
-    WHERE table_schema = 'public'
-      AND table_name = 'order_events'
-      AND column_name = 'actor_type'
-  );
-BEGIN
-  IF has_event_type THEN
-    IF NEW.type IS NULL AND NEW.event_type IS NOT NULL THEN
-      NEW.type := NEW.event_type::text;
-    ELSIF NEW.type IS NOT NULL THEN
-      BEGIN
-        NEW.event_type := NEW.type::order_event_type;
-      EXCEPTION WHEN OTHERS THEN
-        NEW.event_type := 'admin_override';
-      END;
-    END IF;
-  END IF;
-
-  IF has_actor_type
-     AND NEW.actor_id IS NOT NULL
-     AND (NEW.actor_type IS NULL OR NEW.actor_type::text = '') THEN
-    NEW.actor_type := 'admin';
-  END IF;
-
-  RETURN NEW;
-END;
-$$;
-
-
-ALTER FUNCTION "public"."order_events_sync_admin_columns"() OWNER TO "postgres";
-
-
-CREATE OR REPLACE FUNCTION "public"."orders_set_defaults"() RETURNS "trigger"
-    LANGUAGE "plpgsql"
-    AS $$
-BEGIN
-  IF NEW.order_code IS NULL OR NEW.order_code = '' THEN
-    NEW.order_code := public.generate_order_code();
-  END IF;
-  IF NEW.created_at IS NULL THEN
-    NEW.created_at := timezone('utc', now());
-  END IF;
-  IF NEW.updated_at IS NULL THEN
-    NEW.updated_at := timezone('utc', now());
-  END IF;
-  RETURN NEW;
-END;
-$$;
-
-
-ALTER FUNCTION "public"."orders_set_defaults"() OWNER TO "postgres";
-
-
-CREATE OR REPLACE FUNCTION "public"."orders_sync_admin_columns"() RETURNS "trigger"
-    LANGUAGE "plpgsql"
-    AS $$
-begin
-  if new.total is null and new.total_minor is not null then
-    new.total := round((new.total_minor::numeric) / 100, 2);
-  elsif new.total is not null then
-    new.total_minor := round(new.total * 100)::integer;
-  end if;
-  return new;
-end;
-$$;
-
-
-ALTER FUNCTION "public"."orders_sync_admin_columns"() OWNER TO "postgres";
 
 
 CREATE OR REPLACE FUNCTION "public"."profile_ref_code"("_profile_id" "uuid") RETURNS "text"
@@ -2994,14 +2848,8 @@ ALTER TABLE "public"."bar_numbers" OWNER TO "postgres";
 CREATE TABLE IF NOT EXISTS "public"."bar_settings" (
     "bar_id" "uuid" NOT NULL,
     "allow_direct_customer_chat" boolean DEFAULT false NOT NULL,
-    "order_auto_ack" boolean DEFAULT false NOT NULL,
-    "default_prep_minutes" integer DEFAULT 0 NOT NULL,
-    "service_charge_pct" numeric(5,2) DEFAULT 0 NOT NULL,
-    "payment_instructions" "text",
     "created_at" timestamp with time zone DEFAULT "timezone"('utc'::"text", "now"()) NOT NULL,
-    "updated_at" timestamp with time zone DEFAULT "timezone"('utc'::"text", "now"()) NOT NULL,
-    CONSTRAINT "bar_settings_default_prep_minutes_check" CHECK ((("default_prep_minutes" >= 0) AND ("default_prep_minutes" <= 240))),
-    CONSTRAINT "bar_settings_service_charge_pct_check" CHECK ((("service_charge_pct" >= (0)::numeric) AND ("service_charge_pct" <= (25)::numeric)))
+    "updated_at" timestamp with time zone DEFAULT "timezone"('utc'::"text", "now"()) NOT NULL
 );
 
 
@@ -3195,90 +3043,6 @@ CREATE TABLE IF NOT EXISTS "public"."call_consents" (
 
 
 ALTER TABLE "public"."call_consents" OWNER TO "postgres";
-
-
-CREATE TABLE IF NOT EXISTS "public"."campaign_recipients" (
-    "id" bigint NOT NULL,
-    "contact_id" bigint,
-    "msisdn_e164" "text" NOT NULL,
-    "send_allowed" boolean DEFAULT true,
-    "window_24h_open" boolean DEFAULT false,
-    "campaign_id" "uuid" NOT NULL
-);
-
-
-ALTER TABLE "public"."campaign_recipients" OWNER TO "postgres";
-
-
-CREATE SEQUENCE IF NOT EXISTS "public"."campaign_recipients_id_seq"
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER SEQUENCE "public"."campaign_recipients_id_seq" OWNER TO "postgres";
-
-
-ALTER SEQUENCE "public"."campaign_recipients_id_seq" OWNED BY "public"."campaign_recipients"."id";
-
-
-
-CREATE TABLE IF NOT EXISTS "public"."campaign_targets" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "campaign_id" "uuid" NOT NULL,
-    "msisdn" "text" NOT NULL,
-    "user_id" "uuid",
-    "personalized_vars" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
-    "status" "text" DEFAULT 'queued'::"text" NOT NULL,
-    "error_code" "text",
-    "message_id" "text",
-    "last_update_at" timestamp with time zone DEFAULT "now"() NOT NULL
-);
-
-
-ALTER TABLE "public"."campaign_targets" OWNER TO "postgres";
-
-
-CREATE TABLE IF NOT EXISTS "public"."campaigns" (
-    "legacy_id" bigint NOT NULL,
-    "status" "text" DEFAULT 'draft'::"text",
-    "created_at" timestamp with time zone DEFAULT "now"(),
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "template_id" "text" DEFAULT 'custom_text'::"text" NOT NULL,
-    "name" "text" NOT NULL,
-    "type" "text" DEFAULT 'promo'::"text" NOT NULL,
-    "created_by" "uuid",
-    "started_at" timestamp with time zone,
-    "finished_at" timestamp with time zone,
-    "metadata" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
-    "title" "text",
-    "message_kind" "text",
-    "payload" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
-    "target_audience" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
-    "time_zone" "text",
-    CONSTRAINT "campaigns_status_check" CHECK (("status" = ANY (ARRAY['draft'::"text", 'running'::"text", 'paused'::"text", 'done'::"text", 'SENDING'::"text", 'SCHEDULED'::"text", 'SENT'::"text", 'FAILED'::"text"]))),
-    CONSTRAINT "campaigns_type_check" CHECK (("type" = ANY (ARRAY['promo'::"text", 'voucher'::"text"])))
-);
-
-
-ALTER TABLE "public"."campaigns" OWNER TO "postgres";
-
-
-CREATE SEQUENCE IF NOT EXISTS "public"."campaigns_legacy_id_seq"
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER SEQUENCE "public"."campaigns_legacy_id_seq" OWNER TO "postgres";
-
-
-ALTER SEQUENCE "public"."campaigns_legacy_id_seq" OWNED BY "public"."campaigns"."legacy_id";
-
 
 
 CREATE TABLE IF NOT EXISTS "public"."cart_items" (
@@ -3942,11 +3706,8 @@ ALTER TABLE "public"."momo_unmatched" OWNER TO "postgres";
 
 CREATE TABLE IF NOT EXISTS "public"."notifications" (
     "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "order_id" "uuid",
     "to_wa_id" "text" NOT NULL,
-    "template_name" "text",
     "notification_type" "text" NOT NULL,
-    "channel" "public"."notification_channel" DEFAULT 'template'::"public"."notification_channel" NOT NULL,
     "status" "public"."notification_status" DEFAULT 'queued'::"public"."notification_status" NOT NULL,
     "payload" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
     "error_message" "text",
@@ -3983,84 +3744,6 @@ CREATE TABLE IF NOT EXISTS "public"."ocr_jobs" (
 
 ALTER TABLE "public"."ocr_jobs" OWNER TO "postgres";
 
-
-CREATE SEQUENCE IF NOT EXISTS "public"."order_code_seq"
-    START WITH 1000
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER SEQUENCE "public"."order_code_seq" OWNER TO "postgres";
-
-
-CREATE TABLE IF NOT EXISTS "public"."order_events" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "order_id" "uuid" NOT NULL,
-    "event_type" "public"."order_event_type" NOT NULL,
-    "actor_type" "public"."order_event_actor" NOT NULL,
-    "actor_identifier" "text",
-    "note" "text",
-    "created_at" timestamp with time zone DEFAULT "timezone"('utc'::"text", "now"()) NOT NULL,
-    "type" "text",
-    "status" "text",
-    "actor_id" "uuid",
-    "station_id" "uuid"
-);
-
-
-ALTER TABLE "public"."order_events" OWNER TO "postgres";
-
-
-CREATE TABLE IF NOT EXISTS "public"."order_items" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "order_id" "uuid" NOT NULL,
-    "item_id" "uuid",
-    "item_name" "text" NOT NULL,
-    "item_description" "text",
-    "qty" integer NOT NULL,
-    "unit_price_minor" integer NOT NULL,
-    "flags_snapshot" "jsonb" DEFAULT '[]'::"jsonb" NOT NULL,
-    "modifiers_snapshot" "jsonb" DEFAULT '[]'::"jsonb" NOT NULL,
-    "line_total_minor" integer NOT NULL,
-    "created_at" timestamp with time zone DEFAULT "timezone"('utc'::"text", "now"()) NOT NULL,
-    CONSTRAINT "order_items_line_total_minor_check" CHECK (("line_total_minor" >= 0)),
-    CONSTRAINT "order_items_qty_check" CHECK (("qty" >= 1)),
-    CONSTRAINT "order_items_unit_price_minor_check" CHECK (("unit_price_minor" >= 0))
-);
-
-
-ALTER TABLE "public"."order_items" OWNER TO "postgres";
-
-
-CREATE TABLE IF NOT EXISTS "public"."orders" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "order_code" "text",
-    "bar_id" "uuid" NOT NULL,
-    "source_cart_id" "uuid",
-    "table_label" "text",
-    "status" "public"."order_status" DEFAULT 'pending'::"public"."order_status" NOT NULL,
-    "subtotal_minor" integer DEFAULT 0 NOT NULL,
-    "service_charge_minor" integer DEFAULT 0 NOT NULL,
-    "total_minor" integer DEFAULT 0 NOT NULL,
-    "momo_code_used" "text",
-    "note" "text",
-    "paid_at" timestamp with time zone,
-    "served_at" timestamp with time zone,
-    "cancelled_at" timestamp with time zone,
-    "created_at" timestamp with time zone DEFAULT "timezone"('utc'::"text", "now"()) NOT NULL,
-    "updated_at" timestamp with time zone DEFAULT "timezone"('utc'::"text", "now"()) NOT NULL,
-    "profile_id" "uuid",
-    "bar_name" "text",
-    "total" numeric(12,2),
-    "staff_number" "text",
-    "override_reason" "text",
-    "override_at" timestamp with time zone
-);
-
-
-ALTER TABLE "public"."orders" OWNER TO "postgres";
 
 
 CREATE TABLE IF NOT EXISTS "public"."petrol_stations" (
@@ -4263,7 +3946,6 @@ CREATE TABLE IF NOT EXISTS "public"."send_logs" (
     "provider_msg_id" "text",
     "delivery_status" "text",
     "error" "text",
-    "campaign_id" "uuid"
 );
 
 
@@ -4292,7 +3974,6 @@ CREATE TABLE IF NOT EXISTS "public"."send_queue" (
     "attempt" integer DEFAULT 0,
     "next_attempt_at" timestamp with time zone DEFAULT "now"(),
     "status" "text" DEFAULT 'PENDING'::"text",
-    "campaign_id" "uuid" NOT NULL,
     CONSTRAINT "send_queue_status_check" CHECK (("status" = ANY (ARRAY['PENDING'::"text", 'SENT'::"text", 'FAILED'::"text", 'SKIPPED'::"text"])))
 );
 
@@ -4437,39 +4118,6 @@ ALTER SEQUENCE "public"."subscriptions_id_seq" OWNED BY "public"."subscriptions"
 
 
 
-CREATE TABLE IF NOT EXISTS "public"."templates" (
-    "id" bigint NOT NULL,
-    "name" "text" NOT NULL,
-    "language_code" "text" DEFAULT 'en'::"text" NOT NULL,
-    "category" "text",
-    "status" "text" NOT NULL,
-    "meta_id" "text",
-    "components" "jsonb" NOT NULL,
-    "sample" "jsonb" DEFAULT '{}'::"jsonb",
-    "last_synced_at" timestamp with time zone,
-    CONSTRAINT "templates_category_check" CHECK (("category" = ANY (ARRAY['MARKETING'::"text", 'UTILITY'::"text", 'AUTHENTICATION'::"text", 'SERVICE'::"text"]))),
-    CONSTRAINT "templates_status_check" CHECK (("status" = ANY (ARRAY['APPROVED'::"text", 'REJECTED'::"text", 'PENDING'::"text", 'DRAFT'::"text"])))
-);
-
-
-ALTER TABLE "public"."templates" OWNER TO "postgres";
-
-
-CREATE SEQUENCE IF NOT EXISTS "public"."templates_id_seq"
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER SEQUENCE "public"."templates_id_seq" OWNER TO "postgres";
-
-
-ALTER SEQUENCE "public"."templates_id_seq" OWNED BY "public"."templates"."id";
-
-
-
 CREATE TABLE IF NOT EXISTS "public"."transcripts" (
     "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
     "call_id" "uuid",
@@ -4562,7 +4210,6 @@ CREATE TABLE IF NOT EXISTS "public"."voice_calls" (
     "agent_profile" "text",
     "agent_profile_confidence" "text",
     "channel" "text" DEFAULT 'voice'::"text",
-    "campaign_tags" "text"[],
     "lead_name" "text",
     "lead_phone" "text",
     "status" "text",
@@ -4693,7 +4340,6 @@ CREATE TABLE IF NOT EXISTS "public"."vouchers" (
     "code5" "text",
     "amount" numeric(12,2),
     "station_scope" "uuid",
-    "campaign_id" "uuid",
     "qr_url" "text",
     "png_url" "text",
     "expires_at" timestamp with time zone,
@@ -4934,11 +4580,9 @@ ALTER SEQUENCE "public"."webhook_logs_id_seq" OWNED BY "public"."webhook_logs"."
 
 
 
-ALTER TABLE ONLY "public"."campaign_recipients" ALTER COLUMN "id" SET DEFAULT "nextval"('"public"."campaign_recipients_id_seq"'::"regclass");
 
 
 
-ALTER TABLE ONLY "public"."campaigns" ALTER COLUMN "legacy_id" SET DEFAULT "nextval"('"public"."campaigns_legacy_id_seq"'::"regclass");
 
 
 
@@ -4970,7 +4614,6 @@ ALTER TABLE ONLY "public"."subscriptions" ALTER COLUMN "id" SET DEFAULT "nextval
 
 
 
-ALTER TABLE ONLY "public"."templates" ALTER COLUMN "id" SET DEFAULT "nextval"('"public"."templates_id_seq"'::"regclass");
 
 
 
@@ -5207,23 +4850,15 @@ ALTER TABLE ONLY "public"."call_consents"
 
 
 
-ALTER TABLE ONLY "public"."campaign_recipients"
-    ADD CONSTRAINT "campaign_recipients_campaign_id_contact_id_key" UNIQUE ("campaign_id", "contact_id");
 
 
 
-ALTER TABLE ONLY "public"."campaign_recipients"
-    ADD CONSTRAINT "campaign_recipients_pkey" PRIMARY KEY ("id");
 
 
 
-ALTER TABLE ONLY "public"."campaign_targets"
-    ADD CONSTRAINT "campaign_targets_pkey" PRIMARY KEY ("id");
 
 
 
-ALTER TABLE ONLY "public"."campaigns"
-    ADD CONSTRAINT "campaigns_pkey" PRIMARY KEY ("id");
 
 
 
@@ -5457,23 +5092,15 @@ ALTER TABLE ONLY "public"."ocr_jobs"
 
 
 
-ALTER TABLE ONLY "public"."order_events"
-    ADD CONSTRAINT "order_events_pkey" PRIMARY KEY ("id");
 
 
 
-ALTER TABLE ONLY "public"."order_items"
-    ADD CONSTRAINT "order_items_pkey" PRIMARY KEY ("id");
 
 
 
-ALTER TABLE ONLY "public"."orders"
-    ADD CONSTRAINT "orders_order_code_key" UNIQUE ("order_code");
 
 
 
-ALTER TABLE ONLY "public"."orders"
-    ADD CONSTRAINT "orders_pkey" PRIMARY KEY ("id");
 
 
 
@@ -5597,8 +5224,6 @@ ALTER TABLE ONLY "public"."subscriptions"
 
 
 
-ALTER TABLE ONLY "public"."templates"
-    ADD CONSTRAINT "templates_pkey" PRIMARY KEY ("id");
 
 
 
@@ -5817,27 +5442,21 @@ CREATE INDEX "businesses_status_idx" ON "public"."businesses" USING "btree" ("st
 
 
 
-CREATE INDEX "campaign_targets_campaign_idx" ON "public"."campaign_targets" USING "btree" ("campaign_id");
 
 
 
-CREATE UNIQUE INDEX "campaign_targets_campaign_msisdn_key" ON "public"."campaign_targets" USING "btree" ("campaign_id", "msisdn");
 
 
 
-CREATE INDEX "campaign_targets_msisdn_idx" ON "public"."campaign_targets" USING "btree" ("msisdn");
 
 
 
-CREATE INDEX "campaign_targets_status_idx" ON "public"."campaign_targets" USING "btree" ("status");
 
 
 
-CREATE INDEX "campaigns_created_at_idx" ON "public"."campaigns" USING "btree" ("created_at" DESC);
 
 
 
-CREATE INDEX "campaigns_status_idx" ON "public"."campaigns" USING "btree" ("status");
 
 
 
@@ -6017,15 +5636,12 @@ CREATE INDEX "idx_ocr_jobs_status_created" ON "public"."ocr_jobs" USING "btree" 
 
 
 
-CREATE INDEX "idx_order_events_order_created" ON "public"."order_events" USING "btree" ("order_id", "created_at" DESC);
 
 
 
-CREATE INDEX "idx_orders_bar_status_created" ON "public"."orders" USING "btree" ("bar_id", "status", "created_at" DESC);
 
 
 
-CREATE INDEX "idx_orders_profile" ON "public"."orders" USING "btree" ("profile_id");
 
 
 
@@ -6085,19 +5701,15 @@ CREATE INDEX "notifications_status_idx" ON "public"."notifications" USING "btree
 
 
 
-CREATE INDEX "order_events_order_idx" ON "public"."order_events" USING "btree" ("order_id");
 
 
 
-CREATE INDEX "order_events_type_idx" ON "public"."order_events" USING "btree" ("type");
 
 
 
-CREATE INDEX "orders_bar_idx" ON "public"."orders" USING "btree" ("bar_id");
 
 
 
-CREATE INDEX "orders_status_idx" ON "public"."orders" USING "btree" ("status");
 
 
 
@@ -6121,11 +5733,9 @@ CREATE INDEX "referral_attributions_sharer_created_idx" ON "public"."referral_at
 
 
 
-CREATE INDEX "send_logs_campaign_idx" ON "public"."send_logs" USING "btree" ("campaign_id");
 
 
 
-CREATE INDEX "send_queue_campaign_idx" ON "public"."send_queue" USING "btree" ("campaign_id");
 
 
 
@@ -6241,7 +5851,6 @@ CREATE INDEX "voucher_redemptions_voucher_idx" ON "public"."voucher_redemptions"
 
 
 
-CREATE INDEX "vouchers_campaign_idx" ON "public"."vouchers" USING "btree" ("campaign_id");
 
 
 
@@ -6305,11 +5914,9 @@ CREATE OR REPLACE TRIGGER "notifications_sync_admin_columns" BEFORE INSERT OR UP
 
 
 
-CREATE OR REPLACE TRIGGER "order_events_sync_admin_columns" BEFORE INSERT OR UPDATE ON "public"."order_events" FOR EACH ROW EXECUTE FUNCTION "public"."order_events_sync_admin_columns"();
 
 
 
-CREATE OR REPLACE TRIGGER "orders_sync_admin_columns" BEFORE INSERT OR UPDATE ON "public"."orders" FOR EACH ROW EXECUTE FUNCTION "public"."orders_sync_admin_columns"();
 
 
 
@@ -6409,11 +6016,9 @@ CREATE OR REPLACE TRIGGER "trg_ocr_jobs_updated" BEFORE UPDATE ON "public"."ocr_
 
 
 
-CREATE OR REPLACE TRIGGER "trg_orders_defaults" BEFORE INSERT ON "public"."orders" FOR EACH ROW EXECUTE FUNCTION "public"."orders_set_defaults"();
 
 
 
-CREATE OR REPLACE TRIGGER "trg_orders_updated" BEFORE UPDATE ON "public"."orders" FOR EACH ROW EXECUTE FUNCTION "public"."set_updated_at"();
 
 
 
@@ -6596,23 +6201,15 @@ ALTER TABLE ONLY "public"."call_consents"
 
 
 
-ALTER TABLE ONLY "public"."campaign_recipients"
-    ADD CONSTRAINT "campaign_recipients_campaign_id_fkey" FOREIGN KEY ("campaign_id") REFERENCES "public"."campaigns"("id") ON DELETE CASCADE;
 
 
 
-ALTER TABLE ONLY "public"."campaign_recipients"
-    ADD CONSTRAINT "campaign_recipients_contact_id_fkey" FOREIGN KEY ("contact_id") REFERENCES "public"."contacts"("id") ON DELETE CASCADE;
 
 
 
-ALTER TABLE ONLY "public"."campaign_targets"
-    ADD CONSTRAINT "campaign_targets_campaign_id_fkey" FOREIGN KEY ("campaign_id") REFERENCES "public"."campaigns"("id") ON DELETE CASCADE;
 
 
 
-ALTER TABLE ONLY "public"."campaign_targets"
-    ADD CONSTRAINT "campaign_targets_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE SET NULL;
 
 
 
@@ -6807,7 +6404,6 @@ ALTER TABLE ONLY "public"."momo_unmatched"
 
 
 ALTER TABLE ONLY "public"."notifications"
-    ADD CONSTRAINT "notifications_order_id_fkey" FOREIGN KEY ("order_id") REFERENCES "public"."orders"("id") ON DELETE SET NULL;
 
 
 
@@ -6821,28 +6417,18 @@ ALTER TABLE ONLY "public"."ocr_jobs"
 
 
 
-ALTER TABLE ONLY "public"."order_events"
-    ADD CONSTRAINT "order_events_order_id_fkey" FOREIGN KEY ("order_id") REFERENCES "public"."orders"("id") ON DELETE CASCADE;
 
 
 
-ALTER TABLE ONLY "public"."order_items"
-    ADD CONSTRAINT "order_items_order_id_fkey" FOREIGN KEY ("order_id") REFERENCES "public"."orders"("id") ON DELETE CASCADE;
 
 
 
-ALTER TABLE ONLY "public"."orders"
-    ADD CONSTRAINT "orders_bar_id_fkey" FOREIGN KEY ("bar_id") REFERENCES "public"."bars"("id") ON DELETE CASCADE;
 
 
 
-ALTER TABLE ONLY "public"."orders"
-    ADD CONSTRAINT "orders_profile_fk" FOREIGN KEY ("profile_id") REFERENCES "public"."profiles"("user_id") ON DELETE SET NULL;
 
 
 
-ALTER TABLE ONLY "public"."orders"
-    ADD CONSTRAINT "orders_source_cart_id_fkey" FOREIGN KEY ("source_cart_id") REFERENCES "public"."carts"("id") ON DELETE SET NULL;
 
 
 
@@ -6887,7 +6473,6 @@ ALTER TABLE ONLY "public"."rides"
 
 
 ALTER TABLE ONLY "public"."send_logs"
-    ADD CONSTRAINT "send_logs_campaign_id_fkey" FOREIGN KEY ("campaign_id") REFERENCES "public"."campaigns"("id") ON DELETE SET NULL;
 
 
 
@@ -6897,7 +6482,6 @@ ALTER TABLE ONLY "public"."send_logs"
 
 
 ALTER TABLE ONLY "public"."send_queue"
-    ADD CONSTRAINT "send_queue_campaign_id_fkey" FOREIGN KEY ("campaign_id") REFERENCES "public"."campaigns"("id") ON DELETE CASCADE;
 
 
 
@@ -7322,11 +6906,8 @@ CREATE POLICY "businesses_read_all" ON "public"."businesses" FOR SELECT USING (t
 ALTER TABLE "public"."call_consents" ENABLE ROW LEVEL SECURITY;
 
 
-ALTER TABLE "public"."campaign_targets" ENABLE ROW LEVEL SECURITY;
-ALTER TABLE ONLY "public"."campaign_targets" FORCE ROW LEVEL SECURITY;
 
 
-CREATE POLICY "campaign_targets_admin_manage" ON "public"."campaign_targets"
     FOR ALL
     USING (public.is_admin())
     WITH CHECK (public.is_admin());
@@ -7344,18 +6925,14 @@ CREATE POLICY "campaign_targets_admin_manage" ON "public"."campaign_targets"
 
 
 
-ALTER TABLE "public"."campaigns" ENABLE ROW LEVEL SECURITY;
-ALTER TABLE ONLY "public"."campaigns" FORCE ROW LEVEL SECURITY;
 
 
-CREATE POLICY "campaigns_admin_manage" ON "public"."campaigns"
     FOR ALL
     USING (public.is_admin())
     WITH CHECK (public.is_admin());
 
 
 
-CREATE POLICY "campaigns_admin_read" ON "public"."campaigns"
     FOR SELECT
     USING (public.is_admin_reader());
 
@@ -7671,9 +7248,7 @@ CREATE POLICY "notifications_platform_full" ON "public"."notifications" USING ((
 
 
 
-CREATE POLICY "notifications_role_select" ON "public"."notifications" FOR SELECT USING (((("public"."auth_role"() = 'customer'::"text") AND ("public"."auth_wa_id"() = "to_wa_id")) OR (("public"."auth_role"() = ANY (ARRAY['vendor_manager'::"text", 'vendor_staff'::"text"])) AND (EXISTS ( SELECT 1
-   FROM "public"."orders"
-  WHERE (("orders"."id" = "notifications"."order_id") AND ("orders"."bar_id" = "public"."auth_bar_id"())))))));
+CREATE POLICY "notifications_role_select" ON "public"."notifications" FOR SELECT USING ((("public"."auth_role"() = 'customer'::"text") AND ("public"."auth_wa_id"() = "to_wa_id")));
 
 
 
@@ -7696,74 +7271,48 @@ CREATE POLICY "ocr_jobs_vendor_select" ON "public"."ocr_jobs" FOR SELECT USING (
 
 
 
-ALTER TABLE "public"."order_events" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "order_events_block_writes" ON "public"."order_events" USING (false) WITH CHECK (false);
 
 
 
-CREATE POLICY "order_events_customer_select" ON "public"."order_events" FOR SELECT USING ((("public"."auth_role"() = 'customer'::"text") AND (EXISTS ( SELECT 1
-   FROM "public"."orders" "o"
-  WHERE (("o"."id" = "order_events"."order_id") AND ("o"."profile_id" = "public"."auth_profile_id"()))))));
 
 
 
-CREATE POLICY "order_events_platform_full" ON "public"."order_events" USING (("public"."auth_role"() = 'platform'::"text")) WITH CHECK (("public"."auth_role"() = 'platform'::"text"));
 
 
 
-CREATE POLICY "order_events_read_all" ON "public"."order_events" FOR SELECT USING (true);
 
 
 
-CREATE POLICY "order_events_vendor_rw" ON "public"."order_events" USING ((("public"."auth_role"() = ANY (ARRAY['vendor_manager'::"text", 'vendor_staff'::"text"])) AND (EXISTS ( SELECT 1
-   FROM "public"."orders"
-  WHERE (("orders"."id" = "order_events"."order_id") AND ("orders"."bar_id" = "public"."auth_bar_id"())))))) WITH CHECK ((("public"."auth_role"() = ANY (ARRAY['vendor_manager'::"text", 'vendor_staff'::"text"])) AND (EXISTS ( SELECT 1
-   FROM "public"."orders"
-  WHERE (("orders"."id" = "order_events"."order_id") AND ("orders"."bar_id" = "public"."auth_bar_id"()))))));
 
 
 
-ALTER TABLE "public"."order_items" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "order_items_customer_select" ON "public"."order_items" FOR SELECT USING ((("public"."auth_role"() = 'customer'::"text") AND (EXISTS ( SELECT 1
-   FROM "public"."orders" "o"
-  WHERE (("o"."id" = "order_items"."order_id") AND ("o"."profile_id" = "public"."auth_profile_id"()))))));
 
 
 
-CREATE POLICY "order_items_platform_full" ON "public"."order_items" USING (("public"."auth_role"() = 'platform'::"text")) WITH CHECK (("public"."auth_role"() = 'platform'::"text"));
 
 
 
-CREATE POLICY "order_items_vendor_select" ON "public"."order_items" FOR SELECT USING ((("public"."auth_role"() = ANY (ARRAY['vendor_manager'::"text", 'vendor_staff'::"text"])) AND (EXISTS ( SELECT 1
-   FROM "public"."orders"
-  WHERE (("orders"."id" = "order_items"."order_id") AND ("orders"."bar_id" = "public"."auth_bar_id"()))))));
 
 
 
-ALTER TABLE "public"."orders" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "orders_block_writes" ON "public"."orders" USING (false) WITH CHECK (false);
 
 
 
-CREATE POLICY "orders_customer_select" ON "public"."orders" FOR SELECT USING ((("public"."auth_role"() = ANY (ARRAY['customer'::"text", 'platform'::"text"])) AND (("public"."auth_role"() = 'platform'::"text") OR ("public"."auth_profile_id"() = "profile_id"))));
 
 
 
-CREATE POLICY "orders_platform_full" ON "public"."orders" USING (("public"."auth_role"() = 'platform'::"text")) WITH CHECK (("public"."auth_role"() = 'platform'::"text"));
 
 
 
-CREATE POLICY "orders_read_all" ON "public"."orders" FOR SELECT USING (true);
 
 
 
-CREATE POLICY "orders_vendor_rw" ON "public"."orders" USING ((("public"."auth_role"() = ANY (ARRAY['vendor_manager'::"text", 'vendor_staff'::"text"])) AND ("public"."auth_bar_id"() = "bar_id"))) WITH CHECK ((("public"."auth_role"() = ANY (ARRAY['vendor_manager'::"text", 'vendor_staff'::"text"])) AND ("public"."auth_bar_id"() = "bar_id")));
+
+
+
+
+
+
 
 
 
@@ -8297,13 +7846,6 @@ GRANT ALL ON FUNCTION "public"."gate_pro_feature"("_user_id" "uuid") TO "wa_edge
 
 
 
-GRANT ALL ON FUNCTION "public"."generate_order_code"() TO "anon";
-GRANT ALL ON FUNCTION "public"."generate_order_code"() TO "authenticated";
-GRANT ALL ON FUNCTION "public"."generate_order_code"() TO "service_role";
-GRANT ALL ON FUNCTION "public"."generate_order_code"() TO "wa_edge_role";
-
-
-
 GRANT ALL ON FUNCTION "public"."haversine_km"("lat1" double precision, "lng1" double precision, "lat2" double precision, "lng2" double precision) TO "anon";
 GRANT ALL ON FUNCTION "public"."haversine_km"("lat1" double precision, "lng1" double precision, "lat2" double precision, "lng2" double precision) TO "authenticated";
 GRANT ALL ON FUNCTION "public"."haversine_km"("lat1" double precision, "lng1" double precision, "lat2" double precision, "lng2" double precision) TO "service_role";
@@ -8432,24 +7974,12 @@ GRANT ALL ON FUNCTION "public"."on_menu_publish_refresh"() TO "wa_edge_role";
 
 
 
-GRANT ALL ON FUNCTION "public"."order_events_sync_admin_columns"() TO "anon";
-GRANT ALL ON FUNCTION "public"."order_events_sync_admin_columns"() TO "authenticated";
-GRANT ALL ON FUNCTION "public"."order_events_sync_admin_columns"() TO "service_role";
-GRANT ALL ON FUNCTION "public"."order_events_sync_admin_columns"() TO "wa_edge_role";
 
 
 
-GRANT ALL ON FUNCTION "public"."orders_set_defaults"() TO "anon";
-GRANT ALL ON FUNCTION "public"."orders_set_defaults"() TO "authenticated";
-GRANT ALL ON FUNCTION "public"."orders_set_defaults"() TO "service_role";
-GRANT ALL ON FUNCTION "public"."orders_set_defaults"() TO "wa_edge_role";
 
 
 
-GRANT ALL ON FUNCTION "public"."orders_sync_admin_columns"() TO "anon";
-GRANT ALL ON FUNCTION "public"."orders_sync_admin_columns"() TO "authenticated";
-GRANT ALL ON FUNCTION "public"."orders_sync_admin_columns"() TO "service_role";
-GRANT ALL ON FUNCTION "public"."orders_sync_admin_columns"() TO "wa_edge_role";
 
 
 
@@ -8826,33 +8356,18 @@ GRANT ALL ON TABLE "public"."call_consents" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."campaign_recipients" TO "anon";
-GRANT ALL ON TABLE "public"."campaign_recipients" TO "authenticated";
-GRANT ALL ON TABLE "public"."campaign_recipients" TO "service_role";
 
 
 
-GRANT ALL ON SEQUENCE "public"."campaign_recipients_id_seq" TO "anon";
-GRANT ALL ON SEQUENCE "public"."campaign_recipients_id_seq" TO "authenticated";
-GRANT ALL ON SEQUENCE "public"."campaign_recipients_id_seq" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."campaign_targets" TO "anon";
-GRANT ALL ON TABLE "public"."campaign_targets" TO "authenticated";
-GRANT ALL ON TABLE "public"."campaign_targets" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."campaigns" TO "anon";
-GRANT ALL ON TABLE "public"."campaigns" TO "authenticated";
-GRANT ALL ON TABLE "public"."campaigns" TO "service_role";
 
 
 
-GRANT ALL ON SEQUENCE "public"."campaigns_legacy_id_seq" TO "anon";
-GRANT ALL ON SEQUENCE "public"."campaigns_legacy_id_seq" TO "authenticated";
-GRANT ALL ON SEQUENCE "public"."campaigns_legacy_id_seq" TO "service_role";
 
 
 
@@ -9072,27 +8587,13 @@ GRANT ALL ON TABLE "public"."ocr_jobs" TO "service_role";
 
 
 
-GRANT ALL ON SEQUENCE "public"."order_code_seq" TO "anon";
-GRANT ALL ON SEQUENCE "public"."order_code_seq" TO "authenticated";
-GRANT ALL ON SEQUENCE "public"."order_code_seq" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."order_events" TO "anon";
-GRANT ALL ON TABLE "public"."order_events" TO "authenticated";
-GRANT ALL ON TABLE "public"."order_events" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."order_items" TO "anon";
-GRANT ALL ON TABLE "public"."order_items" TO "authenticated";
-GRANT ALL ON TABLE "public"."order_items" TO "service_role";
 
-
-
-GRANT ALL ON TABLE "public"."orders" TO "anon";
-GRANT ALL ON TABLE "public"."orders" TO "authenticated";
-GRANT ALL ON TABLE "public"."orders" TO "service_role";
 
 
 
@@ -9240,15 +8741,9 @@ GRANT ALL ON SEQUENCE "public"."subscriptions_id_seq" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."templates" TO "anon";
-GRANT ALL ON TABLE "public"."templates" TO "authenticated";
-GRANT ALL ON TABLE "public"."templates" TO "service_role";
 
 
 
-GRANT ALL ON SEQUENCE "public"."templates_id_seq" TO "anon";
-GRANT ALL ON SEQUENCE "public"."templates_id_seq" TO "authenticated";
-GRANT ALL ON SEQUENCE "public"."templates_id_seq" TO "service_role";
 
 
 

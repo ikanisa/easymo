@@ -3,7 +3,6 @@ import { sendText } from "../wa/client.ts";
 import { clearState } from "../state/store.ts";
 import type { ChatState } from "../state/store.ts";
 import { sendHomeMenu } from "../flows/home.ts";
-import { DINE_STATE } from "../domains/dinein/state.ts";
 import { t } from "../i18n/translator.ts";
 import {
   getButtonReplyId,
@@ -75,17 +74,7 @@ export async function runGuards(
 ): Promise<boolean> {
   if (isTextMessage(msg)) {
     const body = getTextBody(msg) ?? "";
-    const inDineOnboarding = state.key
-      ? [
-        DINE_STATE.ONBOARD_IDENTITY,
-        DINE_STATE.ONBOARD_LOCATION,
-        DINE_STATE.ONBOARD_PAYMENT,
-        DINE_STATE.ONBOARD_CONTACTS,
-        DINE_STATE.ONBOARD_UPLOAD,
-      ].includes(state.key as typeof DINE_STATE[keyof typeof DINE_STATE])
-      : false;
     if (STOP_REGEX.test(body)) {
-      if (inDineOnboarding) return false;
       const nowIso = new Date().toISOString();
       await upsertContact(ctx, {
         profile_id: ctx.profileId ?? null,
@@ -99,7 +88,6 @@ export async function runGuards(
       return true;
     }
     if (START_REGEX.test(body)) {
-      if (inDineOnboarding) return false;
       const nowIso = new Date().toISOString();
       await upsertContact(ctx, {
         profile_id: ctx.profileId ?? null,
@@ -117,7 +105,6 @@ export async function runGuards(
       return true;
     }
     if (HOME_REGEX.test(body)) {
-      if (inDineOnboarding) return false;
       if (ctx.profileId) {
         await clearState(ctx.supabase, ctx.profileId);
       }
@@ -128,17 +115,6 @@ export async function runGuards(
   if (isInteractiveButtonMessage(msg) &&
     getButtonReplyId(msg) === "back_home") {
     const key = state.key;
-    if (
-      key && [
-        DINE_STATE.ONBOARD_IDENTITY,
-        DINE_STATE.ONBOARD_LOCATION,
-        DINE_STATE.ONBOARD_PAYMENT,
-        DINE_STATE.ONBOARD_CONTACTS,
-        DINE_STATE.ONBOARD_UPLOAD,
-      ].includes(key as typeof DINE_STATE[keyof typeof DINE_STATE])
-    ) {
-      return false;
-    }
     if (ctx.profileId) {
       await clearState(ctx.supabase, ctx.profileId);
     }

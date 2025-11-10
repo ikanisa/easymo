@@ -212,7 +212,7 @@ export const POST = createHandler('admin_api.notifications.id.action', async (
     details: {
       notificationId,
       toRole: data.to_role,
-      template: data.type,
+      type: data.type,
     }
   });
 

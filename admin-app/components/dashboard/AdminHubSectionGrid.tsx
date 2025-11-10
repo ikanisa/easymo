@@ -8,10 +8,6 @@ const SECTION_LINKS: Record<
   string,
   { route: NavigableAdminRouteKey; description: string }
 > = {
-  "ADMIN::OPS_TRIPS": {
-    route: "panelOrders",
-    description: "Monitor live trip matching and manual overrides.",
-  },
   "ADMIN::OPS_MARKETPLACE": {
     route: "panelBars",
     description: "Vendor marketplace roster and inventory status.",
@@ -23,18 +19,6 @@ const SECTION_LINKS: Record<
   "ADMIN::OPS_MOMO": {
     route: "panelQr",
     description: "Manage MoMo QR payloads and deep links.",
-  },
-  "ADMIN::GROW_PROMOTERS": {
-    route: "panelCampaigns",
-    description: "Promoter tooling and growth actions.",
-  },
-  "ADMIN::GROW_BROADCAST": {
-    route: "panelCampaigns",
-    description: "Broadcast orchestration and targeting lists.",
-  },
-  "ADMIN::GROW_TEMPLATES": {
-    route: "panelTemplates",
-    description: "Template catalogue and flow JSON references.",
   },
   "ADMIN::TRUST_REFERRALS": {
     route: "panelUsers",
@@ -62,6 +46,13 @@ const SECTION_LINKS: Record<
   },
 };
 
+const DISABLED_SECTION_IDS = new Set([
+  "ADMIN::OPS_TRIPS",
+  "ADMIN::GROW_PROMOTERS",
+  "ADMIN::GROW_BROADCAST",
+  "ADMIN::GROW_TEMPLATES",
+]);
+
 const GROUP_LABELS: Array<{ key: keyof AdminHubSections; title: string }> = [
   { key: "operations", title: "Operations" },
   { key: "growth", title: "Growth" },
@@ -76,14 +67,15 @@ function SectionGroup({
   title: string;
   items: AdminHubSections[keyof AdminHubSections];
 }) {
-  if (!items.length) return null;
+  const visibleItems = items.filter((item) => !DISABLED_SECTION_IDS.has(item.id));
+  if (!visibleItems.length) return null;
   return (
     <div className="space-y-2">
       <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
         {title}
       </h3>
       <ul className="grid gap-3">
-        {items.map((item) => {
+        {visibleItems.map((item) => {
           const meta = SECTION_LINKS[item.id];
           return (
             <li

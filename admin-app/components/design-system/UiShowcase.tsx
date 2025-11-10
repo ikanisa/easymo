@@ -95,7 +95,7 @@ export function UiShowcase() {
         <div className="flex flex-col gap-2">
           <h2 className="text-lg font-semibold text-[color:var(--color-foreground)]">Vendor operations</h2>
           <p className="text-sm text-[color:var(--color-muted)]">
-            High-touch operators highlighted for manual QA before dispatching future campaigns.
+            High-touch operators highlighted for manual QA before triggering future automations.
           </p>
         </div>
         <DataTable>

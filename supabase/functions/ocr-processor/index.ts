@@ -743,13 +743,7 @@ async function sendMenuReadyNotification(
     const headerText = barResult.data?.name ?? undefined;
     const bodyText =
       "Menu added successfully ✅\nItems are now live.\nNote: Ranked alphabetically first; later, most ordered will move to the top.";
-    const rows = [
-      { id: IDS.DINEIN_BARS_REVIEW, title: "Review & edit menu" },
-      { id: IDS.DINEIN_BARS_MANAGE_ORDERS, title: "Manage orders" },
-      { id: IDS.DINEIN_BARS_UPLOAD, title: "Upload/Update menu" },
-      { id: IDS.DINEIN_BARS_NUMBERS_MENU, title: "Add WhatsApp numbers" },
-      { id: IDS.BACK_MENU, title: "← Back" },
-    ];
+    const rows = [{ id: IDS.BACK_MENU, title: "← Back" }];
 
     console.log("ocr.notify_menu_ready_start", {
       barId,
@@ -759,9 +753,6 @@ async function sendMenuReadyNotification(
     const notificationsPayload = recipients.map((to) => ({
       to_wa_id: to,
       notification_type: "menu_ready",
-      template_name: null,
-      order_id: null,
-      channel: "freeform",
       payload: {
         interactive: {
           type: "list",

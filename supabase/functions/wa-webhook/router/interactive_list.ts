@@ -60,48 +60,6 @@ import {
 } from "../domains/insurance/gate.ts";
 import { homeOnly, sendButtonsMessage } from "../utils/reply.ts";
 import { handleAdminBack } from "../flows/admin/navigation.ts";
-import {
-  handleBarRow as handleDineBarRow,
-  openManagerPortal,
-  sendMenuQr,
-  startDineIn,
-} from "../domains/dinein/browse.ts";
-import { handleItemRow as handleDineItemRow } from "../domains/dinein/item.ts";
-import { openMenu } from "../domains/dinein/menu.ts";
-import {
-  DINE_IDS,
-  isBarRow as isDineBarRow,
-  isItemRow as isDineItemRow,
-  isMoreRow as isDineMoreRow,
-  isOrderRow,
-  isReviewItemRow,
-  parseMoreOffset,
-  parseOrderRowId,
-  parseReviewItemId,
-} from "../domains/dinein/ids.ts";
-import {
-  handleOrderRowSelection,
-  managerContextFromState,
-  promptAddNumber,
-  promptRemoveNumber,
-  showBarsEntry,
-  showBarsMenu,
-  showCurrentNumbers,
-  showDeleteMenuConfirmation,
-  showEditMenu,
-  showManageOrders,
-  showManagerEntry,
-  showManagerMenu,
-  showNumbersMenu,
-  showOnboardIdentity,
-  showRemoveCategoriesConfirmation,
-  showReviewIntro,
-  showReviewItemMenu,
-  showReviewList,
-  showUploadInstruction,
-} from "../domains/dinein/manager.ts";
-import { handleDineBack } from "../domains/dinein/navigation.ts";
-import { copy } from "../domains/dinein/copy.ts";
 
 export async function handleList(
   ctx: RouterContext,
@@ -110,117 +68,17 @@ export async function handleList(
 ): Promise<boolean> {
   const id = getListReplyId(msg);
   if (!id) return false;
+  if (id.startsWith("dinein_")) {
+    await sendDineInDisabledNotice(ctx);
+    return true;
+  }
   
   // Check if this is an AI agent option selection
   if (id.startsWith("agent_option_") && state.key === "ai_agent_selection") {
     return await handleAIAgentOptionSelection(ctx, state, id);
   }
   
-  const managerCtx = managerContextFromState(state);
-  if (id === IDS.DINEIN_BARS_VIEW_LIST) {
-    await startDineIn(ctx, state);
-    return true;
-  }
-  if (id === IDS.DINEIN_BARS_MANAGER_VIEW) {
-    await showManagerMenu(ctx, managerCtx);
-    return true;
-  }
-  if (id === IDS.DINEIN_BARS_MANAGE) {
-    await showManagerEntry(ctx, managerCtx);
-    return true;
-  }
-  if (id === IDS.DINEIN_BARS_ONBOARD) {
-    await showOnboardIdentity(ctx, managerCtx);
-    return true;
-  }
-  if (id === IDS.DINEIN_BARS_UPLOAD) {
-    await showUploadInstruction(ctx, managerCtx);
-    return true;
-  }
-  if (id === IDS.DINEIN_BARS_MANAGE_ORDERS) {
-    await showManageOrders(ctx, managerCtx);
-    return true;
-  }
-  if (id === IDS.DINEIN_BARS_MANAGE_ORDERS_NEXT) {
-    const page = Number(state.data?.page ?? 1);
-    await showManageOrders(ctx, managerCtx, { page: page + 1 });
-    return true;
-  }
-  if (id === IDS.DINEIN_BARS_MANAGE_ORDERS_PREV) {
-    const page = Number(state.data?.page ?? 1);
-    await showManageOrders(ctx, managerCtx, { page: Math.max(1, page - 1) });
-    return true;
-  }
-  if (id === IDS.DINEIN_BARS_NUMBERS_MENU) {
-    await showNumbersMenu(ctx, managerCtx);
-    return true;
-  }
-  if (id === IDS.DINEIN_BARS_NUMBERS_VIEW) {
-    await showCurrentNumbers(ctx, managerCtx);
-    return true;
-  }
-  if (id === IDS.DINEIN_BARS_NUMBERS_ADD) {
-    await promptAddNumber(ctx, managerCtx);
-    return true;
-  }
-  if (id === IDS.DINEIN_BARS_NUMBERS_REMOVE) {
-    await promptRemoveNumber(ctx, managerCtx);
-    return true;
-  }
-  if (id === IDS.DINEIN_BARS_EDIT_MENU) {
-    await showEditMenu(ctx, managerCtx);
-    return true;
-  }
-  if (id === IDS.DINEIN_BARS_EDIT_UPLOAD) {
-    await showUploadInstruction(ctx, managerCtx);
-    return true;
-  }
-  if (id === IDS.DINEIN_BARS_EDIT_DELETE) {
-    await showDeleteMenuConfirmation(ctx, managerCtx);
-    return true;
-  }
-  if (id === IDS.DINEIN_BARS_EDIT_REMOVE_CATEGORIES) {
-    await showRemoveCategoriesConfirmation(ctx, managerCtx);
-    return true;
-  }
-  if (id === IDS.DINEIN_BARS_REVIEW) {
-    await showReviewIntro(ctx, managerCtx);
-    return true;
-  }
-  if (id === IDS.DINEIN_BARS_REVIEW_NEXT_PAGE) {
-    const page = Number(state.data?.page ?? 1);
-    await showReviewList(ctx, managerCtx, { page: page + 1 });
-    return true;
-  }
-  if (id === IDS.DINEIN_BARS_REVIEW_PREV_PAGE) {
-    const page = Number(state.data?.page ?? 1);
-    await showReviewList(ctx, managerCtx, { page: Math.max(1, page - 1) });
-    return true;
-  }
-  if (id === IDS.DINEIN_BARS_REVIEW_VIEW_LIST) {
-    await showReviewList(ctx, managerCtx);
-    return true;
-  }
-  if (isReviewItemRow(id)) {
-    const itemId = parseReviewItemId(id);
-    await showReviewItemMenu(ctx, managerCtx, itemId, state);
-    return true;
-  }
   if (await handleHomeMenuSelection(ctx, id, state)) {
-    return true;
-  }
-  if (isDineBarRow(id)) {
-    return await handleDineBarRow(ctx, id);
-  }
-  if (isDineItemRow(id)) {
-    return await handleDineItemRow(ctx, id, state);
-  }
-  if (isDineMoreRow(id)) {
-    const offset = parseMoreOffset(id);
-    return await openMenu(ctx, state, { offset });
-  }
-  if (isOrderRow(id)) {
-    await handleOrderRowSelection(ctx, state, parseOrderRowId(id));
     return true;
   }
   if (id === IDS.BACK_HOME) {
@@ -295,12 +153,6 @@ export async function handleList(
   if (await handleBasketButton(ctx, state, id)) {
     return true;
   }
-  if (id === DINE_IDS.MANAGE_BAR) {
-    return await openManagerPortal(ctx, state);
-  }
-  if (id === DINE_IDS.MENU_QR) {
-    return await sendMenuQr(ctx, state);
-  }
   if (await handleWalletEarnSelection(ctx, state as any, id)) {
     return true;
   }
@@ -344,28 +196,24 @@ export async function handleList(
       return await handleAdminRow(ctx, id, state);
     }
   }
-  if (id.startsWith("DINE_")) {
-    await sendButtonsMessage(
-      ctx,
-      copy("error.expired"),
-      [...homeOnly()],
-      { emoji: "⚠️" },
-    );
-    await startDineIn(ctx, state, { skipResume: true });
-    return true;
-  }
   return false;
+}
+
+async function sendDineInDisabledNotice(ctx: RouterContext): Promise<void> {
+  await sendButtonsMessage(
+    ctx,
+    {
+      body: "Dine-in workflows are handled outside WhatsApp. Please coordinate with your success manager.",
+    },
+    [...homeOnly()],
+    { emoji: "ℹ️" },
+  );
 }
 
 async function handleBackMenu(
   ctx: RouterContext,
   state: { key: string; data?: Record<string, unknown> },
 ): Promise<boolean> {
-  if (state.key?.startsWith("dine")) {
-    if (await handleDineBack(ctx, state as any)) {
-      return true;
-    }
-  }
   if (state.key?.startsWith("admin")) {
     if (await handleAdminBack(ctx, state)) {
       return true;
@@ -387,7 +235,6 @@ async function handleHomeMenuSelection(
   id: string,
   state: { key: string; data?: Record<string, unknown> },
 ): Promise<boolean> {
-  const managerCtx = managerContextFromState(state);
   switch (id) {
     case IDS.SEE_DRIVERS:
       return await handleSeeDrivers(ctx);
@@ -449,9 +296,6 @@ async function handleHomeMenuSelection(
       return await showWalletRedeem(ctx);
     case IDS.WALLET_TOP:
       return await showWalletTop(ctx);
-    case IDS.DINEIN_BARS:
-      await showBarsEntry(ctx, managerCtx);
-      return true;
     case IDS.ADMIN_HUB:
       await openAdminHub(ctx);
       return true;

@@ -11,7 +11,6 @@ const aiAgentsItems = [
   { href: "/agents/shops", title: "Shops Agent", icon: "🛍️" },
   { href: "/agents/quincaillerie", title: "Hardware Agent", icon: "🔧" },
   { href: "/agents/property-rental", title: "Property Agent", icon: "🏠" },
-  { href: "/agents/waiter", title: "Waiter Agent", icon: "🍽️" },
   { href: "/agents/schedule-trip", title: "Schedule Agent", icon: "📅" },
   { href: "/agents/conversations", title: "Live Conversations", icon: "💬" },
   { href: "/agents/learning", title: "Agent Learning", icon: "🧠" },
@@ -30,14 +29,12 @@ const operationsItems = [
 const businessItems = [
   { href: "/users", title: "Users", icon: "👥" },
   { href: "/trips", title: "Trips", icon: "🚕" },
-  { href: "/orders", title: "Orders", icon: "📦" },
   { href: "/insurance", title: "Insurance", icon: "🛡️" },
   { href: "/marketplace", title: "Marketplace", icon: "🏪" },
 ];
 
 // Marketing & Sales
 const marketingItems = [
-  { href: "/campaigns", title: "Campaigns", icon: "📢" },
   { href: "/leads", title: "Leads", icon: "🎯" },
   { href: "/live-calls", title: "Live Calls", icon: "📞" },
   { href: "/voice-analytics", title: "Voice Analytics", icon: "🎙️" },
@@ -46,7 +43,6 @@ const marketingItems = [
 // System & Settings
 const systemItems = [
   { href: "/logs", title: "System Logs", icon: "📝" },
-  { href: "/templates", title: "Templates", icon: "📄" },
   { href: "/whatsapp-health", title: "WhatsApp Health", icon: "💚" },
   { href: "/settings", title: "Settings", icon: "⚙️" },
 ];

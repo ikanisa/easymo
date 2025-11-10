@@ -10,8 +10,6 @@ const HUB_SECTIONS = {
   ],
   growth: [
     { id: "ADMIN::GROW_PROMOTERS", title: "Promoters" },
-    { id: "ADMIN::GROW_BROADCAST", title: "Broadcast" },
-    { id: "ADMIN::GROW_TEMPLATES", title: "Templates" },
   ],
   trust: [
     { id: "ADMIN::TRUST_REFERRALS", title: "Referrals" },
@@ -82,8 +80,6 @@ export async function handleAdminHub(
         "ADMIN::OPS_WALLET": "flow.admin.wallet.v1",
         "ADMIN::OPS_MOMO": "flow.admin.momoqr.v1",
         "ADMIN::GROW_PROMOTERS": "flow.admin.promoters.v1",
-        "ADMIN::GROW_BROADCAST": "flow.admin.broadcast.v1",
-        "ADMIN::GROW_TEMPLATES": "flow.admin.templates.v1",
         "ADMIN::TRUST_REFERRALS": "flow.admin.referrals.v1",
         "ADMIN::TRUST_FREEZE": "flow.admin.freeze.v1",
         "ADMIN::DIAG_MATCH": "flow.admin.diag.v1",

@@ -30,29 +30,6 @@ const { getSupabaseAdminClient } = await import('@/lib/server/supabase-admin');
 const { evaluateOutboundPolicy } = await import('@/lib/server/policy');
 const { recordAudit } = await import('@/lib/server/audit');
 
-function createOrdersBuilder(data: unknown[]) {
-  const builder: any = {
-    select: vi.fn(() => builder),
-    order: vi.fn(() => builder),
-    range: vi.fn(() => builder),
-    eq: vi.fn(() => builder),
-    then: (resolve: (value: unknown) => unknown) =>
-      Promise.resolve(resolve({ data, error: null, count: data.length })),
-  };
-  return builder;
-}
-
-function createOrderEventsBuilder(data: unknown[]) {
-  const builder: any = {
-    select: vi.fn(() => builder),
-    order: vi.fn(() => builder),
-    limit: vi.fn(() => builder),
-    then: (resolve: (value: unknown) => unknown) =>
-      Promise.resolve(resolve({ data, error: null })),
-  };
-  return builder;
-}
-
 function createNotificationSelection(data: unknown[]) {
   return {
     select: vi.fn(() => ({
@@ -88,66 +65,6 @@ describe('admin journeys', () => {
     vi.resetAllMocks();
   });
 
-  it('lists orders and related events for a customer flow', async () => {
-    const orders = [
-      {
-        id: 'order-1',
-        bar_id: 'bar-1',
-        bar_name: 'Downtown Bar',
-        table_label: 'T3',
-        status: 'pending',
-        total: 23000,
-        created_at: '2025-10-01T12:00:00Z',
-        updated_at: '2025-10-01T12:10:00Z',
-        staff_number: '+250780000100',
-      },
-    ];
-
-    const events = [
-      {
-        id: 'evt-1',
-        order_id: 'order-1',
-        type: 'created',
-        status: 'pending',
-        actor_id: 'customer-1',
-        note: 'Order created via WhatsApp',
-        created_at: '2025-10-01T12:00:02Z',
-      },
-      {
-        id: 'evt-2',
-        order_id: 'order-1',
-        type: 'vendor_nudge',
-        status: null,
-        actor_id: 'system',
-        note: 'Pending reminder queued for vendor',
-        created_at: '2025-10-01T12:15:00Z',
-      },
-    ];
-
-    getSupabaseAdminClient.mockReturnValue({
-      from: (table: string) => {
-        if (table === 'orders') return createOrdersBuilder(orders);
-        if (table === 'order_events') return createOrderEventsBuilder(events);
-        throw new Error(`Unexpected table ${table}`);
-      },
-    });
-
-    const { GET: listOrders } = await import('@/app/api/orders/route');
-    const ordersResponse = await listOrders(createAdminApiRequest(['orders']));
-    expect(ordersResponse.status).toBe(200);
-    const ordersPayload = await ordersResponse.json();
-    expect(ordersPayload.data).toHaveLength(1);
-    expect(ordersPayload.data[0].barName).toBe('Downtown Bar');
-    expect(ordersPayload.data[0].status).toBe('pending');
-
-    const { GET: listEvents } = await import('@/app/api/orders/events/route');
-    const eventsResponse = await listEvents(createAdminApiRequest(['orders', 'events']));
-    expect(eventsResponse.status).toBe(200);
-    const eventsPayload = await eventsResponse.json();
-    expect(eventsPayload.data).toHaveLength(2);
-    expect(eventsPayload.data.find((event: any) => event.type === 'vendor_nudge')).toBeDefined();
-  });
-
   it('requeues failed notifications via retry API', async () => {
     const notificationId = '2b9fae9a-2c5c-4e86-9a9b-e90c0dc2f8a1';
     const notification = {
@@ -155,7 +72,7 @@ describe('admin journeys', () => {
       status: 'failed',
       msisdn: '+250780000111',
       retry_count: 2,
-      type: 'order_pending_vendor',
+      type: 'driver_followup_vendor',
       to_role: 'vendor',
     };
 

@@ -5,7 +5,6 @@ import {
   handleScheduleLocation,
 } from "../domains/mobility/schedule.ts";
 import { handleMarketplaceLocation } from "../domains/marketplace/index.ts";
-import { handleOnboardLocationCoordinates } from "../domains/dinein/manager.ts";
 import { maybeHandleDriverLocation } from "../observe/driver_parser.ts";
 import { recordInbound } from "../observe/conv_audit.ts";
 // AI Agents Integration
@@ -93,20 +92,19 @@ export async function handleLocation(
       lng,
     });
   }
-  if (
-    await handleOnboardLocationCoordinates(ctx, state, {
-      lat,
-      lng,
-      name: typeof msg.location?.name === "string" ? msg.location.name : null,
-      address: typeof msg.location?.address === "string"
-        ? msg.location.address
-        : null,
-    })
-  ) {
+  if (state.key?.startsWith("dine")) {
+    await sendDineInDisabledNotice(ctx);
     return true;
   }
   if (await handleMarketplaceLocation(ctx, state, { lat, lng })) {
     return true;
   }
   return false;
+}
+
+async function sendDineInDisabledNotice(ctx: RouterContext): Promise<void> {
+  await sendText(
+    ctx.from,
+    "Dine-in workflows are handled outside WhatsApp. Please coordinate with your success manager.",
+  );
 }

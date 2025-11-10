@@ -5,18 +5,17 @@ export async function POST(req: NextRequest) {
   const admin = getSupabaseAdminClient();
   if (!admin) return NextResponse.json({ error: "supabase_unavailable" }, { status: 503 });
 
-  const { to, text, template, media, interactive, type, delaySeconds } = await req.json();
-  if (!to || (!text && !template && !media && !interactive)) {
+  const { to, text, media, interactive, type, delaySeconds } = await req.json();
+  if (!to || (!text && !media && !interactive)) {
     return NextResponse.json({ error: "invalid_request" }, { status: 400 });
   }
 
   // Insert a queued notification row; notification-worker will deliver.
-  const payload: Record<string, unknown> = { text, template, media, interactive };
+  const payload: Record<string, unknown> = { text, media, interactive };
   const insertPayload: Record<string, unknown> = {
     to_wa_id: to,
-    notification_type: template?.name ?? type ?? "generic",
-    template_name: template?.name ?? null,
-    channel: template ? "template" : "freeform",
+    notification_type: type ?? "generic",
+    channel: "freeform",
     payload,
     status: "queued",
     retry_count: 0,

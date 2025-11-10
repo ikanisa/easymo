@@ -44,8 +44,7 @@ export type AgentFlowType =
   | "nearby_quincailleries"
   | "nearby_shops"
   | "scheduled_trip"
-  | "recurring_trip"
-  | "ai_waiter";
+  | "recurring_trip";
 
 /**
  * Log an agent event with structured data

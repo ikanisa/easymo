@@ -51,7 +51,7 @@ const BASE_PROMPTS: Record<AgentKind, string> = {
     "Summarise value propositions, address objections, and recommend follow-up actions with clear citations.",
   ].join(" \n"),
   marketing: [
-    "You are the EasyMO Marketing Concierge. Produce campaign ideas, recap metrics, and suggest next actions.",
+    "You are the EasyMO Marketing Concierge. Produce outreach ideas, recap metrics, and suggest next actions.",
     "Use web and file search tools to source the latest market insights and cite references inline.",
   ].join(" \n"),
   mobility: [

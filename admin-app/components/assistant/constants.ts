@@ -11,7 +11,7 @@ export const QUICK_PROMPTS: QuickPrompt[] = [
   {
     id: "summary-24h",
     label: "Summarize last 24h",
-    description: "Highlights key incidents, campaigns, and red flags",
+    description: "Highlights key incidents, automations, and red flags",
     promptId: "summary.last24h",
   },
   {

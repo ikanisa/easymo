@@ -6,7 +6,7 @@ import { logStructured } from '@/lib/server/logger';
 import { jsonOk, jsonError, zodValidationError } from '@/lib/api/http';
 import { createHandler } from '@/app/api/withObservability';
 
-const allowedBuckets = new Set(['operations', 'qr', 'campaign-media', 'docs']);
+const allowedBuckets = new Set(['operations', 'qr', 'docs']);
 
 const requestSchema = z.object({
   bucket: z.string().min(1),
