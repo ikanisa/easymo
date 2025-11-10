@@ -121,7 +121,6 @@ export async function handleText(
     "momo_qr_number",
     "momo_qr_code",
     "momo_qr_amount",
-    "basket_create_momo",
   ]);
   const dineOnboardingStates = new Set<string>([
     DINE_STATE.ONBOARD_IDENTITY,
@@ -222,9 +221,6 @@ export async function handleText(
     return true;
   }
   if (await handleMarketplaceText(ctx, body, state)) {
-    return true;
-  }
-  if (await handleBasketText(ctx, body, state)) {
     return true;
   }
   if (

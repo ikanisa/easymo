@@ -118,21 +118,6 @@ export async function handleButton(
     case IDS.MARKETPLACE_SKIP:
     case IDS.MARKETPLACE_MENU:
       return await handleMarketplaceButton(ctx, state, id);
-    case IDS.BASKETS:
-      return await startBaskets(ctx, state);
-    case IDS.BASKET_CREATE:
-    case IDS.BASKET_JOIN:
-    case IDS.BASKET_MY:
-    case IDS.BASKET_CREATE_PUBLIC:
-    case IDS.BASKET_CREATE_PRIVATE:
-    case IDS.BASKET_SHARE:
-    case IDS.BASKET_QR:
-    case IDS.BASKET_CLOSE:
-    case IDS.BASKET_LEAVE:
-    case IDS.BASKET_BACK:
-    case IDS.BASKET_SKIP:
-      if (await handleBasketButton(ctx, state, id)) return true;
-      return false;
     case IDS.MOTOR_INSURANCE:
     case IDS.MOTOR_INSURANCE_UPLOAD: {
       const gate = await evaluateMotorInsuranceGate(ctx);
@@ -164,11 +149,6 @@ export async function handleButton(
       return await showWalletTop(ctx);
     case IDS.WALLET_SHARE_DONE:
       return await handleWalletShareDone(ctx);
-    case IDS.BASKET_CLOSE_CONFIRM:
-    case IDS.BASKET_CLOSE_CANCEL:
-    case IDS.BASKET_LEAVE_CONFIRM:
-    case IDS.BASKET_LEAVE_CANCEL:
-      return await handleBasketConfirmButton(ctx, id, state);
     case IDS.ROLE_DRIVER:
     case IDS.ROLE_PASSENGER:
       return await handleScheduleRole(ctx, id);

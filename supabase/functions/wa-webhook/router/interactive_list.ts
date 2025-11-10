@@ -403,8 +403,6 @@ async function handleHomeMenuSelection(
       return await startPropertyRentals(ctx);
     case IDS.MARKETPLACE:
       return await startMarketplace(ctx, state);
-    case IDS.BASKETS:
-      return await startBaskets(ctx, state);
     case IDS.MOTOR_INSURANCE: {
       const gate = await evaluateMotorInsuranceGate(ctx);
       console.info("insurance.gate", {

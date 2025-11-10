@@ -64,11 +64,6 @@ const BASE_ROW_DEFS: MenuRowDef[] = [
     descriptionKey: "home.rows.marketplace.description",
   },
   {
-    id: IDS.BASKETS,
-    titleKey: "home.rows.baskets.title",
-    descriptionKey: "home.rows.baskets.description",
-  },
-  {
     id: IDS.MOTOR_INSURANCE,
     titleKey: "home.rows.motorInsurance.title",
     descriptionKey: "home.rows.motorInsurance.description",
