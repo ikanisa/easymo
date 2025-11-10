@@ -10,6 +10,8 @@ import { maybeHandleDriverLocation } from "../observe/driver_parser.ts";
 import { recordInbound } from "../observe/conv_audit.ts";
 // AI Agents Integration
 import { handleAIAgentLocationUpdate } from "../domains/ai-agents/index.ts";
+import { handlePharmacyLocation } from "../domains/healthcare/pharmacies.ts";
+import { handleQuincaillerieLocation } from "../domains/healthcare/quincailleries.ts";
 
 export async function handleLocation(
   ctx: RouterContext,
@@ -49,6 +51,14 @@ export async function handleLocation(
   
   if (aiAgentStates.includes(state.key)) {
     return await handleAIAgentLocationUpdate(ctx, state, { latitude: lat, longitude: lng });
+  }
+  
+  if (state.key === "pharmacy_awaiting_location") {
+    return await handlePharmacyLocation(ctx, { lat, lng });
+  }
+  
+  if (state.key === "quincaillerie_awaiting_location") {
+    return await handleQuincaillerieLocation(ctx, { lat, lng });
   }
   
   if (state.key === "mobility_nearby_location") {

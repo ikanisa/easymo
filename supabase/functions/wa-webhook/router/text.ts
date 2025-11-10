@@ -46,6 +46,7 @@ import { t } from "../i18n/translator.ts";
 import { maybeHandleDriverText } from "../observe/driver_parser.ts";
 import { recordInbound } from "../observe/conv_audit.ts";
 import { getTextBody } from "../utils/messages.ts";
+import { isFeatureEnabled } from "../../_shared/feature-flags.ts";
 
 // AI Agents Integration
 import {
@@ -141,6 +142,39 @@ export async function handleText(
   ) {
     return false; // expect list or location
   }
+  
+  // Handle pharmacy medicine input
+  if (state.key === "pharmacy_awaiting_medicine") {
+    const stateData = state.data as { location?: { lat: number; lng: number } };
+    if (stateData.location) {
+      const medications = body.toLowerCase() === "search" ? undefined : [body];
+      if (isFeatureEnabled("agent.pharmacy")) {
+        return await handleAINearbyPharmacies(
+          ctx,
+          stateData.location,
+          medications,
+        );
+      }
+    }
+    return true;
+  }
+  
+  // Handle quincaillerie items input
+  if (state.key === "quincaillerie_awaiting_items") {
+    const stateData = state.data as { location?: { lat: number; lng: number } };
+    if (stateData.location) {
+      const items = body.toLowerCase() === "search" ? undefined : [body];
+      if (isFeatureEnabled("agent.quincaillerie")) {
+        return await handleAINearbyQuincailleries(
+          ctx,
+          stateData.location,
+          items,
+        );
+      }
+    }
+    return true;
+  }
+  
   if (await handleMomoText(ctx, body, state)) {
     return true;
   }

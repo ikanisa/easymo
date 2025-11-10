@@ -44,6 +44,21 @@ const BASE_ROW_DEFS: MenuRowDef[] = [
     descriptionKey: "home.rows.scheduleTrip.description",
   },
   {
+    id: IDS.NEARBY_PHARMACIES,
+    titleKey: "home.rows.nearbyPharmacies.title",
+    descriptionKey: "home.rows.nearbyPharmacies.description",
+  },
+  {
+    id: IDS.NEARBY_QUINCAILLERIES,
+    titleKey: "home.rows.nearbyQuincailleries.title",
+    descriptionKey: "home.rows.nearbyQuincailleries.description",
+  },
+  {
+    id: IDS.PROPERTY_RENTALS,
+    titleKey: "home.rows.propertyRentals.title",
+    descriptionKey: "home.rows.propertyRentals.description",
+  },
+  {
     id: IDS.MARKETPLACE,
     titleKey: "home.rows.marketplace.title",
     descriptionKey: "home.rows.marketplace.description",

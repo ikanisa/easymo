@@ -28,6 +28,9 @@ import {
 } from "../domains/marketplace/index.ts";
 import { handleAddBusinessCategorySelection } from "../domains/marketplace/index.ts";
 import { sendHomeMenu } from "../flows/home.ts";
+import { startNearbyPharmacies } from "../domains/healthcare/pharmacies.ts";
+import { startNearbyQuincailleries } from "../domains/healthcare/quincailleries.ts";
+import { startPropertyRentals } from "../domains/property/rentals.ts";
 import { handleWalletEarnSelection } from "../domains/wallet/earn.ts";
 import { handleWalletRedeemSelection } from "../domains/wallet/redeem.ts";
 import { ADMIN_ROW_IDS, openAdminHub } from "../flows/admin/hub.ts";
@@ -365,6 +368,12 @@ async function handleHomeMenuSelection(
       return await handleSeePassengers(ctx);
     case IDS.SCHEDULE_TRIP:
       return await startScheduleTrip(ctx, state);
+    case IDS.NEARBY_PHARMACIES:
+      return await startNearbyPharmacies(ctx);
+    case IDS.NEARBY_QUINCAILLERIES:
+      return await startNearbyQuincailleries(ctx);
+    case IDS.PROPERTY_RENTALS:
+      return await startPropertyRentals(ctx);
     case IDS.MARKETPLACE:
       return await startMarketplace(ctx, state);
     case IDS.BASKETS:
