@@ -16,12 +16,39 @@ interface TopBarProps {
   actorInitials?: string;
   signingOut?: boolean;
   onSignOut?: () => void;
+  omniSearchPlaceholder?: string;
+  omniShortcutHint?: string;
 }
 
 interface ShortcutRow {
   label: string;
   keys: string[][];
 }
+export function TopBar(
+  {
+    environmentLabel,
+    onOpenAssistant,
+    onOpenNavigation,
+    assistantEnabled = false,
+    actorLabel,
+    actorInitials = "OP",
+    signingOut = false,
+    onSignOut,
+    omniSearchPlaceholder,
+    omniShortcutHint,
+  }: TopBarProps,
+) {
+  const integrationStatusQuery = useIntegrationStatusQuery({
+    refetchInterval: 120_000,
+  } as any);
+
+  const { badgeLabel, badgeValue } = useMemo(() => {
+    if (integrationStatusQuery.isLoading) {
+      return {
+        badgeValue: "…",
+        badgeLabel: "Checking integration health",
+      };
+    }
 
 function KeyStroke({ combo }: { combo: string[] }) {
   return (
@@ -162,15 +189,19 @@ export function TopBar({
   const panel = usePanelContext();
   const badgeMetrics = useIntegrationBadgeMetrics();
 
+  const searchPlaceholder =
+    omniSearchPlaceholder ?? "Search customers, vendors, menus…";
+  const showShortcutHint = Boolean(omniShortcutHint);
+
   return (
     <header
       role="banner"
       aria-label="Admin panel top bar"
       className={classNames(
         "topbar",
-        "sticky top-0 z-40 grid items-center gap-4 border-b border-[color:var(--color-border)]/60",
-        "bg-[color:var(--color-surface)]/85 px-4 py-4 backdrop-blur-xl shadow-[var(--elevation-low)]",
-        "md:grid-cols-[auto_1fr_auto] md:px-6",
+        "sticky top-0 z-40 grid items-center gap-4 border-b border-[color:var(--color-border)]/50",
+        "bg-[color:var(--color-surface)]/80 px-4 py-4 backdrop-blur-xl shadow-[var(--shadow-ambient)]",
+        "md:grid-cols-[auto_minmax(0,1fr)_auto] md:px-6",
       )}
     >
       <div className="flex items-center gap-3">
@@ -212,6 +243,26 @@ export function TopBar({
             ⌘K
           </kbd>
         </button>
+        <label className="visually-hidden" htmlFor="global-search">
+          Global search
+        </label>
+        <input
+          id="global-search"
+          type="search"
+          placeholder={searchPlaceholder}
+          aria-label="Global search"
+          className="topbar__search-input"
+          autoComplete="off"
+          enterKeyHint="search"
+          title={
+            showShortcutHint ? `Press ${omniShortcutHint} to focus Omnisearch` : undefined
+          }
+        />
+        {showShortcutHint && (
+          <span className="topbar__shortcut" aria-hidden="true">
+            {omniShortcutHint}
+          </span>
+        )}
       </div>
       <div
         className={classNames(

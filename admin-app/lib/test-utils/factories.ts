@@ -45,13 +45,16 @@ export function createInsuranceQuote(
   return {
     id: "quote-id",
     userId: "user-id",
+    intentId: null,
     status: "pending",
     premium: null,
     insurer: null,
     uploadedDocs: [],
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
+    approvedAt: null,
     reviewerComment: null,
+    metadata: null,
     ...overrides,
   };
 }

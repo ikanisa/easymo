@@ -31,6 +31,7 @@ const adminRouteDefinitions = [
   { key: "panelMarketplace", path: "/marketplace", segment: "panel" },
   { key: "panelMarketplaceSettings", path: "/marketplace/settings", segment: "panel" },
   { key: "panelAgents", path: "/agents", segment: "panel" },
+  { key: "panelAgentsTools", path: "/agents/tools", segment: "panel" },
   { key: "panelAgentDetail", path: "/agents/:agentId", segment: "panel" },
   { key: "panelDriverSubscriptions", path: "/driver-subscriptions", segment: "panel" },
   { key: "panelWalletTopUp", path: "/wallet/topup", segment: "panel" },
@@ -43,6 +44,7 @@ const adminRouteDefinitions = [
   { key: "adminAgentDetail", path: "/agents/:agentId", segment: "admin" },
   { key: "adminAgentSearch", path: "/agents/:agentId/search", segment: "admin" },
   { key: "adminInsuranceQueue", path: "/insurance/queue", segment: "admin" },
+  { key: "adminInsuranceKnowledge", path: "/insurance/knowledge", segment: "admin" },
   { key: "adminMobilityDispatch", path: "/mobility/dispatch", segment: "admin" },
 ] as const satisfies ReadonlyArray<AdminRouteDefinition>;
 

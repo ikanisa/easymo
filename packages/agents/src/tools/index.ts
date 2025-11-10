@@ -8,6 +8,7 @@ export { webSearchTool } from './webSearch';
 export { menuLookupTool } from './menuLookup';
 export { checkAvailabilityTool } from './checkAvailability';
 export { createBookingTool } from './createBooking';
+export { scriptPlannerTool } from './scriptPlanner';
 
 // Export types
 export type { WebSearchParams } from './webSearch';

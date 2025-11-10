@@ -105,6 +105,7 @@ const routeSegments: Record<string, string> = {
   aiAttributionRun: "attribution/run",
   aiReconciliationRun: "reconciliation/run",
   aiSupportRun: "support/run",
+  aiSoraGenerate: "sora/generate",
   aiTasksSchedule: "schedule",
   aiTasksRunDue: "run-due",
 };
@@ -126,6 +127,7 @@ const routeServiceScopes: Record<string, string[]> = {
   aiAttributionRun: ["ai:attribution"],
   aiReconciliationRun: ["ai:reconciliation"],
   aiSupportRun: ["ai:support"],
+  aiSoraGenerate: ["ai:sora.generate"],
   aiTasksSchedule: ["tasks:schedule"],
   aiTasksRunDue: ["tasks:run"],
 };
