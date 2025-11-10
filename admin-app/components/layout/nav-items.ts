@@ -1,3 +1,5 @@
+import { isFeatureFlagEnabled } from "@/lib/flags";
+
 // Core navigation sections
 const coreItems = [
   { href: "/dashboard", title: "Dashboard", icon: "📊" },
@@ -49,16 +51,23 @@ const systemItems = [
 ];
 
 const uiKitEnabled = (process.env.NEXT_PUBLIC_UI_V2_ENABLED ?? "false").trim().toLowerCase() === "true";
+const adminHubV2Enabled = isFeatureFlagEnabled("adminHubV2");
+
+const hubNavItems = [
+  { href: "/hub", title: "Admin Hub", icon: "✨" },
+];
 
 // Organize navigation with sections
-export const NAV_SECTIONS = [
-  { title: "Overview", items: coreItems },
-  { title: "AI Agents", items: aiAgentsItems },
-  { title: "Operations", items: operationsItems },
-  { title: "Business", items: businessItems },
-  { title: "Marketing", items: marketingItems },
-  { title: "System", items: systemItems },
-];
+export const NAV_SECTIONS = adminHubV2Enabled
+  ? [{ title: "Hub", items: hubNavItems }]
+  : [
+      { title: "Overview", items: coreItems },
+      { title: "AI Agents", items: aiAgentsItems },
+      { title: "Operations", items: operationsItems },
+      { title: "Business", items: businessItems },
+      { title: "Marketing", items: marketingItems },
+      { title: "System", items: systemItems },
+    ];
 
 // Flat list for backward compatibility
 const baseNavItems = [
@@ -70,6 +79,8 @@ const baseNavItems = [
   ...systemItems,
 ];
 
-export const NAV_ITEMS = uiKitEnabled
+const legacyNavItems = uiKitEnabled
   ? [...baseNavItems, { href: "/design-system", title: "Design System", icon: "🎨" }]
   : baseNavItems;
+
+export const NAV_ITEMS = adminHubV2Enabled ? hubNavItems : legacyNavItems;

@@ -50,32 +50,55 @@ const config: Config = {
         pill: "999px",
       },
       boxShadow: {
-        glass: "0 24px 60px rgba(15, 23, 42, 0.18)",
+        ambient: "var(--shadow-ambient)",
+        floating: "var(--shadow-floating)",
+        pressed: "var(--shadow-pressed)",
+        ring: "var(--shadow-ring)",
         glow: "0 0 60px rgba(14, 165, 233, 0.35)",
       },
       backdropBlur: {
         xs: "6px",
         md: "12px",
         xl: "24px",
+        soft: "var(--glass-blur-soft)",
+        strong: "var(--glass-blur-strong)",
       },
       animation: {
-        "fade-in": "fadeIn 180ms ease-out",
-        "slide-up": "slideUp 220ms ease-out",
+        "fade-in": "fadeIn var(--motion-duration-fast) var(--motion-ease-decelerate) both",
+        "slide-up": "slideUp var(--motion-duration-medium) var(--motion-ease-emphasized) both",
+        "glass-pop": "glassPop var(--motion-duration-fast) var(--motion-ease-emphasized) both",
         "shimmer-slow": "shimmer 3s ease-in-out infinite",
       },
       keyframes: {
         fadeIn: {
-          from: { opacity: "0" },
-          to: { opacity: "1" },
+          from: { opacity: "0", transform: "translateY(6px) scale(0.995)" },
+          to: { opacity: "1", transform: "translateY(0) scale(1)" },
         },
         slideUp: {
-          from: { opacity: "0", transform: "translateY(16px)" },
-          to: { opacity: "1", transform: "translateY(0)" },
+          from: { opacity: "0", transform: "translateY(18px) scale(0.98)" },
+          to: { opacity: "1", transform: "translateY(0) scale(1)" },
+        },
+        glassPop: {
+          "0%": { opacity: "0", transform: "translateY(12px) scale(0.96)" },
+          "60%": { opacity: "1", transform: "translateY(-2px) scale(1.02)" },
+          "100%": { opacity: "1", transform: "translateY(0) scale(1)" },
         },
         shimmer: {
           "0%": { backgroundPosition: "-200% 0" },
           "100%": { backgroundPosition: "200% 0" },
         },
+      },
+      transitionTimingFunction: {
+        standard: "var(--motion-ease-standard)",
+        emphasized: "var(--motion-ease-emphasized)",
+        accelerate: "var(--motion-ease-accelerate)",
+        decelerate: "var(--motion-ease-decelerate)",
+      },
+      transitionDuration: {
+        instant: "var(--motion-duration-instant)",
+        fast: "var(--motion-duration-fast)",
+        medium: "var(--motion-duration-medium)",
+        slow: "var(--motion-duration-slow)",
       },
       gradientColorStops: {
         "primary-start": "var(--gradient-primary-start)",
