@@ -1,5 +1,6 @@
 export const dynamic = 'force-dynamic';
 
+import { createPanelPageMetadata } from "@/components/layout/nav-items";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import { createQueryClient } from "@/lib/api/queryClient";
 import { QrClient } from "./QrClient";
@@ -13,6 +14,8 @@ import {
   type BarsQueryParams,
   fetchBars,
 } from "@/lib/queries/bars";
+
+export const metadata = createPanelPageMetadata("/qr");
 
 const DEFAULT_TOKEN_PARAMS: QrTokensQueryParams = { limit: 100 };
 const DEFAULT_BAR_PARAMS: BarsQueryParams = { limit: 100 };

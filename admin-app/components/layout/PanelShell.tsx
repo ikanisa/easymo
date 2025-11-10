@@ -12,6 +12,7 @@ import { ServiceWorkerToasts } from "@/components/system/ServiceWorkerToasts";
 import { AssistantPanel } from "@/components/assistant/AssistantPanel";
 import { MobileNav } from "@/components/layout/MobileNav";
 import { SessionProvider } from "@/components/providers/SessionProvider";
+import { PanelBreadcrumbs } from "@/components/layout/PanelBreadcrumbs";
 
 interface PanelShellProps {
   children: ReactNode;
@@ -101,6 +102,7 @@ export function PanelShell({
                 className="layout__content"
                 aria-live="polite"
               >
+                <PanelBreadcrumbs />
                 {children}
               </main>
             </div>

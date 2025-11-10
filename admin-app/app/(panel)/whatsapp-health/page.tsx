@@ -1,5 +1,6 @@
 export const dynamic = 'force-dynamic';
 
+import { createPanelPageMetadata } from "@/components/layout/nav-items";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import { createQueryClient } from "@/lib/api/queryClient";
 import { WhatsAppHealthClient } from "./WhatsAppHealthClient";
@@ -12,6 +13,8 @@ import {
   dashboardQueryKeys,
   fetchDashboardWebhookErrors,
 } from "@/lib/queries/dashboard";
+
+export const metadata = createPanelPageMetadata("/whatsapp-health");
 
 const DEFAULT_NOTIFICATION_PARAMS: NotificationsQueryParams = { limit: 200 };
 

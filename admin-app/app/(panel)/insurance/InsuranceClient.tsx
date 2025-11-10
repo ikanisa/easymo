@@ -30,8 +30,8 @@ export function InsuranceClient(
   return (
     <div className="admin-page">
       <PageHeader
-        title="Insurance"
-        description="Human-in-the-loop review of insurance quotes, OCR extracts, and approval workflows."
+        title="Insurance Agent"
+        description="Human-in-the-loop review of quotes, OCR extracts, and approval workflows for policy issuance."
       />
       <SectionCard
         title="Pricing workbench"

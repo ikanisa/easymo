@@ -1,5 +1,6 @@
 export const dynamic = 'force-dynamic';
 
+import { createPanelPageMetadata } from "@/components/layout/nav-items";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import { createQueryClient } from "@/lib/api/queryClient";
 import { MenusClient } from "./MenusClient";
@@ -11,6 +12,8 @@ import {
   ocrJobQueryKeys,
   type OcrJobQueryParams,
 } from "@/lib/queries/menus";
+
+export const metadata = createPanelPageMetadata("/menus");
 
 const DEFAULT_MENU_PARAMS: MenuQueryParams = { limit: 100 };
 const DEFAULT_OCR_PARAMS: OcrJobQueryParams = { limit: 50 };
