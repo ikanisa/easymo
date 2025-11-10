@@ -38,6 +38,12 @@ const businessItems = [
   { href: "/trips", title: "Trips", icon: "🚕" },
   { href: "/insurance", title: "Insurance", icon: "🛡️" },
   { href: "/marketplace", title: "Marketplace", icon: "🏪" },
+  { href: "/pharmacies", title: "Pharmacies", icon: "💊" },
+  { href: "/quincailleries", title: "Quincailleries", icon: "🔧" },
+  { href: "/shops", title: "Shops", icon: "🛍️" },
+  { href: "/bars", title: "Bars & Restaurants", icon: "🍽️" },
+  { href: "/property-rentals", title: "Property Rentals", icon: "🏠" },
+  { href: "/qr", title: "MOMO QR & Tokens", icon: "💳" },
 ];
 
 // Marketing & Sales
