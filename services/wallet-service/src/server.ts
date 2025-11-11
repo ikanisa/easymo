@@ -7,6 +7,7 @@ import { PrismaService } from "@easymo/db";
 import { WalletService, TransferRequest } from "./service";
 import { FXService } from "./fx";
 import { isFeatureEnabled } from "@easymo/commons";
+import { idempotencyMiddleware } from "./idempotency";
 
 const TransferSchema = z.object({
   tenantId: z.string().uuid().default(settings.defaultTenantId),
@@ -29,6 +30,10 @@ async function bootstrap() {
   const app = express();
   app.use(express.json());
   app.use(pinoHttp({ logger: logger as any }));
+  
+  // Apply idempotency middleware to financial operations
+  app.use("/wallet/transfer", idempotencyMiddleware);
+  app.use("/wallet/subscribe", idempotencyMiddleware);
 
   app.get("/health", (_req, res) => {
     res.json({ status: "ok" });
