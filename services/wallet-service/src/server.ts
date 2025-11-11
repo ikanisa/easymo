@@ -8,6 +8,7 @@ import { WalletService, TransferRequest } from "./service";
 import { FXService } from "./fx";
 import { isFeatureEnabled } from "@easymo/commons";
 import { idempotencyMiddleware } from "./idempotency";
+import { ReconciliationService, ReconciliationScheduler } from "./reconciliation";
 
 const TransferSchema = z.object({
   tenantId: z.string().uuid().default(settings.defaultTenantId),
@@ -26,6 +27,8 @@ async function bootstrap() {
   await prisma.$connect();
   const wallet = new WalletService(prisma);
   const fx = new FXService(process.env.EXCHANGE_RATES_API);
+  const reconciliation = new ReconciliationService(prisma);
+  const reconciliationScheduler = new ReconciliationScheduler(prisma);
 
   const app = express();
   app.use(express.json());
@@ -178,11 +181,64 @@ async function bootstrap() {
     }
   });
 
+  // Reconciliation endpoints
+  app.post("/wallet/reconcile/tenant/:tenantId", async (req, res) => {
+    try {
+      const { tenantId } = req.params;
+      const result = await reconciliation.reconcileTenant(tenantId);
+      res.json(result);
+    } catch (error) {
+      logger.error({ msg: "reconciliation.tenant.failed", error });
+      res.status(500).json({ error: (error as Error).message });
+    }
+  });
+
+  app.post("/wallet/reconcile/account/:accountId", async (req, res) => {
+    try {
+      const { accountId } = req.params;
+      const discrepancy = await reconciliation.reconcileAccount(accountId);
+      res.json({ discrepancy });
+    } catch (error) {
+      logger.error({ msg: "reconciliation.account.failed", error });
+      res.status(500).json({ error: (error as Error).message });
+    }
+  });
+
+  app.post("/wallet/reconcile/account/:accountId/repair", async (req, res) => {
+    try {
+      const { accountId } = req.params;
+      const { reason } = req.body;
+      
+      if (!reason) {
+        return res.status(400).json({ error: "reason required" });
+      }
+
+      await reconciliation.repairAccountBalance(accountId, reason);
+      res.json({ success: true });
+    } catch (error) {
+      logger.error({ msg: "reconciliation.repair.failed", error });
+      res.status(500).json({ error: (error as Error).message });
+    }
+  });
+
+  // Start reconciliation scheduler if enabled
+  if (process.env.ENABLE_RECONCILIATION_SCHEDULER === "true") {
+    reconciliationScheduler.start({
+      schedule: process.env.RECONCILIATION_SCHEDULE || "0 2 * * *",
+      alertOnDiscrepancy: true,
+      autoRepair: process.env.AUTO_REPAIR_DISCREPANCIES === "true",
+      autoRepairThreshold: Number(process.env.AUTO_REPAIR_THRESHOLD || "1.00"),
+    });
+
+    logger.info("Reconciliation scheduler started");
+  }
+
   const server = app.listen(settings.port, () => {
     logger.info({ msg: "wallet-service.listen", port: settings.port });
   });
 
   const shutdown = async () => {
+    reconciliationScheduler.stop();
     server.close(async () => {
       await prisma.$disconnect();
       process.exit(0);
