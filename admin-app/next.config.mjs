@@ -6,6 +6,11 @@ if (
   throw new Error('NEXT_PUBLIC_USE_MOCKS=true is not allowed in production builds.');
 }
 
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
@@ -36,6 +41,12 @@ const nextConfig = {
     },
   ],
   webpack: (config, { isServer }) => {
+    // Force video-agent-schema to resolve from dist, not src
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      '@easymo/video-agent-schema': path.resolve(__dirname, '../packages/video-agent-schema/dist/index.js'),
+    };
+    
     if (!isServer) {
       config.resolve.fallback = {
         ...config.resolve.fallback,

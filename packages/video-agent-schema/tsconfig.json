@@ -5,12 +5,12 @@
     "declaration": true,
     "emitDeclarationOnly": false,
     "composite": true,
-    "rootDir": "src",
+    "rootDir": "_src",
     "module": "Node16",
     "target": "ES2021",
     "moduleResolution": "node16",
     "esModuleInterop": true,
     "types": ["node"]
   },
-  "include": ["src/**/*"]
+  "include": ["_src/**/*"]
 }
