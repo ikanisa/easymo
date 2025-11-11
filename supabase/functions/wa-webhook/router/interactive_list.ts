@@ -159,12 +159,22 @@ export async function handleList(
     const stateData = state.data as { rentalType: string };
     return await handleFindPropertyBedrooms(ctx, stateData, id);
   }
+  if (state.key === "property_find_price_unit" && (id === "per_day" || id === "per_night" || id === "per_month")) {
+    const stateData = state.data as { rentalType: string; bedrooms: string; duration?: string };
+    const { handleFindPropertyPriceUnit } = await import("../domains/property/rentals.ts");
+    return await handleFindPropertyPriceUnit(ctx, stateData, id);
+  }
   if (state.key === "property_add_type" && (id === "short_term" || id === "long_term")) {
     return await handleAddPropertyType(ctx, id);
   }
   if (state.key === "property_add_bedrooms" && /^\d+$/.test(id)) {
     const stateData = state.data as { rentalType: string };
     return await handleAddPropertyBedrooms(ctx, stateData, id);
+  }
+  if (state.key === "property_add_price_unit" && (id === "per_day" || id === "per_night" || id === "per_month")) {
+    const stateData = state.data as { rentalType: string; bedrooms: string };
+    const { handleAddPropertyPriceUnit } = await import("../domains/property/rentals.ts");
+    return await handleAddPropertyPriceUnit(ctx, stateData, id);
   }
   
   if (isVehicleOption(id) && state.key === "mobility_nearby_select") {
