@@ -4,13 +4,13 @@ import { Header } from "./Header";
 
 export function DashboardLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="flex h-full">
+    <div className="dashboard-shell">
+      <div className="dashboard-shell__grid">
         <Sidebar />
-        <div className="flex flex-1 flex-col">
+        <div className="dashboard-shell__workspace">
           <Header />
-          <main className="flex-1 p-6">
-            <div className="mx-auto max-w-7xl">{children}</div>
+          <main className="dashboard-shell__content" id="v2-main-content">
+            {children}
           </main>
         </div>
       </div>
