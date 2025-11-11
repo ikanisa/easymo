@@ -6,7 +6,9 @@ import {
   useContext,
   useMemo,
   useState,
+  type JSX,
 } from "react";
+import { CheckCircle2, Info, TriangleAlert } from "lucide-react";
 import styles from "./ToastProvider.module.css";
 import { Button } from "@/components/ui/Button";
 
@@ -27,6 +29,18 @@ interface Toast {
   onAction?: () => void;
   duration?: number | null;
 }
+
+const VARIANT_ICON: Record<ToastVariant, JSX.Element> = {
+  info: <Info aria-hidden className={styles.icon} />, 
+  success: <CheckCircle2 aria-hidden className={styles.icon} />, 
+  error: <TriangleAlert aria-hidden className={`${styles.icon} ${styles.iconError}`} />,
+};
+
+const VARIANT_ROLE: Record<ToastVariant, { role: "status" | "alert"; ariaLive: "polite" | "assertive" }> = {
+  info: { role: "status", ariaLive: "polite" },
+  success: { role: "status", ariaLive: "polite" },
+  error: { role: "alert", ariaLive: "assertive" },
+};
 
 interface ToastContextValue {
   pushToast: (message: string, options?: ToastVariant | ToastOptions) => void;
@@ -80,7 +94,10 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
           <div
             key={toast.id}
             className={`${styles.toast} ${styles[`toast_${toast.variant}`]}`}
+            role={VARIANT_ROLE[toast.variant].role}
+            aria-live={VARIANT_ROLE[toast.variant].ariaLive}
           >
+            <span className={styles.iconWrapper}>{VARIANT_ICON[toast.variant]}</span>
             <span className={styles.message}>{toast.message}</span>
             {toast.onAction && toast.actionLabel
               ? (

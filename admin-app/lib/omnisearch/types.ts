@@ -42,3 +42,11 @@ export type OmniSearchResult =
   | OmniSearchRequestResult
   | OmniSearchPolicyResult
   | OmniSearchTaskResult;
+
+export interface OmniSearchSuggestion {
+  id: string;
+  category: OmniSearchCategory;
+  label: string;
+  description?: string | null;
+  query: string;
+}

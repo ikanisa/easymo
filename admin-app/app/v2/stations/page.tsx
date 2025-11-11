@@ -1,8 +1,31 @@
 "use client";
 
-import { useSupabaseQuery } from "@/src/v2/lib/supabase/hooks";
+import { useMemo, useRef, useState } from "react";
+import { PlusIcon } from "@heroicons/react/24/outline";
+
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
+import { useToast } from "@/components/ui/ToastProvider";
+import { DataTable } from "@/src/v2/components/ui/DataTable";
+import { CrudDialog } from "@/src/v2/components/ui/CrudDialog";
+import {
+  useSupabaseQuery,
+  useCreateStation,
+  useUpdateStation,
+  useDeleteStation,
+} from "@/src/v2/lib/supabase/hooks";
 import { createClient } from "@/src/v2/lib/supabase/client";
 import type { StationRow } from "@/src/v2/lib/supabase/database.types";
+
+interface StationFormValues {
+  name: string;
+  location: string;
+}
+
+type DialogState =
+  | { mode: "create"; station: null }
+  | { mode: "edit"; station: StationRow }
+  | null;
 
 export default function StationsPage() {
   const supabase = createClient();
@@ -18,53 +41,159 @@ export default function StationsPage() {
       return data ?? [];
     },
   );
+  const { pushToast } = useToast();
+  const createStation = useCreateStation();
+  const updateStation = useUpdateStation();
+  const deleteStation = useDeleteStation();
+  const undoBuffer = useRef<StationRow | null>(null);
+  const [dialogState, setDialogState] = useState<DialogState>(null);
+
+  const columns = useMemo(
+    () => [
+      { key: "name" as const, label: "Name", sortable: true },
+      { key: "location" as const, label: "Location" },
+      {
+        key: "created_at" as const,
+        label: "Joined",
+        render: (value: string) => new Date(value).toLocaleDateString(),
+      },
+    ],
+    [],
+  );
+
+  const openCreateDialog = () => setDialogState({ mode: "create", station: null });
+  const openEditDialog = (station: StationRow) => setDialogState({ mode: "edit", station });
+  const closeDialog = () => setDialogState(null);
+
+  const initialValues: StationFormValues = dialogState?.mode === "edit" && dialogState.station
+    ? {
+        name: dialogState.station.name,
+        location: dialogState.station.location ?? "",
+      }
+    : {
+        name: "",
+        location: "",
+      };
+
+  const handleSubmit = async (values: StationFormValues) => {
+    try {
+      if (dialogState?.mode === "edit" && dialogState.station) {
+        await updateStation.mutateAsync({
+          id: dialogState.station.id,
+          name: values.name,
+          location: values.location,
+        });
+        pushToast("Station updated.", "success");
+      } else {
+        await createStation.mutateAsync({
+          name: values.name,
+          location: values.location,
+        });
+        pushToast("Station created.", "success");
+      }
+      closeDialog();
+    } catch (error) {
+      pushToast(
+        error instanceof Error ? error.message : "We couldn’t save the station.",
+        "error",
+      );
+    }
+  };
+
+  const handleDelete = async () => {
+    if (dialogState?.mode !== "edit" || !dialogState.station) return;
+    try {
+      const deleted = await deleteStation.mutateAsync({ id: dialogState.station.id });
+      undoBuffer.current = deleted;
+      pushToast(`Deleted ${deleted.name}.`, {
+        variant: "success",
+        actionLabel: "Undo",
+        onAction: async () => {
+          const payload = undoBuffer.current;
+          if (!payload) return;
+          try {
+            await createStation.mutateAsync({
+              id: payload.id,
+              name: payload.name,
+              location: payload.location ?? undefined,
+            });
+            pushToast("Restored station.", "success");
+          } catch (error) {
+            pushToast(
+              error instanceof Error
+                ? error.message
+                : "Unable to undo deletion.",
+              "error",
+            );
+          }
+        },
+      });
+      closeDialog();
+    } catch (error) {
+      pushToast(
+        error instanceof Error ? error.message : "Failed to delete station.",
+        "error",
+      );
+    }
+  };
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold text-gray-900">Stations</h1>
-        <p className="mt-1 text-sm text-gray-500">
-          Manage the EasyMO network of partner stations and depots.
-        </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold text-gray-900">Stations</h1>
+            <p className="mt-1 text-sm text-gray-500">
+              Manage the EasyMO network of partner stations and depots.
+            </p>
+          </div>
+          <Button variant="primary" onClick={openCreateDialog}>
+            <PlusIcon className="mr-2 h-5 w-5" />
+            Add Station
+          </Button>
+        </div>
       </div>
 
-      <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Name</th>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Location</th>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Joined</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200 bg-white">
-            {isLoading && (
-              <tr>
-                <td colSpan={3} className="px-6 py-12 text-center text-sm text-gray-500">
-                  Loading stations…
-                </td>
-              </tr>
-            )}
-            {!isLoading &&
-              stations.map((station) => (
-                <tr key={station.id}>
-                  <td className="px-6 py-4 text-sm text-gray-900">{station.name}</td>
-                  <td className="px-6 py-4 text-sm text-gray-500">{station.location ?? "—"}</td>
-                  <td className="px-6 py-4 text-sm text-gray-500">
-                    {new Date(station.created_at).toLocaleDateString()}
-                  </td>
-                </tr>
-              ))}
-            {!isLoading && stations.length === 0 && (
-              <tr>
-                <td colSpan={3} className="px-6 py-12 text-center text-sm text-gray-500">
-                  No stations registered yet.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+      <DataTable data={stations} columns={columns} loading={isLoading} onRowClick={openEditDialog} />
+
+      {dialogState ? (
+        <CrudDialog
+          open={Boolean(dialogState)}
+          mode={dialogState.mode}
+          entityName="station"
+          initialValues={initialValues}
+          onClose={closeDialog}
+          onSubmit={handleSubmit}
+          onDelete={dialogState.mode === "edit" ? handleDelete : undefined}
+          description="Stations with clear location metadata appear faster in search and routing recommendations."
+          renderFields={({ values, onChange }) => (
+            <>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700" htmlFor="station-name">
+                  Name
+                </label>
+                <Input
+                  id="station-name"
+                  value={values.name}
+                  onChange={(event) => onChange({ name: event.target.value })}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700" htmlFor="station-location">
+                  Location
+                </label>
+                <Input
+                  id="station-location"
+                  value={values.location}
+                  onChange={(event) => onChange({ location: event.target.value })}
+                  placeholder="City, district, or coordinates"
+                />
+              </div>
+            </>
+          )}
+        />
+      ) : null}
     </div>
   );
 }
