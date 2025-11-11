@@ -24,28 +24,28 @@ export function ShopsClient({ initialParams }: ShopsClientProps) {
   return (
     <div className="admin-page">
       <PageHeader
-        title="Shops"
-        description="Onboard retail partners, visualise nearby inventory, and review shop-level performance metrics."
+        title="Shops & Services"
+        description="Onboard general shops or service providers (salons, spare parts, repair centers) and keep sourcing metadata synced."
         actions={<Button variant="outline">Export CSV</Button>}
       />
 
       <SectionCard
-        title="Add a shop"
-        description="Capture key catalogue and contact fields then sync to Supabase shops table."
+        title="Add a shop or service"
+        description="Capture description, business location, and discovery tags. This keeps the Shops & Services agent effective even when AI is offline."
       >
-        <ShopWizard defaultCategories={params.category ? [params.category] : []} />
+        <ShopWizard />
       </SectionCard>
 
       <SectionCard
-        title="Nearby shops"
-        description="Plot retail density and inspect category coverage across Kigali."
+        title="Nearby shops & services"
+        description="Plot distribution and inspect coverage for general commerce and services."
       >
         <ShopMap shops={shops} />
       </SectionCard>
 
       <SectionCard
-        title="Shop directory"
-        description="Search and filter shops. Selecting a card opens the Supabase-backed profile drawer."
+        title="Directory"
+        description="Search and filter across all shops & services. Selecting a card opens the Supabase-backed profile drawer."
         actions={
           <Input
             value={params.search ?? ""}
@@ -56,7 +56,7 @@ export function ShopsClient({ initialParams }: ShopsClientProps) {
                 offset: 0,
               }))
             }
-            placeholder="Search by shop name"
+            placeholder="Search by name or tag"
             className="max-w-xs"
           />
         }

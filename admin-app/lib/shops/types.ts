@@ -7,7 +7,7 @@ export interface Shop {
   id: string;
   name: string;
   description: string;
-  categories: string[];
+  tags: string[];
   whatsappCatalogUrl: string | null;
   phone: string | null;
   openingHours: string | null;
@@ -15,17 +15,19 @@ export interface Shop {
   status: string;
   rating: number | null;
   totalReviews: number;
-  location: ShopLocation | null;
+  businessLocation: string | null;
+  coordinates: ShopLocation | null;
   createdAt: string;
   updatedAt: string;
 }
 
 export interface CreateShopPayload {
   name: string;
-  description?: string;
+  description: string;
   phone?: string;
-  categories: string[];
-  location?: ShopLocation;
+  tags: string[];
+  businessLocation: string;
+  coordinates?: ShopLocation;
   whatsappCatalogUrl?: string;
   openingHours?: string;
 }

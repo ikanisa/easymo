@@ -181,9 +181,9 @@ const atlasPageConfigs: Record<string, AtlasPageConfig> = {
     hero: {
       icon: "🛍️",
       badge: "Retail",
-      title: "Shops Discovery Agent",
+      title: "Shops & Services Agent",
       description:
-        "Surfaces nearby inventory, pricing, and bundle suggestions for general trade merchants with Atlas-grade search UX.",
+        "Surfaces nearby inventory, service providers, pricing, and bundle suggestions for general trade merchants with Atlas-grade search UX.",
       actions: [
         { label: "Launch retail canvas", href: "/marketplace/settings" },
         { label: "View active intents", href: "/agents/conversations", variant: "ghost" },

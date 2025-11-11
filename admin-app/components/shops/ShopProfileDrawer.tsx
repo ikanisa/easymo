@@ -28,8 +28,10 @@ export function ShopProfileDrawer({ shop, onClose }: ShopProfileDrawerProps) {
           <p className="mt-1 text-[color:var(--color-foreground)]">{shop.description || "No description provided."}</p>
         </div>
         <div>
-          <h4 className="text-xs font-semibold uppercase tracking-wide text-[color:var(--color-muted)]">Categories</h4>
-          <p className="mt-1 text-[color:var(--color-foreground)]">{shop.categories.join(", ")}</p>
+          <h4 className="text-xs font-semibold uppercase tracking-wide text-[color:var(--color-muted)]">Discovery tags</h4>
+          <p className="mt-1 text-[color:var(--color-foreground)]">
+            {shop.tags.length ? shop.tags.join(", ") : "general"}
+          </p>
         </div>
         <div className="grid gap-2 md:grid-cols-2">
           <div>
@@ -62,9 +64,16 @@ export function ShopProfileDrawer({ shop, onClose }: ShopProfileDrawerProps) {
           </div>
         </div>
         <div>
-          <h4 className="text-xs font-semibold uppercase tracking-wide text-[color:var(--color-muted)]">Location</h4>
+          <h4 className="text-xs font-semibold uppercase tracking-wide text-[color:var(--color-muted)]">
+            Business location
+          </h4>
           <p className="mt-1 text-[color:var(--color-foreground)]">
-            {shop.location ? `${shop.location.lat.toFixed(4)}, ${shop.location.lng.toFixed(4)}` : "No coordinates"}
+            {shop.businessLocation ?? "No description provided"}
+          </p>
+          <p className="text-xs text-[color:var(--color-muted)]">
+            {shop.coordinates
+              ? `${shop.coordinates.lat.toFixed(4)}, ${shop.coordinates.lng.toFixed(4)}`
+              : "No GPS coordinates"}
           </p>
         </div>
         <div className="text-xs text-[color:var(--color-muted)]">

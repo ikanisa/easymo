@@ -20,7 +20,12 @@ export function ShopList({ shops, isLoading }: ShopListProps) {
   }
 
   if (!shops.length) {
-    return <EmptyState title="No shops found" description="Add a shop or verify Supabase credentials to load records." />;
+    return (
+      <EmptyState
+        title="No shops or services found"
+        description="Add a shop/service or verify Supabase credentials to load records."
+      />
+    );
   }
 
   return (
@@ -36,17 +41,24 @@ export function ShopList({ shops, isLoading }: ShopListProps) {
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="text-base font-semibold text-[color:var(--color-foreground)]">{shop.name}</p>
+                <p className="text-xs text-[color:var(--color-muted)]">{shop.businessLocation ?? "Business location pending"}</p>
                 <p className="text-xs text-[color:var(--color-muted)]">{shop.phone ?? "No phone"}</p>
               </div>
               <Badge variant={shop.verified ? "green" : "outline"}>{shop.verified ? "Verified" : "Pending"}</Badge>
             </div>
             <p className="mt-2 line-clamp-2 text-sm text-[color:var(--color-muted)]">{shop.description}</p>
             <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-[color:var(--color-muted)]">
-              {shop.categories.map((category) => (
-                <span key={category} className="rounded-full bg-[color:var(--color-surface)] px-2 py-1">
-                  {category}
-                </span>
-              ))}
+              {shop.tags.length
+                ? shop.tags.map((tag) => (
+                    <span key={tag} className="rounded-full bg-[color:var(--color-surface)] px-2 py-1">
+                      {tag}
+                    </span>
+                  ))
+                : (
+                    <span className="rounded-full bg-[color:var(--color-surface)] px-2 py-1">
+                      general
+                    </span>
+                  )}
             </div>
           </button>
         ))}

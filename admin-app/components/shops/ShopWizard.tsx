@@ -9,15 +9,12 @@ import { useToast } from "@/components/ui/ToastProvider";
 import { createShop } from "@/lib/shops/shops-service";
 import { shopsQueryKeys } from "@/lib/queries/shops";
 
-interface ShopWizardProps {
-  defaultCategories?: string[];
-}
-
-export function ShopWizard({ defaultCategories = [] }: ShopWizardProps) {
+export function ShopWizard() {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [description, setDescription] = useState("");
-  const [categories, setCategories] = useState(defaultCategories.join(", "));
+  const [tagsInput, setTagsInput] = useState("");
+  const [businessLocation, setBusinessLocation] = useState("");
   const [whatsappCatalogUrl, setWhatsappCatalogUrl] = useState("");
   const [openingHours, setOpeningHours] = useState("07:00 - 21:00");
   const [lat, setLat] = useState<string>("");
@@ -35,7 +32,8 @@ export function ShopWizard({ defaultCategories = [] }: ShopWizardProps) {
       setName("");
       setPhone("");
       setDescription("");
-      setCategories(defaultCategories.join(", "));
+      setTagsInput("");
+      setBusinessLocation("");
       setWhatsappCatalogUrl("");
       setOpeningHours("07:00 - 21:00");
       setLat("");
@@ -51,12 +49,18 @@ export function ShopWizard({ defaultCategories = [] }: ShopWizardProps) {
     },
   });
 
-  const parsedCategories = categories
+  const parsedTags = tagsInput
     .split(/,|\n/)
     .map((item) => item.trim())
     .filter(Boolean);
+  const tags = parsedTags.slice(0, 5);
+  const tagLimitExceeded = parsedTags.length > tags.length;
 
-  const canSubmit = name.trim().length > 2 && parsedCategories.length > 0;
+  const canSubmit =
+    name.trim().length > 2 &&
+    description.trim().length > 5 &&
+    businessLocation.trim().length > 2 &&
+    tags.length > 0;
 
   return (
     <form
@@ -64,18 +68,23 @@ export function ShopWizard({ defaultCategories = [] }: ShopWizardProps) {
       onSubmit={(event) => {
         event.preventDefault();
         if (!canSubmit || mutation.isLoading) return;
+        const latNum = Number(lat);
+        const lngNum = Number(lng);
+        const hasCoordinates = Number.isFinite(latNum) && Number.isFinite(lngNum);
+
         mutation.mutate({
           name: name.trim(),
           phone: phone.trim() || undefined,
-          description: description.trim() || undefined,
-          categories: parsedCategories,
+          description: description.trim(),
+          businessLocation: businessLocation.trim(),
+          tags,
           whatsappCatalogUrl: whatsappCatalogUrl.trim() || undefined,
           openingHours: openingHours.trim() || undefined,
-          location:
-            lat && lng
+          coordinates:
+            lat && lng && hasCoordinates
               ? {
-                  lat: Number(lat),
-                  lng: Number(lng),
+                  lat: latNum,
+                  lng: lngNum,
                 }
               : undefined,
         });
@@ -103,25 +112,30 @@ export function ShopWizard({ defaultCategories = [] }: ShopWizardProps) {
         </label>
       </div>
       <label className="block text-sm font-medium text-[color:var(--color-foreground)]">
-        Description
+        Business description
         <Textarea
           value={description}
           onChange={(event) => setDescription(event.target.value)}
-          placeholder="Merch assortment or speciality"
+          placeholder="Vehicle parts, electronics repairs, beauty salon…"
           rows={3}
           className="mt-1"
         />
       </label>
       <div className="grid gap-4 md:grid-cols-2">
         <label className="flex flex-col text-sm font-medium text-[color:var(--color-foreground)]">
-          Categories (comma separated)
+          Tags (comma separated, up to five)
           <Textarea
-            value={categories}
-            onChange={(event) => setCategories(event.target.value)}
-            placeholder="grocery, pharmacy"
+            value={tagsInput}
+            onChange={(event) => setTagsInput(event.target.value)}
+            placeholder="vehicle, electronics, smart devices"
             rows={2}
             className="mt-1"
           />
+          <span className="mt-1 text-xs font-normal text-[color:var(--color-muted)]">
+            {tagLimitExceeded
+              ? "Only the first five tags will be used."
+              : "AI sourcing agents rely on these tags to match the right shop or service."}
+          </span>
         </label>
         <label className="flex flex-col text-sm font-medium text-[color:var(--color-foreground)]">
           WhatsApp catalog URL
@@ -144,7 +158,17 @@ export function ShopWizard({ defaultCategories = [] }: ShopWizardProps) {
           />
         </label>
         <label className="flex flex-col text-sm font-medium text-[color:var(--color-foreground)]">
-          Latitude
+          Business location
+          <Input
+            value={businessLocation}
+            onChange={(event) => setBusinessLocation(event.target.value)}
+            placeholder="Kicukiro · KK 9 Ave"
+            className="mt-1"
+            required
+          />
+        </label>
+        <label className="flex flex-col text-sm font-medium text-[color:var(--color-foreground)]">
+          Latitude (optional)
           <Input
             value={lat}
             onChange={(event) => setLat(event.target.value)}
@@ -153,7 +177,7 @@ export function ShopWizard({ defaultCategories = [] }: ShopWizardProps) {
           />
         </label>
         <label className="flex flex-col text-sm font-medium text-[color:var(--color-foreground)]">
-          Longitude
+          Longitude (optional)
           <Input
             value={lng}
             onChange={(event) => setLng(event.target.value)}
@@ -164,7 +188,7 @@ export function ShopWizard({ defaultCategories = [] }: ShopWizardProps) {
       </div>
       <div className="flex items-center justify-end gap-3">
         <Button type="submit" disabled={!canSubmit || mutation.isLoading}>
-          {mutation.isLoading ? "Saving…" : "Create shop"}
+          {mutation.isLoading ? "Saving…" : "Create entry"}
         </Button>
       </div>
     </form>

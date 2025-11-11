@@ -1,13 +1,21 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useShopsQuery } from "@/lib/queries/shops";
+import { useQuery } from "@tanstack/react-query";
+import {
+  agentShopsQueryKey,
+  fetchAgentShops,
+} from "@/lib/agents/shops-service";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { LoadingState } from "@/components/ui/LoadingState";
 import { EmptyState } from "@/components/ui/EmptyState";
 
 export function ShopsAgentClient() {
-  const query = useShopsQuery();
+  const query = useQuery({
+    queryKey: agentShopsQueryKey,
+    queryFn: fetchAgentShops,
+    refetchInterval: 15000,
+  });
   const shops = useMemo(() => query.data?.shops ?? [], [query.data?.shops]);
   const integration = query.data?.integration;
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -28,8 +36,8 @@ export function ShopsAgentClient() {
   return (
     <div className="shops-agent-page">
       <PageHeader
-        title="Nearby Shops"
-        description="Source products from verified shops, compare availability, and escalate manual sourcing requests."
+        title="Shops & Services Agent"
+        description="Surface general shops or service providers when sourcing assistants are offline."
       />
       {integration?.status === "degraded" && (
         <div className="bing-alert" role="status">
@@ -53,7 +61,7 @@ export function ShopsAgentClient() {
                 <div>
                   <p className="shops-agent__name">{shop.name}</p>
                   <p className="shops-agent__meta">
-                    {shop.location ?? "Location unknown"}
+                    {shop.businessLocation ?? "Location unknown"}
                   </p>
                 </div>
                 <div className="shops-agent__badges">
@@ -66,8 +74,8 @@ export function ShopsAgentClient() {
             ))
           ) : (
             <EmptyState
-              title="No shops found"
-              description="Once shops are onboarded they will appear here."
+              title="No shops or services found"
+              description="Once shops or service providers are onboarded they will appear here."
             />
           )}
         </section>
@@ -76,7 +84,7 @@ export function ShopsAgentClient() {
             <>
               <header>
                 <h2>{selectedShop.name}</h2>
-                <p>{selectedShop.location ?? "Location unknown"}</p>
+                <p>{selectedShop.businessLocation ?? "Location unknown"}</p>
               </header>
               <div className="shops-agent__detail-grid">
                 <div>
@@ -84,11 +92,11 @@ export function ShopsAgentClient() {
                   <dd>{selectedShop.status}</dd>
                 </div>
                 <div>
-                  <dt>Categories</dt>
+                  <dt>Tags</dt>
                   <dd>
-                    {selectedShop.categories.length
-                      ? selectedShop.categories.join(", ")
-                      : "Uncategorized"}
+                    {selectedShop.tags.length
+                      ? selectedShop.tags.join(", ")
+                      : "No tags yet"}
                   </dd>
                 </div>
                 <div>

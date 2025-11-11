@@ -10,7 +10,7 @@ interface ShopMapProps {
 
 function computeBounds(shops: Shop[]) {
   const points = shops
-    .map((shop) => shop.location)
+    .map((shop) => shop.coordinates)
     .filter((loc): loc is { lat: number; lng: number } => Boolean(loc));
   if (!points.length) {
     return { minLat: -1.95, maxLat: -1.9, minLng: 30.0, maxLng: 30.1 };
@@ -35,14 +35,14 @@ function project(location: { lat: number; lng: number }, bounds: ReturnType<type
 }
 
 export function ShopMap({ shops }: ShopMapProps) {
-  const withLocation = shops.filter((shop) => shop.location);
+  const withLocation = shops.filter((shop) => shop.coordinates);
   const bounds = computeBounds(withLocation);
 
   return (
     <Card>
       <CardHeader>
         <CardTitle className="text-base font-semibold text-[color:var(--color-foreground)]">
-          Nearby shops heatmap
+          Shops & services heatmap
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -53,8 +53,8 @@ export function ShopMap({ shops }: ShopMapProps) {
               <div
                 key={shop.id}
                 className="absolute flex h-8 w-8 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white text-xs font-semibold text-[color:var(--color-foreground)] shadow-md ring-2 ring-[color:var(--color-accent)]"
-                style={project(shop.location!, bounds)}
-                title={shop.name}
+                style={project(shop.coordinates!, bounds)}
+                title={`${shop.name}${shop.businessLocation ? ` · ${shop.businessLocation}` : ""}`}
               >
                 🛍️
               </div>
@@ -71,18 +71,18 @@ export function ShopMap({ shops }: ShopMapProps) {
               <li key={shop.id} className="flex items-center justify-between rounded-xl border border-[color:var(--color-border)]/50 px-3 py-2">
                 <div>
                   <p className="font-medium text-[color:var(--color-foreground)]">{shop.name}</p>
-                  <p className="text-xs text-[color:var(--color-muted)]">{shop.categories.join(", ")}</p>
+                  <p className="text-xs text-[color:var(--color-muted)]">{shop.tags.join(", ")}</p>
                 </div>
                 <span className="text-xs text-[color:var(--color-muted)]">
-                  {shop.location ? `${shop.location.lat.toFixed(2)}, ${shop.location.lng.toFixed(2)}` : "—"}
+                  {shop.coordinates ? `${shop.coordinates.lat.toFixed(2)}, ${shop.coordinates.lng.toFixed(2)}` : "—"}
                 </span>
               </li>
             ))}
           </ul>
         ) : (
           <EmptyState
-            title="No shops yet"
-            description="Add a shop to visualise distribution across Kigali."
+            title="No shops or services yet"
+            description="Add an entry to visualise distribution across Kigali."
           />
         )}
       </CardContent>

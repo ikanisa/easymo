@@ -9,7 +9,6 @@ import { logStructured } from "@/lib/server/logger";
 const querySchema = z.object({
   search: z.string().optional(),
   verified: z.enum(["true", "false"]).optional(),
-  category: z.string().optional(),
   limit: z.coerce.number().int().min(1).max(200).optional(),
   offset: z.coerce.number().int().min(0).optional(),
 });
@@ -17,9 +16,10 @@ const querySchema = z.object({
 const createSchema = z.object({
   name: z.string().min(2),
   phone: z.string().optional(),
-  description: z.string().optional(),
-  categories: z.array(z.string()).min(1),
-  location: z
+  description: z.string().min(4),
+  tags: z.array(z.string().min(2)).min(1).max(5),
+  businessLocation: z.string().min(3),
+  coordinates: z
     .object({
       lat: z.number(),
       lng: z.number(),
@@ -40,7 +40,7 @@ type ShopRow = {
   id: string;
   name: string;
   description: string | null;
-  categories: string[] | null;
+  tags: string[] | null;
   whatsapp_catalog_url: string | null;
   phone: string | null;
   opening_hours: string | null;
@@ -49,6 +49,7 @@ type ShopRow = {
   rating: number | null;
   total_reviews: number | null;
   location: RawShopLocation;
+  location_text: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -144,7 +145,7 @@ export const GET = createHandler("admin_api.shops.list", async (request, _contex
   const supabaseQuery = adminClient
     .from("shops")
     .select(
-      "id, name, description, categories, whatsapp_catalog_url, phone, opening_hours, verified, status, rating, total_reviews, location, created_at, updated_at",
+      "id, name, description, tags, whatsapp_catalog_url, phone, opening_hours, verified, status, rating, total_reviews, location, location_text, created_at, updated_at",
       { count: "exact" },
     )
     .order("updated_at", { ascending: false })
@@ -155,9 +156,6 @@ export const GET = createHandler("admin_api.shops.list", async (request, _contex
   }
   if (query.verified) {
     supabaseQuery.eq("verified", query.verified === "true");
-  }
-  if (query.category) {
-    supabaseQuery.contains("categories", [query.category]);
   }
 
   const { data, error, count } = await supabaseQuery;
@@ -176,7 +174,7 @@ export const GET = createHandler("admin_api.shops.list", async (request, _contex
     id: row.id,
     name: row.name,
     description: row.description ?? "",
-    categories: row.categories ?? [],
+    tags: row.tags ?? [],
     whatsappCatalogUrl: row.whatsapp_catalog_url,
     phone: row.phone,
     openingHours: row.opening_hours,
@@ -184,7 +182,8 @@ export const GET = createHandler("admin_api.shops.list", async (request, _contex
     status: row.status ?? "active",
     rating: row.rating ?? null,
     totalReviews: row.total_reviews ?? 0,
-    location: formatLocation(row.location),
+    businessLocation: row.location_text ?? null,
+    coordinates: formatLocation(row.location),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   }));
@@ -216,25 +215,28 @@ export const POST = createHandler("admin_api.shops.create", async (request, _con
   const insertPayload: Record<string, unknown> = {
     name: body.name,
     phone: body.phone ?? null,
-    description: body.description ?? null,
-    categories: body.categories,
+    description: body.description,
+    tags: body.tags,
+    location_text: body.businessLocation,
     whatsapp_catalog_url: body.whatsappCatalogUrl ?? null,
     opening_hours: body.openingHours ?? null,
     verified: false,
     status: "active",
   };
 
-  if (body.location) {
+  if (body.coordinates) {
     insertPayload.location = {
       type: "Point",
-      coordinates: [body.location.lng, body.location.lat],
+      coordinates: [body.coordinates.lng, body.coordinates.lat],
     };
   }
 
   const { data, error } = await adminClient
     .from("shops")
     .insert(insertPayload)
-    .select("id, name, description, categories, whatsapp_catalog_url, phone, opening_hours, verified, status, rating, total_reviews, location, created_at, updated_at")
+    .select(
+      "id, name, description, tags, whatsapp_catalog_url, phone, opening_hours, verified, status, rating, total_reviews, location, location_text, created_at, updated_at",
+    )
     .single();
 
   if (error) {
@@ -255,7 +257,7 @@ export const POST = createHandler("admin_api.shops.create", async (request, _con
       id: data!.id,
       name: data!.name,
       description: data!.description ?? "",
-      categories: data!.categories ?? [],
+      tags: data!.tags ?? [],
       whatsappCatalogUrl: data!.whatsapp_catalog_url,
       phone: data!.phone,
       openingHours: data!.opening_hours,
@@ -263,7 +265,8 @@ export const POST = createHandler("admin_api.shops.create", async (request, _con
       status: data!.status ?? "active",
       rating: data!.rating ?? null,
       totalReviews: data!.total_reviews ?? 0,
-      location: formatLocation((data as ShopRow).location),
+      businessLocation: data!.location_text ?? null,
+      coordinates: formatLocation((data as ShopRow).location),
       createdAt: data!.created_at,
       updatedAt: data!.updated_at,
     },

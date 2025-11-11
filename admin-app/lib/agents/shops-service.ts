@@ -13,11 +13,18 @@ const responseSchema = z.object({
   }),
 });
 
-export async function listShops(): Promise<z.infer<typeof responseSchema>> {
+export type AgentShopsResponse = z.infer<typeof responseSchema>;
+export const agentShopsQueryKey = ["agent-shops"] as const;
+
+export async function listShops(): Promise<AgentShopsResponse> {
   const response = await fetch("/api/agents/shops", { cache: "no-store" });
   if (!response.ok) {
     throw new Error("Unable to load shops.");
   }
   const json = await response.json();
   return responseSchema.parse(json);
+}
+
+export function fetchAgentShops() {
+  return listShops();
 }

@@ -18,18 +18,10 @@ interface PanelLayoutProps {
 }
 
 export default async function PanelLayout({ children }: PanelLayoutProps) {
-  // TODO: Re-enable authentication later
-  // For now, bypass session check and use mock session
-  // const session = await readSessionFromCookies();
-  // if (!session) {
-  //   redirect("/login");
-  // }
-  
-  // Mock session for development
-  const session = {
-    actorId: "dev-admin",
-    label: "Development Admin",
-  };
+  const session = await readSessionFromCookies();
+  if (!session) {
+    redirect("/login");
+  }
 
   const environmentLabel = process.env.NEXT_PUBLIC_ENVIRONMENT_LABEL ?? "Staging";
   const assistantEnabled = (process.env.NEXT_PUBLIC_ASSISTANT_ENABLED ?? "")

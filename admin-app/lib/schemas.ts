@@ -558,16 +558,29 @@ export const pharmacyRequestSchema = z.object({
   quotes: z.array(pharmacyQuoteSchema),
 });
 
+const shopCoordinatesSchema = z
+  .object({
+    lat: z.number(),
+    lng: z.number(),
+  })
+  .nullable();
+
 export const shopSchema = z.object({
   id: z.string(),
   name: z.string(),
-  categories: z.array(z.string()),
+  description: z.string(),
+  tags: z.array(z.string()).min(1).max(5),
   rating: z.number().nullable(),
   verified: z.boolean(),
-  location: z.string().nullable(),
+  businessLocation: z.string().nullable(),
   phone: z.string().nullable(),
   status: z.string(),
   deliveryEta: z.number().nullable(),
+  whatsappCatalogUrl: z.string().nullable().optional(),
+  openingHours: z.string().nullable().optional(),
+  totalReviews: z.number().default(0),
+  coordinates: shopCoordinatesSchema,
+  updatedAt: z.string().datetime().nullable().optional(),
 });
 
 export const hardwareVendorSchema = z.object({
