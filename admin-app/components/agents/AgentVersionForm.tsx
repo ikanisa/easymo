@@ -2,7 +2,13 @@
 
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
+import { Textarea } from "@/components/ui/Textarea";
+import { Field } from "@/components/forms/Field";
 import { getAdminApiRoutePath } from "@/lib/routes";
+
+type FieldKey = "instructions" | "tools" | "memory" | "evaluation" | "form";
 
 type Props = {
   personaId: string;
@@ -14,12 +20,17 @@ export function AgentVersionForm({ personaId }: Props) {
   const [toolsJson, setToolsJson] = useState("[]");
   const [memoryJson, setMemoryJson] = useState("{}");
   const [evaluationJson, setEvaluationJson] = useState("[]");
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<{ field: FieldKey; message: string } | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError(null);
+
+    if (!instructions.trim()) {
+      setError({ field: "instructions", message: "Instructions are required" });
+      return;
+    }
 
     let tools: unknown;
     let memory: unknown;
@@ -28,21 +39,21 @@ export function AgentVersionForm({ personaId }: Props) {
     try {
       tools = toolsJson.trim() ? JSON.parse(toolsJson) : [];
     } catch (err) {
-      setError(`Tools JSON invalid: ${(err as Error).message}`);
+      setError({ field: "tools", message: `Tools JSON invalid: ${(err as Error).message}` });
       return;
     }
 
     try {
       memory = memoryJson.trim() ? JSON.parse(memoryJson) : {};
     } catch (err) {
-      setError(`Memory config JSON invalid: ${(err as Error).message}`);
+      setError({ field: "memory", message: `Memory config JSON invalid: ${(err as Error).message}` });
       return;
     }
 
     try {
       evaluation = evaluationJson.trim() ? JSON.parse(evaluationJson) : [];
     } catch (err) {
-      setError(`Evaluation plan JSON invalid: ${(err as Error).message}`);
+      setError({ field: "evaluation", message: `Evaluation plan JSON invalid: ${(err as Error).message}` });
       return;
     }
 
@@ -61,7 +72,7 @@ export function AgentVersionForm({ personaId }: Props) {
 
       if (!response.ok) {
         const payload = await response.json().catch(() => ({}));
-        setError(payload?.error ?? "Failed to create version");
+        setError({ field: "form", message: payload?.error ?? "Failed to create version" });
         return;
       }
 
@@ -71,66 +82,116 @@ export function AgentVersionForm({ personaId }: Props) {
       setEvaluationJson("[]");
       router.refresh();
     } catch (err) {
-      setError((err as Error).message);
+      setError({ field: "form", message: (err as Error).message });
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-      <div>
-        <h3 className="text-lg font-semibold text-slate-900">Publish new version</h3>
-        <p className="text-sm text-slate-500">Provide updated instructions and optional tool configuration. Versions are automatically numbered.</p>
-      </div>
-      <label className="flex flex-col text-sm font-medium">
-        Instructions
-        <textarea
-          value={instructions}
-          onChange={(event) => setInstructions(event.target.value)}
-          required
-          rows={6}
-          className="mt-1 rounded border border-slate-300 px-3 py-2 text-sm"
-          placeholder="Detailed system instructions for the agent persona."
-        />
-      </label>
-      <label className="flex flex-col text-sm font-medium">
-        Tools JSON
-        <textarea
-          value={toolsJson}
-          onChange={(event) => setToolsJson(event.target.value)}
-          rows={3}
-          className="mt-1 rounded border border-slate-300 px-3 py-2 text-sm font-mono"
-        />
-      </label>
-      <label className="flex flex-col text-sm font-medium">
-        Memory Config JSON
-        <textarea
-          value={memoryJson}
-          onChange={(event) => setMemoryJson(event.target.value)}
-          rows={2}
-          className="mt-1 rounded border border-slate-300 px-3 py-2 text-sm font-mono"
-        />
-      </label>
-      <label className="flex flex-col text-sm font-medium">
-        Evaluation Plan JSON
-        <textarea
-          value={evaluationJson}
-          onChange={(event) => setEvaluationJson(event.target.value)}
-          rows={2}
-          className="mt-1 rounded border border-slate-300 px-3 py-2 text-sm font-mono"
-        />
-      </label>
-      {error && <p className="text-sm text-red-600">{error}</p>}
-      <div className="flex justify-end">
-        <button
-          type="submit"
-          disabled={submitting}
-          className="inline-flex items-center rounded bg-emerald-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
-        >
-          {submitting ? "Publishing…" : "Publish version"}
-        </button>
-      </div>
-    </form>
+    <Card asChild>
+      <form onSubmit={handleSubmit} className="flex flex-col">
+        <CardHeader padding="lg">
+          <CardTitle>Publish new version</CardTitle>
+          <CardDescription>
+            Provide updated instructions and optional tool configuration. Versions are automatically numbered.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="gap-6" padding="lg">
+          <Field
+            label="Instructions"
+            labelFor="version-instructions"
+            required
+            helperText="Provide detailed system instructions for the agent persona."
+            error={error?.field === "instructions" ? error.message : undefined}
+          >
+            <Textarea
+              id="version-instructions"
+              value={instructions}
+              onChange={(event) => {
+                if (error?.field === "instructions") {
+                  setError(null);
+                }
+                setInstructions(event.target.value);
+              }}
+              required
+              rows={6}
+              status={error?.field === "instructions" ? "error" : "default"}
+              placeholder="Detailed system instructions for the agent persona."
+            />
+          </Field>
+          <Field
+            label="Tools JSON"
+            labelFor="version-tools"
+            helperText="Array of tool definitions. Leave empty to keep defaults."
+            error={error?.field === "tools" ? error.message : undefined}
+          >
+            <Textarea
+              id="version-tools"
+              value={toolsJson}
+              onChange={(event) => {
+                if (error?.field === "tools") {
+                  setError(null);
+                }
+                setToolsJson(event.target.value);
+              }}
+              rows={3}
+              status={error?.field === "tools" ? "error" : "default"}
+              className="font-mono"
+            />
+          </Field>
+          <Field
+            label="Memory config JSON"
+            labelFor="version-memory"
+            helperText="Key-value pairs persisted between runs."
+            error={error?.field === "memory" ? error.message : undefined}
+          >
+            <Textarea
+              id="version-memory"
+              value={memoryJson}
+              onChange={(event) => {
+                if (error?.field === "memory") {
+                  setError(null);
+                }
+                setMemoryJson(event.target.value);
+              }}
+              rows={3}
+              status={error?.field === "memory" ? "error" : "default"}
+              className="font-mono"
+            />
+          </Field>
+          <Field
+            label="Evaluation plan JSON"
+            labelFor="version-evaluation"
+            helperText="Optional evaluation steps executed after deployment."
+            error={error?.field === "evaluation" ? error.message : undefined}
+          >
+            <Textarea
+              id="version-evaluation"
+              value={evaluationJson}
+              onChange={(event) => {
+                if (error?.field === "evaluation") {
+                  setError(null);
+                }
+                setEvaluationJson(event.target.value);
+              }}
+              rows={3}
+              status={error?.field === "evaluation" ? "error" : "default"}
+              className="font-mono"
+            />
+          </Field>
+          {error?.field === "form" ? (
+            <div className="rounded-xl border border-[color:var(--color-danger)]/40 bg-[color:var(--color-danger)]/5 px-4 py-3">
+              <p className="text-body-sm text-[color:var(--color-danger)]">{error.message}</p>
+            </div>
+          ) : null}
+        </CardContent>
+        <CardFooter padding="lg">
+          <Button type="submit" loading={submitting} variant="primary">
+            {submitting ? "Publishing" : "Publish version"}
+          </Button>
+        </CardFooter>
+      </form>
+    </Card>
   );
 }

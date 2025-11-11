@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import "../styles/theme.css";
+import "../styles/typography.css";
 import { AppProviders } from "@/components/providers/AppProviders";
 import { QueryProvider } from "@/app/providers/QueryProvider";
 import { cssVariableSheet } from "@easymo/ui/tokens";
