@@ -21,8 +21,8 @@
   "home.rows.nearbyQuincailleries.description": "Trouvez des quincailleries et vérifiez les prix des articles.",
   "home.rows.propertyRentals.title": "🏠 Locations immobilières",
   "home.rows.propertyRentals.description": "Trouvez ou listez des propriétés à louer.",
-  "home.rows.marketplace.title": "🛍️ Boutiques",
-  "home.rows.marketplace.description": "Découvrez des vendeurs locaux ou publiez votre activité.",
+  "home.rows.marketplace.title": "🛍️ Magasins & Services",
+  "home.rows.marketplace.description": "Découvrez des magasins et services locaux ou listez votre entreprise.",
   "home.rows.momoQr.title": "💳 Code QR MOMO et Jetons",
   "home.rows.momoQr.description": "Générez des QR codes, scannez et gérez les jetons.",
   "home.rows.motorInsurance.title": "🛡️ Assurance moto",
@@ -504,5 +504,11 @@
   "shops.error": "⚠️ Désolé, nous avons rencontré une erreur lors de la recherche de magasins.\n\nVeuillez réessayer dans quelques minutes ou contacter le support si cela persiste.",
   "property.add.processing": "🏠 Traitement de votre annonce immobilière...",
   "property.no_results": "🏠 Désolé, nous n'avons pas trouvé de biens correspondant à vos critères pour le moment.\n\nVeuillez réessayer plus tard ou ajuster vos critères de recherche.",
-  "property.error": "⚠️ Désolé, nous avons rencontré une erreur avec votre demande immobilière.\n\nVeuillez réessayer dans quelques minutes ou contacter le support si cela persiste."
+  "property.error": "⚠️ Désolé, nous avons rencontré une erreur avec votre demande immobilière.\n\nVeuillez réessayer dans quelques minutes ou contacter le support si cela persiste.",
+  "pharmacy.start.prompt": "💊 *Pharmacies à proximité*\n\nPartagez votre localisation pour trouver des pharmacies près de vous.\n\nAppuyez sur *Lieux enregistrés* pour choisir un lieu sauvegardé, ou partagez votre localisation (➕ → Localisation → Partager).",
+  "pharmacy.location.received": "📍 *Localisation reçue !*\n\n💊 Souhaitez-vous spécifier les médicaments dont vous avez besoin, ou rechercher toutes les pharmacies maintenant ?",
+  "pharmacy.buttons.specify_medicine": "💊 Spécifier médicaments",
+  "pharmacy.buttons.search_now": "🔍 Rechercher maintenant",
+  "quincaillerie.start.prompt": "🔧 *Quincailleries à proximité*\n\nPartagez votre localisation pour trouver des quincailleries près de vous.\n\nAppuyez sur *Lieux enregistrés* pour choisir un lieu sauvegardé, ou partagez votre localisation (➕ → Localisation → Partager).",
+  "quincaillerie.location.received": "📍 *Localisation reçue !*\n\n🔧 Veuillez partager le nom des articles ou une image des articles dont vous avez besoin.\n\nVous pouvez taper les noms des articles ou envoyer une photo."
 }

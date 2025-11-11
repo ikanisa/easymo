@@ -21,8 +21,8 @@
   "home.rows.nearbyQuincailleries.description": "Find hardware stores and check item prices.",
   "home.rows.propertyRentals.title": "🏠 Property Rentals",
   "home.rows.propertyRentals.description": "Find or list rental properties.",
-  "home.rows.marketplace.title": "🛍️ Shops",
-  "home.rows.marketplace.description": "Discover local sellers or list your business.",
+  "home.rows.marketplace.title": "🛍️ Shops & Services",
+  "home.rows.marketplace.description": "Discover local shops and services or list your business.",
   "home.rows.momoQr.title": "💳 MOMO QR Code and Tokens",
   "home.rows.momoQr.description": "Generate QR codes, scan, and manage tokens.",
   "home.rows.motorInsurance.title": "🛡️ Motor Insurance",
@@ -504,5 +504,11 @@
   "shops.error": "⚠️ Sorry, we encountered an error while searching for shops.\n\nPlease try again in a few minutes or contact support if this persists.",
   "property.add.processing": "🏠 Processing your property listing...",
   "property.no_results": "🏠 Sorry, we couldn't find properties matching your criteria right now.\n\nPlease try again later or adjust your search criteria.",
-  "property.error": "⚠️ Sorry, we encountered an error with your property request.\n\nPlease try again in a few minutes or contact support if this persists."
+  "property.error": "⚠️ Sorry, we encountered an error with your property request.\n\nPlease try again in a few minutes or contact support if this persists.",
+  "pharmacy.start.prompt": "💊 *Nearby Pharmacies*\n\nShare your location to find pharmacies near you.\n\nTap *Saved places* to pick a saved location, or share your location using the attachment icon (➕ → Location → Share).",
+  "pharmacy.location.received": "📍 *Location received!*\n\n💊 Would you like to specify medicines you need, or search all pharmacies now?",
+  "pharmacy.buttons.specify_medicine": "💊 Specify Medicines",
+  "pharmacy.buttons.search_now": "🔍 Search Now",
+  "quincaillerie.start.prompt": "🔧 *Nearby Quincailleries*\n\nShare your location to find hardware stores near you.\n\nTap *Saved places* to pick a saved location, or share your location using the attachment icon (➕ → Location → Share).",
+  "quincaillerie.location.received": "📍 *Location received!*\n\n🔧 Please share the item names or an image of the items you need.\n\nYou can type item names or send a photo."
 }

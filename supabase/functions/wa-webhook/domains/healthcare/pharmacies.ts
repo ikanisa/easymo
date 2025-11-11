@@ -16,6 +16,7 @@ import { sendButtonsMessage, buildButtons } from "../../utils/reply.ts";
 import { isFeatureEnabled } from "../../../_shared/feature-flags.ts";
 import { handleAINearbyPharmacies } from "../ai-agents/index.ts";
 import { IDS } from "../../wa/ids.ts";
+import { t } from "../../i18n/translator.ts";
 
 export async function startNearbyPharmacies(ctx: RouterContext): Promise<boolean> {
   if (!ctx.profileId) return false;
@@ -27,12 +28,10 @@ export async function startNearbyPharmacies(ctx: RouterContext): Promise<boolean
   
   await sendButtonsMessage(
     ctx,
-    "💊 *Nearby Pharmacies*\n\n" +
-    "Share your location to find pharmacies near you.\n\n" +
-    "📍 Tap the button below to share your location, or use the attachment icon.",
+    t(ctx.locale, "pharmacy.start.prompt"),
     buildButtons(
-      { id: "pharmacy_share_location", title: "📍 Share Location" },
-      { id: IDS.BACK_HOME, title: "🏠 Back to Home" }
+      { id: IDS.LOCATION_SAVED_LIST, title: t(ctx.locale, "location.saved.button") },
+      { id: IDS.BACK_HOME, title: t(ctx.locale, "common.menu_back") }
     )
   );
   
@@ -53,12 +52,11 @@ export async function handlePharmacyLocation(
   
   await sendButtonsMessage(
     ctx,
-    "📍 *Location received!*\n\n" +
-    "💊 What would you like to do?",
+    t(ctx.locale, "pharmacy.location.received"),
     buildButtons(
-      { id: "pharmacy_search_all", title: "🔍 Search All Pharmacies" },
-      { id: "pharmacy_add_medicine", title: "💊 Specify Medicines" },
-      { id: IDS.BACK_HOME, title: "🏠 Cancel" }
+      { id: "pharmacy_add_medicine", title: t(ctx.locale, "pharmacy.buttons.specify_medicine") },
+      { id: "pharmacy_search_now", title: t(ctx.locale, "pharmacy.buttons.search_now") },
+      { id: IDS.BACK_HOME, title: t(ctx.locale, "common.menu_back") }
     )
   );
   

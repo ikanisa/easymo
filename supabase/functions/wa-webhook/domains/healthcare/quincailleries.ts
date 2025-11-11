@@ -16,6 +16,7 @@ import { sendButtonsMessage, buildButtons } from "../../utils/reply.ts";
 import { isFeatureEnabled } from "../../../_shared/feature-flags.ts";
 import { handleAINearbyQuincailleries } from "../ai-agents/index.ts";
 import { IDS } from "../../wa/ids.ts";
+import { t } from "../../i18n/translator.ts";
 
 export async function startNearbyQuincailleries(ctx: RouterContext): Promise<boolean> {
   if (!ctx.profileId) return false;
@@ -27,12 +28,10 @@ export async function startNearbyQuincailleries(ctx: RouterContext): Promise<boo
   
   await sendButtonsMessage(
     ctx,
-    "🔧 *Nearby Quincailleries*\n\n" +
-    "Share your location to find hardware stores near you.\n\n" +
-    "📍 Tap the button below to share your location, or use the attachment icon.",
+    t(ctx.locale, "quincaillerie.start.prompt"),
     buildButtons(
-      { id: "quincaillerie_share_location", title: "📍 Share Location" },
-      { id: IDS.BACK_HOME, title: "🏠 Back to Home" }
+      { id: IDS.LOCATION_SAVED_LIST, title: t(ctx.locale, "location.saved.button") },
+      { id: IDS.BACK_HOME, title: t(ctx.locale, "common.menu_back") }
     )
   );
   
@@ -45,7 +44,7 @@ export async function handleQuincaillerieLocation(
 ): Promise<boolean> {
   if (!ctx.profileId) return false;
   
-  // Ask for optional item information
+  // Prompt for item name or image
   await setState(ctx.supabase, ctx.profileId, {
     key: "quincaillerie_awaiting_items",
     data: { location },
@@ -53,12 +52,9 @@ export async function handleQuincaillerieLocation(
   
   await sendButtonsMessage(
     ctx,
-    "📍 *Location received!*\n\n" +
-    "🔧 What would you like to do?",
+    t(ctx.locale, "quincaillerie.location.received"),
     buildButtons(
-      { id: "quincaillerie_search_all", title: "🔍 Search All Stores" },
-      { id: "quincaillerie_add_items", title: "🔧 Specify Items" },
-      { id: IDS.BACK_HOME, title: "🏠 Cancel" }
+      { id: IDS.BACK_HOME, title: t(ctx.locale, "common.menu_back") }
     )
   );
   
