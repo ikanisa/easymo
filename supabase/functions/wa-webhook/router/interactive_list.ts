@@ -4,13 +4,17 @@ import type {
 } from "../types.ts";
 import { getListReplyId } from "../utils/messages.ts";
 // AI Agents Integration
-import { handleAIAgentOptionSelection } from "../domains/ai-agents/index.ts";
+import {
+  handleAIAgentOptionSelection,
+  handleShopFallbackSelection,
+  type ShopResultsState,
+} from "../domains/ai-agents/index.ts";
 import {
   handleNearbyResultSelection,
+  handleNearbySavedLocationSelection,
   handleSeeDrivers,
   handleSeePassengers,
   handleVehicleSelection,
-  handleNearbySavedLocationSelection,
   isVehicleOption,
 } from "../domains/mobility/nearby.ts";
 import type { NearbySavedPickerState } from "../domains/mobility/nearby.ts";
@@ -19,12 +23,19 @@ import {
   LOCATION_KIND_BY_ID,
 } from "../domains/locations/save.ts";
 import {
+  handleSavedPlacesAddSelection,
+  handleSavedPlacesListSelection,
+  startSavedPlaces,
+} from "../domains/locations/manage.ts";
+import {
   handleScheduleResultSelection,
   handleScheduleRole,
   handleScheduleSavedLocationSelection,
+  handleScheduleTimeSelection,
   handleScheduleVehicle,
   isScheduleResult,
   isScheduleRole,
+  type ScheduleState,
   startScheduleTrip,
 } from "../domains/mobility/schedule.ts";
 import type { ScheduleSavedPickerState } from "../domains/mobility/schedule.ts";
@@ -34,19 +45,26 @@ import {
   handleMarketplaceResult,
   startMarketplace,
 } from "../domains/marketplace/index.ts";
-import { handleAddBusinessCategorySelection } from "../domains/marketplace/index.ts";
 import { sendHomeMenu } from "../flows/home.ts";
 import { startNearbyPharmacies } from "../domains/healthcare/pharmacies.ts";
 import { startNearbyQuincailleries } from "../domains/healthcare/quincailleries.ts";
 import {
-  startPropertyRentals,
-  handlePropertyMenuSelection,
-  handleFindPropertyType,
-  handleFindPropertyBedrooms,
-  handleAddPropertyType,
+  handlePharmacyResultSelection,
+  type PharmacyResultsState,
+} from "../domains/healthcare/pharmacies.ts";
+import {
+  handleQuincaillerieResultSelection,
+  type QuincaResultsState,
+} from "../domains/healthcare/quincailleries.ts";
+import {
   handleAddPropertyBedrooms,
+  handleAddPropertyType,
+  handleFindPropertyBedrooms,
+  handleFindPropertyType,
+  handlePropertyMenuSelection,
   handlePropertySavedLocationSelection,
   type PropertySavedPickerState,
+  startPropertyRentals,
 } from "../domains/property/rentals.ts";
 import { handleWalletEarnSelection } from "../domains/wallet/earn.ts";
 import { handleWalletRedeemSelection } from "../domains/wallet/redeem.ts";
@@ -118,12 +136,51 @@ export async function handleList(
       );
     }
   }
-  
+
+  if (state.key === "saved_places_list") {
+    if (await handleSavedPlacesListSelection(ctx, id)) {
+      return true;
+    }
+  }
+  if (state.key === "saved_places_add") {
+    if (await handleSavedPlacesAddSelection(ctx, id)) {
+      return true;
+    }
+  }
+  if (state.key === "pharmacy_results") {
+    return await handlePharmacyResultSelection(
+      ctx,
+      (state.data ?? {}) as PharmacyResultsState,
+      id,
+    );
+  }
+  if (state.key === "quincaillerie_results") {
+    return await handleQuincaillerieResultSelection(
+      ctx,
+      (state.data ?? {}) as QuincaResultsState,
+      id,
+    );
+  }
+  if (state.key === "shop_results") {
+    return await handleShopFallbackSelection(
+      ctx,
+      (state.data ?? {}) as ShopResultsState,
+      id,
+    );
+  }
+  if (state.key === "schedule_time_picker") {
+    return await handleScheduleTimeSelection(
+      ctx,
+      (state.data ?? {}) as ScheduleState,
+      id,
+    );
+  }
+
   // Check if this is an AI agent option selection
   if (id.startsWith("agent_option_") && state.key === "ai_agent_selection") {
     return await handleAIAgentOptionSelection(ctx, state, id);
   }
-  
+
   if (await handleHomeMenuSelection(ctx, id, state)) {
     return true;
   }
@@ -137,9 +194,6 @@ export async function handleList(
   if (state.key === "market_category" && id.startsWith("cat::")) {
     return await handleMarketplaceCategorySelection(ctx, id);
   }
-  if (state.key === "market_add_category" && id.startsWith("cat::")) {
-    return await handleAddBusinessCategorySelection(ctx, id, state);
-  }
   if (
     id === IDS.MARKETPLACE_PREV || id === IDS.MARKETPLACE_NEXT ||
     id === IDS.MARKETPLACE_REFRESH || id === IDS.MARKETPLACE_ADD ||
@@ -147,12 +201,15 @@ export async function handleList(
   ) {
     return await handleMarketplaceButton(ctx, state, id);
   }
-  
+
   // Property Rentals flows
   if (state.key === "property_menu") {
     return await handlePropertyMenuSelection(ctx, id);
   }
-  if (state.key === "property_find_type" && (id === "short_term" || id === "long_term")) {
+  if (
+    state.key === "property_find_type" &&
+    (id === "short_term" || id === "long_term")
+  ) {
     return await handleFindPropertyType(ctx, id);
   }
   if (state.key === "property_find_bedrooms" && /^\d+$/.test(id)) {
@@ -165,6 +222,10 @@ export async function handleList(
     return await handleFindPropertyPriceUnit(ctx, stateData, id);
   }
   if (state.key === "property_add_type" && (id === "short_term" || id === "long_term")) {
+  if (
+    state.key === "property_add_type" &&
+    (id === "short_term" || id === "long_term")
+  ) {
     return await handleAddPropertyType(ctx, id);
   }
   if (state.key === "property_add_bedrooms" && /^\d+$/.test(id)) {
@@ -177,6 +238,7 @@ export async function handleList(
     return await handleAddPropertyPriceUnit(ctx, stateData, id);
   }
   
+
   if (isVehicleOption(id) && state.key === "mobility_nearby_select") {
     return await handleVehicleSelection(ctx, (state.data ?? {}) as any, id);
   }
@@ -261,7 +323,8 @@ async function sendDineInDisabledNotice(ctx: RouterContext): Promise<void> {
   await sendButtonsMessage(
     ctx,
     {
-      body: "Dine-in workflows are handled outside WhatsApp. Please coordinate with your success manager.",
+      body:
+        "Dine-in workflows are handled outside WhatsApp. Please coordinate with your success manager.",
     },
     [...homeOnly()],
     { emoji: "ℹ️" },
@@ -292,7 +355,8 @@ async function sendRemovedFeatureNotice(ctx: RouterContext): Promise<void> {
   await sendButtonsMessage(
     ctx,
     {
-      body: "That workflow has been retired. Please use the main menu buttons for the supported features.",
+      body:
+        "That workflow has been retired. Please use the main menu buttons for the supported features.",
     },
     [...homeOnly()],
     { emoji: "ℹ️" },
@@ -331,6 +395,10 @@ async function handleHomeMenuSelection(
       return await handleSeePassengers(ctx);
     case IDS.SCHEDULE_TRIP:
       return await startScheduleTrip(ctx, state);
+    case IDS.SAVED_PLACES:
+      return await startSavedPlaces(ctx);
+    case IDS.SAVED_PLACES:
+      return await startSavedPlaces(ctx);
     case IDS.NEARBY_PHARMACIES:
       return await startNearbyPharmacies(ctx);
     case IDS.NEARBY_QUINCAILLERIES:

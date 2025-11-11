@@ -16,7 +16,7 @@ import { waChatLink } from "../../utils/links.ts";
 import { maskPhone } from "../../flows/support.ts";
 import { logStructuredEvent } from "../../observe/log.ts";
 import { timeAgo } from "../../utils/text.ts";
-import { sendFlowMessage, sendText } from "../../wa/client.ts";
+import { sendText } from "../../wa/client.ts";
 import {
   buildButtons,
   ButtonSpec,
@@ -38,11 +38,94 @@ import {
   type UserFavorite,
 } from "../locations/favorites.ts";
 import { buildSaveRows } from "../locations/save.ts";
-import { SCHEDULE_TIME_FLOW_ID } from "../../config.ts";
 
 const DEFAULT_WINDOW_DAYS = 30;
 const REQUIRED_RADIUS_METERS = 10_000;
 const DEFAULT_TIMEZONE = "Africa/Kigali";
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+type TimeChoiceDef = {
+  id: string;
+  titleKey: string;
+  descriptionKey?: string;
+  type: "offset" | "preset";
+  minutes?: number;
+  dayOffset?: number;
+  time?: string;
+  labelKey?: string;
+};
+
+const TIME_CHOICES: TimeChoiceDef[] = [
+  {
+    id: "time::now",
+    titleKey: "schedule.time.option.now",
+    descriptionKey: "schedule.time.option.now.description",
+    type: "offset",
+    minutes: 0,
+  },
+  {
+    id: "time::30m",
+    titleKey: "schedule.time.option.30m",
+    descriptionKey: "schedule.time.option.30m.description",
+    type: "offset",
+    minutes: 30,
+  },
+  {
+    id: "time::1h",
+    titleKey: "schedule.time.option.1h",
+    descriptionKey: "schedule.time.option.1h.description",
+    type: "offset",
+    minutes: 60,
+  },
+  {
+    id: "time::2h",
+    titleKey: "schedule.time.option.2h",
+    descriptionKey: "schedule.time.option.2h.description",
+    type: "offset",
+    minutes: 120,
+  },
+  {
+    id: "time::5h",
+    titleKey: "schedule.time.option.5h",
+    descriptionKey: "schedule.time.option.5h.description",
+    type: "offset",
+    minutes: 300,
+  },
+  {
+    id: "time::tomorrow_am",
+    titleKey: "schedule.time.option.tomorrow_morning",
+    descriptionKey: "schedule.time.option.tomorrow_morning.description",
+    type: "preset",
+    dayOffset: 1,
+    time: "08:00",
+  },
+  {
+    id: "time::tomorrow_pm",
+    titleKey: "schedule.time.option.tomorrow_evening",
+    descriptionKey: "schedule.time.option.tomorrow_evening.description",
+    type: "preset",
+    dayOffset: 1,
+    time: "18:00",
+  },
+  {
+    id: "time::every_morning",
+    titleKey: "schedule.time.option.every_morning",
+    descriptionKey: "schedule.time.option.every_morning.description",
+    type: "preset",
+    dayOffset: 1,
+    time: "07:30",
+    labelKey: "schedule.time.label.every_morning",
+  },
+  {
+    id: "time::every_evening",
+    titleKey: "schedule.time.option.every_evening",
+    descriptionKey: "schedule.time.option.every_evening.description",
+    type: "preset",
+    dayOffset: 1,
+    time: "17:30",
+    labelKey: "schedule.time.label.every_evening",
+  },
+];
 
 export interface ScheduleState {
   role?: "driver" | "passenger";
@@ -390,8 +473,150 @@ async function requestScheduleTime(
       ],
     },
     { emoji: "🕐" },
+    key: "schedule_time_picker",
+    data: { ...state } as Record<string, unknown>,
+  });
+
+  const rows = [
+    ...buildTimeOptionRows(ctx),
+    {
+      id: IDS.BACK_MENU,
+      title: t(ctx.locale, "common.menu_back"),
+      description: t(ctx.locale, "common.back_to_menu.description"),
+    },
+  ];
+
+  await sendListMessage(
+    ctx,
+    {
+      title: t(ctx.locale, "schedule.time.list.title"),
+      body: t(ctx.locale, "schedule.time.list.body"),
+      sectionTitle: t(ctx.locale, "schedule.time.list.section"),
+      rows,
+      buttonText: t(ctx.locale, "common.buttons.choose"),
+    },
+    { emoji: "🕒" },
   );
   return true;
+}
+
+export async function handleScheduleTimeSelection(
+  ctx: RouterContext,
+  state: ScheduleState,
+  choiceId: string,
+): Promise<boolean> {
+  if (!ctx.profileId || !state.role || !state.vehicle || !state.origin) {
+    return false;
+  }
+  const choice = TIME_CHOICES.find((option) => option.id === choiceId);
+  if (!choice) return false;
+  const timezone = state.timezone ?? DEFAULT_TIMEZONE;
+  const selection = computeTimeSelection(choice, timezone);
+  if (!selection) {
+    await sendButtonsMessage(
+      ctx,
+      t(ctx.locale, "schedule.time.invalid"),
+      homeOnly(),
+    );
+    return true;
+  }
+  const travelLabel = choice.labelKey
+    ? t(ctx.locale, choice.labelKey)
+    : formatTravelLabel(
+      ctx.locale,
+      selection.travelDate,
+      selection.travelTime,
+      timezone,
+    );
+  const nextState: ScheduleState = {
+    ...state,
+    travelDate: selection.travelDate,
+    travelTime: selection.travelTime,
+    timezone,
+    travelLabel,
+  };
+  await setState(ctx.supabase, ctx.profileId, {
+    key: "schedule_recur",
+    data: nextState as Record<string, unknown>,
+  });
+  await sendButtonsMessage(
+    ctx,
+    t(ctx.locale, "schedule.time.saved", { datetime: travelLabel }),
+    buildRecurrenceButtons(ctx),
+  );
+  return true;
+}
+
+function buildTimeOptionRows(ctx: RouterContext) {
+  return TIME_CHOICES.map((choice) => ({
+    id: choice.id,
+    title: t(ctx.locale, choice.titleKey),
+    description: choice.descriptionKey
+      ? t(ctx.locale, choice.descriptionKey)
+      : undefined,
+  }));
+}
+
+function computeTimeSelection(
+  choice: TimeChoiceDef,
+  timezone: string,
+): { travelDate: string; travelTime: string } | null {
+  if (choice.type === "offset") {
+    const minutes = choice.minutes ?? 0;
+    const target = new Date(Date.now() + minutes * 60_000);
+    return formatZonedDate(target, timezone);
+  }
+  if (choice.type === "preset") {
+    const dayOffset = choice.dayOffset ?? 0;
+    const target = new Date(Date.now() + dayOffset * DAY_MS);
+    const { travelDate } = formatZonedDate(target, timezone);
+    return {
+      travelDate,
+      travelTime: choice.time ?? "08:00",
+    };
+  }
+  return null;
+}
+
+function formatZonedDate(
+  date: Date,
+  timezone: string,
+): { travelDate: string; travelTime: string } {
+  const formatter = new Intl.DateTimeFormat("en-CA", {
+    timeZone: timezone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+  const parts = formatter.formatToParts(date);
+  const get = (type: Intl.DateTimeFormatPartTypes): string => {
+    const part = parts.find((entry) => entry.type === type);
+    return part?.value ?? "00";
+  };
+  return {
+    travelDate: `${get("year")}-${get("month")}-${get("day")}`,
+    travelTime: `${get("hour")}:${get("minute")}`,
+  };
+}
+
+function buildRecurrenceButtons(ctx: RouterContext): ButtonSpec[] {
+  return [
+    {
+      id: IDS.SCHEDULE_RECUR_NONE,
+      title: t(ctx.locale, "schedule.recur.none.button"),
+    },
+    {
+      id: IDS.SCHEDULE_RECUR_WEEKDAYS,
+      title: t(ctx.locale, "schedule.recur.weekdays.button"),
+    },
+    {
+      id: IDS.SCHEDULE_RECUR_DAILY,
+      title: t(ctx.locale, "schedule.recur.daily.button"),
+    },
+  ];
 }
 
 export async function startScheduleSavedLocationPicker(
@@ -721,7 +946,7 @@ async function createTripAndDeliverMatches(
       lat: state.origin.lat,
       lng: state.origin.lng,
       radiusMeters,
-      pickupText: options.travelLabel ?? null,
+      pickupText: options.travelLabel ?? undefined,
     });
 
     if (options.dropoff) {
@@ -741,7 +966,9 @@ async function createTripAndDeliverMatches(
       origin: state.origin,
       dropoff: options.dropoff,
       originFavoriteId: state.originFavoriteId ?? null,
-      dropoffFavoriteId: options.dropoff ? (state.dropoffFavoriteId ?? null) : null,
+      dropoffFavoriteId: options.dropoff
+        ? (state.dropoffFavoriteId ?? null)
+        : null,
       travelLabel: options.travelLabel ?? null,
       travelDate: state.travelDate ?? null,
       travelTime: state.travelTime ?? null,
@@ -879,8 +1106,14 @@ function sharePickupButtons(
 
 function shareDropoffButtons(ctx: RouterContext): ButtonSpec[] {
   return buildButtons(
-    { id: IDS.SCHEDULE_SKIP_DROPOFF, title: t(ctx.locale, "common.buttons.skip") },
-    { id: IDS.LOCATION_SAVED_LIST, title: t(ctx.locale, "location.saved.button") },
+    {
+      id: IDS.SCHEDULE_SKIP_DROPOFF,
+      title: t(ctx.locale, "common.buttons.skip"),
+    },
+    {
+      id: IDS.LOCATION_SAVED_LIST,
+      title: t(ctx.locale, "location.saved.button"),
+    },
     { id: IDS.BACK_MENU, title: t(ctx.locale, "common.menu_back") },
   );
 }
@@ -906,6 +1139,7 @@ async function promptScheduleVehicleSelection(
       buttonText: t(ctx.locale, "common.buttons.select"),
     },
     { emoji: "🚗" },
+    { emoji: role === "driver" ? "🚗" : "🧍" },
   );
 }
 
@@ -1085,7 +1319,9 @@ function buildScheduleRow(
   const details = [
     t(ctx.locale, "schedule.match.row.ref", { ref: match.ref_code ?? "---" }),
     distanceLabel
-      ? t(ctx.locale, "schedule.match.row.distance", { distance: distanceLabel })
+      ? t(ctx.locale, "schedule.match.row.distance", {
+        distance: distanceLabel,
+      })
       : null,
     t(ctx.locale, "schedule.match.row.seen", { time: seenLabel }),
   ].filter(Boolean).join(" • ");

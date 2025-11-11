@@ -1,31 +1,37 @@
-/**
- * Nearby Pharmacies Flow
- * 
- * User flow:
- * 1. Select "Nearby Pharmacies" from home menu
- * 2. Share location
- * 3. (Optional) Share medicine image/name or type medicine name
- * 4. AI Agent takes over: searches DB, chats with pharmacies, negotiates prices
- * 5. Returns 3 curated options (5-min timeout)
- */
-
 import type { RouterContext } from "../../types.ts";
-import { setState, clearState } from "../../state/store.ts";
+import { clearState, setState } from "../../state/store.ts";
+import { t } from "../../i18n/translator.ts";
 import { sendText } from "../../wa/client.ts";
-import { sendButtonsMessage, buildButtons } from "../../utils/reply.ts";
+import {
+  buildButtons,
+  homeOnly,
+  sendButtonsMessage,
+  sendListMessage,
+} from "../../utils/reply.ts";
 import { isFeatureEnabled } from "../../../_shared/feature-flags.ts";
-import { handleAINearbyPharmacies } from "../ai-agents/index.ts";
 import { IDS } from "../../wa/ids.ts";
 import { t } from "../../i18n/translator.ts";
+import { routeToAIAgent, sendAgentOptions } from "../ai-agents/index.ts";
+import { waChatLink } from "../../utils/links.ts";
+import { listBusinesses } from "../../rpc/marketplace.ts";
 
-export async function startNearbyPharmacies(ctx: RouterContext): Promise<boolean> {
+const PHARMACY_RESULT_PREFIX = "PHARM::";
+
+export type PharmacyResultsState = {
+  entries: Array<{ id: string; name: string; whatsapp: string }>;
+  prefill?: string | null;
+};
+
+export async function startNearbyPharmacies(
+  ctx: RouterContext,
+): Promise<boolean> {
   if (!ctx.profileId) return false;
-  
+
   await setState(ctx.supabase, ctx.profileId, {
     key: "pharmacy_awaiting_location",
     data: {},
   });
-  
+
   await sendButtonsMessage(
     ctx,
     t(ctx.locale, "pharmacy.start.prompt"),
@@ -33,8 +39,16 @@ export async function startNearbyPharmacies(ctx: RouterContext): Promise<boolean
       { id: IDS.LOCATION_SAVED_LIST, title: t(ctx.locale, "location.saved.button") },
       { id: IDS.BACK_HOME, title: t(ctx.locale, "common.menu_back") }
     )
+    t(ctx.locale, "pharmacy.flow.intro"),
+    buildButtons(
+      {
+        id: IDS.LOCATION_SAVED_LIST,
+        title: t(ctx.locale, "location.saved.button"),
+      },
+      { id: IDS.BACK_HOME, title: t(ctx.locale, "common.menu_back") },
+    ),
   );
-  
+
   return true;
 }
 
@@ -43,13 +57,12 @@ export async function handlePharmacyLocation(
   location: { lat: number; lng: number },
 ): Promise<boolean> {
   if (!ctx.profileId) return false;
-  
-  // Ask for optional medicine information
+
   await setState(ctx.supabase, ctx.profileId, {
     key: "pharmacy_awaiting_medicine",
     data: { location },
   });
-  
+
   await sendButtonsMessage(
     ctx,
     t(ctx.locale, "pharmacy.location.received"),
@@ -58,7 +71,204 @@ export async function handlePharmacyLocation(
       { id: "pharmacy_search_now", title: t(ctx.locale, "pharmacy.buttons.search_now") },
       { id: IDS.BACK_HOME, title: t(ctx.locale, "common.menu_back") }
     )
+    t(ctx.locale, "pharmacy.flow.location_received"),
+    buildButtons({
+      id: IDS.BACK_HOME,
+      title: t(ctx.locale, "common.menu_back"),
+    }),
   );
-  
+
   return true;
+}
+
+export async function processPharmacyRequest(
+  ctx: RouterContext,
+  location: { lat: number; lng: number },
+  rawInput: string,
+): Promise<boolean> {
+  if (!ctx.profileId) return false;
+  const meds = parseKeywords(rawInput);
+  if (!meds.length) {
+    await sendText(ctx.from, t(ctx.locale, "pharmacy.prompt.medicines"));
+    return true;
+  }
+  if (isFeatureEnabled("agent.pharmacy")) {
+    const handled = await tryPharmacyAgent(ctx, location, meds);
+    if (handled) return true;
+  }
+  return await sendPharmacyFallback(ctx, location, meds);
+}
+
+export async function handlePharmacyResultSelection(
+  ctx: RouterContext,
+  state: PharmacyResultsState,
+  id: string,
+): Promise<boolean> {
+  if (!ctx.profileId) return false;
+  const entry = state.entries.find((item) => item.id === id);
+  if (!entry) return false;
+  const medsText = state.prefill?.length ? state.prefill : null;
+  const message = medsText
+    ? t(ctx.locale, "pharmacy.prefill.with_items", { items: medsText })
+    : t(ctx.locale, "pharmacy.prefill.generic");
+  const link = waChatLink(entry.whatsapp, message);
+  await sendButtonsMessage(
+    ctx,
+    t(ctx.locale, "pharmacy.results.chat_cta", { link }),
+    homeOnly(),
+  );
+  await clearState(ctx.supabase, ctx.profileId);
+  return true;
+}
+
+function parseKeywords(input: string): string[] {
+  return input.split(/[\n,]+/)
+    .map((part) => part.trim())
+    .filter((part) => part.length > 1);
+}
+
+async function tryPharmacyAgent(
+  ctx: RouterContext,
+  location: { lat: number; lng: number },
+  medications: string[],
+): Promise<boolean> {
+  await sendText(ctx.from, t(ctx.locale, "agent.searching_pharmacies"));
+  try {
+    const response = await routeToAIAgent(ctx, {
+      userId: ctx.from,
+      agentType: "pharmacy",
+      flowType: "find_medications",
+      location: {
+        latitude: location.lat,
+        longitude: location.lng,
+      },
+      requestData: {
+        medications,
+        prescriptionImage: undefined,
+      },
+    });
+
+    if (response.success && response.options?.length) {
+      await sendAgentOptions(
+        ctx,
+        response.sessionId,
+        response.options,
+        t(ctx.locale, "pharmacy.options_found"),
+      );
+      await setState(ctx.supabase, ctx.profileId!, {
+        key: "ai_agent_selection",
+        data: {
+          sessionId: response.sessionId,
+          agentType: "pharmacy",
+        },
+      });
+      return true;
+    }
+
+    if (response.message) {
+      await sendText(ctx.from, response.message);
+    }
+  } catch (error) {
+    console.error("pharmacy.agent_failure", error);
+    await sendText(ctx.from, t(ctx.locale, "agent.error_occurred"));
+  }
+  return false;
+}
+
+async function sendPharmacyFallback(
+  ctx: RouterContext,
+  location: { lat: number; lng: number },
+  medications: string[],
+): Promise<boolean> {
+  if (!ctx.profileId) return false;
+  let entries: Array<{
+    id: string;
+    name: string;
+    owner_whatsapp?: string | null;
+    distance_km?: number | null;
+    location_text?: string | null;
+    description?: string | null;
+  }> = [];
+  try {
+    entries = await listBusinesses(ctx.supabase, location, "pharmacies", 12);
+  } catch (error) {
+    console.error("pharmacy.fallback_fetch_failed", error);
+  }
+  const withContacts = entries.filter((entry) => entry.owner_whatsapp);
+  if (!withContacts.length) {
+    await sendButtonsMessage(
+      ctx,
+      t(ctx.locale, "pharmacy.results.empty"),
+      homeOnly(),
+    );
+    return true;
+  }
+  const rows = withContacts.slice(0, 10).map((entry) => ({
+    id: `${PHARMACY_RESULT_PREFIX}${entry.id}`,
+    name: entry.name ?? t(ctx.locale, "pharmacy.results.unknown"),
+    description: formatBusinessDescription(ctx, entry),
+    whatsapp: entry.owner_whatsapp!,
+  }));
+
+  await setState(ctx.supabase, ctx.profileId, {
+    key: "pharmacy_results",
+    data: {
+      entries: rows.map((row) => ({
+        id: row.id,
+        name: row.name,
+        whatsapp: row.whatsapp,
+      })),
+      prefill: medications.join(", ") || null,
+    } as Record<string, unknown>,
+  });
+
+  await sendListMessage(
+    ctx,
+    {
+      title: t(ctx.locale, "pharmacy.results.title"),
+      body: t(ctx.locale, "pharmacy.results.body"),
+      sectionTitle: t(ctx.locale, "pharmacy.results.section"),
+      rows: [
+        ...rows.map((row) => ({
+          id: row.id,
+          title: `💊 ${row.name}`,
+          description: row.description,
+        })),
+        {
+          id: IDS.BACK_MENU,
+          title: t(ctx.locale, "common.menu_back"),
+          description: t(ctx.locale, "common.back_to_menu.description"),
+        },
+      ],
+      buttonText: t(ctx.locale, "common.buttons.open"),
+    },
+    { emoji: "💊" },
+  );
+  return true;
+}
+
+function formatBusinessDescription(
+  ctx: RouterContext,
+  entry: {
+    distance_km?: number | null;
+    location_text?: string | null;
+    description?: string | null;
+  },
+): string {
+  const parts: string[] = [];
+  if (typeof entry.distance_km === "number") {
+    parts.push(
+      t(ctx.locale, "marketplace.distance", {
+        distance: entry.distance_km >= 1
+          ? `${entry.distance_km.toFixed(1)} km`
+          : `${Math.round(entry.distance_km * 1000)} m`,
+      }),
+    );
+  }
+  if (entry.location_text?.trim()) {
+    parts.push(entry.location_text.trim());
+  } else if (entry.description?.trim()) {
+    parts.push(entry.description.trim());
+  }
+  return parts.join(" • ");
 }

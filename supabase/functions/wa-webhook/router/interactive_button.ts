@@ -1,4 +1,7 @@
-import type { RouterContext, WhatsAppInteractiveButtonMessage } from "../types.ts";
+import type {
+  RouterContext,
+  WhatsAppInteractiveButtonMessage,
+} from "../types.ts";
 import { getButtonReplyId } from "../utils/messages.ts";
 import { IDS } from "../wa/ids.ts";
 import {
@@ -9,12 +12,12 @@ import {
 } from "../domains/mobility/nearby.ts";
 import {
   handleScheduleChangeVehicle,
+  handleScheduleRecurrenceSelection,
   handleScheduleRefresh,
   handleScheduleRole,
   handleScheduleSkipDropoff,
-  handleScheduleRecurrenceSelection,
-  startScheduleSavedLocationPicker,
   requestScheduleDropoff,
+  startScheduleSavedLocationPicker,
   startScheduleTrip,
 } from "../domains/mobility/schedule.ts";
 import {
@@ -42,13 +45,12 @@ import { showWalletTop } from "../domains/wallet/top.ts";
 import { openAdminHub, showAdminHubList } from "../flows/admin/hub.ts";
 import { handleAdminQuickAction } from "../flows/admin/actions.ts";
 import { handleInsuranceButton } from "../flows/admin/insurance.ts";
-import { sendButtonsMessage, buildButtons } from "../utils/reply.ts";
-import { isFeatureEnabled } from "../../_shared/feature-flags.ts";
-import { handleAINearbyPharmacies, handleAINearbyQuincailleries } from "../domains/ai-agents/index.ts";
+import { buildButtons, sendButtonsMessage } from "../utils/reply.ts";
 import {
   handleQuickSaveLocation,
   LOCATION_KIND_BY_ID,
 } from "../domains/locations/save.ts";
+import { startSavedPlaces } from "../domains/locations/manage.ts";
 import { startPropertySavedLocationPicker } from "../domains/property/rentals.ts";
 
 export async function handleButton(
@@ -166,6 +168,8 @@ export async function handleButton(
         );
       }
       return false;
+    case IDS.SAVED_PLACES:
+      return await startSavedPlaces(ctx);
     case IDS.MOBILITY_CHANGE_VEHICLE:
       if (
         state.key === "mobility_nearby_location" ||
@@ -201,36 +205,7 @@ export async function handleButton(
     case IDS.ADMIN_INSURANCE_EXPORT_SUBMIT:
       if (await handleInsuranceButton(ctx, id, state)) return true;
       return false;
-    
-    // Pharmacy buttons
-    case "pharmacy_search_all":
-      if (!ctx.profileId) return false;
-      const pharmacyState = state.data as { location?: { lat: number; lng: number } };
-      if (pharmacyState.location && isFeatureEnabled("agent.pharmacy")) {
-        return await handleAINearbyPharmacies(ctx, pharmacyState.location, undefined);
-      }
-      return false;
-    case "pharmacy_add_medicine":
-      await sendButtonsMessage(ctx, 
-        "💊 Type the medicine names you need, or share a photo of your prescription.",
-        buildButtons({ id: IDS.BACK_HOME, title: "🏠 Cancel" })
-      );
-      return true;
-    
-    // Quincaillerie buttons
-    case "quincaillerie_search_all":
-      if (!ctx.profileId) return false;
-      const quincaillerieState = state.data as { location?: { lat: number; lng: number } };
-      if (quincaillerieState.location && isFeatureEnabled("agent.quincaillerie")) {
-        return await handleAINearbyQuincailleries(ctx, quincaillerieState.location, undefined);
-      }
-      return false;
-    case "quincaillerie_add_items":
-      await sendButtonsMessage(ctx,
-        "🔧 Type the item names you need, or share a photo of the items.",
-        buildButtons({ id: IDS.BACK_HOME, title: "🏠 Cancel" })
-      );
-      return true;
+
     default:
       if (LOCATION_KIND_BY_ID[id]) {
         return await handleQuickSaveLocation(ctx, LOCATION_KIND_BY_ID[id]);

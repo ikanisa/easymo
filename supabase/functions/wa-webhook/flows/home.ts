@@ -44,6 +44,11 @@ const BASE_ROW_DEFS: MenuRowDef[] = [
     descriptionKey: "home.rows.scheduleTrip.description",
   },
   {
+    id: IDS.SAVED_PLACES,
+    titleKey: "home.rows.savedPlaces.title",
+    descriptionKey: "home.rows.savedPlaces.description",
+  },
+  {
     id: IDS.NEARBY_PHARMACIES,
     titleKey: "home.rows.nearbyPharmacies.title",
     descriptionKey: "home.rows.nearbyPharmacies.description",

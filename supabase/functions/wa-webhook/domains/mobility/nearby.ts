@@ -348,13 +348,11 @@ export async function handleNearbyLocation(
         return true;
       }
 
-      await sendButtonsMessage(
-        ctx,
+      await sendText(
+        ctx.from,
         agentResponse.message ??
           t(ctx.locale, "mobility.nearby.agent_empty"),
-        buildButtons({ id: IDS.BACK_MENU, title: "↩️ Menu" }),
       );
-      return true;
     } catch (error) {
       console.error("mobility.nearby_agent_fail", error);
       await sendText(ctx.from, t(ctx.locale, "mobility.nearby.agent_error"));

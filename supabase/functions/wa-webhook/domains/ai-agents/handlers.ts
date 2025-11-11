@@ -1,18 +1,40 @@
 /**
  * AI Agent Handlers for WhatsApp Flows
- * 
+ *
  * Provides convenient handlers that can be called from the text router
  * to initiate AI agent sessions for various use cases.
  */
 
-import type { RouterContext, WhatsAppTextMessage, WhatsAppLocationMessage } from "../../types.ts";
+import type {
+  RouterContext,
+  WhatsAppLocationMessage,
+  WhatsAppTextMessage,
+} from "../../types.ts";
 import type { ChatState } from "../../state/store.ts";
-import { routeToAIAgent, sendAgentOptions, handleAgentSelection } from "./integration.ts";
+import {
+  handleAgentSelection,
+  routeToAIAgent,
+  sendAgentOptions,
+} from "./integration.ts";
 import { sendText } from "../../wa/client.ts";
-import { sendButtonsMessage, buildButtons } from "../../utils/reply.ts";
+import {
+  buildButtons,
+  homeOnly,
+  sendButtonsMessage,
+  sendListMessage,
+} from "../../utils/reply.ts";
 import { t } from "../../i18n/translator.ts";
-import { setState } from "../../state/store.ts";
+import { clearState, setState } from "../../state/store.ts";
 import { IDS } from "../../wa/ids.ts";
+import { listBusinesses } from "../../rpc/marketplace.ts";
+import { waChatLink } from "../../utils/links.ts";
+
+const SHOP_RESULT_PREFIX = "SHOP::";
+
+export type ShopResultsState = {
+  entries: Array<{ id: string; name: string; whatsapp: string }>;
+  prefill?: string | null;
+};
 
 /**
  * Handle "Nearby Drivers" request with AI agent
@@ -58,9 +80,9 @@ export async function handleAINearbyDrivers(
         ctx,
         response.sessionId,
         response.options,
-        "🚖 Available Drivers"
+        "🚖 Available Drivers",
       );
-      
+
       await setState(ctx.supabase, ctx.profileId || ctx.from, {
         key: "ai_agent_selection",
         data: {
@@ -72,37 +94,37 @@ export async function handleAINearbyDrivers(
       // Send fallback message with helpful info
       await sendButtonsMessage(
         ctx,
-        response.message || 
-        "🚖 No drivers found at this moment.\n\n" +
-        "This could be because:\n" +
-        "• No drivers are available in your area\n" +
-        "• Try the traditional 'See Drivers' option\n" +
-        "• Check back in a few minutes",
+        response.message ||
+          "🚖 No drivers found at this moment.\n\n" +
+            "This could be because:\n" +
+            "• No drivers are available in your area\n" +
+            "• Try the traditional 'See Drivers' option\n" +
+            "• Check back in a few minutes",
         buildButtons(
           { id: IDS.SEE_DRIVERS, title: "👀 See All Drivers" },
-          { id: IDS.BACK_HOME, title: "🏠 Home" }
-        )
+          { id: IDS.BACK_HOME, title: "🏠 Home" },
+        ),
       );
     }
 
     return true;
   } catch (error) {
     console.error("AI Nearby Drivers handler error:", error);
-    
+
     await sendButtonsMessage(
       ctx,
       "😔 Sorry, we encountered an error while searching for drivers.\n\n" +
-      "Please try:\n" +
-      "• Using the traditional driver search\n" +
-      "• Checking your connection\n" +
-      "• Trying again in a few minutes\n" +
-      "• Contact support if this persists",
+        "Please try:\n" +
+        "• Using the traditional driver search\n" +
+        "• Checking your connection\n" +
+        "• Trying again in a few minutes\n" +
+        "• Contact support if this persists",
       buildButtons(
         { id: IDS.SEE_DRIVERS, title: "👀 See All Drivers" },
-        { id: IDS.BACK_HOME, title: "🏠 Home" }
-      )
+        { id: IDS.BACK_HOME, title: "🏠 Home" },
+      ),
     );
-    
+
     return false;
   }
 }
@@ -147,9 +169,9 @@ export async function handleAINearbyPharmacies(
         ctx,
         response.sessionId,
         response.options,
-        t(ctx.locale, "pharmacy.options_found")
+        t(ctx.locale, "pharmacy.options_found"),
       );
-      
+
       await setState(ctx.supabase, ctx.profileId || ctx.from, {
         key: "ai_agent_selection",
         data: {
@@ -224,9 +246,9 @@ export async function handleAINearbyQuincailleries(
         ctx,
         response.sessionId,
         response.options,
-        t(ctx.locale, "quincaillerie.options_found")
+        t(ctx.locale, "quincaillerie.options_found"),
       );
-      
+
       await setState(ctx.supabase, ctx.profileId || ctx.from, {
         key: "ai_agent_selection",
         data: {
@@ -305,9 +327,9 @@ export async function handleAINearbyShops(
         ctx,
         response.sessionId,
         response.options,
-        t(ctx.locale, "shops.options_found")
+        t(ctx.locale, "shops.options_found"),
       );
-      
+
       await setState(ctx.supabase, ctx.profileId || ctx.from, {
         key: "ai_agent_selection",
         data: {
@@ -326,9 +348,13 @@ export async function handleAINearbyShops(
           { id: IDS.BACK_HOME, title: t(ctx.locale, "common.menu_back") }
         )
       );
+      return true;
     }
 
-    return true;
+    if (response.message) {
+      await sendText(ctx.from, response.message);
+    }
+    return await sendShopFallback(ctx, location, items, shopCategory);
   } catch (error) {
     console.error("AI Shops handler error:", error);
     await sendButtonsMessage(
@@ -338,6 +364,10 @@ export async function handleAINearbyShops(
         { id: IDS.BACK_HOME, title: t(ctx.locale, "common.menu_back") }
       )
     );
+    await sendText(ctx.from, t(ctx.locale, "agent.error_occurred"));
+    if (location) {
+      return await sendShopFallback(ctx, location, items, shopCategory);
+    }
     return false;
   }
 }
@@ -370,6 +400,10 @@ export async function handleAIPropertyRental(
       ? t(ctx.locale, "property.find.searching")
       : t(ctx.locale, "property.add.processing");
     
+    const searchingMessage = action === "find"
+      ? t(ctx.locale, "agent.searching_properties")
+      : t(ctx.locale, "agent.adding_property");
+
     await sendText(ctx.from, searchingMessage);
 
     const response = await routeToAIAgent(ctx, {
@@ -390,9 +424,9 @@ export async function handleAIPropertyRental(
           ctx,
           response.sessionId,
           response.options,
-          t(ctx.locale, "property.options_found")
+          t(ctx.locale, "property.options_found"),
         );
-        
+
         await setState(ctx.supabase, ctx.profileId || ctx.from, {
           key: "ai_agent_selection",
           data: {
@@ -448,7 +482,10 @@ export async function handleAIScheduleTrip(
       "analyze_patterns": t(ctx.locale, "agent.analyzing_patterns"),
     };
 
-    await sendText(ctx.from, actionMessages[action] || t(ctx.locale, "agent.processing"));
+    await sendText(
+      ctx.from,
+      actionMessages[action] || t(ctx.locale, "agent.processing"),
+    );
 
     const response = await routeToAIAgent(ctx, {
       userId: ctx.from,
@@ -462,15 +499,15 @@ export async function handleAIScheduleTrip(
 
     if (response.success) {
       await sendText(ctx.from, response.message);
-      
+
       if (response.options && response.options.length > 0) {
         await sendAgentOptions(
           ctx,
           response.sessionId,
           response.options,
-          t(ctx.locale, "schedule.options_available")
+          t(ctx.locale, "schedule.options_available"),
         );
-        
+
         await setState(ctx.supabase, ctx.profileId || ctx.from, {
           key: "ai_agent_selection",
           data: {
@@ -500,7 +537,7 @@ export async function handleAIAgentOptionSelection(
   optionId: string,
 ): Promise<boolean> {
   const stateData = state.data as { sessionId?: string; agentType?: string };
-  
+
   if (!stateData.sessionId) {
     return false;
   }
@@ -512,7 +549,7 @@ export async function handleAIAgentOptionSelection(
   }
 
   const optionIndex = parseInt(match[1], 10);
-  
+
   return await handleAgentSelection(ctx, stateData.sessionId, optionIndex);
 }
 
@@ -531,7 +568,7 @@ export async function handleAIAgentLocationUpdate(
   if (stateKey === "ai_driver_waiting_locations") {
     // Update with location and continue
     const { vehicleType, pickup, dropoff } = stateData;
-    
+
     if (!pickup) {
       await setState(ctx.supabase, ctx.profileId || ctx.from, {
         key: "ai_driver_waiting_locations",
@@ -552,7 +589,7 @@ export async function handleAIAgentLocationUpdate(
       ctx,
       location,
       stateData.medications,
-      stateData.prescriptionImage
+      stateData.prescriptionImage,
     );
   }
 
@@ -561,7 +598,7 @@ export async function handleAIAgentLocationUpdate(
       ctx,
       location,
       stateData.items,
-      stateData.itemImage
+      stateData.itemImage,
     );
   }
 
@@ -571,7 +608,7 @@ export async function handleAIAgentLocationUpdate(
       location,
       stateData.items,
       stateData.itemImage,
-      stateData.shopCategory
+      stateData.shopCategory,
     );
   }
 
@@ -581,9 +618,134 @@ export async function handleAIAgentLocationUpdate(
       stateData.action,
       stateData.rentalType,
       location,
-      stateData.requestData
+      stateData.requestData,
     );
   }
 
   return false;
+}
+
+async function sendShopFallback(
+  ctx: RouterContext,
+  location: { latitude: number; longitude: number; text?: string },
+  items?: string[],
+  category?: string,
+): Promise<boolean> {
+  if (!ctx.profileId) return false;
+  let entries: Array<{
+    id: string;
+    name: string;
+    owner_whatsapp?: string | null;
+    distance_km?: number | null;
+    location_text?: string | null;
+    description?: string | null;
+  }> = [];
+  try {
+    entries = await listBusinesses(
+      ctx.supabase,
+      { lat: location.latitude, lng: location.longitude },
+      category ?? "shops",
+      12,
+    );
+  } catch (error) {
+    console.error("shops.fallback_fetch_failed", error);
+  }
+  const withContacts = entries.filter((entry) => entry.owner_whatsapp);
+  if (!withContacts.length) {
+    await sendButtonsMessage(
+      ctx,
+      t(ctx.locale, "shops.results.empty"),
+      homeOnly(),
+    );
+    return true;
+  }
+  const rows = withContacts.slice(0, 10).map((entry) => ({
+    id: `${SHOP_RESULT_PREFIX}${entry.id}`,
+    name: entry.name ?? t(ctx.locale, "shops.results.unknown"),
+    description: formatShopDescription(ctx, entry),
+    whatsapp: entry.owner_whatsapp!,
+  }));
+
+  await setState(ctx.supabase, ctx.profileId, {
+    key: "shop_results",
+    data: {
+      entries: rows.map((row) => ({
+        id: row.id,
+        name: row.name,
+        whatsapp: row.whatsapp,
+      })),
+      prefill: items?.join(", ") || null,
+    } as Record<string, unknown>,
+  });
+
+  await sendListMessage(
+    ctx,
+    {
+      title: t(ctx.locale, "shops.results.title"),
+      body: t(ctx.locale, "shops.results.body"),
+      sectionTitle: t(ctx.locale, "shops.results.section"),
+      rows: [
+        ...rows.map((row) => ({
+          id: row.id,
+          title: `🛍️ ${row.name}`,
+          description: row.description,
+        })),
+        {
+          id: IDS.BACK_MENU,
+          title: t(ctx.locale, "common.menu_back"),
+          description: t(ctx.locale, "common.back_to_menu.description"),
+        },
+      ],
+      buttonText: t(ctx.locale, "common.buttons.open"),
+    },
+    { emoji: "🛍️" },
+  );
+  return true;
+}
+
+export async function handleShopFallbackSelection(
+  ctx: RouterContext,
+  state: ShopResultsState,
+  id: string,
+): Promise<boolean> {
+  if (!ctx.profileId) return false;
+  const entry = state.entries.find((item) => item.id === id);
+  if (!entry) return false;
+  const prefill = state.prefill && state.prefill.length
+    ? t(ctx.locale, "shops.prefill.with_items", { items: state.prefill })
+    : t(ctx.locale, "shops.prefill.generic");
+  const link = waChatLink(entry.whatsapp, prefill);
+  await sendButtonsMessage(
+    ctx,
+    t(ctx.locale, "shops.results.chat_cta", { link }),
+    homeOnly(),
+  );
+  await clearState(ctx.supabase, ctx.profileId);
+  return true;
+}
+
+function formatShopDescription(
+  ctx: RouterContext,
+  entry: {
+    distance_km?: number | null;
+    location_text?: string | null;
+    description?: string | null;
+  },
+): string {
+  const parts: string[] = [];
+  if (typeof entry.distance_km === "number") {
+    parts.push(
+      t(ctx.locale, "marketplace.distance", {
+        distance: entry.distance_km >= 1
+          ? `${entry.distance_km.toFixed(1)} km`
+          : `${Math.round(entry.distance_km * 1000)} m`,
+      }),
+    );
+  }
+  if (entry.location_text?.trim()) {
+    parts.push(entry.location_text.trim());
+  } else if (entry.description?.trim()) {
+    parts.push(entry.description.trim());
+  }
+  return parts.join(" • ");
 }
