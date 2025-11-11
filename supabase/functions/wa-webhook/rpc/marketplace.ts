@@ -10,14 +10,16 @@ export async function createBusiness(
     category?: string | null;
     lat: number;
     lng: number;
+    tags?: string[];
   },
 ): Promise<void> {
   let categoryId: number | null = null;
-  if (payload.category) {
+  const categorySlug = payload.category ?? "shops";
+  if (categorySlug) {
     const { data: categoryRow, error: categoryError } = await client
       .from("marketplace_categories")
       .select("id")
-      .eq("slug", payload.category)
+      .eq("slug", categorySlug)
       .maybeSingle();
     if (categoryError) throw categoryError;
     categoryId = categoryRow?.id ?? null;
@@ -31,6 +33,7 @@ export async function createBusiness(
     lat: payload.lat,
     lng: payload.lng,
     is_active: true,
+    tags: payload.tags && payload.tags.length ? payload.tags : [],
   });
   if (error) throw error;
 }

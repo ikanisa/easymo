@@ -19,20 +19,12 @@ import { t } from "../i18n/translator.ts";
 import { maybeHandleDriverText } from "../observe/driver_parser.ts";
 import { recordInbound } from "../observe/conv_audit.ts";
 import { getTextBody } from "../utils/messages.ts";
-import { isFeatureEnabled } from "../../_shared/feature-flags.ts";
+import { processPharmacyRequest } from "../domains/healthcare/pharmacies.ts";
+import { processQuincaillerieRequest } from "../domains/healthcare/quincailleries.ts";
 
-// AI Agents Integration
 import {
-  handleAINearbyDrivers,
-  handleAINearbyPharmacies,
-  handleAINearbyQuincailleries,
-  handleAINearbyShops,
-  handleAIPropertyRental,
-  handleAIScheduleTrip,
-} from "../domains/ai-agents/index.ts";
-import {
-  handleFindPropertyBudget,
   handleAddPropertyPrice,
+  handleFindPropertyBudget,
 } from "../domains/property/rentals.ts";
 
 export async function handleText(
@@ -96,39 +88,25 @@ export async function handleText(
   ) {
     return false; // expect list or location
   }
-  
+
   // Handle pharmacy medicine input
   if (state.key === "pharmacy_awaiting_medicine") {
     const stateData = state.data as { location?: { lat: number; lng: number } };
     if (stateData.location) {
-      const medications = body.toLowerCase() === "search" ? undefined : [body];
-      if (isFeatureEnabled("agent.pharmacy")) {
-        return await handleAINearbyPharmacies(
-          ctx,
-          stateData.location,
-          medications,
-        );
-      }
+      await processPharmacyRequest(ctx, stateData.location, body);
     }
     return true;
   }
-  
+
   // Handle quincaillerie items input
   if (state.key === "quincaillerie_awaiting_items") {
     const stateData = state.data as { location?: { lat: number; lng: number } };
     if (stateData.location) {
-      const items = body.toLowerCase() === "search" ? undefined : [body];
-      if (isFeatureEnabled("agent.quincaillerie")) {
-        return await handleAINearbyQuincailleries(
-          ctx,
-          stateData.location,
-          items,
-        );
-      }
+      await processQuincaillerieRequest(ctx, stateData.location, body);
     }
     return true;
   }
-  
+
   // Handle property find budget input
   if (state.key === "property_find_budget") {
     const stateData = state.data as {
@@ -138,7 +116,7 @@ export async function handleText(
     };
     return await handleFindPropertyBudget(ctx, stateData, body);
   }
-  
+
   // Handle property add price input
   if (state.key === "property_add_price") {
     const stateData = state.data as {
@@ -148,7 +126,7 @@ export async function handleText(
     };
     return await handleAddPropertyPrice(ctx, stateData, body);
   }
-  
+
   if (await handleMomoText(ctx, body, state)) {
     return true;
   }
@@ -169,7 +147,9 @@ export async function handleText(
     await startInsurance(ctx, state);
     return true;
   }
-  if (/^(menu|order|browse|start)$/i.test(body) || state.key?.startsWith("dine")) {
+  if (
+    /^(menu|order|browse|start)$/i.test(body) || state.key?.startsWith("dine")
+  ) {
     await sendDineInDisabledNotice(ctx);
     return true;
   }

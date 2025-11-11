@@ -16,6 +16,10 @@ import {
   handleAddPropertyLocation,
 } from "../domains/property/rentals.ts";
 import { recordLastLocation } from "../domains/locations/favorites.ts";
+import {
+  handleSavedPlaceLocation,
+  type SavedPlaceCaptureState,
+} from "../domains/locations/manage.ts";
 
 export async function handleLocation(
   ctx: RouterContext,
@@ -57,6 +61,14 @@ export async function handleLocation(
   
   if (aiAgentStates.includes(state.key)) {
     return await handleAIAgentLocationUpdate(ctx, state, { latitude: lat, longitude: lng });
+  }
+
+  if (state.key === "saved_place_capture") {
+    return await handleSavedPlaceLocation(
+      ctx,
+      (state.data ?? {}) as SavedPlaceCaptureState,
+      { lat, lng },
+    );
   }
   
   if (state.key === "pharmacy_awaiting_location") {
