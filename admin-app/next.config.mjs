@@ -48,6 +48,10 @@ const nextConfig = {
         ...config.optimization,
         moduleIds: 'deterministic',
       };
+    } else {
+      // Server-side: exclude pino worker threads from bundling
+      config.externals = config.externals || [];
+      config.externals.push('pino', 'thread-stream', 'pino-pretty', 'pino-abstract-transport');
     }
     return config;
   },
