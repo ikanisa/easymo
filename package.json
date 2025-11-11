@@ -16,7 +16,7 @@
     "format:check": "prettier --check docs/ eslint.config.js prettier.config.js package.json .prettierignore",
     "type-check": "pnpm --filter @easymo/admin-app run typecheck",
     "typecheck": "pnpm type-check",
-    "test": "pnpm exec vitest run && pnpm --filter @easymo/admin-app exec vitest run --config vitest.config.smoke.cjs",
+    "test": "pnpm --filter @easymo/admin-app exec vitest run && pnpm --filter @easymo/admin-app exec vitest run --config vitest.config.smoke.cjs",
     "test:functions": "deno test --allow-env --allow-read --allow-net supabase/functions/_shared",
     "test:watch": "vitest",
     "schema:verify": "node ./scripts/check-schema-alignment.mjs",
