@@ -20,9 +20,9 @@ const currencyFormatter = new Intl.NumberFormat("en-RW", {
 });
 
 const wizardSteps = [
-  "Upload & OCR",
-  "Vehicle & Cover",
-  "Add-ons & Installments",
+  "Upload and OCR",
+  "Vehicle and cover",
+  "Add-ons and installments",
   "Compare",
   "Review",
   "Payment",
@@ -203,10 +203,10 @@ export function NewRequestWizard() {
   };
 
   const canAdvance = () => {
-    if (currentStep === "Upload & OCR") {
+    if (currentStep === "Upload and OCR") {
       return state.files.length > 0;
     }
-    if (currentStep === "Vehicle & Cover") {
+    if (currentStep === "Vehicle and cover") {
       return state.vehicle.plateNumber.trim().length > 0 && state.sumInsured > 0;
     }
     return true;
@@ -240,7 +240,7 @@ export function NewRequestWizard() {
           })}
         </div>
 
-        {currentStep === "Upload & OCR" && (
+        {currentStep === "Upload and OCR" && (
           <div className="space-y-4">
             <p className="text-sm text-[color:var(--color-muted)]">
               Upload logbooks, IDs, or previous policies. OCR confidence and extracted hints update live.
@@ -275,7 +275,7 @@ export function NewRequestWizard() {
           </div>
         )}
 
-        {currentStep === "Vehicle & Cover" && (
+        {currentStep === "Vehicle and cover" && (
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-3">
               <label className="block text-sm font-medium">Plate number</label>
@@ -292,7 +292,7 @@ export function NewRequestWizard() {
                 className="w-full rounded-lg border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-2"
                 placeholder="JH4DA9350MS000001"
               />
-              <label className="block text-sm font-medium">Make & model</label>
+              <label className="block text-sm font-medium">Make and model</label>
               <div className="flex gap-2">
                 <input
                   value={state.vehicle.make}
@@ -326,18 +326,18 @@ export function NewRequestWizard() {
                 className="w-full rounded-lg border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-2"
               />
               <label className="block text-sm font-medium">Cover type</label>
-              <select
-                value={state.coverType}
-                onChange={(event) => updateState({ coverType: event.target.value })}
-                className="w-full rounded-lg border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-2"
-              >
-                <option value="COMPREHENSIVE">Comprehensive</option>
-                <option value="OD_THEFT_FIRE">Own damage + Theft + Fire</option>
-                <option value="MD_ONLY">Material damage only</option>
-                <option value="THEFT_ONLY">Theft only</option>
-                <option value="FIRE_ONLY">Fire only</option>
-                <option value="TP_ONLY">Third party</option>
-              </select>
+                <select
+                  value={state.coverType}
+                  onChange={(event) => updateState({ coverType: event.target.value })}
+                  className="w-full rounded-lg border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-2"
+                >
+                  <option value="COMPREHENSIVE">Comprehensive</option>
+                  <option value="OD_THEFT_FIRE">Own damage, theft, and fire</option>
+                  <option value="MD_ONLY">Material damage only</option>
+                  <option value="THEFT_ONLY">Theft only</option>
+                  <option value="FIRE_ONLY">Fire only</option>
+                  <option value="TP_ONLY">Third party</option>
+                </select>
               <label className="block text-sm font-medium">Usage</label>
               <select
                 value={state.usage}
@@ -377,7 +377,7 @@ export function NewRequestWizard() {
           </div>
         )}
 
-        {currentStep === "Add-ons & Installments" && (
+        {currentStep === "Add-ons and installments" && (
           <div className="grid gap-6 md:grid-cols-2">
             <div className="space-y-4">
               <label className="flex items-center gap-2 text-sm font-medium">

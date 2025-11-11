@@ -49,7 +49,7 @@ export interface AtlasPageConfig {
 const agentQuickLinks: AtlasQuickLink[] = [
   {
     pill: "Control Room",
-    label: "Open Agents Dashboard",
+    label: "Open agent dashboard",
     description: "Monitor live sessions, guardrails, and handoffs in real time.",
     href: "/agents/dashboard",
   },
@@ -67,7 +67,7 @@ const atlasPageConfigs: Record<string, AtlasPageConfig> = {
     hero: {
       icon: "🚗",
       badge: "Mobility",
-      title: "Driver Negotiation Agent",
+      title: "Driver negotiation agent",
       description:
         "Automates fare discovery and driver negotiations with contextual guardrails borrowed from ChatGPT Atlas' marketplace flows.",
       actions: [
@@ -124,7 +124,7 @@ const atlasPageConfigs: Record<string, AtlasPageConfig> = {
     hero: {
       icon: "💊",
       badge: "Health",
-      title: "Pharmacy Sourcing Agent",
+      title: "Pharmacy sourcing agent",
       description:
         "Digitises pharmacy procurement, verifying stock, expiry windows, and ministry of health limits inside a single Atlas-inspired cockpit.",
       actions: [
@@ -181,7 +181,7 @@ const atlasPageConfigs: Record<string, AtlasPageConfig> = {
     hero: {
       icon: "🛍️",
       badge: "Retail",
-      title: "Shops & Services Agent",
+      title: "Shops and services agent",
       description:
         "Surfaces nearby inventory, service providers, pricing, and bundle suggestions for general trade merchants with Atlas-grade search UX.",
       actions: [
@@ -238,7 +238,7 @@ const atlasPageConfigs: Record<string, AtlasPageConfig> = {
     hero: {
       icon: "🔧",
       badge: "Hardware",
-      title: "Quincaillerie Agent",
+      title: "Quincaillerie agent",
       description:
         "Specialised for hardware and construction workflows—tracks measurements, BOM approvals, and multi-vendor sourcing.",
       actions: [
@@ -295,7 +295,7 @@ const atlasPageConfigs: Record<string, AtlasPageConfig> = {
     hero: {
       icon: "🏠",
       badge: "Real estate",
-      title: "Property Rental Agent",
+      title: "Property rental agent",
       description:
         "Handles inquiries, bookings, and vetting for rentals while mirroring the conversational polish of ChatGPT Atlas.",
       actions: [
@@ -316,7 +316,7 @@ const atlasPageConfigs: Record<string, AtlasPageConfig> = {
           "References neighbourhood data, schools, and commute times automatically so agents reply like locals.",
       },
       {
-        pill: "Trust & safety",
+        pill: "Trust and safety",
         title: "Tenant screening funnel",
         description:
           "Collects IDs, payslips, and references with explainable decisions before escalating to brokers.",
@@ -352,7 +352,7 @@ const atlasPageConfigs: Record<string, AtlasPageConfig> = {
     hero: {
       icon: "📅",
       badge: "Mobility",
-      title: "Schedule Trip Agent",
+      title: "Schedule trip agent",
       description:
         "Plans multi-leg journeys, synchronising passengers, drivers, and payments with Atlas-inspired clarity.",
       actions: [
@@ -558,7 +558,7 @@ const atlasPageConfigs: Record<string, AtlasPageConfig> = {
     ],
     roadmap: [
       {
-        label: "Trust & safety lens",
+        label: "Trust and safety lens",
         description: "Separate scoring backed by policy audits.",
         status: "live",
       },

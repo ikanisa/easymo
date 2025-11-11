@@ -147,6 +147,8 @@ fixture dataset without Supabase connectivity.
 - Fixture plan: `DATA_FIXTURES_PLAN.md`
 - QA checklist: `QA_MATRIX.md`
 - UX guidelines: `UX_POLISH_BRIEF.md`
+- Microcopy guide: [`docs/microcopy-style-guide.md`](../docs/microcopy-style-guide.md)
+- Design system handbook: [`docs/design-system-handbook.md`](../docs/design-system-handbook.md)
 - API docs: `admin-app/docs/API.md`
 - Degraded states: `admin-app/docs/DEGRADED_STATES.md`
 - Operator runbook: `admin-app/docs/OPERATOR_GUIDE.md`

@@ -2,6 +2,11 @@
 
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
+import { Textarea } from "@/components/ui/Textarea";
+import { Field } from "@/components/forms/Field";
 import { getAdminApiRoutePath } from "@/lib/routes";
 
 export function AgentCreator() {
@@ -9,14 +14,14 @@ export function AgentCreator() {
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [description, setDescription] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<{ field: "name" | "form"; message: string } | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError(null);
     if (!name.trim()) {
-      setError("Name is required");
+      setError({ field: "name", message: "Name is required" });
       return;
     }
     setSubmitting(true);
@@ -28,7 +33,7 @@ export function AgentCreator() {
       });
       if (!response.ok) {
         const payload = await response.json().catch(() => ({}));
-        setError(payload?.error ?? "Failed to create agent");
+        setError({ field: "form", message: payload?.error ?? "Failed to create agent" });
         return;
       }
       setName("");
@@ -36,63 +41,85 @@ export function AgentCreator() {
       setDescription("");
       router.refresh();
     } catch (err) {
-      setError((err as Error).message);
+      setError({ field: "form", message: (err as Error).message });
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-3 border rounded-lg p-4 bg-white shadow-sm">
-      <div>
-        <h2 className="text-lg font-semibold">Create New Agent Persona</h2>
-        <p className="text-sm text-slate-500">
-          Define a new AI agent persona with optional slug and description. Additional configuration can be added after creation.
-        </p>
-      </div>
-      <div className="grid gap-2 md:grid-cols-2">
-        <label className="flex flex-col text-sm font-medium">
-          Name
-          <input
-            type="text"
-            value={name}
-            onChange={(event) => setName(event.target.value)}
-            className="mt-1 rounded border border-slate-300 px-3 py-2 text-sm"
-            placeholder="Broker Assistant"
-            required
-          />
-        </label>
-        <label className="flex flex-col text-sm font-medium">
-          Slug
-          <input
-            type="text"
-            value={slug}
-            onChange={(event) => setSlug(event.target.value)}
-            className="mt-1 rounded border border-slate-300 px-3 py-2 text-sm"
-            placeholder="broker-assistant"
-          />
-        </label>
-      </div>
-      <label className="flex flex-col text-sm font-medium">
-        Description
-        <textarea
-          value={description}
-          onChange={(event) => setDescription(event.target.value)}
-          className="mt-1 rounded border border-slate-300 px-3 py-2 text-sm"
-          rows={3}
-          placeholder="Handles insurance intake over WhatsApp, triages documents, and prepares back-office packages."
-        />
-      </label>
-      {error && <p className="text-sm text-red-600">{error}</p>}
-      <div className="flex justify-end gap-2">
-        <button
-          type="submit"
-          disabled={submitting}
-          className="inline-flex items-center rounded bg-slate-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
-        >
-          {submitting ? "Creating…" : "Create Agent"}
-        </button>
-      </div>
-    </form>
+    <Card asChild interactive>
+      <form onSubmit={handleSubmit} className="flex flex-col">
+        <CardHeader padding="lg">
+          <CardTitle>Create a new agent persona</CardTitle>
+          <CardDescription>
+            Define a new AI agent persona with an optional slug and description. Additional configuration can be added after
+            creation.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="gap-6" padding="lg">
+          <div className="grid gap-5 md:grid-cols-2">
+            <Field
+              label="Name"
+              labelFor="agent-name"
+              required
+              helperText="Appears in the persona directory."
+              error={error?.field === "name" ? error.message : undefined}
+            >
+              <Input
+                id="agent-name"
+                value={name}
+                onChange={(event) => {
+                  if (error?.field === "name") {
+                    setError(null);
+                  }
+                  setName(event.target.value);
+                }}
+                placeholder="Broker Assistant"
+                autoComplete="off"
+                size="md"
+              />
+            </Field>
+            <Field
+              label="Slug"
+              labelFor="agent-slug"
+              helperText="Optional URL-safe identifier used in API calls."
+            >
+              <Input
+                id="agent-slug"
+                value={slug}
+                onChange={(event) => setSlug(event.target.value)}
+                placeholder="broker-assistant"
+                autoComplete="off"
+                size="md"
+              />
+            </Field>
+          </div>
+          <Field
+            label="Description"
+            labelFor="agent-description"
+            helperText="Summarize what the persona does for internal collaborators."
+          >
+            <Textarea
+              id="agent-description"
+              value={description}
+              onChange={(event) => setDescription(event.target.value)}
+              rows={4}
+              placeholder="Handles insurance intake over WhatsApp, triages documents, and prepares back-office packages."
+            />
+          </Field>
+          {error?.field === "form" ? (
+            <div className="rounded-xl border border-[color:var(--color-danger)]/40 bg-[color:var(--color-danger)]/5 px-4 py-3">
+              <p className="text-body-sm text-[color:var(--color-danger)]">{error.message}</p>
+            </div>
+          ) : null}
+        </CardContent>
+        <CardFooter padding="lg">
+          <Button type="submit" loading={submitting} variant="primary">
+            {submitting ? "Creating" : "Create agent"}
+          </Button>
+        </CardFooter>
+      </form>
+    </Card>
   );
 }
