@@ -5,37 +5,90 @@ import { logger } from "./logger";
  * In-memory idempotency cache for wallet transfers
  * In production, replace with Redis for distributed deployments
  */
-class IdempotencyStore {
-  private cache = new Map<string, { response: any; timestamp: number }>();
-  private readonly ttlMs = 24 * 60 * 60 * 1000; // 24 hours
+type StoredResponse = { status: number; data: any; hasBody: boolean };
 
-  set(key: string, value: any): void {
-    this.cache.set(key, {
-      response: value,
-      timestamp: Date.now(),
-    });
-    
-    // Cleanup old entries
-    this.cleanup();
+function sendStoredResponse(res: Response, payload: StoredResponse): Response {
+  if (payload.hasBody) {
+    return res.status(payload.status).json(payload.data);
   }
 
-  get(key: string): any | null {
+  return res.status(payload.status).end();
+}
+
+type CacheEntry = {
+  timestamp: number;
+  promise: Promise<StoredResponse>;
+  resolve: (value: StoredResponse) => void;
+  response?: StoredResponse;
+};
+
+class IdempotencyStore {
+  private cache = new Map<string, CacheEntry>();
+  private readonly ttlMs = 24 * 60 * 60 * 1000; // 24 hours
+
+  get(key: string): CacheEntry | null {
     const entry = this.cache.get(key);
     if (!entry) return null;
 
-    // Check if expired
-    if (Date.now() - entry.timestamp > this.ttlMs) {
+    if (entry.response && Date.now() - entry.timestamp > this.ttlMs) {
       this.cache.delete(key);
       return null;
     }
 
-    return entry.response;
+    return entry;
+  }
+
+  createPending(key: string): CacheEntry {
+    // If an entry already exists, reuse it to avoid overwriting the promise
+    const existing = this.cache.get(key);
+    if (existing) {
+      return existing;
+    }
+
+    let resolve!: (value: StoredResponse) => void;
+    const promise = new Promise<StoredResponse>((res) => {
+      resolve = res;
+    });
+
+    const entry: CacheEntry = {
+      timestamp: Date.now(),
+      promise,
+      resolve,
+    };
+
+    this.cache.set(key, entry);
+    this.cleanup();
+
+    return entry;
+  }
+
+  finalizeSuccess(key: string, payload: StoredResponse): void {
+    const entry = this.cache.get(key);
+    if (!entry) return;
+
+    entry.response = payload;
+    entry.timestamp = Date.now();
+    entry.resolve(payload);
+
+    this.cleanup();
+  }
+
+  finalizeFailure(key: string, payload: StoredResponse): void {
+    const entry = this.cache.get(key);
+    if (!entry) return;
+
+    entry.resolve(payload);
+    this.cache.delete(key);
+  }
+
+  isSameEntry(key: string, candidate: CacheEntry): boolean {
+    return this.cache.get(key) === candidate;
   }
 
   private cleanup(): void {
     const now = Date.now();
     for (const [key, entry] of this.cache.entries()) {
-      if (now - entry.timestamp > this.ttlMs) {
+      if (entry.response && now - entry.timestamp > this.ttlMs) {
         this.cache.delete(key);
       }
     }
@@ -73,35 +126,110 @@ export function idempotencyMiddleware(
 
   // Check if we've seen this request before
   const cached = store.get(idempotencyKey);
-  if (cached) {
-    logger.info({ 
+  if (cached && cached.response) {
+    logger.info({
       idempotencyKey,
-      path: req.path 
+      path: req.path
     }, "Returning cached response for idempotent request");
-    
-    return res.status(cached.status || 201).json(cached.data);
+
+    return sendStoredResponse(res, cached.response);
   }
+
+  if (cached && !cached.response) {
+    logger.info({
+      idempotencyKey,
+      path: req.path,
+    }, "Waiting for in-flight idempotent request to complete");
+
+    cached.promise.then((payload) => {
+      logger.info({
+        idempotencyKey,
+        path: req.path,
+      }, "Reusing response from in-flight idempotent request");
+
+      sendStoredResponse(res, payload);
+    });
+
+    return;
+  }
+
+  const entry = store.createPending(idempotencyKey);
+  let settled = false;
 
   // Store the original json method
   const originalJson = res.json.bind(res);
 
   // Override json method to cache the response
   res.json = function (data: any) {
+    const payload: StoredResponse = {
+      status: res.statusCode || 200,
+      data,
+      hasBody: true,
+    };
+
     if (res.statusCode >= 200 && res.statusCode < 300) {
-      store.set(idempotencyKey, {
-        status: res.statusCode,
-        data,
-      });
-      
-      logger.info({ 
+      store.finalizeSuccess(idempotencyKey, payload);
+
+      logger.info({
         idempotencyKey,
         path: req.path,
-        status: res.statusCode 
+        status: payload.status,
       }, "Cached response for idempotent request");
+    } else {
+      store.finalizeFailure(idempotencyKey, payload);
+
+      logger.warn({
+        idempotencyKey,
+        path: req.path,
+        status: payload.status,
+      }, "Idempotent request completed with error response");
     }
-    
+
     return originalJson(data);
   };
+
+  const settleResponse = () => {
+    if (settled) {
+      return;
+    }
+
+    if (!store.isSameEntry(idempotencyKey, entry)) {
+      return;
+    }
+
+    // If the response has already been resolved via res.json, nothing to do
+    if (entry.response) {
+      return;
+    }
+
+    const payload: StoredResponse = {
+      status: res.statusCode || 200,
+      data: undefined,
+      hasBody: false,
+    };
+
+    if (res.statusCode >= 200 && res.statusCode < 300) {
+      store.finalizeSuccess(idempotencyKey, payload);
+
+      logger.info({
+        idempotencyKey,
+        path: req.path,
+        status: payload.status,
+      }, "Cached response for idempotent request without JSON body");
+    } else {
+      store.finalizeFailure(idempotencyKey, payload);
+
+      logger.warn({
+        idempotencyKey,
+        path: req.path,
+        status: payload.status,
+      }, "Idempotent request finished with non-success status");
+    }
+    settled = true;
+  };
+
+  res.on("finish", settleResponse);
+  res.on("close", settleResponse);
 
   next();
 }
