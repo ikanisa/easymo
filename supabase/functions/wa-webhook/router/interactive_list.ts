@@ -193,6 +193,13 @@ export async function handleList(
   if (isVehicleOption(id) && state.key === "schedule_vehicle") {
     return await handleScheduleVehicle(ctx, (state.data ?? {}) as any, id);
   }
+  if (state.key === "schedule_time_select") {
+    const timeOptions = ["now", "30min", "1hour", "2hours", "5hours", "tomorrow_morning", "tomorrow_evening", "every_morning", "every_evening"];
+    if (timeOptions.includes(id)) {
+      const { handleScheduleTimeSelection } = await import("../domains/mobility/schedule.ts");
+      return await handleScheduleTimeSelection(ctx, (state.data ?? {}) as any, id);
+    }
+  }
   if (isScheduleResult(id) && state.key === "schedule_results") {
     return await handleScheduleResultSelection(
       ctx,
