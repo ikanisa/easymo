@@ -24,14 +24,16 @@ export function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="w-64 bg-white border-r border-gray-200">
-      <div className="flex flex-col h-full">
-        <div className="p-6 border-b border-gray-200">
-          <h1 className="text-xl font-semibold text-gray-900">EasyMO Admin</h1>
+    <aside className="dashboard-shell__sidebar">
+      <div className="dashboard-shell__sidebar-inner">
+        <div className="dashboard-shell__sidebar-header">
+          <h1 className="dashboard-shell__sidebar-title">EasyMO Admin</h1>
         </div>
 
         <nav className="flex-1 p-4" aria-label="Secondary">
           <ul className="space-y-1">
+        <nav className="dashboard-shell__sidebar-nav" aria-label="Primary">
+          <ul>
             {navigation.map((item) => {
               const isActive = pathname?.startsWith(item.href);
 
@@ -46,9 +48,14 @@ export function Sidebar() {
                         : "text-gray-700 hover:bg-gray-50",
                     ].join(" ")}
                     aria-current={isActive ? "page" : undefined}
+                      "dashboard-shell__sidebar-link",
+                      isActive ? "dashboard-shell__sidebar-link--active" : "",
+                    ]
+                      .join(" ")
+                      .trim()}
                   >
-                    <item.icon className="h-5 w-5" />
-                    <span className="font-medium">{item.name}</span>
+                    <item.icon className="dashboard-shell__sidebar-icon" />
+                    <span>{item.name}</span>
                   </Link>
                 </li>
               );

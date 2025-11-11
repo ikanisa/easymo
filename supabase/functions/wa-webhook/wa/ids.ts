@@ -33,6 +33,8 @@ export const IDS = {
   MOMO_QR_CODE: "momoqr_code",
   MOMO_QR_SKIP: "momoqr_skip",
   WALLET: "wallet_tokens",
+  BARS_RESTAURANTS: "bars_restaurants",
+  RESTAURANT_MANAGER: "restaurant_manager",
   ADMIN_HUB: "admin_hub",
   ADMIN_HUB_VIEW: "admin_hub_view",
   ADMIN_INSURANCE_VIEW: "admin_insurance_view",
