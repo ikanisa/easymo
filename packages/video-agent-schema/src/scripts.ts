@@ -6,11 +6,11 @@ import {
   ScriptStatusType,
   uuidSchema,
   uuidType,
-} from "./common";
+} from "./common.js";
 import {
   jobAssetReferenceSchema,
   jobAssetReferenceType,
-} from "./jobs";
+} from "./jobs.js";
 
 const metadataRecord = () => z.record(z.string(), z.unknown()).default({});
 

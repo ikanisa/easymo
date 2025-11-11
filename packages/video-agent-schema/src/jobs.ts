@@ -12,7 +12,7 @@ import {
   StorageBucketType,
   uuidSchema,
   uuidType,
-} from "./common";
+} from "./common.js";
 
 const metadataRecord = () => z.record(z.string(), z.unknown()).default({});
 

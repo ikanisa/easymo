@@ -135,7 +135,7 @@ export function buildSceneJobId(plan: ShotPlan, scene: ScenePlan): string {
 }
 
 export * from "./mutations.js";
-export * from "./common";
-export * from "./jobs";
-export * from "./scripts";
-export * from "./provenance";
+export * from "./common.js";
+export * from "./jobs.js";
+export * from "./scripts.js";
+export * from "./provenance.js";

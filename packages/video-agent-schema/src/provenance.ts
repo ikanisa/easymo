@@ -1,11 +1,11 @@
 import { Type } from "@sinclair/typebox";
 import { z } from "zod";
 
-import { uuidSchema, uuidType } from "./common";
+import { uuidSchema, uuidType } from "./common.js";
 import {
   jobAssetReferenceSchema,
   jobAssetReferenceType,
-} from "./jobs";
+} from "./jobs.js";
 
 const metadataRecord = () => z.record(z.string(), z.unknown()).default({});
 
