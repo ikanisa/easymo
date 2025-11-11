@@ -57,15 +57,16 @@ export function SidebarNav() {
   };
 
   return (
-    <nav aria-label="Sidebar" className="flex flex-col gap-4">
+    <nav aria-label="Sidebar" className="flex flex-col gap-6">
       <div className="flex flex-col gap-1">
         <Link
           href={root.href}
           className={classNames(
-            "rounded-xl px-4 py-2 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[color:var(--color-accent)]/60",
+            "rounded-lg px-4 py-2.5 text-base font-semibold transition-all",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2",
             activeRoot
-              ? "bg-[color:var(--color-accent)]/10 text-[color:var(--color-accent)]"
-              : "text-[color:var(--color-foreground)] hover:bg-[color:var(--color-border)]/20",
+              ? "bg-blue-600 text-white shadow-sm border-l-4 border-blue-700"
+              : "text-gray-700 hover:bg-gray-100 hover:text-gray-900",
           )}
           aria-current={activeRoot ? "page" : undefined}
         >
@@ -76,26 +77,16 @@ export function SidebarNav() {
         const sectionOpen = openGroups.has(group.id);
         const panelId = `sidebar-nav-${group.id}`;
         return (
-          <div key={group.id} className="flex flex-col gap-2">
+          <div key={group.id} className="flex flex-col gap-3">
             <button
               type="button"
-              className="flex items-center justify-between rounded-lg px-3 py-2 text-xs font-semibold uppercase tracking-wider text-[color:var(--color-muted)] transition hover:text-[color:var(--color-foreground)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[color:var(--color-accent)]/60"
-              aria-expanded={sectionOpen}
-              aria-controls={panelId}
-              onClick={() => handleToggle(group)}
+              className="flex items-center justify-between px-4 py-1 text-xs font-semibold uppercase tracking-wider text-gray-500 pointer-events-none"
+              aria-label={`${group.title} section`}
+              tabIndex={-1}
             >
               <span>{group.title}</span>
-              <span
-                aria-hidden="true"
-                className={classNames(
-                  "transition-transform",
-                  sectionOpen ? "rotate-90" : "rotate-0",
-                )}
-              >
-                ›
-              </span>
             </button>
-            <div id={panelId} hidden={!sectionOpen}>
+            <div id={panelId}>
               <ul className="flex flex-col gap-1">
                 {group.links.map((item) => {
                   const active = isLinkActive(item.href, pathname);
@@ -104,14 +95,17 @@ export function SidebarNav() {
                       <Link
                         href={item.href}
                         className={classNames(
-                          "flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[color:var(--color-accent)]/60",
+                          "flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm font-medium transition-all",
+                          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2",
+                          "group relative",
                           active
-                            ? "bg-[color:var(--color-accent)]/10 text-[color:var(--color-accent)]"
-                            : "text-[color:var(--color-muted)] hover:bg-[color:var(--color-border)]/20 hover:text-[color:var(--color-foreground)]",
+                            ? "bg-blue-50 text-blue-700 border-l-4 border-blue-600"
+                            : "text-gray-600 hover:bg-gray-100 hover:text-gray-900 border-l-4 border-transparent",
                         )}
                         aria-current={active ? "page" : undefined}
+                        title={item.title}
                       >
-                        {item.title}
+                        <span className="truncate">{item.title}</span>
                       </Link>
                     </li>
                   );
@@ -119,7 +113,7 @@ export function SidebarNav() {
               </ul>
             </div>
             {group.description ? (
-              <p className="px-4 text-xs text-[color:var(--color-muted)]">
+              <p className="px-4 text-xs text-gray-500 leading-relaxed">
                 {group.description}
               </p>
             ) : null}

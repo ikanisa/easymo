@@ -3,46 +3,56 @@
 import Link from "next/link";
 import type { AdminHubSections } from "@/lib/schemas";
 import { adminRoutePaths, toAdminRoute, type NavigableAdminRouteKey } from "@/lib/routes";
+import { ChevronRight } from "lucide-react";
 
 const SECTION_LINKS: Record<
   string,
-  { route: NavigableAdminRouteKey; description: string }
+  { route: NavigableAdminRouteKey; description: string; verb: string }
 > = {
   "ADMIN::OPS_MARKETPLACE": {
     route: "panelBars",
-    description: "Vendor marketplace roster and inventory status.",
+    description: "Manage vendor marketplace roster and inventory status",
+    verb: "Manage",
   },
   "ADMIN::OPS_WALLET": {
     route: "panelSettings",
-    description: "Wallet balances, tokens, and reconciliation controls.",
+    description: "Manage balances, tokens, and reconciliation controls",
+    verb: "Manage",
   },
   "ADMIN::OPS_MOMO": {
     route: "panelQr",
-    description: "Manage MoMo QR payloads and deep links.",
+    description: "Manage MoMo QR payloads and deep links",
+    verb: "Manage",
   },
   "ADMIN::TRUST_REFERRALS": {
     route: "panelUsers",
-    description: "Referral audits and customer resolution actions.",
+    description: "Review referral audits and customer resolution actions",
+    verb: "Review",
   },
   "ADMIN::TRUST_FREEZE": {
     route: "panelUsers",
-    description: "Freeze / unfreeze accounts during incidents.",
+    description: "Freeze or unfreeze accounts during incidents",
+    verb: "Manage",
   },
   "ADMIN::DIAG_MATCH": {
     route: "panelLogs",
-    description: "Matching diagnostics and RPC latency monitors.",
+    description: "View matching diagnostics and RPC latency monitors",
+    verb: "View",
   },
   "ADMIN::DIAG_INSURANCE": {
     route: "panelInsurance",
-    description: "OCR queue health and manual review backlog.",
+    description: "Monitor OCR queue health and manual review backlog",
+    verb: "Monitor",
   },
   "ADMIN::DIAG_HEALTH": {
     route: "panelDashboard",
-    description: "System health KPIs and alert feed.",
+    description: "View system health KPIs and alert feed",
+    verb: "View",
   },
   "ADMIN::DIAG_LOGS": {
     route: "panelLogs",
-    description: "Unified audit and messaging events log.",
+    description: "Browse unified audit and messaging events log",
+    verb: "Browse",
   },
 };
 
@@ -51,10 +61,10 @@ const DISABLED_SECTION_IDS = new Set([
 ]);
 
 const GROUP_LABELS: Array<{ key: keyof AdminHubSections; title: string }> = [
-  { key: "operations", title: "Operations" },
-  { key: "growth", title: "Growth" },
-  { key: "trust", title: "Trust" },
-  { key: "diagnostics", title: "Diagnostics" },
+  { key: "operations", title: "OPERATIONS" },
+  { key: "growth", title: "GROWTH" },
+  { key: "trust", title: "TRUST" },
+  { key: "diagnostics", title: "DIAGNOSTICS" },
 ];
 
 function SectionGroup({
@@ -66,39 +76,60 @@ function SectionGroup({
 }) {
   const visibleItems = items.filter((item) => !DISABLED_SECTION_IDS.has(item.id));
   if (!visibleItems.length) return null;
+  
   return (
-    <div className="space-y-2">
-      <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+    <div className="space-y-3">
+      <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-500">
         {title}
       </h3>
-      <ul className="grid gap-3">
+      <ul className="space-y-2">
         {visibleItems.map((item) => {
           const meta = SECTION_LINKS[item.id];
+          const isDestructive = item.id === "ADMIN::TRUST_FREEZE";
+          
           return (
-            <li
-              key={item.id}
-              className="rounded-md border border-border bg-card p-3 shadow-sm"
-            >
-              <div className="flex items-baseline justify-between gap-3">
-                <div>
-                  <p className="text-sm font-medium text-foreground">
-                    {item.title}
-                  </p>
-                  {meta?.description && (
-                    <p className="text-xs text-muted-foreground">
-                      {meta.description}
+            <li key={item.id}>
+              {meta?.route ? (
+                <Link
+                  href={toAdminRoute(adminRoutePaths[meta.route])}
+                  className={`
+                    group flex items-center justify-between gap-3 rounded-lg border p-4
+                    transition-all duration-200 min-h-[64px]
+                    ${isDestructive 
+                      ? 'border-red-200 bg-red-50 hover:bg-red-100 hover:border-red-300' 
+                      : 'border-gray-200 bg-white hover:bg-gray-50 hover:border-gray-300 hover:shadow-sm'
+                    }
+                  `}
+                >
+                  <div className="flex-1 min-w-0">
+                    <p className={`text-base font-semibold mb-1 ${isDestructive ? 'text-red-900' : 'text-gray-900'}`}>
+                      {item.title}
                     </p>
-                  )}
+                    {meta.description && (
+                      <p className={`text-sm line-clamp-1 ${isDestructive ? 'text-red-700' : 'text-gray-600'}`}>
+                        {meta.description}
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <span className={`text-sm font-medium ${isDestructive ? 'text-red-700' : 'text-blue-600 group-hover:text-blue-700'}`}>
+                      {meta.verb}
+                    </span>
+                    <ChevronRight className={`h-5 w-5 transition-transform group-hover:translate-x-0.5 ${isDestructive ? 'text-red-600' : 'text-gray-400 group-hover:text-blue-600'}`} />
+                  </div>
+                </Link>
+              ) : (
+                <div className="flex items-center justify-between gap-3 rounded-lg border border-gray-200 bg-gray-50 p-4 opacity-60 min-h-[64px]">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-base font-semibold text-gray-700 mb-1">
+                      {item.title}
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      Configuration required
+                    </p>
+                  </div>
                 </div>
-                {meta?.route && (
-                  <Link
-                    href={toAdminRoute(adminRoutePaths[meta.route])}
-                    className="text-xs font-semibold text-primary hover:underline"
-                  >
-                    Open
-                  </Link>
-                )}
-              </div>
+              )}
             </li>
           );
         })}
@@ -115,15 +146,16 @@ export function AdminHubSectionGrid({
   messages?: string[];
 }) {
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {messages && messages.length > 0 && (
-        <div className="rounded-md border border-dashed border-border bg-muted/40 p-3 text-xs text-muted-foreground">
+        <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
+          <p className="text-sm font-medium text-blue-900 mb-1">Configuration Note</p>
           {messages.map((message, index) => (
-            <p key={index}>{message}</p>
+            <p key={index} className="text-sm text-blue-700">{message}</p>
           ))}
         </div>
       )}
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid gap-8 md:grid-cols-2">
         {GROUP_LABELS.map(({ key, title }) => (
           <SectionGroup key={key} title={title} items={sections[key]} />
         ))}

@@ -62,8 +62,8 @@ export function DashboardClient() {
         </div>
       )}
       <SectionCard
-        title="Admin hub quick links"
-        description="Surface the WhatsApp admin hub sections that the flow-exchange bridge currently exposes. Configure ADMIN_FLOW_WA_ID to hydrate live data."
+        title="Quick Actions"
+        description="Access key administrative tools and system diagnostics"
       >
         {adminHub
           ? (
@@ -75,14 +75,14 @@ export function DashboardClient() {
           : adminHubQuery.isLoading
           ? (
             <LoadingState
-              title="Loading admin hub sections"
-              description="Fetching live hub definitions via flow-exchange."
+              title="Loading quick actions"
+              description="Fetching available administrative tools"
             />
           )
           : (
             <EmptyState
-              title="Admin hub unavailable"
-              description="We could not load admin hub sections. Check the flow-exchange bridge configuration."
+              title="Quick actions unavailable"
+              description="Administrative tools could not be loaded. Please refresh the page or contact support if the issue persists."
             />
           )}
       </SectionCard>
