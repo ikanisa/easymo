@@ -1,8 +1,9 @@
 import type { Config } from "tailwindcss";
-import { tailwindPreset } from "@easymo/ui/tokens/tailwind";
+// TODO: Fix @easymo/ui exports - temporarily disabled
+// import { tailwindPreset } from "@easymo/ui/tokens/tailwind";
 
 const config: Config = {
-  presets: [tailwindPreset],
+  // presets: [tailwindPreset],
   content: [
     "./app/**/*.{ts,tsx}",
     "./components/**/*.{ts,tsx}",
