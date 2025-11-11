@@ -10,12 +10,12 @@ const uiKitEnabled = (process.env.NEXT_PUBLIC_UI_V2_ENABLED ?? "false").trim().t
 type FeatureButtonProps = LegacyButtonProps & Partial<UiButtonProps>;
 
 export const Button = forwardRef<HTMLButtonElement, FeatureButtonProps>(function FeatureFlaggedButton(
-  { offlineBehavior = "block", disabled, ...props },
+  { offlineBehavior = "block", disabled, loading, ...props },
   ref,
 ) {
   const { isOnline } = useConnectivity();
   const offlineBlocked = offlineBehavior === "block" && !isOnline;
-  const computedDisabled = disabled ?? offlineBlocked;
+  const computedDisabled = disabled ?? loading ?? offlineBlocked;
 
   if (uiKitEnabled) {
     return (
@@ -24,6 +24,7 @@ export const Button = forwardRef<HTMLButtonElement, FeatureButtonProps>(function
         disabled={computedDisabled}
         data-offline-disabled={offlineBlocked ? "true" : undefined}
         offlineBehavior={offlineBehavior}
+        loading={loading}
         {...props}
       />
     );
@@ -35,6 +36,7 @@ export const Button = forwardRef<HTMLButtonElement, FeatureButtonProps>(function
       disabled={computedDisabled}
       data-offline-disabled={offlineBlocked ? "true" : undefined}
       offlineBehavior={offlineBehavior}
+      loading={loading}
       {...props}
     />
   );

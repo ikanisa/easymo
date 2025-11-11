@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "../styles/design-tokens.css";
 import "../styles/theme.css";
+import "../styles/typography.css";
 import "./globals.css";
 import { AppProviders } from "@/components/providers/AppProviders";
 import { QueryProvider } from "@/app/providers/QueryProvider";
