@@ -12,12 +12,12 @@ import {
 } from "@heroicons/react/24/outline";
 
 const navigation = [
-  { name: "Dashboard", href: "/v2/dashboard", icon: HomeIcon },
-  { name: "Agents", href: "/v2/agents", icon: UsersIcon },
-  { name: "Drivers", href: "/v2/drivers", icon: TruckIcon },
-  { name: "Stations", href: "/v2/stations", icon: MapPinIcon },
-  { name: "Analytics", href: "/v2/analytics", icon: ChartBarIcon },
-  { name: "Settings", href: "/v2/settings", icon: CogIcon },
+  { name: "Mission Control", href: "/v2/dashboard", icon: HomeIcon },
+  { name: "Agent Directory", href: "/v2/agents", icon: UsersIcon },
+  { name: "Driver Ops", href: "/v2/drivers", icon: TruckIcon },
+  { name: "Station Network", href: "/v2/stations", icon: MapPinIcon },
+  { name: "Insights", href: "/v2/analytics", icon: ChartBarIcon },
+  { name: "Workspace Settings", href: "/v2/settings", icon: CogIcon },
 ] as const;
 
 export function Sidebar() {
@@ -30,7 +30,7 @@ export function Sidebar() {
           <h1 className="text-xl font-semibold text-gray-900">EasyMO Admin</h1>
         </div>
 
-        <nav className="flex-1 p-4">
+        <nav className="flex-1 p-4" aria-label="Secondary">
           <ul className="space-y-1">
             {navigation.map((item) => {
               const isActive = pathname?.startsWith(item.href);
@@ -45,6 +45,7 @@ export function Sidebar() {
                         ? "bg-blue-50 text-blue-600"
                         : "text-gray-700 hover:bg-gray-50",
                     ].join(" ")}
+                    aria-current={isActive ? "page" : undefined}
                   >
                     <item.icon className="h-5 w-5" />
                     <span className="font-medium">{item.name}</span>
