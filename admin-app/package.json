@@ -17,6 +17,7 @@
   "dependencies": {
     "@easymo/commons": "workspace:*",
     "@easymo/ui": "workspace:*",
+    "@headlessui/react": "^2.2.2",
     "@va/shared": "workspace:*",
     "@radix-ui/react-slot": "^1.0.2",
     "@supabase/supabase-js": "^2.76.1",
