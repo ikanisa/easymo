@@ -1,7 +1,8 @@
 import type { Metadata, Viewport } from "next";
-import "./globals.css";
+import "../styles/design-tokens.css";
 import "../styles/theme.css";
 import "../styles/typography.css";
+import "./globals.css";
 import { AppProviders } from "@/components/providers/AppProviders";
 import { QueryProvider } from "@/app/providers/QueryProvider";
 import { cssVariableSheet } from "@easymo/ui/tokens";
@@ -23,12 +24,13 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const uiKitEnabled = (process.env.NEXT_PUBLIC_UI_V2_ENABLED ?? "false")
+  const uiV2Enabled = (process.env.NEXT_PUBLIC_UI_V2_ENABLED ?? "false")
     .toLowerCase()
     .trim() === "true";
+  const uiKitEnabled = uiV2Enabled || isUiKitEnabled();
   return (
-    <html lang="en">
-      <body data-ui-theme={uiKitEnabled ? "v2" : undefined}>
+    <html lang="en" className="app-html">
+      <body className="app-body" data-ui-theme={uiKitEnabled ? "v2" : undefined}>
         <QueryProvider>
           <a className="skip-link" href="#main-content">
             Skip to main content

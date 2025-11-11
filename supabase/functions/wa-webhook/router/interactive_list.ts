@@ -184,6 +184,15 @@ export async function handleList(
   if (await handleHomeMenuSelection(ctx, id, state)) {
     return true;
   }
+  
+  // Restaurant manager flows
+  if (state.key === "restaurant_manager") {
+    const { handleRestaurantManagerAction } = await import(
+      "../domains/vendor/restaurant.ts"
+    );
+    return await handleRestaurantManagerAction(ctx, state.data ?? {}, id);
+  }
+  
   if (id === IDS.BACK_HOME) {
     await sendHomeMenu(ctx);
     return true;
@@ -423,6 +432,12 @@ async function handleHomeMenuSelection(
     }
     case IDS.MOMO_QR:
       return await startMomoQr(ctx, state);
+    case IDS.BARS_RESTAURANTS: {
+      const { startRestaurantManager } = await import(
+        "../domains/vendor/restaurant.ts"
+      );
+      return await startRestaurantManager(ctx);
+    }
     case IDS.HOME_MORE: {
       const page =
         state.key === "home_menu" && typeof state.data?.page === "number"
