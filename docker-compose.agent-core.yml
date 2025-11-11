@@ -175,6 +175,32 @@ services:
     ports:
       - "4800:4800"
 
+  whatsapp-webhook-worker:
+    build: ./services/whatsapp-webhook-worker
+    command: pnpm start:dev
+    environment:
+      PORT: 4900
+      LOG_LEVEL: debug
+      KAFKA_BROKERS: kafka:19092
+      KAFKA_CLIENT_ID: whatsapp-webhook-worker
+      KAFKA_GROUP_ID: whatsapp-webhook-worker-group
+      WEBHOOK_TOPIC: whatsapp.webhook.inbound
+      WEBHOOK_PROCESSED_TOPIC: whatsapp.webhook.processed
+      WEBHOOK_DLQ_TOPIC: whatsapp.webhook.dlq
+      REDIS_URL: redis://redis:6379
+      SUPABASE_URL: http://host.docker.internal:54321
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
+      MAX_RETRIES: "3"
+      RETRY_DELAY_MS: "1000"
+      CONCURRENT_MESSAGES: "10"
+    volumes:
+      - ./services/whatsapp-webhook-worker:/usr/src/app
+    depends_on:
+      - kafka
+      - redis
+    ports:
+      - "4900:4900"
+
   broker-orchestrator:
     build: ./services/broker-orchestrator
     command: pnpm start:dev
