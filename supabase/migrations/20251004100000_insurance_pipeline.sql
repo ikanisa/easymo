@@ -442,14 +442,14 @@ BEGIN
              AND table_name = 'insurance_documents' 
              AND column_name = 'request_id') THEN
     
-    ALTER TABLE public.insurance_documents ENABLE ROW LEVEL SECURITY;
+    EXECUTE 'ALTER TABLE public.insurance_documents ENABLE ROW LEVEL SECURITY';
     
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'insurance_documents' AND policyname = 'insurance_documents_full_admin') THEN
-      EXECUTE $$CREATE POLICY insurance_documents_full_admin ON public.insurance_documents FOR ALL USING (public.auth_role() IN ('platform', 'insurance_admin', 'insurance_ops', 'insurance_finance')) WITH CHECK (public.auth_role() IN ('platform', 'insurance_admin', 'insurance_ops', 'insurance_finance'))$$;
+      EXECUTE 'CREATE POLICY insurance_documents_full_admin ON public.insurance_documents FOR ALL USING (public.auth_role() IN (''platform'', ''insurance_admin'', ''insurance_ops'', ''insurance_finance'')) WITH CHECK (public.auth_role() IN (''platform'', ''insurance_admin'', ''insurance_ops'', ''insurance_finance''))';
     END IF;
     
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'insurance_documents' AND policyname = 'insurance_documents_agent_read') THEN
-      EXECUTE $$CREATE POLICY insurance_documents_agent_read ON public.insurance_documents FOR SELECT USING (public.auth_role() = 'insurance_agent' AND EXISTS (SELECT 1 FROM public.insurance_requests req WHERE req.id = insurance_documents.request_id AND (req.assigned_agent_id = public.auth_wa_id() OR req.created_by = public.auth_wa_id() OR req.customer_wa_id = public.auth_wa_id())))$$;
+      EXECUTE 'CREATE POLICY insurance_documents_agent_read ON public.insurance_documents FOR SELECT USING (public.auth_role() = ''insurance_agent'' AND EXISTS (SELECT 1 FROM public.insurance_requests req WHERE req.id = insurance_documents.request_id AND (req.assigned_agent_id = public.auth_wa_id() OR req.created_by = public.auth_wa_id() OR req.customer_wa_id = public.auth_wa_id())))';
     END IF;
   END IF;
 END $$;
