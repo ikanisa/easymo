@@ -11,18 +11,23 @@ export function Header() {
       .slice(0, 2)
       .join("");
   }, []);
+  const now = useMemo(() => new Date(), []);
 
   return (
-    <header className="h-16 border-b border-gray-200 bg-white">
+    <header className="h-16 border-b border-gray-200 bg-white" role="banner">
       <div className="mx-auto flex h-full max-w-7xl items-center justify-between px-6">
         <div>
-          <p className="text-sm font-medium text-gray-500">Environment</p>
+          <p className="text-sm font-medium text-gray-500" aria-live="polite">
+            Environment
+          </p>
           <p className="text-base font-semibold text-gray-900">
             {process.env.NEXT_PUBLIC_ENVIRONMENT_LABEL ?? "Staging"}
           </p>
         </div>
         <div className="flex items-center gap-4">
-          <div className="text-sm text-gray-500">{new Date().toLocaleString()}</div>
+          <div className="text-sm text-gray-500">
+            <time dateTime={now.toISOString()}>{now.toLocaleString()}</time>
+          </div>
           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 text-sm font-semibold text-blue-700">
             {operatorInitials || "EA"}
           </div>

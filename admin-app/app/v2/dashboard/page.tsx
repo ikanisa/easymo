@@ -41,37 +41,47 @@ export default function DashboardPage() {
   });
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-semibold text-gray-900">Dashboard</h1>
+    <section aria-labelledby="dashboard-heading" className="space-y-8">
+      <header className="space-y-2">
+        <p className="text-sm font-medium text-gray-500">Overview</p>
+        <h1 id="dashboard-heading" className="text-2xl font-semibold text-gray-900">
+          Dashboard
+        </h1>
+      </header>
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <MetricCard
-          title="Total Agents"
-          value={metrics?.totalAgents ?? 0}
-          icon={UsersIcon}
-          trend="+12%"
-        />
-        <MetricCard
-          title="Active Drivers"
-          value={metrics?.totalDrivers ?? 0}
-          icon={TruckIcon}
-          trend="+5%"
-        />
-        <MetricCard
-          title="Stations"
-          value={metrics?.totalStations ?? 0}
-          icon={MapPinIcon}
-          trend="+2%"
-        />
-        <MetricCard
-          title="Monthly Revenue"
-          value={`$${(metrics?.monthlyRevenue ?? 0).toFixed(2)}`}
-          icon={CurrencyDollarIcon}
-          trend="+18%"
-        />
-      </div>
+      <section aria-labelledby="dashboard-metrics-heading" className="space-y-4">
+        <h2 id="dashboard-metrics-heading" className="visually-hidden">
+          Key metrics
+        </h2>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <MetricCard
+            title="Total Agents"
+            value={metrics?.totalAgents ?? 0}
+            icon={UsersIcon}
+            trend="+12%"
+          />
+          <MetricCard
+            title="Active Drivers"
+            value={metrics?.totalDrivers ?? 0}
+            icon={TruckIcon}
+            trend="+5%"
+          />
+          <MetricCard
+            title="Stations"
+            value={metrics?.totalStations ?? 0}
+            icon={MapPinIcon}
+            trend="+2%"
+          />
+          <MetricCard
+            title="Monthly Revenue"
+            value={`$${(metrics?.monthlyRevenue ?? 0).toFixed(2)}`}
+            icon={CurrencyDollarIcon}
+            trend="+18%"
+          />
+        </div>
+      </section>
 
       <RecentActivity />
-    </div>
+    </section>
   );
 }

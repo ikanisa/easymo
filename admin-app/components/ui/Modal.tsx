@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useId, useRef } from "react";
 import styles from "./Modal.module.css";
 import { Button } from "@/components/ui/Button";
 
@@ -15,21 +15,52 @@ export function Modal(
   { title, children, onClose, width = "min(640px, 90vw)" }: ModalProps,
 ) {
   const dialogRef = useRef<HTMLDivElement | null>(null);
+  const titleId = useId();
 
   useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        onClose();
-      }
-    };
+    const dialogNode = dialogRef.current;
+    if (!dialogNode) return;
 
     const previouslyFocused = document.activeElement as HTMLElement | null;
 
-    document.addEventListener("keydown", handleKeyDown);
-    dialogRef.current?.focus();
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.stopPropagation();
+        onClose();
+        return;
+      }
+
+      if (event.key === "Tab") {
+        const focusableElements = dialogNode.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])',
+        );
+        if (focusableElements.length === 0) {
+          event.preventDefault();
+          dialogNode.focus();
+          return;
+        }
+
+        const firstElement = focusableElements[0];
+        const lastElement = focusableElements[focusableElements.length - 1];
+        const currentActive = document.activeElement as HTMLElement | null;
+
+        if (event.shiftKey) {
+          if (currentActive === firstElement || !dialogNode.contains(currentActive)) {
+            event.preventDefault();
+            lastElement.focus();
+          }
+        } else if (currentActive === lastElement) {
+          event.preventDefault();
+          firstElement.focus();
+        }
+      }
+    };
+
+    dialogNode.addEventListener("keydown", handleKeyDown);
+    dialogNode.focus({ preventScroll: true });
 
     return () => {
-      document.removeEventListener("keydown", handleKeyDown);
+      dialogNode.removeEventListener("keydown", handleKeyDown);
       previouslyFocused?.focus?.();
     };
   }, [onClose]);
@@ -37,9 +68,7 @@ export function Modal(
   return (
     <div
       className={styles.overlay}
-      role="dialog"
-      aria-modal="true"
-      aria-label={title}
+      role="presentation"
       onClick={onClose}
     >
       <div
@@ -48,9 +77,12 @@ export function Modal(
         onClick={(event) => event.stopPropagation()}
         tabIndex={-1}
         ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
       >
         <header className={styles.header}>
-          <h2>{title}</h2>
+          <h2 id={titleId}>{title}</h2>
           <Button
             type="button"
             onClick={onClose}

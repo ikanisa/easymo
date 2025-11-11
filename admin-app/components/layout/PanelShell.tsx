@@ -73,6 +73,9 @@ export function PanelShell({
         <ServiceWorkerToast />
         <ServiceWorkerToasts />
         <OfflineBanner />
+        <a className="skip-link" href="#main-content">
+          Skip to main content
+        </a>
         <div className="bing-shell">
           <BingNav />
           <div className="bing-shell__workspace">
@@ -92,8 +95,9 @@ export function PanelShell({
               id="main-content"
               className="bing-shell__content"
               aria-live="polite"
+              tabIndex={-1}
             >
-              {children}
+              <div className="panel-page__container">{children}</div>
             </main>
           </div>
         </div>

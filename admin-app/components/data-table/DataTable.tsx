@@ -48,6 +48,7 @@ export function DataTable<TData>({
   const [globalFilter, setGlobalFilter] = useState("");
   const columnDefs = useMemo(() => columns, [columns]);
   const searchInputId = useId();
+  const tableInstanceId = useId();
   const containerRef = useRef<HTMLDivElement | null>(null);
 
   const table = useReactTable({
@@ -116,8 +117,8 @@ export function DataTable<TData>({
   const renderedRows = table.getRowModel().rows;
 
   return (
-    <div className={styles.wrapper} style={wrapperStyle}>
-      <div className={styles.toolbar}>
+    <div className={styles.wrapper} style={wrapperStyle} role="region" aria-live="polite">
+      <div className={styles.toolbar} role="toolbar" aria-label="Table actions" id={`${tableInstanceId}-toolbar`}>
         {globalFilterKey || globalFilterFn
           ? (
             <label className={styles.searchLabel} htmlFor={searchInputId}>
@@ -133,6 +134,7 @@ export function DataTable<TData>({
               value={globalFilter}
               placeholder={searchPlaceholder}
               onChange={(event) => setGlobalFilter(event.target.value)}
+              aria-controls={tableInstanceId}
             />
           )
           : null}
@@ -146,7 +148,15 @@ export function DataTable<TData>({
         </Button>
       </div>
 
-      <div className={styles.tableContainer} role="table" aria-busy={isLoading}>
+      <div
+        className={styles.tableContainer}
+        role="table"
+        aria-busy={isLoading}
+        aria-rowcount={renderedRows.length}
+        aria-colcount={columnDefs.length}
+        aria-describedby={`${tableInstanceId}-toolbar`}
+        id={tableInstanceId}
+      >
         <div role="rowgroup" className={styles.headerRow}>
           {table.getHeaderGroups().map((headerGroup) => (
             <div key={headerGroup.id} role="row" className={styles.row}>
@@ -167,7 +177,12 @@ export function DataTable<TData>({
           ))}
         </div>
 
-        <div role="rowgroup" className={styles.body} ref={containerRef}>
+        <div
+          role="rowgroup"
+          className={styles.body}
+          ref={containerRef}
+          aria-live="polite"
+        >
           {isLoading
             ? (
               <div

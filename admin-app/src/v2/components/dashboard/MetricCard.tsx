@@ -10,10 +10,10 @@ interface MetricCardProps {
 
 export function MetricCard({ title, value, trend, icon: Icon }: MetricCardProps) {
   return (
-    <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+    <article className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm" aria-label={title}>
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-sm font-medium text-gray-500">{title}</p>
+          <h3 className="text-sm font-medium text-gray-500">{title}</h3>
           <p className="mt-2 text-2xl font-semibold text-gray-900">{value}</p>
         </div>
         <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-50 text-blue-600">
@@ -21,6 +21,6 @@ export function MetricCard({ title, value, trend, icon: Icon }: MetricCardProps)
         </div>
       </div>
       {trend && <p className="mt-4 text-sm font-medium text-green-600">{trend}</p>}
-    </div>
+    </article>
   );
 }
