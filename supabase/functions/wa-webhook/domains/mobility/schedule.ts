@@ -412,6 +412,67 @@ async function requestScheduleTime(
 ): Promise<boolean> {
   if (!ctx.profileId) return false;
   await setState(ctx.supabase, ctx.profileId, {
+    key: "schedule_time_select",
+    data: state,
+  });
+
+  // Instead of using a flow, provide list options
+  await sendListMessage(
+    ctx,
+    {
+      title: t(ctx.locale, "schedule.time.title"),
+      body: t(ctx.locale, "schedule.time.prompt"),
+      sectionTitle: t(ctx.locale, "schedule.time.section"),
+      buttonText: t(ctx.locale, "schedule.time.button"),
+      rows: [
+        {
+          id: "now",
+          title: t(ctx.locale, "schedule.time.option.now.title"),
+          description: t(ctx.locale, "schedule.time.option.now.description"),
+        },
+        {
+          id: "30min",
+          title: t(ctx.locale, "schedule.time.option.30min.title"),
+          description: t(ctx.locale, "schedule.time.option.30min.description"),
+        },
+        {
+          id: "1hour",
+          title: t(ctx.locale, "schedule.time.option.1hour.title"),
+          description: t(ctx.locale, "schedule.time.option.1hour.description"),
+        },
+        {
+          id: "2hours",
+          title: t(ctx.locale, "schedule.time.option.2hours.title"),
+          description: t(ctx.locale, "schedule.time.option.2hours.description"),
+        },
+        {
+          id: "5hours",
+          title: t(ctx.locale, "schedule.time.option.5hours.title"),
+          description: t(ctx.locale, "schedule.time.option.5hours.description"),
+        },
+        {
+          id: "tomorrow_morning",
+          title: t(ctx.locale, "schedule.time.option.tomorrow_morning.title"),
+          description: t(ctx.locale, "schedule.time.option.tomorrow_morning.description"),
+        },
+        {
+          id: "tomorrow_evening",
+          title: t(ctx.locale, "schedule.time.option.tomorrow_evening.title"),
+          description: t(ctx.locale, "schedule.time.option.tomorrow_evening.description"),
+        },
+        {
+          id: "every_morning",
+          title: t(ctx.locale, "schedule.time.option.every_morning.title"),
+          description: t(ctx.locale, "schedule.time.option.every_morning.description"),
+        },
+        {
+          id: "every_evening",
+          title: t(ctx.locale, "schedule.time.option.every_evening.title"),
+          description: t(ctx.locale, "schedule.time.option.every_evening.description"),
+        },
+      ],
+    },
+    { emoji: "🕐" },
     key: "schedule_time_picker",
     data: { ...state } as Record<string, unknown>,
   });
@@ -634,6 +695,121 @@ export async function handleScheduleSavedLocationSelection(
     { ...pickerState.state, dropoffFavoriteId: favorite.id },
     coords,
   );
+}
+
+export async function handleScheduleTimeSelection(
+  ctx: RouterContext,
+  state: ScheduleState,
+  timeOption: string,
+): Promise<boolean> {
+  if (!ctx.profileId || !state.role || !state.vehicle || !state.origin) {
+    return false;
+  }
+
+  // Convert time option to actual time
+  const now = new Date();
+  let travelDate: Date;
+  let travelTime: string;
+  let travelLabel: string;
+
+  switch (timeOption) {
+    case "now":
+      travelDate = now;
+      travelTime = formatTime(now);
+      travelLabel = t(ctx.locale, "schedule.time.label.now");
+      break;
+    case "30min":
+      travelDate = new Date(now.getTime() + 30 * 60 * 1000);
+      travelTime = formatTime(travelDate);
+      travelLabel = t(ctx.locale, "schedule.time.label.30min");
+      break;
+    case "1hour":
+      travelDate = new Date(now.getTime() + 60 * 60 * 1000);
+      travelTime = formatTime(travelDate);
+      travelLabel = t(ctx.locale, "schedule.time.label.1hour");
+      break;
+    case "2hours":
+      travelDate = new Date(now.getTime() + 2 * 60 * 60 * 1000);
+      travelTime = formatTime(travelDate);
+      travelLabel = t(ctx.locale, "schedule.time.label.2hours");
+      break;
+    case "5hours":
+      travelDate = new Date(now.getTime() + 5 * 60 * 60 * 1000);
+      travelTime = formatTime(travelDate);
+      travelLabel = t(ctx.locale, "schedule.time.label.5hours");
+      break;
+    case "tomorrow_morning":
+      travelDate = new Date(now);
+      travelDate.setDate(travelDate.getDate() + 1);
+      travelDate.setHours(7, 30, 0, 0);
+      travelTime = "07:30";
+      travelLabel = t(ctx.locale, "schedule.time.label.tomorrow_morning");
+      break;
+    case "tomorrow_evening":
+      travelDate = new Date(now);
+      travelDate.setDate(travelDate.getDate() + 1);
+      travelDate.setHours(17, 30, 0, 0);
+      travelTime = "17:30";
+      travelLabel = t(ctx.locale, "schedule.time.label.tomorrow_evening");
+      break;
+    case "every_morning":
+      travelDate = new Date(now);
+      travelDate.setHours(7, 30, 0, 0);
+      if (travelDate <= now) {
+        travelDate.setDate(travelDate.getDate() + 1);
+      }
+      travelTime = "07:30";
+      travelLabel = t(ctx.locale, "schedule.time.label.every_morning");
+      // Set recurrence for this case
+      const updatedStateRecurring: ScheduleState = {
+        ...state,
+        travelDate: travelDate.toISOString(),
+        travelTime,
+        travelLabel,
+      };
+      return await handleScheduleRecurrenceSelection(ctx, updatedStateRecurring, "daily");
+    case "every_evening":
+      travelDate = new Date(now);
+      travelDate.setHours(17, 30, 0, 0);
+      if (travelDate <= now) {
+        travelDate.setDate(travelDate.getDate() + 1);
+      }
+      travelTime = "17:30";
+      travelLabel = t(ctx.locale, "schedule.time.label.every_evening");
+      // Set recurrence for this case
+      const updatedStateRecurringEvening: ScheduleState = {
+        ...state,
+        travelDate: travelDate.toISOString(),
+        travelTime,
+        travelLabel,
+      };
+      return await handleScheduleRecurrenceSelection(ctx, updatedStateRecurringEvening, "daily");
+    default:
+      return false;
+  }
+
+  // For non-recurring options, proceed to create trip
+  const updatedState: ScheduleState = {
+    ...state,
+    travelDate: travelDate.toISOString(),
+    travelTime,
+    travelLabel,
+  };
+
+  await createTripAndDeliverMatches(
+    ctx,
+    updatedState,
+    {
+      dropoff: updatedState.dropoff ?? null,
+      travelLabel,
+    },
+  );
+  await clearState(ctx.supabase, ctx.profileId);
+  return true;
+}
+
+function formatTime(date: Date): string {
+  return date.toTimeString().slice(0, 5); // HH:MM
 }
 
 export async function handleScheduleRecurrenceSelection(
@@ -962,6 +1138,7 @@ async function promptScheduleVehicleSelection(
       rows: VEHICLE_OPTIONS,
       buttonText: t(ctx.locale, "common.buttons.select"),
     },
+    { emoji: "🚗" },
     { emoji: role === "driver" ? "🚗" : "🧍" },
   );
 }

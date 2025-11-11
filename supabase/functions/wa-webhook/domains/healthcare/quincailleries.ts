@@ -10,6 +10,7 @@ import {
 } from "../../utils/reply.ts";
 import { isFeatureEnabled } from "../../../_shared/feature-flags.ts";
 import { IDS } from "../../wa/ids.ts";
+import { t } from "../../i18n/translator.ts";
 import { routeToAIAgent, sendAgentOptions } from "../ai-agents/index.ts";
 import { waChatLink } from "../../utils/links.ts";
 import { listBusinesses } from "../../rpc/marketplace.ts";
@@ -33,6 +34,11 @@ export async function startNearbyQuincailleries(
 
   await sendButtonsMessage(
     ctx,
+    t(ctx.locale, "quincaillerie.start.prompt"),
+    buildButtons(
+      { id: IDS.LOCATION_SAVED_LIST, title: t(ctx.locale, "location.saved.button") },
+      { id: IDS.BACK_HOME, title: t(ctx.locale, "common.menu_back") }
+    )
     t(ctx.locale, "quincaillerie.flow.intro"),
     buildButtons(
       {
@@ -51,6 +57,8 @@ export async function handleQuincaillerieLocation(
   location: { lat: number; lng: number },
 ): Promise<boolean> {
   if (!ctx.profileId) return false;
+  
+  // Prompt for item name or image
 
   await setState(ctx.supabase, ctx.profileId, {
     key: "quincaillerie_awaiting_items",
@@ -59,6 +67,10 @@ export async function handleQuincaillerieLocation(
 
   await sendButtonsMessage(
     ctx,
+    t(ctx.locale, "quincaillerie.location.received"),
+    buildButtons(
+      { id: IDS.BACK_HOME, title: t(ctx.locale, "common.menu_back") }
+    )
     t(ctx.locale, "quincaillerie.flow.location_received"),
     buildButtons({
       id: IDS.BACK_HOME,

@@ -106,6 +106,17 @@ export async function handleText(
     }
     return true;
   }
+  
+  // Handle property find duration input (for short-term)
+  if (state.key === "property_find_duration") {
+    const stateData = state.data as {
+      rentalType: string;
+      bedrooms: string;
+    };
+    const { handleFindPropertyDuration } = await import("../domains/property/rentals.ts");
+    return await handleFindPropertyDuration(ctx, stateData, body);
+  }
+  
 
   // Handle property find budget input
   if (state.key === "property_find_budget") {
@@ -113,6 +124,8 @@ export async function handleText(
       rentalType: string;
       bedrooms: string;
       currency?: string;
+      duration?: string;
+      priceUnit?: string;
     };
     return await handleFindPropertyBudget(ctx, stateData, body);
   }
@@ -123,6 +136,7 @@ export async function handleText(
       rentalType: string;
       bedrooms: string;
       currency?: string;
+      priceUnit?: string;
     };
     return await handleAddPropertyPrice(ctx, stateData, body);
   }

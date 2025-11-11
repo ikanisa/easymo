@@ -38,6 +38,8 @@ export type PropertyFindState = {
   bedrooms: string;
   budget: string;
   currency?: string;
+  duration?: string; // For short-term: number of days
+  priceUnit?: string; // "per_day" | "per_night" | "per_month"
 };
 
 export type PropertyAddState = {
@@ -45,6 +47,8 @@ export type PropertyAddState = {
   bedrooms: string;
   price: string;
   currency?: string;
+  duration?: string; // For short-term: number of days
+  priceUnit?: string; // "per_day" | "per_night" | "per_month"
 };
 
 export type PropertySavedPickerState =
@@ -93,6 +97,30 @@ function bedroomOptions(locale: RouterContext["locale"]) {
       id: "4",
       title: t(locale, "property.bedrooms.option4.title"),
       description: t(locale, "property.bedrooms.option4.description"),
+    },
+  ];
+}
+
+function priceUnitOptions(locale: RouterContext["locale"], rentalType: string) {
+  if (rentalType === "short_term") {
+    return [
+      {
+        id: "per_day",
+        title: t(locale, "property.priceUnit.perDay.title"),
+        description: t(locale, "property.priceUnit.perDay.description"),
+      },
+      {
+        id: "per_night",
+        title: t(locale, "property.priceUnit.perNight.title"),
+        description: t(locale, "property.priceUnit.perNight.description"),
+      },
+    ];
+  }
+  return [
+    {
+      id: "per_month",
+      title: t(locale, "property.priceUnit.perMonth.title"),
+      description: t(locale, "property.priceUnit.perMonth.description"),
     },
   ];
 }
@@ -226,6 +254,24 @@ export async function handleFindPropertyBedrooms(
   bedrooms: string,
 ): Promise<boolean> {
   if (!ctx.profileId) return false;
+
+  // For short-term rentals, ask for duration first
+  if (state.rentalType === "short_term") {
+    await setState(ctx.supabase, ctx.profileId, {
+      key: "property_find_duration",
+      data: { ...state, bedrooms },
+    });
+
+    await sendButtonsMessage(
+      ctx,
+      t(ctx.locale, "property.find.prompt.duration"),
+      homeOnly(),
+    );
+
+    return true;
+  }
+
+  // For long-term, go straight to budget
   const currencyPref = resolveUserCurrency(ctx.from);
 
   await setState(ctx.supabase, ctx.profileId, {
@@ -245,9 +291,61 @@ export async function handleFindPropertyBedrooms(
   return true;
 }
 
+export async function handleFindPropertyDuration(
+  ctx: RouterContext,
+  state: { rentalType: string; bedrooms: string },
+  duration: string,
+): Promise<boolean> {
+  if (!ctx.profileId) return false;
+  
+  await setState(ctx.supabase, ctx.profileId, {
+    key: "property_find_price_unit",
+    data: { ...state, duration },
+  });
+
+  await sendListMessage(
+    ctx,
+    {
+      title: t(ctx.locale, "property.find.title"),
+      body: t(ctx.locale, "property.find.prompt.priceUnit"),
+      sectionTitle: t(ctx.locale, "property.find.section.priceUnit"),
+      buttonText: t(ctx.locale, "property.common.choose"),
+      rows: priceUnitOptions(ctx.locale, state.rentalType),
+    },
+    { emoji: "🏠" },
+  );
+
+  return true;
+}
+
+export async function handleFindPropertyPriceUnit(
+  ctx: RouterContext,
+  state: { rentalType: string; bedrooms: string; duration?: string },
+  priceUnit: string,
+): Promise<boolean> {
+  if (!ctx.profileId) return false;
+  const currencyPref = resolveUserCurrency(ctx.from);
+
+  await setState(ctx.supabase, ctx.profileId, {
+    key: "property_find_budget",
+    data: { ...state, priceUnit, currency: currencyPref.code },
+  });
+
+  await sendButtonsMessage(
+    ctx,
+    t(ctx.locale, "property.find.prompt.budget", {
+      currency: describeCurrency(currencyPref),
+      code: currencyPref.code,
+    }),
+    homeOnly(),
+  );
+
+  return true;
+}
+
 export async function handleFindPropertyBudget(
   ctx: RouterContext,
-  state: { rentalType: string; bedrooms: string; currency?: string },
+  state: { rentalType: string; bedrooms: string; currency?: string; duration?: string; priceUnit?: string },
   budget: string,
 ): Promise<boolean> {
   if (!ctx.profileId) return false;
@@ -258,6 +356,8 @@ export async function handleFindPropertyBudget(
     bedrooms: state.bedrooms,
     budget,
     currency: currencyCode,
+    duration: state.duration,
+    priceUnit: state.priceUnit,
   };
 
   await setState(ctx.supabase, ctx.profileId, {
@@ -269,7 +369,6 @@ export async function handleFindPropertyBudget(
     ctx,
     t(ctx.locale, "property.find.prompt.location"),
     buildButtons(
-      { id: "property_share_location", title: t(ctx.locale, "property.buttons.share_location") },
       { id: IDS.LOCATION_SAVED_LIST, title: t(ctx.locale, "location.saved.button") },
       { id: IDS.BACK_HOME, title: t(ctx.locale, "common.menu_back") },
     ),
@@ -357,11 +456,60 @@ export async function handleAddPropertyBedrooms(
   bedrooms: string,
 ): Promise<boolean> {
   if (!ctx.profileId) return false;
+
+  // For short-term rentals, ask for price unit first
+  if (state.rentalType === "short_term") {
+    await setState(ctx.supabase, ctx.profileId, {
+      key: "property_add_price_unit",
+      data: { ...state, bedrooms },
+    });
+
+    await sendListMessage(
+      ctx,
+      {
+        title: t(ctx.locale, "property.add.title"),
+        body: t(ctx.locale, "property.add.prompt.priceUnit"),
+        sectionTitle: t(ctx.locale, "property.add.section.priceUnit"),
+        buttonText: t(ctx.locale, "property.common.choose"),
+        rows: priceUnitOptions(ctx.locale, state.rentalType),
+      },
+      { emoji: "🏠" },
+    );
+
+    return true;
+  }
+
+  // For long-term, go straight to price (always per month)
   const currencyPref = resolveUserCurrency(ctx.from);
 
   await setState(ctx.supabase, ctx.profileId, {
     key: "property_add_price",
-    data: { ...state, bedrooms, currency: currencyPref.code },
+    data: { ...state, bedrooms, currency: currencyPref.code, priceUnit: "per_month" },
+  });
+
+  await sendButtonsMessage(
+    ctx,
+    t(ctx.locale, "property.add.prompt.price", {
+      currency: describeCurrency(currencyPref),
+      code: currencyPref.code,
+    }),
+    homeOnly(),
+  );
+
+  return true;
+}
+
+export async function handleAddPropertyPriceUnit(
+  ctx: RouterContext,
+  state: { rentalType: string; bedrooms: string },
+  priceUnit: string,
+): Promise<boolean> {
+  if (!ctx.profileId) return false;
+  const currencyPref = resolveUserCurrency(ctx.from);
+
+  await setState(ctx.supabase, ctx.profileId, {
+    key: "property_add_price",
+    data: { ...state, priceUnit, currency: currencyPref.code },
   });
 
   await sendButtonsMessage(
@@ -378,7 +526,7 @@ export async function handleAddPropertyBedrooms(
 
 export async function handleAddPropertyPrice(
   ctx: RouterContext,
-  state: { rentalType: string; bedrooms: string; currency?: string },
+  state: { rentalType: string; bedrooms: string; currency?: string; priceUnit?: string },
   price: string,
 ): Promise<boolean> {
   if (!ctx.profileId) return false;
@@ -389,6 +537,7 @@ export async function handleAddPropertyPrice(
     bedrooms: state.bedrooms,
     price,
     currency: currencyCode,
+    priceUnit: state.priceUnit,
   };
 
   await setState(ctx.supabase, ctx.profileId, {
@@ -400,7 +549,6 @@ export async function handleAddPropertyPrice(
     ctx,
     t(ctx.locale, "property.add.prompt.location"),
     buildButtons(
-      { id: "property_add_share_location", title: t(ctx.locale, "property.buttons.share_location") },
       { id: IDS.LOCATION_SAVED_LIST, title: t(ctx.locale, "location.saved.button") },
       { id: IDS.BACK_HOME, title: t(ctx.locale, "common.menu_back") },
     ),

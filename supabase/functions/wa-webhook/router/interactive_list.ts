@@ -216,6 +216,12 @@ export async function handleList(
     const stateData = state.data as { rentalType: string };
     return await handleFindPropertyBedrooms(ctx, stateData, id);
   }
+  if (state.key === "property_find_price_unit" && (id === "per_day" || id === "per_night" || id === "per_month")) {
+    const stateData = state.data as { rentalType: string; bedrooms: string; duration?: string };
+    const { handleFindPropertyPriceUnit } = await import("../domains/property/rentals.ts");
+    return await handleFindPropertyPriceUnit(ctx, stateData, id);
+  }
+  if (state.key === "property_add_type" && (id === "short_term" || id === "long_term")) {
   if (
     state.key === "property_add_type" &&
     (id === "short_term" || id === "long_term")
@@ -226,6 +232,12 @@ export async function handleList(
     const stateData = state.data as { rentalType: string };
     return await handleAddPropertyBedrooms(ctx, stateData, id);
   }
+  if (state.key === "property_add_price_unit" && (id === "per_day" || id === "per_night" || id === "per_month")) {
+    const stateData = state.data as { rentalType: string; bedrooms: string };
+    const { handleAddPropertyPriceUnit } = await import("../domains/property/rentals.ts");
+    return await handleAddPropertyPriceUnit(ctx, stateData, id);
+  }
+  
 
   if (isVehicleOption(id) && state.key === "mobility_nearby_select") {
     return await handleVehicleSelection(ctx, (state.data ?? {}) as any, id);
@@ -242,6 +254,13 @@ export async function handleList(
   }
   if (isVehicleOption(id) && state.key === "schedule_vehicle") {
     return await handleScheduleVehicle(ctx, (state.data ?? {}) as any, id);
+  }
+  if (state.key === "schedule_time_select") {
+    const timeOptions = ["now", "30min", "1hour", "2hours", "5hours", "tomorrow_morning", "tomorrow_evening", "every_morning", "every_evening"];
+    if (timeOptions.includes(id)) {
+      const { handleScheduleTimeSelection } = await import("../domains/mobility/schedule.ts");
+      return await handleScheduleTimeSelection(ctx, (state.data ?? {}) as any, id);
+    }
   }
   if (isScheduleResult(id) && state.key === "schedule_results") {
     return await handleScheduleResultSelection(
