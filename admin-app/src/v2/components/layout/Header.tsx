@@ -31,6 +31,17 @@ export function Header() {
           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 text-sm font-semibold text-blue-700">
             {operatorInitials || "EA"}
           </div>
+    <header className="dashboard-shell__header" role="banner">
+      <div className="dashboard-shell__header-inner">
+        <div>
+          <p className="dashboard-shell__meta-label">Environment</p>
+          <p className="dashboard-shell__meta-value">
+            {process.env.NEXT_PUBLIC_ENVIRONMENT_LABEL ?? "Staging"}
+          </p>
+        </div>
+        <div className="dashboard-shell__header-meta">
+          <div className="dashboard-shell__timestamp">{new Date().toLocaleString()}</div>
+          <div className="dashboard-shell__avatar">{operatorInitials || "EA"}</div>
         </div>
       </div>
     </header>

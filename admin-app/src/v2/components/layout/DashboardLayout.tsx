@@ -9,8 +9,10 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
         Skip to main content
       </a>
       <div className="flex h-full">
+    <div className="dashboard-shell">
+      <div className="dashboard-shell__grid">
         <Sidebar />
-        <div className="flex flex-1 flex-col">
+        <div className="dashboard-shell__workspace">
           <Header />
           <main
             id="v2-main-content"
@@ -19,6 +21,8 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
             role="main"
           >
             <div className="mx-auto max-w-7xl space-y-6">{children}</div>
+          <main className="dashboard-shell__content" id="v2-main-content">
+            {children}
           </main>
         </div>
       </div>

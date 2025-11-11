@@ -1138,7 +1138,6 @@ async function promptScheduleVehicleSelection(
       rows: VEHICLE_OPTIONS,
       buttonText: t(ctx.locale, "common.buttons.select"),
     },
-    { emoji: "🚗" },
     { emoji: role === "driver" ? "🚗" : "🧍" },
   );
 }

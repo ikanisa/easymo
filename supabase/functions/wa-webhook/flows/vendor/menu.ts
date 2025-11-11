@@ -6,6 +6,7 @@ import { logEvent, logStructuredEvent } from "../../observe/log.ts";
 import { sendText } from "../../wa/client.ts";
 import { t } from "../../i18n/translator.ts";
 import { findActiveBarNumber } from "../../utils/bar_numbers.ts";
+import { getState } from "../../state/store.ts";
 
 const DEFAULT_FILENAME = "upload.bin";
 
@@ -19,6 +20,15 @@ export async function handleVendorMenuMedia(
   const mediaId = (msg[msg.type] as { id?: string } | undefined)?.id;
   if (!mediaId) return false;
 
+  // Check if user is in restaurant_upload state
+  if (ctx.profileId) {
+    const state = await getState(ctx.supabase, ctx.profileId);
+    if (state.key === "restaurant_upload" && state.data?.barId) {
+      return await handleRestaurantMenuUpload(ctx, msg, mediaId, state.data.barId as string);
+    }
+  }
+
+  // Fallback to legacy bar_numbers lookup
   let record;
   try {
     record = await findActiveBarNumber(ctx.supabase, ctx.from);
@@ -98,6 +108,75 @@ export async function handleVendorMenuMedia(
     await sendText(
       ctx.from,
       t(ctx.locale, "vendor.menu.process_fail"),
+    );
+  }
+
+  return true;
+}
+
+async function handleRestaurantMenuUpload(
+  ctx: RouterContext,
+  msg: Record<string, unknown>,
+  mediaId: string,
+  barId: string,
+): Promise<boolean> {
+  try {
+    const media = await fetchWhatsAppMedia(mediaId);
+    const filename = pickFilename(msg, media.filename, mediaId);
+    const path = `${barId}/${crypto.randomUUID()}-${filename}`;
+    
+    // Upload to storage
+    const { error: uploadError } = await ctx.supabase.storage.from(
+      MENU_MEDIA_BUCKET,
+    )
+      .upload(path, media.bytes, {
+        upsert: false,
+        contentType: media.mime ?? "application/octet-stream",
+      });
+    if (uploadError) throw uploadError;
+
+    // Get the public URL
+    const { data: urlData } = ctx.supabase.storage
+      .from(MENU_MEDIA_BUCKET)
+      .getPublicUrl(path);
+
+    // Create menu upload request
+    const fileType = msg.type === "document" ? "pdf" : "image";
+    const { error: insertError } = await ctx.supabase
+      .from("menu_upload_requests")
+      .insert({
+        bar_id: barId,
+        uploaded_by: ctx.from,
+        file_url: urlData.publicUrl,
+        file_type: fileType,
+        status: "pending",
+      });
+    if (insertError) throw insertError;
+
+    await logStructuredEvent("RESTAURANT_MENU_UPLOADED", {
+      bar_id: barId,
+      wa_id: `***${ctx.from.slice(-4)}`,
+      media_id: mediaId,
+      storage_path: path,
+      file_type: fileType,
+    });
+
+    await sendText(
+      ctx.from,
+      t(ctx.locale, "restaurant.menu.upload_processing"),
+    );
+
+    // Trigger OCR processing
+    await triggerOcrProcessing(ctx.supabase);
+  } catch (err) {
+    console.error("restaurant.menu.upload_fail", err, { mediaId, from: ctx.from });
+    await logStructuredEvent("RESTAURANT_MENU_UPLOAD_FAIL", {
+      wa_id: `***${ctx.from.slice(-4)}`,
+      reason: err instanceof Error ? err.message : String(err ?? "unknown"),
+    });
+    await sendText(
+      ctx.from,
+      t(ctx.locale, "restaurant.menu.upload_error"),
     );
   }
 
