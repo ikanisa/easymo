@@ -1,5 +1,7 @@
 "use client";
 
+import { useMemo } from "react";
+
 import { DataTable } from "@/components/data-table/DataTable";
 import { LoadMoreButton } from "@/components/ui/LoadMoreButton";
 import type { User } from "@/lib/schemas";
@@ -59,6 +61,30 @@ const columns: ColumnDef<User>[] = [
 ];
 
 export function UsersTable({ data, hasMore, onLoadMore, loadingMore }: UsersTableProps) {
+  const localeOptions = useMemo(() => {
+    const unique = new Set<string>();
+    for (const user of data) {
+      if (user.locale) {
+        unique.add(user.locale);
+      }
+    }
+    return Array.from(unique)
+      .sort((a, b) => a.localeCompare(b))
+      .map((locale) => ({ label: locale, value: locale }));
+  }, [data]);
+
+  const statusOptions = useMemo(() => {
+    const unique = new Set<string>();
+    for (const user of data) {
+      if (user.status) {
+        unique.add(user.status);
+      }
+    }
+    return Array.from(unique)
+      .sort((a, b) => a.localeCompare(b))
+      .map((status) => ({ label: status, value: status }));
+  }, [data]);
+
   return (
     <div className="space-y-3">
       <DataTable
@@ -70,6 +96,23 @@ export function UsersTable({ data, hasMore, onLoadMore, loadingMore }: UsersTabl
           )}
         searchPlaceholder="Search by name or number"
         downloadFileName="users.csv"
+        filters={[
+          {
+            id: "locale",
+            label: "Locale",
+            columnId: "locale",
+            type: "select",
+            options: localeOptions,
+            placeholder: "All locales",
+          },
+          {
+            id: "status",
+            label: "Status",
+            columnId: "status",
+            type: "multi-select",
+            options: statusOptions,
+          },
+        ]}
       />
       <LoadMoreButton
         hasMore={hasMore}

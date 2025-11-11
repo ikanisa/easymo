@@ -1,8 +1,10 @@
 "use client";
 
-import { CSSProperties, useId, useMemo, useRef, useState } from "react";
+import { CSSProperties, useCallback, useId, useMemo, useRef, useState } from "react";
 import {
   ColumnDef,
+  type ColumnFiltersState,
+  type FilterFn,
   flexRender,
   getCoreRowModel,
   getFilteredRowModel,
@@ -18,6 +20,28 @@ import { Button } from '@/components/ui/Button';
 
 const DEFAULT_ROW_HEIGHT = 56;
 
+type DataTableFilterOption = {
+  label: string;
+  value: string;
+};
+
+export type DataTableFilter<TData> =
+  | {
+      id: string;
+      label: string;
+      columnId: string;
+      type: "select";
+      options: DataTableFilterOption[];
+      placeholder?: string;
+    }
+  | {
+      id: string;
+      label: string;
+      columnId: string;
+      type: "multi-select";
+      options: DataTableFilterOption[];
+    };
+
 export type DataTableColumn<TData> = ColumnDef<TData, unknown>;
 
 export interface DataTableProps<TData> {
@@ -32,7 +56,27 @@ export interface DataTableProps<TData> {
   emptyTitle?: string;
   emptyDescription?: string;
   downloadFileName?: string;
+  filters?: DataTableFilter<TData>[];
 }
+
+const selectFilterFn: FilterFn<unknown> = (row, columnId, filterValue) => {
+  if (!filterValue) return true;
+  const raw = row.getValue(columnId);
+  if (raw == null) return false;
+  return String(raw).toLowerCase() === String(filterValue).toLowerCase();
+};
+
+const multiSelectFilterFn: FilterFn<unknown> = (row, columnId, filterValue) => {
+  if (!Array.isArray(filterValue) || filterValue.length === 0) {
+    return true;
+  }
+  const raw = row.getValue(columnId);
+  if (raw == null) return false;
+  if (Array.isArray(raw)) {
+    return raw.some((value) => filterValue.includes(String(value)));
+  }
+  return filterValue.includes(String(raw));
+};
 
 export function DataTable<TData>({
   data,
@@ -44,19 +88,42 @@ export function DataTable<TData>({
   emptyTitle = "No records",
   emptyDescription = "Try adjusting filters or search criteria.",
   downloadFileName = "export.csv",
+  filters,
 }: DataTableProps<TData>) {
   const [globalFilter, setGlobalFilter] = useState("");
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const columnDefs = useMemo(() => columns, [columns]);
+  const columnFilterMap = useMemo(() => {
+    return new Map((filters ?? []).map((filter) => [filter.columnId, filter]));
+  }, [filters]);
+  const resolvedColumns = useMemo(() => {
+    return columnDefs.map((column) => {
+      const identifier = (column.id ?? column.accessorKey) as string | undefined;
+      if (!identifier) return column;
+      const filter = columnFilterMap.get(identifier);
+      if (!filter) return column;
+      if (filter.type === "multi-select") {
+        return { ...column, filterFn: column.filterFn ?? multiSelectFilterFn };
+      }
+      if (filter.type === "select") {
+        return { ...column, filterFn: column.filterFn ?? selectFilterFn };
+      }
+      return column;
+    });
+  }, [columnDefs, columnFilterMap]);
   const searchInputId = useId();
   const containerRef = useRef<HTMLDivElement | null>(null);
 
   const table = useReactTable({
     data,
-    columns: columnDefs,
+    columns: resolvedColumns,
     state: {
       globalFilter,
+      columnFilters,
     },
     onGlobalFilterChange: setGlobalFilter,
+    onColumnFiltersChange: setColumnFilters,
     globalFilterFn: globalFilterFn
       ? (row, _columnId, filterValue) =>
         globalFilterFn(row.original, String(filterValue))
@@ -67,6 +134,10 @@ export function DataTable<TData>({
         return String(value).toLowerCase().includes(globalFilter.toLowerCase());
       }
       : undefined,
+    filterFns: {
+      select: selectFilterFn,
+      multiSelect: multiSelectFilterFn,
+    },
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
@@ -96,6 +167,51 @@ export function DataTable<TData>({
     [columnTemplate],
   );
 
+  const totalRows = table.getPreFilteredRowModel().rows.length;
+  const filteredRows = table.getFilteredRowModel().rows.length;
+
+  const activeFilterCount = useMemo(() => {
+    let count = globalFilter.trim() ? 1 : 0;
+    for (const filter of columnFilters) {
+      if (Array.isArray(filter.value)) {
+        if (filter.value.length > 0) count += 1;
+      } else if (filter.value) {
+        count += 1;
+      }
+    }
+    return count;
+  }, [columnFilters, globalFilter]);
+
+  const handleReset = useCallback(() => {
+    setGlobalFilter("");
+    table.resetColumnFilters();
+    setFiltersOpen(false);
+  }, [table]);
+
+  const handleSelectFilterChange = useCallback(
+    (columnId: string, value: string) => {
+      const column = table.getColumn(columnId);
+      column?.setFilterValue(value || undefined);
+    },
+    [table],
+  );
+
+  const handleToggleMultiFilter = useCallback(
+    (columnId: string, value: string) => {
+      const column = table.getColumn(columnId);
+      if (!column) return;
+      const current = column.getFilterValue();
+      const next = new Set<string>(Array.isArray(current) ? current : []);
+      if (next.has(value)) {
+        next.delete(value);
+      } else {
+        next.add(value);
+      }
+      column.setFilterValue(Array.from(next));
+    },
+    [table],
+  );
+
   const handleDownload = () => {
     const csv = Papa.unparse(
       table.getCoreRowModel().rows.map((row) =>
@@ -118,33 +234,118 @@ export function DataTable<TData>({
   return (
     <div className={styles.wrapper} style={wrapperStyle}>
       <div className={styles.toolbar}>
-        {globalFilterKey || globalFilterFn
-          ? (
-            <label className={styles.searchLabel} htmlFor={searchInputId}>
-              <span className="visually-hidden">Search table</span>
-            </label>
-          )
-          : <div />}
-        {globalFilterKey || globalFilterFn
-          ? (
-            <input
-              id={searchInputId}
-              className={styles.searchInput}
-              value={globalFilter}
-              placeholder={searchPlaceholder}
-              onChange={(event) => setGlobalFilter(event.target.value)}
-            />
-          )
-          : null}
-        <Button
-          type="button"
-          size="sm"
-          variant="outline"
-          onClick={handleDownload}
-        >
-          Export CSV
-        </Button>
+        <div className={styles.toolbarLeft}>
+          {globalFilterKey || globalFilterFn ? (
+            <>
+              <label className={styles.searchLabel} htmlFor={searchInputId}>
+                <span className="visually-hidden">Search table</span>
+              </label>
+              <input
+                id={searchInputId}
+                className={styles.searchInput}
+                value={globalFilter}
+                placeholder={searchPlaceholder}
+                onChange={(event) => setGlobalFilter(event.target.value)}
+              />
+            </>
+          ) : null}
+          {filters?.length ? (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className={styles.filterToggle}
+              onClick={() => setFiltersOpen((value) => !value)}
+            >
+              Filters
+              {activeFilterCount > 0 ? (
+                <span className={styles.filterBadge} aria-label={`${activeFilterCount} active filters`}>
+                  {activeFilterCount}
+                </span>
+              ) : null}
+            </Button>
+          ) : null}
+        </div>
+        <div className={styles.toolbarRight}>
+          <span className={styles.resultSummary}>
+            Showing {filteredRows} of {totalRows}
+          </span>
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            onClick={handleReset}
+            disabled={activeFilterCount === 0}
+          >
+            Reset
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            onClick={handleDownload}
+          >
+            Export CSV
+          </Button>
+        </div>
       </div>
+
+      {filtersOpen && filters?.length ? (
+        <div className={styles.filterPanel} role="region" aria-label="Table filters">
+          {filters.map((filter) => {
+            const active = columnFilters.find((item) => item.id === filter.columnId)?.value;
+            if (filter.type === "select") {
+              const value = typeof active === "string" ? active : "";
+              return (
+                <div key={filter.id} className={styles.filterGroup}>
+                  <span className={styles.filterLabel}>{filter.label}</span>
+                  <select
+                    className={styles.filterSelect}
+                    value={value}
+                    onChange={(event) =>
+                      handleSelectFilterChange(filter.columnId, event.target.value)
+                    }
+                    aria-label={filter.label}
+                  >
+                    <option value="">
+                      {filter.placeholder ?? `All ${filter.label.toLowerCase()}`}
+                    </option>
+                    {filter.options.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              );
+            }
+
+            const selected = Array.isArray(active) ? new Set(active) : new Set<string>();
+            return (
+              <fieldset key={filter.id} className={styles.filterGroup}>
+                <legend className={styles.filterLabel}>{filter.label}</legend>
+                <div className={styles.filterOptions}>
+                  {filter.options.map((option) => {
+                    const checked = selected.has(option.value);
+                    return (
+                      <label key={option.value} className={styles.filterOption}>
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() =>
+                            handleToggleMultiFilter(filter.columnId, option.value)
+                          }
+                        />
+                        <span>{option.label}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </fieldset>
+            );
+          })}
+        </div>
+      ) : null}
 
       <div className={styles.tableContainer} role="table" aria-busy={isLoading}>
         <div role="rowgroup" className={styles.headerRow}>

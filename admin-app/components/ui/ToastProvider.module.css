@@ -11,30 +11,33 @@
 .toast {
   min-width: 240px;
   max-width: 360px;
-  border-radius: 12px;
+  border-radius: 14px;
   padding: 12px 16px;
   display: flex;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: space-between;
   gap: 12px;
   color: #0f172a;
-  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.18);
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.18);
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(148, 163, 184, 0.35);
 }
 
 .message {
   flex: 1;
+  font-size: 0.9rem;
 }
 
 .toast_info {
-  background: rgba(14, 165, 233, 0.15);
+  border-left: 4px solid rgba(56, 189, 248, 0.9);
 }
 
 .toast_success {
-  background: rgba(34, 197, 94, 0.18);
+  border-left: 4px solid rgba(34, 197, 94, 0.9);
 }
 
 .toast_error {
-  background: rgba(239, 68, 68, 0.2);
+  border-left: 4px solid rgba(239, 68, 68, 0.95);
 }
 
 .dismissButton {
@@ -44,4 +47,24 @@
 
 .actionButton {
   font-weight: 600;
+}
+
+.iconWrapper {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(15, 23, 42, 0.04);
+  border-radius: 999px;
+  width: 32px;
+  height: 32px;
+}
+
+.icon {
+  width: 18px;
+  height: 18px;
+  color: rgba(15, 23, 42, 0.65);
+}
+
+.iconError {
+  color: rgba(239, 68, 68, 0.85);
 }
