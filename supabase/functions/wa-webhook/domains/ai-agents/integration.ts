@@ -282,10 +282,20 @@ async function invokePropertyAgent(
 /**
  * Invoke Schedule Trip Agent - DATABASE SEARCH ONLY
  */
+/**
+ * Invoke Schedule Trip Agent - WITH ENHANCED 3-TIER FALLBACK
+ * 
+ * Fallback strategy:
+ * 1. Try AI agent scheduling (primary)
+ * 2. Fall back to direct database insert (manual scheduling)
+ * 3. Return user-friendly error with alternatives
+ */
 async function invokeScheduleTripAgent(
   ctx: RouterContext,
   request: AgentRequest,
 ): Promise<AgentResponse> {
+  const supabaseClient = ctx.locals.supabase;
+  
   try {
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
     const SUPABASE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -294,6 +304,7 @@ async function invokeScheduleTripAgent(
       throw new Error("Missing Supabase credentials");
     }
 
+    // TIER 1: Try AI agent scheduling
     const response = await fetch(`${SUPABASE_URL}/functions/v1/agent-schedule-trip`, {
       method: "POST",
       headers: {
@@ -317,27 +328,85 @@ async function invokeScheduleTripAgent(
       const errorText = await response.text();
       console.error("Schedule trip agent HTTP error:", response.status, errorText);
       
-      return {
-        success: false,
-        sessionId: "",
-        message: "🛵 Sorry, we couldn't schedule your trip at this moment. This might be because:\n\n" +
-                 "• The scheduling service is temporarily unavailable\n" +
-                 "• There was an issue processing your request\n\n" +
-                 "Please try using the regular schedule trip option.",
-      };
+      // TIER 2: Fallback to direct database insert
+      console.log("FALLBACK: Attempting direct schedule trip creation");
+      
+      try {
+        const scheduledDate = new Date(request.requestData.scheduledTime);
+        
+        const { data: trip, error: dbError } = await supabaseClient
+          .from("scheduled_trips")
+          .insert({
+            user_id: request.userId,
+            pickup_location: `POINT(${request.requestData.pickup.longitude} ${request.requestData.pickup.latitude})`,
+            dropoff_location: `POINT(${request.requestData.dropoff.longitude} ${request.requestData.dropoff.latitude})`,
+            pickup_address: request.requestData.pickup.address || "Unknown",
+            dropoff_address: request.requestData.dropoff.address || "Unknown",
+            scheduled_time: scheduledDate.toISOString(),
+            vehicle_preference: request.requestData.vehicleType || "Moto",
+            recurrence: request.requestData.recurrence || "once",
+            max_price: request.requestData.maxPrice,
+            notification_minutes: 30,
+            flexibility_minutes: request.requestData.flexibilityMinutes || 15,
+            status: "scheduled",
+          })
+          .select()
+          .single();
+
+        if (dbError) {
+          console.error("Fallback database insert failed:", dbError);
+          throw dbError;
+        }
+
+        console.log("FALLBACK SUCCESS: Trip scheduled via direct DB insert");
+        
+        return {
+          success: true,
+          sessionId: trip.id,
+          message: `✅ Trip scheduled successfully!\n\n` +
+                   `🕐 **Time**: ${scheduledDate.toLocaleString()}\n` +
+                   `🚗 **Vehicle**: ${request.requestData.vehicleType || "Moto"}\n` +
+                   `📍 **From**: ${request.requestData.pickup.address || "Your location"}\n` +
+                   `📍 **To**: ${request.requestData.dropoff.address || "Destination"}\n\n` +
+                   `You'll receive a notification 30 minutes before. Check "My Trips" to manage.`,
+          metadata: {
+            tripId: trip.id,
+            fallbackUsed: true,
+            scheduledTime: scheduledDate.toISOString(),
+          },
+        };
+      } catch (fallbackError) {
+        console.error("All fallbacks failed:", fallbackError);
+        
+        // TIER 3: User-friendly error with alternatives
+        return {
+          success: false,
+          sessionId: "",
+          message: "🛵 Sorry, we couldn't schedule your trip at this moment. This might be because:\n\n" +
+                   "• The scheduling service is temporarily unavailable\n" +
+                   "• There was an issue processing your request\n\n" +
+                   "💡 **What you can do**:\n" +
+                   "• Try the manual trip scheduling option\n" +
+                   "• Book a regular trip instead\n" +
+                   "• Try again in a few minutes",
+        };
+      }
     }
 
     return await response.json();
   } catch (error) {
     console.error("Schedule trip agent error:", error);
     
+    // TIER 3: Network/system error fallback
     return {
       success: false,
       sessionId: "",
       message: "🛵 Unable to schedule trip right now. Please try:\n\n" +
                "• Checking your internet connection\n" +
-               "• Using the traditional trip scheduling\n" +
-               "• Trying again in a few minutes",
+               "• Using the traditional trip scheduling from the menu\n" +
+               "• Booking a regular trip instead\n" +
+               "• Trying again in a few minutes\n\n" +
+               "If the issue persists, contact support.",
     };
   }
 }
