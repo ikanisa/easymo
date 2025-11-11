@@ -547,7 +547,7 @@ export function MobilityNegotiationWorkbench({
             Manual message (M)
           </Button>
           <Button size="sm" onClick={handleApprove} disabled={approveMutation.isLoading || !selectedCandidateId}>
-            {approveMutation.isLoading ? "Approving…" : "Approve & book (A)"}
+            {approveMutation.isLoading ? "Approving…" : "Approve and book (A)"}
           </Button>
         </div>
       </div>

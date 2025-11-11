@@ -28,7 +28,7 @@ export function ToolsIntegrationsPanel() {
 
   return (
     <SectionCard
-      title="Tools & integrations"
+      title="Tools and integrations"
       description="Track integration health, sync windows, and permissions for partner systems."
     >
       <div className="overflow-hidden rounded-2xl border border-[color:var(--color-border)]">
