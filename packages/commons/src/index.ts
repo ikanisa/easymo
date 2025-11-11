@@ -4,3 +4,6 @@ export * from "./feature-flags";
 export * from "./types";
 export * from "./service-auth";
 export * from "./routes";
+export * from "./circuit-breaker";
+export * from "./rate-limit";
+export * from "./webhook-verification";
