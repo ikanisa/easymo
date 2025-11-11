@@ -9,16 +9,16 @@ import { OfflineBanner } from "@/components/system/OfflineBanner";
 import { ServiceWorkerToast } from "@/components/system/ServiceWorkerToast";
 import { ServiceWorkerToasts } from "@/components/system/ServiceWorkerToasts";
 import { AssistantPanel } from "@/components/assistant/AssistantPanel";
-import { SessionProvider } from "@/components/providers/SessionProvider";
+import {
+  SessionProvider,
+  type AdminSession,
+} from "@/components/providers/SessionProvider";
 
 interface PanelShellProps {
   children: ReactNode;
   environmentLabel: string;
   assistantEnabled: boolean;
-  session: {
-    actorId: string;
-    label: string | null;
-  };
+  session: AdminSession;
 }
 
 function deriveInitials(label: string | null, actorId: string): string {
@@ -68,7 +68,7 @@ export function PanelShell({
   };
 
   return (
-    <SessionProvider session={session}>
+    <SessionProvider initialSession={session}>
       <ToastProvider>
         <ServiceWorkerToast />
         <ServiceWorkerToasts />

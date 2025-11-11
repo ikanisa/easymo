@@ -198,3 +198,81 @@ export function TopBar({
           type="button"
           onClick={panel.openCommandPalette}
           className="flex w-full items-center gap-3 rounded-full border border-[color:var(--color-border)]/60 bg-white/90 px-5 py-2 text-sm text-[color:var(--color-muted)] shadow-sm transition hover:border-[color:var(--color-accent)]/70 hover:text-[color:var(--color-foreground)] focus:border-[color:var(--color-accent)] focus:outline-none focus:ring-2 focus:ring-[color:var(--color-accent)]/40"
+        >
+          <Search className="h-4 w-4" aria-hidden />
+          <span className="flex-1 text-left">{searchPlaceholder}</span>
+          <kbd className="rounded border border-[color:var(--color-border)]/60 bg-white/70 px-2 py-0.5 text-[0.65rem] font-medium text-[color:var(--color-muted)]">
+            ⌘K
+          </kbd>
+        </button>
+        {showShortcutHint && (
+          <span className="topbar__shortcut" aria-hidden="true">
+            {omniShortcutHint}
+          </span>
+        )}
+      </div>
+      <div
+        className={classNames(
+          "topbar__actions",
+          "flex items-center gap-3 justify-end",
+          { "topbar__actions--no-assistant": !assistantEnabled },
+        )}
+      >
+        {assistantEnabled && (
+          <Button
+            type="button"
+            variant="outline"
+            className="topbar__assistant inline-flex items-center gap-2 px-4"
+            aria-label="Open assistant"
+            onClick={onOpenAssistant}
+            offlineBehavior="allow"
+          >
+            Assistant
+          </Button>
+        )}
+        <Button
+          type="button"
+          variant="outline"
+          className="topbar__alerts inline-flex items-center gap-2 px-4"
+          aria-label={badgeMetrics.badgeLabel}
+        >
+          Alerts
+          <span
+            className="topbar__badge inline-flex min-w-[1.75rem] items-center justify-center rounded-full bg-[color:var(--color-accent)]/90 px-2 text-xs font-semibold text-[color:var(--color-accent-foreground)]"
+            role="status"
+            aria-live="polite"
+            title={badgeMetrics.badgeLabel}
+          >
+            {badgeMetrics.badgeValue}
+          </span>
+        </Button>
+        <HelpPopover />
+        <Button
+          type="button"
+          variant="outline"
+          className="topbar__profile inline-flex items-center gap-3 px-4"
+          aria-label="Sign out"
+          onClick={onSignOut}
+          disabled={signingOut}
+          offlineBehavior="allow"
+        >
+          <span className="topbar__avatar inline-flex h-9 w-9 items-center justify-center rounded-full bg-[color:var(--color-accent)]/85 text-sm font-semibold text-[color:var(--color-accent-foreground)]">
+            {actorInitials}
+          </span>
+          <span className="topbar__profile-text flex flex-col items-start leading-tight">
+            <span className="text-xs font-medium uppercase tracking-wide text-[color:var(--color-muted)]">
+              Signed in as
+            </span>
+            <span className="text-sm font-semibold text-[color:var(--color-foreground)]">
+              {actorLabel ?? "Administrator"}
+            </span>
+          </span>
+          <span className="ml-2 text-sm font-semibold text-[color:var(--color-accent)]">
+            {signingOut ? "Signing out…" : "Sign out"}
+          </span>
+        </Button>
+      </div>
+    </header>
+  );
+}
+

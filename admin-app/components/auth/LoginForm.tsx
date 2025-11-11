@@ -16,6 +16,9 @@ export function LoginForm() {
     event.preventDefault();
     setError(null);
     setSubmitting(true);
+    
+    console.log('[LOGIN] Starting login attempt', { email, timestamp: new Date().toISOString() });
+    
     try {
       const response = await fetch("/api/auth/login", {
         method: "POST",
@@ -26,14 +29,16 @@ export function LoginForm() {
 
       if (!response.ok) {
         const payload = await response.json().catch(() => ({}));
+        console.error('[LOGIN] Login failed', { status: response.status, payload });
         setError(typeof payload?.message === "string" ? payload.message : "Unable to sign in.");
         return;
       }
 
+      console.log('[LOGIN] Login successful, redirecting to dashboard');
       setEmail("");
       setPassword("");
-      router.replace("/dashboard");
-      router.refresh();
+      // Use full page reload to prevent redirect loops and ensure clean state
+      window.location.href = "/dashboard";
     } catch (cause) {
       console.error("auth.login.failed", cause);
       setError("Unexpected error during sign-in.");

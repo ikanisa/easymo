@@ -1,10 +1,7 @@
-import { ReactNode } from "react";
-import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 import type { Metadata } from "next";
-// import { redirect } from "next/navigation";
+import { redirect } from "next/navigation";
 import { PanelShell } from "@/components/layout/PanelShell";
-import { SessionProvider } from "@/components/providers/SessionProvider";
 import { readSessionFromCookies } from "@/lib/server/session";
 
 export const metadata: Metadata = {
@@ -31,10 +28,12 @@ export default async function PanelLayout({ children }: PanelLayoutProps) {
     .toLowerCase() === "true";
 
   return (
-    <SessionProvider initialSession={session}>
-      <PanelShell environmentLabel={environmentLabel} assistantEnabled={assistantEnabled}>
-        {children}
-      </PanelShell>
-    </SessionProvider>
+    <PanelShell
+      environmentLabel={environmentLabel}
+      assistantEnabled={assistantEnabled}
+      session={session}
+    >
+      {children}
+    </PanelShell>
   );
 }

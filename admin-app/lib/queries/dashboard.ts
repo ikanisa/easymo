@@ -27,6 +27,10 @@ export function useDashboardSnapshotQuery(
   return useQuery({
     queryKey: DASHBOARD_SNAPSHOT_KEY,
     queryFn: fetchDashboardSnapshot,
+    staleTime: 30_000, // 30 seconds
+    gcTime: 5 * 60 * 1000, // 5 minutes
+    retry: 2,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 5000),
     ...options,
   });
 }
@@ -37,6 +41,10 @@ export function useDashboardWebhookErrorsQuery(
   return useQuery({
     queryKey: DASHBOARD_WEBHOOK_ERRORS_KEY,
     queryFn: fetchDashboardWebhookErrors,
+    staleTime: 30_000, // 30 seconds
+    gcTime: 5 * 60 * 1000, // 5 minutes
+    retry: 2,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 5000),
     ...options,
   });
 }
