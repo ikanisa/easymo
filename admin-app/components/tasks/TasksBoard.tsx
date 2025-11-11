@@ -46,7 +46,7 @@ export function TasksBoard() {
 
   return (
     <SectionCard
-      title="Tasks & workflows"
+      title="Tasks and workflows"
       description="Coordinate intake, pricing, payments, and issuance workstreams in one shared board."
     >
       <div className="grid gap-4 lg:grid-cols-4">

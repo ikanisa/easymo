@@ -25,7 +25,7 @@ export function AdminGovernancePanel() {
 
   return (
     <SectionCard
-      title="Settings & admin"
+      title="Settings and admin"
       description="Govern access, review RLS policies, and monitor compliance controls."
     >
       <div className="grid gap-4 md:grid-cols-3">

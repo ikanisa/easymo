@@ -62,7 +62,7 @@ export function PaymentsIssuanceBoard() {
 
   return (
     <SectionCard
-      title="Payments & issuance"
+      title="Payments and issuance"
       description="Track settlement, issuance packages, and finance handoffs. Data syncs back to Supabase `payments` and `policies` tables."
     >
       <div className="overflow-hidden rounded-2xl border border-[color:var(--color-border)]">

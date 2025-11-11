@@ -20,7 +20,7 @@ export function InstructionsPlaybooks() {
 
   return (
     <SectionCard
-      title="Instructions & playbooks"
+      title="Instructions and playbooks"
       description="Codify best practices for every pod with actionable, searchable playbooks."
     >
       <div className="grid gap-4 md:grid-cols-2">

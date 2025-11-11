@@ -27,8 +27,8 @@ import {
 } from "@/lib/queries/insurance";
 
 const COVER_OPTIONS = [
-  { value: "COMPREHENSIVE", label: "Comprehensive (OD, Theft, Fire & TP)" },
-  { value: "OD_THEFT_FIRE", label: "Own damage + Theft + Fire" },
+  { value: "COMPREHENSIVE", label: "Comprehensive (OD, theft, fire, and TP)" },
+  { value: "OD_THEFT_FIRE", label: "Own damage, theft, and fire" },
   { value: "MD_ONLY", label: "Material damage only" },
   { value: "THEFT_ONLY", label: "Theft only" },
   { value: "FIRE_ONLY", label: "Fire only" },
@@ -157,7 +157,7 @@ export function InsuranceWorkbench() {
       setSelectedRequestId(response.data.id);
       setNewRequest({ contactId: "", vehiclePlate: "", notes: "" });
       setRequestError(null);
-      setRequestMessage("Request created.");
+      setRequestMessage("Request submitted.");
     },
   });
 
@@ -215,7 +215,7 @@ export function InsuranceWorkbench() {
     } catch (mutationError) {
       const message = mutationError instanceof Error
         ? mutationError.message
-        : "Failed to create request.";
+        : "We couldn’t submit the request. Try again.";
       setRequestError(message);
     }
   };
@@ -223,11 +223,11 @@ export function InsuranceWorkbench() {
   const handleIngestSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!selectedRequestId) {
-      setIngestError("Select a request to attach documents.");
+      setIngestError("Select a request before attaching documents.");
       return;
     }
     if (!ingestUrl.trim()) {
-      setIngestError("Provide a media URL to ingest.");
+      setIngestError("Enter a media URL to ingest.");
       return;
     }
     setIngestError(null);
@@ -246,7 +246,7 @@ export function InsuranceWorkbench() {
     } catch (ingestErr) {
       const message = ingestErr instanceof Error
         ? ingestErr.message
-        : "Failed to ingest document.";
+        : "We couldn’t ingest the document. Try again.";
       setIngestError(message);
     } finally {
       setIngesting(false);
@@ -256,7 +256,7 @@ export function InsuranceWorkbench() {
   const handleQueueOcr = async () => {
     const docs = documentsQuery.data?.data ?? [];
     if (!docs.length) {
-      setOcrMessage("No documents ready for OCR.");
+      setOcrMessage("No documents are ready for OCR yet.");
       return;
     }
     try {
@@ -265,11 +265,11 @@ export function InsuranceWorkbench() {
         method: "POST",
         body: { document_ids: docs.map((doc) => doc.id) },
       });
-      setOcrMessage("OCR run queued.");
+      setOcrMessage("We queued an OCR run.");
     } catch (queueError) {
       const message = queueError instanceof Error
         ? queueError.message
-        : "Failed to queue OCR.";
+        : "We couldn’t queue OCR. Try again.";
       setOcrMessage(message);
     }
   };
@@ -344,19 +344,19 @@ export function InsuranceWorkbench() {
             method: "POST",
             body: { quotes: payload },
           });
-          setPersistMessage("Simulation results saved to Supabase.");
+          setPersistMessage("We saved the simulation results to Supabase.");
           await persistedQuotesQuery.refetch();
         } catch (persistErr) {
           const message = persistErr instanceof Error
             ? persistErr.message
-            : "Failed to persist quotes.";
+            : "We couldn’t persist the quotes. Try again.";
           setPersistError(message);
         }
       }
     } catch (simulationError) {
       const message = simulationError instanceof Error
         ? simulationError.message
-        : "Failed to run insurance pricing.";
+        : "We couldn’t run the insurance pricing simulation.";
       setError(message);
     } finally {
       setLoading(false);
@@ -488,7 +488,7 @@ export function InsuranceWorkbench() {
                     <p className="text-sm text-red-600">
                       {requestsQuery.error instanceof Error
                         ? requestsQuery.error.message
-                        : "Failed to load requests."}
+                        : "We couldn’t load requests. Try again."}
                     </p>
                     <Button
                       type="button"
@@ -618,7 +618,7 @@ export function InsuranceWorkbench() {
               />
             </label>
             <Button type="submit" disabled={createRequestMutation.isPending}>
-              {createRequestMutation.isPending ? "Creating…" : "Save request"}
+              {createRequestMutation.isPending ? "Submitting…" : "Submit request"}
             </Button>
           </form>
         </div>
@@ -720,7 +720,7 @@ export function InsuranceWorkbench() {
         <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <h3 className="text-base font-semibold">Persisted quotes & workflow</h3>
+              <h3 className="text-base font-semibold">Persisted quotes and workflow</h3>
               <p className="text-sm text-slate-600">
                 View Supabase rows for quotes, policies, and payments tied to this intent.
               </p>
@@ -757,7 +757,7 @@ export function InsuranceWorkbench() {
                     <p className="text-red-600">
                       {persistedQuotesQuery.error instanceof Error
                         ? persistedQuotesQuery.error.message
-                        : "Failed to load quotes."}
+                        : "We couldn’t load quotes. Try again."}
                     </p>
                   )
                   : persistedQuotes.length
@@ -802,7 +802,7 @@ export function InsuranceWorkbench() {
               <h4 className="text-sm font-semibold text-slate-700">Policies</h4>
               {policiesDisabled
                 ? (
-                  <p className="text-slate-500">Policies table unavailable in this environment.</p>
+                  <p className="text-slate-500">Policies table is unavailable in this environment.</p>
                 )
                 : policiesQuery.isLoading
                   ? (
@@ -813,7 +813,7 @@ export function InsuranceWorkbench() {
                       <p className="text-red-600">
                         {policiesQuery.error instanceof Error
                           ? policiesQuery.error.message
-                          : "Failed to load policies."}
+                          : "We couldn’t load policies. Try again."}
                       </p>
                     )
                     : policyItems.length
@@ -852,7 +852,7 @@ export function InsuranceWorkbench() {
               <h4 className="text-sm font-semibold text-slate-700">Payments</h4>
               {paymentsDisabled
                 ? (
-                  <p className="text-slate-500">Payments table unavailable in this environment.</p>
+                  <p className="text-slate-500">Payments table is unavailable in this environment.</p>
                 )
                 : paymentsQuery.isLoading
                   ? (
@@ -863,7 +863,7 @@ export function InsuranceWorkbench() {
                       <p className="text-red-600">
                         {paymentsQuery.error instanceof Error
                           ? paymentsQuery.error.message
-                          : "Failed to load payments."}
+                          : "We couldn’t load payments. Try again."}
                       </p>
                     )
                     : paymentItems.length

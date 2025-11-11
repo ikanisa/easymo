@@ -8,6 +8,12 @@
 - [ ] `pnpm build`
 - [ ] Other (add commands run)
 
+## Design QA
+- [ ] Copy matches the [microcopy style guide](../docs/microcopy-style-guide.md)
+- [ ] Components adhere to the [design system handbook](../docs/design-system-handbook.md) and shared tokens
+- [ ] Storybook docs or handbook entries updated for new/changed components
+- [ ] Screenshots or recordings attached for visual updates
+
 ## Deployment & Observability
 - [ ] Preview deployment link from Vercel is added to the PR description (if applicable)
 - [ ] Supabase migration drift report reviewed or noted as not applicable
