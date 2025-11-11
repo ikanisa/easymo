@@ -4,7 +4,6 @@ Deno.env.set("WA_PHONE_ID", "000000000000");
 Deno.env.set("WA_TOKEN", "token");
 Deno.env.set("WA_APP_SECRET", "secret");
 Deno.env.set("WA_VERIFY_TOKEN", "verify");
-Deno.env.set("VOUCHER_SIGNING_SECRET", "test-secret");
 
 function assert(condition: unknown, message?: string): asserts condition {
   if (!condition) {
@@ -98,7 +97,7 @@ function buildNotification(overrides: Record<string, unknown> = {}) {
     status: "queued",
     locked_at: null,
     to_wa_id: "+250700000001",
-    payload: { template: { name: "demo", language: "en", components: [] } },
+    payload: { text: { body: "demo" } },
     retry_count: 0,
     next_attempt_at: null,
     error_message: null,

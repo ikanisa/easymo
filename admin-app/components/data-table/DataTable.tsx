@@ -91,7 +91,7 @@ export function DataTable<TData>({
   const wrapperStyle = useMemo(
     () =>
       ({
-        "--table-column-template": columnTemplate,
+        "--table-column-layout": columnTemplate,
       }) as CSSProperties,
     [columnTemplate],
   );

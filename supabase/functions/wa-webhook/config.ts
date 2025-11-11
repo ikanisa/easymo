@@ -48,8 +48,7 @@ export const MENU_MEDIA_BUCKET = getEnv("MENU_MEDIA_BUCKET") ??
   "menu-source-files";
 export const INSURANCE_MEDIA_BUCKET = getEnv("INSURANCE_MEDIA_BUCKET") ??
   "insurance-docs";
-export const VOUCHER_SIGNING_SECRET = mustGetOne("VOUCHER_SIGNING_SECRET");
-export const VOUCHER_BUCKET = getEnv("VOUCHERS_BUCKET") ?? "vouchers";
+export const SCHEDULE_TIME_FLOW_ID = getEnv("WA_FLOW_SCHEDULE_TIME_ID") ?? "";
 
 const clientFactory: typeof createClient = typeof createClientFactory ===
     "function"

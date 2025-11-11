@@ -5,12 +5,15 @@ import {
   handleChangeVehicleRequest,
   handleSeeDrivers,
   handleSeePassengers,
+  startNearbySavedLocationPicker,
 } from "../domains/mobility/nearby.ts";
 import {
   handleScheduleChangeVehicle,
   handleScheduleRefresh,
   handleScheduleRole,
   handleScheduleSkipDropoff,
+  handleScheduleRecurrenceSelection,
+  startScheduleSavedLocationPicker,
   requestScheduleDropoff,
   startScheduleTrip,
 } from "../domains/mobility/schedule.ts";
@@ -42,6 +45,11 @@ import { handleInsuranceButton } from "../flows/admin/insurance.ts";
 import { sendButtonsMessage, buildButtons } from "../utils/reply.ts";
 import { isFeatureEnabled } from "../../_shared/feature-flags.ts";
 import { handleAINearbyPharmacies, handleAINearbyQuincailleries } from "../domains/ai-agents/index.ts";
+import {
+  handleQuickSaveLocation,
+  LOCATION_KIND_BY_ID,
+} from "../domains/locations/save.ts";
+import { startPropertySavedLocationPicker } from "../domains/property/rentals.ts";
 
 export async function handleButton(
   ctx: RouterContext,
@@ -111,6 +119,53 @@ export async function handleButton(
       return await handleScheduleSkipDropoff(ctx, (state.data ?? {}) as any);
     case IDS.SCHEDULE_REFRESH_RESULTS:
       return await handleScheduleRefresh(ctx, (state.data ?? {}) as any);
+    case IDS.SCHEDULE_RECUR_NONE:
+    case IDS.SCHEDULE_RECUR_WEEKDAYS:
+    case IDS.SCHEDULE_RECUR_DAILY:
+      if (state.key === "schedule_recur") {
+        return await handleScheduleRecurrenceSelection(
+          ctx,
+          (state.data ?? {}) as any,
+          id,
+        );
+      }
+      return false;
+    case IDS.LOCATION_SAVED_LIST:
+      if (state.key === "mobility_nearby_location") {
+        return await startNearbySavedLocationPicker(
+          ctx,
+          (state.data ?? {}) as any,
+        );
+      }
+      if (state.key === "schedule_location") {
+        return await startScheduleSavedLocationPicker(
+          ctx,
+          (state.data ?? {}) as any,
+          "pickup",
+        );
+      }
+      if (state.key === "schedule_dropoff") {
+        return await startScheduleSavedLocationPicker(
+          ctx,
+          (state.data ?? {}) as any,
+          "dropoff",
+        );
+      }
+      if (state.key === "property_find_location") {
+        return await startPropertySavedLocationPicker(
+          ctx,
+          "find",
+          (state.data ?? {}) as any,
+        );
+      }
+      if (state.key === "property_add_location") {
+        return await startPropertySavedLocationPicker(
+          ctx,
+          "add",
+          (state.data ?? {}) as any,
+        );
+      }
+      return false;
     case IDS.MOBILITY_CHANGE_VEHICLE:
       if (
         state.key === "mobility_nearby_location" ||
@@ -176,8 +231,10 @@ export async function handleButton(
         buildButtons({ id: IDS.BACK_HOME, title: "🏠 Cancel" })
       );
       return true;
-    
     default:
+      if (LOCATION_KIND_BY_ID[id]) {
+        return await handleQuickSaveLocation(ctx, LOCATION_KIND_BY_ID[id]);
+      }
       if (await handleMarketplaceButton(ctx, state, id)) return true;
       return false;
   }

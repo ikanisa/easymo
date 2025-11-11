@@ -173,91 +173,10 @@ for func in "${REMOVE_FUNCTIONS[@]}"; do
 done
 
 # ============================================================================
-# PHASE 5: Basket Feature Removal (Per Requirements)
+# PHASE 5: Legacy PWA Admin Pages (Duplicates)
 # ============================================================================
 echo ""
-echo "🗑️  Phase 5: Removing Baskets feature (not in proposed flows)..."
-echo ""
-
-# Admin UI
-if [ -d "admin-app/app/(panel)/baskets" ]; then
-    rm -rf "admin-app/app/(panel)/baskets"
-    log_removal "admin-app/app/(panel)/baskets/"
-fi
-
-if [ -d "admin-app/app/api/baskets" ]; then
-    rm -rf "admin-app/app/api/baskets"
-    log_removal "admin-app/app/api/baskets/"
-fi
-
-# WhatsApp flows
-if [ -f "supabase/functions/wa-webhook/flows/baskets.ts" ]; then
-    rm -f "supabase/functions/wa-webhook/flows/baskets.ts"
-    log_removal "wa-webhook/flows/baskets.ts"
-fi
-
-if [ -f "supabase/functions/wa-webhook/flows/admin/baskets.ts" ]; then
-    rm -f "supabase/functions/wa-webhook/flows/admin/baskets.ts"
-    log_removal "wa-webhook/flows/admin/baskets.ts"
-fi
-
-if [ -f "supabase/functions/wa-webhook/exchange/admin/baskets.ts" ]; then
-    rm -f "supabase/functions/wa-webhook/exchange/admin/baskets.ts"
-    log_removal "wa-webhook/exchange/admin/baskets.ts"
-fi
-
-# Baskets reminder edge function
-if [ -d "supabase/functions/baskets-reminder" ]; then
-    rm -rf "supabase/functions/baskets-reminder"
-    log_removal "supabase/functions/baskets-reminder/"
-fi
-
-# Database migrations - move to _disabled/
-mkdir -p supabase/migrations/_disabled
-
-BASKET_MIGRATIONS=(
-    "supabase/migrations/20251008184500_basket_security.sql"
-    "supabase/migrations/20251010102000_phase1_basket_join_cleanup.sql"
-    "supabase/migrations/20251113121000_basket_minor_indexes.sql"
-)
-
-for migration in "${BASKET_MIGRATIONS[@]}"; do
-    if [ -f "$migration" ]; then
-        mv "$migration" supabase/migrations/_disabled/
-        log_removal "$migration → _disabled/"
-    fi
-done
-
-# Find any other basket migrations by pattern
-find supabase/migrations -name "*basket*" -type f 2>/dev/null | while read -r mig; do
-    if [[ ! "$mig" =~ "_disabled/" ]]; then
-        mv "$mig" supabase/migrations/_disabled/
-        log_removal "$mig → _disabled/"
-    fi
-done
-
-# ============================================================================
-# PHASE 6: Campaigns Feature Removal (Per Requirements)
-# ============================================================================
-echo ""
-echo "📢 Phase 6: Removing Campaigns feature (not in proposed flows)..."
-echo ""
-
-if [ -d "admin-app/app/(panel)/campaigns" ]; then
-    rm -rf "admin-app/app/(panel)/campaigns"
-    log_removal "admin-app/app/(panel)/campaigns/"
-fi
-
-if [ -d "admin-app/app/api/campaigns" ]; then
-    rm -rf "admin-app/app/api/campaigns"
-    log_removal "admin-app/app/api/campaigns/"
-fi
-
-# ============================================================================
-# PHASE 7: Legacy PWA Admin Pages (Duplicates)
-# ============================================================================
-echo ""
-echo "🔄 Phase 7: Removing duplicate admin pages in src/..."
+echo "🔄 Phase 5: Removing duplicate admin pages in src/..."
 echo ""
 
 # Only remove duplicates that exist in admin-app
@@ -295,8 +214,6 @@ echo "   - Build artifacts (.tar.gz, .bak files)"
 echo "   - Duplicate directories (agent/, app/, apispec/, etc.)"
 echo "   - Legacy documentation (moved to docs/_archive/)"
 echo "   - Example Edge Functions"
-echo "   - Baskets feature (admin UI, flows, migrations)"
-echo "   - Campaigns feature (admin UI)"
 echo "   - Duplicate admin pages in src/"
 echo ""
 echo "✅ What was kept:"

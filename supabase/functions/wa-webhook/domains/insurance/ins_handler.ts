@@ -4,7 +4,6 @@ import { sendText } from "../../wa/client.ts";
 import { getAppConfig } from "../../utils/app_config.ts";
 import { toE164 } from "../../utils/phone.ts";
 import { logStructuredEvent } from "../../observe/log.ts";
-import { queueNotification, sendNotificationNow } from "../../notify/sender.ts";
 import { fetchInsuranceMedia, uploadInsuranceBytes } from "./ins_media.ts";
 import { runInsuranceOCR } from "./ins_ocr.ts";
 import { normalizeInsuranceExtraction } from "./ins_normalize.ts";
@@ -164,94 +163,6 @@ async function notifyAdmins(
   const clientDigits = normalizeClientDigits(ctx.from);
   const message = buildAdminAlert(extracted, clientDigits);
   const targets = admins.slice(0, 5).map(normalizeAdminNumber);
-  const templateName = Deno.env.get("INSURANCE_ADMIN_TEMPLATE");
-  const templateLang = Deno.env.get("INSURANCE_ADMIN_TEMPLATE_LANG") ?? "en";
-  const templateEnabled = Boolean(templateName);
-
-  if (templateEnabled) {
-    const queuedResults = await Promise.allSettled(
-      targets.map((to) =>
-        queueNotification({
-          to,
-          template: {
-            name: templateName!,
-            language: templateLang,
-            components: [
-              {
-                type: "body",
-                parameters: [
-                  {
-                    type: "text",
-                    text: extracted.registration_plate ?? "—",
-                  },
-                  {
-                    type: "text",
-                    text: extracted.policy_number ?? "—",
-                  },
-                  {
-                    type: "text",
-                    text: extracted.certificate_number ?? "—",
-                  },
-                  {
-                    type: "text",
-                    text: extracted.policy_expiry ?? "—",
-                  },
-                  {
-                    type: "text",
-                    text: `https://wa.me/${clientDigits}`,
-                  },
-                ],
-              },
-            ],
-          },
-        }, {
-          supabase: ctx.supabase,
-          type: ADMIN_ALERT_TYPE,
-        })
-      ),
-    );
-
-    const notificationIds = queuedResults
-      .map((result) => result.status === "fulfilled" ? result.value.id : null)
-      .filter((value): value is string => Boolean(value));
-
-    const errors = queuedResults
-      .filter((result) => result.status === "rejected")
-      .map((result) => result.reason);
-
-    if (notificationIds.length) {
-      const sendResults = await Promise.allSettled(
-        notificationIds.map((id) => sendNotificationNow(id, ctx.supabase)),
-      );
-      sendResults
-        .filter((result) => result.status === "rejected")
-        .forEach((result) => errors.push(result.reason));
-    }
-
-    if (errors.length) {
-      await logStructuredEvent("INS_ADMIN_NOTIFY_FAIL", {
-        leadId,
-        count: targets.length,
-        error: errors.map((err) =>
-          err instanceof Error ? err.message : String(err ?? "unknown")
-        ),
-      });
-      await emitAlert("INS_ADMIN_NOTIFY_FAIL", {
-        leadId,
-        count: targets.length,
-        errors: errors.map((err) =>
-          err instanceof Error ? err.message : String(err ?? "unknown")
-        ),
-      });
-    } else {
-      await logStructuredEvent("INS_ADMIN_NOTIFY_OK", {
-        leadId,
-        count: targets.length,
-      });
-    }
-    return;
-  }
-
   const errors: string[] = [];
   for (const to of targets) {
     try {

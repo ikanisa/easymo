@@ -37,8 +37,8 @@ LOG_FILE="${BACKUP_ROOT}/backup.log"
 DB_DUMP_FILE="${BACKUP_ROOT}/supabase-${TIMESTAMP}.sql"
 SNAPSHOT_MANIFEST="${BACKUP_ROOT}/snapshots.json"
 STORAGE_ROOT="${BACKUP_ROOT}/storage"
-VERIFY_TABLES=${VERIFY_TABLES:-"vouchers,voucher_events,insurance_documents"}
-STORAGE_BUCKETS=${STORAGE_BUCKETS:-"voucher-png,voucher-qr,insurance-docs"}
+VERIFY_TABLES=${VERIFY_TABLES:-"insurance_documents"}
+STORAGE_BUCKETS=${STORAGE_BUCKETS:-"insurance-docs"}
 AWS_BACKUP_PATH_PREFIX=${AWS_BACKUP_PATH_PREFIX:-"supabase/${TIMESTAMP}"}
 
 mkdir -p "${BACKUP_ROOT}" "${STORAGE_ROOT}"

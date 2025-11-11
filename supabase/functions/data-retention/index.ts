@@ -17,9 +17,6 @@ const CRON_EXPR = Deno.env.get("DATA_RETENTION_CRON") ?? "0 2 * * *";
 const CRON_ENABLED =
   (Deno.env.get("DATA_RETENTION_CRON_ENABLED") ?? "true").toLowerCase() !==
     "false";
-const VOUCHER_RETENTION_DAYS = Number(
-  Deno.env.get("VOUCHER_RETENTION_DAYS") ?? "90",
-);
 const INSURANCE_DOC_RETENTION_DAYS = Number(
   Deno.env.get("INSURANCE_DOC_RETENTION_DAYS") ?? "30",
 );
@@ -33,21 +30,6 @@ function normalizeStoragePath(path?: string | null): string | null {
     return path.slice(INSURANCE_BUCKET.length + 1);
   }
   return path;
-}
-
-async function purgeExpiredVouchers(now: Date): Promise<number> {
-  const cutoff = new Date(now.getTime() - VOUCHER_RETENTION_DAYS * DAY_MS)
-    .toISOString();
-  const { count, error } = await supabase
-    .from("vouchers")
-    .delete()
-    .eq("status", "expired")
-    .lte("expires_at", cutoff)
-    .select("id", { count: "exact" });
-  if (error) {
-    throw new Error(`voucher_purge_failed: ${error.message}`);
-  }
-  return count ?? 0;
 }
 
 async function deleteInsuranceDocuments(now: Date): Promise<number> {
@@ -113,12 +95,7 @@ async function runRetention(trigger: "http" | "cron") {
   };
 
   try {
-    const [vouchersPurged, insuranceDeleted] = await Promise.all([
-      purgeExpiredVouchers(now),
-      deleteInsuranceDocuments(now),
-    ]);
-
-    summary.vouchers_purged = vouchersPurged;
+    const insuranceDeleted = await deleteInsuranceDocuments(now);
     summary.insurance_documents_deleted = insuranceDeleted;
     summary.ok = true;
     console.info("data_retention.completed", summary);

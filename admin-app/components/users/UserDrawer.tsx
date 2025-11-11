@@ -4,14 +4,7 @@ import { useState } from "react";
 import type { User } from "@/lib/schemas";
 import styles from "./UserDrawer.module.css";
 import { Drawer } from "@/components/ui/Drawer";
-
-// Local utility to mask phone numbers
-function maskMsisdn(input?: string | null): string {
-  if (!input) return "••••••••";
-  const clean = input.replace(/\D/g, "");
-  if (clean.length < 4) return "••••••••";
-  return `•••• ${clean.slice(-4)}`;
-}
+import { maskMsisdn } from "@va/shared";
 
 interface UserDrawerProps {
   user: User | null;
@@ -59,7 +52,7 @@ export function UserDrawer({ user, onClose }: UserDrawerProps) {
             <section>
               <h3>Upcoming sections</h3>
               <p>
-                Voucher history, insurance quotes, and support notes will
+                Token history, insurance quotes, and support notes will
                 surface here in future tasks.
               </p>
             </section>

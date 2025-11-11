@@ -36,9 +36,9 @@ interface BridgeConfig {
 const TARGET_CONFIG: Record<BridgeTarget, BridgeConfig> = {
   whatsappSend: {
     method: "POST",
-    envKeys: ["VOUCHER_SEND_ENDPOINT", "NEXT_PUBLIC_WHATSAPP_SEND_ENDPOINT"],
+    envKeys: ["WHATSAPP_SEND_ENDPOINT", "NEXT_PUBLIC_WHATSAPP_SEND_ENDPOINT"],
     defaultMessage:
-      "WhatsApp send bridge unavailable. Configure VOUCHER_SEND_ENDPOINT to dispatch messages.",
+      "WhatsApp send bridge unavailable. Configure WHATSAPP_SEND_ENDPOINT to dispatch messages.",
   },
   insuranceWorkflow: {
     method: "POST",

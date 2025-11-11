@@ -118,6 +118,58 @@ Vite React app and communicates with those Edge Functions through the
 - The Supabase CLI stores credentials in `~/.config/supabase`. Run `supabase login`
   before `supabase link` to manage multiple environments.
 
+## Supabase MCP Server
+
+LLM tooling that speaks the [Model Context Protocol](https://modelcontextprotocol.io/)
+(Cursor, Windsurf, Claude desktop/code, Cline, etc.) can inspect this Supabase
+project via the official `@supabase/mcp-server-supabase` bridge.
+
+1. [Generate a Supabase personal access token](https://supabase.com/dashboard/account/tokens)
+   dedicated to MCP usage. Grant only the projects you need.
+2. Export the environment expected by the helper script:
+
+   ```bash
+   export SUPABASE_MCP_ACCESS_TOKEN=<your-pat>
+   export SUPABASE_MCP_PROJECT_REF=<project-ref> # lhbowpbcpwoiparwnwgt for dev
+   # VITE_SUPABASE_PROJECT_ID already stores the same ref for local tooling.
+   ```
+
+3. (Optional) Toggle behavior with:
+   - `SUPABASE_MCP_READ_ONLY=false` to allow write queries (defaults to read-only).
+   - `SUPABASE_MCP_EXTRA_ARGS="--schema public"` to pass additional CLI flags.
+4. Run the server whenever your MCP client asks for it:
+
+   ```bash
+   pnpm mcp:supabase
+   ```
+
+   or call the script directly with inline env variables for one-offs:
+
+   ```bash
+   SUPABASE_MCP_ACCESS_TOKEN=pat SUPABASE_MCP_PROJECT_REF=lhbowpbcpwoiparwnwgt pnpm mcp:supabase
+   ```
+
+5. Point your MCP client at the spawned process. For example, Cursor’s
+   `.cursor/mcp.json` entry would be:
+
+   ```json
+   {
+     "mcpServers": {
+       "supabase": {
+         "command": "pnpm",
+         "args": ["mcp:supabase"],
+         "env": {
+           "SUPABASE_MCP_ACCESS_TOKEN": "pat",
+           "SUPABASE_MCP_PROJECT_REF": "lhbowpbcpwoiparwnwgt"
+         }
+       }
+     }
+   }
+   ```
+
+Review Supabase’s [MCP security best practices](https://supabase.com/docs/guides/getting-started/mcp#security-risks)
+before granting write access or sharing tokens.
+
 ## Platform Changes
 
 - Removed `VERCEL_*` environment variables from `.env.example`; local hosting
@@ -186,6 +238,13 @@ Vite React app and communicates with those Edge Functions through the
    in `dashboards/phase4/*.json` and provision Kafka topics per
    `infrastructure/kafka/topics.yaml` during staging cut-overs.
 
+## Deprecated Feature Guard
+
+Legacy promo flows have been fully decommissioned. The guard script
+(`pnpm guard:deprecated`) scans runtime code for prohibited tokens and fails if
+they reappear outside the historical Supabase schema. Pre-commit hooks invoke
+the same check automatically.
+
 ## Package Manager
 
 - Use `pnpm` (>=8) for all workspace installs and scripts. `npm install` / `npm audit fix` reintroduce TypeScript peer dependency conflicts between `typescript@5.9.x` and `typescript-eslint@8.x`.
@@ -238,7 +297,7 @@ for the realtime and marketplace services.
 This Phase 2 implementation lays the groundwork for a fully integrated
 WhatsApp mobility platform.  Future enhancements could include:
 
-- Adding tables and functions for vouchers, stations,
+- Adding tables and functions for stations,
   insurance quotes and audit logging.
 - Implementing PostGIS geospatial queries for precise distance calculations.
 - Extending the simulator to enforce credit usage and subscription
@@ -246,7 +305,7 @@ WhatsApp mobility platform.  Future enhancements could include:
 - Improving error handling and logging with structured outputs.
 
 ## Setup
-Copy env template:
+Copy env sample:
 
 ```
 cp .env.example .env

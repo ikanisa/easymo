@@ -1,7 +1,24 @@
-import { AtlasBlueprintPage } from "@/components/atlas/AtlasBlueprintPage";
-import { getAtlasConfig } from "@/components/atlas/page-config";
+export const dynamic = "force-dynamic";
 
-export default function DriverNegotiationAgentPage() {
-  const config = getAtlasConfig("agents/driver-negotiation");
-  return <AtlasBlueprintPage config={config} />;
+import { HydrationBoundary, dehydrate } from "@tanstack/react-query";
+import { DriverAgentClient } from "./DriverAgentClient";
+import { createQueryClient } from "@/lib/api/queryClient";
+import {
+  driverQueryKeys,
+  fetchDriverRequests,
+} from "@/lib/queries/agents";
+
+export default async function DriverNegotiationAgentPage() {
+  const queryClient = createQueryClient();
+
+  await queryClient.prefetchQuery({
+    queryKey: driverQueryKeys.requests(),
+    queryFn: fetchDriverRequests,
+  });
+
+  return (
+    <HydrationBoundary state={dehydrate(queryClient)}>
+      <DriverAgentClient />
+    </HydrationBoundary>
+  );
 }

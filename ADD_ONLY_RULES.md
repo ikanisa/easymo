@@ -30,7 +30,6 @@ Any PR touching these paths will be blocked by automation and review.
 - ✅ Adding `admin-app/app/dashboard/page.tsx`.
 - ✅ Creating a new migration
   `supabase/migrations/20240925000000_add_mobility_tables.sql`.
-- ⛔ Updating `supabase/functions/voucher/index.ts` — create an HTTP bridge
   instead.
 - ⛔ Editing an existing migration to "fix" data — write a follow-up migration.
 - ⛔ Removing an obsolete util file — deprecate in place or add a wrapper.

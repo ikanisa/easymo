@@ -64,7 +64,7 @@ describe("POST /api/gpt5-chat", () => {
 
     const request = new Request("http://test.local/api/gpt5-chat", {
       method: "POST",
-      body: JSON.stringify({ prompt: "hello", reasoningEffort: "minimal" }),
+      body: JSON.stringify({ prompt: "hello", reasoningEffort: "low" }),
     });
 
     const response = await POST(request);

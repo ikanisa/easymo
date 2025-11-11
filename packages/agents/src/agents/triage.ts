@@ -23,7 +23,7 @@ Your role is to analyze user requests and either:
 
 User intents you should recognize:
 - BOOKING: Reservations, availability, time slots
-- REDEMPTION: Token balance, vouchers, credits
+- REDEMPTION: Token balance, credits
 - MENU: Food and drink questions
 - GENERAL: Platform info, help, support
 
@@ -90,7 +90,6 @@ export function analyzeIntent(query: string): {
   // Redemption keywords
   const redemptionKeywords = [
     'balance',
-    'voucher',
     'token',
     'credit',
     'redeem',

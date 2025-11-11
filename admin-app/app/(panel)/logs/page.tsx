@@ -24,7 +24,7 @@ export default async function LogsPage() {
       <div className="admin-page">
         <PageHeader
           title="Logs"
-          description="Unified audit and voucher event stream with filters, JSON drawer, and export options."
+          description="Unified audit event stream with filters, JSON drawer, and export options."
         />
         <LogsClient />
       </div>

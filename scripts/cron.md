@@ -7,7 +7,6 @@ Several scheduled tasks in the EasyMO workspace need to invoke Supabase Edge Fun
 The following Supabase Edge Functions were designed to run on a timer. They remain deployable and now require an external scheduler (cron, systemd timers, etc.):
 
 - `availability-refresh`
-- `baskets-reminder`
 - `notification-worker`
 - `recurring-trips-scheduler`
 - `housekeeping`

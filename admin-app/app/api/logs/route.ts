@@ -10,8 +10,7 @@ const querySchema = z.object({
   limit: z.coerce.number().int().min(1).max(200).optional(),
   offset: z.coerce.number().int().min(0).optional(),
   actor: z.string().optional(),
-  targetTable: z.string().optional(),
-  type: z.enum(['audit', 'voucher']).optional()
+  targetTable: z.string().optional()
 });
 
 function mockResponse(message: string, filters?: z.infer<typeof querySchema>) {
@@ -73,17 +72,8 @@ export const GET = createHandler('admin_api.logs.list', async (request: Request)
     auditQuery.eq('target_table', query.targetTable);
   }
 
-  const voucherQuery = adminClient
-    .from('voucher_events')
-    .select('id, voucher_id, event_type, actor_id, station_id, context, created_at', { count: 'exact' })
-    .order('created_at', { ascending: false })
-    .range(offset, offset + limit - 1);
-
   try {
-    const [audit, voucher] = await Promise.all([
-      query.type && query.type !== 'audit' ? { data: [], count: 0 } : auditQuery,
-      query.type && query.type !== 'voucher' ? { data: [], count: 0 } : voucherQuery
-    ]);
+    const audit = await auditQuery;
 
     const integrationMessages: string[] = [];
 
@@ -97,30 +87,16 @@ export const GET = createHandler('admin_api.logs.list', async (request: Request)
       diff: row.diff ?? null
     }));
 
-    const voucherEntries = (voucher.data ?? []).map((row) => ({
-      id: row.id,
-      orderId: row.voucher_id,
-      type: row.event_type,
-      createdAt: row.created_at,
-      actorId: row.actor_id ?? null,
-      stationId: row.station_id ?? null,
-      context: row.context ?? null
-    }));
-
     if (!auditEntries.length && (audit.count ?? 0) > 0) {
       integrationMessages.push('Audit log returned empty results.');
     }
 
-    if (!voucherEntries.length && (voucher.count ?? 0) > 0) {
-      integrationMessages.push('Voucher events returned empty results.');
-    }
-
     const responseBody: Record<string, unknown> = {
       audit: auditEntries,
-      events: voucherEntries,
+      events: [],
       totals: {
         audit: audit.count ?? auditEntries.length,
-        voucher: voucher.count ?? voucherEntries.length
+        events: 0
       }
     };
 

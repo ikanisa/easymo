@@ -1,11 +1,11 @@
 const PATH_PARAM_PATTERN = /:([A-Za-z0-9_]+)/g;
 
-export const compileRoutePath = (template: string, params: Record<string, string>) =>
-  template.replace(PATH_PARAM_PATTERN, (_: string, paramName: string) => {
+export const compileRoutePath = (pattern: string, params: Record<string, string>) =>
+  pattern.replace(PATH_PARAM_PATTERN, (_: string, paramName: string) => {
     const value = params[paramName];
     if (value == null) {
       throw new Error(
-        `Missing value for parameter "${paramName}" when generating path from template "${template}".`,
+        `Missing value for parameter "${paramName}" when generating path from pattern "${pattern}".`,
       );
     }
     return encodeURIComponent(String(value));

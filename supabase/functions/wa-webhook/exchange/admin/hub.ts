@@ -8,9 +8,7 @@ const HUB_SECTIONS = {
     { id: "ADMIN::OPS_WALLET", title: "Wallet & tokens" },
     { id: "ADMIN::OPS_MOMO", title: "MoMo QR" },
   ],
-  growth: [
-    { id: "ADMIN::GROW_PROMOTERS", title: "Promoters" },
-  ],
+  growth: [],
   trust: [
     { id: "ADMIN::TRUST_REFERRALS", title: "Referrals" },
     { id: "ADMIN::TRUST_FREEZE", title: "Freeze account" },
@@ -79,7 +77,6 @@ export async function handleAdminHub(
         "ADMIN::OPS_MARKETPLACE": "flow.admin.marketplace.v1",
         "ADMIN::OPS_WALLET": "flow.admin.wallet.v1",
         "ADMIN::OPS_MOMO": "flow.admin.momoqr.v1",
-        "ADMIN::GROW_PROMOTERS": "flow.admin.promoters.v1",
         "ADMIN::TRUST_REFERRALS": "flow.admin.referrals.v1",
         "ADMIN::TRUST_FREEZE": "flow.admin.freeze.v1",
         "ADMIN::DIAG_MATCH": "flow.admin.diag.v1",

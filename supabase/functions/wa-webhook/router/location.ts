@@ -15,6 +15,7 @@ import {
   handleFindPropertyLocation,
   handleAddPropertyLocation,
 } from "../domains/property/rentals.ts";
+import { recordLastLocation } from "../domains/locations/favorites.ts";
 
 export async function handleLocation(
   ctx: RouterContext,
@@ -42,6 +43,8 @@ export async function handleLocation(
     ? parseFloat(rawLng)
     : Number.NaN;
   if (!Number.isFinite(lat) || !Number.isFinite(lng)) return false;
+
+  await recordLastLocation(ctx, { lat, lng });
   
   // Check if this is for an AI agent
   const aiAgentStates = [
@@ -65,12 +68,22 @@ export async function handleLocation(
   }
   
   if (state.key === "property_find_location") {
-    const stateData = state.data as { rentalType: string; bedrooms: string; budget: string };
+    const stateData = state.data as {
+      rentalType: string;
+      bedrooms: string;
+      budget: string;
+      currency?: string;
+    };
     return await handleFindPropertyLocation(ctx, stateData, { lat, lng });
   }
   
   if (state.key === "property_add_location") {
-    const stateData = state.data as { rentalType: string; bedrooms: string; price: string };
+    const stateData = state.data as {
+      rentalType: string;
+      bedrooms: string;
+      price: string;
+      currency?: string;
+    };
     return await handleAddPropertyLocation(ctx, stateData, { lat, lng });
   }
   

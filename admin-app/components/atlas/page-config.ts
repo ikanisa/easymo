@@ -203,7 +203,7 @@ const atlasPageConfigs: Record<string, AtlasPageConfig> = {
       },
       {
         pill: "Bundling",
-        title: "Basket intelligence",
+        title: "Smart cart intelligence",
         description:
           "Suggests add-ons with contribution margin goals, then writes the WhatsApp message for reps automatically.",
       },

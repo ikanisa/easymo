@@ -1,7 +1,24 @@
-import { AtlasBlueprintPage } from "@/components/atlas/AtlasBlueprintPage";
-import { getAtlasConfig } from "@/components/atlas/page-config";
+export const dynamic = "force-dynamic";
 
-export default function PropertyRentalAgentPage() {
-  const config = getAtlasConfig("agents/property-rental");
-  return <AtlasBlueprintPage config={config} />;
+import { HydrationBoundary, dehydrate } from "@tanstack/react-query";
+import { createQueryClient } from "@/lib/api/queryClient";
+import {
+  fetchPropertyListings,
+  propertyQueryKeys,
+} from "@/lib/queries/property-rentals";
+import { PropertyRentalAgentClient } from "./PropertyRentalAgentClient";
+
+export default async function PropertyRentalAgentPage() {
+  const queryClient = createQueryClient();
+
+  await queryClient.prefetchQuery({
+    queryKey: propertyQueryKeys.listings(),
+    queryFn: fetchPropertyListings,
+  });
+
+  return (
+    <HydrationBoundary state={dehydrate(queryClient)}>
+      <PropertyRentalAgentClient />
+    </HydrationBoundary>
+  );
 }

@@ -1,5 +1,4 @@
 import { serve } from "../wa-webhook/deps.ts";
-import { supabase, WA_BOT_NUMBER_E164 } from "../wa-webhook/config.ts";
 import { logStructuredEvent } from "../wa-webhook/observe/log.ts";
 import {
   DeeplinkResolveSchema,
@@ -37,36 +36,18 @@ function normalizeToken(raw: unknown): string | null {
   return match ? match[1] : null;
 }
 
-function formatShareCode(token: string): string {
-  return token.startsWith("JB:") ? token : `JB:${token}`;
-}
-
-function buildWaLink(token: string): string | null {
-  const digitsOnly = WA_BOT_NUMBER_E164.replace(/[^0-9]/g, "");
-  if (!digitsOnly) return null;
-  const shareCode = formatShareCode(token);
-  return `https://wa.me/${digitsOnly}?text=${encodeURIComponent(shareCode)}`;
-}
-
-async function incrementResolveStats(inviteId: string, current: number) {
-  const { error } = await supabase
-    .from("basket_invites")
-    .update({
-      resolved_count: current + 1,
-      last_resolved_at: new Date().toISOString(),
-    })
-    .eq("id", inviteId);
-  if (error) {
-    console.error("deeplink.resolve_stats_failed", error);
-  }
-}
+const REMOVAL_RESPONSE = {
+  ok: false,
+  error: "feature_removed",
+  message:
+    "Legacy invite deeplinks are discontinued. Direct riders to the standard WhatsApp menu.",
+};
 
 serve(async (req) => {
   const origin = req.headers.get("origin");
   const corsHeaders = buildCorsHeaders(origin);
   const correlationId = crypto.randomUUID();
 
-  // Log request
   await logStructuredEvent("DEEPLINK_REQUEST", {
     correlationId,
     method: req.method,
@@ -77,11 +58,10 @@ serve(async (req) => {
     return new Response(null, { status: 204, headers: corsHeaders });
   }
 
-  // Rate limiting: 10 requests per minute per IP
   const clientIP = getClientIP(req);
   const rateLimitKey = `deeplink:${clientIP}`;
   const rateLimitResult = isRateLimited(rateLimitKey, {
-    windowMs: 60 * 1000, // 1 minute
+    windowMs: 60 * 1000,
     maxRequests: 10,
   });
 
@@ -95,17 +75,13 @@ serve(async (req) => {
   }
 
   let rawToken: unknown;
-  let msisdn: unknown;
-  
+
   if (req.method === "GET") {
     const url = new URL(req.url);
     rawToken = url.searchParams.get("token");
-    msisdn = url.searchParams.get("msisdn");
   } else if (req.method === "POST") {
     try {
       const body = await req.json();
-      
-      // Validate request body with Zod
       const validation = validateBody(DeeplinkResolveSchema, body);
       if (!validation.success) {
         await logStructuredEvent("DEEPLINK_VALIDATION_FAILED", {
@@ -114,9 +90,7 @@ serve(async (req) => {
         });
         return validationErrorResponse(validation.error);
       }
-      
       rawToken = validation.data.token;
-      msisdn = validation.data.msisdn;
     } catch (_error) {
       return new Response(
         JSON.stringify({ ok: false, error: "invalid_json" }),
@@ -139,111 +113,20 @@ serve(async (req) => {
   const token = normalizeToken(rawToken);
   if (!token) {
     const body = JSON.stringify({ ok: false, error: "token_required" });
-    if (req.method === "GET") {
-      return new Response(body, {
-        status: 400,
-        headers: { ...corsHeaders, "content-type": "application/json" },
-      });
-    }
     return new Response(body, {
       status: 400,
       headers: { ...corsHeaders, "content-type": "application/json" },
     });
   }
 
-  const { data: invite, error } = await supabase
-    .from("basket_invites")
-    .select("id, token, status, expires_at, resolved_count")
-    .eq("token", token)
-    .maybeSingle();
-
-  if (error) {
-    console.error("deeplink.lookup_failed", error);
-    return new Response(
-      JSON.stringify({ ok: false, error: "lookup_failed" }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, "content-type": "application/json" },
-      },
-    );
-  }
-
-  if (!invite) {
-    return new Response(
-      JSON.stringify({ ok: false, error: "invite_not_found" }),
-      {
-        status: 404,
-        headers: { ...corsHeaders, "content-type": "application/json" },
-      },
-    );
-  }
-
-  if (invite.status !== "active") {
-    return new Response(
-      JSON.stringify({ ok: false, error: "invite_inactive" }),
-      {
-        status: invite.status === "used" ? 409 : 410,
-        headers: { ...corsHeaders, "content-type": "application/json" },
-      },
-    );
-  }
-
-  if (invite.expires_at) {
-    const expiry = new Date(invite.expires_at);
-    if (!Number.isNaN(expiry.getTime()) && expiry.getTime() < Date.now()) {
-      await supabase
-        .from("basket_invites")
-        .update({ status: "expired" })
-        .eq("id", invite.id);
-      return new Response(
-        JSON.stringify({ ok: false, error: "invite_expired" }),
-        {
-          status: 410,
-          headers: { ...corsHeaders, "content-type": "application/json" },
-        },
-      );
-    }
-  }
-
-  await incrementResolveStats(invite.id, invite.resolved_count ?? 0);
-
-  const shareCode = formatShareCode(token);
-  const waLink = buildWaLink(token);
-
-  await logStructuredEvent("DEEPLINK_RESOLVED", {
+  await logStructuredEvent("DEEPLINK_FEATURE_REMOVED", {
     correlationId,
-    invite_id: invite.id,
-    has_wa_link: Boolean(waLink),
-    msisdn_bound: Boolean(msisdn),
+    clientIP,
+    token,
   });
 
-  if (req.method === "POST") {
-    return new Response(
-      JSON.stringify({
-        ok: true,
-        share_code: shareCode,
-        wa_link: waLink,
-        expires_at: invite.expires_at,
-      }),
-      {
-        status: 200,
-        headers: { ...corsHeaders, "content-type": "application/json" },
-      },
-    );
-  }
-
-  if (waLink) {
-    return new Response(null, {
-      status: 302,
-      headers: { ...corsHeaders, Location: waLink },
-    });
-  }
-
-  return new Response(
-    JSON.stringify({ ok: true, share_code: shareCode }),
-    {
-      status: 200,
-      headers: { ...corsHeaders, "content-type": "application/json" },
-    },
-  );
+  return new Response(JSON.stringify(REMOVAL_RESPONSE), {
+    status: 410,
+    headers: { ...corsHeaders, "content-type": "application/json" },
+  });
 });

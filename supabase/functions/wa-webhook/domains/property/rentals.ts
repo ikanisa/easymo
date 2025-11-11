@@ -8,32 +8,94 @@
 
 import type { RouterContext } from "../../types.ts";
 import { setState, clearState } from "../../state/store.ts";
-import { sendListMessage, sendButtonsMessage, buildButtons, homeOnly } from "../../utils/reply.ts";
+import {
+  sendListMessage,
+  sendButtonsMessage,
+  buildButtons,
+  homeOnly,
+} from "../../utils/reply.ts";
 import { sendText } from "../../wa/client.ts";
 import { IDS } from "../../wa/ids.ts";
 import { isFeatureEnabled } from "../../../_shared/feature-flags.ts";
 import { handleAIPropertyRental } from "../ai-agents/index.ts";
 import { sendHomeMenu } from "../../flows/home.ts";
+import { t } from "../../i18n/translator.ts";
+import {
+  describeCurrency,
+  formatCurrencyFromInput,
+  getCurrencyByCode,
+  resolveUserCurrency,
+} from "../../utils/currency.ts";
+import {
+  getFavoriteById,
+  listFavorites,
+  type UserFavorite,
+} from "../locations/favorites.ts";
+import { buildSaveRows } from "../locations/save.ts";
 
-const RENTAL_TYPES = [
-  {
-    id: "short_term",
-    title: "🗓️ Short-term",
-    description: "1 day to 3 months",
-  },
-  {
-    id: "long_term",
-    title: "📅 Long-term",
-    description: "3+ months",
-  },
-];
+export type PropertyFindState = {
+  rentalType: string;
+  bedrooms: string;
+  budget: string;
+  currency?: string;
+};
 
-const BEDROOM_OPTIONS = [
-  { id: "1", title: "1 Bedroom", description: "Studio or 1BR" },
-  { id: "2", title: "2 Bedrooms", description: "2BR apartment/house" },
-  { id: "3", title: "3 Bedrooms", description: "3BR house" },
-  { id: "4", title: "4+ Bedrooms", description: "Large house" },
-];
+export type PropertyAddState = {
+  rentalType: string;
+  bedrooms: string;
+  price: string;
+  currency?: string;
+};
+
+export type PropertySavedPickerState =
+  | {
+    source: "property_find";
+    state: PropertyFindState;
+  }
+  | {
+    source: "property_add";
+    state: PropertyAddState;
+  };
+
+function rentalTypeRows(locale: RouterContext["locale"]) {
+  return [
+    {
+      id: "short_term",
+      title: t(locale, "property.rental.short_term.title"),
+      description: t(locale, "property.rental.short_term.description"),
+    },
+    {
+      id: "long_term",
+      title: t(locale, "property.rental.long_term.title"),
+      description: t(locale, "property.rental.long_term.description"),
+    },
+  ];
+}
+
+function bedroomOptions(locale: RouterContext["locale"]) {
+  return [
+    {
+      id: "1",
+      title: t(locale, "property.bedrooms.option1.title"),
+      description: t(locale, "property.bedrooms.option1.description"),
+    },
+    {
+      id: "2",
+      title: t(locale, "property.bedrooms.option2.title"),
+      description: t(locale, "property.bedrooms.option2.description"),
+    },
+    {
+      id: "3",
+      title: t(locale, "property.bedrooms.option3.title"),
+      description: t(locale, "property.bedrooms.option3.description"),
+    },
+    {
+      id: "4",
+      title: t(locale, "property.bedrooms.option4.title"),
+      description: t(locale, "property.bedrooms.option4.description"),
+    },
+  ];
+}
 
 export async function startPropertyRentals(ctx: RouterContext): Promise<boolean> {
   if (!ctx.profileId) return false;
@@ -46,25 +108,25 @@ export async function startPropertyRentals(ctx: RouterContext): Promise<boolean>
   await sendListMessage(
     ctx,
     {
-      title: "🏠 Property Rentals",
-      body: "Find or add rental properties",
-      sectionTitle: "Choose an option",
-      buttonText: "View options",
+      title: t(ctx.locale, "property.menu.title"),
+      body: t(ctx.locale, "property.menu.body"),
+      sectionTitle: t(ctx.locale, "property.menu.section"),
+      buttonText: t(ctx.locale, "property.menu.button"),
       rows: [
         {
           id: IDS.PROPERTY_FIND,
-          title: "🔍 Find Property",
-          description: "Search for rental properties",
+          title: t(ctx.locale, "property.menu.find.title"),
+          description: t(ctx.locale, "property.menu.find.description"),
         },
         {
           id: IDS.PROPERTY_ADD,
-          title: "➕ Add Property",
-          description: "List your property for rent",
+          title: t(ctx.locale, "property.menu.add.title"),
+          description: t(ctx.locale, "property.menu.add.description"),
         },
         {
           id: IDS.BACK_HOME,
-          title: "🏠 Back to Home",
-          description: "Return to main menu",
+          title: t(ctx.locale, "property.menu.back.title"),
+          description: t(ctx.locale, "property.menu.back.description"),
         },
       ],
     },
@@ -90,11 +152,11 @@ export async function handlePropertyMenuSelection(
     await sendListMessage(
       ctx,
       {
-        title: "🔍 Find Property",
-        body: "What type of rental are you looking for?",
-        sectionTitle: "Rental Type",
-        buttonText: "Choose",
-        rows: RENTAL_TYPES,
+        title: t(ctx.locale, "property.find.title"),
+        body: t(ctx.locale, "property.find.prompt.type"),
+        sectionTitle: t(ctx.locale, "property.find.section.type"),
+        buttonText: t(ctx.locale, "property.common.choose"),
+        rows: rentalTypeRows(ctx.locale),
       },
       { emoji: "🏠" },
     );
@@ -111,11 +173,11 @@ export async function handlePropertyMenuSelection(
     await sendListMessage(
       ctx,
       {
-        title: "➕ Add Property",
-        body: "What type of rental is your property?",
-        sectionTitle: "Rental Type",
-        buttonText: "Choose",
-        rows: RENTAL_TYPES,
+        title: t(ctx.locale, "property.add.title"),
+        body: t(ctx.locale, "property.add.prompt.type"),
+        sectionTitle: t(ctx.locale, "property.find.section.type"),
+        buttonText: t(ctx.locale, "property.common.choose"),
+        rows: rentalTypeRows(ctx.locale),
       },
       { emoji: "🏠" },
     );
@@ -146,11 +208,11 @@ export async function handleFindPropertyType(
   await sendListMessage(
     ctx,
     {
-      title: "🔍 Find Property",
-      body: "How many bedrooms do you need?",
-      sectionTitle: "Bedrooms",
-      buttonText: "Choose",
-      rows: BEDROOM_OPTIONS,
+      title: t(ctx.locale, "property.find.title"),
+      body: t(ctx.locale, "property.find.prompt.bedrooms"),
+      sectionTitle: t(ctx.locale, "property.find.section.bedrooms"),
+      buttonText: t(ctx.locale, "property.common.choose"),
+      rows: bedroomOptions(ctx.locale),
     },
     { emoji: "🏠" },
   );
@@ -164,20 +226,20 @@ export async function handleFindPropertyBedrooms(
   bedrooms: string,
 ): Promise<boolean> {
   if (!ctx.profileId) return false;
+  const currencyPref = resolveUserCurrency(ctx.from);
 
   await setState(ctx.supabase, ctx.profileId, {
     key: "property_find_budget",
-    data: { ...state, bedrooms },
+    data: { ...state, bedrooms, currency: currencyPref.code },
   });
 
   await sendButtonsMessage(
     ctx,
-    "💰 What's your budget?\n\n" +
-    "Type your monthly budget range.\n" +
-    "Examples: 200-500 or 300",
-    buildButtons(
-      { id: IDS.BACK_HOME, title: "🏠 Cancel" }
-    )
+    t(ctx.locale, "property.find.prompt.budget", {
+      currency: describeCurrency(currencyPref),
+      code: currencyPref.code,
+    }),
+    homeOnly(),
   );
 
   return true;
@@ -185,25 +247,32 @@ export async function handleFindPropertyBedrooms(
 
 export async function handleFindPropertyBudget(
   ctx: RouterContext,
-  state: { rentalType: string; bedrooms: string },
+  state: { rentalType: string; bedrooms: string; currency?: string },
   budget: string,
 ): Promise<boolean> {
   if (!ctx.profileId) return false;
+  const currencyCode = state.currency ?? resolveUserCurrency(ctx.from).code;
+
+  const nextState: PropertyFindState = {
+    rentalType: state.rentalType,
+    bedrooms: state.bedrooms,
+    budget,
+    currency: currencyCode,
+  };
 
   await setState(ctx.supabase, ctx.profileId, {
     key: "property_find_location",
-    data: { ...state, budget },
+    data: nextState,
   });
 
   await sendButtonsMessage(
     ctx,
-    "📍 Where would you like to rent?\n\n" +
-    "Share your desired location.\n" +
-    "Tap the button or use the attachment icon.",
+    t(ctx.locale, "property.find.prompt.location"),
     buildButtons(
-      { id: "property_share_location", title: "📍 Share Location" },
-      { id: IDS.BACK_HOME, title: "🏠 Cancel" }
-    )
+      { id: "property_share_location", title: t(ctx.locale, "property.buttons.share_location") },
+      { id: IDS.LOCATION_SAVED_LIST, title: t(ctx.locale, "location.saved.button") },
+      { id: IDS.BACK_HOME, title: t(ctx.locale, "common.menu_back") },
+    ),
   );
 
   return true;
@@ -211,14 +280,17 @@ export async function handleFindPropertyBudget(
 
 export async function handleFindPropertyLocation(
   ctx: RouterContext,
-  state: { rentalType: string; bedrooms: string; budget: string },
+  state: PropertyFindState,
   location: { lat: number; lng: number },
 ): Promise<boolean> {
   if (!ctx.profileId) return false;
+  const currencyPref = state.currency
+    ? getCurrencyByCode(state.currency)
+    : resolveUserCurrency(ctx.from);
 
   // Call AI agent if enabled
   if (isFeatureEnabled("agent.property_rental")) {
-    await sendText(ctx.from, "🤖 Searching for properties and negotiating prices...");
+    await sendText(ctx.from, t(ctx.locale, "property.find.searching"));
     
     try {
       return await handleAIPropertyRental(
@@ -229,13 +301,14 @@ export async function handleFindPropertyLocation(
         {
           bedrooms: parseInt(state.bedrooms),
           budget: state.budget,
+          currency: currencyPref.code,
         },
       );
     } catch (error) {
       console.error("Property AI agent error:", error);
       await sendText(
         ctx.from,
-        "Sorry, we couldn't find properties right now. Please try again later."
+        t(ctx.locale, "property.find.error"),
       );
       await clearState(ctx.supabase, ctx.profileId);
       return true;
@@ -245,8 +318,7 @@ export async function handleFindPropertyLocation(
   // Fallback: no AI, just acknowledge
   await sendText(
     ctx.from,
-    "✅ Your property search has been saved!\n\n" +
-    "We'll notify you when matching properties are available."
+    t(ctx.locale, "property.find.success"),
   );
   await clearState(ctx.supabase, ctx.profileId);
   return true;
@@ -267,11 +339,11 @@ export async function handleAddPropertyType(
   await sendListMessage(
     ctx,
     {
-      title: "➕ Add Property",
-      body: "How many bedrooms does your property have?",
-      sectionTitle: "Bedrooms",
-      buttonText: "Choose",
-      rows: BEDROOM_OPTIONS,
+      title: t(ctx.locale, "property.add.title"),
+      body: t(ctx.locale, "property.add.prompt.bedrooms"),
+      sectionTitle: t(ctx.locale, "property.find.section.bedrooms"),
+      buttonText: t(ctx.locale, "property.common.choose"),
+      rows: bedroomOptions(ctx.locale),
     },
     { emoji: "🏠" },
   );
@@ -285,20 +357,20 @@ export async function handleAddPropertyBedrooms(
   bedrooms: string,
 ): Promise<boolean> {
   if (!ctx.profileId) return false;
+  const currencyPref = resolveUserCurrency(ctx.from);
 
   await setState(ctx.supabase, ctx.profileId, {
     key: "property_add_price",
-    data: { ...state, bedrooms },
+    data: { ...state, bedrooms, currency: currencyPref.code },
   });
 
   await sendButtonsMessage(
     ctx,
-    "💰 What's your monthly rent price?\n\n" +
-    "Type the monthly rent amount.\n" +
-    "Examples: 300 or 450",
-    buildButtons(
-      { id: IDS.BACK_HOME, title: "🏠 Cancel" }
-    )
+    t(ctx.locale, "property.add.prompt.price", {
+      currency: describeCurrency(currencyPref),
+      code: currencyPref.code,
+    }),
+    homeOnly(),
   );
 
   return true;
@@ -306,25 +378,32 @@ export async function handleAddPropertyBedrooms(
 
 export async function handleAddPropertyPrice(
   ctx: RouterContext,
-  state: { rentalType: string; bedrooms: string },
+  state: { rentalType: string; bedrooms: string; currency?: string },
   price: string,
 ): Promise<boolean> {
   if (!ctx.profileId) return false;
+  const currencyCode = state.currency ?? resolveUserCurrency(ctx.from).code;
+
+  const nextState: PropertyAddState = {
+    rentalType: state.rentalType,
+    bedrooms: state.bedrooms,
+    price,
+    currency: currencyCode,
+  };
 
   await setState(ctx.supabase, ctx.profileId, {
     key: "property_add_location",
-    data: { ...state, price },
+    data: nextState,
   });
 
   await sendButtonsMessage(
     ctx,
-    "📍 Where is your property located?\n\n" +
-    "Share the property location.\n" +
-    "Tap the button or use the attachment icon.",
+    t(ctx.locale, "property.add.prompt.location"),
     buildButtons(
-      { id: "property_add_share_location", title: "📍 Share Location" },
-      { id: IDS.BACK_HOME, title: "🏠 Cancel" }
-    )
+      { id: "property_add_share_location", title: t(ctx.locale, "property.buttons.share_location") },
+      { id: IDS.LOCATION_SAVED_LIST, title: t(ctx.locale, "location.saved.button") },
+      { id: IDS.BACK_HOME, title: t(ctx.locale, "common.menu_back") },
+    ),
   );
 
   return true;
@@ -332,28 +411,118 @@ export async function handleAddPropertyPrice(
 
 export async function handleAddPropertyLocation(
   ctx: RouterContext,
-  state: { rentalType: string; bedrooms: string; price: string },
+  state: PropertyAddState,
   location: { lat: number; lng: number },
 ): Promise<boolean> {
   if (!ctx.profileId) return false;
+  const currencyPref = state.currency
+    ? getCurrencyByCode(state.currency)
+    : resolveUserCurrency(ctx.from);
+  const priceLabel = formatCurrencyFromInput(state.price, currencyPref);
 
   // TODO: Save to database
   await clearState(ctx.supabase, ctx.profileId);
+
+  const rentalLabel = state.rentalType === "short_term"
+    ? t(ctx.locale, "property.rental.short_term.title")
+    : t(ctx.locale, "property.rental.long_term.title");
+  const coordsLabel = `${location.lat.toFixed(4)}, ${location.lng.toFixed(4)}`;
   
   await sendButtonsMessage(
     ctx,
-    "✅ *Property Added Successfully!*\n\n" +
-    `📋 Details:\n` +
-    `• Type: ${state.rentalType === "short_term" ? "Short-term" : "Long-term"}\n` +
-    `• Bedrooms: ${state.bedrooms}\n` +
-    `• Price: $${state.price}/month\n` +
-    `• Location: ${location.lat.toFixed(4)}, ${location.lng.toFixed(4)}\n\n` +
-    "Your property is now listed and visible to people searching!",
+    t(ctx.locale, "property.add.success", {
+      type: rentalLabel,
+      bedrooms: state.bedrooms,
+      price: priceLabel,
+      coords: coordsLabel,
+    }),
     buildButtons(
-      { id: IDS.PROPERTY_RENTALS, title: "🏠 View Property Rentals" },
-      { id: IDS.BACK_HOME, title: "🏠 Back to Home" }
-    )
+      { id: IDS.PROPERTY_RENTALS, title: t(ctx.locale, "property.buttons.view_rentals") },
+      { id: IDS.BACK_HOME, title: t(ctx.locale, "common.menu_back") },
+    ),
   );
 
   return true;
+}
+
+export async function startPropertySavedLocationPicker(
+  ctx: RouterContext,
+  mode: "find" | "add",
+  state: PropertyFindState | PropertyAddState,
+): Promise<boolean> {
+  if (!ctx.profileId) return false;
+  const favorites = await listFavorites(ctx);
+  await setState(ctx.supabase, ctx.profileId, {
+    key: "location_saved_picker",
+    data: {
+      source: mode === "find" ? "property_find" : "property_add",
+      state,
+    } satisfies PropertySavedPickerState,
+  });
+  const baseBody = t(ctx.locale, "location.saved.list.body", {
+    context: t(ctx.locale, "location.context.pickup"),
+  });
+  const body = favorites.length
+    ? baseBody
+    : `${baseBody}\n\n${t(ctx.locale, "location.saved.list.empty")}`;
+  await sendListMessage(
+    ctx,
+    {
+      title: t(ctx.locale, "location.saved.list.title"),
+      body,
+      sectionTitle: t(ctx.locale, "location.saved.list.section"),
+      rows: [
+        ...favorites.map(propertyFavoriteToRow),
+        ...buildSaveRows(ctx),
+        {
+          id: IDS.BACK_MENU,
+          title: t(ctx.locale, "common.menu_back"),
+          description: t(ctx.locale, "common.back_to_menu.description"),
+        },
+      ],
+      buttonText: t(ctx.locale, "location.saved.list.button"),
+    },
+    { emoji: "⭐" },
+  );
+  return true;
+}
+
+export async function handlePropertySavedLocationSelection(
+  ctx: RouterContext,
+  pickerState: PropertySavedPickerState,
+  selectionId: string,
+): Promise<boolean> {
+  if (!ctx.profileId) return false;
+  const favorite = await getFavoriteById(ctx, selectionId);
+  if (!favorite) {
+    await sendButtonsMessage(
+      ctx,
+      t(ctx.locale, "location.saved.list.expired"),
+      homeOnly(),
+    );
+    return true;
+  }
+  if (pickerState.source === "property_find") {
+    return await handleFindPropertyLocation(
+      ctx,
+      pickerState.state,
+      { lat: favorite.lat, lng: favorite.lng },
+    );
+  }
+  return await handleAddPropertyLocation(
+    ctx,
+    pickerState.state,
+    { lat: favorite.lat, lng: favorite.lng },
+  );
+}
+
+function propertyFavoriteToRow(
+  favorite: UserFavorite,
+): { id: string; title: string; description?: string } {
+  return {
+    id: favorite.id,
+    title: `⭐ ${favorite.label}`,
+    description: favorite.address ??
+      `${favorite.lat.toFixed(4)}, ${favorite.lng.toFixed(4)}`,
+  };
 }

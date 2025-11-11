@@ -10,7 +10,7 @@ This package provides agent definitions, tools, and orchestration logic for the 
 
 - **Agent Definitions**: Pre-configured agents for different use cases
   - BookingAgent: Handles bar-truck slot bookings
-  - TokenRedemptionAgent: Manages voucher and token redemptions
+  - TokenRedemptionAgent: Manages token redemptions
   - SavingsGroupAgent: Assists with savings group operations
   - TriageAgent: Routes user requests to appropriate specialized agents
 
@@ -18,7 +18,7 @@ This package provides agent definitions, tools, and orchestration logic for the 
   - WebSearch: Search the web for information
   - MenuLookup: Query available drinks/products
   - BookingCreate: Create new bookings
-  - TokenRedeem: Redeem vouchers/tokens
+  - TokenRedeem: Redeem tokens/credits
   - And more...
 
 - **Agent Orchestration**: Hand-off logic between agents
@@ -80,7 +80,7 @@ import { TriageAgent } from '@easymo/agents';
 // Triage agent automatically hands off to specialized agents
 const result = await runAgent(TriageAgent, {
   userId: 'user-123',
-  query: 'I want to redeem my voucher and book a slot'
+  query: 'I want to redeem my credits and book a slot'
 });
 
 // TriageAgent will detect redemption + booking intent
@@ -167,18 +167,18 @@ const result = await runAgent(BookingAgent, {
 
 ### TokenRedemptionAgent
 
-Manages voucher and token redemptions.
+Manages token and credit redemptions.
 
 **Tools**:
-- `checkBalance`: View token/voucher balance
-- `redeemToken`: Redeem a token/voucher
+- `checkBalance`: View token/credit balance
+- `redeemToken`: Redeem a token/credit
 - `viewHistory`: Show redemption history
 
 **Example**:
 ```typescript
 const result = await runAgent(TokenRedemptionAgent, {
   userId: 'user-123',
-  query: 'Redeem my 5000 RWF voucher'
+  query: 'Redeem my 5000 RWF token balance'
 });
 ```
 

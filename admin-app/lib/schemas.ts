@@ -527,6 +527,89 @@ export const timeseriesPointSchema = z.object({
   value: z.number(),
 });
 
+export const driverRequestSchema = z.object({
+  id: z.string(),
+  passengerRef: z.string().nullable(),
+  pickup: z.string().nullable(),
+  dropoff: z.string().nullable(),
+  vehicleType: z.string().nullable(),
+  status: z.string().nullable(),
+  createdAt: z.string().datetime(),
+  pickupLat: z.number().nullable().optional(),
+  pickupLng: z.number().nullable().optional(),
+});
+
+export const pharmacyQuoteSchema = z.object({
+  vendor: z.string(),
+  price: z.number().nullable(),
+  etaMinutes: z.number().nullable(),
+  stockStatus: z.string().nullable(),
+});
+
+export const pharmacyRequestSchema = z.object({
+  id: z.string(),
+  patient: z.string(),
+  medications: z.array(z.string()),
+  status: z.string(),
+  urgency: z.string(),
+  deliveryMode: z.string(),
+  notes: z.string().nullable(),
+  createdAt: z.string().datetime(),
+  quotes: z.array(pharmacyQuoteSchema),
+});
+
+export const shopSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  categories: z.array(z.string()),
+  rating: z.number().nullable(),
+  verified: z.boolean(),
+  location: z.string().nullable(),
+  phone: z.string().nullable(),
+  status: z.string(),
+  deliveryEta: z.number().nullable(),
+});
+
+export const hardwareVendorSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  description: z.string().nullable(),
+  phone: z.string().nullable(),
+  verified: z.boolean().default(false),
+  rating: z.number().nullable(),
+  distanceKm: z.number().nullable(),
+  metadata: z.record(z.any()).optional(),
+  status: z.string().default("active"),
+});
+
+export const propertyListingSchema = z.object({
+  id: z.string(),
+  owner: z.string().nullable(),
+  rentalType: z.string(),
+  bedrooms: z.number().nullable(),
+  bathrooms: z.number().nullable(),
+  price: z.number().nullable(),
+  address: z.string().nullable(),
+  amenities: z.array(z.string()).default([]),
+  images: z.array(z.string()).default([]),
+  distanceKm: z.number().nullable(),
+  availableFrom: z.string().datetime().nullable(),
+  status: z.string(),
+});
+
+export const scheduledTripSchema = z.object({
+  id: z.string(),
+  passengerRef: z.string().nullable(),
+  pickup: z.string().nullable(),
+  dropoff: z.string().nullable(),
+  scheduledTime: z.string().datetime(),
+  recurrence: z.string(),
+  vehiclePreference: z.string(),
+  status: z.string(),
+  maxPrice: z.number().nullable(),
+  nextRunAt: z.string().datetime().nullable(),
+});
+
 export const assistantActionSchema = z.object({
   id: z.string(),
   label: z.string(),
@@ -740,6 +823,13 @@ export type AdminAlertPreference = z.infer<typeof adminAlertPreferenceSchema>;
 export type StorageObject = z.infer<typeof storageObjectSchema>;
 export type DashboardKpi = z.infer<typeof dashboardKpiSchema>;
 export type TimeseriesPoint = z.infer<typeof timeseriesPointSchema>;
+export type DriverRequest = z.infer<typeof driverRequestSchema>;
+export type PharmacyRequest = z.infer<typeof pharmacyRequestSchema>;
+export type PharmacyQuote = z.infer<typeof pharmacyQuoteSchema>;
+export type Shop = z.infer<typeof shopSchema>;
+export type HardwareVendor = z.infer<typeof hardwareVendorSchema>;
+export type PropertyListing = z.infer<typeof propertyListingSchema>;
+export type ScheduledTrip = z.infer<typeof scheduledTripSchema>;
 export type AssistantAction = z.infer<typeof assistantActionSchema>;
 export type AssistantSuggestion = z.infer<typeof assistantSuggestionSchema>;
 export type AssistantMessage = z.infer<typeof assistantMessageSchema>;

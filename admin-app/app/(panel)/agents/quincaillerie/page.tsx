@@ -1,7 +1,24 @@
-import { AtlasBlueprintPage } from "@/components/atlas/AtlasBlueprintPage";
-import { getAtlasConfig } from "@/components/atlas/page-config";
+export const dynamic = "force-dynamic";
 
-export default function QuincaillerieAgentPage() {
-  const config = getAtlasConfig("agents/quincaillerie");
-  return <AtlasBlueprintPage config={config} />;
+import { HydrationBoundary, dehydrate } from "@tanstack/react-query";
+import { createQueryClient } from "@/lib/api/queryClient";
+import {
+  fetchQuincaillerieVendors,
+  quincaQueryKeys,
+} from "@/lib/queries/quincaillerie";
+import { QuincaillerieAgentClient } from "./QuincaillerieAgentClient";
+
+export default async function QuincaillerieAgentPage() {
+  const queryClient = createQueryClient();
+
+  await queryClient.prefetchQuery({
+    queryKey: quincaQueryKeys.vendors(),
+    queryFn: fetchQuincaillerieVendors,
+  });
+
+  return (
+    <HydrationBoundary state={dehydrate(queryClient)}>
+      <QuincaillerieAgentClient />
+    </HydrationBoundary>
+  );
 }

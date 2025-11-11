@@ -181,7 +181,7 @@ paths:
         '200': { description: OK }
   /api/wa/outbound/messages:
     post:
-      summary: Send WhatsApp text or template
+      summary: Send WhatsApp text message
       requestBody:
         required: true
         content:
@@ -191,7 +191,6 @@ paths:
               properties:
                 to: { type: string }
                 text: { type: string }
-                template: { type: object }
       responses:
         '202': { description: Accepted }
   /api/insurance/ingest_media:
@@ -397,7 +396,6 @@ components:
         driver_ids:
           type: array
           items: { type: string }
-        template: { type: object, additionalProperties: true, nullable: true }
         text: { type: string, nullable: true }
       required: [ride_id, driver_ids]
     MobilityPingDriversResponse:

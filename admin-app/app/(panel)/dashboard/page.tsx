@@ -5,7 +5,6 @@ import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import { createQueryClient } from "@/lib/api/queryClient";
 import {
   dashboardQueryKeys,
-  fetchDashboardOrderEvents,
   fetchDashboardSnapshot,
   fetchDashboardWebhookErrors,
 } from "@/lib/queries/dashboard";
@@ -22,10 +21,6 @@ export default async function DashboardPage() {
       queryFn: fetchDashboardSnapshot,
     }),
     queryClient.prefetchQuery({
-      queryKey: dashboardQueryKeys.orderEvents(),
-      queryFn: fetchDashboardOrderEvents,
-    }),
-    queryClient.prefetchQuery({
       queryKey: dashboardQueryKeys.webhookErrors(),
       queryFn: fetchDashboardWebhookErrors,
     }),
@@ -39,4 +34,3 @@ export default async function DashboardPage() {
     </HydrationBoundary>
   );
 }
-

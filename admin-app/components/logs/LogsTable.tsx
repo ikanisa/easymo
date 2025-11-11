@@ -77,7 +77,7 @@ export function LogsTable({ data }: LogsTableProps) {
                 ...prev,
                 target: event.target.value || undefined,
               }))}
-            placeholder="e.g. vouchers"
+            placeholder="e.g. insurance_quotes"
           />
         </label>
       </div>

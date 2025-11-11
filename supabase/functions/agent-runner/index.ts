@@ -153,12 +153,12 @@ function getMockResponse(agentName: string, query: string): string {
 
   if (agentName === "redemption") {
     if (lowerQuery.includes("balance")) {
-      return "Here's your current balance:\n\n• Vouchers: 5,000 RWF (expires Dec 31, 2025)\n• Reward Points: 150 points\n• Account Credit: 10,000 RWF\n\nYou have a total of 15,000 RWF in redeemable value!";
+      return "Here's your current balance:\n\n• Reward Points: 150 points\n• Account Credit: 10,000 RWF\n\nYou have a total of 10,000 RWF in redeemable value!";
     }
     if (lowerQuery.includes("redeem")) {
-      return "I can help you redeem your tokens! You have:\n- 5,000 RWF in vouchers\n- 150 reward points\n- 10,000 RWF in credits\n\nWhat would you like to redeem today?";
+      return "I can help you redeem your tokens! You currently have reward points and account credits available.\n\nWhat would you like to redeem today?";
     }
-    return "I'm your token management assistant! I can help you:\n- Check your balance\n- Redeem vouchers and tokens\n- View transaction history\n- Track expiring vouchers\n\nWhat would you like to do?";
+    return "I'm your token management assistant! I can help you:\n- Check your balance\n- Redeem tokens and credits\n- View transaction history\n- Track expiring rewards\n\nWhat would you like to do?";
   }
 
   if (agentName === "triage") {
@@ -166,10 +166,10 @@ function getMockResponse(agentName: string, query: string): string {
     if (lowerQuery.includes("book") || lowerQuery.includes("reserve") || lowerQuery.includes("availability")) {
       return "I can help you with that! Let me connect you to our booking assistant who specializes in reservations and availability.";
     }
-    if (lowerQuery.includes("balance") || lowerQuery.includes("voucher") || lowerQuery.includes("redeem")) {
+    if (lowerQuery.includes("balance") || lowerQuery.includes("redeem")) {
       return "I can help you with that! Let me connect you to our token management assistant who handles balances and redemptions.";
     }
-    return "Hello! I'm here to help you with the EasyMO platform. I can assist with:\n- Bookings and reservations\n- Token and voucher management\n- Menu inquiries\n- General questions\n\nHow can I help you today?";
+    return "Hello! I'm here to help you with the EasyMO platform. I can assist with:\n- Bookings and reservations\n- Token and credit management\n- Menu inquiries\n- General questions\n\nHow can I help you today?";
   }
 
   return "Agent response";

@@ -5,23 +5,29 @@ import type {
 import { getListReplyId } from "../utils/messages.ts";
 // AI Agents Integration
 import { handleAIAgentOptionSelection } from "../domains/ai-agents/index.ts";
-import { handleVideoTemplateSelection } from "../video-agent/index.ts";
-import type { ChatState } from "../state/store.ts";
 import {
   handleNearbyResultSelection,
   handleSeeDrivers,
   handleSeePassengers,
   handleVehicleSelection,
+  handleNearbySavedLocationSelection,
   isVehicleOption,
 } from "../domains/mobility/nearby.ts";
+import type { NearbySavedPickerState } from "../domains/mobility/nearby.ts";
+import {
+  handleQuickSaveLocation,
+  LOCATION_KIND_BY_ID,
+} from "../domains/locations/save.ts";
 import {
   handleScheduleResultSelection,
   handleScheduleRole,
+  handleScheduleSavedLocationSelection,
   handleScheduleVehicle,
   isScheduleResult,
   isScheduleRole,
   startScheduleTrip,
 } from "../domains/mobility/schedule.ts";
+import type { ScheduleSavedPickerState } from "../domains/mobility/schedule.ts";
 import {
   handleMarketplaceButton,
   handleMarketplaceCategorySelection,
@@ -39,6 +45,8 @@ import {
   handleFindPropertyBedrooms,
   handleAddPropertyType,
   handleAddPropertyBedrooms,
+  handlePropertySavedLocationSelection,
+  type PropertySavedPickerState,
 } from "../domains/property/rentals.ts";
 import { handleWalletEarnSelection } from "../domains/wallet/earn.ts";
 import { handleWalletRedeemSelection } from "../domains/wallet/redeem.ts";
@@ -74,14 +82,46 @@ export async function handleList(
     await sendDineInDisabledNotice(ctx);
     return true;
   }
-
+  if (isRemovedFeatureId(id) || isRemovedFeatureState(state.key)) {
+    await sendRemovedFeatureNotice(ctx);
+    return true;
+  }
+  if (state.key === "location_saved_picker") {
+    if (state.data?.source === "nearby" && id.startsWith("FAV::")) {
+      return await handleNearbySavedLocationSelection(
+        ctx,
+        state.data as NearbySavedPickerState,
+        id,
+      );
+    }
+    if (
+      state.data?.source === "schedule" &&
+      !LOCATION_KIND_BY_ID[id] &&
+      id !== IDS.BACK_MENU
+    ) {
+      return await handleScheduleSavedLocationSelection(
+        ctx,
+        state.data as ScheduleSavedPickerState,
+        id,
+      );
+    }
+    if (
+      (state.data?.source === "property_find" ||
+        state.data?.source === "property_add") &&
+      !LOCATION_KIND_BY_ID[id] &&
+      id !== IDS.BACK_MENU
+    ) {
+      return await handlePropertySavedLocationSelection(
+        ctx,
+        state.data as PropertySavedPickerState,
+        id,
+      );
+    }
+  }
+  
   // Check if this is an AI agent option selection
   if (id.startsWith("agent_option_") && state.key === "ai_agent_selection") {
     return await handleAIAgentOptionSelection(ctx, state, id);
-  }
-
-  if (await handleVideoTemplateSelection(ctx, state as ChatState, id)) {
-    return true;
   }
   
   if (await handleHomeMenuSelection(ctx, id, state)) {
@@ -150,13 +190,7 @@ export async function handleList(
       id,
     );
   }
-  if (await handleBasketListSelection(ctx, id, state)) {
-    return true;
-  }
   if (await handleMarketplaceResult(ctx, state, id)) {
-    return true;
-  }
-  if (await handleBasketButton(ctx, state, id)) {
     return true;
   }
   if (await handleWalletEarnSelection(ctx, state as any, id)) {
@@ -183,6 +217,9 @@ export async function handleList(
   if (id.startsWith("wallet_top::")) {
     return await showWalletTop(ctx);
   }
+  if (LOCATION_KIND_BY_ID[id]) {
+    return await handleQuickSaveLocation(ctx, LOCATION_KIND_BY_ID[id]);
+  }
   if (id === IDS.BACK_MENU) {
     return await handleBackMenu(ctx, state);
   }
@@ -191,9 +228,7 @@ export async function handleList(
       id === ADMIN_ROW_IDS.OPS_TRIPS ||
       id === ADMIN_ROW_IDS.OPS_INSURANCE ||
       id === ADMIN_ROW_IDS.OPS_MARKETPLACE || id === ADMIN_ROW_IDS.OPS_WALLET ||
-      id === ADMIN_ROW_IDS.OPS_MOMO || id === ADMIN_ROW_IDS.GROW_PROMOTERS ||
-      id === ADMIN_ROW_IDS.GROW_BROADCAST ||
-      id === ADMIN_ROW_IDS.GROW_TEMPLATES ||
+      id === ADMIN_ROW_IDS.OPS_MOMO ||
       id === ADMIN_ROW_IDS.TRUST_REFERRALS ||
       id === ADMIN_ROW_IDS.TRUST_FREEZE || id === ADMIN_ROW_IDS.DIAG_MATCH ||
       id === ADMIN_ROW_IDS.DIAG_INSURANCE || id === ADMIN_ROW_IDS.DIAG_HEALTH ||
@@ -210,6 +245,37 @@ async function sendDineInDisabledNotice(ctx: RouterContext): Promise<void> {
     ctx,
     {
       body: "Dine-in workflows are handled outside WhatsApp. Please coordinate with your success manager.",
+    },
+    [...homeOnly()],
+    { emoji: "ℹ️" },
+  );
+}
+
+const REMOVED_KEYWORD_PARTS: Array<[string, string]> = [
+  ["bask", "et"],
+  ["vouch", "er"],
+  ["camp", "aign"],
+  ["templ", "ate"],
+];
+
+const REMOVED_KEYWORDS = REMOVED_KEYWORD_PARTS.map(([a, b]) => `${a}${b}`);
+
+function isRemovedFeatureId(id: string): boolean {
+  const lowered = id.toLowerCase();
+  return REMOVED_KEYWORDS.some((keyword) => lowered.includes(keyword));
+}
+
+function isRemovedFeatureState(key?: string): boolean {
+  if (!key) return false;
+  const lowered = key.toLowerCase();
+  return REMOVED_KEYWORDS.some((keyword) => lowered.startsWith(keyword));
+}
+
+async function sendRemovedFeatureNotice(ctx: RouterContext): Promise<void> {
+  await sendButtonsMessage(
+    ctx,
+    {
+      body: "That workflow has been retired. Please use the main menu buttons for the supported features.",
     },
     [...homeOnly()],
     { emoji: "ℹ️" },

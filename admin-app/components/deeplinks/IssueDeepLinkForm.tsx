@@ -13,14 +13,7 @@ import {
   FlowField,
 } from "./config";
 import styles from "./IssueDeepLinkForm.module.css";
-
-// Local utility to mask phone numbers
-function maskMsisdn(input?: string | null): string {
-  if (!input) return "••••••••";
-  const clean = input.replace(/\D/g, "");
-  if (clean.length < 4) return "••••••••";
-  return `•••• ${clean.slice(-4)}`;
-}
+import { maskMsisdn } from "@va/shared";
 
 interface IssueResponse {
   ok: boolean;

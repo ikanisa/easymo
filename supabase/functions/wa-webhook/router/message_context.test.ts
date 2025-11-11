@@ -10,7 +10,6 @@ const envReady = (() => {
   Deno.env.set("WA_VERIFY_TOKEN", "verify-token");
   Deno.env.set("WA_BOT_NUMBER_E164", "+250700000000");
   Deno.env.set("WA_INBOUND_LOG_SAMPLE_RATE", "0");
-  Deno.env.set("VOUCHER_SIGNING_SECRET", "voucher-secret");
   return true;
 })();
 

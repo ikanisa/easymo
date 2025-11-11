@@ -7,6 +7,7 @@ import { logWalletAdjust } from "../../observe/log.ts";
 import { sendImageUrl } from "../../wa/client.ts";
 import { startWallet, walletBackRow } from "./home.ts";
 import type { SupabaseClient } from "../../deps.ts";
+import { t } from "../../i18n/translator.ts";
 
 const STATE_KEY = "wallet_share";
 
@@ -35,25 +36,25 @@ export async function showWalletEarn(ctx: RouterContext): Promise<boolean> {
     await sendListMessage(
       ctx,
       {
-        title: "🏆 Get share link",
-        body: "Share your invite link to earn tokens.",
-        sectionTitle: "Share",
-        buttonText: "View",
+        title: t(ctx.locale, "wallet.earn.title"),
+        body: t(ctx.locale, "wallet.earn.body"),
+        sectionTitle: t(ctx.locale, "wallet.earn.section"),
+        buttonText: t(ctx.locale, "wallet.earn.button"),
         rows: [
           {
             id: IDS.WALLET_SHARE_WHATSAPP,
-            title: "Share on WhatsApp",
-            description: "Open WhatsApp with your invite prefilled.",
+            title: t(ctx.locale, "wallet.earn.rows.whatsapp.title"),
+            description: t(ctx.locale, "wallet.earn.rows.whatsapp.description"),
           },
           {
             id: IDS.WALLET_SHARE_COPY,
-            title: "Copy link",
-            description: "Copy your short referral link.",
+            title: t(ctx.locale, "wallet.earn.rows.copy.title"),
+            description: t(ctx.locale, "wallet.earn.rows.copy.description"),
           },
           {
             id: IDS.WALLET_SHARE_QR,
-            title: "Show QR",
-            description: "Display a QR code for friends to scan.",
+            title: t(ctx.locale, "wallet.earn.rows.qr.title"),
+            description: t(ctx.locale, "wallet.earn.rows.qr.description"),
           },
           walletBackRow(),
         ],
@@ -69,8 +70,8 @@ export async function showWalletEarn(ctx: RouterContext): Promise<boolean> {
     console.error("wallet.share_fail", error);
     await sendButtonsMessage(
       ctx,
-      "⚠️ Couldn't generate your share link. Try again later.",
-      [{ id: IDS.WALLET_SHARE_DONE, title: "Done" }],
+      t(ctx.locale, "wallet.earn.error"),
+      [{ id: IDS.WALLET_SHARE_DONE, title: t(ctx.locale, "wallet.buttons.done") }],
     );
     return true;
   }
@@ -86,21 +87,21 @@ export async function handleWalletEarnSelection(
   if (!share) {
     await sendButtonsMessage(
       ctx,
-      "Share data missing. Reloading menu.",
-      [{ id: IDS.WALLET_SHARE_DONE, title: "Done" }],
+      t(ctx.locale, "wallet.earn.missing_share"),
+      [{ id: IDS.WALLET_SHARE_DONE, title: t(ctx.locale, "wallet.buttons.done") }],
     );
     return true;
   }
   switch (id) {
     case IDS.WALLET_SHARE_WHATSAPP: {
       const body = [
-        "Share this link to open WhatsApp with your invite prefilled:",
+        t(ctx.locale, "wallet.earn.whatsapp.body"),
         share.waLink,
       ].join("\n\n");
       await sendButtonsMessage(
         ctx,
         body,
-        [{ id: IDS.WALLET_SHARE_DONE, title: "Copy" }],
+        [{ id: IDS.WALLET_SHARE_DONE, title: t(ctx.locale, "wallet.buttons.copy") }],
       );
       await logWalletAdjust({
         actor: ctx.from,
@@ -110,14 +111,14 @@ export async function handleWalletEarnSelection(
     }
     case IDS.WALLET_SHARE_COPY: {
       const body = [
-        "Copy your short referral link:",
+        t(ctx.locale, "wallet.earn.copy.body"),
         share.shortLink,
-        `Referral code: REF:${share.code}`,
+        t(ctx.locale, "wallet.earn.copy.code", { code: share.code }),
       ].join("\n\n");
       await sendButtonsMessage(
         ctx,
         body,
-        [{ id: IDS.WALLET_SHARE_DONE, title: "Done" }],
+        [{ id: IDS.WALLET_SHARE_DONE, title: t(ctx.locale, "wallet.buttons.done") }],
       );
       await logWalletAdjust({
         actor: ctx.from,
@@ -129,12 +130,12 @@ export async function handleWalletEarnSelection(
       await sendImageUrl(
         ctx.from,
         share.qrUrl,
-        `Scan to chat: ${share.shortLink}`,
+        t(ctx.locale, "wallet.earn.qr.caption", { link: share.shortLink }),
       );
       await sendButtonsMessage(
         ctx,
-        "QR code sent above. Save and share it with your friends.",
-        [{ id: IDS.WALLET_SHARE_DONE, title: "Done" }],
+        t(ctx.locale, "wallet.earn.qr.body"),
+        [{ id: IDS.WALLET_SHARE_DONE, title: t(ctx.locale, "wallet.buttons.done") }],
       );
       await logWalletAdjust({
         actor: ctx.from,

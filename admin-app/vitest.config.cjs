@@ -8,6 +8,13 @@ module.exports = {
     coverage: {
       reporter: ["text", "json", "html"],
     },
+    exclude: [
+      "**/node_modules/**",
+      "**/dist/**",
+      "**/cypress/**",
+      "**/.{git,svn,hg}/**",
+      "tests/e2e/playwright/**",
+    ],
   },
   resolve: {
     alias: {
@@ -17,6 +24,8 @@ module.exports = {
       "@easymo/ui": path.resolve(__dirname, "../packages/ui/src/index.ts"),
       "@easymo/ui/*": path.resolve(__dirname, "../packages/ui/src/*"),
       "@easymo/ui/tokens": path.resolve(__dirname, "../packages/ui/tokens/index.ts"),
+      "@easymo/commons": path.resolve(__dirname, "tests/__mocks__/commons-logger.ts"),
+      "@easymo/commons/*": path.resolve(__dirname, "tests/__mocks__/commons-logger.ts"),
       "server-only": path.resolve(__dirname, "tests/__mocks__/server-only.ts"),
     },
   },

@@ -26,7 +26,9 @@
     "functions:deploy": "supabase functions deploy admin-settings admin-stats admin-users admin-trips wa-webhook",
     "functions:deploy:agents": "supabase functions deploy agents/nearby-drivers agents/pharmacy agents/property-rental agents/schedule-trip agents/quincaillerie agents/shops",
     "embeddings:sync": "node ./scripts/embeddings/ingest-documents.mjs",
-    "diagnostics:supabase": "node ./scripts/test-supabase-connection.mjs"
+    "diagnostics:supabase": "node ./scripts/test-supabase-connection.mjs",
+    "mcp:supabase": "bash ./scripts/run-supabase-mcp-server.sh",
+    "guard:deprecated": "deno run --allow-read tools/lint/check_deprecated_features.ts"
   },
   "dependencies": {
     "@easymo/ui": "workspace:*",

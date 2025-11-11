@@ -4,7 +4,6 @@ Deno.env.set("WA_PHONE_ID", "000000000000");
 Deno.env.set("WA_TOKEN", "token");
 Deno.env.set("WA_APP_SECRET", "secret");
 Deno.env.set("WA_VERIFY_TOKEN", "verify");
-Deno.env.set("VOUCHER_SIGNING_SECRET", "test-secret");
 
 import type { RouterContext } from "../../types.ts";
 

@@ -13,12 +13,12 @@ remain additive-only.
 
 - App Router layout implements top navigation, grouped left nav, and mock-backed
   read views for every planned surface (Dashboard, Users, Insurance, Bars, Menus
-  & OCR, Staff Numbers, QR & Deep Links, Stations, Vouchers, WhatsApp Health,
+  & OCR, Staff Numbers, QR & Deep Links, Stations, WhatsApp Health,
   Notifications, Files, Settings, Logs).
 - Shared UI components (virtualized `DataTable`, KPI cards, Section cards,
   empty/loading states, toast notifications) power the current previews while we
   wire real APIs.
-- Dashboard, Users, Vouchers, and other pages render structured mock data with
+- Dashboard, Users, and other pages render structured mock data with
   filtering so stakeholders can review scope before server routes land.
 - API integrations will call Supabase Edge Functions strictly via HTTP bridges
   once implemented.

@@ -30,7 +30,7 @@ export function DashboardClient() {
   }
 
   const snapshotResult = snapshotQuery.data;
-  const snapshot = snapshotResult?.data ?? { kpis: [] };
+  const snapshot = snapshotResult?.data ?? { kpis: [], timeseries: [] };
   const webhookErrors = webhookErrorsQuery.data ?? [];
   const adminHub = adminHubQuery.data;
   const integrationNotice = snapshotResult?.integration;

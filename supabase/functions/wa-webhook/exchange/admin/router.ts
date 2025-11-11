@@ -140,7 +140,6 @@ import { handleAdminTrips } from "./trips.ts";
 import { handleAdminMarketplace } from "./marketplace.ts";
 import { handleAdminWallet } from "./wallet.ts";
 import { handleAdminMomoQr } from "./momoqr.ts";
-import { handleAdminPromoters } from "./promoters.ts";
 import { handleAdminReferrals } from "./referrals.ts";
 import { handleAdminFreeze } from "./freeze.ts";
 import { handleAdminDiagnostics } from "./diagnostics.ts";
@@ -167,12 +166,6 @@ export async function handleAdminFlow(
         return await handleAdminWallet(req, { waId: ctx.waId });
       case "flow.admin.momoqr.v1":
         return await handleAdminMomoQr(req, { waId: ctx.waId });
-      case "flow.admin.promoters.v1":
-        return await handleAdminPromoters(req, { waId: ctx.waId });
-      case "flow.admin.broadcast.v1":
-        return legacyAdminNotice(req, ctx, "broadcast");
-      case "flow.admin.templates.v1":
-        return legacyAdminNotice(req, ctx, "templates");
       case "flow.admin.referrals.v1":
         return await handleAdminReferrals(req, { waId: ctx.waId });
       case "flow.admin.freeze.v1":
@@ -198,28 +191,4 @@ export async function handleAdminFlow(
       };
     }
   });
-}
-
-function legacyAdminNotice(
-  req: FlowExchangeRequest,
-  ctx: AdminContext,
-  feature: "broadcast" | "templates",
-): FlowExchangeResponse {
-  recordAdminAudit({
-    adminWaId: ctx.waId,
-    action: `admin_${feature}_retired`,
-    targetId: req.flow_id ?? null,
-  }).catch((err) => {
-    console.error("admin_legacy_notice_audit_fail", err);
-  });
-  const message = feature === "broadcast"
-    ? "Broadcast tooling now lives in marketing playbooks outside WhatsApp."
-    : "Template review is fully automated. Reference the ops handbooks for guidance.";
-  return {
-    next_screen_id: req.screen_id,
-    messages: [{
-      level: "info",
-      text: `${message} Reach out to sales ops if you need a manual override.`,
-    }],
-  };
 }

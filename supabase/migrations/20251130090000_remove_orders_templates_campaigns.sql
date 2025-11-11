@@ -3,6 +3,12 @@ BEGIN;
 DROP TRIGGER IF EXISTS order_events_sync_admin_columns ON public.order_events;
 DROP FUNCTION IF EXISTS public.order_events_sync_admin_columns();
 
+DROP POLICY IF EXISTS notifications_role_select ON public.notifications;
+CREATE POLICY notifications_role_select ON public.notifications
+  FOR SELECT USING (
+    public.auth_role() = 'customer' AND public.auth_wa_id() = notifications.to_wa_id
+  );
+
 ALTER TABLE IF EXISTS public.notifications
     DROP CONSTRAINT IF EXISTS notifications_order_id_fkey;
 

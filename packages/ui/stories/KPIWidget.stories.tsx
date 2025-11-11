@@ -5,7 +5,7 @@ const meta: Meta<typeof KPIWidget> = {
   component: KPIWidget,
   title: "Data/KPI Widget",
   args: {
-    label: "Net voucher redemptions",
+    label: "Net token redemptions",
     value: "1,248",
     secondary: "+4.2% vs last week",
     trend: {

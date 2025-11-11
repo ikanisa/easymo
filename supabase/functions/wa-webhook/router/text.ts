@@ -131,13 +131,21 @@ export async function handleText(
   
   // Handle property find budget input
   if (state.key === "property_find_budget") {
-    const stateData = state.data as { rentalType: string; bedrooms: string };
+    const stateData = state.data as {
+      rentalType: string;
+      bedrooms: string;
+      currency?: string;
+    };
     return await handleFindPropertyBudget(ctx, stateData, body);
   }
   
   // Handle property add price input
   if (state.key === "property_add_price") {
-    const stateData = state.data as { rentalType: string; bedrooms: string };
+    const stateData = state.data as {
+      rentalType: string;
+      bedrooms: string;
+      currency?: string;
+    };
     return await handleAddPropertyPrice(ctx, stateData, body);
   }
   

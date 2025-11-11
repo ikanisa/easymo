@@ -27,14 +27,14 @@ describe('deeplink signing', () => {
     const nonce = createNonce();
     const expiresAt = new Date(Date.now() + DEFAULT_TTL_MINUTES * 60 * 1000);
     const token = createSignedToken({
-      flow: 'basket_open',
+      flow: 'insurance_attach',
       nonce,
       exp: expiresAt.toISOString(),
       msisdn: '+250700000000',
     });
 
     const decoded = verifySignedToken(token);
-    expect(decoded.payload.flow).toBe('basket_open');
+    expect(decoded.payload.flow).toBe('insurance_attach');
     expect(decoded.payload.nonce).toBe(nonce);
     expect(decoded.payload.msisdn).toBe('+250700000000');
   });
@@ -52,36 +52,27 @@ describe('deeplink signing', () => {
 
   it('builds deep link urls per flow', () => {
     const token = 'abc';
-    const flows: DeeplinkFlow[] = ['insurance_attach', 'basket_open', 'generate_qr'];
+    const flows: DeeplinkFlow[] = ['insurance_attach', 'generate_qr'];
     const urls = flows.map((flow) => buildDeepLinkUrl(flow, token));
     expect(urls).toEqual([
       'https://easymo.link/flow/insurance-attach?t=abc',
-      'https://easymo.link/flow/basket?t=abc',
       'https://easymo.link/flow/qr?t=abc',
     ]);
   });
 
   it('falls back to default deeplink host when env is unset', () => {
     delete process.env.DEEPLINK_BASE_URL;
-    const url = buildDeepLinkUrl('basket_open', 'xyz');
-    expect(url).toBe('https://easymo.link/flow/basket?t=xyz');
+    const url = buildDeepLinkUrl('generate_qr', 'xyz');
+    expect(url).toBe('https://easymo.link/flow/qr?t=xyz');
   });
 
   it('strips nonce from payload objects', () => {
-    const payload = { nonce: 'abc', basket_id: 'bkt_123' };
-    expect(stripNonce(payload)).toEqual({ basket_id: 'bkt_123' });
+    const payload = { nonce: 'abc', request_id: 'rq_123' };
+    expect(stripNonce(payload)).toEqual({ request_id: 'rq_123' });
     expect(stripNonce(null)).toEqual({});
   });
 
   it('builds bootstrap prompts per flow', () => {
-    const basketBootstrap = buildBootstrap(
-      'basket_open',
-      { basket_id: 'bkt_123', basket_name: 'Ibimina' },
-      'https://easymo.link/flow/basket?t=test',
-    );
-    expect(basketBootstrap.flowState).toMatchObject({ flow: 'basket', basket_id: 'bkt_123' });
-    expect(basketBootstrap.firstPrompt.type).toBe('interactive');
-
     const insuranceBootstrap = buildBootstrap(
       'insurance_attach',
       { request_id: 'rq_1' },

@@ -44,6 +44,15 @@
       ],
       "@easymo/commons": [
         "../packages/commons/src/index.ts"
+      ],
+      "@easymo/commons/*": [
+        "../packages/commons/src/*"
+      ],
+      "@va/shared": [
+        "../packages/shared/src/index.ts"
+      ],
+      "@va/shared/*": [
+        "../packages/shared/src/*"
       ]
     },
     "plugins": [

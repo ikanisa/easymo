@@ -48,9 +48,6 @@ const SECTION_LINKS: Record<
 
 const DISABLED_SECTION_IDS = new Set([
   "ADMIN::OPS_TRIPS",
-  "ADMIN::GROW_PROMOTERS",
-  "ADMIN::GROW_BROADCAST",
-  "ADMIN::GROW_TEMPLATES",
 ]);
 
 const GROUP_LABELS: Array<{ key: keyof AdminHubSections; title: string }> = [

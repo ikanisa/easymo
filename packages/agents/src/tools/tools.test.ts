@@ -3,12 +3,11 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import {
+import { 
   checkAvailabilityTool,
   createBookingTool,
   checkBalanceTool,
   menuLookupTool,
-  scriptPlannerTool,
   webSearchTool,
 } from './index';
 
@@ -16,8 +15,6 @@ const mockContext = {
   userId: 'test-user-123',
   source: 'web' as const,
 };
-
-const balanceTool = (checkBalanceTool ?? undefined) as typeof checkBalanceTool | undefined;
 
 describe('Tools', () => {
   describe('checkAvailabilityTool', () => {
@@ -75,33 +72,31 @@ describe('Tools', () => {
     });
   });
 
-  if (balanceTool) {
-    describe('checkBalanceTool', () => {
-      it('should have correct schema', () => {
-        expect(balanceTool.name).toBe('CheckBalance');
-        expect(balanceTool.parameters).toBeDefined();
-      });
-
-      it('should execute successfully without token type', async () => {
-        const result = await balanceTool.execute({}, mockContext);
-
-        expect(result).toBeDefined();
-        expect(result.balances).toBeInstanceOf(Array);
-        expect(result.balances.length).toBeGreaterThan(0);
-      });
-
-      it('should filter by token type', async () => {
-        const result = await balanceTool.execute(
-          { tokenType: 'voucher' },
-          mockContext
-        );
-
-        expect(result).toBeDefined();
-        expect(result.balances).toBeInstanceOf(Array);
-        expect(result.balances.every(b => b.type === 'voucher')).toBe(true);
-      });
+  describe('checkBalanceTool', () => {
+    it('should have correct schema', () => {
+      expect(checkBalanceTool.name).toBe('CheckBalance');
+      expect(checkBalanceTool.parameters).toBeDefined();
     });
-  }
+
+    it('should execute successfully without token type', async () => {
+      const result = await checkBalanceTool.execute({}, mockContext);
+
+      expect(result).toBeDefined();
+      expect(result.balances).toBeInstanceOf(Array);
+      expect(result.balances.length).toBeGreaterThan(0);
+    });
+
+    it('should filter by token type', async () => {
+      const result = await checkBalanceTool.execute(
+        { tokenType: 'token' },
+        mockContext
+      );
+
+      expect(result).toBeDefined();
+      expect(result.balances).toBeInstanceOf(Array);
+      expect(result.balances.every(b => b.type === 'token')).toBe(true);
+    });
+  });
 
   describe('menuLookupTool', () => {
     it('should have correct schema', () => {
@@ -152,30 +147,6 @@ describe('Tools', () => {
           query: 'test',
           maxResults: 100, // Over limit
         });
-      }).toThrow();
-    });
-  });
-
-  describe('scriptPlannerTool', () => {
-    it('should provide fallback recommendations without Supabase configuration', async () => {
-      const result = await scriptPlannerTool.execute(
-        { slots: ['hero', 'cta'], lookbackDays: 7, limit: 2 },
-        mockContext,
-      );
-
-      expect(result).toBeDefined();
-      expect(result.source).toBe('synthetic');
-      expect(result.slots.length).toBe(2);
-      for (const slot of result.slots) {
-        expect(slot.primary).toBeDefined();
-        expect(slot.challenger).toBeDefined();
-        expect(Array.isArray(slot.retrievalContext)).toBe(true);
-      }
-    });
-
-    it('should validate required slots', () => {
-      expect(() => {
-        scriptPlannerTool.parameters.parse({ slots: [] });
       }).toThrow();
     });
   });

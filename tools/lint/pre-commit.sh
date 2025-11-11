@@ -59,7 +59,6 @@ if command -v deno >/dev/null 2>&1; then
     WA_TOKEN=1 \
     WA_APP_SECRET=1 \
     WA_VERIFY_TOKEN=1 \
-    VOUCHER_SIGNING_SECRET=test \
     deno test --allow-env --no-check supabase/functions/_shared/flow_crypto.test.ts
     SUPABASE_URL=http://localhost \
     SUPABASE_SERVICE_ROLE_KEY=test \
@@ -67,7 +66,6 @@ if command -v deno >/dev/null 2>&1; then
     WA_TOKEN=1 \
     WA_APP_SECRET=1 \
     WA_VERIFY_TOKEN=1 \
-    VOUCHER_SIGNING_SECRET=test \
     deno test --allow-env --no-check supabase/functions/wa-webhook/notify/sender.test.ts
   else
     echo "(no staged Deno files; skipping Deno unit tests)"
@@ -78,7 +76,6 @@ if command -v deno >/dev/null 2>&1; then
   WA_TOKEN=1 \
   WA_APP_SECRET=1 \
   WA_VERIFY_TOKEN=1 \
-  VOUCHER_SIGNING_SECRET=test \
   deno test --allow-env --no-check supabase/functions/_shared/flow_crypto.test.ts
   SUPABASE_URL=http://localhost \
   SUPABASE_SERVICE_ROLE_KEY=test \
@@ -86,7 +83,6 @@ if command -v deno >/dev/null 2>&1; then
   WA_TOKEN=1 \
   WA_APP_SECRET=1 \
   WA_VERIFY_TOKEN=1 \
-  VOUCHER_SIGNING_SECRET=test \
   deno test --allow-env --no-check supabase/functions/wa-webhook/notify/sender.test.ts
   echo "→ SQL migration hygiene"
   if ! deno run --allow-read tools/sql/check_migrations.ts; then
@@ -96,6 +92,8 @@ if command -v deno >/dev/null 2>&1; then
   if ! deno run --allow-read tools/lint/check_archive_refs.ts; then
     echo "⚠️  Archive reference scan failed (non-blocking)" >&2
   fi
+  echo "→ Deprecated feature guard"
+  deno run --allow-read tools/lint/check_deprecated_features.ts
 else
   echo "⚠️  deno not available; skipped Deno lint/tests" >&2
 fi

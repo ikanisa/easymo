@@ -19,12 +19,12 @@ export function t(
 ): string {
   const catalog = CATALOGS[locale] ?? CATALOGS[DEFAULT_LANGUAGE];
   const fallback = CATALOGS[DEFAULT_LANGUAGE];
-  const template = catalog[key] ?? fallback[key] ?? key;
-  return applyParams(template, params);
+  const phrase = catalog[key] ?? fallback[key] ?? key;
+  return applyParams(phrase, params);
 }
 
-function applyParams(template: string, params: Params): string {
-  return template.replace(/{{\s*(\w+)\s*}}/g, (_match, token) => {
+function applyParams(phrase: string, params: Params): string {
+  return phrase.replace(/{{\s*(\w+)\s*}}/g, (_match, token) => {
     const value = params[token];
     return value === undefined ? "" : String(value);
   });

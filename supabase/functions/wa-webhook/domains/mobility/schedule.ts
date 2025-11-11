@@ -2,6 +2,7 @@ import type { RouterContext } from "../../types.ts";
 import { clearState, setState } from "../../state/store.ts";
 import { IDS } from "../../wa/ids.ts";
 import { VEHICLE_OPTIONS, vehicleFromId } from "./nearby.ts";
+import { t } from "../../i18n/translator.ts";
 import {
   gateProFeature,
   insertTrip,
@@ -15,10 +16,11 @@ import { waChatLink } from "../../utils/links.ts";
 import { maskPhone } from "../../flows/support.ts";
 import { logStructuredEvent } from "../../observe/log.ts";
 import { timeAgo } from "../../utils/text.ts";
-import { sendText } from "../../wa/client.ts";
+import { sendFlowMessage, sendText } from "../../wa/client.ts";
 import {
   buildButtons,
   ButtonSpec,
+  homeOnly,
   sendButtonsMessage,
   sendListMessage,
   sendListWithActions,
@@ -29,34 +31,31 @@ import {
   getStoredVehicleType,
   updateStoredVehicleType,
 } from "./vehicle_plate.ts";
-
-const ROLE_ROWS = [
-  {
-    id: IDS.ROLE_PASSENGER,
-    title: "Start as passenger",
-    description: "Find drivers for your trip.",
-  },
-  {
-    id: IDS.ROLE_DRIVER,
-    title: "Start as driver",
-    description: "Match with passengers on your route.",
-  },
-  {
-    id: IDS.BACK_MENU,
-    title: "← Back",
-    description: "Return to the main menu.",
-  },
-];
+import {
+  getFavoriteById,
+  listFavorites,
+  saveFavorite,
+  type UserFavorite,
+} from "../locations/favorites.ts";
+import { buildSaveRows } from "../locations/save.ts";
+import { SCHEDULE_TIME_FLOW_ID } from "../../config.ts";
 
 const DEFAULT_WINDOW_DAYS = 30;
-const MIN_RADIUS_METERS = 1000;
+const REQUIRED_RADIUS_METERS = 10_000;
+const DEFAULT_TIMEZONE = "Africa/Kigali";
 
-interface ScheduleState {
+export interface ScheduleState {
   role?: "driver" | "passenger";
   vehicle?: string;
   tripId?: string;
   origin?: { lat: number; lng: number };
   dropoff?: { lat: number; lng: number } | null;
+  originFavoriteId?: string | null;
+  dropoffFavoriteId?: string | null;
+  travelDate?: string | null;
+  travelTime?: string | null;
+  travelLabel?: string | null;
+  timezone?: string | null;
   rows?: ScheduleRow[];
 }
 
@@ -66,6 +65,12 @@ interface ScheduleRow {
   ref: string;
   tripId: string;
 }
+
+export type ScheduleSavedPickerState = {
+  source: "schedule";
+  stage: "pickup" | "dropoff";
+  state: ScheduleState;
+};
 
 function getMatchTimestamp(match: MatchResult): string | null {
   return match.matched_at ?? match.created_at ?? null;
@@ -88,11 +93,11 @@ export async function startScheduleTrip(
   await sendListMessage(
     ctx,
     {
-      title: "🚦 Schedule a trip",
-      body: "Choose how you want to ride today.",
-      sectionTitle: "Role",
-      buttonText: "View",
-      rows: ROLE_ROWS,
+      title: t(ctx.locale, "schedule.menu.title"),
+      body: t(ctx.locale, "schedule.menu.body"),
+      sectionTitle: t(ctx.locale, "schedule.menu.section"),
+      buttonText: t(ctx.locale, "schedule.menu.button"),
+      rows: buildRoleRows(ctx),
     },
     { emoji: "🚦" },
   );
@@ -127,8 +132,8 @@ export async function handleScheduleRole(
       });
       await sendButtonsMessage(
         ctx,
-        "📍 Share pickup location (tap ➕ → Location → Share).",
-        sharePickupButtons(role, { allowChange: true }),
+        t(ctx.locale, "schedule.pickup.prompt"),
+        sharePickupButtons(ctx, role, { allowChange: true }),
       );
       return true;
     }
@@ -141,10 +146,34 @@ export async function handleScheduleSkipDropoff(
   ctx: RouterContext,
   state: ScheduleState,
 ): Promise<boolean> {
-  if (!ctx.profileId || !state.role || !state.vehicle || !state.origin) {
+  if (!ctx.profileId || !state.role || !state.vehicle) {
     return false;
   }
-  return await createTripAndDeliverMatches(ctx, state, { dropoff: null });
+  if (!state.origin) {
+    await sendText(ctx.from, t(ctx.locale, "schedule.pickup.missing"));
+    return true;
+  }
+  if (state.tripId) {
+    return await createTripAndDeliverMatches(ctx, state, {
+      dropoff: null,
+      travelLabel: state.travelLabel ??
+        formatTravelLabel(
+          ctx.locale,
+          state.travelDate ?? null,
+          state.travelTime ?? null,
+          state.timezone ?? DEFAULT_TIMEZONE,
+        ),
+    });
+  }
+  const nextState: ScheduleState = {
+    role: state.role,
+    vehicle: state.vehicle,
+    origin: state.origin,
+    dropoff: null,
+    originFavoriteId: state.originFavoriteId ?? null,
+    dropoffFavoriteId: state.dropoffFavoriteId ?? null,
+  };
+  return await requestScheduleTime(ctx, nextState);
 }
 
 export async function handleScheduleVehicle(
@@ -166,8 +195,8 @@ export async function handleScheduleVehicle(
   });
   await sendButtonsMessage(
     ctx,
-    "📍 Share pickup location (tap ➕ → Location → Share).",
-    sharePickupButtons(state.role, {
+    t(ctx.locale, "schedule.pickup.prompt"),
+    sharePickupButtons(ctx, state.role, {
       allowChange: state.role === "driver",
     }),
   );
@@ -202,16 +231,14 @@ export async function handleScheduleLocation(
       role: state.role,
       vehicle: state.vehicle,
       origin: coords,
+      originFavoriteId: state.originFavoriteId ?? null,
     },
   });
 
   await sendButtonsMessage(
     ctx,
-    "📍 Share drop-off location (optional).",
-    buildButtons(
-      { id: IDS.SCHEDULE_SKIP_DROPOFF, title: "Skip" },
-      { id: IDS.BACK_MENU, title: "↩️ Menu" },
-    ),
+    t(ctx.locale, "schedule.dropoff.prompt"),
+    shareDropoffButtons(ctx),
   );
   return true;
 }
@@ -225,14 +252,19 @@ export async function handleScheduleDropoff(
     return false;
   }
   if (!state.tripId) {
-    await createTripAndDeliverMatches(ctx, {
+    if (!state.origin) {
+      await sendText(ctx.from, t(ctx.locale, "schedule.pickup.missing"));
+      return true;
+    }
+    const nextState: ScheduleState = {
       role: state.role,
       vehicle: state.vehicle,
       origin: state.origin,
-    }, {
       dropoff: coords,
-    });
-    return true;
+      originFavoriteId: state.originFavoriteId ?? null,
+      dropoffFavoriteId: state.dropoffFavoriteId ?? null,
+    };
+    return await requestScheduleTime(ctx, nextState);
   }
   try {
     // Use the same search radius we use for pickup to avoid NULL not-null violations
@@ -260,7 +292,7 @@ export async function handleScheduleDropoff(
     });
 
     await deliverMatches(ctx, context, matches, {
-      messagePrefix: "Drop-off saved!",
+      messagePrefix: t(ctx.locale, "schedule.dropoff.saved"),
       radiusMeters,
     });
     return true;
@@ -284,11 +316,166 @@ export async function handleScheduleDropoff(
     });
     await sendButtonsMessage(
       ctx,
-      "⚠️ Couldn't refresh matches right now. Try again later.",
-      shareDropoffButtons(),
+      t(ctx.locale, "schedule.errors.match_dropoff"),
+      shareDropoffButtons(ctx),
     );
     return true;
   }
+}
+
+async function requestScheduleTime(
+  ctx: RouterContext,
+  state: ScheduleState,
+): Promise<boolean> {
+  if (!ctx.profileId) return false;
+  await setState(ctx.supabase, ctx.profileId, {
+    key: "schedule_time_flow",
+    data: state,
+  });
+
+  if (!SCHEDULE_TIME_FLOW_ID) {
+    await sendButtonsMessage(
+      ctx,
+      t(ctx.locale, "schedule.time.flow_missing"),
+      homeOnly(),
+    );
+    return true;
+  }
+
+  await sendText(ctx.from, t(ctx.locale, "schedule.time.intro"));
+  try {
+    await sendFlowMessage(ctx.from, SCHEDULE_TIME_FLOW_ID, {
+      languageCode: ctx.locale,
+      metadata: {
+        schedule_role: state.role ?? null,
+      },
+    });
+  } catch (error) {
+    console.error("mobility.schedule_time_flow_fail", error);
+    await sendButtonsMessage(
+      ctx,
+      t(ctx.locale, "schedule.time.flow_error"),
+      homeOnly(),
+    );
+  }
+  return true;
+}
+
+export async function startScheduleSavedLocationPicker(
+  ctx: RouterContext,
+  state: ScheduleState,
+  stage: "pickup" | "dropoff",
+): Promise<boolean> {
+  if (!ctx.profileId) return false;
+  const favorites = await listFavorites(ctx);
+  await setState(ctx.supabase, ctx.profileId, {
+    key: "location_saved_picker",
+    data: {
+      source: "schedule",
+      stage,
+      state,
+    } satisfies ScheduleSavedPickerState,
+  });
+  const baseBody = t(ctx.locale, "location.saved.list.body", {
+    context: stage === "pickup"
+      ? t(ctx.locale, "location.context.pickup")
+      : t(ctx.locale, "location.context.dropoff"),
+  });
+  const body = favorites.length
+    ? baseBody
+    : `${baseBody}\n\n${t(ctx.locale, "location.saved.list.empty")}`;
+  await sendListMessage(
+    ctx,
+    {
+      title: t(ctx.locale, "location.saved.list.title"),
+      body,
+      sectionTitle: t(ctx.locale, "location.saved.list.section"),
+      rows: [
+        ...favorites.map((fav) => scheduleFavoriteToRow(fav)),
+        ...buildSaveRows(ctx),
+        {
+          id: IDS.BACK_MENU,
+          title: t(ctx.locale, "common.menu_back"),
+          description: t(ctx.locale, "common.back_to_menu.description"),
+        },
+      ],
+      buttonText: t(ctx.locale, "location.saved.list.button"),
+    },
+    { emoji: "⭐" },
+  );
+  return true;
+}
+
+export async function handleScheduleSavedLocationSelection(
+  ctx: RouterContext,
+  pickerState: ScheduleSavedPickerState,
+  selectionId: string,
+): Promise<boolean> {
+  if (!ctx.profileId) return false;
+  const favorite = await getFavoriteById(ctx, selectionId);
+  if (!favorite) {
+    await sendButtonsMessage(
+      ctx,
+      t(ctx.locale, "location.saved.list.expired"),
+      buildButtons({
+        id: IDS.BACK_MENU,
+        title: t(ctx.locale, "common.menu_back"),
+      }),
+    );
+    return true;
+  }
+  const coords = { lat: favorite.lat, lng: favorite.lng };
+  if (pickerState.stage === "pickup") {
+    return await handleScheduleLocation(
+      ctx,
+      { ...pickerState.state, originFavoriteId: favorite.id },
+      coords,
+    );
+  }
+  return await handleScheduleDropoff(
+    ctx,
+    { ...pickerState.state, dropoffFavoriteId: favorite.id },
+    coords,
+  );
+}
+
+export async function handleScheduleRecurrenceSelection(
+  ctx: RouterContext,
+  state: ScheduleState,
+  choiceId: string,
+): Promise<boolean> {
+  if (!ctx.profileId || !state.role || !state.vehicle || !state.origin) {
+    return false;
+  }
+  const recurrence = parseRecurrenceChoice(choiceId);
+  if (!recurrence) return false;
+
+  if (!state.travelTime) {
+    await sendText(ctx.from, t(ctx.locale, "schedule.time.missing"));
+    return true;
+  }
+
+  if (recurrence !== "none") {
+    const saved = await saveRecurringTrip(ctx, state, recurrence);
+    if (!saved) return true;
+  }
+
+  await createTripAndDeliverMatches(
+    ctx,
+    state,
+    {
+      dropoff: state.dropoff ?? null,
+      travelLabel: state.travelLabel ??
+        formatTravelLabel(
+          ctx.locale,
+          state.travelDate ?? null,
+          state.travelTime ?? null,
+          state.timezone ?? DEFAULT_TIMEZONE,
+        ),
+    },
+  );
+  await clearState(ctx.supabase, ctx.profileId);
+  return true;
 }
 
 export async function handleScheduleRefresh(
@@ -313,7 +500,7 @@ export async function handleScheduleRefresh(
     });
 
     await deliverMatches(ctx, state, matches, {
-      messagePrefix: "🔄 Latest matches",
+      messagePrefix: t(ctx.locale, "schedule.matches.refresh"),
       radiusMeters,
     });
     return true;
@@ -337,7 +524,7 @@ export async function handleScheduleRefresh(
     });
     await sendButtonsMessage(
       ctx,
-      "⚠️ Couldn't refresh matches right now. Please try again shortly.",
+      t(ctx.locale, "schedule.errors.match_refresh"),
       matchActionButtons(state),
     );
     return true;
@@ -357,8 +544,8 @@ export async function requestScheduleDropoff(
   });
   await sendButtonsMessage(
     ctx,
-    "📍 Share drop-off location (tap ➕ → Location). It’s optional—tap Skip if you’re not sure.",
-    shareDropoffButtons(),
+    t(ctx.locale, "schedule.dropoff.instructions"),
+    shareDropoffButtons(ctx),
   );
   return true;
 }
@@ -366,7 +553,10 @@ export async function requestScheduleDropoff(
 async function createTripAndDeliverMatches(
   ctx: RouterContext,
   state: ScheduleState,
-  options: { dropoff: { lat: number; lng: number } | null },
+  options: {
+    dropoff: { lat: number; lng: number } | null;
+    travelLabel?: string | null;
+  },
 ): Promise<boolean> {
   if (!state.origin) throw new Error("Missing pickup location");
   const config = await getAppConfig(ctx.supabase);
@@ -383,6 +573,7 @@ async function createTripAndDeliverMatches(
       lat: state.origin.lat,
       lng: state.origin.lng,
       radiusMeters,
+      pickupText: options.travelLabel ?? null,
     });
 
     if (options.dropoff) {
@@ -401,6 +592,12 @@ async function createTripAndDeliverMatches(
       tripId,
       origin: state.origin,
       dropoff: options.dropoff,
+      originFavoriteId: state.originFavoriteId ?? null,
+      dropoffFavoriteId: options.dropoff ? (state.dropoffFavoriteId ?? null) : null,
+      travelLabel: options.travelLabel ?? null,
+      travelDate: state.travelDate ?? null,
+      travelTime: state.travelTime ?? null,
+      timezone: state.timezone ?? DEFAULT_TIMEZONE,
     };
 
     const matches = await fetchMatches(ctx, context, {
@@ -409,8 +606,14 @@ async function createTripAndDeliverMatches(
       radiusMeters,
     });
 
+    const messagePrefix = options.travelLabel
+      ? t(ctx.locale, "schedule.trip.created_at", {
+        datetime: options.travelLabel,
+      })
+      : t(ctx.locale, "schedule.trip.created");
+
     await deliverMatches(ctx, context, matches, {
-      messagePrefix: "Trip created!",
+      messagePrefix,
       radiusMeters,
     });
     return true;
@@ -433,26 +636,34 @@ async function createTripAndDeliverMatches(
         : String(error ?? "unknown"),
     });
     if (tripId) {
-      const followUp = [
-        "✅ Trip saved!",
-        "We didn't find live matches yet, but your trip is now visible to nearby riders.",
-        "You can explore nearby options anytime from the menu.",
-      ].join("\n");
+      const followUp = t(ctx.locale, "schedule.trip.saved_followup");
 
       const browseButton: ButtonSpec = state.role === "passenger"
-        ? { id: IDS.SEE_DRIVERS, title: "🚗 Nearby drivers" }
-        : { id: IDS.SEE_PASSENGERS, title: "🧍 Nearby passengers" };
+        ? {
+          id: IDS.SEE_DRIVERS,
+          title: t(ctx.locale, "home.rows.seeDrivers.title"),
+        }
+        : {
+          id: IDS.SEE_PASSENGERS,
+          title: t(ctx.locale, "home.rows.seePassengers.title"),
+        };
 
       await sendButtonsMessage(
         ctx,
         followUp,
-        [browseButton, { id: IDS.BACK_MENU, title: "↩️ Menu" }],
+        [
+          browseButton,
+          { id: IDS.BACK_MENU, title: t(ctx.locale, "common.menu_back") },
+        ],
       );
     } else {
       await sendButtonsMessage(
         ctx,
-        "⚠️ Matching service is unavailable right now. Please try again in a few minutes.",
-        buildButtons({ id: IDS.BACK_MENU, title: "↩️ Menu" }),
+        t(ctx.locale, "schedule.errors.service_unavailable"),
+        buildButtons({
+          id: IDS.BACK_MENU,
+          title: t(ctx.locale, "common.menu_back"),
+        }),
       );
     }
 
@@ -478,9 +689,12 @@ export async function handleScheduleResultSelection(
   const link = waChatLink(match.whatsapp, `Hi, I'm Ref ${match.ref}`);
   await sendButtonsMessage(
     ctx,
-    `Open WhatsApp chat: ${link}`,
+    t(ctx.locale, "schedule.chat.cta", { link }),
     [
-      { id: IDS.SCHEDULE_REFRESH_RESULTS, title: "🔄 Refresh" },
+      {
+        id: IDS.SCHEDULE_REFRESH_RESULTS,
+        title: t(ctx.locale, "common.buttons.refresh"),
+      },
     ],
   );
   await clearState(ctx.supabase, ctx.profileId);
@@ -496,15 +710,31 @@ export function isScheduleResult(id: string): boolean {
 }
 
 function sharePickupButtons(
+  ctx: RouterContext,
   role?: "driver" | "passenger",
   options: { allowChange?: boolean } = {},
 ): ButtonSpec[] {
+  const buttons: ButtonSpec[] = [];
   if (role === "driver" && options.allowChange) {
-    return buildButtons(
-      { id: IDS.MOBILITY_CHANGE_VEHICLE, title: "Change vehicle" },
-    );
+    buttons.push({
+      id: IDS.MOBILITY_CHANGE_VEHICLE,
+      title: t(ctx.locale, "mobility.nearby.change_vehicle"),
+    });
   }
-  return [];
+  buttons.push({
+    id: IDS.LOCATION_SAVED_LIST,
+    title: t(ctx.locale, "location.saved.button"),
+  });
+  const [primary, ...rest] = buttons;
+  return buildButtons(primary, ...rest);
+}
+
+function shareDropoffButtons(ctx: RouterContext): ButtonSpec[] {
+  return buildButtons(
+    { id: IDS.SCHEDULE_SKIP_DROPOFF, title: t(ctx.locale, "common.buttons.skip") },
+    { id: IDS.LOCATION_SAVED_LIST, title: t(ctx.locale, "location.saved.button") },
+    { id: IDS.BACK_MENU, title: t(ctx.locale, "common.menu_back") },
+  );
 }
 
 async function promptScheduleVehicleSelection(
@@ -520,27 +750,88 @@ async function promptScheduleVehicleSelection(
     ctx,
     {
       title: role === "driver"
-        ? "🚗 You are a driver"
-        : "🧍 You are a passenger",
-      body: "Choose your vehicle type.",
-      sectionTitle: "Vehicle",
+        ? t(ctx.locale, "schedule.vehicle.prompt.driver")
+        : t(ctx.locale, "schedule.vehicle.prompt.passenger"),
+      body: t(ctx.locale, "schedule.vehicle.body"),
+      sectionTitle: t(ctx.locale, "schedule.vehicle.section"),
       rows: VEHICLE_OPTIONS,
-      buttonText: "Select",
+      buttonText: t(ctx.locale, "common.buttons.select"),
     },
-    sharePickupButtons(role),
+    sharePickupButtons(ctx, role),
   );
 }
 
-function shareDropoffButtons(): ButtonSpec[] {
-  return [
-    { id: IDS.SCHEDULE_SKIP_DROPOFF, title: "Skip" },
-    { id: IDS.SCHEDULE_ADD_DROPOFF, title: "➕ Add drop-off" },
-  ];
+function kmToMeters(km: number | null | undefined): number {
+  if (!km || Number.isNaN(km)) return REQUIRED_RADIUS_METERS;
+  return Math.min(
+    Math.max(Math.round(km * 1000), REQUIRED_RADIUS_METERS),
+    REQUIRED_RADIUS_METERS,
+  );
 }
 
-function kmToMeters(km: number | null | undefined): number {
-  if (!km || Number.isNaN(km)) return MIN_RADIUS_METERS;
-  return Math.max(Math.round(km * 1000), MIN_RADIUS_METERS);
+function parseRecurrenceChoice(
+  id: string,
+): "none" | "weekdays" | "daily" | null {
+  if (id === IDS.SCHEDULE_RECUR_NONE) return "none";
+  if (id === IDS.SCHEDULE_RECUR_WEEKDAYS) return "weekdays";
+  if (id === IDS.SCHEDULE_RECUR_DAILY) return "daily";
+  return null;
+}
+
+async function saveRecurringTrip(
+  ctx: RouterContext,
+  state: ScheduleState,
+  recurrence: "weekdays" | "daily",
+): Promise<boolean> {
+  if (!ctx.profileId) return false;
+  const pickupFavoriteId = await ensureFavoriteForCoords(
+    ctx,
+    state.originFavoriteId,
+    state.origin,
+    t(ctx.locale, "schedule.recur.auto_pickup_label"),
+  );
+  const dropFavoriteId = await ensureFavoriteForCoords(
+    ctx,
+    state.dropoffFavoriteId,
+    state.dropoff,
+    t(ctx.locale, "schedule.recur.auto_dropoff_label"),
+  );
+  if (!pickupFavoriteId || !dropFavoriteId) {
+    await sendText(ctx.from, t(ctx.locale, "schedule.recur.missing_locations"));
+    return false;
+  }
+  const daysOfWeek = recurrence === "weekdays"
+    ? [1, 2, 3, 4, 5]
+    : [1, 2, 3, 4, 5, 6, 7];
+  const { error } = await ctx.supabase.from("recurring_trips").insert({
+    user_id: ctx.profileId,
+    origin_favorite_id: pickupFavoriteId,
+    dest_favorite_id: dropFavoriteId,
+    days_of_week: daysOfWeek,
+    time_local: state.travelTime!,
+    timezone: state.timezone ?? DEFAULT_TIMEZONE,
+  });
+  if (error) {
+    console.error("mobility.schedule_recurring_fail", error);
+    await sendText(ctx.from, t(ctx.locale, "schedule.recur.error"));
+    return false;
+  }
+  await sendText(ctx.from, t(ctx.locale, "schedule.recur.saved"));
+  return true;
+}
+
+async function ensureFavoriteForCoords(
+  ctx: RouterContext,
+  favoriteId: string | null | undefined,
+  coords: { lat: number; lng: number } | null | undefined,
+  fallbackLabel: string,
+): Promise<string | null> {
+  if (favoriteId) return favoriteId;
+  if (!coords) return null;
+  const saved = await saveFavorite(ctx, "other", coords, {
+    label: fallbackLabel,
+  });
+  return saved?.id ?? null;
 }
 
 async function fetchMatches(
@@ -585,7 +876,7 @@ async function deliverMatches(
     count: matches.length,
   });
 
-  const rows = matches.map((match) => buildScheduleRow(match));
+  const rows = matches.map((match) => buildScheduleRow(ctx, match));
 
   await setState(ctx.supabase, ctx.profileId!, {
     key: "schedule_results",
@@ -595,14 +886,17 @@ async function deliverMatches(
     },
   });
 
+  const tapInstruction = t(ctx.locale, "schedule.matches.tap_to_chat");
+  const waitingInstruction = t(ctx.locale, "schedule.matches.waiting");
+  const notifyInstruction = t(ctx.locale, "schedule.matches.notify");
   const body = matches.length
-    ? `${meta.messagePrefix}\nTap a match to open chat.`
-    : `${meta.messagePrefix}\nNo matches yet. We’ll keep looking.`;
+    ? `${meta.messagePrefix}\n${tapInstruction}`
+    : `${meta.messagePrefix}\n${waitingInstruction}`;
 
   if (!matches.length) {
     await sendText(
       ctx.from,
-      `${body}\nWe\'ll keep looking and update you soon.`,
+      `${body}\n${notifyInstruction}`,
     );
     return;
   }
@@ -611,22 +905,25 @@ async function deliverMatches(
     ctx,
     {
       title: state.role === "passenger"
-        ? "🚗 Available drivers"
-        : "🧍 Nearby passengers",
+        ? t(ctx.locale, "schedule.list.title.drivers")
+        : t(ctx.locale, "schedule.list.title.passengers"),
       body,
-      sectionTitle: "Matches",
+      sectionTitle: t(ctx.locale, "schedule.matches.section"),
       rows: rows.map((r) => r.row),
-      buttonText: "Choose",
+      buttonText: t(ctx.locale, "common.buttons.choose"),
     },
     matchActionButtons(state),
   );
 }
 
-function matchActionButtons(state: ScheduleState): ButtonSpec[] {
+function matchActionButtons(_state: ScheduleState): ButtonSpec[] {
   return [];
 }
 
-function buildScheduleRow(match: MatchResult): {
+function buildScheduleRow(
+  ctx: RouterContext,
+  match: MatchResult,
+): {
   row: { id: string; title: string; description?: string };
   state: ScheduleRow;
 } {
@@ -638,9 +935,11 @@ function buildScheduleRow(match: MatchResult): {
     getMatchTimestamp(match) ?? new Date().toISOString(),
   );
   const details = [
-    `Ref ${match.ref_code ?? "---"}`,
-    distanceLabel,
-    `Seen ${seenLabel}`,
+    t(ctx.locale, "schedule.match.row.ref", { ref: match.ref_code ?? "---" }),
+    distanceLabel
+      ? t(ctx.locale, "schedule.match.row.distance", { distance: distanceLabel })
+      : null,
+    t(ctx.locale, "schedule.match.row.seen", { time: seenLabel }),
   ].filter(Boolean).join(" • ");
   const rowId = `MTCH::${match.trip_id}`;
   return {
@@ -656,6 +955,37 @@ function buildScheduleRow(match: MatchResult): {
       tripId: match.trip_id,
     },
   };
+}
+
+function scheduleFavoriteToRow(
+  favorite: UserFavorite,
+): { id: string; title: string; description?: string } {
+  return {
+    id: favorite.id,
+    title: `⭐ ${favorite.label}`,
+    description: favorite.address ??
+      `${favorite.lat.toFixed(4)}, ${favorite.lng.toFixed(4)}`,
+  };
+}
+
+function buildRoleRows(ctx: RouterContext) {
+  return [
+    {
+      id: IDS.ROLE_PASSENGER,
+      title: t(ctx.locale, "schedule.role.passenger.title"),
+      description: t(ctx.locale, "schedule.role.passenger.description"),
+    },
+    {
+      id: IDS.ROLE_DRIVER,
+      title: t(ctx.locale, "schedule.role.driver.title"),
+      description: t(ctx.locale, "schedule.role.driver.description"),
+    },
+    {
+      id: IDS.BACK_MENU,
+      title: t(ctx.locale, "common.menu_back"),
+      description: t(ctx.locale, "common.back_to_menu.description"),
+    },
+  ];
 }
 
 function toDistanceLabel(value: number): string {
@@ -675,4 +1005,23 @@ function sortMatches(a: MatchResult, b: MatchResult): number {
     ? b.distance_km
     : Number.MAX_SAFE_INTEGER;
   return distA - distB;
+}
+
+export function formatTravelLabel(
+  locale: string,
+  date: string | null,
+  time: string | null,
+  timezone: string | null,
+): string {
+  if (!date || !time) return "";
+  const zone = timezone ?? DEFAULT_TIMEZONE;
+  let dateLabel = date;
+  try {
+    dateLabel = new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(
+      new Date(`${date}T00:00:00Z`),
+    );
+  } catch {
+    // ignore formatter failures
+  }
+  return `${dateLabel} · ${time} (${zone})`;
 }

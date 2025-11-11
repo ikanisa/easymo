@@ -1,18 +1,17 @@
 import { z } from "zod";
-import { shouldUseMocks } from "@/lib/runtime-config";
-import { mockDashboardKpis } from "@/lib/mock-data";
-import { callAdminFunction } from "@/lib/server/functions-client";
 import {
   type DashboardKpi,
+  type TimeseriesPoint,
   dashboardKpiSchema,
+  timeseriesPointSchema,
 } from "@/lib/schemas";
 import { getAdminApiPath } from "@/lib/routes";
 
-const useMocks = shouldUseMocks();
 const isServer = typeof window === "undefined";
 
 export type DashboardSnapshot = {
   kpis: DashboardKpi[];
+  timeseries: TimeseriesPoint[];
 };
 
 export type DashboardSnapshotIntegration = {
@@ -44,19 +43,13 @@ function fallbackResult(
   remediation?: string,
 ): DashboardSnapshotResult {
   return {
-    data: fallbackSnapshot(),
+    data: emptySnapshot(),
     integration: degraded(message, remediation),
   };
 }
 
 export async function getDashboardSnapshot(): Promise<DashboardSnapshotResult> {
   if (!isServer) {
-    if (useMocks) {
-      return fallbackResult(
-        "Runtime configured to use mock dashboard fixtures.",
-        "Disable NEXT_PUBLIC_USE_MOCKS before production deploys.",
-      );
-    }
     try {
       const response = await fetch(getAdminApiPath("dashboard"), { cache: "no-store" });
       if (!response.ok) {
@@ -75,54 +68,15 @@ export async function getDashboardSnapshot(): Promise<DashboardSnapshotResult> {
     }
   }
 
-  if (useMocks) {
-    return fallbackResult(
-      "Runtime configured to use mock dashboard fixtures.",
-      "Disable NEXT_PUBLIC_USE_MOCKS before production deploys.",
-    );
-  }
-
   const { getSupabaseAdminClient } = await import(
     "@/lib/server/supabase-admin"
   );
   const adminClient = getSupabaseAdminClient();
   if (!adminClient) {
-    // Fallback to Edge Function admin-stats if service-role envs are missing
-    try {
-      const stats = await callAdminFunction<any>("admin-stats");
-      const kpis: DashboardKpi[] = [
-        { 
-          label: "Total Users", 
-          primaryValue: String(stats?.total_users ?? 0),
-          secondaryValue: null,
-          trend: "flat"
-        },
-        { 
-          label: "Drivers Online", 
-          primaryValue: String(stats?.drivers_online ?? 0),
-          secondaryValue: null,
-          trend: "flat"
-        },
-        { 
-          label: "Open Trips", 
-          primaryValue: String(stats?.open_trips ?? 0),
-          secondaryValue: null,
-          trend: "flat"
-        },
-        { 
-          label: "Active Subscriptions", 
-          primaryValue: String(stats?.active_subscriptions ?? 0),
-          secondaryValue: null,
-          trend: "flat"
-        },
-      ];
-      return {
-        data: { kpis },
-        integration: { status: "ok", target: "dashboard_snapshot" },
-      };
-    } catch (e) {
-      throw new Error("Supabase admin client is not configured.");
-    }
+    return fallbackResult(
+      "Supabase admin client is not configured.",
+      "Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY for the admin app.",
+    );
   }
 
   const { data, error } = await adminClient.rpc("dashboard_snapshot");
@@ -149,13 +103,20 @@ export async function getDashboardSnapshot(): Promise<DashboardSnapshotResult> {
 }
 
 function parseSnapshot(input: unknown): DashboardSnapshot {
-  return z.object({
+  const schema = z.object({
     kpis: z.array(dashboardKpiSchema),
-  }).parse(input);
+    timeseries: z.array(timeseriesPointSchema).optional(),
+  });
+  const parsed = schema.parse(input);
+  return {
+    kpis: parsed.kpis,
+    timeseries: parsed.timeseries ?? [],
+  };
 }
 
-function fallbackSnapshot(): DashboardSnapshot {
+function emptySnapshot(): DashboardSnapshot {
   return {
-    kpis: mockDashboardKpis,
+    kpis: [],
+    timeseries: [],
   };
 }

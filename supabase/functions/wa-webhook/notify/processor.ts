@@ -180,10 +180,10 @@ export function categorizeMetaError(
     return "defer";
   }
 
-  // Invalid template, opt-out, policy violation - fail immediately
+  // Invalid payload, opt-out, policy violation - fail immediately
   if (
-    code === 131000 || // Template not found
-    code === 131026 || // Template paused
+    code === 131000 || // Payload not found
+    code === 131026 || // Payload paused
     code === 131047 || // Rate limit
     code === 131051 || // Unsupported message type
     code === 132000 || // Temporary ban
@@ -252,7 +252,7 @@ export async function getNotificationLocale(
 }
 
 /**
- * Log notification delivery metrics by domain and template
+ * Log notification delivery metrics by domain and message format
  */
 export async function logDeliveryMetrics(
   row: ClaimedRow,

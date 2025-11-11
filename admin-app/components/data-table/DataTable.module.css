@@ -45,7 +45,7 @@
 
 .row {
   display: grid;
-  grid-template-columns: var(--table-column-template, 1fr);
+  grid-template-columns: var(--table-column-layout, 1fr);
   min-height: 56px;
 }
 
