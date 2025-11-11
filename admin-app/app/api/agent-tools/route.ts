@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { listAgentTools, type AgentTool } from "@/lib/supabase/server/tools";
-import { SupabaseUnavailableError, SupabaseQueryError } from "@/lib/supabase/server/utils";
+import { getSupabaseAdminClient } from "@/lib/server/supabase-admin";
 
 const querySchema = z.object({
   includeDisabled: z
@@ -10,33 +9,7 @@ const querySchema = z.object({
     .optional(),
 });
 
-export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const parsed = querySchema.safeParse({
-    includeDisabled: searchParams.get("includeDisabled") ?? undefined,
-  });
-
-  if (!parsed.success) {
-    return NextResponse.json({ error: "invalid_query" }, { status: 400 });
-  }
-
-  try {
-    const tools = await listAgentTools({
-      includeDisabled: parsed.data.includeDisabled ?? true,
-    });
-    return NextResponse.json<{ tools: AgentTool[] }>({ tools });
-  } catch (error) {
-    if (error instanceof SupabaseUnavailableError) {
-      return NextResponse.json({ error: error.message }, { status: 503 });
-    }
-    if (error instanceof SupabaseQueryError) {
-      return NextResponse.json({ error: error.message }, { status: 502 });
-    }
-    return NextResponse.json({ error: "unknown_error" }, { status: 500 });
-  }
-import { getSupabaseAdminClient } from "@/lib/server/supabase-admin";
-
-const mockTools = [
+const fallbackTools = [
   {
     id: "mock-web-search",
     name: "WebSearch",
@@ -59,11 +32,20 @@ const mockTools = [
   },
 ] as const;
 
-export async function GET() {
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const parsed = querySchema.safeParse({
+    includeDisabled: searchParams.get("includeDisabled") ?? undefined,
+  });
+
+  if (!parsed.success) {
+    return NextResponse.json({ error: "invalid_query" }, { status: 400 });
+  }
+
   const admin = getSupabaseAdminClient();
   if (!admin) {
     return NextResponse.json({
-      tools: mockTools,
+      tools: fallbackTools,
       integration: {
         status: "degraded" as const,
         target: "agent_tools",
@@ -72,23 +54,36 @@ export async function GET() {
     });
   }
 
-  const { data, error } = await admin
+  const includeDisabled = parsed.data.includeDisabled ?? true;
+  let query = admin
     .from("agent_tools")
-    .select("id, name, description, enabled, parameters, metadata, created_at, updated_at")
+    .select(
+      "id, name, description, enabled, parameters, metadata, created_at, updated_at",
+    )
     .order("name", { ascending: true });
+
+  if (!includeDisabled) {
+    query = query.eq("enabled", true);
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     return NextResponse.json({
-      tools: mockTools,
+      tools: fallbackTools,
       integration: {
         status: "degraded" as const,
         target: "agent_tools",
         message: error.message || "Failed to load agent tools from Supabase.",
       },
-    }, { status: 200 });
+    });
   }
 
-  return NextResponse.json({ tools: data ?? [] });
+  return NextResponse.json({
+    tools: data ?? [],
+    integration: { status: "ok" as const, target: "agent_tools" },
+  });
 }
 
 export const runtime = "nodejs";
+

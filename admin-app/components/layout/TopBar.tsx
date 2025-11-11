@@ -24,31 +24,6 @@ interface ShortcutRow {
   label: string;
   keys: string[][];
 }
-export function TopBar(
-  {
-    environmentLabel,
-    onOpenAssistant,
-    onOpenNavigation,
-    assistantEnabled = false,
-    actorLabel,
-    actorInitials = "OP",
-    signingOut = false,
-    onSignOut,
-    omniSearchPlaceholder,
-    omniShortcutHint,
-  }: TopBarProps,
-) {
-  const integrationStatusQuery = useIntegrationStatusQuery({
-    refetchInterval: 120_000,
-  } as any);
-
-  const { badgeLabel, badgeValue } = useMemo(() => {
-    if (integrationStatusQuery.isLoading) {
-      return {
-        badgeValue: "…",
-        badgeLabel: "Checking integration health",
-      };
-    }
 
 function KeyStroke({ combo }: { combo: string[] }) {
   return (
@@ -91,26 +66,11 @@ function HelpPopover() {
 
   const shortcuts: ShortcutRow[] = useMemo(
     () => [
-      {
-        label: "Open Omnisearch",
-        keys: [["⌘", "K"], ["Ctrl", "K"]],
-      },
-      {
-        label: "Sidecar · Logs tab",
-        keys: [["⌥", "1"]],
-      },
-      {
-        label: "Sidecar · Tasks tab",
-        keys: [["⌥", "2"]],
-      },
-      {
-        label: "Sidecar · Policies tab",
-        keys: [["⌥", "3"]],
-      },
-      {
-        label: "Close sidecar",
-        keys: [["⌥", "0"]],
-      },
+      { label: "Open Omnisearch", keys: [["⌘", "K"], ["Ctrl", "K"]] },
+      { label: "Sidecar · Logs tab", keys: [["⌥", "1"]] },
+      { label: "Sidecar · Tasks tab", keys: [["⌥", "2"]] },
+      { label: "Sidecar · Policies tab", keys: [["⌥", "3"]] },
+      { label: "Close sidecar", keys: [["⌥", "0"]] },
     ],
     [],
   );
@@ -137,8 +97,12 @@ function HelpPopover() {
         >
           <div className="flex items-center justify-between border-b border-[color:var(--color-border)]/60 bg-[color:var(--color-surface)]/90 px-4 py-3">
             <div>
-              <p className="text-sm font-semibold text-[color:var(--color-foreground)]">Shortcuts</p>
-              <p className="text-xs text-[color:var(--color-muted)]">One screen = one decision. Keep hands on the keyboard.</p>
+              <p className="text-sm font-semibold text-[color:var(--color-foreground)]">
+                Shortcuts
+              </p>
+              <p className="text-xs text-[color:var(--color-muted)]">
+                One screen = one decision. Keep hands on the keyboard.
+              </p>
             </div>
             <Button type="button" size="icon" variant="ghost" onClick={close} aria-label="Close help dialog">
               ×
@@ -185,12 +149,13 @@ export function TopBar({
   actorInitials = "OP",
   signingOut = false,
   onSignOut,
+  omniSearchPlaceholder,
+  omniShortcutHint,
 }: TopBarProps) {
   const panel = usePanelContext();
   const badgeMetrics = useIntegrationBadgeMetrics();
-
   const searchPlaceholder =
-    omniSearchPlaceholder ?? "Search customers, vendors, menus…";
+    omniSearchPlaceholder ?? "Search agents, requests, policies…";
   const showShortcutHint = Boolean(omniShortcutHint);
 
   return (
@@ -238,26 +203,11 @@ export function TopBar({
           aria-expanded={panel.commandPaletteOpen}
         >
           <Search className="h-4 w-4" aria-hidden />
-          <span className="flex-1 text-left">Search agents, requests, policies, and tasks</span>
+          <span className="flex-1 text-left">{searchPlaceholder}</span>
           <kbd className="rounded border border-[color:var(--color-border)]/60 bg-white/70 px-2 py-0.5 text-[0.65rem] font-medium text-[color:var(--color-muted)]">
             ⌘K
           </kbd>
         </button>
-        <label className="visually-hidden" htmlFor="global-search">
-          Global search
-        </label>
-        <input
-          id="global-search"
-          type="search"
-          placeholder={searchPlaceholder}
-          aria-label="Global search"
-          className="topbar__search-input"
-          autoComplete="off"
-          enterKeyHint="search"
-          title={
-            showShortcutHint ? `Press ${omniShortcutHint} to focus Omnisearch` : undefined
-          }
-        />
         {showShortcutHint && (
           <span className="topbar__shortcut" aria-hidden="true">
             {omniShortcutHint}
@@ -291,40 +241,4 @@ export function TopBar({
         >
           Alerts
           <span
-            className="topbar__badge inline-flex min-w-[1.75rem] items-center justify-center rounded-full bg-[color:var(--color-accent)]/90 px-2 text-xs font-semibold text-[color:var(--color-accent-foreground)]"
-            role="status"
-            aria-live="polite"
-            title={badgeMetrics.badgeLabel}
-          >
-            {badgeMetrics.badgeValue}
-          </span>
-        </Button>
-        <HelpPopover />
-        <Button
-          type="button"
-          variant="outline"
-          className="topbar__profile inline-flex items-center gap-3 px-4"
-          aria-label="Sign out"
-          onClick={onSignOut}
-          disabled={signingOut}
-          offlineBehavior="allow"
-        >
-          <span className="topbar__avatar inline-flex h-9 w-9 items-center justify-center rounded-full bg-[color:var(--color-accent)]/85 text-sm font-semibold text-[color:var(--color-accent-foreground)]">
-            {actorInitials}
-          </span>
-          <span className="topbar__profile-text flex flex-col items-start leading-tight">
-            <span className="text-xs font-medium uppercase tracking-wide text-[color:var(--color-muted)]">
-              Signed in as
-            </span>
-            <span className="text-sm font-semibold text-[color:var(--color-foreground)]">
-              {actorLabel ?? "Administrator"}
-            </span>
-          </span>
-          <span className="ml-2 text-sm font-semibold text-[color:var(--color-accent)]">
-            {signingOut ? "Signing out…" : "Sign out"}
-          </span>
-        </Button>
-      </div>
-    </header>
-  );
-}
+            className="topbar__badge inline-flex min-w-[1.75rem] items-center justify-center rounded-full bg-[color:var(--color-accent)]/90 px-2 text-xs」

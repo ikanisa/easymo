@@ -81,7 +81,7 @@ export const insuranceDocumentSchema = z.object({
   createdAt: z.string().datetime(),
 });
 
-export const insurancePolicySchema = z.object({
+export const insurancePolicyDetailSchema = z.object({
   id: z.string().uuid().or(z.string()),
   quoteId: z.string().uuid().or(z.string()).nullable(),
   policyNumber: z.string(),
@@ -305,7 +305,7 @@ export const insurancePolicySchema = z.object({
   breakdown: z.array(insurancePolicyBreakdownSchema).default([]),
 });
 
-export const insuranceDocumentSchema = z.object({
+export const insuranceDocumentDetailSchema = z.object({
   id: z.string(),
   requestId: z.string().nullable(),
   policyId: z.string().nullable(),
@@ -334,7 +334,7 @@ export const insuranceTaskSchema = z.object({
   updatedAt: z.string().datetime().nullable().optional(),
 });
 
-export const insurancePaymentSchema = z.object({
+export const insurancePaymentDetailSchema = z.object({
   id: z.string(),
   requestId: z.string().nullable(),
   policyId: z.string().nullable(),
@@ -349,7 +349,7 @@ export const insurancePaymentSchema = z.object({
   updatedAt: z.string().datetime().nullable().optional(),
 });
 
-export const insuranceRequestSchema = z.object({
+export const insuranceRequestDetailSchema = z.object({
   id: z.string(),
   customerId: z.string().nullable().optional(),
   customerName: z.string().nullable().optional(),
@@ -361,7 +361,7 @@ export const insuranceRequestSchema = z.object({
   premiumTargetMinor: z.number().nullable().optional(),
   ocrConfidence: z.number().nullable().optional(),
   ocrSummary: z.record(z.any()).default({}),
-  documents: z.array(insuranceDocumentSchema).default([]),
+  documents: z.array(insuranceDocumentDetailSchema).default([]),
   assignedAgentId: z.string().nullable().optional(),
   createdBy: z.string().nullable().optional(),
   createdAt: z.string().datetime(),
@@ -369,8 +369,8 @@ export const insuranceRequestSchema = z.object({
   archivedAt: z.string().datetime().nullable().optional(),
   vehicle: insuranceVehicleSchema.nullable().optional(),
   comparison: z.array(insuranceComparisonQuoteSchema).default([]),
-  policy: insurancePolicySchema.nullable().optional(),
-  payments: z.array(insurancePaymentSchema).default([]),
+  policy: insurancePolicyDetailSchema.nullable().optional(),
+  payments: z.array(insurancePaymentDetailSchema).default([]),
   tasks: z.array(insuranceTaskSchema).default([]),
 });
 
@@ -804,11 +804,11 @@ export type InsuranceTaskStatus = z.infer<typeof insuranceTaskStatusSchema>;
 export type InsuranceComparisonQuote = z.infer<typeof insuranceComparisonQuoteSchema>;
 export type InsuranceVehicle = z.infer<typeof insuranceVehicleSchema>;
 export type InsurancePolicyBreakdown = z.infer<typeof insurancePolicyBreakdownSchema>;
-export type InsurancePolicy = z.infer<typeof insurancePolicySchema>;
-export type InsuranceDocument = z.infer<typeof insuranceDocumentSchema>;
+export type InsurancePolicyDetail = z.infer<typeof insurancePolicyDetailSchema>;
+export type InsuranceDocumentDetail = z.infer<typeof insuranceDocumentDetailSchema>;
 export type InsuranceTask = z.infer<typeof insuranceTaskSchema>;
-export type InsurancePayment = z.infer<typeof insurancePaymentSchema>;
-export type InsuranceRequest = z.infer<typeof insuranceRequestSchema>;
+export type InsurancePaymentDetail = z.infer<typeof insurancePaymentDetailSchema>;
+export type InsuranceRequestDetail = z.infer<typeof insuranceRequestDetailSchema>;
 export type WebhookError = z.infer<typeof webhookErrorSchema>;
 export type MenuVersion = z.infer<typeof menuVersionSchema>;
 export type OcrJob = z.infer<typeof ocrJobSchema>;

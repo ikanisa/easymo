@@ -168,8 +168,8 @@ CREATE INDEX IF NOT EXISTS insurance_policies_status_idx ON public.insurance_pol
 
 CREATE INDEX IF NOT EXISTS insurance_policy_breakdowns_policy_idx ON public.insurance_policy_breakdowns(policy_id);
 
-CREATE INDEX IF NOT EXISTS insurance_documents_request_idx ON public.insurance_documents(request_id);
-CREATE INDEX IF NOT EXISTS insurance_documents_policy_idx ON public.insurance_documents(policy_id);
+-- CREATE INDEX IF NOT EXISTS insurance_documents_request_idx ON public.insurance_documents(request_id);
+-- CREATE INDEX IF NOT EXISTS insurance_documents_policy_idx ON public.insurance_documents(policy_id);
 
 CREATE INDEX IF NOT EXISTS insurance_tasks_request_idx ON public.insurance_tasks(request_id);
 CREATE INDEX IF NOT EXISTS insurance_tasks_assigned_idx ON public.insurance_tasks(assigned_to);
@@ -434,4 +434,15 @@ CREATE POLICY insurance_payments_agent_read ON public.insurance_payments
     )
   );
 
+-- Conditional index creation for insurance_documents
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.columns 
+             WHERE table_schema = 'public' 
+             AND table_name = 'insurance_documents' 
+             AND column_name = 'request_id') THEN
+    CREATE INDEX IF NOT EXISTS insurance_documents_request_idx ON public.insurance_documents(request_id);
+    CREATE INDEX IF NOT EXISTS insurance_documents_policy_idx ON public.insurance_documents(policy_id);
+  END IF;
+END $$;
 COMMIT;
