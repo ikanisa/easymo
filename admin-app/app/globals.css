@@ -597,6 +597,24 @@
     outline-offset: 2px;
   }
 
+  .skip-link {
+    position: absolute;
+    top: -200px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 0.75rem 1.5rem;
+    border-radius: 999px;
+    background: #0f172a;
+    color: #ffffff;
+    font-weight: 600;
+    transition: top 150ms ease-in-out;
+    z-index: 999;
+  }
+
+  .skip-link:focus-visible {
+    top: 16px;
+  }
+
   .bing-shell {
     min-height: 100vh;
     display: grid;
@@ -616,6 +634,32 @@
 
   .bing-shell__content {
     flex: 1;
+    width: 100%;
+    padding: clamp(1.5rem, 3vw, 2.5rem) clamp(1.25rem, 4vw, 3.5rem);
+  }
+
+  .panel-page__container {
+    width: min(1200px, 100%);
+    min-width: min(100%, 320px);
+    margin-inline: auto;
+    display: grid;
+    gap: clamp(1.25rem, 3vw, 2.5rem);
+  }
+
+  @media (min-width: 768px) {
+    .panel-page__container {
+      gap: clamp(1.5rem, 2vw, 3rem);
+    }
+  }
+
+  @media (min-width: 1280px) {
+    .bing-shell__content {
+      padding-block: clamp(2rem, 2.5vw, 3.5rem);
+    }
+
+    .panel-page__container {
+      width: min(1320px, 100%);
+    }
     padding: var(--space-section-y) var(--layout-gutter);
     margin-inline: auto;
     width: min(100%, var(--container-max-width-wide));
@@ -815,6 +859,11 @@
     margin: 0;
     font-size: 0.85rem;
     color: rgba(255, 255, 255, 0.6);
+  }
+
+  .bing-nav__item:focus-visible {
+    outline: 3px solid rgba(96, 165, 250, 0.9);
+    outline-offset: 4px;
   }
 
   .bing-nav__close {
