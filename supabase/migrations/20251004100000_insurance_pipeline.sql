@@ -48,7 +48,7 @@ $$;
 -- Core insurance tables
 CREATE TABLE IF NOT EXISTS public.insurance_requests (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  customer_id uuid REFERENCES public.customers(id) ON DELETE SET NULL,
+  customer_id uuid REFERENCES public.profiles(user_id) ON DELETE SET NULL,
   customer_name text,
   customer_wa_id text,
   customer_msisdn text,
