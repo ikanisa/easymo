@@ -1,4 +1,4 @@
-import { logger } from '@easymo/commons';
+import { logger as simpleLogger } from './simple-logger';
 
 interface LogContext {
   event: string;
@@ -13,8 +13,11 @@ interface LogContext {
 }
 
 export function logStructured(context: LogContext) {
-  logger.info({
+  simpleLogger.info({
     target: 'admin-app',
     ...context,
   });
 }
+
+// Re-export logger for compatibility
+export const logger = simpleLogger;
