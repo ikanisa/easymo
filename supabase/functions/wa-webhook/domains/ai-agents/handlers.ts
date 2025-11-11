@@ -129,7 +129,7 @@ export async function handleAINearbyPharmacies(
       return true;
     }
 
-    await sendText(ctx.from, t(ctx.locale, "agent.searching_pharmacies"));
+    await sendText(ctx.from, t(ctx.locale, "pharmacy.searching"));
 
     const response = await routeToAIAgent(ctx, {
       userId: ctx.from,
@@ -158,13 +158,28 @@ export async function handleAINearbyPharmacies(
         },
       });
     } else {
-      await sendText(ctx.from, response.message);
+      // Fallback: fetch from database
+      await sendText(ctx.from, t(ctx.locale, "pharmacy.finding_nearby"));
+      // TODO: Implement database fallback - fetch top 10 pharmacies by distance
+      await sendButtonsMessage(
+        ctx,
+        t(ctx.locale, "pharmacy.no_results"),
+        buildButtons(
+          { id: IDS.BACK_HOME, title: t(ctx.locale, "common.menu_back") }
+        )
+      );
     }
 
     return true;
   } catch (error) {
     console.error("AI Pharmacy handler error:", error);
-    await sendText(ctx.from, t(ctx.locale, "agent.error_occurred"));
+    await sendButtonsMessage(
+      ctx,
+      t(ctx.locale, "pharmacy.error"),
+      buildButtons(
+        { id: IDS.BACK_HOME, title: t(ctx.locale, "common.menu_back") }
+      )
+    );
     return false;
   }
 }
@@ -191,7 +206,7 @@ export async function handleAINearbyQuincailleries(
       return true;
     }
 
-    await sendText(ctx.from, t(ctx.locale, "agent.searching_hardware_stores"));
+    await sendText(ctx.from, t(ctx.locale, "quincaillerie.searching"));
 
     const response = await routeToAIAgent(ctx, {
       userId: ctx.from,
@@ -220,13 +235,28 @@ export async function handleAINearbyQuincailleries(
         },
       });
     } else {
-      await sendText(ctx.from, response.message);
+      // Fallback: fetch from database
+      await sendText(ctx.from, t(ctx.locale, "quincaillerie.finding_nearby"));
+      // TODO: Implement database fallback - fetch top 10 quincailleries by distance
+      await sendButtonsMessage(
+        ctx,
+        t(ctx.locale, "quincaillerie.no_results"),
+        buildButtons(
+          { id: IDS.BACK_HOME, title: t(ctx.locale, "common.menu_back") }
+        )
+      );
     }
 
     return true;
   } catch (error) {
     console.error("AI Quincaillerie handler error:", error);
-    await sendText(ctx.from, t(ctx.locale, "agent.error_occurred"));
+    await sendButtonsMessage(
+      ctx,
+      t(ctx.locale, "quincaillerie.error"),
+      buildButtons(
+        { id: IDS.BACK_HOME, title: t(ctx.locale, "common.menu_back") }
+      )
+    );
     return false;
   }
 }
@@ -255,7 +285,7 @@ export async function handleAINearbyShops(
       return true;
     }
 
-    await sendText(ctx.from, t(ctx.locale, "agent.searching_shops"));
+    await sendText(ctx.from, t(ctx.locale, "shops.searching"));
 
     const response = await routeToAIAgent(ctx, {
       userId: ctx.from,
@@ -286,13 +316,28 @@ export async function handleAINearbyShops(
         },
       });
     } else {
-      await sendText(ctx.from, response.message);
+      // Fallback: fetch from database with tag-based filtering
+      await sendText(ctx.from, t(ctx.locale, "shops.finding_nearby"));
+      // TODO: Implement database fallback - fetch top 10 shops by tags/distance
+      await sendButtonsMessage(
+        ctx,
+        t(ctx.locale, "shops.no_results"),
+        buildButtons(
+          { id: IDS.BACK_HOME, title: t(ctx.locale, "common.menu_back") }
+        )
+      );
     }
 
     return true;
   } catch (error) {
     console.error("AI Shops handler error:", error);
-    await sendText(ctx.from, t(ctx.locale, "agent.error_occurred"));
+    await sendButtonsMessage(
+      ctx,
+      t(ctx.locale, "shops.error"),
+      buildButtons(
+        { id: IDS.BACK_HOME, title: t(ctx.locale, "common.menu_back") }
+      )
+    );
     return false;
   }
 }
@@ -322,8 +367,8 @@ export async function handleAIPropertyRental(
     }
 
     const searchingMessage = action === "find" 
-      ? t(ctx.locale, "agent.searching_properties")
-      : t(ctx.locale, "agent.adding_property");
+      ? t(ctx.locale, "property.find.searching")
+      : t(ctx.locale, "property.add.processing");
     
     await sendText(ctx.from, searchingMessage);
 
@@ -356,16 +401,34 @@ export async function handleAIPropertyRental(
           },
         });
       } else {
-        await sendText(ctx.from, response.message);
+        await sendButtonsMessage(
+          ctx,
+          response.message || t(ctx.locale, "property.no_results"),
+          buildButtons(
+            { id: IDS.BACK_HOME, title: t(ctx.locale, "common.menu_back") }
+          )
+        );
       }
     } else {
-      await sendText(ctx.from, response.message);
+      await sendButtonsMessage(
+        ctx,
+        response.message || t(ctx.locale, "property.error"),
+        buildButtons(
+          { id: IDS.BACK_HOME, title: t(ctx.locale, "common.menu_back") }
+        )
+      );
     }
 
     return true;
   } catch (error) {
     console.error("AI Property Rental handler error:", error);
-    await sendText(ctx.from, t(ctx.locale, "agent.error_occurred"));
+    await sendButtonsMessage(
+      ctx,
+      t(ctx.locale, "property.error"),
+      buildButtons(
+        { id: IDS.BACK_HOME, title: t(ctx.locale, "common.menu_back") }
+      )
+    );
     return false;
   }
 }

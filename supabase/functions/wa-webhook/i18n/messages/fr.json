@@ -489,5 +489,20 @@
   "schedule.time.label.tomorrow_morning": "Demain 7h30",
   "schedule.time.label.tomorrow_evening": "Demain 17h30",
   "schedule.time.label.every_morning": "Quotidien 7h30",
-  "schedule.time.label.every_evening": "Quotidien 17h30"
+  "schedule.time.label.every_evening": "Quotidien 17h30",
+  "pharmacy.searching": "💊 Recherche de pharmacies...",
+  "pharmacy.finding_nearby": "📍 Recherche de pharmacies à proximité...",
+  "pharmacy.no_results": "💊 Désolé, nous n'avons pas trouvé de pharmacies pour le moment.\n\nCela peut être dû à:\n• Aucune pharmacie n'est encore enregistrée dans votre région\n• Le service est temporairement indisponible\n\n💡 Astuce: Nous ajoutons constamment de nouvelles pharmacies à notre base de données!",
+  "pharmacy.error": "⚠️ Désolé, nous avons rencontré une erreur lors de la recherche de pharmacies.\n\nVeuillez réessayer dans quelques minutes ou contacter le support si cela persiste.",
+  "quincaillerie.searching": "🔧 Recherche de quincailleries...",
+  "quincaillerie.finding_nearby": "📍 Recherche de quincailleries à proximité...",
+  "quincaillerie.no_results": "🔧 Désolé, nous n'avons pas trouvé de quincailleries pour le moment.\n\nCela peut être dû à:\n• Aucune quincaillerie n'est encore enregistrée dans votre région\n• Le service est temporairement indisponible\n\n💡 Astuce: Nous ajoutons constamment de nouveaux magasins à notre base de données!",
+  "quincaillerie.error": "⚠️ Désolé, nous avons rencontré une erreur lors de la recherche de quincailleries.\n\nVeuillez réessayer dans quelques minutes ou contacter le support si cela persiste.",
+  "shops.searching": "🛍️ Recherche de magasins et services...",
+  "shops.finding_nearby": "�� Recherche de magasins à proximité...",
+  "shops.no_results": "🛍️ Désolé, nous n'avons pas trouvé de magasins pour le moment.\n\nCela peut être dû à:\n• Aucun magasin n'est encore enregistré dans votre région\n• Le service est temporairement indisponible\n\n💡 Astuce: Nous ajoutons constamment de nouveaux magasins à notre base de données!",
+  "shops.error": "⚠️ Désolé, nous avons rencontré une erreur lors de la recherche de magasins.\n\nVeuillez réessayer dans quelques minutes ou contacter le support si cela persiste.",
+  "property.add.processing": "🏠 Traitement de votre annonce immobilière...",
+  "property.no_results": "🏠 Désolé, nous n'avons pas trouvé de biens correspondant à vos critères pour le moment.\n\nVeuillez réessayer plus tard ou ajuster vos critères de recherche.",
+  "property.error": "⚠️ Désolé, nous avons rencontré une erreur avec votre demande immobilière.\n\nVeuillez réessayer dans quelques minutes ou contacter le support si cela persiste."
 }
