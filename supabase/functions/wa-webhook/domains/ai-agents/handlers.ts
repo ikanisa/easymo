@@ -95,7 +95,8 @@ export async function handleAINearbyDrivers(
       "Please try:\n" +
       "• Using the traditional driver search\n" +
       "• Checking your connection\n" +
-      "• Trying again in a few minutes",
+      "• Trying again in a few minutes\n" +
+      "• Contact support if this persists",
       buildButtons(
         { id: IDS.SEE_DRIVERS, title: "👀 See All Drivers" },
         { id: IDS.BACK_HOME, title: "🏠 Home" }

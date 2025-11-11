@@ -577,8 +577,12 @@ export async function sendAgentOptions(
     await sendButtonsMessage(
       ctx,
       `${headerText}\n\n` +
-      `Found ${options.length} option(s). However, we couldn't display them in interactive format.\n\n` +
-      "Please try again or contact support.",
+      `We found ${options.length} option(s) for you! 🎉\n\n` +
+      "However, we're having trouble displaying them right now. This is usually temporary.\n\n" +
+      "Please:\n" +
+      "• Try again in a moment\n" +
+      "• Use the traditional search\n" +
+      "• Contact support if needed",
       buildButtons(
         { id: IDS.BACK_HOME, title: "🏠 Back to Home" }
       )
@@ -607,8 +611,11 @@ export async function handleAgentSelection(
       
       await sendButtonsMessage(
         ctx,
-        "😔 Sorry, we couldn't find your selection session.\n\n" +
-        "This might have expired. Please start a new search.",
+        "😔 Sorry, your selection session has expired or couldn't be found.\n\n" +
+        "This can happen if:\n" +
+        "• You waited too long to select (sessions expire after 10 minutes)\n" +
+        "• Network issues interrupted the connection\n\n" +
+        "Please start a new search. 🔍",
         buildButtons(
           { id: IDS.BACK_HOME, title: "🏠 Back to Home" }
         )
