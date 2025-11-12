@@ -89,21 +89,39 @@ export function clearSessionCookie() {
   };
 }
 
-export async function readSessionFromCookies(): Promise<AdminSession | null> {
-  const store = cookies();
-  const cookie = store.get(SESSION_COOKIE_NAME);
-  if (!cookie?.value) {
+type CookieStore = {
+  get: (name: string) => unknown;
+  delete?: (name: string) => void;
+};
+
+function getCookieValue(value: unknown): string | null {
+  if (!value) return null;
+  if (typeof value === 'string') return value;
+  if (typeof (value as { value?: unknown }).value === 'string') {
+    return (value as { value?: string }).value ?? null;
+  }
+  if (typeof (value as { name?: string; value?: unknown }).value === 'string') {
+    return (value as { name?: string; value?: string }).value ?? null;
+  }
+  return null;
+}
+
+export async function readSessionFromCookies(store?: CookieStore): Promise<AdminSession | null> {
+  const cookieStore = (store ?? cookies()) as CookieStore;
+  const rawCookie = cookieStore.get(SESSION_COOKIE_NAME);
+  const value = getCookieValue(rawCookie);
+  if (!value) {
     return null;
   }
 
-  const payload = decodePayload(cookie.value);
+  const payload = decodePayload(value);
   if (!payload) {
-    store.delete(SESSION_COOKIE_NAME);
+    cookieStore.delete?.(SESSION_COOKIE_NAME);
     return null;
   }
 
   if (Date.parse(payload.expiresAt) <= Date.now()) {
-    store.delete(SESSION_COOKIE_NAME);
+    cookieStore.delete?.(SESSION_COOKIE_NAME);
     return null;
   }
 
