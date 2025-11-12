@@ -142,6 +142,61 @@ fixture dataset without Supabase connectivity.
   buttons are disabled globally. Lists remain readable from cache, but actions
   resume only after connectivity returns.
 
+## Testing
+
+### Unit and Integration Tests
+```bash
+# Run all tests
+npm test
+
+# Run tests in watch mode
+npm test -- --watch
+
+# Run specific test file
+npm test -- tests/integration-status-badge.test.tsx
+
+# Run with coverage
+npm test -- --coverage
+```
+
+### Visual Regression Tests
+```bash
+cd tests/e2e/playwright
+
+# Run visual tests
+npx playwright test navigation-visual.e2e.spec.ts
+
+# Update baseline screenshots (after intentional UI changes)
+npx playwright test navigation-visual.e2e.spec.ts --update-snapshots
+
+# View test report
+npx playwright show-report
+```
+
+### Accessibility Tests
+```bash
+cd tests/e2e/playwright
+
+# Run accessibility tests
+npx playwright test navigation-accessibility.e2e.spec.ts
+
+# Run all E2E tests
+npx playwright test
+```
+
+### Pre-commit Checklist
+- [ ] Unit tests pass: `npm test -- --run`
+- [ ] Lint passes: `npm run lint`
+- [ ] Type check passes: `npm run type-check`
+- [ ] Build succeeds: `npm run build`
+- [ ] Visual tests pass (if UI changed)
+- [ ] Accessibility tests pass (if navigation changed)
+
+### Testing Documentation
+- [Deployment Checklist](./docs/DEPLOYMENT_CHECKLIST.md) - Pre-deployment validation and smoke tests
+- [Visual Regression Testing](./docs/VISUAL_REGRESSION_TESTING.md) - Screenshot comparison testing
+- [Accessibility Testing](./docs/ACCESSIBILITY_TESTING.md) - WCAG 2.1 Level AA compliance
+
 ## Resources
 
 - Fixture plan: `DATA_FIXTURES_PLAN.md`
