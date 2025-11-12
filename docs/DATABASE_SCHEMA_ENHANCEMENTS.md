@@ -434,9 +434,10 @@ SELECT * FROM transaction_summary;
 
 **1. Create New Partitions (Monthly)**:
 ```sql
--- Example for next month
-CREATE TABLE system_metrics_2026_06 PARTITION OF system_metrics
-  FOR VALUES FROM ('2026-06-01') TO ('2026-07-01');
+-- Example for next month (adjust YYYY-MM to match your deployment date)
+-- Replace YYYY_MM and YYYY-MM-01 with the appropriate year and month.
+CREATE TABLE system_metrics_YYYY_MM PARTITION OF system_metrics
+  FOR VALUES FROM ('YYYY-MM-01') TO ('YYYY-MM-01' + INTERVAL '1 month');
 ```
 
 **2. Cleanup Expired Data**:
