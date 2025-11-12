@@ -33,6 +33,9 @@ export const IDS = {
   MOMO_QR_CODE: "momoqr_code",
   MOMO_QR_SKIP: "momoqr_skip",
   WALLET: "wallet_tokens",
+  PROFILE: "profile",
+  PROFILE_MANAGE_BUSINESSES: "profile_manage_businesses",
+  PROFILE_ADD_BUSINESS: "profile_add_business",
   BARS_RESTAURANTS: "bars_restaurants",
   RESTAURANT_MANAGER: "restaurant_manager",
   ADMIN_HUB: "admin_hub",
@@ -73,5 +76,10 @@ export const IDS = {
   ADMIN_TODAY: "ADMIN::TODAY",
   ADMIN_ALERTS: "ADMIN::ALERTS",
   ADMIN_SETTINGS: "ADMIN::SETTINGS",
+  // Business management IDs
+  BUSINESS_EDIT: "business_edit",
+  BUSINESS_DELETE: "business_delete",
+  BUSINESS_ADD_WHATSAPP: "business_add_whatsapp",
+  BUSINESS_DELETE_CONFIRM: "business_delete_confirm",
   // Existing flows will add more IDs during implementation.
 } as const;

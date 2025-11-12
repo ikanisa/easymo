@@ -86,7 +86,11 @@ import {
   recordMotorInsuranceHidden,
   sendMotorInsuranceBlockedMessage,
 } from "../domains/insurance/gate.ts";
-import { homeOnly, sendButtonsMessage } from "../utils/reply.ts";
+import {
+  homeOnly,
+  sendButtonsMessage,
+  buildButtons,
+} from "../utils/reply.ts";
 import { handleAdminBack } from "../flows/admin/navigation.ts";
 
 export async function handleList(
@@ -179,6 +183,14 @@ export async function handleList(
   // Check if this is an AI agent option selection
   if (id.startsWith("agent_option_") && state.key === "ai_agent_selection") {
     return await handleAIAgentOptionSelection(ctx, state, id);
+  }
+
+  // Check if this is a business selection
+  if (id.startsWith("biz::")) {
+    const { handleBusinessSelection } = await import(
+      "../domains/business/management.ts"
+    );
+    return await handleBusinessSelection(ctx, id);
   }
 
   if (await handleHomeMenuSelection(ctx, id, state)) {
@@ -406,8 +418,6 @@ async function handleHomeMenuSelection(
       return await startScheduleTrip(ctx, state);
     case IDS.SAVED_PLACES:
       return await startSavedPlaces(ctx);
-    case IDS.SAVED_PLACES:
-      return await startSavedPlaces(ctx);
     case IDS.NEARBY_PHARMACIES:
       return await startNearbyPharmacies(ctx);
     case IDS.NEARBY_QUINCAILLERIES:
@@ -416,6 +426,37 @@ async function handleHomeMenuSelection(
       return await startPropertyRentals(ctx);
     case IDS.MARKETPLACE:
       return await startMarketplace(ctx, state);
+    case IDS.PROFILE_MANAGE_BUSINESSES: {
+      const { showManageBusinesses } = await import(
+        "../domains/business/management.ts"
+      );
+      return await showManageBusinesses(ctx);
+    }
+    case IDS.PROFILE_ADD_BUSINESS:
+      // Delegate to marketplace add flow for now
+      return await startMarketplace(ctx, state);
+    case IDS.BUSINESS_DELETE: {
+      if (state.key === "business_detail" && state.data) {
+        const { handleBusinessDelete } = await import(
+          "../domains/business/management.ts"
+        );
+        return await handleBusinessDelete(
+          ctx,
+          state.data.businessId as string,
+          state.data.businessName as string,
+        );
+      }
+      return false;
+    }
+    case IDS.BUSINESS_EDIT:
+    case IDS.BUSINESS_ADD_WHATSAPP:
+      // Placeholder for future implementation
+      await sendButtonsMessage(
+        ctx,
+        "This feature is coming soon!",
+        buildButtons({ id: IDS.PROFILE_MANAGE_BUSINESSES, title: "← Back" }),
+      );
+      return true;
     case IDS.MOTOR_INSURANCE: {
       const gate = await evaluateMotorInsuranceGate(ctx);
       console.info("insurance.gate", {
@@ -432,6 +473,11 @@ async function handleHomeMenuSelection(
     }
     case IDS.MOMO_QR:
       return await startMomoQr(ctx, state);
+    case IDS.PROFILE: {
+      const { sendProfileMenu } = await import("../flows/profile.ts");
+      await sendProfileMenu(ctx);
+      return true;
+    }
     case IDS.BARS_RESTAURANTS: {
       const { startRestaurantManager } = await import(
         "../domains/vendor/restaurant.ts"
