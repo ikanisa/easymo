@@ -69,6 +69,11 @@ const BASE_ROW_DEFS: MenuRowDef[] = [
     descriptionKey: "home.rows.propertyRentals.description",
   },
   {
+    id: IDS.PROFILE,
+    titleKey: "home.rows.profile.title",
+    descriptionKey: "home.rows.profile.description",
+  },
+  {
     id: IDS.MOMO_QR,
     titleKey: "home.rows.momoQr.title",
     descriptionKey: "home.rows.momoQr.description",

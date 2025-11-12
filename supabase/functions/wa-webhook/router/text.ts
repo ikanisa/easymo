@@ -107,6 +107,23 @@ export async function handleText(
     return true;
   }
   
+  // Handle business WhatsApp number input
+  if (state.key === "business_add_whatsapp") {
+    const stateData = state.data as { businessId?: string; businessName?: string };
+    if (stateData.businessId && stateData.businessName) {
+      const { handleAddWhatsAppNumberText } = await import(
+        "../domains/business/whatsapp_numbers.ts"
+      );
+      return await handleAddWhatsAppNumberText(
+        ctx,
+        body,
+        stateData.businessId,
+        stateData.businessName,
+      );
+    }
+    return false;
+  }
+  
   // Handle property find duration input (for short-term)
   if (state.key === "property_find_duration") {
     const stateData = state.data as {

@@ -205,6 +205,23 @@ export async function handleButton(
     case IDS.ADMIN_INSURANCE_EXPORT_SUBMIT:
       if (await handleInsuranceButton(ctx, id, state)) return true;
       return false;
+    case IDS.BUSINESS_DELETE_CONFIRM: {
+      if (
+        state.key === "business_delete_confirm" &&
+        state.data?.businessId &&
+        state.data?.businessName
+      ) {
+        const { confirmBusinessDelete } = await import(
+          "../domains/business/management.ts"
+        );
+        return await confirmBusinessDelete(
+          ctx,
+          state.data.businessId as string,
+          state.data.businessName as string,
+        );
+      }
+      return false;
+    }
 
     default:
       if (LOCATION_KIND_BY_ID[id]) {
