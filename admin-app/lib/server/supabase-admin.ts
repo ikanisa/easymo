@@ -1,3 +1,5 @@
+import "server-only";
+
 // Note: This module is designed for server-side use only
 // It's safe without "server-only" import since it has runtime checks
 // and is primarily used in API routes or server components

@@ -4,6 +4,17 @@
 
 BEGIN;
 
+-- Create agent_registry table if it doesn't exist
+CREATE TABLE IF NOT EXISTS agent_registry (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  agent_type TEXT NOT NULL UNIQUE,
+  display_name TEXT NOT NULL,
+  description TEXT,
+  is_active BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 -- Add new columns to agent_registry to support extended configuration
 ALTER TABLE agent_registry
   ADD COLUMN IF NOT EXISTS slug TEXT UNIQUE,

@@ -11,7 +11,7 @@ BEGIN;
 -- Comprehensive transaction table for all financial operations
 CREATE TABLE IF NOT EXISTS public.transactions (
   id uuid DEFAULT gen_random_uuid() NOT NULL,
-  transaction_ref text UNIQUE NOT NULL,
+  transaction_ref text NOT NULL,
   user_id uuid REFERENCES auth.users(id) ON DELETE SET NULL,
   wallet_id uuid, -- References wallet_accounts if applicable
   type text NOT NULL CHECK (type IN ('debit', 'credit', 'transfer', 'payment', 'refund', 'fee', 'commission')),
@@ -25,14 +25,16 @@ CREATE TABLE IF NOT EXISTS public.transactions (
   description text,
   metadata jsonb DEFAULT '{}'::jsonb,
   correlation_id text,
-  idempotency_key text UNIQUE,
+  idempotency_key text,
   error_code text,
   error_message text,
   initiated_at timestamptz DEFAULT timezone('utc', now()) NOT NULL,
   completed_at timestamptz,
   created_at timestamptz DEFAULT timezone('utc', now()) NOT NULL,
   updated_at timestamptz DEFAULT timezone('utc', now()) NOT NULL,
-  PRIMARY KEY (id, created_at)
+  PRIMARY KEY (id, created_at),
+  UNIQUE (transaction_ref, created_at),
+  UNIQUE (idempotency_key, created_at)
 ) PARTITION BY RANGE (created_at);
 
 -- Create initial partitions for transactions

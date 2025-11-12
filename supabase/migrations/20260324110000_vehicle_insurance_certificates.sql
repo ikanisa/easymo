@@ -36,9 +36,7 @@ CREATE TABLE IF NOT EXISTS public.vehicle_insurance_certificates (
   ocr_extracted_at TIMESTAMPTZ,
   
   -- Validation status
-  is_valid BOOLEAN GENERATED ALWAYS AS (
-    policy_expiry IS NOT NULL AND policy_expiry >= CURRENT_DATE
-  ) STORED,
+  is_valid BOOLEAN DEFAULT FALSE,
   validation_errors TEXT[],
   
   -- Audit fields

@@ -20,15 +20,6 @@ CREATE TABLE IF NOT EXISTS shops (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Add rating column if it doesn't exist
-DO $$ 
-BEGIN
-  IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
-                 WHERE table_name = 'shops' AND column_name = 'rating') THEN
-    ALTER TABLE shops ADD COLUMN rating DECIMAL(3, 2) DEFAULT 0.00;
-  END IF;
-END $$;
-
 -- Indexes for shops
 CREATE INDEX IF NOT EXISTS idx_shops_location ON shops USING GIST (location);
 CREATE INDEX IF NOT EXISTS idx_shops_owner ON shops(owner_id);
@@ -204,8 +195,8 @@ CREATE INDEX IF NOT EXISTS idx_vendor_reviews_user ON vendor_reviews(user_id);
 CREATE TABLE IF NOT EXISTS product_inquiries (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   session_id UUID REFERENCES agent_sessions(id) ON DELETE CASCADE,
-  shop_id UUID REFERENCES shops(id) ON DELETE SET NULL,
-  vendor_id UUID REFERENCES vendors(id) ON DELETE SET NULL,
+  shop_id UUID REFERENCES shops(id) ON DELETE CASCADE,
+  vendor_id UUID REFERENCES vendors(id) ON DELETE CASCADE,
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
   products TEXT[] NOT NULL,
   status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'responded', 'completed', 'cancelled')),
@@ -242,7 +233,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-DROP TRIGGER IF EXISTS trigger_update_shop_rating ON shop_reviews;
 CREATE TRIGGER trigger_update_shop_rating
   AFTER INSERT OR UPDATE ON shop_reviews
   FOR EACH ROW
@@ -265,7 +255,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-DROP TRIGGER IF EXISTS trigger_update_vendor_rating ON vendor_reviews;
 CREATE TRIGGER trigger_update_vendor_rating
   AFTER INSERT OR UPDATE ON vendor_reviews
   FOR EACH ROW
@@ -279,80 +268,63 @@ ALTER TABLE vendor_reviews ENABLE ROW LEVEL SECURITY;
 ALTER TABLE product_inquiries ENABLE ROW LEVEL SECURITY;
 
 -- Shops policies
-DROP POLICY IF EXISTS "Anyone can view active shops" ON shops;
 CREATE POLICY "Anyone can view active shops"
   ON shops FOR SELECT
   USING (status = 'active');
 
-DROP POLICY IF EXISTS "Users can create own shops" ON shops;
 CREATE POLICY "Users can create own shops"
   ON shops FOR INSERT
-  WITH CHECK (auth.uid()::TEXT = owner_id);
+  WITH CHECK (auth.uid()::TEXT = owner_id::TEXT);
 
-DROP POLICY IF EXISTS "Users can update own shops" ON shops;
 CREATE POLICY "Users can update own shops"
   ON shops FOR UPDATE
-  USING (auth.uid()::TEXT = owner_id);
+  USING (auth.uid()::TEXT = owner_id::TEXT);
 
 -- Vendors policies
-DROP POLICY IF EXISTS "Anyone can view active vendors" ON vendors;
 CREATE POLICY "Anyone can view active vendors"
   ON vendors FOR SELECT
   USING (status = 'active');
 
-DROP POLICY IF EXISTS "Users can create own vendors" ON vendors;
 CREATE POLICY "Users can create own vendors"
   ON vendors FOR INSERT
-  WITH CHECK (auth.uid() = owner_id);
+  WITH CHECK (auth.uid()::TEXT = owner_id::TEXT);
 
-DROP POLICY IF EXISTS "Users can update own vendors" ON vendors;
 CREATE POLICY "Users can update own vendors"
   ON vendors FOR UPDATE
-  USING (auth.uid() = owner_id);
+  USING (auth.uid()::TEXT = owner_id::TEXT);
 
 -- Reviews policies
-DROP POLICY IF EXISTS "Anyone can view reviews" ON shop_reviews;
 CREATE POLICY "Anyone can view reviews"
   ON shop_reviews FOR SELECT
   USING (true);
 
-DROP POLICY IF EXISTS "Users can create reviews" ON shop_reviews;
 CREATE POLICY "Users can create reviews"
   ON shop_reviews FOR INSERT
-  WITH CHECK (auth.uid() = user_id);
+  WITH CHECK (auth.uid()::TEXT = user_id::TEXT);
 
-DROP POLICY IF EXISTS "Users can update own reviews" ON shop_reviews;
 CREATE POLICY "Users can update own reviews"
   ON shop_reviews FOR UPDATE
-  USING (auth.uid() = user_id);
+  USING (auth.uid()::TEXT = user_id::TEXT);
 
-DROP POLICY IF EXISTS "Anyone can view vendor reviews" ON vendor_reviews;
 CREATE POLICY "Anyone can view vendor reviews"
   ON vendor_reviews FOR SELECT
   USING (true);
 
-DROP POLICY IF EXISTS "Users can create vendor reviews" ON vendor_reviews;
 CREATE POLICY "Users can create vendor reviews"
   ON vendor_reviews FOR INSERT
-  WITH CHECK (auth.uid() = user_id);
+  WITH CHECK (auth.uid()::TEXT = user_id::TEXT);
 
 -- Product inquiries policies
-DROP POLICY IF EXISTS "Users can view own inquiries" ON product_inquiries;
 CREATE POLICY "Users can view own inquiries"
   ON product_inquiries FOR SELECT
-  USING (
-    auth.uid() = user_id 
-    OR auth.uid()::TEXT IN (
-      SELECT owner_id FROM shops WHERE shops.id = product_inquiries.shop_id
-    )
-    OR auth.uid() IN (
-      SELECT owner_id FROM vendors WHERE vendors.id = product_inquiries.vendor_id
-    )
-  );
+  USING (auth.uid()::TEXT = user_id::TEXT OR auth.uid() IN (
+    SELECT owner_id FROM shops WHERE id = shop_id
+    UNION
+    SELECT owner_id FROM vendors WHERE id = vendor_id
+  ));
 
-DROP POLICY IF EXISTS "Users can create inquiries" ON product_inquiries;
 CREATE POLICY "Users can create inquiries"
   ON product_inquiries FOR INSERT
-  WITH CHECK (auth.uid() = user_id);
+  WITH CHECK (auth.uid()::TEXT = user_id::TEXT);
 
 COMMIT;

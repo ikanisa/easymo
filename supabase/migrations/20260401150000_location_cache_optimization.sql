@@ -96,8 +96,7 @@ CREATE INDEX IF NOT EXISTS idx_routes_origin_dest
   ON public.routes (origin_location_id, destination_location_id);
 
 CREATE INDEX IF NOT EXISTS idx_routes_cached_until 
-  ON public.routes (cached_until) 
-  WHERE cached_until > now();
+  ON public.routes (cached_until);
 
 CREATE INDEX IF NOT EXISTS idx_routes_created 
   ON public.routes (created_at DESC);
