@@ -1,6 +1,12 @@
 "use client";
 
-import { ReactNode, useEffect, useState } from "react";
+import {
+  ReactNode,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { useRouter } from "next/navigation";
 import { BingNav } from "@/components/layout/BingNav";
 import { BingHeader } from "@/components/layout/BingHeader";
@@ -46,6 +52,11 @@ export function PanelShell({
   const [avatarInitials, setAvatarInitials] = useState(() =>
     deriveInitials(actorDisplayLabel, session.actorId),
   );
+  const menuButtonRef = useRef<HTMLButtonElement | null>(null);
+  const workspaceRef = useRef<HTMLDivElement | null>(null);
+  const drawerRef = useRef<HTMLDivElement | null>(null);
+  const firstNavLinkRef = useRef<HTMLAnchorElement | null>(null);
+  const wasMobileNavOpen = useRef(false);
 
   useEffect(() => {
     setAvatarInitials(deriveInitials(actorDisplayLabel, session.actorId));
@@ -67,6 +78,114 @@ export function PanelShell({
     }
   };
 
+  const closeMobileNav = useCallback(() => {
+    setMobileNavOpen(false);
+  }, []);
+
+  useEffect(() => {
+    const workspace = workspaceRef.current;
+    const previousOverflow = document.body.style.overflow;
+
+    if (mobileNavOpen) {
+      workspace?.setAttribute("aria-hidden", "true");
+      workspace?.setAttribute("inert", "");
+      document.body.style.overflow = "hidden";
+    } else {
+      workspace?.removeAttribute("aria-hidden");
+      workspace?.removeAttribute("inert");
+    }
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      workspace?.removeAttribute("aria-hidden");
+      workspace?.removeAttribute("inert");
+    };
+  }, [mobileNavOpen]);
+
+  useEffect(() => {
+    if (!mobileNavOpen) return;
+
+    const drawerElement = drawerRef.current;
+    if (!drawerElement) return;
+
+    const focusableSelectors = [
+      "a[href]",
+      "button:not([disabled])",
+      "textarea:not([disabled])",
+      "input:not([disabled])",
+      "select:not([disabled])",
+      '[tabindex]:not([tabindex="-1"])',
+    ].join(",");
+
+    const getFocusableElements = () =>
+      Array.from(
+        drawerElement.querySelectorAll<HTMLElement>(focusableSelectors),
+      ).filter((element) =>
+        !element.hasAttribute("disabled") &&
+        !element.getAttribute("aria-hidden"),
+      );
+
+    const focusFirstItem = () => {
+      const primaryLink = firstNavLinkRef.current;
+      if (primaryLink) {
+        primaryLink.focus();
+        return;
+      }
+      const focusable = getFocusableElements();
+      (focusable[0] ?? drawerElement).focus();
+    };
+
+    const timer = window.setTimeout(focusFirstItem, 0);
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        closeMobileNav();
+        return;
+      }
+
+      if (event.key !== "Tab") return;
+
+      const focusable = getFocusableElements();
+      if (focusable.length === 0) {
+        event.preventDefault();
+        drawerElement.focus();
+        return;
+      }
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      const activeElement = document.activeElement as HTMLElement | null;
+
+      if (event.shiftKey) {
+        if (activeElement === first || !drawerElement.contains(activeElement)) {
+          event.preventDefault();
+          last.focus();
+        }
+        return;
+      }
+
+      if (activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    drawerElement.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.clearTimeout(timer);
+      drawerElement.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [closeMobileNav, mobileNavOpen]);
+
+  useEffect(() => {
+    if (!mobileNavOpen && wasMobileNavOpen.current) {
+      menuButtonRef.current?.focus();
+    }
+    wasMobileNavOpen.current = mobileNavOpen;
+  }, [mobileNavOpen]);
+
   return (
     <SessionProvider initialSession={session}>
       <ToastProvider>
@@ -78,7 +197,7 @@ export function PanelShell({
         </a>
         <div className="bing-shell">
           <BingNav />
-          <div className="bing-shell__workspace">
+          <div className="bing-shell__workspace" ref={workspaceRef}>
             <BingHeader
               environmentLabel={environmentLabel}
               onOpenNavigation={() => setMobileNavOpen(true)}
@@ -90,6 +209,7 @@ export function PanelShell({
               actorInitials={avatarInitials}
               onSignOut={handleSignOut}
               signingOut={signingOut}
+              menuButtonRef={menuButtonRef}
             />
             <main
               id="main-content"
@@ -102,8 +222,26 @@ export function PanelShell({
           </div>
         </div>
         {mobileNavOpen && (
-          <div className="bing-nav-drawer" role="dialog" aria-modal="true">
-            <BingNav mode="overlay" onClose={() => setMobileNavOpen(false)} />
+          <div
+            className="bing-nav-drawer"
+            role="presentation"
+            onClick={closeMobileNav}
+          >
+            <div
+              className="bing-nav-drawer__panel"
+              role="dialog"
+              aria-modal="true"
+              aria-label="Primary navigation"
+              ref={drawerRef}
+              tabIndex={-1}
+              onClick={(event) => event.stopPropagation()}
+            >
+              <BingNav
+                mode="overlay"
+                onClose={closeMobileNav}
+                firstLinkRef={firstNavLinkRef}
+              />
+            </div>
           </div>
         )}
         {assistantEnabled && (

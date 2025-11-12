@@ -1,6 +1,7 @@
 "use client";
 
 import classNames from "classnames";
+import type { Ref } from "react";
 
 import { GlobalSearch } from "@/components/search/GlobalSearch";
 
@@ -13,6 +14,7 @@ interface BingHeaderProps {
   actorInitials: string;
   onSignOut: () => Promise<void>;
   signingOut: boolean;
+  menuButtonRef?: Ref<HTMLButtonElement>;
 }
 
 export function BingHeader({
@@ -24,6 +26,7 @@ export function BingHeader({
   actorInitials,
   onSignOut,
   signingOut,
+  menuButtonRef,
 }: BingHeaderProps) {
   return (
     <header className="bing-header" role="banner">
@@ -35,6 +38,7 @@ export function BingHeader({
           })}
           onClick={onOpenNavigation}
           aria-label="Open navigation"
+          ref={menuButtonRef}
         >
           ☰
         </button>
