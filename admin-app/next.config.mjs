@@ -18,7 +18,7 @@ const nextConfig = {
   poweredByHeader: false, // Remove unnecessary headers
   experimental: {
     typedRoutes: true,
-    // instrumentationHook: true, // Disabled - causing edge runtime eval error
+    instrumentationHook: true,
     serverComponentsExternalPackages: ['@easymo/commons'],
   },
   typescript: {
