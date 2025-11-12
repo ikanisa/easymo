@@ -129,7 +129,7 @@ export function EnhancedNav({ onSearchOpen, className }: EnhancedNavProps) {
             onClick={onSearchOpen}
             className="p-2 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
             aria-label="Open search"
-            title="Search (⌘K)"
+            title="Search (⌘K / Ctrl+K)"
           >
             <Search className="h-5 w-5 text-gray-600" aria-hidden="true" />
           </button>

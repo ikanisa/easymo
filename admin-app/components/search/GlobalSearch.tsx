@@ -8,7 +8,7 @@ import {
   useRef,
   useState,
   type ChangeEvent,
-  type KeyboardEvent,
+  type KeyboardEvent as ReactKeyboardEvent,
 } from "react";
 import classNames from "classnames";
 import { AlertCircle, Loader2, Search, Sparkles } from "lucide-react";
@@ -36,6 +36,34 @@ interface GlobalSearchProps {
 }
 
 const MIN_QUERY_LENGTH = 2;
+
+function isEditableTarget(target: EventTarget | null) {
+  if (!target) return false;
+  if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement) {
+    return !target.readOnly && !target.disabled;
+  }
+  if (target instanceof HTMLSelectElement) {
+    return !target.disabled;
+  }
+  if (target instanceof HTMLElement) {
+    if (target.isContentEditable) return true;
+    const editableAncestor = target.closest(
+      "input, textarea, select, [contenteditable=\"\"], [contenteditable=\"true\"]",
+    );
+    if (!editableAncestor) return false;
+    if (
+      editableAncestor instanceof HTMLInputElement ||
+      editableAncestor instanceof HTMLTextAreaElement
+    ) {
+      return !editableAncestor.readOnly && !editableAncestor.disabled;
+    }
+    if (editableAncestor instanceof HTMLSelectElement) {
+      return !editableAncestor.disabled;
+    }
+    return editableAncestor instanceof HTMLElement && editableAncestor.isContentEditable;
+  }
+  return false;
+}
 
 export function GlobalSearch({
   placeholder = "Search agents, requests, policies…",
@@ -127,6 +155,40 @@ export function GlobalSearch({
   }, [fetchResults, open, query]);
 
   useEffect(() => {
+    if (typeof window === "undefined") {
+      return undefined;
+    }
+
+    const handleGlobalShortcut = (event: KeyboardEvent) => {
+      const key = typeof event.key === "string" ? event.key.toLowerCase() : "";
+      const usingMeta = event.metaKey && key === "k";
+      const usingCtrl = event.ctrlKey && key === "k";
+
+      if ((!usingMeta && !usingCtrl) || event.defaultPrevented) {
+        return;
+      }
+
+      if (isEditableTarget(event.target)) {
+        return;
+      }
+
+      event.preventDefault();
+
+      if (open) {
+        closePanel();
+        return;
+      }
+
+      setOpen(true);
+    };
+
+    window.addEventListener("keydown", handleGlobalShortcut);
+    return () => {
+      window.removeEventListener("keydown", handleGlobalShortcut);
+    };
+  }, [closePanel, open]);
+
+  useEffect(() => {
     if (!open) return undefined;
     const handle = (event: MouseEvent) => {
       if (!inputRef.current) return;
@@ -189,7 +251,7 @@ export function GlobalSearch({
   );
 
   const handleKeyDown = useCallback(
-    (event: KeyboardEvent<HTMLInputElement>) => {
+    (event: ReactKeyboardEvent<HTMLInputElement>) => {
       if (!open && (event.key === "ArrowDown" || event.key === "ArrowUp")) {
         setOpen(true);
         return;
@@ -308,7 +370,7 @@ export function GlobalSearch({
           className="hidden select-none rounded border border-slate-200 bg-white px-2 py-0.5 text-[0.65rem] text-slate-500 md:block"
           aria-hidden
         >
-          ⌘K
+          ⌘K / Ctrl+K
         </kbd>
       </div>
 

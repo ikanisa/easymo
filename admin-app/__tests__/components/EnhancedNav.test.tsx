@@ -38,7 +38,7 @@ describe("EnhancedNav", () => {
       
       const searchButton = screen.getByRole("button", { name: /open search/i });
       expect(searchButton).toBeInTheDocument();
-      expect(searchButton).toHaveAttribute("title", "Search (⌘K)");
+      expect(searchButton).toHaveAttribute("title", "Search (⌘K / Ctrl+K)");
     });
 
     it("renders root navigation link", () => {
