@@ -81,3 +81,6 @@ export interface AgentRegistryEntry {
   agent: unknown; // OpenAI Agent type
   config: AgentConfig;
 }
+
+// Export tool contract types
+export * from './tool-contracts.types';

@@ -5,6 +5,12 @@
 # Each agent has specific instructions, tools, guardrails, and operational parameters
 # aligned with the platform architecture (Supabase + Edge Functions + WhatsApp).
 #
+# Documentation:
+#   - Tool Catalog: docs/agents/TOOL_CATALOG.md
+#   - Agent Blueprints: docs/agents/AGENT_BLUEPRINTS.md
+#   - Global Conventions: docs/agents/GLOBAL_CONVENTIONS.md
+#   - Configuration Alignment: docs/agents/CONFIGURATION_ALIGNMENT.md
+#
 # Schema:
 #   - slug: Unique identifier (kebab-case)
 #   - name: Display name
@@ -14,6 +20,9 @@
 #   - tools: Array of available tools for the agent
 #   - guardrails: Safety and operational limits
 #   - instructions: System prompt with ROLE, GOAL, STYLE, BEHAVIOR, FLOW, etc.
+#
+# Tool Contract: All tools return {ok: boolean, data?: any, error?: {code: string, msg: string}}
+# Attribution: All tools include {trace_id, org_id, user_id, convo_id} for RLS
 # =========================================================================================
 
 # =========================================================================================
@@ -57,7 +66,7 @@
   name: Waiter AI (Dine-In)
   enabled: true
   languages: [en, fr, rw]
-  autonomy: auto
+  autonomy: suggest
   tools:
     - search_supabase
     - order_create
