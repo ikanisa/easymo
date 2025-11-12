@@ -1,4 +1,4 @@
-import Module from "node:module";
+import Module from "module";
 import * as React from "react";
 
 type LoadFn = (request: string, parent: any, isMain: boolean) => any;
