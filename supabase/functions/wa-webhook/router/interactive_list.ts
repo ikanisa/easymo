@@ -447,9 +447,6 @@ async function handleHomeMenuSelection(
       );
       return await showManageBusinesses(ctx);
     }
-    case IDS.PROFILE_ADD_BUSINESS:
-      // Delegate to marketplace add flow for now
-      return await startMarketplace(ctx, state);
     case IDS.BUSINESS_DELETE: {
       if (state.key === "business_detail" && state.data) {
         const { handleBusinessDelete } = await import(
@@ -520,6 +517,40 @@ async function handleHomeMenuSelection(
     case IDS.PROFILE: {
       const { sendProfileMenu } = await import("../flows/profile.ts");
       await sendProfileMenu(ctx);
+      return true;
+    }
+    case IDS.PROFILE_VEHICLES: {
+      const { handleProfileVehicles } = await import("../domains/profile/index.ts");
+      return await handleProfileVehicles(ctx);
+    }
+    case IDS.PROFILE_ADD_VEHICLE: {
+      const { handleAddVehicle } = await import("../domains/profile/index.ts");
+      return await handleAddVehicle(ctx);
+    }
+    case IDS.PROFILE_BUSINESSES: {
+      const { handleProfileBusinesses } = await import("../domains/profile/index.ts");
+      return await handleProfileBusinesses(ctx);
+    }
+    case IDS.PROFILE_ADD_BUSINESS: {
+      const { handleAddBusiness } = await import("../domains/profile/index.ts");
+      return await handleAddBusiness(ctx);
+    }
+    case IDS.PROFILE_TOKENS: {
+      // Redirect to existing wallet flow
+      return await startWallet(ctx, state);
+    }
+    case IDS.PROFILE_PROPERTIES: {
+      // Redirect to property rentals
+      const { startPropertyRentals } = await import("../domains/property/index.ts");
+      return await startPropertyRentals(ctx);
+    }
+    case IDS.PROFILE_SETTINGS: {
+      // TODO: Implement settings menu (language, notifications, etc.)
+      await sendButtonsMessage(
+        ctx,
+        "Settings menu coming soon!",
+        homeOnly()
+      );
       return true;
     }
     case IDS.BARS_RESTAURANTS: {
