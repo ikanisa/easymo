@@ -87,7 +87,8 @@
 ### Required Actions (Before Deployment)
 - [ ] Review all migration files with team
 - [ ] Test migrations in development environment
-- [ ] Create additional monthly partitions if needed
+- [ ] If deploying before April 2026, manually create partitions for the current month for all partitioned tables (migrations only create April and May 2026 partitions)
+- [ ] Create additional monthly partitions if needed (e.g., for future months beyond those in migrations)
 - [ ] Set up monitoring dashboards for new tables
 - [ ] Train operations team on new features
 - [ ] Update runbooks with new procedures
