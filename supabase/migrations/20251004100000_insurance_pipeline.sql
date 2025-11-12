@@ -97,6 +97,7 @@ CREATE TABLE IF NOT EXISTS public.insurance_policies (
   fees_minor integer,
   issued_at timestamptz,
   issued_by text,
+  assigned_agent_id text,
   created_at timestamptz NOT NULL DEFAULT timezone('utc', now()),
   updated_at timestamptz NOT NULL DEFAULT timezone('utc', now())
 );
@@ -165,6 +166,7 @@ CREATE INDEX IF NOT EXISTS insurance_vehicles_request_idx ON public.insurance_ve
 
 CREATE INDEX IF NOT EXISTS insurance_policies_request_idx ON public.insurance_policies(request_id);
 CREATE INDEX IF NOT EXISTS insurance_policies_status_idx ON public.insurance_policies(status);
+CREATE INDEX IF NOT EXISTS insurance_policies_assigned_idx ON public.insurance_policies(assigned_agent_id);
 
 CREATE INDEX IF NOT EXISTS insurance_policy_breakdowns_policy_idx ON public.insurance_policy_breakdowns(policy_id);
 

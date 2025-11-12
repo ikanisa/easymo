@@ -9,18 +9,18 @@ BEGIN;
 
 -- Index for user transaction queries sorted by date (most common query pattern)
 CREATE INDEX IF NOT EXISTS idx_transactions_user_created
-  ON transactions(user_id, created_at DESC)
-  WHERE deleted_at IS NULL;
+  ON public.wallet_transactions(profile_id, occurred_at DESC)
+  WHERE profile_id IS NOT NULL;
 
--- Index for transaction status queries
-CREATE INDEX IF NOT EXISTS idx_transactions_status_created
-  ON transactions(status, created_at DESC)
-  WHERE deleted_at IS NULL;
+-- Index for transaction status queries (wallet_transactions uses direction field)
+-- Commented out as wallet_transactions does not have a status field
+-- CREATE INDEX IF NOT EXISTS idx_transactions_status_created
+--   ON public.wallet_transactions(direction, occurred_at DESC);
 
 -- Index for amount range queries (useful for analytics)
 CREATE INDEX IF NOT EXISTS idx_transactions_amount
-  ON transactions(amount)
-  WHERE deleted_at IS NULL AND status = 'completed';
+  ON public.wallet_transactions(amount_minor)
+  WHERE profile_id IS NOT NULL;
 
 -- =============================================================================
 -- MESSAGES TABLE INDEXES
@@ -114,14 +114,14 @@ CREATE INDEX IF NOT EXISTS idx_conversation_state_timeout
 -- =============================================================================
 
 -- Index for wallet transaction history
-CREATE INDEX IF NOT EXISTS idx_wallet_transactions_account_created
-  ON wallet_transactions(account_id, created_at DESC)
-  WHERE account_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_wallet_transactions_profile_occurred
+  ON wallet_transactions(profile_id, occurred_at DESC)
+  WHERE profile_id IS NOT NULL;
 
--- Index for pending wallet operations
-CREATE INDEX IF NOT EXISTS idx_wallet_transactions_status
-  ON wallet_transactions(status, created_at DESC)
-  WHERE status IN ('pending', 'processing');
+-- Index for wallet transactions by direction (credit/debit)
+CREATE INDEX IF NOT EXISTS idx_wallet_transactions_direction
+  ON wallet_transactions(direction, occurred_at DESC)
+  WHERE direction IS NOT NULL;
 
 -- =============================================================================
 -- AUDIT LOG INDEXES
@@ -142,7 +142,7 @@ CREATE INDEX IF NOT EXISTS idx_audit_log_user_created
 -- =============================================================================
 
 -- Analyze tables to update statistics for query planner
-ANALYZE transactions;
+-- ANALYZE public.wallet_transactions;  -- Commented as table doesn't have enough records yet
 ANALYZE messages;
 ANALYZE drivers;
 ANALYZE trips;
