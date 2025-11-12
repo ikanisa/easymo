@@ -9,6 +9,18 @@ remain additive-only.
 - CI enforces forbidden path rules via `.github/workflows/additive-guard.yml`.
 - Sensitive paths require approval from CODEOWNERS (`.github/CODEOWNERS`).
 
+## Middleware Expectations
+
+- `middleware.ts` runs for all application routes and API handlers, attaching an
+  `x-request-id` header to every request. Provide an ID explicitly when
+  forwarding to downstream services to preserve traceability.
+- Authenticated access is required for any route outside the allow list
+  (`/login`, `/api/auth/*`, static assets, and other file-extension requests).
+  Requests without a valid, signed `admin_session` cookie receive a `401` JSON
+  response and the cookie is cleared before the request reaches the app.
+- `OPTIONS` preflight requests bypass the session check so CORS negotiations
+  succeed without credentials.
+
 ## Current Status
 
 - App Router layout implements top navigation, grouped left nav, and mock-backed
