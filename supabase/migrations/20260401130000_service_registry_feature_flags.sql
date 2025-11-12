@@ -283,7 +283,7 @@ BEGIN
       WHEN 'percentage' THEN
         -- Use consistent hashing based on user_id for percentage rollout
         IF p_user_id IS NOT NULL THEN
-          v_random_value := (('x' || substring(md5(p_user_id::text), 1, 8))::bit(32)::bigint % 100);
+          v_random_value := (hashtext(p_user_id::text) % 100);
           IF v_random_value < v_flag.rollout_percentage THEN
             v_result := true;
             v_reason := 'percentage_rollout_match';
