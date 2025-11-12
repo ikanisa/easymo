@@ -21,6 +21,7 @@
     "@va/shared": "workspace:*",
     "@radix-ui/react-slot": "^1.0.2",
     "@supabase/supabase-js": "^2.76.1",
+    "@supabase/ssr": "^0.7.0",
     "@tanstack/query-async-storage-persister": "^5.90.8",
     "@tanstack/react-query": "^5.51.21",
     "@tanstack/react-table": "8.16.0",
