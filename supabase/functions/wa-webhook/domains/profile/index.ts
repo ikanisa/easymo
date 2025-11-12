@@ -160,7 +160,7 @@ export async function handleVehicleCertificateUpload(
       },
       body: JSON.stringify({
         profile_id: ctx.profileId,
-        org_id: ctx.orgId || "default",
+        org_id: "default", // Use default org or fetch from profile
         vehicle_plate: vehiclePlate,
         file_url: fileUrl,
       }),
