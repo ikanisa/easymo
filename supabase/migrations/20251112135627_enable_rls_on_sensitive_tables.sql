@@ -90,8 +90,10 @@ DO $$ BEGIN
     CREATE POLICY "service_role_full_access" ON public.wallet_redeem_options FOR ALL USING (auth.role() = 'service_role');
   END IF;
   
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'voucher_redemptions' AND policyname = 'service_role_full_access') THEN
-    CREATE POLICY "service_role_full_access" ON public.voucher_redemptions FOR ALL USING (auth.role() = 'service_role');
+  IF EXISTS (SELECT 1 FROM pg_tables WHERE schemaname = 'public' AND tablename = 'voucher_redemptions') THEN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'voucher_redemptions' AND policyname = 'service_role_full_access') THEN
+      CREATE POLICY "service_role_full_access" ON public.voucher_redemptions FOR ALL USING (auth.role() = 'service_role');
+    END IF;
   END IF;
 
   -- Communication Tables (may not exist)
@@ -143,8 +145,10 @@ DO $$ BEGIN
     CREATE POLICY "service_role_full_access" ON public.campaign_target_archives FOR ALL USING (auth.role() = 'service_role');
   END IF;
   
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'bar_number_canonicalization_conflicts' AND policyname = 'service_role_full_access') THEN
-    CREATE POLICY "service_role_full_access" ON public.bar_number_canonicalization_conflicts FOR ALL USING (auth.role() = 'service_role');
+  IF EXISTS (SELECT 1 FROM pg_tables WHERE schemaname = 'public' AND tablename = 'bar_number_canonicalization_conflicts') THEN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'bar_number_canonicalization_conflicts' AND policyname = 'service_role_full_access') THEN
+      CREATE POLICY "service_role_full_access" ON public.bar_number_canonicalization_conflicts FOR ALL USING (auth.role() = 'service_role');
+    END IF;
   END IF;
 END $$;
 
