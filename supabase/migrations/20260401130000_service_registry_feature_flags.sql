@@ -272,7 +272,7 @@ BEGIN
         
       WHEN 'user_list' THEN
         -- Check if user is in target list
-        IF p_user_id IS NOT NULL AND v_flag.target_users ? p_user_id::text THEN
+        IF p_user_id IS NOT NULL AND v_flag.target_users @> to_jsonb(ARRAY[p_user_id::text]) THEN
           v_result := true;
           v_reason := 'user_in_target_list';
         ELSE
