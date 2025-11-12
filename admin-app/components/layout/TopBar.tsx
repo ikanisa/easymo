@@ -202,7 +202,7 @@ export function TopBar({
           <Search className="h-4 w-4" aria-hidden />
           <span className="flex-1 text-left">{searchPlaceholder}</span>
           <kbd className="rounded border border-[color:var(--color-border)]/60 bg-white/70 px-2 py-0.5 text-[0.65rem] font-medium text-[color:var(--color-muted)]">
-            ⌘K
+            ⌘K / Ctrl+K
           </kbd>
         </button>
         {showShortcutHint && (
