@@ -193,6 +193,21 @@ export async function handleList(
     return await handleBusinessSelection(ctx, id);
   }
 
+  // Check if this is a WhatsApp number selection
+  if (id.startsWith("whatsapp::")) {
+    const numberId = id.substring(10);
+    if (state.key === "business_whatsapp_numbers" && state.data) {
+      const { handleWhatsAppNumberSelection } = await import(
+        "../domains/business/whatsapp_numbers.ts"
+      );
+      return await handleWhatsAppNumberSelection(
+        ctx,
+        numberId,
+        state.data.businessId as string,
+      );
+    }
+  }
+
   if (await handleHomeMenuSelection(ctx, id, state)) {
     return true;
   }
@@ -449,14 +464,43 @@ async function handleHomeMenuSelection(
       return false;
     }
     case IDS.BUSINESS_EDIT:
-    case IDS.BUSINESS_ADD_WHATSAPP:
-      // Placeholder for future implementation
-      await sendButtonsMessage(
-        ctx,
-        "This feature is coming soon!",
-        buildButtons({ id: IDS.PROFILE_MANAGE_BUSINESSES, title: "← Back" }),
-      );
-      return true;
+    case IDS.BUSINESS_ADD_WHATSAPP: {
+      if (state.key === "business_detail" && state.data) {
+        if (id === IDS.BUSINESS_ADD_WHATSAPP) {
+          const { showBusinessWhatsAppNumbers } = await import(
+            "../domains/business/whatsapp_numbers.ts"
+          );
+          return await showBusinessWhatsAppNumbers(
+            ctx,
+            state.data.businessId as string,
+            state.data.businessName as string,
+          );
+        }
+        // Business edit - placeholder for future
+        await sendButtonsMessage(
+          ctx,
+          "Edit business details coming soon!",
+          buildButtons({ id: IDS.PROFILE_MANAGE_BUSINESSES, title: "← Back" }),
+        );
+        return true;
+      }
+      // If called from the WhatsApp numbers list, start add flow
+      if (
+        id === IDS.BUSINESS_ADD_WHATSAPP &&
+        state.key === "business_whatsapp_numbers" &&
+        state.data
+      ) {
+        const { startAddWhatsAppNumber } = await import(
+          "../domains/business/whatsapp_numbers.ts"
+        );
+        return await startAddWhatsAppNumber(
+          ctx,
+          state.data.businessId as string,
+          state.data.businessName as string,
+        );
+      }
+      return false;
+    }
     case IDS.MOTOR_INSURANCE: {
       const gate = await evaluateMotorInsuranceGate(ctx);
       console.info("insurance.gate", {
