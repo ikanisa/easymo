@@ -604,13 +604,12 @@ async function runMatchingFallback(
       count: matches.length,
     });
 
+    // Per requirement: Never send fallback error messages
+    // Instead, proceed with database results (even if empty) and return to menu
     if (!matches.length) {
-      const copy = state.mode === "drivers"
-        ? t(ctx.locale, "mobility.nearby.no_matches.drivers")
-        : t(ctx.locale, "mobility.nearby.no_matches.passengers");
       await sendButtonsMessage(
         ctx,
-        copy,
+        t(ctx.locale, "mobility.nearby.empty_results"),
         homeOnly(),
       );
       await clearState(ctx.supabase, ctx.profileId!);
