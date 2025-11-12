@@ -129,14 +129,11 @@ async function invokeDriverAgent(
       const errorText = await response.text();
       console.error("Driver agent HTTP error:", response.status, errorText);
       
-      // Return fallback response
+      // Per requirement: Return simple empty result without apologetic fallback
       return {
         success: false,
         sessionId: "",
-        message: "🚖 Sorry, we couldn't find drivers at this moment. This might be because:\n\n" +
-                 "• No drivers are currently available in your area\n" +
-                 "• The service is temporarily unavailable\n\n" +
-                 "Please try again in a few minutes or use the traditional driver search.",
+        message: "No matches found at this time.",
       };
     }
 
@@ -147,10 +144,7 @@ async function invokeDriverAgent(
     return {
       success: false,
       sessionId: "",
-      message: "🚖 Unable to search for drivers right now. Please try:\n\n" +
-               "• Checking your internet connection\n" +
-               "• Using the traditional 'See Drivers' option\n" +
-               "• Trying again in a few minutes",
+      message: "Search unavailable. Please try again.",
     };
   }
 }
@@ -193,10 +187,7 @@ async function invokePharmacyAgent(
       return {
         success: false,
         sessionId: "",
-        message: "💊 Sorry, we couldn't find pharmacies at this moment. This might be because:\n\n" +
-                 "• No pharmacies are registered in your area yet\n" +
-                 "• The service is temporarily unavailable\n\n" +
-                 "💡 Tip: We're constantly adding new pharmacies to our database!",
+        message: "No matches found at this time.",
       };
     }
 
@@ -207,10 +198,7 @@ async function invokePharmacyAgent(
     return {
       success: false,
       sessionId: "",
-      message: "💊 Unable to search pharmacies right now. Please try:\n\n" +
-               "• Checking your internet connection\n" +
-               "• Trying again in a few minutes\n" +
-               "• Contacting support if the issue persists",
+      message: "Search unavailable. Please try again.",
     };
   }
 }
@@ -257,10 +245,7 @@ async function invokePropertyAgent(
       return {
         success: false,
         sessionId: "",
-        message: "🏠 Sorry, we couldn't find properties at this moment. This might be because:\n\n" +
-                 "• No properties match your criteria in this area\n" +
-                 "• The service is temporarily unavailable\n\n" +
-                 "💡 Try adjusting your budget or location for better results!",
+        message: "No matches found at this time.",
       };
     }
 
@@ -271,10 +256,7 @@ async function invokePropertyAgent(
     return {
       success: false,
       sessionId: "",
-      message: "🏠 Unable to search properties right now. Please try:\n\n" +
-               "• Checking your internet connection\n" +
-               "• Adjusting your search criteria\n" +
-               "• Trying again in a few minutes",
+      message: "Search unavailable. Please try again.",
     };
   }
 }
@@ -449,10 +431,7 @@ async function invokeShopsAgent(
       return {
         success: false,
         sessionId: "",
-        message: "🛍️ Sorry, we couldn't find shops at this moment. This might be because:\n\n" +
-                 "• No shops are registered in your area yet\n" +
-                 "• The service is temporarily unavailable\n\n" +
-                 "💡 You can browse the marketplace or try again later!",
+        message: "No matches found at this time.",
       };
     }
 
@@ -463,10 +442,7 @@ async function invokeShopsAgent(
     return {
       success: false,
       sessionId: "",
-      message: "🛍️ Unable to search shops right now. Please try:\n\n" +
-               "• Browsing the marketplace manually\n" +
-               "• Checking your internet connection\n" +
-               "• Trying again in a few minutes",
+      message: "Search unavailable. Please try again.",
     };
   }
 }
@@ -507,10 +483,7 @@ async function invokeQuincaillerieAgent(
       return {
         success: false,
         sessionId: "",
-        message: "🔧 Sorry, we couldn't find hardware stores at this moment. This might be because:\n\n" +
-                 "• No hardware stores are registered in your area yet\n" +
-                 "• The service is temporarily unavailable\n\n" +
-                 "💡 We're constantly adding new stores to our database!",
+        message: "No matches found at this time.",
       };
     }
 
@@ -521,10 +494,7 @@ async function invokeQuincaillerieAgent(
     return {
       success: false,
       sessionId: "",
-      message: "🔧 Unable to search hardware stores right now. Please try:\n\n" +
-               "• Checking your internet connection\n" +
-               "• Trying again in a few minutes\n" +
-               "• Contacting support if the issue persists",
+      message: "Search unavailable. Please try again.",
     };
   }
 }
