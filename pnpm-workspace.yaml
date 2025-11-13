@@ -4,6 +4,7 @@ packages:
   - admin-app
   - ai
   - waiter-pwa
+  - real-estate-pwa
 
 onlyBuiltDependencies:
   - '@nestjs/core'
