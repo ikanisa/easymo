@@ -528,7 +528,10 @@ export async function handler(req: Request): Promise<Response> {
                 : {}),
             };
           }
+        } catch (err) {
+          console.error("agent-chat.core_respond_failed", err);
         }
+        const metadataSummary = agentMetadata || {};
         const summary: Record<string, unknown> = {
           agent_kind: toolkit.agent_kind,
           model: toolkit.model,

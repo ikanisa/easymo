@@ -1,0 +1,25 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="512" height="512" fill="#0ea5e9" rx="76.8"/>
+  
+  <!-- Waiter icon (simplified) -->
+  <g transform="translate(128, 102.4)">
+    <!-- Plate -->
+    <ellipse cx="128" cy="256" rx="102.4" ry="25.6" fill="#ffffff" opacity="0.9"/>
+    <ellipse cx="128" cy="256" rx="92.16" ry="20.48" fill="#e0f2fe"/>
+    
+    <!-- Fork and Knife -->
+    <path d="M 76.8 179.2 L 76.8 256" stroke="#ffffff" stroke-width="10.24" stroke-linecap="round"/>
+    <path d="M 61.44 179.2 L 61.44 215.04" stroke="#ffffff" stroke-width="7.68" stroke-linecap="round"/>
+    <path d="M 92.16 179.2 L 92.16 215.04" stroke="#ffffff" stroke-width="7.68" stroke-linecap="round"/>
+    
+    <path d="M 179.2 179.2 L 179.2 256" stroke="#ffffff" stroke-width="12.8" stroke-linecap="round"/>
+    <path d="M 168.96 179.2 L 189.44 194.56" stroke="#ffffff" stroke-width="10.24" stroke-linecap="round"/>
+  </g>
+  
+  <!-- AI Spark -->
+  <g transform="translate(332.8, 128)">
+    <circle cx="0" cy="0" r="40.96" fill="#fbbf24" opacity="0.9"/>
+    <path d="M 0 -61.44 L 0 61.44 M -61.44 0 L 61.44 0" stroke="#ffffff" stroke-width="12.8" stroke-linecap="round"/>
+  </g>
+</svg>
