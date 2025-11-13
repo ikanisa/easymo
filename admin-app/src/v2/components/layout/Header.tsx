@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import React, { useMemo } from "react";
 
 export function Header() {
   const operatorInitials = useMemo(() => {
@@ -14,34 +14,23 @@ export function Header() {
   const now = useMemo(() => new Date(), []);
 
   return (
-    <header className="h-16 border-b border-gray-200 bg-white" role="banner">
-      <div className="mx-auto flex h-full max-w-7xl items-center justify-between px-6">
+    <header className="h-16 border-b border-gray-200 bg-white dashboard-shell__header" role="banner">
+      <div className="mx-auto flex h-full max-w-7xl items-center justify-between px-6 dashboard-shell__header-inner">
         <div>
-          <p className="text-sm font-medium text-gray-500" aria-live="polite">
+          <p className="text-sm font-medium text-gray-500 dashboard-shell__meta-label" aria-live="polite">
             Environment
           </p>
-          <p className="text-base font-semibold text-gray-900">
+          <p className="text-base font-semibold text-gray-900 dashboard-shell__meta-value">
             {process.env.NEXT_PUBLIC_ENVIRONMENT_LABEL ?? "Staging"}
           </p>
         </div>
-        <div className="flex items-center gap-4">
-          <div className="text-sm text-gray-500">
+        <div className="flex items-center gap-4 dashboard-shell__header-meta">
+          <div className="text-sm text-gray-500 dashboard-shell__timestamp">
             <time dateTime={now.toISOString()}>{now.toLocaleString()}</time>
           </div>
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 text-sm font-semibold text-blue-700">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 text-sm font-semibold text-blue-700 dashboard-shell__avatar">
             {operatorInitials || "EA"}
           </div>
-    <header className="dashboard-shell__header" role="banner">
-      <div className="dashboard-shell__header-inner">
-        <div>
-          <p className="dashboard-shell__meta-label">Environment</p>
-          <p className="dashboard-shell__meta-value">
-            {process.env.NEXT_PUBLIC_ENVIRONMENT_LABEL ?? "Staging"}
-          </p>
-        </div>
-        <div className="dashboard-shell__header-meta">
-          <div className="dashboard-shell__timestamp">{new Date().toLocaleString()}</div>
-          <div className="dashboard-shell__avatar">{operatorInitials || "EA"}</div>
         </div>
       </div>
     </header>

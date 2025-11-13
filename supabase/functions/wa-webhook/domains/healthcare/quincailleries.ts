@@ -10,7 +10,6 @@ import {
 } from "../../utils/reply.ts";
 import { isFeatureEnabled } from "../../../_shared/feature-flags.ts";
 import { IDS } from "../../wa/ids.ts";
-import { t } from "../../i18n/translator.ts";
 import { routeToAIAgent, sendAgentOptions } from "../ai-agents/index.ts";
 import { waChatLink } from "../../utils/links.ts";
 import { listBusinesses } from "../../rpc/marketplace.ts";
@@ -38,14 +37,6 @@ export async function startNearbyQuincailleries(
     buildButtons(
       { id: IDS.LOCATION_SAVED_LIST, title: t(ctx.locale, "location.saved.button") },
       { id: IDS.BACK_HOME, title: t(ctx.locale, "common.menu_back") }
-    )
-    t(ctx.locale, "quincaillerie.flow.intro"),
-    buildButtons(
-      {
-        id: IDS.LOCATION_SAVED_LIST,
-        title: t(ctx.locale, "location.saved.button"),
-      },
-      { id: IDS.BACK_HOME, title: t(ctx.locale, "common.menu_back") },
     ),
   );
 
@@ -70,12 +61,7 @@ export async function handleQuincaillerieLocation(
     t(ctx.locale, "quincaillerie.location.received"),
     buildButtons(
       { id: IDS.BACK_HOME, title: t(ctx.locale, "common.menu_back") }
-    )
-    t(ctx.locale, "quincaillerie.flow.location_received"),
-    buildButtons({
-      id: IDS.BACK_HOME,
-      title: t(ctx.locale, "common.menu_back"),
-    }),
+    ),
   );
 
   return true;

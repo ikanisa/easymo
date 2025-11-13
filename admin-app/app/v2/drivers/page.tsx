@@ -49,8 +49,8 @@ export default function DriversPage() {
     return drivers.map((driver) => ({
       ...driver,
       vehicle_name: driver.vehicles
-        ? `${driver.vehicles.make ?? ""} ${driver.vehicles.model ?? ""}`.trim() ||
-          driver.vehicles.license_plate ?? "Assigned"
+        ? (`${driver.vehicles.make ?? ""} ${driver.vehicles.model ?? ""}`.trim() ||
+          driver.vehicles.license_plate) ?? "Assigned"
         : "Unassigned",
     }));
   }, [drivers]);
@@ -58,8 +58,8 @@ export default function DriversPage() {
   const vehicleOptions = useMemo(() => {
     return vehicles.map((vehicle) => ({
       label:
-        `${vehicle.make ?? ""} ${vehicle.model ?? ""}`.trim() ||
-        vehicle.license_plate ?? "Vehicle",
+        (`${vehicle.make ?? ""} ${vehicle.model ?? ""}`.trim() ||
+        vehicle.license_plate) ?? "Vehicle",
       value: vehicle.id,
     }));
   }, [vehicles]);

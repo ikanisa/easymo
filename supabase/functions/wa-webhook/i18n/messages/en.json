@@ -612,6 +612,8 @@
   "restaurant.menu.upload_error": "❌ Failed to process menu upload. Please try again or contact support.",
   "restaurant.menu.upload_processing": "⏳ *Processing your menu...*\n\nWe're extracting items from your menu. This usually takes 1-2 minutes.\n\nYou'll receive a notification when it's ready for review.",
   "restaurant.orders.coming_soon": "📦 *Orders feature coming soon!*\n\nCustomers will be able to order from your menu via WhatsApp soon.",
+  "home.rows.notaryServices.title": "📜 Notary Services",
+  "home.rows.notaryServices.description": "Find notary services and legal assistance.",
   "home.rows.profile.title": "👤 Profile",
   "home.rows.profile.description": "Manage your businesses, tokens, and settings.",
   "profile.menu.title": "👤 Profile",

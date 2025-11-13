@@ -1,33 +1,10 @@
-import "server-only";
-
 // Note: This module is designed for server-side use only
-// It's safe without "server-only" import since it has runtime checks
-// and is primarily used in API routes or server components
+// It has runtime checks and is primarily used in API routes or server components
 import { createServerClient } from "@supabase/ssr";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { cookies, headers } from "next/headers";
 import { requireServiceSupabaseConfig } from "../env-server";
 
-type CookieStore = ReturnType<typeof cookies>;
-type HeaderStore = ReturnType<typeof headers>;
-
-function tryGetCookies(): CookieStore | undefined {
-  try {
-    return cookies();
-  } catch {
-    return undefined;
-  }
-}
-
-function tryGetHeaders(): HeaderStore | undefined {
-  try {
-    return headers();
-  } catch {
-    return undefined;
-  }
-}
-
-export function getSupabaseAdminClient(): SupabaseClient | null {
+export async function getSupabaseAdminClient(): Promise<SupabaseClient | null> {
   if (typeof window !== "undefined") {
     throw new Error("Supabase admin client can only be used on the server");
   }
@@ -35,6 +12,28 @@ export function getSupabaseAdminClient(): SupabaseClient | null {
   const config = requireServiceSupabaseConfig();
   if (!config) {
     return null;
+  }
+
+  // Dynamically import next/headers to avoid build issues
+  const { cookies, headers } = await import("next/headers");
+  
+  type CookieStore = ReturnType<typeof cookies>;
+  type HeaderStore = ReturnType<typeof headers>;
+
+  function tryGetCookies(): CookieStore | undefined {
+    try {
+      return cookies();
+    } catch {
+      return undefined;
+    }
+  }
+
+  function tryGetHeaders(): HeaderStore | undefined {
+    try {
+      return headers();
+    } catch {
+      return undefined;
+    }
   }
 
   const cookieStore = tryGetCookies();

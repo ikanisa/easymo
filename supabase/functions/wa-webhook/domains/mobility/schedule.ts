@@ -473,9 +473,7 @@ async function requestScheduleTime(
       ],
     },
     { emoji: "🕐" },
-    key: "schedule_time_picker",
-    data: { ...state } as Record<string, unknown>,
-  });
+  );
 
   const rows = [
     ...buildTimeOptionRows(ctx),

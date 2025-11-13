@@ -595,3 +595,4 @@ async function handleHomeMenuSelection(
       return false;
   }
 }
+}

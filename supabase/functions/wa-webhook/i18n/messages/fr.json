@@ -590,6 +590,8 @@
   "pharmacy.buttons.search_now": "🔍 Rechercher maintenant",
   "quincaillerie.start.prompt": "🔧 *Quincailleries à proximité*\n\nPartagez votre localisation pour trouver des quincailleries près de vous.\n\nAppuyez sur *Lieux enregistrés* pour choisir un lieu sauvegardé, ou partagez votre localisation (➕ → Localisation → Partager).",
   "quincaillerie.location.received": "📍 *Localisation reçue !*\n\n🔧 Veuillez partager le nom des articles ou une image des articles dont vous avez besoin.\n\nVous pouvez taper les noms des articles ou envoyer une photo.",
+  "home.rows.notaryServices.title": "📜 Services Notariaux",
+  "home.rows.notaryServices.description": "Trouvez des services notariaux et une assistance juridique.",
   "home.rows.profile.title": "👤 Profil",
   "home.rows.profile.description": "Gérez vos entreprises, jetons et paramètres.",
   "profile.menu.title": "👤 Profil",

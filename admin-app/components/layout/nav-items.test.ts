@@ -63,12 +63,12 @@ describe("layout navigation vocabulary", () => {
 
   it("uses approved vocabulary when legacy navigation is enabled", async () => {
     global.__EASYMO_FEATURE_FLAGS__ = { adminHubV2: false };
-    const module = await import("./nav-items");
+    const navModule = await import("./nav-items");
 
-    const sectionTitles = module.NAV_SECTIONS.map((section) => section.title);
+    const sectionTitles = navModule.NAV_SECTIONS.map((section) => section.title);
     expect(sectionTitles).toEqual(Array.from(legacySectionTitles));
 
-    const navTitles = module.NAV_SECTIONS.flatMap((section) => section.items.map((item) => item.title));
+    const navTitles = navModule.NAV_SECTIONS.flatMap((section) => section.items.map((item) => item.title));
     expect(navTitles).toEqual(Array.from(legacyNavTitles));
 
     [...sectionTitles, ...navTitles].forEach((title) => {
@@ -80,9 +80,9 @@ describe("layout navigation vocabulary", () => {
 
   it("exposes the hub navigation vocabulary when the flag is enabled", async () => {
     global.__EASYMO_FEATURE_FLAGS__ = { adminHubV2: true };
-    const module = await import("./nav-items");
+    const navModule = await import("./nav-items");
 
-    const hubTitles = module.NAV_SECTIONS.flatMap((section) => [section.title, ...section.items.map((item) => item.title)]);
+    const hubTitles = navModule.NAV_SECTIONS.flatMap((section) => [section.title, ...section.items.map((item) => item.title)]);
     expect(hubTitles).toEqual(["Hub", "Admin hub"]);
 
     hubTitles.forEach((title) => {

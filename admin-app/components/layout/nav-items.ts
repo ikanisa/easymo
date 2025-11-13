@@ -71,6 +71,7 @@ const systemItems = [
   { href: "/tools", title: "Integrations", icon: "🔌" },
   { href: "/logs", title: "System logs", icon: "📝" },
   { href: "/whatsapp-health", title: "WhatsApp health", icon: "💚" },
+  { href: "/whatsapp-menu", title: "WhatsApp menu", icon: "📱" },
   { href: "/settings", title: "Settings", icon: "⚙️" },
   { href: "/settings/admin", title: "Admin controls", icon: "🛡️" },
 ];

@@ -1,5 +1,4 @@
 import { createBrowserClient, createServerClient } from "@supabase/ssr";
-import { cookies, headers } from "next/headers";
 import type { Database } from "./database.types";
 
 function requireEnv(name: string) {
@@ -17,37 +16,84 @@ export function createClient() {
   );
 }
 
-type CookieStore = ReturnType<typeof cookies>;
-type HeaderStore = ReturnType<typeof headers>;
+// Server-side functions - only import when needed
+export async function createServerSupabaseClient() {
+  const { cookies, headers } = await import("next/headers");
+  
+  type CookieStore = ReturnType<typeof cookies>;
+  type HeaderStore = ReturnType<typeof headers>;
 
-function tryGetCookies(): CookieStore | undefined {
-  try {
-    return cookies();
-  } catch {
-    return undefined;
+  function tryGetCookies(): CookieStore | undefined {
+    try {
+      return cookies();
+    } catch {
+      return undefined;
+    }
   }
+
+  function tryGetHeaders(): HeaderStore | undefined {
+    try {
+      return headers();
+    } catch {
+      return undefined;
+    }
+  }
+
+  const cookieStore = tryGetCookies();
+  const headerStore = tryGetHeaders();
+
+  return createServerClient<Database>(
+    requireEnv("NEXT_PUBLIC_SUPABASE_URL"),
+    requireEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY"),
+    {
+      cookies: cookieStore
+        ? {
+            getAll() {
+              return cookieStore.getAll();
+            },
+            setAll(cookiesToSet) {
+              try {
+                cookiesToSet.forEach(({ name, value, options }) =>
+                  cookieStore.set(name, value, options),
+                );
+              } catch {
+                // Server Component
+              }
+            },
+          }
+        : undefined,
+    },
+  );
 }
 
-function tryGetHeaders(): HeaderStore | undefined {
-  try {
-    return headers();
-  } catch {
-    return undefined;
-  }
-}
-
-type AdminClientOptions = {
-  cookieStore?: CookieStore;
-  headerStore?: HeaderStore;
-};
-
-export function createAdminClient(options: AdminClientOptions = {}) {
+export async function createAdminClient() {
   if (typeof window !== "undefined") {
     throw new Error("Admin client can only be used on the server");
   }
 
-  const cookieStore = options.cookieStore ?? tryGetCookies();
-  const headerStore = options.headerStore ?? tryGetHeaders();
+  const { cookies, headers } = await import("next/headers");
+  
+  type CookieStore = ReturnType<typeof cookies>;
+  type HeaderStore = ReturnType<typeof headers>;
+
+  function tryGetCookies(): CookieStore | undefined {
+    try {
+      return cookies();
+    } catch {
+      return undefined;
+    }
+  }
+
+  function tryGetHeaders(): HeaderStore | undefined {
+    try {
+      return headers();
+    } catch {
+      return undefined;
+    }
+  }
+
+  const cookieStore = tryGetCookies();
+  const headerStore = tryGetHeaders();
 
   const cookieAdapter = cookieStore
     ? {
@@ -56,11 +102,9 @@ export function createAdminClient(options: AdminClientOptions = {}) {
         },
         set(..._args: unknown[]) {
           // Route handlers cannot mutate cookies synchronously
-          // but the interface requires the method to exist.
         },
         remove(..._args: unknown[]) {
           // Route handlers cannot mutate cookies synchronously
-          // but the interface requires the method to exist.
         },
       }
     : undefined;

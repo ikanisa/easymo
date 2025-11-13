@@ -8,6 +8,11 @@ import {
   recordMotorInsuranceHidden,
 } from "../domains/insurance/gate.ts";
 import { t, type TranslationKey } from "../i18n/translator.ts";
+import {
+  fetchActiveMenuItems,
+  getMenuItemId,
+  getMenuItemTranslationKeys,
+} from "../domains/menu/dynamic_home_menu.ts";
 
 const PAGE_SIZE = 9;
 
@@ -27,69 +32,6 @@ type MenuRowDef = {
   descriptionKey: TranslationKey;
 };
 
-const BASE_ROW_DEFS: MenuRowDef[] = [
-  {
-    id: IDS.SEE_DRIVERS,
-    titleKey: "home.rows.seeDrivers.title",
-    descriptionKey: "home.rows.seeDrivers.description",
-  },
-  {
-    id: IDS.SEE_PASSENGERS,
-    titleKey: "home.rows.seePassengers.title",
-    descriptionKey: "home.rows.seePassengers.description",
-  },
-  {
-    id: IDS.SCHEDULE_TRIP,
-    titleKey: "home.rows.scheduleTrip.title",
-    descriptionKey: "home.rows.scheduleTrip.description",
-  },
-  {
-    id: IDS.SAVED_PLACES,
-    titleKey: "home.rows.savedPlaces.title",
-    descriptionKey: "home.rows.savedPlaces.description",
-  },
-  {
-    id: IDS.NEARBY_PHARMACIES,
-    titleKey: "home.rows.nearbyPharmacies.title",
-    descriptionKey: "home.rows.nearbyPharmacies.description",
-  },
-  {
-    id: IDS.NEARBY_QUINCAILLERIES,
-    titleKey: "home.rows.nearbyQuincailleries.title",
-    descriptionKey: "home.rows.nearbyQuincailleries.description",
-  },
-  {
-    id: IDS.MARKETPLACE,
-    titleKey: "home.rows.marketplace.title",
-    descriptionKey: "home.rows.marketplace.description",
-  },
-  {
-    id: IDS.PROPERTY_RENTALS,
-    titleKey: "home.rows.propertyRentals.title",
-    descriptionKey: "home.rows.propertyRentals.description",
-  },
-  {
-    id: IDS.PROFILE,
-    titleKey: "home.rows.profile.title",
-    descriptionKey: "home.rows.profile.description",
-  },
-  {
-    id: IDS.MOMO_QR,
-    titleKey: "home.rows.momoQr.title",
-    descriptionKey: "home.rows.momoQr.description",
-  },
-  {
-    id: IDS.BARS_RESTAURANTS,
-    titleKey: "home.rows.barsRestaurants.title",
-    descriptionKey: "home.rows.barsRestaurants.description",
-  },
-  {
-    id: IDS.MOTOR_INSURANCE,
-    titleKey: "home.rows.motorInsurance.title",
-    descriptionKey: "home.rows.motorInsurance.description",
-  },
-];
-
 const ADMIN_ROW_DEF: MenuRowDef = {
   id: IDS.ADMIN_HUB,
   titleKey: "home.rows.admin.title",
@@ -104,10 +46,11 @@ export async function sendHomeMenu(
   if (!gate.allowed) {
     await recordMotorInsuranceHidden(ctx, gate, "menu");
   }
-  const rows = buildRows({
+  const rows = await buildRows({
     isAdmin: gate.isAdmin,
     showInsurance: gate.allowed,
     locale: ctx.locale,
+    ctx,
   });
   const totalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
   const safePage = Math.min(Math.max(page, 0), totalPages - 1);
@@ -158,26 +101,64 @@ export async function sendHomeMenu(
   );
 }
 
-function buildRows(options: {
+async function buildRows(options: {
   isAdmin: boolean;
   showInsurance: boolean;
   locale: RouterContext["locale"];
-}): MenuRow[] {
-  const baseDefs = options.showInsurance
-    ? BASE_ROW_DEFS
-    : BASE_ROW_DEFS.filter((row) => row.id !== IDS.MOTOR_INSURANCE);
-  const localizedBase = baseDefs.map((row) => ({
-    id: row.id,
-    title: t(options.locale, row.titleKey),
-    description: t(options.locale, row.descriptionKey),
-  }));
-  if (!options.isAdmin) return localizedBase;
+  ctx: RouterContext;
+}): Promise<MenuRow[]> {
+  // Extract country code from E.164 phone number (e.g., +250... -> RW)
+  const countryCode = getCountryFromPhone(options.ctx.from);
+  
+  // Fetch dynamic menu items from database
+  const menuItems = await fetchActiveMenuItems(countryCode, options.ctx.supabase);
+  
+  // Build menu rows from dynamic items
+  const dynamicRows = menuItems.map((item) => {
+    const { titleKey, descriptionKey } = getMenuItemTranslationKeys(item.key);
+    return {
+      id: getMenuItemId(item.key),
+      title: t(options.locale, titleKey as TranslationKey),
+      description: t(options.locale, descriptionKey as TranslationKey),
+    };
+  });
+  
+  // Filter motor insurance if not allowed
+  const filteredRows = options.showInsurance
+    ? dynamicRows
+    : dynamicRows.filter((row) => row.id !== IDS.MOTOR_INSURANCE);
+  
+  // Add admin row if user is admin
+  if (!options.isAdmin) return filteredRows;
   return [
     {
       id: ADMIN_ROW_DEF.id,
       title: t(options.locale, ADMIN_ROW_DEF.titleKey),
       description: t(options.locale, ADMIN_ROW_DEF.descriptionKey),
     },
-    ...localizedBase,
+    ...filteredRows,
   ];
+}
+
+function getCountryFromPhone(phone: string): string {
+  // Map common country codes for East Africa
+  const countryMap: Record<string, string> = {
+    "250": "RW", // Rwanda
+    "256": "UG", // Uganda
+    "254": "KE", // Kenya
+    "255": "TZ", // Tanzania
+    "257": "BI", // Burundi
+    "243": "CD", // DR Congo
+  };
+  
+  // Extract prefix from E.164 format (+250... or 250...)
+  const cleanPhone = phone.replace(/^\+/, "");
+  for (const [prefix, country] of Object.entries(countryMap)) {
+    if (cleanPhone.startsWith(prefix)) {
+      return country;
+    }
+  }
+  
+  // Default to Rwanda
+  return "RW";
 }
