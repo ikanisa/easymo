@@ -218,7 +218,7 @@ serve(async (req) => {
 
     // Parse webhook payload
     const payload = JSON.parse(rawBody);
-    const { referenceId, status, reason, financialTransactionId } = payload;
+    const { referenceId, status, reason } = payload;
 
     await logStructuredEvent("MOMO_WEBHOOK_PARSED", {
       referenceId,
