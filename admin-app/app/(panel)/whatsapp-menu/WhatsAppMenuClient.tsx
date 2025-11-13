@@ -132,7 +132,7 @@ export function WhatsAppMenuClient({ initialItems }: WhatsAppMenuClientProps) {
             </li>
             <li>
               <strong>Display Order:</strong> Items are shown in the order
-              specified by the "Order" column.
+              specified by the &quot;Order&quot; column.
             </li>
             <li>
               <strong>Immediate Effect:</strong> Changes apply immediately to
