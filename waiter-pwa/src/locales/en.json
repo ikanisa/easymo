@@ -1,0 +1,86 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "retry": "Try again",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "back": "Back",
+    "continue": "Continue"
+  },
+  "onboarding": {
+    "welcome": "Welcome to Waiter AI",
+    "selectLanguage": "Select your language",
+    "start": "Start Ordering"
+  },
+  "chat": {
+    "title": "Chat with Waiter AI",
+    "inputPlaceholder": "Type a message...",
+    "send": "Send",
+    "typing": "Waiter AI is typing...",
+    "voiceInput": "Voice input",
+    "quickActions": {
+      "menu": "View Menu",
+      "cart": "My Cart",
+      "recommend": "What do you recommend?",
+      "specials": "Today's specials"
+    }
+  },
+  "menu": {
+    "title": "Menu",
+    "addToCart": "Add to Cart",
+    "search": "Search menu...",
+    "all": "All",
+    "noResults": "No items found",
+    "empty": "Menu is empty",
+    "browseMenu": "Browse Menu",
+    "viewCart": "View Cart"
+  },
+  "cart": {
+    "title": "Your Cart",
+    "empty": "Your cart is empty",
+    "emptyDescription": "Add items from the menu to get started",
+    "total": "Total",
+    "subtotal": "Subtotal",
+    "checkout": "Proceed to Checkout",
+    "items": "{{count}} items",
+    "clearConfirm": "Clear all items from cart?"
+  },
+  "payment": {
+    "title": "Payment",
+    "orderSummary": "Order Summary",
+    "total": "Total",
+    "method": "Payment Method",
+    "mobileMoney": "Mobile Money",
+    "creditCard": "Credit/Debit Card",
+    "pay": "Pay Now",
+    "processing": "Processing...",
+    "momo": {
+      "phoneNumber": "Phone Number",
+      "description": "You will receive a payment request on your phone"
+    },
+    "card": {
+      "secure": "Secure payment powered by Revolut"
+    }
+  },
+  "order": {
+    "title": "Order Status",
+    "number": "Order #{{number}}",
+    "trackOrder": "Track Order",
+    "estimatedTime": "Estimated time: {{time}} minutes",
+    "readyNotification": "Your order is ready!",
+    "readyDescription": "Your order is ready for pickup!",
+    "thankYou": "Thank you for your order!",
+    "placedAt": "Placed at",
+    "notFound": "Order not found",
+    "backToMenu": "Back to Menu",
+    "rateExperience": "Rate your experience",
+    "status": {
+      "pending": "Pending",
+      "confirmed": "Confirmed",
+      "preparing": "Preparing",
+      "ready": "Ready",
+      "completed": "Completed"
+    }
+  }
+}

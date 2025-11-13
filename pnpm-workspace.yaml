@@ -3,6 +3,7 @@ packages:
   - packages/*
   - admin-app
   - ai
+  - waiter-pwa
 
 onlyBuiltDependencies:
   - '@nestjs/core'
