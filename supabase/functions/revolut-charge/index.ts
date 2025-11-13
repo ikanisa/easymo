@@ -119,39 +119,6 @@ async function createRevolutOrder(
   }
 }
 
-async function getRevolutOrderStatus(
-  orderToken: string,
-  config: RevolutConfig,
-  correlationId: string
-): Promise<{ status: string; amount?: number }> {
-  try {
-    const response = await fetch(`${config.apiUrl}/orders/${orderToken}`, {
-      method: "GET",
-      headers: {
-        "Authorization": `Bearer ${config.apiKey}`,
-        "X-Correlation-Id": correlationId,
-      },
-    });
-
-    if (response.ok) {
-      const data = await response.json();
-      return {
-        status: data.state, // PENDING, PROCESSING, COMPLETED, CANCELLED, FAILED
-        amount: data.order_amount?.value / 100, // Convert from cents
-      };
-    }
-
-    return { status: "UNKNOWN" };
-  } catch (error) {
-    await logStructuredEvent("REVOLUT_STATUS_CHECK_ERROR", {
-      error: (error as Error).message,
-      orderToken,
-      correlationId,
-    });
-    return { status: "ERROR" };
-  }
-}
-
 // =====================================================
 // MAIN HANDLER
 // =====================================================
