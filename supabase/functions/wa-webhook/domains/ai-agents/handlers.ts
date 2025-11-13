@@ -396,10 +396,6 @@ export async function handleAIPropertyRental(
       return true;
     }
 
-    const searchingMessage = action === "find" 
-      ? t(ctx.locale, "property.find.searching")
-      : t(ctx.locale, "property.add.processing");
-    
     const searchingMessage = action === "find"
       ? t(ctx.locale, "agent.searching_properties")
       : t(ctx.locale, "agent.adding_property");
