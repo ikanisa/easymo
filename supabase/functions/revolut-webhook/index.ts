@@ -32,19 +32,29 @@ async function verifyRevolutSignature(
     return false; // No signature provided
   }
 
-  const webhookSecret = Deno.env.get("REVOLUT_WEBHOOK_SECRET") || "";
-  if (!webhookSecret) {
-    // In sandbox mode without secret, skip verification
+  const webhookSecret = Deno.env.get("REVOLUT_WEBHOOK_SECRET");
+  const skipVerification = Deno.env.get("REVOLUT_SKIP_SIGNATURE_VERIFICATION") === "true";
+
+  if (!webhookSecret && !skipVerification) {
+    await logStructuredEvent("REVOLUT_WEBHOOK_NO_SECRET_CONFIGURED", {}, "error");
+    return false;
+  }
+
+  if (skipVerification) {
+    await logStructuredEvent("REVOLUT_WEBHOOK_VERIFICATION_SKIPPED", { 
+      environment: Deno.env.get("REVOLUT_ENVIRONMENT") 
+    }, "warn");
     return true;
   }
 
+  // If we have a secret, proceed with verification
   try {
     const encoder = new TextEncoder();
     const message = `${timestamp}.${payload}`;
     
     const key = await crypto.subtle.importKey(
       "raw",
-      encoder.encode(webhookSecret),
+      encoder.encode(webhookSecret!),
       { name: "HMAC", hash: "SHA-256" },
       false,
       ["sign"]
@@ -230,9 +240,26 @@ serve(async (req) => {
     const payload = JSON.parse(rawBody);
     const { event, order } = payload;
 
+    // Validate required fields
+    if (!event || !order || !order.public_id) {
+      await logStructuredEvent("REVOLUT_WEBHOOK_INVALID_PAYLOAD", {
+        event,
+        hasOrder: !!order,
+        correlationId,
+      });
+
+      return new Response(
+        JSON.stringify({ error: "Invalid webhook payload" }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
     await logStructuredEvent("REVOLUT_WEBHOOK_PARSED", {
       event,
-      orderToken: order?.public_id,
+      orderToken: order.public_id,
       correlationId,
     });
 

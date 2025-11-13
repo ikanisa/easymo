@@ -8,7 +8,7 @@
 
 import { serve } from "$std/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { logStructuredEvent, recordMetric } from "../_shared/observability.ts";
+import { logStructuredEvent, recordMetric, maskPII } from "../_shared/observability.ts";
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL")!,
@@ -91,7 +91,7 @@ async function createMoMoPayment(
       referenceId,
       amount,
       currency,
-      phoneNumber: phoneNumber.substring(0, 8) + "****", // PII masking
+      phoneNumber: maskPII(phoneNumber, 7, 3),
       status: response.status,
       correlationId,
     });
@@ -154,7 +154,7 @@ serve(async (req) => {
       orderId,
       amount,
       currency,
-      phoneNumber: phoneNumber?.substring(0, 8) + "****", // PII masking per GROUND_RULES.md
+      phoneNumber: maskPII(phoneNumber, 7, 3),
       provider,
       correlationId,
     });
@@ -206,10 +206,41 @@ serve(async (req) => {
       );
     }
 
+    // Check for existing payment (idempotency)
+    const { data: existingPayment } = await supabase
+      .from("waiter_payments")
+      .select("*")
+      .eq("order_id", orderId)
+      .in("status", ["pending", "processing"])
+      .single();
+
+    if (existingPayment) {
+      await logStructuredEvent("MOMO_CHARGE_IDEMPOTENT", {
+        orderId,
+        paymentId: existingPayment.id,
+        correlationId,
+      });
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          paymentId: existingPayment.id,
+          transactionId: existingPayment.provider_transaction_id,
+          referenceId: existingPayment.provider_transaction_id,
+          message: "Payment already in progress. Please approve on your phone.",
+          instructions: "Check your phone for a payment prompt and enter your PIN.",
+        }),
+        {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
     // Generate reference ID (idempotency key)
     const referenceId = crypto.randomUUID();
 
-    // Create payment record
+    // Create payment record (store masked phone in metadata, not full number)
     const { data: payment, error: paymentError } = await supabase
       .from("waiter_payments")
       .insert({
@@ -221,7 +252,7 @@ serve(async (req) => {
         provider_transaction_id: referenceId,
         status: "pending",
         metadata: {
-          phoneNumber,
+          phoneNumberMasked: maskPII(phoneNumber, 7, 3),
           provider: provider || "mtn",
           correlationId,
         },

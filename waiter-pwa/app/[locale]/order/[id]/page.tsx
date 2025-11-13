@@ -67,10 +67,18 @@ export default function OrderStatusPage() {
           filter: `id=eq.${orderId}`,
         },
         (payload) => {
-          setOrder((prev) => (prev ? { ...prev, ...payload.new } : null));
+          // Reload full order to get all relations
+          loadOrder();
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          console.log('Connected to order updates');
+        } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
+          console.error('Realtime connection error:', status);
+          setError('Realtime connection lost. Order updates may be delayed.');
+        }
+      });
 
     return () => {
       supabase.removeChannel(channel);

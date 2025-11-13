@@ -90,13 +90,21 @@ export default function CheckoutPage() {
         .insert({
           order_number: orderNumber,
           user_id: user.id,
+          conversation_id: localStorage.getItem('conversation_id') || null,
           restaurant_id: localStorage.getItem('venue_id') || 'default-venue',
           table_number: localStorage.getItem('table_number') || '',
-          items: draftOrder.draft_order_items,
+          items: draftOrder.draft_order_items.map((item: any) => ({
+            menu_item_id: item.menu_item_id,
+            name: item.menu_items?.name || item.name,
+            quantity: item.quantity,
+            unit_price: item.unit_price,
+            total_price: item.total_price,
+            notes: item.notes
+          })),
           subtotal: draftOrder.subtotal,
           tax: draftOrder.tax || 0,
           total_amount: draftOrder.total,
-          currency: 'XAF', // Default, should come from venue settings
+          currency: draftOrder.currency || 'XAF',
           status: 'pending',
           payment_status: 'pending',
         })

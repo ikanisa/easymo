@@ -31,9 +31,16 @@ async function verifyMoMoSignature(
     return false; // No signature provided
   }
 
-  const secret = Deno.env.get("MOMO_WEBHOOK_SECRET") || "";
-  if (!secret) {
-    // In sandbox mode without secret, skip verification
+  const secret = Deno.env.get("MOMO_WEBHOOK_SECRET");
+  const skipVerification = Deno.env.get("MOMO_SKIP_SIGNATURE_VERIFICATION") === "true";
+
+  if (!secret && !skipVerification) {
+    await logStructuredEvent("MOMO_WEBHOOK_NO_SECRET", {}, "error");
+    return false; // Reject webhook
+  }
+
+  if (skipVerification) {
+    await logStructuredEvent("MOMO_WEBHOOK_VERIFICATION_SKIPPED", {}, "warn");
     return true;
   }
 
@@ -41,7 +48,7 @@ async function verifyMoMoSignature(
     const encoder = new TextEncoder();
     const key = await crypto.subtle.importKey(
       "raw",
-      encoder.encode(secret),
+      encoder.encode(secret!),
       { name: "HMAC", hash: "SHA-256" },
       false,
       ["sign"]
@@ -219,6 +226,23 @@ serve(async (req) => {
     // Parse webhook payload
     const payload = JSON.parse(rawBody);
     const { referenceId, status, reason } = payload;
+
+    // Validate required fields
+    if (!referenceId || !status) {
+      await logStructuredEvent("MOMO_WEBHOOK_INVALID_PAYLOAD", {
+        hasReferenceId: !!referenceId,
+        hasStatus: !!status,
+        correlationId,
+      });
+
+      return new Response(
+        JSON.stringify({ error: "Invalid webhook payload: missing referenceId or status" }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
 
     await logStructuredEvent("MOMO_WEBHOOK_PARSED", {
       referenceId,

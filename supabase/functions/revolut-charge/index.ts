@@ -188,6 +188,36 @@ serve(async (req) => {
       );
     }
 
+    // Check for existing payment (idempotency)
+    const { data: existingPayment } = await supabase
+      .from("waiter_payments")
+      .select("*")
+      .eq("order_id", orderId)
+      .in("status", ["pending", "processing"])
+      .single();
+
+    if (existingPayment && existingPayment.metadata?.checkoutUrl) {
+      await logStructuredEvent("REVOLUT_CHARGE_IDEMPOTENT", {
+        orderId,
+        paymentId: existingPayment.id,
+        correlationId,
+      });
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          paymentId: existingPayment.id,
+          checkoutUrl: existingPayment.metadata.checkoutUrl,
+          orderToken: existingPayment.provider_transaction_id,
+          message: "Existing payment session found",
+        }),
+        {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
     // Create payment record
     const { data: payment, error: paymentError } = await supabase
       .from("waiter_payments")

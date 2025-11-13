@@ -12,6 +12,7 @@ export default function HomePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [userName, setUserName] = useState('');
   const [tableNumber, setTableNumber] = useState('');
+  const [error, setError] = useState<string | null>(null);
   const supabase = createClient();
 
   useEffect(() => {
@@ -61,7 +62,7 @@ export default function HomePage() {
     } catch (error) {
       console.error('Error starting session:', error);
       setIsLoading(false);
-      alert('Failed to start session. Please try again.');
+      setError(t('common.error'));
     }
   };
 
@@ -140,6 +141,12 @@ export default function HomePage() {
             >
               {t('onboarding.startButton')}
             </button>
+
+            {error && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-sm text-red-700">{error}</p>
+              </div>
+            )}
           </div>
 
           {/* Features */}
