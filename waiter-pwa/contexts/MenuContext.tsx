@@ -40,13 +40,15 @@ export function MenuProvider({
   useEffect(() => {
     async function loadCategories() {
       try {
-        const data = await getMenuCategories(restaurantId)
+        const data = await getMenuCategories(restaurantId || '')
         setCategories(data)
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load categories')
       }
     }
-    loadCategories()
+    if (restaurantId) {
+      loadCategories()
+    }
   }, [restaurantId])
 
   // Load items when category changes
@@ -54,7 +56,7 @@ export function MenuProvider({
     async function loadItems() {
       setLoading(true)
       try {
-        const data = await getMenuItems(restaurantId, selectedCategory || undefined)
+        const data = await getMenuItems(restaurantId || '', selectedCategory || undefined)
         setItems(data)
         setError(null)
       } catch (err) {
@@ -63,7 +65,9 @@ export function MenuProvider({
         setLoading(false)
       }
     }
-    loadItems()
+    if (restaurantId) {
+      loadItems()
+    }
   }, [restaurantId, selectedCategory])
 
   // Cart operations

@@ -1,0 +1,25 @@
+<svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="32" height="32" fill="#0ea5e9" rx="4.8"/>
+  
+  <!-- Waiter icon (simplified) -->
+  <g transform="translate(8, 6.4)">
+    <!-- Plate -->
+    <ellipse cx="8" cy="16" rx="6.4" ry="1.6" fill="#ffffff" opacity="0.9"/>
+    <ellipse cx="8" cy="16" rx="5.76" ry="1.28" fill="#e0f2fe"/>
+    
+    <!-- Fork and Knife -->
+    <path d="M 4.8 11.2 L 4.8 16" stroke="#ffffff" stroke-width="0.64" stroke-linecap="round"/>
+    <path d="M 3.84 11.2 L 3.84 13.44" stroke="#ffffff" stroke-width="0.48" stroke-linecap="round"/>
+    <path d="M 5.76 11.2 L 5.76 13.44" stroke="#ffffff" stroke-width="0.48" stroke-linecap="round"/>
+    
+    <path d="M 11.2 11.2 L 11.2 16" stroke="#ffffff" stroke-width="0.8" stroke-linecap="round"/>
+    <path d="M 10.56 11.2 L 11.84 12.16" stroke="#ffffff" stroke-width="0.64" stroke-linecap="round"/>
+  </g>
+  
+  <!-- AI Spark -->
+  <g transform="translate(20.8, 8)">
+    <circle cx="0" cy="0" r="2.56" fill="#fbbf24" opacity="0.9"/>
+    <path d="M 0 -3.84 L 0 3.84 M -3.84 0 L 3.84 0" stroke="#ffffff" stroke-width="0.8" stroke-linecap="round"/>
+  </g>
+</svg>
