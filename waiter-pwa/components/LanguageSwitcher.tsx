@@ -2,7 +2,7 @@
 
 import { useParams, usePathname, useRouter } from 'next/navigation'
 import { useTransition } from 'react'
-import { locales, localeNames, type Locale } from '@/i18n'
+import { locales, localeNames, type Locale } from '@/i18n/config'
 import { LanguageIcon } from '@heroicons/react/24/outline'
 import { CheckIcon } from '@heroicons/react/24/solid'
 
@@ -76,3 +76,5 @@ export default function LanguageSwitcher() {
     </div>
   )
 }
+
+export { LanguageSwitcher };
