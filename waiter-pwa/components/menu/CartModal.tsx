@@ -11,7 +11,7 @@ interface CartModalProps {
   onClose: () => void
 }
 
-export default function CartModal({ isOpen, onClose }: CartModalProps) {
+function CartModal({ isOpen, onClose }: CartModalProps) {
   const { cart, cartTotal, updateCartQuantity, removeFromCart, clearCart } = useMenu()
   const router = useRouter()
 
@@ -155,3 +155,6 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
     </Transition>
   )
 }
+
+export { CartModal }
+export default CartModal

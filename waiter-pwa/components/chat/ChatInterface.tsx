@@ -8,7 +8,7 @@ import MessageInput from './MessageInput'
 import QuickActions from './QuickActions'
 import { cn } from '@/lib/utils'
 
-export default function ChatInterface() {
+function ChatInterface() {
   const { conversation, createConversation, isLoading, error, clearError } = useChatContext()
   const searchParams = useSearchParams()
   const router = useRouter()
@@ -97,3 +97,6 @@ export default function ChatInterface() {
     </div>
   )
 }
+
+export { ChatInterface }
+export default ChatInterface

@@ -18,6 +18,14 @@ const withPWA = withPWAInit({
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  eslint: {
+    // Allow production builds even with ESLint warnings
+    ignoreDuringBuilds: false,
+  },
+  typescript: {
+    // Allow production builds even with TypeScript errors
+    ignoreBuildErrors: false,
+  },
   experimental: {
     serverActions: {
       allowedOrigins: ['localhost:3001'],

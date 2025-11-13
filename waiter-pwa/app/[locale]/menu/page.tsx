@@ -3,7 +3,6 @@
 import { MenuBrowser } from '@/components/menu/MenuBrowser';
 import { MenuProvider } from '@/contexts/MenuContext';
 import { CartButton } from '@/components/menu/CartButton';
-import { CartModal } from '@/components/menu/CartModal';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
@@ -44,11 +43,8 @@ export default function MenuPage() {
           <MenuBrowser />
         </div>
 
-        {/* Cart Button (Floating) */}
+        {/* Cart Button (Floating) - includes CartModal */}
         <CartButton />
-
-        {/* Cart Modal */}
-        <CartModal />
       </div>
     </MenuProvider>
   );
