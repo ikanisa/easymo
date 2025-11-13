@@ -84,3 +84,52 @@ export function assertRuntimeReady(): void {
     throw new Error(`Missing required envs: ${missing.join(", ")}`);
   }
 }
+
+/**
+ * Enhanced webhook configuration for security, performance, and monitoring
+ */
+export const webhookConfig = {
+  // Rate limiting
+  rateLimit: {
+    enabled: getEnv("ENABLE_RATE_LIMITING") !== "false",
+    windowMs: parseInt(getEnv("RATE_LIMIT_WINDOW_MS") || "60000"), // 1 minute
+    maxRequests: parseInt(getEnv("RATE_LIMIT_MAX_REQUESTS") || "100"),
+    keyPrefix: "wa-webhook",
+  },
+
+  // Caching
+  cache: {
+    enabled: getEnv("ENABLE_CACHING") !== "false",
+    defaultTTL: parseInt(getEnv("CACHE_DEFAULT_TTL") || "300"), // 5 minutes
+    maxSize: parseInt(getEnv("CACHE_MAX_SIZE") || "1000"),
+    checkPeriod: parseInt(getEnv("CACHE_CHECK_PERIOD") || "600"), // 10 minutes
+  },
+
+  // AI Agents
+  aiAgents: {
+    enabled: getEnv("ENABLE_AI_AGENTS") === "true",
+    redisUrl: getEnv("REDIS_URL") ?? "redis://localhost:6379",
+    defaultModel: getEnv("AI_DEFAULT_MODEL") || "gpt-4o-mini",
+    maxTokens: parseInt(getEnv("AI_MAX_TOKENS") || "1000"),
+    temperature: parseFloat(getEnv("AI_TEMPERATURE") || "0.7"),
+  },
+
+  // Monitoring
+  monitoring: {
+    enabled: getEnv("ENABLE_MONITORING") !== "false",
+    logLevel: getEnv("LOG_LEVEL") || "info",
+    sentryDsn: getEnv("SENTRY_DSN") ?? "",
+  },
+
+  // Error handling
+  error: {
+    notifyUser: getEnv("ERROR_NOTIFY_USER") !== "false",
+    includeStack: getEnv("ENVIRONMENT") === "development",
+    maxRetries: parseInt(getEnv("ERROR_MAX_RETRIES") || "3"),
+  },
+
+  // Webhook verification
+  verification: {
+    enabled: getEnv("SKIP_SIGNATURE_VERIFICATION") !== "true",
+  },
+};

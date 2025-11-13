@@ -1,0 +1,37 @@
+{
+  "name": "@easymo/ai",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx watch src/index.ts",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "lint": "eslint src/**/*.ts",
+    "type-check": "tsc --noEmit"
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "dependencies": {
+    "openai": "^4.78.0",
+    "zod": "^3.23.8",
+    "@supabase/supabase-js": "^2.76.1",
+    "ioredis": "^5.4.1",
+    "p-queue": "^8.0.1",
+    "uuid": "^10.0.0",
+    "nanoid": "^5.0.9"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "^5.7.2",
+    "tsx": "^4.19.2",
+    "vitest": "^2.1.6",
+    "eslint": "^9.32.0"
+  }
+}
