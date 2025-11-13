@@ -257,7 +257,6 @@ export async function handleList(
     const { handleFindPropertyPriceUnit } = await import("../domains/property/rentals.ts");
     return await handleFindPropertyPriceUnit(ctx, stateData, id);
   }
-  if (state.key === "property_add_type" && (id === "short_term" || id === "long_term")) {
   if (
     state.key === "property_add_type" &&
     (id === "short_term" || id === "long_term")
