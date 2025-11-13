@@ -1,0 +1,137 @@
+{
+  "common": {
+    "appName": "Serveur IA",
+    "welcome": "Bienvenue",
+    "loading": "Chargement...",
+    "error": "Erreur",
+    "retry": "Réessayer",
+    "cancel": "Annuler",
+    "confirm": "Confirmer",
+    "close": "Fermer",
+    "save": "Enregistrer",
+    "back": "Retour",
+    "next": "Suivant",
+    "done": "Terminé",
+    "search": "Rechercher",
+    "filter": "Filtrer",
+    "sort": "Trier"
+  },
+  "chat": {
+    "greeting": "Bonjour ! Je suis votre serveur IA. Comment puis-je vous aider aujourd'hui ?",
+    "placeholder": "Tapez votre message...",
+    "sending": "Envoi...",
+    "typingIndicator": "L'IA écrit...",
+    "quickActions": {
+      "viewMenu": "Voir le menu",
+      "myCart": "Mon panier",
+      "recommendations": "Recommandations",
+      "specialDiet": "Besoins diététiques spéciaux"
+    },
+    "errors": {
+      "sendFailed": "Échec de l'envoi du message. Veuillez réessayer.",
+      "connectionLost": "Connexion perdue. Reconnexion..."
+    }
+  },
+  "menu": {
+    "title": "Menu",
+    "categories": "Catégories",
+    "all": "Tous les articles",
+    "searchPlaceholder": "Rechercher des articles...",
+    "noResults": "Aucun article trouvé",
+    "addToCart": "Ajouter au panier",
+    "viewDetails": "Voir les détails",
+    "outOfStock": "Rupture de stock",
+    "dietary": {
+      "vegetarian": "Végétarien",
+      "vegan": "Végétalien",
+      "glutenFree": "Sans gluten",
+      "dairyFree": "Sans produits laitiers"
+    }
+  },
+  "cart": {
+    "title": "Mon panier",
+    "empty": "Votre panier est vide",
+    "subtotal": "Sous-total",
+    "tax": "Taxe",
+    "total": "Total",
+    "checkout": "Passer la commande",
+    "continueShopping": "Continuer les achats",
+    "removeItem": "Retirer",
+    "quantity": "Quantité",
+    "itemAdded": "Article ajouté au panier",
+    "itemRemoved": "Article retiré du panier"
+  },
+  "checkout": {
+    "title": "Paiement",
+    "orderSummary": "Résumé de la commande",
+    "paymentMethod": "Méthode de paiement",
+    "mobileMoneyUSSD": "Mobile Money (USSD)",
+    "revol utPay": "Revolut Pay",
+    "phoneNumber": "Numéro de téléphone",
+    "phoneNumberPlaceholder": "Entrez votre numéro de téléphone",
+    "revol utURL": "URL de paiement Revolut",
+    "revol utURLPlaceholder": "Collez votre lien de paiement Revolut",
+    "placeOrder": "Passer la commande",
+    "processingPayment": "Traitement du paiement...",
+    "awaitingUSSD": "Veuillez effectuer le paiement via l'invite USSD sur votre téléphone",
+    "openRevolutLink": "Ouvrir Revolut pour payer",
+    "errors": {
+      "invalidPhone": "Veuillez entrer un numéro de téléphone valide",
+      "invalidRevolutURL": "Veuillez entrer une URL de paiement Revolut valide",
+      "paymentFailed": "Échec du paiement. Veuillez réessayer."
+    }
+  },
+  "order": {
+    "title": "Statut de la commande",
+    "orderNumber": "Commande n°",
+    "status": {
+      "pending": "En attente",
+      "confirmed": "Confirmée",
+      "preparing": "En préparation",
+      "ready": "Prête",
+      "completed": "Terminée",
+      "cancelled": "Annulée"
+    },
+    "trackOrder": "Suivre la commande",
+    "viewReceipt": "Voir le reçu",
+    "orderAgain": "Commander à nouveau",
+    "estimatedTime": "Temps estimé"
+  },
+  "payment": {
+    "title": "Paiement",
+    "methods": {
+      "momo": "Mobile Money",
+      "revolut": "Revolut",
+      "cash": "Payer au comptoir"
+    },
+    "status": {
+      "pending": "Paiement en attente",
+      "processing": "Traitement...",
+      "successful": "Paiement réussi",
+      "failed": "Échec du paiement"
+    },
+    "instructions": {
+      "ussd": "Composez {code} sur votre téléphone pour effectuer le paiement",
+      "revolut": "Cliquez sur le bouton ci-dessous pour payer via Revolut"
+    }
+  },
+  "onboarding": {
+    "selectLanguage": "Sélectionner la langue",
+    "welcome": "Bienvenue sur Serveur IA",
+    "description": "Votre assistant de restaurant IA personnel",
+    "getStarted": "Commencer",
+    "scanQR": "Scannez le code QR de la table ou entrez le numéro de table",
+    "tableNumber": "Numéro de table"
+  },
+  "offline": {
+    "title": "Vous êtes hors ligne",
+    "message": "Certaines fonctionnalités peuvent ne pas être disponibles. Votre panier et votre menu sont en cache.",
+    "willSyncWhenOnline": "Vos modifications se synchroniseront lorsque vous serez de nouveau en ligne."
+  },
+  "install": {
+    "title": "Installer Serveur IA",
+    "message": "Installez notre application pour une expérience plus rapide et meilleure",
+    "install": "Installer",
+    "notNow": "Pas maintenant"
+  }
+}

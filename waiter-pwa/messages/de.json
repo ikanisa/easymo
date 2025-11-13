@@ -1,0 +1,137 @@
+{
+  "common": {
+    "appName": "Kellner KI",
+    "welcome": "Willkommen",
+    "loading": "Laden...",
+    "error": "Fehler",
+    "retry": "Wiederholen",
+    "cancel": "Abbrechen",
+    "confirm": "Bestätigen",
+    "close": "Schließen",
+    "save": "Speichern",
+    "back": "Zurück",
+    "next": "Weiter",
+    "done": "Fertig",
+    "search": "Suchen",
+    "filter": "Filtern",
+    "sort": "Sortieren"
+  },
+  "chat": {
+    "greeting": "Hallo! Ich bin Ihr KI-Kellner. Wie kann ich Ihnen heute helfen?",
+    "placeholder": "Geben Sie Ihre Nachricht ein...",
+    "sending": "Senden...",
+    "typingIndicator": "KI tippt...",
+    "quickActions": {
+      "viewMenu": "Menü ansehen",
+      "myCart": "Mein Warenkorb",
+      "recommendations": "Empfehlungen",
+      "specialDiet": "Besondere Ernährungsbedürfnisse"
+    },
+    "errors": {
+      "sendFailed": "Nachricht konnte nicht gesendet werden. Bitte versuchen Sie es erneut.",
+      "connectionLost": "Verbindung verloren. Verbinde erneut..."
+    }
+  },
+  "menu": {
+    "title": "Menü",
+    "categories": "Kategorien",
+    "all": "Alle Artikel",
+    "searchPlaceholder": "Menüartikel suchen...",
+    "noResults": "Keine Artikel gefunden",
+    "addToCart": "In den Warenkorb",
+    "viewDetails": "Details anzeigen",
+    "outOfStock": "Nicht auf Lager",
+    "dietary": {
+      "vegetarian": "Vegetarisch",
+      "vegan": "Vegan",
+      "glutenFree": "Glutenfrei",
+      "dairyFree": "Milchfrei"
+    }
+  },
+  "cart": {
+    "title": "Mein Warenkorb",
+    "empty": "Ihr Warenkorb ist leer",
+    "subtotal": "Zwischensumme",
+    "tax": "Steuer",
+    "total": "Gesamt",
+    "checkout": "Zur Kasse gehen",
+    "continueShopping": "Weiter einkaufen",
+    "removeItem": "Entfernen",
+    "quantity": "Menge",
+    "itemAdded": "Artikel zum Warenkorb hinzugefügt",
+    "itemRemoved": "Artikel aus dem Warenkorb entfernt"
+  },
+  "checkout": {
+    "title": "Kasse",
+    "orderSummary": "Bestellübersicht",
+    "paymentMethod": "Zahlungsmethode",
+    "mobileMoneyUSSD": "Mobile Money (USSD)",
+    "revol utPay": "Revolut Pay",
+    "phoneNumber": "Telefonnummer",
+    "phoneNumberPlaceholder": "Geben Sie Ihre Telefonnummer ein",
+    "revol utURL": "Revolut-Zahlungs-URL",
+    "revol utURLPlaceholder": "Fügen Sie Ihren Revolut-Zahlungslink ein",
+    "placeOrder": "Bestellung aufgeben",
+    "processingPayment": "Zahlung wird bearbeitet...",
+    "awaitingUSSD": "Bitte schließen Sie die Zahlung über die USSD-Eingabeaufforderung auf Ihrem Telefon ab",
+    "openRevolutLink": "Revolut zum Bezahlen öffnen",
+    "errors": {
+      "invalidPhone": "Bitte geben Sie eine gültige Telefonnummer ein",
+      "invalidRevolutURL": "Bitte geben Sie eine gültige Revolut-Zahlungs-URL ein",
+      "paymentFailed": "Zahlung fehlgeschlagen. Bitte versuchen Sie es erneut."
+    }
+  },
+  "order": {
+    "title": "Bestellstatus",
+    "orderNumber": "Bestellung Nr.",
+    "status": {
+      "pending": "Ausstehend",
+      "confirmed": "Bestätigt",
+      "preparing": "In Vorbereitung",
+      "ready": "Bereit",
+      "completed": "Abgeschlossen",
+      "cancelled": "Storniert"
+    },
+    "trackOrder": "Bestellung verfolgen",
+    "viewReceipt": "Quittung anzeigen",
+    "orderAgain": "Erneut bestellen",
+    "estimatedTime": "Geschätzte Zeit"
+  },
+  "payment": {
+    "title": "Zahlung",
+    "methods": {
+      "momo": "Mobile Money",
+      "revolut": "Revolut",
+      "cash": "An der Kasse bezahlen"
+    },
+    "status": {
+      "pending": "Zahlung ausstehend",
+      "processing": "Wird bearbeitet...",
+      "successful": "Zahlung erfolgreich",
+      "failed": "Zahlung fehlgeschlagen"
+    },
+    "instructions": {
+      "ussd": "Wählen Sie {code} auf Ihrem Telefon, um die Zahlung abzuschließen",
+      "revolut": "Klicken Sie auf die Schaltfläche unten, um über Revolut zu bezahlen"
+    }
+  },
+  "onboarding": {
+    "selectLanguage": "Sprache auswählen",
+    "welcome": "Willkommen bei Kellner KI",
+    "description": "Ihr persönlicher KI-Restaurant-Assistent",
+    "getStarted": "Loslegen",
+    "scanQR": "Scannen Sie den Tisch-QR-Code oder geben Sie die Tischnummer ein",
+    "tableNumber": "Tischnummer"
+  },
+  "offline": {
+    "title": "Sie sind offline",
+    "message": "Einige Funktionen sind möglicherweise nicht verfügbar. Ihr Warenkorb und Menü sind zwischengespeichert.",
+    "willSyncWhenOnline": "Ihre Änderungen werden synchronisiert, wenn Sie wieder online sind."
+  },
+  "install": {
+    "title": "Kellner KI installieren",
+    "message": "Installieren Sie unsere App für ein schnelleres, besseres Erlebnis",
+    "install": "Installieren",
+    "notNow": "Nicht jetzt"
+  }
+}
