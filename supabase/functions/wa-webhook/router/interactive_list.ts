@@ -48,6 +48,7 @@ import {
 import { sendHomeMenu } from "../flows/home.ts";
 import { startNearbyPharmacies } from "../domains/healthcare/pharmacies.ts";
 import { startNearbyQuincailleries } from "../domains/healthcare/quincailleries.ts";
+import { startNotaryServices } from "../domains/services/notary.ts";
 import {
   handlePharmacyResultSelection,
   type PharmacyResultsState,
@@ -56,6 +57,10 @@ import {
   handleQuincaillerieResultSelection,
   type QuincaResultsState,
 } from "../domains/healthcare/quincailleries.ts";
+import {
+  handleNotaryResultSelection,
+  type NotaryResultsState,
+} from "../domains/services/notary.ts";
 import {
   handleAddPropertyBedrooms,
   handleAddPropertyType,
@@ -162,6 +167,23 @@ export async function handleList(
     return await handleQuincaillerieResultSelection(
       ctx,
       (state.data ?? {}) as QuincaResultsState,
+      id,
+    );
+  }
+  if (state.key === "notary_results") {
+    return await handleNotaryResultSelection(
+      ctx,
+      (state.data ?? {}) as NotaryResultsState,
+      id,
+    );
+  }
+  if (state.key === "business_claim") {
+    const { handleBusinessClaim } = await import(
+      "../domains/business/claim.ts"
+    );
+    return await handleBusinessClaim(
+      ctx,
+      (state.data ?? {}) as any,
       id,
     );
   }
@@ -436,10 +458,16 @@ async function handleHomeMenuSelection(
       return await startNearbyPharmacies(ctx);
     case IDS.NEARBY_QUINCAILLERIES:
       return await startNearbyQuincailleries(ctx);
+    case IDS.NEARBY_NOTARY_SERVICES:
+      return await startNotaryServices(ctx);
     case IDS.PROPERTY_RENTALS:
       return await startPropertyRentals(ctx);
-    case IDS.MARKETPLACE:
-      return await startMarketplace(ctx, state);
+    case IDS.MARKETPLACE: {
+      const { startShopsAndServices } = await import(
+        "../domains/shops/services.ts"
+      );
+      return await startShopsAndServices(ctx);
+    }
     case IDS.PROFILE_MANAGE_BUSINESSES: {
       const { showManageBusinesses } = await import(
         "../domains/business/management.ts"
@@ -553,10 +581,10 @@ async function handleHomeMenuSelection(
       return true;
     }
     case IDS.BARS_RESTAURANTS: {
-      const { startRestaurantManager } = await import(
-        "../domains/vendor/restaurant.ts"
+      const { startBarsSearch } = await import(
+        "../domains/bars/search.ts"
       );
-      return await startRestaurantManager(ctx);
+      return await startBarsSearch(ctx);
     }
     case IDS.HOME_MORE: {
       const page =
@@ -592,6 +620,30 @@ async function handleHomeMenuSelection(
       await openAdminHub(ctx);
       return true;
     default:
+      // Check for bars results selection
+      if (id.startsWith("bar_result_") && state.key === "bars_results") {
+        const { handleBarsResultSelection } = await import(
+          "../domains/bars/search.ts"
+        );
+        return await handleBarsResultSelection(ctx, state.data || {}, id);
+      }
+      
+      // Check for shop tag selection
+      if (id.startsWith("shop_tag_") && state.key === "shops_tag_selection") {
+        const { handleShopsTagSelection } = await import(
+          "../domains/shops/services.ts"
+        );
+        return await handleShopsTagSelection(ctx, state.data || {}, id);
+      }
+      
+      // Check for shop result selection
+      if (id.startsWith("shop_result_") && state.key === "shops_results") {
+        const { handleShopsResultSelection } = await import(
+          "../domains/shops/services.ts"
+        );
+        return await handleShopsResultSelection(ctx, state.data || {}, id);
+      }
+      
       return false;
   }
 }

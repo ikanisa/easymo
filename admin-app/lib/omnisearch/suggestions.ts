@@ -46,45 +46,47 @@ export async function fetchOmniSearchSuggestions(
   const normalizedQuery = normaliseQuery(query);
   const likePattern = normalizedQuery ? `%${normalizedQuery}%` : null;
 
+  let agentsQuery = supabase
+    .from("agent_registry")
+    .select("id, agent_type, name, description")
+    .order("updated_at", { ascending: false })
+    .limit(limitPerCategory);
+  if (likePattern) {
+    agentsQuery = agentsQuery.or(`name.ilike.${likePattern},agent_type.ilike.${likePattern}`);
+  }
+
+  let sessionsQuery = supabase
+    .from("agent_sessions")
+    .select("id, agent_type, status")
+    .order("started_at", { ascending: false })
+    .limit(limitPerCategory);
+  if (likePattern) {
+    sessionsQuery = sessionsQuery.ilike("agent_type", likePattern);
+  }
+
+  let settingsQuery = supabase
+    .from("settings")
+    .select("key, description")
+    .order("updated_at", { ascending: false })
+    .limit(limitPerCategory);
+  if (likePattern) {
+    settingsQuery = settingsQuery.ilike("key", likePattern);
+  }
+
+  let tasksQuery = supabase
+    .from("agent_tasks")
+    .select("id, title, status")
+    .order("created_at", { ascending: false })
+    .limit(limitPerCategory);
+  if (likePattern) {
+    tasksQuery = tasksQuery.or(`title.ilike.${likePattern},status.ilike.${likePattern}`);
+  }
+
   const [agentsRes, requestsRes, policiesRes, tasksRes] = await Promise.allSettled([
-    supabase
-      .from("agent_registry")
-      .select("id, agent_type, name, description")
-      .modify((builder) =>
-        likePattern
-          ? builder.or(
-              `name.ilike.${likePattern},agent_type.ilike.${likePattern}`,
-            )
-          : builder,
-      )
-      .order("updated_at", { ascending: false })
-      .limit(limitPerCategory),
-    supabase
-      .from("agent_sessions")
-      .select("id, agent_type, status")
-      .modify((builder) =>
-        likePattern ? builder.ilike("agent_type", likePattern) : builder,
-      )
-      .order("started_at", { ascending: false })
-      .limit(limitPerCategory),
-    supabase
-      .from("settings")
-      .select("key, description")
-      .modify((builder) =>
-        likePattern ? builder.ilike("key", likePattern) : builder,
-      )
-      .order("updated_at", { ascending: false })
-      .limit(limitPerCategory),
-    supabase
-      .from("agent_tasks")
-      .select("id, title, status")
-      .modify((builder) =>
-        likePattern
-          ? builder.or(`title.ilike.${likePattern},status.ilike.${likePattern}`)
-          : builder,
-      )
-      .order("created_at", { ascending: false })
-      .limit(limitPerCategory),
+    agentsQuery,
+    sessionsQuery,
+    settingsQuery,
+    tasksQuery,
   ]);
 
   const suggestions: OmniSearchSuggestion[] = [];

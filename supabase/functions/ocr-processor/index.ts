@@ -279,7 +279,7 @@ async function runOpenAiExtraction(imageBase64: string, contentType: string) {
     throw new Error(`Unsupported content type: ${contentType}`);
   }
   const prompt = buildMenuPrompt();
-  const response = await fetch(`${OPENAI_BASE_URL}/responses`, {
+  const response = await fetch(`${OPENAI_BASE_URL}/chat/completions`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -287,28 +287,58 @@ async function runOpenAiExtraction(imageBase64: string, contentType: string) {
     },
     body: JSON.stringify({
       model: OPENAI_MODEL,
-      input: [
+      messages: [
         { role: "system", content: prompt.system },
         {
           role: "user",
           content: [
-            { type: "input_text", text: prompt.user },
+            { type: "text", text: prompt.user },
             {
-              type: "input_image",
-              image_url: { url: `data:${contentType};base64,${imageBase64}` },
+              type: "image_url",
+              image_url: {
+                url: `data:${contentType};base64,${imageBase64}`,
+              },
             },
           ],
         },
       ],
-      text: {
-        format: {
-          type: "json_schema",
-          json_schema: {
-            name: "menu_extraction_result",
-            schema: {
-              type: "object",
-              additionalProperties: true,
+      response_format: {
+        type: "json_schema",
+        json_schema: {
+          name: "menu_extraction_result",
+          strict: true,
+          schema: {
+            type: "object",
+            properties: {
+              restaurant_name: { type: "string" },
+              categories: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    name: { type: "string" },
+                    items: {
+                      type: "array",
+                      items: {
+                        type: "object",
+                        properties: {
+                          name: { type: "string" },
+                          description: { type: "string" },
+                          price: { type: "number" },
+                          currency: { type: "string" },
+                        },
+                        required: ["name", "description", "price", "currency"],
+                        additionalProperties: false,
+                      },
+                    },
+                  },
+                  required: ["name", "items"],
+                  additionalProperties: false,
+                },
+              },
             },
+            required: ["categories"],
+            additionalProperties: false,
           },
         },
       },

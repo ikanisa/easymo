@@ -28,6 +28,17 @@
   font-size: 0.9rem;
 }
 
+.title {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.description {
+  display: block;
+  color: rgba(15, 23, 42, 0.75);
+}
+
 .toast_info {
   border-left: 4px solid rgba(56, 189, 248, 0.9);
 }

@@ -16,9 +16,8 @@ CREATE INDEX IF NOT EXISTS idx_businesses_phone_number
   ON public.businesses(phone_number)
   WHERE phone_number IS NOT NULL;
 
--- Create index for category filtering (if not exists from previous migrations)
-CREATE INDEX IF NOT EXISTS idx_businesses_category
-  ON public.businesses(category)
-  WHERE category IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_businesses_category_id
+  ON public.businesses(category_id)
+  WHERE category_id IS NOT NULL;
 
 COMMIT;

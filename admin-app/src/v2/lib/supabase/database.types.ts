@@ -4079,6 +4079,98 @@ export type Database = {
           },
         ]
       }
+      message_metadata: {
+        Row: {
+          agent_conversation_id: string | null
+          agent_message_id: string | null
+          conversation_id: string | null
+          created_at: string
+          delivered_at: string | null
+          direction: string
+          expires_at: string
+          message_id: number
+          message_type: string | null
+          metadata: Json
+          read_at: string | null
+          recipient_msisdn: string | null
+          sender_msisdn: string | null
+          sent_at: string | null
+          status: string
+          status_reason: string | null
+          updated_at: string
+          wa_message_id: string | null
+        }
+        Insert: {
+          agent_conversation_id?: string | null
+          agent_message_id?: string | null
+          conversation_id?: string | null
+          created_at?: string
+          delivered_at?: string | null
+          direction: string
+          expires_at?: string
+          message_id: number
+          message_type?: string | null
+          metadata?: Json
+          read_at?: string | null
+          recipient_msisdn?: string | null
+          sender_msisdn?: string | null
+          sent_at?: string | null
+          status?: string
+          status_reason?: string | null
+          updated_at?: string
+          wa_message_id?: string | null
+        }
+        Update: {
+          agent_conversation_id?: string | null
+          agent_message_id?: string | null
+          conversation_id?: string | null
+          created_at?: string
+          delivered_at?: string | null
+          direction?: string
+          expires_at?: string
+          message_id?: number
+          message_type?: string | null
+          metadata?: Json
+          read_at?: string | null
+          recipient_msisdn?: string | null
+          sender_msisdn?: string | null
+          sent_at?: string | null
+          status?: string
+          status_reason?: string | null
+          updated_at?: string
+          wa_message_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_metadata_agent_conversation_id_fkey"
+            columns: ["agent_conversation_id"]
+            isOneToOne: false
+            referencedRelation: "agent_conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "message_metadata_agent_message_id_fkey"
+            columns: ["agent_message_id"]
+            isOneToOne: false
+            referencedRelation: "agent_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "message_metadata_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "message_metadata_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: true
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       mobility_pro_access: {
         Row: {
           created_at: string

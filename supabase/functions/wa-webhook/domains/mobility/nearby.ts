@@ -311,6 +311,9 @@ export async function handleNearbyLocation(
     console.error("mobility.nearby_cache_write_fail", error);
   }
 
+  /* AI AGENT DISABLED FOR PHASE 1 - Direct database matching only
+     AI agents will be enabled in Phase 2 for enhanced driver/passenger matching
+  
   if (
     state.mode === "drivers" &&
     dropoff &&
@@ -358,7 +361,10 @@ export async function handleNearbyLocation(
       await sendText(ctx.from, t(ctx.locale, "mobility.nearby.agent_error"));
     }
   }
+  */
 
+  // DIRECT DATABASE MATCHING: Simple workflow for Phase 1
+  // User shares location → Instant database query → Top 9 results
   return await runMatchingFallback(ctx, state, pickup, dropoff);
 }
 

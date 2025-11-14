@@ -3,9 +3,10 @@
 import { MenuBrowser } from '@/components/menu/MenuBrowser';
 import { MenuProvider } from '@/contexts/MenuContext';
 import { CartButton } from '@/components/menu/CartButton';
-import { CartModal } from '@/components/menu/CartModal';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { useLocale, useTranslations } from 'next-intl';
+import { FeaturedVenueWidget } from '@/components/restaurant/FeaturedVenueWidget';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 
 export default function MenuPage() {
@@ -41,15 +42,13 @@ export default function MenuPage() {
         </header>
 
         {/* Menu Browser */}
-        <div className="flex-1 max-w-4xl w-full mx-auto px-4 py-6">
+        <div className="flex-1 max-w-4xl w-full mx-auto px-4 py-6 space-y-6">
+          <FeaturedVenueWidget />
           <MenuBrowser />
         </div>
 
-        {/* Cart Button (Floating) */}
+        {/* Cart Button (Floating) - includes CartModal */}
         <CartButton />
-
-        {/* Cart Modal */}
-        <CartModal />
       </div>
     </MenuProvider>
   );

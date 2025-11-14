@@ -22,23 +22,23 @@ function parseCredentialsFromEnv(): AdminCredentialRecord[] {
       throw new Error("Expected ADMIN_ACCESS_CREDENTIALS to be an array");
     }
 
-    return parsed
-      .map((entry) => {
-        if (!entry || typeof entry !== "object") return null;
-        const record = entry as Record<string, unknown>;
-        const actorId = typeof record.actorId === "string" ? record.actorId : null;
-        const email = typeof record.email === "string" ? record.email : null;
-        const password = typeof record.password === "string" ? record.password : null;
-        if (!actorId || !email || !password) return null;
-        return {
-          actorId,
-          email,
-          password,
-          username: typeof record.username === "string" ? record.username : undefined,
-          label: typeof record.label === "string" ? record.label : null,
-        } satisfies AdminCredentialRecord;
-      })
-      .filter((value): value is AdminCredentialRecord => Boolean(value));
+    const credentials: AdminCredentialRecord[] = [];
+    for (const entry of parsed) {
+      if (!entry || typeof entry !== "object") continue;
+      const record = entry as Record<string, unknown>;
+      const actorId = typeof record.actorId === "string" ? record.actorId : null;
+      const email = typeof record.email === "string" ? record.email : null;
+      const password = typeof record.password === "string" ? record.password : null;
+      if (!actorId || !email || !password) continue;
+      credentials.push({
+        actorId,
+        email,
+        password,
+        username: typeof record.username === "string" ? record.username : undefined,
+        label: typeof record.label === "string" ? record.label : null,
+      });
+    }
+    return credentials;
   } catch (error) {
     console.error("admin.credentials.invalid_config", error);
     return [];

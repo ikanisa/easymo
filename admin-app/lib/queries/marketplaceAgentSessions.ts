@@ -1,9 +1,6 @@
 import { QueryKey, useQuery, UseQueryOptions } from "@tanstack/react-query";
-import {
-  listMarketplaceAgentSessions,
-  type MarketplaceAgentSession,
-  type MarketplaceAgentSessionListParams,
-} from "@/lib/marketplace/agent-marketplace-service";
+import { listMarketplaceAgentSessions, type MarketplaceAgentSessionListParams } from "@/lib/marketplace/agent-marketplace-service";
+import type { MarketplaceAgentSession } from "@/lib/marketplace/types";
 import type { PaginatedResult } from "@/lib/shared/pagination";
 
 export type MarketplaceAgentSessionsQueryParams = MarketplaceAgentSessionListParams;
@@ -17,13 +14,18 @@ export function fetchMarketplaceAgentSessions(
   return listMarketplaceAgentSessions(params);
 }
 
-export function useMarketplaceAgentSessionsQuery(
-  params: MarketplaceAgentSessionsQueryParams,
-  options?: UseQueryOptions<
+type MarketplaceAgentSessionsQueryOptions = Omit<
+  UseQueryOptions<
     PaginatedResult<MarketplaceAgentSession>,
     unknown,
     PaginatedResult<MarketplaceAgentSession>
   >,
+  "queryKey" | "queryFn"
+>;
+
+export function useMarketplaceAgentSessionsQuery(
+  params: MarketplaceAgentSessionsQueryParams,
+  options?: MarketplaceAgentSessionsQueryOptions,
 ) {
   return useQuery({
     queryKey: marketplaceSessionsKey(params),

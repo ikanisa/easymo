@@ -27,9 +27,7 @@ const alertIntegrationSchema = z.object({
 
 const useMocks = shouldUseMocks();
 
-export async function listAdminAlertPreferences(): Promise<
-  AdminAlertPreferencesResult
-> {
+export async function listAdminAlertPreferences(): Promise<AdminAlertPreferencesResult> {
   if (useMocks) {
     return {
       data: mockAdminAlertPreferences,
@@ -41,25 +39,29 @@ export async function listAdminAlertPreferences(): Promise<
     };
   }
 
-  const response = await apiFetch<{
-    data: unknown;
-    integration?: unknown;
-  }>(getAdminApiPath("settings", "alerts"));
+  try {
+    const payload = await apiFetch<{
+      data: unknown;
+      integration?: unknown;
+    }>(getAdminApiPath("settings", "alerts"));
 
-  if (response.ok) {
-    const parsed = z.object({
-      data: z.array(adminAlertPreferenceSchema),
-      integration: alertIntegrationSchema.optional(),
-    }).safeParse(response.data);
+    const parsed = z
+      .object({
+        data: z.array(adminAlertPreferenceSchema),
+        integration: alertIntegrationSchema.optional(),
+      })
+      .safeParse(payload);
+
     if (parsed.success) {
       return parsed.data;
     }
+
     console.error(
       "Failed to parse alert preferences response",
       parsed.error.flatten(),
     );
-  } else {
-    console.error("Failed to fetch alert preferences", response.error);
+  } catch (error) {
+    console.error("Failed to fetch alert preferences", error);
   }
 
   return {

@@ -1,6 +1,5 @@
 'use client'
 
-import { formatDate } from '@/lib/utils'
 import type { Message } from '@/types/chat'
 import { cn } from '@/lib/utils'
 
@@ -10,8 +9,8 @@ interface MessageBubbleProps {
 }
 
 export default function MessageBubble({ message, isLast }: MessageBubbleProps) {
-  const isUser = message.role === 'user'
-  const isSystem = message.role === 'system'
+  const isUser = message.sender === 'user'
+  const isSystem = message.sender === 'system'
 
   if (isSystem) {
     return (
@@ -25,6 +24,7 @@ export default function MessageBubble({ message, isLast }: MessageBubbleProps) {
 
   return (
     <div
+      data-sender={message.sender}
       className={cn(
         'flex w-full',
         isUser ? 'justify-end' : 'justify-start'
@@ -60,7 +60,7 @@ export default function MessageBubble({ message, isLast }: MessageBubbleProps) {
             isUser ? 'text-primary-100' : 'text-gray-400'
           )}
         >
-          {formatTime(message.created_at)}
+          {formatTime(message.timestamp || message.created_at)}
         </div>
       </div>
     </div>

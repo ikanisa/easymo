@@ -40,7 +40,7 @@ describe("createAdminClient", () => {
     (globalThis as { window?: unknown }).window = {};
     const { createAdminClient } = await import("@/src/v2/lib/supabase/client");
 
-    expect(() => createAdminClient()).toThrowError(
+    await expect(createAdminClient()).rejects.toThrowError(
       "Admin client can only be used on the server",
     );
   });
@@ -49,8 +49,10 @@ describe("createAdminClient", () => {
     const cookieGet = vi.fn((name: string) =>
       name === "sb" ? { value: "cookie-value" } : undefined,
     );
+    const getAll = vi.fn(() => [{ name: "sb", value: "cookie-value" }]);
     cookiesMock.mockReturnValue({
       get: cookieGet,
+      getAll,
       set: vi.fn(),
       delete: vi.fn(),
     });
@@ -60,7 +62,7 @@ describe("createAdminClient", () => {
     createServerClientSpy.mockReturnValue(fakeClient);
 
     const { createAdminClient } = await import("@/src/v2/lib/supabase/client");
-    const client = createAdminClient();
+    const client = await createAdminClient();
 
     expect(client).toBe(fakeClient);
     expect(createServerClientSpy).toHaveBeenCalledTimes(1);
@@ -73,6 +75,31 @@ describe("createAdminClient", () => {
 
     const cookieValue = options?.cookies?.get("sb");
     expect(cookieValue).toBe("cookie-value");
+    expect(options?.cookies?.getAll?.()).toEqual([{ name: "sb", value: "cookie-value" }]);
     expect(options?.headers?.get("x-foo")).toBe("bar");
+  });
+
+  it("falls back to safe cookie adapter when request context is unavailable", async () => {
+    cookiesMock.mockImplementation(() => {
+      throw new Error("no request context");
+    });
+    headersMock.mockImplementation(() => {
+      throw new Error("no headers");
+    });
+
+    const fakeClient = { auth: { getUser: vi.fn() } };
+    createServerClientSpy.mockReturnValue(fakeClient);
+
+    const { createAdminClient } = await import("@/src/v2/lib/supabase/client");
+    const client = await createAdminClient();
+
+    expect(client).toBe(fakeClient);
+    const [, , options] = createServerClientSpy.mock.calls[0];
+    expect(options?.cookies?.get("foo")).toBeUndefined();
+    expect(options?.cookies?.getAll?.()).toEqual([]);
+    expect(() => options?.cookies?.set("foo", "bar")).not.toThrow();
+    expect(() => options?.cookies?.setAll?.([])).not.toThrow();
+    expect(() => options?.cookies?.remove("foo")).not.toThrow();
+    expect(options?.headers).toBeUndefined();
   });
 });

@@ -14,8 +14,8 @@ import {
   useCreateAgent,
   useDeleteAgent,
   useUpdateAgent,
+  type Agent,
 } from "@/src/v2/lib/supabase/hooks";
-import type { AgentRow } from "@/src/v2/lib/supabase/database.types";
 
 interface AgentFormValues {
   name: string;
@@ -26,7 +26,7 @@ interface AgentFormValues {
 
 type DialogState =
   | { mode: "create"; agent: null }
-  | { mode: "edit"; agent: AgentRow }
+  | { mode: "edit"; agent: Agent }
   | null;
 
 export default function AgentsPage() {
@@ -35,7 +35,7 @@ export default function AgentsPage() {
   const createAgent = useCreateAgent();
   const updateAgent = useUpdateAgent();
   const deleteAgent = useDeleteAgent();
-  const undoBuffer = useRef<AgentRow | null>(null);
+  const undoBuffer = useRef<Agent | null>(null);
   const [dialogState, setDialogState] = useState<DialogState>(null);
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -67,7 +67,7 @@ export default function AgentsPage() {
     {
       key: "status" as const,
       label: "Status",
-      render: (value: AgentRow["status"]) => (
+      render: (value: Agent["status"]) => (
         <span
           className={
             value === "active"
@@ -82,17 +82,17 @@ export default function AgentsPage() {
     {
       key: "created_at" as const,
       label: "Joined",
-      render: (value: AgentRow["created_at"]) => new Date(value).toLocaleDateString(),
+      render: (value: Agent["created_at"]) => new Date(value).toLocaleDateString(),
     },
     {
       key: "wallet_balance" as const,
       label: "Balance",
-      render: (value: AgentRow["wallet_balance"]) => `$${Number(value ?? 0).toFixed(2)}`,
+      render: (value: Agent["wallet_balance"]) => `$${Number(value ?? 0).toFixed(2)}`,
     },
   ];
 
   const openCreateDialog = () => setDialogState({ mode: "create", agent: null });
-  const openEditDialog = (agent: AgentRow) => setDialogState({ mode: "edit", agent });
+  const openEditDialog = (agent: Agent) => setDialogState({ mode: "edit", agent });
   const closeDialog = () => setDialogState(null);
 
   const initialValues: AgentFormValues = dialogState?.mode === "edit" && dialogState.agent

@@ -54,6 +54,29 @@ export default function OrderStatusPage() {
       return;
     }
 
+    const loadOrder = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('waiter_orders')
+          .select(`
+            *,
+            waiter_order_items(*),
+            waiter_payments(*)
+          `)
+          .eq('id', orderId)
+          .single();
+
+        if (error) throw error;
+
+        setOrder(data as Order);
+        setIsLoading(false);
+      } catch (error: any) {
+        console.error('Error loading order:', error);
+        setError(error.message || 'Failed to load order');
+        setIsLoading(false);
+      }
+    };
+
     loadOrder();
 
     // Subscribe to order updates
@@ -67,8 +90,7 @@ export default function OrderStatusPage() {
           table: 'waiter_orders',
           filter: `id=eq.${orderId}`,
         },
-        (payload) => {
-          // Reload full order to get all relations
+        () => {
           loadOrder();
         }
       )
@@ -85,29 +107,6 @@ export default function OrderStatusPage() {
       supabase.removeChannel(channel);
     };
   }, [orderId, router, supabase, locale]);
-
-  const loadOrder = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('waiter_orders')
-        .select(`
-          *,
-          waiter_order_items(*),
-          waiter_payments(*)
-        `)
-        .eq('id', orderId)
-        .single();
-
-      if (error) throw error;
-
-      setOrder(data as Order);
-      setIsLoading(false);
-    } catch (error: any) {
-      console.error('Error loading order:', error);
-      setError(error.message || 'Failed to load order');
-      setIsLoading(false);
-    }
-  };
 
   const getStatusIcon = (status: OrderStatus) => {
     switch (status) {

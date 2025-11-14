@@ -8,6 +8,14 @@ remain additive-only.
 - Review `ADD_ONLY_RULES.md` before making changes.
 - CI enforces forbidden path rules via `.github/workflows/additive-guard.yml`.
 - Sensitive paths require approval from CODEOWNERS (`.github/CODEOWNERS`).
+- TypeScript build errors now block merges. Run `pnpm exec tsc -p admin-app/tsconfig.ci.json --noEmit`,
+  `pnpm --filter @easymo/admin-app lint`, and the non-watch test suite before opening a PR. See
+  [`docs/QUALITY_GATES.md`](docs/QUALITY_GATES.md) for details.
+
+### Framework baseline
+
+- The admin panel is pinned to **Next.js 14.2.33**. Do not bump to 15.x until Supabase’s SSR helpers and our cookie adapters are certified against the new runtime. Any trial upgrades should happen on a feature branch with full build + smoke tests.
+- React 18.3.x remains the supported runtime; React 19/Next 15 features (new lint CLI, React Compiler) are intentionally disabled to avoid breaking production builds.
 
 ## Middleware Expectations
 

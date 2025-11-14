@@ -83,6 +83,7 @@ describe('instrumentation register', () => {
 
   it('logs initialization in edge runtime when node globals are unavailable', async () => {
     const originalRuntime = process.env.NEXT_RUNTIME;
+    const originalProcess = process;
     delete process.env.NEXT_RUNTIME;
 
     vi.stubGlobal('process', undefined);
@@ -101,6 +102,7 @@ describe('instrumentation register', () => {
 
     delete (globalThis as Record<string, unknown>).EdgeRuntime;
     vi.unstubAllGlobals();
+    (globalThis as { process: typeof originalProcess }).process = originalProcess;
     process.env.NEXT_RUNTIME = originalRuntime;
   });
 });

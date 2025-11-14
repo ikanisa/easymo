@@ -11,9 +11,14 @@ export function fetchShops(params: ShopsQueryParams = {}): Promise<PaginatedResu
   return listShops(params);
 }
 
+type ShopsQueryOptions = Omit<
+  UseQueryOptions<PaginatedResult<Shop>, unknown, PaginatedResult<Shop>>,
+  "queryKey" | "queryFn"
+>;
+
 export function useShopsQuery(
   params: ShopsQueryParams = {},
-  options?: UseQueryOptions<PaginatedResult<Shop>, unknown, PaginatedResult<Shop>>,
+  options?: ShopsQueryOptions,
 ) {
   return useQuery({
     queryKey: shopsKey(params),

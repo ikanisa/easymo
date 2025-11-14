@@ -199,7 +199,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     )
 
     setTimeout(() => syncCart(), 500)
-  }, [syncCart])
+  }, [removeItem, syncCart])
 
   const removeItem = useCallback(async (itemId: string) => {
     setItems(prev => prev.filter(item => item.id !== itemId))

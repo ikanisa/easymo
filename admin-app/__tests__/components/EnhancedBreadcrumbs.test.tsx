@@ -1,10 +1,32 @@
+import type { ReactNode } from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "../../tests/utils/react-testing";
 import { EnhancedBreadcrumbs } from "@/components/navigation/EnhancedBreadcrumbs";
 
+const mockUsePathname = vi.fn(() => "/insurance");
+
+vi.mock("next/link", () => {
+  const Link = ({
+    href,
+    children,
+    ...props
+  }: {
+    href: string | { pathname?: string };
+    children: ReactNode;
+  }) => {
+    const resolved = typeof href === "string" ? href : href?.pathname ?? "#";
+    return (
+      <a href={resolved} {...props}>
+        {children}
+      </a>
+    );
+  };
+  return { __esModule: true, default: Link };
+});
+
 // Mock Next.js navigation
 vi.mock("next/navigation", () => ({
-  usePathname: vi.fn(() => "/insurance"),
+  usePathname: mockUsePathname,
   useRouter: vi.fn(() => ({
     push: vi.fn(),
     replace: vi.fn(),
@@ -15,6 +37,7 @@ vi.mock("next/navigation", () => ({
 describe("EnhancedBreadcrumbs", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockUsePathname.mockReturnValue("/insurance");
   });
 
   describe("Rendering", () => {
@@ -26,6 +49,8 @@ describe("EnhancedBreadcrumbs", () => {
     });
 
     it("renders home icon when showHome is true", () => {
+      mockUsePathname.mockReturnValue("/notifications");
+
       render(<EnhancedBreadcrumbs showHome={true} />);
       
       const homeIcons = screen.getAllByRole("link")[0].querySelector("svg");
@@ -33,8 +58,7 @@ describe("EnhancedBreadcrumbs", () => {
     });
 
     it("does not render breadcrumbs for root path with showHome=false", () => {
-      const { usePathname } = require("next/navigation");
-      usePathname.mockReturnValue("/insurance");
+      mockUsePathname.mockReturnValue("/insurance");
       
       const { container } = render(<EnhancedBreadcrumbs showHome={false} />);
       expect(container).toBeEmptyDOMElement();
@@ -43,8 +67,7 @@ describe("EnhancedBreadcrumbs", () => {
 
   describe("Breadcrumb Trail", () => {
     it("renders multiple breadcrumb items for nested paths", () => {
-      const { usePathname } = require("next/navigation");
-      usePathname.mockReturnValue("/notifications/settings");
+      mockUsePathname.mockReturnValue("/notifications/settings");
       
       render(<EnhancedBreadcrumbs />);
       
@@ -53,8 +76,7 @@ describe("EnhancedBreadcrumbs", () => {
     });
 
     it("highlights current page in breadcrumbs", () => {
-      const { usePathname } = require("next/navigation");
-      usePathname.mockReturnValue("/notifications");
+      mockUsePathname.mockReturnValue("/notifications");
       
       render(<EnhancedBreadcrumbs />);
       
@@ -65,8 +87,7 @@ describe("EnhancedBreadcrumbs", () => {
     });
 
     it("uses custom current label when provided", () => {
-      const { usePathname } = require("next/navigation");
-      usePathname.mockReturnValue("/notifications");
+      mockUsePathname.mockReturnValue("/notifications");
       
       render(<EnhancedBreadcrumbs currentLabel="Custom Page Title" />);
       
@@ -76,8 +97,7 @@ describe("EnhancedBreadcrumbs", () => {
 
   describe("Separators", () => {
     it("renders chevron separators between breadcrumbs", () => {
-      const { usePathname } = require("next/navigation");
-      usePathname.mockReturnValue("/notifications/settings");
+      mockUsePathname.mockReturnValue("/notifications/settings");
       
       render(<EnhancedBreadcrumbs />);
       
@@ -87,8 +107,7 @@ describe("EnhancedBreadcrumbs", () => {
     });
 
     it("does not render separator after last breadcrumb", () => {
-      const { usePathname } = require("next/navigation");
-      usePathname.mockReturnValue("/notifications");
+      mockUsePathname.mockReturnValue("/notifications");
       
       render(<EnhancedBreadcrumbs />);
       
@@ -111,8 +130,7 @@ describe("EnhancedBreadcrumbs", () => {
     });
 
     it("uses aria-current for current page", () => {
-      const { usePathname } = require("next/navigation");
-      usePathname.mockReturnValue("/notifications");
+      mockUsePathname.mockReturnValue("/notifications");
       
       render(<EnhancedBreadcrumbs />);
       
@@ -121,8 +139,7 @@ describe("EnhancedBreadcrumbs", () => {
     });
 
     it("provides accessible labels for navigation", () => {
-      const { usePathname } = require("next/navigation");
-      usePathname.mockReturnValue("/notifications/settings");
+      mockUsePathname.mockReturnValue("/notifications/settings");
       
       render(<EnhancedBreadcrumbs />);
       
@@ -149,8 +166,7 @@ describe("EnhancedBreadcrumbs", () => {
 
   describe("Keyboard Navigation", () => {
     it("supports keyboard focus on breadcrumb links", () => {
-      const { usePathname } = require("next/navigation");
-      usePathname.mockReturnValue("/notifications/settings");
+      mockUsePathname.mockReturnValue("/notifications/settings");
       
       render(<EnhancedBreadcrumbs />);
       
@@ -183,8 +199,7 @@ describe("EnhancedBreadcrumbs", () => {
     });
 
     it("highlights current page with bold text", () => {
-      const { usePathname } = require("next/navigation");
-      usePathname.mockReturnValue("/notifications");
+      mockUsePathname.mockReturnValue("/notifications");
       
       render(<EnhancedBreadcrumbs />);
       
@@ -193,8 +208,7 @@ describe("EnhancedBreadcrumbs", () => {
     });
 
     it("applies hover styles to breadcrumb links", () => {
-      const { usePathname } = require("next/navigation");
-      usePathname.mockReturnValue("/notifications/settings");
+      mockUsePathname.mockReturnValue("/notifications/settings");
       
       render(<EnhancedBreadcrumbs />);
       
@@ -207,8 +221,7 @@ describe("EnhancedBreadcrumbs", () => {
 
   describe("Integration with Panel Navigation", () => {
     it("builds breadcrumbs from panel navigation structure", () => {
-      const { usePathname } = require("next/navigation");
-      usePathname.mockReturnValue("/notifications");
+      mockUsePathname.mockReturnValue("/notifications");
       
       render(<EnhancedBreadcrumbs />);
       
@@ -217,8 +230,7 @@ describe("EnhancedBreadcrumbs", () => {
     });
 
     it("includes group title in breadcrumb trail", () => {
-      const { usePathname } = require("next/navigation");
-      usePathname.mockReturnValue("/notifications");
+      mockUsePathname.mockReturnValue("/notifications");
       
       render(<EnhancedBreadcrumbs />);
       

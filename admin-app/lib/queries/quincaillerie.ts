@@ -14,12 +14,13 @@ export function fetchQuincaillerieVendors() {
   return listQuincaillerieVendors();
 }
 
+type QuincaillerieVendorsQueryOptions = Omit<
+  UseQueryOptions<QuincaillerieVendorsResponse, unknown, QuincaillerieVendorsResponse>,
+  "queryKey" | "queryFn"
+>;
+
 export function useQuincaillerieVendors(
-  options?: UseQueryOptions<
-    QuincaillerieVendorsResponse,
-    unknown,
-    QuincaillerieVendorsResponse
-  >,
+  options?: QuincaillerieVendorsQueryOptions,
 ) {
   return useQuery({
     queryKey: QUINCA_VENDORS_KEY,

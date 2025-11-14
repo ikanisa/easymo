@@ -21,6 +21,7 @@ import { recordInbound } from "../observe/conv_audit.ts";
 import { getTextBody } from "../utils/messages.ts";
 import { processPharmacyRequest } from "../domains/healthcare/pharmacies.ts";
 import { processQuincaillerieRequest } from "../domains/healthcare/quincailleries.ts";
+import { processNotaryRequest } from "../domains/services/notary.ts";
 
 import {
   handleAddPropertyPrice,
@@ -105,6 +106,26 @@ export async function handleText(
       await processQuincaillerieRequest(ctx, stateData.location, body);
     }
     return true;
+  }
+
+  // Handle notary service input
+  if (state.key === "notary_awaiting_service") {
+    const stateData = state.data as { location?: { lat: number; lng: number } };
+    if (stateData.location) {
+      await processNotaryRequest(ctx, stateData.location, body);
+    }
+    return true;
+  }
+  
+  // Handle business name search
+  if (state.key === "business_claim") {
+    const stateData = state.data as { stage?: string };
+    if (stateData.stage === "awaiting_name") {
+      const { handleBusinessNameSearch } = await import(
+        "../domains/business/claim.ts"
+      );
+      return await handleBusinessNameSearch(ctx, body);
+    }
   }
   
   // Handle business WhatsApp number input

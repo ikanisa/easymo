@@ -7,10 +7,12 @@ import {
 import { handleMarketplaceLocation } from "../domains/marketplace/index.ts";
 import { maybeHandleDriverLocation } from "../observe/driver_parser.ts";
 import { recordInbound } from "../observe/conv_audit.ts";
+import { sendText } from "../wa/client.ts";
 // AI Agents Integration
 import { handleAIAgentLocationUpdate } from "../domains/ai-agents/index.ts";
 import { handlePharmacyLocation } from "../domains/healthcare/pharmacies.ts";
 import { handleQuincaillerieLocation } from "../domains/healthcare/quincailleries.ts";
+import { handleNotaryLocation } from "../domains/services/notary.ts";
 import {
   handleFindPropertyLocation,
   handleAddPropertyLocation,
@@ -50,13 +52,23 @@ export async function handleLocation(
 
   await recordLastLocation(ctx, { lat, lng });
   
-  // Check if this is for an AI agent
+  /* AI AGENT LOCATION ROUTING - DISABLED FOR PHASE 1 (NEARBY SEARCHES)
+     Only enabled for Waiter AI and Real Estate AI agents
+     Phase 2: Will enable for pharmacy, quincaillerie, shops, drivers
+  
   const aiAgentStates = [
-    "ai_driver_waiting_locations",
-    "ai_pharmacy_waiting_location",
-    "ai_quincaillerie_waiting_location",
-    "ai_shops_waiting_location",
-    "ai_property_waiting_location",
+    "ai_driver_waiting_locations",      // DISABLED - Phase 2
+    "ai_pharmacy_waiting_location",     // DISABLED - Phase 2
+    "ai_quincaillerie_waiting_location",// DISABLED - Phase 2
+    "ai_shops_waiting_location",        // DISABLED - Phase 2
+    "ai_property_waiting_location",     // ENABLED - Real Estate AI
+  ];
+  */
+  
+  // PHASE 1: Only Real Estate and Waiter AI use agents
+  const aiAgentStates = [
+    "ai_property_waiting_location",     // Real Estate AI (ENABLED)
+    // Waiter AI doesn't use location routing
   ];
   
   if (aiAgentStates.includes(state.key)) {
@@ -77,6 +89,20 @@ export async function handleLocation(
   
   if (state.key === "quincaillerie_awaiting_location") {
     return await handleQuincaillerieLocation(ctx, { lat, lng });
+  }
+  
+  if (state.key === "bars_wait_location") {
+    const { handleBarsLocation } = await import("../domains/bars/search.ts");
+    return await handleBarsLocation(ctx, { lat, lng });
+  }
+  
+  if (state.key === "shops_wait_location") {
+    const { handleShopsLocation } = await import("../domains/shops/services.ts");
+    return await handleShopsLocation(ctx, state.data || {}, { lat, lng });
+  }
+  
+  if (state.key === "notary_awaiting_location") {
+    return await handleNotaryLocation(ctx, { lat, lng });
   }
   
   if (state.key === "property_find_location") {

@@ -8,8 +8,13 @@ export function fetchAdminHubSnapshot(): Promise<AdminHubSnapshot> {
   return getAdminHubSnapshot();
 }
 
+type AdminHubSnapshotQueryOptions = Omit<
+  UseQueryOptions<AdminHubSnapshot, unknown, AdminHubSnapshot>,
+  "queryKey" | "queryFn"
+>;
+
 export function useAdminHubSnapshotQuery(
-  options?: UseQueryOptions<AdminHubSnapshot, unknown, AdminHubSnapshot>,
+  options?: AdminHubSnapshotQueryOptions,
 ) {
   return useQuery({
     queryKey: ADMIN_HUB_SNAPSHOT_KEY,

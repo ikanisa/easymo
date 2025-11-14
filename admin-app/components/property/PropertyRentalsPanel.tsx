@@ -6,6 +6,8 @@ import { MarketplaceThreadViewer } from "@/components/marketplace/MarketplaceThr
 import { type MarketplaceAgentSessionsQueryParams, useMarketplaceAgentSessionsQuery } from "@/lib/queries/marketplaceAgentSessions";
 import { useMemo } from "react";
 import { SectionCard } from "@/components/ui/SectionCard";
+import { PropertyHighlights } from "@/components/property/PropertyHighlights";
+import { PropertyDemandHeatmap } from "@/components/property/PropertyDemandHeatmap";
 
 interface PropertyRentalsPanelProps {
   params: MarketplaceAgentSessionsQueryParams;
@@ -19,6 +21,8 @@ export function PropertyRentalsPanel({ params }: PropertyRentalsPanelProps) {
 
   return (
     <div className="space-y-6">
+      <PropertyHighlights />
+      <PropertyDemandHeatmap />
       <SectionCard
         title="Launch property search"
         description="Capture bedroom count, neighbourhood, and budget to dispatch the rental agent."

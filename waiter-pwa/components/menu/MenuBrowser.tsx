@@ -5,7 +5,7 @@ import CategoryTabs from './CategoryTabs'
 import MenuItemCard from './MenuItemCard'
 import { ArrowPathIcon } from '@heroicons/react/24/outline'
 
-export default function MenuBrowser() {
+function MenuBrowser() {
   const { items, loading, error } = useMenu()
 
   if (error) {
@@ -52,3 +52,6 @@ export default function MenuBrowser() {
     </div>
   )
 }
+
+export { MenuBrowser }
+export default MenuBrowser

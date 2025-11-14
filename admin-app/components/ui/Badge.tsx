@@ -2,7 +2,18 @@
 
 import React from "react";
 
-type BadgeVariant = "gray" | "blue" | "green" | "red" | "yellow" | "slate";
+type BadgeVariant =
+  | "gray"
+  | "blue"
+  | "green"
+  | "red"
+  | "yellow"
+  | "slate"
+  | "outline"
+  | "warning"
+  | "success"
+  | "destructive"
+  | "default";
 
 const VARIANT_CLASSES: Record<BadgeVariant, string> = {
   gray: "bg-gray-100 text-gray-900",
@@ -11,6 +22,11 @@ const VARIANT_CLASSES: Record<BadgeVariant, string> = {
   red: "bg-red-100 text-red-900",
   yellow: "bg-yellow-100 text-yellow-900",
   slate: "bg-slate-100 text-slate-900",
+  outline: "border border-slate-200 bg-white text-slate-700",
+  warning: "bg-amber-100 text-amber-900",
+  success: "bg-emerald-100 text-emerald-900",
+  destructive: "bg-rose-100 text-rose-900",
+  default: "bg-slate-900 text-white",
 };
 
 type BadgeProps = {

@@ -14,6 +14,8 @@ import { LoadingState } from "@/components/ui/LoadingState";
 import { useAdminHubSnapshotQuery } from "@/lib/queries/adminHub";
 import { AdminHubSectionGrid } from "@/components/dashboard/AdminHubSectionGrid";
 import { AdminDiagnosticsCard } from "@/components/dashboard/AdminDiagnosticsCard";
+import { IntegrationHealthWidget } from "@/components/dashboard/IntegrationHealthWidget";
+import { PaymentsHealthWidget } from "@/components/dashboard/PaymentsHealthWidget";
 
 export function DashboardClient() {
   const snapshotQuery = useDashboardSnapshotQuery();
@@ -84,8 +86,10 @@ export function DashboardClient() {
               title="Quick actions unavailable"
               description="Administrative tools could not be loaded. Please refresh the page or contact support if the issue persists."
             />
-          )}
+        )}
       </SectionCard>
+      <IntegrationHealthWidget />
+      <PaymentsHealthWidget />
       <AdminDiagnosticsCard />
       <section
         aria-label="Key performance indicators"

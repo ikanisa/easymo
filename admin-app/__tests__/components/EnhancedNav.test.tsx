@@ -1,10 +1,32 @@
+import type { ReactNode } from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "../../tests/utils/react-testing";
 import { EnhancedNav } from "@/components/navigation/EnhancedNav";
 
+const mockUsePathname = vi.fn(() => "/insurance");
+
+vi.mock("next/link", () => {
+  const Link = ({
+    href,
+    children,
+    ...props
+  }: {
+    href: string | { pathname?: string };
+    children: ReactNode;
+  }) => {
+    const resolved = typeof href === "string" ? href : href?.pathname ?? "#";
+    return (
+      <a href={resolved} {...props}>
+        {children}
+      </a>
+    );
+  };
+  return { __esModule: true, default: Link };
+});
+
 // Mock Next.js navigation
 vi.mock("next/navigation", () => ({
-  usePathname: vi.fn(() => "/insurance"),
+  usePathname: mockUsePathname,
   useRouter: vi.fn(() => ({
     push: vi.fn(),
     replace: vi.fn(),
@@ -15,6 +37,7 @@ vi.mock("next/navigation", () => ({
 describe("EnhancedNav", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockUsePathname.mockReturnValue("/insurance");
   });
 
   describe("Rendering", () => {
@@ -59,8 +82,7 @@ describe("EnhancedNav", () => {
 
   describe("Active State", () => {
     it("highlights active root link", () => {
-      const { usePathname } = require("next/navigation");
-      usePathname.mockReturnValue("/insurance");
+      mockUsePathname.mockReturnValue("/insurance");
       
       render(<EnhancedNav />);
       
@@ -70,8 +92,7 @@ describe("EnhancedNav", () => {
     });
 
     it("highlights active group link", () => {
-      const { usePathname } = require("next/navigation");
-      usePathname.mockReturnValue("/notifications");
+      mockUsePathname.mockReturnValue("/notifications");
       
       render(<EnhancedNav />);
       
@@ -80,8 +101,7 @@ describe("EnhancedNav", () => {
     });
 
     it("shows active indicator dot on current page", () => {
-      const { usePathname } = require("next/navigation");
-      usePathname.mockReturnValue("/notifications");
+      mockUsePathname.mockReturnValue("/notifications");
       
       render(<EnhancedNav />);
       
@@ -109,8 +129,7 @@ describe("EnhancedNav", () => {
     });
 
     it("auto-expands groups containing active links", () => {
-      const { usePathname } = require("next/navigation");
-      usePathname.mockReturnValue("/notifications");
+      mockUsePathname.mockReturnValue("/notifications");
       
       render(<EnhancedNav />);
       
@@ -235,8 +254,7 @@ describe("EnhancedNav", () => {
     });
 
     it("uses aria-current for active links", () => {
-      const { usePathname } = require("next/navigation");
-      usePathname.mockReturnValue("/insurance");
+      mockUsePathname.mockReturnValue("/insurance");
       
       render(<EnhancedNav />);
       

@@ -17,11 +17,14 @@ import type { RouterContext } from "../types.ts";
 
 import { buildAgentContext, saveAgentInteraction, type AgentContext } from "../shared/agent_context.ts";
 import { logStructuredEvent } from "../observe/log.ts";
-import { sendText } from "../rpc/whatsapp.ts";
+import { sendText, sendTemplateMessage } from "../rpc/whatsapp.ts";
 import { fetchFeatureFlag } from "../../_shared/feature-flags.ts";
 import { AdvancedRateLimiter } from "../shared/advanced_rate_limiter.ts";
 import { getConfig } from "../shared/config_manager.ts";
 import { getMetricsAggregator, type RequestMetrics } from "../shared/metrics_aggregator.ts";
+import { maskE164 } from "../utils/text.ts";
+import type { ApprovedTemplate } from "../shared/template_registry.ts";
+import type { AgentResponse as OrchestratorAgentResponse } from "../shared/agent_orchestrator.ts";
 
 /**
  * Feature flag for AI agent system
@@ -99,6 +102,7 @@ export async function tryAIAgentHandler(
   state: ChatState
 ): Promise<boolean> {
   const correlationId = crypto.randomUUID();
+  const maskedMsisdn = maskE164(msg.from);
   
   try {
     // Check feature flag
@@ -118,28 +122,34 @@ export async function tryAIAgentHandler(
       msg.from,
       correlationId
     );
-    
+
     if (!rateLimitResult.allowed) {
       await logStructuredEvent("AI_RATE_LIMIT_EXCEEDED", {
         correlation_id: correlationId,
-        phone_number: msg.from,
+        msisdn_masked: maskedMsisdn,
         retry_after: rateLimitResult.retryAfter,
         blacklisted: rateLimitResult.blacklisted,
       });
-      
+
       // Send user-friendly rate limit message
       const message = rateLimitResult.blacklisted
         ? "⛔ Your account has been temporarily suspended due to excessive requests. Please try again later."
         : `⏰ You're sending messages too quickly. Please wait ${rateLimitResult.retryAfter}s before trying again.`;
-      
-      await sendText(ctx, msg.from, { body: message });
-      
+
+      await sendText(ctx.supabase, msg.from, {
+        body: message,
+        correlationId,
+        audit: {
+          reason: rateLimitResult.blacklisted ? "rate_limit_blacklisted" : "rate_limited",
+        },
+      });
+
       return true; // Handled (rejected)
     }
-    
+
     await logStructuredEvent("AI_AGENT_REQUEST_START", {
       correlation_id: correlationId,
-      phone_number: msg.from,
+      msisdn_masked: maskedMsisdn,
       message_type: msg.type,
       rate_limit_remaining: rateLimitResult.remaining,
     });
@@ -168,10 +178,57 @@ export async function tryAIAgentHandler(
       });
       return false;
     }
-    
-    // Send response to WhatsApp
-    await sendText(ctx.supabase, msg.from, response.text);
-    
+
+    // Attempt to send via approved template first
+    let deliveredVia: "template" | "text" = "text";
+    if (response.approvedTemplate) {
+      const templateParameters = buildTemplateParameters(response.approvedTemplate, response.text, agentContext);
+      if (templateParameters) {
+        const templateResult = await sendTemplateMessage(ctx.supabase, msg.from, {
+          template: response.approvedTemplate,
+          parameters: templateParameters,
+          correlationId,
+          preview: response.text,
+        });
+        if (templateResult.success) {
+          deliveredVia = "template";
+        } else {
+          await logStructuredEvent("AI_TEMPLATE_DELIVERY_FALLBACK", {
+            correlation_id: correlationId,
+            intent: response.approvedTemplate.intent,
+            template_key: response.approvedTemplate.templateKey,
+            msisdn_masked: maskedMsisdn,
+            reason: templateResult.reason,
+          });
+        }
+      } else {
+        await logStructuredEvent("AI_TEMPLATE_PARAMETERS_UNAVAILABLE", {
+          correlation_id: correlationId,
+          intent: response.approvedTemplate.intent,
+          template_key: response.approvedTemplate.templateKey,
+          msisdn_masked: maskedMsisdn,
+        });
+      }
+    } else {
+      await logStructuredEvent("AI_TEMPLATE_MAPPING_MISSING", {
+        correlation_id: correlationId,
+        msisdn_masked: maskedMsisdn,
+        agent_type: response.agentType,
+      });
+    }
+
+    if (deliveredVia === "text") {
+      await sendText(ctx.supabase, msg.from, {
+        body: response.text,
+        correlationId,
+        audit: {
+          delivery: "text",
+          agent_type: response.agentType,
+          template_key: response.approvedTemplate?.templateKey ?? null,
+        },
+      });
+    }
+
     // Save interaction
     await saveAgentInteraction(
       ctx.supabase,
@@ -183,6 +240,9 @@ export async function tryAIAgentHandler(
         tokens_used: response.tokensUsed,
         cost_usd: response.costUsd,
         latency_ms: response.latencyMs,
+        template_key: response.approvedTemplate?.templateKey ?? null,
+        template_locale: response.approvedTemplate?.locale ?? null,
+        delivered_via: deliveredVia,
       }
     );
     
@@ -211,6 +271,8 @@ export async function tryAIAgentHandler(
       agent_type: response.agentType,
       tokens_used: response.tokensUsed,
       latency_ms: response.latencyMs,
+      delivery: deliveredVia,
+      template_key: response.approvedTemplate?.templateKey ?? null,
     });
     
     return true; // Successfully handled by AI
@@ -239,14 +301,7 @@ export async function tryAIAgentHandler(
 /**
  * Agent response interface
  */
-interface AgentResponse {
-  text: string;
-  agentType: string;
-  tokensUsed?: number;
-  costUsd?: number;
-  latencyMs?: number;
-  sessionData?: Record<string, any>;
-}
+type AgentResponse = OrchestratorAgentResponse;
 
 /**
  * Process message with AI agent using orchestrator
@@ -256,40 +311,90 @@ async function processWithAIAgent(
   supabase: SupabaseClient,
   context: AgentContext
 ): Promise<AgentResponse | null> {
-  const startTime = Date.now();
-  
   try {
     // Import orchestrator (dynamic to avoid circular dependencies)
     const { getAgentOrchestrator } = await import("../shared/agent_orchestrator.ts");
     const orchestrator = getAgentOrchestrator();
-    
+
     // Classify intent and select agent
     const { agentType, confidence } = await orchestrator.classifyIntent(context);
-    
+
     await logStructuredEvent("AGENT_INTENT_CLASSIFIED", {
       correlation_id: context.correlationId,
       agent_type: agentType,
       confidence,
     });
-    
+
     // Process with selected agent
     const response = await orchestrator.processWithAgent(context, agentType);
-    
-    const latencyMs = Date.now() - startTime;
-    
-    return {
-      text: response.text,
-      agentType,
-      tokensUsed: response.tokensUsed,
-      costUsd: response.costUsd,
-      latencyMs,
-      sessionData: response.sessionData,
-    };
-    
+
+    return response;
+
   } catch (error) {
     console.error("AI Agent processing error:", error);
     return null;
   }
+}
+
+function buildTemplateParameters(
+  template: ApprovedTemplate,
+  responseText: string,
+  context: AgentContext,
+): string[] | null {
+  const placeholders = template.bodyVariables ?? [];
+  if (!placeholders.length) {
+    return [];
+  }
+
+  const sanitized = sanitizeTemplateText(responseText);
+  if (!sanitized) {
+    return null;
+  }
+
+  return placeholders.map((placeholder) =>
+    deriveTemplateValue(placeholder, sanitized, context)
+  );
+}
+
+function sanitizeTemplateText(text: string): string {
+  return text
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 1024);
+}
+
+function deriveTemplateValue(
+  placeholder: string,
+  sanitizedResponse: string,
+  context: AgentContext,
+): string {
+  const key = placeholder.toLowerCase();
+
+  if (key.includes("message") || key.includes("response") || key.includes("body")) {
+    return sanitizedResponse;
+  }
+
+  if (key.includes("name")) {
+    return context.userName ?? context.userProfile?.name ?? "there";
+  }
+
+  if (key.includes("agent")) {
+    return "EasyMO Assistant";
+  }
+
+  if (key.includes("language")) {
+    return context.language ?? "en";
+  }
+
+  if (key.includes("phone") || key.includes("msisdn")) {
+    return maskE164(context.phoneNumber ?? "");
+  }
+
+  if (key.includes("topic") || key.includes("intent")) {
+    return context.sessionData?.last_topic ?? "general";
+  }
+
+  return "";
 }
 
 /*

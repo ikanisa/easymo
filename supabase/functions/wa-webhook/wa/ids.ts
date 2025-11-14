@@ -14,6 +14,7 @@ export const IDS = {
   MARKETPLACE_SKIP: "marketplace_skip",
   NEARBY_PHARMACIES: "nearby_pharmacies",
   NEARBY_QUINCAILLERIES: "nearby_quincailleries",
+  NEARBY_NOTARY_SERVICES: "nearby_notary_services",
   PROPERTY_RENTALS: "property_rentals",
   PROPERTY_FIND: "property_find",
   PROPERTY_ADD: "property_add",

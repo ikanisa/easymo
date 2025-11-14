@@ -7,13 +7,11 @@
 // =====================================================
 
 import { serve } from "$std/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { logStructuredEvent, recordMetric, maskPII } from "../_shared/observability.ts";
+import { getServiceClient } from "shared/supabase.ts";
+import { getEnv, requireEnv } from "shared/env.ts";
 
-const supabase = createClient(
-  Deno.env.get("SUPABASE_URL")!,
-  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-);
+const supabase = getServiceClient();
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -33,17 +31,21 @@ interface MoMoConfig {
 }
 
 function getMoMoConfig(provider: string): MoMoConfig {
-  const env = Deno.env.get("MOMO_ENVIRONMENT") || "sandbox";
-  
+  const env = getEnv("MOMO_ENVIRONMENT") || "sandbox";
+  const apiKey = requireEnv("MOMO_API_KEY");
+  const apiSecret = requireEnv("MOMO_API_SECRET");
+  const subscriptionKey = requireEnv("MOMO_SUBSCRIPTION_KEY");
+
   return {
-    apiUrl: env === "production" 
-      ? "https://proxy.momoapi.mtn.com" 
+    apiUrl: env === "production"
+      ? "https://proxy.momoapi.mtn.com"
       : "https://sandbox.momodeveloper.mtn.com",
-    apiKey: Deno.env.get("MOMO_API_KEY") || "",
-    apiSecret: Deno.env.get("MOMO_API_SECRET") || "",
-    subscriptionKey: Deno.env.get("MOMO_SUBSCRIPTION_KEY") || "",
+    apiKey,
+    apiSecret,
+    subscriptionKey,
     environment: env as "sandbox" | "production",
   };
+}
 }
 
 // =====================================================
@@ -70,7 +72,7 @@ async function createMoMoPayment(
           "X-Reference-Id": referenceId,
           "X-Target-Environment": config.environment,
           "Ocp-Apim-Subscription-Key": config.subscriptionKey,
-          "X-Callback-Url": `${Deno.env.get("SUPABASE_URL")}/functions/v1/momo-webhook`,
+          "X-Callback-Url": `${requireEnv("SUPABASE_URL", ["SERVICE_URL"])}/functions/v1/momo-webhook`,
           "X-Correlation-Id": correlationId,
         },
         body: JSON.stringify({

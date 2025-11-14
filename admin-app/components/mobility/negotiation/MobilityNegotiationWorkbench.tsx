@@ -540,14 +540,14 @@ export function MobilityNegotiationWorkbench({
           <p className="mt-2 max-w-3xl text-sm text-slate-600 dark:text-slate-300">{headerDescription}</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button variant="outline" size="sm" onClick={handleExtend} disabled={extendMutation.isLoading}>
-            {extendMutation.isLoading ? "Extending…" : "Extend SLA (E)"}
+          <Button variant="outline" size="sm" onClick={handleExtend} disabled={extendMutation.isPending}>
+            {extendMutation.isPending ? "Extending…" : "Extend SLA (E)"}
           </Button>
-          <Button variant="outline" size="sm" onClick={openManualModal} disabled={manualMessageMutation.isLoading}>
+          <Button variant="outline" size="sm" onClick={openManualModal} disabled={manualMessageMutation.isPending}>
             Manual message (M)
           </Button>
-          <Button size="sm" onClick={handleApprove} disabled={approveMutation.isLoading || !selectedCandidateId}>
-            {approveMutation.isLoading ? "Approving…" : "Approve and book (A)"}
+          <Button size="sm" onClick={handleApprove} disabled={approveMutation.isPending || !selectedCandidateId}>
+            {approveMutation.isPending ? "Approving…" : "Approve and book (A)"}
           </Button>
         </div>
       </div>
@@ -625,7 +625,7 @@ export function MobilityNegotiationWorkbench({
         isOpen={manualModalOpen}
         onClose={closeManualModal}
         onSubmit={handleManualSubmit}
-        isSubmitting={manualMessageMutation.isLoading}
+        isSubmitting={manualMessageMutation.isPending}
         defaultMessage={defaultManual}
         recipients={manualRecipients}
       />

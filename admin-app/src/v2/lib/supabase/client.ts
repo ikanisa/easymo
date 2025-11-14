@@ -100,14 +100,44 @@ export async function createAdminClient() {
         get(name: string) {
           return cookieStore.get(name)?.value;
         },
-        set(..._args: unknown[]) {
-          // Route handlers cannot mutate cookies synchronously
+        getAll() {
+          return cookieStore.getAll();
         },
-        remove(..._args: unknown[]) {
-          // Route handlers cannot mutate cookies synchronously
+        set(name: string, value: string, options?: Parameters<typeof cookieStore.set>[2]) {
+          try {
+            cookieStore.set(name, value, options);
+          } catch {
+            // Route handlers cannot always mutate cookies synchronously.
+          }
+        },
+        setAll(cookiesToSet: Array<{ name: string; value: string; options?: Parameters<typeof cookieStore.set>[2] }>) {
+          cookiesToSet.forEach(({ name, value, options }) => {
+            try {
+              cookieStore.set(name, value, options);
+            } catch {
+              // Ignore outside request contexts.
+            }
+          });
+        },
+        remove(name: string, options?: Parameters<typeof cookieStore.delete>[1]) {
+          try {
+            cookieStore.delete(name, options);
+          } catch {
+            // Ignore outside request contexts.
+          }
         },
       }
-    : undefined;
+    : {
+        get() {
+          return undefined;
+        },
+        getAll() {
+          return [];
+        },
+        set() {},
+        setAll() {},
+        remove() {},
+      };
 
   const headerAdapter = headerStore
     ? {

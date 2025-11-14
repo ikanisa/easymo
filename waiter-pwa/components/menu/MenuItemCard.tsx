@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { useMenu } from '@/contexts/MenuContext'
 import type { MenuItem } from '@/types/menu'
 import { PlusIcon, CheckIcon } from '@heroicons/react/24/outline'
@@ -25,11 +26,14 @@ export default function MenuItemCard({ item }: MenuItemCardProps) {
   return (
     <div className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
       {item.image_url && (
-        <div className="aspect-video w-full bg-gray-100 overflow-hidden">
-          <img
+        <div className="relative aspect-video w-full overflow-hidden bg-gray-100">
+          <Image
             src={item.image_url}
             alt={item.name}
-            className="w-full h-full object-cover"
+            fill
+            sizes="(max-width: 768px) 100vw, 50vw"
+            className="object-cover"
+            priority={false}
           />
         </div>
       )}

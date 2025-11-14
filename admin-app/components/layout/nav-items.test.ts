@@ -50,6 +50,7 @@ const legacyNavTitles = [
   "Integrations",
   "System logs",
   "WhatsApp health",
+  "WhatsApp menu",
   "Settings",
   "Admin controls",
 ] as const;

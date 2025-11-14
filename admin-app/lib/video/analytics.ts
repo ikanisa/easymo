@@ -149,6 +149,28 @@ type ApprovalRow = {
   created_at: string;
 };
 
+function coercePerformanceRows(rows: unknown[] | null | undefined): PerformanceRow[] {
+  if (!rows) {
+    return [];
+  }
+
+  return rows.map((row) => {
+    const candidate = row as PerformanceRow & {
+      job?: PerformanceRow["job"] | PerformanceRow["job"][] | null;
+    };
+
+    const jobValue = candidate.job;
+    const normalizedJob = Array.isArray(jobValue)
+      ? (jobValue[0] as PerformanceRow["job"] | undefined) ?? null
+      : jobValue ?? null;
+
+    return {
+      ...candidate,
+      job: normalizedJob,
+    };
+  });
+}
+
 const SAMPLE_DASHBOARD: VideoAnalyticsDashboardData = {
   isSample: true,
   lookbackDays: 14,
@@ -272,7 +294,7 @@ const SAMPLE_DASHBOARD: VideoAnalyticsDashboardData = {
 export const getVideoAnalyticsDashboardData = cache(async (options?: {
   lookbackDays?: number;
 }): Promise<VideoAnalyticsDashboardData> => {
-  const supabase = getSupabaseAdminClient();
+  const supabase = await getSupabaseAdminClient();
   const lookbackDays = options?.lookbackDays ?? 14;
 
   if (!supabase) {
@@ -293,7 +315,7 @@ export const getVideoAnalyticsDashboardData = cache(async (options?: {
     return SAMPLE_DASHBOARD;
   }
 
-  const rows = data as PerformanceRow[];
+  const rows = coercePerformanceRows(data);
   const dailyRows = rows.filter((row) => row.interval === 'daily');
   const weeklyRows = rows.filter((row) => row.interval === 'weekly');
   const lifetimeRows = rows.filter((row) => row.interval === 'lifetime');
@@ -337,7 +359,7 @@ export const getVideoAnalyticsDashboardData = cache(async (options?: {
 });
 
 export const getVideoJobDetail = cache(async (id: string): Promise<VideoJobDetail | null> => {
-  const supabase = getSupabaseAdminClient();
+  const supabase = await getSupabaseAdminClient();
   if (!supabase) {
     const sample = SAMPLE_DASHBOARD.jobs[0];
     return sample
@@ -362,7 +384,7 @@ export const getVideoJobDetail = cache(async (id: string): Promise<VideoJobDetai
     return null;
   }
 
-  const rows = jobRows as PerformanceRow[];
+  const rows = coercePerformanceRows(jobRows);
   const baseRow = rows.find((row) => row.interval === 'lifetime') ?? rows[0];
   const summary = performanceRowToSummary(baseRow);
 

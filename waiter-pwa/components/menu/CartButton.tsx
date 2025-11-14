@@ -5,7 +5,7 @@ import { ShoppingCartIcon } from '@heroicons/react/24/outline'
 import { useState } from 'react'
 import CartModal from './CartModal'
 
-export default function CartButton() {
+function CartButton() {
   const { cartCount, cartTotal } = useMenu()
   const [isOpen, setIsOpen] = useState(false)
 
@@ -35,3 +35,6 @@ export default function CartButton() {
     </>
   )
 }
+
+export { CartButton }
+export default CartButton

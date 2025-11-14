@@ -228,6 +228,53 @@ export async function handleButton(
         return await handleQuickSaveLocation(ctx, LOCATION_KIND_BY_ID[id]);
       }
       if (await handleMarketplaceButton(ctx, state, id)) return true;
+      
+      // Check for bars search button
+      if (id === "bars_search_now") {
+        const { handleBarsSearchButton } = await import(
+          "../domains/bars/search.ts"
+        );
+        return await handleBarsSearchButton(ctx, id);
+      }
+      
+      // Check for shops browse button
+      if (id === "shops_browse_tags") {
+        const { handleShopsBrowseButton } = await import(
+          "../domains/shops/services.ts"
+        );
+        return await handleShopsBrowseButton(ctx);
+      }
+      
+      // Check for pharmacy search button
+      if (id === "pharmacy_search_now") {
+        const { processPharmacyRequest } = await import(
+          "../domains/healthcare/pharmacies.ts"
+        );
+        if (state.key === "pharmacy_awaiting_medicine" && state.data?.location) {
+          return await processPharmacyRequest(
+            ctx,
+            state.data.location as { lat: number; lng: number },
+            "", // No specific meds, just search nearby
+          );
+        }
+        return false;
+      }
+      
+      // Check for quincaillerie search button
+      if (id === "quincaillerie_search_now") {
+        const { processQuincaillerieRequest } = await import(
+          "../domains/healthcare/quincailleries.ts"
+        );
+        if (state.key === "quincaillerie_awaiting_items" && state.data?.location) {
+          return await processQuincaillerieRequest(
+            ctx,
+            state.data.location as { lat: number; lng: number },
+            "", // No specific items, just search nearby
+          );
+        }
+        return false;
+      }
+      
       return false;
   }
 }

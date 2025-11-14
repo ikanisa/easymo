@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { readSessionFromCookies } from "@/lib/server/session";
 
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 export async function GET() {
   const session = await readSessionFromCookies();

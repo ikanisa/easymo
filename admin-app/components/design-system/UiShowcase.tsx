@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { Button as UiButton } from "@easymo/ui/components/Button";
+import { KpiWidget } from "@easymo/ui/widgets/KpiWidget";
 import {
-  Button as UiButton,
-  KpiWidget,
   DataTable,
   TableHeader,
   TableRow,
@@ -11,8 +11,8 @@ import {
   TableBody,
   TableCell,
   TableCaption,
-  TrendAreaChart,
-} from "@easymo/ui";
+} from "@easymo/ui/table/Table";
+import { TrendAreaChart } from "@easymo/ui/charts/TrendAreaChart";
 
 const chartData = Array.from({ length: 12 }).map((_, index) => ({
   name: `Day ${index + 1}`,
