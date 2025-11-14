@@ -1,6 +1,6 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useRouter, useParams } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
@@ -40,6 +40,7 @@ export default function OrderStatusPage() {
   const t = useTranslations();
   const router = useRouter();
   const params = useParams();
+  const locale = useLocale();
   const orderId = params.id as string;
   const supabase = createClient();
 
@@ -49,7 +50,7 @@ export default function OrderStatusPage() {
 
   useEffect(() => {
     if (!orderId) {
-      router.push('/');
+      router.push(`/${locale}`);
       return;
     }
 
@@ -83,7 +84,7 @@ export default function OrderStatusPage() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [orderId, router, supabase]);
+  }, [orderId, router, supabase, locale]);
 
   const loadOrder = async () => {
     try {
@@ -161,7 +162,7 @@ export default function OrderStatusPage() {
           </h1>
           <p className="text-gray-600 mb-6">{error || t('order.notFoundDesc')}</p>
           <Link
-            href="/menu"
+            href={`/${locale}/menu`}
             className="inline-block bg-emerald-500 hover:bg-emerald-600 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
           >
             {t('order.backToMenu')}
@@ -181,7 +182,7 @@ export default function OrderStatusPage() {
       <header className="bg-white border-b border-gray-200 px-4 py-3">
         <div className="max-w-2xl mx-auto flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <Link href="/menu" className="text-2xl text-gray-700">
+            <Link href={`/${locale}/menu`} className="text-2xl text-gray-700">
               ←
             </Link>
             <h1 className="font-semibold text-lg">{t('order.title')}</h1>
@@ -273,7 +274,7 @@ export default function OrderStatusPage() {
         <div className="space-y-3">
           {isOrderComplete && (
             <Link
-              href={`/feedback/${order.id}`}
+              href={`/${locale}/feedback/${order.id}`}
               className="block w-full bg-emerald-500 hover:bg-emerald-600 text-white font-semibold py-4 rounded-lg text-center transition-colors"
             >
               {t('order.leaveFeedback')}
@@ -281,7 +282,7 @@ export default function OrderStatusPage() {
           )}
 
           <Link
-            href="/menu"
+            href={`/${locale}/menu`}
             className="block w-full bg-white hover:bg-gray-50 text-gray-700 font-semibold py-4 rounded-lg text-center border border-gray-300 transition-colors"
           >
             {t('order.orderAgain')}
