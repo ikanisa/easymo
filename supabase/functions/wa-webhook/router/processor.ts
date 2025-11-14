@@ -6,6 +6,8 @@ import { claimEvent, releaseEvent } from "../state/idempotency.ts";
 import { maybeRunRetention } from "../state/retention.ts";
 import { logEvent, logStructuredEvent } from "../observe/log.ts";
 import { logMetric } from "../observe/logging.ts";
+import { wrapError } from "../utils/middleware.ts";
+import { WebhookError } from "../utils/error_handler.ts";
 
 import type { RouterContext, WhatsAppMessage } from "../types.ts";
 import type { ChatState } from "../state/store.ts";
@@ -52,14 +54,19 @@ export async function handlePreparedWebhook(
   supabase: SupabaseClient,
   prepared: PreparedWebhook,
 ): Promise<Response> {
-  const { payload, messages, contactLocales, requestStart } = prepared;
+  const { payload, messages, contactLocales, requestStart, correlationId } = prepared;
+  const withCid = (payload: Record<string, unknown> = {}) => ({
+    correlationId,
+    ...payload,
+  });
 
   for (const msg of messages) {
     if (!msg?.id) continue;
     const claimed = await hooks.claimEvent(msg.id);
-    await hooks.logStructuredEvent(claimed ? "IDEMPOTENCY_MISS" : "IDEMPOTENCY_HIT", {
-      message_id: msg.id,
-    });
+    await hooks.logStructuredEvent(
+      claimed ? "IDEMPOTENCY_MISS" : "IDEMPOTENCY_HIT",
+      withCid({ message_id: msg.id }),
+    );
     if (!claimed) continue;
 
     const contextResult = await hooks.buildMessageContext(
@@ -77,20 +84,29 @@ export async function handlePreparedWebhook(
       await hooks.logMetric("wa_message_processed", 1, {
         type: msg.type ?? "unknown",
       });
-      await hooks.logStructuredEvent("MESSAGE_LATENCY", {
+      await hooks.logStructuredEvent("MESSAGE_LATENCY", withCid({
         message_id: msg.id,
         ms: Date.now() - messageStart,
         type: msg.type ?? null,
-      });
+      }));
     } catch (err) {
       await hooks.releaseEvent(msg.id);
-      await hooks.logStructuredEvent("IDEMPOTENCY_RELEASE", {
+      await hooks.logStructuredEvent("IDEMPOTENCY_RELEASE", withCid({
         message_id: msg.id,
         reason: err instanceof Error ? err.message : String(err),
-      });
+      }));
       await hooks.logMetric("wa_message_failed", 1, {
         type: msg.type ?? "unknown",
       });
+      if (err instanceof WebhookError) {
+        return await wrapError(err, {
+          correlationId,
+          phoneNumber: msg.from,
+          userId: context.profileId,
+          operation: "handleMessage",
+          duration: Date.now() - messageStart,
+        });
+      }
       throw err;
     }
   }
@@ -102,11 +118,12 @@ export async function handlePreparedWebhook(
     message_count: messages.length,
     object: typeof payload?.object === "string" ? payload.object : null,
     processing_ms: Date.now() - requestStart,
+    correlation_id: correlationId,
   });
-  await hooks.logStructuredEvent("WEBHOOK_RESPONSE", {
+  await hooks.logStructuredEvent("WEBHOOK_RESPONSE", withCid({
     status: 200,
     messageCount: messages.length,
-  });
+  }));
   await hooks.logMetric("wa_webhook_request_ms", Date.now() - requestStart, {
     messageCount: messages.length,
   });
