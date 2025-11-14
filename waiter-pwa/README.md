@@ -77,6 +77,12 @@ pnpm dev    # Starts on port 8083
 pnpm build
 ```
 
+### 6. Linting
+```bash
+pnpm lint
+```
+> The script runs `cross-env ESLINT_USE_FLAT_CONFIG=false eslint --ext .ts,.tsx .` because `next lint` shipped with Next 15 currently passes removed options to ESLint v8. Revisit once the Next CLI fixes the regression; until then keep this command in CI/local workflows.
+
 ---
 
 ## 📂 Project Structure

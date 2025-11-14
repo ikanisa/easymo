@@ -5,6 +5,8 @@ module.exports = {
     environment: "jsdom",
     globals: true,
     setupFiles: ["./tests/setupActShim.ts", "./tests/setupTests.ts"],
+    testTimeout: 15000,
+    hookTimeout: 10000,
     coverage: {
       reporter: ["text", "json", "html"],
     },

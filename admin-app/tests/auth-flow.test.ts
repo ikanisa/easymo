@@ -15,9 +15,26 @@ vi.mock("next/navigation", async () => {
   };
 });
 
+const cookieJar = new Map<string, { value: string }>();
+
+vi.mock("next/headers", () => ({
+  cookies: () => ({
+    get: (name: string) => (cookieJar.has(name) ? { name, value: cookieJar.get(name)!.value } : undefined),
+    getAll: () => Array.from(cookieJar.entries()).map(([name, entry]) => ({ name, value: entry.value })),
+    set: (name: string, value: string) => {
+      cookieJar.set(name, { value });
+    },
+    delete: (name: string) => {
+      cookieJar.delete(name);
+    },
+  }),
+  headers: () => new Map(),
+}));
+
 describe("panel layout authentication", () => {
   beforeEach(() => {
     redirectSpy.mockClear();
+    cookieJar.clear();
   });
 
   it("redirects to /login when session is missing", async () => {

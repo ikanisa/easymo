@@ -7,6 +7,7 @@ import { SessionDrawer } from "@/components/agent-orchestration/SessionDrawer";
 import { AgentConfigDrawer } from "@/components/agent-orchestration/AgentConfigDrawer";
 import { useState } from "react";
 import type { DashboardKpi } from "@/lib/schemas";
+import { SessionTimelineCard } from "@/components/agent-orchestration/SessionTimelineCard";
 
 export function AgentOrchestrationClient() {
   const registryQuery = useAgentRegistry();
@@ -214,6 +215,7 @@ export function AgentOrchestrationClient() {
           </div>
         )}
       </SectionCard>
+      <SessionTimelineCard />
 
       {/* Session Detail Drawer */}
       {selectedSessionId && (
@@ -233,4 +235,3 @@ export function AgentOrchestrationClient() {
     </div>
   );
 }
-

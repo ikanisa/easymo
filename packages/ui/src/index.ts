@@ -6,3 +6,7 @@ export * from "./components/Button";
 export * from "./components/kpi-widget";
 export * from "./components/charts";
 export * from "./widgets/KpiWidget";
+export * from "./widgets/PlaceWidget";
+export * from "./widgets/SessionTimelineWidget";
+export * from "./widgets/PaymentStatusWidget";
+export * from "./widgets/GeoHeatmapWidget";

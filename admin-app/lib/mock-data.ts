@@ -873,6 +873,98 @@ export const mockDashboardKpis: DashboardKpi[] = [
   }),
 ];
 
+export const mockPropertyHighlights = [
+  {
+    id: "prop-nyarutarama-loft",
+    name: "Nyarutarama Sky Loft",
+    location: "KG 552 St · Kigali",
+    rating: 4.9,
+    reviews: 128,
+    priceRange: "$1,250 / mo",
+    eta: "Agent replies in 5 min",
+    status: "Verified",
+    hero:
+      "https://images.unsplash.com/photo-1489171078254-c3365d6e359f?auto=format&fit=crop&w=1200&q=80",
+    badges: ["2 BR", "125 m²", "Lake view"],
+    highlights: [
+      { label: "Leads this week", value: "32" },
+      { label: "Shortlist rate", value: "68%" },
+      { label: "Avg discount", value: "5%" },
+    ],
+  },
+  {
+    id: "prop-kacyiru-terrace",
+    name: "Kacyiru Garden Terrace",
+    location: "KG 7 Ave · Kigali",
+    rating: 4.7,
+    reviews: 96,
+    priceRange: "$980 / mo",
+    eta: "New photos in 12h",
+    status: "New",
+    hero:
+      "https://images.unsplash.com/photo-1432297984334-707bd873aee0?auto=format&fit=crop&w=1200&q=70",
+    badges: ["3 BR", "Furnished", "Balcony"],
+    highlights: [
+      { label: "Leads this week", value: "21" },
+      { label: "Shortlist rate", value: "54%" },
+      { label: "Avg discount", value: "3%" },
+    ],
+  },
+];
+
+export const mockAgentSessionTimeline = [
+  {
+    id: "evt-search",
+    label: "Request captured",
+    timestamp: "08:02",
+    status: "completed",
+    description: "Passenger shared 2 BR / Kimihurura brief via WhatsApp.",
+    actor: "Passenger",
+  },
+  {
+    id: "evt-quote",
+    label: "Vendors fanned out",
+    timestamp: "08:04",
+    status: "completed",
+    description: "3 marketplace vendors responding (BK, Inkike, Homely).",
+    actor: "Agent Core",
+  },
+  {
+    id: "evt-negotiation",
+    label: "Negotiation in progress",
+    timestamp: "08:06",
+    status: "active",
+    description: "Waiting on counter offer for BK reference property.",
+    actor: "Property agent",
+  },
+  {
+    id: "evt-shortlist",
+    label: "Shortlist dispatch",
+    timestamp: "08:09",
+    status: "upcoming",
+    description: "Shortlist + owner slots scheduled for push notification.",
+    actor: "Scheduler",
+  },
+];
+
+export const mockPaymentsHealth = {
+  totalVolume: "RWF 24.5M",
+  growthLabel: "+8.4% vs last week",
+  momoShare: "62%",
+  cardShare: "28%",
+  pendingCount: 4,
+  disputesCount: 1,
+};
+
+export const mockPropertyDemandZones = [
+  { label: "Kacyiru", intensity: 0.9, valueLabel: "Hot" },
+  { label: "Kiyovu", intensity: 0.75, valueLabel: "Rising" },
+  { label: "Gishushu", intensity: 0.65, valueLabel: "Stable" },
+  { label: "Remera", intensity: 0.55, valueLabel: "Warm" },
+  { label: "Gacuriro", intensity: 0.4, valueLabel: "Exploring" },
+  { label: "Kimironko", intensity: 0.35, valueLabel: "Emerging" },
+];
+
 // Simplified mocks - factory functions not available during build
 export const mockLiveCalls: LiveCall[] = [];
 export const mockLeads: Lead[] = [];

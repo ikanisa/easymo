@@ -33,6 +33,9 @@ function chatReducer(state: ChatState, action: ChatAction): ChatState {
     case 'SET_CONVERSATION':
       return { ...state, conversation: action.payload }
     case 'ADD_MESSAGE':
+      if (state.messages.some((msg) => msg.id === action.payload.id)) {
+        return state
+      }
       return { ...state, messages: [...state.messages, action.payload] }
     case 'SET_MESSAGES':
       return { ...state, messages: action.payload }
@@ -211,10 +214,9 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         },
         (payload) => {
           const newMessage = payload.new as Message
+          if (newMessage.conversation_id !== state.conversation?.id) return
           // Only add if not already in state (avoid duplicates)
-          if (!state.messages.find(m => m.id === newMessage.id)) {
-            dispatch({ type: 'ADD_MESSAGE', payload: newMessage })
-          }
+          dispatch({ type: 'ADD_MESSAGE', payload: newMessage })
         }
       )
       .subscribe()

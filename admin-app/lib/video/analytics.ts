@@ -272,7 +272,7 @@ const SAMPLE_DASHBOARD: VideoAnalyticsDashboardData = {
 export const getVideoAnalyticsDashboardData = cache(async (options?: {
   lookbackDays?: number;
 }): Promise<VideoAnalyticsDashboardData> => {
-  const supabase = getSupabaseAdminClient();
+  const supabase = await getSupabaseAdminClient();
   const lookbackDays = options?.lookbackDays ?? 14;
 
   if (!supabase) {
@@ -337,7 +337,7 @@ export const getVideoAnalyticsDashboardData = cache(async (options?: {
 });
 
 export const getVideoJobDetail = cache(async (id: string): Promise<VideoJobDetail | null> => {
-  const supabase = getSupabaseAdminClient();
+  const supabase = await getSupabaseAdminClient();
   if (!supabase) {
     const sample = SAMPLE_DASHBOARD.jobs[0];
     return sample

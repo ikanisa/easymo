@@ -21,6 +21,7 @@ import { recordInbound } from "../observe/conv_audit.ts";
 import { getTextBody } from "../utils/messages.ts";
 import { processPharmacyRequest } from "../domains/healthcare/pharmacies.ts";
 import { processQuincaillerieRequest } from "../domains/healthcare/quincailleries.ts";
+import { processNotaryRequest } from "../domains/services/notary.ts";
 
 import {
   handleAddPropertyPrice,
@@ -103,6 +104,15 @@ export async function handleText(
     const stateData = state.data as { location?: { lat: number; lng: number } };
     if (stateData.location) {
       await processQuincaillerieRequest(ctx, stateData.location, body);
+    }
+    return true;
+  }
+
+  // Handle notary service input
+  if (state.key === "notary_awaiting_service") {
+    const stateData = state.data as { location?: { lat: number; lng: number } };
+    if (stateData.location) {
+      await processNotaryRequest(ctx, stateData.location, body);
     }
     return true;
   }

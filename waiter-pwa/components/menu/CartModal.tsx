@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { useMenu } from '@/contexts/MenuContext'
 import { XMarkIcon, MinusIcon, PlusIcon, TrashIcon } from '@heroicons/react/24/outline'
 import { Dialog, Transition } from '@headlessui/react'
@@ -69,11 +70,15 @@ function CartModal({ isOpen, onClose }: CartModalProps) {
                   cart.map((item) => (
                     <div key={item.id} className="flex gap-3 bg-gray-50 p-3 rounded-lg">
                       {item.menu_item.image_url && (
-                        <img
-                          src={item.menu_item.image_url}
-                          alt={item.menu_item.name}
-                          className="w-16 h-16 rounded object-cover"
-                        />
+                        <div className="relative h-16 w-16 overflow-hidden rounded">
+                          <Image
+                            src={item.menu_item.image_url}
+                            alt={item.menu_item.name}
+                            fill
+                            sizes="64px"
+                            className="object-cover"
+                          />
+                        </div>
                       )}
                       
                       <div className="flex-1 min-w-0">

@@ -48,6 +48,7 @@ import {
 import { sendHomeMenu } from "../flows/home.ts";
 import { startNearbyPharmacies } from "../domains/healthcare/pharmacies.ts";
 import { startNearbyQuincailleries } from "../domains/healthcare/quincailleries.ts";
+import { startNotaryServices } from "../domains/services/notary.ts";
 import {
   handlePharmacyResultSelection,
   type PharmacyResultsState,
@@ -56,6 +57,10 @@ import {
   handleQuincaillerieResultSelection,
   type QuincaResultsState,
 } from "../domains/healthcare/quincailleries.ts";
+import {
+  handleNotaryResultSelection,
+  type NotaryResultsState,
+} from "../domains/services/notary.ts";
 import {
   handleAddPropertyBedrooms,
   handleAddPropertyType,
@@ -162,6 +167,13 @@ export async function handleList(
     return await handleQuincaillerieResultSelection(
       ctx,
       (state.data ?? {}) as QuincaResultsState,
+      id,
+    );
+  }
+  if (state.key === "notary_results") {
+    return await handleNotaryResultSelection(
+      ctx,
+      (state.data ?? {}) as NotaryResultsState,
       id,
     );
   }
@@ -436,6 +448,8 @@ async function handleHomeMenuSelection(
       return await startNearbyPharmacies(ctx);
     case IDS.NEARBY_QUINCAILLERIES:
       return await startNearbyQuincailleries(ctx);
+    case IDS.NEARBY_NOTARY_SERVICES:
+      return await startNotaryServices(ctx);
     case IDS.PROPERTY_RENTALS:
       return await startPropertyRentals(ctx);
     case IDS.MARKETPLACE:

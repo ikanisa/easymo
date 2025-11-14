@@ -285,6 +285,9 @@ export async function handleAINearbyQuincailleries(
 
 /**
  * Handle "Nearby Shops" request with AI agent
+ * TWO-PHASE APPROACH:
+ * Phase 1: Immediately show top 9 nearby shops from database
+ * Phase 2: AI agent processes in background for curated shortlist
  */
 export async function handleAINearbyShops(
   ctx: RouterContext,
@@ -307,54 +310,15 @@ export async function handleAINearbyShops(
       return true;
     }
 
-    await sendText(ctx.from, t(ctx.locale, "shops.searching"));
-
-    const response = await routeToAIAgent(ctx, {
-      userId: ctx.from,
-      agentType: "shops",
-      flowType: "find_products",
-      location,
-      requestData: {
-        action: "find",
-        items,
-        itemImage,
-        shopCategory,
-      },
+    // Phase 1: Immediately send database results (top 9)
+    const instantResults = await sendShopDatabaseResults(ctx, location, items, shopCategory);
+    
+    // Phase 2: Trigger AI agent in background (non-blocking)
+    triggerShopsAgentBackground(ctx, location, items, itemImage, shopCategory).catch((error) => {
+      console.error("shops.background_agent_error", error);
     });
 
-    if (response.success && response.options) {
-      await sendAgentOptions(
-        ctx,
-        response.sessionId,
-        response.options,
-        t(ctx.locale, "shops.options_found"),
-      );
-
-      await setState(ctx.supabase, ctx.profileId || ctx.from, {
-        key: "ai_agent_selection",
-        data: {
-          sessionId: response.sessionId,
-          agentType: "shops",
-        },
-      });
-    } else {
-      // Fallback: fetch from database with tag-based filtering
-      await sendText(ctx.from, t(ctx.locale, "shops.finding_nearby"));
-      // TODO: Implement database fallback - fetch top 10 shops by tags/distance
-      await sendButtonsMessage(
-        ctx,
-        t(ctx.locale, "shops.no_results"),
-        buildButtons(
-          { id: IDS.BACK_HOME, title: t(ctx.locale, "common.menu_back") }
-        )
-      );
-      return true;
-    }
-
-    if (response.message) {
-      await sendText(ctx.from, response.message);
-    }
-    return await sendShopFallback(ctx, location, items, shopCategory);
+    return instantResults;
   } catch (error) {
     console.error("AI Shops handler error:", error);
     await sendButtonsMessage(
@@ -364,9 +328,8 @@ export async function handleAINearbyShops(
         { id: IDS.BACK_HOME, title: t(ctx.locale, "common.menu_back") }
       )
     );
-    await sendText(ctx.from, t(ctx.locale, "agent.error_occurred"));
     if (location) {
-      return await sendShopFallback(ctx, location, items, shopCategory);
+      return await sendShopDatabaseResults(ctx, location, items, shopCategory);
     }
     return false;
   }
@@ -619,6 +582,161 @@ export async function handleAIAgentLocationUpdate(
   }
 
   return false;
+}
+
+/**
+ * Phase 2: Background AI agent processing for shops
+ * Agent contacts shops on behalf of user to create curated shortlist
+ */
+async function triggerShopsAgentBackground(
+  ctx: RouterContext,
+  location: { latitude: number; longitude: number; text?: string },
+  items?: string[],
+  itemImage?: string,
+  shopCategory?: string,
+): Promise<void> {
+  if (!ctx.profileId) return;
+  
+  try {
+    // Send notification that AI agent is working in background
+    await sendText(
+      ctx.from,
+      t(ctx.locale, "shops.agent_processing_background"),
+    );
+    
+    const response = await routeToAIAgent(ctx, {
+      userId: ctx.from,
+      agentType: "shops",
+      flowType: "find_products",
+      location,
+      requestData: {
+        action: "find",
+        items,
+        itemImage,
+        shopCategory,
+      },
+    });
+
+    if (response.success && response.options?.length) {
+      // AI agent found curated results - send them
+      await sendText(
+        ctx.from,
+        t(ctx.locale, "shops.agent_curated_ready"),
+      );
+      
+      await sendAgentOptions(
+        ctx,
+        response.sessionId,
+        response.options,
+        t(ctx.locale, "shops.agent_curated_results"),
+      );
+      
+      await setState(ctx.supabase, ctx.profileId, {
+        key: "ai_agent_selection",
+        data: {
+          sessionId: response.sessionId,
+          agentType: "shops",
+        },
+      });
+    } else if (response.message) {
+      // AI agent completed but no better results
+      await sendText(ctx.from, response.message);
+    }
+  } catch (error) {
+    console.error("shops.background_agent_failure", error);
+    // Silent failure - user already has database results
+  }
+}
+
+/**
+ * Phase 1: Send immediate database results (top 9 nearby shops)
+ * This provides instant results while AI agent processes in background
+ */
+async function sendShopDatabaseResults(
+  ctx: RouterContext,
+  location: { latitude: number; longitude: number; text?: string },
+  items?: string[],
+  category?: string,
+): Promise<boolean> {
+  if (!ctx.profileId) return false;
+  
+  let entries: Array<{
+    id: string;
+    name: string;
+    owner_whatsapp?: string | null;
+    distance_km?: number | null;
+    location_text?: string | null;
+    description?: string | null;
+  }> = [];
+  
+  try {
+    // Fetch top 12, filter for contacts, show top 9
+    entries = await listBusinesses(
+      ctx.supabase,
+      { lat: location.latitude, lng: location.longitude },
+      category ?? "shops_services",
+      12,
+    );
+  } catch (error) {
+    console.error("shops.database_fetch_failed", error);
+  }
+  
+  const withContacts = entries.filter((entry) => entry.owner_whatsapp);
+  
+  if (!withContacts.length) {
+    await sendButtonsMessage(
+      ctx,
+      t(ctx.locale, "shops.results.empty"),
+      homeOnly(),
+    );
+    return true;
+  }
+  
+  // Show top 9 results
+  const top9 = withContacts.slice(0, 9);
+  const rows = top9.map((entry) => ({
+    id: `${SHOP_RESULT_PREFIX}${entry.id}`,
+    name: entry.name ?? t(ctx.locale, "shops.results.unknown"),
+    description: formatShopDescription(ctx, entry),
+    whatsapp: entry.owner_whatsapp!,
+  }));
+
+  await setState(ctx.supabase, ctx.profileId, {
+    key: "shop_results",
+    data: {
+      entries: rows.map((row) => ({
+        id: row.id,
+        name: row.name,
+        whatsapp: row.whatsapp,
+      })),
+      prefill: items?.join(", ") || null,
+    } as Record<string, unknown>,
+  });
+
+  await sendListMessage(
+    ctx,
+    {
+      title: t(ctx.locale, "shops.results.title"),
+      body: t(ctx.locale, "shops.results.instant_body"),
+      sectionTitle: t(ctx.locale, "shops.results.section"),
+      rows: [
+        ...rows.map((row) => ({
+          id: row.id,
+          title: `🛍️ ${row.name}`,
+          description: row.description,
+        })),
+        {
+          id: IDS.BACK_MENU,
+          title: t(ctx.locale, "common.menu_back"),
+          description: t(ctx.locale, "common.back_to_menu.description"),
+        },
+      ],
+      buttonText: t(ctx.locale, "common.buttons.open"),
+    },
+    { emoji: "🛍️" },
+  );
+  
+  return true;
 }
 
 async function sendShopFallback(

@@ -30,6 +30,14 @@ npm run build
 npm start
 ```
 
+### Linting
+
+```bash
+pnpm lint
+```
+
+> This project uses `cross-env ESLINT_USE_FLAT_CONFIG=false eslint --ext .ts,.tsx .` because `next lint` on Next 15 currently forwards removed CLI flags to ESLint v8. Keep this workaround until the Next CLI issue is resolved.
+
 ## Project Structure
 
 ```

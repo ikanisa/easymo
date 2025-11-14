@@ -44,6 +44,14 @@ Run `pnpm --filter @easymo/admin-app dev` and open `/design-system` to view the
 renders form fields, buttons, data tables, and cards with live props so product
 and design can validate states quickly.
 
+### Widget backlog (cross-surface)
+
+- **Integration health badge** (admin dashboard) – implemented via `IntegrationHealthWidget`; reuse hook outputs wherever telemetry is surfaced (e.g., WhatsApp health, agent detail pages).
+- **Google Places-style cards** – shipped as `PlaceWidget` inside `@easymo/ui`. Currently used for property rentals (admin) and venue spotlights (Waiter PWA). Extend it for Real Estate PWA search results and marketplace vendor reviews.
+- **Session timeline widget** – shipped as `SessionTimelineWidget` and mounted on the agent orchestration page to narrate flow-exchange status ticks.
+- **Payments widget** – delivered via `PaymentStatusWidget` feeding the dashboard wallet health card; extend it to Waiter AI’s payment center next.
+- **Geo heatmap widget** – implemented with lightweight gradient cells (`GeoHeatmapWidget`) and currently used for property demand clusters; hook it into mobility routes when telemetry lands.
+
 ## Interaction guidelines
 
 - **Motion**: stay within the transition tokens defined in

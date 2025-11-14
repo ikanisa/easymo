@@ -44,16 +44,44 @@ export async function getSupabaseAdminClient(): Promise<SupabaseClient | null> {
         get(name: string) {
           return cookieStore.get(name)?.value;
         },
-        set(..._args: unknown[]) {
-          // Route handlers cannot mutate cookies synchronously
-          // but the interface requires the method to exist.
+        getAll() {
+          return cookieStore.getAll();
         },
-        remove(..._args: unknown[]) {
-          // Route handlers cannot mutate cookies synchronously
-          // but the interface requires the method to exist.
+        set(name: string, value: string, options?: Parameters<typeof cookieStore.set>[2]) {
+          try {
+            cookieStore.set(name, value, options);
+          } catch {
+            // Route handlers cannot always mutate cookies synchronously.
+          }
+        },
+        setAll(cookiesToSet: Array<{ name: string; value: string; options?: Parameters<typeof cookieStore.set>[2] }>) {
+          cookiesToSet.forEach(({ name, value, options }) => {
+            try {
+              cookieStore.set(name, value, options);
+            } catch {
+              // Ignore when running outside a Request context.
+            }
+          });
+        },
+        remove(name: string, options?: Parameters<typeof cookieStore.delete>[1]) {
+          try {
+            cookieStore.delete(name, options);
+          } catch {
+            // Ignore when running outside a Request context.
+          }
         },
       }
-    : undefined;
+    : {
+        get() {
+          return undefined;
+        },
+        getAll() {
+          return [];
+        },
+        set() {},
+        setAll() {},
+        remove() {},
+      };
 
   const headerAdapter = headerStore
     ? {
