@@ -143,6 +143,7 @@ export async function handleBarsLocation(
   if (!ctx.profileId) return false;
 
   const preference = state?.preference || "all";
+  const page = state?.page || 0;
 
   await logStructuredEvent("BARS_SEARCH_LOCATION_RECEIVED", {
     wa_id: `***${ctx.from.slice(-4)}`,
@@ -151,14 +152,14 @@ export async function handleBarsLocation(
     preference,
   });
 
-  // Search for nearby bars using the preference-based function
+  // Search for nearby bars using the preference-based function (get 27 results)
   const { data: bars, error } = await ctx.supabase
     .rpc("nearby_bars_by_preference", {
       user_lat: location.lat,
       user_lon: location.lng,
       preference: preference,
       radius_km: 10,
-      _limit: 9,
+      _limit: 27,
     });
 
   if (error) {
@@ -191,12 +192,13 @@ export async function handleBarsLocation(
     return true;
   }
 
-  // Store results in state
+  // Store ALL results in state for pagination
   await setState(ctx.supabase, ctx.profileId, {
     key: "bars_results",
     data: {
       userLocation: location,
       preference,
+      page: page,
       bars: bars.map((bar: any) => ({
         id: bar.id,
         name: bar.name,
@@ -208,8 +210,14 @@ export async function handleBarsLocation(
     },
   });
 
+  // Show first 9 results (page 0)
+  const start = page * 9;
+  const end = Math.min(start + 9, bars.length);
+  const pageResults = bars.slice(start, end);
+  const hasMore = end < bars.length;
+
   // Build list message with results
-  const rows = bars.slice(0, 9).map((bar: any, idx: number) => {
+  const rows = pageResults.map((bar: any, idx: number) => {
     const distance = typeof bar.distance_km === 'number'
       ? (bar.distance_km < 1
         ? `${Math.round(bar.distance_km * 1000)}m`
@@ -217,11 +225,20 @@ export async function handleBarsLocation(
       : 'Distance unknown';
 
     return {
-      id: `bar_result_${idx}`,
-      title: bar.name || `Bar #${idx + 1}`,
+      id: `bar_result_${start + idx}`,
+      title: bar.name || `Bar #${start + idx + 1}`,
       description: `${bar.location_text || "Address not available"} • ${distance} away`,
     };
   });
+
+  // Add "More" button if there are more results
+  if (hasMore) {
+    rows.push({
+      id: "bars_more",
+      title: t(ctx.locale, "common.buttons.more"),
+      description: t(ctx.locale, "common.see_more_results"),
+    });
+  }
 
   // Add back button
   rows.push({
@@ -319,6 +336,96 @@ export async function handleBarsResultSelection(
     bar_id: bar.id,
     has_whatsapp: !!bar.whatsapp,
   });
+
+  return true;
+}
+
+export async function handleBarsMore(
+  ctx: RouterContext,
+  state: {
+    bars?: Array<{
+      id: string;
+      name: string;
+      address?: string;
+      distance?: number;
+      whatsapp?: string;
+      features?: any;
+    }>;
+    preference?: string;
+    page?: number;
+    userLocation?: { lat: number; lng: number };
+  },
+): Promise<boolean> {
+  if (!ctx.profileId || !state.bars || !state.userLocation) return false;
+
+  const currentPage = state.page || 0;
+  const nextPage = currentPage + 1;
+  
+  // Update state with new page
+  await setState(ctx.supabase, ctx.profileId, {
+    key: "bars_results",
+    data: {
+      ...state,
+      page: nextPage,
+    },
+  });
+
+  // Show next 9 results
+  const start = nextPage * 9;
+  const end = Math.min(start + 9, state.bars.length);
+  const pageResults = state.bars.slice(start, end);
+  const hasMore = end < state.bars.length;
+
+  const rows = pageResults.map((bar, idx) => {
+    const distance = bar.distance && bar.distance < 1
+      ? `${Math.round(bar.distance * 1000)}m`
+      : bar.distance
+      ? `${bar.distance.toFixed(1)}km`
+      : "Distance unknown";
+
+    return {
+      id: `bar_result_${start + idx}`,
+      title: bar.name || `Bar #${start + idx + 1}`,
+      description: `${bar.address || "Address not available"} • ${distance} away`,
+    };
+  });
+
+  // Add "More" button if there are more results
+  if (hasMore) {
+    rows.push({
+      id: "bars_more",
+      title: t(ctx.locale, "common.buttons.more"),
+      description: t(ctx.locale, "common.see_more_results"),
+    });
+  }
+
+  // Add back button
+  rows.push({
+    id: IDS.BACK_MENU,
+    title: t(ctx.locale, "common.menu_back"),
+    description: t(ctx.locale, "common.back_to_menu.description"),
+  });
+
+  const preferenceText = state.preference && state.preference !== "all"
+    ? ` ${t(ctx.locale, `bars.preferences.${state.preference}`).toLowerCase()}`
+    : "";
+
+  await sendListMessage(
+    ctx,
+    {
+      title: t(ctx.locale, "bars.results.title"),
+      body: t(ctx.locale, "bars.results.showing_more", {
+        from: String(start + 1),
+        to: String(end),
+        total: String(state.bars.length),
+        preference: preferenceText,
+      }),
+      sectionTitle: t(ctx.locale, "bars.results.section"),
+      rows,
+      buttonText: t(ctx.locale, "common.buttons.choose"),
+    },
+    { emoji: "🍺" },
+  );
 
   return true;
 }

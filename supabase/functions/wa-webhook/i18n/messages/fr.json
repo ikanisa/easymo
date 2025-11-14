@@ -759,5 +759,8 @@
   "business.claim.name_too_short": "⚠️ Veuillez entrer au moins 3 caractères pour rechercher.",
   "business.claim.search_error": "😔 La recherche ne fonctionne pas pour le moment. Veuillez réessayer.",
   "business.claim.error": "😔 Un problème est survenu. Veuillez réessayer.",
-  "business.claim.success": "🎉 Entreprise revendiquée! Vous pouvez maintenant la gérer depuis votre profil."
+  "business.claim.success": "🎉 Entreprise revendiquée! Vous pouvez maintenant la gérer depuis votre profil.",
+  "common.buttons.more": "➡️ Plus",
+  "common.see_more_results": "Voir les 9 prochains résultats",
+  "bars.results.showing_more": "Affichage {from}-{to} sur {total}{preference}"
 }

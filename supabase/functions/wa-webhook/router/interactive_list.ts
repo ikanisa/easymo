@@ -628,6 +628,14 @@ async function handleHomeMenuSelection(
         return await handleBarsPreferenceSelection(ctx, id);
       }
       
+      // Check for bars "More" button
+      if (id === "bars_more" && state.key === "bars_results") {
+        const { handleBarsMore } = await import(
+          "../domains/bars/search.ts"
+        );
+        return await handleBarsMore(ctx, state.data || {});
+      }
+      
       // Check for bars results selection
       if (id.startsWith("bar_result_") && state.key === "bars_results") {
         const { handleBarsResultSelection } = await import(

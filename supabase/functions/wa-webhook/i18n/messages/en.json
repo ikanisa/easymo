@@ -804,5 +804,8 @@
   "business.claim.name_too_short": "⚠️ Please enter at least 3 characters to search.",
   "business.claim.search_error": "😔 Search isn't working right now. Please try again.",
   "business.claim.error": "😔 Something went wrong. Please try again.",
-  "business.claim.success": "🎉 Business claimed! You can now manage it from your profile."
+  "business.claim.success": "🎉 Business claimed! You can now manage it from your profile.",
+  "common.buttons.more": "➡️ More",
+  "common.see_more_results": "See next 9 results",
+  "bars.results.showing_more": "Showing {from}-{to} of {total}{preference}"
 }
