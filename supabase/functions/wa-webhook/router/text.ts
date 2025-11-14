@@ -117,6 +117,17 @@ export async function handleText(
     return true;
   }
   
+  // Handle business name search
+  if (state.key === "business_claim") {
+    const stateData = state.data as { stage?: string };
+    if (stateData.stage === "awaiting_name") {
+      const { handleBusinessNameSearch } = await import(
+        "../domains/business/claim.ts"
+      );
+      return await handleBusinessNameSearch(ctx, body);
+    }
+  }
+  
   // Handle business WhatsApp number input
   if (state.key === "business_add_whatsapp") {
     const stateData = state.data as { businessId?: string; businessName?: string };

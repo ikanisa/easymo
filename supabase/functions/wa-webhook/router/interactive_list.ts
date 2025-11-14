@@ -177,6 +177,16 @@ export async function handleList(
       id,
     );
   }
+  if (state.key === "business_claim") {
+    const { handleBusinessClaim } = await import(
+      "../domains/business/claim.ts"
+    );
+    return await handleBusinessClaim(
+      ctx,
+      (state.data ?? {}) as any,
+      id,
+    );
+  }
   if (state.key === "shop_results") {
     return await handleShopFallbackSelection(
       ctx,

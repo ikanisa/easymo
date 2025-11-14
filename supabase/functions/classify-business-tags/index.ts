@@ -124,13 +124,26 @@ async function classifyBatch(batchSize: number) {
   const startTime = Date.now();
 
   // Get unclassified businesses in "Shops & Services" category
-  const { data: businesses, error } = await supabase
+  // First, get IDs of already classified businesses
+  const { data: classified, error: classifiedError } = await supabase
+    .from("business_tag_assignments")
+    .select("business_id");
+
+  const classifiedIds = classified?.map((c) => c.business_id) || [];
+
+  // Then get businesses not in that list
+  let query = supabase
     .from("business")
     .select("id, name, description, tag")
     .eq("category_name", "Shops & Services")
     .eq("is_active", true)
-    .is("tag", null) // Only untagged
     .limit(batchSize);
+
+  if (classifiedIds.length > 0) {
+    query = query.not("id", "in", `(${classifiedIds.join(",")})`);
+  }
+
+  const { data: businesses, error } = await query;
 
   if (error || !businesses || businesses.length === 0) {
     return {
