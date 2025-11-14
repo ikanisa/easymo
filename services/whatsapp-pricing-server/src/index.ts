@@ -2,6 +2,9 @@ import express from "express";
 import multer from "multer";
 import fetch from "node-fetch";
 import OpenAI from "openai";
+import { enqueueOutboundSend } from "./outboundQueue";
+import { resolveSecretValue } from "./secrets";
+import { maskMsisdn } from "./utils/pii";
 
 import {
   INSURER_PROFILES,
@@ -59,7 +62,7 @@ function buildUssdString(profile: InsurerProfile, amount: number, reference?: st
 function quoteToText(quote: DecoratedQuote): string {
   const lines: string[] = [];
   lines.push(`*${quote.providerName}* — Total: *${formatCurrency(quote.grossPremium)}*`);
-  quote.breakdown.forEach((item) => {
+  quote.breakdown.forEach((item: { label: string; amount?: number | null }) => {
     if (item.amount) lines.push(`• ${item.label}: ${formatCurrency(item.amount)}`);
   });
   const ex = quote.mandatoryExcessApplicable;
@@ -74,18 +77,71 @@ function quoteToText(quote: DecoratedQuote): string {
   return lines.join("\n");
 }
 
+let whatsappTokenPromise: Promise<string | undefined> | null = null;
+
+async function getWhatsAppToken(): Promise<string | undefined> {
+  if (!whatsappTokenPromise) {
+    whatsappTokenPromise = resolveSecretValue({
+      ref:
+        process.env.WHATSAPP_TOKEN_SECRET_ARN ??
+        process.env.WHATSAPP_TOKEN_SECRET_ID ??
+        process.env.FACEBOOK_TOKEN_SECRET_ARN ??
+        process.env.FACEBOOK_TOKEN_SECRET_ID ??
+        process.env.FACEBOOK_TOKEN_SECRET_NAME ??
+        process.env.WHATSAPP_TOKEN_SECRET_NAME ??
+        null,
+      fallbackEnv: "WHATSAPP_TOKEN",
+      label: "whatsapp_token",
+      optional: true,
+    });
+  }
+  return whatsappTokenPromise;
+}
+
 async function sendWhatsApp(to: string, bodyText: string, phoneIdOverride?: string) {
   const phoneId = phoneIdOverride || process.env.WHATSAPP_PHONE_ID;
-  const token = process.env.WHATSAPP_TOKEN;
-  if (!phoneId || !token) return;
+  const token = await getWhatsAppToken();
+
+  if (!phoneId || !token) {
+    console.warn("whatsapp.send.credentials_missing", {
+      hasPhoneId: Boolean(phoneId),
+      hasToken: Boolean(token),
+    });
+    return;
+  }
+
   const url = `https://graph.facebook.com/v20.0/${phoneId}/messages`;
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ messaging_product: "whatsapp", to, type: "text", text: { body: bodyText } }),
-  });
-  if (!res.ok) {
-    console.error("WhatsApp send error", await res.text());
+  const maskedRecipient = maskMsisdn(to);
+
+  try {
+    await enqueueOutboundSend(
+      { to, type: "text" },
+      async () => {
+        const res = await fetch(url, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            messaging_product: "whatsapp",
+            to,
+            type: "text",
+            text: { body: bodyText },
+          }),
+        });
+        if (!res.ok) {
+          const errorText = await res.text();
+          throw new Error(`status ${res.status}: ${errorText}`);
+        }
+      },
+    );
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : String(error);
+    console.error("whatsapp.send.error", {
+      to: maskedRecipient,
+      reason,
+    });
   }
 }
 
@@ -229,7 +285,7 @@ async function runQuotePipeline(files: UploadedFile[], overrides: Record<string,
   }
 
   const multi = multiPrice(baseInput);
-  const decoratedQuotes: DecoratedQuote[] = multi.quotes.map((quote) => {
+  const decoratedQuotes: DecoratedQuote[] = multi.quotes.map((quote: PricingOutput) => {
     const profile = INSURER_PROFILES[quote.providerName];
     if (!profile) return quote;
     const reference = `${profile.momoReferencePrefix}${Math.floor(Date.now() / 1000).toString().slice(-4)}`;
