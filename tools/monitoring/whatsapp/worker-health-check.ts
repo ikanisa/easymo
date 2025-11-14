@@ -45,7 +45,7 @@ const checks = payload?.checks ?? {};
 for (const [name, result] of Object.entries(checks)) {
   if (result?.status !== "ok") {
     const reason = result?.error ?? "no error provided";
-    const code = typeof result?.statusCode === "number" ? ` (status ${result.statusCode})` : "";
+    const code = typeof result?.statusCode === "number" ? ` (status ${result?.statusCode})` : "";
     failures.push(`${name}=${result?.status ?? "unknown"}${code}: ${reason}`);
   }
 }
