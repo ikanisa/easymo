@@ -73,8 +73,10 @@ class IdempotencyStore {
         hasBody: true,
       };
 
+      candidate.response = timeoutResponse;
+      candidate.timestamp = Date.now();
+      delete candidate.timeoutId;
       candidate.resolve(timeoutResponse);
-      this.cache.delete(key);
     }, this.pendingTtlMs);
     this.cleanup();
 
