@@ -1,4 +1,4 @@
-import { WA_BOT_NUMBER_E164, WA_PHONE_ID, WA_VERIFY_TOKEN } from "../config.ts";
+import { WA_BOT_NUMBER_E164, WA_PHONE_ID, WA_VERIFY_TOKEN, webhookConfig } from "../config.ts";
 import { logInbound, logStructuredEvent } from "../observe/log.ts";
 import { verifySignature } from "../wa/verify.ts";
 import {
@@ -11,6 +11,9 @@ import type {
   WhatsAppWebhookChange,
   WhatsAppWebhookPayload,
 } from "../types.ts";
+import { applyRateLimiting } from "../utils/middleware.ts";
+import { getCached, setCached } from "../utils/cache.ts";
+import { incrementMetric } from "../utils/metrics_collector.ts";
 
 const MAX_REQUEST_BYTES = Math.max(
   Number(Deno.env.get("WA_WEBHOOK_MAX_BYTES") ?? "262144") || 262144,
@@ -27,12 +30,14 @@ type PipelineHooks = {
   verifySignature: typeof verifySignature;
   logInbound: typeof logInbound;
   logStructuredEvent: typeof logStructuredEvent;
+  applyRateLimiting: typeof applyRateLimiting;
 };
 
 const defaultHooks: PipelineHooks = {
   verifySignature,
   logInbound,
   logStructuredEvent,
+  applyRateLimiting,
 };
 
 let hooks: PipelineHooks = { ...defaultHooks };
@@ -138,55 +143,124 @@ export type PreparedWebhook = {
   messages: WhatsAppMessage[];
   contactLocales: Map<string, string>;
   requestStart: number;
+  correlationId: string;
 };
 
 export type PreparedResponse = {
   type: "response";
   response: Response;
+  correlationId: string;
 };
 
 export async function processWebhookRequest(
   req: Request,
 ): Promise<PreparedWebhook | PreparedResponse> {
-  await hooks.logStructuredEvent("WEBHOOK_REQUEST_RECEIVED", {
+  const correlationId = req.headers.get("x-correlation-id") ?? crypto.randomUUID();
+  const startedAt = Date.now();
+  const withCid = (payload: Record<string, unknown> = {}) => ({
+    correlationId,
+    ...payload,
+  });
+
+  console.log(JSON.stringify({
+    event: "WEBHOOK_REQUEST_RECEIVED",
+    correlationId,
     method: req.method,
     url: req.url,
+    timestamp: new Date(startedAt).toISOString(),
+  }));
+  await hooks.logStructuredEvent("WEBHOOK_REQUEST_RECEIVED", withCid({
+    method: req.method,
+    url: req.url,
+  }));
+  incrementMetric("wa_webhook_request_received_total", 1, {
+    method: req.method,
   });
+
   if (req.method === "GET") {
     const url = new URL(req.url);
     if (
       url.searchParams.get("hub.mode") === "subscribe" &&
       url.searchParams.get("hub.verify_token") === WA_VERIFY_TOKEN
     ) {
-      await hooks.logStructuredEvent("SIG_VERIFY_OK", { mode: "GET" });
+      const cacheKey = `wa:webhook:challenge:${url.searchParams.toString()}`;
+      if (webhookConfig.cache.enabled) {
+        const cachedChallenge = getCached<string>(cacheKey);
+        if (cachedChallenge) {
+          console.log(JSON.stringify({
+            event: "WEBHOOK_CHALLENGE_CACHE_HIT",
+            correlationId,
+            cacheKey,
+          }));
+          await hooks.logStructuredEvent(
+            "WEBHOOK_CHALLENGE_CACHE_HIT",
+            withCid({ cache_key: cacheKey }),
+          );
+          incrementMetric("wa_webhook_cache_hits_total", 1, { scope: "challenge" });
+          return {
+            type: "response",
+            response: new Response(cachedChallenge, { status: 200 }),
+            correlationId,
+          };
+        }
+      }
+
+      await hooks.logStructuredEvent("SIG_VERIFY_OK", withCid({ mode: "GET" }));
+      if (webhookConfig.cache.enabled) {
+        const challenge = url.searchParams.get("hub.challenge") ?? "";
+        setCached(cacheKey, challenge, webhookConfig.cache.defaultTTL);
+        incrementMetric("wa_webhook_cache_misses_total", 1, { scope: "challenge" });
+      }
       return {
         type: "response",
         response: new Response(url.searchParams.get("hub.challenge") ?? "", {
           status: 200,
         }),
+        correlationId,
       };
     }
-    await hooks.logStructuredEvent("SIG_VERIFY_FAIL", { mode: "GET" });
-    return { type: "response", response: new Response("forbidden", { status: 403 }) };
+    await hooks.logStructuredEvent("SIG_VERIFY_FAIL", withCid({ mode: "GET" }));
+    incrementMetric("wa_webhook_request_failed_total", 1, {
+      method: "GET",
+      reason: "verification",
+      status: 403,
+    });
+    return {
+      type: "response",
+      response: new Response("forbidden", { status: 403 }),
+      correlationId,
+    };
   }
 
   if (req.method !== "POST") {
+    incrementMetric("wa_webhook_request_failed_total", 1, {
+      method: req.method,
+      reason: "method_not_allowed",
+      status: 405,
+    });
     return {
       type: "response",
       response: new Response("Method Not Allowed", { status: 405 }),
+      correlationId,
     };
   }
 
   const requestStart = Date.now();
   const declaredLength = Number(req.headers.get("content-length") ?? "");
   if (Number.isFinite(declaredLength) && declaredLength > MAX_REQUEST_BYTES) {
-    await hooks.logStructuredEvent("WEBHOOK_BODY_TOO_LARGE", {
+    await hooks.logStructuredEvent("WEBHOOK_BODY_TOO_LARGE", withCid({
       declared_bytes: declaredLength,
       limit: MAX_REQUEST_BYTES,
+    }));
+    incrementMetric("wa_webhook_request_failed_total", 1, {
+      method: "POST",
+      reason: "payload_too_large",
+      status: 413,
     });
     return {
       type: "response",
       response: new Response("payload_too_large", { status: 413 }),
+      correlationId,
     };
   }
 
@@ -195,40 +269,58 @@ export async function processWebhookRequest(
     rawBody = await readRequestBodyWithLimit(req, MAX_REQUEST_BYTES);
   } catch (err) {
     if (err instanceof PayloadTooLargeError) {
-      await hooks.logStructuredEvent("WEBHOOK_BODY_TOO_LARGE", {
+      await hooks.logStructuredEvent("WEBHOOK_BODY_TOO_LARGE", withCid({
         read_bytes: err.bytes,
         limit: MAX_REQUEST_BYTES,
+      }));
+      incrementMetric("wa_webhook_request_failed_total", 1, {
+        method: "POST",
+        reason: "payload_too_large",
+        status: 413,
       });
       return {
         type: "response",
         response: new Response("payload_too_large", { status: 413 }),
+        correlationId,
       };
     }
     throw err;
   }
-  await hooks.logStructuredEvent("WEBHOOK_BODY_READ", { bytes: rawBody.length });
+  await hooks.logStructuredEvent("WEBHOOK_BODY_READ", withCid({ bytes: rawBody.length }));
 
   if (!(await hooks.verifySignature(req, rawBody))) {
     console.warn("wa_webhook.sig_fail");
-    await hooks.logStructuredEvent("SIG_VERIFY_FAIL", { mode: "POST" });
+    await hooks.logStructuredEvent("SIG_VERIFY_FAIL", withCid({ mode: "POST" }));
+    incrementMetric("wa_webhook_request_failed_total", 1, {
+      method: "POST",
+      reason: "signature",
+      status: 401,
+    });
     return {
       type: "response",
       response: new Response("sig", { status: 401 }),
+      correlationId,
     };
   }
-  await hooks.logStructuredEvent("SIG_VERIFY_OK", { mode: "POST" });
+  await hooks.logStructuredEvent("SIG_VERIFY_OK", withCid({ mode: "POST" }));
 
   let payload: WhatsAppWebhookPayload;
   try {
     payload = JSON.parse(rawBody);
   } catch (err) {
     console.error("wa_webhook.bad_json", err);
-    await hooks.logStructuredEvent("WEBHOOK_BODY_PARSE_FAIL", {
+    await hooks.logStructuredEvent("WEBHOOK_BODY_PARSE_FAIL", withCid({
       error: String(err),
+    }));
+    incrementMetric("wa_webhook_request_failed_total", 1, {
+      method: "POST",
+      reason: "bad_json",
+      status: 400,
     });
     return {
       type: "response",
       response: new Response("bad_json", { status: 400 }),
+      correlationId,
     };
   }
 
@@ -240,10 +332,10 @@ export async function processWebhookRequest(
   const filteredChanges = allChanges.filter(isTargetPhoneNumber);
   const ignoredChanges = allChanges.length - filteredChanges.length;
   if (ignoredChanges > 0) {
-    await hooks.logStructuredEvent("WEBHOOK_PHONE_MISMATCH_IGNORED", {
+    await hooks.logStructuredEvent("WEBHOOK_PHONE_MISMATCH_IGNORED", withCid({
       ignored: ignoredChanges,
       total: allChanges.length,
-    });
+    }));
   }
   const normalizedMessages = filteredChanges.flatMap((change) =>
     coerceMessages(change?.value?.messages)
@@ -251,18 +343,63 @@ export async function processWebhookRequest(
   const messages = dedupeMessages(normalizedMessages);
   const duplicateCount = normalizedMessages.length - messages.length;
   if (duplicateCount > 0) {
-    await hooks.logStructuredEvent("WEBHOOK_DUPLICATE_MESSAGES_IGNORED", {
+    await hooks.logStructuredEvent("WEBHOOK_DUPLICATE_MESSAGES_IGNORED", withCid({
       duplicates: duplicateCount,
       total: normalizedMessages.length,
-    });
+    }));
   }
   const contactLocales = buildContactLocaleIndex(filteredChanges);
 
   if (!messages.length) {
-    await hooks.logStructuredEvent("WEBHOOK_NO_MESSAGE", {
+    await hooks.logStructuredEvent("WEBHOOK_NO_MESSAGE", withCid({
       payload_type: payload?.object ?? null,
-    });
+    }));
   }
+
+  if (messages.length && webhookConfig.rateLimit.enabled) {
+    const uniqueSenders = new Set(messages.map((msg) => msg.from));
+    for (const sender of uniqueSenders) {
+      const rateLimitResult = hooks.applyRateLimiting(sender, correlationId);
+      if (!rateLimitResult.allowed) {
+        await hooks.logStructuredEvent("WEBHOOK_RATE_LIMIT_BLOCK", withCid({
+          sender,
+        }));
+        console.warn(JSON.stringify({
+          event: "WEBHOOK_RATE_LIMIT_BLOCK",
+          correlationId,
+          sender,
+        }));
+        incrementMetric("wa_webhook_request_failed_total", 1, {
+          method: "POST",
+          reason: "rate_limit",
+          status: rateLimitResult.response?.status ?? 429,
+        });
+        return {
+          type: "response",
+          response: rateLimitResult.response ??
+            new Response("rate_limited", { status: 429 }),
+          correlationId,
+        };
+      }
+    }
+  }
+
+  if (webhookConfig.cache.enabled) {
+    for (const msg of messages) {
+      const cacheKey = `wa:webhook:cid:msg:${msg.id}`;
+      setCached(cacheKey, correlationId, webhookConfig.cache.defaultTTL);
+    }
+  }
+
+  incrementMetric("wa_webhook_request_success_total", 1, {
+    method: "POST",
+    messageCount: messages.length,
+  });
+  console.log(JSON.stringify({
+    event: "WEBHOOK_REQUEST_READY",
+    correlationId,
+    messageCount: messages.length,
+  }));
 
   return {
     type: "messages",
@@ -270,5 +407,6 @@ export async function processWebhookRequest(
     messages,
     contactLocales,
     requestStart,
+    correlationId,
   };
 }

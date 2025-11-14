@@ -112,6 +112,7 @@ Deno.test("processes claimed messages and skips duplicates", async () => {
       ],
       contactLocales: new Map<string, string>(),
       requestStart: Date.now() - 10,
+      correlationId: "test-cid",
     };
 
     const response = await handlePreparedWebhook(
@@ -150,6 +151,7 @@ Deno.test("releases idempotency lock and records failure on handler error", asyn
       ],
       contactLocales: new Map<string, string>(),
       requestStart: Date.now() - 5,
+      correlationId: "test-cid",
     };
 
     await assertRejects(() =>
