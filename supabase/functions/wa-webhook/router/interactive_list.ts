@@ -567,10 +567,10 @@ async function handleHomeMenuSelection(
       return true;
     }
     case IDS.BARS_RESTAURANTS: {
-      const { startRestaurantManager } = await import(
-        "../domains/vendor/restaurant.ts"
+      const { startBarsSearch } = await import(
+        "../domains/bars/search.ts"
       );
-      return await startRestaurantManager(ctx);
+      return await startBarsSearch(ctx);
     }
     case IDS.HOME_MORE: {
       const page =
@@ -606,6 +606,13 @@ async function handleHomeMenuSelection(
       await openAdminHub(ctx);
       return true;
     default:
+      // Check for bars results selection
+      if (id.startsWith("bar_result_") && state.key === "bars_results") {
+        const { handleBarsResultSelection } = await import(
+          "../domains/bars/search.ts"
+        );
+        return await handleBarsResultSelection(ctx, state.data || {}, id);
+      }
       return false;
   }
 }

@@ -672,5 +672,15 @@
   "business.delete.description": "Remove this business from your profile.",
   "business.delete.confirm": "⚠️ Are you sure you want to delete {{name}}? This action cannot be undone.",
   "business.delete.success": "✅ Business deleted successfully.",
-  "business.delete.cancelled": "Deletion cancelled."
+  "business.delete.cancelled": "Deletion cancelled.",
+  "bars.search.intro": "🍺 Find nearby bars & restaurants!\n\nTap 'Search Now' and share your location to discover places around you.",
+  "bars.search.share_location": "📍 Please share your location to find nearby bars & restaurants.",
+  "bars.search.error": "❌ Sorry, we couldn't search for bars right now. Please try again.",
+  "bars.search.no_results": "😔 No bars or restaurants found within 10km of your location.\n\nTry again from a different location?",
+  "bars.buttons.search_now": "🔍 Search Now",
+  "bars.buttons.try_again": "🔄 Try Again",
+  "bars.buttons.search_again": "🔍 Search Again",
+  "bars.results.title": "🍺 Nearby Bars & Restaurants",
+  "bars.results.found": "Found {{count}} places near you! Tap to view details.",
+  "bars.results.section": "Results"
 }

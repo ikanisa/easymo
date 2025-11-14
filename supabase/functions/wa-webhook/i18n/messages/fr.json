@@ -650,5 +650,15 @@
   "business.delete.description": "Retirer cette entreprise de votre profil.",
   "business.delete.confirm": "⚠️ Êtes-vous sûr de vouloir supprimer {{name}}? Cette action ne peut pas être annulée.",
   "business.delete.success": "✅ Entreprise supprimée avec succès.",
-  "business.delete.cancelled": "Suppression annulée."
+  "business.delete.cancelled": "Suppression annulée.",
+  "bars.search.intro": "🍺 Trouvez des bars et restaurants à proximité!\n\nAppuyez sur 'Rechercher' et partagez votre position pour découvrir les endroits autour de vous.",
+  "bars.search.share_location": "📍 Veuillez partager votre position pour trouver des bars et restaurants à proximité.",
+  "bars.search.error": "❌ Désolé, nous n'avons pas pu rechercher de bars maintenant. Veuillez réessayer.",
+  "bars.search.no_results": "😔 Aucun bar ou restaurant trouvé dans un rayon de 10km de votre position.\n\nRéessayer depuis un autre endroit?",
+  "bars.buttons.search_now": "🔍 Rechercher",
+  "bars.buttons.try_again": "🔄 Réessayer",
+  "bars.buttons.search_again": "🔍 Rechercher à nouveau",
+  "bars.results.title": "🍺 Bars et Restaurants à Proximité",
+  "bars.results.found": "{{count}} endroits trouvés près de vous! Appuyez pour voir les détails.",
+  "bars.results.section": "Résultats"
 }

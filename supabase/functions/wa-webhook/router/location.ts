@@ -80,6 +80,11 @@ export async function handleLocation(
     return await handleQuincaillerieLocation(ctx, { lat, lng });
   }
   
+  if (state.key === "bars_wait_location") {
+    const { handleBarsLocation } = await import("../domains/bars/search.ts");
+    return await handleBarsLocation(ctx, { lat, lng });
+  }
+  
   if (state.key === "notary_awaiting_location") {
     return await handleNotaryLocation(ctx, { lat, lng });
   }

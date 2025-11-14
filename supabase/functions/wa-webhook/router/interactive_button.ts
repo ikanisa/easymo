@@ -228,6 +228,15 @@ export async function handleButton(
         return await handleQuickSaveLocation(ctx, LOCATION_KIND_BY_ID[id]);
       }
       if (await handleMarketplaceButton(ctx, state, id)) return true;
+      
+      // Check for bars search button
+      if (id === "bars_search_now") {
+        const { handleBarsSearchButton } = await import(
+          "../domains/bars/search.ts"
+        );
+        return await handleBarsSearchButton(ctx, id);
+      }
+      
       return false;
   }
 }

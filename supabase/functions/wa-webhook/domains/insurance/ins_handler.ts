@@ -191,7 +191,7 @@ async function ensureInsuranceQuote(
   ctx: RouterContext,
   params: {
     leadId: string;
-    userId: string;
+    userId: string | null;
     filePath: string;
     extracted: InsuranceExtraction;
   },
