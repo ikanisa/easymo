@@ -1,23 +1,17 @@
-export type MessageRole = 'user' | 'assistant' | 'system'
+import type { Database } from './database'
 
-export interface Message {
-  id: string
-  conversation_id: string
-  role: MessageRole
-  content: string
-  created_at: string
-  metadata?: Record<string, any>
+type MessageRow = Database['public']['Tables']['messages']['Row']
+type ConversationRow = Database['public']['Tables']['conversations']['Row']
+
+export type MessageSender = MessageRow['sender']
+
+export type Message = Omit<MessageRow, 'metadata' | 'timestamp'> & {
+  metadata: Record<string, any>
+  timestamp: string
 }
 
-export interface Conversation {
-  id: string
-  user_id: string
-  restaurant_id: string
-  language: string
-  table_number?: string
-  status: 'active' | 'completed' | 'archived'
-  created_at: string
-  updated_at: string
+export type Conversation = Omit<ConversationRow, 'metadata'> & {
+  metadata: Record<string, any>
 }
 
 export interface ChatState {
