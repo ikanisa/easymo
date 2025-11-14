@@ -14,12 +14,11 @@ import {
   useCreateDriver,
   useUpdateDriver,
   useDeleteDriver,
+  type Driver,
+  type Vehicle,
 } from "@/src/v2/lib/supabase/hooks";
-import type { DriverRow, VehicleRow } from "@/src/v2/lib/supabase/database.types";
 
-type DriverWithVehicle = DriverRow & { vehicles: VehicleRow | null };
-
-interface DriverRowWithVehicle extends DriverWithVehicle {
+interface DriverRowWithVehicle extends Driver {
   vehicle_name: string;
 }
 
@@ -32,7 +31,7 @@ interface DriverFormValues {
 
 type DialogState =
   | { mode: "create"; driver: null }
-  | { mode: "edit"; driver: DriverWithVehicle }
+  | { mode: "edit"; driver: DriverRowWithVehicle }
   | null;
 
 export default function DriversPage() {
@@ -42,7 +41,7 @@ export default function DriversPage() {
   const createDriver = useCreateDriver();
   const updateDriver = useUpdateDriver();
   const deleteDriver = useDeleteDriver();
-  const undoBuffer = useRef<DriverRow | null>(null);
+  const undoBuffer = useRef<Driver | null>(null);
   const [dialogState, setDialogState] = useState<DialogState>(null);
 
   const rows: DriverRowWithVehicle[] = useMemo(() => {
