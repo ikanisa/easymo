@@ -1,34 +1,49 @@
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json }
+  | Json[]
+
 export interface Database {
   public: {
     Tables: {
       conversations: {
         Row: {
           id: string
-          user_id: string
-          restaurant_id: string
-          language: string
+          user_id: string | null
+          restaurant_id: string | null
           table_number: string | null
-          status: 'active' | 'completed' | 'archived'
+          language: string
+          metadata: Json
+          started_at: string
+          last_activity: string | null
           created_at: string
           updated_at: string
         }
         Insert: {
           id?: string
-          user_id: string
-          restaurant_id: string
-          language?: string
+          user_id?: string | null
+          restaurant_id?: string | null
           table_number?: string | null
-          status?: 'active' | 'completed' | 'archived'
+          language?: string
+          metadata?: Json
+          started_at?: string
+          last_activity?: string | null
           created_at?: string
           updated_at?: string
         }
         Update: {
           id?: string
-          user_id?: string
-          restaurant_id?: string
-          language?: string
+          user_id?: string | null
+          restaurant_id?: string | null
           table_number?: string | null
-          status?: 'active' | 'completed' | 'archived'
+          language?: string
+          metadata?: Json
+          started_at?: string
+          last_activity?: string | null
+          created_at?: string
           updated_at?: string
         }
       }
@@ -36,25 +51,29 @@ export interface Database {
         Row: {
           id: string
           conversation_id: string
-          role: 'user' | 'assistant' | 'system'
+          sender: 'user' | 'assistant' | 'system'
           content: string
-          metadata: Record<string, any> | null
+          metadata: Json
+          timestamp: string | null
           created_at: string
         }
         Insert: {
           id?: string
           conversation_id: string
-          role: 'user' | 'assistant' | 'system'
+          sender: 'user' | 'assistant' | 'system'
           content: string
-          metadata?: Record<string, any> | null
+          metadata?: Json
+          timestamp?: string | null
           created_at?: string
         }
         Update: {
           id?: string
           conversation_id?: string
-          role?: 'user' | 'assistant' | 'system'
+          sender?: 'user' | 'assistant' | 'system'
           content?: string
-          metadata?: Record<string, any> | null
+          metadata?: Json
+          timestamp?: string | null
+          created_at?: string
         }
       }
       cart_items: {
