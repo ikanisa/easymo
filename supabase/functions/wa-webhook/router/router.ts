@@ -23,6 +23,11 @@ import {
   isMediaMessage,
   isTextMessage,
 } from "../utils/messages.ts";
+import { applyRateLimiting } from "../utils/middleware.ts";
+import { getCached, setCached } from "../utils/cache.ts";
+import { webhookConfig } from "../config.ts";
+import { incrementMetric } from "../utils/metrics_collector.ts";
+import { ErrorCode, WebhookError } from "../utils/error_handler.ts";
 
 type RouterHooks = {
   runGuards: (
@@ -70,6 +75,20 @@ const defaultHooks: RouterHooks = {
 
 let hooks: RouterHooks = { ...defaultHooks };
 
+type RouterEnhancementHooks = {
+  applyRateLimiting: typeof applyRateLimiting;
+  getCached: typeof getCached;
+  setCached: typeof setCached;
+};
+
+const enhancementDefaults: RouterEnhancementHooks = {
+  applyRateLimiting,
+  getCached,
+  setCached,
+};
+
+let enhancementHooks: RouterEnhancementHooks = { ...enhancementDefaults };
+
 export function __setRouterTestOverrides(
   overrides: Partial<RouterHooks>,
 ): void {
@@ -80,18 +99,47 @@ export function __resetRouterTestOverrides(): void {
   hooks = { ...defaultHooks };
 }
 
+export function __setRouterEnhancementOverrides(
+  overrides: Partial<RouterEnhancementHooks>,
+): void {
+  enhancementHooks = { ...enhancementHooks, ...overrides };
+}
+
+export function __resetRouterEnhancementOverrides(): void {
+  enhancementHooks = { ...enhancementDefaults };
+}
+
 export async function handleMessage(
   ctx: RouterContext,
   msg: WhatsAppMessage,
   state: ChatState,
 ): Promise<void> {
   const LOG_LEVEL = (Deno.env.get("LOG_LEVEL") ?? "").toLowerCase();
+  const correlationCacheKey = `wa:webhook:cid:msg:${msg.id}`;
+  const cachedCorrelation = webhookConfig.cache.enabled
+    ? enhancementHooks.getCached<string>(correlationCacheKey)
+    : null;
+  const correlationId = cachedCorrelation ?? crypto.randomUUID();
+  if (webhookConfig.cache.enabled && !cachedCorrelation) {
+    enhancementHooks.setCached(
+      correlationCacheKey,
+      correlationId,
+      webhookConfig.cache.defaultTTL,
+    );
+  }
+  const withCid = (payload: Record<string, unknown> = {}) => ({
+    correlationId,
+    messageId: msg.id,
+    ...payload,
+  });
+
   const dbg = (route: string) => {
     if (LOG_LEVEL === "debug") {
       console.debug("router.route_decision", {
         route,
         id: msg.id,
         type: msg.type,
+        correlationId,
       });
     }
   };
@@ -100,17 +148,101 @@ export async function handleMessage(
       id: msg.id,
       from: (msg as any)?.from,
       type: msg.type,
+      correlationId,
     });
   }
+
+  incrementMetric("wa_webhook_message_received_total", 1, {
+    type: msg.type ?? "unknown",
+  });
+  console.log(JSON.stringify({
+    event: "ROUTER_MESSAGE_RECEIVED",
+    correlationId,
+    messageId: msg.id,
+    from: (msg as any)?.from ?? null,
+    type: msg.type,
+  }));
+
+  if (webhookConfig.rateLimit.enabled) {
+    const rateLimitResult = enhancementHooks.applyRateLimiting(
+      msg.from,
+      correlationId,
+    );
+    if (!rateLimitResult.allowed) {
+      incrementMetric("wa_webhook_message_blocked_total", 1, {
+        reason: "rate_limit",
+        type: msg.type ?? "unknown",
+      });
+      console.warn(JSON.stringify({
+        event: "ROUTER_RATE_LIMIT_BLOCK",
+        correlationId,
+        messageId: msg.id,
+        from: msg.from,
+      }));
+      const err = new WebhookError(
+        "Rate limit exceeded",
+        ErrorCode.RATE_LIMIT_ERROR,
+        rateLimitResult.response?.status ?? 429,
+        { phoneNumber: msg.from },
+      );
+      err.correlationId = correlationId;
+      throw err;
+    }
+  }
+
+  type RouteDecision = { route: string; timestamp: number };
+  const routeCacheKey = `wa:webhook:route:${msg.id}`;
+  const cachedDecision = webhookConfig.cache.enabled
+    ? enhancementHooks.getCached<RouteDecision>(routeCacheKey)
+    : null;
+  if (cachedDecision) {
+    incrementMetric("wa_webhook_message_cache_hit_total", 1, {
+      route: cachedDecision.route,
+    });
+    console.log(JSON.stringify({
+      event: "ROUTER_ROUTE_CACHE_HIT",
+      correlationId,
+      messageId: msg.id,
+      route: cachedDecision.route,
+    }));
+    return;
+  }
+
+  const rememberRoute = (route: string) => {
+    if (webhookConfig.cache.enabled) {
+      enhancementHooks.setCached(
+        routeCacheKey,
+        { route, timestamp: Date.now() },
+        webhookConfig.cache.defaultTTL,
+      );
+    }
+    incrementMetric("wa_webhook_message_success_total", 1, {
+      route,
+      type: msg.type ?? "unknown",
+    });
+    console.log(JSON.stringify({
+      event: "ROUTER_ROUTE_SELECTED",
+      correlationId,
+      messageId: msg.id,
+      route,
+    }));
+  };
+
   try {
-    if (await hooks.runGuards(ctx, msg, state)) return;
+    if (await hooks.runGuards(ctx, msg, state)) {
+      rememberRoute("guarded");
+      dbg("guarded");
+      return;
+    }
     if (isMediaMessage(msg) && await hooks.handleMedia(ctx, msg, state)) {
+      rememberRoute("media");
       dbg("media");
       return;
     }
     if (
       isInteractiveListMessage(msg) && await hooks.handleList(ctx, msg, state)
     ) {
+      rememberRoute("interactive_list");
       dbg("interactive_list");
       return;
     }
@@ -118,20 +250,27 @@ export async function handleMessage(
       isInteractiveButtonMessage(msg) &&
       await hooks.handleButton(ctx, msg, state)
     ) {
+      rememberRoute("interactive_button");
       dbg("interactive_button");
       return;
     }
     if (isLocationMessage(msg) && await hooks.handleLocation(ctx, msg, state)) {
+      rememberRoute("location");
       dbg("location");
       return;
     }
     if (isTextMessage(msg) && await hooks.handleText(ctx, msg, state)) {
+      rememberRoute("text");
       dbg("text");
       return;
     }
     await hooks.logUnhandled(msg.type);
+    rememberRoute("unhandled");
   } catch (err) {
-    logError("wa_router.handleMessage", err, { msg });
+    incrementMetric("wa_webhook_message_failed_total", 1, {
+      type: msg.type ?? "unknown",
+    });
+    logError("wa_router.handleMessage", err, withCid({ msg }));
     throw err;
   }
 }
