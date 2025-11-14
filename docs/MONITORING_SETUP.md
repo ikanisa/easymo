@@ -474,6 +474,18 @@ groups:
           severity: critical
         annotations:
           summary: "Disk space running out on {{ $labels.instance }}"
+
+      # WhatsApp webhook worker dependency failure
+      - alert: WhatsAppWebhookWorkerDependenciesDegraded
+        expr: probe_success{job="whatsapp-webhook-worker-health"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "WhatsApp webhook worker dependency probe failing"
+          description: |
+            Synthetic health check reported degraded status.
+            Latest failure reason: {{ $labels.failure_reason }}
 ```
 
 ### AlertManager Setup
@@ -513,6 +525,27 @@ receivers:
         title: '{{ .GroupLabels.alertname }}'
         text: '{{ range .Alerts }}{{ .Annotations.description }}{{ end }}'
 ```
+
+---
+
+### Synthetic WhatsApp Worker Probe
+
+- **Script:** `tools/monitoring/whatsapp/worker-health-check.ts`
+- **Schedule:** Every minute via Cron, GitHub Actions, or your synthetic monitor platform.
+- **Export to Prometheus:** Push `probe_success` (1/0) and `failure_reason` label via Pushgateway or
+  your preferred metrics bridge so the `WhatsAppWebhookWorkerDependenciesDegraded` rule can evaluate accurately.
+
+Example Cron entry using Pushgateway:
+
+```bash
+* * * * * WHATSAPP_WORKER_HEALTH_URL=https://worker.easymo.com/health \
+    deno run --allow-env --allow-net tools/monitoring/whatsapp/worker-health-check.ts \
+    | curl --silent --show-error --data-binary @- \
+        http://pushgateway.easymo.com:9091/metrics/job/whatsapp-webhook-worker-health
+```
+
+The script surfaces Redis, Supabase, and OpenAI probe results (including upstream HTTP status codes)
+so operators can triage the failing dependency immediately.
 
 ---
 

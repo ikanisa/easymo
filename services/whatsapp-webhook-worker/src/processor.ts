@@ -24,6 +24,8 @@ export interface WebhookProcessingResult {
  * Reuses the existing wa-webhook handler logic
  */
 export class WebhookProcessor {
+  private supabase: SupabaseClient;
+  private idempotencyStore: any;
   private supabase!: SupabaseClient;
   private idempotencyStore: IdempotencyStore;
   private serviceRolePromise: Promise<string | undefined>;
