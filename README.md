@@ -303,6 +303,9 @@ WhatsApp mobility platform.  Future enhancements could include:
 - Extending the simulator to enforce credit usage and subscription
   expiration rules.
 - Improving error handling and logging with structured outputs.
+- Tracking the deferred inventory console rebuild; see
+  [`docs/inventory-app-assessment.md`](docs/inventory-app-assessment.md) for the
+  guardrails and roadmap impact.【F:docs/inventory-app-assessment.md†L1-L44】
 
 ## Setup
 Copy env sample:

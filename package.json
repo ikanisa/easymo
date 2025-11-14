@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "pnpm --filter @easymo/admin-app run dev",
     "dev:full": "pnpm --parallel --filter './admin-app' --filter './services/*' run dev",
-    "prebuild": "node ./scripts/assert-no-service-role-in-client.mjs",
+    "prebuild": "node ./scripts/assert-no-service-role-in-client.mjs && node ./scripts/assert-inventory-app-deferred.mjs",
     "build": "pnpm --filter @va/shared build && pnpm --filter @easymo/commons build && pnpm --filter @easymo/video-agent-schema build && pnpm --filter @easymo/admin-app run build",
     "netlify:build": "pnpm --filter @va/shared build && pnpm --filter @easymo/commons build && pnpm --filter @easymo/video-agent-schema build && cd admin-app && pnpm build",
     "start": "pnpm --filter @easymo/admin-app run start",
