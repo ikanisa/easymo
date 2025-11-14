@@ -332,7 +332,15 @@ kubectl logs -n easymo-prod deployment/agent-core --tail=50
 curl https://api.easymo.com/health/agent-core
 curl https://api.easymo.com/health/ranking-service
 curl https://api.easymo.com/health/wallet-service
+curl https://api.easymo.com/health/whatsapp-webhook-worker | jq
 # All should return: 200 OK
+# WhatsApp webhook worker health must report:
+#   "status": "ok"
+#   "checks.openai.status": "ok"
+#   "checks.redis.status": "ok"
+#   "checks.supabase.status": "ok"
+# If any probe is "fail" or the endpoint returns HTTP 503, pause the rollout
+# and investigate Redis, Supabase, or OpenAI connectivity before proceeding.
 ```
 
 **Rollback Point 3**: If deployments fail, rollback via kubectl.

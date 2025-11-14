@@ -24,7 +24,7 @@ export interface WebhookProcessingResult {
  */
 export class WebhookProcessor {
   private supabase: SupabaseClient;
-  private idempotencyStore: IdempotencyStore;
+  private idempotencyStore: any;
 
   constructor() {
     this.supabase = createClient(

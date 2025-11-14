@@ -19,7 +19,12 @@ const envSchema = z.object({
   // Supabase
   SUPABASE_URL: z.string(),
   SUPABASE_SERVICE_ROLE_KEY: z.string(),
-  
+
+  // OpenAI
+  OPENAI_API_KEY: z.string(),
+  OPENAI_MODEL: z.string().default("gpt-4o-mini"),
+  OPENAI_BASE_URL: z.string().optional(),
+
   // Worker Config
   MAX_RETRIES: z.string().default("3").transform(Number),
   RETRY_DELAY_MS: z.string().default("1000").transform(Number),
