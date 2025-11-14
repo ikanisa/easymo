@@ -75,9 +75,9 @@ export async function handleNotaryLocation(
 }
 
 /**
- * Process notary service request with TWO-PHASE APPROACH
- * Phase 1: Immediately show top 9 nearby notaries from database
- * Phase 2: AI agent processes in background for curated shortlist
+ * Process notary service request - DIRECT DATABASE APPROACH
+ * Phase 1: Simple workflow - User shares location → Instant database results
+ * Phase 2: AI agents disabled for nearby searches (to be enabled later)
  */
 export async function processNotaryRequest(
   ctx: RouterContext,
@@ -87,18 +87,14 @@ export async function processNotaryRequest(
   if (!ctx.profileId) return false;
   
   const serviceType = parseServiceType(rawInput);
-  if (!serviceType.length) {
-    await sendText(ctx.from, t(ctx.locale, "notary.prompt.service"));
-    return true;
-  }
   
-  // TWO-PHASE APPROACH:
-  // Phase 1: Immediately show top 9 nearby notaries from database
-  // Phase 2: AI agent processes in background for curated shortlist
+  // Show all nearby notaries (no service type required for Phase 1)
+  // If service type specified, use it for WhatsApp message prefill only
   
-  // Phase 1: Instant database results
+  // DIRECT DATABASE RESULTS: Instant top 9 nearby notaries
   const instantResults = await sendNotaryDatabaseResults(ctx, location, serviceType);
   
+  /* AI AGENT DISABLED FOR PHASE 1 - Will be enabled in Phase 2
   // Phase 2: Trigger AI agent in background (if enabled)
   if (isFeatureEnabled("agent.notary") && instantResults) {
     // Start AI agent processing in background - non-blocking
@@ -106,6 +102,7 @@ export async function processNotaryRequest(
       console.error("notary.background_agent_error", error);
     });
   }
+  */
   
   return instantResults;
 }

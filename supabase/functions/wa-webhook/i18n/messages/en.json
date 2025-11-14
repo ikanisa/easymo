@@ -682,5 +682,21 @@
   "bars.buttons.search_again": "🔍 Search Again",
   "bars.results.title": "🍺 Nearby Bars & Restaurants",
   "bars.results.found": "Found {{count}} places near you! Tap to view details.",
-  "bars.results.section": "Results"
+  "bars.results.section": "Results",
+  "shops.menu.intro": "🏪 Discover nearby shops & services!\n\nBrowse by category to find what you need.",
+  "shops.buttons.browse": "🔍 Browse Categories",
+  "shops.tags.title": "Shop Categories",
+  "shops.tags.body": "Choose a category to find nearby businesses:",
+  "shops.tags.section": "Categories",
+  "shops.tags.error": "❌ Failed to load categories. Please try again.",
+  "shops.tags.empty": "No categories available at the moment.",
+  "shops.tags.no_businesses": "No businesses available in any category yet.",
+  "shops.location.prompt": "📍 Share your location to find {{category}} near you",
+  "shops.search.error": "❌ Sorry, search failed. Please try again.",
+  "shops.search.no_results": "😔 No {{category}} found within 10km.\n\nTry a different category or location?",
+  "shops.results.title": "{{category}} Near You",
+  "shops.results.found": "Found {{count}} {{category}} businesses!",
+  "shops.results.section": "Results",
+  "shops.buttons.search_again": "🔍 Search Again",
+  "shops.buttons.try_again": "🔄 Try Again"
 }

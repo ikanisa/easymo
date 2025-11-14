@@ -452,8 +452,12 @@ async function handleHomeMenuSelection(
       return await startNotaryServices(ctx);
     case IDS.PROPERTY_RENTALS:
       return await startPropertyRentals(ctx);
-    case IDS.MARKETPLACE:
-      return await startMarketplace(ctx, state);
+    case IDS.MARKETPLACE: {
+      const { startShopsAndServices } = await import(
+        "../domains/shops/services.ts"
+      );
+      return await startShopsAndServices(ctx);
+    }
     case IDS.PROFILE_MANAGE_BUSINESSES: {
       const { showManageBusinesses } = await import(
         "../domains/business/management.ts"
@@ -613,6 +617,23 @@ async function handleHomeMenuSelection(
         );
         return await handleBarsResultSelection(ctx, state.data || {}, id);
       }
+      
+      // Check for shop tag selection
+      if (id.startsWith("shop_tag_") && state.key === "shops_tag_selection") {
+        const { handleShopsTagSelection } = await import(
+          "../domains/shops/services.ts"
+        );
+        return await handleShopsTagSelection(ctx, state.data || {}, id);
+      }
+      
+      // Check for shop result selection
+      if (id.startsWith("shop_result_") && state.key === "shops_results") {
+        const { handleShopsResultSelection } = await import(
+          "../domains/shops/services.ts"
+        );
+        return await handleShopsResultSelection(ctx, state.data || {}, id);
+      }
+      
       return false;
   }
 }

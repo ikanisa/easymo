@@ -133,9 +133,11 @@ export async function handleBarsLocation(
 
   // Build list message with results
   const rows = bars.slice(0, 10).map((bar: any, idx: number) => {
-    const distance = bar.distance < 1
-      ? `${Math.round(bar.distance * 1000)}m`
-      : `${bar.distance.toFixed(1)}km`;
+    const distance = typeof bar.distance === 'number'
+      ? (bar.distance < 1
+        ? `${Math.round(bar.distance * 1000)}m`
+        : `${bar.distance.toFixed(1)}km`)
+      : 'Distance unknown';
 
     return {
       id: `bar_result_${idx}`,

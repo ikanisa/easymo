@@ -660,5 +660,21 @@
   "bars.buttons.search_again": "🔍 Rechercher à nouveau",
   "bars.results.title": "🍺 Bars et Restaurants à Proximité",
   "bars.results.found": "{{count}} endroits trouvés près de vous! Appuyez pour voir les détails.",
-  "bars.results.section": "Résultats"
+  "bars.results.section": "Résultats",
+  "shops.menu.intro": "🏪 Découvrez les magasins et services à proximité!\n\nParcourez par catégorie pour trouver ce dont vous avez besoin.",
+  "shops.buttons.browse": "🔍 Parcourir les Catégories",
+  "shops.tags.title": "Catégories de Magasins",
+  "shops.tags.body": "Choisissez une catégorie pour trouver des entreprises à proximité:",
+  "shops.tags.section": "Catégories",
+  "shops.tags.error": "❌ Échec du chargement des catégories. Veuillez réessayer.",
+  "shops.tags.empty": "Aucune catégorie disponible pour le moment.",
+  "shops.tags.no_businesses": "Aucune entreprise disponible dans aucune catégorie pour le moment.",
+  "shops.location.prompt": "📍 Partagez votre position pour trouver {{category}} près de vous",
+  "shops.search.error": "❌ Désolé, la recherche a échoué. Veuillez réessayer.",
+  "shops.search.no_results": "😔 Aucun {{category}} trouvé dans un rayon de 10km.\n\nEssayer une autre catégorie ou emplacement?",
+  "shops.results.title": "{{category}} Près de Vous",
+  "shops.results.found": "{{count}} entreprises {{category}} trouvées!",
+  "shops.results.section": "Résultats",
+  "shops.buttons.search_again": "🔍 Rechercher à Nouveau",
+  "shops.buttons.try_again": "🔄 Réessayer"
 }

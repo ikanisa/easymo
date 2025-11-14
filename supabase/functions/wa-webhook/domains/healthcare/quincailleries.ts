@@ -74,25 +74,23 @@ export async function processQuincaillerieRequest(
 ): Promise<boolean> {
   if (!ctx.profileId) return false;
   const items = parseKeywords(rawInput);
-  if (!items.length) {
-    await sendText(ctx.from, t(ctx.locale, "quincaillerie.prompt.items"));
-    return true;
-  }
   
-  // TWO-PHASE APPROACH:
-  // Phase 1: Immediately show top 9 nearby quincailleries from database
-  // Phase 2: AI agent processes in background for curated shortlist
+  // DIRECT DATABASE APPROACH (Phase 2: AI agents disabled for nearby searches)
+  // Simple workflow: User shares location → Instant top 9 results from database
+  // If items specified, use them for WhatsApp message prefill only
   
-  // Phase 1: Instant database results
+  // Show instant database results - top 9 nearby quincailleries
   const instantResults = await sendQuincaillerieDatabaseResults(ctx, location, items);
   
-  // Phase 2: Trigger AI agent in background (if enabled)
-  if (isFeatureEnabled("agent.quincaillerie") && instantResults) {
+  /* AI AGENT DISABLED FOR PHASE 1 - Will be enabled in Phase 2
+  // Phase 2: Trigger AI agent in background (only if items specified and enabled)
+  if (items.length > 0 && isFeatureEnabled("agent.quincaillerie") && instantResults) {
     // Start AI agent processing in background - non-blocking
     triggerQuincaillerieAgentBackground(ctx, location, items).catch((error) => {
       console.error("quincaillerie.background_agent_error", error);
     });
   }
+  */
   
   return instantResults;
 }
