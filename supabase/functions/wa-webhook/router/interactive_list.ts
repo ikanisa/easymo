@@ -157,6 +157,12 @@ export async function handleList(
     }
   }
   if (state.key === "pharmacy_results") {
+    if (id === "pharmacy_more") {
+      const { handlePharmacyMore } = await import(
+        "../domains/healthcare/pharmacies.ts"
+      );
+      return await handlePharmacyMore(ctx, state.data ?? {});
+    }
     return await handlePharmacyResultSelection(
       ctx,
       (state.data ?? {}) as PharmacyResultsState,
@@ -164,6 +170,12 @@ export async function handleList(
     );
   }
   if (state.key === "quincaillerie_results") {
+    if (id === "quincaillerie_more") {
+      const { handleQuincaillerieMore } = await import(
+        "../domains/healthcare/quincailleries.ts"
+      );
+      return await handleQuincaillerieMore(ctx, state.data ?? {});
+    }
     return await handleQuincaillerieResultSelection(
       ctx,
       (state.data ?? {}) as QuincaResultsState,

@@ -808,5 +808,7 @@
   "common.buttons.more": "➡️ More",
   "common.see_more_results": "See next 9 results",
   "bars.results.showing_more": "Showing {from}-{to} of {total}{preference}",
-  "shops.results.showing_more": "Showing {from}-{to} of {total} {category}"
+  "shops.results.showing_more": "Showing {from}-{to} of {total} {category}",
+  "pharmacy.results.showing_more": "Showing {from}-{to} of {total} pharmacies",
+  "quincaillerie.results.showing_more": "Showing {from}-{to} of {total} hardware stores"
 }

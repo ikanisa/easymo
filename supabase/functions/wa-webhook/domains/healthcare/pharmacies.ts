@@ -173,6 +173,7 @@ async function sendPharmacyDatabaseResults(
   ctx: RouterContext,
   location: { lat: number; lng: number },
   medications: string[],
+  page: number = 0,
 ): Promise<boolean> {
   if (!ctx.profileId) return false;
   
@@ -186,8 +187,8 @@ async function sendPharmacyDatabaseResults(
   }> = [];
   
   try {
-    // Fetch top 12, filter for contacts, show top 9
-    entries = await listBusinesses(ctx.supabase, location, "pharmacies", 12);
+    // Fetch 27 results for pagination
+    entries = await listBusinesses(ctx.supabase, location, "pharmacies", 27);
   } catch (error) {
     console.error("pharmacy.database_fetch_failed", error);
   }
@@ -203,9 +204,13 @@ async function sendPharmacyDatabaseResults(
     return true;
   }
   
-  // Show top 9 results
-  const top9 = withContacts.slice(0, 9);
-  const rows = top9.map((entry) => ({
+  // Pagination: show 9 results per page
+  const start = page * 9;
+  const end = Math.min(start + 9, withContacts.length);
+  const pageResults = withContacts.slice(start, end);
+  const hasMore = end < withContacts.length;
+  
+  const rows = pageResults.map((entry, idx) => ({
     id: `${PHARMACY_RESULT_PREFIX}${entry.id}`,
     name: entry.name ?? t(ctx.locale, "pharmacy.results.unknown"),
     description: formatBusinessDescription(ctx, entry),
@@ -215,33 +220,56 @@ async function sendPharmacyDatabaseResults(
   await setState(ctx.supabase, ctx.profileId, {
     key: "pharmacy_results",
     data: {
-      entries: rows.map((row) => ({
-        id: row.id,
-        name: row.name,
-        whatsapp: row.whatsapp,
+      entries: withContacts.map((entry) => ({
+        id: `${PHARMACY_RESULT_PREFIX}${entry.id}`,
+        name: entry.name ?? t(ctx.locale, "pharmacy.results.unknown"),
+        whatsapp: entry.owner_whatsapp!,
+        distance_km: entry.distance_km,
+        location_text: entry.location_text,
+        description: entry.description,
       })),
       prefill: medications.join(", ") || null,
+      page: page,
+      userLocation: location,
     } as Record<string, unknown>,
+  });
+
+  const listRows = [
+    ...rows.map((row) => ({
+      id: row.id,
+      title: `💊 ${row.name}`,
+      description: row.description,
+    })),
+  ];
+  
+  // Add "More" button if there are more results
+  if (hasMore) {
+    listRows.push({
+      id: "pharmacy_more",
+      title: t(ctx.locale, "common.buttons.more"),
+      description: t(ctx.locale, "common.see_more_results"),
+    });
+  }
+  
+  listRows.push({
+    id: IDS.BACK_MENU,
+    title: t(ctx.locale, "common.menu_back"),
+    description: t(ctx.locale, "common.back_to_menu.description"),
   });
 
   await sendListMessage(
     ctx,
     {
       title: t(ctx.locale, "pharmacy.results.title"),
-      body: t(ctx.locale, "pharmacy.results.instant_body"),
+      body: page === 0 
+        ? t(ctx.locale, "pharmacy.results.instant_body")
+        : t(ctx.locale, "pharmacy.results.showing_more", {
+            from: String(start + 1),
+            to: String(end),
+            total: String(withContacts.length),
+          }),
       sectionTitle: t(ctx.locale, "pharmacy.results.section"),
-      rows: [
-        ...rows.map((row) => ({
-          id: row.id,
-          title: `💊 ${row.name}`,
-          description: row.description,
-        })),
-        {
-          id: IDS.BACK_MENU,
-          title: t(ctx.locale, "common.menu_back"),
-          description: t(ctx.locale, "common.back_to_menu.description"),
-        },
-      ],
+      rows: listRows,
       buttonText: t(ctx.locale, "common.buttons.open"),
     },
     { emoji: "💊" },
@@ -409,4 +437,30 @@ function formatBusinessDescription(
     parts.push(entry.description.trim());
   }
   return parts.join(" • ");
+}
+
+export async function handlePharmacyMore(
+  ctx: RouterContext,
+  state: {
+    entries?: Array<{
+      id: string;
+      name: string;
+      whatsapp: string;
+      distance_km?: number;
+      location_text?: string;
+      description?: string;
+    }>;
+    prefill?: string | null;
+    page?: number;
+    userLocation?: { lat: number; lng: number };
+  },
+): Promise<boolean> {
+  if (!ctx.profileId || !state.entries || !state.userLocation) return false;
+
+  const currentPage = state.page || 0;
+  const nextPage = currentPage + 1;
+  const medications = state.prefill ? state.prefill.split(", ") : [];
+  
+  // Call sendPharmacyDatabaseResults with next page
+  return await sendPharmacyDatabaseResults(ctx, state.userLocation, medications, nextPage);
 }
