@@ -14,6 +14,8 @@ export type MenuItemKey =
   | "momo_qr"
   | "bars_restaurants"
   | "notary_services"
+  | "profile"
+  | "support"
   | "customer_support";
 
 export interface WhatsAppHomeMenuItem {
@@ -89,7 +91,9 @@ export function getMenuItemId(key: MenuItemKey): string {
     momo_qr: "momoqr_start",
     bars_restaurants: "bars_restaurants",
     notary_services: "notary_services",
-    customer_support: "profile",
+    profile: "profile",
+    support: "support",
+    customer_support: "support",
   };
 
   return mapping[key] || key;
@@ -149,9 +153,17 @@ export function getMenuItemTranslationKeys(
       titleKey: "home.rows.notaryServices.title",
       descriptionKey: "home.rows.notaryServices.description",
     },
-    customer_support: {
+    profile: {
       titleKey: "home.rows.profile.title",
       descriptionKey: "home.rows.profile.description",
+    },
+    support: {
+      titleKey: "home.rows.support.title",
+      descriptionKey: "home.rows.support.description",
+    },
+    customer_support: {
+      titleKey: "home.rows.customerSupport.title",
+      descriptionKey: "home.rows.customerSupport.description",
     },
   };
 
