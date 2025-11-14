@@ -254,22 +254,9 @@ export async function handleProfileBusinesses(ctx: RouterContext): Promise<boole
 export async function handleAddBusiness(ctx: RouterContext): Promise<boolean> {
   if (!ctx.profileId) return false;
 
-  await setState(ctx.supabase, ctx.profileId, {
-    key: "profile_add_business",
-    data: { stage: "search_method" },
-  });
-
-  await sendButtonsMessage(
-    ctx,
-    t(ctx.locale, "profile.businesses.add.search_prompt"),
-    [
-      { id: IDS.PROFILE_BUSINESS_SEARCH_NAME, title: t(ctx.locale, "profile.businesses.add.search_by_name") },
-      { id: IDS.PROFILE_BUSINESS_SEARCH_LOCATION, title: t(ctx.locale, "profile.businesses.add.search_by_location") },
-      { id: IDS.BACK_MENU, title: t(ctx.locale, "common.buttons.skip") },
-    ]
-  );
-
-  return true;
+  // Start the business claiming flow with smart search
+  const { startBusinessClaim } = await import("../business/claim.ts");
+  return await startBusinessClaim(ctx);
 }
 
 // Helper functions

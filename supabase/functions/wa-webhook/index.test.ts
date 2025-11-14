@@ -357,23 +357,19 @@ Deno.test("releases idempotency lock on handler error", async () => {
     );
   };
 
-  let caught = false;
-  try {
-    await handler(
-      new Request("https://example.com/webhook", {
-        method: "POST",
-        body,
-        headers: {
-          "content-type": "application/json",
-          "x-hub-signature-256": signature,
-        },
-      }),
-    );
-  } catch (_err) {
-    caught = true;
-  }
+  const response = await handler(
+    new Request("https://example.com/webhook", {
+      method: "POST",
+      body,
+      headers: {
+        "content-type": "application/json",
+        "x-hub-signature-256": signature,
+      },
+    }),
+  );
 
-  assert(caught, "expected handler to throw");
+  assertEquals(response.status, 500);
+  assert(response.headers.get("X-Correlation-ID"));
   assertEquals(waEvents.has("wamid.fail.1"), false);
   // restore fetch
   globalThis.fetch = async (url: string, init?: RequestInit) => {

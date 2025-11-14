@@ -28,13 +28,19 @@ export function fetchOcrJobs(
   return listOcrJobs(params);
 }
 
+type MenuVersionsQueryOptions = Omit<
+  UseQueryOptions<PaginatedResult<MenuVersion>, unknown, PaginatedResult<MenuVersion>>,
+  "queryKey" | "queryFn"
+>;
+
+type OcrJobsQueryOptions = Omit<
+  UseQueryOptions<PaginatedResult<OcrJob>, unknown, PaginatedResult<OcrJob>>,
+  "queryKey" | "queryFn"
+>;
+
 export function useMenuVersionsQuery(
   params: MenuQueryParams = { limit: 100 },
-  options?: UseQueryOptions<
-    PaginatedResult<MenuVersion>,
-    unknown,
-    PaginatedResult<MenuVersion>
-  >,
+  options?: MenuVersionsQueryOptions,
 ) {
   return useQuery({
     queryKey: menuKey(params),
@@ -45,11 +51,7 @@ export function useMenuVersionsQuery(
 
 export function useOcrJobsQuery(
   params: OcrJobQueryParams = { limit: 50 },
-  options?: UseQueryOptions<
-    PaginatedResult<OcrJob>,
-    unknown,
-    PaginatedResult<OcrJob>
-  >,
+  options?: OcrJobsQueryOptions,
 ) {
   return useQuery({
     queryKey: ocrKey(params),

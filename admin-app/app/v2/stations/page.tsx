@@ -9,13 +9,12 @@ import { useToast } from "@/components/ui/ToastProvider";
 import { DataTable } from "@/src/v2/components/ui/DataTable";
 import { CrudDialog } from "@/src/v2/components/ui/CrudDialog";
 import {
-  useSupabaseQuery,
+  useStations,
   useCreateStation,
   useUpdateStation,
   useDeleteStation,
+  type Station,
 } from "@/src/v2/lib/supabase/hooks";
-import { createClient } from "@/src/v2/lib/supabase/client";
-import type { StationRow } from "@/src/v2/lib/supabase/database.types";
 
 interface StationFormValues {
   name: string;
@@ -24,28 +23,16 @@ interface StationFormValues {
 
 type DialogState =
   | { mode: "create"; station: null }
-  | { mode: "edit"; station: StationRow }
+  | { mode: "edit"; station: Station }
   | null;
 
 export default function StationsPage() {
-  const supabase = createClient();
-  const { data: stations = [], isLoading } = useSupabaseQuery<StationRow[]>(
-    ["stations", "list"],
-    async () => {
-      const { data, error } = await supabase
-        .from("stations")
-        .select("id, name, location, created_at")
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-      return data ?? [];
-    },
-  );
+  const { data: stations = [], isLoading } = useStations();
   const { pushToast } = useToast();
   const createStation = useCreateStation();
   const updateStation = useUpdateStation();
   const deleteStation = useDeleteStation();
-  const undoBuffer = useRef<StationRow | null>(null);
+  const undoBuffer = useRef<Station | null>(null);
   const [dialogState, setDialogState] = useState<DialogState>(null);
 
   const columns = useMemo(
@@ -62,7 +49,7 @@ export default function StationsPage() {
   );
 
   const openCreateDialog = () => setDialogState({ mode: "create", station: null });
-  const openEditDialog = (station: StationRow) => setDialogState({ mode: "edit", station });
+  const openEditDialog = (station: Station) => setDialogState({ mode: "edit", station });
   const closeDialog = () => setDialogState(null);
 
   const initialValues: StationFormValues = dialogState?.mode === "edit" && dialogState.station

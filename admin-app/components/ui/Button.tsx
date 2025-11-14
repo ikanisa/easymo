@@ -2,7 +2,10 @@
 
 import { forwardRef } from "react";
 import { Button as LegacyButton, buttonVariants, type ButtonProps as LegacyButtonProps } from "@/components/ui/shadcn/button";
-import { Button as UiButton, type ButtonProps as UiButtonProps } from "@easymo/ui";
+import {
+  Button as UiButton,
+  type ButtonProps as UiButtonProps,
+} from "@easymo/ui/components/Button";
 import { useConnectivity } from "@/components/providers/ConnectivityProvider";
 
 const uiKitEnabled = (process.env.NEXT_PUBLIC_UI_V2_ENABLED ?? "false").trim().toLowerCase() === "true";

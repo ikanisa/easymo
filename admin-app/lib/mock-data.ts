@@ -10,11 +10,12 @@ import type {
   DashboardKpi,
   FlowMeta,
   InsuranceComparisonQuote,
-  InsuranceDocument,
-  InsurancePayment,
+  InsuranceDocumentDetail,
+  InsurancePaymentDetail,
+  InsurancePolicyDetail,
   InsurancePolicy,
   InsuranceQuote,
-  InsuranceRequest,
+  InsuranceRequestDetail,
   InsuranceTask,
   InsuranceVehicle,
   MenuVersion,
@@ -36,6 +37,7 @@ import type {
 } from "./schemas";
 import type { MarketplaceAgentSession } from "@/lib/marketplace/types";
 import type { Shop } from "@/lib/shops/types";
+import type { SessionTimelineEvent } from "@easymo/ui/widgets/SessionTimelineWidget";
 import {
   ALERT_DEFINITIONS,
   DEFAULT_ALERT_CHANNELS,
@@ -230,7 +232,7 @@ const insurancePolicies: InsurancePolicy[] = [
   },
 ];
 
-const insuranceDocuments: InsuranceDocument[] = [
+const insuranceDocuments: InsuranceDocumentDetail[] = [
   {
     id: "doc-req-2024-0001-logbook",
     requestId: "req-2024-0001",
@@ -285,7 +287,7 @@ const insuranceDocuments: InsuranceDocument[] = [
   },
 ];
 
-const insurancePayments: InsurancePayment[] = [
+const insurancePayments: InsurancePaymentDetail[] = [
   {
     id: "pay-req-2024-0001-1",
     requestId: "req-2024-0001",
@@ -468,6 +470,43 @@ const insuranceComparisons: Record<string, InsuranceComparisonQuote[]> = {
   ],
 };
 
+const insurancePolicyDetailsByRequest: Record<string, InsurancePolicyDetail> = {
+  "req-2024-0002": {
+    id: "pol-2024-0101-detail",
+    quoteId: "quote-2",
+    policyNumber: "RAD-987K/2024",
+    status: "active",
+    insurer: "Radiant",
+    premium: 428_000,
+    currency: "RWF",
+    effectiveAt: formatISO(subDays(now, 15)),
+    expiresAt: formatISO(addDays(now, 350)),
+    createdAt: formatISO(subDays(now, 14)),
+    updatedAt: formatISO(subDays(now, 12)),
+    metadata: {
+      issuedBy: "uw.radiant",
+      feesMinor: 18_000,
+    },
+  },
+  "req-2024-0003": {
+    id: "pol-2024-0102-detail",
+    quoteId: "quote-3",
+    policyNumber: "RAC-441T/2024",
+    status: "pending_issue",
+    insurer: "Prime Life",
+    premium: 186_000,
+    currency: "RWF",
+    effectiveAt: null,
+    expiresAt: null,
+    createdAt: formatISO(subDays(now, 4)),
+    updatedAt: null,
+    metadata: {
+      pendingAction: "Awaiting issuance confirmation",
+      feesMinor: 9_000,
+    },
+  },
+};
+
 export const mockInsuranceVehicles = insuranceVehicles;
 export const mockInsurancePolicies = insurancePolicies;
 export const mockInsuranceDocuments = insuranceDocuments;
@@ -475,7 +514,7 @@ export const mockInsurancePayments = insurancePayments;
 export const mockInsuranceTasks = insuranceTasks;
 export const mockInsuranceComparisons = insuranceComparisons;
 
-export const mockInsuranceRequests: InsuranceRequest[] = [
+export const mockInsuranceRequests: InsuranceRequestDetail[] = [
   {
     id: "req-2024-0001",
     customerId: mockUsers[0].id,
@@ -523,7 +562,7 @@ export const mockInsuranceRequests: InsuranceRequest[] = [
     archivedAt: null,
     vehicle: insuranceVehicles.find((vehicle) => vehicle.requestId === "req-2024-0002") ?? null,
     comparison: insuranceComparisons["req-2024-0002"],
-    policy: insurancePolicies.find((policy) => policy.requestId === "req-2024-0002") ?? null,
+    policy: insurancePolicyDetailsByRequest["req-2024-0002"] ?? null,
     payments: insurancePayments.filter((payment) => payment.requestId === "req-2024-0002"),
     tasks: insuranceTasks.filter((task) => task.requestId === "req-2024-0002"),
   },
@@ -550,7 +589,7 @@ export const mockInsuranceRequests: InsuranceRequest[] = [
     archivedAt: null,
     vehicle: insuranceVehicles.find((vehicle) => vehicle.requestId === "req-2024-0003") ?? null,
     comparison: insuranceComparisons["req-2024-0003"],
-    policy: insurancePolicies.find((policy) => policy.requestId === "req-2024-0003") ?? null,
+    policy: insurancePolicyDetailsByRequest["req-2024-0003"] ?? null,
     payments: insurancePayments.filter((payment) => payment.requestId === "req-2024-0003"),
     tasks: insuranceTasks.filter((task) => task.requestId === "req-2024-0003"),
   },
@@ -562,7 +601,7 @@ const insuranceCustomerMap = new Map<
     id: string;
     name: string;
     msisdn: string;
-    status: InsuranceRequest["status"];
+    status: InsuranceRequestDetail["status"];
     lastRequestAt: string;
     preferredInsurer: string | null;
     documents: number;
@@ -945,7 +984,7 @@ export const mockAgentSessionTimeline = [
     description: "Shortlist + owner slots scheduled for push notification.",
     actor: "Scheduler",
   },
-];
+] satisfies SessionTimelineEvent[];
 
 export const mockPaymentsHealth = {
   totalVolume: "RWF 24.5M",
@@ -1280,10 +1319,33 @@ export const mockQrTokens: QrToken[] = Array.from(
 );
 
 export const mockQrPreview: QrPreview = {
-  id: "preview-1",
-  barId: mockBars[0]?.id ?? "mock-bar",
-  barName: mockBars[0]?.name ?? "Sunset Bar",
-  imageUrl: "https://example.com/qr-preview.png",
+  interactive: {
+    header: "Scan to open Sunset Bar’s digital menu",
+    body: "Preview tonight’s specials, confirm reservations, or request assistance without leaving WhatsApp.",
+    buttonLabel: "Open menu",
+    sectionTitle: "Quick actions",
+    rows: [
+      {
+        id: "qr-row-specials",
+        title: "Tonight’s specials",
+        description: "Signature cocktails and chef highlights refreshed hourly.",
+      },
+      {
+        id: "qr-row-reserve",
+        title: "Reserve a table",
+        description: "Reply with your group size to secure a slot instantly.",
+      },
+      {
+        id: "qr-row-support",
+        title: "Need assistance?",
+        description: "Chat with an operator for large bookings or private events.",
+      },
+    ],
+  },
+  fallback: [
+    "If scanning fails, send the code B:sunset-bar T:Table 1 K:mock via WhatsApp.",
+    "Our team will confirm your reservation and share payment links immediately.",
+  ],
   metadata: {
     barId: mockBars[0]?.id ?? "mock-bar",
     barName: mockBars[0]?.name ?? "Sunset Bar",

@@ -10,12 +10,13 @@ export function fetchPharmacyRequests() {
   return listPharmacyRequests();
 }
 
+type PharmacyRequestsQueryOptions = Omit<
+  UseQueryOptions<PharmacyRequestsResponse, unknown, PharmacyRequestsResponse>,
+  "queryKey" | "queryFn"
+>;
+
 export function usePharmacyRequestsQuery(
-  options?: UseQueryOptions<
-    PharmacyRequestsResponse,
-    unknown,
-    PharmacyRequestsResponse
-  >,
+  options?: PharmacyRequestsQueryOptions,
 ) {
   return useQuery({
     queryKey: PHARMACY_REQUESTS_KEY,

@@ -27,7 +27,7 @@ test.describe('AI Chat', () => {
     await expect(page.locator('text=Show me the menu')).toBeVisible();
     
     // Wait for AI response
-    await expect(page.locator('[data-role="assistant"]').first()).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('[data-sender="assistant"]').first()).toBeVisible({ timeout: 10000 });
   });
 
   test('should show typing indicator during response', async ({ page }) => {
@@ -50,7 +50,7 @@ test.describe('AI Chat', () => {
     if (count > 0) {
       await quickActions.first().click();
       // Message should be sent
-      await expect(page.locator('[data-role="user"]').first()).toBeVisible();
+      await expect(page.locator('[data-sender="user"]').first()).toBeVisible();
     }
   });
 

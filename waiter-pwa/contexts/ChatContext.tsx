@@ -2,7 +2,15 @@
 
 import { createContext, useContext, useCallback, useReducer, useEffect } from 'react'
 import { createClient } from '@/lib/supabase'
-import type { Message, Conversation, ChatState, SendMessageRequest } from '@/types/chat'
+import type { Message, Conversation, ChatState } from '@/types/chat'
+import {
+  createConversationInsert,
+  createMessageInsert,
+  mergeMessages,
+  normalizeConversation,
+  normalizeMessage,
+  type MessageRow,
+} from './chat-helpers'
 
 interface ChatContextType extends ChatState {
   sendMessage: (content: string, metadata?: Record<string, any>) => Promise<void>
@@ -13,7 +21,7 @@ interface ChatContextType extends ChatState {
 
 type ChatAction =
   | { type: 'SET_CONVERSATION'; payload: Conversation }
-  | { type: 'ADD_MESSAGE'; payload: Message }
+  | { type: 'UPSERT_MESSAGE'; payload: Message }
   | { type: 'SET_MESSAGES'; payload: Message[] }
   | { type: 'SET_LOADING'; payload: boolean }
   | { type: 'SET_ERROR'; payload: string | null }
@@ -32,11 +40,8 @@ function chatReducer(state: ChatState, action: ChatAction): ChatState {
   switch (action.type) {
     case 'SET_CONVERSATION':
       return { ...state, conversation: action.payload }
-    case 'ADD_MESSAGE':
-      if (state.messages.some((msg) => msg.id === action.payload.id)) {
-        return state
-      }
-      return { ...state, messages: [...state.messages, action.payload] }
+    case 'UPSERT_MESSAGE':
+      return { ...state, messages: mergeMessages(state.messages, action.payload) }
     case 'SET_MESSAGES':
       return { ...state, messages: action.payload }
     case 'SET_LOADING':
@@ -59,79 +64,96 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   const supabase = createClient()
 
   const createConversation = useCallback(async (language = 'en', tableNumber?: string) => {
-    try {
-      dispatch({ type: 'SET_LOADING', payload: true })
+    dispatch({ type: 'SET_LOADING', payload: true })
 
-      // Get or create anonymous user
-      const { data: { user } } = await supabase.auth.getUser()
+    try {
+      let {
+        data: { user },
+      } = await supabase.auth.getUser()
+
       if (!user) {
-        const { data: { user: anonUser }, error: authError } = await supabase.auth.signInAnonymously()
-        if (authError || !anonUser) throw new Error('Failed to create session')
+        const { error: authError } = await supabase.auth.signInAnonymously()
+        if (authError) throw authError
+
+        const refreshed = await supabase.auth.getUser()
+        user = refreshed.data.user ?? null
       }
 
-      const { data: conversation, error } = await supabase
+      const conversationInsert = createConversationInsert({
+        userId: user?.id ?? null,
+        restaurantId: process.env.NEXT_PUBLIC_RESTAURANT_ID ?? null,
+        language,
+        tableNumber,
+      })
+
+      const { data: conversationRow, error } = await supabase
         .from('conversations')
-        .insert({
-          user_id: user?.id || '',
-          restaurant_id: process.env.NEXT_PUBLIC_RESTAURANT_ID!,
-          language,
-          table_number: tableNumber,
-          status: 'active',
-        })
+        .insert(conversationInsert)
         .select()
         .single()
 
-      if (error) throw error
+      if (error || !conversationRow) {
+        throw error ?? new Error('Failed to create conversation')
+      }
 
+      const conversation = normalizeConversation(conversationRow)
       dispatch({ type: 'SET_CONVERSATION', payload: conversation })
 
-      // Create welcome message
-      const welcomeMessage = {
-        conversation_id: conversation.id,
-        role: 'assistant' as const,
+      const welcomeInsert = createMessageInsert({
+        conversationId: conversation.id,
+        sender: 'assistant',
         content: getWelcomeMessage(language),
-      }
+        metadata: { type: 'welcome' },
+      })
 
-      const { data: message, error: msgError } = await supabase
+      const { data: welcomeRow, error: welcomeError } = await supabase
         .from('messages')
-        .insert(welcomeMessage)
+        .insert(welcomeInsert)
         .select()
         .single()
 
-      if (msgError) throw msgError
-      dispatch({ type: 'ADD_MESSAGE', payload: message })
-      dispatch({ type: 'SET_LOADING', payload: false })
+      if (welcomeError || !welcomeRow) {
+        throw welcomeError ?? new Error('Failed to create welcome message')
+      }
+
+      dispatch({ type: 'UPSERT_MESSAGE', payload: normalizeMessage(welcomeRow as MessageRow) })
     } catch (error: any) {
-      dispatch({ type: 'SET_ERROR', payload: error.message })
+      dispatch({ type: 'SET_ERROR', payload: error.message ?? 'Failed to start conversation' })
+    } finally {
+      dispatch({ type: 'SET_LOADING', payload: false })
     }
   }, [supabase])
 
   const loadConversation = useCallback(async (conversationId: string) => {
-    try {
-      dispatch({ type: 'SET_LOADING', payload: true })
+    dispatch({ type: 'SET_LOADING', payload: true })
 
-      // Load conversation
-      const { data: conversation, error: convError } = await supabase
+    try {
+      const { data: conversationRow, error: convError } = await supabase
         .from('conversations')
         .select()
         .eq('id', conversationId)
         .single()
 
-      if (convError) throw convError
-      dispatch({ type: 'SET_CONVERSATION', payload: conversation })
+      if (convError || !conversationRow) {
+        throw convError ?? new Error('Conversation not found')
+      }
 
-      // Load messages
-      const { data: messages, error: msgError } = await supabase
+      dispatch({ type: 'SET_CONVERSATION', payload: normalizeConversation(conversationRow) })
+
+      const { data: messageRows, error: msgError } = await supabase
         .from('messages')
         .select()
         .eq('conversation_id', conversationId)
-        .order('created_at', { ascending: true })
+        .order('timestamp', { ascending: true })
 
       if (msgError) throw msgError
-      dispatch({ type: 'SET_MESSAGES', payload: messages || [] })
-      dispatch({ type: 'SET_LOADING', payload: false })
+
+      const normalized = (messageRows ?? []).map((row) => normalizeMessage(row as MessageRow))
+      dispatch({ type: 'SET_MESSAGES', payload: normalized })
     } catch (error: any) {
-      dispatch({ type: 'SET_ERROR', payload: error.message })
+      dispatch({ type: 'SET_ERROR', payload: error.message ?? 'Unable to load conversation' })
+    } finally {
+      dispatch({ type: 'SET_LOADING', payload: false })
     }
   }, [supabase])
 
@@ -141,40 +163,68 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       return
     }
 
-    try {
-      // Add user message optimistically
-      const userMessage: Message = {
-        id: crypto.randomUUID(),
-        conversation_id: state.conversation.id,
-        role: 'user',
-        content,
-        created_at: new Date().toISOString(),
-        metadata,
+    const conversationId = state.conversation.id
+    const clientMessageId = crypto.randomUUID()
+
+    const toMessage = (raw: any): Message => {
+      const fallbackId = raw.id ?? crypto.randomUUID()
+      const row: MessageRow = {
+        id: fallbackId,
+        conversation_id: raw.conversation_id ?? conversationId,
+        sender: raw.sender ?? raw.role ?? 'assistant',
+        content: raw.content ?? '',
+        metadata: (raw.metadata ?? {}) as MessageRow['metadata'],
+        timestamp: raw.timestamp ?? raw.created_at ?? new Date().toISOString(),
+        created_at: raw.created_at ?? raw.timestamp ?? new Date().toISOString(),
       }
-      dispatch({ type: 'ADD_MESSAGE', payload: userMessage })
 
-      // Save to database
-      const { error: insertError } = await supabase
+      return normalizeMessage(row)
+    }
+
+    try {
+      const messageInsert = createMessageInsert({
+        conversationId,
+        sender: 'user',
+        content,
+        metadata,
+        clientMessageId,
+      })
+
+      const now = new Date().toISOString()
+      const pendingRow: MessageRow = {
+        id: clientMessageId,
+        conversation_id: conversationId,
+        sender: 'user',
+        content,
+        metadata: (messageInsert.metadata ?? {}) as MessageRow['metadata'],
+        timestamp: now,
+        created_at: now,
+      }
+
+      const pendingMessage = normalizeMessage(pendingRow)
+      pendingMessage.metadata.pending = true
+      dispatch({ type: 'UPSERT_MESSAGE', payload: pendingMessage })
+
+      const { data: insertedRow, error: insertError } = await supabase
         .from('messages')
-        .insert({
-          conversation_id: state.conversation.id,
-          role: 'user',
-          content,
-          metadata,
-        })
+        .insert(messageInsert)
+        .select()
+        .single()
 
-      if (insertError) throw insertError
+      if (insertError || !insertedRow) {
+        throw insertError ?? new Error('Failed to save message')
+      }
 
-      // Show typing indicator
+      dispatch({ type: 'UPSERT_MESSAGE', payload: normalizeMessage(insertedRow as MessageRow) })
+
       dispatch({ type: 'SET_TYPING', payload: true })
 
-      // Call chat API
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           content,
-          conversation_id: state.conversation.id,
+          conversation_id: conversationId,
           metadata,
         }),
       })
@@ -182,15 +232,15 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       if (!response.ok) throw new Error('Failed to get response')
 
       const data = await response.json()
-      
+
       dispatch({ type: 'SET_TYPING', payload: false })
 
       if (data.assistant_reply) {
-        dispatch({ type: 'ADD_MESSAGE', payload: data.assistant_reply })
+        dispatch({ type: 'UPSERT_MESSAGE', payload: toMessage(data.assistant_reply) })
       }
     } catch (error: any) {
       dispatch({ type: 'SET_TYPING', payload: false })
-      dispatch({ type: 'SET_ERROR', payload: error.message })
+      dispatch({ type: 'SET_ERROR', payload: error.message ?? 'Failed to send message' })
     }
   }, [state.conversation, supabase])
 
@@ -213,10 +263,10 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
           filter: `conversation_id=eq.${state.conversation.id}`,
         },
         (payload) => {
-          const newMessage = payload.new as Message
-          if (newMessage.conversation_id !== state.conversation?.id) return
-          // Only add if not already in state (avoid duplicates)
-          dispatch({ type: 'ADD_MESSAGE', payload: newMessage })
+          const newRow = payload.new as MessageRow
+          if (newRow.conversation_id !== state.conversation?.id) return
+
+          dispatch({ type: 'UPSERT_MESSAGE', payload: normalizeMessage(newRow) })
         }
       )
       .subscribe()

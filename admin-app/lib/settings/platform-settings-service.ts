@@ -20,29 +20,18 @@ export type PlatformSettingsData = {
 
 type PlatformSettingsResponse = PlatformSettingsData;
 
-type PlatformSettingsSaveSuccess = {
-  message?: string;
-  integration?: PlatformSettingsIntegration;
-};
-
-type PlatformSettingsSaveError = {
-  error?: string;
-  message?: string;
-  integration?: PlatformSettingsIntegration;
-};
-
 export async function fetchPlatformSettings(): Promise<PlatformSettingsResponse> {
-  const response = await apiFetch<PlatformSettingsResponse>(getAdminApiPath("settings"), {
-    cache: "no-store",
-  });
-
-  if (!response.ok) {
-    const message = (response.error as { message?: string })?.message ??
-      "Failed to load platform settings.";
+  try {
+    return await apiFetch<PlatformSettingsResponse>(getAdminApiPath("settings"), {
+      cache: "no-store",
+    });
+  } catch (error) {
+    const message =
+      error instanceof Error && error.message
+        ? error.message
+        : "Failed to load platform settings.";
     throw new Error(message);
   }
-
-  return response.data;
 }
 
 export type SavePlatformSettingsResult =
@@ -60,32 +49,28 @@ export type SavePlatformSettingsResult =
 export async function savePlatformSettings(
   payload: PlatformSettingsData,
 ): Promise<SavePlatformSettingsResult> {
-  const response = await apiFetch<PlatformSettingsSaveSuccess>(
-    getAdminApiPath("settings"),
-    {
+  try {
+    const successBody = await apiFetch<{
+      message?: string;
+      integration?: PlatformSettingsIntegration;
+    }>(getAdminApiPath("settings"), {
       method: "POST",
       body: payload,
-    },
-  );
+    });
 
-  if (!response.ok) {
-    const errorBody = response.error as PlatformSettingsSaveError;
-    const message = typeof errorBody?.message === "string"
-      ? errorBody.message
-      : typeof errorBody?.error === "string"
-      ? errorBody.error
-      : "Failed to save settings.";
+    return {
+      ok: true,
+      message: successBody?.message ?? "Settings saved.",
+      integration: successBody?.integration,
+    };
+  } catch (error) {
+    const message =
+      error instanceof Error && error.message
+        ? error.message
+        : "Failed to save settings.";
     return {
       ok: false,
       message,
-      integration: errorBody?.integration,
     };
   }
-
-  const successBody = response.data;
-  return {
-    ok: true,
-    message: successBody?.message ?? "Settings saved.",
-    integration: successBody?.integration,
-  };
 }

@@ -38,14 +38,10 @@ export interface LogsPayload {
 const LOGS_KEY: QueryKey = ["logs"];
 
 export async function fetchLogs(): Promise<LogsPayload> {
-  const response = await apiFetch<LogsPayload>(getAdminApiPath("logs"), {
+  return apiFetch<LogsPayload>(getAdminApiPath("logs"), {
     method: "GET",
     revalidate: 30,
   });
-  if (!response.ok) {
-    throw response.error ?? new Error("Failed to load logs");
-  }
-  return response.data;
 }
 
 export function useLogsQuery(

@@ -14,6 +14,7 @@ import type { ChatMessage, Tool, ToolCall } from "./openai_client.ts";
 import { getOpenAIClient } from "./openai_client.ts";
 import { getToolManager } from "./tool_manager.ts";
 import { logStructuredEvent } from "../observe/log.ts";
+import { getTemplateRegistry, type ApprovedTemplate } from "./template_registry.ts";
 
 export type AgentType =
   | "customer_service"
@@ -45,6 +46,7 @@ export interface AgentResponse {
   confidence: number;
   sessionData?: Record<string, any>;
   suggestedNextAgent?: AgentType;
+  approvedTemplate?: ApprovedTemplate | null;
 }
 
 export class AgentOrchestrator {
@@ -52,6 +54,7 @@ export class AgentOrchestrator {
   private conversationAgents: Map<string, AgentType> = new Map(); // conversationId -> agentType
   private openai = getOpenAIClient();
   private toolManager = getToolManager();
+  private templateRegistry = getTemplateRegistry();
 
   constructor() {
     this.initializeAgents();
@@ -496,7 +499,7 @@ Respond with just the category name (e.g., "booking").`,
       tool_calls: toolCallsExecuted,
     });
 
-    return {
+    return await this.attachTemplateMetadata(context, agentType, {
       text: response.text || "I apologize, I couldn't generate a response.",
       agentType,
       tokensUsed: response.usage.total_tokens,
@@ -508,7 +511,7 @@ Respond with just the category name (e.g., "booking").`,
         last_agent: agentType,
         last_topic: this.extractTopic(context.currentMessage),
       },
-    };
+    });
   }
 
   /**
@@ -613,6 +616,29 @@ Respond with just the category name (e.g., "booking").`,
     logStructuredEvent("CONVERSATION_ENDED", {
       conversation_id: conversationId,
     });
+  }
+
+  private async attachTemplateMetadata(
+    context: AgentContext,
+    agentType: AgentType,
+    response: AgentResponse,
+  ): Promise<AgentResponse> {
+    try {
+      const localeHint = context.userProfile?.language || context.sessionData?.preferred_language || context.language;
+      const template = await this.templateRegistry.get(
+        context.supabase,
+        agentType,
+        localeHint,
+      );
+      return { ...response, approvedTemplate: template };
+    } catch (error) {
+      await logStructuredEvent("AI_TEMPLATE_ATTACH_FAILED", {
+        agent_type: agentType,
+        correlation_id: context.correlationId,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      return { ...response, approvedTemplate: null };
+    }
   }
 }
 

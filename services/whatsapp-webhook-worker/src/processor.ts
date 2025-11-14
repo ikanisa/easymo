@@ -2,6 +2,7 @@ import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { config } from "./config.js";
 import { logger } from "./logger.js";
 import { IdempotencyStore } from "@easymo/messaging";
+import { resolveSecret } from "./secrets.js";
 
 export interface WebhookPayload {
   id: string;
@@ -25,13 +26,17 @@ export interface WebhookProcessingResult {
 export class WebhookProcessor {
   private supabase: SupabaseClient;
   private idempotencyStore: any;
+  private supabase!: SupabaseClient;
+  private idempotencyStore: IdempotencyStore;
+  private serviceRolePromise: Promise<string | undefined>;
 
   constructor() {
-    this.supabase = createClient(
-      config.SUPABASE_URL,
-      config.SUPABASE_SERVICE_ROLE_KEY
-    );
-    
+    this.serviceRolePromise = resolveSecret({
+      ref: config.SUPABASE_SERVICE_ROLE_KEY,
+      fallbackEnv: "SUPABASE_SERVICE_ROLE_KEY",
+      label: "supabase_service_role",
+    });
+
     this.idempotencyStore = new IdempotencyStore({
       redisUrl: config.REDIS_URL,
       ttlSeconds: 24 * 60 * 60, // 24 hours
@@ -41,6 +46,11 @@ export class WebhookProcessor {
   }
 
   async connect(): Promise<void> {
+    const serviceRoleKey = await this.serviceRolePromise;
+    if (!serviceRoleKey) {
+      throw new Error("Supabase service role key unavailable");
+    }
+    this.supabase = createClient(config.SUPABASE_URL, serviceRoleKey);
     await this.idempotencyStore.connect();
     logger.info("WebhookProcessor initialized");
   }

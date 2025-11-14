@@ -74,25 +74,23 @@ export async function processPharmacyRequest(
 ): Promise<boolean> {
   if (!ctx.profileId) return false;
   const meds = parseKeywords(rawInput);
-  if (!meds.length) {
-    await sendText(ctx.from, t(ctx.locale, "pharmacy.prompt.medicines"));
-    return true;
-  }
   
-  // TWO-PHASE APPROACH:
-  // Phase 1: Immediately show top 9 nearby pharmacies from database
-  // Phase 2: AI agent processes in background for curated shortlist
+  // DIRECT DATABASE APPROACH (Phase 2: AI agents disabled for nearby searches)
+  // Simple workflow: User shares location → Instant top 9 results from database
+  // If medicines specified, use them for WhatsApp message prefill only
   
-  // Phase 1: Instant database results
+  // Show instant database results - top 9 nearby pharmacies
   const instantResults = await sendPharmacyDatabaseResults(ctx, location, meds);
   
-  // Phase 2: Trigger AI agent in background (if enabled)
-  if (isFeatureEnabled("agent.pharmacy") && instantResults) {
+  /* AI AGENT DISABLED FOR PHASE 1 - Will be enabled in Phase 2
+  // Phase 2: Trigger AI agent in background (only if meds specified and enabled)
+  if (meds.length > 0 && isFeatureEnabled("agent.pharmacy") && instantResults) {
     // Start AI agent processing in background - non-blocking
     triggerPharmacyAgentBackground(ctx, location, meds).catch((error) => {
       console.error("pharmacy.background_agent_error", error);
     });
   }
+  */
   
   return instantResults;
 }
@@ -329,7 +327,6 @@ async function triggerPharmacyAgentBackground(
   }
 }
 
-async function sendPharmacyFallbackOld(
 async function sendPharmacyFallbackOld(
   ctx: RouterContext,
   location: { lat: number; lng: number },

@@ -1,25 +1,126 @@
 "use client";
 
 import {
-  useQuery,
   useMutation,
+  useQuery,
   useQueryClient,
   type QueryKey,
   type UseMutationResult,
-  type UseQueryResult,
   type UseQueryOptions,
+  type UseQueryResult,
 } from "@tanstack/react-query";
-import { createClient } from "./client";
-import type {
-  AgentRow,
-  DriverRow,
-  StationRow,
-  TransactionRow,
-  VehicleRow,
-  Database,
-} from "./database.types";
 
-type DriverWithVehicle = DriverRow & { vehicles: VehicleRow | null };
+import type { Database } from "./database.types";
+
+const API_BASE = "/api/v2";
+
+type AgentsTable = Database["public"]["Tables"]["agents"];
+type DriversTable = Database["public"]["Tables"]["drivers"];
+type StationsTable = Database["public"]["Tables"]["stations"];
+type VehiclesTable = Database["public"]["Tables"]["vehicles"];
+type TransactionsTable = Database["public"]["Tables"]["transactions"];
+
+export type Agent = Pick<
+  AgentsTable["Row"],
+  "id" | "name" | "phone" | "status" | "wallet_balance" | "created_at"
+>;
+
+export type Vehicle = Pick<
+  VehiclesTable["Row"],
+  "id" | "make" | "model" | "license_plate"
+>;
+
+export type Driver =
+  Pick<
+    DriversTable["Row"],
+    "id" | "name" | "phone" | "status" | "vehicle_id" | "created_at"
+  > & {
+    vehicles: Vehicle | null;
+  };
+
+export type Station = Pick<
+  StationsTable["Row"],
+  "id" | "name" | "location" | "created_at"
+>;
+
+export type Transaction = Pick<
+  TransactionsTable["Row"],
+  "id" | "description" | "created_at"
+> & {
+  amount: number;
+};
+
+export interface DashboardMetrics {
+  totalAgents: number;
+  totalDrivers: number;
+  totalStations: number;
+  monthlyRevenue: number;
+}
+
+type AgentCreateInput = {
+  id?: string;
+  name: string;
+  phone: string;
+  status?: string | null;
+  wallet_balance?: number | null;
+};
+
+type AgentUpdateInput = { id: string } & Partial<Omit<AgentCreateInput, "id">>;
+
+type DriverCreateInput = {
+  id?: string;
+  name: string;
+  phone: string;
+  status?: string | null;
+  vehicle_id?: string | null;
+};
+
+type DriverUpdateInput = { id: string } & Partial<Omit<DriverCreateInput, "id">>;
+
+type StationCreateInput = {
+  id?: string;
+  name: string;
+  location?: string | null;
+};
+
+type StationUpdateInput = { id: string } & Partial<Omit<StationCreateInput, "id">>;
+
+async function request<T>(path: string, init: RequestInit = {}) {
+  const response = await fetch(path, {
+    ...init,
+    headers: {
+      ...(init.headers ?? {}),
+      ...(init.body ? { "Content-Type": "application/json" } : {}),
+    },
+    credentials: init.credentials ?? "same-origin",
+  });
+
+  const text = await response.text();
+  let data: unknown = null;
+
+  if (text) {
+    try {
+      data = JSON.parse(text);
+    } catch {
+      data = text;
+    }
+  }
+
+  if (!response.ok) {
+    const message =
+      typeof data === "object" && data !== null && "error" in data
+        ? String((data as { error: unknown }).error)
+        : response.statusText;
+
+    throw new Error(message || "Request failed");
+  }
+
+  return data as T;
+}
+
+function buildUrl(path: string) {
+  return `${API_BASE}${path}`;
+}
 
 export function useSupabaseQuery<TData, TError = Error>(
   queryKey: QueryKey,
@@ -35,91 +136,43 @@ export function useSupabaseQuery<TData, TError = Error>(
 }
 
 export function useAgents(
-  options?: Omit<UseQueryOptions<AgentRow[], Error, AgentRow[], QueryKey>, "queryKey" | "queryFn">,
+  options?: Omit<UseQueryOptions<Agent[], Error, Agent[], QueryKey>, "queryKey" | "queryFn">,
 ) {
-  const supabase = createClient();
-
-  return useSupabaseQuery<AgentRow[]>(
+  return useSupabaseQuery<Agent[]>(
     ["agents"],
-    async () => {
-      const { data, error } = await supabase
-        .from("agents")
-        .select("*")
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-      return data ?? [];
-    },
+    () => request<Agent[]>(buildUrl("/agents")),
     options,
   );
 }
 
-export function useDrivers(
-  options?: Omit<
-    UseQueryOptions<DriverWithVehicle[], Error, DriverWithVehicle[], QueryKey>,
-    "queryKey" | "queryFn"
-  >,
-) {
-  const supabase = createClient();
+type AgentUpdateMutation = UseMutationResult<Agent, Error, AgentUpdateInput>;
 
-  return useSupabaseQuery(
-    ["drivers"],
-    async () => {
-      const { data, error } = await supabase
-        .from("drivers")
-        .select("*, vehicles(*)")
-        .order("created_at", { ascending: false });
+type AgentCreateMutation = UseMutationResult<Agent, Error, AgentCreateInput>;
 
-      if (error) throw error;
-      return (data ?? []) as DriverWithVehicle[];
-    },
-    options,
-  );
-}
-
-type UpdateAgentInput = Partial<Omit<AgentRow, "id">> & Pick<AgentRow, "id">;
-
-type UpdateAgentMutation = UseMutationResult<AgentRow, Error, UpdateAgentInput>;
-
-export function useUpdateAgent(): UpdateAgentMutation {
+export function useUpdateAgent(): AgentUpdateMutation {
   const queryClient = useQueryClient();
-  const supabase = createClient();
 
   return useMutation({
-    mutationFn: async ({ id, ...updates }: UpdateAgentInput) => {
-      const { data, error } = await supabase
-        .from("agents")
-        .update(updates)
-        .eq("id", id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
+    mutationFn: async ({ id, ...updates }: AgentUpdateInput) =>
+      request<Agent>(buildUrl(`/agents/${encodeURIComponent(id)}`), {
+        method: "PATCH",
+        body: JSON.stringify(updates),
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["agents"] });
     },
   });
 }
 
-type CreateAgentInput = Database["public"]["Tables"]["agents"]["Insert"];
-
-export function useCreateAgent() {
+export function useCreateAgent(): AgentCreateMutation {
   const queryClient = useQueryClient();
-  const supabase = createClient();
 
-  return useMutation<AgentRow, Error, CreateAgentInput>({
-    mutationFn: async (payload) => {
-      const { data, error } = await supabase
-        .from("agents")
-        .insert(payload)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
+  return useMutation({
+    mutationFn: async (payload: AgentCreateInput) =>
+      request<Agent>(buildUrl("/agents"), {
+        method: "POST",
+        body: JSON.stringify(payload),
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["agents"] });
     },
@@ -128,67 +181,52 @@ export function useCreateAgent() {
 
 export function useDeleteAgent() {
   const queryClient = useQueryClient();
-  const supabase = createClient();
 
-  return useMutation<AgentRow, Error, { id: string }>({
-    mutationFn: async ({ id }) => {
-      const { data, error } = await supabase
-        .from("agents")
-        .delete()
-        .eq("id", id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
+  return useMutation<Agent, Error, { id: string }>({
+    mutationFn: async ({ id }) =>
+      request<Agent>(buildUrl(`/agents/${encodeURIComponent(id)}`), {
+        method: "DELETE",
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["agents"] });
     },
   });
 }
 
-type UpdateDriverInput = Partial<Omit<DriverRow, "id">> & Pick<DriverRow, "id">;
+export function useDrivers(
+  options?: Omit<UseQueryOptions<Driver[], Error, Driver[], QueryKey>, "queryKey" | "queryFn">,
+) {
+  return useSupabaseQuery(
+    ["drivers"],
+    () => request<Driver[]>(buildUrl("/drivers")),
+    options,
+  );
+}
 
 export function useUpdateDriver() {
   const queryClient = useQueryClient();
-  const supabase = createClient();
 
-  return useMutation<DriverWithVehicle, Error, UpdateDriverInput>({
-    mutationFn: async ({ id, ...updates }) => {
-      const { data, error } = await supabase
-        .from("drivers")
-        .update(updates)
-        .eq("id", id)
-        .select("*, vehicles(*)")
-        .single();
-
-      if (error) throw error;
-      return data as DriverWithVehicle;
-    },
+  return useMutation<Driver, Error, DriverUpdateInput>({
+    mutationFn: async ({ id, ...updates }) =>
+      request<Driver>(buildUrl(`/drivers/${encodeURIComponent(id)}`), {
+        method: "PATCH",
+        body: JSON.stringify(updates),
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["drivers"] });
     },
   });
 }
 
-type CreateDriverInput = Database["public"]["Tables"]["drivers"]["Insert"];
-
 export function useCreateDriver() {
   const queryClient = useQueryClient();
-  const supabase = createClient();
 
-  return useMutation<DriverWithVehicle, Error, CreateDriverInput>({
-    mutationFn: async (payload) => {
-      const { data, error } = await supabase
-        .from("drivers")
-        .insert(payload)
-        .select("*, vehicles(*)")
-        .single();
-
-      if (error) throw error;
-      return data as DriverWithVehicle;
-    },
+  return useMutation<Driver, Error, DriverCreateInput>({
+    mutationFn: async (payload) =>
+      request<Driver>(buildUrl("/drivers"), {
+        method: "POST",
+        body: JSON.stringify(payload),
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["drivers"] });
     },
@@ -197,67 +235,52 @@ export function useCreateDriver() {
 
 export function useDeleteDriver() {
   const queryClient = useQueryClient();
-  const supabase = createClient();
 
-  return useMutation<DriverRow, Error, { id: string }>({
-    mutationFn: async ({ id }) => {
-      const { data, error } = await supabase
-        .from("drivers")
-        .delete()
-        .eq("id", id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
+  return useMutation<Driver, Error, { id: string }>({
+    mutationFn: async ({ id }) =>
+      request<Driver>(buildUrl(`/drivers/${encodeURIComponent(id)}`), {
+        method: "DELETE",
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["drivers"] });
     },
   });
 }
 
-type UpdateStationInput = Partial<Omit<StationRow, "id">> & Pick<StationRow, "id">;
+export function useStations(
+  options?: Omit<UseQueryOptions<Station[], Error, Station[], QueryKey>, "queryKey" | "queryFn">,
+) {
+  return useSupabaseQuery(
+    ["stations"],
+    () => request<Station[]>(buildUrl("/stations")),
+    options,
+  );
+}
 
 export function useUpdateStation() {
   const queryClient = useQueryClient();
-  const supabase = createClient();
 
-  return useMutation<StationRow, Error, UpdateStationInput>({
-    mutationFn: async ({ id, ...updates }) => {
-      const { data, error } = await supabase
-        .from("stations")
-        .update(updates)
-        .eq("id", id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
+  return useMutation<Station, Error, StationUpdateInput>({
+    mutationFn: async ({ id, ...updates }) =>
+      request<Station>(buildUrl(`/stations/${encodeURIComponent(id)}`), {
+        method: "PATCH",
+        body: JSON.stringify(updates),
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["stations"] });
     },
   });
 }
 
-type CreateStationInput = Database["public"]["Tables"]["stations"]["Insert"];
-
 export function useCreateStation() {
   const queryClient = useQueryClient();
-  const supabase = createClient();
 
-  return useMutation<StationRow, Error, CreateStationInput>({
-    mutationFn: async (payload) => {
-      const { data, error } = await supabase
-        .from("stations")
-        .insert(payload)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
+  return useMutation<Station, Error, StationCreateInput>({
+    mutationFn: async (payload) =>
+      request<Station>(buildUrl("/stations"), {
+        method: "POST",
+        body: JSON.stringify(payload),
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["stations"] });
     },
@@ -266,20 +289,12 @@ export function useCreateStation() {
 
 export function useDeleteStation() {
   const queryClient = useQueryClient();
-  const supabase = createClient();
 
-  return useMutation<StationRow, Error, { id: string }>({
-    mutationFn: async ({ id }) => {
-      const { data, error } = await supabase
-        .from("stations")
-        .delete()
-        .eq("id", id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
+  return useMutation<Station, Error, { id: string }>({
+    mutationFn: async ({ id }) =>
+      request<Station>(buildUrl(`/stations/${encodeURIComponent(id)}`), {
+        method: "DELETE",
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["stations"] });
     },
@@ -287,36 +302,20 @@ export function useDeleteStation() {
 }
 
 export function useVehicles() {
-  const supabase = createClient();
-
-  return useSupabaseQuery<VehicleRow[]>(
-    ["vehicles"],
-    async () => {
-      const { data, error } = await supabase
-        .from("vehicles")
-        .select("*")
-        .order("make", { ascending: true });
-
-      if (error) throw error;
-      return data ?? [];
-    },
+  return useSupabaseQuery<Vehicle[]>(["vehicles"], () =>
+    request<Vehicle[]>(buildUrl("/vehicles")),
   );
 }
 
 export function useRecentTransactions(limit = 5) {
-  const supabase = createClient();
-
-  return useSupabaseQuery<TransactionRow[]>(
+  return useSupabaseQuery<Transaction[]>(
     ["transactions", limit],
-    async () => {
-      const { data, error } = await supabase
-        .from("transactions")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .limit(limit);
+    () => request<Transaction[]>(buildUrl(`/transactions?limit=${limit}`)),
+  );
+}
 
-      if (error) throw error;
-      return data ?? [];
-    },
+export function useDashboardMetrics() {
+  return useSupabaseQuery<DashboardMetrics>(["dashboard-metrics"], () =>
+    request<DashboardMetrics>(buildUrl("/dashboard/metrics")),
   );
 }

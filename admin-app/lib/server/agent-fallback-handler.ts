@@ -46,7 +46,8 @@ export async function handleAgentFallback<T>(
 ): Promise<FallbackResult<T>> {
   const { agentName, userId, sessionId, originalError, context } = options;
 
-  logStructured('AGENT_FALLBACK_TRIGGERED', {
+  logStructured({
+    event: 'AGENT_FALLBACK_TRIGGERED',
     agentName,
     userId,
     sessionId,
@@ -60,7 +61,8 @@ export async function handleAgentFallback<T>(
   if (fallbackStrategies.rankingService) {
     try {
       const data = await fallbackStrategies.rankingService();
-      logStructured('AGENT_FALLBACK_SUCCESS', {
+      logStructured({
+        event: 'AGENT_FALLBACK_SUCCESS',
         agentName,
         strategy: 'ranking_service',
       });
@@ -74,7 +76,8 @@ export async function handleAgentFallback<T>(
         shouldRetry: false,
       };
     } catch (rankingError) {
-      logStructured('AGENT_FALLBACK_RANKING_FAILED', {
+      logStructured({
+        event: 'AGENT_FALLBACK_RANKING_FAILED',
         agentName,
         error: rankingError instanceof Error ? rankingError.message : 'Unknown',
       });
@@ -85,7 +88,8 @@ export async function handleAgentFallback<T>(
   if (fallbackStrategies.supabaseBackup) {
     try {
       const data = await fallbackStrategies.supabaseBackup();
-      logStructured('AGENT_FALLBACK_SUCCESS', {
+      logStructured({
+        event: 'AGENT_FALLBACK_SUCCESS',
         agentName,
         strategy: 'supabase_backup',
       });
@@ -99,7 +103,8 @@ export async function handleAgentFallback<T>(
         shouldRetry: false,
       };
     } catch (supabaseError) {
-      logStructured('AGENT_FALLBACK_SUPABASE_FAILED', {
+      logStructured({
+        event: 'AGENT_FALLBACK_SUPABASE_FAILED',
         agentName,
         error: supabaseError instanceof Error ? supabaseError.message : 'Unknown',
       });
@@ -110,7 +115,8 @@ export async function handleAgentFallback<T>(
   if (fallbackStrategies.mockData) {
     try {
       const data = fallbackStrategies.mockData();
-      logStructured('AGENT_FALLBACK_SUCCESS', {
+      logStructured({
+        event: 'AGENT_FALLBACK_SUCCESS',
         agentName,
         strategy: 'mock_data',
       });
@@ -124,7 +130,8 @@ export async function handleAgentFallback<T>(
         shouldRetry: true,
       };
     } catch (mockError) {
-      logStructured('AGENT_FALLBACK_MOCK_FAILED', {
+      logStructured({
+        event: 'AGENT_FALLBACK_MOCK_FAILED',
         agentName,
         error: mockError instanceof Error ? mockError.message : 'Unknown',
       });
@@ -132,7 +139,7 @@ export async function handleAgentFallback<T>(
   }
 
   // Strategy 4: Graceful failure
-  logStructured('AGENT_FALLBACK_ALL_FAILED', { agentName });
+  logStructured({ event: 'AGENT_FALLBACK_ALL_FAILED', agentName });
   emitMetric(`agent.${agentName}.fallback.all_failed`, 1);
   
   return {
