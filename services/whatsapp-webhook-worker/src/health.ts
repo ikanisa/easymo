@@ -43,10 +43,10 @@ const supabaseClient = createClient(
 async function runOpenAIProbe(): Promise<ProbeResult> {
   const started = Date.now();
   try {
-    await openAIClient.responses.create({
+    await openAIClient.chat.completions.create({
       model: config.OPENAI_MODEL,
-      input: "Health check ping",
-      max_output_tokens: 1,
+      messages: [{ role: "user", content: "ping" }],
+      max_tokens: 1,
     });
     return { status: "ok", latencyMs: Date.now() - started };
   } catch (error) {
