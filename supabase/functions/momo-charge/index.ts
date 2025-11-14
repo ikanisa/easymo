@@ -131,10 +131,61 @@ async function createMoMoPayment(
   }
 }
 
+interface MoMoTokenResponse {
+  access_token: string;
+  token_type: string;
+  expires_in: number | string;
+}
+
+const momoTokenCache = new Map<string, { token: string; expiresAt: number }>();
+
 async function getMoMoToken(config: MoMoConfig): Promise<string> {
-  // In production, implement proper OAuth token flow
-  // For now, return API key (sandbox mode)
-  return config.apiKey;
+  const cacheKey = `${config.apiKey}:${config.environment}`;
+  const cachedToken = momoTokenCache.get(cacheKey);
+  const now = Date.now();
+  if (cachedToken && cachedToken.expiresAt > now) {
+    return cachedToken.token;
+  }
+
+  if (!config.apiKey || !config.apiSecret) {
+    throw new Error("MoMo API credentials not configured");
+  }
+
+  if (!config.subscriptionKey) {
+    throw new Error("MoMo subscription key not configured");
+  }
+
+  const basicAuth = btoa(`${config.apiKey}:${config.apiSecret}`);
+
+  const response = await fetch(`${config.apiUrl}/collection/token/`, {
+    method: "POST",
+    headers: {
+      Authorization: `Basic ${basicAuth}`,
+      "Ocp-Apim-Subscription-Key": config.subscriptionKey,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({}),
+  });
+
+  if (!response.ok) {
+    const errorBody = await response.text();
+    await logStructuredEvent("MOMO_TOKEN_ERROR", {
+      status: response.status,
+      error: errorBody,
+    });
+    throw new Error(`Failed to obtain MoMo access token: ${response.status}`);
+  }
+
+  const tokenData = (await response.json()) as MoMoTokenResponse;
+  const expiresInSeconds = Number(tokenData.expires_in || 0);
+  const expiresAt = Date.now() + Math.max(expiresInSeconds - 30, 30) * 1000;
+
+  momoTokenCache.set(cacheKey, {
+    token: tokenData.access_token,
+    expiresAt,
+  });
+
+  return tokenData.access_token;
 }
 
 // =====================================================

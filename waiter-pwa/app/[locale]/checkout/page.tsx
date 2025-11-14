@@ -1,6 +1,6 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
@@ -11,6 +11,7 @@ type PaymentMethod = 'momo' | 'revolut' | null;
 
 export default function CheckoutPage() {
   const t = useTranslations();
+  const locale = useLocale();
   const router = useRouter();
   const supabase = createClient();
 
@@ -31,7 +32,7 @@ export default function CheckoutPage() {
         const { data: { user } } = await supabase.auth.getUser();
         
         if (!user) {
-          router.push('/');
+          router.push(`/${locale}`);
           return;
         }
 
@@ -47,7 +48,7 @@ export default function CheckoutPage() {
           setCartTotal(draftOrder.total || 0);
         } else {
           // No cart, redirect to menu
-          router.push('/menu');
+          router.push(`/${locale}/menu`);
         }
       } catch (error) {
         console.error('Error loading cart:', error);
@@ -55,7 +56,7 @@ export default function CheckoutPage() {
     };
 
     loadCart();
-  }, [router, supabase]);
+  }, [router, supabase, locale]);
 
   const handleCreateOrder = async () => {
     setIsLoading(true);
@@ -65,7 +66,7 @@ export default function CheckoutPage() {
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
-        router.push('/');
+        router.push(`/${locale}`);
         return;
       }
 
@@ -157,7 +158,7 @@ export default function CheckoutPage() {
 
         if (data.success) {
           // Redirect to order status page
-          router.push(`/order/${orderId}`);
+          router.push(`/${locale}/order/${orderId}`);
         } else {
           setError(data.error || 'Payment failed');
           setIsLoading(false);
@@ -169,7 +170,7 @@ export default function CheckoutPage() {
             orderId,
             amount: cartTotal,
             currency: 'EUR',
-            returnUrl: `${window.location.origin}/order/${orderId}`,
+            returnUrl: `${window.location.origin}/${locale}/order/${orderId}`,
           },
         });
 
@@ -197,7 +198,7 @@ export default function CheckoutPage() {
         <header className="bg-white border-b border-gray-200 px-4 py-3">
           <div className="max-w-2xl mx-auto flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <Link href="/menu" className="text-2xl text-gray-700">
+              <Link href={`/${locale}/menu`} className="text-2xl text-gray-700">
                 ←
               </Link>
               <h1 className="font-semibold text-lg">{t('checkout.title')}</h1>
@@ -263,7 +264,7 @@ export default function CheckoutPage() {
       <header className="bg-white border-b border-gray-200 px-4 py-3">
         <div className="max-w-2xl mx-auto flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <Link href="/menu" className="text-2xl text-gray-700">
+            <Link href={`/${locale}/menu`} className="text-2xl text-gray-700">
               ←
             </Link>
             <h1 className="font-semibold text-lg">{t('checkout.payment')}</h1>

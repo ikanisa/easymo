@@ -1,6 +1,6 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
@@ -8,6 +8,7 @@ import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 
 export default function HomePage() {
   const t = useTranslations();
+  const locale = useLocale();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const [userName, setUserName] = useState('');
@@ -20,7 +21,7 @@ export default function HomePage() {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
         // User already has a session, redirect to chat
-        router.push('/chat');
+        router.push(`/${locale}/chat`);
       } else {
         setIsLoading(false);
       }
@@ -38,7 +39,7 @@ export default function HomePage() {
       setTableNumber(table);
       localStorage.setItem('table_number', table);
     }
-  }, [router, supabase.auth]);
+  }, [router, supabase.auth, locale]);
 
   const handleStart = async () => {
     setIsLoading(true);
@@ -58,7 +59,7 @@ export default function HomePage() {
       }
 
       // Redirect to chat
-      router.push('/chat');
+      router.push(`/${locale}/chat`);
     } catch (error) {
       console.error('Error starting session:', error);
       setIsLoading(false);
