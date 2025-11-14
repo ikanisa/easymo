@@ -19,6 +19,7 @@ export const IDS = {
   PROPERTY_FIND: "property_find",
   PROPERTY_ADD: "property_add",
   PROPERTY_CHAT_AI: "property_chat_ai",
+  BAR_CHAT_WAITER: "bar_chat_waiter",
   SAVED_PLACES: "saved_places",
   LOCATION_SAVED_LIST: "location_saved_list",
   LOCATION_SAVE_HOME: "location_save_home",

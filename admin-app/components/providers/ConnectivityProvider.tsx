@@ -20,12 +20,11 @@ const ConnectivityContext = createContext<ConnectivityContextValue>({
 });
 
 export function ConnectivityProvider({ children }: { children: ReactNode }) {
-  const [isOnline, setIsOnline] = useState<boolean>(() => {
-    if (typeof window === "undefined") return true;
-    return navigator.onLine;
-  });
+  const [mounted, setMounted] = useState(false);
+  const [isOnline, setIsOnline] = useState<boolean>(true);
 
   useEffect(() => {
+    setMounted(true);
     if (typeof window === "undefined") return;
 
     const updateStatus = () => {
@@ -43,12 +42,12 @@ export function ConnectivityProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (typeof document === "undefined") return;
+    if (!mounted || typeof document === "undefined") return;
     document.documentElement.dataset.networkStatus = isOnline
       ? "online"
       : "offline";
     document.body.dataset.offline = (!isOnline).toString();
-  }, [isOnline]);
+  }, [isOnline, mounted]);
 
   const value = useMemo<ConnectivityContextValue>(() => ({
     isOnline,

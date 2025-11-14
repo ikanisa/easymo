@@ -316,10 +316,26 @@ export async function handleBarsResultSelection(
     message += t(ctx.locale, "bars.result.no_whatsapp");
   }
 
+  // Store bar info for AI waiter context
+  if (ctx.profileId) {
+    await setState(ctx.supabase, ctx.profileId, {
+      key: "bar_detail",
+      data: {
+        barId: bar.id,
+        barName: bar.name,
+        barWhatsApp: bar.whatsapp,
+      },
+    });
+  }
+
   await sendButtonsMessage(
     ctx,
     message,
     buildButtons(
+      {
+        id: "bar_chat_waiter",
+        title: t(ctx.locale, "bars.buttons.chat_waiter"),
+      },
       {
         id: "bars_search_now",
         title: t(ctx.locale, "bars.buttons.search_again"),

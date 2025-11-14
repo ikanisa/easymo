@@ -669,6 +669,30 @@ async function handleHomeMenuSelection(
         return await handleBarsResultSelection(ctx, state.data || {}, id);
       }
       
+      // Check for bar waiter AI chat
+      if (id === IDS.BAR_CHAT_WAITER || (id === "bar_chat_waiter" && state.key === "bar_detail")) {
+        await sendButtonsMessage(
+          ctx,
+          t(ctx.locale, "bars.waiter.greeting"),
+          buildButtons(
+            {
+              id: IDS.BACK_MENU,
+              title: t(ctx.locale, "common.menu_back"),
+            },
+          ),
+          { emoji: "🤖" },
+        );
+        
+        // Set state to waiter chat mode
+        if (ctx.profileId && state.data) {
+          await setState(ctx.supabase, ctx.profileId, {
+            key: "bar_waiter_chat",
+            data: state.data,
+          });
+        }
+        return true;
+      }
+      
       // Check for shop tag selection
       if (id.startsWith("shop_tag_") && state.key === "shops_tag_selection") {
         const { handleShopsTagSelection } = await import(

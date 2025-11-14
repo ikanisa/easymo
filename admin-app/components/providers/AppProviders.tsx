@@ -13,9 +13,11 @@ interface AppProvidersProps {
 export function AppProviders({ children }: AppProvidersProps) {
   useServiceWorkerRegistration();
 
+  const [mounted, setMounted] = useState(false);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     if (typeof window === "undefined") return;
     const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
     const update = () => setPrefersReducedMotion(mediaQuery.matches);
@@ -23,6 +25,18 @@ export function AppProviders({ children }: AppProvidersProps) {
     mediaQuery.addEventListener("change", update);
     return () => mediaQuery.removeEventListener("change", update);
   }, []);
+
+  if (!mounted) {
+    return (
+      <ThemeProvider>
+        <ConnectivityProvider>
+          <MotionProviders reducedMotion={false}>
+            {children}
+          </MotionProviders>
+        </ConnectivityProvider>
+      </ThemeProvider>
+    );
+  }
 
   return (
     <ThemeProvider>
