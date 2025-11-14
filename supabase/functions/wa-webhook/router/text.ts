@@ -179,6 +179,12 @@ export async function handleText(
     return await handleAddPropertyPrice(ctx, stateData, body);
   }
 
+  // Handle property AI chat - conversational mode
+  if (state.key === "property_ai_chat") {
+    const { handlePropertyAIChat } = await import("../domains/property/rentals.ts");
+    return await handlePropertyAIChat(ctx, body);
+  }
+
   if (await handleMomoText(ctx, body, state)) {
     return true;
   }

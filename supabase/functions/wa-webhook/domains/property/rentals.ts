@@ -152,6 +152,11 @@ export async function startPropertyRentals(ctx: RouterContext): Promise<boolean>
           description: t(ctx.locale, "property.menu.add.description"),
         },
         {
+          id: IDS.PROPERTY_CHAT_AI,
+          title: t(ctx.locale, "property.menu.chatAI.title"),
+          description: t(ctx.locale, "property.menu.chatAI.description"),
+        },
+        {
           id: IDS.BACK_HOME,
           title: t(ctx.locale, "property.menu.back.title"),
           description: t(ctx.locale, "property.menu.back.description"),
@@ -208,6 +213,24 @@ export async function handlePropertyMenuSelection(
         rows: rentalTypeRows(ctx.locale),
       },
       { emoji: "🏠" },
+    );
+    return true;
+  }
+
+  if (id === IDS.PROPERTY_CHAT_AI) {
+    // Start AI Agent Chat
+    await setState(ctx.supabase, ctx.profileId, {
+      key: "property_ai_chat",
+      data: { chatActive: true },
+    });
+    
+    await sendButtonsMessage(
+      ctx,
+      t(ctx.locale, "property.aiChat.welcome"),
+      buildButtons(
+        { id: IDS.BACK_HOME, title: t(ctx.locale, "common.menu_back") }
+      ),
+      { emoji: "🤖" }
     );
     return true;
   }
@@ -673,4 +696,115 @@ function propertyFavoriteToRow(
     description: favorite.address ??
       `${favorite.lat.toFixed(4)}, ${favorite.lng.toFixed(4)}`,
   };
+}
+
+/**
+ * Handle conversational AI agent chat for property rentals
+ */
+export async function handlePropertyAIChat(
+  ctx: RouterContext,
+  userMessage: string,
+): Promise<boolean> {
+  if (!ctx.profileId) return false;
+
+  try {
+    const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+    const SUPABASE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+
+    if (!SUPABASE_URL || !SUPABASE_KEY) {
+      throw new Error("Missing Supabase credentials");
+    }
+
+    // Show typing indicator
+    await sendText(ctx.from, t(ctx.locale, "property.aiChat.processing"));
+
+    // Call the property AI agent with conversational mode
+    const response = await fetch(`${SUPABASE_URL}/functions/v1/agent-property-rental`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${SUPABASE_KEY}`,
+      },
+      body: JSON.stringify({
+        userId: ctx.profileId,
+        mode: "conversational",
+        message: userMessage,
+        userPhone: ctx.from,
+        locale: ctx.locale,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("Property AI chat error:", response.status, errorText);
+      
+      await sendButtonsMessage(
+        ctx,
+        t(ctx.locale, "property.aiChat.error"),
+        buildButtons(
+          { id: IDS.PROPERTY_RENTALS, title: t(ctx.locale, "property.buttons.back_menu") },
+          { id: IDS.BACK_HOME, title: t(ctx.locale, "common.menu_back") }
+        ),
+      );
+      return true;
+    }
+
+    const aiResponse = await response.json();
+
+    // Send AI response to user
+    if (aiResponse.message) {
+      await sendButtonsMessage(
+        ctx,
+        aiResponse.message,
+        buildButtons(
+          { id: IDS.PROPERTY_RENTALS, title: t(ctx.locale, "property.buttons.back_menu") },
+          { id: IDS.BACK_HOME, title: t(ctx.locale, "common.menu_back") }
+        ),
+        { emoji: "🤖" }
+      );
+    }
+
+    // If agent provides property options, display them
+    if (aiResponse.properties && aiResponse.properties.length > 0) {
+      const propertyRows = aiResponse.properties.slice(0, 9).map((prop: any, idx: number) => ({
+        id: `ai_property_${idx}`,
+        title: prop.title || `Property ${idx + 1}`,
+        description: prop.description || `${prop.bedrooms} bed • ${prop.price}`,
+      }));
+
+      await sendListMessage(
+        ctx,
+        {
+          title: t(ctx.locale, "property.aiChat.results.title"),
+          body: t(ctx.locale, "property.aiChat.results.body", { count: aiResponse.properties.length }),
+          sectionTitle: t(ctx.locale, "property.aiChat.results.section"),
+          buttonText: t(ctx.locale, "property.common.choose"),
+          rows: [
+            ...propertyRows,
+            {
+              id: IDS.BACK_HOME,
+              title: t(ctx.locale, "common.menu_back"),
+              description: t(ctx.locale, "common.back_to_menu.description"),
+            },
+          ],
+        },
+        { emoji: "🏠" },
+      );
+    }
+
+    return true;
+  } catch (error) {
+    console.error("Property AI chat exception:", error);
+    
+    await sendButtonsMessage(
+      ctx,
+      t(ctx.locale, "property.aiChat.error"),
+      buildButtons(
+        { id: IDS.PROPERTY_RENTALS, title: t(ctx.locale, "property.buttons.back_menu") },
+        { id: IDS.BACK_HOME, title: t(ctx.locale, "common.menu_back") }
+      ),
+    );
+    
+    return true;
+  }
 }

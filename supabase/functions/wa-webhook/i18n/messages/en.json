@@ -813,5 +813,14 @@
   "quincaillerie.results.showing_more": "🔧 Showing results {from}-{to} of {total}",
   "common.see_more_categories": "See more categories",
   "shops.tags.showing_more": "Showing categories {from}-{to} of {total}",
-  "support.contact_info": "📞 Need help? Contact us:\n\nWhatsApp: +250788123456\nEmail: support@easymo.rw\n\nOur team is here to assist you!"
+  "support.contact_info": "📞 Need help? Contact us:\n\nWhatsApp: +250788123456\nEmail: support@easymo.rw\n\nOur team is here to assist you!",
+  "property.menu.chatAI.title": "🤖 Chat with AI Agent",
+  "property.menu.chatAI.description": "Ask our AI assistant about properties",
+  "property.aiChat.welcome": "👋 Hello! I'm your real estate AI assistant.\n\nI can help you:\n• Find properties to rent\n• Answer questions about listings\n• Get property recommendations\n• Understand pricing and locations\n\nJust ask me anything about properties! 🏠",
+  "property.aiChat.processing": "🤖 Let me check that for you...",
+  "property.aiChat.error": "😔 Sorry, I'm having trouble processing your request right now. Please try again or use the menu options.",
+  "property.aiChat.results.title": "🏠 Property Matches",
+  "property.aiChat.results.body": "I found {count} properties that match your criteria. Tap to view details:",
+  "property.aiChat.results.section": "Available Properties",
+  "property.buttons.back_menu": "↩️ Back to Menu"
 }

@@ -768,5 +768,14 @@
   "quincaillerie.results.showing_more": "🔧 Résultats {from}-{to} sur {total}",
   "common.see_more_categories": "Voir plus de catégories",
   "shops.tags.showing_more": "Catégories {from}-{to} sur {total}",
-  "support.contact_info": "📞 Besoin d'aide? Contactez-nous:\n\nWhatsApp: +250788123456\nEmail: support@easymo.rw\n\nNotre équipe est là pour vous aider!"
+  "support.contact_info": "📞 Besoin d'aide? Contactez-nous:\n\nWhatsApp: +250788123456\nEmail: support@easymo.rw\n\nNotre équipe est là pour vous aider!",
+  "property.menu.chatAI.title": "🤖 Discuter avec l'Agent IA",
+  "property.menu.chatAI.description": "Demandez à notre assistant IA sur les propriétés",
+  "property.aiChat.welcome": "👋 Bonjour! Je suis votre assistant IA immobilier.\n\nJe peux vous aider à:\n• Trouver des propriétés à louer\n• Répondre aux questions sur les annonces\n• Obtenir des recommandations de propriétés\n• Comprendre les prix et les emplacements\n\nDemandez-moi n'importe quoi sur les propriétés! 🏠",
+  "property.aiChat.processing": "🤖 Laissez-moi vérifier cela pour vous...",
+  "property.aiChat.error": "😔 Désolé, j'ai du mal à traiter votre demande pour le moment. Veuillez réessayer ou utiliser les options du menu.",
+  "property.aiChat.results.title": "�� Propriétés Correspondantes",
+  "property.aiChat.results.body": "J'ai trouvé {count} propriétés qui correspondent à vos critères. Appuyez pour voir les détails:",
+  "property.aiChat.results.section": "Propriétés Disponibles",
+  "property.buttons.back_menu": "↩️ Retour au Menu"
 }
