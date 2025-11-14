@@ -580,7 +580,7 @@ async function handleHomeMenuSelection(
     }
     case IDS.PROFILE_PROPERTIES: {
       // Redirect to property rentals
-      const { startPropertyRentals } = await import("../domains/property/index.ts");
+      const { startPropertyRentals } = await import("../domains/property/rentals.ts");
       return await startPropertyRentals(ctx);
     }
     case IDS.PROFILE_SETTINGS: {
