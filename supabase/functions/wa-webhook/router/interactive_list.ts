@@ -664,6 +664,14 @@ async function handleHomeMenuSelection(
         return await handleShopsTagSelection(ctx, state.data || {}, id);
       }
       
+      // Check for shops tags "More" button
+      if (id === "shops_tags_more" && state.key === "shops_tag_selection") {
+        const { handleShopsTagsMore } = await import(
+          "../domains/shops/services.ts"
+        );
+        return await handleShopsTagsMore(ctx, state.data || {});
+      }
+      
       // Check for shops "More" button
       if (id === "shops_more" && state.key === "shops_results") {
         const { handleShopsMore } = await import(

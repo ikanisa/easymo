@@ -762,8 +762,10 @@
   "business.claim.success": "🎉 Entreprise revendiquée! Vous pouvez maintenant la gérer depuis votre profil.",
   "common.buttons.more": "➡️ Plus",
   "common.see_more_results": "Voir les 9 prochains résultats",
-  "bars.results.showing_more": "Affichage {from}-{to} sur {total}{preference}",
-  "shops.results.showing_more": "Affichage {from}-{to} sur {total} {category}",
-  "pharmacy.results.showing_more": "Affichage {from}-{to} sur {total} pharmacies",
-  "quincaillerie.results.showing_more": "Affichage {from}-{to} sur {total} quincailleries"
+  "bars.results.showing_more": "🍺 Résultats {from}-{to} sur {total}",
+  "shops.results.showing_more": "Résultats {from}-{to} sur {total}",
+  "pharmacy.results.showing_more": "💊 Résultats {from}-{to} sur {total}",
+  "quincaillerie.results.showing_more": "🔧 Résultats {from}-{to} sur {total}",
+  "common.see_more_categories": "Voir plus de catégories",
+  "shops.tags.showing_more": "Catégories {from}-{to} sur {total}"
 }

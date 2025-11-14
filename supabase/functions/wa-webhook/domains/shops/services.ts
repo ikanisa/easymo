@@ -21,6 +21,7 @@ export async function startShopsAndServices(
 
 export async function handleShopsBrowseButton(
   ctx: RouterContext,
+  page: number = 0,
 ): Promise<boolean> {
   if (!ctx.profileId) return false;
 
@@ -52,10 +53,11 @@ export async function handleShopsBrowseButton(
     return true;
   }
 
-  // Store tags in state
+  // Store ALL tags in state with page info
   await setState(ctx.supabase, ctx.profileId, {
     key: "shops_tag_selection",
     data: {
+      page: page,
       tags: tags.map((tag: any) => ({
         id: tag.tag_id,
         name: tag.tag_name,
@@ -67,12 +69,27 @@ export async function handleShopsBrowseButton(
     },
   });
 
-  // Build list rows (top 9 tags)
-  const rows = tags.slice(0, 9).map((tag: any, idx: number) => ({
-    id: `shop_tag_${idx}`,
+  // Pagination: show 9 tags per page
+  const start = page * 9;
+  const end = Math.min(start + 9, tags.length);
+  const pageTags = tags.slice(start, end);
+  const hasMore = end < tags.length;
+
+  // Build list rows for current page
+  const rows = pageTags.map((tag: any, idx: number) => ({
+    id: `shop_tag_${start + idx}`,
     title: `${tag.icon || "🏷️"} ${tag.tag_name}`,
     description: `${tag.business_count} ${tag.business_count === 1 ? "business" : "businesses"}`,
   }));
+
+  // Add "More" button if there are more tags
+  if (hasMore) {
+    rows.push({
+      id: "shops_tags_more",
+      title: t(ctx.locale, "common.buttons.more"),
+      description: t(ctx.locale, "common.see_more_categories"),
+    });
+  }
 
   // Add back button
   rows.push({
@@ -85,7 +102,13 @@ export async function handleShopsBrowseButton(
     ctx,
     {
       title: t(ctx.locale, "shops.tags.title"),
-      body: t(ctx.locale, "shops.tags.body"),
+      body: page === 0
+        ? t(ctx.locale, "shops.tags.body")
+        : t(ctx.locale, "shops.tags.showing_more", {
+            from: String(start + 1),
+            to: String(end),
+            total: String(tags.length),
+          }),
       sectionTitle: t(ctx.locale, "shops.tags.section"),
       rows,
       buttonText: t(ctx.locale, "common.buttons.view"),
@@ -96,6 +119,7 @@ export async function handleShopsBrowseButton(
   await logStructuredEvent("SHOPS_TAGS_SHOWN", {
     wa_id: `***${ctx.from.slice(-4)}`,
     tag_count: tags.length,
+    page: page,
   });
 
   return true;
@@ -423,6 +447,81 @@ export async function handleShopsMore(
       buttonText: t(ctx.locale, "common.buttons.view"),
     },
     { emoji: state.tag_icon || "🏪" },
+  );
+
+  return true;
+}
+
+export async function handleShopsTagsMore(
+  ctx: RouterContext,
+  state: {
+    tags?: Array<{
+      id: string;
+      name: string;
+      slug: string;
+      icon?: string;
+      description?: string;
+      count: number;
+    }>;
+    page?: number;
+  },
+): Promise<boolean> {
+  if (!ctx.profileId || !state.tags) return false;
+
+  const currentPage = state.page || 0;
+  const nextPage = currentPage + 1;
+
+  // Update state with new page
+  await setState(ctx.supabase, ctx.profileId, {
+    key: "shops_tag_selection",
+    data: {
+      ...state,
+      page: nextPage,
+    },
+  });
+
+  // Pagination for stored tags
+  const start = nextPage * 9;
+  const end = Math.min(start + 9, state.tags.length);
+  const pageTags = state.tags.slice(start, end);
+  const hasMore = end < state.tags.length;
+
+  const rows = pageTags.map((tag, idx) => ({
+    id: `shop_tag_${start + idx}`,
+    title: `${tag.icon || "🏷️"} ${tag.name}`,
+    description: `${tag.count} ${tag.count === 1 ? "business" : "businesses"}`,
+  }));
+
+  // Add "More" button if there are more tags
+  if (hasMore) {
+    rows.push({
+      id: "shops_tags_more",
+      title: t(ctx.locale, "common.buttons.more"),
+      description: t(ctx.locale, "common.see_more_categories"),
+    });
+  }
+
+  // Add back button
+  rows.push({
+    id: IDS.BACK_MENU,
+    title: t(ctx.locale, "common.menu_back"),
+    description: t(ctx.locale, "common.back_to_menu.description"),
+  });
+
+  await sendListMessage(
+    ctx,
+    {
+      title: t(ctx.locale, "shops.tags.title"),
+      body: t(ctx.locale, "shops.tags.showing_more", {
+        from: String(start + 1),
+        to: String(end),
+        total: String(state.tags.length),
+      }),
+      sectionTitle: t(ctx.locale, "shops.tags.section"),
+      rows,
+      buttonText: t(ctx.locale, "common.buttons.view"),
+    },
+    { emoji: "🏪" },
   );
 
   return true;
