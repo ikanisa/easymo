@@ -335,7 +335,6 @@ async function triggerQuincaillerieAgentBackground(
 }
 
 async function sendQuincaillerieFallbackOld(
-async function sendQuincaillerieFallbackOld(
   ctx: RouterContext,
   location: { lat: number; lng: number },
   items: string[],

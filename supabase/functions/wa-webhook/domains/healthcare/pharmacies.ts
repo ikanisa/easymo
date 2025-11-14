@@ -330,7 +330,6 @@ async function triggerPharmacyAgentBackground(
 }
 
 async function sendPharmacyFallbackOld(
-async function sendPharmacyFallbackOld(
   ctx: RouterContext,
   location: { lat: number; lng: number },
   medications: string[],

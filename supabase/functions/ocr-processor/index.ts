@@ -327,7 +327,7 @@ async function runOpenAiExtraction(imageBase64: string, contentType: string) {
                           price: { type: "number" },
                           currency: { type: "string" },
                         },
-                        required: ["name", "price"],
+                        required: ["name", "description", "price", "currency"],
                         additionalProperties: false,
                       },
                     },

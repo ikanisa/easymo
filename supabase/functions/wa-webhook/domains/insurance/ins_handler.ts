@@ -7,6 +7,7 @@ import { logStructuredEvent } from "../../observe/log.ts";
 import { fetchInsuranceMedia, uploadInsuranceBytes } from "./ins_media.ts";
 import { runInsuranceOCR } from "./ins_ocr.ts";
 import { normalizeInsuranceExtraction } from "./ins_normalize.ts";
+import { notifyInsuranceAdmins } from "./ins_admin_notify.ts";
 import {
   buildAdminAlert,
   buildUserErrorMessage,
@@ -146,50 +147,41 @@ async function notifyAdmins(
   leadId: string,
   extracted: InsuranceExtraction,
 ): Promise<void> {
-  const { insurance_admin_numbers } = await getAppConfig(ctx.supabase);
-  const admins = Array.isArray(insurance_admin_numbers)
-    ? insurance_admin_numbers.filter((value) =>
-      typeof value === "string" && value.trim()
-    )
-    : [];
-  if (!admins.length) {
-    await logStructuredEvent("INS_ADMIN_NOTIFY_OK", {
+  try {
+    // Use new admin notification system with table-based admins
+    const result = await notifyInsuranceAdmins(ctx.supabase, {
       leadId,
-      count: 0,
+      userWaId: ctx.from,
+      extracted,
     });
-    return;
-  }
 
-  const clientDigits = normalizeClientDigits(ctx.from);
-  const message = buildAdminAlert(extracted, clientDigits);
-  const targets = admins.slice(0, 5).map(normalizeAdminNumber);
-  const errors: string[] = [];
-  for (const to of targets) {
-    try {
-      await sendText(to, message);
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err ?? "unknown");
-      errors.push(msg);
-      console.error("INS_ADMIN_SEND_FAIL", { to, error: msg });
+    if (result.failed > 0) {
+      await logStructuredEvent("INS_ADMIN_NOTIFY_PARTIAL", {
+        leadId,
+        sent: result.sent,
+        failed: result.failed,
+        errors: result.errors,
+      });
+      
+      if (result.sent === 0) {
+        await emitAlert("INS_ADMIN_NOTIFY_FAIL", {
+          leadId,
+          errors: result.errors,
+        });
+      }
+    } else {
+      await logStructuredEvent("INS_ADMIN_NOTIFY_OK", {
+        leadId,
+        count: result.sent,
+      });
     }
-  }
-
-  if (errors.length) {
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error ?? "unknown");
     await logStructuredEvent("INS_ADMIN_NOTIFY_FAIL", {
       leadId,
-      count: targets.length,
-      error: errors,
+      error: msg,
     });
-    await emitAlert("INS_ADMIN_NOTIFY_FAIL", {
-      leadId,
-      count: targets.length,
-      errors,
-    });
-  } else {
-    await logStructuredEvent("INS_ADMIN_NOTIFY_OK", {
-      leadId,
-      count: targets.length,
-    });
+    await emitAlert("INS_ADMIN_NOTIFY_FAIL", { leadId, error: msg });
   }
 }
 
