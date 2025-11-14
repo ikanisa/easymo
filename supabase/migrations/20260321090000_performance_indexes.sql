@@ -7,8 +7,7 @@ BEGIN;
 -- TRANSACTIONS TABLE INDEXES
 -- =============================================================================
 
--- Index for user transaction queries sorted by date (most common query pattern)
-CREATE INDEX IF NOT EXISTS idx_transactions_user_created
+CREATE INDEX IF NOT EXISTS idx_wallet_transactions_user_created
   ON public.wallet_transactions(profile_id, occurred_at DESC)
   WHERE profile_id IS NOT NULL;
 
