@@ -41,7 +41,7 @@ async function listBusinesses(
   req: FlowExchangeRequest,
 ): Promise<FlowExchangeResponse> {
   const { data, error } = await supabase
-    .from("businesses")
+    .from("business")
     .select("id, name, status, catalog_url, created_at")
     .order("created_at", { ascending: false })
     .limit(LIMIT);
@@ -74,7 +74,7 @@ async function updateStatus(
     };
   }
   const { error } = await supabase
-    .from("businesses")
+    .from("business")
     .update({ status })
     .eq("id", bizId);
   if (error) {

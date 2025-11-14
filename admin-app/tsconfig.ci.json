@@ -22,10 +22,10 @@
         "../packages/ui/tokens/index.ts"
       ],
       "@easymo/video-agent-schema": [
-        "../packages/video-agent-schema/src/index.ts"
+        "../packages/video-agent-schema/dist/index"
       ],
       "@easymo/video-agent-schema/*": [
-        "../packages/video-agent-schema/src/*"
+        "../packages/video-agent-schema/dist/*"
       ],
       "@easymo/commons": [
         "../packages/commons/src/index.ts"

@@ -92,8 +92,16 @@ function extractLocation(data: GenericRecord | undefined, prefixes: string[]): M
   for (const prefix of prefixes) {
     const base = getNestedValue(data, [prefix]) as GenericRecord | undefined;
     if (base && typeof base === "object") {
-      const lat = toNumber(base.lat ?? base.latitude ?? base.latlng?.[0] ?? base.coordinates?.[0]);
-      const lng = toNumber(base.lng ?? base.longitude ?? base.latlng?.[1] ?? base.coordinates?.[1]);
+      const latLngValue = base.latlng;
+      const coordinatesValue = base.coordinates;
+      const latLngArray = Array.isArray(latLngValue) ? latLngValue : undefined;
+      const coordinatesArray = Array.isArray(coordinatesValue) ? coordinatesValue : undefined;
+      const lat = toNumber(
+        base.lat ?? base.latitude ?? latLngArray?.[0] ?? coordinatesArray?.[0],
+      );
+      const lng = toNumber(
+        base.lng ?? base.longitude ?? latLngArray?.[1] ?? coordinatesArray?.[1],
+      );
       if (lat != null && lng != null) {
         const label = toStringValue(base.label ?? base.address ?? base.display ?? base.name);
         return { lat, lng, label };
@@ -132,7 +140,8 @@ function extractVehicleType(data: GenericRecord | undefined): string | null {
   );
 }
 
-function extractRideId(session: AgentSession): string | null {
+function extractRideId(session?: AgentSession | null): string | null {
+  if (!session) return null;
   return (
     toStringValue(session.metadata?.ride_id) ??
     toStringValue(session.request_data?.ride_id) ??
@@ -613,7 +622,7 @@ export function MobilityNegotiationWorkbench({
                   {passengerName ?? "Unknown passenger"} · {passengerPhone ?? "No phone"}
                 </p>
               </div>
-              <Button asChild variant="link" size="sm" className="px-0">
+              <Button asChild variant="ghost" size="sm" className="px-0 text-[color:var(--color-accent)] underline-offset-4 hover:underline">
                 <Link href="/agents/conversations">Open conversation history</Link>
               </Button>
             </div>

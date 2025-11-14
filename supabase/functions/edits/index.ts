@@ -12,7 +12,7 @@ import {
   type LineageEntry,
   type Mutation,
   type ShotPlan,
-} from "../../packages/video-agent-schema/src/index.ts";
+} from "../../packages/video-agent-schema/_src/index.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",

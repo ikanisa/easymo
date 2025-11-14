@@ -1,15 +1,15 @@
 import { z } from "zod";
 
-import type { Database } from "@/src/v2/lib/supabase/database.types";
-
 import { coerceNullableString } from "../_lib/utils";
 
 export const stationSelect = "id, name, location, created_at";
 
-export type StationRow = Pick<
-  Database["public"]["Tables"]["stations"]["Row"],
-  "id" | "name" | "location" | "created_at"
->;
+export type StationRow = {
+  id: string;
+  name: string;
+  location: string | null;
+  created_at: string;
+};
 
 export const stationCreateSchema = z.object({
   id: z.string().uuid().optional(),

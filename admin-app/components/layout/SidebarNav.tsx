@@ -9,6 +9,7 @@ import {
   type PanelNavGroup,
   type PanelNavGroupId,
 } from "./nav-items";
+import { toLinkHref } from "@/lib/link-helpers";
 
 function isLinkActive(href: string, pathname: string) {
   return pathname === href || pathname.startsWith(`${href}/`);
@@ -60,7 +61,7 @@ export function SidebarNav() {
     <nav aria-label="Sidebar" className="flex flex-col gap-6">
       <div className="flex flex-col gap-1">
         <Link
-          href={root.href}
+          href={toLinkHref(root.href)}
           className={classNames(
             "rounded-lg px-4 py-2.5 text-base font-semibold transition-all",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2",
@@ -93,7 +94,7 @@ export function SidebarNav() {
                   return (
                     <li key={item.href}>
                       <Link
-                        href={item.href}
+                        href={toLinkHref(item.href)}
                         className={classNames(
                           "flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm font-medium transition-all",
                           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2",

@@ -5,9 +5,9 @@ import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import { createQueryClient } from "@/lib/api/queryClient";
 import {
   dashboardQueryKeys,
-  fetchDashboardSnapshot,
   fetchDashboardWebhookErrors,
 } from "@/lib/queries/dashboard";
+import { getDashboardSnapshot } from "@/lib/dashboard/dashboard-service";
 import { DashboardClient } from "./DashboardClient";
 
 export const metadata = createPanelPageMetadata("/dashboard");
@@ -24,7 +24,7 @@ export default async function DashboardPage() {
   await Promise.all([
     queryClient.prefetchQuery({
       queryKey: dashboardQueryKeys.snapshot(),
-      queryFn: fetchDashboardSnapshot,
+      queryFn: getDashboardSnapshot,
     }),
     queryClient.prefetchQuery({
       queryKey: dashboardQueryKeys.webhookErrors(),

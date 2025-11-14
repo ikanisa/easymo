@@ -11,6 +11,7 @@ import {
   ChartBarIcon,
   CogIcon,
 } from "@heroicons/react/24/outline";
+import { toLinkHref } from "@/lib/link-helpers";
 
 const navigation = [
   { name: "Dashboard", href: "/v2/dashboard", icon: HomeIcon },
@@ -41,7 +42,7 @@ export function Sidebar() {
               return (
                 <li key={item.name}>
                   <Link
-                    href={item.href}
+                    href={toLinkHref(item.href)}
                     className={[
                       "flex items-center gap-3 rounded-lg px-3 py-2 transition-colors duration-150",
                       "dashboard-shell__sidebar-link",

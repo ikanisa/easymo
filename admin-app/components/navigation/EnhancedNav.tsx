@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import classNames from "classnames";
 import { Search, Menu, X } from "lucide-react";
 import { PANEL_NAVIGATION, type PanelNavGroup, type PanelNavGroupId } from "../layout/nav-items";
+import { toLinkHref } from "@/lib/link-helpers";
 
 interface EnhancedNavProps {
   onSearchOpen?: () => void;
@@ -140,7 +141,7 @@ export function EnhancedNav({ onSearchOpen, className }: EnhancedNavProps) {
           {/* Root link */}
           <div className="mb-6">
             <Link
-              href={root.href}
+              href={toLinkHref(root.href)}
               onClick={closeMobileMenu}
               className={classNames(
                 "flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold transition-all",
@@ -208,7 +209,7 @@ export function EnhancedNav({ onSearchOpen, className }: EnhancedNavProps) {
                       return (
                         <li key={item.href}>
                           <Link
-                            href={item.href}
+                            href={toLinkHref(item.href)}
                             onClick={closeMobileMenu}
                             className={classNames(
                               "flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all",

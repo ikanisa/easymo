@@ -72,6 +72,33 @@ export type Database = {
           },
         ]
       }
+      agents: {
+        Row: {
+          id: string
+          name: string | null
+          phone: string | null
+          status: string | null
+          wallet_balance: number | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          name?: string | null
+          phone?: string | null
+          status?: string | null
+          wallet_balance?: number | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string | null
+          phone?: string | null
+          status?: string | null
+          wallet_balance?: number | null
+          created_at?: string
+        }
+        Relationships: []
+      }
       admin_audit_log: {
         Row: {
           action: string
@@ -11478,4 +11505,3 @@ export const Constants = {
     },
   },
 } as const
-

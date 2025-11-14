@@ -1,13 +1,13 @@
-import type { Database } from "@/src/v2/lib/supabase/database.types";
-
 import { normalizeNumber } from "../_lib/utils";
 
 export const transactionSelect = "id, amount, description, created_at";
 
-export type TransactionRow = Pick<
-  Database["public"]["Tables"]["transactions"]["Row"],
-  "id" | "amount" | "description" | "created_at"
->;
+export type TransactionRow = {
+  id: string;
+  amount: number | null;
+  description: string | null;
+  created_at: string;
+};
 
 export function sanitizeTransaction(row: TransactionRow) {
   return {

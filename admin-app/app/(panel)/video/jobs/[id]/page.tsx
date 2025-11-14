@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { GlassPanel } from "@/components/layout/GlassPanel";
@@ -111,7 +110,15 @@ export default async function VideoJobDetailPage({ params }: PageProps) {
                       {product.hero_asset_url
                         ? (
                           <p className="text-neutral-500">
-                            Hero asset: <Link href={product.hero_asset_url} className="text-sky-400 underline">{product.hero_asset_url}</Link>
+                            Hero asset:{" "}
+                            <a
+                              href={product.hero_asset_url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-sky-400 underline"
+                            >
+                              {product.hero_asset_url}
+                            </a>
                           </p>
                         )
                         : null}
@@ -163,14 +170,32 @@ export default async function VideoJobDetailPage({ params }: PageProps) {
               <h3 className="text-sm uppercase tracking-wide text-neutral-400">Master (1080p)</h3>
               <p className="mt-2 break-all text-sm text-neutral-100">{job.masterPath ?? "Not yet stored"}</p>
               {job.masterSignedUrl
-                ? <Link href={job.masterSignedUrl} className="mt-3 inline-flex items-center text-sm font-semibold text-sky-400 underline">Download master</Link>
+                ? (
+                  <a
+                    href={job.masterSignedUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="mt-3 inline-flex items-center text-sm font-semibold text-sky-400 underline"
+                  >
+                    Download master
+                  </a>
+                )
                 : null}
             </div>
             <div className="rounded-xl bg-neutral-900/40 p-4">
               <h3 className="text-sm uppercase tracking-wide text-neutral-400">WhatsApp rendition</h3>
               <p className="mt-2 break-all text-sm text-neutral-100">{job.whatsappPath ?? "Not yet stored"}</p>
               {job.whatsappSignedUrl
-                ? <Link href={job.whatsappSignedUrl} className="mt-3 inline-flex items-center text-sm font-semibold text-sky-400 underline">Download WhatsApp file</Link>
+                ? (
+                  <a
+                    href={job.whatsappSignedUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="mt-3 inline-flex items-center text-sm font-semibold text-sky-400 underline"
+                  >
+                    Download WhatsApp file
+                  </a>
+                )
                 : null}
               <p className="mt-2 text-xs text-neutral-500">Status: {job.whatsappStatus}</p>
             </div>

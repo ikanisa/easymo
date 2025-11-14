@@ -165,19 +165,22 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   }
   if (maxPerRequest > 0 && files.length > maxPerRequest) files.length = maxPerRequest;
   if (!files.length) return NextResponse.json({ imported: 0, reason: 'no_files' }, { status: 200 });
-  const urlsAll = files.map((f: any) => f?.webViewLink || `https://drive.google.com/file/d/${f?.id}/view`);
-  const uniqueUrlsAll = Array.from(new Set(urlsAll));
+  const urlsAll: string[] = files.map((f: any) => {
+    const directUrl = typeof f?.webViewLink === "string" ? f.webViewLink : null;
+    return directUrl ?? `https://drive.google.com/file/d/${f?.id}/view`;
+  });
+  const uniqueUrlsAll = Array.from(new Set<string>(urlsAll));
   const duplicatesBatch = urlsAll.length - uniqueUrlsAll.length;
   const { data: existingRows } = await admin.from('agent_documents').select('source_url').eq('agent_id', id).in('source_url', uniqueUrlsAll);
-  const existingSet = new Set((existingRows ?? []).map((r: any) => r.source_url));
-  const newUrls = uniqueUrlsAll.filter((u) => !existingSet.has(u));
+  const existingSet = new Set<string>((existingRows ?? []).map((r: any) => r.source_url));
+  const newUrls: string[] = uniqueUrlsAll.filter((u) => !existingSet.has(u));
 
   const mapByUrl = new Map<string, Record<string, unknown>>();
   files.forEach((f: any) => {
     const url = f?.webViewLink || `https://drive.google.com/file/d/${f?.id}/view`;
     mapByUrl.set(url, f);
   });
-  const rows = newUrls.map((u: string) => {
+  const rows = newUrls.map((u) => {
     const f = mapByUrl.get(u);
     return {
       agent_id: id,

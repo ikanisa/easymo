@@ -7,6 +7,7 @@ import {
   useMemo,
   useState,
   type JSX,
+  type ReactNode,
 } from "react";
 import { CheckCircle2, Info, TriangleAlert } from "lucide-react";
 import styles from "./ToastProvider.module.css";
@@ -58,7 +59,7 @@ interface ToastContextValue {
 
 const ToastContext = createContext<ToastContextValue | undefined>(undefined);
 
-export function ToastProvider({ children }: { children: React.ReactNode }) {
+export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
 
   const dismissToast = useCallback((id: string) => {

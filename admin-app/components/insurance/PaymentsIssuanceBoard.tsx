@@ -6,11 +6,6 @@ import { Drawer } from "@/components/ui/Drawer";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import {
-  InsurancePayment,
-  InsurancePolicy,
-  InsuranceRequest,
-} from "@/lib/schemas";
-import {
   mockInsurancePayments,
   mockInsurancePolicies,
   mockInsuranceRequests,
@@ -26,10 +21,14 @@ function formatCurrency(value: number) {
   return currencyFormatter.format(Math.round(value));
 }
 
+type InsurancePolicyMock = (typeof mockInsurancePolicies)[number];
+type InsurancePaymentMock = (typeof mockInsurancePayments)[number];
+type InsuranceRequestMock = (typeof mockInsuranceRequests)[number];
+
 interface PolicyRow {
-  policy: InsurancePolicy;
-  request: InsuranceRequest | undefined;
-  payment: InsurancePayment | undefined;
+  policy: InsurancePolicyMock;
+  request: InsuranceRequestMock | undefined;
+  payment: InsurancePaymentMock | undefined;
 }
 
 function buildRows(): PolicyRow[] {
@@ -40,7 +39,7 @@ function buildRows(): PolicyRow[] {
   }));
 }
 
-const paymentStatusVariant: Record<InsurancePayment["status"], ComponentProps<typeof Badge>["variant"]> = {
+const paymentStatusVariant: Record<InsurancePaymentMock["status"], ComponentProps<typeof Badge>["variant"]> = {
   pending: "warning",
   in_review: "outline",
   completed: "success",
@@ -48,7 +47,7 @@ const paymentStatusVariant: Record<InsurancePayment["status"], ComponentProps<ty
   refunded: "default",
 };
 
-const policyStatusVariant: Record<InsurancePolicy["status"], ComponentProps<typeof Badge>["variant"]> = {
+const policyStatusVariant: Record<InsurancePolicyMock["status"], ComponentProps<typeof Badge>["variant"]> = {
   draft: "outline",
   pending_issue: "warning",
   active: "success",

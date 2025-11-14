@@ -112,7 +112,7 @@ export const GET = createHandler(
 
     const { data: quoteRows } = rows.length
       ? await quoteQuery
-      : { data: [], error: null };
+      : { data: [] };
 
     const groupedQuotes = new Map<string, any[]>();
     (quoteRows ?? []).forEach((quote) => {

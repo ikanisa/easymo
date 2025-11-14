@@ -93,7 +93,7 @@ export async function handleLocation(
   
   if (state.key === "bars_wait_location") {
     const { handleBarsLocation } = await import("../domains/bars/search.ts");
-    return await handleBarsLocation(ctx, { lat, lng });
+    return await handleBarsLocation(ctx, { lat, lng }, state.data as { preference?: string });
   }
   
   if (state.key === "shops_wait_location") {
@@ -156,6 +156,6 @@ export async function handleLocation(
 async function sendDineInDisabledNotice(ctx: RouterContext): Promise<void> {
   await sendText(
     ctx.from,
-    "Dine-in workflows are handled outside WhatsApp. Please coordinate with your success manager.",
+    "Dine-in orders are handled separately. Please contact our team for assistance.",
   );
 }

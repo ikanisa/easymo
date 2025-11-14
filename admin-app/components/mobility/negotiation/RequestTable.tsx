@@ -196,7 +196,11 @@ export function RequestTable({
             title="No active negotiations"
             description="Queues are quiet right now. Hop into live conversations to seed more demand."
             action={(
-              <Button asChild variant="link" className="px-0 text-slate-900 dark:text-slate-100">
+              <Button
+                asChild
+                variant="ghost"
+                className="px-0 text-slate-900 underline-offset-4 hover:underline dark:text-slate-100"
+              >
                 <Link href="/agents/conversations">Open Conversations</Link>
               </Button>
             )}

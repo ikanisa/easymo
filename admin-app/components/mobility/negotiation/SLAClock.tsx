@@ -43,7 +43,8 @@ export function SLAClock({ startedAt, deadlineAt, status, className }: SLAClockP
 
   const progress = totalMs > 0 ? Math.min(1, Math.max(0, 1 - remainingMs / totalMs)) : 0;
   const timeDisplay = formatDuration(remainingMs);
-  const isBreached = Boolean(deadlineAt) && new Date(deadlineAt).getTime() < now;
+  const deadlineTime = deadlineAt ? new Date(deadlineAt).getTime() : null;
+  const isBreached = deadlineTime != null && deadlineTime < now;
 
   return (
     <Card className={className}>

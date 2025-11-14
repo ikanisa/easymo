@@ -10,43 +10,45 @@ import {
   type UseQueryResult,
 } from "@tanstack/react-query";
 
-import type { Database } from "./database.types";
-
 const API_BASE = "/api/v2";
 
-type AgentsTable = Database["public"]["Tables"]["agents"];
-type DriversTable = Database["public"]["Tables"]["drivers"];
-type StationsTable = Database["public"]["Tables"]["stations"];
-type VehiclesTable = Database["public"]["Tables"]["vehicles"];
-type TransactionsTable = Database["public"]["Tables"]["transactions"];
+export type Agent = {
+  id: string;
+  name: string;
+  phone: string;
+  status: string | null;
+  wallet_balance: number | null;
+  created_at: string;
+};
 
-export type Agent = Pick<
-  AgentsTable["Row"],
-  "id" | "name" | "phone" | "status" | "wallet_balance" | "created_at"
->;
+export type Vehicle = {
+  id: string;
+  make: string | null;
+  model: string | null;
+  license_plate: string | null;
+};
 
-export type Vehicle = Pick<
-  VehiclesTable["Row"],
-  "id" | "make" | "model" | "license_plate"
->;
+export type Driver = {
+  id: string;
+  name: string;
+  phone: string;
+  status: string | null;
+  vehicle_id: string | null;
+  created_at: string;
+  vehicles: Vehicle | null;
+};
 
-export type Driver =
-  Pick<
-    DriversTable["Row"],
-    "id" | "name" | "phone" | "status" | "vehicle_id" | "created_at"
-  > & {
-    vehicles: Vehicle | null;
-  };
+export type Station = {
+  id: string;
+  name: string;
+  location: string | null;
+  created_at: string;
+};
 
-export type Station = Pick<
-  StationsTable["Row"],
-  "id" | "name" | "location" | "created_at"
->;
-
-export type Transaction = Pick<
-  TransactionsTable["Row"],
-  "id" | "description" | "created_at"
-> & {
+export type Transaction = {
+  id: string;
+  description: string;
+  created_at: string;
   amount: number;
 };
 

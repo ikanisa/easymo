@@ -30,25 +30,25 @@ export default function DashboardPage() {
           <MetricCard
             title="Total Agents"
             value={metrics?.totalAgents ?? 0}
-            icon={UsersIcon}
+            icon={<UsersIcon className="h-6 w-6" aria-hidden="true" />}
             trend="+12%"
           />
           <MetricCard
             title="Active Drivers"
             value={metrics?.totalDrivers ?? 0}
-            icon={TruckIcon}
+            icon={<TruckIcon className="h-6 w-6" aria-hidden="true" />}
             trend="+5%"
           />
           <MetricCard
             title="Stations"
             value={metrics?.totalStations ?? 0}
-            icon={MapPinIcon}
+            icon={<MapPinIcon className="h-6 w-6" aria-hidden="true" />}
             trend="+2%"
           />
           <MetricCard
             title="Monthly Revenue"
             value={`$${(metrics?.monthlyRevenue ?? 0).toFixed(2)}`}
-            icon={CurrencyDollarIcon}
+            icon={<CurrencyDollarIcon className="h-6 w-6" aria-hidden="true" />}
             trend="+18%"
           />
         </div>

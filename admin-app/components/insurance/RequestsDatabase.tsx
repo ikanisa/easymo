@@ -6,11 +6,6 @@ import { Drawer } from "@/components/ui/Drawer";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import {
-  InsurancePayment,
-  InsuranceRequest,
-  InsuranceTask,
-} from "@/lib/schemas";
-import {
   mockInsurancePayments,
   mockInsuranceRequests,
   mockInsuranceTasks,
@@ -26,7 +21,11 @@ function formatCurrency(value: number) {
   return currencyFormatter.format(Math.round(value));
 }
 
-const statusVariant: Record<InsuranceRequest["status"], ComponentProps<typeof Badge>["variant"]> = {
+type RequestMock = (typeof mockInsuranceRequests)[number];
+type PaymentMock = (typeof mockInsurancePayments)[number];
+type TaskMock = (typeof mockInsuranceTasks)[number];
+
+const statusVariant: Record<RequestMock["status"], ComponentProps<typeof Badge>["variant"]> = {
   draft: "outline",
   intake: "outline",
   under_review: "warning",
@@ -37,19 +36,19 @@ const statusVariant: Record<InsuranceRequest["status"], ComponentProps<typeof Ba
   cancelled: "destructive",
 };
 
-interface RequestDetail extends InsuranceRequest {
+interface RequestDetail extends RequestMock {
   outstandingMinor: number;
   overdueTasks: number;
 }
 
-function deriveOutstanding(request: InsuranceRequest): number {
+function deriveOutstanding(request: RequestMock): number {
   return mockInsurancePayments
     .filter((payment) => payment.requestId === request.id)
     .filter((payment) => payment.status !== "completed")
     .reduce((total, payment) => total + payment.amountMinor, 0);
 }
 
-function deriveOverdueTasks(request: InsuranceRequest): number {
+function deriveOverdueTasks(request: RequestMock): number {
   const now = Date.now();
   return mockInsuranceTasks
     .filter((task) => task.requestId === request.id)
@@ -127,7 +126,7 @@ export function RequestsDatabase() {
               <ul className="space-y-1 pt-2">
                 {mockInsurancePayments
                   .filter((payment) => payment.requestId === selected.id)
-                  .map((payment: InsurancePayment) => (
+                  .map((payment: PaymentMock) => (
                     <li key={payment.id} className="flex justify-between">
                       <span>{payment.status.replace(/_/g, " ")}</span>
                       <span>{formatCurrency(payment.amountMinor)}</span>
@@ -140,7 +139,7 @@ export function RequestsDatabase() {
               <ul className="space-y-1 pt-2">
                 {mockInsuranceTasks
                   .filter((task) => task.requestId === selected.id)
-                  .map((task: InsuranceTask) => (
+                  .map((task: TaskMock) => (
                     <li key={task.id} className="flex justify-between">
                       <span>{task.title}</span>
                       <span className="text-[color:var(--color-muted)]">{task.status}</span>

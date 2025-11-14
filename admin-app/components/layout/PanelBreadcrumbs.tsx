@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import classNames from "classnames";
 import { buildPanelBreadcrumbs } from "@/components/layout/nav-items";
+import { toLinkHref } from "@/lib/link-helpers";
 
 interface PanelBreadcrumbsProps {
   className?: string;
@@ -35,7 +36,7 @@ export function PanelBreadcrumbs({ className }: PanelBreadcrumbsProps) {
           <li key={`${crumb.label}-${index}`} className="flex items-center gap-2">
             {crumb.href && !crumb.current ? (
               <Link
-                href={crumb.href}
+                href={toLinkHref(crumb.href)}
                 className="rounded px-1 py-0.5 transition hover:text-[color:var(--color-foreground)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-accent)]/60"
               >
                 {crumb.label}

@@ -1,15 +1,18 @@
 import { z } from "zod";
 
-import type { Database } from "@/src/v2/lib/supabase/database.types";
-
 import { coerceNullableString, normalizeNumber } from "../_lib/utils";
 
-export const agentSelect = "id, name, phone, status, wallet_balance, created_at";
+export const agentSelect =
+  "id, name, phone, status, wallet_balance, created_at" as const;
 
-export type AgentRow = Pick<
-  Database["public"]["Tables"]["agents"]["Row"],
-  "id" | "name" | "phone" | "status" | "wallet_balance" | "created_at"
->;
+export type AgentRow = {
+  id: string;
+  name: string;
+  phone: string;
+  status: string | null;
+  wallet_balance: number | null;
+  created_at: string;
+};
 
 export const agentCreateSchema = z.object({
   id: z.string().uuid().optional(),

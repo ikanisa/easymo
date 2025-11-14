@@ -6,7 +6,7 @@ import { PlusIcon } from "@heroicons/react/24/outline";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { useToast } from "@/components/ui/ToastProvider";
-import { DataTable } from "@/src/v2/components/ui/DataTable";
+import { DataTable, type DataTableColumn } from "@/src/v2/components/ui/DataTable";
 import { CrudDialog } from "@/src/v2/components/ui/CrudDialog";
 import {
   useStations,
@@ -35,14 +35,19 @@ export default function StationsPage() {
   const undoBuffer = useRef<Station | null>(null);
   const [dialogState, setDialogState] = useState<DialogState>(null);
 
-  const columns = useMemo(
+  const columns: DataTableColumn<Station>[] = useMemo(
     () => [
-      { key: "name" as const, label: "Name", sortable: true },
-      { key: "location" as const, label: "Location" },
+      { key: "name", label: "Name", sortable: true },
       {
-        key: "created_at" as const,
+        key: "location",
+        label: "Location",
+        render: (_value, item) => String(item.location ?? "—"),
+      },
+      {
+        key: "created_at",
         label: "Joined",
-        render: (value: string) => new Date(value).toLocaleDateString(),
+        render: (_value, item) =>
+          item.created_at ? new Date(item.created_at).toLocaleDateString() : "—",
       },
     ],
     [],
@@ -54,8 +59,8 @@ export default function StationsPage() {
 
   const initialValues: StationFormValues = dialogState?.mode === "edit" && dialogState.station
     ? {
-        name: dialogState.station.name,
-        location: dialogState.station.location ?? "",
+        name: String(dialogState.station.name ?? ""),
+        location: String(dialogState.station.location ?? ""),
       }
     : {
         name: "",
@@ -101,8 +106,8 @@ export default function StationsPage() {
           try {
             await createStation.mutateAsync({
               id: payload.id,
-              name: payload.name,
-              location: payload.location ?? undefined,
+              name: String(payload.name ?? ""),
+              location: payload.location ? String(payload.location) : undefined,
             });
             pushToast("Restored station.", "success");
           } catch (error) {

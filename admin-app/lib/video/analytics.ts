@@ -1,6 +1,5 @@
 import 'server-only';
 
-import { cache } from 'react';
 import { getSupabaseAdminClient } from '@/lib/server/supabase-admin';
 
 export type VideoAnalyticsDashboardData = {
@@ -291,9 +290,9 @@ const SAMPLE_DASHBOARD: VideoAnalyticsDashboardData = {
   lastRefreshedAt: null,
 };
 
-export const getVideoAnalyticsDashboardData = cache(async (options?: {
+export async function getVideoAnalyticsDashboardData(options?: {
   lookbackDays?: number;
-}): Promise<VideoAnalyticsDashboardData> => {
+}): Promise<VideoAnalyticsDashboardData> {
   const supabase = await getSupabaseAdminClient();
   const lookbackDays = options?.lookbackDays ?? 14;
 
@@ -356,9 +355,9 @@ export const getVideoAnalyticsDashboardData = cache(async (options?: {
     rightsExpiring,
     lastRefreshedAt,
   };
-});
+}
 
-export const getVideoJobDetail = cache(async (id: string): Promise<VideoJobDetail | null> => {
+export async function getVideoJobDetail(id: string): Promise<VideoJobDetail | null> {
   const supabase = await getSupabaseAdminClient();
   if (!supabase) {
     const sample = SAMPLE_DASHBOARD.jobs[0];
@@ -413,7 +412,7 @@ export const getVideoJobDetail = cache(async (id: string): Promise<VideoJobDetai
       costPerRender: row.cost_per_render ?? null,
     })),
   };
-});
+}
 
 function aggregateTotals(rows: PerformanceRow[]): VideoAnalyticsDashboardData['totals'] {
   const totals = rows.reduce(

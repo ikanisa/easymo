@@ -9,6 +9,7 @@ import {
   PANEL_NAVIGATION,
   type PanelNavGroupId,
 } from "./nav-items";
+import { toLinkHref } from "@/lib/link-helpers";
 
 interface MobileNavProps {
   open: boolean;
@@ -106,7 +107,7 @@ export function MobileNav({ open, onClose, onNavigate }: MobileNavProps) {
         </div>
         <nav aria-label="Mobile navigation" className="grid gap-2">
           <Link
-            href={root.href}
+            href={toLinkHref(root.href)}
             className={classNames(
               "rounded-xl px-4 py-3 text-sm font-semibold",
               activeRoot
@@ -159,7 +160,7 @@ export function MobileNav({ open, onClose, onNavigate }: MobileNavProps) {
                       return (
                         <li key={item.href}>
                           <Link
-                            href={item.href}
+                            href={toLinkHref(item.href)}
                             className={classNames(
                               "block rounded-lg px-3 py-2 text-sm font-medium",
                               active

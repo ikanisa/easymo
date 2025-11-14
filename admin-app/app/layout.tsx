@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import type { ReactNode } from "react";
 import "../styles/design-tokens.css";
 import "../styles/theme.css";
 import "../styles/typography.css";
@@ -22,7 +23,7 @@ export const viewport: Viewport = {
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   const uiV2Enabled = (process.env.NEXT_PUBLIC_UI_V2_ENABLED ?? "false")
     .toLowerCase()

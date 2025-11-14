@@ -75,25 +75,23 @@ async function classifySingleBusiness(businessId: string) {
   // Classify with OpenAI
   const classification = await classifyWithOpenAI(business, tags as BusinessTag[]);
 
-  // Store assignments
-  const assignments = [];
-  for (const result of classification.results) {
-    const tag = tags.find((t) => t.slug === result.tag);
-    if (tag && result.confidence >= 0.5) {
-      const { error: assignError } = await supabase
-        .from("business_tag_assignments")
-        .upsert({
-          business_id: business.id,
-          tag_id: tag.id,
-          confidence_score: result.confidence,
-          assigned_by: "ai",
-        }, { onConflict: "business_id,tag_id" });
+  // Update business.tag_id with best match (tag field will auto-sync via trigger)
+  let assignments = [];
+  if (classification.results.length > 0) {
+    const bestMatch = classification.results[0];
+    const tag = tags.find((t) => t.slug === bestMatch.tag);
+    
+    if (tag && bestMatch.confidence >= 0.5) {
+      const { error: updateError } = await supabase
+        .from("business")
+        .update({ tag_id: tag.id })
+        .eq("id", business.id);
 
-      if (!assignError) {
+      if (!updateError) {
         assignments.push({
           tag: tag.name,
           slug: tag.slug,
-          confidence: result.confidence,
+          confidence: bestMatch.confidence,
         });
       }
     }
@@ -124,26 +122,14 @@ async function classifyBatch(batchSize: number) {
   const startTime = Date.now();
 
   // Get unclassified businesses in "Shops & Services" category
-  // First, get IDs of already classified businesses
-  const { data: classified, error: classifiedError } = await supabase
-    .from("business_tag_assignments")
-    .select("business_id");
-
-  const classifiedIds = classified?.map((c) => c.business_id) || [];
-
-  // Then get businesses not in that list
-  let query = supabase
+  // Businesses without a tag or with empty tag
+  const { data: businesses, error } = await supabase
     .from("business")
     .select("id, name, description, tag")
     .eq("category_name", "Shops & Services")
     .eq("is_active", true)
+    .or("tag.is.null,tag.eq.")
     .limit(batchSize);
-
-  if (classifiedIds.length > 0) {
-    query = query.not("id", "in", `(${classifiedIds.join(",")})`);
-  }
-
-  const { data: businesses, error } = await query;
 
   if (error || !businesses || businesses.length === 0) {
     return {

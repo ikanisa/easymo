@@ -1,11 +1,11 @@
-import type { Database } from "@/src/v2/lib/supabase/database.types";
-
 export const vehicleSelect = "id, make, model, license_plate";
 
-export type VehicleRow = Pick<
-  Database["public"]["Tables"]["vehicles"]["Row"],
-  "id" | "make" | "model" | "license_plate"
->;
+export type VehicleRow = {
+  id: string;
+  make: string | null;
+  model: string | null;
+  license_plate: string | null;
+};
 
 export function sanitizeVehicle(row: VehicleRow) {
   return {

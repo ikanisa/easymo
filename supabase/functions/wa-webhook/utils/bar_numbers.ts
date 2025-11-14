@@ -299,7 +299,7 @@ async function selectBusinessCandidate(
   canonicalNumber: string,
 ): Promise<BusinessCandidate | null> {
   const { data, error } = await client
-    .from("businesses")
+    .from("business")
     .select(
       "id, name, location_text, lat, lng, status, created_at",
     )

@@ -381,7 +381,7 @@ async function sendDineInDisabledNotice(ctx: RouterContext): Promise<void> {
     ctx,
     {
       body:
-        "Dine-in workflows are handled outside WhatsApp. Please coordinate with your success manager.",
+        "Dine-in orders are handled separately. Please contact our team for assistance.",
     },
     [...homeOnly()],
     { emoji: "ℹ️" },
@@ -620,6 +620,14 @@ async function handleHomeMenuSelection(
       await openAdminHub(ctx);
       return true;
     default:
+      // Check for bars preference selection
+      if (id.startsWith("bars_pref_") && state.key === "bars_wait_preference") {
+        const { handleBarsPreferenceSelection } = await import(
+          "../domains/bars/search.ts"
+        );
+        return await handleBarsPreferenceSelection(ctx, id);
+      }
+      
       // Check for bars results selection
       if (id.startsWith("bar_result_") && state.key === "bars_results") {
         const { handleBarsResultSelection } = await import(

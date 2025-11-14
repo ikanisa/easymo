@@ -19,7 +19,7 @@
   "scripts": {
     "build": "pnpm exec tsc -p tsconfig.json",
     "type-check": "pnpm exec tsc -p tsconfig.json --noEmit",
-    "lint": "eslint \"src/**/*.ts\""
+    "lint": "eslint \"_src/**/*.ts\""
   },
   "dependencies": {
     "@sinclair/typebox": "^0.34.13",

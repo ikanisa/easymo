@@ -17,11 +17,6 @@ describe("dashboard snapshot", () => {
   });
 
   it("returns Supabase snapshot when RPC succeeds", async () => {
-    const originalWindow =
-      (globalThis as unknown as { window?: unknown }).window;
-    // Simulate server-side environment.
-    delete (globalThis as unknown as { window?: unknown }).window;
-
     const { getSupabaseAdminClient } = await import(
       "@/lib/server/supabase-admin"
     ) as {
@@ -48,15 +43,9 @@ describe("dashboard snapshot", () => {
       data: snapshot,
       integration: { status: "ok", target: "dashboard_snapshot" },
     });
-
-    (globalThis as unknown as { window?: unknown }).window = originalWindow;
   });
 
   it("throws when Supabase RPC fails", async () => {
-    const originalWindow =
-      (globalThis as unknown as { window?: unknown }).window;
-    delete (globalThis as unknown as { window?: unknown }).window;
-
     const { getSupabaseAdminClient } = await import(
       "@/lib/server/supabase-admin"
     ) as {
@@ -72,7 +61,5 @@ describe("dashboard snapshot", () => {
     await expect(getDashboardSnapshot()).rejects.toThrow(
       "Supabase RPC dashboard_snapshot returned an error",
     );
-
-    (globalThis as unknown as { window?: unknown }).window = originalWindow;
   });
 });

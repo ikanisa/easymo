@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import classNames from "classnames";
 import { NAV_ITEMS } from "@/components/layout/nav-items";
+import { toLinkHref } from "@/lib/link-helpers";
 
 export function SidebarRail() {
   const pathname = usePathname();
@@ -23,7 +24,7 @@ export function SidebarRail() {
           return (
             <Link
               key={item.href}
-              href={item.href}
+              href={toLinkHref(item.href)}
               className={classNames("sidebar-rail__link", {
                 "sidebar-rail__link--active": active,
               })}

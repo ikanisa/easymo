@@ -212,6 +212,6 @@ export async function handleText(
 async function sendDineInDisabledNotice(ctx: RouterContext): Promise<void> {
   await sendText(
     ctx.from,
-    "Dine-in workflows are handled outside WhatsApp. Please coordinate with your success manager.",
+    "Dine-in orders are handled separately. Please contact our team for assistance.",
   );
 }

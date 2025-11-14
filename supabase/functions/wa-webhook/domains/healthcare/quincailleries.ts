@@ -49,22 +49,8 @@ export async function handleQuincaillerieLocation(
 ): Promise<boolean> {
   if (!ctx.profileId) return false;
   
-  // Prompt for item name or image
-
-  await setState(ctx.supabase, ctx.profileId, {
-    key: "quincaillerie_awaiting_items",
-    data: { location },
-  });
-
-  await sendButtonsMessage(
-    ctx,
-    t(ctx.locale, "quincaillerie.location.received"),
-    buildButtons(
-      { id: IDS.BACK_HOME, title: t(ctx.locale, "common.menu_back") }
-    ),
-  );
-
-  return true;
+  // DIRECTLY search and show results - no item prompt
+  return await processQuincaillerieRequest(ctx, location, "");
 }
 
 export async function processQuincaillerieRequest(

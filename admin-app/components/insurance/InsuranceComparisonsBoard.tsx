@@ -5,7 +5,7 @@ import { SectionCard } from "@/components/ui/SectionCard";
 import { Drawer } from "@/components/ui/Drawer";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { InsuranceComparisonQuote, InsuranceRequest } from "@/lib/schemas";
+import { InsuranceComparisonQuote } from "@/lib/schemas";
 import { mockInsuranceRequests } from "@/lib/mock-data";
 
 const currencyFormatter = new Intl.NumberFormat("en-RW", {
@@ -18,13 +18,15 @@ function formatCurrency(value: number) {
   return currencyFormatter.format(Math.round(value));
 }
 
+type ComparisonRequest = (typeof mockInsuranceRequests)[number];
+
 interface ComparisonRow {
-  request: InsuranceRequest;
+  request: ComparisonRequest;
   bestQuote: InsuranceComparisonQuote | null;
   spreadMinor: number | null;
 }
 
-function computeRows(requests: InsuranceRequest[]): ComparisonRow[] {
+function computeRows(requests: ComparisonRequest[]): ComparisonRow[] {
   return requests.map((request) => {
     const sorted = [...request.comparison].sort(
       (a, b) => a.grossPremiumMinor - b.grossPremiumMinor,
@@ -44,7 +46,7 @@ function computeRows(requests: InsuranceRequest[]): ComparisonRow[] {
 
 export function InsuranceComparisonsBoard() {
   const [selectedQuote, setSelectedQuote] = useState<{
-    request: InsuranceRequest;
+    request: ComparisonRequest;
     quote: InsuranceComparisonQuote;
   } | null>(null);
 

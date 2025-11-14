@@ -24,7 +24,7 @@ export async function createBusiness(
     if (categoryError) throw categoryError;
     categoryId = categoryRow?.id ?? null;
   }
-  const { error } = await client.from("businesses").insert({
+  const { error } = await client.from("business").insert({
     owner_whatsapp: payload.owner,
     name: payload.name,
     description: payload.description ?? null,

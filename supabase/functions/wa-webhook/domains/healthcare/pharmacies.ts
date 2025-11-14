@@ -49,22 +49,8 @@ export async function handlePharmacyLocation(
 ): Promise<boolean> {
   if (!ctx.profileId) return false;
 
-  await setState(ctx.supabase, ctx.profileId, {
-    key: "pharmacy_awaiting_medicine",
-    data: { location },
-  });
-
-  await sendButtonsMessage(
-    ctx,
-    t(ctx.locale, "pharmacy.location.received"),
-    buildButtons(
-      { id: "pharmacy_add_medicine", title: t(ctx.locale, "pharmacy.buttons.specify_medicine") },
-      { id: "pharmacy_search_now", title: t(ctx.locale, "pharmacy.buttons.search_now") },
-      { id: IDS.BACK_HOME, title: t(ctx.locale, "common.menu_back") }
-    ),
-  );
-
-  return true;
+  // DIRECTLY search and show results - no medicine prompt
+  return await processPharmacyRequest(ctx, location, "");
 }
 
 export async function processPharmacyRequest(

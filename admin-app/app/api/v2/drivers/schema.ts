@@ -1,24 +1,26 @@
 import { z } from "zod";
 
-import type { Database } from "@/src/v2/lib/supabase/database.types";
-
 import { coerceNullableString } from "../_lib/utils";
 
 export const driverSelect =
   "id, name, phone, status, vehicle_id, created_at, vehicles(id, make, model, license_plate)";
 
-export type VehicleRow = Pick<
-  Database["public"]["Tables"]["vehicles"]["Row"],
-  "id" | "make" | "model" | "license_plate"
->;
+export type VehicleRow = {
+  id: string;
+  make: string | null;
+  model: string | null;
+  license_plate: string | null;
+};
 
-export type DriverRow =
-  Pick<
-    Database["public"]["Tables"]["drivers"]["Row"],
-    "id" | "name" | "phone" | "status" | "vehicle_id" | "created_at"
-  > & {
-    vehicles: VehicleRow | null;
-  };
+export type DriverRow = {
+  id: string;
+  name: string;
+  phone: string;
+  status: string | null;
+  vehicle_id: string | null;
+  created_at: string;
+  vehicles: VehicleRow[] | null;
+};
 
 export const driverCreateSchema = z.object({
   id: z.string().uuid().optional(),
@@ -31,6 +33,7 @@ export const driverCreateSchema = z.object({
 export const driverUpdateSchema = driverCreateSchema.omit({ id: true }).partial();
 
 export function sanitizeDriver(row: DriverRow) {
+  const vehicle = row.vehicles?.[0] ?? null;
   return {
     id: row.id,
     name: row.name,
@@ -38,12 +41,12 @@ export function sanitizeDriver(row: DriverRow) {
     status: coerceNullableString(row.status),
     vehicle_id: row.vehicle_id ?? null,
     created_at: row.created_at,
-    vehicles: row.vehicles
+    vehicles: vehicle
       ? {
-          id: row.vehicles.id,
-          make: row.vehicles.make,
-          model: row.vehicles.model,
-          license_plate: row.vehicles.license_plate,
+          id: vehicle.id,
+          make: vehicle.make,
+          model: vehicle.model,
+          license_plate: vehicle.license_plate,
         }
       : null,
   };

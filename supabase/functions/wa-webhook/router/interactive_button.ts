@@ -229,13 +229,9 @@ export async function handleButton(
       }
       if (await handleMarketplaceButton(ctx, state, id)) return true;
       
-      // Check for bars search button
-      if (id === "bars_search_now") {
-        const { handleBarsSearchButton } = await import(
-          "../domains/bars/search.ts"
-        );
-        return await handleBarsSearchButton(ctx, id);
-      }
+      // Removed: bars_search_now button (now goes direct to location)
+      // Removed: pharmacy_search_now button (now goes direct to results)
+      // Removed: quincaillerie_search_now button (now goes direct to results)
       
       // Check for shops browse button
       if (id === "shops_browse_tags") {
@@ -245,35 +241,8 @@ export async function handleButton(
         return await handleShopsBrowseButton(ctx);
       }
       
-      // Check for pharmacy search button
-      if (id === "pharmacy_search_now") {
-        const { processPharmacyRequest } = await import(
-          "../domains/healthcare/pharmacies.ts"
-        );
-        if (state.key === "pharmacy_awaiting_medicine" && state.data?.location) {
-          return await processPharmacyRequest(
-            ctx,
-            state.data.location as { lat: number; lng: number },
-            "", // No specific meds, just search nearby
-          );
-        }
-        return false;
-      }
-      
-      // Check for quincaillerie search button
-      if (id === "quincaillerie_search_now") {
-        const { processQuincaillerieRequest } = await import(
-          "../domains/healthcare/quincailleries.ts"
-        );
-        if (state.key === "quincaillerie_awaiting_items" && state.data?.location) {
-          return await processQuincaillerieRequest(
-            ctx,
-            state.data.location as { lat: number; lng: number },
-            "", // No specific items, just search nearby
-          );
-        }
-        return false;
-      }
+      // Removed: pharmacy_search_now and quincaillerie_search_now buttons
+      // These flows now go directly to showing results after location
       
       return false;
   }
@@ -282,7 +251,7 @@ export async function handleButton(
 async function sendDineInDisabledNotice(ctx: RouterContext): Promise<void> {
   await sendButtonsMessage(
     ctx,
-    "Dine-in workflows are handled outside WhatsApp. Please coordinate with your success manager.",
+    "Dine-in orders are handled separately. Please contact our team for assistance.",
     buildButtons({ id: IDS.BACK_HOME, title: "🏠 Back" }),
     { emoji: "ℹ️" },
   );
