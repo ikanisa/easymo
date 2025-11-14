@@ -807,5 +807,6 @@
   "business.claim.success": "🎉 Business claimed! You can now manage it from your profile.",
   "common.buttons.more": "➡️ More",
   "common.see_more_results": "See next 9 results",
-  "bars.results.showing_more": "Showing {from}-{to} of {total}{preference}"
+  "bars.results.showing_more": "Showing {from}-{to} of {total}{preference}",
+  "shops.results.showing_more": "Showing {from}-{to} of {total} {category}"
 }

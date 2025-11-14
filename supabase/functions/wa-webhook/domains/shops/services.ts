@@ -151,10 +151,12 @@ export async function handleShopsTagSelection(
 
 export async function handleShopsLocation(
   ctx: RouterContext,
-  state: { tag_id?: string; tag_name?: string; tag_icon?: string },
+  state: { tag_id?: string; tag_name?: string; tag_icon?: string; page?: number },
   location: { lat: number; lng: number },
 ): Promise<boolean> {
   if (!ctx.profileId || !state.tag_id) return false;
+
+  const page = state.page || 0;
 
   await logStructuredEvent("SHOPS_LOCATION_RECEIVED", {
     wa_id: `***${ctx.from.slice(-4)}`,
@@ -163,14 +165,14 @@ export async function handleShopsLocation(
     lng: location.lng.toFixed(4),
   });
 
-  // Search for businesses by tag_id from business_tags table
+  // Search for businesses by tag_id from business_tags table (get 27 results)
   const { data: businesses, error } = await ctx.supabase
-    .rpc("get_businesses_by_tag_id", {
+    .rpc("get_shops_by_tag_id", {
       p_tag_id: state.tag_id,
       p_user_lat: location.lat,
       p_user_lon: location.lng,
       p_radius_km: 10,
-      p_limit: 9, // Top 9 results
+      p_limit: 27,
     });
 
   if (error) {
@@ -197,7 +199,7 @@ export async function handleShopsLocation(
     return true;
   }
 
-  // Store results in state
+  // Store ALL results in state for pagination
   await setState(ctx.supabase, ctx.profileId, {
     key: "shops_results",
     data: {
@@ -205,6 +207,7 @@ export async function handleShopsLocation(
       tag_id: state.tag_id,
       tag_name: state.tag_name,
       tag_icon: state.tag_icon,
+      page: page,
       businesses: businesses.map((biz: any) => ({
         id: biz.id,
         name: biz.name,
@@ -216,18 +219,33 @@ export async function handleShopsLocation(
     },
   });
 
-  // Build list message with top 9 results
-  const rows = businesses.slice(0, 9).map((biz: any, idx: number) => {
+  // Show first 9 results (page 0)
+  const start = page * 9;
+  const end = Math.min(start + 9, businesses.length);
+  const pageResults = businesses.slice(start, end);
+  const hasMore = end < businesses.length;
+
+  // Build list message with results
+  const rows = pageResults.map((biz: any, idx: number) => {
     const distance = biz.distance_km < 1
       ? `${Math.round(biz.distance_km * 1000)}m`
       : `${biz.distance_km.toFixed(1)}km`;
 
     return {
-      id: `shop_result_${idx}`,
-      title: biz.name || `Business #${idx + 1}`,
+      id: `shop_result_${start + idx}`,
+      title: biz.name || `Business #${start + idx + 1}`,
       description: `${biz.location_text || "No location"} • ${distance}`,
     };
   });
+
+  // Add "More" button if there are more results
+  if (hasMore) {
+    rows.push({
+      id: "shops_more",
+      title: t(ctx.locale, "common.buttons.more"),
+      description: t(ctx.locale, "common.see_more_results"),
+    });
+  }
 
   // Add back button
   rows.push({
@@ -318,6 +336,94 @@ export async function handleShopsResultSelection(
     wa_id: `***${ctx.from.slice(-4)}`,
     business_id: business.id,
   });
+
+  return true;
+}
+
+export async function handleShopsMore(
+  ctx: RouterContext,
+  state: {
+    businesses?: Array<{
+      id: string;
+      name: string;
+      description?: string;
+      distance_km?: number;
+      whatsapp?: string;
+      location?: string;
+    }>;
+    tag_id?: string;
+    tag_name?: string;
+    tag_icon?: string;
+    page?: number;
+    userLocation?: { lat: number; lng: number };
+  },
+): Promise<boolean> {
+  if (!ctx.profileId || !state.businesses || !state.userLocation) return false;
+
+  const currentPage = state.page || 0;
+  const nextPage = currentPage + 1;
+  
+  // Update state with new page
+  await setState(ctx.supabase, ctx.profileId, {
+    key: "shops_results",
+    data: {
+      ...state,
+      page: nextPage,
+    },
+  });
+
+  // Show next 9 results
+  const start = nextPage * 9;
+  const end = Math.min(start + 9, state.businesses.length);
+  const pageResults = state.businesses.slice(start, end);
+  const hasMore = end < state.businesses.length;
+
+  const rows = pageResults.map((biz, idx) => {
+    const distance = biz.distance_km && biz.distance_km < 1
+      ? `${Math.round(biz.distance_km * 1000)}m`
+      : biz.distance_km
+      ? `${biz.distance_km.toFixed(1)}km`
+      : "Distance unknown";
+
+    return {
+      id: `shop_result_${start + idx}`,
+      title: biz.name || `Business #${start + idx + 1}`,
+      description: `${biz.location || "No location"} • ${distance}`,
+    };
+  });
+
+  // Add "More" button if there are more results
+  if (hasMore) {
+    rows.push({
+      id: "shops_more",
+      title: t(ctx.locale, "common.buttons.more"),
+      description: t(ctx.locale, "common.see_more_results"),
+    });
+  }
+
+  // Add back button
+  rows.push({
+    id: IDS.BACK_MENU,
+    title: t(ctx.locale, "common.menu_back"),
+    description: t(ctx.locale, "common.back_to_menu.description"),
+  });
+
+  await sendListMessage(
+    ctx,
+    {
+      title: `${state.tag_icon || "🏪"} ${state.tag_name}`,
+      body: t(ctx.locale, "shops.results.showing_more", {
+        from: String(start + 1),
+        to: String(end),
+        total: String(state.businesses.length),
+        category: state.tag_name,
+      }),
+      sectionTitle: t(ctx.locale, "shops.results.section"),
+      rows,
+      buttonText: t(ctx.locale, "common.buttons.view"),
+    },
+    { emoji: state.tag_icon || "🏪" },
+  );
 
   return true;
 }

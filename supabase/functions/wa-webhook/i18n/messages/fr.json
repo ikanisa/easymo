@@ -762,5 +762,6 @@
   "business.claim.success": "🎉 Entreprise revendiquée! Vous pouvez maintenant la gérer depuis votre profil.",
   "common.buttons.more": "➡️ Plus",
   "common.see_more_results": "Voir les 9 prochains résultats",
-  "bars.results.showing_more": "Affichage {from}-{to} sur {total}{preference}"
+  "bars.results.showing_more": "Affichage {from}-{to} sur {total}{preference}",
+  "shops.results.showing_more": "Affichage {from}-{to} sur {total} {category}"
 }
