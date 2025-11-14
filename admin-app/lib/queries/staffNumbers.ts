@@ -17,13 +17,14 @@ export function fetchStaffNumbers(
   return listStaffNumbers(params);
 }
 
+type StaffNumbersQueryOptions = Omit<
+  UseQueryOptions<PaginatedResult<StaffNumber>, unknown, PaginatedResult<StaffNumber>>,
+  "queryKey" | "queryFn"
+>;
+
 export function useStaffNumbersQuery(
   params: StaffNumbersQueryParams = { limit: 200 },
-  options?: UseQueryOptions<
-    PaginatedResult<StaffNumber>,
-    unknown,
-    PaginatedResult<StaffNumber>
-  >,
+  options?: StaffNumbersQueryOptions,
 ) {
   return useQuery({
     queryKey: staffNumbersKey(params),

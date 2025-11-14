@@ -64,8 +64,8 @@ export function filterBySearch<T extends Record<string, any>>(
         return value.toLowerCase().includes(lower);
       }
       if (Array.isArray(value)) {
-        return value.some((v) =>
-          typeof v === "string" ? v.toLowerCase().includes(lower) : false
+        return (value as unknown[]).some((entry): boolean =>
+          typeof entry === "string" ? entry.toLowerCase().includes(lower) : false
         );
       }
       return false;

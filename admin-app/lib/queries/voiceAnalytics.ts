@@ -72,7 +72,7 @@ export function useVoiceAnalyticsQuery(params?: URLSearchParams) {
   return useQuery<VoiceAnalyticsResponse>({
     queryKey: voiceAnalyticsQueryKeys.params(params),
     queryFn: () => fetchVoiceAnalytics(params),
-    keepPreviousData: true,
+    placeholderData: (previousData) => previousData,
   });
 }
 

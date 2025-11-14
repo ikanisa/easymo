@@ -30,7 +30,7 @@ const DOMAIN_CONFIG: Record<RealtimeDomain, SubscriptionConfig[]> = {
   sla: [{ schema: "public", table: "agent_sessions", event: "UPDATE" }],
 };
 
-export type RealtimeHandler = <T = Record<string, unknown>>(
+export type RealtimeHandler = <T extends Record<string, unknown> = Record<string, unknown>>(
   payload: RealtimePostgresChangesPayload<T>,
   domain: RealtimeDomain,
 ) => void;
@@ -54,7 +54,7 @@ export class SupabaseRealtimeManager {
     );
 
     configs.forEach((config) => {
-      channel.on(
+      (channel as any).on(
         "postgres_changes",
         {
           event: config.event ?? "*",
@@ -62,7 +62,8 @@ export class SupabaseRealtimeManager {
           table: config.table,
           filter: config.filter,
         },
-        (payload) => handler(payload, domain),
+        (payload: RealtimePostgresChangesPayload<Record<string, unknown>>) =>
+          handler(payload, domain),
       );
     });
 

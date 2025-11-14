@@ -44,7 +44,7 @@ export function ShopWizard() {
       pushToast({
         title: "Unable to save shop",
         description: error instanceof Error ? error.message : "Unexpected error",
-        variant: "destructive",
+        variant: "error",
       });
     },
   });
@@ -67,7 +67,7 @@ export function ShopWizard() {
       className="space-y-4"
       onSubmit={(event) => {
         event.preventDefault();
-        if (!canSubmit || mutation.isLoading) return;
+        if (!canSubmit || mutation.isPending) return;
         const latNum = Number(lat);
         const lngNum = Number(lng);
         const hasCoordinates = Number.isFinite(latNum) && Number.isFinite(lngNum);
@@ -187,8 +187,8 @@ export function ShopWizard() {
         </label>
       </div>
       <div className="flex items-center justify-end gap-3">
-        <Button type="submit" disabled={!canSubmit || mutation.isLoading}>
-          {mutation.isLoading ? "Saving…" : "Create entry"}
+        <Button type="submit" disabled={!canSubmit || mutation.isPending}>
+          {mutation.isPending ? "Saving…" : "Create entry"}
         </Button>
       </div>
     </form>
