@@ -4,15 +4,44 @@
 
 BEGIN;
 
-INSERT INTO public.businesses (
-  owner_whatsapp,
-  name,
-  location_text,
-  phone_number,
-  category,
-  google_maps_url,
-  is_active
-) VALUES
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM public.marketplace_categories
+    WHERE name = 'Pharmacies'
+  ) THEN
+    RAISE EXCEPTION 'Required marketplace category "Pharmacies" is missing. Seed aborted.';
+  END IF;
+END $$ LANGUAGE plpgsql;
+
+WITH pharmacies_category AS (
+  SELECT id
+  FROM public.marketplace_categories
+  WHERE name = 'Pharmacies'
+  LIMIT 1
+),
+shops_category AS (
+  SELECT id
+  FROM public.marketplace_categories
+  WHERE name = 'Shops'
+  LIMIT 1
+),
+category_map AS (
+  SELECT 'Pharmacy'::text AS legacy_category, id FROM pharmacies_category
+  UNION ALL
+  SELECT 'Drug store', id FROM pharmacies_category
+  UNION ALL
+  SELECT 'Pharmaceutical company', id FROM pharmacies_category
+  UNION ALL
+  SELECT 'Veterinary pharmacy', id FROM pharmacies_category
+  UNION ALL
+  SELECT 'Home health care service', id FROM pharmacies_category
+  UNION ALL
+  SELECT 'Health and beauty shop', id FROM shops_category
+),
+new_businesses AS (
+  VALUES
   ('+250788000000', 'MEMIA''S PHARMACY LTD', '24F3+WVC', '0788 310 016', 'Pharmacy', 'https://www.google.com/maps/search/?api=1&query=MEMIA''S+PHARMACY+LTD+24F3+WVC+Kigali', true),
   ('+250788000000', 'Pharmacie NOVA', 'KK 521 St', '0788 430 878', 'Pharmacy', 'https://www.google.com/maps/search/?api=1&query=Pharmacie+NOVA+KK+521+St+Kigali', true),
   ('+250788000000', 'Medicentre Pharmacy LTD', 'Kicukiro Market, KK 15 Rd', '0786 509 450', 'Pharmacy', 'https://www.google.com/maps/search/?api=1&query=Medicentre+Pharmacy+LTD+Kicukiro+Market+KK+15+Rd+Kigali', true),
@@ -133,6 +162,28 @@ INSERT INTO public.businesses (
   ('+250788000000', 'SABANS Pharmacy Kanombe', 'KK 11 Ave', '0794 980 888', 'Pharmacy', 'https://www.google.com/maps/search/?api=1&query=SABANS+Pharmacy+Kanombe+KK+11+Ave+Kigali', true),
   ('+250788000000', 'Healthland Pharmacy', 'KN 2 Ave, KN 247 St', '0784 664 463', 'Pharmacy', 'https://www.google.com/maps/search/?api=1&query=Healthland+Pharmacy+KN+2+Ave+KN+247+St+Kigali', true),
   ('+250788000000', 'Heritage Pharmacy', 'Nyamirambo Sector', '0784 980 470', 'Pharmacy', 'https://www.google.com/maps/search/?api=1&query=Heritage+Pharmacy+Nyamirambo+Sector+Kigali', true)
+)
+AS b(owner_whatsapp, name, location_text, phone_number, legacy_category, google_maps_url, is_active)
+INSERT INTO public.businesses (
+  owner_whatsapp,
+  name,
+  location_text,
+  phone_number,
+  category_id,
+  google_maps_url,
+  is_active
+)
+SELECT
+  b.owner_whatsapp,
+  b.name,
+  b.location_text,
+  b.phone_number,
+  COALESCE(cm.id, (SELECT id FROM pharmacies_category)),
+  b.google_maps_url,
+  b.is_active
+FROM new_businesses b
+LEFT JOIN category_map cm
+  ON cm.legacy_category = b.legacy_category
 ON CONFLICT DO NOTHING;
 
 COMMIT;
