@@ -8,17 +8,12 @@ import {
   requireAdminAuth,
 } from "../_shared/admin.ts";
 import { verifyQrPayload } from "../wa-webhook/utils/qr.ts";
+import { getRotatingSecret } from "shared/env.ts";
 
 const supabase = createServiceRoleClient();
-const QR_TOKEN_SECRET = Deno.env.get("QR_TOKEN_SECRET") ?? "";
-
 const requestSchema = z.object({
   token: z.string().min(10),
 }).strict();
-
-if (!QR_TOKEN_SECRET) {
-  console.warn("qr-info.secret_missing");
-}
 
 Deno.serve(async (req) => {
   logRequest("qr-info", req);
@@ -32,10 +27,6 @@ Deno.serve(async (req) => {
 
   if (req.method !== "POST") {
     return json({ error: "method_not_allowed" }, 405);
-  }
-
-  if (!QR_TOKEN_SECRET) {
-    return json({ error: "qr_token_secret_missing" }, 500);
   }
 
   let payload: unknown;
@@ -52,10 +43,20 @@ Deno.serve(async (req) => {
 
   const { token } = parseResult.data;
 
+  const { active, previous } = getRotatingSecret("QR_TOKEN_SECRET");
+  const secrets = [active, previous].filter((value): value is string =>
+    Boolean(value && value.length)
+  );
+
+  if (!secrets.length) {
+    console.error("qr-info.secret_missing");
+    return json({ error: "qr_token_secret_missing" }, 500);
+  }
+
   try {
     const { barSlug, tableLabel } = await verifyQrPayload(
       token,
-      QR_TOKEN_SECRET,
+      secrets,
     );
 
     const { data: barRow, error } = await supabase
