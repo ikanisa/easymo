@@ -150,6 +150,8 @@ The seed file includes 97 bar UUIDs. Sample IDs:
 - `0243b1c6-f563-42c8-9058-6b52b53c4f64`
 - ... (see full list in seed file)
 
+The seed script now cross-checks `public.bars` for any missing UUIDs and aborts if the reconciled list still differs from 97 entries, ensuring data drift is caught before inserts.
+
 **Note:** Ensure these bars exist in the `bars` table before running the seed.
 
 ## Integration Points
