@@ -22,27 +22,65 @@ CREATE TABLE IF NOT EXISTS public.system_metrics (
   PRIMARY KEY (id, created_at)
 ) PARTITION BY RANGE (created_at);
 
--- Create initial partitions (current month and next month)
-CREATE TABLE IF NOT EXISTS public.system_metrics_2026_04 PARTITION OF public.system_metrics
-  FOR VALUES FROM ('2026-04-01') TO ('2026-05-01');
+-- Partition bootstrapping (default partition plus current & next month)
+-- Default partition to ensure inserts always succeed even if monthly partitions are missing
+CREATE TABLE IF NOT EXISTS public.system_metrics_default PARTITION OF public.system_metrics DEFAULT;
 
-CREATE TABLE IF NOT EXISTS public.system_metrics_2026_05 PARTITION OF public.system_metrics
-  FOR VALUES FROM ('2026-05-01') TO ('2026-06-01');
+-- Indexes for efficient metric queries on default partition
+CREATE INDEX IF NOT EXISTS idx_system_metrics_service_time_default
+  ON public.system_metrics_default (service_name, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_system_metrics_type_time_default
+  ON public.system_metrics_default (metric_type, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_system_metrics_tags_default
+  ON public.system_metrics_default USING gin (tags);
 
--- Indexes for efficient metric queries
-CREATE INDEX IF NOT EXISTS idx_system_metrics_service_time 
-  ON public.system_metrics_2026_04 (service_name, created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_system_metrics_type_time 
-  ON public.system_metrics_2026_04 (metric_type, created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_system_metrics_tags 
-  ON public.system_metrics_2026_04 USING gin (tags);
+-- Create partitions for the current and next UTC months dynamically with supporting indexes
+DO $$
+DECLARE
+  v_months date[] := ARRAY[
+    date_trunc('month', timezone('utc', now()))::date,
+    (date_trunc('month', timezone('utc', now()))::date + INTERVAL '1 month')::date
+  ];
+  v_start date;
+  v_end date;
+  v_suffix text;
+BEGIN
+  FOREACH v_start IN ARRAY v_months
+  LOOP
+    v_end := (v_start + INTERVAL '1 month')::date;
+    v_suffix := to_char(v_start, 'YYYY_MM');
 
-CREATE INDEX IF NOT EXISTS idx_system_metrics_service_time_05 
-  ON public.system_metrics_2026_05 (service_name, created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_system_metrics_type_time_05 
-  ON public.system_metrics_2026_05 (metric_type, created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_system_metrics_tags_05 
-  ON public.system_metrics_2026_05 USING gin (tags);
+    EXECUTE format(
+      'CREATE TABLE IF NOT EXISTS %I.%I PARTITION OF public.system_metrics FOR VALUES FROM (%L) TO (%L);',
+      'public',
+      'system_metrics_' || v_suffix,
+      v_start,
+      v_end
+    );
+
+    EXECUTE format(
+      'CREATE INDEX IF NOT EXISTS %I ON %I.%I (service_name, created_at DESC);',
+      'idx_system_metrics_service_time_' || v_suffix,
+      'public',
+      'system_metrics_' || v_suffix
+    );
+
+    EXECUTE format(
+      'CREATE INDEX IF NOT EXISTS %I ON %I.%I (metric_type, created_at DESC);',
+      'idx_system_metrics_type_time_' || v_suffix,
+      'public',
+      'system_metrics_' || v_suffix
+    );
+
+    EXECUTE format(
+      'CREATE INDEX IF NOT EXISTS %I ON %I.%I USING gin (tags);',
+      'idx_system_metrics_tags_' || v_suffix,
+      'public',
+      'system_metrics_' || v_suffix
+    );
+  END LOOP;
+END
+$$;
 
 -- RLS policies for metrics
 ALTER TABLE public.system_metrics ENABLE ROW LEVEL SECURITY;
@@ -93,31 +131,74 @@ CREATE TABLE IF NOT EXISTS public.system_audit_logs (
   PRIMARY KEY (id, created_at)
 ) PARTITION BY RANGE (created_at);
 
--- Create initial partitions
-CREATE TABLE IF NOT EXISTS public.system_audit_logs_2026_04 PARTITION OF public.system_audit_logs
-  FOR VALUES FROM ('2026-04-01') TO ('2026-05-01');
+-- Partition bootstrapping
+-- Default partition for audit logs
+CREATE TABLE IF NOT EXISTS public.system_audit_logs_default PARTITION OF public.system_audit_logs DEFAULT;
 
-CREATE TABLE IF NOT EXISTS public.system_audit_logs_2026_05 PARTITION OF public.system_audit_logs
-  FOR VALUES FROM ('2026-05-01') TO ('2026-06-01');
+-- Indexes on default audit log partition
+CREATE INDEX IF NOT EXISTS idx_system_audit_user_time_default
+  ON public.system_audit_logs_default (user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_system_audit_resource_default
+  ON public.system_audit_logs_default (resource_type, resource_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_system_audit_correlation_default
+  ON public.system_audit_logs_default (correlation_id) WHERE correlation_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_system_audit_action_default
+  ON public.system_audit_logs_default (action, created_at DESC);
 
--- Indexes for audit log queries
-CREATE INDEX IF NOT EXISTS idx_system_audit_user_time 
-  ON public.system_audit_logs_2026_04 (user_id, created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_system_audit_resource 
-  ON public.system_audit_logs_2026_04 (resource_type, resource_id, created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_system_audit_correlation 
-  ON public.system_audit_logs_2026_04 (correlation_id) WHERE correlation_id IS NOT NULL;
-CREATE INDEX IF NOT EXISTS idx_system_audit_action 
-  ON public.system_audit_logs_2026_04 (action, created_at DESC);
+-- Create current and next month partitions for audit logs dynamically
+DO $$
+DECLARE
+  v_months date[] := ARRAY[
+    date_trunc('month', timezone('utc', now()))::date,
+    (date_trunc('month', timezone('utc', now()))::date + INTERVAL '1 month')::date
+  ];
+  v_start date;
+  v_end date;
+  v_suffix text;
+BEGIN
+  FOREACH v_start IN ARRAY v_months
+  LOOP
+    v_end := (v_start + INTERVAL '1 month')::date;
+    v_suffix := to_char(v_start, 'YYYY_MM');
 
-CREATE INDEX IF NOT EXISTS idx_system_audit_user_time_05 
-  ON public.system_audit_logs_2026_05 (user_id, created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_system_audit_resource_05 
-  ON public.system_audit_logs_2026_05 (resource_type, resource_id, created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_system_audit_correlation_05 
-  ON public.system_audit_logs_2026_05 (correlation_id) WHERE correlation_id IS NOT NULL;
-CREATE INDEX IF NOT EXISTS idx_system_audit_action_05 
-  ON public.system_audit_logs_2026_05 (action, created_at DESC);
+    EXECUTE format(
+      'CREATE TABLE IF NOT EXISTS %I.%I PARTITION OF public.system_audit_logs FOR VALUES FROM (%L) TO (%L);',
+      'public',
+      'system_audit_logs_' || v_suffix,
+      v_start,
+      v_end
+    );
+
+    EXECUTE format(
+      'CREATE INDEX IF NOT EXISTS %I ON %I.%I (user_id, created_at DESC);',
+      'idx_system_audit_user_time_' || v_suffix,
+      'public',
+      'system_audit_logs_' || v_suffix
+    );
+
+    EXECUTE format(
+      'CREATE INDEX IF NOT EXISTS %I ON %I.%I (resource_type, resource_id, created_at DESC);',
+      'idx_system_audit_resource_' || v_suffix,
+      'public',
+      'system_audit_logs_' || v_suffix
+    );
+
+    EXECUTE format(
+      'CREATE INDEX IF NOT EXISTS %I ON %I.%I (correlation_id) WHERE correlation_id IS NOT NULL;',
+      'idx_system_audit_correlation_' || v_suffix,
+      'public',
+      'system_audit_logs_' || v_suffix
+    );
+
+    EXECUTE format(
+      'CREATE INDEX IF NOT EXISTS %I ON %I.%I (action, created_at DESC);',
+      'idx_system_audit_action_' || v_suffix,
+      'public',
+      'system_audit_logs_' || v_suffix
+    );
+  END LOOP;
+END
+$$;
 
 -- RLS policies for audit logs
 ALTER TABLE public.system_audit_logs ENABLE ROW LEVEL SECURITY;

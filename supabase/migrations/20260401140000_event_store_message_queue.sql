@@ -23,33 +23,68 @@ CREATE TABLE IF NOT EXISTS public.event_store (
   PRIMARY KEY (id, created_at)
 ) PARTITION BY RANGE (created_at);
 
--- Create initial partitions for event store
-CREATE TABLE IF NOT EXISTS public.event_store_2026_04 PARTITION OF public.event_store
-  FOR VALUES FROM ('2026-04-01') TO ('2026-05-01');
+-- Partition bootstrapping for event store (default plus current & next month)
+-- Default partition captures events until rolling partitions are created
+CREATE TABLE IF NOT EXISTS public.event_store_default PARTITION OF public.event_store DEFAULT;
 
-CREATE TABLE IF NOT EXISTS public.event_store_2026_05 PARTITION OF public.event_store
-  FOR VALUES FROM ('2026-05-01') TO ('2026-06-01');
+-- Indexes on default partition
+CREATE INDEX IF NOT EXISTS idx_event_store_aggregate_default
+  ON public.event_store_default (aggregate_type, aggregate_id, created_at DESC);
 
--- Indexes for event store
-CREATE INDEX IF NOT EXISTS idx_event_store_aggregate 
-  ON public.event_store_2026_04 (aggregate_type, aggregate_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_event_store_type_default
+  ON public.event_store_default (event_type, created_at DESC);
 
-CREATE INDEX IF NOT EXISTS idx_event_store_type 
-  ON public.event_store_2026_04 (event_type, created_at DESC);
-
-CREATE INDEX IF NOT EXISTS idx_event_store_correlation 
-  ON public.event_store_2026_04 (correlation_id) 
+CREATE INDEX IF NOT EXISTS idx_event_store_correlation_default
+  ON public.event_store_default (correlation_id)
   WHERE correlation_id IS NOT NULL;
 
-CREATE INDEX IF NOT EXISTS idx_event_store_aggregate_05 
-  ON public.event_store_2026_05 (aggregate_type, aggregate_id, created_at DESC);
+-- Dynamically provision current and next month partitions with indexes
+DO $$
+DECLARE
+  v_months date[] := ARRAY[
+    date_trunc('month', timezone('utc', now()))::date,
+    (date_trunc('month', timezone('utc', now()))::date + INTERVAL '1 month')::date
+  ];
+  v_start date;
+  v_end date;
+  v_suffix text;
+BEGIN
+  FOREACH v_start IN ARRAY v_months
+  LOOP
+    v_end := (v_start + INTERVAL '1 month')::date;
+    v_suffix := to_char(v_start, 'YYYY_MM');
 
-CREATE INDEX IF NOT EXISTS idx_event_store_type_05 
-  ON public.event_store_2026_05 (event_type, created_at DESC);
+    EXECUTE format(
+      'CREATE TABLE IF NOT EXISTS %I.%I PARTITION OF public.event_store FOR VALUES FROM (%L) TO (%L);',
+      'public',
+      'event_store_' || v_suffix,
+      v_start,
+      v_end
+    );
 
-CREATE INDEX IF NOT EXISTS idx_event_store_correlation_05 
-  ON public.event_store_2026_05 (correlation_id) 
-  WHERE correlation_id IS NOT NULL;
+    EXECUTE format(
+      'CREATE INDEX IF NOT EXISTS %I ON %I.%I (aggregate_type, aggregate_id, created_at DESC);',
+      'idx_event_store_aggregate_' || v_suffix,
+      'public',
+      'event_store_' || v_suffix
+    );
+
+    EXECUTE format(
+      'CREATE INDEX IF NOT EXISTS %I ON %I.%I (event_type, created_at DESC);',
+      'idx_event_store_type_' || v_suffix,
+      'public',
+      'event_store_' || v_suffix
+    );
+
+    EXECUTE format(
+      'CREATE INDEX IF NOT EXISTS %I ON %I.%I (correlation_id) WHERE correlation_id IS NOT NULL;',
+      'idx_event_store_correlation_' || v_suffix,
+      'public',
+      'event_store_' || v_suffix
+    );
+  END LOOP;
+END
+$$;
 
 -- RLS policies for event store
 ALTER TABLE public.event_store ENABLE ROW LEVEL SECURITY;
