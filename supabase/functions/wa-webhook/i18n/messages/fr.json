@@ -25,7 +25,7 @@
   "home.rows.propertyRentals.description": "Trouvez ou listez des propriétés à louer.",
   "home.rows.marketplace.title": "🛍️ Boutiques & services",
   "home.rows.marketplace.description": "Découvrez des boutiques et services ou publiez votre activité.",
-  "home.rows.momoQr.title": "💳 Code QR MOMO et Jetons",
+  "home.rows.momoQr.title": "💳 QR MOMO & Jetons",
   "home.rows.momoQr.description": "Générez des QR codes, scannez et gérez les jetons.",
   "home.rows.motorInsurance.title": "🛡️ Assurance moto",
   "home.rows.admin.title": "🛠️ Admin",
@@ -767,5 +767,6 @@
   "pharmacy.results.showing_more": "💊 Résultats {from}-{to} sur {total}",
   "quincaillerie.results.showing_more": "🔧 Résultats {from}-{to} sur {total}",
   "common.see_more_categories": "Voir plus de catégories",
-  "shops.tags.showing_more": "Catégories {from}-{to} sur {total}"
+  "shops.tags.showing_more": "Catégories {from}-{to} sur {total}",
+  "support.contact_info": "📞 Besoin d'aide? Contactez-nous:\n\nWhatsApp: +250788123456\nEmail: support@easymo.rw\n\nNotre équipe est là pour vous aider!"
 }

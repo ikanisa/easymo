@@ -598,6 +598,19 @@ async function handleHomeMenuSelection(
       );
       return await startBarsSearch(ctx);
     }
+    case "help_support":
+    case "customer_support": {
+      // Both support options show contact information
+      await sendButtonsMessage(
+        ctx,
+        {
+          body: t(ctx.locale, "support.contact_info"),
+        },
+        homeOnly(),
+        { emoji: "💬" }
+      );
+      return true;
+    }
     case IDS.HOME_MORE: {
       const page =
         state.key === "home_menu" && typeof state.data?.page === "number"

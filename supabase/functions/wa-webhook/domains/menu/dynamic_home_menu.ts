@@ -92,8 +92,8 @@ export function getMenuItemId(key: MenuItemKey): string {
     bars_restaurants: "bars_restaurants",
     notary_services: "notary_services",
     profile: "profile",
-    support: "support",
-    customer_support: "support",
+    support: "help_support",
+    customer_support: "customer_support",
   };
 
   return mapping[key] || key;

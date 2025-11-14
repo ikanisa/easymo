@@ -25,7 +25,7 @@
   "home.rows.propertyRentals.description": "Find or list rental properties.",
   "home.rows.marketplace.title": "🛍️ Shops & services",
   "home.rows.marketplace.description": "Discover shops and services or list your business.",
-  "home.rows.momoQr.title": "💳 MOMO QR Code and Tokens",
+  "home.rows.momoQr.title": "💳 MOMO QR & Tokens",
   "home.rows.momoQr.description": "Generate QR codes, scan, and manage tokens.",
   "home.rows.barsRestaurants.title": "🍽️ Bars & Restaurants",
   "home.rows.barsRestaurants.description": "Manage your restaurant menu and orders.",
@@ -812,5 +812,6 @@
   "pharmacy.results.showing_more": "💊 Showing results {from}-{to} of {total}",
   "quincaillerie.results.showing_more": "🔧 Showing results {from}-{to} of {total}",
   "common.see_more_categories": "See more categories",
-  "shops.tags.showing_more": "Showing categories {from}-{to} of {total}"
+  "shops.tags.showing_more": "Showing categories {from}-{to} of {total}",
+  "support.contact_info": "📞 Need help? Contact us:\n\nWhatsApp: +250788123456\nEmail: support@easymo.rw\n\nOur team is here to assist you!"
 }
