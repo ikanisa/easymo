@@ -1,12 +1,12 @@
 "use client";
 
-import type { AgentRow } from "@/src/v2/lib/supabase/database.types";
+import type { Agent } from "@/src/v2/lib/supabase/hooks";
 import { Dialog, Transition } from "@headlessui/react";
 import { Fragment } from "react";
 import { XMarkIcon } from "@heroicons/react/24/outline";
 
 interface AgentDetailsModalProps {
-  agent: AgentRow;
+  agent: Agent;
   onClose: () => void;
 }
 
