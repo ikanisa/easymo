@@ -1,9 +1,7 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/http.ts";
-import { logStructuredEvent } from "../_shared/observability.ts";
+import { getServiceClient } from "shared/supabase.ts";
 
-const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const supabase = getServiceClient();
 
 interface BarsLookupRequest {
   lat?: number;
@@ -30,7 +28,6 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     const body: BarsLookupRequest = await req.json();
     const { lat, lng, radius_km = 10, limit = 20, ...filters } = body;
 

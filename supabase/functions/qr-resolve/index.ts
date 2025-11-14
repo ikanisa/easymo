@@ -3,11 +3,7 @@ import { verifyQrPayload } from "../wa-webhook/utils/qr.ts";
 import { ensureProfile, setState } from "../wa-webhook/state/store.ts";
 import { supabase } from "../wa-webhook/config.ts";
 import { logStructuredEvent } from "../wa-webhook/observe/log.ts";
-
-const QR_TOKEN_SECRET = Deno.env.get("QR_TOKEN_SECRET") ?? "";
-if (!QR_TOKEN_SECRET) {
-  console.warn("qr-resolve.secret_missing");
-}
+import { getRotatingSecret } from "shared/env.ts";
 
 function normalize(label: string): string {
   return label.trim().replace(/\s+/g, " ").toUpperCase();
@@ -16,13 +12,6 @@ function normalize(label: string): string {
 serve(async (req: Request): Promise<Response> => {
   if (req.method !== "POST") {
     return new Response("Method Not Allowed", { status: 405 });
-  }
-  if (!QR_TOKEN_SECRET) {
-    await logStructuredEvent("QR_RESOLVE_FAIL", { error: "secret_missing" });
-    return new Response(
-      JSON.stringify({ ok: false, error: "QR token secret missing" }),
-      { status: 500 },
-    );
   }
   const started = Date.now();
   let body: { wa_id?: string; token?: string };
@@ -40,9 +29,20 @@ serve(async (req: Request): Promise<Response> => {
     );
   }
   try {
+    const { active, previous } = getRotatingSecret("QR_TOKEN_SECRET");
+    const secrets = [active, previous].filter((value): value is string =>
+      Boolean(value && value.length)
+    );
+    if (!secrets.length) {
+      await logStructuredEvent("QR_RESOLVE_FAIL", { error: "secret_missing" });
+      return new Response(
+        JSON.stringify({ ok: false, error: "QR token secret missing" }),
+        { status: 500 },
+      );
+    }
     const { barSlug, tableLabel } = await verifyQrPayload(
       body.token,
-      QR_TOKEN_SECRET,
+      secrets,
     );
     const { data: barRow, error: barError } = await supabase
       .from("bars")

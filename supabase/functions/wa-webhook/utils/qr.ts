@@ -37,8 +37,17 @@ export async function makeQrPayload(
 
 export async function verifyQrPayload(
   token: string,
-  salt: string,
+  salts: string | string[],
 ): Promise<{ barSlug: string; tableLabel: string }> {
+  const list = Array.isArray(salts) ? salts : [salts];
+  const candidates = list
+    .map((value) => value?.trim())
+    .filter((value): value is string => Boolean(value && value.length));
+
+  if (!candidates.length) {
+    throw new Error("QR token secret not configured");
+  }
+
   const match = token.trim().match(
     /^B:(?<slug>[A-Za-z0-9_-]+)\s+T:(?<table>[A-Za-z0-9\s_-]+)\s+K:(?<sig>[A-Fa-f0-9]{32,})$/,
   );
@@ -47,10 +56,19 @@ export async function verifyQrPayload(
   }
   const slug = match.groups.slug;
   const table = normalizeTableLabel(match.groups.table);
-  const expected = await hmacHex(salt, `B:${slug}|T:${table}`);
-  if (expected !== match.groups.sig.toLowerCase()) {
-    await logStructuredEvent("QR_TOKEN_FAIL", { slug, table });
-    throw new Error("Invalid signature");
+  const expectedSig = match.groups.sig.toLowerCase();
+
+  for (const salt of candidates) {
+    const expected = await hmacHex(salt, `B:${slug}|T:${table}`);
+    if (expected === expectedSig) {
+      return { barSlug: slug, tableLabel: table };
+    }
   }
-  return { barSlug: slug, tableLabel: table };
+
+  await logStructuredEvent("QR_TOKEN_FAIL", {
+    slug,
+    table,
+    candidate_count: candidates.length,
+  });
+  throw new Error("Invalid signature");
 }

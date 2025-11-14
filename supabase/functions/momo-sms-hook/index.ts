@@ -1,14 +1,6 @@
 import { serve } from "$std/http/server.ts";
 import { getServiceClient } from "shared/supabase.ts";
-
-const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
-const SERVICE_URL = Deno.env.get("SERVICE_URL") ?? "";
-const HMAC_SECRET = Deno.env.get("MOMO_SMS_HMAC_SECRET") ?? "";
-const ALLOWED_IPS = (Deno.env.get("MOMO_SMS_ALLOWED_IPS") ?? "")
-  .split(",")
-  .map((value) => value.trim())
-  .filter((value) => value.length > 0);
-const DEFAULT_SOURCE = Deno.env.get("MOMO_SMS_DEFAULT_SOURCE") ?? "gateway";
+import { getSecret, getSecretPair, getStringList } from "shared/secrets.ts";
 
 const supabase = getServiceClient();
 
@@ -53,11 +45,27 @@ function extractClientIp(request: Request): string | null {
   return realIp?.trim() ?? null;
 }
 
-function isIpAllowed(request: Request): boolean {
-  if (!ALLOWED_IPS.length) return true;
+type RuntimeConfig = {
+  secrets: string[];
+  allowedIps: string[];
+  defaultSource: string;
+};
+
+function loadRuntimeConfig(): RuntimeConfig {
+  const { active, previous } = getSecretPair("MOMO_SMS_HMAC_SECRET");
+  const secrets = [active, previous].filter((value): value is string =>
+    Boolean(value && value.length)
+  );
+  const allowedIps = getStringList("MOMO_SMS_ALLOWED_IPS");
+  const defaultSource = getSecret("MOMO_SMS_DEFAULT_SOURCE") ?? "gateway";
+  return { secrets, allowedIps, defaultSource };
+}
+
+function isIpAllowed(request: Request, allowedIps: string[]): boolean {
+  if (!allowedIps.length) return true;
   const clientIp = extractClientIp(request);
   if (!clientIp) return false;
-  return ALLOWED_IPS.includes(clientIp);
+  return allowedIps.includes(clientIp);
 }
 
 async function computeHmacHex(
@@ -82,11 +90,19 @@ async function computeHmacHex(
 async function verifySignature(
   body: string,
   headerSignature: string | null,
+  secrets: string[],
+  allowSkip: boolean,
 ): Promise<boolean> {
-  if (!HMAC_SECRET) return true;
+  if (!secrets.length) return allowSkip;
   if (!headerSignature) return false;
-  const expected = await computeHmacHex(HMAC_SECRET, body);
-  return timingSafeEquals(expected, headerSignature.trim());
+  const trimmed = headerSignature.trim();
+  for (const secret of secrets) {
+    const expected = await computeHmacHex(secret, body);
+    if (timingSafeEquals(expected, trimmed)) {
+      return true;
+    }
+  }
+  return false;
 }
 
 function bufferToHex(buffer: ArrayBuffer): string {
@@ -161,7 +177,14 @@ serve(async (request) => {
     return jsonResponse({ ok: false, error: "method_not_allowed" }, 405);
   }
 
-  if (!isIpAllowed(request)) {
+  const config = loadRuntimeConfig();
+
+  if (!config.secrets.length && !config.allowedIps.length) {
+    console.error("momo-sms.security_not_configured");
+    return jsonResponse({ ok: false, error: "security_not_configured" }, 503);
+  }
+
+  if (!isIpAllowed(request, config.allowedIps)) {
     return jsonResponse({ ok: false, error: "ip_forbidden" }, 403);
   }
 
@@ -171,7 +194,12 @@ serve(async (request) => {
     request.headers.get("authorization")?.replace(/^Bearer\s+/i, "") ??
     request.headers.get("x-api-key");
 
-  const signatureValid = await verifySignature(rawBody, headerSignature);
+  const signatureValid = await verifySignature(
+    rawBody,
+    headerSignature,
+    config.secrets,
+    config.allowedIps.length > 0,
+  );
   if (!signatureValid) {
     return jsonResponse({ ok: false, error: "invalid_signature" }, 401);
   }
@@ -194,7 +222,7 @@ serve(async (request) => {
       raw_text: payload.message,
       msisdn_raw: payload.msisdn ?? null,
       received_at: receivedAt,
-      ingest_source: payload.ingestSource ?? DEFAULT_SOURCE,
+      ingest_source: payload.ingestSource ?? config.defaultSource,
       hash,
     })
     .select("id")
@@ -210,7 +238,7 @@ serve(async (request) => {
 
   console.log("momo_sms_hook.inserted", {
     inboxId: data.id,
-    source: payload.ingestSource ?? DEFAULT_SOURCE,
+    source: payload.ingestSource ?? config.defaultSource,
   });
   return jsonResponse({ ok: true, duplicate: false, inboxId: data.id });
 });

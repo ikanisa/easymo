@@ -6,13 +6,11 @@
 // =====================================================
 
 import { serve } from "$std/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { logStructuredEvent, recordMetric } from "../_shared/observability.ts";
+import { getServiceClient } from "shared/supabase.ts";
+import { getEnv, requireEnv } from "shared/env.ts";
 
-const supabase = createClient(
-  Deno.env.get("SUPABASE_URL")!,
-  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-);
+const supabase = getServiceClient();
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -31,16 +29,19 @@ interface RevolutConfig {
 }
 
 function getRevolutConfig(): RevolutConfig {
-  const env = Deno.env.get("REVOLUT_ENVIRONMENT") || "sandbox";
-  
+  const env = getEnv("REVOLUT_ENVIRONMENT") || "sandbox";
+  const apiKey = requireEnv("REVOLUT_API_KEY");
+  const merchantId = requireEnv("REVOLUT_MERCHANT_ID");
+
   return {
     apiUrl: env === "production"
       ? "https://merchant.revolut.com/api/1.0"
       : "https://sandbox-merchant.revolut.com/api/1.0",
-    apiKey: Deno.env.get("REVOLUT_API_KEY") || "",
-    merchantId: Deno.env.get("REVOLUT_MERCHANT_ID") || "",
+    apiKey,
+    merchantId,
     environment: env as "sandbox" | "production",
   };
+}
 }
 
 // =====================================================
