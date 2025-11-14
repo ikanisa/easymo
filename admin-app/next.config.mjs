@@ -22,7 +22,7 @@ const nextConfig = {
     serverComponentsExternalPackages: ['@easymo/commons'],
   },
   typescript: {
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: false,
   },
   // Optimize for Chrome memory usage
   headers: async () => [

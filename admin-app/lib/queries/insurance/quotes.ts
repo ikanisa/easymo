@@ -135,7 +135,12 @@ export function useInsuranceQuotesRealtime(params: InsuranceQueryParams = { limi
 
 export function useApproveInsuranceQuoteMutation(
   params: InsuranceQueryParams = { limit: 100 },
-  options?: UseMutationOptions<z.infer<typeof mutationResponseSchema>, Error, string>,
+  options?: UseMutationOptions<
+    z.infer<typeof mutationResponseSchema>,
+    Error,
+    string,
+    { previous: PaginatedResult<InsuranceQuote> | undefined }
+  >,
 ) {
   const queryClient = useQueryClient();
   return useMutation({
@@ -187,7 +192,12 @@ export function useApproveInsuranceQuoteMutation(
 
 export function useRequestChangesMutation(
   params: InsuranceQueryParams = { limit: 100 },
-  options?: UseMutationOptions<z.infer<typeof mutationResponseSchema>, Error, { quoteId: string; comment: string }>,
+  options?: UseMutationOptions<
+    z.infer<typeof mutationResponseSchema>,
+    Error,
+    { quoteId: string; comment: string },
+    { previous: PaginatedResult<InsuranceQuote> | undefined }
+  >,
 ) {
   const queryClient = useQueryClient();
   return useMutation({
@@ -239,7 +249,12 @@ export function useRequestChangesMutation(
 
 export function useUpdateInsuranceQuoteStatusMutation(
   params: InsuranceQueryParams = { limit: 100 },
-  options?: UseMutationOptions<z.infer<typeof statusResponseSchema>, Error, { quoteId: string; status: string; reviewerComment?: string | null }>,
+  options?: UseMutationOptions<
+    z.infer<typeof statusResponseSchema>,
+    Error,
+    { quoteId: string; status: string; reviewerComment?: string | null },
+    { previous: PaginatedResult<InsuranceQuote> | undefined }
+  >,
 ) {
   const queryClient = useQueryClient();
   return useMutation({

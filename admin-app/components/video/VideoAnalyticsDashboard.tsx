@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { SparklineChart } from "@easymo/ui";
+import { TrendAreaChart as SparklineChart } from "@easymo/ui/charts/TrendAreaChart";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { SectionCard } from "@/components/ui/SectionCard";
 import type { VideoAnalyticsDashboardData } from "@/lib/video/analytics";

@@ -30,11 +30,7 @@ export const getAdminRoutePath = <Key extends AdminRouteKey>(
     ? []
     : [AdminRouteParams<Key>]
 ): Route => {
-  if (params.length === 0) {
-    return baseGetAdminRoutePath(key) as Route;
-  }
-
-  return baseGetAdminRoutePath(key, params[0]) as Route;
+  return baseGetAdminRoutePath(key, ...(params as typeof params)) as Route;
 };
 
 export type AdminNavigableRoute = Extract<NavigableAdminRoutePath, Route>;

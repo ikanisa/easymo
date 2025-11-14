@@ -30,9 +30,8 @@ export function useUpdateAgentTool() {
       data: Partial<Pick<AgentTool, "description" | "enabled" | "parameters" | "metadata">>;
     }) =>
       apiClient.fetch("agentTool", {
-        params: { toolId },
         method: "PATCH",
-        body: data,
+        body: { toolId, ...data },
       }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["agent-tools"] });

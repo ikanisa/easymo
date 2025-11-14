@@ -27,14 +27,14 @@ class SimpleLogger {
 
   private formatMessage(level: LogLevel, context: LogContext, message?: string): string {
     const timestamp = new Date().toISOString();
-    const logEntry = {
+    const logEntry: Record<string, unknown> = {
       timestamp,
       level: level.toUpperCase(),
       service: this.service,
       ...context,
     };
-    
-    if (message) {
+
+    if (typeof message === 'string' && message.length > 0) {
       logEntry.message = message;
     }
 

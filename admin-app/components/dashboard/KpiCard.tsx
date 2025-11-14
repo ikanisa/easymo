@@ -1,5 +1,5 @@
 import type { DashboardKpi } from "@/lib/schemas";
-import { KPIWidget } from "@easymo/ui";
+import { KpiWidget } from "@easymo/ui/widgets/KpiWidget";
 import { isUiKitEnabled } from "@/lib/ui-kit";
 
 interface KpiCardProps {
@@ -8,25 +8,15 @@ interface KpiCardProps {
 
 export function KpiCard({ kpi }: KpiCardProps) {
   if (isUiKitEnabled()) {
+    const trend = kpi.trend ?? undefined;
+
     return (
-      <KPIWidget
+      <KpiWidget
         label={kpi.label}
         value={kpi.primaryValue}
-        secondary={kpi.secondaryValue ?? undefined}
-        trend={
-          kpi.trend
-            ? {
-                direction: kpi.trend === "flat" ? "neutral" : kpi.trend,
-                label:
-                  kpi.trend === "up"
-                    ? "Trending up"
-                    : kpi.trend === "down"
-                    ? "Trending down"
-                    : "Holding steady",
-                srOnly: kpi.helpText,
-              }
-            : undefined
-        }
+        changeLabel={kpi.secondaryValue ?? undefined}
+        trend={trend}
+        context={kpi.helpText}
         data-testid="ui-kit-kpi"
       />
     );

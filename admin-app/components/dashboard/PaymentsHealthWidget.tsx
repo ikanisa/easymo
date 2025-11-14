@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { PaymentStatusWidget } from "@easymo/ui";
+import { PaymentStatusWidget } from "@easymo/ui/widgets/PaymentStatusWidget";
 import { mockPaymentsHealth } from "@/lib/mock-data";
 import { SectionCard } from "@/components/ui/SectionCard";
 

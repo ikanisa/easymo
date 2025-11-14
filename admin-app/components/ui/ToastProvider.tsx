@@ -21,9 +21,18 @@ type ToastOptions = {
   duration?: number | null;
 };
 
+type StructuredToastContent = {
+  title?: string;
+  description?: string;
+  variant?: ToastVariant;
+} & Pick<ToastOptions, "actionLabel" | "onAction" | "duration">;
+
+type ToastContent = string | StructuredToastContent;
+
 interface Toast {
   id: string;
-  message: string;
+  title?: string;
+  description: string;
   variant: ToastVariant;
   actionLabel?: string;
   onAction?: () => void;
@@ -43,7 +52,7 @@ const VARIANT_ROLE: Record<ToastVariant, { role: "status" | "alert"; ariaLive: "
 };
 
 interface ToastContextValue {
-  pushToast: (message: string, options?: ToastVariant | ToastOptions) => void;
+  pushToast: (message: ToastContent, options?: ToastVariant | ToastOptions) => void;
   dismissToast: (id: string) => void;
 }
 
@@ -57,23 +66,32 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const pushToast = useCallback(
-    (message: string, options?: ToastVariant | ToastOptions) => {
+    (message: ToastContent, options?: ToastVariant | ToastOptions) => {
       const id = crypto.randomUUID();
-      const normalized: ToastOptions = typeof options === "string"
+      const normalizedOptions: ToastOptions = typeof options === "string"
         ? { variant: options }
         : options ?? {};
+      const normalizedContent: StructuredToastContent =
+        typeof message === "string"
+          ? { description: message }
+          : message;
+      const variant = normalizedContent.variant ?? normalizedOptions.variant ?? "info";
+      const description =
+        normalizedContent.description ??
+        (typeof message === "string" ? message : normalizedContent.title);
       const toast: Toast = {
         id,
-        message,
-        variant: normalized.variant ?? "info",
-        actionLabel: normalized.actionLabel,
-        onAction: normalized.onAction,
-        duration: normalized.duration ?? undefined,
+        title: typeof message === "string" ? undefined : normalizedContent.title,
+        description: description ?? "",
+        variant,
+        actionLabel: normalizedContent.actionLabel ?? normalizedOptions.actionLabel,
+        onAction: normalizedContent.onAction ?? normalizedOptions.onAction,
+        duration: (normalizedContent.duration ?? normalizedOptions.duration) ?? undefined,
       };
 
       setToasts((prev) => [...prev, toast]);
 
-      const delay = normalized.duration ?? 4000;
+      const delay = toast.duration ?? 4000;
       if (typeof window !== "undefined" && delay > 0) {
         window.setTimeout(() => dismissToast(id), delay);
       }
@@ -98,7 +116,10 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
             aria-live={VARIANT_ROLE[toast.variant].ariaLive}
           >
             <span className={styles.iconWrapper}>{VARIANT_ICON[toast.variant]}</span>
-            <span className={styles.message}>{toast.message}</span>
+            <span className={styles.message}>
+              {toast.title ? <span className={styles.title}>{toast.title}</span> : null}
+              <span className={styles.description}>{toast.description}</span>
+            </span>
             {toast.onAction && toast.actionLabel
               ? (
                 <Button
