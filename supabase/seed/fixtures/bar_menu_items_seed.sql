@@ -116,8 +116,32 @@ DECLARE
     'fb3ca7c3-0bb6-44e6-8658-6e0a71e8cbf6',
     'fbc9d9fa-c98c-4872-b2a0-8d5c9ef29898'
   ]::UUID[];
+  expected_bar_count CONSTANT integer := 97;
+  missing_bar_ids UUID[];
   bar_id UUID;
 BEGIN
+  SELECT array_agg(id)
+  INTO missing_bar_ids
+  FROM (
+    SELECT id
+    FROM public.bars
+    WHERE NOT (id = ANY(bar_ids))
+    ORDER BY id
+    LIMIT GREATEST(expected_bar_count - COALESCE(array_length(bar_ids, 1), 0), 0)
+  ) AS missing_ids;
+
+  IF missing_bar_ids IS NOT NULL AND array_length(missing_bar_ids, 1) > 0 THEN
+    bar_ids := array_cat(bar_ids, missing_bar_ids);
+    RAISE NOTICE 'Discovered % additional bar IDs in database; appended to seed list.',
+      array_length(missing_bar_ids, 1);
+  END IF;
+
+  IF COALESCE(array_length(bar_ids, 1), 0) <> expected_bar_count THEN
+    RAISE EXCEPTION 'Expected % bar IDs but found % after reconciliation. Verify bar setup before re-running seed.',
+      expected_bar_count,
+      COALESCE(array_length(bar_ids, 1), 0);
+  END IF;
+
   -- Loop through each bar and insert all menu items
   FOREACH bar_id IN ARRAY bar_ids
   LOOP
