@@ -183,7 +183,8 @@ INSERT INTO job_sources (name, source_type, config, is_active) VALUES
     "queries": [
       {"country": "RW", "query": "jobs in Rwanda"}
     ]
-  }'::jsonb, false); -- Disabled by default
+  }'::jsonb, false) -- Disabled by default
+ON CONFLICT (name) DO NOTHING;
 
 -- Function to generate job hash for deduplication
 CREATE OR REPLACE FUNCTION generate_job_hash(

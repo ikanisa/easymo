@@ -663,6 +663,7 @@ INSERT INTO job_categories (name, description, icon, typical_pay_range, common_s
   ('farm_work', 'Agricultural work', '🌾', '5000-12000 RWF/day', ARRAY['physical_work', 'farming']),
   ('mechanic', 'Mechanical repair', '🔧', '15000-40000 RWF/day', ARRAY['mechanics', 'problem_solving', 'tools']),
   ('tailoring', 'Tailoring and sewing', '✂️', '8000-25000 RWF/day', ARRAY['sewing', 'precision', 'creativity']),
-  ('other', 'Other miscellaneous jobs', '🔧', 'Varies', ARRAY['flexibility']);
+  ('other', 'Other miscellaneous jobs', '🔧', 'Varies', ARRAY['flexibility'])
+ON CONFLICT (name) DO NOTHING;
 
 COMMIT;
