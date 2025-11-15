@@ -226,6 +226,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS job_listings_set_hash ON job_listings;
 CREATE TRIGGER job_listings_set_hash
   BEFORE INSERT OR UPDATE ON job_listings
   FOR EACH ROW

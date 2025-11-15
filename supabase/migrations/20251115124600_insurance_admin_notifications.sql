@@ -91,6 +91,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 DROP TRIGGER IF EXISTS insurance_admins_updated_at ON public.insurance_admins;
+DROP TRIGGER IF EXISTS insurance_admins_updated_at ON public.insurance_admins;
 CREATE TRIGGER insurance_admins_updated_at
   BEFORE UPDATE ON public.insurance_admins
   FOR EACH ROW
@@ -105,6 +106,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS insurance_admin_notifications_updated_at ON public.insurance_admin_notifications;
 DROP TRIGGER IF EXISTS insurance_admin_notifications_updated_at ON public.insurance_admin_notifications;
 CREATE TRIGGER insurance_admin_notifications_updated_at
   BEFORE UPDATE ON public.insurance_admin_notifications
@@ -128,6 +130,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS update_admin_stats_on_send ON public.insurance_admin_notifications;
 DROP TRIGGER IF EXISTS update_admin_stats_on_send ON public.insurance_admin_notifications;
 CREATE TRIGGER update_admin_stats_on_send
   AFTER UPDATE ON public.insurance_admin_notifications

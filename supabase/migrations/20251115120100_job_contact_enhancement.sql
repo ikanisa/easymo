@@ -196,6 +196,7 @@ $$ LANGUAGE plpgsql;
 
 -- Create trigger for contact validation
 DROP TRIGGER IF EXISTS job_listings_validate_contact ON job_listings;
+DROP TRIGGER IF EXISTS job_listings_validate_contact ON job_listings;
 CREATE TRIGGER job_listings_validate_contact
   BEFORE INSERT OR UPDATE ON job_listings
   FOR EACH ROW

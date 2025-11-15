@@ -380,18 +380,23 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Apply to all tables
+DROP TRIGGER IF EXISTS update_job_listings_updated_at ON job_listings;
 CREATE TRIGGER update_job_listings_updated_at BEFORE UPDATE ON job_listings
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_job_seekers_updated_at ON job_seekers;
 CREATE TRIGGER update_job_seekers_updated_at BEFORE UPDATE ON job_seekers
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_job_matches_updated_at ON job_matches;
 CREATE TRIGGER update_job_matches_updated_at BEFORE UPDATE ON job_matches
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_job_conversations_updated_at ON job_conversations;
 CREATE TRIGGER update_job_conversations_updated_at BEFORE UPDATE ON job_conversations
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_job_applications_updated_at ON job_applications;
 CREATE TRIGGER update_job_applications_updated_at BEFORE UPDATE ON job_applications
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
