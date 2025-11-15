@@ -7,10 +7,16 @@
 
 import type { RouterContext } from "../../types.ts";
 import { t } from "../../i18n/translator.ts";
-import { sendMessage, sendListMessage } from "../../utils/reply.ts";
+import { sendListMessage } from "../../utils/reply.ts";
+import { sendText } from "../../wa/client.ts";
 import { logStructuredEvent } from "../../observe/log.ts";
 import { setState, getState } from "../../state/store.ts";
 import { IDS } from "../../wa/ids.ts";
+
+// Helper function to send text messages
+async function sendMessage(ctx: RouterContext, options: { text: string }): Promise<void> {
+  await sendText(ctx.from, options.text);
+}
 
 interface JobConversation {
   conversationId: string;
