@@ -15,18 +15,48 @@ CREATE EXTENSION IF NOT EXISTS vector;
 -- ENUMS
 -- =====================================================
 
-CREATE TYPE job_type AS ENUM ('gig', 'part_time', 'full_time', 'contract', 'temporary');
-CREATE TYPE pay_type AS ENUM ('hourly', 'daily', 'weekly', 'monthly', 'fixed', 'commission', 'negotiable');
-CREATE TYPE job_status AS ENUM ('open', 'filled', 'closed', 'expired', 'paused');
-CREATE TYPE match_type AS ENUM ('automatic', 'manual', 'ai_suggested');
-CREATE TYPE match_status AS ENUM ('suggested', 'viewed', 'contacted', 'hired', 'rejected', 'expired');
-CREATE TYPE user_role AS ENUM ('job_seeker', 'job_poster', 'both');
+-- Create types if they don't exist
+DO $$ BEGIN
+  CREATE TYPE job_type AS ENUM ('gig', 'part_time', 'full_time', 'contract', 'temporary');
+EXCEPTION
+  WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
+  CREATE TYPE pay_type AS ENUM ('hourly', 'daily', 'weekly', 'monthly', 'fixed', 'commission', 'negotiable');
+EXCEPTION
+  WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
+  CREATE TYPE job_status AS ENUM ('open', 'filled', 'closed', 'expired', 'paused');
+EXCEPTION
+  WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
+  CREATE TYPE match_type AS ENUM ('automatic', 'manual', 'ai_suggested');
+EXCEPTION
+  WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
+  CREATE TYPE match_status AS ENUM ('suggested', 'viewed', 'contacted', 'hired', 'rejected', 'expired');
+EXCEPTION
+  WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
+  CREATE TYPE user_role AS ENUM ('job_seeker', 'job_poster', 'both');
+EXCEPTION
+  WHEN duplicate_object THEN null;
+END $$;
 
 -- =====================================================
 -- TABLE: job_listings
 -- =====================================================
 
-CREATE TABLE job_listings (
+CREATE TABLE IF NOT EXISTS job_listings (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   
   -- Poster info
@@ -111,7 +141,7 @@ CREATE INDEX job_listings_required_skills_idx ON job_listings USING gin(required
 -- TABLE: job_seekers
 -- =====================================================
 
-CREATE TABLE job_seekers (
+CREATE TABLE IF NOT EXISTS job_seekers (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   
   -- Identity
@@ -179,7 +209,7 @@ CREATE INDEX job_seekers_preferred_categories_idx ON job_seekers USING gin(prefe
 -- TABLE: job_matches
 -- =====================================================
 
-CREATE TABLE job_matches (
+CREATE TABLE IF NOT EXISTS job_matches (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   
   -- Match parties
@@ -228,7 +258,7 @@ CREATE INDEX job_matches_poster_interested_idx ON job_matches(poster_interested)
 -- TABLE: job_conversations
 -- =====================================================
 
-CREATE TABLE job_conversations (
+CREATE TABLE IF NOT EXISTS job_conversations (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   
   -- User identity
@@ -271,7 +301,7 @@ CREATE INDEX job_conversations_extracted_metadata_idx ON job_conversations USING
 -- TABLE: job_applications
 -- =====================================================
 
-CREATE TABLE job_applications (
+CREATE TABLE IF NOT EXISTS job_applications (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   
   -- Application details
@@ -307,7 +337,7 @@ CREATE INDEX job_applications_created_at_idx ON job_applications(created_at DESC
 -- TABLE: job_analytics
 -- =====================================================
 
-CREATE TABLE job_analytics (
+CREATE TABLE IF NOT EXISTS job_analytics (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   
   -- Event tracking
@@ -597,7 +627,7 @@ CREATE POLICY "Service role can manage analytics"
 -- Seed Data for Categories
 -- =====================================================
 
-CREATE TABLE job_categories (
+CREATE TABLE IF NOT EXISTS job_categories (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   name text UNIQUE NOT NULL,
   description text,
