@@ -119,14 +119,14 @@ async function getServiceAccountToken(): Promise<string | null> {
   return json?.access_token || null;
 }
 
-export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function POST(req: NextRequest, context: { params: Promise<{ id: string }> }) {
+  const { id } = await context.params;
   const admin = getSupabaseAdminClient();
   if (!admin) return NextResponse.json({ error: "supabase_unavailable" }, { status: 503 });
   const apiKey = process.env.GOOGLE_DRIVE_API_KEY;
   const saToken = await getServiceAccountToken();
   let body: any; try { body = await req.json(); } catch { return NextResponse.json({ error: 'invalid_json' }, { status: 400 }); }
   const folder = String(body?.folder || '').trim();
-  const id = id;
   const folderId = parseFolderId(folder);
   if (!folderId) return NextResponse.json({ error: 'invalid_folder' }, { status: 400 });
   const pageSize = Math.min(Number(body?.page_size ?? 100), 1000);
