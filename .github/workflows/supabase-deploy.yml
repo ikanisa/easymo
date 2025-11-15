@@ -62,7 +62,7 @@ jobs:
           fi
           # Link project and push migrations
           supabase link --project-ref "$SUPABASE_PROJECT_REF"
-          supabase db push --password "$SUPABASE_DB_PASSWORD"
+          supabase db push --password "$SUPABASE_DB_PASSWORD" --include-all
 
   functions:
     name: Deploy wa-webhook function
