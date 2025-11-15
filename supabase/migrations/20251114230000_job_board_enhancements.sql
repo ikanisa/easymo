@@ -52,7 +52,7 @@ CREATE INDEX IF NOT EXISTS job_seekers_org_id_idx ON job_seekers(org_id) WHERE o
 -- Job sources table for external integrations
 CREATE TABLE IF NOT EXISTS job_sources (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  name text NOT NULL,
+  name text NOT NULL UNIQUE,
   source_type text NOT NULL CHECK (source_type IN ('openai_deep_search', 'serpapi', 'custom_rss', 'manual')),
   base_url text,
   config jsonb DEFAULT '{}'::jsonb,
