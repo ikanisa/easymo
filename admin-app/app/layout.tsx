@@ -30,8 +30,8 @@ export default function RootLayout({
     .trim() === "true";
   const uiKitEnabled = uiV2Enabled || isUiKitEnabled();
   return (
-    <html lang="en" className="app-html">
-      <body className="app-body" data-ui-theme={uiKitEnabled ? "v2" : undefined}>
+    <html lang="en" className="app-html" suppressHydrationWarning>
+      <body className="app-body" data-ui-theme={uiKitEnabled ? "v2" : undefined} suppressHydrationWarning>
         <QueryProvider>
           <a className="skip-link" href="#main-content">
             Skip to main content

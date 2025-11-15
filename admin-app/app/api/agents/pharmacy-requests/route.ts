@@ -75,8 +75,8 @@ export const GET = createHandler(
       return fallback("Supabase admin client unavailable.");
     }
 
-    const limit = params.limit ?? 50;
-    const offset = params.offset ?? 0;
+    const limit = limit ?? 50;
+    const offset = offset ?? 0;
 
     const requestQuery = admin
       .from("pharmacy_requests")

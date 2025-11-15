@@ -18,11 +18,13 @@ const nextConfig = {
   poweredByHeader: false, // Remove unnecessary headers
   experimental: {
     typedRoutes: true,
-    instrumentationHook: true,
-    serverComponentsExternalPackages: ['@easymo/commons'],
   },
+  serverExternalPackages: ['@easymo/commons'],
   typescript: {
     ignoreBuildErrors: false,
+  },
+  eslint: {
+    ignoreDuringBuilds: false,
   },
   // Optimize for Chrome memory usage
   headers: async () => [

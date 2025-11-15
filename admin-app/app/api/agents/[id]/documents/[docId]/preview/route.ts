@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdminClient } from "@/lib/server/supabase-admin";
 
-export async function GET(req: NextRequest, { params }: { params: { id: string; docId: string } }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string; docId: string }> }) {
   const admin = getSupabaseAdminClient();
   if (!admin) return NextResponse.json({ error: "supabase_unavailable" }, { status: 503 });
-  const { docId } = params;
+  const { docId } = await params;
   const ttl = Number(new URL(req.url).searchParams.get('ttl') ?? '300');
   const { data: doc, error } = await admin.from('agent_documents').select('id, storage_path, source_url').eq('id', docId).maybeSingle();
   if (error || !doc) return NextResponse.json({ error: error ?? 'not_found' }, { status: 404 });

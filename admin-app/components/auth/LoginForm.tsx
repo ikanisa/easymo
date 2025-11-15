@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import classNames from "classnames";
 import styles from "./LoginForm.module.css";
@@ -9,11 +9,17 @@ export function LoginForm() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isPending, startTransition] = useTransition();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const isLoading = submitting || isPending;
+
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    
+    if (isLoading) return;
+    
     setError(null);
     setSubmitting(true);
     
@@ -31,18 +37,22 @@ export function LoginForm() {
         const payload = await response.json().catch(() => ({}));
         console.error('[LOGIN] Login failed', { status: response.status, payload });
         setError(typeof payload?.message === "string" ? payload.message : "Unable to sign in.");
+        setSubmitting(false);
         return;
       }
 
       console.log('[LOGIN] Login successful, redirecting to dashboard');
       setEmail("");
       setPassword("");
-      // Use full page reload to prevent redirect loops and ensure clean state
-      window.location.href = "/dashboard";
+      
+      // Use Next.js router for client-side navigation with transition
+      startTransition(() => {
+        router.push("/dashboard");
+        router.refresh();
+      });
     } catch (cause) {
       console.error("auth.login.failed", cause);
       setError("Unexpected error during sign-in.");
-    } finally {
       setSubmitting(false);
     }
   };
@@ -52,7 +62,11 @@ export function LoginForm() {
       <form className={styles.form} onSubmit={handleSubmit} noValidate>
         <h1 className={styles.heading}>Admin sign-in</h1>
         <p className={styles.subheading}>Access operations tools with your admin account.</p>
-        {error && <div className={styles.error}>{error}</div>}
+        {error && (
+          <div className={styles.error} role="alert">
+            {error}
+          </div>
+        )}
         <label className={styles.field} htmlFor="email">
           Email
           <input
@@ -61,8 +75,9 @@ export function LoginForm() {
             autoComplete="email"
             value={email}
             onChange={(event) => setEmail(event.target.value)}
-            disabled={submitting}
+            disabled={isLoading}
             required
+            aria-required="true"
           />
         </label>
         <label className={styles.field} htmlFor="password">
@@ -73,12 +88,18 @@ export function LoginForm() {
             autoComplete="current-password"
             value={password}
             onChange={(event) => setPassword(event.target.value)}
-            disabled={submitting}
+            disabled={isLoading}
             required
+            aria-required="true"
           />
         </label>
-        <button className={classNames(styles.submit, submitting && styles.loading)} type="submit" disabled={submitting}>
-          {submitting ? "Signing in…" : "Sign in"}
+        <button 
+          className={classNames(styles.submit, isLoading && styles.loading)} 
+          type="submit" 
+          disabled={isLoading}
+          aria-busy={isLoading}
+        >
+          {isLoading ? "Signing in…" : "Sign in"}
         </button>
       </form>
     </div>

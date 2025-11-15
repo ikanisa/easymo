@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdminClient } from "@/lib/server/supabase-admin";
 
-export async function GET(req: Request, { params }: { params: { id: string } }) {
+export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const admin = getSupabaseAdminClient();
   if (!admin) return NextResponse.json({ error: "supabase_unavailable" }, { status: 503 });
-  const { id } = params;
+  const { id } = await params;
   const url = new URL(req.url);
   const status = url.searchParams.get("status");
   const limitParam = url.searchParams.get("limit");

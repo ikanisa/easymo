@@ -1,62 +1,71 @@
-# macOS
-.DS_Store
 
-# Logs
-logs
-.logs/
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
-
-# Node / JS
-node_modules/
-dist/
-dist-ssr
-build/
-coverage/
-.cache/
-.turbo/
-.next/
-.pnp.*
-.pnpm-state/
-*.local
-
-# TypeScript
-*.tsbuildinfo
-
+!.env.example
+!.vscode/extensions.json
+# Build outputs (added by cleanup script)
 # Editor / IDE
-.vscode/
-.idea/
-
+# Editor directories and files
 # Env & local config
+# IDE
+# Logs
+# Misc
+# Netlify build artifacts
+# Node / JS
+# OS files
+# Supabase CLI/local artifacts
+# Temporary files
+# Testing
+# TypeScript
+# macOS
+*.env.local
+*.local
+*.log
+*.md.backup
+*.njsproj
+*.ntvs*
+*.sln
+*.sql.backup
+*.suo
+*.sw?
+*.swo
+*.swp
+*.tar.gz
+*.tsbuildinfo
+*~
+.AppleDouble
+.DS_Store
+.LSOverride
+.cache/
 .env
 .env.*
-*.env.local
-!.env.example
-
-# Supabase CLI/local artifacts
+.env.local
+.env.local.backup
+.idea
+.idea/
+.logs/
+.netlify/
+.next/
+.nyc_output/
+.pnp.*
+.pnpm-state/
 .supabase/
 .supabase/**
-supabase/.temp/
-supabase/.branches/
-
-# Netlify build artifacts
-.netlify/
-
-# Editor directories and files
+.turbo/
+.vercel
+.vscode/
 .vscode/*
-!.vscode/extensions.json
-.idea
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
-*.swp
-
-.env
+Thumbs.db
+build/
+combined_*.sql
+coverage/
+dist-ssr
+dist/
+lerna-debug.log*
+logs
+node_modules/
+npm-debug.log*
 package.json.backup
-.env.local
+pnpm-debug.log*
+supabase/.branches/
+supabase/.temp/
+yarn-debug.log*
+yarn-error.log*

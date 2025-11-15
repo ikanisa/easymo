@@ -1,5 +1,10 @@
 export const IDS = {
   // Home menu
+  JOB_BOARD: "job_board",
+  JOB_FIND: "job_find",
+  JOB_POST: "job_post",
+  JOB_MY_JOBS: "job_my_jobs",
+  JOB_MY_APPLICATIONS: "job_my_applications",
   SEE_DRIVERS: "see_drivers",
   SEE_PASSENGERS: "see_passengers",
   SCHEDULE_TRIP: "schedule_trip",

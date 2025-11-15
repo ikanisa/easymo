@@ -147,7 +147,8 @@ export const PATCH = createHandler<{ params: Promise<{ id: string }> }>(
         );
       }
 
-      const actorId = headers().get("x-actor-id");
+      const headersList = await headers();
+      const actorId = headersList.get("x-actor-id");
 
       await recordAudit({
         actorId,

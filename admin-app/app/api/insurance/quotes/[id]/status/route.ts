@@ -21,7 +21,7 @@ function mapRow(row: Record<string, any>) {
   };
 }
 
-export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const admin = getSupabaseAdminClient();
   if (!admin) {
     return NextResponse.json({ error: "supabase_unavailable" }, { status: 503 });

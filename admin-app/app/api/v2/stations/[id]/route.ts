@@ -15,10 +15,10 @@ const paramsSchema = z.object({
 
 export async function PATCH(
   request: Request,
-  context: { params: { id: string } },
+  context: { params: Promise<{ id: string }> },
 ) {
   try {
-    const { id } = paramsSchema.parse(context.params);
+    const { id } = paramsSchema.parse(await context.params);
     const updates = stationUpdateSchema.parse(await request.json());
 
     const updatePayload: Record<string, unknown> = {};
@@ -59,10 +59,10 @@ export async function PATCH(
 
 export async function DELETE(
   _request: Request,
-  context: { params: { id: string } },
+  context: { params: Promise<{ id: string }> },
 ) {
   try {
-    const { id } = paramsSchema.parse(context.params);
+    const { id } = paramsSchema.parse(await context.params);
     const supabase = await createAdminClient();
     const { data, error } = await supabase
       .from("stations")

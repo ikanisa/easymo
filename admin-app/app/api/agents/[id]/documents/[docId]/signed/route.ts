@@ -3,13 +3,14 @@ import { getSupabaseAdminClient } from "@/lib/server/supabase-admin";
 
 const BUCKET = process.env.AGENT_DOCS_BUCKET || "agent-docs";
 
-export async function GET(_: Request, { params }: { params: { id: string; docId: string } }) {
+export async function GET(_: Request, context: { params: Promise<{ id: string; docId: string }> }) {
+  const { docId } = await context.params;
   const admin = getSupabaseAdminClient();
   if (!admin) return NextResponse.json({ error: "supabase_unavailable" }, { status: 503 });
   const { data: doc, error } = await admin
     .from("agent_documents")
     .select("storage_path")
-    .eq("id", params.docId)
+    .eq("id", docId)
     .maybeSingle();
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
   if (!doc?.storage_path) return NextResponse.json({ error: "no_storage_path" }, { status: 404 });

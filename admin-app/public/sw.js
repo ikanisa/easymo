@@ -95,12 +95,21 @@ self.addEventListener("sync", (event) => {
 });
 
 async function cacheFirst(request, cacheName) {
-  const cache = await caches.open(cacheName);
-  const cached = await cache.match(request);
-  if (cached) return cached;
-  const response = await fetch(request);
-  cache.put(request, response.clone());
-  return response;
+  try {
+    const cache = await caches.open(cacheName);
+    const cached = await cache.match(request);
+    if (cached) return cached;
+    const response = await fetch(request);
+    if (response && response.ok) {
+      cache.put(request, response.clone());
+    }
+    return response;
+  } catch (error) {
+    if (process.env.NODE_ENV === "production") {
+      console.warn('sw.cache_first_failed', error);
+    }
+    return new Response("", { status: 503 });
+  }
 }
 
 async function networkFirst(request) {

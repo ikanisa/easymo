@@ -129,7 +129,8 @@ export const POST = createHandler("admin_api.agent_sessions.create", async (req)
       );
     }
 
-    const actorId = headers().get("x-actor-id");
+    const headersList = await headers();
+    const actorId = headersList.get("x-actor-id");
 
     await recordAudit({
       actorId,

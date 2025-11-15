@@ -592,6 +592,36 @@ async function handleHomeMenuSelection(
       );
       return true;
     }
+    case IDS.JOB_BOARD: {
+      const { showJobBoardMenu } = await import(
+        "../domains/jobs/index.ts"
+      );
+      return await showJobBoardMenu(ctx);
+    }
+    case IDS.JOB_FIND: {
+      const { startJobSearch } = await import(
+        "../domains/jobs/index.ts"
+      );
+      return await startJobSearch(ctx);
+    }
+    case IDS.JOB_POST: {
+      const { startJobPosting } = await import(
+        "../domains/jobs/index.ts"
+      );
+      return await startJobPosting(ctx);
+    }
+    case IDS.JOB_MY_APPLICATIONS: {
+      const { showMyApplications } = await import(
+        "../domains/jobs/index.ts"
+      );
+      return await showMyApplications(ctx);
+    }
+    case IDS.JOB_MY_JOBS: {
+      const { showMyJobs } = await import(
+        "../domains/jobs/index.ts"
+      );
+      return await showMyJobs(ctx);
+    }
     case IDS.BARS_RESTAURANTS: {
       const { startBarsSearch } = await import(
         "../domains/bars/search.ts"

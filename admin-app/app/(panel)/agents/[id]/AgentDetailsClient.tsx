@@ -23,7 +23,7 @@ import {
   type AgentPersona,
 } from "@/lib/queries/agents";
 import { getAdminApiRoutePath } from "@/lib/routes";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useToast } from "@/components/ui/ToastProvider";
 import { Tooltip } from "@/components/ui/Tooltip";
 

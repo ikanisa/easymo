@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic";
 
 export async function POST(
   req: Request,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const admin = getSupabaseAdminClient();
   if (!admin) {
@@ -13,7 +13,7 @@ export async function POST(
       status: 503,
     });
   }
-  const { id } = params;
+  const { id } = await params;
   const form = await req.formData();
   const file = form.get("file");
   const title = (form.get("title") as string) || undefined;

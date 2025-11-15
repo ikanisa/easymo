@@ -1,19 +1,19 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdminClient } from "@/lib/server/supabase-admin";
 
-export async function GET(_: Request, { params }: { params: { id: string } }) {
+export async function GET(_: Request, { params }: { params: Promise<{ id: string }> }) {
   const admin = getSupabaseAdminClient();
   if (!admin) return NextResponse.json({ error: "supabase_unavailable" }, { status: 503 });
-  const { id } = params;
+  const { id } = await params;
   const { data, error } = await admin.from("agent_documents").select("*").eq("agent_id", id).order("created_at", { ascending: false });
   if (error) return NextResponse.json({ error }, { status: 400 });
   return NextResponse.json({ documents: data ?? [] });
 }
 
-export async function POST(req: Request, { params }: { params: { id: string } }) {
+export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const admin = getSupabaseAdminClient();
   if (!admin) return NextResponse.json({ error: "supabase_unavailable" }, { status: 503 });
-  const { id } = params;
+  const { id } = await params;
   // Allow JSON posting of remote source (source_url) as a simple path
   const body = await req.json().catch(() => ({} as Record<string, unknown>));
   const title = typeof body.title === "string" ? body.title : null;

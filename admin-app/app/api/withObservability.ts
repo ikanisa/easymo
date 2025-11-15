@@ -13,10 +13,9 @@ export function createHandler<TContext = unknown>(
   name: string,
   handler: ApiHandler<TContext>,
 ) {
-  return async (request: Request, context?: TContext) => {
+  return async (request: Request, context: TContext) => {
     try {
-      const ctxValue = (context ?? ({} as TContext));
-      return await withApiObservability(name, request, (obs) => handler(request, ctxValue, obs));
+      return await withApiObservability(name, request, (obs) => handler(request, context, obs));
     } catch (error) {
       console.error(`${name}.unhandled`, error);
       captureException(error as Error, { route: name, path: (request as any)?.url });

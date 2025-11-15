@@ -185,6 +185,12 @@ export async function handleText(
     return await handlePropertyAIChat(ctx, body);
   }
 
+  // Handle job board AI conversations
+  if (state.key === "job_conversation") {
+    const { handleJobBoardText } = await import("../domains/jobs/index.ts");
+    return await handleJobBoardText(ctx, body);
+  }
+
   if (await handleMomoText(ctx, body, state)) {
     return true;
   }
