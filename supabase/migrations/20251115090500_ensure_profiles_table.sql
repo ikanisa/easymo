@@ -96,7 +96,8 @@ BEGIN
     WHERE tablename = 'profiles' 
     AND policyname = 'Users can read own profile'
   ) THEN
-    CREATE POLICY "Users can read own profile" ON public.profiles
+    DROP POLICY IF EXISTS "Users can read own profile" ON public.profiles;
+CREATE POLICY "Users can read own profile" ON public.profiles
       FOR SELECT
       USING (auth.uid() = user_id);
   END IF;
@@ -110,7 +111,8 @@ BEGIN
     WHERE tablename = 'profiles' 
     AND policyname = 'Service role can manage all profiles'
   ) THEN
-    CREATE POLICY "Service role can manage all profiles" ON public.profiles
+    DROP POLICY IF EXISTS "Service role can manage all profiles" ON public.profiles;
+CREATE POLICY "Service role can manage all profiles" ON public.profiles
       FOR ALL
       USING (auth.jwt()->>'role' = 'service_role')
       WITH CHECK (auth.jwt()->>'role' = 'service_role');

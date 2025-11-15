@@ -69,20 +69,24 @@ ALTER TABLE job_source_urls ENABLE ROW LEVEL SECURITY;
 ALTER TABLE property_source_urls ENABLE ROW LEVEL SECURITY;
 
 -- Public read access for active sources
+DROP POLICY IF EXISTS "Anyone can view active job sources" ON job_source_urls;
 CREATE POLICY "Anyone can view active job sources"
   ON job_source_urls FOR SELECT
   USING (is_active = true);
 
+DROP POLICY IF EXISTS "Anyone can view active property sources" ON property_source_urls;
 CREATE POLICY "Anyone can view active property sources"
   ON property_source_urls FOR SELECT
   USING (is_active = true);
 
 -- Service role full access
+DROP POLICY IF EXISTS "Service role can manage job sources" ON job_source_urls;
 CREATE POLICY "Service role can manage job sources"
   ON job_source_urls FOR ALL
   USING (auth.jwt()->>'role' = 'service_role')
   WITH CHECK (auth.jwt()->>'role' = 'service_role');
 
+DROP POLICY IF EXISTS "Service role can manage property sources" ON property_source_urls;
 CREATE POLICY "Service role can manage property sources"
   ON property_source_urls FOR ALL
   USING (auth.jwt()->>'role' = 'service_role')

@@ -201,11 +201,13 @@ ON CONFLICT (key) DO UPDATE SET
 ALTER TABLE whatsapp_profile_menu_items ENABLE ROW LEVEL SECURITY;
 
 -- Public read access for active menu items
+DROP POLICY IF EXISTS "Anyone can view active profile menu items" ON whatsapp_profile_menu_items;
 CREATE POLICY "Anyone can view active profile menu items"
   ON whatsapp_profile_menu_items FOR SELECT
   USING (is_active = true);
 
 -- Admin write access (service role only)
+DROP POLICY IF EXISTS "Service role can manage profile menu items" ON whatsapp_profile_menu_items;
 CREATE POLICY "Service role can manage profile menu items"
   ON whatsapp_profile_menu_items FOR ALL
   USING (auth.jwt()->>'role' = 'service_role')

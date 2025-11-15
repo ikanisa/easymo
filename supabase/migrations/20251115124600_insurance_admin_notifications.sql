@@ -165,17 +165,20 @@ ALTER TABLE public.insurance_admins ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.insurance_admin_notifications ENABLE ROW LEVEL SECURITY;
 
 -- Allow service role full access
+DROP POLICY IF EXISTS "Service role has full access to insurance_admins" ON public.insurance_admins;
 CREATE POLICY "Service role has full access to insurance_admins"
   ON public.insurance_admins
   FOR ALL
   USING (auth.role() = 'service_role');
 
+DROP POLICY IF EXISTS "Service role has full access to insurance_admin_notifications" ON public.insurance_admin_notifications;
 CREATE POLICY "Service role has full access to insurance_admin_notifications"
   ON public.insurance_admin_notifications
   FOR ALL
   USING (auth.role() = 'service_role');
 
 -- Allow authenticated users to view admins (for admin portal)
+DROP POLICY IF EXISTS "Authenticated users can view insurance admins" ON public.insurance_admins;
 CREATE POLICY "Authenticated users can view insurance admins"
   ON public.insurance_admins
   FOR SELECT

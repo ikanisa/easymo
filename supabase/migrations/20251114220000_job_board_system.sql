@@ -481,36 +481,44 @@ ALTER TABLE job_applications ENABLE ROW LEVEL SECURITY;
 ALTER TABLE job_analytics ENABLE ROW LEVEL SECURITY;
 
 -- Job Listings: Public read for open jobs, write for poster
+DROP POLICY IF EXISTS "Public can view open job listings" ON job_listings;
 CREATE POLICY "Public can view open job listings"
   ON job_listings FOR SELECT
   USING (status = 'open' OR posted_by = current_setting('request.jwt.claims', true)::json->>'phone');
 
+DROP POLICY IF EXISTS "Users can create job listings" ON job_listings;
 CREATE POLICY "Users can create job listings"
   ON job_listings FOR INSERT
   WITH CHECK (posted_by = current_setting('request.jwt.claims', true)::json->>'phone');
 
+DROP POLICY IF EXISTS "Poster can update own job listings" ON job_listings;
 CREATE POLICY "Poster can update own job listings"
   ON job_listings FOR UPDATE
   USING (posted_by = current_setting('request.jwt.claims', true)::json->>'phone');
 
+DROP POLICY IF EXISTS "Poster can delete own job listings" ON job_listings;
 CREATE POLICY "Poster can delete own job listings"
   ON job_listings FOR DELETE
   USING (posted_by = current_setting('request.jwt.claims', true)::json->>'phone');
 
 -- Job Seekers: Users can read/write own profile
+DROP POLICY IF EXISTS "Users can view own seeker profile" ON job_seekers;
 CREATE POLICY "Users can view own seeker profile"
   ON job_seekers FOR SELECT
   USING (phone_number = current_setting('request.jwt.claims', true)::json->>'phone');
 
+DROP POLICY IF EXISTS "Users can create own seeker profile" ON job_seekers;
 CREATE POLICY "Users can create own seeker profile"
   ON job_seekers FOR INSERT
   WITH CHECK (phone_number = current_setting('request.jwt.claims', true)::json->>'phone');
 
+DROP POLICY IF EXISTS "Users can update own seeker profile" ON job_seekers;
 CREATE POLICY "Users can update own seeker profile"
   ON job_seekers FOR UPDATE
   USING (phone_number = current_setting('request.jwt.claims', true)::json->>'phone');
 
 -- Job Matches: Seeker and poster can view their matches
+DROP POLICY IF EXISTS "Users can view their job matches" ON job_matches;
 CREATE POLICY "Users can view their job matches"
   ON job_matches FOR SELECT
   USING (
@@ -524,6 +532,7 @@ CREATE POLICY "Users can view their job matches"
     )
   );
 
+DROP POLICY IF EXISTS "Users can update their match status" ON job_matches;
 CREATE POLICY "Users can update their match status"
   ON job_matches FOR UPDATE
   USING (
@@ -538,19 +547,23 @@ CREATE POLICY "Users can update their match status"
   );
 
 -- Job Conversations: Users can view/update own conversations
+DROP POLICY IF EXISTS "Users can view own conversations" ON job_conversations;
 CREATE POLICY "Users can view own conversations"
   ON job_conversations FOR SELECT
   USING (phone_number = current_setting('request.jwt.claims', true)::json->>'phone');
 
+DROP POLICY IF EXISTS "Users can create own conversations" ON job_conversations;
 CREATE POLICY "Users can create own conversations"
   ON job_conversations FOR INSERT
   WITH CHECK (phone_number = current_setting('request.jwt.claims', true)::json->>'phone');
 
+DROP POLICY IF EXISTS "Users can update own conversations" ON job_conversations;
 CREATE POLICY "Users can update own conversations"
   ON job_conversations FOR UPDATE
   USING (phone_number = current_setting('request.jwt.claims', true)::json->>'phone');
 
 -- Job Applications: Seeker and poster can view
+DROP POLICY IF EXISTS "Users can view related applications" ON job_applications;
 CREATE POLICY "Users can view related applications"
   ON job_applications FOR SELECT
   USING (
@@ -564,6 +577,7 @@ CREATE POLICY "Users can view related applications"
     )
   );
 
+DROP POLICY IF EXISTS "Seekers can create applications" ON job_applications;
 CREATE POLICY "Seekers can create applications"
   ON job_applications FOR INSERT
   WITH CHECK (
@@ -574,6 +588,7 @@ CREATE POLICY "Seekers can create applications"
   );
 
 -- Analytics: Admin only (service role)
+DROP POLICY IF EXISTS "Service role can manage analytics" ON job_analytics;
 CREATE POLICY "Service role can manage analytics"
   ON job_analytics FOR ALL
   USING (auth.jwt()->>'role' = 'service_role');

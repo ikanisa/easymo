@@ -66,13 +66,16 @@ ALTER TABLE research_sessions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE researched_properties ENABLE ROW LEVEL SECURITY;
 
 -- Public read access for researched properties
+DROP POLICY IF EXISTS researched_properties_public_read ON researched_properties;
 CREATE POLICY researched_properties_public_read ON researched_properties
   FOR SELECT USING (status = 'active');
 
 -- Admin-only write access
+DROP POLICY IF EXISTS research_sessions_admin_all ON research_sessions;
 CREATE POLICY research_sessions_admin_all ON research_sessions
   FOR ALL USING (auth.jwt() ->> 'role' = 'service_role');
 
+DROP POLICY IF EXISTS researched_properties_admin_all ON researched_properties;
 CREATE POLICY researched_properties_admin_all ON researched_properties
   FOR ALL USING (auth.jwt() ->> 'role' = 'service_role');
 
