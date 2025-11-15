@@ -13,9 +13,6 @@ WHERE display_order >= 1;
 INSERT INTO whatsapp_home_menu_items (
   key,
   name,
-  label_en,
-  label_fr,
-  label_rw,
   description_en,
   description_fr,
   description_rw,
@@ -25,13 +22,11 @@ INSERT INTO whatsapp_home_menu_items (
   page_number,
   is_active,
   requires_auth,
-  feature_flag
+  feature_flag,
+  country_specific_names
 ) VALUES (
   'jobs',
   '💼 Jobs & Gigs',
-  'Jobs & Gigs',
-  'Emplois & Petits Boulots',
-  'Imirimo n''Akazi',
   'Find work or post jobs - from one-day gigs to full-time positions',
   'Trouver du travail ou publier des offres d''emploi - des petits boulots aux postes à temps plein',
   'Shakisha akazi cyangwa utangaze imirimo - kuva ku murimo w''umunsi umwe kugeza ku kazi cyuzuye',
@@ -41,12 +36,22 @@ INSERT INTO whatsapp_home_menu_items (
   1,
   true,
   false,
-  'FEATURE_JOB_BOARD'
+  'FEATURE_JOB_BOARD',
+  jsonb_build_object(
+    'en', 'Jobs & Gigs',
+    'fr', 'Emplois & Petits Boulots',
+    'rw', 'Imirimo n''Akazi'
+  )
 ) ON CONFLICT (key) DO UPDATE SET
   display_order = 1,
   active_countries = ARRAY['RW', 'MT'],
   page_number = 1,
-  is_active = true;
+  is_active = true,
+  country_specific_names = jsonb_build_object(
+    'en', 'Jobs & Gigs',
+    'fr', 'Emplois & Petits Boulots',
+    'rw', 'Imirimo n''Akazi'
+  );
 
 -- Update job_sources config to include Malta queries
 UPDATE job_sources
