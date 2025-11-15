@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdminClient } from "@/lib/server/supabase-admin";
 
-export async function GET(_: Request, { params }: { params: Promise<{ id: string; runId: string }> }) {
+export async function GET(_: Request, context: { params: Promise<{ id: string; runId: string }> }) {
+  const { runId } = await context.params;
   const admin = getSupabaseAdminClient();
   if (!admin) return NextResponse.json({ error: "supabase_unavailable" }, { status: 503 });
   const { data, error } = await admin

@@ -1,0 +1,9 @@
+{
+  "name": "@easymo/wa-webhook-router",
+  "version": "1.0.0",
+  "exports": "./src/index.ts",
+  "tasks": {
+    "test": "deno test --allow-all",
+    "check": "deno check src/index.ts"
+  }
+}

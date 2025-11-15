@@ -4,6 +4,7 @@ import { sendListMessage, sendButtonsMessage, homeOnly } from "../../utils/reply
 import { IDS } from "../../wa/ids.ts";
 import { setState, clearState } from "../../state/store.ts";
 import { logStructuredEvent } from "../../observe/log.ts";
+import { fetchProfileMenuItems, submenuItemsToRows } from "../../utils/dynamic_submenu.ts";
 
 /**
  * Profile Hub
@@ -23,8 +24,50 @@ export async function handleProfileMenu(ctx: RouterContext): Promise<boolean> {
     wa_id: ctx.from,
   });
 
-  // Fetch user assets counts
-  const counts = await getProfileAssetCounts(ctx);
+  // Fetch profile menu items dynamically from database
+  const menuItems = await fetchProfileMenuItems(
+    ctx.countryCode || 'RW',
+    ctx.locale || 'en',
+    ctx.supabase
+  );
+
+  if (!menuItems || menuItems.length === 0) {
+    console.error("No profile menu items found, using fallback");
+    // Fallback to basic menu with MOMO QR
+    await sendListMessage(
+      ctx,
+      {
+        title: t(ctx.locale, "profile.menu.title"),
+        body: t(ctx.locale, "profile.menu.body"),
+        sectionTitle: t(ctx.locale, "profile.menu.section"),
+        rows: [
+          {
+            id: IDS.MOMO_QR,
+            title: "📱 MOMO QR & Tokens",
+            description: "View your MOMO QR code and payment tokens",
+          },
+          {
+            id: IDS.BACK_MENU,
+            title: t(ctx.locale, "common.menu_back"),
+            description: t(ctx.locale, "common.back_to_menu.description"),
+          },
+        ],
+        buttonText: t(ctx.locale, "common.buttons.open"),
+      },
+      { emoji: "👤" }
+    );
+    return true;
+  }
+
+  // Convert database items to WhatsApp list rows
+  const rows = submenuItemsToRows(menuItems, getProfileMenuItemId);
+
+  // Add back button
+  rows.push({
+    id: IDS.BACK_MENU,
+    title: t(ctx.locale, "common.menu_back"),
+    description: t(ctx.locale, "common.back_to_menu.description"),
+  });
 
   await sendListMessage(
     ctx,
@@ -32,44 +75,28 @@ export async function handleProfileMenu(ctx: RouterContext): Promise<boolean> {
       title: t(ctx.locale, "profile.menu.title"),
       body: t(ctx.locale, "profile.menu.body"),
       sectionTitle: t(ctx.locale, "profile.menu.section"),
-      rows: [
-        {
-          id: IDS.PROFILE_VEHICLES,
-          title: t(ctx.locale, "profile.menu.vehicles.title", { count: counts.vehicles }),
-          description: t(ctx.locale, "profile.menu.vehicles.description"),
-        },
-        {
-          id: IDS.PROFILE_BUSINESSES,
-          title: t(ctx.locale, "profile.menu.businesses.title", { count: counts.businesses }),
-          description: t(ctx.locale, "profile.menu.businesses.description"),
-        },
-        {
-          id: IDS.PROFILE_PROPERTIES,
-          title: t(ctx.locale, "profile.menu.properties.title", { count: counts.properties }),
-          description: t(ctx.locale, "profile.menu.properties.description"),
-        },
-        {
-          id: IDS.PROFILE_TOKENS,
-          title: t(ctx.locale, "profile.menu.tokens.title"),
-          description: t(ctx.locale, "profile.menu.tokens.description"),
-        },
-        {
-          id: IDS.PROFILE_SETTINGS,
-          title: t(ctx.locale, "profile.menu.settings.title"),
-          description: t(ctx.locale, "profile.menu.settings.description"),
-        },
-        {
-          id: IDS.BACK_MENU,
-          title: t(ctx.locale, "common.menu_back"),
-          description: t(ctx.locale, "common.back_to_menu.description"),
-        },
-      ],
+      rows,
       buttonText: t(ctx.locale, "common.buttons.open"),
     },
     { emoji: "👤" }
   );
 
   return true;
+}
+
+/**
+ * Map profile menu item keys to IDS constants
+ */
+function getProfileMenuItemId(key: string): string {
+  const mapping: Record<string, string> = {
+    'view_profile': IDS.PROFILE_SETTINGS,
+    'momo_qr': IDS.MOMO_QR,
+    'payment_history': IDS.PROFILE_TOKENS,
+    'settings': IDS.PROFILE_SETTINGS,
+    'change_language': 'change_language',
+    'help_support': 'help_support',
+  };
+  return mapping[key] || key;
 }
 
 export async function handleProfileVehicles(ctx: RouterContext): Promise<boolean> {
