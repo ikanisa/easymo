@@ -181,8 +181,8 @@ CREATE TABLE IF NOT EXISTS job_categories_by_country (
   UNIQUE(country_code, category_key)
 );
 
-CREATE INDEX job_categories_country_idx ON job_categories_by_country(country_code);
-CREATE INDEX job_categories_popular_idx ON job_categories_by_country(country_code, is_popular) WHERE is_popular = true;
+CREATE INDEX IF NOT EXISTS job_categories_country_idx ON job_categories_by_country(country_code);
+CREATE INDEX IF NOT EXISTS job_categories_popular_idx ON job_categories_by_country(country_code, is_popular) WHERE is_popular = true;
 
 -- =====================================================
 -- 6. Seed common job categories for all countries
@@ -314,7 +314,7 @@ $$;
 ALTER TABLE job_listings
   ADD COLUMN IF NOT EXISTS country_code text REFERENCES countries(code);
 
-CREATE INDEX IF NOT EXISTS job_listings_country_code_idx ON job_listings(country_code);
+CREATE INDEX IF NOT EXISTS IF NOT EXISTS job_listings_country_code_idx ON job_listings(country_code);
 
 -- Try to detect and update country codes for existing jobs
 UPDATE job_listings
@@ -406,7 +406,7 @@ $$;
 ALTER TABLE job_seekers
   ADD COLUMN IF NOT EXISTS country_code text REFERENCES countries(code);
 
-CREATE INDEX IF NOT EXISTS job_seekers_country_code_idx ON job_seekers(country_code);
+CREATE INDEX IF NOT EXISTS IF NOT EXISTS job_seekers_country_code_idx ON job_seekers(country_code);
 
 -- Try to detect country from phone numbers
 UPDATE job_seekers js

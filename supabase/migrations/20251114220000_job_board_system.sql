@@ -119,23 +119,23 @@ CREATE TABLE IF NOT EXISTS job_listings (
 );
 
 -- Indexes
-CREATE INDEX job_listings_posted_by_idx ON job_listings(posted_by);
-CREATE INDEX job_listings_status_idx ON job_listings(status) WHERE status = 'open';
-CREATE INDEX job_listings_category_idx ON job_listings(category);
-CREATE INDEX job_listings_job_type_idx ON job_listings(job_type);
-CREATE INDEX job_listings_created_at_idx ON job_listings(created_at DESC);
-CREATE INDEX job_listings_start_date_idx ON job_listings(start_date) WHERE start_date IS NOT NULL;
-CREATE INDEX job_listings_expires_at_idx ON job_listings(expires_at) WHERE expires_at IS NOT NULL;
+CREATE INDEX IF NOT EXISTS job_listings_posted_by_idx ON job_listings(posted_by);
+CREATE INDEX IF NOT EXISTS job_listings_status_idx ON job_listings(status) WHERE status = 'open';
+CREATE INDEX IF NOT EXISTS job_listings_category_idx ON job_listings(category);
+CREATE INDEX IF NOT EXISTS job_listings_job_type_idx ON job_listings(job_type);
+CREATE INDEX IF NOT EXISTS job_listings_created_at_idx ON job_listings(created_at DESC);
+CREATE INDEX IF NOT EXISTS job_listings_start_date_idx ON job_listings(start_date) WHERE start_date IS NOT NULL;
+CREATE INDEX IF NOT EXISTS job_listings_expires_at_idx ON job_listings(expires_at) WHERE expires_at IS NOT NULL;
 
 -- Vector index for semantic search
-CREATE INDEX job_listings_skills_embedding_idx 
+CREATE INDEX IF NOT EXISTS job_listings_skills_embedding_idx 
 ON job_listings 
 USING hnsw (required_skills_embedding vector_cosine_ops)
 WITH (m = 16, ef_construction = 64);
 
 -- GIN index for JSONB metadata
-CREATE INDEX job_listings_metadata_idx ON job_listings USING gin(metadata);
-CREATE INDEX job_listings_required_skills_idx ON job_listings USING gin(required_skills);
+CREATE INDEX IF NOT EXISTS job_listings_metadata_idx ON job_listings USING gin(metadata);
+CREATE INDEX IF NOT EXISTS job_listings_required_skills_idx ON job_listings USING gin(required_skills);
 
 -- =====================================================
 -- TABLE: job_seekers
@@ -189,21 +189,21 @@ CREATE TABLE IF NOT EXISTS job_seekers (
 );
 
 -- Indexes
-CREATE INDEX job_seekers_phone_number_idx ON job_seekers(phone_number);
-CREATE INDEX job_seekers_last_active_idx ON job_seekers(last_active DESC);
-CREATE INDEX job_seekers_profile_complete_idx ON job_seekers(profile_complete);
-CREATE INDEX job_seekers_available_immediately_idx ON job_seekers(available_immediately) WHERE available_immediately = true;
+CREATE INDEX IF NOT EXISTS job_seekers_phone_number_idx ON job_seekers(phone_number);
+CREATE INDEX IF NOT EXISTS job_seekers_last_active_idx ON job_seekers(last_active DESC);
+CREATE INDEX IF NOT EXISTS job_seekers_profile_complete_idx ON job_seekers(profile_complete);
+CREATE INDEX IF NOT EXISTS job_seekers_available_immediately_idx ON job_seekers(available_immediately) WHERE available_immediately = true;
 
 -- Vector index for matching
-CREATE INDEX job_seekers_skills_embedding_idx 
+CREATE INDEX IF NOT EXISTS job_seekers_skills_embedding_idx 
 ON job_seekers 
 USING hnsw (skills_embedding vector_cosine_ops)
 WITH (m = 16, ef_construction = 64);
 
 -- GIN indexes
-CREATE INDEX job_seekers_skills_idx ON job_seekers USING gin(skills);
-CREATE INDEX job_seekers_metadata_idx ON job_seekers USING gin(metadata);
-CREATE INDEX job_seekers_preferred_categories_idx ON job_seekers USING gin(preferred_categories);
+CREATE INDEX IF NOT EXISTS job_seekers_skills_idx ON job_seekers USING gin(skills);
+CREATE INDEX IF NOT EXISTS job_seekers_metadata_idx ON job_seekers USING gin(metadata);
+CREATE INDEX IF NOT EXISTS job_seekers_preferred_categories_idx ON job_seekers USING gin(preferred_categories);
 
 -- =====================================================
 -- TABLE: job_matches
@@ -246,13 +246,13 @@ CREATE TABLE IF NOT EXISTS job_matches (
 );
 
 -- Indexes
-CREATE INDEX job_matches_job_id_idx ON job_matches(job_id);
-CREATE INDEX job_matches_seeker_id_idx ON job_matches(seeker_id);
-CREATE INDEX job_matches_status_idx ON job_matches(status);
-CREATE INDEX job_matches_similarity_score_idx ON job_matches(similarity_score DESC);
-CREATE INDEX job_matches_created_at_idx ON job_matches(created_at DESC);
-CREATE INDEX job_matches_seeker_interested_idx ON job_matches(seeker_interested) WHERE seeker_interested = true;
-CREATE INDEX job_matches_poster_interested_idx ON job_matches(poster_interested) WHERE poster_interested = true;
+CREATE INDEX IF NOT EXISTS job_matches_job_id_idx ON job_matches(job_id);
+CREATE INDEX IF NOT EXISTS job_matches_seeker_id_idx ON job_matches(seeker_id);
+CREATE INDEX IF NOT EXISTS job_matches_status_idx ON job_matches(status);
+CREATE INDEX IF NOT EXISTS job_matches_similarity_score_idx ON job_matches(similarity_score DESC);
+CREATE INDEX IF NOT EXISTS job_matches_created_at_idx ON job_matches(created_at DESC);
+CREATE INDEX IF NOT EXISTS job_matches_seeker_interested_idx ON job_matches(seeker_interested) WHERE seeker_interested = true;
+CREATE INDEX IF NOT EXISTS job_matches_poster_interested_idx ON job_matches(poster_interested) WHERE poster_interested = true;
 
 -- =====================================================
 -- TABLE: job_conversations
@@ -291,11 +291,11 @@ CREATE TABLE IF NOT EXISTS job_conversations (
 );
 
 -- Indexes
-CREATE INDEX job_conversations_phone_number_idx ON job_conversations(phone_number);
-CREATE INDEX job_conversations_last_message_at_idx ON job_conversations(last_message_at DESC);
-CREATE INDEX job_conversations_active_job_id_idx ON job_conversations(active_job_id) WHERE active_job_id IS NOT NULL;
-CREATE INDEX job_conversations_active_seeker_id_idx ON job_conversations(active_seeker_id) WHERE active_seeker_id IS NOT NULL;
-CREATE INDEX job_conversations_extracted_metadata_idx ON job_conversations USING gin(extracted_metadata);
+CREATE INDEX IF NOT EXISTS job_conversations_phone_number_idx ON job_conversations(phone_number);
+CREATE INDEX IF NOT EXISTS job_conversations_last_message_at_idx ON job_conversations(last_message_at DESC);
+CREATE INDEX IF NOT EXISTS job_conversations_active_job_id_idx ON job_conversations(active_job_id) WHERE active_job_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS job_conversations_active_seeker_id_idx ON job_conversations(active_seeker_id) WHERE active_seeker_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS job_conversations_extracted_metadata_idx ON job_conversations USING gin(extracted_metadata);
 
 -- =====================================================
 -- TABLE: job_applications
@@ -328,10 +328,10 @@ CREATE TABLE IF NOT EXISTS job_applications (
 );
 
 -- Indexes
-CREATE INDEX job_applications_job_id_idx ON job_applications(job_id);
-CREATE INDEX job_applications_seeker_id_idx ON job_applications(seeker_id);
-CREATE INDEX job_applications_status_idx ON job_applications(status);
-CREATE INDEX job_applications_created_at_idx ON job_applications(created_at DESC);
+CREATE INDEX IF NOT EXISTS job_applications_job_id_idx ON job_applications(job_id);
+CREATE INDEX IF NOT EXISTS job_applications_seeker_id_idx ON job_applications(seeker_id);
+CREATE INDEX IF NOT EXISTS job_applications_status_idx ON job_applications(status);
+CREATE INDEX IF NOT EXISTS job_applications_created_at_idx ON job_applications(created_at DESC);
 
 -- =====================================================
 -- TABLE: job_analytics
@@ -357,11 +357,11 @@ CREATE TABLE IF NOT EXISTS job_analytics (
 );
 
 -- Indexes
-CREATE INDEX job_analytics_event_type_idx ON job_analytics(event_type);
-CREATE INDEX job_analytics_entity_type_idx ON job_analytics(entity_type);
-CREATE INDEX job_analytics_entity_id_idx ON job_analytics(entity_id);
-CREATE INDEX job_analytics_phone_number_idx ON job_analytics(phone_number);
-CREATE INDEX job_analytics_created_at_idx ON job_analytics(created_at DESC);
+CREATE INDEX IF NOT EXISTS job_analytics_event_type_idx ON job_analytics(event_type);
+CREATE INDEX IF NOT EXISTS job_analytics_entity_type_idx ON job_analytics(entity_type);
+CREATE INDEX IF NOT EXISTS job_analytics_entity_id_idx ON job_analytics(entity_id);
+CREATE INDEX IF NOT EXISTS job_analytics_phone_number_idx ON job_analytics(phone_number);
+CREATE INDEX IF NOT EXISTS job_analytics_created_at_idx ON job_analytics(created_at DESC);
 
 -- Partitioning by month (for large-scale analytics)
 -- CREATE TABLE job_analytics_y2025m01 PARTITION OF job_analytics FOR VALUES FROM ('2025-01-01') TO ('2025-02-01');
