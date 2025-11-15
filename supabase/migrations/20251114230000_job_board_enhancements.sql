@@ -61,6 +61,13 @@ CREATE TABLE IF NOT EXISTS job_sources (
   updated_at timestamptz NOT NULL DEFAULT now()
 );
 
+-- Add unique constraint to job_sources.name if not exists
+DO $$ BEGIN
+  ALTER TABLE job_sources ADD CONSTRAINT job_sources_name_key UNIQUE (name);
+EXCEPTION
+  WHEN duplicate_object THEN null;
+END $$;
+
 -- Link job_listings to sources
 DO $$ BEGIN
   ALTER TABLE job_listings
