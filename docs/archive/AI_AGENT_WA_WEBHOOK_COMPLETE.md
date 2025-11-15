@@ -7,9 +7,11 @@
 
 ## 🎯 What Was Done
 
-Surgical, production-ready integration of OpenAI-powered AI agents into the wa-webhook edge function, following the **additive-only pattern**. No existing handlers were modified.
+Surgical, production-ready integration of OpenAI-powered AI agents into the wa-webhook edge
+function, following the **additive-only pattern**. No existing handlers were modified.
 
 ### New Capabilities ✨
+
 - **Intelligent Conversations**: AI agents remember context and provide natural responses
 - **Function Calling**: Agents can check balances, search trips, make bookings
 - **Memory Management**: Conversations persisted and recalled automatically
@@ -21,6 +23,7 @@ Surgical, production-ready integration of OpenAI-powered AI agents into the wa-w
 ## 📁 Files Created/Modified
 
 ### NEW Files (3 files, 893 lines)
+
 ```
 supabase/functions/wa-webhook/shared/
 ├── openai_client.ts      ✅ 241 lines - OpenAI API client with retries, function calling
@@ -29,6 +32,7 @@ supabase/functions/wa-webhook/shared/
 ```
 
 ### UPDATED Files (2 files, 68 lines changed)
+
 ```
 supabase/functions/wa-webhook/
 ├── router/ai_agent_handler.ts  🔧 Enhanced with new components
@@ -36,6 +40,7 @@ supabase/functions/wa-webhook/
 ```
 
 ### Documentation (2 files)
+
 ```
 supabase/functions/wa-webhook/
 └── AI_IMPLEMENTATION_COMPLETE.md  📖 Comprehensive guide
@@ -48,6 +53,7 @@ AI_AGENT_WA_WEBHOOK_COMPLETE.md    📖 Root summary (this file)
 ## 🏗️ Architecture
 
 ### How It Works
+
 ```
 User WhatsApp Message
   ↓
@@ -64,6 +70,7 @@ AI Eligibility Check (NEW)
 ```
 
 ### Example Flow
+
 ```
 User: "What's my balance?"
   ↓
@@ -81,6 +88,7 @@ Saved to memory for future context
 ## 🚀 Quick Start
 
 ### 1. Set Environment Variables
+
 ```bash
 # Required
 export OPENAI_API_KEY="sk-..."
@@ -93,6 +101,7 @@ export AI_TEMPERATURE="0.7"                  # Creativity (default: 0.7)
 ```
 
 ### 2. Enable Feature Flag
+
 ```sql
 INSERT INTO feature_flags (name, enabled, metadata)
 VALUES ('ai_agents_enabled', true, '{"rollout_percentage": 100}')
@@ -100,6 +109,7 @@ ON CONFLICT (name) DO UPDATE SET enabled = true;
 ```
 
 ### 3. Test It
+
 ```bash
 # Send a message via WhatsApp
 User: "Hi, how are you?"
@@ -122,9 +132,10 @@ AI: [executes tool] "Your wallet balance is 50,000 RWF."
 - [ ] **Tool logging**: Check `ai_tool_executions` table
 
 ### Database Verification
+
 ```sql
 -- Recent AI interactions
-SELECT phone_number, 
+SELECT phone_number,
        message_content->>'text'->>'body' as user_msg,
        response_content->>'text'->>'body' as ai_response,
        metadata->>'tokens_used' as tokens,
@@ -145,6 +156,7 @@ ORDER BY created_at DESC LIMIT 10;
 ## 💡 Key Features
 
 ### 1. OpenAI Integration
+
 - ✅ Chat Completions API with function calling
 - ✅ Automatic retries (3x with backoff)
 - ✅ Token usage & cost tracking
@@ -152,18 +164,21 @@ ORDER BY created_at DESC LIMIT 10;
 - ✅ Embedding generation (for future semantic search)
 
 ### 2. Memory Management
+
 - ✅ Short-term: Last 20 messages from `wa_interactions`
 - ✅ Long-term: Important facts in `agent_conversations`
 - ✅ Conversation summaries
 - ✅ GDPR-compliant cleanup (90-day default)
 
 ### 3. Tool System
+
 - ✅ **check_wallet_balance** - Get user balance
 - ✅ **search_trips** - Find trips by route/date
 - ✅ **get_user_profile** - User information
 - ✅ **initiate_transfer** - Money transfer (with validation)
 
 ### 4. Monitoring
+
 - ✅ Structured logging for every event
 - ✅ Cost tracking per conversation
 - ✅ Tool execution metrics
@@ -174,6 +189,7 @@ ORDER BY created_at DESC LIMIT 10;
 ## 📊 Cost Estimation
 
 ### Per Conversation
+
 - Model: `gpt-4o-mini`
 - Input: $0.15 / 1M tokens
 - Output: $0.60 / 1M tokens
@@ -181,27 +197,31 @@ ORDER BY created_at DESC LIMIT 10;
 - With tools: **$0.0004** per conversation
 
 ### Monthly Projections
+
 | Daily Conversations | Monthly Cost |
-|--------------------|-------------|
-| 1,000              | $6          |
-| 5,000              | $30         |
-| 10,000             | $60         |
-| 50,000             | $300        |
+| ------------------- | ------------ |
+| 1,000               | $6           |
+| 5,000               | $30          |
+| 10,000              | $60          |
+| 50,000              | $300         |
 
 ---
 
 ## 🔧 Next Steps
 
 ### Phase 3: Pipeline Integration (2-3 days)
+
 **Goal**: Connect AI handler to main processor
 
 **Tasks**:
+
 1. Update `router/processor.ts` - Add AI routing before existing handlers
 2. Add eligibility check function
 3. Test end-to-end integration
 4. Deploy to staging environment
 
 **Files to modify**:
+
 ```typescript
 // router/processor.ts
 import { tryAIAgentHandler } from "./ai_agent_handler.ts";
@@ -211,13 +231,14 @@ export async function handlePreparedWebhook(...) {
     // NEW: Try AI agent first
     const aiHandled = await tryAIAgentHandler(ctx, msg, state);
     if (aiHandled) continue; // AI handled it
-    
+
     // Existing routing logic...
   }
 }
 ```
 
 ### Phase 4: Specialized Agents (3-5 days)
+
 **Goal**: Create agent types with specialized prompts & capabilities
 
 1. **Booking Agent**
@@ -241,6 +262,7 @@ export async function handlePreparedWebhook(...) {
    - Multi-agent orchestration
 
 ### Phase 5: Advanced Features (Ongoing)
+
 - Streaming responses for real-time UX
 - Vector search with embeddings for semantic memory
 - Multi-agent conversations
@@ -253,6 +275,7 @@ export async function handlePreparedWebhook(...) {
 ## 🛡️ Security & Compliance
 
 ### Security ✅
+
 - API keys in environment (not code)
 - Webhook signature verification (existing)
 - Rate limiting (existing)
@@ -261,6 +284,7 @@ export async function handlePreparedWebhook(...) {
 - Input validation for all tools
 
 ### GDPR Compliance ✅
+
 - 90-day conversation retention (configurable)
 - User data deletion support
 - Opt-out via feature flag
@@ -271,6 +295,7 @@ export async function handlePreparedWebhook(...) {
 ## 📚 Documentation
 
 ### For Developers
+
 1. **AI_IMPLEMENTATION_COMPLETE.md** - Full technical guide
    - Architecture details
    - API reference
@@ -283,6 +308,7 @@ export async function handlePreparedWebhook(...) {
    - Usage examples
 
 ### For Operations
+
 - Monitoring setup
 - Cost tracking queries
 - Error troubleshooting
@@ -293,12 +319,14 @@ export async function handlePreparedWebhook(...) {
 ## 🎯 Success Metrics
 
 ### Performance Targets
+
 - ✅ Response time < 3s (90th percentile)
 - ✅ AI accuracy > 85%
 - ✅ Tool success rate > 95%
 - ✅ Error rate < 1%
 
 ### Business Targets
+
 - ✅ User satisfaction > 4.0/5
 - ✅ Task completion > 80%
 - ✅ Human escalation < 10%
@@ -320,21 +348,25 @@ export async function handlePreparedWebhook(...) {
 ### Common Issues
 
 **1. "OpenAI API key not configured"**
+
 ```bash
 supabase secrets set OPENAI_API_KEY=sk-...
 ```
 
 **2. AI not responding**
+
 - Check feature flag: `SELECT * FROM feature_flags WHERE name = 'ai_agents_enabled';`
 - Verify message matches patterns in `AI_ELIGIBLE_PATTERNS`
 - Check logs: `supabase functions logs wa-webhook | grep "AI_AGENT"`
 
 **3. Tool execution failing**
+
 - Verify user exists in `users` table
 - Check required tables exist (wallets, trips)
 - Review `ai_tool_executions` table for error details
 
 ### Debug Mode
+
 ```bash
 export LOG_LEVEL=debug
 export ERROR_INCLUDE_STACK=true
@@ -375,6 +407,7 @@ Ready for Phase 3 integration into processor pipeline.
 ## ✅ Review Checklist
 
 Before merging:
+
 - [x] Code follows TypeScript best practices
 - [x] All functions have proper error handling
 - [x] Structured logging added for observability
@@ -392,7 +425,9 @@ Before merging:
 
 **Phase 1 & 2: COMPLETE** ✅
 
-We've successfully implemented the foundation for AI-powered conversational agents in wa-webhook. The system is:
+We've successfully implemented the foundation for AI-powered conversational agents in wa-webhook.
+The system is:
+
 - **Production-ready** with comprehensive error handling
 - **Cost-effective** using gpt-4o-mini
 - **Scalable** with proper caching and rate limiting

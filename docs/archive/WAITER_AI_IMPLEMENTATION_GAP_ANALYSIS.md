@@ -5,6 +5,7 @@
 ### ✅ Already Implemented
 
 #### Database Tables
+
 - ✅ **conversations** - Chat sessions (RLS enabled)
 - ✅ **messages** - Chat history (RLS enabled)
 - ✅ **draft_orders** - Cart management (RLS enabled)
@@ -13,6 +14,7 @@
 - ✅ **reservations** - Table bookings (RLS enabled)
 
 #### Edge Functions
+
 - ✅ **agent-chat** - Exists but designed for admin panel (broker/support/sales agents)
   - NOT designed for Waiter AI specifically
   - Uses different schema (agent_chat_sessions, agent_chat_messages)
@@ -20,6 +22,7 @@
   - Has admin authentication
 
 #### Frontend (waiter-pwa/)
+
 - ✅ Complete PWA with 7 views (~2,078 LOC)
 - ✅ All UI components built
 - ✅ Contexts for Chat, Cart, Supabase
@@ -33,6 +36,7 @@
 ### 1. Database Tables
 
 #### Missing Core Tables:
+
 ```sql
 -- ❌ users table (referenced in spec but missing)
 -- ❌ menu_items table (may exist but need to verify structure)
@@ -42,6 +46,7 @@
 ```
 
 #### Missing Payment Tables:
+
 ```sql
 -- ❌ payments table (for payment tracking)
 -- ❌ payment_methods table (user saved payment methods)
@@ -50,6 +55,7 @@
 ### 2. Edge Functions
 
 #### Missing Waiter-Specific Functions:
+
 ```typescript
 // ❌ waiter-ai-agent/index.ts - Dedicated Waiter AI function
 //    - Should handle: menu search, cart, orders, wine pairing, reservations, feedback
@@ -224,7 +230,7 @@ CREATE INDEX idx_payments_status ON payments(status);
 CREATE INDEX idx_feedback_order_id ON feedback(order_id);
 
 -- Full-text search on menu
-CREATE INDEX idx_menu_items_fts 
+CREATE INDEX idx_menu_items_fts
   ON menu_items USING gin(to_tsvector('english', name || ' ' || coalesce(description, '')));
 
 -- Triggers
@@ -281,15 +287,15 @@ const tools = [
         type: "object",
         properties: {
           query: { type: "string", description: "Search query" },
-          dietary: { 
-            type: "string", 
+          dietary: {
+            type: "string",
             enum: ["vegan", "vegetarian", "gluten-free", "dairy-free", ""],
-            description: "Dietary filter"
-          }
+            description: "Dietary filter",
+          },
         },
-        required: ["query"]
-      }
-    }
+        required: ["query"],
+      },
+    },
   },
   {
     type: "function",
@@ -301,11 +307,11 @@ const tools = [
         properties: {
           itemId: { type: "string" },
           quantity: { type: "number", minimum: 1 },
-          options: { type: "object", description: "Special requests or customizations" }
+          options: { type: "object", description: "Special requests or customizations" },
         },
-        required: ["itemId", "quantity"]
-      }
-    }
+        required: ["itemId", "quantity"],
+      },
+    },
   },
   {
     type: "function",
@@ -322,16 +328,16 @@ const tools = [
               type: "object",
               properties: {
                 itemId: { type: "string" },
-                quantity: { type: "number" }
-              }
-            }
+                quantity: { type: "number" },
+              },
+            },
           },
           removeItems: { type: "array", items: { type: "string" } },
-          specialRequests: { type: "string" }
+          specialRequests: { type: "string" },
         },
-        required: ["orderId"]
-      }
-    }
+        required: ["orderId"],
+      },
+    },
   },
   {
     type: "function",
@@ -341,11 +347,11 @@ const tools = [
       parameters: {
         type: "object",
         properties: {
-          orderId: { type: "string" }
+          orderId: { type: "string" },
         },
-        required: ["orderId"]
-      }
-    }
+        required: ["orderId"],
+      },
+    },
   },
   {
     type: "function",
@@ -355,11 +361,11 @@ const tools = [
       parameters: {
         type: "object",
         properties: {
-          dish: { type: "string" }
+          dish: { type: "string" },
         },
-        required: ["dish"]
-      }
-    }
+        required: ["dish"],
+      },
+    },
   },
   {
     type: "function",
@@ -371,11 +377,11 @@ const tools = [
         properties: {
           datetime: { type: "string", format: "date-time" },
           partySize: { type: "number", minimum: 1 },
-          specialRequests: { type: "string" }
+          specialRequests: { type: "string" },
         },
-        required: ["datetime", "partySize"]
-      }
-    }
+        required: ["datetime", "partySize"],
+      },
+    },
   },
   {
     type: "function",
@@ -388,14 +394,14 @@ const tools = [
           orderId: { type: "string" },
           rating: { type: "number", minimum: 1, maximum: 5 },
           comment: { type: "string" },
-          categories: { 
+          categories: {
             type: "object",
-            description: "Ratings for food_quality, service, ambiance, value"
-          }
+            description: "Ratings for food_quality, service, ambiance, value",
+          },
         },
-        required: ["orderId", "rating"]
-      }
-    }
+        required: ["orderId", "rating"],
+      },
+    },
   },
   {
     type: "function",
@@ -405,12 +411,12 @@ const tools = [
       parameters: {
         type: "object",
         properties: {
-          orderId: { type: "string" }
+          orderId: { type: "string" },
         },
-        required: ["orderId"]
-      }
-    }
-  }
+        required: ["orderId"],
+      },
+    },
+  },
 ];
 
 // Tool handlers
@@ -420,9 +426,7 @@ async function handleToolCall(name: string, args: any, context: any) {
   try {
     switch (name) {
       case "search_menu": {
-        let query = supabase.from("menu_items")
-          .select("*")
-          .eq("available", true);
+        let query = supabase.from("menu_items").select("*").eq("available", true);
 
         if (args.query) {
           query = query.textSearch("name,description", args.query);
@@ -450,15 +454,13 @@ async function handleToolCall(name: string, args: any, context: any) {
         if (!item) return { error: "Menu item not found" };
 
         // Add to draft orders
-        const { error } = await supabase
-          .from("draft_order_items")
-          .insert({
-            user_id: context.userId,
-            menu_item_id: args.itemId,
-            quantity: args.quantity,
-            price: item.price,
-            options: args.options || {}
-          });
+        const { error } = await supabase.from("draft_order_items").insert({
+          user_id: context.userId,
+          menu_item_id: args.itemId,
+          quantity: args.quantity,
+          price: item.price,
+          options: args.options || {},
+        });
 
         if (error) throw error;
 
@@ -466,7 +468,7 @@ async function handleToolCall(name: string, args: any, context: any) {
           success: true,
           item: item.name,
           quantity: args.quantity,
-          subtotal: item.price * args.quantity
+          subtotal: item.price * args.quantity,
         };
       }
 
@@ -476,7 +478,7 @@ async function handleToolCall(name: string, args: any, context: any) {
           .from("orders")
           .update({
             special_requests: args.specialRequests,
-            updated_at: new Date().toISOString()
+            updated_at: new Date().toISOString(),
           })
           .eq("id", args.orderId)
           .eq("user_id", context.userId);
@@ -490,9 +492,9 @@ async function handleToolCall(name: string, args: any, context: any) {
       case "cancel_order": {
         const { error } = await supabase
           .from("orders")
-          .update({ 
+          .update({
             status: "cancelled",
-            updated_at: new Date().toISOString()
+            updated_at: new Date().toISOString(),
           })
           .eq("id", args.orderId)
           .eq("user_id", context.userId);
@@ -523,7 +525,7 @@ async function handleToolCall(name: string, args: any, context: any) {
             datetime: args.datetime,
             party_size: args.partySize,
             special_requests: args.specialRequests,
-            status: "pending"
+            status: "pending",
           })
           .select()
           .single();
@@ -534,15 +536,13 @@ async function handleToolCall(name: string, args: any, context: any) {
       }
 
       case "submit_feedback": {
-        const { error } = await supabase
-          .from("feedback")
-          .insert({
-            order_id: args.orderId,
-            user_id: context.userId,
-            rating: args.rating,
-            comment: args.comment,
-            categories: args.categories || {}
-          });
+        const { error } = await supabase.from("feedback").insert({
+          order_id: args.orderId,
+          user_id: context.userId,
+          rating: args.rating,
+          comment: args.comment,
+          categories: args.categories || {},
+        });
 
         if (error) throw error;
 
@@ -580,7 +580,7 @@ serve(async (req) => {
       action,
       conversationId,
       userId,
-      language
+      language,
     });
 
     // Start conversation
@@ -591,7 +591,7 @@ serve(async (req) => {
           user_id: userId,
           language,
           metadata,
-          started_at: new Date().toISOString()
+          started_at: new Date().toISOString(),
         })
         .select()
         .single();
@@ -601,15 +601,19 @@ serve(async (req) => {
       const welcomeMessages = {
         en: "Hello! I'm your virtual waiter. How may I assist you today?",
         fr: "Bonjour! Je suis votre serveur virtuel. Comment puis-je vous aider aujourd'hui?",
-        es: "¡Hola! Soy su camarero virtual. ¿Cómo puedo ayudarle hoy?"
+        es: "¡Hola! Soy su camarero virtual. ¿Cómo puedo ayudarle hoy?",
       };
 
-      return new Response(JSON.stringify({
-        conversationId: conversation.id,
-        welcomeMessage: welcomeMessages[language as keyof typeof welcomeMessages] || welcomeMessages.en
-      }), {
-        headers: { "Content-Type": "application/json" }
-      });
+      return new Response(
+        JSON.stringify({
+          conversationId: conversation.id,
+          welcomeMessage:
+            welcomeMessages[language as keyof typeof welcomeMessages] || welcomeMessages.en,
+        }),
+        {
+          headers: { "Content-Type": "application/json" },
+        }
+      );
     }
 
     // Send message
@@ -619,7 +623,7 @@ serve(async (req) => {
         conversation_id: conversationId,
         sender: "user",
         content: message,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
 
       // Get conversation history
@@ -630,10 +634,11 @@ serve(async (req) => {
         .order("timestamp", { ascending: true })
         .limit(20);
 
-      const chatMessages = messages?.map(m => ({
-        role: m.sender === "user" ? "user" : "assistant",
-        content: m.content
-      })) || [];
+      const chatMessages =
+        messages?.map((m) => ({
+          role: m.sender === "user" ? "user" : "assistant",
+          content: m.content,
+        })) || [];
 
       // Call OpenAI with streaming
       const response = await openai.chat.completions.create({
@@ -641,10 +646,10 @@ serve(async (req) => {
         messages: [
           { role: "system", content: SYSTEM_PROMPT },
           ...chatMessages,
-          { role: "user", content: message }
+          { role: "user", content: message },
         ],
         tools,
-        stream: true
+        stream: true,
       });
 
       // Stream response
@@ -670,11 +675,12 @@ serve(async (req) => {
           if (toolCalls.length > 0) {
             for (const toolCall of toolCalls) {
               const args = JSON.parse(toolCall.function.arguments);
-              const result = await handleToolCall(
-                toolCall.function.name,
-                args,
-                { userId, conversationId, venueId: metadata?.venue, tableNumber: metadata?.table }
-              );
+              const result = await handleToolCall(toolCall.function.name, args, {
+                userId,
+                conversationId,
+                venueId: metadata?.venue,
+                tableNumber: metadata?.table,
+              });
 
               // Get final response with tool result
               const finalResponse = await openai.chat.completions.create({
@@ -685,9 +691,9 @@ serve(async (req) => {
                   {
                     role: "function",
                     name: toolCall.function.name,
-                    content: JSON.stringify(result)
-                  }
-                ]
+                    content: JSON.stringify(result),
+                  },
+                ],
               });
 
               fullResponse = finalResponse.choices[0].message.content || fullResponse;
@@ -699,32 +705,31 @@ serve(async (req) => {
             conversation_id: conversationId,
             sender: "assistant",
             content: fullResponse,
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
           });
 
           controller.close();
-        }
+        },
       });
 
       return new Response(stream, {
         headers: {
           "Content-Type": "text/event-stream",
-          "Cache-Control": "no-cache"
-        }
+          "Cache-Control": "no-cache",
+        },
       });
     }
 
     return new Response(JSON.stringify({ error: "Invalid action" }), {
       status: 400,
-      headers: { "Content-Type": "application/json" }
+      headers: { "Content-Type": "application/json" },
     });
-
   } catch (error) {
     await logStructuredEvent("WAITER_AI_ERROR", { error: error.message });
 
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
-      headers: { "Content-Type": "application/json" }
+      headers: { "Content-Type": "application/json" },
     });
   }
 });
@@ -733,6 +738,7 @@ serve(async (req) => {
 ### Phase 3: Payment Functions (1 hour each)
 
 **Files needed**:
+
 - `supabase/functions/send_order/index.ts`
 - `supabase/functions/momo_charge/index.ts`
 - `supabase/functions/revolut_charge/index.ts`

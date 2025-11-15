@@ -9,11 +9,13 @@
 ## 🔄 What Changed
 
 ### 1. Schedule Updated
+
 - **Before:** 3x daily (9am, 2pm, 7pm EAT)
 - **After:** **1x daily at 11am EAT** (8am UTC)
 - **Cost Impact:** Reduced from ~$45/month to ~$15/month
 
 ### 2. Multi-Source Property Research
+
 Now uses **THREE data sources** instead of one:
 
 1. ✅ **Econfary API** - Primary property data source
@@ -58,7 +60,7 @@ curl -X POST "$SUPABASE_URL/functions/v1/openai-deep-research" \
 
 # Expected: Properties from all 3 sources
 # - Econfary API
-# - SerpAPI  
+# - SerpAPI
 # - OpenAI Deep Research
 ```
 
@@ -67,9 +69,10 @@ curl -X POST "$SUPABASE_URL/functions/v1/openai-deep-research" \
 ## 📊 Expected Results
 
 ### Property Sources Distribution
+
 ```sql
 -- View properties by source
-SELECT 
+SELECT
   source,
   COUNT(*) as count,
   AVG(price) as avg_price,
@@ -91,6 +94,7 @@ ORDER BY count DESC;
 ## 💰 Updated Cost Estimates
 
 ### Daily Costs (1x per day at 11am)
+
 ```bash
 # Econfary API: Free (or included in API key)
 # SerpAPI: ~$0.02 per search × 5 searches = $0.10
@@ -103,6 +107,7 @@ ORDER BY count DESC;
 ```
 
 ### Annual Estimate
+
 - **Previous (3x daily):** $540/year
 - **New (1x daily with 3 sources):** $65/year
 - **Savings:** $475/year
@@ -112,6 +117,7 @@ ORDER BY count DESC;
 ## 🔧 Configuration
 
 ### Cron Schedule (Updated)
+
 ```sql
 -- Single daily job at 11am EAT (8am UTC)
 SELECT * FROM cron.job WHERE jobname = 'openai-deep-research-daily';
@@ -126,14 +132,15 @@ SELECT cron.schedule(
 ```
 
 ### API Keys Configuration
+
 ```bash
 # In database:
-UPDATE app_settings 
-SET value = 'c548f5e85718225f50752750e5be2837035009df30ed57d99b67527c9f200bd7' 
+UPDATE app_settings
+SET value = 'c548f5e85718225f50752750e5be2837035009df30ed57d99b67527c9f200bd7'
 WHERE key = 'app.econfary_api_key';
 
-UPDATE app_settings 
-SET value = 'YOUR_SERPAPI_KEY' 
+UPDATE app_settings
+SET value = 'YOUR_SERPAPI_KEY'
 WHERE key = 'app.serpapi_key';
 
 # Or as environment variables:
@@ -147,7 +154,7 @@ export SERPAPI_KEY="YOUR_SERPAPI_KEY"
 
 ```sql
 -- View today's research session with source breakdown
-SELECT 
+SELECT
   id,
   started_at,
   properties_found,
@@ -161,7 +168,7 @@ WHERE started_at > CURRENT_DATE
 ORDER BY started_at DESC;
 
 -- Source quality comparison
-SELECT 
+SELECT
   source,
   COUNT(*) as total_properties,
   COUNT(DISTINCT location_country) as countries_covered,
@@ -177,21 +184,25 @@ GROUP BY source;
 ## 🎯 Benefits of Multi-Source Approach
 
 ### 1. **Broader Coverage**
+
 - Econfary: Professional property listings
 - SerpAPI: Public web listings (Airbnb, local sites)
 - OpenAI: Niche and recently posted properties
 
 ### 2. **Data Validation**
+
 - Cross-reference prices across sources
 - Identify outliers and suspicious listings
 - Higher confidence in property data
 
 ### 3. **Resilience**
+
 - If one API fails, others continue
 - No single point of failure
 - Better uptime guarantee
 
 ### 4. **Cost Efficiency**
+
 - 1x daily instead of 3x
 - Mix of free (Econfary) + cheap (SerpAPI) + smart (OpenAI)
 - 89% cost reduction vs. previous setup
@@ -216,8 +227,8 @@ curl -X POST "$SUPABASE_URL/functions/v1/openai-deep-research" \
 
 # Check results
 psql $DATABASE_URL -c "
-  SELECT source, COUNT(*), MIN(scraped_at), MAX(scraped_at) 
-  FROM researched_properties 
+  SELECT source, COUNT(*), MIN(scraped_at), MAX(scraped_at)
+  FROM researched_properties
   WHERE scraped_at > NOW() - INTERVAL '1 hour'
   GROUP BY source;
 "
@@ -227,15 +238,15 @@ psql $DATABASE_URL -c "
 
 ## 📝 Summary of Changes
 
-| Aspect | Before | After |
-|--------|--------|-------|
-| Schedule | 3x daily | 1x daily (11am EAT) |
-| Data Sources | 1 (OpenAI only) | 3 (Econfary + SerpAPI + OpenAI) |
-| Properties per run | 10-15 | 55-90 |
-| Cost per day | ~$1.50 | ~$0.18 |
-| Cost per month | ~$45 | ~$5.40 |
-| Annual cost | ~$540 | ~$65 |
-| **Savings** | - | **$475/year (89%)** |
+| Aspect             | Before          | After                           |
+| ------------------ | --------------- | ------------------------------- |
+| Schedule           | 3x daily        | 1x daily (11am EAT)             |
+| Data Sources       | 1 (OpenAI only) | 3 (Econfary + SerpAPI + OpenAI) |
+| Properties per run | 10-15           | 55-90                           |
+| Cost per day       | ~$1.50          | ~$0.18                          |
+| Cost per month     | ~$45            | ~$5.40                          |
+| Annual cost        | ~$540           | ~$65                            |
+| **Savings**        | -               | **$475/year (89%)**             |
 
 ---
 
@@ -243,7 +254,7 @@ psql $DATABASE_URL -c "
 
 - [x] Updated cron schedule to 1x daily at 11am EAT
 - [x] Added Econfary API integration
-- [x] Added SerpAPI integration  
+- [x] Added SerpAPI integration
 - [x] Merged all three data sources
 - [x] Updated cost estimates
 - [x] Updated monitoring queries
@@ -255,6 +266,7 @@ psql $DATABASE_URL -c "
 ---
 
 **Next Steps:**
+
 1. Deploy: `supabase functions deploy openai-deep-research`
 2. Apply migrations: `supabase db push`
 3. Verify cron job: Check at 11am EAT tomorrow

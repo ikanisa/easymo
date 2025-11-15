@@ -1,7 +1,9 @@
 # WhatsApp Agent Integration Checklist
+
 ## Phase 3: Exercise and Harden Fallbacks
 
-This checklist validates that every AI agent is properly integrated with WhatsApp workflows and has robust fallback handling.
+This checklist validates that every AI agent is properly integrated with WhatsApp workflows and has
+robust fallback handling.
 
 ## Pre-Flight Checks
 
@@ -18,21 +20,24 @@ This checklist validates that every AI agent is properly integrated with WhatsAp
 **Location:** `supabase/functions/agent-negotiation/`
 
 **WhatsApp Flow:**
+
 1. User sends ride request: "Need ride from Kigali to Airport"
 2. Webhook → `wa-webhook` → triggers agent
 3. Agent processes → orchestrates drivers
 4. Response sent via WA template
 
 **Tests:**
+
 - [ ] Incoming message triggers agent
 - [ ] AI path returns driver recommendations
 - [ ] Fallback 1: Ranking service returns top drivers
-- [ ] Fallback 2: Supabase query returns available drivers  
+- [ ] Fallback 2: Supabase query returns available drivers
 - [ ] Fallback 3: Mock driver data returned
 - [ ] WA template renders correctly
 - [ ] Error message sent if all fail
 
 **Expected Response:**
+
 ```
 🚗 Available Drivers:
 1. John Doe - Toyota Corolla - 5000 RWF
@@ -41,6 +46,7 @@ Reply with driver number to book
 ```
 
 **Validation Command:**
+
 ```bash
 curl -X POST https://[project].supabase.co/functions/v1/agent-negotiation \
   -H "Authorization: Bearer $ANON_KEY" \
@@ -54,12 +60,14 @@ curl -X POST https://[project].supabase.co/functions/v1/agent-negotiation \
 **Location:** `supabase/functions/agents/pharmacy`
 
 **WhatsApp Flow:**
+
 1. User: "Need Amoxicillin 500mg and Paracetamol"
 2. Agent processes medication request
 3. Queries pharmacy vendors
 4. Returns quotes via WA
 
 **Tests:**
+
 - [ ] Medication parsing works
 - [ ] Pharmacy queries executed
 - [ ] Fallback: Supabase pharmacy_requests table
@@ -68,6 +76,7 @@ curl -X POST https://[project].supabase.co/functions/v1/agent-negotiation \
 - [ ] Stock status included
 
 **Expected Response:**
+
 ```
 💊 Pharmacy Quotes:
 1. CityPharma - 18,500 RWF (35 min) ✅ In stock
@@ -82,12 +91,14 @@ Reply with number to order
 **Location:** `supabase/functions/agent-shops/`
 
 **WhatsApp Flow:**
+
 1. User: "Find plumber in Kacyiru"
 2. Agent searches shops/services
 3. Returns top 10 ranked results
 4. User can book directly
 
 **Tests:**
+
 - [ ] Location parsing works
 - [ ] AI ranking returns top 10
 - [ ] Fallback: Supabase shops with location filter
@@ -96,6 +107,7 @@ Reply with number to order
 - [ ] Rating/reviews shown
 
 **Expected Response:**
+
 ```
 🔧 Plumbers in Kacyiru:
 1. Expert Plumbing ⭐4.8 - 078...
@@ -112,12 +124,14 @@ Reply with number for details
 **Location:** `supabase/functions/agent-quincaillerie/`
 
 **WhatsApp Flow:**
+
 1. User: "Need hammer and nails"
 2. Agent searches hardware catalog
 3. Returns products with prices
 4. Links to purchase
 
 **Tests:**
+
 - [ ] Product search works
 - [ ] AI catalog search ranking
 - [ ] Fallback: Supabase products table
@@ -132,12 +146,14 @@ Reply with number for details
 **Location:** `supabase/functions/agent-property-rental/`
 
 **WhatsApp Flow:**
+
 1. User: "Looking for 2BR apartment in Kimironko"
 2. Agent searches properties
 3. Returns matching listings
 4. Schedules viewings
 
 **Tests:**
+
 - [ ] Property search parameters parsed
 - [ ] Supabase properties queried
 - [ ] Fallback: Mock property listings
@@ -152,12 +168,14 @@ Reply with number for details
 **Location:** `supabase/functions/agent-schedule-trip/`
 
 **WhatsApp Flow:**
+
 1. User: "Bus to Huye tomorrow 8am"
 2. Agent queries schedules
 3. Returns available buses
 4. Books seat
 
 **Tests:**
+
 - [ ] Date/time parsing works
 - [ ] Route matching accurate
 - [ ] Supabase schedules queried
@@ -172,12 +190,14 @@ Reply with number for details
 **Location:** `supabase/functions/agents/marketplace`
 
 **WhatsApp Flow:**
+
 1. User: "Selling iPhone 12"
 2. Agent creates listing
 3. Matches with buyers
 4. Facilitates transaction
 
 **Tests:**
+
 - [ ] Listing creation works
 - [ ] AI categorization correct
 - [ ] Price suggestion given
@@ -189,9 +209,11 @@ Reply with number for details
 
 ### 8-15. Additional Agents
 
-**Video Analysis, Insurance OCR, MoMo Allocation, Agent Chat, Agent Runner, Agent Monitor, Contact Queue, Customer Lookup**
+**Video Analysis, Insurance OCR, MoMo Allocation, Agent Chat, Agent Runner, Agent Monitor, Contact
+Queue, Customer Lookup**
 
 Each follows similar validation pattern:
+
 - [ ] Trigger mechanism validated
 - [ ] Primary AI path tested
 - [ ] Fallback 1 tested
@@ -207,6 +229,7 @@ Each follows similar validation pattern:
 For each agent, run synthetic failure tests:
 
 ### Test 1: Force AI Failure
+
 ```bash
 # Set environment variable to force AI path to fail
 export FORCE_AGENT_FAILURE=true
@@ -214,7 +237,8 @@ export FORCE_AGENT_FAILURE=true
 # Verify fallback 1 (ranking) triggers
 ```
 
-### Test 2: Force Ranking Failure  
+### Test 2: Force Ranking Failure
+
 ```bash
 # Disable ranking service
 export RANKING_SERVICE_ENABLED=false
@@ -222,6 +246,7 @@ export RANKING_SERVICE_ENABLED=false
 ```
 
 ### Test 3: Force Supabase Failure
+
 ```bash
 # Use invalid Supabase credentials
 export SUPABASE_URL=https://invalid.supabase.co
@@ -229,6 +254,7 @@ export SUPABASE_URL=https://invalid.supabase.co
 ```
 
 ### Test 4: All Systems Down
+
 ```bash
 # Disable all services
 # Verify graceful error message sent to user
@@ -242,7 +268,7 @@ Check that each agent logs correctly:
 
 ```sql
 -- Query structured logs
-SELECT 
+SELECT
   event,
   agent_name,
   fallback_strategy,
@@ -255,6 +281,7 @@ ORDER BY occurrences DESC;
 ```
 
 **Expected Events:**
+
 - `AGENT_FALLBACK_TRIGGERED` - Fallback initiated
 - `AGENT_FALLBACK_SUCCESS` - Fallback worked
 - `AGENT_FALLBACK_RANKING_FAILED` - Ranking tier failed
@@ -274,6 +301,7 @@ curl http://localhost:9090/api/v1/query \
 ```
 
 **Expected Metrics:**
+
 - `agent.{name}.fallback.triggered` - Total fallbacks
 - `agent.{name}.fallback.ranking_success` - Ranking worked
 - `agent.{name}.fallback.supabase_success` - Supabase worked
@@ -296,6 +324,7 @@ Ensure all message templates are approved and active:
 - [ ] `agent_error_message`
 
 **Validation:**
+
 ```bash
 # Check template status via WhatsApp Business API
 curl "https://graph.facebook.com/v18.0/$WA_BUSINESS_ID/message_templates" \
@@ -346,15 +375,15 @@ Before declaring Phase 3 complete:
 
 ## Issues & Resolutions
 
-| Agent | Issue | Resolution | Status |
-|-------|-------|------------|--------|
-| Driver Negotiation | - | - | ✅ |
-| Pharmacy | - | - | ✅ |
-| Shops & Services | - | - | ✅ |
-| ... | | | |
+| Agent              | Issue | Resolution | Status |
+| ------------------ | ----- | ---------- | ------ |
+| Driver Negotiation | -     | -          | ✅     |
+| Pharmacy           | -     | -          | ✅     |
+| Shops & Services   | -     | -          | ✅     |
+| ...                |       |            |        |
 
 ---
 
 **Last Updated:** 2025-11-11  
-**Phase 3 Status:** ✅ Implementation Complete - Validation In Progress
-**Next Phase:** Phase 4 - QA + Observability
+**Phase 3 Status:** ✅ Implementation Complete - Validation In Progress **Next Phase:** Phase 4 -
+QA + Observability

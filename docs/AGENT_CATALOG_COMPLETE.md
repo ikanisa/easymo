@@ -1,7 +1,6 @@
 # Complete Agent Catalog - EasyMO Platform
 
-**Generated**: November 11, 2025 @ 13:20
-**Total Agents**: 15 AI agents + 2 infrastructure
+**Generated**: November 11, 2025 @ 13:20 **Total Agents**: 15 AI agents + 2 infrastructure
 
 ---
 
@@ -10,14 +9,18 @@
 **Discovery Complete**: All agent experiences enumerated across 5 deployments.
 
 ### By Status
+
 - ✅ **Fully Validated**: 1 (Shops & Services)
 - 🟢 **Integration Complete**: 8 (missing tests/fallbacks)
 - 🟡 **Needs Clarification**: 3 (wallet, quotes, vehicle)
 - 🔴 **Critical Gap**: 1 (Waiter - no backend)
 
 ### Critical Finding
-**Pharmacy "missing" edge function resolved**: Uses `agent-negotiation` with `agentType: "pharmacy"`.  
-The `agent-negotiation` function is **multi-purpose**, handling drivers, pharmacies, quincailleries, and shops.
+
+**Pharmacy "missing" edge function resolved**: Uses `agent-negotiation` with
+`agentType: "pharmacy"`.  
+The `agent-negotiation` function is **multi-purpose**, handling drivers, pharmacies, quincailleries,
+and shops.
 
 ---
 
@@ -26,11 +29,13 @@ The `agent-negotiation` function is **multi-purpose**, handling drivers, pharmac
 ### A. Mobility & Transportation (4 agents)
 
 #### 1. Driver Negotiation Agent
-**Purpose**: Match users with nearby drivers  
+
+**Purpose**: Match users with nearby drivers
+
 - **Admin UI**: ✅ `admin-app/app/(panel)/agents/driver-negotiation/`
 - **Service**: ✅ `lib/agents/driver-requests-service.ts`
 - **Edge Function**: ✅ `agent-negotiation` (shared, `agentType: "driver"`)
-- **WA Domain**: ✅ `domains/mobility/nearby.ts`  
+- **WA Domain**: ✅ `domains/mobility/nearby.ts`
 - **WA Handler**: ✅ `handleAINearbyDrivers()`
 - **SDK**: ✅ `packages/agents/src/agents/drivers/`
 - **Trigger**: Location + vehicle type
@@ -39,7 +44,9 @@ The `agent-negotiation` function is **multi-purpose**, handling drivers, pharmac
 - **Status**: 🟢 Integration complete, needs E2E tests
 
 #### 2. Schedule Trip Agent
-**Purpose**: Create and manage scheduled trips  
+
+**Purpose**: Create and manage scheduled trips
+
 - **Admin UI**: ✅ `admin-app/app/(panel)/agents/schedule-trip/`
 - **Service**: ✅ `lib/agents/schedule-trips-service.ts`
 - **Edge Function**: ✅ `agent-schedule-trip` (dedicated)
@@ -52,14 +59,18 @@ The `agent-negotiation` function is **multi-purpose**, handling drivers, pharmac
 - **Status**: 🟡 Integration exists, **needs fallback hardening**
 
 #### 3. Driver Quotes Agent
-**Purpose**: Get price quotes from multiple drivers  
+
+**Purpose**: Get price quotes from multiple drivers
+
 - **WA Domain**: ✅ `domains/mobility/agent_quotes.ts`
 - **Edge Function**: ❓ Part of agent-negotiation?
 - **WA Handler**: ❓ Needs investigation
 - **Status**: 🟡 **Needs clarification** - separate or part of #1?
 
 #### 4. Vehicle Registration
-**Purpose**: Driver onboarding, vehicle verification  
+
+**Purpose**: Driver onboarding, vehicle verification
+
 - **WA Domain**: ✅ `domains/mobility/vehicle_plate.ts`
 - **AI Usage**: ❓ Workflow, not AI agent
 - **Status**: 🟡 **Needs clarification** - is this an AI agent?
@@ -69,7 +80,9 @@ The `agent-negotiation` function is **multi-purpose**, handling drivers, pharmac
 ### B. Healthcare & Pharmacy (2 agents)
 
 #### 5. Pharmacy Agent
-**Purpose**: Find pharmacies with specific medications  
+
+**Purpose**: Find pharmacies with specific medications
+
 - **Admin UI**: ✅ `admin-app/app/(panel)/agents/pharmacy/`
 - **Service**: ✅ `lib/agents/pharmacy-service.ts`
 - **API**: ✅ `app/api/agents/pharmacy-requests/`
@@ -85,7 +98,9 @@ The `agent-negotiation` function is **multi-purpose**, handling drivers, pharmac
 **Note**: Originally thought missing, but uses `agent-negotiation` with different `agentType`.
 
 #### 6. Quincaillerie Agent
-**Purpose**: Find hardware stores with specific items  
+
+**Purpose**: Find hardware stores with specific items
+
 - **Admin UI**: ✅ `admin-app/app/(panel)/agents/quincaillerie/`
 - **Service**: ✅ `lib/agents/quincaillerie-service.ts`
 - **Edge Function**: ✅ `agent-quincaillerie` (dedicated)
@@ -102,7 +117,9 @@ The `agent-negotiation` function is **multi-purpose**, handling drivers, pharmac
 ### C. Marketplace & Commerce (2 agents)
 
 #### 7. Shops & Services Agent ⭐
-**Purpose**: Find shops/stores with products  
+
+**Purpose**: Find shops/stores with products
+
 - **Admin UI**: ✅ `admin-app/app/(panel)/agents/shops/`
 - **Service**: ✅ `lib/agents/shops-service.ts`
 - **Edge Function**: ✅ `agent-shops` (dedicated)
@@ -115,7 +132,9 @@ The `agent-negotiation` function is **multi-purpose**, handling drivers, pharmac
 - **Status**: ✅ **BEST PRACTICE** - Template for others
 
 #### 8. Marketplace Vendor Quotes
-**Purpose**: Get quotes from marketplace vendors  
+
+**Purpose**: Get quotes from marketplace vendors
+
 - **Service**: ✅ `lib/marketplace/agent-marketplace-service.ts`
 - **WA Domain**: ✅ `domains/marketplace/agent_quotes.ts`
 - **WA Handler**: ❓ Not in ai-agents/handlers.ts
@@ -127,7 +146,9 @@ The `agent-negotiation` function is **multi-purpose**, handling drivers, pharmac
 ### D. Property & Real Estate (1 agent)
 
 #### 9. Property Rental Agent
-**Purpose**: Find properties or add rentals  
+
+**Purpose**: Find properties or add rentals
+
 - **Admin UI**: ✅ `admin-app/app/(panel)/agents/property-rental/`
 - **Service**: ✅ `lib/agents/property-rentals-service.ts`
 - **Edge Function**: ✅ `agent-property-rental` (dedicated)
@@ -144,7 +165,9 @@ The `agent-negotiation` function is **multi-purpose**, handling drivers, pharmac
 ### E. Conversational & General (3 agents)
 
 #### 10. General Chat Agent
-**Purpose**: Multi-purpose conversational AI  
+
+**Purpose**: Multi-purpose conversational AI
+
 - **Edge Function**: ✅ `agent-chat` (dedicated)
 - **Agent Types**: broker, support, sales, marketing, mobility
 - **Backend**: Delegates to Agent-Core service
@@ -153,14 +176,18 @@ The `agent-negotiation` function is **multi-purpose**, handling drivers, pharmac
 - **Status**: ✅ **PRODUCTION READY**
 
 #### 11. Triage Agent
-**Purpose**: Intent classification, route to correct agent  
+
+**Purpose**: Intent classification, route to correct agent
+
 - **SDK**: ✅ `packages/agents/src/agents/triage.ts`
 - **Edge Function**: ✅ `agent-runner` (supports triage)
 - **Flag**: `ENABLE_AGENTS` (OFF)
 - **Status**: 🟢 Infrastructure ready, usage unclear
 
 #### 12. Booking Agent
-**Purpose**: Generic booking orchestration  
+
+**Purpose**: Generic booking orchestration
+
 - **SDK**: ✅ `packages/agents/src/agents/booking.ts`
 - **Edge Function**: ✅ `agent-runner` (supports booking)
 - **Flag**: `ENABLE_AGENTS` (OFF)
@@ -171,7 +198,9 @@ The `agent-negotiation` function is **multi-purpose**, handling drivers, pharmac
 ### F. Dining & Food (1 agent)
 
 #### 13. Waiter/Dining Agent
-**Purpose**: Restaurant/dining services  
+
+**Purpose**: Restaurant/dining services
+
 - **Admin UI**: ✅ `admin-app/app/(panel)/agents/waiter/` (**EMPTY FOLDER**)
 - **Service**: ❌ NOT FOUND
 - **Edge Function**: ❌ NOT FOUND
@@ -186,7 +215,9 @@ The `agent-negotiation` function is **multi-purpose**, handling drivers, pharmac
 ### G. Wallet & Finance (1 agent?)
 
 #### 14. Token Redemption Agent
-**Purpose**: Handle wallet token redemption  
+
+**Purpose**: Handle wallet token redemption
+
 - **Edge Function**: ✅ `agent-runner` (supports redemption)
 - **WA Domain**: ✅ `domains/wallet/` (multiple handlers)
 - **AI Usage**: ❓ May be workflow, not AI agent
@@ -197,12 +228,14 @@ The `agent-negotiation` function is **multi-purpose**, handling drivers, pharmac
 ### H. Infrastructure (2 non-user agents)
 
 #### 15. Agent Monitor
+
 - **Purpose**: Monitor agent health and performance
 - **Edge Function**: ✅ `agent-monitor`
 - **Type**: Infrastructure
 - **Status**: ✅ Operational
 
 #### 16. Agent Runner
+
 - **Purpose**: Execute agents (booking, redemption, triage)
 - **Edge Function**: ✅ `agent-runner`
 - **Type**: Infrastructure orchestrator
@@ -213,29 +246,32 @@ The `agent-negotiation` function is **multi-purpose**, handling drivers, pharmac
 
 ## INTEGRATION MATRIX
 
-| Agent | Admin UI | Service | Edge Fn | WA Domain | WA Handler | SDK | Fallback | Tests | Status |
-|-------|---------|---------|---------|-----------|------------|-----|----------|-------|--------|
-| Driver Negotiation | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | 🟢 |
-| Schedule Trip | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ | 🟡 |
-| Pharmacy | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | 🟢 |
-| Quincaillerie | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | 🟢 |
-| **Shops** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅✅ | ❌ | ✅ |
-| Property | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | 🟢 |
-| General Chat | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ | ✅ | ❌ | ✅ |
-| Triage | ❌ | ❌ | ✅ | ❌ | ❌ | ✅ | ❓ | ❌ | 🟢 |
-| Booking | ❌ | ❌ | ✅ | ❌ | ❌ | ✅ | ❓ | ❌ | 🟢 |
-| **Waiter** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | 🔴 |
-| Marketplace Quotes | ⚠️ | ✅ | ❓ | ✅ | ❓ | ❓ | ❌ | ❌ | 🟡 |
+| Agent              | Admin UI | Service | Edge Fn | WA Domain | WA Handler | SDK | Fallback | Tests | Status |
+| ------------------ | -------- | ------- | ------- | --------- | ---------- | --- | -------- | ----- | ------ |
+| Driver Negotiation | ✅       | ✅      | ✅      | ✅        | ✅         | ✅  | ✅       | ❌    | 🟢     |
+| Schedule Trip      | ✅       | ✅      | ✅      | ✅        | ✅         | ✅  | ❌       | ❌    | 🟡     |
+| Pharmacy           | ✅       | ✅      | ✅      | ✅        | ✅         | ✅  | ✅       | ❌    | 🟢     |
+| Quincaillerie      | ✅       | ✅      | ✅      | ✅        | ✅         | ✅  | ✅       | ❌    | 🟢     |
+| **Shops**          | ✅       | ✅      | ✅      | ✅        | ✅         | ✅  | ✅✅     | ❌    | ✅     |
+| Property           | ✅       | ✅      | ✅      | ✅        | ✅         | ✅  | ✅       | ❌    | 🟢     |
+| General Chat       | ❌       | ❌      | ✅      | ❌        | ❌         | ❌  | ✅       | ❌    | ✅     |
+| Triage             | ❌       | ❌      | ✅      | ❌        | ❌         | ✅  | ❓       | ❌    | 🟢     |
+| Booking            | ❌       | ❌      | ✅      | ❌        | ❌         | ✅  | ❓       | ❌    | 🟢     |
+| **Waiter**         | ✅       | ❌      | ❌      | ❌        | ❌         | ❌  | ❌       | ❌    | 🔴     |
+| Marketplace Quotes | ⚠️       | ✅      | ❓      | ✅        | ❓         | ❓  | ❌       | ❌    | 🟡     |
 
 **Legend**:  
-✅ Complete | ❌ Missing | ⚠️ Partial | ❓ Unknown | 🟢 Good | 🟡 Needs Work | 🔴 Critical | ✅✅ Best Practice
+✅ Complete | ❌ Missing | ⚠️ Partial | ❓ Unknown | 🟢 Good | 🟡 Needs Work | 🔴 Critical | ✅✅
+Best Practice
 
 ---
 
 ## KEY FINDINGS
 
 ### 1. Multi-Purpose Edge Function Discovered
+
 **`agent-negotiation`** handles multiple agent types:
+
 - Driver negotiation (`agentType: "driver"`)
 - Pharmacy search (`agentType: "pharmacy"`)
 - Quincaillerie search (`agentType: "quincaillerie"`)
@@ -244,7 +280,9 @@ The `agent-negotiation` function is **multi-purpose**, handling drivers, pharmac
 This explains why no separate `agent-pharmacy` function exists.
 
 ### 2. Best Practice Identified
+
 **Shops & Services agent** has the most complete implementation:
+
 - ✅ AI agent search (primary)
 - ✅ Ranking service fallback
 - ✅ Database direct fallback
@@ -254,11 +292,13 @@ This explains why no separate `agent-pharmacy` function exists.
 **Recommendation**: Apply this pattern to all other agents.
 
 ### 3. Critical Gap: Waiter Agent
+
 - Admin UI page exists but **completely empty**
 - No backend service, edge function, or WA integration
 - **Decision needed**: Implement or remove
 
 ### 4. Clarifications Needed
+
 - **Driver Quotes**: Separate agent or part of negotiation?
 - **Vehicle Registration**: AI agent or just workflow?
 - **Token Redemption**: AI agent or just workflow?
@@ -269,6 +309,7 @@ This explains why no separate `agent-pharmacy` function exists.
 ## FALLBACK STATUS
 
 ### ✅ Fallbacks Documented (6)
+
 1. Driver Negotiation - "Try See Drivers"
 2. Pharmacy - "No pharmacies in area"
 3. Quincaillerie - "Service unavailable"
@@ -277,11 +318,13 @@ This explains why no separate `agent-pharmacy` function exists.
 6. General Chat - Canned responses
 
 ### ❌ Fallbacks Need Implementation (3)
+
 1. **Schedule Trip** - No documented fallback
 2. **Marketplace Quotes** - No fallback found
 3. **Waiter** - No backend at all
 
 ### ❓ Fallbacks Unknown (3)
+
 1. Triage Agent
 2. Booking Agent
 3. Token Redemption
@@ -333,6 +376,7 @@ This explains why no separate `agent-pharmacy` function exists.
 **Current**: 0% test coverage for agent integrations
 
 **Needed**:
+
 - [ ] Unit tests for each handler
 - [ ] Integration tests for WA flows
 - [ ] E2E tests with real WhatsApp
@@ -345,20 +389,21 @@ This explains why no separate `agent-pharmacy` function exists.
 
 **TO BE FILLED**
 
-| Agent/Domain | DRI | Backup | Status |
-|--------------|-----|--------|--------|
-| Driver/Mobility | ? | ? | ? |
-| Healthcare | ? | ? | ? |
-| Marketplace | ? | ? | ? |
-| Property | ? | ? | ? |
-| Chat/General | ? | ? | ? |
-| Infrastructure | ? | ? | ? |
+| Agent/Domain    | DRI | Backup | Status |
+| --------------- | --- | ------ | ------ |
+| Driver/Mobility | ?   | ?      | ?      |
+| Healthcare      | ?   | ?      | ?      |
+| Marketplace     | ?   | ?      | ?      |
+| Property        | ?   | ?      | ?      |
+| Chat/General    | ?   | ?      | ?      |
+| Infrastructure  | ?   | ?      | ?      |
 
 ---
 
 ## DEPLOYMENT SUMMARY
 
 ### Edge Functions (9)
+
 1. `agent-negotiation` - Multi-purpose (drivers, pharmacy, quincaillerie, shops)
 2. `agent-schedule-trip` - Dedicated
 3. `agent-quincaillerie` - Dedicated
@@ -370,6 +415,7 @@ This explains why no separate `agent-pharmacy` function exists.
 9. `agents` - Registry/config folder
 
 ### WA-Webhook Domains (8)
+
 1. `mobility` - Drivers, schedule, quotes, vehicle
 2. `healthcare` - Pharmacy, quincaillerie
 3. `marketplace` - Shops, vendor quotes
@@ -380,7 +426,9 @@ This explains why no separate `agent-pharmacy` function exists.
 8. `locations` - Not AI agents
 
 ### Admin UI Pages (15)
+
 All in `admin-app/app/(panel)/agents/`:
+
 - 6 with full backend (driver, pharmacy, quincaillerie, shops, property, schedule)
 - 1 empty (waiter - **critical gap**)
 - 8 infrastructure/monitoring pages
@@ -394,9 +442,10 @@ All in `admin-app/app/(panel)/agents/`:
 **Fully Validated**: 1 (Shops & Services)
 
 **Integration Complete**: 8 agents
+
 - Driver Negotiation
 - Pharmacy
-- Quincaillerie  
+- Quincaillerie
 - Property Rental
 - Schedule Trip (needs fallback)
 - General Chat
@@ -404,16 +453,19 @@ All in `admin-app/app/(panel)/agents/`:
 - Booking
 
 **Needs Investigation**: 3 agents
+
 - Driver Quotes
 - Marketplace Quotes
 - Token Redemption
 
 **Critical Gap**: 1 agent
+
 - Waiter (UI exists, no backend)
 
 **Testing Coverage**: 0%
 
-**Recommendation**: 
+**Recommendation**:
+
 1. Fix waiter (implement or remove)
 2. Add fallbacks to schedule trip
 3. Investigate marketplace quotes
@@ -429,6 +481,7 @@ All in `admin-app/app/(panel)/agents/`:
 ---
 
 **Files**:
+
 - This doc: `docs/AGENT_CATALOG_COMPLETE.md`
 - Audit plan: `docs/COMPLETE_AGENT_AUDIT_PLAN.md`
 - Previous: `docs/AI_AGENTS_AUDIT.md` (partial)

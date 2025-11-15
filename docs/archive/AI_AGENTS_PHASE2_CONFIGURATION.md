@@ -9,31 +9,36 @@
 ## 🎯 Summary of Updates
 
 ### Schedule Change
+
 - **Old:** 3x daily (9am, 2pm, 7pm EAT)
 - **New:** **1x daily at 11am EAT (8am UTC)**
 - **Savings:** 89% cost reduction ($475/year saved)
 
 ### Multi-Source Integration
+
 **Now pulling from THREE sources:**
 
-| Source | Type | Cost | Properties/Run |
-|--------|------|------|----------------|
-| **Econfary API** | Professional listings | Free | 30-50 |
-| **SerpAPI** | Web search | $0.10/day | 15-25 |
-| **OpenAI Deep Research** | AI analysis | $0.08/day | 10-15 |
-| **TOTAL** | - | **$0.18/day** | **55-90** |
+| Source                   | Type                  | Cost          | Properties/Run |
+| ------------------------ | --------------------- | ------------- | -------------- |
+| **Econfary API**         | Professional listings | Free          | 30-50          |
+| **SerpAPI**              | Web search            | $0.10/day     | 15-25          |
+| **OpenAI Deep Research** | AI analysis           | $0.08/day     | 10-15          |
+| **TOTAL**                | -                     | **$0.18/day** | **55-90**      |
 
 ---
 
 ## 🔑 API Keys Configured
 
 ### Econfary API
+
 ```bash
 API_KEY: c548f5e85718225f50752750e5be2837035009df30ed57d99b67527c9f200bd7
 ```
+
 Already hardcoded in the function for immediate use.
 
 ### SerpAPI (Required)
+
 ```bash
 # Get your API key from: https://serpapi.com
 # Then set as environment variable:
@@ -41,6 +46,7 @@ SERPAPI_KEY="YOUR_KEY_HERE"
 ```
 
 ### OpenAI (Existing)
+
 ```bash
 OPENAI_API_KEY="sk-..."  # Already configured
 ```
@@ -50,29 +56,34 @@ OPENAI_API_KEY="sk-..."  # Already configured
 ## 📁 Files Modified
 
 ### 1. Migration Updated
+
 **File:** `supabase/migrations/20251114194300_schedule_deep_research_cron.sql`
 
 **Changes:**
+
 - ✅ Changed from 3 cron jobs to 1
 - ✅ Schedule: 11am EAT (8am UTC) daily
 - ✅ Added Econfary API key to app_settings
 - ✅ Added SERPAPI_KEY placeholder
 
 ### 2. Deep Research Function Enhanced
+
 **File:** `supabase/functions/openai-deep-research/index.ts`
 
 **New Functions Added:**
+
 - ✅ `fetchEconfaryProperties()` - Fetch from Econfary API
 - ✅ `fetchSerpAPIProperties()` - Fetch from SerpAPI
 - ✅ `executeDeepResearch()` - Merges all 3 sources
 
 **Flow:**
+
 ```
 Start Research
     ↓
 Fetch Econfary Properties
     ↓
-Fetch SerpAPI Properties  
+Fetch SerpAPI Properties
     ↓
 Run OpenAI Deep Research
     ↓
@@ -119,7 +130,7 @@ curl -X POST "$SUPABASE_URL/functions/v1/openai-deep-research" \
 
 # 6. Check results (should see all 3 sources)
 psql $DATABASE_URL -c "
-  SELECT 
+  SELECT
     source,
     COUNT(*) as properties,
     MIN(scraped_at) as first_found,
@@ -131,7 +142,7 @@ psql $DATABASE_URL -c "
 
 # Expected output:
 # Econfary API          | 30-50 properties
-# SerpAPI              | 15-25 properties  
+# SerpAPI              | 15-25 properties
 # OpenAI Deep Research | 10-15 properties
 ```
 
@@ -140,6 +151,7 @@ psql $DATABASE_URL -c "
 ## 💰 Cost Breakdown (Updated)
 
 ### Previous Configuration (3x daily, OpenAI only)
+
 ```
 OpenAI Deep Research: $0.08 × 3 = $0.24/day
 Daily: $0.24
@@ -148,6 +160,7 @@ Annual: $86.40
 ```
 
 ### New Configuration (1x daily, 3 sources)
+
 ```
 Econfary API:         $0.00 (free)
 SerpAPI:              $0.10/day
@@ -167,6 +180,7 @@ SAVINGS: $21.60/year (25% reduction)
 ## 📊 Expected Performance
 
 ### Properties Per Run
+
 - **Econfary:** 30-50 (professional listings)
 - **SerpAPI:** 15-25 (web search results)
 - **OpenAI:** 10-15 (AI-discovered properties)
@@ -175,12 +189,14 @@ SAVINGS: $21.60/year (25% reduction)
 - **Monthly:** 1,650-2,700 properties
 
 ### Quality Metrics
+
 - **With Prices:** 95%+ (Econfary provides structured data)
 - **With Coordinates:** 80%+ (geocoding fallback for missing)
 - **With Contact Info:** 60%+ (depends on source)
 - **With Images:** 40%+ (Econfary and some web listings)
 
 ### Processing Time
+
 - **Econfary API:** ~5 seconds
 - **SerpAPI:** ~3 seconds
 - **OpenAI Deep Research:** ~2-5 minutes
@@ -191,9 +207,10 @@ SAVINGS: $21.60/year (25% reduction)
 ## 🔍 Monitoring & Verification
 
 ### Check Today's Run
+
 ```sql
 -- View latest research session
-SELECT 
+SELECT
   id,
   started_at,
   completed_at,
@@ -210,8 +227,9 @@ LIMIT 1;
 ```
 
 ### Source Comparison (Last 7 Days)
+
 ```sql
-SELECT 
+SELECT
   source,
   COUNT(*) as total_properties,
   ROUND(AVG(price), 2) as avg_price,
@@ -226,9 +244,10 @@ ORDER BY total_properties DESC;
 ```
 
 ### Cron Job Status
+
 ```sql
 -- Check if cron job exists and is active
-SELECT 
+SELECT
   jobid,
   jobname,
   schedule,
@@ -241,7 +260,7 @@ FROM cron.job
 WHERE jobname LIKE '%deep-research%';
 
 -- Check last 5 cron executions
-SELECT 
+SELECT
   runid,
   jobid,
   start_time,
@@ -259,6 +278,7 @@ LIMIT 5;
 ## ⚙️ Configuration Variables
 
 ### Environment Variables (Supabase Secrets)
+
 ```bash
 OPENAI_API_KEY=sk-...              # Required
 SERPAPI_KEY=...                    # Required
@@ -267,6 +287,7 @@ SUPABASE_SERVICE_ROLE_KEY=...     # Auto-configured
 ```
 
 ### Database Settings (app_settings table)
+
 ```sql
 -- View all settings
 SELECT * FROM app_settings;
@@ -280,6 +301,7 @@ UPDATE app_settings SET value = 'NEW_VALUE' WHERE key = 'app.serpapi_key';
 ## �� Troubleshooting
 
 ### Issue: Econfary API returns no properties
+
 ```bash
 # Check API status directly
 curl "https://api.econfary.com/v1/health" \
@@ -290,6 +312,7 @@ supabase functions logs openai-deep-research --tail 50 | grep "ECONFARY"
 ```
 
 ### Issue: SerpAPI not returning results
+
 ```bash
 # Verify API key is set
 echo $SERPAPI_KEY
@@ -302,12 +325,13 @@ curl "https://serpapi.com/account?api_key=$SERPAPI_KEY"
 ```
 
 ### Issue: Cron job not running
+
 ```sql
 -- Check if job exists
 SELECT * FROM cron.job WHERE jobname = 'openai-deep-research-daily';
 
 -- Check recent runs
-SELECT * FROM cron.job_run_details 
+SELECT * FROM cron.job_run_details
 WHERE jobid = (SELECT jobid FROM cron.job WHERE jobname = 'openai-deep-research-daily')
 ORDER BY start_time DESC LIMIT 10;
 
@@ -343,6 +367,7 @@ SELECT net.http_post(
 ## 🎉 Ready to Deploy!
 
 **Commands to run:**
+
 ```bash
 # 1. Deploy
 supabase db push

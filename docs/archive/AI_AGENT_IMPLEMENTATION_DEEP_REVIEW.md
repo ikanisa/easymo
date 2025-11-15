@@ -12,6 +12,7 @@
 ### Current Implementation Status: **70% Complete** ⚠️
 
 **What's Working**:
+
 - ✅ OpenAI integration in wa-webhook (`shared/openai_client.ts`)
 - ✅ Basic tool system with 4 tools (`shared/tool_manager.ts`)
 - ✅ Memory management (`shared/memory_manager.ts`)
@@ -20,6 +21,7 @@
 - ✅ Basic routing in `router/ai_agent_handler.ts`
 
 **Critical Gaps**:
+
 - ❌ No streaming response implementation
 - ❌ Limited tool coverage (only 4 basic tools)
 - ❌ No MCP (Model Context Protocol) integration
@@ -36,6 +38,7 @@
 ## 🏗️ Current Architecture Analysis
 
 ### File Structure (wa-webhook)
+
 ```
 supabase/functions/wa-webhook/
 ├── index.ts                          # Main entry (21 lines, basic)
@@ -64,6 +67,7 @@ supabase/functions/wa-webhook/
 ```
 
 ### Database Schema
+
 ```sql
 -- Tables exist in: 20251113112500_ai_agents.sql
 ✅ agent_conversations    # Conversation tracking
@@ -78,9 +82,11 @@ supabase/functions/wa-webhook/
 ### Integration Points
 
 #### ✅ WORKING:
+
 1. **WhatsApp Message Flow**:
+
    ```
-   WhatsApp → wa-webhook/index.ts → router/pipeline.ts → 
+   WhatsApp → wa-webhook/index.ts → router/pipeline.ts →
    router/ai_agent_handler.ts → OpenAI → Response
    ```
 
@@ -93,6 +99,7 @@ supabase/functions/wa-webhook/
 3. **Memory**: Conversation history from `wa_interactions` table
 
 #### ❌ NOT WORKING:
+
 1. **Streaming**: No SSE or chunked responses
 2. **Advanced Tools**: No web search, OCR, image analysis
 3. **MCP Integration**: No external tool providers
@@ -107,9 +114,11 @@ supabase/functions/wa-webhook/
 ### Phase 1: Core Infrastructure (2-3 hours)
 
 #### 1.1 Streaming Handler ⚡ CRITICAL
+
 **File**: `supabase/functions/wa-webhook/shared/streaming_handler.ts`
 
 **What to implement**:
+
 ```typescript
 export class StreamingHandler {
   async streamChatCompletion(
@@ -117,31 +126,37 @@ export class StreamingHandler {
     tools: Tool[],
     onChunk: (text: string) => Promise<void>,
     onToolCall: (toolCall: ToolCall) => Promise<void>
-  ): Promise<ChatCompletionResponse>
+  ): Promise<ChatCompletionResponse>;
 }
 ```
 
-**Why**: WhatsApp users expect quick responses. Streaming shows "typing..." and sends partial responses.
+**Why**: WhatsApp users expect quick responses. Streaming shows "typing..." and sends partial
+responses.
 
 #### 1.2 Connection Pool 🔧 HIGH PRIORITY
+
 **File**: `supabase/functions/wa-webhook/shared/connection_pool.ts`
 
 **What to implement**:
+
 ```typescript
 class ConnectionPool {
   private pool: SupabaseClient[];
-  async acquire(): Promise<SupabaseClient>
-  release(client: SupabaseClient): void
-  getStats(): PoolStats
+  async acquire(): Promise<SupabaseClient>;
+  release(client: SupabaseClient): void;
+  getStats(): PoolStats;
 }
 ```
 
-**Why**: Current implementation creates new client per request. Pool reuses connections, reducing latency by 50-100ms.
+**Why**: Current implementation creates new client per request. Pool reuses connections, reducing
+latency by 50-100ms.
 
 #### 1.3 Enhanced Error Handler 🛡️ HIGH PRIORITY
+
 **File**: `supabase/functions/wa-webhook/shared/error-handler.ts` (ENHANCE EXISTING)
 
 **What to add**:
+
 - Retry logic with exponential backoff
 - User-friendly error messages in English/French/Kinyarwanda
 - Error categorization (transient vs permanent)
@@ -149,9 +164,11 @@ class ConnectionPool {
 - Structured error logging with correlation IDs
 
 #### 1.4 Advanced Rate Limiter 🚦 MEDIUM PRIORITY
+
 **File**: `supabase/functions/wa-webhook/shared/advanced_rate_limiter.ts`
 
 **What to implement**:
+
 - Per-user rate limiting (e.g., 20 messages/minute)
 - Per-agent-type limits (different for AI vs regular handlers)
 - Token-based throttling (limit tokens/hour for cost control)
@@ -161,9 +178,11 @@ class ConnectionPool {
 ### Phase 2: Enhanced Tools & Capabilities (3-4 hours)
 
 #### 2.1 Expand Tool Library 🛠️
+
 **File**: `supabase/functions/wa-webhook/shared/enhanced_tools.ts`
 
 **New tools to add**:
+
 ```typescript
 1. web_search          // Use Tavily/Perplexity API
 2. image_analyzer      // WhatsApp media analysis
@@ -176,17 +195,21 @@ class ConnectionPool {
 ```
 
 **Integration points**:
+
 - `rpc/mobility.ts` for trips
 - `rpc/wallet.ts` for payments
 - `rpc/marketplace.ts` for businesses
 - WhatsApp Media API for images
 
 #### 2.2 Semantic Memory with Embeddings 🧠
-**Files**: 
+
+**Files**:
+
 - `shared/memory_manager.ts` (ENHANCE)
 - Create migration: `20251113150000_add_agent_embeddings.sql`
 
 **What to implement**:
+
 ```sql
 CREATE TABLE agent_embeddings (
   id UUID PRIMARY KEY,
@@ -203,7 +226,9 @@ CREATE INDEX ON agent_embeddings USING ivfflat (embedding vector_cosine_ops);
 **Why**: Enable semantic search of past conversations, relevant context retrieval.
 
 #### 2.3 Specialized Agent Implementations 🤖
+
 **Files**: Create in `shared/agents/`
+
 ```
 shared/agents/
 ├── base_agent.ts           # Abstract base class
@@ -215,6 +240,7 @@ shared/agents/
 ```
 
 **Each agent gets**:
+
 - Custom system prompt
 - Specialized tools
 - Domain-specific context
@@ -223,26 +249,28 @@ shared/agents/
 ### Phase 3: Production Readiness (2-3 hours)
 
 #### 3.1 Monitoring & Observability 📊
+
 **File**: `shared/monitoring.ts`
 
 **Metrics to track**:
+
 ```typescript
 interface AgentMetrics {
   // Performance
   latency_p50: number;
   latency_p95: number;
   latency_p99: number;
-  
+
   // Usage
   messages_per_hour: number;
   tokens_per_message: number;
   cost_per_conversation: number;
-  
+
   // Quality
   tool_success_rate: number;
   conversation_completion_rate: number;
   user_satisfaction_score: number;
-  
+
   // Errors
   error_rate: number;
   timeout_rate: number;
@@ -253,14 +281,18 @@ interface AgentMetrics {
 **Integration**: Send to Supabase `agent_metrics` table, expose via API for dashboard.
 
 #### 3.2 Security Enhancements 🔐
+
 **Files to enhance**:
+
 - `shared/webhook-verification.ts` (add retry, caching)
 - `shared/rate-limiter.ts` (add blacklist, adaptive limits)
 - Create: `shared/input_validator.ts` (sanitize user input)
 - Create: `shared/pii_masker.ts` (redact sensitive data in logs)
 
 #### 3.3 Testing Suite 🧪
+
 **New files**:
+
 ```
 tests/ai-agents/
 ├── unit/
@@ -280,6 +312,7 @@ tests/ai-agents/
 ### Phase 4: Admin Panel Integration (2-3 hours)
 
 #### 4.1 Database Updates
+
 **Migration**: `20251113160000_agent_admin_tables.sql`
 
 ```sql
@@ -308,7 +341,9 @@ CREATE TABLE agent_configurations (
 ```
 
 #### 4.2 Admin API Endpoints
+
 **Files**: `admin-app/app/api/ai-agents/`
+
 ```
 api/ai-agents/
 ├── route.ts                # GET /api/ai-agents (list all)
@@ -322,7 +357,9 @@ api/ai-agents/
 ```
 
 #### 4.3 Admin UI Components
+
 **Files**: `admin-app/components/ai-agents/`
+
 ```
 components/ai-agents/
 ├── AgentList.tsx           # List of agents with status
@@ -340,21 +377,25 @@ components/ai-agents/
 ### Order of Implementation (Priority-based)
 
 #### ✅ Phase 1A: Immediate Fixes (Do First - 1 hour)
+
 1. **Fix connection pooling** - Reuse Supabase clients
 2. **Enhance error handler** - Better error messages, retry logic
 3. **Add input validation** - Prevent injection attacks
 
 #### ✅ Phase 1B: Core Features (Do Second - 2 hours)
+
 4. **Implement streaming** - Faster responses
 5. **Add rate limiting** - Cost control
 6. **Enhanced logging** - Better debugging
 
 #### ✅ Phase 2: Expand Capabilities (Do Third - 3 hours)
+
 7. **Add 8 new tools** - More functionality
 8. **Specialized agents** - Better domain handling
 9. **Semantic memory** - Contextual awareness
 
 #### ✅ Phase 3: Production & Admin (Do Last - 3 hours)
+
 10. **Monitoring dashboard** - Observability
 11. **Admin panel** - Agent management
 12. **Testing suite** - Quality assurance
@@ -364,6 +405,7 @@ components/ai-agents/
 ## 📏 Alignment with Requirements
 
 ### ✅ Meets Business Requirements:
+
 - WhatsApp interface (existing implementation)
 - Natural conversation (OpenAI integration)
 - Tool execution (4 tools, expanding to 12)
@@ -371,6 +413,7 @@ components/ai-agents/
 - Multi-language (i18n system in place)
 
 ### ⚠️ Needs Alignment:
+
 - **Provided code examples**: Many are for Node.js/NestJS services, but we're in Deno edge functions
   - **Decision**: Use concepts, not direct code
   - **Adaptation**: Convert to Deno-compatible modules
@@ -380,8 +423,9 @@ components/ai-agents/
   - **Decision**: Use Supabase pgvector (already in stack)
 
 ### ✅ Follows Repository Rules:
+
 - **Additive-only**: All new files, no modifications to existing handlers
-- **Ground rules compliance**: 
+- **Ground rules compliance**:
   - Structured logging ✅
   - Correlation IDs ✅
   - Error handling ✅
@@ -413,6 +457,7 @@ components/ai-agents/
 ### What to Adapt from Provided Code:
 
 ✅ **Use**:
+
 - OpenAI client patterns
 - Tool execution logic
 - Memory management concepts
@@ -420,6 +465,7 @@ components/ai-agents/
 - Monitoring approaches
 
 ❌ **Don't Use**:
+
 - NestJS-specific code
 - Node.js-only modules
 - Complex infrastructure (Pinecone, Redis clustering)
@@ -430,7 +476,8 @@ components/ai-agents/
 ## 📊 Success Metrics
 
 ### Performance Targets:
-- **Latency**: 
+
+- **Latency**:
   - P50 < 800ms (vs current ~1200ms)
   - P95 < 1500ms (vs current ~2500ms)
   - P99 < 2500ms (vs current ~5000ms)
@@ -439,12 +486,14 @@ components/ai-agents/
 - **Error Rate**: < 1% of messages
 
 ### Quality Targets:
+
 - **Tool Success Rate**: > 95%
 - **Conversation Completion**: > 90% (users don't abandon)
 - **Fallback Rate**: < 10% (AI handles most queries)
 - **User Satisfaction**: > 4.5/5 (via feedback)
 
 ### Coverage Targets:
+
 - **AI-Handled Messages**: > 60% of all messages
 - **Tool Usage**: > 5 tool calls per 100 messages
 - **Multi-Turn Conversations**: > 30% of conversations
@@ -454,21 +503,25 @@ components/ai-agents/
 ## 🔧 Next Actions
 
 ### Immediate (Next 30 minutes):
+
 1. ✅ Review complete
 2. 🔄 Get approval for implementation approach
 3. 🔄 Start with Phase 1A (connection pool + error handler)
 
 ### Short-term (Next 2 hours):
+
 4. Implement streaming handler
 5. Add advanced rate limiter
 6. Expand tool library to 12 tools
 
 ### Medium-term (Next 4 hours):
+
 7. Add specialized agents
 8. Implement monitoring
 9. Create admin API endpoints
 
 ### Long-term (Next day):
+
 10. Build admin UI
 11. Write comprehensive tests
 12. Deploy to staging → production
@@ -479,7 +532,8 @@ components/ai-agents/
 
 **Current state**: Good foundation (70%), but incomplete.
 
-**Recommended approach**: 
+**Recommended approach**:
+
 - ✅ **Keep** existing wa-webhook structure
 - ✅ **Enhance** with streaming, pooling, monitoring
 - ✅ **Add** 8 new tools and specialized agents

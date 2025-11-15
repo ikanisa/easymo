@@ -1,7 +1,9 @@
 # Job Board AI Agent - Complete Design & Implementation
 
 ## Overview
+
 WhatsApp-based AI agent for matching job seekers with job opportunities, specializing in:
+
 - **Miscellaneous/Gig Jobs**: One-day, short-term, part-time work
 - **Structured Jobs**: Long-term, full-time positions
 - **AI-Powered Matching**: OpenAI embeddings for semantic intent matching
@@ -46,6 +48,7 @@ WhatsApp-based AI agent for matching job seekers with job opportunities, special
 #### Tables
 
 **job_listings**
+
 ```sql
 - id: uuid (PK)
 - posted_by: text (WhatsApp number)
@@ -72,6 +75,7 @@ WhatsApp-based AI agent for matching job seekers with job opportunities, special
 ```
 
 **job_seekers**
+
 ```sql
 - id: uuid (PK)
 - phone_number: text (unique)
@@ -94,6 +98,7 @@ WhatsApp-based AI agent for matching job seekers with job opportunities, special
 ```
 
 **job_matches**
+
 ```sql
 - id: uuid (PK)
 - job_id: uuid (FK -> job_listings)
@@ -109,6 +114,7 @@ WhatsApp-based AI agent for matching job seekers with job opportunities, special
 ```
 
 **job_conversations**
+
 ```sql
 - id: uuid (PK)
 - phone_number: text
@@ -162,6 +168,7 @@ WhatsApp-based AI agent for matching job seekers with job opportunities, special
 #### Metadata Extraction Strategy
 
 For **miscellaneous/gig jobs**, the AI extracts:
+
 - **Core**: Title, category, location, pay
 - **Temporal**: Start date, duration, hours/day
 - **Requirements**: Physical demands, tools needed, experience level
@@ -169,6 +176,7 @@ For **miscellaneous/gig jobs**, the AI extracts:
 - **Flexibility**: Negotiable pay, flexible hours, remote option
 
 Example conversation:
+
 ```
 User: "I need someone to help move furniture tomorrow in Kigali"
 
@@ -195,50 +203,52 @@ AI Extracts:
 
 async function matchJobsForSeeker(seekerId: string) {
   const seeker = await getSeeker(seekerId);
-  
+
   // Step 1: Vector similarity (semantic matching)
-  const vectorMatches = await supabase.rpc('match_jobs_vector', {
+  const vectorMatches = await supabase.rpc("match_jobs_vector", {
     query_embedding: seeker.skills_embedding,
     match_threshold: 0.7,
-    match_count: 50
+    match_count: 50,
   });
-  
+
   // Step 2: Filter by hard constraints
-  const filtered = vectorMatches.filter(job => {
+  const filtered = vectorMatches.filter((job) => {
     return (
-      job.status === 'open' &&
+      job.status === "open" &&
       job.pay_min >= seeker.min_pay &&
       seeker.preferred_job_types.includes(job.job_type) &&
       isLocationMatch(job.location, seeker.preferred_locations) &&
       isAvailable(seeker.availability, job.start_date)
     );
   });
-  
+
   // Step 3: Re-rank with business logic
-  const ranked = filtered.map(job => ({
-    ...job,
-    final_score: calculateFinalScore(job, seeker)
-  })).sort((a, b) => b.final_score - a.final_score);
-  
+  const ranked = filtered
+    .map((job) => ({
+      ...job,
+      final_score: calculateFinalScore(job, seeker),
+    }))
+    .sort((a, b) => b.final_score - a.final_score);
+
   return ranked.slice(0, 10);
 }
 
 function calculateFinalScore(job, seeker) {
   let score = job.similarity_score; // Base: 0-1
-  
+
   // Boost recent jobs
   const ageHours = (Date.now() - job.created_at) / 3600000;
-  score *= (1 + Math.exp(-ageHours / 24) * 0.2); // +20% for fresh jobs
-  
+  score *= 1 + Math.exp(-ageHours / 24) * 0.2; // +20% for fresh jobs
+
   // Boost location match
   if (job.location === seeker.preferred_locations[0]) score *= 1.15;
-  
+
   // Boost pay match
   if (job.pay_max >= seeker.min_pay * 1.5) score *= 1.1;
-  
+
   // Boost category preference
   if (seeker.preferred_categories.includes(job.category)) score *= 1.1;
-  
+
   return score;
 }
 ```
@@ -246,6 +256,7 @@ function calculateFinalScore(job, seeker) {
 ### 5. Conversation Flows
 
 #### Flow A: Job Seeker
+
 ```
 1. User: "Looking for part-time work"
    → AI: "I can help! Tell me about your skills and what kind of work you're looking for."
@@ -263,6 +274,7 @@ function calculateFinalScore(job, seeker) {
 ```
 
 #### Flow B: Job Poster
+
 ```
 1. User: "I need to hire someone"
    → AI: "What kind of job? Describe what you need help with."
@@ -327,6 +339,7 @@ admin-app/
 ### 7. Key Features
 
 #### For Miscellaneous Jobs
+
 - **Rapid Posting**: 30-second conversational job posting
 - **Skill Inference**: AI infers required skills from descriptions
 - **Urgency Handling**: Prioritizes "today" and "tomorrow" jobs
@@ -334,6 +347,7 @@ admin-app/
 - **Location Smart**: Understands "near me", city districts, landmarks
 
 #### For Job Seekers
+
 - **Smart Matching**: Semantic search beyond keyword matching
 - **Proactive Alerts**: "New job matching your skills posted 5 min ago!"
 - **Profile Building**: Extracts skills from conversation history
@@ -344,20 +358,20 @@ admin-app/
 
 ```sql
 -- Dashboard queries
-SELECT 
+SELECT
   COUNT(*) as total_jobs,
   COUNT(*) FILTER (WHERE status = 'filled') as filled_jobs,
   AVG(EXTRACT(EPOCH FROM (updated_at - created_at)) / 3600) as avg_fill_time_hours
 FROM job_listings
 WHERE created_at > NOW() - INTERVAL '7 days';
 
-SELECT 
+SELECT
   COUNT(DISTINCT seeker_id) as active_seekers,
   AVG(array_length(preferred_job_types, 1)) as avg_preferences
 FROM job_seekers
 WHERE last_active > NOW() - INTERVAL '7 days';
 
-SELECT 
+SELECT
   AVG(similarity_score) as avg_match_quality,
   COUNT(*) FILTER (WHERE status = 'hired') as successful_hires
 FROM job_matches
@@ -367,41 +381,44 @@ WHERE created_at > NOW() - INTERVAL '7 days';
 ### 9. Technical Specifications
 
 **OpenAI Models**:
+
 - **Chat**: `gpt-4-turbo-preview` (function calling, metadata extraction)
 - **Embeddings**: `text-embedding-3-small` (1536 dimensions, cost-effective)
 
 **Embedding Strategy**:
+
 ```typescript
 // Job listing: Concatenate key fields for rich semantic search
 const jobText = `
   ${job.title}
   ${job.description}
   ${job.category}
-  Required skills: ${job.required_skills.join(', ')}
+  Required skills: ${job.required_skills.join(", ")}
   Location: ${job.location}
   Pay: ${job.pay_min}-${job.pay_max} ${job.pay_type}
 `.trim();
 
 const embedding = await openai.embeddings.create({
   model: "text-embedding-3-small",
-  input: jobText
+  input: jobText,
 });
 
 // Seeker: Concatenate profile + preferences
 const seekerText = `
   ${seeker.bio}
-  Skills: ${seeker.skills.join(', ')}
+  Skills: ${seeker.skills.join(", ")}
   Experience: ${seeker.experience_years} years
-  Looking for: ${seeker.preferred_job_types.join(', ')}
-  Preferred: ${seeker.preferred_categories.join(', ')}
+  Looking for: ${seeker.preferred_job_types.join(", ")}
+  Preferred: ${seeker.preferred_categories.join(", ")}
 `.trim();
 ```
 
 **pgvector Configuration**:
+
 ```sql
 -- Use HNSW index for fast similarity search
-CREATE INDEX job_listings_embedding_idx 
-ON job_listings 
+CREATE INDEX job_listings_embedding_idx
+ON job_listings
 USING hnsw (required_skills_embedding vector_cosine_ops)
 WITH (m = 16, ef_construction = 64);
 
@@ -418,12 +435,12 @@ RETURNS TABLE (
 )
 LANGUAGE sql
 AS $$
-  SELECT 
+  SELECT
     id,
     title,
     1 - (required_skills_embedding <=> query_embedding) as similarity_score
   FROM job_listings
-  WHERE 
+  WHERE
     1 - (required_skills_embedding <=> query_embedding) > match_threshold
     AND status = 'open'
   ORDER BY required_skills_embedding <=> query_embedding

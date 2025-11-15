@@ -18,21 +18,25 @@
 ## What Was Deleted (Step 1 Completed ✅)
 
 ### Basket-related (3 migrations):
+
 - ✅ `20251010101000_phase1_archive_legacy_tables.sql`
 - ✅ `20251011130000_phase5_drop_archive_tables.sql`
 - ✅ `20260304120000_remove_baskets_vouchers.sql`
 
 ### SACCO-related (3 migrations):
+
 - ✅ `20251031134020_contribution_cycle_helper.sql`
 - ✅ `20251031135000_sacco_loan_endorsements.sql`
 - ✅ `20251031135010_sacco_loan_endorsements_rls.sql`
 
 ### Campaign-related (3 migrations):
+
 - ✅ `20251030100000_campaigns_uuid_rework.sql`
 - ✅ `20251130090000_remove_orders_templates_campaigns.sql`
 - ✅ `20251205100000_admin_marketing_fixture_support.sql`
 
 ### Other deprecated (2 migrations):
+
 - ✅ `20251031134015_momo_inbox_tracking.sql` (momo_sms_inbox)
 - ✅ `20250215093000_add_business_tags.sql` (references non-existent businesses table)
 
@@ -55,8 +59,8 @@
    - `20251023160010_agent_management.sql` - agent_id column issue
    - `20251026110000_business_categories.sql` - duplicate trigger
 
-3. **Remote has additional migrations** (not in local)
-   Migrations that exist on remote but not locally - these may fix the issues above.
+3. **Remote has additional migrations** (not in local) Migrations that exist on remote but not
+   locally - these may fix the issues above.
 
 ---
 
@@ -72,7 +76,8 @@
 
 ### Why NOT to manually fix?
 
-1. ❌ **Time-consuming** - Would need to manually clean basket/sacco/campaign code from dozens of migrations
+1. ❌ **Time-consuming** - Would need to manually clean basket/sacco/campaign code from dozens of
+   migrations
 2. ❌ **Error-prone** - Easy to miss references, break dependencies
 3. ❌ **Divergence risk** - Local and remote would continue to differ
 4. ❌ **Unknown unknowns** - Remote may have migrations with critical fixes
@@ -107,7 +112,8 @@ supabase start
 supabase status
 ```
 
-**Expected outcome:** 
+**Expected outcome:**
+
 - Fresh migration files generated from working remote schema
 - No basket/sacco/campaign references (since they're not in remote DB)
 - All tables properly created in correct order
@@ -134,6 +140,7 @@ If you insist on keeping local migrations, you would need to:
 ## Post-Cleanup Steps (After Option A)
 
 ### 1. Verify Clean State
+
 ```bash
 # Check no basket/sacco/campaign tables exist
 supabase db diff
@@ -143,7 +150,9 @@ psql $DATABASE_URL -c "\dt public.*" | grep -E "profiles|businesses|wallet|shops
 ```
 
 ### 2. Verify Missing Tables Are Created
+
 Based on earlier analysis, ensure these exist:
+
 - ✅ `profiles`
 - ✅ `businesses` (with tags column)
 - ✅ `wallet_accounts`, `wallet_transactions`, `wallet_earn_actions`, `wallet_redeem_options`
@@ -154,7 +163,9 @@ Based on earlier analysis, ensure these exist:
 - ✅ `insurance_media_queue`, `insurance_leads`
 
 ### 3. Create New Migration for Any Missing Features
+
 If you need new tables/columns that remote doesn't have:
+
 ```bash
 supabase migration new add_missing_features
 # Edit the new migration file
@@ -172,6 +183,7 @@ supabase db push
 - **migrations/**: Will be repopulated by `supabase db pull`
 
 ### Archive Command
+
 ```bash
 # Create timestamped archive
 tar -czf supabase-migrations-archive-20251112.tar.gz \
@@ -198,6 +210,7 @@ mv supabase-migrations-archive-20251112.tar.gz ~/backups/
 - [ ] **Option B:** Manual repair (NOT RECOMMENDED - 6-8 hours)
 
 **If Option A, execute:**
+
 ```bash
 cd /Users/jeanbosco/workspace/easymo-
 supabase db pull
@@ -206,6 +219,7 @@ supabase status
 ```
 
 **If Option B, next steps:**
+
 1. Manually clean 20251003160000_phase_a_legacy.sql (remove all basket code)
 2. Clean 20251017220824_remote_schema.sql (remove basket/sacco DROPs)
 3. Fix 20251001140000_rls_policies.sql (auth.role() syntax)
@@ -239,6 +253,7 @@ Once decided, I'll execute the chosen approach and verify Supabase starts succes
 ---
 
 **Files:**
+
 - This plan: `/Users/jeanbosco/workspace/easymo-/MIGRATION_FIX_PLAN.md`
 - Status report: `/Users/jeanbosco/workspace/easymo-/MIGRATION_STATUS_REPORT.md`
 - Broken migrations: `/Users/jeanbosco/workspace/easymo-/supabase/migrations-broken/` (133 files)

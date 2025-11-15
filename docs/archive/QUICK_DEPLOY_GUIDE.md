@@ -38,7 +38,7 @@ supabase db execute "SELECT wa_id, name, is_active FROM insurance_admins;"
 
 ```sql
 -- Check recent notifications
-SELECT 
+SELECT
   ian.lead_id,
   ia.name as admin_name,
   ian.user_wa_id as customer,
@@ -53,52 +53,58 @@ LIMIT 10;
 ## 🔧 Admin Management
 
 ### Add Admin
+
 ```sql
 INSERT INTO insurance_admins (wa_id, name, role, is_active)
 VALUES ('250XXXXXXXXX', 'New Admin Name', 'admin', true);
 ```
 
 ### Deactivate Admin
+
 ```sql
-UPDATE insurance_admins 
-SET is_active = false 
+UPDATE insurance_admins
+SET is_active = false
 WHERE wa_id = '250XXXXXXXXX';
 ```
 
 ### Reactivate Admin
+
 ```sql
-UPDATE insurance_admins 
-SET is_active = true 
+UPDATE insurance_admins
+SET is_active = true
 WHERE wa_id = '250XXXXXXXXX';
 ```
 
 ## 📞 Current Admins
 
-| Number         | Name              | Status |
-|----------------|-------------------|--------|
-| +250793094876  | Insurance Admin 1 | Active |
-| +250788767816  | Insurance Admin 2 | Active |
-| +250795588248  | Insurance Admin 3 | Active |
+| Number        | Name              | Status |
+| ------------- | ----------------- | ------ |
+| +250793094876 | Insurance Admin 1 | Active |
+| +250788767816 | Insurance Admin 2 | Active |
+| +250795588248 | Insurance Admin 3 | Active |
 
 ## 🐛 Troubleshooting
 
 ### No notifications received?
 
 1. **Check admin table:**
+
    ```sql
    SELECT * FROM insurance_admins WHERE is_active = true;
    ```
 
 2. **Check notification queue:**
+
    ```sql
-   SELECT * FROM notifications 
+   SELECT * FROM notifications
    WHERE notification_type = 'insurance_admin_alert'
    ORDER BY created_at DESC LIMIT 5;
    ```
 
 3. **Check admin notification log:**
+
    ```sql
-   SELECT * FROM insurance_admin_notifications 
+   SELECT * FROM insurance_admin_notifications
    ORDER BY sent_at DESC LIMIT 5;
    ```
 
@@ -111,6 +117,7 @@ WHERE wa_id = '250XXXXXXXXX';
 ### User not getting summary?
 
 Check insurance handler logs:
+
 ```bash
 supabase functions logs wa-webhook | grep "INS_"
 ```
@@ -118,19 +125,20 @@ supabase functions logs wa-webhook | grep "INS_"
 ### OCR failing?
 
 Verify OpenAI key:
+
 ```bash
 supabase secrets list | grep OPENAI
 ```
 
 ## 📋 What Each File Does
 
-| File | Purpose |
-|------|---------|
+| File                                               | Purpose                               |
+| -------------------------------------------------- | ------------------------------------- |
 | `20260502000000_insurance_admin_notifications.sql` | Creates tables, inserts admin numbers |
-| `ins_admin_notify.ts` | Notification logic & formatting |
-| `insurance-ocr/index.ts` | OCR processing + admin alerts |
-| `ins_handler.ts` | WhatsApp message handling |
-| `ocr-processor/index.ts` | Menu OCR (OpenAI schema fixed) |
+| `ins_admin_notify.ts`                              | Notification logic & formatting       |
+| `insurance-ocr/index.ts`                           | OCR processing + admin alerts         |
+| `ins_handler.ts`                                   | WhatsApp message handling             |
+| `ocr-processor/index.ts`                           | Menu OCR (OpenAI schema fixed)        |
 
 ## ✅ Success Criteria
 
@@ -161,6 +169,7 @@ User sends certificate photo
 ## 📞 Support
 
 If issues persist:
+
 1. Check logs: `supabase functions logs [function-name]`
 2. Verify migration applied: `SELECT * FROM insurance_admins;`
 3. Test with simple certificate image

@@ -3,6 +3,7 @@
 // =====================================================
 // Routes job board conversations to the AI agent
 // Handles both job seekers and job posters
+// Last updated: 2025-11-15
 // =====================================================
 
 import type { RouterContext } from "../../types.ts";
@@ -90,11 +91,12 @@ export async function startJobSearch(ctx: RouterContext): Promise<boolean> {
   await setState(ctx.supabase, ctx.profileId, {
     key: "job_conversation",
     data: {
+      conversationId: crypto.randomUUID(),
       role: "job_seeker",
       language: ctx.locale,
       status: "active",
       startedAt: new Date().toISOString(),
-    } satisfies JobConversation & { startedAt: string },
+    },
   });
 
   // Send welcome message
@@ -120,11 +122,12 @@ export async function startJobPosting(ctx: RouterContext): Promise<boolean> {
   await setState(ctx.supabase, ctx.profileId, {
     key: "job_conversation",
     data: {
+      conversationId: crypto.randomUUID(),
       role: "job_poster",
       language: ctx.locale,
       status: "active",
       startedAt: new Date().toISOString(),
-    } satisfies JobConversation & { startedAt: string },
+    },
   });
 
   // Send welcome message
@@ -150,11 +153,11 @@ export async function handleJobBoardText(
     return false;
   }
 
-  const conversationData = state.data as JobConversation & { startedAt?: string };
+  const conversationData = (state.data || {}) as Partial<JobConversation> & { startedAt?: string };
 
   await logStructuredEvent("JOB_AGENT_MESSAGE", {
     userId: ctx.profileId,
-    role: conversationData.role,
+    role: conversationData.role || "unknown",
     messageLength: messageText.length,
   });
 
@@ -167,7 +170,7 @@ export async function handleJobBoardText(
         headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
-          "x-correlation-id": ctx.correlationId || crypto.randomUUID(),
+          "x-correlation-id": crypto.randomUUID(),
         },
         body: JSON.stringify({
           phone_number: ctx.from,
@@ -374,21 +377,6 @@ export async function showMyJobs(ctx: RouterContext): Promise<boolean> {
       message += `   💰 ${payInfo}\n`;
       message += `   📋 ${t(ctx.locale, `jobs.type.${job.job_type}`)} | ${t(ctx.locale, `jobs.status.${job.status}`)}\n`;
       message += `   👥 ${applicants} applicant${applicants !== 1 ? "s" : ""}\n\n`;
-    });
-
-    message += t(ctx.locale, "jobs.myJobs.footer");
-
-    await sendMessage(ctx, { text: message });
-
-    return true;
-  } catch (error: any) {
-    console.error("Error fetching jobs:", error);
-    await sendMessage(ctx, {
-      text: t(ctx.locale, "jobs.error.fetch_failed"),
-    });
-    return true;
-  }
-}
     });
 
     message += t(ctx.locale, "jobs.myJobs.footer");

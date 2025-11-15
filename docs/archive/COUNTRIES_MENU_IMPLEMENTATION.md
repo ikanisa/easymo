@@ -3,21 +3,27 @@
 ## ✅ Completed Successfully
 
 ### Overview
-Created comprehensive countries table with mobile money details and implemented country-specific WhatsApp menu naming system. Users in different countries now see localized menu item names (e.g., "MOMO QR Code" in Rwanda, "Orange Money QR" in Ivory Coast).
+
+Created comprehensive countries table with mobile money details and implemented country-specific
+WhatsApp menu naming system. Users in different countries now see localized menu item names (e.g.,
+"MOMO QR Code" in Rwanda, "Orange Money QR" in Ivory Coast).
 
 ---
 
 ## 🌍 Countries Table
 
 ### Created: 31 African Countries
+
 - **East Africa** (5): Rwanda, Uganda, Kenya, Tanzania, Burundi
 - **Central Africa** (7): Cameroon, DR Congo, Congo, Gabon, CAR, Chad, Equatorial Guinea
-- **West Africa** (10): Ghana, Ivory Coast, Benin, Burkina Faso, Senegal, Togo, Mali, Guinea, Niger, Mauritania
+- **West Africa** (10): Ghana, Ivory Coast, Benin, Burkina Faso, Senegal, Togo, Mali, Guinea, Niger,
+  Mauritania
 - **Southern Africa** (4): Zambia, Zimbabwe, Malawi, Namibia
 - **Indian Ocean** (4): Madagascar, Mauritius, Seychelles, Comoros
 - **Horn of Africa** (1): Djibouti
 
 ### Database Schema
+
 ```sql
 CREATE TABLE countries (
   id UUID PRIMARY KEY,
@@ -25,13 +31,13 @@ CREATE TABLE countries (
   name TEXT,                      -- Country name
   currency_code TEXT,             -- RWF, UGX, KES, etc.
   phone_prefix TEXT,              -- +250, +256, +254, etc.
-  
+
   -- Mobile Money
   mobile_money_provider TEXT,     -- MTN Mobile Money, Orange Money, etc.
   mobile_money_brand TEXT,        -- MoMo, Orange Money, M-Pesa, etc.
   ussd_send_to_phone TEXT,        -- *182*1*1*{phone}*{amount}#
   ussd_pay_merchant TEXT,         -- *182*8*1*{code}*{amount}#
-  
+
   -- Metadata
   flag_emoji TEXT,                -- 🇷🇼, 🇺🇬, etc.
   timezone TEXT,                  -- Africa/Kigali, etc.
@@ -45,20 +51,21 @@ CREATE TABLE countries (
 ## 📱 Mobile Money Providers
 
 ### Provider Distribution
-| Provider | Countries | Codes |
-|----------|-----------|-------|
-| MTN MoMo | 7 | BJ, CG, CM, GH, RW, UG, ZM |
-| Orange Money | 7 | BF, CD, CF, CI, GN, ML, SN |
-| Airtel Money | 5 | GA, MW, NE, SC, TD |
-| M-Pesa | 2 | KE, TZ |
-| EcoCash | 2 | BI, ZW |
-| MVola | 2 | KM, MG |
-| T-Money | 1 | TG |
-| D-Money | 1 | DJ |
-| GETESA | 1 | GQ |
-| Moov Money | 1 | MR |
-| MTC Money | 1 | NA |
-| my.t money | 1 | MU |
+
+| Provider     | Countries | Codes                      |
+| ------------ | --------- | -------------------------- |
+| MTN MoMo     | 7         | BJ, CG, CM, GH, RW, UG, ZM |
+| Orange Money | 7         | BF, CD, CF, CI, GN, ML, SN |
+| Airtel Money | 5         | GA, MW, NE, SC, TD         |
+| M-Pesa       | 2         | KE, TZ                     |
+| EcoCash      | 2         | BI, ZW                     |
+| MVola        | 2         | KM, MG                     |
+| T-Money      | 1         | TG                         |
+| D-Money      | 1         | DJ                         |
+| GETESA       | 1         | GQ                         |
+| Moov Money   | 1         | MR                         |
+| MTC Money    | 1         | NA                         |
+| my.t money   | 1         | MU                         |
 
 ---
 
@@ -66,20 +73,21 @@ CREATE TABLE countries (
 
 ### "MOMO QR Code" → Localized Names
 
-| Country | Default Name | Localized Name | Provider |
-|---------|--------------|----------------|----------|
-| 🇷🇼 Rwanda | MOMO QR Code | **MOMO QR Code** | MTN MoMo |
+| Country        | Default Name | Localized Name      | Provider     |
+| -------------- | ------------ | ------------------- | ------------ |
+| 🇷🇼 Rwanda      | MOMO QR Code | **MOMO QR Code**    | MTN MoMo     |
 | 🇨🇮 Ivory Coast | MOMO QR Code | **Orange Money QR** | Orange Money |
-| 🇰🇪 Kenya | MOMO QR Code | **M-Pesa QR Code** | M-Pesa |
-| 🇹🇿 Tanzania | MOMO QR Code | **M-Pesa QR Code** | M-Pesa |
-| 🇬🇭 Ghana | MOMO QR Code | **MOMO QR Code** | MTN MoMo |
-| 🇸🇳 Senegal | MOMO QR Code | **Orange Money QR** | Orange Money |
-| 🇿🇲 Zambia | MOMO QR Code | **MOMO QR Code** | MTN MoMo |
-| 🇿🇼 Zimbabwe | MOMO QR Code | **EcoCash QR Code** | EcoCash |
-| 🇲🇬 Madagascar | MOMO QR Code | **MVola QR Code** | MVola |
-| 🇹🇬 Togo | MOMO QR Code | **T-Money QR Code** | T-Money |
+| 🇰🇪 Kenya       | MOMO QR Code | **M-Pesa QR Code**  | M-Pesa       |
+| 🇹🇿 Tanzania    | MOMO QR Code | **M-Pesa QR Code**  | M-Pesa       |
+| 🇬🇭 Ghana       | MOMO QR Code | **MOMO QR Code**    | MTN MoMo     |
+| 🇸🇳 Senegal     | MOMO QR Code | **Orange Money QR** | Orange Money |
+| 🇿🇲 Zambia      | MOMO QR Code | **MOMO QR Code**    | MTN MoMo     |
+| 🇿🇼 Zimbabwe    | MOMO QR Code | **EcoCash QR Code** | EcoCash      |
+| 🇲🇬 Madagascar  | MOMO QR Code | **MVola QR Code**   | MVola        |
+| 🇹🇬 Togo        | MOMO QR Code | **T-Money QR Code** | T-Money      |
 
 ### How It Works
+
 ```typescript
 // User in Rwanda (+250788123456)
 const country = "RW";
@@ -97,29 +105,32 @@ const menuName = getLocalizedMenuName(item, country);
 ## 💡 USSD Codes
 
 ### Sample P2P Transfer Codes
-| Country | Provider | USSD Pattern | Example |
-|---------|----------|--------------|---------|
-| Rwanda | MTN MoMo | `*182*1*1*{phone}*{amount}#` | *182\*1\*1\*0788...\*5000# |
-| Ivory Coast | Orange Money | `*144*1*{phone}*{amount}#` | *144\*1\*0101...\*20000# |
-| Kenya | M-Pesa | `*126*{phone}*{amount}#` | *126\*0712...\*1000# |
-| Ghana | MTN MoMo | `*170*1*1*{phone}*{amount}#` | *170\*1\*1\*024...\*50# |
-| Tanzania | M-Pesa | `*150*00*{phone}*{amount}#` | *150\*00\*0767...\*20000# |
+
+| Country     | Provider     | USSD Pattern                 | Example                     |
+| ----------- | ------------ | ---------------------------- | --------------------------- |
+| Rwanda      | MTN MoMo     | `*182*1*1*{phone}*{amount}#` | \*182\*1\*1\*0788...\*5000# |
+| Ivory Coast | Orange Money | `*144*1*{phone}*{amount}#`   | \*144\*1\*0101...\*20000#   |
+| Kenya       | M-Pesa       | `*126*{phone}*{amount}#`     | \*126\*0712...\*1000#       |
+| Ghana       | MTN MoMo     | `*170*1*1*{phone}*{amount}#` | \*170\*1\*1\*024...\*50#    |
+| Tanzania    | M-Pesa       | `*150*00*{phone}*{amount}#`  | \*150\*00\*0767...\*20000#  |
 
 ### Merchant Payment Codes
-| Country | Provider | USSD Pattern | Example |
-|---------|----------|--------------|---------|
-| Rwanda | MTN MoMo | `*182*8*1*{code}*{amount}#` | *182\*8\*1\*12345\*10000# |
-| Ivory Coast | Orange Money | `*144*4*{code}*{amount}#` | *144\*4\*CIE123\*5000# |
-| Kenya | M-Pesa | `*126*4*{code}*{amount}#` | *126\*4\*SHOP123\*2000# |
+
+| Country     | Provider     | USSD Pattern                | Example                    |
+| ----------- | ------------ | --------------------------- | -------------------------- |
+| Rwanda      | MTN MoMo     | `*182*8*1*{code}*{amount}#` | \*182\*8\*1\*12345\*10000# |
+| Ivory Coast | Orange Money | `*144*4*{code}*{amount}#`   | \*144\*4\*CIE123\*5000#    |
+| Kenya       | M-Pesa       | `*126*4*{code}*{amount}#`   | \*126\*4\*SHOP123\*2000#   |
 
 ---
 
 ## 🛠️ Technical Implementation
 
 ### 1. Database View
+
 ```sql
 CREATE VIEW whatsapp_menu_by_country AS
-SELECT 
+SELECT
   c.code as country_code,
   c.name as country_name,
   c.mobile_money_brand,
@@ -137,21 +148,22 @@ WHERE c.code = ANY(wm.active_countries)
 ```
 
 ### 2. TypeScript Integration
+
 ```typescript
 export interface WhatsAppHomeMenuItem {
   id: string;
   name: string;
   key: MenuItemKey;
-  country_specific_names: Record<string, { 
-    name?: string; 
-    description?: string 
-  }> | null;
+  country_specific_names: Record<
+    string,
+    {
+      name?: string;
+      description?: string;
+    }
+  > | null;
 }
 
-export function getLocalizedMenuName(
-  item: WhatsAppHomeMenuItem,
-  countryCode: string,
-): string {
+export function getLocalizedMenuName(item: WhatsAppHomeMenuItem, countryCode: string): string {
   if (item.country_specific_names?.[countryCode]) {
     return item.country_specific_names[countryCode].name || item.name;
   }
@@ -160,6 +172,7 @@ export function getLocalizedMenuName(
 ```
 
 ### 3. Dynamic Menu Fetching
+
 ```typescript
 // Automatically applies country-specific names
 const items = await fetchActiveMenuItems(countryCode, supabase);
@@ -170,13 +183,16 @@ const items = await fetchActiveMenuItems(countryCode, supabase);
 
 ## 📊 Menu Items per Country
 
-| Country | Menu Items | Notes |
-|---------|------------|-------|
-| Rwanda | 12 | All features including Motor Insurance & Notary |
-| Others | 10 | Excludes Motor Insurance & Notary Services |
+| Country | Menu Items | Notes                                           |
+| ------- | ---------- | ----------------------------------------------- |
+| Rwanda  | 12         | All features including Motor Insurance & Notary |
+| Others  | 10         | Excludes Motor Insurance & Notary Services      |
 
 ### Menu Item Distribution
-- **Available in all 31 countries**: Nearby Drivers, Nearby Passengers, Schedule Trip, Nearby Pharmacies, Quincailleries, Shops & Services, Property Rentals, MOMO QR (localized), Bars & Restaurants, Customer Support
+
+- **Available in all 31 countries**: Nearby Drivers, Nearby Passengers, Schedule Trip, Nearby
+  Pharmacies, Quincailleries, Shops & Services, Property Rentals, MOMO QR (localized), Bars &
+  Restaurants, Customer Support
 - **Rwanda only**: Motor Insurance, Notary Services
 
 ---
@@ -184,16 +200,18 @@ const items = await fetchActiveMenuItems(countryCode, supabase);
 ## 🔍 Database Queries
 
 ### Get Country by Phone Number
+
 ```sql
 -- Extract country from phone number
-SELECT * FROM countries 
+SELECT * FROM countries
 WHERE '+250788123456' LIKE phone_prefix || '%';
 -- Returns: Rwanda
 ```
 
 ### Get Menu for Country
+
 ```sql
-SELECT 
+SELECT
   localized_name,
   menu_key
 FROM whatsapp_menu_by_country
@@ -202,8 +220,9 @@ ORDER BY display_order;
 ```
 
 ### Get USSD Code
+
 ```sql
-SELECT 
+SELECT
   name,
   mobile_money_brand,
   ussd_send_to_phone
@@ -213,8 +232,9 @@ WHERE code = 'RW';
 ```
 
 ### Check All Localizations
+
 ```sql
-SELECT 
+SELECT
   country_code,
   localized_name
 FROM whatsapp_menu_by_country
@@ -227,13 +247,16 @@ ORDER BY country_code;
 ## 📁 Files Created
 
 ### Migrations
+
 1. `20251113130000_countries_mobile_money.sql` - Countries table + country-specific naming
 2. `20251113131000_expand_menu_countries.sql` - Expand menu to all 31 countries
 
 ### Test Scripts
+
 - `test-countries-menu.sh` - Comprehensive testing
 
 ### Code Updates
+
 - `domains/menu/dynamic_home_menu.ts` - Added `getLocalizedMenuName()` function
 
 ---
@@ -250,6 +273,7 @@ ORDER BY country_code;
 ```
 
 Run tests:
+
 ```bash
 bash test-countries-menu.sh
 ```
@@ -263,13 +287,14 @@ bash test-countries-menu.sh
 ✅ **USSD Ready** - All payment codes stored and ready to use  
 ✅ **Scalable** - Easy to add new countries  
 ✅ **Dynamic** - Menu names change based on country  
-✅ **Comprehensive** - 31 countries, 12 providers  
+✅ **Comprehensive** - 31 countries, 12 providers
 
 ---
 
 ## 🚀 Usage Examples
 
 ### Example 1: User in Rwanda
+
 ```
 Phone: +250788123456
 Country: RW
@@ -278,6 +303,7 @@ USSD: *182*1*1*{phone}*{amount}#
 ```
 
 ### Example 2: User in Ivory Coast
+
 ```
 Phone: +225010123456
 Country: CI
@@ -286,6 +312,7 @@ USSD: *144*1*{phone}*{amount}#
 ```
 
 ### Example 3: User in Kenya
+
 ```
 Phone: +254712345678
 Country: KE
@@ -298,6 +325,7 @@ USSD: *126*{phone}*{amount}#
 ## 📞 Integration Points
 
 ### 1. WhatsApp Webhook
+
 ```typescript
 const countryCode = getCountryFromPhone(ctx.from); // "CI"
 const menuItems = await fetchActiveMenuItems(countryCode);
@@ -305,16 +333,18 @@ const menuItems = await fetchActiveMenuItems(countryCode);
 ```
 
 ### 2. Admin Panel
+
 - View countries: `/countries`
 - Manage menu items: `/whatsapp-menu`
 - Toggle country availability per menu item
 
 ### 3. QR Code Generation
+
 ```typescript
-const country = await getCountryByCode('RW');
+const country = await getCountryByCode("RW");
 const ussdCode = country.ussd_pay_merchant
-  .replace('{code}', merchantCode)
-  .replace('{amount}', amount);
+  .replace("{code}", merchantCode)
+  .replace("{amount}", amount);
 // → *182*8*1*12345*10000#
 ```
 
@@ -346,7 +376,6 @@ const ussdCode = country.ussd_pay_merchant
 **Migration Versions**: 20251113130000, 20251113131000  
 **Countries**: 31  
 **Providers**: 12  
-**Test Coverage**: Comprehensive  
+**Test Coverage**: Comprehensive
 
 **Ready for**: Production deployment and immediate use
-

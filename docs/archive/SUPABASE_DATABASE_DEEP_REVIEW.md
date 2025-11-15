@@ -9,6 +9,7 @@
 ## Executive Summary
 
 Your Supabase database has **191 tables**, which is excessive and indicates:
+
 - **Multiple duplicate/redundant tables**
 - **Lack of consolidation** between related features
 - **Orphaned tables** from old features
@@ -21,6 +22,7 @@ Your Supabase database has **191 tables**, which is excessive and indicates:
 ## Critical Issues Found
 
 ### 1. 🔴 DUPLICATE BUSINESS TABLES (High Priority)
+
 **Problem**: Multiple tables for the same concept
 
 ```
@@ -31,11 +33,13 @@ Your Supabase database has **191 tables**, which is excessive and indicates:
 ```
 
 **❌ Issues**:
+
 - Data inconsistency across tables
 - Confusion about which table to use
 - Multiple sources of truth
 
 **✅ RECOMMENDATION**:
+
 ```sql
 -- KEEP: businesses (main table)
 -- MERGE INTO businesses:
@@ -45,6 +49,7 @@ Your Supabase database has **191 tables**, which is excessive and indicates:
 ```
 
 **Migration Strategy**:
+
 1. Add `business_type` ENUM to `businesses` ('restaurant', 'shop', 'bar', 'service')
 2. Migrate data from `shops` → `businesses`
 3. Migrate data from `bars` → `businesses`
@@ -63,10 +68,12 @@ Your Supabase database has **191 tables**, which is excessive and indicates:
 ```
 
 **❌ Issues**:
+
 - `carts` and `draft_orders` serve the same purpose
 - Waiter AI orders isolated from main system
 
 **✅ RECOMMENDATION**:
+
 ```sql
 -- KEEP: orders (completed orders)
 -- KEEP: draft_orders (pending/cart orders)
@@ -86,6 +93,7 @@ Your Supabase database has **191 tables**, which is excessive and indicates:
 ```
 
 **✅ RECOMMENDATION**:
+
 ```sql
 -- KEEP: order_items (for completed orders)
 -- KEEP: draft_order_items (for draft orders)
@@ -106,10 +114,12 @@ Your Supabase database has **191 tables**, which is excessive and indicates:
 ```
 
 **❌ Issues**:
+
 - `items` vs `menu_items` - unclear purpose
 - Platform-specific menu tables (WhatsApp, restaurant)
 
 **✅ RECOMMENDATION**:
+
 ```sql
 -- KEEP: menu_items (main table)
 -- KEEP: menu_categories
@@ -132,6 +142,7 @@ Your Supabase database has **191 tables**, which is excessive and indicates:
 ```
 
 **✅ RECOMMENDATION**:
+
 ```sql
 -- KEEP: transactions (main payment records)
 -- KEEP: transaction_events (audit trail)
@@ -165,10 +176,12 @@ Your Supabase database has **191 tables**, which is excessive and indicates:
 ```
 
 **❌ Issues**:
+
 - Too many similar conversation systems
 - No unified messaging architecture
 
 **✅ RECOMMENDATION**:
+
 ```sql
 -- Option A: Unified System
 CREATE TABLE unified_conversations (
@@ -198,7 +211,7 @@ CREATE TABLE unified_messages (
 ```
 AI/Agent tables (23 tables total):
 - agent_sessions
-- agent_conversations  
+- agent_conversations
 - agent_chat_sessions (duplicate?)
 - agent_messages
 - agent_chat_messages (duplicate?)
@@ -209,10 +222,12 @@ AI/Agent tables (23 tables total):
 ```
 
 **❌ Issues**:
+
 - `ai_*` and `agent_*` prefixes for same features
 - Redundant session/chat tables
 
 **✅ RECOMMENDATION**:
+
 ```sql
 -- Consolidate to ONE agent system:
 KEEP:
@@ -238,6 +253,7 @@ MERGE OR DELETE:
 ### 8. 🟢 REDUNDANT/UNUSED TABLES (Low Priority)
 
 #### Potentially Unused Tables:
+
 ```sql
 -- Old/deprecated tables:
 - legacy_customer_profile (marked as legacy)
@@ -269,15 +285,17 @@ MERGE OR DELETE:
 ### ✅ WELL-STRUCTURED TABLES (Keep As-Is)
 
 #### Waiter AI System (7 tables) - GOOD
+
 ```
 ✓ waiter_conversations - Chat sessions
-✓ waiter_messages - Chat history  
+✓ waiter_messages - Chat history
 ✓ waiter_orders - Orders from AI
 ✓ waiter_order_items - Order line items
 ✓ waiter_payments - Payment tracking
 ✓ waiter_reservations - Table bookings
 ✓ waiter_feedback - Customer feedback
 ```
+
 **Status**: Well-isolated, clear purpose. **NO CHANGES NEEDED**.
 
 ---
@@ -320,9 +338,10 @@ DROP TABLE IF EXISTS whatsapp_home_menu_items; -- Use menu_items with flag
 ### 🟡 TABLES TO MERGE
 
 #### 1. Business Tables → businesses
+
 ```sql
 -- Add type column
-ALTER TABLE businesses ADD COLUMN business_type TEXT 
+ALTER TABLE businesses ADD COLUMN business_type TEXT
   CHECK (business_type IN ('restaurant', 'bar', 'shop', 'service', 'other'));
 
 -- Migrate shops
@@ -335,8 +354,8 @@ SELECT name, ..., 'bar' FROM bars;
 
 -- Update foreign keys
 ALTER TABLE orders ADD COLUMN business_id UUID REFERENCES businesses(id);
-UPDATE orders o SET business_id = b.id 
-FROM shops s JOIN businesses b ON s.name = b.name 
+UPDATE orders o SET business_id = b.id
+FROM shops s JOIN businesses b ON s.name = b.name
 WHERE o.shop_id = s.id;
 
 -- Drop old tables
@@ -345,6 +364,7 @@ DROP TABLE bars CASCADE;
 ```
 
 #### 2. Cart Tables → draft_orders
+
 ```sql
 -- Migrate carts to draft_orders
 INSERT INTO draft_orders (user_id, status, created_at)
@@ -363,6 +383,7 @@ DROP TABLE carts CASCADE;
 ```
 
 #### 3. Config Tables → configurations
+
 ```sql
 -- Unified config table
 CREATE TABLE IF NOT EXISTS configurations (
@@ -396,6 +417,7 @@ DROP TABLE bar_settings; -- migrate first
 ### Waiter AI Tables - Missing Columns
 
 #### waiter_conversations
+
 ```sql
 -- Add missing columns for completeness
 ALTER TABLE waiter_conversations ADD COLUMN IF NOT EXISTS
@@ -407,6 +429,7 @@ ALTER TABLE waiter_conversations ADD COLUMN IF NOT EXISTS
 ```
 
 #### waiter_messages
+
 ```sql
 -- Add missing columns
 ALTER TABLE waiter_messages ADD COLUMN IF NOT EXISTS
@@ -417,6 +440,7 @@ ALTER TABLE waiter_messages ADD COLUMN IF NOT EXISTS
 ```
 
 #### waiter_orders
+
 ```sql
 -- Ensure all order columns exist
 ALTER TABLE waiter_orders ADD COLUMN IF NOT EXISTS
@@ -434,6 +458,7 @@ ALTER TABLE waiter_orders ADD COLUMN IF NOT EXISTS
 ```
 
 ### menu_items
+
 ```sql
 -- Add missing menu item columns
 ALTER TABLE menu_items ADD COLUMN IF NOT EXISTS
@@ -452,6 +477,7 @@ ALTER TABLE menu_items ADD COLUMN IF NOT EXISTS
 ```
 
 ### businesses
+
 ```sql
 -- Add missing business columns
 ALTER TABLE businesses ADD COLUMN IF NOT EXISTS
@@ -475,6 +501,7 @@ ALTER TABLE businesses ADD COLUMN IF NOT EXISTS
 ## WhatsApp Flow Integration Check
 
 ### Tables Used by WhatsApp Flow:
+
 ```
 ✓ wa_messages - WhatsApp messages
 ✓ wa_events - WhatsApp events
@@ -488,6 +515,7 @@ ALTER TABLE businesses ADD COLUMN IF NOT EXISTS
 **Status**: Core WhatsApp tables present. ✅
 
 ### Missing Integration:
+
 ```
 ❌ waiter_conversations not linked to wa_threads
 ❌ waiter_orders not linked to wa_messages
@@ -495,14 +523,15 @@ ALTER TABLE businesses ADD COLUMN IF NOT EXISTS
 ```
 
 **✅ RECOMMENDATION**: Add cross-references
+
 ```sql
-ALTER TABLE waiter_conversations 
+ALTER TABLE waiter_conversations
   ADD COLUMN wa_thread_id UUID REFERENCES wa_threads(id);
 
-ALTER TABLE waiter_orders 
+ALTER TABLE waiter_orders
   ADD COLUMN wa_message_id UUID REFERENCES wa_messages(id);
 
-ALTER TABLE businesses 
+ALTER TABLE businesses
   ADD COLUMN whatsapp_number_id UUID REFERENCES business_whatsapp_numbers(id);
 ```
 
@@ -511,6 +540,7 @@ ALTER TABLE businesses
 ## Admin Panel Integration Check
 
 ### Admin-Specific Tables:
+
 ```
 ✓ admin_audit_log - Admin actions
 ✓ admin_sessions - Admin logins
@@ -522,6 +552,7 @@ ALTER TABLE businesses
 **Status**: Admin infrastructure present. ✅
 
 ### Tables Accessible from Admin Panel (Should Be):
+
 ```
 ✓ businesses - Manage businesses
 ✓ menu_items - Manage menus
@@ -540,6 +571,7 @@ ALTER TABLE businesses
 ## Cleanup Action Plan
 
 ### Phase 1: Delete Obvious Duplicates (Week 1)
+
 ```sql
 -- Backup first!
 pg_dump > backup_before_cleanup.sql
@@ -558,6 +590,7 @@ DROP TABLE IF EXISTS legacy_customer_profile CASCADE;
 ```
 
 ### Phase 2: Merge Tables (Week 2)
+
 ```sql
 -- 1. Merge shops → businesses
 -- 2. Merge bars → businesses
@@ -566,6 +599,7 @@ DROP TABLE IF EXISTS legacy_customer_profile CASCADE;
 ```
 
 ### Phase 3: Add Missing Columns (Week 3)
+
 ```sql
 -- Add all missing columns identified above
 -- Update RLS policies
@@ -573,6 +607,7 @@ DROP TABLE IF EXISTS legacy_customer_profile CASCADE;
 ```
 
 ### Phase 4: Integration Fixes (Week 4)
+
 ```sql
 -- Add WhatsApp cross-references
 -- Add admin panel views
@@ -599,20 +634,23 @@ DROP TABLE IF EXISTS legacy_customer_profile CASCADE;
 **Agent System** (10-12 tables): Consolidate from 23 to ~12  
 **WhatsApp** (6-8 tables): Keep core integration tables  
 **Admin** (5-6 tables): Keep admin infrastructure  
-**System** (3-4 tables): Unified configurations  
+**System** (3-4 tables): Unified configurations
 
 ---
 
 ## Summary & Next Steps
 
 ### 🎯 Immediate Actions:
+
 1. **Create backup** of entire database
 2. **Delete obvious duplicates** (business, carts, items, etc.)
-3. **Add missing columns** to waiter_* tables
+3. **Add missing columns** to waiter\_\* tables
 4. **Test admin panel** and WhatsApp flow after changes
 
 ### 📋 Detailed Cleanup Script:
+
 Would you like me to generate:
+
 1. Complete SQL migration script for cleanup?
 2. Data migration script for merging tables?
 3. RLS policy updates after cleanup?

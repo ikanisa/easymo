@@ -2,11 +2,14 @@
 
 ## What Was Built
 
-A complete, production-ready **WhatsApp-based job marketplace** powered by AI that connects job seekers with opportunities across Rwanda. The system specializes in **miscellaneous/gig work** (one-day jobs, part-time, urgent needs) and **structured positions** (full-time, contracts).
+A complete, production-ready **WhatsApp-based job marketplace** powered by AI that connects job
+seekers with opportunities across Rwanda. The system specializes in **miscellaneous/gig work**
+(one-day jobs, part-time, urgent needs) and **structured positions** (full-time, contracts).
 
 ## 🚀 Key Features
 
 ### For Job Posters
+
 - ✅ **30-second job posting** via natural conversation
 - ✅ **AI metadata extraction** from descriptions
 - ✅ **Automatic matching** to qualified workers
@@ -14,6 +17,7 @@ A complete, production-ready **WhatsApp-based job marketplace** powered by AI th
 - ✅ **Multi-category support** (20 job types)
 
 ### For Job Seekers
+
 - ✅ **Profile building** from conversation
 - ✅ **Smart job search** with semantic matching
 - ✅ **Instant applications** via chat
@@ -21,6 +25,7 @@ A complete, production-ready **WhatsApp-based job marketplace** powered by AI th
 - ✅ **Application tracking**
 
 ### For Administrators
+
 - ✅ **Real-time dashboard** (Next.js)
 - ✅ **Analytics** (jobs, seekers, matches, fill rates)
 - ✅ **Structured logging** for observability
@@ -29,6 +34,7 @@ A complete, production-ready **WhatsApp-based job marketplace** powered by AI th
 ## 📁 Files Created
 
 ### Database (1 file)
+
 ```
 supabase/migrations/20251114220000_job_board_system.sql
 ├── 7 tables (listings, seekers, matches, conversations, applications, analytics, categories)
@@ -39,6 +45,7 @@ supabase/migrations/20251114220000_job_board_system.sql
 ```
 
 ### Edge Function (5 files)
+
 ```
 supabase/functions/job-board-ai-agent/
 ├── index.ts           # Main handler (273 lines)
@@ -50,6 +57,7 @@ supabase/functions/job-board-ai-agent/
 ```
 
 ### WhatsApp Integration (3 files)
+
 ```
 supabase/functions/wa-webhook/domains/jobs/
 ├── handler.ts         # Routes to AI agent (95 lines)
@@ -58,12 +66,14 @@ supabase/functions/wa-webhook/domains/jobs/
 ```
 
 ### Admin Dashboard (1 file)
+
 ```
 admin-app/app/(panel)/jobs/page.tsx
 └── Full dashboard with stats and tabs (310 lines)
 ```
 
 ### Documentation (4 files)
+
 ```
 docs/
 ├── JOB_BOARD_AI_AGENT_DESIGN.md    # Complete design (520 lines)
@@ -115,23 +125,27 @@ docs/
 ## 🔧 Technical Specifications
 
 ### AI Models
+
 - **Chat**: OpenAI GPT-4 Turbo Preview
 - **Embeddings**: text-embedding-3-small (1536 dimensions)
 - **Function Calling**: 10 tools for job operations
 
 ### Database
+
 - **pgvector**: HNSW indexes for fast similarity search
 - **RLS**: Row-level security on all tables
 - **Triggers**: Auto-timestamps, notifications
 - **Functions**: Vector matching with filters
 
 ### Performance
+
 - **Embedding Generation**: ~100ms
 - **Vector Search**: <10ms (for 10k jobs)
 - **Full Job Post**: ~300ms end-to-end
 - **Dashboard Load**: ~200ms
 
 ### Security
+
 - ✅ RLS policies (users see only their data)
 - ✅ Phone number masking in logs
 - ✅ Service role key protection
@@ -145,6 +159,7 @@ docs/
 **User**: "I need someone to help move furniture tomorrow in Kigali, paying 10k"
 
 **AI Agent**:
+
 1. **Detects intent**: Job posting (confidence: 92%)
 2. **Extracts metadata**:
    ```json
@@ -172,20 +187,22 @@ docs/
 **User**: "Looking for delivery work, I have a motorcycle"
 
 **AI Agent**:
+
 1. **Detects intent**: Job search (confidence: 88%)
 2. **Updates/creates profile**: Adds skills ["delivery", "motorcycle_driving"]
 3. **Generates embedding**: From skills text
 4. **Searches jobs**: Vector similarity + filters
 5. **Ranks results**: By score, recency, location, pay
 6. **Formats response**:
+
    ```
    📋 Found 3 matching jobs:
-   
+
    1. Food Delivery Driver
       📍 Kigali
       💰 8,000-12,000 RWF (daily)
       ✨ 92% match
-   
+
    Reply with the number to learn more!
    ```
 
@@ -196,6 +213,7 @@ docs/
 **User**: "1" (referring to job #1)
 
 **AI Agent**:
+
 1. **Gets job details**: Fetches from database
 2. **Shows full info**: Description, requirements, contact
 3. **Asks confirmation**: "Interested? I can connect you!"
@@ -203,6 +221,7 @@ docs/
 **User**: "Yes interested"
 
 **AI Agent**:
+
 1. **Creates match**: Updates job_matches table
 2. **Creates application**: In job_applications table
 3. **Notifies poster**: (Future: WhatsApp template message)
@@ -211,7 +230,9 @@ docs/
 ## 📊 Use Cases Supported
 
 ### Miscellaneous/Gig Jobs ⚡
+
 Perfect for:
+
 - Construction day labor
 - Moving/furniture help
 - Delivery (food, packages, errands)
@@ -222,6 +243,7 @@ Perfect for:
 - Security (events, temporary)
 
 **Characteristics**:
+
 - ✅ Fast posting (1 message)
 - ✅ Quick matching (< 5 min)
 - ✅ Same-day/next-day work
@@ -229,7 +251,9 @@ Perfect for:
 - ✅ No formal contracts
 
 ### Structured Jobs 🏢
+
 Suitable for:
+
 - Full-time positions
 - Part-time regular work
 - Contracts (1-6 months)
@@ -237,6 +261,7 @@ Suitable for:
 - Skilled trades (plumbing, electrical, mechanic)
 
 **Characteristics**:
+
 - ✅ Detailed requirements
 - ✅ Experience verification
 - ✅ Salary negotiation
@@ -245,6 +270,7 @@ Suitable for:
 ## 🎯 Matching Algorithm
 
 ### Hybrid Approach
+
 1. **Semantic Search** (70% weight)
    - Vector cosine similarity
    - Understands synonyms, context
@@ -268,12 +294,15 @@ Suitable for:
 ### Example Match
 
 **Job**: "Need experienced plumber for emergency pipe repair, paying 20k"
+
 - Embedding captures: plumbing, emergency, pipes, repair, experience
 
 **Seeker**: "5 years plumbing experience, all tools, available 24/7"
+
 - Embedding captures: plumbing, expertise, tools, availability
 
 **Match Score**: 0.95 (95%)
+
 - Semantic similarity: 0.92
 - Location match: +3%
 - Experience match: +2%
@@ -284,6 +313,7 @@ Suitable for:
 ## 📈 Success Metrics
 
 ### Business Metrics
+
 - **Job Fill Rate**: % of jobs successfully filled
 - **Time to Fill**: Avg hours from post to filled
 - **Match Quality**: Avg similarity score of successful hires
@@ -291,17 +321,19 @@ Suitable for:
 - **Category Distribution**: Which job types are most popular
 
 ### Technical Metrics
+
 - **Response Time**: P95 < 2s for agent responses
 - **Embedding Quality**: Match scores > 0.7 for 80% of matches
 - **Error Rate**: < 1% of requests
 - **Uptime**: > 99.9%
 
 ### Sample Dashboard Query
+
 ```sql
-SELECT 
+SELECT
   COUNT(*) as total_jobs,
   COUNT(*) FILTER (WHERE status = 'filled') as filled_jobs,
-  ROUND(COUNT(*) FILTER (WHERE status = 'filled')::numeric / 
+  ROUND(COUNT(*) FILTER (WHERE status = 'filled')::numeric /
         COUNT(*)::numeric * 100, 1) as fill_rate,
   ROUND(AVG(EXTRACT(EPOCH FROM (filled_at - created_at)) / 3600), 1) as avg_hours_to_fill
 FROM job_listings
@@ -311,6 +343,7 @@ WHERE created_at > NOW() - INTERVAL '7 days';
 ## 🔮 Future Enhancements
 
 ### Phase 2 (Next 1-2 months)
+
 - [ ] **Notifications**: WhatsApp templates for matches
 - [ ] **Ratings**: 5-star system for completed jobs
 - [ ] **Verification**: ID/certificate uploads
@@ -318,6 +351,7 @@ WHERE created_at > NOW() - INTERVAL '7 days';
 - [ ] **Multi-language**: Kinyarwanda, French support
 
 ### Phase 3 (3-6 months)
+
 - [ ] **PWA**: Mobile app for browsing
 - [ ] **Voice**: Voice message job posting
 - [ ] **Image**: Photo uploads for job sites
@@ -325,6 +359,7 @@ WHERE created_at > NOW() - INTERVAL '7 days';
 - [ ] **ML**: Improved category detection
 
 ### Phase 4 (6-12 months)
+
 - [ ] **Marketplace**: Competing for jobs (bidding)
 - [ ] **Teams**: Hire groups (event staffing)
 - [ ] **Scheduling**: Calendar integration
@@ -336,22 +371,26 @@ WHERE created_at > NOW() - INTERVAL '7 days';
 ### Per 1,000 Users/Month
 
 **OpenAI**:
+
 - Embeddings: 1,000 jobs + 1,000 seekers × $0.000002 = **$0.004**
 - Chat (GPT-4): 3,000 conversations × $0.011 = **$33**
 - **Total OpenAI**: ~$33/month
 
 **Supabase**:
+
 - Database: Included in Pro plan ($25/month)
 - Edge Functions: 100K invocations (free tier)
 - Storage: < 1GB (minimal)
 - **Total Supabase**: $25/month (shared across all features)
 
 **Total Cost**: **~$58/month** for 1,000 active users
+
 - **Per user**: $0.058/month
 - **Per job post**: $0.011
 - **Very cost-effective!** 💰
 
 ### Optimization Tips
+
 - Batch embeddings (OpenAI supports arrays)
 - Cache common searches (Redis)
 - Use GPT-3.5 for simple extractions
@@ -362,6 +401,7 @@ WHERE created_at > NOW() - INTERVAL '7 days';
 ### ✅ Ready for Production
 
 **Implemented**:
+
 - ✅ Full database schema with migrations
 - ✅ Edge function with 10 tools
 - ✅ WhatsApp integration
@@ -372,6 +412,7 @@ WHERE created_at > NOW() - INTERVAL '7 days';
 - ✅ Documentation (4 comprehensive guides)
 
 **To Deploy**:
+
 1. Run migration: `supabase db push`
 2. Deploy function: `supabase functions deploy job-board-ai-agent`
 3. Set secrets: `supabase secrets set OPENAI_API_KEY=...`
@@ -427,6 +468,7 @@ WHERE created_at > NOW() - INTERVAL '7 days';
 ## 🙏 Acknowledgments
 
 Built following EasyMO ground rules:
+
 - ✅ Structured observability (correlation IDs, event logging)
 - ✅ Security-first (RLS, masked PII)
 - ✅ Feature flags ready
@@ -436,9 +478,11 @@ Built following EasyMO ground rules:
 
 ## 🎉 Ready to Launch!
 
-The Job Board AI Agent is **production-ready** and **fully documented**. Follow the deployment guide to get it live in 30 minutes.
+The Job Board AI Agent is **production-ready** and **fully documented**. Follow the deployment guide
+to get it live in 30 minutes.
 
 **Next Steps**:
+
 1. Review docs/JOB_BOARD_DEPLOYMENT.md
 2. Run database migration
 3. Deploy edge function
@@ -449,8 +493,5 @@ The Job Board AI Agent is **production-ready** and **fully documented**. Follow 
 
 ---
 
-**Status**: ✅ **Implementation Complete**
-**Date**: November 14, 2025
-**Version**: 1.0.0
-**Lines of Code**: ~3,200 (code + tests + docs)
-**Ready**: For Production Deployment 🚀
+**Status**: ✅ **Implementation Complete** **Date**: November 14, 2025 **Version**: 1.0.0 **Lines of
+Code**: ~3,200 (code + tests + docs) **Ready**: For Production Deployment 🚀

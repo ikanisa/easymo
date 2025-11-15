@@ -79,6 +79,27 @@ export async function saveFavorite(
   options: { label?: string; address?: string | null } = {},
 ): Promise<UserFavorite | null> {
   if (!ctx.profileId) return null;
+  const label = (options.label?.trim() || favoriteKindLabel(kind)).toLowerCase();
+  
+  // First check if this label already exists for this user
+  const { data: existing } = await ctx.supabase
+    .from("user_favorites")
+    .select("id")
+    .eq("user_id", ctx.profileId)
+    .ilike("label", label)
+    .maybeSingle();
+
+  if (existing) {
+    // Update existing favorite
+    const updated = await updateFavorite(ctx, existing.id, coords, {
+      label: options.label?.trim() || favoriteKindLabel(kind),
+      address: options.address,
+    });
+    if (!updated) return null;
+    return getFavoriteById(ctx, existing.id);
+  }
+
+  // Insert new favorite
   const payload = {
     user_id: ctx.profileId,
     kind,

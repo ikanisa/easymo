@@ -8,12 +8,14 @@
 ## ✅ What's Been Created
 
 ### Phase 3: Add Missing Columns
+
 - **Migration**: `20251113171400_phase3_add_missing_columns.sql`
 - **Status**: ✅ Ready to apply
 - **Risk**: VERY LOW
-- **Action**: Adds missing columns to waiter_*, businesses, menu_* tables
+- **Action**: Adds missing columns to waiter*\*, businesses, menu*\* tables
 
 ### Phase 1: Careful Deletion
+
 - **Migration**: `20251113173000_careful_deletion_phase1.sql`
 - **Status**: ✅ Ready to apply
 - **Risk**: LOW (checks for data before deleting)
@@ -26,19 +28,22 @@
 The script is **extremely careful** and follows these rules:
 
 ### ✅ WILL DELETE (Safe - No Risk):
+
 1. `legacy_customer_profile` - Marked as legacy
 2. `bar_number_canonicalization_conflicts` - Edge case table
 3. `whatsapp_home_menu_items` - IF EMPTY (otherwise skips)
 
 ### ⚠️ CONDITIONAL DELETION (Only if Empty):
+
 4. `business` table - Only if 0 rows
 5. `items` table - Only if 0 rows
 6. `payments` table - Only if 0 rows
 7. `cart_items` + `carts` - Only if both have 0 rows
-8. `ai_conversations` + `ai_messages` + related ai_* tables - Only if 0 rows
+8. `ai_conversations` + `ai_messages` + related ai\_\* tables - Only if 0 rows
 9. `agent_chat_sessions` + `agent_chat_messages` - Only if 0 rows
 
 ### 🛡️ Safety Features:
+
 - Checks row count BEFORE deleting
 - Logs every action to `database_cleanup_audit` table
 - Uses CASCADE to handle dependencies
@@ -50,16 +55,19 @@ The script is **extremely careful** and follows these rules:
 ## 📋 Execution Instructions
 
 ### Option 1: Via Supabase CLI (Recommended)
+
 ```bash
 cd /Users/jeanbosco/workspace/easymo-
 supabase db push --linked --include-all
 ```
 
 This will apply:
+
 1. Phase 3 migration (add columns)
 2. Phase 1 migration (careful deletion)
 
 ### Option 2: Direct SQL Execution
+
 ```bash
 # Phase 3 first
 psql "YOUR_DB_URL" -f supabase/migrations/20251113171400_phase3_add_missing_columns.sql
@@ -69,6 +77,7 @@ psql "YOUR_DB_URL" -f supabase/migrations/20251113173000_careful_deletion_phase1
 ```
 
 ### Option 3: Via Supabase Dashboard
+
 1. Open Supabase Dashboard
 2. Go to SQL Editor
 3. Copy contents of Phase 3 SQL file
@@ -81,22 +90,25 @@ psql "YOUR_DB_URL" -f supabase/migrations/20251113173000_careful_deletion_phase1
 ## 🔍 Verification After Execution
 
 ### Check Audit Log:
+
 ```sql
-SELECT * FROM database_cleanup_audit 
+SELECT * FROM database_cleanup_audit
 WHERE phase = 'Phase 1'
 ORDER BY executed_at DESC;
 ```
 
 ### Check Table Count:
+
 ```sql
 -- Before: 191 tables
 SELECT COUNT(*) as total_tables
 FROM information_schema.tables
-WHERE table_schema = 'public' 
+WHERE table_schema = 'public'
   AND table_type = 'BASE TABLE';
 ```
 
 ### Verify New Columns:
+
 ```sql
 -- Check waiter_conversations has new columns
 \d waiter_conversations
@@ -109,18 +121,21 @@ WHERE table_schema = 'public'
 ## 📊 Expected Results
 
 ### Phase 3 (Add Columns):
+
 - ✅ All Waiter AI tables have complete columns
 - ✅ WhatsApp integration fields added
 - ✅ Business and menu tables enhanced
 - ✅ Performance indexes created
 
 ### Phase 1 (Careful Deletion):
+
 - ✅ 3-10 tables deleted (depends on which are empty)
 - ✅ All deletions logged in audit table
 - ✅ No data loss (only empty tables deleted)
 - ✅ Warnings shown for tables with data
 
 ### Final State:
+
 - **Table Count**: 181-188 tables (from 191)
 - **Reduction**: 3-10 tables deleted
 - **Status**: Cleaner, more complete schema
@@ -148,7 +163,7 @@ ALTER TABLE waiter_conversations DROP COLUMN IF EXISTS platform;
 ## Current Status
 
 - ✅ Phase 3 migration created
-- ✅ Phase 1 careful deletion created  
+- ✅ Phase 1 careful deletion created
 - ✅ Both migrations timestamped and ready
 - ⏳ Awaiting execution via `supabase db push --linked --include-all`
 
@@ -157,9 +172,9 @@ ALTER TABLE waiter_conversations DROP COLUMN IF EXISTS platform;
 **The migrations are ready. Execute when comfortable!**
 
 Key Points:
+
 - Phase 1 checks data before deleting
 - Only empty tables will be deleted
 - All actions logged
 - Transaction-based (safe)
 - Can review audit log after execution
-

@@ -12,12 +12,14 @@
 After comprehensive review of the codebase, here's the current state:
 
 ### ✅ What Works
+
 1. **wa-webhook** - Solid foundation with good structure
 2. **packages/agents** - Basic agent definitions exist
 3. **services/agent-core** - NestJS infrastructure ready
 4. **Database** - Supabase foundation in place
 
 ### ❌ Critical Gaps
+
 1. **No unified agent orchestration** - Multiple fragmented implementations
 2. **No memory management** - No conversation persistence beyond basic state
 3. **Limited OpenAI usage** - Not leveraging function calling, streaming, embeddings
@@ -29,6 +31,7 @@ After comprehensive review of the codebase, here's the current state:
 ### 🎯 Implementation Strategy
 
 **INCREMENTAL, ADDITIVE-ONLY APPROACH**:
+
 1. Build new `@easymo/ai` package (NEW)
 2. Enhance wa-webhook with new capabilities (ADDITIVE)
 3. Create database migrations (NEW TABLES)
@@ -40,9 +43,11 @@ After comprehensive review of the codebase, here's the current state:
 ## Current Architecture Analysis
 
 ### 1. wa-webhook (supabase/functions/wa-webhook/)
+
 **Status**: 🟢 GOOD FOUNDATION - Needs Enhancement
 
 **Structure**:
+
 ```
 wa-webhook/
 ├── index.ts              # Entry point - KEEP AS IS
@@ -62,26 +67,31 @@ wa-webhook/
 ```
 
 **Current Flow**:
+
 ```
 WhatsApp → wa-webhook → pipeline → processor → router → handlers
 ```
 
 **Enhancement Plan**:
+
 - Keep existing flow intact
 - Add agent orchestration layer
 - Enhance with memory, tools, monitoring
 - Add streaming support
 
 ### 2. packages/agents/
+
 **Status**: 🟡 PARTIAL - Needs Expansion
 
 **Current**:
+
 - Basic agent definitions (BookingAgent, TriageAgent)
 - Simple tool system
 - Feature flags
 - Observability
 
 **Needs**:
+
 - Memory management
 - Orchestration
 - Streaming support
@@ -89,15 +99,18 @@ WhatsApp → wa-webhook → pipeline → processor → router → handlers
 - Cost tracking
 
 ### 3. services/agent-core/
+
 **Status**: 🟡 INFRASTRUCTURE READY - Needs Logic
 
 **Current**:
+
 - NestJS structure
 - Prisma DB
 - OpenTelemetry
 - Basic endpoints
 
 **Needs**:
+
 - Full agent runtime
 - Conversation management
 - Tool registry
@@ -108,9 +121,11 @@ WhatsApp → wa-webhook → pipeline → processor → router → handlers
 ## Implementation Plan
 
 ### Phase 1: Core AI Package (Week 1)
+
 **Goal**: Create world-class AI foundation
 
 #### Step 1.1: Create `@easymo/ai` Package
+
 ```bash
 packages/ai/
 ├── src/
@@ -145,6 +160,7 @@ packages/ai/
 ```
 
 **Key Features**:
+
 - Full OpenAI Chat Completions API (NOT Assistants API)
 - Function calling for tools
 - Streaming responses
@@ -153,6 +169,7 @@ packages/ai/
 - Error handling
 
 ### Phase 2: Database Schema (Week 1)
+
 **Goal**: Persistent agent state
 
 #### Migration: `20251113_ai_agent_system.sql`
@@ -212,7 +229,7 @@ CREATE TABLE ai_memories (
 );
 
 -- Vector similarity search
-CREATE INDEX ai_memories_embedding_idx ON ai_memories 
+CREATE INDEX ai_memories_embedding_idx ON ai_memories
 USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100);
 
 -- Tool registry
@@ -240,47 +257,37 @@ CREATE TABLE ai_metrics (
 ```
 
 ### Phase 3: Enhanced wa-webhook Integration (Week 2)
+
 **Goal**: Seamless WhatsApp agent interaction
 
 #### 3.1: Add Agent Integration Layer
 
 **File**: `supabase/functions/wa-webhook/_shared/agent-client.ts` (NEW)
+
 ```typescript
-import { OpenAIProvider } from '@easymo/ai';
-import { MemoryManager } from '@easymo/ai';
-import { ToolManager } from '@easymo/ai';
+import { OpenAIProvider } from "@easymo/ai";
+import { MemoryManager } from "@easymo/ai";
+import { ToolManager } from "@easymo/ai";
 
 export class WhatsAppAgentClient {
   private openai: OpenAIProvider;
   private memory: MemoryManager;
   private tools: ToolManager;
 
-  async processMessage(
-    phoneNumber: string,
-    message: string,
-    context: any
-  ): Promise<string> {
+  async processMessage(phoneNumber: string, message: string, context: any): Promise<string> {
     // Get or create conversation
     const conversationId = await this.getConversation(phoneNumber);
-    
+
     // Get agent based on routing logic
     const agent = await this.selectAgent(message, context);
-    
+
     // Process with memory
-    const response = await agent.processMessage(
-      conversationId,
-      message,
-      context
-    );
-    
+    const response = await agent.processMessage(conversationId, message, context);
+
     return response.message.content;
   }
 
-  async streamMessage(
-    phoneNumber: string,
-    message: string,
-    context: any
-  ): AsyncGenerator<string> {
+  async streamMessage(phoneNumber: string, message: string, context: any): AsyncGenerator<string> {
     // Streaming implementation
   }
 }
@@ -289,9 +296,10 @@ export class WhatsAppAgentClient {
 #### 3.2: Enhance Message Router
 
 **File**: `supabase/functions/wa-webhook/router/router.ts` (ENHANCE)
+
 ```typescript
 // Add AI agent routing
-import { WhatsAppAgentClient } from '../_shared/agent-client.ts';
+import { WhatsAppAgentClient } from "../_shared/agent-client.ts";
 
 const agentClient = new WhatsAppAgentClient();
 
@@ -301,7 +309,7 @@ export async function handleMessage(
   state: ChatState
 ): Promise<void> {
   // Existing routing logic KEPT AS IS
-  
+
   // Add AI agent fallback
   if (shouldUseAIAgent(msg, state)) {
     const response = await agentClient.processMessage(
@@ -309,19 +317,21 @@ export async function handleMessage(
       extractMessageText(msg),
       buildContext(state)
     );
-    
+
     await sendWhatsAppMessage(msg.from, response);
     return;
   }
-  
+
   // Existing handlers continue...
 }
 ```
 
 ### Phase 4: Admin Panel (Week 3)
+
 **Goal**: Manage agents via UI
 
 #### Admin Routes (admin-app/app/agents/)
+
 ```
 agents/
 ├── page.tsx                 # Agent list
@@ -334,6 +344,7 @@ agents/
 ```
 
 ### Phase 5: Production Enhancements (Week 4)
+
 - Rate limiting
 - Error handling
 - Monitoring
@@ -345,7 +356,9 @@ agents/
 ## Key Decisions
 
 ### 1. **OpenAI API Choice**
+
 ✅ **Use Chat Completions API** (NOT Assistants API)
+
 - More control
 - Lower latency
 - Better streaming
@@ -353,16 +366,19 @@ agents/
 - Full function calling support
 
 ### 2. **Memory Strategy**
+
 - **Short-term**: Redis (last 50 messages)
 - **Long-term**: Supabase pgvector + OpenAI embeddings
 - **Working**: In-memory cache
 
 ### 3. **Tool System**
+
 - Built-in tools (web search, calculator, DB query)
 - Custom tools (WhatsApp specific)
 - MCP integration (future)
 
 ### 4. **Deployment**
+
 - **wa-webhook**: Supabase Edge Functions (Deno)
 - **agent-core**: Docker container (Node.js/NestJS)
 - **@easymo/ai**: Shared package (used by both)
@@ -371,12 +387,11 @@ agents/
 
 ## Success Criteria
 
-✅ **Week 1**: New AI package + database schema
-✅ **Week 2**: wa-webhook enhanced with agents
-✅ **Week 3**: Admin panel functional
-✅ **Week 4**: Production-ready with monitoring
+✅ **Week 1**: New AI package + database schema ✅ **Week 2**: wa-webhook enhanced with agents ✅
+**Week 3**: Admin panel functional ✅ **Week 4**: Production-ready with monitoring
 
 **Metrics**:
+
 - Response time < 2s (90th percentile)
 - Cost < $0.05 per conversation
 - 99.9% uptime

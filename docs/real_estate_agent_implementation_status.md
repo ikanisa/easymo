@@ -2,14 +2,17 @@
 
 **Generated:** 2025-11-13
 
-This document provides a comprehensive overview of what already exists and what needs to be implemented for the Real Estate AI Agent feature.
+This document provides a comprehensive overview of what already exists and what needs to be
+implemented for the Real Estate AI Agent feature.
 
 ## Phase 0: Discovery - What Already Exists
 
 ### ✅ Database Schema (90% Complete)
 
 **Existing Tables:**
-- ✅ `properties` - Full table with location (PostGIS), rental_type, bedrooms, bathrooms, price, amenities, images, status
+
+- ✅ `properties` - Full table with location (PostGIS), rental_type, bedrooms, bathrooms, price,
+  amenities, images, status
 - ✅ `property_inquiries` - Links users to properties they're interested in
 - ✅ `property_reviews` - Rating system for properties
 - ✅ `agent_sessions` - Tracks all agent interactions (includes property_rental type)
@@ -18,11 +21,13 @@ This document provides a comprehensive overview of what already exists and what 
 - ✅ `agent_metrics` - Analytics for agent performance
 
 **Existing Functions:**
+
 - ✅ `search_nearby_properties()` - PostGIS-based search with filters
 - ✅ RLS policies for security
 - ✅ Proper indexes for performance
 
 **Missing Tables (Need to Add):**
+
 - ❌ `listings` - Enhanced version with more fields (external_ref, source, owner outreach tracking)
 - ❌ `property_requests` - Structured user property requests with preferences
 - ❌ `shortlists` - Top-5 curated property lists with AI rationale
@@ -32,6 +37,7 @@ This document provides a comprehensive overview of what already exists and what 
 ### ✅ WhatsApp Integration (80% Complete)
 
 **Existing Files:**
+
 - ✅ `supabase/functions/wa-webhook/domains/property/rentals.ts` - Full property rental flow
 - ✅ `supabase/functions/wa-webhook/domains/ai-agents/handlers.ts` - AI property rental handler
 - ✅ `supabase/functions/wa-webhook/domains/ai-agents/integration.ts` - Agent routing
@@ -40,6 +46,7 @@ This document provides a comprehensive overview of what already exists and what 
 - ✅ State management for multi-step property flows
 
 **Existing Features:**
+
 - ✅ Property Find flow (rental type → bedrooms → budget → location → AI agent)
 - ✅ Property Add flow (rental type → bedrooms → price → location → save)
 - ✅ Location picker with saved favorites
@@ -48,6 +55,7 @@ This document provides a comprehensive overview of what already exists and what 
 - ✅ AI agent integration via `handleAIPropertyRental()`
 
 **Missing:**
+
 - ❌ Shortlist delivery to WhatsApp users
 - ❌ Owner outreach via WhatsApp templates
 - ❌ Follow-up notification system
@@ -56,6 +64,7 @@ This document provides a comprehensive overview of what already exists and what 
 ### ✅ Edge Functions (60% Complete)
 
 **Existing:**
+
 - ✅ `supabase/functions/agents/property-rental/index.ts` - Basic property search agent
   - Handles find and add property actions
   - Creates agent sessions
@@ -64,6 +73,7 @@ This document provides a comprehensive overview of what already exists and what 
   - Quote generation
 
 **Missing Edge Function Tools:**
+
 - ❌ `tool-search_supabase` - Generic Supabase query tool
 - ❌ `tool-deep_search_market` - External market scraping (Airbnb, Booking.com)
 - ❌ `tool-contact_owner_whatsapp` - WhatsApp template messaging
@@ -76,6 +86,7 @@ This document provides a comprehensive overview of what already exists and what 
 ### ✅ Admin Panel (70% Complete)
 
 **Existing:**
+
 - ✅ `admin-app/app/(panel)/property-rentals/` - Property rentals page
 - ✅ `admin-app/components/property/PropertyRentalsPanel.tsx` - Main panel component
 - ✅ Uses existing marketplace components:
@@ -86,6 +97,7 @@ This document provides a comprehensive overview of what already exists and what 
 - ✅ Integration with agent_sessions and agent_quotes
 
 **Missing:**
+
 - ❌ Dashboard widget for property metrics
 - ❌ Shortlists management view
 - ❌ Listings CRUD interface
@@ -96,6 +108,7 @@ This document provides a comprehensive overview of what already exists and what 
 ### ❌ PWA Frontend (0% Complete - Major Gap)
 
 **Missing Entirely:**
+
 - ❌ Real estate PWA app (separate from waiter-pwa)
 - ❌ Chat interface for property conversations
 - ❌ Shortlist viewing UI
@@ -106,6 +119,7 @@ This document provides a comprehensive overview of what already exists and what 
 - ❌ Deep link handling from WhatsApp
 
 **Existing Reference:**
+
 - ✅ `waiter-pwa/` - Can be used as template/reference
   - Has chat components
   - Has PWA setup
@@ -115,12 +129,14 @@ This document provides a comprehensive overview of what already exists and what 
 ### ✅ OpenAI Agent Configuration (50% Complete)
 
 **Existing:**
+
 - ✅ Agent type `property_rental` registered in system
 - ✅ Basic routing to property rental agent
 - ✅ Session management
 - ✅ Quote generation
 
 **Missing:**
+
 - ❌ Comprehensive system prompt with guardrails
 - ❌ Tool definitions for all required tools
 - ❌ Multi-language prompt templates
@@ -131,11 +147,13 @@ This document provides a comprehensive overview of what already exists and what 
 ### ✅ i18n (60% Complete)
 
 **Existing:**
+
 - ✅ Property rental i18n keys in WhatsApp flows
 - ✅ Multi-language support infrastructure
 - ✅ EN/FR support in waiter-pwa
 
 **Missing:**
+
 - ❌ Complete translations for EN/FR/ES/DE/PT
 - ❌ PWA i18n resource files
 - ❌ Admin panel property-specific translations
@@ -144,37 +162,44 @@ This document provides a comprehensive overview of what already exists and what 
 ## Implementation Priority Ranking
 
 ### Critical Path (Must Have):
+
 1. **Phase 1**: Enhanced database schema (listings, property_requests, shortlists, owner_outreach)
 2. **Phase 2**: Edge function tools (especially shortlist_rank, notify_user, contact_owner_whatsapp)
 3. **Phase 3**: OpenAI agent configuration with proper system prompts and tools
 4. **Phase 4**: PWA frontend (chat, shortlist view, offline support)
 
 ### High Value (Should Have):
+
 5. **Phase 5**: Admin panel enhancements (dashboard widget, shortlist management, owner outreach)
 6. **Phase 6**: Full i18n coverage (all languages)
 
 ### Nice to Have (Could Have):
+
 7. **Phase 7**: Advanced features (OCR, external market search, voice calls)
 
 ## Key Architectural Decisions
 
 ### ✅ Additive Approach
+
 - Existing `properties` table will remain
 - New `listings` table will extend capabilities
 - Both can coexist during migration
 - Existing flows continue to work
 
 ### ✅ Multi-Tenant Support
+
 - RLS policies enforce org_id separation
 - Existing patterns maintained
 
 ### ✅ Security
+
 - No external URLs exposed to users (Airbnb, Booking.com)
 - No payment handling in property agent
 - Webhook signature verification
 - Service role key protected
 
 ### ✅ Observability
+
 - Structured logging with correlation IDs
 - Event counters for metrics
 - PII masking in logs

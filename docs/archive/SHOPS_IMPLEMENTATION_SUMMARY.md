@@ -3,6 +3,7 @@
 ## ✅ WHAT WAS IMPLEMENTED
 
 ### 1. Database Schema (Migration: `20251114113500_create_business_tags_system.sql`)
+
 - ✅ **business_tags** table with 12 predefined categories
 - ✅ **business_tag_assignments** for many-to-many relationships
 - ✅ **get_businesses_by_tag()** RPC function (geospatial search)
@@ -11,6 +12,7 @@
 - ✅ RLS policies for security
 
 ### 2. AI Classification Function (`classify-business-tags/index.ts`)
+
 - ✅ OpenAI gpt-4o-mini integration
 - ✅ Intelligent business categorization
 - ✅ Confidence scoring (0-1)
@@ -18,6 +20,7 @@
 - ✅ Comprehensive logging
 
 ### 3. WhatsApp Flow (`domains/shops/services.ts`)
+
 - ✅ startShopsAndServices() - Entry point
 - ✅ handleShopsBrowseButton() - Show dynamic tags
 - ✅ handleShopsTagSelection() - Tag picker → location request
@@ -25,12 +28,15 @@
 - ✅ handleShopsResultSelection() - Business details
 
 ### 4. Translations
+
 - ✅ English (`en.json`) - 14 new keys
 - ✅ French (`fr.json`) - 14 new keys
 - ✅ Support for dynamic category names
 
 ### 5. Router Integration
+
 **Files to Update:**
+
 1. `router/interactive_list.ts` - MARKETPLACE handler
 2. `router/interactive_button.ts` - shops_browse_tags handler
 3. `router/location.ts` - shops_wait_location handler
@@ -39,26 +45,27 @@
 
 ## 📋 PREDEFINED TAGS (12 Categories)
 
-| Icon | Name | Slug | Description |
-|------|------|------|-------------|
-| 📱 | Electronics | electronics | Phones, computers, gadgets |
-| 🏠 | Household Goods | household_goods | Furniture, kitchenware, decor |
-| 🔧 | Spareparts | spareparts | Auto/moto parts, repairs |
-| 💅 | Salon & Beauty | salon_beauty | Hair, cosmetics, spa |
-| 👔 | Clothing & Fashion | clothing_fashion | Clothes, shoes, boutiques |
-| 🍷 | Liquor Store | liquor_store | Wine, beer, spirits |
-| 🛒 | Mini Markets | mini_markets | Groceries, supermarkets |
-| 🎁 | Boutiques | boutiques | Specialty shops, gifts |
-| 📎 | Office Supplies | office_supplies | Stationery, printing |
-| 🐕 | Pet Supplies | pet_supplies | Pet food, accessories |
-| ⚽ | Sports & Fitness | sports_fitness | Sporting goods, gym |
-| 🏪 | Other Services | other_services | Miscellaneous |
+| Icon | Name               | Slug             | Description                   |
+| ---- | ------------------ | ---------------- | ----------------------------- |
+| 📱   | Electronics        | electronics      | Phones, computers, gadgets    |
+| 🏠   | Household Goods    | household_goods  | Furniture, kitchenware, decor |
+| 🔧   | Spareparts         | spareparts       | Auto/moto parts, repairs      |
+| 💅   | Salon & Beauty     | salon_beauty     | Hair, cosmetics, spa          |
+| 👔   | Clothing & Fashion | clothing_fashion | Clothes, shoes, boutiques     |
+| 🍷   | Liquor Store       | liquor_store     | Wine, beer, spirits           |
+| 🛒   | Mini Markets       | mini_markets     | Groceries, supermarkets       |
+| 🎁   | Boutiques          | boutiques        | Specialty shops, gifts        |
+| 📎   | Office Supplies    | office_supplies  | Stationery, printing          |
+| 🐕   | Pet Supplies       | pet_supplies     | Pet food, accessories         |
+| ⚽   | Sports & Fitness   | sports_fitness   | Sporting goods, gym           |
+| 🏪   | Other Services     | other_services   | Miscellaneous                 |
 
 ---
 
 ## 🚀 DEPLOYMENT STEPS
 
 ### Step 1: Apply Migration
+
 ```bash
 cd /Users/jeanbosco/workspace/easymo-
 export SUPABASE_ACCESS_TOKEN=sbp_64ff5d99515ed7b690b69d60451ece55bc467ae0
@@ -68,6 +75,7 @@ supabase db push --include-all
 ### Step 2: Wire Up Routers
 
 **File: `router/interactive_list.ts`**
+
 ```typescript
 // Replace MARKETPLACE handler (around line 569)
 case IDS.MARKETPLACE: {
@@ -96,18 +104,18 @@ if (id.startsWith("shop_result_") && state.key === "shops_results") {
 ```
 
 **File: `router/interactive_button.ts`**
+
 ```typescript
 // Add to default case before "return false" (around line 236)
 // Check for shops browse button
 if (id === "shops_browse_tags") {
-  const { handleShopsBrowseButton } = await import(
-    "../domains/shops/services.ts"
-  );
+  const { handleShopsBrowseButton } = await import("../domains/shops/services.ts");
   return await handleShopsBrowseButton(ctx);
 }
 ```
 
 **File: `router/location.ts`**
+
 ```typescript
 // Add after quincaillerie handler (around line 80)
 if (state.key === "shops_wait_location") {
@@ -117,6 +125,7 @@ if (state.key === "shops_wait_location") {
 ```
 
 ### Step 3: Deploy Functions
+
 ```bash
 # Deploy AI classifier
 supabase functions deploy classify-business-tags --project-ref lhbowpbcpwoiparwnwgt --no-verify-jwt
@@ -126,6 +135,7 @@ supabase functions deploy wa-webhook --project-ref lhbowpbcpwoiparwnwgt --no-ver
 ```
 
 ### Step 4: Classify Businesses
+
 ```bash
 # Classify 50 businesses
 curl -X POST "https://lhbowpbcpwoiparwnwgt.supabase.co/functions/v1/classify-business-tags" \
@@ -187,6 +197,7 @@ curl -X POST "https://lhbowpbcpwoiparwnwgt.supabase.co/functions/v1/classify-bus
 ## 🤖 AI CLASSIFICATION
 
 ### How It Works
+
 1. Fetches business (name, description, original tag)
 2. Loads all active tags with keywords
 3. Sends to OpenAI gpt-4o-mini with structured prompt
@@ -195,6 +206,7 @@ curl -X POST "https://lhbowpbcpwoiparwnwgt.supabase.co/functions/v1/classify-bus
 6. Logs everything for audit
 
 ### Batch Processing
+
 ```bash
 # Classify next 100 businesses
 for i in {1..2}; do
@@ -211,8 +223,9 @@ done
 ## 📊 MONITORING QUERIES
 
 ### Check Tag Distribution
+
 ```sql
-SELECT 
+SELECT
   bt.name,
   bt.icon,
   COUNT(DISTINCT bta.business_id) as businesses
@@ -224,8 +237,9 @@ ORDER BY businesses DESC;
 ```
 
 ### Classification Success Rate
+
 ```sql
-SELECT 
+SELECT
   COUNT(*) FILTER (WHERE success = true) * 100.0 / COUNT(*) as success_rate_pct,
   AVG(processing_time_ms) as avg_time_ms,
   COUNT(*) as total_classifications
@@ -233,8 +247,9 @@ FROM business_tag_classification_logs;
 ```
 
 ### Low Confidence Assignments (Need Review)
+
 ```sql
-SELECT 
+SELECT
   b.name,
   bt.name as tag,
   bta.confidence_score,
@@ -266,11 +281,13 @@ LIMIT 20;
 ## 🎯 WHAT CHANGED
 
 ### Before
+
 - "Shops & Services" showed: Pharmacies, Quincailleries, Bars
 - These were duplicates of home menu items
 - Not useful for finding general retail shops
 
 ### After
+
 - "Shops & Services" shows: Electronics, Household Goods, Clothing, etc.
 - Exclusive retail categories not on home menu
 - AI classifies 441 businesses intelligently
@@ -301,4 +318,3 @@ LIMIT 20;
 6. Test user flow end-to-end
 
 **Estimated Time:** 30-45 minutes for full deployment + classification
-

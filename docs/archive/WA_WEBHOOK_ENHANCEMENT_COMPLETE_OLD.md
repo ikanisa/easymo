@@ -11,7 +11,9 @@
 ### 1. Enhanced Security Components
 
 #### ✅ Webhook Verification (`shared/webhook-verification.ts`)
+
 **Features**:
+
 - SHA-256 HMAC signature verification
 - Timing-safe string comparison (prevents timing attacks)
 - Signature result caching (1-minute TTL)
@@ -19,6 +21,7 @@
 - Automatic cache cleanup
 
 **Usage**:
+
 ```typescript
 import { WebhookVerifier } from "./shared/webhook-verification.ts";
 
@@ -32,6 +35,7 @@ const response = verifier.handleVerificationChallenge(mode, token, challenge);
 ```
 
 **Benefits**:
+
 - ✅ Prevents unauthorized webhook calls
 - ✅ Caching reduces verification overhead by 90%
 - ✅ Timing-safe comparison prevents side-channel attacks
@@ -41,8 +45,10 @@ const response = verifier.handleVerificationChallenge(mode, token, challenge);
 
 ### 2. Advanced Rate Limiting (`shared/rate-limiter.ts`)
 
-####  ✅ Multi-Tier Rate Limiter
+#### ✅ Multi-Tier Rate Limiter
+
 **Features**:
+
 - Per-user rate limiting (100 requests/minute default)
 - Violation tracking with blacklist
 - Automatic blacklisting after 10 violations
@@ -51,13 +57,14 @@ const response = verifier.handleVerificationChallenge(mode, token, challenge);
 - Health monitoring
 
 **Usage**:
+
 ```typescript
 import { RateLimiter } from "./shared/rate-limiter.ts";
 
 const rateLimiter = new RateLimiter({
-  windowMs: 60000,      // 1 minute window
-  maxRequests: 100,     // 100 requests per window
-  keyPrefix: "wa-webhook"
+  windowMs: 60000, // 1 minute window
+  maxRequests: 100, // 100 requests per window
+  keyPrefix: "wa-webhook",
 });
 
 const result = await rateLimiter.checkLimit(phoneNumber, correlationId);
@@ -66,12 +73,13 @@ if (!result.allowed) {
   // Return 429 Too Many Requests
   return new Response("Rate limit exceeded", {
     status: 429,
-    headers: { "Retry-After": result.retryAfter.toString() }
+    headers: { "Retry-After": result.retryAfter.toString() },
   });
 }
 ```
 
 **Protection Levels**:
+
 1. **Normal**: 100 requests/minute per user
 2. **Warning**: Logs violations
 3. **Blacklist**: After 10 violations, 1-hour block
@@ -82,7 +90,9 @@ if (!result.allowed) {
 ### 3. High-Performance Caching (`shared/cache.ts`)
 
 #### ✅ In-Memory LRU Cache
+
 **Features**:
+
 - TTL-based expiration
 - LRU (Least Recently Used) eviction
 - Hit/miss tracking
@@ -91,13 +101,14 @@ if (!result.allowed) {
 - Get-or-set pattern support
 
 **Usage**:
+
 ```typescript
 import { CacheManager } from "./shared/cache.ts";
 
 const cache = new CacheManager({
-  defaultTTL: 300,      // 5 minutes
-  maxSize: 1000,        // Max 1000 entries
-  checkPeriod: 600      // Cleanup every 10 minutes
+  defaultTTL: 300, // 5 minutes
+  maxSize: 1000, // Max 1000 entries
+  checkPeriod: 600, // Cleanup every 10 minutes
 });
 
 // Simple get/set
@@ -111,11 +122,12 @@ const profile = await cache.getOrSet(
     // Expensive operation - only runs on cache miss
     return await fetchUserProfile(userId);
   },
-  600  // Cache for 10 minutes
+  600 // Cache for 10 minutes
 );
 ```
 
 **Performance Impact**:
+
 - ✅ 95%+ cache hit rate for user profiles
 - ✅ Sub-millisecond retrieval
 - ✅ Reduces database load by 80%
@@ -126,7 +138,9 @@ const profile = await cache.getOrSet(
 ### 4. Comprehensive Error Handler (`shared/error-handler.ts`)
 
 #### ✅ Production-Grade Error Management
+
 **Features**:
+
 - Categorized error codes (11 types)
 - User-friendly error messages
 - Automatic user notification via WhatsApp
@@ -135,6 +149,7 @@ const profile = await cache.getOrSet(
 - Correlation ID tracking
 
 **Error Categories**:
+
 ```typescript
 enum ErrorCode {
   VALIDATION_ERROR          // 400 - Invalid input
@@ -152,6 +167,7 @@ enum ErrorCode {
 ```
 
 **Usage**:
+
 ```typescript
 import { ErrorHandler, WebhookError, ErrorCode } from "./shared/error-handler.ts";
 
@@ -166,7 +182,7 @@ try {
     phoneNumber: user.phone,
     userId: user.id,
     operation: "processMessage",
-    duration: Date.now() - startTime
+    duration: Date.now() - startTime,
   });
   return response;
 }
@@ -177,11 +193,12 @@ throw new WebhookError(
   ErrorCode.RATE_LIMIT_ERROR,
   429,
   { retryAfter: 60 },
-  false  // not retryable
+  false // not retryable
 );
 ```
 
 **User Experience**:
+
 - Users receive clear, actionable error messages
 - Correlation IDs for support tickets
 - Automatic retry guidance for transient errors
@@ -192,45 +209,48 @@ throw new WebhookError(
 ### 5. Enhanced Configuration (`config.ts`)
 
 #### ✅ Feature Flags & Configuration Management
+
 **New Configuration**:
+
 ```typescript
 export const webhookConfig = {
   rateLimit: {
     enabled: true,
     windowMs: 60000,
     maxRequests: 100,
-    keyPrefix: "wa-webhook"
+    keyPrefix: "wa-webhook",
   },
   cache: {
     enabled: true,
     defaultTTL: 300,
     maxSize: 1000,
-    checkPeriod: 600
+    checkPeriod: 600,
   },
   aiAgents: {
-    enabled: false,  // Toggle AI agents
+    enabled: false, // Toggle AI agents
     redisUrl: "redis://localhost:6379",
     defaultModel: "gpt-4o-mini",
     maxTokens: 1000,
-    temperature: 0.7
+    temperature: 0.7,
   },
   monitoring: {
     enabled: true,
     logLevel: "info",
-    sentryDsn: ""
+    sentryDsn: "",
   },
   error: {
     notifyUser: true,
-    includeStack: false,  // Only in development
-    maxRetries: 3
+    includeStack: false, // Only in development
+    maxRetries: 3,
   },
   verification: {
-    enabled: true  // Signature verification
-  }
+    enabled: true, // Signature verification
+  },
 };
 ```
 
 **Environment Variables**:
+
 ```bash
 # Rate Limiting
 ENABLE_RATE_LIMITING=true
@@ -263,6 +283,7 @@ ENVIRONMENT=production
 ## Integration Architecture
 
 ### Current Flow
+
 ```
 WhatsApp → Webhook → Pipeline → Processor → Router → Handlers
                                                          ↓
@@ -270,6 +291,7 @@ WhatsApp → Webhook → Pipeline → Processor → Router → Handlers
 ```
 
 ### Enhanced Flow (Implemented Components)
+
 ```
 WhatsApp → Webhook → [Verification] → [Rate Limit] → Pipeline
                          ↓                  ↓
@@ -279,6 +301,7 @@ WhatsApp → Webhook → [Verification] → [Rate Limit] → Pipeline
 ```
 
 ### Phase 2 Flow (To Be Integrated)
+
 ```
 WhatsApp → Webhook → [Security Layer] → [AI Router] → Specialized Agents
                                             ↓              ↓
@@ -294,6 +317,7 @@ WhatsApp → Webhook → [Security Layer] → [AI Router] → Specialized Agents
 ### Next Steps for Integration
 
 #### 1. Integrate with Pipeline (`router/pipeline.ts`)
+
 ```typescript
 // Add to processWebhookRequest
 import { WebhookVerifier } from "../shared/webhook-verification.ts";
@@ -307,11 +331,7 @@ const rateLimiter = new RateLimiter(webhookConfig.rateLimit);
 if (webhookConfig.verification.enabled) {
   const isValid = verifier.verifySignature(body, signature, correlationId);
   if (!isValid) {
-    throw new WebhookError(
-      "Invalid signature",
-      ErrorCode.WEBHOOK_VERIFICATION_ERROR,
-      403
-    );
+    throw new WebhookError("Invalid signature", ErrorCode.WEBHOOK_VERIFICATION_ERROR, 403);
   }
 }
 
@@ -319,17 +339,15 @@ if (webhookConfig.verification.enabled) {
 if (webhookConfig.rateLimit.enabled) {
   const rateLimitResult = await rateLimiter.checkLimit(phoneNumber, correlationId);
   if (!rateLimitResult.allowed) {
-    throw new WebhookError(
-      "Rate limit exceeded",
-      ErrorCode.RATE_LIMIT_ERROR,
-      429,
-      { retryAfter: rateLimitResult.retryAfter }
-    );
+    throw new WebhookError("Rate limit exceeded", ErrorCode.RATE_LIMIT_ERROR, 429, {
+      retryAfter: rateLimitResult.retryAfter,
+    });
   }
 }
 ```
 
 #### 2. Integrate with Processor (`router/processor.ts`)
+
 ```typescript
 import { CacheManager } from "../shared/cache.ts";
 import { ErrorHandler } from "../shared/error-handler.ts";
@@ -351,13 +369,15 @@ try {
   return await errorHandler.handle(error, {
     correlationId,
     phoneNumber: msg.from,
-    duration: Date.now() - messageStart
+    duration: Date.now() - messageStart,
   });
 }
 ```
 
 #### 3. AI Agent Router (New File)
+
 Create `router/ai_agent.ts`:
+
 ```typescript
 import { AgentOrchestrator } from "@easymo/ai";
 import { webhookConfig } from "../config.ts";
@@ -412,20 +432,21 @@ export async function handleAIAgentMessage(
 
 ### Expected Improvements
 
-| Metric | Before | After | Improvement |
-|--------|--------|-------|-------------|
-| **Security** | Basic | HMAC + Timing-Safe | +99% attack prevention |
-| **Abuse Protection** | None | Rate limiting + Blacklist | +100% |
-| **Cache Hit Rate** | 0% | 95% | -80% DB load |
-| **Error Handling** | Generic | Categorized + User notify | +200% UX |
-| **Response Time** | Varies | Consistent | -50% p95 latency |
-| **Monitoring** | Basic logs | Structured events | +300% observability |
+| Metric               | Before     | After                     | Improvement            |
+| -------------------- | ---------- | ------------------------- | ---------------------- |
+| **Security**         | Basic      | HMAC + Timing-Safe        | +99% attack prevention |
+| **Abuse Protection** | None       | Rate limiting + Blacklist | +100%                  |
+| **Cache Hit Rate**   | 0%         | 95%                       | -80% DB load           |
+| **Error Handling**   | Generic    | Categorized + User notify | +200% UX               |
+| **Response Time**    | Varies     | Consistent                | -50% p95 latency       |
+| **Monitoring**       | Basic logs | Structured events         | +300% observability    |
 
 ---
 
 ## Security Enhancements
 
 ### ✅ Implemented
+
 1. **Webhook Signature Verification**
    - HMAC SHA-256 validation
    - Timing-safe comparison
@@ -442,6 +463,7 @@ export async function handleAIAgentMessage(
    - Correlation IDs for debugging
 
 ### 🔜 Recommended (Phase 2)
+
 4. **Request Validation**
    - JSON schema validation
    - Input sanitization
@@ -461,12 +483,14 @@ export async function handleAIAgentMessage(
 ## Cost Optimization
 
 ### Caching Strategy
+
 - User profiles: 5 minutes TTL
 - Business data: 10 minutes TTL
 - Static content: 1 hour TTL
 - **Expected Savings**: 80% reduction in database queries
 
 ### AI Agent Costs (Phase 2)
+
 - Use gpt-4o-mini for triage (10x cheaper)
 - Cache common responses
 - Implement token limits
@@ -477,6 +501,7 @@ export async function handleAIAgentMessage(
 ## Monitoring & Observability
 
 ### Structured Events Logged
+
 ```typescript
 // All components emit structured events:
 - SIGNATURE_VALID / SIGNATURE_MISMATCH
@@ -487,16 +512,18 @@ export async function handleAIAgentMessage(
 ```
 
 ### Metrics Tracked
+
 ```typescript
-- wa_webhook_request_ms
-- wa_message_processed
-- wa_message_failed
-- rate_limit_violations
-- cache_hit_rate
-- error_count_by_code
+-wa_webhook_request_ms -
+  wa_message_processed -
+  wa_message_failed -
+  rate_limit_violations -
+  cache_hit_rate -
+  error_count_by_code;
 ```
 
 ### Health Checks
+
 ```typescript
 // Each component provides health status:
 - Rate Limiter: buckets.size < 10000
@@ -509,6 +536,7 @@ export async function handleAIAgentMessage(
 ## Testing Recommendations
 
 ### Unit Tests Needed
+
 ```bash
 supabase/functions/wa-webhook/shared/
 ├── webhook-verification.test.ts  # Signature verification
@@ -518,6 +546,7 @@ supabase/functions/wa-webhook/shared/
 ```
 
 ### Integration Tests
+
 ```bash
 tests/integration/
 ├── webhook-security.test.ts      # End-to-end security
@@ -526,6 +555,7 @@ tests/integration/
 ```
 
 ### Load Tests
+
 ```bash
 # Test rate limiting under load
 k6 run tests/load/rate-limit.js
@@ -542,6 +572,7 @@ k6 run tests/load/error-scenarios.js
 ## Deployment Checklist
 
 ### Environment Variables
+
 ```bash
 # ✅ Verify all env vars set
 - [x] WA_APP_SECRET
@@ -555,12 +586,14 @@ k6 run tests/load/error-scenarios.js
 ```
 
 ### Database Migrations
+
 ```sql
 -- None required for Phase 1 (in-memory components)
 -- Phase 2 will require AI agent tables
 ```
 
 ### Monitoring Setup
+
 ```bash
 # ✅ Configure monitoring
 - [x] Structured logging enabled
@@ -570,6 +603,7 @@ k6 run tests/load/error-scenarios.js
 ```
 
 ### Rollout Plan
+
 1. **Deploy to staging**
    - Test all security features
    - Verify rate limiting
@@ -590,6 +624,7 @@ k6 run tests/load/error-scenarios.js
 ## Phase 2: AI Agent Integration
 
 ### Ready for Next Phase
+
 With these enhancements in place, we're ready to integrate AI agents:
 
 1. **AI Router** - Route messages to appropriate agents
@@ -600,6 +635,7 @@ With these enhancements in place, we're ready to integrate AI agents:
 6. **Streaming Responses** - Real-time AI responses
 
 ### Prerequisites
+
 - ✅ Enhanced webhook security
 - ✅ Rate limiting
 - ✅ Error handling
@@ -614,6 +650,7 @@ With these enhancements in place, we're ready to integrate AI agents:
 ## Documentation Updates
 
 ### New Files Created
+
 1. `shared/webhook-verification.ts` - Security verification
 2. `shared/rate-limiter.ts` - Rate limiting
 3. `shared/cache.ts` - Caching layer
@@ -621,6 +658,7 @@ With these enhancements in place, we're ready to integrate AI agents:
 5. `config.ts` - Enhanced (added webhookConfig)
 
 ### Files to Update (Phase 2)
+
 1. `router/pipeline.ts` - Add security checks
 2. `router/processor.ts` - Add cache & error handling
 3. `router/router.ts` - Add AI agent routing
@@ -631,17 +669,20 @@ With these enhancements in place, we're ready to integrate AI agents:
 ## Compliance with GROUND_RULES.md
 
 ### ✅ Observability
+
 - All components emit structured events
 - Correlation IDs tracked throughout
 - Metrics recorded for monitoring
 
 ### ✅ Security
+
 - No secrets in code
 - Webhook signature verification
 - Rate limiting with blacklisting
 - Error masking in production
 
 ### ✅ Feature Flags
+
 - `ENABLE_RATE_LIMITING`
 - `ENABLE_CACHING`
 - `ENABLE_AI_AGENTS` (Phase 2)
@@ -652,6 +693,7 @@ With these enhancements in place, we're ready to integrate AI agents:
 ## Success Criteria
 
 ### Phase 1 (Current) - Complete ✅
+
 - [x] Enhanced security components
 - [x] Rate limiting implemented
 - [x] Caching layer ready
@@ -660,6 +702,7 @@ With these enhancements in place, we're ready to integrate AI agents:
 - [x] Monitoring hooks in place
 
 ### Phase 2 (Next) - AI Integration
+
 - [ ] AI orchestrator integrated
 - [ ] Specialized agents implemented
 - [ ] Database schema deployed
@@ -672,25 +715,21 @@ With these enhancements in place, we're ready to integrate AI agents:
 ## Next Actions
 
 **Immediate (This Week)**:
+
 1. Review this implementation
 2. Test security components
 3. Set environment variables
 4. Deploy to staging
 
-**Short Term (Next Week)**:
-5. Integrate with pipeline
-6. Add AI database schema
-7. Connect Redis
-8. Build AI router
+**Short Term (Next Week)**: 5. Integrate with pipeline 6. Add AI database schema 7. Connect Redis 8.
+Build AI router
 
-**Medium Term (2 Weeks)**:
-9. Implement specialized agents
-10. End-to-end testing
-11. Production deployment
-12. Monitor and optimize
+**Medium Term (2 Weeks)**: 9. Implement specialized agents 10. End-to-end testing 11. Production
+deployment 12. Monitor and optimize
 
 ---
 
 **Status**: Phase 1 complete! Ready for integration and Phase 2 AI agents. 🚀
 
-All components are production-ready, well-tested patterns, and follow GROUND_RULES.md. The foundation is solid for world-class AI agent integration.
+All components are production-ready, well-tested patterns, and follow GROUND_RULES.md. The
+foundation is solid for world-class AI agent integration.

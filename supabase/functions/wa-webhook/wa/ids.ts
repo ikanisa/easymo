@@ -47,6 +47,7 @@ export const IDS = {
   PROFILE_PROPERTIES: "profile_properties",
   PROFILE_TOKENS: "profile_tokens",
   PROFILE_SETTINGS: "profile_settings",
+  PROFILE_VIEW: "profile_view",
   PROFILE_ADD_VEHICLE: "profile_add_vehicle",
   PROFILE_MANAGE_BUSINESSES: "profile_manage_businesses",
   PROFILE_ADD_BUSINESS: "profile_add_business",

@@ -96,6 +96,7 @@ import {
 import {
   homeOnly,
   sendButtonsMessage,
+  sendListMessage,
   buildButtons,
 } from "../utils/reply.ts";
 import { handleAdminBack } from "../flows/admin/navigation.ts";
@@ -579,12 +580,64 @@ async function handleHomeMenuSelection(
       const { startPropertyRentals } = await import("../domains/property/rentals.ts");
       return await startPropertyRentals(ctx);
     }
+    case IDS.PROFILE_VIEW: {
+      // Show user profile information
+      if (!ctx.profileId) {
+        await sendButtonsMessage(ctx, "Profile not found. Please register first.", homeOnly());
+        return true;
+      }
+      
+      const { data: profile } = await ctx.supabase
+        .from("profiles")
+        .select("full_name, wa_id, created_at, country_code")
+        .eq("id", ctx.profileId)
+        .single();
+      
+      if (!profile) {
+        await sendButtonsMessage(ctx, "Profile not found.", homeOnly());
+        return true;
+      }
+      
+      const profileInfo = `👤 *Your Profile*\n\n` +
+        `Name: ${profile.full_name || 'Not set'}\n` +
+        `WhatsApp: ${profile.wa_id}\n` +
+        `Country: ${profile.country_code || 'RW'}\n` +
+        `Member since: ${new Date(profile.created_at).toLocaleDateString()}`;
+      
+      await sendButtonsMessage(ctx, profileInfo, homeOnly());
+      return true;
+    }
     case IDS.PROFILE_SETTINGS: {
       // TODO: Implement settings menu (language, notifications, etc.)
       await sendButtonsMessage(
         ctx,
         "Settings menu coming soon!",
         homeOnly()
+      );
+      return true;
+    }
+    case "saved_locations": {
+      // Show saved locations (redirect to saved places)
+      const { startSavedPlaces } = await import("../domains/locations/manage.ts");
+      return await startSavedPlaces(ctx);
+    }
+    case "change_language": {
+      // Language selection menu
+      await sendListMessage(
+        ctx,
+        {
+          title: "Change Language",
+          body: "Select your preferred language:",
+          sectionTitle: "Available Languages",
+          rows: [
+            { id: "lang_en", title: "🇬🇧 English", description: "English" },
+            { id: "lang_fr", title: "🇫🇷 Français", description: "French" },
+            { id: "lang_rw", title: "🇷🇼 Kinyarwanda", description: "Kinyarwanda" },
+            { id: IDS.BACK_MENU, title: "Back to Menu", description: "Return to previous menu" },
+          ],
+          buttonText: "Select",
+        },
+        { emoji: "🌍" }
       );
       return true;
     }
@@ -632,6 +685,38 @@ async function handleHomeMenuSelection(
         t(ctx.locale, "support.contact_info"),
         homeOnly(),
         { emoji: "💬" }
+      );
+      return true;
+    }
+    case "lang_en":
+    case "lang_fr":
+    case "lang_rw": {
+      // Update user language preference
+      const langMap: Record<string, string> = {
+        "lang_en": "en",
+        "lang_fr": "fr",
+        "lang_rw": "rw",
+      };
+      const newLang = langMap[id] || "en";
+      
+      if (ctx.profileId) {
+        await ctx.supabase
+          .from("profiles")
+          .update({ preferred_language: newLang })
+          .eq("id", ctx.profileId);
+      }
+      
+      const confirmMsg: Record<string, string> = {
+        "en": "✅ Language changed to English",
+        "fr": "✅ Langue changée en Français",
+        "rw": "✅ Ururimi rwahinduwe ku Kinyarwanda",
+      };
+      
+      await sendButtonsMessage(
+        ctx,
+        confirmMsg[newLang] || confirmMsg["en"],
+        homeOnly(),
+        { emoji: "🌍" }
       );
       return true;
     }

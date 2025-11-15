@@ -9,7 +9,8 @@
 
 ## Overview
 
-This document provides the step-by-step implementation plan to transform the current fragmented AI agent system into a **world-class, production-ready, WhatsApp-integrated agent platform**.
+This document provides the step-by-step implementation plan to transform the current fragmented AI
+agent system into a **world-class, production-ready, WhatsApp-integrated agent platform**.
 
 **Timeline**: 6-8 weeks  
 **Priority**: CRITICAL  
@@ -20,7 +21,7 @@ This document provides the step-by-step implementation plan to transform the cur
 ## Guiding Principles
 
 1. **WhatsApp-First**: All agents must work seamlessly via WhatsApp
-2. **Production Safety**: No breaking changes to existing functionality  
+2. **Production Safety**: No breaking changes to existing functionality
 3. **Incremental Delivery**: Ship working features every week
 4. **Cost-Conscious**: Optimize for OpenAI API costs
 5. **Maintainable**: Clear architecture, well-documented
@@ -40,6 +41,7 @@ This document provides the step-by-step implementation plan to transform the cur
 1. **Create migration file**: `supabase/migrations/YYYYMMDD_ai_agent_system.sql`
 
 2. **Tables to create**:
+
    ```sql
    -- Core agent configuration
    CREATE TABLE ai_agents (
@@ -143,13 +145,14 @@ This document provides the step-by-step implementation plan to transform the cur
    CREATE INDEX idx_messages_created ON ai_messages(created_at DESC);
    CREATE INDEX idx_tool_execs_conversation ON ai_tool_executions(conversation_id);
    CREATE INDEX idx_embeddings_conversation ON ai_embeddings(conversation_id);
-   
+
    -- Vector similarity search index
-   CREATE INDEX idx_embeddings_vector ON ai_embeddings 
+   CREATE INDEX idx_embeddings_vector ON ai_embeddings
    USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100);
    ```
 
 3. **Helper functions**:
+
    ```sql
    -- Match embeddings by similarity
    CREATE OR REPLACE FUNCTION match_ai_embeddings(
@@ -202,9 +205,9 @@ This document provides the step-by-step implementation plan to transform the cur
 
 ```typescript
 // packages/ai/src/core/orchestrator.ts
-import OpenAI from 'openai';
-import { Redis } from 'ioredis';
-import { createClient } from '@supabase/supabase-js';
+import OpenAI from "openai";
+import { Redis } from "ioredis";
+import { createClient } from "@supabase/supabase-js";
 
 export class AgentOrchestrator {
   private openai: OpenAI;
@@ -229,20 +232,20 @@ export class AgentOrchestrator {
   }): Promise<AgentResponse> {
     // 1. Get or create conversation
     const conversation = await this.getOrCreateConversation(params);
-    
+
     // 2. Classify intent if new conversation
     if (!conversation.agent_id) {
       const agent = await this.classifyIntent(params.message);
       conversation.agent_id = agent.id;
       await this.updateConversation(conversation);
     }
-    
+
     // 3. Load agent configuration
     const agent = await this.loadAgent(conversation.agent_id);
-    
+
     // 4. Retrieve relevant memory
     const memory = await this.retrieveMemory(conversation.id, params.message);
-    
+
     // 5. Execute agent
     const response = await this.executeAgent(agent, {
       conversation,
@@ -250,13 +253,13 @@ export class AgentOrchestrator {
       memory,
       context: params.context,
     });
-    
+
     // 6. Save to memory
     await this.saveToMemory(conversation, params.message, response);
-    
+
     // 7. Track metrics
     await this.trackMetrics(conversation, response);
-    
+
     return response;
   }
 
@@ -277,42 +280,39 @@ export class AgentOrchestrator {
   private async classifyIntent(message: string): Promise<AgentConfig> {
     // Use GPT-4o-mini for fast, cheap classification
     const response = await this.openai.chat.completions.create({
-      model: 'gpt-4o-mini',
+      model: "gpt-4o-mini",
       messages: [
         {
-          role: 'system',
+          role: "system",
           content: `Classify this message into one of: 
             booking, payment, support, driver, shop, property, general`,
         },
-        { role: 'user', content: message },
+        { role: "user", content: message },
       ],
       temperature: 0.3,
       max_tokens: 50,
     });
 
-    const agentType = response.choices[0].message.content?.trim() || 'general';
+    const agentType = response.choices[0].message.content?.trim() || "general";
     return await this.loadAgentByType(agentType);
   }
 
   /**
    * Execute agent with tools
    */
-  private async executeAgent(
-    agent: AgentConfig,
-    params: ExecutionParams
-  ): Promise<AgentResponse> {
+  private async executeAgent(agent: AgentConfig, params: ExecutionParams): Promise<AgentResponse> {
     // Build messages array
     const messages = await this.buildMessages(params);
-    
+
     // Get available tools
     const tools = await this.loadTools(agent.tools);
-    
+
     // Execute with function calling
     const response = await this.openai.chat.completions.create({
       model: agent.model,
       messages,
-      tools: tools.map(t => ({
-        type: 'function',
+      tools: tools.map((t) => ({
+        type: "function",
         function: {
           name: t.name,
           description: t.description,
@@ -325,15 +325,11 @@ export class AgentOrchestrator {
 
     // Handle tool calls if present
     if (response.choices[0].message.tool_calls) {
-      return await this.handleToolCalls(
-        response.choices[0].message,
-        tools,
-        params
-      );
+      return await this.handleToolCalls(response.choices[0].message, tools, params);
     }
 
     return {
-      message: response.choices[0].message.content || '',
+      message: response.choices[0].message.content || "",
       usage: response.usage,
     };
   }
@@ -349,15 +345,15 @@ export class AgentOrchestrator {
     // Execute each tool
     const toolResults = await Promise.all(
       message.tool_calls.map(async (tc: any) => {
-        const tool = tools.find(t => t.name === tc.function.name);
+        const tool = tools.find((t) => t.name === tc.function.name);
         if (!tool) throw new Error(`Tool not found: ${tc.function.name}`);
-        
+
         const args = JSON.parse(tc.function.arguments);
         const result = await tool.execute(args, params.context);
-        
+
         // Log execution
         await this.logToolExecution(tc, result, params.conversation.id);
-        
+
         return { id: tc.id, result };
       })
     );
@@ -369,18 +365,15 @@ export class AgentOrchestrator {
   /**
    * Retrieve relevant memory using embeddings
    */
-  private async retrieveMemory(
-    conversationId: string,
-    query: string
-  ): Promise<string[]> {
+  private async retrieveMemory(conversationId: string, query: string): Promise<string[]> {
     // Generate embedding for query
     const embedding = await this.openai.embeddings.create({
-      model: 'text-embedding-3-small',
+      model: "text-embedding-3-small",
       input: query,
     });
 
     // Search similar embeddings
-    const { data } = await this.supabase.rpc('match_ai_embeddings', {
+    const { data } = await this.supabase.rpc("match_ai_embeddings", {
       query_embedding: embedding.data[0].embedding,
       match_count: 5,
       match_threshold: 0.7,
@@ -400,19 +393,19 @@ export class AgentOrchestrator {
     // Save to short-term (Redis)
     await this.redis.lpush(
       `conversation:${conversation.id}:messages`,
-      JSON.stringify({ role: 'user', content: userMessage }),
-      JSON.stringify({ role: 'assistant', content: response.message })
+      JSON.stringify({ role: "user", content: userMessage }),
+      JSON.stringify({ role: "assistant", content: response.message })
     );
     await this.redis.expire(`conversation:${conversation.id}:messages`, 86400 * 30); // 30 days
 
     // Save to long-term (embeddings) if important
     if (await this.isImportant(userMessage, response.message)) {
       const embedding = await this.openai.embeddings.create({
-        model: 'text-embedding-3-small',
+        model: "text-embedding-3-small",
         input: `User: ${userMessage}\nAssistant: ${response.message}`,
       });
 
-      await this.supabase.from('ai_embeddings').insert({
+      await this.supabase.from("ai_embeddings").insert({
         conversation_id: conversation.id,
         content: `User: ${userMessage}\nAssistant: ${response.message}`,
         embedding: embedding.data[0].embedding,
@@ -423,6 +416,7 @@ export class AgentOrchestrator {
 ```
 
 **Deliverable**: Working orchestrator that can:
+
 - ✅ Route messages to appropriate agents
 - ✅ Execute agents with tools
 - ✅ Remember conversations
@@ -442,9 +436,9 @@ export class AgentOrchestrator {
 
 ```typescript
 // supabase/functions/wa-webhook/domains/ai-agents/orchestrator-integration.ts
-import { AgentOrchestrator } from '@easymo/ai';
-import type { RouterContext } from '../../types.ts';
-import { sendText } from '../../wa/client.ts';
+import { AgentOrchestrator } from "@easymo/ai";
+import type { RouterContext } from "../../types.ts";
+import { sendText } from "../../wa/client.ts";
 
 // Initialize orchestrator (singleton)
 let orchestrator: AgentOrchestrator | null = null;
@@ -452,10 +446,10 @@ let orchestrator: AgentOrchestrator | null = null;
 function getOrchestrator(): AgentOrchestrator {
   if (!orchestrator) {
     orchestrator = new AgentOrchestrator({
-      openaiKey: Deno.env.get('OPENAI_API_KEY')!,
-      redisUrl: Deno.env.get('REDIS_URL')!,
-      supabaseUrl: Deno.env.get('SUPABASE_URL')!,
-      supabaseKey: Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+      openaiKey: Deno.env.get("OPENAI_API_KEY")!,
+      redisUrl: Deno.env.get("REDIS_URL")!,
+      supabaseUrl: Deno.env.get("SUPABASE_URL")!,
+      supabaseKey: Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     });
   }
   return orchestrator;
@@ -464,19 +458,16 @@ function getOrchestrator(): AgentOrchestrator {
 /**
  * Handle AI agent message from WhatsApp
  */
-export async function handleAIAgentMessage(
-  ctx: RouterContext,
-  message: string
-): Promise<boolean> {
+export async function handleAIAgentMessage(ctx: RouterContext, message: string): Promise<boolean> {
   try {
     const orchestrator = getOrchestrator();
-    
+
     // Check if user has active AI conversation
     const conversationId = await getActiveConversation(ctx.from);
-    
+
     // Send typing indicator
     await sendTypingIndicator(ctx.from);
-    
+
     // Process with streaming
     const stream = orchestrator.streamMessage({
       userId: ctx.from,
@@ -484,14 +475,14 @@ export async function handleAIAgentMessage(
       conversationId,
     });
 
-    let fullResponse = '';
+    let fullResponse = "";
     for await (const chunk of stream) {
       fullResponse += chunk;
-      
+
       // Send chunks every 50 characters or sentence boundary
-      if (fullResponse.length > 50 || chunk.includes('.') || chunk.includes('?')) {
+      if (fullResponse.length > 50 || chunk.includes(".") || chunk.includes("?")) {
         await sendText(ctx.from, fullResponse);
-        fullResponse = '';
+        fullResponse = "";
       }
     }
 
@@ -502,7 +493,7 @@ export async function handleAIAgentMessage(
 
     return true;
   } catch (error) {
-    console.error('AI agent error:', error);
+    console.error("AI agent error:", error);
     await sendText(
       ctx.from,
       '❌ Sorry, I encountered an error. Please try again or type "help" for support.'
@@ -514,38 +505,33 @@ export async function handleAIAgentMessage(
 /**
  * Start new AI conversation
  */
-export async function startAIConversation(
-  ctx: RouterContext,
-  agentType?: string
-): Promise<void> {
+export async function startAIConversation(ctx: RouterContext, agentType?: string): Promise<void> {
   const orchestrator = getOrchestrator();
-  
+
   // Create conversation
   const conversation = await orchestrator.createConversation({
     userId: ctx.from,
-    agentType: agentType || 'triage',
-    channel: 'whatsapp',
+    agentType: agentType || "triage",
+    channel: "whatsapp",
   });
 
   // Store in session
-  await ctx.supabase
-    .from('wa_sessions')
-    .upsert({
-      phone_number: ctx.from,
-      ai_conversation_id: conversation.id,
-      updated_at: new Date().toISOString(),
-    });
+  await ctx.supabase.from("wa_sessions").upsert({
+    phone_number: ctx.from,
+    ai_conversation_id: conversation.id,
+    updated_at: new Date().toISOString(),
+  });
 
   // Send welcome message
   await sendText(
     ctx.from,
     `👋 Hi! I'm your EasyMO assistant. How can I help you today?\n\n` +
-    `I can help with:\n` +
-    `• Booking bar-truck slots\n` +
-    `• Checking your balance\n` +
-    `• Making payments\n` +
-    `• General questions\n\n` +
-    `Just send me a message!`
+      `I can help with:\n` +
+      `• Booking bar-truck slots\n` +
+      `• Checking your balance\n` +
+      `• Making payments\n` +
+      `• General questions\n\n` +
+      `Just send me a message!`
   );
 }
 ```
@@ -553,6 +539,7 @@ export async function startAIConversation(
 **Deliverable**: WhatsApp users can chat with AI agents naturally
 
 **Test**: Send WhatsApp messages and verify:
+
 - ✅ Agent responds appropriately
 - ✅ Conversation context preserved
 - ✅ Tools execute correctly
@@ -595,40 +582,40 @@ export async function startAIConversation(
 
 ```typescript
 // packages/ai/src/tools/payment/check-balance.ts
-import { z } from 'zod';
-import { createClient } from '@supabase/supabase-js';
+import { z } from "zod";
+import { createClient } from "@supabase/supabase-js";
 
 export const checkBalanceTool = {
-  name: 'check_balance',
-  description: 'Check user wallet balance and recent transactions',
+  name: "check_balance",
+  description: "Check user wallet balance and recent transactions",
   parameters: z.object({
-    userId: z.string().describe('User phone number or ID'),
-    includePending: z.boolean().optional().describe('Include pending transactions'),
+    userId: z.string().describe("User phone number or ID"),
+    includePending: z.boolean().optional().describe("Include pending transactions"),
   }),
   execute: async (params: any, context: any) => {
     const supabase = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
     // Get balance
     const { data: wallet } = await supabase
-      .from('wallets')
-      .select('balance, currency')
-      .eq('user_id', params.userId)
+      .from("wallets")
+      .select("balance, currency")
+      .eq("user_id", params.userId)
       .single();
 
     // Get recent transactions
     const { data: transactions } = await supabase
-      .from('transactions')
-      .select('*')
-      .eq('user_id', params.userId)
-      .order('created_at', { ascending: false })
+      .from("transactions")
+      .select("*")
+      .eq("user_id", params.userId)
+      .order("created_at", { ascending: false })
       .limit(5);
 
     return {
       balance: wallet?.balance || 0,
-      currency: wallet?.currency || 'RWF',
+      currency: wallet?.currency || "RWF",
       recentTransactions: transactions || [],
     };
   },
@@ -650,6 +637,7 @@ export const checkBalanceTool = {
 **Tasks**:
 
 1. **Implement proper streaming**:
+
    ```typescript
    async *streamMessage(params: StreamParams): AsyncGenerator<string> {
      const stream = await this.openai.chat.completions.create({
@@ -680,7 +668,8 @@ export const checkBalanceTool = {
    - Implement sliding window for context
    - Alert on high token usage
 
-**Deliverable**: 
+**Deliverable**:
+
 - ✅ Streaming responses in WhatsApp
 - ✅ Response cache reducing costs by 30%
 - ✅ Average latency < 2 seconds
@@ -694,20 +683,18 @@ export const checkBalanceTool = {
 **Tasks**:
 
 1. **Implement retry logic**:
+
    ```typescript
-   async function retryWithBackoff<T>(
-     fn: () => Promise<T>,
-     maxRetries: number = 3
-   ): Promise<T> {
+   async function retryWithBackoff<T>(fn: () => Promise<T>, maxRetries: number = 3): Promise<T> {
      for (let i = 0; i < maxRetries; i++) {
        try {
          return await fn();
        } catch (error) {
          if (i === maxRetries - 1) throw error;
-         await new Promise(r => setTimeout(r, Math.pow(2, i) * 1000));
+         await new Promise((r) => setTimeout(r, Math.pow(2, i) * 1000));
        }
      }
-     throw new Error('Max retries exceeded');
+     throw new Error("Max retries exceeded");
    }
    ```
 
@@ -727,6 +714,7 @@ export const checkBalanceTool = {
    - Alert on high error rates
 
 **Deliverable**:
+
 - ✅ 99%+ success rate
 - ✅ Graceful degradation
 - ✅ No technical errors shown to users
@@ -760,6 +748,7 @@ export const checkBalanceTool = {
    - Enable conversation replay
 
 **Deliverable**:
+
 - ✅ Security audit passed
 - ✅ PII protected
 - ✅ Compliance-ready (GDPR, etc.)
@@ -815,6 +804,7 @@ export const checkBalanceTool = {
 **Deliverable**: Full admin interface for managing agents
 
 **Test**: Admin can:
+
 - ✅ Create/edit agents
 - ✅ Enable/disable tools
 - ✅ View all conversations
@@ -829,19 +819,20 @@ export const checkBalanceTool = {
 **Implementation**:
 
 1. **Metrics Collection**:
+
    ```typescript
    // Track key metrics
-   await recordMetric('agent.conversation.started', 1, {
+   await recordMetric("agent.conversation.started", 1, {
      agent: agent.name,
-     channel: 'whatsapp',
+     channel: "whatsapp",
    });
 
-   await recordMetric('agent.response.latency', duration, {
+   await recordMetric("agent.response.latency", duration, {
      agent: agent.name,
      success: true,
    });
 
-   await recordMetric('agent.cost.usd', cost, {
+   await recordMetric("agent.cost.usd", cost, {
      agent: agent.name,
      model: agent.model,
    });
@@ -867,6 +858,7 @@ export const checkBalanceTool = {
    - Track satisfaction score
 
 **Deliverable**:
+
 - ✅ Real-time dashboard
 - ✅ Automated alerts
 - ✅ User feedback system
@@ -905,6 +897,7 @@ export const checkBalanceTool = {
    - Troubleshooting guide
 
 **Deliverable**:
+
 - ✅ 80%+ test coverage
 - ✅ Load tested to 100+ concurrent users
 - ✅ Complete documentation
@@ -914,6 +907,7 @@ export const checkBalanceTool = {
 ## Success Metrics
 
 ### Week 2 (Phase 1 Complete):
+
 - ✅ 3 agents operational
 - ✅ 10+ tools working
 - ✅ WhatsApp integration live
@@ -921,6 +915,7 @@ export const checkBalanceTool = {
 - ✅ Basic metrics collected
 
 ### Week 4 (Phase 2 Complete):
+
 - ✅ Streaming responses
 - ✅ < 2 second average latency
 - ✅ < $0.03 per conversation
@@ -928,6 +923,7 @@ export const checkBalanceTool = {
 - ✅ Security compliant
 
 ### Week 6 (Phase 3 Complete):
+
 - ✅ Full admin panel
 - ✅ Real-time monitoring
 - ✅ 80%+ test coverage
@@ -939,28 +935,36 @@ export const checkBalanceTool = {
 ## Risk Mitigation
 
 ### Risk 1: OpenAI API Costs Exceed Budget
+
 **Mitigation**:
+
 - Set daily spending limits
 - Use GPT-4o-mini for classification
 - Implement aggressive caching
 - Monitor cost per conversation
 
 ### Risk 2: Performance Issues Under Load
+
 **Mitigation**:
+
 - Load test early (Week 2)
 - Implement connection pooling
 - Add Redis caching layer
 - Scale horizontally if needed
 
 ### Risk 3: User Dissatisfaction with AI
+
 **Mitigation**:
+
 - Easy escalation to human
 - Collect feedback actively
 - A/B test different prompts
 - Iterate on agent instructions
 
 ### Risk 4: Security Vulnerability
+
 **Mitigation**:
+
 - Security audit before launch
 - Input/output validation
 - Rate limiting
@@ -997,9 +1001,11 @@ export const checkBalanceTool = {
 
 ## Conclusion
 
-This plan provides a clear, actionable roadmap to transform the fragmented AI agent system into a **world-class platform**.
+This plan provides a clear, actionable roadmap to transform the fragmented AI agent system into a
+**world-class platform**.
 
 **Key Success Factors**:
+
 1. Focus on WhatsApp integration from day 1
 2. Incremental delivery - ship every week
 3. Cost-conscious - optimize early

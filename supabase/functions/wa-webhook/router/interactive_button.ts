@@ -222,6 +222,11 @@ export async function handleButton(
       }
       return false;
     }
+    case IDS.BACK_HOME: {
+      const { sendHomeMenu } = await import("../flows/home.ts");
+      await sendHomeMenu(ctx);
+      return true;
+    }
 
     default:
       if (LOCATION_KIND_BY_ID[id]) {

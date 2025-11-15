@@ -8,7 +8,8 @@
 
 ## Overview
 
-This document defines the complete tool catalog for EasyMO AI agents. All tools follow a standardized contract with consistent return types, error handling, and attribution.
+This document defines the complete tool catalog for EasyMO AI agents. All tools follow a
+standardized contract with consistent return types, error handling, and attribution.
 
 ### Tool Contract
 
@@ -26,6 +27,7 @@ All tools **MUST** return:
 ```
 
 **Security Requirements**:
+
 - Errors are user-safe by default
 - Sensitive details go to logs only
 - Every tool call includes `trace_id` and `{org_id, user_id, convo_id}` for RLS-safe attribution
@@ -41,6 +43,7 @@ All tools **MUST** return:
 **Purpose**: Notifies Admin Inbox and optionally Slack/SMS
 
 **Parameters**:
+
 ```typescript
 {
   channel: 'inbox' | 'slack' | 'sms';
@@ -57,6 +60,7 @@ All tools **MUST** return:
 ```
 
 **Returns**:
+
 ```typescript
 {
   ok: true;
@@ -76,6 +80,7 @@ All tools **MUST** return:
 **Purpose**: RLS-scoped reads for inventory, menus, quotes, etc.
 
 **Parameters**:
+
 ```typescript
 {
   table: string;
@@ -93,6 +98,7 @@ All tools **MUST** return:
 ```
 
 **Returns**:
+
 ```typescript
 {
   ok: true;
@@ -114,6 +120,7 @@ All tools **MUST** return:
 **Purpose**: Check product availability, pricing, and stock levels
 
 **Parameters**:
+
 ```typescript
 {
   items: Array<{sku?: string; name?: string}>;
@@ -124,6 +131,7 @@ All tools **MUST** return:
 ```
 
 **Returns**:
+
 ```typescript
 {
   ok: true;
@@ -135,7 +143,7 @@ All tools **MUST** return:
       qty: number;
       unit: string;
       available: boolean;
-    }>
+    }>;
   }
 }
 ```
@@ -149,6 +157,7 @@ All tools **MUST** return:
 **Purpose**: Create a new order (dining, pharmacy, hardware, shop)
 
 **Parameters**:
+
 ```typescript
 {
   items: Array<{
@@ -167,6 +176,7 @@ All tools **MUST** return:
 ```
 
 **Returns**:
+
 ```typescript
 {
   ok: true;
@@ -188,6 +198,7 @@ All tools **MUST** return:
 **Purpose**: Update order status and send WhatsApp notifications
 
 **Parameters**:
+
 ```typescript
 {
   order_id: string;
@@ -198,6 +209,7 @@ All tools **MUST** return:
 ```
 
 **Returns**:
+
 ```typescript
 {
   ok: true;
@@ -218,6 +230,7 @@ All tools **MUST** return:
 **Purpose**: Book dining reservation or viewing appointment
 
 **Parameters**:
+
 ```typescript
 {
   venue_id: string;
@@ -231,6 +244,7 @@ All tools **MUST** return:
 ```
 
 **Returns**:
+
 ```typescript
 {
   ok: true;
@@ -250,6 +264,7 @@ All tools **MUST** return:
 **Purpose**: Find drivers, venues, or services near a location
 
 **Parameters**:
+
 ```typescript
 {
   lat: number;
@@ -263,6 +278,7 @@ All tools **MUST** return:
 ```
 
 **Returns**:
+
 ```typescript
 {
   ok: true;
@@ -274,7 +290,7 @@ All tools **MUST** return:
       lat: number; // coarse precision only
       lng: number; // coarse precision only
       metadata?: Record<string, any>;
-    }>
+    }>;
   }
 }
 ```
@@ -288,6 +304,7 @@ All tools **MUST** return:
 **Purpose**: Estimate trip pricing for mobility services
 
 **Parameters**:
+
 ```typescript
 {
   origin: {lat: number; lng: number; name?: string};
@@ -300,13 +317,17 @@ All tools **MUST** return:
 ```
 
 **Returns**:
+
 ```typescript
 {
   ok: true;
   data: {
     estimate: number;
     currency: string;
-    window: {min: number; max: number};
+    window: {
+      min: number;
+      max: number;
+    }
     eta_minutes: number;
   }
 }
@@ -321,16 +342,18 @@ All tools **MUST** return:
 **Purpose**: Extract text fields from insurance documents
 
 **Parameters**:
+
 ```typescript
 {
   file_url: string;
-  document_type: 'vehicle_registration' | 'id_card' | 'license' | 'policy';
+  document_type: "vehicle_registration" | "id_card" | "license" | "policy";
   trace_id: string;
   org_id: string;
 }
 ```
 
 **Returns**:
+
 ```typescript
 {
   ok: true;
@@ -353,6 +376,7 @@ All tools **MUST** return:
 **Purpose**: Calculate insurance premium with breakdown
 
 **Parameters**:
+
 ```typescript
 {
   type: 'motor' | 'travel' | 'health';
@@ -367,6 +391,7 @@ All tools **MUST** return:
 ```
 
 **Returns**:
+
 ```typescript
 {
   ok: true;
@@ -377,7 +402,7 @@ All tools **MUST** return:
       base: number;
       tax: number;
       fees: number;
-    };
+    }
     insurer: string;
     validity: string; // ISO 8601
   }
@@ -393,6 +418,7 @@ All tools **MUST** return:
 **Purpose**: Generate PDFs (certificates, receipts, contracts)
 
 **Parameters**:
+
 ```typescript
 {
   template_id: string;
@@ -404,6 +430,7 @@ All tools **MUST** return:
 ```
 
 **Returns**:
+
 ```typescript
 {
   ok: true;
@@ -425,6 +452,7 @@ All tools **MUST** return:
 **Purpose**: Create mobile money payment charge
 
 **Parameters**:
+
 ```typescript
 {
   amount: number;
@@ -440,6 +468,7 @@ All tools **MUST** return:
 ```
 
 **Returns**:
+
 ```typescript
 {
   ok: true;
@@ -451,7 +480,8 @@ All tools **MUST** return:
 }
 ```
 
-**Security**: 
+**Security**:
+
 - Settlement confirmed via webhook before fulfillment
 - Never collect card PANs
 - Server-side only
@@ -467,6 +497,7 @@ All tools **MUST** return:
 **Purpose**: Search rental properties
 
 **Parameters**:
+
 ```typescript
 {
   filters: {
@@ -484,6 +515,7 @@ All tools **MUST** return:
 ```
 
 **Returns**:
+
 ```typescript
 {
   ok: true;
@@ -496,7 +528,7 @@ All tools **MUST** return:
       area: string;
       photos: string[];
       available_from: string;
-    }>
+    }>;
   }
 }
 ```
@@ -510,6 +542,7 @@ All tools **MUST** return:
 **Purpose**: Schedule property viewing appointment
 
 **Parameters**:
+
 ```typescript
 {
   listing_id: string;
@@ -523,6 +556,7 @@ All tools **MUST** return:
 ```
 
 **Returns**:
+
 ```typescript
 {
   ok: true;
@@ -541,6 +575,7 @@ All tools **MUST** return:
 **Purpose**: Create legal case intake record
 
 **Parameters**:
+
 ```typescript
 {
   category: string;
@@ -554,6 +589,7 @@ All tools **MUST** return:
 ```
 
 **Returns**:
+
 ```typescript
 {
   ok: true;
@@ -575,6 +611,7 @@ All tools **MUST** return:
 **Purpose**: Schedule WhatsApp broadcast campaign
 
 **Parameters**:
+
 ```typescript
 {
   template_id: string; // Pre-approved WhatsApp template
@@ -590,6 +627,7 @@ All tools **MUST** return:
 ```
 
 **Returns**:
+
 ```typescript
 {
   ok: true;
@@ -602,6 +640,7 @@ All tools **MUST** return:
 ```
 
 **Guardrails**:
+
 - Only pre-approved templates allowed
 - Quiet hours throttle enforced
 - Opt-in proof required
@@ -613,6 +652,7 @@ All tools **MUST** return:
 **Purpose**: Log events for funnel analytics and KPIs
 
 **Parameters**:
+
 ```typescript
 {
   event: string;
@@ -625,6 +665,7 @@ All tools **MUST** return:
 ```
 
 **Returns**:
+
 ```typescript
 {
   ok: true;
@@ -647,6 +688,7 @@ All tools **MUST** return:
 **Purpose**: Generate video ads using Sora-2 API
 
 **Parameters**:
+
 ```typescript
 {
   prompt: {
@@ -671,6 +713,7 @@ All tools **MUST** return:
 ```
 
 **Returns**:
+
 ```typescript
 {
   ok: true;
@@ -684,6 +727,7 @@ All tools **MUST** return:
 ```
 
 **Critical Rules**:
+
 1. Clip length and resolution are API parameters ONLY (not in prompt)
 2. Size availability depends on model:
    - sora-2: 1280x720, 720x1280
@@ -693,6 +737,7 @@ All tools **MUST** return:
 5. Use Remix for small deltas
 
 **Guardrails**:
+
 - Brand kit must exist
 - Consent registry required
 - Country pack palette enforced
@@ -701,28 +746,29 @@ All tools **MUST** return:
 
 ## Tool Implementation Status
 
-| Tool | Implementation | Edge Function | Status |
-|------|---------------|---------------|--------|
-| notify_staff | ✅ | admin-messages | Complete |
-| search_supabase | ✅ | Multiple | Complete |
-| inventory_check | ⚠️ | Via search_supabase | Partial |
-| order_create | ⚠️ | Multiple | Partial |
-| order_status_update | ⚠️ | Multiple | Partial |
-| reservation_book | ❌ | TBD | Planned |
-| maps_geosearch | ✅ | agent-negotiation | Complete |
-| trip_price_estimate | ⚠️ | agent-negotiation | Partial |
-| ocr_extract | ✅ | ocr-processor | Complete |
-| price_insurance | ❌ | TBD | Planned |
-| generate_pdf | ❌ | TBD | Planned |
-| momo_charge | ✅ | momo-allocator | Complete |
-| property_search | ✅ | agent-property-rental | Complete |
-| schedule_viewing | ⚠️ | agent-property-rental | Partial |
-| case_intake | ❌ | TBD | Planned |
-| broadcast_schedule | ❌ | TBD | Planned |
-| analytics_log | ✅ | observability | Complete |
-| sora_generate_video | ❌ | TBD | Planned |
+| Tool                | Implementation | Edge Function         | Status   |
+| ------------------- | -------------- | --------------------- | -------- |
+| notify_staff        | ✅             | admin-messages        | Complete |
+| search_supabase     | ✅             | Multiple              | Complete |
+| inventory_check     | ⚠️             | Via search_supabase   | Partial  |
+| order_create        | ⚠️             | Multiple              | Partial  |
+| order_status_update | ⚠️             | Multiple              | Partial  |
+| reservation_book    | ❌             | TBD                   | Planned  |
+| maps_geosearch      | ✅             | agent-negotiation     | Complete |
+| trip_price_estimate | ⚠️             | agent-negotiation     | Partial  |
+| ocr_extract         | ✅             | ocr-processor         | Complete |
+| price_insurance     | ❌             | TBD                   | Planned  |
+| generate_pdf        | ❌             | TBD                   | Planned  |
+| momo_charge         | ✅             | momo-allocator        | Complete |
+| property_search     | ✅             | agent-property-rental | Complete |
+| schedule_viewing    | ⚠️             | agent-property-rental | Partial  |
+| case_intake         | ❌             | TBD                   | Planned  |
+| broadcast_schedule  | ❌             | TBD                   | Planned  |
+| analytics_log       | ✅             | observability         | Complete |
+| sora_generate_video | ❌             | TBD                   | Planned  |
 
 **Legend**:
+
 - ✅ Complete - Fully implemented and tested
 - ⚠️ Partial - Basic implementation exists, needs enhancement
 - ❌ Planned - Not yet implemented
@@ -731,23 +777,23 @@ All tools **MUST** return:
 
 ## Tool Access by Agent
 
-| Agent | Tools Allowed |
-|-------|--------------|
-| Concierge Router | search_supabase, notify_staff, analytics_log |
-| Waiter AI | search_supabase, order_create, order_status_update, momo_charge, notify_staff, analytics_log |
-| Mobility Orchestrator | maps_geosearch, search_supabase, momo_charge, notify_staff, analytics_log |
-| Pharmacy | search_supabase, inventory_check, order_create, order_status_update, momo_charge, ocr_extract, notify_staff, analytics_log |
-| Hardware | search_supabase, inventory_check, order_create, order_status_update, momo_charge, notify_staff, analytics_log |
-| Shop | search_supabase, inventory_check, order_create, order_status_update, momo_charge, notify_staff, analytics_log |
-| Insurance | ocr_extract, price_insurance, generate_pdf, momo_charge, notify_staff, analytics_log |
-| Property | search_supabase, schedule_viewing, generate_pdf, momo_charge, notify_staff, analytics_log |
-| Legal Intake | search_supabase, generate_pdf, momo_charge, notify_staff, analytics_log |
-| Payments | momo_charge, notify_staff, analytics_log |
-| Marketing & Sales | search_supabase, broadcast_schedule, analytics_log, notify_staff |
-| Sora-2 Video | sora_generate_video, search_supabase, analytics_log |
-| Support & Handoff | notify_staff, analytics_log |
-| Locops | search_supabase, analytics_log |
-| Analytics & Risk | analytics_log, notify_staff |
+| Agent                 | Tools Allowed                                                                                                              |
+| --------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| Concierge Router      | search_supabase, notify_staff, analytics_log                                                                               |
+| Waiter AI             | search_supabase, order_create, order_status_update, momo_charge, notify_staff, analytics_log                               |
+| Mobility Orchestrator | maps_geosearch, search_supabase, momo_charge, notify_staff, analytics_log                                                  |
+| Pharmacy              | search_supabase, inventory_check, order_create, order_status_update, momo_charge, ocr_extract, notify_staff, analytics_log |
+| Hardware              | search_supabase, inventory_check, order_create, order_status_update, momo_charge, notify_staff, analytics_log              |
+| Shop                  | search_supabase, inventory_check, order_create, order_status_update, momo_charge, notify_staff, analytics_log              |
+| Insurance             | ocr_extract, price_insurance, generate_pdf, momo_charge, notify_staff, analytics_log                                       |
+| Property              | search_supabase, schedule_viewing, generate_pdf, momo_charge, notify_staff, analytics_log                                  |
+| Legal Intake          | search_supabase, generate_pdf, momo_charge, notify_staff, analytics_log                                                    |
+| Payments              | momo_charge, notify_staff, analytics_log                                                                                   |
+| Marketing & Sales     | search_supabase, broadcast_schedule, analytics_log, notify_staff                                                           |
+| Sora-2 Video          | sora_generate_video, search_supabase, analytics_log                                                                        |
+| Support & Handoff     | notify_staff, analytics_log                                                                                                |
+| Locops                | search_supabase, analytics_log                                                                                             |
+| Analytics & Risk      | analytics_log, notify_staff                                                                                                |
 
 ---
 
@@ -755,18 +801,18 @@ All tools **MUST** return:
 
 Standard error codes across all tools:
 
-| Code | Description | User Message |
-|------|-------------|-------------|
-| AUTH_ERROR | Authentication/authorization failed | "Access denied" |
-| NOT_FOUND | Resource not found | "Item not found" |
-| VALIDATION_ERROR | Invalid input parameters | "Invalid request" |
-| RATE_LIMIT | Too many requests | "Please try again later" |
-| SERVICE_UNAVAILABLE | External service down | "Service temporarily unavailable" |
-| PAYMENT_FAILED | Payment processing failed | "Payment unsuccessful" |
-| INSUFFICIENT_FUNDS | Not enough balance | "Insufficient funds" |
-| EXPIRED | Resource expired | "Link expired" |
-| CONFLICT | Resource conflict | "Already exists" |
-| INTERNAL_ERROR | Unexpected error | "Something went wrong" |
+| Code                | Description                         | User Message                      |
+| ------------------- | ----------------------------------- | --------------------------------- |
+| AUTH_ERROR          | Authentication/authorization failed | "Access denied"                   |
+| NOT_FOUND           | Resource not found                  | "Item not found"                  |
+| VALIDATION_ERROR    | Invalid input parameters            | "Invalid request"                 |
+| RATE_LIMIT          | Too many requests                   | "Please try again later"          |
+| SERVICE_UNAVAILABLE | External service down               | "Service temporarily unavailable" |
+| PAYMENT_FAILED      | Payment processing failed           | "Payment unsuccessful"            |
+| INSUFFICIENT_FUNDS  | Not enough balance                  | "Insufficient funds"              |
+| EXPIRED             | Resource expired                    | "Link expired"                    |
+| CONFLICT            | Resource conflict                   | "Already exists"                  |
+| INTERNAL_ERROR      | Unexpected error                    | "Something went wrong"            |
 
 ---
 
@@ -782,40 +828,40 @@ Each tool should have:
 Example test structure:
 
 ```typescript
-describe('momo_charge', () => {
-  it('should create payment link', async () => {
+describe("momo_charge", () => {
+  it("should create payment link", async () => {
     const result = await momo_charge({
       amount: 1000,
-      currency: 'RWF',
-      phone: '+250788123456',
-      memo: 'Test payment',
-      idempotency_key: 'test-123',
-      trace_id: 'trace-123',
-      org_id: 'org-123',
-      user_id: 'user-123'
+      currency: "RWF",
+      phone: "+250788123456",
+      memo: "Test payment",
+      idempotency_key: "test-123",
+      trace_id: "trace-123",
+      org_id: "org-123",
+      user_id: "user-123",
     });
-    
+
     expect(result.ok).toBe(true);
     expect(result.data.payment_link).toBeDefined();
     expect(result.data.momo_ref).toBeDefined();
   });
-  
-  it('should handle idempotency', async () => {
-    const key = 'duplicate-123';
-    const result1 = await momo_charge({...params, idempotency_key: key});
-    const result2 = await momo_charge({...params, idempotency_key: key});
-    
+
+  it("should handle idempotency", async () => {
+    const key = "duplicate-123";
+    const result1 = await momo_charge({ ...params, idempotency_key: key });
+    const result2 = await momo_charge({ ...params, idempotency_key: key });
+
     expect(result1.data.momo_ref).toBe(result2.data.momo_ref);
   });
-  
-  it('should reject invalid phone', async () => {
+
+  it("should reject invalid phone", async () => {
     const result = await momo_charge({
       ...params,
-      phone: 'invalid'
+      phone: "invalid",
     });
-    
+
     expect(result.ok).toBe(false);
-    expect(result.error.code).toBe('VALIDATION_ERROR');
+    expect(result.error.code).toBe("VALIDATION_ERROR");
   });
 });
 ```

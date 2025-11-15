@@ -36,13 +36,13 @@ PWA (Next.js 15) → Edge Functions (Deno) → OpenAI GPT-4 + Supabase Postgres
 
 ## Key Files
 
-| File | Purpose |
-|------|---------|
-| `supabase/functions/waiter-ai-agent/index.ts` | Main AI agent (OpenAI + tools) |
-| `supabase/migrations/20260413000000_waiter_ai_complete_schema.sql` | Complete schema |
-| `waiter-pwa/app/[locale]/chat/page.tsx` | Chat interface |
-| `waiter-pwa/contexts/ChatContext.tsx` | Chat state management |
-| `waiter-pwa/contexts/CartContext.tsx` | Cart state management |
+| File                                                               | Purpose                        |
+| ------------------------------------------------------------------ | ------------------------------ |
+| `supabase/functions/waiter-ai-agent/index.ts`                      | Main AI agent (OpenAI + tools) |
+| `supabase/migrations/20260413000000_waiter_ai_complete_schema.sql` | Complete schema                |
+| `waiter-pwa/app/[locale]/chat/page.tsx`                            | Chat interface                 |
+| `waiter-pwa/contexts/ChatContext.tsx`                              | Chat state management          |
+| `waiter-pwa/contexts/CartContext.tsx`                              | Cart state management          |
 
 ## Environment Variables
 

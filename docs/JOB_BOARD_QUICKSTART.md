@@ -2,9 +2,11 @@
 
 ## What Is This?
 
-A WhatsApp bot that lets people **post jobs** and **find work** using natural conversation. No forms, no apps—just chat!
+A WhatsApp bot that lets people **post jobs** and **find work** using natural conversation. No
+forms, no apps—just chat!
 
 **Example**:
+
 ```
 👤 User: "I need someone to help move furniture tomorrow in Kigali, paying 10k"
 🤖 Bot:  "Job posted! I've notified 5 matching workers."
@@ -31,12 +33,13 @@ cd /Users/jeanbosco/workspace/easymo-
 supabase db push
 
 # Verify (should show 7 tables)
-supabase db run "SELECT table_name FROM information_schema.tables 
-                 WHERE table_schema = 'public' 
+supabase db run "SELECT table_name FROM information_schema.tables
+                 WHERE table_schema = 'public'
                  AND table_name LIKE 'job_%'"
 ```
 
 **Expected output**:
+
 ```
 job_listings
 job_seekers
@@ -82,7 +85,7 @@ if (isJobDomainMessage(message)) {
   const response = await handleJobDomain({
     phoneNumber: from,
     message,
-    messageType: type
+    messageType: type,
   });
   await sendWhatsAppMessage(from, response.reply);
   return;
@@ -90,6 +93,7 @@ if (isJobDomainMessage(message)) {
 ```
 
 Redeploy:
+
 ```bash
 supabase functions deploy wa-webhook
 ```
@@ -105,6 +109,7 @@ Send WhatsApp message to your business number:
 ```
 
 **Expected Response**:
+
 ```
 I'll create that job posting for you:
 
@@ -119,6 +124,7 @@ Is this correct?
 Reply: `"Yes"`
 
 **Expected**:
+
 ```
 ✅ Job posted! I've notified matching workers.
 Job ID: abc-123-def
@@ -134,6 +140,7 @@ npm run dev
 Navigate to: `http://localhost:3000/jobs`
 
 You should see:
+
 - Total jobs: 1
 - Open jobs: 1
 - Recent job listing
@@ -143,6 +150,7 @@ You should see:
 ### ❌ "Extension vector does not exist"
 
 **Fix**:
+
 ```bash
 supabase db run "CREATE EXTENSION IF NOT EXISTS vector"
 ```
@@ -150,6 +158,7 @@ supabase db run "CREATE EXTENSION IF NOT EXISTS vector"
 ### ❌ "OPENAI_API_KEY not found"
 
 **Fix**:
+
 ```bash
 supabase secrets set OPENAI_API_KEY=sk-...
 supabase functions deploy job-board-ai-agent
@@ -158,8 +167,9 @@ supabase functions deploy job-board-ai-agent
 ### ❌ "No matches created"
 
 **Check embeddings**:
+
 ```bash
-supabase db run "SELECT id, title, required_skills_embedding IS NOT NULL 
+supabase db run "SELECT id, title, required_skills_embedding IS NOT NULL
                  FROM job_listings LIMIT 5"
 ```
 
@@ -168,6 +178,7 @@ Should show `true` for embeddings.
 ### ❌ "Function timeout"
 
 OpenAI API might be slow. Check:
+
 ```bash
 supabase functions logs job-board-ai-agent --tail
 ```
@@ -177,16 +188,19 @@ supabase functions logs job-board-ai-agent --tail
 ### Try These Flows
 
 1. **Post another job**:
+
    ```
    "Need construction worker for 3 days, concrete work, 15k daily"
    ```
 
 2. **Search for work**:
+
    ```
    "Looking for delivery jobs, I have a motorcycle"
    ```
 
 3. **View your jobs**:
+
    ```
    "Show my jobs"
    ```
@@ -214,15 +228,15 @@ supabase functions logs job-board-ai-agent --tail
 supabase functions logs job-board-ai-agent --tail
 
 # Check analytics
-supabase db run "SELECT event_type, COUNT(*) 
-                 FROM job_analytics 
-                 GROUP BY event_type 
+supabase db run "SELECT event_type, COUNT(*)
+                 FROM job_analytics
+                 GROUP BY event_type
                  ORDER BY COUNT(*) DESC"
 
 # See recent jobs
-supabase db run "SELECT id, title, category, status 
-                 FROM job_listings 
-                 ORDER BY created_at DESC 
+supabase db run "SELECT id, title, category, status
+                 FROM job_listings
+                 ORDER BY created_at DESC
                  LIMIT 10"
 ```
 
@@ -256,6 +270,7 @@ WhatsApp → wa-webhook → job-board-ai-agent → Database
 ## Support
 
 **Stuck?** Check:
+
 1. Function logs: `supabase functions logs job-board-ai-agent`
 2. Database logs: `SELECT * FROM job_analytics ORDER BY created_at DESC`
 3. Full docs in `/docs` folder
@@ -265,6 +280,7 @@ WhatsApp → wa-webhook → job-board-ai-agent → Database
 ## Cost
 
 **For 1,000 users/month**:
+
 - OpenAI: ~$33 (embeddings + chat)
 - Supabase: $25 (shared across features)
 - **Total**: ~$58/month = **$0.058 per user**
@@ -276,6 +292,7 @@ Very affordable! 💰
 You now have a fully functional AI-powered job marketplace running on WhatsApp! 🎉
 
 **Next Steps**:
+
 1. ✅ Invite users to test
 2. ✅ Monitor dashboard metrics
 3. ✅ Gather feedback
@@ -283,6 +300,4 @@ You now have a fully functional AI-powered job marketplace running on WhatsApp! 
 
 ---
 
-**Quickstart Version**: 1.0
-**Total Time**: ~20 minutes
-**Status**: Ready to Go! 🚀
+**Quickstart Version**: 1.0 **Total Time**: ~20 minutes **Status**: Ready to Go! 🚀

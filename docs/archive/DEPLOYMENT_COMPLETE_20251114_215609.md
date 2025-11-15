@@ -65,7 +65,7 @@
 
 ```sql
 -- Check latest run
-SELECT 
+SELECT
   started_at,
   completed_at,
   properties_found,
@@ -81,7 +81,7 @@ LIMIT 1;
 
 ```sql
 -- Properties by country and source
-SELECT 
+SELECT
   location_country,
   source,
   COUNT(*) as total,
@@ -146,11 +146,13 @@ Database: researched_properties
 ## Files Modified
 
 ### Code
+
 - `supabase/functions/openai-deep-research/index.ts` - Enhanced function
 - `supabase/migrations/20251114194200_openai_deep_research_tables.sql` - Tables
 - `supabase/migrations/20251114194300_schedule_deep_research_cron.sql` - Cron
 
 ### Documentation
+
 - `DEPLOYMENT_COMPLETE_YYYYMMDD_HHMMSS.md` - This file
 - `FINAL_DEPLOYMENT_SUMMARY.md` - Complete reference
 - `DEEP_RESEARCH_CONTACT_VALIDATION.md` - Contact validation
@@ -165,6 +167,7 @@ Database: researched_properties
 
 **Time:** 11:00 AM EAT  
 **Expected:**
+
 - Function executes automatically
 - Searches all 6 countries
 - Inserts 200-400 properties
@@ -175,7 +178,7 @@ Database: researched_properties
 Run this at 11:30 AM EAT tomorrow:
 
 ```sql
-SELECT 
+SELECT
   location_country,
   source,
   COUNT(*) as properties,
@@ -190,12 +193,14 @@ GROUP BY location_country, source;
 ## Success Metrics
 
 ### Week 1 Target
+
 - 1,400-2,450 properties
 - 100% with contact numbers
 - Coverage: 6 countries
 - Cost: $1.26 for the week
 
 ### Month 1 Target
+
 - 6,000-12,000 properties
 - All contactable via WhatsApp
 - Monthly cost: $5.40
@@ -205,18 +210,21 @@ GROUP BY location_country, source;
 ## Support & Troubleshooting
 
 ### Check Cron Status
+
 ```sql
 SELECT * FROM cron.job WHERE jobname = 'openai-deep-research-daily';
 ```
 
 ### Check Recent Runs
+
 ```sql
-SELECT * FROM cron.job_run_details 
+SELECT * FROM cron.job_run_details
 WHERE jobid = (SELECT jobid FROM cron.job WHERE jobname = 'openai-deep-research-daily')
 ORDER BY start_time DESC LIMIT 5;
 ```
 
 ### View Function Logs
+
 ```bash
 supabase functions logs openai-deep-research --tail 100
 ```
@@ -236,9 +244,10 @@ supabase functions logs openai-deep-research --tail 100
 
 **Status:** Fully operational  
 **Next Execution:** Tomorrow at 11:00 AM EAT  
-**Manual Intervention:** None required  
+**Manual Intervention:** None required
 
 System will automatically:
+
 - ✅ Run daily at 11am EAT
 - ✅ Scrape properties from 3 sources
 - ✅ Validate contact numbers

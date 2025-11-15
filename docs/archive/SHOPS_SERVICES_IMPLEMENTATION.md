@@ -3,11 +3,15 @@
 ## ✅ COMPLETE IMPLEMENTATION GUIDE
 
 ### Problem Statement
-The "Shops & Services" menu showed categories like Pharmacies, Bars, etc., which were already on the home menu. It needed to show exclusive retail categories like Electronics, Household Goods, Clothing, etc.
+
+The "Shops & Services" menu showed categories like Pharmacies, Bars, etc., which were already on the
+home menu. It needed to show exclusive retail categories like Electronics, Household Goods,
+Clothing, etc.
 
 ### Solution Architecture
 
 #### 1. Database Schema (`20251114113500_create_business_tags_system.sql`)
+
 ```sql
 - business_tags: Dynamic tag definitions with icons, descriptions, keywords
 - business_tag_assignments: Many-to-many relationship (business ↔ tags)
@@ -17,6 +21,7 @@ The "Shops & Services" menu showed categories like Pharmacies, Bars, etc., which
 ```
 
 #### 2. AI Classification Function (`classify-business-tags/index.ts`)
+
 ```typescript
 - Uses OpenAI gpt-4o-mini for intelligent categorization
 - Analyzes: business name, description, original tag
@@ -26,6 +31,7 @@ The "Shops & Services" menu showed categories like Pharmacies, Bars, etc., which
 ```
 
 #### 3. WhatsApp Flow (`domains/shops/services.ts`)
+
 ```typescript
 - startShopsAndServices(): Initial menu with "Browse" button
 - handleShopsBrowseButton(): Show dynamic list of tag categories
@@ -96,6 +102,7 @@ Computers, phones, accessories
 ### Implementation Steps
 
 #### Step 1: Apply Database Migration
+
 ```bash
 cd /Users/jeanbosco/workspace/easymo-
 export SUPABASE_ACCESS_TOKEN=sbp_64ff5d99515ed7b690b69d60451ece55bc467ae0
@@ -103,11 +110,13 @@ supabase db push --include-all
 ```
 
 #### Step 2: Deploy AI Classification Function
+
 ```bash
 supabase functions deploy classify-business-tags --project-ref lhbowpbcpwoiparwnwgt --no-verify-jwt
 ```
 
 #### Step 3: Classify Existing Businesses
+
 ```bash
 curl -X POST "https://lhbowpbcpwoiparwnwgt.supabase.co/functions/v1/classify-business-tags" \
   -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
@@ -116,7 +125,9 @@ curl -X POST "https://lhbowpbcpwoiparwnwgt.supabase.co/functions/v1/classify-bus
 ```
 
 #### Step 4: Add Translations
+
 Add to `i18n/messages/en.json`:
+
 ```json
 "shops.menu.intro": "🏪 Discover nearby shops & services!\n\nBrowse by category to find what you need.",
 "shops.buttons.browse": "🔍 Browse Categories",
@@ -134,7 +145,9 @@ Add to `i18n/messages/en.json`:
 ```
 
 #### Step 5: Wire Up Routers
+
 Update `router/interactive_list.ts`:
+
 ```typescript
 case IDS.MARKETPLACE: {
   const { startShopsAndServices } = await import(
@@ -145,36 +158,33 @@ case IDS.MARKETPLACE: {
 ```
 
 Add to default case:
+
 ```typescript
 // Check for shop tag selection
 if (id.startsWith("shop_tag_") && state.key === "shops_tag_selection") {
-  const { handleShopsTagSelection } = await import(
-    "../domains/shops/services.ts"
-  );
+  const { handleShopsTagSelection } = await import("../domains/shops/services.ts");
   return await handleShopsTagSelection(ctx, state.data || {}, id);
 }
 
 // Check for shop result selection
 if (id.startsWith("shop_result_") && state.key === "shops_results") {
-  const { handleShopsResultSelection } = await import(
-    "../domains/shops/services.ts"
-  );
+  const { handleShopsResultSelection } = await import("../domains/shops/services.ts");
   return await handleShopsResultSelection(ctx, state.data || {}, id);
 }
 ```
 
 Update `router/interactive_button.ts` default case:
+
 ```typescript
 // Check for shops browse button
 if (id === "shops_browse_tags") {
-  const { handleShopsBrowseButton } = await import(
-    "../domains/shops/services.ts"
-  );
+  const { handleShopsBrowseButton } = await import("../domains/shops/services.ts");
   return await handleShopsBrowseButton(ctx);
 }
 ```
 
 Update `router/location.ts`:
+
 ```typescript
 if (state.key === "shops_wait_location") {
   const { handleShopsLocation } = await import("../domains/shops/services.ts");
@@ -183,6 +193,7 @@ if (state.key === "shops_wait_location") {
 ```
 
 #### Step 6: Deploy wa-webhook
+
 ```bash
 supabase functions deploy wa-webhook --project-ref lhbowpbcpwoiparwnwgt --no-verify-jwt
 ```
@@ -190,6 +201,7 @@ supabase functions deploy wa-webhook --project-ref lhbowpbcpwoiparwnwgt --no-ver
 ### AI Classification Details
 
 #### OpenAI Prompt Template
+
 ```
 You are an expert business classifier. Analyze the following business and assign it to the most appropriate tag(s).
 
@@ -219,6 +231,7 @@ Return JSON:
 ```
 
 #### Batch Processing
+
 ```bash
 # Classify 50 businesses
 curl -X POST "https://.../classify-business-tags" \
@@ -232,6 +245,7 @@ curl -X POST "https://.../classify-business-tags" \
 ### Database Queries
 
 #### Get businesses by tag
+
 ```sql
 SELECT * FROM get_businesses_by_tag(
   'electronics',  -- tag slug
@@ -243,13 +257,15 @@ SELECT * FROM get_businesses_by_tag(
 ```
 
 #### Get all active tags with counts
+
 ```sql
 SELECT * FROM get_active_business_tags();
 ```
 
 #### Check classification logs
+
 ```sql
-SELECT 
+SELECT
   business_name,
   classified_tags,
   success,
@@ -287,13 +303,13 @@ LIMIT 10;
 
 ```sql
 -- Classification success rate
-SELECT 
+SELECT
   COUNT(*) FILTER (WHERE success = true) * 100.0 / COUNT(*) as success_rate,
   AVG(processing_time_ms) as avg_time_ms
 FROM business_tag_classification_logs;
 
 -- Tags by business count
-SELECT 
+SELECT
   bt.name,
   COUNT(bta.business_id) as businesses
 FROM business_tags bt
@@ -302,7 +318,7 @@ GROUP BY bt.id, bt.name
 ORDER BY businesses DESC;
 
 -- Low confidence assignments (need review)
-SELECT 
+SELECT
   b.name,
   bt.name as tag,
   bta.confidence_score

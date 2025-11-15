@@ -21,15 +21,15 @@ This document provides comprehensive API documentation for all EasyMO microservi
 
 ## Services Directory
 
-| Service | Port | Description | Status |
-|---------|------|-------------|--------|
-| wallet-service | 4400 | Payment processing and wallet management | ✅ Stable |
-| ranking-service | 4401 | Vendor ranking and scoring | ✅ Stable |
-| vendor-service | 4402 | Vendor management | ⚠️ Partial |
-| buyer-service | 4403 | Buyer operations | ✅ Stable |
-| agent-core | 4404 | AI agent orchestration | ✅ Stable |
-| voice-bridge | 4405 | Voice call handling | ❌ In Development |
-| broker-orchestrator | 4406 | Intent brokering | ✅ Stable |
+| Service             | Port | Description                              | Status            |
+| ------------------- | ---- | ---------------------------------------- | ----------------- |
+| wallet-service      | 4400 | Payment processing and wallet management | ✅ Stable         |
+| ranking-service     | 4401 | Vendor ranking and scoring               | ✅ Stable         |
+| vendor-service      | 4402 | Vendor management                        | ⚠️ Partial        |
+| buyer-service       | 4403 | Buyer operations                         | ✅ Stable         |
+| agent-core          | 4404 | AI agent orchestration                   | ✅ Stable         |
+| voice-bridge        | 4405 | Voice call handling                      | ❌ In Development |
+| broker-orchestrator | 4406 | Intent brokering                         | ✅ Stable         |
 
 ---
 
@@ -55,12 +55,12 @@ Content-Type: application/json
 
 ### Headers
 
-| Header | Required | Description |
-|--------|----------|-------------|
-| Authorization | Yes | Bearer token for authentication |
-| Content-Type | Yes | application/json |
-| X-Correlation-Id | No | Request tracing ID |
-| Idempotency-Key | No* | Unique key for idempotent operations (*Required for financial operations) |
+| Header           | Required | Description                                                                |
+| ---------------- | -------- | -------------------------------------------------------------------------- |
+| Authorization    | Yes      | Bearer token for authentication                                            |
+| Content-Type     | Yes      | application/json                                                           |
+| X-Correlation-Id | No       | Request tracing ID                                                         |
+| Idempotency-Key  | No\*     | Unique key for idempotent operations (\*Required for financial operations) |
 
 ---
 
@@ -76,12 +76,13 @@ Transfer funds between wallet accounts.
 **Idempotent:** Yes
 
 **Request:**
+
 ```json
 {
   "tenantId": "550e8400-e29b-41d4-a716-446655440000",
   "sourceAccountId": "550e8400-e29b-41d4-a716-446655440001",
   "destinationAccountId": "550e8400-e29b-41d4-a716-446655440002",
-  "amount": 1000.00,
+  "amount": 1000.0,
   "currency": "USD",
   "reference": "Payment for order #12345",
   "metadata": {
@@ -93,6 +94,7 @@ Transfer funds between wallet accounts.
 ```
 
 **Headers:**
+
 ```http
 Authorization: Bearer <token>
 Idempotency-Key: <unique-key>
@@ -100,6 +102,7 @@ Content-Type: application/json
 ```
 
 **Response (201 Created):**
+
 ```json
 {
   "transaction": {
@@ -131,15 +134,16 @@ Content-Type: application/json
 
 **Error Responses:**
 
-| Status | Error Code | Description |
-|--------|------------|-------------|
-| 400 | validation_error | Invalid request parameters |
-| 403 | feature_disabled | Wallet service is disabled |
-| 404 | account_not_found | One or more accounts not found |
-| 409 | insufficient_funds | Source account has insufficient balance |
-| 429 | rate_limit_exceeded | Too many requests |
+| Status | Error Code          | Description                             |
+| ------ | ------------------- | --------------------------------------- |
+| 400    | validation_error    | Invalid request parameters              |
+| 403    | feature_disabled    | Wallet service is disabled              |
+| 404    | account_not_found   | One or more accounts not found          |
+| 409    | insufficient_funds  | Source account has insufficient balance |
+| 429    | rate_limit_exceeded | Too many requests                       |
 
 **Error Example:**
+
 ```json
 {
   "error": "insufficient_funds",
@@ -159,12 +163,14 @@ Get account summary including balance and recent transactions.
 **Authentication:** Required
 
 **Request:**
+
 ```http
 GET /wallet/accounts/550e8400-e29b-41d4-a716-446655440001
 Authorization: Bearer <token>
 ```
 
 **Response (200 OK):**
+
 ```json
 {
   "account": {
@@ -197,6 +203,7 @@ Health check endpoint.
 **Authentication:** Not required
 
 **Response (200 OK):**
+
 ```json
 {
   "status": "ok",
@@ -218,6 +225,7 @@ Calculate vendor ranking score.
 **Authentication:** Required
 
 **Request:**
+
 ```json
 {
   "tenantId": "550e8400-e29b-41d4-a716-446655440000",
@@ -232,6 +240,7 @@ Calculate vendor ranking score.
 ```
 
 **Response (200 OK):**
+
 ```json
 {
   "vendorId": "vendor_123",
@@ -260,6 +269,7 @@ Execute an AI agent workflow.
 **Authentication:** Required
 
 **Request:**
+
 ```json
 {
   "agentType": "property-rental",
@@ -275,6 +285,7 @@ Execute an AI agent workflow.
 ```
 
 **Response (200 OK):**
+
 ```json
 {
   "response": {
@@ -312,11 +323,13 @@ Execute an AI agent workflow.
 Services use cursor-based pagination:
 
 **Request:**
+
 ```http
 GET /api/resource?limit=20&cursor=abc123
 ```
 
 **Response:**
+
 ```json
 {
   "data": [...],
@@ -331,11 +344,13 @@ GET /api/resource?limit=20&cursor=abc123
 ### Filtering and Sorting
 
 **Request:**
+
 ```http
 GET /api/resource?filter[status]=active&sort=-createdAt
 ```
 
 Parameters:
+
 - `filter[field]=value` - Filter by field
 - `sort=field` - Sort ascending
 - `sort=-field` - Sort descending
@@ -345,6 +360,7 @@ Parameters:
 All endpoints implement rate limiting:
 
 **Response Headers:**
+
 ```http
 X-RateLimit-Limit: 100
 X-RateLimit-Remaining: 75
@@ -352,6 +368,7 @@ X-RateLimit-Reset: 2024-03-15T11:00:00Z
 ```
 
 **Rate Limit Error (429):**
+
 ```json
 {
   "error": "rate_limit_exceeded",
@@ -403,7 +420,7 @@ Services can emit webhook events for async notifications.
   "timestamp": "2024-03-15T10:30:00Z",
   "data": {
     "transactionId": "tx_123",
-    "amount": 1000.00,
+    "amount": 1000.0,
     "status": "completed"
   },
   "signature": "sha256=abc123..."
@@ -422,7 +439,7 @@ const isValid = verifyHMACSignature({
   signature: req.headers["x-signature"],
   secret: process.env.WEBHOOK_SECRET,
   algorithm: "sha256",
-  encoding: "hex"
+  encoding: "hex",
 });
 ```
 

@@ -3,15 +3,17 @@
 **Version**: 2.0.0  
 **Last Updated**: 2025-11-11  
 **Status**: Release Candidate  
-**Review Cycle**: Weekly until v2.1  
+**Review Cycle**: Weekly until v2.1
 
 ---
 
 ## 📋 Overview
 
-This document lists known issues, limitations, and workarounds for EasyMO v2.0. All issues are tracked, prioritized, and scheduled for future releases.
+This document lists known issues, limitations, and workarounds for EasyMO v2.0. All issues are
+tracked, prioritized, and scheduled for future releases.
 
 **Issue Severity Levels**:
+
 - 🔴 **Critical**: Blocks core functionality
 - 🟠 **High**: Significant impact, workaround available
 - 🟡 **Medium**: Minor inconvenience, affects some users
@@ -36,15 +38,17 @@ All critical issues identified in testing phases (1-4) have been resolved.
 **Status**: Known limitation, fix scheduled for v2.1  
 **Affects**: Non-English speakers (Kinyarwanda, French, Swahili)
 
-**Description**:
-AI agents currently only support English language input and output. Users who prefer other languages must navigate using traditional menus, which are multi-lingual.
+**Description**: AI agents currently only support English language input and output. Users who
+prefer other languages must navigate using traditional menus, which are multi-lingual.
 
 **Impact**:
+
 - ~40% of users prefer Kinyarwanda
 - ~20% prefer French
 - AI adoption limited in non-English speaking regions
 
 **Workaround**:
+
 ```
 User: [Sends Kinyarwanda message]
 System: "I currently support English only. Text 'MENU' for traditional navigation with Kinyarwanda support."
@@ -54,6 +58,7 @@ System: "I currently support English only. Text 'MENU' for traditional navigatio
 ```
 
 **Fix Schedule**:
+
 - v2.1 (Q1 2026): Kinyarwanda support
 - v2.2 (Q2 2026): French support
 - v2.3 (Q3 2026): Swahili support
@@ -69,16 +74,18 @@ System: "I currently support English only. Text 'MENU' for traditional navigatio
 **Status**: Data quality issue, expanding coverage  
 **Affects**: Users outside Kigali
 
-**Description**:
-Vendor data quality is highest in Kigali. Other cities have limited vendor coverage, resulting in "No vendors found" responses from AI agents.
+**Description**: Vendor data quality is highest in Kigali. Other cities have limited vendor
+coverage, resulting in "No vendors found" responses from AI agents.
 
 **Impact**:
+
 - Kigali: 500+ vendors, 95% coverage
 - Musanze: 50 vendors, 60% coverage
 - Rubavu: 30 vendors, 40% coverage
 - Other cities: <10 vendors, <30% coverage
 
 **Workaround**:
+
 ```
 AI: "😔 No vendors found in your area.
 
@@ -91,6 +98,7 @@ We're still expanding to your region. In the meantime:
 ```
 
 **Fix Schedule**:
+
 - v2.1 (Q1 2026): Musanze full coverage
 - v2.2 (Q2 2026): All major cities
 - v2.3 (Q3 2026): National coverage
@@ -106,15 +114,17 @@ We're still expanding to your region. In the meantime:
 **Status**: Feature incomplete, delayed to v2.1  
 **Affects**: Users looking for complex product searches
 
-**Description**:
-The Marketplace Agent (for shopping across multiple categories) is developed but not activated in v2.0 due to incomplete testing.
+**Description**: The Marketplace Agent (for shopping across multiple categories) is developed but
+not activated in v2.0 due to incomplete testing.
 
 **Impact**:
+
 - Users can search within categories (pharmacy, hardware, etc.)
 - Cannot search across categories ("I need paint AND medicine")
 - Multi-vendor shopping cart not available
 
 **Workaround**:
+
 ```
 User: "I need paint and medicine"
 
@@ -129,6 +139,7 @@ Would you like to start with medicine or paint?"
 ```
 
 **Fix Schedule**:
+
 - v2.1 (Q1 2026): Marketplace Agent activated
 - Includes: Multi-category search, shopping cart, bulk ordering
 
@@ -145,15 +156,17 @@ Would you like to start with medicine or paint?"
 **Status**: Design decision, may extend in v2.1  
 **Affects**: Users who take long time to decide
 
-**Description**:
-Agent sessions expire after 10 minutes for security and resource management. Some users report this feels too short when comparing multiple options.
+**Description**: Agent sessions expire after 10 minutes for security and resource management. Some
+users report this feels too short when comparing multiple options.
 
 **Impact**:
+
 - ~8% of sessions expire before user makes selection
 - Users need to restart search
 - Slightly lower conversion rate
 
 **Workaround**:
+
 ```
 System: "😔 Sorry, your selection session has expired.
 
@@ -163,11 +176,13 @@ Sessions last 10 minutes for your security. Please start a new search when you'r
 ```
 
 **Mitigation in v2.0**:
+
 - Clear expiration warnings in messages
 - Session recovery attempts if possible
 - User can quickly restart with same query
 
 **Fix Consideration**:
+
 - v2.1: Extend to 15 minutes (testing impact on resources)
 - v2.2: Intelligent timeout (longer for complex searches)
 
@@ -182,15 +197,17 @@ Sessions last 10 minutes for your security. Please start a new search when you'r
 **Status**: Feature not yet implemented  
 **Affects**: Users who prefer voice over text
 
-**Description**:
-AI agents only process text messages. Voice messages sent by users are not transcribed or processed by agents.
+**Description**: AI agents only process text messages. Voice messages sent by users are not
+transcribed or processed by agents.
 
 **Impact**:
+
 - ~15% of users prefer voice messages
 - Voice messages fall back to traditional flow
 - Reduced AI adoption among voice-first users
 
 **Workaround**:
+
 ```
 User: [Sends voice message]
 
@@ -204,6 +221,7 @@ Voice support coming in v2.2!"
 ```
 
 **Fix Schedule**:
+
 - v2.2 (Q2 2026): Voice transcription (Whisper API)
 - v2.3 (Q3 2026): Voice responses (text-to-speech)
 
@@ -216,19 +234,21 @@ Voice support coming in v2.2!"
 **Status**: Ongoing data cleanup  
 **Affects**: Search relevance, especially outside Kigali
 
-**Description**:
-Some vendor profiles have:
+**Description**: Some vendor profiles have:
+
 - Incomplete product catalogs
 - Outdated prices
 - Incorrect locations
 - Missing business hours
 
 **Impact**:
+
 - Search results may show vendors that are closed/unavailable
 - Prices may not match actual prices
 - Delivery estimates may be inaccurate
 
 **Mitigation in v2.0**:
+
 ```
 # Each vendor result includes:
 "💡 Tip: Confirm availability before ordering
@@ -236,11 +256,13 @@ Some vendor profiles have:
 ```
 
 **Fix Schedule**:
+
 - Ongoing: Vendor data cleanup campaign
 - v2.1: Automated data validation
 - v2.2: Vendor self-service portal for updates
 
 **Workaround**:
+
 - AI agent asks users to confirm vendor details
 - Support team manually verifies problematic vendors
 - Users can report incorrect information
@@ -254,15 +276,17 @@ Some vendor profiles have:
 **Status**: Feature planned for v2.1  
 **Affects**: Users who prefer card payments
 
-**Description**:
-Only wallet and Mobile Money (MoMo) payments supported. Visa/Mastercard integration not yet complete.
+**Description**: Only wallet and Mobile Money (MoMo) payments supported. Visa/Mastercard integration
+not yet complete.
 
 **Impact**:
+
 - ~10% of users request card payments
 - International users may struggle with local payment methods
 - Reduced conversion for high-value orders
 
 **Workaround**:
+
 ```
 System: "Payment Options:
 💰 Wallet (5,000 RWF balance)
@@ -274,6 +298,7 @@ System: "Payment Options:
 ```
 
 **Fix Schedule**:
+
 - v2.1 (Q1 2026): Card payment integration (Stripe/Flutterwave)
 - Includes: Visa, Mastercard, Amex
 
@@ -288,25 +313,29 @@ System: "Payment Options:
 **Status**: Performance optimization ongoing  
 **Affects**: <5% of requests during peak load
 
-**Description**:
-Target p95 response time is <1s. During peak load (8-9am, 6-7pm), some requests take 1-2s.
+**Description**: Target p95 response time is <1s. During peak load (8-9am, 6-7pm), some requests
+take 1-2s.
 
 **Impact**:
+
 - Users experience slight delay
 - Still within acceptable UX range
 - No functional impact
 
 **Mitigation in v2.0**:
+
 - Loading indicators ("🚖 Searching for drivers...")
 - Optimistic UI updates
 - Cached responses for common queries
 
 **Fix Schedule**:
+
 - v2.1: Database query optimization
 - v2.1: Redis caching expansion
 - v2.2: CDN integration for static content
 
 **Metrics**:
+
 - Current p95: ~800ms ✅ (within target)
 - Peak p95: ~1200ms ⚠️ (slightly over)
 - Target p95: <1000ms
@@ -320,20 +349,22 @@ Target p95 response time is <1s. During peak load (8-9am, 6-7pm), some requests 
 **Status**: Platform limitation  
 **Affects**: Users on Android <8.0 or iOS <12.0
 
-**Description**:
-Some emojis (🛵, 🎯, 💡) may render as boxes or question marks on older devices.
+**Description**: Some emojis (🛵, 🎯, 💡) may render as boxes or question marks on older devices.
 
 **Impact**:
+
 - Visual inconsistency
 - No functional impact (text still clear)
 - Affects <3% of users
 
 **Workaround**:
+
 - All critical information also in text
 - Emojis are supplementary, not required
 - Example: "🚖 Taxi" → still shows "Taxi" even if emoji fails
 
 **Fix Consideration**:
+
 - v2.2: Detect device capabilities, fall back to text-only when needed
 - Not a priority (affects minimal users)
 
@@ -346,23 +377,26 @@ Some emojis (🛵, 🎯, 💡) may render as boxes or question marks on older de
 **Status**: UI improvement planned for v2.1  
 **Affects**: Admins viewing dashboard on mobile
 
-**Description**:
-Admin dashboard (`/agents/dashboard`) is optimized for desktop. Mobile layout has:
+**Description**: Admin dashboard (`/agents/dashboard`) is optimized for desktop. Mobile layout has:
+
 - Small text in charts
 - Horizontal scrolling required
 - Touch targets too small
 
 **Impact**:
+
 - Admins prefer desktop for monitoring
 - Mobile access still functional but not ideal
 - ~20% of admin views on mobile
 
 **Workaround**:
+
 - Use landscape mode on mobile
 - Desktop browser recommended for monitoring
 - WhatsApp admin commands work well on mobile
 
 **Fix Schedule**:
+
 - v2.1: Responsive dashboard redesign
 - Mobile-first charts
 - Touch-friendly controls
@@ -378,12 +412,13 @@ Admin dashboard (`/agents/dashboard`) is optimized for desktop. Mobile layout ha
 **Status**: Rare edge case, fix in v2.1  
 **Affects**: Users with multiple WhatsApp devices
 
-**Description**:
-If user sends messages from multiple devices simultaneously, session state may become confused.
+**Description**: If user sends messages from multiple devices simultaneously, session state may
+become confused.
 
 **Occurrence**: <0.1% of sessions
 
 **Workaround**:
+
 - System detects conflict
 - Prompts user: "I see you're active on another device. Continue here?"
 - User selects device to continue
@@ -399,10 +434,10 @@ If user sends messages from multiple devices simultaneously, session state may b
 **Status**: Fix in progress  
 **Affects**: Products with special characters (é, ñ, etc.)
 
-**Description**:
-Product names with special characters may cause search mismatches.
+**Description**: Product names with special characters may cause search mismatches.
 
 **Example**:
+
 ```
 User: "café"
 AI searches: "cafe" (without accent)
@@ -424,14 +459,15 @@ May miss products listed as "café"
 **Status**: WhatsApp API limitation  
 **Affects**: User perception of responsiveness
 
-**Description**:
-WhatsApp API doesn't reliably show "typing..." indicator when agent is processing.
+**Description**: WhatsApp API doesn't reliably show "typing..." indicator when agent is processing.
 
 **Impact**:
+
 - Users may think system is frozen
 - Actually processing normally
 
 **Mitigation**:
+
 - Send quick acknowledgment: "🔍 Searching..."
 - Then send results
 - User knows system is working
@@ -478,37 +514,37 @@ These are intentional design decisions, not bugs:
 
 ### By Severity
 
-| Severity | Count | Percentage |
-|----------|-------|------------|
-| 🔴 Critical | 0 | 0% |
-| 🟠 High | 3 | 18% |
-| 🟡 Medium | 4 | 24% |
-| 🟢 Low | 6 | 35% |
-| By Design | 4 | 24% |
-| **Total** | **17** | **100%** |
+| Severity    | Count  | Percentage |
+| ----------- | ------ | ---------- |
+| 🔴 Critical | 0      | 0%         |
+| 🟠 High     | 3      | 18%        |
+| 🟡 Medium   | 4      | 24%        |
+| 🟢 Low      | 6      | 35%        |
+| By Design   | 4      | 24%        |
+| **Total**   | **17** | **100%**   |
 
 ### By Category
 
-| Category | Count |
-|----------|-------|
-| Language/i18n | 1 |
-| Geographic | 1 |
-| Features | 3 |
-| Data Quality | 1 |
-| Performance | 1 |
-| UI/UX | 3 |
-| Edge Cases | 3 |
-| By Design | 4 |
+| Category      | Count |
+| ------------- | ----- |
+| Language/i18n | 1     |
+| Geographic    | 1     |
+| Features      | 3     |
+| Data Quality  | 1     |
+| Performance   | 1     |
+| UI/UX         | 3     |
+| Edge Cases    | 3     |
+| By Design     | 4     |
 
 ### Resolution Timeline
 
-| Release | Issues Fixed |
-|---------|--------------|
-| v2.0 | All critical issues ✅ |
-| v2.1 (Q1 2026) | 7 issues |
-| v2.2 (Q2 2026) | 5 issues |
-| v2.3 (Q3 2026) | 2 issues |
-| By Design | 4 (not fixing) |
+| Release        | Issues Fixed           |
+| -------------- | ---------------------- |
+| v2.0           | All critical issues ✅ |
+| v2.1 (Q1 2026) | 7 issues               |
+| v2.2 (Q2 2026) | 5 issues               |
+| v2.3 (Q3 2026) | 2 issues               |
+| By Design      | 4 (not fixing)         |
 
 ---
 
@@ -521,6 +557,7 @@ These are intentional design decisions, not bugs:
 **Phone**: +250-xxx-xxx-xxx
 
 **Include**:
+
 - Your phone number
 - What you were trying to do
 - What happened vs. what you expected
@@ -532,35 +569,32 @@ These are intentional design decisions, not bugs:
 **Slack**: `#engineering-bugs`
 
 **Template**:
-```markdown
-**Issue ID**: [Auto-assigned]
-**Severity**: [Critical/High/Medium/Low]
-**Component**: [Agent/UI/Backend/Database]
 
-**Description**: 
-[Clear description of issue]
+```markdown
+**Issue ID**: [Auto-assigned] **Severity**: [Critical/High/Medium/Low] **Component**:
+[Agent/UI/Backend/Database]
+
+**Description**: [Clear description of issue]
 
 **Steps to Reproduce**:
+
 1. Step 1
 2. Step 2
 3. ...
 
-**Expected Behavior**:
-[What should happen]
+**Expected Behavior**: [What should happen]
 
-**Actual Behavior**:
-[What actually happens]
+**Actual Behavior**: [What actually happens]
 
 **Environment**:
+
 - Version: v2.0.0
 - Environment: [Production/Staging/Local]
 - Browser/Device: [If applicable]
 
-**Logs**:
-[Paste relevant logs with correlation ID]
+**Logs**: [Paste relevant logs with correlation ID]
 
-**Screenshots**:
-[Attach if applicable]
+**Screenshots**: [Attach if applicable]
 ```
 
 ---
@@ -569,12 +603,14 @@ These are intentional design decisions, not bugs:
 
 **Live Dashboard**: https://easymo.com/admin/issues  
 **Metrics Tracked**:
+
 - Open issues by severity
 - Time to resolution
 - Issue recurrence rate
 - User impact
 
 **SLA Targets**:
+
 - 🔴 Critical: 4 hours
 - 🟠 High: 24 hours
 - 🟡 Medium: 7 days
@@ -623,8 +659,8 @@ Contact: eng-lead@easymo.com
 **Document Version**: 1.0  
 **Last Updated**: 2025-11-11  
 **Status**: Active  
-**Next Review**: 2025-11-18 (weekly)  
+**Next Review**: 2025-11-18 (weekly)
 
 ---
 
-*Found a new issue? Report it: support@easymo.com*
+_Found a new issue? Report it: support@easymo.com_

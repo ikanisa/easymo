@@ -6,11 +6,11 @@
 
 ## ✅ Edge Functions Deployed
 
-| Function | Status | Size | Dashboard Link |
-|----------|--------|------|----------------|
+| Function          | Status      | Size     | Dashboard Link                                                                |
+| ----------------- | ----------- | -------- | ----------------------------------------------------------------------------- |
 | **insurance-ocr** | ✅ Deployed | 116.4 KB | [View](https://supabase.com/dashboard/project/lhbowpbcpwoiparwnwgt/functions) |
-| **wa-webhook** | ✅ Deployed | - | [View](https://supabase.com/dashboard/project/lhbowpbcpwoiparwnwgt/functions) |
-| **ocr-processor** | ✅ Deployed | - | [View](https://supabase.com/dashboard/project/lhbowpbcpwoiparwnwgt/functions) |
+| **wa-webhook**    | ✅ Deployed | -        | [View](https://supabase.com/dashboard/project/lhbowpbcpwoiparwnwgt/functions) |
+| **ocr-processor** | ✅ Deployed | -        | [View](https://supabase.com/dashboard/project/lhbowpbcpwoiparwnwgt/functions) |
 
 ## ⚠️ Database Migration - Action Required
 
@@ -26,6 +26,7 @@ The database migration needs to be applied manually via the Supabase SQL Editor:
    - Or use the SQL below
 
 3. **Execute in SQL Editor:**
+
    ```sql
    BEGIN;
 
@@ -41,7 +42,7 @@ The database migration needs to be applied manually via the Supabase SQL Editor:
    );
 
    -- Index for active admin lookup
-   CREATE INDEX IF NOT EXISTS idx_insurance_admins_active 
+   CREATE INDEX IF NOT EXISTS idx_insurance_admins_active
      ON insurance_admins(is_active) WHERE is_active = true;
 
    -- Insert the three admin numbers
@@ -67,11 +68,11 @@ The database migration needs to be applied manually via the Supabase SQL Editor:
    );
 
    -- Indexes for tracking
-   CREATE INDEX IF NOT EXISTS idx_insurance_admin_notifications_lead 
+   CREATE INDEX IF NOT EXISTS idx_insurance_admin_notifications_lead
      ON insurance_admin_notifications(lead_id);
-   CREATE INDEX IF NOT EXISTS idx_insurance_admin_notifications_admin 
+   CREATE INDEX IF NOT EXISTS idx_insurance_admin_notifications_admin
      ON insurance_admin_notifications(admin_wa_id);
-   CREATE INDEX IF NOT EXISTS idx_insurance_admin_notifications_sent 
+   CREATE INDEX IF NOT EXISTS idx_insurance_admin_notifications_sent
      ON insurance_admin_notifications(sent_at DESC);
 
    -- Function to get active insurance admins
@@ -104,22 +105,25 @@ The database migration needs to be applied manually via the Supabase SQL Editor:
 Once migration is applied:
 
 ### 1. Check Admin Table
+
 ```sql
-SELECT wa_id, name, is_active 
-FROM insurance_admins 
+SELECT wa_id, name, is_active
+FROM insurance_admins
 WHERE is_active = true;
 ```
 
 **Expected:** 3 rows with phone numbers
 
 ### 2. Test Notification Flow
+
 - Send insurance certificate image via WhatsApp
 - User should receive summary message
 - All 3 admins should receive detailed notification with customer contact link
 
 ### 3. Monitor Notifications
+
 ```sql
-SELECT 
+SELECT
   ian.*,
   ia.name as admin_name
 FROM insurance_admin_notifications ian
@@ -129,6 +133,7 @@ LIMIT 5;
 ```
 
 ### 4. Check Function Logs
+
 ```bash
 supabase functions logs insurance-ocr --limit 50
 supabase functions logs wa-webhook --limit 50
@@ -205,21 +210,24 @@ When a user submits an insurance certificate via WhatsApp:
 ## 🔧 Admin Management (After Migration)
 
 ### Add New Admin:
+
 ```sql
 INSERT INTO insurance_admins (wa_id, name, role, is_active)
 VALUES ('250XXXXXXXXX', 'Admin Name', 'admin', true);
 ```
 
 ### Deactivate Admin:
+
 ```sql
-UPDATE insurance_admins 
-SET is_active = false 
+UPDATE insurance_admins
+SET is_active = false
 WHERE wa_id = '250XXXXXXXXX';
 ```
 
 ### View Delivery Stats:
+
 ```sql
-SELECT 
+SELECT
   ia.name,
   COUNT(*) as total_notifications,
   COUNT(*) FILTER (WHERE ian.status = 'sent') as successful,
@@ -236,14 +244,16 @@ ORDER BY total_notifications DESC;
 ### No Notifications Received?
 
 1. **Check if migration applied:**
+
    ```sql
    SELECT COUNT(*) FROM insurance_admins;
    -- Should return 3
    ```
 
 2. **Check notification queue:**
+
    ```sql
-   SELECT * FROM notifications 
+   SELECT * FROM notifications
    WHERE notification_type = 'insurance_admin_alert'
    ORDER BY created_at DESC LIMIT 10;
    ```
@@ -262,6 +272,7 @@ supabase functions logs wa-webhook | grep "INS_"
 ### OCR Errors?
 
 Check OpenAI configuration:
+
 ```bash
 supabase secrets list | grep OPENAI_API_KEY
 ```

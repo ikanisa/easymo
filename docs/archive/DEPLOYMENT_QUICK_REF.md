@@ -14,11 +14,13 @@
 **Dashboard**: https://supabase.com/dashboard/project/lhbowpbcpwoiparwnwgt
 
 **WhatsApp Webhook**:
+
 ```
 https://lhbowpbcpwoiparwnwgt.supabase.co/functions/v1/wa-webhook
 ```
 
 **Health Check**:
+
 ```bash
 curl https://lhbowpbcpwoiparwnwgt.supabase.co/functions/v1/wa-webhook/health
 ```
@@ -28,11 +30,13 @@ curl https://lhbowpbcpwoiparwnwgt.supabase.co/functions/v1/wa-webhook/health
 ## 🔑 Credentials
 
 **Database URL**:
+
 ```
 postgresql://postgres:***@db.lhbowpbcpwoiparwnwgt.supabase.co:5432/postgres
 ```
 
 **Supabase URL**:
+
 ```
 https://lhbowpbcpwoiparwnwgt.supabase.co
 ```
@@ -94,6 +98,4 @@ See `DEPLOYMENT_COMPLETE.md` for detailed information.
 
 ---
 
-**Status**: ✅ PRODUCTION READY
-**Time**: ~20 minutes
-**Success Rate**: 100%
+**Status**: ✅ PRODUCTION READY **Time**: ~20 minutes **Success Rate**: 100%

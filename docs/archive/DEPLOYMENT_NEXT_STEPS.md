@@ -65,7 +65,6 @@ cat supabase/migrations/20251114194300_schedule_deep_research_cron.sql | psql $D
 3. Add these:
    - **Name:** `SERPAPI_KEY`  
      **Value:** `YOUR_SERPAPI_KEY_HERE` (get from https://serpapi.com)
-   
    - **Name:** `OPENAI_API_KEY` (if not already set)  
      **Value:** `sk-...`
 
@@ -88,6 +87,7 @@ curl -X POST "https://vacltfdslodqybxojytc.supabase.co/functions/v1/openai-deep-
 ```
 
 **Expected result (after 3-6 minutes):**
+
 ```json
 {
   "success": true,
@@ -111,7 +111,7 @@ Run this SQL in Supabase Dashboard:
 
 ```sql
 -- Check if properties were inserted
-SELECT 
+SELECT
   source,
   COUNT(*) as total,
   COUNT(contact_info) as with_contacts,
@@ -135,12 +135,12 @@ After applying migrations, update the cron job settings:
 
 ```sql
 -- Update Supabase URL and service role key
-UPDATE app_settings 
-SET value = 'https://vacltfdslodqybxojytc.supabase.co' 
+UPDATE app_settings
+SET value = 'https://vacltfdslodqybxojytc.supabase.co'
 WHERE key = 'app.supabase_url';
 
-UPDATE app_settings 
-SET value = 'YOUR_SERVICE_ROLE_KEY_HERE' 
+UPDATE app_settings
+SET value = 'YOUR_SERVICE_ROLE_KEY_HERE'
 WHERE key = 'app.service_role_key';
 
 -- Verify cron job
@@ -169,7 +169,7 @@ After completing all steps:
 
 ```sql
 -- Check today's run
-SELECT 
+SELECT
   started_at,
   properties_found,
   properties_inserted,
@@ -186,7 +186,7 @@ LIMIT 1;
 
 ```sql
 -- Properties by country
-SELECT 
+SELECT
   location_country,
   COUNT(*) as total_properties,
   COUNT(DISTINCT contact_info) as unique_contacts,
@@ -212,6 +212,7 @@ ORDER BY total_properties DESC;
 ### Issue: No properties inserted
 
 **Solution:** Check function logs:
+
 ```bash
 supabase functions logs openai-deep-research --tail 100
 ```
@@ -219,8 +220,9 @@ supabase functions logs openai-deep-research --tail 100
 ### Issue: Cron job not running
 
 **Solution:** Check cron jobs:
+
 ```sql
-SELECT * FROM cron.job_run_details 
+SELECT * FROM cron.job_run_details
 WHERE jobid = (SELECT jobid FROM cron.job WHERE jobname = 'openai-deep-research-daily')
 ORDER BY start_time DESC LIMIT 5;
 ```
@@ -230,11 +232,13 @@ ORDER BY start_time DESC LIMIT 5;
 ## 📞 Support
 
 **Documentation:**
+
 - Full Guide: `FINAL_DEPLOYMENT_SUMMARY.md`
 - Contact Validation: `DEEP_RESEARCH_CONTACT_VALIDATION.md`
 - Configuration: `AI_AGENTS_PHASE2_CONFIGURATION.md`
 
 **Dashboards:**
+
 - Functions: https://supabase.com/dashboard/project/vacltfdslodqybxojytc/functions
 - Database: https://supabase.com/dashboard/project/vacltfdslodqybxojytc/editor
 - SQL Editor: https://supabase.com/dashboard/project/vacltfdslodqybxojytc/sql/new
@@ -248,6 +252,7 @@ ORDER BY start_time DESC LIMIT 5;
 **Just complete the 5 manual steps above and you're live!**
 
 Expected timeline:
+
 - Step 1 (Migrations): 5 minutes
 - Step 2 (Secrets): 2 minutes
 - Step 3 (Testing): 6 minutes (function runtime)

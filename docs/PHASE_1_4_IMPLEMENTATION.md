@@ -1,14 +1,17 @@
 # Phase 1-4 Implementation Summary
 
-This document summarizes the implementation of stability, observability, scalability, and resilience enhancements across 4 phases.
+This document summarizes the implementation of stability, observability, scalability, and resilience
+enhancements across 4 phases.
 
 ## Phase 1: Stabilization & Security Hardening [80% Complete]
 
 ### ✅ 1.1: WhatsApp Webhook Queue Worker
+
 **Status**: Complete  
 **Files**: `services/whatsapp-webhook-worker/`
 
 **Implemented:**
+
 - Durable Kafka-based queue for webhook processing
 - Redis-based idempotency to prevent duplicate processing
 - Automatic retry with exponential backoff (3 retries by default)
@@ -18,12 +21,14 @@ This document summarizes the implementation of stability, observability, scalabi
 - Docker integration in `docker-compose.agent-core.yml`
 
 **Key Features:**
+
 - Decouples webhook ingestion from processing
 - Prevents webhook retry storms
 - Provides visibility into processing failures
 - Scales independently from Edge Functions
 
 **Configuration:**
+
 ```env
 KAFKA_BROKERS=localhost:19092
 REDIS_URL=redis://localhost:6380
@@ -34,6 +39,7 @@ WEBHOOK_DLQ_TOPIC=whatsapp.webhook.dlq
 ```
 
 **Usage:**
+
 ```bash
 docker-compose -f docker-compose.agent-core.yml up whatsapp-webhook-worker
 ```
@@ -41,10 +47,12 @@ docker-compose -f docker-compose.agent-core.yml up whatsapp-webhook-worker
 ---
 
 ### ✅ 1.2: Explicit State Machine Registry
+
 **Status**: Complete  
 **Files**: `packages/state-machine/`
 
 **Implemented:**
+
 - Type-safe state machine with generics (`StateMachineRegistry<TContext, TEvent>`)
 - Transition guards for validation
 - Entry/exit actions for state lifecycle
@@ -54,6 +62,7 @@ docker-compose -f docker-compose.agent-core.yml up whatsapp-webhook-worker
 - Comprehensive error handling
 
 **Key Features:**
+
 - Replaces ad-hoc `{key, data}` blobs with structured state management
 - Enforces valid transitions only
 - Prevents invalid state changes
@@ -61,6 +70,7 @@ docker-compose -f docker-compose.agent-core.yml up whatsapp-webhook-worker
 - Limits fallback attempts (max 3)
 
 **States:**
+
 - `idle` - No active conversation
 - `awaiting_input` - Waiting for user
 - `processing_intent` - Analyzing message
@@ -71,6 +81,7 @@ docker-compose -f docker-compose.agent-core.yml up whatsapp-webhook-worker
 - `error` - Error state
 
 **Example Usage:**
+
 ```typescript
 import { createConversationStateMachine, ConversationEvent } from "@easymo/state-machine";
 
@@ -88,10 +99,12 @@ const result = await machine.transition(
 ---
 
 ### ✅ 1.3: Circuit Breaker Pattern
+
 **Status**: Complete  
 **Files**: `packages/circuit-breaker/`
 
 **Implemented:**
+
 - Three-state circuit breaker (CLOSED/OPEN/HALF_OPEN)
 - Configurable failure thresholds
 - Per-request timeout support
@@ -101,6 +114,7 @@ const result = await machine.transition(
 - Built-in metrics tracking
 
 **Key Features:**
+
 - Prevents cascading failures during API outages
 - Fails fast when downstream service is unavailable
 - Automatically tests recovery
@@ -108,22 +122,22 @@ const result = await machine.transition(
 - Configurable thresholds and timeouts
 
 **Example for WhatsApp API:**
+
 ```typescript
 import { createCircuitBreaker } from "@easymo/circuit-breaker";
 
 const whatsappBreaker = createCircuitBreaker({
   name: "whatsapp-graph-api",
-  failureThreshold: 30,      // Open at 30% failures
-  minimumRequests: 5,        // Need 5 requests
-  windowMs: 30000,           // 30 second window
-  resetTimeoutMs: 60000,     // Wait 60s before retry
-  requestTimeoutMs: 10000,   // 10s timeout
-  
+  failureThreshold: 30, // Open at 30% failures
+  minimumRequests: 5, // Need 5 requests
+  windowMs: 30000, // 30 second window
+  resetTimeoutMs: 60000, // Wait 60s before retry
+  requestTimeoutMs: 10000, // 10s timeout
+
   isFailure: (error) => {
-    return error.name === "RequestTimeoutError" || 
-           error.response?.status >= 500;
+    return error.name === "RequestTimeoutError" || error.response?.status >= 500;
   },
-  
+
   onOpen: () => {
     console.error("⚠️ WhatsApp API circuit breaker OPENED");
   },
@@ -136,6 +150,7 @@ const result = await whatsappBreaker.execute(async () => {
 ```
 
 **Metrics:**
+
 - Total requests
 - Success/failure counts
 - Failure rate percentage
@@ -145,10 +160,12 @@ const result = await whatsappBreaker.execute(async () => {
 ---
 
 ### ⏭️ 1.4: Secrets Management
+
 **Status**: Deferred  
 **Reason**: Requires infrastructure-wide changes
 
 **Recommendations:**
+
 1. Use GitHub Actions secrets for CI/CD
 2. Use Supabase Vault for Edge Function secrets
 3. Use environment-specific secret managers (AWS Secrets Manager, etc.)
@@ -156,6 +173,7 @@ const result = await whatsappBreaker.execute(async () => {
 5. Implement secret rotation policies
 
 **Scripts to Audit:**
+
 - `scripts/*.sh` - Check for hard-coded tokens
 - `supabase/functions/*/index.ts` - Verify no service role keys in code
 - `.env.example` - Ensure no actual secrets
@@ -163,10 +181,12 @@ const result = await whatsappBreaker.execute(async () => {
 ---
 
 ### ✅ 1.5: Enhanced Wallet Idempotency
+
 **Status**: Complete  
 **Files**: `services/wallet-service/src/idempotency.ts`
 
 **Implemented:**
+
 - **Required** Idempotency-Key header (breaking change)
 - Redis-based distributed storage
 - Strict format validation (16-255 characters)
@@ -175,6 +195,7 @@ const result = await whatsappBreaker.execute(async () => {
 - Enhanced test coverage
 
 **Key Changes:**
+
 - `Idempotency-Key` header is now **REQUIRED** for POST requests
 - Uses `@easymo/messaging` IdempotencyStore with Redis
 - Returns 400 error if key missing or invalid
@@ -182,6 +203,7 @@ const result = await whatsappBreaker.execute(async () => {
 - Prevents duplicate transactions across distributed instances
 
 **Example:**
+
 ```bash
 curl -X POST http://localhost:4400/wallet/transfer \
   -H 'Content-Type: application/json' \
@@ -195,6 +217,7 @@ curl -X POST http://localhost:4400/wallet/transfer \
 ```
 
 **Error Responses:**
+
 ```json
 // Missing key
 {
@@ -214,20 +237,25 @@ curl -X POST http://localhost:4400/wallet/transfer \
 ## Implementation Statistics
 
 ### Packages Created
+
 1. `@easymo/state-machine` - State machine registry
 2. `@easymo/circuit-breaker` - Circuit breaker pattern
 
 ### Services Created
+
 1. `whatsapp-webhook-worker` - Queue-based webhook processor
 
 ### Services Enhanced
+
 1. `wallet-service` - Enhanced idempotency
 
 ### Infrastructure
+
 - Kafka topics: `whatsapp.webhook.inbound`, `whatsapp.webhook.processed`, `whatsapp.webhook.dlq`
 - Redis namespaces: `webhook:*`, `wallet:*`
 
 ### Lines of Code
+
 - State Machine: ~400 lines
 - Circuit Breaker: ~350 lines
 - Webhook Worker: ~450 lines
@@ -240,13 +268,16 @@ curl -X POST http://localhost:4400/wallet/transfer \
 ### Breaking Changes
 
 #### Wallet Service
+
 **Before:**
+
 ```bash
 # Idempotency key was optional
 curl -X POST /wallet/transfer -d '{...}'
 ```
 
 **After:**
+
 ```bash
 # Idempotency key is REQUIRED
 curl -X POST /wallet/transfer \
@@ -257,10 +288,12 @@ curl -X POST /wallet/transfer \
 ### New Dependencies
 
 #### Services
+
 - `whatsapp-webhook-worker` requires Kafka and Redis
 - `wallet-service` requires Redis
 
 #### Environment Variables
+
 ```env
 # Webhook Worker
 KAFKA_BROKERS=localhost:19092
@@ -275,6 +308,7 @@ REDIS_URL=redis://localhost:6380
 ## Testing
 
 ### Unit Tests
+
 ```bash
 # State Machine
 pnpm --filter @easymo/state-machine test
@@ -287,6 +321,7 @@ pnpm --filter @easymo/wallet-service test
 ```
 
 ### Integration Tests
+
 ```bash
 # Start infrastructure
 docker-compose -f docker-compose.agent-core.yml up -d kafka redis
@@ -308,6 +343,7 @@ curl http://localhost:4900/metrics
 ### Metrics to Track
 
 #### Webhook Worker
+
 - `webhook.processing.success` - Successful processing count
 - `webhook.processing.failed` - Failed processing count
 - `webhook.retry.scheduled` - Retry count
@@ -315,6 +351,7 @@ curl http://localhost:4900/metrics
 - `webhook.processing.duration` - Processing latency
 
 #### Circuit Breaker
+
 - Circuit state (CLOSED/OPEN/HALF_OPEN)
 - Failure rate percentage
 - Total requests
@@ -322,6 +359,7 @@ curl http://localhost:4900/metrics
 - Next retry timestamp
 
 #### Wallet Idempotency
+
 - `idempotency.hit` - Cache hits
 - `idempotency.miss` - New requests
 - `idempotency.error` - Validation errors
@@ -329,6 +367,7 @@ curl http://localhost:4900/metrics
 ### Logging
 
 All components use structured logging with:
+
 - Correlation IDs for distributed tracing
 - PII masking for sensitive data
 - JSON format for machine parsing
@@ -339,6 +378,7 @@ All components use structured logging with:
 ## Next Steps
 
 ### Phase 2: Observability & Performance
+
 1. Instrument webhook worker with Prometheus metrics
 2. Add rate-limiting middleware for Edge Functions
 3. Automate Supabase key rotation
@@ -346,6 +386,7 @@ All components use structured logging with:
 5. Optimize Edge Function cold-start
 
 ### Phase 3: Feature Expansion
+
 1. Persist rich conversation context (use state machine)
 2. Extend wallet with reconciliation jobs
 3. Add role-based operational tooling
@@ -353,6 +394,7 @@ All components use structured logging with:
 5. Implement interactive WhatsApp messages
 
 ### Phase 4: Scale & Resilience
+
 1. Expand Kafka topic usage
 2. Expand Redis caching
 3. Roll out distributed tracing (OpenTelemetry)
@@ -364,12 +406,14 @@ All components use structured logging with:
 ## Documentation
 
 ### Package READMEs
+
 - ✅ `packages/state-machine/README.md`
 - ✅ `packages/circuit-breaker/README.md`
 - ✅ `services/whatsapp-webhook-worker/README.md`
 - ✅ `services/wallet-service/README.md` (updated)
 
 ### Ground Rules Compliance
+
 - ✅ Structured logging with correlation IDs
 - ✅ PII masking in logs
 - ✅ Feature flags (where applicable)
@@ -388,4 +432,5 @@ Phase 1 successfully delivered critical stability and security enhancements:
 3. **Resilience**: Circuit breaker prevents cascading failures
 4. **Security**: Enhanced idempotency prevents duplicate transactions
 
-These foundations enable safe scaling and provide visibility into system health, setting the stage for Phases 2-4.
+These foundations enable safe scaling and provide visibility into system health, setting the stage
+for Phases 2-4.

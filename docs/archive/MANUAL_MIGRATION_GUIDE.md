@@ -3,23 +3,29 @@
 ## Quick Steps
 
 ### 1. Open Supabase SQL Editor
+
 Go to: https://supabase.com/dashboard/project/lhbowpbcpwoiparwnwgt/sql
 
 ### 2. Open the Migration Script
+
 File location: `./supabase_migrations_manual.sql`
 
 ### 3. Copy & Paste
+
 - Open the file `supabase_migrations_manual.sql`
 - Select ALL content (Cmd+A / Ctrl+A)
 - Copy (Cmd+C / Ctrl+C)
 - Paste into Supabase SQL Editor
 
 ### 4. Execute
+
 - Click "Run" button (or press Cmd+Enter / Ctrl+Enter)
 - Wait 3-5 minutes for completion
 
 ### 5. Verify
+
 Look for this message at the end:
+
 ```
 ✅ All 25 migrations applied successfully!
 📊 Schema version: 20260401170000
@@ -28,6 +34,7 @@ Look for this message at the end:
 ## What This Script Does
 
 ### ✅ Applies 25 Migrations
+
 1. **PostGIS Extension** - Enables geographic data types
 2. **Shops Table** - Creates base shops infrastructure
 3. **RLS Policies** (8 migrations) - Security on 34 tables
@@ -38,6 +45,7 @@ Look for this message at the end:
 8. **Feature Migrations** (15 files) - Agents, payments, analytics
 
 ### ⚠️ Expected Warnings (SAFE to ignore)
+
 ```
 NOTICE: extension "postgis" already exists, skipping
 NOTICE: relation "shops" already exists, skipping
@@ -49,6 +57,7 @@ These are normal - the script is idempotent (safe to run multiple times).
 ## After Running
 
 ### Mark Migrations as Applied Locally
+
 ```bash
 # In your terminal, run:
 supabase migration repair --status applied \
@@ -62,6 +71,7 @@ supabase migration repair --status applied \
 ```
 
 ### Verify Sync
+
 ```bash
 supabase migration list
 supabase db diff
@@ -70,19 +80,23 @@ supabase db diff
 ## Troubleshooting
 
 ### Error: "relation does not exist"
+
 - **Safe to ignore** if the NOTICE says "skipping"
 - **Action needed** if ERROR persists - check table dependencies
 
 ### Error: "already exists"
+
 - **Safe to ignore** - means it's already applied
 - Script handles this with `IF NOT EXISTS` and `ON CONFLICT`
 
 ### Script Hangs
+
 - Check Supabase Dashboard for connection issues
 - Try smaller batches (split script into parts)
 - Use direct connection instead of pooler
 
 ### Need Help?
+
 Check the main report: `/tmp/final_status_report.md`
 
 ## File Locations
@@ -90,4 +104,3 @@ Check the main report: `/tmp/final_status_report.md`
 - **Migration Script**: `./supabase_migrations_manual.sql` (196 KB, 4,862 lines)
 - **This Guide**: `./MANUAL_MIGRATION_GUIDE.md`
 - **Status Report**: `/tmp/final_status_report.md`
-

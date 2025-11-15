@@ -9,6 +9,7 @@
 ## 🎯 Overview
 
 This guide provides two methods to extract coordinates:
+
 1. **SQL Method** - Extract directly from Google Maps URLs (free, fast)
 2. **API Method** - Geocode addresses using Google Maps API (paid, accurate)
 
@@ -19,6 +20,7 @@ This guide provides two methods to extract coordinates:
 ### 1. Ensure google_maps_url Column Exists
 
 Run this migration first:
+
 ```bash
 # Via Supabase Dashboard SQL Editor
 # Or via CLI:
@@ -30,8 +32,9 @@ Migration: `supabase/migrations/20251113192300_add_google_maps_url_column.sql`
 ### 2. Populate Google Maps URLs (if available)
 
 If you have Google Maps URLs for businesses, update them:
+
 ```sql
-UPDATE businesses 
+UPDATE businesses
 SET google_maps_url = 'https://maps.google.com/?q=-1.9536,30.0606'
 WHERE id = 'business-id';
 ```
@@ -43,6 +46,7 @@ WHERE id = 'business-id';
 Extract coordinates directly from Google Maps URLs using SQL.
 
 ### Supported URL Formats:
+
 - `https://maps.google.com/?q=-1.9536,30.0606`
 - `https://www.google.com/maps/place/Name/@-1.9536,30.0606,17z`
 - `https://goo.gl/maps/xxx/@-1.9536,30.0606`
@@ -50,16 +54,19 @@ Extract coordinates directly from Google Maps URLs using SQL.
 ### Execute:
 
 **Option A: Via Supabase Dashboard**
+
 1. Open: https://supabase.com/dashboard/project/lhbowpbcpwoiparwnwgt/sql
 2. Paste contents of: `extract_coordinates_from_urls.sql`
 3. Click RUN
 
 **Option B: Via psql**
+
 ```bash
 psql "YOUR_DB_URL" -f extract_coordinates_from_urls.sql
 ```
 
 ### What It Does:
+
 1. Analyzes current state of businesses table
 2. Creates helper functions for coordinate extraction
 3. Extracts coordinates from URLs using regex
@@ -67,6 +74,7 @@ psql "YOUR_DB_URL" -f extract_coordinates_from_urls.sql
 5. Shows summary of results
 
 ### Expected Output:
+
 ```
 === ANALYZING BUSINESS TABLE ===
 total_businesses: 250
@@ -91,23 +99,27 @@ Use Google Maps Geocoding API for businesses without coordinates.
 ### Setup:
 
 1. **Install dependencies** (if not already installed):
+
 ```bash
 cd /Users/jeanbosco/workspace/easymo-
 npm install axios @supabase/supabase-js
 ```
 
 2. **Set environment variables**:
+
 ```bash
 export SUPABASE_SERVICE_ROLE_KEY="your-service-role-key"
 export NEXT_PUBLIC_SUPABASE_URL="https://lhbowpbcpwoiparwnwgt.supabase.co"
 ```
 
 3. **Run the script**:
+
 ```bash
 node scripts/extract_coordinates_with_api.js
 ```
 
 ### What It Does:
+
 1. Fetches all businesses without coordinates
 2. For each business:
    - Tries to extract from google_maps_url first
@@ -116,6 +128,7 @@ node scripts/extract_coordinates_with_api.js
 4. Provides detailed progress and summary
 
 ### Expected Output:
+
 ```
 ╔════════════════════════════════════════════════════════════════════╗
 ║        EXTRACT COORDINATES FROM GOOGLE MAPS URLS                   ║
@@ -132,7 +145,7 @@ node scripts/extract_coordinates_with_api.js
 ...
 
 ═══════════════════════════════════════════════════════════════════
-                           SUMMARY                                  
+                           SUMMARY
 ═══════════════════════════════════════════════════════════════════
 ✅ Successfully updated: 23
 ⚠️  Failed to geocode: 2
@@ -149,8 +162,9 @@ node scripts/extract_coordinates_with_api.js
 ## 🔍 Verification Queries
 
 ### Check Coordinate Coverage:
+
 ```sql
-SELECT 
+SELECT
     COUNT(*) as total_businesses,
     COUNT(latitude) as has_coordinates,
     COUNT(*) - COUNT(latitude) as missing_coordinates,
@@ -159,8 +173,9 @@ FROM businesses;
 ```
 
 ### List Businesses Without Coordinates:
+
 ```sql
-SELECT 
+SELECT
     id,
     name,
     address,
@@ -173,8 +188,9 @@ ORDER BY name;
 ```
 
 ### Show Recently Updated:
+
 ```sql
-SELECT 
+SELECT
     name,
     address,
     latitude,
@@ -187,9 +203,10 @@ LIMIT 20;
 ```
 
 ### Validate Coordinate Ranges:
+
 ```sql
 -- Check for invalid coordinates
-SELECT 
+SELECT
     name,
     latitude,
     longitude
@@ -206,27 +223,35 @@ WHERE latitude IS NOT NULL
 ## 📊 Google Maps URL Formats
 
 ### Format 1: Direct Coordinates
+
 ```
 https://maps.google.com/?q=-1.9536,30.0606
 ```
+
 **Extraction**: Direct from `q=` parameter
 
 ### Format 2: Place URL with Coordinates
+
 ```
 https://www.google.com/maps/place/Restaurant+Name/@-1.9536,30.0606,17z
 ```
+
 **Extraction**: From `@lat,lng,zoom` format
 
 ### Format 3: Shortened URL
+
 ```
 https://goo.gl/maps/abc123/@-1.9536,30.0606
 ```
+
 **Extraction**: From `@lat,lng` after redirect
 
 ### Format 4: Address Only
+
 ```
 https://www.google.com/maps/place/KN+5+Rd,+Kigali,+Rwanda
 ```
+
 **Extraction**: Requires geocoding API
 
 ---
@@ -234,12 +259,14 @@ https://www.google.com/maps/place/KN+5+Rd,+Kigali,+Rwanda
 ## ⚠️ API Rate Limits & Costs
 
 ### Google Maps Geocoding API:
+
 - **Free tier**: $200 credit per month
 - **Cost**: $5 per 1000 requests
 - **Rate limit**: 50 requests per second
 - **Script rate limit**: 5 requests per second (built-in delay)
 
 ### Estimations:
+
 - 100 addresses: $0.50 (within free tier)
 - 500 addresses: $2.50
 - 1000 addresses: $5.00
@@ -251,14 +278,18 @@ https://www.google.com/maps/place/KN+5+Rd,+Kigali,+Rwanda
 ## 🛠️ Troubleshooting
 
 ### Issue: "API Key Invalid"
+
 **Solution**: Verify API key has Geocoding API enabled
+
 ```bash
 # Check in Google Cloud Console:
 # APIs & Services > Enabled APIs > Geocoding API
 ```
 
 ### Issue: "No coordinates found for address"
+
 **Possible causes**:
+
 - Address is too vague (e.g., just "Kigali")
 - Address has typos
 - Address doesn't exist in Google Maps
@@ -266,13 +297,16 @@ https://www.google.com/maps/place/KN+5+Rd,+Kigali,+Rwanda
 **Solution**: Manually update with correct address or coordinates
 
 ### Issue: "Rate limit exceeded"
-**Solution**: Script has built-in rate limiting (200ms delay).
-If still hitting limits, increase delay in script:
+
+**Solution**: Script has built-in rate limiting (200ms delay). If still hitting limits, increase
+delay in script:
+
 ```javascript
-await new Promise(resolve => setTimeout(resolve, 500)); // 500ms
+await new Promise((resolve) => setTimeout(resolve, 500)); // 500ms
 ```
 
 ### Issue: "Connection timeout"
+
 **Solution**: Check internet connection and firewall settings
 
 ---
@@ -288,6 +322,7 @@ await new Promise(resolve => setTimeout(resolve, 500)); // 500ms
 ## ✅ Execution Checklist
 
 ### Phase 1: SQL Extraction
+
 - [ ] Run migration to add google_maps_url column
 - [ ] Populate google_maps_url for businesses (if available)
 - [ ] Run SQL extraction script
@@ -295,6 +330,7 @@ await new Promise(resolve => setTimeout(resolve, 500)); // 500ms
 - [ ] Note how many still need coordinates
 
 ### Phase 2: API Geocoding (if needed)
+
 - [ ] Install Node.js dependencies
 - [ ] Set environment variables
 - [ ] Run API geocoding script
@@ -302,6 +338,7 @@ await new Promise(resolve => setTimeout(resolve, 500)); // 500ms
 - [ ] Check completion percentage
 
 ### Phase 3: Manual Cleanup (if needed)
+
 - [ ] Review businesses that failed geocoding
 - [ ] Manually update addresses or coordinates
 - [ ] Re-run geocoding for fixed addresses
@@ -323,7 +360,7 @@ node scripts/extract_coordinates_with_api.js
 
 # 4. Verify
 psql "YOUR_DB_URL" -c "
-SELECT 
+SELECT
   COUNT(*) as total,
   COUNT(latitude) as with_coords,
   ROUND(100.0 * COUNT(latitude) / COUNT(*), 2) as percentage
@@ -343,4 +380,5 @@ FROM businesses;
 
 **Ready to extract coordinates!** 🚀
 
-Start with SQL extraction for free coordinate extraction from URLs, then use API geocoding for remaining addresses.
+Start with SQL extraction for free coordinate extraction from URLs, then use API geocoding for
+remaining addresses.

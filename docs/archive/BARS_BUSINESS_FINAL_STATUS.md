@@ -8,30 +8,34 @@
 
 ## 📊 Summary
 
-| Table | Records | Duplicates | Schema | Coordinates | Ready |
-|-------|---------|------------|--------|-------------|-------|
-| **bars** | 306 | 0 | ✅ Complete | 0/306 (0%) | ✅ Yes |
-| **business** | 885 | 0 | ✅ Complete | 0/885 (0%) | ✅ Yes |
+| Table        | Records | Duplicates | Schema      | Coordinates | Ready  |
+| ------------ | ------- | ---------- | ----------- | ----------- | ------ |
+| **bars**     | 306     | 0          | ✅ Complete | 0/306 (0%)  | ✅ Yes |
+| **business** | 885     | 0          | ✅ Complete | 0/885 (0%)  | ✅ Yes |
 
 ---
 
 ## ✅ Completed Work
 
 ### 1. **Table Cleanup & Deduplication**
+
 - ✅ Removed all duplicate entries
 - ✅ Added unique constraints:
   - `bars`: unique on `slug`
   - `business`: unique on (`name`, `owner_whatsapp`)
 
 ### 2. **Schema Enhancements**
+
 Both tables now have:
+
 - ✅ `lat` DOUBLE PRECISION - Latitude coordinate
-- ✅ `lng` DOUBLE PRECISION - Longitude coordinate  
+- ✅ `lng` DOUBLE PRECISION - Longitude coordinate
 - ✅ `location` GEOGRAPHY(POINT, 4326) - PostGIS geography for spatial queries
 - ✅ Auto-update triggers that sync `location` when `lat`/`lng` changes
 - ✅ Spatial indexes for efficient location-based queries
 
 ### 3. **Utility Functions Created**
+
 ```sql
 -- Coordinate extraction from Google Maps URLs
 extract_coordinates_from_google_maps_url(url TEXT)
@@ -68,14 +72,14 @@ SELECT batch_geocode_bars();
 SELECT batch_geocode_businesses();
 
 -- 4. Verify results
-SELECT 
+SELECT
   'bars' as table_name,
   COUNT(*) as total,
   COUNT(location) as with_coords,
   ROUND(COUNT(location)::NUMERIC / COUNT(*) * 100, 1) as percentage
 FROM public.bars
 UNION ALL
-SELECT 
+SELECT
   'business' as table_name,
   COUNT(*) as total,
   COUNT(location) as with_coords,
@@ -87,14 +91,14 @@ FROM public.business;
 
 ```sql
 -- Update a specific bar
-UPDATE public.bars 
-SET lat = -1.9441, lng = 30.0619 
+UPDATE public.bars
+SET lat = -1.9441, lng = 30.0619
 WHERE slug = 'bahamas-pub';
 -- location column updates automatically via trigger!
 
 -- Update a specific business
-UPDATE public.business 
-SET lat = -1.9578, lng = 30.1127 
+UPDATE public.business
+SET lat = -1.9578, lng = 30.1127
 WHERE name = 'Kigali City Market';
 ```
 
@@ -104,12 +108,12 @@ Some location_text fields contain Plus Codes (e.g., "24F3+WVC"):
 
 ```sql
 -- Find records with Plus Codes
-SELECT id, name, location_text 
-FROM public.bars 
+SELECT id, name, location_text
+FROM public.bars
 WHERE location_text ~ '[0-9A-Z]{4}\+[0-9A-Z]{2,3}';
 
 -- Parse Plus Code and update
-UPDATE public.bars 
+UPDATE public.bars
 SET lat = (SELECT lat FROM parse_plus_code_coordinates('24F3+WVC')),
     lng = (SELECT lng FROM parse_plus_code_coordinates('24F3+WVC'))
 WHERE location_text LIKE '%24F3+WVC%';
@@ -120,10 +124,11 @@ WHERE location_text LIKE '%24F3+WVC%';
 ## 🗺️ Spatial Queries (Once Coordinates Are Populated)
 
 ### Find Nearby Bars
+
 ```sql
 -- Find bars within 5km of a point
-SELECT 
-  name, 
+SELECT
+  name,
   slug,
   location_text,
   ST_Distance(
@@ -142,8 +147,9 @@ LIMIT 10;
 ```
 
 ### Find Closest Businesses by Category
+
 ```sql
-SELECT 
+SELECT
   name,
   location_text,
   category_id,
@@ -177,18 +183,18 @@ LIMIT 5;
 
 ```sql
 -- Check for duplicates
-SELECT slug, COUNT(*) 
-FROM public.bars 
-GROUP BY slug 
+SELECT slug, COUNT(*)
+FROM public.bars
+GROUP BY slug
 HAVING COUNT(*) > 1;
 
-SELECT name, owner_whatsapp, COUNT(*) 
-FROM public.business 
-GROUP BY name, owner_whatsapp 
+SELECT name, owner_whatsapp, COUNT(*)
+FROM public.business
+GROUP BY name, owner_whatsapp
 HAVING COUNT(*) > 1;
 
 -- Check coordinate coverage
-SELECT 
+SELECT
   COUNT(*) as total_bars,
   COUNT(lat) as with_lat,
   COUNT(lng) as with_lng,
@@ -196,7 +202,7 @@ SELECT
   ROUND(COUNT(location)::NUMERIC / COUNT(*) * 100, 1) || '%' as coverage
 FROM public.bars;
 
-SELECT 
+SELECT
   COUNT(*) as total_businesses,
   COUNT(lat) as with_lat,
   COUNT(lng) as with_lng,
@@ -205,7 +211,7 @@ SELECT
 FROM public.business;
 
 -- Check triggers
-SELECT 
+SELECT
   tgname as trigger_name,
   tgrelid::regclass as table_name
 FROM pg_trigger
@@ -217,11 +223,13 @@ WHERE tgname LIKE '%location%'
 
 ## ⚠️ Important Notes
 
-1. **Catalog URLs**: The `catalog_url` and `google_maps_url` fields contain placeholder URLs, not parseable Google Maps URLs with coordinates.
+1. **Catalog URLs**: The `catalog_url` and `google_maps_url` fields contain placeholder URLs, not
+   parseable Google Maps URLs with coordinates.
 
 2. **Location Text**: Most coordinate data must come from geocoding the `location_text` field.
 
-3. **RLS Policies**: Both tables have Row Level Security enabled. Ensure appropriate policies exist for your use case.
+3. **RLS Policies**: Both tables have Row Level Security enabled. Ensure appropriate policies exist
+   for your use case.
 
 4. **Foreign Keys**: Changes to these tables may affect:
    - `bar_managers`
@@ -234,7 +242,8 @@ WHERE tgname LIKE '%location%'
    - `orders`
    - `carts`
 
-5. **Performance**: Once coordinates are populated, spatial queries will be very fast thanks to GIST indexes.
+5. **Performance**: Once coordinates are populated, spatial queries will be very fast thanks to GIST
+   indexes.
 
 ---
 
@@ -250,6 +259,7 @@ WHERE tgname LIKE '%location%'
 ## 📞 Support
 
 For questions or issues:
+
 1. Check migration files in `supabase/migrations/`
 2. Review function source: `\df+ function_name` in psql
 3. Check trigger definitions: `\d+ table_name` in psql
@@ -258,4 +268,3 @@ For questions or issues:
 
 **Status**: ✅ **TABLES READY FOR PRODUCTION USE**  
 **Action Required**: Populate coordinates via geocoding API or manual entry
-

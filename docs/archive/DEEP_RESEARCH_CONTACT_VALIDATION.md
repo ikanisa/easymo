@@ -48,11 +48,12 @@ For each location, we run 5 comprehensive searches:
   "houses for rent {location} bedrooms price contact",
   "apartments for rent {location} furnished price phone",
   "property rental {location} available now contact number",
-  "real estate rent {location} whatsapp contact"
-]
+  "real estate rent {location} whatsapp contact",
+];
 ```
 
 This ensures we capture listings from:
+
 - Real estate websites
 - Classified ads (OLX, Jumia House, etc.)
 - Facebook Marketplace
@@ -64,15 +65,18 @@ This ensures we capture listings from:
 ## 🔍 Property Extraction Process
 
 ### Step 1: Web Search (SerpAPI)
+
 ```
 User Query → SerpAPI → 30 results per query × 5 queries = 150 results
 ```
 
 ### Step 2: AI Extraction (OpenAI GPT-4o-mini)
+
 Each search result is analyzed for:
+
 - Property title
 - Type (apartment/house/villa/studio)
-- Bedrooms and bathrooms  
+- Bedrooms and bathrooms
 - Price and currency
 - Address/location
 - Amenities
@@ -80,6 +84,7 @@ Each search result is analyzed for:
 - Available from date
 
 ### Step 3: Contact Validation
+
 ```typescript
 // Must have contact
 if (!contact || contact.length < 10) {
@@ -97,7 +102,9 @@ if (!contact.match(/^\+\d{10,15}$/)) {
 ```
 
 ### Step 4: Save to Database
+
 Only properties with:
+
 - ✅ Valid contact number (+XXX format)
 - ✅ Price > 0
 - ✅ Bedrooms ≥ 1
@@ -108,6 +115,7 @@ Only properties with:
 ## 📊 Expected Results Per Run
 
 ### Rwanda (Kigali)
+
 ```bash
 Econfary API:         30-50 properties (all with contacts)
 SerpAPI:              20-30 properties (validated contacts)
@@ -117,6 +125,7 @@ Total:                60-95 properties WITH CONTACT NUMBERS
 ```
 
 ### Malta (Valletta, Sliema)
+
 ```bash
 Econfary API:         25-40 properties
 SerpAPI:              15-25 properties
@@ -126,6 +135,7 @@ Total:                48-77 properties WITH CONTACT NUMBERS
 ```
 
 ### Tanzania, Kenya, Uganda (Combined)
+
 ```bash
 Total per country:    40-70 properties WITH CONTACT NUMBERS
 ```
@@ -156,7 +166,7 @@ curl -X POST "$SUPABASE_URL/functions/v1/openai-deep-research" \
 
 # 5. Verify ALL properties have contacts
 psql $DATABASE_URL -c "
-  SELECT 
+  SELECT
     source,
     COUNT(*) as total_properties,
     COUNT(contact_info) as with_contact,
@@ -174,9 +184,10 @@ psql $DATABASE_URL -c "
 ## 📈 Monitoring Contact Numbers
 
 ### Check Contact Quality
+
 ```sql
 -- View all contacts from last run
-SELECT 
+SELECT
   title,
   source,
   contact_info,
@@ -189,7 +200,7 @@ WHERE scraped_at > NOW() - INTERVAL '1 hour'
 ORDER BY source, price;
 
 -- Verify all have proper format
-SELECT 
+SELECT
   source,
   COUNT(*) as total,
   COUNT(CASE WHEN contact_info LIKE '+250%' THEN 1 END) as rwanda,
@@ -203,6 +214,7 @@ GROUP BY source;
 ```
 
 ### Check Skipped Properties (No Contact)
+
 ```sql
 -- These should be minimal
 SELECT COUNT(*) as properties_skipped_no_contact
@@ -234,6 +246,7 @@ After deployment, verify:
 ### Issue: Too many properties skipped (no contact)
 
 **Solution:**
+
 ```bash
 # Check SerpAPI search results
 curl "https://serpapi.com/search?api_key=$SERPAPI_KEY&engine=google&q=rental+properties+kigali+whatsapp+contact"
@@ -245,10 +258,11 @@ curl "https://serpapi.com/search?api_key=$SERPAPI_KEY&engine=google&q=rental+pro
 ### Issue: Contact numbers not in international format
 
 **Solution:**
+
 ```sql
 -- Find invalid formats
-SELECT contact_info, COUNT(*) 
-FROM researched_properties 
+SELECT contact_info, COUNT(*)
+FROM researched_properties
 WHERE contact_info NOT LIKE '+%'
 GROUP BY contact_info;
 
@@ -261,6 +275,7 @@ WHERE contact_info LIKE '0%' AND location_country = 'Rwanda';
 ### Issue: Duplicate contacts (same person, multiple listings)
 
 **This is OK!** Same person can have multiple properties. Deduplication uses:
+
 - title + address OR
 - contact + price
 
@@ -280,7 +295,7 @@ const property = await getProperty(propertyId);
 const message = `Hi! I'm interested in your property: ${property.title}. 
 Is it still available?`;
 
-const whatsappLink = `https://wa.me/${property.contact_info.replace('+', '')}?text=${encodeURIComponent(message)}`;
+const whatsappLink = `https://wa.me/${property.contact_info.replace("+", "")}?text=${encodeURIComponent(message)}`;
 
 // Send link to user
 await sendWhatsAppMessage(userId, whatsappLink);
@@ -294,13 +309,13 @@ Track these KPIs:
 
 ```sql
 -- Contact coverage rate (should be 100%)
-SELECT 
+SELECT
   ROUND(100.0 * COUNT(contact_info) / COUNT(*), 2) as contact_coverage_percent
 FROM researched_properties
 WHERE scraped_at > NOW() - INTERVAL '7 days';
 
 -- Properties by source with contacts
-SELECT 
+SELECT
   source,
   COUNT(*) as total,
   COUNT(DISTINCT contact_info) as unique_contacts,
@@ -310,7 +325,7 @@ WHERE scraped_at > NOW() - INTERVAL '7 days'
 GROUP BY source;
 
 -- Top 10 most active landlords
-SELECT 
+SELECT
   contact_info,
   COUNT(*) as properties_count,
   AVG(price) as avg_price,
@@ -330,6 +345,7 @@ LIMIT 10;
 **Status:** ✅ ALL PROPERTIES NOW HAVE CONTACT NUMBERS
 
 **Enhancements:**
+
 - ✅ SerpAPI with 5 search queries per location
 - ✅ AI-powered contact extraction
 - ✅ International format normalization (+XXX)

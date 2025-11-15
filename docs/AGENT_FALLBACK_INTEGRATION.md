@@ -1,10 +1,14 @@
 # Agent Fallback Integration Status
+
 ## Phase 3: Exercise and Harden Fallbacks
 
 ### Overview
-This document tracks the implementation of comprehensive fallback logic across all 14+ AI agents in the EasyMO platform.
+
+This document tracks the implementation of comprehensive fallback logic across all 14+ AI agents in
+the EasyMO platform.
 
 ### Fallback Strategy (4-Tier)
+
 1. **Ranking Service** - AI-powered top recommendations
 2. **Supabase Backup** - Database queries with cached data
 3. **Mock Data** - Curated example data with retry recommendation
@@ -14,25 +18,26 @@ This document tracks the implementation of comprehensive fallback logic across a
 
 #### ✅ Phase 3 Complete
 
-| Agent | Route | Ranking | Supabase | Mock | WhatsApp Hook | Status |
-|-------|-------|---------|----------|------|---------------|--------|
-| **Driver Negotiation** | `/api/agents/driver-requests` | ✅ | ✅ | ✅ | `supabase/functions/agent-negotiation` | **INTEGRATED** |
-| **Pharmacy** | `/api/agents/pharmacy-requests` | ⚠️ | ✅ | ✅ | `supabase/functions/agents/pharmacy` | **INTEGRATED** |
-| **Shops & Services** | `/api/agents/shops` | ✅ | ✅ | ✅ | `supabase/functions/agent-shops` | **INTEGRATED** |
-| **Hardware/Quincaillerie** | `/api/agents/quincaillerie` | ✅ | ✅ | ✅ | `supabase/functions/agent-quincaillerie` | **INTEGRATED** |
-| **Property Rental** | `/api/agents/property-rentals` | ⚠️ | ✅ | ✅ | `supabase/functions/agent-property-rental` | **INTEGRATED** |
-| **Schedule Trip** | `/api/agents/schedule-trips` | ⚠️ | ✅ | ✅ | `supabase/functions/agent-schedule-trip` | **INTEGRATED** |
-| **Marketplace** | `/api/marketplace/agent-sessions` | ✅ | ✅ | ✅ | `supabase/functions/agents/marketplace` | **INTEGRATED** |
-| **Video Analysis** | `/api/video/*` | N/A | ✅ | ✅ | `packages/video-agent` | **INTEGRATED** |
-| **Insurance OCR** | `/api/insurance-ocr` | N/A | ✅ | ✅ | `supabase/functions/insurance-ocr` | **INTEGRATED** |
-| **MoMo Allocation** | `/api/momo-allocator` | N/A | ✅ | ✅ | `supabase/functions/momo-allocator` | **INTEGRATED** |
-| **Agent Chat** | `/api/agent-chat` | ✅ | ✅ | ✅ | `supabase/functions/agent-chat` | **INTEGRATED** |
-| **Agent Runner** | Backend service | ✅ | ✅ | ✅ | `supabase/functions/agent-runner` | **INTEGRATED** |
-| **Agent Monitor** | `/api/agent-monitor` | N/A | ✅ | ✅ | `supabase/functions/agent-monitor` | **INTEGRATED** |
-| **Contact Queue** | `/api/ai-contact-queue` | N/A | ✅ | ✅ | `supabase/functions/ai-contact-queue` | **INTEGRATED** |
-| **Customer Lookup** | `/api/ai-lookup-customer` | ✅ | ✅ | ✅ | `supabase/functions/ai-lookup-customer` | **INTEGRATED** |
+| Agent                      | Route                             | Ranking | Supabase | Mock | WhatsApp Hook                              | Status         |
+| -------------------------- | --------------------------------- | ------- | -------- | ---- | ------------------------------------------ | -------------- |
+| **Driver Negotiation**     | `/api/agents/driver-requests`     | ✅      | ✅       | ✅   | `supabase/functions/agent-negotiation`     | **INTEGRATED** |
+| **Pharmacy**               | `/api/agents/pharmacy-requests`   | ⚠️      | ✅       | ✅   | `supabase/functions/agents/pharmacy`       | **INTEGRATED** |
+| **Shops & Services**       | `/api/agents/shops`               | ✅      | ✅       | ✅   | `supabase/functions/agent-shops`           | **INTEGRATED** |
+| **Hardware/Quincaillerie** | `/api/agents/quincaillerie`       | ✅      | ✅       | ✅   | `supabase/functions/agent-quincaillerie`   | **INTEGRATED** |
+| **Property Rental**        | `/api/agents/property-rentals`    | ⚠️      | ✅       | ✅   | `supabase/functions/agent-property-rental` | **INTEGRATED** |
+| **Schedule Trip**          | `/api/agents/schedule-trips`      | ⚠️      | ✅       | ✅   | `supabase/functions/agent-schedule-trip`   | **INTEGRATED** |
+| **Marketplace**            | `/api/marketplace/agent-sessions` | ✅      | ✅       | ✅   | `supabase/functions/agents/marketplace`    | **INTEGRATED** |
+| **Video Analysis**         | `/api/video/*`                    | N/A     | ✅       | ✅   | `packages/video-agent`                     | **INTEGRATED** |
+| **Insurance OCR**          | `/api/insurance-ocr`              | N/A     | ✅       | ✅   | `supabase/functions/insurance-ocr`         | **INTEGRATED** |
+| **MoMo Allocation**        | `/api/momo-allocator`             | N/A     | ✅       | ✅   | `supabase/functions/momo-allocator`        | **INTEGRATED** |
+| **Agent Chat**             | `/api/agent-chat`                 | ✅      | ✅       | ✅   | `supabase/functions/agent-chat`            | **INTEGRATED** |
+| **Agent Runner**           | Backend service                   | ✅      | ✅       | ✅   | `supabase/functions/agent-runner`          | **INTEGRATED** |
+| **Agent Monitor**          | `/api/agent-monitor`              | N/A     | ✅       | ✅   | `supabase/functions/agent-monitor`         | **INTEGRATED** |
+| **Contact Queue**          | `/api/ai-contact-queue`           | N/A     | ✅       | ✅   | `supabase/functions/ai-contact-queue`      | **INTEGRATED** |
+| **Customer Lookup**        | `/api/ai-lookup-customer`         | ✅      | ✅       | ✅   | `supabase/functions/ai-lookup-customer`    | **INTEGRATED** |
 
 **Legend:**
+
 - ✅ Fully implemented and tested
 - ⚠️ Ranking service not applicable (rule-based)
 - N/A Not needed for this agent type
@@ -40,6 +45,7 @@ This document tracks the implementation of comprehensive fallback logic across a
 ### Observability Integration
 
 All agents now log:
+
 ```typescript
 // Fallback triggered
 {
@@ -68,6 +74,7 @@ agent.${agentName}.fallback.all_failed: 1
 Each agent's WhatsApp workflow has been validated:
 
 #### Driver Negotiation
+
 - **Trigger:** Incoming ride request via WA
 - **Agent:** `supabase/functions/agent-negotiation`
 - **Fallback Flow:** AI ranking → Supabase driver pool → Mock drivers → Error message
@@ -75,6 +82,7 @@ Each agent's WhatsApp workflow has been validated:
 - **✅ Validated:** 2025-11-11
 
 #### Pharmacy
+
 - **Trigger:** Medication request via WA
 - **Agent:** `supabase/functions/agents/pharmacy`
 - **Fallback Flow:** Supabase pharmacy_requests → Mock pharmacies → Error message
@@ -82,6 +90,7 @@ Each agent's WhatsApp workflow has been validated:
 - **✅ Validated:** 2025-11-11
 
 #### Shops & Services
+
 - **Trigger:** Shop search via WA
 - **Agent:** `supabase/functions/agent-shops`
 - **Fallback Flow:** AI ranking (top 10) → Supabase shops → Mock shops → Error
@@ -89,6 +98,7 @@ Each agent's WhatsApp workflow has been validated:
 - **✅ Validated:** 2025-11-11
 
 #### Hardware/Quincaillerie
+
 - **Trigger:** Hardware item search via WA
 - **Agent:** `supabase/functions/agent-quincaillerie`
 - **Fallback Flow:** AI catalog search → Supabase products → Mock catalog → Error
@@ -96,6 +106,7 @@ Each agent's WhatsApp workflow has been validated:
 - **✅ Validated:** 2025-11-11
 
 #### Property Rental
+
 - **Trigger:** Property search via WA
 - **Agent:** `supabase/functions/agent-property-rental`
 - **Fallback Flow:** Supabase properties → Mock listings → Error
@@ -103,6 +114,7 @@ Each agent's WhatsApp workflow has been validated:
 - **✅ Validated:** 2025-11-11
 
 #### Schedule Trip
+
 - **Trigger:** Trip booking request via WA
 - **Agent:** `supabase/functions/agent-schedule-trip`
 - **Fallback Flow:** Supabase schedules → Mock schedules → Error
@@ -110,6 +122,7 @@ Each agent's WhatsApp workflow has been validated:
 - **✅ Validated:** 2025-11-11
 
 #### Marketplace
+
 - **Trigger:** Marketplace item search via WA
 - **Agent:** `supabase/functions/agents/marketplace`
 - **Fallback Flow:** AI search → Category fallback → Mock listings → Error
@@ -139,18 +152,18 @@ pnpm test agent-fallback
 
 Each agent has custom error messaging:
 
-| Agent | Error Message |
-|-------|---------------|
+| Agent              | Error Message                                                            |
+| ------------------ | ------------------------------------------------------------------------ |
 | Driver Negotiation | "Unable to process driver request. Please try again or contact support." |
-| Pharmacy | "Pharmacy service temporarily unavailable. Please try again shortly." |
-| Shops & Services | "Shop search unavailable. Please try again or browse manually." |
-| Hardware | "Hardware catalog temporarily unavailable. Please try again." |
-| Property Rental | "Property search unavailable. Please contact us for assistance." |
-| Schedule Trip | "Trip scheduling unavailable. Please try booking directly." |
-| Marketplace | "Marketplace search unavailable. Please browse categories manually." |
-| Video Analysis | "Video processing unavailable. Please try again later." |
-| Insurance OCR | "Document processing unavailable. Please upload again later." |
-| MoMo Allocation | "Payment processing unavailable. Please try another method." |
+| Pharmacy           | "Pharmacy service temporarily unavailable. Please try again shortly."    |
+| Shops & Services   | "Shop search unavailable. Please try again or browse manually."          |
+| Hardware           | "Hardware catalog temporarily unavailable. Please try again."            |
+| Property Rental    | "Property search unavailable. Please contact us for assistance."         |
+| Schedule Trip      | "Trip scheduling unavailable. Please try booking directly."              |
+| Marketplace        | "Marketplace search unavailable. Please browse categories manually."     |
+| Video Analysis     | "Video processing unavailable. Please try again later."                  |
+| Insurance OCR      | "Document processing unavailable. Please upload again later."            |
+| MoMo Allocation    | "Payment processing unavailable. Please try another method."             |
 
 ### Testing Checklist
 
@@ -203,6 +216,7 @@ AGENT_FALLBACK_LOG_LEVEL=info     # debug|info|warn|error
 ### Rollback Plan
 
 If issues arise:
+
 1. Set `FEATURE_AGENT_FALLBACK=false` to disable new fallback logic
 2. Existing routes already have built-in fallbacks
 3. Monitor `agent.*.fallback.all_failed` metric
@@ -210,6 +224,5 @@ If issues arise:
 
 ---
 
-**Status:** ✅ Phase 3 Complete - All 15 agents have integrated fallback logic
-**Last Updated:** 2025-11-11
-**Owner:** Platform Team
+**Status:** ✅ Phase 3 Complete - All 15 agents have integrated fallback logic **Last Updated:**
+2025-11-11 **Owner:** Platform Team

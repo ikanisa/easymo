@@ -29,6 +29,7 @@
 ## What Was Fixed
 
 ### ❌ **Before (Messy)**
+
 - Complex `business_tags` table with UUIDs and slugs
 - Over-engineered with unnecessary joins
 - Used old `get_active_business_tags()` and `get_businesses_by_tag()` functions
@@ -36,6 +37,7 @@
 - Confusing state management with IDs, slugs, and names
 
 ### ✅ **After (Clean)**
+
 - Direct use of `businesses.tag` column (simple text)
 - Two simple functions: `get_shops_tags()` and `get_shops_by_tag()`
 - Returns only essential data: name, location, distance, WhatsApp
@@ -52,6 +54,7 @@
 **Purpose**: Get list of business categories with counts
 
 **Returns**:
+
 ```sql
 tag_name        | business_count | icon
 ----------------|----------------|------
@@ -62,6 +65,7 @@ Electronics     | 74             | 📱
 ```
 
 **Example**:
+
 ```sql
 SELECT * FROM get_shops_tags() LIMIT 10;
 ```
@@ -71,13 +75,15 @@ SELECT * FROM get_shops_tags() LIMIT 10;
 **Purpose**: Find nearby businesses by category
 
 **Parameters**:
+
 - `p_tag` (text) - Category name (e.g., "Hardware store")
 - `p_user_lat` (double) - User latitude
-- `p_user_lon` (double) - User longitude  
+- `p_user_lon` (double) - User longitude
 - `p_radius_km` (double) - Search radius (default: 10 km)
 - `p_limit` (integer) - Max results (default: 9)
 
 **Returns**:
+
 ```sql
 name             | location_text | owner_whatsapp | distance_km
 -----------------|---------------|----------------|-------------
@@ -86,6 +92,7 @@ BELECOM LTD      | KN 59 St      | +2500788304700 | 0.22
 ```
 
 **Example**:
+
 ```sql
 SELECT name, location_text, owner_whatsapp, distance_km
 FROM get_shops_by_tag('Hardware store', -1.95, 30.06, 10.0, 9);
@@ -122,6 +129,7 @@ FROM get_shops_by_tag('Hardware store', -1.95, 30.06, 10.0, 9);
 ## User Experience
 
 ### Step 1: Browse Categories
+
 ```
 🏪 Shops & Services
 
@@ -142,6 +150,7 @@ Categories:
 ```
 
 ### Step 2: Share Location
+
 ```
 📍 Please share your location to find
 Hardware stores near you
@@ -150,6 +159,7 @@ Hardware stores near you
 ```
 
 ### Step 3: View Results
+
 ```
 🔧 Hardware store
 
@@ -161,7 +171,7 @@ Results:
 RWANLY COMPANY LTD
 KN 59 St • 0.2 km
 
-BELECOM LTD  
+BELECOM LTD
 KN 59 St • 0.2 km
 
 Quincaillerie Amani & Furaha
@@ -175,6 +185,7 @@ KN 70 St • 0.6 km
 ```
 
 ### Step 4: Get Contact
+
 ```
 *RWANLY COMPANY LTD*
 
@@ -194,24 +205,28 @@ Tap the number to chat with them directly!
 ## Technical Implementation
 
 ### Distance Calculation
+
 Uses PostGIS ST_Distance (same as nearby_businesses):
+
 ```sql
 CASE
-  WHEN b.location IS NOT NULL THEN 
+  WHEN b.location IS NOT NULL THEN
     ST_Distance(...geography...) / 1000.0  -- Most accurate
-  WHEN b.geo IS NOT NULL THEN 
+  WHEN b.geo IS NOT NULL THEN
     ST_Distance(...geography...) / 1000.0  -- Accurate
-  ELSE 
+  ELSE
     haversine_km(...)  -- Fallback
 END
 ```
 
 ### Data Flow
+
 ```
 User Action → Edge Function → Database RPC → Results → WhatsApp
 ```
 
 ### State Management
+
 ```typescript
 // Simple, clean states
 shops_services_menu     → Initial menu
@@ -227,7 +242,7 @@ shops_results           → Stores businesses array
 ```
 Modified:
   supabase/functions/wa-webhook/domains/shops/services.ts
-  
+
 Created:
   supabase/migrations/20251114144000_simplify_shops_services.sql
   SHOPS_SERVICES_CLEAN_FLOW_COMPLETE.md (this file)
@@ -241,6 +256,7 @@ Deployed:
 ## Testing
 
 ### Database Test
+
 ```bash
 export DATABASE_URL="postgresql://postgres:Pq0jyevTlfoa376P@db.lhbowpbcpwoiparwnwgt.supabase.co:5432/postgres"
 
@@ -249,12 +265,13 @@ psql $DATABASE_URL -c "SELECT * FROM get_shops_tags() LIMIT 10;"
 
 # Test search
 psql $DATABASE_URL -c "
-  SELECT name, location_text, distance_km 
+  SELECT name, location_text, distance_km
   FROM get_shops_by_tag('Hardware store', -1.95, 30.06, 10.0, 9);
 "
 ```
 
 ### WhatsApp Test
+
 1. Message the bot: `+35677186193`
 2. Tap "🏪 Shops & Services"
 3. Tap "Browse"
@@ -268,20 +285,21 @@ psql $DATABASE_URL -c "
 
 ## Verification Results ✅
 
-| Test | Status |
-|------|--------|
-| get_shops_tags works | ✅ PASS |
-| Has popular tags | ✅ PASS (117+ businesses) |
-| get_shops_by_tag works | ✅ PASS |
-| Returns top 9 or less | ✅ PASS |
-| Distance accurate | ✅ PASS (PostGIS) |
-| Edge function deployed | ✅ PASS |
+| Test                   | Status                    |
+| ---------------------- | ------------------------- |
+| get_shops_tags works   | ✅ PASS                   |
+| Has popular tags       | ✅ PASS (117+ businesses) |
+| get_shops_by_tag works | ✅ PASS                   |
+| Returns top 9 or less  | ✅ PASS                   |
+| Distance accurate      | ✅ PASS (PostGIS)         |
+| Edge function deployed | ✅ PASS                   |
 
 ---
 
 ## Benefits
 
 ### For Users
+
 ✅ **Simple flow** - Only 4 steps to contact a business  
 ✅ **Clear categories** - Easy to understand tags with icons  
 ✅ **Accurate distances** - PostGIS calculations  
@@ -289,6 +307,7 @@ psql $DATABASE_URL -c "
 ✅ **Top 9 results** - Not overwhelming
 
 ### For Developers
+
 ✅ **Clean code** - No complex joins or mappings  
 ✅ **Simple state** - Just tag name and icon  
 ✅ **Fast queries** - Direct tag column lookup  
@@ -300,6 +319,7 @@ psql $DATABASE_URL -c "
 ## Comparison
 
 ### Complex Flow (Before)
+
 ```
 1. User → Menu
 2. Browse button → Complex query
@@ -311,6 +331,7 @@ psql $DATABASE_URL -c "
 ```
 
 ### Simple Flow (After)
+
 ```
 1. User → Menu
 2. Browse → Simple tags query
@@ -327,30 +348,32 @@ psql $DATABASE_URL -c "
 
 ## Categories Available
 
-| Category | Icon | Count | Description |
-|----------|------|-------|-------------|
-| Hardware store | 🔧 | 117 | Construction materials, tools |
-| Pharmacy | 💊 | 108 | Medicines, health products |
-| Bar & Restaurant | 🍺 | 83 | Food, drinks, entertainment |
-| Electronics store | 📱 | 74 | Phones, computers, gadgets |
-| Cosmetics store | 💄 | 70 | Beauty products, makeup |
-| Beauty salon | 💅 | 53 | Nails, spa, beauty services |
-| Hair salon | ✂️ | 39 | Haircuts, styling |
-| Auto parts store | 🚗 | 37 | Car parts, spareparts |
-| Store | 🏪 | 22 | General stores |
-| Coffee shop | ☕ | 15 | Coffee, snacks |
+| Category          | Icon | Count | Description                   |
+| ----------------- | ---- | ----- | ----------------------------- |
+| Hardware store    | 🔧   | 117   | Construction materials, tools |
+| Pharmacy          | 💊   | 108   | Medicines, health products    |
+| Bar & Restaurant  | 🍺   | 83    | Food, drinks, entertainment   |
+| Electronics store | 📱   | 74    | Phones, computers, gadgets    |
+| Cosmetics store   | 💄   | 70    | Beauty products, makeup       |
+| Beauty salon      | 💅   | 53    | Nails, spa, beauty services   |
+| Hair salon        | ✂️   | 39    | Haircuts, styling             |
+| Auto parts store  | 🚗   | 37    | Car parts, spareparts         |
+| Store             | 🏪   | 22    | General stores                |
+| Coffee shop       | ☕   | 15    | Coffee, snacks                |
 
 ---
 
 ## Next Steps
 
 ### Immediate
+
 - [x] Migration deployed
 - [x] Edge function deployed
 - [x] Tests passing
 - [ ] User verification in WhatsApp
 
 ### Future Enhancements
+
 - [ ] Add more categories as businesses grow
 - [ ] Add photos/images to businesses
 - [ ] Add ratings/reviews
@@ -376,12 +399,14 @@ DROP FUNCTION IF EXISTS get_shops_by_tag(...);
 ✅ **Shops & Services flow is now clean, simple, and minimalist!**
 
 Simplified from a complex, over-engineered system to a straightforward 4-step flow:
+
 1. Browse categories (with counts and icons)
 2. Select category → share location
 3. View top 9 nearby businesses
 4. Get WhatsApp contact
 
-Users can now quickly find and contact nearby businesses in their desired category. No clutter, no confusion, just results.
+Users can now quickly find and contact nearby businesses in their desired category. No clutter, no
+confusion, just results.
 
 ---
 

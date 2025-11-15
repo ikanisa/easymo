@@ -8,16 +8,19 @@
 ## 📦 What's Being Deployed
 
 ### 1. Schedule Change
+
 - **Old:** 3x daily (9am, 2pm, 7pm EAT)
 - **New:** **1x daily at 11am EAT (8am UTC)**
 - **Savings:** $475/year (89% cost reduction)
 
 ### 2. Multi-Source Integration
+
 - ✅ **Econfary API** (c548f5e...bd7)
 - ✅ **SerpAPI** (needs YOUR_KEY)
 - ✅ **OpenAI Deep Research** (o4-mini)
 
 ### 3. Contact Number Requirement
+
 - ✅ **100% of properties have WhatsApp/phone numbers**
 - ✅ International format (+250, +356, +255, +254, +256)
 - ✅ 10-17 character validation
@@ -46,7 +49,7 @@ curl -X POST "$SUPABASE_URL/functions/v1/openai-deep-research" \
 
 # 5. Verify contacts
 psql $DATABASE_URL -c "
-  SELECT 
+  SELECT
     source,
     COUNT(*) as total,
     COUNT(contact_info) as with_contacts,
@@ -62,6 +65,7 @@ psql $DATABASE_URL -c "
 ## 📊 Expected Output
 
 ### Test Run (Rwanda)
+
 ```bash
 Processing: 3-6 minutes
 Results:
@@ -70,7 +74,7 @@ Results:
   - OpenAI Deep Research:  10-15 properties
   ----------------------------------------
   TOTAL:                   60-95 properties
-  
+
 All with:
   ✅ Contact numbers (+250XXXXXXXXX)
   ✅ Prices in RWF
@@ -79,6 +83,7 @@ All with:
 ```
 
 ### Production Run (All Countries - Daily at 11am)
+
 ```bash
 Countries: Rwanda, Malta, Tanzania, Kenya, Uganda, Burundi
 Properties per day: 200-400
@@ -93,6 +98,7 @@ Cost: $0.18/day = $5.40/month = $64.80/year
 ## 📁 Files Modified
 
 ### Database Migrations
+
 1. `supabase/migrations/20251114194200_openai_deep_research_tables.sql`
    - ✅ Added `source_url` field
    - ✅ Made `contact_info` REQUIRED
@@ -105,6 +111,7 @@ Cost: $0.18/day = $5.40/month = $64.80/year
    - ✅ Added SerpAPI key placeholder
 
 ### Edge Function
+
 3. `supabase/functions/openai-deep-research/index.ts`
    - ✅ Enhanced SerpAPI with 5 search queries
    - ✅ AI-powered property extraction
@@ -114,6 +121,7 @@ Cost: $0.18/day = $5.40/month = $64.80/year
    - ✅ Comprehensive logging
 
 ### Documentation
+
 4. `AI_AGENTS_DEPLOYMENT_UPDATED.md` - Multi-source guide
 5. `AI_AGENTS_PHASE2_CONFIGURATION.md` - Phase 2 config
 6. `DEEP_RESEARCH_CONTACT_VALIDATION.md` - Contact validation
@@ -124,6 +132,7 @@ Cost: $0.18/day = $5.40/month = $64.80/year
 ## ✅ Pre-Deployment Checklist
 
 ### Required
+
 - [x] Database migrations created
 - [x] Edge function enhanced
 - [x] Contact validation implemented
@@ -138,6 +147,7 @@ Cost: $0.18/day = $5.40/month = $64.80/year
 - [ ] **Verify first run tomorrow** ← DO THIS
 
 ### Optional (Can do later)
+
 - [ ] Set up monitoring dashboard
 - [ ] Configure alerts for failures
 - [ ] Implement webhook notifications
@@ -148,6 +158,7 @@ Cost: $0.18/day = $5.40/month = $64.80/year
 ## 🔧 Post-Deployment Verification
 
 ### Immediate (After First Test Run)
+
 ```bash
 # 1. Check if properties were inserted
 psql $DATABASE_URL -c "SELECT COUNT(*) FROM researched_properties WHERE scraped_at > NOW() - INTERVAL '1 hour';"
@@ -156,7 +167,7 @@ psql $DATABASE_URL -c "SELECT COUNT(*) FROM researched_properties WHERE scraped_
 
 # 2. Verify ALL have contacts
 psql $DATABASE_URL -c "
-  SELECT 
+  SELECT
     COUNT(*) as total,
     COUNT(contact_info) as with_contact,
     COUNT(CASE WHEN contact_info LIKE '+%' THEN 1 END) as proper_format
@@ -178,6 +189,7 @@ psql $DATABASE_URL -c "
 ```
 
 ### Tomorrow (After Scheduled Run at 11am EAT)
+
 ```bash
 # Check if cron job executed
 psql $DATABASE_URL -c "
@@ -189,7 +201,7 @@ psql $DATABASE_URL -c "
 
 # Check today's properties
 psql $DATABASE_URL -c "
-  SELECT 
+  SELECT
     location_country,
     source,
     COUNT(*) as count,
@@ -206,21 +218,25 @@ psql $DATABASE_URL -c "
 ## 💡 Key Features
 
 ### 1. Guaranteed Contact Numbers
+
 - **100% coverage** - No property without contact
 - **International format** - All start with +
 - **WhatsApp ready** - Can immediately connect buyers to sellers
 
 ### 2. Multi-Source Reliability
+
 - **If one API fails**, others continue
 - **Cross-validation** - Same properties from multiple sources
 - **Broader coverage** - Professional + classified + AI-discovered
 
 ### 3. Cost Optimized
+
 - **1x daily** vs. 3x daily = 67% fewer runs
 - **Smart queries** - 5 targeted searches per location
 - **Efficient models** - o4-mini-deep-research (cheap + fast)
 
 ### 4. Production Ready
+
 - **Database constraints** - Can't insert without contact
 - **Validation layers** - Multiple checks before insertion
 - **Comprehensive logging** - Track every step
@@ -231,6 +247,7 @@ psql $DATABASE_URL -c "
 ## 📞 Sample Contact Data
 
 ### Expected Format
+
 ```sql
 -- Rwanda
 +250788123456
@@ -249,9 +266,10 @@ psql $DATABASE_URL -c "
 ```
 
 ### Contact Usage in App
+
 ```typescript
 // When user selects property
-const whatsappLink = `https://wa.me/${contact.replace('+', '')}`;
+const whatsappLink = `https://wa.me/${contact.replace("+", "")}`;
 
 // Example:
 // Input:  +250788123456
@@ -259,9 +277,7 @@ const whatsappLink = `https://wa.me/${contact.replace('+', '')}`;
 
 await sendMessage(userId, {
   text: "Contact the owner:",
-  buttons: [
-    { id: "whatsapp", title: "WhatsApp Owner" }
-  ]
+  buttons: [{ id: "whatsapp", title: "WhatsApp Owner" }],
 });
 ```
 
@@ -272,7 +288,7 @@ await sendMessage(userId, {
 After 7 days, you should have:
 
 ```sql
-SELECT 
+SELECT
   location_country,
   COUNT(*) as properties,
   COUNT(DISTINCT contact_info) as unique_contacts,
@@ -286,8 +302,9 @@ ORDER BY properties DESC;
 ```
 
 **Expected Results:**
+
 - Rwanda: 400-650 properties
-- Malta: 300-500 properties  
+- Malta: 300-500 properties
 - Tanzania: 250-450 properties
 - Kenya: 250-450 properties
 - Uganda: 200-400 properties
@@ -326,6 +343,7 @@ ORDER BY properties DESC;
 **All code is written, tested, and documented.**
 
 **Just run:**
+
 ```bash
 supabase db push
 supabase functions deploy openai-deep-research
@@ -334,11 +352,13 @@ supabase functions deploy openai-deep-research
 # Wait for 11am EAT tomorrow
 ```
 
-**Result:** Automated property research with guaranteed contact numbers, running daily for just $0.18/day!
+**Result:** Automated property research with guaranteed contact numbers, running daily for just
+$0.18/day!
 
 ---
 
 **Questions? Check:**
+
 - `AI_AGENTS_DEPLOYMENT_UPDATED.md` - Detailed deployment
 - `DEEP_RESEARCH_CONTACT_VALIDATION.md` - Contact validation details
 - `AI_AGENTS_PHASE2_CONFIGURATION.md` - Configuration reference

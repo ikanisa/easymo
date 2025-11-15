@@ -6,6 +6,7 @@
 ## 📋 Quick Commands
 
 ### Development
+
 ```bash
 # Start development
 cd waiter-pwa
@@ -23,6 +24,7 @@ pnpm start
 ```
 
 ### Database
+
 ```bash
 cd supabase
 
@@ -37,6 +39,7 @@ supabase db reset
 ```
 
 ### Edge Functions
+
 ```bash
 cd supabase
 
@@ -51,6 +54,7 @@ supabase functions logs waiter-ai-agent
 ```
 
 ### Deployment
+
 ```bash
 # Automated
 cd waiter-pwa
@@ -66,6 +70,7 @@ netlify deploy --prod
 ## 🔑 Environment Variables
 
 ### Local (.env.local)
+
 ```env
 NEXT_PUBLIC_SUPABASE_URL=https://lhbowpbcpwoiparwnwgt.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbG...
@@ -74,6 +79,7 @@ NEXT_PUBLIC_APP_URL=http://localhost:3001
 ```
 
 ### Supabase Secrets
+
 ```bash
 supabase secrets set OPENAI_API_KEY=sk-proj-...
 ```
@@ -81,6 +87,7 @@ supabase secrets set OPENAI_API_KEY=sk-proj-...
 ## 📁 Key Files
 
 ### Frontend
+
 - `app/page.tsx` - Home/landing
 - `app/chat/page.tsx` - AI chat (MISSING - needs creation)
 - `app/menu/page.tsx` - Menu browser (MISSING)
@@ -88,18 +95,21 @@ supabase secrets set OPENAI_API_KEY=sk-proj-...
 - `app/order/[id]/page.tsx` - Order tracking
 
 ### Contexts (State)
+
 - `contexts/ChatContext.tsx` - Chat state
 - `contexts/MenuContext.tsx` - Menu state
 - `contexts/CartContext.tsx` - Cart state
 - `contexts/PaymentContext.tsx` - Payment state
 
 ### Backend
+
 - `supabase/functions/waiter-ai-agent/index.ts` - AI agent (824 lines)
 - `supabase/migrations/20260413000000_waiter_ai_complete_schema.sql` - Database (564 lines)
 
 ## 🧪 Testing Checklist
 
 ### Must Test Before Production
+
 - [ ] Start conversation with AI
 - [ ] Send chat messages
 - [ ] Browse menu by category
@@ -112,6 +122,7 @@ supabase secrets set OPENAI_API_KEY=sk-proj-...
 - [ ] Test offline mode
 
 ### Test Accounts
+
 ```bash
 # Anonymous auth auto-creates users
 # No test accounts needed
@@ -120,6 +131,7 @@ supabase secrets set OPENAI_API_KEY=sk-proj-...
 ## 🗄️ Database Tables
 
 ### Core Tables (12 total)
+
 1. `waiter_conversations` - Chat sessions
 2. `waiter_messages` - Message history
 3. `menu_categories` - Menu structure
@@ -134,6 +146,7 @@ supabase secrets set OPENAI_API_KEY=sk-proj-...
 12. `wine_pairings` - Wine suggestions
 
 ### Sample Menu Data
+
 ```sql
 -- Insert sample category
 INSERT INTO menu_categories (name, description, sort_order)
@@ -153,6 +166,7 @@ VALUES (
 ## 🚨 Troubleshooting
 
 ### Build Fails
+
 ```bash
 # Clean and rebuild
 rm -rf .next node_modules
@@ -161,6 +175,7 @@ pnpm build
 ```
 
 ### Database Connection Issues
+
 ```bash
 # Check Supabase status
 supabase status
@@ -170,6 +185,7 @@ psql $DATABASE_URL -c "SELECT 1"
 ```
 
 ### Edge Function Not Working
+
 ```bash
 # Check logs
 supabase functions logs waiter-ai-agent --follow
@@ -179,6 +195,7 @@ supabase functions deploy waiter-ai-agent
 ```
 
 ### Cart Not Syncing
+
 ```bash
 # Check localStorage
 localStorage.getItem('waiter-ai-cart')
@@ -190,6 +207,7 @@ SELECT * FROM draft_orders WHERE user_id = auth.uid();
 ## 📊 Monitoring
 
 ### Key Metrics to Track
+
 - Response time (AI chat)
 - Cart conversion rate
 - Payment success rate
@@ -198,6 +216,7 @@ SELECT * FROM draft_orders WHERE user_id = auth.uid();
 - User sessions
 
 ### Logs Location
+
 - **Frontend**: Browser console
 - **Edge Functions**: Supabase logs
 - **Database**: Supabase logs
@@ -215,10 +234,12 @@ SELECT * FROM draft_orders WHERE user_id = auth.uid();
 ## 📱 PWA Features
 
 ### Install Instructions
+
 **iOS**: Safari > Share > Add to Home Screen  
 **Android**: Chrome > Menu > Install App
 
 ### Offline Capabilities
+
 - ✅ Cart persists (localStorage)
 - ✅ Menu cached
 - ✅ Messages cached
@@ -227,6 +248,7 @@ SELECT * FROM draft_orders WHERE user_id = auth.uid();
 ## 🎯 Feature Flags
 
 In `.env.local`:
+
 ```env
 NEXT_PUBLIC_ENABLE_VOICE=false    # Voice input
 NEXT_PUBLIC_ENABLE_PUSH=true      # Push notifications
@@ -235,11 +257,13 @@ NEXT_PUBLIC_ENABLE_PUSH=true      # Push notifications
 ## 📞 Support
 
 ### Documentation
+
 - Main README: `/waiter-pwa/README.md`
 - Status: `/WAITER_AI_PWA_IMPLEMENTATION_STATUS.md`
 - Complete Guide: `/WAITER_AI_PWA_COMPLETE.md`
 
 ### Issues
+
 - Check `/docs/GROUND_RULES.md`
 - Review recent commits
 - Check Supabase dashboard
@@ -247,6 +271,7 @@ NEXT_PUBLIC_ENABLE_PUSH=true      # Push notifications
 ## ⚡ Performance Tips
 
 ### Optimize Build
+
 ```bash
 # Analyze bundle
 pnpm build -- --analyze
@@ -256,6 +281,7 @@ pnpm build -- --analyze
 ```
 
 ### Database Optimization
+
 ```sql
 -- Add indexes for common queries
 CREATE INDEX idx_menu_items_category ON menu_items(category_id);
@@ -266,6 +292,7 @@ CREATE INDEX idx_orders_user ON orders(user_id);
 ## 🎉 Success Indicators
 
 You're ready when:
+
 - ✅ Build succeeds without errors
 - ✅ Dev server runs on localhost:3001
 - ✅ Can send chat message and get AI response
@@ -277,23 +304,27 @@ You're ready when:
 ## 🚀 Next Steps
 
 1. **Test Locally**
+
    ```bash
    cd waiter-pwa
    pnpm dev
    ```
 
 2. **Apply Migration**
+
    ```bash
    cd ../supabase
    supabase db push
    ```
 
 3. **Set OpenAI Key**
+
    ```bash
    supabase secrets set OPENAI_API_KEY=sk-...
    ```
 
 4. **Deploy**
+
    ```bash
    cd ../waiter-pwa
    ./deploy.sh

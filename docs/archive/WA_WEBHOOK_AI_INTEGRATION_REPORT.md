@@ -8,7 +8,9 @@
 
 ## Executive Summary
 
-After deep analysis of the EasyMO repository, I've identified the current state and created a surgical implementation plan to integrate world-class AI agents with the WhatsApp webhook while respecting the additive-only guards.
+After deep analysis of the EasyMO repository, I've identified the current state and created a
+surgical implementation plan to integrate world-class AI agents with the WhatsApp webhook while
+respecting the additive-only guards.
 
 ### Key Findings
 
@@ -16,11 +18,12 @@ After deep analysis of the EasyMO repository, I've identified the current state 
 ✅ **Clean Architecture**: wa-webhook well-structured with router pattern  
 ⚠️ **Critical Gap**: No integration between wa-webhook and AI agents  
 ❌ **Missing**: Specialized agent implementations for WhatsApp context  
-✅ **Security**: wa-webhook has basic security, needs enhancement  
+✅ **Security**: wa-webhook has basic security, needs enhancement
 
 ### What Users Get
 
 Users interact with AI agents via WhatsApp:
+
 - Natural conversation with context memory
 - Tool execution (balance check, transfers, bookings, etc.)
 - Multi-turn conversations with state management
@@ -85,7 +88,7 @@ packages/ai/src/
 │  • Processor    │           │ • Memory         │
 └─────────────────┘           └──────────────────┘
 
-**Problem**: Users send WhatsApp messages → wa-webhook processes them → 
+**Problem**: Users send WhatsApp messages → wa-webhook processes them →
              No AI agent involvement → Missing intelligent responses
 ```
 
@@ -98,9 +101,11 @@ packages/ai/src/
 **Goal**: Connect wa-webhook to @easymo/ai without modifying existing handlers
 
 #### 1.1 Create AI Agent Handler (NEW FILE)
+
 ```typescript
 // supabase/functions/wa-webhook/router/ai_agent_handler.ts
 ```
+
 - Detects AI-eligible messages
 - Routes to appropriate specialized agent
 - Handles streaming responses
@@ -108,15 +113,18 @@ packages/ai/src/
 - Falls back to existing handlers if needed
 
 #### 1.2 Create Agent Context Builder (NEW FILE)
+
 ```typescript
 // supabase/functions/wa-webhook/_shared/agent_context.ts
 ```
+
 - Builds agent context from WhatsApp message
 - Extracts user profile, preferences, history
 - Prepares tool execution context
 - Handles session management
 
 #### 1.3 Create Specialized Agents (NEW FILES)
+
 ```typescript
 // packages/ai/src/agents/whatsapp/
 ├── customer_service_agent.ts    → General inquiries & support
@@ -126,6 +134,7 @@ packages/ai/src/
 ```
 
 #### 1.4 Enhance Security (NEW FILES - Additive)
+
 ```typescript
 // supabase/functions/wa-webhook/_shared/
 ├── webhook_verification_enhanced.ts  → HMAC verification with caching
@@ -211,7 +220,7 @@ CREATE OR REPLACE FUNCTION match_agent_embeddings(
   content TEXT,
   similarity float
 ) LANGUAGE SQL STABLE AS $$
-  SELECT id, content, 
+  SELECT id, content,
     1 - (embedding <=> query_embedding) AS similarity
   FROM agent_embeddings
   WHERE 1 - (embedding <=> query_embedding) > match_threshold
@@ -224,26 +233,27 @@ CREATE INDEX idx_conversations_user ON agent_conversations(user_id);
 CREATE INDEX idx_messages_conversation ON agent_messages(conversation_id);
 CREATE INDEX idx_tool_exec_conversation ON agent_tool_executions(conversation_id);
 CREATE INDEX idx_metrics_agent ON agent_metrics(agent_type, timestamp DESC);
-CREATE INDEX idx_embeddings_vector ON agent_embeddings 
+CREATE INDEX idx_embeddings_vector ON agent_embeddings
   USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100);
 ```
 
 ### Phase 3: Enhanced Security Components ✅ NEW FILES
 
 #### 3.1 Webhook Verification (Production-Grade)
+
 ```typescript
 // supabase/functions/wa-webhook/_shared/webhook_verification_enhanced.ts
 
 export class WebhookVerifier {
   private cache: Map<string, VerificationResult>;
-  
+
   verifySignature(payload: string, signature: string | null): boolean {
     // HMAC SHA-256 verification
     // Timing-safe comparison
     // Caching for performance
     // Auto cleanup
   }
-  
+
   handleVerificationChallenge(mode, token, challenge): Response | null {
     // WhatsApp verification endpoint
   }
@@ -251,13 +261,14 @@ export class WebhookVerifier {
 ```
 
 #### 3.2 Advanced Rate Limiting
+
 ```typescript
 // supabase/functions/wa-webhook/_shared/rate_limiter_advanced.ts
 
 export class RateLimiter {
   private buckets: Map<string, RateLimitBucket>;
   private blacklist: Set<string>;
-  
+
   async checkLimit(identifier: string): Promise<RateLimitResult> {
     // Per-user sliding window (100 req/min)
     // Violation tracking
@@ -268,12 +279,13 @@ export class RateLimiter {
 ```
 
 #### 3.3 High-Performance Cache
+
 ```typescript
 // supabase/functions/wa-webhook/_shared/cache_manager.ts
 
 export class CacheManager {
   private cache: Map<string, CacheEntry>;
-  
+
   async getOrSet<T>(key: string, factory: () => Promise<T>, ttl?: number): Promise<T> {
     // LRU eviction
     // TTL-based expiration
@@ -284,6 +296,7 @@ export class CacheManager {
 ```
 
 #### 3.4 AI-Specific Error Handler
+
 ```typescript
 // supabase/functions/wa-webhook/_shared/error_handler_ai.ts
 
@@ -303,6 +316,7 @@ export class AIErrorHandler {
 ## Integration Flow (How It Works)
 
 ### Current Flow (Without AI)
+
 ```
 WhatsApp Message
   ↓
@@ -322,6 +336,7 @@ Response sent to WhatsApp
 ```
 
 ### New Flow (With AI Integration)
+
 ```
 WhatsApp Message
   ↓
@@ -363,21 +378,22 @@ NEW: ai_agent_handler.ts (AI eligibility check)
 
 ## Agent Decision Matrix
 
-| Message Type | Condition | Handler | Example |
-|-------------|-----------|---------|---------|
-| Text | Free-form question | AI Agent | "How do I book a trip?" |
-| Text | Contains keywords (book, help, support) | AI Agent | "I need help with my booking" |
-| Text | Casual conversation | AI Agent | "Hello", "Thanks" |
-| Interactive List | From AI Agent menu | AI Agent | User selects "Book a Trip" |
-| Interactive List | From existing menu | Existing Handler | Main menu navigation |
-| Interactive Button | AI Agent buttons | AI Agent | "Yes, proceed" after AI question |
-| Interactive Button | Existing buttons | Existing Handler | Confirm booking button |
+| Message Type       | Condition                               | Handler          | Example                          |
+| ------------------ | --------------------------------------- | ---------------- | -------------------------------- |
+| Text               | Free-form question                      | AI Agent         | "How do I book a trip?"          |
+| Text               | Contains keywords (book, help, support) | AI Agent         | "I need help with my booking"    |
+| Text               | Casual conversation                     | AI Agent         | "Hello", "Thanks"                |
+| Interactive List   | From AI Agent menu                      | AI Agent         | User selects "Book a Trip"       |
+| Interactive List   | From existing menu                      | Existing Handler | Main menu navigation             |
+| Interactive Button | AI Agent buttons                        | AI Agent         | "Yes, proceed" after AI question |
+| Interactive Button | Existing buttons                        | Existing Handler | Confirm booking button           |
 
 ---
 
 ## World-Class Agent Features
 
 ### 1. Multi-Turn Conversations
+
 ```typescript
 User: "I want to book a trip"
 Agent: "I'd be happy to help! Where would you like to go?"
@@ -388,11 +404,13 @@ Agent: "Perfect! I found 3 available trips..." [Shows options]
 ```
 
 ### 2. Context Memory
+
 - **Short-term**: Last 50 messages in Redis (< 100ms retrieval)
 - **Long-term**: Semantic search in pgvector (user preferences, past trips)
 - **Working Memory**: Current conversation state, form data
 
 ### 3. Tool Execution
+
 ```typescript
 Available Tools:
 - checkBalanceTool → Get wallet balance
@@ -404,6 +422,7 @@ Available Tools:
 ```
 
 ### 4. Intelligent Routing
+
 ```typescript
 Message Analysis → Intent Classification → Agent Selection
   ↓                       ↓                      ↓
@@ -413,6 +432,7 @@ Message Analysis → Intent Classification → Agent Selection
 ```
 
 ### 5. Streaming Responses
+
 ```typescript
 // Real-time token-by-token delivery
 Agent: "Let me check available trips for you..."
@@ -424,6 +444,7 @@ Agent: "Let me check available trips for you..."
 ```
 
 ### 6. Cost Optimization
+
 ```typescript
 Model Selection:
 - gpt-4o-mini → General chat ($0.15/1M tokens)
@@ -437,6 +458,7 @@ Model Selection:
 ## Security Enhancements
 
 ### 1. Webhook Verification
+
 ```typescript
 ✅ HMAC SHA-256 signature validation
 ✅ Timing-safe comparison (prevent timing attacks)
@@ -445,6 +467,7 @@ Model Selection:
 ```
 
 ### 2. Rate Limiting
+
 ```typescript
 ✅ Per-user limits (100 requests/minute)
 ✅ Sliding window algorithm
@@ -454,6 +477,7 @@ Model Selection:
 ```
 
 ### 3. Error Handling
+
 ```typescript
 ✅ 11 error categories with user-friendly messages
 ✅ Correlation ID tracking
@@ -463,6 +487,7 @@ Model Selection:
 ```
 
 ### 4. Input Validation
+
 ```typescript
 ✅ Zod schema validation
 ✅ Content moderation (OpenAI Moderation API)
@@ -475,6 +500,7 @@ Model Selection:
 ## Admin Panel Integration
 
 ### 1. Agent Management Dashboard
+
 ```typescript
 Features:
 - Create/Edit/Delete agents
@@ -485,6 +511,7 @@ Features:
 ```
 
 ### 2. Conversation Monitoring
+
 ```typescript
 Views:
 - Active conversations list
@@ -495,6 +522,7 @@ Views:
 ```
 
 ### 3. Metrics Dashboard
+
 ```typescript
 Metrics:
 - Total conversations
@@ -511,16 +539,19 @@ Metrics:
 ## Implementation Steps (Additive Only)
 
 ### Step 1: Create AI Agent Handler ✅
+
 ```bash
 # NEW FILE: supabase/functions/wa-webhook/router/ai_agent_handler.ts
 ```
 
 ### Step 2: Create Agent Context Builder ✅
+
 ```bash
 # NEW FILE: supabase/functions/wa-webhook/_shared/agent_context.ts
 ```
 
 ### Step 3: Implement Specialized Agents ✅
+
 ```bash
 # NEW FILES: packages/ai/src/agents/whatsapp/
 - customer_service_agent.ts
@@ -530,6 +561,7 @@ Metrics:
 ```
 
 ### Step 4: Add Security Components ✅
+
 ```bash
 # NEW FILES: supabase/functions/wa-webhook/_shared/
 - webhook_verification_enhanced.ts
@@ -539,11 +571,13 @@ Metrics:
 ```
 
 ### Step 5: Database Migration ✅
+
 ```bash
 # NEW FILE: supabase/migrations/YYYYMMDDHHMMSS_ai_agents.sql
 ```
 
 ### Step 6: Update Router (Minimal Change)
+
 ```typescript
 // router/router.ts - ADD ONE LINE ONLY
 import { tryAIAgentHandler } from "./ai_agent_handler.ts";
@@ -561,16 +595,19 @@ if (aiHandled) return;
 ## Success Metrics
 
 ### Performance
+
 - ✅ P95 latency < 2000ms (OpenAI response time)
 - ✅ Cache hit rate > 80%
 - ✅ Rate limit false positives < 0.1%
 
 ### Business
+
 - ✅ 50% reduction in support tickets
 - ✅ 30% increase in booking completion
 - ✅ 90% user satisfaction with AI responses
 
 ### Cost
+
 - ✅ Average cost per conversation < $0.05
 - ✅ gpt-4o-mini usage > 70% (vs gpt-4o)
 - ✅ Token usage optimized (context pruning)
@@ -580,28 +617,36 @@ if (aiHandled) return;
 ## Risk Mitigation
 
 ### Risk 1: AI Hallucinations
-**Mitigation**: 
+
+**Mitigation**:
+
 - Strict system prompts
 - Tool-based fact retrieval
 - Validation of generated data
 - Fallback to human agent
 
 ### Risk 2: High Costs
+
 **Mitigation**:
+
 - Model selection (mini vs full)
 - Context pruning
 - Caching frequent queries
 - Rate limiting per user
 
 ### Risk 3: Latency Issues
+
 **Mitigation**:
+
 - Streaming responses
 - Async tool execution
 - Redis caching
 - Connection pooling
 
 ### Risk 4: Security Breaches
+
 **Mitigation**:
+
 - Signature verification
 - Rate limiting + blacklisting
 - Input validation
@@ -624,7 +669,8 @@ if (aiHandled) return;
 
 ## Conclusion
 
-This implementation plan provides a **surgical, additive-only approach** to integrating world-class AI agents into the EasyMO WhatsApp webhook. It:
+This implementation plan provides a **surgical, additive-only approach** to integrating world-class
+AI agents into the EasyMO WhatsApp webhook. It:
 
 - ✅ Respects additive-only guards (all new files)
 - ✅ Leverages existing `@easymo/ai` package

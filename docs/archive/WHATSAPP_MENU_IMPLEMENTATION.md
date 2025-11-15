@@ -1,7 +1,9 @@
 # WhatsApp Dynamic Home Menu Implementation
 
 ## Overview
+
 Successfully implemented dynamic WhatsApp home menu management system that allows:
+
 - Dynamic menu items loaded from database instead of hardcoded values
 - Country-specific menu item availability
 - Admin panel for real-time menu management
@@ -10,36 +12,44 @@ Successfully implemented dynamic WhatsApp home menu management system that allow
 ## Changes Made
 
 ### 1. Database Layer (Already Exists ✅)
+
 **Table:** `whatsapp_home_menu_items`
+
 - Fields: id, name, key, is_active, active_countries[], display_order, icon
 - 12 menu items seeded with default configuration
 - RLS policies enabled for security
 - Located in: `supabase/migrations/20260322100000_whatsapp_home_menu_config.sql`
 
 ### 2. WhatsApp Webhook Integration
+
 **New File:** `supabase/functions/wa-webhook/domains/menu/dynamic_home_menu.ts`
+
 - `fetchActiveMenuItems(countryCode)` - Fetches active menu items for specific country
 - `getMenuItemId(key)` - Maps menu keys to internal IDS
 - `getMenuItemTranslationKeys(key)` - Maps menu keys to i18n translation keys
 - Supports all existing menu items with proper type safety
 
 **Modified:** `supabase/functions/wa-webhook/flows/home.ts`
+
 - Replaced hardcoded `BASE_ROW_DEFS` with dynamic database fetch
 - Added country detection from phone number (E.164 format)
 - Country mapping: +250→RW, +256→UG, +254→KE, +255→TZ, +257→BI, +243→CD
 - Maintains backward compatibility with existing features (insurance gate, admin menu)
 
 **Translation Updates:**
+
 - Added "notary_services" translations to English and French
 - Files: `supabase/functions/wa-webhook/i18n/messages/en.json`, `fr.json`
 
 ### 3. Admin Panel Management
 
 **New Page:** `admin-app/app/(panel)/whatsapp-menu/page.tsx`
+
 - Server-side data fetching with Supabase
 - Force dynamic rendering for real-time updates
 
 **New Component:** `admin-app/app/(panel)/whatsapp-menu/WhatsAppMenuClient.tsx`
+
 - Interactive menu management interface
 - Real-time toggle for active/inactive status
 - Country availability toggle buttons (RW, UG, KE, TZ, BI, CD)
@@ -47,30 +57,37 @@ Successfully implemented dynamic WhatsApp home menu management system that allow
 - Error handling and loading states
 
 **New Component:** `admin-app/components/whatsapp-menu/WhatsAppMenuTable.tsx`
+
 - Sortable table with display order
 - Visual country badges with active/inactive states
 - Click-to-toggle functionality for both status and countries
 - Responsive design with proper styling
 
 **New API:** `admin-app/app/api/whatsapp-menu/route.ts`
+
 - GET endpoint: Fetch all menu items ordered by display_order
 - PATCH endpoint: Update menu item (status, countries, etc.)
 - Proper error handling and validation
 
 **New Types:** `admin-app/types/whatsapp-menu.ts`
+
 - Zod schemas for validation
 - TypeScript types exported for consistency
 
 **New Queries:** `admin-app/lib/queries/whatsapp-menu.ts`
+
 - React Query helper functions
 - Query keys for cache management
 
 **Navigation Update:** `admin-app/components/layout/nav-items.ts`
+
 - Added "WhatsApp menu" (📱) to System section
 - Located between "WhatsApp health" and "Settings"
 
 ### 4. Testing Infrastructure
+
 **New File:** `test-whatsapp-menu.sh`
+
 - Database connectivity test
 - Country-specific filtering validation
 - Active/inactive status toggle test
@@ -79,6 +96,7 @@ Successfully implemented dynamic WhatsApp home menu management system that allow
 ## How It Works
 
 ### WhatsApp User Flow
+
 1. User sends message to WhatsApp bot
 2. System extracts country code from phone number (+250... → RW)
 3. `fetchActiveMenuItems("RW")` queries database for active items in Rwanda
@@ -86,6 +104,7 @@ Successfully implemented dynamic WhatsApp home menu management system that allow
 5. User sees only items marked active for their country
 
 ### Admin Management Flow
+
 1. Admin navigates to `/whatsapp-menu` in admin panel
 2. Sees all 12 menu items in a table sorted by display_order
 3. Can click status button to toggle active/inactive
@@ -94,6 +113,7 @@ Successfully implemented dynamic WhatsApp home menu management system that allow
 6. New WhatsApp sessions immediately reflect changes
 
 ### Country Detection Logic
+
 ```typescript
 Phone: +250788123456 → Country: RW (Rwanda)
 Phone: +256771234567 → Country: UG (Uganda)
@@ -102,6 +122,7 @@ Default: RW (if no match)
 ```
 
 ## Current Menu Items (12 total)
+
 1. 🚖 Nearby Drivers (nearby_drivers)
 2. 🧍 Nearby Passengers (nearby_passengers)
 3. 🚦 Schedule Trip (schedule_trip)
@@ -116,6 +137,7 @@ Default: RW (if no match)
 12. 💬 Customer Support (customer_support)
 
 ## Database Schema
+
 ```sql
 CREATE TABLE whatsapp_home_menu_items (
   id UUID PRIMARY KEY,
@@ -133,9 +155,11 @@ CREATE TABLE whatsapp_home_menu_items (
 ## API Endpoints
 
 ### GET /api/whatsapp-menu
+
 Returns all menu items ordered by display_order.
 
 **Response:**
+
 ```json
 {
   "data": [
@@ -153,9 +177,11 @@ Returns all menu items ordered by display_order.
 ```
 
 ### PATCH /api/whatsapp-menu
+
 Updates a specific menu item.
 
 **Request:**
+
 ```json
 {
   "id": "uuid",
@@ -167,6 +193,7 @@ Updates a specific menu item.
 ## Testing Instructions
 
 ### 1. Database Testing
+
 ```bash
 export DATABASE_URL="postgresql://postgres:Pq0jyevTlfoa376P@db.lhbowpbcpwoiparwnwgt.supabase.co:5432/postgres"
 
@@ -178,6 +205,7 @@ psql "$DATABASE_URL" -c "SELECT name FROM whatsapp_home_menu_items WHERE is_acti
 ```
 
 ### 2. Admin Panel Testing
+
 ```bash
 # Start admin app
 cd admin-app
@@ -192,6 +220,7 @@ npm run dev
 ```
 
 ### 3. WhatsApp Integration Testing
+
 1. Deploy wa-webhook function to Supabase
 2. Send test message from +250... number (Rwanda)
 3. Verify menu shows all items active for RW
@@ -200,6 +229,7 @@ npm run dev
 6. Verify "Motor Insurance" no longer appears
 
 ### 4. Edge Cases to Test
+
 - Toggle all countries off for an item (should disappear for everyone)
 - Toggle item inactive (should disappear globally)
 - Test with non-East African number (should default to RW menu)
@@ -209,6 +239,7 @@ npm run dev
 ## Files Modified/Created Summary
 
 ### Created (11 files)
+
 1. `supabase/functions/wa-webhook/domains/menu/dynamic_home_menu.ts`
 2. `admin-app/types/whatsapp-menu.ts`
 3. `admin-app/lib/queries/whatsapp-menu.ts`
@@ -219,6 +250,7 @@ npm run dev
 8. `test-whatsapp-menu.sh`
 
 ### Modified (4 files)
+
 1. `supabase/functions/wa-webhook/flows/home.ts`
 2. `supabase/functions/wa-webhook/i18n/messages/en.json`
 3. `supabase/functions/wa-webhook/i18n/messages/fr.json`
@@ -226,16 +258,14 @@ npm run dev
 
 ## Key Features
 
-✅ **Dynamic Menu Loading** - No hardcoded menu items, all from database
-✅ **Country-Specific Availability** - Different menus for RW, UG, KE, TZ, BI, CD
-✅ **Real-Time Management** - Admin can toggle items without code changes
-✅ **Immediate Effect** - Changes apply to new WhatsApp sessions instantly
-✅ **Backward Compatible** - Existing features (insurance gate, admin menu) preserved
-✅ **Type Safety** - Full TypeScript coverage with Zod validation
-✅ **i18n Support** - English and French translations maintained
-✅ **RLS Security** - Row-level security policies in place
-✅ **Audit Trail** - created_at, updated_at timestamps tracked
-✅ **Observability** - Logging for menu fetch failures
+✅ **Dynamic Menu Loading** - No hardcoded menu items, all from database ✅ **Country-Specific
+Availability** - Different menus for RW, UG, KE, TZ, BI, CD ✅ **Real-Time Management** - Admin can
+toggle items without code changes ✅ **Immediate Effect** - Changes apply to new WhatsApp sessions
+instantly ✅ **Backward Compatible** - Existing features (insurance gate, admin menu) preserved ✅
+**Type Safety** - Full TypeScript coverage with Zod validation ✅ **i18n Support** - English and
+French translations maintained ✅ **RLS Security** - Row-level security policies in place ✅ **Audit
+Trail** - created_at, updated_at timestamps tracked ✅ **Observability** - Logging for menu fetch
+failures
 
 ## Deployment Checklist
 
@@ -267,6 +297,7 @@ npm run dev
 ## Support
 
 For questions or issues:
+
 1. Check database logs: `psql "$DATABASE_URL" -c "SELECT * FROM whatsapp_home_menu_items;"`
 2. Check admin API: `curl http://localhost:3000/api/whatsapp-menu`
 3. Check WhatsApp webhook logs in Supabase dashboard

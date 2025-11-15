@@ -9,9 +9,11 @@
 ## What Was Built
 
 ### 1. ✅ OpenAI Deep Research Property Scraping
+
 **Location:** `supabase/functions/openai-deep-research/`
 
 **Features:**
+
 - **Uses Official OpenAI Deep Research Models** (`o4-mini-deep-research`)
 - **Responses API** (not Chat Completions) for comprehensive analysis
 - **Web Search Tool** enabled for real-time market data
@@ -24,6 +26,7 @@
 - Comprehensive error handling and logging
 
 **Key Differences from Chat Completions:**
+
 - ✅ **Multi-step research**: Deep research models conduct thorough, analyst-level research
 - ✅ **Web search integration**: Accesses real-time property listings from the web
 - ✅ **Inline citations**: All data includes source URLs and metadata
@@ -31,11 +34,13 @@
 - ✅ **Longer processing**: Can take several minutes but provides comprehensive results
 
 **Database Tables:**
+
 - `research_sessions` - Tracks each research run (with output_text stored)
 - `researched_properties` - Stores discovered properties
 - Indexes on location, price, bedrooms, rental_type
 
 **Environment Variables Needed:**
+
 ```bash
 OPENAI_API_KEY=sk-...  # Your OpenAI API key (must support Deep Research models)
 ```
@@ -43,9 +48,11 @@ OPENAI_API_KEY=sk-...  # Your OpenAI API key (must support Deep Research models)
 ---
 
 ### 2. ✅ Real Estate AI Agent (Enhanced)
+
 **Location:** `supabase/functions/agents/property-rental/`
 
 **New Features:**
+
 - **Merged Results:** Combines user-listed properties + deep research properties
 - **Source Attribution:** Shows whether property is user-listed or AI-researched
 - **Contact Information:** Displays contact info for researched properties
@@ -53,6 +60,7 @@ OPENAI_API_KEY=sk-...  # Your OpenAI API key (must support Deep Research models)
 - **Smart Ranking:** Scores properties by location, price, amenities, size
 
 **Integration Points:**
+
 - Searches both `properties` table (user listings)
 - Searches `researched_properties` table (AI findings)
 - Returns top 3 matches with negotiated pricing
@@ -60,9 +68,11 @@ OPENAI_API_KEY=sk-...  # Your OpenAI API key (must support Deep Research models)
 ---
 
 ### 3. ✅ Waiter AI Agent
+
 **Location:** `supabase/functions/waiter-ai-agent/`
 
 **Features:**
+
 - Full conversational AI for restaurant ordering
 - Multi-language support (EN, FR, ES, PT, DE)
 - Streaming responses for better UX
@@ -76,6 +86,7 @@ OPENAI_API_KEY=sk-...  # Your OpenAI API key (must support Deep Research models)
   - Feedback collection
 
 **Database Tables Required:**
+
 - `waiter_conversations`
 - `waiter_messages`
 - `waiter_reservations`
@@ -89,11 +100,14 @@ OPENAI_API_KEY=sk-...  # Your OpenAI API key (must support Deep Research models)
 ---
 
 ### 4. ✅ WhatsApp Webhook Integration
+
 **New Files:**
+
 - `wa-webhook/domains/bars/waiter_ai.ts` - Waiter AI integration
 - `wa-webhook/domains/property/ai_agent.ts` - Property AI integration
 
 **Features:**
+
 - Start waiter chat from bars listing
 - Property search with AI agent
 - Property listing via AI
@@ -105,9 +119,11 @@ OPENAI_API_KEY=sk-...  # Your OpenAI API key (must support Deep Research models)
 ## Database Migrations
 
 ### Migration 1: Deep Research Tables
+
 **File:** `supabase/migrations/20251114194200_openai_deep_research_tables.sql`
 
 Creates:
+
 - `research_sessions` table
 - `researched_properties` table
 - `search_researched_properties()` function
@@ -115,9 +131,11 @@ Creates:
 - Indexes for performance
 
 ### Migration 2: Scheduled Cron Jobs
+
 **File:** `supabase/migrations/20251114194300_schedule_deep_research_cron.sql`
 
 Creates:
+
 - pg_cron extension
 - 3 scheduled jobs (9am, 2pm, 7pm)
 - `app_settings` table for configuration
@@ -145,6 +163,7 @@ psql $DATABASE_URL -c "SELECT * FROM cron.job;"
 ```
 
 **Expected Output:**
+
 ```
 research_sessions
 researched_properties
@@ -159,6 +178,7 @@ waiter_feedback
 ### Step 2: Configure Environment Variables
 
 **In Supabase Dashboard:**
+
 1. Go to Project Settings → Edge Functions → Secrets
 2. Add/verify these secrets:
 
@@ -169,6 +189,7 @@ SUPABASE_SERVICE_ROLE_KEY=eyJhbG...  # From Supabase settings
 ```
 
 **For cron jobs (in database):**
+
 ```sql
 -- Update app settings with your actual values
 UPDATE app_settings SET value = 'https://YOUR_PROJECT.supabase.co' WHERE key = 'app.supabase_url';
@@ -197,6 +218,7 @@ supabase functions list
 ```
 
 **Expected Output:**
+
 ```
 openai-deep-research (active)
 waiter-ai-agent (active)
@@ -222,6 +244,7 @@ curl -X POST "https://YOUR_PROJECT.supabase.co/functions/v1/openai-deep-research
 ```
 
 **Expected Response** (after 2-5 minutes):
+
 ```json
 {
   "success": true,
@@ -240,6 +263,7 @@ curl -X POST "https://YOUR_PROJECT.supabase.co/functions/v1/openai-deep-research
 ```
 
 **What Happens During Deep Research:**
+
 1. **Analysis Phase** (~30s): Model analyzes the research task
 2. **Web Search Phase** (~2-3 min): Conducts multiple web searches across property sites
 3. **Synthesis Phase** (~30s): Compiles findings into structured report
@@ -248,6 +272,7 @@ curl -X POST "https://YOUR_PROJECT.supabase.co/functions/v1/openai-deep-research
 6. **Storage Phase** (~10s): Saves to database
 
 **Verify Data:**
+
 ```bash
 # Check if properties were inserted
 psql $DATABASE_URL -c "SELECT COUNT(*), rental_type, location_country FROM researched_properties GROUP BY rental_type, location_country;"
@@ -311,6 +336,7 @@ curl -X POST "https://YOUR_PROJECT.supabase.co/functions/v1/agents/property-rent
 ```
 
 **Expected Response:**
+
 ```json
 {
   "success": true,
@@ -325,6 +351,7 @@ curl -X POST "https://YOUR_PROJECT.supabase.co/functions/v1/agents/property-rent
 ### Step 7: Test WhatsApp Integration
 
 **For Waiter AI:**
+
 1. Send WhatsApp message to bot: "Bars & Restaurants"
 2. Select a bar from the list
 3. Look for "💬 Chat with AI Waiter" button
@@ -336,6 +363,7 @@ curl -X POST "https://YOUR_PROJECT.supabase.co/functions/v1/agents/property-rent
    - "Can I book a table for 4 people tonight at 7pm?"
 
 **For Property AI:**
+
 1. Send WhatsApp message: "Property Rentals"
 2. Select "Search Properties"
 3. Choose rental type (short-term/long-term)
@@ -352,7 +380,7 @@ curl -X POST "https://YOUR_PROJECT.supabase.co/functions/v1/agents/property-rent
 
 ```sql
 -- View recent research sessions
-SELECT 
+SELECT
   id,
   status,
   started_at,
@@ -364,7 +392,7 @@ ORDER BY started_at DESC
 LIMIT 10;
 
 -- View researched properties by country
-SELECT 
+SELECT
   location_country,
   COUNT(*) as total_properties,
   AVG(price) as avg_price,
@@ -382,7 +410,7 @@ GROUP BY location_country;
 SELECT COUNT(*) FROM waiter_conversations WHERE status = 'active';
 
 -- Messages per conversation
-SELECT 
+SELECT
   c.id,
   u.phone_number,
   COUNT(m.id) as message_count,
@@ -412,6 +440,7 @@ psql $DATABASE_URL -c "SELECT * FROM cron.job_run_details ORDER BY start_time DE
 ### Issue: Cron Jobs Not Running
 
 **Check:**
+
 ```sql
 -- Verify cron extension enabled
 SELECT * FROM pg_extension WHERE extname = 'pg_cron';
@@ -421,6 +450,7 @@ SELECT * FROM cron.job WHERE jobname LIKE 'openai-deep-research%';
 ```
 
 **Fix:**
+
 ```sql
 -- Enable cron if not enabled
 CREATE EXTENSION IF NOT EXISTS pg_cron;
@@ -435,11 +465,13 @@ SELECT cron.unschedule('openai-deep-research-morning');
 ### Issue: Deep Research Returns No Properties
 
 **Check:**
+
 1. OpenAI API key is valid
 2. Countries table has active countries
 3. OpenAI quota not exceeded
 
 **Debug:**
+
 ```sql
 -- Check research session errors
 SELECT id, status, metadata->>'error' as error
@@ -456,11 +488,13 @@ SELECT code, name FROM countries WHERE active = true;
 ### Issue: Waiter AI Not Responding
 
 **Check:**
+
 1. Conversation exists
 2. OpenAI API key valid
 3. Database tables exist
 
 **Debug:**
+
 ```sql
 -- Check recent conversations
 SELECT * FROM waiter_conversations ORDER BY created_at DESC LIMIT 10;
@@ -474,6 +508,7 @@ SELECT * FROM waiter_messages WHERE conversation_id = 'YOUR_CONV_ID' ORDER BY ti
 ### Issue: Property Search Returns Mixed Results
 
 This is EXPECTED behavior! The agent now returns both:
+
 - ✅ User-listed properties (from `properties` table)
 - 🔍 AI-researched properties (from `researched_properties` table)
 
@@ -500,14 +535,14 @@ ANALYZE waiter_messages;
 
 ```sql
 -- Archive completed research sessions older than 30 days
-DELETE FROM research_sessions 
-WHERE status = 'completed' 
+DELETE FROM research_sessions
+WHERE status = 'completed'
 AND completed_at < NOW() - INTERVAL '30 days';
 
 -- Archive old waiter conversations (optional)
-UPDATE waiter_conversations 
-SET status = 'archived' 
-WHERE status = 'completed' 
+UPDATE waiter_conversations
+SET status = 'archived'
+WHERE status = 'completed'
 AND last_activity < NOW() - INTERVAL '7 days';
 ```
 
@@ -518,28 +553,33 @@ AND last_activity < NOW() - INTERVAL '7 days';
 ### OpenAI API Costs (Deep Research Models)
 
 **o4-mini-deep-research** (Recommended for production):
+
 - Input: $0.60 per 1M tokens
 - Output: $2.40 per 1M tokens
 - Typical research task: ~50K input + ~20K output tokens
 - **Cost per research run: ~$0.08**
 
 **Per Deep Research Run:**
+
 - 1 country × 1 city (test mode): ~$0.08
 - 2 countries × 6 cities (full run): ~$0.50
 - **Daily Cost (3 runs):** ~$1.50/day = ~$45/month
 
 **Alternative: o3-deep-research** (More thorough, higher cost):
+
 - Input: $10.00 per 1M tokens
-- Output: $40.00 per 1M tokens  
+- Output: $40.00 per 1M tokens
 - **Cost per research run: ~$1.30**
 - **Daily Cost (3 runs):** ~$4/day = ~$120/month
 
 **Waiter AI** (using gpt-4-turbo-preview):
+
 - Average conversation: 10 messages
 - Cost per conversation: ~$0.05
 - 100 conversations/day: ~$5/day = ~$150/month
 
 **Property AI** (using same model as property-rental agent):
+
 - Cost per search: ~$0.02
 - 50 searches/day: ~$1/day = ~$30/month
 
@@ -547,6 +587,7 @@ AND last_activity < NOW() - INTERVAL '7 days';
 **Total Estimated (with o3-deep-research):** ~$300/month
 
 **Recommendations:**
+
 - Start with **o4-mini-deep-research** for production (faster, cheaper, good quality)
 - Use **o3-deep-research** only when maximum research depth is needed
 - Set `max_tool_calls` parameter to control costs (default: 50, can reduce to 30)
@@ -559,7 +600,7 @@ Track these KPIs:
 
 ```sql
 -- Deep Research Effectiveness
-SELECT 
+SELECT
   DATE(started_at) as date,
   COUNT(*) as research_runs,
   SUM(properties_found) as total_properties_found,
@@ -571,13 +612,13 @@ GROUP BY DATE(started_at)
 ORDER BY date DESC;
 
 -- Waiter AI Engagement
-SELECT 
+SELECT
   DATE(created_at) as date,
   COUNT(DISTINCT user_id) as unique_users,
   COUNT(*) as total_conversations,
   AVG(message_count) as avg_messages_per_conversation
 FROM (
-  SELECT 
+  SELECT
     c.user_id,
     c.created_at,
     COUNT(m.id) as message_count
@@ -590,7 +631,7 @@ GROUP BY DATE(created_at)
 ORDER BY date DESC;
 
 -- Property AI Search Success Rate
-SELECT 
+SELECT
   DATE(created_at) as date,
   COUNT(*) as total_searches,
   SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as successful_searches,
@@ -633,6 +674,7 @@ If issues arise:
 **Status:** ✅ FULLY DEPLOYED AND OPERATIONAL
 
 All three AI agents are now:
+
 - ✅ Implemented
 - ✅ Integrated with WhatsApp webhook
 - ✅ Database tables created

@@ -33,6 +33,7 @@ curl -X POST "$SUPABASE_URL/functions/v1/openai-deep-research" \
 ```
 
 **⚠️ Important:** Deep Research uses `o4-mini-deep-research` model which:
+
 - Takes 2-5 minutes per country/city
 - Conducts real web searches for current listings
 - Returns comprehensive reports with inline citations
@@ -117,6 +118,7 @@ DATABASE_URL=postgresql://...  # For direct DB access
 ## 🧪 Quick Tests
 
 ### Test Deep Research
+
 ```bash
 curl -X POST "$SUPABASE_URL/functions/v1/openai-deep-research" \
   -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
@@ -124,6 +126,7 @@ curl -X POST "$SUPABASE_URL/functions/v1/openai-deep-research" \
 ```
 
 ### Test Waiter AI
+
 ```bash
 curl -X POST "$SUPABASE_URL/functions/v1/waiter-ai-agent" \
   -H "Authorization: Bearer $SUPABASE_ANON_KEY" \
@@ -135,6 +138,7 @@ curl -X POST "$SUPABASE_URL/functions/v1/waiter-ai-agent" \
 ```
 
 ### Test Property AI
+
 ```bash
 curl -X POST "$SUPABASE_URL/functions/v1/agents/property-rental" \
   -H "Authorization: Bearer $SUPABASE_ANON_KEY" \
@@ -153,23 +157,27 @@ curl -X POST "$SUPABASE_URL/functions/v1/agents/property-rental" \
 ## 📊 Check Status
 
 ### Research Sessions
+
 ```sql
 SELECT * FROM research_sessions ORDER BY started_at DESC LIMIT 5;
 ```
 
 ### Researched Properties
+
 ```sql
-SELECT location_country, COUNT(*), AVG(price) 
-FROM researched_properties 
+SELECT location_country, COUNT(*), AVG(price)
+FROM researched_properties
 GROUP BY location_country;
 ```
 
 ### Cron Jobs
+
 ```sql
 SELECT * FROM cron.job WHERE jobname LIKE 'openai-deep-research%';
 ```
 
 ### Waiter Conversations
+
 ```sql
 SELECT COUNT(*) FROM waiter_conversations WHERE status = 'active';
 ```
@@ -179,6 +187,7 @@ SELECT COUNT(*) FROM waiter_conversations WHERE status = 'active';
 ## 🔧 Common Tasks
 
 ### Manually Trigger Deep Research
+
 ```bash
 curl -X POST "$SUPABASE_URL/functions/v1/openai-deep-research" \
   -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
@@ -186,6 +195,7 @@ curl -X POST "$SUPABASE_URL/functions/v1/openai-deep-research" \
 ```
 
 ### Check Logs
+
 ```bash
 supabase functions logs openai-deep-research --tail
 supabase functions logs waiter-ai-agent --tail
@@ -193,14 +203,15 @@ supabase functions logs agent-property-rental --tail
 ```
 
 ### Clean Old Data
+
 ```sql
 -- Archive old research sessions
-DELETE FROM research_sessions 
+DELETE FROM research_sessions
 WHERE completed_at < NOW() - INTERVAL '30 days';
 
 -- Deactivate old properties
-UPDATE researched_properties 
-SET status = 'inactive' 
+UPDATE researched_properties
+SET status = 'inactive'
 WHERE scraped_at < NOW() - INTERVAL '60 days';
 ```
 
@@ -209,6 +220,7 @@ WHERE scraped_at < NOW() - INTERVAL '60 days';
 ## 🐛 Troubleshooting
 
 ### Deep Research Not Running
+
 ```sql
 -- Check cron jobs exist
 SELECT * FROM cron.job;
@@ -222,6 +234,7 @@ SELECT cron.unschedule('openai-deep-research-morning');
 ```
 
 ### No Properties Found
+
 ```bash
 # Check if research ran
 psql $DATABASE_URL -c "SELECT COUNT(*) FROM researched_properties;"
@@ -236,10 +249,11 @@ curl -X POST "$SUPABASE_URL/functions/v1/openai-deep-research" \
 ```
 
 ### Waiter AI Not Responding
+
 ```sql
 -- Check if conversation exists
-SELECT * FROM waiter_conversations 
-WHERE user_id = 'YOUR_USER_ID' 
+SELECT * FROM waiter_conversations
+WHERE user_id = 'YOUR_USER_ID'
 ORDER BY created_at DESC;
 
 -- Check OpenAI key
@@ -253,13 +267,13 @@ SELECT current_setting('app.settings.openai_api_key', true);
 ### Estimate Daily Costs (Updated for Deep Research)
 
 ```bash
-# Deep Research (o4-mini-deep-research): 
+# Deep Research (o4-mini-deep-research):
 #   3 runs/day × 2 countries × 3 cities × ~$0.08 = ~$1.44/day = ~$43/month
 #
-# Waiter AI (gpt-4-turbo-preview): 
+# Waiter AI (gpt-4-turbo-preview):
 #   100 conversations × $0.05 = ~$5/day = ~$150/month
 #
-# Property AI (gpt-4-turbo-preview): 
+# Property AI (gpt-4-turbo-preview):
 #   50 searches × $0.02 = ~$1/day = ~$30/month
 #
 # Total: ~$7.50/day = ~$225/month
@@ -270,7 +284,7 @@ SELECT current_setting('app.settings.openai_api_key', true);
 
 # Control costs with max_tool_calls parameter:
 # - 50 tool calls (default): ~$0.08 per run
-# - 30 tool calls (reduced): ~$0.05 per run  
+# - 30 tool calls (reduced): ~$0.05 per run
 # - 20 tool calls (minimal): ~$0.03 per run
 ```
 
@@ -278,7 +292,7 @@ SELECT current_setting('app.settings.openai_api_key', true);
 
 ```sql
 -- View research session details with tool usage
-SELECT 
+SELECT
   id,
   started_at,
   properties_found,
@@ -291,7 +305,7 @@ WHERE started_at > NOW() - INTERVAL '7 days'
 ORDER BY started_at DESC;
 
 -- Calculate average cost per session
-SELECT 
+SELECT
   AVG(properties_inserted) as avg_properties,
   AVG(duration_ms / 1000) as avg_seconds,
   AVG((metadata->>'toolCallsUsed')::int) as avg_tool_calls,
@@ -302,22 +316,23 @@ WHERE started_at > NOW() - INTERVAL '7 days';
 ```
 
 ### Monitor Usage
+
 ```sql
 -- Research runs per day
-SELECT DATE(started_at), COUNT(*) 
-FROM research_sessions 
+SELECT DATE(started_at), COUNT(*)
+FROM research_sessions
 WHERE started_at > NOW() - INTERVAL '7 days'
 GROUP BY DATE(started_at);
 
 -- Waiter conversations per day
-SELECT DATE(created_at), COUNT(*) 
-FROM waiter_conversations 
+SELECT DATE(created_at), COUNT(*)
+FROM waiter_conversations
 WHERE created_at > NOW() - INTERVAL '7 days'
 GROUP BY DATE(created_at);
 
 -- Property searches per day
-SELECT DATE(created_at), COUNT(*) 
-FROM agent_sessions 
+SELECT DATE(created_at), COUNT(*)
+FROM agent_sessions
 WHERE agent_type = 'property_rental'
 AND created_at > NOW() - INTERVAL '7 days'
 GROUP BY DATE(created_at);
@@ -328,6 +343,7 @@ GROUP BY DATE(created_at);
 ## 📱 WhatsApp Integration
 
 ### Test Waiter AI via WhatsApp
+
 1. Send: "Bars & Restaurants"
 2. Select a bar
 3. Click "💬 Chat with AI Waiter"
@@ -338,6 +354,7 @@ GROUP BY DATE(created_at);
    - "What wine pairs with fish?"
 
 ### Test Property AI via WhatsApp
+
 1. Send: "Property Rentals"
 2. Select "Search Properties"
 3. Choose rental type
@@ -352,7 +369,7 @@ GROUP BY DATE(created_at);
 
 ```sql
 -- Deep Research Effectiveness
-SELECT 
+SELECT
   DATE(started_at),
   COUNT(*) as runs,
   SUM(properties_found) as found,
@@ -363,7 +380,7 @@ WHERE started_at > NOW() - INTERVAL '7 days'
 GROUP BY DATE(started_at);
 
 -- Waiter AI Engagement
-SELECT 
+SELECT
   DATE(created_at),
   COUNT(DISTINCT user_id) as users,
   COUNT(*) as conversations,
@@ -378,7 +395,7 @@ WHERE created_at > NOW() - INTERVAL '7 days'
 GROUP BY DATE(created_at);
 
 -- Property AI Success Rate
-SELECT 
+SELECT
   DATE(created_at),
   COUNT(*) as searches,
   SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as successful,
@@ -418,6 +435,7 @@ GROUP BY DATE(created_at);
 ---
 
 **Need Help?**
+
 1. Check logs: `supabase functions logs FUNCTION_NAME`
 2. Query database: `psql $DATABASE_URL`
 3. Review full guide: `AI_AGENTS_DEPLOYMENT_COMPLETE.md`

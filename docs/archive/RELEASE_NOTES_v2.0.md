@@ -3,13 +3,16 @@
 **Release Date**: 2025-11 (Target)  
 **Version**: 2.0.0  
 **Code Name**: "Intelligent Mobility"  
-**Status**: Release Candidate  
+**Status**: Release Candidate
 
 ---
 
 ## 🎉 Overview
 
-EasyMO v2.0 represents a major milestone in our WhatsApp mobility platform, introducing **AI-powered agents** that provide intelligent, conversational assistance across all user roles. This release transforms the user experience from menu-driven interactions to natural language conversations with smart fallback mechanisms.
+EasyMO v2.0 represents a major milestone in our WhatsApp mobility platform, introducing **AI-powered
+agents** that provide intelligent, conversational assistance across all user roles. This release
+transforms the user experience from menu-driven interactions to natural language conversations with
+smart fallback mechanisms.
 
 ### What's New in v2.0
 
@@ -31,12 +34,14 @@ EasyMO v2.0 represents a major milestone in our WhatsApp mobility platform, intr
 **Available Agents**:
 
 #### **Buyer Agent** 🛍️
+
 - Natural language product search
 - Smart vendor recommendations
 - Order tracking and updates
 - Payment assistance
 
 **Example Conversation**:
+
 ```
 User: "I need vegetables near me"
 Buyer Agent: "🛍️ I found 5 vendors with vegetables near you!
@@ -44,6 +49,7 @@ Buyer Agent: "🛍️ I found 5 vendors with vegetables near you!
 ```
 
 #### **Station Agent** 🏪
+
 - Order management and fulfillment
 - Inventory updates
 - Customer communication
@@ -52,12 +58,14 @@ Buyer Agent: "🛍️ I found 5 vendors with vegetables near you!
 **Trigger**: Station operators sending WhatsApp messages about orders.
 
 #### **Vendor Agent** 🍽️
+
 - Menu management via WhatsApp
 - Product availability updates
 - Order notifications
 - Performance insights
 
 **Example**:
+
 ```
 Vendor: "Mark chicken as sold out"
 Vendor Agent: "✅ Updated! Chicken is now marked as unavailable.
@@ -65,6 +73,7 @@ Vendor Agent: "✅ Updated! Chicken is now marked as unavailable.
 ```
 
 #### **Driver Agent** 🚗
+
 - Trip matching and optimization
 - Route suggestions
 - Earnings tracking
@@ -73,12 +82,14 @@ Vendor Agent: "✅ Updated! Chicken is now marked as unavailable.
 **Trigger**: Driver accepting trips or requesting nearby orders.
 
 #### **Admin Agent** 👨‍💼
+
 - Platform monitoring via WhatsApp
 - Quick stats and reports
 - User support escalation
 - System health checks
 
 **Example**:
+
 ```
 Admin: "How many orders today?"
 Admin Agent: "📊 Today's Stats:
@@ -88,6 +99,7 @@ Admin Agent: "📊 Today's Stats:
 ```
 
 #### **Customer Support Agent** 💬
+
 - Automated ticket creation
 - FAQ responses
 - Issue routing
@@ -114,6 +126,7 @@ Admin Agent: "📊 Today's Stats:
 9. **Vendor Unavailable** → Show nearest alternatives
 
 **Example**:
+
 ```
 # AI agent times out
 System: "😔 Sorry, we encountered an error while searching for drivers.
@@ -128,6 +141,7 @@ Please try:
 ```
 
 **Benefits**:
+
 - ✅ Zero dead-ends (always a path forward)
 - ✅ Graceful degradation (fallback to traditional flows)
 - ✅ User context preserved (no starting over)
@@ -140,6 +154,7 @@ Please try:
 **What it does**: Provides comprehensive monitoring and metrics for all AI agent interactions.
 
 **Features**:
+
 - **Agent Performance Metrics**
   - Request volume (per agent, per hour)
   - Success/failure rates
@@ -161,6 +176,7 @@ Please try:
 **Access**: Admin dashboard at `/agents/dashboard` or WhatsApp admin commands.
 
 **Structured Logging**:
+
 ```typescript
 // All agent interactions logged with correlation IDs
 {
@@ -181,6 +197,7 @@ Please try:
 **What it does**: Uses ML algorithms to recommend the best vendors based on multiple factors.
 
 **Ranking Factors**:
+
 - ⭐ Vendor rating (user reviews)
 - 📍 Distance from user
 - ⏱️ Average delivery time
@@ -192,13 +209,14 @@ Please try:
 **Algorithm**: Weighted scoring with real-time adjustments based on current demand/supply.
 
 **Example Output**:
+
 ```
 1. Mama Sarah's Veggies ⭐ 4.8
    📍 1.2km • ⏱️ 15min • 💰 500 RWF
-   
+
 2. Green Market ⭐ 4.6
    📍 2.5km • ⏱️ 25min • 💰 450 RWF
-   
+
 3. Fresh Farm ⭐ 4.5
    📍 3.0km • ⏱️ 30min • 💰 480 RWF
 ```
@@ -210,6 +228,7 @@ Please try:
 **What it does**: Seamless payment flows integrated with AI agents.
 
 **Features**:
+
 - One-click payments from agent conversations
 - Real-time balance updates
 - Transaction history via WhatsApp
@@ -217,13 +236,14 @@ Please try:
 - Low balance alerts
 
 **Example Flow**:
+
 ```
 Buyer Agent: "Your order total is 2,500 RWF. Pay with wallet?
               Current balance: 5,000 RWF"
 
 User: "Yes"
 
-Buyer Agent: "✅ Payment successful! 
+Buyer Agent: "✅ Payment successful!
               New balance: 2,500 RWF
               Order confirmed and on the way! 🛵"
 ```
@@ -233,6 +253,7 @@ Buyer Agent: "✅ Payment successful!
 ## 🔧 Improvements & Bug Fixes
 
 ### User Experience
+
 - ✅ Improved error messages (3 major improvements, see UX audit)
 - ✅ Session expiration now explains 10-minute timeout
 - ✅ Better emoji usage (15 types, context-appropriate)
@@ -240,18 +261,21 @@ Buyer Agent: "✅ Payment successful!
 - ✅ Cultural sensitivity review (Rwandan market validated)
 
 ### Performance
+
 - ✅ Response time p95: <1 second (target met)
 - ✅ Agent fallback rate: <10% (validated in staging)
 - ✅ Database query optimization (30% faster vendor search)
 - ✅ Redis caching layer (40% reduction in API calls)
 
 ### Reliability
+
 - ✅ 99.9% uptime target (monitored in Phase 4)
 - ✅ Automatic retry logic (5 retries with exponential backoff)
 - ✅ Circuit breakers on external APIs
 - ✅ Graceful degradation on OpenAI API issues
 
 ### Security
+
 - ✅ All PII masked in logs
 - ✅ Webhook signature verification (WhatsApp, Twilio)
 - ✅ RLS policies on all agent tables
@@ -264,12 +288,14 @@ Buyer Agent: "✅ Payment successful!
 ### Infrastructure
 
 **Edge Functions** (Deno 2.x):
+
 - `wa-webhook`: Main WhatsApp handler
 - `admin-*`: Admin dashboard APIs
 - `agent-*`: Agent-specific endpoints
 - `simulator`: Testing utilities
 
 **Microservices** (Node.js 20, NestJS):
+
 - `agent-core`: Central agent orchestration
 - `voice-bridge`: Voice call handling
 - `wallet-service`: Payment processing
@@ -278,12 +304,14 @@ Buyer Agent: "✅ Payment successful!
 - 7+ additional services
 
 **Databases**:
+
 - Supabase PostgreSQL (user data, orders, RLS)
 - Agent-Core PostgreSQL (agent sessions, Prisma)
 - Redis (caching, rate limiting)
 - Kafka (event streaming)
 
 **Monorepo** (pnpm workspace):
+
 - `packages/commons`: Shared utilities
 - `packages/db`: Prisma schema
 - `packages/shared`: TypeScript types
@@ -296,24 +324,28 @@ Buyer Agent: "✅ Payment successful!
 ### Test Coverage
 
 **Unit Tests**: 84 passing (vitest)
+
 - Agent handlers
 - Fallback logic
 - Ranking algorithms
 - Wallet transactions
 
 **Integration Tests**: 21 synthetic failure scenarios
+
 - AI service timeouts
 - Database connectivity issues
 - Payment gateway failures
 - Network interruptions
 
 **E2E Tests** (Manual + Automated):
+
 - Full user journeys (buyer → vendor → driver)
 - WhatsApp webhook integration
 - Payment flows
 - Admin dashboard
 
 **Load Testing**:
+
 - 100 concurrent users
 - 1000+ messages/minute
 - <2% error rate at peak load
@@ -321,6 +353,7 @@ Buyer Agent: "✅ Payment successful!
 ### Quality Gates
 
 All builds must pass:
+
 - ✅ ESLint (2 console warnings OK)
 - ✅ TypeScript type checking
 - ✅ Vitest unit tests
@@ -337,6 +370,7 @@ All builds must pass:
 **No action required!** The new AI agents are backward compatible with existing menu flows.
 
 **What's changing**:
+
 - You can now use **natural language** instead of navigating menus
 - Faster responses with **AI-powered assistance**
 - Better recommendations based on **your preferences**
@@ -344,6 +378,7 @@ All builds must pass:
 **Example - Old vs New**:
 
 **Old (Menu-driven)**:
+
 ```
 1. See Drivers
 2. Schedule Trip
@@ -353,6 +388,7 @@ All builds must pass:
 ```
 
 **New (AI-powered)**:
+
 ```
 User: "I need a driver to airport"
 AI: "🚖 I found 5 drivers near you heading to Kigali Airport!
@@ -368,6 +404,7 @@ AI: "🚖 I found 5 drivers near you heading to Kigali Airport!
 **Pre-Deployment Checklist**:
 
 1. **Environment Variables** (add to production):
+
    ```bash
    # Feature Flags (gradual rollout)
    FEATURE_AI_AGENTS=true
@@ -378,12 +415,12 @@ AI: "🚖 I found 5 drivers near you heading to Kigali Airport!
    FEATURE_DRIVER_AGENT=true
    FEATURE_ADMIN_AGENT=true
    FEATURE_CUSTOMER_SUPPORT_AGENT=true
-   
+
    # Observability
    ENABLE_STRUCTURED_LOGGING=true
    ENABLE_METRICS=true
    LOG_LEVEL=info
-   
+
    # Rate Limits
    AGENT_MAX_RETRIES=5
    AGENT_TIMEOUT_MS=30000
@@ -391,21 +428,24 @@ AI: "🚖 I found 5 drivers near you heading to Kigali Airport!
    ```
 
 2. **Database Migrations**:
+
    ```bash
    # Backup first!
    pg_dump -h prod-db > backup_$(date +%s).sql
-   
+
    # Apply migrations (additive only)
    supabase db push --project-ref <prod-ref>
    pnpm --filter @easymo/db prisma:migrate:deploy
    ```
 
 3. **Deploy Supabase Functions**:
+
    ```bash
    supabase functions deploy --project-ref <prod-ref>
    ```
 
 4. **Deploy Microservices** (rolling update):
+
    ```bash
    kubectl apply -f infrastructure/k8s/agent-core.yaml
    kubectl rollout status deployment/agent-core
@@ -425,6 +465,7 @@ AI: "🚖 I found 5 drivers near you heading to Kigali Airport!
    - Monitor fallback frequency (<10% target)
 
 **Rollback Procedure** (if issues arise):
+
 ```bash
 # Immediate: Disable feature flags
 FEATURE_AI_AGENTS=false
@@ -438,6 +479,7 @@ FEATURE_AI_AGENTS_ROLLOUT_PERCENTAGE=0
 ### For Developers
 
 **New Dependencies**:
+
 ```bash
 # Install (if not already)
 pnpm install --frozen-lockfile
@@ -448,6 +490,7 @@ pnpm --filter @easymo/commons build
 ```
 
 **API Changes**:
+
 - ✅ No breaking changes to existing APIs
 - ✅ New endpoints under `/api/agents/*`
 - ✅ New Supabase tables (additive only):
@@ -456,6 +499,7 @@ pnpm --filter @easymo/commons build
   - `agent_metrics`
 
 **Development Workflow**:
+
 ```bash
 # Start all services
 docker compose -f docker-compose.agent-core.yml up
@@ -472,24 +516,26 @@ pnpm typecheck
 ```
 
 **Message Library** (new in v2.0):
+
 ```typescript
 // Use centralized messages for consistency
-import { AGENT_MESSAGES } from '@shared/agent-messages';
+import { AGENT_MESSAGES } from "@shared/agent-messages";
 
 await sendText(ctx.from, AGENT_MESSAGES.LOADING.DRIVERS);
 await sendText(ctx.from, AGENT_MESSAGES.ERRORS.SESSION_EXPIRED);
 ```
 
 **Observability** (MUST follow Ground Rules):
+
 ```typescript
 // Structured logging with correlation IDs
-import { logStructuredEvent } from '../_shared/observability';
+import { logStructuredEvent } from "../_shared/observability";
 
-await logStructuredEvent('AGENT_REQUEST', {
-  agentType: 'buyer',
+await logStructuredEvent("AGENT_REQUEST", {
+  agentType: "buyer",
   userId: ctx.from,
   sessionId: ctx.sessionId,
-  requestType: 'product_search'
+  requestType: "product_search",
 });
 ```
 
@@ -547,28 +593,31 @@ await logStructuredEvent('AGENT_REQUEST', {
 
 ### v2.0 vs v1.x
 
-| Metric | v1.x | v2.0 | Improvement |
-|--------|------|------|-------------|
-| Time to first result | 3.2s | 0.8s | ⬇️ 75% |
-| Average order flow time | 5 minutes | 2 minutes | ⬇️ 60% |
-| Vendor search relevance | 65% | 92% | ⬆️ 27pp |
-| User satisfaction | 3.8/5 | 4.6/5 | ⬆️ 0.8 |
-| Support tickets/day | 45 | 32 | ⬇️ 29% |
-| Fallback rate | N/A | 8% | ✅ Target met |
+| Metric                  | v1.x      | v2.0      | Improvement   |
+| ----------------------- | --------- | --------- | ------------- |
+| Time to first result    | 3.2s      | 0.8s      | ⬇️ 75%        |
+| Average order flow time | 5 minutes | 2 minutes | ⬇️ 60%        |
+| Vendor search relevance | 65%       | 92%       | ⬆️ 27pp       |
+| User satisfaction       | 3.8/5     | 4.6/5     | ⬆️ 0.8        |
+| Support tickets/day     | 45        | 32        | ⬇️ 29%        |
+| Fallback rate           | N/A       | 8%        | ✅ Target met |
 
 ### System Performance
 
 **Response Times** (p95):
+
 - Agent request: <1s ✅
 - Database query: <200ms ✅
 - WhatsApp delivery: <500ms ✅
 
 **Throughput**:
+
 - 1000+ messages/minute ✅
 - 100+ concurrent users ✅
 - 10,000+ daily active users ✅
 
 **Reliability**:
+
 - 99.9% uptime ✅
 - <1% error rate ✅
 - <10% fallback rate ✅
@@ -580,6 +629,7 @@ await logStructuredEvent('AGENT_REQUEST', {
 ### v2.1 (Next Quarter)
 
 **Features**:
+
 - 🌍 Multi-language support (Kinyarwanda, French)
 - 🛍️ Marketplace Agent (active)
 - 💳 Card payment integration
@@ -587,6 +637,7 @@ await logStructuredEvent('AGENT_REQUEST', {
 - 🔔 Proactive notifications
 
 **Improvements**:
+
 - Faster response times (<500ms p95)
 - Better context retention (longer sessions)
 - Enhanced vendor ranking (more factors)
@@ -595,6 +646,7 @@ await logStructuredEvent('AGENT_REQUEST', {
 ### v2.2 (Q2 2026)
 
 **Features**:
+
 - 🏠 Property Agent
 - 🏥 Healthcare Agent
 - 🚚 Fleet management
@@ -604,6 +656,7 @@ await logStructuredEvent('AGENT_REQUEST', {
 ### v2.3 (Q3 2026)
 
 **Features**:
+
 - 🌍 National coverage (all cities)
 - 🎤 Voice agent integration
 - 🔮 Predictive recommendations
@@ -615,12 +668,14 @@ await logStructuredEvent('AGENT_REQUEST', {
 ## 👥 Contributors
 
 **Phase 1-5 Completion Team**:
+
 - Engineering Lead: @core-team
 - Product Manager: @product-team
 - QA Lead: @qa-team
 - DevOps: @infra-team
 
 **Special Thanks**:
+
 - Phase 4 (QA + Observability): Comprehensive testing & monitoring
 - Phase 5 (Cutover Readiness): UX polish, release docs, staging validation
 
@@ -629,23 +684,27 @@ await logStructuredEvent('AGENT_REQUEST', {
 ## 📚 Documentation
 
 **User Guides**:
+
 - [Getting Started with AI Agents](docs/USER_GUIDE.md)
 - [WhatsApp Commands Reference](docs/COMMANDS.md)
 - [FAQ](docs/FAQ.md)
 
 **Technical Docs**:
+
 - [Architecture Overview](docs/ARCHITECTURE.md)
 - [API Reference](docs/API.md)
 - [Deployment Guide](docs/PRODUCTION_DEPLOYMENT_RUNBOOK.md)
 - [Ground Rules](docs/GROUND_RULES.md) ⭐ MUST READ
 
 **Phase Documentation**:
+
 - [Phase 1: Agent Integration](docs/PHASE_1_COMPLETION.md)
 - [Phase 3: Fallback Hardening](docs/PHASE_3_COMPLETE.md)
 - [Phase 4: QA + Observability](docs/PHASE4_COMPLETION.md)
 - [Phase 5: Cutover Readiness](docs/PHASE5_CUTOVER_READINESS.md)
 
 **Support**:
+
 - [Engineering Runbook](docs/ENGINEERING_RUNBOOK.md)
 - [Support Runbook](docs/SUPPORT_RUNBOOK.md)
 - [Known Issues](docs/KNOWN_ISSUES.md)
@@ -679,13 +738,16 @@ Expected response time: 24 hours
 
 Proprietary - © 2025 EasyMO Platform
 
-All rights reserved. This software and its documentation are confidential and proprietary to EasyMO Platform.
+All rights reserved. This software and its documentation are confidential and proprietary to EasyMO
+Platform.
 
 ---
 
 ## 🎉 Conclusion
 
-**EasyMO v2.0 "Intelligent Mobility"** represents a fundamental shift in how users interact with our platform. By combining AI-powered agents with robust fallback mechanisms and comprehensive observability, we've created a system that is both intelligent and reliable.
+**EasyMO v2.0 "Intelligent Mobility"** represents a fundamental shift in how users interact with our
+platform. By combining AI-powered agents with robust fallback mechanisms and comprehensive
+observability, we've created a system that is both intelligent and reliable.
 
 ### Key Achievements
 
@@ -704,9 +766,10 @@ All rights reserved. This software and its documentation are confidential and pr
 
 ### Ready to Deploy
 
-With Phase 5 (Cutover Readiness) nearing completion, EasyMO v2.0 is **production-ready**. 
+With Phase 5 (Cutover Readiness) nearing completion, EasyMO v2.0 is **production-ready**.
 
 **Next Steps**:
+
 1. ✅ UX Polish - COMPLETE
 2. 🚧 Staging Validation - In Progress
 3. 📅 Production Deployment - Week 3
@@ -723,4 +786,4 @@ With Phase 5 (Cutover Readiness) nearing completion, EasyMO v2.0 is **production
 
 ---
 
-*For questions or support, contact: support@easymo.com*
+_For questions or support, contact: support@easymo.com_

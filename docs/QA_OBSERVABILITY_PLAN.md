@@ -1,6 +1,7 @@
 # Phase 4: QA + Observability - Implementation Plan
 
 ## Overview
+
 Comprehensive QA and observability implementation for all AI agent workflows across EasyMO platform.
 
 **Status**: In Progress  
@@ -14,6 +15,7 @@ Comprehensive QA and observability implementation for all AI agent workflows acr
 ### 1.1 UI Regression Tests
 
 #### Admin Dashboard
+
 - [ ] Dashboard loads without errors
 - [ ] All agent cards display correctly
 - [ ] Real-time monitoring connects
@@ -23,6 +25,7 @@ Comprehensive QA and observability implementation for all AI agent workflows acr
 - [ ] Export features work
 
 #### Agent Dashboards (Per Agent)
+
 - [ ] Driver Negotiation dashboard
 - [ ] Pharmacy Orders dashboard
 - [ ] Shops & Services dashboard
@@ -40,6 +43,7 @@ Comprehensive QA and observability implementation for all AI agent workflows acr
 - [ ] Tutoring dashboard
 
 #### Station App
+
 - [ ] Driver view loads
 - [ ] Request acceptance flow
 - [ ] Quote submission works
@@ -48,6 +52,7 @@ Comprehensive QA and observability implementation for all AI agent workflows acr
 ### 1.2 API Regression Tests
 
 #### Core APIs
+
 ```bash
 # Test all agent APIs
 ./scripts/test-agent-apis.sh
@@ -75,6 +80,7 @@ POST /api/agents/tutoring-requests
 ### 1.3 WhatsApp End-to-End Tests
 
 #### Flow Templates by Agent
+
 1. **Driver Negotiation**
    - Trigger: User sends location
    - Expected: Agent finds nearby drivers
@@ -156,10 +162,11 @@ POST /api/agents/tutoring-requests
 
 ### 2.1 Structured Logging (IMPLEMENTED)
 
-**Base Implementation**: `supabase/functions/_shared/observability.ts`
-**Agent-Specific**: `supabase/functions/_shared/agent-observability.ts`
+**Base Implementation**: `supabase/functions/_shared/observability.ts` **Agent-Specific**:
+`supabase/functions/_shared/agent-observability.ts`
 
 #### Key Functions
+
 ```typescript
 // Event logging
 logStructuredEvent(event: string, details: object)
@@ -182,12 +189,14 @@ maskPhone(phone: string)
 ### 2.2 Metrics Collection (IN PROGRESS)
 
 #### Current Implementation
+
 - Admin App: `admin-app/lib/server/metrics.ts`
 - Supabase: `supabase/functions/wa-webhook/observe/metrics.ts`
 
 #### Required Metrics per Agent
 
 **Session Metrics**
+
 - `agent.session.created` - Counter
 - `agent.session.completed` - Counter
 - `agent.session.timeout` - Counter
@@ -195,6 +204,7 @@ maskPhone(phone: string)
 - `agent.session.duration` - Histogram
 
 **Quote Metrics**
+
 - `agent.quote.sent` - Counter
 - `agent.quote.received` - Counter
 - `agent.quote.accepted` - Counter
@@ -202,15 +212,18 @@ maskPhone(phone: string)
 - `agent.quote.expired` - Counter
 
 **Vendor Metrics**
+
 - `agent.vendor.contacted` - Counter
 - `agent.vendor.responded` - Counter
 - `agent.vendor.timeout` - Counter
 
 **Fallback Metrics**
+
 - `agent.fallback.triggered` - Counter (with reason tag)
 - `agent.fallback.type` - Counter (ranking/mock/supabase)
 
 **Performance Metrics**
+
 - `agent.negotiation.duration` - Histogram
 - `agent.response.time` - Histogram
 - `agent.ai.latency` - Histogram
@@ -218,6 +231,7 @@ maskPhone(phone: string)
 ### 2.3 Alerts & Monitoring
 
 #### Critical Alerts
+
 1. **Agent Session Failure Rate > 5%**
    - Check: WhatsApp webhook health
    - Check: Supabase function errors
@@ -239,6 +253,7 @@ maskPhone(phone: string)
    - Check: Rate limits
 
 #### Monitoring Dashboards
+
 - **Supabase Dashboard**: Function logs and metrics
 - **Admin Panel**: Real-time agent monitoring
 - **Grafana** (Future): Custom dashboards
@@ -251,107 +266,119 @@ maskPhone(phone: string)
 ### 3.1 Test Scenarios
 
 #### Scenario 1: AI Service Unavailable
+
 ```typescript
 // Force AI path to fail
-test('falls back to ranking when AI fails', async () => {
+test("falls back to ranking when AI fails", async () => {
   // Mock AI service error
-  mockAIService.searchVendors = () => { throw new Error('AI_UNAVAILABLE') }
-  
+  mockAIService.searchVendors = () => {
+    throw new Error("AI_UNAVAILABLE");
+  };
+
   // Trigger workflow
-  const result = await triggerAgent('shops', userRequest)
-  
+  const result = await triggerAgent("shops", userRequest);
+
   // Assert fallback triggered
-  expect(result.fallbackUsed).toBe(true)
-  expect(result.fallbackType).toBe('ranking')
-  expect(result.vendors).toHaveLength(10)
-  expect(result.userMessage).toContain('top-rated')
-})
+  expect(result.fallbackUsed).toBe(true);
+  expect(result.fallbackType).toBe("ranking");
+  expect(result.vendors).toHaveLength(10);
+  expect(result.userMessage).toContain("top-rated");
+});
 ```
 
 #### Scenario 2: Database Connection Lost
+
 ```typescript
-test('handles database failures gracefully', async () => {
+test("handles database failures gracefully", async () => {
   // Mock database error
-  mockSupabase.from = () => { throw new Error('DB_CONNECTION_LOST') }
-  
+  mockSupabase.from = () => {
+    throw new Error("DB_CONNECTION_LOST");
+  };
+
   // Trigger workflow
-  const result = await triggerAgent('pharmacy', userRequest)
-  
+  const result = await triggerAgent("pharmacy", userRequest);
+
   // Assert graceful degradation
-  expect(result.error).toBeDefined()
-  expect(result.userMessage).toContain('try again')
-  expect(result.retryable).toBe(true)
-})
+  expect(result.error).toBeDefined();
+  expect(result.userMessage).toContain("try again");
+  expect(result.retryable).toBe(true);
+});
 ```
 
 #### Scenario 3: Vendor Notification Failure
+
 ```typescript
-test('tracks vendor notification failures', async () => {
+test("tracks vendor notification failures", async () => {
   // Mock WhatsApp send failure
-  mockWhatsApp.sendMessage = () => { throw new Error('RATE_LIMIT') }
-  
+  mockWhatsApp.sendMessage = () => {
+    throw new Error("RATE_LIMIT");
+  };
+
   // Trigger workflow
-  const result = await triggerAgent('driver', userRequest)
-  
+  const result = await triggerAgent("driver", userRequest);
+
   // Assert error logged and fallback triggered
-  expect(result.notificationsFailed).toBeGreaterThan(0)
-  expect(result.fallbackUsed).toBe(true)
-  expect(metrics.vendorNotificationFailure).toHaveBeenCalled()
-})
+  expect(result.notificationsFailed).toBeGreaterThan(0);
+  expect(result.fallbackUsed).toBe(true);
+  expect(metrics.vendorNotificationFailure).toHaveBeenCalled();
+});
 ```
 
 #### Scenario 4: Timeout Before Any Quotes
+
 ```typescript
-test('shows fallback when no quotes arrive', async () => {
+test("shows fallback when no quotes arrive", async () => {
   // Mock slow/no vendor responses
-  mockVendors.forEach(v => v.responseTime = Infinity)
-  
+  mockVendors.forEach((v) => (v.responseTime = Infinity));
+
   // Trigger workflow with short timeout
-  const result = await triggerAgent('hardware', userRequest, { timeout: 1000 })
-  
+  const result = await triggerAgent("hardware", userRequest, { timeout: 1000 });
+
   // Assert timeout handling
-  expect(result.quotesReceived).toBe(0)
-  expect(result.fallbackUsed).toBe(true)
-  expect(result.userMessage).toContain('top vendors')
-})
+  expect(result.quotesReceived).toBe(0);
+  expect(result.fallbackUsed).toBe(true);
+  expect(result.userMessage).toContain("top vendors");
+});
 ```
 
 #### Scenario 5: Partial Quote Collection
+
 ```typescript
-test('presents partial results on timeout', async () => {
+test("presents partial results on timeout", async () => {
   // Mock some vendors responding, others not
-  mockVendors[0].responseTime = 500
-  mockVendors[1].responseTime = 600
-  mockVendors.slice(2).forEach(v => v.responseTime = Infinity)
-  
+  mockVendors[0].responseTime = 500;
+  mockVendors[1].responseTime = 600;
+  mockVendors.slice(2).forEach((v) => (v.responseTime = Infinity));
+
   // Trigger workflow
-  const result = await triggerAgent('shops', userRequest, { timeout: 1000 })
-  
+  const result = await triggerAgent("shops", userRequest, { timeout: 1000 });
+
   // Assert partial results shown
-  expect(result.quotesReceived).toBe(2)
-  expect(result.partialResults).toBe(true)
-  expect(result.userMessage).toContain('so far')
-})
+  expect(result.quotesReceived).toBe(2);
+  expect(result.partialResults).toBe(true);
+  expect(result.userMessage).toContain("so far");
+});
 ```
 
 ### 3.2 Test Implementation Script
 
 Create: `tests/synthetic-failures.test.ts`
-```typescript
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { triggerAgent, mockServices } from './test-utils'
 
-describe('Synthetic Failure Tests', () => {
+```typescript
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { triggerAgent, mockServices } from "./test-utils";
+
+describe("Synthetic Failure Tests", () => {
   beforeEach(() => {
-    mockServices.reset()
-  })
+    mockServices.reset();
+  });
 
   afterEach(() => {
-    mockServices.restore()
-  })
+    mockServices.restore();
+  });
 
   // Add all scenario tests here
-})
+});
 ```
 
 ---
@@ -363,6 +390,7 @@ describe('Synthetic Failure Tests', () => {
 Run: `./scripts/audit-wa-templates.sh`
 
 #### Required Templates per Agent
+
 1. Driver: `driver_quote_request`, `driver_quote_received`, `driver_trip_confirmed`
 2. Pharmacy: `pharmacy_order_request`, `pharmacy_quote`, `pharmacy_delivery_update`
 3. Shops: `shops_search_request`, `shops_vendor_list`, `shops_quote`
@@ -384,6 +412,7 @@ Run: `./scripts/audit-wa-templates.sh`
 Run: `./scripts/check-wa-webhook.sh`
 
 Expected checks:
+
 - Webhook responds to GET with challenge
 - Webhook accepts POST with valid signature
 - Webhook rejects POST with invalid signature
@@ -393,6 +422,7 @@ Expected checks:
 ### 4.3 Message Flow Validation
 
 For each agent, test:
+
 1. User message → Webhook → Agent function → AI/Fallback → Response
 2. Verify correlation IDs propagate through stack
 3. Verify all events logged with structured data
@@ -404,25 +434,27 @@ For each agent, test:
 
 ### 5.1 Target Metrics
 
-| Metric | Target | P95 | P99 |
-|--------|--------|-----|-----|
-| Agent session creation | < 500ms | 1s | 2s |
-| AI vendor search | < 2s | 4s | 6s |
-| Fallback activation | < 300ms | 500ms | 1s |
-| WhatsApp message send | < 1s | 2s | 3s |
-| Quote collection window | 5min | - | - |
-| Partial results presented | 2min | - | - |
+| Metric                    | Target  | P95   | P99 |
+| ------------------------- | ------- | ----- | --- |
+| Agent session creation    | < 500ms | 1s    | 2s  |
+| AI vendor search          | < 2s    | 4s    | 6s  |
+| Fallback activation       | < 300ms | 500ms | 1s  |
+| WhatsApp message send     | < 1s    | 2s    | 3s  |
+| Quote collection window   | 5min    | -     | -   |
+| Partial results presented | 2min    | -     | -   |
 
 ### 5.2 Load Testing
 
 Run: `./scripts/load-test-agents.sh`
 
 Simulate:
+
 - 100 concurrent users per agent
 - 1000 requests per minute peak
 - Sustained load for 10 minutes
 
 Monitor:
+
 - Response times
 - Error rates
 - Fallback rates
@@ -436,6 +468,7 @@ Monitor:
 ### 6.1 Agent Feature Flags
 
 File: `config/agent-features.json`
+
 ```json
 {
   "driver_negotiation": { "enabled": true, "ai_enabled": true },
@@ -459,6 +492,7 @@ File: `config/agent-features.json`
 ### 6.2 Environment Configuration
 
 Required ENV vars per deployment:
+
 ```bash
 # Supabase Functions
 SUPABASE_URL=
@@ -480,6 +514,7 @@ ADMIN_SESSION_SECRET=
 ## 7. Rollout Checklist
 
 ### Pre-Deployment
+
 - [ ] All regression tests passing
 - [ ] Synthetic failure tests passing
 - [ ] WhatsApp templates approved
@@ -489,6 +524,7 @@ ADMIN_SESSION_SECRET=
 - [ ] Mock/seed data loaded
 
 ### Deployment
+
 - [ ] Deploy Supabase functions
 - [ ] Deploy admin app
 - [ ] Deploy station app
@@ -497,6 +533,7 @@ ADMIN_SESSION_SECRET=
 - [ ] Monitor error rates
 
 ### Post-Deployment
+
 - [ ] Run end-to-end tests
 - [ ] Verify metrics flowing
 - [ ] Check alert configurations
@@ -504,6 +541,7 @@ ADMIN_SESSION_SECRET=
 - [ ] Test rollback procedure
 
 ### Monitoring (First 24h)
+
 - [ ] Session creation rate
 - [ ] Quote acceptance rate
 - [ ] Fallback activation rate
@@ -516,12 +554,14 @@ ADMIN_SESSION_SECRET=
 ## 8. Rollback Plan
 
 ### Trigger Conditions
+
 - Error rate > 10% sustained for 5 minutes
 - WhatsApp webhook failures > 5%
 - Database connection failures
 - Critical agent completely broken
 
 ### Rollback Steps
+
 1. Disable affected agent via feature flag
 2. Revert Supabase function deployment
 3. Revert admin app deployment
@@ -534,6 +574,7 @@ ADMIN_SESSION_SECRET=
 ## 9. Documentation Updates
 
 ### Update Files
+
 - [ ] `README.md` - Agent list and status
 - [ ] `docs/ARCHITECTURE.md` - Agent architecture
 - [ ] `docs/GROUND_RULES.md` - Observability examples
@@ -541,6 +582,7 @@ ADMIN_SESSION_SECRET=
 - [ ] Each agent's README - Setup and testing
 
 ### API Documentation
+
 - [ ] Update OpenAPI specs
 - [ ] Document webhook signatures
 - [ ] Document feature flags

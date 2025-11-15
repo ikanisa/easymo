@@ -2,11 +2,12 @@
 
 **Version**: 2.0.0  
 **Date**: 2025-11-13  
-**Status**: READY FOR IMPLEMENTATION  
+**Status**: READY FOR IMPLEMENTATION
 
 ## Overview
 
-This guide provides step-by-step instructions for implementing the enhanced AI agent system in the wa-webhook edge function. All enhancements are **additive-only** and respect the existing codebase.
+This guide provides step-by-step instructions for implementing the enhanced AI agent system in the
+wa-webhook edge function. All enhancements are **additive-only** and respect the existing codebase.
 
 ## Prerequisites
 
@@ -43,14 +44,15 @@ supabase db push --include-all
 ```
 
 **Verify**:
+
 ```sql
-SELECT table_name 
-FROM information_schema.tables 
+SELECT table_name
+FROM information_schema.tables
 WHERE table_name LIKE 'agent_%';
 
 -- Should return:
 -- agent_configurations
--- agent_conversations  
+-- agent_conversations
 -- agent_messages
 -- agent_embeddings
 -- agent_metrics
@@ -88,7 +90,7 @@ import { registerEnhancedTools } from "./enhanced_tools.ts";
 
 constructor() {
   this.registerBuiltinTools();
-  
+
   // Register enhanced external API tools
   registerEnhancedTools((tool) => this.registerTool(tool));
 }
@@ -124,10 +126,7 @@ import { getRateLimiter } from "../shared/advanced_rate_limiter.ts";
 const rateLimiter = getRateLimiter();
 
 // In tryAIAgentHandler function
-const rateLimitResult = await rateLimiter.checkLimit(
-  msg.from,
-  correlationId
-);
+const rateLimitResult = await rateLimiter.checkLimit(msg.from, correlationId);
 
 if (!rateLimitResult.allowed) {
   await logStructuredEvent("RATE_LIMIT_BLOCKED", {
@@ -136,7 +135,7 @@ if (!rateLimitResult.allowed) {
     blacklisted: rateLimitResult.blacklisted,
     retry_after: rateLimitResult.retryAfter,
   });
-  
+
   // Send rate limit message to user
   await sendText(
     ctx.supabase,
@@ -145,7 +144,7 @@ if (!rateLimitResult.allowed) {
       ? "Your account has been temporarily suspended due to excessive requests. Please try again later."
       : `Too many requests. Please wait ${rateLimitResult.retryAfter} seconds.`
   );
-  
+
   return true; // Handled
 }
 ```
@@ -172,7 +171,7 @@ if (relevantMemories.length > 0) {
   const memoryContext = relevantMemories
     .map((m) => `[Memory: ${m.similarity.toFixed(2)}] ${m.content}`)
     .join("\n");
-  
+
   messages.unshift({
     role: "system",
     content: `Relevant context from past interactions:\n${memoryContext}`,
@@ -264,12 +263,12 @@ import { getOpenAIClient } from "./shared/openai_client.ts";
 
 serve(async (req: Request): Promise<Response> => {
   const url = new URL(req.url);
-  
+
   // Health check endpoint
   if (url.pathname === "/health" && req.method === "GET") {
     const pool = getConnectionPool();
     const rateLimiter = getRateLimiter();
-    
+
     const health = {
       status: "healthy",
       timestamp: new Date().toISOString(),
@@ -293,26 +292,26 @@ serve(async (req: Request): Promise<Response> => {
         },
       },
     };
-    
+
     const allHealthy = Object.values(health.checks).every((check) =>
       typeof check === "object" ? check.healthy !== false : check
     );
-    
+
     return new Response(JSON.stringify(health, null, 2), {
       status: allHealthy ? 200 : 503,
       headers: { "Content-Type": "application/json" },
     });
   }
-  
+
   // Existing webhook processing
   const cid = crypto.randomUUID();
   try {
     const result = await processWebhookRequest(req);
-    
+
     if (result.type === "response") {
       return result.response;
     }
-    
+
     return await handlePreparedWebhook(supabase, result);
   } catch (err) {
     console.error("wa_webhook.unhandled", { cid, error: String(err) });
@@ -330,6 +329,7 @@ curl https://your-project.supabase.co/functions/v1/wa-webhook/health
 ```
 
 Expected response:
+
 ```json
 {
   "status": "healthy",
@@ -352,6 +352,7 @@ Expected response:
 Send a WhatsApp message: "Hi, how can I check my balance?"
 
 Expected flow:
+
 1. Message received → Pipeline → Processor
 2. AI Agent Handler checks eligibility → TRUE
 3. Feature flag check → ENABLED
@@ -368,6 +369,7 @@ Expected flow:
 Send: "What's the weather in Kigali?"
 
 Expected:
+
 1. AI agent recognizes weather query
 2. Calls `get_weather` tool
 3. Tool executes (requires OPENWEATHER_API_KEY)
@@ -380,6 +382,7 @@ Expected:
 Send: "What are the latest news about Rwanda?"
 
 Expected:
+
 1. AI agent recognizes information need
 2. Calls `web_search` tool (requires TAVILY_API_KEY)
 3. Tool searches web
@@ -392,6 +395,7 @@ Expected:
 Send 150 requests in 1 minute from same number:
 
 Expected:
+
 1. First 100 requests: Processed normally
 2. Requests 101-110: Rate limited, returns retry-after
 3. Request 111+: Blacklisted for 1 hour
@@ -399,6 +403,7 @@ Expected:
 ### Test 6: Memory Recall
 
 Conversation:
+
 1. User: "I prefer traveling in the morning"
 2. AI: "Noted! You prefer morning trips."
 3. (10 minutes later)
@@ -412,13 +417,15 @@ Expected: AI recalls preference from earlier in conversation using memory.
 ### Key Metrics to Track
 
 1. **Performance Metrics**
+
    ```sql
-   SELECT * FROM agent_performance_analytics 
+   SELECT * FROM agent_performance_analytics
    WHERE time_bucket > NOW() - INTERVAL '24 hours'
    ORDER BY time_bucket DESC;
    ```
 
 2. **Tool Usage**
+
    ```sql
    SELECT * FROM tool_usage_analytics
    WHERE time_bucket > NOW() - INTERVAL '24 hours'
@@ -426,8 +433,9 @@ Expected: AI recalls preference from earlier in conversation using memory.
    ```
 
 3. **Cost Tracking**
+
    ```sql
-   SELECT 
+   SELECT
      agent_type,
      DATE(created_at) as date,
      SUM(cost_usd) as daily_cost,
@@ -441,7 +449,7 @@ Expected: AI recalls preference from earlier in conversation using memory.
 
 4. **Error Rates**
    ```sql
-   SELECT 
+   SELECT
      agent_type,
      COUNT(*) as total,
      COUNT(*) FILTER (WHERE success = true) as successful,
@@ -457,14 +465,16 @@ Expected: AI recalls preference from earlier in conversation using memory.
 If issues arise:
 
 ### Immediate Rollback
+
 ```bash
 # Disable AI agents via feature flag
-UPDATE feature_flags 
-SET enabled = false 
+UPDATE feature_flags
+SET enabled = false
 WHERE flag_name = 'ai_agents_enabled';
 ```
 
 ### Full Rollback
+
 ```sql
 BEGIN;
 
@@ -490,7 +500,9 @@ COMMIT;
 ## Troubleshooting
 
 ### Issue: "Connection pool timeout"
+
 **Solution**: Increase pool size or maxSize in config
+
 ```typescript
 connectionPool: {
   maxSize: 30, // Increase from 20
@@ -498,7 +510,9 @@ connectionPool: {
 ```
 
 ### Issue: "Rate limit blacklist too aggressive"
+
 **Solution**: Adjust thresholds
+
 ```typescript
 rateLimit: {
   blacklistThreshold: 20, // Increase from 10
@@ -507,7 +521,9 @@ rateLimit: {
 ```
 
 ### Issue: "OpenAI API errors"
+
 **Solution**: Check API key, implement fallback
+
 ```typescript
 model: {
   defaultModel: "gpt-4o-mini",
@@ -516,14 +532,16 @@ model: {
 ```
 
 ### Issue: "Memory search returns no results"
+
 **Solution**: Check embedding generation and vector index
+
 ```sql
 -- Verify embeddings exist
 SELECT COUNT(*) FROM agent_embeddings;
 
 -- Check vector index
-SELECT indexname, indexdef 
-FROM pg_indexes 
+SELECT indexname, indexdef
+FROM pg_indexes
 WHERE tablename = 'agent_embeddings';
 
 -- Rebuild if needed
@@ -533,6 +551,7 @@ REINDEX INDEX idx_agent_embeddings_vector;
 ## Performance Optimization
 
 ### 1. Cache Frequently Used Data
+
 ```typescript
 // Cache user profiles
 const profile = await cache.getOrSet(
@@ -543,22 +562,21 @@ const profile = await cache.getOrSet(
 ```
 
 ### 2. Batch Database Operations
+
 ```typescript
 // Instead of multiple inserts
-await Promise.all([
-  saveMetric1(),
-  saveMetric2(),
-  saveMetric3(),
-]);
+await Promise.all([saveMetric1(), saveMetric2(), saveMetric3()]);
 ```
 
 ### 3. Limit Token Usage
+
 ```typescript
 // Truncate long conversations
 const recentMessages = conversationHistory.slice(-10);
 ```
 
 ### 4. Use Streaming for Long Responses
+
 ```typescript
 // Implement streaming for better UX
 const stream = openai.streamChat({...});
@@ -606,6 +624,7 @@ After successful deployment:
 ## Support
 
 For issues or questions:
+
 - Review logs: Check structured events in Supabase logs
 - Check metrics: Query agent_metrics and agent_performance_analytics
 - Test tools: Use health endpoint to verify configuration

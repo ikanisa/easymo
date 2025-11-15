@@ -89,9 +89,14 @@ export async function handleProfileMenu(ctx: RouterContext): Promise<boolean> {
  */
 function getProfileMenuItemId(key: string): string {
   const mapping: Record<string, string> = {
-    'view_profile': IDS.PROFILE_SETTINGS,
+    'view_profile': IDS.PROFILE_VIEW,
+    'my_businesses': IDS.PROFILE_BUSINESSES,
+    'my_vehicles': IDS.PROFILE_VEHICLES,
+    'my_properties': IDS.PROFILE_PROPERTIES,
+    'my_jobs': IDS.JOB_MY_JOBS,
     'momo_qr': IDS.MOMO_QR,
     'payment_history': IDS.PROFILE_TOKENS,
+    'saved_locations': 'saved_locations',
     'settings': IDS.PROFILE_SETTINGS,
     'change_language': 'change_language',
     'help_support': 'help_support',
@@ -164,12 +169,25 @@ export async function handleAddVehicle(ctx: RouterContext): Promise<boolean> {
   return true;
 }
 
-export async function handleVehicleCertificateUpload(
+/**
+ * Handle vehicle certificate media upload
+ */
+export async function handleVehicleCertificateMedia(
   ctx: RouterContext,
-  fileUrl: string,
-  vehiclePlate: string
+  msg: any
 ): Promise<boolean> {
   if (!ctx.profileId) return false;
+
+  // Extract media ID and download URL
+  const mediaId = msg.image?.id;
+  if (!mediaId) {
+    await sendButtonsMessage(
+      ctx,
+      t(ctx.locale, "profile.vehicles.add.invalid_image"),
+      homeOnly()
+    );
+    return true;
+  }
 
   await sendButtonsMessage(
     ctx,
@@ -178,6 +196,13 @@ export async function handleVehicleCertificateUpload(
   );
 
   try {
+    // Get media URL from WhatsApp
+    const mediaUrl = await getMediaUrl(mediaId);
+    
+    // For now, we'll generate a simple vehicle plate from timestamp
+    // In production, you'd extract this from OCR or ask the user
+    const vehiclePlate = `VEH-${Date.now().toString().slice(-6)}`;
+
     // Call vehicle OCR edge function
     const response = await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/vehicle-ocr`, {
       method: "POST",
@@ -187,9 +212,9 @@ export async function handleVehicleCertificateUpload(
       },
       body: JSON.stringify({
         profile_id: ctx.profileId,
-        org_id: "default", // Use default org or fetch from profile
+        org_id: "default",
         vehicle_plate: vehiclePlate,
-        file_url: fileUrl,
+        file_url: mediaUrl,
       }),
     });
 
@@ -226,6 +251,21 @@ export async function handleVehicleCertificateUpload(
     await clearState(ctx.supabase, ctx.profileId);
     return true;
   }
+}
+
+async function getMediaUrl(mediaId: string): Promise<string> {
+  // Get WhatsApp access token
+  const accessToken = Deno.env.get("WA_ACCESS_TOKEN");
+  
+  // Fetch media URL from WhatsApp API
+  const response = await fetch(`https://graph.facebook.com/v17.0/${mediaId}`, {
+    headers: {
+      "Authorization": `Bearer ${accessToken}`,
+    },
+  });
+  
+  const data = await response.json();
+  return data.url || "";
 }
 
 export async function handleProfileBusinesses(ctx: RouterContext): Promise<boolean> {

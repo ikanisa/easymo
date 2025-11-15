@@ -24,12 +24,14 @@ Before starting, ensure you have:
 ### Day 1: Database Setup
 
 1. **Enable pgvector extension**:
+
    ```sql
    -- In Supabase SQL Editor
    CREATE EXTENSION IF NOT EXISTS vector;
    ```
 
 2. **Create migration file**:
+
    ```bash
    cd supabase/migrations
    touch $(date +%Y%m%d%H%M%S)_ai_agent_system.sql
@@ -41,6 +43,7 @@ Before starting, ensure you have:
    - Paste into migration file
 
 4. **Run migration**:
+
    ```bash
    supabase db push
    ```
@@ -55,6 +58,7 @@ Before starting, ensure you have:
 ### Day 2-3: Create AI Package
 
 1. **Create package structure**:
+
    ```bash
    mkdir -p packages/ai/src/{core,agents,tools,memory}
    cd packages/ai
@@ -62,12 +66,14 @@ Before starting, ensure you have:
    ```
 
 2. **Install dependencies**:
+
    ```bash
    pnpm add openai zod ioredis @supabase/supabase-js uuid
    pnpm add -D @types/node typescript tsx vitest
    ```
 
 3. **Create package.json**:
+
    ```json
    {
      "name": "@easymo/ai",
@@ -84,6 +90,7 @@ Before starting, ensure you have:
    ```
 
 4. **Create tsconfig.json**:
+
    ```json
    {
      "compilerOptions": {
@@ -106,8 +113,8 @@ Before starting, ensure you have:
 5. **Add to pnpm-workspace.yaml**:
    ```yaml
    packages:
-     - 'packages/*'
-     - 'packages/ai'  # Add this line
+     - "packages/*"
+     - "packages/ai" # Add this line
    ```
 
 ---
@@ -115,6 +122,7 @@ Before starting, ensure you have:
 ### Day 3-4: Implement AgentOrchestrator
 
 1. **Create core types**:
+
    ```bash
    touch packages/ai/src/core/types.ts
    ```
@@ -138,7 +146,7 @@ Before starting, ensure you have:
      agent_id: string;
      user_id: string;
      profile_id?: string;
-     status: 'active' | 'ended' | 'escalated';
+     status: "active" | "ended" | "escalated";
      context: Record<string, any>;
      started_at: string;
      ended_at?: string;
@@ -157,6 +165,7 @@ Before starting, ensure you have:
    ```
 
 2. **Create orchestrator skeleton**:
+
    ```bash
    touch packages/ai/src/core/orchestrator.ts
    ```
@@ -169,8 +178,8 @@ Before starting, ensure you have:
 4. **Create index.ts**:
    ```typescript
    // packages/ai/src/index.ts
-   export { AgentOrchestrator } from './core/orchestrator';
-   export type { AgentConfig, Conversation, AgentResponse } from './core/types';
+   export { AgentOrchestrator } from "./core/orchestrator";
+   export type { AgentConfig, Conversation, AgentResponse } from "./core/types";
    ```
 
 ---
@@ -178,22 +187,24 @@ Before starting, ensure you have:
 ### Day 5: Basic Tools
 
 1. **Create tool structure**:
+
    ```bash
    mkdir -p packages/ai/src/tools/{payment,booking,support}
    ```
 
 2. **Implement check_balance tool**:
+
    ```bash
    touch packages/ai/src/tools/payment/check-balance.ts
    ```
 
    ```typescript
-   import { z } from 'zod';
-   import { createClient } from '@supabase/supabase-js';
+   import { z } from "zod";
+   import { createClient } from "@supabase/supabase-js";
 
    export const checkBalanceTool = {
-     name: 'check_balance',
-     description: 'Check user wallet balance and recent transactions',
+     name: "check_balance",
+     description: "Check user wallet balance and recent transactions",
      parameters: z.object({
        userId: z.string(),
      }),
@@ -204,26 +215,27 @@ Before starting, ensure you have:
        );
 
        const { data: wallet } = await supabase
-         .from('wallets')
-         .select('balance, currency')
-         .eq('user_id', params.userId)
+         .from("wallets")
+         .select("balance, currency")
+         .eq("user_id", params.userId)
          .single();
 
        return {
          balance: wallet?.balance || 0,
-         currency: wallet?.currency || 'RWF',
+         currency: wallet?.currency || "RWF",
        };
      },
    };
    ```
 
 3. **Create tool registry**:
+
    ```bash
    touch packages/ai/src/tools/index.ts
    ```
 
    ```typescript
-   import { checkBalanceTool } from './payment/check-balance';
+   import { checkBalanceTool } from "./payment/check-balance";
 
    export const TOOLS = {
      check_balance: checkBalanceTool,
@@ -239,35 +251,34 @@ Before starting, ensure you have:
 ### Day 6-7: WhatsApp Integration
 
 1. **Create integration file**:
+
    ```bash
    touch supabase/functions/wa-webhook/domains/ai-agents/orchestrator-integration.ts
    ```
 
 2. **Implement handler**:
+
    ```typescript
-   import { AgentOrchestrator } from '@easymo/ai';
+   import { AgentOrchestrator } from "@easymo/ai";
 
    let orchestrator: AgentOrchestrator | null = null;
 
    export function getOrchestrator(): AgentOrchestrator {
      if (!orchestrator) {
        orchestrator = new AgentOrchestrator({
-         openaiKey: Deno.env.get('OPENAI_API_KEY')!,
-         redisUrl: Deno.env.get('REDIS_URL')!,
-         supabaseUrl: Deno.env.get('SUPABASE_URL')!,
-         supabaseKey: Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+         openaiKey: Deno.env.get("OPENAI_API_KEY")!,
+         redisUrl: Deno.env.get("REDIS_URL")!,
+         supabaseUrl: Deno.env.get("SUPABASE_URL")!,
+         supabaseKey: Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
        });
      }
      return orchestrator;
    }
 
-   export async function handleAIMessage(
-     ctx: any,
-     message: string
-   ): Promise<boolean> {
+   export async function handleAIMessage(ctx: any, message: string): Promise<boolean> {
      try {
        const orchestrator = getOrchestrator();
-       
+
        const response = await orchestrator.processMessage({
          userId: ctx.from,
          message,
@@ -276,20 +287,21 @@ Before starting, ensure you have:
        await sendText(ctx.from, response.message);
        return true;
      } catch (error) {
-       console.error('AI error:', error);
+       console.error("AI error:", error);
        return false;
      }
    }
    ```
 
 3. **Update text router**:
+
    ```typescript
    // In router/text.ts
-   import { handleAIMessage } from '../domains/ai-agents/orchestrator-integration.ts';
+   import { handleAIMessage } from "../domains/ai-agents/orchestrator-integration.ts";
 
    // Add to router
-   if (text.startsWith('ai ') || ctx.inAIConversation) {
-     return await handleAIMessage(ctx, text.replace('ai ', ''));
+   if (text.startsWith("ai ") || ctx.inAIConversation) {
+     return await handleAIMessage(ctx, text.replace("ai ", ""));
    }
    ```
 
@@ -305,33 +317,33 @@ touch packages/ai/src/core/orchestrator.test.ts
 ```
 
 ```typescript
-import { describe, it, expect, beforeEach } from 'vitest';
-import { AgentOrchestrator } from './orchestrator';
+import { describe, it, expect, beforeEach } from "vitest";
+import { AgentOrchestrator } from "./orchestrator";
 
-describe('AgentOrchestrator', () => {
+describe("AgentOrchestrator", () => {
   let orchestrator: AgentOrchestrator;
 
   beforeEach(() => {
     orchestrator = new AgentOrchestrator({
-      openaiKey: 'test-key',
-      redisUrl: 'redis://localhost:6379',
-      supabaseUrl: 'https://test.supabase.co',
-      supabaseKey: 'test-key',
+      openaiKey: "test-key",
+      redisUrl: "redis://localhost:6379",
+      supabaseUrl: "https://test.supabase.co",
+      supabaseKey: "test-key",
     });
   });
 
-  it('should classify intent correctly', async () => {
-    const agent = await orchestrator.classifyIntent('I want to book a slot');
-    expect(agent.type).toBe('booking');
+  it("should classify intent correctly", async () => {
+    const agent = await orchestrator.classifyIntent("I want to book a slot");
+    expect(agent.type).toBe("booking");
   });
 
-  it('should create conversation', async () => {
+  it("should create conversation", async () => {
     const conversation = await orchestrator.getOrCreateConversation({
-      userId: '+250788123456',
-      message: 'Hello',
+      userId: "+250788123456",
+      message: "Hello",
     });
     expect(conversation.id).toBeDefined();
-    expect(conversation.status).toBe('active');
+    expect(conversation.status).toBe("active");
   });
 });
 ```
@@ -378,7 +390,7 @@ AI_MAX_CONVERSATIONS_PER_USER=5
 
 ```typescript
 // test-orchestrator.ts
-import { AgentOrchestrator } from '@easymo/ai';
+import { AgentOrchestrator } from "@easymo/ai";
 
 const orchestrator = new AgentOrchestrator({
   openaiKey: process.env.OPENAI_API_KEY!,
@@ -389,19 +401,20 @@ const orchestrator = new AgentOrchestrator({
 
 async function test() {
   const response = await orchestrator.processMessage({
-    userId: '+250788123456',
-    message: 'I want to book a slot for Friday',
+    userId: "+250788123456",
+    message: "I want to book a slot for Friday",
   });
-  
-  console.log('Response:', response.message);
-  console.log('Cost:', response.cost);
-  console.log('Tokens:', response.usage);
+
+  console.log("Response:", response.message);
+  console.log("Cost:", response.cost);
+  console.log("Tokens:", response.usage);
 }
 
 test();
 ```
 
 Run:
+
 ```bash
 pnpm tsx test-orchestrator.ts
 ```
@@ -421,7 +434,7 @@ pnpm tsx test-orchestrator.ts
 
 ```sql
 -- In Supabase SQL Editor
-SELECT 
+SELECT
   c.id,
   c.user_id,
   a.name as agent_name,
@@ -440,7 +453,7 @@ LIMIT 10;
 ### Check Costs
 
 ```sql
-SELECT 
+SELECT
   DATE(created_at) as date,
   COUNT(*) as messages,
   SUM(cost_usd) as total_cost
@@ -464,7 +477,8 @@ ORDER BY date DESC;
 
 ### Issue: Agent Not Responding
 
-**Solution**: 
+**Solution**:
+
 1. Check logs: `supabase functions logs wa-webhook`
 2. Verify agent is enabled in database
 3. Test orchestrator directly
@@ -472,6 +486,7 @@ ORDER BY date DESC;
 ### Issue: High Costs
 
 **Solution**:
+
 1. Reduce max_tokens
 2. Use GPT-4o-mini for simple tasks
 3. Implement response caching
@@ -492,12 +507,14 @@ After completing Week 1-2:
 
 ## Support
 
-**Questions?** 
+**Questions?**
+
 - Check `AI_AGENT_REVIEW_REPORT.md` for architecture details
 - Check `AI_AGENT_IMPLEMENTATION_PLAN.md` for full roadmap
 - Review existing code in `packages/agents/src/`
 
 **Stuck?**
+
 - Test each component independently
 - Check logs thoroughly
 - Start simple, add complexity gradually

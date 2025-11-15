@@ -3,16 +3,16 @@
 ## What This Adds
 
 Automatically discover and import jobs from online sources:
+
 - 🔍 **OpenAI Deep Search**: Finds jobs on legitimate job boards
-- 🌐 **SerpAPI**: Crawls Google for job postings  
+- 🌐 **SerpAPI**: Crawls Google for job postings
 - 🤖 **Auto-matching**: External jobs matched to seekers like local jobs
 - ⏰ **Daily Sync**: Runs automatically at 3 AM
 
 ## Prerequisites
 
-✅ Phase 1 (core job board) deployed
-✅ OpenAI API key already set
-✅ (Optional) SerpAPI API key for Google search
+✅ Phase 1 (core job board) deployed ✅ OpenAI API key already set ✅ (Optional) SerpAPI API key for
+Google search
 
 ## Setup in 4 Steps
 
@@ -25,8 +25,8 @@ cd /Users/jeanbosco/workspace/easymo-
 supabase db push
 
 # Verify new columns
-supabase db run "SELECT column_name FROM information_schema.columns 
-                 WHERE table_name = 'job_listings' 
+supabase db run "SELECT column_name FROM information_schema.columns
+                 WHERE table_name = 'job_listings'
                  AND column_name IN ('org_id', 'is_external', 'job_hash')"
 ```
 
@@ -51,7 +51,7 @@ supabase secrets set SERPAPI_API_KEY=your-key-here
 ```sql
 -- Connect to your Supabase database
 -- Enable Deep Search for Rwanda
-UPDATE job_sources 
+UPDATE job_sources
 SET is_active = true,
     config = '{
       "queries": [
@@ -64,6 +64,7 @@ WHERE source_type = 'openai_deep_search';
 ```
 
 Or run via CLI:
+
 ```bash
 supabase db run "UPDATE job_sources SET is_active = true WHERE source_type = 'openai_deep_search'"
 ```
@@ -73,6 +74,7 @@ supabase db run "UPDATE job_sources SET is_active = true WHERE source_type = 'op
 ### Step 4: Test & Schedule (4 min)
 
 **Test manual sync**:
+
 ```bash
 curl -X POST https://YOUR_PROJECT.supabase.co/functions/v1/job-sources-sync \
   -H "Content-Type: application/json" \
@@ -81,6 +83,7 @@ curl -X POST https://YOUR_PROJECT.supabase.co/functions/v1/job-sources-sync \
 ```
 
 **Expected response**:
+
 ```json
 {
   "success": true,
@@ -96,11 +99,13 @@ curl -X POST https://YOUR_PROJECT.supabase.co/functions/v1/job-sources-sync \
 **Schedule daily runs** (choose one):
 
 **Option A: Supabase Dashboard** (Easier)
+
 1. Go to Database → Cron Jobs
 2. Click "Create a new cron job"
 3. Name: `job-sources-sync`
 4. Schedule: `0 3 * * *` (3 AM daily)
 5. SQL:
+
 ```sql
 SELECT net.http_post(
   url := 'https://YOUR_PROJECT.supabase.co/functions/v1/job-sources-sync',
@@ -113,6 +118,7 @@ SELECT net.http_post(
 ```
 
 **Option B: SQL** (For automation)
+
 ```sql
 CREATE EXTENSION IF NOT EXISTS pg_cron;
 
@@ -137,15 +143,15 @@ SELECT cron.schedule(
 
 ```sql
 -- Count external jobs
-SELECT COUNT(*) as external_jobs 
-FROM job_listings 
+SELECT COUNT(*) as external_jobs
+FROM job_listings
 WHERE is_external = true;
 
 -- View recent external jobs
-SELECT title, company_name, location, discovered_at 
-FROM job_listings 
-WHERE is_external = true 
-ORDER BY discovered_at DESC 
+SELECT title, company_name, location, discovered_at
+FROM job_listings
+WHERE is_external = true
+ORDER BY discovered_at DESC
 LIMIT 5;
 ```
 
@@ -162,6 +168,7 @@ supabase functions logs job-sources-sync --tail
 ```
 
 Look for:
+
 ```
 JOB_SOURCES_SYNC_START
 PROCESSING_SOURCE: OpenAI Deep Search
@@ -174,7 +181,7 @@ JOB_SOURCES_SYNC_COMPLETE: inserted=15, updated=0
 
 ```sql
 -- Jobs discovered per day
-SELECT 
+SELECT
   DATE(discovered_at) as date,
   COUNT(*) as jobs_found
 FROM job_listings
@@ -184,7 +191,7 @@ GROUP BY DATE(discovered_at)
 ORDER BY date DESC;
 
 -- Source performance
-SELECT 
+SELECT
   js.name,
   COUNT(*) as total_jobs,
   MAX(jl.discovered_at) as last_run
@@ -226,7 +233,7 @@ External jobs are **seamlessly mixed** with local jobs:
 
 2. 📦 Food Courier (ONLINE POSTING)
    📍 Kigali
-   💰 10,000 RWF/day  
+   💰 10,000 RWF/day
    ✨ 89% match
    🔗 More details: jobboard.rw/...
 
@@ -241,6 +248,7 @@ Users don't need to know the difference!
 ## Cost Estimate
 
 **Daily cost** (10 queries, 50 jobs found):
+
 - Deep Search: 10 × $0.015 = **$0.15**
 - Embeddings: 50 × $0.00002 = **$0.001**
 - **Total**: ~$0.15/day = **$4.50/month**
@@ -252,11 +260,13 @@ Very affordable! 💰
 ### No Jobs Discovered
 
 1. Check source is active:
+
 ```sql
 SELECT name, is_active FROM job_sources;
 ```
 
 2. Check logs:
+
 ```bash
 supabase functions logs job-sources-sync --since 1h
 ```
@@ -266,6 +276,7 @@ supabase functions logs job-sources-sync --since 1h
 ### Duplicates
 
 Rare, but if you see duplicates:
+
 ```sql
 -- Check for duplicates
 SELECT title, company_name, COUNT(*)
@@ -280,7 +291,7 @@ Fix: Hash generation should prevent this automatically.
 ### High Errors
 
 ```sql
-SELECT 
+SELECT
   event_type,
   COUNT(*),
   MAX(created_at) as last_error
@@ -305,12 +316,14 @@ Now that external jobs are flowing:
 Want to add Indeed API or custom RSS?
 
 1. Insert new source:
+
 ```sql
 INSERT INTO job_sources (name, source_type, config, is_active) VALUES
   ('Indeed API', 'custom_rss', '{"feed_url": "https://rss.indeed.com/..."}'::jsonb, true);
 ```
 
 2. Extend `job-sources-sync/index.ts`:
+
 ```typescript
 else if (source.source_type === 'custom_rss') {
   const sourceStats = await processRSSFeed(source, correlationId);
@@ -329,17 +342,14 @@ else if (source.source_type === 'custom_rss') {
 ## Success! 🎉
 
 You now have a **hybrid job marketplace**:
+
 - 📱 Local WhatsApp postings
 - 🌐 Online job board discoveries
 - 🤖 AI-powered matching for both
 - ⏰ Daily automatic updates
 
-**Total setup time**: ~10 minutes
-**Monthly cost**: ~$5-8
-**Value**: Priceless! 🚀
+**Total setup time**: ~10 minutes **Monthly cost**: ~$5-8 **Value**: Priceless! 🚀
 
 ---
 
-**Phase 2 Status**: ✅ Complete
-**Version**: 1.0.0
-**Ready to Go!** 🎊
+**Phase 2 Status**: ✅ Complete **Version**: 1.0.0 **Ready to Go!** 🎊

@@ -62,9 +62,8 @@ export async function fetchProfileMenuItems(
 ): Promise<SubmenuItem[]> {
   const db = client || supabase;
 
-  const { data, error } = await db.rpc('get_profile_menu_items_localized', {
-    p_country_code: countryCode,
-    p_language: language,
+  const { data, error } = await db.rpc('get_profile_menu_items', {
+    user_country_code: countryCode,
   });
 
   if (error) {

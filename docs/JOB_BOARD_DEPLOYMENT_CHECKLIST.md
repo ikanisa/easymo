@@ -3,15 +3,17 @@
 ## Phase 1: Core System ✅
 
 ### 1.1 Database Setup
-- [ ] Run base migration: `supabase db push --include-migrations 20251114220000_job_board_system.sql`
+
+- [ ] Run base migration:
+      `supabase db push --include-migrations 20251114220000_job_board_system.sql`
 - [ ] Verify pgvector extension: `SELECT * FROM pg_extension WHERE extname = 'vector'`
 - [ ] Check tables created (7 tables):
   ```sql
-  SELECT table_name FROM information_schema.tables 
+  SELECT table_name FROM information_schema.tables
   WHERE table_schema = 'public' AND table_name LIKE 'job_%';
   ```
 - [ ] Verify categories seeded: `SELECT COUNT(*) FROM job_categories` (should be 20)
-- [ ] Test vector matching function: 
+- [ ] Test vector matching function:
   ```sql
   SELECT match_jobs_for_seeker(
     ARRAY[0.1, 0.2, ...]::vector(1536),
@@ -20,6 +22,7 @@
   ```
 
 ### 1.2 Environment Configuration
+
 - [ ] Set OpenAI API key: `supabase secrets set OPENAI_API_KEY=sk-...`
 - [ ] Verify Supabase vars: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`
 - [ ] (Optional) Set feature flags:
@@ -29,6 +32,7 @@
   ```
 
 ### 1.3 Edge Function Deployment
+
 - [ ] Deploy job-board-ai-agent:
   ```bash
   supabase functions deploy job-board-ai-agent --no-verify-jwt
@@ -48,24 +52,28 @@
   ```
 
 ### 1.4 WhatsApp Integration
+
 - [ ] Update wa-webhook to route job messages:
+
   ```typescript
   import { handleJobDomain, isJobDomainMessage } from "./domains/jobs/handler.ts";
-  
+
   if (isJobDomainMessage(message)) {
     const response = await handleJobDomain({
       phoneNumber: from,
       message,
-      messageType: type
+      messageType: type,
     });
     await sendWhatsAppMessage(from, response.reply);
     return;
   }
   ```
+
 - [ ] Redeploy wa-webhook: `supabase functions deploy wa-webhook`
 - [ ] Test via WhatsApp: Send "I need a job" to your business number
 
 ### 1.5 Admin Dashboard
+
 - [ ] Navigate to `/jobs` in admin-app
 - [ ] Verify stats display correctly
 - [ ] Check recent jobs list loads
@@ -74,24 +82,26 @@
 ## Phase 2: Organizational Enhancements ✅
 
 ### 2.1 Enhanced Schema
+
 - [ ] Run enhancement migration:
   ```bash
   supabase db push --include-migrations 20251114230000_job_board_enhancements.sql
   ```
 - [ ] Verify new columns added:
   ```sql
-  SELECT column_name FROM information_schema.columns 
-  WHERE table_name = 'job_listings' 
+  SELECT column_name FROM information_schema.columns
+  WHERE table_name = 'job_listings'
   AND column_name IN ('org_id', 'company_name', 'is_external', 'job_hash');
   ```
 - [ ] Check job_sources table: `SELECT * FROM job_sources`
-- [ ] Verify RLS policies updated: 
+- [ ] Verify RLS policies updated:
   ```sql
   SELECT policyname FROM pg_policies WHERE tablename = 'job_listings';
   ```
 
 ### 2.2 Test Organizational Features
-- [ ] Create test organization: 
+
+- [ ] Create test organization:
   ```sql
   INSERT INTO public.organizations (name, slug) VALUES ('Test Org', 'test-org');
   ```
@@ -100,7 +110,7 @@
   INSERT INTO job_listings (title, org_id, ...) VALUES (...);
   ```
 - [ ] Verify org-scoped RLS works
-- [ ] Test hash generation: 
+- [ ] Test hash generation:
   ```sql
   SELECT generate_job_hash('Driver', 'Acme Co', 'Kigali', 'https://example.com/job');
   ```
@@ -108,6 +118,7 @@
 ## Phase 3: External Job Sources 🆕
 
 ### 3.1 Deploy Job Sources Sync
+
 - [ ] Deploy function:
   ```bash
   supabase functions deploy job-sources-sync --no-verify-jwt
@@ -118,9 +129,10 @@
   ```
 
 ### 3.2 Configure Job Sources
+
 - [ ] Enable Deep Search:
   ```sql
-  UPDATE job_sources 
+  UPDATE job_sources
   SET is_active = true,
       config = '{
         "queries": [
@@ -132,12 +144,13 @@
   ```
 - [ ] (If you have SerpAPI) Enable SerpAPI:
   ```sql
-  UPDATE job_sources 
-  SET is_active = true 
+  UPDATE job_sources
+  SET is_active = true
   WHERE source_type = 'serpapi';
   ```
 
 ### 3.3 Test Manual Sync
+
 - [ ] Run sync manually:
   ```bash
   curl -X POST https://YOUR_PROJECT.supabase.co/functions/v1/job-sources-sync \
@@ -162,16 +175,18 @@
   ```
 - [ ] Check embeddings generated:
   ```sql
-  SELECT COUNT(*) FROM job_listings 
-  WHERE is_external = true 
+  SELECT COUNT(*) FROM job_listings
+  WHERE is_external = true
   AND required_skills_embedding IS NOT NULL;
   ```
 
 ### 3.4 Schedule Daily Sync
+
 - [ ] **Option A: Supabase Scheduled Functions**
   1. Go to Supabase Dashboard → Database → Cron Jobs
   2. Create new job: `0 3 * * *` (3 AM daily)
   3. SQL:
+
   ```sql
   SELECT net.http_post(
     url := 'https://YOUR_PROJECT.supabase.co/functions/v1/job-sources-sync',
@@ -184,9 +199,10 @@
   ```
 
 - [ ] **Option B: pg_cron**
+
   ```sql
   CREATE EXTENSION IF NOT EXISTS pg_cron;
-  
+
   SELECT cron.schedule(
     'job-sources-sync',
     '0 3 * * *',
@@ -201,6 +217,7 @@
   ```
 
 - [ ] Schedule stale job cleanup:
+
   ```sql
   SELECT cron.schedule(
     'close-stale-external-jobs',
@@ -223,6 +240,7 @@
 ## Phase 4: Testing & Validation 🧪
 
 ### 4.1 End-to-End Testing
+
 - [ ] **Post a local job via WhatsApp**:
   - Send: "I need someone to help move furniture tomorrow in Kigali, paying 10k"
   - Verify: Job created in database
@@ -250,6 +268,7 @@
   - Verify: Lists jobs applied to
 
 ### 4.2 Performance Testing
+
 - [ ] Test response time (should be < 2s):
   ```bash
   time curl -X POST https://YOUR_PROJECT.supabase.co/functions/v1/job-board-ai-agent \
@@ -258,23 +277,23 @@
   ```
 - [ ] Test vector search performance:
   ```sql
-  EXPLAIN ANALYZE 
+  EXPLAIN ANALYZE
   SELECT * FROM match_jobs_for_seeker(
     ARRAY[...]::vector(1536), NULL, 0.7, 20, NULL, NULL, NULL
   );
   ```
 - [ ] Verify indexes being used:
   ```sql
-  SELECT indexname FROM pg_indexes 
+  SELECT indexname FROM pg_indexes
   WHERE tablename = 'job_listings';
   ```
 
 ### 4.3 Security Testing
+
 - [ ] Test RLS policies:
   - Try accessing another user's jobs (should fail)
   - Try accessing org jobs without permission (should fail)
   - Verify open jobs are publicly visible
-  
 - [ ] Test PII masking in logs:
   ```bash
   supabase functions logs job-board-ai-agent | grep "phone"
@@ -282,7 +301,9 @@
   Should not show full phone numbers
 
 ### 4.4 Data Quality Checks
+
 - [ ] Check for duplicate jobs:
+
   ```sql
   SELECT title, company_name, location, COUNT(*)
   FROM job_listings
@@ -292,18 +313,20 @@
   ```
 
 - [ ] Verify embeddings quality:
+
   ```sql
-  SELECT 
+  SELECT
     COUNT(*) as total_jobs,
     COUNT(required_skills_embedding) as with_embedding,
     ROUND(100.0 * COUNT(required_skills_embedding) / COUNT(*), 1) as coverage_pct
   FROM job_listings;
   ```
+
   Coverage should be 100%
 
 - [ ] Check match quality:
   ```sql
-  SELECT 
+  SELECT
     AVG(similarity_score) as avg_score,
     MIN(similarity_score) as min_score,
     MAX(similarity_score) as max_score,
@@ -316,26 +339,29 @@
 ## Phase 5: Monitoring & Observability 📊
 
 ### 5.1 Set Up Monitoring
+
 - [ ] Configure log streaming:
+
   ```bash
   supabase functions logs job-board-ai-agent --tail > /var/log/job-agent.log &
   supabase functions logs job-sources-sync --tail > /var/log/job-sync.log &
   ```
 
 - [ ] Create monitoring dashboard queries:
+
   ```sql
   -- Daily job posts
-  SELECT DATE(created_at), COUNT(*) 
-  FROM job_listings 
+  SELECT DATE(created_at), COUNT(*)
+  FROM job_listings
   WHERE created_at > NOW() - INTERVAL '30 days'
   GROUP BY DATE(created_at);
-  
+
   -- Match quality over time
   SELECT DATE(created_at), AVG(similarity_score)
   FROM job_matches
   WHERE created_at > NOW() - INTERVAL '30 days'
   GROUP BY DATE(created_at);
-  
+
   -- External job sources performance
   SELECT js.name, COUNT(*) as jobs_found
   FROM job_listings jl
@@ -345,11 +371,13 @@
   ```
 
 ### 5.2 Set Up Alerts (Optional)
+
 - [ ] Create alert for high error rate:
+
   ```sql
   -- Alert if > 10 errors in last hour
-  SELECT COUNT(*) FROM job_analytics 
-  WHERE event_type = 'ERROR' 
+  SELECT COUNT(*) FROM job_analytics
+  WHERE event_type = 'ERROR'
   AND created_at > NOW() - INTERVAL '1 hour'
   HAVING COUNT(*) > 10;
   ```
@@ -357,13 +385,14 @@
 - [ ] Create alert for stale sync:
   ```sql
   -- Alert if no sync in last 25 hours
-  SELECT COUNT(*) FROM job_analytics 
+  SELECT COUNT(*) FROM job_analytics
   WHERE event_type = 'JOB_SOURCES_SYNC_COMPLETE'
   AND created_at > NOW() - INTERVAL '25 hours'
   HAVING COUNT(*) = 0;
   ```
 
 ### 5.3 Document Runbook
+
 - [ ] Create incident response procedures
 - [ ] Document common issues and fixes
 - [ ] Set up on-call rotation (if needed)
@@ -371,6 +400,7 @@
 ## Phase 6: Production Hardening 🔒
 
 ### 6.1 Performance Optimization
+
 - [ ] Review slow queries:
   ```sql
   SELECT query, mean_exec_time, calls
@@ -379,11 +409,11 @@
   ORDER BY mean_exec_time DESC
   LIMIT 10;
   ```
-  
 - [ ] Add missing indexes if needed
 - [ ] Consider partitioning for large tables (> 1M rows)
 
 ### 6.2 Backup & Recovery
+
 - [ ] Verify daily backups enabled
 - [ ] Test restore procedure:
   ```bash
@@ -393,21 +423,26 @@
 - [ ] Document recovery time objectives (RTO)
 
 ### 6.3 Rate Limiting
+
 - [ ] Implement rate limiting on edge functions:
   ```typescript
   const rateLimit = await checkRateLimit(phoneNumber);
   if (rateLimit.exceeded) {
-    return new Response(JSON.stringify({
-      error: "Too many requests. Try again in a minute."
-    }), { status: 429 });
+    return new Response(
+      JSON.stringify({
+        error: "Too many requests. Try again in a minute.",
+      }),
+      { status: 429 }
+    );
   }
   ```
 
 ### 6.4 Cost Monitoring
+
 - [ ] Set up billing alerts in OpenAI dashboard
 - [ ] Monitor token usage:
   ```sql
-  SELECT 
+  SELECT
     DATE(created_at),
     COUNT(*) as api_calls,
     COUNT(*) * 0.011 as estimated_cost_usd
@@ -420,6 +455,7 @@
 ## Success Criteria ✅
 
 ### Must Have (MVP)
+
 - [x] Users can post jobs via WhatsApp
 - [x] Users can search for jobs via WhatsApp
 - [x] Semantic matching works (> 0.7 similarity)
@@ -430,6 +466,7 @@
 - [x] Tests pass
 
 ### Should Have (V1.1)
+
 - [ ] WhatsApp template notifications for matches
 - [ ] Rating system after job completion
 - [ ] Multi-language support (FR, RW)
@@ -437,6 +474,7 @@
 - [ ] Mobile money payment integration
 
 ### Nice to Have (V2.0)
+
 - [ ] PWA for job browsing
 - [ ] Voice message support
 - [ ] Advanced analytics dashboard
@@ -446,6 +484,7 @@
 ## Post-Deployment
 
 ### Week 1
+
 - [ ] Monitor error rates daily
 - [ ] Review user feedback
 - [ ] Check match quality metrics
@@ -453,6 +492,7 @@
 - [ ] Fix critical bugs
 
 ### Month 1
+
 - [ ] Analyze usage patterns
 - [ ] Calculate actual costs
 - [ ] Identify popular job categories
@@ -464,22 +504,26 @@
 If critical issues occur:
 
 1. **Disable Job Board**:
+
 ```bash
 supabase secrets set FEATURE_JOB_BOARD=false
 ```
 
 2. **Stop Scheduled Sync**:
+
 ```sql
 SELECT cron.unschedule('job-sources-sync');
 ```
 
 3. **Rollback Migrations** (if needed):
+
 ```bash
 supabase db reset
 # Then apply only non-job-board migrations
 ```
 
 4. **Redeploy Previous Version**:
+
 ```bash
 git checkout HEAD~1 supabase/functions/job-board-ai-agent/
 supabase functions deploy job-board-ai-agent
@@ -497,7 +541,7 @@ supabase functions deploy job-board-ai-agent
 ## Completion Sign-Off
 
 - [ ] All Phase 1 items complete
-- [ ] All Phase 2 items complete  
+- [ ] All Phase 2 items complete
 - [ ] All Phase 3 items complete
 - [ ] All tests passing
 - [ ] Monitoring set up
@@ -505,6 +549,4 @@ supabase functions deploy job-board-ai-agent
 - [ ] Team trained
 - [ ] Production ready! 🚀
 
-**Deployed By**: _______________
-**Date**: _______________
-**Version**: 1.0.0
+**Deployed By**: **\*\***\_\_\_**\*\*** **Date**: **\*\***\_\_\_**\*\*** **Version**: 1.0.0

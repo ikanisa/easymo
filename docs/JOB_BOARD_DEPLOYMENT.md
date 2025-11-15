@@ -23,12 +23,14 @@ FEATURE_AUTO_MATCHING=true
 ### 2. Dependencies
 
 **Required**:
+
 - Supabase CLI ≥1.110.0
 - pnpm ≥10.18.3 (for building packages)
 - Node.js 20+
 - Deno 2.x (for edge functions)
 
 **Verify**:
+
 ```bash
 supabase --version
 pnpm --version
@@ -51,12 +53,13 @@ supabase db push
 
 # Verify tables created
 supabase db run \
-  "SELECT table_name FROM information_schema.tables 
-   WHERE table_schema = 'public' 
+  "SELECT table_name FROM information_schema.tables
+   WHERE table_schema = 'public'
    AND table_name LIKE 'job_%'"
 ```
 
 **Expected Output**:
+
 ```
 job_listings
 job_seekers
@@ -74,6 +77,7 @@ supabase db run "SELECT * FROM pg_extension WHERE extname = 'vector'"
 ```
 
 If not installed:
+
 ```bash
 supabase db run "CREATE EXTENSION IF NOT EXISTS vector"
 ```
@@ -100,6 +104,7 @@ supabase functions list
 ```
 
 **Output should include**:
+
 ```
 job-board-ai-agent   deployed   https://...supabase.co/functions/v1/job-board-ai-agent
 ```
@@ -145,13 +150,14 @@ if (isJobDomainMessage(message)) {
   const response = await handleJobDomain({
     phoneNumber: from,
     message,
-    messageType: type
+    messageType: type,
   });
   return response;
 }
 ```
 
 Then redeploy:
+
 ```bash
 supabase functions deploy wa-webhook
 ```
@@ -177,20 +183,23 @@ netlify deploy --prod
 ### Step 9: Verify End-to-End
 
 1. **Send WhatsApp Message**:
+
    ```
    To: Your WhatsApp Business Number
    Message: "I need a delivery driver for tomorrow"
    ```
 
 2. **Check Logs**:
+
    ```bash
    supabase functions logs job-board-ai-agent --tail
    ```
 
 3. **Verify Database**:
+
    ```bash
    supabase db run \
-     "SELECT id, title, category, status FROM job_listings 
+     "SELECT id, title, category, status FROM job_listings
       ORDER BY created_at DESC LIMIT 5"
    ```
 
@@ -204,20 +213,20 @@ netlify deploy --prod
 
 ```sql
 -- Check embeddings are being generated
-SELECT 
-  id, 
-  title, 
-  required_skills_embedding IS NOT NULL as has_embedding 
-FROM job_listings 
+SELECT
+  id,
+  title,
+  required_skills_embedding IS NOT NULL as has_embedding
+FROM job_listings
 LIMIT 5;
 
 -- Check matches are being created
 SELECT COUNT(*) as total_matches FROM job_matches;
 
 -- Check RLS is active
-SELECT tablename, rowsecurity 
-FROM pg_tables 
-WHERE schemaname = 'public' 
+SELECT tablename, rowsecurity
+FROM pg_tables
+WHERE schemaname = 'public'
 AND tablename LIKE 'job_%';
 ```
 
@@ -227,8 +236,8 @@ All should show `rowsecurity = true`.
 
 ```sql
 -- Verify vector search function exists
-SELECT routine_name 
-FROM information_schema.routines 
+SELECT routine_name
+FROM information_schema.routines
 WHERE routine_name IN ('match_jobs_for_seeker', 'match_seekers_for_job');
 ```
 
@@ -269,7 +278,7 @@ Create database trigger for critical events:
 CREATE OR REPLACE FUNCTION notify_job_posted()
 RETURNS TRIGGER AS $$
 BEGIN
-  PERFORM pg_notify('job_posted', 
+  PERFORM pg_notify('job_posted',
     json_build_object(
       'job_id', NEW.id,
       'category', NEW.category,
@@ -292,7 +301,7 @@ Save these for regular monitoring:
 
 ```sql
 -- Daily job posts
-SELECT 
+SELECT
   DATE(created_at) as date,
   COUNT(*) as jobs_posted,
   COUNT(DISTINCT posted_by) as unique_posters
@@ -302,7 +311,7 @@ GROUP BY DATE(created_at)
 ORDER BY date DESC;
 
 -- Match quality
-SELECT 
+SELECT
   AVG(similarity_score) as avg_score,
   COUNT(*) FILTER (WHERE similarity_score > 0.8) as high_quality,
   COUNT(*) FILTER (WHERE similarity_score > 0.7) as medium_quality
@@ -310,7 +319,7 @@ FROM job_matches
 WHERE created_at > NOW() - INTERVAL '7 days';
 
 -- Popular categories
-SELECT 
+SELECT
   category,
   COUNT(*) as count,
   AVG(EXTRACT(EPOCH FROM (COALESCE(filled_at, NOW()) - created_at)) / 86400) as avg_days_to_fill
@@ -368,6 +377,7 @@ if (Deno.env.get("FEATURE_JOB_BOARD") !== "true") {
 **Cause**: OpenAI API slow or rate limited
 
 **Fix**:
+
 1. Check OpenAI API status
 2. Increase function timeout (default 60s)
 3. Add retry logic for API calls
@@ -377,25 +387,26 @@ if (Deno.env.get("FEATURE_JOB_BOARD") !== "true") {
 **Cause**: Embeddings not generated
 
 **Check**:
+
 ```sql
-SELECT 
+SELECT
   COUNT(*) FILTER (WHERE required_skills_embedding IS NOT NULL) as with_embedding,
   COUNT(*) as total
 FROM job_listings;
 ```
 
 **Fix**: Regenerate embeddings for existing jobs:
+
 ```typescript
 // Run as admin script
-const jobs = await supabase.from('job_listings')
-  .select('*')
-  .is('required_skills_embedding', null);
+const jobs = await supabase.from("job_listings").select("*").is("required_skills_embedding", null);
 
 for (const job of jobs.data) {
   const embedding = await generateEmbedding(openai, jobText);
-  await supabase.from('job_listings')
+  await supabase
+    .from("job_listings")
     .update({ required_skills_embedding: embedding })
-    .eq('id', job.id);
+    .eq("id", job.id);
 }
 ```
 
@@ -408,9 +419,10 @@ for (const job of jobs.data) {
 ### Issue: High costs
 
 **Check**:
+
 ```sql
 -- Count API calls (rough estimate)
-SELECT 
+SELECT
   DATE(created_at),
   COUNT(*) as embedding_calls
 FROM job_listings
@@ -419,6 +431,7 @@ GROUP BY DATE(created_at);
 ```
 
 **Optimize**:
+
 - Batch embeddings (OpenAI supports arrays)
 - Cache common searches
 - Use cheaper model (text-embedding-3-small already used)
@@ -462,12 +475,16 @@ Monitor these post-deployment:
 ## Support
 
 **Logs Location**:
+
 - Edge function: `supabase functions logs job-board-ai-agent`
 - Database: `SELECT * FROM job_analytics ORDER BY created_at DESC`
 
 **Common Queries**:
-- Recent errors: `SELECT * FROM job_analytics WHERE event_type = 'ERROR' ORDER BY created_at DESC LIMIT 10`
-- User activity: `SELECT phone_number, COUNT(*) FROM job_conversations GROUP BY phone_number ORDER BY COUNT(*) DESC`
+
+- Recent errors:
+  `SELECT * FROM job_analytics WHERE event_type = 'ERROR' ORDER BY created_at DESC LIMIT 10`
+- User activity:
+  `SELECT phone_number, COUNT(*) FROM job_conversations GROUP BY phone_number ORDER BY COUNT(*) DESC`
 
 **Contact**: See main project README for support channels
 

@@ -3,6 +3,7 @@
 ## ✅ What's Done (Phases 3E-3F)
 
 ### Multilingual Support (Phase 3E) - 100%
+
 - 5 languages: EN, FR, ES, PT, DE
 - Complete translations (chat, menu, cart, checkout, orders, offline, install)
 - Language switcher component
@@ -10,6 +11,7 @@
 - URL-based locale routing
 
 ### Offline PWA (Phase 3F) - 100%
+
 - Service worker with Workbox
 - Offline detection and banner
 - Install prompt (Add to Home Screen)

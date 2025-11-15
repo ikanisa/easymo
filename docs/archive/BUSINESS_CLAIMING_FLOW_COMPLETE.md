@@ -5,7 +5,8 @@
 
 ## 🎯 Overview
 
-Smart business claiming system that allows users to find and claim their businesses from the existing database using OpenAI-powered semantic search.
+Smart business claiming system that allows users to find and claim their businesses from the
+existing database using OpenAI-powered semantic search.
 
 ## 📋 User Flow
 
@@ -32,6 +33,7 @@ Smart business claiming system that allows users to find and claim their busines
 ### Three-Stage Search Process:
 
 #### Stage 1: Query Understanding
+
 ```typescript
 // OpenAI extracts search intent and keywords
 Input: "Bourbon Coffee Kigali"
@@ -43,6 +45,7 @@ Output: {
 ```
 
 #### Stage 2: Database Query
+
 ```sql
 -- Smart query with extracted terms
 SELECT id, name, category, address
@@ -54,6 +57,7 @@ LIMIT 20;
 ```
 
 #### Stage 3: AI Ranking
+
 ```typescript
 // OpenAI ranks results by relevance
 Input: {
@@ -66,6 +70,7 @@ Output: {
 ```
 
 ### Fallback Mechanism:
+
 - If OpenAI API unavailable → Simple ILIKE search
 - If no results → Suggest alternative spellings
 - If search fails → Graceful error handling
@@ -75,6 +80,7 @@ Output: {
 ### Tables Used:
 
 #### 1. `business` (Main Table)
+
 ```sql
 - id (UUID)
 - name (TEXT)
@@ -87,6 +93,7 @@ Output: {
 ```
 
 #### 2. `business_owners` (Ownership Tracking)
+
 ```sql
 - id (UUID)
 - business_id (UUID) → business.id
@@ -97,6 +104,7 @@ Output: {
 ```
 
 #### 3. `business_whatsapp_numbers` (Multiple Numbers)
+
 ```sql
 - id (UUID)
 - business_id (UUID) → business.id
@@ -108,6 +116,7 @@ Output: {
 ```
 
 #### 4. `profile_assets` (User Asset Tracking)
+
 ```sql
 - profile_id (UUID)
 - kind (TEXT) - 'business', 'vehicle', 'property'
@@ -118,28 +127,31 @@ Output: {
 
 ### Files Created/Modified:
 
-| File | Type | Purpose |
-|------|------|---------|
-| `domains/business/claim.ts` | NEW | OpenAI semantic search & claiming logic |
-| `domains/profile/index.ts` | MODIFIED | Integrated business claim flow |
-| `router/text.ts` | MODIFIED | Handle business name input |
-| `router/interactive_list.ts` | MODIFIED | Handle business selection |
-| `i18n/messages/en.json` | MODIFIED | Translation keys |
+| File                         | Type     | Purpose                                 |
+| ---------------------------- | -------- | --------------------------------------- |
+| `domains/business/claim.ts`  | NEW      | OpenAI semantic search & claiming logic |
+| `domains/profile/index.ts`   | MODIFIED | Integrated business claim flow          |
+| `router/text.ts`             | MODIFIED | Handle business name input              |
+| `router/interactive_list.ts` | MODIFIED | Handle business selection               |
+| `i18n/messages/en.json`      | MODIFIED | Translation keys                        |
 
 ### Key Functions:
 
 #### `startBusinessClaim(ctx)`
+
 - Initiates claiming flow
 - Sets state to `business_claim`
 - Prompts user for business name
 
 #### `handleBusinessNameSearch(ctx, businessName)`
+
 - Validates input (min 2 characters)
 - Calls OpenAI semantic search
 - Shows top 9 results in list view
 - Handles no results gracefully
 
 #### `searchBusinessesSemantic(ctx, query)`
+
 - **Stage 1:** Generate embedding for query
 - **Stage 2:** Extract keywords & intent with GPT-4o-mini
 - **Stage 3:** Query database with smart filters
@@ -147,12 +159,14 @@ Output: {
 - **Fallback:** Simple ILIKE search if AI fails
 
 #### `handleBusinessClaim(ctx, state, selectionId)`
+
 - Validates business not already claimed
 - Claims business (4-step process)
 - Notifies user of success
 - Clears state
 
 #### `claimBusiness(ctx, businessId)`
+
 1. Insert into `business_owners` table
 2. Add to `business_whatsapp_numbers` table
 3. Update `business.owner_id` (legacy)
@@ -161,6 +175,7 @@ Output: {
 ## 🎨 UI/UX Features
 
 ### Smart Search Suggestions:
+
 ```
 No results? Try:
 • Different spelling
@@ -169,6 +184,7 @@ No results? Try:
 ```
 
 ### Result Display:
+
 ```
 🏢 Bourbon Coffee Kigali City
    Cafe • Kigali City Center • 500m away
@@ -178,6 +194,7 @@ No results? Try:
 ```
 
 ### Success Message:
+
 ```
 🎉 Success!
 
@@ -193,7 +210,8 @@ You can:
 ## 🔒 Security & Validation
 
 ### Ownership Checks:
-1. **Already Owned by User:** 
+
+1. **Already Owned by User:**
    - Check `business_owners` for existing claim
    - Show "You already own this business"
 
@@ -210,6 +228,7 @@ You can:
 ## 📈 Metrics & Logging
 
 ### Events Logged:
+
 ```typescript
 - BUSINESS_CLAIM_STARTED
 - BUSINESS_CLAIM_SEARCH_RESULTS
@@ -219,6 +238,7 @@ You can:
 ```
 
 ### Search Metrics:
+
 ```typescript
 {
   query: "user search term",
@@ -230,6 +250,7 @@ You can:
 ## 🎯 Business Value
 
 ### For Business Owners:
+
 - ✅ Easy discovery of their businesses in system
 - ✅ Claim ownership with one tap
 - ✅ Manage business information
@@ -237,12 +258,14 @@ You can:
 - ✅ Track customer inquiries
 
 ### For Users:
+
 - ✅ Find businesses easily
 - ✅ Smart search understands typos
 - ✅ See relevant results
 - ✅ Quick claiming process
 
 ### For Platform:
+
 - ✅ Accurate business ownership
 - ✅ Better data quality
 - ✅ Multiple contact channels
@@ -253,36 +276,42 @@ You can:
 ### Test Cases:
 
 #### 1. Exact Match:
+
 ```
 Input: "Bourbon Coffee"
 Expected: Bourbon Coffee locations shown first
 ```
 
 #### 2. Partial Match:
+
 ```
 Input: "Bourbon"
 Expected: All Bourbon-related businesses
 ```
 
 #### 3. Typo Handling:
+
 ```
 Input: "Borbon Coffe"
 Expected: Still shows Bourbon Coffee (AI understands)
 ```
 
 #### 4. Category Search:
+
 ```
 Input: "Coffee shop Kigali"
 Expected: Coffee shops in Kigali area
 ```
 
 #### 5. No Results:
+
 ```
 Input: "XYZ123NonExistent"
 Expected: Helpful suggestions shown
 ```
 
 #### 6. Already Claimed:
+
 ```
 Action: Try to claim same business twice
 Expected: "You already own this business"
@@ -291,6 +320,7 @@ Expected: "You already own this business"
 ## 🚀 Deployment
 
 ### Environment Variables Required:
+
 ```bash
 OPENAI_API_KEY=sk-...  # For semantic search
 SUPABASE_URL=https://...
@@ -298,11 +328,13 @@ SUPABASE_SERVICE_ROLE_KEY=...
 ```
 
 ### Deploy Command:
+
 ```bash
 supabase functions deploy wa-webhook --no-verify-jwt
 ```
 
 ### Verification:
+
 ```bash
 # Test flow
 1. Send "Profile" to bot
@@ -317,8 +349,9 @@ supabase functions deploy wa-webhook --no-verify-jwt
 ## 📊 Database Queries for Monitoring
 
 ### Check Claimed Businesses:
+
 ```sql
-SELECT 
+SELECT
   b.name,
   b.category,
   bo.role,
@@ -332,9 +365,10 @@ ORDER BY bo.created_at DESC;
 ```
 
 ### Search Performance:
+
 ```sql
 -- Check recent searches
-SELECT 
+SELECT
   payload->>'query' as search_query,
   payload->>'results_count' as results,
   payload->>'method' as search_method,
@@ -346,8 +380,9 @@ LIMIT 20;
 ```
 
 ### Claim Rate:
+
 ```sql
-SELECT 
+SELECT
   DATE(created_at) as date,
   COUNT(*) as claims
 FROM business_owners
@@ -359,6 +394,7 @@ ORDER BY date DESC;
 ## 🔄 Future Enhancements
 
 ### Phase 2 Features:
+
 - [ ] Image-based business search (upload photo)
 - [ ] Location-based search (find nearby businesses)
 - [ ] Bulk business claiming
@@ -385,6 +421,7 @@ ORDER BY date DESC;
 ## 📞 Summary
 
 **Smart Business Claiming Flow:**
+
 - 🤖 OpenAI-powered semantic search
 - 🎯 Top 9 relevant results
 - ⚡ One-tap claiming

@@ -16,28 +16,36 @@ supabase db push
 ## 📋 Phase Breakdown
 
 ### Phase 1: Foundation (2 min) ✅ REQUIRED
+
 **File**: `20251112170000_phase1_foundation.sql`
+
 - PostGIS + pgvector extensions
 - Core tables (shops, bars)
 - RLS on 25+ tables
 - Basic policies
 
 ### Phase 2: Performance (3-5 min) ⚠️ RECOMMENDED
+
 **File**: `20251112170100_phase2_performance.sql`
+
 - 40+ foreign key indexes
 - updated_at triggers (45+ tables)
 - Timestamp defaults fixed
 - Partition automation
 
 ### Phase 3: Business Logic (5-7 min) ⚠️ RECOMMENDED
+
 **File**: `20251112170200_phase3_business_logic.sql`
+
 - Wallet, trip, driver matching functions
 - Observability (Ground Rules compliant)
 - Refined security policies
 - Audit logging with PII masking
 
 ### Phase 4: Advanced Features (10-15 min) 💡 OPTIONAL
+
 **File**: `20251112170300_phase4_advanced_features.sql`
+
 - Video performance analytics
 - WhatsApp menu config
 - Restaurant menu system
@@ -95,13 +103,13 @@ supabase db reset --version 20251112170200
 
 ## 📊 Expected Results
 
-| Check | Expected | Command |
-|-------|----------|---------|
-| **Extensions** | 2 | `SELECT count(*) FROM pg_extension WHERE extname IN ('postgis', 'vector');` |
-| **RLS Tables** | 30+ | `SELECT count(*) FROM pg_tables WHERE schemaname = 'public' AND rowsecurity = true;` |
-| **Indexes** | 50+ | `SELECT count(*) FROM pg_indexes WHERE schemaname = 'public' AND indexname LIKE 'idx_%';` |
-| **Functions** | 30+ | `SELECT count(*) FROM pg_proc WHERE pronamespace = 'public'::regnamespace;` |
-| **Bars Data** | 5+ | `SELECT count(*) FROM bars;` |
+| Check          | Expected | Command                                                                                   |
+| -------------- | -------- | ----------------------------------------------------------------------------------------- |
+| **Extensions** | 2        | `SELECT count(*) FROM pg_extension WHERE extname IN ('postgis', 'vector');`               |
+| **RLS Tables** | 30+      | `SELECT count(*) FROM pg_tables WHERE schemaname = 'public' AND rowsecurity = true;`      |
+| **Indexes**    | 50+      | `SELECT count(*) FROM pg_indexes WHERE schemaname = 'public' AND indexname LIKE 'idx_%';` |
+| **Functions**  | 30+      | `SELECT count(*) FROM pg_proc WHERE pronamespace = 'public'::regnamespace;`               |
+| **Bars Data**  | 5+       | `SELECT count(*) FROM bars;`                                                              |
 
 ---
 
@@ -110,7 +118,7 @@ supabase db reset --version 20251112170200
 ✅ **Zero errors** in deployment logs  
 ✅ **All 4 phases** show "Complete" message  
 ✅ **Application** still functional (test key endpoints)  
-✅ **Performance** within acceptable range (check slow queries)  
+✅ **Performance** within acceptable range (check slow queries)
 
 ---
 

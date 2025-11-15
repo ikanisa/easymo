@@ -4,15 +4,18 @@
 **Last Updated**: 2025-11-11  
 **Owner**: DevOps + Engineering  
 **Target Time**: <10 minutes  
-**Risk Level**: Low (well-tested procedures)  
+**Risk Level**: Low (well-tested procedures)
 
 ---
 
 ## 📋 Overview
 
-This document provides step-by-step procedures for rolling back EasyMO v2.0 deployment in case of critical issues. All procedures are designed for rapid execution (<10 minutes) with minimal user impact.
+This document provides step-by-step procedures for rolling back EasyMO v2.0 deployment in case of
+critical issues. All procedures are designed for rapid execution (<10 minutes) with minimal user
+impact.
 
 **Rollback Triggers**:
+
 - 🔴 Error rate >5%
 - 🔴 Critical bug discovered
 - 🔴 User complaints >10/hour
@@ -24,13 +27,13 @@ This document provides step-by-step procedures for rolling back EasyMO v2.0 depl
 
 ## 🚨 Emergency Rollback Decision Matrix
 
-| Severity | Condition | Action | Time Limit |
-|----------|-----------|--------|------------|
-| **P0** | System down | Full rollback | <5 min |
-| **P1** | Error rate >10% | Full rollback | <10 min |
-| **P2** | Error rate 5-10% | Reduce rollout → Fix | <15 min |
-| **P3** | Minor issues | Monitor → Fix | <30 min |
-| **P4** | Cosmetic | Schedule fix | Next sprint |
+| Severity | Condition        | Action               | Time Limit  |
+| -------- | ---------------- | -------------------- | ----------- |
+| **P0**   | System down      | Full rollback        | <5 min      |
+| **P1**   | Error rate >10%  | Full rollback        | <10 min     |
+| **P2**   | Error rate 5-10% | Reduce rollout → Fix | <15 min     |
+| **P3**   | Minor issues     | Monitor → Fix        | <30 min     |
+| **P4**   | Cosmetic         | Schedule fix         | Next sprint |
 
 ---
 
@@ -39,7 +42,7 @@ This document provides step-by-step procedures for rolling back EasyMO v2.0 depl
 **Best For**: Quick disable without code changes  
 **Downtime**: None  
 **Duration**: <2 minutes  
-**Risk**: Minimal  
+**Risk**: Minimal
 
 ### Step 1: Disable All AI Features
 
@@ -98,7 +101,7 @@ EOF
 **Best For**: Issues affecting only some users  
 **Downtime**: None  
 **Duration**: <3 minutes  
-**Risk**: Minimal  
+**Risk**: Minimal
 
 ### Step 1: Reduce Rollout Percentage
 
@@ -146,7 +149,7 @@ watch -n 5 'curl -s https://api.easymo.com/metrics/errors | jq ".error_rate"'
 **Best For**: Deployment introduced breaking changes  
 **Downtime**: <30 seconds per service  
 **Duration**: <10 minutes  
-**Risk**: Low  
+**Risk**: Low
 
 ### Step 1: Rollback Agent-Core
 
@@ -203,7 +206,7 @@ done
 **Best For**: Webhook issues, edge function errors  
 **Downtime**: <1 minute  
 **Duration**: <5 minutes  
-**Risk**: Low  
+**Risk**: Low
 
 ### Step 1: Identify Previous Version
 
@@ -243,7 +246,7 @@ curl https://lhbowpbcpwoiparwnwgt.supabase.co/functions/v1/_health
 **Best For**: Catastrophic database issues  
 **Downtime**: 5-15 minutes  
 **Duration**: 15-30 minutes  
-**Risk**: HIGH (data loss possible)  
+**Risk**: HIGH (data loss possible)
 
 ⚠️ **WARNING**: Only use if database state is corrupted. Data created after backup will be lost!
 
@@ -285,7 +288,7 @@ pg_restore -h prod-agent-db.easymo.com \
 ```bash
 # Check table counts
 psql -h prod-db <<EOF
-SELECT 
+SELECT
   schemaname,
   tablename,
   pg_size_pretty(pg_total_relation_size(schemaname||'.'||tablename)) AS size
@@ -449,13 +452,13 @@ EOF
 
 ## 🕐 Rollback Timeframes
 
-| Method | Downtime | Duration | Complexity | Risk |
-|--------|----------|----------|------------|------|
-| Feature Flag | 0 min | <2 min | Low | Minimal |
-| Partial Rollout | 0 min | <3 min | Low | Minimal |
-| Service Rollback | <30 sec/svc | <10 min | Medium | Low |
-| Edge Function | <1 min | <5 min | Low | Low |
-| Database | 5-15 min | 15-30 min | High | **HIGH** |
+| Method           | Downtime    | Duration  | Complexity | Risk     |
+| ---------------- | ----------- | --------- | ---------- | -------- |
+| Feature Flag     | 0 min       | <2 min    | Low        | Minimal  |
+| Partial Rollout  | 0 min       | <3 min    | Low        | Minimal  |
+| Service Rollback | <30 sec/svc | <10 min   | Medium     | Low      |
+| Edge Function    | <1 min      | <5 min    | Low        | Low      |
+| Database         | 5-15 min    | 15-30 min | High       | **HIGH** |
 
 **Target**: Execute rollback in <10 minutes for any P0/P1 issue.
 
@@ -464,16 +467,19 @@ EOF
 ## 📞 Escalation Path
 
 ### Level 1: On-Call Engineer (0-5 minutes)
+
 - Execute rollback procedures
 - Monitor metrics
 - Communicate in war room
 
 ### Level 2: Engineering Lead (5-15 minutes)
+
 - Approve database rollback (if needed)
 - Coordinate team response
 - Communicate with stakeholders
 
 ### Level 3: Engineering Manager (15+ minutes)
+
 - Authorize extended downtime
 - Escalate to executives
 - Manage external communication
@@ -487,63 +493,66 @@ EOF
 ### Immediate (0-1 hour)
 
 1. **Incident Report**:
+
    ```bash
    # Create incident document
    cat > incidents/incident_v2.0_rollback_$(date +%Y%m%d).md <<EOF
    # Incident Report: v2.0 Rollback
-   
+
    Date: $(date)
    Severity: [P0/P1/P2]
    Duration: [X] minutes
-   
+
    ## Timeline
    - [Time] Issue detected
    - [Time] Rollback initiated
    - [Time] Rollback completed
    - [Time] Services verified
-   
+
    ## Root Cause
    [Description]
-   
+
    ## Resolution
    [What was done]
-   
+
    ## Prevention
    [How to avoid in future]
    EOF
    ```
 
 2. **Team Notification**:
+
    ```
    @channel ✅ ROLLBACK COMPLETE
-   
+
    Issue: [Brief description]
    Rollback Method: [Feature Flag/Service/Database]
    Duration: [X] minutes
    Impact: [# users affected]
-   
+
    Status: Services stable, monitoring ongoing
    Next Steps: Root cause analysis, fix development
-   
+
    Timeline for fix: [TBD]
    ```
 
 3. **User Communication** (if user-facing impact):
+
    ```
    Subject: Brief Service Disruption - Resolved
-   
+
    Hi,
-   
-   We experienced a brief issue with our new AI features 
+
+   We experienced a brief issue with our new AI features
    and have temporarily reverted to our previous system.
-   
+
    Impact: [Minimal/None]
    Duration: [X] minutes
    Current Status: All services operating normally
-   
+
    We apologize for any inconvenience. Our team is working
    on a fix.
-   
+
    Questions? support@easymo.com
    ```
 
@@ -642,4 +651,4 @@ After rollback, verify:
 
 ---
 
-*For rollback support, contact: oncall@easymo.com | PagerDuty: @oncall-engineer*
+_For rollback support, contact: oncall@easymo.com | PagerDuty: @oncall-engineer_

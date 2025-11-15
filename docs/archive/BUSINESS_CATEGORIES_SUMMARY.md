@@ -3,29 +3,34 @@
 ## ✅ Completed Successfully
 
 ### Overview
-Integrated business categories with WhatsApp home menu system, creating a unified, dynamic category management system that controls both menu visibility and business discoverability.
+
+Integrated business categories with WhatsApp home menu system, creating a unified, dynamic category
+management system that controls both menu visibility and business discoverability.
 
 ### What Changed
 
 #### 1. Database Schema ✅
+
 - **marketplace_categories**: Added `menu_item_id` column (FK to whatsapp_home_menu_items)
 - **businesses**: Added `category_name` column (text field linking to category name)
 - **Indexes**: Created for optimal query performance
 - **View**: Created `business_category_menu_view` for easy querying
 
 #### 2. Data Population ✅
+
 Created 6 business categories, each linked to a WhatsApp menu item:
 
-| # | Category | Icon | Menu Key | Countries |
-|---|----------|------|----------|-----------|
-| 1 | Pharmacies | 💊 | nearby_pharmacies | All 6 |
-| 2 | Quincailleries | 🔧 | quincailleries | All 6 |
-| 3 | Shops & Services | 🏪 | shops_services | All 6 |
-| 4 | Property Rentals | 🏠 | property_rentals | All 6 |
-| 5 | Notary Services | 📜 | notary_services | RW only |
-| 6 | Bars & Restaurants | 🍽️ | bars_restaurants | All 6 |
+| #   | Category           | Icon | Menu Key          | Countries |
+| --- | ------------------ | ---- | ----------------- | --------- |
+| 1   | Pharmacies         | 💊   | nearby_pharmacies | All 6     |
+| 2   | Quincailleries     | 🔧   | quincailleries    | All 6     |
+| 3   | Shops & Services   | 🏪   | shops_services    | All 6     |
+| 4   | Property Rentals   | 🏠   | property_rentals  | All 6     |
+| 5   | Notary Services    | 📜   | notary_services   | RW only   |
+| 6   | Bars & Restaurants | 🍽️   | bars_restaurants  | All 6     |
 
 #### 3. Business Migration ✅
+
 - 4 existing businesses updated with `category_name`
 - All assigned to "Shops & Services"
 - Backward compatible with `category_id`
@@ -38,6 +43,7 @@ WhatsApp Menu Item → Category → Business
 ```
 
 **How it works**:
+
 1. Admin toggles menu item active/inactive
 2. Category inherits visibility from menu item
 3. Businesses in that category become discoverable/hidden
@@ -56,11 +62,13 @@ WhatsApp Menu Item → Category → Business
 ### Impact on Admin Panel
 
 The existing `/whatsapp-menu` admin panel now controls:
+
 - **Menu visibility** in WhatsApp
 - **Category availability** for business searches
 - **Country-specific filtering** for both
 
 Example workflow:
+
 1. Admin goes to http://localhost:3000/whatsapp-menu
 2. Clicks "Inactive" on "Nearby Pharmacies"
 3. Pharmacies menu item hidden from WhatsApp
@@ -70,12 +78,14 @@ Example workflow:
 ### Files Created/Modified
 
 **Created**:
+
 - `supabase/migrations/20251113120000_link_business_categories_menu.sql` - Main migration
 - `test-business-categories.sh` - Comprehensive test script
 - `BUSINESS_CATEGORIES_INTEGRATION.md` - Full documentation
 - `BUSINESS_CATEGORIES_QUICKREF.md` - Quick reference guide
 
 **Modified**:
+
 - None (purely additive changes)
 
 ### Testing Results
@@ -91,6 +101,7 @@ Example workflow:
 ```
 
 Run tests:
+
 ```bash
 bash test-business-categories.sh
 ```
@@ -98,6 +109,7 @@ bash test-business-categories.sh
 ### Database Queries
 
 **Get categories for a country**:
+
 ```sql
 SELECT mc.name, mc.icon
 FROM marketplace_categories mc
@@ -106,11 +118,13 @@ WHERE wm.is_active = true AND 'RW' = ANY(wm.active_countries);
 ```
 
 **Get businesses in a category**:
+
 ```sql
 SELECT name FROM businesses WHERE category_name = 'Pharmacies';
 ```
 
 **Check full relationship**:
+
 ```sql
 SELECT * FROM business_category_menu_view LIMIT 10;
 ```
@@ -118,35 +132,40 @@ SELECT * FROM business_category_menu_view LIMIT 10;
 ### Usage in Code
 
 **Fetch categories (TypeScript/Supabase)**:
+
 ```typescript
 const { data: categories } = await supabase
-  .from('marketplace_categories')
-  .select(`
+  .from("marketplace_categories")
+  .select(
+    `
     id,
     name,
     slug,
     icon,
     whatsapp_home_menu_items!inner(is_active, active_countries)
-  `)
-  .eq('whatsapp_home_menu_items.is_active', true)
-  .contains('whatsapp_home_menu_items.active_countries', [country]);
+  `
+  )
+  .eq("whatsapp_home_menu_items.is_active", true)
+  .contains("whatsapp_home_menu_items.active_countries", [country]);
 ```
 
 **Get businesses by category**:
+
 ```typescript
 const { data } = await supabase
-  .from('businesses')
-  .select('*')
-  .eq('category_name', 'Pharmacies')
-  .eq('is_active', true);
+  .from("businesses")
+  .select("*")
+  .eq("category_name", "Pharmacies")
+  .eq("is_active", true);
 ```
 
 **Use the view**:
+
 ```typescript
 const { data } = await supabase
-  .from('business_category_menu_view')
-  .select('*')
-  .eq('menu_active', true);
+  .from("business_category_menu_view")
+  .select("*")
+  .eq("menu_active", true);
 ```
 
 ### Relationship Diagram
@@ -189,14 +208,17 @@ const { data } = await supabase
 ### Country-Specific Example
 
 **Rwanda (+250)**:
+
 - Sees: All 6 categories
 - Can search: All business types
 
 **Uganda (+256)**:
+
 - Sees: 5 categories (no Notary Services)
 - Can search: Pharmacies, Quincailleries, Shops, Property, Bars
 
 **Toggle Effect**:
+
 ```
 Admin disables "nearby_pharmacies" →
   - Menu item hidden in WhatsApp
@@ -216,11 +238,13 @@ Admin disables "nearby_pharmacies" →
 ### Backward Compatibility
 
 ✅ **Old code still works**:
+
 - `category_id` field maintained
 - Foreign key to `marketplace_categories(id)` intact
 - Existing queries unaffected
 
 ✅ **Gradual migration**:
+
 - Use `category_name` in new code
 - Keep `category_id` for existing integrations
 - Both fields kept in sync
@@ -256,6 +280,6 @@ Admin disables "nearby_pharmacies" →
 **Tables Updated**: 3 (marketplace_categories, businesses, whatsapp_home_menu_items)  
 **Categories Created**: 6  
 **View Created**: business_category_menu_view  
-**Test Coverage**: Comprehensive  
+**Test Coverage**: Comprehensive
 
 **Ready for**: Production deployment and immediate use

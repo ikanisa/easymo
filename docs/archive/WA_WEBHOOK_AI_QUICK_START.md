@@ -19,7 +19,7 @@
 **Supabase Dashboard → SQL Editor**
 
 ```sql
-INSERT INTO feature_flags (flag_name, enabled, description) 
+INSERT INTO feature_flags (flag_name, enabled, description)
 VALUES ('ai_agents_enabled', false, 'Enable AI agents for WhatsApp');
 ```
 
@@ -44,11 +44,13 @@ supabase db push
 **File**: `supabase/functions/wa-webhook/router/router.ts`
 
 **Add at top**:
+
 ```typescript
 import { tryAIAgentHandler } from "./ai_agent_handler.ts";
 ```
 
 **Add in handleMessage() before existing handlers**:
+
 ```typescript
 const aiHandled = await tryAIAgentHandler(ctx, msg, state);
 if (aiHandled) return;
@@ -76,15 +78,18 @@ UPDATE feature_flags SET enabled = true WHERE flag_name = 'ai_agents_enabled';
 ## Verification
 
 ### Check Logs
+
 ```bash
 supabase functions logs wa-webhook --follow
 ```
 
 Look for:
+
 - `AI_AGENT_REQUEST_START`
 - `AI_AGENT_REQUEST_SUCCESS`
 
 ### Check Database
+
 ```sql
 SELECT * FROM agent_conversations ORDER BY started_at DESC LIMIT 1;
 SELECT * FROM agent_messages ORDER BY created_at DESC LIMIT 5;
@@ -111,32 +116,35 @@ UPDATE feature_flags SET enabled = false WHERE flag_name = 'ai_agents_enabled';
 
 ## Test Messages
 
-| Message | Expected Agent | Purpose |
-|---------|---------------|---------|
-| "Hello" | general | Test basic greeting |
-| "How do I book a trip?" | booking | Test question detection |
-| "Check my balance" | payment | Test keyword matching |
-| "I need help" | customer_service | Test support routing |
+| Message                 | Expected Agent   | Purpose                 |
+| ----------------------- | ---------------- | ----------------------- |
+| "Hello"                 | general          | Test basic greeting     |
+| "How do I book a trip?" | booking          | Test question detection |
+| "Check my balance"      | payment          | Test keyword matching   |
+| "I need help"           | customer_service | Test support routing    |
 
 ---
 
 ## Monitoring
 
 ### Daily Check
+
 ```sql
 SELECT * FROM agent_daily_metrics ORDER BY date DESC LIMIT 1;
 ```
 
 ### Cost Tracking
+
 ```sql
 SELECT SUM(cost_usd) FROM agent_metrics WHERE timestamp > NOW() - INTERVAL '1 day';
 ```
 
 ### Success Rate
+
 ```sql
-SELECT 
+SELECT
   COUNT(*) FILTER (WHERE success) * 100.0 / COUNT(*) as success_rate
-FROM agent_metrics 
+FROM agent_metrics
 WHERE timestamp > NOW() - INTERVAL '1 day';
 ```
 

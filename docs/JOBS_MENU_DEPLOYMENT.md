@@ -3,6 +3,7 @@
 ## What This Does
 
 Adds **"Jobs"** as the **first menu item** in the WhatsApp home menu, visible in both:
+
 - 🇷🇼 **Rwanda**
 - 🇲🇹 **Malta**
 
@@ -32,6 +33,7 @@ WHERE key = 'jobs';
 ```
 
 **Expected Result**:
+
 ```
 key  | label_en     | display_order | active_countries | page_number
 -----+--------------+---------------+------------------+-------------
@@ -42,7 +44,7 @@ jobs | Jobs & Gigs  | 1             | {RW,MT}          | 1
 
 ```sql
 -- Check Malta queries added
-SELECT 
+SELECT
   name,
   source_type,
   jsonb_array_length(config->'queries') as query_count,
@@ -62,7 +64,7 @@ Send any message to your WhatsApp Business number. You should see:
 
 📱 First Page:
 1. 💼 Jobs & Gigs
-2. 👤 My Profile  
+2. 👤 My Profile
 3. 🚗 Nearby Drivers
 4. 🚶 Find Passengers
 ... (up to 9 items)
@@ -77,6 +79,7 @@ Reply *2* for next page
 ## What Was Changed
 
 ### 1. WhatsApp Menu
+
 - **Added**: `jobs` menu item
 - **Position**: Display order 1 (first item, first page)
 - **Countries**: Rwanda (RW) + Malta (MT)
@@ -89,6 +92,7 @@ Reply *2* for next page
 ### 2. External Job Sources
 
 **Deep Search Queries (Malta)**:
+
 - One day casual jobs in Valletta Malta
 - Part time jobs in Sliema Malta
 - Hospitality jobs St Julians Malta
@@ -96,6 +100,7 @@ Reply *2* for next page
 - Restaurant waiter jobs Malta
 
 **SerpAPI Queries (Malta)**:
+
 - jobs in Malta
 - jobs in Valletta
 - jobs in Sliema
@@ -103,6 +108,7 @@ Reply *2* for next page
 ### 3. Job Categories (Malta-Specific)
 
 Added 7 new categories:
+
 - **iGaming** 🎰 (major Malta sector)
 - **Healthcare** 🏥
 - **Maritime** ⚓ (yachting industry)
@@ -114,6 +120,7 @@ Added 7 new categories:
 ### 4. Category Inference (Enhanced)
 
 Updated auto-categorization to recognize:
+
 - "labour" (British spelling)
 - "waitress", "hospitality", "bar staff", "barista"
 - "receptionist", "retail"
@@ -127,26 +134,26 @@ Updated auto-categorization to recognize:
 ### Manual Test via WhatsApp (Malta User)
 
 1. **User sends**: "I'm looking for bar work in Sliema"
-   
 2. **AI should**:
    - Detect Malta context
    - Search local + external jobs
    - Return Malta-specific results
 
 3. **Expected response**:
+
    ```
    📋 Found 5 matching jobs:
-   
+
    1. 🍺 Bar Staff - St Julians (ONLINE)
       📍 St Julians, Malta
       💰 €8-10/hour
       ✨ 91% match
-   
+
    2. 🍺 Bartender - Sliema (LOCAL)
       📍 Sliema, Malta
       💰 €9/hour + tips
       ✨ 88% match
-   
+
    ...
    ```
 
@@ -186,6 +193,7 @@ The menu now shows (first page):
 9. 🛒 Shops & Services
 
 Jobs is **first** because:
+
 - ✅ High user value (income generation)
 - ✅ Frequent use case (daily job searches)
 - ✅ Cross-country appeal (RW + MT)
@@ -197,11 +205,11 @@ Jobs is **first** because:
 
 ```sql
 -- Jobs by country (last 7 days)
-SELECT 
-  CASE 
-    WHEN location LIKE '%Malta%' OR location LIKE '%Valletta%' OR location LIKE '%Sliema%' 
+SELECT
+  CASE
+    WHEN location LIKE '%Malta%' OR location LIKE '%Valletta%' OR location LIKE '%Sliema%'
     THEN 'Malta'
-    WHEN location LIKE '%Kigali%' OR location LIKE '%Rwanda%' 
+    WHEN location LIKE '%Kigali%' OR location LIKE '%Rwanda%'
     THEN 'Rwanda'
     ELSE 'Other'
   END as country,
@@ -213,7 +221,7 @@ WHERE created_at > NOW() - INTERVAL '7 days'
 GROUP BY country;
 
 -- Malta-specific categories performance
-SELECT 
+SELECT
   category,
   COUNT(*) as job_count,
   AVG(EXTRACT(EPOCH FROM (COALESCE(filled_at, NOW()) - created_at)) / 3600) as avg_hours_to_fill
@@ -224,7 +232,7 @@ GROUP BY category
 ORDER BY job_count DESC;
 
 -- Malta external job sources
-SELECT 
+SELECT
   js.name,
   COUNT(*) as jobs_found,
   MAX(jl.discovered_at) as last_discovered
@@ -241,15 +249,15 @@ GROUP BY js.name;
 
 Based on Malta's economy:
 
-| Sector | Typical Jobs | Keywords |
-|--------|-------------|----------|
-| **iGaming** | Developers, Customer Support, Compliance | "igaming", "casino", "betting" |
-| **Hospitality** | Waiters, Bar Staff, Hotel Workers | "restaurant", "hotel", "bar" |
-| **Healthcare** | Nurses, Carers, Medical Staff | "nurse", "healthcare", "carer" |
-| **Maritime** | Crew, Yacht Staff, Marine Engineers | "yacht", "maritime", "crew" |
-| **Finance** | Accountants, Analysts, Compliance | "finance", "banking", "accounting" |
-| **Retail** | Sales, Shop Assistants | "retail", "sales", "shop" |
-| **Construction** | Builders, Electricians, Plumbers | "construction", "builder", "electrician" |
+| Sector           | Typical Jobs                             | Keywords                                 |
+| ---------------- | ---------------------------------------- | ---------------------------------------- |
+| **iGaming**      | Developers, Customer Support, Compliance | "igaming", "casino", "betting"           |
+| **Hospitality**  | Waiters, Bar Staff, Hotel Workers        | "restaurant", "hotel", "bar"             |
+| **Healthcare**   | Nurses, Carers, Medical Staff            | "nurse", "healthcare", "carer"           |
+| **Maritime**     | Crew, Yacht Staff, Marine Engineers      | "yacht", "maritime", "crew"              |
+| **Finance**      | Accountants, Analysts, Compliance        | "finance", "banking", "accounting"       |
+| **Retail**       | Sales, Shop Assistants                   | "retail", "sales", "shop"                |
+| **Construction** | Builders, Electricians, Plumbers         | "construction", "builder", "electrician" |
 
 ---
 
@@ -258,16 +266,19 @@ Based on Malta's economy:
 ### Menu Item Not Showing
 
 1. **Check menu query**:
+
 ```sql
 SELECT * FROM whatsapp_home_menu_items WHERE key = 'jobs';
 ```
 
 2. **Verify feature flag** (if using):
+
 ```bash
 supabase secrets list | grep FEATURE_JOB_BOARD
 ```
 
 3. **Check user country**:
+
 ```sql
 -- Ensure user profile has country set
 SELECT phone_number, country FROM profiles WHERE phone_number = '+356...';
@@ -276,13 +287,15 @@ SELECT phone_number, country FROM profiles WHERE phone_number = '+356...';
 ### No Malta Jobs Appearing
 
 1. **Check job sources active**:
+
 ```sql
-SELECT name, is_active, config->'queries' 
-FROM job_sources 
+SELECT name, is_active, config->'queries'
+FROM job_sources
 WHERE source_type IN ('openai_deep_search', 'serpapi');
 ```
 
 2. **Verify last sync**:
+
 ```sql
 SELECT MAX(created_at) as last_sync
 FROM job_analytics
@@ -290,6 +303,7 @@ WHERE event_type = 'JOB_SOURCES_SYNC_COMPLETE';
 ```
 
 3. **Manually trigger sync**:
+
 ```bash
 curl -X POST https://YOUR_PROJECT.supabase.co/functions/v1/job-sources-sync \
   -H "Authorization: Bearer YOUR_SERVICE_ROLE_KEY" \
@@ -297,6 +311,7 @@ curl -X POST https://YOUR_PROJECT.supabase.co/functions/v1/job-sources-sync \
 ```
 
 4. **Check logs**:
+
 ```bash
 supabase functions logs job-sources-sync --tail
 ```
@@ -312,6 +327,7 @@ supabase functions logs job-sources-sync --tail
 - **Total additional cost**: **~$3.15/month**
 
 **Total system cost** (both countries):
+
 - Rwanda + Malta: **~$68/month** for 1,000 users
 - **Per user**: **$0.068/month**
 
@@ -341,9 +357,7 @@ Now that Jobs is in the menu:
 
 ---
 
-**Status**: ✅ Ready to Deploy
-**Deployment Time**: 2 minutes
-**Impact**: Jobs now first item in RW + MT
-**Cost**: +$3.15/month for Malta support
+**Status**: ✅ Ready to Deploy **Deployment Time**: 2 minutes **Impact**: Jobs now first item in
+RW + MT **Cost**: +$3.15/month for Malta support
 
 🇷🇼🇲🇹 **Ready to serve both markets!** 🚀

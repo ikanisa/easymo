@@ -297,6 +297,9 @@ async function searchBusinessesSemantic(
     }
 
     const embeddingData = await embeddingResponse.json();
+    if (!embeddingData.data || embeddingData.data.length === 0) {
+      throw new Error('No embedding data returned from OpenAI');
+    }
     const queryEmbedding = embeddingData.data[0].embedding;
 
     // Step 2: Use OpenAI to extract search intent and keywords

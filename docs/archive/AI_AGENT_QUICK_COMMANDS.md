@@ -37,6 +37,7 @@ supabase functions logs wa-webhook --tail
 ## 📊 Monitoring Queries (Copy-Paste Ready)
 
 ### Real-Time Stats (Last Hour)
+
 ```sql
 SELECT
   COUNT(*) AS messages,
@@ -49,6 +50,7 @@ WHERE timestamp > NOW() - INTERVAL '1 hour';
 ```
 
 ### By Agent Type (Last 24h)
+
 ```sql
 SELECT
   agent_type,
@@ -63,6 +65,7 @@ ORDER BY messages DESC;
 ```
 
 ### Tool Usage Stats
+
 ```sql
 SELECT
   tool_name,
@@ -76,6 +79,7 @@ ORDER BY executions DESC;
 ```
 
 ### Errors (Last Hour)
+
 ```sql
 SELECT
   agent_type,
@@ -90,6 +94,7 @@ ORDER BY occurrences DESC;
 ```
 
 ### Cost Tracking (Today)
+
 ```sql
 SELECT
   DATE_TRUNC('hour', timestamp) AS hour,
@@ -107,6 +112,7 @@ ORDER BY hour DESC;
 ## 🔧 Common Configuration Changes
 
 ### Adjust Agent Temperature
+
 ```sql
 UPDATE ai_agents
 SET model_config = jsonb_set(
@@ -118,6 +124,7 @@ WHERE type = 'customer_service';
 ```
 
 ### Change Max Tokens
+
 ```sql
 UPDATE ai_agents
 SET model_config = jsonb_set(
@@ -129,6 +136,7 @@ WHERE type = 'general';
 ```
 
 ### Disable an Agent Temporarily
+
 ```sql
 UPDATE ai_agents
 SET status = 'maintenance'
@@ -136,6 +144,7 @@ WHERE type = 'marketplace';
 ```
 
 ### Enable/Disable Feature Flag
+
 ```sql
 -- Disable AI agents (fallback to existing handlers)
 UPDATE feature_flags
@@ -153,6 +162,7 @@ WHERE flag_name = 'ai_agents_enabled';
 ## 🐛 Quick Troubleshooting
 
 ### Agent Not Responding
+
 ```bash
 # Check feature flag
 echo "SELECT * FROM feature_flags WHERE flag_name = 'ai_agents_enabled';" | psql $DATABASE_URL
@@ -165,6 +175,7 @@ echo "SELECT * FROM agent_metrics WHERE success = false AND timestamp > NOW() - 
 ```
 
 ### High Latency
+
 ```bash
 # Check connection pool stats (look for "CONNECTION_POOL_MAINTENANCE" in logs)
 supabase functions logs wa-webhook --tail | grep "CONNECTION_POOL"
@@ -174,6 +185,7 @@ echo "SELECT conversation_id, latency_ms, llm_latency_ms, tool_execution_ms FROM
 ```
 
 ### High Costs
+
 ```bash
 # Check expensive conversations
 echo "SELECT conversation_id, SUM(cost_usd) AS total_cost, COUNT(*) AS messages, SUM(tokens_total) AS tokens FROM agent_metrics WHERE timestamp > NOW() - INTERVAL '24 hours' GROUP BY conversation_id ORDER BY total_cost DESC LIMIT 10;" | psql $DATABASE_URL
@@ -187,13 +199,16 @@ echo "UPDATE ai_agents SET model_config = jsonb_set(model_config, '{max_tokens}'
 ## ✅ Health Check Checklist
 
 ### After Deployment
-- [ ] Health endpoint returns 200: `curl https://your-project.supabase.co/functions/v1/wa-webhook/health`
+
+- [ ] Health endpoint returns 200:
+      `curl https://your-project.supabase.co/functions/v1/wa-webhook/health`
 - [ ] Feature flag is enabled: Check `feature_flags` table
 - [ ] 5 agents are active: `SELECT COUNT(*) FROM ai_agents WHERE status = 'active';`
 - [ ] Default configs exist: `SELECT COUNT(*) FROM agent_configurations;`
 - [ ] Logs are flowing: `supabase functions logs wa-webhook --tail`
 
 ### Test Messages
+
 Send these via WhatsApp to test each agent:
 
 1. **General**: "Hello" → Should greet and offer help
@@ -222,6 +237,7 @@ WHERE timestamp > NOW() - INTERVAL '1 hour';
 ```
 
 **Expected Values**:
+
 - Avg Latency: 600-900ms
 - Success Rate: > 90%
 - Cost per Message: $0.02-$0.04
@@ -261,6 +277,7 @@ HAVING hourly_cost > 1.0;
 ## 📞 Emergency Commands
 
 ### Disable AI Agents Immediately
+
 ```sql
 UPDATE feature_flags
 SET enabled = false
@@ -268,11 +285,13 @@ WHERE flag_name = 'ai_agents_enabled';
 ```
 
 ### Force Redeploy
+
 ```bash
 supabase functions deploy wa-webhook --no-verify-jwt
 ```
 
 ### View Last 100 Errors
+
 ```sql
 SELECT
   timestamp,
@@ -286,6 +305,7 @@ LIMIT 100;
 ```
 
 ### Clear Old Data (if database full)
+
 ```sql
 -- Run the cleanup function
 SELECT cleanup_old_agent_data();
@@ -331,6 +351,7 @@ After 24 hours, verify these metrics:
 ---
 
 **Quick Links**:
+
 - Supabase Dashboard: https://app.supabase.com/project/your-project
 - Logs: `supabase functions logs wa-webhook --tail`
 - Database: `psql $DATABASE_URL`

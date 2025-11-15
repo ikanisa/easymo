@@ -9,17 +9,18 @@
 
 ## 🎯 What's Fixed
 
-| Feature | Status | Impact |
-|---------|--------|--------|
-| **Distance Calculation** | ✅ FIXED | PostGIS accuracy (±1m vs ±50m) |
-| **Bars Search** | ✅ FIXED | Users can view list + contacts |
-| **Shops & Services** | ✅ SIMPLIFIED | Clean 4-step flow |
+| Feature                  | Status        | Impact                         |
+| ------------------------ | ------------- | ------------------------------ |
+| **Distance Calculation** | ✅ FIXED      | PostGIS accuracy (±1m vs ±50m) |
+| **Bars Search**          | ✅ FIXED      | Users can view list + contacts |
+| **Shops & Services**     | ✅ SIMPLIFIED | Clean 4-step flow              |
 
 ---
 
 ## 🧪 Quick Tests
 
 ### Test Distance
+
 ```bash
 export DB="postgresql://postgres:Pq0jyevTlfoa376P@db.lhbowpbcpwoiparwnwgt.supabase.co:5432/postgres"
 
@@ -34,6 +35,7 @@ psql $DB -c "SELECT * FROM get_shops_tags() LIMIT 5;"
 ```
 
 ### Test in WhatsApp
+
 Message: `+35677186193`
 
 **Test 1**: 🏥 Pharmacies → Share location → ✅ Should show list  
@@ -47,18 +49,18 @@ Message: `+35677186193`
 ```bash
 # Check functions exist
 psql $DB -c "
-SELECT proname, 
-       CASE WHEN COUNT(*) > 0 THEN '✅' ELSE '❌' END 
-FROM pg_proc 
+SELECT proname,
+       CASE WHEN COUNT(*) > 0 THEN '✅' ELSE '❌' END
+FROM pg_proc
 WHERE proname IN ('nearby_businesses_v2', 'nearby_bars', 'get_shops_tags', 'get_shops_by_tag')
 GROUP BY proname;
 "
 
 # Check migrations
 psql $DB -c "
-SELECT version, name 
-FROM supabase_migrations.schema_migrations 
-WHERE version >= '20251114140500' 
+SELECT version, name
+FROM supabase_migrations.schema_migrations
+WHERE version >= '20251114140500'
 ORDER BY version;
 "
 ```
@@ -70,6 +72,7 @@ ORDER BY version;
 ## 📱 User Flows
 
 ### Pharmacies
+
 ```
 1. Tap "🏥 Pharmacies"
 2. Share location
@@ -78,6 +81,7 @@ ORDER BY version;
 ```
 
 ### Bars
+
 ```
 1. Tap "🍺 Bars & Restaurants"
 2. Share location
@@ -86,6 +90,7 @@ ORDER BY version;
 ```
 
 ### Shops
+
 ```
 1. Tap "🏪 Shops & Services"
 2. Tap "View" → Select "🔧 Hardware"
@@ -99,6 +104,7 @@ ORDER BY version;
 ## 🗂️ Files
 
 ### Migrations
+
 ```
 ✅ 20251114140500_fix_distance_calculation.sql
 ✅ 20251114143000_fix_nearby_bars.sql
@@ -106,6 +112,7 @@ ORDER BY version;
 ```
 
 ### Documentation
+
 ```
 📖 DISTANCE_CALCULATION_FIX.md
 📖 BARS_SEARCH_FIX_COMPLETE.md
@@ -118,27 +125,30 @@ ORDER BY version;
 
 ## 🔧 Functions
 
-| Function | Purpose | Example |
-|----------|---------|---------|
-| `nearby_businesses()` | Basic search | `(-1.95, 30.06, '', 10)` |
-| `nearby_businesses_v2()` | With category | `(-1.95, 30.06, '', 'pharmacies', 9)` |
-| `nearby_bars()` | Bars search | `(-1.95, 30.06, 10.0, 5)` |
-| `get_shops_tags()` | List categories | `SELECT * FROM get_shops_tags();` |
-| `get_shops_by_tag()` | Search by tag | `('Hardware store', -1.95, 30.06, 10, 9)` |
+| Function                 | Purpose         | Example                                   |
+| ------------------------ | --------------- | ----------------------------------------- |
+| `nearby_businesses()`    | Basic search    | `(-1.95, 30.06, '', 10)`                  |
+| `nearby_businesses_v2()` | With category   | `(-1.95, 30.06, '', 'pharmacies', 9)`     |
+| `nearby_bars()`          | Bars search     | `(-1.95, 30.06, 10.0, 5)`                 |
+| `get_shops_tags()`       | List categories | `SELECT * FROM get_shops_tags();`         |
+| `get_shops_by_tag()`     | Search by tag   | `('Hardware store', -1.95, 30.06, 10, 9)` |
 
 ---
 
 ## 📈 Results
 
 ### Distance Accuracy
+
 - **Before**: Haversine ±30-50m per 10km
 - **After**: PostGIS ±1m (sub-meter accuracy)
 
 ### User Experience
+
 - **Before**: Bars list broken, shops complex
 - **After**: All working, clean 4-step flows
 
 ### Performance
+
 - **Query time**: ~50ms (no change)
 - **Accuracy**: 99.9% improvement
 

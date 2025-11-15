@@ -3,6 +3,7 @@
 ## ✅ COMPLETED WORK (Phases 3A-3D)
 
 ### Phase 3A: PWA Foundation ✅
+
 - Next.js 15 with TypeScript configured
 - Tailwind CSS with custom theme
 - Supabase client integration
@@ -10,7 +11,9 @@
 - Project structure established
 
 ### Phase 3B: Chat Interface ✅
+
 **Files Created:**
+
 - `contexts/ChatContext.tsx` - Global chat state
 - `components/chat/ChatInterface.tsx` - Main chat UI
 - `components/chat/MessageBubble.tsx` - Message display
@@ -22,7 +25,9 @@
 - `app/chat/page.tsx` - Chat page
 
 ### Phase 3C: Menu Browser ✅
+
 **Files Created:**
+
 - `types/menu.ts` - Menu type definitions
 - `lib/supabase/client.ts` - Supabase client wrapper
 - `lib/supabase/menu.ts` - Menu query functions
@@ -36,6 +41,7 @@
 - `app/menu/page.tsx` - Menu page
 
 **Features:**
+
 - Real-time menu from Supabase
 - Full-text search
 - Category filtering
@@ -45,10 +51,13 @@
 - Responsive grid layout
 
 ### Phase 3D: Cart & Checkout ✅
+
 **Files Created:**
+
 - `app/checkout/page.tsx` - Checkout flow
 
 **Features:**
+
 - Order summary display
 - Payment method selection (USSD/Revolut)
 - Phone number input for USSD
@@ -59,9 +68,11 @@
 ## 🔄 REMAINING WORK
 
 ### Phase 3E: Multilingual UI (1 day)
+
 **Status**: Started - next-intl installed
 
 **TODO:**
+
 1. Create translation files (started - need es.json, pt.json, de.json)
 2. Configure next-intl in next.config.mjs
 3. Create i18n.ts configuration
@@ -73,6 +84,7 @@
 9. Test all languages
 
 **Translation Files Needed:**
+
 ```
 messages/
 ├── en.json ✅ (created - 4 KB)
@@ -83,7 +95,9 @@ messages/
 ```
 
 ### Phase 3F: Offline Support (1 day)
+
 **TODO:**
+
 1. Install workbox-webpack-plugin
 2. Configure service worker in next.config.mjs
 3. Create sw.js with caching strategies:
@@ -97,7 +111,9 @@ messages/
 8. Test offline scenarios
 
 ### Phase 3G: Polish & Testing (1 day)
+
 **TODO:**
+
 1. **Performance**:
    - Add next/image for optimized images
    - Implement code splitting
@@ -135,6 +151,7 @@ messages/
 ## 🚀 DEPLOYMENT STEPS
 
 ### 1. Database Setup
+
 ```bash
 # Apply migrations
 cd /Users/jeanbosco/workspace/easymo-
@@ -145,7 +162,9 @@ psql postgresql://postgres:Pq0jyevTlfoa376P@db.lhbowpbcpwoiparwnwgt.supabase.co:
 ```
 
 ### 2. Environment Variables
+
 Create `.env.local` in waiter-pwa/:
+
 ```bash
 NEXT_PUBLIC_SUPABASE_URL=https://lhbowpbcpwoiparwnwgt.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbG...
@@ -153,6 +172,7 @@ OPENAI_API_KEY=sk-...
 ```
 
 ### 3. Build & Deploy
+
 ```bash
 cd waiter-pwa
 pnpm build
@@ -163,7 +183,9 @@ vercel --prod
 ```
 
 ### 4. Supabase Edge Functions
+
 Deploy these functions:
+
 ```bash
 # Agent chat handler
 supabase functions deploy agent-chat
@@ -181,15 +203,18 @@ supabase functions deploy update-order-status
 **Overall Progress**: 60% Complete
 
 ✅ **Completed** (3/6 phases):
+
 - Phase 3A: PWA Foundation
-- Phase 3B: Chat Interface  
+- Phase 3B: Chat Interface
 - Phase 3C: Menu Browser
 - Phase 3D: Cart & Checkout
 
 ⏳ **In Progress**:
+
 - Phase 3E: Multilingual UI (package installed, translations 40% done)
 
 🔜 **Remaining**:
+
 - Phase 3E: Finish translations (60%)
 - Phase 3F: Offline Support
 - Phase 3G: Polish & Testing
@@ -199,14 +224,18 @@ supabase functions deploy update-order-status
 ## 🎯 KEY INTEGRATIONS NEEDED
 
 ### 1. OpenAI Agent (app/api/chat/route.ts)
+
 Currently basic - needs:
+
 - Tool definitions (search_menu, add_to_cart, process_payment)
 - Streaming responses
 - Context management
 - Error handling
 
 ### 2. Payment Processing
+
 Create Supabase Edge Function:
+
 ```typescript
 // supabase/functions/process-payment/index.ts
 - Handle USSD initiation
@@ -216,7 +245,9 @@ Create Supabase Edge Function:
 ```
 
 ### 3. Real-time Updates
+
 Implement Supabase Realtime:
+
 - Order status changes
 - Payment confirmations
 - Agent typing indicators
@@ -224,6 +255,7 @@ Implement Supabase Realtime:
 ## 📝 IMMEDIATE NEXT STEPS
 
 1. **Complete Phase 3E** (2-3 hours):
+
    ```bash
    cd waiter-pwa
    # Create remaining translation files
@@ -233,6 +265,7 @@ Implement Supabase Realtime:
    ```
 
 2. **Phase 3F** (4-6 hours):
+
    ```bash
    # Install workbox
    # Configure service worker

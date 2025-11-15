@@ -3,13 +3,14 @@
 **Phase**: 5 - Cutover Readiness  
 **Status**: ✅ COMPLETE  
 **Date**: 2025-11-11  
-**Reviewed By**: Product Team  
+**Reviewed By**: Product Team
 
 ---
 
 ## 📋 Executive Summary
 
 This document audits all user-facing messages in the AI agents system, ensuring:
+
 - ✅ Clarity and friendliness
 - ✅ Consistent tone and voice
 - ✅ Appropriate emoji usage
@@ -18,6 +19,7 @@ This document audits all user-facing messages in the AI agents system, ensuring:
 - ✅ Accessibility considerations
 
 ### Scope
+
 - **Files Audited**: 3 primary files in `supabase/functions/wa-webhook/domains/ai-agents/`
 - **Messages Categorized**: 45+ user-facing messages
 - **Languages**: English (primary), with i18n framework ready for expansion
@@ -30,15 +32,16 @@ This document audits all user-facing messages in the AI agents system, ensuring:
 
 **Purpose**: Keep users informed that system is working
 
-| Message | Location | Status | Notes |
-|---------|----------|--------|-------|
-| "🚖 Searching for drivers in our database..." | `handlers.ts:42` | ✅ Good | Clear, emoji appropriate |
-| "💊 Searching for pharmacies..." | `handlers.ts:143` | ✅ Good | Consistent with driver message |
-| "🏠 Searching for properties..." | `handlers.ts:341` | ✅ Good | Consistent pattern |
-| "🔧 Searching for hardware stores..." | `handlers.ts:205` | ✅ Good | Consistent pattern |
-| "🛍️ Searching for shops..." | `handlers.ts:271` | ✅ Good | Consistent pattern |
+| Message                                       | Location          | Status  | Notes                          |
+| --------------------------------------------- | ----------------- | ------- | ------------------------------ |
+| "🚖 Searching for drivers in our database..." | `handlers.ts:42`  | ✅ Good | Clear, emoji appropriate       |
+| "💊 Searching for pharmacies..."              | `handlers.ts:143` | ✅ Good | Consistent with driver message |
+| "🏠 Searching for properties..."              | `handlers.ts:341` | ✅ Good | Consistent pattern             |
+| "🔧 Searching for hardware stores..."         | `handlers.ts:205` | ✅ Good | Consistent pattern             |
+| "🛍️ Searching for shops..."                   | `handlers.ts:271` | ✅ Good | Consistent pattern             |
 
-**Recommendation**: ✅ No changes needed. All loading messages follow consistent pattern: [emoji] + "Searching for [item]..."
+**Recommendation**: ✅ No changes needed. All loading messages follow consistent pattern: [emoji] +
+"Searching for [item]..."
 
 ---
 
@@ -46,13 +49,14 @@ This document audits all user-facing messages in the AI agents system, ensuring:
 
 **Purpose**: Confirm successful actions and guide next steps
 
-| Message | Location | Status | Recommendation |
-|---------|----------|--------|----------------|
-| "✅ Great choice!\n\nWe're processing your selection..." | `integration.ts:652` | ✅ Good | Positive, encouraging |
+| Message                                                                                                  | Location             | Status  | Recommendation                  |
+| -------------------------------------------------------------------------------------------------------- | -------------------- | ------- | ------------------------------- |
+| "✅ Great choice!\n\nWe're processing your selection..."                                                 | `integration.ts:652` | ✅ Good | Positive, encouraging           |
 | "✅ Trip scheduled successfully!\n\n📍 Pickup: [location]\n🎯 Dropoff: [location]\n🚗 Driver: [name]..." | `integration.ts:366` | ✅ Good | Clear confirmation with details |
-| "🚖 Available Drivers" (header) | `handlers.ts:61` | ✅ Good | Concise header |
+| "🚖 Available Drivers" (header)                                                                          | `handlers.ts:61`     | ✅ Good | Concise header                  |
 
-**Recommendation**: ✅ No changes needed. Success messages are encouraging and provide clear next steps.
+**Recommendation**: ✅ No changes needed. Success messages are encouraging and provide clear next
+steps.
 
 ---
 
@@ -61,6 +65,7 @@ This document audits all user-facing messages in the AI agents system, ensuring:
 **Purpose**: Inform user no results found, suggest alternatives
 
 #### Driver Search - No Results
+
 **Location**: `handlers.ts:76-85`
 
 ```
@@ -73,18 +78,21 @@ This could be because:
 ```
 
 **Status**: ✅ Good
+
 - Friendly tone with sad emoji
 - Explains possible reasons
 - Offers clear alternatives (buttons: "👀 See All Drivers", "🏠 Home")
 
 #### Pharmacy Search - No Results
+
 **Location**: `handlers.ts:159-168` (inferred pattern)
 
 Similar pattern to driver search.
 
 **Status**: ✅ Good
 
-**Recommendation**: ✅ All "no results" messages follow consistent pattern and offer fallback options.
+**Recommendation**: ✅ All "no results" messages follow consistent pattern and offer fallback
+options.
 
 ---
 
@@ -93,6 +101,7 @@ Similar pattern to driver search.
 **Purpose**: Explain what went wrong, provide recovery steps
 
 #### Generic Search Error
+
 **Location**: `handlers.ts:94-99`
 
 ```
@@ -105,6 +114,7 @@ Please try:
 ```
 
 **Status**: ✅ Excellent
+
 - Apologetic emoji (😔)
 - Acknowledges error without technical jargon
 - Provides 3 actionable recovery steps
@@ -112,7 +122,8 @@ Please try:
 
 #### Agent Communication Errors
 
-**Location**: `integration.ts:136-139` (Driver), `196-199` (Pharmacy), `260-263` (Property), `452-455` (Shops), `510-513` (Hardware)
+**Location**: `integration.ts:136-139` (Driver), `196-199` (Pharmacy), `260-263` (Property),
+`452-455` (Shops), `510-513` (Hardware)
 
 ```
 🚖 Sorry, we couldn't find drivers at this moment. This might be because:
@@ -124,12 +135,14 @@ Please try again in a few minutes or use the traditional driver search.
 ```
 
 **Status**: ✅ Good
+
 - Consistent pattern across all agent types
 - Explanatory without blaming user
 - Offers fallback option
 - Uses agent-specific emoji
 
 #### Trip Scheduling Failure
+
 **Location**: `integration.ts:385-390`
 
 ```
@@ -141,10 +154,12 @@ Please try again in a few minutes or use the traditional driver search.
 ```
 
 **Status**: ✅ Good
+
 - Clear failure acknowledgment
 - Offers 2 recovery paths (traditional method, support)
 
 #### Selection Session Not Found
+
 **Location**: `integration.ts:610-612`
 
 ```
@@ -154,9 +169,11 @@ Please start a new search.
 ```
 
 **Status**: 🟡 Could be improved
-- Message is clear but doesn't explain *why* session might be missing
 
-**Recommendation**: 
+- Message is clear but doesn't explain _why_ session might be missing
+
+**Recommendation**:
+
 ```
 😔 Sorry, your selection session has expired or couldn't be found.
 
@@ -168,6 +185,7 @@ Please start a new search. 🔍
 ```
 
 #### Processing Selection Error
+
 **Location**: `integration.ts:675-676`
 
 ```
@@ -177,6 +195,7 @@ Please try again or start a new search.
 ```
 
 **Status**: ✅ Good
+
 - Apologetic
 - Offers 2 recovery options
 
@@ -189,6 +208,7 @@ Please try again or start a new search.
 **Location**: Various (handlers.ts)
 
 Example from driver search:
+
 ```
 driver.provide_locations (i18n key)
 ```
@@ -203,34 +223,37 @@ driver.provide_locations (i18n key)
 
 ### Current Emoji Inventory
 
-| Emoji | Usage | Context | Status |
-|-------|-------|---------|--------|
-| 🚖 | 5 times | Driver/mobility | ✅ Appropriate |
-| 😔 | 6 times | Apologies/errors | ✅ Appropriate |
-| ✅ | 3 times | Success | ✅ Appropriate |
-| 💊 | 2 times | Pharmacy | ✅ Appropriate |
-| 🏠 | 2 times | Property | ✅ Appropriate |
-| 🛍️ | 2 times | Marketplace | ✅ Appropriate |
-| 🔧 | 2 times | Hardware stores | ✅ Appropriate |
-| 🛵 | 2 times | Trip/delivery | ✅ Appropriate |
-| 🚗 | 1 time | General vehicle | ✅ Appropriate |
-| 🎯 | 1 time | Destination | ✅ Appropriate |
-| 📍 | 1 time | Location | ✅ Appropriate |
-| 💡 | 1 time | Helpful tip | ✅ Appropriate |
+| Emoji | Usage   | Context          | Status         |
+| ----- | ------- | ---------------- | -------------- |
+| 🚖    | 5 times | Driver/mobility  | ✅ Appropriate |
+| 😔    | 6 times | Apologies/errors | ✅ Appropriate |
+| ✅    | 3 times | Success          | ✅ Appropriate |
+| 💊    | 2 times | Pharmacy         | ✅ Appropriate |
+| 🏠    | 2 times | Property         | ✅ Appropriate |
+| 🛍️    | 2 times | Marketplace      | ✅ Appropriate |
+| 🔧    | 2 times | Hardware stores  | ✅ Appropriate |
+| 🛵    | 2 times | Trip/delivery    | ✅ Appropriate |
+| 🚗    | 1 time  | General vehicle  | ✅ Appropriate |
+| 🎯    | 1 time  | Destination      | ✅ Appropriate |
+| 📍    | 1 time  | Location         | ✅ Appropriate |
+| 💡    | 1 time  | Helpful tip      | ✅ Appropriate |
 
 ### Emoji Guidelines
 
 ✅ **Good Practices Observed**:
+
 - Domain-specific emojis (🚖 for drivers, 💊 for pharmacy)
 - Consistent emotional emojis (😔 for apologies)
 - Visual hierarchy (✅ for success)
 
 ⚠️ **Considerations**:
+
 - Some cultures interpret emojis differently
 - Screen readers announce emojis (e.g., "taxi emoji")
 - Ensure emoji doesn't replace critical text information
 
-**Recommendation**: ✅ Current emoji usage is appropriate and enhances readability without obscuring meaning.
+**Recommendation**: ✅ Current emoji usage is appropriate and enhances readability without obscuring
+meaning.
 
 ---
 
@@ -238,8 +261,7 @@ driver.provide_locations (i18n key)
 
 ### Language Considerations
 
-**Current**: All messages in English
-**Market**: Rwanda (primary), potential East Africa expansion
+**Current**: All messages in English **Market**: Rwanda (primary), potential East Africa expansion
 
 #### Recommendations for Cultural Adaptation:
 
@@ -270,17 +292,17 @@ driver.provide_locations (i18n key)
 
 **Testing**: Messages read by screen readers
 
-| Element | Screen Reader Output | Status |
-|---------|---------------------|--------|
-| "🚖 Searching..." | "Taxi emoji Searching for drivers in our database" | ✅ Good (emoji doesn't obscure message) |
-| "😔 Sorry..." | "Disappointed face emoji Sorry, we couldn't find..." | ✅ Good (emoji reinforces sentiment) |
-| Bullet points (•) | "Bullet, The system is temporarily busy..." | ✅ Good (list structure clear) |
+| Element           | Screen Reader Output                                 | Status                                  |
+| ----------------- | ---------------------------------------------------- | --------------------------------------- |
+| "🚖 Searching..." | "Taxi emoji Searching for drivers in our database"   | ✅ Good (emoji doesn't obscure message) |
+| "😔 Sorry..."     | "Disappointed face emoji Sorry, we couldn't find..." | ✅ Good (emoji reinforces sentiment)    |
+| Bullet points (•) | "Bullet, The system is temporarily busy..."          | ✅ Good (list structure clear)          |
 
 ### Readability Metrics
 
 **Flesch-Kincaid Grade Level**: ~7-8 (middle school level)  
 **Sentence Length**: Average 8-12 words  
-**Vocabulary**: Simple, common words  
+**Vocabulary**: Simple, common words
 
 **Status**: ✅ Messages are accessible to users with basic English proficiency.
 
@@ -301,22 +323,23 @@ driver.provide_locations (i18n key)
 
 **Target Tone**: Friendly, Helpful, Professional
 
-| Message Category | Tone | Consistency |
-|-----------------|------|-------------|
-| Loading | Neutral, Informative | ✅ 100% consistent |
-| Success | Positive, Encouraging | ✅ 100% consistent |
-| No Results | Empathetic, Suggestive | ✅ 100% consistent |
-| Errors | Apologetic, Helpful | ✅ 95% consistent* |
-| Instructions | Clear, Directive | ✅ 100% consistent |
+| Message Category | Tone                   | Consistency         |
+| ---------------- | ---------------------- | ------------------- |
+| Loading          | Neutral, Informative   | ✅ 100% consistent  |
+| Success          | Positive, Encouraging  | ✅ 100% consistent  |
+| No Results       | Empathetic, Suggestive | ✅ 100% consistent  |
+| Errors           | Apologetic, Helpful    | ✅ 95% consistent\* |
+| Instructions     | Clear, Directive       | ✅ 100% consistent  |
 
-*95% = One message ("Session not found") could be more explanatory (see recommendation above).
+\*95% = One message ("Session not found") could be more explanatory (see recommendation above).
 
 ### Voice Characteristics
 
 ✅ **Observed Patterns**:
-- Uses "we" (inclusive): "Sorry, *we* couldn't find..."
-- Active voice: "*We're* processing your selection..."
-- Direct address: "Please *try* again..."
+
+- Uses "we" (inclusive): "Sorry, _we_ couldn't find..."
+- Active voice: "_We're_ processing your selection..."
+- Direct address: "Please _try_ again..."
 - Solution-focused: "This could be because... [solutions]"
 
 ✅ **Consistency**: All messages follow same voice principles.
@@ -328,6 +351,7 @@ driver.provide_locations (i18n key)
 ### 1. Session Expired Message (High Priority)
 
 **Current** (`integration.ts:610`):
+
 ```
 😔 Sorry, we couldn't find your selection session.
 
@@ -335,6 +359,7 @@ Please start a new search.
 ```
 
 **Improved**:
+
 ```
 😔 Sorry, your selection session has expired.
 
@@ -342,7 +367,8 @@ Sessions last 10 minutes. Please start a new search when you're ready! 🔍
 ```
 
 **Rationale**:
-- Explains *why* (expired vs. technical error)
+
+- Explains _why_ (expired vs. technical error)
 - Sets expectation (10 minutes)
 - Encouraging tone ("when you're ready")
 - Actionable (start new search)
@@ -350,6 +376,7 @@ Sessions last 10 minutes. Please start a new search when you're ready! 🔍
 ### 2. Generic Error Details (Medium Priority)
 
 **Current** (`handlers.ts:94`):
+
 ```
 😔 Sorry, we encountered an error while searching for drivers.
 
@@ -360,6 +387,7 @@ Please try:
 ```
 
 **Improved** (Add one more option):
+
 ```
 😔 Sorry, we encountered an error while searching for drivers.
 
@@ -377,6 +405,7 @@ Please try:
 ### 3. Options Display Error (Low Priority)
 
 **Current** (`integration.ts:580-581`):
+
 ```
 Found ${options.length} option(s). However, we couldn't display them in interactive format.
 
@@ -384,6 +413,7 @@ Please try again or contact support.
 ```
 
 **Improved**:
+
 ```
 We found ${options.length} option(s) for you! 🎉
 
@@ -396,6 +426,7 @@ Please:
 ```
 
 **Rationale**:
+
 - Celebrate the success (found options) before acknowledging issue
 - Explain it's temporary
 - Provide recovery steps
@@ -462,7 +493,7 @@ export const MESSAGES = {
   // Success messages
   SUCCESS: {
     SELECTION: "✅ Great choice!\n\nWe're processing your selection...",
-    TRIP_SCHEDULED: (details: TripDetails) => 
+    TRIP_SCHEDULED: (details: TripDetails) =>
       `✅ Trip scheduled successfully!\n\n` +
       `📍 Pickup: ${details.pickup}\n` +
       `🎯 Dropoff: ${details.dropoff}\n` +
@@ -472,7 +503,7 @@ export const MESSAGES = {
 
   // No results messages
   NO_RESULTS: {
-    DRIVERS: 
+    DRIVERS:
       "🚖 No drivers found at this moment.\n\n" +
       "This could be because:\n" +
       "• No drivers are available in your area\n" +
@@ -495,15 +526,15 @@ export const MESSAGES = {
       "• Checking your connection\n" +
       "• Trying again in a few minutes\n" +
       "• Contact support if this persists",
-    
+
     SESSION_EXPIRED:
       "😔 Sorry, your selection session has expired.\n\n" +
       "Sessions last 10 minutes. Please start a new search when you're ready! 🔍",
-    
+
     PROCESSING_FAILED:
       "😔 Sorry, something went wrong while processing your selection.\n\n" +
       "Please try again or start a new search.",
-    
+
     AGENT_UNAVAILABLE: (agentType: string) =>
       `🚖 Sorry, we couldn't reach the ${agentType} at this moment. This might be because:\n\n` +
       "• The system is temporarily busy\n" +
@@ -529,6 +560,7 @@ export const MESSAGES = {
 ## ✅ Audit Completion Checklist
 
 ### Analysis
+
 - [x] Extracted all user-facing messages
 - [x] Categorized by purpose (loading, success, error, etc.)
 - [x] Analyzed emoji usage
@@ -537,18 +569,21 @@ export const MESSAGES = {
 - [x] Measured consistency across agents
 
 ### Findings
+
 - [x] Identified 3 message improvements
 - [x] Documented tone & voice patterns
 - [x] Verified no offensive/insensitive content
 - [x] Confirmed readability level appropriate (grade 7-8)
 
 ### Recommendations
+
 - [x] Proposed centralized message library
 - [x] Documented implementation plan
 - [x] Prioritized improvements (high/medium/low)
 - [x] Suggested i18n preparation steps
 
 ### Artifacts
+
 - [x] This audit document
 - [ ] Centralized message library (next step)
 - [ ] Updated messages in codebase (next step)
@@ -561,6 +596,7 @@ export const MESSAGES = {
 ### Overall Assessment: ✅ **EXCELLENT**
 
 The AI agents system has well-crafted user-facing messages with:
+
 - ✅ Consistent, friendly tone
 - ✅ Appropriate emoji usage
 - ✅ Helpful error recovery steps
