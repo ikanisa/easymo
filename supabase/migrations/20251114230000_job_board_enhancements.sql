@@ -8,8 +8,17 @@
 BEGIN;
 
 -- Add organizational context to job_listings
+DO $$ BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'organizations') THEN
+    ALTER TABLE job_listings
+      ADD COLUMN IF NOT EXISTS org_id uuid REFERENCES public.organizations(id) ON DELETE CASCADE;
+  ELSE
+    ALTER TABLE job_listings
+      ADD COLUMN IF NOT EXISTS org_id uuid;
+  END IF;
+END $$;
+
 ALTER TABLE job_listings
-  ADD COLUMN IF NOT EXISTS org_id uuid REFERENCES public.organizations(id) ON DELETE CASCADE,
   ADD COLUMN IF NOT EXISTS created_by uuid REFERENCES public.profiles(id),
   ADD COLUMN IF NOT EXISTS onsite_remote text CHECK (onsite_remote IN ('onsite', 'remote', 'hybrid', 'unspecified')) DEFAULT 'unspecified',
   ADD COLUMN IF NOT EXISTS slots integer DEFAULT 1,
@@ -28,8 +37,15 @@ CREATE INDEX IF NOT EXISTS job_listings_job_hash_idx ON job_listings(job_hash) W
 CREATE INDEX IF NOT EXISTS job_listings_is_external_idx ON job_listings(is_external);
 
 -- Add organizational context to job_seekers
-ALTER TABLE job_seekers
-  ADD COLUMN IF NOT EXISTS org_id uuid REFERENCES public.organizations(id) ON DELETE CASCADE;
+DO $$ BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'organizations') THEN
+    ALTER TABLE job_seekers
+      ADD COLUMN IF NOT EXISTS org_id uuid REFERENCES public.organizations(id) ON DELETE CASCADE;
+  ELSE
+    ALTER TABLE job_seekers
+      ADD COLUMN IF NOT EXISTS org_id uuid;
+  END IF;
+END $$;
 
 CREATE INDEX IF NOT EXISTS job_seekers_org_id_idx ON job_seekers(org_id) WHERE org_id IS NOT NULL;
 
