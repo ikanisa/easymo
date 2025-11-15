@@ -62,9 +62,13 @@ CREATE TABLE IF NOT EXISTS job_sources (
 );
 
 -- Link job_listings to sources
-ALTER TABLE job_listings
-  ADD CONSTRAINT job_listings_source_id_fkey 
-  FOREIGN KEY (source_id) REFERENCES job_sources(id) ON DELETE SET NULL;
+DO $$ BEGIN
+  ALTER TABLE job_listings
+    ADD CONSTRAINT job_listings_source_id_fkey 
+    FOREIGN KEY (source_id) REFERENCES job_sources(id) ON DELETE SET NULL;
+EXCEPTION
+  WHEN duplicate_object THEN null;
+END $$;
 
 -- Update RLS policies to use org_id when available
 DROP POLICY IF EXISTS "Public can view open job listings" ON job_listings;
