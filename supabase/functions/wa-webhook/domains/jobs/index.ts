@@ -233,26 +233,42 @@ export async function showMyApplications(ctx: RouterContext): Promise<boolean> {
   });
 
   try {
-    // Query job_applications table
+    // First, get the job_seeker record using phone number
+    const { data: seeker, error: seekerError } = await ctx.supabase
+      .from("job_seekers")
+      .select("id")
+      .eq("phone_number", ctx.from)
+      .maybeSingle();
+
+    if (seekerError) throw seekerError;
+
+    if (!seeker) {
+      await sendMessage(ctx, {
+        text: t(ctx.locale, "jobs.applications.no_profile"),
+      });
+      return true;
+    }
+
+    // Query job_applications table using the seeker's id
     const { data: applications, error } = await ctx.supabase
       .from("job_applications")
       .select(`
         id,
         status,
-        applied_at,
+        created_at,
         job_listings (
           id,
           title,
-          company_name,
           location,
           pay_min,
           pay_max,
           pay_type,
-          currency
+          currency,
+          job_type
         )
       `)
-      .eq("seeker_id", ctx.profileId)
-      .order("applied_at", { ascending: false })
+      .eq("seeker_id", seeker.id)
+      .order("created_at", { ascending: false })
       .limit(10);
 
     if (error) throw error;
@@ -270,12 +286,13 @@ export async function showMyApplications(ctx: RouterContext): Promise<boolean> {
     applications.forEach((app: any, index: number) => {
       const job = app.job_listings;
       const payInfo = job.pay_min && job.pay_max
-        ? `${job.currency || ""} ${job.pay_min}-${job.pay_max}/${job.pay_type}`
+        ? `${job.currency || "RWF"} ${job.pay_min}-${job.pay_max}/${job.pay_type}`
         : t(ctx.locale, "jobs.pay.negotiable");
 
       message += `${index + 1}. *${job.title}*\n`;
-      message += `   ${job.company_name || job.location}\n`;
-      message += `   ${payInfo}\n`;
+      message += `   📍 ${job.location}\n`;
+      message += `   💰 ${payInfo}\n`;
+      message += `   📋 ${t(ctx.locale, `jobs.type.${job.job_type}`)}\n`;
       message += `   Status: ${t(ctx.locale, `jobs.status.${app.status}`)}\n\n`;
     });
 
@@ -304,7 +321,7 @@ export async function showMyJobs(ctx: RouterContext): Promise<boolean> {
   });
 
   try {
-    // Query job_listings table
+    // Query job_listings table using phone number (posted_by is text field with phone)
     const { data: jobs, error } = await ctx.supabase
       .from("job_listings")
       .select(`
@@ -317,10 +334,9 @@ export async function showMyJobs(ctx: RouterContext): Promise<boolean> {
         pay_max,
         pay_type,
         currency,
-        created_at,
-        _count:job_applications(count)
+        created_at
       `)
-      .eq("posted_by", ctx.profileId)
+      .eq("posted_by", ctx.from)  // Use phone number, not profileId
       .order("created_at", { ascending: false })
       .limit(10);
 
@@ -333,21 +349,49 @@ export async function showMyJobs(ctx: RouterContext): Promise<boolean> {
       return true;
     }
 
+    // Get application counts for each job
+    const jobIds = jobs.map((j: any) => j.id);
+    const { data: appCounts } = await ctx.supabase
+      .from("job_applications")
+      .select("job_id")
+      .in("job_id", jobIds);
+
+    // Count applications per job
+    const countsByJob = (appCounts || []).reduce((acc: any, app: any) => {
+      acc[app.job_id] = (acc[app.job_id] || 0) + 1;
+      return acc;
+    }, {});
+
     // Format jobs list
     let message = t(ctx.locale, "jobs.myJobs.header") + "\n\n";
 
     jobs.forEach((job: any, index: number) => {
       const payInfo = job.pay_min && job.pay_max
-        ? `${job.currency || ""} ${job.pay_min}-${job.pay_max}/${job.pay_type}`
+        ? `${job.currency || "RWF"} ${job.pay_min}-${job.pay_max}/${job.pay_type}`
         : t(ctx.locale, "jobs.pay.negotiable");
 
-      const applicants = job._count?.count || 0;
+      const applicants = countsByJob[job.id] || 0;
 
       message += `${index + 1}. *${job.title}*\n`;
-      message += `   ${job.location}\n`;
-      message += `   ${payInfo}\n`;
-      message += `   ${t(ctx.locale, `jobs.type.${job.job_type}`)} | ${t(ctx.locale, `jobs.status.${job.status}`)}\n`;
-      message += `   ${applicants} ${t(ctx.locale, "jobs.applicants", { count: applicants })}\n\n`;
+      message += `   📍 ${job.location}\n`;
+      message += `   💰 ${payInfo}\n`;
+      message += `   📋 ${t(ctx.locale, `jobs.type.${job.job_type}`)} | ${t(ctx.locale, `jobs.status.${job.status}`)}\n`;
+      message += `   👥 ${applicants} applicant${applicants !== 1 ? "s" : ""}\n\n`;
+    });
+
+    message += t(ctx.locale, "jobs.myJobs.footer");
+
+    await sendMessage(ctx, { text: message });
+
+    return true;
+  } catch (error: any) {
+    console.error("Error fetching jobs:", error);
+    await sendMessage(ctx, {
+      text: t(ctx.locale, "jobs.error.fetch_failed"),
+    });
+    return true;
+  }
+}
     });
 
     message += t(ctx.locale, "jobs.myJobs.footer");
