@@ -138,7 +138,7 @@ export async function handleBarsPreferenceSelection(
 export async function handleBarsLocation(
   ctx: RouterContext,
   location: { lat: number; lng: number },
-  state?: { preference?: string },
+  state?: { preference?: string; page?: number },
 ): Promise<boolean> {
   if (!ctx.profileId) return false;
 

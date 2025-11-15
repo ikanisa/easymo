@@ -1,3 +1,5 @@
+import { detectLanguage, translateText } from "../_shared/multilingual-utils.ts";
+import { transcribeAudio, textToSpeech } from "../_shared/voice-handler.ts";
 // =====================================================
 // JOB BOARD AI AGENT - Main Edge Function
 // =====================================================

@@ -7,6 +7,8 @@
  * @see docs/GROUND_RULES.md
  */
 
+type IntervalHandle = number & { unref?: () => void };
+
 interface RateLimitConfig {
   windowMs: number;
   maxRequests: number;
@@ -36,7 +38,7 @@ class RateLimiter {
   private buckets: Map<string, BucketState> = new Map();
   private blacklist: Set<string> = new Set();
   private config: RateLimitConfig;
-  private cleanupInterval?: number;
+  private cleanupInterval?: IntervalHandle;
 
   constructor(config: Partial<RateLimitConfig> = {}) {
     this.config = { ...DEFAULT_CONFIG, ...config };
@@ -173,7 +175,9 @@ class RateLimiter {
    * Start periodic cleanup
    */
   private startCleanup(): void {
-    this.cleanupInterval = setInterval(() => this.cleanup(), 60000);
+    const handle = setInterval(() => this.cleanup(), 60000) as IntervalHandle;
+    handle.unref?.();
+    this.cleanupInterval = handle;
   }
 
   /**

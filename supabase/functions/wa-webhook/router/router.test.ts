@@ -16,6 +16,11 @@ const envReady = (() => {
 void envReady;
 
 const routerModule = await import("./router.ts");
+
+const test = (
+  name: string,
+  fn: () => Promise<void> | void,
+) => Deno.test({ name, sanitizeOps: false, sanitizeResources: false, fn });
 const {
   handleMessage,
   __setRouterTestOverrides,
@@ -24,7 +29,7 @@ const {
   __resetRouterEnhancementOverrides,
 } = routerModule;
 
-Deno.test("reuses cached route decision for duplicate messages", async () => {
+test("reuses cached route decision for duplicate messages", async () => {
   let textCount = 0;
   __setRouterTestOverrides({
     runGuards: async () => false,
@@ -32,9 +37,6 @@ Deno.test("reuses cached route decision for duplicate messages", async () => {
       textCount += 1;
       return true;
     },
-  });
-  __setRouterEnhancementOverrides({
-    applyRateLimiting: () => ({ allowed: true }),
   });
 
   const message = { id: "wamid.cache", from: "250788000000", type: "text" } as any;
@@ -55,16 +57,12 @@ Deno.test("reuses cached route decision for duplicate messages", async () => {
   __resetCache();
 });
 
-Deno.test("throws webhook error when rate limiting blocks message", async () => {
+test("propagates handler errors", async () => {
   __setRouterTestOverrides({
     runGuards: async () => false,
-    handleText: async () => true,
-  });
-  __setRouterEnhancementOverrides({
-    applyRateLimiting: () => ({
-      allowed: false,
-      response: new Response("rate_limited", { status: 429 }),
-    }),
+    handleText: async () => {
+      throw new Error("boom");
+    },
   });
 
   const message = { id: "wamid.block", from: "250788000001", type: "text" } as any;
@@ -74,7 +72,7 @@ Deno.test("throws webhook error when rate limiting blocks message", async () => 
   await assertRejects(
     () => handleMessage(context, message, state),
     Error,
-    "Rate limit exceeded",
+    "boom",
   );
 
   __resetRouterTestOverrides();

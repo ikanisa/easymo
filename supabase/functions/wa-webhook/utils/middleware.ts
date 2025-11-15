@@ -186,6 +186,7 @@ export async function enhanceWebhookRequest(
       return {
         type: "response",
         response: rateLimitResult.response,
+        correlationId,
       };
     }
   }

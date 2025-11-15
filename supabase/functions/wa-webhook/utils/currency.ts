@@ -46,6 +46,7 @@ const PRESETS: CurrencyPreset[] = [
 ];
 
 export type CurrencyPreference = {
+  prefixes?: string[];
   code: string;
   symbol: string;
   decimals: number;
@@ -69,7 +70,6 @@ export function getCurrencyByCode(code?: string | null): CurrencyPreference {
   const match = PRESETS.find((preset) => preset.code === normalized);
   if (match) return match;
   return {
-    prefixes: [],
     code: normalized,
     symbol: DEFAULT_PRESET.symbol,
     decimals: DEFAULT_PRESET.decimals,

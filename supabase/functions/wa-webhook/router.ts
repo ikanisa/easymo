@@ -1,7 +1,22 @@
 // Traffic Router for wa-webhook microservices
 // Routes incoming WhatsApp messages to appropriate microservice based on domain
 
+import { SUPABASE_SERVICE_ROLE_KEY } from "./config.ts";
+import { fetchWithTimeout } from "./utils/http.ts";
+
 const MICROSERVICES_BASE_URL = Deno.env.get("SUPABASE_URL") + "/functions/v1";
+const ROUTER_TIMEOUT_MS = Math.max(
+  Number(Deno.env.get("WA_ROUTER_TIMEOUT_MS") ?? "4000") || 4000,
+  1000,
+);
+const ROUTER_RETRY_ATTEMPTS = Math.max(
+  Number(Deno.env.get("WA_ROUTER_RETRIES") ?? "0") || 0,
+  0,
+);
+const ROUTER_RETRY_DELAY_MS = Math.max(
+  Number(Deno.env.get("WA_ROUTER_RETRY_DELAY_MS") ?? "200") || 200,
+  0,
+);
 
 interface RouteConfig {
   service: string;
@@ -107,29 +122,38 @@ function getServiceFromState(chatState: string): string | null {
  */
 export async function forwardToMicroservice(
   service: string,
-  payload: any,
-  headers: Headers
+  payload: unknown,
+  headers?: Headers,
 ): Promise<Response> {
   const url = `${MICROSERVICES_BASE_URL}/${service}`;
-  
-  const forwardHeaders = new Headers();
+  const forwardHeaders = new Headers(headers);
   forwardHeaders.set("Content-Type", "application/json");
-  forwardHeaders.set("Authorization", headers.get("Authorization") || "");
-  forwardHeaders.set("X-Correlation-ID", headers.get("X-Correlation-ID") || crypto.randomUUID());
+  const existingAuth = forwardHeaders.get("Authorization");
+  if (!existingAuth || !existingAuth.trim()) {
+    forwardHeaders.set("Authorization", `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`);
+  }
+  forwardHeaders.set("apikey", SUPABASE_SERVICE_ROLE_KEY);
+  const correlationId = forwardHeaders.get("X-Correlation-ID") ??
+    crypto.randomUUID();
+  forwardHeaders.set("X-Correlation-ID", correlationId);
   forwardHeaders.set("X-Routed-From", "wa-webhook");
+  forwardHeaders.set("X-Service-Route", service);
 
   try {
-    const response = await fetch(url, {
+    const response = await fetchWithTimeout(url, {
       method: "POST",
       headers: forwardHeaders,
       body: JSON.stringify(payload),
+      timeoutMs: ROUTER_TIMEOUT_MS,
+      retries: ROUTER_RETRY_ATTEMPTS,
+      retryDelayMs: ROUTER_RETRY_DELAY_MS,
     });
 
     console.log(JSON.stringify({
       event: "MESSAGE_ROUTED",
       service,
       status: response.status,
-      correlationId: forwardHeaders.get("X-Correlation-ID"),
+      correlationId,
     }));
 
     return response;
@@ -138,6 +162,7 @@ export async function forwardToMicroservice(
       event: "ROUTING_ERROR",
       service,
       error: error instanceof Error ? error.message : String(error),
+      correlationId,
     }));
     
     // Return fallback response
@@ -158,7 +183,12 @@ export async function forwardToMicroservice(
 export async function checkServiceHealth(service: string): Promise<boolean> {
   try {
     const url = `${MICROSERVICES_BASE_URL}/${service}/health`;
-    const response = await fetch(url, { method: "GET" });
+    const response = await fetchWithTimeout(url, {
+      method: "GET",
+      timeoutMs: ROUTER_TIMEOUT_MS,
+      retries: ROUTER_RETRY_ATTEMPTS,
+      retryDelayMs: ROUTER_RETRY_DELAY_MS,
+    });
     const data = await response.json();
     return data.status === "healthy";
   } catch {

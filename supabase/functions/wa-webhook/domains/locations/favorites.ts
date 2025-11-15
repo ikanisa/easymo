@@ -126,20 +126,20 @@ export async function updateFavorite(
 }
 
 function normalizeFavorites(rows: RawFavorite[]): UserFavorite[] {
-  return rows
-    .map((row) => {
-      const coords = parsePoint(row.geog);
-      if (!coords) return null;
-      return {
-        id: row.id,
-        kind: row.kind,
-        label: row.label,
-        address: row.address ?? null,
-        lat: coords.lat,
-        lng: coords.lng,
-      } satisfies UserFavorite;
-    })
-    .filter((fav): fav is UserFavorite => Boolean(fav));
+  const favorites: UserFavorite[] = [];
+  for (const row of rows) {
+    const coords = parsePoint(row.geog);
+    if (!coords) continue;
+    favorites.push({
+      id: row.id,
+      kind: row.kind,
+      label: row.label,
+      address: row.address ?? null,
+      lat: coords.lat,
+      lng: coords.lng,
+    });
+  }
+  return favorites;
 }
 
 function parsePoint(

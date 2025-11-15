@@ -41,6 +41,8 @@ export interface AggregatedMetrics {
   lastHourCost: number;
 }
 
+type IntervalHandle = number & { unref?: () => void };
+
 export class MetricsAggregator {
   private metrics = {
     totalRequests: 0,
@@ -62,11 +64,13 @@ export class MetricsAggregator {
   };
 
   private startTime = Date.now();
-  private cleanupInterval?: number;
+  private cleanupInterval?: IntervalHandle;
 
   constructor() {
     // Cleanup old hourly buckets every 5 minutes
-    this.cleanupInterval = setInterval(() => this.cleanupOldBuckets(), 300000);
+    const handle = setInterval(() => this.cleanupOldBuckets(), 300000) as IntervalHandle;
+    handle.unref?.();
+    this.cleanupInterval = handle;
   }
 
   /**

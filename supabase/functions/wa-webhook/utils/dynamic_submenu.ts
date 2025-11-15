@@ -109,9 +109,10 @@ export async function getSubmenuRows(
   backButtonText: string = 'Back to Menu',
   idMapper?: (key: string) => string,
 ): Promise<Array<{ id: string; title: string; description: string }>> {
+  const countryCode = (ctx as { countryCode?: string }).countryCode ?? "RW";
   const items = await fetchSubmenuItems(
     parentKey,
-    ctx.countryCode || 'RW',
+    countryCode,
     ctx.locale || 'en',
     ctx.supabase,
   );

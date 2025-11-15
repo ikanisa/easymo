@@ -1,3 +1,5 @@
+import { detectLanguage, translateText } from "../_shared/multilingual-utils.ts";
+import { transcribeAudio, textToSpeech } from "../_shared/voice-handler.ts";
 // Property Rental Agent
 // Handles short-term and long-term rental matching, property listing, and price negotiation
 

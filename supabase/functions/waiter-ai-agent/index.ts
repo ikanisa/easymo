@@ -1,3 +1,5 @@
+import { detectLanguage, translateText } from "../_shared/multilingual-utils.ts";
+import { transcribeAudio, textToSpeech, downloadWhatsAppAudio, uploadWhatsAppMedia } from "../_shared/voice-handler.ts";
 // =====================================================
 // WAITER AI AGENT - Complete Edge Function
 // =====================================================

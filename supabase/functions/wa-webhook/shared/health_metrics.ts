@@ -37,6 +37,8 @@ export interface HealthStatus {
   };
 }
 
+type MetricsAggregatorInstance = ReturnType<typeof getMetricsAggregator>;
+
 /**
  * Check overall system health
  */
@@ -108,8 +110,8 @@ async function checkDatabaseHealth(supabase: SupabaseClient): Promise<boolean> {
  * Get detailed metrics for monitoring
  */
 export function getDetailedMetrics(): {
-  metrics: ReturnType<typeof getMetricsAggregator>["getMetrics"];
-  summary: string;
+  metrics: ReturnType<MetricsAggregatorInstance["getMetrics"]>;
+  summary: ReturnType<MetricsAggregatorInstance["getMetricsSummary"]>;
   config: ReturnType<typeof getConfigSummary>;
 } {
   const metricsAggregator = getMetricsAggregator();

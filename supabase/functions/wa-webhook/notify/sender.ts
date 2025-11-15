@@ -299,7 +299,7 @@ async function deliverNotification(
     payload: mergeMeta(row.payload, {
       last_status: "sent",
       last_sent_at: now,
-      message_id: responseJson?.messages?.[0]?.id ?? null,
+      message_id: extractMessageId(responseJson),
       last_response: responseJson,
     }),
   };
@@ -309,7 +309,7 @@ async function deliverNotification(
   await logStructuredEvent("NOTIFY_SEND_OK", {
     id: row.id,
     to: maskWa(row.to_wa_id),
-    message_id: responseJson?.messages?.[0]?.id ?? null,
+    message_id: extractMessageId(responseJson),
   });
 }
 
@@ -676,6 +676,17 @@ async function safeJson(response: Response | null): Promise<unknown> {
   } catch (_) {
     return null;
   }
+}
+
+function extractMessageId(payload: unknown): string | null {
+  if (!payload || typeof payload !== "object") return null;
+  const messages = (payload as Record<string, unknown>).messages;
+  if (!Array.isArray(messages) || !messages.length) return null;
+  const first = messages[0];
+  const id = first && typeof first === "object"
+    ? (first as Record<string, unknown>).id
+    : null;
+  return typeof id === "string" ? id : null;
 }
 
 function pruneUndefined(

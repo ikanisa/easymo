@@ -623,13 +623,23 @@ export async function startPropertySavedLocationPicker(
 ): Promise<boolean> {
   if (!ctx.profileId) return false;
   const favorites = await listFavorites(ctx);
-  await setState(ctx.supabase, ctx.profileId, {
-    key: "location_saved_picker",
-    data: {
-      source: mode === "find" ? "property_find" : "property_add",
-      state,
-    } satisfies PropertySavedPickerState,
-  });
+  if (mode === "find") {
+    await setState(ctx.supabase, ctx.profileId, {
+      key: "location_saved_picker",
+      data: {
+        source: "property_find",
+        state: state as PropertyFindState,
+      } satisfies PropertySavedPickerState,
+    });
+  } else {
+    await setState(ctx.supabase, ctx.profileId, {
+      key: "location_saved_picker",
+      data: {
+        source: "property_add",
+        state: state as PropertyAddState,
+      } satisfies PropertySavedPickerState,
+    });
+  }
   const baseBody = t(ctx.locale, "location.saved.list.body", {
     context: t(ctx.locale, "location.context.pickup"),
   });

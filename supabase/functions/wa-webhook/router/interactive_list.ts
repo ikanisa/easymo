@@ -3,6 +3,7 @@ import type {
   WhatsAppInteractiveListMessage,
 } from "../types.ts";
 import { getListReplyId } from "../utils/messages.ts";
+import { t } from "../i18n/translator.ts";
 // AI Agents Integration
 import {
   handleAIAgentOptionSelection,
@@ -38,6 +39,7 @@ import {
   type ScheduleState,
   startScheduleTrip,
 } from "../domains/mobility/schedule.ts";
+import { setState } from "../state/store.ts";
 import type { ScheduleSavedPickerState } from "../domains/mobility/schedule.ts";
 import {
   handleMarketplaceButton,
@@ -391,10 +393,7 @@ export async function handleList(
 async function sendDineInDisabledNotice(ctx: RouterContext): Promise<void> {
   await sendButtonsMessage(
     ctx,
-    {
-      body:
-        "Dine-in orders are handled separately. Please contact our team for assistance.",
-    },
+    "Dine-in orders are handled separately. Please contact our team for assistance.",
     [...homeOnly()],
     { emoji: "ℹ️" },
   );
@@ -423,10 +422,7 @@ function isRemovedFeatureState(key?: string): boolean {
 async function sendRemovedFeatureNotice(ctx: RouterContext): Promise<void> {
   await sendButtonsMessage(
     ctx,
-    {
-      body:
-        "That workflow has been retired. Please use the main menu buttons for the supported features.",
-    },
+    "That workflow has been retired. Please use the main menu buttons for the supported features.",
     [...homeOnly()],
     { emoji: "ℹ️" },
   );
@@ -633,9 +629,7 @@ async function handleHomeMenuSelection(
       // Both support options show contact information
       await sendButtonsMessage(
         ctx,
-        {
-          body: t(ctx.locale, "support.contact_info"),
-        },
+        t(ctx.locale, "support.contact_info"),
         homeOnly(),
         { emoji: "💬" }
       );

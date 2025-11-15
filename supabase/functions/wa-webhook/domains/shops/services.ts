@@ -181,6 +181,7 @@ export async function handleShopsLocation(
   if (!ctx.profileId || !state.tag_id) return false;
 
   const page = state.page || 0;
+  const categoryName = resolveCategoryName(state);
 
   await logStructuredEvent("SHOPS_LOCATION_RECEIVED", {
     wa_id: `***${ctx.from.slice(-4)}`,
@@ -212,7 +213,7 @@ export async function handleShopsLocation(
   if (!businesses || businesses.length === 0) {
     await sendButtonsMessage(
       ctx,
-      t(ctx.locale, "shops.search.no_results", { category: state.tag_name }),
+      t(ctx.locale, "shops.search.no_results", { category: categoryName }),
       buildButtons(
         {
           id: IDS.BACK_MENU,
@@ -281,10 +282,10 @@ export async function handleShopsLocation(
   await sendListMessage(
     ctx,
     {
-      title: `${state.tag_icon || "🏪"} ${state.tag_name}`,
+      title: `${state.tag_icon || "🏪"} ${categoryName}`,
       body: t(ctx.locale, "shops.results.found", {
         count: businesses.length.toString(),
-        category: state.tag_name,
+        category: categoryName,
       }),
       sectionTitle: t(ctx.locale, "shops.results.section"),
       rows,
@@ -386,6 +387,7 @@ export async function handleShopsMore(
 
   const currentPage = state.page || 0;
   const nextPage = currentPage + 1;
+  const categoryName = resolveCategoryName(state);
   
   // Update state with new page
   await setState(ctx.supabase, ctx.profileId, {
@@ -435,12 +437,12 @@ export async function handleShopsMore(
   await sendListMessage(
     ctx,
     {
-      title: `${state.tag_icon || "🏪"} ${state.tag_name}`,
+      title: `${state.tag_icon || "🏪"} ${categoryName}`,
       body: t(ctx.locale, "shops.results.showing_more", {
         from: String(start + 1),
         to: String(end),
         total: String(state.businesses.length),
-        category: state.tag_name,
+        category: categoryName,
       }),
       sectionTitle: t(ctx.locale, "shops.results.section"),
       rows,
@@ -525,4 +527,12 @@ export async function handleShopsTagsMore(
   );
 
   return true;
+}
+
+function resolveCategoryName(state: { tag_name?: string }): string {
+  if (typeof state.tag_name === "string") {
+    const trimmed = state.tag_name.trim();
+    if (trimmed.length) return trimmed;
+  }
+  return "shops";
 }

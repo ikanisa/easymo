@@ -26,9 +26,9 @@ export async function handleProfileMenu(ctx: RouterContext): Promise<boolean> {
 
   // Fetch profile menu items dynamically from database
   const menuItems = await fetchProfileMenuItems(
-    ctx.countryCode || 'RW',
-    ctx.locale || 'en',
-    ctx.supabase
+    "RW",
+    ctx.locale,
+    ctx.supabase,
   );
 
   if (!menuItems || menuItems.length === 0) {

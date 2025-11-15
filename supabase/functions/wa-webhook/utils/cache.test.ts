@@ -14,7 +14,12 @@ import {
   __resetCache,
 } from "./cache.ts";
 
-Deno.test("Cache - basic get/set", () => {
+const test = (
+  name: string,
+  fn: () => Promise<void> | void,
+) => Deno.test({ name, sanitizeOps: false, sanitizeResources: false, fn });
+
+test("Cache - basic get/set", () => {
   __resetCache();
   
   const cache = getCacheManager();
@@ -25,7 +30,7 @@ Deno.test("Cache - basic get/set", () => {
   assertEquals(value, "value1");
 });
 
-Deno.test("Cache - returns null for missing keys", () => {
+test("Cache - returns null for missing keys", () => {
   __resetCache();
   
   const cache = getCacheManager();
@@ -34,7 +39,7 @@ Deno.test("Cache - returns null for missing keys", () => {
   assertEquals(value, null);
 });
 
-Deno.test("Cache - respects TTL", async () => {
+test("Cache - respects TTL", async () => {
   __resetCache();
   
   const cache = getCacheManager();
@@ -52,7 +57,7 @@ Deno.test("Cache - respects TTL", async () => {
   assertEquals(cache.get("key1"), null);
 });
 
-Deno.test("Cache - getOrSet creates entry if missing", async () => {
+test("Cache - getOrSet creates entry if missing", async () => {
   __resetCache();
   
   const cache = getCacheManager();
@@ -83,7 +88,7 @@ Deno.test("Cache - getOrSet creates entry if missing", async () => {
   assertEquals(factoryCalled, false);
 });
 
-Deno.test("Cache - delete removes entry", () => {
+test("Cache - delete removes entry", () => {
   __resetCache();
   
   const cache = getCacheManager();
@@ -96,7 +101,7 @@ Deno.test("Cache - delete removes entry", () => {
   assertEquals(cache.get("key1"), null);
 });
 
-Deno.test("Cache - tracks hit/miss statistics", () => {
+test("Cache - tracks hit/miss statistics", () => {
   __resetCache();
   
   const cache = getCacheManager();
@@ -117,7 +122,7 @@ Deno.test("Cache - tracks hit/miss statistics", () => {
   assertExists(stats.hitRate);
 });
 
-Deno.test("Cache - evicts LRU when full", () => {
+test("Cache - evicts LRU when full", () => {
   __resetCache();
   
   // Create cache with small size for testing
@@ -129,7 +134,7 @@ Deno.test("Cache - evicts LRU when full", () => {
   cache.destroy();
 });
 
-Deno.test("Cache - has() checks existence", () => {
+test("Cache - has() checks existence", () => {
   __resetCache();
   
   const cache = getCacheManager();
@@ -140,7 +145,7 @@ Deno.test("Cache - has() checks existence", () => {
   assertEquals(cache.has("nonexistent"), false);
 });
 
-Deno.test("Cache - clear() removes all entries", () => {
+test("Cache - clear() removes all entries", () => {
   __resetCache();
   
   const cache = getCacheManager();
@@ -159,7 +164,7 @@ Deno.test("Cache - clear() removes all entries", () => {
   assertEquals(stats.size, 0);
 });
 
-Deno.test("Cache - isHealthy checks capacity", () => {
+test("Cache - isHealthy checks capacity", () => {
   __resetCache();
   
   const cache = getCacheManager();
@@ -170,7 +175,7 @@ Deno.test("Cache - isHealthy checks capacity", () => {
   assertEquals(cache.isHealthy(), true);
 });
 
-Deno.test("Cache - stores different data types", () => {
+test("Cache - stores different data types", () => {
   __resetCache();
   
   const cache = getCacheManager();

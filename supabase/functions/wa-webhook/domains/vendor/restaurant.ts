@@ -6,10 +6,10 @@ import {
   homeOnly,
   sendButtonsMessage,
   sendListMessage,
-  sendText,
 } from "../../utils/reply.ts";
 import { IDS } from "../../wa/ids.ts";
 import { logStructuredEvent } from "../../observe/log.ts";
+import { sendText } from "../../wa/client.ts";
 
 export type RestaurantManagerState = {
   barId?: string;
