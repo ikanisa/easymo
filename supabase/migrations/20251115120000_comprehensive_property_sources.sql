@@ -168,7 +168,7 @@ INSERT INTO property_sources (name, source_type, base_url, config, is_active) VA
 
 -- Malta: Century 21 Malta
 INSERT INTO property_sources (name, source_type, base_url, config, is_active) VALUES
-('Century 21 Malta', 'openai_deep_search', 'https://www.century21.com.mt', 
+('Century 21 Malta', 'openai_deep_research', 'https://www.century21.com.mt', 
 '{
   "queries": [
     {"country": "Malta", "query": "site:century21.com.mt properties to let Malta"}
@@ -279,7 +279,7 @@ INSERT INTO property_sources (name, source_type, base_url, config, is_active) VA
 
 -- Rwanda: Rwandan Real Estate Agents (Aggregated)
 INSERT INTO property_sources (name, source_type, base_url, config, is_active) VALUES
-('Rwanda Real Estate Agents', 'openai_deep_search', NULL, 
+('Rwanda Real Estate Agents', 'openai_deep_research', NULL, 
 '{
   "queries": [
     {"country": "Rwanda", "city": "Kigali", "query": "Kigali real estate agents rental properties phone contact", "num_results": 30},
