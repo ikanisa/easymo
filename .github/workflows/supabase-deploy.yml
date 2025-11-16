@@ -89,3 +89,41 @@ jobs:
           supabase functions deploy wa-webhook \
             --project-ref "$PROJECT_REF" \
             --no-verify-jwt
+
+  smoke-health:
+    name: Post-deploy health smoke tests
+    runs-on: ubuntu-latest
+    needs: [functions]
+    if: ${{ needs.gate.outputs.can_deploy == 'true' }}
+    env:
+      FUNCTIONS_BASE: https://${{ secrets.SUPABASE_PROJECT_REF }}.functions.supabase.co
+    steps:
+      - name: Validate configuration
+        run: |
+          if [ -z "${FUNCTIONS_BASE}" ] || ! echo "${FUNCTIONS_BASE}" | grep -q "https://"; then
+            echo "::error::FUNCTIONS_BASE not configured" && exit 1
+          fi
+
+      - name: Check webhook health endpoints
+        run: |
+          set -euo pipefail
+          for path in wa-webhook-core/health wa-webhook-mobility/health wa-webhook-property/health wa-webhook-jobs/health; do
+            echo "→ hitting ${FUNCTIONS_BASE}/${path}"
+            status=$(curl -s -o /tmp/health.json -w "%{http_code}" "${FUNCTIONS_BASE}/${path}")
+            cat /tmp/health.json
+            if [ "$status" -ge 300 ]; then
+              echo "::error::Health check failed for ${path} with status ${status}" && exit 1
+            fi
+          done
+
+      - name: Check agent health endpoints
+        run: |
+          set -euo pipefail
+          for path in waiter-ai-agent/health agent-property-rental/health job-board-ai-agent/health; do
+            echo "→ hitting ${FUNCTIONS_BASE}/${path}"
+            status=$(curl -s -o /tmp/agent-health.json -w "%{http_code}" "${FUNCTIONS_BASE}/${path}")
+            cat /tmp/agent-health.json
+            if [ "$status" -ge 300 ]; then
+              echo "::error::Health check failed for ${path} with status ${status}" && exit 1
+            fi
+          done

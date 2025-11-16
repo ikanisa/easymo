@@ -36,35 +36,108 @@ const supabase = createClient(
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
 );
 
+const healthMetrics = {
+  success: 0,
+  failure: 0,
+  latencyMsTotal: 0,
+};
+
+const renderHealthMetrics = (service: string): string => [
+  `agent_health_checks_total{service="${service}",status="success"} ${healthMetrics.success}`,
+  `agent_health_checks_total{service="${service}",status="failure"} ${healthMetrics.failure}`,
+  `agent_health_latency_ms_sum{service="${service}"} ${healthMetrics.latencyMsTotal}`,
+].join("
+");
+
 // =====================================================
 // Main Handler
 // =====================================================
 
 serve(async (req: Request) => {
-  const correlationId = req.headers.get("x-correlation-id") || crypto.randomUUID();
-  
+  const url = new URL(req.url);
+  const requestId = req.headers.get("x-request-id") || crypto.randomUUID();
+  const startedAt = Date.now();
+
+  const respond = (body: unknown, init: ResponseInit = {}): Response => {
+    const headers = new Headers({
+      "Content-Type": "application/json",
+      "X-Request-ID": requestId,
+      ...(init.headers || {}),
+    });
+    return new Response(
+      typeof body === "string" ? body : JSON.stringify(body),
+      { ...init, headers },
+    );
+  };
+
+  if (req.method === "GET" && (url.pathname === "/health" || url.pathname === "/ping")) {
+    try {
+      const { error } = await supabase.from("job_conversations").select("id").limit(1);
+      const healthy = !error;
+      const durationMs = Date.now() - startedAt;
+      healthMetrics.latencyMsTotal += durationMs;
+      healthy ? healthMetrics.success++ : healthMetrics.failure++;
+
+      await logStructuredEvent("JOB_AGENT_HEALTH", {
+        requestId,
+        healthy,
+        durationMs,
+        error: error?.message,
+      });
+
+      return respond({
+        status: healthy ? "ok" : "degraded",
+        service: "job-board-ai-agent",
+        requestId,
+        latency_ms: durationMs,
+        timestamp: new Date().toISOString(),
+        checks: { database: healthy ? "connected" : "error" },
+      }, { status: healthy ? 200 : 503 });
+    } catch (error) {
+      const durationMs = Date.now() - startedAt;
+      healthMetrics.failure++;
+      healthMetrics.latencyMsTotal += durationMs;
+      await logStructuredEvent("JOB_AGENT_HEALTH_ERROR", {
+        requestId,
+        error: error instanceof Error ? error.message : String(error),
+        durationMs,
+      }, "error");
+
+      return respond({
+        status: "unhealthy",
+        service: "job-board-ai-agent",
+        requestId,
+        latency_ms: durationMs,
+      }, { status: 503 });
+    }
+  }
+
+  if (req.method === "GET" && url.pathname === "/metrics") {
+    return new Response(renderHealthMetrics("job-board-ai-agent"), {
+      status: 200,
+      headers: {
+        "Content-Type": "text/plain; version=0.0.4",
+        "X-Request-ID": requestId,
+      },
+    });
+  }
+
   try {
     // Verify method
     if (req.method !== "POST") {
-      return new Response(JSON.stringify({ error: "Method not allowed" }), {
-        status: 405,
-        headers: { "Content-Type": "application/json" },
-      });
+      return respond({ error: "Method not allowed" }, { status: 405 });
     }
 
     const { phone_number, message, conversation_history } = await req.json();
 
     if (!phone_number || !message) {
-      return new Response(
-        JSON.stringify({ error: "phone_number and message required" }),
-        { status: 400, headers: { "Content-Type": "application/json" } }
-      );
+      return respond({ error: "phone_number and message required" }, { status: 400 });
     }
 
     await logStructuredEvent("JOB_AGENT_REQUEST", {
       phoneNumber: phone_number,
       messageLength: message.length,
-      correlationId,
+      requestId,
     });
 
     // Load or create conversation
@@ -123,7 +196,7 @@ serve(async (req: Request) => {
         await logStructuredEvent("TOOL_CALL", {
           functionName,
           phoneNumber: phone_number,
-          correlationId,
+          requestId,
         });
 
         let result: any;
@@ -263,7 +336,7 @@ serve(async (req: Request) => {
       phoneNumber: phone_number,
       toolCallCount: toolCalls.length,
       responseLength: finalResponse.length,
-      correlationId,
+      requestId,
     });
 
     return new Response(
@@ -277,7 +350,7 @@ serve(async (req: Request) => {
         status: 200,
         headers: {
           "Content-Type": "application/json",
-          "x-correlation-id": correlationId,
+          "x-correlation-id": requestId,
         },
       }
     );
@@ -286,7 +359,7 @@ serve(async (req: Request) => {
       event: "JOB_AGENT_ERROR",
       error: error.message,
       stack: error.stack,
-      correlationId,
+      requestId,
     });
 
     return new Response(
@@ -298,7 +371,7 @@ serve(async (req: Request) => {
         status: 500,
         headers: {
           "Content-Type": "application/json",
-          "x-correlation-id": correlationId,
+          "x-correlation-id": requestId,
         },
       }
     );
