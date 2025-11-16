@@ -52,7 +52,7 @@ describe("mobility ping drivers route", () => {
             text: "Please confirm dispatch readiness.",
           }),
         },
-      ) as any,
+      ),
     );
 
     expect(response.status).toBe(202);
@@ -89,7 +89,7 @@ describe("mobility ping drivers route", () => {
             delaySeconds: 600,
           }),
         },
-      ) as any,
+      ),
     );
 
     expect(response.status).toBe(202);
@@ -113,7 +113,7 @@ describe("mobility ping drivers route", () => {
           headers: { "content-type": "application/json" },
           body: JSON.stringify({ ride_id: "", driver_ids: [] }),
         },
-      ) as any,
+      ),
     );
 
     expect(response.status).toBe(400);
