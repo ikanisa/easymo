@@ -1,1 +1,95 @@
-../../infra/ci/preview-deploy.yml
+name: Preview Deploy
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  gate:
+    name: Check preview secrets
+    runs-on: ubuntu-latest
+    outputs:
+      can_run: ${{ steps.check.outputs.can_run }}
+    steps:
+      - name: Validate preview environment secrets
+        id: check
+        env:
+          PREVIEW_SUPABASE_URL: ${{ secrets.PREVIEW_SUPABASE_URL }}
+          PREVIEW_SUPABASE_ANON_KEY: ${{ secrets.PREVIEW_SUPABASE_ANON_KEY }}
+          PREVIEW_SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.PREVIEW_SUPABASE_SERVICE_ROLE_KEY }}
+          PREVIEW_SUPABASE_JWT_SECRET: ${{ secrets.PREVIEW_SUPABASE_JWT_SECRET }}
+          PREVIEW_EASYMO_ADMIN_TOKEN: ${{ secrets.PREVIEW_EASYMO_ADMIN_TOKEN }}
+          SLA_ALERT_WEBHOOK_URL: ${{ secrets.SLA_ALERT_WEBHOOK_URL }}
+          SUPABASE_CHANNEL_MONITOR_WEBHOOK: ${{ secrets.SUPABASE_CHANNEL_MONITOR_WEBHOOK }}
+          AGENT_AUDIT_WEBHOOK_URL: ${{ secrets.AGENT_AUDIT_WEBHOOK_URL }}
+        run: |
+          required=(PREVIEW_SUPABASE_URL PREVIEW_SUPABASE_ANON_KEY PREVIEW_SUPABASE_SERVICE_ROLE_KEY PREVIEW_SUPABASE_JWT_SECRET PREVIEW_EASYMO_ADMIN_TOKEN SLA_ALERT_WEBHOOK_URL SUPABASE_CHANNEL_MONITOR_WEBHOOK AGENT_AUDIT_WEBHOOK_URL)
+          missing=()
+          for var in "${required[@]}"; do
+            if [ -z "${!var}" ]; then
+              missing+=("$var")
+            fi
+          done
+
+          if [ ${#missing[@]} -eq 0 ]; then
+            echo "can_run=true" >> $GITHUB_OUTPUT
+            echo "All preview secrets present."
+          else
+            echo "can_run=false" >> $GITHUB_OUTPUT
+            echo "::warning::Missing preview secrets: ${missing[*]}" >&2
+          fi
+
+  preview-smoke:
+    name: Build preview bundle and run smoke tests
+    runs-on: ubuntu-latest
+    needs: gate
+    if: ${{ needs.gate.outputs.can_run == 'true' }}
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PREVIEW_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.PREVIEW_SUPABASE_ANON_KEY }}
+      SUPABASE_URL: ${{ secrets.PREVIEW_SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.PREVIEW_SUPABASE_SERVICE_ROLE_KEY }}
+      SUPABASE_JWT_SECRET: ${{ secrets.PREVIEW_SUPABASE_JWT_SECRET }}
+      EASYMO_ADMIN_TOKEN: ${{ secrets.PREVIEW_EASYMO_ADMIN_TOKEN }}
+      SLA_ALERT_WEBHOOK_URL: ${{ secrets.SLA_ALERT_WEBHOOK_URL }}
+      SUPABASE_CHANNEL_MONITOR_WEBHOOK: ${{ secrets.SUPABASE_CHANNEL_MONITOR_WEBHOOK }}
+      AGENT_AUDIT_WEBHOOK_URL: ${{ secrets.AGENT_AUDIT_WEBHOOK_URL }}
+      NODE_OPTIONS: --max_old_space_size=4096
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.18.3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Verify preview environment
+        run: pnpm env:check
+
+      - name: Build shared packages
+        run: |
+          pnpm --filter @va/shared build
+          pnpm --filter @easymo/commons build
+          pnpm --filter @easymo/ui build
+          pnpm --filter @easymo/video-agent-schema build
+
+      - name: Build production bundles
+        run: pnpm build
+
+      - name: Run preview smoke tests
+        run: pnpm --filter @easymo/admin-app exec vitest run --config vitest.config.smoke.cjs --runInBand

@@ -22,18 +22,69 @@ jobs:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+          AUTH_SMTP_ADMIN_EMAILS: ${{ secrets.AUTH_SMTP_ADMIN_EMAILS }}
+          AUTH_SMTP_SENDER_NAME: ${{ secrets.AUTH_SMTP_SENDER_NAME }}
+          AUTH_SMTP_REPLY_TO: ${{ secrets.AUTH_SMTP_REPLY_TO }}
         run: |
-          if [ -n "${SUPABASE_ACCESS_TOKEN}" ] && [ -n "${SUPABASE_PROJECT_REF}" ] && [ -n "${SUPABASE_DB_PASSWORD}" ]; then
+          required=(SUPABASE_ACCESS_TOKEN SUPABASE_PROJECT_REF SUPABASE_DB_PASSWORD AUTH_SMTP_ADMIN_EMAILS AUTH_SMTP_SENDER_NAME AUTH_SMTP_REPLY_TO)
+          missing=()
+          for var in "${required[@]}"; do
+            if [ -z "${!var}" ]; then
+              missing+=("$var")
+            fi
+          done
+
+          if [ ${#missing[@]} -eq 0 ]; then
             echo "can_deploy=true" >> $GITHUB_OUTPUT
             echo "Secrets present: proceeding with deploy."
           else
             echo "can_deploy=false" >> $GITHUB_OUTPUT
-            echo "Required secrets missing: skipping deploy." >&2
+            echo "Required secrets missing: ${missing[*]}" >&2
+          fi
+
+  policy-audit:
+    if: ${{ needs.gate.outputs.can_deploy == 'true' }}
+    needs: gate
+    name: Validate RLS policies and email config
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 20
+
+      - name: Check migration RLS coverage
+        run: node scripts/check-migrations-rls.mjs
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Verify Supabase auth email secrets
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+        run: |
+          set -euo pipefail
+          supabase secrets list --project-ref "$SUPABASE_PROJECT_REF" > /tmp/secrets.txt
+          missing=0
+          for key in AUTH_SMTP_ADMIN_EMAILS AUTH_SMTP_SENDER_NAME AUTH_SMTP_REPLY_TO; do
+            if ! grep -q "$key" /tmp/secrets.txt; then
+              echo "::error::Missing Supabase secret $key in target environment"
+              missing=1
+            fi
+          done
+          if [ "$missing" -ne 0 ]; then
+            exit 1
           fi
 
   migrate:
     if: ${{ needs.gate.outputs.can_deploy == 'true' }}
-    needs: gate
+    needs: [gate, policy-audit]
     name: Apply DB migrations (remote)
     runs-on: ubuntu-latest
     steps:
@@ -67,7 +118,7 @@ jobs:
   functions:
     name: Deploy wa-webhook function
     runs-on: ubuntu-latest
-    needs: [gate]
+    needs: [gate, policy-audit]
     if: ${{ needs.gate.outputs.can_deploy == 'true' }}
     steps:
       - name: Checkout
