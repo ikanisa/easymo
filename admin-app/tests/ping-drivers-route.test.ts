@@ -93,6 +93,7 @@ describe("mobility ping drivers route", () => {
     );
 
     expect(response.status).toBe(202);
+    expect(insertMock.mock.calls[0]).toBeDefined();
     const inserted = insertMock.mock.calls[0]?.[0] as Array<Record<string, unknown>>;
     expect(inserted[0]).toMatchObject({
       to_wa_id: "driver-delayed",
