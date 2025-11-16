@@ -69,8 +69,9 @@ NEXT_PUBLIC_FEATURE_NEW_AUTH_FLOW=false
 ## Supabase auth flows
 ### Email sign-in
 1. User enters email on `/login`; frontend calls `supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: <app url> } })`.
-2. Supabase emails magic link; upon click, session is created and stored in Supabase client.
+2. Supabase emails a magic link; when the user clicks the link, they are redirected to the specified `emailRedirectTo` URL. The frontend at this URL must handle the Supabase auth callback—by listening for `onAuthStateChange` or parsing auth tokens from the URL—to establish the session in the Supabase client.
 3. Frontend exchanges session and stores profile/role via `/api/auth/profile` (server pulls from Supabase `auth.users` + `public.profiles`).
+   - **Logging requirement**: Backend must log structured event `USER_LOGIN` with `{ userId, email, method: "magic_link", correlationId }` upon successful session establishment (per GROUND_RULES.md section 1.1).
 4. Redirect to last-intended route (from `redirect_to` param or stored location) or `/app/home`.
 
 ### Admin invitation flow
@@ -81,20 +82,39 @@ NEXT_PUBLIC_FEATURE_NEW_AUTH_FLOW=false
 3. Supabase sends email with invite link (magic link token).
 4. Recipient clicks link → Supabase creates user + session; frontend detects `invitation_token` and calls `POST /api/auth/accept-invite` with token.
 5. Backend validates feature flag and token with Supabase Admin API, reads invite metadata, assigns role/org membership (upsert into `public.user_roles`), marks invite `accepted`, and returns profile payload.
+1. Admin opens AdminPage → `<UserInvitePanel>` and submits invite form (email, role, org). Frontend calls backend `POST /api/admin/invitations`.
+2. Backend uses service key to call `supabase.auth.admin.inviteUserByEmail(email, { data: { role, orgId }, redirectTo: <app url>/login })`; stores invite row in `public.invites` with status `pending`.
+   - **Logging requirement**: Backend must log structured event `INVITE_SENT` with `{ inviteId, email, role, orgId, inviterId, correlationId }` upon successful invite creation (per GROUND_RULES.md section 1.1).
+3. Supabase sends email with invite link (magic link token).
+4. Recipient clicks link → Supabase creates user + session; frontend detects `invitation_token` and calls `POST /api/auth/accept-invite` with token.
+5. Backend validates token with Supabase Admin API, reads invite metadata, assigns role/org membership (upsert into `public.user_roles`), marks invite `accepted`, and returns profile payload.
+   - **Logging requirement**: Backend must log structured event `INVITE_ACCEPTED` with `{ inviteId, userId, email, role, orgId, correlationId }` upon successful invite acceptance and role assignment (per GROUND_RULES.md section 1.1).
+   > **Note:** The `public.invites` and `public.user_roles` tables must exist in your Supabase database. See the schema definitions in `supabase/migrations/` (or create appropriate migrations if not present).
+3. Supabase sends email with invite link (magic link token).
+4. Recipient clicks link → Supabase creates user + session; frontend detects `invitation_token` and calls `POST /api/auth/accept-invite` with token.
+5. Backend validates the invitation token as follows:
+   - Verifies the token is a valid Supabase JWT (using Supabase Admin API or JWT library), checking signature and expiry.
+   - Extracts the user information from the token (e.g., user ID, email).
+   - Uses `supabase.auth.admin.getUserById` (or equivalent) to fetch the user and confirm the account was created via the invite.
+   - Queries the `public.invites` table to ensure the invite status is `pending` and the email matches the user.
+   - If all checks pass, assigns role/org membership (upsert into `public.user_roles`), marks invite as `accepted`, and returns the profile payload.
 6. Frontend stores session + role, clears invite token, and routes to onboarding (`/app/home/onboarding`) if first login, else to `/app/home`.
 
 ## State/data contracts (frontend ↔ backend)
 - **Session fetch**: `GET /api/auth/profile`  
   - **Auth requirements**: Requires valid Supabase session token in `Authorization: Bearer <access_token>` header.  
   - **Response**: `{ userId, email, displayName, orgId, roles: string[], featureFlags?: Record<string, boolean> }`.
+  - **Logging requirement**: Must log `USER_LOGIN` event with correlation ID (per GROUND_RULES.md section 1.1).
 - **Invite creation**: `POST /api/admin/invitations`  
   - **Auth requirements**: Requires admin role; must include valid Supabase session token in `Authorization: Bearer <access_token>` header.  
   - **Request body**: `{ email, role, orgId, inviterId }`  
   - **Response**: `{ inviteId, status: 'pending', email, role, orgId, createdAt }`.
+  - **Logging requirement**: Must log `INVITE_SENT` event with correlation ID (per GROUND_RULES.md section 1.1).
 - **Invite acceptance**: `POST /api/auth/accept-invite`  
   - **Auth requirements**: Backend endpoint; requires Supabase service role key (provided via `Authorization: Bearer <service_role_key>` header, not exposed to client).  
   - **Request body**: `{ invitationToken }`  
   - **Response**: `{ userId, email, orgId, roles, requiresPassword: boolean }`.
+  - **Logging requirement**: Must log `INVITE_ACCEPTED` event with correlation ID (per GROUND_RULES.md section 1.1).
 - **Role guard helper**: frontend expects `roles` array + `orgId` to be present in session payload; API must ensure they are consistent with Supabase `auth.users` and `public.user_roles`.
 - **Error envelope**: backend errors respond as `{ error: { code, message, hint? } }` (this is the standard format used by all admin-app API routes). The `code` field must use the canonical error code taxonomy (e.g., `AUTH_INVALID_TOKEN`, `AUTH_INVITE_EXPIRED`, `INVITE_ALREADY_ACCEPTED`) as defined in [`@easymo/commons/errors`](../../packages/commons/src/errors.ts) and referenced in API route handlers. Frontend surfaces `message` and logs `code`/`hint`.
 - **Caching**: profile fetch is cached per session with SWR/React Query; mutation endpoints return updated profile to keep cache consistent.
