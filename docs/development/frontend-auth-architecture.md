@@ -22,6 +22,50 @@
   - AdminPage → `<UserInvitePanel>`, `<RoleManager>`, audit log list.
 - **Auth primitives**: `<AuthGate>` (protect routes), `<SessionProvider>` (Supabase session), `<RoleGuard>` (checks roles/scopes), `<InviteCTA>` (shows pending invites).
 
+## Feature flags
+Per [GROUND_RULES.md section 3](../GROUND_RULES.md#3-feature-flags), all new features MUST be gated behind feature flags that default to OFF in production. This auth architecture introduces the following feature flags:
+
+- **`FEATURE_INVITE_SYSTEM`**: Controls the admin invitation flow. When disabled, admin users cannot send invites and the `<UserInvitePanel>` is hidden.
+- **`FEATURE_NEW_AUTH_FLOW`**: Gates the entire enhanced auth architecture (magic link sign-in, role-based routing, session profile caching). When disabled, the system falls back to legacy auth behavior.
+
+### Implementation
+```typescript
+// Backend example (NestJS/Express)
+import { isFeatureEnabled } from "@easymo/commons";
+
+app.post("/api/admin/invitations", async (req, res) => {
+  if (!isFeatureEnabled("invite.system")) {
+    return res.status(403).json({ error: "Feature not enabled" });
+  }
+  // Process invitation
+});
+
+// Frontend example (Next.js)
+const enableInvites = process.env.NEXT_PUBLIC_FEATURE_INVITE_SYSTEM === "true";
+
+function AdminPage() {
+  return (
+    <>
+      {enableInvites && <UserInvitePanel />}
+      <RoleManager />
+      <AuditLogList />
+    </>
+  );
+}
+```
+
+### Configuration
+```bash
+# .env.example
+# Auth feature flags (default: false in production)
+FEATURE_INVITE_SYSTEM=false
+FEATURE_NEW_AUTH_FLOW=false
+
+# Frontend flags (must be prefixed for Next.js)
+NEXT_PUBLIC_FEATURE_INVITE_SYSTEM=false
+NEXT_PUBLIC_FEATURE_NEW_AUTH_FLOW=false
+```
+
 ## Supabase auth flows
 ### Email sign-in
 1. User enters email on `/login`; frontend calls `supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: <app url> } })`.
@@ -30,11 +74,13 @@
 4. Redirect to last-intended route (from `redirect_to` param or stored location) or `/app/home`.
 
 ### Admin invitation flow
-1. Admin opens AdminPage → `<UserInvitePanel>` and submits invite form (email, role, org). Frontend calls backend `POST /api/admin/invitations`.
-2. Backend uses service key to call `supabase.auth.admin.inviteUserByEmail(email, { data: { role, orgId }, redirectTo: <app url>/login })`; stores invite row in `public.invites` with status `pending`.
+**Feature flag**: `FEATURE_INVITE_SYSTEM` (must be enabled for this flow to be available)
+
+1. Admin opens AdminPage → `<UserInvitePanel>` (only visible when feature flag is enabled) and submits invite form (email, role, org). Frontend calls backend `POST /api/admin/invitations`.
+2. Backend verifies `FEATURE_INVITE_SYSTEM` is enabled, then uses service key to call `supabase.auth.admin.inviteUserByEmail(email, { data: { role, orgId }, redirectTo: <app url>/login })`; stores invite row in `public.invites` with status `pending`.
 3. Supabase sends email with invite link (magic link token).
 4. Recipient clicks link → Supabase creates user + session; frontend detects `invitation_token` and calls `POST /api/auth/accept-invite` with token.
-5. Backend validates token with Supabase Admin API, reads invite metadata, assigns role/org membership (upsert into `public.user_roles`), marks invite `accepted`, and returns profile payload.
+5. Backend validates feature flag and token with Supabase Admin API, reads invite metadata, assigns role/org membership (upsert into `public.user_roles`), marks invite `accepted`, and returns profile payload.
 6. Frontend stores session + role, clears invite token, and routes to onboarding (`/app/home/onboarding`) if first login, else to `/app/home`.
 
 ## State/data contracts (frontend ↔ backend)
