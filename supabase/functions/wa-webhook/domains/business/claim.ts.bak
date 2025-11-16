@@ -8,7 +8,7 @@ import { logStructuredEvent } from "../../observe/log.ts";
 import {
   requireEmbedding,
   requireFirstMessageContent,
-} from "../../../_shared/openaiGuard.ts";
+} from "../_shared/openaiGuard.ts";
 
 /**
  * Business Claiming Flow with OpenAI Semantic Search

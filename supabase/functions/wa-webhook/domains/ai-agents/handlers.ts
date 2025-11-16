@@ -49,7 +49,11 @@ export async function handleAINearbyDrivers(
   try {
     // If locations not provided, ask user
     if (!pickup || !dropoff) {
-      await sendText(ctx.from, t(ctx.locale, "driver.provide_locations"));
+      const instructions = t(ctx.locale, "location.share.instructions");
+      await sendText(
+        ctx.from,
+        t(ctx.locale, "driver.provide_locations", { instructions }),
+      );
       await setState(ctx.supabase, ctx.profileId || ctx.from, {
         key: "ai_driver_waiting_locations",
         data: {
@@ -140,7 +144,11 @@ export async function handleAINearbyPharmacies(
 ): Promise<boolean> {
   try {
     if (!location) {
-      await sendText(ctx.from, t(ctx.locale, "pharmacy.provide_location"));
+      const instructions = t(ctx.locale, "location.share.instructions");
+      await sendText(
+        ctx.from,
+        t(ctx.locale, "pharmacy.provide_location", { instructions }),
+      );
       await setState(ctx.supabase, ctx.profileId || ctx.from, {
         key: "ai_pharmacy_waiting_location",
         data: {
@@ -217,7 +225,11 @@ export async function handleAINearbyQuincailleries(
 ): Promise<boolean> {
   try {
     if (!location) {
-      await sendText(ctx.from, t(ctx.locale, "quincaillerie.provide_location"));
+      const instructions = t(ctx.locale, "location.share.instructions");
+      await sendText(
+        ctx.from,
+        t(ctx.locale, "quincaillerie.provide_location", { instructions }),
+      );
       await setState(ctx.supabase, ctx.profileId || ctx.from, {
         key: "ai_quincaillerie_waiting_location",
         data: {
@@ -298,7 +310,11 @@ export async function handleAINearbyShops(
 ): Promise<boolean> {
   try {
     if (!location) {
-      await sendText(ctx.from, t(ctx.locale, "shops.provide_location"));
+      const instructions = t(ctx.locale, "location.share.instructions");
+      await sendText(
+        ctx.from,
+        t(ctx.locale, "shops.provide_location", { instructions }),
+      );
       await setState(ctx.supabase, ctx.profileId || ctx.from, {
         key: "ai_shops_waiting_location",
         data: {
@@ -347,7 +363,11 @@ export async function handleAIPropertyRental(
 ): Promise<boolean> {
   try {
     if (!location && action === "find") {
-      await sendText(ctx.from, t(ctx.locale, "property.provide_location"));
+      const instructions = t(ctx.locale, "location.share.instructions");
+      await sendText(
+        ctx.from,
+        t(ctx.locale, "property.provide_location", { instructions }),
+      );
       await setState(ctx.supabase, ctx.profileId || ctx.from, {
         key: "ai_property_waiting_location",
         data: {

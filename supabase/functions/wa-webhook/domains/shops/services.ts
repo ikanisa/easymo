@@ -149,9 +149,13 @@ export async function handleShopsTagSelection(
     },
   });
 
+  const instructions = t(ctx.locale, "location.share.instructions");
   await sendButtonsMessage(
     ctx,
-    t(ctx.locale, "shops.location.prompt", { category: tag.name }),
+    t(ctx.locale, "shops.location.prompt", {
+      category: tag.name,
+      instructions,
+    }),
     buildButtons(
       {
         id: IDS.LOCATION_SAVED_LIST,

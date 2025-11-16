@@ -122,6 +122,9 @@ serve(async (req: Request): Promise<Response> => {
     return respond({ error: "internal_error", requestId }, {
       status: 500,
     });
+  }
+  
+  try {
     const decision = routeIncomingPayload(payload);
     const forwarded = await forwardToEdgeService(decision, payload, req.headers);
     return finalize(forwarded, correlationId, requestStart, decision.service);

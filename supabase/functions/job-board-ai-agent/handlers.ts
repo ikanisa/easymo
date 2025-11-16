@@ -9,7 +9,7 @@ import { logStructuredEvent } from "../_shared/observability.ts";
 import {
   requireEmbedding,
   requireFirstMessageContent,
-} from "../../../packages/shared/src/openaiGuard.ts";
+} from "../_shared/openaiGuard.ts";
 
 // =====================================================
 // Helper: Generate Embeddings

@@ -31,9 +31,10 @@ export async function startNearbyQuincailleries(
     data: {},
   });
 
+  const instructions = t(ctx.locale, "location.share.instructions");
   await sendButtonsMessage(
     ctx,
-    t(ctx.locale, "quincaillerie.start.prompt"),
+    t(ctx.locale, "quincaillerie.start.prompt", { instructions }),
     buildButtons(
       { id: IDS.LOCATION_SAVED_LIST, title: t(ctx.locale, "location.saved.button") },
       { id: IDS.BACK_HOME, title: t(ctx.locale, "common.menu_back") }

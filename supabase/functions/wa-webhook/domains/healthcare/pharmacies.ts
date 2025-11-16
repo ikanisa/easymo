@@ -31,9 +31,10 @@ export async function startNearbyPharmacies(
     data: {},
   });
 
+  const instructions = t(ctx.locale, "location.share.instructions");
   await sendButtonsMessage(
     ctx,
-    t(ctx.locale, "pharmacy.start.prompt"),
+    t(ctx.locale, "pharmacy.start.prompt", { instructions }),
     buildButtons(
       { id: IDS.LOCATION_SAVED_LIST, title: t(ctx.locale, "location.saved.button") },
       { id: IDS.BACK_HOME, title: t(ctx.locale, "common.menu_back") }

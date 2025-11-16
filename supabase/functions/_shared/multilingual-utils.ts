@@ -7,7 +7,7 @@
 import OpenAI from "https://deno.land/x/openai@v4.20.0/mod.ts";
 import {
   requireFirstMessageContent,
-} from "../../../packages/shared/src/openaiGuard.ts";
+} from "../_shared/openaiGuard.ts";
 
 const openai = new OpenAI({
   apiKey: Deno.env.get("OPENAI_API_KEY")!,

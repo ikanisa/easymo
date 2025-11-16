@@ -1,7 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/http.ts";
 import { logStructuredEvent } from "../_shared/observability.ts";
-import { requireEmbedding } from "../../../packages/shared/src/openaiGuard.ts";
+import { requireEmbedding } from "../_shared/openaiGuard.ts";
 
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;

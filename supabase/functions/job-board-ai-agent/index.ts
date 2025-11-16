@@ -12,7 +12,7 @@ import { createClient } from "@supabase/supabase-js";
 import OpenAI from "openai";
 import { SYSTEM_PROMPT } from "./prompts.ts";
 import { tools } from "./tools.ts";
-import { requireFirstChoice } from "../../../packages/shared/src/openaiGuard.ts";
+import { requireFirstChoice } from "../_shared/openaiGuard.ts";
 import {
   handleExtractJobMetadata,
   handlePostJob,

@@ -131,9 +131,10 @@ export async function handleBarsPreferenceSelection(
     data: { preference },
   });
 
+  const instructions = t(ctx.locale, "location.share.instructions");
   await sendButtonsMessage(
     ctx,
-    t(ctx.locale, "bars.search.share_location"),
+    t(ctx.locale, "bars.search.share_location", { instructions }),
     buildButtons(
       {
         id: IDS.LOCATION_SAVED_LIST,

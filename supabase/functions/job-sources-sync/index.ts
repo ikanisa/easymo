@@ -11,7 +11,7 @@ import { serve } from "$std/http/server.ts";
 import { createClient } from "@supabase/supabase-js";
 import OpenAI from "openai";
 import { logStructuredEvent } from "../_shared/observability.ts";
-import { requireFirstMessageContent } from "../../../packages/shared/src/openaiGuard.ts";
+import { requireFirstMessageContent } from "../_shared/openaiGuard.ts";
 import { generateEmbedding } from "../job-board-ai-agent/handlers.ts";
 
 const openai = new OpenAI({

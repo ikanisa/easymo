@@ -73,13 +73,11 @@ const defaultHooks: RouterHooks = {
 
 let hooks: RouterHooks = { ...defaultHooks };
 
-type RouterEnhancementHooks = {
 type RouterCacheHooks = {
   getCached: typeof getCached;
   setCached: typeof setCached;
 };
 
-const enhancementDefaults: RouterEnhancementHooks = {
 const cacheDefaults: RouterCacheHooks = {
   getCached,
   setCached,

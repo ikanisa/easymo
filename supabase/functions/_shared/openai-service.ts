@@ -3,7 +3,7 @@ import OpenAI from "npm:openai@^4.24.0";
 import {
   requireEmbedding,
   requireFirstMessageContent,
-} from "../../../packages/shared/src/openaiGuard.ts";
+} from "../_shared/openaiGuard.ts";
 
 const openai = new OpenAI({
   apiKey: Deno.env.get("OPENAI_API_KEY"),

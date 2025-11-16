@@ -390,7 +390,9 @@ export async function handleFindPropertyBudget(
 
   await sendButtonsMessage(
     ctx,
-    t(ctx.locale, "property.find.prompt.location"),
+    t(ctx.locale, "property.find.prompt.location", {
+      instructions: t(ctx.locale, "location.share.instructions"),
+    }),
     buildButtons(
       { id: IDS.LOCATION_SAVED_LIST, title: t(ctx.locale, "location.saved.button") },
       { id: IDS.BACK_HOME, title: t(ctx.locale, "common.menu_back") },
@@ -570,7 +572,9 @@ export async function handleAddPropertyPrice(
 
   await sendButtonsMessage(
     ctx,
-    t(ctx.locale, "property.add.prompt.location"),
+    t(ctx.locale, "property.add.prompt.location", {
+      instructions: t(ctx.locale, "location.share.instructions"),
+    }),
     buildButtons(
       { id: IDS.LOCATION_SAVED_LIST, title: t(ctx.locale, "location.saved.button") },
       { id: IDS.BACK_HOME, title: t(ctx.locale, "common.menu_back") },

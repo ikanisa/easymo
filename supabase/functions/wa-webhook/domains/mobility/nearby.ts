@@ -544,9 +544,10 @@ async function promptShareLocation(
     id: IDS.LOCATION_SAVED_LIST,
     title: t(ctx.locale, "location.saved.button"),
   });
+  const instructions = t(ctx.locale, "location.share.instructions");
   await sendButtonsMessage(
     ctx,
-    t(ctx.locale, "mobility.nearby.share_location"),
+    t(ctx.locale, "mobility.nearby.share_location", { instructions }),
     buttons,
   );
 }

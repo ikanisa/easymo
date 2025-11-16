@@ -403,9 +403,10 @@ async function captureBusinessTags(
     key: MARKETPLACE_STATES.ADD_LOCATION,
     data: { ...(state.data ?? {}), tags },
   });
+  const instructions = t(ctx.locale, "location.share.instructions");
   await sendButtonsMessage(
     ctx,
-    t(ctx.locale, "marketplace.prompts.business_location"),
+    t(ctx.locale, "marketplace.prompts.business_location", { instructions }),
     buildButtons(
       {
         id: IDS.LOCATION_SAVED_LIST,

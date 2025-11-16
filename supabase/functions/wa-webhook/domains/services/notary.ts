@@ -35,9 +35,10 @@ export async function startNotaryServices(
     data: {},
   });
 
+  const instructions = t(ctx.locale, "location.share.instructions");
   await sendButtonsMessage(
     ctx,
-    t(ctx.locale, "notary.start.prompt"),
+    t(ctx.locale, "notary.start.prompt", { instructions }),
     buildButtons(
       { id: IDS.LOCATION_SAVED_LIST, title: t(ctx.locale, "location.saved.button") },
       { id: IDS.BACK_HOME, title: t(ctx.locale, "common.menu_back") }
