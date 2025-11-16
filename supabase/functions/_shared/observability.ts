@@ -298,6 +298,24 @@ function createTracedFetch(baseFetch: typeof fetch, requestId: string): typeof f
   };
 }
 
+/**
+ * Wraps a Supabase Edge Function handler with request tracing and structured logging.
+ *
+ * This function instruments the handler to:
+ * - Automatically propagate and inject a request/correlation ID into all outgoing fetch requests.
+ * - Log structured request and response events with timing and status.
+ * - Intercept and restore the global fetch function for the duration of the handler.
+ *
+ * @param scope - Service or endpoint name for logging and event scoping (e.g., "wa-webhook").
+ * @param handler - The edge function handler to wrap. Receives the instrumented Request and a context object containing the requestId and start time.
+ * @returns A Deno-compatible request handler function suitable for use as a Supabase Edge Function entrypoint.
+ *
+ * @example
+ * export const handleWaWebhook = withRequestInstrumentation("wa-webhook", async (req, ctx) => {
+ *   // Your handler logic here
+ *   return new Response("OK");
+ * });
+ */
 export function withRequestInstrumentation(scope: string, handler: EdgeHandler) {
   return async (req: Request): Promise<Response> => {
     const requestId = getCorrelationId(req);
