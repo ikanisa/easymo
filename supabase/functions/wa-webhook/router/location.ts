@@ -22,6 +22,12 @@ import {
   handleSavedPlaceLocation,
   type SavedPlaceCaptureState,
 } from "../domains/locations/manage.ts";
+import {
+  handleJobFindLocation,
+  handleJobPostLocation,
+  type JobFindLocationState,
+  type JobPostState,
+} from "../domains/jobs/index.ts";
 
 export async function handleLocation(
   ctx: RouterContext,
@@ -123,6 +129,24 @@ export async function handleLocation(
       currency?: string;
     };
     return await handleAddPropertyLocation(ctx, stateData, { lat, lng });
+  }
+  
+  if (state.key === "job_find_location") {
+    const stateData = (state.data ?? {}) as JobFindLocationState;
+    return await handleJobFindLocation(
+      ctx,
+      stateData,
+      { lat, lng },
+    );
+  }
+  
+  if (state.key === "job_post_location") {
+    const stateData = (state.data ?? {}) as JobPostState;
+    return await handleJobPostLocation(
+      ctx,
+      stateData,
+      { lat, lng },
+    );
   }
   
   if (state.key === "mobility_nearby_location") {

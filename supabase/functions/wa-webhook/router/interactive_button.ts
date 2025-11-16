@@ -70,6 +70,18 @@ import {
   type MenuOrderSession,
 } from "../domains/orders/menu_order.ts";
 import { setState } from "../state/store.ts";
+import {
+  replayJobCandidates,
+  replayJobResults,
+  showJobCandidates,
+  startJobPosting,
+  startJobSavedLocationPicker,
+  startJobSearch,
+  type JobCandidatesState,
+  type JobFindLocationState,
+  type JobFindResultsState,
+  type JobPostState,
+} from "../domains/jobs/index.ts";
 
 export async function handleButton(
   ctx: RouterContext,
@@ -115,6 +127,27 @@ export async function handleButton(
       return await handleSeePassengers(ctx);
     case IDS.SCHEDULE_TRIP:
       return await startScheduleTrip(ctx, state);
+    case IDS.JOB_FIND:
+    case IDS.JOB_FIND_AGAIN:
+      return await startJobSearch(ctx);
+    case IDS.JOB_POST:
+      return await startJobPosting(ctx);
+    case IDS.JOB_RESULTS_BACK:
+      if (state.key === "job_find_results") {
+        return await replayJobResults(
+          ctx,
+          (state.data ?? {}) as JobFindResultsState,
+        );
+      }
+      return false;
+    case IDS.JOB_CANDIDATES_BACK:
+      if (state.key === "job_candidates_results") {
+        return await replayJobCandidates(
+          ctx,
+          (state.data ?? {}) as JobCandidatesState,
+        );
+      }
+      return false;
     case IDS.MARKETPLACE:
       return await startMarketplace(ctx, state);
     case IDS.MARKETPLACE_BROWSE:
@@ -245,6 +278,20 @@ export async function handleButton(
           (state.data ?? {}) as any,
         );
       }
+      if (state.key === "job_find_location") {
+        return await startJobSavedLocationPicker(
+          ctx,
+          "find",
+          (state.data ?? {}) as JobFindLocationState,
+        );
+      }
+      if (state.key === "job_post_location") {
+        return await startJobSavedLocationPicker(
+          ctx,
+          "post",
+          (state.data ?? {}) as JobPostState,
+        );
+      }
       return false;
     case IDS.SAVED_PLACES:
       return await startSavedPlaces(ctx);
@@ -337,6 +384,13 @@ export async function handleButton(
           "../domains/shops/services.ts"
         );
         return await handleShopsBrowseButton(ctx);
+      }
+      if (id.startsWith("job_candidates::")) {
+        const jobId = id.substring("job_candidates::".length);
+        if (jobId) {
+          return await showJobCandidates(ctx, jobId);
+        }
+        return false;
       }
       
       // Removed: pharmacy_search_now and quincaillerie_search_now buttons
@@ -436,6 +490,38 @@ async function handleSavedPlacesSkip(
         buildButtons(
           { id: IDS.LOCATION_SAVED_LIST, title: t(ctx.locale, "location.saved.button") },
           { id: IDS.BACK_HOME, title: t(ctx.locale, "common.menu_back") },
+        ),
+      );
+      return true;
+    }
+    case "job_find": {
+      const jobState = state.data.state as JobFindLocationState;
+      await setState(ctx.supabase, ctx.profileId, {
+        key: "job_find_location",
+        data: jobState,
+      });
+      await sendButtonsMessage(
+        ctx,
+        t(ctx.locale, "jobs.find.prompt.location", { instructions }),
+        buildButtons(
+          { id: IDS.LOCATION_SAVED_LIST, title: t(ctx.locale, "location.saved.button") },
+          { id: IDS.BACK_MENU, title: t(ctx.locale, "common.menu_back") },
+        ),
+      );
+      return true;
+    }
+    case "job_post": {
+      const jobState = state.data.state as JobPostState;
+      await setState(ctx.supabase, ctx.profileId, {
+        key: "job_post_location",
+        data: jobState,
+      });
+      await sendButtonsMessage(
+        ctx,
+        t(ctx.locale, "jobs.post.prompt.location", { instructions }),
+        buildButtons(
+          { id: IDS.LOCATION_SAVED_LIST, title: t(ctx.locale, "location.saved.button") },
+          { id: IDS.BACK_MENU, title: t(ctx.locale, "common.menu_back") },
         ),
       );
       return true;

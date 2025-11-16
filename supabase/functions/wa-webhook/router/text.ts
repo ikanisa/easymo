@@ -28,6 +28,7 @@ import {
   handleAddPropertyPrice,
   handleFindPropertyBudget,
 } from "../domains/property/rentals.ts";
+import { handleJobPostDetails } from "../domains/jobs/index.ts";
 
 export async function handleText(
   ctx: RouterContext,
@@ -192,6 +193,10 @@ export async function handleText(
       priceUnit?: string;
     };
     return await handleAddPropertyPrice(ctx, stateData, body);
+  }
+
+  if (state.key === "job_post_details") {
+    return await handleJobPostDetails(ctx, (state.data ?? {}) as any, body);
   }
 
   // Handle property AI chat - conversational mode

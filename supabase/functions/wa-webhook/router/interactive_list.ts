@@ -73,6 +73,16 @@ import {
   type PropertySavedPickerState,
   startPropertyRentals,
 } from "../domains/property/rentals.ts";
+import {
+  handleJobCandidatesSelection,
+  handleJobFindDurationSelection,
+  handleJobPostDurationSelection,
+  handleJobResultsSelection,
+  handleJobSavedLocationSelection,
+  type JobCandidatesState,
+  type JobFindResultsState,
+  type JobSavedPickerState,
+} from "../domains/jobs/index.ts";
 import { handleWalletEarnSelection } from "../domains/wallet/earn.ts";
 import { handleWalletRedeemSelection } from "../domains/wallet/redeem.ts";
 import { ADMIN_ROW_IDS, openAdminHub } from "../flows/admin/hub.ts";
@@ -155,6 +165,17 @@ export async function handleList(
         id,
       );
     }
+    if (
+      (state.data?.source === "job_find" || state.data?.source === "job_post") &&
+      !LOCATION_KIND_BY_ID[id] &&
+      id !== IDS.BACK_MENU
+    ) {
+      return await handleJobSavedLocationSelection(
+        ctx,
+        state.data as JobSavedPickerState,
+        id,
+      );
+    }
   }
 
   if (state.key === "saved_places_list") {
@@ -166,6 +187,26 @@ export async function handleList(
     if (await handleSavedPlacesAddSelection(ctx, id)) {
       return true;
     }
+  }
+  if (state.key === "job_find_type") {
+    return await handleJobFindDurationSelection(ctx, id);
+  }
+  if (state.key === "job_post_type") {
+    return await handleJobPostDurationSelection(ctx, id);
+  }
+  if (state.key === "job_find_results") {
+    return await handleJobResultsSelection(
+      ctx,
+      (state.data ?? {}) as JobFindResultsState,
+      id,
+    );
+  }
+  if (state.key === "job_candidates_results") {
+    return await handleJobCandidatesSelection(
+      ctx,
+      (state.data ?? {}) as JobCandidatesState,
+      id,
+    );
   }
   if (
     state.key === MENU_ORDER_BROWSER_STATE &&
