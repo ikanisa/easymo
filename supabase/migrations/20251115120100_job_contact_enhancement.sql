@@ -203,7 +203,8 @@ CREATE TRIGGER job_listings_validate_contact
   EXECUTE FUNCTION validate_job_contact_info();
 
 -- View to show jobs with full contact info
-CREATE OR REPLACE VIEW job_listings_with_contacts AS
+DROP VIEW IF EXISTS job_listings_with_contacts;
+CREATE VIEW job_listings_with_contacts AS
 SELECT 
   jl.*,
   CASE 
