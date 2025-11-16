@@ -2,9 +2,10 @@
   "home.rows.jobs.title": "💼 Emplois & Petits Boulots",
   "home.rows.jobs.description": "Trouver du travail ou publier des offres - des petits boulots aux postes à temps plein",
   
-  "jobs.menu.greeting": "💼 *Tableau d'Emploi*\n\nTrouvez du travail ou publiez des offres. Que vous recherchiez un petit boulot d'une journée ou un poste à temps plein, nous avons ce qu'il vous faut!",
+  "jobs.menu.title": "💼 Tableau d'emploi",
+  "jobs.menu.greeting": "💼 Tableau d'emploi\n\nTrouvez du travail ou publiez des offres. Que vous cherchiez un petit boulot d'une journée ou un poste à temps plein, nous avons ce qu'il vous faut!",
   "jobs.menu.button": "Choisir une Action",
-  "jobs.menu.section": "Que souhaitez-vous faire?",
+  "jobs.menu.section": "Choisis une option",
   
   "jobs.menu.find.title": "🔍 Trouver un Emploi",
   "jobs.menu.find.description": "Rechercher des emplois correspondant à vos compétences",

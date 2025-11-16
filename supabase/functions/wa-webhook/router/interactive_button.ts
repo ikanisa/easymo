@@ -3,6 +3,7 @@ import type {
   WhatsAppInteractiveButtonMessage,
 } from "../types.ts";
 import { getButtonReplyId } from "../utils/messages.ts";
+import { t } from "../i18n/translator.ts";
 import { IDS } from "../wa/ids.ts";
 import {
   handleChangeVehicleRequest,
@@ -26,6 +27,11 @@ import {
 } from "../domains/marketplace/index.ts";
 import { startInsurance } from "../domains/insurance/index.ts";
 import {
+  replayBarsResults,
+  startBarsSearch,
+  startBarMenuOrder,
+} from "../domains/bars/search.ts";
+import {
   evaluateMotorInsuranceGate,
   recordMotorInsuranceHidden,
   sendMotorInsuranceBlockedMessage,
@@ -45,13 +51,23 @@ import { showWalletTop } from "../domains/wallet/top.ts";
 import { openAdminHub, showAdminHubList } from "../flows/admin/hub.ts";
 import { handleAdminQuickAction } from "../flows/admin/actions.ts";
 import { handleInsuranceButton } from "../flows/admin/insurance.ts";
-import { buildButtons, sendButtonsMessage } from "../utils/reply.ts";
+import { buildButtons, sendButtonsMessage, homeOnly } from "../utils/reply.ts";
 import {
   handleQuickSaveLocation,
   LOCATION_KIND_BY_ID,
 } from "../domains/locations/save.ts";
-import { startSavedPlaces } from "../domains/locations/manage.ts";
+import {
+  startSavedPlaces,
+  startSavedPlaceCreation,
+  SAVED_PLACES_ADD_ID,
+  SAVED_PLACES_SKIP_ID,
+} from "../domains/locations/manage.ts";
 import { startPropertySavedLocationPicker } from "../domains/property/rentals.ts";
+import {
+  MENU_ORDER_ACTIONS_STATE,
+  handleMenuOrderAction,
+  type MenuOrderSession,
+} from "../domains/orders/menu_order.ts";
 
 export async function handleButton(
   ctx: RouterContext,
@@ -112,6 +128,33 @@ export async function handleButton(
       return await showWalletTop(ctx);
     case IDS.WALLET_SHARE_DONE:
       return await handleWalletShareDone(ctx);
+    case IDS.BAR_VIEW_MENU: {
+      if (state.key === "bar_detail") {
+        return await startBarMenuOrder(ctx, state.data || {});
+      }
+      return false;
+    }
+    case "bars_search_now": {
+      if (state.key === "bar_detail" && state.data?.barsResults) {
+        const replayed = await replayBarsResults(
+          ctx,
+          state.data.barsResults as any,
+        );
+        if (replayed) return true;
+      }
+      return await startBarsSearch(ctx);
+    }
+    case IDS.MENU_ORDER_ADD:
+    case IDS.MENU_ORDER_VIEW:
+    case IDS.MENU_ORDER_FINISH:
+      if (state.key === MENU_ORDER_ACTIONS_STATE) {
+        return await handleMenuOrderAction(
+          ctx,
+          (state.data ?? {}) as MenuOrderSession,
+          id,
+        );
+      }
+      return false;
     case IDS.ROLE_DRIVER:
     case IDS.ROLE_PASSENGER:
       return await handleScheduleRole(ctx, id);
@@ -170,6 +213,17 @@ export async function handleButton(
       return false;
     case IDS.SAVED_PLACES:
       return await startSavedPlaces(ctx);
+    case SAVED_PLACES_ADD_ID:
+      return await startSavedPlaceCreation(ctx);
+    case SAVED_PLACES_SKIP_ID:
+      await sendButtonsMessage(
+        ctx,
+        t(ctx.locale, "location.saved.skip_message", {
+          instructions: t(ctx.locale, "location.share.instructions"),
+        }),
+        homeOnly(),
+      );
+      return true;
     case IDS.MOBILITY_CHANGE_VEHICLE:
       if (
         state.key === "mobility_nearby_location" ||

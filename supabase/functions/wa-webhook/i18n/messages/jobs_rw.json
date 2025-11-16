@@ -2,9 +2,10 @@
   "home.rows.jobs.title": "💼 Imirimo n'Akazi",
   "home.rows.jobs.description": "Shakisha akazi cyangwa utangaze imirimo - kuva ku murimo w'umunsi umwe kugeza ku kazi cyuzuye",
   
-  "jobs.menu.greeting": "💼 *Ikibanza cy'Akazi*\n\nShakisha akazi cyangwa utangaze imirimo. Niba ushaka akazi k'umunsi umwe cyangwa akazi karambye, turimo!",
+  "jobs.menu.title": "💼 Ikibanza cy'akazi",
+  "jobs.menu.greeting": "💼 Ikibanza cy'akazi\n\nShakisha akazi cyangwa utangaze imirimo. Niba ushaka akazi k'umunsi umwe cyangwa akazi karambye, turimo!",
   "jobs.menu.button": "Hitamo Igikorwa",
-  "jobs.menu.section": "Ushaka gukora iki?",
+  "jobs.menu.section": "Hitamo icyo ukora",
   
   "jobs.menu.find.title": "🔍 Shakisha Akazi",
   "jobs.menu.find.description": "Shakisha imirimo ihuye n'ubushobozi bwawe",

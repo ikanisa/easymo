@@ -60,9 +60,12 @@ export async function showJobBoardMenu(ctx: RouterContext): Promise<boolean> {
     },
   ];
 
+  const header = t(ctx.locale, "jobs.menu.title");
+  const greeting = t(ctx.locale, "jobs.menu.greeting");
+
   await sendListMessage(ctx, {
-    title: t(ctx.locale, "jobs.menu.greeting"),
-    body: t(ctx.locale, "jobs.menu.greeting"),
+    title: header,
+    body: greeting,
     sectionTitle: t(ctx.locale, "jobs.menu.section"),
     rows,
     buttonText: t(ctx.locale, "jobs.menu.button"),

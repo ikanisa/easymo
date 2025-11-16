@@ -4,6 +4,7 @@ import { sendListMessage, sendButtonsMessage, homeOnly } from "../../utils/reply
 import { IDS } from "../../wa/ids.ts";
 import { setState, clearState } from "../../state/store.ts";
 import { logStructuredEvent } from "../../observe/log.ts";
+import { detectCountryIso } from "../../utils/phone.ts";
 import { fetchProfileMenuItems, submenuItemsToRows } from "../../utils/dynamic_submenu.ts";
 
 /**
@@ -24,9 +25,11 @@ export async function handleProfileMenu(ctx: RouterContext): Promise<boolean> {
     wa_id: ctx.from,
   });
 
+  const countryCode = detectCountryIso(ctx.from)?.toUpperCase() ?? "RW";
+
   // Fetch profile menu items dynamically from database
   const menuItems = await fetchProfileMenuItems(
-    "RW",
+    countryCode,
     ctx.locale,
     ctx.supabase,
   );

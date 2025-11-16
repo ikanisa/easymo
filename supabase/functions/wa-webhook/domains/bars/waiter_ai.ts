@@ -1,9 +1,9 @@
 // Waiter AI Agent Integration for Bars & Restaurants
 import type { RouterContext } from "../../types.ts";
 import { t } from "../../i18n/translator.ts";
-import { sendMessage } from "../../utils/reply.ts";
 import { logStructuredEvent } from "../../observe/log.ts";
 import { setState, getState } from "../../state/store.ts";
+import { sendText } from "../../wa/client.ts";
 
 interface WaiterConversation {
   conversationId: string;
@@ -74,9 +74,10 @@ export async function startWaiterChat(
     });
 
     // Send welcome message
-    await sendMessage(ctx, {
-      text: `🤖 *AI Waiter for ${venueName}*\n\n${data.welcomeMessage}\n\n_Just type your message to chat with the AI Waiter!_`
-    });
+    await sendText(
+      ctx.from,
+      `🤖 *AI Waiter for ${venueName}*\n\n${data.welcomeMessage}\n\n_Just type your message to chat with the AI Waiter!_`,
+    );
 
     await logStructuredEvent("WAITER_CHAT_STARTED", {
       userId: ctx.profileId,
@@ -93,9 +94,7 @@ export async function startWaiterChat(
       venueId
     });
 
-    await sendMessage(ctx, {
-      text: t(ctx.locale, "errors.generic")
-    });
+    await sendText(ctx.from, t(ctx.locale, "errors.generic"));
 
     return false;
   }
@@ -119,11 +118,12 @@ export async function handleWaiterMessage(
     );
 
     if (!state?.data?.conversationId) {
-      await sendMessage(ctx, {
-        text: "❌ No active waiter conversation found. Please start a new chat from the bars menu."
-      });
-      return false;
-    }
+      await sendText(
+        ctx.from,
+        "❌ No active waiter conversation found. Please start a new chat from the bars menu.",
+      );
+     return false;
+   }
 
     await logStructuredEvent("WAITER_MESSAGE_SENT", {
       userId: ctx.profileId,
@@ -182,11 +182,11 @@ export async function handleWaiterMessage(
       }
 
       if (fullResponse) {
-        await sendMessage(ctx, { text: fullResponse });
+        await sendText(ctx.from, fullResponse);
       }
     } else {
       const data = await response.json();
-      await sendMessage(ctx, { text: data.message || "Response received" });
+      await sendText(ctx.from, data.message || "Response received");
     }
 
     await logStructuredEvent("WAITER_MESSAGE_COMPLETE", {
@@ -202,9 +202,7 @@ export async function handleWaiterMessage(
       userId: ctx.profileId
     });
 
-    await sendMessage(ctx, {
-      text: t(ctx.locale, "errors.generic")
-    });
+    await sendText(ctx.from, t(ctx.locale, "errors.generic"));
 
     return false;
   }
@@ -238,9 +236,10 @@ export async function endWaiterChat(
       data: null
     });
 
-    await sendMessage(ctx, {
-      text: "👋 *Chat Ended*\n\nThank you for using AI Waiter! Your conversation has been saved."
-    });
+    await sendText(
+      ctx.from,
+      "👋 *Chat Ended*\n\nThank you for using AI Waiter! Your conversation has been saved.",
+    );
 
     return true;
 

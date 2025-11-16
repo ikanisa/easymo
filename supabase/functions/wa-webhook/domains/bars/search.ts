@@ -9,6 +9,27 @@ import {
 } from "../../utils/reply.ts";
 import { IDS } from "../../wa/ids.ts";
 import { logStructuredEvent } from "../../observe/log.ts";
+import {
+  startMenuOrderSession,
+  type MenuOrderItem,
+  type MenuOrderSession,
+} from "../orders/menu_order.ts";
+
+type BarSummary = {
+  id: string;
+  name: string;
+  address?: string;
+  distance?: number;
+  whatsapp?: string;
+  features?: unknown;
+};
+
+type BarsResultsState = {
+  bars?: BarSummary[];
+  preference?: string;
+  page?: number;
+  userLocation?: { lat: number; lng: number };
+};
 
 export async function startBarsSearch(
   ctx: RouterContext,
@@ -192,83 +213,32 @@ export async function handleBarsLocation(
     return true;
   }
 
-  // Store ALL results in state for pagination
+  const normalizedBars: BarSummary[] = bars.map((bar: any) => ({
+    id: bar.id,
+    name: bar.name,
+    address: bar.location_text,
+    distance: typeof bar.distance_km === "number" ? bar.distance_km : undefined,
+    whatsapp: bar.whatsapp_number,
+    features: bar.features,
+  }));
+
+  const storedState: BarsResultsState = {
+    userLocation: location,
+    preference,
+    page,
+    bars: normalizedBars,
+  };
+
   await setState(ctx.supabase, ctx.profileId, {
     key: "bars_results",
-    data: {
-      userLocation: location,
-      preference,
-      page: page,
-      bars: bars.map((bar: any) => ({
-        id: bar.id,
-        name: bar.name,
-        address: bar.location_text,
-        distance: bar.distance_km,
-        whatsapp: bar.whatsapp_number,
-        features: bar.features,
-      })),
-    },
+    data: storedState,
   });
 
-  // Show first 9 results (page 0)
-  const start = page * 9;
-  const end = Math.min(start + 9, bars.length);
-  const pageResults = bars.slice(start, end);
-  const hasMore = end < bars.length;
-
-  // Build list message with results
-  const rows = pageResults.map((bar: any, idx: number) => {
-    const distance = typeof bar.distance_km === 'number'
-      ? (bar.distance_km < 1
-        ? `${Math.round(bar.distance_km * 1000)}m`
-        : `${bar.distance_km.toFixed(1)}km`)
-      : 'Distance unknown';
-
-    return {
-      id: `bar_result_${start + idx}`,
-      title: bar.name || `Bar #${start + idx + 1}`,
-      description: `${bar.location_text || "Address not available"} • ${distance} away`,
-    };
-  });
-
-  // Add "More" button if there are more results
-  if (hasMore) {
-    rows.push({
-      id: "bars_more",
-      title: t(ctx.locale, "common.buttons.more"),
-      description: t(ctx.locale, "common.see_more_results"),
-    });
-  }
-
-  // Add back button
-  rows.push({
-    id: IDS.BACK_MENU,
-    title: t(ctx.locale, "common.menu_back"),
-    description: t(ctx.locale, "common.back_to_menu.description"),
-  });
-
-  const preferenceText = preference !== "all" 
-    ? ` ${t(ctx.locale, `bars.preferences.${preference}`).toLowerCase()}`
-    : "";
-
-  await sendListMessage(
-    ctx,
-    {
-      title: t(ctx.locale, "bars.results.title"),
-      body: t(ctx.locale, "bars.results.found_with_preference", {
-        count: bars.length.toString(),
-        preference: preferenceText,
-      }),
-      sectionTitle: t(ctx.locale, "bars.results.section"),
-      rows,
-      buttonText: t(ctx.locale, "common.buttons.choose"),
-    },
-    { emoji: "🍺" },
-  );
+  await sendBarsResultsPage(ctx, storedState, { mode: "found" });
 
   await logStructuredEvent("BARS_SEARCH_RESULTS_SENT", {
     wa_id: `***${ctx.from.slice(-4)}`,
-    count: bars.length,
+    count: normalizedBars.length,
     preference,
   });
 
@@ -277,26 +247,17 @@ export async function handleBarsLocation(
 
 export async function handleBarsResultSelection(
   ctx: RouterContext,
-  state: { 
-    bars?: Array<{
-      id: string;
-      name: string;
-      address?: string;
-      distance?: number;
-      whatsapp?: string;
-      features?: any;
-    }>;
-    preference?: string;
-  },
+  state: BarsResultsState,
   selectionId: string,
 ): Promise<boolean> {
-  if (!state.bars) return false;
+  const bars = state?.bars ?? [];
+  if (!bars.length) return false;
 
   const match = selectionId.match(/^bar_result_(\d+)$/);
   if (!match) return false;
 
   const idx = parseInt(match[1]);
-  const bar = state.bars[idx];
+  const bar = bars[idx];
   if (!bar) return false;
 
   const distance = bar.distance && bar.distance < 1
@@ -316,14 +277,21 @@ export async function handleBarsResultSelection(
     message += t(ctx.locale, "bars.result.no_whatsapp");
   }
 
-  // Store bar info for AI waiter context
+  // Store bar info for AI waiter + menu context
   if (ctx.profileId) {
+    const snapshot: BarsResultsState = {
+      bars,
+      preference: state?.preference,
+      page: state?.page,
+      userLocation: state?.userLocation,
+    };
     await setState(ctx.supabase, ctx.profileId, {
       key: "bar_detail",
       data: {
         barId: bar.id,
         barName: bar.name,
         barWhatsApp: bar.whatsapp,
+        barsResults: snapshot,
       },
     });
   }
@@ -333,16 +301,16 @@ export async function handleBarsResultSelection(
     message,
     buildButtons(
       {
+        id: IDS.BAR_VIEW_MENU,
+        title: t(ctx.locale, "bars.buttons.view_menu"),
+      },
+      {
         id: "bar_chat_waiter",
         title: t(ctx.locale, "bars.buttons.chat_waiter"),
       },
       {
         id: "bars_search_now",
         title: t(ctx.locale, "bars.buttons.search_again"),
-      },
-      {
-        id: IDS.BACK_MENU,
-        title: t(ctx.locale, "common.menu_back"),
       },
     ),
   );
@@ -358,47 +326,181 @@ export async function handleBarsResultSelection(
 
 export async function handleBarsMore(
   ctx: RouterContext,
-  state: {
-    bars?: Array<{
-      id: string;
-      name: string;
-      address?: string;
-      distance?: number;
-      whatsapp?: string;
-      features?: any;
-    }>;
-    preference?: string;
-    page?: number;
-    userLocation?: { lat: number; lng: number };
-  },
+  state: BarsResultsState,
 ): Promise<boolean> {
-  if (!ctx.profileId || !state.bars || !state.userLocation) return false;
+  if (!ctx.profileId) return false;
+  const bars = state?.bars ?? [];
+  if (!bars.length) return false;
 
-  const currentPage = state.page || 0;
+  const currentPage = state.page ?? 0;
   const nextPage = currentPage + 1;
-  
-  // Update state with new page
+  const updatedState: BarsResultsState = {
+    ...state,
+    page: nextPage,
+    bars,
+  };
+
   await setState(ctx.supabase, ctx.profileId, {
     key: "bars_results",
-    data: {
-      ...state,
-      page: nextPage,
-    },
+    data: updatedState,
   });
 
-  // Show next 9 results
-  const start = nextPage * 9;
-  const end = Math.min(start + 9, state.bars.length);
-  const pageResults = state.bars.slice(start, end);
-  const hasMore = end < state.bars.length;
+  await sendBarsResultsPage(ctx, updatedState, { mode: "more" });
+  return true;
+}
+
+export async function replayBarsResults(
+  ctx: RouterContext,
+  state: BarsResultsState,
+): Promise<boolean> {
+  if (!ctx.profileId) return false;
+  const bars = state?.bars ?? [];
+  if (!bars.length) return false;
+  const resetState: BarsResultsState = {
+    ...state,
+    page: 0,
+    bars,
+  };
+  await setState(ctx.supabase, ctx.profileId, {
+    key: "bars_results",
+    data: resetState,
+  });
+  await sendBarsResultsPage(ctx, resetState, { mode: "found" });
+  return true;
+}
+
+export async function startBarMenuOrder(
+  ctx: RouterContext,
+  detail: Record<string, unknown>,
+): Promise<boolean> {
+  if (!ctx.profileId) return false;
+  const barId = typeof detail?.barId === "string" ? detail.barId : null;
+  const barName = typeof detail?.barName === "string"
+    ? detail.barName
+    : t(ctx.locale, "bars.menu.unknown_name");
+  if (!barId) return false;
+
+  const menuItems = await fetchBarMenuItems(ctx, barId);
+  if (!menuItems.length) {
+    await sendButtonsMessage(
+      ctx,
+      t(ctx.locale, "bars.menu.no_items", { name: barName }),
+      buildButtons(
+        {
+          id: "bar_chat_waiter",
+          title: t(ctx.locale, "bars.buttons.chat_waiter"),
+        },
+        {
+          id: "bars_search_now",
+          title: t(ctx.locale, "bars.buttons.search_again"),
+        },
+      ),
+    );
+    return true;
+  }
+
+  const contacts = await fetchBarContactNumbers(ctx, barId);
+  if (!contacts.length) {
+    await sendButtonsMessage(
+      ctx,
+      t(ctx.locale, "bars.menu.no_contacts", { name: barName }),
+      buildButtons(
+        {
+          id: "bars_search_now",
+          title: t(ctx.locale, "bars.buttons.search_again"),
+        },
+        {
+          id: IDS.BACK_MENU,
+          title: t(ctx.locale, "common.menu_back"),
+        },
+      ),
+    );
+    return true;
+  }
+
+  const session: MenuOrderSession = {
+    vendorType: "bar",
+    vendorId: barId,
+    vendorName: barName,
+    contactNumbers: contacts,
+    menuItems,
+    selections: [],
+  };
+  return await startMenuOrderSession(ctx, session);
+}
+
+async function fetchBarMenuItems(
+  ctx: RouterContext,
+  barId: string,
+): Promise<MenuOrderItem[]> {
+  const { data, error } = await ctx.supabase
+    .from("restaurant_menu_items")
+    .select("id, name, category, price, currency, description")
+    .eq("bar_id", barId)
+    .eq("is_available", true)
+    .order("category", { ascending: true })
+    .order("name", { ascending: true })
+    .limit(30);
+  if (error) {
+    console.error("bars.menu_fetch_fail", error);
+    return [];
+  }
+  return (data ?? []).map((item) => ({
+    id: item.id,
+    name: item.name,
+    category: item.category,
+    price: item.price,
+    currency: item.currency,
+    description: item.description ?? undefined,
+  }));
+}
+
+async function fetchBarContactNumbers(
+  ctx: RouterContext,
+  barId: string,
+): Promise<string[]> {
+  const { data, error } = await ctx.supabase
+    .from("bar_numbers")
+    .select("number_e164, role")
+    .eq("bar_id", barId)
+    .eq("is_active", true);
+  if (error) {
+    console.error("bars.menu_contact_fail", error);
+    return [];
+  }
+  if (!data) return [];
+  const managers = data.filter((row) => row.role === "manager");
+  const target = managers.length ? managers : data;
+  const numbers = target
+    .map((row) => row.number_e164)
+    .filter((value): value is string => Boolean(value && value.trim()));
+  return Array.from(new Set(numbers));
+}
+
+type BarsResultsPageMode = "found" | "more";
+
+async function sendBarsResultsPage(
+  ctx: RouterContext,
+  state: BarsResultsState,
+  options: { mode: BarsResultsPageMode } = { mode: "found" },
+): Promise<void> {
+  const bars = state.bars ?? [];
+  const total = bars.length;
+  if (!total) return;
+
+  const requestedPage = state.page ?? 0;
+  const safePage = Math.max(0, Math.min(requestedPage, Math.floor((total - 1) / 9)));
+  const start = safePage * 9;
+  const end = Math.min(start + 9, total);
+  const pageResults = bars.slice(start, end);
+  const hasMore = end < total;
 
   const rows = pageResults.map((bar, idx) => {
-    const distance = bar.distance && bar.distance < 1
-      ? `${Math.round(bar.distance * 1000)}m`
-      : bar.distance
-      ? `${bar.distance.toFixed(1)}km`
+    const distance = typeof bar.distance === "number"
+      ? (bar.distance < 1
+        ? `${Math.round(bar.distance * 1000)}m`
+        : `${bar.distance.toFixed(1)}km`)
       : "Distance unknown";
-
     return {
       id: `bar_result_${start + idx}`,
       title: bar.name || `Bar #${start + idx + 1}`,
@@ -406,7 +508,6 @@ export async function handleBarsMore(
     };
   });
 
-  // Add "More" button if there are more results
   if (hasMore) {
     rows.push({
       id: "bars_more",
@@ -415,33 +516,38 @@ export async function handleBarsMore(
     });
   }
 
-  // Add back button
   rows.push({
     id: IDS.BACK_MENU,
     title: t(ctx.locale, "common.menu_back"),
     description: t(ctx.locale, "common.back_to_menu.description"),
   });
 
-  const preferenceText = state.preference && state.preference !== "all"
-    ? ` ${t(ctx.locale, `bars.preferences.${state.preference}`).toLowerCase()}`
+  const preferenceKey = state.preference ?? "all";
+  const preferenceText = preferenceKey !== "all"
+    ? ` ${t(ctx.locale, `bars.preferences.${preferenceKey}`).toLowerCase()}`
     : "";
+
+  const body = options.mode === "more"
+    ? t(ctx.locale, "bars.results.showing_more", {
+      from: String(start + 1),
+      to: String(end),
+      total: String(total),
+      preference: preferenceText,
+    })
+    : t(ctx.locale, "bars.results.found_with_preference", {
+      count: total.toString(),
+      preference: preferenceText,
+    });
 
   await sendListMessage(
     ctx,
     {
       title: t(ctx.locale, "bars.results.title"),
-      body: t(ctx.locale, "bars.results.showing_more", {
-        from: String(start + 1),
-        to: String(end),
-        total: String(state.bars.length),
-        preference: preferenceText,
-      }),
+      body,
       sectionTitle: t(ctx.locale, "bars.results.section"),
       rows,
       buttonText: t(ctx.locale, "common.buttons.choose"),
     },
     { emoji: "🍺" },
   );
-
-  return true;
 }

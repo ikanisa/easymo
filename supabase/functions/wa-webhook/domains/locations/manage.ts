@@ -19,7 +19,8 @@ import {
 import { IDS } from "../../wa/ids.ts";
 
 const FAVORITE_ROW_PREFIX = "FAVM::";
-const ADD_ROW_ID = "saved_places_add";
+export const SAVED_PLACES_ADD_ID = "saved_places_add";
+export const SAVED_PLACES_SKIP_ID = "saved_places_skip";
 
 export type SavedPlaceCaptureState = {
   mode: "create" | "edit";
@@ -35,6 +36,25 @@ export async function startSavedPlaces(ctx: RouterContext): Promise<boolean> {
     data: {},
   });
   const favorites = await listFavorites(ctx);
+  if (!favorites.length) {
+    const instructions = t(ctx.locale, "location.share.instructions");
+    await sendButtonsMessage(
+      ctx,
+      t(ctx.locale, "location.saved.manage.empty_cta", { instructions }),
+      buildButtons(
+        {
+          id: SAVED_PLACES_ADD_ID,
+          title: t(ctx.locale, "location.saved.manage.add_row"),
+        },
+        {
+          id: SAVED_PLACES_SKIP_ID,
+          title: t(ctx.locale, "location.saved.manage.button.skip"),
+        },
+      ),
+      { emoji: "⭐" },
+    );
+    return true;
+  }
   const rows = [
     ...favorites.map((favorite) => buildFavoriteRow(ctx, favorite)),
     buildAddRow(ctx),
@@ -60,8 +80,8 @@ export async function handleSavedPlacesListSelection(
   ctx: RouterContext,
   id: string,
 ): Promise<boolean> {
-  if (id === ADD_ROW_ID) {
-    return await startAddFavoriteFlow(ctx);
+  if (id === SAVED_PLACES_ADD_ID) {
+    return await startSavedPlaceCreation(ctx);
   }
   if (id === IDS.BACK_MENU) return false;
   const favoriteId = parseFavoriteRowId(id);
@@ -119,6 +139,12 @@ export async function handleSavedPlaceLocation(
 }
 
 async function startAddFavoriteFlow(ctx: RouterContext): Promise<boolean> {
+  return await startSavedPlaceCreation(ctx);
+}
+
+export async function startSavedPlaceCreation(
+  ctx: RouterContext,
+): Promise<boolean> {
   if (!ctx.profileId) return false;
   await setState(ctx.supabase, ctx.profileId, {
     key: "saved_places_add",
@@ -222,7 +248,7 @@ function buildFavoriteRow(
 
 function buildAddRow(ctx: RouterContext) {
   return {
-    id: ADD_ROW_ID,
+    id: SAVED_PLACES_ADD_ID,
     title: t(ctx.locale, "location.saved.manage.add_row"),
     description: t(ctx.locale, "location.saved.manage.add_desc"),
   };

@@ -127,6 +127,18 @@ const TIME_CHOICES: TimeChoiceDef[] = [
   },
 ];
 
+const LEGACY_TIME_IDS: Record<string, string> = {
+  now: "time::now",
+  "30min": "time::30m",
+  "1hour": "time::1h",
+  "2hours": "time::2h",
+  "5hours": "time::5h",
+  tomorrow_morning: "time::tomorrow_am",
+  tomorrow_evening: "time::tomorrow_pm",
+  every_morning: "time::every_morning",
+  every_evening: "time::every_evening",
+};
+
 export interface ScheduleState {
   role?: "driver" | "passenger";
   vehicle?: string;
@@ -417,65 +429,6 @@ async function requestScheduleTime(
     data: serializedState,
   });
 
-  // Instead of using a flow, provide list options
-  await sendListMessage(
-    ctx,
-    {
-      title: t(ctx.locale, "schedule.time.title"),
-      body: t(ctx.locale, "schedule.time.prompt"),
-      sectionTitle: t(ctx.locale, "schedule.time.section"),
-      buttonText: t(ctx.locale, "schedule.time.button"),
-      rows: [
-        {
-          id: "now",
-          title: t(ctx.locale, "schedule.time.option.now.title"),
-          description: t(ctx.locale, "schedule.time.option.now.description"),
-        },
-        {
-          id: "30min",
-          title: t(ctx.locale, "schedule.time.option.30min.title"),
-          description: t(ctx.locale, "schedule.time.option.30min.description"),
-        },
-        {
-          id: "1hour",
-          title: t(ctx.locale, "schedule.time.option.1hour.title"),
-          description: t(ctx.locale, "schedule.time.option.1hour.description"),
-        },
-        {
-          id: "2hours",
-          title: t(ctx.locale, "schedule.time.option.2hours.title"),
-          description: t(ctx.locale, "schedule.time.option.2hours.description"),
-        },
-        {
-          id: "5hours",
-          title: t(ctx.locale, "schedule.time.option.5hours.title"),
-          description: t(ctx.locale, "schedule.time.option.5hours.description"),
-        },
-        {
-          id: "tomorrow_morning",
-          title: t(ctx.locale, "schedule.time.option.tomorrow_morning.title"),
-          description: t(ctx.locale, "schedule.time.option.tomorrow_morning.description"),
-        },
-        {
-          id: "tomorrow_evening",
-          title: t(ctx.locale, "schedule.time.option.tomorrow_evening.title"),
-          description: t(ctx.locale, "schedule.time.option.tomorrow_evening.description"),
-        },
-        {
-          id: "every_morning",
-          title: t(ctx.locale, "schedule.time.option.every_morning.title"),
-          description: t(ctx.locale, "schedule.time.option.every_morning.description"),
-        },
-        {
-          id: "every_evening",
-          title: t(ctx.locale, "schedule.time.option.every_evening.title"),
-          description: t(ctx.locale, "schedule.time.option.every_evening.description"),
-        },
-      ],
-    },
-    { emoji: "🕐" },
-  );
-
   const rows = [
     ...buildTimeOptionRows(ctx),
     {
@@ -488,13 +441,13 @@ async function requestScheduleTime(
   await sendListMessage(
     ctx,
     {
-      title: t(ctx.locale, "schedule.time.list.title"),
-      body: t(ctx.locale, "schedule.time.list.body"),
-      sectionTitle: t(ctx.locale, "schedule.time.list.section"),
+      title: t(ctx.locale, "schedule.time.title"),
+      body: t(ctx.locale, "schedule.time.prompt"),
+      sectionTitle: t(ctx.locale, "schedule.time.section"),
       rows,
-      buttonText: t(ctx.locale, "common.buttons.choose"),
+      buttonText: t(ctx.locale, "schedule.time.button"),
     },
-    { emoji: "🕒" },
+    { emoji: "🕐" },
   );
   return true;
 }
@@ -507,7 +460,10 @@ export async function handleScheduleTimeSelection(
   if (!ctx.profileId || !state.role || !state.vehicle || !state.origin) {
     return false;
   }
-  const choice = TIME_CHOICES.find((option) => option.id === choiceId);
+  const normalizedChoiceId = LEGACY_TIME_IDS[choiceId] ?? choiceId;
+  const choice = TIME_CHOICES.find((option) =>
+    option.id === normalizedChoiceId
+  );
   if (!choice) return false;
   const timezone = state.timezone ?? DEFAULT_TIMEZONE;
   const selection = computeTimeSelection(choice, timezone);

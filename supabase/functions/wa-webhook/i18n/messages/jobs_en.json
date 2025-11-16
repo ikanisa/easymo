@@ -2,9 +2,10 @@
   "home.rows.jobs.title": "💼 Jobs & Gigs",
   "home.rows.jobs.description": "Find work or post jobs - from one-day gigs to full-time positions",
   
-  "jobs.menu.greeting": "💼 *Job Board*\n\nFind work or post jobs. Whether you're looking for a one-day gig or a full-time position, we've got you covered!",
+  "jobs.menu.title": "💼 Job Board",
+  "jobs.menu.greeting": "💼 Job Board\n\nFind work or post jobs. Whether you're looking for a one-day gig or a full-time position, we've got you covered!",
   "jobs.menu.button": "Choose Action",
-  "jobs.menu.section": "What would you like to do?",
+  "jobs.menu.section": "Pick an option",
   
   "jobs.menu.find.title": "🔍 Find a Job",
   "jobs.menu.find.description": "Search for jobs that match your skills and availability",

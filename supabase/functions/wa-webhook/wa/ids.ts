@@ -25,6 +25,7 @@ export const IDS = {
   PROPERTY_ADD: "property_add",
   PROPERTY_CHAT_AI: "property_chat_ai",
   BAR_CHAT_WAITER: "bar_chat_waiter",
+  BAR_VIEW_MENU: "bar_view_menu",
   SAVED_PLACES: "saved_places",
   LOCATION_SAVED_LIST: "location_saved_list",
   LOCATION_SAVE_HOME: "location_save_home",
@@ -90,6 +91,9 @@ export const IDS = {
   SCHEDULE_RECUR_NONE: "schedule_recur_none",
   SCHEDULE_RECUR_WEEKDAYS: "schedule_recur_weekdays",
   SCHEDULE_RECUR_DAILY: "schedule_recur_daily",
+  MENU_ORDER_ADD: "menu_order_add",
+  MENU_ORDER_VIEW: "menu_order_view",
+  MENU_ORDER_FINISH: "menu_order_finish",
   // Admin hub buttons
   ADMIN_TODAY: "ADMIN::TODAY",
   ADMIN_ALERTS: "ADMIN::ALERTS",

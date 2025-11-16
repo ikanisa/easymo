@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.76.1";
+import { sendText } from "../../wa/client.ts";
 import type { InsuranceExtraction } from "./ins_normalize.ts";
 
 export interface AdminNotificationPayload {
@@ -74,12 +75,34 @@ export async function notifyInsuranceAdmins(
   let failed = 0;
 
   for (const admin of admins) {
+    const adminWaId = typeof admin.wa_id === "string"
+      ? admin.wa_id.trim()
+      : "";
+    if (!adminWaId) {
+      errors.push("Missing admin wa_id");
+      failed++;
+      continue;
+    }
+
+    try {
+      await sendText(adminWaId, message);
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error ?? "unknown");
+      console.error("insurance.admin_direct_send_fail", {
+        admin: adminWaId,
+        error: msg,
+      });
+      errors.push(`${adminWaId}: ${msg}`);
+      failed++;
+      continue;
+    }
+
     try {
       // Queue notification via notifications table
       const { error: notifError } = await client
         .from("notifications")
         .insert({
-          to_wa_id: admin.wa_id,
+          to_wa_id: adminWaId,
           notification_type: "insurance_admin_alert",
           payload: {
             text: message,
@@ -93,20 +116,20 @@ export async function notifyInsuranceAdmins(
 
       if (notifError) {
         console.error("insurance.admin_notif_queue_fail", {
-          admin: admin.wa_id,
+          admin: adminWaId,
           error: notifError.message,
         });
-        errors.push(`${admin.wa_id}: ${notifError.message}`);
+        errors.push(`${adminWaId}: ${notifError.message}`);
         failed++;
         continue;
       }
 
       // Track admin notification
-      await client
+      const { error: auditError } = await client
         .from("insurance_admin_notifications")
         .insert({
           lead_id: leadId,
-          admin_wa_id: admin.wa_id,
+          admin_wa_id: adminWaId,
           user_wa_id: userWaId,
           notification_payload: {
             message,
@@ -114,9 +137,18 @@ export async function notifyInsuranceAdmins(
           },
           status: "queued",
         });
+      if (auditError) {
+        console.error("insurance.admin_notif_record_fail", {
+          admin: adminWaId,
+          error: auditError.message,
+        });
+        errors.push(`${adminWaId}: ${auditError.message}`);
+        failed++;
+        continue;
+      }
 
       console.log("insurance.admin_notif_queued", {
-        admin: admin.wa_id,
+        admin: adminWaId,
         leadId,
         userWaId,
       });
@@ -124,10 +156,10 @@ export async function notifyInsuranceAdmins(
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error);
       console.error("insurance.admin_notif_error", {
-        admin: admin.wa_id,
+        admin: adminWaId,
         error: msg,
       });
-      errors.push(`${admin.wa_id}: ${msg}`);
+      errors.push(`${adminWaId}: ${msg}`);
       failed++;
     }
   }

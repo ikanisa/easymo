@@ -289,17 +289,17 @@ export async function handleNearbyLocation(
 ): Promise<boolean> {
   if (!ctx.profileId || !state.vehicle || !state.mode) return false;
 
-  if (state.mode === "drivers" && !state.pickup) {
+  const isDriverRequest = state.mode === "drivers";
+  const pickup = coords;
+  let updatedState = state;
+
+  if (isDriverRequest) {
+    updatedState = { ...state, pickup };
     await setState(ctx.supabase, ctx.profileId, {
       key: "mobility_nearby_location",
-      data: { ...state, pickup: coords },
+      data: updatedState,
     });
-    await sendText(ctx.from, t(ctx.locale, "mobility.nearby.pickup_saved"));
-    return true;
   }
-
-  const pickup = state.mode === "drivers" ? state.pickup ?? coords : coords;
-  const dropoff = state.mode === "drivers" ? coords : undefined;
 
   try {
     await storeNearbyIntent(ctx.supabase, ctx.profileId, state.mode, {
@@ -365,7 +365,7 @@ export async function handleNearbyLocation(
 
   // DIRECT DATABASE MATCHING: Simple workflow for Phase 1
   // User shares location → Instant database query → Top 9 results
-  return await runMatchingFallback(ctx, state, pickup, dropoff);
+  return await runMatchingFallback(ctx, updatedState, pickup);
 }
 
 export async function handleNearbyResultSelection(
@@ -417,7 +417,11 @@ export async function startNearbySavedLocationPicker(
   const snapshot = snapshotNearbyState(state);
   if (!snapshot) return false;
   const favorites = await listFavorites(ctx);
-  const stage = state.mode === "drivers" && state.pickup ? "dropoff" : "pickup";
+  const stage: NearbySavedPickerState["stage"] = state.mode === "drivers"
+    ? "pickup"
+    : state.pickup
+    ? "dropoff"
+    : "pickup";
   await setState(ctx.supabase, ctx.profileId, {
     key: "location_saved_picker",
     data: {

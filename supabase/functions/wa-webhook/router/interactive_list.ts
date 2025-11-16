@@ -100,6 +100,14 @@ import {
   buildButtons,
 } from "../utils/reply.ts";
 import { handleAdminBack } from "../flows/admin/navigation.ts";
+import {
+  MENU_ITEM_PREFIX,
+  MENU_ORDER_BROWSER_STATE,
+  MENU_ORDER_ACTIONS_STATE,
+  handleMenuItemSelection,
+  handleMenuOrderAction,
+  type MenuOrderSession,
+} from "../domains/orders/menu_order.ts";
 
 export async function handleList(
   ctx: RouterContext,
@@ -158,6 +166,16 @@ export async function handleList(
     if (await handleSavedPlacesAddSelection(ctx, id)) {
       return true;
     }
+  }
+  if (
+    state.key === MENU_ORDER_BROWSER_STATE &&
+    id.startsWith(MENU_ITEM_PREFIX)
+  ) {
+    return await handleMenuItemSelection(
+      ctx,
+      (state.data ?? {}) as MenuOrderSession,
+      id,
+    );
   }
   if (state.key === "pharmacy_results") {
     if (id === "pharmacy_more") {
