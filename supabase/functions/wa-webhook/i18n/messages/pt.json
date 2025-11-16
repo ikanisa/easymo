@@ -105,5 +105,9 @@
   "jobs.candidates.detail": "*{{name}}*\n📱 {{phone}}\n💪 {{skills}}\n🗓️ Experience: {{experience}} years",
   "jobs.candidates.contact": "📱 Message them on WhatsApp: {{link}}",
   "jobs.candidates.buttons.backList": "⬅️ Back to candidates",
-  "jobs.candidates.experience.unknown": "Unknown"
+  "jobs.candidates.experience.unknown": "Unknown",
+  "profile.menu.momoQr.title": "📱 MOMO QR Code",
+  "profile.menu.momoQr.description": "Show or share your MOMO QR payment code.",
+  "profile.menu.wallet.title": "💰 Wallet & Tokens",
+  "profile.menu.wallet.description": "View token balance, rewards, and payout options."
 }

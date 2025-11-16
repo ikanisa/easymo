@@ -30,7 +30,7 @@
 - ✅ Created `whatsapp_profile_menu_items` table
 - ✅ 6 profile menu items:
   1. 👤 My Profile
-  2. 📱 MOMO QR & Tokens (moved from main menu)
+  2. 📱 MOMO QR Code (moved from main menu)
   3. 💳 Payment History
   4. ⚙️ Settings
   5. 🌍 Language
@@ -209,7 +209,7 @@ curl -X POST https://lhbowpbcpwoiparwnwgt.supabase.co/functions/v1/job-board-ai-
 ```
 When user selects "Profile":
 1. 👤 My Profile
-2. 📱 MOMO QR & Tokens       ← MOVED FROM MAIN MENU
+2. 📱 MOMO QR Code       ← MOVED FROM MAIN MENU
 3. 💳 Payment History
 4. ⚙️ Settings
 5. 🌍 Language

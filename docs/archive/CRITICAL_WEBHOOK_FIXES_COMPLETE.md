@@ -28,14 +28,14 @@ collisions
 
 **Solution:**
 
-- Changed to "MOMO QR & Tokens" (17 characters)
+- Changed to "MOMO QR Code" (17 characters)
 - Fully visible in WhatsApp list menus
 
 **Database Update:**
 
 ```sql
 UPDATE whatsapp_home_menu_items
-SET name = 'MOMO QR & Tokens'
+SET name = 'MOMO QR Code'
 WHERE key = 'momo_qr';
 ```
 
@@ -85,7 +85,7 @@ WHERE key = 'momo_qr';
 6. Nearby Pharmacies
 7. Bars & Restaurants
 8. Shops & Services
-9. MOMO QR & Tokens (shortened)
+9. MOMO QR Code (shortened)
 10. Property Rentals
 11. Quincailleries
 12. Notary Services
@@ -136,7 +136,7 @@ Dashboard: https://supabase.com/dashboard/project/lhbowpbcpwoiparwnwgt/functions
 1. Send "Hi" to WhatsApp bot
 2. Verify 10 items on page 1 (9 menu + "More" button)
 3. No "Duplicated row id" error
-4. "MOMO QR & Tokens" displays correctly (not truncated)
+4. "MOMO QR Code" displays correctly (not truncated)
 
 ### Test Bars Search
 

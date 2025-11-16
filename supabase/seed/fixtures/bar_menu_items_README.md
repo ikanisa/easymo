@@ -18,7 +18,7 @@ This seed file populates the `restaurant_menu_items` table with a comprehensive 
 |----------|-------|----------|
 | BEERS | 21 | Amstel, Corona, Guinness, Heineken, Tusker |
 | BREAKFAST | 1 | Omelette |
-| CIDERSS | 3 | Savanna Cider, Smirnoff Ice |
+| CIDERS | 3 | Savanna Cider, Smirnoff Ice |
 | COCKTAILS | 25 | Mojito, Margarita, Martini, Piña Colada |
 | COFFEE | 6 | Espresso, Cappuccino, Latte, Americano |
 | DESSERTS | 4 | Chocolate Cake, Fruit Salad, Avocado Smoothie |
@@ -46,9 +46,9 @@ This seed file populates the `restaurant_menu_items` table with a comprehensive 
 ## Usage
 
 ### Prerequisites
-1. Ensure the migration `20260322110000_bars_restaurants_menu_system.sql` has been applied
-2. Ensure all 97 bar records exist in the `bars` table with the specified UUIDs
-3. The seed now reconciles missing UUIDs by querying `public.bars`; it aborts if the final list still differs from 97 entries. Fix upstream data issues before rerunning if this happens.
+1. Ensure the migration `20260322110000_bars_restaurants_menu_system.sql` has been applied.
+2. Confirm Rwanda bars exist in `public.bars` (the script automatically selects every row where `country = 'Rwanda'`).
+3. No manual UUID list is required—the seed deletes existing menu items for those bars before inserting the shared menu, keeping it idempotent.
 
 ### Execution
 
@@ -79,15 +79,16 @@ To include this as part of the regular seeding process, add to `supabase/seed/se
 
 ## Data Structure
 
-Each menu item includes:
-- `bar_id`: UUID of the bar (from the predefined list of 97 bars)
+Each menu item now stores:
+- `bar_id`: UUID for each bar where `country = 'Rwanda'`
+- `category_id`: Static UUID for the category (stored directly on the row)
+- `category_name`: Category label (e.g., "COCKTAILS", "FAST FOOD")
 - `name`: Item name (e.g., "Mojito", "Beef Burger")
-- `category`: Category name (e.g., "COCKTAILS", "FAST FOOD")
-- `description`: Item description (may be empty)
-- `price`: Set to 0.00 (to be updated by bar managers)
-- `currency`: "RWF" (Rwandan Franc)
-- `is_available`: true (all items available by default)
-- `ocr_extracted`: false (manually curated menu)
+- `description`: Item description (nullable)
+- `price`: `1.00` RWF placeholder (bar managers should update real prices)
+- `currency`: `"RWF"`
+- `is_available`: `true`
+- `ocr_extracted`: `false`
 
 ## Notes
 
@@ -104,11 +105,9 @@ Individual bars can:
 - Add custom descriptions
 - Upload images (`image_url`)
 
-### Bar IDs
-The seed file includes 97 pre-defined bar UUIDs. Ensure these bars exist before running the seed:
-- `00710229-f8b1-4903-980f-ddcb3580dcf2`
-- `01c7812c-b553-4594-a598-52641f057952`
-- ... (see full list in seed file)
+### Source Data
+- Menu entries live in `supabase/seed/fixtures/data/rwanda_menu_items.json`.
+- The SQL seed cross-joins those entries with every bar where `country = 'Rwanda'`, so no manual UUID maintenance is needed.
 
 ## Verification
 
@@ -141,9 +140,7 @@ To remove all seeded menu items:
 -- Delete all menu items for the seeded bars
 DELETE FROM public.restaurant_menu_items 
 WHERE bar_id IN (
-  '00710229-f8b1-4903-980f-ddcb3580dcf2',
-  '01c7812c-b553-4594-a598-52641f057952',
-  -- ... (include all 97 bar IDs)
+  SELECT id FROM public.bars WHERE country = 'Rwanda'
 );
 ```
 

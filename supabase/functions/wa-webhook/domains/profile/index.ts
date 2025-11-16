@@ -41,7 +41,6 @@ export async function handleProfileMenu(ctx: RouterContext): Promise<boolean> {
 
   if (!menuItems || menuItems.length === 0) {
     console.error("No profile menu items found, using fallback");
-    // Fallback to basic menu with MOMO QR
     await sendListMessage(
       ctx,
       {
@@ -51,8 +50,13 @@ export async function handleProfileMenu(ctx: RouterContext): Promise<boolean> {
         rows: [
           {
             id: IDS.MOMO_QR,
-            title: "📱 MOMO QR & Tokens",
-            description: "View your MOMO QR code and payment tokens",
+            title: t(ctx.locale, "profile.menu.momoQr.title"),
+            description: t(ctx.locale, "profile.menu.momoQr.description"),
+          },
+          {
+            id: IDS.WALLET,
+            title: t(ctx.locale, "profile.menu.wallet.title"),
+            description: t(ctx.locale, "profile.menu.wallet.description"),
           },
           {
             id: IDS.BACK_MENU,
@@ -62,7 +66,7 @@ export async function handleProfileMenu(ctx: RouterContext): Promise<boolean> {
         ],
         buttonText: t(ctx.locale, "common.buttons.open"),
       },
-      { emoji: "👤" }
+      { emoji: "👤" },
     );
     return true;
   }
@@ -104,6 +108,7 @@ function getProfileMenuItemId(key: string): string {
     'show_properties': IDS.PROFILE_PROPERTIES,
     'show_my_jobs': IDS.JOB_MY_JOBS,
     'show_momo_qr': IDS.MOMO_QR,
+    'show_wallet': IDS.WALLET,
     'show_saved_locations': 'saved_locations',
     'show_help': 'help_support',
     'change_language': 'change_language',
@@ -118,6 +123,7 @@ function getProfileMenuItemId(key: string): string {
     'my_properties': IDS.PROFILE_PROPERTIES,
     'my_jobs': IDS.JOB_MY_JOBS,
     'momo_qr': IDS.MOMO_QR,
+    'wallet_tokens': IDS.WALLET,
     'saved_locations': 'saved_locations',
     'help_support': 'help_support',
     'change_language': 'change_language',

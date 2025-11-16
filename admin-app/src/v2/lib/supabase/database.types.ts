@@ -5289,7 +5289,8 @@ export type Database = {
       restaurant_menu_items: {
         Row: {
           bar_id: string
-          category: string
+          category_id: string | null
+          category_name: string
           created_at: string
           created_by: string | null
           currency: string
@@ -5306,7 +5307,8 @@ export type Database = {
         }
         Insert: {
           bar_id: string
-          category: string
+          category_id?: string | null
+          category_name: string
           created_at?: string
           created_by?: string | null
           currency?: string
@@ -5323,7 +5325,8 @@ export type Database = {
         }
         Update: {
           bar_id?: string
-          category?: string
+          category_id?: string | null
+          category_name?: string
           created_at?: string
           created_by?: string | null
           currency?: string

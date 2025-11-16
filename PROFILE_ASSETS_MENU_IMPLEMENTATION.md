@@ -80,7 +80,7 @@ function getProfileMenuItemId(key: string): string {
 ├── 3. 🚗 My Vehicles (view/add/manage) ← NEW
 ├── 4. 🏠 My Properties (view/add/manage) ← NEW
 ├── 5. 💼 My Jobs (view posts & applications) ← NEW
-├── 6. 📱 MOMO QR & Tokens
+├── 6. 📱 MOMO QR Code
 ├── 7. 💳 Payment History
 ├── 8. 📍 Saved Locations
 ├── 9. ⚙️ Settings

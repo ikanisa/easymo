@@ -42,7 +42,7 @@ const EXPECTED_BARS = 97;
 const EXPECTED_ITEMS_PER_BAR = 184;
 const EXPECTED_TOTAL_ITEMS = EXPECTED_BARS * EXPECTED_ITEMS_PER_BAR; // 17,848
 const EXPECTED_CATEGORIES = [
-  'BEERS', 'BREAKFAST', 'CIDERSS', 'COCKTAILS', 'COFFEE', 'DESSERTS',
+  'BEERS', 'BREAKFAST', 'CIDERS', 'COCKTAILS', 'COFFEE', 'DESSERTS',
   'ENERGY DRINKS', 'FAST FOOD', 'GIN', 'GRILL', 'JUICES', 'LIQUORS',
   'MAIN COURSES', 'PASTA', 'PIZZA', 'RUM', 'SIDE DISHES', 'SODA',
   'SOUP', 'SPIRITS', 'TEA', 'TRADITIONAL', 'VEGETARIAN', 'WATER',
@@ -134,7 +134,7 @@ async function verifyMenuSeed() {
     console.log("3️⃣  Checking menu categories...");
     const { data: categories, error: catError } = await client
       .from("restaurant_menu_items")
-      .select("category")
+      .select("category_name")
       .limit(10000);
 
     if (catError) {
@@ -142,7 +142,7 @@ async function verifyMenuSeed() {
       return false;
     }
 
-    const uniqueCategories = [...new Set(categories.map(c => c.category))];
+    const uniqueCategories = [...new Set(categories.map(c => c.category_name))];
     console.log(`   Unique categories found: ${uniqueCategories.length}`);
     console.log(`   Categories: ${uniqueCategories.sort().join(", ")}`);
     
@@ -157,7 +157,7 @@ async function verifyMenuSeed() {
     console.log("4️⃣  Sampling menu items...");
     const { data: sampleItems, error: sampleError } = await client
       .from("restaurant_menu_items")
-      .select("name, category, price, currency")
+      .select("name, category_name, price, currency")
       .limit(5);
 
     if (sampleError) {
@@ -167,7 +167,7 @@ async function verifyMenuSeed() {
 
     console.log("   Sample items:");
     sampleItems.forEach(item => {
-      console.log(`   - ${item.name} (${item.category}) - ${item.price} ${item.currency}`);
+      console.log(`   - ${item.name} (${item.category_name}) - ${item.price} ${item.currency}`);
     });
     console.log("   ✅ Sample items retrieved successfully\n");
 

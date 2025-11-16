@@ -54,7 +54,7 @@ export function QrClient({
               : "text-[color:var(--color-muted)] hover:text-[color:var(--color-foreground)]"
           }`}
         >
-          MOMO QR & Tokens
+          MOMO QR Code
         </button>
         <button
           type="button"

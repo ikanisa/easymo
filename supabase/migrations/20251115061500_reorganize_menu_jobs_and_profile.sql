@@ -90,8 +90,8 @@ CREATE INDEX IF NOT EXISTS profile_menu_items_active_idx ON whatsapp_profile_men
 --   -- MOMO QR Code (moved from main menu)
 --   (
 --     'momo_qr',
---     '📱 MOMO QR & Tokens',
---     'MOMO QR & Tokens',
+--     '📱 MOMO QR Code',
+--     'MOMO QR Code',
 --     'QR MOMO & Jetons',
 --     'QR ya MOMO n''Ibimenyetso',
 --     'View your MOMO QR code and payment tokens',

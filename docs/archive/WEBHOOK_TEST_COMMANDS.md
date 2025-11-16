@@ -6,7 +6,7 @@
 Send to WhatsApp: "Hi"
 Expected: Home menu with 10 items on page 1
 ✅ No "Duplicated row id" error
-✅ "MOMO QR & Tokens" displays fully
+✅ "MOMO QR Code" displays fully
 ```
 
 ## Test 2: Bars Search with Preference
@@ -80,7 +80,7 @@ supabase functions deploy wa-webhook --no-verify-jwt
 ## What Was Fixed
 
 1. ✅ Removed duplicate "support" menu item
-2. ✅ Shortened "MOMO QR & Tokens" title
+2. ✅ Shortened "MOMO QR Code" title
 3. ✅ Fixed country filtering (RW, Malta, TZ only)
 4. ✅ Pagination messages render properly
 5. ✅ Unique row IDs enforced in home menu

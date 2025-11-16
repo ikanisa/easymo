@@ -37,7 +37,7 @@ const rows = submenuItemsToRows(menuItems);
 
 **Profile Menu Items (6):**
 1. 👤 My Profile
-2. 📱 MOMO QR & Tokens ← **MOVED FROM MAIN MENU**
+2. 📱 MOMO QR Code ← **MOVED FROM MAIN MENU**
 3. 💳 Payment History
 4. ⚙️ Settings
 5. 🌍 Language

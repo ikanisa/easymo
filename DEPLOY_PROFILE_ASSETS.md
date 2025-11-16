@@ -75,7 +75,7 @@ SELECT key, name, display_order, is_active FROM whatsapp_profile_menu_items ORDE
    - 🚗 My Vehicles ← NEW
    - 🏠 My Properties ← NEW
    - 💼 My Jobs ← NEW
-   - 📱 MOMO QR & Tokens
+   - 📱 MOMO QR Code
    - 💳 Payment History
    - 📍 Saved Locations
    - ⚙️ Settings

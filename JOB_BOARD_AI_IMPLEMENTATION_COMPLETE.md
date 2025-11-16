@@ -137,7 +137,7 @@ The system now supports job boards for **every country in the countries table**,
 
 **Profile Submenu Created:**
 1. 👤 My Profile
-2. 📱 **MOMO QR & Tokens** (moved from main menu)
+2. 📱 **MOMO QR Code** (moved from main menu)
 3. 💳 Payment History
 4. 📍 Saved Locations
 5. ⚙️ Settings

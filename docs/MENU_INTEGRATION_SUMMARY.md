@@ -11,14 +11,15 @@ populating the `restaurant_menu_items` table with a shared menu across 97 bars.
 
 **Path:** `supabase/seed/fixtures/bar_menu_items_seed.sql`
 
-- **Purpose:** Populate menu items for all 97 bars
-- **Structure:** PL/pgSQL block with FOREACH loop
+- **Purpose:** Populate menu items for every bar where `country = 'Rwanda'`
+- **Structure:** Validates bar presence, deletes existing menu items for those bars, then cross-joins a menu template with the target bars
 - **Records:** 17,848 total (97 bars × 184 items per bar)
 - **Features:**
   - Transaction-safe (BEGIN/COMMIT)
-  - Uses parameterized bar_id variable for efficient looping
+  - Idempotent delete+insert (no duplicate rows)
   - Properly escaped special characters (apostrophes)
   - Organized by 26 menu categories
+  - Stores both `category_id` (UUID) and `category_name` fields directly on each row
 
 ### 2. Documentation
 
@@ -42,8 +43,15 @@ populating the `restaurant_menu_items` table with a shared menu across 97 bars.
   - Validates items per bar
   - Verifies all categories present
   - Samples menu items
-  - Detects duplicate entries
+- Detects duplicate entries
 - **Usage:** `pnpm seed:verify` (added to package.json)
+
+### 4. Menu Data JSON
+
+**Path:** `supabase/seed/fixtures/data/rwanda_menu_items.json`
+
+- **Purpose:** Canonical list of menu entries (category, item name, description, price placeholder)
+- **Usage:** Referenced when generating the SQL seed to keep data maintenance simple and auditable
 
 ## Menu Structure
 
@@ -53,7 +61,7 @@ populating the `restaurant_menu_items` table with a shared menu across 97 bars.
 | ------------- | ----- | ------ |
 | BEERS         | 21    | Drinks |
 | BREAKFAST     | 1     | Food   |
-| CIDERSS       | 3     | Drinks |
+| CIDERS        | 3     | Drinks |
 | COCKTAILS     | 25    | Drinks |
 | COFFEE        | 6     | Drinks |
 | DESSERTS      | 4     | Food   |
@@ -86,10 +94,11 @@ Each menu item includes:
 
 - `bar_id` (UUID) - References `bars.id`
 - `menu_id` (UUID, nullable) - References `menus.id`
+- `category_id` (UUID) - Static UUID per category (no lookup table)
+- `category_name` (TEXT) - Category label
 - `name` (TEXT) - Item name
-- `category` (TEXT) - Category name
 - `description` (TEXT) - Item description
-- `price` (NUMERIC) - Set to 0.00 initially
+- `price` (NUMERIC) - Set to 1.00 RWF initially
 - `currency` (TEXT) - "RWF" (Rwandan Franc)
 - `is_available` (BOOLEAN) - true by default
 - `image_url` (TEXT, nullable) - For future image uploads
@@ -136,30 +145,20 @@ ORDER BY item_count DESC;
 -- Expected: 184 items per bar
 
 -- Check category distribution
-SELECT category, COUNT(*) as item_count
+SELECT category_name, COUNT(*) as item_count
 FROM public.restaurant_menu_items
-GROUP BY category
+GROUP BY category_name
 ORDER BY item_count DESC;
 
 -- Sample items
-SELECT name, category, price, currency
+SELECT name, category_name, price, currency
 FROM public.restaurant_menu_items
 LIMIT 10;
 ```
 
-## Bar IDs Included
+## Target Bars
 
-The seed file includes 97 bar UUIDs. Sample IDs:
-
-- `00710229-f8b1-4903-980f-ddcb3580dcf2`
-- `01c7812c-b553-4594-a598-52641f057952`
-- `0243b1c6-f563-42c8-9058-6b52b53c4f64`
-- ... (see full list in seed file)
-
-The seed script now cross-checks `public.bars` for any missing UUIDs and aborts if the reconciled
-list still differs from 97 entries, ensuring data drift is caught before inserts.
-
-**Note:** Ensure these bars exist in the `bars` table before running the seed.
+The seed selects every row from `public.bars` where `country = 'Rwanda'`. As of this release that equals 97 bars, but the script automatically adapts if more bars are added or removed.
 
 ## Integration Points
 

@@ -24,7 +24,7 @@ UPDATE whatsapp_home_menu_items SET display_order = 13 WHERE key = 'customer_sup
 
 -- Update MOMO QR name to be shorter (max 24 chars for WhatsApp)
 UPDATE whatsapp_home_menu_items 
-SET name = 'MOMO QR & Tokens'
+SET name = 'MOMO QR Code'
 WHERE key = 'momo_qr';
 
 -- Ensure all items have proper country assignments (RW only for now)
