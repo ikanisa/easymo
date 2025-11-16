@@ -25,7 +25,7 @@
 ## Supabase auth flows
 ### Email sign-in
 1. User enters email on `/login`; frontend calls `supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: <app url> } })`.
-2. Supabase emails magic link; upon click, session is created and stored in Supabase client.
+2. Supabase emails a magic link; when the user clicks the link, they are redirected to the specified `emailRedirectTo` URL. The frontend at this URL must handle the Supabase auth callback—by listening for `onAuthStateChange` or parsing auth tokens from the URL—to establish the session in the Supabase client.
 3. Frontend exchanges session and stores profile/role via `/api/auth/profile` (server pulls from Supabase `auth.users` + `public.profiles`).
 4. Redirect to last-intended route (from `redirect_to` param or stored location) or `/app/home`.
 
