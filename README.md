@@ -59,7 +59,7 @@ Vite React app and communicates with those Edge Functions through the
 
 ## Local Setup
 
-1. Install prerequisites: `pnpm` (v8+), Node 18.18+, and the Supabase CLI (`brew install supabase/tap/supabase` on macOS).
+1. Install prerequisites: `pnpm` (≥10.18.3), Node 18.18+, and the Supabase CLI (`brew install supabase/tap/supabase` on macOS).
 2. Clone this repository and install dependencies from the root: `pnpm install`.
 3. Copy `.env.example` to `.env` (backend/shared) and `.env.local` (Next.js only),
    then populate every `CHANGEME_*` placeholder with your Supabase project values.
