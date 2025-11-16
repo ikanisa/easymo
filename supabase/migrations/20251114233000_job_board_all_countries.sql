@@ -258,7 +258,6 @@ WHERE country_code = 'RW';
 CREATE OR REPLACE VIEW job_listings_with_country AS
 SELECT 
   jl.*,
-  c.code as country_code,
   c.name as country_name,
   c.currency_code,
   c.currency_symbol,
@@ -267,8 +266,8 @@ SELECT
   jcc.label_fr as category_label_fr,
   jcc.label_local as category_label_local
 FROM job_listings jl
-LEFT JOIN countries c ON jl.location ILIKE '%' || c.name || '%' OR jl.location ILIKE '%' || c.code || '%'
-LEFT JOIN job_categories_by_country jcc ON c.code = jcc.country_code AND jl.category = jcc.category_key
+LEFT JOIN countries c ON jl.country_code = c.code
+LEFT JOIN job_categories_by_country jcc ON jl.country_code = jcc.country_code AND jl.category = jcc.category_key
 WHERE jl.status = 'open'
   AND (jl.expires_at IS NULL OR jl.expires_at > now());
 
