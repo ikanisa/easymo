@@ -203,6 +203,9 @@ export async function handleButton(
       return await handleAddBusiness(ctx);
     }
     case IDS.BAR_VIEW_MENU: {
+      try {
+        console.log(JSON.stringify({ event: 'BAR_VIEW_MENU_TAP', stateKey: state?.key || null, hasData: !!state?.data, hasBarId: !!(state as any)?.data?.barId }));
+      } catch {}
       // Prefer bar_detail state, but accept any state that contains barId
       if (state.key === "bar_detail" && state.data) {
         return await startBarMenuOrder(ctx, state.data || {});
@@ -211,6 +214,9 @@ export async function handleButton(
         return await startBarMenuOrder(ctx, state.data as any);
       }
       // Graceful fallback: ask user to select a place again
+      try {
+        console.warn(JSON.stringify({ event: 'BAR_VIEW_MENU_MISSING_CONTEXT', stateKey: state?.key || null }));
+      } catch {}
       await sendButtonsMessage(
         ctx,
         t(ctx.locale, "bars.menu.select_prompt"),
@@ -398,7 +404,7 @@ export async function handleButton(
       if (LOCATION_KIND_BY_ID[id]) {
         return await handleQuickSaveLocation(ctx, LOCATION_KIND_BY_ID[id]);
       }
-      if (await handleMarketplaceButton(ctx, state, id)) return true;
+      // Marketplace flows removed
       
       // Removed: bars_search_now button (now goes direct to location)
       // Removed: pharmacy_search_now button (now goes direct to results)

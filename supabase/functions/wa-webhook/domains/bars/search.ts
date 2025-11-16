@@ -388,7 +388,14 @@ export async function startBarMenuOrder(
       : t(ctx.locale, "bars.menu.unknown_name");
     if (!barId) return false;
 
+    try {
+      console.log(JSON.stringify({ event: 'BAR_MENU_START', barId, barName }));
+    } catch {}
+
     const menuItems = await fetchBarMenuItems(ctx, barId);
+    try {
+      console.log(JSON.stringify({ event: 'BAR_MENU_ITEMS_RESULT', count: menuItems?.length ?? 0 }));
+    } catch {}
     if (!menuItems.length) {
       await sendButtonsMessage(
         ctx,
@@ -402,6 +409,9 @@ export async function startBarMenuOrder(
     }
 
     const contacts = await fetchBarContactNumbers(ctx, barId);
+    try {
+      console.log(JSON.stringify({ event: 'BAR_MENU_CONTACTS_RESULT', count: contacts?.length ?? 0 }));
+    } catch {}
     if (!contacts.length) {
       await sendButtonsMessage(
         ctx,
@@ -445,6 +455,7 @@ async function fetchBarMenuItems(
   // 1) Try business_id first (new linkage)
   let rows: MenuOrderItem[] = [];
   try {
+    console.log(JSON.stringify({ event: 'BAR_MENU_FETCH', mode: 'business_id', barId }));
     const { data, error } = await ctx.supabase
       .from("restaurant_menu_items")
       .select("id, name, category_name, price, currency, description")
@@ -469,6 +480,7 @@ async function fetchBarMenuItems(
 
   // 2) Try legacy query using bar_id (with new schema first)
   try {
+    console.log(JSON.stringify({ event: 'BAR_MENU_FETCH', mode: 'bar_id_category_name', barId }));
     const { data, error } = await ctx.supabase
       .from("restaurant_menu_items")
       .select("id, name, category_name, price, currency, description")
@@ -487,6 +499,7 @@ async function fetchBarMenuItems(
       description: item.description ?? undefined,
     }));
   } catch (err) {
+    console.warn(JSON.stringify({ event: 'BAR_MENU_FETCH_WARN', mode: 'bar_id_category', error: String((err as any)?.message || err) }));
     // Fallback to legacy column name "category"
     const { data, error: err2 } = await ctx.supabase
       .from("restaurant_menu_items")
@@ -516,6 +529,7 @@ async function fetchBarMenuItems(
   // If nothing found, the consumer barId likely comes from business.id.
   // Try to resolve the matching public.bars row by name/slug and retry.
   try {
+    console.log(JSON.stringify({ event: 'BAR_MENU_FETCH', mode: 'resolve_bars_retry' }));
     const state = await (ctx.profileId
       ? ctx.supabase.from("chat_state").select("state").eq("user_id", ctx.profileId).maybeSingle()
       : Promise.resolve({ data: null } as any));
@@ -532,6 +546,7 @@ async function fetchBarMenuItems(
     }
     const { data: barRow } = await query.maybeSingle();
     if (barRow?.id) {
+      console.log(JSON.stringify({ event: 'BAR_MENU_FETCH', mode: 'resolved_bar_id_retry', resolvedBarId: barRow.id }));
       // Retry with resolved bars.id
       return await fetchBarMenuItems(ctx, barRow.id);
     }
