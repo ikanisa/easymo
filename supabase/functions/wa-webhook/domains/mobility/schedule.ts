@@ -288,9 +288,10 @@ export async function handleScheduleVehicle(
       vehicle: vehicleType,
     },
   });
+  const instructions = t(ctx.locale, "location.share.instructions");
   await sendButtonsMessage(
     ctx,
-    t(ctx.locale, "schedule.pickup.prompt"),
+    t(ctx.locale, "schedule.pickup.prompt", { instructions }),
     sharePickupButtons(ctx, state.role, {
       allowChange: state.role === "driver",
     }),
@@ -332,7 +333,9 @@ export async function handleScheduleLocation(
 
   await sendButtonsMessage(
     ctx,
-    t(ctx.locale, "schedule.dropoff.prompt"),
+    t(ctx.locale, "schedule.dropoff.prompt", {
+      instructions: t(ctx.locale, "location.share.instructions"),
+    }),
     shareDropoffButtons(ctx),
   );
   return true;
@@ -438,12 +441,14 @@ async function requestScheduleTime(
     },
   ];
 
+  const listTitle = t(ctx.locale, "schedule.time.list.title");
+  const listBody = t(ctx.locale, "schedule.time.list.body");
   await sendListMessage(
     ctx,
     {
-      title: t(ctx.locale, "schedule.time.title"),
-      body: t(ctx.locale, "schedule.time.prompt"),
-      sectionTitle: t(ctx.locale, "schedule.time.section"),
+      title: "",
+      body: `${listTitle}\n\n${listBody}`.trim(),
+      sectionTitle: t(ctx.locale, "schedule.time.list.section"),
       rows,
       buttonText: t(ctx.locale, "schedule.time.button"),
     },
@@ -762,7 +767,9 @@ export async function requestScheduleDropoff(
   });
   await sendButtonsMessage(
     ctx,
-    t(ctx.locale, "schedule.dropoff.instructions"),
+    t(ctx.locale, "schedule.dropoff.instructions", {
+      instructions: t(ctx.locale, "location.share.instructions"),
+    }),
     shareDropoffButtons(ctx),
   );
   return true;

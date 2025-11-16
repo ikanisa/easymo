@@ -1,23 +1,21 @@
 {
-  "files": [],
-  "references": [
-    { "path": "./tsconfig.app.json" },
-    { "path": "./tsconfig.node.json" },
-    { "path": "./apps/app-apis/tsconfig.json" },
-    { "path": "./apps/router-fn/tsconfig.json" },
-    { "path": "./packages/ui/tsconfig.json" },
-    { "path": "./packages/clients/tsconfig.json" }
-  ],
+  "extends": "./tsconfig.base.json",
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@va/shared": ["packages/shared/src/index.ts"],
+      "@va/shared/*": ["packages/shared/src/*"],
+      "@easymo/video-agent-schema": ["packages/video-agent-schema/dist/index"],
+      "@easymo/video-agent-schema/*": ["packages/video-agent-schema/dist/*"]
     },
     "noImplicitAny": false,
     "noUnusedParameters": false,
     "skipLibCheck": true,
     "allowJs": true,
     "noUnusedLocals": false,
-    "strictNullChecks": false
-  }
+    "strictNullChecks": false,
+    "jsx": "react-jsx"
+  },
+  "files": []
 }

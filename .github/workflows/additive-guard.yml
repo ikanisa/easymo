@@ -13,6 +13,20 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.18.3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
       - name: Collect changed files
         id: diff
         run: |
@@ -60,6 +74,12 @@ jobs:
             echo "Additive-only guard failed." >&2
             exit 1
           fi
+
+      - name: Lint workspace
+        run: pnpm lint
+
+      - name: Type check workspace
+        run: pnpm type-check
 
       - name: Summary
         run: |

@@ -62,33 +62,71 @@ export async function fetchProfileMenuItems(
 ): Promise<SubmenuItem[]> {
   const db = client || supabase;
 
-  const { data, error } = await db.rpc('get_profile_menu_items', {
-    user_country_code: countryCode,
-  });
+  // Determine if country is in Africa by checking countries table
+  const { data: countryData } = await db
+    .from('countries')
+    .select('code')
+    .eq('code', countryCode)
+    .single();
+
+  const isAfrica = !!countryData; // If country exists in our countries table, it's Africa
+
+  // Fetch all profile menu items
+  const { data, error } = await db
+    .from('whatsapp_profile_menu_items')
+    .select('*')
+    .eq('is_active', true)
+    .order('display_order');
 
   if (error) {
     console.error('Failed to fetch profile menu items:', error);
     return [];
   }
 
-  return (data || []) as SubmenuItem[];
+  // Filter by region restrictions
+  const filtered = (data || []).filter((item: any) => {
+    if (!item.region_restrictions || item.region_restrictions.length === 0) {
+      return true; // No restriction = show everywhere
+    }
+    
+    if (item.region_restrictions.includes('africa')) {
+      return isAfrica; // Only show in African countries
+    }
+    
+    return true;
+  });
+
+  // Map to SubmenuItem format
+  return filtered.map((item: any) => ({
+    key: item.key,
+    name: item.name,
+    icon: item.icon,
+    display_order: item.display_order,
+    action_type: item.action_type || 'action',
+    action_target: item.action_target,
+    description: item.description_en || item.description || ''
+  }));
 }
 
 /**
  * Convert submenu items to WhatsApp list row format
  * @param items - Array of submenu items
- * @param idMapper - Optional function to map keys to IDS constants
+ * @param idMapper - Optional function to map action_target to IDS constants
  * @returns Array of WhatsApp list rows
  */
 export function submenuItemsToRows(
   items: SubmenuItem[],
-  idMapper?: (key: string) => string,
+  idMapper?: (actionTarget: string) => string,
 ): Array<{ id: string; title: string; description: string }> {
-  return items.map((item) => ({
-    id: idMapper ? idMapper(item.key) : item.key,
-    title: item.icon ? `${item.icon} ${item.name}` : item.name,
-    description: item.description || '',
-  }));
+  return items.map((item) => {
+    // Use action_target if available, fallback to key
+    const routeId = item.action_target || item.key;
+    return {
+      id: idMapper ? idMapper(routeId) : routeId,
+      title: item.icon ? `${item.icon} ${item.name}` : item.name,
+      description: item.description || '',
+    };
+  });
 }
 
 /**

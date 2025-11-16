@@ -46,6 +46,20 @@ function formatAdminNotificationMessage(
   return sections.join("\n");
 }
 
+function normalizeAdminWaId(value: string | null | undefined): string {
+  if (!value) return "";
+  const digits = value.replace(/[^0-9]/g, "").trim();
+  return digits;
+}
+
+function getFallbackAdminIds(): string[] {
+  const raw = Deno.env.get("INSURANCE_ADMIN_FALLBACK_WA_IDS") ?? "";
+  if (!raw.trim()) return [];
+  return raw.split(",")
+    .map((entry) => normalizeAdminWaId(entry))
+    .filter((entry) => entry.length >= 8);
+}
+
 export async function notifyInsuranceAdmins(
   client: SupabaseClient,
   payload: AdminNotificationPayload,
@@ -64,7 +78,17 @@ export async function notifyInsuranceAdmins(
     return { sent: 0, failed: 0, errors: [adminError.message] };
   }
 
-  if (!admins || admins.length === 0) {
+  const dbAdmins = (admins ?? []).map((admin) => ({
+    wa_id: typeof admin.wa_id === "string" ? admin.wa_id.trim() : "",
+    name: admin.name ?? "",
+  })).filter((admin) => Boolean(admin.wa_id));
+
+  const fallbackAdmins = getFallbackAdminIds();
+  const targets = dbAdmins.length
+    ? dbAdmins
+    : fallbackAdmins.map((waId) => ({ wa_id: waId, name: "fallback" }));
+
+  if (!targets.length) {
     console.warn("insurance.no_active_admins");
     return { sent: 0, failed: 0, errors: ["No active admins found"] };
   }
@@ -74,10 +98,8 @@ export async function notifyInsuranceAdmins(
   let sent = 0;
   let failed = 0;
 
-  for (const admin of admins) {
-    const adminWaId = typeof admin.wa_id === "string"
-      ? admin.wa_id.trim()
-      : "";
+  for (const admin of targets) {
+    const adminWaId = normalizeAdminWaId(admin.wa_id);
     if (!adminWaId) {
       errors.push("Missing admin wa_id");
       failed++;
@@ -168,7 +190,7 @@ export async function notifyInsuranceAdmins(
     leadId,
     sent,
     failed,
-    totalAdmins: admins.length,
+    totalAdmins: targets.length,
   });
 
   return { sent, failed, errors };

@@ -149,7 +149,7 @@ async function notifyAdmins(
 ): Promise<void> {
   try {
     // Use new admin notification system with table-based admins
-    const result = await notifyInsuranceAdmins(ctx.supabase, {
+    const result = await notifyInsuranceAdmins(sharedSupabase, {
       leadId,
       userWaId: ctx.from,
       extracted,
