@@ -6,7 +6,7 @@
 BEGIN;
 
 -- Add persona column if it doesn't exist
-ALTER TABLE agent_configurations 
+ALTER TABLE agent_configs 
 ADD COLUMN IF NOT EXISTS persona TEXT,
 ADD COLUMN IF NOT EXISTS enabled_tools JSONB DEFAULT '[]'::jsonb,
 ADD COLUMN IF NOT EXISTS instructions TEXT;
@@ -17,7 +17,7 @@ ADD COLUMN IF NOT EXISTS instructions TEXT;
 -- ============================================================================
 -- 1. CONCIERGE ROUTER AGENT
 -- ============================================================================
-INSERT INTO agent_configurations (
+INSERT INTO agent_configs (
   agent_type,
   system_prompt,
   persona,
@@ -66,9 +66,9 @@ GUARDRAILS:
 -- 2. WAITER AI AGENT (Combined Bar & Restaurant)
 -- ============================================================================
 -- First, delete old separate agents if they exist
-DELETE FROM agent_configurations WHERE agent_type IN ('bar-ai', 'restaurant-ai');
+DELETE FROM agent_configs WHERE agent_type IN ('bar-ai', 'restaurant-ai');
 
-INSERT INTO agent_configurations (
+INSERT INTO agent_configs (
   agent_type,
   system_prompt,
   persona,
@@ -117,7 +117,7 @@ GUARDRAILS:
 -- ============================================================================
 -- 3. JOB BOARD AI AGENT (NEW)
 -- ============================================================================
-INSERT INTO agent_configurations (
+INSERT INTO agent_configs (
   agent_type,
   system_prompt,
   persona,
@@ -182,7 +182,7 @@ GUARDRAILS:
 -- ============================================================================
 -- 4. MOBILITY ORCHESTRATOR AGENT
 -- ============================================================================
-INSERT INTO agent_configurations (
+INSERT INTO agent_configs (
   agent_type,
   system_prompt,
   persona,
@@ -229,7 +229,7 @@ TOOLS:
 -- ============================================================================
 -- 5. PHARMACY AGENT
 -- ============================================================================
-INSERT INTO agent_configurations (
+INSERT INTO agent_configs (
   agent_type,
   system_prompt,
   persona,
@@ -275,7 +275,7 @@ TOOLS:
 -- ============================================================================
 -- 6. HARDWARE / QUINCAILLERIE AGENT
 -- ============================================================================
-INSERT INTO agent_configurations (
+INSERT INTO agent_configs (
   agent_type,
   system_prompt,
   persona,
@@ -317,7 +317,7 @@ TOOLS:
 -- ============================================================================
 -- 7. SHOP / CONVENIENCE AGENT
 -- ============================================================================
-INSERT INTO agent_configurations (
+INSERT INTO agent_configs (
   agent_type,
   system_prompt,
   persona,
@@ -358,7 +358,7 @@ TOOLS:
 -- ============================================================================
 -- 8. INSURANCE AGENT
 -- ============================================================================
-INSERT INTO agent_configurations (
+INSERT INTO agent_configs (
   agent_type,
   system_prompt,
   persona,
@@ -403,7 +403,7 @@ TOOLS:
 -- ============================================================================
 -- 9. PROPERTY RENTALS AGENT
 -- ============================================================================
-INSERT INTO agent_configurations (
+INSERT INTO agent_configs (
   agent_type,
   system_prompt,
   persona,
@@ -449,7 +449,7 @@ TOOLS:
 -- ============================================================================
 -- 10. LEGAL INTAKE AGENT
 -- ============================================================================
-INSERT INTO agent_configurations (
+INSERT INTO agent_configs (
   agent_type,
   system_prompt,
   persona,
@@ -492,7 +492,7 @@ TOOLS:
 -- ============================================================================
 -- 11. PAYMENTS AGENT
 -- ============================================================================
-INSERT INTO agent_configurations (
+INSERT INTO agent_configs (
   agent_type,
   system_prompt,
   persona,
@@ -531,7 +531,7 @@ TOOLS:
 -- ============================================================================
 -- 12. MARKETING & SALES AGENT
 -- ============================================================================
-INSERT INTO agent_configurations (
+INSERT INTO agent_configs (
   agent_type,
   system_prompt,
   persona,
@@ -573,7 +573,7 @@ TOOLS:
 -- ============================================================================
 -- 13. SORA-2 VIDEO ADS AGENT
 -- ============================================================================
-INSERT INTO agent_configurations (
+INSERT INTO agent_configs (
   agent_type,
   system_prompt,
   persona,
@@ -642,14 +642,14 @@ GUARDRAILS:
 -- ============================================================================
 -- Create index on persona for future queries
 -- ============================================================================
-CREATE INDEX IF NOT EXISTS idx_agent_configurations_persona 
-ON agent_configurations USING gin(to_tsvector('english', persona));
+CREATE INDEX IF NOT EXISTS idx_agent_configs_persona 
+ON agent_configs USING gin(to_tsvector('english', persona));
 
 -- Add comment to table
-COMMENT ON TABLE agent_configurations IS 'AI Agent configurations with system prompts, personas, instructions, and enabled tools';
-COMMENT ON COLUMN agent_configurations.persona IS 'Agent personality and communication style';
-COMMENT ON COLUMN agent_configurations.enabled_tools IS 'JSON array of tool names this agent can use';
-COMMENT ON COLUMN agent_configurations.instructions IS 'Detailed operational instructions for the agent';
-COMMENT ON COLUMN agent_configurations.system_prompt IS 'Core system prompt defining agent role and boundaries';
+COMMENT ON TABLE agent_configs IS 'AI Agent configurations with system prompts, personas, instructions, and enabled tools';
+COMMENT ON COLUMN agent_configs.persona IS 'Agent personality and communication style';
+COMMENT ON COLUMN agent_configs.enabled_tools IS 'JSON array of tool names this agent can use';
+COMMENT ON COLUMN agent_configs.instructions IS 'Detailed operational instructions for the agent';
+COMMENT ON COLUMN agent_configs.system_prompt IS 'Core system prompt defining agent role and boundaries';
 
 COMMIT;
