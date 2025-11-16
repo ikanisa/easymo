@@ -80,6 +80,8 @@ Vite React app and communicates with those Edge Functions through the
 
 | Variable | Purpose | Scope |
 | --- | --- | --- |
+| `APP_ENV` | Names the runtime (e.g., `local`, `staging`, `prod`) for logging. | `.env` |
+| `PORT` | (Optional) Admin app port (defaults to 3000). | `admin-app/.env.local` |
 | `NEXT_PUBLIC_SUPABASE_URL` | Public Supabase URL for browser traffic. | `.env.local` |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Browser anon key; **never** use the service role. | `.env.local` |
 | `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` | Mirrors the `NEXT_PUBLIC_*` pair for tooling (Vitest/Cypress). | `.env`, `.env.local` |
