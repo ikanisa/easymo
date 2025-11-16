@@ -594,10 +594,10 @@ CREATE TABLE IF NOT EXISTS feature_flags (
   updated_at timestamptz NOT NULL DEFAULT now()
 );
 
-INSERT INTO feature_flags (key, name, description, enabled, rollout_percentage, countries)
+INSERT INTO feature_flags (key, name, description, enabled, rollout_percentage)
 VALUES 
-  ('FEATURE_JOB_BOARD', 'Job Board & Gigs', 'WhatsApp job marketplace with AI matching', true, 100, NULL),
-  ('FEATURE_EXTERNAL_JOB_SOURCES', 'External Job Ingestion', 'Deep Search and SerpAPI job discovery', true, 100, NULL)
+  ('FEATURE_JOB_BOARD', 'Job Board & Gigs', 'WhatsApp job marketplace with AI matching', true, 100),
+  ('FEATURE_EXTERNAL_JOB_SOURCES', 'External Job Ingestion', 'Deep Search and SerpAPI job discovery', true, 100)
 ON CONFLICT (key) DO UPDATE SET
   enabled = EXCLUDED.enabled,
   rollout_percentage = EXCLUDED.rollout_percentage,
