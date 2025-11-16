@@ -15,16 +15,19 @@ import { OfflineBanner } from "@/components/system/OfflineBanner";
 import { ServiceWorkerToast } from "@/components/system/ServiceWorkerToast";
 import { ServiceWorkerToasts } from "@/components/system/ServiceWorkerToasts";
 import { AssistantPanel } from "@/components/assistant/AssistantPanel";
-import {
-  SessionProvider,
-  type AdminSession,
-} from "@/components/providers/SessionProvider";
+const DEFAULT_ACTOR_ID =
+  process.env.NEXT_PUBLIC_ADMIN_ACTOR_ID ||
+  process.env.ADMIN_TEST_ACTOR_ID ||
+  "00000000-0000-0000-0000-000000000001";
+const DEFAULT_ACTOR_LABEL =
+  process.env.NEXT_PUBLIC_ADMIN_ACTOR_LABEL || "Operator";
 
 interface PanelShellProps {
   children: ReactNode;
   environmentLabel: string;
   assistantEnabled: boolean;
-  session: AdminSession;
+  actorId?: string;
+  actorLabel?: string | null;
 }
 
 function deriveInitials(label: string | null, actorId: string): string {
@@ -42,15 +45,16 @@ export function PanelShell({
   children,
   environmentLabel,
   assistantEnabled,
-  session,
+  actorId = DEFAULT_ACTOR_ID,
+  actorLabel = DEFAULT_ACTOR_LABEL,
 }: PanelShellProps) {
   const router = useRouter();
-  const actorDisplayLabel = session.label?.trim() || `${session.actorId.slice(0, 8)}…`;
+  const actorDisplayLabel = actorLabel?.trim() || `${actorId.slice(0, 8)}…`;
   const [assistantOpen, setAssistantOpen] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const [avatarInitials, setAvatarInitials] = useState(() =>
-    deriveInitials(actorDisplayLabel, session.actorId),
+    deriveInitials(actorDisplayLabel, actorId),
   );
   const menuButtonRef = useRef<HTMLButtonElement | null>(null);
   const workspaceRef = useRef<HTMLDivElement | null>(null);
@@ -59,21 +63,54 @@ export function PanelShell({
   const wasMobileNavOpen = useRef(false);
 
   useEffect(() => {
-    setAvatarInitials(deriveInitials(actorDisplayLabel, session.actorId));
-  }, [actorDisplayLabel, session.actorId]);
+    if (typeof window === "undefined" || !actorId) return;
+
+    const originalFetch = window.fetch.bind(window);
+
+    window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+      const request =
+        input instanceof Request
+          ? input
+          : new Request(input, init ?? { credentials: "same-origin" });
+
+      try {
+        const url = new URL(request.url, window.location.origin);
+        if (url.origin === window.location.origin) {
+          const headers = new Headers(request.headers);
+          if (!headers.has("x-actor-id")) {
+            headers.set("x-actor-id", actorId);
+          }
+          return originalFetch(
+            new Request(request, {
+              headers,
+              credentials: request.credentials,
+            }),
+          );
+        }
+      } catch (error) {
+        console.warn("panel.fetch_enrichment_failed", error);
+      }
+
+      return originalFetch(request);
+    };
+
+    return () => {
+      window.fetch = originalFetch;
+    };
+  }, [actorId]);
+
+  useEffect(() => {
+    setAvatarInitials(deriveInitials(actorDisplayLabel, actorId));
+  }, [actorDisplayLabel, actorId]);
 
   const handleSignOut = async () => {
     try {
       setSigningOut(true);
-      await fetch("/api/auth/logout", {
-        method: "POST",
-        credentials: "same-origin",
-      });
     } catch (error) {
       console.error("panel.logout_failed", error);
     } finally {
       setSigningOut(false);
-      router.replace("/login");
+      router.replace("/");
       router.refresh();
     }
   };
@@ -187,70 +224,55 @@ export function PanelShell({
   }, [mobileNavOpen]);
 
   return (
-    <SessionProvider initialSession={session}>
-      <ToastProvider>
-        <ServiceWorkerToast />
-        <ServiceWorkerToasts />
-        <OfflineBanner />
-        <a className="skip-link" href="#main-content">
-          Skip to main content
-        </a>
-        <div className="bing-shell">
-          <BingNav />
-          <div className="bing-shell__workspace" ref={workspaceRef}>
-            <BingHeader
-              environmentLabel={environmentLabel}
-              onOpenNavigation={() => setMobileNavOpen(true)}
-              assistantEnabled={assistantEnabled}
-              onOpenAssistant={assistantEnabled
-                ? () => setAssistantOpen(true)
-                : undefined}
-              actorLabel={actorDisplayLabel}
-              actorInitials={avatarInitials}
-              onSignOut={handleSignOut}
-              signingOut={signingOut}
-              menuButtonRef={menuButtonRef}
-            />
-            <main
-              id="main-content"
-              className="bing-shell__content"
-              aria-live="polite"
-              tabIndex={-1}
-            >
-              <div className="panel-page__container">{children}</div>
-            </main>
+    <ToastProvider>
+      <ServiceWorkerToast />
+      <ServiceWorkerToasts />
+      <OfflineBanner />
+      <a className="skip-link" href="#main-content">
+        Skip to main content
+      </a>
+      <div className="bing-shell">
+        <BingNav />
+        <div className="bing-shell__workspace" ref={workspaceRef}>
+          <BingHeader
+            environmentLabel={environmentLabel}
+            onOpenNavigation={() => setMobileNavOpen(true)}
+            assistantEnabled={assistantEnabled}
+            onOpenAssistant={assistantEnabled ? () => setAssistantOpen(true) : undefined}
+            actorLabel={actorDisplayLabel}
+            actorInitials={avatarInitials}
+            onSignOut={handleSignOut}
+            signingOut={signingOut}
+            menuButtonRef={menuButtonRef}
+          />
+          <main
+            id="main-content"
+            className="bing-shell__content"
+            aria-live="polite"
+            tabIndex={-1}
+          >
+            <div className="panel-page__container">{children}</div>
+          </main>
+        </div>
+      </div>
+      {mobileNavOpen && (
+        <div className="bing-nav-drawer" role="presentation" onClick={closeMobileNav}>
+          <div
+            className="bing-nav-drawer__panel"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Primary navigation"
+            ref={drawerRef}
+            tabIndex={-1}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <BingNav mode="overlay" onClose={closeMobileNav} firstLinkRef={firstNavLinkRef} />
           </div>
         </div>
-        {mobileNavOpen && (
-          <div
-            className="bing-nav-drawer"
-            role="presentation"
-            onClick={closeMobileNav}
-          >
-            <div
-              className="bing-nav-drawer__panel"
-              role="dialog"
-              aria-modal="true"
-              aria-label="Primary navigation"
-              ref={drawerRef}
-              tabIndex={-1}
-              onClick={(event) => event.stopPropagation()}
-            >
-              <BingNav
-                mode="overlay"
-                onClose={closeMobileNav}
-                firstLinkRef={firstNavLinkRef}
-              />
-            </div>
-          </div>
-        )}
-        {assistantEnabled && (
-          <AssistantPanel
-            open={assistantOpen}
-            onClose={() => setAssistantOpen(false)}
-          />
-        )}
-      </ToastProvider>
-    </SessionProvider>
+      )}
+      {assistantEnabled && (
+        <AssistantPanel open={assistantOpen} onClose={() => setAssistantOpen(false)} />
+      )}
+    </ToastProvider>
   );
 }

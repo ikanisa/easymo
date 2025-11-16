@@ -62,12 +62,4 @@ function checkSession(): boolean {
   }
 }
 
-function checkRateLimit(): boolean {
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    require('@/lib/server/rate-limit');
-    return true;
-  } catch {
-    return false;
-  }
-}
+const checkRateLimit = () => false;

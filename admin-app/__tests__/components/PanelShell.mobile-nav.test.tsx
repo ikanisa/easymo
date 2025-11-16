@@ -12,10 +12,6 @@ vi.mock("next/navigation", () => ({
   usePathname: vi.fn(() => "/dashboard"),
 }));
 
-vi.mock("@/components/providers/SessionProvider", () => ({
-  SessionProvider: ({ children }: { children: ReactNode }) => <>{children}</>,
-}));
-
 vi.mock("@/components/ui/ToastProvider", () => ({
   ToastProvider: ({ children }: { children: ReactNode }) => <>{children}</>,
 }));
@@ -37,12 +33,6 @@ vi.mock("@/components/assistant/AssistantPanel", () => ({
 }));
 
 describe("PanelShell mobile navigation accessibility", () => {
-  const session = {
-    actorId: "actor-123",
-    label: "Test User",
-    expiresAt: new Date().toISOString(),
-  };
-
   afterEach(() => {
     cleanup();
   });
@@ -52,7 +42,8 @@ describe("PanelShell mobile navigation accessibility", () => {
       <PanelShell
         assistantEnabled={false}
         environmentLabel="Test"
-        session={session}
+        actorId="actor-123"
+        actorLabel="Test User"
       >
         <div>Content</div>
       </PanelShell>,
