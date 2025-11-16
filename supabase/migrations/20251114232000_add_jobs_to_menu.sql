@@ -13,30 +13,18 @@ WHERE display_order >= 1;
 INSERT INTO whatsapp_home_menu_items (
   key,
   name,
-  description_en,
-  description_fr,
-  description_rw,
   icon,
   display_order,
   active_countries,
-  page_number,
   is_active,
-  requires_auth,
-  feature_flag,
   country_specific_names
 ) VALUES (
   'jobs',
   '💼 Jobs & Gigs',
-  'Find work or post jobs - from one-day gigs to full-time positions',
-  'Trouver du travail ou publier des offres d''emploi - des petits boulots aux postes à temps plein',
-  'Shakisha akazi cyangwa utangaze imirimo - kuva ku murimo w''umunsi umwe kugeza ku kazi cyuzuye',
   '💼',
   1,
   ARRAY['RW', 'MT'],
-  1,
   true,
-  false,
-  'FEATURE_JOB_BOARD',
   jsonb_build_object(
     'en', 'Jobs & Gigs',
     'fr', 'Emplois & Petits Boulots',
@@ -45,7 +33,6 @@ INSERT INTO whatsapp_home_menu_items (
 ) ON CONFLICT (key) DO UPDATE SET
   display_order = 1,
   active_countries = ARRAY['RW', 'MT'],
-  page_number = 1,
   is_active = true,
   country_specific_names = jsonb_build_object(
     'en', 'Jobs & Gigs',
