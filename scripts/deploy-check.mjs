@@ -131,7 +131,12 @@ function verifyServiceWorkerManifest() {
     return { ok: false, message: "public/sw.js is missing." };
   }
 
-  const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
+  let manifest;
+  try {
+    manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
+  } catch (err) {
+    return { ok: false, message: "public/manifest.webmanifest is not valid JSON." };
+  }
   const icons = Array.isArray(manifest.icons) ? manifest.icons : [];
   const iconPaths = icons.map((icon) => icon.src).filter(Boolean);
 
