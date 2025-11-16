@@ -313,7 +313,7 @@ $$;
 ALTER TABLE job_listings
   ADD COLUMN IF NOT EXISTS country_code text REFERENCES countries(code);
 
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS job_listings_country_code_idx ON job_listings(country_code);
+CREATE INDEX IF NOT EXISTS job_listings_country_code_idx ON job_listings(country_code);
 
 -- Try to detect and update country codes for existing jobs
 UPDATE job_listings
@@ -405,7 +405,7 @@ $$;
 ALTER TABLE job_seekers
   ADD COLUMN IF NOT EXISTS country_code text REFERENCES countries(code);
 
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS job_seekers_country_code_idx ON job_seekers(country_code);
+CREATE INDEX IF NOT EXISTS job_seekers_country_code_idx ON job_seekers(country_code);
 
 -- Try to detect country from phone numbers
 UPDATE job_seekers js
