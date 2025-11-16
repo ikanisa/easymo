@@ -116,12 +116,45 @@ export const glass = {
   shadow: "0 24px 60px rgba(7, 11, 26, 0.32)",
 } as const satisfies TokenDictionary<Record<string, string>>;
 
+export const layout = {
+  shellMaxWidth: "1200px",
+  shellGutter: "1.5rem",
+  shellSidebarWidth: "18rem",
+  shellHeaderHeight: "3.5rem",
+} as const satisfies TokenDictionary<Record<string, string>>;
+
+export const effects = {
+  focusRingWidth: "2px",
+  focusRingOffset: "2px",
+  focusRingColor: "rgba(56, 189, 248, 0.55)",
+  elevationLow: "0 1px 2px rgba(7, 11, 26, 0.2)",
+  elevationMedium: "0 20px 60px rgba(7, 11, 26, 0.28)",
+} as const satisfies TokenDictionary<Record<string, string>>;
+
+export const motion = {
+  durations: {
+    instant: "90ms",
+    fast: "160ms",
+    medium: "240ms",
+    slow: "360ms",
+  },
+  easing: {
+    standard: "cubic-bezier(0.2, 0, 0, 1)",
+    emphasized: "cubic-bezier(0.34, 0.7, 0, 1)",
+    decelerate: "cubic-bezier(0, 0, 0.2, 1)",
+    accelerate: "cubic-bezier(0.5, 0, 0.7, 0.2)",
+  },
+} as const satisfies NestedTokenDictionary<Record<string, Record<string, string>>>;
+
 export const tokens = {
   colors,
   typography,
   spacing,
   radii,
   glass,
+  layout,
+  effects,
+  motion,
 };
 
 type TokenEntries = Array<[string, string]>;
@@ -136,9 +169,13 @@ function kebabCase(value: string): string {
 function flattenEntries(): TokenEntries {
   const entries: TokenEntries = [];
 
-  Object.entries(colors).forEach(([key, value]) => {
-    entries.push([`--ui-color-${kebabCase(key)}`, value]);
-  });
+  const pushSimpleRecord = (prefix: string, record: Record<string, string>) => {
+    Object.entries(record).forEach(([key, value]) => {
+      entries.push([`--ui-${prefix}-${kebabCase(String(key))}`, value]);
+    });
+  };
+
+  pushSimpleRecord("color", colors);
 
   Object.entries(typography).forEach(([groupKey, group]) => {
     Object.entries(group).forEach(([key, value]) => {
@@ -151,12 +188,15 @@ function flattenEntries(): TokenEntries {
     entries.push([`--ui-space-${normalisedKey}`, value]);
   });
 
-  Object.entries(radii).forEach(([key, value]) => {
-    entries.push([`--ui-radius-${kebabCase(key)}`, value]);
-  });
+  pushSimpleRecord("radius", radii);
+  pushSimpleRecord("glass", glass);
+  pushSimpleRecord("layout", layout);
+  pushSimpleRecord("effect", effects);
 
-  Object.entries(glass).forEach(([key, value]) => {
-    entries.push([`--ui-glass-${kebabCase(key)}`, value]);
+  Object.entries(motion).forEach(([groupKey, group]) => {
+    Object.entries(group).forEach(([key, value]) => {
+      entries.push([`--ui-motion-${kebabCase(groupKey)}-${kebabCase(String(key))}`, value]);
+    });
   });
 
   return entries;

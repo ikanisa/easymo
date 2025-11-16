@@ -1,7 +1,10 @@
 import { forwardRef, type HTMLAttributes } from "react";
+import { FormField as UiFormField, type FieldProps as UiFieldProps } from "@easymo/ui/components/forms";
 import { cn } from "@/lib/utils";
 
-export interface FieldProps extends HTMLAttributes<HTMLDivElement> {
+const uiKitEnabled = (process.env.NEXT_PUBLIC_UI_V2_ENABLED ?? "false").trim().toLowerCase() === "true";
+
+export interface FieldProps extends HTMLAttributes<HTMLDivElement>, Partial<UiFieldProps> {
   orientation?: "vertical" | "horizontal";
   label?: string;
   labelFor?: string;
@@ -14,6 +17,24 @@ export const Field = forwardRef<HTMLDivElement, FieldProps>(function Field(
   { className, orientation = "vertical", label, labelFor, helperText, error, required, children, ...props },
   ref,
 ) {
+  if (uiKitEnabled) {
+    return (
+      <UiFormField
+        ref={ref}
+        label={label}
+        labelFor={labelFor}
+        helperText={helperText}
+        error={error}
+        required={required}
+        orientation={orientation}
+        className={className}
+        {...props}
+      >
+        {children}
+      </UiFormField>
+    );
+  }
+
   return (
     <div
       ref={ref}
