@@ -287,7 +287,7 @@ $$;
 COMMENT ON TABLE whatsapp_profile_menu_items IS 
   'Profile submenu items for WhatsApp interface. MOMO QR moved here from main menu for better UX.';
 
-COMMENT ON FUNCTION get_profile_menu_items IS 
+COMMENT ON FUNCTION get_profile_menu_items(text) IS 
   'Returns localized profile menu items based on user country. Used by Profile section in WhatsApp flow.';
 
 COMMENT ON COLUMN whatsapp_home_menu_items.is_active IS 
