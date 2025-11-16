@@ -6,7 +6,7 @@ import { logger } from "./logger";
 import { PrismaService } from "@easymo/db";
 import { WalletService, TransferRequest } from "./service";
 import { FXService } from "./fx";
-import { isFeatureEnabled } from "@easymo/commons";
+import { isFeatureEnabled, setRequestId } from "@easymo/commons";
 import { idempotencyMiddleware } from "./idempotency";
 import { ReconciliationService, ReconciliationScheduler } from "./reconciliation";
 import { randomUUID } from "crypto";
@@ -39,6 +39,7 @@ async function bootstrap() {
     (req as any).id = requestId;
     req.headers["x-request-id"] = requestId;
     res.setHeader("x-request-id", requestId);
+    setRequestId(requestId);
     next();
   });
   app.use(pinoHttp({ logger: logger as any }));
