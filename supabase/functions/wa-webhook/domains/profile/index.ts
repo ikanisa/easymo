@@ -367,13 +367,13 @@ async function getUserVehicles(ctx: RouterContext) {
 
 async function getUserBusinesses(ctx: RouterContext) {
   const { data } = await ctx.supabase
-    .from("business_owners")
-    .select("business_id, businesses(id, name, category)")
-    .eq("profile_id", ctx.profileId!);
+    .from("business")
+    .select("id, name, category_name")
+    .eq("owner_user_id", ctx.profileId!);
 
   return (data || []).map((item: any) => ({
-    id: item.businesses.id,
-    name: item.businesses.name,
-    category: item.businesses.category,
+    id: item.id,
+    name: item.name,
+    category: item.category_name,
   }));
 }

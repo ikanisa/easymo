@@ -186,11 +186,12 @@ export async function handleBusinessClaim(
 
   try {
     // Check if business already claimed by this user
+    // Check if user already owns this business
     const { data: existing } = await ctx.supabase
-      .from("business_owners")
+      .from("business")
       .select("id")
-      .eq("business_id", business.id)
-      .eq("owner_id", ctx.profileId)
+      .eq("id", business.id)
+      .eq("owner_user_id", ctx.profileId)
       .maybeSingle();
 
     if (existing) {
@@ -205,12 +206,13 @@ export async function handleBusinessClaim(
 
     // Check if business is claimed by someone else
     const { data: otherOwner } = await ctx.supabase
-      .from("business_owners")
-      .select("id")
-      .eq("business_id", business.id)
+      .from("business")
+      .select("id, owner_user_id")
+      .eq("id", business.id)
+      .not("owner_user_id", "is", null)
       .maybeSingle();
 
-    if (otherOwner) {
+    if (otherOwner && otherOwner.owner_user_id !== ctx.profileId) {
       await sendButtonsMessage(
         ctx,
         t(ctx.locale, "business.claim.already_owned", { name: business.name }),
@@ -459,15 +461,14 @@ async function claimBusiness(
 ): Promise<void> {
   if (!ctx.profileId) throw new Error("No profile ID");
 
-  // 1. Add to business_owners table
+  // 1. Update business owner_user_id
   const { error: ownerError } = await ctx.supabase
-    .from("business_owners")
-    .insert({
-      business_id: businessId,
-      owner_id: ctx.profileId,
-      role: "owner",
-      is_primary: true,
-    });
+    .from("business")
+    .update({
+      owner_user_id: ctx.profileId,
+      owner_whatsapp: ctx.from,
+    })
+    .eq("id", businessId);
 
   if (ownerError) throw ownerError;
 
