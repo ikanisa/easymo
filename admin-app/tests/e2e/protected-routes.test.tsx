@@ -3,6 +3,12 @@ import { NextRequest } from "next/server";
 import { middleware } from "../../middleware";
 import { createSessionCookie } from "@/lib/server/session";
 
+/**
+ * Constructs a NextRequest instance for testing middleware behavior.
+ * @param path - The URL path to test (e.g., "/dashboard", "/notifications")
+ * @param cookieHeader - Optional cookie header string in the format "name=value"
+ * @returns A NextRequest instance with the specified path and optional cookie headers
+ */
 const buildRequest = (path: string, cookieHeader?: string) =>
   new NextRequest(new URL(`https://example.com${path}`), {
     headers: cookieHeader ? { cookie: cookieHeader } : undefined,
