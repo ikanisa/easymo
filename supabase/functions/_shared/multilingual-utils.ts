@@ -5,6 +5,9 @@
 // =====================================================
 
 import OpenAI from "https://deno.land/x/openai@v4.20.0/mod.ts";
+import {
+  requireFirstMessageContent,
+} from "../../../packages/shared/src/openaiGuard.ts";
 
 const openai = new OpenAI({
   apiKey: Deno.env.get("OPENAI_API_KEY")!,
@@ -33,7 +36,12 @@ export async function detectLanguage(text: string): Promise<Language> {
       max_tokens: 5,
     });
 
-    const result = response.choices[0].message.content?.trim().toLowerCase();
+    const result = requireFirstMessageContent(
+      response,
+      "Language detection"
+    )
+      .trim()
+      .toLowerCase();
     
     if (result === "rw" || result === "en" || result === "fr") {
       return result as Language;
@@ -78,7 +86,9 @@ export async function translateText(
       max_tokens: 1000,
     });
 
-    return response.choices[0].message.content?.trim() || text;
+    return (
+      requireFirstMessageContent(response, "Text translation").trim() || text
+    );
   } catch (error) {
     console.error("Translation error:", error);
     return text; // Return original if translation fails

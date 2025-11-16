@@ -12,6 +12,7 @@ import { createClient } from "@supabase/supabase-js";
 import OpenAI from "openai";
 import { SYSTEM_PROMPT } from "./prompts.ts";
 import { tools } from "./tools.ts";
+import { requireFirstChoice } from "../../../packages/shared/src/openaiGuard.ts";
 import {
   handleExtractJobMetadata,
   handlePostJob,
@@ -178,7 +179,10 @@ serve(async (req: Request) => {
       max_tokens: 1000,
     });
 
-    let assistantMessage = response.choices[0].message;
+    let assistantMessage = requireFirstChoice(
+      response,
+      "Job board chat completion"
+    ).message;
     const toolCalls: any[] = [];
 
     // Handle function calls iteratively
@@ -297,7 +301,10 @@ serve(async (req: Request) => {
         max_tokens: 1000,
       });
 
-      assistantMessage = response.choices[0].message;
+      assistantMessage = requireFirstChoice(
+        response,
+        "Job board tool follow-up"
+      ).message;
     }
 
     const finalResponse = assistantMessage.content || "I'm here to help with jobs!";

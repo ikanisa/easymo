@@ -1,14 +1,53 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const supabase = createClient(Deno.env.get("SUPABASE_URL") ?? "", Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "");
+const supabase = createClient(
+  Deno.env.get("SUPABASE_URL") ?? "",
+  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+);
 
 serve(async (req: Request): Promise<Response> => {
   const url = new URL(req.url);
+  const correlationId = req.headers.get("X-Correlation-ID") ?? crypto.randomUUID();
+
   if (url.pathname === "/health" || url.pathname.endsWith("/health")) {
-    return new Response(JSON.stringify({ status: "healthy", service: "wa-webhook-ai-agents", version: "1.0.0" }), {
-      headers: { "Content-Type": "application/json" },
+    return new Response(JSON.stringify({
+      status: "healthy",
+      service: "wa-webhook-ai-agents",
+      version: "2.0.0",
+      timestamp: new Date().toISOString(),
+    }), { headers: { "Content-Type": "application/json" } });
+  }
+
+  try {
+    const payload = await req.json();
+    await captureAgentRequest(payload, correlationId);
+    return new Response(JSON.stringify({ success: true, service: "wa-webhook-ai-agents" }), {
+      headers: { "Content-Type": "application/json", "X-Correlation-ID": correlationId },
+    });
+  } catch (error) {
+    console.error(JSON.stringify({
+      event: "AI_AGENT_HANDLER_ERROR",
+      correlationId,
+      error: error instanceof Error ? error.message : String(error),
+    }));
+    return new Response(JSON.stringify({ error: "internal_error", service: "wa-webhook-ai-agents" }), {
+      status: 500,
+      headers: { "Content-Type": "application/json", "X-Correlation-ID": correlationId },
     });
   }
-  return new Response(JSON.stringify({ success: true }), { headers: { "Content-Type": "application/json" } });
 });
+
+async function captureAgentRequest(payload: unknown, correlationId: string) {
+  await supabase.from("wa_ai_agent_events").insert({
+    correlation_id: correlationId,
+    payload,
+    received_at: new Date().toISOString(),
+  }).catch((error) => {
+    console.warn(JSON.stringify({
+      event: "AI_AGENT_EVENT_LOG_FAILURE",
+      correlationId,
+      error: error instanceof Error ? error.message : String(error),
+    }));
+  });
+}

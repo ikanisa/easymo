@@ -1,13 +1,23 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { logStructuredEvent } from "../_shared/observability.ts";
+import { forwardToEdgeService, routeIncomingPayload, summarizeServiceHealth } from "./router.ts";
+import { LatencyTracker } from "./telemetry.ts";
 
+const coldStartMarker = performance.now();
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL") ?? "",
-  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
 );
 
+const latencyTracker = new LatencyTracker({
+  windowSize: 120,
+  coldStartSloMs: Number(Deno.env.get("WA_CORE_COLD_START_SLO_MS") ?? "1750") || 1750,
+  p95SloMs: Number(Deno.env.get("WA_CORE_P95_SLO_MS") ?? "1200") || 1200,
+});
+
 serve(async (req: Request): Promise<Response> => {
+  const requestStart = performance.now();
   const url = new URL(req.url);
   const requestId = req.headers.get("x-request-id") ?? crypto.randomUUID();
 
@@ -74,6 +84,16 @@ serve(async (req: Request): Promise<Response> => {
         checks: { database: "error" },
       }, { status: 503 });
     }
+  const correlationId = req.headers.get("x-correlation-id") ?? crypto.randomUUID();
+
+  latencyTracker.recordColdStart(coldStartMarker, requestStart, correlationId);
+
+  if (url.pathname === "/health" || url.pathname.endsWith("/health")) {
+    const serviceHealth = await summarizeServiceHealth(supabase);
+    return finalize(new Response(JSON.stringify(serviceHealth, null, 2), {
+      status: serviceHealth.status === "healthy" ? 200 : 503,
+      headers: { "Content-Type": "application/json" },
+    }), correlationId, requestStart);
   }
 
   if (req.method === "GET") {
@@ -84,6 +104,9 @@ serve(async (req: Request): Promise<Response> => {
       return respond(challenge, { status: 200 });
     }
     return respond({ error: "forbidden" }, { status: 403 });
+      return finalize(new Response(challenge, { status: 200 }), correlationId, requestStart);
+    }
+    return finalize(new Response("Forbidden", { status: 403 }), correlationId, requestStart);
   }
 
   try {
@@ -99,7 +122,39 @@ serve(async (req: Request): Promise<Response> => {
     return respond({ error: "internal_error", requestId }, {
       status: 500,
     });
+    const decision = routeIncomingPayload(payload);
+    const forwarded = await forwardToEdgeService(decision, payload, req.headers);
+    return finalize(forwarded, correlationId, requestStart, decision.service);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error(JSON.stringify({
+      event: "WA_WEBHOOK_CORE_ERROR",
+      correlationId,
+      message,
+    }));
+    return finalize(new Response(JSON.stringify({ error: "internal_error" }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    }), correlationId, requestStart);
   }
 });
 
-console.log("✅ wa-webhook-core service started");
+function finalize(
+  response: Response,
+  correlationId: string,
+  requestStart: number,
+  routedService = "wa-webhook-core",
+): Response {
+  const headers = new Headers(response.headers);
+  headers.set("X-Correlation-ID", correlationId);
+  headers.set("X-Routed-Service", routedService);
+
+  const durationMs = latencyTracker.recordLatency(performance.now() - requestStart, correlationId);
+  headers.set("X-WA-Core-Latency", `${Math.round(durationMs)}ms`);
+
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  });
+}

@@ -24,6 +24,31 @@ function assertEquals(actual: unknown, expected: unknown, message?: string) {
   }
 }
 
+async function assertRejects(
+  fn: () => Promise<unknown>,
+  expectedMessage?: string,
+): Promise<void> {
+  let threw = false;
+  try {
+    await fn();
+  } catch (error) {
+    threw = true;
+    if (expectedMessage) {
+      assert(
+        typeof error === "object" && error !== null && "message" in error,
+        "expected an error object",
+      );
+      assert(
+        String((error as { message?: unknown }).message).includes(
+          expectedMessage,
+        ),
+        `expected error message to include ${expectedMessage}`,
+      );
+    }
+  }
+  assert(threw, "expected promise to reject");
+}
+
 class StubSupabaseClient {
   readonly calls: RpcCall[] = [];
   private readonly responses: Record<string, RpcResponse[]>;
@@ -120,4 +145,21 @@ Deno.test("listBusinesses throws when all fallbacks fail", async () => {
     }
   }
   assert(thrown, "expected an error to be thrown");
+});
+
+Deno.test("listBusinesses surfaces permission errors before fallbacks", async () => {
+  const client = new StubSupabaseClient({
+    nearby_businesses_v2: [
+      { data: null, error: { message: "permission denied for table business" } },
+    ],
+    nearby_businesses: [
+      { data: [{ id: "should_not_use" }], error: null },
+    ],
+  });
+
+  await assertRejects(
+    () => listBusinesses(client as unknown as any, { lat: 0, lng: 0 }, "food", 2),
+    "permission denied",
+  );
+  assertEquals(client.calls.length, 1);
 });

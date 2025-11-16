@@ -22,6 +22,7 @@ import {
   Tool,
 } from '../../types/agent.types';
 import OpenAI from 'openai';
+import { requireFirstMessageContent } from '../../../../shared/src/openaiGuard';
 
 /**
  * Property search parameters
@@ -434,7 +435,10 @@ export class PropertyRentalAgent extends BaseAgent {
 
           return {
             imageUrl,
-            analysis: response.choices[0].message.content,
+            analysis: requireFirstMessageContent(
+              response,
+              'Property rental image analysis',
+            ),
           };
         })
       );
