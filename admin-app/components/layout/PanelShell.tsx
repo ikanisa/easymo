@@ -17,7 +17,8 @@ interface PanelShellProps {
   children: ReactNode;
   environmentLabel: string;
   assistantEnabled: boolean;
-  session: AdminSession;
+  actorId?: string;
+  actorLabel?: string | null;
 }
 
 function deriveInitials(label: string | null, actorId: string): string {
@@ -35,14 +36,15 @@ export function PanelShell({
   children,
   environmentLabel,
   assistantEnabled,
-  session,
+  actorId = DEFAULT_ACTOR_ID,
+  actorLabel = DEFAULT_ACTOR_LABEL,
 }: PanelShellProps) {
   const router = useRouter();
-  const actorDisplayLabel = session.label?.trim() || `${session.actorId.slice(0, 8)}…`;
+  const actorDisplayLabel = actorLabel?.trim() || `${actorId.slice(0, 8)}…`;
   const [assistantOpen, setAssistantOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const [avatarInitials, setAvatarInitials] = useState(() =>
-    deriveInitials(actorDisplayLabel, session.actorId),
+    deriveInitials(actorDisplayLabel, actorId),
   );
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const workspaceRef = useRef<HTMLDivElement | null>(null);
@@ -55,21 +57,54 @@ export function PanelShell({
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
 
   useEffect(() => {
-    setAvatarInitials(deriveInitials(actorDisplayLabel, session.actorId));
-  }, [actorDisplayLabel, session.actorId]);
+    if (typeof window === "undefined" || !actorId) return;
+
+    const originalFetch = window.fetch.bind(window);
+
+    window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+      const request =
+        input instanceof Request
+          ? input
+          : new Request(input, init ?? { credentials: "same-origin" });
+
+      try {
+        const url = new URL(request.url, window.location.origin);
+        if (url.origin === window.location.origin) {
+          const headers = new Headers(request.headers);
+          if (!headers.has("x-actor-id")) {
+            headers.set("x-actor-id", actorId);
+          }
+          return originalFetch(
+            new Request(request, {
+              headers,
+              credentials: request.credentials,
+            }),
+          );
+        }
+      } catch (error) {
+        console.warn("panel.fetch_enrichment_failed", error);
+      }
+
+      return originalFetch(request);
+    };
+
+    return () => {
+      window.fetch = originalFetch;
+    };
+  }, [actorId]);
+
+  useEffect(() => {
+    setAvatarInitials(deriveInitials(actorDisplayLabel, actorId));
+  }, [actorDisplayLabel, actorId]);
 
   const handleSignOut = async () => {
     try {
       setSigningOut(true);
-      await fetch("/api/auth/logout", {
-        method: "POST",
-        credentials: "same-origin",
-      });
     } catch (error) {
       console.error("panel.logout_failed", error);
     } finally {
       setSigningOut(false);
-      router.replace("/login");
+      router.replace("/");
       router.refresh();
     }
   };
