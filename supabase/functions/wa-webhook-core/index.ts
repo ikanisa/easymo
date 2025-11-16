@@ -1,44 +1,33 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { forwardToEdgeService, routeIncomingPayload, summarizeServiceHealth } from "./router.ts";
+import { LatencyTracker } from "./telemetry.ts";
 
+const coldStartMarker = performance.now();
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL") ?? "",
-  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
 );
 
+const latencyTracker = new LatencyTracker({
+  windowSize: 120,
+  coldStartSloMs: Number(Deno.env.get("WA_CORE_COLD_START_SLO_MS") ?? "1750") || 1750,
+  p95SloMs: Number(Deno.env.get("WA_CORE_P95_SLO_MS") ?? "1200") || 1200,
+});
+
 serve(async (req: Request): Promise<Response> => {
+  const requestStart = performance.now();
   const url = new URL(req.url);
-  
+  const correlationId = req.headers.get("x-correlation-id") ?? crypto.randomUUID();
+
+  latencyTracker.recordColdStart(coldStartMarker, requestStart, correlationId);
+
   if (url.pathname === "/health" || url.pathname.endsWith("/health")) {
-    try {
-      // Check profiles table (core user table)
-      const { error } = await supabase.from("profiles").select("user_id").limit(1);
-      
-      return new Response(JSON.stringify({
-        status: error ? "unhealthy" : "healthy",
-        service: "wa-webhook-core",
-        timestamp: new Date().toISOString(),
-        checks: { 
-          database: error ? "disconnected" : "connected",
-          table: "profiles"
-        },
-        version: "1.0.0",
-        ...(error && { error: error.message }),
-      }, null, 2), {
-        status: error ? 503 : 200,
-        headers: { "Content-Type": "application/json" },
-      });
-    } catch (err) {
-      return new Response(JSON.stringify({
-        status: "unhealthy",
-        service: "wa-webhook-core",
-        error: err instanceof Error ? err.message : String(err),
-        checks: { database: "error" },
-      }, null, 2), {
-        status: 503,
-        headers: { "Content-Type": "application/json" },
-      });
-    }
+    const serviceHealth = await summarizeServiceHealth(supabase);
+    return finalize(new Response(JSON.stringify(serviceHealth, null, 2), {
+      status: serviceHealth.status === "healthy" ? 200 : 503,
+      headers: { "Content-Type": "application/json" },
+    }), correlationId, requestStart);
   }
 
   if (req.method === "GET") {
@@ -46,23 +35,46 @@ serve(async (req: Request): Promise<Response> => {
     const token = url.searchParams.get("hub.verify_token");
     const challenge = url.searchParams.get("hub.challenge");
     if (mode === "subscribe" && token === Deno.env.get("WA_VERIFY_TOKEN")) {
-      return new Response(challenge, { status: 200 });
+      return finalize(new Response(challenge, { status: 200 }), correlationId, requestStart);
     }
-    return new Response("Forbidden", { status: 403 });
+    return finalize(new Response("Forbidden", { status: 403 }), correlationId, requestStart);
   }
 
   try {
     const payload = await req.json();
-    return new Response(JSON.stringify({ success: true, service: "wa-webhook-core" }), {
-      status: 200,
-      headers: { "Content-Type": "application/json" },
-    });
+    const decision = routeIncomingPayload(payload);
+    const forwarded = await forwardToEdgeService(decision, payload, req.headers);
+    return finalize(forwarded, correlationId, requestStart, decision.service);
   } catch (err) {
-    return new Response(JSON.stringify({ error: "internal_error" }), { 
+    const message = err instanceof Error ? err.message : String(err);
+    console.error(JSON.stringify({
+      event: "WA_WEBHOOK_CORE_ERROR",
+      correlationId,
+      message,
+    }));
+    return finalize(new Response(JSON.stringify({ error: "internal_error" }), {
       status: 500,
-      headers: { "Content-Type": "application/json" }
-    });
+      headers: { "Content-Type": "application/json" },
+    }), correlationId, requestStart);
   }
 });
 
-console.log("✅ wa-webhook-core service started");
+function finalize(
+  response: Response,
+  correlationId: string,
+  requestStart: number,
+  routedService = "wa-webhook-core",
+): Response {
+  const headers = new Headers(response.headers);
+  headers.set("X-Correlation-ID", correlationId);
+  headers.set("X-Routed-Service", routedService);
+
+  const durationMs = latencyTracker.recordLatency(performance.now() - requestStart, correlationId);
+  headers.set("X-WA-Core-Latency", `${Math.round(durationMs)}ms`);
+
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  });
+}
