@@ -12,6 +12,7 @@ export function LoadingState({ title, description, message = "Loading…", class
     <div
       role="status"
       aria-live="polite"
+      aria-label={title ?? message}
       className={clsx(
         "flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed",
         "border-[color:var(--ui-color-border)]/70 bg-[color:var(--ui-color-surface)]/60 px-8 py-10 text-center shadow-[var(--ui-elevation-low,0_1px_2px_rgba(7,11,26,0.2))]",
