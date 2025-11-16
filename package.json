@@ -17,6 +17,7 @@
     "type-check": "pnpm --filter @easymo/admin-app run typecheck",
     "typecheck": "pnpm type-check",
     "test": "pnpm --filter @easymo/admin-app exec vitest run && pnpm --filter @easymo/admin-app exec vitest run --config vitest.config.smoke.cjs",
+    "test:ci": "pnpm --filter @easymo/admin-app run lint && pnpm --filter @easymo/admin-app run type-check && pnpm --filter @easymo/admin-app exec vitest run --coverage --config vitest.config.cjs && pnpm --filter @easymo/agent-core test -- --coverage --runInBand && pnpm --filter @easymo/broker-orchestrator test -- --coverage --runInBand && pnpm --filter @easymo/wallet-service test -- --coverage --runInBand",
     "test:functions": "deno test --allow-env --allow-read --allow-net supabase/functions/_shared",
     "lint:migrations": "node ./scripts/check-migrations-rls.mjs",
     "test:watch": "vitest",

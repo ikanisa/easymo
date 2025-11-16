@@ -272,3 +272,71 @@ export function logResponse(
     status >= 500 ? "error" : status >= 400 ? "warn" : "info",
   );
 }
+
+type EdgeHandlerContext = {
+  requestId: string;
+  startedAt: number;
+};
+
+type EdgeHandler = (
+  req: Request,
+  ctx: EdgeHandlerContext,
+) => Promise<Response> | Response;
+
+function createTracedFetch(baseFetch: typeof fetch, requestId: string): typeof fetch {
+  return async (input: Request | URL | string, init?: RequestInit): Promise<Response> => {
+    const headers = new Headers(init?.headers ?? (input instanceof Request ? input.headers : undefined));
+    headers.set("x-request-id", requestId);
+    headers.set("x-correlation-id", requestId);
+
+    if (input instanceof Request) {
+      return await baseFetch(new Request(input, { headers }));
+    }
+
+    const nextInit: RequestInit = { ...(init ?? {}), headers };
+    return await baseFetch(input, nextInit);
+  };
+}
+
+export function withRequestInstrumentation(scope: string, handler: EdgeHandler) {
+  return async (req: Request): Promise<Response> => {
+    const requestId = getCorrelationId(req);
+    const startedAt = Date.now();
+    const requestHeaders = new Headers(req.headers);
+    requestHeaders.set("x-request-id", requestId);
+    requestHeaders.set("x-correlation-id", requestId);
+    const instrumentedRequest = new Request(req, { headers: requestHeaders });
+
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = createTracedFetch(originalFetch, requestId);
+
+    logStructuredEvent(`${scope.toUpperCase()}_REQUEST`, {
+      method: instrumentedRequest.method,
+      path: new URL(instrumentedRequest.url).pathname,
+      requestId,
+    });
+
+    try {
+      const response = await handler(instrumentedRequest, { requestId, startedAt });
+      const headers = new Headers(response.headers);
+      headers.set("x-request-id", requestId);
+      headers.set("x-correlation-id", requestId);
+      const durationMs = Date.now() - startedAt;
+      logStructuredEvent(`${scope.toUpperCase()}_RESPONSE`, {
+        status: response.status,
+        durationMs,
+        requestId,
+      });
+      return new Response(response.body, { ...response, headers });
+    } catch (error) {
+      logStructuredEvent(`${scope.toUpperCase()}_RESPONSE`, {
+        status: 500,
+        requestId,
+        error: error instanceof Error ? error.message : String(error),
+      }, "error");
+      throw error;
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  };
+}

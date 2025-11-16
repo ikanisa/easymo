@@ -29,5 +29,13 @@ export default {
   },
   collectCoverageFrom: ["src/**/*.ts"],
   coverageDirectory: "coverage",
+  coverageThreshold: {
+    global: {
+      branches: 60,
+      functions: 65,
+      lines: 65,
+      statements: 65,
+    },
+  },
   testEnvironment: "node"
 };
