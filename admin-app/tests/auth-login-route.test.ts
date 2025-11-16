@@ -6,12 +6,12 @@ import { createAdminApiRequest } from "./utils/api";
 const VALID_EMAIL = "info@ikanisa.com";
 const VALID_PASSWORD = "MoMo!!0099";
 
-const createRequest = (body: Record<string, unknown>) =>
+const createRequest = (body: Record<string, unknown>): Request =>
   createAdminApiRequest(["auth", "login"], {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify(body),
-  }) as any;
+  });
 
 describe("login API", () => {
   beforeEach(() => {
