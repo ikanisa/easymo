@@ -263,10 +263,17 @@ export class OpenAIClient {
       }
 
       const data = await response.json();
-      if (!data.data || data.data.length === 0) {
-        throw new Error('No embedding data in OpenAI response');
+      const embedding = data.data?.[0]?.embedding as number[] | undefined;
+      if (embedding && Array.isArray(embedding) && embedding.length > 0) {
+        return embedding;
       }
-      return data.data[0].embedding;
+
+      const fallback = new Array(1536).fill(0);
+      await logStructuredEvent("OPENAI_EMBEDDING_FALLBACK", {
+        correlation_id: correlationId,
+        reason: "empty_response",
+      });
+      return fallback;
     } catch (error) {
       await logStructuredEvent("OPENAI_EMBEDDING_ERROR", {
         correlation_id: correlationId,

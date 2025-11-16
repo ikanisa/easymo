@@ -5,6 +5,32 @@ const handlerRef: { current: ((req: Request) => Promise<Response>) | null } = {
 const waEvents = new Map<string, { wa_message_id: string }>();
 const contacts: Array<Record<string, unknown>> = [];
 const logs: Array<{ endpoint: string; payload: unknown }> = [];
+const homeMenuItems: Array<Record<string, unknown>> = [
+  {
+    id: "menu-1",
+    key: "jobs",
+    name: "Jobs",
+    is_active: true,
+    active_countries: ["RW"],
+    display_order: 1,
+    icon: null,
+    country_specific_names: null,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+  {
+    id: "menu-2",
+    key: "schedule_trip",
+    name: "Schedule Trip",
+    is_active: true,
+    active_countries: ["RW"],
+    display_order: 2,
+    icon: null,
+    country_specific_names: null,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+];
 const profiles = new Map<
   string,
   { user_id: string; whatsapp_e164: string; locale: string | null }
@@ -24,6 +50,8 @@ const mockSupabase = {
         return createChatStateQuery();
       case "webhook_logs":
         return createWebhookLogsQuery();
+      case "whatsapp_home_menu_items":
+        return createHomeMenuQuery();
       default:
         throw new Error(`Unexpected table ${table}`);
     }
@@ -214,6 +242,26 @@ function createWebhookLogsQuery() {
   };
 }
 
+function createHomeMenuQuery() {
+  return {
+    select() {
+      return this;
+    },
+    eq(_column: string, _value: unknown) {
+      return this;
+    },
+    contains(_column: string, _values: unknown) {
+      return this;
+    },
+    order() {
+      return this;
+    },
+    async then(resolve: (value: unknown) => void) {
+      resolve({ data: homeMenuItems, error: null });
+    },
+  };
+}
+
 async function signPayload(secret: string, body: string): Promise<string> {
   const key = await crypto.subtle.importKey(
     "raw",
@@ -398,6 +446,107 @@ test("releases idempotency lock on handler error", async () => {
       },
     );
   };
+});
+
+test("renders home menu list on free text and records state", async () => {
+  reset();
+  const handler = getHandler();
+  const payload = {
+    object: "whatsapp_business_account",
+    entry: [
+      {
+        id: "entry-2",
+        changes: [
+          {
+            value: {
+              messages: [
+                {
+                  id: "wamid.menu.1",
+                  from: "250788000002",
+                  type: "text",
+                  text: { body: "hello" },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    ],
+  };
+  const body = JSON.stringify(payload);
+  const signature = await signPayload("super-secret", body);
+
+  const response = await handler(
+    new Request("https://example.com/webhook", {
+      method: "POST",
+      body,
+      headers: {
+        "content-type": "application/json",
+        "x-hub-signature-256": signature,
+      },
+    }),
+  );
+
+  assertEquals(response.status, 200);
+  assert(fetchCalls.length > 0);
+  const lastPayload = fetchCalls[fetchCalls.length - 1]?.payload as any;
+  assertEquals(lastPayload?.interactive?.type, "list");
+  const rows = lastPayload?.interactive?.action?.sections?.[0]?.rows ?? [];
+  assert(rows.length >= 2, "home menu should include dynamic rows");
+  const stateEntries = Array.from(chatState.values());
+  assert(stateEntries.length > 0, "chat state should be persisted");
+  assertEquals((stateEntries[0] as any).state?.key, "home_menu");
+});
+
+test("BACK_HOME button returns the home menu list", async () => {
+  reset();
+  const handler = getHandler();
+  const payload = {
+    object: "whatsapp_business_account",
+    entry: [
+      {
+        id: "entry-3",
+        changes: [
+          {
+            value: {
+              messages: [
+                {
+                  id: "wamid.back_home.1",
+                  from: "250788000003",
+                  type: "interactive",
+                  interactive: {
+                    type: "button",
+                    button_reply: { id: "back_home", title: "Home" },
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    ],
+  };
+  const body = JSON.stringify(payload);
+  const signature = await signPayload("super-secret", body);
+
+  const response = await handler(
+    new Request("https://example.com/webhook", {
+      method: "POST",
+      body,
+      headers: {
+        "content-type": "application/json",
+        "x-hub-signature-256": signature,
+      },
+    }),
+  );
+
+  assertEquals(response.status, 200);
+  assert(fetchCalls.length > 0);
+  const listPayload = fetchCalls[fetchCalls.length - 1]?.payload as any;
+  assertEquals(listPayload?.interactive?.type, "list");
+  const rows = listPayload?.interactive?.action?.sections?.[0]?.rows ?? [];
+  const hasHomeBack = rows.some((row: any) => row.id === "home_more" || row.id === "home_back");
+  assert(hasHomeBack, "home navigation rows should be included");
 });
 
 function resolveFetchUrl(input: RequestInfo | URL): string {

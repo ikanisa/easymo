@@ -1,0 +1,52 @@
+name: Edge E2E & Deployment Verification
+
+on:
+  schedule:
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+
+jobs:
+  edge-e2e:
+    runs-on: ubuntu-latest
+    env:
+      EDGE_FUNCTIONS_BASE: ${{ secrets.EDGE_FUNCTIONS_BASE }}
+      EDGE_FUNCTIONS_TOKEN: ${{ secrets.EDGE_FUNCTIONS_TOKEN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: Run wa-webhook E2E harness
+        run: |
+          deno test --allow-env --allow-read --allow-net supabase/functions/wa-webhook/index.test.ts supabase/functions/wa-webhook/shared/openai_client.test.ts | tee e2e-edge.log
+
+      - name: Upload E2E logs
+        uses: actions/upload-artifact@v4
+        with:
+          name: edge-e2e-logs
+          path: e2e-edge.log
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 20
+
+      - name: Verify deployed edge functions
+        if: ${{ env.EDGE_FUNCTIONS_BASE != '' }}
+        run: |
+          node scripts/verify-edge-functions.mjs | tee edge-verify.log
+
+      - name: Skip deployment verification (missing secrets)
+        if: ${{ env.EDGE_FUNCTIONS_BASE == '' }}
+        run: echo "Skipping deployment verification because EDGE_FUNCTIONS_BASE is not configured."
+
+      - name: Upload verification logs
+        uses: actions/upload-artifact@v4
+        with:
+          name: edge-deployment-logs
+          path: edge-verify.log
+          if-no-files-found: ignore
