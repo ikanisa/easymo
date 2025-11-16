@@ -10,6 +10,9 @@ import { wrapError } from "../utils/middleware.ts";
 import { WebhookError } from "../utils/error_handler.ts";
 import { routeMessage, forwardToMicroservice } from "../router.ts";
 import { getRoutingText } from "../utils/messages.ts";
+import { sendButtonsMessage } from "../utils/reply.ts";
+import { IDS } from "../wa/ids.ts";
+import { t } from "../i18n/translator.ts";
 
 import type {
   RouterContext,
@@ -61,6 +64,10 @@ const ROUTER_DISABLED_SERVICES = new Set(
 );
 const ROUTER_TEXT_ONLY = (Deno.env.get("WA_ROUTER_TEXT_ONLY") ?? "true")
   .toLowerCase() !== "false";
+const HANDLER_TIMEOUT_MS = Math.max(
+  Number(Deno.env.get("WA_HANDLER_TIMEOUT_MS") ?? "5000") || 5000,
+  1000,
+);
 
 export function __setProcessorTestOverrides(
   overrides: Partial<MessageProcessorHooks>,
@@ -117,7 +124,25 @@ export async function handlePreparedWebhook(
     const messageStart = Date.now();
 
     try {
-      await hooks.handleMessage(context, msg, state);
+      const timedResult = await runWithTimeout(
+        hooks.handleMessage(context, msg, state),
+        HANDLER_TIMEOUT_MS,
+      );
+
+      if (timedResult.timedOut) {
+        await hooks.releaseEvent(msg.id);
+        await sendTimeoutFallback(context);
+        await hooks.logStructuredEvent("MESSAGE_TIMEOUT_FALLBACK", withCid({
+          message_id: msg.id,
+          timeout_ms: HANDLER_TIMEOUT_MS,
+        }));
+        await hooks.logMetric("wa_message_failed", 1, {
+          type: msg.type ?? "unknown",
+          reason: "timeout",
+        });
+        continue;
+      }
+
       await hooks.logMetric("wa_message_processed", 1, {
         type: msg.type ?? "unknown",
       });
@@ -246,6 +271,43 @@ function shouldRouteTraffic(): boolean {
   if (ROUTER_MODE === "active") return true;
   if (ROUTER_SAMPLE_RATE <= 0) return false;
   return Math.random() < ROUTER_SAMPLE_RATE;
+}
+
+async function sendTimeoutFallback(context: RouterContext): Promise<void> {
+  try {
+    await sendButtonsMessage(
+      context,
+      t(context.locale, "error.retry"),
+      [{
+        id: IDS.BACK_HOME,
+        title: t(context.locale, "common.buttons.retry"),
+      }],
+      { emoji: "⏳" },
+    );
+  } catch (error) {
+    console.error("wa_webhook.timeout_fallback_fail", error);
+  }
+}
+
+async function runWithTimeout<T>(
+  promise: Promise<T>,
+  timeoutMs: number,
+): Promise<{ timedOut: boolean; result?: T }> {
+  let timeoutHandle: number | undefined;
+  const timeoutPromise = new Promise<{ timedOut: true }>((resolve) => {
+    timeoutHandle = setTimeout(() => resolve({ timedOut: true }), timeoutMs) as
+      unknown as number;
+  });
+
+  const result = await Promise.race<
+    { timedOut: boolean; result?: T }
+  >([
+    promise.then((value) => ({ timedOut: false, result: value })),
+    timeoutPromise,
+  ]);
+
+  if (timeoutHandle) clearTimeout(timeoutHandle);
+  return result;
 }
 
 function parseRouterMode(value: string): RouterMode {
