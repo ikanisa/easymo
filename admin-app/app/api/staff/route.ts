@@ -15,14 +15,14 @@ const querySchema = z.object({
 });
 
 function fromMocks(params: z.infer<typeof querySchema>) {
-  const offset = params.offset ?? 0;
-  const limit = params.limit ?? 200;
+  const offset = offset ?? 0;
+  const limit = limit ?? 200;
 
   const filtered = mockStaffNumbers.filter((row: any) => {
-    const roleMatch = params.role ? row.role === params.role : true;
-    const activeMatch = params.active ? String(row.active) === params.active : true;
-    const searchMatch = params.search
-      ? `${row.barName} ${row.number}`.toLowerCase().includes(params.search.toLowerCase())
+    const roleMatch = role ? row.role === role : true;
+    const activeMatch = active ? String(row.active) === active : true;
+    const searchMatch = search
+      ? `${row.barName} ${row.number}`.toLowerCase().includes(search.toLowerCase())
       : true;
     return roleMatch && activeMatch && searchMatch;
   });
@@ -55,8 +55,8 @@ export const GET = createHandler('admin_api.staff.list', async (request: Request
     return fromMocks(params);
   }
 
-  const offset = params.offset ?? 0;
-  const limit = params.limit ?? 200;
+  const offset = offset ?? 0;
+  const limit = limit ?? 200;
 
   const supabaseQuery = adminClient
     .from('bar_numbers')
@@ -65,14 +65,14 @@ export const GET = createHandler('admin_api.staff.list', async (request: Request
     .order('created_at', { ascending: false })
     .range(offset, offset + limit - 1);
 
-  if (params.role) {
-    supabaseQuery.eq('role', params.role);
+  if (role) {
+    supabaseQuery.eq('role', role);
   }
-  if (params.active) {
-    supabaseQuery.eq('is_active', params.active === 'true');
+  if (active) {
+    supabaseQuery.eq('is_active', active === 'true');
   }
-  if (params.search) {
-    const pattern = `%${params.search}%`;
+  if (search) {
+    const pattern = `%${search}%`;
     supabaseQuery.or(
       `number_e164.ilike.${pattern},bar.name.ilike.${pattern}`
     );

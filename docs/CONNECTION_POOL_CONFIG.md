@@ -2,7 +2,8 @@
 
 ## Overview
 
-Proper database connection pooling is critical for application performance and resource management. This guide covers connection pool configuration for PostgreSQL (Prisma), Redis, and Kafka.
+Proper database connection pooling is critical for application performance and resource management.
+This guide covers connection pool configuration for PostgreSQL (Prisma), Redis, and Kafka.
 
 ## PostgreSQL Connection Pooling
 
@@ -22,9 +23,7 @@ const prisma = new PrismaClient({
       url: process.env.DATABASE_URL,
     },
   },
-  log: process.env.NODE_ENV === "development" 
-    ? ["query", "error", "warn"] 
-    : ["error"],
+  log: process.env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"],
 });
 
 // Connection pool limits are configured via DATABASE_URL
@@ -46,16 +45,17 @@ DATABASE_URL="postgresql://user:pass@host:5432/db?connection_limit=20&pool_timeo
 
 ### Pool Size Guidelines
 
-| Environment | Connection Limit | Pool Timeout | Connect Timeout |
-|-------------|------------------|--------------|-----------------|
-| Development | 5 | 10s | 5s |
-| Staging | 10 | 10s | 5s |
-| Production (Low Traffic) | 15 | 10s | 5s |
-| Production (High Traffic) | 20-30 | 10s | 5s |
+| Environment               | Connection Limit | Pool Timeout | Connect Timeout |
+| ------------------------- | ---------------- | ------------ | --------------- |
+| Development               | 5                | 10s          | 5s              |
+| Staging                   | 10               | 10s          | 5s              |
+| Production (Low Traffic)  | 15               | 10s          | 5s              |
+| Production (High Traffic) | 20-30            | 10s          | 5s              |
 
 **Formula:** `connections = ((core_count * 2) + effective_spindle_count)`
 
 For typical cloud instances:
+
 - 2 CPU cores → 10 connections
 - 4 CPU cores → 20 connections
 - 8 CPU cores → 30 connections
@@ -68,14 +68,15 @@ import { PrismaService } from "@easymo/db";
 
 async function bootstrap() {
   const prisma = new PrismaService();
-  
+
   // Monitor pool status
   setInterval(async () => {
     const metrics = await prisma.$metrics.json();
     console.log({
       event: "DB_POOL_METRICS",
-      activeConnections: metrics.gauges.find(g => g.key === "prisma_pool_connections_busy")?.value,
-      idleConnections: metrics.gauges.find(g => g.key === "prisma_pool_connections_idle")?.value,
+      activeConnections: metrics.gauges.find((g) => g.key === "prisma_pool_connections_busy")
+        ?.value,
+      idleConnections: metrics.gauges.find((g) => g.key === "prisma_pool_connections_idle")?.value,
     });
   }, 60000); // Every minute
 }
@@ -86,6 +87,7 @@ async function bootstrap() {
 For production deployments with multiple services, use PgBouncer as a connection pooler:
 
 **Installation:**
+
 ```bash
 # Ubuntu/Debian
 sudo apt-get install pgbouncer
@@ -95,6 +97,7 @@ brew install pgbouncer
 ```
 
 **Configuration:** `/etc/pgbouncer/pgbouncer.ini`
+
 ```ini
 [databases]
 easymo = host=db.supabase.co port=5432 dbname=postgres
@@ -118,6 +121,7 @@ stats_users = postgres
 ```
 
 **Update CONNECTION_URL:**
+
 ```bash
 # Direct connection (development)
 DATABASE_URL="postgresql://user:pass@host:5432/postgres"
@@ -146,23 +150,23 @@ export function createRedisClient(options?: Partial<Redis.RedisOptions>): Redis 
     port: parseInt(process.env.REDIS_PORT || "6379"),
     password: process.env.REDIS_PASSWORD,
     db: parseInt(process.env.REDIS_DB || "0"),
-    
+
     // Connection pool settings
     maxRetriesPerRequest: 3,
     retryStrategy: (times: number) => {
       const delay = Math.min(times * 50, 2000);
       return delay;
     },
-    
+
     // Connection timeout
     connectTimeout: 10000,
-    
+
     // Keep-alive
     keepAlive: 30000,
-    
+
     // Enable offline queue
     enableOfflineQueue: true,
-    
+
     // Reconnect on error
     reconnectOnError: (err: Error) => {
       const targetError = "READONLY";
@@ -171,7 +175,7 @@ export function createRedisClient(options?: Partial<Redis.RedisOptions>): Redis 
       }
       return false;
     },
-    
+
     ...options,
   });
 }
@@ -215,10 +219,10 @@ const redis = createRedisClient();
 async function getUser(userId: string) {
   const cached = await redis.get(`user:${userId}`);
   if (cached) return JSON.parse(cached);
-  
+
   const user = await db.user.findUnique({ where: { id: userId } });
   await redis.setex(`user:${userId}`, 300, JSON.stringify(user));
-  
+
   return user;
 }
 
@@ -246,11 +250,11 @@ export function createKafkaClient(): Kafka {
   return new Kafka({
     clientId: process.env.KAFKA_CLIENT_ID || "easymo-service",
     brokers: (process.env.KAFKA_BROKERS || "localhost:9092").split(","),
-    
+
     // Connection settings
     connectionTimeout: 10000,
     requestTimeout: 30000,
-    
+
     // Retry settings
     retry: {
       initialRetryTime: 100,
@@ -258,19 +262,19 @@ export function createKafkaClient(): Kafka {
       maxRetryTime: 30000,
       multiplier: 2,
     },
-    
+
     // Logging
-    logLevel: process.env.NODE_ENV === "production" 
-      ? logLevel.ERROR 
-      : logLevel.INFO,
-    
+    logLevel: process.env.NODE_ENV === "production" ? logLevel.ERROR : logLevel.INFO,
+
     // SSL/SASL (if needed)
     ssl: process.env.KAFKA_SSL === "true",
-    sasl: process.env.KAFKA_USERNAME ? {
-      mechanism: "plain",
-      username: process.env.KAFKA_USERNAME,
-      password: process.env.KAFKA_PASSWORD,
-    } : undefined,
+    sasl: process.env.KAFKA_USERNAME
+      ? {
+          mechanism: "plain",
+          username: process.env.KAFKA_USERNAME,
+          password: process.env.KAFKA_PASSWORD,
+        }
+      : undefined,
   });
 }
 
@@ -281,20 +285,20 @@ export async function createKafkaProducer(kafka: Kafka) {
   const producer = kafka.producer({
     // Batching for better throughput
     maxInFlightRequests: 5,
-    
+
     // Idempotence for exactly-once semantics
     idempotent: true,
-    
+
     // Compression
     compression: 1, // GZIP
-    
+
     // Retry
     retry: {
       initialRetryTime: 100,
       retries: 3,
     },
   });
-  
+
   await producer.connect();
   return producer;
 }
@@ -305,23 +309,23 @@ export async function createKafkaProducer(kafka: Kafka) {
 export async function createKafkaConsumer(kafka: Kafka, groupId: string) {
   const consumer = kafka.consumer({
     groupId,
-    
+
     // Session timeout
     sessionTimeout: 30000,
-    
+
     // Heartbeat interval
     heartbeatInterval: 3000,
-    
+
     // Rebalance timeout
     rebalanceTimeout: 60000,
-    
+
     // Max wait time for fetch
     maxWaitTimeInMs: 5000,
-    
+
     // Max bytes per partition
     maxBytesPerPartition: 1048576, // 1MB
   });
-  
+
   await consumer.connect();
   return consumer;
 }
@@ -348,16 +352,19 @@ KAFKA_GROUP_ID=wallet-service-group
 ### 1. Right-Size Your Pools
 
 ❌ **Too Small:**
+
 - Requests queue up
 - Increased latency
 - Timeouts under load
 
 ❌ **Too Large:**
+
 - Wasted resources
 - Database overload
 - Memory pressure
 
 ✅ **Just Right:**
+
 - Monitor actual usage
 - Start conservative
 - Scale based on metrics
@@ -365,6 +372,7 @@ KAFKA_GROUP_ID=wallet-service-group
 ### 2. Monitor Pool Metrics
 
 **What to Monitor:**
+
 - Active connections
 - Idle connections
 - Wait time for connections
@@ -372,6 +380,7 @@ KAFKA_GROUP_ID=wallet-service-group
 - Query duration
 
 **Alerting Thresholds:**
+
 ```yaml
 # Example Prometheus alerts
 - alert: HighConnectionUtilization
@@ -394,19 +403,19 @@ const server = app.listen(port);
 // Graceful shutdown
 process.on("SIGTERM", async () => {
   console.log("SIGTERM received, starting graceful shutdown");
-  
+
   // Stop accepting new requests
   server.close();
-  
+
   // Close database connections
   await prisma.$disconnect();
-  
+
   // Close Redis connections
   await redis.quit();
-  
+
   // Close Kafka producer
   await producer.disconnect();
-  
+
   console.log("Shutdown complete");
   process.exit(0);
 });
@@ -416,20 +425,17 @@ process.on("SIGTERM", async () => {
 
 ```typescript
 // Retry logic with exponential backoff
-async function connectWithRetry(
-  connect: () => Promise<void>,
-  maxRetries = 5
-): Promise<void> {
+async function connectWithRetry(connect: () => Promise<void>, maxRetries = 5): Promise<void> {
   for (let i = 0; i < maxRetries; i++) {
     try {
       await connect();
       return;
     } catch (error) {
       if (i === maxRetries - 1) throw error;
-      
+
       const delay = Math.min(1000 * Math.pow(2, i), 10000);
       console.log(`Connection failed, retrying in ${delay}ms...`);
-      await new Promise(resolve => setTimeout(resolve, delay));
+      await new Promise((resolve) => setTimeout(resolve, delay));
     }
   }
 }
@@ -462,11 +468,13 @@ watch -n 1 'psql -c "SELECT count(*) FROM pg_stat_activity WHERE datname = '\''e
 ### Issue: Connection Pool Exhausted
 
 **Symptoms:**
+
 - "Connection pool exhausted" errors
 - High wait times for connections
 - 503 Service Unavailable responses
 
 **Solutions:**
+
 1. Increase connection pool size
 2. Optimize slow queries
 3. Implement connection pooler (PgBouncer)
@@ -475,11 +483,13 @@ watch -n 1 'psql -c "SELECT count(*) FROM pg_stat_activity WHERE datname = '\''e
 ### Issue: Connection Leaks
 
 **Symptoms:**
+
 - Connections never released
 - Pool size grows over time
 - Eventually all connections used
 
 **Solutions:**
+
 1. Ensure transactions are properly closed
 2. Use `try/finally` blocks
 3. Enable connection leak detection:
@@ -502,10 +512,12 @@ prisma.$on("warn", (e) => {
 ### Issue: Connection Timeout
 
 **Symptoms:**
+
 - "Connection timeout" errors
 - Intermittent connectivity issues
 
 **Solutions:**
+
 1. Increase `connect_timeout` in connection string
 2. Check network connectivity
 3. Verify firewall rules
@@ -519,7 +531,7 @@ prisma.$on("warn", (e) => {
 
 ```sql
 -- Find slow queries
-SELECT 
+SELECT
   query,
   calls,
   total_time,
@@ -530,7 +542,7 @@ ORDER BY mean_time DESC
 LIMIT 10;
 
 -- Find missing indexes
-SELECT 
+SELECT
   schemaname,
   tablename,
   attname,

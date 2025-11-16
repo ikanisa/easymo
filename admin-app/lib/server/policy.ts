@@ -123,7 +123,7 @@ function recordDecision(
   observability?.recordMetric("policy.outbound.decision", 1, tags);
   observability?.log({
     event: "policy.decision",
-    status: result.allowed ? "ok" : "blocked",
+    status: result.allowed ? "ok" : "error",
     details: tags,
   });
 }

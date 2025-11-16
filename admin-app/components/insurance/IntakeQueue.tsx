@@ -7,9 +7,7 @@ import { Drawer } from "@/components/ui/Drawer";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import {
-  InsuranceRequest,
   InsuranceTask,
-  InsuranceDocument,
 } from "@/lib/schemas";
 import {
   mockInsuranceDocuments,
@@ -17,7 +15,10 @@ import {
   mockInsuranceTasks,
 } from "@/lib/mock-data";
 
-const statusIntent: Record<InsuranceRequest["status"], { label: string; variant: "success" | "warning" | "destructive" | "outline" | "default" } > = {
+type IntakeRequest = (typeof mockInsuranceRequests)[number];
+type IntakeDocument = (typeof mockInsuranceDocuments)[number];
+
+const statusIntent: Record<IntakeRequest["status"], { label: string; variant: "success" | "warning" | "destructive" | "outline" | "default" } > = {
   draft: { label: "Draft", variant: "outline" },
   intake: { label: "Intake", variant: "outline" },
   under_review: { label: "Under review", variant: "warning" },
@@ -46,13 +47,15 @@ function deriveNextTask(requestId: string): InsuranceTask | undefined {
     .find((task) => pendingStatuses.includes(task.status));
 }
 
-interface RequestWithMeta extends InsuranceRequest {
+interface RequestWithMeta extends IntakeRequest {
   nextTask?: InsuranceTask;
   documentCount: number;
+  coverType?: string | null;
+  usage?: string | null;
 }
 
 export function IntakeQueue() {
-  const [statusFilter, setStatusFilter] = useState<"all" | InsuranceRequest["status"]>("all");
+  const [statusFilter, setStatusFilter] = useState<"all" | IntakeRequest["status"]>("all");
   const [selectedRequest, setSelectedRequest] = useState<RequestWithMeta | null>(null);
 
   const requests = useMemo<RequestWithMeta[]>(() => {
@@ -214,7 +217,7 @@ export function IntakeQueue() {
               <ul className="space-y-1 pt-2">
                 {mockInsuranceDocuments
                   .filter((doc) => doc.requestId === selectedRequest.id)
-                  .map((doc: InsuranceDocument) => (
+                  .map((doc: IntakeDocument) => (
                     <li key={doc.id} className="flex items-center justify-between">
                       <span>{doc.docType}</span>
                       <span className="text-xs text-[color:var(--color-muted)]">

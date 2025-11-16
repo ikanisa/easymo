@@ -117,6 +117,17 @@ export async function handleText(
     return true;
   }
   
+  // Handle business name search
+  if (state.key === "business_claim") {
+    const stateData = state.data as { stage?: string };
+    if (stateData.stage === "awaiting_name") {
+      const { handleBusinessNameSearch } = await import(
+        "../domains/business/claim.ts"
+      );
+      return await handleBusinessNameSearch(ctx, body);
+    }
+  }
+  
   // Handle business WhatsApp number input
   if (state.key === "business_add_whatsapp") {
     const stateData = state.data as { businessId?: string; businessName?: string };
@@ -168,6 +179,18 @@ export async function handleText(
     return await handleAddPropertyPrice(ctx, stateData, body);
   }
 
+  // Handle property AI chat - conversational mode
+  if (state.key === "property_ai_chat") {
+    const { handlePropertyAIChat } = await import("../domains/property/rentals.ts");
+    return await handlePropertyAIChat(ctx, body);
+  }
+
+  // Handle job board AI conversations
+  if (state.key === "job_conversation") {
+    const { handleJobBoardText } = await import("../domains/jobs/index.ts");
+    return await handleJobBoardText(ctx, body);
+  }
+
   if (await handleMomoText(ctx, body, state)) {
     return true;
   }
@@ -201,6 +224,6 @@ export async function handleText(
 async function sendDineInDisabledNotice(ctx: RouterContext): Promise<void> {
   await sendText(
     ctx.from,
-    "Dine-in workflows are handled outside WhatsApp. Please coordinate with your success manager.",
+    "Dine-in orders are handled separately. Please contact our team for assistance.",
   );
 }

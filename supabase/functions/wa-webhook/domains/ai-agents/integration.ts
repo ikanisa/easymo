@@ -16,7 +16,14 @@ import { IDS } from "../../wa/ids.ts";
 
 export interface AgentRequest {
   userId: string;
-  agentType: "nearby_drivers" | "pharmacy" | "property_rental" | "schedule_trip" | "shops" | "quincaillerie";
+  agentType:
+    | "nearby_drivers"
+    | "pharmacy"
+    | "property_rental"
+    | "schedule_trip"
+    | "shops"
+    | "quincaillerie"
+    | "notary";
   flowType: string;
   requestData: any;
   location?: { latitude: number; longitude: number; text?: string };
@@ -276,7 +283,7 @@ async function invokeScheduleTripAgent(
   ctx: RouterContext,
   request: AgentRequest,
 ): Promise<AgentResponse> {
-  const supabaseClient = ctx.locals.supabase;
+  const supabaseClient = ctx.supabase;
   
   try {
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL");

@@ -2,7 +2,8 @@
 
 ## Overview
 
-This document outlines the backup strategy, recovery procedures, and disaster recovery plan for the EasyMO platform.
+This document outlines the backup strategy, recovery procedures, and disaster recovery plan for the
+EasyMO platform.
 
 ## Table of Contents
 
@@ -21,11 +22,13 @@ This document outlines the backup strategy, recovery procedures, and disaster re
 #### Supabase (Primary Database)
 
 **Automatic Backups:**
+
 - Supabase Pro tier provides daily automated backups
 - Point-in-time recovery (PITR) available for last 7 days
 - Backups stored in multiple availability zones
 
 **Manual Backups:**
+
 ```bash
 # Export full database schema and data
 supabase db dump --project-ref <project-ref> > backup_$(date +%Y%m%d_%H%M%S).sql
@@ -38,11 +41,13 @@ supabase db dump --project-ref <project-ref> \
 ```
 
 **Backup Schedule:**
+
 - Daily: Automated full backup (Supabase)
 - Weekly: Manual backup of critical tables
 - Monthly: Full backup stored in cold storage (S3 Glacier)
 
 **Retention Policy:**
+
 - Daily backups: 30 days
 - Weekly backups: 3 months
 - Monthly backups: 1 year
@@ -51,6 +56,7 @@ supabase db dump --project-ref <project-ref> \
 #### Agent-Core Database (Prisma/PostgreSQL)
 
 **Setup Automated Backups:**
+
 ```bash
 # Install pg_dump automation
 cat > /etc/cron.daily/agent-core-backup.sh << 'EOF'
@@ -78,6 +84,7 @@ chmod +x /etc/cron.daily/agent-core-backup.sh
 ### Application Backups
 
 **Configuration Files:**
+
 ```bash
 # Backup environment variables and configs
 tar -czf config_backup_$(date +%Y%m%d).tar.gz \
@@ -91,6 +98,7 @@ aws s3 cp config_backup_*.tar.gz s3://easymo-backups/configs/
 ```
 
 **Edge Functions:**
+
 ```bash
 # Backup all Supabase functions
 tar -czf functions_backup_$(date +%Y%m%d).tar.gz supabase/functions/
@@ -102,6 +110,7 @@ aws s3 cp functions_backup_*.tar.gz s3://easymo-backups/functions/
 ### Redis Backup
 
 **Setup Redis Persistence:**
+
 ```bash
 # Configure Redis for AOF persistence
 redis-cli CONFIG SET appendonly yes
@@ -117,6 +126,7 @@ cp /var/lib/redis/dump.rdb /var/backups/redis/dump_$(date +%Y%m%d).rdb
 ### Kafka Backup
 
 **Topic Configuration Backup:**
+
 ```bash
 # Export topic configurations
 kafka-topics.sh --bootstrap-server localhost:9092 --describe > kafka_topics_$(date +%Y%m%d).txt
@@ -234,29 +244,34 @@ redis-cli DBSIZE
 **Recovery Point Objective (RPO):** 24 hours
 
 **Steps:**
+
 1. **Assess Damage** (15 minutes)
    - Determine extent of data loss
    - Identify last known good backup
 
 2. **Provision New Database** (30 minutes)
+
    ```bash
    # Create new Supabase project
    # Or provision new PostgreSQL instance
    ```
 
 3. **Restore from Backup** (2 hours)
+
    ```bash
    # Restore latest daily backup
    psql $NEW_DATABASE_URL < latest_backup.sql
    ```
 
 4. **Verify Data Integrity** (1 hour)
+
    ```bash
    # Run verification queries
    ./scripts/verify-database-integrity.sh
    ```
 
 5. **Update Connection Strings** (30 minutes)
+
    ```bash
    # Update all services with new DATABASE_URL
    # Redeploy edge functions
@@ -276,13 +291,16 @@ redis-cli DBSIZE
 **RPO:** 5 minutes
 
 **Steps:**
+
 1. **Identify Failed Services** (5 minutes)
+
    ```bash
    # Check service health
    ./scripts/health-check-all.sh
    ```
 
 2. **Check Infrastructure** (10 minutes)
+
    ```bash
    # Verify AWS/GCP status
    # Check DNS resolution
@@ -290,15 +308,17 @@ redis-cli DBSIZE
    ```
 
 3. **Restart Services** (15 minutes)
+
    ```bash
    # Restart Docker containers
    docker-compose restart
-   
+
    # Or restart individual services
    systemctl restart wallet-service
    ```
 
 4. **Verify Recovery** (15 minutes)
+
    ```bash
    # Run smoke tests
    pnpm test:smoke
@@ -314,7 +334,9 @@ redis-cli DBSIZE
 #### Scenario 3: Security Breach
 
 **Immediate Actions:**
+
 1. **Isolate Affected Systems** (Immediate)
+
    ```bash
    # Disable compromised API keys
    # Block suspicious IPs
@@ -322,6 +344,7 @@ redis-cli DBSIZE
    ```
 
 2. **Assess Impact** (30 minutes)
+
    ```bash
    # Check audit logs
    # Identify accessed data
@@ -329,6 +352,7 @@ redis-cli DBSIZE
    ```
 
 3. **Rotate Credentials** (1 hour)
+
    ```bash
    # Rotate all API keys
    # Generate new service role keys
@@ -336,6 +360,7 @@ redis-cli DBSIZE
    ```
 
 4. **Patch Vulnerabilities** (2-4 hours)
+
    ```bash
    # Deploy security patches
    # Update dependencies
@@ -356,6 +381,7 @@ redis-cli DBSIZE
 ### Backup Testing Schedule
 
 **Monthly:** Restore test in staging environment
+
 ```bash
 # Restore latest backup to staging
 ./scripts/restore-to-staging.sh
@@ -368,6 +394,7 @@ pnpm test:integration
 ```
 
 **Quarterly:** Full disaster recovery drill
+
 ```bash
 # Simulate complete system failure
 # Follow full DR procedures
@@ -468,6 +495,7 @@ psql $DATABASE_URL < migrations/rollback/20240315_rollback.sql
 ### Post-Incident Review
 
 After each incident:
+
 1. Document what happened
 2. Analyze root cause
 3. Identify preventive measures
@@ -477,6 +505,7 @@ After each incident:
 ### Backup Validation Metrics
 
 Track and improve:
+
 - Time to restore (RTO)
 - Data loss (RPO)
 - Success rate of restores
@@ -497,6 +526,7 @@ Track and improve:
 ### Backup Automation
 
 Create `/scripts/backup-automation.sh`:
+
 ```bash
 #!/bin/bash
 set -e
@@ -528,6 +558,7 @@ echo "Backup completed successfully"
 ### Restore Automation
 
 Create `/scripts/restore-automation.sh`:
+
 ```bash
 #!/bin/bash
 set -e
@@ -568,6 +599,7 @@ echo "Restore completed successfully"
 ```
 
 Make scripts executable:
+
 ```bash
 chmod +x /scripts/backup-automation.sh
 chmod +x /scripts/restore-automation.sh

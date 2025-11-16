@@ -5,11 +5,6 @@ import { SectionCard } from "@/components/ui/SectionCard";
 import { Drawer } from "@/components/ui/Drawer";
 import { Badge } from "@/components/ui/Badge";
 import {
-  InsurancePolicy,
-  InsurancePolicyBreakdown,
-  InsuranceRequest,
-} from "@/lib/schemas";
-import {
   mockInsurancePolicies,
   mockInsuranceRequests,
 } from "@/lib/mock-data";
@@ -24,12 +19,15 @@ function formatCurrency(value: number) {
   return currencyFormatter.format(Math.round(value));
 }
 
+type PolicyMock = (typeof mockInsurancePolicies)[number];
+type RequestMock = (typeof mockInsuranceRequests)[number];
+
 interface PolicyDetail {
-  policy: InsurancePolicy;
-  request: InsuranceRequest | undefined;
+  policy: PolicyMock;
+  request: RequestMock | undefined;
 }
 
-const statusVariant: Record<InsurancePolicy["status"], ComponentProps<typeof Badge>["variant"]> = {
+const statusVariant: Record<PolicyMock["status"], ComponentProps<typeof Badge>["variant"]> = {
   draft: "outline",
   pending_issue: "warning",
   active: "success",
@@ -107,7 +105,7 @@ export function PoliciesDatabase() {
             <div className="rounded-lg border border-[color:var(--color-border)] p-3">
               <p className="text-xs font-semibold uppercase tracking-wide text-[color:var(--color-muted)]">Breakdown</p>
               <ul className="space-y-1 pt-2">
-                {selected.policy.breakdown.map((item: InsurancePolicyBreakdown) => (
+                {selected.policy.breakdown.map((item) => (
                   <li key={item.id} className="flex justify-between">
                     <span>{item.label}</span>
                     <span>{formatCurrency(item.amountMinor)}</span>

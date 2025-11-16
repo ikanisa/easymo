@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdminClient } from "@/lib/server/supabase-admin";
 
-export async function POST(req: Request, { params }: { params: { id: string; versionId: string } }) {
+export async function POST(req: Request, { params }: { params: Promise<{ id: string; versionId: string }> }) {
   const admin = getSupabaseAdminClient();
   if (!admin) return NextResponse.json({ error: "supabase_unavailable" }, { status: 503 });
-  const { id, versionId } = params;
+  const { id, versionId } = await params;
   let env: "staging" | "production" = (process.env.AGENT_DEFAULT_DEPLOY_ENV ?? "staging") as any;
   try {
     const body = await req.json();

@@ -44,6 +44,16 @@ export type DataTableFilter<TData> =
 
 export type DataTableColumn<TData> = ColumnDef<TData, unknown>;
 
+function getColumnIdentifier<TData>(column: DataTableColumn<TData>): string | undefined {
+  if (typeof column.id === "string" && column.id) {
+    return column.id;
+  }
+  if ("accessorKey" in column && typeof column.accessorKey === "string") {
+    return column.accessorKey;
+  }
+  return undefined;
+}
+
 export interface DataTableProps<TData> {
   data: TData[];
   columns: DataTableColumn<TData>[];
@@ -97,17 +107,23 @@ export function DataTable<TData>({
   const columnFilterMap = useMemo(() => {
     return new Map((filters ?? []).map((filter) => [filter.columnId, filter]));
   }, [filters]);
-  const resolvedColumns = useMemo(() => {
+  const resolvedColumns = useMemo<ColumnDef<TData, unknown>[]>(() => {
     return columnDefs.map((column) => {
-      const identifier = (column.id ?? column.accessorKey) as string | undefined;
+      const identifier = getColumnIdentifier(column);
       if (!identifier) return column;
       const filter = columnFilterMap.get(identifier);
       if (!filter) return column;
       if (filter.type === "multi-select") {
-        return { ...column, filterFn: column.filterFn ?? multiSelectFilterFn };
+        return {
+          ...column,
+          filterFn: (column.filterFn ?? "multiSelect") as ColumnDef<TData, unknown>["filterFn"],
+        };
       }
       if (filter.type === "select") {
-        return { ...column, filterFn: column.filterFn ?? selectFilterFn };
+        return {
+          ...column,
+          filterFn: (column.filterFn ?? "select") as ColumnDef<TData, unknown>["filterFn"],
+        };
       }
       return column;
     });

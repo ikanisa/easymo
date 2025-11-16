@@ -4,6 +4,7 @@ import { sendListMessage, sendButtonsMessage, homeOnly } from "../../utils/reply
 import { IDS } from "../../wa/ids.ts";
 import { setState, clearState } from "../../state/store.ts";
 import { logStructuredEvent } from "../../observe/log.ts";
+import { fetchProfileMenuItems, submenuItemsToRows } from "../../utils/dynamic_submenu.ts";
 
 /**
  * Profile Hub
@@ -23,8 +24,50 @@ export async function handleProfileMenu(ctx: RouterContext): Promise<boolean> {
     wa_id: ctx.from,
   });
 
-  // Fetch user assets counts
-  const counts = await getProfileAssetCounts(ctx);
+  // Fetch profile menu items dynamically from database
+  const menuItems = await fetchProfileMenuItems(
+    "RW",
+    ctx.locale,
+    ctx.supabase,
+  );
+
+  if (!menuItems || menuItems.length === 0) {
+    console.error("No profile menu items found, using fallback");
+    // Fallback to basic menu with MOMO QR
+    await sendListMessage(
+      ctx,
+      {
+        title: t(ctx.locale, "profile.menu.title"),
+        body: t(ctx.locale, "profile.menu.body"),
+        sectionTitle: t(ctx.locale, "profile.menu.section"),
+        rows: [
+          {
+            id: IDS.MOMO_QR,
+            title: "📱 MOMO QR & Tokens",
+            description: "View your MOMO QR code and payment tokens",
+          },
+          {
+            id: IDS.BACK_MENU,
+            title: t(ctx.locale, "common.menu_back"),
+            description: t(ctx.locale, "common.back_to_menu.description"),
+          },
+        ],
+        buttonText: t(ctx.locale, "common.buttons.open"),
+      },
+      { emoji: "👤" }
+    );
+    return true;
+  }
+
+  // Convert database items to WhatsApp list rows
+  const rows = submenuItemsToRows(menuItems, getProfileMenuItemId);
+
+  // Add back button
+  rows.push({
+    id: IDS.BACK_MENU,
+    title: t(ctx.locale, "common.menu_back"),
+    description: t(ctx.locale, "common.back_to_menu.description"),
+  });
 
   await sendListMessage(
     ctx,
@@ -32,44 +75,33 @@ export async function handleProfileMenu(ctx: RouterContext): Promise<boolean> {
       title: t(ctx.locale, "profile.menu.title"),
       body: t(ctx.locale, "profile.menu.body"),
       sectionTitle: t(ctx.locale, "profile.menu.section"),
-      rows: [
-        {
-          id: IDS.PROFILE_VEHICLES,
-          title: t(ctx.locale, "profile.menu.vehicles.title", { count: counts.vehicles }),
-          description: t(ctx.locale, "profile.menu.vehicles.description"),
-        },
-        {
-          id: IDS.PROFILE_BUSINESSES,
-          title: t(ctx.locale, "profile.menu.businesses.title", { count: counts.businesses }),
-          description: t(ctx.locale, "profile.menu.businesses.description"),
-        },
-        {
-          id: IDS.PROFILE_PROPERTIES,
-          title: t(ctx.locale, "profile.menu.properties.title", { count: counts.properties }),
-          description: t(ctx.locale, "profile.menu.properties.description"),
-        },
-        {
-          id: IDS.PROFILE_TOKENS,
-          title: t(ctx.locale, "profile.menu.tokens.title"),
-          description: t(ctx.locale, "profile.menu.tokens.description"),
-        },
-        {
-          id: IDS.PROFILE_SETTINGS,
-          title: t(ctx.locale, "profile.menu.settings.title"),
-          description: t(ctx.locale, "profile.menu.settings.description"),
-        },
-        {
-          id: IDS.BACK_MENU,
-          title: t(ctx.locale, "common.menu_back"),
-          description: t(ctx.locale, "common.back_to_menu.description"),
-        },
-      ],
+      rows,
       buttonText: t(ctx.locale, "common.buttons.open"),
     },
     { emoji: "👤" }
   );
 
   return true;
+}
+
+/**
+ * Map profile menu item keys to IDS constants
+ */
+function getProfileMenuItemId(key: string): string {
+  const mapping: Record<string, string> = {
+    'view_profile': IDS.PROFILE_VIEW,
+    'my_businesses': IDS.PROFILE_BUSINESSES,
+    'my_vehicles': IDS.PROFILE_VEHICLES,
+    'my_properties': IDS.PROFILE_PROPERTIES,
+    'my_jobs': IDS.JOB_MY_JOBS,
+    'momo_qr': IDS.MOMO_QR,
+    'payment_history': IDS.PROFILE_TOKENS,
+    'saved_locations': 'saved_locations',
+    'settings': IDS.PROFILE_SETTINGS,
+    'change_language': 'change_language',
+    'help_support': 'help_support',
+  };
+  return mapping[key] || key;
 }
 
 export async function handleProfileVehicles(ctx: RouterContext): Promise<boolean> {
@@ -137,12 +169,25 @@ export async function handleAddVehicle(ctx: RouterContext): Promise<boolean> {
   return true;
 }
 
-export async function handleVehicleCertificateUpload(
+/**
+ * Handle vehicle certificate media upload
+ */
+export async function handleVehicleCertificateMedia(
   ctx: RouterContext,
-  fileUrl: string,
-  vehiclePlate: string
+  msg: any
 ): Promise<boolean> {
   if (!ctx.profileId) return false;
+
+  // Extract media ID and download URL
+  const mediaId = msg.image?.id;
+  if (!mediaId) {
+    await sendButtonsMessage(
+      ctx,
+      t(ctx.locale, "profile.vehicles.add.invalid_image"),
+      homeOnly()
+    );
+    return true;
+  }
 
   await sendButtonsMessage(
     ctx,
@@ -151,6 +196,13 @@ export async function handleVehicleCertificateUpload(
   );
 
   try {
+    // Get media URL from WhatsApp
+    const mediaUrl = await getMediaUrl(mediaId);
+    
+    // For now, we'll generate a simple vehicle plate from timestamp
+    // In production, you'd extract this from OCR or ask the user
+    const vehiclePlate = `VEH-${Date.now().toString().slice(-6)}`;
+
     // Call vehicle OCR edge function
     const response = await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/vehicle-ocr`, {
       method: "POST",
@@ -160,9 +212,9 @@ export async function handleVehicleCertificateUpload(
       },
       body: JSON.stringify({
         profile_id: ctx.profileId,
-        org_id: "default", // Use default org or fetch from profile
+        org_id: "default",
         vehicle_plate: vehiclePlate,
-        file_url: fileUrl,
+        file_url: mediaUrl,
       }),
     });
 
@@ -199,6 +251,21 @@ export async function handleVehicleCertificateUpload(
     await clearState(ctx.supabase, ctx.profileId);
     return true;
   }
+}
+
+async function getMediaUrl(mediaId: string): Promise<string> {
+  // Get WhatsApp access token
+  const accessToken = Deno.env.get("WA_ACCESS_TOKEN");
+  
+  // Fetch media URL from WhatsApp API
+  const response = await fetch(`https://graph.facebook.com/v17.0/${mediaId}`, {
+    headers: {
+      "Authorization": `Bearer ${accessToken}`,
+    },
+  });
+  
+  const data = await response.json();
+  return data.url || "";
 }
 
 export async function handleProfileBusinesses(ctx: RouterContext): Promise<boolean> {
@@ -254,22 +321,9 @@ export async function handleProfileBusinesses(ctx: RouterContext): Promise<boole
 export async function handleAddBusiness(ctx: RouterContext): Promise<boolean> {
   if (!ctx.profileId) return false;
 
-  await setState(ctx.supabase, ctx.profileId, {
-    key: "profile_add_business",
-    data: { stage: "search_method" },
-  });
-
-  await sendButtonsMessage(
-    ctx,
-    t(ctx.locale, "profile.businesses.add.search_prompt"),
-    [
-      { id: IDS.PROFILE_BUSINESS_SEARCH_NAME, title: t(ctx.locale, "profile.businesses.add.search_by_name") },
-      { id: IDS.PROFILE_BUSINESS_SEARCH_LOCATION, title: t(ctx.locale, "profile.businesses.add.search_by_location") },
-      { id: IDS.BACK_MENU, title: t(ctx.locale, "common.buttons.skip") },
-    ]
-  );
-
-  return true;
+  // Start the business claiming flow with smart search
+  const { startBusinessClaim } = await import("../business/claim.ts");
+  return await startBusinessClaim(ctx);
 }
 
 // Helper functions
@@ -313,13 +367,13 @@ async function getUserVehicles(ctx: RouterContext) {
 
 async function getUserBusinesses(ctx: RouterContext) {
   const { data } = await ctx.supabase
-    .from("business_owners")
-    .select("business_id, businesses(id, name, category)")
-    .eq("profile_id", ctx.profileId!);
+    .from("business")
+    .select("id, name, category_name")
+    .eq("owner_user_id", ctx.profileId!);
 
   return (data || []).map((item: any) => ({
-    id: item.businesses.id,
-    name: item.businesses.name,
-    category: item.businesses.category,
+    id: item.id,
+    name: item.name,
+    category: item.category_name,
   }));
 }

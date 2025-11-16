@@ -3,6 +3,7 @@ import type {
   WhatsAppInteractiveListMessage,
 } from "../types.ts";
 import { getListReplyId } from "../utils/messages.ts";
+import { t } from "../i18n/translator.ts";
 // AI Agents Integration
 import {
   handleAIAgentOptionSelection,
@@ -38,6 +39,7 @@ import {
   type ScheduleState,
   startScheduleTrip,
 } from "../domains/mobility/schedule.ts";
+import { setState } from "../state/store.ts";
 import type { ScheduleSavedPickerState } from "../domains/mobility/schedule.ts";
 import {
   handleMarketplaceButton,
@@ -94,6 +96,7 @@ import {
 import {
   homeOnly,
   sendButtonsMessage,
+  sendListMessage,
   buildButtons,
 } from "../utils/reply.ts";
 import { handleAdminBack } from "../flows/admin/navigation.ts";
@@ -157,6 +160,12 @@ export async function handleList(
     }
   }
   if (state.key === "pharmacy_results") {
+    if (id === "pharmacy_more") {
+      const { handlePharmacyMore } = await import(
+        "../domains/healthcare/pharmacies.ts"
+      );
+      return await handlePharmacyMore(ctx, state.data ?? {});
+    }
     return await handlePharmacyResultSelection(
       ctx,
       (state.data ?? {}) as PharmacyResultsState,
@@ -164,6 +173,12 @@ export async function handleList(
     );
   }
   if (state.key === "quincaillerie_results") {
+    if (id === "quincaillerie_more") {
+      const { handleQuincaillerieMore } = await import(
+        "../domains/healthcare/quincailleries.ts"
+      );
+      return await handleQuincaillerieMore(ctx, state.data ?? {});
+    }
     return await handleQuincaillerieResultSelection(
       ctx,
       (state.data ?? {}) as QuincaResultsState,
@@ -174,6 +189,16 @@ export async function handleList(
     return await handleNotaryResultSelection(
       ctx,
       (state.data ?? {}) as NotaryResultsState,
+      id,
+    );
+  }
+  if (state.key === "business_claim") {
+    const { handleBusinessClaim } = await import(
+      "../domains/business/claim.ts"
+    );
+    return await handleBusinessClaim(
+      ctx,
+      (state.data ?? {}) as any,
       id,
     );
   }
@@ -369,10 +394,7 @@ export async function handleList(
 async function sendDineInDisabledNotice(ctx: RouterContext): Promise<void> {
   await sendButtonsMessage(
     ctx,
-    {
-      body:
-        "Dine-in workflows are handled outside WhatsApp. Please coordinate with your success manager.",
-    },
+    "Dine-in orders are handled separately. Please contact our team for assistance.",
     [...homeOnly()],
     { emoji: "ℹ️" },
   );
@@ -401,10 +423,7 @@ function isRemovedFeatureState(key?: string): boolean {
 async function sendRemovedFeatureNotice(ctx: RouterContext): Promise<void> {
   await sendButtonsMessage(
     ctx,
-    {
-      body:
-        "That workflow has been retired. Please use the main menu buttons for the supported features.",
-    },
+    "That workflow has been retired. Please use the main menu buttons for the supported features.",
     [...homeOnly()],
     { emoji: "ℹ️" },
   );
@@ -452,8 +471,12 @@ async function handleHomeMenuSelection(
       return await startNotaryServices(ctx);
     case IDS.PROPERTY_RENTALS:
       return await startPropertyRentals(ctx);
-    case IDS.MARKETPLACE:
-      return await startMarketplace(ctx, state);
+    case IDS.MARKETPLACE: {
+      const { startShopsAndServices } = await import(
+        "../domains/shops/services.ts"
+      );
+      return await startShopsAndServices(ctx);
+    }
     case IDS.PROFILE_MANAGE_BUSINESSES: {
       const { showManageBusinesses } = await import(
         "../domains/business/management.ts"
@@ -554,8 +577,35 @@ async function handleHomeMenuSelection(
     }
     case IDS.PROFILE_PROPERTIES: {
       // Redirect to property rentals
-      const { startPropertyRentals } = await import("../domains/property/index.ts");
+      const { startPropertyRentals } = await import("../domains/property/rentals.ts");
       return await startPropertyRentals(ctx);
+    }
+    case IDS.PROFILE_VIEW: {
+      // Show user profile information
+      if (!ctx.profileId) {
+        await sendButtonsMessage(ctx, "Profile not found. Please register first.", homeOnly());
+        return true;
+      }
+      
+      const { data: profile } = await ctx.supabase
+        .from("profiles")
+        .select("full_name, wa_id, created_at, country_code")
+        .eq("id", ctx.profileId)
+        .single();
+      
+      if (!profile) {
+        await sendButtonsMessage(ctx, "Profile not found.", homeOnly());
+        return true;
+      }
+      
+      const profileInfo = `👤 *Your Profile*\n\n` +
+        `Name: ${profile.full_name || 'Not set'}\n` +
+        `WhatsApp: ${profile.wa_id}\n` +
+        `Country: ${profile.country_code || 'RW'}\n` +
+        `Member since: ${new Date(profile.created_at).toLocaleDateString()}`;
+      
+      await sendButtonsMessage(ctx, profileInfo, homeOnly());
+      return true;
     }
     case IDS.PROFILE_SETTINGS: {
       // TODO: Implement settings menu (language, notifications, etc.)
@@ -566,11 +616,109 @@ async function handleHomeMenuSelection(
       );
       return true;
     }
-    case IDS.BARS_RESTAURANTS: {
-      const { startRestaurantManager } = await import(
-        "../domains/vendor/restaurant.ts"
+    case "saved_locations": {
+      // Show saved locations (redirect to saved places)
+      const { startSavedPlaces } = await import("../domains/locations/manage.ts");
+      return await startSavedPlaces(ctx);
+    }
+    case "change_language": {
+      // Language selection menu
+      await sendListMessage(
+        ctx,
+        {
+          title: "Change Language",
+          body: "Select your preferred language:",
+          sectionTitle: "Available Languages",
+          rows: [
+            { id: "lang_en", title: "🇬🇧 English", description: "English" },
+            { id: "lang_fr", title: "🇫🇷 Français", description: "French" },
+            { id: "lang_rw", title: "🇷🇼 Kinyarwanda", description: "Kinyarwanda" },
+            { id: IDS.BACK_MENU, title: "Back to Menu", description: "Return to previous menu" },
+          ],
+          buttonText: "Select",
+        },
+        { emoji: "🌍" }
       );
-      return await startRestaurantManager(ctx);
+      return true;
+    }
+    case IDS.JOB_BOARD: {
+      const { showJobBoardMenu } = await import(
+        "../domains/jobs/index.ts"
+      );
+      return await showJobBoardMenu(ctx);
+    }
+    case IDS.JOB_FIND: {
+      const { startJobSearch } = await import(
+        "../domains/jobs/index.ts"
+      );
+      return await startJobSearch(ctx);
+    }
+    case IDS.JOB_POST: {
+      const { startJobPosting } = await import(
+        "../domains/jobs/index.ts"
+      );
+      return await startJobPosting(ctx);
+    }
+    case IDS.JOB_MY_APPLICATIONS: {
+      const { showMyApplications } = await import(
+        "../domains/jobs/index.ts"
+      );
+      return await showMyApplications(ctx);
+    }
+    case IDS.JOB_MY_JOBS: {
+      const { showMyJobs } = await import(
+        "../domains/jobs/index.ts"
+      );
+      return await showMyJobs(ctx);
+    }
+    case IDS.BARS_RESTAURANTS: {
+      const { startBarsSearch } = await import(
+        "../domains/bars/search.ts"
+      );
+      return await startBarsSearch(ctx);
+    }
+    case "help_support":
+    case "customer_support": {
+      // Both support options show contact information
+      await sendButtonsMessage(
+        ctx,
+        t(ctx.locale, "support.contact_info"),
+        homeOnly(),
+        { emoji: "💬" }
+      );
+      return true;
+    }
+    case "lang_en":
+    case "lang_fr":
+    case "lang_rw": {
+      // Update user language preference
+      const langMap: Record<string, string> = {
+        "lang_en": "en",
+        "lang_fr": "fr",
+        "lang_rw": "rw",
+      };
+      const newLang = langMap[id] || "en";
+      
+      if (ctx.profileId) {
+        await ctx.supabase
+          .from("profiles")
+          .update({ preferred_language: newLang })
+          .eq("id", ctx.profileId);
+      }
+      
+      const confirmMsg: Record<string, string> = {
+        "en": "✅ Language changed to English",
+        "fr": "✅ Langue changée en Français",
+        "rw": "✅ Ururimi rwahinduwe ku Kinyarwanda",
+      };
+      
+      await sendButtonsMessage(
+        ctx,
+        confirmMsg[newLang] || confirmMsg["en"],
+        homeOnly(),
+        { emoji: "🌍" }
+      );
+      return true;
     }
     case IDS.HOME_MORE: {
       const page =
@@ -606,6 +754,86 @@ async function handleHomeMenuSelection(
       await openAdminHub(ctx);
       return true;
     default:
+      // Check for bars preference selection
+      if (id.startsWith("bars_pref_") && state.key === "bars_wait_preference") {
+        const { handleBarsPreferenceSelection } = await import(
+          "../domains/bars/search.ts"
+        );
+        return await handleBarsPreferenceSelection(ctx, id);
+      }
+      
+      // Check for bars "More" button
+      if (id === "bars_more" && state.key === "bars_results") {
+        const { handleBarsMore } = await import(
+          "../domains/bars/search.ts"
+        );
+        return await handleBarsMore(ctx, state.data || {});
+      }
+      
+      // Check for bars results selection
+      if (id.startsWith("bar_result_") && state.key === "bars_results") {
+        const { handleBarsResultSelection } = await import(
+          "../domains/bars/search.ts"
+        );
+        return await handleBarsResultSelection(ctx, state.data || {}, id);
+      }
+      
+      // Check for bar waiter AI chat
+      if (id === IDS.BAR_CHAT_WAITER || (id === "bar_chat_waiter" && state.key === "bar_detail")) {
+        await sendButtonsMessage(
+          ctx,
+          t(ctx.locale, "bars.waiter.greeting"),
+          buildButtons(
+            {
+              id: IDS.BACK_MENU,
+              title: t(ctx.locale, "common.menu_back"),
+            },
+          ),
+          { emoji: "🤖" },
+        );
+        
+        // Set state to waiter chat mode
+        if (ctx.profileId && state.data) {
+          await setState(ctx.supabase, ctx.profileId, {
+            key: "bar_waiter_chat",
+            data: state.data,
+          });
+        }
+        return true;
+      }
+      
+      // Check for shop tag selection
+      if (id.startsWith("shop_tag_") && state.key === "shops_tag_selection") {
+        const { handleShopsTagSelection } = await import(
+          "../domains/shops/services.ts"
+        );
+        return await handleShopsTagSelection(ctx, state.data || {}, id);
+      }
+      
+      // Check for shops tags "More" button
+      if (id === "shops_tags_more" && state.key === "shops_tag_selection") {
+        const { handleShopsTagsMore } = await import(
+          "../domains/shops/services.ts"
+        );
+        return await handleShopsTagsMore(ctx, state.data || {});
+      }
+      
+      // Check for shops "More" button
+      if (id === "shops_more" && state.key === "shops_results") {
+        const { handleShopsMore } = await import(
+          "../domains/shops/services.ts"
+        );
+        return await handleShopsMore(ctx, state.data || {});
+      }
+      
+      // Check for shop result selection
+      if (id.startsWith("shop_result_") && state.key === "shops_results") {
+        const { handleShopsResultSelection } = await import(
+          "../domains/shops/services.ts"
+        );
+        return await handleShopsResultSelection(ctx, state.data || {}, id);
+      }
+      
       return false;
   }
 }

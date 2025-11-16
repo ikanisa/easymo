@@ -19,9 +19,9 @@ const updateAgentConfigSchema = z.object({
 });
 
 // GET /api/agent-orchestration/registry/[agent_type] - Get agent config
-export const GET = createHandler<{ params: Promise<{ agent_type: string }> }>(
+export const GET = createHandler(
   "admin_api.agent_registry.get",
-  async (req, context) => {
+  async (req, context: { params: Promise<{ agent_type: string }> }) => {
     try {
       const { agent_type } = await context.params;
       const supabase = getSupabaseAdminClient();
@@ -54,9 +54,9 @@ export const GET = createHandler<{ params: Promise<{ agent_type: string }> }>(
 );
 
 // PATCH /api/agent-orchestration/registry/[agent_type] - Update agent config
-export const PATCH = createHandler<{ params: Promise<{ agent_type: string }> }>(
+export const PATCH = createHandler(
   "admin_api.agent_registry.update",
-  async (req, context) => {
+  async (req, context: { params: Promise<{ agent_type: string }> }) => {
     try {
       const { agent_type } = await context.params;
       const body = await req.json();

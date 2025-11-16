@@ -48,6 +48,7 @@ This seed file populates the `restaurant_menu_items` table with a comprehensive 
 ### Prerequisites
 1. Ensure the migration `20260322110000_bars_restaurants_menu_system.sql` has been applied
 2. Ensure all 97 bar records exist in the `bars` table with the specified UUIDs
+3. The seed now reconciles missing UUIDs by querying `public.bars`; it aborts if the final list still differs from 97 entries. Fix upstream data issues before rerunning if this happens.
 
 ### Execution
 

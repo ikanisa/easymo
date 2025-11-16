@@ -1,6 +1,6 @@
 "use client";
 
-import { GeoHeatmapWidget } from "@easymo/ui";
+import { GeoHeatmapWidget } from "@easymo/ui/widgets/GeoHeatmapWidget";
 import { SectionCard } from "@/components/ui/SectionCard";
 import { mockPropertyDemandZones } from "@/lib/mock-data";
 

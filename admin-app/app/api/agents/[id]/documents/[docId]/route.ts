@@ -5,7 +5,7 @@ const BUCKET = process.env.AGENT_DOCS_BUCKET || "agent-docs";
 
 export async function PATCH(
   req: Request,
-  { params }: { params: { id: string; docId: string } },
+  { params }: { params: Promise<{ id: string; docId: string }> },
 ) {
   const admin = getSupabaseAdminClient();
   if (!admin) {
@@ -17,7 +17,7 @@ export async function PATCH(
     return NextResponse.json({ error: "invalid_payload" }, { status: 400 });
   }
 
-  const { docId } = params;
+  const { docId } = await params;
   const { data: current, error: fetchErr } = await admin
     .from("agent_documents")
     .select("id, title, metadata, embedding_status")
@@ -83,8 +83,9 @@ export async function PATCH(
 
 export async function DELETE(
   _: Request,
-  { params }: { params: { id: string; docId: string } },
+  context: { params: Promise<{ id: string; docId: string }> },
 ) {
+  const { docId } = await context.params;
   const admin = getSupabaseAdminClient();
   if (!admin) {
     return NextResponse.json({ error: "supabase_unavailable" }, {
@@ -95,7 +96,7 @@ export async function DELETE(
   const { data: doc, error: fetchErr } = await admin
     .from("agent_documents")
     .select("id, storage_path")
-    .eq("id", params.docId)
+    .eq("id", docId)
     .maybeSingle();
   if (fetchErr) {
     return NextResponse.json({ error: fetchErr.message }, { status: 500 });
@@ -108,7 +109,7 @@ export async function DELETE(
   }
   const { error } = await admin.from("agent_documents").delete().eq(
     "id",
-    params.docId,
+    docId,
   );
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

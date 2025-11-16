@@ -7,13 +7,11 @@
 // =====================================================
 
 import { serve } from "$std/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { logStructuredEvent, recordMetric, maskPII } from "../_shared/observability.ts";
+import { getServiceClient } from "shared/supabase.ts";
+import { getEnv, requireEnv } from "shared/env.ts";
 
-const supabase = createClient(
-  Deno.env.get("SUPABASE_URL")!,
-  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-);
+const supabase = getServiceClient();
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -33,17 +31,21 @@ interface MoMoConfig {
 }
 
 function getMoMoConfig(provider: string): MoMoConfig {
-  const env = Deno.env.get("MOMO_ENVIRONMENT") || "sandbox";
-  
+  const env = getEnv("MOMO_ENVIRONMENT") || "sandbox";
+  const apiKey = requireEnv("MOMO_API_KEY");
+  const apiSecret = requireEnv("MOMO_API_SECRET");
+  const subscriptionKey = requireEnv("MOMO_SUBSCRIPTION_KEY");
+
   return {
-    apiUrl: env === "production" 
-      ? "https://proxy.momoapi.mtn.com" 
+    apiUrl: env === "production"
+      ? "https://proxy.momoapi.mtn.com"
       : "https://sandbox.momodeveloper.mtn.com",
-    apiKey: Deno.env.get("MOMO_API_KEY") || "",
-    apiSecret: Deno.env.get("MOMO_API_SECRET") || "",
-    subscriptionKey: Deno.env.get("MOMO_SUBSCRIPTION_KEY") || "",
+    apiKey,
+    apiSecret,
+    subscriptionKey,
     environment: env as "sandbox" | "production",
   };
+}
 }
 
 // =====================================================
@@ -70,7 +72,7 @@ async function createMoMoPayment(
           "X-Reference-Id": referenceId,
           "X-Target-Environment": config.environment,
           "Ocp-Apim-Subscription-Key": config.subscriptionKey,
-          "X-Callback-Url": `${Deno.env.get("SUPABASE_URL")}/functions/v1/momo-webhook`,
+          "X-Callback-Url": `${requireEnv("SUPABASE_URL", ["SERVICE_URL"])}/functions/v1/momo-webhook`,
           "X-Correlation-Id": correlationId,
         },
         body: JSON.stringify({
@@ -129,10 +131,61 @@ async function createMoMoPayment(
   }
 }
 
+interface MoMoTokenResponse {
+  access_token: string;
+  token_type: string;
+  expires_in: number | string;
+}
+
+const momoTokenCache = new Map<string, { token: string; expiresAt: number }>();
+
 async function getMoMoToken(config: MoMoConfig): Promise<string> {
-  // In production, implement proper OAuth token flow
-  // For now, return API key (sandbox mode)
-  return config.apiKey;
+  const cacheKey = `${config.apiKey}:${config.environment}`;
+  const cachedToken = momoTokenCache.get(cacheKey);
+  const now = Date.now();
+  if (cachedToken && cachedToken.expiresAt > now) {
+    return cachedToken.token;
+  }
+
+  if (!config.apiKey || !config.apiSecret) {
+    throw new Error("MoMo API credentials not configured");
+  }
+
+  if (!config.subscriptionKey) {
+    throw new Error("MoMo subscription key not configured");
+  }
+
+  const basicAuth = btoa(`${config.apiKey}:${config.apiSecret}`);
+
+  const response = await fetch(`${config.apiUrl}/collection/token/`, {
+    method: "POST",
+    headers: {
+      Authorization: `Basic ${basicAuth}`,
+      "Ocp-Apim-Subscription-Key": config.subscriptionKey,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({}),
+  });
+
+  if (!response.ok) {
+    const errorBody = await response.text();
+    await logStructuredEvent("MOMO_TOKEN_ERROR", {
+      status: response.status,
+      error: errorBody,
+    });
+    throw new Error(`Failed to obtain MoMo access token: ${response.status}`);
+  }
+
+  const tokenData = (await response.json()) as MoMoTokenResponse;
+  const expiresInSeconds = Number(tokenData.expires_in || 0);
+  const expiresAt = Date.now() + Math.max(expiresInSeconds - 30, 30) * 1000;
+
+  momoTokenCache.set(cacheKey, {
+    token: tokenData.access_token,
+    expiresAt,
+  });
+
+  return tokenData.access_token;
 }
 
 // =====================================================

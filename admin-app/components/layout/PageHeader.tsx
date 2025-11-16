@@ -4,9 +4,10 @@ interface PageHeaderProps {
   title: string;
   description: string;
   meta?: ReactNode;
+  actions?: ReactNode;
 }
 
-export function PageHeader({ title, description, meta }: PageHeaderProps) {
+export function PageHeader({ title, description, meta, actions }: PageHeaderProps) {
   return (
     <header className="page-header">
       <div className="page-header__summary">
@@ -14,6 +15,7 @@ export function PageHeader({ title, description, meta }: PageHeaderProps) {
         <p>{description}</p>
       </div>
       {meta ? <div className="page-header__meta">{meta}</div> : null}
+      {actions ? <div className="page-header__actions">{actions}</div> : null}
     </header>
   );
 }

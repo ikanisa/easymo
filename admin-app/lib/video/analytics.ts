@@ -1,6 +1,5 @@
 import 'server-only';
 
-import { cache } from 'react';
 import { getSupabaseAdminClient } from '@/lib/server/supabase-admin';
 
 export type VideoAnalyticsDashboardData = {
@@ -149,6 +148,28 @@ type ApprovalRow = {
   created_at: string;
 };
 
+function coercePerformanceRows(rows: unknown[] | null | undefined): PerformanceRow[] {
+  if (!rows) {
+    return [];
+  }
+
+  return rows.map((row) => {
+    const candidate = row as PerformanceRow & {
+      job?: PerformanceRow["job"] | PerformanceRow["job"][] | null;
+    };
+
+    const jobValue = candidate.job;
+    const normalizedJob = Array.isArray(jobValue)
+      ? (jobValue[0] as PerformanceRow["job"] | undefined) ?? null
+      : jobValue ?? null;
+
+    return {
+      ...candidate,
+      job: normalizedJob,
+    };
+  });
+}
+
 const SAMPLE_DASHBOARD: VideoAnalyticsDashboardData = {
   isSample: true,
   lookbackDays: 14,
@@ -269,9 +290,9 @@ const SAMPLE_DASHBOARD: VideoAnalyticsDashboardData = {
   lastRefreshedAt: null,
 };
 
-export const getVideoAnalyticsDashboardData = cache(async (options?: {
+export async function getVideoAnalyticsDashboardData(options?: {
   lookbackDays?: number;
-}): Promise<VideoAnalyticsDashboardData> => {
+}): Promise<VideoAnalyticsDashboardData> {
   const supabase = await getSupabaseAdminClient();
   const lookbackDays = options?.lookbackDays ?? 14;
 
@@ -293,7 +314,7 @@ export const getVideoAnalyticsDashboardData = cache(async (options?: {
     return SAMPLE_DASHBOARD;
   }
 
-  const rows = data as PerformanceRow[];
+  const rows = coercePerformanceRows(data);
   const dailyRows = rows.filter((row) => row.interval === 'daily');
   const weeklyRows = rows.filter((row) => row.interval === 'weekly');
   const lifetimeRows = rows.filter((row) => row.interval === 'lifetime');
@@ -334,9 +355,9 @@ export const getVideoAnalyticsDashboardData = cache(async (options?: {
     rightsExpiring,
     lastRefreshedAt,
   };
-});
+}
 
-export const getVideoJobDetail = cache(async (id: string): Promise<VideoJobDetail | null> => {
+export async function getVideoJobDetail(id: string): Promise<VideoJobDetail | null> {
   const supabase = await getSupabaseAdminClient();
   if (!supabase) {
     const sample = SAMPLE_DASHBOARD.jobs[0];
@@ -362,7 +383,7 @@ export const getVideoJobDetail = cache(async (id: string): Promise<VideoJobDetai
     return null;
   }
 
-  const rows = jobRows as PerformanceRow[];
+  const rows = coercePerformanceRows(jobRows);
   const baseRow = rows.find((row) => row.interval === 'lifetime') ?? rows[0];
   const summary = performanceRowToSummary(baseRow);
 
@@ -391,7 +412,7 @@ export const getVideoJobDetail = cache(async (id: string): Promise<VideoJobDetai
       costPerRender: row.cost_per_render ?? null,
     })),
   };
-});
+}
 
 function aggregateTotals(rows: PerformanceRow[]): VideoAnalyticsDashboardData['totals'] {
   const totals = rows.reduce(

@@ -7,7 +7,9 @@
 
 ## Executive Summary
 
-The existing `config/agent_configs.yaml` contains all 15 agents specified in the problem statement. This document analyzes alignment between the current configuration and the detailed requirements from the problem statement.
+The existing `config/agent_configs.yaml` contains all 15 agents specified in the problem statement.
+This document analyzes alignment between the current configuration and the detailed requirements
+from the problem statement.
 
 ### Overall Status: ✅ Well-Aligned
 
@@ -42,6 +44,7 @@ The existing `config/agent_configs.yaml` contains all 15 agents specified in the
 ```
 
 **Problem Statement Requirements**: ✅ Met
+
 - Fast triage concierge ✅
 - Intent detection tools ✅
 - No payments restriction ✅
@@ -53,14 +56,16 @@ The existing `config/agent_configs.yaml` contains all 15 agents specified in the
 
 ```yaml
 - slug: waiter-ai
-  autonomy: suggest  # Changed from auto per requirements
-  tools: [search_supabase, order_create, order_status_update, momo_charge, notify_staff, analytics_log]
+  autonomy: suggest # Changed from auto per requirements
+  tools:
+    [search_supabase, order_create, order_status_update, momo_charge, notify_staff, analytics_log]
   guardrails:
-    payment_limits: {currency: RWF, max_per_txn: 200000}
+    payment_limits: { currency: RWF, max_per_txn: 200000 }
     allergy_check: true
 ```
 
 **Problem Statement Requirements**: ✅ Met
+
 - Menu presentation ✅
 - Order creation ✅
 - Payment via MoMo only ✅
@@ -81,6 +86,7 @@ The existing `config/agent_configs.yaml` contains all 15 agents specified in the
 ```
 
 **Problem Statement Requirements**: ✅ Met
+
 - Nearby drivers/passengers ✅
 - Price estimation ✅
 - Coarse location only ✅
@@ -93,7 +99,17 @@ The existing `config/agent_configs.yaml` contains all 15 agents specified in the
 ```yaml
 - slug: pharmacy-agent
   autonomy: suggest
-  tools: [search_supabase, inventory_check, order_create, order_status_update, momo_charge, ocr_extract, notify_staff, analytics_log]
+  tools:
+    [
+      search_supabase,
+      inventory_check,
+      order_create,
+      order_status_update,
+      momo_charge,
+      ocr_extract,
+      notify_staff,
+      analytics_log,
+    ]
   guardrails:
     medical_advice: forbidden
     pharmacist_review_required: true
@@ -101,6 +117,7 @@ The existing `config/agent_configs.yaml` contains all 15 agents specified in the
 ```
 
 **Problem Statement Requirements**: ✅ Met
+
 - Availability checking ✅
 - Substitutes handling ✅
 - OCR for prescriptions ✅
@@ -113,12 +130,22 @@ The existing `config/agent_configs.yaml` contains all 15 agents specified in the
 ```yaml
 - slug: hardware-agent
   autonomy: suggest
-  tools: [search_supabase, inventory_check, order_create, order_status_update, momo_charge, notify_staff, analytics_log]
+  tools:
+    [
+      search_supabase,
+      inventory_check,
+      order_create,
+      order_status_update,
+      momo_charge,
+      notify_staff,
+      analytics_log,
+    ]
   guardrails:
     delivery_fee_threshold_kg: 20
 ```
 
 **Problem Statement Requirements**: ✅ Met
+
 - Specs capture ✅
 - Delivery fee threshold ✅
 - Heavy item handling ✅
@@ -130,12 +157,22 @@ The existing `config/agent_configs.yaml` contains all 15 agents specified in the
 ```yaml
 - slug: shop-agent
   autonomy: auto
-  tools: [search_supabase, inventory_check, order_create, order_status_update, momo_charge, notify_staff, analytics_log]
+  tools:
+    [
+      search_supabase,
+      inventory_check,
+      order_create,
+      order_status_update,
+      momo_charge,
+      notify_staff,
+      analytics_log,
+    ]
   guardrails:
     substitution_policy: "brand->generic->none"
 ```
 
 **Problem Statement Requirements**: ✅ Met
+
 - Fast picking ✅
 - Smart substitutions ✅
 - Autonomy: auto ✅
@@ -155,6 +192,7 @@ The existing `config/agent_configs.yaml` contains all 15 agents specified in the
 ```
 
 **Problem Statement Requirements**: ✅ Met
+
 - OCR extraction ✅
 - Premium calculation ✅
 - PDF certificate generation ✅
@@ -173,6 +211,7 @@ The existing `config/agent_configs.yaml` contains all 15 agents specified in the
 ```
 
 **Problem Statement Requirements**: ✅ Met
+
 - Property search ✅
 - Viewing scheduling ✅
 - Address privacy ✅
@@ -190,6 +229,7 @@ The existing `config/agent_configs.yaml` contains all 15 agents specified in the
 ```
 
 **Problem Statement Requirements**: ✅ Met
+
 - No legal advice ✅
 - Handoff required ✅
 - Document generation ✅
@@ -210,6 +250,7 @@ The existing `config/agent_configs.yaml` contains all 15 agents specified in the
 ```
 
 **Problem Statement Requirements**: ✅ Met
+
 - MoMo processing ✅
 - No card PANs ✅
 - Server-side only ✅
@@ -228,6 +269,7 @@ The existing `config/agent_configs.yaml` contains all 15 agents specified in the
 ```
 
 **Problem Statement Requirements**: ✅ Met
+
 - Template-only broadcasts ✅
 - Quiet hours enforcement ✅
 - Handoff for approval ✅
@@ -254,6 +296,7 @@ The existing `config/agent_configs.yaml` contains all 15 agents specified in the
 ```
 
 **Problem Statement Requirements**: ✅ Met
+
 - Sora API integration ✅
 - Brand kit requirement ✅
 - Consent registry ✅
@@ -273,6 +316,7 @@ The existing `config/agent_configs.yaml` contains all 15 agents specified in the
 ```
 
 **Problem Statement Requirements**: ✅ Met
+
 - Escalation handling ✅
 - Context summarization ✅
 - Staff notification ✅
@@ -290,6 +334,7 @@ The existing `config/agent_configs.yaml` contains all 15 agents specified in the
 ```
 
 **Problem Statement Requirements**: ✅ Met
+
 - Silent policy enforcement ✅
 - Country pack application ✅
 - Market exclusions ✅
@@ -307,6 +352,7 @@ The existing `config/agent_configs.yaml` contains all 15 agents specified in the
 ```
 
 **Problem Statement Requirements**: ✅ Met
+
 - Event logging ✅
 - Risk detection ✅
 - Privacy compliance ✅
@@ -319,7 +365,6 @@ The existing `config/agent_configs.yaml` contains all 15 agents specified in the
 
 1. **trip_price_estimate** - Referenced in problem statement for Mobility agent, not in YAML
    - May be integrated within `maps_geosearch` or edge function
-   
 2. **case_intake** - Referenced for Legal agent, not in YAML
    - May be integrated within `search_supabase` or planned
 
@@ -350,9 +395,10 @@ None - configuration is production-ready.
 ### High Priority (Should Do)
 
 1. **Update Waiter AI autonomy**: Change from "auto" to "suggest" to match problem statement
+
    ```yaml
    - slug: waiter-ai
-     autonomy: suggest  # Changed from auto
+     autonomy: suggest # Changed from auto
    ```
 
 2. **Add missing tool references** in YAML comments for documentation:
@@ -380,13 +426,13 @@ None - configuration is production-ready.
 
 ## Configuration Quality Assessment
 
-| Category | Score | Notes |
-|----------|-------|-------|
-| Completeness | 98% | All agents present, minor tool documentation gaps |
-| Correctness | 100% | All existing configurations match requirements |
-| Consistency | 95% | One autonomy level discrepancy (Waiter AI) |
-| Documentation | 90% | YAML is self-documenting, could add more inline docs |
-| Maintainability | 95% | Well-structured, easy to update |
+| Category        | Score | Notes                                                |
+| --------------- | ----- | ---------------------------------------------------- |
+| Completeness    | 98%   | All agents present, minor tool documentation gaps    |
+| Correctness     | 100%  | All existing configurations match requirements       |
+| Consistency     | 95%   | One autonomy level discrepancy (Waiter AI)           |
+| Documentation   | 90%   | YAML is self-documenting, could add more inline docs |
+| Maintainability | 95%   | Well-structured, easy to update                      |
 
 **Overall Grade**: A (Excellent)
 
@@ -395,6 +441,7 @@ None - configuration is production-ready.
 ## Next Steps
 
 ### Phase 1: Documentation (Complete) ✅
+
 - [x] Create Tool Catalog
 - [x] Create Agent Blueprints
 - [x] Create Global Conventions
@@ -402,18 +449,21 @@ None - configuration is production-ready.
 - [x] This alignment report
 
 ### Phase 2: Configuration Updates (Recommended)
+
 - [ ] Update Waiter AI autonomy level
 - [ ] Add tool documentation comments
 - [ ] Create JSON Schema for validation
 - [ ] Add inline documentation
 
 ### Phase 3: Implementation (Planned)
+
 - [ ] Implement missing tools (case_intake, broadcast_schedule)
 - [ ] Create tool registry system
 - [ ] Add runtime validation
 - [ ] Create agent configuration UI
 
 ### Phase 4: Testing (Future)
+
 - [ ] Unit tests for each agent configuration
 - [ ] Integration tests for tool assignments
 - [ ] End-to-end flow tests
@@ -423,24 +473,30 @@ None - configuration is production-ready.
 
 ## Conclusion
 
-The existing `config/agent_configs.yaml` is **well-aligned** with the problem statement requirements. With 15/15 agents configured correctly, proper tool assignments, and comprehensive guardrails, the configuration is production-ready with only minor enhancements recommended.
+The existing `config/agent_configs.yaml` is **well-aligned** with the problem statement
+requirements. With 15/15 agents configured correctly, proper tool assignments, and comprehensive
+guardrails, the configuration is production-ready with only minor enhancements recommended.
 
 **Key Strengths**:
+
 - Complete agent coverage
 - Proper security guardrails
 - Clear autonomy levels
 - Structured and maintainable
 
 **Minor Improvements**:
+
 - One autonomy level adjustment (Waiter AI)
 - Additional tool documentation
 - Schema validation
 
-**Overall Assessment**: The configuration demonstrates excellent understanding of requirements and is ready for production use with minimal changes.
+**Overall Assessment**: The configuration demonstrates excellent understanding of requirements and
+is ready for production use with minimal changes.
 
 ---
 
 **References**:
+
 - [Tool Catalog](./TOOL_CATALOG.md)
 - [Agent Blueprints](./AGENT_BLUEPRINTS.md)
 - [Global Conventions](./GLOBAL_CONVENTIONS.md)

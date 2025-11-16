@@ -155,6 +155,44 @@ export async function sendList(
   });
 }
 
+export async function sendTemplate(
+  to: string,
+  opts: {
+    name: string;
+    language: string;
+    templateId?: string;
+    bodyParameters?: Array<{ type: "text"; text: string }>;
+  },
+): Promise<void> {
+  const templatePayload: Record<string, unknown> = {
+    name: opts.name,
+    language: { code: opts.language },
+  };
+
+  if (opts.templateId) {
+    templatePayload.template_id = opts.templateId;
+  }
+
+  if (opts.bodyParameters && opts.bodyParameters.length) {
+    templatePayload.components = [
+      {
+        type: "body",
+        parameters: opts.bodyParameters.map((param) => ({
+          type: param.type,
+          text: param.text,
+        })),
+      },
+    ];
+  }
+
+  await post({
+    messaging_product: "whatsapp",
+    to,
+    type: "template",
+    template: templatePayload,
+  });
+}
+
 export async function sendImageUrl(
   to: string,
   link: string,

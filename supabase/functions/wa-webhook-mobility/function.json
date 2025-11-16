@@ -1,0 +1,6 @@
+{
+  "name": "wa-webhook-mobility",
+  "version": "1.0.0",
+  "verify_jwt": false,
+  "import_map": "./deno.json"
+}

@@ -3,15 +3,17 @@
 **Version**: 2.0.0  
 **Target Audience**: End Users, Administrators, Developers  
 **Migration Type**: Non-breaking (backward compatible)  
-**Estimated Downtime**: Zero (rolling update)  
+**Estimated Downtime**: Zero (rolling update)
 
 ---
 
 ## 📋 Overview
 
-This guide walks you through migrating from EasyMO v1.x to v2.0, which introduces AI-powered agents while maintaining full backward compatibility with existing workflows.
+This guide walks you through migrating from EasyMO v1.x to v2.0, which introduces AI-powered agents
+while maintaining full backward compatibility with existing workflows.
 
 **Key Points**:
+
 - ✅ **No breaking changes** - All v1.x features continue to work
 - ✅ **Zero downtime** - Rolling deployment with gradual rollout
 - ✅ **Opt-in AI features** - Users can continue using traditional menus
@@ -26,6 +28,7 @@ This guide walks you through migrating from EasyMO v1.x to v2.0, which introduce
 **Short Answer**: Nothing breaks, but you get new AI-powered shortcuts!
 
 **Old Way (Still Works)**:
+
 ```
 [System sends menu]
 1. 🚖 See Drivers
@@ -37,11 +40,12 @@ This guide walks you through migrating from EasyMO v1.x to v2.0, which introduce
 ```
 
 **New Way (AI-Powered)**:
+
 ```
 You: "I need a driver to airport"
 
 AI: "🚖 I found 5 drivers near you heading to Kigali Airport!
-     
+
      [Interactive buttons with drivers, prices, ETAs]"
 ```
 
@@ -54,6 +58,7 @@ AI: "🚖 I found 5 drivers near you heading to Kigali Airport!
 #### ✅ No Action Required
 
 You don't need to do anything! The system will:
+
 - Automatically detect natural language messages
 - Route to AI agents when beneficial
 - Fall back to traditional menus if needed
@@ -61,6 +66,7 @@ You don't need to do anything! The system will:
 #### 📱 Optional: Try AI Features
 
 **To try AI agents**:
+
 1. Just type what you need in natural language
 2. Examples:
    - "Find me vegetables near me"
@@ -69,6 +75,7 @@ You don't need to do anything! The system will:
    - "How much is delivery to Kimihurura?"
 
 **To use traditional menus**:
+
 1. Text "MENU" anytime
 2. Or select from button options when presented
 
@@ -77,37 +84,44 @@ You don't need to do anything! The system will:
 ### Common Questions
 
 #### Q: Will I lose my order history?
+
 **A**: No! All your data is preserved. AI agents can access your full history.
 
 #### Q: What if I don't like the AI agent?
+
 **A**: Text "MENU" to switch back to traditional navigation anytime.
 
 #### Q: Does this cost extra?
+
 **A**: No! AI features are free. Same rates apply.
 
 #### Q: What if the AI doesn't understand me?
+
 **A**: The system will:
+
 1. Ask clarifying questions
 2. Offer menu-based alternatives
 3. Connect you to human support if needed
 
 #### Q: Can I use my language (Kinyarwanda/French)?
+
 **A**: Currently English only. Kinyarwanda and French coming in v2.1 (next quarter).
 
 #### Q: How do I know if I'm talking to AI or the menu?
+
 **A**: AI responses are conversational and personalized. Menu responses show numbered options.
 
 ---
 
 ### Troubleshooting
 
-| Issue | Solution |
-|-------|----------|
-| AI not responding | Text "MENU" to use traditional flow |
-| Session expired | Sessions last 10 minutes. Just start a new search |
-| Vendor not found | Try "Browse Vendors" from main menu |
-| Payment failed | Check wallet balance or try alternative payment |
-| Can't understand AI | Text "HELP" for clarifications |
+| Issue               | Solution                                          |
+| ------------------- | ------------------------------------------------- |
+| AI not responding   | Text "MENU" to use traditional flow               |
+| Session expired     | Sessions last 10 minutes. Just start a new search |
+| Vendor not found    | Try "Browse Vendors" from main menu               |
+| Payment failed      | Check wallet balance or try alternative payment   |
+| Can't understand AI | Text "HELP" for clarifications                    |
 
 ---
 
@@ -147,6 +161,7 @@ OPENAI_MODEL=gpt-4-turbo-2024-04-09
 ```
 
 **Security Notes**:
+
 - Store `OPENAI_API_KEY` in vault (DO NOT commit)
 - Keep `SERVICE_ROLE_KEY` server-side only
 - Use separate keys for staging/production
@@ -180,6 +195,7 @@ supabase db diff --schema public
 ```
 
 **New Tables Created**:
+
 - `agent_sessions` - Agent conversation state
 - `agent_requests` - Request history and metrics
 - `agent_metrics` - Performance tracking
@@ -223,6 +239,7 @@ kubectl rollout status deployment/wallet-service
 ```
 
 **Verify Health**:
+
 ```bash
 kubectl get pods -n easymo-prod
 kubectl logs -f deployment/agent-core -n easymo-prod
@@ -232,14 +249,14 @@ kubectl logs -f deployment/agent-core -n easymo-prod
 
 **Recommended Schedule** (adjust based on your risk tolerance):
 
-| Day | Percentage | Users | Actions |
-|-----|------------|-------|---------|
-| Day 1 | 1% | ~100 | Monitor intensively, war room standby |
-| Day 2 | 5% | ~500 | Review metrics, collect feedback |
-| Day 3 | 10% | ~1,000 | Check error rates, adjust if needed |
-| Day 4 | 25% | ~2,500 | Expand monitoring, train support team |
-| Day 7 | 50% | ~5,000 | Mid-rollout review, fix minor issues |
-| Day 10 | 100% | All users | Full launch celebration! 🎉 |
+| Day    | Percentage | Users     | Actions                               |
+| ------ | ---------- | --------- | ------------------------------------- |
+| Day 1  | 1%         | ~100      | Monitor intensively, war room standby |
+| Day 2  | 5%         | ~500      | Review metrics, collect feedback      |
+| Day 3  | 10%        | ~1,000    | Check error rates, adjust if needed   |
+| Day 4  | 25%        | ~2,500    | Expand monitoring, train support team |
+| Day 7  | 50%        | ~5,000    | Mid-rollout review, fix minor issues  |
+| Day 10 | 100%       | All users | Full launch celebration! 🎉           |
 
 **Feature Flag Control**:
 
@@ -255,6 +272,7 @@ kubectl set env deployment/agent-core FEATURE_AI_AGENTS_ROLLOUT_PERCENTAGE=5
 ```
 
 **Rollback Triggers** (immediate rollback if):
+
 - Error rate >5%
 - User complaints >10/hour
 - Critical bug discovered
@@ -393,6 +411,7 @@ kubectl set env deployment/agent-core FEATURE_AI_AGENTS_ROLLOUT_PERCENTAGE=1
 ### Rollback Procedure
 
 **When to Rollback**:
+
 - Error rate >5%
 - Critical bug discovered
 - User complaints exceed threshold
@@ -415,6 +434,7 @@ psql -h prod-db < backup_<timestamp>.sql
 ```
 
 **Post-Rollback**:
+
 1. Investigate root cause
 2. Fix issue in staging
 3. Re-validate before retry
@@ -476,6 +496,7 @@ LOG_LEVEL=debug
 **No manual changes needed!** Migrations are automatic.
 
 To regenerate Prisma client:
+
 ```bash
 pnpm --filter @easymo/db prisma:generate
 ```
@@ -521,24 +542,28 @@ const agentResponse = await fetch('/api/agents/buyer/search', {
 #### 5. Message Library (New)
 
 **Old Way** (hardcoded strings):
+
 ```typescript
 await sendText(ctx.from, "🚖 Searching for drivers...");
 ```
 
 **New Way** (centralized messages):
+
 ```typescript
-import { AGENT_MESSAGES } from '@shared/agent-messages';
+import { AGENT_MESSAGES } from "@shared/agent-messages";
 
 await sendText(ctx.from, AGENT_MESSAGES.LOADING.DRIVERS);
 ```
 
 **Benefits**:
+
 - DRY (Don't Repeat Yourself)
 - Consistent tone across codebase
 - Easy to update all instances
 - i18n-ready
 
 **Migration Script** (optional):
+
 ```bash
 # Find all hardcoded messages
 grep -r "await sendText.*🚖\|😔\|✅" supabase/functions/wa-webhook/
@@ -552,11 +577,13 @@ grep -r "await sendText.*🚖\|😔\|✅" supabase/functions/wa-webhook/
 **Ground Rules Requirement**: All agent interactions MUST log structured events.
 
 **Old Way** (unstructured):
+
 ```typescript
-console.log('User searched for drivers');
+console.log("User searched for drivers");
 ```
 
 **New Way** (structured, with correlation IDs):
+
 ```typescript
 import { logStructuredEvent } from '../_shared/observability';
 
@@ -570,6 +597,7 @@ await logStructuredEvent('AGENT_REQUEST', {
 ```
 
 **Required for**:
+
 - All agent requests
 - Fallback triggers
 - Error conditions
@@ -623,6 +651,7 @@ All v1.x code continues to work without modification.
 **None in v2.0**. All v1.x features remain supported.
 
 **Future Deprecation** (v3.0+, not before Q3 2026):
+
 - Legacy menu-only flows (will always fallback, never removed)
 - Old Supabase function signatures (gradual migration)
 
@@ -645,6 +674,7 @@ All v1.x code continues to work without modification.
 - [ ] Product sign-off
 
 **Commands**:
+
 ```bash
 # Full test suite
 pnpm exec vitest run
@@ -666,6 +696,7 @@ pnpm audit
 ### Post-Production Validation
 
 **Day 1 Checks** (hourly):
+
 - [ ] Error rate <1%
 - [ ] Response time p95 <1s
 - [ ] Fallback rate <10%
@@ -673,12 +704,14 @@ pnpm audit
 - [ ] User complaints <5/hour
 
 **Week 1 Checks** (daily):
+
 - [ ] Business metrics trending up
 - [ ] User satisfaction >4.5/5
 - [ ] Support tickets trending down
 - [ ] No major incidents
 
 **Success Criteria** (30 days):
+
 - [ ] Error rate sustained <1%
 - [ ] 99.9% uptime achieved
 - [ ] User adoption >50%
@@ -694,6 +727,7 @@ pnpm audit
 
 **Cause**: Shared packages not built  
 **Solution**:
+
 ```bash
 pnpm --filter @va/shared build
 pnpm --filter @easymo/commons build
@@ -709,6 +743,7 @@ pnpm build
 
 **Cause**: Feature flag disabled or AI service down  
 **Solution**:
+
 ```bash
 # Check feature flags
 echo $FEATURE_AI_AGENTS  # Should be "true"
@@ -724,6 +759,7 @@ kubectl logs -f deployment/agent-core
 
 **Cause**: AI service degraded or excessive timeouts  
 **Solution**:
+
 1. Check OpenAI status page
 2. Increase `AGENT_TIMEOUT_MS` if needed
 3. Scale agent-core pods
@@ -733,6 +769,7 @@ kubectl logs -f deployment/agent-core
 
 **Cause**: Conflicting schema changes  
 **Solution**:
+
 ```bash
 # Rollback to backup
 psql -h prod-db < backup_<timestamp>.sql
@@ -780,6 +817,7 @@ Email: security@easymo.com
 ## ✅ Migration Success Checklist
 
 ### Pre-Migration
+
 - [ ] Read this guide completely
 - [ ] Backup database
 - [ ] Test rollback procedure
@@ -788,6 +826,7 @@ Email: security@easymo.com
 - [ ] Alert stakeholders
 
 ### Migration Day
+
 - [ ] Apply database migrations
 - [ ] Deploy edge functions
 - [ ] Deploy microservices
@@ -797,6 +836,7 @@ Email: security@easymo.com
 - [ ] Send go-live notification
 
 ### Post-Migration (Week 1)
+
 - [ ] Daily metrics review
 - [ ] Increase rollout gradually
 - [ ] Collect user feedback
@@ -824,4 +864,4 @@ Email: security@easymo.com
 
 ---
 
-*Questions? Contact: eng-team@easymo.com*
+_Questions? Contact: eng-team@easymo.com_

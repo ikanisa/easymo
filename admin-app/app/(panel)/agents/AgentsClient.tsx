@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { useAgentsList, useCreateAgent } from "@/lib/queries/agents";
+import { useAgentsList, useCreateAgent, type AgentPersona } from "@/lib/queries/agents";
 import { useState } from "react";
 
 export function AgentsClient() {
@@ -34,7 +34,7 @@ export function AgentsClient() {
       </form>
 
       {isLoading && <div>Loading…</div>}
-      {error && <div className="text-red-600">Failed to load agents</div>}
+      {Boolean(error) && <div className="text-red-600">Failed to load agents</div>}
       <table className="w-full text-sm border">
         <thead>
           <tr className="bg-gray-50">
@@ -46,16 +46,16 @@ export function AgentsClient() {
           </tr>
         </thead>
         <tbody>
-          {data?.agents?.map((a: any) => {
-            const stats = a.vector_stats ?? { totalDocs: 0, readyDocs: 0, jsonChunks: 0, vecChunks: 0 };
+          {(data?.agents ?? []).map((agent: AgentPersona) => {
+            const stats = agent.vector_stats ?? { totalDocs: 0, readyDocs: 0, jsonChunks: 0, vecChunks: 0 };
             return (
-            <tr key={a.id} className="border-t">
-              <td className="p-2"><Link className="underline" href={`/agents/${a.id}`}>{a.name}</Link></td>
-              <td className="p-2">{a.status}</td>
+              <tr key={agent.id} className="border-t">
+                <td className="p-2"><Link className="underline" href={`/agents/${agent.id}`}>{agent.name}</Link></td>
+                <td className="p-2">{agent.status}</td>
               <td className="p-2 text-xs">{stats.readyDocs}/{stats.totalDocs}</td>
               <td className="p-2 text-xs">json {stats.jsonChunks} · vec {stats.vecChunks}</td>
-              <td className="p-2">{new Date(a.updated_at).toLocaleString()}</td>
-            </tr>
+                <td className="p-2">{new Date(agent.updated_at).toLocaleString()}</td>
+              </tr>
             );
           })}
         </tbody>

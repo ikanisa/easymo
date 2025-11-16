@@ -2,11 +2,13 @@
 
 ## Implementation Overview
 
-This implementation provides a comprehensive menu seeding solution for the EasyMO platform, populating the `restaurant_menu_items` table with a shared menu across 97 bars.
+This implementation provides a comprehensive menu seeding solution for the EasyMO platform,
+populating the `restaurant_menu_items` table with a shared menu across 97 bars.
 
 ## Files Created
 
 ### 1. SQL Seed File
+
 **Path:** `supabase/seed/fixtures/bar_menu_items_seed.sql`
 
 - **Purpose:** Populate menu items for all 97 bars
@@ -19,6 +21,7 @@ This implementation provides a comprehensive menu seeding solution for the EasyM
   - Organized by 26 menu categories
 
 ### 2. Documentation
+
 **Path:** `supabase/seed/fixtures/bar_menu_items_README.md`
 
 - **Contents:**
@@ -30,6 +33,7 @@ This implementation provides a comprehensive menu seeding solution for the EasyM
   - Troubleshooting guidance
 
 ### 3. Verification Script
+
 **Path:** `scripts/verify-menu-seed.mjs`
 
 - **Purpose:** Automated verification of seed data integrity
@@ -45,40 +49,41 @@ This implementation provides a comprehensive menu seeding solution for the EasyM
 
 ### Categories and Counts
 
-| Category | Count | Type |
-|----------|-------|------|
-| BEERS | 21 | Drinks |
-| BREAKFAST | 1 | Food |
-| CIDERSS | 3 | Drinks |
-| COCKTAILS | 25 | Drinks |
-| COFFEE | 6 | Drinks |
-| DESSERTS | 4 | Food |
-| ENERGY DRINKS | 3 | Drinks |
-| FAST FOOD | 6 | Food |
-| GIN | 6 | Drinks |
-| GRILL | 9 | Food |
-| JUICES | 9 | Drinks |
-| LIQUORS | 9 | Drinks |
-| MAIN COURSES | 3 | Food |
-| PASTA | 3 | Food |
-| PIZZA | 7 | Food |
-| RUM | 5 | Drinks |
-| SIDE DISHES | 3 | Food |
-| SODA | 9 | Drinks |
-| SOUP | 4 | Food |
-| SPIRITS | 9 | Drinks |
-| TEA | 3 | Drinks |
-| TRADITIONAL | 7 | Food |
-| VEGETARIAN | 3 | Food |
-| WATER | 3 | Drinks |
-| WHISKEY | 16 | Drinks |
-| WINES | 7 | Drinks |
+| Category      | Count | Type   |
+| ------------- | ----- | ------ |
+| BEERS         | 21    | Drinks |
+| BREAKFAST     | 1     | Food   |
+| CIDERSS       | 3     | Drinks |
+| COCKTAILS     | 25    | Drinks |
+| COFFEE        | 6     | Drinks |
+| DESSERTS      | 4     | Food   |
+| ENERGY DRINKS | 3     | Drinks |
+| FAST FOOD     | 6     | Food   |
+| GIN           | 6     | Drinks |
+| GRILL         | 9     | Food   |
+| JUICES        | 9     | Drinks |
+| LIQUORS       | 9     | Drinks |
+| MAIN COURSES  | 3     | Food   |
+| PASTA         | 3     | Food   |
+| PIZZA         | 7     | Food   |
+| RUM           | 5     | Drinks |
+| SIDE DISHES   | 3     | Food   |
+| SODA          | 9     | Drinks |
+| SOUP          | 4     | Food   |
+| SPIRITS       | 9     | Drinks |
+| TEA           | 3     | Drinks |
+| TRADITIONAL   | 7     | Food   |
+| VEGETARIAN    | 3     | Food   |
+| WATER         | 3     | Drinks |
+| WHISKEY       | 16    | Drinks |
+| WINES         | 7     | Drinks |
 
 **Total:** 184 items per bar
 
 ### Data Model
 
 Each menu item includes:
+
 - `bar_id` (UUID) - References `bars.id`
 - `menu_id` (UUID, nullable) - References `menus.id`
 - `name` (TEXT) - Item name
@@ -124,31 +129,35 @@ SELECT COUNT(*) FROM public.restaurant_menu_items;
 -- Expected: 17,848
 
 -- Check items per bar
-SELECT bar_id, COUNT(*) as item_count 
-FROM public.restaurant_menu_items 
-GROUP BY bar_id 
+SELECT bar_id, COUNT(*) as item_count
+FROM public.restaurant_menu_items
+GROUP BY bar_id
 ORDER BY item_count DESC;
 -- Expected: 184 items per bar
 
 -- Check category distribution
-SELECT category, COUNT(*) as item_count 
-FROM public.restaurant_menu_items 
-GROUP BY category 
+SELECT category, COUNT(*) as item_count
+FROM public.restaurant_menu_items
+GROUP BY category
 ORDER BY item_count DESC;
 
 -- Sample items
-SELECT name, category, price, currency 
-FROM public.restaurant_menu_items 
+SELECT name, category, price, currency
+FROM public.restaurant_menu_items
 LIMIT 10;
 ```
 
 ## Bar IDs Included
 
 The seed file includes 97 bar UUIDs. Sample IDs:
+
 - `00710229-f8b1-4903-980f-ddcb3580dcf2`
 - `01c7812c-b553-4594-a598-52641f057952`
 - `0243b1c6-f563-42c8-9058-6b52b53c4f64`
 - ... (see full list in seed file)
+
+The seed script now cross-checks `public.bars` for any missing UUIDs and aborts if the reconciled
+list still differs from 97 entries, ensuring data drift is caught before inserts.
 
 **Note:** Ensure these bars exist in the `bars` table before running the seed.
 
@@ -174,20 +183,26 @@ The seed file includes 97 bar UUIDs. Sample IDs:
 ## Post-Seeding Actions
 
 ### 1. Update Prices
+
 Bar managers should update item prices through:
+
 - Admin panel interface
 - Direct database updates
 - Batch import tools
 
 ### 2. Customize Items
+
 Bar managers can:
+
 - Update descriptions
 - Mark items unavailable
 - Add custom images
 - Adjust categories
 
 ### 3. Create Menu Versions
+
 Link items to specific menu versions:
+
 ```sql
 -- Create a menu version for a bar
 INSERT INTO public.menus (bar_id, version, status, source)
@@ -208,7 +223,7 @@ To remove all seeded menu items:
 BEGIN;
 
 -- Delete items for specific bars
-DELETE FROM public.restaurant_menu_items 
+DELETE FROM public.restaurant_menu_items
 WHERE bar_id IN (
   -- List all 97 bar IDs here
   '00710229-f8b1-4903-980f-ddcb3580dcf2',
@@ -276,6 +291,7 @@ psql -c "SELECT COUNT(*) FROM restaurant_menu_items WHERE bar_id = 'uuid';"
 ## Support
 
 For issues or questions:
+
 1. Check documentation in `bar_menu_items_README.md`
 2. Run verification script for diagnostics
 3. Review database logs for errors
@@ -292,6 +308,7 @@ For issues or questions:
 ## Maintenance
 
 ### Regular Tasks
+
 - Update prices quarterly or as needed
 - Review and update descriptions
 - Add seasonal items
@@ -299,6 +316,7 @@ For issues or questions:
 - Upload item images
 
 ### Monitoring
+
 - Track menu item views/orders
 - Monitor price changes
 - Audit manager modifications

@@ -70,7 +70,7 @@ export const GET = createHandler(
       return fallback("Supabase admin client unavailable.");
     }
 
-    const limit = params.limit ?? 50;
+    const limit = limit ?? 50;
     let query = admin
       .from("scheduled_trips")
       .select(
@@ -79,8 +79,8 @@ export const GET = createHandler(
       .order("scheduled_time", { ascending: true })
       .limit(limit);
 
-    if (params.status) {
-      query = query.eq("status", params.status);
+    if (status) {
+      query = query.eq("status", status);
     }
 
     const { data, error } = await query;

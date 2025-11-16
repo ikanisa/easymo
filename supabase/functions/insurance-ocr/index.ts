@@ -7,6 +7,7 @@ import {
   runInsuranceOCR,
 } from "../wa-webhook/domains/insurance/ins_ocr.ts";
 import { normalizeInsuranceExtraction } from "../wa-webhook/domains/insurance/ins_normalize.ts";
+import { notifyInsuranceAdmins } from "../wa-webhook/domains/insurance/ins_admin_notify.ts";
 import { determineNextStatus } from "./utils.ts";
 import { recordRunMetrics } from "./telemetry.ts";
 
@@ -212,6 +213,24 @@ async function processQueueRow(
         lead_id: leadId,
       })
       .eq("id", row.id);
+
+    // Notify insurance admins with extracted data and user contact
+    if (row.wa_id) {
+      const notifyResult = await notifyInsuranceAdmins(client, {
+        leadId,
+        userWaId: row.wa_id,
+        extracted: normalized,
+        documentUrl: signedUrl,
+      });
+
+      console.log("insurance-ocr.admin_notify_result", {
+        leadId,
+        sent: notifyResult.sent,
+        failed: notifyResult.failed,
+      });
+    } else {
+      console.warn("insurance-ocr.no_user_wa_id", { leadId, queueId: row.id });
+    }
 
     return { id: row.id, status: "succeeded", leadId };
   } catch (error) {

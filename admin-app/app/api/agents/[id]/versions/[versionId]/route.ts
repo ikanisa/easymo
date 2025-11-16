@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdminClient } from "@/lib/server/supabase-admin";
 
-export async function PATCH(req: Request, { params }: { params: { id: string; versionId: string } }) {
+export async function PATCH(req: Request, { params }: { params: Promise<{ id: string; versionId: string }> }) {
   const admin = getSupabaseAdminClient();
   if (!admin) return NextResponse.json({ error: "supabase_unavailable" }, { status: 503 });
-  const { versionId } = params;
+  const { versionId } = await params;
   const body = await req.json().catch(() => ({}));
   const patch: Record<string, unknown> = {};
   if (typeof body.instructions === "string") patch.instructions = body.instructions;

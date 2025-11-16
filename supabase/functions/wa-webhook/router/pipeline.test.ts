@@ -29,7 +29,7 @@ function installTestHooks() {
   const inbound: unknown[] = [];
   let nextSignatureResult = true;
   __setPipelineTestOverrides({
-    logStructuredEvent: async (event: string, payload: Record<string, unknown>) => {
+    logStructuredEvent: async (event: string, payload: Record<string, unknown> = {}) => {
       events.push({ event, payload });
     },
     logInbound: async (payload: unknown) => {
@@ -51,7 +51,26 @@ function installTestHooks() {
   };
 }
 
-Deno.test("returns hub challenge for verified GET request", async () => {
+const test = (
+  name: string,
+  fn: () => Promise<void> | void,
+) => Deno.test({ name, sanitizeOps: false, sanitizeResources: false, fn });
+
+function expectResponse(result: Awaited<ReturnType<typeof processWebhookRequest>>): Response {
+  if (result.type !== "response") {
+    throw new Error(`Expected response but received ${result.type}`);
+  }
+  return result.response;
+}
+
+function expectMessages(result: Awaited<ReturnType<typeof processWebhookRequest>>) {
+  if (result.type !== "messages") {
+    throw new Error(`Expected messages but received ${result.type}`);
+  }
+  return result;
+}
+
+test("returns hub challenge for verified GET request", async () => {
   const hooks = installTestHooks();
   try {
     const res = await processWebhookRequest(
@@ -60,9 +79,9 @@ Deno.test("returns hub challenge for verified GET request", async () => {
         { method: "GET" },
       ),
     );
-    assertEquals(res.type, "response");
-    assertEquals(res.response.status, 200);
-    assertEquals(await res.response.text(), "123");
+    const response = expectResponse(res);
+    assertEquals(response.status, 200);
+    assertEquals(await response.text(), "123");
     assertEquals(hooks.events.some((entry) => entry.event === "SIG_VERIFY_OK"), true);
   } finally {
     __resetPipelineTestOverrides();
@@ -70,7 +89,7 @@ Deno.test("returns hub challenge for verified GET request", async () => {
   }
 });
 
-Deno.test("rejects POST requests when signature verification fails", async () => {
+test("rejects POST requests when signature verification fails", async () => {
   const hooks = installTestHooks();
   try {
     hooks.setSignatureResult(false);
@@ -81,15 +100,15 @@ Deno.test("rejects POST requests when signature verification fails", async () =>
         headers: { "content-type": "application/json" },
       }),
     );
-    assertEquals(res.type, "response");
-    assertEquals(res.response.status, 401);
+    const response = expectResponse(res);
+    assertEquals(response.status, 401);
   } finally {
     __resetPipelineTestOverrides();
     __resetCache();
   }
 });
 
-Deno.test("filters messages for configured phone number and normalises payload", async () => {
+test("filters messages for configured phone number and normalises payload", async () => {
   const hooks = installTestHooks();
   try {
     const payload = {
@@ -139,19 +158,19 @@ Deno.test("filters messages for configured phone number and normalises payload",
         },
       }),
     );
-    assertEquals(res.type, "messages");
-    assertEquals(res.messages.length, 1);
-    assertEquals(res.messages[0].id, "wamid.1");
-    assertEquals(res.messages[0].from, "250700000001");
-    assertEquals(res.contactLocales.get("+250700000001"), "fr");
-    assertEquals(res.contactLocales.get("250700000001"), "fr");
+    const messageResult = expectMessages(res);
+    assertEquals(messageResult.messages.length, 1);
+    assertEquals(messageResult.messages[0].id, "wamid.1");
+    assertEquals(messageResult.messages[0].from, "250700000001");
+    assertEquals(messageResult.contactLocales.get("+250700000001"), "fr");
+    assertEquals(messageResult.contactLocales.get("250700000001"), "fr");
   } finally {
     __resetPipelineTestOverrides();
     __resetCache();
   }
 });
 
-Deno.test("deduplicates repeated messages and logs ignored duplicates", async () => {
+test("deduplicates repeated messages and logs ignored duplicates", async () => {
   const hooks = installTestHooks();
   try {
     const payload = {
@@ -187,8 +206,8 @@ Deno.test("deduplicates repeated messages and logs ignored duplicates", async ()
         },
       }),
     );
-    assertEquals(res.type, "messages");
-    assertEquals(res.messages.length, 2);
+    const messageResult = expectMessages(res);
+    assertEquals(messageResult.messages.length, 2);
     const duplicateEvent = hooks.events.find((event) =>
       event.event === "WEBHOOK_DUPLICATE_MESSAGES_IGNORED"
     );
@@ -200,22 +219,71 @@ Deno.test("deduplicates repeated messages and logs ignored duplicates", async ()
   }
 });
 
-Deno.test("reuses cached hub challenge on subsequent verification requests", async () => {
+test("reuses cached hub challenge on subsequent verification requests", async () => {
   const hooks = installTestHooks();
   try {
     const url = "https://example.com/webhook?hub.mode=subscribe&hub.verify_token=verify-token&hub.challenge=cacheme";
-    const first = await processWebhookRequest(new Request(url, { method: "GET" }));
-    assertEquals(first.type, "response");
-    assertEquals(await first.response.text(), "cacheme");
+    const first = expectResponse(
+      await processWebhookRequest(new Request(url, { method: "GET" })),
+    );
+    assertEquals(await first.text(), "cacheme");
     hooks.reset();
 
-    const second = await processWebhookRequest(new Request(url, { method: "GET" }));
-    assertEquals(second.type, "response");
-    assertEquals(await second.response.text(), "cacheme");
+    const second = expectResponse(
+      await processWebhookRequest(new Request(url, { method: "GET" })),
+    );
+    assertEquals(await second.text(), "cacheme");
     const cacheHit = hooks.events.find((event) =>
       event.event === "WEBHOOK_CHALLENGE_CACHE_HIT"
     );
     assertEquals(typeof cacheHit?.payload?.cache_key, "string");
+  } finally {
+    __resetPipelineTestOverrides();
+    __resetCache();
+  }
+});
+
+test("returns rate limit response when sender is blocked", async () => {
+  const hooks = installTestHooks();
+  try {
+    hooks.setRateLimitResult({
+      allowed: false,
+      response: new Response("rate_limited", { status: 429 }),
+    });
+    const payload = {
+      object: "whatsapp_business_account",
+      entry: [
+        {
+          id: "entry-1",
+          changes: [
+            {
+              value: {
+                metadata: {
+                  phone_number_id: "12345",
+                  display_phone_number: "+250700000000",
+                },
+                messages: [
+                  { id: "wamid.blocked", from: "250788000000", type: "text" },
+                ],
+              },
+            },
+          ],
+        },
+      ],
+    };
+    const res = await processWebhookRequest(
+      new Request("https://example.com/webhook", {
+        method: "POST",
+        body: JSON.stringify(payload),
+        headers: {
+          "content-type": "application/json",
+          "content-length": String(JSON.stringify(payload).length),
+        },
+      }),
+    );
+    const response = expectResponse(res);
+    assertEquals(response.status, 429);
+    assertEquals(hooks.getRateLimitInvocations().length, 1);
   } finally {
     __resetPipelineTestOverrides();
     __resetCache();

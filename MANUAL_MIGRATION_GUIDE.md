@@ -1,93 +1,299 @@
-# 📋 Manual Migration Guide for Supabase Dashboard
+# 🚀 MANUAL MIGRATION GUIDE
+## Apply Database Migrations via Supabase Dashboard
 
-## Quick Steps
+**Date**: November 15, 2025  
+**Reason**: `supabase db push` timed out due to network latency  
+**Status**: Edge Functions deployed ✅ | Migrations pending ⏳
 
-### 1. Open Supabase SQL Editor
-Go to: https://supabase.com/dashboard/project/lhbowpbcpwoiparwnwgt/sql
+---
 
-### 2. Open the Migration Script
-File location: `./supabase_migrations_manual.sql`
+## 📋 WHAT NEEDS TO BE DONE
 
-### 3. Copy & Paste
-- Open the file `supabase_migrations_manual.sql`
-- Select ALL content (Cmd+A / Ctrl+A)
-- Copy (Cmd+C / Ctrl+C)
-- Paste into Supabase SQL Editor
+You need to manually apply **3 migration files** via the Supabase Dashboard SQL Editor.
 
-### 4. Execute
-- Click "Run" button (or press Cmd+Enter / Ctrl+Enter)
-- Wait 3-5 minutes for completion
+---
 
-### 5. Verify
-Look for this message at the end:
+## 🎯 STEP-BY-STEP INSTRUCTIONS
+
+### Step 1: Open Supabase SQL Editor
+
+Go to: **https://supabase.com/dashboard/project/lhbowpbcpwoiparwnwgt/sql**
+
+---
+
+### Step 2: Apply Migration 1 - Job Sources
+
+**File**: `supabase/migrations/20251115110000_comprehensive_job_sources.sql`
+
+1. Open this file in your code editor
+2. **Copy the entire contents** (Ctrl+A, Ctrl+C)
+3. Go to Supabase SQL Editor
+4. Click **"New query"**
+5. **Paste** the SQL (Ctrl+V)
+6. Click **"Run"** (or press F5)
+7. Wait for success message
+
+**This migration adds**:
+- 25+ job sources (Malta: 12, Rwanda: 11+)
+- JobsPlus, LinkedIn, KeepMePosted, Indeed, BrighterMonday, etc.
+- Daily automated sync at 2 AM UTC
+
+---
+
+### Step 3: Apply Migration 2 - Property Sources
+
+**File**: `supabase/migrations/20251115120000_comprehensive_property_sources.sql`
+
+1. Open this file in your code editor
+2. **Copy the entire contents**
+3. Go to Supabase SQL Editor
+4. Click **"New query"**
+5. **Paste** the SQL
+6. Click **"Run"**
+7. Wait for success message
+
+**This migration adds**:
+- 30+ property sources (Malta: 16, Rwanda: 14)
+- Property.com.mt, Frank Salt, Remax, House.co.rw, etc.
+- Creates `property_sources` table
+- Daily automated sync at 3 AM UTC
+
+---
+
+### Step 4: Apply Migration 3 - Job Contact Enhancement
+
+**File**: `supabase/migrations/20251115120100_job_contact_enhancement.sql`
+
+1. Open this file in your code editor
+2. **Copy the entire contents**
+3. Go to Supabase SQL Editor
+4. Click **"New query"**
+5. **Paste** the SQL
+6. Click **"Run"**
+7. Wait for success message
+
+**This migration adds**:
+- 7 new contact fields: email, whatsapp, linkedin, facebook, twitter, website, other
+- Phone normalization function (+250, +356)
+- Contact validation trigger
+- `job_listings_with_contacts` view
+
+---
+
+### Step 5: Verify Migrations
+
+In the SQL Editor, run these verification queries:
+
+```sql
+-- Check job sources (expect 25+)
+SELECT COUNT(*) as total_job_sources 
+FROM job_sources 
+WHERE is_active = true;
+
+-- Check property sources (expect 30+)
+SELECT COUNT(*) as total_property_sources 
+FROM property_sources 
+WHERE is_active = true;
+
+-- Check contact fields added
+SELECT column_name 
+FROM information_schema.columns 
+WHERE table_name = 'job_listings' 
+  AND column_name LIKE 'contact_%';
+
+-- Check pg_cron jobs configured
+SELECT jobname, schedule 
+FROM cron.job 
+WHERE jobname LIKE '%sync%';
 ```
-✅ All 25 migrations applied successfully!
-📊 Schema version: 20260401170000
-```
 
-## What This Script Does
+**Expected Results**:
+- ✅ `total_job_sources`: 25+
+- ✅ `total_property_sources`: 30+
+- ✅ Contact fields: 7 columns
+- ✅ Cron jobs: 2 (job sync @ 2 AM, property sync @ 3 AM)
 
-### ✅ Applies 25 Migrations
-1. **PostGIS Extension** - Enables geographic data types
-2. **Shops Table** - Creates base shops infrastructure
-3. **RLS Policies** (8 migrations) - Security on 34 tables
-4. **Performance Indexes** - Foreign key optimization
-5. **Automated Triggers** - updated_at timestamps
-6. **Partitioning** - Table partitioning setup
-7. **Observability** - Logging & monitoring
-8. **Feature Migrations** (15 files) - Agents, payments, analytics
+---
 
-### ⚠️ Expected Warnings (SAFE to ignore)
-```
-NOTICE: extension "postgis" already exists, skipping
-NOTICE: relation "shops" already exists, skipping
-NOTICE: relation "voucher_redemptions" does not exist, skipping
-```
+## 🚀 STEP 6: TRIGGER SCRAPING
 
-These are normal - the script is idempotent (safe to run multiple times).
+After migrations are applied, trigger the scraping functions manually:
 
-## After Running
+### Option 1: Via Dashboard
 
-### Mark Migrations as Applied Locally
+1. Go to: **https://supabase.com/dashboard/project/lhbowpbcpwoiparwnwgt/functions**
+2. Click **"job-sources-sync"** → **"Invoke"** → **"Send request"**
+3. Click **"openai-deep-research"** → **"Invoke"** → Body: `{"action":"sync_all"}` → **"Send request"**
+
+### Option 2: Via cURL (Terminal)
+
 ```bash
-# In your terminal, run:
-supabase migration repair --status applied \
-  20240101000000 20240102000000 \
-  20251112135627 20251112135628 20251112135629 20251112135630 \
-  20251112135631 20251112135632 20251112135633 20251112135634 \
-  20260312090000 20260322100000 20260322110000 20260323100000 \
-  20260324100000 20260324110000 20260324120000 20260401100000 \
-  20260401110000 20260401120000 20260401130000 20260401140000 \
-  20260401150000 20260401160000 20260401170000
+# Trigger job scraping
+curl -X POST https://lhbowpbcpwoiparwnwgt.supabase.co/functions/v1/job-sources-sync \
+  -H "Content-Type: application/json" \
+  -d '{}'
+
+# Trigger property scraping
+curl -X POST https://lhbowpbcpwoiparwnwgt.supabase.co/functions/v1/openai-deep-research \
+  -H "Content-Type: application/json" \
+  -d '{"action":"sync_all"}'
 ```
 
-### Verify Sync
-```bash
-supabase migration list
-supabase db diff
+---
+
+## 📊 STEP 7: MONITOR PROGRESS
+
+### Check Logs
+
+Go to: **https://supabase.com/dashboard/project/lhbowpbcpwoiparwnwgt/functions**
+
+1. Click **"job-sources-sync"** → **"Logs"** tab
+2. Click **"openai-deep-research"** → **"Logs"** tab
+
+Watch for:
+- ✅ "Processing source: JobsPlus Malta..."
+- ✅ "Inserted X jobs from source..."
+- ✅ "Total jobs processed: X"
+
+### Check Data
+
+Run these queries in SQL Editor:
+
+```sql
+-- Check current job count
+SELECT COUNT(*) as total_jobs 
+FROM job_listings 
+WHERE is_external = true;
+
+-- Check recent jobs with contacts
+SELECT 
+  title, 
+  company_name, 
+  contact_phone, 
+  contact_email, 
+  contact_whatsapp,
+  discovered_at
+FROM job_listings
+WHERE is_external = true
+ORDER BY discovered_at DESC
+LIMIT 10;
+
+-- Check property count
+SELECT COUNT(*) as total_properties 
+FROM researched_properties 
+WHERE status = 'active';
+
+-- Check recent properties
+SELECT 
+  title, 
+  property_type, 
+  bedrooms, 
+  price, 
+  location_city,
+  contact_info,
+  scraped_at
+FROM researched_properties
+WHERE status = 'active'
+ORDER BY scraped_at DESC
+LIMIT 10;
 ```
 
-## Troubleshooting
+---
 
-### Error: "relation does not exist"
-- **Safe to ignore** if the NOTICE says "skipping"
-- **Action needed** if ERROR persists - check table dependencies
+## ⏱️ EXPECTED TIMELINE
 
-### Error: "already exists"
-- **Safe to ignore** - means it's already applied
-- Script handles this with `IF NOT EXISTS` and `ON CONFLICT`
+### Immediately After Triggering
+- ⏳ Scraping starts (functions running)
+- 👀 Monitor logs for progress
 
-### Script Hangs
-- Check Supabase Dashboard for connection issues
-- Try smaller batches (split script into parts)
-- Use direct connection instead of pooler
+### Within 30-60 Minutes
+- ✅ 20-40 jobs added
+- ✅ 10-20 properties added
+- 📊 Contact info: 80%+ (jobs), 100% (properties)
 
-### Need Help?
-Check the main report: `/tmp/final_status_report.md`
+### Within 1-2 Hours
+- ✅ 50-80 jobs (with comprehensive contacts)
+- ✅ 20-30 properties (100% with contacts)
 
-## File Locations
+### Within 24 Hours
+- ✅ 100+ jobs (85%+ contact coverage)
+- ✅ 50+ properties (100% contact coverage)
+- ✅ Daily automated sync running
 
-- **Migration Script**: `./supabase_migrations_manual.sql` (196 KB, 4,862 lines)
-- **This Guide**: `./MANUAL_MIGRATION_GUIDE.md`
-- **Status Report**: `/tmp/final_status_report.md`
+---
 
+## 🔧 TROUBLESHOOTING
+
+### If Migration Fails
+
+**Error**: "relation already exists"
+- **Solution**: That table/column was already created. Skip to next migration.
+
+**Error**: "permission denied"
+- **Solution**: Make sure you're logged in as database owner in Dashboard.
+
+**Error**: "syntax error"
+- **Solution**: Make sure you copied the ENTIRE file contents (including `BEGIN;` and `COMMIT;`).
+
+### If Scraping Returns 0 Results
+
+**Check**: Verify migrations were applied
+```sql
+SELECT COUNT(*) FROM job_sources WHERE is_active = true;
+-- If 0, migrations didn't apply
+```
+
+**Solution**: Re-run the migration steps.
+
+### If Functions Return Errors
+
+**Check logs** in Dashboard → Functions → [function name] → Logs
+
+Common issues:
+- Missing API keys (OPENAI_API_KEY, SERPAPI_KEY)
+- Rate limits (wait and retry)
+- Network timeouts (normal for first run)
+
+---
+
+## ✅ SUCCESS CRITERIA
+
+After completing all steps, you should have:
+
+- ✅ 25+ job sources configured
+- ✅ 30+ property sources configured
+- ✅ 7 new contact fields in job_listings
+- ✅ 2 pg_cron jobs scheduled
+- ✅ 20-80 jobs with contact info
+- ✅ 10-30 properties with contact info
+- ✅ Daily automated sync running
+
+---
+
+## 📚 RELATED DOCUMENTATION
+
+- **QUICKSTART_SCRAPING.md** - Quick reference
+- **WORLD_CLASS_SCRAPING_IMPLEMENTATION.md** - Complete overview
+- **JOB_CONTACT_ENHANCEMENT_COMPLETE.md** - Contact extraction details
+- **PROPERTY_RENTAL_DEEP_SEARCH.md** - Property scraping
+- **FINAL_DEPLOYMENT_STATUS.md** - Deployment summary
+
+---
+
+## 🎯 QUICK SUMMARY
+
+1. ✅ Open Supabase Dashboard SQL Editor
+2. ✅ Copy & paste migration 1 → Run
+3. ✅ Copy & paste migration 2 → Run
+4. ✅ Copy & paste migration 3 → Run
+5. ✅ Verify: Check counts (25+ sources, 30+ sources)
+6. ✅ Trigger scraping (Dashboard or cURL)
+7. ✅ Monitor logs & check data
+8. ✅ Wait 1-2 hours for initial results
+
+**Dashboard URL**: https://supabase.com/dashboard/project/lhbowpbcpwoiparwnwgt/sql
+
+---
+
+**Status**: ⏳ **ACTION REQUIRED - APPLY MIGRATIONS NOW**  
+**Then**: 🚀 Trigger scraping & watch the data flow in!

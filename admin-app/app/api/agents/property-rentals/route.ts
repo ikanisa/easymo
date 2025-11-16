@@ -81,13 +81,13 @@ export const GET = createHandler(
     }
 
     const { data, error } = await admin.rpc("search_nearby_properties", {
-      p_latitude: params.lat ?? DEFAULT_LAT,
-      p_longitude: params.lng ?? DEFAULT_LNG,
-      p_radius_km: params.radiusKm ?? 10,
-      p_rental_type: params.rentalType ?? null,
-      p_bedrooms: params.bedrooms ?? null,
-      p_min_budget: params.minBudget ?? 0,
-      p_max_budget: params.maxBudget ?? 9_999_999,
+      p_latitude: lat ?? DEFAULT_LAT,
+      p_longitude: lng ?? DEFAULT_LNG,
+      p_radius_km: radiusKm ?? 10,
+      p_rental_type: rentalType ?? null,
+      p_bedrooms: bedrooms ?? null,
+      p_min_budget: minBudget ?? 0,
+      p_max_budget: maxBudget ?? 9_999_999,
     });
 
     if (error) {

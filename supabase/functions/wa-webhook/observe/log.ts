@@ -10,6 +10,15 @@ const INBOUND_SNAPSHOT_LIMIT = Math.max(
 const INBOUND_DEBUG_SNAPSHOT = ["1", "true"].includes(
   (Deno.env.get("WA_INBOUND_DEBUG_SNAPSHOT") ?? "").toLowerCase(),
 );
+const DEFAULT_DB_EVENT_PATTERNS = [
+  "wa_inbound",
+  "WEBHOOK_UNHANDLED_ERROR",
+  "RETENTION_*",
+  "HEALTH_CHECK_ERROR",
+];
+const DB_EVENT_PATTERNS = buildPatternList(
+  Deno.env.get("WA_LOG_DB_EVENTS") ?? DEFAULT_DB_EVENT_PATTERNS.join(","),
+);
 
 type LogMeta = Record<string, unknown> & {
   headers?: Record<string, unknown>;
@@ -24,16 +33,30 @@ async function insertLog(
   payload: unknown,
   meta: LogMeta = {},
 ): Promise<void> {
+  const {
+    headers,
+    statusCode,
+    status_code,
+    errorMessage,
+    error_message,
+    ...rest
+  } = meta;
+  const finalHeaders = headers ?? rest;
+  const consoleEnvelope = {
+    event: endpoint,
+    payload,
+    meta: {
+      ...finalHeaders,
+      status_code: statusCode ?? status_code ?? null,
+      error_message: errorMessage ?? error_message ?? null,
+    },
+  };
+  if (!shouldPersistEvent(endpoint)) {
+    console.log(JSON.stringify({ ...consoleEnvelope, persisted: false }));
+    return;
+  }
   try {
-    const {
-      headers,
-      statusCode,
-      status_code,
-      errorMessage,
-      error_message,
-      ...rest
-    } = meta;
-    const finalHeaders = headers ?? rest;
+    console.log(JSON.stringify({ ...consoleEnvelope, persisted: true }));
     await supabase.from("webhook_logs").insert({
       endpoint,
       payload,
@@ -52,6 +75,23 @@ async function insertLog(
   } catch (err) {
     console.error("wa_webhook.log_insert_fail", endpoint, err);
   }
+}
+
+function shouldPersistEvent(endpoint: string): boolean {
+  if (!DB_EVENT_PATTERNS.length) return false;
+  return DB_EVENT_PATTERNS.some((pattern) => pattern.test(endpoint));
+}
+
+function buildPatternList(raw: string): RegExp[] {
+  return raw.split(",")
+    .map((token) => token.trim())
+    .filter((token) => token.length > 0)
+    .map((token) => {
+      if (token === "*") return /^.*$/;
+      const escaped = token.replace(/[-/\\^$+?.()|[\]{}]/g, "\\$&");
+      const withWildcards = escaped.replace(/\\\*/g, ".*");
+      return new RegExp(`^${withWildcards}$`, "i");
+    });
 }
 
 export async function logInbound(payload: unknown): Promise<void> {

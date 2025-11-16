@@ -5,9 +5,14 @@ export type BarDashboardQueryParams = BarDashboardParams;
 
 const barDashboardKey = (params: BarDashboardQueryParams) => ["bar-dashboard", params] satisfies QueryKey;
 
+type BarDashboardQueryOptions = Omit<
+  UseQueryOptions<BarDashboardSnapshot, unknown, BarDashboardSnapshot>,
+  "queryKey" | "queryFn"
+>;
+
 export function useBarDashboardQuery(
   params: BarDashboardQueryParams,
-  options?: UseQueryOptions<BarDashboardSnapshot, unknown, BarDashboardSnapshot>,
+  options?: BarDashboardQueryOptions,
 ) {
   return useQuery({
     queryKey: barDashboardKey(params),

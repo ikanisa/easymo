@@ -43,12 +43,12 @@ export const GET = createHandler("api.example", async (request) => {
   if (!admin) {
     return fallback("Supabase unavailable.");
   }
-  
+
   const { data, error } = await admin.from("items").select("*");
   if (error) {
     return fallback(error.message ?? "Query failed.");
   }
-  
+
   return jsonOk({ items: data });
 });
 ```
@@ -68,10 +68,10 @@ import { getFallbackData } from "@/lib/agents/fallback-data";
 function fallback(error: any, params?: { limit?: number; offset?: number }) {
   const errorType = classifyError(error);
   const userMessage = getUserMessage(errorType);
-  
+
   const fallbackData = getFallbackData("example");
   const paginated = paginateFallback(fallbackData, params?.limit, params?.offset);
-  
+
   return jsonOk({
     items: paginated.data,
     total: paginated.total,
@@ -96,19 +96,19 @@ export const GET = createHandler("api.example", async (request, _, { recordMetri
       offset: Number(params.get("offset")) || undefined,
     });
   }
-  
+
   const admin = getSupabaseAdminClient();
   if (!admin) {
     recordMetric("agents.example.supabase_missing", 1);
     return fallback(new Error("Supabase admin client unavailable."));
   }
-  
+
   const { data, error } = await admin.from("items").select("*");
   if (error) {
     recordMetric("agents.example.supabase_error", 1, { message: error.message });
     return fallback(error);
   }
-  
+
   return jsonOk({ items: data });
 });
 ```
@@ -164,10 +164,10 @@ Replace your hardcoded fallback function with:
 function fallback(error: any, params?: { limit?: number; offset?: number }) {
   const errorType = classifyError(error);
   const userMessage = getUserMessage(errorType);
-  
+
   const fallbackData = getFallbackData("your-agent-type");
   const paginated = paginateFallback(fallbackData, params?.limit, params?.offset);
-  
+
   return jsonOk({
     yourDataKey: paginated.data,
     total: paginated.total,
@@ -195,13 +195,13 @@ export const GET = createHandler("api.your_agent", async (request, _, { recordMe
   } catch (error) {
     return zodValidationError(error);
   }
-  
+
   // Synthetic failure testing
   if (params.simulateFailure) {
     recordMetric("agents.your_agent.synthetic_failure", 1);
     return fallback(new Error("Synthetic failure for testing"), params);
   }
-  
+
   // ... rest of handler
 });
 ```
@@ -316,6 +316,7 @@ If issues arise:
 ## Support
 
 Questions? Check:
+
 - `docs/PHASE_3_FALLBACK_HARDENING.md` - Full documentation
 - `lib/agents/fallback-system.ts` - System implementation
 - `__tests__/lib/agents/fallback-system.test.ts` - Example usage

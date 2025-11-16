@@ -1,3 +1,5 @@
+import "server-only";
+
 import { z } from "zod";
 import { shouldUseMocks } from "@/lib/runtime-config";
 import { getAdminApiPath } from "@/lib/routes";

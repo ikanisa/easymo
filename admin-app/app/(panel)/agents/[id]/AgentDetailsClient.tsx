@@ -1,8 +1,29 @@
 "use client";
 import { useParams } from "next/navigation";
-import { useAgentDetailAggregate, useCreateVersion, useDeployVersion, useUploadAgentDocument, useDeleteAgentDocument, useAgentTasks, useAgentRuns, useAgentRunDetails, useAgentAudit, useAddAgentDocUrl, useEmbedAllAgentDocs, useDriveSyncAgentDocs, useWebSearchImportAgentDocs, useEmbedAgentDocument, useSearchAgentKnowledge } from "@/lib/queries/agents";
+import {
+  useAgentDetailAggregate,
+  useCreateVersion,
+  useDeployVersion,
+  useUploadAgentDocument,
+  useDeleteAgentDocument,
+  useAgentTasks,
+  useAgentRuns,
+  useAgentRunDetails,
+  useAgentAudit,
+  useAddAgentDocUrl,
+  useEmbedAllAgentDocs,
+  useDriveSyncAgentDocs,
+  useWebSearchImportAgentDocs,
+  useEmbedAgentDocument,
+  useSearchAgentKnowledge,
+  type AgentDocument,
+  type AgentTask,
+  type AgentRun,
+  type AgentAuditEvent,
+  type AgentPersona,
+} from "@/lib/queries/agents";
 import { getAdminApiRoutePath } from "@/lib/routes";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useToast } from "@/components/ui/ToastProvider";
 import { Tooltip } from "@/components/ui/Tooltip";
 
@@ -64,7 +85,11 @@ export function AgentDetailsClient() {
   if (detailQ.isLoading) return <div className="p-6">Loading…</div>;
   if (detailQ.isError) return <div className="p-6 text-red-600">Failed to load agent</div>;
 
-  const agent = detailQ.data?.agent;
+  const agent: AgentPersona | null = detailQ.data?.agent ?? null;
+
+  if (!agent) {
+    return <div className="p-6 text-red-600">Agent not found.</div>;
+  }
 
   return (
     <div className="p-6 space-y-6">
@@ -94,7 +119,7 @@ export function AgentDetailsClient() {
             </tr>
           </thead>
           <tbody>
-            {(detailQ.data?.versions ?? []).map((v: any) => (
+            {(detailQ.data?.versions ?? []).map((v) => (
               <tr key={v.id} className="border-t">
                 <td className="p-2">{v.version}</td>
                 <td className="p-2">{v.status}</td>
@@ -202,23 +227,23 @@ export function AgentDetailsClient() {
             </tr>
           </thead>
           <tbody>
-            {(detailQ.data?.documents ?? []).map((d: any) => {
-              const isTemp = d?.metadata?.__temp;
+            {(detailQ.data?.documents ?? []).map((document: AgentDocument) => {
+              const isTemp = Boolean(document.metadata?.__temp);
               return (
-              <tr key={d.id} className={`border-t ${isTemp ? 'opacity-60 italic' : ''}`}>
+              <tr key={document.id} className={`border-t ${isTemp ? 'opacity-60 italic' : ''}`}>
                 <td className="p-2">
-                  {d.title}
+                  {document.title}
                   {isTemp && (
                     <Tooltip label="Temporary row — awaiting server insert">
                       <span className="ml-2 inline-block rounded bg-yellow-100 px-2 py-0.5 text-xs text-yellow-900">New</span>
                     </Tooltip>
                   )}
-                  {d.embedding_status && d.embedding_status !== 'ready' && !isTemp && (
+                  {document.embedding_status && document.embedding_status !== 'ready' && !isTemp && (
                     <Tooltip label="Embedding in progress or pending">
-                      <span className="ml-2 inline-block rounded bg-blue-100 px-2 py-0.5 text-xs text-blue-900">{d.embedding_status}</span>
+                      <span className="ml-2 inline-block rounded bg-blue-100 px-2 py-0.5 text-xs text-blue-900">{document.embedding_status}</span>
                     </Tooltip>
                   )}
-                  {d.embedding_status === 'ready' && (
+                  {document.embedding_status === 'ready' && (
                     <Tooltip label="Embeddings complete and searchable">
                       <span className="ml-2 inline-block rounded bg-green-100 px-2 py-0.5 text-xs text-green-900">Ready</span>
                     </Tooltip>
@@ -229,7 +254,7 @@ export function AgentDetailsClient() {
                       const res = await fetch(
                         getAdminApiRoutePath("agentDocumentSigned", {
                           agentId: String(agent.id),
-                          documentId: String(d.id),
+                          documentId: String(document.id),
                         }),
                       );
                       if (res.ok) {
@@ -239,15 +264,15 @@ export function AgentDetailsClient() {
                     }}
                   >Open</button>
                 </td>
-                <td className="p-2">{new Date(d.created_at).toLocaleString()}</td>
+                <td className="p-2">{new Date(document.created_at).toLocaleString()}</td>
                 <td className="p-2">
-                  <button className="px-2 py-1 border rounded" onClick={() => delDoc.mutate(d.id, { onSuccess: () => pushToast("Deleted document", "success"), onError: () => pushToast("Delete failed", "error") })}>Delete</button>
-                  {d.embedding_status !== 'ready' && (
+                  <button className="px-2 py-1 border rounded" onClick={() => delDoc.mutate(document.id, { onSuccess: () => pushToast("Deleted document", "success"), onError: () => pushToast("Delete failed", "error") })}>Delete</button>
+                  {document.embedding_status !== 'ready' && (
                     <button
                       className="ml-2 px-2 py-1 border rounded disabled:opacity-50"
-                      disabled={embedDoc.isPending && embedDocId === d.id}
-                      onClick={async () => { setEmbedDocId(d.id); try { await embedDoc.mutateAsync(d.id); pushToast(`Embedding started – ${d.title}`); } catch { pushToast("Embed failed", "error"); } finally { setEmbedDocId(null); } }}
-                    >{(embedDoc.isPending && embedDocId === d.id) ? 'Embedding…' : (d.embedding_status === 'failed' ? 'Retry' : 'Embed')}</button>
+                      disabled={embedDoc.isPending && embedDocId === document.id}
+                      onClick={async () => { setEmbedDocId(document.id); try { await embedDoc.mutateAsync(document.id); pushToast(`Embedding started – ${document.title}`); } catch { pushToast("Embed failed", "error"); } finally { setEmbedDocId(null); } }}
+                    >{(embedDoc.isPending && embedDocId === document.id) ? 'Embedding…' : (document.embedding_status === 'failed' ? 'Retry' : 'Embed')}</button>
                   )}
                 </td>
               </tr>
@@ -275,7 +300,7 @@ export function AgentDetailsClient() {
           <button className="px-3 py-2 border rounded">Search</button>
         </form>
         <div className="grid gap-2">
-          {searchResults.map((r: any, idx: number) => (
+          {searchResults.map((r, idx) => (
             <div key={idx} className="border rounded p-3">
               <div className="text-xs text-gray-500">score: {r.score?.toFixed?.(3) ?? r.score}</div>
               <pre className="whitespace-pre-wrap text-sm">{r.content}</pre>
@@ -338,7 +363,7 @@ export function AgentDetailsClient() {
             </tr>
           </thead>
           <tbody>
-            {(tasksQ.data?.tasks ?? []).map((t: any) => (
+            {(tasksQ.data?.tasks ?? []).map((t: AgentTask) => (
               <tr key={t.id} className="border-t">
                 <td className="p-2">{t.type}</td>
                 <td className="p-2">{t.status}</td>
@@ -362,7 +387,7 @@ export function AgentDetailsClient() {
             </tr>
           </thead>
           <tbody>
-            {(runsQ.data?.runs ?? []).map((r: any) => (
+            {(runsQ.data?.runs ?? []).map((r: AgentRun) => (
               <tr key={r.id} className="border-t">
                 <td className="p-2">{r.status}</td>
                 <td className="p-2">{r.started_at}</td>
@@ -394,7 +419,7 @@ export function AgentDetailsClient() {
             </tr>
           </thead>
           <tbody>
-            {(auditQ.data?.events ?? []).map((ev: any) => (
+            {(auditQ.data?.events ?? []).map((ev: AgentAuditEvent) => (
               <tr key={ev.id} className="border-t">
                 <td className="p-2">{new Date(ev.created_at).toLocaleString()}</td>
                 <td className="p-2">{ev.actor ?? "system"}</td>

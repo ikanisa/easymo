@@ -3,6 +3,7 @@
 Quick reference guide for developers using the new database schema enhancements.
 
 ## Table of Contents
+
 - [Recording Metrics](#recording-metrics)
 - [Logging Audit Events](#logging-audit-events)
 - [Feature Flags](#feature-flags)
@@ -21,26 +22,27 @@ Quick reference guide for developers using the new database schema enhancements.
 
 ```typescript
 // Edge Function (Deno)
-await supabase.rpc('record_metric', {
-  p_service_name: 'wa-webhook',
-  p_metric_type: 'latency',
-  p_metric_name: 'message_processing',
+await supabase.rpc("record_metric", {
+  p_service_name: "wa-webhook",
+  p_metric_type: "latency",
+  p_metric_name: "message_processing",
   p_value: 125,
-  p_unit: 'ms',
-  p_tags: { message_type: 'text', status: 'success' }
+  p_unit: "ms",
+  p_tags: { message_type: "text", status: "success" },
 });
 
 // Node.js Microservice
-await supabase.rpc('record_metric', {
-  p_service_name: 'wallet-service',
-  p_metric_type: 'throughput',
-  p_metric_name: 'transactions_processed',
+await supabase.rpc("record_metric", {
+  p_service_name: "wallet-service",
+  p_metric_type: "throughput",
+  p_metric_name: "transactions_processed",
   p_value: 1,
-  p_unit: 'count'
+  p_unit: "count",
 });
 ```
 
 **View recent metrics:**
+
 ```sql
 SELECT * FROM recent_metrics_by_service;
 ```
@@ -52,28 +54,28 @@ SELECT * FROM recent_metrics_by_service;
 **Log a user action:**
 
 ```typescript
-await supabase.rpc('log_audit_event', {
-  p_actor_type: 'user',
+await supabase.rpc("log_audit_event", {
+  p_actor_type: "user",
   p_actor_identifier: userId,
-  p_action: 'wallet_transfer',
-  p_resource_type: 'transaction',
+  p_action: "wallet_transfer",
+  p_resource_type: "transaction",
   p_resource_id: transactionId,
-  p_metadata: { amount: 1000, currency: 'RWF' },
-  p_correlation_id: req.headers['x-correlation-id']
+  p_metadata: { amount: 1000, currency: "RWF" },
+  p_correlation_id: req.headers["x-correlation-id"],
 });
 ```
 
 **Log a service action:**
 
 ```typescript
-await supabase.rpc('log_audit_event', {
-  p_actor_type: 'service',
-  p_actor_identifier: 'matching-service',
-  p_action: 'driver_matched',
-  p_resource_type: 'trip',
+await supabase.rpc("log_audit_event", {
+  p_actor_type: "service",
+  p_actor_identifier: "matching-service",
+  p_action: "driver_matched",
+  p_resource_type: "trip",
   p_resource_id: tripId,
   p_metadata: { driver_id: driverId, distance_km: 2.5 },
-  p_correlation_id: correlationId
+  p_correlation_id: correlationId,
 });
 ```
 
@@ -84,10 +86,10 @@ await supabase.rpc('log_audit_event', {
 **Check if feature is enabled for user:**
 
 ```typescript
-const isEnabled = await supabase.rpc('is_feature_enabled', {
-  p_flag_key: 'new_checkout_flow',
+const isEnabled = await supabase.rpc("is_feature_enabled", {
+  p_flag_key: "new_checkout_flow",
   p_user_id: userId,
-  p_environment: 'production'
+  p_environment: "production",
 });
 
 if (isEnabled) {
@@ -103,7 +105,7 @@ if (isEnabled) {
 
 ```sql
 INSERT INTO feature_flags (
-  key, name, description, enabled, 
+  key, name, description, enabled,
   rollout_strategy, rollout_percentage, environment
 ) VALUES (
   'video_calls',
@@ -119,8 +121,8 @@ INSERT INTO feature_flags (
 **Update rollout percentage:**
 
 ```sql
-UPDATE feature_flags 
-SET rollout_percentage = 50 
+UPDATE feature_flags
+SET rollout_percentage = 50
 WHERE key = 'video_calls';
 ```
 
@@ -138,24 +140,24 @@ SELECT * FROM feature_flag_overview;
 
 ```typescript
 // Called when processing a WhatsApp message
-await supabase.rpc('update_whatsapp_session_activity', {
-  p_phone_number: '+250788123456',
-  p_increment_message_count: true
+await supabase.rpc("update_whatsapp_session_activity", {
+  p_phone_number: "+250788123456",
+  p_increment_message_count: true,
 });
 ```
 
 **Enqueue an outbound message:**
 
 ```typescript
-const messageId = await supabase.rpc('enqueue_whatsapp_message', {
-  p_recipient_phone: '+250788123456',
-  p_message_type: 'text',
+const messageId = await supabase.rpc("enqueue_whatsapp_message", {
+  p_recipient_phone: "+250788123456",
+  p_message_type: "text",
   p_message_payload: {
-    text: 'Your ride has been confirmed!',
-    preview_url: false
+    text: "Your ride has been confirmed!",
+    preview_url: false,
   },
-  p_priority: 7,  // High priority (1-10 scale)
-  p_correlation_id: tripId
+  p_priority: 7, // High priority (1-10 scale)
+  p_correlation_id: tripId,
 });
 ```
 
@@ -173,17 +175,17 @@ SELECT * FROM whatsapp_queue_stats;
 **Create a transaction with idempotency:**
 
 ```typescript
-const txnId = await supabase.rpc('create_transaction', {
+const txnId = await supabase.rpc("create_transaction", {
   p_user_id: userId,
-  p_type: 'payment',
-  p_amount: 1000.00,
-  p_currency: 'RWF',
+  p_type: "payment",
+  p_amount: 1000.0,
+  p_currency: "RWF",
   p_idempotency_key: `order-payment-${orderId}`,
   p_metadata: {
     order_id: orderId,
-    payment_method: 'mobile_money',
-    provider: 'mtn_momo'
-  }
+    payment_method: "mobile_money",
+    provider: "mtn_momo",
+  },
 });
 ```
 
@@ -191,16 +193,16 @@ const txnId = await supabase.rpc('create_transaction', {
 
 ```typescript
 // When payment is confirmed
-await supabase.rpc('update_transaction_status', {
+await supabase.rpc("update_transaction_status", {
   p_transaction_id: txnId,
-  p_new_status: 'completed'
+  p_new_status: "completed",
 });
 
 // When payment fails
-await supabase.rpc('update_transaction_status', {
+await supabase.rpc("update_transaction_status", {
   p_transaction_id: txnId,
-  p_new_status: 'failed',
-  p_error_message: 'Insufficient funds'
+  p_new_status: "failed",
+  p_error_message: "Insufficient funds",
 });
 ```
 
@@ -219,30 +221,30 @@ SELECT * FROM user_recent_transactions WHERE user_id = '...';
 
 ```typescript
 // Trip started event
-await supabase.rpc('append_event', {
+await supabase.rpc("append_event", {
   p_aggregate_id: tripId,
-  p_aggregate_type: 'trip',
-  p_event_type: 'trip_started',
+  p_aggregate_type: "trip",
+  p_event_type: "trip_started",
   p_payload: {
     driver_id: driverId,
     passenger_id: passengerId,
     pickup_location: { lat: -1.9536, lng: 30.0606 },
-    started_at: new Date().toISOString()
+    started_at: new Date().toISOString(),
   },
   p_correlation_id: correlationId,
-  p_metadata: { source: 'mobile_app', version: '2.1.0' }
+  p_metadata: { source: "mobile_app", version: "2.1.0" },
 });
 
 // Driver arrived event
-await supabase.rpc('append_event', {
+await supabase.rpc("append_event", {
   p_aggregate_id: tripId,
-  p_aggregate_type: 'trip',
-  p_event_type: 'driver_arrived',
+  p_aggregate_type: "trip",
+  p_event_type: "driver_arrived",
   p_payload: {
     arrived_at: new Date().toISOString(),
-    location: { lat: -1.9536, lng: 30.0606 }
+    location: { lat: -1.9536, lng: 30.0606 },
   },
-  p_correlation_id: correlationId
+  p_correlation_id: correlationId,
 });
 ```
 
@@ -250,24 +252,24 @@ await supabase.rpc('append_event', {
 
 ```typescript
 // Get all events for a trip
-const { data: events } = await supabase.rpc('get_aggregate_events', {
-  p_aggregate_type: 'trip',
+const { data: events } = await supabase.rpc("get_aggregate_events", {
+  p_aggregate_type: "trip",
   p_aggregate_id: tripId,
-  p_limit: 100
+  p_limit: 100,
 });
 
 // Replay events to build current state
-let tripState = { status: 'pending' };
+let tripState = { status: "pending" };
 for (const event of events) {
   switch (event.event_type) {
-    case 'trip_started':
-      tripState = { ...tripState, status: 'active', ...event.payload };
+    case "trip_started":
+      tripState = { ...tripState, status: "active", ...event.payload };
       break;
-    case 'driver_arrived':
+    case "driver_arrived":
       tripState = { ...tripState, driver_arrived_at: event.payload.arrived_at };
       break;
-    case 'trip_completed':
-      tripState = { ...tripState, status: 'completed', ...event.payload };
+    case "trip_completed":
+      tripState = { ...tripState, status: "completed", ...event.payload };
       break;
   }
 }
@@ -286,29 +288,29 @@ SELECT * FROM event_store_stats;
 **Schedule a job:**
 
 ```typescript
-const jobId = await supabase.rpc('schedule_job', {
-  p_job_type: 'send_notification',
-  p_job_name: 'Trip reminder notification',
+const jobId = await supabase.rpc("schedule_job", {
+  p_job_type: "send_notification",
+  p_job_name: "Trip reminder notification",
   p_payload: {
     user_id: userId,
     trip_id: tripId,
-    notification_type: 'trip_reminder'
+    notification_type: "trip_reminder",
   },
   p_scheduled_at: new Date(Date.now() + 3600000).toISOString(), // 1 hour from now
   p_priority: 5,
-  p_idempotency_key: `trip-reminder-${tripId}`
+  p_idempotency_key: `trip-reminder-${tripId}`,
 });
 ```
 
 **Mark job as completed:**
 
 ```typescript
-await supabase.rpc('complete_job', {
+await supabase.rpc("complete_job", {
   p_job_id: jobId,
   p_result: {
     notification_sent: true,
-    sent_at: new Date().toISOString()
-  }
+    sent_at: new Date().toISOString(),
+  },
 });
 ```
 
@@ -318,9 +320,9 @@ await supabase.rpc('complete_job', {
 SELECT * FROM background_job_stats;
 
 -- Check pending jobs
-SELECT * FROM background_jobs 
-WHERE status = 'pending' 
-ORDER BY priority DESC, scheduled_at 
+SELECT * FROM background_jobs
+WHERE status = 'pending'
+ORDER BY priority DESC, scheduled_at
 LIMIT 10;
 ```
 
@@ -331,12 +333,12 @@ LIMIT 10;
 **Set a cache value:**
 
 ```typescript
-await supabase.rpc('set_cache', {
-  p_key: 'user_preferences:' + userId,
-  p_value: { theme: 'dark', language: 'en', notifications: true },
-  p_ttl_seconds: 3600,  // 1 hour
-  p_cache_type: 'user_data',
-  p_tags: ['user:' + userId, 'preferences']
+await supabase.rpc("set_cache", {
+  p_key: "user_preferences:" + userId,
+  p_value: { theme: "dark", language: "en", notifications: true },
+  p_ttl_seconds: 3600, // 1 hour
+  p_cache_type: "user_data",
+  p_tags: ["user:" + userId, "preferences"],
 });
 ```
 
@@ -362,8 +364,8 @@ if (cachedValue) {
 
 ```typescript
 // When user updates preferences, invalidate all user caches
-await supabase.rpc('invalidate_cache_by_tag', {
-  p_tag: 'user:' + userId
+await supabase.rpc("invalidate_cache_by_tag", {
+  p_tag: "user:" + userId,
 });
 ```
 
@@ -381,16 +383,16 @@ SELECT * FROM cache_stats;
 
 ```typescript
 // Find nearby pickup points
-const { data: nearbyLocations } = await supabase.rpc('find_nearby_locations', {
+const { data: nearbyLocations } = await supabase.rpc("find_nearby_locations", {
   p_lat: -1.9536,
   p_lng: 30.0606,
-  p_radius_meters: 5000,  // 5km radius
-  p_location_type: 'pickup',
-  p_limit: 20
+  p_radius_meters: 5000, // 5km radius
+  p_location_type: "pickup",
+  p_limit: 20,
 });
 
 // Results include distance in meters
-nearbyLocations.forEach(loc => {
+nearbyLocations.forEach((loc) => {
   console.log(`${loc.address} - ${loc.distance_meters}m away`);
 });
 ```
@@ -431,13 +433,13 @@ if (cachedRoute && cachedRoute.length > 0) {
 
 ```typescript
 // Called at service startup
-const serviceId = await supabase.rpc('register_service', {
-  p_service_name: 'wallet-service',
-  p_service_type: 'microservice',
-  p_version: '2.1.0',
-  p_endpoint: 'http://wallet-service:3000',
-  p_health_check_url: 'http://wallet-service:3000/health',
-  p_capabilities: ['wallet_transfer', 'balance_inquiry', 'transaction_history']
+const serviceId = await supabase.rpc("register_service", {
+  p_service_name: "wallet-service",
+  p_service_type: "microservice",
+  p_version: "2.1.0",
+  p_endpoint: "http://wallet-service:3000",
+  p_health_check_url: "http://wallet-service:3000/health",
+  p_capabilities: ["wallet_transfer", "balance_inquiry", "transaction_history"],
 });
 ```
 
@@ -445,14 +447,14 @@ const serviceId = await supabase.rpc('register_service', {
 
 ```typescript
 // Called periodically (e.g., every 30 seconds)
-await supabase.rpc('service_heartbeat', {
-  p_service_name: 'wallet-service',
-  p_status: 'healthy',
+await supabase.rpc("service_heartbeat", {
+  p_service_name: "wallet-service",
+  p_status: "healthy",
   p_metrics: {
     active_connections: 45,
     requests_per_minute: 120,
-    error_rate: 0.01
-  }
+    error_rate: 0.01,
+  },
 });
 ```
 
@@ -515,17 +517,17 @@ All RPC calls should include error handling:
 
 ```typescript
 try {
-  const result = await supabase.rpc('function_name', params);
+  const result = await supabase.rpc("function_name", params);
   if (result.error) throw result.error;
   return result.data;
 } catch (error) {
-  console.error('RPC call failed:', error);
+  console.error("RPC call failed:", error);
   // Log to audit
-  await supabase.rpc('log_audit_event', {
-    p_actor_type: 'system',
-    p_action: 'function_error',
-    p_resource_type: 'rpc_call',
-    p_metadata: { error: error.message, function: 'function_name' }
+  await supabase.rpc("log_audit_event", {
+    p_actor_type: "system",
+    p_action: "function_error",
+    p_resource_type: "rpc_call",
+    p_metadata: { error: error.message, function: "function_name" },
   });
   throw error;
 }
@@ -539,23 +541,23 @@ try {
 
 ```sql
 -- Service health
-SELECT * FROM service_health_overview 
+SELECT * FROM service_health_overview
 WHERE health_status IN ('warning', 'critical');
 
 -- Queue backlogs
-SELECT * FROM whatsapp_queue_stats 
+SELECT * FROM whatsapp_queue_stats
 WHERE status = 'pending' AND message_count > 100;
 
-SELECT * FROM message_queue_stats 
+SELECT * FROM message_queue_stats
 WHERE status = 'pending' AND message_count > 50;
 
 -- Failed jobs
-SELECT * FROM background_job_stats 
+SELECT * FROM background_job_stats
 WHERE status = 'failed' AND job_count > 0;
 
 -- Transaction failures
-SELECT * FROM transaction_summary 
-WHERE status = 'failed' 
+SELECT * FROM transaction_summary
+WHERE status = 'failed'
 ORDER BY transaction_count DESC;
 ```
 
@@ -563,7 +565,7 @@ ORDER BY transaction_count DESC;
 
 ```sql
 -- Slowest services (by average latency)
-SELECT 
+SELECT
   service_name,
   AVG(value) as avg_latency_ms
 FROM system_metrics
@@ -574,7 +576,7 @@ ORDER BY avg_latency_ms DESC
 LIMIT 10;
 
 -- Cache hit rate
-SELECT 
+SELECT
   cache_type,
   active_count,
   expired_count,

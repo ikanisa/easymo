@@ -11,9 +11,9 @@ function headers() {
   return { 'x-agent-jwt': token, 'Content-Type': 'application/json' };
 }
 
-export async function POST(request: Request, context: { params: { id: string } }) {
+export async function POST(request: Request, context: { params: Promise<{ id: string }> }) {
   try {
-    const { id } = idSchema.parse(context.params);
+    const { id } = idSchema.parse(await context.params);
     const payload = bodySchema.parse(await request.json().catch(() => ({})));
     const base = getAgentCoreUrl();
     if (!base) return NextResponse.json({ error: 'agent_core_unavailable' }, { status: 503 });

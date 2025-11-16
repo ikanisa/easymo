@@ -26,10 +26,10 @@ export const dynamic = "force-dynamic";
 
 export const POST = createHandler("admin_api.insurance.id.request_changes", async (
   request: Request,
-  context: { params: { id: string } },
+  context: { params: Promise<{ id: string }> },
 ) => {
   try {
-    const { id } = paramsSchema.parse(context.params);
+    const { id } = paramsSchema.parse(await context.params);
     const payload = bodySchema.parse(await request.json());
 
     let actorId: string;

@@ -111,3 +111,32 @@ export function getListReplyId(
   const trimmed = id.trim();
   return trimmed.length ? trimmed : null;
 }
+
+export function getRoutingText(
+  msg: WhatsAppMessage,
+): string | null {
+  if (isTextMessage(msg)) {
+    return getTextBody(msg);
+  }
+  if (isInteractiveButtonMessage(msg)) {
+    const title = msg.interactive?.button_reply?.title;
+    if (typeof title === "string" && title.trim().length) {
+      return title.trim();
+    }
+    const id = msg.interactive?.button_reply?.id;
+    if (typeof id === "string" && id.trim().length) {
+      return id.trim();
+    }
+  }
+  if (isInteractiveListMessage(msg)) {
+    const title = msg.interactive?.list_reply?.title;
+    if (typeof title === "string" && title.trim().length) {
+      return title.trim();
+    }
+    const id = msg.interactive?.list_reply?.id;
+    if (typeof id === "string" && id.trim().length) {
+      return id.trim();
+    }
+  }
+  return null;
+}

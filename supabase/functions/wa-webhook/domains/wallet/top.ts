@@ -69,7 +69,7 @@ export async function showWalletTop(ctx: RouterContext): Promise<boolean> {
     });
   } catch (error) {
     console.error("wallet.top_fail", error);
-    await sendButtonsMessage(ctx, "⚠️ Couldn't load promoter stats.", [
+    await sendButtonsMessage(ctx, "😔 Can't show your stats right now. Please try again later.", [
       { id: IDS.WALLET_TOP, title: "Done" },
     ]);
   }

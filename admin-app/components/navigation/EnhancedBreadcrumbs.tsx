@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import classNames from "classnames";
 import { ChevronRight, Home } from "lucide-react";
 import { buildPanelBreadcrumbs } from "../layout/nav-items";
+import { toLinkHref } from "@/lib/link-helpers";
 
 interface EnhancedBreadcrumbsProps {
   className?: string;
@@ -60,7 +61,7 @@ export function EnhancedBreadcrumbs({
             >
               {crumb.href && !crumb.current ? (
                 <Link
-                  href={crumb.href}
+                  href={toLinkHref(crumb.href)}
                   className={classNames(
                     "flex items-center gap-2 rounded px-2 py-1 transition-all",
                     "hover:text-gray-900 hover:bg-gray-100",

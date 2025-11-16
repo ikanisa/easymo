@@ -12,9 +12,11 @@ interface ThemeProviderProps {
 export function ThemeProvider(
   { children, defaultTheme = "system" }: ThemeProviderProps,
 ) {
+  const [mounted, setMounted] = useState(false);
   const [theme, setTheme] = useState<Exclude<ThemeOption, "system">>("light");
 
   useEffect(() => {
+    setMounted(true);
     if (typeof window === "undefined") return;
 
     const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
@@ -43,10 +45,11 @@ export function ThemeProvider(
   }, [defaultTheme]);
 
   useEffect(() => {
+    if (!mounted) return;
     const classList = document.documentElement.classList;
     classList.remove("light", "dark");
     classList.add(theme);
-  }, [theme]);
+  }, [theme, mounted]);
 
   return <>{children}</>;
 }

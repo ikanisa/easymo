@@ -69,8 +69,8 @@ function fromMocks(
   }));
 
   const result = filterAndPaginate(rows, {
-    bucket: params.bucket,
-    search: params.search,
+    bucket: bucket,
+    search: search,
     limit,
     offset
   });
@@ -95,19 +95,19 @@ export const GET = createHandler('admin_api.storage.list', async (request: Reque
     return zodValidationError(error);
   }
 
-  if (params.bucket && !allowedBuckets.has(params.bucket)) {
+  if (bucket && !allowedBuckets.has(bucket)) {
     return jsonError({ error: 'bucket_not_allowed', message: 'Bucket not in allowlist.' }, 403);
   }
 
-  const limit = params.limit ?? 200;
-  const offset = params.offset ?? 0;
+  const limit = limit ?? 200;
+  const offset = offset ?? 0;
 
   const adminClient = getSupabaseAdminClient();
   if (!adminClient) {
     return fromMocks(params, limit, offset);
   }
 
-  const buckets = params.bucket ? [params.bucket] : Array.from(allowedBuckets);
+  const buckets = bucket ? [bucket] : Array.from(allowedBuckets);
   const collected: StorageRow[] = [];
   let degradedMessage: string | null = null;
   let hadError = false;
@@ -191,8 +191,8 @@ export const GET = createHandler('admin_api.storage.list', async (request: Reque
   collected.sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1));
 
   const result = filterAndPaginate(collected, {
-    bucket: params.bucket,
-    search: params.search,
+    bucket: bucket,
+    search: search,
     limit,
     offset
   });

@@ -1,5 +1,10 @@
 export const IDS = {
   // Home menu
+  JOB_BOARD: "job_board",
+  JOB_FIND: "job_find",
+  JOB_POST: "job_post",
+  JOB_MY_JOBS: "job_my_jobs",
+  JOB_MY_APPLICATIONS: "job_my_applications",
   SEE_DRIVERS: "see_drivers",
   SEE_PASSENGERS: "see_passengers",
   SCHEDULE_TRIP: "schedule_trip",
@@ -18,6 +23,8 @@ export const IDS = {
   PROPERTY_RENTALS: "property_rentals",
   PROPERTY_FIND: "property_find",
   PROPERTY_ADD: "property_add",
+  PROPERTY_CHAT_AI: "property_chat_ai",
+  BAR_CHAT_WAITER: "bar_chat_waiter",
   SAVED_PLACES: "saved_places",
   LOCATION_SAVED_LIST: "location_saved_list",
   LOCATION_SAVE_HOME: "location_save_home",
@@ -40,6 +47,7 @@ export const IDS = {
   PROFILE_PROPERTIES: "profile_properties",
   PROFILE_TOKENS: "profile_tokens",
   PROFILE_SETTINGS: "profile_settings",
+  PROFILE_VIEW: "profile_view",
   PROFILE_ADD_VEHICLE: "profile_add_vehicle",
   PROFILE_MANAGE_BUSINESSES: "profile_manage_businesses",
   PROFILE_ADD_BUSINESS: "profile_add_business",

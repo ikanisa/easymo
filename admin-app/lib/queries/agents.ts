@@ -12,6 +12,7 @@ import {
 } from "@/lib/agents/driver-requests-service";
 import { apiFetch } from "@/lib/api/client";
 import { getAdminApiPath } from "@/lib/routes";
+import type { AgentVersion } from "@/lib/agents/agents-service";
 
 const DRIVER_REQUESTS_KEY: QueryKey = ["agents", "driver", "requests"];
 
@@ -25,24 +26,85 @@ const agentQueryKeys = {
   audit: (agentId: string) => ["agents", "audit", agentId] as const,
 };
 
-type AgentListResponse = { agents: unknown[] };
-
-type AgentDetailAggregate = {
-  agent: Record<string, unknown> | null;
-  versions: unknown[];
-  documents: unknown[];
-  vectorStats?: {
-    totalDocs: number;
-    readyDocs: number;
-    jsonChunks: number;
-    vecChunks: number;
-  };
+export type AgentVectorStats = {
+  totalDocs: number;
+  readyDocs: number;
+  jsonChunks: number;
+  vecChunks: number;
 };
 
-type AgentTasksResponse = { tasks: unknown[] };
-type AgentRunsResponse = { runs: unknown[] };
-type AgentRunDetailResponse = { run: unknown };
-type AgentAuditResponse = { events: unknown[] };
+export type AgentPersona = {
+  id: string;
+  name: string;
+  summary: string | null;
+  status: string;
+  default_language: string | null;
+  tags: string[] | null;
+  updated_at: string;
+  created_at: string;
+  vector_stats?: AgentVectorStats;
+};
+
+export type AgentDocument = {
+  id: string;
+  agent_id: string;
+  title: string | null;
+  source_url?: string | null;
+  storage_path?: string | null;
+  embedding_status?: string | null;
+  created_at: string;
+  updated_at?: string;
+  metadata?: ({
+    __temp?: boolean;
+  } & Record<string, unknown>) | null;
+  [key: string]: unknown;
+};
+
+export type AgentListResponse = { agents: AgentPersona[] };
+
+export type AgentDetailAggregate = {
+  agent: AgentPersona | null;
+  versions: AgentVersion[];
+  documents: AgentDocument[];
+  vectorStats?: AgentVectorStats;
+};
+
+export type AgentTask = {
+  id: string;
+  agent_id: string;
+  type: string;
+  status: string;
+  payload: Record<string, unknown>;
+  scheduled_at: string | null;
+  created_at: string;
+  updated_at?: string;
+  started_at?: string | null;
+  completed_at?: string | null;
+  [key: string]: unknown;
+};
+
+export type AgentRun = {
+  id: string;
+  agent_id: string;
+  status: string;
+  started_at: string;
+  completed_at: string | null;
+  metadata?: Record<string, unknown> | null;
+  [key: string]: unknown;
+};
+
+export type AgentAuditEvent = {
+  id: string;
+  actor: string | null;
+  action: string;
+  meta: Record<string, unknown> | null;
+  created_at: string;
+};
+
+export type AgentTasksResponse = { tasks: AgentTask[] };
+export type AgentRunsResponse = { runs: AgentRun[] };
+export type AgentRunDetailResponse = { run: AgentRun };
+export type AgentAuditResponse = { events: AgentAuditEvent[] };
 
 export function fetchDriverRequests() {
   return listDriverRequests();
@@ -67,8 +129,13 @@ export const driverQueryKeys = {
   requests: () => DRIVER_REQUESTS_KEY,
 };
 
+type AgentListQueryOptions = Omit<
+  UseQueryOptions<AgentListResponse, unknown, AgentListResponse>,
+  "queryKey" | "queryFn"
+>;
+
 export function useAgentsList(
-  options?: UseQueryOptions<AgentListResponse, unknown, AgentListResponse>,
+  options?: AgentListQueryOptions,
 ) {
   return useQuery({
     queryKey: agentQueryKeys.list,
@@ -100,9 +167,14 @@ export function useCreateAgent(
   });
 }
 
+type AgentDetailQueryOptions = Omit<
+  UseQueryOptions<AgentDetailAggregate, unknown, AgentDetailAggregate>,
+  "queryKey" | "queryFn"
+>;
+
 export function useAgentDetailAggregate(
   agentId?: string,
-  options?: UseQueryOptions<AgentDetailAggregate, unknown, AgentDetailAggregate>,
+  options?: AgentDetailQueryOptions,
 ) {
   return useQuery({
     queryKey: agentQueryKeys.detail(agentId ?? "unknown"),
@@ -285,10 +357,15 @@ export function useEmbedAgentDocument(
   });
 }
 
+type AgentTasksQueryOptions = Omit<
+  UseQueryOptions<AgentTasksResponse, unknown, AgentTasksResponse>,
+  "queryKey" | "queryFn"
+>;
+
 export function useAgentTasks(
   agentId: string,
   params?: { status?: string },
-  options?: UseQueryOptions<AgentTasksResponse, unknown, AgentTasksResponse>,
+  options?: AgentTasksQueryOptions,
 ) {
   return useQuery({
     queryKey: agentQueryKeys.tasks(agentId),
@@ -305,10 +382,15 @@ export function useAgentTasks(
   });
 }
 
+type AgentRunsQueryOptions = Omit<
+  UseQueryOptions<AgentRunsResponse, unknown, AgentRunsResponse>,
+  "queryKey" | "queryFn"
+>;
+
 export function useAgentRuns(
   agentId: string,
   params?: { status?: string; limit?: number },
-  options?: UseQueryOptions<AgentRunsResponse, unknown, AgentRunsResponse>,
+  options?: AgentRunsQueryOptions,
 ) {
   return useQuery({
     queryKey: agentQueryKeys.runs(agentId, params),
@@ -326,10 +408,15 @@ export function useAgentRuns(
   });
 }
 
+type AgentRunDetailQueryOptions = Omit<
+  UseQueryOptions<AgentRunDetailResponse, unknown, AgentRunDetailResponse>,
+  "queryKey" | "queryFn"
+>;
+
 export function useAgentRunDetails(
   agentId: string,
   runId?: string | null,
-  options?: UseQueryOptions<AgentRunDetailResponse, unknown, AgentRunDetailResponse>,
+  options?: AgentRunDetailQueryOptions,
 ) {
   return useQuery({
     queryKey: agentQueryKeys.runDetail(agentId, runId ?? "unknown"),
@@ -340,9 +427,14 @@ export function useAgentRunDetails(
   });
 }
 
+type AgentAuditQueryOptions = Omit<
+  UseQueryOptions<AgentAuditResponse, unknown, AgentAuditResponse>,
+  "queryKey" | "queryFn"
+>;
+
 export function useAgentAudit(
   agentId: string,
-  options?: UseQueryOptions<AgentAuditResponse, unknown, AgentAuditResponse>,
+  options?: AgentAuditQueryOptions,
 ) {
   return useQuery({
     queryKey: agentQueryKeys.audit(agentId),

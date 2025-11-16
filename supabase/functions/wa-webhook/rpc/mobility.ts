@@ -57,8 +57,8 @@ export async function insertTrip(
       creator_user_id: params.userId,
       role: params.role,
       vehicle_type: params.vehicleType,
-      pickup_lat: params.lat,
-      pickup_lng: params.lng,
+      pickup_latitude: params.lat,
+      pickup_longitude: params.lng,
       pickup: `SRID=4326;POINT(${params.lng} ${params.lat})`,
       pickup_radius_m: params.radiusMeters,
       pickup_text: params.pickupText ?? null,
@@ -83,8 +83,8 @@ export async function updateTripDropoff(
   const { error } = await client
     .from("trips")
     .update({
-      dropoff_lat: params.lat,
-      dropoff_lng: params.lng,
+      dropoff_latitude: params.lat,
+      dropoff_longitude: params.lng,
       dropoff: `SRID=4326;POINT(${params.lng} ${params.lat})`,
       dropoff_text: params.dropoffText ?? null,
       dropoff_radius_m: params.radiusMeters ?? null,

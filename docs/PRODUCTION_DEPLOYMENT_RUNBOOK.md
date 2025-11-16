@@ -4,13 +4,14 @@
 **Last Updated**: 2025-11-11  
 **Owner**: DevOps + Engineering  
 **Estimated Duration**: 2 hours (including monitoring)  
-**Downtime**: Zero (rolling update)  
+**Downtime**: Zero (rolling update)
 
 ---
 
 ## 📋 Pre-Deployment Checklist
 
 ### 1. Staging Validation ✅
+
 - [ ] All tests passing in staging (84 unit + 21 synthetic)
 - [ ] Load test completed (100 concurrent users, <2% error rate)
 - [ ] Manual E2E testing complete (all user flows)
@@ -20,6 +21,7 @@
 - [ ] Security review complete
 
 ### 2. Team Readiness ✅
+
 - [ ] On-call engineer identified and alerted
 - [ ] Backup engineer on standby
 - [ ] Engineering manager notified
@@ -28,6 +30,7 @@
 - [ ] War room channel created (#v2-deployment)
 
 ### 3. Infrastructure Readiness ✅
+
 - [ ] Production environment healthy (check dashboards)
 - [ ] Database backup completed (<1 hour old)
 - [ ] Rollback plan validated
@@ -36,6 +39,7 @@
 - [ ] Feature flags configured (start at 1%)
 
 ### 4. Code Readiness ✅
+
 - [ ] Latest code in `main` branch
 - [ ] All CI checks passing
 - [ ] Version tagged (`v2.0.0`)
@@ -49,16 +53,16 @@
 **Total Duration**: ~2 hours  
 **Launch Window**: Tuesday 9:00 AM - 11:00 AM EAT (off-peak)
 
-| Phase | Duration | Start Time | Activities |
-|-------|----------|------------|------------|
-| Pre-Deploy | 15 min | 08:45 AM | Final checks, team sync |
-| Database | 15 min | 09:00 AM | Backup + migrations |
-| Edge Functions | 10 min | 09:15 AM | Deploy Supabase functions |
-| Microservices | 20 min | 09:25 AM | Rolling update (12 services) |
-| Feature Flags | 5 min | 09:45 AM | Enable at 1% |
-| Smoke Tests | 15 min | 09:50 AM | Automated + manual |
-| Monitoring | 60 min | 10:05 AM | Watch metrics, collect feedback |
-| Sign-Off | 10 min | 11:05 AM | Confirm success, notify |
+| Phase          | Duration | Start Time | Activities                      |
+| -------------- | -------- | ---------- | ------------------------------- |
+| Pre-Deploy     | 15 min   | 08:45 AM   | Final checks, team sync         |
+| Database       | 15 min   | 09:00 AM   | Backup + migrations             |
+| Edge Functions | 10 min   | 09:15 AM   | Deploy Supabase functions       |
+| Microservices  | 20 min   | 09:25 AM   | Rolling update (12 services)    |
+| Feature Flags  | 5 min    | 09:45 AM   | Enable at 1%                    |
+| Smoke Tests    | 15 min   | 09:50 AM   | Automated + manual              |
+| Monitoring     | 60 min   | 10:05 AM   | Watch metrics, collect feedback |
+| Sign-Off       | 10 min   | 11:05 AM   | Confirm success, notify         |
 
 ---
 
@@ -67,6 +71,7 @@
 ### 1.1 Team Sync (08:45 AM)
 
 **Slack Announcement**:
+
 ```
 @channel 🚀 EasyMO v2.0 Deployment Starting
 
@@ -174,7 +179,7 @@ EOF
 
 # Check row counts (should be 0 for new tables)
 psql -h lhbowpbcpwoiparwnwgt.db.supabase.co -U postgres <<EOF
-SELECT 
+SELECT
   'agent_sessions' as table, COUNT(*) as rows FROM agent_sessions
 UNION ALL
 SELECT 'agent_requests', COUNT(*) FROM agent_requests
@@ -332,7 +337,15 @@ kubectl logs -n easymo-prod deployment/agent-core --tail=50
 curl https://api.easymo.com/health/agent-core
 curl https://api.easymo.com/health/ranking-service
 curl https://api.easymo.com/health/wallet-service
+curl https://api.easymo.com/health/whatsapp-webhook-worker | jq
 # All should return: 200 OK
+# WhatsApp webhook worker health must report:
+#   "status": "ok"
+#   "checks.openai.status": "ok"
+#   "checks.redis.status": "ok"
+#   "checks.supabase.status": "ok"
+# If any probe is "fail" or the endpoint returns HTTP 503, pause the rollout
+# and investigate Redis, Supabase, or OpenAI connectivity before proceeding.
 ```
 
 **Rollback Point 3**: If deployments fail, rollback via kubectl.
@@ -402,6 +415,7 @@ kubectl exec -n easymo-prod deployment/agent-core -- \
 **Test Scenarios**:
 
 1. **AI Agent Flow** (Internal WhatsApp Number):
+
    ```
    Send: "I need vegetables"
    Expected: AI agent responds with vendors
@@ -409,6 +423,7 @@ kubectl exec -n easymo-prod deployment/agent-core -- \
    ```
 
 2. **Traditional Flow** (Send "MENU"):
+
    ```
    Send: "MENU"
    Expected: Menu buttons appear
@@ -416,6 +431,7 @@ kubectl exec -n easymo-prod deployment/agent-core -- \
    ```
 
 3. **Fallback Scenario** (Temporarily disable agent):
+
    ```
    Disable agent → Send message
    Expected: Graceful fallback to menu
@@ -423,6 +439,7 @@ kubectl exec -n easymo-prod deployment/agent-core -- \
    ```
 
 4. **Payment Flow**:
+
    ```
    Complete order → Pay with wallet
    Expected: Payment successful, balance updated
@@ -495,15 +512,15 @@ Ensure these alerts are active:
 - name: High Error Rate
   condition: error_rate > 0.05
   action: Page on-call engineer
-  
+
 - name: Service Down
   condition: uptime < 0.99
   action: Page engineering manager
-  
+
 - name: High Fallback Rate
   condition: fallback_rate > 0.30
   action: Slack #engineering-alerts
-  
+
 - name: Slow Response
   condition: p95_response_time > 2000
   action: Slack #engineering-alerts
@@ -514,17 +531,20 @@ Ensure these alerts are active:
 **After 1 hour, decide**:
 
 ✅ **Proceed** if:
+
 - Error rate <1%
 - No critical issues
 - User feedback positive
 - Support tickets normal
 
 ⚠️ **Hold** if:
+
 - Error rate 1-5%
 - Minor issues (fixable)
 - Investigate further
 
 🛑 **Rollback** if:
+
 - Error rate >5%
 - Critical bugs
 - User complaints spike
@@ -552,6 +572,7 @@ Ensure these alerts are active:
 ### 8.2 Team Notifications
 
 **Slack Announcement**:
+
 ```
 @channel ✅ EasyMO v2.0 Deployment SUCCESSFUL!
 
@@ -571,6 +592,7 @@ Dashboard: https://admin.easymo.com/agents/dashboard
 ```
 
 **Email to Stakeholders**:
+
 ```
 Subject: EasyMO v2.0 Successfully Deployed
 
@@ -618,18 +640,19 @@ Engineering Team
 
 After successful Day 1 deployment, increase rollout:
 
-| Day | Percentage | Users (~) | Command |
-|-----|------------|-----------|---------|
-| 1 | 1% | 100 | `ROLLOUT_PERCENTAGE=1` |
-| 2 | 5% | 500 | `ROLLOUT_PERCENTAGE=5` |
-| 3 | 10% | 1,000 | `ROLLOUT_PERCENTAGE=10` |
-| 4 | 25% | 2,500 | `ROLLOUT_PERCENTAGE=25` |
-| 7 | 50% | 5,000 | `ROLLOUT_PERCENTAGE=50` |
-| 8 | 75% | 7,500 | `ROLLOUT_PERCENTAGE=75` |
-| 9 | 90% | 9,000 | `ROLLOUT_PERCENTAGE=90` |
-| 10 | 100% | All | `ROLLOUT_PERCENTAGE=100` 🎉 |
+| Day | Percentage | Users (~) | Command                     |
+| --- | ---------- | --------- | --------------------------- |
+| 1   | 1%         | 100       | `ROLLOUT_PERCENTAGE=1`      |
+| 2   | 5%         | 500       | `ROLLOUT_PERCENTAGE=5`      |
+| 3   | 10%        | 1,000     | `ROLLOUT_PERCENTAGE=10`     |
+| 4   | 25%        | 2,500     | `ROLLOUT_PERCENTAGE=25`     |
+| 7   | 50%        | 5,000     | `ROLLOUT_PERCENTAGE=50`     |
+| 8   | 75%        | 7,500     | `ROLLOUT_PERCENTAGE=75`     |
+| 9   | 90%        | 9,000     | `ROLLOUT_PERCENTAGE=90`     |
+| 10  | 100%       | All       | `ROLLOUT_PERCENTAGE=100` 🎉 |
 
 **Increase Command**:
+
 ```bash
 # Update feature flag
 kubectl patch configmap feature-flags \
@@ -641,6 +664,7 @@ kubectl rollout restart deployment/agent-core -n easymo-prod
 ```
 
 **Between Each Increase**:
+
 1. Monitor for 2-4 hours
 2. Check metrics (error rate, fallback rate)
 3. Review user feedback
@@ -655,6 +679,7 @@ kubectl rollout restart deployment/agent-core -n easymo-prod
 **Symptoms**: Migration script errors, tables not created
 
 **Solution**:
+
 ```bash
 # Check migration status
 supabase db diff --schema public
@@ -671,6 +696,7 @@ supabase db push --project-ref $SUPABASE_PROJECT_REF
 **Symptoms**: 500 errors, timeouts
 
 **Solution**:
+
 ```bash
 # Check function logs
 supabase functions logs wa-webhook --project-ref $SUPABASE_PROJECT_REF
@@ -687,6 +713,7 @@ curl https://lhbowpbcpwoiparwnwgt.supabase.co/functions/v1/wa-webhook
 **Symptoms**: Pods restarting, CrashLoopBackOff status
 
 **Solution**:
+
 ```bash
 # Check pod logs
 kubectl logs -n easymo-prod deployment/agent-core --tail=100
@@ -703,6 +730,7 @@ kubectl rollout undo deployment/agent-core -n easymo-prod
 **Symptoms**: Alerts firing, errors in logs
 
 **Solution**:
+
 ```bash
 # Immediate: Disable feature flags
 kubectl patch configmap feature-flags \
@@ -720,12 +748,14 @@ kubectl logs -n easymo-prod deployment/agent-core | grep ERROR
 ## 📞 Support Contacts
 
 **During Deployment**:
+
 - On-Call Engineer: [Name] - PagerDuty / Phone
 - Backup Engineer: [Name] - Slack @username
 - Engineering Manager: [Name] - Phone
 - War Room: #v2-deployment
 
 **Post-Deployment**:
+
 - Engineering Support: #engineering-support
 - DevOps Team: #devops
 - Incident Response: PagerDuty
@@ -749,4 +779,4 @@ kubectl logs -n easymo-prod deployment/agent-core | grep ERROR
 
 ---
 
-*For deployment support, contact: devops@easymo.com*
+_For deployment support, contact: devops@easymo.com_

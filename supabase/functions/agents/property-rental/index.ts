@@ -161,9 +161,10 @@ async function handleAddProperty(supabase: any, request: PropertySearchRequest, 
 
 async function handleFindProperty(supabase: any, request: PropertySearchRequest, sessionId: string) {
   try {
-    // Search for matching properties
     const radiusKm = 10;
-    const { data: properties, error } = await supabase.rpc("search_nearby_properties", {
+    
+    // Search user-listed properties
+    const { data: userProperties, error: userError } = await supabase.rpc("search_nearby_properties", {
       p_latitude: request.location.latitude,
       p_longitude: request.location.longitude,
       p_radius_km: radiusKm,
@@ -173,9 +174,24 @@ async function handleFindProperty(supabase: any, request: PropertySearchRequest,
       p_max_budget: request.maxBudget || 999999999,
     });
 
-    if (error) throw error;
+    // Search OpenAI deep research properties
+    const { data: researchedProperties, error: researchError } = await supabase.rpc("search_researched_properties", {
+      p_latitude: request.location.latitude,
+      p_longitude: request.location.longitude,
+      p_radius_km: radiusKm,
+      p_rental_type: request.rentalType,
+      p_bedrooms: request.bedrooms,
+      p_min_budget: request.minBudget || 0,
+      p_max_budget: request.maxBudget || 999999999,
+    });
 
-    if (!properties || properties.length === 0) {
+    // Merge and deduplicate properties
+    const allProperties = [
+      ...(userProperties || []).map((p: any) => ({ ...p, source_type: 'user_listed' })),
+      ...(researchedProperties || []).map((p: any) => ({ ...p, source_type: 'deep_research', owner_id: null }))
+    ];
+
+    if (allProperties.length === 0) {
       await supabase
         .from("agent_sessions")
         .update({ status: "completed", completed_at: new Date().toISOString() })
@@ -191,6 +207,8 @@ async function handleFindProperty(supabase: any, request: PropertySearchRequest,
       );
     }
 
+    const properties = allProperties;
+
     // Score and rank properties
     const scoredProperties = properties.map((prop: any) => ({
       ...prop,
@@ -205,22 +223,32 @@ async function handleFindProperty(supabase: any, request: PropertySearchRequest,
       // Simulate price negotiation (in production, would contact owners)
       const negotiatedPrice = await simulateNegotiation(property.price, request.maxBudget);
 
+      const vendorName = property.source_type === 'deep_research' 
+        ? `${property.source || 'OpenAI Research'}` 
+        : (property.owner_name || "Property Owner");
+
       const { data: quote } = await supabase
         .from("agent_quotes")
         .insert({
           session_id: sessionId,
-          vendor_id: property.owner_id,
-          vendor_type: "property_owner",
-          vendor_name: property.owner_name || "Property Owner",
+          vendor_id: property.owner_id || null,
+          vendor_type: property.source_type === 'deep_research' ? "researched_property" : "property_owner",
+          vendor_name: vendorName,
           offer_data: {
             original_price: property.price,
             negotiated_price: negotiatedPrice,
             bedrooms: property.bedrooms,
             bathrooms: property.bathrooms,
-            location: property.address,
+            location: property.location_address || property.address,
+            location_city: property.location_city,
+            location_country: property.location_country,
             amenities: property.amenities,
-            images: property.images,
+            images: property.images || [],
             distance: property.distance,
+            source: property.source || 'user_listed',
+            source_type: property.source_type,
+            contact_info: property.contact_info,
+            currency: property.currency || 'USD'
           },
           status: "pending",
           ranking_score: property.matchScore,
@@ -308,25 +336,36 @@ function formatPropertyOptions(properties: any[], quotes: any[]): string {
 
   quotes.forEach((quote: any, index: number) => {
     const offer = quote.offer_data;
-    message += `*Option ${index + 1}*\n`;
+    const isResearched = offer.source_type === 'deep_research';
+    
+    message += `*Option ${index + 1}*${isResearched ? ' 🔍 (AI Research)' : ''}\n`;
     message += `📍 ${offer.location}\n`;
+    if (offer.location_city) message += `🏙️ ${offer.location_city}, ${offer.location_country}\n`;
     message += `📏 Distance: ${offer.distance?.toFixed(1)}km\n`;
     message += `🛏️ Bedrooms: ${offer.bedrooms}\n`;
     message += `🚿 Bathrooms: ${offer.bathrooms}\n`;
     message += `\n💰 *Pricing:*\n`;
-    message += `  Monthly Rent: ${offer.negotiated_price} RWF`;
+    message += `  Monthly Rent: ${offer.negotiated_price} ${offer.currency || 'RWF'}`;
 
     if (offer.negotiated_price < offer.original_price) {
       const discount = ((offer.original_price - offer.negotiated_price) / offer.original_price * 100).toFixed(1);
       message += ` (${discount}% negotiated discount!)`;
     }
-    message += `\n  Deposit: ${offer.negotiated_price * 2} RWF\n`;
+    message += `\n  Deposit: ${offer.negotiated_price * 2} ${offer.currency || 'RWF'}\n`;
 
     if (offer.amenities && offer.amenities.length > 0) {
       message += `\n✨ *Amenities:*\n`;
       offer.amenities.slice(0, 5).forEach((amenity: string) => {
         message += `  • ${amenity}\n`;
       });
+    }
+
+    if (isResearched && offer.contact_info) {
+      message += `\n📞 Contact: ${offer.contact_info}\n`;
+    }
+
+    if (isResearched && offer.source) {
+      message += `📰 Source: ${offer.source}\n`;
     }
 
     message += `─────────────\n\n`;

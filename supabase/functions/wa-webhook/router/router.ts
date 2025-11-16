@@ -23,11 +23,9 @@ import {
   isMediaMessage,
   isTextMessage,
 } from "../utils/messages.ts";
-import { applyRateLimiting } from "../utils/middleware.ts";
 import { getCached, setCached } from "../utils/cache.ts";
 import { webhookConfig } from "../config.ts";
 import { incrementMetric } from "../utils/metrics_collector.ts";
-import { ErrorCode, WebhookError } from "../utils/error_handler.ts";
 
 type RouterHooks = {
   runGuards: (
@@ -75,19 +73,17 @@ const defaultHooks: RouterHooks = {
 
 let hooks: RouterHooks = { ...defaultHooks };
 
-type RouterEnhancementHooks = {
-  applyRateLimiting: typeof applyRateLimiting;
+type RouterCacheHooks = {
   getCached: typeof getCached;
   setCached: typeof setCached;
 };
 
-const enhancementDefaults: RouterEnhancementHooks = {
-  applyRateLimiting,
+const cacheDefaults: RouterCacheHooks = {
   getCached,
   setCached,
 };
 
-let enhancementHooks: RouterEnhancementHooks = { ...enhancementDefaults };
+let cacheHooks: RouterCacheHooks = { ...cacheDefaults };
 
 export function __setRouterTestOverrides(
   overrides: Partial<RouterHooks>,
@@ -100,13 +96,13 @@ export function __resetRouterTestOverrides(): void {
 }
 
 export function __setRouterEnhancementOverrides(
-  overrides: Partial<RouterEnhancementHooks>,
+  overrides: Partial<RouterCacheHooks>,
 ): void {
-  enhancementHooks = { ...enhancementHooks, ...overrides };
+  cacheHooks = { ...cacheHooks, ...overrides };
 }
 
 export function __resetRouterEnhancementOverrides(): void {
-  enhancementHooks = { ...enhancementDefaults };
+  cacheHooks = { ...cacheDefaults };
 }
 
 export async function handleMessage(
@@ -117,11 +113,11 @@ export async function handleMessage(
   const LOG_LEVEL = (Deno.env.get("LOG_LEVEL") ?? "").toLowerCase();
   const correlationCacheKey = `wa:webhook:cid:msg:${msg.id}`;
   const cachedCorrelation = webhookConfig.cache.enabled
-    ? enhancementHooks.getCached<string>(correlationCacheKey)
+    ? cacheHooks.getCached<string>(correlationCacheKey)
     : null;
   const correlationId = cachedCorrelation ?? crypto.randomUUID();
   if (webhookConfig.cache.enabled && !cachedCorrelation) {
-    enhancementHooks.setCached(
+    cacheHooks.setCached(
       correlationCacheKey,
       correlationId,
       webhookConfig.cache.defaultTTL,
@@ -163,37 +159,10 @@ export async function handleMessage(
     type: msg.type,
   }));
 
-  if (webhookConfig.rateLimit.enabled) {
-    const rateLimitResult = enhancementHooks.applyRateLimiting(
-      msg.from,
-      correlationId,
-    );
-    if (!rateLimitResult.allowed) {
-      incrementMetric("wa_webhook_message_blocked_total", 1, {
-        reason: "rate_limit",
-        type: msg.type ?? "unknown",
-      });
-      console.warn(JSON.stringify({
-        event: "ROUTER_RATE_LIMIT_BLOCK",
-        correlationId,
-        messageId: msg.id,
-        from: msg.from,
-      }));
-      const err = new WebhookError(
-        "Rate limit exceeded",
-        ErrorCode.RATE_LIMIT_ERROR,
-        rateLimitResult.response?.status ?? 429,
-        { phoneNumber: msg.from },
-      );
-      err.correlationId = correlationId;
-      throw err;
-    }
-  }
-
   type RouteDecision = { route: string; timestamp: number };
   const routeCacheKey = `wa:webhook:route:${msg.id}`;
   const cachedDecision = webhookConfig.cache.enabled
-    ? enhancementHooks.getCached<RouteDecision>(routeCacheKey)
+    ? cacheHooks.getCached<RouteDecision>(routeCacheKey)
     : null;
   if (cachedDecision) {
     incrementMetric("wa_webhook_message_cache_hit_total", 1, {
@@ -210,7 +179,7 @@ export async function handleMessage(
 
   const rememberRoute = (route: string) => {
     if (webhookConfig.cache.enabled) {
-      enhancementHooks.setCached(
+      cacheHooks.setCached(
         routeCacheKey,
         { route, timestamp: Date.now() },
         webhookConfig.cache.defaultTTL,

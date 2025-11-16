@@ -129,18 +129,22 @@ async function handleFilterBlock(
       .eq("id", row.id);
 
     // Log to audit log
-    await supa.rpc("log_notification_event", {
-      p_notification_id: row.id,
-      p_event_type: result.reason === "contact_opted_out"
-        ? "blocked_optout"
-        : result.reason === "quiet_hours"
-        ? "deferred_quiet_hours"
-        : "deferred_rate_limit",
-      p_details: {
-        reason: result.reason,
-        defer_until: result.defer_until?.toISOString(),
-      },
-    }).catch((err) => console.error("audit_log_error", err));
+    try {
+      await supa.rpc("log_notification_event", {
+        p_notification_id: row.id,
+        p_event_type: result.reason === "contact_opted_out"
+          ? "blocked_optout"
+          : result.reason === "quiet_hours"
+          ? "deferred_quiet_hours"
+          : "deferred_rate_limit",
+        p_details: {
+          reason: result.reason,
+          defer_until: result.defer_until?.toISOString(),
+        },
+      });
+    } catch (err) {
+      console.error("audit_log_error", err);
+    }
   }
 }
 

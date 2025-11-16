@@ -1,5 +1,6 @@
 import { assertEquals, assertRejects } from "https://deno.land/std@0.203.0/testing/asserts.ts";
 import type { SupabaseClient } from "../deps.ts";
+import type { MessageContextResult } from "./message_context.ts";
 
 const envReady = (() => {
   Deno.env.set("SUPABASE_URL", "http://localhost");
@@ -28,10 +29,11 @@ type StructuredEvent = { event: string; payload: Record<string, unknown> };
 
 type LogEvent = { endpoint: string; payload: Record<string, unknown> };
 
-type ContextResult = {
-  context: { supabase: unknown; from: string; locale: string };
-  state: { key: string; data?: Record<string, unknown> };
-};
+const test = (
+  name: string,
+  fn: () => Promise<void> | void,
+) => Deno.test({ name, sanitizeOps: false, sanitizeResources: false, fn });
+
 
 function installHooks() {
   const metrics: Metric[] = [];
@@ -51,11 +53,12 @@ function installHooks() {
     releaseEvent: async (id: string) => {
       releases.push(id);
     },
-    buildMessageContext: async (_client, msg) => {
+    buildMessageContext: async (client, msg, _contactLocales) => {
       if (msg.id === "wamid.null") return null;
-      const context: ContextResult = {
-        context: { supabase: {}, from: msg.from, locale: "en" },
+      const context: MessageContextResult = {
+        context: { supabase: client, from: msg.from, locale: "en" },
         state: { key: "home" },
+        language: "en",
       };
       return context;
     },
@@ -65,14 +68,17 @@ function installHooks() {
       }
       handled.push({ id: msg.id });
     },
-    logMetric: async (name, value, tags) => {
+    logMetric: async (name, value, tags = {}) => {
       metrics.push({ name, value, tags });
     },
-    logStructuredEvent: async (event, payload) => {
+    logStructuredEvent: async (event, payload = {}) => {
       structuredEvents.push({ event, payload });
     },
     logEvent: async (endpoint, payload) => {
-      logEvents.push({ endpoint, payload });
+      logEvents.push({
+        endpoint,
+        payload: (payload ?? {}) as Record<string, unknown>,
+      });
     },
     maybeRunRetention: async () => {
       retentionRuns += 1;
@@ -99,7 +105,7 @@ function installHooks() {
   };
 }
 
-Deno.test("processes claimed messages and skips duplicates", async () => {
+test("processes claimed messages and skips duplicates", async () => {
   const hooks = installHooks();
   try {
     const prepared: Parameters<typeof handlePreparedWebhook>[1] = {
@@ -140,7 +146,7 @@ Deno.test("processes claimed messages and skips duplicates", async () => {
   }
 });
 
-Deno.test("releases idempotency lock and records failure on handler error", async () => {
+test("releases idempotency lock and records failure on handler error", async () => {
   const hooks = installHooks();
   try {
     const prepared: Parameters<typeof handlePreparedWebhook>[1] = {

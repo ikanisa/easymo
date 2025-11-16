@@ -2,13 +2,15 @@
 
 ## Summary
 
-Phase 3 focused on creating a robust, centralized fallback system for all AI agents. This ensures graceful degradation when services are unavailable and provides user-friendly error messaging.
+Phase 3 focused on creating a robust, centralized fallback system for all AI agents. This ensures
+graceful degradation when services are unavailable and provides user-friendly error messaging.
 
 ## What Was Delivered
 
 ### 1. Centralized Fallback System (`lib/agents/fallback-system.ts`)
 
 **Features:**
+
 - **Standardized fallback data structures** with `FallbackResponse<T>` interface
 - **Quality scoring algorithm** (`scoreItem`) for ranking results
 - **Search filtering** (`filterBySearch`) across multiple fields
@@ -24,6 +26,7 @@ Phase 3 focused on creating a robust, centralized fallback system for all AI age
 - **Ranking system** with scoring and sorting
 
 **Benefits:**
+
 - Consistent fallback behavior across all agents
 - Reduces code duplication (no need to rewrite fallback logic per agent)
 - Better user experience with meaningful error messages
@@ -32,6 +35,7 @@ Phase 3 focused on creating a robust, centralized fallback system for all AI age
 ### 2. Fallback Mock Data (`lib/agents/fallback-data.ts`)
 
 **Comprehensive mock data for all agent types:**
+
 - Driver negotiation/requests (2 mock items)
 - Pharmacy requests (2 mock items)
 - Property rentals (2 mock items)
@@ -41,6 +45,7 @@ Phase 3 focused on creating a robust, centralized fallback system for all AI age
 - Agent sessions (2 mock items)
 
 **Features:**
+
 - `getFallbackData(agentType)` function for easy access
 - Realistic data that mirrors production structure
 - Includes all required fields for UI rendering
@@ -49,6 +54,7 @@ Phase 3 focused on creating a robust, centralized fallback system for all AI age
 ### 3. Comprehensive Test Suite (`__tests__/lib/agents/fallback-system.test.ts`)
 
 **Test coverage:**
+
 - ✅ Scoring algorithm validation
 - ✅ Search filtering (case-insensitive, multiple fields)
 - ✅ Fallback response structure
@@ -62,17 +68,18 @@ Phase 3 focused on creating a robust, centralized fallback system for all AI age
 ## Integration Status
 
 ### Agents Already Using Enhanced Fallbacks:
+
 1. **Shops & Services** - Full integration with ranking system
 2. **Pharmacy Requests** - Fallback with quotes support
 
 ### Agents Ready for Integration:
+
 3. Driver Requests
 4. Property Rentals
 5. Quincaillerie/Hardware
 6. Schedule Trips
 7. Marketplace
-8. Agent Sessions (monitoring)
-9-14. Additional agents in supabase/functions/
+8. Agent Sessions (monitoring) 9-14. Additional agents in supabase/functions/
 
 ## Usage Example
 
@@ -89,10 +96,10 @@ import { getFallbackData } from "@/lib/agents/fallback-data";
 function fallback(error: any, params?: { limit?: number; offset?: number }) {
   const errorType = classifyError(error);
   const userMessage = getUserMessage(errorType);
-  
+
   const fallbackData = getFallbackData("agent-type-here");
   const paginated = paginateFallback(fallbackData, params?.limit, params?.offset);
-  
+
   return jsonOk({
     data: paginated.data,
     total: paginated.total,
@@ -113,23 +120,27 @@ function fallback(error: any, params?: { limit?: number; offset?: number }) {
 ### How to Test Fallbacks:
 
 **Option 1: Query parameter (recommended)**
+
 ```
 GET /api/agents/shops?simulateFailure=true
 ```
 
 **Option 2: Environment variable**
+
 ```bash
 export SIMULATE_AGENT_FAILURES=true
 npm run dev
 ```
 
 **Option 3: Test suite**
+
 ```bash
 cd admin-app
 npm test -- fallback-system
 ```
 
 ### What Gets Tested:
+
 - Fallback data quality and completeness
 - Error classification accuracy
 - User message appropriateness
@@ -138,18 +149,19 @@ npm test -- fallback-system
 
 ## Key Improvements Over Previous System
 
-| Aspect | Before | After |
-|--------|--------|-------|
+| Aspect             | Before                   | After                              |
+| ------------------ | ------------------------ | ---------------------------------- |
 | **Error Messages** | Generic "error occurred" | User-friendly, classified messages |
-| **Fallback Data** | Hardcoded per agent | Centralized, reusable |
-| **Ranking** | None or manual | Automatic scoring algorithm |
-| **Testing** | Manual only | Automated + synthetic failures |
-| **Pagination** | Inconsistent | Standardized helper |
-| **Maintenance** | Update 14+ files | Update 1 system file |
+| **Fallback Data**  | Hardcoded per agent      | Centralized, reusable              |
+| **Ranking**        | None or manual           | Automatic scoring algorithm        |
+| **Testing**        | Manual only              | Automated + synthetic failures     |
+| **Pagination**     | Inconsistent             | Standardized helper                |
+| **Maintenance**    | Update 14+ files         | Update 1 system file               |
 
 ## Quality Scoring Algorithm
 
 Items are scored 0-1 based on:
+
 - **Rating** (60% weight): (rating/5) × 0.6
 - **Verified** (20% weight): +0.2 bonus if verified
 - **Reviews** (15% weight): min(reviews, 200) / 200 × 0.15
@@ -171,12 +183,14 @@ unknown → FallbackErrorType.UNKNOWN
 ## Observability Integration
 
 All fallback events are logged with:
+
 - `integration.status`: "degraded"
 - `integration.message`: User-friendly error
 - `integration.remediation`: Action steps
 - `integration.timestamp`: When fallback triggered
 
 This feeds into monitoring dashboards to track:
+
 - Fallback frequency by agent
 - Error type distribution
 - Service health over time
@@ -212,4 +226,5 @@ admin-app/
 
 **Phase 3 Status: ✅ COMPLETE**
 
-All foundational fallback infrastructure is in place. Agents can now be incrementally migrated to use the centralized system.
+All foundational fallback infrastructure is in place. Agents can now be incrementally migrated to
+use the centralized system.

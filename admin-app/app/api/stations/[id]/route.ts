@@ -21,7 +21,7 @@ const updateSchema = z.object({
 
 export const PATCH = createHandler('admin_api.stations.update', async (
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) => {
   const parseParams = paramsSchema.safeParse(params);
   if (!parseParams.success) {
@@ -97,7 +97,7 @@ export const PATCH = createHandler('admin_api.stations.update', async (
 
 export const DELETE = createHandler('admin_api.stations.delete', async (
   _request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) => {
   const parseParams = paramsSchema.safeParse(params);
   if (!parseParams.success) {

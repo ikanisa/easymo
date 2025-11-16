@@ -171,7 +171,9 @@ export async function handleMarketplaceButton(
     case IDS.MARKETPLACE_MENU:
       return await startMarketplace(ctx, state);
     case IDS.BACK_MENU:
-      await clearState(ctx.supabase, ctx.profileId);
+      if (ctx.profileId) {
+        await clearState(ctx.supabase, ctx.profileId);
+      }
       await sendHomeMenu(ctx);
       return true;
     default:
