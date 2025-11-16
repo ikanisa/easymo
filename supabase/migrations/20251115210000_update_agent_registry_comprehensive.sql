@@ -1,6 +1,6 @@
 -- Update Agent Registry with Comprehensive Instructions and Personas
 -- Date: 2025-11-15
--- Description: Add persona column, update system_prompt with detailed instructions,
+-- Description: Add persona column, update instructions with detailed instructions,
 --              combine bar and restaurant agents, add job board agent
 
 BEGIN;
@@ -19,7 +19,7 @@ ADD COLUMN IF NOT EXISTS instructions TEXT;
 -- ============================================================================
 INSERT INTO agent_configs (
   slug,
-  system_prompt,
+  instructions,
   persona,
   enabled_tools,
   instructions,
@@ -54,7 +54,7 @@ GUARDRAILS:
   '{"model": "gpt-4o", "temperature": 0.3, "max_tokens": 150}'::jsonb,
   true
 ) ON CONFLICT (slug) DO UPDATE SET
-  system_prompt = EXCLUDED.system_prompt,
+  instructions = EXCLUDED.instructions,
   persona = EXCLUDED.persona,
   enabled_tools = EXCLUDED.enabled_tools,
   instructions = EXCLUDED.instructions,
@@ -70,7 +70,7 @@ DELETE FROM agent_configs WHERE slug IN ('bar-ai', 'restaurant-ai');
 
 INSERT INTO agent_configs (
   slug,
-  system_prompt,
+  instructions,
   persona,
   enabled_tools,
   instructions,
@@ -106,7 +106,7 @@ GUARDRAILS:
   '{"model": "gpt-4o", "temperature": 0.7, "max_tokens": 400}'::jsonb,
   true
 ) ON CONFLICT (slug) DO UPDATE SET
-  system_prompt = EXCLUDED.system_prompt,
+  instructions = EXCLUDED.instructions,
   persona = EXCLUDED.persona,
   enabled_tools = EXCLUDED.enabled_tools,
   instructions = EXCLUDED.instructions,
@@ -119,7 +119,7 @@ GUARDRAILS:
 -- ============================================================================
 INSERT INTO agent_configs (
   slug,
-  system_prompt,
+  instructions,
   persona,
   enabled_tools,
   instructions,
@@ -171,7 +171,7 @@ GUARDRAILS:
   '{"model": "gpt-4o", "temperature": 0.5, "max_tokens": 500}'::jsonb,
   true
 ) ON CONFLICT (slug) DO UPDATE SET
-  system_prompt = EXCLUDED.system_prompt,
+  instructions = EXCLUDED.instructions,
   persona = EXCLUDED.persona,
   enabled_tools = EXCLUDED.enabled_tools,
   instructions = EXCLUDED.instructions,
@@ -184,7 +184,7 @@ GUARDRAILS:
 -- ============================================================================
 INSERT INTO agent_configs (
   slug,
-  system_prompt,
+  instructions,
   persona,
   enabled_tools,
   instructions,
@@ -218,7 +218,7 @@ TOOLS:
   '{"model": "gpt-4o", "temperature": 0.4, "max_tokens": 300}'::jsonb,
   true
 ) ON CONFLICT (slug) DO UPDATE SET
-  system_prompt = EXCLUDED.system_prompt,
+  instructions = EXCLUDED.instructions,
   persona = EXCLUDED.persona,
   enabled_tools = EXCLUDED.enabled_tools,
   instructions = EXCLUDED.instructions,
@@ -231,7 +231,7 @@ TOOLS:
 -- ============================================================================
 INSERT INTO agent_configs (
   slug,
-  system_prompt,
+  instructions,
   persona,
   enabled_tools,
   instructions,
@@ -264,7 +264,7 @@ TOOLS:
   '{"model": "gpt-4o", "temperature": 0.3, "max_tokens": 350}'::jsonb,
   true
 ) ON CONFLICT (slug) DO UPDATE SET
-  system_prompt = EXCLUDED.system_prompt,
+  instructions = EXCLUDED.instructions,
   persona = EXCLUDED.persona,
   enabled_tools = EXCLUDED.enabled_tools,
   instructions = EXCLUDED.instructions,
@@ -277,7 +277,7 @@ TOOLS:
 -- ============================================================================
 INSERT INTO agent_configs (
   slug,
-  system_prompt,
+  instructions,
   persona,
   enabled_tools,
   instructions,
@@ -306,7 +306,7 @@ TOOLS:
   '{"model": "gpt-4o", "temperature": 0.4, "max_tokens": 300}'::jsonb,
   true
 ) ON CONFLICT (slug) DO UPDATE SET
-  system_prompt = EXCLUDED.system_prompt,
+  instructions = EXCLUDED.instructions,
   persona = EXCLUDED.persona,
   enabled_tools = EXCLUDED.enabled_tools,
   instructions = EXCLUDED.instructions,
@@ -319,7 +319,7 @@ TOOLS:
 -- ============================================================================
 INSERT INTO agent_configs (
   slug,
-  system_prompt,
+  instructions,
   persona,
   enabled_tools,
   instructions,
@@ -347,7 +347,7 @@ TOOLS:
   '{"model": "gpt-4o", "temperature": 0.5, "max_tokens": 300}'::jsonb,
   true
 ) ON CONFLICT (slug) DO UPDATE SET
-  system_prompt = EXCLUDED.system_prompt,
+  instructions = EXCLUDED.instructions,
   persona = EXCLUDED.persona,
   enabled_tools = EXCLUDED.enabled_tools,
   instructions = EXCLUDED.instructions,
@@ -360,7 +360,7 @@ TOOLS:
 -- ============================================================================
 INSERT INTO agent_configs (
   slug,
-  system_prompt,
+  instructions,
   persona,
   enabled_tools,
   instructions,
@@ -392,7 +392,7 @@ TOOLS:
   '{"model": "gpt-4o", "temperature": 0.3, "max_tokens": 400}'::jsonb,
   true
 ) ON CONFLICT (slug) DO UPDATE SET
-  system_prompt = EXCLUDED.system_prompt,
+  instructions = EXCLUDED.instructions,
   persona = EXCLUDED.persona,
   enabled_tools = EXCLUDED.enabled_tools,
   instructions = EXCLUDED.instructions,
@@ -405,7 +405,7 @@ TOOLS:
 -- ============================================================================
 INSERT INTO agent_configs (
   slug,
-  system_prompt,
+  instructions,
   persona,
   enabled_tools,
   instructions,
@@ -438,7 +438,7 @@ TOOLS:
   '{"model": "gpt-4o", "temperature": 0.6, "max_tokens": 450}'::jsonb,
   true
 ) ON CONFLICT (slug) DO UPDATE SET
-  system_prompt = EXCLUDED.system_prompt,
+  instructions = EXCLUDED.instructions,
   persona = EXCLUDED.persona,
   enabled_tools = EXCLUDED.enabled_tools,
   instructions = EXCLUDED.instructions,
@@ -451,7 +451,7 @@ TOOLS:
 -- ============================================================================
 INSERT INTO agent_configs (
   slug,
-  system_prompt,
+  instructions,
   persona,
   enabled_tools,
   instructions,
@@ -481,7 +481,7 @@ TOOLS:
   '{"model": "gpt-4o", "temperature": 0.3, "max_tokens": 400}'::jsonb,
   true
 ) ON CONFLICT (slug) DO UPDATE SET
-  system_prompt = EXCLUDED.system_prompt,
+  instructions = EXCLUDED.instructions,
   persona = EXCLUDED.persona,
   enabled_tools = EXCLUDED.enabled_tools,
   instructions = EXCLUDED.instructions,
@@ -494,7 +494,7 @@ TOOLS:
 -- ============================================================================
 INSERT INTO agent_configs (
   slug,
-  system_prompt,
+  instructions,
   persona,
   enabled_tools,
   instructions,
@@ -520,7 +520,7 @@ TOOLS:
   '{"model": "gpt-4o", "temperature": 0.1, "max_tokens": 200}'::jsonb,
   true
 ) ON CONFLICT (slug) DO UPDATE SET
-  system_prompt = EXCLUDED.system_prompt,
+  instructions = EXCLUDED.instructions,
   persona = EXCLUDED.persona,
   enabled_tools = EXCLUDED.enabled_tools,
   instructions = EXCLUDED.instructions,
@@ -533,7 +533,7 @@ TOOLS:
 -- ============================================================================
 INSERT INTO agent_configs (
   slug,
-  system_prompt,
+  instructions,
   persona,
   enabled_tools,
   instructions,
@@ -562,7 +562,7 @@ TOOLS:
   '{"model": "gpt-4o", "temperature": 0.4, "max_tokens": 300}'::jsonb,
   true
 ) ON CONFLICT (slug) DO UPDATE SET
-  system_prompt = EXCLUDED.system_prompt,
+  instructions = EXCLUDED.instructions,
   persona = EXCLUDED.persona,
   enabled_tools = EXCLUDED.enabled_tools,
   instructions = EXCLUDED.instructions,
@@ -575,7 +575,7 @@ TOOLS:
 -- ============================================================================
 INSERT INTO agent_configs (
   slug,
-  system_prompt,
+  instructions,
   persona,
   enabled_tools,
   instructions,
@@ -631,7 +631,7 @@ GUARDRAILS:
   '{"model": "gpt-4o", "temperature": 0.2, "max_tokens": 600}'::jsonb,
   true
 ) ON CONFLICT (slug) DO UPDATE SET
-  system_prompt = EXCLUDED.system_prompt,
+  instructions = EXCLUDED.instructions,
   persona = EXCLUDED.persona,
   enabled_tools = EXCLUDED.enabled_tools,
   instructions = EXCLUDED.instructions,
@@ -650,6 +650,6 @@ COMMENT ON TABLE agent_configs IS 'AI Agent configurations with system prompts, 
 COMMENT ON COLUMN agent_configs.persona IS 'Agent personality and communication style';
 COMMENT ON COLUMN agent_configs.enabled_tools IS 'JSON array of tool names this agent can use';
 COMMENT ON COLUMN agent_configs.instructions IS 'Detailed operational instructions for the agent';
-COMMENT ON COLUMN agent_configs.system_prompt IS 'Core system prompt defining agent role and boundaries';
+COMMENT ON COLUMN agent_configs.instructions IS 'Core system prompt defining agent role and boundaries';
 
 COMMIT;
