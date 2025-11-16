@@ -2,6 +2,14 @@
 
 All notable changes to this repository are documented here.
 
+## 2025-11-20 – Supabase onboarding refresh
+
+- Added Supabase-first Quickstart and README instructions covering env vars, CLI setup, migrations, seeds, and function deploys.
+- Published an admin invitation/access guide (`docs/admin-access-guide.md`) describing roles, token rotation, and revocation steps.
+- Breaking: Removed legacy cleanup-era Quickstart content and rollback guidance; follow the new setup flow when configuring environments.
+- Breaking: Local database resets now rely on `supabase db reset` plus `supabase/seeders/phase2_seed.sql`; older seed paths are no longer referenced.
+- Removal: Deprecated `CLEANUP_*` progress notes are no longer linked from onboarding docs.
+
 ## 2025-10-22 – WhatsApp calling API alignment
 
 - Added `waCalls` controller metadata to `@easymo/commons` so helper utilities resolve `/wa/webhook` (GET) and `/wa/events` (POST).

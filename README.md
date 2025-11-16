@@ -57,52 +57,51 @@ Vite React app and communicates with those Edge Functions through the
   Grafana-ready dashboards (`dashboards/phase4/*.json`) and Kafka topic manifests
   document the expanded footprint.
 
-## Local Setup (MacBook)
+## Local Setup
 
-1. Install prerequisites via Homebrew: `brew install node pnpm supabase/tap/supabase`,
-   then install local reverse proxy tooling by running `brew bundle --file=./Brewfile`
-   from within `infra/mac`.
-2. Clone this repository, then run `pnpm install` from the workspace root.
-3. Duplicate `.env.example` to `.env` (shared defaults) and `.env.local`
-   (Next.js-only overrides). Update every `CHANGEME_*` placeholder with your
-   Supabase project reference and credentials.
-4. Start Supabase locally with `supabase start` **or** configure the CLI to use
-   a remote project (`supabase link --project-ref <ref>`). See [docs/local-hosting.md](docs/local-hosting.md)
-   for the full workflow, including reverse proxy notes.
-5. Launch the admin app with `pnpm dev` (Next.js) or `pnpm start` after a build
-   to emulate the production bundle.
+1. Install prerequisites: `pnpm` (≥10.18.3), Node 18.18+, and the Supabase CLI (`brew install supabase/tap/supabase` on macOS).
+2. Clone this repository and install dependencies from the root: `pnpm install`.
+3. Copy `.env.example` to `.env` (backend/shared) and `.env.local` (Next.js only),
+   then populate every `CHANGEME_*` placeholder with your Supabase project values.
+4. Start Supabase locally with `supabase start` or link to a remote project with
+   `supabase link --project-ref <project-ref> && supabase db pull`.
+5. Apply migrations and seed data (local stack):
+   - `supabase db reset` to recreate the database from `supabase/migrations`.
+   - `supabase db seed --file supabase/seeders/phase2_seed.sql` to load sample data.
+6. Deploy the Edge Functions used by the admin API when targeting a remote project:
+   - `pnpm functions:deploy` (core admin routes)
+   - `pnpm functions:deploy:agents` (agent-specific helpers)
+7. Launch the admin app:
+   - Dev: `pnpm dev`
+   - Production build + serve: `pnpm build && pnpm start`
 
 ## Environment Variables
 
-- `.env` holds settings shared by Node processes (Edge Functions, CLI tooling).
-- `.env.local` is read only by Next.js at runtime—keep it out of version control
-  to protect secrets during local development.
-- Required values:
-  - `APP_ENV` and `PORT` configure the admin runtime name and local port.
-  - `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` drive browser
-    calls to Supabase.
-  - `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` mirror the `NEXT_PUBLIC_*`
-    values for tooling (Cypress/Vitest) and must never contain service-role keys.
-  - `VITE_SUPABASE_PROJECT_ID` stores the Supabase project ref (e.g.
-    `vacltfdslodqybxojytc`) for diagnostics scripts.
-  - `SUPABASE_SERVICE_ROLE_KEY` allows Edge Functions to bypass RLS; keep it on
-    the server side.
-  - `EASYMO_ADMIN_TOKEN` secures Supabase Edge Function routes.
-  - `ADMIN_SESSION_SECRET` must be at least 16 characters to encrypt cookies.
-- Optional helpers (`SUPABASE_DB_URL`, `DISPATCHER_FUNCTION_URL`, cron toggles,
-  etc.) remain in `.env.example` for services that need them.
+| Variable | Purpose | Scope |
+| --- | --- | --- |
+| `APP_ENV` | Names the runtime (e.g., `local`, `staging`, `prod`) for logging. | `.env` |
+| `PORT` | Admin app port (defaults to 3000). | `.env`, `.env.local` |
+| `NEXT_PUBLIC_SUPABASE_URL` | Public Supabase URL for browser traffic. | `.env.local` |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Browser anon key; **never** use the service role. | `.env.local` |
+| `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` | Mirrors the `NEXT_PUBLIC_*` pair for tooling (Vitest/Cypress). | `.env`, `.env.local` |
+| `VITE_SUPABASE_PROJECT_ID` | Supabase project ref used by diagnostics scripts. | `.env` |
+| `SUPABASE_SERVICE_ROLE_KEY` | Service role key used only by Edge Functions. | `.env` |
+| `EASYMO_ADMIN_TOKEN` | Shared secret validated by admin Edge Functions. | `.env`, `.env.local` |
+| `ADMIN_SESSION_SECRET` | 16+ chars to encrypt cookies in the admin app. | `.env` |
+
+Optional helpers such as `SUPABASE_DB_URL`, `DISPATCHER_FUNCTION_URL`, and cron toggles
+remain in `.env.example` for services that require them.
 
 ## Run Commands
 
 - Install deps: `pnpm install`
-- Shared packages: `pnpm --filter @va/shared build && pnpm --filter @easymo/commons build`
-- Netlify build (same command used in CI): `pnpm netlify:build`
 - Local dev server with hot reload: `pnpm dev`
 - Production build: `pnpm build`
 - Serve the compiled build: `pnpm start`
+- Netlify build (CI-equivalent): `pnpm netlify:build`
+- Deploy Edge Functions: `pnpm functions:deploy` or `pnpm functions:deploy:agents`
 - Supabase connectivity check: `pnpm diagnostics:supabase [table_name]`
-- Additional scripts for packages/services are documented in
-  `docs/local-hosting.md` and individual service READMEs.
+- Reset local database: `supabase db reset && supabase db seed --file supabase/seeders/phase2_seed.sql`
 
 ## Supabase Notes
 
