@@ -190,8 +190,16 @@ function flattenEntries(): TokenEntries {
 
   pushSimpleRecord("radius", radii);
   pushSimpleRecord("glass", glass);
-  pushSimpleRecord("layout", layout);
-  pushSimpleRecord("effect", effects);
+  // Layout tokens: flatten as --ui-shell-max-width, --ui-shell-gutter, etc.
+  Object.entries(layout).forEach(([groupKey, group]) => {
+    Object.entries(group).forEach(([key, value]) => {
+      entries.push([`--ui-${kebabCase(String(groupKey))}-${kebabCase(String(key))}`, value]);
+    });
+  });
+  // Effects tokens: flatten as --ui-focus-ring-width, --ui-elevation-low, etc.
+  Object.entries(effects).forEach(([key, value]) => {
+    entries.push([`--ui-${kebabCase(String(key))}`, value]);
+  });
 
   Object.entries(motion).forEach(([groupKey, group]) => {
     Object.entries(group).forEach(([key, value]) => {
