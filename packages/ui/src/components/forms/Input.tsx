@@ -9,7 +9,7 @@ const inputVariants = cva(
   clsx(
     "block w-full rounded-xl border bg-[color:var(--ui-color-surface)]/95",
     "text-[color:var(--ui-color-foreground)] placeholder:text-[color:var(--ui-color-muted)]",
-    "transition-colors duration-150 ease-[var(--motion-ease-standard, ease)]",
+    "transition-colors duration-150 ease-[var(--ui-motion-easing-standard, ease)]",
     "focus-visible:outline-none focus-visible:ring-[color:var(--ui-color-focus, var(--ui-color-outline))]",
     "focus-visible:ring-[length:var(--ui-focus-ring-width, 2px)]",
     "focus-visible:ring-offset-[length:var(--ui-focus-ring-offset, 2px)]",
