@@ -140,7 +140,7 @@ export const HelperText = forwardRef<HTMLParagraphElement, HelperTextProps>(func
     <p
       ref={ref}
       className={clsx(
-        "text-sm", 
+        "text-sm",
         tone === "default" && "text-[color:var(--ui-color-muted)]",
         tone === "danger" && "text-[color:var(--ui-color-danger)]",
         tone === "success" && "text-[color:var(--ui-color-success)]",
