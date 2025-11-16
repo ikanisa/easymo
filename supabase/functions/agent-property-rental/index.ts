@@ -1,5 +1,6 @@
 import { detectLanguage, translateText } from "../_shared/multilingual-utils.ts";
 import { transcribeAudio, textToSpeech } from "../_shared/voice-handler.ts";
+import { logStructuredEvent } from "../_shared/observability.ts";
 // Property Rental Agent
 // Handles short-term and long-term rental matching, property listing, and price negotiation
 
@@ -8,6 +9,18 @@ import { createClient } from "@supabase/supabase-js@2";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+const healthMetrics = {
+  success: 0,
+  failure: 0,
+  latencyMsTotal: 0,
+};
+
+const renderHealthMetrics = (service: string): string => [
+  `agent_health_checks_total{service="${service}",status="success"} ${healthMetrics.success}`,
+  `agent_health_checks_total{service="${service}",status="failure"} ${healthMetrics.failure}`,
+  `agent_health_latency_ms_sum{service="${service}"} ${healthMetrics.latencyMsTotal}`,
+].join("\n");
 
 interface PropertySearchRequest {
   userId: string;
@@ -51,12 +64,70 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
+  const url = new URL(req.url);
+  const requestId = req.headers.get("x-request-id") ?? crypto.randomUUID();
+
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
   const startTime = Date.now();
+
+  if (req.method === "GET" && (url.pathname === "/health" || url.pathname === "/ping")) {
+    try {
+      const { error } = await supabase.from("agent_sessions").select("id").limit(1);
+      const healthy = !error;
+      const durationMs = Date.now() - startTime;
+      healthMetrics.latencyMsTotal += durationMs;
+      healthy ? healthMetrics.success++ : healthMetrics.failure++;
+
+      logStructuredEvent("PROPERTY_AGENT_HEALTH", {
+        requestId,
+        healthy,
+        durationMs,
+        error: error?.message,
+      });
+
+      return new Response(JSON.stringify({
+        status: healthy ? "ok" : "degraded",
+        service: "agent-property-rental",
+        requestId,
+        latency_ms: durationMs,
+        timestamp: new Date().toISOString(),
+        checks: { database: healthy ? "connected" : "error" },
+      }), {
+        status: healthy ? 200 : 503,
+        headers: { ...corsHeaders, "Content-Type": "application/json", "X-Request-ID": requestId },
+      });
+    } catch (error) {
+      const durationMs = Date.now() - startTime;
+      healthMetrics.failure++;
+      healthMetrics.latencyMsTotal += durationMs;
+      logStructuredEvent("PROPERTY_AGENT_HEALTH_ERROR", {
+        requestId,
+        error: error instanceof Error ? error.message : String(error),
+        durationMs,
+      }, "error");
+
+      return new Response(JSON.stringify({
+        status: "unhealthy",
+        service: "agent-property-rental",
+        requestId,
+        latency_ms: durationMs,
+      }), {
+        status: 503,
+        headers: { ...corsHeaders, "Content-Type": "application/json", "X-Request-ID": requestId },
+      });
+    }
+  }
+
+  if (req.method === "GET" && url.pathname === "/metrics") {
+    return new Response(renderHealthMetrics("agent-property-rental"), {
+      status: 200,
+      headers: { "Content-Type": "text/plain; version=0.0.4", "X-Request-ID": requestId },
+    });
+  }
 
   try {
     const request: PropertySearchRequest = await req.json();

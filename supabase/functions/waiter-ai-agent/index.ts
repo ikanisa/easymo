@@ -24,6 +24,20 @@ const supabase = createClient(
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
 );
 
+const healthMetrics = {
+  success: 0,
+  failure: 0,
+  latencyMsTotal: 0,
+};
+
+function renderHealthMetrics(service: string): string {
+  return [
+    `agent_health_checks_total{service="${service}",status="success"} ${healthMetrics.success}`,
+    `agent_health_checks_total{service="${service}",status="failure"} ${healthMetrics.failure}`,
+    `agent_health_latency_ms_sum{service="${service}"} ${healthMetrics.latencyMsTotal}`,
+  ].join("\n");
+}
+
 // =====================================================
 // SYSTEM PROMPT
 // =====================================================
@@ -593,13 +607,78 @@ async function handleToolCall(
 // =====================================================
 
 serve(async (req: Request) => {
+  const url = new URL(req.url);
+  const requestId = req.headers.get("x-request-id") ?? crypto.randomUUID();
+  const startedAt = Date.now();
+
   // CORS headers
   const headers = {
     "Content-Type": "application/json",
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Methods": "POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type, Authorization"
+    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    "X-Request-ID": requestId,
   };
+
+  const respond = (body: unknown, init: ResponseInit = {}): Response => {
+    const mergedHeaders = new Headers({ ...headers, ...(init.headers || {}) });
+    return new Response(
+      typeof body === "string" ? body : JSON.stringify(body),
+      { ...init, headers: mergedHeaders },
+    );
+  };
+
+  if (req.method === "GET" && (url.pathname === "/health" || url.pathname === "/ping")) {
+    try {
+      const { error } = await supabase.from("waiter_conversations").select("id").limit(1);
+      const healthy = !error;
+      const durationMs = Date.now() - startedAt;
+      healthMetrics.latencyMsTotal += durationMs;
+      healthy ? healthMetrics.success++ : healthMetrics.failure++;
+
+      await logStructuredEvent("WAITER_HEALTH_CHECK", {
+        requestId,
+        healthy,
+        durationMs,
+        error: error?.message,
+      });
+
+      return respond({
+        status: healthy ? "ok" : "degraded",
+        service: "waiter-ai-agent",
+        requestId,
+        latency_ms: durationMs,
+        checks: { database: healthy ? "connected" : "error" },
+        timestamp: new Date().toISOString(),
+      }, { status: healthy ? 200 : 503 });
+    } catch (error) {
+      const durationMs = Date.now() - startedAt;
+      healthMetrics.failure++;
+      healthMetrics.latencyMsTotal += durationMs;
+      await logStructuredEvent("WAITER_HEALTH_CHECK_ERROR", {
+        requestId,
+        error: error instanceof Error ? error.message : String(error),
+        durationMs,
+      }, "error");
+
+      return respond({
+        status: "unhealthy",
+        service: "waiter-ai-agent",
+        requestId,
+        latency_ms: durationMs,
+      }, { status: 503 });
+    }
+  }
+
+  if (req.method === "GET" && url.pathname === "/metrics") {
+    return new Response(renderHealthMetrics("waiter-ai-agent"), {
+      status: 200,
+      headers: {
+        "Content-Type": "text/plain; version=0.0.4",
+        "X-Request-ID": requestId,
+      },
+    });
+  }
 
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 204, headers });

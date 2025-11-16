@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { logStructuredEvent } from "../_shared/observability.ts";
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL") ?? "",
@@ -8,36 +9,70 @@ const supabase = createClient(
 
 serve(async (req: Request): Promise<Response> => {
   const url = new URL(req.url);
+  const requestId = req.headers.get("x-request-id") ?? crypto.randomUUID();
+
+  const respond = (
+    body: unknown,
+    init: ResponseInit = {},
+  ): Response => {
+    const headers = new Headers(init.headers);
+    headers.set("Content-Type", "application/json");
+    headers.set("X-Request-ID", requestId);
+    return new Response(JSON.stringify(body), { ...init, headers });
+  };
+
+  const logEvent = (
+    event: string,
+    details: Record<string, unknown> = {},
+    level: "debug" | "info" | "warn" | "error" = "info",
+  ) => {
+    logStructuredEvent(event, {
+      service: "wa-webhook-core",
+      requestId,
+      path: url.pathname,
+      ...details,
+    }, level);
+  };
   
   if (url.pathname === "/health" || url.pathname.endsWith("/health")) {
+    const startedAt = Date.now();
     try {
       // Check profiles table (core user table)
       const { error } = await supabase.from("profiles").select("user_id").limit(1);
-      
-      return new Response(JSON.stringify({
-        status: error ? "unhealthy" : "healthy",
+      const healthy = !error;
+
+      logEvent("CORE_HEALTH_CHECK", {
+        healthy,
+        durationMs: Date.now() - startedAt,
+        error: error?.message,
+      }, healthy ? "info" : "warn");
+
+      return respond({
+        status: healthy ? "healthy" : "unhealthy",
         service: "wa-webhook-core",
         timestamp: new Date().toISOString(),
-        checks: { 
-          database: error ? "disconnected" : "connected",
-          table: "profiles"
+        requestId,
+        checks: {
+          database: healthy ? "connected" : "disconnected",
+          table: "profiles",
+          duration_ms: Date.now() - startedAt,
         },
         version: "1.0.0",
         ...(error && { error: error.message }),
-      }, null, 2), {
-        status: error ? 503 : 200,
-        headers: { "Content-Type": "application/json" },
-      });
+      }, { status: healthy ? 200 : 503 });
     } catch (err) {
-      return new Response(JSON.stringify({
+      logEvent("CORE_HEALTH_CHECK_ERROR", {
+        durationMs: Date.now() - startedAt,
+        error: err instanceof Error ? err.message : String(err),
+      }, "error");
+
+      return respond({
         status: "unhealthy",
         service: "wa-webhook-core",
+        requestId,
         error: err instanceof Error ? err.message : String(err),
         checks: { database: "error" },
-      }, null, 2), {
-        status: 503,
-        headers: { "Content-Type": "application/json" },
-      });
+      }, { status: 503 });
     }
   }
 
@@ -46,21 +81,23 @@ serve(async (req: Request): Promise<Response> => {
     const token = url.searchParams.get("hub.verify_token");
     const challenge = url.searchParams.get("hub.challenge");
     if (mode === "subscribe" && token === Deno.env.get("WA_VERIFY_TOKEN")) {
-      return new Response(challenge, { status: 200 });
+      return respond(challenge, { status: 200 });
     }
-    return new Response("Forbidden", { status: 403 });
+    return respond({ error: "forbidden" }, { status: 403 });
   }
 
   try {
     const payload = await req.json();
-    return new Response(JSON.stringify({ success: true, service: "wa-webhook-core" }), {
+    logEvent("CORE_WEBHOOK_RECEIVED", { payloadType: typeof payload });
+    return respond({ success: true, service: "wa-webhook-core", requestId }, {
       status: 200,
-      headers: { "Content-Type": "application/json" },
     });
   } catch (err) {
-    return new Response(JSON.stringify({ error: "internal_error" }), { 
+    logEvent("CORE_WEBHOOK_ERROR", {
+      error: err instanceof Error ? err.message : String(err),
+    }, "error");
+    return respond({ error: "internal_error", requestId }, {
       status: 500,
-      headers: { "Content-Type": "application/json" }
     });
   }
 });
