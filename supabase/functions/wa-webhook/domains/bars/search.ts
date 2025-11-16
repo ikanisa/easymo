@@ -440,8 +440,33 @@ async function fetchBarMenuItems(
   ctx: RouterContext,
   barId: string,
 ): Promise<MenuOrderItem[]> {
-  // Attempt using new schema (category_name)
+  // barId may be a business.id (from business search) or bars.id.
+  // 1) Try business_id first (new linkage)
   let rows: MenuOrderItem[] = [];
+  try {
+    const { data, error } = await ctx.supabase
+      .from("restaurant_menu_items")
+      .select("id, name, category_name, price, currency, description")
+      .eq("business_id", barId)
+      .eq("is_available", true)
+      .order("category_name", { ascending: true, nullsFirst: true })
+      .order("name", { ascending: true })
+      .limit(30);
+    if (error) throw error;
+    rows = (data ?? []).map((item: any) => ({
+      id: item.id,
+      name: item.name,
+      category: item.category_name ?? undefined,
+      price: item.price,
+      currency: item.currency,
+      description: item.description ?? undefined,
+    }));
+    if (rows.length) return rows;
+  } catch (_e) {
+    // continue to next strategy
+  }
+
+  // 2) Try legacy query using bar_id (with new schema first)
   try {
     const { data, error } = await ctx.supabase
       .from("restaurant_menu_items")
