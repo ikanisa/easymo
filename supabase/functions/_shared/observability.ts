@@ -273,11 +273,30 @@ export function logResponse(
   );
 }
 
+/**
+ * Context object provided to edge function handlers wrapped with request instrumentation.
+ * 
+ * @property requestId - Unique identifier for the request, used for correlation tracking across logs and downstream services.
+ * @property startedAt - Timestamp (in milliseconds) when the request started, useful for calculating request duration.
+ */
 type EdgeHandlerContext = {
   requestId: string;
   startedAt: number;
 };
 
+/**
+ * Edge function handler signature for handlers wrapped with request instrumentation.
+ * 
+ * @param req - The incoming HTTP request to handle.
+ * @param ctx - Context object containing request metadata (requestId and startedAt).
+ * @returns A Response object or a Promise that resolves to a Response.
+ * 
+ * @example
+ * const handler: EdgeHandler = async (req, ctx) => {
+ *   console.log(`Handling request ${ctx.requestId}`);
+ *   return new Response("OK", { status: 200 });
+ * };
+ */
 type EdgeHandler = (
   req: Request,
   ctx: EdgeHandlerContext,
