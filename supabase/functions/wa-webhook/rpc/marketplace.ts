@@ -1,5 +1,11 @@
 import type { SupabaseClient } from "../deps.ts";
 
+function isPermissionDenied(error: unknown): boolean {
+  if (!error || typeof error !== "object" || !("message" in error)) return false;
+  const message = String((error as { message?: unknown }).message).toLowerCase();
+  return message.includes("permission denied") || message.includes("row level security");
+}
+
 export async function createBusiness(
   client: SupabaseClient,
   payload: {
@@ -56,6 +62,10 @@ export async function listBusinesses(
     return primary.data ?? [];
   }
 
+  if (isPermissionDenied(primary.error)) {
+    throw primary.error;
+  }
+
   console.error("marketplace.nearby_v2_fail", primary.error);
 
   const fallbackPayload = {
@@ -73,6 +83,9 @@ export async function listBusinesses(
     if (!withCategory.error) {
       return withCategory.data ?? [];
     }
+    if (isPermissionDenied(withCategory.error)) {
+      throw withCategory.error;
+    }
     // if PostgREST rejects _category the next call omits it
     console.error(
       "marketplace.nearby_fallback_with_category_fail",
@@ -85,6 +98,9 @@ export async function listBusinesses(
     fallbackPayload,
   );
   if (withoutCategory.error) {
+    if (isPermissionDenied(withoutCategory.error)) {
+      throw withoutCategory.error;
+    }
     throw withoutCategory.error;
   }
   return withoutCategory.data ?? [];
