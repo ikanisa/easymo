@@ -21,7 +21,11 @@ function resolveBaseUrl() {
 
 async function checkEndpoint(baseUrl, endpoint) {
   const url = new URL(endpoint.path, baseUrl).toString();
-  const response = await fetch(url, { headers: { Accept: "application/json,text/html" } });
+  const acceptHeader =
+    endpoint.expect === "json"
+      ? "application/json"
+      : "text/html";
+  const response = await fetch(url, { headers: { Accept: acceptHeader } });
   const ok = response.status < 400;
 
   let detail = "";
