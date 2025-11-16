@@ -28,9 +28,6 @@ function installTestHooks() {
   const events: StructuredEvent[] = [];
   const inbound: unknown[] = [];
   let nextSignatureResult = true;
-  let nextRateLimitResult: { allowed: boolean; response?: Response } = { allowed: true };
-  const rateLimitInvocations: Array<{ sender: string; correlationId: string }> = [];
-
   __setPipelineTestOverrides({
     logStructuredEvent: async (event: string, payload: Record<string, unknown> = {}) => {
       events.push({ event, payload });
@@ -39,10 +36,6 @@ function installTestHooks() {
       inbound.push(payload);
     },
     verifySignature: async (_req: Request, _body: string) => nextSignatureResult,
-    applyRateLimiting: (sender: string, correlationId: string) => {
-      rateLimitInvocations.push({ sender, correlationId });
-      return nextRateLimitResult;
-    },
   });
 
   return {
@@ -51,16 +44,9 @@ function installTestHooks() {
     setSignatureResult(value: boolean) {
       nextSignatureResult = value;
     },
-    setRateLimitResult(result: { allowed: boolean; response?: Response }) {
-      nextRateLimitResult = result;
-    },
-    getRateLimitInvocations() {
-      return rateLimitInvocations;
-    },
     reset() {
       events.length = 0;
       inbound.length = 0;
-      rateLimitInvocations.length = 0;
     },
   };
 }

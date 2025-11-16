@@ -11,7 +11,6 @@ import type {
   WhatsAppWebhookChange,
   WhatsAppWebhookPayload,
 } from "../types.ts";
-import { applyRateLimiting } from "../utils/middleware.ts";
 import { getCached, setCached } from "../utils/cache.ts";
 import { incrementMetric } from "../utils/metrics_collector.ts";
 
@@ -30,14 +29,12 @@ type PipelineHooks = {
   verifySignature: typeof verifySignature;
   logInbound: typeof logInbound;
   logStructuredEvent: typeof logStructuredEvent;
-  applyRateLimiting: typeof applyRateLimiting;
 };
 
 const defaultHooks: PipelineHooks = {
   verifySignature,
   logInbound,
   logStructuredEvent,
-  applyRateLimiting,
 };
 
 let hooks: PipelineHooks = { ...defaultHooks };
@@ -354,34 +351,6 @@ export async function processWebhookRequest(
     await hooks.logStructuredEvent("WEBHOOK_NO_MESSAGE", withCid({
       payload_type: payload?.object ?? null,
     }));
-  }
-
-  if (messages.length && webhookConfig.rateLimit.enabled) {
-    const uniqueSenders = new Set(messages.map((msg) => msg.from));
-    for (const sender of uniqueSenders) {
-      const rateLimitResult = hooks.applyRateLimiting(sender, correlationId);
-      if (!rateLimitResult.allowed) {
-        await hooks.logStructuredEvent("WEBHOOK_RATE_LIMIT_BLOCK", withCid({
-          sender,
-        }));
-        console.warn(JSON.stringify({
-          event: "WEBHOOK_RATE_LIMIT_BLOCK",
-          correlationId,
-          sender,
-        }));
-        incrementMetric("wa_webhook_request_failed_total", 1, {
-          method: "POST",
-          reason: "rate_limit",
-          status: rateLimitResult.response?.status ?? 429,
-        });
-        return {
-          type: "response",
-          response: rateLimitResult.response ??
-            new Response("rate_limited", { status: 429 }),
-          correlationId,
-        };
-      }
-    }
   }
 
   if (webhookConfig.cache.enabled) {
