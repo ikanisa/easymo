@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type Ref } from "react";
 import classNames from "classnames";
 import { Search, HelpCircle, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/Button";
@@ -18,6 +18,7 @@ interface TopBarProps {
   onSignOut?: () => void;
   omniSearchPlaceholder?: string;
   omniShortcutHint?: string;
+  menuButtonRef?: Ref<HTMLButtonElement>;
 }
 
 interface ShortcutRow {
@@ -151,6 +152,7 @@ export function TopBar({
   onSignOut,
   omniSearchPlaceholder,
   omniShortcutHint,
+  menuButtonRef,
 }: TopBarProps) {
   const panel = usePanelContext();
   const badgeMetrics = useIntegrationBadgeMetrics();
@@ -177,6 +179,7 @@ export function TopBar({
           className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium md:hidden"
           aria-label="Open navigation"
           onClick={onOpenNavigation}
+          ref={menuButtonRef}
         >
           Menu
         </Button>
