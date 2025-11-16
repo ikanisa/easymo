@@ -4,6 +4,10 @@ import { middleware } from "../../middleware";
 import { createSessionCookie } from "@/lib/server/session";
 
 /**
+ * Constructs a NextRequest for testing middleware behavior with optional authentication
+ * @param path - The request path (e.g., "/dashboard", "/notifications")
+ * @param cookieHeader - Optional cookie header string to simulate authenticated requests
+ * @returns A NextRequest instance configured for testing
  * Constructs a NextRequest instance for testing middleware behavior.
  * @param path - The URL path to test (e.g., "/dashboard", "/notifications")
  * @param cookieHeader - Optional cookie header string in the format "name=value"
