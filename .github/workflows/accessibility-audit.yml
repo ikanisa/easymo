@@ -36,7 +36,7 @@ jobs:
             --url="$AUDIT_BASE_URL" \
             --numberOfRuns=1 \
             --collect.hints=true \
-            --output-path=artifacts/lighthouse/report.json \
+            --output-dir=artifacts/lighthouse \
             --format=json
           lhci assert --assert.preset=lighthouse:recommended --assert.minimumScore=0.8 --assert.outputPath=artifacts/lighthouse/assertion-results.json
 
