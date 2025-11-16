@@ -18,7 +18,7 @@ ADD COLUMN IF NOT EXISTS instructions TEXT;
 -- 1. CONCIERGE ROUTER AGENT
 -- ============================================================================
 INSERT INTO agent_configs (
-  agent_type,
+  slug,
   system_prompt,
   persona,
   enabled_tools,
@@ -53,7 +53,7 @@ GUARDRAILS:
   '{"route_when_confidence_gte": 0.6, "max_clarifying_questions": 1, "allow_payments": false, "pii_minimization": true}'::jsonb,
   '{"model": "gpt-4o", "temperature": 0.3, "max_tokens": 150}'::jsonb,
   true
-) ON CONFLICT (agent_type) DO UPDATE SET
+) ON CONFLICT (slug) DO UPDATE SET
   system_prompt = EXCLUDED.system_prompt,
   persona = EXCLUDED.persona,
   enabled_tools = EXCLUDED.enabled_tools,
@@ -66,10 +66,10 @@ GUARDRAILS:
 -- 2. WAITER AI AGENT (Combined Bar & Restaurant)
 -- ============================================================================
 -- First, delete old separate agents if they exist
-DELETE FROM agent_configs WHERE agent_type IN ('bar-ai', 'restaurant-ai');
+DELETE FROM agent_configs WHERE slug IN ('bar-ai', 'restaurant-ai');
 
 INSERT INTO agent_configs (
-  agent_type,
+  slug,
   system_prompt,
   persona,
   enabled_tools,
@@ -105,7 +105,7 @@ GUARDRAILS:
   '{"payment_limits": {"currency": "RWF", "max_per_txn": 200000}, "pii_minimization": true, "never_collect_card": true, "allergy_check": true}'::jsonb,
   '{"model": "gpt-4o", "temperature": 0.7, "max_tokens": 400}'::jsonb,
   true
-) ON CONFLICT (agent_type) DO UPDATE SET
+) ON CONFLICT (slug) DO UPDATE SET
   system_prompt = EXCLUDED.system_prompt,
   persona = EXCLUDED.persona,
   enabled_tools = EXCLUDED.enabled_tools,
@@ -118,7 +118,7 @@ GUARDRAILS:
 -- 3. JOB BOARD AI AGENT (NEW)
 -- ============================================================================
 INSERT INTO agent_configs (
-  agent_type,
+  slug,
   system_prompt,
   persona,
   enabled_tools,
@@ -170,7 +170,7 @@ GUARDRAILS:
   '{"pii_handling": "minimal", "allow_unsafe_jobs": false, "require_human_approval": ["suspicious_post", "flagged_user"]}'::jsonb,
   '{"model": "gpt-4o", "temperature": 0.5, "max_tokens": 500}'::jsonb,
   true
-) ON CONFLICT (agent_type) DO UPDATE SET
+) ON CONFLICT (slug) DO UPDATE SET
   system_prompt = EXCLUDED.system_prompt,
   persona = EXCLUDED.persona,
   enabled_tools = EXCLUDED.enabled_tools,
@@ -183,7 +183,7 @@ GUARDRAILS:
 -- 4. MOBILITY ORCHESTRATOR AGENT
 -- ============================================================================
 INSERT INTO agent_configs (
-  agent_type,
+  slug,
   system_prompt,
   persona,
   enabled_tools,
@@ -217,7 +217,7 @@ TOOLS:
   '{"location_privacy": "coarse_only", "payment_deposit_required": false, "pii_minimization": true}'::jsonb,
   '{"model": "gpt-4o", "temperature": 0.4, "max_tokens": 300}'::jsonb,
   true
-) ON CONFLICT (agent_type) DO UPDATE SET
+) ON CONFLICT (slug) DO UPDATE SET
   system_prompt = EXCLUDED.system_prompt,
   persona = EXCLUDED.persona,
   enabled_tools = EXCLUDED.enabled_tools,
@@ -230,7 +230,7 @@ TOOLS:
 -- 5. PHARMACY AGENT
 -- ============================================================================
 INSERT INTO agent_configs (
-  agent_type,
+  slug,
   system_prompt,
   persona,
   enabled_tools,
@@ -263,7 +263,7 @@ TOOLS:
   '{"medical_advice": "forbidden", "pharmacist_review_required": true, "age_restricted": "handoff"}'::jsonb,
   '{"model": "gpt-4o", "temperature": 0.3, "max_tokens": 350}'::jsonb,
   true
-) ON CONFLICT (agent_type) DO UPDATE SET
+) ON CONFLICT (slug) DO UPDATE SET
   system_prompt = EXCLUDED.system_prompt,
   persona = EXCLUDED.persona,
   enabled_tools = EXCLUDED.enabled_tools,
@@ -276,7 +276,7 @@ TOOLS:
 -- 6. HARDWARE / QUINCAILLERIE AGENT
 -- ============================================================================
 INSERT INTO agent_configs (
-  agent_type,
+  slug,
   system_prompt,
   persona,
   enabled_tools,
@@ -305,7 +305,7 @@ TOOLS:
   '{"delivery_fee_threshold_kg": 20, "pii_minimization": true}'::jsonb,
   '{"model": "gpt-4o", "temperature": 0.4, "max_tokens": 300}'::jsonb,
   true
-) ON CONFLICT (agent_type) DO UPDATE SET
+) ON CONFLICT (slug) DO UPDATE SET
   system_prompt = EXCLUDED.system_prompt,
   persona = EXCLUDED.persona,
   enabled_tools = EXCLUDED.enabled_tools,
@@ -318,7 +318,7 @@ TOOLS:
 -- 7. SHOP / CONVENIENCE AGENT
 -- ============================================================================
 INSERT INTO agent_configs (
-  agent_type,
+  slug,
   system_prompt,
   persona,
   enabled_tools,
@@ -346,7 +346,7 @@ TOOLS:
   '{"substitution_policy": "brand->generic->none", "pii_minimization": true}'::jsonb,
   '{"model": "gpt-4o", "temperature": 0.5, "max_tokens": 300}'::jsonb,
   true
-) ON CONFLICT (agent_type) DO UPDATE SET
+) ON CONFLICT (slug) DO UPDATE SET
   system_prompt = EXCLUDED.system_prompt,
   persona = EXCLUDED.persona,
   enabled_tools = EXCLUDED.enabled_tools,
@@ -359,7 +359,7 @@ TOOLS:
 -- 8. INSURANCE AGENT
 -- ============================================================================
 INSERT INTO agent_configs (
-  agent_type,
+  slug,
   system_prompt,
   persona,
   enabled_tools,
@@ -391,7 +391,7 @@ TOOLS:
   '{"approval_thresholds": {"premium_gt": 500000, "ocr_conf_lt": 0.8}, "pii_minimization": true, "localized_disclaimers": true}'::jsonb,
   '{"model": "gpt-4o", "temperature": 0.3, "max_tokens": 400}'::jsonb,
   true
-) ON CONFLICT (agent_type) DO UPDATE SET
+) ON CONFLICT (slug) DO UPDATE SET
   system_prompt = EXCLUDED.system_prompt,
   persona = EXCLUDED.persona,
   enabled_tools = EXCLUDED.enabled_tools,
@@ -404,7 +404,7 @@ TOOLS:
 -- 9. PROPERTY RENTALS AGENT
 -- ============================================================================
 INSERT INTO agent_configs (
-  agent_type,
+  slug,
   system_prompt,
   persona,
   enabled_tools,
@@ -437,7 +437,7 @@ TOOLS:
   '{"address_sharing": "on-viewing", "pii_minimization": true}'::jsonb,
   '{"model": "gpt-4o", "temperature": 0.6, "max_tokens": 450}'::jsonb,
   true
-) ON CONFLICT (agent_type) DO UPDATE SET
+) ON CONFLICT (slug) DO UPDATE SET
   system_prompt = EXCLUDED.system_prompt,
   persona = EXCLUDED.persona,
   enabled_tools = EXCLUDED.enabled_tools,
@@ -450,7 +450,7 @@ TOOLS:
 -- 10. LEGAL INTAKE AGENT
 -- ============================================================================
 INSERT INTO agent_configs (
-  agent_type,
+  slug,
   system_prompt,
   persona,
   enabled_tools,
@@ -480,7 +480,7 @@ TOOLS:
   '{"advice": "forbidden", "pii_minimization": true}'::jsonb,
   '{"model": "gpt-4o", "temperature": 0.3, "max_tokens": 400}'::jsonb,
   true
-) ON CONFLICT (agent_type) DO UPDATE SET
+) ON CONFLICT (slug) DO UPDATE SET
   system_prompt = EXCLUDED.system_prompt,
   persona = EXCLUDED.persona,
   enabled_tools = EXCLUDED.enabled_tools,
@@ -493,7 +493,7 @@ TOOLS:
 -- 11. PAYMENTS AGENT
 -- ============================================================================
 INSERT INTO agent_configs (
-  agent_type,
+  slug,
   system_prompt,
   persona,
   enabled_tools,
@@ -519,7 +519,7 @@ TOOLS:
   '{"direct_card_details": "forbidden", "receipts_from_country_pack": true, "pii_minimization": true}'::jsonb,
   '{"model": "gpt-4o", "temperature": 0.1, "max_tokens": 200}'::jsonb,
   true
-) ON CONFLICT (agent_type) DO UPDATE SET
+) ON CONFLICT (slug) DO UPDATE SET
   system_prompt = EXCLUDED.system_prompt,
   persona = EXCLUDED.persona,
   enabled_tools = EXCLUDED.enabled_tools,
@@ -532,7 +532,7 @@ TOOLS:
 -- 12. MARKETING & SALES AGENT
 -- ============================================================================
 INSERT INTO agent_configs (
-  agent_type,
+  slug,
   system_prompt,
   persona,
   enabled_tools,
@@ -561,7 +561,7 @@ TOOLS:
   '{"only_preapproved_templates": true, "quiet_hours_throttle": true, "pii_minimization": true}'::jsonb,
   '{"model": "gpt-4o", "temperature": 0.4, "max_tokens": 300}'::jsonb,
   true
-) ON CONFLICT (agent_type) DO UPDATE SET
+) ON CONFLICT (slug) DO UPDATE SET
   system_prompt = EXCLUDED.system_prompt,
   persona = EXCLUDED.persona,
   enabled_tools = EXCLUDED.enabled_tools,
@@ -574,7 +574,7 @@ TOOLS:
 -- 13. SORA-2 VIDEO ADS AGENT
 -- ============================================================================
 INSERT INTO agent_configs (
-  agent_type,
+  slug,
   system_prompt,
   persona,
   enabled_tools,
@@ -630,7 +630,7 @@ GUARDRAILS:
   '{"require_brand_kit": true, "require_consent_registry": true, "sora_params": {"allowed_models": ["sora-2", "sora-2-pro"], "allowed_seconds": [4, 8, 12], "allowed_sizes": {"sora-2": ["1280x720", "720x1280"], "sora-2-pro": ["1280x720", "720x1280", "1024x1792", "1792x1024"]}}}'::jsonb,
   '{"model": "gpt-4o", "temperature": 0.2, "max_tokens": 600}'::jsonb,
   true
-) ON CONFLICT (agent_type) DO UPDATE SET
+) ON CONFLICT (slug) DO UPDATE SET
   system_prompt = EXCLUDED.system_prompt,
   persona = EXCLUDED.persona,
   enabled_tools = EXCLUDED.enabled_tools,
