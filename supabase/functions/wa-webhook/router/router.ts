@@ -23,11 +23,9 @@ import {
   isMediaMessage,
   isTextMessage,
 } from "../utils/messages.ts";
-import { applyRateLimiting } from "../utils/middleware.ts";
 import { getCached, setCached } from "../utils/cache.ts";
 import { webhookConfig } from "../config.ts";
 import { incrementMetric } from "../utils/metrics_collector.ts";
-import { ErrorCode, WebhookError } from "../utils/error_handler.ts";
 
 type RouterHooks = {
   runGuards: (
@@ -76,13 +74,11 @@ const defaultHooks: RouterHooks = {
 let hooks: RouterHooks = { ...defaultHooks };
 
 type RouterEnhancementHooks = {
-  applyRateLimiting: typeof applyRateLimiting;
   getCached: typeof getCached;
   setCached: typeof setCached;
 };
 
 const enhancementDefaults: RouterEnhancementHooks = {
-  applyRateLimiting,
   getCached,
   setCached,
 };
@@ -162,33 +158,6 @@ export async function handleMessage(
     from: (msg as any)?.from ?? null,
     type: msg.type,
   }));
-
-  if (webhookConfig.rateLimit.enabled) {
-    const rateLimitResult = enhancementHooks.applyRateLimiting(
-      msg.from,
-      correlationId,
-    );
-    if (!rateLimitResult.allowed) {
-      incrementMetric("wa_webhook_message_blocked_total", 1, {
-        reason: "rate_limit",
-        type: msg.type ?? "unknown",
-      });
-      console.warn(JSON.stringify({
-        event: "ROUTER_RATE_LIMIT_BLOCK",
-        correlationId,
-        messageId: msg.id,
-        from: msg.from,
-      }));
-      const err = new WebhookError(
-        "Rate limit exceeded",
-        ErrorCode.RATE_LIMIT_ERROR,
-        rateLimitResult.response?.status ?? 429,
-        { phoneNumber: msg.from },
-      );
-      err.correlationId = correlationId;
-      throw err;
-    }
-  }
 
   type RouteDecision = { route: string; timestamp: number };
   const routeCacheKey = `wa:webhook:route:${msg.id}`;
