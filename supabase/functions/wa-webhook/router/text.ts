@@ -44,6 +44,18 @@ export async function handleText(
   try {
     await maybeHandleDriverText(ctx, msg);
   } catch (_) { /* noop */ }
+  
+  // Check for active AI customer support chat
+  if (state.key === "ai_customer_support_active") {
+    const { handleCustomerSupportMessage } = await import("../domains/ai-agents/customer-support.ts");
+    return await handleCustomerSupportMessage(
+      ctx,
+      body,
+      state.data?.agent_config,
+      state.data?.conversation_history || []
+    );
+  }
+  
   if (state.key === "bar_waiter_chat") {
     return await handleBarWaiterMessage(ctx, body, state.data);
   }

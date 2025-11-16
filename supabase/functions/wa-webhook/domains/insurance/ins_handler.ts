@@ -365,3 +365,57 @@ export async function processInsuranceDocument(
     return "ocr_error";
   }
 }
+
+/**
+ * Handle insurance help request - show admin contacts
+ */
+export async function handleInsuranceHelp(ctx: RouterContext): Promise<boolean> {
+  const { sendButtonsMessage } = await import("../../wa/client.ts");
+  const { homeOnly } = await import("../../utils/reply.ts");
+  const { IDS } = await import("../../wa/ids.ts");
+  
+  // Fetch insurance admin contacts from database
+  const { data: contacts } = await ctx.supabase
+    .from('insurance_admin_contacts')
+    .select('*')
+    .eq('is_active', true)
+    .order('display_order');
+
+  if (!contacts || contacts.length === 0) {
+    await sendButtonsMessage(
+      ctx,
+      "Insurance support contacts are currently unavailable. Please try again later.",
+      homeOnly()
+    );
+    return true;
+  }
+
+  // Build contact list message
+  const contactList = contacts
+    .map((c: any) => `${c.display_name}: ${c.contact_value}`)
+    .join('\n');
+
+  const message = `🏥 *Motor Insurance Support*\n\n` +
+    `Contact our insurance team for help:\n\n${contactList}\n\n` +
+    `Tap a contact to start chatting on WhatsApp.`;
+
+  // Build contact buttons (max 3)
+  const buttons = contacts.slice(0, 3).map((contact: any) => ({
+    id: `insurance_contact_${contact.id}`,
+    title: contact.display_name.substring(0, 20) // WhatsApp button limit
+  }));
+
+  buttons.push({
+    id: IDS.BACK_MENU,
+    title: "Back to Menu"
+  });
+
+  await sendButtonsMessage(ctx, message, buttons, { emoji: "🏥" });
+  
+  await logStructuredEvent("INSURANCE_HELP_REQUESTED", {
+    profile_id: ctx.profileId,
+    wa_id: ctx.from
+  });
+
+  return true;
+}

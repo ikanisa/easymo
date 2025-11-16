@@ -585,6 +585,11 @@ async function handleHomeMenuSelection(
       }
       return await startInsurance(ctx, state);
     }
+    case "insurance_help":
+    case IDS.INSURANCE_HELP: {
+      const { handleInsuranceHelp } = await import("../domains/insurance/ins_handler.ts");
+      return await handleInsuranceHelp(ctx);
+    }
     case IDS.MOMO_QR:
       return await startMomoQr(ctx, state);
     case IDS.PROFILE: {
@@ -689,19 +694,54 @@ async function handleHomeMenuSelection(
       return await startSavedPlaces(ctx);
     }
     case "change_language": {
-      // Language selection menu
+      // Fetch languages from database
+      const { data: languages } = await ctx.supabase
+        .from('supported_languages')
+        .select('*')
+        .eq('is_active', true)
+        .order('display_order');
+
+      if (!languages || languages.length === 0) {
+        // Fallback if database fails
+        await sendListMessage(
+          ctx,
+          {
+            title: "Change Language",
+            body: "Select your preferred language:",
+            sectionTitle: "Available Languages",
+            rows: [
+              { id: "lang_en", title: "🇬🇧 English", description: "English" },
+              { id: "lang_fr", title: "🇫🇷 Français", description: "French" },
+              { id: IDS.BACK_MENU, title: "Back to Menu", description: "Return to previous menu" },
+            ],
+            buttonText: "Select",
+          },
+          { emoji: "🌍" }
+        );
+        return true;
+      }
+
+      // Build dynamic language list from database
+      const rows = languages.map((lang: any) => ({
+        id: `lang_${lang.code}`,
+        title: `${lang.flag_emoji} ${lang.name}`,
+        description: lang.native_name
+      }));
+
+      // Add back button
+      rows.push({
+        id: IDS.BACK_MENU,
+        title: t(ctx.locale, "common.menu_back"),
+        description: "Return to previous menu"
+      });
+
       await sendListMessage(
         ctx,
         {
           title: "Change Language",
           body: "Select your preferred language:",
           sectionTitle: "Available Languages",
-          rows: [
-            { id: "lang_en", title: "🇬🇧 English", description: "English" },
-            { id: "lang_fr", title: "🇫🇷 Français", description: "French" },
-            { id: "lang_rw", title: "🇷🇼 Kinyarwanda", description: "Kinyarwanda" },
-            { id: IDS.BACK_MENU, title: "Back to Menu", description: "Return to previous menu" },
-          ],
+          rows,
           buttonText: "Select",
         },
         { emoji: "🌍" }
@@ -752,13 +792,17 @@ async function handleHomeMenuSelection(
     case "help_support":
     case "show_help":
     case "customer_support": {
-      // Both support options show contact information
-      await sendButtonsMessage(
-        ctx,
-        t(ctx.locale, "support.contact_info"),
-        homeOnly(),
-        { emoji: "💬" }
-      );
+      // Launch AI customer support agent
+      const { startCustomerSupportChat } = await import("../domains/ai-agents/customer-support.ts");
+      return await startCustomerSupportChat(ctx);
+    }
+    case "escalate_to_human": {
+      const { escalateToHumanSupport } = await import("../domains/ai-agents/customer-support.ts");
+      return await escalateToHumanSupport(ctx);
+    }
+    case "continue_ai_chat": {
+      // Just acknowledge - next text message will be handled by text router
+      await sendText(ctx.from, "I'm listening! What would you like to know?");
       return true;
     }
     case "lang_en":
