@@ -1,5 +1,10 @@
 # Markdown Catalog
 
+> **Legend:**  
+> - **Current**: The document is up-to-date and reflects the latest workflows, features, or conventions.  
+> - **Outdated**: The document is no longer maintained, references deprecated features, or has been superseded by newer documentation.  
+>  
+> _Status is determined based on last update, relevance to current codebase, and whether the document is referenced in active workflows (see admin-entrypoints doc, line 14, for heuristics)._
 Path | Status
 --- | ---
 .changeset/README.md | Current
