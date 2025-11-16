@@ -67,6 +67,17 @@ export function getAdminToken(): string | null {
   return getEnv("EASYMO_ADMIN_TOKEN", ["ADMIN_TOKEN"]);
 }
 
+export function getInvitationDefaults(): {
+  defaultRole: string;
+  expiryDays: number;
+} {
+  const defaultRole = getEnv("ADMIN_INVITE_DEFAULT_ROLE") ?? "member";
+  const rawExpiry = getEnv("ADMIN_INVITE_EXPIRY_DAYS");
+  const parsed = rawExpiry ? Number.parseInt(rawExpiry, 10) : NaN;
+  const expiryDays = Number.isFinite(parsed) && parsed > 0 ? parsed : 14;
+  return { defaultRole, expiryDays };
+}
+
 export function getSupabaseServiceConfig(): {
   url: string;
   serviceRoleKey: string;
