@@ -3,6 +3,7 @@ import {
   type SupabaseClient,
 } from "https://esm.sh/@supabase/supabase-js@2.76.1";
 import { getEnv, requireEnv } from "./env.ts";
+import { withRequestInstrumentation } from "./observability.ts";
 
 type AdminConfig = {
   supabaseUrl: string;
@@ -141,3 +142,8 @@ export function parseNumber(value: unknown, fallback: number): number {
   }
   return fallback;
 }
+
+export const withAdminTracing = (
+  scope: string,
+  handler: (req: Request, ctx: { requestId: string; startedAt: number }) => Response | Promise<Response>,
+) => withRequestInstrumentation(scope, handler);

@@ -2,16 +2,14 @@ import {
   createServiceRoleClient,
   handleOptions,
   json,
-  logRequest,
   logResponse,
   requireAdminAuth,
+  withAdminTracing,
 } from "../_shared/admin.ts";
 
 const supabase = createServiceRoleClient();
 
-Deno.serve(async (req) => {
-  logRequest("admin-health", req);
-
+Deno.serve(withAdminTracing("admin-health", async (req, ctx) => {
   if (req.method === "OPTIONS") {
     return handleOptions();
   }
@@ -35,10 +33,10 @@ Deno.serve(async (req) => {
       supabase: "ok" as const,
       timestamp: new Date().toISOString(),
     };
-    logResponse("admin-health", 200, payload);
+    logResponse("admin-health", 200, { ...payload, requestId: ctx.requestId, durationMs: Date.now() - ctx.startedAt });
     return json(payload);
   } catch (err) {
     console.error("admin-health.unhandled", err);
     return json({ status: "error", reason: "unhandled" }, 500);
   }
-});
+}));

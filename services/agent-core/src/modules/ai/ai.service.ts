@@ -2,7 +2,7 @@ import { Injectable, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import axios, { AxiosInstance } from "axios";
 import { OpenAI } from "openai";
-import { getApiEndpointPath } from "@easymo/commons";
+import { getApiEndpointPath, getRequestId } from "@easymo/commons";
 
 type AgentPersona = "broker" | "sales" | "marketing" | "cold_caller";
 type AgentSendResult = {
@@ -90,8 +90,13 @@ export class AiService {
   }
 
   private reqHeaders() {
+    const existingRequestId = getRequestId();
+    const requestId = existingRequestId && existingRequestId.trim().length > 0
+      ? existingRequestId
+      : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
     return {
-      "x-request-id": `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+      "x-request-id": requestId,
+      "x-trace-id": requestId,
       "Idempotency-Key": `${Date.now()}-${Math.random().toString(16).slice(2)}`,
     };
   }
