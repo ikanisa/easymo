@@ -2,6 +2,7 @@ import { createHmac, timingSafeEqual } from "crypto";
 import { cookies } from "next/headers";
 import type { Session as SupabaseSession, User as SupabaseUser } from "@supabase/supabase-js";
 import { createServerSupabaseClient } from "@/lib/supabase/server/client";
+import { isAdminUser } from "@/lib/auth/is-admin-user";
 
 export interface AdminSession {
   actorId: string;
@@ -13,27 +14,7 @@ const SESSION_COOKIE_NAME = "admin_session";
 const SESSION_TTL_MS = 1000 * 60 * 60 * 8; // 8 hours
 
 export function isAdminSupabaseUser(user: SupabaseUser | null): boolean {
-  if (!user) return false;
-  const appRole = (user.app_metadata as Record<string, unknown> | undefined)?.role;
-  const userRole = (user.user_metadata as Record<string, unknown> | undefined)?.role;
-  const appRoles = (user.app_metadata as Record<string, unknown> | undefined)?.roles;
-  const userRoles = (user.user_metadata as Record<string, unknown> | undefined)?.roles;
-
-  const normalize = (value: unknown) =>
-    typeof value === "string"
-      ? [value]
-      : Array.isArray(value)
-        ? (value as unknown[]).filter((entry): entry is string => typeof entry === "string")
-        : [];
-
-  const roles = [
-    ...normalize(appRole),
-    ...normalize(userRole),
-    ...normalize(appRoles),
-    ...normalize(userRoles),
-  ];
-
-  return roles.some((role) => role.toLowerCase() === "admin");
+  return isAdminUser(user);
 }
 
 export function mapSupabaseSessionToAdmin(
