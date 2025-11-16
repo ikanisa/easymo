@@ -7,3 +7,4 @@ export * from "./routes";
 export * from "./circuit-breaker";
 export * from "./rate-limit";
 export * from "./webhook-verification";
+export * from "./service-discovery";
