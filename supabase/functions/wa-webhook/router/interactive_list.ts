@@ -346,8 +346,27 @@ export async function handleList(
     return await handleScheduleVehicle(ctx, (state.data ?? {}) as any, id);
   }
   if (state.key === "schedule_time_select") {
-    const timeOptions = ["now", "30min", "1hour", "2hours", "5hours", "tomorrow_morning", "tomorrow_evening", "every_morning", "every_evening"];
-    if (timeOptions.includes(id)) {
+    const timeOptions = new Set([
+      "now",
+      "30min",
+      "1hour",
+      "2hours",
+      "5hours",
+      "tomorrow_morning",
+      "tomorrow_evening",
+      "every_morning",
+      "every_evening",
+      "time::now",
+      "time::30m",
+      "time::1h",
+      "time::2h",
+      "time::5h",
+      "time::tomorrow_am",
+      "time::tomorrow_pm",
+      "time::every_morning",
+      "time::every_evening",
+    ]);
+    if (timeOptions.has(id)) {
       const { handleScheduleTimeSelection } = await import("../domains/mobility/schedule.ts");
       return await handleScheduleTimeSelection(ctx, (state.data ?? {}) as any, id);
     }
@@ -577,11 +596,21 @@ async function handleHomeMenuSelection(
       const { handleProfileVehicles } = await import("../domains/profile/index.ts");
       return await handleProfileVehicles(ctx);
     }
+    case "show_vehicles": {
+      // Action target alias from whatsapp_profile_menu_items
+      const { handleProfileVehicles } = await import("../domains/profile/index.ts");
+      return await handleProfileVehicles(ctx);
+    }
     case IDS.PROFILE_ADD_VEHICLE: {
       const { handleAddVehicle } = await import("../domains/profile/index.ts");
       return await handleAddVehicle(ctx);
     }
     case IDS.PROFILE_BUSINESSES: {
+      const { handleProfileBusinesses } = await import("../domains/profile/index.ts");
+      return await handleProfileBusinesses(ctx);
+    }
+    case "show_businesses": {
+      // Action target alias from whatsapp_profile_menu_items
       const { handleProfileBusinesses } = await import("../domains/profile/index.ts");
       return await handleProfileBusinesses(ctx);
     }
@@ -597,6 +626,24 @@ async function handleHomeMenuSelection(
       // Redirect to property rentals
       const { startPropertyRentals } = await import("../domains/property/rentals.ts");
       return await startPropertyRentals(ctx);
+    }
+    case "show_properties": {
+      // Action target alias from whatsapp_profile_menu_items
+      const { startPropertyRentals } = await import("../domains/property/rentals.ts");
+      return await startPropertyRentals(ctx);
+    }
+    case "show_my_jobs": {
+      // Action target alias from whatsapp_profile_menu_items
+      const { showMyJobs } = await import("../domains/jobs/index.ts");
+      return await showMyJobs(ctx);
+    }
+    case "show_momo_qr": {
+      // Action target alias from whatsapp_profile_menu_items
+      return await startWallet(ctx, state);
+    }
+    case "show_profile": {
+      // Action target alias for profile view
+      id = IDS.PROFILE_VIEW; // Fall through to profile view handler
     }
     case IDS.PROFILE_VIEW: {
       // Show user profile information
@@ -625,7 +672,8 @@ async function handleHomeMenuSelection(
       await sendButtonsMessage(ctx, profileInfo, homeOnly());
       return true;
     }
-    case IDS.PROFILE_SETTINGS: {
+    case IDS.PROFILE_SETTINGS:
+    case "show_settings": {
       // TODO: Implement settings menu (language, notifications, etc.)
       await sendButtonsMessage(
         ctx,
@@ -634,7 +682,8 @@ async function handleHomeMenuSelection(
       );
       return true;
     }
-    case "saved_locations": {
+    case "saved_locations":
+    case "show_saved_locations": {
       // Show saved locations (redirect to saved places)
       const { startSavedPlaces } = await import("../domains/locations/manage.ts");
       return await startSavedPlaces(ctx);
@@ -695,7 +744,13 @@ async function handleHomeMenuSelection(
       );
       return await startBarsSearch(ctx);
     }
+    case IDS.NOTARY_SERVICES:
+    case "notary_services": {
+      const { startNotarySearch } = await import("../domains/services/notary.ts");
+      return await startNotarySearch(ctx);
+    }
     case "help_support":
+    case "show_help":
     case "customer_support": {
       // Both support options show contact information
       await sendButtonsMessage(

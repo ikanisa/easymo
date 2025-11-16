@@ -22,6 +22,7 @@ import { getTextBody } from "../utils/messages.ts";
 import { processPharmacyRequest } from "../domains/healthcare/pharmacies.ts";
 import { processQuincaillerieRequest } from "../domains/healthcare/quincailleries.ts";
 import { processNotaryRequest } from "../domains/services/notary.ts";
+import { handleBarWaiterMessage } from "../domains/bars/waiter_ai.ts";
 
 import {
   handleAddPropertyPrice,
@@ -43,6 +44,9 @@ export async function handleText(
   try {
     await maybeHandleDriverText(ctx, msg);
   } catch (_) { /* noop */ }
+  if (state.key === "bar_waiter_chat") {
+    return await handleBarWaiterMessage(ctx, body, state.data);
+  }
   if (state.key === vehiclePlateStateKey) {
     const resume = parsePlateState(state.data);
     if (!resume) {

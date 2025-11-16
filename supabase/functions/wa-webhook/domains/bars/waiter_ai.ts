@@ -1,271 +1,182 @@
-// Waiter AI Agent Integration for Bars & Restaurants
 import type { RouterContext } from "../../types.ts";
 import { t } from "../../i18n/translator.ts";
 import { logStructuredEvent } from "../../observe/log.ts";
-import { setState, getState } from "../../state/store.ts";
 import { sendText } from "../../wa/client.ts";
+import { setState } from "../../state/store.ts";
 
-interface WaiterConversation {
+const WAITER_AGENT_URL = `${Deno.env.get("SUPABASE_URL")}/functions/v1/waiter-ai-agent`;
+const WAITER_AGENT_TOKEN = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+
+type WaiterChatSession = {
   conversationId: string;
-  venueId: string;
-  venueName: string;
+  barId: string;
+  barName: string;
   language: string;
-  status: "active" | "completed";
+};
+
+async function postWaiterAgent(payload: Record<string, unknown>): Promise<Response> {
+  return await fetch(WAITER_AGENT_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${WAITER_AGENT_TOKEN}`,
+    },
+    body: JSON.stringify(payload),
+  });
 }
 
-/**
- * Start a conversation with AI Waiter for a specific venue
- */
-export async function startWaiterChat(
+export async function startBarWaiterChat(
   ctx: RouterContext,
-  venueId: string,
-  venueName: string
+  detail: Record<string, unknown>,
 ): Promise<boolean> {
   if (!ctx.profileId) return false;
+  const barId = typeof detail?.barId === "string" ? detail.barId : null;
+  const barName = typeof detail?.barName === "string"
+    ? detail.barName
+    : t(ctx.locale, "bars.menu.unknown_name");
+  if (!barId) {
+    await sendText(
+      ctx.from,
+      t(ctx.locale, "bars.waiter.error"),
+    );
+    return true;
+  }
 
   try {
-    await logStructuredEvent("WAITER_CHAT_START", {
+    const response = await postWaiterAgent({
+      action: "start_conversation",
       userId: ctx.profileId,
-      venueId,
-      venueName,
-      language: ctx.locale
+      language: ctx.locale,
+      metadata: {
+        venue: barId,
+        venueName: barName,
+        phoneNumber: ctx.from,
+      },
     });
 
-    // Call waiter-ai-agent edge function to start conversation
-    const response = await fetch(
-      `${Deno.env.get("SUPABASE_URL")}/functions/v1/waiter-ai-agent`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
-        },
-        body: JSON.stringify({
-          action: "start_conversation",
-          userId: ctx.profileId,
-          language: ctx.locale,
-          metadata: {
-            venue: venueId,
-            venueName,
-            phoneNumber: ctx.phoneNumber
-          }
-        })
-      }
-    );
-
     if (!response.ok) {
-      throw new Error(`Waiter AI failed: ${response.statusText}`);
+      throw new Error(`waiter_start_failed_${response.status}`);
     }
 
     const data = await response.json();
-
-    // Store conversation state
-    const conversationState: WaiterConversation = {
-      conversationId: data.conversationId,
-      venueId,
-      venueName,
+    const session: WaiterChatSession = {
+      conversationId: String(data.conversationId ?? ""),
+      barId,
+      barName,
       language: ctx.locale,
-      status: "active"
     };
 
+    if (!session.conversationId) {
+      throw new Error("waiter_conversation_missing");
+    }
+
     await setState(ctx.supabase, ctx.profileId, {
-      key: "waiter_conversation",
-      data: conversationState
+      key: "bar_waiter_chat",
+      data: session,
     });
 
-    // Send welcome message
+    const welcomeMessage = typeof data.welcomeMessage === "string"
+      ? data.welcomeMessage
+      : t(ctx.locale, "bars.waiter.greeting");
+
     await sendText(
       ctx.from,
-      `🤖 *AI Waiter for ${venueName}*\n\n${data.welcomeMessage}\n\n_Just type your message to chat with the AI Waiter!_`,
+      `🤖 *${barName}*
+\n${welcomeMessage}`,
     );
 
     await logStructuredEvent("WAITER_CHAT_STARTED", {
-      userId: ctx.profileId,
-      conversationId: data.conversationId,
-      venueId
+      bar_id: barId,
+      conversation_id: session.conversationId,
     });
-
     return true;
-
   } catch (error) {
-    await logStructuredEvent("WAITER_CHAT_ERROR", {
-      error: error.message,
-      userId: ctx.profileId,
-      venueId
-    });
-
-    await sendText(ctx.from, t(ctx.locale, "errors.generic"));
-
-    return false;
+    console.error("waiter.chat_start_error", error);
+    await sendText(ctx.from, t(ctx.locale, "bars.waiter.error"));
+    return true;
   }
 }
 
-/**
- * Handle user message in ongoing waiter conversation
- */
-export async function handleWaiterMessage(
+export async function handleBarWaiterMessage(
   ctx: RouterContext,
-  message: string
+  message: string,
+  stateData?: Record<string, unknown>,
 ): Promise<boolean> {
   if (!ctx.profileId) return false;
-
-  try {
-    // Get conversation state
-    const state = await getState<WaiterConversation>(
-      ctx.supabase,
-      ctx.profileId,
-      "waiter_conversation"
-    );
-
-    if (!state?.data?.conversationId) {
-      await sendText(
-        ctx.from,
-        "❌ No active waiter conversation found. Please start a new chat from the bars menu.",
-      );
-     return false;
-   }
-
-    await logStructuredEvent("WAITER_MESSAGE_SENT", {
-      userId: ctx.profileId,
-      conversationId: state.data.conversationId,
-      messageLength: message.length
-    });
-
-    // Call waiter-ai-agent to process message
-    const response = await fetch(
-      `${Deno.env.get("SUPABASE_URL")}/functions/v1/waiter-ai-agent`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
-        },
-        body: JSON.stringify({
-          action: "send_message",
-          userId: ctx.profileId,
-          conversationId: state.data.conversationId,
-          message,
-          language: state.data.language
-        })
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error(`Waiter AI failed: ${response.statusText}`);
-    }
-
-    // Handle streaming response
-    if (response.headers.get("content-type")?.includes("text/event-stream")) {
-      const reader = response.body?.getReader();
-      const decoder = new TextDecoder();
-      let fullResponse = "";
-
-      if (reader) {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-
-          const chunk = decoder.decode(value);
-          const lines = chunk.split("\n");
-
-          for (const line of lines) {
-            if (line.startsWith("data: ")) {
-              const data = JSON.parse(line.slice(6));
-              if (data.type === "chunk") {
-                fullResponse += data.content;
-              } else if (data.type === "done") {
-                fullResponse = data.content;
-              }
-            }
-          }
-        }
-      }
-
-      if (fullResponse) {
-        await sendText(ctx.from, fullResponse);
-      }
-    } else {
-      const data = await response.json();
-      await sendText(ctx.from, data.message || "Response received");
-    }
-
-    await logStructuredEvent("WAITER_MESSAGE_COMPLETE", {
-      userId: ctx.profileId,
-      conversationId: state.data.conversationId
-    });
-
-    return true;
-
-  } catch (error) {
-    await logStructuredEvent("WAITER_MESSAGE_ERROR", {
-      error: error.message,
-      userId: ctx.profileId
-    });
-
-    await sendText(ctx.from, t(ctx.locale, "errors.generic"));
-
-    return false;
-  }
-}
-
-/**
- * End waiter conversation
- */
-export async function endWaiterChat(
-  ctx: RouterContext
-): Promise<boolean> {
-  if (!ctx.profileId) return false;
-
-  try {
-    const state = await getState<WaiterConversation>(
-      ctx.supabase,
-      ctx.profileId,
-      "waiter_conversation"
-    );
-
-    if (state?.data?.conversationId) {
-      await logStructuredEvent("WAITER_CHAT_END", {
-        userId: ctx.profileId,
-        conversationId: state.data.conversationId
-      });
-    }
-
-    // Clear conversation state
-    await setState(ctx.supabase, ctx.profileId, {
-      key: "waiter_conversation",
-      data: null
-    });
-
+  const session = stateData as WaiterChatSession | undefined;
+  if (!session?.conversationId) {
     await sendText(
       ctx.from,
-      "👋 *Chat Ended*\n\nThank you for using AI Waiter! Your conversation has been saved.",
+      t(ctx.locale, "bars.waiter.error"),
     );
-
     return true;
+  }
 
-  } catch (error) {
-    await logStructuredEvent("WAITER_CHAT_END_ERROR", {
-      error: error.message,
-      userId: ctx.profileId
+  try {
+    const response = await postWaiterAgent({
+      action: "send_message",
+      userId: ctx.profileId,
+      conversationId: session.conversationId,
+      language: session.language ?? ctx.locale,
+      message,
     });
 
-    return false;
+    let reply = "";
+    const contentType = response.headers.get("content-type") ?? "";
+    if (contentType.includes("text/event-stream")) {
+      reply = await readStreamedResponse(response);
+    } else if (response.ok) {
+      const data = await response.json();
+      reply = typeof data.message === "string"
+        ? data.message
+        : String(data.content ?? "");
+    }
+
+    if (!reply.trim()) {
+      reply = t(ctx.locale, "bars.waiter.processing");
+    }
+
+    await sendText(ctx.from, reply.trim());
+    await logStructuredEvent("WAITER_MESSAGE_SENT", {
+      bar_id: session.barId,
+      conversation_id: session.conversationId,
+    });
+    return true;
+  } catch (error) {
+    console.error("waiter.chat_message_error", error);
+    await sendText(ctx.from, t(ctx.locale, "bars.waiter.error"));
+    return true;
   }
 }
 
-/**
- * Check if user has active waiter conversation
- */
-export async function hasActiveWaiterChat(
-  ctx: RouterContext
-): Promise<boolean> {
-  if (!ctx.profileId) return false;
+async function readStreamedResponse(response: Response): Promise<string> {
+  const reader = response.body?.getReader();
+  if (!reader) return "";
+  const decoder = new TextDecoder();
+  let buffer = "";
 
-  const state = await getState<WaiterConversation>(
-    ctx.supabase,
-    ctx.profileId,
-    "waiter_conversation"
-  );
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    const chunk = decoder.decode(value, { stream: true });
+    buffer += chunk;
+  }
 
-  return state?.data?.status === "active";
+  const lines = buffer.split("\n");
+  for (const line of lines) {
+    if (line.startsWith("data: ")) {
+      try {
+        const payload = JSON.parse(line.slice(6));
+        if (payload?.type === "done" && typeof payload.content === "string") {
+          return payload.content;
+        }
+        if (payload?.content && typeof payload.content === "string") {
+          return payload.content;
+        }
+      } catch (_) {
+        continue;
+      }
+    }
+  }
+  return "";
 }

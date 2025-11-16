@@ -1,15 +1,7 @@
 "use client";
 
-import {
-  ReactNode,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import { ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { BingNav } from "@/components/layout/BingNav";
-import { BingHeader } from "@/components/layout/BingHeader";
 import { ToastProvider } from "@/components/ui/ToastProvider";
 import { OfflineBanner } from "@/components/system/OfflineBanner";
 import { ServiceWorkerToast } from "@/components/system/ServiceWorkerToast";
@@ -32,6 +24,11 @@ if (_adminActorId) {
 }
 const DEFAULT_ACTOR_LABEL =
   process.env.NEXT_PUBLIC_ADMIN_ACTOR_LABEL || "Operator";
+import { SessionProvider, type AdminSession } from "@/components/providers/SessionProvider";
+import { SidebarRail } from "@/components/layout/SidebarRail";
+import { TopBar } from "@/components/layout/TopBar";
+import { MobileNav } from "@/components/layout/MobileNav";
+import { PanelContextProvider, type SidecarState } from "@/components/layout/PanelContext";
 
 interface PanelShellProps {
   children: ReactNode;
@@ -62,16 +59,19 @@ export function PanelShell({
   const router = useRouter();
   const actorDisplayLabel = actorLabel?.trim() || `${actorId.slice(0, 8)}…`;
   const [assistantOpen, setAssistantOpen] = useState(false);
-  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const [avatarInitials, setAvatarInitials] = useState(() =>
     deriveInitials(actorDisplayLabel, actorId),
   );
-  const menuButtonRef = useRef<HTMLButtonElement | null>(null);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const workspaceRef = useRef<HTMLDivElement | null>(null);
-  const drawerRef = useRef<HTMLDivElement | null>(null);
-  const firstNavLinkRef = useRef<HTMLAnchorElement | null>(null);
-  const wasMobileNavOpen = useRef(false);
+  const menuButtonRef = useRef<HTMLButtonElement | null>(null);
+  const [sidecarState, setSidecarState] = useState<SidecarState>({
+    open: false,
+    tab: "overview",
+    entity: null,
+  });
+  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined" || !actorId) return;
@@ -126,164 +126,56 @@ export function PanelShell({
     }
   };
 
-  const closeMobileNav = useCallback(() => {
-    setMobileNavOpen(false);
-  }, []);
+  const closeMobileNav = useCallback(() => setMobileNavOpen(false), []);
 
-  useEffect(() => {
-    const workspace = workspaceRef.current;
-    const previousOverflow = document.body.style.overflow;
-
-    if (mobileNavOpen) {
-      workspace?.setAttribute("aria-hidden", "true");
-      workspace?.setAttribute("inert", "");
-      document.body.style.overflow = "hidden";
-    } else {
-      workspace?.removeAttribute("aria-hidden");
-      workspace?.removeAttribute("inert");
-    }
-
-    return () => {
-      document.body.style.overflow = previousOverflow;
-      workspace?.removeAttribute("aria-hidden");
-      workspace?.removeAttribute("inert");
-    };
-  }, [mobileNavOpen]);
-
-  useEffect(() => {
-    if (!mobileNavOpen) return;
-
-    const drawerElement = drawerRef.current;
-    if (!drawerElement) return;
-
-    const focusableSelectors = [
-      "a[href]",
-      "button:not([disabled])",
-      "textarea:not([disabled])",
-      "input:not([disabled])",
-      "select:not([disabled])",
-      '[tabindex]:not([tabindex="-1"])',
-    ].join(",");
-
-    const getFocusableElements = () =>
-      Array.from(
-        drawerElement.querySelectorAll<HTMLElement>(focusableSelectors),
-      ).filter((element) =>
-        !element.hasAttribute("disabled") &&
-        !element.getAttribute("aria-hidden"),
-      );
-
-    const focusFirstItem = () => {
-      const primaryLink = firstNavLinkRef.current;
-      if (primaryLink) {
-        primaryLink.focus();
-        return;
-      }
-      const focusable = getFocusableElements();
-      (focusable[0] ?? drawerElement).focus();
-    };
-
-    const timer = window.setTimeout(focusFirstItem, 0);
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        event.preventDefault();
-        closeMobileNav();
-        return;
-      }
-
-      if (event.key !== "Tab") return;
-
-      const focusable = getFocusableElements();
-      if (focusable.length === 0) {
-        event.preventDefault();
-        drawerElement.focus();
-        return;
-      }
-
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
-      const activeElement = document.activeElement as HTMLElement | null;
-
-      if (event.shiftKey) {
-        if (activeElement === first || !drawerElement.contains(activeElement)) {
-          event.preventDefault();
-          last.focus();
-        }
-        return;
-      }
-
-      if (activeElement === last) {
-        event.preventDefault();
-        first.focus();
-      }
-    };
-
-    drawerElement.addEventListener("keydown", handleKeyDown);
-
-    return () => {
-      window.clearTimeout(timer);
-      drawerElement.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [closeMobileNav, mobileNavOpen]);
-
-  useEffect(() => {
-    if (!mobileNavOpen && wasMobileNavOpen.current) {
-      menuButtonRef.current?.focus();
-    }
-    wasMobileNavOpen.current = mobileNavOpen;
-  }, [mobileNavOpen]);
+  const panelContextValue = useMemo(
+    () => ({
+      commandPaletteOpen,
+      openCommandPalette: () => setCommandPaletteOpen(true),
+      closeCommandPalette: () => setCommandPaletteOpen(false),
+      openSidecar: (entity, tab = "overview") => setSidecarState({ open: true, entity, tab }),
+      closeSidecar: () => setSidecarState((prev) => ({ ...prev, open: false })),
+      sidecarState,
+      setSidecarTab: (tab) => setSidecarState((prev) => ({ ...prev, tab })),
+    }),
+    [commandPaletteOpen, sidecarState],
+  );
 
   return (
-    <ToastProvider>
-      <ServiceWorkerToast />
-      <ServiceWorkerToasts />
-      <OfflineBanner />
-      <a className="skip-link" href="#main-content">
-        Skip to main content
-      </a>
-      <div className="bing-shell">
-        <BingNav />
-        <div className="bing-shell__workspace" ref={workspaceRef}>
-          <BingHeader
-            environmentLabel={environmentLabel}
-            onOpenNavigation={() => setMobileNavOpen(true)}
-            assistantEnabled={assistantEnabled}
-            onOpenAssistant={assistantEnabled ? () => setAssistantOpen(true) : undefined}
-            actorLabel={actorDisplayLabel}
-            actorInitials={avatarInitials}
-            onSignOut={handleSignOut}
-            signingOut={signingOut}
-            menuButtonRef={menuButtonRef}
-          />
-          <main
-            id="main-content"
-            className="bing-shell__content"
-            aria-live="polite"
-            tabIndex={-1}
-          >
-            <div className="panel-page__container">{children}</div>
-          </main>
-        </div>
-      </div>
-      {mobileNavOpen && (
-        <div className="bing-nav-drawer" role="presentation" onClick={closeMobileNav}>
-          <div
-            className="bing-nav-drawer__panel"
-            role="dialog"
-            aria-modal="true"
-            aria-label="Primary navigation"
-            ref={drawerRef}
-            tabIndex={-1}
-            onClick={(event) => event.stopPropagation()}
-          >
-            <BingNav mode="overlay" onClose={closeMobileNav} firstLinkRef={firstNavLinkRef} />
+    <SessionProvider initialSession={session}>
+      <ToastProvider>
+        <ServiceWorkerToast />
+        <ServiceWorkerToasts />
+        <OfflineBanner />
+        <a className="skip-link" href="#main-content">
+          Skip to main content
+        </a>
+        <PanelContextProvider value={panelContextValue}>
+          <div className="app-shell">
+            <SidebarRail />
+            <div className="app-shell__workspace" ref={workspaceRef}>
+              <TopBar
+                environmentLabel={environmentLabel}
+                onOpenNavigation={() => setMobileNavOpen(true)}
+                assistantEnabled={assistantEnabled}
+                onOpenAssistant={assistantEnabled ? () => setAssistantOpen(true) : undefined}
+                actorLabel={actorDisplayLabel}
+                actorInitials={avatarInitials}
+                onSignOut={handleSignOut}
+                signingOut={signingOut}
+                menuButtonRef={menuButtonRef}
+              />
+              <main id="main-content" className="app-shell__content" aria-live="polite" tabIndex={-1}>
+                <div className="panel-page__container">{children}</div>
+              </main>
+            </div>
           </div>
-        </div>
-      )}
-      {assistantEnabled && (
-        <AssistantPanel open={assistantOpen} onClose={() => setAssistantOpen(false)} />
-      )}
-    </ToastProvider>
+          <MobileNav open={mobileNavOpen} onClose={closeMobileNav} />
+          {assistantEnabled && (
+            <AssistantPanel open={assistantOpen} onClose={() => setAssistantOpen(false)} />
+          )}
+        </PanelContextProvider>
+      </ToastProvider>
+    </SessionProvider>
   );
 }

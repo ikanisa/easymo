@@ -25,6 +25,23 @@ export default function SettingsPage() {
             </li>
           </ul>
         </section>
+        <section className="rounded-lg border border-gray-200 bg-white p-6">
+          <h2 className="text-lg font-semibold text-gray-900">Operator runbook</h2>
+          <p className="mt-1 text-sm text-gray-500">
+            Keep these actions in mind when promoting or rolling back deployments. A detailed guide lives in <code>docs/deployment/README.md</code>.
+          </p>
+          <ol className="mt-4 list-decimal space-y-2 pl-5 text-sm text-gray-700">
+            <li>
+              Run <code>pnpm deploy:check</code> locally or in CI to confirm env vars, schema checksums, and PWA assets are aligned before shipping.
+            </li>
+            <li>
+              After deploy, execute <code>pnpm smoke:netlify</code> (or check the Netlify post-build logs) to verify <code>/login</code>, <code>/dashboard</code>, live calls, and marketplace endpoints are healthy.
+            </li>
+            <li>
+              For issues, disable marketplace vendors via <code>/api/marketplace/settings</code> or promote the previous Netlify deploy while coordinating in the incident channel.
+            </li>
+          </ol>
+        </section>
       </div>
     </div>
   );

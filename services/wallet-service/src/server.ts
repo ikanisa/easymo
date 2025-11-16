@@ -9,6 +9,7 @@ import { FXService } from "./fx";
 import { isFeatureEnabled } from "@easymo/commons";
 import { idempotencyMiddleware } from "./idempotency";
 import { ReconciliationService, ReconciliationScheduler } from "./reconciliation";
+import { randomUUID } from "crypto";
 
 const TransferSchema = z.object({
   tenantId: z.string().uuid().default(settings.defaultTenantId),
@@ -32,6 +33,14 @@ async function bootstrap() {
 
   const app = express();
   app.use(express.json());
+  app.use((req, res, next) => {
+    const headerId = typeof req.headers["x-request-id"] === "string" ? req.headers["x-request-id"] : undefined;
+    const requestId = headerId?.trim() || randomUUID();
+    (req as any).id = requestId;
+    req.headers["x-request-id"] = requestId;
+    res.setHeader("x-request-id", requestId);
+    next();
+  });
   app.use(pinoHttp({ logger: logger as any }));
   
   // Apply idempotency middleware to financial operations

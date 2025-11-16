@@ -56,17 +56,19 @@ jobs:
       - name: Assert no service role in client env
         run: node scripts/assert-no-service-role-in-client.mjs
 
-      - name: Check formatting
-        run: pnpm format:check
+      - name: Lint, type-check and unit tests
+        run: pnpm test:ci
 
-      - name: Run lint
-        run: pnpm lint
-
-      - name: Type check
-        run: pnpm type-check
-
-      - name: Unit tests
-        run: pnpm test -- --runInBand
+      - name: Upload coverage artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-reports
+          path: |
+            admin-app/coverage
+            services/agent-core/coverage
+            services/broker-orchestrator/coverage
+            services/wallet-service/coverage
 
       - name: Deno unit tests (Supabase functions)
         run: deno test --no-check --allow-env --allow-read --allow-net supabase/functions/_shared supabase/functions/wa-webhook

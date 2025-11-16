@@ -176,10 +176,13 @@ export async function processWebhookRequest(
 
   if (req.method === "GET") {
     const url = new URL(req.url);
-    if (
-      url.searchParams.get("hub.mode") === "subscribe" &&
-      url.searchParams.get("hub.verify_token") === WA_VERIFY_TOKEN
-    ) {
+    
+    // Check if this is a WhatsApp webhook verification request
+    if (url.searchParams.has("hub.mode") || url.searchParams.has("hub.verify_token")) {
+      if (
+        url.searchParams.get("hub.mode") === "subscribe" &&
+        url.searchParams.get("hub.verify_token") === WA_VERIFY_TOKEN
+      ) {
       const cacheKey = `wa:webhook:challenge:${url.searchParams.toString()}`;
       if (webhookConfig.cache.enabled) {
         const cachedChallenge = getCached<string>(cacheKey);
@@ -215,16 +218,38 @@ export async function processWebhookRequest(
         }),
         correlationId,
       };
+      }
+      // Invalid verification token
+      await hooks.logStructuredEvent("SIG_VERIFY_FAIL", withCid({ mode: "GET" }));
+      incrementMetric("wa_webhook_request_failed_total", 1, {
+        method: "GET",
+        reason: "verification",
+        status: 403,
+      });
+      return {
+        type: "response",
+        response: new Response("forbidden", { status: 403 }),
+        correlationId,
+      };
     }
-    await hooks.logStructuredEvent("SIG_VERIFY_FAIL", withCid({ mode: "GET" }));
-    incrementMetric("wa_webhook_request_failed_total", 1, {
-      method: "GET",
-      reason: "verification",
-      status: 403,
-    });
+    
+    // Plain GET request (not WhatsApp verification) - return info
     return {
       type: "response",
-      response: new Response("forbidden", { status: 403 }),
+      response: new Response(JSON.stringify({
+        service: "WhatsApp Webhook",
+        status: "active",
+        version: "2.0",
+        endpoints: {
+          webhook: "POST /",
+          health: "GET /health",
+          metrics: "GET /metrics"
+        },
+        info: "WhatsApp webhook verification requires hub.mode, hub.verify_token, and hub.challenge parameters"
+      }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" }
+      }),
       correlationId,
     };
   }

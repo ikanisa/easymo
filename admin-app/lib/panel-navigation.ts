@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-export type PanelNavGroupId = "utilities" | "archive";
+export type PanelNavGroupId = "core";
 
 export interface PanelNavItem {
   href: string;
@@ -29,67 +29,33 @@ export interface PanelBreadcrumb {
 }
 
 const defaultDescription =
-  "Operational console for the Insurance Agent workflow and supporting admin utilities.";
+  "Operational console for the core easyMO workflows.";
 
 const panelRoot: PanelNavItem = {
-  href: "/insurance",
-  title: "Insurance Agent",
-  icon: "🛡️",
-  description:
-    "Human-in-the-loop underwriting, OCR review, and approvals for insurance submissions.",
+  href: "/dashboard",
+  title: "Dashboard",
+  icon: "📊",
+  description: "KPIs, service health, and quick access to operational tools.",
 };
 
-const adminUtilitiesGroup: PanelNavGroup = {
-  id: "utilities",
-  title: "Admin Utilities",
-  description: "Cross-functional tooling that supports the Insurance Agent rollout.",
+const coreNavigationGroup: PanelNavGroup = {
+  id: "core",
+  title: "Core", 
+  description: "Primary workflows surfaced in the slim rail.",
   links: [
-    { href: "/notifications", title: "Notifications" },
-    { href: "/logs", title: "System Logs" },
-    { href: "/settings", title: "Settings" },
-    { href: "/users", title: "Users" },
-    { href: "/trips", title: "Trips" },
+    { href: "/dashboard", title: "Dashboard" },
+    { href: "/leads", title: "Leads" },
+    { href: "/live-calls", title: "Live calls" },
     { href: "/marketplace", title: "Marketplace" },
-    { href: "/menus", title: "Menus" },
-    { href: "/files", title: "Files" },
-    { href: "/qr", title: "QR Codes" },
-    { href: "/whatsapp-health", title: "WhatsApp Health" },
-    { href: "/live-calls", title: "Live Calls" },
-    { href: "/voice-analytics", title: "Voice Analytics" },
-    { href: "/vendor-responses", title: "Vendor Responses" },
-    { href: "/negotiations", title: "Negotiations" },
-    { href: "/agent-orchestration", title: "Agent Orchestration" },
-    { href: "/wallet/topup", title: "Wallet Top-up" },
+    { href: "/settings", title: "Settings" },
   ],
 };
 
-const legacyArchiveGroup: PanelNavGroup = {
-  id: "archive",
-  title: "Legacy Archive",
-  description: "In-flight destinations retained while the migration completes.",
-  collapsedByDefault: true,
-  links: [
-    { href: "/dashboard", title: "Legacy Dashboard" },
-    { href: "/sessions", title: "Legacy Sessions" },
-    { href: "/agents", title: "Agents" },
-    { href: "/agents/dashboard", title: "Agents Dashboard" },
-    { href: "/agents/[id]", title: "Agent Details" },
-    { href: "/ai", title: "AI Prototypes" },
-    { href: "/bars", title: "Bars" },
-    { href: "/marketplace/settings", title: "Marketplace Settings" },
-  ],
-};
-
-const archiveVisible =
-  (process.env.NEXT_PUBLIC_SHOW_LEGACY_NAV ?? "false").trim().toLowerCase() === "true";
-
-const allGroups: PanelNavGroup[] = [adminUtilitiesGroup, legacyArchiveGroup];
+const allGroups: PanelNavGroup[] = [coreNavigationGroup];
 
 export const panelNavigation: PanelNavigation = {
   root: panelRoot,
-  groups: allGroups.filter(
-    (group) => group.id !== "archive" || archiveVisible,
-  ),
+  groups: allGroups,
 };
 
 const routeMetadata: Record<string, { title: string; description: string }> = {
@@ -97,113 +63,25 @@ const routeMetadata: Record<string, { title: string; description: string }> = {
     title: panelRoot.title,
     description: panelRoot.description ?? defaultDescription,
   },
-  "/notifications": {
-    title: "Notifications",
-    description: "Preview outbound alerts and confirm delivery health across channels.",
+  "/dashboard": {
+    title: "Dashboard",
+    description: panelRoot.description ?? defaultDescription,
   },
-  "/logs": {
-    title: "System Logs",
-    description: "Investigate platform events, webhook retries, and integration noise.",
+  "/leads": {
+    title: "Leads",
+    description: "Inspect marketing-sourced leads and handoff readiness.",
   },
-  "/settings": {
-    title: "Settings",
-    description: "Toggle feature flags, update credentials, and manage rollout controls.",
-  },
-  "/users": {
-    title: "Users",
-    description: "Search operators, review profiles, and stage messaging follow-ups.",
-  },
-  "/trips": {
-    title: "Trips",
-    description: "Audit trip requests, expirations, and fulfillment states across tenants.",
+  "/live-calls": {
+    title: "Live Calls",
+    description: "Observe call center volume, connect rates, and agent assignments.",
   },
   "/marketplace": {
     title: "Marketplace",
     description: "Review vendor onboarding health and catalog configuration progress.",
   },
-  "/marketplace/settings": {
-    title: "Marketplace Settings",
-    description: "Adjust vendor entitlements, contact windows, and subscription quotas.",
-  },
-  "/menus": {
-    title: "Menus",
-    description: "Manage menu syncs, price accuracy checks, and content completeness.",
-  },
-  "/files": {
-    title: "Files",
-    description: "Inspect uploaded assets, OCR extracts, and pipeline processing states.",
-  },
-  "/qr": {
-    title: "QR Codes",
-    description: "Generate ordering codes and confirm routing details for storefronts.",
-  },
-  "/whatsapp-health": {
-    title: "WhatsApp Health",
-    description: "Monitor template delivery, opt-outs, and live conversation health.",
-  },
-  "/live-calls": {
-    title: "Live Calls",
-    description: "Observe call center volume, connect rates, and agent assignment flow.",
-  },
-  "/voice-analytics": {
-    title: "Voice Analytics",
-    description: "Review transcription quality and AI scoring pipelines for calls.",
-  },
-  "/vendor-responses": {
-    title: "Vendor Responses",
-    description: "Track marketplace vendor replies, SLAs, and negotiation outcomes.",
-  },
-  "/negotiations": {
-    title: "Negotiations",
-    description: "Inspect AI-led negotiation transcripts and pricing adjustments.",
-  },
-  "/agent-orchestration": {
-    title: "Agent Orchestration",
-    description: "Monitor multi-agent registry, health metrics, and rollout cadence.",
-  },
-  "/wallet/topup": {
-    title: "Wallet Top-up",
-    description: "Provision platform wallets, apply FX, and credit vendor balances.",
-  },
-  "/dashboard": {
-    title: "Legacy Dashboard",
-    description: "Historical metrics retained during the Insurance Agent migration.",
-  },
-  "/sessions": {
-    title: "Legacy Sessions",
-    description: "Archive of prior agent sessions for reference during migration.",
-  },
-  "/agents": {
-    title: "Agents",
-    description: "Legacy agent registry management interface.",
-  },
-  "/agents/dashboard": {
-    title: "Agents Dashboard",
-    description: "Legacy dashboard for monitoring aggregate agent performance.",
-  },
-  "/agents/[id]": {
-    title: "Agent Details",
-    description: "Legacy detail view for managing individual agent assets and runs.",
-  },
-  "/ai": {
-    title: "AI Prototypes",
-    description: "Experimental AI flows maintained for regression testing.",
-  },
-  "/bars": {
-    title: "Bars",
-    description: "Historic data visualisations awaiting migration.",
-  },
-  "/leads": {
-    title: "Leads",
-    description: "Inspect marketing-sourced leads before routing into Insurance Agent.",
-  },
-  "/sessions/[id]": {
-    title: "Session Details",
-    description: "Legacy session drill-in retained for auditing conversations.",
-  },
-  "/vendor-responses/[id]": {
-    title: "Vendor Response",
-    description: "Legacy vendor response review page.",
+  "/settings": {
+    title: "Settings",
+    description: "Toggle demo mode, adjust throttles, and manage rollout controls.",
   },
 };
 

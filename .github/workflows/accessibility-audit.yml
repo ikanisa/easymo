@@ -1,0 +1,58 @@
+name: Accessibility and Lighthouse Audit
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    env:
+      AUDIT_BASE_URL: ${{ vars.AUDIT_BASE_URL || secrets.AUDIT_BASE_URL || '' }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        if: env.AUDIT_BASE_URL != ''
+        uses: actions/setup-node@v6
+        with:
+          node-version: 20
+
+      - name: Install audit tooling
+        if: env.AUDIT_BASE_URL != ''
+        run: npm install -g @lhci/cli@0.14.0 pa11y-ci@3.1.0
+
+      - name: Run Lighthouse (blocking)
+        if: env.AUDIT_BASE_URL != ''
+        env:
+          LHCI_BUILD_CONTEXT__CURRENT_BRANCH: ${{ github.head_ref || github.ref_name }}
+        run: |
+          mkdir -p artifacts/lighthouse
+          lhci collect \
+            --url="$AUDIT_BASE_URL" \
+            --numberOfRuns=1 \
+            --collect.hints=true \
+            --output-dir=artifacts/lighthouse \
+            --format=json
+          lhci assert --assert.preset=lighthouse:recommended --assert.minimumScore=0.8 > artifacts/lighthouse/assertion-results.json
+
+      - name: Run pa11y accessibility sweep
+        if: env.AUDIT_BASE_URL != ''
+        run: |
+          mkdir -p artifacts/pa11y
+          pa11y-ci "$AUDIT_BASE_URL" --json > artifacts/pa11y/report.json || true
+
+      - name: Upload audit artifacts
+        if: always() && env.AUDIT_BASE_URL != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: accessibility-and-lighthouse-reports
+          path: artifacts
+
+      - name: Skip audits (missing base URL)
+        if: env.AUDIT_BASE_URL == ''
+        run: echo "AUDIT_BASE_URL is not configured; skipping Lighthouse and pa11y checks."

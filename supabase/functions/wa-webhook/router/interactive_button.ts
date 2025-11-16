@@ -31,6 +31,7 @@ import {
   startBarsSearch,
   startBarMenuOrder,
 } from "../domains/bars/search.ts";
+import { startBarWaiterChat } from "../domains/bars/waiter_ai.ts";
 import {
   evaluateMotorInsuranceGate,
   recordMotorInsuranceHidden,
@@ -68,6 +69,7 @@ import {
   handleMenuOrderAction,
   type MenuOrderSession,
 } from "../domains/orders/menu_order.ts";
+import { setState } from "../state/store.ts";
 
 export async function handleButton(
   ctx: RouterContext,
@@ -144,6 +146,13 @@ export async function handleButton(
       }
       return await startBarsSearch(ctx);
     }
+    case IDS.BAR_CHAT_WAITER:
+    case "bar_chat_waiter": {
+      if (state.key === "bar_detail") {
+        return await startBarWaiterChat(ctx, state.data || {});
+      }
+      return false;
+    }
     case IDS.MENU_ORDER_ADD:
     case IDS.MENU_ORDER_VIEW:
     case IDS.MENU_ORDER_FINISH:
@@ -215,7 +224,10 @@ export async function handleButton(
       return await startSavedPlaces(ctx);
     case SAVED_PLACES_ADD_ID:
       return await startSavedPlaceCreation(ctx);
-    case SAVED_PLACES_SKIP_ID:
+    case SAVED_PLACES_SKIP_ID: {
+      if (await handleSavedPlacesSkip(ctx, state)) {
+        return true;
+      }
       await sendButtonsMessage(
         ctx,
         t(ctx.locale, "location.saved.skip_message", {
@@ -224,6 +236,7 @@ export async function handleButton(
         homeOnly(),
       );
       return true;
+    }
     case IDS.MOBILITY_CHANGE_VEHICLE:
       if (
         state.key === "mobility_nearby_location" ||
@@ -314,4 +327,95 @@ async function sendDineInDisabledNotice(ctx: RouterContext): Promise<void> {
     buildButtons({ id: IDS.BACK_HOME, title: "🏠 Back" }),
     { emoji: "ℹ️" },
   );
+}
+
+async function handleSavedPlacesSkip(
+  ctx: RouterContext,
+  state: { key: string; data?: Record<string, unknown> },
+): Promise<boolean> {
+  if (!ctx.profileId || state.key !== "location_saved_picker" || !state.data) {
+    return false;
+  }
+  const source = state.data.source as string | undefined;
+  const instructions = t(ctx.locale, "location.share.instructions");
+
+  switch (source) {
+    case "nearby": {
+      const snapshot = state.data.snapshot as
+        | { mode?: string; vehicle?: string; pickup?: { lat: number; lng: number } | null }
+        | undefined;
+      if (!snapshot?.mode || !snapshot?.vehicle) break;
+      await setState(ctx.supabase, ctx.profileId, {
+        key: "mobility_nearby_location",
+        data: {
+          mode: snapshot.mode,
+          vehicle: snapshot.vehicle,
+          pickup: snapshot.pickup ?? undefined,
+        },
+      });
+      await sendButtonsMessage(
+        ctx,
+        t(ctx.locale, "mobility.nearby.share_location", { instructions }),
+        buildButtons(
+          { id: IDS.LOCATION_SAVED_LIST, title: t(ctx.locale, "location.saved.button") },
+          { id: IDS.BACK_MENU, title: t(ctx.locale, "common.menu_back") },
+        ),
+      );
+      return true;
+    }
+    case "schedule": {
+      const stage = state.data.stage === "dropoff" ? "dropoff" : "pickup";
+      const scheduleState = state.data.state as Record<string, unknown>;
+      const key = stage === "dropoff" ? "schedule_dropoff" : "schedule_location";
+      await setState(ctx.supabase, ctx.profileId, { key, data: scheduleState });
+      await sendButtonsMessage(
+        ctx,
+        t(
+          ctx.locale,
+          stage === "dropoff" ? "schedule.dropoff.prompt" : "schedule.pickup.prompt",
+          { instructions },
+        ),
+        buildButtons(
+          { id: IDS.LOCATION_SAVED_LIST, title: t(ctx.locale, "location.saved.button") },
+          { id: IDS.BACK_MENU, title: t(ctx.locale, "common.menu_back") },
+        ),
+      );
+      return true;
+    }
+    case "property_find": {
+      const findState = state.data.state as Record<string, unknown>;
+      await setState(ctx.supabase, ctx.profileId, {
+        key: "property_find_location",
+        data: findState,
+      });
+      await sendButtonsMessage(
+        ctx,
+        t(ctx.locale, "property.find.prompt.location", { instructions }),
+        buildButtons(
+          { id: IDS.LOCATION_SAVED_LIST, title: t(ctx.locale, "location.saved.button") },
+          { id: IDS.BACK_HOME, title: t(ctx.locale, "common.menu_back") },
+        ),
+      );
+      return true;
+    }
+    case "property_add": {
+      const addState = state.data.state as Record<string, unknown>;
+      await setState(ctx.supabase, ctx.profileId, {
+        key: "property_add_location",
+        data: addState,
+      });
+      await sendButtonsMessage(
+        ctx,
+        t(ctx.locale, "property.add.prompt.location", { instructions }),
+        buildButtons(
+          { id: IDS.LOCATION_SAVED_LIST, title: t(ctx.locale, "location.saved.button") },
+          { id: IDS.BACK_HOME, title: t(ctx.locale, "common.menu_back") },
+        ),
+      );
+      return true;
+    }
+    default:
+      break;
+  }
+  return false;
 }

@@ -11,10 +11,16 @@ export class WhatsAppClientError extends Error {
     this.detail = detail;
   }
 }
-import { safeButtonTitle, safeRowDesc, safeRowTitle } from "../utils/text.ts";
+import {
+  safeButtonTitle,
+  safeHeaderText,
+  safeRowDesc,
+  safeRowTitle,
+} from "../utils/text.ts";
 import {
   previewListPayload,
   validateListMessage,
+  WA_LIMITS_CONST,
 } from "../utils/wa_validate.ts";
 
 const GRAPH_BASE = "https://graph.facebook.com/v20.0";
@@ -106,48 +112,56 @@ export async function sendList(
     rows: Array<{ id: string; title: string; description?: string }>;
   },
 ): Promise<void> {
+  const headerText = safeHeaderText(opts.title ?? "", WA_LIMITS_CONST.HEADER_TEXT);
+  const sectionTitle = safeHeaderText(opts.sectionTitle ?? "", WA_LIMITS_CONST.SECTION_TITLE) ||
+    "Options";
+  const bodyText = (opts.body ?? "").slice(0, WA_LIMITS_CONST.BODY).trim();
+  const buttonText = safeButtonTitle(opts.buttonText ?? "Choose");
+  const rows = opts.rows.slice(0, WA_LIMITS_CONST.MAX_ROWS_PER_SECTION).map((row) => ({
+    id: row.id,
+    title: safeRowTitle(row.title),
+    description: row.description ? safeRowDesc(row.description) : undefined,
+  }));
+
   // Validate and optionally preview payload
   const issues = validateListMessage({
-    title: opts.title,
-    body: opts.body,
-    buttonText: opts.buttonText,
-    sectionTitle: opts.sectionTitle,
-    rows: opts.rows,
+    title: headerText,
+    body: bodyText,
+    buttonText,
+    sectionTitle,
+    rows,
   });
   if (issues.length) console.warn("wa_client.validate_warn", { issues });
   if ((Deno.env.get("LOG_LEVEL") ?? "").toLowerCase() === "debug") {
     console.debug(
       "wa.payload.list_preview",
       previewListPayload({
-        title: opts.title,
-        body: opts.body,
-        buttonText: opts.buttonText,
-        sectionTitle: opts.sectionTitle,
-        rows: opts.rows,
+        title: headerText,
+        body: bodyText,
+        buttonText,
+        sectionTitle,
+        rows,
       }),
     );
   }
+  const headerPayload = headerText
+    ? { type: "text", text: headerText }
+    : null;
   await post({
     messaging_product: "whatsapp",
     to,
     type: "interactive",
     interactive: {
       type: "list",
-      header: { type: "text", text: safeRowTitle(opts.title, 60) },
-      body: { text: opts.body.slice(0, 1024) },
+      ...(headerPayload ? { header: headerPayload } : {}),
+      body: { text: bodyText },
       action: {
-        button: safeButtonTitle(opts.buttonText ?? "Choose"),
+        button: buttonText,
         sections: [
           {
             // WhatsApp constraint: section title max 24 chars
-            title: safeRowTitle(opts.sectionTitle, 24),
-            rows: opts.rows.slice(0, 10).map((row) => ({
-              id: row.id,
-              title: safeRowTitle(row.title),
-              description: row.description
-                ? safeRowDesc(row.description)
-                : undefined,
-            })),
+            title: sectionTitle,
+            rows,
           },
         ],
       },
