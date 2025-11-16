@@ -21,10 +21,6 @@ import {
   startScheduleSavedLocationPicker,
   startScheduleTrip,
 } from "../domains/mobility/schedule.ts";
-import {
-  handleMarketplaceButton,
-  startMarketplace,
-} from "../domains/marketplace/index.ts";
 import { startInsurance } from "../domains/insurance/index.ts";
 import {
   replayBarsResults,
@@ -149,7 +145,6 @@ export async function handleButton(
       }
       return false;
     case IDS.MARKETPLACE:
-      return await startMarketplace(ctx, state);
     case IDS.MARKETPLACE_BROWSE:
     case IDS.MARKETPLACE_ADD:
     case IDS.MARKETPLACE_NEXT:
@@ -157,7 +152,17 @@ export async function handleButton(
     case IDS.MARKETPLACE_REFRESH:
     case IDS.MARKETPLACE_SKIP:
     case IDS.MARKETPLACE_MENU:
-      return await handleMarketplaceButton(ctx, state, id);
+      // Marketplace has been retired; show services hub instead
+      await sendButtonsMessage(
+        ctx,
+        t(ctx.locale, "services.menu.body"),
+        [
+          { id: IDS.NEARBY_PHARMACIES, title: t(ctx.locale, "services.menu.pharmacies") },
+          { id: IDS.NEARBY_QUINCAILLERIES, title: t(ctx.locale, "services.menu.quincailleries") },
+          { id: IDS.NOTARY_SERVICES, title: t(ctx.locale, "services.menu.notary") },
+        ],
+      );
+      return true;
     case IDS.MOTOR_INSURANCE:
     case IDS.MOTOR_INSURANCE_UPLOAD: {
       const gate = await evaluateMotorInsuranceGate(ctx);
@@ -189,11 +194,32 @@ export async function handleButton(
       return await showWalletTop(ctx);
     case IDS.WALLET_SHARE_DONE:
       return await handleWalletShareDone(ctx);
+    case IDS.PROFILE_ADD_VEHICLE: {
+      const { handleAddVehicle } = await import("../domains/profile/index.ts");
+      return await handleAddVehicle(ctx);
+    }
+    case IDS.PROFILE_ADD_BUSINESS: {
+      const { handleAddBusiness } = await import("../domains/profile/index.ts");
+      return await handleAddBusiness(ctx);
+    }
     case IDS.BAR_VIEW_MENU: {
-      if (state.key === "bar_detail") {
+      // Prefer bar_detail state, but accept any state that contains barId
+      if (state.key === "bar_detail" && state.data) {
         return await startBarMenuOrder(ctx, state.data || {});
       }
-      return false;
+      if (state.data && (state.data as any).barId) {
+        return await startBarMenuOrder(ctx, state.data as any);
+      }
+      // Graceful fallback: ask user to select a place again
+      await sendButtonsMessage(
+        ctx,
+        t(ctx.locale, "bars.menu.select_prompt"),
+        buildButtons(
+          { id: "bars_search_now", title: t(ctx.locale, "bars.buttons.search_again") },
+          { id: IDS.BACK_MENU, title: t(ctx.locale, "common.menu_back") },
+        ),
+      );
+      return true;
     }
     case "bars_search_now": {
       if (state.key === "bar_detail" && state.data?.barsResults) {

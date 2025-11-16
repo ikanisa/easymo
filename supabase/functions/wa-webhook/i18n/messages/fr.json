@@ -650,7 +650,7 @@
   "profile.vehicles.list.section": "Véhicules",
   "profile.vehicles.no_details": "Aucun détail",
   "profile.vehicles.add_button": "➕ Ajouter un Véhicule",
-  "profile.vehicles.add.upload_prompt": "Téléchargez une photo du certificat d'assurance de votre véhicule (Carte Jaune).",
+  "profile.vehicles.add.upload_prompt": "Téléversez une photo claire ou un PDF du certificat d'assurance de votre véhicule.",
   "profile.vehicles.add.processing": "Traitement du certificat... Veuillez patienter.",
   "profile.vehicles.add.success": "✅ Véhicule {{plate}} ajouté avec succès!",
   "profile.vehicles.add.pending": "⏳ Véhicule {{plate}} en attente de vérification. Raison: {{reason}}",
@@ -662,6 +662,12 @@
   "profile.businesses.no_category": "Non catégorisé",
   "profile.businesses.add_button": "➕ Ajouter une Entreprise",
   "profile.businesses.manage_numbers": "📱 Gérer les Numéros WhatsApp",
+  "profile.vehicles.delete_confirm_short": "Supprimer le véhicule",
+  "services.menu.title": "🛍️ Boutiques & services",
+  "services.menu.body": "Parcourez les services par catégorie.",
+  "services.menu.pharmacies": "💊 Pharmacies",
+  "services.menu.quincailleries": "🔧 Quincailleries",
+  "services.menu.notary": "📜 Notaire",
   "profile.businesses.add.search_prompt": "Comment souhaitez-vous trouver votre entreprise?",
   "profile.businesses.add.search_by_name": "Rechercher par nom",
   "profile.businesses.add.search_by_location": "Partager l'emplacement pour trouver à proximité",
@@ -917,6 +923,6 @@
   "jobs.candidates.detail": "*{{name}}*\n📱 {{phone}}\n💪 {{skills}}\n🗓️ Expérience : {{experience}} ans",
   "jobs.candidates.contact": "📱 Écrire sur WhatsApp : {{link}}",
   "jobs.candidates.buttons.backList": "⬅️ Retour aux candidats",
-  "jobs.candidates.experience.unknown": "Inconnue"
-
+  "jobs.candidates.experience.unknown": "Inconnue",
+  "bars.menu.select_prompt": "Veuillez d'abord choisir un lieu dans la liste, puis appuyez sur Voir le menu."
 }
