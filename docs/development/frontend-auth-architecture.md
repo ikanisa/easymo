@@ -32,6 +32,7 @@
 ### Admin invitation flow
 1. Admin opens AdminPage → `<UserInvitePanel>` and submits invite form (email, role, org). Frontend calls backend `POST /api/admin/invitations`.
 2. Backend uses service key to call `supabase.auth.admin.inviteUserByEmail(email, { data: { role, orgId }, redirectTo: <app url>/login })`; stores invite row in `public.invites` with status `pending`.
+   > **Note:** The `public.invites` and `public.user_roles` tables must exist in your Supabase database. See the schema definitions in `supabase/migrations/` (or create appropriate migrations if not present).
 3. Supabase sends email with invite link (magic link token).
 4. Recipient clicks link → Supabase creates user + session; frontend detects `invitation_token` and calls `POST /api/auth/accept-invite` with token.
 5. Backend validates the invitation token as follows:
