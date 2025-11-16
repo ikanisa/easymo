@@ -4,18 +4,18 @@
 BEGIN;
 
 -- Add Malta-specific categories
-INSERT INTO job_categories (name, description, icon, parent_category, is_active) VALUES
-  ('igaming', 'iGaming & Betting', '🎰', NULL, true),
-  ('healthcare', 'Healthcare & Nursing', '🏥', NULL, true),
-  ('maritime', 'Maritime & Yachting', '⚓', NULL, true),
-  ('finance', 'Finance & Banking', '💰', NULL, true)
+INSERT INTO job_categories (name, description, icon, parent_category) VALUES
+  ('igaming', 'iGaming & Betting', '🎰', NULL),
+  ('healthcare', 'Healthcare & Nursing', '🏥', NULL),
+  ('maritime', 'Maritime & Yachting', '⚓', NULL),
+  ('finance', 'Finance & Banking', '💰', NULL)
 ON CONFLICT (name) DO NOTHING;
 
 -- Add sub-categories for hospitality (popular in Malta)
-INSERT INTO job_categories (name, description, icon, parent_category, is_active) VALUES
-  ('bar_staff', 'Bar Staff', '🍺', 'cooking', true),
-  ('hotel_staff', 'Hotel Staff', '🏨', 'cooking', true),
-  ('restaurant_manager', 'Restaurant Manager', '👔', 'cooking', true)
+INSERT INTO job_categories (name, description, icon, parent_category) VALUES
+  ('bar_staff', 'Bar Staff', '🍺', 'cooking'),
+  ('hotel_staff', 'Hotel Staff', '🏨', 'cooking'),
+  ('restaurant_manager', 'Restaurant Manager', '👔', 'cooking')
 ON CONFLICT (name) DO NOTHING;
 
 -- Update job category matching to recognize Malta terms
