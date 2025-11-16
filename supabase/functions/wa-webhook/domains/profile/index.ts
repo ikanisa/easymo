@@ -88,23 +88,37 @@ export async function handleProfileMenu(ctx: RouterContext): Promise<boolean> {
 }
 
 /**
- * Map profile menu item keys to IDS constants
+ * Map profile menu item action_targets to route IDs
+ * This ensures the router can handle actions from database-driven menu
  */
 function getProfileMenuItemId(key: string): string {
-  const mapping: Record<string, string> = {
-    'view_profile': IDS.PROFILE_VIEW,
+  // Map database action_targets to router-recognized IDs
+  const actionTargetMapping: Record<string, string> = {
+    'show_businesses': IDS.PROFILE_BUSINESSES,
+    'show_vehicles': IDS.PROFILE_VEHICLES,
+    'show_properties': IDS.PROFILE_PROPERTIES,
+    'show_my_jobs': IDS.JOB_MY_JOBS,
+    'show_momo_qr': IDS.MOMO_QR,
+    'show_saved_locations': 'saved_locations',
+    'show_help': 'help_support',
+    'change_language': 'change_language',
+    'show_profile': IDS.PROFILE_VIEW,
+    'show_settings': IDS.PROFILE_SETTINGS,
+  };
+  
+  // Also support direct key mapping as fallback
+  const keyMapping: Record<string, string> = {
     'my_businesses': IDS.PROFILE_BUSINESSES,
     'my_vehicles': IDS.PROFILE_VEHICLES,
     'my_properties': IDS.PROFILE_PROPERTIES,
     'my_jobs': IDS.JOB_MY_JOBS,
     'momo_qr': IDS.MOMO_QR,
-    'payment_history': IDS.PROFILE_TOKENS,
     'saved_locations': 'saved_locations',
-    'settings': IDS.PROFILE_SETTINGS,
-    'change_language': 'change_language',
     'help_support': 'help_support',
+    'change_language': 'change_language',
   };
-  return mapping[key] || key;
+  
+  return actionTargetMapping[key] || keyMapping[key] || key;
 }
 
 export async function handleProfileVehicles(ctx: RouterContext): Promise<boolean> {

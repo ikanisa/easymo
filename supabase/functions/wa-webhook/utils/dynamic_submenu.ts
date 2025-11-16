@@ -77,18 +77,22 @@ export async function fetchProfileMenuItems(
 /**
  * Convert submenu items to WhatsApp list row format
  * @param items - Array of submenu items
- * @param idMapper - Optional function to map keys to IDS constants
+ * @param idMapper - Optional function to map action_target to IDS constants
  * @returns Array of WhatsApp list rows
  */
 export function submenuItemsToRows(
   items: SubmenuItem[],
-  idMapper?: (key: string) => string,
+  idMapper?: (actionTarget: string) => string,
 ): Array<{ id: string; title: string; description: string }> {
-  return items.map((item) => ({
-    id: idMapper ? idMapper(item.key) : item.key,
-    title: item.icon ? `${item.icon} ${item.name}` : item.name,
-    description: item.description || '',
-  }));
+  return items.map((item) => {
+    // Use action_target if available, fallback to key
+    const routeId = item.action_target || item.key;
+    return {
+      id: idMapper ? idMapper(routeId) : routeId,
+      title: item.icon ? `${item.icon} ${item.name}` : item.name,
+      description: item.description || '',
+    };
+  });
 }
 
 /**
