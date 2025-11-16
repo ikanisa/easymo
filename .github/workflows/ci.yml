@@ -79,3 +79,27 @@ jobs:
 
       - name: Apply Prisma migrations
         run: pnpm --filter @easymo/db prisma:migrate:deploy
+
+  edge-deployment-verification:
+    name: Edge deployment verification
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    env:
+      EDGE_FUNCTIONS_BASE: ${{ secrets.EDGE_FUNCTIONS_BASE }}
+      EDGE_FUNCTIONS_TOKEN: ${{ secrets.EDGE_FUNCTIONS_TOKEN }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 20
+
+      - name: Verify deployed edge functions
+        if: ${{ env.EDGE_FUNCTIONS_BASE != '' }}
+        run: node scripts/verify-edge-functions.mjs
+
+      - name: Skip verification (missing secrets)
+        if: ${{ env.EDGE_FUNCTIONS_BASE == '' }}
+        run: echo "Skipping edge deployment verification; EDGE_FUNCTIONS_BASE is not set."
