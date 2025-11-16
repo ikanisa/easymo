@@ -4,6 +4,7 @@ import { createHash } from "node:crypto";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { logStructuredEvent, logError, recordMetric, recordDurationMetric } from "./_shared/logger.mjs";
 
 const requiredEnv = [
   "SUPABASE_URL",
@@ -54,10 +55,15 @@ function verifyEnv() {
         ...missing.map((key) => `  - ${key}`),
         "Populate these variables locally or in Netlify before deploying.",
       ].join("\n"),
+      missingVars: missing,
     };
   }
 
-  return { ok: true, message: "All critical environment variables are present." };
+  return { 
+    ok: true, 
+    message: "All critical environment variables are present.",
+    varsChecked: requiredEnv.length,
+  };
 }
 
 function computeChecksum(files) {
@@ -108,10 +114,17 @@ function verifySchemaChecksum() {
         `  recorded checksum: ${recorded}`,
         "Re-export latest_schema.sql and update the MIGRATIONS_CHECKSUM comment before deploying.",
       ].join("\n"),
+      expectedChecksum: expected,
+      recordedChecksum: recorded,
     };
   }
 
-  return { ok: true, message: "latest_schema.sql matches current migrations." };
+  return { 
+    ok: true, 
+    message: "latest_schema.sql matches current migrations.",
+    migrationCount: files.length,
+    checksum: expected,
+  };
 }
 
 function extractPrecacheList(swContents) {
@@ -159,14 +172,24 @@ function verifyServiceWorkerManifest() {
       ]
         .filter(Boolean)
         .join("\n"),
+      missingIconFiles,
+      missingInCache,
     };
   }
 
-  return { ok: true, message: "Service worker cache list matches manifest icons." };
+  return { 
+    ok: true, 
+    message: "Service worker cache list matches manifest icons.",
+    iconCount: iconPaths.length,
+    precacheCount: precacheList.length,
+  };
 }
 
 async function main() {
   loadLocalEnv();
+  const startTime = Date.now();
+
+  logStructuredEvent("DEPLOY_CHECK_STARTED");
 
   const steps = [
     ["Environment completeness", verifyEnv],
@@ -177,23 +200,54 @@ async function main() {
   const failures = [];
 
   for (const [label, fn] of steps) {
+    const checkStart = Date.now();
     const result = await fn();
+    
     if (result.ok) {
-      console.log(`✅ ${label}: ${result.message}`);
+      logStructuredEvent("CHECK_PASSED", {
+        check: label,
+        message: result.message,
+        ...Object.fromEntries(
+          Object.entries(result)
+            .filter(([k]) => k !== 'ok' && k !== 'message')
+        ),
+      });
+      
+      recordMetric("deploy.check.passed", 1, { check: label });
     } else {
+      logStructuredEvent("CHECK_FAILED", {
+        check: label,
+        message: result.message,
+        ...Object.fromEntries(
+          Object.entries(result)
+            .filter(([k]) => k !== 'ok' && k !== 'message')
+        ),
+      }, "error");
+      
+      recordMetric("deploy.check.failed", 1, { check: label });
       failures.push(`${label}: ${result.message}`);
     }
+    
+    recordDurationMetric("deploy.check.duration", checkStart, { check: label });
   }
 
+  recordDurationMetric("deploy.suite.duration", startTime);
+
   if (failures.length) {
-    console.error("\nPre-deploy check failed:\n" + failures.join("\n"));
+    logStructuredEvent("DEPLOY_CHECK_FAILED", {
+      failureCount: failures.length,
+      failures,
+    }, "error");
     process.exit(1);
   }
 
-  console.log("\nAll deployment gate checks passed. Safe to deploy ✅");
+  logStructuredEvent("DEPLOY_CHECK_COMPLETED", {
+    checksRun: steps.length,
+    checksPassed: steps.length,
+  });
 }
 
 main().catch((error) => {
-  console.error("Unexpected failure during deploy:check", error);
+  logError("deploy_check", error);
   process.exit(1);
 });

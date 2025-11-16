@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 
+import { logStructuredEvent, logError, recordMetric, recordDurationMetric } from "../_shared/logger.mjs";
+
 const DEFAULT_ENDPOINTS = [
   { path: "/login", expect: "text" },
   { path: "/dashboard", expect: "text" },
@@ -46,27 +48,60 @@ async function checkEndpoint(baseUrl, endpoint) {
 
 async function main() {
   const baseUrl = resolveBaseUrl();
-  console.log(`Running Netlify smoke tests against ${baseUrl}`);
+  const startTime = Date.now();
+
+  logStructuredEvent("SMOKE_TEST_STARTED", {
+    baseUrl,
+    endpointCount: DEFAULT_ENDPOINTS.length,
+  });
 
   const results = [];
   for (const endpoint of DEFAULT_ENDPOINTS) {
+    const checkStart = Date.now();
     try {
       const result = await checkEndpoint(baseUrl, endpoint);
       results.push(result);
-      console.log(`✅ ${endpoint.path} (${result.status})`);
+      
+      logStructuredEvent("ENDPOINT_CHECK_PASSED", {
+        path: endpoint.path,
+        status: result.status,
+        expect: endpoint.expect,
+      });
+      
+      recordMetric("smoke.endpoint.checked", 1, {
+        path: endpoint.path,
+        status: result.status,
+        result: "success",
+      });
+      
+      recordDurationMetric("smoke.endpoint.duration", checkStart, {
+        path: endpoint.path,
+      });
     } catch (error) {
-      console.error(`❌ ${endpoint.path}: ${error.message}`);
+      logError("endpoint_check", error, {
+        path: endpoint.path,
+        baseUrl,
+      });
+      
+      recordMetric("smoke.endpoint.checked", 1, {
+        path: endpoint.path,
+        result: "failure",
+      });
+      
       throw error;
     }
   }
 
-  console.log("\nSmoke tests passed:");
-  for (const result of results) {
-    console.log(`- ${result.path} (${result.status})`);
-  }
+  recordDurationMetric("smoke.suite.duration", startTime);
+
+  logStructuredEvent("SMOKE_TEST_COMPLETED", {
+    baseUrl,
+    checksRun: results.length,
+    results: results.map(r => ({ path: r.path, status: r.status })),
+  });
 }
 
 main().catch((error) => {
-  console.error("Smoke test suite failed", error);
+  logError("smoke_test_suite", error);
   process.exit(1);
 });
