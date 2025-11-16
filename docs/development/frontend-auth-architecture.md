@@ -34,7 +34,12 @@
 2. Backend uses service key to call `supabase.auth.admin.inviteUserByEmail(email, { data: { role, orgId }, redirectTo: <app url>/login })`; stores invite row in `public.invites` with status `pending`.
 3. Supabase sends email with invite link (magic link token).
 4. Recipient clicks link → Supabase creates user + session; frontend detects `invitation_token` and calls `POST /api/auth/accept-invite` with token.
-5. Backend validates token with Supabase Admin API, reads invite metadata, assigns role/org membership (upsert into `public.user_roles`), marks invite `accepted`, and returns profile payload.
+5. Backend validates the invitation token as follows:
+   - Verifies the token is a valid Supabase JWT (using Supabase Admin API or JWT library), checking signature and expiry.
+   - Extracts the user information from the token (e.g., user ID, email).
+   - Uses `supabase.auth.admin.getUserById` (or equivalent) to fetch the user and confirm the account was created via the invite.
+   - Queries the `public.invites` table to ensure the invite status is `pending` and the email matches the user.
+   - If all checks pass, assigns role/org membership (upsert into `public.user_roles`), marks invite as `accepted`, and returns the profile payload.
 6. Frontend stores session + role, clears invite token, and routes to onboarding (`/app/home/onboarding`) if first login, else to `/app/home`.
 
 ## State/data contracts (frontend ↔ backend)
