@@ -27,6 +27,11 @@ export async function handleProfileMenu(ctx: RouterContext): Promise<boolean> {
 
   const countryCode = detectCountryIso(ctx.from)?.toUpperCase() ?? "RW";
 
+  await setState(ctx.supabase, ctx.profileId, {
+    key: "profile_menu",
+    data: { countryCode },
+  });
+
   // Fetch profile menu items dynamically from database
   const menuItems = await fetchProfileMenuItems(
     countryCode,

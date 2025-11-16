@@ -11,7 +11,7 @@ import type { SupabaseClient } from "../deps.ts";
 export interface SubmenuItem {
   key: string;
   name: string;
-  icon: string | null;
+  icon?: string | null;
   display_order: number;
   action_type: string;
   action_target: string | null;
@@ -56,55 +56,29 @@ export async function fetchSubmenuItems(
  * @returns Array of profile menu items
  */
 export async function fetchProfileMenuItems(
-  countryCode: string = 'RW',
-  language: string = 'en',
+  countryCode: string = "RW",
+  _language: string = "en",
   client?: SupabaseClient,
 ): Promise<SubmenuItem[]> {
   const db = client || supabase;
 
-  // Determine if country is in Africa by checking countries table
-  const { data: countryData } = await db
-    .from('countries')
-    .select('code')
-    .eq('code', countryCode)
-    .single();
-
-  const isAfrica = !!countryData; // If country exists in our countries table, it's Africa
-
-  // Fetch all profile menu items
-  const { data, error } = await db
-    .from('whatsapp_profile_menu_items')
-    .select('*')
-    .eq('is_active', true)
-    .order('display_order');
+  const { data, error } = await db.rpc("get_profile_menu_items", {
+    user_country_code: countryCode,
+  });
 
   if (error) {
-    console.error('Failed to fetch profile menu items:', error);
+    console.error("Failed to fetch profile menu items:", error);
     return [];
   }
 
-  // Filter by region restrictions
-  const filtered = (data || []).filter((item: any) => {
-    if (!item.region_restrictions || item.region_restrictions.length === 0) {
-      return true; // No restriction = show everywhere
-    }
-    
-    if (item.region_restrictions.includes('africa')) {
-      return isAfrica; // Only show in African countries
-    }
-    
-    return true;
-  });
-
-  // Map to SubmenuItem format
-  return filtered.map((item: any) => ({
+  return (data || []).map((item: any) => ({
     key: item.key,
-    name: item.name,
-    icon: item.icon,
-    display_order: item.display_order,
-    action_type: item.action_type || 'action',
-    action_target: item.action_target,
-    description: item.description_en || item.description || ''
+    name: item.name ?? "",
+    icon: null,
+    display_order: item.display_order ?? 0,
+    action_type: item.action_type ?? "action",
+    action_target: item.action_target ?? item.key,
+    description: item.description ?? "",
   }));
 }
 

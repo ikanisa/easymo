@@ -82,6 +82,32 @@ export async function handleButton(
     await sendDineInDisabledNotice(ctx);
     return true;
   }
+  if (id.startsWith("lang_")) {
+    const langCode = id.slice(5).toLowerCase();
+    const { data: languageRow } = await ctx.supabase
+      .from("supported_languages")
+      .select("code, name")
+      .eq("code", langCode)
+      .maybeSingle();
+
+    const resolvedCode = languageRow?.code ?? "en";
+
+    if (ctx.profileId) {
+      await ctx.supabase
+        .from("profiles")
+        .update({ preferred_language: resolvedCode })
+        .eq("id", ctx.profileId);
+    }
+
+    const displayName = languageRow?.name ?? resolvedCode.toUpperCase();
+    await sendButtonsMessage(
+      ctx,
+      `✅ Language changed to ${displayName}`,
+      homeOnly(),
+      { emoji: "🌍" },
+    );
+    return true;
+  }
   switch (id) {
     case IDS.SEE_DRIVERS:
       return await handleSeeDrivers(ctx);

@@ -42,10 +42,10 @@ export async function showManageBusinesses(
   });
 
   // Query businesses owned by this user
-  const { data: businesses, error } = await ctx.supabase
+  let { data: businesses, error } = await ctx.supabase
     .from("business")
     .select("id, name, description, category_id, location_text, is_active")
-    .eq("owner_whatsapp", ctx.from)
+    .eq("owner_user_id", ctx.profileId)
     .eq("is_active", true)
     .order("created_at", { ascending: false });
 
@@ -57,6 +57,20 @@ export async function showManageBusinesses(
       buildButtons({ id: IDS.BACK_HOME, title: t(ctx.locale, "common.home_button") }),
     );
     return true;
+  }
+
+  if (!businesses || businesses.length === 0) {
+    // Fallback for older records that only tracked owner_whatsapp
+    const fallback = await ctx.supabase
+      .from("business")
+      .select("id, name, description, category_id, location_text, is_active")
+      .eq("owner_whatsapp", ctx.from)
+      .eq("is_active", true)
+      .order("created_at", { ascending: false });
+
+    if (!fallback.error && fallback.data) {
+      businesses = fallback.data;
+    }
   }
 
   if (!businesses || businesses.length === 0) {
@@ -122,7 +136,9 @@ export async function showBusinessDetail(
     .from("business")
     .select("id, name, description, location_text, is_active, owner_whatsapp")
     .eq("id", businessId)
-    .eq("owner_whatsapp", ctx.from)
+    .or(
+      `owner_user_id.eq.${ctx.profileId},owner_whatsapp.eq.${ctx.from}`,
+    )
     .single();
 
   if (error || !business) {
