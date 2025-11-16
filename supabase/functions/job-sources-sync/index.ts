@@ -11,6 +11,7 @@ import { serve } from "$std/http/server.ts";
 import { createClient } from "@supabase/supabase-js";
 import OpenAI from "openai";
 import { logStructuredEvent } from "../_shared/observability.ts";
+import { requireFirstMessageContent } from "../../../packages/shared/src/openaiGuard.ts";
 import { generateEmbedding } from "../job-board-ai-agent/handlers.ts";
 
 const openai = new OpenAI({
@@ -235,7 +236,9 @@ Aim for MINIMUM 20 jobs per query. Be comprehensive and thorough.
         temperature: 0.2, // Lower temperature for accuracy
       });
 
-      const result = JSON.parse(response.choices[0].message.content || "{}");
+      const result = JSON.parse(
+        requireFirstMessageContent(response, "Job source extraction") || "{}",
+      );
       const jobs = result.jobs || [];
 
       await logStructuredEvent("DEEP_SEARCH_QUERY_RESULT", {
@@ -509,7 +512,10 @@ If this doesn't look like a real job posting, return null.`;
       max_tokens: 700, // Increased for contact fields
     });
 
-    const content = response.choices[0].message.content?.trim();
+    const content = requireFirstMessageContent(
+      response,
+      "Job board response summarization",
+    ).trim();
     if (!content || content === "null") return null;
 
     const result = JSON.parse(content);

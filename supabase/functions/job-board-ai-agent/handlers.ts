@@ -6,6 +6,10 @@ import OpenAI from "openai";
 import { SupabaseClient } from "@supabase/supabase-js";
 import { JOB_EXTRACTION_PROMPT, SEEKER_EXTRACTION_PROMPT } from "./prompts.ts";
 import { logStructuredEvent } from "../_shared/observability.ts";
+import {
+  requireEmbedding,
+  requireFirstMessageContent,
+} from "../../../packages/shared/src/openaiGuard.ts";
 
 // =====================================================
 // Helper: Generate Embeddings
@@ -19,7 +23,7 @@ export async function generateEmbedding(
     model: "text-embedding-3-small",
     input: text,
   });
-  return response.data[0].embedding;
+  return requireEmbedding(response, "Job board embedding");
 }
 
 // =====================================================
@@ -77,7 +81,9 @@ export async function handleExtractJobMetadata(
     temperature: 0.3,
   });
   
-  const extracted = JSON.parse(response.choices[0].message.content || "{}");
+  const extracted = JSON.parse(
+    requireFirstMessageContent(response, "Job metadata extraction") || "{}"
+  );
   
   return {
     success: true,

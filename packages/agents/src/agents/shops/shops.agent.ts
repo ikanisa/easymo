@@ -24,6 +24,7 @@ import {
   Tool,
 } from '../../types/agent.types';
 import OpenAI from 'openai';
+import { requireFirstMessageContent } from '../../../../shared/src/openaiGuard';
 
 /**
  * Product search parameters
@@ -405,7 +406,8 @@ export class ShopsAgent extends BaseAgent {
         max_tokens: 300,
       });
 
-      const content = response.choices[0].message.content || '{}';
+      const content =
+        requireFirstMessageContent(response, 'Shop product parsing') || '{}';
       
       // Extract JSON from response
       const jsonMatch = content.match(/\{[\s\S]*\}/);
