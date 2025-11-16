@@ -8,7 +8,6 @@ export async function claimEvent(id: string): Promise<boolean> {
       {
         onConflict: "wa_message_id",
         ignoreDuplicates: true,
-        returning: "representation",
       },
     )
     .select("wa_message_id");

@@ -71,11 +71,11 @@ export const GET = createHandler(
     }
 
     const { data, error } = await admin.rpc("search_nearby_vendors", {
-      p_latitude: params.lat ?? DEFAULT_LAT,
-      p_longitude: params.lng ?? DEFAULT_LNG,
+      p_latitude: lat ?? DEFAULT_LAT,
+      p_longitude: lng ?? DEFAULT_LNG,
       p_vendor_type: "quincaillerie",
-      p_radius_km: params.radiusKm ?? 10,
-      p_limit: params.limit ?? 20,
+      p_radius_km: radiusKm ?? 10,
+      p_limit: limit ?? 20,
     });
 
     if (error) {

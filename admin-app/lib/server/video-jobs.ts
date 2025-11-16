@@ -135,14 +135,14 @@ export async function loadVideoJobDetail(jobId: string): Promise<VideoJobDetail 
     }
   }
 
-  const script = data.script as
-    | {
-      locale: string | null;
-      synopsis: string | null;
-      template?: { slug?: string | null; title?: string | null } | null;
-    }
-    | null
-    | undefined;
+  const rawScript = Array.isArray(data.script) ? data.script[0] : data.script;
+  const script = rawScript && typeof rawScript === "object" && !Array.isArray(rawScript)
+    ? (rawScript as {
+        locale?: string | null;
+        synopsis?: string | null;
+        template?: { slug?: string | null; title?: string | null } | null;
+      })
+    : null;
 
   return {
     id: data.id as string,
@@ -159,11 +159,11 @@ export async function loadVideoJobDetail(jobId: string): Promise<VideoJobDetail 
     updatedAt: data.updated_at as string,
     script: script
       ? {
-        locale: script.locale ?? null,
-        synopsis: script.synopsis ?? null,
-        templateSlug: script.template?.slug ?? null,
-        templateTitle: script.template?.title ?? null,
-      }
+          locale: script.locale ?? null,
+          synopsis: script.synopsis ?? null,
+          templateSlug: script.template?.slug ?? null,
+          templateTitle: script.template?.title ?? null,
+        }
       : null,
   } satisfies VideoJobDetail;
 }

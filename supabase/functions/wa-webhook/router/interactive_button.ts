@@ -222,12 +222,33 @@ export async function handleButton(
       }
       return false;
     }
+    case IDS.BACK_HOME: {
+      const { sendHomeMenu } = await import("../flows/home.ts");
+      await sendHomeMenu(ctx);
+      return true;
+    }
 
     default:
       if (LOCATION_KIND_BY_ID[id]) {
         return await handleQuickSaveLocation(ctx, LOCATION_KIND_BY_ID[id]);
       }
       if (await handleMarketplaceButton(ctx, state, id)) return true;
+      
+      // Removed: bars_search_now button (now goes direct to location)
+      // Removed: pharmacy_search_now button (now goes direct to results)
+      // Removed: quincaillerie_search_now button (now goes direct to results)
+      
+      // Check for shops browse button
+      if (id === "shops_browse_tags") {
+        const { handleShopsBrowseButton } = await import(
+          "../domains/shops/services.ts"
+        );
+        return await handleShopsBrowseButton(ctx);
+      }
+      
+      // Removed: pharmacy_search_now and quincaillerie_search_now buttons
+      // These flows now go directly to showing results after location
+      
       return false;
   }
 }
@@ -235,7 +256,7 @@ export async function handleButton(
 async function sendDineInDisabledNotice(ctx: RouterContext): Promise<void> {
   await sendButtonsMessage(
     ctx,
-    "Dine-in workflows are handled outside WhatsApp. Please coordinate with your success manager.",
+    "Dine-in orders are handled separately. Please contact our team for assistance.",
     buildButtons({ id: IDS.BACK_HOME, title: "🏠 Back" }),
     { emoji: "ℹ️" },
   );

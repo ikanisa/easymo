@@ -4,6 +4,7 @@ import type { NextRequest } from 'next/server';
 import { clearSessionCookie, readSessionFromCookies } from './lib/server/session';
 
 const PUBLIC_PATHS = [
+  '/',
   '/login',
   '/favicon.ico',
   '/robots.txt',

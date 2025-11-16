@@ -61,7 +61,7 @@ export async function handleAINearbyDrivers(
       return true;
     }
 
-    await sendText(ctx.from, "🚖 Searching for drivers in our database...");
+    await sendText(ctx.from, "🚖 Looking for drivers near you...");
 
     const response = await routeToAIAgent(ctx, {
       userId: ctx.from,

@@ -6,7 +6,7 @@ import { PlusIcon } from "@heroicons/react/24/outline";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { useToast } from "@/components/ui/ToastProvider";
-import { DataTable } from "@/src/v2/components/ui/DataTable";
+import { DataTable, type DataTableColumn } from "@/src/v2/components/ui/DataTable";
 import { SearchBar } from "@/src/v2/components/ui/SearchBar";
 import { CrudDialog } from "@/src/v2/components/ui/CrudDialog";
 import {
@@ -14,8 +14,8 @@ import {
   useCreateAgent,
   useDeleteAgent,
   useUpdateAgent,
+  type Agent,
 } from "@/src/v2/lib/supabase/hooks";
-import type { AgentRow } from "@/src/v2/lib/supabase/database.types";
 
 interface AgentFormValues {
   name: string;
@@ -26,7 +26,7 @@ interface AgentFormValues {
 
 type DialogState =
   | { mode: "create"; agent: null }
-  | { mode: "edit"; agent: AgentRow }
+  | { mode: "edit"; agent: Agent }
   | null;
 
 export default function AgentsPage() {
@@ -35,7 +35,7 @@ export default function AgentsPage() {
   const createAgent = useCreateAgent();
   const updateAgent = useUpdateAgent();
   const deleteAgent = useDeleteAgent();
-  const undoBuffer = useRef<AgentRow | null>(null);
+  const undoBuffer = useRef<Agent | null>(null);
   const [dialogState, setDialogState] = useState<DialogState>(null);
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -46,14 +46,13 @@ export default function AgentsPage() {
 
     return agents.filter((agent) => {
       const normalizedTerm = searchTerm.toLowerCase();
-      return (
-        agent.name.toLowerCase().includes(normalizedTerm) ||
-        agent.phone.toLowerCase().includes(normalizedTerm)
-      );
+      const name = (agent.name ?? "").toLowerCase();
+      const phone = (agent.phone ?? "").toLowerCase();
+      return name.includes(normalizedTerm) || phone.includes(normalizedTerm);
     });
   }, [agents, searchTerm]);
 
-  const columns = [
+  const columns: DataTableColumn<Agent>[] = [
     {
       key: "name" as const,
       label: "Name",
@@ -67,7 +66,9 @@ export default function AgentsPage() {
     {
       key: "status" as const,
       label: "Status",
-      render: (value: AgentRow["status"]) => (
+      render: (_value, item) => {
+        const value = item.status ?? "inactive";
+        return (
         <span
           className={
             value === "active"
@@ -77,28 +78,29 @@ export default function AgentsPage() {
         >
           {value}
         </span>
-      ),
+      );
+      },
     },
     {
       key: "created_at" as const,
       label: "Joined",
-      render: (value: AgentRow["created_at"]) => new Date(value).toLocaleDateString(),
+      render: (_value, item) => new Date(item.created_at).toLocaleDateString(),
     },
     {
       key: "wallet_balance" as const,
       label: "Balance",
-      render: (value: AgentRow["wallet_balance"]) => `$${Number(value ?? 0).toFixed(2)}`,
+      render: (_value, item) => `$${Number(item.wallet_balance ?? 0).toFixed(2)}`,
     },
   ];
 
   const openCreateDialog = () => setDialogState({ mode: "create", agent: null });
-  const openEditDialog = (agent: AgentRow) => setDialogState({ mode: "edit", agent });
+  const openEditDialog = (agent: Agent) => setDialogState({ mode: "edit", agent });
   const closeDialog = () => setDialogState(null);
 
   const initialValues: AgentFormValues = dialogState?.mode === "edit" && dialogState.agent
     ? {
-        name: dialogState.agent.name,
-        phone: dialogState.agent.phone,
+        name: dialogState.agent.name ?? "",
+        phone: dialogState.agent.phone ?? "",
         status: dialogState.agent.status ?? "active",
         wallet_balance: Number(dialogState.agent.wallet_balance ?? 0),
       }
@@ -152,10 +154,10 @@ export default function AgentsPage() {
           try {
             await createAgent.mutateAsync({
               id: payload.id,
-              name: payload.name,
-              phone: payload.phone,
-              status: payload.status,
-              wallet_balance: payload.wallet_balance,
+              name: payload.name ?? "",
+              phone: payload.phone ?? "",
+              status: payload.status ?? "active",
+              wallet_balance: Number(payload.wallet_balance ?? 0),
             });
             pushToast("Restored agent.", "success");
           } catch (error) {

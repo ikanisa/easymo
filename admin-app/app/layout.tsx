@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import type { ReactNode } from "react";
 import "../styles/design-tokens.css";
 import "../styles/theme.css";
 import "../styles/typography.css";
@@ -22,15 +23,15 @@ export const viewport: Viewport = {
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   const uiV2Enabled = (process.env.NEXT_PUBLIC_UI_V2_ENABLED ?? "false")
     .toLowerCase()
     .trim() === "true";
   const uiKitEnabled = uiV2Enabled || isUiKitEnabled();
   return (
-    <html lang="en" className="app-html">
-      <body className="app-body" data-ui-theme={uiKitEnabled ? "v2" : undefined}>
+    <html lang="en" className="app-html" suppressHydrationWarning>
+      <body className="app-body" data-ui-theme={uiKitEnabled ? "v2" : undefined} suppressHydrationWarning>
         <QueryProvider>
           <a className="skip-link" href="#main-content">
             Skip to main content

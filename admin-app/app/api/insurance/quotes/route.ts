@@ -90,7 +90,10 @@ export async function GET(request: NextRequest) {
       )
       .order("created_at", { ascending: false })
       .range(offset, offset + limit - 1);
-    data = fallback.data;
+    data = (fallback.data ?? []).map((row) => ({
+      ...row,
+      intent_id: (row as { intent_id?: unknown }).intent_id ?? null,
+    }));
     error = fallback.error;
     count = fallback.count;
   }

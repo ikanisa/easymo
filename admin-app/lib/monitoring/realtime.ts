@@ -5,9 +5,8 @@ import type {
 
 type FetchLike = typeof fetch;
 
-export interface ChannelMonitorOptions<TRecord = Record<string, unknown>> {
+export interface ChannelMonitorOptions<TRecord extends Record<string, unknown> = Record<string, unknown>> {
   channel: string;
-  event?: "postgres_changes";
   schema?: string;
   table?: string;
   filter?: string;
@@ -33,7 +32,7 @@ function resolveFetch(customFetch?: FetchLike | null): FetchLike | null {
 }
 
 function computeLatency(payload: RealtimePostgresChangesPayload<any>): number | null {
-  const timestamp = payload.commit_timestamp ?? payload.timestamp;
+  const timestamp = payload.commit_timestamp;
   if (!timestamp) return null;
   const commitTime = new Date(timestamp).getTime();
   if (Number.isNaN(commitTime)) return null;
@@ -66,7 +65,7 @@ function maybeNotifySla(
   }).catch(() => undefined);
 }
 
-export function subscribeWithMonitoring<TRecord = Record<string, unknown>>(
+export function subscribeWithMonitoring<TRecord extends Record<string, unknown> = Record<string, unknown>>(
   client: SupabaseRealtimeClient | null,
   options: ChannelMonitorOptions<TRecord>,
 ): RealtimeChannel | null {
@@ -74,7 +73,6 @@ export function subscribeWithMonitoring<TRecord = Record<string, unknown>>(
 
   const fetcher = resolveFetch(options.monitorFetch ?? null);
   const channel = client.channel(options.channel);
-  const event = options.event ?? "postgres_changes";
   const schema = options.schema ?? "public";
 
   const handler = (payload: RealtimePostgresChangesPayload<TRecord>) => {
@@ -83,7 +81,7 @@ export function subscribeWithMonitoring<TRecord = Record<string, unknown>>(
 
     maybeNotifyRealtime(fetcher, {
       channel: options.channel,
-      event,
+      event: "postgres_changes",
       table: options.table,
       status: "message",
       latencyMs: typeof latencyMs === "number" ? latencyMs : undefined,
@@ -118,7 +116,7 @@ export function subscribeWithMonitoring<TRecord = Record<string, unknown>>(
     options.onEvent(payload);
   };
 
-  channel.on(event, {
+  channel.on("postgres_changes", {
     event: "*",
     schema,
     table: options.table,
@@ -127,7 +125,7 @@ export function subscribeWithMonitoring<TRecord = Record<string, unknown>>(
 
   maybeNotifyRealtime(fetcher, {
     channel: options.channel,
-    event,
+    event: "postgres_changes",
     status: "subscribing",
     table: options.table,
     requestedAt: new Date().toISOString(),
@@ -137,7 +135,7 @@ export function subscribeWithMonitoring<TRecord = Record<string, unknown>>(
     options.onStatusChange?.(status);
     maybeNotifyRealtime(fetcher, {
       channel: options.channel,
-      event,
+      event: "postgres_changes",
       status,
       table: options.table,
       receivedAt: new Date().toISOString(),
@@ -148,7 +146,7 @@ export function subscribeWithMonitoring<TRecord = Record<string, unknown>>(
   channel.unsubscribe = () => {
     maybeNotifyRealtime(fetcher, {
       channel: options.channel,
-      event,
+      event: "postgres_changes",
       status: "unsubscribed",
       table: options.table,
       receivedAt: new Date().toISOString(),

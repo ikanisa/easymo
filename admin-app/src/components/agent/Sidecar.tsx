@@ -34,6 +34,7 @@ import {
   MapCard,
 } from "@/components/atlas";
 import Link from "next/link";
+import { toLinkHref } from "@/lib/link-helpers";
 
 export type AgentSidecarTab =
   | "overview"
@@ -330,7 +331,7 @@ export function AgentSidecar() {
               action.href ? (
                 <Link
                   key={action.id}
-                  href={action.href}
+                  href={toLinkHref(action.href)}
                   className="rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600 transition hover:border-blue-300 hover:text-blue-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:border-slate-700 dark:text-slate-300 dark:hover:border-blue-500 dark:hover:text-blue-200 dark:focus-visible:ring-offset-slate-900"
                 >
                   {action.label}
@@ -639,4 +640,3 @@ export function useAgentSidecarDataset(pathname?: string): AgentSidecarDataset {
     return baseDataset;
   }, [currentPath]);
 }
-

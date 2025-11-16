@@ -12,13 +12,13 @@ export type TripRow = Record<string, unknown>;
 export async function listTrips(params: { search?: string } & Pagination = {}): Promise<PaginatedResult<TripRow>> {
   if (!isServer) {
     // Client → call our API
-    return apiClient.fetch("trips", {
-      query: {
-        search: params.search,
-        offset: params.offset,
-        limit: params.limit,
-      },
-    });
+    const search = new URLSearchParams();
+    if (params.search) search.set("search", params.search);
+    if (typeof params.offset === "number") search.set("offset", String(params.offset));
+    if (typeof params.limit === "number") search.set("limit", String(params.limit));
+
+    const query = search.toString();
+    return apiClient.fetch<PaginatedResult<TripRow>>(`trips${query ? `?${query}` : ""}`);
   }
 
   if (useMocks) {

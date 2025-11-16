@@ -73,7 +73,16 @@ export async function sendHomeMenu(
     });
   }
 
-  const visibleRows = [...pageRows, ...extras];
+  // Ensure unique row IDs by checking for duplicates
+  const seenIds = new Set<string>();
+  const uniqueRows: MenuRow[] = [];
+  
+  for (const row of [...pageRows, ...extras]) {
+    if (!seenIds.has(row.id)) {
+      seenIds.add(row.id);
+      uniqueRows.push(row);
+    }
+  }
 
   if (ctx.profileId) {
     await setState(ctx.supabase, ctx.profileId, {
@@ -81,6 +90,8 @@ export async function sendHomeMenu(
       data: { page: safePage } satisfies HomeState,
     });
   }
+  
+  const visibleRows = uniqueRows;
 
   const greeting = t(ctx.locale, "home.menu.greeting", {
     phone: maskPhone(ctx.from),

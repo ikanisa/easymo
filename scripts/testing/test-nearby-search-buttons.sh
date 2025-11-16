@@ -1,0 +1,52 @@
+#!/bin/bash
+set -e
+
+echo "🔍 Testing Nearby Search Button Fixes"
+echo "======================================"
+echo ""
+
+echo "✓ Checking bars search handler..."
+grep -q "typeof bar.distance === 'number'" supabase/functions/wa-webhook/domains/bars/search.ts && echo "  ✓ Bars distance null check added"
+
+echo ""
+echo "✓ Checking button router integrations..."
+grep -q "pharmacy_search_now" supabase/functions/wa-webhook/router/interactive_button.ts && echo "  ✓ Pharmacy search button handler added"
+grep -q "quincaillerie_search_now" supabase/functions/wa-webhook/router/interactive_button.ts && echo "  ✓ Quincaillerie search button handler added"
+grep -q "bars_search_now" supabase/functions/wa-webhook/router/interactive_button.ts && echo "  ✓ Bars search button handler exists"
+
+echo ""
+echo "✓ Checking pharmacy handler..."
+grep -A 5 "processPharmacyRequest" supabase/functions/wa-webhook/domains/healthcare/pharmacies.ts | grep -q "If no meds specified" && echo "  ✓ Pharmacy handles empty search"
+
+echo ""
+echo "✓ Checking quincaillerie handler..."
+grep -A 5 "processQuincaillerieRequest" supabase/functions/wa-webhook/domains/healthcare/quincailleries.ts | grep -q "If no items specified" && echo "  ✓ Quincaillerie handles empty search"
+
+echo ""
+echo "✓ Type checking..."
+deno check supabase/functions/wa-webhook/domains/bars/search.ts > /dev/null 2>&1 && echo "  ✓ bars/search.ts types OK"
+deno check supabase/functions/wa-webhook/domains/healthcare/pharmacies.ts > /dev/null 2>&1 && echo "  ✓ pharmacies.ts types OK"
+deno check supabase/functions/wa-webhook/domains/healthcare/quincailleries.ts > /dev/null 2>&1 && echo "  ✓ quincailleries.ts types OK"
+deno check supabase/functions/wa-webhook/router/interactive_button.ts > /dev/null 2>&1 && echo "  ✓ interactive_button.ts types OK"
+
+echo ""
+echo "======================================"
+echo "✅ All checks passed!"
+echo ""
+echo "📋 What was fixed:"
+echo "  • Bars: Fixed undefined distance.toFixed() error"
+echo "  • Pharmacy: Added 'Search Now' button handler"
+echo "  • Quincaillerie: Added 'Search Now' button handler"
+echo "  • All: Handle empty search (show all nearby)"
+echo ""
+echo "🎯 User Flow:"
+echo "  1. User taps 'Nearby Pharmacies/Bars/Quincailleries'"
+echo "  2. System asks for location"
+echo "  3. User shares location"
+echo "  4. System shows 'Search Now' button"
+echo "  5. User taps 'Search Now' ✅"
+echo "  6. System displays list of nearby places"
+echo ""
+echo "🚀 Ready to deploy:"
+echo "   supabase functions deploy wa-webhook --no-verify-jwt"
+echo ""

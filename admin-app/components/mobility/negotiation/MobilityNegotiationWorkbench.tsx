@@ -92,8 +92,16 @@ function extractLocation(data: GenericRecord | undefined, prefixes: string[]): M
   for (const prefix of prefixes) {
     const base = getNestedValue(data, [prefix]) as GenericRecord | undefined;
     if (base && typeof base === "object") {
-      const lat = toNumber(base.lat ?? base.latitude ?? base.latlng?.[0] ?? base.coordinates?.[0]);
-      const lng = toNumber(base.lng ?? base.longitude ?? base.latlng?.[1] ?? base.coordinates?.[1]);
+      const latLngValue = base.latlng;
+      const coordinatesValue = base.coordinates;
+      const latLngArray = Array.isArray(latLngValue) ? latLngValue : undefined;
+      const coordinatesArray = Array.isArray(coordinatesValue) ? coordinatesValue : undefined;
+      const lat = toNumber(
+        base.lat ?? base.latitude ?? latLngArray?.[0] ?? coordinatesArray?.[0],
+      );
+      const lng = toNumber(
+        base.lng ?? base.longitude ?? latLngArray?.[1] ?? coordinatesArray?.[1],
+      );
       if (lat != null && lng != null) {
         const label = toStringValue(base.label ?? base.address ?? base.display ?? base.name);
         return { lat, lng, label };
@@ -132,7 +140,8 @@ function extractVehicleType(data: GenericRecord | undefined): string | null {
   );
 }
 
-function extractRideId(session: AgentSession): string | null {
+function extractRideId(session?: AgentSession | null): string | null {
+  if (!session) return null;
   return (
     toStringValue(session.metadata?.ride_id) ??
     toStringValue(session.request_data?.ride_id) ??
@@ -540,14 +549,14 @@ export function MobilityNegotiationWorkbench({
           <p className="mt-2 max-w-3xl text-sm text-slate-600 dark:text-slate-300">{headerDescription}</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button variant="outline" size="sm" onClick={handleExtend} disabled={extendMutation.isLoading}>
-            {extendMutation.isLoading ? "Extending…" : "Extend SLA (E)"}
+          <Button variant="outline" size="sm" onClick={handleExtend} disabled={extendMutation.isPending}>
+            {extendMutation.isPending ? "Extending…" : "Extend SLA (E)"}
           </Button>
-          <Button variant="outline" size="sm" onClick={openManualModal} disabled={manualMessageMutation.isLoading}>
+          <Button variant="outline" size="sm" onClick={openManualModal} disabled={manualMessageMutation.isPending}>
             Manual message (M)
           </Button>
-          <Button size="sm" onClick={handleApprove} disabled={approveMutation.isLoading || !selectedCandidateId}>
-            {approveMutation.isLoading ? "Approving…" : "Approve and book (A)"}
+          <Button size="sm" onClick={handleApprove} disabled={approveMutation.isPending || !selectedCandidateId}>
+            {approveMutation.isPending ? "Approving…" : "Approve and book (A)"}
           </Button>
         </div>
       </div>
@@ -613,7 +622,7 @@ export function MobilityNegotiationWorkbench({
                   {passengerName ?? "Unknown passenger"} · {passengerPhone ?? "No phone"}
                 </p>
               </div>
-              <Button asChild variant="link" size="sm" className="px-0">
+              <Button asChild variant="ghost" size="sm" className="px-0 text-[color:var(--color-accent)] underline-offset-4 hover:underline">
                 <Link href="/agents/conversations">Open conversation history</Link>
               </Button>
             </div>
@@ -625,7 +634,7 @@ export function MobilityNegotiationWorkbench({
         isOpen={manualModalOpen}
         onClose={closeManualModal}
         onSubmit={handleManualSubmit}
-        isSubmitting={manualMessageMutation.isLoading}
+        isSubmitting={manualMessageMutation.isPending}
         defaultMessage={defaultManual}
         recipients={manualRecipients}
       />

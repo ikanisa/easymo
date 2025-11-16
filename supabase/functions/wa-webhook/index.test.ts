@@ -55,8 +55,12 @@ Deno.env.set("WA_BOT_NUMBER_E164", "+250700000000");
 Deno.env.set("WA_INBOUND_LOG_SAMPLE_RATE", "0");
 
 const fetchCalls: Array<{ url: string; payload: unknown }> = [];
-globalThis.fetch = async (url: string, init?: RequestInit) => {
-  const body = typeof init?.body === "string" ? JSON.parse(init!.body) : null;
+globalThis.fetch = async (
+  input: RequestInfo | URL,
+  init?: RequestInit,
+) => {
+  const url = resolveFetchUrl(input);
+  const body = await extractJsonBody(input, init);
   fetchCalls.push({ url, payload: body });
   return new Response(JSON.stringify({ messages: [{ id: "wamid.SAMPLE" }] }), {
     status: 200,
@@ -78,6 +82,11 @@ function reset() {
   chatState.clear();
   fetchCalls.length = 0;
 }
+
+const test = (
+  name: string,
+  fn: () => Promise<void> | void,
+) => Deno.test({ name, sanitizeOps: false, sanitizeResources: false, fn });
 
 function createWaEventsQuery() {
   return {
@@ -241,7 +250,7 @@ function assertEquals(actual: unknown, expected: unknown, message?: string) {
   }
 }
 
-Deno.test("rejects POST with invalid signature", async () => {
+test("rejects POST with invalid signature", async () => {
   reset();
   const handler = getHandler();
   const body = JSON.stringify({});
@@ -256,7 +265,7 @@ Deno.test("rejects POST with invalid signature", async () => {
   assertEquals(waEvents.size, 0);
 });
 
-Deno.test("processes STOP command and records contact opt-out", async () => {
+test("processes STOP command and records contact opt-out", async () => {
   reset();
   const handler = getHandler();
   const payload = {
@@ -304,7 +313,7 @@ Deno.test("processes STOP command and records contact opt-out", async () => {
   assertEquals(waEvents.has("wamid.stop.1"), true);
 });
 
-Deno.test("releases idempotency lock on handler error", async () => {
+test("releases idempotency lock on handler error", async () => {
   reset();
   const handler = getHandler();
   // Force handleMessage to throw by clearing fetch to throw after claim
@@ -336,7 +345,11 @@ Deno.test("releases idempotency lock on handler error", async () => {
   // Cause sendText to fail by making fetch return 500 once
   let failNext = true;
   fetchCalls.length = 0;
-  globalThis.fetch = async (url: string, init?: RequestInit) => {
+  globalThis.fetch = async (
+    input: RequestInfo | URL,
+    init?: RequestInit,
+  ) => {
+    const url = resolveFetchUrl(input);
     if (failNext) {
       failNext = false;
       return new Response(JSON.stringify({ error: "fail" }), {
@@ -344,9 +357,7 @@ Deno.test("releases idempotency lock on handler error", async () => {
         headers: { "content-type": "application/json" },
       });
     }
-    const bodyJson = typeof init?.body === "string"
-      ? JSON.parse(init.body as string)
-      : null;
+    const bodyJson = await extractJsonBody(input, init);
     fetchCalls.push({ url, payload: bodyJson });
     return new Response(
       JSON.stringify({ messages: [{ id: "wamid.SAMPLE" }] }),
@@ -372,10 +383,12 @@ Deno.test("releases idempotency lock on handler error", async () => {
   assert(response.headers.get("X-Correlation-ID"));
   assertEquals(waEvents.has("wamid.fail.1"), false);
   // restore fetch
-  globalThis.fetch = async (url: string, init?: RequestInit) => {
-    const bodyJson = typeof init?.body === "string"
-      ? JSON.parse(init.body as string)
-      : null;
+  globalThis.fetch = async (
+    input: RequestInfo | URL,
+    init?: RequestInit,
+  ) => {
+    const url = resolveFetchUrl(input);
+    const bodyJson = await extractJsonBody(input, init);
     fetchCalls.push({ url, payload: bodyJson });
     return new Response(
       JSON.stringify({ messages: [{ id: "wamid.SAMPLE" }] }),
@@ -386,3 +399,34 @@ Deno.test("releases idempotency lock on handler error", async () => {
     );
   };
 });
+
+function resolveFetchUrl(input: RequestInfo | URL): string {
+  if (typeof input === "string") return input;
+  if (input instanceof URL) return input.toString();
+  return input.url;
+}
+
+async function extractJsonBody(
+  input: RequestInfo | URL,
+  init?: RequestInit,
+): Promise<unknown> {
+  if (typeof init?.body === "string") {
+    try {
+      return JSON.parse(init.body);
+    } catch {
+      return null;
+    }
+  }
+  if (input instanceof Request) {
+    const clone = input.clone();
+    const text = await clone.text();
+    if (text && text.length) {
+      try {
+        return JSON.parse(text);
+      } catch {
+        return null;
+      }
+    }
+  }
+  return null;
+}

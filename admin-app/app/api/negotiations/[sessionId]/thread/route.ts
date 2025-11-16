@@ -12,7 +12,7 @@ const paramsSchema = z.object({
 
 export async function GET(
   _request: Request,
-  context: { params: { sessionId: string } },
+  context: { params: Promise<{ sessionId: string }> },
 ) {
   const parsed = paramsSchema.safeParse(context.params);
   if (!parsed.success) {

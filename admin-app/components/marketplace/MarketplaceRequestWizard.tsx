@@ -91,7 +91,7 @@ export function MarketplaceRequestWizard({
       pushToast({
         title: "Unable to start request",
         description: error instanceof Error ? error.message : "Unexpected error",
-        variant: "destructive",
+        variant: "error",
       });
     },
   });
@@ -213,7 +213,7 @@ export function MarketplaceRequestWizard({
         <Button
           type="button"
           variant="ghost"
-          disabled={stepIndex === 0 || mutation.isLoading}
+          disabled={stepIndex === 0 || mutation.isPending}
           onClick={() => setStepIndex((index) => Math.max(0, index - 1))}
         >
           Back
@@ -227,9 +227,9 @@ export function MarketplaceRequestWizard({
               setStepIndex((index) => Math.min(STEPS.length - 1, index + 1));
             }
           }}
-          disabled={!canAdvance || mutation.isLoading}
+          disabled={!canAdvance || mutation.isPending}
         >
-          {mutation.isLoading ? "Dispatching…" : currentStep === "Review" ? "Start sourcing" : "Next"}
+          {mutation.isPending ? "Dispatching…" : currentStep === "Review" ? "Start sourcing" : "Next"}
         </Button>
       </div>
     </div>

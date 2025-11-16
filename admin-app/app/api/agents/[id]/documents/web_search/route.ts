@@ -27,10 +27,10 @@ async function searchSerpApi(query: string, topN: number, apiKey: string) {
   return results.map((i: any) => ({ title: i?.title, url: i?.link })).slice(0, topN);
 }
 
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const admin = getSupabaseAdminClient();
   if (!admin) return NextResponse.json({ error: "supabase_unavailable" }, { status: 503 });
-  const { id } = params;
+  const { id } = await params;
   let body: any; try { body = await req.json(); } catch { return NextResponse.json({ error: 'invalid_json' }, { status: 400 }); }
   const query = String(body?.query || '').trim();
   const topN = Math.max(1, Math.min(Number(body?.top_n ?? 5), 50));

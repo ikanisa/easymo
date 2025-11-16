@@ -5,17 +5,20 @@
 ## 1. Observability
 
 ### Structured Logging
-All services, edge functions, and APIs MUST use structured logging in JSON format with correlation IDs.
+
+All services, edge functions, and APIs MUST use structured logging in JSON format with correlation
+IDs.
 
 #### Supabase Edge Functions
+
 ```typescript
 import { logStructuredEvent } from "../_shared/observability.ts";
 
 // Log significant events
-await logStructuredEvent("USER_CREATED", { 
-  userId, 
+await logStructuredEvent("USER_CREATED", {
+  userId,
   method: "whatsapp",
-  correlationId: req.headers.get("x-correlation-id") 
+  correlationId: req.headers.get("x-correlation-id"),
 });
 
 // Log errors with context
@@ -23,34 +26,42 @@ await logStructuredEvent("ERROR", {
   error: err.message,
   stack: err.stack,
   context: { userId, action: "transfer" },
-  correlationId
+  correlationId,
 });
 ```
 
 #### Node.js Services
+
 ```typescript
 import { childLogger } from "@easymo/commons";
 
 const log = childLogger({ service: "wallet-service" });
 
 // Log significant events
-log.info({ 
-  event: "PAYMENT_PROCESSED", 
-  txId, 
-  amount,
-  correlationId 
-}, "Payment OK");
+log.info(
+  {
+    event: "PAYMENT_PROCESSED",
+    txId,
+    amount,
+    correlationId,
+  },
+  "Payment OK"
+);
 
 // Log errors with context
-log.error({ 
-  event: "PAYMENT_FAILED",
-  error: err.message,
-  txId,
-  correlationId
-}, "Payment processing failed");
+log.error(
+  {
+    event: "PAYMENT_FAILED",
+    error: err.message,
+    txId,
+    correlationId,
+  },
+  "Payment processing failed"
+);
 ```
 
 ### Event Counters and Metrics
+
 Record metrics for all significant actions:
 
 ```typescript
@@ -67,6 +78,7 @@ metrics.histogram("wallet.transfer.duration", durationMs);
 ```
 
 ### Correlation IDs
+
 Every request MUST have a correlation ID for distributed tracing:
 
 ```typescript
@@ -75,7 +87,7 @@ const correlationId = req.headers.get("x-correlation-id") || crypto.randomUUID()
 
 // Pass to all downstream calls
 const response = await fetch(url, {
-  headers: { "x-correlation-id": correlationId }
+  headers: { "x-correlation-id": correlationId },
 });
 
 // Include in all logs
@@ -83,6 +95,7 @@ log.info({ correlationId, event: "PROCESSING" }, "Started");
 ```
 
 ### PII Masking
+
 Personal Identifiable Information MUST be masked in logs:
 
 ```typescript
@@ -103,6 +116,7 @@ function maskEmail(email: string): string {
 ## 2. Security
 
 ### Secret Management
+
 - **NEVER** expose server secrets in client-side environment variables
 - Use `VITE_*` or `NEXT_PUBLIC_*` prefix ONLY for public values
 - Service role keys, admin tokens, and API secrets MUST stay server-side
@@ -120,9 +134,11 @@ VITE_ADMIN_TOKEN=secret123  # NEVER DO THIS
 The prebuild script (`scripts/assert-no-service-role-in-client.mjs`) enforces this rule.
 
 ### Webhook Signature Verification
+
 ALL webhook endpoints MUST verify signatures:
 
 #### WhatsApp Webhooks
+
 ```typescript
 import { verifySignature } from "../wa/verify.ts";
 
@@ -133,6 +149,7 @@ if (!isValid) {
 ```
 
 #### Twilio Webhooks
+
 ```typescript
 import crypto from "crypto";
 
@@ -145,20 +162,18 @@ function verifyTwilioSignature(
   const data = Object.keys(params)
     .sort()
     .reduce((acc, key) => acc + key + params[key], url);
-  
+
   const expectedSignature = crypto
     .createHmac("sha1", authToken)
     .update(Buffer.from(data, "utf-8"))
     .digest("base64");
-  
-  return crypto.timingSafeEqual(
-    Buffer.from(signature),
-    Buffer.from(expectedSignature)
-  );
+
+  return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSignature));
 }
 ```
 
 ### Rate Limiting
+
 Public endpoints MUST implement rate limiting:
 
 ```typescript
@@ -170,7 +185,7 @@ const limiter = rateLimit({
   max: 100, // limit each IP to 100 requests per windowMs
   standardHeaders: true,
   legacyHeaders: false,
-  message: "Too many requests from this IP"
+  message: "Too many requests from this IP",
 });
 
 app.use("/api/", limiter);
@@ -185,12 +200,12 @@ async function rateLimit(key: string, limit: number, windowSec: number): Promise
     url: Deno.env.get("UPSTASH_REDIS_URL")!,
     token: Deno.env.get("UPSTASH_REDIS_TOKEN")!,
   });
-  
+
   const current = await redis.incr(key);
   if (current === 1) {
     await redis.expire(key, windowSec);
   }
-  
+
   return current <= limit;
 }
 
@@ -202,14 +217,12 @@ if (!allowed) {
 ```
 
 ### SQL Injection Prevention
+
 Always use parameterized queries:
 
 ```typescript
 // ✅ CORRECT - Parameterized query
-const { data } = await supabase
-  .from("users")
-  .select("*")
-  .eq("id", userId);
+const { data } = await supabase.from("users").select("*").eq("id", userId);
 
 // ✅ CORRECT - Prisma (automatically parameterized)
 const user = await prisma.user.findUnique({ where: { id: userId } });
@@ -219,6 +232,7 @@ const query = `SELECT * FROM users WHERE id = '${userId}'`;
 ```
 
 ### API Key Rotation
+
 Document and implement API key rotation procedures:
 
 1. Generate new key
@@ -231,6 +245,7 @@ Document and implement API key rotation procedures:
 All new features MUST be gated behind feature flags that default to OFF in production.
 
 ### Implementation
+
 ```typescript
 // Environment variable
 const enableMarketplace = process.env.FEATURE_MARKETPLACE === "true";
@@ -247,6 +262,7 @@ if (isFeatureEnabled("wallet.service")) {
 ```
 
 ### Configuration
+
 ```bash
 # .env.example
 # Feature flags (default: false in production)
@@ -257,6 +273,7 @@ FEATURE_AI_AGENTS=false
 ```
 
 ### Testing
+
 Test both enabled and disabled states:
 
 ```typescript
@@ -265,7 +282,7 @@ describe("Wallet Transfer", () => {
     process.env.FEATURE_WALLET_SERVICE = "true";
     // Test enabled behavior
   });
-  
+
   it("should reject when feature disabled", async () => {
     process.env.FEATURE_WALLET_SERVICE = "false";
     // Test disabled behavior
@@ -276,6 +293,7 @@ describe("Wallet Transfer", () => {
 ## 4. Error Handling
 
 ### Fail Fast
+
 Validate configuration at startup:
 
 ```typescript
@@ -289,6 +307,7 @@ for (const key of required) {
 ```
 
 ### Graceful Degradation
+
 Handle external service failures gracefully:
 
 ```typescript
@@ -303,6 +322,7 @@ try {
 ```
 
 ### Circuit Breaker
+
 Implement circuit breakers for external services:
 
 ```typescript
@@ -350,6 +370,7 @@ await redis.setex(
 ## 6. Data Integrity
 
 ### Foreign Key Constraints
+
 All relationships MUST have foreign key constraints:
 
 ```sql
@@ -360,24 +381,26 @@ ALTER TABLE transactions
 ```
 
 ### Database Transactions
+
 Use transactions for multi-table operations:
 
 ```typescript
 await prisma.$transaction(async (tx) => {
   await tx.walletEntry.create({ data: debitEntry });
   await tx.walletEntry.create({ data: creditEntry });
-  await tx.walletAccount.update({ 
+  await tx.walletAccount.update({
     where: { id: sourceId },
-    data: { balance: { decrement: amount } }
+    data: { balance: { decrement: amount } },
   });
   await tx.walletAccount.update({
     where: { id: destId },
-    data: { balance: { increment: amount } }
+    data: { balance: { increment: amount } },
   });
 });
 ```
 
 ### Audit Trails
+
 Financial tables MUST have audit triggers:
 
 ```sql
@@ -410,11 +433,12 @@ $$ LANGUAGE plpgsql;
 ## 7. Performance
 
 ### Database Indexes
+
 High-traffic queries MUST have appropriate indexes:
 
 ```sql
 -- Frequently queried columns
-CREATE INDEX idx_transactions_user_created 
+CREATE INDEX idx_transactions_user_created
   ON transactions(user_id, created_at DESC);
 
 -- Composite indexes for complex queries
@@ -427,6 +451,7 @@ CREATE INDEX idx_agents_location_geohash
 ```
 
 ### Query Optimization
+
 Monitor and optimize slow queries:
 
 ```typescript
@@ -436,15 +461,19 @@ const result = await query();
 const duration = Date.now() - start;
 
 if (duration > 1000) {
-  log.warn({ 
-    duration, 
-    query: "fetch_user_transactions",
-    userId 
-  }, "Slow query detected");
+  log.warn(
+    {
+      duration,
+      query: "fetch_user_transactions",
+      userId,
+    },
+    "Slow query detected"
+  );
 }
 ```
 
 ### Caching
+
 Implement caching for frequently accessed data:
 
 ```typescript
@@ -452,14 +481,14 @@ Implement caching for frequently accessed data:
 async function getUser(userId: string) {
   const cacheKey = `user:${userId}`;
   const cached = await redis.get(cacheKey);
-  
+
   if (cached) {
     return JSON.parse(cached);
   }
-  
+
   const user = await db.user.findUnique({ where: { id: userId } });
   await redis.setex(cacheKey, 300, JSON.stringify(user)); // 5 min TTL
-  
+
   return user;
 }
 ```
@@ -467,6 +496,7 @@ async function getUser(userId: string) {
 ## 8. Testing
 
 ### Test Coverage
+
 Aim for 80%+ test coverage for critical paths:
 
 ```typescript
@@ -477,20 +507,20 @@ describe("Wallet Transfer", () => {
       sourceAccountId,
       destinationAccountId,
       amount: 100,
-      currency: "USD"
+      currency: "USD",
     });
-    
+
     expect(result.transaction).toBeDefined();
     expect(result.entries).toHaveLength(2);
   });
-  
+
   it("should prevent overdraft", async () => {
     await expect(
       walletService.transfer({
         sourceAccountId,
         destinationAccountId,
         amount: 999999,
-        currency: "USD"
+        currency: "USD",
       })
     ).rejects.toThrow("Insufficient funds");
   });
@@ -498,17 +528,18 @@ describe("Wallet Transfer", () => {
 ```
 
 ### Integration Tests
+
 Test external integrations with mocks:
 
 ```typescript
 // Mock external API
 jest.mock("../external-api", () => ({
-  sendMessage: jest.fn().mockResolvedValue({ messageId: "123" })
+  sendMessage: jest.fn().mockResolvedValue({ messageId: "123" }),
 }));
 
 it("should handle API failures gracefully", async () => {
   externalApi.sendMessage.mockRejectedValue(new Error("API Error"));
-  
+
   const result = await service.sendNotification();
   expect(result.error).toBe("Service temporarily unavailable");
 });
@@ -517,6 +548,7 @@ it("should handle API failures gracefully", async () => {
 ## 9. Deployment
 
 ### Environment Validation
+
 Validate environment before deployment:
 
 ```bash
@@ -540,7 +572,9 @@ done
 ```
 
 ### Database Migrations
+
 Migrations MUST:
+
 - Be reversible (provide DOWN migration)
 - Be wrapped in BEGIN/COMMIT
 - Be tested in staging first
@@ -559,6 +593,7 @@ COMMIT;
 ```
 
 ### Health Checks
+
 All services MUST expose health endpoints:
 
 ```typescript
@@ -568,13 +603,13 @@ app.get("/health", async (req, res) => {
     redis: await checkRedis(),
     kafka: await checkKafka(),
   };
-  
-  const healthy = Object.values(checks).every(v => v === true);
-  
+
+  const healthy = Object.values(checks).every((v) => v === true);
+
   res.status(healthy ? 200 : 503).json({
     status: healthy ? "healthy" : "unhealthy",
     checks,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 });
 ```
@@ -582,6 +617,7 @@ app.get("/health", async (req, res) => {
 ## Summary
 
 These ground rules ensure:
+
 - **Observability**: Structured logging and metrics for debugging
 - **Security**: Protected secrets and verified webhooks
 - **Reliability**: Feature flags and graceful degradation

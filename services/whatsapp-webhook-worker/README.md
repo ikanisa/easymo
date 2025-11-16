@@ -54,6 +54,30 @@ Health check endpoint:
 curl http://localhost:4900/health
 ```
 
+The `/health` endpoint now performs live dependency probes and returns detailed
+JSON including latency and failure reasons:
+
+```json
+{
+  "status": "ok",
+  "timestamp": "2024-01-01T00:00:00.000Z",
+  "uptime": 123.456,
+  "checks": {
+    "openai": { "status": "ok", "latencyMs": 152 },
+    "redis": { "status": "ok", "latencyMs": 8 },
+    "supabase": { "status": "ok", "latencyMs": 32 }
+  },
+  "worker": {
+    "running": true,
+    "metrics": { "processed": 42, "failed": 0, "retried": 0, "deadLettered": 0 }
+  }
+}
+```
+
+If any probe fails, the endpoint responds with HTTP `503` and includes the
+captured error message and upstream status code (if available) so monitors can
+pinpoint the root cause quickly.
+
 Metrics endpoint:
 ```bash
 curl http://localhost:4900/metrics

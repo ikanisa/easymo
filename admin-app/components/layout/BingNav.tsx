@@ -6,6 +6,7 @@ import classNames from "classnames";
 import type { Ref } from "react";
 
 import { NAV_SECTIONS } from "./nav-items";
+import { toLinkHref } from "@/lib/link-helpers";
 
 interface BingNavProps {
   mode?: "desktop" | "overlay";
@@ -64,7 +65,7 @@ export function BingNav({
                 return (
                   <Link
                     key={item.href}
-                    href={item.href as any}
+                    href={toLinkHref(item.href)}
                     className={classNames("bing-nav__item", {
                       "bing-nav__item--active": active,
                     })}

@@ -2,7 +2,8 @@
 
 ## Overview
 
-This guide covers security testing procedures for the EasyMO platform, including webhook verification, authentication, authorization, and vulnerability scanning.
+This guide covers security testing procedures for the EasyMO platform, including webhook
+verification, authentication, authorization, and vulnerability scanning.
 
 ## Table of Contents
 
@@ -21,6 +22,7 @@ This guide covers security testing procedures for the EasyMO platform, including
 ### WhatsApp Webhook Verification
 
 **Test Case 1: Valid Signature**
+
 ```bash
 #!/bin/bash
 # Test WhatsApp webhook with valid signature
@@ -42,6 +44,7 @@ curl -X POST "$WEBHOOK_URL" \
 **Expected:** 200 OK response
 
 **Test Case 2: Invalid Signature**
+
 ```bash
 curl -X POST "$WEBHOOK_URL" \
   -H "Content-Type: application/json" \
@@ -52,6 +55,7 @@ curl -X POST "$WEBHOOK_URL" \
 **Expected:** 401 Unauthorized
 
 **Test Case 3: Missing Signature**
+
 ```bash
 curl -X POST "$WEBHOOK_URL" \
   -H "Content-Type: application/json" \
@@ -63,32 +67,37 @@ curl -X POST "$WEBHOOK_URL" \
 ### Twilio Webhook Verification
 
 **Test Case: Valid Twilio Signature**
+
 ```javascript
-const crypto = require('crypto');
+const crypto = require("crypto");
 
 const authToken = process.env.TWILIO_AUTH_TOKEN;
-const url = 'https://your-domain.com/twilio/voice';
+const url = "https://your-domain.com/twilio/voice";
 const params = {
-  CallSid: 'CA1234567890ABCDE',
-  From: '+15558675310',
-  To: '+15551234567'
+  CallSid: "CA1234567890ABCDE",
+  From: "+15558675310",
+  To: "+15551234567",
 };
 
 // Build signature
-const data = url + Object.keys(params).sort().reduce((acc, key) => 
-  acc + key + params[key], '');
-const signature = crypto.createHmac('sha1', authToken)
-  .update(Buffer.from(data, 'utf-8'))
-  .digest('base64');
+const data =
+  url +
+  Object.keys(params)
+    .sort()
+    .reduce((acc, key) => acc + key + params[key], "");
+const signature = crypto
+  .createHmac("sha1", authToken)
+  .update(Buffer.from(data, "utf-8"))
+  .digest("base64");
 
 // Test
 fetch(url, {
-  method: 'POST',
+  method: "POST",
   headers: {
-    'X-Twilio-Signature': signature,
-    'Content-Type': 'application/x-www-form-urlencoded'
+    "X-Twilio-Signature": signature,
+    "Content-Type": "application/x-www-form-urlencoded",
   },
-  body: new URLSearchParams(params)
+  body: new URLSearchParams(params),
 });
 ```
 
@@ -99,6 +108,7 @@ fetch(url, {
 ### Service Token Testing
 
 **Test Case 1: Valid Service Token**
+
 ```bash
 curl -X POST http://localhost:4400/wallet/transfer \
   -H "Authorization: Bearer valid_service_token" \
@@ -109,6 +119,7 @@ curl -X POST http://localhost:4400/wallet/transfer \
 **Expected:** 201 Created (or appropriate success response)
 
 **Test Case 2: Invalid Token**
+
 ```bash
 curl -X POST http://localhost:4400/wallet/transfer \
   -H "Authorization: Bearer invalid_token" \
@@ -118,6 +129,7 @@ curl -X POST http://localhost:4400/wallet/transfer \
 **Expected:** 401 Unauthorized
 
 **Test Case 3: Missing Token**
+
 ```bash
 curl -X POST http://localhost:4400/wallet/transfer \
   -d '{"amount": 100}'
@@ -126,6 +138,7 @@ curl -X POST http://localhost:4400/wallet/transfer \
 **Expected:** 401 Unauthorized
 
 **Test Case 4: Expired Token**
+
 ```bash
 # Use a token that's expired (JWT with exp in past)
 curl -X POST http://localhost:4400/wallet/transfer \
@@ -142,6 +155,7 @@ curl -X POST http://localhost:4400/wallet/transfer \
 ### Role-Based Access Control
 
 **Test Case 1: Admin Access to Admin Endpoints**
+
 ```bash
 curl -X GET https://your-project.supabase.co/functions/v1/admin-users \
   -H "x-api-key: $ADMIN_TOKEN"
@@ -150,6 +164,7 @@ curl -X GET https://your-project.supabase.co/functions/v1/admin-users \
 **Expected:** 200 OK
 
 **Test Case 2: Regular User Access to Admin Endpoints**
+
 ```bash
 curl -X GET https://your-project.supabase.co/functions/v1/admin-users \
   -H "Authorization: Bearer $USER_JWT"
@@ -158,6 +173,7 @@ curl -X GET https://your-project.supabase.co/functions/v1/admin-users \
 **Expected:** 403 Forbidden
 
 **Test Case 3: Cross-Tenant Access Prevention**
+
 ```bash
 # User from tenant A trying to access tenant B's data
 curl -X GET http://localhost:4400/wallet/accounts/tenant_b_account \
@@ -173,6 +189,7 @@ curl -X GET http://localhost:4400/wallet/accounts/tenant_b_account \
 ### SQL Injection Testing
 
 **Test Case 1: SQL Injection in Query Parameters**
+
 ```bash
 curl "http://localhost:4400/wallet/accounts/123' OR '1'='1"
 ```
@@ -180,6 +197,7 @@ curl "http://localhost:4400/wallet/accounts/123' OR '1'='1"
 **Expected:** 400 Bad Request (not SQL error)
 
 **Test Case 2: SQL Injection in JSON Payload**
+
 ```bash
 curl -X POST http://localhost:4400/wallet/transfer \
   -H "Authorization: Bearer $TOKEN" \
@@ -196,6 +214,7 @@ curl -X POST http://localhost:4400/wallet/transfer \
 ### XSS Testing
 
 **Test Case: Script Injection in Input**
+
 ```bash
 curl -X POST http://localhost:4404/agent/execute \
   -H "Authorization: Bearer $TOKEN" \
@@ -210,6 +229,7 @@ curl -X POST http://localhost:4404/agent/execute \
 ### Command Injection Testing
 
 **Test Case: Shell Command in Input**
+
 ```bash
 curl -X POST http://localhost:4400/wallet/transfer \
   -H "Authorization: Bearer $TOKEN" \
@@ -227,6 +247,7 @@ curl -X POST http://localhost:4400/wallet/transfer \
 ### Standard Rate Limit
 
 **Test Case: Exceed Rate Limit**
+
 ```bash
 #!/bin/bash
 # Send 101 requests rapidly (limit is 100 per 15 min)
@@ -237,16 +258,19 @@ for i in {1..101}; do
 done
 ```
 
-**Expected:** 
+**Expected:**
+
 - First 100 requests: 200 OK
 - 101st request: 429 Too Many Requests
 
 **Test Case: Rate Limit Headers**
+
 ```bash
 curl -v http://localhost:4400/health
 ```
 
 **Expected Headers:**
+
 ```
 X-RateLimit-Limit: 100
 X-RateLimit-Remaining: 99
@@ -256,6 +280,7 @@ X-RateLimit-Reset: 2024-03-15T11:00:00Z
 ### Strict Rate Limit (Sensitive Operations)
 
 **Test Case: Password Reset Rate Limit**
+
 ```bash
 #!/bin/bash
 # Attempt 6 password resets (limit is 5 per hour)
@@ -268,6 +293,7 @@ done
 ```
 
 **Expected:**
+
 - First 5 requests: 200 OK
 - 6th request: 429 Too Many Requests
 
@@ -278,6 +304,7 @@ done
 ### Duplicate Request Prevention
 
 **Test Case 1: Same Idempotency Key Returns Same Response**
+
 ```bash
 IDEMPOTENCY_KEY="test-$(uuidgen)"
 
@@ -314,6 +341,7 @@ diff /tmp/response1.json /tmp/response2.json
 **Expected:** No difference (responses are identical)
 
 **Test Case 2: Different Keys Create Different Transactions**
+
 ```bash
 KEY1="test-$(uuidgen)"
 KEY2="test-$(uuidgen)"
@@ -432,6 +460,7 @@ pnpm lint
 **PGP Key:** Available at https://easymo.com/security/pgp
 
 Include:
+
 1. Description of vulnerability
 2. Steps to reproduce
 3. Potential impact

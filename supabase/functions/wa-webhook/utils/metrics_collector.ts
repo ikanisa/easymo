@@ -20,11 +20,13 @@ interface HistogramBucket {
   count: number;
 }
 
+type IntervalHandle = number & { unref?: () => void };
+
 class MetricsCollector {
   private counters: Map<string, Map<string, number>> = new Map();
   private gauges: Map<string, Map<string, number>> = new Map();
   private histograms: Map<string, Map<string, number[]>> = new Map();
-  private flushInterval?: number;
+  private flushInterval?: IntervalHandle;
   private readonly FLUSH_INTERVAL_MS = 30000; // 30 seconds
 
   constructor() {
@@ -270,9 +272,11 @@ class MetricsCollector {
    * Start periodic flushing
    */
   private startFlushing(): void {
-    this.flushInterval = setInterval(() => {
+    const handle = setInterval(() => {
       this.flush();
-    }, this.FLUSH_INTERVAL_MS);
+    }, this.FLUSH_INTERVAL_MS) as IntervalHandle;
+    handle.unref?.();
+    this.flushInterval = handle;
   }
 
   /**

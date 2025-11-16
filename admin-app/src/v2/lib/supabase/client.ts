@@ -1,4 +1,6 @@
 import { createBrowserClient, createServerClient } from "@supabase/ssr";
+import type { CookieMethodsServer } from "@supabase/ssr";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "./database.types";
 
 function requireEnv(name: string) {
@@ -18,10 +20,10 @@ export function createClient() {
 
 // Server-side functions - only import when needed
 export async function createServerSupabaseClient() {
-  const { cookies, headers } = await import("next/headers");
+  const { cookies } = await import("next/headers");
   
   type CookieStore = ReturnType<typeof cookies>;
-  type HeaderStore = ReturnType<typeof headers>;
+  type CookieSetOptions = Parameters<CookieStore["set"]>[2];
 
   function tryGetCookies(): CookieStore | undefined {
     try {
@@ -31,50 +33,50 @@ export async function createServerSupabaseClient() {
     }
   }
 
-  function tryGetHeaders(): HeaderStore | undefined {
-    try {
-      return headers();
-    } catch {
-      return undefined;
-    }
-  }
-
   const cookieStore = tryGetCookies();
-  const headerStore = tryGetHeaders();
+
+  const cookiesAdapter: CookieMethodsServer = cookieStore
+    ? {
+        getAll() {
+          return cookieStore.getAll();
+        },
+        setAll(cookiesToSet: Array<{ name: string; value: string; options: CookieSetOptions }>) {
+          try {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options),
+            );
+          } catch {
+            // Server Component contexts may not allow cookie mutation.
+          }
+        },
+      }
+    : {
+        getAll() {
+          return [];
+        },
+        setAll(_cookies: Array<{ name: string; value: string; options: CookieSetOptions }>) {
+          // No-op when cookies cannot be mutated in this environment.
+        },
+      };
 
   return createServerClient<Database>(
     requireEnv("NEXT_PUBLIC_SUPABASE_URL"),
     requireEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY"),
     {
-      cookies: cookieStore
-        ? {
-            getAll() {
-              return cookieStore.getAll();
-            },
-            setAll(cookiesToSet) {
-              try {
-                cookiesToSet.forEach(({ name, value, options }) =>
-                  cookieStore.set(name, value, options),
-                );
-              } catch {
-                // Server Component
-              }
-            },
-          }
-        : undefined,
+      cookies: cookiesAdapter,
     },
   );
 }
 
-export async function createAdminClient() {
+export async function createAdminClient(): Promise<SupabaseClient> {
   if (typeof window !== "undefined") {
     throw new Error("Admin client can only be used on the server");
   }
 
-  const { cookies, headers } = await import("next/headers");
+  const { cookies } = await import("next/headers");
   
   type CookieStore = ReturnType<typeof cookies>;
-  type HeaderStore = ReturnType<typeof headers>;
+  type CookieSetOptions = Parameters<CookieStore["set"]>[2];
 
   function tryGetCookies(): CookieStore | undefined {
     try {
@@ -84,16 +86,7 @@ export async function createAdminClient() {
     }
   }
 
-  function tryGetHeaders(): HeaderStore | undefined {
-    try {
-      return headers();
-    } catch {
-      return undefined;
-    }
-  }
-
   const cookieStore = tryGetCookies();
-  const headerStore = tryGetHeaders();
 
   const cookieAdapter = cookieStore
     ? {
@@ -103,14 +96,14 @@ export async function createAdminClient() {
         getAll() {
           return cookieStore.getAll();
         },
-        set(name: string, value: string, options?: Parameters<typeof cookieStore.set>[2]) {
+        set(name: string, value: string, options?: CookieSetOptions) {
           try {
             cookieStore.set(name, value, options);
           } catch {
             // Route handlers cannot always mutate cookies synchronously.
           }
         },
-        setAll(cookiesToSet: Array<{ name: string; value: string; options?: Parameters<typeof cookieStore.set>[2] }>) {
+        setAll(cookiesToSet: Array<{ name: string; value: string; options?: CookieSetOptions }>) {
           cookiesToSet.forEach(({ name, value, options }) => {
             try {
               cookieStore.set(name, value, options);
@@ -118,13 +111,6 @@ export async function createAdminClient() {
               // Ignore outside request contexts.
             }
           });
-        },
-        remove(name: string, options?: Parameters<typeof cookieStore.delete>[1]) {
-          try {
-            cookieStore.delete(name, options);
-          } catch {
-            // Ignore outside request contexts.
-          }
         },
       }
     : {
@@ -135,24 +121,14 @@ export async function createAdminClient() {
           return [];
         },
         set() {},
-        setAll() {},
-        remove() {},
+        setAll(_cookies?: Array<{ name: string; value: string; options?: CookieSetOptions }>) {},
       };
-
-  const headerAdapter = headerStore
-    ? {
-        get(name: string) {
-          return headerStore.get(name) ?? undefined;
-        },
-      }
-    : undefined;
 
   return createServerClient<Database>(
     requireEnv("NEXT_PUBLIC_SUPABASE_URL"),
     requireEnv("SUPABASE_SERVICE_ROLE_KEY"),
     {
       cookies: cookieAdapter,
-      headers: headerAdapter,
     },
-  );
+  ) as unknown as SupabaseClient;
 }

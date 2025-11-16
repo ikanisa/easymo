@@ -3,6 +3,7 @@ import { supabase } from "../../config.ts";
 import type { SupabaseClient } from "../../deps.ts";
 
 export type MenuItemKey =
+  | "jobs"
   | "nearby_drivers"
   | "nearby_passengers"
   | "schedule_trip"
@@ -14,6 +15,7 @@ export type MenuItemKey =
   | "momo_qr"
   | "bars_restaurants"
   | "notary_services"
+  | "profile"
   | "customer_support";
 
 export interface WhatsAppHomeMenuItem {
@@ -78,6 +80,7 @@ export async function fetchActiveMenuItems(
  */
 export function getMenuItemId(key: MenuItemKey): string {
   const mapping: Record<MenuItemKey, string> = {
+    jobs: "job_board",
     nearby_drivers: "see_drivers",
     nearby_passengers: "see_passengers",
     schedule_trip: "schedule_trip",
@@ -89,7 +92,8 @@ export function getMenuItemId(key: MenuItemKey): string {
     momo_qr: "momoqr_start",
     bars_restaurants: "bars_restaurants",
     notary_services: "notary_services",
-    customer_support: "profile",
+    profile: "profile",
+    customer_support: "customer_support",
   };
 
   return mapping[key] || key;
@@ -105,6 +109,10 @@ export function getMenuItemTranslationKeys(
     MenuItemKey,
     { titleKey: string; descriptionKey: string }
   > = {
+    jobs: {
+      titleKey: "home.rows.jobs.title",
+      descriptionKey: "home.rows.jobs.description",
+    },
     nearby_drivers: {
       titleKey: "home.rows.seeDrivers.title",
       descriptionKey: "home.rows.seeDrivers.description",
@@ -149,9 +157,13 @@ export function getMenuItemTranslationKeys(
       titleKey: "home.rows.notaryServices.title",
       descriptionKey: "home.rows.notaryServices.description",
     },
-    customer_support: {
+    profile: {
       titleKey: "home.rows.profile.title",
       descriptionKey: "home.rows.profile.description",
+    },
+    customer_support: {
+      titleKey: "home.rows.customerSupport.title",
+      descriptionKey: "home.rows.customerSupport.description",
     },
   };
 

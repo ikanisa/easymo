@@ -198,8 +198,8 @@ export const GET = createHandler(
       return fallback("Supabase admin client unavailable.", params);
     }
 
-    const limit = params.limit ?? 50;
-    const offset = params.offset ?? 0;
+    const limit = limit ?? 50;
+    const offset = offset ?? 0;
     const query = admin
       .from("shops")
       .select(
@@ -210,8 +210,8 @@ export const GET = createHandler(
       .order("rating", { ascending: false })
       .range(offset, offset + limit - 1);
 
-    if (params.search) {
-      const pattern = `%${params.search}%`;
+    if (search) {
+      const pattern = `%${search}%`;
       query.or(`name.ilike.${pattern},location_text.ilike.${pattern}`);
     }
 

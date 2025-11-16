@@ -49,22 +49,8 @@ export async function handleQuincaillerieLocation(
 ): Promise<boolean> {
   if (!ctx.profileId) return false;
   
-  // Prompt for item name or image
-
-  await setState(ctx.supabase, ctx.profileId, {
-    key: "quincaillerie_awaiting_items",
-    data: { location },
-  });
-
-  await sendButtonsMessage(
-    ctx,
-    t(ctx.locale, "quincaillerie.location.received"),
-    buildButtons(
-      { id: IDS.BACK_HOME, title: t(ctx.locale, "common.menu_back") }
-    ),
-  );
-
-  return true;
+  // DIRECTLY search and show results - no item prompt
+  return await processQuincaillerieRequest(ctx, location, "");
 }
 
 export async function processQuincaillerieRequest(
@@ -74,25 +60,23 @@ export async function processQuincaillerieRequest(
 ): Promise<boolean> {
   if (!ctx.profileId) return false;
   const items = parseKeywords(rawInput);
-  if (!items.length) {
-    await sendText(ctx.from, t(ctx.locale, "quincaillerie.prompt.items"));
-    return true;
-  }
   
-  // TWO-PHASE APPROACH:
-  // Phase 1: Immediately show top 9 nearby quincailleries from database
-  // Phase 2: AI agent processes in background for curated shortlist
+  // DIRECT DATABASE APPROACH (Phase 2: AI agents disabled for nearby searches)
+  // Simple workflow: User shares location → Instant top 9 results from database
+  // If items specified, use them for WhatsApp message prefill only
   
-  // Phase 1: Instant database results
+  // Show instant database results - top 9 nearby quincailleries
   const instantResults = await sendQuincaillerieDatabaseResults(ctx, location, items);
   
-  // Phase 2: Trigger AI agent in background (if enabled)
-  if (isFeatureEnabled("agent.quincaillerie") && instantResults) {
+  /* AI AGENT DISABLED FOR PHASE 1 - Will be enabled in Phase 2
+  // Phase 2: Trigger AI agent in background (only if items specified and enabled)
+  if (items.length > 0 && isFeatureEnabled("agent.quincaillerie") && instantResults) {
     // Start AI agent processing in background - non-blocking
     triggerQuincaillerieAgentBackground(ctx, location, items).catch((error) => {
       console.error("quincaillerie.background_agent_error", error);
     });
   }
+  */
   
   return instantResults;
 }
@@ -189,6 +173,7 @@ async function sendQuincaillerieDatabaseResults(
   ctx: RouterContext,
   location: { lat: number; lng: number },
   items: string[],
+  page: number = 0,
 ): Promise<boolean> {
   if (!ctx.profileId) return false;
   
@@ -202,12 +187,12 @@ async function sendQuincaillerieDatabaseResults(
   }> = [];
   
   try {
-    // Fetch top 12, filter for contacts, show top 9
+    // Fetch 27 results for pagination
     entries = await listBusinesses(
       ctx.supabase,
       location,
       "quincailleries",
-      12,
+      27,
     );
   } catch (error) {
     console.error("quincaillerie.database_fetch_failed", error);
@@ -224,9 +209,13 @@ async function sendQuincaillerieDatabaseResults(
     return true;
   }
   
-  // Show top 9 results
-  const top9 = withContacts.slice(0, 9);
-  const rows = top9.map((entry) => ({
+  // Pagination: show 9 results per page
+  const start = page * 9;
+  const end = Math.min(start + 9, withContacts.length);
+  const pageResults = withContacts.slice(start, end);
+  const hasMore = end < withContacts.length;
+  
+  const rows = pageResults.map((entry) => ({
     id: `${QUINCA_RESULT_PREFIX}${entry.id}`,
     name: entry.name ?? t(ctx.locale, "quincaillerie.results.unknown"),
     description: formatBusinessDescription(ctx, entry),
@@ -236,33 +225,56 @@ async function sendQuincaillerieDatabaseResults(
   await setState(ctx.supabase, ctx.profileId, {
     key: "quincaillerie_results",
     data: {
-      entries: rows.map((row) => ({
-        id: row.id,
-        name: row.name,
-        whatsapp: row.whatsapp,
+      entries: withContacts.map((entry) => ({
+        id: `${QUINCA_RESULT_PREFIX}${entry.id}`,
+        name: entry.name ?? t(ctx.locale, "quincaillerie.results.unknown"),
+        whatsapp: entry.owner_whatsapp!,
+        distance_km: entry.distance_km,
+        location_text: entry.location_text,
+        description: entry.description,
       })),
       prefill: items.join(", ") || null,
+      page: page,
+      userLocation: location,
     } as Record<string, unknown>,
+  });
+
+  const listRows = [
+    ...rows.map((row) => ({
+      id: row.id,
+      title: `🔧 ${row.name}`,
+      description: row.description,
+    })),
+  ];
+  
+  // Add "More" button if there are more results
+  if (hasMore) {
+    listRows.push({
+      id: "quincaillerie_more",
+      title: t(ctx.locale, "common.buttons.more"),
+      description: t(ctx.locale, "common.see_more_results"),
+    });
+  }
+  
+  listRows.push({
+    id: IDS.BACK_MENU,
+    title: t(ctx.locale, "common.menu_back"),
+    description: t(ctx.locale, "common.back_to_menu.description"),
   });
 
   await sendListMessage(
     ctx,
     {
       title: t(ctx.locale, "quincaillerie.results.title"),
-      body: t(ctx.locale, "quincaillerie.results.instant_body"),
+      body: page === 0 
+        ? t(ctx.locale, "quincaillerie.results.instant_body")
+        : t(ctx.locale, "quincaillerie.results.showing_more", {
+            from: String(start + 1),
+            to: String(end),
+            total: String(withContacts.length),
+          }),
       sectionTitle: t(ctx.locale, "quincaillerie.results.section"),
-      rows: [
-        ...rows.map((row) => ({
-          id: row.id,
-          title: `🔧 ${row.name}`,
-          description: row.description,
-        })),
-        {
-          id: IDS.BACK_MENU,
-          title: t(ctx.locale, "common.menu_back"),
-          description: t(ctx.locale, "common.back_to_menu.description"),
-        },
-      ],
+      rows: listRows,
       buttonText: t(ctx.locale, "common.buttons.open"),
     },
     { emoji: "🔧" },
@@ -334,7 +346,6 @@ async function triggerQuincaillerieAgentBackground(
   }
 }
 
-async function sendQuincaillerieFallbackOld(
 async function sendQuincaillerieFallbackOld(
   ctx: RouterContext,
   location: { lat: number; lng: number },
@@ -436,4 +447,30 @@ function formatBusinessDescription(
     parts.push(entry.description.trim());
   }
   return parts.join(" • ");
+}
+
+export async function handleQuincaillerieMore(
+  ctx: RouterContext,
+  state: {
+    entries?: Array<{
+      id: string;
+      name: string;
+      whatsapp: string;
+      distance_km?: number;
+      location_text?: string;
+      description?: string;
+    }>;
+    prefill?: string | null;
+    page?: number;
+    userLocation?: { lat: number; lng: number };
+  },
+): Promise<boolean> {
+  if (!ctx.profileId || !state.entries || !state.userLocation) return false;
+
+  const currentPage = state.page || 0;
+  const nextPage = currentPage + 1;
+  const items = state.prefill ? state.prefill.split(", ") : [];
+  
+  // Call sendQuincaillerieDatabaseResults with next page
+  return await sendQuincaillerieDatabaseResults(ctx, state.userLocation, items, nextPage);
 }

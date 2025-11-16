@@ -5,7 +5,9 @@ This directory contains comprehensive documentation for the EasyMO AI agent syst
 ## Documents
 
 ### [Global Conventions](./GLOBAL_CONVENTIONS.md)
+
 Platform-wide conventions and specifications including:
+
 - Surfaces & routing architecture
 - Tool naming & contract standards
 - Autonomy levels (auto/suggest/handoff)
@@ -16,7 +18,9 @@ Platform-wide conventions and specifications including:
 **Use this for**: Understanding platform-wide rules and requirements.
 
 ### [Tool Catalog](./TOOL_CATALOG.md)
+
 Complete specification of all available tools across 8 categories:
+
 - Messaging & Orchestration
 - Commerce & Operations
 - Maps & Mobility
@@ -29,7 +33,9 @@ Complete specification of all available tools across 8 categories:
 **Use this for**: Understanding tool capabilities, parameters, and return types.
 
 ### [Agent Blueprints](./AGENT_BLUEPRINTS.md)
+
 Detailed specifications for all 15 AI agents:
+
 - Concierge Router
 - Waiter AI
 - Mobility Orchestrator
@@ -52,7 +58,7 @@ Detailed specifications for all 15 AI agents:
 
 ### For Developers
 
-1. **Implementing a new tool?** 
+1. **Implementing a new tool?**
    - See [Tool Catalog](./TOOL_CATALOG.md) for contract requirements
    - Use TypeScript types from `packages/agents/src/types/tool-contracts.types.ts`
    - Follow the standard `ToolResult<T>` return type
@@ -96,6 +102,7 @@ Detailed specifications for all 15 AI agents:
 ### Document Updates
 
 Update these documents when:
+
 - Adding/removing agents
 - Adding/removing tools
 - Changing tool contracts
@@ -113,6 +120,7 @@ Update these documents when:
 ## Support
 
 For questions or clarifications:
+
 1. Check these docs first
 2. Review related code in `packages/agents/`
 3. Consult team lead or architecture owner

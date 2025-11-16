@@ -15,7 +15,7 @@ export const Icon = forwardRef<SVGSVGElement, IconProps>(
     const LucideIcon = Icons[name] ?? Icons.HelpCircle;
     const ariaLabel = label ?? name.replace(/([A-Z])/g, " $1").trim();
 
-    return createElement(LucideIcon as React.ComponentType<any>, {
+    return createElement(LucideIcon as any, {
       ref,
       "aria-label": ariaLabel,
       role: label ? "img" : undefined,

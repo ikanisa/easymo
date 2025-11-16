@@ -5,7 +5,7 @@ const STATUS_COMPLETES = new Set(["completed", "failed", "stopped", "dry_run"]);
 
 export async function PATCH(
   req: Request,
-  { params }: { params: { id: string; taskId: string } },
+  { params }: { params: Promise<{ id: string; taskId: string }> },
 ) {
   const admin = getSupabaseAdminClient();
   if (!admin) {
@@ -51,8 +51,8 @@ export async function PATCH(
   const { data, error } = await admin
     .from("agent_tasks")
     .update(updates)
-    .eq("id", params.taskId)
-    .eq("agent_id", params.id)
+    .eq("id", taskId)
+    .eq("agent_id", id)
     .select("*")
     .single();
 

@@ -3,6 +3,7 @@ import pinoHttp from "pino-http";
 import { config } from "./config.js";
 import { logger } from "./logger.js";
 import { WebhookWorker } from "./worker.js";
+import { buildHealthReport } from "./health.js";
 
 async function main() {
   logger.info({ config: { ...config, SUPABASE_SERVICE_ROLE_KEY: "***" } }, "Starting service");
@@ -15,13 +16,21 @@ async function main() {
   app.use(express.json());
   app.use(pinoHttp({ logger: logger as any }));
 
-  app.get("/health", (_req, res) => {
-    const metrics = worker.getMetrics();
-    res.json({
-      status: "ok",
-      uptime: process.uptime(),
-      metrics,
-    });
+  app.get("/health", async (_req, res) => {
+    try {
+      const report = await buildHealthReport(worker);
+      const statusCode = report.status === "ok" ? 200 : 503;
+      res.status(statusCode).json(report);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      logger.error({ msg: "health.endpoint.failed", error: message });
+      res.status(500).json({
+        status: "critical",
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime(),
+        error: message,
+      });
+    }
   });
 
   app.get("/metrics", (_req, res) => {

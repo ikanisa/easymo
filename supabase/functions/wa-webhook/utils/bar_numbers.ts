@@ -94,7 +94,7 @@ export async function loadActiveBarNumbers<T extends BarNumberRow>(
     if (error) {
       if (error.code !== "42703") throw error;
     } else {
-      await pushRows(data as BarNumberRow[]);
+      await pushRows(coerceRows<BarNumberRow>(data));
       if (results.length) return results;
     }
   }
@@ -110,7 +110,7 @@ export async function loadActiveBarNumbers<T extends BarNumberRow>(
       .order("created_at", { ascending: false })
       .limit(5);
     if (error) throw error;
-    await pushRows(data as BarNumberRow[]);
+    await pushRows(coerceRows<BarNumberRow>(data));
     if (results.length) return results;
   }
 
@@ -125,9 +125,13 @@ export async function loadActiveBarNumbers<T extends BarNumberRow>(
     .order("created_at", { ascending: false })
     .limit(PATTERN_RESULT_LIMIT);
   if (error) throw error;
-  await pushRows(data as BarNumberRow[]);
+  await pushRows(coerceRows<BarNumberRow>(data));
 
   return results;
+}
+
+function coerceRows<T>(data: unknown): T[] {
+  return Array.isArray(data) ? (data as T[]) : [];
 }
 
 export async function findActiveBarNumber(
@@ -299,7 +303,7 @@ async function selectBusinessCandidate(
   canonicalNumber: string,
 ): Promise<BusinessCandidate | null> {
   const { data, error } = await client
-    .from("businesses")
+    .from("business")
     .select(
       "id, name, location_text, lat, lng, status, created_at",
     )

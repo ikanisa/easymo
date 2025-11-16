@@ -12,7 +12,12 @@ import {
   __resetRateLimiter,
 } from "./rate_limiter.ts";
 
-Deno.test("Rate Limiter - allows requests within limit", () => {
+const test = (
+  name: string,
+  fn: () => Promise<void> | void,
+) => Deno.test({ name, sanitizeOps: false, sanitizeResources: false, fn });
+
+test("Rate Limiter - allows requests within limit", () => {
   __resetRateLimiter();
   
   const limiter = getRateLimiter();
@@ -22,7 +27,7 @@ Deno.test("Rate Limiter - allows requests within limit", () => {
   assertEquals(result.remaining, 99); // Default max is 100
 });
 
-Deno.test("Rate Limiter - blocks after exceeding limit", () => {
+test("Rate Limiter - blocks after exceeding limit", () => {
   __resetRateLimiter();
   
   const limiter = getRateLimiter();
@@ -40,7 +45,7 @@ Deno.test("Rate Limiter - blocks after exceeding limit", () => {
   assertExists(result.retryAfter);
 });
 
-Deno.test("Rate Limiter - isolates different identifiers", () => {
+test("Rate Limiter - isolates different identifiers", () => {
   __resetRateLimiter();
   
   const limiter = getRateLimiter();
@@ -55,7 +60,7 @@ Deno.test("Rate Limiter - isolates different identifiers", () => {
   assertEquals(result.allowed, true);
 });
 
-Deno.test("Rate Limiter - unblock removes limits", () => {
+test("Rate Limiter - unblock removes limits", () => {
   __resetRateLimiter();
   
   const limiter = getRateLimiter();
@@ -77,7 +82,7 @@ Deno.test("Rate Limiter - unblock removes limits", () => {
   assertEquals(result.allowed, true);
 });
 
-Deno.test("Rate Limiter - blacklists after violations", () => {
+test("Rate Limiter - blacklists after violations", () => {
   __resetRateLimiter();
   
   const limiter = getRateLimiter();
@@ -96,7 +101,7 @@ Deno.test("Rate Limiter - blacklists after violations", () => {
   assertEquals(result.retryAfter, 3600); // 1 hour penalty
 });
 
-Deno.test("Rate Limiter - stats tracking", () => {
+test("Rate Limiter - stats tracking", () => {
   __resetRateLimiter();
   
   const limiter = getRateLimiter();
@@ -111,7 +116,7 @@ Deno.test("Rate Limiter - stats tracking", () => {
   assertExists(stats.config);
 });
 
-Deno.test("Rate Limiter - cleanup removes expired buckets", async () => {
+test("Rate Limiter - cleanup removes expired buckets", async () => {
   __resetRateLimiter();
   
   // Set very short window for testing

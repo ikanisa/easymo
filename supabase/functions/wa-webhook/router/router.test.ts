@@ -16,13 +16,18 @@ const envReady = (() => {
 void envReady;
 
 const routerModule = await import("./router.ts");
+
+const test = (
+  name: string,
+  fn: () => Promise<void> | void,
+) => Deno.test({ name, sanitizeOps: false, sanitizeResources: false, fn });
 const {
   handleMessage,
   __setRouterTestOverrides,
   __resetRouterTestOverrides,
 } = routerModule;
 
-Deno.test("reuses cached route decision for duplicate messages", async () => {
+test("reuses cached route decision for duplicate messages", async () => {
   let textCount = 0;
   __setRouterTestOverrides({
     runGuards: async () => false,
@@ -46,5 +51,29 @@ Deno.test("reuses cached route decision for duplicate messages", async () => {
   assertEquals(textCount, 1, "second invocation should hit cache and skip handler");
 
   __resetRouterTestOverrides();
+  __resetRouterEnhancementOverrides();
+  __resetCache();
+});
+
+test("propagates handler errors", async () => {
+  __setRouterTestOverrides({
+    runGuards: async () => false,
+    handleText: async () => {
+      throw new Error("boom");
+    },
+  });
+
+  const message = { id: "wamid.block", from: "250788000001", type: "text" } as any;
+  const context = { supabase: {}, from: message.from, profileId: "user-2", locale: "en" } as any;
+  const state = {} as any;
+
+  await assertRejects(
+    () => handleMessage(context, message, state),
+    Error,
+    "boom",
+  );
+
+  __resetRouterTestOverrides();
+  __resetRouterEnhancementOverrides();
   __resetCache();
 });

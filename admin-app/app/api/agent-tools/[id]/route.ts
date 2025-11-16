@@ -3,7 +3,7 @@ import { getSupabaseAdminClient } from "@/lib/server/supabase-admin";
 
 export async function PATCH(
   req: Request,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const admin = getSupabaseAdminClient();
   if (!admin) {
@@ -34,11 +34,13 @@ export async function PATCH(
   }
 
   updates.updated_at = new Date().toISOString();
+  
+  const { id } = await params;
 
   const { data, error } = await admin
     .from("agent_tools")
     .update(updates)
-    .eq("id", params.id)
+    .eq("id", id)
     .select("*")
     .single();
 

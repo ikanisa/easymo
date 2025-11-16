@@ -6,13 +6,14 @@ import { Button } from "@/components/ui/Button";
 
 interface DrawerProps {
   title: string;
+  description?: string;
   children: React.ReactNode;
   onClose: () => void;
   position?: "right" | "left";
 }
 
 export function Drawer(
-  { title, children, onClose, position = "right" }: DrawerProps,
+  { title, description, children, onClose, position = "right" }: DrawerProps,
 ) {
   const drawerRef = useRef<HTMLDivElement | null>(null);
 
@@ -46,6 +47,7 @@ export function Drawer(
         <header className={styles.header}>
           <div>
             <h2>{title}</h2>
+            {description ? <p className={styles.description}>{description}</p> : null}
           </div>
           <Button
             type="button"

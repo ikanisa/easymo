@@ -43,7 +43,7 @@ export async function showManageBusinesses(
 
   // Query businesses owned by this user
   const { data: businesses, error } = await ctx.supabase
-    .from("businesses")
+    .from("business")
     .select("id, name, description, category_id, location_text, is_active")
     .eq("owner_whatsapp", ctx.from)
     .eq("is_active", true)
@@ -119,7 +119,7 @@ export async function showBusinessDetail(
 
   // Fetch business details
   const { data: business, error } = await ctx.supabase
-    .from("businesses")
+    .from("business")
     .select("id, name, description, location_text, is_active, owner_whatsapp")
     .eq("id", businessId)
     .eq("owner_whatsapp", ctx.from)
@@ -223,7 +223,7 @@ export async function confirmBusinessDelete(
 
   // Soft delete by setting is_active to false
   const { error } = await ctx.supabase
-    .from("businesses")
+    .from("business")
     .update({ is_active: false })
     .eq("id", businessId)
     .eq("owner_whatsapp", ctx.from);

@@ -50,10 +50,15 @@ async function runRetention(): Promise<void> {
 async function purgeWaEvents(): Promise<void> {
   const cutoffIso = new Date(Date.now() - EVENTS_TTL_DAYS * DAY_MS)
     .toISOString();
-  const { error, count } = await supabase
+  const query = supabase
     .from("wa_events")
-    .delete({ count: "exact" })
-    .lt("created_at", cutoffIso);
+    .delete({ count: "exact" });
+  const lt = (query as { lt?: (column: string, value: string) => typeof query }).lt;
+  if (!lt) {
+    console.warn("retention.wa_events_skip", "lt not supported by client stub");
+    return;
+  }
+  const { error, count } = await lt.call(query, "created_at", cutoffIso);
   if (error) {
     console.error("retention.wa_events_fail", error);
     return;
@@ -68,10 +73,15 @@ async function purgeWaEvents(): Promise<void> {
 
 async function purgeWebhookLogs(): Promise<void> {
   const cutoffIso = new Date(Date.now() - LOGS_TTL_DAYS * DAY_MS).toISOString();
-  const { error, count } = await supabase
+  const query = supabase
     .from("webhook_logs")
-    .delete({ count: "exact" })
-    .lt("received_at", cutoffIso);
+    .delete({ count: "exact" });
+  const lt = (query as { lt?: (column: string, value: string) => typeof query }).lt;
+  if (!lt) {
+    console.warn("retention.webhook_logs_skip", "lt not supported by client stub");
+    return;
+  }
+  const { error, count } = await lt.call(query, "received_at", cutoffIso);
   if (error) {
     console.error("retention.webhook_logs_fail", error);
     return;

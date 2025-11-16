@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdminClient } from "@/lib/server/supabase-admin";
 
-export async function GET(req: Request, { params }: { params: { id: string } }) {
+export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const admin = getSupabaseAdminClient();
   if (!admin) return NextResponse.json({ error: "supabase_unavailable" }, { status: 503 });
-  const { id } = params;
+  const { id } = await params;
   const url = new URL(req.url);
   const status = url.searchParams.get("status");
   let query = admin.from("agent_tasks").select("*").eq("agent_id", id).order("created_at", { ascending: false });
@@ -14,10 +14,10 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
   return NextResponse.json({ tasks: data ?? [] });
 }
 
-export async function POST(req: Request, { params }: { params: { id: string } }) {
+export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const admin = getSupabaseAdminClient();
   if (!admin) return NextResponse.json({ error: "supabase_unavailable" }, { status: 503 });
-  const { id } = params;
+  const { id } = await params;
   const body = await req.json().catch(() => ({}));
   const type = typeof body.type === "string" ? body.type : null;
   if (!type) return NextResponse.json({ error: "type_required" }, { status: 400 });

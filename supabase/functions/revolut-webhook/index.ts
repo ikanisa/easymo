@@ -6,13 +6,11 @@
 // =====================================================
 
 import { serve } from "$std/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { logStructuredEvent, recordMetric } from "../_shared/observability.ts";
+import { getServiceClient } from "shared/supabase.ts";
+import { getEnv, getRotatingSecret } from "shared/env.ts";
 
-const supabase = createClient(
-  Deno.env.get("SUPABASE_URL")!,
-  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-);
+const supabase = getServiceClient();
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -32,17 +30,20 @@ async function verifyRevolutSignature(
     return false; // No signature provided
   }
 
-  const webhookSecret = Deno.env.get("REVOLUT_WEBHOOK_SECRET");
-  const skipVerification = Deno.env.get("REVOLUT_SKIP_SIGNATURE_VERIFICATION") === "true";
+  const { active, previous } = getRotatingSecret("REVOLUT_WEBHOOK_SECRET");
+  const secrets = [active, previous].filter((value): value is string =>
+    Boolean(value && value.length)
+  );
+  const skipVerification = getEnv("REVOLUT_SKIP_SIGNATURE_VERIFICATION") === "true";
 
-  if (!webhookSecret && !skipVerification) {
+  if (!secrets.length && !skipVerification) {
     await logStructuredEvent("REVOLUT_WEBHOOK_NO_SECRET_CONFIGURED", {}, "error");
     return false;
   }
 
   if (skipVerification) {
-    await logStructuredEvent("REVOLUT_WEBHOOK_VERIFICATION_SKIPPED", { 
-      environment: Deno.env.get("REVOLUT_ENVIRONMENT") 
+    await logStructuredEvent("REVOLUT_WEBHOOK_VERIFICATION_SKIPPED", {
+      environment: getEnv("REVOLUT_ENVIRONMENT"),
     }, "warn");
     return true;
   }
@@ -51,24 +52,36 @@ async function verifyRevolutSignature(
   try {
     const encoder = new TextEncoder();
     const message = `${timestamp}.${payload}`;
-    
-    const key = await crypto.subtle.importKey(
-      "raw",
-      encoder.encode(webhookSecret!),
-      { name: "HMAC", hash: "SHA-256" },
-      false,
-      ["sign"]
-    );
 
-    const signatureBuffer = await crypto.subtle.sign(
-      "HMAC",
-      key,
-      encoder.encode(message)
-    );
+    for (const secret of secrets) {
+      const key = await crypto.subtle.importKey(
+        "raw",
+        encoder.encode(secret),
+        { name: "HMAC", hash: "SHA-256" },
+        false,
+        ["sign"],
+      );
 
-    const expectedSignature = btoa(String.fromCharCode(...new Uint8Array(signatureBuffer)));
+      const signatureBuffer = await crypto.subtle.sign(
+        "HMAC",
+        key,
+        encoder.encode(message),
+      );
 
-    return expectedSignature === signature;
+      const expectedSignature = btoa(
+        String.fromCharCode(...new Uint8Array(signatureBuffer)),
+      );
+
+      if (expectedSignature === signature) {
+        return true;
+      }
+    }
+
+    await logStructuredEvent("REVOLUT_WEBHOOK_SIGNATURE_MISMATCH", {
+      candidate_count: secrets.length,
+    });
+
+    return false;
   } catch (error) {
     await logStructuredEvent("REVOLUT_WEBHOOK_SIGNATURE_ERROR", {
       error: (error as Error).message,

@@ -11,9 +11,9 @@ function headers() {
   return { 'x-agent-jwt': token, 'Content-Type': 'application/json' };
 }
 
-export async function GET(_request: Request, context: { params: { id: string } }) {
+export async function GET(_request: Request, context: { params: Promise<{ id: string }> }) {
   try {
-    const { id } = idSchema.parse(context.params);
+    const { id } = idSchema.parse(await context.params);
     const base = getAgentCoreUrl();
     if (!base) return NextResponse.json({ error: 'agent_core_unavailable' }, { status: 503 });
     const res = await fetch(`${base.replace(/\/$/, '')}/admin/agents/${id}/documents`, { headers: headers() });
@@ -24,9 +24,9 @@ export async function GET(_request: Request, context: { params: { id: string } }
   }
 }
 
-export async function POST(request: Request, context: { params: { id: string } }) {
+export async function POST(request: Request, context: { params: Promise<{ id: string }> }) {
   try {
-    const { id } = idSchema.parse(context.params);
+    const { id } = idSchema.parse(await context.params);
     const payload = createSchema.parse(await request.json());
     const base = getAgentCoreUrl();
     if (!base) return NextResponse.json({ error: 'agent_core_unavailable' }, { status: 503 });

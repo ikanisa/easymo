@@ -1,0 +1,37 @@
+{
+  "dashboard": "WA-Webhook Microservices",
+  "panels": [
+    {
+      "title": "Service Health",
+      "services": [
+        "wa-webhook-core",
+        "wa-webhook-mobility",
+        "wa-webhook-property",
+        "wa-webhook-marketplace",
+        "wa-webhook-jobs",
+        "wa-webhook-wallet",
+        "wa-webhook-ai-agents"
+      ],
+      "metrics": [
+        "health_status",
+        "error_rate",
+        "p95_latency"
+      ]
+    },
+    {
+      "title": "Traffic Distribution",
+      "type": "pie",
+      "metric": "requests_per_service"
+    },
+    {
+      "title": "Cold Start Times",
+      "type": "line",
+      "metric": "cold_start_duration_ms"
+    },
+    {
+      "title": "Memory Usage",
+      "type": "area",
+      "metric": "memory_usage_mb"
+    }
+  ]
+}

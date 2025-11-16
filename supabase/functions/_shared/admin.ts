@@ -1,4 +1,8 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.76.1";
+import {
+  createClient,
+  type SupabaseClient,
+} from "https://esm.sh/@supabase/supabase-js@2.76.1";
+import { getEnv, requireEnv } from "./env.ts";
 
 type AdminConfig = {
   supabaseUrl: string;
@@ -14,25 +18,55 @@ const BASE_CORS_HEADERS: Record<string, string> = {
   "Content-Type": "application/json",
 };
 
-let cachedConfig: AdminConfig | null = null;
+const CONFIG_TTL_MS = (() => {
+  const raw = getEnv("ADMIN_CONFIG_CACHE_TTL_MS");
+  if (!raw) return 300_000;
+  const parsed = Number.parseInt(raw, 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 300_000;
+})();
+
+let cachedConfig: { value: AdminConfig; expiresAt: number } | null = null;
+let cachedClient: {
+  client: SupabaseClient;
+  config: AdminConfig;
+  expiresAt: number;
+} | null = null;
 
 export function loadAdminConfig(): AdminConfig {
-  if (cachedConfig) return cachedConfig;
-  const supabaseUrl = mustGetEnv("SUPABASE_URL");
-  const serviceRoleKey = mustGetEnv(
+  const now = Date.now();
+  if (cachedConfig && cachedConfig.expiresAt > now) {
+    return cachedConfig.value;
+  }
+  const supabaseUrl = requireEnv("SUPABASE_URL", ["SERVICE_URL"]);
+  const serviceRoleKey = requireEnv("SUPABASE_SERVICE_ROLE_KEY", [
     "SERVICE_ROLE_KEY",
-    "SUPABASE_SERVICE_ROLE_KEY",
-  );
-  const adminToken = mustGetEnv("ADMIN_TOKEN");
-  cachedConfig = { supabaseUrl, serviceRoleKey, adminToken };
-  return cachedConfig;
+  ]);
+  const adminToken = requireEnv("ADMIN_TOKEN", ["EASYMO_ADMIN_TOKEN"]);
+  const config = { supabaseUrl, serviceRoleKey, adminToken };
+  cachedConfig = { value: config, expiresAt: now + CONFIG_TTL_MS };
+  return config;
 }
 
 export function createServiceRoleClient() {
-  const { supabaseUrl, serviceRoleKey } = loadAdminConfig();
-  return createClient(supabaseUrl, serviceRoleKey, {
+  const config = loadAdminConfig();
+  const now = Date.now();
+  if (
+    cachedClient &&
+    cachedClient.expiresAt > now &&
+    cachedClient.config.supabaseUrl === config.supabaseUrl &&
+    cachedClient.config.serviceRoleKey === config.serviceRoleKey
+  ) {
+    return cachedClient.client;
+  }
+  const client = createClient(config.supabaseUrl, config.serviceRoleKey, {
     auth: { persistSession: false },
   });
+  cachedClient = {
+    client,
+    config,
+    expiresAt: now + CONFIG_TTL_MS,
+  };
+  return client;
 }
 
 export function isAdminAuthenticated(req: Request): boolean {
@@ -97,16 +131,6 @@ export function logResponse(
   extra: Record<string, unknown> = {},
 ): void {
   console.info(`${scope}.response`, { status, ...extra });
-}
-
-export function mustGetEnv(...keys: string[]): string {
-  for (const key of keys) {
-    const value = Deno.env.get(key);
-    if (value && value.length > 0) {
-      return value;
-    }
-  }
-  throw new Error(`Missing required env: ${keys.join("/")}`);
 }
 
 export function parseNumber(value: unknown, fallback: number): number {

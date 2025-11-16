@@ -126,7 +126,12 @@ export function TasksBoard() {
                 <li>Leave a note for the next pod if blockers remain.</li>
               </ul>
             </div>
-            <Button variant="success">Mark as completed</Button>
+            <Button
+              variant="primary"
+              className="bg-emerald-600 text-white hover:bg-emerald-500"
+            >
+              Mark as completed
+            </Button>
           </div>
         </Drawer>
       )}

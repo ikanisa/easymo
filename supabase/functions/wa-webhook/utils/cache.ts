@@ -7,6 +7,8 @@
  * @see docs/GROUND_RULES.md
  */
 
+type IntervalHandle = number & { unref?: () => void };
+
 interface CacheEntry<T> {
   value: T;
   expires: number;
@@ -36,7 +38,7 @@ class CacheManager {
     deletes: 0,
     evictions: 0,
   };
-  private cleanupInterval?: number;
+  private cleanupInterval?: IntervalHandle;
 
   constructor(config: Partial<CacheConfig> = {}) {
     this.config = { ...DEFAULT_CONFIG, ...config };
@@ -218,10 +220,12 @@ class CacheManager {
    * Start periodic cleanup
    */
   private startCleanup(): void {
-    this.cleanupInterval = setInterval(
+    const handle = setInterval(
       () => this.cleanup(),
-      this.config.checkPeriod * 1000
-    );
+      this.config.checkPeriod * 1000,
+    ) as IntervalHandle;
+    handle.unref?.();
+    this.cleanupInterval = handle;
   }
 
   /**

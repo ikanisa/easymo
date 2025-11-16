@@ -411,9 +411,10 @@ async function requestScheduleTime(
   state: ScheduleState,
 ): Promise<boolean> {
   if (!ctx.profileId) return false;
+  const serializedState: Record<string, unknown> = { ...state };
   await setState(ctx.supabase, ctx.profileId, {
     key: "schedule_time_select",
-    data: state,
+    data: serializedState,
   });
 
   // Instead of using a flow, provide list options

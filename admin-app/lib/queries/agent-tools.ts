@@ -12,10 +12,33 @@ export type AgentTool = {
   updated_at: string;
 };
 
+export type AgentToolsResponse = {
+  tools: AgentTool[];
+  integration?: {
+    status: "ok" | "degraded";
+    target: string;
+    message?: string;
+  };
+};
+
+export type AgentToolTestResult = {
+  status: "ok" | "error" | "mock";
+  tool?: string;
+  httpStatus?: number;
+  response?: unknown;
+  echo?: Record<string, unknown>;
+  message?: string;
+};
+
+export type AgentToolTestResponse = {
+  result: AgentToolTestResult;
+};
+
 export function useAgentTools() {
   return useQuery({
     queryKey: ["agent-tools"],
-    queryFn: ({ signal }) => apiClient.fetch("agentTools", { signal }),
+    queryFn: ({ signal }) =>
+      apiClient.fetch<AgentToolsResponse>("agentTools", { signal }),
   });
 }
 
@@ -30,9 +53,8 @@ export function useUpdateAgentTool() {
       data: Partial<Pick<AgentTool, "description" | "enabled" | "parameters" | "metadata">>;
     }) =>
       apiClient.fetch("agentTool", {
-        params: { toolId },
         method: "PATCH",
-        body: data,
+        body: { toolId, ...data },
       }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["agent-tools"] });
@@ -49,7 +71,7 @@ export function useTestAgentTool() {
       toolId: string;
       payload: Record<string, unknown>;
     }) =>
-      apiClient.fetch("agentToolTestCall", {
+      apiClient.fetch<AgentToolTestResponse>("agentToolTestCall", {
         method: "POST",
         body: { toolId, payload },
       }),

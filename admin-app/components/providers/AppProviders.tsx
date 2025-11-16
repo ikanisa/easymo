@@ -5,6 +5,7 @@ import { ThemeProvider } from "./ThemeProvider";
 import { MotionProviders } from "@/components/motion/MotionProviders";
 import { useServiceWorkerRegistration } from "@/app/sw/register";
 import { ConnectivityProvider } from "@/components/providers/ConnectivityProvider";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 interface AppProvidersProps {
   children: ReactNode;
@@ -13,9 +14,11 @@ interface AppProvidersProps {
 export function AppProviders({ children }: AppProvidersProps) {
   useServiceWorkerRegistration();
 
+  const [mounted, setMounted] = useState(false);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     if (typeof window === "undefined") return;
     const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
     const update = () => setPrefersReducedMotion(mediaQuery.matches);
@@ -24,13 +27,15 @@ export function AppProviders({ children }: AppProvidersProps) {
     return () => mediaQuery.removeEventListener("change", update);
   }, []);
 
-  return (
+  const content = (
     <ThemeProvider>
       <ConnectivityProvider>
-        <MotionProviders reducedMotion={prefersReducedMotion}>
+        <MotionProviders reducedMotion={mounted ? prefersReducedMotion : false}>
           {children}
         </MotionProviders>
       </ConnectivityProvider>
     </ThemeProvider>
   );
+
+  return <ErrorBoundary>{content}</ErrorBoundary>;
 }

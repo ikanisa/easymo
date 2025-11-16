@@ -1,30 +1,22 @@
+import "server-only";
+
 import { z } from "zod";
 import {
-  type DashboardKpi,
-  type TimeseriesPoint,
   dashboardKpiSchema,
   timeseriesPointSchema,
 } from "@/lib/schemas";
-import { getAdminApiPath } from "@/lib/routes";
+import {
+  type DashboardSnapshot,
+  type DashboardSnapshotIntegration,
+  type DashboardSnapshotResult,
+} from "@/lib/dashboard/dashboard-types";
+import { getSupabaseAdminClient } from "@/lib/server/supabase-admin";
 
-const isServer = typeof window === "undefined";
-
-export type DashboardSnapshot = {
-  kpis: DashboardKpi[];
-  timeseries: TimeseriesPoint[];
-};
-
-export type DashboardSnapshotIntegration = {
-  status: "ok" | "degraded";
-  target: "dashboard_snapshot";
-  message?: string;
-  remediation?: string;
-};
-
-export type DashboardSnapshotResult = {
-  data: DashboardSnapshot;
-  integration: DashboardSnapshotIntegration;
-};
+export type {
+  DashboardSnapshot,
+  DashboardSnapshotIntegration,
+  DashboardSnapshotResult,
+} from "@/lib/dashboard/dashboard-types";
 
 function degraded(
   message: string,
@@ -49,28 +41,6 @@ function fallbackResult(
 }
 
 export async function getDashboardSnapshot(): Promise<DashboardSnapshotResult> {
-  if (!isServer) {
-    try {
-      const response = await fetch(getAdminApiPath("dashboard"), { cache: "no-store" });
-      if (!response.ok) {
-        throw new Error("Failed to fetch dashboard snapshot from API");
-      }
-      const json = await response.json();
-      return {
-        data: parseSnapshot(json),
-        integration: {
-          status: "ok",
-          target: "dashboard_snapshot",
-        },
-      };
-    } catch (error) {
-      throw error instanceof Error ? error : new Error(String(error));
-    }
-  }
-
-  const { getSupabaseAdminClient } = await import(
-    "@/lib/server/supabase-admin"
-  );
   const adminClient = getSupabaseAdminClient();
   if (!adminClient) {
     return fallbackResult(

@@ -11,7 +11,6 @@
 
 1. **Permanently Deleted** (11 migrations) - in `migrations-deleted/`
    - Deprecated features: baskets, saccos, campaigns, momo_sms_inbox
-   
 2. **Archived for Reference** (113 migrations) - in `migrations-broken/`
    - Moved due to dependency issues, but may contain useful code
 
@@ -24,21 +23,25 @@
 These were deleted entirely because they reference deprecated features:
 
 #### Basket-related (3 files):
+
 1. `20251010101000_phase1_archive_legacy_tables.sql`
 2. `20251011130000_phase5_drop_archive_tables.sql`
 3. `20260304120000_remove_baskets_vouchers.sql`
 
 #### SACCO-related (3 files):
+
 4. `20251031134020_contribution_cycle_helper.sql`
 5. `20251031135000_sacco_loan_endorsements.sql`
 6. `20251031135010_sacco_loan_endorsements_rls.sql`
 
 #### Campaign-related (3 files):
+
 7. `20251030100000_campaigns_uuid_rework.sql`
 8. `20251130090000_remove_orders_templates_campaigns.sql`
 9. `20251205100000_admin_marketing_fixture_support.sql`
 
 #### Other deprecated (2 files):
+
 10. `20251031134015_momo_inbox_tracking.sql` - MoMo SMS inbox feature
 11. `20250215093000_add_business_tags.sql` - Early reference to non-existent businesses table
 
@@ -51,12 +54,14 @@ These were deleted entirely because they reference deprecated features:
 These are shown as "deleted" in git status but are preserved in migrations-broken/:
 
 ### Phase 1: Early 2025 (7 migrations)
-1. `20250201120000_data_retention_archives.sql` *(actually applied)*
-2. `20250907104112_bb1041f4-1b8a-4bce-b154-b8a3e8eb8462.sql` *(actually applied)*
+
+1. `20250201120000_data_retention_archives.sql` _(actually applied)_
+2. `20250907104112_bb1041f4-1b8a-4bce-b154-b8a3e8eb8462.sql` _(actually applied)_
 
 ### Phase 2: October 2025 - Core Schema (30 migrations)
+
 3. `20251001140000_rls_policies.sql` - ❌ RLS auth.role() syntax error
-4. `20251003160000_phase_a_legacy.sql` - ⚠️  Contains baskets (we use cleaned version)
+4. `20251003160000_phase_a_legacy.sql` - ⚠️ Contains baskets (we use cleaned version)
 5. `20251004100000_insurance_pipeline.sql`
 6. `20251004170000_runtime_support.sql`
 7. `20251005130000_master_schema_additions.sql`
@@ -87,6 +92,7 @@ These are shown as "deleted" in git status but are preserved in migrations-broke
 32. `20251014120000_remote_sync_placeholder.sql`
 
 ### Phase 3: Mid-October 2025 (20 migrations)
+
 33. `20251014121000_remote_sync_placeholder.sql`
 34. `20251014123000_remote_sync_placeholder.sql`
 35. `20251016120000_user_favorites_and_driver_parking.sql`
@@ -109,6 +115,7 @@ These are shown as "deleted" in git status but are preserved in migrations-broke
 52. `20251021033131_brokerai_insurance_and_mobility.sql` - ❌ Missing loc column
 
 ### Phase 4: Late October 2025 (30 migrations)
+
 53. `20251021133942_agent_management.sql`
 54. `20251023120000_add_agent_profile_columns.sql`
 55. `20251023121000_add_wa_messages.sql`
@@ -125,7 +132,7 @@ These are shown as "deleted" in git status but are preserved in migrations-broke
 66. `20251027073908_order_items_id_uuid.sql`
 67. `20251027120000_admin_core_schema.sql`
 68. `20251028163000_item_modifier_index.sql`
-69. `20251030100000_campaigns_uuid_rework.sql` *(deleted - campaigns)*
+69. `20251030100000_campaigns_uuid_rework.sql` _(deleted - campaigns)_
 70. `20251030130916_whatsapp_notifications_enhancement.sql`
 71. `20251030131000_notification_helper_functions.sql`
 72. `20251030140000_enable_rls_lockdown.sql`
@@ -135,12 +142,13 @@ These are shown as "deleted" in git status but are preserved in migrations-broke
 76. `20251031152000_admin_alert_prefs_rls.sql`
 77. `20251031152500_wallet_rls_policies.sql`
 78. `20251031203000_remote_sync_placeholder.sql`
-79. `20251101120000_loans_reminders_extension.sql` - ⚠️  Contains sacco/basket refs
+79. `20251101120000_loans_reminders_extension.sql` - ⚠️ Contains sacco/basket refs
 80. `20251101121000_motor_insurance_feature_gate.sql`
 81. `20251105131954_agent_orchestration_foundation.sql`
 82. `20251108000000_ai_agents_system.sql`
 
 ### Phase 5: November 2025 (20 migrations)
+
 83. `20251111090000_mobility_radius_dropoff_guard.sql`
 84. `20251111090100_fix_insurance_schema.sql`
 85. `20251112090000_phase2_mobility_core.sql`
@@ -158,12 +166,13 @@ These are shown as "deleted" in git status but are preserved in migrations-broke
 97. `20251207094500_agent_management.sql`
 98. `20251207100500_agent_docs_bucket.sql`
 99. `20251207112000_agent_document_embeddings.sql`
-100. `20251207130000_agent_toolkits.sql`
-101. `20251215094500_conversations_metadata.sql`
-102. `20251215121000_agent_security_hardening.sql`
-103. `20251220103000_policy_reliability.sql`
+100.  `20251207130000_agent_toolkits.sql`
+101.  `20251215094500_conversations_metadata.sql`
+102.  `20251215121000_agent_security_hardening.sql`
+103.  `20251220103000_policy_reliability.sql`
 
 ### Phase 6: January-March 2026 (21 migrations)
+
 104. `20260115103000_admin_station_rls_alignment.sql`
 105. `20260127160000_dual_constraint_matching.sql`
 106. `20260127160500_router_keyword_map.sql`
@@ -178,7 +187,7 @@ These are shown as "deleted" in git status but are preserved in migrations-broke
 115. `20260215100000_property_rental_agent.sql`
 116. `20260215110000_schedule_trip_agent.sql`
 117. `20260215120000_shops_quincaillerie_agents.sql`
-118. `20260220120000_enable_postgis.sql` *(duplicate - PostGIS already enabled)*
+118. `20260220120000_enable_postgis.sql` _(duplicate - PostGIS already enabled)_
 119. `20260312090000_video_performance_analytics.sql`
 120. `20260318100000_video_agent_content_system.sql`
 121. `20260320121500_agent_admin_views.sql`
@@ -204,7 +213,7 @@ These are shown as "deleted" in git status but are preserved in migrations-broke
 8. ✅ `20251002120000_core_schema.sql`
 9. ✅ `20251002123000_rls_core_policies.sql`
 10. ✅ `20251002124500_core_helpers.sql`
-11. ✅ `20251003160000_phase_a_legacy_cleaned.sql` *(custom - baskets removed)*
+11. ✅ `20251003160000_phase_a_legacy_cleaned.sql` _(custom - baskets removed)_
 
 ---
 
@@ -267,7 +276,8 @@ These are shown as "deleted" in git status but are preserved in migrations-broke
 
 ## Notes
 
-1. **Phase A Legacy**: We created a cleaned version (`phase_a_legacy_cleaned.sql`) with 269 lines of basket code removed
+1. **Phase A Legacy**: We created a cleaned version (`phase_a_legacy_cleaned.sql`) with 269 lines of
+   basket code removed
 2. **Baskets domain**: Completely removed (group savings/crowdfunding feature)
 3. **SACCOs domain**: Completely removed (savings & credit cooperatives)
 4. **Campaigns domain**: Completely removed (marketing campaigns)
@@ -300,4 +310,3 @@ done
 ---
 
 **End of Report**
-

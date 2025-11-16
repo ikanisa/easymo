@@ -1,8 +1,5 @@
 "use client";
 
-// Scaffolded registration hook for the admin service worker. Full offline
-// persistence (cache hydration, queue replay UI) will land during Phase 7 of the
-// roadmap.
 import { useEffect } from "react";
 
 export function useServiceWorkerRegistration() {
@@ -16,9 +13,20 @@ export function useServiceWorkerRegistration() {
 
     const register = async () => {
       try {
-        await navigator.serviceWorker.register("/sw.js");
+        const registration = await navigator.serviceWorker.register("/sw.js", {
+          scope: "/",
+          updateViaCache: "none",
+        });
+        
+        // Check for updates periodically
+        registration.update().catch((error) => {
+          console.warn("sw.update_failed", error);
+        });
       } catch (error) {
-        console.warn("sw.register_failed", error);
+        // Silently fail in development
+        if (process.env.NODE_ENV === "production") {
+          console.warn("sw.register_failed", error);
+        }
       }
     };
 

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { SparklineChart } from "@easymo/ui";
+import { TrendAreaChart as SparklineChart } from "@easymo/ui/charts/TrendAreaChart";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { SectionCard } from "@/components/ui/SectionCard";
 import type { VideoAnalyticsDashboardData } from "@/lib/video/analytics";
@@ -87,11 +87,15 @@ export function VideoAnalyticsDashboard({ data }: VideoAnalyticsDashboardProps) 
         description="Approval rate trend plus the highest performing hooks in the selected window."
       >
         <div className="grid gap-6 lg:grid-cols-[2fr,1fr]">
-          <SparklineChart
-            aria-label="Hook approval rate trend"
-            data={data.retentionTimeline.map((point) => ({ label: point.label, value: point.value }))}
-            description="Average approval rate across all hooks"
-          />
+          <div className="flex flex-col gap-2">
+            <SparklineChart
+              aria-label="Hook approval rate trend"
+              data={data.retentionTimeline.map((point) => ({ name: point.label, value: point.value }))}
+            />
+            <p className="text-xs text-[color:var(--color-muted)]">
+              Average approval rate across all hooks
+            </p>
+          </div>
           <div className="flex flex-col gap-3">
             {data.hookLeaders.map((leader) => (
               <div key={leader.jobId} className="rounded-xl border border-[color:var(--color-border)]/60 p-4">
@@ -150,11 +154,15 @@ export function VideoAnalyticsDashboard({ data }: VideoAnalyticsDashboardProps) 
         title="Cost per render"
         description="Average render cost over time to monitor spend efficiency."
       >
-        <SparklineChart
-          aria-label="Average cost per render"
-          data={data.costPerRenderTimeline.map((point) => ({ label: point.label, value: point.value }))}
-          description="Daily average cost per render"
-        />
+        <div className="flex flex-col gap-2">
+          <SparklineChart
+            aria-label="Average cost per render"
+            data={data.costPerRenderTimeline.map((point) => ({ name: point.label, value: point.value }))}
+          />
+          <p className="text-xs text-[color:var(--color-muted)]">
+            Daily average cost per render
+          </p>
+        </div>
       </SectionCard>
 
       <SectionCard

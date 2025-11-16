@@ -3,10 +3,11 @@ import {
   createClientFactory,
   type SupabaseClient,
 } from "./deps.ts";
+import { getEnv as getSharedEnv } from "../_shared/env.ts";
 
 function getEnv(...names: string[]): string | undefined {
   for (const name of names) {
-    const value = Deno.env.get(name);
+    const value = getSharedEnv(name);
     if (value) return value;
   }
   return undefined;

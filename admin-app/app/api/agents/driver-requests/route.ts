@@ -65,8 +65,8 @@ export const GET = createHandler(
       return fallbackResponse("Supabase admin client unavailable.");
     }
 
-    const limit = params.limit ?? 50;
-    const offset = params.offset ?? 0;
+    const limit = limit ?? 50;
+    const offset = offset ?? 0;
 
     const query = admin
       .from("trips")
@@ -78,8 +78,8 @@ export const GET = createHandler(
       .order("created_at", { ascending: false })
       .range(offset, offset + limit - 1);
 
-    if (params.status) {
-      query.eq("status", params.status);
+    if (status) {
+      query.eq("status", status);
     }
 
     const { data, error, count } = await query;

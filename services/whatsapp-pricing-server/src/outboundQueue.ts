@@ -1,0 +1,71 @@
+import PQueue from "p-queue";
+import pRetry from "p-retry";
+import { randomUUID } from "crypto";
+import { maskMsisdn } from "./utils/pii";
+
+type QueueMeta = {
+  to: string;
+  type: string;
+  correlationId?: string;
+};
+
+const DEFAULT_CONCURRENCY = Number(process.env.WHATSAPP_QUEUE_CONCURRENCY ?? "4");
+const DEFAULT_INTERVAL_CAP = Number(process.env.WHATSAPP_QUEUE_RATE_CAP ?? "20");
+const DEFAULT_INTERVAL = Number(process.env.WHATSAPP_QUEUE_INTERVAL_MS ?? "1000");
+const DEFAULT_RETRIES = Number(process.env.WHATSAPP_QUEUE_RETRIES ?? "2");
+
+class OutboundMessageQueue {
+  private queue: PQueue;
+
+  constructor() {
+    this.queue = new PQueue({
+      concurrency: Number.isFinite(DEFAULT_CONCURRENCY) ? DEFAULT_CONCURRENCY : 4,
+      intervalCap: Number.isFinite(DEFAULT_INTERVAL_CAP) ? DEFAULT_INTERVAL_CAP : 20,
+      interval: Number.isFinite(DEFAULT_INTERVAL) ? DEFAULT_INTERVAL : 1000,
+      carryoverConcurrencyCount: true,
+    });
+  }
+
+  async enqueue(meta: QueueMeta, task: () => Promise<void>): Promise<void> {
+    const correlationId = meta.correlationId ?? randomUUID();
+    const retries = Number.isFinite(DEFAULT_RETRIES) ? Math.max(0, DEFAULT_RETRIES) : 2;
+    const maskedRecipient = maskMsisdn(meta.to);
+
+    console.info("outbound.queue.schedule", {
+      correlationId,
+      to: maskedRecipient,
+      type: meta.type,
+    });
+
+    await this.queue.add(() =>
+      pRetry(task, {
+        retries,
+        onFailedAttempt: (error) => {
+          console.warn("outbound.queue.retry", {
+            correlationId,
+            to: maskedRecipient,
+            attempt: error.attemptNumber,
+            retriesLeft: error.retriesLeft,
+            reason: error.message,
+          });
+        },
+      }),
+    );
+
+    console.info("outbound.queue.delivered", {
+      correlationId,
+      to: maskedRecipient,
+      type: meta.type,
+    });
+  }
+}
+
+const outboundQueue = new OutboundMessageQueue();
+
+export function getOutboundQueue(): OutboundMessageQueue {
+  return outboundQueue;
+}
+
+export async function enqueueOutboundSend(meta: QueueMeta, task: () => Promise<void>): Promise<void> {
+  await outboundQueue.enqueue(meta, task);
+}

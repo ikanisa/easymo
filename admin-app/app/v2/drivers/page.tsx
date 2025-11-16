@@ -6,7 +6,7 @@ import { PlusIcon } from "@heroicons/react/24/outline";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { useToast } from "@/components/ui/ToastProvider";
-import { DataTable } from "@/src/v2/components/ui/DataTable";
+import { DataTable, type DataTableColumn } from "@/src/v2/components/ui/DataTable";
 import { CrudDialog } from "@/src/v2/components/ui/CrudDialog";
 import {
   useDrivers,
@@ -14,12 +14,11 @@ import {
   useCreateDriver,
   useUpdateDriver,
   useDeleteDriver,
+  type Driver,
+  type Vehicle,
 } from "@/src/v2/lib/supabase/hooks";
-import type { DriverRow, VehicleRow } from "@/src/v2/lib/supabase/database.types";
 
-type DriverWithVehicle = DriverRow & { vehicles: VehicleRow | null };
-
-interface DriverRowWithVehicle extends DriverWithVehicle {
+interface DriverRowWithVehicle extends Driver {
   vehicle_name: string;
 }
 
@@ -32,7 +31,7 @@ interface DriverFormValues {
 
 type DialogState =
   | { mode: "create"; driver: null }
-  | { mode: "edit"; driver: DriverWithVehicle }
+  | { mode: "edit"; driver: DriverRowWithVehicle }
   | null;
 
 export default function DriversPage() {
@@ -42,7 +41,7 @@ export default function DriversPage() {
   const createDriver = useCreateDriver();
   const updateDriver = useUpdateDriver();
   const deleteDriver = useDeleteDriver();
-  const undoBuffer = useRef<DriverRow | null>(null);
+  const undoBuffer = useRef<Driver | null>(null);
   const [dialogState, setDialogState] = useState<DialogState>(null);
 
   const rows: DriverRowWithVehicle[] = useMemo(() => {
@@ -64,18 +63,19 @@ export default function DriversPage() {
     }));
   }, [vehicles]);
 
-  const columns = [
-    { key: "name" as const, label: "Name", sortable: true },
-    { key: "phone" as const, label: "Phone", sortable: true },
+  const columns: DataTableColumn<DriverRowWithVehicle>[] = [
+    { key: "name", label: "Name", sortable: true },
+    { key: "phone", label: "Phone", sortable: true },
     {
-      key: "vehicle_name" as const,
+      key: "vehicle_name",
       label: "Vehicle",
-      render: (value: string) => value,
+      render: (_value, item) => item.vehicle_name,
     },
     {
-      key: "created_at" as const,
+      key: "created_at",
       label: "Joined",
-      render: (value: string) => new Date(value).toLocaleDateString(),
+      render: (_value, item) =>
+        item.created_at ? new Date(item.created_at).toLocaleDateString() : "—",
     },
   ];
 
@@ -86,10 +86,12 @@ export default function DriversPage() {
 
   const initialValues: DriverFormValues = dialogState?.mode === "edit" && dialogState.driver
     ? {
-        name: dialogState.driver.name,
-        phone: dialogState.driver.phone,
-        status: dialogState.driver.status ?? "active",
-        vehicle_id: dialogState.driver.vehicle_id,
+        name: String(dialogState.driver.name ?? ""),
+        phone: String(dialogState.driver.phone ?? ""),
+        status: String(dialogState.driver.status ?? "active"),
+        vehicle_id: typeof dialogState.driver.vehicle_id === "string"
+          ? dialogState.driver.vehicle_id
+          : null,
       }
     : {
         name: "",
@@ -141,10 +143,10 @@ export default function DriversPage() {
           try {
             await createDriver.mutateAsync({
               id: payload.id,
-              name: payload.name,
-              phone: payload.phone,
-              status: payload.status ?? undefined,
-              vehicle_id: payload.vehicle_id,
+              name: String(payload.name ?? ""),
+              phone: String(payload.phone ?? ""),
+              status: payload.status ? String(payload.status) : undefined,
+              vehicle_id: typeof payload.vehicle_id === "string" ? payload.vehicle_id : null,
             });
             pushToast("Restored driver.", "success");
           } catch (error) {

@@ -834,9 +834,9 @@ export function InsuranceWorkbench() {
                               </div>
                               <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-slate-500">
                                 <span>{policy.insurer ?? "Insurer pending"}</span>
-                                {policy.premium
+                                {policy.premiumTotalMinor != null
                                   ? (
-                                    <span>{formatRwf(policy.premium)} premium</span>
+                                    <span>{formatRwf(policy.premiumTotalMinor)} premium</span>
                                   )
                                   : null}
                               </div>

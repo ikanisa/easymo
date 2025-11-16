@@ -27,27 +27,36 @@ class MockSupabase {
   }
 
   rpc(name: string, args: Record<string, unknown>) {
-    if (name !== "security.claim_notifications") {
-      throw new Error(`Unexpected rpc ${name}`);
-    }
-    const limit = typeof args?._limit === "number"
-      ? (args._limit as number)
-      : 10;
-    const nowIso = new Date().toISOString();
-    const claimed = this.rows
-      .filter((row) =>
-        row.status === "queued" &&
-        (!row.next_attempt_at || row.next_attempt_at <= nowIso)
-      )
-      .slice(0, limit)
-      .map((row) => ({ ...row }));
-    for (const claim of claimed) {
-      const source = this.rows.find((row) => row.id === claim.id);
-      if (source) {
-        source.locked_at = nowIso;
+    switch (name) {
+      case "security.claim_notifications": {
+        const limit = typeof args?._limit === "number"
+          ? (args._limit as number)
+          : 10;
+        const nowIso = new Date().toISOString();
+        const claimed = this.rows
+          .filter((row) =>
+            row.status === "queued" &&
+            (!row.next_attempt_at || row.next_attempt_at <= nowIso)
+          )
+          .slice(0, limit)
+          .map((row) => ({ ...row }));
+        for (const claim of claimed) {
+          const source = this.rows.find((row) => row.id === claim.id);
+          if (source) {
+            source.locked_at = nowIso;
+          }
+        }
+        return Promise.resolve({ data: claimed, error: null });
       }
+      case "init_contact_preferences":
+        return Promise.resolve({ data: null, error: null });
+      case "is_opted_out":
+        return Promise.resolve({ data: false, error: null });
+      case "is_in_quiet_hours":
+        return Promise.resolve({ data: false, error: null });
+      default:
+        throw new Error(`Unexpected rpc ${name}`);
     }
-    return Promise.resolve({ data: claimed, error: null });
   }
 
   from(table: string) {
@@ -56,11 +65,12 @@ class MockSupabase {
     }
     const builder: any = {
       filters: [] as Array<{ column: string; value: unknown }>,
-      select: (_fields: string) => builder,
+      select: (_fields: string, _opts?: Record<string, unknown>) => builder,
       eq: (column: string, value: unknown) => {
         builder.filters.push({ column, value });
         return builder;
       },
+      gte: (_column: string, _value: unknown) => builder,
       or: (_expr: string) => builder,
       order: (_column: string, _opts: Record<string, unknown>) => builder,
       limit: async (limit: number) => {
@@ -97,7 +107,7 @@ function buildNotification(overrides: Record<string, unknown> = {}) {
     status: "queued",
     locked_at: null,
     to_wa_id: "+250700000001",
-    payload: { text: { body: "demo" } },
+    payload: { message: { text: "demo" } },
     retry_count: 0,
     next_attempt_at: null,
     error_message: null,

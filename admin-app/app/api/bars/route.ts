@@ -14,14 +14,14 @@ const querySchema = z.object({
 });
 
 function selectMock(params: z.infer<typeof querySchema>) {
-  const offset = params.offset ?? 0;
-  const limit = params.limit ?? 100;
+  const offset = offset ?? 0;
+  const limit = limit ?? 100;
   const filtered = mockBars.filter((bar) => {
-    const statusMatch = params.status
-      ? bar.isActive === (params.status === 'active')
+    const statusMatch = status
+      ? bar.isActive === (status === 'active')
       : true;
-    const searchMatch = params.search
-      ? `${bar.name} ${bar.location ?? ''}`.toLowerCase().includes(params.search.toLowerCase())
+    const searchMatch = search
+      ? `${bar.name} ${bar.location ?? ''}`.toLowerCase().includes(search.toLowerCase())
       : true;
     return statusMatch && searchMatch;
   });
@@ -60,8 +60,8 @@ export const GET = createHandler('admin_api.bars.list', async (request, _context
     return fromMocks(params, 'Supabase credentials missing. Showing mock bars.');
   }
 
-  const offset = params.offset ?? 0;
-  const limit = params.limit ?? 100;
+  const offset = offset ?? 0;
+  const limit = limit ?? 100;
 
   const supabaseQuery = adminClient
     .from('bars')
@@ -75,11 +75,11 @@ export const GET = createHandler('admin_api.bars.list', async (request, _context
     .order('updated_at', { ascending: false })
     .range(offset, offset + limit - 1);
 
-  if (params.status) {
-    supabaseQuery.eq('is_active', params.status === 'active');
+  if (status) {
+    supabaseQuery.eq('is_active', status === 'active');
   }
-  if (params.search) {
-    const pattern = `%${params.search}%`;
+  if (search) {
+    const pattern = `%${search}%`;
     supabaseQuery.or(`name.ilike.${pattern},location_text.ilike.${pattern}`);
   }
 

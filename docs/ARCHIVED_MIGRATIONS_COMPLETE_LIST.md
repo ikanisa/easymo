@@ -169,19 +169,14 @@
 
 1. **20251001140000_rls_policies.sql**
    - Error: `auth.role()` syntax error in dynamic SQL
-   
 2. **20251017220824_remote_schema.sql**
    - Error: DROP statements on non-existent tables (baskets_reminders, campaigns, saccos)
-   
 3. **20251018143000_storage_bucket_setup.sql**
    - Error: `storage.create_bucket()` incorrect syntax (`public => false`)
-   
 4. **20251021033131_brokerai_insurance_and_mobility.sql**
    - Error: Index on non-existent `loc` column
-   
 5. **20251023160010_agent_management.sql**
    - Error: Reference to `agent_id` column that doesn't exist
-   
 6. **20251026110000_business_categories.sql**
    - Error: Duplicate trigger creation
 
@@ -231,4 +226,6 @@ done
 
 ---
 
-**Note:** The 11 currently applied migrations provide all core functionality: profiles, businesses, wallet, orders, menus, mobility, bars, agents, admin, and notifications. Only restore additional migrations if you need specific features they provide.
+**Note:** The 11 currently applied migrations provide all core functionality: profiles, businesses,
+wallet, orders, menus, mobility, bars, agents, admin, and notifications. Only restore additional
+migrations if you need specific features they provide.

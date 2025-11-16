@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import type { AtlasPageConfig } from "./page-config";
+import { toLinkHref } from "@/lib/link-helpers";
 
 const statusAccentMap: Record<
   NonNullable<AtlasPageConfig["roadmap"][number]["status"]>,
@@ -42,7 +43,7 @@ export function AtlasBlueprintPage({ config }: { config: AtlasPageConfig }) {
                     variant={buttonVariant}
                     size="lg"
                   >
-                    <Link href={action.href as any}>{action.label}</Link>
+                    <Link href={toLinkHref(action.href)}>{action.label}</Link>
                   </Button>
                 ) : (
                   <Button
@@ -141,7 +142,7 @@ export function AtlasBlueprintPage({ config }: { config: AtlasPageConfig }) {
           </div>
           <div className="mt-6 grid gap-4 md:grid-cols-2">
             {config.quickLinks.map((link) => (
-              <Link
+              <a
                 key={link.label}
                 href={link.href}
                 className="group rounded-2xl border border-slate-100/70 bg-white/70 p-4 transition hover:-translate-y-0.5 hover:border-blue-200 hover:bg-white dark:border-slate-800/70 dark:bg-slate-900/80"
@@ -160,7 +161,7 @@ export function AtlasBlueprintPage({ config }: { config: AtlasPageConfig }) {
                 <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
                   {link.description}
                 </p>
-              </Link>
+              </a>
             ))}
           </div>
         </section>

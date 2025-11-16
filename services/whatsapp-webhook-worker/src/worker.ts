@@ -8,9 +8,9 @@ import { WebhookProcessor, WebhookPayload, WebhookProcessingResult } from "./pro
  * Consumes webhook events from Kafka topic and processes them
  */
 export class WebhookWorker {
-  private kafkaFactory: KafkaFactory;
-  private consumer!: KafkaConsumer;
-  private producer!: KafkaProducer;
+  private kafkaFactory: any;
+  private consumer!: any;
+  private producer!: any;
   private processor: WebhookProcessor;
   private isRunning = false;
 
@@ -47,14 +47,14 @@ export class WebhookWorker {
     await this.producer.connect();
     await this.processor.connect();
 
-    await this.consumer.subscribe([config.WEBHOOK_TOPIC]);
+    await this.consumer.subscribe(config.WEBHOOK_TOPIC);
 
     this.isRunning = true;
 
     // Start consuming messages
     await this.consumer.run({
       autoCommit: false,
-      eachMessage: async ({ topic, partition, message }) => {
+      eachMessage: async ({ topic, partition, message }: any) => {
         if (!this.isRunning) return;
 
         const correlationId = message.headers?.["x-correlation-id"]?.toString() || 
@@ -242,5 +242,9 @@ export class WebhookWorker {
 
   getMetrics() {
     return { ...this.metrics };
+  }
+
+  isStarted() {
+    return this.isRunning;
   }
 }

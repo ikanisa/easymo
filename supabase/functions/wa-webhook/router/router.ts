@@ -74,16 +74,18 @@ const defaultHooks: RouterHooks = {
 let hooks: RouterHooks = { ...defaultHooks };
 
 type RouterEnhancementHooks = {
+type RouterCacheHooks = {
   getCached: typeof getCached;
   setCached: typeof setCached;
 };
 
 const enhancementDefaults: RouterEnhancementHooks = {
+const cacheDefaults: RouterCacheHooks = {
   getCached,
   setCached,
 };
 
-let enhancementHooks: RouterEnhancementHooks = { ...enhancementDefaults };
+let cacheHooks: RouterCacheHooks = { ...cacheDefaults };
 
 export function __setRouterTestOverrides(
   overrides: Partial<RouterHooks>,
@@ -96,13 +98,13 @@ export function __resetRouterTestOverrides(): void {
 }
 
 export function __setRouterEnhancementOverrides(
-  overrides: Partial<RouterEnhancementHooks>,
+  overrides: Partial<RouterCacheHooks>,
 ): void {
-  enhancementHooks = { ...enhancementHooks, ...overrides };
+  cacheHooks = { ...cacheHooks, ...overrides };
 }
 
 export function __resetRouterEnhancementOverrides(): void {
-  enhancementHooks = { ...enhancementDefaults };
+  cacheHooks = { ...cacheDefaults };
 }
 
 export async function handleMessage(
@@ -113,11 +115,11 @@ export async function handleMessage(
   const LOG_LEVEL = (Deno.env.get("LOG_LEVEL") ?? "").toLowerCase();
   const correlationCacheKey = `wa:webhook:cid:msg:${msg.id}`;
   const cachedCorrelation = webhookConfig.cache.enabled
-    ? enhancementHooks.getCached<string>(correlationCacheKey)
+    ? cacheHooks.getCached<string>(correlationCacheKey)
     : null;
   const correlationId = cachedCorrelation ?? crypto.randomUUID();
   if (webhookConfig.cache.enabled && !cachedCorrelation) {
-    enhancementHooks.setCached(
+    cacheHooks.setCached(
       correlationCacheKey,
       correlationId,
       webhookConfig.cache.defaultTTL,
@@ -162,7 +164,7 @@ export async function handleMessage(
   type RouteDecision = { route: string; timestamp: number };
   const routeCacheKey = `wa:webhook:route:${msg.id}`;
   const cachedDecision = webhookConfig.cache.enabled
-    ? enhancementHooks.getCached<RouteDecision>(routeCacheKey)
+    ? cacheHooks.getCached<RouteDecision>(routeCacheKey)
     : null;
   if (cachedDecision) {
     incrementMetric("wa_webhook_message_cache_hit_total", 1, {
@@ -179,7 +181,7 @@ export async function handleMessage(
 
   const rememberRoute = (route: string) => {
     if (webhookConfig.cache.enabled) {
-      enhancementHooks.setCached(
+      cacheHooks.setCached(
         routeCacheKey,
         { route, timestamp: Date.now() },
         webhookConfig.cache.defaultTTL,

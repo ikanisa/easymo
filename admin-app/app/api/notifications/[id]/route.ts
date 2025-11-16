@@ -19,7 +19,7 @@ const actionSchema = z.object({
 
 export const POST = createHandler('admin_api.notifications.id.action', async (
   request: Request,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
   observability,
 ) => {
   const adminClient = getSupabaseAdminClient();

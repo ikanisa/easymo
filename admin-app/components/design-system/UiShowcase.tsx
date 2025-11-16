@@ -1,18 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import {
-  Button as UiButton,
-  KpiWidget,
-  DataTable,
-  TableHeader,
-  TableRow,
-  TableHead,
-  TableBody,
-  TableCell,
-  TableCaption,
-  TrendAreaChart,
-} from "@easymo/ui";
+import { Button as UiButton } from "@easymo/ui/components/Button";
+import { KpiWidget } from "@easymo/ui/widgets/KpiWidget";
+import { TrendAreaChart } from "@easymo/ui/charts/TrendAreaChart";
 
 const chartData = Array.from({ length: 12 }).map((_, index) => ({
   name: `Day ${index + 1}`,
@@ -98,27 +89,36 @@ export function UiShowcase() {
             High-touch operators highlighted for manual QA before triggering future automations.
           </p>
         </div>
-        <DataTable>
-          <TableHeader>
-            <TableRow>
-              <TableHead scope="col">Vendor</TableHead>
-              <TableHead scope="col">Status</TableHead>
-              <TableHead scope="col">7d Volume</TableHead>
-              <TableHead scope="col">SLA</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {vendors.map((vendor) => (
-              <TableRow key={vendor.name}>
-                <TableCell>{vendor.name}</TableCell>
-                <TableCell>{vendor.status}</TableCell>
-                <TableCell>{vendor.volume}</TableCell>
-                <TableCell>{vendor.sla}</TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-          <TableCaption>Insights generated via the GPT-5 copilot and Supabase aggregates.</TableCaption>
-        </DataTable>
+        <div className="rounded-2xl border border-[color:var(--color-border)]/50 bg-[color:var(--color-surface)]/80 shadow-[var(--elevation-low)]">
+          <table className="w-full min-w-[480px] border-collapse text-left text-sm text-[color:var(--color-foreground)]">
+            <thead className="bg-[color:var(--color-surface-muted)]/70 text-xs uppercase tracking-[0.12em] text-[color:var(--color-muted)]">
+              <tr>
+                <th scope="col" className="px-4 py-3 font-semibold">Vendor</th>
+                <th scope="col" className="px-4 py-3 font-semibold">Status</th>
+                <th scope="col" className="px-4 py-3 font-semibold">7d Volume</th>
+                <th scope="col" className="px-4 py-3 font-semibold">SLA</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[color:var(--color-border)]/30">
+              {vendors.map((vendor, index) => (
+                <tr
+                  key={vendor.name}
+                  className={index % 2 === 0
+                    ? "bg-[color:var(--color-surface)]/70"
+                    : "bg-[color:var(--color-surface-muted)]/40"}
+                >
+                  <td className="px-4 py-3">{vendor.name}</td>
+                  <td className="px-4 py-3">{vendor.status}</td>
+                  <td className="px-4 py-3">{vendor.volume}</td>
+                  <td className="px-4 py-3">{vendor.sla}</td>
+                </tr>
+              ))}
+            </tbody>
+            <caption className="mt-3 text-start text-xs text-[color:var(--color-muted)] px-4 pb-4">
+              Insights generated via the GPT-5 copilot and Supabase aggregates.
+            </caption>
+          </table>
+        </div>
       </section>
     </div>
   );

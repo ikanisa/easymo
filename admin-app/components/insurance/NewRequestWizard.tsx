@@ -591,7 +591,7 @@ export function NewRequestWizard() {
                 <li>Archive OCR docs once policy PDF is stored.</li>
               </ul>
             </div>
-            <Button variant="success">Complete issuance and create policy record</Button>
+            <Button variant="primary">Complete issuance and create policy record</Button>
           </div>
         )}
 

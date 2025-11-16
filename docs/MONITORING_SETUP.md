@@ -2,7 +2,8 @@
 
 ## Overview
 
-This guide provides step-by-step instructions for setting up comprehensive monitoring and observability for the EasyMO platform using industry-standard tools.
+This guide provides step-by-step instructions for setting up comprehensive monitoring and
+observability for the EasyMO platform using industry-standard tools.
 
 ## Architecture
 
@@ -43,6 +44,7 @@ This guide provides step-by-step instructions for setting up comprehensive monit
 ### Implementation
 
 Already implemented in the platform! See:
+
 - **Edge Functions:** `supabase/functions/_shared/observability.ts`
 - **Node Services:** `packages/commons/src/logger.ts`
 
@@ -52,14 +54,17 @@ Already implemented in the platform! See:
 import { logger } from "@easymo/commons";
 
 // ✅ DO: Use structured logging
-logger.info({
-  event: "PAYMENT_PROCESSED",
-  userId: "user_123",
-  amount: 1000,
-  currency: "USD",
-  transactionId: "tx_456",
-  correlationId: req.headers["x-correlation-id"],
-}, "Payment processed successfully");
+logger.info(
+  {
+    event: "PAYMENT_PROCESSED",
+    userId: "user_123",
+    amount: 1000,
+    currency: "USD",
+    transactionId: "tx_456",
+    correlationId: req.headers["x-correlation-id"],
+  },
+  "Payment processed successfully"
+);
 
 // ❌ DON'T: Use unstructured strings
 logger.info("Payment processed for user user_123 amount 1000");
@@ -70,6 +75,7 @@ logger.info("Payment processed for user user_123 amount 1000");
 #### Option 1: Grafana Loki (Recommended)
 
 **Install Loki:**
+
 ```bash
 # Docker Compose
 cat > docker-compose.loki.yml << EOF
@@ -99,6 +105,7 @@ docker-compose -f docker-compose.loki.yml up -d
 ```
 
 **Loki Configuration:** `loki-config.yaml`
+
 ```yaml
 auth_enabled: false
 
@@ -144,6 +151,7 @@ table_manager:
 ```
 
 **Promtail Configuration:** `promtail-config.yaml`
+
 ```yaml
 server:
   http_listen_port: 9080
@@ -167,14 +175,15 @@ scrape_configs:
     docker_sd_configs:
       - host: unix:///var/run/docker.sock
     relabel_configs:
-      - source_labels: ['__meta_docker_container_name']
-        regex: '/(.*)'
-        target_label: 'container'
+      - source_labels: ["__meta_docker_container_name"]
+        regex: "/(.*)"
+        target_label: "container"
 ```
 
 #### Option 2: ELK Stack
 
 **Docker Compose:**
+
 ```yaml
 version: "3"
 services:
@@ -213,6 +222,7 @@ volumes:
 ### Prometheus Setup
 
 **Install Prometheus:**
+
 ```bash
 # Docker Compose
 cat > docker-compose.prometheus.yml << EOF
@@ -236,57 +246,58 @@ EOF
 ```
 
 **Prometheus Configuration:** `prometheus.yml`
+
 ```yaml
 global:
   scrape_interval: 15s
   evaluation_interval: 15s
   external_labels:
-    cluster: 'easymo-production'
+    cluster: "easymo-production"
 
 scrape_configs:
   # Wallet Service
-  - job_name: 'wallet-service'
+  - job_name: "wallet-service"
     static_configs:
-      - targets: ['localhost:4400']
-    metrics_path: '/metrics'
+      - targets: ["localhost:4400"]
+    metrics_path: "/metrics"
 
   # Ranking Service
-  - job_name: 'ranking-service'
+  - job_name: "ranking-service"
     static_configs:
-      - targets: ['localhost:4401']
+      - targets: ["localhost:4401"]
 
   # Vendor Service
-  - job_name: 'vendor-service'
+  - job_name: "vendor-service"
     static_configs:
-      - targets: ['localhost:4402']
+      - targets: ["localhost:4402"]
 
   # Agent Core
-  - job_name: 'agent-core'
+  - job_name: "agent-core"
     static_configs:
-      - targets: ['localhost:4404']
+      - targets: ["localhost:4404"]
 
   # Node Exporter (system metrics)
-  - job_name: 'node'
+  - job_name: "node"
     static_configs:
-      - targets: ['localhost:9100']
+      - targets: ["localhost:9100"]
 
   # PostgreSQL
-  - job_name: 'postgres'
+  - job_name: "postgres"
     static_configs:
-      - targets: ['localhost:9187']
+      - targets: ["localhost:9187"]
 
   # Redis
-  - job_name: 'redis'
+  - job_name: "redis"
     static_configs:
-      - targets: ['localhost:9121']
+      - targets: ["localhost:9121"]
 
 alerting:
   alertmanagers:
     - static_configs:
-        - targets: ['localhost:9093']
+        - targets: ["localhost:9093"]
 
 rule_files:
-  - 'alerts.yml'
+  - "alerts.yml"
 ```
 
 ### Service Metrics Implementation
@@ -295,70 +306,74 @@ rule_files:
 
 ```typescript
 // services/wallet-service/src/metrics.ts
-import { register, Counter, Histogram, Gauge } from 'prom-client';
+import { register, Counter, Histogram, Gauge } from "prom-client";
 
 // Request counter
 export const requestCounter = new Counter({
-  name: 'wallet_requests_total',
-  help: 'Total number of requests',
-  labelNames: ['method', 'endpoint', 'status'],
+  name: "wallet_requests_total",
+  help: "Total number of requests",
+  labelNames: ["method", "endpoint", "status"],
 });
 
 // Request duration
 export const requestDuration = new Histogram({
-  name: 'wallet_request_duration_seconds',
-  help: 'Request duration in seconds',
-  labelNames: ['method', 'endpoint'],
+  name: "wallet_request_duration_seconds",
+  help: "Request duration in seconds",
+  labelNames: ["method", "endpoint"],
   buckets: [0.1, 0.5, 1, 2, 5],
 });
 
 // Transfer counter
 export const transferCounter = new Counter({
-  name: 'wallet_transfers_total',
-  help: 'Total number of transfers',
-  labelNames: ['status', 'currency'],
+  name: "wallet_transfers_total",
+  help: "Total number of transfers",
+  labelNames: ["status", "currency"],
 });
 
 // Account balance gauge
 export const accountBalance = new Gauge({
-  name: 'wallet_account_balance',
-  help: 'Current account balance',
-  labelNames: ['accountId', 'currency'],
+  name: "wallet_account_balance",
+  help: "Current account balance",
+  labelNames: ["accountId", "currency"],
 });
 
 // Export metrics endpoint
 export function metricsHandler(req: any, res: any) {
-  res.set('Content-Type', register.contentType);
+  res.set("Content-Type", register.contentType);
   res.end(register.metrics());
 }
 ```
 
 **Add to Express app:**
+
 ```typescript
-import { metricsHandler, requestCounter, requestDuration } from './metrics';
+import { metricsHandler, requestCounter, requestDuration } from "./metrics";
 
 // Metrics endpoint
-app.get('/metrics', metricsHandler);
+app.get("/metrics", metricsHandler);
 
 // Metrics middleware
 app.use((req, res, next) => {
   const start = Date.now();
-  
-  res.on('finish', () => {
+
+  res.on("finish", () => {
     const duration = (Date.now() - start) / 1000;
-    
+
     requestCounter.inc({
       method: req.method,
       endpoint: req.route?.path || req.path,
       status: res.statusCode,
     });
-    
-    requestDuration.observe({
-      method: req.method,
-      endpoint: req.route?.path || req.path,
-    }, duration);
+
+    requestDuration.observe(
+      {
+        method: req.method,
+        endpoint: req.route?.path || req.path,
+      },
+      duration
+    );
   });
-  
+
   next();
 });
 ```
@@ -370,35 +385,39 @@ app.use((req, res, next) => {
 ### OpenTelemetry Setup
 
 **Install dependencies:**
+
 ```bash
 pnpm add @opentelemetry/api @opentelemetry/sdk-node @opentelemetry/auto-instrumentations-node
 ```
 
 **Configure tracing:**
+
 ```typescript
 // services/wallet-service/src/tracing.ts
-import { NodeSDK } from '@opentelemetry/sdk-node';
-import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentations-node';
-import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
+import { NodeSDK } from "@opentelemetry/sdk-node";
+import { getNodeAutoInstrumentations } from "@opentelemetry/auto-instrumentations-node";
+import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
 
 const sdk = new NodeSDK({
   traceExporter: new OTLPTraceExporter({
-    url: process.env.OTEL_EXPORTER_OTLP_ENDPOINT || 'http://localhost:4318/v1/traces',
+    url: process.env.OTEL_EXPORTER_OTLP_ENDPOINT || "http://localhost:4318/v1/traces",
   }),
   instrumentations: [getNodeAutoInstrumentations()],
-  serviceName: 'wallet-service',
+  serviceName: "wallet-service",
 });
 
 sdk.start();
 
-process.on('SIGTERM', () => {
-  sdk.shutdown()
-    .then(() => console.log('Tracing terminated'))
-    .catch((error) => console.log('Error terminating tracing', error));
+process.on("SIGTERM", () => {
+  sdk
+    .shutdown()
+    .then(() => console.log("Tracing terminated"))
+    .catch((error) => console.log("Error terminating tracing", error));
 });
 ```
 
 **Start Jaeger (trace collector):**
+
 ```bash
 docker run -d --name jaeger \
   -e COLLECTOR_OTLP_ENABLED=true \
@@ -414,6 +433,7 @@ docker run -d --name jaeger \
 ### Alert Rules
 
 **File:** `prometheus/alerts.yml`
+
 ```yaml
 groups:
   - name: easymo_alerts
@@ -459,7 +479,9 @@ groups:
 
       # High memory usage
       - alert: HighMemoryUsage
-        expr: (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes > 0.9
+        expr:
+          (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes
+          > 0.9
         for: 10m
         labels:
           severity: warning
@@ -468,51 +490,88 @@ groups:
 
       # Disk space running out
       - alert: DiskSpaceRunningOut
-        expr: (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) < 0.1
+        expr:
+          (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"})
+          < 0.1
         for: 10m
         labels:
           severity: critical
         annotations:
           summary: "Disk space running out on {{ $labels.instance }}"
+
+      # WhatsApp webhook worker dependency failure
+      - alert: WhatsAppWebhookWorkerDependenciesDegraded
+        expr: probe_success{job="whatsapp-webhook-worker-health"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "WhatsApp webhook worker dependency probe failing"
+          description: |
+            Synthetic health check reported degraded status.
+            Latest failure reason: {{ $labels.failure_reason }}
 ```
 
 ### AlertManager Setup
 
 **Configuration:** `alertmanager.yml`
+
 ```yaml
 global:
-  smtp_smarthost: 'smtp.gmail.com:587'
-  smtp_from: 'alerts@easymo.com'
-  smtp_auth_username: 'alerts@easymo.com'
-  smtp_auth_password: 'app_password'
+  smtp_smarthost: "smtp.gmail.com:587"
+  smtp_from: "alerts@easymo.com"
+  smtp_auth_username: "alerts@easymo.com"
+  smtp_auth_password: "app_password"
 
 route:
-  group_by: ['alertname', 'cluster']
+  group_by: ["alertname", "cluster"]
   group_wait: 10s
   group_interval: 10s
   repeat_interval: 12h
-  receiver: 'team-email'
+  receiver: "team-email"
   routes:
     - match:
         severity: critical
-      receiver: 'pagerduty'
+      receiver: "pagerduty"
 
 receivers:
-  - name: 'team-email'
+  - name: "team-email"
     email_configs:
-      - to: 'team@easymo.com'
+      - to: "team@easymo.com"
 
-  - name: 'pagerduty'
+  - name: "pagerduty"
     pagerduty_configs:
-      - service_key: 'your_pagerduty_key'
+      - service_key: "your_pagerduty_key"
 
-  - name: 'slack'
+  - name: "slack"
     slack_configs:
-      - api_url: 'https://hooks.slack.com/services/YOUR/WEBHOOK/URL'
-        channel: '#alerts'
-        title: '{{ .GroupLabels.alertname }}'
-        text: '{{ range .Alerts }}{{ .Annotations.description }}{{ end }}'
+      - api_url: "https://hooks.slack.com/services/YOUR/WEBHOOK/URL"
+        channel: "#alerts"
+        title: "{{ .GroupLabels.alertname }}"
+        text: "{{ range .Alerts }}{{ .Annotations.description }}{{ end }}"
 ```
+
+---
+
+### Synthetic WhatsApp Worker Probe
+
+- **Script:** `tools/monitoring/whatsapp/worker-health-check.ts`
+- **Schedule:** Every minute via Cron, GitHub Actions, or your synthetic monitor platform.
+- **Export to Prometheus:** Push `probe_success` (1/0) and `failure_reason` label via Pushgateway or
+  your preferred metrics bridge so the `WhatsAppWebhookWorkerDependenciesDegraded` rule can evaluate
+  accurately.
+
+Example Cron entry using Pushgateway:
+
+```bash
+* * * * * WHATSAPP_WORKER_HEALTH_URL=https://worker.easymo.com/health \
+    deno run --allow-env --allow-net tools/monitoring/whatsapp/worker-health-check.ts \
+    | curl --silent --show-error --data-binary @- \
+        http://pushgateway.easymo.com:9091/metrics/job/whatsapp-webhook-worker-health
+```
+
+The script surfaces Redis, Supabase, and OpenAI probe results (including upstream HTTP status codes)
+so operators can triage the failing dependency immediately.
 
 ---
 
@@ -521,6 +580,7 @@ receivers:
 ### Grafana Setup
 
 **Install Grafana:**
+
 ```bash
 docker run -d --name grafana \
   -p 3000:3000 \
@@ -533,6 +593,7 @@ docker run -d --name grafana \
 ### Pre-built Dashboards
 
 Create `dashboards/wallet-service.json`:
+
 ```json
 {
   "dashboard": {
@@ -596,11 +657,13 @@ curl -X POST http://localhost:3000/api/dashboards/db \
 ### Sentry Setup
 
 **Install:**
+
 ```bash
 pnpm add @sentry/node @sentry/profiling-node
 ```
 
 **Configure:**
+
 ```typescript
 // services/wallet-service/src/sentry.ts
 import * as Sentry from "@sentry/node";
@@ -611,9 +674,7 @@ Sentry.init({
   environment: process.env.NODE_ENV,
   tracesSampleRate: process.env.NODE_ENV === "production" ? 0.1 : 1.0,
   profilesSampleRate: 0.1,
-  integrations: [
-    new ProfilingIntegration(),
-  ],
+  integrations: [new ProfilingIntegration()],
 });
 
 // Export for use in error handlers
@@ -621,6 +682,7 @@ export { Sentry };
 ```
 
 **Add to Express:**
+
 ```typescript
 import { Sentry } from './sentry';
 
