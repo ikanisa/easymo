@@ -42,5 +42,5 @@
 - **Invite creation**: `POST /api/admin/invitations` body `{ email, role, orgId, inviterId }` → returns `{ inviteId, status: 'pending', email, role, orgId, createdAt }`.
 - **Invite acceptance**: `POST /api/auth/accept-invite` body `{ invitationToken }` → returns `{ userId, email, orgId, roles, requiresPassword: boolean }`.
 - **Role guard helper**: frontend expects `roles` array + `orgId` to be present in session payload; API must ensure they are consistent with Supabase `auth.users` and `public.user_roles`.
-- **Error envelope**: backend errors respond as `{ error: { code, message, hint? } }` with appropriate HTTP status; frontend surfaces `message` and logs `code`/`hint`.
+- **Error envelope**: backend errors respond as `{ error: { code, message, hint? } }` (this is the standard format used by all admin-app API routes). The `code` field must use the canonical error code taxonomy (e.g., `AUTH_INVALID_TOKEN`, `AUTH_INVITE_EXPIRED`, `INVITE_ALREADY_ACCEPTED`) as defined in [`@easymo/commons/errors`](../../packages/commons/src/errors.ts) and referenced in API route handlers. Frontend surfaces `message` and logs `code`/`hint`.
 - **Caching**: profile fetch is cached per session with SWR/React Query; mutation endpoints return updated profile to keep cache consistent.
