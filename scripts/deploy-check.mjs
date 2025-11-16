@@ -89,7 +89,7 @@ function verifySchemaChecksum() {
 
   const expected = computeChecksum(files);
   const schema = readFileSync(schemaPath, "utf8");
-  const marker = schema.match(/--\s*MIGRATIONS_CHECKSUM:\s*([a-f0-9]+)/i);
+  const marker = schema.match(/--\s*MIGRATIONS_CHECKSUM:\s*([a-f0-9]+)/);
 
   if (!marker) {
     return {
