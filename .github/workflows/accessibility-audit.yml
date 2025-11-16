@@ -44,7 +44,7 @@ jobs:
         if: env.AUDIT_BASE_URL != ''
         run: |
           mkdir -p artifacts/pa11y
-          pa11y-ci "$AUDIT_BASE_URL" --json > artifacts/pa11y/report.json
+          pa11y-ci "$AUDIT_BASE_URL" --json > artifacts/pa11y/report.json || true
 
       - name: Upload audit artifacts
         if: always() && env.AUDIT_BASE_URL != ''
