@@ -21,6 +21,8 @@ type BarSummary = {
   address?: string;
   distance?: number;
   whatsapp?: string;
+  country?: string;
+  slug?: string;
   features?: unknown;
 };
 
@@ -218,6 +220,8 @@ export async function handleBarsLocation(
     id: bar.id,
     name: bar.name,
     address: bar.location_text,
+    country: bar.country,
+    slug: bar.slug,
     distance: typeof bar.distance_km === "number" ? bar.distance_km : undefined,
     whatsapp: bar.whatsapp_number,
     features: bar.features,
@@ -291,6 +295,8 @@ export async function handleBarsResultSelection(
       data: {
         barId: bar.id,
         barName: bar.name,
+        barCountry: (bar as any).country,
+        barSlug: (bar as any).slug,
         barWhatsApp: bar.whatsapp,
         barsResults: snapshot,
       },
@@ -434,24 +440,98 @@ async function fetchBarMenuItems(
   ctx: RouterContext,
   barId: string,
 ): Promise<MenuOrderItem[]> {
-  const { data, error } = await ctx.supabase
-    .from("restaurant_menu_items")
-    .select("id, name, category, price, currency, description")
-    .eq("bar_id", barId)
+  // Attempt using new schema (category_name)
+  let rows: MenuOrderItem[] = [];
+  try {
+    const { data, error } = await ctx.supabase
+      .from("restaurant_menu_items")
+      .select("id, name, category_name, price, currency, description")
+      .eq("bar_id", barId)
+      .eq("is_available", true)
+      .order("category_name", { ascending: true, nullsFirst: true })
+      .order("name", { ascending: true })
+      .limit(30);
+    if (error) throw error;
+    rows = (data ?? []).map((item: any) => ({
+      id: item.id,
+      name: item.name,
+      category: item.category_name ?? undefined,
+      price: item.price,
+      currency: item.currency,
+      description: item.description ?? undefined,
+    }));
+  } catch (err) {
+    // Fallback to legacy column name "category"
+    const { data, error: err2 } = await ctx.supabase
+      .from("restaurant_menu_items")
+      .select("id, name, category, price, currency, description")
+      .eq("bar_id", barId)
+      .eq("is_available", true)
+      .order("category", { ascending: true })
+      .order("name", { ascending: true })
+      .limit(30);
+    if (err2) {
+      console.error("bars.menu_fetch_fail", err2);
+      rows = [];
+    } else {
+      rows = (data ?? []).map((item: any) => ({
+        id: item.id,
+        name: item.name,
+        category: item.category ?? undefined,
+        price: item.price,
+        currency: item.currency,
+        description: item.description ?? undefined,
+      }));
+    }
+  }
+
+  if (rows.length) return rows;
+
+  // If nothing found, the consumer barId likely comes from business.id.
+  // Try to resolve the matching public.bars row by name/slug and retry.
+  try {
+    const state = await (ctx.profileId
+      ? ctx.supabase.from("chat_state").select("state").eq("user_id", ctx.profileId).maybeSingle()
+      : Promise.resolve({ data: null } as any));
+    const s = (state as any)?.data?.state || (state as any)?.data || {};
+    const barName: string | undefined = s?.barName;
+    const barSlug: string | undefined = s?.barSlug;
+    const barCountry: string | undefined = s?.barCountry;
+    let query = ctx.supabase.from("bars").select("id, name, country, slug").limit(1);
+    if (barSlug) {
+      query = query.eq("slug", barSlug);
+    } else if (barName) {
+      query = query.ilike("name", barName);
+      if (barCountry) query = query.eq("country", barCountry);
+    }
+    const { data: barRow } = await query.maybeSingle();
+    if (barRow?.id) {
+      // Retry with resolved bars.id
+      return await fetchBarMenuItems(ctx, barRow.id);
+    }
+  } catch (e) {
+    // non-fatal
+  }
+
+  // Fallback: use shared Rwanda catalog mirrored into public.menu_items
+  const { data: shared, error: sharedErr } = await ctx.supabase
+    .from("menu_items")
+    .select("id, name, price, currency, description, category_name, category")
     .eq("is_available", true)
-    .order("category", { ascending: true })
+    .or("metadata->>source.eq.mirror,metadata->>from.eq.restaurant_menu_items")
+    .order("category_name", { ascending: true, nullsFirst: true })
     .order("name", { ascending: true })
     .limit(30);
-  if (error) {
-    console.error("bars.menu_fetch_fail", error);
+  if (sharedErr) {
+    console.error("bars.menu_shared_fetch_fail", sharedErr);
     return [];
   }
-  return (data ?? []).map((item) => ({
+  return (shared ?? []).map((item: any) => ({
     id: item.id,
     name: item.name,
-    category: item.category,
+    category: item.category_name ?? item.category ?? undefined,
     price: item.price,
-    currency: item.currency,
+    currency: item.currency ?? 'RWF',
     description: item.description ?? undefined,
   }));
 }

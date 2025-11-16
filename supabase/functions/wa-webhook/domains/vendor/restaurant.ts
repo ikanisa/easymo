@@ -124,37 +124,90 @@ async function showCurrentMenu(
 ): Promise<boolean> {
   if (!state.barId) return false;
 
-  const { data: menuItems, error } = await ctx.supabase
-    .from("restaurant_menu_items")
-    .select("id, name, category, price, currency, is_available")
-    .eq("bar_id", state.barId)
-    .eq("is_available", true)
-    .order("category")
-    .order("name");
-
-  if (error) {
-    console.error("restaurant.menu_fetch_fail", error);
-    await sendButtonsMessage(
-      ctx,
-      t(ctx.locale, "restaurant.menu.fetch_error"),
-      homeOnly(),
-    );
-    return true;
+  // Try new schema (category_name) first, then fallback to legacy category
+  let menuItems: Array<{ id: string; name: string; category?: string | null; price: number; currency: string; is_available: boolean }>|null = null;
+  try {
+    const { data, error } = await ctx.supabase
+      .from("restaurant_menu_items")
+      .select("id, name, category_name, price, currency, is_available")
+      .eq("bar_id", state.barId)
+      .eq("is_available", true)
+      .order("category_name", { ascending: true, nullsFirst: true })
+      .order("name");
+    if (error) throw error;
+    menuItems = (data ?? []).map((row: any) => ({
+      id: row.id,
+      name: row.name,
+      category: row.category_name ?? undefined,
+      price: row.price,
+      currency: row.currency,
+      is_available: row.is_available,
+    }));
+  } catch (err) {
+    const { data, error: err2 } = await ctx.supabase
+      .from("restaurant_menu_items")
+      .select("id, name, category, price, currency, is_available")
+      .eq("bar_id", state.barId)
+      .eq("is_available", true)
+      .order("category")
+      .order("name");
+    if (err2) {
+      console.error("restaurant.menu_fetch_fail", err2);
+      await sendButtonsMessage(
+        ctx,
+        t(ctx.locale, "restaurant.menu.fetch_error"),
+        homeOnly(),
+      );
+      return true;
+    }
+    menuItems = data as any;
   }
 
   if (!menuItems || menuItems.length === 0) {
+    // Try showing the shared Rwanda catalog as a helpful preview
+    const { data: shared } = await ctx.supabase
+      .from("menu_items")
+      .select("name, description, price, currency, category_name, category")
+      .or("metadata->>source.eq.mirror,metadata->>from.eq.restaurant_menu_items")
+      .eq("is_available", true)
+      .order("category_name", { ascending: true, nullsFirst: true })
+      .order("name", { ascending: true })
+      .limit(50);
+
+    if (!shared || shared.length === 0) {
+      await sendButtonsMessage(
+        ctx,
+        t(ctx.locale, "restaurant.menu.empty"),
+        buildButtons(
+          { id: "restaurant_upload_menu", title: t(ctx.locale, "restaurant.menu.upload_button") },
+          { id: IDS.BACK_MENU, title: t(ctx.locale, "common.menu_back") },
+        ),
+      );
+      return true;
+    }
+
+    const byCat: Record<string, typeof shared> = {};
+    for (const it of shared) {
+      const cat = (it as any).category_name || (it as any).category || "Other";
+      if (!byCat[cat]) byCat[cat] = [] as any;
+      byCat[cat].push(it as any);
+    }
+    let preview = "No active menu configured. Here is the standard Rwanda menu preview:" + "\n\n";
+    const cats = Object.keys(byCat).slice(0, 5);
+    for (const cat of cats) {
+      preview += `*${cat}*\n`;
+      for (const it of byCat[cat].slice(0, 4)) {
+        preview += `• ${it.name} - ${it.price} ${it.currency || 'RWF'}\n`;
+      }
+      preview += "\n";
+    }
+
     await sendButtonsMessage(
       ctx,
-      t(ctx.locale, "restaurant.menu.empty"),
+      preview.trim(),
       buildButtons(
-        {
-          id: "restaurant_upload_menu",
-          title: t(ctx.locale, "restaurant.menu.upload_button"),
-        },
-        {
-          id: IDS.BACK_MENU,
-          title: t(ctx.locale, "common.menu_back"),
-        },
+        { id: "restaurant_upload_menu", title: t(ctx.locale, "restaurant.menu.upload_button") },
+        { id: IDS.BACK_MENU, title: t(ctx.locale, "common.menu_back") },
       ),
     );
     return true;
