@@ -1,6 +1,14 @@
 import type { RouterContext } from "../../types.ts";
 import { supabase } from "../../config.ts";
 import type { SupabaseClient } from "../../deps.ts";
+import { getOrSetCached } from "../../utils/cache.ts";
+
+const MENU_CACHE_ENABLED =
+  (Deno.env.get("WA_MENU_CACHE_ENABLED") ?? "true").toLowerCase() !== "false";
+const MENU_CACHE_TTL_SECONDS = Math.max(
+  Number(Deno.env.get("WA_MENU_CACHE_TTL_SECONDS") ?? "420") || 420,
+  60,
+);
 
 export type MenuItemKey =
   | "jobs"
@@ -53,26 +61,34 @@ export async function fetchActiveMenuItems(
   client?: SupabaseClient,
 ): Promise<WhatsAppHomeMenuItem[]> {
   const db = client || supabase;
-  
-  const { data, error } = await db
-    .from("whatsapp_home_menu_items")
-    .select("*")
-    .eq("is_active", true)
-    .contains("active_countries", [countryCode])
-    .order("display_order", { ascending: true });
+  const cacheKey = `menu:home:${countryCode}`;
 
-  if (error) {
-    console.error("Failed to fetch menu items:", error);
-    // Return empty array on error, fallback will handle it
-    return [];
+  const fetcher = async (): Promise<WhatsAppHomeMenuItem[]> => {
+    const { data, error } = await db
+      .from("whatsapp_home_menu_items")
+      .select("*")
+      .eq("is_active", true)
+      .contains("active_countries", [countryCode])
+      .order("display_order", { ascending: true });
+
+    if (error) {
+      console.error("Failed to fetch menu items:", error);
+      // Return empty array on error, fallback will handle it
+      return [];
+    }
+
+    const items = (data || []) as WhatsAppHomeMenuItem[];
+    return items.map(item => ({
+      ...item,
+      name: getLocalizedMenuName(item, countryCode),
+    }));
+  };
+
+  if (!MENU_CACHE_ENABLED) {
+    return await fetcher();
   }
 
-  // Apply country-specific names
-  const items = (data || []) as WhatsAppHomeMenuItem[];
-  return items.map(item => ({
-    ...item,
-    name: getLocalizedMenuName(item, countryCode),
-  }));
+  return await getOrSetCached(cacheKey, fetcher, MENU_CACHE_TTL_SECONDS);
 }
 
 /**

@@ -8,8 +8,16 @@ if (
 
 import path from 'path';
 import { fileURLToPath } from 'url';
+import bundleAnalyzer from '@next/bundle-analyzer';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+const withBundleAnalyzer = bundleAnalyzer({
+  enabled: String(process.env.ANALYZE || '').toLowerCase() === 'true',
+});
+const preferEdgeBundles = String(process.env.NEXT_EDGE_BUNDLE || '').toLowerCase() === 'true';
+const enableOptimizedImports =
+  String(process.env.NEXT_DISABLE_OPTIMIZED_IMPORTS || '').toLowerCase() !== 'true';
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -18,6 +26,9 @@ const nextConfig = {
   poweredByHeader: false, // Remove unnecessary headers
   experimental: {
     typedRoutes: true,
+    optimizePackageImports: enableOptimizedImports
+      ? ['@headlessui/react', '@heroicons/react', 'framer-motion']
+      : undefined,
   },
   serverExternalPackages: ['@easymo/commons'],
   typescript: {
@@ -66,8 +77,26 @@ const nextConfig = {
       config.externals = config.externals || [];
       config.externals.push('pino', 'thread-stream', 'pino-pretty', 'pino-abstract-transport');
     }
+
+    if (preferEdgeBundles) {
+      config.resolve.conditionNames = Array.from(
+        new Set([...(config.resolve.conditionNames ?? []), 'worker', 'browser'])
+      );
+      config.optimization = {
+        ...config.optimization,
+        usedExports: true,
+        sideEffects: true,
+      };
+    }
+
+    if (enableOptimizedImports) {
+      config.module.generator = {
+        ...config.module.generator,
+        'asset/resource': { emit: true },
+      };
+    }
     return config;
   },
 };
 
-export default nextConfig;
+export default withBundleAnalyzer(nextConfig);
