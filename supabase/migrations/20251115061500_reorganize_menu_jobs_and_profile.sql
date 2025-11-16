@@ -14,8 +14,7 @@ BEGIN;
 -- First page typically shows items 1-9
 
 UPDATE whatsapp_home_menu_items 
-SET display_order = 9,
-    page_number = 1
+SET display_order = 9
 WHERE key = 'jobs';
 
 -- =====================================================
