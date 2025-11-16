@@ -18,6 +18,7 @@
     "typecheck": "pnpm type-check",
     "test": "pnpm --filter @easymo/admin-app exec vitest run && pnpm --filter @easymo/admin-app exec vitest run --config vitest.config.smoke.cjs",
     "test:functions": "deno test --allow-env --allow-read --allow-net supabase/functions/_shared",
+    "lint:migrations": "node ./scripts/check-migrations-rls.mjs",
     "test:watch": "vitest",
     "schema:verify": "node ./scripts/check-schema-alignment.mjs",
     "env:check": "node ./scripts/check-env.mjs",
