@@ -7,6 +7,23 @@ import { OfflineBanner } from "@/components/system/OfflineBanner";
 import { ServiceWorkerToast } from "@/components/system/ServiceWorkerToast";
 import { ServiceWorkerToasts } from "@/components/system/ServiceWorkerToasts";
 import { AssistantPanel } from "@/components/assistant/AssistantPanel";
+// Securely determine DEFAULT_ACTOR_ID: require explicit env in production
+const _adminActorId =
+  process.env.NEXT_PUBLIC_ADMIN_ACTOR_ID ||
+  process.env.ADMIN_TEST_ACTOR_ID;
+let DEFAULT_ACTOR_ID: string;
+if (_adminActorId) {
+  DEFAULT_ACTOR_ID = _adminActorId;
+} else if (process.env.NODE_ENV === "production") {
+  throw new Error(
+    "SECURITY: No admin actor ID set. Set NEXT_PUBLIC_ADMIN_ACTOR_ID or ADMIN_TEST_ACTOR_ID in production."
+  );
+} else {
+  // Allow fallback only in non-production (dev/test)
+  DEFAULT_ACTOR_ID = "00000000-0000-0000-0000-000000000001";
+}
+const DEFAULT_ACTOR_LABEL =
+  process.env.NEXT_PUBLIC_ADMIN_ACTOR_LABEL || "Operator";
 import { SessionProvider, type AdminSession } from "@/components/providers/SessionProvider";
 import { SidebarRail } from "@/components/layout/SidebarRail";
 import { TopBar } from "@/components/layout/TopBar";
