@@ -2,7 +2,9 @@
 
 ## Invitation workflow
 
-1. Generate an invitation token from the admin console (Users → Invite) or by calling the `admin-users` Edge Function with the `invite_user` action.
+1. Generate an invitation token from the admin console (Users → Invite).  
+   *(Note: The `admin-users` Edge Function currently only supports GET requests to list users.  
+   User invitations are typically handled through the admin console UI.)*
 2. Share the invitation link with the recipient. Links expire according to the Supabase email token settings for the project.
 3. Once accepted, confirm the profile record in `profiles` includes the correct `role` (`admin`, `analyst`, `viewer`) and `status` (`active`).
 4. Rotate the invite token or delete the pending invite if the link was exposed.

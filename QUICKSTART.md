@@ -4,7 +4,7 @@ This guide walks through setting up Supabase, configuring environment variables,
 
 ## 1) Prerequisites
 
-- Node 18.18+ and `pnpm` v8+
+- Node 18.18+ and `pnpm` ≥10.18.3
 - Supabase CLI (`brew install supabase/tap/supabase` on macOS)
 - Access to a Supabase project (local stack or remote)
 

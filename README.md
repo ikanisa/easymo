@@ -65,9 +65,10 @@ Vite React app and communicates with those Edge Functions through the
    then populate every `CHANGEME_*` placeholder with your Supabase project values.
 4. Start Supabase locally with `supabase start` or link to a remote project with
    `supabase link --project-ref <project-ref> && supabase db pull`.
-5. Apply migrations and seed data (local stack):
-   - `supabase db reset` to recreate the database from `supabase/migrations`.
-   - `supabase db seed --file supabase/seeders/phase2_seed.sql` to load sample data.
+5. Reset the database and seed data (local stack):
+   - `supabase db reset && supabase db seed --file supabase/seeders/phase2_seed.sql`  
+     (This will recreate the database from `supabase/migrations` and load sample data.  
+     **Note:** `supabase db reset` automatically applies all migrations; you do not need to run migrations separately.)
 6. Deploy the Edge Functions used by the admin API when targeting a remote project:
    - `pnpm functions:deploy` (core admin routes)
    - `pnpm functions:deploy:agents` (agent-specific helpers)
