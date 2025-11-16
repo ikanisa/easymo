@@ -1,15 +1,17 @@
 import classNames from "classnames";
+import { LoadingState as UiLoadingState, type LoadingStateProps as UiLoadingStateProps } from "@easymo/ui/components/feedback";
 
-interface LoadingStateProps {
-  title?: string;
-  description?: string;
-  message?: string;
-  className?: string;
-}
+const uiKitEnabled = (process.env.NEXT_PUBLIC_UI_V2_ENABLED ?? "false").trim().toLowerCase() === "true";
 
-export function LoadingState(
-  { title, description, message = "Loading…", className }: LoadingStateProps,
-) {
+interface LoadingStateProps extends UiLoadingStateProps {}
+
+export function LoadingState(props: LoadingStateProps) {
+  if (uiKitEnabled) {
+    return <UiLoadingState {...props} />;
+  }
+
+  const { title, description, message = "Loading…", className } = props;
+
   return (
     <div
       role="status"

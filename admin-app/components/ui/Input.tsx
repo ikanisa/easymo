@@ -1,8 +1,11 @@
 import * as React from "react";
 import { cva, type VariantProps } from "class-variance-authority";
+import { Input as UiInput, type InputProps as UiInputProps } from "@easymo/ui/components/forms";
 import { cn } from "@/lib/utils";
 
-const inputVariants = cva(
+const uiKitEnabled = (process.env.NEXT_PUBLIC_UI_V2_ENABLED ?? "false").trim().toLowerCase() === "true";
+
+const legacyInputVariants = cva(
   "block w-full rounded-xl border bg-[color:var(--color-surface)]/95 text-[color:var(--color-foreground)] placeholder:text-[color:var(--color-muted)] transition-all duration-[var(--motion-duration-fast)] ease-[var(--motion-ease-standard)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-accent)]/45 focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--color-surface)] disabled:cursor-not-allowed disabled:opacity-60",
   {
     variants: {
@@ -34,11 +37,26 @@ const inputVariants = cva(
 
 type NativeInputProps = Omit<React.InputHTMLAttributes<HTMLInputElement>, "size">;
 
-export interface InputProps extends NativeInputProps, VariantProps<typeof inputVariants> {}
+export interface InputProps extends NativeInputProps, VariantProps<typeof legacyInputVariants>, Partial<UiInputProps> {}
 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
   ({ className, type = "text", variant, size, status = "default", ...props }, ref) => {
     const ariaInvalid = props["aria-invalid"] ?? (status === "error" ? true : undefined);
+
+    if (uiKitEnabled) {
+      return (
+        <UiInput
+          ref={ref}
+          type={type}
+          status={status as UiInputProps["status"]}
+          variant={variant as UiInputProps["variant"]}
+          size={size as UiInputProps["size"]}
+          aria-invalid={ariaInvalid}
+          className={className}
+          {...props}
+        />
+      );
+    }
 
     return (
       <input
@@ -46,7 +64,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
         ref={ref}
         data-status={status !== "default" ? status : undefined}
         aria-invalid={ariaInvalid}
-        className={cn(inputVariants({ variant, size, status }), className)}
+        className={cn(legacyInputVariants({ variant, size, status }), className)}
         {...props}
       />
     );
@@ -54,4 +72,4 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
 );
 Input.displayName = "Input";
 
-export { Input, inputVariants };
+export { Input, legacyInputVariants as inputVariants };

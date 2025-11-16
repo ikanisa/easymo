@@ -87,6 +87,27 @@
   --ui-glass-tint: linear-gradient(135deg, rgba(7, 11, 26, 0.62), rgba(7, 11, 26, 0.35));
   --ui-glass-highlight: rgba(255, 255, 255, 0.08);
   --ui-glass-shadow: 0 24px 60px rgba(7, 11, 26, 0.32);
+
+  --ui-shell-max-width: 1200px;
+  --ui-shell-gutter: 1.5rem;
+  --ui-shell-sidebar-width: 18rem;
+  --ui-shell-header-height: 3.5rem;
+
+  --ui-focus-ring-width: 2px;
+  --ui-focus-ring-offset: 2px;
+  --ui-focus-ring-color: rgba(56, 189, 248, 0.55);
+
+  --ui-motion-durations-instant: 90ms;
+  --ui-motion-durations-fast: 160ms;
+  --ui-motion-durations-medium: 240ms;
+  --ui-motion-durations-slow: 360ms;
+  --ui-motion-easing-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ui-motion-easing-emphasized: cubic-bezier(0.34, 0.7, 0, 1);
+  --ui-motion-easing-decelerate: cubic-bezier(0, 0, 0.2, 1);
+  --ui-motion-easing-accelerate: cubic-bezier(0.5, 0, 0.7, 0.2);
+
+  --ui-elevation-low: 0 1px 2px rgba(7, 11, 26, 0.2);
+  --ui-elevation-medium: 0 20px 60px rgba(7, 11, 26, 0.28);
 }
 
 [data-ui-theme='dark'],
