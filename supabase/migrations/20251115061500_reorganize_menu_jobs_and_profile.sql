@@ -60,138 +60,133 @@ CREATE INDEX IF NOT EXISTS profile_menu_items_active_idx ON whatsapp_profile_men
 -- 4. Seed Profile submenu items
 -- =====================================================
 
-INSERT INTO whatsapp_profile_menu_items (
-  key,
-  name,
-  label_en,
-  label_fr,
-  label_rw,
-  description_en,
-  description_fr,
-  description_rw,
-  icon,
-  display_order,
-  action_type,
-  action_target
-) VALUES
-  -- View/Edit Profile
-  (
-    'view_profile',
-    '👤 My Profile',
-    'My Profile',
-    'Mon Profil',
-    'Umwirondoro Wanjye',
-    'View and edit your profile information',
-    'Voir et modifier vos informations de profil',
-    'Reba kandi uhindure amakuru yawe',
-    '👤',
-    1,
-    'action',
-    'show_profile_details'
-  ),
-  -- MOMO QR Code (moved from main menu)
-  (
-    'momo_qr',
-    '📱 MOMO QR & Tokens',
-    'MOMO QR & Tokens',
-    'QR MOMO & Jetons',
-    'QR ya MOMO n''Ibimenyetso',
-    'View your MOMO QR code and payment tokens',
-    'Voir votre code QR MOMO et jetons de paiement',
-    'Reba QR yawe ya MOMO n''ibimenyetso byo kwishyura',
-    '📱',
-    2,
-    'action',
-    'show_momo_qr'
-  ),
-  -- Payment History
-  (
-    'payment_history',
-    '💳 Payment History',
-    'Payment History',
-    'Historique des Paiements',
-    'Amateka y''Ubwishyu',
-    'View your transaction history',
-    'Voir l''historique de vos transactions',
-    'Reba amateka y''ibikorwa byawe',
-    '💳',
-    3,
-    'action',
-    'show_payment_history'
-  ),
-  -- Saved Locations
-  (
-    'saved_locations',
-    '📍 Saved Locations',
-    'Saved Locations',
-    'Lieux Sauvegardés',
-    'Ahantu Habitswe',
-    'Manage your saved addresses',
-    'Gérer vos adresses sauvegardées',
-    'Genzura aderesi zawe zabitswe',
-    '📍',
-    4,
-    'action',
-    'show_saved_locations'
-  ),
-  -- Settings
-  (
-    'settings',
-    '⚙️ Settings',
-    'Settings',
-    'Paramètres',
-    'Igenamiterere',
-    'Manage your account settings and preferences',
-    'Gérer les paramètres de votre compte',
-    'Genzura igenamiterere rya konti yawe',
-    '⚙️',
-    5,
-    'action',
-    'show_settings'
-  ),
-  -- Language
-  (
-    'change_language',
-    '🌍 Language',
-    'Change Language',
-    'Changer de Langue',
-    'Hindura Ururimi',
-    'Choose your preferred language',
-    'Choisissez votre langue préférée',
-    'Hitamo ururimi ukunda',
-    '🌍',
-    6,
-    'action',
-    'change_language'
-  ),
-  -- Help & Support
-  (
-    'help_support',
-    '❓ Help & Support',
-    'Help & Support',
-    'Aide & Support',
-    'Ubufasha & Inkunga',
-    'Get help and contact support',
-    'Obtenir de l''aide et contacter le support',
-    'Kubona ubufasha no kuvugana n''abakunzi',
-    '❓',
-    7,
-    'action',
-    'show_help'
-  )
-ON CONFLICT (key) DO UPDATE SET
-  name = EXCLUDED.name,
-  label_en = EXCLUDED.label_en,
-  label_fr = EXCLUDED.label_fr,
-  label_rw = EXCLUDED.label_rw,
-  description_en = EXCLUDED.description_en,
-  description_fr = EXCLUDED.description_fr,
-  description_rw = EXCLUDED.description_rw,
-  icon = EXCLUDED.icon,
-  display_order = EXCLUDED.display_order,
-  action_type = EXCLUDED.action_type,
-  action_target = EXCLUDED.action_target,
-  updated_at = now();
+-- INSERT INTO whatsapp_profile_menu_items (
+--   key,
+--   name,
+--   description_en,
+--   description_fr,
+--   description_rw,
+--   icon,
+--   display_order,
+--   action_type,
+--   action_target,
+--   country_specific_names
+-- ) VALUES
+--   -- View/Edit Profile
+--   (
+--     'view_profile',
+--     '👤 My Profile',
+--     'My Profile',
+--     'Mon Profil',
+--     'Umwirondoro Wanjye',
+--     'View and edit your profile information',
+--     'Voir et modifier vos informations de profil',
+--     'Reba kandi uhindure amakuru yawe',
+--     '👤',
+--     1,
+--     'action',
+--     'show_profile_details'
+--   ),
+--   -- MOMO QR Code (moved from main menu)
+--   (
+--     'momo_qr',
+--     '📱 MOMO QR & Tokens',
+--     'MOMO QR & Tokens',
+--     'QR MOMO & Jetons',
+--     'QR ya MOMO n''Ibimenyetso',
+--     'View your MOMO QR code and payment tokens',
+--     'Voir votre code QR MOMO et jetons de paiement',
+--     'Reba QR yawe ya MOMO n''ibimenyetso byo kwishyura',
+--     '📱',
+--     2,
+--     'action',
+--     'show_momo_qr'
+--   ),
+--   -- Payment History
+--   (
+--     'payment_history',
+--     '💳 Payment History',
+--     'Payment History',
+--     'Historique des Paiements',
+--     'Amateka y''Ubwishyu',
+--     'View your transaction history',
+--     'Voir l''historique de vos transactions',
+--     'Reba amateka y''ibikorwa byawe',
+--     '💳',
+--     3,
+--     'action',
+--     'show_payment_history'
+--   ),
+--   -- Saved Locations
+--   (
+--     'saved_locations',
+--     '📍 Saved Locations',
+--     'Saved Locations',
+--     'Lieux Sauvegardés',
+--     'Ahantu Habitswe',
+--     'Manage your saved addresses',
+--     'Gérer vos adresses sauvegardées',
+--     'Genzura aderesi zawe zabitswe',
+--     '📍',
+--     4,
+--     'action',
+--     'show_saved_locations'
+--   ),
+--   -- Settings
+--   (
+--     'settings',
+--     '⚙️ Settings',
+--     'Settings',
+--     'Paramètres',
+--     'Igenamiterere',
+--     'Manage your account settings and preferences',
+--     'Gérer les paramètres de votre compte',
+--     'Genzura igenamiterere rya konti yawe',
+--     '⚙️',
+--     5,
+--     'action',
+--     'show_settings'
+--   ),
+--   -- Language
+--   (
+--     'change_language',
+--     '🌍 Language',
+--     'Change Language',
+--     'Changer de Langue',
+--     'Hindura Ururimi',
+--     'Choose your preferred language',
+--     'Choisissez votre langue préférée',
+--     'Hitamo ururimi ukunda',
+--     '🌍',
+--     6,
+--     'action',
+--     'change_language'
+--   ),
+--   -- Help & Support
+--   (
+--     'help_support',
+--     '❓ Help & Support',
+--     'Help & Support',
+--     'Aide & Support',
+--     'Ubufasha & Inkunga',
+--     'Get help and contact support',
+--     'Obtenir de l''aide et contacter le support',
+--     'Kubona ubufasha no kuvugana n''abakunzi',
+--     '❓',
+--     7,
+--     'action',
+--     'show_help'
+--   )
+-- ON CONFLICT (key) DO UPDATE SET
+--   name = EXCLUDED.name,
+--   description_en = EXCLUDED.description_en,
+--   description_fr = EXCLUDED.description_fr,
+--   description_rw = EXCLUDED.description_rw,
+--   icon = EXCLUDED.icon,
+--   display_order = EXCLUDED.display_order,
+--   action_type = EXCLUDED.action_type,
+--   action_target = EXCLUDED.action_target,
+--   updated_at = now();
 
 -- =====================================================
 -- 5. Add RLS policies for profile menu
