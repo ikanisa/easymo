@@ -11,7 +11,7 @@ import {
 
 const buttonVariants = cva(
   clsx(
-    "inline-flex items-center justify-center gap-2 rounded-full text-sm font-semibold transition-all",
+    "inline-flex items-center justify-center gap-2 rounded-full text-sm font-semibold transition-colors transition-shadow transition-opacity",
     "focus-visible:outline-none focus-visible:ring-[length:var(--ui-focus-ring-width,2px)] focus-visible:ring-offset-[length:var(--ui-focus-ring-offset,2px)]",
     "focus-visible:ring-[color:var(--ui-focus-ring-color,var(--ui-color-outline))] focus-visible:ring-offset-[color:var(--ui-color-surface)]",
     "disabled:cursor-not-allowed disabled:opacity-60",
