@@ -615,24 +615,24 @@
     top: 16px;
   }
 
-  .bing-shell {
+  .app-shell {
     min-height: 100vh;
     display: grid;
-    grid-template-columns: minmax(var(--sidebar-width), 20rem) minmax(0, 1fr);
-    background: linear-gradient(135deg, #f8faff 0%, #ecf4ff 45%, #e5ebff 100%);
+    grid-template-columns: minmax(var(--sidebar-width-compact), 5.5rem) minmax(0, 1fr);
+    background: linear-gradient(140deg, #f8fbff 0%, #eef3ff 45%, #e8edff 100%);
     color: var(--color-foreground);
   }
 
-  .bing-shell__workspace {
+  .app-shell__workspace {
     min-height: 100vh;
     display: grid;
     grid-template-rows: auto 1fr;
-    background: rgba(255, 255, 255, 0.82);
+    background: rgba(255, 255, 255, 0.92);
     backdrop-filter: blur(12px);
-    border-left: 1px solid rgba(99, 102, 241, 0.15);
+    border-left: 1px solid rgba(148, 163, 184, 0.25);
   }
 
-  .bing-shell__content {
+  .app-shell__content {
     flex: 1;
     width: 100%;
     padding: clamp(1.5rem, 3vw, 2.5rem) clamp(1.25rem, 4vw, 3.5rem);
