@@ -380,60 +380,61 @@ export async function startBarMenuOrder(
   ctx: RouterContext,
   detail: Record<string, unknown>,
 ): Promise<boolean> {
-  if (!ctx.profileId) return false;
-  const barId = typeof detail?.barId === "string" ? detail.barId : null;
-  const barName = typeof detail?.barName === "string"
-    ? detail.barName
-    : t(ctx.locale, "bars.menu.unknown_name");
-  if (!barId) return false;
+  try {
+    if (!ctx.profileId) return false;
+    const barId = typeof detail?.barId === "string" ? detail.barId : null;
+    const barName = typeof detail?.barName === "string"
+      ? detail.barName
+      : t(ctx.locale, "bars.menu.unknown_name");
+    if (!barId) return false;
 
-  const menuItems = await fetchBarMenuItems(ctx, barId);
-  if (!menuItems.length) {
+    const menuItems = await fetchBarMenuItems(ctx, barId);
+    if (!menuItems.length) {
+      await sendButtonsMessage(
+        ctx,
+        t(ctx.locale, "bars.menu.no_items", { name: barName }),
+        buildButtons(
+          { id: "bar_chat_waiter", title: t(ctx.locale, "bars.buttons.chat_waiter") },
+          { id: "bars_search_now", title: t(ctx.locale, "bars.buttons.search_again") },
+        ),
+      );
+      return true;
+    }
+
+    const contacts = await fetchBarContactNumbers(ctx, barId);
+    if (!contacts.length) {
+      await sendButtonsMessage(
+        ctx,
+        t(ctx.locale, "bars.menu.no_contacts", { name: barName }),
+        buildButtons(
+          { id: "bars_search_now", title: t(ctx.locale, "bars.buttons.search_again") },
+          { id: IDS.BACK_MENU, title: t(ctx.locale, "common.menu_back") },
+        ),
+      );
+      return true;
+    }
+
+    const session: MenuOrderSession = {
+      vendorType: "bar",
+      vendorId: barId,
+      vendorName: barName,
+      contactNumbers: contacts,
+      menuItems,
+      selections: [],
+    };
+    return await startMenuOrderSession(ctx, session);
+  } catch (error) {
+    console.error("bars.view_menu_error", {
+      barId: (detail as any)?.barId,
+      message: error instanceof Error ? error.message : String(error ?? "err"),
+    });
     await sendButtonsMessage(
       ctx,
-      t(ctx.locale, "bars.menu.no_items", { name: barName }),
-      buildButtons(
-        {
-          id: "bar_chat_waiter",
-          title: t(ctx.locale, "bars.buttons.chat_waiter"),
-        },
-        {
-          id: "bars_search_now",
-          title: t(ctx.locale, "bars.buttons.search_again"),
-        },
-      ),
+      t(ctx.locale, "restaurant.menu.fetch_error"),
+      buildButtons({ id: IDS.BACK_MENU, title: t(ctx.locale, "common.menu_back") }),
     );
     return true;
   }
-
-  const contacts = await fetchBarContactNumbers(ctx, barId);
-  if (!contacts.length) {
-    await sendButtonsMessage(
-      ctx,
-      t(ctx.locale, "bars.menu.no_contacts", { name: barName }),
-      buildButtons(
-        {
-          id: "bars_search_now",
-          title: t(ctx.locale, "bars.buttons.search_again"),
-        },
-        {
-          id: IDS.BACK_MENU,
-          title: t(ctx.locale, "common.menu_back"),
-        },
-      ),
-    );
-    return true;
-  }
-
-  const session: MenuOrderSession = {
-    vendorType: "bar",
-    vendorId: barId,
-    vendorName: barName,
-    contactNumbers: contacts,
-    menuItems,
-    selections: [],
-  };
-  return await startMenuOrderSession(ctx, session);
 }
 
 async function fetchBarMenuItems(
