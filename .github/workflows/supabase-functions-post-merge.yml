@@ -1,0 +1,92 @@
+name: Supabase Functions Post-merge Deploy
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  gate:
+    name: Check required secrets
+    runs-on: ubuntu-latest
+    outputs:
+      can_deploy: ${{ steps.check.outputs.can_deploy }}
+    steps:
+      - name: Evaluate required secrets
+        id: check
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          if [ -n "${SUPABASE_ACCESS_TOKEN}" ] && [ -n "${SUPABASE_PROJECT_REF}" ] && [ -n "${SUPABASE_SERVICE_ROLE_KEY}" ]; then
+            echo "can_deploy=true" >> $GITHUB_OUTPUT
+            echo "Secrets present: proceeding with deploy."
+          else
+            echo "can_deploy=false" >> $GITHUB_OUTPUT
+            echo "Required secrets missing: skipping deploy." >&2
+          fi
+
+  deploy-functions:
+    name: Deploy and verify Supabase functions
+    needs: gate
+    if: ${{ needs.gate.outputs.can_deploy == 'true' }}
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+      SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      FUNCTIONS: "wa-webhook wa-webhook-core wa-webhook-marketplace wa-webhook-jobs wa-webhook-ai-agents agent-property-rental"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Supabase CLI version
+        run: supabase --version
+
+      - name: Cache bust for Edge functions
+        run: |
+          set -euo pipefail
+          if [ -z "${PROJECT_REF}" ]; then
+            echo "::error::Missing SUPABASE_PROJECT_REF secret" && exit 1
+          fi
+          CACHE_BUSTER="${GITHUB_SHA:-$(date +%s)}"
+          supabase secrets set --project-ref "$PROJECT_REF" EDGE_CACHE_BUSTER="$CACHE_BUSTER"
+          echo "Set EDGE_CACHE_BUSTER=$CACHE_BUSTER to invalidate cached assets."
+
+      - name: Deploy functions
+        run: |
+          set -euo pipefail
+          if [ -z "${PROJECT_REF}" ]; then
+            echo "::error::Missing SUPABASE_PROJECT_REF secret" && exit 1
+          fi
+          supabase functions deploy $FUNCTIONS --project-ref "$PROJECT_REF" --no-verify-jwt
+
+      - name: Verify deployed functions
+        run: |
+          set -euo pipefail
+          supabase functions list --project-ref "$PROJECT_REF"
+
+      - name: Health check function endpoints
+        run: |
+          set -euo pipefail
+          BASE_URL="https://${PROJECT_REF}.functions.supabase.co"
+          for fn in $FUNCTIONS; do
+            url="$BASE_URL/$fn"
+            status=$(curl -s -o /dev/null -w "%{http_code}" -H "apikey: $SERVICE_ROLE_KEY" -H "Authorization: Bearer $SERVICE_ROLE_KEY" "$url")
+            if [ "$status" -ge 200 ] && [ "$status" -lt 500 ]; then
+              echo "[$fn] responded with status $status"
+            else
+              echo "::error::[$fn] health check failed with status $status" >&2
+              exit 1
+            fi
+          done
