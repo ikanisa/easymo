@@ -1,5 +1,9 @@
 // OpenAI Service with Assistants API v2, Realtime, and Vision support
 import OpenAI from "npm:openai@^4.24.0";
+import {
+  requireEmbedding,
+  requireFirstMessageContent,
+} from "../../../packages/shared/src/openaiGuard.ts";
 
 const openai = new OpenAI({
   apiKey: Deno.env.get("OPENAI_API_KEY"),
@@ -159,7 +163,7 @@ export async function analyzeImage(
     max_tokens: 1000,
   });
 
-  return response.choices[0].message.content || "";
+  return requireFirstMessageContent(response, "Vision analysis");
 }
 
 // Generate embeddings for semantic search
@@ -169,7 +173,7 @@ export async function generateEmbedding(text: string): Promise<number[]> {
     input: text,
   });
 
-  return response.data[0].embedding;
+  return requireEmbedding(response, "Assistant embeddings");
 }
 
 // Chat completion (for simple queries)

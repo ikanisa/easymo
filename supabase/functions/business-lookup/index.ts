@@ -1,6 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/http.ts";
 import { logStructuredEvent } from "../_shared/observability.ts";
+import { requireEmbedding } from "../../../packages/shared/src/openaiGuard.ts";
 
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
@@ -110,7 +111,10 @@ async function searchByName(
   }
 
   const embeddingData = await embeddingResponse.json();
-  const embedding = embeddingData.data[0].embedding;
+  const embedding = requireEmbedding(
+    embeddingData,
+    "Business lookup embedding",
+  );
 
   // Search using pgvector
   const { data, error } = await supabase.rpc("search_businesses_by_name_similarity", {

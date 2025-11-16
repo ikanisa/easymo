@@ -5,6 +5,10 @@ import { sendButtonsMessage, sendListMessage, homeOnly } from "../../utils/reply
 import { IDS } from "../../wa/ids.ts";
 import { setState, clearState } from "../../state/store.ts";
 import { logStructuredEvent } from "../../observe/log.ts";
+import {
+  requireEmbedding,
+  requireFirstMessageContent,
+} from "../../../../packages/shared/src/openaiGuard.ts";
 
 /**
  * Business Claiming Flow with OpenAI Semantic Search
@@ -299,10 +303,10 @@ async function searchBusinessesSemantic(
     }
 
     const embeddingData = await embeddingResponse.json();
-    if (!embeddingData.data || embeddingData.data.length === 0) {
-      throw new Error('No embedding data returned from OpenAI');
-    }
-    const queryEmbedding = embeddingData.data[0].embedding;
+    const queryEmbedding = requireEmbedding(
+      embeddingData,
+      "Business search embedding",
+    );
 
     // Step 2: Use OpenAI to extract search intent and keywords
     const intentResponse = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -334,7 +338,9 @@ Output format: { "keywords": ["term1", "term2"], "category_hints": ["category1"]
     }
 
     const intentData = await intentResponse.json();
-    const searchIntent = JSON.parse(intentData.choices[0].message.content);
+    const searchIntent = JSON.parse(
+      requireFirstMessageContent(intentData, "Business intent extraction"),
+    );
 
     // Step 3: Search database with semantic matching
     const keywords = searchIntent.keywords || [query];
@@ -389,7 +395,9 @@ Businesses: ${JSON.stringify(businesses.map(b => ({ id: b.id, name: b.name, cate
     }
 
     const rankingData = await rankingResponse.json();
-    const ranking = JSON.parse(rankingData.choices[0].message.content);
+    const ranking = JSON.parse(
+      requireFirstMessageContent(rankingData, "Business ranking"),
+    );
 
     // Reorder businesses by AI ranking
     const rankedBusinesses = ranking.ranked_ids
