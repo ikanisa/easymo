@@ -52,6 +52,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
           variant={variant as UiInputProps["variant"]}
           size={size as UiInputProps["size"]}
           aria-invalid={ariaInvalid}
+          className={className}
           {...props}
         />
       );
