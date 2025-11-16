@@ -38,7 +38,7 @@ jobs:
             --collect.hints=true \
             --output-dir=artifacts/lighthouse \
             --format=json
-          lhci assert --assert.preset=lighthouse:recommended --assert.minimumScore=0.8 --assert.outputPath=artifacts/lighthouse/assertion-results.json
+          lhci assert --assert.preset=lighthouse:recommended --assert.minimumScore=0.8 > artifacts/lighthouse/assertion-results.json
 
       - name: Run pa11y accessibility sweep
         if: env.AUDIT_BASE_URL != ''
