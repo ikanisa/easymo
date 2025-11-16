@@ -23,6 +23,7 @@
     "test:watch": "vitest",
     "schema:verify": "node ./scripts/check-schema-alignment.mjs",
     "env:check": "node ./scripts/check-env.mjs",
+    "deploy:check": "node ./scripts/deploy-check.mjs",
     "health": "node ./scripts/health-check.mjs",
     "seed:remote": "bash ./scripts/seed-remote.sh",
     "seed:verify": "node ./scripts/verify-menu-seed.mjs",
@@ -31,7 +32,8 @@
     "embeddings:sync": "node ./scripts/embeddings/ingest-documents.mjs",
     "diagnostics:supabase": "node ./scripts/test-supabase-connection.mjs",
     "mcp:supabase": "bash ./scripts/run-supabase-mcp-server.sh",
-    "guard:deprecated": "deno run --allow-read tools/lint/check_deprecated_features.ts"
+    "guard:deprecated": "deno run --allow-read tools/lint/check_deprecated_features.ts",
+    "smoke:netlify": "node ./scripts/smoke/netlify-smoke.mjs"
   },
   "dependencies": {
     "@easymo/ui": "workspace:*",
