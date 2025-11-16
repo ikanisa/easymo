@@ -38,9 +38,17 @@
 6. Frontend stores session + role, clears invite token, and routes to onboarding (`/app/home/onboarding`) if first login, else to `/app/home`.
 
 ## State/data contracts (frontend ↔ backend)
-- **Session fetch**: `GET /api/auth/profile` → returns `{ userId, email, displayName, orgId, roles: string[], featureFlags?: Record<string, boolean> }`.
-- **Invite creation**: `POST /api/admin/invitations` body `{ email, role, orgId, inviterId }` → returns `{ inviteId, status: 'pending', email, role, orgId, createdAt }`.
-- **Invite acceptance**: `POST /api/auth/accept-invite` body `{ invitationToken }` → returns `{ userId, email, orgId, roles, requiresPassword: boolean }`.
+- **Session fetch**: `GET /api/auth/profile`  
+  - **Auth requirements**: Requires valid Supabase session token in `Authorization: Bearer <access_token>` header.  
+  - **Response**: `{ userId, email, displayName, orgId, roles: string[], featureFlags?: Record<string, boolean> }`.
+- **Invite creation**: `POST /api/admin/invitations`  
+  - **Auth requirements**: Requires admin role; must include valid Supabase session token in `Authorization: Bearer <access_token>` header.  
+  - **Request body**: `{ email, role, orgId, inviterId }`  
+  - **Response**: `{ inviteId, status: 'pending', email, role, orgId, createdAt }`.
+- **Invite acceptance**: `POST /api/auth/accept-invite`  
+  - **Auth requirements**: Backend endpoint; requires Supabase service role key (provided via `Authorization: Bearer <service_role_key>` header, not exposed to client).  
+  - **Request body**: `{ invitationToken }`  
+  - **Response**: `{ userId, email, orgId, roles, requiresPassword: boolean }`.
 - **Role guard helper**: frontend expects `roles` array + `orgId` to be present in session payload; API must ensure they are consistent with Supabase `auth.users` and `public.user_roles`.
 - **Error envelope**: backend errors respond as `{ error: { code, message, hint? } }` (this is the standard format used by all admin-app API routes). The `code` field must use the canonical error code taxonomy (e.g., `AUTH_INVALID_TOKEN`, `AUTH_INVITE_EXPIRED`, `INVITE_ALREADY_ACCEPTED`) as defined in [`@easymo/commons/errors`](../../packages/commons/src/errors.ts) and referenced in API route handlers. Frontend surfaces `message` and logs `code`/`hint`.
 - **Caching**: profile fetch is cached per session with SWR/React Query; mutation endpoints return updated profile to keep cache consistent.
