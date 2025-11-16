@@ -46,8 +46,7 @@ const renderHealthMetrics = (service: string): string => [
   `agent_health_checks_total{service="${service}",status="success"} ${healthMetrics.success}`,
   `agent_health_checks_total{service="${service}",status="failure"} ${healthMetrics.failure}`,
   `agent_health_latency_ms_sum{service="${service}"} ${healthMetrics.latencyMsTotal}`,
-].join("
-");
+].join("\n");
 
 // =====================================================
 // Main Handler
