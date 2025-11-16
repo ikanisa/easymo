@@ -32,7 +32,7 @@ describe("wa outbound messages route", () => {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ to: "+123", text: "hello" }),
-      }) as any,
+      }),
     );
 
     expect(response.status).toBe(202);
@@ -48,7 +48,7 @@ describe("wa outbound messages route", () => {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ to: "", text: "" }),
-      }) as any,
+      }),
     );
 
     expect(response.status).toBe(400);

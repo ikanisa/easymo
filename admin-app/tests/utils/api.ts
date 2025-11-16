@@ -1,3 +1,4 @@
+import { NextRequest } from "next/server";
 import { getAdminApiPath } from "@/lib/routes";
 
 const TEST_ORIGIN = "http://localhost" as const;
@@ -28,4 +29,4 @@ export const createAdminApiRequest = (
   segments: ReadonlyArray<string | number>,
   init?: RequestInit,
   query?: QueryInit,
-) => new Request(getAdminApiUrl(segments, query), init);
+) => new NextRequest(getAdminApiUrl(segments, query), init as ConstructorParameters<typeof NextRequest>[1]);
