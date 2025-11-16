@@ -1,4 +1,4 @@
-import { assertEquals, assertRejects } from "https://deno.land/std@0.203.0/testing/asserts.ts";
+import { assertEquals } from "https://deno.land/std@0.203.0/testing/asserts.ts";
 import { __resetCache, setCached } from "../utils/cache.ts";
 
 const envReady = (() => {
@@ -25,8 +25,6 @@ const {
   handleMessage,
   __setRouterTestOverrides,
   __resetRouterTestOverrides,
-  __setRouterEnhancementOverrides,
-  __resetRouterEnhancementOverrides,
 } = routerModule;
 
 test("reuses cached route decision for duplicate messages", async () => {
