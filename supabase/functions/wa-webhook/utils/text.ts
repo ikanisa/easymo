@@ -1,13 +1,30 @@
+export function stripMarkdown(value: string): string {
+  if (!value) return "";
+  return value.replace(/[*_`~]/g, "");
+}
+
+function normalizeWhitespace(value: string): string {
+  return value ? value.replace(/\s+/g, " ").trim() : "";
+}
+
 export function safeRowTitle(value: string, max = 24): string {
-  return truncate(value, max);
+  const cleaned = normalizeWhitespace(stripMarkdown(value ?? ""));
+  return truncate(cleaned, max);
 }
 
 export function safeRowDesc(value: string, max = 72): string {
-  return truncate(value, max);
+  const cleaned = normalizeWhitespace(value ?? "");
+  return truncate(cleaned, max);
 }
 
 export function safeButtonTitle(value: string, max = 20): string {
-  return truncate(value, max);
+  const cleaned = normalizeWhitespace(stripMarkdown(value ?? ""));
+  return truncate(cleaned, max);
+}
+
+export function safeHeaderText(value: string, max = 60): string {
+  const cleaned = normalizeWhitespace(stripMarkdown(value ?? ""));
+  return truncate(cleaned, max);
 }
 
 export function truncate(value: string, max: number): string {
