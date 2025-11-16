@@ -62,16 +62,50 @@ export async function fetchProfileMenuItems(
 ): Promise<SubmenuItem[]> {
   const db = client || supabase;
 
-  const { data, error } = await db.rpc('get_profile_menu_items', {
-    user_country_code: countryCode,
-  });
+  // Determine if country is in Africa by checking countries table
+  const { data: countryData } = await db
+    .from('countries')
+    .select('code')
+    .eq('code', countryCode)
+    .single();
+
+  const isAfrica = !!countryData; // If country exists in our countries table, it's Africa
+
+  // Fetch all profile menu items
+  const { data, error } = await db
+    .from('whatsapp_profile_menu_items')
+    .select('*')
+    .eq('is_active', true)
+    .order('display_order');
 
   if (error) {
     console.error('Failed to fetch profile menu items:', error);
     return [];
   }
 
-  return (data || []) as SubmenuItem[];
+  // Filter by region restrictions
+  const filtered = (data || []).filter((item: any) => {
+    if (!item.region_restrictions || item.region_restrictions.length === 0) {
+      return true; // No restriction = show everywhere
+    }
+    
+    if (item.region_restrictions.includes('africa')) {
+      return isAfrica; // Only show in African countries
+    }
+    
+    return true;
+  });
+
+  // Map to SubmenuItem format
+  return filtered.map((item: any) => ({
+    key: item.key,
+    name: item.name,
+    icon: item.icon,
+    display_order: item.display_order,
+    action_type: item.action_type || 'action',
+    action_target: item.action_target,
+    description: item.description_en || item.description || ''
+  }));
 }
 
 /**

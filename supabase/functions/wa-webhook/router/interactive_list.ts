@@ -744,6 +744,11 @@ async function handleHomeMenuSelection(
       );
       return await startBarsSearch(ctx);
     }
+    case IDS.NOTARY_SERVICES:
+    case "notary_services": {
+      const { startNotarySearch } = await import("../domains/services/notary.ts");
+      return await startNotarySearch(ctx);
+    }
     case "help_support":
     case "show_help":
     case "customer_support": {
