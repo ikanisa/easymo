@@ -179,7 +179,6 @@ export async function handleText(
       bedrooms: string;
       currency?: string;
       duration?: string;
-      priceUnit?: string;
     };
     return await handleFindPropertyBudget(ctx, stateData, body);
   }

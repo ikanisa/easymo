@@ -39,7 +39,6 @@ export type PropertyFindState = {
   budget: string;
   currency?: string;
   duration?: string; // For short-term: number of days
-  priceUnit?: string; // "per_day" | "per_night" | "per_month"
 };
 
 export type PropertyAddState = {
@@ -320,38 +319,11 @@ export async function handleFindPropertyDuration(
   duration: string,
 ): Promise<boolean> {
   if (!ctx.profileId) return false;
-  
-  await setState(ctx.supabase, ctx.profileId, {
-    key: "property_find_price_unit",
-    data: { ...state, duration },
-  });
-
-  await sendListMessage(
-    ctx,
-    {
-      title: t(ctx.locale, "property.find.title"),
-      body: t(ctx.locale, "property.find.prompt.priceUnit"),
-      sectionTitle: t(ctx.locale, "property.find.section.priceUnit"),
-      buttonText: t(ctx.locale, "property.common.choose"),
-      rows: priceUnitOptions(ctx.locale, state.rentalType),
-    },
-    { emoji: "🏠" },
-  );
-
-  return true;
-}
-
-export async function handleFindPropertyPriceUnit(
-  ctx: RouterContext,
-  state: { rentalType: string; bedrooms: string; duration?: string },
-  priceUnit: string,
-): Promise<boolean> {
-  if (!ctx.profileId) return false;
   const currencyPref = resolveUserCurrency(ctx.from);
 
   await setState(ctx.supabase, ctx.profileId, {
     key: "property_find_budget",
-    data: { ...state, priceUnit, currency: currencyPref.code },
+    data: { ...state, duration, currency: currencyPref.code },
   });
 
   await sendButtonsMessage(
@@ -368,7 +340,7 @@ export async function handleFindPropertyPriceUnit(
 
 export async function handleFindPropertyBudget(
   ctx: RouterContext,
-  state: { rentalType: string; bedrooms: string; currency?: string; duration?: string; priceUnit?: string },
+  state: { rentalType: string; bedrooms: string; currency?: string; duration?: string },
   budget: string,
 ): Promise<boolean> {
   if (!ctx.profileId) return false;
@@ -380,7 +352,6 @@ export async function handleFindPropertyBudget(
     budget,
     currency: currencyCode,
     duration: state.duration,
-    priceUnit: state.priceUnit,
   };
 
   await setState(ctx.supabase, ctx.profileId, {

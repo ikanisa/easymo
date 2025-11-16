@@ -8,7 +8,11 @@
 
 import type { RouterContext } from "../../types.ts";
 import { t } from "../../i18n/translator.ts";
-import { sendListMessage } from "../../utils/reply.ts";
+import {
+  buildButtons,
+  sendButtonsMessage,
+  sendListMessage,
+} from "../../utils/reply.ts";
 import { sendText } from "../../wa/client.ts";
 import { logStructuredEvent } from "../../observe/log.ts";
 import { setState, getState } from "../../state/store.ts";
@@ -316,7 +320,46 @@ export async function showMyApplications(ctx: RouterContext): Promise<boolean> {
 /**
  * Show user's posted jobs
  */
-export async function showMyJobs(ctx: RouterContext): Promise<boolean> {
+export async function startMyJobsMenu(ctx: RouterContext): Promise<boolean> {
+  if (!ctx.profileId) return false;
+
+  await sendListMessage(
+    ctx,
+    {
+      title: t(ctx.locale, "jobs.myJobs.menu.title"),
+      body: t(ctx.locale, "jobs.myJobs.menu.body"),
+      sectionTitle: t(ctx.locale, "jobs.myJobs.menu.section"),
+      buttonText: t(ctx.locale, "common.buttons.open"),
+      rows: [
+        {
+          id: "job_my_add",
+          title: t(ctx.locale, "jobs.myJobs.menu.add.title"),
+          description: t(ctx.locale, "jobs.myJobs.menu.add.description"),
+        },
+        {
+          id: "job_my_view",
+          title: t(ctx.locale, "jobs.myJobs.menu.view.title"),
+          description: t(ctx.locale, "jobs.myJobs.menu.view.description"),
+        },
+        {
+          id: "job_my_ai",
+          title: t(ctx.locale, "jobs.myJobs.menu.ai.title"),
+          description: t(ctx.locale, "jobs.myJobs.menu.ai.description"),
+        },
+        {
+          id: IDS.BACK_MENU,
+          title: t(ctx.locale, "common.menu_back"),
+          description: t(ctx.locale, "common.back_to_menu.description"),
+        },
+      ],
+    },
+    { emoji: "💼" },
+  );
+
+  return true;
+}
+
+export async function listMyJobs(ctx: RouterContext): Promise<boolean> {
   if (!ctx.profileId) return false;
 
   await logStructuredEvent("JOB_MY_JOBS_VIEW", {
@@ -346,9 +389,15 @@ export async function showMyJobs(ctx: RouterContext): Promise<boolean> {
     if (error) throw error;
 
     if (!jobs || jobs.length === 0) {
-      await sendMessage(ctx, {
-        text: t(ctx.locale, "jobs.myJobs.none"),
-      });
+      await sendButtonsMessage(
+        ctx,
+        t(ctx.locale, "jobs.myJobs.none"),
+        buildButtons(
+          { id: "job_my_add", title: t(ctx.locale, "jobs.myJobs.menu.add.short") },
+          { id: IDS.BACK_MENU, title: t(ctx.locale, "common.menu_back") },
+        ),
+        { emoji: "💼" },
+      );
       return true;
     }
 

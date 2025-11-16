@@ -79,20 +79,20 @@ export async function saveFavorite(
   options: { label?: string; address?: string | null } = {},
 ): Promise<UserFavorite | null> {
   if (!ctx.profileId) return null;
-  const label = (options.label?.trim() || favoriteKindLabel(kind)).toLowerCase();
+  const normalizedLabel = options.label?.trim() || favoriteKindLabel(kind);
   
-  // First check if this label already exists for this user
+  // First check if this kind already exists for this user
   const { data: existing } = await ctx.supabase
     .from("user_favorites")
     .select("id")
     .eq("user_id", ctx.profileId)
-    .ilike("label", label)
+    .eq("kind", kind)
     .maybeSingle();
 
   if (existing) {
     // Update existing favorite
     const updated = await updateFavorite(ctx, existing.id, coords, {
-      label: options.label?.trim() || favoriteKindLabel(kind),
+      label: normalizedLabel,
       address: options.address,
     });
     if (!updated) return null;
@@ -103,7 +103,7 @@ export async function saveFavorite(
   const payload = {
     user_id: ctx.profileId,
     kind,
-    label: options.label?.trim() || favoriteKindLabel(kind),
+    label: normalizedLabel,
     address: options.address ?? null,
     geog: `SRID=4326;POINT(${coords.lng} ${coords.lat})`,
   };

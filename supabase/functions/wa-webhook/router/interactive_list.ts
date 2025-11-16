@@ -307,11 +307,6 @@ export async function handleList(
     const stateData = state.data as { rentalType: string };
     return await handleFindPropertyBedrooms(ctx, stateData, id);
   }
-  if (state.key === "property_find_price_unit" && (id === "per_day" || id === "per_night" || id === "per_month")) {
-    const stateData = state.data as { rentalType: string; bedrooms: string; duration?: string };
-    const { handleFindPropertyPriceUnit } = await import("../domains/property/rentals.ts");
-    return await handleFindPropertyPriceUnit(ctx, stateData, id);
-  }
   if (
     state.key === "property_add_type" &&
     (id === "short_term" || id === "long_term")
@@ -637,10 +632,22 @@ async function handleHomeMenuSelection(
       const { startPropertyRentals } = await import("../domains/property/rentals.ts");
       return await startPropertyRentals(ctx);
     }
-    case "show_my_jobs": {
-      // Action target alias from whatsapp_profile_menu_items
-      const { showMyJobs } = await import("../domains/jobs/index.ts");
-      return await showMyJobs(ctx);
+    case "show_my_jobs":
+    case IDS.JOB_MY_JOBS: {
+      const { startMyJobsMenu } = await import("../domains/jobs/index.ts");
+      return await startMyJobsMenu(ctx);
+    }
+    case "job_my_add": {
+      const { startJobPosting } = await import("../domains/jobs/index.ts");
+      return await startJobPosting(ctx);
+    }
+    case "job_my_view": {
+      const { listMyJobs } = await import("../domains/jobs/index.ts");
+      return await listMyJobs(ctx);
+    }
+    case "job_my_ai": {
+      const { showJobBoardMenu } = await import("../domains/jobs/index.ts");
+      return await showJobBoardMenu(ctx);
     }
     case "show_momo_qr": {
       // Action target alias from whatsapp_profile_menu_items
@@ -771,12 +778,6 @@ async function handleHomeMenuSelection(
         "../domains/jobs/index.ts"
       );
       return await showMyApplications(ctx);
-    }
-    case IDS.JOB_MY_JOBS: {
-      const { showMyJobs } = await import(
-        "../domains/jobs/index.ts"
-      );
-      return await showMyJobs(ctx);
     }
     case IDS.BARS_RESTAURANTS: {
       const { startBarsSearch } = await import(
