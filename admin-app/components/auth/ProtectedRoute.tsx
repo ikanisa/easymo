@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode, useEffect } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSupabaseAuth } from "@/components/providers/SupabaseAuthProvider";
 
@@ -19,21 +19,26 @@ export function ProtectedRoute({
 }: ProtectedRouteProps) {
   const { status, isAdmin } = useSupabaseAuth();
   const router = useRouter();
+  const [isRedirecting, setIsRedirecting] = useState(false);
 
   useEffect(() => {
     if (status === "unauthenticated") {
+      setIsRedirecting(true);
       router.replace(redirectTo);
     }
     if (requireAdmin && status === "authenticated" && !isAdmin) {
+      setIsRedirecting(true);
       router.replace(redirectTo);
     }
   }, [isAdmin, redirectTo, requireAdmin, router, status]);
 
-  if (status === "loading") {
+  if (status === "loading" || isRedirecting) {
     return (
       fallback ?? (
         <div className="panel-page__container">
-          <p className="text-sm text-neutral-500">Checking your access…</p>
+          <p className="text-sm text-neutral-500">
+            {isRedirecting ? "Redirecting…" : "Checking your access…"}
+          </p>
         </div>
       )
     );

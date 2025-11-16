@@ -46,7 +46,9 @@ export function InviteUserCard() {
         tone: "success",
       });
       setEmail("");
-      queryClient.invalidateQueries({ queryKey: ["users"] }).catch(() => undefined);
+      queryClient.invalidateQueries({ queryKey: ["users"] }).catch((error) => {
+        console.warn("users.cache_invalidation_failed", error);
+      });
     },
     onError: (error: unknown) => {
       const message = error instanceof Error ? error.message : "Unable to send invite.";
