@@ -28,6 +28,14 @@ jobs:
     env:
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/agent_core
       NODE_OPTIONS: --max_old_space_size=4096
+      SUPABASE_URL: http://127.0.0.1:54321
+      SUPABASE_SERVICE_ROLE_KEY: dev-service-role-key
+      SUPABASE_JWT_SECRET: dev-jwt-secret
+      NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: dev-anon-key
+      SLA_ALERT_WEBHOOK_URL: http://localhost:8080/alerts
+      SUPABASE_CHANNEL_MONITOR_WEBHOOK: http://localhost:8080/channel-monitor
+      AGENT_AUDIT_WEBHOOK_URL: http://localhost:8080/audit
 
     steps:
       - name: Checkout repository
@@ -47,8 +55,15 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Validate required environment variables
+        run: pnpm env:check
+
       - name: Build shared packages
-        run: pnpm --filter @va/shared build && pnpm --filter @easymo/commons build
+        run: |
+          pnpm --filter @va/shared build
+          pnpm --filter @easymo/commons build
+          pnpm --filter @easymo/ui build
+          pnpm --filter @easymo/video-agent-schema build
 
       - name: Format check
         run: pnpm format:check
