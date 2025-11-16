@@ -115,15 +115,9 @@ export function PanelShell({
   }, [actorDisplayLabel, actorId]);
 
   const handleSignOut = async () => {
-    try {
-      setSigningOut(true);
-    } catch (error) {
-      console.error("panel.logout_failed", error);
-    } finally {
-      setSigningOut(false);
-      router.replace("/");
-      router.refresh();
-    }
+    setSigningOut(true);
+    router.replace("/");
+    router.refresh();
   };
 
   const closeMobileNav = useCallback(() => setMobileNavOpen(false), []);
