@@ -219,21 +219,21 @@ CREATE POLICY "Service role can manage profile menu items"
 -- Ensure Jobs is at position 9, adjust others as needed
 
 -- Core services (page 1: orders 1-9)
-UPDATE whatsapp_home_menu_items SET display_order = 1, page_number = 1 WHERE key = 'profile';
-UPDATE whatsapp_home_menu_items SET display_order = 2, page_number = 1 WHERE key = 'nearby_drivers';
-UPDATE whatsapp_home_menu_items SET display_order = 3, page_number = 1 WHERE key = 'nearby_passengers';
-UPDATE whatsapp_home_menu_items SET display_order = 4, page_number = 1 WHERE key = 'schedule_trip';
-UPDATE whatsapp_home_menu_items SET display_order = 5, page_number = 1 WHERE key = 'motor_insurance';
-UPDATE whatsapp_home_menu_items SET display_order = 6, page_number = 1 WHERE key = 'nearby_pharmacies';
-UPDATE whatsapp_home_menu_items SET display_order = 7, page_number = 1 WHERE key = 'bars_restaurants';
-UPDATE whatsapp_home_menu_items SET display_order = 8, page_number = 1 WHERE key = 'shops_services';
-UPDATE whatsapp_home_menu_items SET display_order = 9, page_number = 1 WHERE key = 'jobs'; -- Jobs now on first page
+UPDATE whatsapp_home_menu_items SET display_order = 1 WHERE key = 'profile';
+UPDATE whatsapp_home_menu_items SET display_order = 2 WHERE key = 'nearby_drivers';
+UPDATE whatsapp_home_menu_items SET display_order = 3 WHERE key = 'nearby_passengers';
+UPDATE whatsapp_home_menu_items SET display_order = 4 WHERE key = 'schedule_trip';
+UPDATE whatsapp_home_menu_items SET display_order = 5 WHERE key = 'motor_insurance';
+UPDATE whatsapp_home_menu_items SET display_order = 6 WHERE key = 'nearby_pharmacies';
+UPDATE whatsapp_home_menu_items SET display_order = 7 WHERE key = 'bars_restaurants';
+UPDATE whatsapp_home_menu_items SET display_order = 8 WHERE key = 'shops_services';
+UPDATE whatsapp_home_menu_items SET display_order = 9 WHERE key = 'jobs'; -- Jobs now on first page
 
 -- Additional services (page 2: orders 10+)
-UPDATE whatsapp_home_menu_items SET display_order = 10, page_number = 2 WHERE key = 'property_rentals';
-UPDATE whatsapp_home_menu_items SET display_order = 11, page_number = 2 WHERE key = 'quincailleries';
-UPDATE whatsapp_home_menu_items SET display_order = 12, page_number = 2 WHERE key = 'notary_services';
-UPDATE whatsapp_home_menu_items SET display_order = 13, page_number = 2 WHERE key = 'customer_support';
+UPDATE whatsapp_home_menu_items SET display_order = 10 WHERE key = 'property_rentals';
+UPDATE whatsapp_home_menu_items SET display_order = 11 WHERE key = 'quincailleries';
+UPDATE whatsapp_home_menu_items SET display_order = 12 WHERE key = 'notary_services';
+UPDATE whatsapp_home_menu_items SET display_order = 13 WHERE key = 'customer_support';
 
 -- =====================================================
 -- 7. Add function to get profile menu items
