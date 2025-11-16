@@ -19,6 +19,7 @@ import {
   SessionProvider,
   type AdminSession,
 } from "@/components/providers/SessionProvider";
+import { useSupabaseAuth } from "@/components/providers/SupabaseAuthProvider";
 
 interface PanelShellProps {
   children: ReactNode;
@@ -45,6 +46,7 @@ export function PanelShell({
   session,
 }: PanelShellProps) {
   const router = useRouter();
+  const { signOut: supabaseSignOut } = useSupabaseAuth();
   const actorDisplayLabel = session.label?.trim() || `${session.actorId.slice(0, 8)}…`;
   const [assistantOpen, setAssistantOpen] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -65,10 +67,7 @@ export function PanelShell({
   const handleSignOut = async () => {
     try {
       setSigningOut(true);
-      await fetch("/api/auth/logout", {
-        method: "POST",
-        credentials: "same-origin",
-      });
+      await supabaseSignOut();
     } catch (error) {
       console.error("panel.logout_failed", error);
     } finally {

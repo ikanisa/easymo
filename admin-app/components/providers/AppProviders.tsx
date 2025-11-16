@@ -6,6 +6,7 @@ import { MotionProviders } from "@/components/motion/MotionProviders";
 import { useServiceWorkerRegistration } from "@/app/sw/register";
 import { ConnectivityProvider } from "@/components/providers/ConnectivityProvider";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { SupabaseAuthProvider } from "@/components/providers/SupabaseAuthProvider";
 
 interface AppProvidersProps {
   children: ReactNode;
@@ -30,9 +31,11 @@ export function AppProviders({ children }: AppProvidersProps) {
   const content = (
     <ThemeProvider>
       <ConnectivityProvider>
-        <MotionProviders reducedMotion={mounted ? prefersReducedMotion : false}>
-          {children}
-        </MotionProviders>
+        <SupabaseAuthProvider>
+          <MotionProviders reducedMotion={mounted ? prefersReducedMotion : false}>
+            {children}
+          </MotionProviders>
+        </SupabaseAuthProvider>
       </ConnectivityProvider>
     </ThemeProvider>
   );

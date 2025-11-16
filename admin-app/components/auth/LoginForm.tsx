@@ -3,10 +3,12 @@
 import { FormEvent, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import classNames from "classnames";
+import { useSupabaseAuth } from "@/components/providers/SupabaseAuthProvider";
 import styles from "./LoginForm.module.css";
 
 export function LoginForm() {
   const router = useRouter();
+  const { signInWithPassword } = useSupabaseAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isPending, startTransition] = useTransition();
@@ -26,25 +28,11 @@ export function LoginForm() {
     console.log('[LOGIN] Starting login attempt', { email, timestamp: new Date().toISOString() });
     
     try {
-      const response = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-        credentials: "same-origin",
-      });
-
-      if (!response.ok) {
-        const payload = await response.json().catch(() => ({}));
-        console.error('[LOGIN] Login failed', { status: response.status, payload });
-        setError(typeof payload?.message === "string" ? payload.message : "Unable to sign in.");
-        setSubmitting(false);
-        return;
-      }
-
-      console.log('[LOGIN] Login successful, redirecting to dashboard');
+      const user = await signInWithPassword(email, password);
+      console.log('[LOGIN] Login successful, redirecting to dashboard', { userId: user.id });
       setEmail("");
       setPassword("");
-      
+
       // Use Next.js router for client-side navigation with transition
       startTransition(() => {
         router.push("/dashboard");
@@ -52,7 +40,8 @@ export function LoginForm() {
       });
     } catch (cause) {
       console.error("auth.login.failed", cause);
-      setError("Unexpected error during sign-in.");
+      const message = cause instanceof Error ? cause.message : null;
+      setError(message || "Unexpected error during sign-in.");
       setSubmitting(false);
     }
   };

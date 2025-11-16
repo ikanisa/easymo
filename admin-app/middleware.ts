@@ -1,7 +1,9 @@
+import { createMiddlewareClient } from "@supabase/ssr";
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import type { Database } from "@/src/v2/lib/supabase/database.types";
 
-import { clearSessionCookie, readSessionFromCookies } from './lib/server/session';
+import { clearSessionCookie, isAdminSupabaseUser, readSessionFromCookies } from './lib/server/session';
 
 const PUBLIC_PATHS = [
   '/',
@@ -57,25 +59,44 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next({ request: { headers } });
   }
 
-  const session = await readSessionFromRequestCookies(request);
+  const response = NextResponse.next({ request: { headers } });
 
-  if (!session) {
-    const responseHeaders = new Headers();
-    const requestId = headers.get('x-request-id');
-    if (requestId) {
-      responseHeaders.set('x-request-id', requestId);
-    }
-    const response = NextResponse.json({ error: 'Unauthorized' }, {
-      status: 401,
-      headers: responseHeaders,
-    });
-
-    const clearCookie = clearSessionCookie();
-    response.cookies.set(clearCookie.name, clearCookie.value, clearCookie.attributes);
+  const legacySession = await readSessionFromRequestCookies(request);
+  if (legacySession) {
     return response;
   }
 
-  return NextResponse.next({ request: { headers } });
+  try {
+    const supabase = createMiddlewareClient<Database>({ req: request, res: response });
+    const { data, error } = await supabase.auth.getSession();
+    if (error) {
+      console.warn('supabase.middleware.session_error', error.message);
+    }
+    if (data.session && isAdminSupabaseUser(data.session.user)) {
+      return response;
+    }
+  } catch (error) {
+    console.warn('supabase.middleware.error', error);
+  }
+
+  const responseHeaders = new Headers();
+  const requestId = headers.get('x-request-id');
+  if (requestId) {
+    responseHeaders.set('x-request-id', requestId);
+  }
+
+  const unauthorized = NextResponse.json({ error: 'Unauthorized' }, {
+    status: 401,
+    headers: responseHeaders,
+  });
+
+  const clearCookie = clearSessionCookie();
+  unauthorized.cookies.set(clearCookie.name, clearCookie.value, clearCookie.attributes);
+  response.cookies.getAll().forEach((cookie) => {
+    unauthorized.cookies.set(cookie.name, cookie.value, cookie);
+  });
+
+  return unauthorized;
 }
 
 export const config = {

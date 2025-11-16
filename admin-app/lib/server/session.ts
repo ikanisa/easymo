@@ -1,5 +1,7 @@
-import { cookies } from "next/headers";
 import { createHmac, timingSafeEqual } from "crypto";
+import { cookies } from "next/headers";
+import type { Session as SupabaseSession, User as SupabaseUser } from "@supabase/supabase-js";
+import { createServerSupabaseClient } from "@/lib/supabase/server/client";
 
 export interface AdminSession {
   actorId: string;
@@ -9,6 +11,53 @@ export interface AdminSession {
 
 const SESSION_COOKIE_NAME = "admin_session";
 const SESSION_TTL_MS = 1000 * 60 * 60 * 8; // 8 hours
+
+export function isAdminSupabaseUser(user: SupabaseUser | null): boolean {
+  if (!user) return false;
+  const appRole = (user.app_metadata as Record<string, unknown> | undefined)?.role;
+  const userRole = (user.user_metadata as Record<string, unknown> | undefined)?.role;
+  const appRoles = (user.app_metadata as Record<string, unknown> | undefined)?.roles;
+  const userRoles = (user.user_metadata as Record<string, unknown> | undefined)?.roles;
+
+  const normalize = (value: unknown) =>
+    typeof value === "string"
+      ? [value]
+      : Array.isArray(value)
+        ? (value as unknown[]).filter((entry): entry is string => typeof entry === "string")
+        : [];
+
+  const roles = [
+    ...normalize(appRole),
+    ...normalize(userRole),
+    ...normalize(appRoles),
+    ...normalize(userRoles),
+  ];
+
+  return roles.some((role) => role.toLowerCase() === "admin");
+}
+
+export function mapSupabaseSessionToAdmin(
+  session: SupabaseSession | null,
+): AdminSession | null {
+  if (!session || !session.user) return null;
+  if (!isAdminSupabaseUser(session.user)) return null;
+
+  const label =
+    (session.user.user_metadata as Record<string, unknown> | undefined)?.full_name &&
+    typeof (session.user.user_metadata as Record<string, unknown>).full_name === "string"
+      ? ((session.user.user_metadata as Record<string, string>).full_name ?? null)
+      : session.user.email ?? null;
+
+  const expiresAt = session.expires_at
+    ? new Date(session.expires_at * 1000).toISOString()
+    : new Date(Date.now() + SESSION_TTL_MS).toISOString();
+
+  return {
+    actorId: session.user.id,
+    label,
+    expiresAt,
+  };
+}
 
 function getSessionSecret(): string {
   const secret =
@@ -106,23 +155,42 @@ function getCookieValue(value: unknown): string | null {
   return null;
 }
 
+async function readSupabaseAdminSession(): Promise<AdminSession | null> {
+  try {
+    const supabase = await createServerSupabaseClient();
+    const { data, error } = await supabase.auth.getSession();
+    if (error) {
+      console.warn('supabase.session.read_failed', error.message);
+      return null;
+    }
+    return mapSupabaseSessionToAdmin(data.session);
+  } catch (error) {
+    console.warn('supabase.session.error', error instanceof Error ? error.message : error);
+    return null;
+  }
+}
+
 export async function readSessionFromCookies(store?: CookieStore): Promise<AdminSession | null> {
   const cookieStore = (store ?? cookies()) as CookieStore;
   const rawCookie = cookieStore.get(SESSION_COOKIE_NAME);
   const value = getCookieValue(rawCookie);
   if (!value) {
-    return null;
+    // Only attempt Supabase fallback when using the default cookie store (server components)
+    if (store) return null;
+    return readSupabaseAdminSession();
   }
 
   const payload = decodePayload(value);
   if (!payload) {
     cookieStore.delete?.(SESSION_COOKIE_NAME);
-    return null;
+    if (store) return null;
+    return readSupabaseAdminSession();
   }
 
   if (Date.parse(payload.expiresAt) <= Date.now()) {
     cookieStore.delete?.(SESSION_COOKIE_NAME);
-    return null;
+    if (store) return null;
+    return readSupabaseAdminSession();
   }
 
   return payload;
