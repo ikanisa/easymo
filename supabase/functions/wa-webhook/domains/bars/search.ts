@@ -438,11 +438,15 @@ export async function startBarMenuOrder(
       barId: (detail as any)?.barId,
       message: error instanceof Error ? error.message : String(error ?? "err"),
     });
-    await sendButtonsMessage(
-      ctx,
-      t(ctx.locale, "restaurant.menu.fetch_error"),
-      buildButtons({ id: IDS.BACK_MENU, title: t(ctx.locale, "common.menu_back") }),
-    );
+    // Fallback to plain text to avoid interactive validation issues
+    try {
+      await sendText(
+        ctx.from,
+        t(ctx.locale, "restaurant.menu.fetch_error"),
+      );
+    } catch (_) {
+      // swallow
+    }
     return true;
   }
 }
