@@ -495,16 +495,13 @@ export async function handleScheduleTimeSelection(
     timezone,
     travelLabel,
   };
-  await setState(ctx.supabase, ctx.profileId, {
-    key: "schedule_recur",
-    data: nextState as Record<string, unknown>,
+  // UX: auto-create the trip and show matches immediately (no extra step)
+  // This avoids multiple concurrent messages and delivers a single list-view
+  // containing the nearby drivers/passengers.
+  return await createTripAndDeliverMatches(ctx, nextState, {
+    dropoff: state.dropoff ?? null,
+    travelLabel,
   });
-  await sendButtonsMessage(
-    ctx,
-    t(ctx.locale, "schedule.time.saved", { datetime: travelLabel }),
-    buildRecurrenceButtons(ctx),
-  );
-  return true;
 }
 
 function buildTimeOptionRows(ctx: RouterContext) {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { SectionCard } from "@/components/ui/SectionCard";
 import { Drawer } from "@/components/ui/Drawer";
 import { Badge } from "@/components/ui/Badge";
@@ -27,8 +28,13 @@ export function InsuranceComparisonsBoard() {
   const [quotes, setQuotes] = useState<QuoteRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<{ intentId: string; quotes: QuoteRow[] } | null>(null);
-  const [statusFilter, setStatusFilter] = useState<string | "all">("all");
-  const [search, setSearch] = useState("");
+  const searchParams = useSearchParams();
+  const [statusFilter, setStatusFilter] = useState<string | "all">(
+    (searchParams?.get("status") as any) || "all",
+  );
+  const [search, setSearch] = useState(
+    searchParams?.get("search") || searchParams?.get("intentId") || "",
+  );
 
   useEffect(() => {
     let mounted = true;
@@ -131,6 +137,15 @@ export function InsuranceComparisonsBoard() {
                 <span className="text-[color:var(--color-muted)]">Spread</span>
                 <span>{formatCurrencyRW(g.spread)}</span>
               </div>
+              <div className="pt-2 text-xs">
+                <a
+                  href={`/insurance/documents?intentId=${encodeURIComponent(g.intentId)}`}
+                  className="text-[color:var(--color-accent)] underline-offset-2 hover:underline"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  View documents →
+                </a>
+              </div>
             </div>
           </button>
         ))}
@@ -153,6 +168,14 @@ export function InsuranceComparisonsBoard() {
                 <div className="font-semibold">{formatCurrencyRW(q.premium)}</div>
               </div>
             ))}
+            <div className="pt-2 text-xs">
+              <a
+                href={`/insurance/documents?intentId=${encodeURIComponent(selected.intentId)}`}
+                className="text-[color:var(--color-accent)] underline-offset-2 hover:underline"
+              >
+                View documents for this request →
+              </a>
+            </div>
           </div>
         </Drawer>
       )}

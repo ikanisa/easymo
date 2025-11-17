@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { SectionCard } from "@/components/ui/SectionCard";
 import { Drawer } from "@/components/ui/Drawer";
 import { Badge } from "@/components/ui/Badge";
@@ -12,12 +13,17 @@ export function DocumentsLibrary() {
   const [selectedDocId, setSelectedDocId] = useState<string | null>(null);
   const [documents, setDocuments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const searchParams = useSearchParams();
+  const initialIntentId = searchParams?.get("intentId") || "";
+  const [intentId, setIntentId] = useState<string>(initialIntentId);
 
   useEffect(() => {
     let mounted = true;
     (async () => {
       try {
-        const res = await fetch("/api/insurance/documents", { cache: "no-store" });
+        const params = new URLSearchParams();
+        if (intentId) params.set("intentId", intentId);
+        const res = await fetch(`/api/insurance/documents${params.toString() ? `?${params.toString()}` : ""}`, { cache: "no-store" });
         if (!res.ok) throw new Error("Failed to load documents");
         const json = await res.json();
         const data = Array.isArray(json?.data) ? json.data : [];
@@ -32,7 +38,7 @@ export function DocumentsLibrary() {
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [intentId]);
 
   const filtered = useMemo(() => {
     return documents.filter((doc) => (typeFilter === "all" ? true : (doc.kind ?? doc.docType) === typeFilter));
@@ -51,7 +57,7 @@ export function DocumentsLibrary() {
       title="Documents library"
       description="Search OCR uploads, signed policies, and supporting docs with verification signals."
     >
-      <div className="mb-4 flex flex-wrap items-center gap-2 text-sm">
+      <div className="mb-4 flex flex-wrap items-center gap-3 text-sm">
         <label className="text-[color:var(--color-muted)]">Filter by type</label>
         <select
           value={typeFilter}
@@ -65,6 +71,15 @@ export function DocumentsLibrary() {
             </option>
           ))}
         </select>
+        <div className="ml-auto flex items-center gap-2">
+          <label className="text-[color:var(--color-muted)]">Intent</label>
+          <input
+            value={intentId}
+            onChange={(e) => setIntentId(e.target.value)}
+            placeholder="intent UUID"
+            className="min-w-[220px] rounded-lg border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-1"
+          />
+        </div>
       </div>
 
       <div className="overflow-hidden rounded-2xl border border-[color:var(--color-border)]">

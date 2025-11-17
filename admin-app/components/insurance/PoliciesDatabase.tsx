@@ -130,7 +130,17 @@ export function PoliciesDatabase() {
                       {request?.vehicle?.plateNumber ?? "Unlinked"}
                     </div>
                   </td>
-                  <td className="px-4 py-3">{policy.quoteId ?? "—"}</td>
+                  <td className="px-4 py-3">
+                    {policy.quoteId ? (
+                      <a
+                        href={`/insurance/comparisons?search=${encodeURIComponent(policy.quoteId)}`}
+                        className="text-[color:var(--color-accent)] underline-offset-2 hover:underline"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {policy.quoteId}
+                      </a>
+                    ) : "—"}
+                  </td>
                   <td className="px-4 py-3">
                     <div className="font-medium">{request?.customerName ?? "—"}</div>
                     <div className="text-xs text-[color:var(--color-muted)]">{request?.customerMsisdn ?? ""}</div>

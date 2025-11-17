@@ -15,7 +15,7 @@ function formatCurrency(value: number) {
   return currencyFormatter.format(Math.round(value));
 }
 
-type InsurancePayment = { id: string; status: string; amount: number; reference?: string | null; recordedAt?: string | null };
+type InsurancePayment = { id: string; status: string; amount: number; reference?: string | null; recordedAt?: string | null; intentId?: string | null; quoteId?: string | null };
 
 const paymentStatusVariant: Record<string, ComponentProps<typeof Badge>["variant"]> = {
   pending: "warning",
@@ -47,6 +47,8 @@ export function PaymentsIssuanceBoard() {
           amount: Number(p.amount ?? 0),
           reference: p.reference ?? null,
           recordedAt: p.recordedAt ?? p.recorded_at ?? null,
+          intentId: p.intentId ?? p.intent_id ?? null,
+          quoteId: p.quoteId ?? p.quote_id ?? null,
         }));
         if (mounted) setPayments(mapped);
       } catch {
@@ -96,6 +98,7 @@ export function PaymentsIssuanceBoard() {
               <th className="px-4 py-3 text-left">Amount</th>
               <th className="px-4 py-3 text-left">Status</th>
               <th className="px-4 py-3 text-left">Recorded</th>
+              <th className="px-4 py-3 text-left">Links</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[color:var(--color-border)] bg-[color:var(--color-surface)]">
@@ -118,6 +121,24 @@ export function PaymentsIssuanceBoard() {
                   </Badge>
                 </td>
                 <td className="px-4 py-3">{p.recordedAt ? new Date(p.recordedAt).toLocaleString() : "—"}</td>
+                <td className="px-4 py-3 space-x-2">
+                  {p.intentId ? (
+                    <a
+                      href={`/insurance/requests?search=${encodeURIComponent(p.intentId)}`}
+                      className="text-[color:var(--color-accent)] underline-offset-2 hover:underline"
+                    >
+                      Request
+                    </a>
+                  ) : null}
+                  {p.quoteId ? (
+                    <a
+                      href={`/insurance/comparisons?search=${encodeURIComponent(p.quoteId)}`}
+                      className="text-[color:var(--color-accent)] underline-offset-2 hover:underline"
+                    >
+                      Quote
+                    </a>
+                  ) : null}
+                </td>
               </tr>
             ))}
             {!payments.length && (

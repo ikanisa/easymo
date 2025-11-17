@@ -137,7 +137,7 @@ export function RequestsDatabase() {
               <th className="px-4 py-3 text-left">Outstanding</th>
               <th className="px-4 py-3 text-left">Tasks overdue</th>
               <th className="px-4 py-3 text-left">Quotes</th>
-              <th className="px-4 py-3 text-left">Action</th>
+              <th className="px-4 py-3 text-left">Links</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[color:var(--color-border)] bg-[color:var(--color-surface)]">
@@ -157,10 +157,19 @@ export function RequestsDatabase() {
                 <td className="px-4 py-3">{row.outstandingMinor ? formatCurrency(row.outstandingMinor) : "—"}</td>
                 <td className="px-4 py-3">{row.overdueTasks}</td>
                 <td className="px-4 py-3">{row.comparison.length}</td>
-                <td className="px-4 py-3">
-                  <Button variant="outline" size="sm" onClick={() => setSelected(row)}>
-                    Open
-                  </Button>
+                <td className="px-4 py-3 space-x-2">
+                  <a
+                    href={`/insurance/comparisons?intentId=${encodeURIComponent(row.id)}`}
+                    className="text-[color:var(--color-accent)] underline-offset-2 hover:underline"
+                  >
+                    Comparisons
+                  </a>
+                  <a
+                    href={`/insurance/documents?intentId=${encodeURIComponent(row.id)}`}
+                    className="text-[color:var(--color-accent)] underline-offset-2 hover:underline"
+                  >
+                    Documents
+                  </a>
                 </td>
               </tr>
             ))}
