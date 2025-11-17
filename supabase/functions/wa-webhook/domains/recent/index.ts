@@ -64,6 +64,32 @@ export async function showRecentHub(ctx: RouterContext): Promise<boolean> {
     }
   }
 
+  // Property add resume (most recent)
+  for (const a of acts || []) {
+    const type = String((a as any).activity_type || '');
+    if (type === 'property_add') {
+      rows.push({
+        id: 'property_add_resume',
+        title: '🏠 Resume property posting',
+        description: 'Use your last post details and current location.',
+      });
+      break;
+    }
+  }
+
+  // Pharmacies resume (use recent location)
+  for (const a of acts || []) {
+    const type = String((a as any).activity_type || '');
+    if (type === 'pharmacy_search') {
+      rows.push({
+        id: 'pharmacy_resume',
+        title: '💊 Pharmacies near you',
+        description: 'Open nearby pharmacies using your recent location.',
+      });
+      break;
+    }
+  }
+
   // Quick entries: drivers / passengers / pharmacies
   rows.push({ id: IDS.SEE_DRIVERS, title: t(ctx.locale, 'home.rows.seeDrivers.title'), description: t(ctx.locale, 'home.rows.seeDrivers.description') });
   rows.push({ id: IDS.SEE_PASSENGERS, title: t(ctx.locale, 'home.rows.seePassengers.title'), description: t(ctx.locale, 'home.rows.seePassengers.description') });
@@ -128,6 +154,38 @@ export async function handleRecentSelection(ctx: RouterContext, id: string): Pro
       if (!recent) return false;
       const { handleFindPropertyLocation } = await import('../property/rentals.ts');
       return await handleFindPropertyLocation(ctx, details, recent);
+    } catch (_err) {
+      return false;
+    }
+  }
+  if (id === 'property_add_resume') {
+    try {
+      // Load last property_add details
+      const { data: acts } = await ctx.supabase
+        .from('recent_activities')
+        .select('details')
+        .eq('user_id', ctx.profileId!)
+        .eq('activity_type', 'property_add')
+        .order('occurred_at', { ascending: false })
+        .limit(1);
+      const details = (Array.isArray(acts) && acts[0]?.details) ? acts[0].details as any : null;
+      if (!details) return false;
+      const { getRecentLocation } = await import('../locations/recent.ts');
+      const recent = await getRecentLocation(ctx, 'property');
+      if (!recent) return false;
+      const { handleAddPropertyLocation } = await import('../property/rentals.ts');
+      return await handleAddPropertyLocation(ctx, details, recent);
+    } catch (_err) {
+      return false;
+    }
+  }
+  if (id === 'pharmacy_resume') {
+    try {
+      const { getRecentLocation } = await import('../locations/recent.ts');
+      const recent = await getRecentLocation(ctx, 'pharmacies');
+      if (!recent) return false;
+      const { processPharmacyRequest } = await import('../healthcare/pharmacies.ts');
+      return await processPharmacyRequest(ctx, recent, '');
     } catch (_err) {
       return false;
     }

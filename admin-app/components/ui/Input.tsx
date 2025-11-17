@@ -66,14 +66,16 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
     }
 
     const inputAny = inputProps as any;
+    const NativeInput: any = 'input';
 
     return (
-      <input
+      <NativeInput
         type={type}
         ref={ref}
         data-status={status !== "default" ? status : undefined}
         aria-invalid={ariaInvalid}
         className={cn(legacyInputVariants({ variant, size, status }), className)}
+        // @ts-expect-error Next 15/react-dom typing mismatch on formAction for <input>
         {...inputAny}
       />
     );

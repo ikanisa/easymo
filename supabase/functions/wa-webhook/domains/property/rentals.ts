@@ -556,6 +556,11 @@ export async function handleAddPropertyPrice(
     data: nextState,
   });
 
+  // Record recent property posting criteria for resume
+  try {
+    await recordRecentActivity(ctx, 'property_add', null, nextState as unknown as Record<string, unknown>);
+  } catch (_) { /* non-fatal */ }
+
   // Recent-location skip for add flow
   try {
     const recent = await getRecentLocation(ctx, 'property');
