@@ -60,6 +60,13 @@
     "app/api/users/**/*.tsx",
     "app/api/agent-tasks/**/*.ts",
     "app/api/agent-tasks/**/*.tsx",
+    "app/api/agent-tools/**/*.ts",
+    "app/api/agent-tools/**/*.tsx",
+    "app/api/agent-orchestration/**/*.ts",
+    "app/api/agent-orchestration/**/*.tsx",
+    "app/api/agent-admin/**/*.ts",
+    "app/api/agent-admin/**/*.tsx",
+    
     "lib/**/*.ts",
     "lib/**/*.tsx",
     "middleware.ts",

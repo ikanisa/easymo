@@ -211,6 +211,11 @@ export async function showJobBoardMenu(ctx: RouterContext): Promise<boolean> {
       description: t(ctx.locale, "jobs.menu.find.description"),
     },
     {
+      id: "jobs_recommended",
+      title: "⭐ Recommended for you",
+      description: "Based on your profile and preferences",
+    },
+    {
       id: IDS.JOB_POST,
       title: t(ctx.locale, "jobs.menu.post.title"),
       description: t(ctx.locale, "jobs.menu.post.description"),

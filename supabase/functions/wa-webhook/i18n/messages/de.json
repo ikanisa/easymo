@@ -110,4 +110,12 @@
   "profile.menu.momoQr.description": "Show or share your MOMO QR payment code.",
   "profile.menu.wallet.title": "💰 Wallet & Tokens",
   "profile.menu.wallet.description": "View token balance, rewards, and payout options."
+  ,
+  "bars.waiter.greeting": "👋 Willkommen! Ich bin Ihr KI‑Kellner.\n\nIch kann helfen mit:\n• Menüempfehlungen\n• Fragen zu Gerichten\n• Preisinformationen\n• Besonderen Ernährungsbedürfnissen\n\nWobei kann ich für dieses Restaurant helfen?",
+  "bars.waiter.processing": "🤖 Ich prüfe das für Sie...",
+  "bars.waiter.error": "😔 Entschuldigung, derzeit gibt es ein Problem. Bitte nutzen Sie das normale Menü oder kontaktieren Sie das Restaurant.",
+  "bars.waiter.quick_actions": "Schnellaktionen:",
+  "bars.waiter.no_prefs": "Noch keine gespeicherten Präferenzen.",
+  "bars.waiter.buttons.view_prefs": "🗂️ Meine Präferenzen",
+  "bars.waiter.buttons.suggestions": "✨ Vorschläge"
 }

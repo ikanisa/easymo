@@ -6,12 +6,11 @@ import type {
   CookieMethodsServerDeprecated,
 } from "@supabase/ssr";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Database } from "@/src/v2/lib/supabase/database.types";
 import { requireServiceSupabaseConfig } from "../env-server";
 
 type CookieAdapter = CookieMethodsServer & CookieMethodsServerDeprecated;
 
-export function getSupabaseAdminClient(): SupabaseClient<Database> | null {
+export function getSupabaseAdminClient(): SupabaseClient | null {
   if (typeof window !== "undefined") {
     throw new Error("Supabase admin client can only be used on the server");
   }
@@ -34,7 +33,7 @@ export function getSupabaseAdminClient(): SupabaseClient<Database> | null {
     setAll() {},
   };
 
-  return createServerClient<Database>(config.url, config.serviceRoleKey, {
+  return createServerClient(config.url, config.serviceRoleKey, {
     cookies: cookieAdapter,
   });
 }

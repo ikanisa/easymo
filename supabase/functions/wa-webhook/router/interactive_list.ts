@@ -901,6 +901,29 @@ async function handleHomeMenuSelection(
       );
       return await showJobBoardMenu(ctx);
     }
+    case "jobs_recommended": {
+      const { routeToAIAgent } = await import("../domains/ai-agents/integration.ts");
+      const response = await routeToAIAgent(ctx, {
+        userId: ctx.from,
+        agentType: "job_board",
+        flowType: "search_jobs",
+        requestData: { skills_query: null, max_results: 5 },
+      });
+      if (response?.success && Array.isArray(response.jobs) && response.jobs.length) {
+        const { sendListMessage } = await import("../utils/reply.ts");
+        await sendListMessage(ctx, {
+          title: "⭐ Recommended Jobs",
+          body: `Top ${Math.min(5, response.jobs.length)} suggestions near you`,
+          sectionTitle: "Jobs",
+          rows: response.jobs.slice(0, 5).map((j: any) => ({ id: j.id, title: j.title, description: j.location_city || j.location || '' })),
+          buttonText: "Open",
+        });
+        return true;
+      }
+      const { sendButtonsMessage, buildButtons } = await import("../utils/reply.ts");
+      await sendButtonsMessage(ctx, "No recommendations yet. Try Find a Job.", buildButtons({ id: IDS.JOB_FIND, title: "Find a Job" }));
+      return true;
+    }
     case IDS.JOB_FIND: {
       const { startJobSearch } = await import(
         "../domains/jobs/index.ts"

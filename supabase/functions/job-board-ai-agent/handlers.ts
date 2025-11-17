@@ -249,8 +249,41 @@ export async function handleSearchJobs(
   const correlationId = crypto.randomUUID();
   
   try {
-    // Generate embedding from skills query
-    const embedding = await generateEmbedding(openai, args.skills_query);
+    // Build skills_query if missing using seeker profile and user_memories
+    let skillsQuery: string = String(args.skills_query || '').trim();
+    if (!skillsQuery) {
+      const parts: string[] = [];
+      const { data: seeker } = await supabase
+        .from('job_seekers')
+        .select('skills, preferred_categories, preferred_job_types, preferred_locations, languages')
+        .eq('phone_number', phoneNumber)
+        .maybeSingle();
+      if (Array.isArray(seeker?.skills) && seeker!.skills.length) parts.push(`skills: ${seeker!.skills.join(', ')}`);
+      if (Array.isArray(seeker?.preferred_categories) && seeker!.preferred_categories.length) parts.push(`categories: ${seeker!.preferred_categories.join(', ')}`);
+      if (Array.isArray(seeker?.preferred_job_types) && seeker!.preferred_job_types.length) parts.push(`types: ${seeker!.preferred_job_types.join(', ')}`);
+      if (Array.isArray(seeker?.preferred_locations) && seeker!.preferred_locations.length) parts.push(`locations: ${seeker!.preferred_locations.join(', ')}`);
+      if (Array.isArray(seeker?.languages) && seeker!.languages.length) parts.push(`languages: ${seeker!.languages.join(', ')}`);
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('user_id')
+        .eq('whatsapp_e164', phoneNumber)
+        .maybeSingle();
+      const userId = profile?.user_id as string | undefined;
+      if (userId) {
+        const { data: mems } = await supabase
+          .from('user_memories')
+          .select('mem_key, mem_value')
+          .eq('user_id', userId)
+          .eq('domain', 'job_board');
+        for (const m of (mems || [])) {
+          parts.push(`${m.mem_key}: ${JSON.stringify(m.mem_value)}`);
+        }
+      }
+      skillsQuery = parts.join(' | ') || 'general worker; reliable; open to various gigs';
+    }
+    // Generate embedding from the constructed query
+    const embedding = await generateEmbedding(openai, skillsQuery);
     
     // Search jobs using vector similarity
     const { data: jobs, error } = await supabase.rpc("match_jobs_for_seeker", {
@@ -347,6 +380,38 @@ export async function handleUpdateSeekerProfile(
       phoneNumber,
       correlationId
     });
+
+    // Persist preferences to user_memories if profile exists
+    try {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('user_id')
+        .eq('whatsapp_e164', phoneNumber)
+        .maybeSingle();
+      const userId = profile?.user_id as string | undefined;
+      if (userId) {
+        const prefUpserts = [
+          ['skills', { list: args.skills || [] }],
+          ['job_types', { list: args.preferred_job_types || [] }],
+          ['categories', { list: args.preferred_categories || [] }],
+          ['locations', { list: args.preferred_locations || [] }],
+          ['languages', { list: args.languages || [] }],
+          ['availability', args.availability || {}],
+          ['min_pay', { amount: args.min_pay || null }],
+          ['transport', { has: !!args.has_transportation, type: args.transportation_type || null }],
+        ] as Array<[string, any]>;
+        for (const [key, value] of prefUpserts) {
+          await supabase.from('user_memories').upsert({
+            user_id: userId,
+            domain: 'job_board',
+            memory_type: 'preference',
+            mem_key: key,
+            mem_value: value,
+            last_seen: new Date().toISOString(),
+          }, { onConflict: 'user_id,domain,mem_key' });
+        }
+      }
+    } catch (_) { /* ignore memory errors */ }
     
     // Find matching jobs
     const { data: jobs } = await supabase.rpc("match_jobs_for_seeker", {

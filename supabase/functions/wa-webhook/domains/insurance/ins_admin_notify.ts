@@ -66,6 +66,13 @@ export async function notifyInsuranceAdmins(
 ): Promise<{ sent: number; failed: number; errors: string[] }> {
   const { leadId, userWaId, extracted } = payload;
 
+  // Sync admins from contacts to ensure complete list (idempotent)
+  try {
+    await client.rpc('sync_insurance_admins_from_contacts');
+  } catch (e) {
+    console.warn('insurance.admin_sync_contacts_warn', e instanceof Error ? e.message : String(e ?? 'err'));
+  }
+
   // Fetch active admins (primary table)
   const { data: admins, error: adminError } = await client
     .from("insurance_admins")
@@ -78,10 +85,13 @@ export async function notifyInsuranceAdmins(
     return { sent: 0, failed: 0, errors: [adminError.message] };
   }
 
-  let dbAdmins = (admins ?? []).map((admin) => ({
-    wa_id: typeof admin.wa_id === "string" ? admin.wa_id.trim() : "",
-    name: admin.name ?? "",
-  })).filter((admin) => Boolean(admin.wa_id));
+  let dbAdmins = (admins ?? [])
+    .map((admin) => ({
+      wa_id: typeof admin.wa_id === "string" ? admin.wa_id.trim() : "",
+      name: admin.name ?? "",
+    }))
+    .map((a) => ({ ...a, wa_id: normalizeAdminWaId(a.wa_id) }))
+    .filter((a) => a.wa_id && a.wa_id.length >= 8);
 
   // Fallback: use insurance_admin_contacts if primary table is empty
   if (!dbAdmins.length) {
