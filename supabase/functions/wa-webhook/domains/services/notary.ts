@@ -12,6 +12,7 @@ import { isFeatureEnabled } from "../../../_shared/feature-flags.ts";
 import { IDS } from "../../wa/ids.ts";
 import { routeToAIAgent, sendAgentOptions } from "../ai-agents/index.ts";
 import { waChatLink } from "../../utils/links.ts";
+import { getRecentLocation } from "../locations/recent.ts";
 // Marketplace retired: query business table directly
 
 const NOTARY_RESULT_PREFIX = "NOTARY::";
@@ -29,6 +30,14 @@ export async function startNotaryServices(
   ctx: RouterContext,
 ): Promise<boolean> {
   if (!ctx.profileId) return false;
+
+  // If user has a recent location (<=30m), skip prompt and show results
+  try {
+    const recent = await getRecentLocation(ctx, 'notary');
+    if (recent) {
+      return await sendNotaryDatabaseResults(ctx, recent, []);
+    }
+  } catch (_) { /* non-fatal */ }
 
   await setState(ctx.supabase, ctx.profileId, {
     key: "notary_awaiting_location",

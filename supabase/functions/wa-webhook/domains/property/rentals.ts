@@ -32,6 +32,7 @@ import {
   type UserFavorite,
 } from "../locations/favorites.ts";
 import { buildSaveRows } from "../locations/save.ts";
+import { getRecentLocation } from "../locations/recent.ts";
 
 export type PropertyFindState = {
   rentalType: string;
@@ -359,6 +360,14 @@ export async function handleFindPropertyBudget(
     data: nextState,
   });
 
+  // Recent-location skip: if we have a fresh location, proceed directly
+  try {
+    const recent = await getRecentLocation(ctx, 'property');
+    if (recent) {
+      return await handleFindPropertyLocation(ctx, nextState, recent);
+    }
+  } catch (_) { /* non-fatal */ }
+
   await sendButtonsMessage(
     ctx,
     t(ctx.locale, "property.find.prompt.location", {
@@ -540,6 +549,14 @@ export async function handleAddPropertyPrice(
     key: "property_add_location",
     data: nextState,
   });
+
+  // Recent-location skip for add flow
+  try {
+    const recent = await getRecentLocation(ctx, 'property');
+    if (recent) {
+      return await handleAddPropertyLocation(ctx, nextState, recent);
+    }
+  } catch (_) { /* non-fatal */ }
 
   await sendButtonsMessage(
     ctx,

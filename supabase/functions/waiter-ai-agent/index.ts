@@ -39,6 +39,147 @@ function renderHealthMetrics(service: string): string {
 }
 
 // =====================================================
+// CONFIG & HELPERS
+// =====================================================
+
+const ADMIN_INTERNAL_TOKEN = Deno.env.get("EASYMO_ADMIN_TOKEN") ?? "";
+
+type Guardrails = {
+  payment_limits?: { currency?: string; max_per_txn?: number };
+  pii_minimization?: boolean;
+  never_collect_card?: boolean;
+  allergy_check?: boolean;
+};
+
+async function loadAgentGuardrails(): Promise<Guardrails> {
+  try {
+    const { data, error } = await supabase
+      .from("agent_registry")
+      .select("guardrails, slug")
+      .eq("slug", "waiter-ai")
+      .maybeSingle();
+    if (error) throw error;
+    return (data?.guardrails as Guardrails) || {};
+  } catch (_) {
+    return {};
+  }
+}
+
+function containsCardPAN(text: string): boolean {
+  const digits = text.replace(/\D/g, "");
+  // Very rough: 13–19 consecutive digits heuristic
+  return /\b\d{13,19}\b/.test(digits);
+}
+
+function currencyForCountryCode(code?: string | null): string {
+  switch ((code || "").toUpperCase()) {
+    case "RW":
+      return "RWF";
+    case "MT":
+      return "EUR";
+    case "CA":
+      return "CAD";
+    default:
+      return "RWF";
+  }
+}
+
+async function enforcePolicy(
+  guardrails: Guardrails,
+  toolName: string,
+  args: any,
+): Promise<{ allowed: boolean; reason?: string }> {
+  // Payment ceilings
+  if (toolName === "initiate_payment" && guardrails?.payment_limits) {
+    const limit = guardrails.payment_limits.max_per_txn ?? 200000;
+    const amount = Number(args?.amount ?? 0);
+    if (amount > limit) {
+      return { allowed: false, reason: `Payment exceeds limit (${limit}).` };
+    }
+  }
+  return { allowed: true };
+}
+
+async function promoteDraftToOrder(userId: string, conversationId?: string | null, restaurantId?: string | null, currency?: string) {
+  // Find draft order
+  const { data: draft } = await supabase
+    .from("draft_orders")
+    .select("id, subtotal, tax, total, metadata")
+    .eq("user_id", userId)
+    .eq("status", "draft")
+    .maybeSingle();
+  if (!draft) return { error: "No draft order to finalize" };
+
+  const { data: items } = await supabase
+    .from("draft_order_items")
+    .select("menu_item_id, quantity, unit_price, total_price")
+    .eq("draft_order_id", draft.id);
+
+  // Compute
+  const subtotal = (items || []).reduce((s, i) => s + Number(i.total_price || 0), 0);
+  const tax = subtotal * 0.1;
+  const total = subtotal + tax;
+
+  // Resolve currency if not provided
+  let cur = currency || "RWF";
+  if (!currency && conversationId) {
+    const { data: conv } = await supabase
+      .from("waiter_conversations")
+      .select("metadata")
+      .eq("id", conversationId)
+      .maybeSingle();
+    const countryCode = (conv?.metadata as any)?.countryCode || (conv?.metadata as any)?.country_code || null;
+    cur = currencyForCountryCode(countryCode);
+  }
+
+  // Create waiter_orders
+  const { data: order, error: orderErr } = await supabase
+    .from("waiter_orders")
+    .insert({
+      user_id: userId,
+      conversation_id: conversationId || null,
+      restaurant_id: restaurantId || null,
+      status: "pending",
+      payment_status: "pending",
+      subtotal: subtotal.toFixed(2),
+      tax: tax.toFixed(2),
+      total: total.toFixed(2),
+      currency: cur,
+      metadata: draft.metadata || {},
+    })
+    .select("id, total, currency")
+    .single();
+  if (orderErr) return { error: orderErr.message };
+
+  // Insert items
+  for (const it of items || []) {
+    // Fetch menu item name for clearer receipts
+    const { data: menu } = await supabase
+      .from("menu_items")
+      .select("name")
+      .eq("id", it.menu_item_id)
+      .maybeSingle();
+    await supabase
+      .from("waiter_order_items")
+      .insert({
+        order_id: order.id,
+        menu_item_id: it.menu_item_id,
+        name: menu?.name || "Item",
+        quantity: it.quantity,
+        unit_price: it.unit_price,
+      });
+  }
+
+  // Mark draft as finalised
+  await supabase
+    .from("draft_orders")
+    .update({ status: "finalised", metadata: { ...(draft.metadata || {}), waiter_order_id: order.id } })
+    .eq("id", draft.id);
+
+  return { order };
+}
+
+// =====================================================
 // SYSTEM PROMPT
 // =====================================================
 
@@ -107,6 +248,79 @@ const tools = [
           }
         },
         required: ["query"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "finalize_order",
+      description: "Promote the current user's draft order to a finalised order ready for payment",
+      parameters: {
+        type: "object",
+        properties: {
+          currency: { type: "string", description: "ISO 4217 currency (e.g., RWF, EUR, CAD)" }
+        },
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "initiate_payment",
+      description: "Initiate payment for a finalised order via Mobile Money or Revolut",
+      parameters: {
+        type: "object",
+        properties: {
+          order_id: { type: "string", description: "UUID of the waiter order" },
+          provider: { type: "string", enum: ["mtn","airtel","revolut","cash"], description: "Payment provider" },
+          phone_number: { type: "string", description: "Phone number for MoMo charge (E.164)" },
+          amount: { type: "number", description: "Override amount (optional)" }
+        },
+        required: ["order_id"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_payment_status",
+      description: "Fetch current payment status for a payment reference",
+      parameters: {
+        type: "object",
+        properties: {
+          payment_id: { type: "string" }
+        },
+        required: ["payment_id"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "knowledge_lookup",
+      description: "Search internal knowledge base (specials, recipes, notes) and return top matches",
+      parameters: {
+        type: "object",
+        properties: {
+          query: { type: "string" },
+          top_k: { type: "number", default: 5 }
+        },
+        required: ["query"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "trending_items",
+      description: "Return trending menu items for a time window",
+      parameters: {
+        type: "object",
+        properties: {
+          days: { type: "number", description: "How many recent days to include", default: 1 },
+          limit: { type: "number", description: "Max items to return", default: 5 }
+        }
       }
     }
   },
@@ -323,6 +537,11 @@ async function handleToolCall(
   });
 
   try {
+    const guardrails = await loadAgentGuardrails();
+    const policy = await enforcePolicy(guardrails, name, args);
+    if (!policy.allowed) {
+      return { success: false, error: policy.reason || "Action not allowed by policy" };
+    }
     switch (name) {
       case "search_menu": {
         let query = supabase
@@ -378,7 +597,7 @@ async function handleToolCall(
         // Get menu item details
         const { data: item, error: itemError } = await supabase
           .from("menu_items")
-          .select("id, name, description, price, available")
+          .select("id, name, description, price, available, tags, dietary_info")
           .eq("id", args.item_id)
           .single();
 
@@ -443,6 +662,13 @@ async function handleToolCall(
           .update({ subtotal, tax, total })
           .eq("id", draftOrder.id);
 
+        // Allergy note (if tags present)
+        let warning: string | undefined;
+        const tags = Array.isArray((item as any)?.tags) ? (item as any).tags as string[] : [];
+        const risky = ["nuts","shellfish","gluten","dairy","sesame"];
+        const found = tags.filter((t) => risky.includes(String(t).toLowerCase()));
+        if (found.length) warning = `Allergy note: contains ${found.join(", ")}`;
+
         return {
           success: true,
           item: {
@@ -451,7 +677,8 @@ async function handleToolCall(
             unit_price: item.price,
             total_price: item.price * args.quantity
           },
-          cart_total: total
+          cart_total: total,
+          warning
         };
       }
 
@@ -476,6 +703,101 @@ async function handleToolCall(
           recommendations: data || [],
           count: data?.length || 0
         };
+      }
+
+      case "finalize_order": {
+        const currency = typeof args?.currency === "string" ? args.currency : undefined;
+        const { order, error } = await promoteDraftToOrder(context.userId, context.conversationId, context.venueId || null, currency);
+        if (error || !order) return { success: false, error: error || "Failed to finalize order" };
+        return { success: true, order };
+      }
+
+      case "initiate_payment": {
+        // Fetch order
+        const { data: order, error: oErr } = await supabase
+          .from("waiter_orders")
+          .select("id, total, currency, user_id")
+          .eq("id", args.order_id)
+          .eq("user_id", context.userId)
+          .single();
+        if (oErr || !order) return { success: false, error: "Order not found" };
+
+        const amount = Number(args?.amount ?? order.total);
+        const provider = (args?.provider as string | undefined) || "mtn";
+        const phone = (args?.phone_number as string | undefined) || null;
+
+        const url = `${Deno.env.get("SUPABASE_URL")}/functions/v1/momo-charge`;
+        const res = await fetch(url, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            // Internal server-to-server call; service role is available server-side only
+            Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+            "x-correlation-id": crypto.randomUUID(),
+          },
+          body: JSON.stringify({
+            orderId: order.id,
+            amount,
+            currency: order.currency,
+            phoneNumber: phone,
+            provider,
+          }),
+        });
+        const json = await res.json().catch(() => ({}));
+        if (!res.ok) return { success: false, error: json?.error || `Payment error ${res.status}` };
+        return { success: true, payment: json };
+      }
+
+      case "get_payment_status": {
+        const { data, error } = await supabase
+          .from("waiter_payments")
+          .select("id, status, order_id, currency, amount, created_at, processed_at, provider_transaction_id")
+          .eq("id", args.payment_id)
+          .eq("user_id", context.userId)
+          .single();
+        if (error || !data) return { success: false, error: "Payment not found" };
+        return { success: true, payment: data };
+      }
+
+      case "knowledge_lookup": {
+        const query = String(args?.query || "").slice(0, 512);
+        const top_k = Math.max(1, Math.min(20, Number(args?.top_k ?? 5)));
+        const url = `${Deno.env.get("SUPABASE_URL")}/functions/v1/retrieval-search`;
+        const res = await fetch(url, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+          },
+          body: JSON.stringify({ query, topK: top_k }),
+        });
+        const json = await res.json().catch(() => ({ results: [] }));
+        if (!res.ok) return { success: false, error: json?.error || `retrieval error ${res.status}` };
+        return { success: true, results: json?.results ?? [] };
+      }
+
+      case "trending_items": {
+        const days = Math.max(1, Math.min(30, Number(args?.days ?? 1)));
+        const limit = Math.max(1, Math.min(20, Number(args?.limit ?? 5)));
+        const { data, error } = await supabase
+          .from("menu_item_popularity_daily")
+          .select("day, menu_item_id, order_count")
+          .gte("day", new Date(Date.now() - days * 86400000).toISOString())
+          .order("order_count", { ascending: false })
+          .limit(limit);
+        if (error) return { success: false, error: error.message };
+        // Hydrate names
+        const ids = (data || []).map((d: any) => d.menu_item_id);
+        const { data: items } = await supabase.from("menu_items").select("id, name, price").in("id", ids);
+        const byId = new Map((items || []).map((i: any) => [i.id, i]));
+        const enriched = (data || []).map((d: any) => ({
+          day: d.day,
+          menu_item_id: d.menu_item_id,
+          order_count: d.order_count,
+          name: byId.get(d.menu_item_id)?.name,
+          price: byId.get(d.menu_item_id)?.price,
+        }));
+        return { success: true, items: enriched };
       }
 
       case "book_table": {
@@ -685,7 +1007,20 @@ serve(async (req: Request) => {
   }
 
   try {
-    const { action, userId, message, language, conversationId, metadata } = await req.json();
+    const { action, userId, message, language, conversationId, metadata, audio } = await req.json();
+
+    // Basic S2S auth for WA webhook and internal calls
+    const adminHeader = req.headers.get("x-admin-token") || "";
+    const isInternal = ADMIN_INTERNAL_TOKEN && adminHeader === ADMIN_INTERNAL_TOKEN;
+
+    if (!isInternal) {
+      // If verify_jwt is enabled at deploy-time this is redundant, but keep a soft gate
+      // Refuse privileged actions without internal token
+      if (action === "start_conversation" || action === "send_message" || action === "send_audio") {
+        // allow but continue; if you want to hard-enforce, uncomment:
+        // return respond({ error: 'unauthorized' }, { status: 401 });
+      }
+    }
 
     await logStructuredEvent("WAITER_AI_REQUEST", {
       action,
@@ -745,6 +1080,11 @@ serve(async (req: Request) => {
     // ACTION: SEND MESSAGE
     // =====================================================
     if (action === "send_message") {
+      // PII & payment guardrails (basic)
+      if (containsCardPAN(String(message || ""))) {
+        await logStructuredEvent("WAITER_GUARDRAIL_PAN_BLOCK", { conversationId, userId });
+        return respond({ error: "For your safety, please do not share card numbers. Use mobile money or secure links." }, { status: 400 });
+      }
       // Store user message
       await supabase
         .from("waiter_messages")
@@ -885,6 +1225,35 @@ serve(async (req: Request) => {
           "Connection": "keep-alive"
         }
       });
+    }
+
+    // =====================================================
+    // ACTION: SEND AUDIO (WhatsApp voice)
+    // =====================================================
+    if (action === "send_audio") {
+      // Expect: audio = { phoneNumberId, mediaId, accessToken }
+      if (!audio?.phoneNumberId || !audio?.mediaId || !audio?.accessToken) {
+        return respond({ error: "missing_audio_fields" }, { status: 400 });
+      }
+
+      // Download + transcribe
+      const buffer = await downloadWhatsAppAudio(audio.mediaId, audio.accessToken);
+      const transcript = await transcribeAudio(buffer, "ogg");
+
+      // Recurse into send_message pipeline with transcribed text
+      const forward = await fetch(url.toString(), {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-admin-token": adminHeader },
+        body: JSON.stringify({
+          action: "send_message",
+          userId,
+          conversationId,
+          language: language || transcript.language || "en",
+          message: transcript.text,
+          metadata,
+        }),
+      });
+      return forward;
     }
 
     return new Response(

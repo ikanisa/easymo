@@ -17,6 +17,7 @@ export const ADMIN_ROW_IDS = {
   DIAG_INSURANCE: "ADMIN::DIAG::INSURANCE",
   DIAG_HEALTH: "ADMIN::DIAG::HEALTH",
   DIAG_LOGS: "ADMIN::DIAG::LOGS",
+  DIAG_MENU_RECONCILE: "ADMIN::DIAG::MENU_RECONCILE",
   INSURANCE_LEAD_PREFIX: "ADMIN::INSURANCE::LEAD::",
   INSURANCE_DETAIL_DM: "ADMIN::INSURANCE::DETAIL::DM",
   INSURANCE_DETAIL_REVIEW: "ADMIN::INSURANCE::DETAIL::REVIEW",
@@ -50,6 +51,7 @@ export async function showAdminHubList(ctx: RouterContext): Promise<void> {
       sectionTitle: "Ops tools",
       rows: [
         { id: ADMIN_ROW_IDS.OPS_INSURANCE, title: "Insurance" },
+        { id: ADMIN_ROW_IDS.DIAG_MENU_RECONCILE, title: "Reconcile Menus ↔ Business" },
         { id: IDS.BACK_MENU, title: "← Back" },
       ],
     },

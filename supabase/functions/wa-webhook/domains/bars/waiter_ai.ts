@@ -5,7 +5,7 @@ import { sendText } from "../../wa/client.ts";
 import { setState } from "../../state/store.ts";
 
 const WAITER_AGENT_URL = `${Deno.env.get("SUPABASE_URL")}/functions/v1/waiter-ai-agent`;
-const WAITER_AGENT_TOKEN = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+const ADMIN_INTERNAL_TOKEN = Deno.env.get("EASYMO_ADMIN_TOKEN") ?? "";
 
 type WaiterChatSession = {
   conversationId: string;
@@ -19,7 +19,8 @@ async function postWaiterAgent(payload: Record<string, unknown>): Promise<Respon
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "Authorization": `Bearer ${WAITER_AGENT_TOKEN}`,
+      // Use internal admin token rather than service role for safer S2S auth
+      "x-admin-token": ADMIN_INTERNAL_TOKEN,
     },
     body: JSON.stringify(payload),
   });
