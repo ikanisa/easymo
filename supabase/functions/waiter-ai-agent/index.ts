@@ -695,6 +695,91 @@ async function handleToolCall(
           .update({ subtotal, tax, total })
           .eq("id", draftOrder.id);
 
+        // Persist preferences/memory heuristics (best-effort)
+        try {
+          // Dietary labels from menu item tags
+          const tags: string[] = Array.isArray((item as any)?.tags) ? (item as any).tags as string[] : [];
+          if (tags.length) {
+            const { data: existingDiet } = await supabase
+              .from('user_memories')
+              .select('id, mem_value')
+              .eq('user_id', context.userId)
+              .eq('domain', 'waiter')
+              .eq('mem_key', 'dietary')
+              .maybeSingle();
+            const set = new Set<string>(Array.isArray(existingDiet?.mem_value?.labels) ? existingDiet!.mem_value.labels : []);
+            for (const t of tags) {
+              const low = String(t).toLowerCase();
+              if (["vegan","vegetarian","gluten-free","halal","kosher"].includes(low)) set.add(low);
+            }
+            if (set.size) {
+              await supabase.from('user_memories').upsert({
+                user_id: context.userId,
+                domain: 'waiter',
+                memory_type: 'preference',
+                mem_key: 'dietary',
+                mem_value: { labels: Array.from(set) },
+                last_seen: new Date().toISOString(),
+              }, { onConflict: 'user_id,domain,mem_key' });
+            }
+          }
+
+          // Favorite items (increment simple counters)
+          const { data: fav } = await supabase
+            .from('user_memories')
+            .select('id, mem_value')
+            .eq('user_id', context.userId)
+            .eq('domain', 'waiter')
+            .eq('mem_key', 'favorite_items')
+            .maybeSingle();
+          const list: Array<{ item_id: string; name: string; count: number }> = Array.isArray(fav?.mem_value?.items)
+            ? fav!.mem_value.items
+            : [];
+          const idx = list.findIndex((x) => x.item_id === item.id);
+          if (idx >= 0) list[idx].count += args.quantity || 1; else list.push({ item_id: item.id, name: item.name, count: args.quantity || 1 });
+          await supabase.from('user_memories').upsert({
+            user_id: context.userId,
+            domain: 'waiter',
+            memory_type: 'summary',
+            mem_key: 'favorite_items',
+            mem_value: { items: list.slice(0, 50) },
+            last_seen: new Date().toISOString(),
+          }, { onConflict: 'user_id,domain,mem_key' });
+
+          // Cooking preference and sides from options
+          if (args?.options?.cooking) {
+            await supabase.from('user_memories').upsert({
+              user_id: context.userId,
+              domain: 'waiter',
+              memory_type: 'preference',
+              mem_key: 'cooking_preference',
+              mem_value: { value: String(args.options.cooking) },
+              last_seen: new Date().toISOString(),
+            }, { onConflict: 'user_id,domain,mem_key' });
+          }
+          if (Array.isArray(args?.options?.sides) && args.options.sides.length) {
+            const { data: existingSides } = await supabase
+              .from('user_memories')
+              .select('id, mem_value')
+              .eq('user_id', context.userId)
+              .eq('domain', 'waiter')
+              .eq('mem_key', 'preferred_sides')
+              .maybeSingle();
+            const set = new Set<string>(Array.isArray(existingSides?.mem_value?.labels) ? existingSides!.mem_value.labels : []);
+            for (const s of args.options.sides) set.add(String(s));
+            await supabase.from('user_memories').upsert({
+              user_id: context.userId,
+              domain: 'waiter',
+              memory_type: 'preference',
+              mem_key: 'preferred_sides',
+              mem_value: { labels: Array.from(set) },
+              last_seen: new Date().toISOString(),
+            }, { onConflict: 'user_id,domain,mem_key' });
+          }
+        } catch (_e) {
+          // best-effort; do not block add_to_cart on memory errors
+        }
+
         // Allergy note (if tags present)
         let warning: string | undefined;
         const tags = Array.isArray((item as any)?.tags) ? (item as any).tags as string[] : [];

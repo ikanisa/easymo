@@ -10,8 +10,10 @@ class ResponseCache {
   set<T>(key: string, value: T, ttlSeconds: number = 60): void {
     // Cleanup if cache is too large
     if (this.cache.size >= this.maxSize) {
-      const oldestKey = this.cache.keys().next().value;
-      this.cache.delete(oldestKey);
+      const oldestKey = this.cache.keys().next().value as string | undefined;
+      if (typeof oldestKey === 'string') {
+        this.cache.delete(oldestKey);
+      }
     }
 
     this.cache.set(key, {

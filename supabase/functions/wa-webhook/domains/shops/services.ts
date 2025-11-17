@@ -9,6 +9,7 @@ import {
 } from "../../utils/reply.ts";
 import { IDS } from "../../wa/ids.ts";
 import { logStructuredEvent } from "../../observe/log.ts";
+import { recordRecentActivity } from "../locations/recent.ts";
 
 export async function startShopsAndServices(
   ctx: RouterContext,
@@ -206,6 +207,14 @@ export async function handleShopsLocation(
     lat: location.lat.toFixed(4),
     lng: location.lng.toFixed(4),
   });
+
+  // Record recent activity for quick resume
+  try {
+    await recordRecentActivity(ctx, 'shops_search', state.tag_id, {
+      tagName: state.tag_name ?? null,
+      tagIcon: state.tag_icon ?? null,
+    });
+  } catch (_) { /* non-fatal */ }
 
   // Search for businesses by tag_id from business_tags table (get 27 results)
   const { data: businesses, error } = await ctx.supabase

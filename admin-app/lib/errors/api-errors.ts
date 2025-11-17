@@ -98,9 +98,11 @@ export class InternalServerError extends ApiError {
 
 export class ServiceUnavailableError extends ApiError {
   constructor(service: string, details?: unknown) {
+    const extra =
+      details && typeof details === "object" ? (details as Record<string, unknown>) : {};
     super(`Service ${service} is unavailable`, 503, "SERVICE_UNAVAILABLE", {
       service,
-      ...details,
+      ...extra,
     });
     this.name = "ServiceUnavailableError";
   }

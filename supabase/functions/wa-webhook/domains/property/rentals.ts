@@ -32,6 +32,7 @@ import {
   type UserFavorite,
 } from "../locations/favorites.ts";
 import { buildSaveRows } from "../locations/save.ts";
+import { recordRecentActivity } from "../locations/recent.ts";
 import { getRecentLocation } from "../locations/recent.ts";
 
 export type PropertyFindState = {
@@ -359,6 +360,11 @@ export async function handleFindPropertyBudget(
     key: "property_find_location",
     data: nextState,
   });
+
+  // Record recent property search criteria
+  try {
+    await recordRecentActivity(ctx, 'property_search', null, nextState as unknown as Record<string, unknown>);
+  } catch (_) { /* non-fatal */ }
 
   // Recent-location skip: if we have a fresh location, proceed directly
   try {

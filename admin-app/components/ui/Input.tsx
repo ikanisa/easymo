@@ -59,6 +59,14 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
       );
     }
 
+    const { formAction, ...rest } = props as Record<string, unknown>;
+    const inputProps = rest as unknown as React.InputHTMLAttributes<HTMLInputElement>;
+    if (typeof formAction === "string") {
+      (inputProps as any).formAction = formAction;
+    }
+
+    const inputAny = inputProps as any;
+
     return (
       <input
         type={type}
@@ -66,7 +74,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
         data-status={status !== "default" ? status : undefined}
         aria-invalid={ariaInvalid}
         className={cn(legacyInputVariants({ variant, size, status }), className)}
-        {...props}
+        {...inputAny}
       />
     );
   },

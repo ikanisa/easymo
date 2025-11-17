@@ -1,4 +1,4 @@
-import { headers } from 'next/headers';
+import { headers as nextHeaders } from 'next/headers';
 import { isActorAuthorized } from '@/lib/auth/credentials';
 
 // Looser UUID shape to tolerate test IDs and non-versioned UUIDs
@@ -12,7 +12,17 @@ export class UnauthorizedError extends Error {
 }
 
 export function getActorId(): string | null {
-  const value = headers().get('x-actor-id');
+  // Support Next 15 async headers() types by avoiding compile-time coupling
+  let value: string | null = null;
+  try {
+    const h = (nextHeaders as unknown as () => any)();
+    if (h && typeof h.get === 'function') {
+      const v = h.get('x-actor-id');
+      value = typeof v === 'string' ? v : null;
+    }
+  } catch {
+    // Not in a request context
+  }
   if (value) {
     if (!UUID_REGEX.test(value)) return null;
     if (!isActorAuthorized(value)) {
