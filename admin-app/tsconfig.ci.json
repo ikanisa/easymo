@@ -66,6 +66,8 @@
     "app/api/agent-orchestration/**/*.tsx",
     "app/api/agent-admin/**/*.ts",
     "app/api/agent-admin/**/*.tsx",
+    "app/api/agents/**/*.ts",
+    "app/api/agents/**/*.tsx",
     
     "lib/**/*.ts",
     "lib/**/*.tsx",

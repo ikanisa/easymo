@@ -71,6 +71,34 @@ export async function notifyInsuranceAdmins(
     await client.rpc('sync_insurance_admins_from_contacts');
   } catch (e) {
     console.warn('insurance.admin_sync_contacts_warn', e instanceof Error ? e.message : String(e ?? 'err'));
+    // Fallback: perform programmatic sync if RPC not available
+    try {
+      const { data: contacts, error: contactsError } = await client
+        .from('insurance_admin_contacts')
+        .select('contact_type, contact_value, display_name, is_active')
+        .eq('is_active', true)
+        .order('display_order');
+      if (!contactsError && contacts && contacts.length) {
+        const rows = contacts
+          .filter((c: any) => String(c.contact_type || '').toLowerCase() === 'whatsapp')
+          .map((c: any) => ({
+            wa_id: normalizeAdminWaId(c.contact_value || ''),
+            name: (c.display_name || 'Insurance Admin').trim(),
+            role: 'admin',
+            is_active: true,
+            receives_all_alerts: true,
+          }))
+          .filter((r) => r.wa_id && r.wa_id.length >= 8);
+        if (rows.length) {
+          const { error: upErr } = await client
+            .from('insurance_admins')
+            .upsert(rows, { onConflict: 'wa_id' });
+          if (upErr) console.warn('insurance.admin_programmatic_upsert_fail', upErr.message);
+        }
+      }
+    } catch (e2) {
+      console.warn('insurance.admin_programmatic_sync_warn', e2 instanceof Error ? e2.message : String(e2 ?? 'err'));
+    }
   }
 
   // Fetch active admins (primary table)
