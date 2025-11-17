@@ -6,7 +6,6 @@ import type {
   CookieMethodsServerDeprecated,
 } from "@supabase/ssr";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { cookies as nextCookies } from "next/headers";
 import { requireServiceSupabaseConfig } from "../env-server";
 
 type CookieAdapter = CookieMethodsServer & CookieMethodsServerDeprecated;
@@ -21,58 +20,18 @@ export function getSupabaseAdminClient(): SupabaseClient | null {
     return null;
   }
 
-  let cookieStore: ReturnType<typeof nextCookies> | undefined;
-  try {
-    cookieStore = nextCookies();
-  } catch {
-    cookieStore = undefined;
-  }
-
-  const cookieAdapter: CookieAdapter = cookieStore
-    ? {
-        get(name) {
-          return cookieStore!.get(name)?.value;
-        },
-        getAll() {
-          return cookieStore!
-            .getAll()
-            .map(({ name, value }) => ({ name, value })) ?? [];
-        },
-        set(name, value, options) {
-          try {
-            cookieStore!.set({ name, value, ...(options ?? {}) });
-          } catch {
-            // Ignore when running outside a Request context.
-          }
-        },
-        remove(name, options) {
-          try {
-            cookieStore!.delete({ name, ...(options ?? {}) });
-          } catch {
-            // Ignore when running outside a Request context.
-          }
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            try {
-              cookieStore!.set({ name, value, ...(options ?? {}) });
-            } catch {
-              // Ignore when running outside a Request context.
-            }
-          });
-        },
-      }
-    : {
-        get() {
-          return undefined;
-        },
-        getAll() {
-          return [];
-        },
-        set() {},
-        remove() {},
-        setAll() {},
-      };
+  // Minimal cookie adapter: avoids direct next/headers dependency and async types.
+  const cookieAdapter: CookieAdapter = {
+    get() {
+      return undefined;
+    },
+    getAll() {
+      return [];
+    },
+    set() {},
+    remove() {},
+    setAll() {},
+  };
 
   return createServerClient(config.url, config.serviceRoleKey, {
     cookies: cookieAdapter,

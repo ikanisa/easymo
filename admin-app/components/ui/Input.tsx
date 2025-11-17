@@ -1,6 +1,6 @@
 import * as React from "react";
 import { cva, type VariantProps } from "class-variance-authority";
-import { Input as UiInput, type InputProps as UiInputProps } from "@easymo/ui/components/forms";
+import { Input as UiInput } from "@easymo/ui/components/forms";
 import { cn } from "@/lib/utils";
 
 const uiKitEnabled = (process.env.NEXT_PUBLIC_UI_V2_ENABLED ?? "false").trim().toLowerCase() === "true";
@@ -37,7 +37,7 @@ const legacyInputVariants = cva(
 
 type NativeInputProps = Omit<React.InputHTMLAttributes<HTMLInputElement>, "size">;
 
-export interface InputProps extends NativeInputProps, VariantProps<typeof legacyInputVariants>, Partial<UiInputProps> {}
+export interface InputProps extends NativeInputProps, VariantProps<typeof legacyInputVariants> {}
 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
   ({ className, type = "text", variant, size, status = "default", ...props }, ref) => {
@@ -48,9 +48,10 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
         <UiInput
           ref={ref}
           type={type}
-          status={status as UiInputProps["status"]}
-          variant={variant as UiInputProps["variant"]}
-          size={size as UiInputProps["size"]}
+          // Cast variant props to satisfy ui kit input props when enabled
+          status={status as any}
+          variant={variant as any}
+          size={size as any}
           aria-invalid={ariaInvalid}
           className={className}
           {...props}

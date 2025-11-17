@@ -724,6 +724,10 @@ async function handleHomeMenuSelection(
       const { handleProfileVehicles } = await import("../domains/profile/index.ts");
       return await handleProfileVehicles(ctx);
     }
+    case IDS.RECENT: {
+      const { showRecentHub } = await import("../domains/recent/index.ts");
+      return await showRecentHub(ctx);
+    }
     case "show_vehicles": {
       // Action target alias from whatsapp_profile_menu_items
       const { handleProfileVehicles } = await import("../domains/profile/index.ts");
