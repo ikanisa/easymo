@@ -1439,6 +1439,85 @@ serve(async (req: Request) => {
     }
 
     // =====================================================
+    // ACTION: PROFILE SUMMARY
+    // =====================================================
+    if (action === "profile_summary") {
+      const { data } = await supabase
+        .from('user_memories')
+        .select('mem_key, mem_value')
+        .eq('user_id', userId)
+        .eq('domain', 'waiter')
+        .in('mem_key', ['dietary','favorite_items','cooking_preference','preferred_sides'])
+        .order('last_seen', { ascending: false });
+      const byKey: Record<string, any> = {};
+      for (const row of (data || [])) byKey[row.mem_key] = row.mem_value;
+      const fav = (byKey.favorite_items?.items || []) as Array<{ name: string; count: number }>;
+      fav.sort((a, b) => (b.count || 0) - (a.count || 0));
+      const favorites = fav.slice(0, 5).map((x) => x.name);
+      const dietary = (byKey.dietary?.labels || []) as string[];
+      const cooking = byKey.cooking_preference?.value as string | undefined;
+      const sides = (byKey.preferred_sides?.labels || []) as string[];
+      const summaryParts = [] as string[];
+      if (dietary.length) summaryParts.push(`Dietary: ${dietary.join(', ')}`);
+      if (cooking) summaryParts.push(`Cooking: ${cooking}`);
+      if (sides.length) summaryParts.push(`Sides: ${sides.join(', ')}`);
+      if (favorites.length) summaryParts.push(`Favorites: ${favorites.join(', ')}`);
+      const summary = summaryParts.length ? summaryParts.join(' | ') : 'No saved preferences yet.';
+      return respond({ profile: { dietary, cooking, sides, favorites, summary } }, { status: 200 });
+    }
+
+    // =====================================================
+    // ACTION: ASSISTANT SUGGESTIONS (Personalized + Market insights)
+    // =====================================================
+    if (action === "assistant_suggestions") {
+      // 1) User favorites
+      const { data: favMem } = await supabase
+        .from('user_memories')
+        .select('mem_value')
+        .eq('user_id', userId)
+        .eq('domain', 'waiter')
+        .eq('mem_key', 'favorite_items')
+        .maybeSingle();
+      const favItems = Array.isArray(favMem?.mem_value?.items) ? favMem!.mem_value.items as Array<{ item_id: string; name: string; count: number }> : [];
+      favItems.sort((a, b) => (b.count || 0) - (a.count || 0));
+      const favTop = favItems.slice(0, 3);
+
+      // 2) Trending (1 day window; fallback 7d MV if available)
+      const { data: trendingDaily } = await supabase
+        .from('menu_item_popularity_daily')
+        .select('menu_item_id, order_count')
+        .gte('day', new Date(Date.now() - 86400000).toISOString())
+        .order('order_count', { ascending: false })
+        .limit(5);
+      const trendingIds = (trendingDaily || []).map((r: any) => r.menu_item_id);
+      const { data: trendingItems } = trendingIds.length
+        ? await supabase.from('menu_items').select('id, name, price').in('id', trendingIds)
+        : { data: [] } as any;
+
+      // 3) New items (last 14 days)
+      let newItems: any[] = [];
+      try {
+        const since = new Date(Date.now() - 14 * 86400000).toISOString();
+        const { data } = await supabase
+          .from('menu_items')
+          .select('id, name, price, created_at')
+          .gte('created_at', since)
+          .order('created_at', { ascending: false })
+          .limit(5);
+        newItems = data || [];
+      } catch (_) {}
+
+      // Format suggestions
+      const favLine = favTop.length ? `Based on your favorites: ${favTop.map(x => x.name).join(', ')}` : '';
+      const trendLine = (trendingItems || []).length ? `Trending now: ${(trendingItems || []).map((x: any) => x.name).join(', ')}` : '';
+      const newLine = newItems.length ? `New on the menu: ${newItems.map((x: any) => x.name).join(', ')}` : '';
+      const parts = [favLine, trendLine, newLine].filter(Boolean);
+      const messageText = parts.length ? `✨ Suggestions\n\n• ${parts.join('\n• ')}` : '✨ Suggestions\n\nTry our chef specials or ask for the menu!';
+
+      return respond({ message: messageText }, { status: 200 });
+    }
+
+    // =====================================================
     // ACTION: SEND AUDIO (WhatsApp voice)
     // =====================================================
     if (action === "send_audio") {

@@ -28,6 +28,7 @@ import {
   startBarMenuOrder,
 } from "../domains/bars/search.ts";
 import { startBarWaiterChat } from "../domains/bars/waiter_ai.ts";
+import { handleBarWaiterPreferences, handleBarWaiterSuggestions } from "../domains/bars/waiter_ai.ts";
 import {
   evaluateMotorInsuranceGate,
   recordMotorInsuranceHidden,
@@ -241,6 +242,30 @@ export async function handleButton(
     case "bar_chat_waiter": {
       if (state.key === "bar_detail") {
         return await startBarWaiterChat(ctx, state.data || {});
+      }
+      return false;
+    }
+    case IDS.WAITER_VIEW_PREFERENCES: {
+      if (state.key === "bar_waiter_chat") {
+        return await handleBarWaiterPreferences(ctx, state.data || {});
+      }
+      return false;
+    }
+    case IDS.WAITER_SUGGESTIONS: {
+      if (state.key === "bar_waiter_chat") {
+        return await handleBarWaiterSuggestions(ctx, state.data || {});
+      }
+      return false;
+    }
+    case IDS.WAITER_VIEW_PREFERENCES: {
+      if (state.key === "bar_waiter_chat") {
+        return await handleBarWaiterPreferences(ctx, state.data || {});
+      }
+      return false;
+    }
+    case IDS.WAITER_SUGGESTIONS: {
+      if (state.key === "bar_waiter_chat") {
+        return await handleBarWaiterSuggestions(ctx, state.data || {});
       }
       return false;
     }

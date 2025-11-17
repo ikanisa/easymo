@@ -35,10 +35,9 @@ BEGIN
   PERFORM cron.schedule(
     'waiter_trending_refresh_nightly',
     '5 3 * * *',
-    $$SELECT public.refresh_menu_item_popularity_windows()$$
+    $job$SELECT public.refresh_menu_item_popularity_windows()$job$
   );
 EXCEPTION WHEN OTHERS THEN NULL;
 END$$;
 
 COMMIT;
-

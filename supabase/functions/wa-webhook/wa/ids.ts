@@ -31,6 +31,8 @@ export const IDS = {
   PROPERTY_CHAT_AI: "property_chat_ai",
   BAR_CHAT_WAITER: "bar_chat_waiter",
   BAR_VIEW_MENU: "bar_view_menu",
+  WAITER_VIEW_PREFERENCES: "waiter_view_preferences",
+  WAITER_SUGGESTIONS: "waiter_suggestions",
   SAVED_PLACES: "saved_places",
   LOCATION_SAVED_LIST: "location_saved_list",
   LOCATION_SAVE_HOME: "location_save_home",

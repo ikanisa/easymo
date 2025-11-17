@@ -2,6 +2,8 @@ import type { RouterContext } from "../../types.ts";
 import { t } from "../../i18n/translator.ts";
 import { logStructuredEvent } from "../../observe/log.ts";
 import { sendText } from "../../wa/client.ts";
+import { sendButtonsMessage, buildButtons } from "../../utils/reply.ts";
+import { IDS } from "../../wa/ids.ts";
 import { setState } from "../../state/store.ts";
 import { WA_TOKEN, WA_PHONE_ID } from "../../config.ts";
 
@@ -87,6 +89,36 @@ export async function startBarWaiterChat(
       `🤖 *${barName}*
 \n${welcomeMessage}`,
     );
+
+    // Offer quick actions after greeting
+    await sendButtonsMessage(
+      ctx,
+      t(ctx.locale, "bars.waiter.quick_actions"),
+      buildButtons(
+        { id: IDS.WAITER_VIEW_PREFERENCES, title: t(ctx.locale, "bars.waiter.buttons.view_prefs") },
+        { id: IDS.WAITER_SUGGESTIONS, title: t(ctx.locale, "bars.waiter.buttons.suggestions") },
+      ),
+    );
+
+    // Auto-send personalized suggestions based on favorites + trending + new
+    try {
+      const res = await fetch(WAITER_AGENT_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-admin-token": ADMIN_INTERNAL_TOKEN },
+        body: JSON.stringify({
+          action: "assistant_suggestions",
+          userId: ctx.profileId,
+          conversationId: session.conversationId,
+          language: session.language ?? ctx.locale,
+          metadata: { venue: session.barId },
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json().catch(() => ({}));
+        const msg = typeof data?.message === 'string' ? data.message : null;
+        if (msg) await sendText(ctx.from, msg);
+      }
+    } catch (_) {}
 
     await logStructuredEvent("WAITER_CHAT_STARTED", {
       bar_id: barId,
@@ -207,6 +239,66 @@ export async function handleBarWaiterAudio(
   } catch (error) {
     console.error("waiter.chat_audio_error", error);
     await sendText(ctx.from, t(ctx.locale, "bars.waiter.error"));
+    return true;
+  }
+}
+
+export async function handleBarWaiterPreferences(
+  ctx: RouterContext,
+  stateData?: Record<string, unknown>,
+): Promise<boolean> {
+  if (!ctx.profileId) return false;
+  const session = stateData as WaiterChatSession | undefined;
+  if (!session?.conversationId) {
+    await sendText(ctx.from, t(ctx.locale, "bars.waiter.error"));
+    return true;
+  }
+  try {
+    const res = await fetch(WAITER_AGENT_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-admin-token": ADMIN_INTERNAL_TOKEN },
+      body: JSON.stringify({ action: "profile_summary", userId: ctx.profileId, conversationId: session.conversationId }),
+    });
+    const data = await res.json().catch(() => ({}));
+    const summary = data?.profile?.summary || t(ctx.locale, "bars.waiter.no_prefs");
+    await sendText(ctx.from, `🗂️ ${summary}`);
+    return true;
+  } catch (e) {
+    console.error("waiter.view_prefs_error", e);
+    await sendText(ctx.from, t(ctx.locale, "bars.waiter.no_prefs"));
+    return true;
+  }
+}
+
+export async function handleBarWaiterSuggestions(
+  ctx: RouterContext,
+  stateData?: Record<string, unknown>,
+): Promise<boolean> {
+  if (!ctx.profileId) return false;
+  const session = stateData as WaiterChatSession | undefined;
+  if (!session?.conversationId) {
+    await sendText(ctx.from, t(ctx.locale, "bars.waiter.error"));
+    return true;
+  }
+  try {
+    const res = await fetch(WAITER_AGENT_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-admin-token": ADMIN_INTERNAL_TOKEN },
+      body: JSON.stringify({
+        action: "assistant_suggestions",
+        userId: ctx.profileId,
+        conversationId: session.conversationId,
+        language: session.language ?? ctx.locale,
+        metadata: { venue: session.barId },
+      }),
+    });
+    const data = await res.json().catch(() => ({}));
+    const msg = typeof data?.message === 'string' ? data.message : "Here are some ideas!";
+    await sendText(ctx.from, msg);
+    return true;
+  } catch (e) {
+    console.error("waiter.suggestions_error", e);
+    await sendText(ctx.from, t(ctx.locale, "bars.waiter.processing"));
     return true;
   }
 }
