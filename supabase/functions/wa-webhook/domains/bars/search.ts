@@ -14,6 +14,7 @@ import {
   type MenuOrderItem,
   type MenuOrderSession,
 } from "../orders/menu_order.ts";
+import { getState } from "../../state/store.ts";
 
 type BarSummary = {
   id: string;
@@ -392,7 +393,7 @@ export async function startBarMenuOrder(
       console.log(JSON.stringify({ event: 'BAR_MENU_START', barId, barName }));
     } catch {}
 
-    const menuItems = await fetchBarMenuItems(ctx, barId);
+    const menuItems = await fetchBarMenuItems(ctx, barId, { visited: new Set() });
     try {
       console.log(JSON.stringify({ event: 'BAR_MENU_ITEMS_RESULT', count: menuItems?.length ?? 0 }));
     } catch {}
@@ -454,7 +455,14 @@ export async function startBarMenuOrder(
 async function fetchBarMenuItems(
   ctx: RouterContext,
   barId: string,
+  opts?: { visited?: Set<string> }
 ): Promise<MenuOrderItem[]> {
+  const visited = opts?.visited ?? new Set<string>();
+  if (visited.has(barId)) {
+    console.warn(JSON.stringify({ event: 'BAR_MENU_FETCH_GUARD_HIT', barId }));
+    return [];
+  }
+  visited.add(barId);
   // barId may be a business.id (from business search) or bars.id.
   // 1) Try business_id first (new linkage)
   let rows: MenuOrderItem[] = [];
@@ -534,13 +542,23 @@ async function fetchBarMenuItems(
   // Try to resolve the matching public.bars row by name/slug and retry.
   try {
     console.log(JSON.stringify({ event: 'BAR_MENU_FETCH', mode: 'resolve_bars_retry' }));
-    const state = await (ctx.profileId
-      ? ctx.supabase.from("chat_state").select("state").eq("user_id", ctx.profileId).maybeSingle()
-      : Promise.resolve({ data: null } as any));
-    const s = (state as any)?.data?.state || (state as any)?.data || {};
-    const barName: string | undefined = s?.barName;
-    const barSlug: string | undefined = s?.barSlug;
-    const barCountry: string | undefined = s?.barCountry;
+    let barName: string | undefined;
+    let barSlug: string | undefined;
+    let barCountry: string | undefined;
+    if (ctx.profileId) {
+      const chatState = await getState(ctx.supabase, ctx.profileId);
+      const data: any = chatState?.data || {};
+      // Prefer bar_detail payload if present
+      if (chatState?.key === 'bar_detail') {
+        barName = data?.barName;
+        barSlug = data?.barSlug;
+        barCountry = data?.barCountry;
+      } else {
+        barName = data?.barName;
+        barSlug = data?.barSlug;
+        barCountry = data?.barCountry;
+      }
+    }
     let query = ctx.supabase.from("bars").select("id, name, country, slug").limit(1);
     if (barSlug) {
       query = query.eq("slug", barSlug);
@@ -552,7 +570,11 @@ async function fetchBarMenuItems(
     if (barRow?.id) {
       console.log(JSON.stringify({ event: 'BAR_MENU_FETCH', mode: 'resolved_bar_id_retry', resolvedBarId: barRow.id }));
       // Retry with resolved bars.id
-      return await fetchBarMenuItems(ctx, barRow.id);
+      if (barRow.id === barId) {
+        // Prevent infinite recursion
+        return [];
+      }
+      return await fetchBarMenuItems(ctx, barRow.id, { visited });
     }
   } catch (e) {
     // non-fatal
