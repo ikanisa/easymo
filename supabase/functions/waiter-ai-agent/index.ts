@@ -327,6 +327,39 @@ const tools = [
   {
     type: "function",
     function: {
+      name: "user_memory_put",
+      description: "Store a user memory record (preference, summary, or note)",
+      parameters: {
+        type: "object",
+        properties: {
+          domain: { type: "string" },
+          memory_type: { type: "string", enum: ["preference","summary","note"], default: "preference" },
+          mem_key: { type: "string" },
+          mem_value: { type: "object" },
+          confidence: { type: "number" }
+        },
+        required: ["domain","mem_key","mem_value"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "user_memory_get",
+      description: "Fetch user memory records by domain and optional key",
+      parameters: {
+        type: "object",
+        properties: {
+          domain: { type: "string" },
+          mem_key: { type: "string" }
+        },
+        required: ["domain"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
       name: "add_to_cart",
       description: "Add a menu item to the user's cart with specified quantity and options",
       parameters: {
@@ -709,6 +742,15 @@ async function handleToolCall(
         const currency = typeof args?.currency === "string" ? args.currency : undefined;
         const { order, error } = await promoteDraftToOrder(context.userId, context.conversationId, context.venueId || null, currency);
         if (error || !order) return { success: false, error: error || "Failed to finalize order" };
+        // Store memory: last_order_total and timestamp
+        await supabase.from('user_memories').upsert({
+          user_id: context.userId,
+          domain: 'waiter',
+          memory_type: 'summary',
+          mem_key: 'last_order',
+          mem_value: { order_id: order.id, total: order.total, currency: order.currency },
+          last_seen: new Date().toISOString(),
+        }, { onConflict: 'user_id,domain,mem_key' });
         return { success: true, order };
       }
 
@@ -798,6 +840,39 @@ async function handleToolCall(
           price: byId.get(d.menu_item_id)?.price,
         }));
         return { success: true, items: enriched };
+      }
+
+      case "user_memory_put": {
+        const payload = {
+          user_id: context.userId,
+          domain: String(args?.domain || 'waiter'),
+          memory_type: String(args?.memory_type || 'preference'),
+          mem_key: String(args?.mem_key || 'unknown'),
+          mem_value: args?.mem_value ?? {},
+          confidence: typeof args?.confidence === 'number' ? args.confidence : 1.0,
+          last_seen: new Date().toISOString(),
+        };
+        const { data, error } = await supabase
+          .from('user_memories')
+          .upsert(payload, { onConflict: 'user_id,domain,mem_key' })
+          .select('id, domain, mem_key, mem_value, confidence, last_seen')
+          .single();
+        if (error) return { success: false, error: error.message };
+        return { success: true, memory: data };
+      }
+
+      case "user_memory_get": {
+        const domain = String(args?.domain || 'waiter');
+        let query = supabase
+          .from('user_memories')
+          .select('mem_key, mem_value, memory_type, confidence, last_seen')
+          .eq('user_id', context.userId)
+          .eq('domain', domain)
+          .order('last_seen', { ascending: false });
+        if (args?.mem_key) query = query.eq('mem_key', String(args.mem_key));
+        const { data, error } = await query.limit(50);
+        if (error) return { success: false, error: error.message };
+        return { success: true, memories: data || [] };
       }
 
       case "book_table": {
@@ -1113,11 +1188,23 @@ serve(async (req: Request) => {
         content: m.content
       })) || [];
 
+      // Personalization: fetch user memories for waiter domain and seed system context
+      const { data: mems } = await supabase
+        .from('user_memories')
+        .select('mem_key, mem_value')
+        .eq('user_id', userId)
+        .eq('domain', 'waiter')
+        .order('last_seen', { ascending: false })
+        .limit(20);
+      const memorySummary = Array.isArray(mems) && mems.length
+        ? `Known preferences: ${mems.map(m => `${m.mem_key}=${JSON.stringify(m.mem_value)}`).join('; ')}`
+        : '';
+
       // Call OpenAI with streaming
       const response = await openai.chat.completions.create({
         model: "gpt-4-turbo-preview",
         messages: [
-          { role: "system", content: SYSTEM_PROMPT + `\n\nCurrent language: ${language}` },
+          { role: "system", content: SYSTEM_PROMPT + `\n\nCurrent language: ${language}` + (memorySummary ? `\n\n${memorySummary}` : '') },
           ...chatMessages,
           { role: "user", content: message }
         ],

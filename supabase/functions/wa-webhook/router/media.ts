@@ -1,6 +1,7 @@
 import type { RouterContext, WhatsAppMediaMessage } from "../types.ts";
 import { handleVendorMenuMedia } from "../flows/vendor/menu.ts";
 import { handleInsuranceMedia } from "../domains/insurance/index.ts";
+import { handleBarWaiterAudio } from "../domains/bars/waiter_ai.ts";
 
 export async function handleMedia(
   ctx: RouterContext,
@@ -18,6 +19,11 @@ export async function handleMedia(
     }
   }
   
+  // Route audio to Waiter chat when active
+  if (msg.type === "audio" && state.key === "bar_waiter_chat") {
+    return await handleBarWaiterAudio(ctx, msg as any, state.data);
+  }
+
   if (await handleInsuranceMedia(ctx, msg, state)) return true;
   if (await handleVendorMenuMedia(ctx, msg)) return true;
   return false;

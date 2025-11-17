@@ -4,16 +4,21 @@ import { PaymentStatusWidget } from "@easymo/ui/widgets/PaymentStatusWidget";
 import { SectionCard } from "@/components/ui/SectionCard";
 
 export function PaymentsHealthWidget() {
+  const formatCurrency = (value: number) =>
+    new Intl.NumberFormat("en-RW", { style: "currency", currency: "RWF", maximumFractionDigits: 0 }).format(
+      Math.round(value),
+    );
+  const formatPercent = (value: number) => `${Math.round(value)}%`;
   return (
     <SectionCard
       title="Payments health"
       description="Reconciles MoMo, Revolut, and in-flight disputes across wallets."
     >
       <PaymentStatusWidget
-        totalVolume={0}
+        totalVolume={formatCurrency(0)}
         growthLabel="—"
-        momoShare={0}
-        cardShare={0}
+        momoShare={formatPercent(0)}
+        cardShare={formatPercent(0)}
         pendingCount={0}
         disputesCount={0}
         cta={

@@ -283,6 +283,13 @@ async function sendPharmacyDatabaseResults(
     },
     { emoji: "💊" },
   );
+  // Record recent activity
+  try {
+    const { recordRecentActivity } = await import("../locations/recent.ts");
+    await recordRecentActivity(ctx, 'pharmacy_search', null, {
+      count: withContacts.length,
+    });
+  } catch (_) { /* non-fatal */ }
   
   return true;
 }

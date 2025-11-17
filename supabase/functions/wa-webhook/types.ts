@@ -115,9 +115,20 @@ export type WhatsAppDocumentMessage = WhatsAppMessage & {
   } | null;
 };
 
+export type WhatsAppAudioMessage = WhatsAppMessage & {
+  type: "audio";
+  audio?: {
+    id?: string | null;
+    mime_type?: string | null;
+    voice?: boolean | null;
+    [key: string]: unknown;
+  } | null;
+};
+
 export type WhatsAppMediaMessage =
   | WhatsAppImageMessage
-  | WhatsAppDocumentMessage;
+  | WhatsAppDocumentMessage
+  | WhatsAppAudioMessage;
 
 export type WhatsAppWebhookPayload = {
   object?: string;

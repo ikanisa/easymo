@@ -3,6 +3,7 @@ import { t } from "../../i18n/translator.ts";
 import { logStructuredEvent } from "../../observe/log.ts";
 import { sendText } from "../../wa/client.ts";
 import { setState } from "../../state/store.ts";
+import { WA_TOKEN, WA_PHONE_ID } from "../../config.ts";
 
 const WAITER_AGENT_URL = `${Deno.env.get("SUPABASE_URL")}/functions/v1/waiter-ai-agent`;
 const ADMIN_INTERNAL_TOKEN = Deno.env.get("EASYMO_ADMIN_TOKEN") ?? "";
@@ -146,6 +147,65 @@ export async function handleBarWaiterMessage(
     return true;
   } catch (error) {
     console.error("waiter.chat_message_error", error);
+    await sendText(ctx.from, t(ctx.locale, "bars.waiter.error"));
+    return true;
+  }
+}
+
+export async function handleBarWaiterAudio(
+  ctx: RouterContext,
+  msg: { audio?: { id?: string | null } | null },
+  stateData?: Record<string, unknown>,
+): Promise<boolean> {
+  if (!ctx.profileId) return false;
+  const session = stateData as WaiterChatSession | undefined;
+  if (!session?.conversationId) {
+    await sendText(ctx.from, t(ctx.locale, "bars.waiter.error"));
+    return true;
+  }
+
+  const mediaId = msg.audio?.id || null;
+  if (!mediaId) {
+    await sendText(ctx.from, t(ctx.locale, "bars.waiter.processing"));
+    return true;
+  }
+
+  try {
+    const response = await postWaiterAgent({
+      action: "send_audio",
+      userId: ctx.profileId,
+      conversationId: session.conversationId,
+      language: session.language ?? ctx.locale,
+      audio: {
+        mediaId,
+        phoneNumberId: WA_PHONE_ID,
+        accessToken: WA_TOKEN,
+      },
+    });
+
+    let reply = "";
+    const contentType = response.headers.get("content-type") ?? "";
+    if (contentType.includes("text/event-stream")) {
+      reply = await readStreamedResponse(response);
+    } else if (response.ok) {
+      const data = await response.json();
+      reply = typeof data.message === "string"
+        ? data.message
+        : String(data.content ?? "");
+    }
+
+    if (!reply.trim()) {
+      reply = t(ctx.locale, "bars.waiter.processing");
+    }
+
+    await sendText(ctx.from, reply.trim());
+    await logStructuredEvent("WAITER_AUDIO_SENT", {
+      bar_id: session.barId,
+      conversation_id: session.conversationId,
+    });
+    return true;
+  } catch (error) {
+    console.error("waiter.chat_audio_error", error);
     await sendText(ctx.from, t(ctx.locale, "bars.waiter.error"));
     return true;
   }

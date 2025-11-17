@@ -54,6 +54,7 @@ export const IDS = {
   PROFILE_TOKENS: "profile_tokens",
   PROFILE_SETTINGS: "profile_settings",
   PROFILE_VIEW: "profile_view",
+  RECENT: "recent_hub",
   PROFILE_NEXT: "profile_next",
   PROFILE_PREV: "profile_prev",
   PROFILE_ADD_VEHICLE: "profile_add_vehicle",

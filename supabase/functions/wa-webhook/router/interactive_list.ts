@@ -81,6 +81,7 @@ import { handleWalletEarnSelection } from "../domains/wallet/earn.ts";
 import { handleWalletRedeemSelection } from "../domains/wallet/redeem.ts";
 import { ADMIN_ROW_IDS, openAdminHub } from "../flows/admin/hub.ts";
 import { handleAdminRow } from "../flows/admin/dispatcher.ts";
+import { handleRecentSelection } from "../domains/recent/index.ts";
 import { IDS } from "../wa/ids.ts";
 import { handleMomoButton, startMomoQr } from "../flows/momo/qr.ts";
 import { startWallet, WALLET_STATE_HOME } from "../domains/wallet/home.ts";
@@ -197,6 +198,9 @@ export async function handleList(
     if (await handleSavedPlacesAddSelection(ctx, id)) {
       return true;
     }
+  }
+  if (state.key === 'recent_hub') {
+    return await handleRecentSelection(ctx, id);
   }
   if (state.key === "job_find_type") {
     return await handleJobFindDurationSelection(ctx, id);
