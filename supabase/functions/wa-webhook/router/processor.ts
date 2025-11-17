@@ -64,8 +64,9 @@ const ROUTER_DISABLED_SERVICES = new Set(
 );
 const ROUTER_TEXT_ONLY = (Deno.env.get("WA_ROUTER_TEXT_ONLY") ?? "true")
   .toLowerCase() !== "false";
+// Increase default handler timeout to reduce Meta fallback "snag" in slow paths
 const HANDLER_TIMEOUT_MS = Math.max(
-  Number(Deno.env.get("WA_HANDLER_TIMEOUT_MS") ?? "5000") || 5000,
+  Number(Deno.env.get("WA_HANDLER_TIMEOUT_MS") ?? "10000") || 10000,
   1000,
 );
 
