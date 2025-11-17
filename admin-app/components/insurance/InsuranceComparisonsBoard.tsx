@@ -175,6 +175,13 @@ export function InsuranceComparisonsBoard() {
               >
                 View documents for this request →
               </a>
+              <span className="mx-2 text-[color:var(--color-muted)]">|</span>
+              <a
+                href={`/insurance/policies?search=${encodeURIComponent(selected.quotes[0]?.id ?? "")}`}
+                className="text-[color:var(--color-accent)] underline-offset-2 hover:underline"
+              >
+                Find policy by best quote →
+              </a>
             </div>
           </div>
         </Drawer>

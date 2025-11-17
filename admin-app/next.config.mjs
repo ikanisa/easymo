@@ -32,11 +32,10 @@ const nextConfig = {
   },
   serverExternalPackages: ['@easymo/commons'],
   typescript: {
-    // Keep enabled later after TS cleanup passes land
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: false,
   },
   eslint: {
-    ignoreDuringBuilds: true,
+    ignoreDuringBuilds: false,
   },
   // Optimize for Chrome memory usage
   headers: async () => [

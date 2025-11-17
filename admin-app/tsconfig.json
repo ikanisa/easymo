@@ -69,6 +69,13 @@
     "types/**/*.d.ts"
   ],
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "tests",
+    "__tests__",
+    "app/api/agents/**",
+    "app/api/agent-admin/**",
+    "app/api/agent-tasks/**",
+    "app/api/agent-tools/**",
+    "app/api/agent-orchestration/**"
   ]
 }
