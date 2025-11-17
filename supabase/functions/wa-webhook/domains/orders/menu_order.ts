@@ -3,6 +3,7 @@ import { sendText } from "../../wa/client.ts";
 import { setState, clearState } from "../../state/store.ts";
 import { IDS } from "../../wa/ids.ts";
 import { t } from "../../i18n/translator.ts";
+import { safeRowDesc, safeRowTitle, stripMarkdown, truncate } from "../../utils/text.ts";
 import {
   buildButtons,
   sendButtonsMessage,
@@ -171,8 +172,11 @@ async function showMenuList(
   if (!ctx.profileId) return;
   const rows = session.menuItems.slice(0, MAX_MENU_ROWS).map((item) => ({
     id: `${MENU_ITEM_PREFIX}${item.id}`,
-    title: item.name,
-    description: buildMenuRowDescription(ctx.locale, item),
+    // WhatsApp UI requirement:
+    //  - Row title ("header") must be the item name (no markdown, <= 24 chars)
+    //  - Row description ("body") contains category and price (<= 72 chars)
+    title: safeRowTitle(stripMarkdown(item.name || "")),
+    description: safeRowDesc(buildMenuRowDescription(ctx.locale, item)),
   }));
   rows.push({
     id: IDS.BACK_MENU,
