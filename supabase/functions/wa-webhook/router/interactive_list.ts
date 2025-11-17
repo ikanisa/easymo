@@ -605,6 +605,14 @@ async function handleHomeMenuSelection(
       );
       return await startShopsAndServices(ctx);
     }
+    case 'pharmacy_resume': {
+      const { handleRecentSelection } = await import("../domains/recent/index.ts");
+      return await handleRecentSelection(ctx, 'pharmacy_resume');
+    }
+    case 'property_resume': {
+      const { handleRecentSelection } = await import("../domains/recent/index.ts");
+      return await handleRecentSelection(ctx, 'property_resume');
+    }
     case IDS.PROFILE_MANAGE_BUSINESSES: {
       const { showManageBusinesses } = await import(
         "../domains/business/management.ts"

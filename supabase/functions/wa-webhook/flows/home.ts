@@ -134,7 +134,7 @@ async function buildRows(options: {
     };
   });
 
-  // Recent resume row (e.g., last bar menu)
+  // Recent resume rows (bar/property/pharmacy)
   try {
     if (options.ctx.profileId) {
       const { data: recent } = await options.ctx.supabase
@@ -142,7 +142,7 @@ async function buildRows(options: {
         .select('activity_type, ref_id, details')
         .eq('user_id', options.ctx.profileId)
         .order('occurred_at', { ascending: false })
-        .limit(1);
+        .limit(10);
       const last = Array.isArray(recent) && recent[0] ? recent[0] as any : null;
       if (last && (last.activity_type === 'bar_menu' || last.activity_type === 'bar_detail')) {
         const barId = String(last.ref_id || (last.details?.barId ?? ''));
@@ -154,6 +154,22 @@ async function buildRows(options: {
             description: t(options.locale, 'home.resume.body' as TranslationKey, { bar: barName }),
           });
         }
+      }
+      const hasProperty = (recent || []).some((r: any) => String(r.activity_type) === 'property_search');
+      if (hasProperty) {
+        dynamicRows.unshift({
+          id: 'property_resume',
+          title: t(options.locale, 'home.resume.property.title' as TranslationKey),
+          description: t(options.locale, 'home.resume.property.description' as TranslationKey),
+        });
+      }
+      const hasPharmacy = (recent || []).some((r: any) => String(r.activity_type) === 'pharmacy_search');
+      if (hasPharmacy) {
+        dynamicRows.unshift({
+          id: 'pharmacy_resume',
+          title: t(options.locale, 'home.resume.pharmacy.title' as TranslationKey),
+          description: t(options.locale, 'home.resume.pharmacy.description' as TranslationKey),
+        });
       }
     }
   } catch (_) { /* non-fatal */ }

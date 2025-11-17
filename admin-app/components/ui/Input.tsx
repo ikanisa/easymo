@@ -44,6 +44,11 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
     const ariaInvalid = props["aria-invalid"] ?? (status === "error" ? true : undefined);
 
     if (uiKitEnabled) {
+      const { formAction: fa, ...restUi } = props as Record<string, unknown>;
+      const uiProps: any = restUi;
+      if (typeof fa === "string") {
+        uiProps.formAction = fa;
+      }
       return (
         <UiInput
           ref={ref}
@@ -54,7 +59,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
           size={size as any}
           aria-invalid={ariaInvalid}
           className={className}
-          {...props}
+          {...uiProps}
         />
       );
     }
@@ -75,7 +80,6 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
         data-status={status !== "default" ? status : undefined}
         aria-invalid={ariaInvalid}
         className={cn(legacyInputVariants({ variant, size, status }), className)}
-        // @ts-expect-error Next 15/react-dom typing mismatch on formAction for <input>
         {...inputAny}
       />
     );

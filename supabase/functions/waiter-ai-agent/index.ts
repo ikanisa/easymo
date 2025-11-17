@@ -360,6 +360,17 @@ const tools = [
   {
     type: "function",
     function: {
+      name: "user_profile_summary",
+      description: "Return a summary of the user's dining preferences and favorites for personalization",
+      parameters: {
+        type: "object",
+        properties: {},
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
       name: "add_to_cart",
       description: "Add a menu item to the user's cart with specified quantity and options",
       parameters: {
@@ -958,6 +969,34 @@ async function handleToolCall(
         const { data, error } = await query.limit(50);
         if (error) return { success: false, error: error.message };
         return { success: true, memories: data || [] };
+      }
+
+      case "user_profile_summary": {
+        const keys = ['dietary','favorite_items','cooking_preference','preferred_sides'];
+        const { data, error } = await supabase
+          .from('user_memories')
+          .select('mem_key, mem_value')
+          .eq('user_id', context.userId)
+          .eq('domain', 'waiter')
+          .in('mem_key', keys)
+          .order('last_seen', { ascending: false });
+        if (error) return { success: false, error: error.message };
+        const byKey: Record<string, any> = {};
+        for (const row of (data || [])) byKey[row.mem_key] = row.mem_value;
+        // Build friendly summary
+        const fav = (byKey.favorite_items?.items || []) as Array<{ name: string; count: number }>;
+        fav.sort((a, b) => (b.count || 0) - (a.count || 0));
+        const favorites = fav.slice(0, 5).map((x) => x.name);
+        const dietary = (byKey.dietary?.labels || []) as string[];
+        const cooking = byKey.cooking_preference?.value as string | undefined;
+        const sides = (byKey.preferred_sides?.labels || []) as string[];
+        const summaryParts = [] as string[];
+        if (dietary.length) summaryParts.push(`Dietary: ${dietary.join(', ')}`);
+        if (cooking) summaryParts.push(`Cooking: ${cooking}`);
+        if (sides.length) summaryParts.push(`Sides: ${sides.join(', ')}`);
+        if (favorites.length) summaryParts.push(`Favorites: ${favorites.join(', ')}`);
+        const summary = summaryParts.length ? summaryParts.join(' | ') : 'No saved preferences yet.';
+        return { success: true, profile: { dietary, cooking, sides, favorites, summary } };
       }
 
       case "book_table": {

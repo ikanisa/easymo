@@ -17,6 +17,13 @@ interface PropertySearchRequest {
   location: { latitude: number; longitude: number };
   address?: string;
   amenities?: string[];
+  // Extended preferences (optional)
+  furnished?: boolean;
+  pets?: boolean;
+  accessibility?: boolean;
+  parking?: boolean;
+  internetNeeds?: "basic" | "high" | "none";
+  propertyTypes?: string[];
   // For adding property
   propertyData?: {
     price: number;
@@ -176,6 +183,12 @@ async function handleFindProperty(supabase: any, request: PropertySearchRequest,
     if (!request.minBudget && memMap.get('budget_min')) request.minBudget = Number(memMap.get('budget_min') || 0) || undefined;
     if (!request.maxBudget && memMap.get('budget_max')) request.maxBudget = Number(memMap.get('budget_max') || 0) || undefined;
     if (!request.amenities && memMap.get('amenities')) request.amenities = memMap.get('amenities');
+    if (request.furnished === undefined && memMap.get('furnished')) request.furnished = Boolean(memMap.get('furnished'));
+    if (request.pets === undefined && memMap.get('pets')) request.pets = Boolean(memMap.get('pets'));
+    if (request.accessibility === undefined && memMap.get('accessibility')) request.accessibility = Boolean(memMap.get('accessibility'));
+    if (request.parking === undefined && memMap.get('parking')) request.parking = Boolean(memMap.get('parking'));
+    if (!request.internetNeeds && memMap.get('internet_needs')) request.internetNeeds = String(memMap.get('internet_needs')) as any;
+    if (!request.propertyTypes && memMap.get('property_types')) request.propertyTypes = memMap.get('property_types');
 
     const radiusKm = 10;
     
@@ -299,6 +312,12 @@ async function handleFindProperty(supabase: any, request: PropertySearchRequest,
         minBudget: request.minBudget,
         maxBudget: request.maxBudget,
         amenities: request.amenities || [],
+        furnished: request.furnished ?? null,
+        pets: request.pets ?? null,
+        accessibility: request.accessibility ?? null,
+        parking: request.parking ?? null,
+        internet_needs: request.internetNeeds ?? null,
+        property_types: request.propertyTypes || [],
       },
       last_seen: new Date().toISOString(),
     }, { onConflict: 'user_id,domain,mem_key' });
@@ -339,6 +358,17 @@ function calculatePropertyScore(property: any, request: PropertySearchRequest): 
   } else {
     score += 10;
   }
+
+  // Preference boosts (furnished, pets, parking, accessibility, internet)
+  const amens = Array.isArray(property.amenities) ? property.amenities.map((s: string) => String(s).toLowerCase()) : [];
+  if (request.furnished !== undefined) {
+    if (request.furnished && (amens.includes('furnished') || amens.includes('fully_furnished'))) score += 5;
+    if (request.furnished === false && amens.includes('unfurnished')) score += 3;
+  }
+  if (request.pets && (amens.includes('pet_friendly') || amens.includes('pets_allowed'))) score += 5;
+  if (request.parking && (amens.includes('parking') || amens.includes('garage'))) score += 4;
+  if (request.accessibility && (amens.includes('accessible') || amens.includes('elevator') || amens.includes('wheelchair_accessible'))) score += 4;
+  if (request.internetNeeds === 'high' && (amens.includes('wifi') || amens.includes('fiber'))) score += 4;
 
   // Size score (10%)
   if (property.bedrooms === request.bedrooms) score += 10;
