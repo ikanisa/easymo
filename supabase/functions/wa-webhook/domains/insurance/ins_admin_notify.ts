@@ -129,16 +129,27 @@ export async function notifyInsuranceAdmins(
     }
 
     try {
+      // Try free-form text first (works only within 24h customer service window)
       await sendText(adminWaId, message);
     } catch (error) {
-      const msg = error instanceof Error ? error.message : String(error ?? "unknown");
-      console.error("insurance.admin_direct_send_fail", {
-        admin: adminWaId,
-        error: msg,
-      });
-      errors.push(`${adminWaId}: ${msg}`);
-      failed++;
-      continue;
+      // Fallback to approved template for business-initiated delivery outside 24h
+      const errMsg = error instanceof Error ? error.message : String(error ?? "unknown");
+      console.warn("insurance.admin_direct_send_fail", { admin: adminWaId, error: errMsg });
+      try {
+        const templateName = Deno.env.get("WA_INSURANCE_ADMIN_TEMPLATE") ?? "insurance_admin_alert";
+        const lang = Deno.env.get("WA_TEMPLATE_LANG") ?? "en";
+        // Compact message as 1 body parameter to match a generic template
+        const compact = message.replace(/\*|_|
+/g, ' ').trim().slice(0, 1024);
+        const { sendTemplate } = await import("../../wa/client.ts");
+        await sendTemplate(adminWaId, { name: templateName, language: lang, bodyParameters: [{ type: 'text', text: compact }] });
+      } catch (tplError) {
+        const tplMsg = tplError instanceof Error ? tplError.message : String(tplError ?? "unknown");
+        console.error("insurance.admin_template_send_fail", { admin: adminWaId, error: tplMsg });
+        errors.push(`${adminWaId}: ${errMsg} | tpl:${tplMsg}`);
+        failed++;
+        continue;
+      }
     }
 
     try {
@@ -169,26 +180,34 @@ export async function notifyInsuranceAdmins(
       }
 
       // Track admin notification
-      const { error: auditError } = await client
-        .from("insurance_admin_notifications")
-        .insert({
-          lead_id: leadId,
-          admin_wa_id: adminWaId,
-          user_wa_id: userWaId,
-          notification_payload: {
-            message,
-            extracted,
-          },
-          status: "queued",
-        });
-      if (auditError) {
-        console.error("insurance.admin_notif_record_fail", {
-          admin: adminWaId,
-          error: auditError.message,
-        });
-        errors.push(`${adminWaId}: ${auditError.message}`);
-        failed++;
-        continue;
+      // Insert audit only if admin exists in insurance_admins (FK constraint)
+      const { data: exists } = await client
+        .from("insurance_admins")
+        .select("wa_id")
+        .eq("wa_id", adminWaId)
+        .maybeSingle();
+      if (exists?.wa_id) {
+        const { error: auditError } = await client
+          .from("insurance_admin_notifications")
+          .insert({
+            lead_id: leadId,
+            admin_wa_id: adminWaId,
+            user_wa_id: userWaId,
+            notification_payload: {
+              message,
+              extracted,
+            },
+            status: "queued",
+          });
+        if (auditError) {
+          console.error("insurance.admin_notif_record_fail", {
+            admin: adminWaId,
+            error: auditError.message,
+          });
+          errors.push(`${adminWaId}: ${auditError.message}`);
+          failed++;
+          continue;
+        }
       }
 
       console.log("insurance.admin_notif_queued", {
