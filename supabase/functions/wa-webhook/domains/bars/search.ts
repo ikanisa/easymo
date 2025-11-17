@@ -15,6 +15,7 @@ import {
   type MenuOrderSession,
 } from "../orders/menu_order.ts";
 import { getState } from "../../state/store.ts";
+import { recordRecentActivity } from "../locations/recent.ts";
 
 type BarSummary = {
   id: string;
@@ -313,6 +314,15 @@ export async function handleBarsResultSelection(
         barsResults: snapshot,
       },
     });
+    // Record recent activity for quick resume on Home
+    try {
+      await recordRecentActivity(ctx, 'bar_detail', bar.id, {
+        barId: bar.id,
+        barName: bar.name,
+        barCountry: (bar as any).country ?? null,
+        barSlug: (bar as any).slug ?? null,
+      });
+    } catch (_) { /* non-fatal */ }
   }
 
   await sendButtonsMessage(
@@ -444,6 +454,14 @@ export async function startBarMenuOrder(
       menuItems,
       selections: [],
     };
+    // Record menu view as recent activity
+    try {
+      await recordRecentActivity(ctx, 'bar_menu', barId, {
+        barId,
+        barName,
+        menuCount: menuItems.length,
+      });
+    } catch (_) { /* ignore */ }
     return await startMenuOrderSession(ctx, session);
   } catch (error) {
     console.error("bars.view_menu_error", {

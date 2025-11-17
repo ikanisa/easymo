@@ -125,7 +125,7 @@ async function buildRows(options: {
   const menuItems = await fetchActiveMenuItems(countryCode, options.ctx.supabase);
   
   // Build menu rows from dynamic items
-  const dynamicRows = menuItems.map((item) => {
+  const dynamicRows: MenuRow[] = menuItems.map((item) => {
     const { titleKey, descriptionKey } = getMenuItemTranslationKeys(item.key);
     return {
       id: getMenuItemId(item.key),
@@ -133,6 +133,30 @@ async function buildRows(options: {
       description: t(options.locale, descriptionKey as TranslationKey),
     };
   });
+
+  // Recent resume row (e.g., last bar menu)
+  try {
+    if (options.ctx.profileId) {
+      const { data: recent } = await options.ctx.supabase
+        .from('recent_activities')
+        .select('activity_type, ref_id, details')
+        .eq('user_id', options.ctx.profileId)
+        .order('occurred_at', { ascending: false })
+        .limit(1);
+      const last = Array.isArray(recent) && recent[0] ? recent[0] as any : null;
+      if (last && (last.activity_type === 'bar_menu' || last.activity_type === 'bar_detail')) {
+        const barId = String(last.ref_id || (last.details?.barId ?? ''));
+        const barName = String(last.details?.barName || '').trim() || 'your last bar';
+        if (barId) {
+          dynamicRows.unshift({
+            id: `bar_resume::${barId}`,
+            title: t(options.locale, 'home.buttons.resume' as TranslationKey, { bar: barName }),
+            description: t(options.locale, 'home.resume.body' as TranslationKey, { bar: barName }),
+          });
+        }
+      }
+    }
+  } catch (_) { /* non-fatal */ }
   
   // Filter motor insurance if not allowed
   const filteredRows = options.showInsurance

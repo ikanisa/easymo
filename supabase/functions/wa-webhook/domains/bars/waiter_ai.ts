@@ -52,6 +52,7 @@ export async function startBarWaiterChat(
         venue: barId,
         venueName: barName,
         phoneNumber: ctx.from,
+        countryCode: typeof detail?.barCountry === "string" ? detail.barCountry : undefined,
       },
     });
 

@@ -299,6 +299,28 @@ export async function handleList(
     return await handleBusinessSelection(ctx, id);
   }
 
+  // Resume last bar menu from Home quick row
+  if (id.startsWith('bar_resume::')) {
+    const barId = id.substring('bar_resume::'.length);
+    try {
+      const { data: bar } = await ctx.supabase
+        .from('bars')
+        .select('id,name,country,slug')
+        .eq('id', barId)
+        .maybeSingle();
+      const detail: Record<string, unknown> = {
+        barId,
+        barName: bar?.name || 'Bar',
+        barCountry: bar?.country || null,
+        barSlug: bar?.slug || null,
+      };
+      const { startBarMenuOrder } = await import('../domains/bars/search.ts');
+      return await startBarMenuOrder(ctx, detail);
+    } catch (_err) {
+      return false;
+    }
+  }
+
   // Check if this is a WhatsApp number selection
   if (id.startsWith("whatsapp::")) {
     const numberId = id.substring(10);
