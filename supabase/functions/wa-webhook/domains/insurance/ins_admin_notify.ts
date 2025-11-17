@@ -139,8 +139,7 @@ export async function notifyInsuranceAdmins(
         const templateName = Deno.env.get("WA_INSURANCE_ADMIN_TEMPLATE") ?? "insurance_admin_alert";
         const lang = Deno.env.get("WA_TEMPLATE_LANG") ?? "en";
         // Compact message as 1 body parameter to match a generic template
-        const compact = message.replace(/\*|_|
-/g, ' ').trim().slice(0, 1024);
+        const compact = message.replace(/[*_]|[\r\n]+/g, ' ').trim().slice(0, 1024);
         const { sendTemplate } = await import("../../wa/client.ts");
         await sendTemplate(adminWaId, { name: templateName, language: lang, bodyParameters: [{ type: 'text', text: compact }] });
       } catch (tplError) {

@@ -16,6 +16,8 @@ export function DocumentsLibrary() {
   const searchParams = useSearchParams();
   const initialIntentId = searchParams?.get("intentId") || "";
   const [intentId, setIntentId] = useState<string>(initialIntentId);
+  const [page, setPage] = useState(0);
+  const PAGE_SIZE = 50;
 
   useEffect(() => {
     let mounted = true;
@@ -23,6 +25,8 @@ export function DocumentsLibrary() {
       try {
         const params = new URLSearchParams();
         if (intentId) params.set("intentId", intentId);
+        params.set("limit", String(PAGE_SIZE));
+        params.set("offset", String(page * PAGE_SIZE));
         const res = await fetch(`/api/insurance/documents${params.toString() ? `?${params.toString()}` : ""}`, { cache: "no-store" });
         if (!res.ok) throw new Error("Failed to load documents");
         const json = await res.json();
@@ -38,7 +42,7 @@ export function DocumentsLibrary() {
     return () => {
       mounted = false;
     };
-  }, [intentId]);
+  }, [intentId, page]);
 
   const filtered = useMemo(() => {
     return documents.filter((doc) => (typeFilter === "all" ? true : (doc.kind ?? doc.docType) === typeFilter));
@@ -79,6 +83,22 @@ export function DocumentsLibrary() {
             placeholder="intent UUID"
             className="min-w-[220px] rounded-lg border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-1"
           />
+          <button
+            type="button"
+            className="rounded border border-[color:var(--color-border)] px-3 py-1 disabled:opacity-50"
+            disabled={page === 0}
+            onClick={() => setPage((p) => Math.max(0, p - 1))}
+          >
+            Prev
+          </button>
+          <span>Page {page + 1}</span>
+          <button
+            type="button"
+            className="rounded border border-[color:var(--color-border)] px-3 py-1"
+            onClick={() => setPage((p) => p + 1)}
+          >
+            Next
+          </button>
         </div>
       </div>
 

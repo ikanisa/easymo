@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getSupabaseAdminClient } from "@/lib/server/supabase-admin";
+import type { Database } from "@/src/v2/lib/supabase/database.types";
 
 const listParamsSchema = z.object({
   limit: z.coerce.number().min(1).max(200).default(25),
@@ -46,7 +47,9 @@ export async function GET(request: NextRequest) {
 
   const { limit, offset, status, search } = parsed.data;
   let query = admin
-    .from("insurance_intents")
+    .from("insurance_intents" as keyof Database["public"]["Tables"]) as unknown as import("@supabase/supabase-js").PostgrestQueryBuilder<Database["public"]> // typed safeguard
+  ;
+  query = (query as any)
     .select(
       "id, contact_id, status, vehicle_type, vehicle_plate, insurer_preference, notes, created_at, updated_at",
       { count: "exact" },

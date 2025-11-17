@@ -38,6 +38,8 @@ export function PoliciesDatabase() {
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<string | "all">("all");
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(0);
+  const PAGE_SIZE = 25;
 
   useEffect(() => {
     let mounted = true;
@@ -45,6 +47,8 @@ export function PoliciesDatabase() {
       try {
         const params = new URLSearchParams();
         if (statusFilter !== "all") params.set("status", statusFilter);
+        params.set("limit", String(PAGE_SIZE));
+        params.set("offset", String(page * PAGE_SIZE));
         const res = await fetch(`/api/insurance/policies${params.toString() ? `?${params.toString()}` : ""}`, { cache: "no-store" });
         if (!res.ok) throw new Error("Failed to load policies");
         const json = await res.json();
@@ -70,7 +74,7 @@ export function PoliciesDatabase() {
     return () => {
       mounted = false;
     };
-  }, [statusFilter]);
+  }, [statusFilter, page]);
 
   return (
     <SectionCard
@@ -99,6 +103,24 @@ export function PoliciesDatabase() {
           placeholder="Search policy/quote id"
           className="min-w-[220px] rounded-lg border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-1 text-sm"
         />
+        <div className="ml-auto flex items-center gap-2 text-sm">
+          <button
+            type="button"
+            className="rounded border border-[color:var(--color-border)] px-3 py-1 disabled:opacity-50"
+            disabled={page === 0}
+            onClick={() => setPage((p) => Math.max(0, p - 1))}
+          >
+            Prev
+          </button>
+          <span>Page {page + 1}</span>
+          <button
+            type="button"
+            className="rounded border border-[color:var(--color-border)] px-3 py-1"
+            onClick={() => setPage((p) => p + 1)}
+          >
+            Next
+          </button>
+        </div>
       </div>
 
       <div className="overflow-hidden rounded-2xl border border-[color:var(--color-border)]">

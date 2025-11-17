@@ -58,6 +58,8 @@
     "app/api/storage/**/*.tsx",
     "app/api/users/**/*.ts",
     "app/api/users/**/*.tsx",
+    "app/api/agent-tasks/**/*.ts",
+    "app/api/agent-tasks/**/*.tsx",
     "lib/**/*.ts",
     "lib/**/*.tsx",
     "middleware.ts",
