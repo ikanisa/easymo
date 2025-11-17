@@ -236,6 +236,10 @@ export async function handleButton(
       const { handleAddBusiness } = await import("../domains/profile/index.ts");
       return await handleAddBusiness(ctx);
     }
+    case "BIZ::ADD_NEW": {
+      const { startAddNewBusiness } = await import("../domains/business/add_new.ts");
+      return await startAddNewBusiness(ctx);
+    }
     case IDS.PROFILE_BUSINESSES: {
       const { handleProfileBusinesses } = await import("../domains/profile/index.ts");
       return await handleProfileBusinesses(ctx);

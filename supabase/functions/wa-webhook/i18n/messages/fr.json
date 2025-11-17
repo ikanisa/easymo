@@ -494,7 +494,7 @@
   "wallet.earn.copy.body": "Copiez votre lien de parrainage :",
   "wallet.earn.copy.code": "Code de parrainage : REF:{{code}}",
   "wallet.earn.qr.caption": "Scanner pour discuter : {{link}}",
-  "wallet.earn.qr.body": "QR envoyé ci-dessus. Enregistrez-le et partagez-le.",
+  "wallet.earn.qr.body": "QR généré ci-dessous. Enregistrez-le et partagez-le.",
   "wallet.earn.note.keep_code": "Important : dites à votre invité de ne pas supprimer le code REF lorsqu'il envoie le message à easyMO afin que vous receviez les jetons.",
   "wallet.earn.share_text_intro": "Transférez ce message pour inviter vos amis :",
   "wallet.earn.forward.instructions": "Maintenez ce message, appuyez sur Transférer et envoyez-le à jusqu'à cinq contacts.",

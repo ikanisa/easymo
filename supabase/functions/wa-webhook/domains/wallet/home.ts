@@ -1,6 +1,5 @@
-import type { RouterContext } from "../../types.ts";
+import type { ButtonSpec, RouterContext } from "../../types.ts";
 import {
-  ButtonSpec,
   sendButtonsMessage,
   sendListMessage,
 } from "../../utils/reply.ts";

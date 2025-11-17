@@ -19,6 +19,8 @@ const MAX_REQUEST_BYTES = Math.max(
   1024,
 );
 
+const ADMIN_BYPASS_TOKEN = Deno.env.get("EASYMO_ADMIN_TOKEN") ?? "";
+
 class PayloadTooLargeError extends Error {
   constructor(readonly bytes: number) {
     super("payload_too_large");
@@ -310,21 +312,38 @@ export async function processWebhookRequest(
   }
   await hooks.logStructuredEvent("WEBHOOK_BODY_READ", withCid({ bytes: rawBody.length }));
 
-  if (!(await hooks.verifySignature(req, rawBody))) {
-    console.warn("wa_webhook.sig_fail");
-    await hooks.logStructuredEvent("SIG_VERIFY_FAIL", withCid({ mode: "POST" }));
-    incrementMetric("wa_webhook_request_failed_total", 1, {
-      method: "POST",
-      reason: "signature",
-      status: 401,
-    });
-    return {
-      type: "response",
-      response: new Response("sig", { status: 401 }),
-      correlationId,
-    };
+  const adminBypass = Boolean(
+    ADMIN_BYPASS_TOKEN &&
+      req.headers.get("x-admin-token") === ADMIN_BYPASS_TOKEN,
+  );
+  const shouldVerify = webhookConfig.verification.enabled !== false &&
+    !adminBypass;
+  if (shouldVerify) {
+    const verified = await hooks.verifySignature(req, rawBody);
+    if (!verified) {
+      console.warn("wa_webhook.sig_fail");
+      await hooks.logStructuredEvent("SIG_VERIFY_FAIL", withCid({
+        mode: "POST",
+        reason: "mismatch",
+      }));
+      incrementMetric("wa_webhook_request_failed_total", 1, {
+        method: "POST",
+        reason: "signature",
+        status: 401,
+      });
+      return {
+        type: "response",
+        response: new Response("sig", { status: 401 }),
+        correlationId,
+      };
+    }
+    await hooks.logStructuredEvent("SIG_VERIFY_OK", withCid({ mode: "POST" }));
+  } else {
+    await hooks.logStructuredEvent("SIG_VERIFY_SKIPPED", withCid({
+      mode: "POST",
+      reason: adminBypass ? "admin_bypass" : "disabled",
+    }));
   }
-  await hooks.logStructuredEvent("SIG_VERIFY_OK", withCid({ mode: "POST" }));
 
   let payload: WhatsAppWebhookPayload;
   try {

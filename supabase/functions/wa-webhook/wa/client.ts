@@ -70,21 +70,63 @@ export async function sendText(to: string, body: string): Promise<void> {
   });
 }
 
+type WhatsAppButtonSpec = {
+  id?: string;
+  title: string;
+  url?: string;
+  phoneNumber?: string;
+  kind?: "reply" | "url" | "call";
+};
+
+function resolveButtonKind(
+  button: WhatsAppButtonSpec,
+): "reply" | "url" | "call" {
+  if (button.kind === "url" || button.url) return "url";
+  if (button.kind === "call" || button.phoneNumber) return "call";
+  return "reply";
+}
+
 export async function sendButtons(
   to: string,
   body: string,
-  buttons: Array<{ id: string; title: string }>,
+  buttons: WhatsAppButtonSpec[],
 ): Promise<void> {
   if ((Deno.env.get("LOG_LEVEL") ?? "").toLowerCase() === "debug") {
     console.debug("wa.payload.buttons_preview", {
       bodyPreview: body?.slice(0, 40),
       count: buttons?.length ?? 0,
       buttons: buttons.slice(0, 3).map((b) => ({
-        id: b.id,
+        id: b.id ?? null,
         title: b.title.slice(0, 20),
+        kind: resolveButtonKind(b),
       })),
     });
   }
+  const normalized = buttons.slice(0, 3).map((btn, idx) => {
+    const title = safeButtonTitle(btn.title);
+    const kind = resolveButtonKind(btn);
+    if (kind === "url" && btn.url) {
+      return {
+        type: "url",
+        url: btn.url,
+        title,
+      };
+    }
+    if (kind === "call" && btn.phoneNumber) {
+      return {
+        type: "phone_number",
+        phone_number: btn.phoneNumber,
+        title,
+      };
+    }
+    return {
+      type: "reply",
+      reply: {
+        id: btn.id ?? `btn_${idx}_${Date.now()}`,
+        title,
+      },
+    };
+  });
   await post({
     messaging_product: "whatsapp",
     to,
@@ -93,10 +135,7 @@ export async function sendButtons(
       type: "button",
       body: { text: body.slice(0, 1024) },
       action: {
-        buttons: buttons.slice(0, 3).map((btn) => ({
-          type: "reply",
-          reply: { id: btn.id, title: safeButtonTitle(btn.title) },
-        })),
+        buttons: normalized,
       },
     },
   });

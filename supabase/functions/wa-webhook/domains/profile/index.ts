@@ -91,6 +91,13 @@ export async function handleProfileMenu(ctx: RouterContext): Promise<boolean> {
 
   // Convert database items to WhatsApp list rows with pagination support
   const allRows = submenuItemsToRows(menuItems, getProfileMenuItemId);
+  if (!allRows.some((row) => row.id === IDS.WALLET_EARN)) {
+    allRows.unshift({
+      id: IDS.WALLET_EARN,
+      title: t(ctx.locale, "profile.menu.invite.title"),
+      description: t(ctx.locale, "profile.menu.invite.description"),
+    });
+  }
   const total = allRows.length;
   // Compute reserved control rows based on current page
   const computePageSize = (pageIdx: number, totalItems: number) => {

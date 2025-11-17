@@ -8,6 +8,14 @@ export type RouterContext = {
   locale: SupportedLanguage;
 };
 
+export type ButtonSpec = {
+  id?: string;
+  title: string;
+  url?: string;
+  phoneNumber?: string;
+  kind?: "reply" | "url" | "call";
+};
+
 export type FlowExchangeRequest = {
   flow_id: string;
   screen_id: string;

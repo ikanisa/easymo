@@ -1,12 +1,11 @@
 import type { RouterContext } from "../../types.ts";
 import { sendButtonsMessage, sendListMessage } from "../../utils/reply.ts";
-import { buildWaLink } from "../../utils/share.ts";
+import { ensureReferralLink as ensureReferralLinkShared } from "../../utils/share.ts";
 import { IDS } from "../../wa/ids.ts";
 import { setState } from "../../state/store.ts";
 import { logWalletAdjust } from "../../observe/log.ts";
 import { sendImageUrl } from "../../wa/client.ts";
 import { startWallet, walletBackRow } from "./home.ts";
-import type { SupabaseClient } from "../../deps.ts";
 import { t } from "../../i18n/translator.ts";
 
 const STATE_KEY = "wallet_share";
@@ -20,10 +19,6 @@ type ShareState = {
     qrUrl: string;
   };
 };
-
-const SHORT_LINK_PREFIX = "https://easy.mo/r/";
-const QR_BASE = "https://quickchart.io/qr?text=";
-const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
 export async function showWalletEarn(ctx: RouterContext): Promise<boolean> {
   if (!ctx.profileId) return false;
@@ -178,78 +173,5 @@ async function ensureReferralLink(
   ctx: RouterContext,
 ): Promise<{ code: string; shortLink: string; waLink: string; qrUrl: string }> {
   const profileId = ctx.profileId!;
-  const client = ctx.supabase;
-  const existing = await client
-    .from("referral_links")
-    .select("code, short_url")
-    .eq("user_id", profileId)
-    .eq("active", true)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  if (existing.error) throw existing.error;
-
-  let code = existing.data?.code ?? "";
-  if (!code) {
-    code = await insertReferralLink(client, profileId);
-  } else if (!existing.data?.short_url) {
-    const shortLink = buildShortLink(code);
-    const { error: updateError } = await client
-      .from("referral_links")
-      .update({ short_url: shortLink })
-      .eq("user_id", profileId)
-      .eq("code", code);
-    if (updateError) {
-      console.error("wallet.referral_short_update_fail", updateError);
-    }
-  }
-
-  const shortLink = existing.data?.short_url ?? buildShortLink(code);
-  const waLink = buildWaLink(`REF:${code}`) || shortLink;
-  const qrUrl = `${QR_BASE}${encodeURIComponent(shortLink)}`;
-
-  return { code, shortLink, waLink, qrUrl };
-}
-
-async function insertReferralLink(
-  client: SupabaseClient,
-  profileId: string,
-): Promise<string> {
-  for (let attempt = 0; attempt < 5; attempt++) {
-    const code = generateReferralCode();
-    const shortLink = buildShortLink(code);
-    const { data, error } = await client
-      .from("referral_links")
-      .insert({
-        user_id: profileId,
-        code,
-        short_url: shortLink,
-        active: true,
-      })
-      .select("code")
-      .single();
-    if (!error && data?.code) {
-      return data.code;
-    }
-    if (error && error.code === "23505") {
-      continue;
-    }
-    if (error) throw error;
-  }
-  throw new Error("Failed to create referral link after retries");
-}
-
-function generateReferralCode(length = 8): string {
-  const bytes = new Uint8Array(length);
-  crypto.getRandomValues(bytes);
-  let result = "";
-  for (const byte of bytes) {
-    result += CODE_ALPHABET[byte % CODE_ALPHABET.length];
-  }
-  return result;
-}
-
-function buildShortLink(code: string): string {
-  return `${SHORT_LINK_PREFIX}${code}`;
+  return await ensureReferralLinkShared(ctx.supabase, profileId);
 }

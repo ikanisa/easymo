@@ -1,10 +1,8 @@
-import type { RouterContext } from "../types.ts";
+import type { ButtonSpec, RouterContext } from "../types.ts";
 import { sendButtons, sendList } from "../wa/client.ts";
 import { IDS } from "../wa/ids.ts";
 import { t } from "../i18n/translator.ts";
 import { ensureReferralLink } from "./share.ts";
-
-export type ButtonSpec = { id: string; title: string };
 
 const HOME_BUTTON: ButtonSpec = { id: IDS.BACK_HOME, title: "🏠 Home" };
 
@@ -33,22 +31,40 @@ export async function sendButtonsMessage(
     const hasAdmin = buttons.some((b) =>
       typeof b?.id === 'string' && (b.id.startsWith('ADMIN::') || b.id.toLowerCase().includes('admin'))
     );
-    if (!hasAdmin && augmented.length < 3) {
-      const already = augmented.some((b) => b.id === IDS.SHARE_EASYMO);
+    const canAutoShare = Boolean(
+      !hasAdmin &&
+        augmented.length < 3 &&
+        ctx.profileId,
+    );
+    if (canAutoShare) {
+      const already = augmented.some((b) =>
+        b.id === IDS.SHARE_EASYMO || b.url?.includes("share") ||
+        b.kind === "url_share"
+      );
       if (!already && ctx.profileId) {
-        // Only add for authenticated users (so link has their code)
+        const share = await ensureReferralLink(ctx.supabase, ctx.profileId);
+        const inviteMessage = t(ctx.locale, "wallet.earn.share.prefill_message", {
+          link: share.waLink || share.shortLink,
+          code: share.code,
+        });
+        const shareUrl = `https://wa.me/?text=${encodeURIComponent(inviteMessage)}`;
         augmented.push({
           id: IDS.SHARE_EASYMO,
           title: t(ctx.locale, "common.buttons.share_easymo"),
+          url: shareUrl,
+          kind: "url",
         });
       }
     }
-  } catch (_) {}
-  const payload = ensureHomeButton(augmented).map((button) =>
-    button.id === IDS.BACK_HOME
-      ? { ...button, title: t(ctx.locale, "common.home_button") }
-      : button
-  );
+  } catch (err) {
+    console.warn("reply.auto_share_failed", { err: (err as Error)?.message });
+  }
+  const payload = ensureHomeButton(augmented).map((button) => {
+    if (button.id === IDS.BACK_HOME) {
+      return { ...button, title: t(ctx.locale, "common.home_button") };
+    }
+    return button;
+  });
   await sendButtons(ctx.from, coerceBody(body, options.emoji ?? ""), payload);
 }
 

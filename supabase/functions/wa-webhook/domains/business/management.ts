@@ -336,25 +336,53 @@ export async function handleBusinessSelection(
     return await showBusinessDetail(ctx, businessId);
   }
 
-  if (
-    state?.key === BUSINESS_DETAIL_STATE &&
-    (id === IDS.BUSINESS_MANAGE_MENU || id === IDS.BUSINESS_VIEW_ORDERS)
-  ) {
-    const barId = typeof state.data?.barId === "string"
-      ? state.data?.barId
-      : null;
-    if (!barId) {
-      await sendButtonsMessage(
-        ctx,
-        t(ctx.locale, "restaurant.not_manager"),
-        buildButtons({ id: IDS.BACK_MENU, title: t(ctx.locale, "common.menu_back") }),
-      );
-      return true;
+  if (state?.key === BUSINESS_DETAIL_STATE) {
+    if (id === IDS.BUSINESS_MANAGE_MENU || id === IDS.BUSINESS_VIEW_ORDERS) {
+      return await handleBusinessDetailAction(ctx, state, id);
     }
-    const initialAction = id === IDS.BUSINESS_MANAGE_MENU ? "menu" : "orders";
-    await startRestaurantManager(ctx, { barId, initialAction });
-    return true;
   }
 
   return false;
+}
+
+export async function handleBusinessDetailAction(
+  ctx: RouterContext,
+  state: { key?: string; data?: Record<string, unknown> },
+  actionId: string,
+): Promise<boolean> {
+  const businessId = typeof state.data?.businessId === "string"
+    ? state.data.businessId
+    : null;
+  if (!businessId) return false;
+
+  let { data: business } = await ctx.supabase
+    .from("business")
+    .select("bar_id, owner_user_id, owner_whatsapp")
+    .eq("id", businessId)
+    .maybeSingle();
+
+  if (!business && state.data?.barId) {
+    business = { bar_id: state.data.barId, owner_user_id: ctx.profileId, owner_whatsapp: ctx.from } as any;
+  }
+  if (!business) {
+    await sendButtonsMessage(
+      ctx,
+      t(ctx.locale, "restaurant.not_manager"),
+      buildButtons({ id: IDS.BACK_MENU, title: t(ctx.locale, "common.menu_back") }),
+    );
+    return true;
+  }
+  const isOwner = business.owner_user_id === ctx.profileId ||
+    business.owner_whatsapp === ctx.from;
+  if (!business.bar_id || !isOwner) {
+    await sendButtonsMessage(
+      ctx,
+      t(ctx.locale, "restaurant.not_manager"),
+      buildButtons({ id: IDS.BACK_MENU, title: t(ctx.locale, "common.menu_back") }),
+    );
+    return true;
+  }
+  const initialAction = actionId === IDS.BUSINESS_MANAGE_MENU ? "menu" : "orders";
+  await startRestaurantManager(ctx, { barId: business.bar_id, initialAction });
+  return true;
 }

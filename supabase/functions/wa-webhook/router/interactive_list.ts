@@ -82,7 +82,9 @@ import {
   BUSINESS_MANAGEMENT_STATE,
   BUSINESS_DETAIL_STATE,
   handleBusinessSelection,
+  handleBusinessDetailAction,
 } from "../domains/business/management.ts";
+import { startAddNewBusiness } from "../domains/business/add_new.ts";
 import { handleWalletRedeemSelection } from "../domains/wallet/redeem.ts";
 import { ADMIN_ROW_IDS, openAdminHub } from "../flows/admin/hub.ts";
 import { handleAdminRow } from "../flows/admin/dispatcher.ts";
@@ -303,6 +305,10 @@ export async function handleList(
     if (await handleBusinessSelection(ctx, id, state)) {
       return true;
     }
+  }
+
+  if (id === "BIZ::ADD_NEW") {
+    return await startAddNewBusiness(ctx);
   }
 
   // Check if this is an AI agent option selection

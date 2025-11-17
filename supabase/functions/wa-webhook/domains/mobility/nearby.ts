@@ -1,4 +1,4 @@
-import type { RouterContext } from "../../types.ts";
+import type { ButtonSpec, RouterContext } from "../../types.ts";
 import { clearState, setState } from "../../state/store.ts";
 import { t } from "../../i18n/translator.ts";
 import { IDS } from "../../wa/ids.ts";
@@ -18,7 +18,6 @@ import { timeAgo } from "../../utils/text.ts";
 import { sendText } from "../../wa/client.ts";
 import {
   buildButtons,
-  ButtonSpec,
   homeOnly,
   sendButtonsMessage,
   sendListMessage,

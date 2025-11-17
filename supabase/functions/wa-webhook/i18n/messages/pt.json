@@ -139,7 +139,7 @@
   "wallet.earn.copy.body": "Copie seu link curto:",
   "wallet.earn.copy.code": "Código de referência: REF:{{code}}",
   "wallet.earn.qr.caption": "Escaneie para conversar: {{link}}",
-  "wallet.earn.qr.body": "QR enviado acima. Salve e compartilhe com seus amigos.",
+  "wallet.earn.qr.body": "QR gerado abaixo. Salve e compartilhe com seus amigos.",
   "wallet.earn.note.keep_code": "Importante: peça à pessoa convidada para não apagar o código REF quando enviar a mensagem ao easyMO, para que você receba os tokens.",
   "wallet.earn.share_text_intro": "Reencaminhe esta mensagem para convidar seus amigos:",
   "wallet.earn.forward.instructions": "Toque e segure esta mensagem, toque em Encaminhar e envie para até cinco contatos.",
