@@ -1,29 +1,50 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { SectionCard } from "@/components/ui/SectionCard";
 import { Drawer } from "@/components/ui/Drawer";
 import { Badge } from "@/components/ui/Badge";
-import { mockInsuranceDocuments, mockInsuranceRequests } from "@/lib/mock-data";
-
-const docTypes = Array.from(new Set(mockInsuranceDocuments.map((doc) => doc.docType)));
+// Live data only; no mock imports
+// computed from loaded docs
 
 export function DocumentsLibrary() {
   const [typeFilter, setTypeFilter] = useState<string | "all">("all");
   const [selectedDocId, setSelectedDocId] = useState<string | null>(null);
+  const [documents, setDocuments] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const documents = useMemo(() => {
-    return mockInsuranceDocuments.filter((doc) =>
-      typeFilter === "all" ? true : doc.docType === typeFilter,
-    );
-  }, [typeFilter]);
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const res = await fetch("/api/insurance/documents", { cache: "no-store" });
+        if (!res.ok) throw new Error("Failed to load documents");
+        const json = await res.json();
+        const data = Array.isArray(json?.data) ? json.data : [];
+        if (mounted) setDocuments(data);
+        // types computed via useMemo downstream
+      } catch {
+        if (mounted) setDocuments([]);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
-  const selectedDoc = selectedDocId
-    ? mockInsuranceDocuments.find((doc) => doc.id === selectedDocId) ?? null
-    : null;
-  const relatedRequest = selectedDoc
-    ? mockInsuranceRequests.find((request) => request.id === selectedDoc.requestId)
-    : null;
+  const filtered = useMemo(() => {
+    return documents.filter((doc) => (typeFilter === "all" ? true : (doc.kind ?? doc.docType) === typeFilter));
+  }, [documents, typeFilter]);
+
+  const docTypes = useMemo(
+    () => Array.from(new Set(documents.map((d: any) => String(d.kind || d.docType || "other")))),
+    [documents],
+  );
+
+  const selectedDoc = selectedDocId ? documents.find((d) => d.id === selectedDocId) ?? null : null;
+  const relatedRequest = null as any;
 
   return (
     <SectionCard
@@ -58,26 +79,36 @@ export function DocumentsLibrary() {
             </tr>
           </thead>
           <tbody className="divide-y divide-[color:var(--color-border)] bg-[color:var(--color-surface)]">
-            {documents.map((doc) => (
+            {filtered.map((doc) => (
               <tr
                 key={doc.id}
                 className="cursor-pointer hover:bg-[color:var(--color-border)]/20"
                 onClick={() => setSelectedDocId(doc.id)}
               >
                 <td className="px-4 py-3">
-                  <div className="font-medium">{doc.docType}</div>
-                  <div className="text-xs text-[color:var(--color-muted)]">{doc.storagePath}</div>
+                  <div className="font-medium">{doc.kind ?? doc.docType ?? "other"}</div>
+                  <div className="text-xs text-[color:var(--color-muted)]">{doc.storagePath ?? doc.storage_path}</div>
                 </td>
-                <td className="px-4 py-3">{doc.requestId ?? "—"}</td>
-                <td className="px-4 py-3">{doc.uploadedBy ?? "—"}</td>
-                <td className="px-4 py-3">{doc.ocrConfidence ? `${Math.round(doc.ocrConfidence * 100)}%` : "—"}</td>
+                <td className="px-4 py-3">{doc.intentId ?? doc.intent_id ?? "—"}</td>
+                <td className="px-4 py-3">{doc.contactId ?? doc.contact_id ?? "—"}</td>
+                <td className="px-4 py-3">{doc.ocrConfidence ? `${Math.round(Number(doc.ocrConfidence) * 100)}%` : "—"}</td>
                 <td className="px-4 py-3">
-                  <Badge variant={doc.verified ? "success" : "outline"}>
-                    {doc.verified ? "Verified" : "Pending"}
+                  <Badge variant={(doc.ocrState ?? doc.ocr_state) === 'verified' ? "success" : "outline"}>
+                    {(doc.ocrState ?? doc.ocr_state) === 'verified' ? "Verified" : "Pending"}
                   </Badge>
                 </td>
               </tr>
             ))}
+            {!filtered.length && (
+              <tr>
+                <td colSpan={5} className="px-4 py-6 text-center text-[color:var(--color-muted)]">{loading ? "Loading…" : "No documents found."}</td>
+              </tr>
+            )}
+            {!documents.length && (
+              <tr>
+                <td colSpan={5} className="px-4 py-6 text-center text-[color:var(--color-muted)]">No documents found.</td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>

@@ -5,7 +5,6 @@ import { SectionCard } from "@/components/ui/SectionCard";
 import { Drawer } from "@/components/ui/Drawer";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { mockIntegrationTools } from "@/lib/mock-data";
 
 interface IntegrationTool {
   id: string;
@@ -24,7 +23,7 @@ const statusVariant: Record<IntegrationTool["status"], ComponentProps<typeof Bad
 
 export function ToolsIntegrationsPanel() {
   const [selected, setSelected] = useState<IntegrationTool | null>(null);
-  const tools = useMemo(() => mockIntegrationTools as IntegrationTool[], []);
+  const tools = useMemo<IntegrationTool[]>(() => [], []);
 
   return (
     <SectionCard
@@ -60,6 +59,13 @@ export function ToolsIntegrationsPanel() {
                 </td>
               </tr>
             ))}
+            {!tools.length && (
+              <tr>
+                <td colSpan={5} className="px-4 py-6 text-center text-[color:var(--color-muted)]">
+                  No integrations configured.
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>

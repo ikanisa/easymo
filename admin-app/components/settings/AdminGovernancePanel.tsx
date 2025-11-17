@@ -3,7 +3,6 @@
 import { type ComponentProps } from "react";
 import { SectionCard } from "@/components/ui/SectionCard";
 import { Badge } from "@/components/ui/Badge";
-import { mockAdminPanels } from "@/lib/mock-data";
 
 interface AdminPanel {
   id: string;
@@ -21,7 +20,7 @@ const statusVariant: Record<AdminPanel["status"], React.ComponentProps<typeof Ba
 };
 
 export function AdminGovernancePanel() {
-  const panels = mockAdminPanels as AdminPanel[];
+  const panels: AdminPanel[] = [];
 
   return (
     <SectionCard
@@ -42,6 +41,11 @@ export function AdminGovernancePanel() {
             </p>
           </div>
         ))}
+        {!panels.length && (
+          <div className="rounded-2xl border border-dashed border-[color:var(--color-border)] p-4 text-sm text-[color:var(--color-muted)]">
+            No governance panels configured.
+          </div>
+        )}
       </div>
     </SectionCard>
   );

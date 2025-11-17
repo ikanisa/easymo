@@ -1,13 +1,10 @@
 "use client";
 
-import { useState, type ComponentProps } from "react";
+import { useEffect, useState, type ComponentProps } from "react";
 import { SectionCard } from "@/components/ui/SectionCard";
 import { Drawer } from "@/components/ui/Drawer";
 import { Badge } from "@/components/ui/Badge";
-import {
-  mockInsurancePolicies,
-  mockInsuranceRequests,
-} from "@/lib/mock-data";
+// Live data only; no mock imports
 
 const currencyFormatter = new Intl.NumberFormat("en-RW", {
   style: "currency",
@@ -19,8 +16,8 @@ function formatCurrency(value: number) {
   return currencyFormatter.format(Math.round(value));
 }
 
-type PolicyMock = (typeof mockInsurancePolicies)[number];
-type RequestMock = (typeof mockInsuranceRequests)[number];
+type PolicyMock = { id: string; quoteId?: string | null; policyNumber?: string | null; insurer: string; status: string; effectiveFrom?: string | null; effectiveTo?: string | null; premiumTotalMinor?: number | null; breakdown: Array<{ id: string; label: string; amountMinor: number }> };
+type RequestMock = { id: string; customerName?: string; customerMsisdn?: string; vehicle?: { plateNumber?: string | null } | null };
 
 interface PolicyDetail {
   policy: PolicyMock;
@@ -37,17 +34,79 @@ const statusVariant: Record<PolicyMock["status"], ComponentProps<typeof Badge>["
 
 export function PoliciesDatabase() {
   const [selected, setSelected] = useState<PolicyDetail | null>(null);
+  const [policies, setPolicies] = useState<PolicyMock[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [statusFilter, setStatusFilter] = useState<string | "all">("all");
+  const [search, setSearch] = useState("");
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const params = new URLSearchParams();
+        if (statusFilter !== "all") params.set("status", statusFilter);
+        const res = await fetch(`/api/insurance/policies${params.toString() ? `?${params.toString()}` : ""}`, { cache: "no-store" });
+        if (!res.ok) throw new Error("Failed to load policies");
+        const json = await res.json();
+        const data = Array.isArray(json?.data) ? json.data : [];
+        const mapped: PolicyMock[] = data.map((p: any) => ({
+          id: String(p.id),
+          quoteId: p.quoteId ?? p.quote_id ?? null,
+          policyNumber: p.policyNumber ?? p.policy_number ?? null,
+          insurer: p.insurer ?? "",
+          status: p.status ?? "draft",
+          effectiveFrom: p.effectiveAt ?? p.effective_at ?? null,
+          effectiveTo: p.expiresAt ?? p.expires_at ?? null,
+          premiumTotalMinor: p.premium ?? null,
+          breakdown: [],
+        }));
+        if (mounted) setPolicies(mapped);
+      } catch {
+        if (mounted) setPolicies([]);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, [statusFilter]);
 
   return (
     <SectionCard
       title="Policies database"
       description="Central repository for issued policies, breakdowns, and metadata synced from Supabase."
     >
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex gap-2 text-sm">
+          <label className="text-[color:var(--color-muted)]">Status</label>
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}
+            className="rounded-lg border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-1"
+          >
+            <option value="all">All</option>
+            <option value="draft">Draft</option>
+            <option value="pending_issue">Pending issue</option>
+            <option value="active">Active</option>
+            <option value="expired">Expired</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
+        </div>
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search policy/quote id"
+          className="min-w-[220px] rounded-lg border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-1 text-sm"
+        />
+      </div>
+
       <div className="overflow-hidden rounded-2xl border border-[color:var(--color-border)]">
         <table className="min-w-full divide-y divide-[color:var(--color-border)] text-sm">
           <thead className="bg-[color:var(--color-surface-muted)] text-xs uppercase tracking-wide">
             <tr>
               <th className="px-4 py-3 text-left">Policy</th>
+              <th className="px-4 py-3 text-left">Quote</th>
               <th className="px-4 py-3 text-left">Customer</th>
               <th className="px-4 py-3 text-left">Insurer</th>
               <th className="px-4 py-3 text-left">Effective dates</th>
@@ -55,8 +114,10 @@ export function PoliciesDatabase() {
             </tr>
           </thead>
           <tbody className="divide-y divide-[color:var(--color-border)] bg-[color:var(--color-surface)]">
-            {mockInsurancePolicies.map((policy) => {
-              const request = mockInsuranceRequests.find((item) => item.id === policy.requestId);
+            {policies
+              .filter((p) => (search.trim() ? (p.policyNumber ?? "").includes(search) || (p.quoteId ?? "").includes(search) : true))
+              .map((policy) => {
+              const request = undefined as unknown as RequestMock | undefined;
               return (
                 <tr
                   key={policy.id}
@@ -69,6 +130,7 @@ export function PoliciesDatabase() {
                       {request?.vehicle?.plateNumber ?? "Unlinked"}
                     </div>
                   </td>
+                  <td className="px-4 py-3">{policy.quoteId ?? "—"}</td>
                   <td className="px-4 py-3">
                     <div className="font-medium">{request?.customerName ?? "—"}</div>
                     <div className="text-xs text-[color:var(--color-muted)]">{request?.customerMsisdn ?? ""}</div>
@@ -87,6 +149,13 @@ export function PoliciesDatabase() {
                 </tr>
               );
             })}
+            {!policies.length && (
+              <tr>
+                <td colSpan={5} className="px-4 py-6 text-center text-[color:var(--color-muted)]">
+                  {loading ? "Loading…" : "No policies found."}
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
@@ -105,7 +174,7 @@ export function PoliciesDatabase() {
             <div className="rounded-lg border border-[color:var(--color-border)] p-3">
               <p className="text-xs font-semibold uppercase tracking-wide text-[color:var(--color-muted)]">Breakdown</p>
               <ul className="space-y-1 pt-2">
-                {selected.policy.breakdown.map((item) => (
+            {selected.policy.breakdown.map((item) => (
                   <li key={item.id} className="flex justify-between">
                     <span>{item.label}</span>
                     <span>{formatCurrency(item.amountMinor)}</span>

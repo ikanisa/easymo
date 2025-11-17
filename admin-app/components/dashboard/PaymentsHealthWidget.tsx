@@ -1,7 +1,6 @@
 "use client";
 
 import { PaymentStatusWidget } from "@easymo/ui/widgets/PaymentStatusWidget";
-import { mockPaymentsHealth } from "@/lib/mock-data";
 import { SectionCard } from "@/components/ui/SectionCard";
 
 export function PaymentsHealthWidget() {
@@ -11,12 +10,12 @@ export function PaymentsHealthWidget() {
       description="Reconciles MoMo, Revolut, and in-flight disputes across wallets."
     >
       <PaymentStatusWidget
-        totalVolume={mockPaymentsHealth.totalVolume}
-        growthLabel={mockPaymentsHealth.growthLabel}
-        momoShare={mockPaymentsHealth.momoShare}
-        cardShare={mockPaymentsHealth.cardShare}
-        pendingCount={mockPaymentsHealth.pendingCount}
-        disputesCount={mockPaymentsHealth.disputesCount}
+        totalVolume={0}
+        growthLabel="—"
+        momoShare={0}
+        cardShare={0}
+        pendingCount={0}
+        disputesCount={0}
         cta={
           <a
             href="/wallet"

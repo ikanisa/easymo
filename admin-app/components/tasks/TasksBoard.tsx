@@ -1,26 +1,25 @@
 "use client";
 
-import { useMemo, useState, type ComponentProps } from "react";
+import { useEffect, useMemo, useState, type ComponentProps } from "react";
 import { SectionCard } from "@/components/ui/SectionCard";
 import { Drawer } from "@/components/ui/Drawer";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { mockWorkflowBoard, mockInsuranceRequests } from "@/lib/mock-data";
+// Live data only; no mock imports
 
-interface WorkflowTask {
+type WorkflowTask = {
   id: string;
   title: string;
-  stage: string;
-  owner: string;
+  status: string;
+  owner?: string;
   dueAt: string | null;
-  status: "open" | "in_progress" | "blocked" | "completed";
-  priority: "low" | "medium" | "high";
-  relatedRequestId?: string | null;
-}
+  priority?: "low" | "medium" | "high";
+  agentName?: string;
+};
 
-const stageOrder = ["Intake", "Quote", "Payments", "Issuance"];
+const stageOrder = ["open", "in_progress", "blocked", "completed"];
 
-const statusVariant: Record<WorkflowTask["status"], ComponentProps<typeof Badge>["variant"]> = {
+const statusVariant: Record<string, ComponentProps<typeof Badge>["variant"]> = {
   open: "outline",
   in_progress: "warning",
   blocked: "destructive",
@@ -34,15 +33,51 @@ const priorityTone: Record<WorkflowTask["priority"], string> = {
 };
 
 function groupByStage(tasks: WorkflowTask[]) {
-  return stageOrder.map((stage) => ({
-    stage,
-    tasks: tasks.filter((task) => task.stage === stage),
-  }));
+  const map: Record<string, WorkflowTask[]> = {};
+  for (const t of tasks) {
+    const key = (t.status || "open").toLowerCase();
+    if (!map[key]) map[key] = [];
+    map[key].push(t);
+  }
+  const keys = Array.from(new Set([...stageOrder, ...Object.keys(map)]));
+  return keys.map((stage) => ({ stage, tasks: map[stage] ?? [] }));
 }
 
 export function TasksBoard() {
   const [selected, setSelected] = useState<WorkflowTask | null>(null);
-  const grouped = useMemo(() => groupByStage(mockWorkflowBoard as WorkflowTask[]), []);
+  const [tasks, setTasks] = useState<WorkflowTask[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const res = await fetch("/api/agent-tasks", { cache: "no-store" });
+        if (!res.ok) throw new Error("Failed to load tasks");
+        const json = await res.json();
+        const rows = Array.isArray(json?.tasks) ? json.tasks : [];
+        const mapped: WorkflowTask[] = rows.map((row: any) => ({
+          id: String(row.id),
+          title: String(row.title ?? row.agentName ?? "Task"),
+          status: String(row.status ?? "open").toLowerCase(),
+          owner: row.agentName ?? undefined,
+          dueAt: (row.dueAt as string | null | undefined) ?? null,
+          priority: undefined,
+          agentName: row.agentName ?? undefined,
+        }));
+        if (mounted) setTasks(mapped);
+      } catch {
+        if (mounted) setTasks([]);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const grouped = useMemo(() => groupByStage(tasks), [tasks]);
 
   return (
     <SectionCard
@@ -71,19 +106,19 @@ export function TasksBoard() {
                 >
                   <div className="flex items-center justify-between">
                     <span className="font-medium">{task.title}</span>
-                    <span className={`rounded-full px-2 py-0.5 text-xs ${priorityTone[task.priority]}`}>
-                      {task.priority}
+                    <span className={`rounded-full px-2 py-0.5 text-xs ${task.priority ? priorityTone[task.priority] : "bg-slate-100 text-slate-600"}`}>
+                      {task.priority ?? "normal"}
                     </span>
                   </div>
                   <div className="mt-1 flex items-center justify-between text-xs text-[color:var(--color-muted)]">
-                    <span>{task.owner}</span>
+                    <span>{task.owner ?? task.agentName ?? "Unassigned"}</span>
                     <span>{task.dueAt ? new Date(task.dueAt).toLocaleDateString() : "No due"}</span>
                   </div>
                 </button>
               ))}
               {!column.tasks.length && (
                 <p className="rounded-xl border border-dashed border-[color:var(--color-border)] p-3 text-center text-xs text-[color:var(--color-muted)]">
-                  No tasks queued.
+                  {loading ? "Loading…" : "No tasks queued."}
                 </p>
               )}
             </div>
@@ -110,15 +145,7 @@ export function TasksBoard() {
                 <p>{new Date(selected.dueAt).toLocaleString()}</p>
               </div>
             )}
-            {selected.relatedRequestId && (
-              <div className="rounded-lg border border-[color:var(--color-border)] p-3">
-                <p className="text-xs font-semibold uppercase tracking-wide text-[color:var(--color-muted)]">Request link</p>
-                <p className="font-medium">{selected.relatedRequestId}</p>
-                <p className="text-xs text-[color:var(--color-muted)]">
-                  {mockInsuranceRequests.find((request) => request.id === selected.relatedRequestId)?.customerName ?? "Customer unknown"}
-                </p>
-              </div>
-            )}
+            {/* No cross-links to mock requests */}
             <div className="rounded-lg border border-[color:var(--color-border)] p-3">
               <p className="text-xs font-semibold uppercase tracking-wide text-[color:var(--color-muted)]">Workflow tips</p>
               <ul className="list-disc space-y-1 pl-4 pt-2">

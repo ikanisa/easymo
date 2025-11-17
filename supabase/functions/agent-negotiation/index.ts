@@ -70,11 +70,7 @@ async function startNegotiation(req: Request): Promise<Response> {
     return json({ error: "missing_required_fields" }, 400);
   }
   
-  // Check marketplace feature flag for marketplace flows
-  const isMarketplaceFlow = ["nearby_pharmacies", "nearby_quincailleries", "nearby_shops"].includes(payload.flowType);
-  if (isMarketplaceFlow && !isFeatureEnabled("agent.marketplace")) {
-    return json({ error: "feature_disabled", message: "Marketplace agent is not enabled" }, 403);
-  }
+  // Marketplace flag removed; flows are handled per-category (pharmacy/quincaillerie/shops)
 
   const windowMinutes = payload.windowMinutes ?? 5;
   const now = new Date();
@@ -105,9 +101,9 @@ async function startNegotiation(req: Request): Promise<Response> {
       await findAndContactDrivers(session.id, payload);
     }
     
-    // For marketplace flows, find matching vendors
+    // Category-specific vendor flows (pharmacy/quincaillerie/shops)
     if (["nearby_pharmacies", "nearby_quincailleries", "nearby_shops"].includes(payload.flowType)) {
-      await findAndContactMarketplaceVendors(session.id, payload);
+      await findAndContactNearbyVendors(session.id, payload);
     }
 
     await logStructuredEvent("AGENT_SESSION_CREATED", {
@@ -226,16 +222,16 @@ async function findAndContactDrivers(
 }
 
 /**
- * Find matching marketplace vendors and send quote requests
- */
-async function findAndContactMarketplaceVendors(
+ * Find matching vendors (pharmacy/quincaillerie/shops) and send quote requests
+*/
+async function findAndContactNearbyVendors(
   sessionId: string,
   request: StartNegotiationRequest,
 ): Promise<void> {
   const { requestData, flowType } = request;
 
   if (!requestData.pickup) {
-    throw new Error("Location required for marketplace vendor matching");
+    throw new Error("Location required for vendor matching");
   }
 
   // Determine category based on flow type
@@ -266,11 +262,11 @@ async function findAndContactMarketplaceVendors(
   );
 
   if (vendorsError) {
-    console.error("Marketplace vendor matching failed:", vendorsError);
+    console.error("Vendor matching failed:", vendorsError);
     throw vendorsError;
   }
 
-  await logStructuredEvent("MARKETPLACE_VENDORS_MATCHED", {
+  await logStructuredEvent("VENDORS_MATCHED", {
     sessionId,
     category,
     vendorCount: vendors?.length ?? 0,

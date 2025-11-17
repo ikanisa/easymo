@@ -1,15 +1,11 @@
 import { apiFetch } from "@/lib/api/client";
 import { getAdminApiPath } from "@/lib/routes";
-import { shouldUseMocks } from "@/lib/runtime-config";
-import { mockNotifications } from "@/lib/mock-data";
 import type { NotificationOutbox } from "@/lib/schemas";
 import {
   paginateArray,
   type PaginatedResult,
   type Pagination,
 } from "@/lib/shared/pagination";
-
-const useMocks = shouldUseMocks();
 
 export type NotificationListParams = Pagination & {
   status?: NotificationOutbox["status"];
@@ -18,13 +14,6 @@ export type NotificationListParams = Pagination & {
 export async function listNotifications(
   params: NotificationListParams = {},
 ): Promise<PaginatedResult<NotificationOutbox>> {
-  if (useMocks) {
-    const filtered = params.status
-      ? mockNotifications.filter((item) => item.status === params.status)
-      : mockNotifications;
-    return paginateArray(filtered, params);
-  }
-
   const limit = params.limit ?? 100;
   const offset = params.offset ?? 0;
 
@@ -54,9 +43,6 @@ export async function listNotifications(
     };
   } catch (error) {
     console.error("Failed to fetch notifications", error);
-    const fallback = params.status
-      ? mockNotifications.filter((item) => item.status === params.status)
-      : mockNotifications;
-    return paginateArray(fallback, params);
+    return paginateArray([], params);
   }
 }

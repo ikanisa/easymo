@@ -4,7 +4,6 @@ import { useState } from "react";
 import { SectionCard } from "@/components/ui/SectionCard";
 import { Drawer } from "@/components/ui/Drawer";
 import { Badge } from "@/components/ui/Badge";
-import { mockAgentPlaybooks } from "@/lib/mock-data";
 
 interface Playbook {
   id: string;
@@ -16,7 +15,7 @@ interface Playbook {
 
 export function InstructionsPlaybooks() {
   const [selected, setSelected] = useState<Playbook | null>(null);
-  const playbooks = mockAgentPlaybooks as Playbook[];
+  const playbooks: Playbook[] = [];
 
   return (
     <SectionCard
@@ -39,6 +38,11 @@ export function InstructionsPlaybooks() {
             </p>
           </button>
         ))}
+        {!playbooks.length && (
+          <div className="rounded-2xl border border-dashed border-[color:var(--color-border)] p-4 text-sm text-[color:var(--color-muted)]">
+            No playbooks available.
+          </div>
+        )}
       </div>
 
       {selected && (

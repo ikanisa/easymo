@@ -139,6 +139,19 @@ export async function handleShopsTagSelection(
   const tag = state.tags[idx];
   if (!tag) return false;
 
+  // Use recent location if available to skip prompt
+  try {
+    const { getRecentLocation } = await import("../locations/recent.ts");
+    const recent = await getRecentLocation(ctx, 'shops');
+    if (recent) {
+      return await handleShopsLocation(ctx, {
+        tag_id: tag.id,
+        tag_name: tag.name,
+        tag_icon: tag.icon,
+      }, recent);
+    }
+  } catch (_) { /* ignore */ }
+
   // Set state to wait for location
   await setState(ctx.supabase, ctx.profileId, {
     key: "shops_wait_location",

@@ -51,6 +51,7 @@ export async function insertTrip(
     pickupText?: string;
   },
 ): Promise<string> {
+  const expires = new Date(Date.now() + 30 * 60 * 1000).toISOString();
   const { data, error } = await client
     .from("trips")
     .insert({
@@ -63,6 +64,7 @@ export async function insertTrip(
       pickup_radius_m: params.radiusMeters,
       pickup_text: params.pickupText ?? null,
       status: "open",
+      expires_at: expires,
     })
     .select("id")
     .single();

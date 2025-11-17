@@ -12,8 +12,10 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import OpenAI from "https://deno.land/x/openai@v4.20.0/mod.ts";
 import { logStructuredEvent } from "../_shared/observability.ts";
 
+const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY")!;
+
 const openai = new OpenAI({
-  apiKey: Deno.env.get("OPENAI_API_KEY")!,
+  apiKey: OPENAI_API_KEY,
   timeout: 3600000, // 1 hour timeout for deep research
 });
 
@@ -21,6 +23,42 @@ const supabase = createClient(
   Deno.env.get("SUPABASE_URL")!,
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
 );
+
+async function createDeepResearchResponse(params: Record<string, unknown>) {
+  const response = await fetch("https://api.openai.com/v1/responses", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${OPENAI_API_KEY}`,
+    },
+    body: JSON.stringify(params),
+  });
+
+  const json = await response.json();
+
+  if (!response.ok) {
+    throw new Error(json?.error?.message ?? "OpenAI responses API error");
+  }
+
+  return json;
+}
+
+async function createChatCompletion(params: Record<string, unknown>) {
+  const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${OPENAI_API_KEY}`,
+    },
+    body: JSON.stringify(params),
+  });
+
+  const json = await response.json();
+  if (!response.ok) {
+    throw new Error(json?.error?.message ?? "OpenAI chat completion error");
+  }
+  return json;
+}
 
 // API Keys
 const ECONFARY_API_KEY = "c548f5e85718225f50752750e5be2837035009df30ed57d99b67527c9f200bd7";
@@ -118,6 +156,23 @@ interface ResearchedProperty {
   source: string;
   contact?: string;
   availableFrom: string;
+  sourceUrl?: string;
+}
+
+interface ResearchedJob {
+  title: string;
+  description: string;
+  company?: string;
+  location: string;
+  category: string;
+  jobType: string;
+  payMin?: number;
+  payMax?: number;
+  payType?: string;
+  currency?: string;
+  contactPhone?: string;
+  contactEmail?: string;
+  applyUrl?: string;
   sourceUrl?: string;
 }
 
@@ -318,6 +373,181 @@ async function fetchEconfaryProperties(country: string, city?: string): Promise<
   }
 }
 
+function extractJsonObject(text: string): any | null {
+  if (!text) return null;
+  const trimmed = text.trim();
+  try {
+    return JSON.parse(trimmed);
+  } catch (_) {
+    const fenced = trimmed.match(/```json([\s\S]+?)```/i);
+    if (fenced) {
+      try {
+        return JSON.parse(fenced[1].trim());
+      } catch (_) {
+        // continue
+      }
+    }
+    const first = trimmed.indexOf("{");
+    const last = trimmed.lastIndexOf("}");
+    if (first !== -1 && last !== -1 && last > first) {
+      try {
+        return JSON.parse(trimmed.slice(first, last + 1));
+      } catch (_) {
+        return null;
+      }
+    }
+  }
+  return null;
+}
+
+async function runSourcePropertyResearch(
+  country: string,
+  sourceUrl: string,
+  sourceName: string,
+): Promise<ResearchedProperty[]> {
+  const prompt = `You are a professional property data researcher. Analyse the website ${sourceName} (${sourceUrl}) and return CURRENT rental listings for ${country}.
+
+REQUIREMENTS:
+- Include only legitimate listings with contact numbers.
+- Prefer detailed listings with price, bedrooms, bathrooms, and exact locations.
+- Provide at least 5 listings when available.
+
+OUTPUT:
+Return STRICT JSON with this schema:
+{
+  "properties": [
+    {
+      "title": "",
+      "type": "apartment|house|villa|studio",
+      "bedrooms": 2,
+      "bathrooms": 1,
+      "price": 500000,
+      "currency": "RWF|EUR|USD",
+      "rentalType": "short_term|long_term",
+      "location": {
+        "address": "",
+        "city": "",
+        "country": "${country}",
+        "latitude": number|null,
+        "longitude": number|null
+      },
+      "amenities": ["WiFi","Parking"],
+      "description": "",
+      "contact": "phone number with country code",
+      "availableFrom": "YYYY-MM-DD",
+      "sourceUrl": "direct URL to listing"
+    }
+  ]
+}`;
+
+  const response = await createDeepResearchResponse({
+    model: "o4-mini-deep-research",
+    input: prompt,
+    tools: [{ type: "web_search_preview" }],
+    max_tool_calls: 25,
+    background: false,
+  });
+
+  const parsed = extractJsonObject(response.output_text || "");
+  const rawList = Array.isArray(parsed?.properties)
+    ? parsed?.properties
+    : Array.isArray(parsed)
+    ? parsed
+    : [];
+
+  const normalized: ResearchedProperty[] = [];
+  for (const raw of rawList) {
+    try {
+      const prop: ResearchedProperty = {
+        title: raw.title,
+        type: raw.type,
+        bedrooms: raw.bedrooms,
+        bathrooms: raw.bathrooms,
+        price: raw.price,
+        currency: raw.currency,
+        rentalType: raw.rentalType,
+        location: {
+          address: raw.location?.address || "",
+          city: raw.location?.city || "",
+          country: raw.location?.country || country,
+          latitude: raw.location?.latitude,
+          longitude: raw.location?.longitude,
+        },
+        amenities: raw.amenities || [],
+        description: raw.description || "",
+        source: sourceName,
+        contact: raw.contact,
+        availableFrom: raw.availableFrom || new Date().toISOString().split("T")[0],
+        sourceUrl: raw.sourceUrl || sourceUrl,
+      };
+
+      const validated = validateAndNormalizeProperty(prop, country.slice(0, 2).toUpperCase());
+      if (validated) {
+        normalized.push(validated);
+      }
+    } catch (_) {
+      continue;
+    }
+  }
+
+  return normalized;
+}
+
+async function runSourceJobResearch(
+  country: string,
+  sourceUrl: string,
+  sourceName: string,
+): Promise<ResearchedJob[]> {
+  const prompt = `You are an expert recruiter. Gather the latest job postings from ${sourceName} (${sourceUrl}) that are relevant to workers in ${country}.
+
+Return STRICT JSON with the shape:
+{
+  "jobs": [
+    {
+      "title": "",
+      "company": "",
+      "description": "",
+      "location": "",
+      "category": "delivery|cooking|cleaning|security|construction|data_entry|sales|igaming|healthcare|tutoring|childcare|other",
+      "jobType": "gig|part_time|full_time|contract|temporary",
+      "payMin": number|null,
+      "payMax": number|null,
+      "payType": "hourly|daily|weekly|monthly|fixed|commission|negotiable",
+      "currency": "RWF|EUR|USD",
+      "contactPhone": "phone or WhatsApp with country code",
+      "contactEmail": "email if available",
+      "applyUrl": "direct link to apply",
+      "sourceUrl": "url of the listing"
+    }
+  ]
+}
+
+Respond with JSON only.`;
+
+  const response = await createDeepResearchResponse({
+    model: "o4-mini-deep-research",
+    input: prompt,
+    tools: [{ type: "web_search_preview" }],
+    max_tool_calls: 25,
+    background: false,
+  });
+
+  const parsed = extractJsonObject(response.output_text || "");
+  const rawJobs = Array.isArray(parsed?.jobs)
+    ? parsed?.jobs
+    : Array.isArray(parsed)
+    ? parsed
+    : [];
+
+  const jobs: ResearchedJob[] = [];
+  for (const job of rawJobs) {
+    const normalized = normalizeJobResearch(job, country, sourceUrl, sourceName);
+    if (normalized) jobs.push(normalized);
+  }
+
+  return jobs;
+}
+
 // =====================================================
 // SERPAPI INTEGRATION - Enhanced Property Extraction
 // =====================================================
@@ -447,7 +677,7 @@ If bedrooms is missing, estimate from context or use 1.
 Search result text:
 ${text}`;
 
-    const extractionResponse = await openai.chat.completions.create({
+    const extractionResponse = await createChatCompletion({
       model: "gpt-4o-mini",
       messages: [
         {
@@ -463,7 +693,7 @@ ${text}`;
       max_tokens: 500
     });
 
-    const content = extractionResponse.choices[0].message.content?.trim();
+    const content = extractionResponse.choices?.[0]?.message?.content?.trim();
     if (!content) return null;
 
     // Parse JSON response
@@ -589,14 +819,14 @@ async function geocodeAddress(address: string, city: string, country: string): P
     // Use simple geocoding with OpenAI chat (not deep research)
     const prompt = `Given the address "${address}, ${city}, ${country}", provide the most accurate latitude and longitude coordinates. Respond ONLY with JSON: {"latitude": -1.234, "longitude": 30.123}`;
     
-    const response = await openai.chat.completions.create({
+    const response = await createChatCompletion({
       model: "gpt-4o-mini",
       messages: [{ role: "user", content: prompt }],
       temperature: 0.1,
       max_tokens: 100
     });
 
-    const content = response.choices[0].message.content?.trim();
+    const content = response.choices?.[0]?.message?.content?.trim();
     if (!content) return null;
 
     const coords = JSON.parse(content);
@@ -640,7 +870,7 @@ async function executeDeepResearch(
       // SOURCE 3: OpenAI Deep Research
       const prompt = buildDeepResearchPrompt(country.name, city);
       
-      const response = await openai.responses.create({
+      const response = await createDeepResearchResponse({
         model: "o4-mini-deep-research",
         input: prompt,
         background: false,
@@ -844,6 +1074,76 @@ async function insertResearchedProperties(properties: ResearchedProperty[], rese
   return insertedCount;
 }
 
+function normalizeJobResearch(
+  job: any,
+  country: string,
+  sourceUrl: string,
+  sourceName: string,
+): ResearchedJob | null {
+  if (!job?.title || !job?.description) return null;
+
+  const jobType = normalizeJobType(job.jobType);
+  const category = normalizeJobCategory(job.category);
+  const payType = normalizePayType(job.payType);
+  const currency = job.currency || (country === "MT" ? "EUR" : "RWF");
+
+  return {
+    title: String(job.title).trim().slice(0, 200),
+    description: String(job.description).trim(),
+    company: job.company || sourceName,
+    location: job.location || country,
+    category,
+    jobType,
+    payMin: job.payMin ? Number(job.payMin) : undefined,
+    payMax: job.payMax ? Number(job.payMax) : undefined,
+    payType,
+    currency,
+    contactPhone: job.contactPhone || job.contact || undefined,
+    contactEmail: job.contactEmail || undefined,
+    applyUrl: job.applyUrl || job.sourceUrl || sourceUrl,
+    sourceUrl: job.sourceUrl || sourceUrl,
+  };
+}
+
+function normalizeJobType(type?: string) {
+  const normalized = (type || "").toLowerCase();
+  const allowed = ["gig", "part_time", "full_time", "contract", "temporary"];
+  return allowed.includes(normalized) ? normalized : "gig";
+}
+
+function normalizeJobCategory(category?: string) {
+  const normalized = (category || "").toLowerCase();
+  const allowed = [
+    "delivery",
+    "cooking",
+    "cleaning",
+    "security",
+    "construction",
+    "data_entry",
+    "sales",
+    "igaming",
+    "healthcare",
+    "tutoring",
+    "childcare",
+    "other",
+  ];
+  return allowed.includes(normalized) ? normalized : "other";
+}
+
+function normalizePayType(payType?: string) {
+  const normalized = (payType || "").toLowerCase();
+  const allowed = [
+    "hourly",
+    "daily",
+    "weekly",
+    "monthly",
+    "fixed",
+    "commission",
+    "negotiable",
+  ];
+  return allowed.includes(normalized) ? normalized : "negotiable";
+}
+
 serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 204, headers: corsHeaders });
@@ -852,13 +1152,75 @@ serve(async (req: Request) => {
   const startTime = Date.now();
 
   try {
-    const { action, countries: targetCountries, testMode } = await req.json();
+    const body = await req.json();
+    const action = body.action ?? "scrape";
+    const requestType = (body.type ?? "properties") as "jobs" | "properties";
+    const testMode = Boolean(body.testMode);
+    const sourceUrl: string | undefined = body.source_url;
+    const sourceName: string | undefined = body.source_name;
+    const fast: boolean = Boolean(body.fast);
+    const explicitCountry: string | undefined = body.country;
+    const targetCountries = body.countries as string[] | undefined;
 
     await logStructuredEvent("DEEP_RESEARCH_REQUEST", {
       action,
-      targetCountries: targetCountries || "all",
-      testMode: testMode || false
+      requestType,
+      targetCountries: targetCountries || explicitCountry || "all",
+      testMode
     });
+
+    // Source-specific scrape mode (used by source-url-scraper)
+    if (action === "source_scrape" && sourceUrl) {
+      if (requestType === "jobs") {
+        let jobs;
+        if (fast) {
+          // Fast mode: avoid heavy deep-research; use chat-based extraction fallback (lighter) or empty
+          jobs = await runSourceJobResearch(
+            explicitCountry ?? "RW",
+            sourceUrl,
+            sourceName ?? sourceUrl,
+          );
+        } else {
+          jobs = await runSourceJobResearch(
+            explicitCountry ?? "RW",
+            sourceUrl,
+            sourceName ?? sourceUrl,
+          );
+        }
+
+        return new Response(
+          JSON.stringify({
+            success: true,
+            listingType: "jobs",
+            listings: jobs,
+            source: sourceUrl,
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+
+      let properties;
+      if (fast) {
+        // Fast mode: use SerpAPI-only results to avoid long deep-research calls
+        properties = await fetchSerpAPIProperties(explicitCountry ?? "RW");
+      } else {
+        properties = await runSourcePropertyResearch(
+          explicitCountry ?? "RW",
+          sourceUrl,
+          sourceName ?? sourceUrl,
+        );
+      }
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          listingType: "properties",
+          listings: properties,
+          source: sourceUrl,
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
 
     const { data: session, error: sessionError } = await supabase
       .from("research_sessions")
@@ -872,13 +1234,14 @@ serve(async (req: Request) => {
 
     if (sessionError) throw sessionError;
 
-    let countriesQuery = supabase
-      .from("countries")
+    let countriesQuery = supabase.from("countries")
       .select("code, name")
       .eq("is_active", true);
 
     if (targetCountries && Array.isArray(targetCountries) && targetCountries.length > 0) {
       countriesQuery = countriesQuery.in("code", targetCountries);
+    } else if (explicitCountry) {
+      countriesQuery = countriesQuery.eq("code", explicitCountry);
     }
 
     const { data: countries, error: countriesError } = await countriesQuery;
@@ -940,6 +1303,8 @@ serve(async (req: Request) => {
       JSON.stringify({
         success: true,
         sessionId: session.id,
+        listingType: "properties",
+        listings: allProperties,
         statistics: {
           countriesSearched: countries.length,
           propertiesFound: allProperties.length,

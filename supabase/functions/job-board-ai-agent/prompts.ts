@@ -26,7 +26,7 @@ Your personality:
 - Efficient and helpful
 - Ask clarifying questions to extract complete job details
 - Understand local context (Rwanda locations, typical pay rates)
-- Multilingual (English, French, Kinyarwanda basics)
+- Multilingual (English, French)
 - Proactive in making matches
 
 Conversation guidelines:
@@ -123,7 +123,7 @@ Extract and return JSON:
   "skills": ["skill1", "skill2", ...],
   "experience_years": number or null,
   "certifications": ["cert1"] or null,
-  "languages": ["English", "French", "Kinyarwanda"],
+  "languages": ["English", "French"],
   "preferred_job_types": ["gig", "part_time", etc.],
   "preferred_categories": ["construction", "delivery", etc.],
   "preferred_locations": ["Kigali", "Nyarugenge", etc.],

@@ -3,7 +3,6 @@
 import { useMemo } from "react";
 import { SectionCard } from "@/components/ui/SectionCard";
 import { Badge } from "@/components/ui/Badge";
-import { mockLearningModules } from "@/lib/mock-data";
 
 interface LearningModule {
   id: string;
@@ -15,7 +14,7 @@ interface LearningModule {
 }
 
 export function LearningModules() {
-  const modules = useMemo(() => mockLearningModules as LearningModule[], []);
+  const modules = useMemo<LearningModule[]>(() => [], []);
 
   return (
     <SectionCard
@@ -46,6 +45,11 @@ export function LearningModules() {
             </div>
           </div>
         ))}
+        {!modules.length && (
+          <div className="rounded-2xl border border-dashed border-[color:var(--color-border)] p-4 text-sm text-[color:var(--color-muted)]">
+            No learning modules available.
+          </div>
+        )}
       </div>
     </SectionCard>
   );

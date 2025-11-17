@@ -2,7 +2,6 @@
 
 import { GeoHeatmapWidget } from "@easymo/ui/widgets/GeoHeatmapWidget";
 import { SectionCard } from "@/components/ui/SectionCard";
-import { mockPropertyDemandZones } from "@/lib/mock-data";
 
 export function PropertyDemandHeatmap() {
   return (
@@ -10,7 +9,7 @@ export function PropertyDemandHeatmap() {
       title="Demand clusters"
       description="Micro-market coverage derived from WhatsApp intents & shortlist density."
     >
-      <GeoHeatmapWidget zones={mockPropertyDemandZones} />
+      <GeoHeatmapWidget zones={[]} />
     </SectionCard>
   );
 }

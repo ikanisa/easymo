@@ -12,7 +12,7 @@ import { isFeatureEnabled } from "../../../_shared/feature-flags.ts";
 import { IDS } from "../../wa/ids.ts";
 import { routeToAIAgent, sendAgentOptions } from "../ai-agents/index.ts";
 import { waChatLink } from "../../utils/links.ts";
-import { listBusinesses } from "../../rpc/marketplace.ts";
+// Marketplace retired: query business table directly
 
 const NOTARY_RESULT_PREFIX = "NOTARY::";
 
@@ -165,8 +165,54 @@ async function sendNotaryDatabaseResults(
   }> = [];
   
   try {
-    // Fetch top 12, filter for contacts, show top 9
-    entries = await listBusinesses(ctx.supabase, location, "notary_services", 12);
+    // Direct DB query for notaries (category/tag/description contains 'notary')
+    const { data, error } = await ctx.supabase
+      .from('business')
+      .select('id, name, owner_whatsapp, location_text, description, lat, lng, latitude, longitude')
+      .eq('is_active', true)
+      .or([
+        'category_name.ilike.%notary%',
+        'tag.ilike.%notary%',
+        'description.ilike.%notary%'
+      ].join(','))
+      .limit(24);
+    if (error) throw error;
+
+    const toNumber = (v: any) => (typeof v === 'number' ? v : (typeof v === 'string' ? parseFloat(v) : NaN));
+    const haversine = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+      const R = 6371;
+      const toRad = (x: number) => x * Math.PI / 180;
+      const dLat = toRad(lat2 - lat1);
+      const dLon = toRad(lon2 - lon1);
+      const a = Math.sin(dLat/2)**2 + Math.cos(toRad(lat1))*Math.cos(toRad(lat2))*Math.sin(dLon/2)**2;
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      return R * c;
+    };
+
+    const enriched = (data || []).map((row: any) => {
+      const lat = Number.isFinite(toNumber(row.lat)) ? toNumber(row.lat) : toNumber(row.latitude);
+      const lng = Number.isFinite(toNumber(row.lng)) ? toNumber(row.lng) : toNumber(row.longitude);
+      const distance_km = Number.isFinite(lat) && Number.isFinite(lng)
+        ? haversine(location.lat, location.lng, lat, lng)
+        : null;
+      return { ...row, distance_km };
+    });
+
+    enriched.sort((a, b) => {
+      if (a.distance_km === null && b.distance_km === null) return 0;
+      if (a.distance_km === null) return 1;
+      if (b.distance_km === null) return -1;
+      return a.distance_km - b.distance_km;
+    });
+
+    entries = enriched.map((row: any) => ({
+      id: row.id,
+      name: row.name,
+      owner_whatsapp: row.owner_whatsapp,
+      distance_km: row.distance_km,
+      location_text: row.location_text,
+      description: row.description,
+    }));
   } catch (error) {
     console.error("notary.database_fetch_failed", error);
   }
@@ -306,13 +352,10 @@ function formatNotaryDescription(
   const parts: string[] = [];
   
   if (typeof entry.distance_km === "number") {
-    parts.push(
-      t(ctx.locale, "marketplace.distance", {
-        distance: entry.distance_km >= 1
-          ? `${entry.distance_km.toFixed(1)} km`
-          : `${Math.round(entry.distance_km * 1000)} m`,
-      }),
-    );
+    const distLabel = entry.distance_km >= 1
+      ? `${entry.distance_km.toFixed(1)} km`
+      : `${Math.round(entry.distance_km * 1000)} m`;
+    parts.push(`Distance: ${distLabel}`);
   }
   
   if (entry.location_text?.trim()) {

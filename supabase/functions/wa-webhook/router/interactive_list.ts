@@ -41,12 +41,6 @@ import {
 } from "../domains/mobility/schedule.ts";
 import { setState } from "../state/store.ts";
 import type { ScheduleSavedPickerState } from "../domains/mobility/schedule.ts";
-import {
-  handleMarketplaceButton,
-  handleMarketplaceCategorySelection,
-  handleMarketplaceResult,
-  startMarketplace,
-} from "../domains/marketplace/index.ts";
 import { sendHomeMenu } from "../flows/home.ts";
 import { startNearbyPharmacies } from "../domains/healthcare/pharmacies.ts";
 import { startNearbyQuincailleries } from "../domains/healthcare/quincailleries.ts";
@@ -183,6 +177,22 @@ export async function handleList(
       return true;
     }
   }
+  // Vehicle management actions
+  if (id.startsWith('VEH-DEL::')) {
+    const vehId = id.slice('VEH-DEL::'.length);
+    try {
+      await ctx.supabase.from('vehicles').delete().eq('id', vehId);
+      const { handleProfileVehicles } = await import("../domains/profile/index.ts");
+      return await handleProfileVehicles(ctx);
+    } catch (_) {
+      return false;
+    }
+  }
+  if (id.startsWith('VEH::')) {
+    const vehId = id.slice('VEH::'.length);
+    const { handleVehicleItemSelection } = await import("../domains/profile/index.ts");
+    return await handleVehicleItemSelection(ctx, vehId);
+  }
   if (state.key === "saved_places_add") {
     if (await handleSavedPlacesAddSelection(ctx, id)) {
       return true;
@@ -255,11 +265,11 @@ export async function handleList(
     const { handleBusinessClaim } = await import(
       "../domains/business/claim.ts"
     );
-    return await handleBusinessClaim(
-      ctx,
-      (state.data ?? {}) as any,
-      id,
-    );
+    if (id === 'BIZ::ADD_NEW') {
+      const { startAddNewBusiness } = await import("../domains/business/add_new.ts");
+      return await startAddNewBusiness(ctx);
+    }
+    return await handleBusinessClaim(ctx, (state.data ?? {}) as any, id);
   }
   if (state.key === "shop_results") {
     return await handleShopFallbackSelection(
@@ -304,6 +314,12 @@ export async function handleList(
     }
   }
 
+  // Handle add-new business category selection
+  if (state.key === 'business_add_new' && id.startsWith('BIZCAT::')) {
+    const { handleAddNewBusinessSelect } = await import("../domains/business/add_new.ts");
+    return await handleAddNewBusinessSelect(ctx, id, (state.data ?? {}) as any);
+  }
+
   if (await handleHomeMenuSelection(ctx, id, state)) {
     return true;
   }
@@ -323,16 +339,31 @@ export async function handleList(
   if (await handleInsuranceListSelection(ctx, state, id)) {
     return true;
   }
-  if (state.key === "market_category" && id.startsWith("cat::")) {
-    return await handleMarketplaceCategorySelection(ctx, id);
+  if (id === IDS.PROFILE_MANAGE_BUSINESSES) {
+    const { showManageBusinesses } = await import("../domains/business/management.ts");
+    return await showManageBusinesses(ctx);
   }
-  if (
-    id === IDS.MARKETPLACE_PREV || id === IDS.MARKETPLACE_NEXT ||
-    id === IDS.MARKETPLACE_REFRESH || id === IDS.MARKETPLACE_ADD ||
-    id === IDS.MARKETPLACE_BROWSE || id === IDS.MARKETPLACE_MENU
-  ) {
-    return await handleMarketplaceButton(ctx, state, id);
+  if (id === IDS.SHOPS_SERVICES_MENU || id === 'shops_services_menu') {
+    // Show category-specific services hub instead of deprecated marketplace
+    await sendListMessage(
+      ctx,
+      {
+        title: t(ctx.locale, "services.menu.title"),
+        body: t(ctx.locale, "services.menu.body"),
+        sectionTitle: t(ctx.locale, "services.menu.section"),
+        rows: [
+          { id: IDS.NEARBY_PHARMACIES, title: t(ctx.locale, "services.menu.pharmacies"), description: t(ctx.locale, "services.menu.find_nearby") },
+          { id: IDS.NEARBY_QUINCAILLERIES, title: t(ctx.locale, "services.menu.quincailleries"), description: t(ctx.locale, "services.menu.find_nearby") },
+          { id: IDS.NOTARY_SERVICES, title: t(ctx.locale, "services.menu.notary"), description: t(ctx.locale, "services.menu.request") },
+          { id: IDS.BACK_MENU, title: t(ctx.locale, "common.menu_back"), description: t(ctx.locale, "common.back_to_menu.description") },
+        ],
+        buttonText: t(ctx.locale, "common.buttons.choose"),
+      },
+      { emoji: "🛎️" },
+    );
+    return true;
   }
+  // Marketplace flows retired
 
   // Property Rentals flows
   if (state.key === "property_menu") {
@@ -414,9 +445,7 @@ export async function handleList(
       id,
     );
   }
-  if (await handleMarketplaceResult(ctx, state, id)) {
-    return true;
-  }
+  // Marketplace flows removed
   if (await handleWalletEarnSelection(ctx, state as any, id)) {
     return true;
   }
@@ -629,6 +658,38 @@ async function handleHomeMenuSelection(
     case IDS.MOMO_QR:
       return await startMomoQr(ctx, state);
     case IDS.PROFILE: {
+      const { sendProfileMenu } = await import("../flows/profile.ts");
+      await sendProfileMenu(ctx);
+      return true;
+    }
+    case IDS.PROFILE_NEXT: {
+      if (!ctx.profileId) return false;
+      // Increment page and re-render profile menu
+      const { data } = await ctx.supabase
+        .from("chat_state")
+        .select("data")
+        .eq("user_id", ctx.profileId)
+        .eq("key", "profile_menu")
+        .maybeSingle();
+      const countryCode = (data?.data?.countryCode as string) ?? 'RW';
+      const page = Math.max(0, Number(data?.data?.page ?? 0)) + 1;
+      await setState(ctx.supabase, ctx.profileId, { key: 'profile_menu', data: { countryCode, page } });
+      const { sendProfileMenu } = await import("../flows/profile.ts");
+      await sendProfileMenu(ctx);
+      return true;
+    }
+    case IDS.PROFILE_PREV: {
+      if (!ctx.profileId) return false;
+      const { data } = await ctx.supabase
+        .from("chat_state")
+        .select("data")
+        .eq("user_id", ctx.profileId)
+        .eq("key", "profile_menu")
+        .maybeSingle();
+      const countryCode = (data?.data?.countryCode as string) ?? 'RW';
+      const current = Math.max(0, Number(data?.data?.page ?? 0));
+      const page = current > 0 ? current - 1 : 0;
+      await setState(ctx.supabase, ctx.profileId, { key: 'profile_menu', data: { countryCode, page } });
       const { sendProfileMenu } = await import("../flows/profile.ts");
       await sendProfileMenu(ctx);
       return true;
@@ -848,13 +909,11 @@ async function handleHomeMenuSelection(
       return true;
     }
     case "lang_en":
-    case "lang_fr":
-    case "lang_rw": {
+    case "lang_fr": {
       // Update user language preference
       const langMap: Record<string, string> = {
         "lang_en": "en",
         "lang_fr": "fr",
-        "lang_rw": "rw",
       };
       const newLang = langMap[id] || "en";
       
@@ -868,7 +927,6 @@ async function handleHomeMenuSelection(
       const confirmMsg: Record<string, string> = {
         "en": "✅ Language changed to English",
         "fr": "✅ Langue changée en Français",
-        "rw": "✅ Ururimi rwahinduwe ku Kinyarwanda",
       };
       
       await sendButtonsMessage(

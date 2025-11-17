@@ -3,7 +3,6 @@
 import { type ComponentProps } from "react";
 import { SectionCard } from "@/components/ui/SectionCard";
 import { Badge } from "@/components/ui/Badge";
-import { mockAgentOverviewMetrics } from "@/lib/mock-data";
 
 interface AgentMetric {
   label: string;
@@ -19,7 +18,7 @@ const trendVariant: Record<AgentMetric["trend"], React.ComponentProps<typeof Bad
 };
 
 export function AgentOverviewKpis() {
-  const metrics = mockAgentOverviewMetrics as AgentMetric[];
+  const metrics: AgentMetric[] = [];
 
   return (
     <SectionCard
@@ -41,6 +40,11 @@ export function AgentOverviewKpis() {
             </Badge>
           </div>
         ))}
+        {!metrics.length && (
+          <div className="rounded-2xl border border-dashed border-[color:var(--color-border)] p-4 text-sm text-[color:var(--color-muted)]">
+            No KPIs available.
+          </div>
+        )}
       </div>
       <div className="mt-6 rounded-2xl border border-[color:var(--color-border)] bg-[color:var(--color-surface-muted)] p-4 text-sm">
         <h3 className="text-sm font-semibold">Workflow guidance</h3>

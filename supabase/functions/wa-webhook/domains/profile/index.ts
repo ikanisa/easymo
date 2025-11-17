@@ -5,6 +5,8 @@ import { IDS } from "../../wa/ids.ts";
 import { setState, clearState } from "../../state/store.ts";
 import { logStructuredEvent } from "../../observe/log.ts";
 import { detectCountryIso } from "../../utils/phone.ts";
+import { fetchInsuranceMedia, uploadInsuranceBytes } from "../insurance/ins_media.ts";
+import { runInsuranceOCR } from "../insurance/ins_ocr.ts";
 import { fetchProfileMenuItems, submenuItemsToRows } from "../../utils/dynamic_submenu.ts";
 
 /**
@@ -27,9 +29,25 @@ export async function handleProfileMenu(ctx: RouterContext): Promise<boolean> {
 
   const countryCode = detectCountryIso(ctx.from)?.toUpperCase() ?? "RW";
 
+  // Load current pagination state (default page 0)
+  let page = 0;
+  try {
+    const { data } = await ctx.supabase
+      .from("chat_state")
+      .select("data")
+      .eq("user_id", ctx.profileId)
+      .eq("key", "profile_menu")
+      .maybeSingle();
+    if (data?.data?.page && Number.isFinite(Number(data.data.page))) {
+      page = Math.max(0, Number(data.data.page));
+    }
+  } catch (_) {
+    // ignore and use default
+  }
+
   await setState(ctx.supabase, ctx.profileId, {
     key: "profile_menu",
-    data: { countryCode },
+    data: { countryCode, page },
   });
 
   // Fetch profile menu items dynamically from database
@@ -71,11 +89,47 @@ export async function handleProfileMenu(ctx: RouterContext): Promise<boolean> {
     return true;
   }
 
-  // Convert database items to WhatsApp list rows
-  const rows = submenuItemsToRows(menuItems, getProfileMenuItemId);
+  // Convert database items to WhatsApp list rows with pagination support
+  const allRows = submenuItemsToRows(menuItems, getProfileMenuItemId);
+  const total = allRows.length;
+  // Compute reserved control rows based on current page
+  const computePageSize = (pageIdx: number, totalItems: number) => {
+    const baseMax = 10; // WhatsApp hard limit per section
+    const totalPages = Math.max(1, Math.ceil(totalItems / 9));
+    const hasPrev = pageIdx > 0;
+    const hasNext = pageIdx < totalPages - 1;
+    const reserved = 1 + (hasPrev ? 1 : 0) + (hasNext ? 1 : 0); // Back + Prev/Next
+    return Math.max(0, baseMax - reserved);
+  };
+  // Re-evaluate total pages after computing page size dynamics
+  const initialPageSize = computePageSize(page, total);
+  const totalPages = Math.max(1, Math.ceil(total / Math.max(1, initialPageSize)));
+  if (page >= totalPages) page = totalPages - 1;
+  const pageSize = computePageSize(page, total);
+  const start = page * pageSize;
+  const end = Math.min(start + pageSize, total);
+  const pageRows = allRows.slice(start, end);
 
-  // Add back button
-  rows.push({
+  // Add pagination controls if needed
+  if (totalPages > 1) {
+    if (page > 0) {
+      pageRows.unshift({
+        id: IDS.PROFILE_PREV,
+        title: "◀ Prev",
+        description: `Page ${page + 1} of ${totalPages}`,
+      });
+    }
+    if (page < totalPages - 1 && pageRows.length < pageSize) {
+      pageRows.push({
+        id: IDS.PROFILE_NEXT,
+        title: "Next ▶",
+        description: `Page ${page + 1} of ${totalPages}`,
+      });
+    }
+  }
+
+  // Add back button (last slot)
+  pageRows.push({
     id: IDS.BACK_MENU,
     title: t(ctx.locale, "common.menu_back"),
     description: t(ctx.locale, "common.back_to_menu.description"),
@@ -87,7 +141,7 @@ export async function handleProfileMenu(ctx: RouterContext): Promise<boolean> {
       title: t(ctx.locale, "profile.menu.title"),
       body: t(ctx.locale, "profile.menu.body"),
       sectionTitle: t(ctx.locale, "profile.menu.section"),
-      rows,
+      rows: pageRows,
       buttonText: t(ctx.locale, "common.buttons.open"),
     },
     { emoji: "👤" }
@@ -161,6 +215,11 @@ export async function handleProfileVehicles(ctx: RouterContext): Promise<boolean
           title: `${v.plate} ${v.status === "active" ? "✓" : "⏳"}`,
           description: `${v.make || ""} ${v.model || ""} ${v.year || ""}`.trim() || t(ctx.locale, "profile.vehicles.no_details"),
         })),
+        ...(vehicles.length ? vehicles.map((v) => ({
+          id: `VEH-DEL::${v.id}`,
+          title: `🗑️ Delete ${v.plate}`,
+          description: t(ctx.locale, "profile.vehicles.delete_confirm_short"),
+        })) : []),
         {
           id: IDS.PROFILE_ADD_VEHICLE,
           title: t(ctx.locale, "profile.vehicles.add_button"),
@@ -207,7 +266,7 @@ export async function handleVehicleCertificateMedia(
   if (!ctx.profileId) return false;
 
   // Extract media ID and download URL
-  const mediaId = msg.image?.id;
+  const mediaId = msg.image?.id || msg.document?.id;
   if (!mediaId) {
     await sendButtonsMessage(
       ctx,
@@ -217,53 +276,62 @@ export async function handleVehicleCertificateMedia(
     return true;
   }
 
-  await sendButtonsMessage(
-    ctx,
-    t(ctx.locale, "profile.vehicles.add.processing"),
-    []
-  );
+  await sendButtonsMessage(ctx, t(ctx.locale, "profile.vehicles.add.processing"), []);
 
   try {
-    // Get media URL from WhatsApp
-    const mediaUrl = await getMediaUrl(mediaId);
-    
-    // For now, we'll generate a simple vehicle plate from timestamp
-    // In production, you'd extract this from OCR or ask the user
-    const vehiclePlate = `VEH-${Date.now().toString().slice(-6)}`;
+    // Fetch and upload media to storage, get signed URL for OCR
+    const media = await fetchInsuranceMedia(mediaId, ctx.profileId);
+    const uploaded = await uploadInsuranceBytes(ctx.supabase, ctx.profileId, media);
+    const ocr = await runInsuranceOCR(uploaded.signedUrl);
 
-    // Call vehicle OCR edge function
-    const response = await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/vehicle-ocr`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
-      },
-      body: JSON.stringify({
-        profile_id: ctx.profileId,
-        org_id: "default",
-        vehicle_plate: vehiclePlate,
-        file_url: mediaUrl,
-      }),
-    });
+    // Validate that this looks like a legit insurance certificate
+    const plate = String((ocr as any)?.registration_plate || '').trim();
+    const insurer = String((ocr as any)?.insurer_name || '').trim();
+    const policy = String((ocr as any)?.policy_number || '').trim();
+    const cert = String((ocr as any)?.certificate_number || '').trim();
+    const inception = String((ocr as any)?.policy_inception || '').trim();
+    const expiry = String((ocr as any)?.policy_expiry || '').trim();
 
-    const result = await response.json();
-
-    if (result.success && result.status === "active") {
+    // Additional validation: expiry must be in the future (>= today)
+    const requiredOk = plate && insurer && policy && cert && inception && expiry && (new Date(expiry) >= new Date(new Date().toISOString().slice(0,10)));
+    if (!requiredOk) {
       await sendButtonsMessage(
         ctx,
-        t(ctx.locale, "profile.vehicles.add.success", { plate: vehiclePlate }),
+        "❌ This does not look like a valid insurance certificate. Please send a clear photo/PDF of your active insurance certificate.",
         homeOnly()
       );
-    } else {
-      await sendButtonsMessage(
-        ctx,
-        t(ctx.locale, "profile.vehicles.add.pending", { 
-          plate: vehiclePlate,
-          reason: result.reason || "verification_needed"
-        }),
-        homeOnly()
-      );
+      await clearState(ctx.supabase, ctx.profileId);
+      return true;
     }
+
+    // Insert into vehicles
+    const insertPayload: any = {
+      owner_user_id: ctx.profileId,
+      registration_plate: plate,
+      insurer_name: insurer,
+      policy_number: policy,
+      certificate_number: cert,
+      policy_inception: inception,
+      policy_expiry: expiry,
+      carte_jaune_number: (ocr as any)?.carte_jaune_number ?? null,
+      carte_jaune_expiry: (ocr as any)?.carte_jaune_expiry ?? null,
+      make: (ocr as any)?.make ?? null,
+      model: (ocr as any)?.model ?? null,
+      vehicle_year: (ocr as any)?.vehicle_year ?? null,
+      vin_chassis: (ocr as any)?.vin_chassis ?? null,
+      usage: (ocr as any)?.usage ?? null,
+      licensed_to_carry: (ocr as any)?.licensed_to_carry ?? null,
+      document_path: uploaded.path,
+      status: 'active',
+    };
+
+    await ctx.supabase.from('vehicles').insert(insertPayload);
+
+    await sendButtonsMessage(
+      ctx,
+      t(ctx.locale, "profile.vehicles.add.success", { plate }),
+      homeOnly()
+    );
 
     await clearState(ctx.supabase, ctx.profileId);
     return true;
@@ -326,6 +394,10 @@ export async function handleProfileBusinesses(ctx: RouterContext): Promise<boole
           description: b.category || t(ctx.locale, "profile.businesses.no_category"),
         })),
         {
+          id: IDS.PROFILE_MANAGE_BUSINESSES,
+          title: "Manage my businesses",
+        },
+        {
           id: IDS.PROFILE_ADD_BUSINESS,
           title: t(ctx.locale, "profile.businesses.add_button"),
         },
@@ -386,11 +458,51 @@ async function getProfileAssetCounts(ctx: RouterContext): Promise<{
 async function getUserVehicles(ctx: RouterContext) {
   const { data } = await ctx.supabase
     .from("vehicles")
-    .select("id, plate, make, model, year, status")
-    .eq("profile_id", ctx.profileId!)
+    .select("id, registration_plate, make, model, vehicle_year, status")
+    .eq("owner_user_id", ctx.profileId!)
     .order("created_at", { ascending: false });
 
-  return data || [];
+  return (data || []).map((r: any) => ({
+    id: r.id,
+    plate: r.registration_plate,
+    make: r.make,
+    model: r.model,
+    year: r.vehicle_year,
+    status: r.status,
+  }));
+}
+
+export async function handleVehicleItemSelection(
+  ctx: RouterContext,
+  vehicleId: string,
+): Promise<boolean> {
+  if (!ctx.profileId) return false;
+  const { data: v } = await ctx.supabase
+    .from('vehicles')
+    .select('id, registration_plate, make, model, vehicle_year, status')
+    .eq('id', vehicleId)
+    .maybeSingle();
+  if (!v) return false;
+
+  await sendListMessage(
+    ctx,
+    {
+      title: t(ctx.locale, "profile.vehicles.list.title"),
+      body: `${v.registration_plate} — ${[v.make, v.model, v.vehicle_year].filter(Boolean).join(' ')}`,
+      sectionTitle: t(ctx.locale, "profile.vehicles.list.section"),
+      rows: [
+        {
+          id: `VEH-DEL::${v.id}`,
+          title: `🗑️ ${t(ctx.locale, "profile.vehicles.delete_confirm_short")}`,
+          description: t(ctx.locale, "profile.vehicles.no_details"),
+        },
+        { id: IDS.BACK_MENU, title: t(ctx.locale, "common.menu_back") },
+      ],
+      buttonText: t(ctx.locale, "common.buttons.choose"),
+    },
+    { emoji: '🚗' },
+  );
+  return true;
 }
 
 async function getUserBusinesses(ctx: RouterContext) {

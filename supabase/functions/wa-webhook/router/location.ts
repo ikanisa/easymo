@@ -4,7 +4,6 @@ import {
   handleScheduleDropoff,
   handleScheduleLocation,
 } from "../domains/mobility/schedule.ts";
-import { handleMarketplaceLocation } from "../domains/marketplace/index.ts";
 import { maybeHandleDriverLocation } from "../observe/driver_parser.ts";
 import { recordInbound } from "../observe/conv_audit.ts";
 import { sendText } from "../wa/client.ts";
@@ -22,6 +21,7 @@ import {
   handleSavedPlaceLocation,
   type SavedPlaceCaptureState,
 } from "../domains/locations/manage.ts";
+import { saveRecentLocation } from "../domains/locations/recent.ts";
 import {
   handleJobFindLocation,
   handleJobPostLocation,
@@ -57,6 +57,17 @@ export async function handleLocation(
   if (!Number.isFinite(lat) || !Number.isFinite(lng)) return false;
 
   await recordLastLocation(ctx, { lat, lng });
+  try {
+    const source = state.key?.includes('bars') ? 'bars'
+      : state.key?.includes('pharmacy') ? 'pharmacies'
+      : state.key?.includes('quincaillerie') ? 'quincailleries'
+      : state.key === 'shops_wait_location' ? 'shops'
+      : state.key?.includes('notary') ? 'notary'
+      : state.key?.includes('property') ? 'property'
+      : state.key?.includes('mobility') ? 'mobility'
+      : undefined;
+    await saveRecentLocation(ctx, { lat, lng }, source as any);
+  } catch (_) { /* non-fatal */ }
   
   /* AI AGENT LOCATION ROUTING - DISABLED FOR PHASE 1 (NEARBY SEARCHES)
      Only enabled for Waiter AI and Real Estate AI agents
@@ -169,9 +180,6 @@ export async function handleLocation(
   }
   if (state.key?.startsWith("dine")) {
     await sendDineInDisabledNotice(ctx);
-    return true;
-  }
-  if (await handleMarketplaceLocation(ctx, state, { lat, lng })) {
     return true;
   }
   return false;

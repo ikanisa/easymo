@@ -25,6 +25,14 @@ export async function startNearbyQuincailleries(
   ctx: RouterContext,
 ): Promise<boolean> {
   if (!ctx.profileId) return false;
+  // Use recent location if available to skip prompt
+  try {
+    const { getRecentLocation } = await import("../locations/recent.ts");
+    const recent = await getRecentLocation(ctx, 'quincailleries');
+    if (recent) {
+      return await processQuincaillerieRequest(ctx, recent, "");
+    }
+  } catch (_) { /* ignore */ }
 
   await setState(ctx.supabase, ctx.profileId, {
     key: "quincaillerie_awaiting_location",

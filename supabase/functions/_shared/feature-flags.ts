@@ -19,7 +19,6 @@ export type FeatureFlag =
   | "agent.warmTransfer"
   | "agent.negotiation"
   | "agent.scheduling"
-  | "agent.marketplace"
   | "agent.nearby_drivers"
   | "agent.pharmacy"
   | "agent.property_rental"
@@ -28,9 +27,6 @@ export type FeatureFlag =
   | "agent.quincaillerie"
   | "agent.notary"
   | "wallet.service"
-  | "marketplace.ranking"
-  | "marketplace.vendor"
-  | "marketplace.buyer"
   | "ocr.processor"
   | "cart.reminders"
   | "deeplink.resolver";
@@ -49,7 +45,6 @@ const DEFAULT_FLAGS: Record<FeatureFlag, boolean> = {
   "agent.warmTransfer": false,
   "agent.negotiation": false,
   "agent.scheduling": false,
-  "agent.marketplace": false,
   "agent.nearby_drivers": false,
   "agent.pharmacy": false,
   "agent.property_rental": false,
@@ -58,9 +53,6 @@ const DEFAULT_FLAGS: Record<FeatureFlag, boolean> = {
   "agent.quincaillerie": false,
   "agent.notary": false,
   "wallet.service": false,
-  "marketplace.ranking": false,
-  "marketplace.vendor": false,
-  "marketplace.buyer": false,
   "ocr.processor": true,
   "cart.reminders": true,
   "deeplink.resolver": true,

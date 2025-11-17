@@ -32,10 +32,10 @@ const nextConfig = {
   },
   serverExternalPackages: ['@easymo/commons'],
   typescript: {
-    ignoreBuildErrors: true, // TODO: Fix remaining Next.js 15 async params (see ADMIN_APP_CLEANUP_COMPLETE.md)
+    ignoreBuildErrors: false,
   },
   eslint: {
-    ignoreDuringBuilds: true,
+    ignoreDuringBuilds: false,
   },
   // Optimize for Chrome memory usage
   headers: async () => [

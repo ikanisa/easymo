@@ -2,7 +2,6 @@ export const dynamic = 'force-dynamic';
 import { z } from 'zod';
 import { getSupabaseAdminClient } from '@/lib/server/supabase-admin';
 import { logStructured } from '@/lib/server/logger';
-import { mockStorageObjects } from '@/lib/mock-data';
 import { jsonOk, jsonError, zodValidationError } from '@/lib/api/http';
 import { createHandler } from '@/app/api/withObservability';
 
@@ -53,34 +52,15 @@ function filterAndPaginate(
   return { data: slice, total, hasMore };
 }
 
-function fromMocks(
-  params: z.infer<typeof querySchema>,
-  limit: number,
-  offset: number,
-  options: { message?: string } = {}
-) {
-  const rows: StorageRow[] = mockStorageObjects.map((object: any) => ({
-    id: object.id,
-    bucket: object.bucket,
-    path: object.path,
-    mimeType: object.mimeType,
-    sizeKb: object.sizeKb,
-    updatedAt: object.updatedAt
-  }));
-
-  const result = filterAndPaginate(rows, {
-    bucket: bucket,
-    search: search,
-    limit,
-    offset
-  });
-
+function degradedEmpty(message?: string) {
   return jsonOk({
-    ...result,
+    data: [],
+    total: 0,
+    hasMore: false,
     integration: {
       status: 'degraded' as const,
       target: 'storage_browser',
-      message: options.message ?? 'Supabase credentials missing. Showing mock storage objects.',
+      message: message ?? 'Supabase credentials missing. Storage browser unavailable.',
     },
   });
 }
@@ -95,16 +75,17 @@ export const GET = createHandler('admin_api.storage.list', async (request: Reque
     return zodValidationError(error);
   }
 
+  const bucket = params.bucket;
   if (bucket && !allowedBuckets.has(bucket)) {
     return jsonError({ error: 'bucket_not_allowed', message: 'Bucket not in allowlist.' }, 403);
   }
 
-  const limit = limit ?? 200;
-  const offset = offset ?? 0;
+  const limit = params.limit ?? 200;
+  const offset = params.offset ?? 0;
 
   const adminClient = getSupabaseAdminClient();
   if (!adminClient) {
-    return fromMocks(params, limit, offset);
+    return degradedEmpty();
   }
 
   const buckets = bucket ? [bucket] : Array.from(allowedBuckets);
@@ -166,9 +147,7 @@ export const GET = createHandler('admin_api.storage.list', async (request: Reque
 
   if (!collected.length) {
     if (hadError) {
-      return fromMocks(params, limit, offset, {
-        message: degradedMessage ?? 'Supabase storage request failed. Showing mock data.'
-      });
+      return degradedEmpty(degradedMessage ?? 'Supabase storage request failed.');
     }
 
     const body: Record<string, unknown> = {
@@ -191,8 +170,8 @@ export const GET = createHandler('admin_api.storage.list', async (request: Reque
   collected.sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1));
 
   const result = filterAndPaginate(collected, {
-    bucket: bucket,
-    search: search,
+    bucket: params.bucket,
+    search: params.search,
     limit,
     offset
   });

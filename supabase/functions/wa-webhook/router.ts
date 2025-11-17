@@ -42,11 +42,6 @@ const ROUTES: RouteConfig[] = [
     priority: 1,
   },
   {
-    service: "wa-webhook-marketplace",
-    keywords: ["buy", "sell", "marketplace", "shop", "product", "listing"],
-    priority: 2,
-  },
-  {
     service: "wa-webhook-wallet",
     keywords: ["wallet", "payment", "pay", "balance", "deposit", "withdraw", "money"],
     priority: 1,
@@ -107,9 +102,6 @@ function getServiceFromState(chatState: string): string | null {
   }
   if (chatState.includes("property") || chatState.includes("rental_")) {
     return "wa-webhook-property";
-  }
-  if (chatState.includes("marketplace") || chatState.includes("listing_")) {
-    return "wa-webhook-marketplace";
   }
   if (chatState.includes("wallet") || chatState.includes("payment_")) {
     return "wa-webhook-wallet";
@@ -204,7 +196,6 @@ export async function getAllServicesHealth(): Promise<Record<string, boolean>> {
     "wa-webhook-jobs",
     "wa-webhook-mobility",
     "wa-webhook-property",
-    "wa-webhook-marketplace",
     "wa-webhook-wallet",
     "wa-webhook-ai-agents",
     "wa-webhook-core",

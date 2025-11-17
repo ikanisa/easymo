@@ -66,7 +66,7 @@ export async function notifyInsuranceAdmins(
 ): Promise<{ sent: number; failed: number; errors: string[] }> {
   const { leadId, userWaId, extracted } = payload;
 
-  // Fetch active admins
+  // Fetch active admins (primary table)
   const { data: admins, error: adminError } = await client
     .from("insurance_admins")
     .select("wa_id, name")
@@ -78,10 +78,32 @@ export async function notifyInsuranceAdmins(
     return { sent: 0, failed: 0, errors: [adminError.message] };
   }
 
-  const dbAdmins = (admins ?? []).map((admin) => ({
+  let dbAdmins = (admins ?? []).map((admin) => ({
     wa_id: typeof admin.wa_id === "string" ? admin.wa_id.trim() : "",
     name: admin.name ?? "",
   })).filter((admin) => Boolean(admin.wa_id));
+
+  // Fallback: use insurance_admin_contacts if primary table is empty
+  if (!dbAdmins.length) {
+    try {
+      const { data: contacts, error: contactsError } = await client
+        .from("insurance_admin_contacts")
+        .select("contact_type, contact_value, display_name")
+        .eq("is_active", true)
+        .order("display_order");
+      if (!contactsError && contacts && contacts.length) {
+        dbAdmins = contacts
+          .filter((c: any) => String(c.contact_type || "").toLowerCase() === "whatsapp")
+          .map((c: any) => ({
+            wa_id: (c.contact_value || "").trim(),
+            name: c.display_name || "admin",
+          }))
+          .filter((c: any) => Boolean(c.wa_id));
+      }
+    } catch (_) {
+      // swallow and continue to env fallback
+    }
+  }
 
   const fallbackAdmins = getFallbackAdminIds();
   const targets = dbAdmins.length

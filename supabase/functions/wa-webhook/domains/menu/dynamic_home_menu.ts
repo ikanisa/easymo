@@ -103,7 +103,7 @@ export function getMenuItemId(key: MenuItemKey): string {
     motor_insurance: "motor_insurance",
     nearby_pharmacies: "nearby_pharmacies",
     quincailleries: "nearby_quincailleries",
-    shops_services: "marketplace",
+    shops_services: "shops_services_menu",
     property_rentals: "property_rentals",
     momo_qr: "momoqr_start",
     bars_restaurants: "bars_restaurants",

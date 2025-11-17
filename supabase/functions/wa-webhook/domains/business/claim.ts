@@ -5,10 +5,7 @@ import { sendButtonsMessage, sendListMessage, homeOnly } from "../../utils/reply
 import { IDS } from "../../wa/ids.ts";
 import { setState, clearState } from "../../state/store.ts";
 import { logStructuredEvent } from "../../observe/log.ts";
-import {
-  requireEmbedding,
-  requireFirstMessageContent,
-} from "../../../_shared/openaiGuard.ts";
+import { requireFirstMessageContent } from "../../../_shared/openaiGuard.ts";
 
 /**
  * Business Claiming Flow with OpenAI Semantic Search
@@ -30,7 +27,7 @@ export type BusinessClaimState = {
   stage: "awaiting_name" | "search_results" | "claiming";
   searchQuery?: string;
   results?: Array<{
-    id: string;
+    id: string; // can be 'bar:<uuid>' for bars table results
     name: string;
     category: string;
     address?: string;
@@ -89,14 +86,15 @@ export async function handleBusinessNameSearch(
   await sendText(ctx.from, t(ctx.locale, "business.claim.searching"));
 
   try {
-    // Perform OpenAI-powered semantic search
-    const results = await searchBusinessesSemantic(ctx, trimmed);
+    // Perform fuzzy/semantic search via DB RPC with robust fallbacks
+    const results = await searchBusinessesSmart(ctx, trimmed);
 
     if (!results || results.length === 0) {
       await sendButtonsMessage(
         ctx,
         t(ctx.locale, "business.claim.no_results", { query: trimmed }),
         [
+          { id: 'BIZ::ADD_NEW', title: '➕ Add new business' },
           { id: IDS.PROFILE_ADD_BUSINESS, title: t(ctx.locale, "business.claim.search_again") },
           { id: IDS.BACK_MENU, title: t(ctx.locale, "common.menu_back") },
         ],
@@ -125,11 +123,16 @@ export async function handleBusinessNameSearch(
         }),
         sectionTitle: t(ctx.locale, "business.claim.results.section"),
         rows: [
-          ...results.slice(0, 9).map((biz, idx) => ({
+          ...results.slice(0, 8).map((biz, idx) => ({
             id: `${BUSINESS_RESULT_PREFIX}${idx}`,
             title: `🏢 ${biz.name}`,
             description: formatBusinessDescription(biz),
           })),
+          {
+            id: 'BIZ::ADD_NEW',
+            title: '➕ Add new business',
+            description: 'Type name, then location and category',
+          },
           {
             id: IDS.PROFILE_ADD_BUSINESS,
             title: t(ctx.locale, "business.claim.search_again"),
@@ -189,6 +192,15 @@ export async function handleBusinessClaim(
   await sendText(ctx.from, t(ctx.locale, "business.claim.processing"));
 
   try {
+    // If the selected entry came from bars table, convert it into a business record first
+    if (business.id.startsWith('bar:')) {
+      const barId = business.id.slice(4);
+      const newBusinessId = await createBusinessFromBar(ctx, barId, business.name, business.address, business.category);
+      // Replace id with the newly created business id so the rest of the flow continues normally
+      (state.results as any)[idx].id = newBusinessId;
+      business.id = newBusinessId;
+    }
+
     // Check if business already claimed by this user
     // Check if user already owns this business
     const { data: existing } = await ctx.supabase
@@ -437,9 +449,15 @@ async function searchBusinessesSimple(
 }>> {
   const { data: businesses, error } = await ctx.supabase
     .from("business")
-    .select("id, name, category, address")
-    .ilike("name", `%${query}%`)
-    .limit(9);
+    .select("id, name, category, category_name, address, location_text")
+    .or([
+      `name.ilike.%${query}%`,
+      `category.ilike.%${query}%`,
+      `category_name.ilike.%${query}%`,
+      `address.ilike.%${query}%`,
+      `location_text.ilike.%${query}%`,
+    ].join(','))
+    .limit(20);
 
   if (error) {
     console.error("business.search.simple_error", error);
@@ -455,9 +473,107 @@ async function searchBusinessesSimple(
   return businesses?.map(b => ({
     id: b.id,
     name: b.name,
-    category: b.category || "Business",
-    address: b.address || undefined,
+    category: b.category_name || b.category || "Business",
+    address: b.location_text || b.address || undefined,
   })) || [];
+}
+
+/**
+ * Fuzzy/semantic business search (fast path)
+ */
+async function searchBusinessesSmart(
+  ctx: RouterContext,
+  query: string,
+): Promise<Array<{
+  id: string; name: string; category: string; address?: string; distance?: number;
+}>> {
+  try {
+    const { data: fuzzy, error: fuzzyErr } = await ctx.supabase
+      .rpc('search_businesses_fuzzy', { p_query: query, p_limit: 20 });
+    if (!fuzzyErr && Array.isArray(fuzzy) && fuzzy.length) {
+      await logStructuredEvent("BUSINESS_SEARCH_FUZZY", {
+        query,
+        results_count: fuzzy.length,
+        method: "rpc_fuzzy",
+      });
+      return fuzzy.map((b: any) => ({
+        id: b.id,
+        name: b.name,
+        category: b.category || "Business",
+        address: b.address || undefined,
+      }));
+    }
+
+    const { data: broad, error: broadErr } = await ctx.supabase
+      .from("business")
+      .select("id, name, category, category_name, location_text, address")
+      .or([
+        `name.ilike.%${query}%`,
+        `category.ilike.%${query}%`,
+        `category_name.ilike.%${query}%`,
+        `location_text.ilike.%${query}%`,
+        `address.ilike.%${query}%`,
+      ].join(','))
+      .limit(20);
+    if (!broadErr && Array.isArray(broad) && broad.length) {
+      await logStructuredEvent("BUSINESS_SEARCH_BROAD", {
+        query,
+        results_count: broad.length,
+        method: "broad_ilike",
+      });
+      const bizList = broad.map((b: any) => ({
+        id: b.id,
+        name: b.name,
+        category: b.category_name || b.category || "Business",
+        address: b.location_text || b.address || undefined,
+      }));
+      // Complement with bars matches (name/location) if space remains
+      const remaining = Math.max(0, 20 - bizList.length);
+      let barsList: any[] = [];
+      if (remaining > 0) {
+        const { data: bars } = await ctx.supabase
+          .from('bars')
+          .select('id, name, location_text')
+          .or([
+            `name.ilike.%${query}%`,
+            `location_text.ilike.%${query}%`,
+          ].join(','))
+          .limit(remaining);
+        if (Array.isArray(bars) && bars.length) {
+          barsList = bars.map((r: any) => ({
+            id: `bar:${r.id}`,
+            name: r.name,
+            category: 'Bar & Restaurant',
+            address: r.location_text || undefined,
+          }));
+        }
+      }
+      return bizList.concat(barsList);
+    }
+
+    // No business matches → try bars directly
+    const { data: barsOnly } = await ctx.supabase
+      .from('bars')
+      .select('id, name, location_text')
+      .or([
+        `name.ilike.%${query}%`,
+        `location_text.ilike.%${query}%`,
+      ].join(','))
+      .limit(20);
+    if (Array.isArray(barsOnly) && barsOnly.length) {
+      return barsOnly.map((r: any) => ({
+        id: `bar:${r.id}`,
+        name: r.name,
+        category: 'Bar & Restaurant',
+        address: r.location_text || undefined,
+      }));
+    }
+
+    return await searchBusinessesSimple(ctx, query);
+  } catch (error) {
+    console.error("business.search.smart_error", error);
+    return await searchBusinessesSimple(ctx, query);
+  }
 }
 
 /**
@@ -512,6 +628,42 @@ async function claimBusiness(
       kind: "business",
       reference_id: businessId,
     });
+}
+
+/**
+ * Create a business entry from a bars table record
+ */
+async function createBusinessFromBar(
+  ctx: RouterContext,
+  barId: string,
+  fallbackName?: string,
+  fallbackAddress?: string,
+  fallbackCategory?: string,
+): Promise<string> {
+  const { data: bar, error } = await ctx.supabase
+    .from('bars')
+    .select('id, name, location_text, country')
+    .eq('id', barId)
+    .maybeSingle();
+  if (error) throw error;
+  if (!bar && !fallbackName) throw new Error('Bar not found');
+
+  const payload: Record<string, any> = {
+    name: bar?.name || fallbackName || 'Business',
+    location_text: bar?.location_text || fallbackAddress || null,
+    category_name: fallbackCategory || 'Bar & Restaurant',
+    owner_user_id: ctx.profileId,
+    owner_whatsapp: ctx.from,
+    is_active: true,
+  };
+
+  const { data: created, error: insertErr } = await ctx.supabase
+    .from('business')
+    .insert(payload)
+    .select('id')
+    .single();
+  if (insertErr) throw insertErr;
+  return created!.id as string;
 }
 
 /**

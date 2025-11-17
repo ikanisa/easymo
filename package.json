@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "pnpm --filter @easymo/admin-app run dev",
     "dev:full": "pnpm --parallel --filter './admin-app' --filter './services/*' run dev",
-    "prebuild": "node ./scripts/assert-no-service-role-in-client.mjs && node ./scripts/assert-inventory-app-deferred.mjs",
+    "prebuild": "node ./scripts/assert-no-service-role-in-client.mjs && node ./scripts/assert-inventory-app-deferred.mjs && node ./scripts/assert-no-mocks-in-admin.mjs",
     "build": "pnpm --filter @va/shared build && pnpm --filter @easymo/commons build && pnpm --filter @easymo/video-agent-schema build && pnpm --filter @easymo/admin-app run build",
     "netlify:build": "pnpm --filter @va/shared build && pnpm --filter @easymo/commons build && pnpm --filter @easymo/video-agent-schema build && cd admin-app && pnpm build",
     "start": "pnpm --filter @easymo/admin-app run start",
@@ -38,9 +38,7 @@
   "dependencies": {
     "@easymo/ui": "workspace:*",
     "@supabase/supabase-js": "^2.79.0",
-    "@va/shared": "workspace:*",
-    "jsdom": "^26.1.0",
-    "vitest": "^3.2.4"
+    "@va/shared": "workspace:*"
   },
   "devDependencies": {
     "@eslint/js": "^9.37.0",
@@ -60,7 +58,19 @@
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.38.0",
     "vitest": "^3.2.4",
+    "jsdom": "^26.1.0",
     "yaml": "^2.8.1"
+  },
+  "pnpm": {
+    "overrides": {
+      "@supabase/supabase-js": "^2.79.0",
+      "@supabase/ssr": "^0.7.0",
+      "openai": "^4.104.0",
+      "zod": "^3.25.76",
+      "pino": "^9.5.0",
+      "typescript": "^5.9.3",
+      "@types/node": "^20.11.30"
+    }
   },
   "engines": {
     "node": ">=18.18.0",

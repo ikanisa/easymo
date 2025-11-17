@@ -1,6 +1,5 @@
 import type { RouterContext, WhatsAppTextMessage } from "../types.ts";
 import { sendHomeMenu } from "../flows/home.ts";
-import { handleMarketplaceText } from "../domains/marketplace/index.ts";
 import { handleMomoText } from "../flows/momo/qr.ts";
 import { handleWalletText } from "../domains/wallet/home.ts";
 import { handleAdminCommand } from "../flows/admin/commands.ts";
@@ -145,6 +144,12 @@ export async function handleText(
     }
   }
   
+  // Handle add-new business text stages
+  if (state.key === 'business_add_new') {
+    const { handleAddNewBusinessText } = await import('../domains/business/add_new.ts');
+    return await handleAddNewBusinessText(ctx, body, (state.data ?? {}) as any);
+  }
+  
   // Handle business WhatsApp number input
   if (state.key === "business_add_whatsapp") {
     const stateData = state.data as { businessId?: string; businessName?: string };
@@ -221,9 +226,7 @@ export async function handleText(
     await sendDineInDisabledNotice(ctx);
     return true;
   }
-  if (await handleMarketplaceText(ctx, body, state)) {
-    return true;
-  }
+  // Marketplace flows removed
   if (
     (state.key === "ins_wait_doc" || state.key === "insurance_upload") &&
     /^(cancel|back)$/i.test(body)

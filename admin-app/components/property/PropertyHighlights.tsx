@@ -2,7 +2,6 @@
 
 import { PlaceWidget } from "@easymo/ui/widgets/PlaceWidget";
 import { SectionCard } from "@/components/ui/SectionCard";
-import { mockPropertyHighlights } from "@/lib/mock-data";
 
 interface PropertyHighlight {
   id: string;
@@ -19,7 +18,7 @@ interface PropertyHighlight {
 }
 
 export function PropertyHighlights() {
-  const properties = mockPropertyHighlights as PropertyHighlight[];
+  const properties: PropertyHighlight[] = [];
 
   return (
     <SectionCard
@@ -43,6 +42,11 @@ export function PropertyHighlights() {
             footer="Synced from Supabase listings and shortlist engagement."
           />
         ))}
+        {!properties.length && (
+          <div className="rounded-2xl border border-dashed border-[color:var(--color-border)] p-4 text-sm text-[color:var(--color-muted)]">
+            No featured properties.
+          </div>
+        )}
       </div>
     </SectionCard>
   );

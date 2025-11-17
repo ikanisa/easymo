@@ -128,6 +128,17 @@ export async function handleBarsPreferenceSelection(
 
   const preference = match[1];
 
+  // Try recent location within TTL first to skip ask
+  const { getRecentLocation } = await import("../locations/recent.ts");
+  const recent = await getRecentLocation(ctx, 'bars');
+  if (recent) {
+    await setState(ctx.supabase, ctx.profileId, {
+      key: "bars_wait_location",
+      data: { preference },
+    });
+    return await handleBarsLocation(ctx, recent, { preference, page: 0 });
+  }
+
   // Store preference and move to location request
   await setState(ctx.supabase, ctx.profileId, {
     key: "bars_wait_location",

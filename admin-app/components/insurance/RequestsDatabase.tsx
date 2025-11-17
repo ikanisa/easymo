@@ -1,15 +1,11 @@
 "use client";
 
-import { useMemo, useState, type ComponentProps } from "react";
+import { useEffect, useMemo, useState, type ComponentProps } from "react";
 import { SectionCard } from "@/components/ui/SectionCard";
 import { Drawer } from "@/components/ui/Drawer";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import {
-  mockInsurancePayments,
-  mockInsuranceRequests,
-  mockInsuranceTasks,
-} from "@/lib/mock-data";
+// Live data only; no mock imports
 
 const currencyFormatter = new Intl.NumberFormat("en-RW", {
   style: "currency",
@@ -21,11 +17,16 @@ function formatCurrency(value: number) {
   return currencyFormatter.format(Math.round(value));
 }
 
-type RequestMock = (typeof mockInsuranceRequests)[number];
-type PaymentMock = (typeof mockInsurancePayments)[number];
-type TaskMock = (typeof mockInsuranceTasks)[number];
+type RequestRow = {
+  id: string;
+  status: string;
+  vehiclePlate: string | null;
+  createdAt: string;
+};
+type PaymentMock = { id: string; intentId?: string | null; status: string; amount: number };
+type TaskMock = { id: string; requestId: string; title: string; status: string; dueAt?: string | null };
 
-const statusVariant: Record<RequestMock["status"], ComponentProps<typeof Badge>["variant"]> = {
+const statusVariant: Record<string, ComponentProps<typeof Badge>["variant"]> = {
   draft: "outline",
   intake: "outline",
   under_review: "warning",
@@ -36,43 +37,96 @@ const statusVariant: Record<RequestMock["status"], ComponentProps<typeof Badge>[
   cancelled: "destructive",
 };
 
-interface RequestDetail extends RequestMock {
+interface RequestDetail {
+  id: string;
+  status: string;
+  customerName?: string;
+  customerMsisdn?: string;
+  vehicle?: { plateNumber?: string | null } | null;
+  comparison: Array<{ insurer: string; grossPremiumMinor: number }>;
   outstandingMinor: number;
   overdueTasks: number;
 }
 
-function deriveOutstanding(request: RequestMock): number {
-  return mockInsurancePayments
-    .filter((payment) => payment.requestId === request.id)
-    .filter((payment) => payment.status !== "completed")
-    .reduce((total, payment) => total + payment.amountMinor, 0);
+function deriveOutstanding(_request: RequestRow): number {
+  return 0;
 }
 
-function deriveOverdueTasks(request: RequestMock): number {
-  const now = Date.now();
-  return mockInsuranceTasks
-    .filter((task) => task.requestId === request.id)
-    .filter((task) => task.dueAt && new Date(task.dueAt).getTime() < now)
-    .filter((task) => task.status !== "completed" && task.status !== "cancelled").length;
+function deriveOverdueTasks(_request: RequestRow): number {
+  return 0;
 }
 
 export function RequestsDatabase() {
   const [selected, setSelected] = useState<RequestDetail | null>(null);
-  const rows = useMemo<RequestDetail[]>(
-    () =>
-      mockInsuranceRequests.map((request) => ({
-        ...request,
-        outstandingMinor: deriveOutstanding(request),
-        overdueTasks: deriveOverdueTasks(request),
-      })),
-    [],
-  );
+  const [rows, setRows] = useState<RequestDetail[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [statusFilter, setStatusFilter] = useState<string | "all">("all");
+  const [search, setSearch] = useState("");
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const params = new URLSearchParams();
+        if (statusFilter !== "all") params.set("status", statusFilter);
+        if (search.trim()) params.set("search", search.trim());
+        const res = await fetch(`/api/insurance/requests${params.toString() ? `?${params.toString()}` : ""}`, { cache: "no-store" });
+        if (!res.ok) throw new Error("Failed to load requests");
+        const json = await res.json();
+        const data = Array.isArray(json?.data) ? json.data : [];
+        const mapped: RequestDetail[] = data.map((r: any) => ({
+          id: String(r.id),
+          status: String(r.status ?? ""),
+          customerName: String(r.contactId ?? "—"),
+          customerMsisdn: "",
+          vehicle: { plateNumber: r.vehiclePlate ?? r.vehicle_plate ?? null } as any,
+          comparison: [],
+          outstandingMinor: 0,
+          overdueTasks: 0,
+        }));
+        if (mounted) setRows(mapped);
+      } catch {
+        if (mounted) setRows([]);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, [statusFilter, search]);
 
   return (
     <SectionCard
       title="Requests database"
       description="Full history of insurance requests with outstanding balances, tasks, and comparisons."
     >
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex gap-2 text-sm">
+          <label className="text-[color:var(--color-muted)]">Status</label>
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}
+            className="rounded-lg border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-1"
+          >
+            <option value="all">All</option>
+            <option value="collecting">Collecting</option>
+            <option value="under_review">Under review</option>
+            <option value="quoted">Quoted</option>
+            <option value="awaiting_payment">Awaiting payment</option>
+            <option value="paid">Paid</option>
+            <option value="issued">Issued</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
+        </div>
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search plate/notes"
+          className="min-w-[220px] rounded-lg border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-1 text-sm"
+        />
+      </div>
+
       <div className="overflow-hidden rounded-2xl border border-[color:var(--color-border)]">
         <table className="min-w-full divide-y divide-[color:var(--color-border)] text-sm">
           <thead className="bg-[color:var(--color-surface-muted)] text-xs uppercase tracking-wide">
@@ -110,6 +164,13 @@ export function RequestsDatabase() {
                 </td>
               </tr>
             ))}
+            {!rows.length && (
+              <tr>
+                <td colSpan={7} className="px-4 py-6 text-center text-[color:var(--color-muted)]">
+                  {loading ? "Loading…" : "No requests found."}
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
@@ -124,27 +185,13 @@ export function RequestsDatabase() {
             <div className="rounded-lg border border-[color:var(--color-border)] p-3">
               <p className="text-xs font-semibold uppercase tracking-wide text-[color:var(--color-muted)]">Payments</p>
               <ul className="space-y-1 pt-2">
-                {mockInsurancePayments
-                  .filter((payment) => payment.requestId === selected.id)
-                  .map((payment: PaymentMock) => (
-                    <li key={payment.id} className="flex justify-between">
-                      <span>{payment.status.replace(/_/g, " ")}</span>
-                      <span>{formatCurrency(payment.amountMinor)}</span>
-                    </li>
-                  ))}
+                <li className="text-[color:var(--color-muted)]">No payments data.</li>
               </ul>
             </div>
             <div className="rounded-lg border border-[color:var(--color-border)] p-3">
               <p className="text-xs font-semibold uppercase tracking-wide text-[color:var(--color-muted)]">Tasks</p>
               <ul className="space-y-1 pt-2">
-                {mockInsuranceTasks
-                  .filter((task) => task.requestId === selected.id)
-                  .map((task: TaskMock) => (
-                    <li key={task.id} className="flex justify-between">
-                      <span>{task.title}</span>
-                      <span className="text-[color:var(--color-muted)]">{task.status}</span>
-                    </li>
-                  ))}
+                <li className="text-[color:var(--color-muted)]">No tasks data.</li>
               </ul>
             </div>
             <div className="rounded-lg border border-[color:var(--color-border)] p-3">
