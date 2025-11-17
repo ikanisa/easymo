@@ -1,157 +1,77 @@
 export const dynamic = 'force-dynamic';
-import { headers } from 'next/headers';
+
 import { z } from 'zod';
+import { createHandler } from '@/app/api/withObservability';
 import { jsonOk, jsonError, zodValidationError } from '@/lib/api/http';
 import { getSupabaseAdminClient } from '@/lib/server/supabase-admin';
-import { logStructured } from '@/lib/server/logger';
-import { recordAudit } from '@/lib/server/audit';
-import { requireActorId, UnauthorizedError } from '@/lib/server/auth';
-import { createHandler } from '@/app/api/withObservability';
 
-const listQuerySchema = z.object({
-  status: z.string().optional(),
+const querySchema = z.object({
   search: z.string().optional(),
+  status: z.enum(['active', 'inactive']).optional(),
   limit: z.coerce.number().int().min(1).max(200).optional(),
-  offset: z.coerce.number().int().min(0).optional()
+  offset: z.coerce.number().int().min(0).optional(),
 });
 
-const createSchema = z.object({
-  name: z.string().min(1),
-  engencode: z.string().min(1),
-  ownerContact: z.string().optional().nullable(),
-  status: z.enum(['active', 'inactive']).default('active')
-});
-
-export const GET = createHandler('admin_api.stations.list', async (request: Request) => {
-  const adminClient = getSupabaseAdminClient();
-  if (!adminClient) {
-    return jsonError({ error: 'supabase_unavailable', message: 'Supabase credentials missing. Unable to fetch stations.' }, 503);
+export const GET = createHandler('admin_api.stations.list', async (request, _context, { recordMetric }) => {
+  const admin = getSupabaseAdminClient();
+  if (!admin) {
+    recordMetric('stations.supabase_unavailable', 1);
+    return jsonOk({ data: [], total: 0, hasMore: false });
   }
 
-  let query: z.infer<typeof listQuerySchema>;
+  let params: z.infer<typeof querySchema>;
   try {
-    query = listQuerySchema.parse(Object.fromEntries(new URL(request.url).searchParams));
+    params = querySchema.parse(Object.fromEntries(new URL(request.url).searchParams));
   } catch (error) {
     return zodValidationError(error);
   }
 
-  const rangeStart = query.offset ?? 0;
-  const rangeEnd = rangeStart + (query.limit ?? 100) - 1;
+  const { search, status, limit = 200, offset = 0 } = params;
 
-  const offset = query.offset ?? 0;
-  const limit = query.limit ?? 100;
-
-  const supabaseQuery = adminClient
+  const query = admin
     .from('stations')
-    .select('id, name, engencode, owner_contact, status, created_at', { count: 'exact' })
-    .order('created_at', { ascending: false })
+    .select('id, name, code, whatsapp_e164, status, location_point, updated_at')
+    .order('updated_at', { ascending: false })
     .range(offset, offset + limit - 1);
 
-  if (query.status) {
-    supabaseQuery.eq('status', query.status);
-  }
-  if (query.search) {
-    supabaseQuery.ilike('name', `%${query.search}%`);
+  if (status) query.eq('status', status);
+  if (search) {
+    const pattern = `%${search}%`;
+    query.or(`name.ilike.${pattern},code.ilike.${pattern}`);
   }
 
-  const { data, error, count } = await supabaseQuery;
+  const { data, error, count } = await query;
   if (error) {
-    logStructured({
-      event: 'stations_fetch_failed',
-      target: 'stations',
-      status: 'error',
-      message: error.message
-    });
+    recordMetric('stations.supabase_error', 1, { message: error.message });
     return jsonError({ error: 'stations_fetch_failed', message: 'Unable to load stations.' }, 500);
   }
 
-  const rows = data ?? [];
+  const rows = (data ?? []).map((row: any) => ({
+    id: row.id,
+    name: row.name,
+    engencode: row.code,
+    ownerContact: row.whatsapp_e164 ?? null,
+    status: row.status ?? 'active',
+    location: (() => {
+      const geo = row.location_point as any;
+      if (!geo) return null;
+      try {
+        // Expect either GEOJSON or [lng, lat]
+        if (Array.isArray(geo)) return { lat: Number(geo[1]), lng: Number(geo[0]) };
+        if (typeof geo === 'object' && geo !== null) {
+          const coords = (geo.coordinates ?? geo?.geometry?.coordinates) as any[] | undefined;
+          if (Array.isArray(coords) && coords.length >= 2) return { lat: Number(coords[1]), lng: Number(coords[0]) };
+        }
+      } catch {}
+      return null;
+    })(),
+    updatedAt: row.updated_at ?? new Date().toISOString(),
+  }));
+
   const total = count ?? rows.length;
   const hasMore = offset + rows.length < total;
-
-  return jsonOk({
-    data: rows.map((row) => ({
-      id: row.id,
-      name: row.name,
-      engencode: row.engencode,
-      ownerContact: row.owner_contact,
-      status: row.status,
-      createdAt: row.created_at
-    })),
-    total,
-    hasMore
-  });
+  return jsonOk({ data: rows, total, hasMore });
 });
 
-export const POST = createHandler('admin_api.stations.create', async (request: Request) => {
-  const adminClient = getSupabaseAdminClient();
-  if (!adminClient) {
-    return jsonError({ error: 'supabase_unavailable', message: 'Supabase credentials missing. Unable to create station.' }, 503);
-  }
+export const runtime = 'nodejs';
 
-  let payload: z.infer<typeof createSchema>;
-  try {
-    payload = createSchema.parse(await request.json());
-  } catch (error) {
-    return zodValidationError(error);
-  }
-
-  let actorId: string;
-  try {
-    actorId = requireActorId();
-  } catch (err) {
-    if (err instanceof UnauthorizedError) {
-      return jsonError({ error: 'unauthorized', message: err.message }, 401);
-    }
-    throw err;
-  }
-
-  const { data, error } = await adminClient
-    .from('stations')
-    .insert({
-      name: payload.name,
-      engencode: payload.engencode,
-      owner_contact: payload.ownerContact ?? null,
-      status: payload.status
-    })
-    .select('id, name, engencode, owner_contact, status, created_at')
-    .single();
-
-  if (error || !data) {
-    logStructured({
-      event: 'station_create_failed',
-      target: 'stations',
-      status: 'error',
-      message: error?.message ?? 'Unknown error'
-    });
-    return jsonError({ error: 'station_create_failed', message: 'Unable to create station.' }, 500);
-  }
-
-  await recordAudit({
-    actorId,
-    action: 'station_create',
-    targetTable: 'stations',
-    targetId: data.id,
-    diff: payload
-  });
-
-  logStructured({
-    event: 'station_created',
-    target: 'stations',
-    status: 'ok',
-    details: { stationId: data.id }
-  });
-
-  return jsonOk({
-    data: {
-      id: data.id,
-      name: data.name,
-      engencode: data.engencode,
-      ownerContact: data.owner_contact,
-      status: data.status,
-      createdAt: data.created_at
-    }
-  }, 201);
-});
-
-export const runtime = "nodejs";

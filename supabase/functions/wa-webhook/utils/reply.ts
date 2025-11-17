@@ -2,6 +2,7 @@ import type { RouterContext } from "../types.ts";
 import { sendButtons, sendList } from "../wa/client.ts";
 import { IDS } from "../wa/ids.ts";
 import { t } from "../i18n/translator.ts";
+import { ensureReferralLink } from "./share.ts";
 
 export type ButtonSpec = { id: string; title: string };
 
@@ -26,7 +27,24 @@ export async function sendButtonsMessage(
   buttons: ButtonSpec[],
   options: { emoji?: string } = {},
 ): Promise<void> {
-  const payload = ensureHomeButton(buttons).map((button) =>
+  let augmented = [...buttons];
+  // Auto-append Share button if room (<3 actions)
+  try {
+    const hasAdmin = buttons.some((b) =>
+      typeof b?.id === 'string' && (b.id.startsWith('ADMIN::') || b.id.toLowerCase().includes('admin'))
+    );
+    if (!hasAdmin && augmented.length < 3) {
+      const already = augmented.some((b) => b.id === IDS.SHARE_EASYMO);
+      if (!already && ctx.profileId) {
+        // Only add for authenticated users (so link has their code)
+        augmented.push({
+          id: IDS.SHARE_EASYMO,
+          title: t(ctx.locale, "common.buttons.share_easymo"),
+        });
+      }
+    }
+  } catch (_) {}
+  const payload = ensureHomeButton(augmented).map((button) =>
     button.id === IDS.BACK_HOME
       ? { ...button, title: t(ctx.locale, "common.home_button") }
       : button

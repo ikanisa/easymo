@@ -1,12 +1,10 @@
 import { z } from "zod";
 import { apiFetch } from "@/lib/api/client";
 import { getAdminApiPath } from "@/lib/routes";
-import { shouldUseMocks } from "@/lib/runtime-config";
 import {
   adminAlertPreferenceSchema,
   type AdminAlertPreference,
 } from "@/lib/schemas";
-import { mockAdminAlertPreferences } from "@/lib/mock-data";
 
 export type AlertPreferencesIntegration = {
   status: "ok" | "degraded";
@@ -25,20 +23,7 @@ const alertIntegrationSchema = z.object({
   message: z.string().optional(),
 });
 
-const useMocks = shouldUseMocks();
-
 export async function listAdminAlertPreferences(): Promise<AdminAlertPreferencesResult> {
-  if (useMocks) {
-    return {
-      data: mockAdminAlertPreferences,
-      integration: {
-        status: "degraded",
-        target: "admin_alert_prefs",
-        message: "Using mock alert preferences.",
-      },
-    };
-  }
-
   try {
     const payload = await apiFetch<{
       data: unknown;
@@ -65,11 +50,11 @@ export async function listAdminAlertPreferences(): Promise<AdminAlertPreferences
   }
 
   return {
-    data: mockAdminAlertPreferences,
+    data: [],
     integration: {
       status: "degraded",
       target: "admin_alert_prefs",
-      message: "Falling back to mock alert preferences.",
+      message: "Unable to load alert preferences.",
     },
   };
 }

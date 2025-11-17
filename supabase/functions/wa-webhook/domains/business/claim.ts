@@ -192,25 +192,31 @@ export async function handleBusinessClaim(
   await sendText(ctx.from, t(ctx.locale, "business.claim.processing"));
 
   try {
+    let claimedBarId: string | null = null;
     // If the selected entry came from bars table, convert it into a business record first
     if (business.id.startsWith('bar:')) {
       const barId = business.id.slice(4);
-      const newBusinessId = await createBusinessFromBar(ctx, barId, business.name, business.address, business.category);
+      const created = await createBusinessFromBar(ctx, barId, business.name, business.address, business.category);
       // Replace id with the newly created business id so the rest of the flow continues normally
-      (state.results as any)[idx].id = newBusinessId;
-      business.id = newBusinessId;
+      (state.results as any)[idx].id = created.businessId;
+      business.id = created.businessId;
+      claimedBarId = created.barId ?? barId;
     }
 
-    // Check if business already claimed by this user
-    // Check if user already owns this business
-    const { data: existing } = await ctx.supabase
+    // Load current claim/owner state
+    let { data: existing, error: existingErr } = await ctx.supabase
       .from("business")
-      .select("id")
+      .select("id, claimed, owner_user_id, bar_id")
       .eq("id", business.id)
-      .eq("owner_user_id", ctx.profileId)
       .maybeSingle();
+    if (existingErr) throw existingErr;
 
-    if (existing) {
+    // Already claimed by this user
+    if (!claimedBarId && existing?.bar_id) {
+      claimedBarId = String(existing.bar_id);
+    }
+
+    if (existing && existing.claimed && existing.owner_user_id === ctx.profileId) {
       await sendButtonsMessage(
         ctx,
         t(ctx.locale, "business.claim.already_claimed", { name: business.name }),
@@ -220,15 +226,8 @@ export async function handleBusinessClaim(
       return true;
     }
 
-    // Check if business is claimed by someone else
-    const { data: otherOwner } = await ctx.supabase
-      .from("business")
-      .select("id, owner_user_id")
-      .eq("id", business.id)
-      .not("owner_user_id", "is", null)
-      .maybeSingle();
-
-    if (otherOwner && otherOwner.owner_user_id !== ctx.profileId) {
+    // Claimed by someone else
+    if (existing && existing.claimed && existing.owner_user_id && existing.owner_user_id !== ctx.profileId) {
       await sendButtonsMessage(
         ctx,
         t(ctx.locale, "business.claim.already_owned", { name: business.name }),
@@ -240,6 +239,9 @@ export async function handleBusinessClaim(
 
     // Claim the business
     await claimBusiness(ctx, business.id);
+    if (claimedBarId) {
+      await ensureBarManager(ctx, claimedBarId);
+    }
 
     await sendButtonsMessage(
       ctx,
@@ -361,6 +363,7 @@ Output format: { "keywords": ["term1", "term2"], "category_hints": ["category1"]
     const { data: businesses, error } = await ctx.supabase
       .from("business")
       .select("id, name, category, address, google_maps_url, latitude, longitude")
+      .eq('claimed', false)
       .or(`name.ilike.%${query}%,name.ilike.%${keywords[0]}%,category.ilike.%${searchIntent.category_hints?.[0] || ""}%`)
       .limit(20);
 
@@ -450,6 +453,7 @@ async function searchBusinessesSimple(
   const { data: businesses, error } = await ctx.supabase
     .from("business")
     .select("id, name, category, category_name, address, location_text")
+    .eq('claimed', false)
     .or([
       `name.ilike.%${query}%`,
       `category.ilike.%${query}%`,
@@ -496,17 +500,31 @@ async function searchBusinessesSmart(
         results_count: fuzzy.length,
         method: "rpc_fuzzy",
       });
-      return fuzzy.map((b: any) => ({
-        id: b.id,
-        name: b.name,
-        category: b.category || "Business",
-        address: b.address || undefined,
-      }));
+      // Filter out claimed via secondary lookup
+      const ids = fuzzy.map((b: any) => b.id).filter(Boolean);
+      let allowed = new Set<string>();
+      if (ids.length) {
+        const { data: unclaimed } = await ctx.supabase
+          .from('business')
+          .select('id')
+          .in('id', ids)
+          .eq('claimed', false);
+        allowed = new Set((unclaimed || []).map((r: any) => r.id));
+      }
+      return fuzzy
+        .filter((b: any) => allowed.has(b.id))
+        .map((b: any) => ({
+          id: b.id,
+          name: b.name,
+          category: b.category || "Business",
+          address: b.address || undefined,
+        }));
     }
 
     const { data: broad, error: broadErr } = await ctx.supabase
       .from("business")
       .select("id, name, category, category_name, location_text, address")
+      .eq('claimed', false)
       .or([
         `name.ilike.%${query}%`,
         `category.ilike.%${query}%`,
@@ -534,6 +552,7 @@ async function searchBusinessesSmart(
         const { data: bars } = await ctx.supabase
           .from('bars')
           .select('id, name, location_text')
+          .eq('claimed', false)
           .or([
             `name.ilike.%${query}%`,
             `location_text.ilike.%${query}%`,
@@ -555,6 +574,7 @@ async function searchBusinessesSmart(
     const { data: barsOnly } = await ctx.supabase
       .from('bars')
       .select('id, name, location_text')
+      .eq('claimed', false)
       .or([
         `name.ilike.%${query}%`,
         `location_text.ilike.%${query}%`,
@@ -591,6 +611,7 @@ async function claimBusiness(
     .update({
       owner_user_id: ctx.profileId,
       owner_whatsapp: ctx.from,
+      claimed: true,
     })
     .eq("id", businessId);
 
@@ -601,10 +622,10 @@ async function claimBusiness(
     .from("business_whatsapp_numbers")
     .insert({
       business_id: businessId,
-      whatsapp_number: ctx.from,
+      whatsapp_e164: ctx.from,
       is_primary: true,
-      is_active: true,
-      added_by: ctx.profileId,
+      verified: false,
+      added_by_whatsapp: ctx.from,
     });
 
   if (whatsappError) {
@@ -639,10 +660,10 @@ async function createBusinessFromBar(
   fallbackName?: string,
   fallbackAddress?: string,
   fallbackCategory?: string,
-): Promise<string> {
+): Promise<{ businessId: string; barId?: string }> {
   const { data: bar, error } = await ctx.supabase
     .from('bars')
-    .select('id, name, location_text, country')
+    .select('id, name, location_text, country, whatsapp_number')
     .eq('id', barId)
     .maybeSingle();
   if (error) throw error;
@@ -654,16 +675,33 @@ async function createBusinessFromBar(
     category_name: fallbackCategory || 'Bar & Restaurant',
     owner_user_id: ctx.profileId,
     owner_whatsapp: ctx.from,
+    claimed: true,
     is_active: true,
+    country: bar?.country || null,
+    bar_id: bar?.id || barId,
   };
 
   const { data: created, error: insertErr } = await ctx.supabase
     .from('business')
     .insert(payload)
-    .select('id')
+    .select('id, bar_id')
     .single();
   if (insertErr) throw insertErr;
-  return created!.id as string;
+  // Mark original bar as claimed to avoid duplicate claims in future searches
+  try {
+    await ctx.supabase
+      .from('bars')
+      .update({ claimed: true })
+      .eq('id', barId);
+  } catch (_) {}
+  // Attach menu items to the new business reference (best effort)
+  try {
+    await ctx.supabase
+      .from('restaurant_menu_items')
+      .update({ business_id: created?.id })
+      .eq('bar_id', barId);
+  } catch (_) {}
+  return { businessId: created!.id as string, barId: (created?.bar_id ?? barId) as string };
 }
 
 /**
@@ -692,4 +730,20 @@ function formatBusinessDescription(business: {
   }
 
   return parts.join(" • ") || "Business";
+}
+
+async function ensureBarManager(ctx: RouterContext, barId: string): Promise<void> {
+  if (!ctx.profileId || !barId) return;
+  try {
+    await ctx.supabase
+      .from('bar_managers')
+      .upsert({
+        bar_id: barId,
+        user_id: ctx.profileId,
+        role: 'owner',
+        is_active: true,
+      }, { onConflict: 'bar_id,user_id' });
+  } catch (error) {
+    console.error("business.ensure_manager_fail", error);
+  }
 }

@@ -2,9 +2,8 @@ export const dynamic = "force-dynamic";
 
 import { z } from "zod";
 import { createHandler } from "@/app/api/withObservability";
-import { jsonOk, zodValidationError } from "@/lib/api/http";
+import { jsonOk, zodValidationError, jsonError } from "@/lib/api/http";
 import { getSupabaseAdminClient } from "@/lib/server/supabase-admin";
-import { mockShops } from "@/lib/mock-data";
 import type { Shop } from "@/lib/shops/types";
 
 const querySchema = z.object({
@@ -145,39 +144,8 @@ function serializeMockShop(shop: Shop) {
   };
 }
 
-function rankedFallbackResults(search?: string) {
-  const lower = search?.toLowerCase();
-  let results = mockShops;
-  if (lower) {
-    results = results.filter(
-      (shop) =>
-        shop.name.toLowerCase().includes(lower) ||
-        shop.description.toLowerCase().includes(lower) ||
-        (shop.businessLocation ?? "").toLowerCase().includes(lower) ||
-        shop.tags.some((tag) => tag.toLowerCase().includes(lower)),
-    );
-  }
-  return results
-    .map((shop) => ({ shop, score: scoreShop(shop) }))
-    .sort((a, b) => b.score - a.score)
-    .slice(0, 10)
-    .map(({ shop }) => serializeMockShop(shop));
-}
-
-function fallback(message: string, params?: z.infer<typeof querySchema>) {
-  const shops = rankedFallbackResults(params?.search);
-  return jsonOk({
-    shops,
-    total: shops.length,
-    hasMore: false,
-    integration: {
-      status: "degraded" as const,
-      target: "agents_shops",
-      message,
-      remediation:
-        "Check Supabase credentials or ensure shops/search_nearby_shops are deployed.",
-    },
-  });
+function fallbackError(message: string, code = 503) {
+  return jsonError({ error: 'unavailable', message }, code);
 }
 
 export const GET = createHandler(
@@ -195,11 +163,10 @@ export const GET = createHandler(
     const admin = getSupabaseAdminClient();
     if (!admin) {
       recordMetric("agents.shops.supabase_missing", 1);
-      return fallback("Supabase admin client unavailable.", params);
+      return fallbackError("Supabase admin client unavailable.");
     }
 
-    const limit = limit ?? 50;
-    const offset = offset ?? 0;
+    const { limit = 50, offset = 0, search } = params;
     const query = admin
       .from("shops")
       .select(
@@ -220,7 +187,7 @@ export const GET = createHandler(
       recordMetric("agents.shops.supabase_error", 1, {
         message: error.message,
       });
-      return fallback(error.message ?? "Unknown Supabase error.", params);
+      return fallbackError(error.message ?? "Unknown Supabase error.", 500);
     }
 
     const rows = (data as AgentShopRow[]) ?? [];

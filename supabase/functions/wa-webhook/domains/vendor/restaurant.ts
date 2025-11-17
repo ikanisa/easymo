@@ -20,15 +20,19 @@ export type RestaurantManagerState = {
 // Check if user is a restaurant/bar manager
 export async function isBarManager(
   ctx: RouterContext,
+  targetBarId?: string,
 ): Promise<{ isManager: boolean; barId?: string }> {
   if (!ctx.profileId) return { isManager: false };
 
-  const { data, error } = await ctx.supabase
+  let query = ctx.supabase
     .from("bar_managers")
     .select("bar_id, is_active")
     .eq("user_id", ctx.profileId)
-    .eq("is_active", true)
-    .maybeSingle();
+    .eq("is_active", true);
+  if (targetBarId) {
+    query = query.eq("bar_id", targetBarId);
+  }
+  const { data, error } = await query.maybeSingle();
 
   if (error || !data) {
     return { isManager: false };
@@ -40,10 +44,12 @@ export async function isBarManager(
 // Start restaurant manager menu
 export async function startRestaurantManager(
   ctx: RouterContext,
+  options: { barId?: string; initialAction?: "menu" | "orders" } = {},
 ): Promise<boolean> {
   if (!ctx.profileId) return false;
 
-  const { isManager, barId } = await isBarManager(ctx);
+  const { barId: forcedBarId, initialAction } = options;
+  const { isManager, barId } = await isBarManager(ctx, forcedBarId);
 
   if (!isManager) {
     await sendButtonsMessage(
@@ -54,10 +60,19 @@ export async function startRestaurantManager(
     return true;
   }
 
+  const resolvedBarId = forcedBarId ?? barId;
+
   await setState(ctx.supabase, ctx.profileId, {
     key: "restaurant_manager",
-    data: { barId },
+    data: { barId: resolvedBarId },
   });
+
+  if (initialAction === "menu") {
+    return await showCurrentMenu(ctx, { barId: resolvedBarId });
+  }
+  if (initialAction === "orders") {
+    return await showOrders(ctx, { barId: resolvedBarId });
+  }
 
   const rows = [
     {

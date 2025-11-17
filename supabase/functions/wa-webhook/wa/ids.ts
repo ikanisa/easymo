@@ -91,6 +91,8 @@ export const IDS = {
   WALLET_SHARE_COPY: "wallet_share_copy",
   WALLET_SHARE_QR: "wallet_share_qr",
   WALLET_SHARE_DONE: "wallet_share_done",
+  SHARE_EASYMO: "share_easymo",
+  WALLET_TRANSFER: "wallet_transfer",
   ROLE_DRIVER: "role_driver",
   ROLE_PASSENGER: "role_passenger",
   MOBILITY_SHARE_LOCATION: "mobility_share_location",
@@ -113,5 +115,7 @@ export const IDS = {
   BUSINESS_DELETE: "business_delete",
   BUSINESS_ADD_WHATSAPP: "business_add_whatsapp",
   BUSINESS_DELETE_CONFIRM: "business_delete_confirm",
+  BUSINESS_MANAGE_MENU: "business_manage_menu",
+  BUSINESS_VIEW_ORDERS: "business_view_orders",
   // Existing flows will add more IDs during implementation.
 } as const;

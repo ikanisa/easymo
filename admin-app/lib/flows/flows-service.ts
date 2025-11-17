@@ -1,9 +1,6 @@
-import { mockFlows } from "@/lib/mock-data";
-import {
-  paginateArray,
-  type PaginatedResult,
-  type Pagination,
-} from "@/lib/shared/pagination";
+import { apiFetch } from "@/lib/api/client";
+import { getAdminApiPath } from "@/lib/routes";
+import { type PaginatedResult, type Pagination } from "@/lib/shared/pagination";
 import type { FlowMeta } from "@/lib/schemas";
 
 export type FlowListParams = Pagination & {
@@ -13,8 +10,20 @@ export type FlowListParams = Pagination & {
 export async function listFlows(
   params: FlowListParams = {},
 ): Promise<PaginatedResult<FlowMeta>> {
-  const filtered = mockFlows.filter((flow) =>
-    params.status ? flow.status === params.status : true
+  const offset = params.offset ?? 0;
+  const limit = params.limit ?? 100;
+
+  const searchParams = new URLSearchParams();
+  searchParams.set("limit", String(limit));
+  searchParams.set("offset", String(offset));
+  if (params.status) searchParams.set("status", params.status);
+
+  const response = await apiFetch<{ data: FlowMeta[]; total: number; hasMore?: boolean }>(
+    `${getAdminApiPath("flows")}?${searchParams.toString()}`,
   );
-  return paginateArray(filtered, params);
+  return {
+    data: response.data,
+    total: response.total,
+    hasMore: response.hasMore ?? (offset + response.data.length < response.total),
+  };
 }

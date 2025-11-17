@@ -74,10 +74,23 @@ export async function GET(request: NextRequest) {
   }
 
   const rows = (data ?? []).map(mapRow);
-  const total = count ?? rows.length;
-  const hasMore = offset + rows.length < total;
+  // Enrich with policy numbers by quoteId
+  const quoteIds = Array.from(new Set(rows.map((r) => r.quoteId).filter((v): v is string => Boolean(v))));
+  let policyByQuote = new Map<string, string>();
+  if (quoteIds.length) {
+    const { data: policies } = await admin
+      .from('insurance_policies')
+      .select('quote_id, policy_number')
+      .in('quote_id', quoteIds);
+    (policies ?? []).forEach((p: any) => {
+      if (p.quote_id && p.policy_number) policyByQuote.set(String(p.quote_id), String(p.policy_number));
+    });
+  }
+  const enriched = rows.map((r) => ({ ...r, policyNumber: r.quoteId ? policyByQuote.get(r.quoteId) ?? null : null }));
+  const total = count ?? enriched.length;
+  const hasMore = offset + enriched.length < total;
 
-  return NextResponse.json({ data: rows, total, hasMore });
+  return NextResponse.json({ data: enriched, total, hasMore });
 }
 
 export const runtime = "nodejs";

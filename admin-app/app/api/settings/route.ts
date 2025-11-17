@@ -6,7 +6,6 @@ import { z } from 'zod';
 import { getSupabaseAdminClient } from '@/lib/server/supabase-admin';
 import { logStructured } from '@/lib/server/logger';
 import { recordAudit } from '@/lib/server/audit';
-import { mockSettingsEntries } from '@/lib/mock-data';
 import { requireActorId, UnauthorizedError } from '@/lib/server/auth';
 
 const settingsResponseSchema = z.object({
@@ -21,14 +20,11 @@ const settingsMutationSchema = z.object({
   optOutList: z.array(z.string())
 });
 
-function buildDegradedResponse(message: string, status = 503) {
-  return jsonOk(
+function buildDegradedError(message: string, status = 503) {
+  return jsonError(
     {
-      integration: {
-        status: 'degraded' as const,
-        message,
-        target: 'settings_store'
-      }
+      error: 'settings_unavailable',
+      message,
     },
     status,
   );
@@ -42,8 +38,8 @@ async function fetchSettingsFromSupabase() {
     logStructured({
       event: 'settings_fetch_failed',
       target: 'supabase',
-      status: 'degraded',
-      message: 'Failed to load settings from Supabase. Falling back to mocks.',
+      status: 'error',
+      message: 'Failed to load settings from Supabase.',
       details: { error: error?.message }
     });
     return null;
@@ -53,20 +49,6 @@ async function fetchSettingsFromSupabase() {
     entries.set(row.key, row.value);
   }
   return entries;
-}
-
-function fallbackSettings() {
-  const quiet = mockSettingsEntries.find((entry: any) => entry.key === 'quiet_hours.rw');
-  const throttle = mockSettingsEntries.find((entry: any) => entry.key === 'send_throttle.whatsapp.per_minute');
-  const optOut = mockSettingsEntries.find((entry: any) => entry.key === 'opt_out.list');
-  return {
-    quietHours: () => ({
-      start: quiet ? quiet.valuePreview.split('–')[0].trim() : '22:00',
-      end: quiet ? quiet.valuePreview.split('–')[1].trim() : '06:00'
-    }),
-    throttlePerMinute: throttle ? Number(throttle.valuePreview) : 60,
-    optOutList: optOut ? (JSON.parse(optOut.valuePreview) as string[]) : []
-  };
 }
 
 export const GET = createHandler('admin_api.settings.get', async () => {
@@ -87,23 +69,13 @@ export const GET = createHandler('admin_api.settings.get', async () => {
     return jsonOk(payload);
   }
 
-  const fallback = fallbackSettings();
-  return jsonOk({
-    quietHours: fallback.quietHours(),
-    throttlePerMinute: fallback.throttlePerMinute,
-    optOutList: fallback.optOutList,
-    integration: {
-      status: 'degraded' as const,
-      message: 'Using mock settings because Supabase credentials are not configured.',
-      target: 'settings_store'
-    }
-  });
+  return buildDegradedError('Supabase credentials are not configured.');
 });
 
 export const POST = createHandler('admin_api.settings.post', async (request: Request) => {
   const adminClient = getSupabaseAdminClient();
   if (!adminClient) {
-    return buildDegradedResponse('Supabase service role not available. Configure environment variables to persist settings.');
+    return buildDegradedError('Supabase service role not available. Configure environment variables to persist settings.');
   }
 
   let parsed: z.infer<typeof settingsMutationSchema>;

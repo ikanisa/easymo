@@ -1,34 +1,22 @@
 export const dynamic = 'force-dynamic';
-import { NextResponse } from "next/server";
 import { z } from "zod";
 import { liveCallSchema } from "@/lib/schemas";
-import { mockLiveCalls } from "@/lib/mock-data";
 import { getVoiceBridgeApiUrl, shouldUseMocks } from "@/lib/runtime-config";
+import { jsonError, jsonOk } from "@/lib/api/http";
 
 const liveCallsResponseSchema = z.object({
   calls: z.array(liveCallSchema),
   generatedAt: z.string().datetime().optional(),
 });
 
-function fallbackResponse() {
-  return NextResponse.json({
-    calls: mockLiveCalls,
-    generatedAt: new Date().toISOString(),
-    integration: {
-      status: "mock",
-      message: "Using live call fixtures",
-    },
-  });
-}
-
 export async function GET() {
   if (shouldUseMocks()) {
-    return fallbackResponse();
+    return jsonError({ error: 'unavailable', message: 'Voice bridge not configured in this environment.' }, 503);
   }
 
   const voiceUrl = getVoiceBridgeApiUrl();
   if (!voiceUrl) {
-    return fallbackResponse();
+    return jsonError({ error: 'unavailable', message: 'VOICE_BRIDGE_API_URL is not set.' }, 503);
   }
 
   try {
@@ -42,13 +30,10 @@ export async function GET() {
       throw new Error(`Voice bridge responded with ${response.status}`);
     }
     const parsed = liveCallsResponseSchema.parse(await response.json());
-    return NextResponse.json({
-      ...parsed,
-      integration: { status: "ok" },
-    });
+    return jsonOk({ ...parsed, integration: { status: 'ok' as const } });
   } catch (error) {
     console.error("live-calls.fetch_failed", error);
-    return fallbackResponse();
+    return jsonError({ error: 'upstream_failed', message: 'Failed to fetch live calls.' }, 502);
   }
 }
 

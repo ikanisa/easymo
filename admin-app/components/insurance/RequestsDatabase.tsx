@@ -80,8 +80,8 @@ export function RequestsDatabase() {
         const mapped: RequestDetail[] = data.map((r: any) => ({
           id: String(r.id),
           status: String(r.status ?? ""),
-          customerName: String(r.contactId ?? "—"),
-          customerMsisdn: "",
+          customerName: (r.contactName as string | null) ?? (r.contactId as string | null) ?? "—",
+          customerMsisdn: (r.contactPhone as string | null) ?? "",
           vehicle: { plateNumber: r.vehiclePlate ?? r.vehicle_plate ?? null } as any,
           comparison: [],
           outstandingMinor: 0,
@@ -154,6 +154,7 @@ export function RequestsDatabase() {
             <tr>
               <th className="px-4 py-3 text-left">Request</th>
               <th className="px-4 py-3 text-left">Customer</th>
+              <th className="px-4 py-3 text-left">Vehicle</th>
               <th className="px-4 py-3 text-left">Status</th>
               <th className="px-4 py-3 text-left">Outstanding</th>
               <th className="px-4 py-3 text-left">Tasks overdue</th>
@@ -172,6 +173,7 @@ export function RequestsDatabase() {
                   <div className="font-medium">{row.customerName}</div>
                   <div className="text-xs text-[color:var(--color-muted)]">{row.customerMsisdn}</div>
                 </td>
+                <td className="px-4 py-3">{row.vehicle?.plateNumber ?? "—"}</td>
                 <td className="px-4 py-3">
                   <Badge variant={statusVariant[row.status]}>{row.status.replace(/_/g, " ")}</Badge>
                 </td>

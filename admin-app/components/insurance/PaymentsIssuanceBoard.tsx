@@ -160,6 +160,17 @@ export function PaymentsIssuanceBoard() {
                       Quote
                     </a>
                   ) : null}
+                  {p.policyNumber ? (
+                    <span className="text-[color:var(--color-muted)]">•</span>
+                  ) : null}
+                  {p.policyNumber ? (
+                    <a
+                      href={`/insurance/policies?search=${encodeURIComponent(p.policyNumber)}`}
+                      className="text-[color:var(--color-accent)] underline-offset-2 hover:underline text-xs"
+                    >
+                      Policy: {p.policyNumber}
+                    </a>
+                  ) : null}
                 </td>
               </tr>
             ))}

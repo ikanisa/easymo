@@ -64,7 +64,7 @@ export function BarsClient({
 
       <SectionCard
         title="Bars overview"
-        description="Filter by status or search by name to locate a bar quickly. Row actions will connect to drawers and overrides in later phases."
+        description="Filter by status/claim or search by name."
         actions={
           <div className="flex flex-wrap items-center gap-3">
             <label className="text-sm text-[color:var(--color-muted)]">
@@ -87,6 +87,25 @@ export function BarsClient({
                     {status}
                   </option>
                 ))}
+              </select>
+            </label>
+            <label className="text-sm text-[color:var(--color-muted)]">
+              Claimed
+              <select
+                value={barParams.claimed == null ? "" : (barParams.claimed ? "true" : "false")}
+                onChange={(event) => {
+                  const v = event.target.value;
+                  setBarParams((prev) => ({
+                    ...prev,
+                    claimed: v === "" ? undefined : v === "true",
+                    limit: initialBarParams.limit ?? 100,
+                  }));
+                }}
+                className="ml-2 rounded-lg border border-[color:var(--color-border)]/40 bg-white/90 px-3 py-1 text-sm"
+              >
+                <option value="">All</option>
+                <option value="true">Claimed</option>
+                <option value="false">Unclaimed</option>
               </select>
             </label>
             <label className="text-sm text-[color:var(--color-muted)]">

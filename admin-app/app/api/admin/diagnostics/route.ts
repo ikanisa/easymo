@@ -1,12 +1,11 @@
 export const dynamic = 'force-dynamic';
-import { jsonOk } from "@/lib/api/http";
+import { jsonOk, jsonError } from "@/lib/api/http";
 import { getSupabaseAdminClient } from "@/lib/server/supabase-admin";
 import {
   composeDiagnosticsSnapshot,
   parseAdminDiagnosticsHealth,
   parseAdminDiagnosticsLogs,
 } from "@/lib/flow-exchange/admin-diagnostics";
-import { mockAdminDiagnostics } from "@/lib/mock-data";
 import { createHandler } from "@/app/api/withObservability";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ObservabilityContext } from "@/lib/server/observability";
@@ -31,19 +30,8 @@ type QueueSnapshot = {
   mobilityOpenTrips: number;
 };
 
-function withMessage(message: string) {
-  return {
-    health: {
-      ...mockAdminDiagnostics.health,
-      messages: [...mockAdminDiagnostics.health.messages, message],
-    },
-    logs: {
-      ...mockAdminDiagnostics.logs,
-      messages: [...mockAdminDiagnostics.logs.messages, message],
-    },
-    matches: mockAdminDiagnostics.matches,
-    queues: mockAdminDiagnostics.queues,
-  };
+function degrade(message: string) {
+  return jsonError({ error: 'unavailable', message }, 503);
 }
 
 export const GET = createHandler(
@@ -53,11 +41,7 @@ export const GET = createHandler(
     const adminWaId = process.env.ADMIN_FLOW_WA_ID;
 
     if (!adminClient || !adminWaId) {
-      return jsonOk(
-        withMessage(
-          "Diagnostics bridge not configured. Set SUPABASE credentials and ADMIN_FLOW_WA_ID for live data.",
-        ),
-      );
+      return degrade("Diagnostics bridge not configured. Set SUPABASE credentials and ADMIN_FLOW_WA_ID for live data.");
     }
 
     try {
@@ -87,12 +71,7 @@ export const GET = createHandler(
           healthResult.error,
           logsResult.error,
         );
-        return jsonOk(
-          withMessage(
-            "Failed to load diagnostics from flow-exchange. Showing mock data instead.",
-          ),
-          502,
-        );
+        return jsonError({ error: 'upstream_failed', message: 'Failed to load diagnostics from flow-exchange.' }, 502);
       }
 
       const health = parseAdminDiagnosticsHealth(healthResult.data);
@@ -110,9 +89,7 @@ export const GET = createHandler(
       observability.recordMetric?.("admin_diagnostics_load_error_total", 1, {
         message: error instanceof Error ? error.message : "unknown",
       });
-      return jsonOk(
-        withMessage("Unexpected diagnostics error. Showing mock data instead."),
-      );
+      return jsonError({ error: 'unknown', message: 'Unexpected diagnostics error.' }, 500);
     }
   },
 );
@@ -193,16 +170,11 @@ async function loadMatchSummary(
     messages.push("Failed to load live match telemetry. Showing cached values.");
     observability.recordMetric?.("admin_diagnostics_match_summary_error_total", 1);
     return {
-      matchesLastHour: mockAdminDiagnostics.matches.matchesLastHour,
-      matchesLast24h: mockAdminDiagnostics.matches.matchesLast24h,
-      openTrips: mockAdminDiagnostics.matches.openTrips,
-      errorCountLastHour: mockAdminDiagnostics.matches.errorCountLastHour,
-      recentErrors: mockAdminDiagnostics.matches.recentErrors.map((err: any, idx: number) => ({
-        id: err.id ?? `mock-err-${idx}`,
-        endpoint: err.endpoint ?? '',
-        status_code: err.status_code ?? 0,
-        received_at: err.received_at ?? new Date().toISOString()
-      })),
+      matchesLastHour: 0,
+      matchesLast24h: 0,
+      openTrips: 0,
+      errorCountLastHour: 0,
+      recentErrors: [],
       messages,
     };
   }
@@ -255,7 +227,7 @@ async function loadQueueSnapshot(
   } catch (error) {
     console.error("admin-diagnostics.queue_snapshot_fail", error);
     observability.recordMetric?.("admin_diagnostics_queue_snapshot_error_total", 1);
-    return mockAdminDiagnostics.queues;
+    return { notificationsQueued: 0, ocrPending: 0, mobilityOpenTrips: 0 };
   }
 }
 

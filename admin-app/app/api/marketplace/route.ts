@@ -1,17 +1,12 @@
 export const dynamic = 'force-dynamic';
-import { NextResponse } from "next/server";
 import { z } from "zod";
 import {
   vendorRankingSchema,
   marketplaceIntentSchema,
   marketplacePurchaseSchema,
 } from "@/lib/schemas";
-import {
-  mockVendorRankings,
-  mockMarketplaceIntents,
-  mockMarketplacePurchases,
-} from "@/lib/mock-data";
 import { getMarketplaceServiceUrls, shouldUseMocks } from "@/lib/runtime-config";
+import { jsonError, jsonOk } from "@/lib/api/http";
 
 const rankingResponseSchema = z.object({
   vendors: z.array(vendorRankingSchema),
@@ -25,18 +20,6 @@ const purchasesResponseSchema = z.object({
   purchases: z.array(marketplacePurchaseSchema),
 });
 
-function fallback() {
-  return NextResponse.json({
-    vendors: mockVendorRankings,
-    intents: mockMarketplaceIntents,
-    purchases: mockMarketplacePurchases,
-    integration: {
-      status: "mock",
-      message: "Marketplace services unreachable; using fixtures",
-    },
-  });
-}
-
 async function safeFetch(url: string | null, schema: z.ZodTypeAny) {
   if (!url) return null;
   const response = await fetch(url, { cache: "no-store" });
@@ -49,12 +32,12 @@ async function safeFetch(url: string | null, schema: z.ZodTypeAny) {
 
 export async function GET() {
   if (shouldUseMocks()) {
-    return fallback();
+    return jsonError({ error: 'unavailable', message: 'Marketplace services not configured.' }, 503);
   }
 
   const urls = getMarketplaceServiceUrls();
   if (!urls.ranking || !urls.buyer) {
-    return fallback();
+    return jsonError({ error: 'unavailable', message: 'Marketplace service URLs missing.' }, 503);
   }
 
   try {
@@ -73,17 +56,18 @@ export async function GET() {
       ),
     ]);
 
-    return NextResponse.json({
-      vendors: ranking?.vendors ?? mockVendorRankings,
-      intents: intents?.intents ?? mockMarketplaceIntents,
-      purchases: purchases?.purchases ?? mockMarketplacePurchases,
-      integration: {
-        status: "ok",
-      },
+    if (!ranking || !intents || !purchases) {
+      return jsonError({ error: 'partial_upstream', message: 'One or more marketplace endpoints failed.' }, 502);
+    }
+    return jsonOk({
+      vendors: ranking.vendors,
+      intents: intents.intents,
+      purchases: purchases.purchases,
+      integration: { status: 'ok' as const },
     });
   } catch (error) {
     console.error("marketplace.summary.failed", error);
-    return fallback();
+    return jsonError({ error: 'upstream_failed', message: 'Failed to fetch marketplace summary.' }, 502);
   }
 }
 

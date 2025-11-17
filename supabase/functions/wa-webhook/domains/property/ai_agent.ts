@@ -177,7 +177,7 @@ export async function executePropertyAISearch(
 
     // Call property-rental agent
     const response = await fetch(
-      `${Deno.env.get("SUPABASE_URL")}/functions/v1/agents/property-rental`,
+      `${Deno.env.get("SUPABASE_URL")}/functions/v1/agent-property-rental`,
       {
         method: "POST",
         headers: {

@@ -12,12 +12,15 @@ if (!isProd) {
 const root = process.cwd();
 const TARGET_DIRS = [
   join(root, 'admin-app', 'components'),
+  join(root, 'admin-app', 'app'),
+  join(root, 'admin-app', 'lib'),
 ];
 
 const EXCLUDE_DIRS = new Set([
   join(root, 'admin-app', 'tests'),
   join(root, 'admin-app', '__tests__'),
   join(root, 'admin-app', 'docs'),
+  join(root, 'admin-app', 'public'),
 ]);
 
 const VALID_EXT = new Set(['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs']);

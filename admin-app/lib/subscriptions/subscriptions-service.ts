@@ -1,10 +1,8 @@
-import { shouldUseMocks } from "@/lib/runtime-config";
 import { paginateArray, type PaginatedResult, type Pagination } from "@/lib/shared/pagination";
 import { matchesSearch } from "@/lib/shared/search";
 import { callAdminFunction } from "@/lib/server/functions-client";
 import { apiClient } from "@/lib/api/client";
 
-const useMocks = shouldUseMocks();
 const isServer = typeof window === "undefined";
 
 export type SubscriptionRow = Record<string, unknown>;
@@ -18,10 +16,6 @@ export async function listSubscriptions(params: { search?: string } & Pagination
 
     const query = search.toString();
     return apiClient.fetch<PaginatedResult<SubscriptionRow>>(`subscriptions${query ? `?${query}` : ""}`);
-  }
-
-  if (useMocks) {
-    return paginateArray([], params);
   }
 
   const { getSupabaseAdminClient } = await import("@/lib/server/supabase-admin");

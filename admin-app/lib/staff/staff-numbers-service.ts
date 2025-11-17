@@ -1,16 +1,8 @@
 import { apiFetch } from "@/lib/api/client";
 import { getAdminApiPath } from "@/lib/routes";
-import { shouldUseMocks } from "@/lib/runtime-config";
-import { mockStaffNumbers } from "@/lib/mock-data";
-import {
-  paginateArray,
-  type PaginatedResult,
-  type Pagination,
-} from "@/lib/shared/pagination";
+import { type PaginatedResult, type Pagination } from "@/lib/shared/pagination";
 import { matchesSearch } from "@/lib/shared/search";
 import type { StaffNumber } from "@/lib/schemas";
-
-const useMocks = shouldUseMocks();
 const isServer = typeof window === "undefined";
 
 export type StaffNumberListParams = Pagination & {
@@ -32,18 +24,11 @@ export async function listStaffNumbers(
     }
   }
 
-  if (useMocks) {
-    const filtered = filterStaff(mockStaffNumbers, params);
-    return paginateArray(filtered, { offset, limit });
-  }
-
   const response = await fetchStaffNumbersApi({ ...params, offset, limit });
   if (response) {
     return response;
   }
-
-  const filtered = filterStaff(mockStaffNumbers, params);
-  return paginateArray(filtered, { offset, limit });
+  return { data: [], total: 0, hasMore: false };
 }
 
 function filterStaff(staff: StaffNumber[], params: StaffNumberListParams) {

@@ -4,17 +4,9 @@ import {
   type AdminDiagnosticsMatch,
   type AdminDiagnosticsSnapshot,
 } from "@/lib/schemas";
-import { mockAdminDiagnostics, mockAdminDiagnosticsMatch } from "@/lib/mock-data";
-import { shouldUseMocks } from "@/lib/runtime-config";
 import { getAdminApiPath } from "@/lib/routes";
 
-const useMocks = shouldUseMocks();
-
 export async function getAdminDiagnostics(): Promise<AdminDiagnosticsSnapshot> {
-  if (useMocks) {
-    return mockAdminDiagnostics;
-  }
-
   try {
     const response = await fetch(getAdminApiPath("admin", "diagnostics"), { cache: "no-store" });
     if (!response.ok) {
@@ -27,33 +19,17 @@ export async function getAdminDiagnostics(): Promise<AdminDiagnosticsSnapshot> {
   } catch (error) {
     console.error("Admin diagnostics fetch failed", error);
     return adminDiagnosticsSnapshotSchema.parse({
-      health: {
-        ...mockAdminDiagnostics.health,
-        messages: [
-          ...mockAdminDiagnostics.health.messages,
-          "Failed to load diagnostics. Showing mock snapshot instead.",
-        ],
-      },
-      logs: {
-        ...mockAdminDiagnostics.logs,
-        messages: [
-          ...mockAdminDiagnostics.logs.messages,
-          "Diagnostics logs fallback to mock data.",
-        ],
-      },
-      matches: mockAdminDiagnostics.matches,
-      queues: mockAdminDiagnostics.queues,
-    });
+      health: { status: "unknown", recentErrors: [], messages: ["Failed to load diagnostics."] },
+      logs: { entries: [], messages: ["No logs."] },
+      matches: { matchesLastHour: 0, matchesLast24h: 0, openTrips: 0, errorCountLastHour: 0, recentErrors: [], messages: [] },
+      queues: { notificationsQueued: 0, ocrPending: 0, mobilityOpenTrips: 0 },
+    } as any);
   }
 }
 
 export async function getAdminDiagnosticsMatch(
   tripId: string,
 ): Promise<AdminDiagnosticsMatch> {
-  if (useMocks) {
-    return mockAdminDiagnosticsMatch;
-  }
-
   try {
     const response = await fetch(getAdminApiPath("admin", "diagnostics", "match"), {
       method: "POST",
@@ -69,12 +45,6 @@ export async function getAdminDiagnosticsMatch(
     return adminDiagnosticsMatchSchema.parse(json);
   } catch (error) {
     console.error("Diagnostics match fetch failed", error);
-    return adminDiagnosticsMatchSchema.parse({
-      ...mockAdminDiagnosticsMatch,
-      messages: [
-        ...mockAdminDiagnosticsMatch.messages,
-        "Failed to load trip diagnostics. Showing mock data instead.",
-      ],
-    });
+    return adminDiagnosticsMatchSchema.parse({ trip: null, messages: ["Failed to load trip diagnostics."] } as any);
   }
 }

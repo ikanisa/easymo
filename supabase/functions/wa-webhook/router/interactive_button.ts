@@ -46,6 +46,8 @@ import {
   showWalletRedeem,
 } from "../domains/wallet/redeem.ts";
 import { showWalletTop } from "../domains/wallet/top.ts";
+import { ensureReferralLink } from "../utils/share.ts";
+import { logStructuredEvent } from "../observe/log.ts";
 import { openAdminHub, showAdminHubList } from "../flows/admin/hub.ts";
 import { handleAdminQuickAction } from "../flows/admin/actions.ts";
 import { handleInsuranceButton } from "../flows/admin/insurance.ts";
@@ -193,6 +195,37 @@ export async function handleButton(
       return await handleWalletRedeemConfirm(ctx, state as any);
     case IDS.WALLET_TOP:
       return await showWalletTop(ctx);
+    case IDS.SHARE_EASYMO: {
+      if (!ctx.profileId) return false;
+      try {
+        const link = await ensureReferralLink(ctx.supabase, ctx.profileId);
+        const shareText = [
+          t(ctx.locale, "wallet.earn.forward.instructions"),
+          t(ctx.locale, "wallet.earn.share_text_intro"),
+          link.waLink,
+          t(ctx.locale, "wallet.earn.copy.code", { code: link.code }),
+          t(ctx.locale, "wallet.earn.note.keep_code"),
+        ].join("\n\n");
+        await logStructuredEvent("SHARE_EASYMO_TAP", { profileId: ctx.profileId, from: ctx.from });
+        await sendButtonsMessage(
+          ctx,
+          shareText,
+          [
+            { id: IDS.WALLET_EARN, title: t(ctx.locale, "wallet.earn.button") },
+            { id: IDS.BACK_HOME, title: t(ctx.locale, "common.home_button") },
+          ],
+        );
+        return true;
+      } catch (e) {
+        await logStructuredEvent("SHARE_EASYMO_ERROR", { profileId: ctx.profileId, from: ctx.from, error: (e as Error)?.message });
+        await sendButtonsMessage(
+          ctx,
+          t(ctx.locale, "wallet.earn.error"),
+          [{ id: IDS.BACK_HOME, title: t(ctx.locale, "common.home_button") }],
+        );
+        return true;
+      }
+    }
     case IDS.WALLET_SHARE_DONE:
       return await handleWalletShareDone(ctx);
     case IDS.PROFILE_ADD_VEHICLE: {
@@ -202,6 +235,14 @@ export async function handleButton(
     case IDS.PROFILE_ADD_BUSINESS: {
       const { handleAddBusiness } = await import("../domains/profile/index.ts");
       return await handleAddBusiness(ctx);
+    }
+    case IDS.PROFILE_BUSINESSES: {
+      const { handleProfileBusinesses } = await import("../domains/profile/index.ts");
+      return await handleProfileBusinesses(ctx);
+    }
+    case IDS.PROFILE_MANAGE_BUSINESSES: {
+      const { showManageBusinesses } = await import("../domains/business/management.ts");
+      return await showManageBusinesses(ctx);
     }
     case IDS.BAR_VIEW_MENU: {
       try {

@@ -2,7 +2,6 @@ export const dynamic = 'force-dynamic';
 import { z } from 'zod';
 import { getSupabaseAdminClient } from '@/lib/server/supabase-admin';
 import { logStructured } from '@/lib/server/logger';
-import { mockStaffNumbers } from '@/lib/mock-data';
 import { jsonOk, jsonError, zodValidationError } from '@/lib/api/http';
 import { createHandler } from '@/app/api/withObservability';
 
@@ -14,32 +13,8 @@ const querySchema = z.object({
   offset: z.coerce.number().int().min(0).optional()
 });
 
-function fromMocks(params: z.infer<typeof querySchema>) {
-  const offset = offset ?? 0;
-  const limit = limit ?? 200;
-
-  const filtered = mockStaffNumbers.filter((row: any) => {
-    const roleMatch = role ? row.role === role : true;
-    const activeMatch = active ? String(row.active) === active : true;
-    const searchMatch = search
-      ? `${row.barName} ${row.number}`.toLowerCase().includes(search.toLowerCase())
-      : true;
-    return roleMatch && activeMatch && searchMatch;
-  });
-
-  const slice = filtered.slice(offset, offset + limit);
-  const hasMore = offset + slice.length < filtered.length;
-
-  return jsonOk({
-    data: slice,
-    total: filtered.length,
-    hasMore,
-    integration: {
-      status: 'degraded' as const,
-      target: 'staff_numbers',
-      message: 'Supabase credentials missing. Showing mock staff numbers.',
-    },
-  });
+function unavailable(message: string, code = 503) {
+  return jsonError({ error: 'unavailable', message }, code);
 }
 
 export const GET = createHandler('admin_api.staff.list', async (request: Request) => {
@@ -52,11 +27,10 @@ export const GET = createHandler('admin_api.staff.list', async (request: Request
 
   const adminClient = getSupabaseAdminClient();
   if (!adminClient) {
-    return fromMocks(params);
+    return unavailable('Supabase credentials missing.');
   }
 
-  const offset = offset ?? 0;
-  const limit = limit ?? 200;
+  const { offset = 0, limit = 200, role, active, search } = params;
 
   const supabaseQuery = adminClient
     .from('bar_numbers')
@@ -86,7 +60,7 @@ export const GET = createHandler('admin_api.staff.list', async (request: Request
       status: 'error',
       message: error.message
     });
-    return fromMocks(params);
+    return unavailable('Unable to load staff numbers.', 500);
   }
 
   const rows = data ?? [];

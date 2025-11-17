@@ -1,15 +1,8 @@
 import { apiFetch } from "@/lib/api/client";
 import { getAdminApiPath } from "@/lib/routes";
-import { shouldUseMocks } from "@/lib/runtime-config";
-import { mockOcrJobs } from "@/lib/mock-data";
-import {
-  paginateArray,
-  type PaginatedResult,
-  type Pagination,
-} from "@/lib/shared/pagination";
+import { type PaginatedResult, type Pagination } from "@/lib/shared/pagination";
 import type { OcrJob } from "@/lib/schemas";
 
-const useMocks = shouldUseMocks();
 
 export type OcrJobListParams = Pagination & {
   status?: OcrJob["status"];
@@ -22,16 +15,7 @@ export async function listOcrJobs(
   const offset = params.offset ?? 0;
   const limit = params.limit ?? 50;
 
-  const applyFilter = (collection: OcrJob[]) =>
-    collection.filter((job) => {
-      const statusMatch = params.status ? job.status === params.status : true;
-      const barMatch = params.barId ? job.barId === params.barId : true;
-      return statusMatch && barMatch;
-    });
-
-  if (useMocks) {
-    return paginateArray(applyFilter(mockOcrJobs), { offset, limit });
-  }
+  // Fetch from live API
 
   const searchParams = new URLSearchParams();
   searchParams.set("limit", String(limit));
@@ -44,20 +28,15 @@ export async function listOcrJobs(
     ? `${getAdminApiPath("ocr", "jobs")}?${query}`
     : getAdminApiPath("ocr", "jobs");
 
-  try {
-    const response = await apiFetch<{
-      data: OcrJob[];
-      total: number;
-      hasMore?: boolean;
-    }>(url);
+  const response = await apiFetch<{
+    data: OcrJob[];
+    total: number;
+    hasMore?: boolean;
+  }>(url);
 
-    return {
-      data: response.data,
-      total: response.total,
-      hasMore: response.hasMore ?? (offset + response.data.length < response.total),
-    };
-  } catch (error) {
-    console.error("Failed to fetch OCR jobs", error);
-    return paginateArray(applyFilter(mockOcrJobs), { offset, limit });
-  }
+  return {
+    data: response.data,
+    total: response.total,
+    hasMore: response.hasMore ?? (offset + response.data.length < response.total),
+  };
 }

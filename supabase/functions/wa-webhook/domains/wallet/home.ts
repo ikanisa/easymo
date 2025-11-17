@@ -143,6 +143,11 @@ function buildWalletHomeRows(): WalletListRow[] {
       description: "Share invites to earn rewards.",
     },
     {
+      id: IDS.WALLET_TRANSFER,
+      title: "Transfer tokens",
+      description: "Send tokens to a friend.",
+    },
+    {
       id: IDS.WALLET_TRANSACTIONS,
       title: "Transactions",
       description: "See wallet and token history.",

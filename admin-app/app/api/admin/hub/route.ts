@@ -1,15 +1,11 @@
 export const dynamic = 'force-dynamic';
-import { jsonOk } from "@/lib/api/http";
+import { jsonOk, jsonError } from "@/lib/api/http";
 import { getSupabaseAdminClient } from "@/lib/server/supabase-admin";
 import { parseAdminHubSnapshotFromFlowExchange } from "@/lib/flow-exchange/admin-hub";
-import { mockAdminHubSnapshot } from "@/lib/mock-data";
 import { createHandler } from "@/app/api/withObservability";
 
-function withMessage(message: string) {
-  return {
-    sections: mockAdminHubSnapshot.sections,
-    messages: [...mockAdminHubSnapshot.messages, message],
-  };
+function degrade(message: string) {
+  return jsonError({ error: 'unavailable', message }, 503);
 }
 
 export const GET = createHandler("admin_api.admin_hub.get", async () => {
@@ -17,11 +13,7 @@ export const GET = createHandler("admin_api.admin_hub.get", async () => {
   const adminWaId = process.env.ADMIN_FLOW_WA_ID;
 
   if (!adminClient || !adminWaId) {
-    return jsonOk(
-      withMessage(
-        "Admin flow bridge not configured. Set SUPABASE credentials and ADMIN_FLOW_WA_ID to load live sections.",
-      ),
-    );
+    return degrade("Admin flow bridge not configured. Set SUPABASE credentials and ADMIN_FLOW_WA_ID to load live sections.");
   }
 
   try {
@@ -35,19 +27,14 @@ export const GET = createHandler("admin_api.admin_hub.get", async () => {
 
     if (error) {
       console.error("Admin hub flow invoke failed", error);
-      return jsonOk(
-        withMessage(
-          "Failed to load live admin hub sections. Showing mock snapshot instead.",
-        ),
-        502,
-      );
+      return jsonError({ error: 'upstream_failed', message: 'Failed to load admin hub sections.' }, 502);
     }
 
     const snapshot = parseAdminHubSnapshotFromFlowExchange(data);
     return jsonOk(snapshot);
   } catch (error) {
     console.error("Admin hub API error", error);
-    return jsonOk(withMessage("Unexpected error loading admin hub sections. Showing mock snapshot instead."));
+    return jsonError({ error: 'unknown', message: 'Unexpected error loading admin hub sections.' }, 500);
   }
 });
 

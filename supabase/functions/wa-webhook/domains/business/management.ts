@@ -5,6 +5,7 @@ import { sendListMessage, sendButtonsMessage, buildButtons } from "../../utils/r
 import { t } from "../../i18n/translator.ts";
 import { logStructuredEvent } from "../../observe/log.ts";
 import { sendHomeMenu } from "../../flows/home.ts";
+import { startRestaurantManager } from "../vendor/restaurant.ts";
 
 export const BUSINESS_MANAGEMENT_STATE = "business_management";
 export const BUSINESS_DETAIL_STATE = "business_detail";
@@ -19,11 +20,19 @@ type BusinessListRow = {
 type Business = {
   id: string;
   name: string;
-  description: string | null;
-  category_id: number | null;
+  category_name: string | null;
   location_text: string | null;
   is_active: boolean;
+  tag?: string | null;
+  bar_id?: string | null;
+  owner_user_id?: string | null;
 };
+
+function isBarBusinessRecord(business: Pick<Business, "category_name" | "tag">): boolean {
+  const slug = `${business.category_name ?? ""} ${business.tag ?? ""}`.toLowerCase();
+  if (!slug.trim()) return false;
+  return slug.includes("bar") || slug.includes("restaurant");
+}
 
 /**
  * Display list of businesses owned by the current user
@@ -44,26 +53,38 @@ export async function showManageBusinesses(
   // Query businesses owned by this user
   let { data: businesses, error } = await ctx.supabase
     .from("business")
-    .select("id, name, description, category_id, location_text, is_active")
+    .select("id, name, category_name, location_text, is_active")
     .eq("owner_user_id", ctx.profileId)
     .eq("is_active", true)
     .order("created_at", { ascending: false });
 
   if (error) {
-    console.error("business.query_error", { error: error.message });
-    await sendButtonsMessage(
-      ctx,
-      "⚠️ Could not load your businesses. Please try again later.",
-      buildButtons({ id: IDS.BACK_HOME, title: t(ctx.locale, "common.home_button") }),
-    );
-    return true;
+    // Fallback: some environments may not have created_at; retry ordering by name
+    console.warn("business.query_error_primary", { error: error.message });
+    const retry = await ctx.supabase
+      .from("business")
+      .select("id, name, category_name, location_text, is_active")
+      .eq("owner_user_id", ctx.profileId)
+      .eq("is_active", true)
+      .order("name", { ascending: true });
+    if (!retry.error) {
+      businesses = retry.data as any;
+    } else {
+      console.error("business.query_error_fallback", { error: retry.error.message });
+      await sendButtonsMessage(
+        ctx,
+        "⚠️ Could not load your businesses. Please try again later.",
+        buildButtons({ id: IDS.BACK_HOME, title: t(ctx.locale, "common.home_button") }),
+      );
+      return true;
+    }
   }
 
   if (!businesses || businesses.length === 0) {
     // Fallback for older records that only tracked owner_whatsapp
     const fallback = await ctx.supabase
       .from("business")
-      .select("id, name, description, category_id, location_text, is_active")
+      .select("id, name, category_name, location_text, is_active")
       .eq("owner_whatsapp", ctx.from)
       .eq("is_active", true)
       .order("created_at", { ascending: false });
@@ -98,7 +119,7 @@ export async function showManageBusinesses(
   const rows: BusinessListRow[] = businesses.map((business) => ({
     id: `biz::${business.id}`,
     title: business.name,
-    description: business.location_text || business.description || "No description",
+    description: business.location_text || business.category_name || "",
   }));
 
   rows.push({
@@ -134,7 +155,7 @@ export async function showBusinessDetail(
   // Fetch business details
   const { data: business, error } = await ctx.supabase
     .from("business")
-    .select("id, name, description, location_text, is_active, owner_whatsapp")
+    .select("id, name, category_name, location_text, is_active, owner_whatsapp, owner_user_id, bar_id, tag")
     .eq("id", businessId)
     .or(
       `owner_user_id.eq.${ctx.profileId},owner_whatsapp.eq.${ctx.from}`,
@@ -151,12 +172,39 @@ export async function showBusinessDetail(
     return true;
   }
 
+  const canManageVenue = Boolean(
+    business.bar_id &&
+      isBarBusinessRecord(business) &&
+      business.owner_user_id === ctx.profileId,
+  );
+
   await setState(ctx.supabase, ctx.profileId, {
     key: BUSINESS_DETAIL_STATE,
-    data: { businessId, businessName: business.name },
+    data: {
+      businessId,
+      businessName: business.name,
+      barId: business.bar_id ?? null,
+    },
   });
 
-  const rows: BusinessListRow[] = [
+  const rows: BusinessListRow[] = [];
+
+  if (canManageVenue) {
+    rows.push(
+      {
+        id: IDS.BUSINESS_MANAGE_MENU,
+        title: t(ctx.locale, "restaurant.menu.view_title"),
+        description: t(ctx.locale, "restaurant.menu.view_desc"),
+      },
+      {
+        id: IDS.BUSINESS_VIEW_ORDERS,
+        title: t(ctx.locale, "restaurant.orders.view_title"),
+        description: t(ctx.locale, "restaurant.orders.view_desc"),
+      },
+    );
+  }
+
+  rows.push(
     {
       id: IDS.BUSINESS_EDIT,
       title: t(ctx.locale, "business.edit.title"),
@@ -177,7 +225,7 @@ export async function showBusinessDetail(
       title: "← Back to My Businesses",
       description: "Return to business list",
     },
-  ];
+  );
 
   await sendListMessage(
     ctx,
@@ -281,10 +329,32 @@ export async function confirmBusinessDelete(
 export async function handleBusinessSelection(
   ctx: RouterContext,
   id: string,
+  state?: { key?: string; data?: Record<string, unknown> },
 ): Promise<boolean> {
   if (id.startsWith("biz::")) {
     const businessId = id.substring(5);
     return await showBusinessDetail(ctx, businessId);
   }
+
+  if (
+    state?.key === BUSINESS_DETAIL_STATE &&
+    (id === IDS.BUSINESS_MANAGE_MENU || id === IDS.BUSINESS_VIEW_ORDERS)
+  ) {
+    const barId = typeof state.data?.barId === "string"
+      ? state.data?.barId
+      : null;
+    if (!barId) {
+      await sendButtonsMessage(
+        ctx,
+        t(ctx.locale, "restaurant.not_manager"),
+        buildButtons({ id: IDS.BACK_MENU, title: t(ctx.locale, "common.menu_back") }),
+      );
+      return true;
+    }
+    const initialAction = id === IDS.BUSINESS_MANAGE_MENU ? "menu" : "orders";
+    await startRestaurantManager(ctx, { barId, initialAction });
+    return true;
+  }
+
   return false;
 }

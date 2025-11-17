@@ -83,7 +83,7 @@ export async function handleWalletEarnSelection(
   id: string,
 ): Promise<boolean> {
   if (!ctx.profileId || state.key !== STATE_KEY) return false;
-  const share = state.data;
+  let share = state.data;
   if (!share) {
     await sendButtonsMessage(
       ctx,
@@ -97,6 +97,8 @@ export async function handleWalletEarnSelection(
       const body = [
         t(ctx.locale, "wallet.earn.whatsapp.body"),
         share.waLink,
+        t(ctx.locale, "wallet.earn.copy.code", { code: share.code }),
+        t(ctx.locale, "wallet.earn.note.keep_code"),
       ].join("\n\n");
       await sendButtonsMessage(
         ctx,
@@ -114,6 +116,7 @@ export async function handleWalletEarnSelection(
         t(ctx.locale, "wallet.earn.copy.body"),
         share.shortLink,
         t(ctx.locale, "wallet.earn.copy.code", { code: share.code }),
+        t(ctx.locale, "wallet.earn.note.keep_code"),
       ].join("\n\n");
       await sendButtonsMessage(
         ctx,
@@ -127,14 +130,29 @@ export async function handleWalletEarnSelection(
       return true;
     }
     case IDS.WALLET_SHARE_QR: {
+      let qrShare = share;
+      try {
+        qrShare = await ensureReferralLink(ctx);
+        share = qrShare;
+        await setState(ctx.supabase, ctx.profileId, {
+          key: STATE_KEY,
+          data: qrShare,
+        });
+      } catch (_) {
+        // fall back to existing share data
+      }
       await sendImageUrl(
         ctx.from,
-        share.qrUrl,
-        t(ctx.locale, "wallet.earn.qr.caption", { link: share.shortLink }),
+        qrShare.qrUrl,
+        t(ctx.locale, "wallet.earn.qr.caption", { link: qrShare.shortLink }),
       );
+      const qrBody = [
+        t(ctx.locale, "wallet.earn.qr.body"),
+        t(ctx.locale, "wallet.earn.note.keep_code"),
+      ].join("\n\n");
       await sendButtonsMessage(
         ctx,
-        t(ctx.locale, "wallet.earn.qr.body"),
+        qrBody,
         [{ id: IDS.WALLET_SHARE_DONE, title: t(ctx.locale, "wallet.buttons.done") }],
       );
       await logWalletAdjust({

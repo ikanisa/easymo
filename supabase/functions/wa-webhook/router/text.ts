@@ -28,6 +28,7 @@ import {
   handleFindPropertyBudget,
 } from "../domains/property/rentals.ts";
 import { handleJobPostDetails } from "../domains/jobs/index.ts";
+import { handleWalletTransferText } from "../domains/wallet/transfer.ts";
 
 export async function handleText(
   ctx: RouterContext,
@@ -58,6 +59,9 @@ export async function handleText(
   
   if (state.key === "bar_waiter_chat") {
     return await handleBarWaiterMessage(ctx, body, state.data);
+  }
+  if (state.key === "wallet_transfer") {
+    return await handleWalletTransferText(ctx, body, (state as any));
   }
   if (state.key === vehiclePlateStateKey) {
     const resume = parsePlateState(state.data);

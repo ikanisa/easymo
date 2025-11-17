@@ -16,3 +16,4 @@ export default function InsuranceQuoteBuilderPage() {
     </div>
   );
 }
+export const dynamic = "force-dynamic";

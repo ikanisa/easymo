@@ -16,7 +16,7 @@ function formatCurrency(value: number) {
   return currencyFormatter.format(Math.round(value));
 }
 
-type PolicyMock = { id: string; quoteId?: string | null; policyNumber?: string | null; insurer: string; status: string; effectiveFrom?: string | null; effectiveTo?: string | null; premiumTotalMinor?: number | null; breakdown: Array<{ id: string; label: string; amountMinor: number }> };
+type PolicyMock = { id: string; quoteId?: string | null; policyNumber?: string | null; insurer: string; status: string; effectiveFrom?: string | null; effectiveTo?: string | null; premiumTotalMinor?: number | null; breakdown: Array<{ id: string; label: string; amountMinor: number }>; customerName?: string | null; customerPhone?: string | null; vehiclePlate?: string | null };
 type RequestMock = { id: string; customerName?: string; customerMsisdn?: string; vehicle?: { plateNumber?: string | null } | null };
 
 interface PolicyDetail {
@@ -63,6 +63,10 @@ export function PoliciesDatabase() {
           effectiveTo: p.expiresAt ?? p.expires_at ?? null,
           premiumTotalMinor: p.premium ?? null,
           breakdown: [],
+          // Enriched fields
+          customerName: p.customerName ?? null,
+          customerPhone: p.customerPhone ?? null,
+          vehiclePlate: p.vehiclePlate ?? null,
         }));
         if (mounted) setPolicies(mapped);
       } catch {
@@ -130,6 +134,7 @@ export function PoliciesDatabase() {
               <th className="px-4 py-3 text-left">Policy</th>
               <th className="px-4 py-3 text-left">Quote</th>
               <th className="px-4 py-3 text-left">Customer</th>
+              <th className="px-4 py-3 text-left">Vehicle</th>
               <th className="px-4 py-3 text-left">Insurer</th>
               <th className="px-4 py-3 text-left">Effective dates</th>
               <th className="px-4 py-3 text-left">Status</th>
@@ -164,9 +169,10 @@ export function PoliciesDatabase() {
                     ) : "—"}
                   </td>
                   <td className="px-4 py-3">
-                    <div className="font-medium">{request?.customerName ?? "—"}</div>
-                    <div className="text-xs text-[color:var(--color-muted)]">{request?.customerMsisdn ?? ""}</div>
+                    <div className="font-medium">{policy.customerName ?? request?.customerName ?? "—"}</div>
+                    <div className="text-xs text-[color:var(--color-muted)]">{policy.customerPhone ?? request?.customerMsisdn ?? ""}</div>
                   </td>
+                  <td className="px-4 py-3">{policy.vehiclePlate ?? request?.vehicle?.plateNumber ?? "—"}</td>
                   <td className="px-4 py-3">{policy.insurer}</td>
                   <td className="px-4 py-3">
                     {policy.effectiveFrom

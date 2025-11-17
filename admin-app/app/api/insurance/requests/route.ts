@@ -70,11 +70,41 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  const rows = (data ?? []).map(mapRow);
+  const rows: Array<{
+    id: string;
+    contactId: string | null;
+    status: string;
+    vehicleType: string | null;
+    vehiclePlate: string | null;
+    insurerPreference: string | null;
+    notes: string | null;
+    createdAt: string;
+    updatedAt: string | null;
+  }> = (data ?? []).map(mapRow);
+  // Enrich with contact info
+  const contactIds = Array.from(new Set(rows.map((r) => r.contactId).filter((v): v is string => Boolean(v))));
+  let contactsMap = new Map<string, { name: string | null; phone: string | null }>();
+  if (contactIds.length) {
+    const { data: contacts } = await admin
+      .from('wa_contacts')
+      .select('id, display_name, phone_e164')
+      .in('id', contactIds);
+    (contacts ?? []).forEach((c: any) => {
+      contactsMap.set(String(c.id), {
+        name: (c.display_name as string | null) ?? null,
+        phone: (c.phone_e164 as string | null) ?? null,
+      });
+    });
+  }
+  const enriched = rows.map((r) => ({
+    ...r,
+    contactName: r.contactId ? (contactsMap.get(r.contactId)?.name ?? null) : null,
+    contactPhone: r.contactId ? (contactsMap.get(r.contactId)?.phone ?? null) : null,
+  }));
   const total = count ?? rows.length;
   const hasMore = offset + rows.length < total;
 
-  return NextResponse.json({ data: rows, total, hasMore });
+  return NextResponse.json({ data: enriched, total, hasMore });
 }
 
 export async function POST(request: NextRequest) {

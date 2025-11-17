@@ -2,7 +2,6 @@ export const dynamic = 'force-dynamic';
 import { z } from "zod";
 import { getSupabaseAdminClient } from "@/lib/server/supabase-admin";
 import { parseAdminDiagnosticsMatch } from "@/lib/flow-exchange/admin-diagnostics";
-import { mockAdminDiagnosticsMatch } from "@/lib/mock-data";
 import { jsonOk, zodValidationError, jsonError } from "@/lib/api/http";
 import { requireActorId, UnauthorizedError } from "@/lib/server/auth";
 import { createHandler } from "@/app/api/withObservability";
@@ -11,14 +10,8 @@ const requestSchema = z.object({
   tripId: z.string().min(1, "Trip id required"),
 });
 
-function errorResponse(message: string, status = 200) {
-  return jsonOk(
-    {
-      trip: mockAdminDiagnosticsMatch.trip,
-      messages: [...mockAdminDiagnosticsMatch.messages, message],
-    },
-    status,
-  );
+function degrade(message: string, status = 503) {
+  return jsonError({ error: 'unavailable', message }, status);
 }
 
 export const POST = createHandler("admin_api.admin_diagnostics.match", async (request: Request) => {
@@ -44,7 +37,7 @@ export const POST = createHandler("admin_api.admin_diagnostics.match", async (re
   const adminWaId = process.env.ADMIN_FLOW_WA_ID;
 
   if (!adminClient || !adminWaId) {
-    return errorResponse(
+    return degrade(
       "Diagnostics match bridge not configured. Set SUPABASE credentials and ADMIN_FLOW_WA_ID.",
     );
   }
@@ -61,8 +54,8 @@ export const POST = createHandler("admin_api.admin_diagnostics.match", async (re
 
     if (error) {
       console.error("Diagnostics match invocation failed", error);
-      return errorResponse(
-        "Failed to load trip diagnostics. Showing mock data instead.",
+      return degrade(
+        "Failed to load trip diagnostics.", 502,
       );
     }
 
@@ -70,8 +63,8 @@ export const POST = createHandler("admin_api.admin_diagnostics.match", async (re
     return jsonOk(result);
   } catch (error) {
     console.error("Diagnostics match API error", error);
-    return errorResponse(
-      "Unexpected error while loading trip diagnostics. Showing mock data instead.",
+    return degrade(
+      "Unexpected error while loading trip diagnostics.", 500,
     );
   }
 });

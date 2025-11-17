@@ -135,10 +135,12 @@ export async function handleAddNewBusinessSelect(
   await sendButtonsMessage(
     ctx,
     `Business added: ${name} (${category}). You can now manage it under My Businesses.`,
-    homeOnly(),
+    [
+      { id: IDS.PROFILE_BUSINESSES, title: t(ctx.locale, "business.claim.view_my_businesses") },
+      { id: IDS.BACK_HOME, title: t(ctx.locale, "common.home_button") },
+    ],
   );
   await clearState(ctx.supabase, ctx.profileId);
   await logStructuredEvent('BUSINESS_ADDED_NEW', { profile_id: ctx.profileId, business_id: data.id });
   return true;
 }
-

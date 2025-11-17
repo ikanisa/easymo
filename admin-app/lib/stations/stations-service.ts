@@ -1,16 +1,8 @@
 import { apiFetch } from "@/lib/api/client";
 import { getAdminApiPath } from "@/lib/routes";
-import { shouldUseMocks } from "@/lib/runtime-config";
-import { mockStations } from "@/lib/mock-data";
-import { matchesSearch } from "@/lib/shared/search";
-import {
-  paginateArray,
-  type PaginatedResult,
-  type Pagination,
-} from "@/lib/shared/pagination";
+import { type PaginatedResult, type Pagination } from "@/lib/shared/pagination";
 import type { Station } from "@/lib/schemas";
 
-const useMocks = shouldUseMocks();
 const isServer = typeof window === "undefined";
 
 export type StationListParams = Pagination & {
@@ -24,11 +16,6 @@ export async function listStations(
   const offset = params.offset ?? 0;
   const limit = params.limit ?? 200;
 
-  if (useMocks) {
-    const filtered = filterStations(mockStations, params);
-    return paginateArray(filtered, { offset, limit });
-  }
-
   if (!isServer) {
     const response = await fetchStationsApi({ ...params, offset, limit });
     if (response.ok) {
@@ -40,20 +27,8 @@ export async function listStations(
   if (response.ok) {
     return response.value;
   }
-
-  const filtered = filterStations(mockStations, params);
-  return paginateArray(filtered, { offset, limit });
-}
-
-function filterStations(stations: Station[], params: StationListParams) {
-  return stations.filter((station) => {
-    const statusMatch = params.status ? station.status === params.status : true;
-    const searchMatch = matchesSearch(
-      `${station.name} ${station.engencode}`,
-      params.search,
-    );
-    return statusMatch && searchMatch;
-  });
+  // No fallback to mocks
+  return { data: [], total: 0, hasMore: false };
 }
 
 type StationsApiResponse = {

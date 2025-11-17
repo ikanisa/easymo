@@ -14,10 +14,6 @@ export const metadata = createPanelPageMetadata("/dashboard");
 
 export default async function DashboardPage() {
   const startTime = Date.now();
-  console.log('[DASHBOARD] Loading dashboard page', {
-    timestamp: new Date().toISOString(),
-    startTime,
-  });
   
   const queryClient = createQueryClient();
 
@@ -33,11 +29,6 @@ export default async function DashboardPage() {
   ]);
 
   const dehydratedState = dehydrate(queryClient);
-  
-  console.log('[DASHBOARD] Dashboard data loaded', {
-    duration: Date.now() - startTime,
-    dehydratedStateSize: JSON.stringify(dehydratedState).length,
-  });
 
   return (
     <HydrationBoundary state={dehydratedState}>

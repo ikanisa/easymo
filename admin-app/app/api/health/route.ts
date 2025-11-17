@@ -53,13 +53,8 @@ function checkEnvironment(): boolean {
 }
 
 function checkSession(): boolean {
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    require('@/lib/server/session');
-    return true;
-  } catch {
-    return false;
-  }
+  // Session integration optional; report false if not configured
+  return false;
 }
 
 const checkRateLimit = () => false;

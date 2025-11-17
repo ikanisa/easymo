@@ -4,7 +4,6 @@ import { z } from "zod";
 import { getSupabaseAdminClient } from "@/lib/server/supabase-admin";
 import { logStructured } from "@/lib/server/logger";
 import { recordAudit } from "@/lib/server/audit";
-import { mockAdminAlertPreferences } from "@/lib/mock-data";
 import { jsonOk, jsonError, zodValidationError } from "@/lib/api/http";
 import type { AdminAlertPreference } from "@/lib/schemas";
 import {
@@ -79,12 +78,12 @@ async function fetchPreferences(): Promise<{
   const adminClient = getSupabaseAdminClient();
   if (!adminClient) {
     return {
-      data: mockAdminAlertPreferences,
+      data: mergePreferences([]),
       integration: {
         status: "degraded",
         target: "admin_alert_prefs",
         message:
-          "Supabase credentials missing; returning mock alert preferences.",
+          "Supabase credentials missing; returning default alert preferences.",
       },
     };
   }

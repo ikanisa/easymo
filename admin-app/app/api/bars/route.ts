@@ -2,48 +2,16 @@ export const dynamic = 'force-dynamic';
 import { z } from 'zod';
 import { getSupabaseAdminClient } from '@/lib/server/supabase-admin';
 import { logStructured } from '@/lib/server/logger';
-import { mockBars } from '@/lib/mock-data';
 import { createHandler } from '@/app/api/withObservability';
-import { jsonOk, zodValidationError } from '@/lib/api/http';
+import { jsonError, jsonOk, zodValidationError } from '@/lib/api/http';
 
 const querySchema = z.object({
   status: z.enum(['active', 'inactive']).optional(),
   search: z.string().optional(),
+  claimed: z.enum(['true', 'false']).optional(),
   limit: z.coerce.number().int().min(1).max(200).optional(),
   offset: z.coerce.number().int().min(0).optional()
 });
-
-function selectMock(params: z.infer<typeof querySchema>) {
-  const offset = offset ?? 0;
-  const limit = limit ?? 100;
-  const filtered = mockBars.filter((bar) => {
-    const statusMatch = status
-      ? bar.isActive === (status === 'active')
-      : true;
-    const searchMatch = search
-      ? `${bar.name} ${bar.location ?? ''}`.toLowerCase().includes(search.toLowerCase())
-      : true;
-    return statusMatch && searchMatch;
-  });
-  const slice = filtered.slice(offset, offset + limit);
-  return {
-    data: slice,
-    total: filtered.length,
-    hasMore: offset + slice.length < filtered.length
-  };
-}
-
-function fromMocks(params: z.infer<typeof querySchema>, message: string) {
-  const result = selectMock(params);
-  return jsonOk({
-    ...result,
-    integration: {
-      status: 'degraded' as const,
-      target: 'bars',
-      message,
-    },
-  });
-}
 
 export const GET = createHandler('admin_api.bars.list', async (request, _context, { recordMetric }) => {
   let params: z.infer<typeof querySchema>;
@@ -57,16 +25,15 @@ export const GET = createHandler('admin_api.bars.list', async (request, _context
   const adminClient = getSupabaseAdminClient();
   if (!adminClient) {
     recordMetric('bars.supabase_unavailable', 1);
-    return fromMocks(params, 'Supabase credentials missing. Showing mock bars.');
+    return jsonError({ error: 'supabase_unavailable', message: 'Supabase credentials missing.' }, 503);
   }
 
-  const offset = offset ?? 0;
-  const limit = limit ?? 100;
+  const { offset = 0, limit = 100, status, search, claimed } = params;
 
   const supabaseQuery = adminClient
     .from('bars')
     .select(
-      `id, slug, name, location_text, city_area, is_active, created_at, updated_at,
+      `id, slug, name, location_text, city_area, is_active, created_at, updated_at, claimed,
        momo_code, published_menu_version,
        bar_numbers(count),
        bar_settings:bar_settings(allow_direct_customer_chat)` ,
@@ -77,6 +44,9 @@ export const GET = createHandler('admin_api.bars.list', async (request, _context
 
   if (status) {
     supabaseQuery.eq('is_active', status === 'active');
+  }
+  if (claimed) {
+    supabaseQuery.eq('claimed', claimed === 'true');
   }
   if (search) {
     const pattern = `%${search}%`;
@@ -93,7 +63,7 @@ export const GET = createHandler('admin_api.bars.list', async (request, _context
       message: error.message
     });
     recordMetric('bars.supabase_error', 1, { message: error.message });
-    return fromMocks(params, 'Supabase query failed. Showing mock bars.');
+    return jsonError({ error: 'query_failed', message: 'Unable to load bars.' }, 500);
   }
 
   const rows = data ?? [];
@@ -111,6 +81,7 @@ export const GET = createHandler('admin_api.bars.list', async (request, _context
       slug: row.slug ?? row.id,
       location: row.location_text ?? row.city_area ?? null,
       isActive: row.is_active ?? false,
+      claimed: Boolean((row as any).claimed),
       receivingNumbers,
       publishedMenuVersion: row.published_menu_version ?? null,
       lastUpdated: row.updated_at ?? row.created_at ?? new Date().toISOString(),

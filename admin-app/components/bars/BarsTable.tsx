@@ -27,6 +27,11 @@ const columns: ColumnDef<Bar>[] = [
     ),
   },
   {
+    header: "Claimed",
+    accessorKey: "claimed",
+    cell: ({ row }) => (row.original.claimed ? "Yes" : "No"),
+  },
+  {
     header: "Active",
     accessorKey: "isActive",
     cell: ({ row }) => (row.original.isActive ? "Yes" : "No"),

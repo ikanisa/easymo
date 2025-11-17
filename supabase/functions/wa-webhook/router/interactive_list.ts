@@ -78,6 +78,11 @@ import {
   type JobSavedPickerState,
 } from "../domains/jobs/index.ts";
 import { handleWalletEarnSelection } from "../domains/wallet/earn.ts";
+import {
+  BUSINESS_MANAGEMENT_STATE,
+  BUSINESS_DETAIL_STATE,
+  handleBusinessSelection,
+} from "../domains/business/management.ts";
 import { handleWalletRedeemSelection } from "../domains/wallet/redeem.ts";
 import { ADMIN_ROW_IDS, openAdminHub } from "../flows/admin/hub.ts";
 import { handleAdminRow } from "../flows/admin/dispatcher.ts";
@@ -89,6 +94,7 @@ import { showWalletEarn } from "../domains/wallet/earn.ts";
 import { showWalletTransactions } from "../domains/wallet/transactions.ts";
 import { showWalletRedeem } from "../domains/wallet/redeem.ts";
 import { showWalletTop } from "../domains/wallet/top.ts";
+import { startWalletTransfer } from "../domains/wallet/transfer.ts";
 import {
   handleInsuranceListSelection,
   startInsurance,
@@ -290,17 +296,18 @@ export async function handleList(
     );
   }
 
+  if (
+    state.key === BUSINESS_MANAGEMENT_STATE ||
+    state.key === BUSINESS_DETAIL_STATE
+  ) {
+    if (await handleBusinessSelection(ctx, id, state)) {
+      return true;
+    }
+  }
+
   // Check if this is an AI agent option selection
   if (id.startsWith("agent_option_") && state.key === "ai_agent_selection") {
     return await handleAIAgentOptionSelection(ctx, state, id);
-  }
-
-  // Check if this is a business selection
-  if (id.startsWith("biz::")) {
-    const { handleBusinessSelection } = await import(
-      "../domains/business/management.ts"
-    );
-    return await handleBusinessSelection(ctx, id);
   }
 
   // Resume last bar menu from Home quick row
@@ -1028,6 +1035,8 @@ async function handleHomeMenuSelection(
       return await showWalletRedeem(ctx);
     case IDS.WALLET_TOP:
       return await showWalletTop(ctx);
+    case IDS.WALLET_TRANSFER:
+      return await startWalletTransfer(ctx);
     case IDS.ADMIN_HUB:
       await openAdminHub(ctx);
       return true;

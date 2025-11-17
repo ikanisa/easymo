@@ -162,6 +162,7 @@ function getProfileMenuItemId(key: string): string {
     'show_properties': IDS.PROFILE_PROPERTIES,
     'show_my_jobs': IDS.JOB_MY_JOBS,
     'show_momo_qr': IDS.MOMO_QR,
+    'show_invite_friends': IDS.WALLET_EARN,
     'show_wallet': IDS.WALLET,
     'show_recent': IDS.RECENT,
     'show_saved_locations': 'saved_locations',
@@ -179,6 +180,7 @@ function getProfileMenuItemId(key: string): string {
     'my_jobs': IDS.JOB_MY_JOBS,
     'momo_qr': IDS.MOMO_QR,
     'wallet_tokens': IDS.WALLET,
+    'invite_friends': IDS.WALLET_EARN,
     'recent': IDS.RECENT,
     'saved_locations': 'saved_locations',
     'help_support': 'help_support',
@@ -391,7 +393,7 @@ export async function handleProfileBusinesses(ctx: RouterContext): Promise<boole
       sectionTitle: t(ctx.locale, "profile.businesses.list.section"),
       rows: [
         ...businesses.map((b) => ({
-          id: `BIZ::${b.id}`,
+          id: `biz::${b.id}`,
           title: b.name,
           description: b.category || t(ctx.locale, "profile.businesses.no_category"),
         })),

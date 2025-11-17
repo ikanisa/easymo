@@ -33,6 +33,7 @@ export const barSchema = z.object({
   slug: z.string(),
   location: z.string().nullable(),
   isActive: z.boolean().default(true),
+  claimed: z.boolean().optional(),
   receivingNumbers: z.number().default(0),
   publishedMenuVersion: z.string().nullable(),
   lastUpdated: z.string().datetime(),

@@ -7,6 +7,7 @@ export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ id: string; taskId: string }> },
 ) {
+  const { id, taskId } = await params;
   const admin = getSupabaseAdminClient();
   if (!admin) {
     return NextResponse.json({ error: "supabase_unavailable" }, { status: 503 });

@@ -1,6 +1,5 @@
 "use server";
 
-import { mockSettingsEntries } from "@/lib/mock-data";
 import { getSupabaseAdminClient } from "@/lib/server/supabase-admin";
 import type { ObservabilityContext } from "@/lib/server/observability";
 import { claimThrottleWindow, type ThrottleWindow } from "@/lib/server/throttle-store";
@@ -59,26 +58,11 @@ async function fetchPolicySettings() {
     };
   }
 
-  const quiet = mockSettingsEntries.find((entry) =>
-    entry.key === "quiet_hours.rw"
-  );
-  const throttle = mockSettingsEntries.find((entry) =>
-    entry.key === "send_throttle.whatsapp.per_minute"
-  );
-  const optOut = mockSettingsEntries.find((entry) =>
-    entry.key === "opt_out.list"
-  );
+  // Defaults when settings are unavailable
   return {
-    quietHours: quiet
-      ? (() => {
-        const parts = quiet.valuePreview.split("–").map((value) =>
-          value.trim()
-        );
-        return { start: parts[0] ?? "22:00", end: parts[1] ?? "06:00" };
-      })()
-      : { start: "22:00", end: "06:00" },
-    throttle: throttle ? Number(throttle.valuePreview) : 60,
-    optOut: optOut ? JSON.parse(optOut.valuePreview) : [],
+    quietHours: { start: "22:00", end: "06:00" },
+    throttle: 60,
+    optOut: [],
   };
 }
 

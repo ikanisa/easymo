@@ -12,3 +12,4 @@ export default function InsuranceRequestsPage() {
     </div>
   );
 }
+export const dynamic = "force-dynamic";

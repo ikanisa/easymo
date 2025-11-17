@@ -1,10 +1,8 @@
 import "server-only";
 
 import { z } from "zod";
-import { shouldUseMocks } from "@/lib/runtime-config";
 import { getAdminApiPath } from "@/lib/routes";
 import { callAdminFunction } from "@/lib/server/functions-client";
-import { mockUsers } from "@/lib/mock-data";
 import { type User, userSchema } from "@/lib/schemas";
 import {
   paginateArray,
@@ -13,25 +11,12 @@ import {
 } from "@/lib/shared/pagination";
 import { matchesSearch } from "@/lib/shared/search";
 
-const useMocks = shouldUseMocks();
 const isServer = typeof window === "undefined";
 
 export async function listUsers(
   params: { search?: string } & Pagination = {},
 ): Promise<PaginatedResult<User>> {
   if (!isServer) {
-    if (useMocks) {
-      const filtered = mockUsers.filter((user) =>
-        params.search
-          ? matchesSearch(
-            `${user.displayName ?? ""} ${user.msisdn}`,
-            params.search,
-          )
-          : true
-      );
-      return paginateArray(filtered, params);
-    }
-
     const searchParams = new URLSearchParams();
     if (params.search) searchParams.set("search", params.search);
     if (params.offset !== undefined) {
@@ -55,18 +40,6 @@ export async function listUsers(
         hasMore: z.boolean(),
       })
       .parse(json);
-  }
-
-  if (useMocks) {
-    const filtered = mockUsers.filter((user) =>
-      params.search
-        ? matchesSearch(
-          `${user.displayName ?? ""} ${user.msisdn}`,
-          params.search,
-        )
-        : true
-    );
-    return paginateArray(filtered, params);
   }
 
   const { getSupabaseAdminClient } = await import("@/lib/server/supabase-admin");

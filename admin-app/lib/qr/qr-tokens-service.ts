@@ -1,15 +1,7 @@
 import { apiFetch } from "@/lib/api/client";
 import { getAdminApiPath } from "@/lib/routes";
-import { shouldUseMocks } from "@/lib/runtime-config";
-import { mockQrTokens } from "@/lib/mock-data";
-import {
-  paginateArray,
-  type PaginatedResult,
-  type Pagination,
-} from "@/lib/shared/pagination";
+import { type PaginatedResult, type Pagination } from "@/lib/shared/pagination";
 import type { QrToken } from "@/lib/schemas";
-
-const useMocks = shouldUseMocks();
 
 export type QrTokenListParams = Pagination & {
   printed?: boolean;
@@ -21,10 +13,6 @@ export async function listQrTokens(
 ): Promise<PaginatedResult<QrToken>> {
   const offset = params.offset ?? 0;
   const limit = params.limit ?? 100;
-
-  if (useMocks) {
-    return paginateArray(mockQrTokens, { offset, limit });
-  }
 
   const searchParams = new URLSearchParams();
   searchParams.set("limit", String(limit));
@@ -38,20 +26,15 @@ export async function listQrTokens(
 
   const url = `${getAdminApiPath("qr")}?${searchParams.toString()}`;
   
-  try {
-    const response = await apiFetch<{
-      data: QrToken[];
-      total: number;
-      hasMore?: boolean;
-    }>(url);
+  const response = await apiFetch<{
+    data: QrToken[];
+    total: number;
+    hasMore?: boolean;
+  }>(url);
 
-    return {
-      data: response.data,
-      total: response.total,
-      hasMore: response.hasMore ?? (offset + response.data.length < response.total),
-    };
-  } catch (error) {
-    console.error("Failed to fetch QR tokens", error);
-    return paginateArray(mockQrTokens, { offset, limit });
-  }
+  return {
+    data: response.data,
+    total: response.total,
+    hasMore: response.hasMore ?? (offset + response.data.length < response.total),
+  };
 }

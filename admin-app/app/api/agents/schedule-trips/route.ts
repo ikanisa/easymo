@@ -70,7 +70,7 @@ export const GET = createHandler(
       return fallback("Supabase admin client unavailable.");
     }
 
-    const limit = limit ?? 50;
+    const { limit = 50, status } = params;
     let query = admin
       .from("scheduled_trips")
       .select(
@@ -117,4 +117,3 @@ export const GET = createHandler(
 );
 
 export const runtime = "nodejs";
-

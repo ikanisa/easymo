@@ -18,6 +18,7 @@ export function DocumentsLibrary() {
   const [intentId, setIntentId] = useState<string>(initialIntentId);
   const [page, setPage] = useState(0);
   const PAGE_SIZE = 50;
+  const [bucket, setBucket] = useState<string>((process.env.NEXT_PUBLIC_DOCS_BUCKET ?? 'docs').trim());
 
   useEffect(() => {
     let mounted = true;
@@ -55,6 +56,20 @@ export function DocumentsLibrary() {
 
   const selectedDoc = selectedDocId ? documents.find((d) => d.id === selectedDocId) ?? null : null;
   const relatedRequest = null as any;
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  async function requestSignedUrl() {
+    if (!selectedDoc) return;
+    const path = selectedDoc.storagePath ?? selectedDoc.storage_path;
+    if (!bucket || !path) return;
+    try {
+      const res = await fetch(`/api/files/signed-url?bucket=${encodeURIComponent(bucket)}&path=${encodeURIComponent(path)}`, { cache: 'no-store' });
+      if (!res.ok) return;
+      const json = await res.json();
+      if (json?.url) setPreviewUrl(json.url as string);
+    } catch {
+      // ignore
+    }
+  }
 
   return (
     <SectionCard
@@ -83,6 +98,16 @@ export function DocumentsLibrary() {
             placeholder="intent UUID"
             className="min-w-[220px] rounded-lg border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-1"
           />
+          <label className="ml-2 text-[color:var(--color-muted)]">Bucket</label>
+          <select
+            value={bucket}
+            onChange={(e) => setBucket(e.target.value)}
+            className="rounded-lg border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-1"
+          >
+            <option value="docs">docs</option>
+            <option value="operations">operations</option>
+            <option value="qr">qr</option>
+          </select>
           <button
             type="button"
             className="rounded border border-[color:var(--color-border)] px-3 py-1 disabled:opacity-50"
@@ -125,7 +150,7 @@ export function DocumentsLibrary() {
                   <div className="text-xs text-[color:var(--color-muted)]">{doc.storagePath ?? doc.storage_path}</div>
                 </td>
                 <td className="px-4 py-3">{doc.intentId ?? doc.intent_id ?? "—"}</td>
-                <td className="px-4 py-3">{doc.contactId ?? doc.contact_id ?? "—"}</td>
+                <td className="px-4 py-3">{doc.contactName ?? doc.contactId ?? doc.contact_id ?? "—"}</td>
                 <td className="px-4 py-3">{doc.ocrConfidence ? `${Math.round(Number(doc.ocrConfidence) * 100)}%` : "—"}</td>
                 <td className="px-4 py-3">
                   <Badge variant={(doc.ocrState ?? doc.ocr_state) === 'verified' ? "success" : "outline"}>
@@ -159,6 +184,25 @@ export function DocumentsLibrary() {
                   {relatedRequest.customerName} • {relatedRequest.status.replace(/_/g, " ")}
                 </p>
               )}
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={requestSignedUrl}
+                className="rounded border border-[color:var(--color-border)] px-3 py-1 text-sm"
+              >
+                Generate preview link
+              </button>
+              {previewUrl ? (
+                <a
+                  href={previewUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-[color:var(--color-accent)] underline-offset-2 hover:underline"
+                >
+                  Open preview
+                </a>
+              ) : null}
             </div>
             <div className="rounded-lg border border-[color:var(--color-border)] p-3">
               <p className="text-xs font-semibold uppercase tracking-wide text-[color:var(--color-muted)]">OCR payload</p>

@@ -1,13 +1,8 @@
-import { shouldUseMocks } from "@/lib/runtime-config";
-import { mockInsuranceQuotes } from "@/lib/mock-data";
 import type { InsuranceQuote } from "@/lib/schemas";
-import {
-  paginateArray,
-  type PaginatedResult,
-  type Pagination,
-} from "@/lib/shared/pagination";
+import { type PaginatedResult, type Pagination } from "@/lib/shared/pagination";
+import { apiFetch } from "@/lib/api/client";
+import { getAdminApiPath } from "@/lib/routes";
 
-const useMocks = shouldUseMocks();
 const isServer = typeof window === "undefined";
 
 export type InsuranceQuoteListParams = Pagination & {
@@ -20,85 +15,19 @@ export async function listInsuranceQuotes(
   const offset = params.offset ?? 0;
   const limit = params.limit ?? 25;
 
-  if (!isServer) {
-    // CSR still relies on mocks until API pagination is wired.
-    return paginateArray(filterQuotes(mockInsuranceQuotes, params), {
-      offset,
-      limit,
-    });
-  }
+  // Always call the live admin API which aggregates required joins
+  const searchParams = new URLSearchParams();
+  searchParams.set("limit", String(limit));
+  searchParams.set("offset", String(offset));
+  if (params.status) searchParams.set("status", params.status);
+  const url = `${getAdminApiPath("insurance", "quotes")}?${searchParams.toString()}`;
 
-  if (useMocks) {
-    return paginateArray(filterQuotes(mockInsuranceQuotes, params), {
-      offset,
-      limit,
-    });
-  }
-
-  const { getSupabaseAdminClient } = await import(
-    "@/lib/server/supabase-admin"
-  );
-  const adminClient = getSupabaseAdminClient();
-  if (!adminClient) {
-    return paginateArray(filterQuotes(mockInsuranceQuotes, params), {
-      offset,
-      limit,
-    });
-  }
-
-  const query = adminClient
-    .from("insurance_quotes")
-    .select(
-      "id, user_id, status, premium, insurer, uploaded_docs, created_at, updated_at, reviewer_comment",
-      { count: "exact" },
-    )
-    .order("created_at", { ascending: false })
-    .range(offset, offset + limit - 1);
-
-  if (params.status) {
-    query.eq("status", params.status);
-  }
-
-  const { data, error, count } = await query;
-
-  if (error || !data) {
-    console.error("Failed to fetch insurance quotes from Supabase", error);
-    return paginateArray(filterQuotes(mockInsuranceQuotes, params), {
-      offset,
-      limit,
-    });
-  }
-
+  const response = await apiFetch<{ data: InsuranceQuote[]; total: number; hasMore?: boolean }>(url);
   return {
-    data: data.map((item) => ({
-      id: item.id,
-      userId: item.user_id ?? null,
-      intentId: (item as any).intent_id ?? null,
-      status: item.status ?? "pending",
-      premium: typeof item.premium === "number"
-        ? item.premium
-        : item.premium === null
-        ? null
-        : Number(item.premium ?? 0) || null,
-      insurer: item.insurer ?? null,
-      uploadedDocs: item.uploaded_docs ?? [],
-      createdAt: item.created_at,
-      updatedAt: item.updated_at,
-      approvedAt: (item as any).approved_at ?? null,
-      reviewerComment: item.reviewer_comment ?? null,
-      metadata: (item as any).metadata ?? null,
-    })),
-    total: count ?? data.length,
-    hasMore: params.offset !== undefined && params.limit !== undefined
-      ? (params.offset + params.limit) < (count ?? data.length)
-      : false,
+    data: response.data,
+    total: response.total,
+    hasMore: response.hasMore ?? (offset + response.data.length < response.total),
   };
 }
 
-function filterQuotes(
-  quotes: InsuranceQuote[],
-  params: InsuranceQuoteListParams,
-): InsuranceQuote[] {
-  if (!params.status) return quotes;
-  return quotes.filter((quote) => quote.status === params.status);
-}
+// Filtering is provided by server route; local fallback removed

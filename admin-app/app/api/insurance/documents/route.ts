@@ -60,10 +60,26 @@ export async function GET(request: NextRequest) {
   }
 
   const rows = (data ?? []).map(mapRow);
+  // Enrich with contact info if available
+  const contactIds = Array.from(new Set(rows.map((r) => r.contactId).filter((v): v is string => Boolean(v))));
+  let contactsMap = new Map<string, { name: string | null }>();
+  if (contactIds.length) {
+    const { data: contacts } = await admin
+      .from('wa_contacts')
+      .select('id, display_name')
+      .in('id', contactIds);
+    (contacts ?? []).forEach((c: any) => {
+      contactsMap.set(String(c.id), { name: (c.display_name as string | null) ?? null });
+    });
+  }
+  const enriched = rows.map((r) => ({
+    ...r,
+    contactName: r.contactId ? (contactsMap.get(r.contactId)?.name ?? null) : null,
+  }));
   const total = count ?? rows.length;
   const hasMore = offset + rows.length < total;
 
-  return NextResponse.json({ data: rows, total, hasMore });
+  return NextResponse.json({ data: enriched, total, hasMore });
 }
 
 export const runtime = "nodejs";

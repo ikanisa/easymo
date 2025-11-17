@@ -234,6 +234,25 @@ async function handleAddProperty(supabase: any, request: PropertySearchRequest, 
 
 async function handleFindProperty(supabase: any, request: PropertySearchRequest, sessionId: string) {
   try {
+    // Personalization: fetch user memories for real_estate domain
+    const { data: mems } = await supabase
+      .from('user_memories')
+      .select('mem_key, mem_value')
+      .eq('user_id', request.userId)
+      .eq('domain', 'real_estate')
+      .order('last_seen', { ascending: false })
+      .limit(20);
+
+    // Apply defaults from memory if request fields are missing
+    const memMap = new Map<string, any>((mems || []).map((m: any) => [m.mem_key, m.mem_value]));
+    if (!request.bedrooms && memMap.get('bedrooms')) request.bedrooms = Number(memMap.get('bedrooms') || 0) || undefined;
+    if (!request.minBudget && memMap.get('budget_min')) request.minBudget = Number(memMap.get('budget_min') || 0) || undefined;
+    if (!request.maxBudget && memMap.get('budget_max')) request.maxBudget = Number(memMap.get('budget_max') || 0) || undefined;
+    if (!request.amenities && memMap.get('amenities')) request.amenities = memMap.get('amenities');
+    if (request.propertyData?.bathrooms === undefined && memMap.get('bathrooms')) {
+      request.propertyData = { ...(request.propertyData || {}), bathrooms: Number(memMap.get('bathrooms') || 0) || undefined };
+    }
+
     // Search for matching properties
     const radiusKm = 10;
     const { data: properties, error } = await supabase.rpc("search_nearby_properties", {
@@ -313,8 +332,24 @@ async function handleFindProperty(supabase: any, request: PropertySearchRequest,
       })
       .eq("id", sessionId);
 
-    // Format message
-    const message = formatPropertyOptions(topProperties, quotes);
+    // Format message (include memory context if any)
+    const message = formatPropertyOptions(topProperties, quotes, mems || []);
+
+    // Store memory summary of this search
+    await supabase.from('user_memories').upsert({
+      user_id: request.userId,
+      domain: 'real_estate',
+      memory_type: 'preference',
+      mem_key: 'search_prefs',
+      mem_value: {
+        rentalType: request.rentalType,
+        bedrooms: request.bedrooms,
+        minBudget: request.minBudget,
+        maxBudget: request.maxBudget,
+        amenities: request.amenities || [],
+      },
+      last_seen: new Date().toISOString(),
+    }, { onConflict: 'user_id,domain,mem_key' });
 
     return new Response(
       JSON.stringify({
@@ -376,8 +411,18 @@ async function simulateNegotiation(originalPrice: number, maxBudget?: number): P
   return Math.max(negotiatedPrice, maxBudget);
 }
 
-function formatPropertyOptions(properties: any[], quotes: any[]): string {
+function formatPropertyOptions(properties: any[], quotes: any[], mems: any[]): string {
   let message = "🏠 *Available Properties:*\n\n";
+
+  // Include memory context if available
+  if (Array.isArray(mems) && mems.length) {
+    const prefs = mems.filter((m: any) => ['search_prefs','bedrooms','budget_min','budget_max','amenities'].includes(m.mem_key));
+    if (prefs.length) {
+      message += "📌 Based on your preferences: ";
+      message += prefs.map((m: any) => `${m.mem_key}=${JSON.stringify(m.mem_value)}`).join('; ');
+      message += "\n\n";
+    }
+  }
 
   quotes.forEach((quote: any, index: number) => {
     const offer = quote.offer_data;

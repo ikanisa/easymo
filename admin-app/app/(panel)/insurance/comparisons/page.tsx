@@ -12,3 +12,4 @@ export default function InsuranceComparisonsPage() {
     </div>
   );
 }
+export const dynamic = "force-dynamic";

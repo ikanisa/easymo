@@ -1,20 +1,12 @@
 import { apiFetch } from "@/lib/api/client";
 import { getAdminApiPath } from "@/lib/routes";
-import { shouldUseMocks } from "@/lib/runtime-config";
-import { mockBars } from "@/lib/mock-data";
-import { matchesSearch } from "@/lib/shared/search";
-import {
-  paginateArray,
-  type PaginatedResult,
-  type Pagination,
-} from "@/lib/shared/pagination";
+import { type PaginatedResult, type Pagination } from "@/lib/shared/pagination";
 import type { Bar } from "@/lib/schemas";
-
-const useMocks = shouldUseMocks();
 
 export type BarListParams = Pagination & {
   search?: string;
   status?: "active" | "inactive";
+  claimed?: boolean;
 };
 
 export async function listBars(
@@ -23,45 +15,22 @@ export async function listBars(
   const offset = params.offset ?? 0;
   const limit = params.limit ?? 100;
 
-  if (useMocks) {
-    const filtered = filterBars(mockBars, params);
-    return paginateArray(filtered, { offset, limit });
-  }
-
   const searchParams = new URLSearchParams();
   searchParams.set("limit", String(limit));
   searchParams.set("offset", String(offset));
   if (params.search) searchParams.set("search", params.search);
   if (params.status) searchParams.set("status", params.status);
+  if (params.claimed !== undefined) searchParams.set("claimed", params.claimed ? "true" : "false");
 
-  try {
-    const response = await apiFetch<{
-      data: Bar[];
-      total: number;
-      hasMore?: boolean;
-    }>(`${getAdminApiPath("bars")}?${searchParams.toString()}`);
+  const response = await apiFetch<{
+    data: Bar[];
+    total: number;
+    hasMore?: boolean;
+  }>(`${getAdminApiPath("bars")}?${searchParams.toString()}`);
 
-    return {
-      data: response.data,
-      total: response.total,
-      hasMore: response.hasMore ?? (offset + response.data.length < response.total),
-    };
-  } catch (error) {
-    console.error("Failed to fetch bars", error);
-    const fallback = filterBars(mockBars, params);
-    return paginateArray(fallback, { offset, limit });
-  }
-}
-
-function filterBars(bars: Bar[], params: BarListParams) {
-  return bars.filter((bar) => {
-    const statusMatch = params.status
-      ? bar.isActive === (params.status === "active")
-      : true;
-    const searchMatch = matchesSearch(
-      `${bar.name} ${bar.location ?? ""}`,
-      params.search,
-    );
-    return statusMatch && searchMatch;
-  });
+  return {
+    data: response.data,
+    total: response.total,
+    hasMore: response.hasMore ?? (offset + response.data.length < response.total),
+  };
 }

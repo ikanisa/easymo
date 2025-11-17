@@ -70,6 +70,7 @@ export const GET = createHandler(
       return fallback("Supabase admin client unavailable.");
     }
 
+    const { lat, lng, radiusKm, limit } = params;
     const { data, error } = await admin.rpc("search_nearby_vendors", {
       p_latitude: lat ?? DEFAULT_LAT,
       p_longitude: lng ?? DEFAULT_LNG,
@@ -115,4 +116,3 @@ export const GET = createHandler(
 );
 
 export const runtime = "nodejs";
-

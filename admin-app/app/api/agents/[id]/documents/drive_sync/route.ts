@@ -42,13 +42,11 @@ function pemToUint8Array(pem: string): Uint8Array {
 
 async function importPrivateKey(pem: string): Promise<CryptoKey> {
   const keyBytes = pemToUint8Array(pem);
-  const buffer = keyBytes.buffer.slice(
-    keyBytes.byteOffset,
-    keyBytes.byteOffset + keyBytes.byteLength,
-  );
+  // Cast to ArrayBuffer to satisfy BufferSource types across DOM libs
+  const ab = keyBytes.buffer as unknown as ArrayBuffer;
   return crypto.subtle.importKey(
     "pkcs8",
-    buffer,
+    ab,
     { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
     false,
     ["sign"],

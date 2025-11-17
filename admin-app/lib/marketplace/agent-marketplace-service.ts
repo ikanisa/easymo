@@ -1,8 +1,6 @@
 import { apiFetch } from "@/lib/api/client";
 import { getAdminApiPath } from "@/lib/routes";
-import { shouldUseMocks } from "@/lib/runtime-config";
-import { mockMarketplaceSessions } from "@/lib/mock-data";
-import { paginateArray, type PaginatedResult, type Pagination } from "@/lib/shared/pagination";
+import { type PaginatedResult, type Pagination } from "@/lib/shared/pagination";
 import type {
   MarketplaceAgentSession,
 } from "@/lib/marketplace/types";
@@ -18,18 +16,11 @@ interface MarketplaceSessionResponse {
   hasMore?: boolean;
 }
 
-const useMocks = shouldUseMocks();
-
 export async function listMarketplaceAgentSessions(
   params: MarketplaceAgentSessionListParams,
 ): Promise<PaginatedResult<MarketplaceAgentSession>> {
   const offset = params.offset ?? 0;
   const limit = params.limit ?? 25;
-
-  if (useMocks) {
-    const filtered = mockMarketplaceSessions.filter((session) => session.agentType === params.agentType);
-    return paginateArray(filtered, { offset, limit });
-  }
 
   const searchParams = new URLSearchParams();
   searchParams.set("agentType", params.agentType);
