@@ -437,7 +437,7 @@ export async function handleRestaurantEditText(
       return true;
     }
     if (state.stage === "awaiting_rename" && state.itemId) {
-      const name = body.trim().slice(1, 0) ? body.trim().slice(0, 120) : body.trim();
+      const name = body.trim().slice(0, 120);
       const { error } = await items.update({ name }).eq("id", state.itemId);
       if (error) throw error;
       await finish("✅ Renamed.");

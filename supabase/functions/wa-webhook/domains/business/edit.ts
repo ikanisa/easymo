@@ -154,22 +154,26 @@ export async function handleBusinessEditText(
         return true;
       }
       case "awaiting_specialties": {
-        const specialties = input
+        const specialtiesText = input
           .split(",")
           .map((s) => s.trim())
           .filter(Boolean)
-          .slice(0, 20);
-        const { error } = await idEq(table.update({ specialties } as any));
+          .slice(0, 20)
+          .join(", ");
+        // Append to description for broad compatibility
+        const { data } = await idEq(table.select("description").maybeSingle());
+        const description = [data?.description?.toString() || "", specialtiesText ? `Specialties: ${specialtiesText}` : ""].filter(Boolean).join("\n").slice(0, 1000);
+        const { error } = await idEq(table.update({ description }));
         if (error) throw error;
-        await finish(`✅ Specialties updated.`);
+        await finish(`✅ Specialties saved.`);
         return true;
       }
       case "awaiting_promotions": {
-        // Store in metadata for now; dedicated table can be added later.
         const promo = input.trim().slice(0, 500);
-        const { data: row } = await idEq(table.select("metadata").maybeSingle());
-        const metadata = { ...(row?.metadata ?? {}), promo_last: promo } as Record<string, unknown>;
-        const { error } = await idEq(table.update({ metadata } as any));
+        // Append to description for broad compatibility
+        const { data } = await idEq(table.select("description").maybeSingle());
+        const description = [data?.description?.toString() || "", promo ? `Promo: ${promo}` : ""].filter(Boolean).join("\n").slice(0, 1000);
+        const { error } = await idEq(table.update({ description }));
         if (error) throw error;
         await finish(`✅ Promotion saved.`);
         return true;
@@ -183,4 +187,3 @@ export async function handleBusinessEditText(
     return true;
   }
 }
-
