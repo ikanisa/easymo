@@ -1507,14 +1507,49 @@ serve(async (req: Request) => {
         newItems = data || [];
       } catch (_) {}
 
-      // Format suggestions
+      // Compose unified suggestions list with reasons
+      type Suggestion = { id?: string; name: string; reason: string; price?: number | null; currency?: string | null };
+      const suggestions: Suggestion[] = [];
+      for (const fav of favTop) {
+        if (!fav?.name) continue;
+        suggestions.push({ id: fav.item_id, name: fav.name, reason: "favorite_pick" });
+      }
+      for (const trend of trendingItems || []) {
+        if (!trend?.name) continue;
+        suggestions.push({
+          id: trend.id,
+          name: trend.name,
+          reason: "trending",
+          price: trend.price ?? null,
+          currency: trend.currency ?? null,
+        });
+      }
+      for (const fresh of newItems || []) {
+        if (!fresh?.name) continue;
+        suggestions.push({
+          id: fresh.id,
+          name: fresh.name,
+          reason: "new_item",
+          price: fresh.price ?? null,
+          currency: fresh.currency ?? null,
+        });
+      }
+      const seen = new Set<string>();
+      const deduped = suggestions.filter((entry) => {
+        const key = entry.name.toLowerCase();
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      }).slice(0, 30);
+
+      // Legacy text fallback for older clients
       const favLine = favTop.length ? `Based on your favorites: ${favTop.map(x => x.name).join(', ')}` : '';
       const trendLine = (trendingItems || []).length ? `Trending now: ${(trendingItems || []).map((x: any) => x.name).join(', ')}` : '';
       const newLine = newItems.length ? `New on the menu: ${newItems.map((x: any) => x.name).join(', ')}` : '';
       const parts = [favLine, trendLine, newLine].filter(Boolean);
       const messageText = parts.length ? `✨ Suggestions\n\n• ${parts.join('\n• ')}` : '✨ Suggestions\n\nTry our chef specials or ask for the menu!';
 
-      return respond({ message: messageText }, { status: 200 });
+      return respond({ message: messageText, suggestions: deduped }, { status: 200 });
     }
 
     // =====================================================

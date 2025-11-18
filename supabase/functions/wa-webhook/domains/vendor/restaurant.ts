@@ -551,15 +551,65 @@ export async function handleMenuFileUpload(
   return true;
 }
 
-// Show orders (placeholder for now)
+// Show recent orders (best-effort using existing restaurant-based schema)
 async function showOrders(
   ctx: RouterContext,
   state: RestaurantManagerState,
 ): Promise<boolean> {
-  await sendButtonsMessage(
-    ctx,
-    t(ctx.locale, "restaurant.orders.coming_soon"),
-    homeOnly(),
-  );
-  return true;
+  if (!state.barId) return false;
+  try {
+    // Resolve bar name
+    const { data: bar } = await ctx.supabase
+      .from('bars')
+      .select('id, name')
+      .eq('id', state.barId)
+      .maybeSingle();
+    const barName = bar?.name || '';
+
+    // Try a restaurant-based orders schema: orders join restaurants by name match
+    // Note: This is a heuristic until a direct mapping exists
+    const pattern = barName ? `%${barName}%` : undefined;
+    let orders: Array<{ id: string; order_number?: string; status?: string; created_at: string }>|null = null;
+    if (pattern) {
+      const { data } = await ctx.supabase
+        .from('orders')
+        .select('id, order_number, status, created_at, restaurants:restaurants(name)')
+        .order('created_at', { ascending: false })
+        .limit(5);
+      orders = (data ?? []).filter((row: any) => {
+        const rname = Array.isArray(row.restaurants) ? row.restaurants[0]?.name : row.restaurants?.name;
+        return typeof rname === 'string' && rname.toLowerCase().includes(barName.toLowerCase());
+      }) as any;
+    }
+    if (!orders || orders.length === 0) {
+      await sendButtonsMessage(
+        ctx,
+        'No recent orders found.',
+        homeOnly(),
+      );
+      return true;
+    }
+    // Build summary message
+    let body = `📦 Recent orders for ${barName}\n\n`;
+    for (const o of orders) {
+      const code = (o as any).order_number ?? o.id.slice(0, 6).toUpperCase();
+      const status = (o as any).status ?? 'unknown';
+      const when = new Date(o.created_at).toLocaleString();
+      body += `• ${code} — ${status} — ${when}\n`;
+    }
+    await sendButtonsMessage(
+      ctx,
+      body.trim(),
+      buildButtons({ id: IDS.BACK_MENU, title: t(ctx.locale, 'common.menu_back') }),
+    );
+    return true;
+  } catch (err) {
+    console.error('restaurant.orders_fetch_fail', err);
+    await sendButtonsMessage(
+      ctx,
+      t(ctx.locale, 'restaurant.menu.fetch_error'),
+      homeOnly(),
+    );
+    return true;
+  }
 }

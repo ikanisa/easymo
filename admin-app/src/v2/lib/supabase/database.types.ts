@@ -7,30 +7,10 @@ export type Json =
   | Json[]
 
 export type Database = {
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json
-          operationName?: string
-          query?: string
-          variables?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "13.0.5"
   }
   public: {
     Tables: {
@@ -71,33 +51,6 @@ export type Database = {
             referencedColumns: ["user_id"]
           },
         ]
-      }
-      agents: {
-        Row: {
-          id: string
-          name: string | null
-          phone: string | null
-          status: string | null
-          wallet_balance: number | null
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          name?: string | null
-          phone?: string | null
-          status?: string | null
-          wallet_balance?: number | null
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          name?: string | null
-          phone?: string | null
-          status?: string | null
-          wallet_balance?: number | null
-          created_at?: string
-        }
-        Relationships: []
       }
       admin_audit_log: {
         Row: {
@@ -309,6 +262,105 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      agent_configs: {
+        Row: {
+          created_at: string
+          description: string | null
+          guardrails: Json | null
+          id: string
+          instructions: string
+          is_active: boolean | null
+          languages: string[] | null
+          max_tokens: number | null
+          model: string | null
+          name: string
+          slug: string
+          temperature: number | null
+          tools: Json | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          guardrails?: Json | null
+          id?: string
+          instructions: string
+          is_active?: boolean | null
+          languages?: string[] | null
+          max_tokens?: number | null
+          model?: string | null
+          name: string
+          slug: string
+          temperature?: number | null
+          tools?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          guardrails?: Json | null
+          id?: string
+          instructions?: string
+          is_active?: boolean | null
+          languages?: string[] | null
+          max_tokens?: number | null
+          model?: string | null
+          name?: string
+          slug?: string
+          temperature?: number | null
+          tools?: Json | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      agent_contexts: {
+        Row: {
+          agent_type: string
+          context_data: Json
+          conversation_id: string | null
+          created_at: string | null
+          id: string
+          messages_count: number | null
+          token_count: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          agent_type: string
+          context_data?: Json
+          conversation_id?: string | null
+          created_at?: string | null
+          id?: string
+          messages_count?: number | null
+          token_count?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          agent_type?: string
+          context_data?: Json
+          conversation_id?: string | null
+          created_at?: string | null
+          id?: string
+          messages_count?: number | null
+          token_count?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_contexts_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "stuck_webhook_conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agent_contexts_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "webhook_conversations"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -798,6 +850,7 @@ export type Database = {
           languages: string[] | null
           max_extensions: number | null
           name: string
+          persona: string | null
           sla_minutes: number | null
           slug: string | null
           system_prompt: string | null
@@ -820,6 +873,7 @@ export type Database = {
           languages?: string[] | null
           max_extensions?: number | null
           name: string
+          persona?: string | null
           sla_minutes?: number | null
           slug?: string | null
           system_prompt?: string | null
@@ -842,6 +896,7 @@ export type Database = {
           languages?: string[] | null
           max_extensions?: number | null
           name?: string
+          persona?: string | null
           sla_minutes?: number | null
           slug?: string | null
           system_prompt?: string | null
@@ -899,8 +954,11 @@ export type Database = {
           agent_type: string | null
           cancellation_reason: string | null
           completed_at: string | null
+          conversation_id: string | null
           created_at: string
           deadline_at: string
+          ended_at: string | null
+          error_count: number | null
           error_message: string | null
           extensions_count: number | null
           flow_type: string
@@ -910,8 +968,11 @@ export type Database = {
           request_data: Json
           result_data: Json | null
           selected_quote_id: string | null
+          session_state: string | null
           started_at: string
           status: string
+          total_messages: number | null
+          total_tokens_used: number | null
           updated_at: string
           user_id: string
         }
@@ -919,8 +980,11 @@ export type Database = {
           agent_type?: string | null
           cancellation_reason?: string | null
           completed_at?: string | null
+          conversation_id?: string | null
           created_at?: string
           deadline_at: string
+          ended_at?: string | null
+          error_count?: number | null
           error_message?: string | null
           extensions_count?: number | null
           flow_type: string
@@ -930,8 +994,11 @@ export type Database = {
           request_data?: Json
           result_data?: Json | null
           selected_quote_id?: string | null
+          session_state?: string | null
           started_at?: string
           status?: string
+          total_messages?: number | null
+          total_tokens_used?: number | null
           updated_at?: string
           user_id: string
         }
@@ -939,8 +1006,11 @@ export type Database = {
           agent_type?: string | null
           cancellation_reason?: string | null
           completed_at?: string | null
+          conversation_id?: string | null
           created_at?: string
           deadline_at?: string
+          ended_at?: string | null
+          error_count?: number | null
           error_message?: string | null
           extensions_count?: number | null
           flow_type?: string
@@ -950,8 +1020,11 @@ export type Database = {
           request_data?: Json
           result_data?: Json | null
           selected_quote_id?: string | null
+          session_state?: string | null
           started_at?: string
           status?: string
+          total_messages?: number | null
+          total_tokens_used?: number | null
           updated_at?: string
           user_id?: string
         }
@@ -1248,6 +1321,54 @@ export type Database = {
           },
         ]
       }
+      ai_agents_config: {
+        Row: {
+          agent_key: string
+          agent_name: string
+          created_at: string | null
+          id: string
+          is_active: boolean
+          max_tokens: number | null
+          metadata: Json | null
+          model_name: string | null
+          persona: string
+          system_prompt: string
+          temperature: number | null
+          tools: Json | null
+          updated_at: string | null
+        }
+        Insert: {
+          agent_key: string
+          agent_name: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean
+          max_tokens?: number | null
+          metadata?: Json | null
+          model_name?: string | null
+          persona: string
+          system_prompt: string
+          temperature?: number | null
+          tools?: Json | null
+          updated_at?: string | null
+        }
+        Update: {
+          agent_key?: string
+          agent_name?: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean
+          max_tokens?: number | null
+          metadata?: Json | null
+          model_name?: string | null
+          persona?: string
+          system_prompt?: string
+          temperature?: number | null
+          tools?: Json | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       analytics_events: {
         Row: {
           context: Json | null
@@ -1428,6 +1549,27 @@ export type Database = {
           wa_bot_number_e164?: string | null
           wallet_redeem_catalog?: Json
           welcome_bonus_tokens?: number
+        }
+        Relationships: []
+      }
+      app_settings: {
+        Row: {
+          description: string | null
+          key: string
+          updated_at: string
+          value: string
+        }
+        Insert: {
+          description?: string | null
+          key: string
+          updated_at?: string
+          value: string
+        }
+        Update: {
+          description?: string | null
+          key?: string
+          updated_at?: string
+          value?: string
         }
         Relationships: []
       }
@@ -1716,113 +1858,240 @@ export type Database = {
       bars: {
         Row: {
           city_area: string | null
-          country: string | null
+          claimed: boolean
+          country: string
           created_at: string
           currency: string | null
+          features: Json | null
+          geocode_status: string | null
+          geocoded_at: string | null
           google_maps_url: string | null
+          has_events: boolean | null
+          has_free_wifi: boolean | null
+          has_happy_hour: boolean | null
+          has_karaoke: boolean | null
+          has_late_night_hours: boolean | null
+          has_live_music: boolean | null
+          has_live_sports: boolean | null
+          has_outdoor_seating: boolean | null
+          has_parking: boolean | null
+          has_vegetarian_options: boolean | null
           id: string
           is_active: boolean
-          lat: number | null
-          lng: number | null
+          is_family_friendly: boolean | null
+          latitude: number | null
           location: unknown
           location_text: string | null
+          longitude: number | null
           momo_code: string | null
           name: string
-          phone_number: string | null
           slug: string
           updated_at: string
+          whatsapp_number: string | null
         }
         Insert: {
           city_area?: string | null
-          country?: string | null
+          claimed?: boolean
+          country: string
           created_at?: string
           currency?: string | null
+          features?: Json | null
+          geocode_status?: string | null
+          geocoded_at?: string | null
           google_maps_url?: string | null
+          has_events?: boolean | null
+          has_free_wifi?: boolean | null
+          has_happy_hour?: boolean | null
+          has_karaoke?: boolean | null
+          has_late_night_hours?: boolean | null
+          has_live_music?: boolean | null
+          has_live_sports?: boolean | null
+          has_outdoor_seating?: boolean | null
+          has_parking?: boolean | null
+          has_vegetarian_options?: boolean | null
           id?: string
           is_active?: boolean
-          lat?: number | null
-          lng?: number | null
+          is_family_friendly?: boolean | null
+          latitude?: number | null
           location?: unknown
           location_text?: string | null
+          longitude?: number | null
           momo_code?: string | null
           name: string
-          phone_number?: string | null
           slug: string
           updated_at?: string
+          whatsapp_number?: string | null
         }
         Update: {
           city_area?: string | null
-          country?: string | null
+          claimed?: boolean
+          country?: string
           created_at?: string
           currency?: string | null
+          features?: Json | null
+          geocode_status?: string | null
+          geocoded_at?: string | null
           google_maps_url?: string | null
+          has_events?: boolean | null
+          has_free_wifi?: boolean | null
+          has_happy_hour?: boolean | null
+          has_karaoke?: boolean | null
+          has_late_night_hours?: boolean | null
+          has_live_music?: boolean | null
+          has_live_sports?: boolean | null
+          has_outdoor_seating?: boolean | null
+          has_parking?: boolean | null
+          has_vegetarian_options?: boolean | null
           id?: string
           is_active?: boolean
-          lat?: number | null
-          lng?: number | null
+          is_family_friendly?: boolean | null
+          latitude?: number | null
           location?: unknown
           location_text?: string | null
+          longitude?: number | null
           momo_code?: string | null
           name?: string
-          phone_number?: string | null
           slug?: string
           updated_at?: string
+          whatsapp_number?: string | null
         }
         Relationships: []
       }
       business: {
         Row: {
-          catalog_url: string | null
-          category_id: string | null
+          bar_id: string | null
+          category_name: string | null
+          claimed: boolean
+          country: string | null
           created_at: string
           description: string | null
+          geocode_status: string | null
+          geocoded_at: string | null
+          has_events: boolean | null
+          has_free_wifi: boolean | null
+          has_happy_hour: boolean | null
+          has_karaoke: boolean | null
+          has_late_night_hours: boolean | null
+          has_live_music: boolean | null
+          has_live_sports: boolean | null
+          has_outdoor_seating: boolean | null
+          has_parking: boolean | null
+          has_vegetarian_options: boolean | null
           id: string
           is_active: boolean
-          lat: number | null
-          lng: number | null
+          is_family_friendly: boolean | null
+          latitude: number | null
           location: unknown
           location_text: string | null
+          location_url: string | null
+          longitude: number | null
+          maps_url: string | null
           name: string
           name_embedding: string | null
+          new_category_id: string | null
           owner_user_id: string | null
           owner_whatsapp: string | null
           status: string | null
+          tag: string | null
+          tag_id: string | null
         }
         Insert: {
-          catalog_url?: string | null
-          category_id?: string | null
+          bar_id?: string | null
+          category_name?: string | null
+          claimed?: boolean
+          country?: string | null
           created_at?: string
           description?: string | null
+          geocode_status?: string | null
+          geocoded_at?: string | null
+          has_events?: boolean | null
+          has_free_wifi?: boolean | null
+          has_happy_hour?: boolean | null
+          has_karaoke?: boolean | null
+          has_late_night_hours?: boolean | null
+          has_live_music?: boolean | null
+          has_live_sports?: boolean | null
+          has_outdoor_seating?: boolean | null
+          has_parking?: boolean | null
+          has_vegetarian_options?: boolean | null
           id?: string
           is_active?: boolean
-          lat?: number | null
-          lng?: number | null
+          is_family_friendly?: boolean | null
+          latitude?: number | null
           location?: unknown
           location_text?: string | null
+          location_url?: string | null
+          longitude?: number | null
+          maps_url?: string | null
           name: string
           name_embedding?: string | null
+          new_category_id?: string | null
           owner_user_id?: string | null
           owner_whatsapp?: string | null
           status?: string | null
+          tag?: string | null
+          tag_id?: string | null
         }
         Update: {
-          catalog_url?: string | null
-          category_id?: string | null
+          bar_id?: string | null
+          category_name?: string | null
+          claimed?: boolean
+          country?: string | null
           created_at?: string
           description?: string | null
+          geocode_status?: string | null
+          geocoded_at?: string | null
+          has_events?: boolean | null
+          has_free_wifi?: boolean | null
+          has_happy_hour?: boolean | null
+          has_karaoke?: boolean | null
+          has_late_night_hours?: boolean | null
+          has_live_music?: boolean | null
+          has_live_sports?: boolean | null
+          has_outdoor_seating?: boolean | null
+          has_parking?: boolean | null
+          has_vegetarian_options?: boolean | null
           id?: string
           is_active?: boolean
-          lat?: number | null
-          lng?: number | null
+          is_family_friendly?: boolean | null
+          latitude?: number | null
           location?: unknown
           location_text?: string | null
+          location_url?: string | null
+          longitude?: number | null
+          maps_url?: string | null
           name?: string
           name_embedding?: string | null
+          new_category_id?: string | null
           owner_user_id?: string | null
           owner_whatsapp?: string | null
           status?: string | null
+          tag?: string | null
+          tag_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "business_bar_id_fkey"
+            columns: ["bar_id"]
+            isOneToOne: false
+            referencedRelation: "bars"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "business_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "business_tags"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_business_category"
+            columns: ["new_category_id"]
+            isOneToOne: false
+            referencedRelation: "service_categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       business_categories: {
         Row: {
@@ -1850,6 +2119,59 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      business_tags: {
+        Row: {
+          color: string | null
+          created_at: string
+          description: string | null
+          icon: string | null
+          id: string
+          is_active: boolean
+          name: string
+          parent_tag_id: string | null
+          search_keywords: string[] | null
+          slug: string
+          sort_order: number | null
+          updated_at: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          parent_tag_id?: string | null
+          search_keywords?: string[] | null
+          slug: string
+          sort_order?: number | null
+          updated_at?: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          parent_tag_id?: string | null
+          search_keywords?: string[] | null
+          slug?: string
+          sort_order?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_tags_parent_tag_id_fkey"
+            columns: ["parent_tag_id"]
+            isOneToOne: false
+            referencedRelation: "business_tags"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       business_whatsapp_numbers: {
         Row: {
@@ -1887,8 +2209,8 @@ export type Database = {
             foreignKeyName: "business_whatsapp_numbers_business_id_fkey"
             columns: ["business_id"]
             isOneToOne: false
-            referencedRelation: "business_category_menu_view"
-            referencedColumns: ["business_id"]
+            referencedRelation: "business"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "business_whatsapp_numbers_business_id_fkey"
@@ -1896,88 +2218,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "businesses"
             referencedColumns: ["id"]
-          },
-        ]
-      }
-      businesses: {
-        Row: {
-          catalog_url: string | null
-          category_id: number | null
-          category_name: string | null
-          created_at: string | null
-          description: string | null
-          geo: unknown
-          id: string
-          is_active: boolean
-          lat: number | null
-          lng: number | null
-          location: unknown
-          location_text: string | null
-          name: string
-          name_embedding: string | null
-          owner_user_id: string | null
-          owner_whatsapp: string
-          status: string | null
-        }
-        Insert: {
-          catalog_url?: string | null
-          category_id?: number | null
-          category_name?: string | null
-          created_at?: string | null
-          description?: string | null
-          geo?: unknown
-          id?: string
-          is_active?: boolean
-          lat?: number | null
-          lng?: number | null
-          location?: unknown
-          location_text?: string | null
-          name: string
-          name_embedding?: string | null
-          owner_user_id?: string | null
-          owner_whatsapp: string
-          status?: string | null
-        }
-        Update: {
-          catalog_url?: string | null
-          category_id?: number | null
-          category_name?: string | null
-          created_at?: string | null
-          description?: string | null
-          geo?: unknown
-          id?: string
-          is_active?: boolean
-          lat?: number | null
-          lng?: number | null
-          location?: unknown
-          location_text?: string | null
-          name?: string
-          name_embedding?: string | null
-          owner_user_id?: string | null
-          owner_whatsapp?: string
-          status?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "businesses_category_id_fkey"
-            columns: ["category_id"]
-            isOneToOne: false
-            referencedRelation: "business_category_menu_view"
-            referencedColumns: ["category_id"]
-          },
-          {
-            foreignKeyName: "businesses_category_id_fkey"
-            columns: ["category_id"]
-            isOneToOne: false
-            referencedRelation: "marketplace_categories"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "businesses_owner_user_id_fkey"
-            columns: ["owner_user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -2649,6 +2889,54 @@ export type Database = {
           },
         ]
       }
+      conversation_state_transitions: {
+        Row: {
+          conversation_id: string | null
+          correlation_id: string | null
+          created_at: string | null
+          from_state: string | null
+          id: string
+          metadata: Json | null
+          to_state: string
+          transition_reason: string | null
+        }
+        Insert: {
+          conversation_id?: string | null
+          correlation_id?: string | null
+          created_at?: string | null
+          from_state?: string | null
+          id?: string
+          metadata?: Json | null
+          to_state: string
+          transition_reason?: string | null
+        }
+        Update: {
+          conversation_id?: string | null
+          correlation_id?: string | null
+          created_at?: string | null
+          from_state?: string | null
+          id?: string
+          metadata?: Json | null
+          to_state?: string
+          transition_reason?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversation_state_transitions_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "stuck_webhook_conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversation_state_transitions_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "webhook_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       conversations: {
         Row: {
           channel: string
@@ -2695,6 +2983,7 @@ export type Database = {
           mobile_money_provider: string
           name: string
           phone_prefix: string
+          region: string
           sort_order: number | null
           timezone: string | null
           updated_at: string
@@ -2713,6 +3002,7 @@ export type Database = {
           mobile_money_provider: string
           name: string
           phone_prefix: string
+          region?: string
           sort_order?: number | null
           timezone?: string | null
           updated_at?: string
@@ -2731,6 +3021,7 @@ export type Database = {
           mobile_money_provider?: string
           name?: string
           phone_prefix?: string
+          region?: string
           sort_order?: number | null
           timezone?: string | null
           updated_at?: string
@@ -2738,6 +3029,60 @@ export type Database = {
           ussd_send_to_phone?: string
         }
         Relationships: []
+      }
+      customer_support_contacts: {
+        Row: {
+          contact_type: string
+          contact_value: string
+          country_code: string | null
+          created_at: string | null
+          department: string | null
+          display_name: string
+          display_order: number | null
+          id: string
+          is_active: boolean
+          updated_at: string | null
+        }
+        Insert: {
+          contact_type: string
+          contact_value: string
+          country_code?: string | null
+          created_at?: string | null
+          department?: string | null
+          display_name: string
+          display_order?: number | null
+          id?: string
+          is_active?: boolean
+          updated_at?: string | null
+        }
+        Update: {
+          contact_type?: string
+          contact_value?: string
+          country_code?: string | null
+          created_at?: string | null
+          department?: string | null
+          display_name?: string
+          display_order?: number | null
+          id?: string
+          is_active?: boolean
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_support_contacts_country_code_fkey"
+            columns: ["country_code"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "customer_support_contacts_country_code_fkey"
+            columns: ["country_code"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_menu_by_country"
+            referencedColumns: ["country_code"]
+          },
+        ]
       }
       deeplink_events: {
         Row: {
@@ -2821,6 +3166,127 @@ export type Database = {
           used_at?: string | null
         }
         Relationships: []
+      }
+      draft_order_items: {
+        Row: {
+          created_at: string | null
+          draft_order_id: string
+          id: string
+          menu_item_id: string | null
+          options: Json | null
+          quantity: number
+          special_requests: string | null
+          total_price: number | null
+          unit_price: number
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          draft_order_id: string
+          id?: string
+          menu_item_id?: string | null
+          options?: Json | null
+          quantity?: number
+          special_requests?: string | null
+          total_price?: number | null
+          unit_price: number
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          draft_order_id?: string
+          id?: string
+          menu_item_id?: string | null
+          options?: Json | null
+          quantity?: number
+          special_requests?: string | null
+          total_price?: number | null
+          unit_price?: number
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "draft_order_items_draft_order_id_fkey"
+            columns: ["draft_order_id"]
+            isOneToOne: false
+            referencedRelation: "draft_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "draft_order_items_menu_item_id_fkey"
+            columns: ["menu_item_id"]
+            isOneToOne: false
+            referencedRelation: "menu_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "draft_order_items_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      draft_orders: {
+        Row: {
+          conversation_id: string | null
+          created_at: string | null
+          id: string
+          items: Json
+          metadata: Json | null
+          status: string | null
+          subtotal: number | null
+          tax: number | null
+          total: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          conversation_id?: string | null
+          created_at?: string | null
+          id?: string
+          items?: Json
+          metadata?: Json | null
+          status?: string | null
+          subtotal?: number | null
+          tax?: number | null
+          total?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          conversation_id?: string | null
+          created_at?: string | null
+          id?: string
+          items?: Json
+          metadata?: Json | null
+          status?: string | null
+          subtotal?: number | null
+          tax?: number | null
+          total?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "draft_orders_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "waiter_conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "draft_orders_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       driver_availability: {
         Row: {
@@ -2990,9 +3456,9 @@ export type Database = {
       driver_status: {
         Row: {
           last_seen: string | null
-          lat: number | null
-          lng: number | null
+          latitude: number | null
           location: unknown
+          longitude: number | null
           online: boolean | null
           updated_at: string
           user_id: string
@@ -3000,9 +3466,9 @@ export type Database = {
         }
         Insert: {
           last_seen?: string | null
-          lat?: number | null
-          lng?: number | null
+          latitude?: number | null
           location?: unknown
+          longitude?: number | null
           online?: boolean | null
           updated_at?: string
           user_id: string
@@ -3010,9 +3476,9 @@ export type Database = {
         }
         Update: {
           last_seen?: string | null
-          lat?: number | null
-          lng?: number | null
+          latitude?: number | null
           location?: unknown
+          longitude?: number | null
           online?: boolean | null
           updated_at?: string
           user_id?: string
@@ -3308,6 +3774,118 @@ export type Database = {
         }
         Relationships: []
       }
+      insurance_admin_notifications: {
+        Row: {
+          admin_wa_id: string
+          created_at: string
+          delivered_at: string | null
+          error_message: string | null
+          id: string
+          lead_id: string
+          notification_payload: Json
+          read_at: string | null
+          retry_count: number | null
+          sent_at: string | null
+          status: string
+          updated_at: string
+          user_wa_id: string
+        }
+        Insert: {
+          admin_wa_id: string
+          created_at?: string
+          delivered_at?: string | null
+          error_message?: string | null
+          id?: string
+          lead_id: string
+          notification_payload: Json
+          read_at?: string | null
+          retry_count?: number | null
+          sent_at?: string | null
+          status?: string
+          updated_at?: string
+          user_wa_id: string
+        }
+        Update: {
+          admin_wa_id?: string
+          created_at?: string
+          delivered_at?: string | null
+          error_message?: string | null
+          id?: string
+          lead_id?: string
+          notification_payload?: Json
+          read_at?: string | null
+          retry_count?: number | null
+          sent_at?: string | null
+          status?: string
+          updated_at?: string
+          user_wa_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_admin"
+            columns: ["admin_wa_id"]
+            isOneToOne: false
+            referencedRelation: "insurance_admin_performance"
+            referencedColumns: ["wa_id"]
+          },
+          {
+            foreignKeyName: "fk_admin"
+            columns: ["admin_wa_id"]
+            isOneToOne: false
+            referencedRelation: "insurance_admins"
+            referencedColumns: ["wa_id"]
+          },
+          {
+            foreignKeyName: "insurance_admin_notifications_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "insurance_leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      insurance_admins: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean | null
+          last_notified_at: string | null
+          name: string
+          notification_preferences: Json | null
+          receives_all_alerts: boolean | null
+          role: string | null
+          total_notifications_sent: number | null
+          updated_at: string
+          wa_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          last_notified_at?: string | null
+          name: string
+          notification_preferences?: Json | null
+          receives_all_alerts?: boolean | null
+          role?: string | null
+          total_notifications_sent?: number | null
+          updated_at?: string
+          wa_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          last_notified_at?: string | null
+          name?: string
+          notification_preferences?: Json | null
+          receives_all_alerts?: boolean | null
+          role?: string | null
+          total_notifications_sent?: number | null
+          updated_at?: string
+          wa_id?: string
+        }
+        Relationships: []
+      }
       insurance_documents: {
         Row: {
           checksum: string | null
@@ -3565,6 +4143,60 @@ export type Database = {
         }
         Relationships: []
       }
+      invitations: {
+        Row: {
+          accepted_at: string | null
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          invited_by: string | null
+          metadata: Json
+          role_slug: string
+          status: string
+          token: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          created_at?: string
+          email: string
+          expires_at?: string
+          id?: string
+          invited_by?: string | null
+          metadata?: Json
+          role_slug: string
+          status?: string
+          token?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          invited_by?: string | null
+          metadata?: Json
+          role_slug?: string
+          status?: string
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invitations_invited_by_fkey"
+            columns: ["invited_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "invitations_role_slug_fkey"
+            columns: ["role_slug"]
+            isOneToOne: false
+            referencedRelation: "roles"
+            referencedColumns: ["slug"]
+          },
+        ]
+      }
       item_modifiers: {
         Row: {
           created_at: string
@@ -3695,6 +4327,682 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      job_analytics: {
+        Row: {
+          created_at: string
+          entity_id: string
+          entity_type: string
+          event_data: Json | null
+          event_type: string
+          id: string
+          phone_number: string | null
+          user_role: Database["public"]["Enums"]["user_role"] | null
+        }
+        Insert: {
+          created_at?: string
+          entity_id: string
+          entity_type: string
+          event_data?: Json | null
+          event_type: string
+          id?: string
+          phone_number?: string | null
+          user_role?: Database["public"]["Enums"]["user_role"] | null
+        }
+        Update: {
+          created_at?: string
+          entity_id?: string
+          entity_type?: string
+          event_data?: Json | null
+          event_type?: string
+          id?: string
+          phone_number?: string | null
+          user_role?: Database["public"]["Enums"]["user_role"] | null
+        }
+        Relationships: []
+      }
+      job_applications: {
+        Row: {
+          availability_note: string | null
+          cover_message: string | null
+          created_at: string
+          id: string
+          job_id: string
+          match_id: string | null
+          proposed_rate: number | null
+          response_message: string | null
+          reviewed_at: string | null
+          seeker_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          availability_note?: string | null
+          cover_message?: string | null
+          created_at?: string
+          id?: string
+          job_id: string
+          match_id?: string | null
+          proposed_rate?: number | null
+          response_message?: string | null
+          reviewed_at?: string | null
+          seeker_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          availability_note?: string | null
+          cover_message?: string | null
+          created_at?: string
+          id?: string
+          job_id?: string
+          match_id?: string | null
+          proposed_rate?: number | null
+          response_message?: string | null
+          reviewed_at?: string | null
+          seeker_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_applications_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "job_listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_applications_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "job_listings_with_contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_applications_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "job_listings_with_country"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_applications_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "job_matches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_applications_seeker_id_fkey"
+            columns: ["seeker_id"]
+            isOneToOne: false
+            referencedRelation: "job_seekers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      job_conversations: {
+        Row: {
+          active_job_id: string | null
+          active_seeker_id: string | null
+          conversation_state: Json | null
+          created_at: string
+          current_intent: string | null
+          extracted_metadata: Json | null
+          id: string
+          last_message_at: string
+          message_count: number | null
+          messages: Json[] | null
+          phone_number: string
+          role: Database["public"]["Enums"]["user_role"]
+          updated_at: string
+          user_name: string | null
+        }
+        Insert: {
+          active_job_id?: string | null
+          active_seeker_id?: string | null
+          conversation_state?: Json | null
+          created_at?: string
+          current_intent?: string | null
+          extracted_metadata?: Json | null
+          id?: string
+          last_message_at?: string
+          message_count?: number | null
+          messages?: Json[] | null
+          phone_number: string
+          role?: Database["public"]["Enums"]["user_role"]
+          updated_at?: string
+          user_name?: string | null
+        }
+        Update: {
+          active_job_id?: string | null
+          active_seeker_id?: string | null
+          conversation_state?: Json | null
+          created_at?: string
+          current_intent?: string | null
+          extracted_metadata?: Json | null
+          id?: string
+          last_message_at?: string
+          message_count?: number | null
+          messages?: Json[] | null
+          phone_number?: string
+          role?: Database["public"]["Enums"]["user_role"]
+          updated_at?: string
+          user_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_conversations_active_job_id_fkey"
+            columns: ["active_job_id"]
+            isOneToOne: false
+            referencedRelation: "job_listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_conversations_active_job_id_fkey"
+            columns: ["active_job_id"]
+            isOneToOne: false
+            referencedRelation: "job_listings_with_contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_conversations_active_job_id_fkey"
+            columns: ["active_job_id"]
+            isOneToOne: false
+            referencedRelation: "job_listings_with_country"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_conversations_active_seeker_id_fkey"
+            columns: ["active_seeker_id"]
+            isOneToOne: false
+            referencedRelation: "job_seekers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      job_listings: {
+        Row: {
+          category: string | null
+          company_name: string | null
+          contact_email: string | null
+          contact_facebook: string | null
+          contact_linkedin: string | null
+          contact_method: string | null
+          contact_other: Json | null
+          contact_phone: string | null
+          contact_twitter: string | null
+          contact_website: string | null
+          contact_whatsapp: string | null
+          country_code: string | null
+          created_at: string
+          created_by: string | null
+          currency: string | null
+          description: string
+          discovered_at: string | null
+          duration: string | null
+          end_date: string | null
+          experience_level: string | null
+          expires_at: string | null
+          external_id: string | null
+          external_url: string | null
+          filled_at: string | null
+          flexible_hours: boolean | null
+          geog: unknown
+          has_contact_info: boolean | null
+          id: string
+          is_external: boolean | null
+          job_hash: string | null
+          job_type: Database["public"]["Enums"]["job_type"]
+          last_seen_at: string | null
+          location: string
+          location_details: string | null
+          location_embedding: string | null
+          metadata: Json | null
+          onsite_remote: string | null
+          org_id: string | null
+          pay_max: number | null
+          pay_min: number | null
+          pay_type: Database["public"]["Enums"]["pay_type"]
+          physical_demands: string | null
+          posted_by: string
+          poster_name: string | null
+          required_skills: Json | null
+          required_skills_embedding: string | null
+          slots: number | null
+          source_id: string | null
+          start_date: string | null
+          status: Database["public"]["Enums"]["job_status"]
+          team_size: string | null
+          title: string
+          tools_needed: string[] | null
+          transport_provided: boolean | null
+          updated_at: string
+          weather_dependent: boolean | null
+        }
+        Insert: {
+          category?: string | null
+          company_name?: string | null
+          contact_email?: string | null
+          contact_facebook?: string | null
+          contact_linkedin?: string | null
+          contact_method?: string | null
+          contact_other?: Json | null
+          contact_phone?: string | null
+          contact_twitter?: string | null
+          contact_website?: string | null
+          contact_whatsapp?: string | null
+          country_code?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string | null
+          description: string
+          discovered_at?: string | null
+          duration?: string | null
+          end_date?: string | null
+          experience_level?: string | null
+          expires_at?: string | null
+          external_id?: string | null
+          external_url?: string | null
+          filled_at?: string | null
+          flexible_hours?: boolean | null
+          geog?: unknown
+          has_contact_info?: boolean | null
+          id?: string
+          is_external?: boolean | null
+          job_hash?: string | null
+          job_type?: Database["public"]["Enums"]["job_type"]
+          last_seen_at?: string | null
+          location: string
+          location_details?: string | null
+          location_embedding?: string | null
+          metadata?: Json | null
+          onsite_remote?: string | null
+          org_id?: string | null
+          pay_max?: number | null
+          pay_min?: number | null
+          pay_type?: Database["public"]["Enums"]["pay_type"]
+          physical_demands?: string | null
+          posted_by: string
+          poster_name?: string | null
+          required_skills?: Json | null
+          required_skills_embedding?: string | null
+          slots?: number | null
+          source_id?: string | null
+          start_date?: string | null
+          status?: Database["public"]["Enums"]["job_status"]
+          team_size?: string | null
+          title: string
+          tools_needed?: string[] | null
+          transport_provided?: boolean | null
+          updated_at?: string
+          weather_dependent?: boolean | null
+        }
+        Update: {
+          category?: string | null
+          company_name?: string | null
+          contact_email?: string | null
+          contact_facebook?: string | null
+          contact_linkedin?: string | null
+          contact_method?: string | null
+          contact_other?: Json | null
+          contact_phone?: string | null
+          contact_twitter?: string | null
+          contact_website?: string | null
+          contact_whatsapp?: string | null
+          country_code?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string | null
+          description?: string
+          discovered_at?: string | null
+          duration?: string | null
+          end_date?: string | null
+          experience_level?: string | null
+          expires_at?: string | null
+          external_id?: string | null
+          external_url?: string | null
+          filled_at?: string | null
+          flexible_hours?: boolean | null
+          geog?: unknown
+          has_contact_info?: boolean | null
+          id?: string
+          is_external?: boolean | null
+          job_hash?: string | null
+          job_type?: Database["public"]["Enums"]["job_type"]
+          last_seen_at?: string | null
+          location?: string
+          location_details?: string | null
+          location_embedding?: string | null
+          metadata?: Json | null
+          onsite_remote?: string | null
+          org_id?: string | null
+          pay_max?: number | null
+          pay_min?: number | null
+          pay_type?: Database["public"]["Enums"]["pay_type"]
+          physical_demands?: string | null
+          posted_by?: string
+          poster_name?: string | null
+          required_skills?: Json | null
+          required_skills_embedding?: string | null
+          slots?: number | null
+          source_id?: string | null
+          start_date?: string | null
+          status?: Database["public"]["Enums"]["job_status"]
+          team_size?: string | null
+          title?: string
+          tools_needed?: string[] | null
+          transport_provided?: boolean | null
+          updated_at?: string
+          weather_dependent?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_listings_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "job_listings_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "job_sources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      job_matches: {
+        Row: {
+          contacted_at: string | null
+          created_at: string
+          hired_at: string | null
+          id: string
+          job_id: string
+          match_reasons: Json | null
+          match_type: Database["public"]["Enums"]["match_type"]
+          metadata: Json | null
+          poster_interested: boolean | null
+          poster_viewed_at: string | null
+          rejected_reason: string | null
+          seeker_id: string
+          seeker_interested: boolean | null
+          seeker_message: string | null
+          seeker_viewed_at: string | null
+          similarity_score: number
+          status: Database["public"]["Enums"]["match_status"]
+          updated_at: string
+        }
+        Insert: {
+          contacted_at?: string | null
+          created_at?: string
+          hired_at?: string | null
+          id?: string
+          job_id: string
+          match_reasons?: Json | null
+          match_type?: Database["public"]["Enums"]["match_type"]
+          metadata?: Json | null
+          poster_interested?: boolean | null
+          poster_viewed_at?: string | null
+          rejected_reason?: string | null
+          seeker_id: string
+          seeker_interested?: boolean | null
+          seeker_message?: string | null
+          seeker_viewed_at?: string | null
+          similarity_score: number
+          status?: Database["public"]["Enums"]["match_status"]
+          updated_at?: string
+        }
+        Update: {
+          contacted_at?: string | null
+          created_at?: string
+          hired_at?: string | null
+          id?: string
+          job_id?: string
+          match_reasons?: Json | null
+          match_type?: Database["public"]["Enums"]["match_type"]
+          metadata?: Json | null
+          poster_interested?: boolean | null
+          poster_viewed_at?: string | null
+          rejected_reason?: string | null
+          seeker_id?: string
+          seeker_interested?: boolean | null
+          seeker_message?: string | null
+          seeker_viewed_at?: string | null
+          similarity_score?: number
+          status?: Database["public"]["Enums"]["match_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_matches_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "job_listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_matches_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "job_listings_with_contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_matches_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "job_listings_with_country"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_matches_seeker_id_fkey"
+            columns: ["seeker_id"]
+            isOneToOne: false
+            referencedRelation: "job_seekers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      job_seekers: {
+        Row: {
+          availability: Json | null
+          available_immediately: boolean | null
+          bio: string | null
+          bio_embedding: string | null
+          certifications: string[] | null
+          country_code: string | null
+          created_at: string
+          experience_years: number | null
+          id: string
+          languages: string[] | null
+          last_active: string
+          max_distance_km: number | null
+          metadata: Json | null
+          min_pay: number | null
+          name: string | null
+          notifications_enabled: boolean | null
+          org_id: string | null
+          phone_number: string
+          preferred_categories: string[] | null
+          preferred_contact_method: string | null
+          preferred_job_types: Database["public"]["Enums"]["job_type"][] | null
+          preferred_locations: string[] | null
+          preferred_pay_types: Database["public"]["Enums"]["pay_type"][] | null
+          profile_complete: boolean | null
+          rating: number | null
+          skills: Json | null
+          skills_embedding: string | null
+          total_jobs_completed: number | null
+          updated_at: string
+          verified: boolean | null
+        }
+        Insert: {
+          availability?: Json | null
+          available_immediately?: boolean | null
+          bio?: string | null
+          bio_embedding?: string | null
+          certifications?: string[] | null
+          country_code?: string | null
+          created_at?: string
+          experience_years?: number | null
+          id?: string
+          languages?: string[] | null
+          last_active?: string
+          max_distance_km?: number | null
+          metadata?: Json | null
+          min_pay?: number | null
+          name?: string | null
+          notifications_enabled?: boolean | null
+          org_id?: string | null
+          phone_number: string
+          preferred_categories?: string[] | null
+          preferred_contact_method?: string | null
+          preferred_job_types?: Database["public"]["Enums"]["job_type"][] | null
+          preferred_locations?: string[] | null
+          preferred_pay_types?: Database["public"]["Enums"]["pay_type"][] | null
+          profile_complete?: boolean | null
+          rating?: number | null
+          skills?: Json | null
+          skills_embedding?: string | null
+          total_jobs_completed?: number | null
+          updated_at?: string
+          verified?: boolean | null
+        }
+        Update: {
+          availability?: Json | null
+          available_immediately?: boolean | null
+          bio?: string | null
+          bio_embedding?: string | null
+          certifications?: string[] | null
+          country_code?: string | null
+          created_at?: string
+          experience_years?: number | null
+          id?: string
+          languages?: string[] | null
+          last_active?: string
+          max_distance_km?: number | null
+          metadata?: Json | null
+          min_pay?: number | null
+          name?: string | null
+          notifications_enabled?: boolean | null
+          org_id?: string | null
+          phone_number?: string
+          preferred_categories?: string[] | null
+          preferred_contact_method?: string | null
+          preferred_job_types?: Database["public"]["Enums"]["job_type"][] | null
+          preferred_locations?: string[] | null
+          preferred_pay_types?: Database["public"]["Enums"]["pay_type"][] | null
+          profile_complete?: boolean | null
+          rating?: number | null
+          skills?: Json | null
+          skills_embedding?: string | null
+          total_jobs_completed?: number | null
+          updated_at?: string
+          verified?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_seekers_country_code_fkey"
+            columns: ["country_code"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "job_seekers_country_code_fkey"
+            columns: ["country_code"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_menu_by_country"
+            referencedColumns: ["country_code"]
+          },
+        ]
+      }
+      job_source_urls: {
+        Row: {
+          country_code: string
+          created_at: string
+          id: string
+          is_active: boolean
+          last_error: string | null
+          last_scraped_at: string | null
+          last_success_at: string | null
+          metadata: Json | null
+          name: string
+          scrape_frequency_hours: number | null
+          total_jobs_found: number | null
+          total_scrapes: number | null
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          country_code?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          last_error?: string | null
+          last_scraped_at?: string | null
+          last_success_at?: string | null
+          metadata?: Json | null
+          name: string
+          scrape_frequency_hours?: number | null
+          total_jobs_found?: number | null
+          total_scrapes?: number | null
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          country_code?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          last_error?: string | null
+          last_scraped_at?: string | null
+          last_success_at?: string | null
+          metadata?: Json | null
+          name?: string
+          scrape_frequency_hours?: number | null
+          total_jobs_found?: number | null
+          total_scrapes?: number | null
+          updated_at?: string
+          url?: string
+        }
+        Relationships: []
+      }
+      job_sources: {
+        Row: {
+          base_url: string | null
+          config: Json | null
+          created_at: string
+          id: string
+          is_active: boolean | null
+          name: string
+          source_type: string
+          updated_at: string
+        }
+        Insert: {
+          base_url?: string | null
+          config?: Json | null
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          name: string
+          source_type: string
+          updated_at?: string
+        }
+        Update: {
+          base_url?: string | null
+          config?: Json | null
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          source_type?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       leaderboard_notifications: {
         Row: {
@@ -3851,13 +5159,6 @@ export type Database = {
             foreignKeyName: "marketplace_categories_menu_item_id_fkey"
             columns: ["menu_item_id"]
             isOneToOne: false
-            referencedRelation: "business_category_menu_view"
-            referencedColumns: ["menu_item_id"]
-          },
-          {
-            foreignKeyName: "marketplace_categories_menu_item_id_fkey"
-            columns: ["menu_item_id"]
-            isOneToOne: false
             referencedRelation: "whatsapp_home_menu_items"
             referencedColumns: ["id"]
           },
@@ -3907,6 +5208,98 @@ export type Database = {
             columns: ["call_id"]
             isOneToOne: false
             referencedRelation: "voice_calls"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      menu_items: {
+        Row: {
+          allergens: string[] | null
+          calories: number | null
+          category_id: string | null
+          category_name: string | null
+          created_at: string | null
+          currency: string | null
+          description: string | null
+          description_translations: Json | null
+          id: string
+          image_url: string | null
+          is_available: boolean | null
+          is_gluten_free: boolean | null
+          is_spicy: boolean | null
+          is_vegan: boolean | null
+          is_vegetarian: boolean | null
+          metadata: Json | null
+          name: string
+          name_translations: Json | null
+          preparation_time: number | null
+          price: number
+          restaurant_id: string
+          sort_order: number | null
+          spice_level: number | null
+          tags: string[] | null
+          updated_at: string | null
+        }
+        Insert: {
+          allergens?: string[] | null
+          calories?: number | null
+          category_id?: string | null
+          category_name?: string | null
+          created_at?: string | null
+          currency?: string | null
+          description?: string | null
+          description_translations?: Json | null
+          id?: string
+          image_url?: string | null
+          is_available?: boolean | null
+          is_gluten_free?: boolean | null
+          is_spicy?: boolean | null
+          is_vegan?: boolean | null
+          is_vegetarian?: boolean | null
+          metadata?: Json | null
+          name: string
+          name_translations?: Json | null
+          preparation_time?: number | null
+          price: number
+          restaurant_id: string
+          sort_order?: number | null
+          spice_level?: number | null
+          tags?: string[] | null
+          updated_at?: string | null
+        }
+        Update: {
+          allergens?: string[] | null
+          calories?: number | null
+          category_id?: string | null
+          category_name?: string | null
+          created_at?: string | null
+          currency?: string | null
+          description?: string | null
+          description_translations?: Json | null
+          id?: string
+          image_url?: string | null
+          is_available?: boolean | null
+          is_gluten_free?: boolean | null
+          is_spicy?: boolean | null
+          is_vegan?: boolean | null
+          is_vegetarian?: boolean | null
+          metadata?: Json | null
+          name?: string
+          name_translations?: Json | null
+          preparation_time?: number | null
+          price?: number
+          restaurant_id?: string
+          sort_order?: number | null
+          spice_level?: number | null
+          tags?: string[] | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "menu_items_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
             referencedColumns: ["id"]
           },
         ]
@@ -4102,98 +5495,6 @@ export type Database = {
             columns: ["conversation_id"]
             isOneToOne: false
             referencedRelation: "conversations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      message_metadata: {
-        Row: {
-          agent_conversation_id: string | null
-          agent_message_id: string | null
-          conversation_id: string | null
-          created_at: string
-          delivered_at: string | null
-          direction: string
-          expires_at: string
-          message_id: number
-          message_type: string | null
-          metadata: Json
-          read_at: string | null
-          recipient_msisdn: string | null
-          sender_msisdn: string | null
-          sent_at: string | null
-          status: string
-          status_reason: string | null
-          updated_at: string
-          wa_message_id: string | null
-        }
-        Insert: {
-          agent_conversation_id?: string | null
-          agent_message_id?: string | null
-          conversation_id?: string | null
-          created_at?: string
-          delivered_at?: string | null
-          direction: string
-          expires_at?: string
-          message_id: number
-          message_type?: string | null
-          metadata?: Json
-          read_at?: string | null
-          recipient_msisdn?: string | null
-          sender_msisdn?: string | null
-          sent_at?: string | null
-          status?: string
-          status_reason?: string | null
-          updated_at?: string
-          wa_message_id?: string | null
-        }
-        Update: {
-          agent_conversation_id?: string | null
-          agent_message_id?: string | null
-          conversation_id?: string | null
-          created_at?: string
-          delivered_at?: string | null
-          direction?: string
-          expires_at?: string
-          message_id?: number
-          message_type?: string | null
-          metadata?: Json
-          read_at?: string | null
-          recipient_msisdn?: string | null
-          sender_msisdn?: string | null
-          sent_at?: string | null
-          status?: string
-          status_reason?: string | null
-          updated_at?: string
-          wa_message_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "message_metadata_agent_conversation_id_fkey"
-            columns: ["agent_conversation_id"]
-            isOneToOne: false
-            referencedRelation: "agent_conversations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "message_metadata_agent_message_id_fkey"
-            columns: ["agent_message_id"]
-            isOneToOne: false
-            referencedRelation: "agent_messages"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "message_metadata_conversation_id_fkey"
-            columns: ["conversation_id"]
-            isOneToOne: false
-            referencedRelation: "conversations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "message_metadata_message_id_fkey"
-            columns: ["message_id"]
-            isOneToOne: true
-            referencedRelation: "messages"
             referencedColumns: ["id"]
           },
         ]
@@ -4581,6 +5882,204 @@ export type Database = {
           },
         ]
       }
+      order_items: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          menu_item_id: string | null
+          metadata: Json | null
+          name: string
+          name_translations: Json | null
+          order_id: string
+          price: number
+          quantity: number
+          special_instructions: string | null
+          status: string | null
+          subtotal: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          menu_item_id?: string | null
+          metadata?: Json | null
+          name: string
+          name_translations?: Json | null
+          order_id: string
+          price: number
+          quantity: number
+          special_instructions?: string | null
+          status?: string | null
+          subtotal?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          menu_item_id?: string | null
+          metadata?: Json | null
+          name?: string
+          name_translations?: Json | null
+          order_id?: string
+          price?: number
+          quantity?: number
+          special_instructions?: string | null
+          status?: string | null
+          subtotal?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_items_menu_item_id_fkey"
+            columns: ["menu_item_id"]
+            isOneToOne: false
+            referencedRelation: "menu_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orders: {
+        Row: {
+          completed_at: string | null
+          confirmed_at: string | null
+          created_at: string | null
+          currency: string | null
+          discount: number | null
+          id: string
+          language: string | null
+          metadata: Json | null
+          notes: string | null
+          order_number: string
+          payment_method: string | null
+          restaurant_id: string
+          session_id: string | null
+          special_instructions: string | null
+          status: string | null
+          subtotal: number | null
+          table_id: string | null
+          tax: number | null
+          tip: number | null
+          total: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          confirmed_at?: string | null
+          created_at?: string | null
+          currency?: string | null
+          discount?: number | null
+          id?: string
+          language?: string | null
+          metadata?: Json | null
+          notes?: string | null
+          order_number: string
+          payment_method?: string | null
+          restaurant_id: string
+          session_id?: string | null
+          special_instructions?: string | null
+          status?: string | null
+          subtotal?: number | null
+          table_id?: string | null
+          tax?: number | null
+          tip?: number | null
+          total?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          confirmed_at?: string | null
+          created_at?: string | null
+          currency?: string | null
+          discount?: number | null
+          id?: string
+          language?: string | null
+          metadata?: Json | null
+          notes?: string | null
+          order_number?: string
+          payment_method?: string | null
+          restaurant_id?: string
+          session_id?: string | null
+          special_instructions?: string | null
+          status?: string | null
+          subtotal?: number | null
+          table_id?: string | null
+          tax?: number | null
+          tip?: number | null
+          total?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_table_id_fkey"
+            columns: ["table_id"]
+            isOneToOne: false
+            referencedRelation: "restaurant_tables"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payment_events: {
+        Row: {
+          created_at: string | null
+          event_data: Json | null
+          event_type: string
+          id: string
+          payment_id: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          event_data?: Json | null
+          event_type: string
+          id?: string
+          payment_id: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          event_data?: Json | null
+          event_type?: string
+          id?: string
+          payment_id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_events_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payment_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_events_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payment_methods: {
         Row: {
           account_details_encrypted: string | null
@@ -4638,6 +6137,125 @@ export type Database = {
           user_id?: string
           verification_method?: string | null
           verified_at?: string | null
+        }
+        Relationships: []
+      }
+      payments: {
+        Row: {
+          amount: number
+          completed_at: string | null
+          confirmation_method: string | null
+          confirmed_by_user_at: string | null
+          created_at: string | null
+          currency: string
+          error_code: string | null
+          error_message: string | null
+          failed_at: string | null
+          id: string
+          initiated_at: string | null
+          metadata: Json | null
+          order_id: string
+          payment_instructions: string | null
+          payment_link: string | null
+          payment_method_details: Json | null
+          phone_number: string | null
+          provider: string
+          provider_reference: string | null
+          provider_transaction_id: string | null
+          status: string | null
+          updated_at: string | null
+          user_id: string
+          ussd_code: string | null
+        }
+        Insert: {
+          amount: number
+          completed_at?: string | null
+          confirmation_method?: string | null
+          confirmed_by_user_at?: string | null
+          created_at?: string | null
+          currency: string
+          error_code?: string | null
+          error_message?: string | null
+          failed_at?: string | null
+          id?: string
+          initiated_at?: string | null
+          metadata?: Json | null
+          order_id: string
+          payment_instructions?: string | null
+          payment_link?: string | null
+          payment_method_details?: Json | null
+          phone_number?: string | null
+          provider: string
+          provider_reference?: string | null
+          provider_transaction_id?: string | null
+          status?: string | null
+          updated_at?: string | null
+          user_id: string
+          ussd_code?: string | null
+        }
+        Update: {
+          amount?: number
+          completed_at?: string | null
+          confirmation_method?: string | null
+          confirmed_by_user_at?: string | null
+          created_at?: string | null
+          currency?: string
+          error_code?: string | null
+          error_message?: string | null
+          failed_at?: string | null
+          id?: string
+          initiated_at?: string | null
+          metadata?: Json | null
+          order_id?: string
+          payment_instructions?: string | null
+          payment_link?: string | null
+          payment_method_details?: Json | null
+          phone_number?: string | null
+          provider?: string
+          provider_reference?: string | null
+          provider_transaction_id?: string | null
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string
+          ussd_code?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      performance_metrics: {
+        Row: {
+          created_at: string
+          execution_time_ms: number
+          function_name: string
+          id: string
+          metadata: Json | null
+          metric_type: string
+          status: string | null
+        }
+        Insert: {
+          created_at?: string
+          execution_time_ms: number
+          function_name: string
+          id?: string
+          metadata?: Json | null
+          metric_type: string
+          status?: string | null
+        }
+        Update: {
+          created_at?: string
+          execution_time_ms?: number
+          function_name?: string
+          id?: string
+          metadata?: Json | null
+          metric_type?: string
+          status?: string | null
         }
         Relationships: []
       }
@@ -4704,6 +6322,51 @@ export type Database = {
         }
         Relationships: []
       }
+      processed_webhook_messages: {
+        Row: {
+          conversation_id: string | null
+          correlation_id: string
+          id: string
+          payload: Json | null
+          processed_at: string | null
+          processing_time_ms: number | null
+          whatsapp_message_id: string
+        }
+        Insert: {
+          conversation_id?: string | null
+          correlation_id: string
+          id?: string
+          payload?: Json | null
+          processed_at?: string | null
+          processing_time_ms?: number | null
+          whatsapp_message_id: string
+        }
+        Update: {
+          conversation_id?: string | null
+          correlation_id?: string
+          id?: string
+          payload?: Json | null
+          processed_at?: string | null
+          processing_time_ms?: number | null
+          whatsapp_message_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "processed_webhook_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "stuck_webhook_conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "processed_webhook_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "webhook_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_inquiries: {
         Row: {
           created_at: string | null
@@ -4769,6 +6432,7 @@ export type Database = {
         Row: {
           created_at: string
           credits_balance: number | null
+          display_name: string | null
           locale: string | null
           metadata: Json
           ref_code: string | null
@@ -4781,6 +6445,7 @@ export type Database = {
         Insert: {
           created_at?: string
           credits_balance?: number | null
+          display_name?: string | null
           locale?: string | null
           metadata?: Json
           ref_code?: string | null
@@ -4793,6 +6458,7 @@ export type Database = {
         Update: {
           created_at?: string
           credits_balance?: number | null
+          display_name?: string | null
           locale?: string | null
           metadata?: Json
           ref_code?: string | null
@@ -5022,6 +6688,90 @@ export type Database = {
           },
         ]
       }
+      property_source_urls: {
+        Row: {
+          country_code: string
+          created_at: string
+          id: string
+          is_active: boolean
+          last_error: string | null
+          last_scraped_at: string | null
+          last_success_at: string | null
+          metadata: Json | null
+          name: string
+          scrape_frequency_hours: number | null
+          total_properties_found: number | null
+          total_scrapes: number | null
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          country_code?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          last_error?: string | null
+          last_scraped_at?: string | null
+          last_success_at?: string | null
+          metadata?: Json | null
+          name: string
+          scrape_frequency_hours?: number | null
+          total_properties_found?: number | null
+          total_scrapes?: number | null
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          country_code?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          last_error?: string | null
+          last_scraped_at?: string | null
+          last_success_at?: string | null
+          metadata?: Json | null
+          name?: string
+          scrape_frequency_hours?: number | null
+          total_properties_found?: number | null
+          total_scrapes?: number | null
+          updated_at?: string
+          url?: string
+        }
+        Relationships: []
+      }
+      property_sources: {
+        Row: {
+          base_url: string | null
+          config: Json | null
+          created_at: string
+          id: string
+          is_active: boolean | null
+          name: string
+          source_type: string
+          updated_at: string
+        }
+        Insert: {
+          base_url?: string | null
+          config?: Json | null
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          name: string
+          source_type: string
+          updated_at?: string
+        }
+        Update: {
+          base_url?: string | null
+          config?: Json | null
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          source_type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       qr_tokens: {
         Row: {
           created_at: string
@@ -5057,6 +6807,85 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "stations"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      recent_activities: {
+        Row: {
+          activity_type: string
+          details: Json
+          id: string
+          occurred_at: string
+          ref_id: string | null
+          user_id: string
+        }
+        Insert: {
+          activity_type: string
+          details?: Json
+          id?: string
+          occurred_at?: string
+          ref_id?: string | null
+          user_id: string
+        }
+        Update: {
+          activity_type?: string
+          details?: Json
+          id?: string
+          occurred_at?: string
+          ref_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recent_activities_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      recent_locations: {
+        Row: {
+          captured_at: string
+          context: Json
+          expires_at: string
+          geog: unknown
+          id: string
+          lat: number
+          lng: number
+          source: string | null
+          user_id: string
+        }
+        Insert: {
+          captured_at?: string
+          context?: Json
+          expires_at: string
+          geog?: unknown
+          id?: string
+          lat: number
+          lng: number
+          source?: string | null
+          user_id: string
+        }
+        Update: {
+          captured_at?: string
+          context?: Json
+          expires_at?: string
+          geog?: unknown
+          id?: string
+          lat?: number
+          lng?: number
+          source?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recent_locations_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -5286,9 +7115,238 @@ export type Database = {
         }
         Relationships: []
       }
+      research_sessions: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          duration_ms: number | null
+          id: string
+          metadata: Json | null
+          properties_duplicate: number | null
+          properties_failed: number | null
+          properties_found: number | null
+          properties_inserted: number | null
+          started_at: string
+          status: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          duration_ms?: number | null
+          id?: string
+          metadata?: Json | null
+          properties_duplicate?: number | null
+          properties_failed?: number | null
+          properties_found?: number | null
+          properties_inserted?: number | null
+          started_at?: string
+          status?: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          duration_ms?: number | null
+          id?: string
+          metadata?: Json | null
+          properties_duplicate?: number | null
+          properties_failed?: number | null
+          properties_found?: number | null
+          properties_inserted?: number | null
+          started_at?: string
+          status?: string
+        }
+        Relationships: []
+      }
+      researched_properties: {
+        Row: {
+          amenities: string[] | null
+          available_from: string | null
+          bathrooms: number
+          bedrooms: number
+          contact_info: string
+          created_at: string
+          currency: string
+          description: string | null
+          id: string
+          last_seen_at: string | null
+          location: unknown
+          location_address: string | null
+          location_city: string | null
+          location_country: string | null
+          price: number
+          property_hash: string | null
+          property_source_id: string | null
+          property_type: string
+          rental_type: string
+          research_session_id: string | null
+          scraped_at: string
+          source: string
+          source_url: string | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          amenities?: string[] | null
+          available_from?: string | null
+          bathrooms?: number
+          bedrooms?: number
+          contact_info: string
+          created_at?: string
+          currency?: string
+          description?: string | null
+          id?: string
+          last_seen_at?: string | null
+          location?: unknown
+          location_address?: string | null
+          location_city?: string | null
+          location_country?: string | null
+          price: number
+          property_hash?: string | null
+          property_source_id?: string | null
+          property_type: string
+          rental_type: string
+          research_session_id?: string | null
+          scraped_at?: string
+          source: string
+          source_url?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          amenities?: string[] | null
+          available_from?: string | null
+          bathrooms?: number
+          bedrooms?: number
+          contact_info?: string
+          created_at?: string
+          currency?: string
+          description?: string | null
+          id?: string
+          last_seen_at?: string | null
+          location?: unknown
+          location_address?: string | null
+          location_city?: string | null
+          location_country?: string | null
+          price?: number
+          property_hash?: string | null
+          property_source_id?: string | null
+          property_type?: string
+          rental_type?: string
+          research_session_id?: string | null
+          scraped_at?: string
+          source?: string
+          source_url?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "researched_properties_property_source_id_fkey"
+            columns: ["property_source_id"]
+            isOneToOne: false
+            referencedRelation: "property_sources"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "researched_properties_research_session_id_fkey"
+            columns: ["research_session_id"]
+            isOneToOne: false
+            referencedRelation: "research_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reservations: {
+        Row: {
+          cancelled_at: string | null
+          confirmed_at: string | null
+          created_at: string | null
+          duration_minutes: number | null
+          guest_email: string | null
+          guest_name: string
+          guest_phone: string | null
+          id: string
+          language: string | null
+          metadata: Json | null
+          party_size: number
+          reservation_date: string
+          reservation_number: string
+          reservation_time: string
+          restaurant_id: string
+          special_requests: string | null
+          status: string | null
+          table_id: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          cancelled_at?: string | null
+          confirmed_at?: string | null
+          created_at?: string | null
+          duration_minutes?: number | null
+          guest_email?: string | null
+          guest_name: string
+          guest_phone?: string | null
+          id?: string
+          language?: string | null
+          metadata?: Json | null
+          party_size: number
+          reservation_date: string
+          reservation_number: string
+          reservation_time: string
+          restaurant_id: string
+          special_requests?: string | null
+          status?: string | null
+          table_id?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          cancelled_at?: string | null
+          confirmed_at?: string | null
+          created_at?: string | null
+          duration_minutes?: number | null
+          guest_email?: string | null
+          guest_name?: string
+          guest_phone?: string | null
+          id?: string
+          language?: string | null
+          metadata?: Json | null
+          party_size?: number
+          reservation_date?: string
+          reservation_number?: string
+          reservation_time?: string
+          restaurant_id?: string
+          special_requests?: string | null
+          status?: string | null
+          table_id?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reservations_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reservations_table_id_fkey"
+            columns: ["table_id"]
+            isOneToOne: false
+            referencedRelation: "restaurant_tables"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       restaurant_menu_items: {
         Row: {
           bar_id: string
+          business_id: string | null
           category_id: string | null
           category_name: string
           created_at: string
@@ -5307,6 +7365,7 @@ export type Database = {
         }
         Insert: {
           bar_id: string
+          business_id?: string | null
           category_id?: string | null
           category_name: string
           created_at?: string
@@ -5325,6 +7384,7 @@ export type Database = {
         }
         Update: {
           bar_id?: string
+          business_id?: string | null
           category_id?: string | null
           category_name?: string
           created_at?: string
@@ -5350,6 +7410,20 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "restaurant_menu_items_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "business"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "restaurant_menu_items_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "restaurant_menu_items_menu_id_fkey"
             columns: ["menu_id"]
             isOneToOne: false
@@ -5364,6 +7438,116 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      restaurant_tables: {
+        Row: {
+          capacity: number | null
+          created_at: string | null
+          floor: string | null
+          id: string
+          is_available: boolean | null
+          metadata: Json | null
+          qr_code: string
+          restaurant_id: string
+          section: string | null
+          table_number: string
+        }
+        Insert: {
+          capacity?: number | null
+          created_at?: string | null
+          floor?: string | null
+          id?: string
+          is_available?: boolean | null
+          metadata?: Json | null
+          qr_code: string
+          restaurant_id: string
+          section?: string | null
+          table_number: string
+        }
+        Update: {
+          capacity?: number | null
+          created_at?: string | null
+          floor?: string | null
+          id?: string
+          is_available?: boolean | null
+          metadata?: Json | null
+          qr_code?: string
+          restaurant_id?: string
+          section?: string | null
+          table_number?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restaurant_tables_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      restaurants: {
+        Row: {
+          address: string | null
+          created_at: string | null
+          currency: string | null
+          default_language: string | null
+          description: string | null
+          email: string | null
+          id: string
+          is_active: boolean | null
+          location: unknown
+          metadata: Json | null
+          name: string
+          payment_settings: Json | null
+          phone: string | null
+          settings: Json | null
+          slug: string
+          supported_languages: string[] | null
+          timezone: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string | null
+          currency?: string | null
+          default_language?: string | null
+          description?: string | null
+          email?: string | null
+          id?: string
+          is_active?: boolean | null
+          location?: unknown
+          metadata?: Json | null
+          name: string
+          payment_settings?: Json | null
+          phone?: string | null
+          settings?: Json | null
+          slug: string
+          supported_languages?: string[] | null
+          timezone?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          address?: string | null
+          created_at?: string | null
+          currency?: string | null
+          default_language?: string | null
+          description?: string | null
+          email?: string | null
+          id?: string
+          is_active?: boolean | null
+          location?: unknown
+          metadata?: Json | null
+          name?: string
+          payment_settings?: Json | null
+          phone?: string | null
+          settings?: Json | null
+          slug?: string
+          supported_languages?: string[] | null
+          timezone?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       ride_candidates: {
         Row: {
@@ -5456,6 +7640,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      roles: {
+        Row: {
+          created_at: string
+          description: string | null
+          slug: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          slug: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          slug?: string
+        }
+        Relationships: []
       }
       router_destinations: {
         Row: {
@@ -6049,6 +8251,42 @@ export type Database = {
         }
         Relationships: []
       }
+      service_categories: {
+        Row: {
+          created_at: string
+          description: string | null
+          icon_emoji: string | null
+          id: string
+          is_active: boolean
+          key: string
+          label: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          icon_emoji?: string | null
+          id?: string
+          is_active?: boolean
+          key: string
+          label: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          icon_emoji?: string | null
+          id?: string
+          is_active?: boolean
+          key?: string
+          label?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       service_registry: {
         Row: {
           capabilities: Json | null
@@ -6432,6 +8670,39 @@ export type Database = {
             referencedColumns: ["user_id"]
           },
         ]
+      }
+      supported_languages: {
+        Row: {
+          code: string
+          created_at: string | null
+          display_order: number | null
+          flag_emoji: string
+          id: string
+          is_active: boolean
+          name: string
+          native_name: string
+        }
+        Insert: {
+          code: string
+          created_at?: string | null
+          display_order?: number | null
+          flag_emoji: string
+          id?: string
+          is_active?: boolean
+          name: string
+          native_name: string
+        }
+        Update: {
+          code?: string
+          created_at?: string | null
+          display_order?: number | null
+          flag_emoji?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          native_name?: string
+        }
+        Relationships: []
       }
       system_audit_logs: {
         Row: {
@@ -7105,17 +9376,18 @@ export type Database = {
           created_at: string | null
           creator_user_id: string | null
           dropoff: unknown
-          dropoff_lat: number | null
-          dropoff_lng: number | null
+          dropoff_latitude: number | null
           dropoff_lon: number | null
+          dropoff_longitude: number | null
           dropoff_radius_m: number
           dropoff_text: string | null
+          expires_at: string | null
           id: string
           pickup: unknown
           pickup_at: string
-          pickup_lat: number | null
-          pickup_lng: number | null
+          pickup_latitude: number | null
           pickup_lon: number | null
+          pickup_longitude: number | null
           pickup_radius_m: number
           pickup_text: string | null
           recurrence_rule: string | null
@@ -7131,17 +9403,18 @@ export type Database = {
           created_at?: string | null
           creator_user_id?: string | null
           dropoff?: unknown
-          dropoff_lat?: number | null
-          dropoff_lng?: number | null
+          dropoff_latitude?: number | null
           dropoff_lon?: number | null
+          dropoff_longitude?: number | null
           dropoff_radius_m?: number
           dropoff_text?: string | null
+          expires_at?: string | null
           id?: string
           pickup?: unknown
           pickup_at?: string
-          pickup_lat?: number | null
-          pickup_lng?: number | null
+          pickup_latitude?: number | null
           pickup_lon?: number | null
+          pickup_longitude?: number | null
           pickup_radius_m?: number
           pickup_text?: string | null
           recurrence_rule?: string | null
@@ -7157,17 +9430,18 @@ export type Database = {
           created_at?: string | null
           creator_user_id?: string | null
           dropoff?: unknown
-          dropoff_lat?: number | null
-          dropoff_lng?: number | null
+          dropoff_latitude?: number | null
           dropoff_lon?: number | null
+          dropoff_longitude?: number | null
           dropoff_radius_m?: number
           dropoff_text?: string | null
+          expires_at?: string | null
           id?: string
           pickup?: unknown
           pickup_at?: string
-          pickup_lat?: number | null
-          pickup_lng?: number | null
+          pickup_latitude?: number | null
           pickup_lon?: number | null
+          pickup_longitude?: number | null
           pickup_radius_m?: number
           pickup_text?: string | null
           recurrence_rule?: string | null
@@ -7224,6 +9498,135 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "user_favorites_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      user_memories: {
+        Row: {
+          confidence: number
+          domain: string
+          first_seen: string
+          id: string
+          last_seen: string
+          mem_key: string
+          mem_value: Json
+          memory_type: string
+          user_id: string
+        }
+        Insert: {
+          confidence?: number
+          domain: string
+          first_seen?: string
+          id?: string
+          last_seen?: string
+          mem_key: string
+          mem_value?: Json
+          memory_type?: string
+          user_id: string
+        }
+        Update: {
+          confidence?: number
+          domain?: string
+          first_seen?: string
+          id?: string
+          last_seen?: string
+          mem_key?: string
+          mem_value?: Json
+          memory_type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_memories_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      user_payment_methods: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          is_default: boolean | null
+          metadata: Json | null
+          phone_number: string | null
+          provider: string
+          provider_account_name: string | null
+          revolut_link: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_default?: boolean | null
+          metadata?: Json | null
+          phone_number?: string | null
+          provider: string
+          provider_account_name?: string | null
+          revolut_link?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_default?: boolean | null
+          metadata?: Json | null
+          phone_number?: string | null
+          provider?: string
+          provider_account_name?: string | null
+          revolut_link?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          assigned_at: string
+          assigned_by: string | null
+          role_slug: string
+          user_id: string
+        }
+        Insert: {
+          assigned_at?: string
+          assigned_by?: string | null
+          role_slug: string
+          user_id: string
+        }
+        Update: {
+          assigned_at?: string
+          assigned_by?: string | null
+          role_slug?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_roles_assigned_by_fkey"
+            columns: ["assigned_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "user_roles_role_slug_fkey"
+            columns: ["role_slug"]
+            isOneToOne: false
+            referencedRelation: "roles"
+            referencedColumns: ["slug"]
+          },
+          {
+            foreignKeyName: "user_roles_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
@@ -7320,6 +9723,83 @@ export type Database = {
           {
             foreignKeyName: "vehicle_insurance_certificates_profile_id_fkey"
             columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      vehicles: {
+        Row: {
+          carte_jaune_expiry: string | null
+          carte_jaune_number: string | null
+          certificate_number: string | null
+          created_at: string
+          document_path: string | null
+          id: string
+          insurer_name: string | null
+          licensed_to_carry: number | null
+          make: string | null
+          model: string | null
+          owner_user_id: string | null
+          policy_expiry: string | null
+          policy_inception: string | null
+          policy_number: string | null
+          registration_plate: string
+          status: string
+          updated_at: string
+          usage: string | null
+          vehicle_year: number | null
+          vin_chassis: string | null
+        }
+        Insert: {
+          carte_jaune_expiry?: string | null
+          carte_jaune_number?: string | null
+          certificate_number?: string | null
+          created_at?: string
+          document_path?: string | null
+          id?: string
+          insurer_name?: string | null
+          licensed_to_carry?: number | null
+          make?: string | null
+          model?: string | null
+          owner_user_id?: string | null
+          policy_expiry?: string | null
+          policy_inception?: string | null
+          policy_number?: string | null
+          registration_plate: string
+          status?: string
+          updated_at?: string
+          usage?: string | null
+          vehicle_year?: number | null
+          vin_chassis?: string | null
+        }
+        Update: {
+          carte_jaune_expiry?: string | null
+          carte_jaune_number?: string | null
+          certificate_number?: string | null
+          created_at?: string
+          document_path?: string | null
+          id?: string
+          insurer_name?: string | null
+          licensed_to_carry?: number | null
+          make?: string | null
+          model?: string | null
+          owner_user_id?: string | null
+          policy_expiry?: string | null
+          policy_inception?: string | null
+          policy_number?: string | null
+          registration_plate?: string
+          status?: string
+          updated_at?: string
+          usage?: string | null
+          vehicle_year?: number | null
+          vin_chassis?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehicles_owner_user_id_fkey"
+            columns: ["owner_user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["user_id"]
@@ -8149,6 +10629,370 @@ export type Database = {
           },
         ]
       }
+      waiter_conversations: {
+        Row: {
+          created_at: string | null
+          id: string
+          language: string | null
+          last_activity: string | null
+          metadata: Json | null
+          restaurant_id: string | null
+          started_at: string | null
+          status: string | null
+          table_number: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          language?: string | null
+          last_activity?: string | null
+          metadata?: Json | null
+          restaurant_id?: string | null
+          started_at?: string | null
+          status?: string | null
+          table_number?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          language?: string | null
+          last_activity?: string | null
+          metadata?: Json | null
+          restaurant_id?: string | null
+          started_at?: string | null
+          status?: string | null
+          table_number?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "waiter_conversations_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      waiter_feedback: {
+        Row: {
+          comment: string | null
+          created_at: string | null
+          food_rating: number | null
+          id: string
+          metadata: Json | null
+          order_id: string | null
+          rating: number
+          service_rating: number | null
+          user_id: string
+          would_recommend: boolean | null
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string | null
+          food_rating?: number | null
+          id?: string
+          metadata?: Json | null
+          order_id?: string | null
+          rating: number
+          service_rating?: number | null
+          user_id: string
+          would_recommend?: boolean | null
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string | null
+          food_rating?: number | null
+          id?: string
+          metadata?: Json | null
+          order_id?: string | null
+          rating?: number
+          service_rating?: number | null
+          user_id?: string
+          would_recommend?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "waiter_feedback_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      waiter_messages: {
+        Row: {
+          content: string
+          conversation_id: string
+          created_at: string | null
+          id: string
+          metadata: Json | null
+          sender: string
+          timestamp: string | null
+        }
+        Insert: {
+          content: string
+          conversation_id: string
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          sender: string
+          timestamp?: string | null
+        }
+        Update: {
+          content?: string
+          conversation_id?: string
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          sender?: string
+          timestamp?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "waiter_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "waiter_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      waiter_order_items: {
+        Row: {
+          created_at: string
+          id: string
+          menu_item_id: string | null
+          name: string
+          options: Json | null
+          order_id: string
+          quantity: number
+          total_price: number | null
+          unit_price: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          menu_item_id?: string | null
+          name: string
+          options?: Json | null
+          order_id: string
+          quantity: number
+          total_price?: number | null
+          unit_price: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          menu_item_id?: string | null
+          name?: string
+          options?: Json | null
+          order_id?: string
+          quantity?: number
+          total_price?: number | null
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "waiter_order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "waiter_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      waiter_orders: {
+        Row: {
+          conversation_id: string | null
+          created_at: string
+          currency: string
+          id: string
+          metadata: Json | null
+          payment_status: string
+          restaurant_id: string | null
+          status: string
+          subtotal: number
+          tax: number
+          tip: number
+          total: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          conversation_id?: string | null
+          created_at?: string
+          currency?: string
+          id?: string
+          metadata?: Json | null
+          payment_status?: string
+          restaurant_id?: string | null
+          status?: string
+          subtotal?: number
+          tax?: number
+          tip?: number
+          total?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          conversation_id?: string | null
+          created_at?: string
+          currency?: string
+          id?: string
+          metadata?: Json | null
+          payment_status?: string
+          restaurant_id?: string | null
+          status?: string
+          subtotal?: number
+          tax?: number
+          tip?: number
+          total?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "waiter_orders_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "waiter_conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "waiter_orders_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      waiter_payments: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          id: string
+          metadata: Json | null
+          order_id: string
+          payment_method: string
+          processed_at: string | null
+          provider_transaction_id: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          currency?: string
+          id?: string
+          metadata?: Json | null
+          order_id: string
+          payment_method: string
+          processed_at?: string | null
+          provider_transaction_id?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          metadata?: Json | null
+          order_id?: string
+          payment_method?: string
+          processed_at?: string | null
+          provider_transaction_id?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "waiter_payments_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "waiter_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "waiter_payments_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      waiter_reservations: {
+        Row: {
+          created_at: string | null
+          guest_email: string | null
+          guest_name: string
+          guest_phone: string | null
+          id: string
+          metadata: Json | null
+          party_size: number
+          reservation_code: string
+          reservation_datetime: string
+          restaurant_id: string | null
+          special_requests: string | null
+          status: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          guest_email?: string | null
+          guest_name: string
+          guest_phone?: string | null
+          id?: string
+          metadata?: Json | null
+          party_size: number
+          reservation_code: string
+          reservation_datetime: string
+          restaurant_id?: string | null
+          special_requests?: string | null
+          status?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          guest_email?: string | null
+          guest_name?: string
+          guest_phone?: string | null
+          id?: string
+          metadata?: Json | null
+          party_size?: number
+          reservation_code?: string
+          reservation_datetime?: string
+          restaurant_id?: string | null
+          special_requests?: string | null
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "waiter_reservations_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       wallet_accounts: {
         Row: {
           balance_minor: number
@@ -8491,6 +11335,99 @@ export type Database = {
           },
         ]
       }
+      webhook_conversations: {
+        Row: {
+          agent_type: string | null
+          conversation_context: Json | null
+          created_at: string | null
+          error_count: number | null
+          id: string
+          last_activity_at: string | null
+          locked_at: string | null
+          locked_by: string | null
+          retry_count: number | null
+          status: string
+          updated_at: string | null
+          user_id: string
+          whatsapp_phone: string
+        }
+        Insert: {
+          agent_type?: string | null
+          conversation_context?: Json | null
+          created_at?: string | null
+          error_count?: number | null
+          id?: string
+          last_activity_at?: string | null
+          locked_at?: string | null
+          locked_by?: string | null
+          retry_count?: number | null
+          status?: string
+          updated_at?: string | null
+          user_id: string
+          whatsapp_phone: string
+        }
+        Update: {
+          agent_type?: string | null
+          conversation_context?: Json | null
+          created_at?: string | null
+          error_count?: number | null
+          id?: string
+          last_activity_at?: string | null
+          locked_at?: string | null
+          locked_by?: string | null
+          retry_count?: number | null
+          status?: string
+          updated_at?: string | null
+          user_id?: string
+          whatsapp_phone?: string
+        }
+        Relationships: []
+      }
+      webhook_dlq: {
+        Row: {
+          correlation_id: string | null
+          created_at: string | null
+          error: string | null
+          error_stack: string | null
+          id: string
+          max_retries: number | null
+          next_retry_at: string | null
+          payload: Json
+          processed_at: string | null
+          resolution_status: string | null
+          retry_count: number | null
+          whatsapp_message_id: string | null
+        }
+        Insert: {
+          correlation_id?: string | null
+          created_at?: string | null
+          error?: string | null
+          error_stack?: string | null
+          id?: string
+          max_retries?: number | null
+          next_retry_at?: string | null
+          payload: Json
+          processed_at?: string | null
+          resolution_status?: string | null
+          retry_count?: number | null
+          whatsapp_message_id?: string | null
+        }
+        Update: {
+          correlation_id?: string | null
+          created_at?: string | null
+          error?: string | null
+          error_stack?: string | null
+          id?: string
+          max_retries?: number | null
+          next_retry_at?: string | null
+          payload?: Json
+          processed_at?: string | null
+          resolution_status?: string | null
+          retry_count?: number | null
+          whatsapp_message_id?: string | null
+        }
+        Relationships: []
+      }
       webhook_logs: {
         Row: {
           endpoint: string
@@ -8605,53 +11542,6 @@ export type Database = {
         }
         Relationships: []
       }
-      whatsapp_menu_items: {
-        Row: {
-          created_at: string
-          description_override: string | null
-          emoji: string | null
-          id: string
-          intent_id: string
-          is_enabled: boolean
-          menu_key: string
-          position: number
-          title_override: string | null
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          description_override?: string | null
-          emoji?: string | null
-          id?: string
-          intent_id: string
-          is_enabled?: boolean
-          menu_key: string
-          position: number
-          title_override?: string | null
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          description_override?: string | null
-          emoji?: string | null
-          id?: string
-          intent_id?: string
-          is_enabled?: boolean
-          menu_key?: string
-          position?: number
-          title_override?: string | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "whatsapp_menu_items_intent_id_fkey"
-            columns: ["intent_id"]
-            isOneToOne: false
-            referencedRelation: "whatsapp_intents"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       whatsapp_message_queue: {
         Row: {
           correlation_id: string | null
@@ -8722,6 +11612,75 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      whatsapp_profile_menu_items: {
+        Row: {
+          action_target: string | null
+          action_type: string | null
+          active_countries: string[] | null
+          country_specific_names: Json | null
+          created_at: string
+          description_en: string | null
+          description_fr: string | null
+          description_rw: string | null
+          display_order: number
+          feature_flag: string | null
+          id: string
+          is_active: boolean
+          key: string
+          label_en: string | null
+          label_fr: string | null
+          label_rw: string | null
+          name: string
+          region_restrictions: string[] | null
+          requires_auth: boolean | null
+          updated_at: string
+        }
+        Insert: {
+          action_target?: string | null
+          action_type?: string | null
+          active_countries?: string[] | null
+          country_specific_names?: Json | null
+          created_at?: string
+          description_en?: string | null
+          description_fr?: string | null
+          description_rw?: string | null
+          display_order?: number
+          feature_flag?: string | null
+          id?: string
+          is_active?: boolean
+          key: string
+          label_en?: string | null
+          label_fr?: string | null
+          label_rw?: string | null
+          name: string
+          region_restrictions?: string[] | null
+          requires_auth?: boolean | null
+          updated_at?: string
+        }
+        Update: {
+          action_target?: string | null
+          action_type?: string | null
+          active_countries?: string[] | null
+          country_specific_names?: Json | null
+          created_at?: string
+          description_en?: string | null
+          description_fr?: string | null
+          description_rw?: string | null
+          display_order?: number
+          feature_flag?: string | null
+          id?: string
+          is_active?: boolean
+          key?: string
+          label_en?: string | null
+          label_fr?: string | null
+          label_rw?: string | null
+          name?: string
+          region_restrictions?: string[] | null
+          requires_auth?: boolean | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       whatsapp_sessions: {
         Row: {
@@ -8834,6 +11793,54 @@ export type Database = {
         }
         Relationships: []
       }
+      wine_pairings: {
+        Row: {
+          confidence_score: number | null
+          created_at: string | null
+          description: string | null
+          description_translations: Json | null
+          food_category: string
+          food_item: string
+          id: string
+          metadata: Json | null
+          price_range: string | null
+          region: string | null
+          wine_name: string
+          wine_type: string
+          wine_varietal: string | null
+        }
+        Insert: {
+          confidence_score?: number | null
+          created_at?: string | null
+          description?: string | null
+          description_translations?: Json | null
+          food_category: string
+          food_item: string
+          id?: string
+          metadata?: Json | null
+          price_range?: string | null
+          region?: string | null
+          wine_name: string
+          wine_type: string
+          wine_varietal?: string | null
+        }
+        Update: {
+          confidence_score?: number | null
+          created_at?: string | null
+          description?: string | null
+          description_translations?: Json | null
+          food_category?: string
+          food_item?: string
+          id?: string
+          metadata?: Json | null
+          price_range?: string | null
+          region?: string | null
+          wine_name?: string
+          wine_type?: string
+          wine_varietal?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       analytics_summary: {
@@ -8856,20 +11863,95 @@ export type Database = {
         }
         Relationships: []
       }
-      business_category_menu_view: {
+      businesses: {
         Row: {
-          business_id: string | null
-          business_name: string | null
-          category_icon: string | null
-          category_id: number | null
           category_name: string | null
-          category_slug: string | null
-          menu_active: boolean | null
-          menu_countries: string[] | null
-          menu_item_id: string | null
-          menu_key: string | null
+          country: string | null
+          created_at: string | null
+          description: string | null
+          geocode_status: string | null
+          geocoded_at: string | null
+          id: string | null
+          is_active: boolean | null
+          latitude: number | null
+          location: unknown
+          location_text: string | null
+          location_url: string | null
+          longitude: number | null
+          maps_url: string | null
+          name: string | null
+          name_embedding: string | null
+          new_category_id: string | null
+          owner_user_id: string | null
+          owner_whatsapp: string | null
+          status: string | null
+          tag: string | null
+          tag_id: string | null
         }
-        Relationships: []
+        Insert: {
+          category_name?: string | null
+          country?: string | null
+          created_at?: string | null
+          description?: string | null
+          geocode_status?: string | null
+          geocoded_at?: string | null
+          id?: string | null
+          is_active?: boolean | null
+          latitude?: number | null
+          location?: unknown
+          location_text?: string | null
+          location_url?: string | null
+          longitude?: number | null
+          maps_url?: string | null
+          name?: string | null
+          name_embedding?: string | null
+          new_category_id?: string | null
+          owner_user_id?: string | null
+          owner_whatsapp?: string | null
+          status?: string | null
+          tag?: string | null
+          tag_id?: string | null
+        }
+        Update: {
+          category_name?: string | null
+          country?: string | null
+          created_at?: string | null
+          description?: string | null
+          geocode_status?: string | null
+          geocoded_at?: string | null
+          id?: string | null
+          is_active?: boolean | null
+          latitude?: number | null
+          location?: unknown
+          location_text?: string | null
+          location_url?: string | null
+          longitude?: number | null
+          maps_url?: string | null
+          name?: string | null
+          name_embedding?: string | null
+          new_category_id?: string | null
+          owner_user_id?: string | null
+          owner_whatsapp?: string | null
+          status?: string | null
+          tag?: string | null
+          tag_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "business_tags"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_business_category"
+            columns: ["new_category_id"]
+            isOneToOne: false
+            referencedRelation: "service_categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       cache_stats: {
         Row: {
@@ -8971,6 +12053,17 @@ export type Database = {
         }
         Relationships: []
       }
+      geocoding_queue: {
+        Row: {
+          country: string | null
+          geocode_status: string | null
+          location_text: string | null
+          name: string | null
+          record_id: string | null
+          table_name: string | null
+        }
+        Relationships: []
+      }
       geography_columns: {
         Row: {
           coord_dimension: number | null
@@ -9013,6 +12106,300 @@ export type Database = {
         }
         Relationships: []
       }
+      insurance_admin_performance: {
+        Row: {
+          is_active: boolean | null
+          last_notification_time: string | null
+          last_notified_at: string | null
+          name: string | null
+          notifications_delivered: number | null
+          notifications_failed: number | null
+          notifications_read: number | null
+          notifications_sent: number | null
+          role: string | null
+          total_notifications_sent: number | null
+          wa_id: string | null
+        }
+        Relationships: []
+      }
+      job_listings_with_contacts: {
+        Row: {
+          available_contact_methods: string[] | null
+          category: string | null
+          company_name: string | null
+          contact_display: string | null
+          contact_email: string | null
+          contact_facebook: string | null
+          contact_linkedin: string | null
+          contact_method: string | null
+          contact_other: Json | null
+          contact_phone: string | null
+          contact_twitter: string | null
+          contact_website: string | null
+          contact_whatsapp: string | null
+          country_code: string | null
+          created_at: string | null
+          created_by: string | null
+          currency: string | null
+          description: string | null
+          discovered_at: string | null
+          duration: string | null
+          end_date: string | null
+          experience_level: string | null
+          expires_at: string | null
+          external_id: string | null
+          external_url: string | null
+          filled_at: string | null
+          flexible_hours: boolean | null
+          has_contact_info: boolean | null
+          id: string | null
+          is_external: boolean | null
+          job_hash: string | null
+          job_type: Database["public"]["Enums"]["job_type"] | null
+          last_seen_at: string | null
+          location: string | null
+          location_details: string | null
+          location_embedding: string | null
+          metadata: Json | null
+          onsite_remote: string | null
+          org_id: string | null
+          pay_max: number | null
+          pay_min: number | null
+          pay_type: Database["public"]["Enums"]["pay_type"] | null
+          physical_demands: string | null
+          posted_by: string | null
+          poster_name: string | null
+          primary_phone: string | null
+          required_skills: Json | null
+          required_skills_embedding: string | null
+          slots: number | null
+          source_id: string | null
+          start_date: string | null
+          status: Database["public"]["Enums"]["job_status"] | null
+          team_size: string | null
+          title: string | null
+          tools_needed: string[] | null
+          transport_provided: boolean | null
+          updated_at: string | null
+          weather_dependent: boolean | null
+        }
+        Insert: {
+          available_contact_methods?: never
+          category?: string | null
+          company_name?: string | null
+          contact_display?: never
+          contact_email?: string | null
+          contact_facebook?: string | null
+          contact_linkedin?: string | null
+          contact_method?: string | null
+          contact_other?: Json | null
+          contact_phone?: string | null
+          contact_twitter?: string | null
+          contact_website?: string | null
+          contact_whatsapp?: string | null
+          country_code?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          currency?: string | null
+          description?: string | null
+          discovered_at?: string | null
+          duration?: string | null
+          end_date?: string | null
+          experience_level?: string | null
+          expires_at?: string | null
+          external_id?: string | null
+          external_url?: string | null
+          filled_at?: string | null
+          flexible_hours?: boolean | null
+          has_contact_info?: boolean | null
+          id?: string | null
+          is_external?: boolean | null
+          job_hash?: string | null
+          job_type?: Database["public"]["Enums"]["job_type"] | null
+          last_seen_at?: string | null
+          location?: string | null
+          location_details?: string | null
+          location_embedding?: string | null
+          metadata?: Json | null
+          onsite_remote?: string | null
+          org_id?: string | null
+          pay_max?: number | null
+          pay_min?: number | null
+          pay_type?: Database["public"]["Enums"]["pay_type"] | null
+          physical_demands?: string | null
+          posted_by?: string | null
+          poster_name?: string | null
+          primary_phone?: never
+          required_skills?: Json | null
+          required_skills_embedding?: string | null
+          slots?: number | null
+          source_id?: string | null
+          start_date?: string | null
+          status?: Database["public"]["Enums"]["job_status"] | null
+          team_size?: string | null
+          title?: string | null
+          tools_needed?: string[] | null
+          transport_provided?: boolean | null
+          updated_at?: string | null
+          weather_dependent?: boolean | null
+        }
+        Update: {
+          available_contact_methods?: never
+          category?: string | null
+          company_name?: string | null
+          contact_display?: never
+          contact_email?: string | null
+          contact_facebook?: string | null
+          contact_linkedin?: string | null
+          contact_method?: string | null
+          contact_other?: Json | null
+          contact_phone?: string | null
+          contact_twitter?: string | null
+          contact_website?: string | null
+          contact_whatsapp?: string | null
+          country_code?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          currency?: string | null
+          description?: string | null
+          discovered_at?: string | null
+          duration?: string | null
+          end_date?: string | null
+          experience_level?: string | null
+          expires_at?: string | null
+          external_id?: string | null
+          external_url?: string | null
+          filled_at?: string | null
+          flexible_hours?: boolean | null
+          has_contact_info?: boolean | null
+          id?: string | null
+          is_external?: boolean | null
+          job_hash?: string | null
+          job_type?: Database["public"]["Enums"]["job_type"] | null
+          last_seen_at?: string | null
+          location?: string | null
+          location_details?: string | null
+          location_embedding?: string | null
+          metadata?: Json | null
+          onsite_remote?: string | null
+          org_id?: string | null
+          pay_max?: number | null
+          pay_min?: number | null
+          pay_type?: Database["public"]["Enums"]["pay_type"] | null
+          physical_demands?: string | null
+          posted_by?: string | null
+          poster_name?: string | null
+          primary_phone?: never
+          required_skills?: Json | null
+          required_skills_embedding?: string | null
+          slots?: number | null
+          source_id?: string | null
+          start_date?: string | null
+          status?: Database["public"]["Enums"]["job_status"] | null
+          team_size?: string | null
+          title?: string | null
+          tools_needed?: string[] | null
+          transport_provided?: boolean | null
+          updated_at?: string | null
+          weather_dependent?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_listings_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "job_listings_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "job_sources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      job_listings_with_country: {
+        Row: {
+          category: string | null
+          company_name: string | null
+          contact_email: string | null
+          contact_facebook: string | null
+          contact_linkedin: string | null
+          contact_method: string | null
+          contact_other: Json | null
+          contact_phone: string | null
+          contact_twitter: string | null
+          contact_website: string | null
+          contact_whatsapp: string | null
+          country_code: string | null
+          country_name: string | null
+          created_at: string | null
+          created_by: string | null
+          currency: string | null
+          currency_code: string | null
+          currency_symbol: string | null
+          description: string | null
+          discovered_at: string | null
+          duration: string | null
+          end_date: string | null
+          experience_level: string | null
+          expires_at: string | null
+          external_id: string | null
+          external_url: string | null
+          filled_at: string | null
+          flag_emoji: string | null
+          flexible_hours: boolean | null
+          geog: unknown
+          has_contact_info: boolean | null
+          id: string | null
+          is_external: boolean | null
+          job_hash: string | null
+          job_type: Database["public"]["Enums"]["job_type"] | null
+          last_seen_at: string | null
+          location: string | null
+          location_details: string | null
+          location_embedding: string | null
+          metadata: Json | null
+          onsite_remote: string | null
+          org_id: string | null
+          pay_max: number | null
+          pay_min: number | null
+          pay_type: Database["public"]["Enums"]["pay_type"] | null
+          physical_demands: string | null
+          posted_by: string | null
+          poster_name: string | null
+          required_skills: Json | null
+          required_skills_embedding: string | null
+          slots: number | null
+          source_id: string | null
+          start_date: string | null
+          status: Database["public"]["Enums"]["job_status"] | null
+          team_size: string | null
+          title: string | null
+          tools_needed: string[] | null
+          transport_provided: boolean | null
+          updated_at: string | null
+          weather_dependent: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_listings_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "job_listings_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "job_sources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       leaderboard_snapshots_v: {
         Row: {
           generated_at: string | null
@@ -9034,6 +12421,28 @@ export type Database = {
           top9?: Json | null
           window?: string | null
           your_rank_map?: Json | null
+        }
+        Relationships: []
+      }
+      menu_item_popularity_30d: {
+        Row: {
+          menu_item_id: string | null
+          order_count: number | null
+        }
+        Relationships: []
+      }
+      menu_item_popularity_7d: {
+        Row: {
+          menu_item_id: string | null
+          order_count: number | null
+        }
+        Relationships: []
+      }
+      menu_item_popularity_daily: {
+        Row: {
+          day: string | null
+          menu_item_id: string | null
+          order_count: number | null
         }
         Relationships: []
       }
@@ -9094,6 +12503,55 @@ export type Database = {
         }
         Relationships: []
       }
+      payment_summary: {
+        Row: {
+          amount: number | null
+          completed_at: string | null
+          confirmation_method: string | null
+          confirmed_by_user_at: string | null
+          created_at: string | null
+          currency: string | null
+          error_code: string | null
+          error_message: string | null
+          event_count: number | null
+          failed_at: string | null
+          id: string | null
+          initiated_at: string | null
+          last_event_at: string | null
+          metadata: Json | null
+          order_id: string | null
+          order_number: string | null
+          payment_instructions: string | null
+          payment_link: string | null
+          payment_method_details: Json | null
+          phone_number: string | null
+          provider: string | null
+          provider_reference: string | null
+          provider_transaction_id: string | null
+          restaurant_id: string | null
+          restaurant_name: string | null
+          status: string | null
+          updated_at: string | null
+          user_id: string | null
+          ussd_code: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       published_menus: {
         Row: {
           bar_id: string | null
@@ -9129,6 +12587,36 @@ export type Database = {
           service_name: string | null
         }
         Relationships: []
+      }
+      recent_webhook_state_transitions: {
+        Row: {
+          agent_type: string | null
+          conversation_id: string | null
+          correlation_id: string | null
+          created_at: string | null
+          from_state: string | null
+          id: string | null
+          to_state: string | null
+          transition_reason: string | null
+          user_id: string | null
+          whatsapp_phone: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversation_state_transitions_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "stuck_webhook_conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversation_state_transitions_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "webhook_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       route_cache_stats: {
         Row: {
@@ -9178,6 +12666,48 @@ export type Database = {
         }
         Relationships: []
       }
+      stuck_webhook_conversations: {
+        Row: {
+          agent_type: string | null
+          error_count: number | null
+          id: string | null
+          idle_seconds: number | null
+          last_activity_at: string | null
+          locked_at: string | null
+          locked_by: string | null
+          retry_count: number | null
+          status: string | null
+          user_id: string | null
+          whatsapp_phone: string | null
+        }
+        Insert: {
+          agent_type?: string | null
+          error_count?: number | null
+          id?: string | null
+          idle_seconds?: never
+          last_activity_at?: string | null
+          locked_at?: string | null
+          locked_by?: string | null
+          retry_count?: number | null
+          status?: string | null
+          user_id?: string | null
+          whatsapp_phone?: string | null
+        }
+        Update: {
+          agent_type?: string | null
+          error_count?: number | null
+          id?: string | null
+          idle_seconds?: never
+          last_activity_at?: string | null
+          locked_at?: string | null
+          locked_by?: string | null
+          retry_count?: number | null
+          status?: string | null
+          user_id?: string | null
+          whatsapp_phone?: string | null
+        }
+        Relationships: []
+      }
       transaction_summary: {
         Row: {
           avg_amount: number | null
@@ -9224,6 +12754,62 @@ export type Database = {
         }
         Relationships: []
       }
+      webhook_agent_performance: {
+        Row: {
+          active_sessions: number | null
+          agent_type: string | null
+          avg_duration_seconds: number | null
+          avg_messages_per_session: number | null
+          avg_tokens_used: number | null
+          completed_sessions: number | null
+          failed_sessions: number | null
+          total_errors: number | null
+          unique_conversations: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_sessions_agent_type_fkey"
+            columns: ["agent_type"]
+            isOneToOne: false
+            referencedRelation: "agent_registry"
+            referencedColumns: ["agent_type"]
+          },
+        ]
+      }
+      webhook_conversation_health: {
+        Row: {
+          avg_idle_seconds: number | null
+          count: number | null
+          locked_count: number | null
+          max_retries: number | null
+          status: string | null
+          total_errors: number | null
+        }
+        Relationships: []
+      }
+      webhook_dlq_summary: {
+        Row: {
+          avg_retry_count: number | null
+          count: number | null
+          max_retries_reached: number | null
+          newest_message: string | null
+          oldest_message: string | null
+          resolution_status: string | null
+        }
+        Relationships: []
+      }
+      webhook_message_processing_metrics: {
+        Row: {
+          avg_processing_ms: number | null
+          hour: string | null
+          max_processing_ms: number | null
+          messages_processed: number | null
+          min_processing_ms: number | null
+          p95_processing_ms: number | null
+          p99_processing_ms: number | null
+        }
+        Relationships: []
+      }
       whatsapp_menu_by_country: {
         Row: {
           country_code: string | null
@@ -9237,18 +12823,6 @@ export type Database = {
           menu_item_id: string | null
           menu_key: string | null
           mobile_money_brand: string | null
-        }
-        Relationships: []
-      }
-      whatsapp_menu_entries: {
-        Row: {
-          description: string | null
-          emoji: string | null
-          is_enabled: boolean | null
-          menu_key: string | null
-          payload_id: string | null
-          position: number | null
-          title: string | null
         }
         Relationships: []
       }
@@ -9273,6 +12847,7 @@ export type Database = {
       }
     }
     Functions: {
+      __get_setting_for_cron: { Args: { setting_key: string }; Returns: string }
       _drop_policy_if_exists: {
         Args: { pol_name: string; tbl: unknown }
         Returns: undefined
@@ -9366,6 +12941,10 @@ export type Database = {
         Returns: unknown
       }
       _st_within: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }
+      acquire_conversation_lock: {
+        Args: { p_conversation_id: string; p_lock_id: string }
+        Returns: boolean
+      }
       addauth: { Args: { "": string }; Returns: boolean }
       addgeometrycolumn:
         | {
@@ -9456,8 +13035,9 @@ export type Database = {
       auth_profile_id: { Args: never; Returns: string }
       auth_role: { Args: never; Returns: string }
       auth_wa_id: { Args: never; Returns: string }
+      bytea_to_text: { Args: { data: string }; Returns: string }
       calculate_distance_km: {
-        Args: { lat1: number; lat2: number; lng1: number; lng2: number }
+        Args: { lat1: number; lat2: number; lon1: number; lon2: number }
         Returns: number
       }
       calculate_next_retry: {
@@ -9485,10 +13065,25 @@ export type Database = {
           owner_whatsapp: string
         }[]
       }
+      check_webhook_system_health: {
+        Args: never
+        Returns: {
+          alert_type: string
+          details: Json
+          message: string
+          severity: string
+        }[]
+      }
       cleanup_expired_cache: { Args: never; Returns: number }
       cleanup_expired_whatsapp_sessions: { Args: never; Returns: number }
+      cleanup_stale_external_jobs: { Args: never; Returns: number }
+      cleanup_stuck_webhook_conversations: { Args: never; Returns: number }
       complete_job: {
         Args: { p_job_id: string; p_result?: Json }
+        Returns: boolean
+      }
+      country_matches: {
+        Args: { business_country: string; search_country: string }
         Returns: boolean
       }
       create_monthly_partition: {
@@ -9506,8 +13101,13 @@ export type Database = {
         }
         Returns: string
       }
+      current_setting: { Args: { setting_key: string }; Returns: string }
       daitch_mokotoff: { Args: { "": string }; Returns: string[] }
       dashboard_snapshot: { Args: never; Returns: Json }
+      detect_country_from_location: {
+        Args: { location_text: string }
+        Returns: string
+      }
       disablelongtransactions: { Args: never; Returns: string }
       dmetaphone: { Args: { "": string }; Returns: string }
       dmetaphone_alt: { Args: { "": string }; Returns: string }
@@ -9565,6 +13165,7 @@ export type Database = {
         Returns: string
       }
       equals: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }
+      expire_old_jobs: { Args: never; Returns: undefined }
       extract_coordinates_from_google_maps_url: {
         Args: { url: string }
         Returns: {
@@ -9578,6 +13179,10 @@ export type Database = {
           lat: number
           lng: number
         }[]
+      }
+      extract_job_contact_info: {
+        Args: { description: string; metadata?: Json }
+        Returns: Json
       }
       find_nearby_bars: {
         Args: {
@@ -9636,6 +13241,30 @@ export type Database = {
           used_credit: boolean
         }[]
       }
+      generate_country_job_queries: {
+        Args: {
+          p_country_code: string
+          p_country_name: string
+          p_currency: string
+        }
+        Returns: Json
+      }
+      generate_job_hash:
+        | {
+            Args: {
+              p_company_name: string
+              p_external_url: string
+              p_location_text: string
+              p_title: string
+            }
+            Returns: string
+          }
+        | {
+            Args: { p_company: string; p_location: string; p_title: string }
+            Returns: string
+          }
+      generate_order_number: { Args: never; Returns: string }
+      generate_reservation_number: { Args: never; Returns: string }
       geometry: { Args: { "": string }; Returns: unknown }
       geometry_above: {
         Args: { geom1: unknown; geom2: unknown }
@@ -9734,6 +13363,26 @@ export type Database = {
         Returns: boolean
       }
       geomfromewkt: { Args: { "": string }; Returns: unknown }
+      get_active_business_tags: {
+        Args: never
+        Returns: {
+          business_count: number
+          description: string
+          icon: string
+          id: string
+          name: string
+          slug: string
+          sort_order: number
+        }[]
+      }
+      get_active_insurance_admins: {
+        Args: never
+        Returns: {
+          name: string
+          role: string
+          wa_id: string
+        }[]
+      }
       get_aggregate_events: {
         Args: {
           p_aggregate_id: string
@@ -9748,6 +13397,7 @@ export type Database = {
           payload: Json
         }[]
       }
+      get_app_setting: { Args: { setting_key: string }; Returns: string }
       get_audit_trail: {
         Args: {
           p_limit?: number
@@ -9761,6 +13411,26 @@ export type Database = {
           id: string
           metadata: Json
           user_id: string
+        }[]
+      }
+      get_businesses_by_tag: {
+        Args: {
+          p_limit?: number
+          p_radius_km?: number
+          p_tag_slug: string
+          p_user_lat: number
+          p_user_lon: number
+        }
+        Returns: {
+          description: string
+          distance: number
+          id: string
+          latitude: number
+          location_text: string
+          longitude: number
+          name: string
+          owner_whatsapp: string
+          tag: string
         }[]
       }
       get_cache: { Args: { p_key: string }; Returns: Json }
@@ -9792,6 +13462,28 @@ export type Database = {
         Args: { p_fallback?: string; p_wa_id: string }
         Returns: string
       }
+      get_default_payment_method: {
+        Args: { p_user_id: string }
+        Returns: {
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          is_default: boolean | null
+          metadata: Json | null
+          phone_number: string | null
+          provider: string
+          provider_account_name: string | null
+          revolut_link: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "user_payment_methods"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       get_events_by_correlation: {
         Args: { p_correlation_id: string; p_limit?: number }
         Returns: {
@@ -9814,12 +13506,79 @@ export type Database = {
           user_id: string
         }[]
       }
+      get_job_sources_to_scrape: {
+        Args: { hours_threshold?: number }
+        Returns: {
+          country_code: string
+          id: string
+          last_scraped_at: string
+          name: string
+          url: string
+        }[]
+      }
+      get_nearby_jobs: {
+        Args: {
+          p_job_types?: Database["public"]["Enums"]["job_type"][]
+          p_lat: number
+          p_limit?: number
+          p_lng: number
+        }
+        Returns: {
+          company_name: string
+          contact_phone: string
+          created_at: string
+          currency: string
+          description: string
+          distance_km: number
+          id: string
+          job_type: Database["public"]["Enums"]["job_type"]
+          location: string
+          pay_max: number
+          pay_min: number
+          pay_type: Database["public"]["Enums"]["pay_type"]
+          posted_by: string
+          title: string
+        }[]
+      }
       get_notification_queue_stats: {
         Args: never
         Returns: {
           count: number
           oldest_queued: string
           status: string
+        }[]
+      }
+      get_profile_menu_items: {
+        Args: { user_country_code?: string }
+        Returns: {
+          action_target: string
+          action_type: string
+          description: string
+          display_order: number
+          key: string
+          name: string
+        }[]
+      }
+      get_profile_menu_items_localized: {
+        Args: { p_country_code?: string; p_language?: string }
+        Returns: {
+          action_target: string
+          action_type: string
+          description: string
+          display_order: number
+          icon: string
+          key: string
+          name: string
+        }[]
+      }
+      get_property_sources_to_scrape: {
+        Args: { hours_threshold?: number }
+        Returns: {
+          country_code: string
+          id: string
+          last_scraped_at: string
+          name: string
+          url: string
         }[]
       }
       get_service_configs: {
@@ -9833,6 +13592,69 @@ export type Database = {
           config_value: Json
           description: string
           value_type: string
+        }[]
+      }
+      get_shops_by_tag: {
+        Args: {
+          p_limit?: number
+          p_radius_km?: number
+          p_tag: string
+          p_user_lat: number
+          p_user_lon: number
+        }
+        Returns: {
+          description: string
+          distance_km: number
+          id: string
+          location_text: string
+          name: string
+          owner_whatsapp: string
+        }[]
+      }
+      get_shops_by_tag_id: {
+        Args: {
+          p_limit?: number
+          p_radius_km?: number
+          p_tag_id: string
+          p_user_lat: number
+          p_user_lon: number
+        }
+        Returns: {
+          description: string
+          distance_km: number
+          id: string
+          latitude: number
+          location_text: string
+          longitude: number
+          name: string
+          owner_whatsapp: string
+        }[]
+      }
+      get_shops_tags: {
+        Args: never
+        Returns: {
+          business_count: number
+          description: string
+          icon: string
+          tag_id: string
+          tag_name: string
+          tag_slug: string
+        }[]
+      }
+      get_submenu_items: {
+        Args: {
+          p_country_code?: string
+          p_language?: string
+          p_parent_key: string
+        }
+        Returns: {
+          action_target: string
+          action_type: string
+          description: string
+          display_order: number
+          icon: string
+          key: string
+          name: string
         }[]
       }
       get_template_by_key: {
@@ -9880,10 +13702,147 @@ export type Database = {
           policy_number: string
         }[]
       }
+      get_webhook_performance_stats: {
+        Args: { lookback_hours?: number }
+        Returns: {
+          metric_name: string
+          unit: string
+          value: number
+        }[]
+      }
       gettransactionid: { Args: never; Returns: unknown }
       haversine_km: {
         Args: { lat1: number; lat2: number; lng1: number; lng2: number }
         Returns: number
+      }
+      http: {
+        Args: { request: Database["public"]["CompositeTypes"]["http_request"] }
+        Returns: Database["public"]["CompositeTypes"]["http_response"]
+        SetofOptions: {
+          from: "http_request"
+          to: "http_response"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      http_delete:
+        | {
+            Args: { uri: string }
+            Returns: Database["public"]["CompositeTypes"]["http_response"]
+            SetofOptions: {
+              from: "*"
+              to: "http_response"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
+        | {
+            Args: { content: string; content_type: string; uri: string }
+            Returns: Database["public"]["CompositeTypes"]["http_response"]
+            SetofOptions: {
+              from: "*"
+              to: "http_response"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
+      http_get:
+        | {
+            Args: { uri: string }
+            Returns: Database["public"]["CompositeTypes"]["http_response"]
+            SetofOptions: {
+              from: "*"
+              to: "http_response"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
+        | {
+            Args: { data: Json; uri: string }
+            Returns: Database["public"]["CompositeTypes"]["http_response"]
+            SetofOptions: {
+              from: "*"
+              to: "http_response"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
+      http_head: {
+        Args: { uri: string }
+        Returns: Database["public"]["CompositeTypes"]["http_response"]
+        SetofOptions: {
+          from: "*"
+          to: "http_response"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      http_header: {
+        Args: { field: string; value: string }
+        Returns: Database["public"]["CompositeTypes"]["http_header"]
+        SetofOptions: {
+          from: "*"
+          to: "http_header"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      http_list_curlopt: {
+        Args: never
+        Returns: {
+          curlopt: string
+          value: string
+        }[]
+      }
+      http_patch: {
+        Args: { content: string; content_type: string; uri: string }
+        Returns: Database["public"]["CompositeTypes"]["http_response"]
+        SetofOptions: {
+          from: "*"
+          to: "http_response"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      http_post:
+        | {
+            Args: { content: string; content_type: string; uri: string }
+            Returns: Database["public"]["CompositeTypes"]["http_response"]
+            SetofOptions: {
+              from: "*"
+              to: "http_response"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
+        | {
+            Args: { data: Json; uri: string }
+            Returns: Database["public"]["CompositeTypes"]["http_response"]
+            SetofOptions: {
+              from: "*"
+              to: "http_response"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
+      http_put: {
+        Args: { content: string; content_type: string; uri: string }
+        Returns: Database["public"]["CompositeTypes"]["http_response"]
+        SetofOptions: {
+          from: "*"
+          to: "http_response"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      http_reset_curlopt: { Args: never; Returns: boolean }
+      http_set_curlopt: {
+        Args: { curlopt: string; value: string }
+        Returns: boolean
+      }
+      increment_session_metrics: {
+        Args: { p_agent_type: string; p_conversation_id: string }
+        Returns: undefined
       }
       init_contact_preferences: {
         Args: { p_locale?: string; p_profile_id?: string; p_wa_id: string }
@@ -9948,6 +13907,14 @@ export type Database = {
         }
         Returns: string
       }
+      log_payment_event: {
+        Args: {
+          p_event_data?: Json
+          p_event_type: string
+          p_payment_id: string
+        }
+        Returns: string
+      }
       log_structured_event: {
         Args: {
           p_correlation_id?: string
@@ -9958,6 +13925,7 @@ export type Database = {
         Returns: string
       }
       longtransactionsenabled: { Args: never; Returns: boolean }
+      map_tag_to_category: { Args: { tag_value: string }; Returns: string }
       mark_driver_served: {
         Args: { driver_uuid: string; viewer_e164: string }
         Returns: undefined
@@ -10039,6 +14007,56 @@ export type Database = {
           whatsapp_e164: string
         }[]
       }
+      match_jobs_for_seeker:
+        | {
+            Args: {
+              filter_categories?: string[]
+              filter_job_types?: Database["public"]["Enums"]["job_type"][]
+              match_count?: number
+              match_threshold?: number
+              min_pay?: number
+              query_embedding: string
+            }
+            Returns: {
+              category: string
+              description: string
+              id: string
+              job_type: Database["public"]["Enums"]["job_type"]
+              location: string
+              pay_max: number
+              pay_min: number
+              pay_type: Database["public"]["Enums"]["pay_type"]
+              similarity_score: number
+              title: string
+            }[]
+          }
+        | {
+            Args: {
+              filter_categories?: string[]
+              filter_job_types?: Database["public"]["Enums"]["job_type"][]
+              match_count?: number
+              match_threshold?: number
+              min_pay?: number
+              query_embedding: string
+              seeker_country_code?: string
+              seeker_org_id?: string
+            }
+            Returns: {
+              category: string
+              company_name: string
+              country_code: string
+              description: string
+              id: string
+              is_external: boolean
+              job_type: Database["public"]["Enums"]["job_type"]
+              location: string
+              pay_max: number
+              pay_min: number
+              pay_type: Database["public"]["Enums"]["pay_type"]
+              similarity_score: number
+              title: string
+            }[]
+          }
       match_passengers_for_trip_v2: {
         Args: {
           _limit?: number
@@ -10078,6 +14096,25 @@ export type Database = {
           pickup_distance_km: number
         }[]
       }
+      match_seekers_for_job: {
+        Args: {
+          filter_locations?: string[]
+          match_count?: number
+          match_threshold?: number
+          max_pay?: number
+          query_embedding: string
+        }
+        Returns: {
+          bio: string
+          experience_years: number
+          id: string
+          name: string
+          phone_number: string
+          rating: number
+          similarity_score: number
+          skills: Json
+        }[]
+      }
       mobility_buy_subscription: {
         Args: { _user_id: string }
         Returns: {
@@ -10085,6 +14122,68 @@ export type Database = {
           message: string
           success: boolean
           wallet_balance: number
+        }[]
+      }
+      nearby_bars: {
+        Args: {
+          _limit?: number
+          radius_km?: number
+          user_lat: number
+          user_lon: number
+        }
+        Returns: {
+          city_area: string
+          country: string
+          distance_km: number
+          id: string
+          latitude: number
+          location_text: string
+          longitude: number
+          name: string
+          slug: string
+          whatsapp_number: string
+        }[]
+      }
+      nearby_bars_by_preference: {
+        Args: {
+          _limit?: number
+          preference: string
+          radius_km?: number
+          user_lat: number
+          user_lon: number
+        }
+        Returns: {
+          city_area: string
+          country: string
+          distance_km: number
+          features: Json
+          id: string
+          latitude: number
+          location_text: string
+          longitude: number
+          name: string
+          slug: string
+          whatsapp_number: string
+        }[]
+      }
+      nearby_business: {
+        Args: {
+          _category?: string
+          _limit?: number
+          radius_km?: number
+          user_lat: number
+          user_lon: number
+        }
+        Returns: {
+          category_id: string
+          country: string
+          description: string
+          distance_km: number
+          id: string
+          latitude: number
+          location_text: string
+          longitude: number
+          name: string
         }[]
       }
       nearby_businesses: {
@@ -10096,6 +14195,42 @@ export type Database = {
           location_text: string
           name: string
           owner_whatsapp: string
+        }[]
+      }
+      nearby_businesses_v2: {
+        Args: {
+          _category_slug?: string
+          _lat: number
+          _limit?: number
+          _lng: number
+          _viewer: string
+        }
+        Returns: {
+          category_slug: string
+          description: string
+          distance_km: number
+          id: string
+          location_text: string
+          name: string
+          owner_whatsapp: string
+        }[]
+      }
+      nearby_drivers: {
+        Args: {
+          _limit?: number
+          _vehicle_type?: string
+          radius_km?: number
+          user_lat: number
+          user_lon: number
+        }
+        Returns: {
+          distance_km: number
+          last_seen: string
+          latitude: number
+          longitude: number
+          online: boolean
+          user_id: string
+          vehicle_type: string
         }[]
       }
       nearest_drivers: {
@@ -10110,6 +14245,10 @@ export type Database = {
           driver_id: string
           eta_minutes: number
         }[]
+      }
+      normalize_job_contact_phone: {
+        Args: { country?: string; phone: string }
+        Returns: string
       }
       parse_plus_code_coordinates: {
         Args: { plus_code: string }
@@ -10244,6 +14383,7 @@ export type Database = {
               whatsapp_e164: string
             }[]
           }
+      reconcile_menu_business_links: { Args: never; Returns: number }
       record_metric:
         | {
             Args: {
@@ -10277,6 +14417,9 @@ export type Database = {
         Returns: string
       }
       refresh_daily_metrics: { Args: never; Returns: undefined }
+      refresh_job_sources_for_all_countries: { Args: never; Returns: undefined }
+      refresh_menu_item_popularity_daily: { Args: never; Returns: undefined }
+      refresh_menu_item_popularity_windows: { Args: never; Returns: undefined }
       refresh_menu_items_snapshot: { Args: never; Returns: undefined }
       refresh_video_performance: {
         Args: { job_uuid: string }
@@ -10292,6 +14435,10 @@ export type Database = {
           p_version: string
         }
         Returns: string
+      }
+      release_conversation_lock: {
+        Args: { p_conversation_id: string; p_lock_id: string }
+        Returns: boolean
       }
       round: { Args: { ndigits: number; value: number }; Returns: number }
       router_check_rate_limit: {
@@ -10360,6 +14507,16 @@ export type Database = {
           location_text: string
           name: string
           similarity: number
+        }[]
+      }
+      search_businesses_fuzzy: {
+        Args: { p_limit?: number; p_query: string }
+        Returns: {
+          address: string
+          category: string
+          id: string
+          name: string
+          score: number
         }[]
       }
       search_live_market_candidates: {
@@ -10448,6 +14605,46 @@ export type Database = {
           verified: boolean
         }[]
       }
+      search_researched_properties: {
+        Args: {
+          p_bedrooms?: number
+          p_latitude: number
+          p_longitude: number
+          p_max_budget?: number
+          p_min_budget?: number
+          p_radius_km?: number
+          p_rental_type?: string
+        }
+        Returns: {
+          amenities: string[]
+          available_from: string
+          bathrooms: number
+          bedrooms: number
+          contact_info: string
+          currency: string
+          description: string
+          distance: number
+          id: string
+          location_address: string
+          location_city: string
+          location_country: string
+          price: number
+          property_type: string
+          rental_type: string
+          source: string
+          title: string
+        }[]
+      }
+      send_insurance_admin_notifications: { Args: never; Returns: Json }
+      send_pending_insurance_admin_notifications: {
+        Args: never
+        Returns: {
+          admin_wa_id: string
+          error: string
+          notification_id: string
+          status: string
+        }[]
+      }
       service_heartbeat: {
         Args: { p_metrics?: Json; p_service_name: string; p_status?: string }
         Returns: boolean
@@ -10474,6 +14671,8 @@ export type Database = {
         }
         Returns: string
       }
+      show_limit: { Args: never; Returns: number }
+      show_trgm: { Args: { "": string }; Returns: string[] }
       soundex: { Args: { "": string }; Returns: string }
       st_3dclosestpoint: {
         Args: { geom1: unknown; geom2: unknown }
@@ -10542,10 +14741,6 @@ export type Database = {
         | { Args: { "": string }; Returns: string }
       st_asgml:
         | {
-            Args: { geom: unknown; maxdecimaldigits?: number; options?: number }
-            Returns: string
-          }
-        | {
             Args: {
               geom: unknown
               id?: string
@@ -10554,6 +14749,10 @@ export type Database = {
               options?: number
               version: number
             }
+            Returns: string
+          }
+        | {
+            Args: { geom: unknown; maxdecimaldigits?: number; options?: number }
             Returns: string
           }
         | {
@@ -10764,16 +14963,16 @@ export type Database = {
         Returns: unknown
       }
       st_generatepoints:
-        | { Args: { area: unknown; npoints: number }; Returns: unknown }
         | {
             Args: { area: unknown; npoints: number; seed: number }
             Returns: unknown
           }
+        | { Args: { area: unknown; npoints: number }; Returns: unknown }
       st_geogfromtext: { Args: { "": string }; Returns: unknown }
       st_geographyfromtext: { Args: { "": string }; Returns: unknown }
       st_geohash:
-        | { Args: { geom: unknown; maxchars?: number }; Returns: string }
         | { Args: { geog: unknown; maxchars?: number }; Returns: string }
+        | { Args: { geom: unknown; maxchars?: number }; Returns: string }
       st_geomcollfromtext: { Args: { "": string }; Returns: unknown }
       st_geometricmedian: {
         Args: {
@@ -10995,8 +15194,8 @@ export type Database = {
         Returns: Record<string, unknown>[]
       }
       st_srid:
-        | { Args: { geom: unknown }; Returns: number }
         | { Args: { geog: unknown }; Returns: number }
+        | { Args: { geom: unknown }; Returns: number }
       st_subdivide: {
         Args: { geom: unknown; gridsize?: number; maxvertices?: number }
         Returns: unknown[]
@@ -11058,6 +15257,7 @@ export type Database = {
       }
       station_scope_matches: { Args: { target: string }; Returns: boolean }
       text_soundex: { Args: { "": string }; Returns: string }
+      text_to_bytea: { Args: { data: string }; Returns: string }
       track_event: {
         Args: {
           p_context?: Json
@@ -11072,6 +15272,18 @@ export type Database = {
       unlockrows: { Args: { "": string }; Returns: number }
       update_bars_coordinates_from_url: { Args: never; Returns: number }
       update_business_coordinates_from_url: { Args: never; Returns: number }
+      update_job_source_scrape_stats: {
+        Args: { p_error?: string; p_jobs_found?: number; p_source_id: string }
+        Returns: undefined
+      }
+      update_property_source_scrape_stats: {
+        Args: {
+          p_error?: string
+          p_properties_found?: number
+          p_source_id: string
+        }
+        Returns: undefined
+      }
       update_transaction_status: {
         Args: {
           p_error_message?: string
@@ -11153,6 +15365,20 @@ export type Database = {
         }
         Returns: undefined
       }
+      urlencode:
+        | { Args: { data: Json }; Returns: string }
+        | {
+            Args: { string: string }
+            Returns: {
+              error: true
+            } & "Could not choose the best candidate function between: public.urlencode(string => bytea), public.urlencode(string => varchar). Try renaming the parameters or the function itself in the database so function overloading can be resolved"
+          }
+        | {
+            Args: { string: string }
+            Returns: {
+              error: true
+            } & "Could not choose the best candidate function between: public.urlencode(string => bytea), public.urlencode(string => varchar). Try renaming the parameters or the function itself in the database so function overloading can be resolved"
+          }
       wallet_apply_delta: {
         Args: {
           p_delta: number
@@ -11281,6 +15507,17 @@ export type Database = {
           to_balance: number
         }[]
       }
+      wallet_transfer_tokens: {
+        Args: {
+          p_amount: number
+          p_recipient_whatsapp: string
+          p_sender: string
+        }
+        Returns: {
+          reason: string
+          success: boolean
+        }[]
+      }
       wallet_vendor_summary: {
         Args: { _vendor_id: string }
         Returns: {
@@ -11307,11 +15544,29 @@ export type Database = {
         | "completed"
         | "rejected"
       item_modifier_type: "single" | "multiple"
+      job_status: "open" | "filled" | "closed" | "expired" | "paused"
+      job_type: "gig" | "part_time" | "full_time" | "contract" | "temporary"
+      match_status:
+        | "suggested"
+        | "viewed"
+        | "contacted"
+        | "hired"
+        | "rejected"
+        | "expired"
+      match_type: "automatic" | "manual" | "ai_suggested"
       menu_source: "ocr" | "manual"
       menu_status: "draft" | "published" | "archived"
       notification_status: "queued" | "sent" | "failed"
       ocr_job_status: "queued" | "processing" | "succeeded" | "failed"
       ocr_status: "pending" | "processing" | "done" | "failed"
+      pay_type:
+        | "hourly"
+        | "daily"
+        | "weekly"
+        | "monthly"
+        | "fixed"
+        | "commission"
+        | "negotiable"
       ride_status:
         | "searching"
         | "shortlisted"
@@ -11327,12 +15582,30 @@ export type Database = {
         | "vendor_manager"
         | "vendor_staff"
       sub_status: "pending_review" | "active" | "expired" | "rejected"
+      user_role: "job_seeker" | "job_poster" | "both"
       vehicle_kind: "moto" | "sedan" | "suv" | "van" | "truck"
     }
     CompositeTypes: {
       geometry_dump: {
         path: number[] | null
         geom: unknown
+      }
+      http_header: {
+        field: string | null
+        value: string | null
+      }
+      http_request: {
+        method: unknown
+        uri: string | null
+        headers: Database["public"]["CompositeTypes"]["http_header"][] | null
+        content_type: string | null
+        content: string | null
+      }
+      http_response: {
+        status: number | null
+        content_type: string | null
+        headers: Database["public"]["CompositeTypes"]["http_header"][] | null
+        content: string | null
       }
       valid_detail: {
         valid: boolean | null
@@ -11461,9 +15734,6 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {
       agent_status: ["draft", "active", "disabled"],
@@ -11482,11 +15752,31 @@ export const Constants = {
         "rejected",
       ],
       item_modifier_type: ["single", "multiple"],
+      job_status: ["open", "filled", "closed", "expired", "paused"],
+      job_type: ["gig", "part_time", "full_time", "contract", "temporary"],
+      match_status: [
+        "suggested",
+        "viewed",
+        "contacted",
+        "hired",
+        "rejected",
+        "expired",
+      ],
+      match_type: ["automatic", "manual", "ai_suggested"],
       menu_source: ["ocr", "manual"],
       menu_status: ["draft", "published", "archived"],
       notification_status: ["queued", "sent", "failed"],
       ocr_job_status: ["queued", "processing", "succeeded", "failed"],
       ocr_status: ["pending", "processing", "done", "failed"],
+      pay_type: [
+        "hourly",
+        "daily",
+        "weekly",
+        "monthly",
+        "fixed",
+        "commission",
+        "negotiable",
+      ],
       ride_status: [
         "searching",
         "shortlisted",
@@ -11504,6 +15794,7 @@ export const Constants = {
         "vendor_staff",
       ],
       sub_status: ["pending_review", "active", "expired", "rejected"],
+      user_role: ["job_seeker", "job_poster", "both"],
       vehicle_kind: ["moto", "sedan", "suv", "van", "truck"],
     },
   },

@@ -1,4 +1,4 @@
-import type { RouterContext } from "../../types.ts";
+import type { ButtonSpec, RouterContext } from "../../types.ts";
 import { t } from "../../i18n/translator.ts";
 import { logStructuredEvent } from "../../observe/log.ts";
 import { sendText } from "../../wa/client.ts";
@@ -10,12 +10,29 @@ import { WA_TOKEN, WA_PHONE_ID } from "../../config.ts";
 const WAITER_AGENT_URL = `${Deno.env.get("SUPABASE_URL")}/functions/v1/waiter-ai-agent`;
 const ADMIN_INTERNAL_TOKEN = Deno.env.get("EASYMO_ADMIN_TOKEN") ?? "";
 
+type WaiterSuggestionItem = {
+  id?: string;
+  name: string;
+  price?: number | null;
+  currency?: string | null;
+  reason?: string;
+};
+
+type WaiterSuggestionsState = {
+  items: WaiterSuggestionItem[];
+  page: number;
+};
+
 type WaiterChatSession = {
   conversationId: string;
   barId: string;
   barName: string;
   language: string;
+  suggestions?: WaiterSuggestionsState;
 };
+
+const SUGGESTIONS_PAGE_SIZE = 9;
+const NUMBER_EMOJIS = ["1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣", "9️⃣"];
 
 async function postWaiterAgent(payload: Record<string, unknown>): Promise<Response> {
   return await fetch(WAITER_AGENT_URL, {
@@ -27,6 +44,146 @@ async function postWaiterAgent(payload: Record<string, unknown>): Promise<Respon
     },
     body: JSON.stringify(payload),
   });
+}
+
+function numberLabel(index: number): string {
+  return NUMBER_EMOJIS[index] ?? `${index + 1}.`;
+}
+
+function normalizeSuggestionPayload(raw: unknown): WaiterSuggestionItem[] {
+  if (!raw) return [];
+  if (Array.isArray(raw)) {
+    return raw.map((item) => ({
+      id: typeof item?.id === "string" ? item.id : undefined,
+      name: typeof item?.name === "string" ? item.name : "",
+      price: typeof item?.price === "number" ? item.price : null,
+      currency: typeof item?.currency === "string" ? item.currency : null,
+      reason: typeof item?.reason === "string" ? item.reason : undefined,
+    })).filter((item) => item.name);
+  }
+  if (Array.isArray((raw as any)?.items)) {
+    return (raw as any).items.map((item: any) => ({
+      id: typeof item?.id === "string" ? item.id : undefined,
+      name: typeof item?.name === "string" ? item.name : "",
+      price: typeof item?.price === "number" ? item.price : null,
+      currency: typeof item?.currency === "string" ? item.currency : null,
+      reason: typeof item?.reason === "string" ? item.reason : undefined,
+    })).filter((item: WaiterSuggestionItem) => item.name);
+  }
+  if (Array.isArray((raw as any)?.suggestions)) {
+    return normalizeSuggestionPayload((raw as any).suggestions);
+  }
+  return [];
+}
+
+async function persistWaiterSession(
+  ctx: RouterContext,
+  session: WaiterChatSession,
+): Promise<void> {
+  if (!ctx.profileId) return;
+  await setState(ctx.supabase, ctx.profileId, {
+    key: "bar_waiter_chat",
+    data: session,
+  });
+}
+
+async function sendWaiterSuggestionsPage(
+  ctx: RouterContext,
+  session: WaiterChatSession,
+  suggestions: WaiterSuggestionItem[],
+  requestedPage = 0,
+): Promise<void> {
+  if (!ctx.profileId || !suggestions.length) return;
+  const totalPages = Math.max(1, Math.ceil(suggestions.length / SUGGESTIONS_PAGE_SIZE));
+  const page = Math.min(Math.max(requestedPage, 0), totalPages - 1);
+  const start = page * SUGGESTIONS_PAGE_SIZE;
+  const pageItems = suggestions.slice(start, start + SUGGESTIONS_PAGE_SIZE);
+  const lines = pageItems.map((item, idx) => {
+    const price = item.price && item.currency
+      ? ` — ${item.price} ${item.currency}`
+      : "";
+    const tag = item.reason ? ` (${t(ctx.locale, `bars.waiter.suggestions.reason.${item.reason}`, { default: item.reason })})` : "";
+    return `${numberLabel(idx)} ${item.name}${tag}${price}`;
+  });
+  const instructions = t(ctx.locale, "bars.waiter.suggestions.instructions");
+  const pageInfo = t(ctx.locale, "bars.waiter.suggestions.page", {
+    page: String(page + 1),
+    total: String(totalPages),
+    from: String(start + 1),
+    to: String(start + pageItems.length),
+    count: String(suggestions.length),
+  });
+  const body = [
+    `✨ ${session.barName}`,
+    t(ctx.locale, "bars.waiter.suggestions.header"),
+    "",
+    lines.join("\n"),
+    "",
+    instructions,
+    pageInfo,
+  ].join("\n");
+
+  const buttons: ButtonSpec[] = [];
+  if (page < totalPages - 1) {
+    buttons.push({
+      id: IDS.WAITER_SUGGESTIONS_MORE,
+      title: t(ctx.locale, "bars.waiter.buttons.more_suggestions"),
+    });
+  }
+  buttons.push({
+    id: `bar_resume::${session.barId}`,
+    title: t(ctx.locale, "bars.buttons.view_menu"),
+  });
+  buttons.push({
+    id: IDS.BACK_HOME,
+    title: t(ctx.locale, "common.home_button"),
+  });
+  await sendButtonsMessage(ctx, body, buttons);
+  session.suggestions = { items: suggestions, page };
+  await persistWaiterSession(ctx, session);
+}
+
+async function requestWaiterSuggestions(
+  ctx: RouterContext,
+  session: WaiterChatSession,
+): Promise<{ items: WaiterSuggestionItem[]; message?: string }> {
+  const res = await fetch(WAITER_AGENT_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "x-admin-token": ADMIN_INTERNAL_TOKEN },
+    body: JSON.stringify({
+      action: "assistant_suggestions",
+      userId: ctx.profileId,
+      conversationId: session.conversationId,
+      language: session.language ?? ctx.locale,
+      metadata: { venue: session.barId },
+    }),
+  });
+  const data = await res.json().catch(() => ({}));
+  const items = normalizeSuggestionPayload(data?.suggestions ?? data?.items ?? data);
+  const message = typeof data?.message === "string" ? data.message : undefined;
+  return { items, message };
+}
+
+function extractSelectedSuggestions(
+  message: string,
+  session: WaiterChatSession | undefined,
+): string[] {
+  if (!session?.suggestions?.items?.length) return [];
+  const matches = Array.from(message.matchAll(/\b(\d{1,2})\b/g));
+  if (!matches.length) return [];
+  const page = session.suggestions.page ?? 0;
+  const baseIndex = page * SUGGESTIONS_PAGE_SIZE;
+  const selected: string[] = [];
+  for (const match of matches) {
+    const idx = parseInt(match[1], 10);
+    if (!Number.isFinite(idx) || idx <= 0 || idx > SUGGESTIONS_PAGE_SIZE) continue;
+    const globalIndex = baseIndex + (idx - 1);
+    const item = session.suggestions.items[globalIndex];
+    if (item?.name) {
+      selected.push(item.name);
+    }
+  }
+  return Array.from(new Set(selected));
 }
 
 export async function startBarWaiterChat(
@@ -75,48 +232,27 @@ export async function startBarWaiterChat(
       throw new Error("waiter_conversation_missing");
     }
 
-    await setState(ctx.supabase, ctx.profileId, {
-      key: "bar_waiter_chat",
-      data: session,
-    });
+    await persistWaiterSession(ctx, session);
 
     const welcomeMessage = typeof data.welcomeMessage === "string"
       ? data.welcomeMessage
       : t(ctx.locale, "bars.waiter.greeting");
 
-    await sendText(
-      ctx.from,
-      `🤖 *${barName}*
-\n${welcomeMessage}`,
-    );
-
-    // Offer quick actions after greeting
-    await sendButtonsMessage(
-      ctx,
-      t(ctx.locale, "bars.waiter.quick_actions"),
-      buildButtons(
-        { id: IDS.WAITER_VIEW_PREFERENCES, title: t(ctx.locale, "bars.waiter.buttons.view_prefs") },
-        { id: IDS.WAITER_SUGGESTIONS, title: t(ctx.locale, "bars.waiter.buttons.suggestions") },
-      ),
-    );
+    const quickActionsBody = `🤖 *${barName}*\n\n${welcomeMessage}\n\n${t(ctx.locale, "bars.waiter.quick_actions")}`;
+    const quickButtons: ButtonSpec[] = [
+      { id: `bar_resume::${barId}`, title: t(ctx.locale, "bars.buttons.view_menu") },
+      { id: IDS.WAITER_SUGGESTIONS, title: t(ctx.locale, "bars.waiter.buttons.suggestions") },
+      { id: IDS.WAITER_VIEW_PREFERENCES, title: t(ctx.locale, "bars.waiter.buttons.view_prefs") },
+    ];
+    await sendButtonsMessage(ctx, quickActionsBody, quickButtons);
 
     // Auto-send personalized suggestions based on favorites + trending + new
     try {
-      const res = await fetch(WAITER_AGENT_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "x-admin-token": ADMIN_INTERNAL_TOKEN },
-        body: JSON.stringify({
-          action: "assistant_suggestions",
-          userId: ctx.profileId,
-          conversationId: session.conversationId,
-          language: session.language ?? ctx.locale,
-          metadata: { venue: session.barId },
-        }),
-      });
-      if (res.ok) {
-        const data = await res.json().catch(() => ({}));
-        const msg = typeof data?.message === 'string' ? data.message : null;
-        if (msg) await sendText(ctx.from, msg);
+      const { items, message } = await requestWaiterSuggestions(ctx, session);
+      if (items.length) {
+        await sendWaiterSuggestionsPage(ctx, session, items, 0);
+      } else if (message) {
+        await sendText(ctx.from, message);
       }
     } catch (_) {}
 
@@ -148,12 +284,17 @@ export async function handleBarWaiterMessage(
   }
 
   try {
+    let outbound = message.trim();
+    const selections = extractSelectedSuggestions(outbound, session);
+    if (selections.length) {
+      outbound = selections.map((name) => `Add ${name}`).join(". ");
+    }
     const response = await postWaiterAgent({
       action: "send_message",
       userId: ctx.profileId,
       conversationId: session.conversationId,
       language: session.language ?? ctx.locale,
-      message,
+      message: outbound,
     });
 
     let reply = "";
@@ -281,26 +422,40 @@ export async function handleBarWaiterSuggestions(
     return true;
   }
   try {
-    const res = await fetch(WAITER_AGENT_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "x-admin-token": ADMIN_INTERNAL_TOKEN },
-      body: JSON.stringify({
-        action: "assistant_suggestions",
-        userId: ctx.profileId,
-        conversationId: session.conversationId,
-        language: session.language ?? ctx.locale,
-        metadata: { venue: session.barId },
-      }),
-    });
-    const data = await res.json().catch(() => ({}));
-    const msg = typeof data?.message === 'string' ? data.message : "Here are some ideas!";
-    await sendText(ctx.from, msg);
+    const { items, message } = await requestWaiterSuggestions(ctx, session);
+    if (items.length) {
+      await sendWaiterSuggestionsPage(ctx, session, items, 0);
+      return true;
+    }
+    if (message) {
+      await sendText(ctx.from, message);
+      return true;
+    }
+    await sendText(ctx.from, t(ctx.locale, "bars.waiter.processing"));
     return true;
   } catch (e) {
     console.error("waiter.suggestions_error", e);
     await sendText(ctx.from, t(ctx.locale, "bars.waiter.processing"));
     return true;
   }
+}
+
+export async function handleBarWaiterSuggestionsMore(
+  ctx: RouterContext,
+  stateData?: Record<string, unknown>,
+): Promise<boolean> {
+  if (!ctx.profileId) return false;
+  const session = stateData as WaiterChatSession | undefined;
+  if (!session?.conversationId) {
+    await sendText(ctx.from, t(ctx.locale, "bars.waiter.error"));
+    return true;
+  }
+  if (!session.suggestions?.items?.length) {
+    return await handleBarWaiterSuggestions(ctx, session);
+  }
+  const nextPage = (session.suggestions.page ?? 0) + 1;
+  await sendWaiterSuggestionsPage(ctx, session, session.suggestions.items, nextPage);
+  return true;
 }
 
 async function readStreamedResponse(response: Response): Promise<string> {

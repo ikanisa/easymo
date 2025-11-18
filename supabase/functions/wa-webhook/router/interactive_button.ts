@@ -28,7 +28,11 @@ import {
   startBarMenuOrder,
 } from "../domains/bars/search.ts";
 import { startBarWaiterChat } from "../domains/bars/waiter_ai.ts";
-import { handleBarWaiterPreferences, handleBarWaiterSuggestions } from "../domains/bars/waiter_ai.ts";
+import {
+  handleBarWaiterPreferences,
+  handleBarWaiterSuggestions,
+  handleBarWaiterSuggestionsMore,
+} from "../domains/bars/waiter_ai.ts";
 import {
   evaluateMotorInsuranceGate,
   recordMotorInsuranceHidden,

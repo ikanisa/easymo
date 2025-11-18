@@ -33,6 +33,7 @@ export const IDS = {
   BAR_VIEW_MENU: "bar_view_menu",
   WAITER_VIEW_PREFERENCES: "waiter_view_preferences",
   WAITER_SUGGESTIONS: "waiter_suggestions",
+  WAITER_SUGGESTIONS_MORE: "waiter_suggestions_more",
   SAVED_PLACES: "saved_places",
   LOCATION_SAVED_LIST: "location_saved_list",
   LOCATION_SAVE_HOME: "location_save_home",
