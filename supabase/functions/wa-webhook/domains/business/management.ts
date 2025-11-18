@@ -6,6 +6,10 @@ import { t } from "../../i18n/translator.ts";
 import { logStructuredEvent } from "../../observe/log.ts";
 import { sendHomeMenu } from "../../flows/home.ts";
 import { startRestaurantManager } from "../vendor/restaurant.ts";
+import {
+  refreshBusinessDeeplink,
+  showBusinessDeeplinkShare,
+} from "./deeplink.ts";
 
 export const BUSINESS_MANAGEMENT_STATE = "business_management";
 export const BUSINESS_DETAIL_STATE = "business_detail";
@@ -211,6 +215,11 @@ export async function showBusinessDetail(
       description: t(ctx.locale, "business.edit.description"),
     },
     {
+      id: IDS.BUSINESS_SHARE_DEEPLINK,
+      title: t(ctx.locale, "business.deeplink.share_row.title"),
+      description: t(ctx.locale, "business.deeplink.share_row.description"),
+    },
+    {
       id: IDS.BUSINESS_ADD_WHATSAPP,
       title: t(ctx.locale, "business.addWhatsapp.title"),
       description: t(ctx.locale, "business.addWhatsapp.description"),
@@ -374,6 +383,12 @@ export async function handleBusinessDetailAction(
   }
   const isOwner = business.owner_user_id === ctx.profileId ||
     business.owner_whatsapp === ctx.from;
+  if (actionId === IDS.BUSINESS_SHARE_DEEPLINK) {
+    return await showBusinessDeeplinkShare(ctx, businessId);
+  }
+  if (actionId === IDS.BUSINESS_REFRESH_DEEPLINK) {
+    return await refreshBusinessDeeplink(ctx, businessId);
+  }
   if (!business.bar_id || !isOwner) {
     await sendButtonsMessage(
       ctx,

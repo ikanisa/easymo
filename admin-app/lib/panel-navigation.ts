@@ -32,18 +32,19 @@ const defaultDescription =
   "Operational console for the core easyMO workflows.";
 
 const panelRoot: PanelNavItem = {
-  href: "/dashboard",
-  title: "Dashboard",
+  href: "/insurance",
+  title: "Insurance Agent",
   icon: "📊",
   description: "KPIs, service health, and quick access to operational tools.",
 };
 
 const coreNavigationGroup: PanelNavGroup = {
   id: "core",
-  title: "Core", 
+  title: "Admin Utilities",
   description: "Primary workflows surfaced in the slim rail.",
   links: [
-    { href: "/dashboard", title: "Dashboard" },
+    { href: "/insurance", title: "Insurance" },
+    { href: "/notifications", title: "Notifications" },
     { href: "/leads", title: "Leads" },
     { href: "/live-calls", title: "Live calls" },
     { href: "/marketplace", title: "Marketplace" },
@@ -63,9 +64,13 @@ const routeMetadata: Record<string, { title: string; description: string }> = {
     title: panelRoot.title,
     description: panelRoot.description ?? defaultDescription,
   },
-  "/dashboard": {
-    title: "Dashboard",
+  "/insurance": {
+    title: "Insurance",
     description: panelRoot.description ?? defaultDescription,
+  },
+  "/notifications": {
+    title: "Notifications",
+    description: "Operational notifications status and delivery metrics.",
   },
   "/leads": {
     title: "Leads",
@@ -209,4 +214,3 @@ export function getRouteMetadata(pathname: string) {
   const normalized = normalizePath(pathname);
   return routeMetadata[normalized];
 }
-

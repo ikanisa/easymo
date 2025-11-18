@@ -39,6 +39,13 @@ export type WalletPromoter = {
   tokens?: number | null;
 };
 
+export type WalletPartner = {
+  id: string;
+  name?: string | null;
+  whatsapp_e164?: string | null;
+  category?: string | null;
+};
+
 export async function fetchWalletSummary(
   client: SupabaseClient,
   profileId: string,
@@ -50,6 +57,17 @@ export async function fetchWalletSummary(
   if (!data || (Array.isArray(data) && !data.length)) return null;
   const row = Array.isArray(data) ? data[0] : data;
   return row as WalletSummary;
+}
+
+export async function listWalletPartners(
+  client: SupabaseClient,
+  limit = 20,
+): Promise<WalletPartner[]> {
+  const { data, error } = await client.rpc("wallet_list_token_partners", {
+    _limit: limit,
+  });
+  if (error) throw error;
+  return (data ?? []) as WalletPartner[];
 }
 
 export async function listWalletTransactions(

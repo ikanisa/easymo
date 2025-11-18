@@ -118,6 +118,8 @@ export const IDS = {
   BUSINESS_DELETE_CONFIRM: "business_delete_confirm",
   BUSINESS_MANAGE_MENU: "business_manage_menu",
   BUSINESS_VIEW_ORDERS: "business_view_orders",
+  BUSINESS_SHARE_DEEPLINK: "business_share_link",
+  BUSINESS_REFRESH_DEEPLINK: "business_refresh_link",
   // Restaurant/bar menu management actions
   RESTAURANT_EDIT_MENU: "restaurant_edit_menu",
   RESTAURANT_ADD_ITEM: "restaurant_add_item",

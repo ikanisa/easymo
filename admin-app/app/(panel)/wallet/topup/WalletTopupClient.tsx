@@ -2,12 +2,19 @@
 import { useState } from 'react';
 import { getAdminApiRoutePath } from "@/lib/routes";
 
+interface FxQuote {
+  tokens: number;
+  rate?: number;
+  currency?: string;
+  [key: string]: unknown;
+}
+
 export function WalletTopupClient() {
   const [tenantId, setTenantId] = useState("");
   const [vendorAccountId, setVendorAccountId] = useState("");
   const [amount, setAmount] = useState("1000");
   const [currency, setCurrency] = useState("RWF");
-  const [fx, setFx] = useState<any | null>(null);
+  const [fx, setFx] = useState<FxQuote | null>(null);
   const [platformAccount, setPlatformAccount] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
 
@@ -24,7 +31,7 @@ export function WalletTopupClient() {
       if (res.ok) setFx(json);
       else setStatus(`FX failed: ${json.error || res.status}`);
     } catch (err) {
-      setStatus(`FX error: ${(err as Error).message}`);
+      setStatus(`FX error: ${err instanceof Error ? err.message : String(err)}`);
     }
   }
 
@@ -89,4 +96,3 @@ export function WalletTopupClient() {
     </div>
   );
 }
-

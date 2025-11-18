@@ -50,9 +50,23 @@ export async function handleWalletText(
 
   const isWalletState = state.key.startsWith("wallet_");
   const walletKeyword = /\b(wallet|tokens?)\b/.test(lower);
+  const jobIntent = /\b(job|jobs|work|hiring|gig)\b/.test(lower);
 
-  if (!isWalletState && !walletKeyword) {
-    return false;
+  // Only take over when the user mentions wallet/tokens, otherwise
+  // allow other flows (e.g., jobs) to handle the text.
+  if (!isWalletState) {
+    if (!walletKeyword) return false;
+  } else {
+    // In wallet state: react only to wallet-related commands/keywords,
+    // otherwise release control so other domains can handle.
+    const walletCommands = /\b(menu|back|wallet|token|tokens|balance|earn|redeem|transfer|transactions?|history|top)\b/;
+    if (!walletCommands.test(lower)) {
+      // If the user typed a clear jobs intent, let jobs handle it.
+      if (jobIntent) return false;
+      // For unrelated chatter, fall back to home menu instead of looping wallet.
+      await clearState(ctx.supabase, ctx.profileId);
+      return false;
+    }
   }
 
   if (lower === "home") {

@@ -27,6 +27,7 @@ import { SidebarRail } from "@/components/layout/SidebarRail";
 import { TopBar } from "@/components/layout/TopBar";
 import { MobileNav } from "@/components/layout/MobileNav";
 import { PanelContextProvider, type SidecarState } from "@/components/layout/PanelContext";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 interface PanelShellProps {
   children: ReactNode;
@@ -70,6 +71,7 @@ export function PanelShell({
     entity: null,
   });
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
+  const queryClient = useMemo(() => new QueryClient(), []);
 
   useEffect(() => {
     if (typeof window === "undefined" || !actorId) return;
@@ -118,7 +120,15 @@ export function PanelShell({
     router.refresh();
   };
 
-  const closeMobileNav = useCallback(() => setMobileNavOpen(false), []);
+  const closeMobileNav = useCallback(() => {
+    setMobileNavOpen(false);
+    // Restore focus to the menu toggle for accessibility
+    const target = menuButtonRef.current as HTMLButtonElement | null;
+    if (target) {
+      // Delay slightly to allow dialog unmount
+      setTimeout(() => target.focus(), 0);
+    }
+  }, [menuButtonRef]);
 
   const panelContextValue = useMemo(
     () => ({
@@ -134,6 +144,7 @@ export function PanelShell({
   );
 
   return (
+      <QueryClientProvider client={queryClient}>
       <ToastProvider>
         <ServiceWorkerToast />
         <ServiceWorkerToasts />
@@ -167,5 +178,6 @@ export function PanelShell({
           )}
         </PanelContextProvider>
       </ToastProvider>
+      </QueryClientProvider>
   );
 }

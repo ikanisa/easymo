@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import classNames from "classnames";
@@ -20,6 +20,7 @@ interface MobileNavProps {
 export function MobileNav({ open, onClose, onNavigate }: MobileNavProps) {
   const pathname = usePathname();
   const { root, groups } = PANEL_NAVIGATION;
+  const panelRef = useRef<HTMLDivElement | null>(null);
   const [openGroups, setOpenGroups] = useState<Set<PanelNavGroupId>>(() => {
     const initial = new Set<PanelNavGroupId>();
     for (const group of groups) {
@@ -37,11 +38,38 @@ export function MobileNav({ open, onClose, onNavigate }: MobileNavProps) {
       if (event.key === "Escape") {
         onClose();
       }
+      if (event.key === "Tab") {
+        const rootEl = panelRef.current;
+        if (!rootEl) return;
+        const focusables = rootEl.querySelectorAll<HTMLElement>(
+          'a[href], button, [tabindex]:not([tabindex="-1"])',
+        );
+        if (focusables.length === 0) return;
+        const first = focusables[0];
+        const last = focusables[focusables.length - 1];
+        const active = document.activeElement as HTMLElement | null;
+        const isShift = event.shiftKey;
+        if (!active) return;
+        if (!rootEl.contains(active)) return;
+        if (!isShift && active === last) {
+          event.preventDefault();
+          first.focus();
+        } else if (isShift && active === first) {
+          event.preventDefault();
+          last.focus();
+        }
+      }
     };
 
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     document.addEventListener("keydown", handleKeyDown);
+
+    // Set initial focus to first nav link
+    requestAnimationFrame(() => {
+      const firstLink = panelRef.current?.querySelector<HTMLElement>('nav a, a[role="link"]');
+      firstLink?.focus?.();
+    });
 
     return () => {
       document.body.style.overflow = previousOverflow;
@@ -81,14 +109,15 @@ export function MobileNav({ open, onClose, onNavigate }: MobileNavProps) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex justify-end bg-black/40 backdrop-blur-sm lg:hidden"
+      className="bing-nav-drawer fixed inset-0 z-50 flex justify-end bg-black/40 backdrop-blur-sm lg:hidden"
       role="dialog"
       aria-modal="true"
-      aria-label="Mobile navigation"
+      aria-label="Primary navigation"
       onClick={onClose}
     >
       <div
-        className="flex h-full w-80 max-w-[85vw] flex-col gap-6 bg-[color:var(--color-surface)] p-6 shadow-[var(--elevation-high)]"
+        ref={panelRef}
+        className="bing-nav-drawer__panel flex h-full w-80 max-w-[85vw] flex-col gap-6 bg-[color:var(--color-surface)] p-6 shadow-[var(--elevation-high)]"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="flex items-center justify-between">
@@ -154,7 +183,7 @@ export function MobileNav({ open, onClose, onNavigate }: MobileNavProps) {
                 </button>
                 <div id={panelId} hidden={!sectionOpen} className="border-t border-[color:var(--color-border)]/40">
                   <ul className="flex flex-col gap-1 p-2">
-                    {group.links.map((item) => {
+                    {group.links.filter((item) => item.href !== root.href).map((item) => {
                       const active =
                         pathname === item.href || pathname.startsWith(`${item.href}/`);
                       return (

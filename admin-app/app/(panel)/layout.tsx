@@ -1,6 +1,8 @@
 import type { ReactNode } from "react";
 import type { Metadata } from "next";
 import { PanelShell } from "@/components/layout/PanelShell";
+import { getCurrentSession } from "@/lib/server/session";
+import { redirect } from "next/navigation";
 
 export const metadata: Metadata = {
   title: {
@@ -16,6 +18,10 @@ interface PanelLayoutProps {
 }
 
 export default async function PanelLayout({ children }: PanelLayoutProps) {
+  const session = getCurrentSession();
+  if (!session) {
+    redirect('/login');
+  }
   const environmentLabel = process.env.NEXT_PUBLIC_ENVIRONMENT_LABEL ?? "Staging";
   const assistantEnabled = (process.env.NEXT_PUBLIC_ASSISTANT_ENABLED ?? "")
     .toLowerCase() === "true";

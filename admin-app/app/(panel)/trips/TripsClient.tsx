@@ -2,8 +2,21 @@
 import { useState, useEffect, useCallback } from "react";
 import { getAdminApiRoutePath } from "@/lib/routes";
 
+interface TripRow {
+  id: string | number;
+  creator_user_id?: string | null;
+  status?: string | null;
+  vehicle_type?: string | null;
+  created_at?: string | null;
+}
+
+interface TripsResponse {
+  data: TripRow[];
+  total: number;
+}
+
 export function TripsClient() {
-  const [data, setData] = useState<{ data: any[]; total: number } | null>(null);
+  const [data, setData] = useState<TripsResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
@@ -18,10 +31,10 @@ export function TripsClient() {
       if (params?.search) sp.set("search", params.search);
       const res = await fetch(`${tripsUrl}?${sp.toString()}`, { cache: "no-store" });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const json = await res.json();
+      const json: TripsResponse = await res.json();
       setData(json);
-    } catch (e: any) {
-      setError(e?.message ?? String(e));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
     } finally {
       setLoading(false);
     }
@@ -59,8 +72,8 @@ export function TripsClient() {
         </button>
       </form>
       <div className="grid grid-cols-3 gap-3">
-        <div className="p-3 border rounded">Open Trips<br/><b>{data?.data?.filter((t:any)=>t?.status===null||t?.status==='open').length ?? 0}</b></div>
-        <div className="p-3 border rounded">Expired<br/><b>{data?.data?.filter((t:any)=>t?.status==='expired').length ?? 0}</b></div>
+        <div className="p-3 border rounded">Open Trips<br/><b>{data?.data?.filter((t)=>t?.status===null||t?.status==='open').length ?? 0}</b></div>
+        <div className="p-3 border rounded">Expired<br/><b>{data?.data?.filter((t)=>t?.status==='expired').length ?? 0}</b></div>
         <div className="p-3 border rounded">Total<br/><b>{data?.total ?? 0}</b></div>
       </div>
       <div className="overflow-auto border rounded">
@@ -75,7 +88,7 @@ export function TripsClient() {
             </tr>
           </thead>
           <tbody>
-            {(data?.data ?? []).map((t: any) => (
+            {(data?.data ?? []).map((t) => (
               <tr key={String(t.id)} className="border-t">
                 <td className="p-2 font-mono text-xs">{String(t.id)}</td>
                 <td className="p-2 text-xs">{String(t.creator_user_id ?? '')}</td>
@@ -93,4 +106,3 @@ export function TripsClient() {
     </div>
   );
 }
-

@@ -28,6 +28,23 @@ interface ActiveSession {
   deadlineAt: string;
 }
 
+// Minimal row shapes from Supabase (snake_case), limited to fields we use
+type AgentRegistryRow = {
+  agent_type: string;
+  name: string;
+  enabled: boolean;
+};
+
+type AgentSessionRow = {
+  id: string;
+  agent_type: string;
+  status: string;
+  started_at: string;
+  completed_at: string | null;
+  deadline_at: string;
+  user_id?: string | null;
+};
+
 export function AgentsDashboardClient() {
   const [agents, setAgents] = useState<AgentStatus[]>([]);
   const [activeSessions, setActiveSessions] = useState<ActiveSession[]>([]);
@@ -71,20 +88,24 @@ export function AgentsDashboardClient() {
         .gte("completed_at", today.toISOString());
 
       // Calculate agent statuses
-      const agentStatuses: AgentStatus[] = (agentRegistry || []).map((agent: any) => {
-        const agentSessions = (sessions || []).filter(
-          (s: any) => s.agent_type === agent.agent_type
+      const typedRegistry = (agentRegistry ?? []) as AgentRegistryRow[];
+      const typedSessions = (sessions ?? []) as AgentSessionRow[];
+      const typedCompleted = (completedSessions ?? []) as AgentSessionRow[];
+
+      const agentStatuses: AgentStatus[] = typedRegistry.map((agent) => {
+        const agentSessions = typedSessions.filter(
+          (s) => s.agent_type === agent.agent_type,
         );
-        
-        const agentCompleted = (completedSessions || []).filter(
-          (s: any) => s.agent_type === agent.agent_type
+
+        const agentCompleted = typedCompleted.filter(
+          (s) => s.agent_type === agent.agent_type,
         );
 
         const avgResponseTime = agentCompleted.length > 0
-          ? agentCompleted.reduce((sum: number, s: any) => {
+          ? agentCompleted.reduce((sum: number, s) => {
               const start = new Date(s.started_at).getTime();
-              const end = new Date(s.completed_at).getTime();
-              return sum + (end - start);
+              const end = new Date(s.completed_at ?? s.started_at).getTime();
+              return sum + Math.max(0, end - start);
             }, 0) / agentCompleted.length / 1000
           : 0;
 
@@ -95,15 +116,29 @@ export function AgentsDashboardClient() {
           activeSessions: agentSessions.length,
           completedToday: agentCompleted.length,
           averageResponseTime: Math.round(avgResponseTime),
-          successRate: agentCompleted.length > 0 
-            ? Math.round((agentCompleted.length / (agentCompleted.length + agentSessions.length)) * 100)
-            : 0,
+          successRate:
+            agentCompleted.length + agentSessions.length > 0
+              ? Math.round(
+                  (agentCompleted.length /
+                    (agentCompleted.length + agentSessions.length)) * 100,
+                )
+              : 0,
           status: agentSessions.length > 0 ? "active" : "idle",
         };
       });
 
       setAgents(agentStatuses);
-      setActiveSessions(sessions || []);
+      setActiveSessions(
+        // Keep the UI props shape expected by the component
+        (typedSessions || []).map((s) => ({
+          id: s.id,
+          agentType: s.agent_type,
+          userId: s.user_id ?? "",
+          status: s.status,
+          startedAt: s.started_at,
+          deadlineAt: s.deadline_at,
+        })),
+      );
       setStats({
         totalSessions: (completedCount || 0) + (sessions?.length || 0),
         activeNow: sessions?.length || 0,
@@ -345,11 +380,11 @@ export function AgentsDashboardClient() {
                             </span>
                           </td>
                           <td className="p-3">
-                            <Button asChild variant="ghost" size="sm">
-                              <Link href={`/sessions/${session.id}` as any}>
+                          <Button asChild variant="ghost" size="sm">
+                              <Link href={`/sessions/${session.id}`}>
                                 View
                               </Link>
-                            </Button>
+                          </Button>
                           </td>
                         </tr>
                       );

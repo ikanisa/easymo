@@ -7,6 +7,18 @@ import { Badge } from "@/components/ui/Badge";
 import { useToast } from "@/components/ui/ToastProvider";
 import { useAgentTools, useTestAgentTool, useUpdateAgentTool } from "@/lib/queries/agent-tools";
 
+type AgentTool = {
+  id: string;
+  name: string;
+  description?: string;
+  enabled?: boolean;
+  parameters?: Record<string, unknown> | null;
+  metadata?: Record<string, unknown> | null;
+  updated_at: string;
+};
+
+type ToolInvokeResult = { result?: { status?: string; [key: string]: unknown } } | unknown;
+
 export default function AgentToolsPage() {
   const { pushToast } = useToast();
   const toolsQuery = useAgentTools();
@@ -16,8 +28,8 @@ export default function AgentToolsPage() {
   const [payloadDraft, setPayloadDraft] = useState<string>("{\n  \"example\": \"payload\"\n}");
   const [testResult, setTestResult] = useState<unknown>(null);
 
-  const tools = useMemo(() => {
-    const list = (toolsQuery.data?.tools as any[] | undefined) ?? [];
+  const tools: AgentTool[] = useMemo(() => {
+    const list = (toolsQuery.data?.tools as AgentTool[] | undefined) ?? [];
     return list;
   }, [toolsQuery.data?.tools]);
 
@@ -61,9 +73,10 @@ export default function AgentToolsPage() {
     }
 
     try {
-      const result = await testCall.mutateAsync({ toolId: selectedToolId, payload: parsed });
-      setTestResult(result?.result ?? result);
-      const status = (result as any)?.result?.status;
+      const result: ToolInvokeResult = await testCall.mutateAsync({ toolId: selectedToolId, payload: parsed });
+      // Prefer nested result if present
+      setTestResult((result as { result?: unknown })?.result ?? result);
+      const status = (result as { result?: { status?: string } })?.result?.status;
       pushToast(
         status ? `Test call ${status === "ok" ? "succeeded" : status}` : "Test call completed",
         status === "error" ? "error" : "success",

@@ -371,7 +371,31 @@ export async function handleList(
   if (await handleHomeMenuSelection(ctx, id, state)) {
     return true;
   }
-  
+
+  // Wallet transfer partner selection
+  if (state.key === "wallet_transfer") {
+    if (id === "manual_recipient") {
+      await setState(ctx.supabase, ctx.profileId!, { key: "wallet_transfer", data: { stage: "recipient", ...(state.data ?? {}) } });
+      await sendButtonsMessage(ctx, "Send the recipient's WhatsApp number (e.g., +2507…).", [{ id: IDS.BACK_MENU, title: "Cancel" }]);
+      return true;
+    }
+    if (id.startsWith("partner::")) {
+      const partnerId = id.slice("partner::".length);
+      const { data: partner } = await ctx.supabase
+        .from('token_partners')
+        .select('whatsapp_e164')
+        .eq('id', partnerId)
+        .maybeSingle();
+      if (partner?.whatsapp_e164) {
+        await setState(ctx.supabase, ctx.profileId!, { key: "wallet_transfer", data: { stage: "amount", to: partner.whatsapp_e164, ...(state.data ?? {}) } });
+        await sendButtonsMessage(ctx, "How many tokens to send? Enter a number.", [{ id: IDS.BACK_MENU, title: "Cancel" }]);
+        return true;
+      }
+      await sendButtonsMessage(ctx, "Recipient not available.", [{ id: IDS.BACK_MENU, title: "Cancel" }]);
+      return true;
+    }
+  }
+
   // Business edit flows
   if (state.key === "business_edit") {
     const { handleBusinessEditAction } = await import("../domains/business/edit.ts");

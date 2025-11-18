@@ -1,29 +1,44 @@
 import type { RouterContext } from "../../types.ts";
-import { sendButtonsMessage } from "../../utils/reply.ts";
+import { sendButtonsMessage, sendListMessage } from "../../utils/reply.ts";
 import { IDS } from "../../wa/ids.ts";
 import { setState } from "../../state/store.ts";
 import { t } from "../../i18n/translator.ts";
 import { toE164 } from "../../utils/phone.ts";
+import { listWalletPartners } from "../../rpc/wallet.ts";
 
 type TransferState = {
   key: string;
   data?: {
-    stage: "recipient" | "amount";
+    stage: "choose" | "recipient" | "amount";
     to?: string;
+    idem?: string;
   };
 };
 
 export async function startWalletTransfer(ctx: RouterContext): Promise<boolean> {
   if (!ctx.profileId) return false;
-  await setState(ctx.supabase, ctx.profileId, {
-    key: "wallet_transfer",
-    data: { stage: "recipient" },
-  });
-  await sendButtonsMessage(
-    ctx,
-    "Send the recipient's WhatsApp number (e.g., +2507…).",
-    [{ id: IDS.BACK_MENU, title: "Cancel" }],
-  );
+  const idem = crypto.randomUUID();
+  await setState(ctx.supabase, ctx.profileId, { key: "wallet_transfer", data: { stage: "choose", idem } });
+  try {
+    const partners = await listWalletPartners(ctx.supabase, 10);
+    const rows = [
+      ...partners.map((p) => ({ id: `partner::${p.id}`, title: p.name ?? "Partner", description: p.whatsapp_e164 ?? undefined })),
+      { id: "manual_recipient", title: "Enter number manually", description: "Type +countrycode and number" },
+      { id: IDS.BACK_MENU, title: "← Back", description: "Return" },
+    ];
+    await sendListMessage(
+      ctx,
+      { title: "Transfer tokens", body: "Choose a partner or enter a number.", sectionTitle: "Recipients", rows, buttonText: "Select" },
+      { emoji: "💎" },
+    );
+  } catch {
+    await setState(ctx.supabase, ctx.profileId, { key: "wallet_transfer", data: { stage: "recipient", idem } });
+    await sendButtonsMessage(
+      ctx,
+      "Send the recipient's WhatsApp number (e.g., +2507…).",
+      [{ id: IDS.BACK_MENU, title: "Cancel" }],
+    );
+  }
   return true;
 }
 
@@ -34,6 +49,16 @@ export async function handleWalletTransferText(
 ): Promise<boolean> {
   if (!ctx.profileId || state.key !== "wallet_transfer") return false;
   const data = state.data || { stage: "recipient" };
+  if (data.stage === "choose") {
+    // If the user typed instead of selecting, treat as manual
+    const to = toE164(body);
+    if (/^\+\d{6,15}$/.test(to)) {
+      await setState(ctx.supabase, ctx.profileId, { key: "wallet_transfer", data: { stage: "amount", to, idem: data.idem } });
+      await sendButtonsMessage(ctx, "How many tokens to send? Enter a number.", [{ id: IDS.BACK_MENU, title: "Cancel" }]);
+      return true;
+    }
+    return false;
+  }
   if (data.stage === "recipient") {
     const to = toE164(body);
     if (!/^\+\d{6,15}$/.test(to)) {
@@ -72,6 +97,7 @@ export async function handleWalletTransferText(
           p_sender: ctx.profileId,
           p_recipient_whatsapp: data.to,
           p_amount: amount,
+          p_idempotency_key: data.idem ?? crypto.randomUUID(),
         },
       );
       if (error) throw error;
@@ -103,4 +129,3 @@ export async function handleWalletTransferText(
   }
   return false;
 }
-

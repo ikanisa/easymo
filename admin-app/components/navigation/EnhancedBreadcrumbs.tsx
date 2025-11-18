@@ -59,7 +59,7 @@ export function EnhancedBreadcrumbs({
               className="flex items-center gap-2"
               aria-current={crumb.current ? "page" : undefined}
             >
-              {crumb.href && !crumb.current ? (
+              {crumb.href && (!crumb.current || (isFirst && showHome)) ? (
                 <Link
                   href={toLinkHref(crumb.href)}
                   className={classNames(
@@ -68,6 +68,7 @@ export function EnhancedBreadcrumbs({
                     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1",
                   )}
                   title={`Navigate to ${crumb.label}`}
+                  aria-label={crumb.current ? `Current page: ${crumb.label}` : undefined}
                 >
                   {isFirst && showHome && (
                     <Home className="h-4 w-4" aria-hidden="true" />

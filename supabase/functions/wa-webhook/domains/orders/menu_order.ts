@@ -248,7 +248,7 @@ async function showMenuList(
       }),
       body: bodyText.join("\n\n"),
       sectionTitle: t(ctx.locale, "menu.order.list.section"),
-      rows: menuRows,
+      rows: [],
       sections,
       buttonText: t(ctx.locale, "menu.order.list.button"),
     },

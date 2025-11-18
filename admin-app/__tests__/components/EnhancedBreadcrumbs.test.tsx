@@ -3,7 +3,9 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "../../tests/utils/react-testing";
 import { EnhancedBreadcrumbs } from "@/components/navigation/EnhancedBreadcrumbs";
 
-const mockUsePathname = vi.fn(() => "/insurance");
+const { mockUsePathname } = vi.hoisted(() => ({
+  mockUsePathname: vi.fn(() => "/insurance"),
+}));
 
 vi.mock("next/link", () => {
   const Link = ({

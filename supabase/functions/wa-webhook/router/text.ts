@@ -22,6 +22,7 @@ import { processPharmacyRequest } from "../domains/healthcare/pharmacies.ts";
 import { processQuincaillerieRequest } from "../domains/healthcare/quincailleries.ts";
 import { processNotaryRequest } from "../domains/services/notary.ts";
 import { handleBarWaiterMessage } from "../domains/bars/waiter_ai.ts";
+import { handleBusinessDeeplinkCode } from "../domains/business/deeplink.ts";
 
 import {
   handleAddPropertyPrice,
@@ -93,6 +94,12 @@ export async function handleText(
   if (referralMatch) {
     const code = referralMatch[1];
     if (await applyReferralCodeFromMessage(ctx, code)) {
+      return true;
+    }
+  }
+  const businessCodeMatch = body.match(/^biz[:：]\s*([a-z0-9]{4,32})$/i);
+  if (businessCodeMatch) {
+    if (await handleBusinessDeeplinkCode(ctx, businessCodeMatch[1])) {
       return true;
     }
   }
@@ -237,6 +244,12 @@ export async function handleText(
   }
   if (await handleWalletText(ctx, body, state)) {
     return true;
+  }
+  // Quick intent: jobs / work → open job board menu with action buttons
+  if (/\b(job|jobs|work|hiring|gig|i need a job|find a job)\b/i.test(body)) {
+    const { showJobBoardMenu } = await import("../domains/jobs/index.ts");
+    const ok = await showJobBoardMenu(ctx);
+    if (ok) return true;
   }
   if (state.key?.startsWith("dine")) {
     await sendDineInDisabledNotice(ctx);

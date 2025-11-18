@@ -14,6 +14,10 @@ export function buildWaLink(prefill: string, overrideNumber?: string): string {
   return `https://wa.me/${digits}?text=${encodeURIComponent(prefill)}`;
 }
 
+export function buildQrUrl(payload: string): string {
+  return `${QR_BASE}${encodeURIComponent(payload)}&timestamp=${Date.now()}`;
+}
+
 export async function ensureReferralLink(
   client: SupabaseClient,
   profileId: string,
@@ -44,7 +48,7 @@ export async function ensureReferralLink(
   const shortLink = existing.data?.short_url ?? buildShortLink(code);
   const waLink = buildWaLink(`REF:${code}`, REFERRAL_NUMBER_E164) || shortLink;
   const qrPayload = waLink || shortLink;
-  const qrUrl = `${QR_BASE}${encodeURIComponent(qrPayload)}&timestamp=${Date.now()}`;
+  const qrUrl = buildQrUrl(qrPayload);
   return { code, shortLink, waLink, qrUrl };
 }
 
@@ -67,7 +71,7 @@ async function insertReferralLink(
   throw new Error("Failed to create referral link");
 }
 
-function generateReferralCode(length = 8): string {
+export function generateReferralCode(length = 8): string {
   const bytes = new Uint8Array(length);
   crypto.getRandomValues(bytes);
   let result = "";
