@@ -7,6 +7,7 @@ import {
 import { maybeHandleDriverLocation } from "../observe/driver_parser.ts";
 import { recordInbound } from "../observe/conv_audit.ts";
 import { sendText } from "../wa/client.ts";
+import { clearState } from "../state/store.ts";
 // AI Agents Integration
 import { handleAIAgentLocationUpdate } from "../domains/ai-agents/index.ts";
 import { handlePharmacyLocation } from "../domains/healthcare/pharmacies.ts";
@@ -159,12 +160,37 @@ export async function handleLocation(
       { lat, lng },
     );
   }
-  
+
   if (state.key === "mobility_nearby_location") {
     return await handleNearbyLocation(ctx, (state.data ?? {}) as any, {
       lat,
       lng,
     });
+  }
+
+  // Add New Business flow: capture coords and advance to category selection
+  if (state.key === 'business_add_new' && (state.data as any)?.stage === 'location') {
+    const { handleAddNewBusinessLocation } = await import('../domains/business/add_new.ts');
+    return await handleAddNewBusinessLocation(ctx, (state.data as any), { lat, lng });
+  }
+
+  // Business edit: update GPS coordinates from WhatsApp location share
+  if (state.key === "business_edit" && (state.data as any)?.stage === "awaiting_location") {
+    const businessId = (state.data as any)?.businessId as string | undefined;
+    if (!businessId) return false;
+    const { error } = await ctx.supabase
+      .from("business")
+      .update({ latitude: lat, longitude: lng })
+      .eq("id", businessId);
+    if (error) {
+      await sendText(ctx, "⚠️ Failed to update location. Please try again.");
+      return true;
+    }
+    if (ctx.profileId) {
+      try { await clearState(ctx.supabase, ctx.profileId); } catch (_) { /* noop */ }
+    }
+    await sendText(ctx, "✅ Location updated.");
+    return true;
   }
   if (state.key === "schedule_location") {
     return await handleScheduleLocation(ctx, (state.data ?? {}) as any, {

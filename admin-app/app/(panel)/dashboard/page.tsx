@@ -13,8 +13,6 @@ import { DashboardClient } from "./DashboardClient";
 export const metadata = createPanelPageMetadata("/dashboard");
 
 export default async function DashboardPage() {
-  const startTime = Date.now();
-  
   const queryClient = createQueryClient();
 
   await Promise.all([

@@ -59,51 +59,84 @@ export const GET = createHandler("admin_api.bars.dashboard", async (request, _co
 
   const limit = query.limit ?? 20;
 
-  // Try canonical bars schema first; on failure, fall back to restaurant-based schema
+  // Prefer explicit mapping (bar_restaurant_map) → restaurant-based orders
   let orders: OrderRow[] = [];
-  {
-    const ordersQuery = adminClient
-      .from("orders")
-      .select("id, order_code, status, table_label, created_at, updated_at, total_minor, metadata")
-      .order("created_at", { ascending: false })
-      .limit(limit);
-    if (query.barId) ordersQuery.eq("bar_id", query.barId);
-    const { data, error } = await ordersQuery;
-    if (!error) {
-      orders = (data ?? []) as OrderRow[];
-    } else {
-      // Fallback: restaurant schema (orders with order_number, table_id, total, metadata)
-      const alt = await adminClient
+  let resolvedBy = 'unknown';
+  if (query.barId) {
+    const map = await adminClient
+      .from('bar_restaurant_map')
+      .select('restaurant_id')
+      .eq('bar_id', query.barId)
+      .maybeSingle();
+    if (!map.error && map.data?.restaurant_id) {
+      const rs = await adminClient
         .from('orders')
-        .select('id, order_number, status, table_id, created_at, updated_at, total, metadata, restaurants:restaurants(name)')
+        .select('id, order_number, status, table_id, created_at, updated_at, total, metadata')
+        .eq('restaurant_id', map.data.restaurant_id)
         .order('created_at', { ascending: false })
         .limit(limit);
-      if (alt.error) {
-        recordMetric("bars.dashboard.orders_error", 1, { message: alt.error.message });
-        logStructured({ event: 'bars_dashboard_orders_failed', target: 'orders', status: 'error', message: alt.error.message });
-        return jsonError({ error: 'orders_fetch_failed', message: 'Unable to load bar orders.' }, 500);
+      if (!rs.error) {
+        orders = (rs.data ?? []).map((r: any) => ({
+          id: r.id,
+          order_code: r.order_number ?? null,
+          status: r.status ?? null,
+          table_label: (r.table_id ?? null) as any,
+          created_at: r.created_at,
+          updated_at: r.updated_at ?? null,
+          total_minor: r.total ? Math.round(Number(r.total) * 100) : null,
+          metadata: (r.metadata ?? null) as any,
+        }));
+        resolvedBy = 'mapping';
       }
-      const barName = query.barId
-        ? (await adminClient.from('bars').select('name').eq('id', query.barId).maybeSingle()).data?.name ?? ''
-        : '';
-      const rows = (alt.data ?? []) as any[];
-      const filtered = barName
-        ? rows.filter((r) => {
-            const rn = Array.isArray(r.restaurants) ? r.restaurants[0]?.name : r.restaurants?.name;
-            return typeof rn === 'string' && rn.toLowerCase().includes(barName.toLowerCase());
-          })
-        : rows;
-      orders = filtered.map((r) => ({
-        id: r.id,
-        order_code: r.order_number ?? null,
-        status: r.status ?? null,
-        table_label: (r.table_id ?? null) as any, // shows raw id when no label available
-        created_at: r.created_at,
-        updated_at: r.updated_at ?? null,
-        total_minor: r.total ? Math.round(Number(r.total) * 100) : null,
-        metadata: (r.metadata ?? null) as any,
-      }));
     }
+  }
+  // Fallback #1: canonical bars orders (if present)
+  if (!orders.length) {
+    const q = adminClient
+      .from('orders')
+      .select('id, order_code, status, table_label, created_at, updated_at, total_minor, metadata')
+      .order('created_at', { ascending: false })
+      .limit(limit);
+    if (query.barId) q.eq('bar_id', query.barId);
+    const r = await q;
+    if (!r.error) {
+      orders = (r.data ?? []) as OrderRow[];
+      resolvedBy = 'bar_id';
+    }
+  }
+  // Fallback #2: name heuristic on restaurant orders
+  if (!orders.length) {
+    const alt = await adminClient
+      .from('orders')
+      .select('id, order_number, status, table_id, created_at, updated_at, total, metadata, restaurants:restaurants(name)')
+      .order('created_at', { ascending: false })
+      .limit(limit);
+    if (alt.error) {
+      recordMetric('bars.dashboard.orders_error', 1, { message: alt.error.message });
+      logStructured({ event: 'bars_dashboard_orders_failed', target: 'orders', status: 'error', message: alt.error.message });
+      return jsonError({ error: 'orders_fetch_failed', message: 'Unable to load bar orders.' }, 500);
+    }
+    const barName = query.barId
+      ? (await adminClient.from('bars').select('name').eq('id', query.barId).maybeSingle()).data?.name ?? ''
+      : '';
+    const rows = (alt.data ?? []) as any[];
+    const filtered = barName
+      ? rows.filter((r) => {
+          const rn = Array.isArray(r.restaurants) ? r.restaurants[0]?.name : r.restaurants?.name;
+          return typeof rn === 'string' && rn.toLowerCase().includes(barName.toLowerCase());
+        })
+      : rows;
+    orders = filtered.map((r) => ({
+      id: r.id,
+      order_code: r.order_number ?? null,
+      status: r.status ?? null,
+      table_label: (r.table_id ?? null) as any,
+      created_at: r.created_at,
+      updated_at: r.updated_at ?? null,
+      total_minor: r.total ? Math.round(Number(r.total) * 100) : null,
+      metadata: (r.metadata ?? null) as any,
+    }));
+    resolvedBy = 'name';
   }
   const orderIds = orders.map((order) => order.id);
 

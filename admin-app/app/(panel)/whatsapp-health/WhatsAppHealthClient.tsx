@@ -27,12 +27,11 @@ export function WhatsAppHealthClient(
     notificationsQuery.data?.data,
   ]);
 
-  const { total, successCount, failureCount, queuedCount, successRate } =
+  const { total, failureCount, queuedCount, successRate } =
     useMemo(() => {
       if (!notifications.length) {
         return {
           total: 0,
-          successCount: 0,
           failureCount: 0,
           queuedCount: 0,
           successRate: "—",
@@ -45,7 +44,6 @@ export function WhatsAppHealthClient(
       const rate = total ? ((success / total) * 100).toFixed(1) : "—";
       return {
         total,
-        successCount: success,
         failureCount: failure,
         queuedCount: queued,
         successRate: rate,

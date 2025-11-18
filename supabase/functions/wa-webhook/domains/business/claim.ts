@@ -131,7 +131,7 @@ export async function handleBusinessNameSearch(
           {
             id: 'BIZ::ADD_NEW',
             title: '➕ Add new business',
-            description: 'Type name, then location and category',
+            description: 'Enter name, share GPS location (WhatsApp pin), then choose category',
           },
           {
             id: IDS.PROFILE_ADD_BUSINESS,

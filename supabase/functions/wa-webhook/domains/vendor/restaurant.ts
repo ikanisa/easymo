@@ -558,28 +558,41 @@ async function showOrders(
 ): Promise<boolean> {
   if (!state.barId) return false;
   try {
-    // Resolve bar name
-    const { data: bar } = await ctx.supabase
-      .from('bars')
-      .select('id, name')
-      .eq('id', state.barId)
+    // Resolve mapping (preferred)
+    const { data: mapRow } = await ctx.supabase
+      .from('bar_restaurant_map')
+      .select('restaurant_id')
+      .eq('bar_id', state.barId)
       .maybeSingle();
-    const barName = bar?.name || '';
-
-    // Try a restaurant-based orders schema: orders join restaurants by name match
-    // Note: This is a heuristic until a direct mapping exists
-    const pattern = barName ? `%${barName}%` : undefined;
     let orders: Array<{ id: string; order_number?: string; status?: string; created_at: string }>|null = null;
-    if (pattern) {
+    if (mapRow?.restaurant_id) {
       const { data } = await ctx.supabase
         .from('orders')
-        .select('id, order_number, status, created_at, restaurants:restaurants(name)')
+        .select('id, order_number, status, created_at')
+        .eq('restaurant_id', mapRow.restaurant_id)
         .order('created_at', { ascending: false })
         .limit(5);
-      orders = (data ?? []).filter((row: any) => {
-        const rname = Array.isArray(row.restaurants) ? row.restaurants[0]?.name : row.restaurants?.name;
-        return typeof rname === 'string' && rname.toLowerCase().includes(barName.toLowerCase());
-      }) as any;
+      orders = (data ?? []) as any;
+    }
+    // Fallback: name heuristic
+    if (!orders || orders.length === 0) {
+      const { data: bar } = await ctx.supabase
+        .from('bars')
+        .select('id, name')
+        .eq('id', state.barId)
+        .maybeSingle();
+      const barName = bar?.name || '';
+      if (barName) {
+        const { data } = await ctx.supabase
+          .from('orders')
+          .select('id, order_number, status, created_at, restaurants:restaurants(name)')
+          .order('created_at', { ascending: false })
+          .limit(5);
+        orders = (data ?? []).filter((row: any) => {
+          const rname = Array.isArray(row.restaurants) ? row.restaurants[0]?.name : row.restaurants?.name;
+          return typeof rname === 'string' && rname.toLowerCase().includes(barName.toLowerCase());
+        }) as any;
+      }
     }
     if (!orders || orders.length === 0) {
       await sendButtonsMessage(
@@ -590,7 +603,7 @@ async function showOrders(
       return true;
     }
     // Build summary message
-    let body = `📦 Recent orders for ${barName}\n\n`;
+    let body = `📦 Recent orders\n\n`;
     for (const o of orders) {
       const code = (o as any).order_number ?? o.id.slice(0, 6).toUpperCase();
       const status = (o as any).status ?? 'unknown';

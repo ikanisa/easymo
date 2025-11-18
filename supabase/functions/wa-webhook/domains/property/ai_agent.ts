@@ -45,8 +45,8 @@ export async function startPropertyAISearch(
             `Please provide:\n` +
             `1. Number of bedrooms (e.g., "2 bedrooms")\n` +
             `2. Your maximum budget in RWF (e.g., "500000")\n` +
-            `3. Share your location when prompted\n\n` +
-            `_Type your criteria or send your location to start searching_`
+            `3. Share your location when prompted (use WhatsApp Location map pin)\n\n` +
+            `_Type your criteria, then send your location via WhatsApp Location (map pin)_`
     });
 
     return true;

@@ -38,7 +38,7 @@ export async function startBusinessEdit(
       sectionTitle: "Fields",
       rows: [
         { id: IDS.BUSINESS_EDIT_NAME, title: "Name", description: "Change business name" },
-        { id: IDS.BUSINESS_EDIT_LOCATION, title: "Location", description: "Update location text" },
+        { id: IDS.BUSINESS_EDIT_LOCATION, title: "Location", description: "Update GPS location (WhatsApp pin)" },
         { id: IDS.BUSINESS_EDIT_CATEGORY, title: "Category", description: "Update category name" },
         { id: IDS.BUSINESS_EDIT_SPECIALTIES, title: "Specialties", description: "Comma-separated specialties" },
         { id: IDS.BUSINESS_EDIT_PROMOTIONS, title: "Promotions & Events", description: "Add promo/event text" },
@@ -74,7 +74,7 @@ export async function handleBusinessEditAction(
       await setStage("awaiting_location");
       await sendButtonsMessage(
         ctx,
-        "Send the new location text (e.g., Kigali, Remera)",
+        "Please share the new location using WhatsApp Location (map pin). Text addresses are not accepted.",
         buildButtons({ id: IDS.BACK_MENU, title: "Cancel" }),
       );
       return true;
@@ -140,10 +140,12 @@ export async function handleBusinessEditText(
         return true;
       }
       case "awaiting_location": {
-        const location_text = input.trim().slice(0, 200);
-        const { error } = await idEq(table.update({ location_text }));
-        if (error) throw error;
-        await finish(`✅ Location updated.`);
+        // Location must be shared via WhatsApp map pin; reject typed input
+        await sendButtonsMessage(
+          ctx,
+          "📍 Please share your location using WhatsApp Location (map pin). Text locations are not allowed.",
+          buildButtons({ id: IDS.BACK_MENU, title: "Cancel" }),
+        );
         return true;
       }
       case "awaiting_category": {

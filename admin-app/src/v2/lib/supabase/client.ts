@@ -73,7 +73,7 @@ export async function createAdminClient(): Promise<SupabaseClient> {
     throw new Error("Admin client can only be used on the server");
   }
 
-  const { cookies } = await import("next/headers");
+  const { cookies, headers } = await import("next/headers");
   
   type CookieStore = ReturnType<typeof cookies>;
   type CookieSetOptions = Parameters<CookieStore["set"]>[2];
@@ -87,6 +87,12 @@ export async function createAdminClient(): Promise<SupabaseClient> {
   }
 
   const cookieStore = tryGetCookies();
+  let requestHeaders: Headers | undefined;
+  try {
+    requestHeaders = headers();
+  } catch {
+    requestHeaders = undefined;
+  }
 
   const cookieAdapter = cookieStore
     ? {
@@ -112,6 +118,13 @@ export async function createAdminClient(): Promise<SupabaseClient> {
             }
           });
         },
+        remove(name: string) {
+          try {
+            cookieStore.delete(name);
+          } catch {
+            // Ignore when deletion isn't permitted in this context.
+          }
+        },
       }
     : {
         get() {
@@ -122,6 +135,7 @@ export async function createAdminClient(): Promise<SupabaseClient> {
         },
         set() {},
         setAll(_cookies?: Array<{ name: string; value: string; options?: CookieSetOptions }>) {},
+        remove(_name: string) {},
       };
 
   return createServerClient<Database>(
@@ -129,6 +143,7 @@ export async function createAdminClient(): Promise<SupabaseClient> {
     requireEnv("SUPABASE_SERVICE_ROLE_KEY"),
     {
       cookies: cookieAdapter,
+      headers: requestHeaders,
     },
   ) as unknown as SupabaseClient;
 }

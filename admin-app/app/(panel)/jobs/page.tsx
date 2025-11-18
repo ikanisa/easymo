@@ -40,17 +40,15 @@ export default function JobsDashboard() {
   const [activeTab, setActiveTab] = useState<'overview' | 'jobs' | 'seekers' | 'matches'>('overview');
 
   useEffect(() => {
-    loadDashboardData();
-  }, []);
-
-  async function loadDashboardData() {
-    try {
-      // Load stats with proper typing
-      const [jobsResult, seekersResult, matchesResult] = await Promise.all([
-        supabase.from('job_listings').select('status', { count: 'exact', head: true }),
-        supabase.from('job_seekers').select('*', { count: 'exact', head: true }),
-        supabase.from('job_matches').select('status', { count: 'exact', head: true }),
-      ]);
+    // Define inside effect to satisfy exhaustive-deps without over-subscribing
+    async function loadDashboardData() {
+      try {
+        // Load stats with proper typing
+        const [jobsResult, seekersResult, matchesResult] = await Promise.all([
+          supabase.from('job_listings').select('status', { count: 'exact', head: true }),
+          supabase.from('job_seekers').select('*', { count: 'exact', head: true }),
+          supabase.from('job_matches').select('status', { count: 'exact', head: true }),
+        ]);
 
       // Load detailed stats
       const openJobsResult = await supabase
@@ -96,7 +94,10 @@ export default function JobsDashboard() {
     } finally {
       setLoading(false);
     }
-  }
+    }
+
+    void loadDashboardData();
+  }, [supabase]);
 
   if (loading) {
     return (

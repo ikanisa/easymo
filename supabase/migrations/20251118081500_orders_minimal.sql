@@ -15,7 +15,15 @@ CREATE TABLE IF NOT EXISTS public.orders (
   CONSTRAINT orders_status_valid CHECK (status IN ('pending','preparing','confirmed','served','cancelled'))
 );
 
-CREATE INDEX IF NOT EXISTS idx_orders_bar ON public.orders(bar_id, created_at DESC);
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'orders' AND column_name = 'bar_id'
+  ) THEN
+    CREATE INDEX IF NOT EXISTS idx_orders_bar ON public.orders(bar_id, created_at DESC);
+  END IF;
+END $$;
 
 CREATE TABLE IF NOT EXISTS public.order_items (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -34,47 +42,75 @@ ALTER TABLE public.orders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.order_items ENABLE ROW LEVEL SECURITY;
 
 -- Bar managers can read orders for their bars
-CREATE POLICY IF NOT EXISTS "Managers can read their bar orders"
-  ON public.orders
-  FOR SELECT
-  TO authenticated
-  USING (
-    EXISTS (
-      SELECT 1 FROM public.bar_managers
-      WHERE bar_managers.bar_id = orders.bar_id
-        AND bar_managers.user_id = auth.uid()
-        AND bar_managers.is_active = true
-    )
-  );
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'orders' AND polname = 'Managers can read their bar orders'
+  ) THEN
+    CREATE POLICY "Managers can read their bar orders"
+      ON public.orders
+      FOR SELECT
+      TO authenticated
+      USING (
+        EXISTS (
+          SELECT 1 FROM public.bar_managers
+          WHERE bar_managers.bar_id = orders.bar_id
+            AND bar_managers.user_id = auth.uid()
+            AND bar_managers.is_active = true
+        )
+      );
+  END IF;
+END $$;
 
-CREATE POLICY IF NOT EXISTS "Managers can read their bar order items"
-  ON public.order_items
-  FOR SELECT
-  TO authenticated
-  USING (
-    EXISTS (
-      SELECT 1 FROM public.orders o
-      JOIN public.bar_managers m ON m.bar_id = o.bar_id
-      WHERE o.id = order_items.order_id
-        AND m.user_id = auth.uid()
-        AND m.is_active = true
-    )
-  );
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'order_items' AND polname = 'Managers can read their bar order items'
+  ) THEN
+    CREATE POLICY "Managers can read their bar order items"
+      ON public.order_items
+      FOR SELECT
+      TO authenticated
+      USING (
+        EXISTS (
+          SELECT 1 FROM public.orders o
+          JOIN public.bar_managers m ON m.bar_id = o.bar_id
+          WHERE o.id = order_items.order_id
+            AND m.user_id = auth.uid()
+            AND m.is_active = true
+        )
+      );
+  END IF;
+END $$;
 
 -- Service role full access
-CREATE POLICY IF NOT EXISTS "Service role can manage orders"
-  ON public.orders
-  FOR ALL
-  TO service_role
-  USING (true)
-  WITH CHECK (true);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'orders' AND polname = 'Service role can manage orders'
+  ) THEN
+    CREATE POLICY "Service role can manage orders"
+      ON public.orders
+      FOR ALL
+      TO service_role
+      USING (true)
+      WITH CHECK (true);
+  END IF;
+END $$;
 
-CREATE POLICY IF NOT EXISTS "Service role can manage order items"
-  ON public.order_items
-  FOR ALL
-  TO service_role
-  USING (true)
-  WITH CHECK (true);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'order_items' AND polname = 'Service role can manage order items'
+  ) THEN
+    CREATE POLICY "Service role can manage order items"
+      ON public.order_items
+      FOR ALL
+      TO service_role
+      USING (true)
+      WITH CHECK (true);
+  END IF;
+END $$;
 
 -- updated_at trigger
 CREATE OR REPLACE FUNCTION update_orders_updated_at()
@@ -94,4 +130,3 @@ COMMENT ON TABLE public.orders IS 'Lightweight bar orders for dashboards and WA 
 COMMENT ON TABLE public.order_items IS 'Items composing each order';
 
 COMMIT;
-

@@ -263,6 +263,15 @@ export async function handleButton(
       if (state.data && (state.data as any).barId) {
         return await startBarMenuOrder(ctx, state.data as any);
       }
+      if (state.key === "bar_waiter_chat" && state.data?.barId) {
+        const detail = {
+          barId: state.data.barId as string,
+          barName: state.data.barName as string,
+          barCountry: state.data.barCountry as string | undefined,
+          barSlug: state.data.barSlug as string | undefined,
+        };
+        return await startBarMenuOrder(ctx, detail);
+      }
       // Graceful fallback: ask user to select a place again
       try {
         console.warn(JSON.stringify({ event: 'BAR_VIEW_MENU_MISSING_CONTEXT', stateKey: state?.key || null }));
@@ -303,6 +312,12 @@ export async function handleButton(
     case IDS.WAITER_SUGGESTIONS: {
       if (state.key === "bar_waiter_chat") {
         return await handleBarWaiterSuggestions(ctx, state.data || {});
+      }
+      return false;
+    }
+    case IDS.WAITER_SUGGESTIONS_MORE: {
+      if (state.key === "bar_waiter_chat") {
+        return await handleBarWaiterSuggestionsMore(ctx, state.data || {});
       }
       return false;
     }

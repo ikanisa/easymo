@@ -2,7 +2,7 @@ import type { ButtonSpec, RouterContext } from "../../types.ts";
 import { t } from "../../i18n/translator.ts";
 import { logStructuredEvent } from "../../observe/log.ts";
 import { sendText } from "../../wa/client.ts";
-import { sendButtonsMessage, buildButtons } from "../../utils/reply.ts";
+import { sendButtonsMessage } from "../../utils/reply.ts";
 import { IDS } from "../../wa/ids.ts";
 import { setState } from "../../state/store.ts";
 import { WA_TOKEN, WA_PHONE_ID } from "../../config.ts";
@@ -28,6 +28,8 @@ type WaiterChatSession = {
   barId: string;
   barName: string;
   language: string;
+  barCountry?: string;
+  barSlug?: string;
   suggestions?: WaiterSuggestionsState;
 };
 
@@ -102,7 +104,10 @@ async function sendWaiterSuggestionsPage(
     const price = item.price && item.currency
       ? ` — ${item.price} ${item.currency}`
       : "";
-    const tag = item.reason ? ` (${t(ctx.locale, `bars.waiter.suggestions.reason.${item.reason}`, { default: item.reason })})` : "";
+    const reasonLabel = item.reason
+      ? t(ctx.locale, `bars.waiter.suggestions.reason.${item.reason}`)
+      : "";
+    const tag = reasonLabel ? ` (${reasonLabel})` : "";
     return `${numberLabel(idx)} ${item.name}${tag}${price}`;
   });
   const instructions = t(ctx.locale, "bars.waiter.suggestions.instructions");
@@ -131,7 +136,7 @@ async function sendWaiterSuggestionsPage(
     });
   }
   buttons.push({
-    id: `bar_resume::${session.barId}`,
+    id: IDS.BAR_VIEW_MENU,
     title: t(ctx.locale, "bars.buttons.view_menu"),
   });
   buttons.push({
@@ -158,6 +163,9 @@ async function requestWaiterSuggestions(
       metadata: { venue: session.barId },
     }),
   });
+  if (!res.ok) {
+    return { items: [], message: undefined };
+  }
   const data = await res.json().catch(() => ({}));
   const items = normalizeSuggestionPayload(data?.suggestions ?? data?.items ?? data);
   const message = typeof data?.message === "string" ? data.message : undefined;
@@ -195,6 +203,12 @@ export async function startBarWaiterChat(
   const barName = typeof detail?.barName === "string"
     ? detail.barName
     : t(ctx.locale, "bars.menu.unknown_name");
+  const barCountry = typeof detail?.barCountry === "string"
+    ? detail.barCountry
+    : undefined;
+  const barSlug = typeof detail?.barSlug === "string"
+    ? detail.barSlug
+    : undefined;
   if (!barId) {
     await sendText(
       ctx.from,
@@ -226,6 +240,8 @@ export async function startBarWaiterChat(
       barId,
       barName,
       language: ctx.locale,
+      barCountry,
+      barSlug,
     };
 
     if (!session.conversationId) {
@@ -240,7 +256,7 @@ export async function startBarWaiterChat(
 
     const quickActionsBody = `🤖 *${barName}*\n\n${welcomeMessage}\n\n${t(ctx.locale, "bars.waiter.quick_actions")}`;
     const quickButtons: ButtonSpec[] = [
-      { id: `bar_resume::${barId}`, title: t(ctx.locale, "bars.buttons.view_menu") },
+      { id: IDS.BAR_VIEW_MENU, title: t(ctx.locale, "bars.buttons.view_menu") },
       { id: IDS.WAITER_SUGGESTIONS, title: t(ctx.locale, "bars.waiter.buttons.suggestions") },
       { id: IDS.WAITER_VIEW_PREFERENCES, title: t(ctx.locale, "bars.waiter.buttons.view_prefs") },
     ];

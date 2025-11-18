@@ -8,7 +8,7 @@ import { t } from "../../i18n/translator.ts";
 export type AddNewBusinessState = {
   stage: 'name' | 'location' | 'category' | 'confirm';
   name?: string;
-  location?: string;
+  coords?: { lat: number; lng: number };
   category?: string;
 };
 
@@ -74,42 +74,61 @@ export async function handleAddNewBusinessText(
 
   // Location stage
   if (state.stage === 'location') {
-    const name = state.name!;
-    await setState(ctx.supabase, ctx.profileId, {
-      key: 'business_add_new',
-      data: { stage: 'category', name, location: text },
-    });
-
-    // Show category picker as list
-    const rows = Object.entries(CATEGORY_DEFS).map(([slug, def]) => ({
-      id: `BIZCAT::${slug}`,
-      title: t(ctx.locale, def.key),
-      description: undefined,
-    }));
-    await sendListMessage(
+    // Location must be shared via WhatsApp Location (map pin)
+    await sendButtonsMessage(
       ctx,
-      {
-        title: t(ctx.locale, "business.add_new.category_title"),
-        body: t(ctx.locale, "business.add_new.category_body", {
-          name,
-          location: text,
-        }),
-        sectionTitle: t(ctx.locale, "business.add_new.category_section"),
-        rows: [
-          ...rows,
-          {
-            id: IDS.BACK_MENU,
-            title: t(ctx.locale, "common.menu_back"),
-          },
-        ],
-        buttonText: t(ctx.locale, 'common.buttons.choose'),
-      },
-      { emoji: '🏢' },
+      t(ctx.locale, "business.add_new.prompt_location"),
+      [{ id: IDS.BACK_MENU, title: t(ctx.locale, 'common.buttons.cancel') }],
     );
     return true;
   }
 
   return false;
+}
+
+// Handle WhatsApp location for the Add New Business flow
+export async function handleAddNewBusinessLocation(
+  ctx: RouterContext,
+  state: AddNewBusinessState,
+  coords: { lat: number; lng: number },
+): Promise<boolean> {
+  if (!ctx.profileId) return false;
+  if (state.stage !== 'location' || !state.name) return false;
+
+  const name = state.name;
+  // Advance to category selection with coords stored
+  await setState(ctx.supabase, ctx.profileId, {
+    key: 'business_add_new',
+    data: { stage: 'category', name, coords },
+  });
+
+  // Show category picker as list
+  const rows = Object.entries(CATEGORY_DEFS).map(([slug, def]) => ({
+    id: `BIZCAT::${slug}`,
+    title: t(ctx.locale, def.key),
+    description: undefined,
+  }));
+  await sendListMessage(
+    ctx,
+    {
+      title: t(ctx.locale, "business.add_new.category_title"),
+      body: t(ctx.locale, "business.add_new.category_body", {
+        name,
+        location: `${coords.lat.toFixed(5)}, ${coords.lng.toFixed(5)}`,
+      }),
+      sectionTitle: t(ctx.locale, "business.add_new.category_section"),
+      rows: [
+        ...rows,
+        {
+          id: IDS.BACK_MENU,
+          title: t(ctx.locale, "common.menu_back"),
+        },
+      ],
+      buttonText: t(ctx.locale, 'common.buttons.choose'),
+    },
+    { emoji: '🏢' },
+  );
+  return true;
 }
 
 export async function handleAddNewBusinessSelect(
@@ -121,7 +140,7 @@ export async function handleAddNewBusinessSelect(
   if (!id.startsWith('BIZCAT::')) return false;
   const category = id.split('::')[1];
   const name = state.name!;
-  const location = state.location!;
+  const coords = state.coords!;
   const def = CATEGORY_DEFS[category] ?? {
     tag: "Business",
     key: "business.add_new.category.generic",
@@ -132,7 +151,8 @@ export async function handleAddNewBusinessSelect(
     .from('business')
     .insert({
       name,
-      location_text: location,
+      latitude: coords.lat,
+      longitude: coords.lng,
       category_name: def.tag,
       owner_user_id: ctx.profileId,
       owner_whatsapp: ctx.from,
@@ -174,7 +194,7 @@ export async function handleAddNewBusinessSelect(
       { id: IDS.BACK_HOME, title: t(ctx.locale, "common.home_button") },
     ],
   );
-  await maybeCreateBarFromBusiness(ctx, data.id, name, location, category);
+  await maybeCreateBarFromBusiness(ctx, data.id, name, coords, category);
   await clearState(ctx.supabase, ctx.profileId);
   await logStructuredEvent('BUSINESS_ADDED_NEW', { profile_id: ctx.profileId, business_id: data.id });
   return true;
@@ -184,7 +204,7 @@ async function maybeCreateBarFromBusiness(
   ctx: RouterContext,
   businessId: string,
   name: string,
-  location: string,
+  coords: { lat: number; lng: number },
   category: string,
 ) {
   if (category !== 'bar_restaurant') return;
@@ -195,7 +215,9 @@ async function maybeCreateBarFromBusiness(
       .insert({
         name,
         slug,
-        location_text: location || null,
+        location_text: null,
+        latitude: coords.lat,
+        longitude: coords.lng,
         country: 'Rwanda',
         whatsapp_number: ctx.from,
         is_active: true,

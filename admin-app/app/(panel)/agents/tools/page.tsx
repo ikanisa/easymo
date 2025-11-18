@@ -55,7 +55,7 @@ export default function AgentToolsPage() {
     let parsed: Record<string, unknown>;
     try {
       parsed = JSON.parse(payloadDraft || "{}");
-    } catch (error) {
+    } catch {
       pushToast("Payload must be valid JSON", "error");
       return;
     }
