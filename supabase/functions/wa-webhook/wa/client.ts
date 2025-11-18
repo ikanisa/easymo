@@ -70,63 +70,21 @@ export async function sendText(to: string, body: string): Promise<void> {
   });
 }
 
-type WhatsAppButtonSpec = {
-  id?: string;
-  title: string;
-  url?: string;
-  phoneNumber?: string;
-  kind?: "reply" | "url" | "call";
-};
-
-function resolveButtonKind(
-  button: WhatsAppButtonSpec,
-): "reply" | "url" | "call" {
-  if (button.kind === "url" || button.url) return "url";
-  if (button.kind === "call" || button.phoneNumber) return "call";
-  return "reply";
-}
-
 export async function sendButtons(
   to: string,
   body: string,
-  buttons: WhatsAppButtonSpec[],
+  buttons: Array<{ id: string; title: string }>,
 ): Promise<void> {
   if ((Deno.env.get("LOG_LEVEL") ?? "").toLowerCase() === "debug") {
     console.debug("wa.payload.buttons_preview", {
       bodyPreview: body?.slice(0, 40),
       count: buttons?.length ?? 0,
       buttons: buttons.slice(0, 3).map((b) => ({
-        id: b.id ?? null,
+        id: b.id,
         title: b.title.slice(0, 20),
-        kind: resolveButtonKind(b),
       })),
     });
   }
-  const normalized = buttons.slice(0, 3).map((btn, idx) => {
-    const title = safeButtonTitle(btn.title);
-    const kind = resolveButtonKind(btn);
-    if (kind === "url" && btn.url) {
-      return {
-        type: "url",
-        url: btn.url,
-        title,
-      };
-    }
-    if (kind === "call" && btn.phoneNumber) {
-      return {
-        type: "phone_number",
-        phone_number: btn.phoneNumber,
-        title,
-      };
-    }
-    return {
-      type: "reply",
-      reply: {
-        id: btn.id ?? `btn_${idx}_${Date.now()}`,
-        title,
-      },
-    };
-  });
   await post({
     messaging_product: "whatsapp",
     to,
@@ -135,7 +93,10 @@ export async function sendButtons(
       type: "button",
       body: { text: body.slice(0, 1024) },
       action: {
-        buttons: normalized,
+        buttons: buttons.slice(0, 3).map((btn) => ({
+          type: "reply",
+          reply: { id: btn.id, title: safeButtonTitle(btn.title) },
+        })),
       },
     },
   });
@@ -147,19 +108,36 @@ export async function sendList(
     title: string;
     body: string;
     buttonText?: string;
-    sectionTitle: string;
-    rows: Array<{ id: string; title: string; description?: string }>;
+    sectionTitle?: string;
+    rows?: Array<{ id: string; title: string; description?: string }>;
+    sections?: Array<{
+      title: string;
+      rows: Array<{ id: string; title: string; description?: string }>;
+    }>;
   },
 ): Promise<void> {
   const headerText = safeHeaderText(opts.title ?? "", WA_LIMITS_CONST.HEADER_TEXT);
-  const sectionTitle = safeHeaderText(opts.sectionTitle ?? "", WA_LIMITS_CONST.SECTION_TITLE) ||
-    "Options";
+  const baseSectionTitle = safeHeaderText(
+    opts.sectionTitle ?? "",
+    WA_LIMITS_CONST.SECTION_TITLE,
+  ) || "Options";
   const bodyText = (opts.body ?? "").slice(0, WA_LIMITS_CONST.BODY).trim();
   const buttonText = safeButtonTitle(opts.buttonText ?? "Choose");
-  const rows = opts.rows.slice(0, WA_LIMITS_CONST.MAX_ROWS_PER_SECTION).map((row) => ({
-    id: row.id,
-    title: safeRowTitle(row.title),
-    description: row.description ? safeRowDesc(row.description) : undefined,
+  const sectionsInput = Array.isArray(opts.sections) && opts.sections.length
+    ? opts.sections
+    : [{
+      title: baseSectionTitle,
+      rows: opts.rows ?? [],
+    }];
+  const sections = sectionsInput.map((section) => ({
+    title: safeHeaderText(section.title ?? "", WA_LIMITS_CONST.SECTION_TITLE) ||
+      baseSectionTitle,
+    rows: (section.rows ?? []).slice(0, WA_LIMITS_CONST.MAX_ROWS_PER_SECTION)
+      .map((row) => ({
+        id: row.id,
+        title: safeRowTitle(row.title),
+        description: row.description ? safeRowDesc(row.description) : undefined,
+      })),
   }));
 
   // Validate and optionally preview payload
@@ -167,8 +145,7 @@ export async function sendList(
     title: headerText,
     body: bodyText,
     buttonText,
-    sectionTitle,
-    rows,
+    sections,
   });
   if (issues.length) console.warn("wa_client.validate_warn", { issues });
   if ((Deno.env.get("LOG_LEVEL") ?? "").toLowerCase() === "debug") {
@@ -178,8 +155,7 @@ export async function sendList(
         title: headerText,
         body: bodyText,
         buttonText,
-        sectionTitle,
-        rows,
+        sections,
       }),
     );
   }
@@ -196,13 +172,7 @@ export async function sendList(
       body: { text: bodyText },
       action: {
         button: buttonText,
-        sections: [
-          {
-            // WhatsApp constraint: section title max 24 chars
-            title: sectionTitle,
-            rows,
-          },
-        ],
+        sections,
       },
     },
   });

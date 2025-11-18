@@ -81,6 +81,11 @@ export async function startRestaurantManager(
       description: t(ctx.locale, "restaurant.menu.view_desc"),
     },
     {
+      id: IDS.RESTAURANT_EDIT_MENU,
+      title: t(ctx.locale, "restaurant.menu.edit_title") ?? "Edit menu",
+      description: t(ctx.locale, "restaurant.menu.edit_desc") ?? "Add, rename, price, toggle, delete",
+    },
+    {
       id: "restaurant_upload_menu",
       title: t(ctx.locale, "restaurant.menu.upload_title"),
       description: t(ctx.locale, "restaurant.menu.upload_desc"),
@@ -123,6 +128,8 @@ export async function handleRestaurantManagerAction(
   switch (actionId) {
     case "restaurant_view_menu":
       return await showCurrentMenu(ctx, state);
+    case IDS.RESTAURANT_EDIT_MENU:
+      return await startMenuEditor(ctx, state);
     case "restaurant_upload_menu":
       return await promptMenuUpload(ctx, state);
     case "restaurant_view_orders":
@@ -268,6 +275,193 @@ async function showCurrentMenu(
   });
 
   return true;
+}
+
+// Menu editor entry
+async function startMenuEditor(ctx: RouterContext, state: RestaurantManagerState): Promise<boolean> {
+  if (!state.barId) return false;
+  await setState(ctx.supabase, ctx.profileId!, { key: "restaurant_edit", data: { barId: state.barId } });
+  await sendListMessage(
+    ctx,
+    {
+      title: "Menu editor",
+      body: "Choose an action",
+      sectionTitle: "Actions",
+      rows: [
+        { id: IDS.RESTAURANT_ADD_ITEM, title: "Add item", description: "Name | Category | Price | Currency" },
+        { id: IDS.RESTAURANT_RENAME_ITEM, title: "Rename item", description: "Pick an item to rename" },
+        { id: IDS.RESTAURANT_CHANGE_PRICE, title: "Change price", description: "Pick an item to price" },
+        { id: IDS.RESTAURANT_TOGGLE_ITEM, title: "Toggle availability", description: "Enable/disable item" },
+        { id: IDS.RESTAURANT_DELETE_ITEM, title: "Delete item", description: "Soft delete (unavailable)" },
+        { id: IDS.BACK_MENU, title: t(ctx.locale, "common.menu_back") },
+      ],
+      buttonText: "Choose",
+    },
+    { emoji: "📝" },
+  );
+  return true;
+}
+
+// Helpers for item list selection
+async function listMenuItems(
+  ctx: RouterContext,
+  barId: string,
+  mapId: (id: string) => string,
+  title = "Pick an item",
+): Promise<boolean> {
+  const { data, error } = await ctx.supabase
+    .from("restaurant_menu_items")
+    .select("id, name, category_name, price, currency, is_available")
+    .eq("bar_id", barId)
+    .order("category_name", { ascending: true, nullsFirst: true })
+    .order("name")
+    .limit(30);
+  if (error) {
+    console.error("restaurant.items_list_fail", error);
+    await sendButtonsMessage(ctx, "⚠️ Failed to load items.", homeOnly());
+    return true;
+  }
+  const rows = (data ?? []).map((it: any) => ({
+    id: mapId(it.id),
+    title: `${it.name} • ${it.price} ${it.currency}`,
+    description: it.category_name ? `${it.category_name}${it.is_available ? '' : ' • unavailable'}` : (it.is_available ? '' : 'unavailable'),
+  }));
+  rows.push({ id: IDS.RESTAURANT_EDIT_MENU, title: "← Back", description: "Return to editor" });
+  await sendListMessage(
+    ctx,
+    { title, body: "", sectionTitle: "Items", rows, buttonText: "Select" },
+  );
+  return true;
+}
+
+export async function handleRestaurantEditAction(
+  ctx: RouterContext,
+  state: { barId?: string; action?: string; itemId?: string; stage?: string },
+  actionId: string,
+): Promise<boolean> {
+  if (!ctx.profileId || !state.barId) return false;
+  const setEditState = async (patch: Record<string, unknown>) =>
+    await setState(ctx.supabase, ctx.profileId!, { key: "restaurant_edit", data: { ...state, ...patch } });
+
+  if (actionId === IDS.RESTAURANT_ADD_ITEM) {
+    await setEditState({ stage: "awaiting_add" });
+    await sendButtonsMessage(
+      ctx,
+      "Send: Name | Category | Price | Currency (e.g., Brochette | Grill | 2500 | RWF)",
+      homeOnly(),
+    );
+    return true;
+  }
+  if (actionId === IDS.RESTAURANT_RENAME_ITEM) {
+    return await listMenuItems(ctx, state.barId, (id) => `re_rename::${id}`, "Pick item to rename");
+  }
+  if (actionId === IDS.RESTAURANT_CHANGE_PRICE) {
+    return await listMenuItems(ctx, state.barId, (id) => `re_price::${id}`, "Pick item to reprice");
+  }
+  if (actionId === IDS.RESTAURANT_TOGGLE_ITEM) {
+    return await listMenuItems(ctx, state.barId, (id) => `re_toggle::${id}`, "Pick item to toggle");
+  }
+  if (actionId === IDS.RESTAURANT_DELETE_ITEM) {
+    return await listMenuItems(ctx, state.barId, (id) => `re_delete::${id}`, "Pick item to delete");
+  }
+
+  // Selection handlers
+  if (actionId.startsWith("re_rename::")) {
+    const itemId = actionId.slice("re_rename::".length);
+    await setEditState({ stage: "awaiting_rename", itemId });
+    await sendButtonsMessage(ctx, "Send the new name", homeOnly());
+    return true;
+  }
+  if (actionId.startsWith("re_price::")) {
+    const itemId = actionId.slice("re_price::".length);
+    await setEditState({ stage: "awaiting_price", itemId });
+    await sendButtonsMessage(ctx, "Send the new price (e.g., 2500 or 2500 RWF)", homeOnly());
+    return true;
+  }
+  if (actionId.startsWith("re_toggle::")) {
+    const itemId = actionId.slice("re_toggle::".length);
+    const { data } = await ctx.supabase
+      .from("restaurant_menu_items")
+      .select("is_available")
+      .eq("id", itemId)
+      .maybeSingle();
+    const is_available = !(data?.is_available ?? true);
+    await ctx.supabase
+      .from("restaurant_menu_items")
+      .update({ is_available })
+      .eq("id", itemId);
+    await sendButtonsMessage(ctx, is_available ? "✅ Item enabled" : "✅ Item disabled", homeOnly());
+    return true;
+  }
+  if (actionId.startsWith("re_delete::")) {
+    const itemId = actionId.slice("re_delete::".length);
+    await ctx.supabase
+      .from("restaurant_menu_items")
+      .update({ is_available: false })
+      .eq("id", itemId);
+    await sendButtonsMessage(ctx, "🗑️ Item deleted (soft)", homeOnly());
+    return true;
+  }
+
+  return false;
+}
+
+export async function handleRestaurantEditText(
+  ctx: RouterContext,
+  body: string,
+  state: { barId?: string; stage?: string; itemId?: string },
+): Promise<boolean> {
+  if (!ctx.profileId || !state.barId) return false;
+  const items = ctx.supabase.from("restaurant_menu_items");
+  const finish = async (message: string) => {
+    await sendButtonsMessage(ctx, message, homeOnly());
+    await setState(ctx.supabase, ctx.profileId!, { key: "restaurant_edit", data: { barId: state.barId } });
+  };
+  try {
+    if (state.stage === "awaiting_add") {
+      const parts = body.split("|").map((s) => s.trim()).filter(Boolean);
+      if (parts.length < 3) {
+        await sendButtonsMessage(ctx, "Format: Name | Category | Price | Currency", homeOnly());
+        return true;
+      }
+      const [name, category_name, priceRaw, currencyRaw] = [parts[0], parts[1], parts[2], parts[3] ?? "RWF"];
+      const price = Number(String(priceRaw).replace(/[^0-9.]/g, ""));
+      const currency = String(currencyRaw || "RWF").toUpperCase().slice(0, 5);
+      if (!name || !category_name || !Number.isFinite(price)) {
+        await sendButtonsMessage(ctx, "Invalid values. Example: Brochette | Grill | 2500 | RWF", homeOnly());
+        return true;
+      }
+      const { error } = await items.insert({ bar_id: state.barId, name, category_name, price, currency, is_available: true });
+      if (error) throw error;
+      await finish(`✅ Added: ${name} - ${price} ${currency}`);
+      return true;
+    }
+    if (state.stage === "awaiting_rename" && state.itemId) {
+      const name = body.trim().slice(1, 0) ? body.trim().slice(0, 120) : body.trim();
+      const { error } = await items.update({ name }).eq("id", state.itemId);
+      if (error) throw error;
+      await finish("✅ Renamed.");
+      return true;
+    }
+    if (state.stage === "awaiting_price" && state.itemId) {
+      const match = body.trim().match(/([0-9][0-9.,]*)\s*([A-Za-z]{3,5})?/);
+      if (!match) {
+        await sendButtonsMessage(ctx, "Format: 2500 or 2500 RWF", homeOnly());
+        return true;
+      }
+      const price = Number(match[1].replace(/[^0-9.]/g, ""));
+      const currency = (match[2] ?? "RWF").toUpperCase().slice(0, 5);
+      const { error } = await items.update({ price, currency }).eq("id", state.itemId);
+      if (error) throw error;
+      await finish(`✅ Price updated: ${price} ${currency}`);
+      return true;
+    }
+  } catch (err) {
+    console.error("restaurant.edit_text_fail", err);
+    await sendButtonsMessage(ctx, "⚠️ Failed to update.", homeOnly());
+    return true;
+  }
+  return false;
 }
 
 // Prompt for menu upload

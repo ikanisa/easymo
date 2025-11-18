@@ -13,6 +13,7 @@ import {
 export const MENU_ORDER_BROWSER_STATE = "menu_order_browser";
 export const MENU_ORDER_ACTIONS_STATE = "menu_order_actions";
 export const MENU_ITEM_PREFIX = "menu_item::";
+export const MENU_LIST_MORE = "menu_list_more";
 
 export type MenuOrderItem = {
   id: string;
@@ -38,6 +39,7 @@ export type MenuOrderSession = {
   contactNumbers: string[];
   menuItems: MenuOrderItem[];
   selections: MenuOrderSelection[];
+  page?: number;
 };
 
 const MAX_MENU_ROWS = 9; // WhatsApp limit (9 items + back row)
@@ -59,7 +61,7 @@ export async function startMenuOrderSession(
     );
     return true;
   }
-  await showMenuList(ctx, normalized);
+  await showMenuList(ctx, { ...normalized, page: normalized.page ?? 0 });
   return true;
 }
 
@@ -87,6 +89,7 @@ export async function handleMenuItemSelection(
         category: item.category ?? undefined,
       },
     ],
+    page: session.page ?? 0,
   };
   await setState(ctx.supabase, ctx.profileId, {
     key: MENU_ORDER_ACTIONS_STATE,
@@ -127,7 +130,7 @@ export async function handleMenuOrderAction(
   if (!ctx.profileId) return false;
   switch (actionId) {
     case IDS.MENU_ORDER_ADD:
-      await showMenuList(ctx, session);
+      await showMenuList(ctx, { ...session, page: session.page ?? 0 });
       return true;
     case IDS.MENU_ORDER_VIEW: {
       if (!session.selections.length) {
@@ -170,7 +173,22 @@ async function showMenuList(
   session: MenuOrderSession,
 ): Promise<void> {
   if (!ctx.profileId) return;
-  const rows = session.menuItems.slice(0, MAX_MENU_ROWS).map((item) => ({
+  const totalItems = session.menuItems.length;
+  if (!totalItems) {
+    await sendText(
+      ctx.from,
+      t(ctx.locale, "menu.order.menu_empty", { vendor: session.vendorName }),
+    );
+    return;
+  }
+  const totalPages = Math.max(1, Math.ceil(totalItems / MAX_MENU_ROWS));
+  const currentPage = Math.min(
+    Math.max(session.page ?? 0, 0),
+    totalPages - 1,
+  );
+  const startIdx = currentPage * MAX_MENU_ROWS;
+  const endIdx = Math.min(startIdx + MAX_MENU_ROWS, totalItems);
+  const menuRowsBase = session.menuItems.slice(startIdx, endIdx).map((item) => ({
     id: `${MENU_ITEM_PREFIX}${item.id}`,
     // WhatsApp UI requirement:
     //  - Row title ("header") must be the item name (no markdown, <= 24 chars)
@@ -178,35 +196,90 @@ async function showMenuList(
     title: safeRowTitle(stripMarkdown(item.name || "")),
     description: safeRowDesc(buildMenuRowDescription(ctx.locale, item)),
   }));
-  rows.push({
-    id: IDS.BACK_MENU,
-    title: t(ctx.locale, "common.menu_back"),
-    description: t(ctx.locale, "common.back_to_menu.description"),
-  });
+  const sessionWithPage: MenuOrderSession = {
+    ...session,
+    page: currentPage,
+  };
   await setState(ctx.supabase, ctx.profileId, {
     key: MENU_ORDER_BROWSER_STATE,
-    data: session,
+    data: sessionWithPage,
   });
-  const truncated = session.menuItems.length > MAX_MENU_ROWS
-    ? t(ctx.locale, "menu.order.list.truncated", {
-      count: String(session.menuItems.length - MAX_MENU_ROWS),
+  const pageInfo = totalPages > 1
+    ? t(ctx.locale, "menu.order.list.page_info", {
+      page: String(currentPage + 1),
+      total: String(totalPages),
+      from: String(startIdx + 1),
+      to: String(endIdx),
+      total_items: String(totalItems),
     })
     : "";
+  const bodyText = [t(ctx.locale, "menu.order.list.body", {
+    vendor: session.vendorName,
+  })];
+  if (pageInfo) bodyText.push(pageInfo);
+  const menuRows = [...menuRowsBase];
+  if (currentPage < totalPages - 1) {
+    menuRows.push({
+      id: MENU_LIST_MORE,
+      title: t(ctx.locale, "menu.order.list.more"),
+      description: t(ctx.locale, "menu.order.list.more_desc"),
+    });
+  }
+  const actionRows = [{
+    id: IDS.BACK_HOME,
+    title: t(ctx.locale, "common.home_button"),
+    description: t(ctx.locale, "common.back_to_menu.description"),
+  }];
+  const sections = [
+    {
+      title: t(ctx.locale, "menu.order.list.section"),
+      rows: menuRows,
+    },
+    {
+      title: t(ctx.locale, "menu.order.list.actions"),
+      rows: actionRows,
+    },
+  ];
   await sendListMessage(
     ctx,
     {
       title: t(ctx.locale, "menu.order.list.title", {
         vendor: session.vendorName,
       }),
-      body: `${t(ctx.locale, "menu.order.list.body", {
-        vendor: session.vendorName,
-      })}${truncated ? `\n\n${truncated}` : ""}`,
+      body: bodyText.join("\n\n"),
       sectionTitle: t(ctx.locale, "menu.order.list.section"),
-      rows,
+      rows: menuRows,
+      sections,
       buttonText: t(ctx.locale, "menu.order.list.button"),
     },
     { emoji: "🍽️" },
   );
+}
+
+export async function handleMenuPagination(
+  ctx: RouterContext,
+  session: MenuOrderSession,
+  direction: "next" | "prev",
+): Promise<boolean> {
+  if (!ctx.profileId) return false;
+  const totalItems = session.menuItems.length;
+  if (!totalItems) return false;
+  const totalPages = Math.max(1, Math.ceil(totalItems / MAX_MENU_ROWS));
+  const currentPage = Math.min(
+    Math.max(session.page ?? 0, 0),
+    totalPages - 1,
+  );
+  const delta = direction === "next" ? 1 : -1;
+  const targetPage = Math.min(
+    Math.max(currentPage + delta, 0),
+    totalPages - 1,
+  );
+  if (targetPage === currentPage) {
+    await showMenuList(ctx, { ...session, page: currentPage });
+    return true;
+  }
+  await showMenuList(ctx, { ...session, page: targetPage });
+  return true;
 }
 
 async function finalizeOrder(

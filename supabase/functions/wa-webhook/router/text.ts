@@ -171,6 +171,18 @@ export async function handleText(
     return false;
   }
   
+  // Handle business edit text fields
+  if (state.key === "business_edit") {
+    const { handleBusinessEditText } = await import("../domains/business/edit.ts");
+    return await handleBusinessEditText(ctx, body, (state.data ?? {}) as any);
+  }
+
+  // Handle restaurant menu editor text
+  if (state.key === "restaurant_edit") {
+    const { handleRestaurantEditText } = await import("../domains/vendor/restaurant.ts");
+    return await handleRestaurantEditText(ctx, body, (state.data ?? {}) as any);
+  }
+  
   // Handle property find duration input (for short-term)
   if (state.key === "property_find_duration") {
     const stateData = state.data as {

@@ -9,11 +9,8 @@ export type RouterContext = {
 };
 
 export type ButtonSpec = {
-  id?: string;
+  id: string;
   title: string;
-  url?: string;
-  phoneNumber?: string;
-  kind?: "reply" | "url" | "call";
 };
 
 export type FlowExchangeRequest = {

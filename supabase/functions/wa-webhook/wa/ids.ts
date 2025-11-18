@@ -117,5 +117,18 @@ export const IDS = {
   BUSINESS_DELETE_CONFIRM: "business_delete_confirm",
   BUSINESS_MANAGE_MENU: "business_manage_menu",
   BUSINESS_VIEW_ORDERS: "business_view_orders",
+  // Restaurant/bar menu management actions
+  RESTAURANT_EDIT_MENU: "restaurant_edit_menu",
+  RESTAURANT_ADD_ITEM: "restaurant_add_item",
+  RESTAURANT_RENAME_ITEM: "restaurant_rename_item",
+  RESTAURANT_CHANGE_PRICE: "restaurant_change_price",
+  RESTAURANT_TOGGLE_ITEM: "restaurant_toggle_item",
+  RESTAURANT_DELETE_ITEM: "restaurant_delete_item",
+  // Business edit details actions
+  BUSINESS_EDIT_NAME: "business_edit_name",
+  BUSINESS_EDIT_CATEGORY: "business_edit_category",
+  BUSINESS_EDIT_LOCATION: "business_edit_location",
+  BUSINESS_EDIT_SPECIALTIES: "business_edit_specialties",
+  BUSINESS_EDIT_PROMOTIONS: "business_edit_promotions",
   // Existing flows will add more IDs during implementation.
 } as const;

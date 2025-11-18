@@ -2,7 +2,6 @@ import type { ButtonSpec, RouterContext } from "../types.ts";
 import { sendButtons, sendList } from "../wa/client.ts";
 import { IDS } from "../wa/ids.ts";
 import { t } from "../i18n/translator.ts";
-import { ensureReferralLink } from "./share.ts";
 
 const HOME_BUTTON: ButtonSpec = { id: IDS.BACK_HOME, title: "🏠 Home" };
 
@@ -37,23 +36,13 @@ export async function sendButtonsMessage(
         ctx.profileId,
     );
     if (canAutoShare) {
-      const already = augmented.some((b) =>
-        b.id === IDS.SHARE_EASYMO || b.url?.includes("share") ||
-        b.kind === "url_share"
-      );
+      const already = augmented.some((b) => b.id === IDS.SHARE_EASYMO);
       if (!already && ctx.profileId) {
-        const share = await ensureReferralLink(ctx.supabase, ctx.profileId);
-        const inviteMessage = t(ctx.locale, "wallet.earn.share.prefill_message", {
-          link: share.waLink || share.shortLink,
-          code: share.code,
-        });
-        const shareUrl = `https://wa.me/?text=${encodeURIComponent(inviteMessage)}`;
+        // Use a plain reply button. The handler (IDS.SHARE_EASYMO) will send the share link.
         augmented.push({
           id: IDS.SHARE_EASYMO,
           title: t(ctx.locale, "common.buttons.share_easymo"),
-          url: shareUrl,
-          kind: "url",
-        });
+        } as ButtonSpec);
       }
     }
   } catch (err) {
@@ -96,16 +85,32 @@ export async function sendListMessage(
   list: {
     title: string;
     body: string;
-    sectionTitle: string;
+    sectionTitle?: string;
     rows: Array<{ id: string; title: string; description?: string }>;
     buttonText?: string;
+    sections?: Array<{
+      title: string;
+      rows: Array<{ id: string; title: string; description?: string }>;
+    }>;
   },
   options: { emoji?: string } = {},
 ): Promise<void> {
+  const baseSectionTitle = list.sectionTitle ||
+    t(ctx.locale, "common.buttons.select");
+  const sections = Array.isArray(list.sections) && list.sections.length
+    ? list.sections.map((section) => ({
+      title: section.title || baseSectionTitle,
+      rows: section.rows,
+    }))
+    : [{
+      title: baseSectionTitle,
+      rows: list.rows,
+    }];
   await sendList(ctx.from, {
     ...list,
     body: coerceBody(list.body, options.emoji ?? ""),
     buttonText: list.buttonText ?? t(ctx.locale, "common.buttons.select"),
+    sections,
   });
 }
 

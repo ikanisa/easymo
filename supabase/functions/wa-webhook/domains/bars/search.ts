@@ -16,6 +16,7 @@ import {
 } from "../orders/menu_order.ts";
 import { getState } from "../../state/store.ts";
 import { recordRecentActivity } from "../locations/recent.ts";
+import { sendText } from "../../wa/client.ts";
 
 type BarSummary = {
   id: string;
@@ -434,17 +435,7 @@ export async function startBarMenuOrder(
     try {
       console.log(JSON.stringify({ event: 'BAR_MENU_CONTACTS_RESULT', count: contacts?.length ?? 0 }));
     } catch {}
-    if (!contacts.length) {
-      await sendButtonsMessage(
-        ctx,
-        t(ctx.locale, "bars.menu.no_contacts", { name: barName }),
-        buildButtons(
-          { id: "bars_search_now", title: t(ctx.locale, "bars.buttons.search_again") },
-          { id: IDS.BACK_MENU, title: t(ctx.locale, "common.menu_back") },
-        ),
-      );
-      return true;
-    }
+    // If no contacts, proceed silently; order finalization will warn later.
 
     const session: MenuOrderSession = {
       vendorType: "bar",
@@ -612,7 +603,7 @@ async function fetchBarMenuItems(
   // Fallback: use shared Rwanda catalog mirrored into public.menu_items
   const { data: shared, error: sharedErr } = await ctx.supabase
     .from("menu_items")
-    .select("id, name, price, currency, description, category_name, category")
+    .select("id, name, price, currency, description, category_name")
     .eq("is_available", true)
     .or("metadata->>source.eq.mirror,metadata->>from.eq.restaurant_menu_items")
     .order("category_name", { ascending: true, nullsFirst: true })
@@ -625,7 +616,7 @@ async function fetchBarMenuItems(
   return (shared ?? []).map((item: any) => ({
     id: item.id,
     name: item.name,
-    category: item.category_name ?? item.category ?? undefined,
+    category: item.category_name ?? undefined,
     price: item.price,
     currency: item.currency ?? 'RWF',
     description: item.description ?? undefined,

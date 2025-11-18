@@ -117,8 +117,10 @@ import {
   MENU_ITEM_PREFIX,
   MENU_ORDER_BROWSER_STATE,
   MENU_ORDER_ACTIONS_STATE,
+  MENU_LIST_MORE,
   handleMenuItemSelection,
   handleMenuOrderAction,
+  handleMenuPagination,
   type MenuOrderSession,
 } from "../domains/orders/menu_order.ts";
 
@@ -238,6 +240,13 @@ export async function handleList(
       ctx,
       (state.data ?? {}) as MenuOrderSession,
       id,
+    );
+  }
+  if (state.key === MENU_ORDER_BROWSER_STATE && id === MENU_LIST_MORE) {
+    return await handleMenuPagination(
+      ctx,
+      (state.data ?? {}) as MenuOrderSession,
+      "next",
     );
   }
   if (state.key === "pharmacy_results") {
@@ -363,12 +372,24 @@ export async function handleList(
     return true;
   }
   
+  // Business edit flows
+  if (state.key === "business_edit") {
+    const { handleBusinessEditAction } = await import("../domains/business/edit.ts");
+    return await handleBusinessEditAction(ctx, (state.data ?? {}) as any, id);
+  }
+
   // Restaurant manager flows
   if (state.key === "restaurant_manager") {
     const { handleRestaurantManagerAction } = await import(
       "../domains/vendor/restaurant.ts"
     );
     return await handleRestaurantManagerAction(ctx, state.data ?? {}, id);
+  }
+
+  // Restaurant menu editor flows
+  if (state.key === "restaurant_edit") {
+    const { handleRestaurantEditAction } = await import("../domains/vendor/restaurant.ts");
+    return await handleRestaurantEditAction(ctx, (state.data ?? {}) as any, id);
   }
   
   if (id === IDS.BACK_HOME) {
@@ -658,13 +679,13 @@ async function handleHomeMenuSelection(
             state.data.businessName as string,
           );
         }
-        // Business edit - placeholder for future
-        await sendButtonsMessage(
+        // Business edit - launch edit menu
+        const { startBusinessEdit } = await import("../domains/business/edit.ts");
+        return await startBusinessEdit(
           ctx,
-          "Edit business details coming soon!",
-          buildButtons({ id: IDS.PROFILE_MANAGE_BUSINESSES, title: "← Back" }),
+          state.data.businessId as string,
+          state.data.businessName as string,
         );
-        return true;
       }
       // If called from the WhatsApp numbers list, start add flow
       if (
