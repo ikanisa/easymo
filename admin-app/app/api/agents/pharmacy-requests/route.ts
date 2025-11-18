@@ -96,7 +96,18 @@ export const GET = createHandler(
       );
     }
 
-    const rows = data ?? [];
+    type ReqRow = {
+      id: string;
+      customer_name?: string | null;
+      customer_phone?: string | null;
+      status?: string | null;
+      urgency?: string | null;
+      delivery_mode?: string | null;
+      notes?: string | null;
+      created_at?: string | null;
+      requested_items?: string[] | string | null;
+    };
+    const rows = (data ?? []) as ReqRow[];
     const total = count ?? rows.length;
     const hasMore = offset + rows.length < total;
     const quoteQuery = admin
@@ -109,35 +120,43 @@ export const GET = createHandler(
         rows.map((row) => row.id),
       );
 
+    type QuoteRow = {
+      request_id: string;
+      vendor_name?: string | null;
+      total_price?: number | null;
+      eta_minutes?: number | null;
+      stock_status?: string | null;
+    };
+
     const { data: quoteRows } = rows.length
       ? await quoteQuery
-      : { data: [] };
+      : { data: [] as QuoteRow[] };
 
-    const groupedQuotes = new Map<string, any[]>();
-    (quoteRows ?? []).forEach((quote) => {
+    const groupedQuotes = new Map<string, QuoteRow[]>();
+    (quoteRows ?? []).forEach((quote: QuoteRow) => {
       if (!groupedQuotes.has(quote.request_id)) {
         groupedQuotes.set(quote.request_id, []);
       }
       groupedQuotes.get(quote.request_id)!.push(quote);
     });
 
-    const requests = rows.map((row) => {
-      const quotes = groupedQuotes.get(row.id) ?? [];
+    const requests = rows.map((row: ReqRow) => {
+      const quotes = groupedQuotes.get(row.id) ?? [] as QuoteRow[];
       return {
         id: row.id,
         patient: row.customer_name ?? row.customer_phone ?? "Unknown patient",
         medications: Array.isArray(row.requested_items ?? [])
-          ? row.requested_items
-          : (row.requested_items ?? "")
+          ? (row.requested_items as string[])
+          : String(row.requested_items ?? "")
               .split(",")
-              .map((item: string) => item.trim())
+              .map((item) => item.trim())
               .filter(Boolean),
         status: row.status ?? "pending",
         urgency: row.urgency ?? "standard",
         deliveryMode: row.delivery_mode ?? "courier",
         notes: row.notes ?? null,
         createdAt: row.created_at ?? new Date().toISOString(),
-        quotes: quotes.map((quote) => ({
+        quotes: quotes.map((quote: QuoteRow) => ({
           vendor: quote.vendor_name,
           price: quote.total_price ?? null,
           etaMinutes: quote.eta_minutes ?? null,

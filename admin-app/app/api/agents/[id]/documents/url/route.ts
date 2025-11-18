@@ -21,9 +21,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       return NextResponse.json({ error: 'rate_limited_daily', limit: maxPerDay }, { status: 429 });
     }
   }
-  let body: any; try { body = await req.json(); } catch { return NextResponse.json({ error: 'invalid_json' }, { status: 400 }); }
-  const title = (body?.title ?? '').trim();
-  const url = (body?.url ?? '').trim();
+  let body: unknown; try { body = await req.json(); } catch { return NextResponse.json({ error: 'invalid_json' }, { status: 400 }); }
+  const obj = (body && typeof body === 'object' ? body as Record<string, unknown> : {});
+  const title = String(obj?.title ?? '').trim();
+  const url = String(obj?.url ?? '').trim();
   if (!url) return NextResponse.json({ error: 'url_required' }, { status: 400 });
   // Duplicate pre-check
   const { data: existing } = await admin

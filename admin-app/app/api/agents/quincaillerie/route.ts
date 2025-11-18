@@ -88,18 +88,29 @@ export const GET = createHandler(
       );
     }
 
-    const vendors = (data ?? []).map((row: any) => ({
+    type RpcVendorRow = {
+      id: string;
+      name?: string | null;
+      description?: string | null;
+      phone?: string | null;
+      verified?: boolean | null;
+      rating?: number | string | null;
+      distance?: number | string | null;
+      metadata?: Record<string, unknown> | null;
+      status?: string | null;
+    };
+    const vendors = ((data ?? []) as RpcVendorRow[]).map((row) => ({
       id: row.id,
       name: row.name ?? "Unnamed vendor",
       description: row.description ?? null,
       phone: row.phone ?? null,
       verified: Boolean(row.verified),
       rating:
-        typeof row.rating === "number" ? Number(row.rating) : row.rating ?? null,
+        typeof row.rating === "number" ? Number(row.rating) : (typeof row.rating === 'string' ? Number(row.rating) : row.rating ?? null),
       distanceKm:
         typeof row.distance === "number"
           ? Number(Number(row.distance).toFixed(2))
-          : null,
+          : (typeof row.distance === 'string' && Number.isFinite(Number(row.distance)) ? Number(Number(row.distance).toFixed(2)) : null),
       metadata: row.metadata ?? {},
       status: "active",
     }));

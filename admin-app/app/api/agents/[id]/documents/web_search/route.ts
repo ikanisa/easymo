@@ -3,16 +3,25 @@ import { getSupabaseAdminClient } from "@/lib/server/supabase-admin";
 
 type Provider = 'bing' | 'serpapi';
 
+type BingWebPage = { name?: string; url?: string };
+type BingResponse = { webPages?: { value?: BingWebPage[] } };
+
 async function searchBing(query: string, topN: number, apiKey: string) {
   const url = new URL('https://api.bing.microsoft.com/v7.0/search');
   url.searchParams.set('q', query);
   url.searchParams.set('count', String(Math.min(topN, 50)));
   const resp = await fetch(url.toString(), { headers: { 'Ocp-Apim-Subscription-Key': apiKey } });
   if (!resp.ok) throw new Error(`bing_failed:${resp.status}`);
-  const json = await resp.json();
+  const json = (await resp.json()) as BingResponse;
   const webPages = json?.webPages?.value ?? [];
-  return webPages.map((i: any) => ({ title: i?.name, url: i?.url })).slice(0, topN);
+  return webPages
+    .map((i) => ({ title: i?.name, url: String(i?.url ?? "") }))
+    .filter((i) => i.url)
+    .slice(0, topN);
 }
+
+type SerpOrganic = { title?: string; link?: string };
+type SerpResponse = { organic_results?: SerpOrganic[] };
 
 async function searchSerpApi(query: string, topN: number, apiKey: string) {
   const url = new URL('https://serpapi.com/search.json');
@@ -22,19 +31,24 @@ async function searchSerpApi(query: string, topN: number, apiKey: string) {
   url.searchParams.set('api_key', apiKey);
   const resp = await fetch(url.toString());
   if (!resp.ok) throw new Error(`serpapi_failed:${resp.status}`);
-  const json = await resp.json();
+  const json = (await resp.json()) as SerpResponse;
   const results = json?.organic_results ?? [];
-  return results.map((i: any) => ({ title: i?.title, url: i?.link })).slice(0, topN);
+  return results
+    .map((i) => ({ title: i?.title, url: String(i?.link ?? "") }))
+    .filter((i) => i.url)
+    .slice(0, topN);
 }
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const admin = getSupabaseAdminClient();
   if (!admin) return NextResponse.json({ error: "supabase_unavailable" }, { status: 503 });
   const { id } = await params;
-  let body: any; try { body = await req.json(); } catch { return NextResponse.json({ error: 'invalid_json' }, { status: 400 }); }
-  const query = String(body?.query || '').trim();
-  const topN = Math.max(1, Math.min(Number(body?.top_n ?? 5), 50));
-  const provider: Provider = (String(body?.provider || '').toLowerCase() as Provider) || (process.env.SEARCH_API_PROVIDER as Provider) || 'bing';
+  let body: unknown;
+  try { body = await req.json(); } catch { return NextResponse.json({ error: 'invalid_json' }, { status: 400 }); }
+  const obj = (body && typeof body === 'object' ? body as Record<string, unknown> : {});
+  const query = String(obj?.query ?? '').trim();
+  const topN = Math.max(1, Math.min(Number(obj?.top_n ?? 5), 50));
+  const provider: Provider = (String(obj?.provider ?? '').toLowerCase() as Provider) || (process.env.SEARCH_API_PROVIDER as Provider) || 'bing';
   if (!query) return NextResponse.json({ error: 'query_required' }, { status: 400 });
   const maxPerHour = Number(process.env.AGENT_DOCS_IMPORT_MAX_PER_HOUR || '0') || 0;
   const maxPerDay = Number(process.env.AGENT_DOCS_IMPORT_MAX_PER_DAY || '0') || 0;
@@ -73,8 +87,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     const uniqueUrlsAll = Array.from(new Set(urlsAll));
     const duplicatesBatch = urlsAll.length - uniqueUrlsAll.length;
     // DB duplicates
-    const { data: existingRows } = await admin.from('agent_documents').select('source_url').eq('agent_id', id).in('source_url', uniqueUrlsAll);
-    const existingSet = new Set((existingRows ?? []).map((r: any) => r.source_url));
+    const { data: existingRows } = await admin
+      .from('agent_documents')
+      .select('source_url')
+      .eq('agent_id', id)
+      .in('source_url', uniqueUrlsAll);
+    const existingSet = new Set<string>((existingRows ?? []).map((r: { source_url: string }) => r.source_url));
     const newUrls = uniqueUrlsAll.filter((u) => !existingSet.has(u));
     let cap = Number.isFinite(remaining as number) ? (remaining as number) : newUrls.length;
     if (maxPerRequest > 0) cap = Math.min(cap, maxPerRequest);
@@ -89,8 +107,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     const duplicatesDb = existingSet.size;
     const skippedCap = Math.max(0, newUrls.length - chosenUrls.length);
     return NextResponse.json({ imported, duplicates: duplicatesBatch + duplicatesDb, skipped: skippedCap, provider });
-  } catch (e: any) {
-    return NextResponse.json({ error: String(e?.message || e) }, { status: 502 });
+  } catch (e) {
+    return NextResponse.json({ error: e instanceof Error ? e.message : String(e) }, { status: 502 });
   }
 }
 

@@ -14,7 +14,16 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ id: st
     return NextResponse.json({ error }, { status: 400 });
   }
 
-  const summary = ((data as any[]) ?? []).find((row) => row.agent_id === id);
+  type SummaryRow = {
+    agent_id: string;
+    total_docs?: number | null;
+    ready_docs?: number | null;
+    json_chunks?: number | null;
+    vec_chunks?: number | null;
+  };
+
+  const rows = (Array.isArray(data) ? (data as SummaryRow[]) : []);
+  const summary = rows.find((row) => row.agent_id === id);
 
   if (summary) {
     return NextResponse.json({

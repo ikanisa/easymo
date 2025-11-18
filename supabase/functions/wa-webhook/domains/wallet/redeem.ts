@@ -139,27 +139,35 @@ export async function handleWalletRedeemConfirm(
     );
     return true;
   }
-  await logWalletAdjust({
-    actor: ctx.from,
-    action: "redeem_confirm",
-    cost: option.cost_tokens ?? 0,
-  });
-  const summary = [
-    t(ctx.locale, "wallet.redeem.requested", {
-      title: option.title ?? t(ctx.locale, "wallet.redeem.reward"),
-    }),
-    t(ctx.locale, "wallet.redeem.notify_once_ready"),
-  ].join("\n\n");
-  await sendButtonsMessage(
-    ctx,
-    summary,
-    [{ id: IDS.WALLET_REDEEM, title: "Done" }],
-  );
-  await setState(ctx.supabase, ctx.profileId, {
-    key: STATES.CONFIRM,
-    data: { option },
-  });
-  return true;
+  const cost = option.cost_tokens ?? 0;
+  try {
+    const { data, error } = await ctx.supabase.rpc('wallet_redeem_request', {
+      p_profile: ctx.profileId,
+      p_option_id: option.id,
+      p_idempotency_key: crypto.randomUUID(),
+    });
+    if (error) throw error;
+    const row = Array.isArray(data) ? data[0] : data;
+    const ok = !!row?.success;
+    await logWalletAdjust({ actor: ctx.from, action: ok ? 'redeem_debited' : 'redeem_failed', cost });
+    if (ok) {
+      const summary = [
+        t(ctx.locale, "wallet.redeem.requested", {
+          title: option.title ?? t(ctx.locale, "wallet.redeem.reward"),
+        }),
+        t(ctx.locale, "wallet.redeem.notify_once_ready"),
+      ].join("\n\n");
+      await sendButtonsMessage(ctx, summary, [{ id: IDS.WALLET_REDEEM, title: "Done" }]);
+    } else {
+      await sendButtonsMessage(ctx, t(ctx.locale, 'wallet.redeem.load_fail'), [{ id: IDS.WALLET_REDEEM, title: 'Back' }]);
+    }
+    await setState(ctx.supabase, ctx.profileId, { key: STATES.CONFIRM, data: { option } });
+    return true;
+  } catch (err) {
+    console.error('wallet.redeem_rpc_fail', err);
+    await sendButtonsMessage(ctx, t(ctx.locale, 'wallet.redeem.load_fail'), [{ id: IDS.WALLET_REDEEM, title: 'Back' }]);
+    return true;
+  }
 }
 
 function buildWalletNavRows(refreshId: string) {

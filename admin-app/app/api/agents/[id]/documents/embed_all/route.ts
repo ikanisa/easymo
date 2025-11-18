@@ -12,14 +12,15 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   } catch {
     // ignore, default false
   }
-  const sel = includeReady ? '*' : "*";
+  const sel = includeReady ? '*' : '*';
   const { data, error } = await admin
     .from('agent_documents')
     .select(sel)
     .eq('agent_id', id)
     .order('created_at', { ascending: true });
   if (error) return NextResponse.json({ error }, { status: 400 });
-  const docs = (data ?? []).filter((d: any) => includeReady || d.embedding_status !== 'ready');
+  type DocumentRow = { id: string; embedding_status?: string | null };
+  const docs = ((data ?? []) as DocumentRow[]).filter((d) => includeReady || d.embedding_status !== 'ready');
   let ok = 0, fail = 0;
   for (const d of docs) {
     try {

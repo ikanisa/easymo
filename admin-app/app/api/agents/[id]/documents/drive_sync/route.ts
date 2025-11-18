@@ -123,8 +123,9 @@ export async function POST(req: NextRequest, context: { params: Promise<{ id: st
   if (!admin) return NextResponse.json({ error: "supabase_unavailable" }, { status: 503 });
   const apiKey = process.env.GOOGLE_DRIVE_API_KEY;
   const saToken = await getServiceAccountToken();
-  let body: any; try { body = await req.json(); } catch { return NextResponse.json({ error: 'invalid_json' }, { status: 400 }); }
-  const folder = String(body?.folder || '').trim();
+  let body: unknown; try { body = await req.json(); } catch { return NextResponse.json({ error: 'invalid_json' }, { status: 400 }); }
+  const obj = (body && typeof body === 'object' ? body as Record<string, unknown> : {});
+  const folder = String(obj?.folder ?? '').trim();
   const folderId = parseFolderId(folder);
   if (!folderId) return NextResponse.json({ error: 'invalid_folder' }, { status: 400 });
   const pageSize = Math.min(Number(body?.page_size ?? 100), 1000);
@@ -141,12 +142,15 @@ export async function POST(req: NextRequest, context: { params: Promise<{ id: st
   let resp: Response;
   try {
     resp = await fetch(url.toString(), saToken ? { headers: { Authorization: `Bearer ${saToken}` } } : undefined);
-  } catch (e: any) {
-    return NextResponse.json({ error: String(e?.message || e) }, { status: 502 });
+  } catch (e) {
+    return NextResponse.json({ error: e instanceof Error ? e.message : String(e) }, { status: 502 });
   }
   if (!resp.ok) return NextResponse.json({ error: `drive_list_failed:${resp.status}` }, { status: 502 });
-  const json = await resp.json();
-  const files = Array.isArray(json?.files) ? json.files : [];
+  const json: unknown = await resp.json();
+  type DriveFile = { id?: string; name?: string; mimeType?: string; webViewLink?: string; webContentLink?: string };
+  const files: DriveFile[] = (json && typeof json === 'object' && Array.isArray((json as Record<string, unknown>).files))
+    ? ((json as Record<string, unknown>).files as DriveFile[])
+    : [];
   if (maxPerHour > 0) {
     const since = new Date(Date.now() - 60 * 60 * 1000).toISOString();
     const { count } = await admin.from('agent_documents').select('id', { count: 'exact', head: true }).eq('agent_id', id).gte('created_at', since);
@@ -163,19 +167,19 @@ export async function POST(req: NextRequest, context: { params: Promise<{ id: st
   }
   if (maxPerRequest > 0 && files.length > maxPerRequest) files.length = maxPerRequest;
   if (!files.length) return NextResponse.json({ imported: 0, reason: 'no_files' }, { status: 200 });
-  const urlsAll: string[] = files.map((f: any) => {
+  const urlsAll: string[] = files.map((f) => {
     const directUrl = typeof f?.webViewLink === "string" ? f.webViewLink : null;
-    return directUrl ?? `https://drive.google.com/file/d/${f?.id}/view`;
+    return directUrl ?? `https://drive.google.com/file/d/${f?.id ?? ''}/view`;
   });
   const uniqueUrlsAll = Array.from(new Set<string>(urlsAll));
   const duplicatesBatch = urlsAll.length - uniqueUrlsAll.length;
   const { data: existingRows } = await admin.from('agent_documents').select('source_url').eq('agent_id', id).in('source_url', uniqueUrlsAll);
-  const existingSet = new Set<string>((existingRows ?? []).map((r: any) => r.source_url));
+  const existingSet = new Set<string>((existingRows ?? []).map((r: { source_url: string }) => r.source_url));
   const newUrls: string[] = uniqueUrlsAll.filter((u) => !existingSet.has(u));
 
-  const mapByUrl = new Map<string, Record<string, unknown>>();
-  files.forEach((f: any) => {
-    const url = f?.webViewLink || `https://drive.google.com/file/d/${f?.id}/view`;
+  const mapByUrl = new Map<string, DriveFile>();
+  files.forEach((f) => {
+    const url = f?.webViewLink || `https://drive.google.com/file/d/${f?.id ?? ''}/view`;
     mapByUrl.set(url, f);
   });
   const rows = newUrls.map((u) => {

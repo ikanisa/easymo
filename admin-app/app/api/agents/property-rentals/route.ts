@@ -49,6 +49,15 @@ const fallbackProperties = [
 const DEFAULT_LAT = -1.94407;
 const DEFAULT_LNG = 30.061885;
 
+function toNumber(value: unknown) {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string") {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return null;
+}
+
 function fallback(message: string) {
   return jsonOk({
     properties: fallbackProperties,
@@ -100,14 +109,29 @@ export const GET = createHandler(
       );
     }
 
-    const properties = (data ?? []).map((row: any) => ({
+    type RpcRow = {
+      id: string;
+      owner_name?: string | null;
+      owner_id?: string | null;
+      rental_type?: string | null;
+      bedrooms?: number | string | null;
+      bathrooms?: number | string | null;
+      price?: number | string | null;
+      address?: string | null;
+      amenities?: string[] | null;
+      images?: string[] | null;
+      distance?: number | string | null;
+      available_from?: string | null;
+      status?: string | null;
+    };
+    const properties = ((data ?? []) as RpcRow[]).map((row) => ({
       id: row.id,
       owner: row.owner_name ?? row.owner_id ?? null,
       rentalType: row.rental_type ?? "long_term",
       bedrooms:
-        typeof row.bedrooms === "number" ? Number(row.bedrooms) : null,
+        typeof row.bedrooms === "number" ? Number(row.bedrooms) : toNumber(row.bedrooms),
       bathrooms:
-        typeof row.bathrooms === "number" ? Number(row.bathrooms) : null,
+        typeof row.bathrooms === "number" ? Number(row.bathrooms) : toNumber(row.bathrooms),
       price: row.price !== null ? Number(row.price) : null,
       address: row.address ?? "Unknown address",
       amenities: Array.isArray(row.amenities) ? row.amenities : [],
@@ -115,7 +139,7 @@ export const GET = createHandler(
       distanceKm:
         typeof row.distance === "number"
           ? Number(Number(row.distance).toFixed(2))
-          : null,
+          : toNumber(row.distance),
       availableFrom: row.available_from ?? null,
       status: row.status ?? "available",
     }));

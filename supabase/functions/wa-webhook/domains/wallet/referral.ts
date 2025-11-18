@@ -19,10 +19,11 @@ export async function applyReferralCodeFromMessage(
   const normalized = code.trim().toUpperCase();
   if (!normalized) return false;
   try {
-    const { data, error } = await ctx.supabase.rpc("referral_apply_code", {
+    const { data, error } = await ctx.supabase.rpc("referral_apply_code_v2", {
       _joiner_profile_id: ctx.profileId,
       _joiner_whatsapp: ctx.from,
       _code: normalized,
+      _idempotency_key: crypto.randomUUID(),
     });
     if (error) {
       console.error("referral.apply_fail", error);

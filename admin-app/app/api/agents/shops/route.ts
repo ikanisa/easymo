@@ -113,7 +113,7 @@ function serializeShopRow(row: AgentShopRow) {
   };
 }
 
-function scoreShop(shop: Pick<Shop, "rating" | "verified" | "totalReviews" | "updatedAt">) {
+function _scoreShop(shop: Pick<Shop, "rating" | "verified" | "totalReviews" | "updatedAt">) {
   const ratingComponent = ((shop.rating ?? 3) / 5) * 0.6;
   const verifiedBonus = shop.verified ? 0.2 : 0;
   const reviewComponent = Math.min(shop.totalReviews, 200) / 200 * 0.15;
@@ -124,7 +124,7 @@ function scoreShop(shop: Pick<Shop, "rating" | "verified" | "totalReviews" | "up
   return ratingComponent + verifiedBonus + reviewComponent + freshnessComponent;
 }
 
-function serializeMockShop(shop: Shop) {
+function _serializeMockShop(shop: Shop) {
   return {
     id: shop.id,
     name: shop.name,
