@@ -10,6 +10,12 @@ import { serve } from "$std/http/server.ts";
 import { logStructuredEvent, recordMetric, maskPII } from "../_shared/observability.ts";
 import { getServiceClient } from "shared/supabase.ts";
 import { getEnv, requireEnv } from "shared/env.ts";
+import {
+  getPaymentProviderAdapter,
+  type PaymentRequest as ProviderPaymentRequest,
+  type ProviderSecrets,
+  type MobileMoneyProviderId,
+} from "../../../services/agent-core/src/payments/index.ts";
 
 const supabase = getServiceClient();
 
@@ -127,79 +133,47 @@ async function createMoMoPayment(
       correlationId,
     });
 
+function buildProviderSecrets(providerId: MobileMoneyProviderId): ProviderSecrets {
+  if (providerId === 'orange') {
     return {
-      success: false,
-      error: `MoMo API error: ${response.status}`,
-    };
-  } catch (error) {
-    await logStructuredEvent("MOMO_REQUEST_ERROR", {
-      error: (error as Error).message,
-      referenceId,
-      correlationId,
-    });
-
-    return {
-      success: false,
-      error: (error as Error).message,
+      apiKey: requireEnv('ORANGE_MONEY_API_KEY'),
+      apiSecret: requireEnv('ORANGE_MONEY_API_SECRET'),
+      merchantId: requireEnv('ORANGE_MONEY_MERCHANT_ID'),
+      callbackUrl: requireEnv('ORANGE_MONEY_CALLBACK_URL', ['SERVICE_URL']),
+      environment: (getEnv('ORANGE_MONEY_ENVIRONMENT') || 'sandbox') as 'sandbox' | 'production',
     };
   }
+
+  if (providerId === 'wave') {
+    return {
+      apiKey: requireEnv('WAVE_API_KEY'),
+      merchantId: requireEnv('WAVE_MERCHANT_ID'),
+      callbackUrl: requireEnv('WAVE_CALLBACK_URL', ['SERVICE_URL']),
+      environment: (getEnv('WAVE_ENVIRONMENT') || 'sandbox') as 'sandbox' | 'production',
+    };
+  }
+
+  return {
+    apiKey: requireEnv('MOMO_API_KEY'),
+    apiSecret: requireEnv('MOMO_API_SECRET'),
+    subscriptionKey: requireEnv('MOMO_SUBSCRIPTION_KEY'),
+    callbackUrl: `${requireEnv('SUPABASE_URL', ['SERVICE_URL'])}/functions/v1/momo-webhook`,
+    environment: (getEnv('MOMO_ENVIRONMENT') || 'sandbox') as 'sandbox' | 'production',
+  };
 }
 
-interface MoMoTokenResponse {
-  access_token: string;
-  token_type: string;
-  expires_in: number | string;
-}
-
-const momoTokenCache = new Map<string, { token: string; expiresAt: number }>();
-
-async function getMoMoToken(config: MoMoConfig): Promise<string> {
-  const cacheKey = `${config.apiKey}:${config.environment}`;
-  const cachedToken = momoTokenCache.get(cacheKey);
-  const now = Date.now();
-  if (cachedToken && cachedToken.expiresAt > now) {
-    return cachedToken.token;
-  }
-
-  if (!config.apiKey || !config.apiSecret) {
-    throw new Error("MoMo API credentials not configured");
-  }
-
-  if (!config.subscriptionKey) {
-    throw new Error("MoMo subscription key not configured");
-  }
-
-  const basicAuth = btoa(`${config.apiKey}:${config.apiSecret}`);
-
-  const response = await fetch(`${config.apiUrl}/collection/token/`, {
-    method: "POST",
-    headers: {
-      Authorization: `Basic ${basicAuth}`,
-      "Ocp-Apim-Subscription-Key": config.subscriptionKey,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({}),
-  });
-
-  if (!response.ok) {
-    const errorBody = await response.text();
-    await logStructuredEvent("MOMO_TOKEN_ERROR", {
-      status: response.status,
-      error: errorBody,
-    });
-    throw new Error(`Failed to obtain MoMo access token: ${response.status}`);
-  }
-
-  const tokenData = (await response.json()) as MoMoTokenResponse;
-  const expiresInSeconds = Number(tokenData.expires_in || 0);
-  const expiresAt = Date.now() + Math.max(expiresInSeconds - 30, 30) * 1000;
-
-  momoTokenCache.set(cacheKey, {
-    token: tokenData.access_token,
-    expiresAt,
-  });
-
-  return tokenData.access_token;
+function buildProviderRequest(
+  params: { amount: number; currency: string; phoneNumber: string; referenceId: string; correlationId: string; orderId: string },
+): ProviderPaymentRequest {
+  return {
+    amount: params.amount,
+    currency: params.currency,
+    phoneNumber: params.phoneNumber,
+    referenceId: params.referenceId,
+    correlationId: params.correlationId,
+    description: `Order ${params.orderId}`,
+    metadata: { orderId: params.orderId },
+  };
 }
 
 async function handleFarmerDeposit(payload: any, correlationId: string): Promise<Response> {
@@ -479,16 +453,27 @@ serve(async (req) => {
       );
     }
 
-    // Initiate MoMo payment
-    const config = getMoMoConfig(provider || "mtn");
-    const result = await createMoMoPayment(
+    // Initiate provider payment
+    const providerId = ((provider ?? 'mtn') as string).toLowerCase() as MobileMoneyProviderId;
+    const adapter = getPaymentProviderAdapter(providerId);
+    if (!adapter) {
+      return new Response(
+        JSON.stringify({ error: `Unsupported provider ${provider}` }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      );
+    }
+
+    const providerSecrets = buildProviderSecrets(providerId);
+    const providerRequest = buildProviderRequest({
       amount,
-      currency || "XAF",
+      currency: currency || 'XAF',
       phoneNumber,
       referenceId,
-      config,
-      correlationId
-    );
+      correlationId,
+      orderId,
+    });
+
+    const result = await adapter.initiatePayment(providerRequest, providerSecrets);
 
     if (!result.success) {
       // Update payment status to failed
@@ -504,7 +489,7 @@ serve(async (req) => {
         .eq("id", payment.id);
 
       await recordMetric("payment.momo.failed", 1, {
-        provider: provider || "mtn",
+        provider: providerId,
         currency: currency || "XAF",
       });
 
@@ -534,7 +519,7 @@ serve(async (req) => {
       .eq("id", orderId);
 
     await recordMetric("payment.momo.initiated", 1, {
-      provider: provider || "mtn",
+      provider: providerId,
       currency: currency || "XAF",
     });
 
@@ -544,6 +529,7 @@ serve(async (req) => {
       transactionId: result.transactionId,
       amount,
       correlationId,
+      provider: providerId,
     });
 
     return new Response(
@@ -552,8 +538,8 @@ serve(async (req) => {
         paymentId: payment.id,
         transactionId: result.transactionId,
         referenceId,
-        message: "Payment initiated. Please approve on your phone.",
-        instructions: "Check your phone for a payment prompt and enter your PIN.",
+        message: result.instructions ?? "Payment initiated. Please approve on your phone.",
+        instructions: result.instructions ?? "Check your phone for a payment prompt and enter your PIN.",
       }),
       {
         status: 200,

@@ -6428,44 +6428,160 @@ export type Database = {
           },
         ]
       }
+      farms: {
+        Row: {
+          certifications: string[] | null
+          cooperative_name: string | null
+          country: string | null
+          created_at: string
+          district: string | null
+          hectares: number | null
+          id: string
+          id_document_path: string | null
+          id_verification_status: Database["public"]["Enums"]["verification_status"]
+          last_verified_at: string | null
+          location: unknown | null
+          momo_name: string | null
+          momo_number: string | null
+          momo_statement_path: string | null
+          momo_verification_status: Database["public"]["Enums"]["verification_status"]
+          name: string
+          owner_profile_id: string
+          primary_crops: string[] | null
+          province: string | null
+          sector: string | null
+          updated_at: string
+          verification_notes: string | null
+          village: string | null
+        }
+        Insert: {
+          certifications?: string[] | null
+          cooperative_name?: string | null
+          country?: string | null
+          created_at?: string
+          district?: string | null
+          hectares?: number | null
+          id?: string
+          id_document_path?: string | null
+          id_verification_status?: Database["public"]["Enums"]["verification_status"]
+          last_verified_at?: string | null
+          location?: unknown | null
+          momo_name?: string | null
+          momo_number?: string | null
+          momo_statement_path?: string | null
+          momo_verification_status?: Database["public"]["Enums"]["verification_status"]
+          name: string
+          owner_profile_id: string
+          primary_crops?: string[] | null
+          province?: string | null
+          sector?: string | null
+          updated_at?: string
+          verification_notes?: string | null
+          village?: string | null
+        }
+        Update: {
+          certifications?: string[] | null
+          cooperative_name?: string | null
+          country?: string | null
+          created_at?: string
+          district?: string | null
+          hectares?: number | null
+          id?: string
+          id_document_path?: string | null
+          id_verification_status?: Database["public"]["Enums"]["verification_status"]
+          last_verified_at?: string | null
+          location?: unknown | null
+          momo_name?: string | null
+          momo_number?: string | null
+          momo_statement_path?: string | null
+          momo_verification_status?: Database["public"]["Enums"]["verification_status"]
+          name?: string
+          owner_profile_id?: string
+          primary_crops?: string[] | null
+          province?: string | null
+          sector?: string | null
+          updated_at?: string
+          verification_notes?: string | null
+          village?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "farms_owner_profile_id_fkey"
+            columns: ["owner_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
           credits_balance: number | null
           display_name: string | null
+          id_document_path: string | null
+          id_document_uploaded_at: string | null
+          id_verification_status: Database["public"]["Enums"]["verification_status"]
           locale: string | null
           metadata: Json
+          momo_name_match: boolean | null
+          momo_name_on_file: string | null
+          momo_verification_status: Database["public"]["Enums"]["verification_status"]
+          momo_verified_name: string | null
           ref_code: string | null
           updated_at: string
           user_id: string
           vehicle_plate: string | null
           vehicle_type: string | null
+          verification_notes: string | null
+          verification_reviewed_at: string | null
+          verification_reviewer_id: string | null
           whatsapp_e164: string | null
         }
         Insert: {
           created_at?: string
           credits_balance?: number | null
           display_name?: string | null
+          id_document_path?: string | null
+          id_document_uploaded_at?: string | null
+          id_verification_status?: Database["public"]["Enums"]["verification_status"]
           locale?: string | null
           metadata?: Json
+          momo_name_match?: boolean | null
+          momo_name_on_file?: string | null
+          momo_verification_status?: Database["public"]["Enums"]["verification_status"]
+          momo_verified_name?: string | null
           ref_code?: string | null
           updated_at?: string
           user_id?: string
           vehicle_plate?: string | null
           vehicle_type?: string | null
+          verification_notes?: string | null
+          verification_reviewed_at?: string | null
+          verification_reviewer_id?: string | null
           whatsapp_e164?: string | null
         }
         Update: {
           created_at?: string
           credits_balance?: number | null
           display_name?: string | null
+          id_document_path?: string | null
+          id_document_uploaded_at?: string | null
+          id_verification_status?: Database["public"]["Enums"]["verification_status"]
           locale?: string | null
           metadata?: Json
+          momo_name_match?: boolean | null
+          momo_name_on_file?: string | null
+          momo_verification_status?: Database["public"]["Enums"]["verification_status"]
+          momo_verified_name?: string | null
           ref_code?: string | null
           updated_at?: string
           user_id?: string
           vehicle_plate?: string | null
           vehicle_type?: string | null
+          verification_notes?: string | null
+          verification_reviewed_at?: string | null
+          verification_reviewer_id?: string | null
           whatsapp_e164?: string | null
         }
         Relationships: []
@@ -8442,6 +8558,132 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      shipments: {
+        Row: {
+          created_at: string
+          deposit_amount: number | null
+          deposit_currency: string | null
+          deposit_reference: string | null
+          deposit_success: boolean | null
+          farm_id: string
+          id: string
+          listing_id: string | null
+          metadata: Json
+          order_id: string | null
+          pickup_address: string | null
+          pickup_confirmed_at: string | null
+          pickup_confirmed_by: string | null
+          pickup_location: unknown | null
+          pickup_notes: string | null
+          pickup_photo_path: string
+          pickup_photo_uploaded_at: string
+          pickup_photo_uploaded_by: string | null
+          pickup_scheduled_at: string | null
+          pickup_window_end: string | null
+          pickup_window_start: string | null
+          quantity_collected: number | null
+          quantity_committed: number | null
+          spoilage_percent: number | null
+          spoilage_qty: number | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          deposit_amount?: number | null
+          deposit_currency?: string | null
+          deposit_reference?: string | null
+          deposit_success?: boolean | null
+          farm_id: string
+          id?: string
+          listing_id?: string | null
+          metadata?: Json
+          order_id?: string | null
+          pickup_address?: string | null
+          pickup_confirmed_at?: string | null
+          pickup_confirmed_by?: string | null
+          pickup_location?: unknown | null
+          pickup_notes?: string | null
+          pickup_photo_path: string
+          pickup_photo_uploaded_at?: string
+          pickup_photo_uploaded_by?: string | null
+          pickup_scheduled_at?: string | null
+          pickup_window_end?: string | null
+          pickup_window_start?: string | null
+          quantity_collected?: number | null
+          quantity_committed?: number | null
+          spoilage_percent?: number | null
+          spoilage_qty?: number | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          deposit_amount?: number | null
+          deposit_currency?: string | null
+          deposit_reference?: string | null
+          deposit_success?: boolean | null
+          farm_id?: string
+          id?: string
+          listing_id?: string | null
+          metadata?: Json
+          order_id?: string | null
+          pickup_address?: string | null
+          pickup_confirmed_at?: string | null
+          pickup_confirmed_by?: string | null
+          pickup_location?: unknown | null
+          pickup_notes?: string | null
+          pickup_photo_path?: string
+          pickup_photo_uploaded_at?: string
+          pickup_photo_uploaded_by?: string | null
+          pickup_scheduled_at?: string | null
+          pickup_window_end?: string | null
+          pickup_window_start?: string | null
+          quantity_collected?: number | null
+          quantity_committed?: number | null
+          spoilage_percent?: number | null
+          spoilage_qty?: number | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shipments_farm_id_fkey"
+            columns: ["farm_id"]
+            isOneToOne: false
+            referencedRelation: "farms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shipments_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shipments_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shipments_pickup_confirmed_by_fkey"
+            columns: ["pickup_confirmed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "shipments_pickup_photo_uploaded_by_fkey"
+            columns: ["pickup_photo_uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       shop_reviews: {
         Row: {
@@ -12552,6 +12794,17 @@ export type Database = {
           },
         ]
       }
+      ops_pickup_metrics: {
+        Row: {
+          avg_fill_rate: number | null
+          avg_spoilage_percent: number | null
+          bucket_day: string | null
+          deposit_success_rate: number | null
+          pickup_utilization_rate: number | null
+          pickups: number | null
+        }
+        Relationships: []
+      }
       published_menus: {
         Row: {
           bar_id: string | null
@@ -15492,6 +15745,21 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      schedule_pickup: {
+        Args: {
+          p_farm_id: string
+          p_listing_id?: string | null
+          p_order_id?: string | null
+          p_pickup_at: string
+          p_pickup_photo_path: string
+          p_pickup_address?: string | null
+          p_pickup_lat?: number | null
+          p_pickup_lng?: number | null
+          p_quantity_committed?: number | null
+          p_metadata?: Json
+        }
+        Returns: Database["public"]["Tables"]["shipments"]["Row"]
+      }
       wallet_transfer: {
         Args: {
           p_amount: number
@@ -15578,6 +15846,7 @@ export type Database = {
         | "customer"
         | "vendor"
         | "admin"
+      verification_status: "unverified" | "pending" | "verified" | "rejected"
         | "system"
         | "vendor_manager"
         | "vendor_staff"

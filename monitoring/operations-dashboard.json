@@ -1,0 +1,30 @@
+{
+  "dashboard": "Supply Chain Ops",
+  "description": "Daily produce pickup performance across farms",
+  "panels": [
+    {
+      "title": "Fill Rate (14d)",
+      "type": "line",
+      "metric": "ops_pickup_metrics.fill_rate_pct",
+      "source": "public.ops_pickup_metrics"
+    },
+    {
+      "title": "Spoilage Percent", 
+      "type": "bar",
+      "metric": "ops_pickup_metrics.spoilage_pct",
+      "source": "public.ops_pickup_metrics"
+    },
+    {
+      "title": "Deposit Success by Farm",
+      "type": "table",
+      "metric": "shipments.deposit_success_pct",
+      "source": "monitoring/operations-metrics.sql#3"
+    },
+    {
+      "title": "Pickup Utilization",
+      "type": "stacked-area",
+      "metric": "shipments.status_counts",
+      "source": "monitoring/operations-metrics.sql#4"
+    }
+  ]
+}

@@ -14,6 +14,10 @@ import type { SupabaseClient } from "../../_shared/supabase.ts";
 import type { WhatsAppMessage } from "../types.ts";
 import type { ChatState } from "../state/store.ts";
 import type { RouterContext } from "../types.ts";
+import type {
+  DetectionResult,
+  ToneLocale,
+} from "../../../../packages/localization/src/index.ts";
 
 import { buildAgentContext, saveAgentInteraction, type AgentContext } from "../shared/agent_context.ts";
 import { logStructuredEvent } from "../observe/log.ts";
@@ -155,11 +159,22 @@ export async function tryAIAgentHandler(
     });
     
     // Build agent context
+    const toneLocale: ToneLocale = (ctx.toneLocale ?? (ctx.locale === "sw" ? "sw" : "en")) as ToneLocale;
+    const toneDetection: DetectionResult = ctx.toneDetection ?? {
+      locale: toneLocale,
+      swahiliScore: toneLocale === "sw" ? 1 : 0,
+      englishScore: toneLocale === "en" ? 1 : 0,
+    };
     const agentContext = await buildAgentContext(
       ctx.supabase,
       msg,
       state,
-      correlationId
+      correlationId,
+      {
+        toneLocale,
+        toneDetection,
+        languageHint: ctx.locale,
+      },
     );
     
     if (!agentContext) {

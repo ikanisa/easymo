@@ -1,11 +1,17 @@
 import type { SupabaseClient } from "./deps.ts";
 import type { SupportedLanguage } from "./i18n/language.ts";
+import type {
+  DetectionResult,
+  ToneLocale,
+} from "../../../../packages/localization/src/index.ts";
 
 export type RouterContext = {
   supabase: SupabaseClient;
   from: string; // customer/vendor WhatsApp E164 number
   profileId?: string; // optional profile.user_id
   locale: SupportedLanguage;
+  toneLocale?: ToneLocale;
+  toneDetection?: DetectionResult;
 };
 
 export type ButtonSpec = {

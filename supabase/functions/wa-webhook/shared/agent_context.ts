@@ -8,6 +8,10 @@
 import type { SupabaseClient } from "../../_shared/supabase.ts";
 import type { WhatsAppMessage } from "../types.ts";
 import type { ChatState } from "../state/store.ts";
+import type {
+  DetectionResult,
+  ToneLocale,
+} from "../../../../packages/localization/src/index.ts";
 
 export interface AgentContext {
   conversationId: string;
@@ -20,6 +24,8 @@ export interface AgentContext {
   messageType: string;
   sessionData: Record<string, any>;
   language: string;
+  toneLocale: ToneLocale;
+  toneDetection: DetectionResult;
   timestamp: string;
   correlationId: string;
   channel: "whatsapp";
@@ -47,15 +53,28 @@ export interface MessageHistoryItem {
 /**
  * Build agent context from WhatsApp message and chat state
  */
+type ToneGuidance = {
+  toneLocale?: ToneLocale;
+  toneDetection?: DetectionResult;
+  languageHint?: string;
+};
+
 export async function buildAgentContext(
   supabase: SupabaseClient,
   message: WhatsAppMessage,
   state: ChatState,
-  correlationId: string
+  correlationId: string,
+  tone?: ToneGuidance,
 ): Promise<AgentContext | null> {
   try {
     const phoneNumber = message.from || "";
     const conversationId = `wa_${phoneNumber}_${Date.now()}`;
+    const resolvedTone = tone?.toneLocale ?? "en";
+    const toneDetection: DetectionResult = tone?.toneDetection ?? {
+      locale: resolvedTone,
+      swahiliScore: resolvedTone === "sw" ? 1 : 0,
+      englishScore: resolvedTone === "en" ? 1 : 0,
+    };
 
     // Extract message content based on type
     const currentMessage = extractMessageContent(message);
@@ -77,7 +96,9 @@ export async function buildAgentContext(
       currentMessage,
       messageType: message.type || "text",
       sessionData: state?.data || {},
-      language: userProfile?.language || state?.lang || "en",
+      language: tone?.languageHint ?? userProfile?.language || state?.lang || "en",
+      toneLocale: resolvedTone,
+      toneDetection,
       timestamp: new Date().toISOString(),
       correlationId,
       channel: "whatsapp",

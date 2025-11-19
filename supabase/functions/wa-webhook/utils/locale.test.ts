@@ -21,8 +21,10 @@ Deno.test("normalizeDisplayNumber strips non digits", () => {
 
 Deno.test("detectMessageLanguage prefers message language", () => {
   const locales = new Map<string, string>();
-  const msg = { language: { code: "fr" }, from: "250700000000" };
-  assertEquals(detectMessageLanguage(msg, locales), "fr");
+  const msg = { language: { code: "fr" }, from: "250700000000" } as any;
+  const detection = detectMessageLanguage(msg, locales);
+  assertEquals(detection.language, "fr");
+  assertEquals(detection.toneLocale, "en");
 });
 
 Deno.test("detectMessageLanguage falls back to contacts", () => {
@@ -38,6 +40,19 @@ Deno.test("detectMessageLanguage falls back to contacts", () => {
       },
     } as ContactChange,
   ]);
-  const msg = { from: "250700000000" };
-  assertEquals(detectMessageLanguage(msg, locales), "fr");
+  const msg = { from: "250700000000" } as any;
+  const detection = detectMessageLanguage(msg, locales);
+  assertEquals(detection.language, "fr");
+});
+
+Deno.test("detectMessageLanguage inspects message body for Kiswahili tone", () => {
+  const locales = new Map<string, string>();
+  const msg = {
+    from: "250788000000",
+    type: "text",
+    text: { body: "Habari, bei ya mazao ni kiasi gani?" },
+  } as any;
+  const detection = detectMessageLanguage(msg, locales);
+  assertEquals(detection.toneLocale, "sw");
+  assertEquals(detection.language, "sw");
 });
