@@ -12,7 +12,7 @@ const payloadSchema = z.object({
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-export const POST = createHandler("admin_api.users.invite", async (request: Request) => {
+export const POST = createHandler("admin_api.users.invite", async (request: Request, _context, obs) => {
   const actor = await readSessionFromCookies();
   if (!actor) {
     return jsonError({ error: "unauthorized" }, 401);
@@ -40,7 +40,18 @@ export const POST = createHandler("admin_api.users.invite", async (request: Requ
       user_metadata: { ...(data.user.user_metadata ?? {}), role: payload.role },
     });
     if (roleError) {
-      console.warn("supabase.invite_user.role_update_failed", roleError.message);
+      obs.log({
+        event: "ADMIN_INVITE_ROLE_UPDATE_FAILED",
+        status: "warning",
+        message: roleError.message,
+        details: { userId: data.user.id, role: payload.role },
+      });
+    } else {
+      obs.log({
+        event: "ADMIN_INVITED",
+        status: "ok",
+        details: { email: payload.email, role: payload.role, userId: data.user.id },
+      });
     }
   }
 

@@ -92,9 +92,6 @@ export async function middleware(request: NextRequest) {
 
   const clearCookie = clearSessionCookie();
   unauthorized.cookies.set(clearCookie.name, clearCookie.value, clearCookie.attributes);
-  response.cookies.getAll().forEach((cookie) => {
-    unauthorized.cookies.set(cookie.name, cookie.value, cookie);
-  });
 
   return unauthorized;
 }

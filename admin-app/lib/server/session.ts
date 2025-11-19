@@ -175,21 +175,18 @@ export async function readSessionFromCookies(store?: CookieStore): Promise<Admin
   const rawCookie = cookieStore.get(SESSION_COOKIE_NAME);
   const value = getCookieValue(rawCookie);
   if (!value) {
-    // Only attempt Supabase fallback when using the default cookie store (server components)
-    if (store) return null;
+    // Always attempt Supabase fallback when no legacy session exists
     return readSupabaseAdminSession();
   }
 
   const payload = decodePayload(value);
   if (!payload) {
     cookieStore.delete?.(SESSION_COOKIE_NAME);
-    if (store) return null;
     return readSupabaseAdminSession();
   }
 
   if (Date.parse(payload.expiresAt) <= Date.now()) {
     cookieStore.delete?.(SESSION_COOKIE_NAME);
-    if (store) return null;
     return readSupabaseAdminSession();
   }
 
