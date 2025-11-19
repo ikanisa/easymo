@@ -13,6 +13,7 @@ Quick reference guide for developers using the new database schema enhancements.
 - [Background Jobs](#background-jobs)
 - [Caching](#caching)
 - [Location Queries](#location-queries)
+- [Farm Verification & Shipments](#farm-verification--shipments)
 
 ---
 
@@ -424,6 +425,55 @@ if (cachedRoute && cachedRoute.length > 0) {
   return route;
 }
 ```
+
+---
+
+## Farm Verification & Shipments
+
+**Store verification artifacts + create a farm profile:**
+
+```typescript
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+await supabase.storage.from('verification-artifacts').upload(
+  `farms/${farmId}/national-id.jpg`,
+  fileBlob,
+  { upsert: true }
+);
+
+await supabase.from('farms').insert({
+  id: farmId,
+  owner_profile_id: userId,
+  name: 'Kigali Fresh Produce',
+  momo_number: '+2507XXXXXXX',
+  momo_name: 'Aline Mukamana',
+  id_document_path: `farms/${farmId}/national-id.jpg`,
+  id_verification_status: 'pending',
+  momo_verification_status: 'pending'
+});
+```
+
+**Schedule a pickup (photo proof required):**
+
+```typescript
+await supabase.rpc('schedule_pickup', {
+  p_farm_id: farmId,
+  p_listing_id: listingId,
+  p_pickup_at: new Date().toISOString(),
+  p_pickup_photo_path: `pickup-photos/${farmId}/${Date.now()}.jpg`,
+  p_pickup_address: 'Gahanga collection point',
+  p_pickup_lat: -1.939,
+  p_pickup_lng: 30.1,
+  p_quantity_committed: 1200,
+  p_metadata: { commodity: 'tomatoes', unit: 'kg' }
+});
+```
+
+**Ops dashboards + metrics:**
+
+- Query `public.ops_pickup_metrics` for daily fill rate, spoilage, deposit success and pickup utilization.
+- `monitoring/operations-metrics.sql` ships ready-made spoilage, deposit and utilization queries.
+- `monitoring/operations-dashboard.json` plugs those queries into the monitoring stack so ops can review fulfillment health next to webhook alerts.
 
 ---
 
