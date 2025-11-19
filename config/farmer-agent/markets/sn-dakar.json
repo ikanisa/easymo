@@ -1,0 +1,92 @@
+{
+  "marketCode": "sn-dakar",
+  "country": "SN",
+  "currency": "XOF",
+  "timezone": "Africa/Dakar",
+  "locale": "fr",
+  "aliases": ["dakar", "senegal", "sn"],
+  "allowedCities": [
+    "Dakar",
+    "Thiès",
+    "Saint-Louis",
+    "Kaolack"
+  ],
+  "marketDays": ["tuesday", "friday"],
+  "alertLeadHours": [36, 24],
+  "commodities": [
+    {
+      "commodity": "cassava",
+      "synonyms": ["manioc", "agbelima"],
+      "varieties": [
+        {
+          "code": "bonoua_white",
+          "name": "Bonoua White",
+          "synonyms": ["manioc blanc", "bonoua"],
+          "grades": ["export", "industrial"],
+          "defaultUnit": "kg",
+          "allowedUnits": ["kg", "bag", "tonne"],
+          "minOrder": 50
+        },
+        {
+          "code": "red_kassava",
+          "name": "Red Kassava",
+          "synonyms": ["manioc rouge"],
+          "grades": ["table", "industrial"],
+          "defaultUnit": "bag",
+          "allowedUnits": ["bag", "tonne"],
+          "minOrder": 20
+        }
+      ]
+    },
+    {
+      "commodity": "plantain",
+      "synonyms": ["banane plantain"],
+      "varieties": [
+        {
+          "code": "ala_ta",
+          "name": "Ala Ta",
+          "synonyms": ["ala-ta", "alata"],
+          "grades": ["premium", "standard"],
+          "defaultUnit": "bunch",
+          "allowedUnits": ["bunch", "dozen", "crate"],
+          "minOrder": 30
+        },
+        {
+          "code": "agbagba",
+          "name": "Agbagba",
+          "synonyms": ["agbagba"],
+          "grades": ["premium"],
+          "defaultUnit": "crate",
+          "allowedUnits": ["crate", "kg"],
+          "minOrder": 25
+        }
+      ]
+    },
+    {
+      "commodity": "fonio",
+      "synonyms": ["findi"],
+      "varieties": [
+        {
+          "code": "white_fonio",
+          "name": "White Fonio",
+          "synonyms": ["findi blanc"],
+          "grades": ["grade_a", "grade_b"],
+          "defaultUnit": "kg",
+          "allowedUnits": ["kg", "sack"],
+          "minOrder": 10
+        }
+      ]
+    }
+  ],
+  "codFallback": {
+    "enabled": true,
+    "requiresConfirmation": true,
+    "instructions": "Confirmez la livraison contre paiement en espèces si le paiement mobile échoue."
+  },
+  "whatsappTemplates": {
+    "market_alert": {
+      "intent": "produce_market_alert",
+      "locales": ["fr", "en"]
+    }
+  }
+}

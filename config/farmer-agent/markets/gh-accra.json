@@ -1,0 +1,83 @@
+{
+  "marketCode": "gh-accra",
+  "country": "GH",
+  "currency": "GHS",
+  "timezone": "Africa/Accra",
+  "locale": "en",
+  "aliases": ["accra", "ghana", "gh"],
+  "allowedCities": [
+    "Accra",
+    "Tema",
+    "Kumasi",
+    "Tamale"
+  ],
+  "marketDays": ["wednesday", "saturday"],
+  "alertLeadHours": [30, 24],
+  "commodities": [
+    {
+      "commodity": "yam",
+      "synonyms": ["puna", "white yam"],
+      "varieties": [
+        {
+          "code": "pona",
+          "name": "Pona",
+          "synonyms": ["pona", "pona yam"],
+          "grades": ["export", "domestic"],
+          "defaultUnit": "tuber",
+          "allowedUnits": ["tuber", "bag", "tonne"],
+          "minOrder": 40
+        },
+        {
+          "code": "laraba",
+          "name": "Laraba",
+          "synonyms": ["laraba"],
+          "grades": ["premium", "standard"],
+          "defaultUnit": "bag",
+          "allowedUnits": ["bag", "tonne"],
+          "minOrder": 20
+        }
+      ]
+    },
+    {
+      "commodity": "maize",
+      "synonyms": ["corn"],
+      "varieties": [
+        {
+          "code": "obatanpa",
+          "name": "Obatanpa",
+          "synonyms": ["obatampa"],
+          "grades": ["grade_1", "grade_2"],
+          "defaultUnit": "bag",
+          "allowedUnits": ["bag", "tonne", "kg"],
+          "minOrder": 30
+        }
+      ]
+    },
+    {
+      "commodity": "groundnut",
+      "synonyms": ["peanut"],
+      "varieties": [
+        {
+          "code": "nkatie",
+          "name": "Nkatie",
+          "synonyms": ["nkate", "peanut"],
+          "grades": ["premium", "standard"],
+          "defaultUnit": "bag",
+          "allowedUnits": ["bag", "kg"],
+          "minOrder": 25
+        }
+      ]
+    }
+  ],
+  "codFallback": {
+    "enabled": true,
+    "requiresConfirmation": false,
+    "instructions": "If the merchant wallet declines, confirm cash on delivery at the market shed."
+  },
+  "whatsappTemplates": {
+    "market_alert": {
+      "intent": "produce_market_alert",
+      "locales": ["en"]
+    }
+  }
+}

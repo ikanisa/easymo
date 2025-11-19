@@ -1,0 +1,82 @@
+{
+  "marketCode": "ci-abidjan",
+  "country": "CI",
+  "currency": "XOF",
+  "timezone": "Africa/Abidjan",
+  "locale": "fr",
+  "aliases": ["abidjan", "ci", "cotedivoire"],
+  "allowedCities": [
+    "Abidjan",
+    "Yamoussoukro",
+    "Bouaké"
+  ],
+  "marketDays": ["monday", "thursday"],
+  "alertLeadHours": [36, 24],
+  "commodities": [
+    {
+      "commodity": "cocoa",
+      "synonyms": ["cacao"],
+      "varieties": [
+        {
+          "code": "forastero",
+          "name": "Forastero",
+          "synonyms": ["forrero", "bulk cocoa"],
+          "grades": ["grade_1", "grade_2"],
+          "defaultUnit": "bag",
+          "allowedUnits": ["bag", "tonne"],
+          "minOrder": 25
+        }
+      ]
+    },
+    {
+      "commodity": "cashew",
+      "synonyms": ["anacarde"],
+      "varieties": [
+        {
+          "code": "w320",
+          "name": "W320",
+          "synonyms": ["w-320", "whole 320"],
+          "grades": ["export"],
+          "defaultUnit": "kg",
+          "allowedUnits": ["kg", "bag", "tonne"],
+          "minOrder": 50
+        },
+        {
+          "code": "bb",
+          "name": "Brokens & Butts",
+          "synonyms": ["bb", "butts"],
+          "grades": ["industrial"],
+          "defaultUnit": "kg",
+          "allowedUnits": ["kg", "bag"],
+          "minOrder": 30
+        }
+      ]
+    },
+    {
+      "commodity": "hibiscus",
+      "synonyms": ["bissap"],
+      "varieties": [
+        {
+          "code": "sabdariffa",
+          "name": "Roselle Sabdariffa",
+          "synonyms": ["roselle", "bissap rouge"],
+          "grades": ["sun_dried", "mechanical"],
+          "defaultUnit": "kg",
+          "allowedUnits": ["kg", "bale"],
+          "minOrder": 15
+        }
+      ]
+    }
+  ],
+  "codFallback": {
+    "enabled": true,
+    "requiresConfirmation": true,
+    "instructions": "Informer l'acheteur que le paiement à la livraison reste possible avec le comptoir cash de Treichville."
+  },
+  "whatsappTemplates": {
+    "market_alert": {
+      "intent": "produce_market_alert",
+      "locales": ["fr", "pt"]
+    }
+  }
+}
