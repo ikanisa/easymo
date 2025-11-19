@@ -1,0 +1,28 @@
+{
+  "intent": "produce_market_alert",
+  "locale": "pt",
+  "templateName": "produce_market_alert_pt",
+  "variables": {
+    "body": [
+      "buyer_name",
+      "commodity",
+      "market_day",
+      "city",
+      "price_hint",
+      "cod_copy"
+    ]
+  },
+  "body": "👋 {{1}}, novos lotes de {{2}} chegam em {{4}} na {{3}}. As ofertas iniciam em {{5}}. {{6}}",
+  "buttons": [
+    { "type": "QUICK_REPLY", "text": "Reservar" },
+    { "type": "QUICK_REPLY", "text": "Enviar preços" }
+  ],
+  "samples": {
+    "buyer_name": "Mercador Silva",
+    "commodity": "Caju W320",
+    "market_day": "Quinta",
+    "city": "Abidjan",
+    "price_hint": "2.4 XOF/kg",
+    "cod_copy": "Entrega com pagamento em dinheiro disponível"
+  }
+}

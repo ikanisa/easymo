@@ -16,4 +16,5 @@ export { PropertyRentalAgent } from './property/property-rental.agent';
 export { ScheduleTripAgent } from './schedule/schedule-trip.agent';
 export { QuincaillerieAgent } from './quincaillerie/quincaillerie.agent';
 export { ShopsAgent } from './shops/shops.agent';
+export { FarmerAgent } from './farmer/farmer.agent';
 
