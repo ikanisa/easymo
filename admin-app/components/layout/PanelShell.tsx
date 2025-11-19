@@ -7,6 +7,7 @@ import { OfflineBanner } from "@/components/system/OfflineBanner";
 import { ServiceWorkerToast } from "@/components/system/ServiceWorkerToast";
 import { ServiceWorkerToasts } from "@/components/system/ServiceWorkerToasts";
 import { AssistantPanel } from "@/components/assistant/AssistantPanel";
+import { useSupabaseAuth } from "@/components/providers/SupabaseAuthProvider";
 // Securely determine DEFAULT_ACTOR_ID: require explicit env in production
 const _adminActorId =
   process.env.NEXT_PUBLIC_ADMIN_ACTOR_ID ||
@@ -56,6 +57,7 @@ export function PanelShell({
   actorLabel = DEFAULT_ACTOR_LABEL,
 }: PanelShellProps) {
   const router = useRouter();
+  const { signOut: supabaseSignOut } = useSupabaseAuth();
   const actorDisplayLabel = actorLabel?.trim() || `${actorId.slice(0, 8)}…`;
   const [assistantOpen, setAssistantOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
@@ -115,9 +117,16 @@ export function PanelShell({
   }, [actorDisplayLabel, actorId]);
 
   const handleSignOut = async () => {
-    setSigningOut(true);
-    router.replace("/");
-    router.refresh();
+    try {
+      setSigningOut(true);
+      await supabaseSignOut();
+    } catch (error) {
+      console.error("panel.logout_failed", error);
+    } finally {
+      setSigningOut(false);
+      router.replace("/");
+      router.refresh();
+    }
   };
 
   const closeMobileNav = useCallback(() => {
