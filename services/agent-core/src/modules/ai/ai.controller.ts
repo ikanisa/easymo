@@ -45,6 +45,40 @@ const SupportSchema = z.object({
   timestamp: z.number().optional(),
 });
 
+const FarmerBrokerSchema = z.object({
+  msisdn: z.string().min(8),
+  message: z.string().min(1),
+  intent: z.enum(["farmer_supply", "buyer_demand"]),
+  locale: z.string().min(2).max(5).optional(),
+  conversationId: z.string().uuid().optional(),
+  profile: z.object({
+    id: z.string().uuid().optional(),
+    locale: z.string().min(2).max(5).nullable().optional(),
+    metadata: z.record(z.any()).nullable().optional(),
+  }).optional(),
+  farm: z.object({
+    id: z.string().uuid().optional(),
+    farm_name: z.string().optional(),
+    district: z.string().optional().nullable(),
+    sector: z.string().optional().nullable(),
+    region: z.string().optional().nullable(),
+    hectares: z.number().nonnegative().optional().nullable(),
+    commodities: z.array(z.string()).optional().nullable(),
+    certifications: z.array(z.string()).optional().nullable(),
+    irrigation: z.boolean().optional().nullable(),
+    metadata: z.record(z.any()).optional().nullable(),
+    farm_synonyms: z.array(z.object({
+      phrase: z.string(),
+      locale: z.string().nullable().optional(),
+      category: z.string().nullable().optional(),
+    })).optional(),
+  }).optional(),
+  buyerContext: z.object({
+    market: z.string().optional(),
+    requestedMessage: z.string().optional(),
+  }).optional(),
+});
+
 const SoraGenerationSchema = z.object({
   campaignId: z.string().uuid(),
   figureId: z.string().uuid(),
@@ -96,6 +130,13 @@ export class AiController {
   async support(@Body() body: unknown) {
     const payload = SupportSchema.parse(body) as Parameters<AiService["runSupport"]>[0];
     return await this.ai.runSupport(payload);
+  }
+
+  @Post(getAgentCoreRouteSegment("aiFarmerBrokerRun"))
+  @ServiceScopes(...getAgentCoreRouteServiceScopes("aiFarmerBrokerRun"))
+  async farmerBroker(@Body() body: unknown) {
+    const payload = FarmerBrokerSchema.parse(body) as Parameters<AiService["runFarmerBroker"]>[0];
+    return await this.ai.runFarmerBroker(payload);
   }
 
   @Post(getAgentCoreRouteSegment("aiSoraGenerate"))

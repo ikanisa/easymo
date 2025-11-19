@@ -26,6 +26,7 @@ const agentCoreRouteDefinitions = defineHttpControllers({
       attribution: { method: "POST" as const, segment: "attribution/run" as const },
       reconciliation: { method: "POST" as const, segment: "reconciliation/run" as const },
       support: { method: "POST" as const, segment: "support/run" as const },
+      farmerBrokerRun: { method: "POST" as const, segment: "farmer-broker/run" as const },
       soraGenerate: {
         method: "POST" as const,
         segment: "sora/generate" as const,
@@ -123,6 +124,7 @@ const agentCoreServiceScopes = Object.freeze({
   aiAttributionRun: ["ai:attribution"],
   aiReconciliationRun: ["ai:reconciliation"],
   aiSupportRun: ["ai:support"],
+  aiFarmerBrokerRun: ["ai:farmer-broker"],
   aiSoraGenerate: ["ai:sora.generate"],
   aiTasksSchedule: ["tasks:schedule"],
   aiTasksRunDue: ["tasks:run"],
