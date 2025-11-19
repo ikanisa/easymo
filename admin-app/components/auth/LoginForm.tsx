@@ -29,7 +29,7 @@ export function LoginForm() {
     
     try {
       const user = await signInWithPassword(email, password);
-      console.log('[LOGIN] Login successful, redirecting to dashboard', { userId: user.id });
+      console.log('[LOGIN] Login successful, redirecting to dashboard');
       setEmail("");
       setPassword("");
 
