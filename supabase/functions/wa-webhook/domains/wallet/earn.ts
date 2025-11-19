@@ -42,11 +42,6 @@ export async function showWalletEarn(ctx: RouterContext): Promise<boolean> {
             description: t(ctx.locale, "wallet.earn.rows.whatsapp.description"),
           },
           {
-            id: IDS.WALLET_SHARE_COPY,
-            title: t(ctx.locale, "wallet.earn.rows.copy.title"),
-            description: t(ctx.locale, "wallet.earn.rows.copy.description"),
-          },
-          {
             id: IDS.WALLET_SHARE_QR,
             title: t(ctx.locale, "wallet.earn.rows.qr.title"),
             description: t(ctx.locale, "wallet.earn.rows.qr.description"),
@@ -103,24 +98,6 @@ export async function handleWalletEarnSelection(
       await logWalletAdjust({
         actor: ctx.from,
         action: "referral_share_whatsapp",
-      });
-      return true;
-    }
-    case IDS.WALLET_SHARE_COPY: {
-      const body = [
-        t(ctx.locale, "wallet.earn.copy.body"),
-        share.shortLink,
-        t(ctx.locale, "wallet.earn.copy.code", { code: share.code }),
-        t(ctx.locale, "wallet.earn.note.keep_code"),
-      ].join("\n\n");
-      await sendButtonsMessage(
-        ctx,
-        body,
-        [{ id: IDS.WALLET_SHARE_DONE, title: t(ctx.locale, "wallet.buttons.done") }],
-      );
-      await logWalletAdjust({
-        actor: ctx.from,
-        action: "referral_share_copy",
       });
       return true;
     }
