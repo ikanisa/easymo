@@ -8,7 +8,7 @@ import {
   type ReactNode,
 } from "react";
 
-export interface FieldProps extends HTMLAttributes<HTMLDivElement> {
+export interface FieldProps extends Omit<HTMLAttributes<HTMLDivElement>, 'children'> {
   label?: string;
   labelFor?: string;
   helperText?: string;
@@ -16,6 +16,11 @@ export interface FieldProps extends HTMLAttributes<HTMLDivElement> {
   required?: boolean;
   orientation?: "vertical" | "horizontal";
   description?: string;
+  /**
+   * The field content. Can be a ReactNode or a render function that receives
+   * control props (id, required, aria-describedby, aria-invalid) to apply to the input.
+   */
+  children?: ReactNode | ((props: InputHTMLAttributes<HTMLInputElement>) => ReactNode);
 }
 
 export const FormField = forwardRef<HTMLDivElement, FieldProps>(function FormField(
