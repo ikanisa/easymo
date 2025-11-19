@@ -30,22 +30,36 @@ interface MoMoConfig {
   environment: "sandbox" | "production";
 }
 
-function getMoMoConfig(provider: string): MoMoConfig {
+const buildBaseMoMoConfig = () => {
   const env = getEnv("MOMO_ENVIRONMENT") || "sandbox";
-  const apiKey = requireEnv("MOMO_API_KEY");
-  const apiSecret = requireEnv("MOMO_API_SECRET");
-  const subscriptionKey = requireEnv("MOMO_SUBSCRIPTION_KEY");
-
   return {
     apiUrl: env === "production"
       ? "https://proxy.momoapi.mtn.com"
       : "https://sandbox.momodeveloper.mtn.com",
-    apiKey,
-    apiSecret,
-    subscriptionKey,
+    apiKey: requireEnv("MOMO_API_KEY"),
+    apiSecret: requireEnv("MOMO_API_SECRET"),
+    subscriptionKey: requireEnv("MOMO_SUBSCRIPTION_KEY"),
     environment: env as "sandbox" | "production",
-  };
-}
+  } satisfies MoMoConfig;
+};
+
+const buildAirtelConfig = (fallback: MoMoConfig): MoMoConfig => {
+  const env = getEnv("AIRTEL_MOMO_ENVIRONMENT") || fallback.environment;
+  return {
+    apiUrl: getEnv("AIRTEL_MOMO_API_URL") || "https://openapi.airtel.africa",
+    apiKey: getEnv("AIRTEL_MOMO_API_KEY") || fallback.apiKey,
+    apiSecret: getEnv("AIRTEL_MOMO_API_SECRET") || fallback.apiSecret,
+    subscriptionKey: getEnv("AIRTEL_MOMO_SUBSCRIPTION_KEY") || fallback.subscriptionKey,
+    environment: env as "sandbox" | "production",
+  } satisfies MoMoConfig;
+};
+
+function getMoMoConfig(provider: string): MoMoConfig {
+  const base = buildBaseMoMoConfig();
+  if ((provider || "mtn").toLowerCase() === "airtel") {
+    return buildAirtelConfig(base);
+  }
+  return base;
 }
 
 // =====================================================
@@ -188,6 +202,131 @@ async function getMoMoToken(config: MoMoConfig): Promise<string> {
   return tokenData.access_token;
 }
 
+async function handleFarmerDeposit(payload: any, correlationId: string): Promise<Response> {
+  const { registrationId, amount, currency, phoneNumber, provider } = payload;
+  if (!registrationId || !phoneNumber) {
+    return new Response(JSON.stringify({ error: "registrationId_and_phone_required" }), {
+      status: 400,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
+  const registration = await supabase
+    .from("farm_pickup_registrations")
+    .select("id, farm_id, profile_id, quantity_tonnes, price_per_tonne, deposit_amount, deposit_percent")
+    .eq("id", registrationId)
+    .single();
+
+  if (registration.error || !registration.data) {
+    await logStructuredEvent("MOMO_REGISTRATION_NOT_FOUND", {
+      registrationId,
+      error: registration.error?.message,
+      correlationId,
+    });
+    return new Response(JSON.stringify({ error: "registration_not_found" }), {
+      status: 404,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
+  const fallbackAmount = Math.round(
+    ((registration.data.quantity_tonnes ?? 0) * 1000 * (registration.data.price_per_tonne ?? 400)) *
+      (registration.data.deposit_percent ?? 0.25),
+  );
+  const computedAmount = Number(amount ?? registration.data.deposit_amount ?? fallbackAmount);
+  if (!Number.isFinite(computedAmount) || computedAmount <= 0) {
+    return new Response(JSON.stringify({ error: "invalid_deposit_amount" }), {
+      status: 400,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
+  const depositInsert = await supabase
+    .from("farm_pickup_deposits")
+    .insert({
+      registration_id: registrationId,
+      farm_id: registration.data.farm_id,
+      farmer_profile_id: registration.data.profile_id,
+      amount: computedAmount,
+      currency: currency ?? "RWF",
+      provider: provider ?? "mtn",
+      phone_number: phoneNumber,
+      status: "pending",
+      metadata: { correlationId },
+    })
+    .select("id")
+    .single();
+
+  if (depositInsert.error) {
+    await logStructuredEvent("MOMO_DEPOSIT_RECORD_ERROR", {
+      registrationId,
+      error: depositInsert.error.message,
+      correlationId,
+    });
+    return new Response(JSON.stringify({ error: "deposit_record_failed" }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
+  const paymentProvider = provider ?? "mtn";
+  const config = getMoMoConfig(paymentProvider);
+  const result = await createMoMoPayment(
+    computedAmount,
+    currency ?? "RWF",
+    phoneNumber,
+    depositInsert.data.id,
+    config,
+    correlationId,
+  );
+
+  if (!result.success) {
+    await supabase
+      .from("farm_pickup_deposits")
+      .update({ status: "failed", metadata: { correlationId, error: result.error } })
+      .eq("id", depositInsert.data.id);
+    await supabase
+      .from("farm_pickup_registrations")"
+      .update({ deposit_status: "failed" })
+      .eq("id", registrationId);
+    await recordMetric("payment.momo.failed", 1, { provider: paymentProvider, currency: currency ?? "RWF", flow: "farmer_deposit" });
+    return new Response(JSON.stringify({ success: false, error: result.error }), {
+      status: 400,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
+  await supabase
+    .from("farm_pickup_deposits")
+    .update({ status: "processing", provider_transaction_id: result.transactionId })
+    .eq("id", depositInsert.data.id);
+  await supabase
+    .from("farm_pickup_registrations")
+    .update({ deposit_status: "processing" })
+    .eq("id", registrationId);
+
+  await recordMetric("payment.momo.initiated", 1, { provider: paymentProvider, currency: currency ?? "RWF", flow: "farmer_deposit" });
+  await logStructuredEvent("MOMO_CHARGE_SUCCESS", {
+    registrationId,
+    depositId: depositInsert.data.id,
+    transactionId: result.transactionId,
+    amount: computedAmount,
+    correlationId,
+    flow: "farmer_deposit",
+  });
+
+  return new Response(JSON.stringify({
+    success: true,
+    depositId: depositInsert.data.id,
+    transactionId: result.transactionId,
+    referenceId: depositInsert.data.id,
+    message: "Deposit initiated. Please approve on your phone.",
+  }), {
+    status: 200,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
+
 // =====================================================
 // MAIN HANDLER
 // =====================================================
@@ -201,16 +340,27 @@ serve(async (req) => {
   const correlationId = req.headers.get("x-correlation-id") || crypto.randomUUID();
 
   try {
-    const { orderId, amount, currency, phoneNumber, provider } = await req.json();
+    const payload = await req.json();
+    const flow: "order" | "farmer_deposit" = payload.mode === "farmer_deposit" || payload.registrationId
+      ? "farmer_deposit"
+      : "order";
 
     await logStructuredEvent("MOMO_CHARGE_REQUEST", {
-      orderId,
-      amount,
-      currency,
-      phoneNumber: maskPII(phoneNumber, 7, 3),
-      provider,
+      orderId: payload.orderId,
+      registrationId: payload.registrationId,
+      amount: payload.amount,
+      currency: payload.currency,
+      phoneNumber: payload.phoneNumber ? maskPII(payload.phoneNumber, 7, 3) : null,
+      provider: payload.provider,
+      flow,
       correlationId,
     });
+
+    if (flow === "farmer_deposit") {
+      return await handleFarmerDeposit(payload, correlationId);
+    }
+
+    const { orderId, amount, currency, phoneNumber, provider } = payload;
 
     // Validate input
     if (!orderId || !amount || !phoneNumber) {

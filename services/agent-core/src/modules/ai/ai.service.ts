@@ -3,6 +3,10 @@ import { ConfigService } from "@nestjs/config";
 import axios, { AxiosInstance } from "axios";
 import { OpenAI } from "openai";
 import { getApiEndpointPath, getRequestId } from "@easymo/commons";
+import {
+  buildFarmerBrokerMessages,
+  type FarmerBrokerInput,
+} from "../../agents/farmer-broker.js";
 
 type AgentPersona = "broker" | "sales" | "marketing" | "cold_caller";
 type AgentSendResult = {
@@ -40,6 +44,13 @@ type SupportInput = {
   message: string;
   messageId?: string;
   timestamp?: number;
+};
+
+type FarmerBrokerResult = {
+  success: boolean;
+  message?: string;
+  locale?: string;
+  responseId?: string;
 };
 
 type VoiceCallInput = {
@@ -365,6 +376,34 @@ export class AiService {
       delivery: delivery.delivery,
       threadId: delivery.threadId,
     };
+  }
+
+  async runFarmerBroker(input: FarmerBrokerInput): Promise<FarmerBrokerResult> {
+    const fallbackLocale = input.locale ?? input.profile?.locale ?? "rw";
+    const fallbackMessage = input.intent === "buyer_demand"
+      ? "Muraho! We'll send Kigali supply options shortly."
+      : "Muraho! Turimo kuguhuza n'abaguzi b'i Kigali, turagusubiza vuba.";
+
+    if (!this.client) {
+      this.logger.warn({ msg: "ai.farmer_broker.skipped", reason: "OpenAI client not configured" });
+      return { success: false, message: fallbackMessage, locale: fallbackLocale };
+    }
+
+    try {
+      const { messages, metadata, locale } = buildFarmerBrokerMessages(input);
+      const temperature = input.intent === "buyer_demand" ? 0.4 : 0.6;
+      const response = await this.client.responses.create({
+        model: "gpt-4o-mini",
+        input: messages,
+        temperature,
+        metadata,
+      });
+      const text = (response.output_text ?? "").trim() || fallbackMessage;
+      return { success: true, message: text, locale, responseId: response.id };
+    } catch (error) {
+      this.logger.error({ msg: "ai.farmer_broker.failed", error: this.formatError(error) });
+      return { success: false, message: fallbackMessage, locale: fallbackLocale };
+    }
   }
 
   async runVoiceCall(input: VoiceCallInput) {

@@ -23,6 +23,7 @@ import { processQuincaillerieRequest } from "../domains/healthcare/quincaillerie
 import { processNotaryRequest } from "../domains/services/notary.ts";
 import { handleBarWaiterMessage } from "../domains/bars/waiter_ai.ts";
 import { handleBusinessDeeplinkCode } from "../domains/business/deeplink.ts";
+import { maybeHandleFarmerBroker } from "../domains/ai-agents/farmer.ts";
 
 import {
   handleAddPropertyPrice,
@@ -160,7 +161,11 @@ export async function handleText(
     const { handleAddNewBusinessText } = await import('../domains/business/add_new.ts');
     return await handleAddNewBusinessText(ctx, body, (state.data ?? {}) as any);
   }
-  
+
+  if (await maybeHandleFarmerBroker(ctx, body, state)) {
+    return true;
+  }
+
   // Handle business WhatsApp number input
   if (state.key === "business_add_whatsapp") {
     const stateData = state.data as { businessId?: string; businessName?: string };
