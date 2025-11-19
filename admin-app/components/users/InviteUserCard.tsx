@@ -43,7 +43,7 @@ export function InviteUserCard() {
           result.userId
             ? `Invite sent to ${email}. Role set to ${result.role}.`
             : `Invite sent to ${email}.`,
-        tone: "success",
+        variant: "success",
       });
       setEmail("");
       queryClient.invalidateQueries({ queryKey: ["users"] }).catch((error) => {
@@ -52,7 +52,7 @@ export function InviteUserCard() {
     },
     onError: (error: unknown) => {
       const message = error instanceof Error ? error.message : "Unable to send invite.";
-      pushToast({ title: "Invite failed", description: message, tone: "error" });
+      pushToast({ title: "Invite failed", description: message, variant: "error" });
     },
   });
 

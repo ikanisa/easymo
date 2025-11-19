@@ -42,7 +42,7 @@ export const POST = createHandler("admin_api.users.invite", async (request: Requ
     if (roleError) {
       obs.log({
         event: "ADMIN_INVITE_ROLE_UPDATE_FAILED",
-        status: "warning",
+        status: "error",
         message: roleError.message,
         details: { userId: data.user.id, role: payload.role },
       });

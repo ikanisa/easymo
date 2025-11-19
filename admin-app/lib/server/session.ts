@@ -1,4 +1,4 @@
-import { createHmac, timingSafeEqual } from "crypto";
+import { createHmac } from "crypto";
 import { cookies } from "next/headers";
 import type { Session as SupabaseSession, User as SupabaseUser } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server/client";
@@ -76,18 +76,6 @@ function signPayload(payload: string): string {
   const hmac = createHmac("sha256", key);
   hmac.update(payload, "utf8");
   return hmac.digest().toString("base64url");
-}
-
-function verifySignature(payload: string, signature: string): boolean {
-  const expected = signPayload(payload);
-  if (expected.length !== signature.length) return false;
-  try {
-    const expectedBuf = Buffer.from(expected, "base64url");
-    const signatureBuf = Buffer.from(signature, "base64url");
-    return timingSafeEqual(expectedBuf, signatureBuf);
-  } catch {
-    return false;
-  }
 }
 
 export function writeSessionCookie(session: AdminSession) {

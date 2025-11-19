@@ -1,4 +1,4 @@
-import { createMiddlewareClient } from "@supabase/ssr";
+import { createServerClient } from "@supabase/ssr";
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import type { Database } from "@/src/v2/lib/supabase/database.types";
@@ -59,7 +59,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next({ request: { headers } });
   }
 
-  const response = NextResponse.next({ request: { headers } });
+  let response = NextResponse.next({ request: { headers } });
 
   const legacySession = await readSessionFromCookies(createCustomCookieStore(request));
   if (legacySession) {
@@ -67,7 +67,27 @@ export async function middleware(request: NextRequest) {
   }
 
   try {
-    const supabase = createMiddlewareClient<Database>({ req: request, res: response });
+    const supabase = createServerClient<Database>(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() {
+            return request.cookies.getAll();
+          },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value }) =>
+              request.cookies.set(name, value)
+            );
+            response = NextResponse.next({ request });
+            cookiesToSet.forEach(({ name, value, options }) =>
+              response.cookies.set(name, value, options)
+            );
+          },
+        },
+      }
+    );
+    
     const { data, error } = await supabase.auth.getSession();
     if (error) {
       log.warn({ event: 'AUTH_SESSION_ERROR', error: error.message, path: request.nextUrl.pathname }, 'Supabase session retrieval failed');
