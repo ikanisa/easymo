@@ -11,6 +11,7 @@ import {
 } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { getSupabaseClient } from "@/lib/supabase-client";
+import { isAdminUser } from "@/lib/auth/is-admin-user";
 
 export type AuthStatus = "loading" | "authenticated" | "unauthenticated";
 
@@ -25,31 +26,6 @@ type SupabaseAuthContextValue = {
 };
 
 const SupabaseAuthContext = createContext<SupabaseAuthContextValue | null>(null);
-
-function isAdminUser(user: User | null): boolean {
-  if (!user) return false;
-  const role = (user.app_metadata as Record<string, unknown> | undefined)?.role;
-  const roles = (user.app_metadata as Record<string, unknown> | undefined)?.roles;
-  const userRole = (user.user_metadata as Record<string, unknown> | undefined)?.role;
-  const userRoles = (user.user_metadata as Record<string, unknown> | undefined)?.roles;
-
-  const normalize = (value: unknown) => {
-    if (typeof value === "string") return [value];
-    if (Array.isArray(value)) {
-      return (value as unknown[]).filter((entry): entry is string => typeof entry === "string");
-    }
-    return [];
-  };
-
-  const allRoles = [
-    ...normalize(role),
-    ...normalize(userRole),
-    ...normalize(roles),
-    ...normalize(userRoles),
-  ];
-
-  return allRoles.some((value) => value.toLowerCase() === "admin");
-}
 
 interface SupabaseAuthProviderProps {
   children: ReactNode;
