@@ -1,13 +1,27 @@
 import { Injectable, Logger, NotFoundException } from "@nestjs/common";
 import { PrismaService } from "@easymo/db";
 import { CallDirection, CallPlatform } from "@prisma/client";
+import { getRequestId } from "@easymo/commons";
+import { randomUUID } from "node:crypto";
 import type { AgentContext } from "@easymo/commons";
+import { SupabaseToolService } from "../../tools/supabase-tool.service.js";
+import type {
+  CreateListingInput,
+  CreateMatchInput,
+  CreateOrderInput,
+  RecordPaymentInput,
+  SearchSupabaseInput,
+  SearchSupabaseRequest,
+  ToolAttribution,
+  ToolAttributionDraft,
+} from "../../tools/types.js";
 
 @Injectable()
 export class ToolsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly logger: Logger,
+    private readonly supabaseTools: SupabaseToolService,
   ) {}
 
   async listLeads(agent: AgentContext, params: { limit: number; search?: string }) {
@@ -207,4 +221,112 @@ export class ToolsService {
       message: `Handoff request queued for ${payload.queue}.`,
     };
   }
+
+  async searchSupabase(agent: AgentContext, payload: SearchSupabaseInput) {
+    return await this.supabaseTools.searchSupabase({
+      tenant_id: payload.tenantId,
+      table: payload.table,
+      filters: normaliseFilterKeys(payload.filters),
+      limit: payload.limit,
+      order: normaliseOrder(payload.order),
+      attribution: this.buildAttribution(agent, payload.attribution),
+    });
+  }
+
+  async createListing(agent: AgentContext, payload: CreateListingInput) {
+    return await this.supabaseTools.createListing({
+      tenant_id: payload.tenantId,
+      farm_id: payload.farmId,
+      produce_id: payload.produceId,
+      quantity: payload.quantity,
+      unit_type: payload.unitType,
+      price_per_unit: payload.pricePerUnit,
+      currency: payload.currency,
+      harvest_date: payload.harvestDate,
+      title: payload.title,
+      description: payload.description,
+      tags: payload.tags ?? [],
+      metadata: payload.metadata ?? {},
+      attribution: this.buildAttribution(agent, payload.attribution),
+    });
+  }
+
+  async createOrder(agent: AgentContext, payload: CreateOrderInput) {
+    return await this.supabaseTools.createOrder({
+      tenant_id: payload.tenantId,
+      buyer_profile_id: payload.buyerProfileId,
+      listing_id: payload.listingId,
+      produce_id: payload.produceId,
+      quantity: payload.quantity,
+      unit_type: payload.unitType,
+      currency: payload.currency,
+      ceiling_total: payload.ceilingTotal,
+      notes: payload.notes,
+      metadata: payload.metadata ?? {},
+      attribution: this.buildAttribution(agent, payload.attribution),
+    });
+  }
+
+  async createMatch(agent: AgentContext, payload: CreateMatchInput) {
+    return await this.supabaseTools.createMatch({
+      tenant_id: payload.tenantId,
+      order_id: payload.orderId,
+      listing_id: payload.listingId,
+      score: payload.score,
+      metadata: payload.metadata ?? {},
+      attribution: this.buildAttribution(agent, payload.attribution),
+    });
+  }
+
+  async recordPayment(agent: AgentContext, payload: RecordPaymentInput) {
+    return await this.supabaseTools.recordPayment({
+      tenant_id: payload.tenantId,
+      order_id: payload.orderId,
+      payer_profile_id: payload.payerProfileId,
+      amount: payload.amount,
+      currency: payload.currency,
+      provider: payload.provider,
+      provider_ref: payload.providerRef,
+      metadata: payload.metadata ?? {},
+      attribution: this.buildAttribution(agent, payload.attribution),
+    });
+  }
+
+  private buildAttribution(agent: AgentContext, draft?: ToolAttributionDraft | null): ToolAttribution {
+    const trace = draft?.traceId?.trim() && draft.traceId.trim().length > 0 ? draft.traceId.trim() : getRequestId() ?? randomUUID();
+    const orgId = draft?.orgId?.trim() && draft.orgId.trim().length > 0 ? draft.orgId.trim() : agent.tenantId;
+    const userId = draft?.userId?.trim() && draft.userId.trim().length > 0 ? draft.userId.trim() : agent.agentId;
+    const convo = draft?.convoId?.trim() && draft.convoId.trim().length > 0 ? draft.convoId.trim() : agent.sessionId ?? undefined;
+    return {
+      trace_id: trace,
+      org_id: orgId,
+      user_id: userId,
+      convo_id: convo,
+    };
+  }
+}
+
+function normaliseFilterKeys(filters?: Record<string, unknown> | null): Record<string, unknown> {
+  if (!filters) return {};
+  return Object.entries(filters).reduce<Record<string, unknown>>((acc, [key, value]) => {
+    acc[toSnakeCase(key)] = value;
+    return acc;
+  }, {});
+}
+
+function normaliseOrder(
+  order?: SearchSupabaseInput["order"],
+): SearchSupabaseRequest["order"] | undefined {
+  if (!order) return undefined;
+  return {
+    column: toSnakeCase(order.column),
+    ascending: order.ascending,
+  };
+}
+
+function toSnakeCase(input: string): string {
+  return input
+    .replace(/([a-z0-9])([A-Z])/g, "$1_$2")
+    .replace(/[\s-]+/g, "_")
+    .toLowerCase();
 }

@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { waRouterConfig } from "./router.config.ts";
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL") ?? "",
@@ -16,6 +17,10 @@ serve(async (req: Request): Promise<Response> => {
       service: "wa-webhook-ai-agents",
       version: "2.0.0",
       timestamp: new Date().toISOString(),
+      proactive: {
+        featureToggles: waRouterConfig.featureToggles,
+        locales: Object.keys(waRouterConfig.proactiveTemplates),
+      },
     }), { headers: { "Content-Type": "application/json" } });
   }
 
