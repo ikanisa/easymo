@@ -29,7 +29,11 @@ Deno.test("buildMessageContext resolves profile, state, and locale", async () =>
   let ensureLocale: string | undefined;
   const overrides: Parameters<typeof __setMessageContextTestOverrides>[0] = {
     normalizeWaId: (value: string) => `+${value}`,
-    detectMessageLanguage: () => "fr",
+    detectMessageLanguage: () => ({
+      language: "fr",
+      toneLocale: "sw",
+      toneDetection: { locale: "sw", swahiliScore: 2, englishScore: 0 },
+    }),
     ensureProfile: async (
       _client,
       whatsapp,
@@ -56,8 +60,20 @@ Deno.test("buildMessageContext resolves profile, state, and locale", async () =>
     assertEquals(result?.context.from, "+250700000001");
     assertEquals(result?.context.profileId, "user-1");
     assertEquals(result?.context.locale, "fr");
+    assertEquals(result?.context.toneLocale, "sw");
+    assertEquals(result?.context.toneDetection, {
+      locale: "sw",
+      swahiliScore: 2,
+      englishScore: 0,
+    });
     assertEquals(result?.state, { key: "home", data: { foo: "bar" } });
     assertEquals(result?.language, "fr");
+    assertEquals(result?.toneLocale, "sw");
+    assertEquals(result?.toneDetection, {
+      locale: "sw",
+      swahiliScore: 2,
+      englishScore: 0,
+    });
     assertEquals(ensureWhatsApp, "+250700000001");
     assertEquals(ensureLocale, "fr");
   } finally {
@@ -69,7 +85,11 @@ Deno.test("buildMessageContext skips messages with invalid numbers", async () =>
   let metricCalls = 0;
   __setMessageContextTestOverrides({
     normalizeWaId: (value: string) => `+${value}`,
-    detectMessageLanguage: () => null,
+    detectMessageLanguage: () => ({
+      language: null,
+      toneLocale: "en",
+      toneDetection: { locale: "en", swahiliScore: 0, englishScore: 0 },
+    }),
     ensureProfile: async () => {
       throw new InvalidWhatsAppNumberError("bad");
     },

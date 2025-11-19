@@ -1,9 +1,13 @@
 import type {
   WhatsAppContact,
   WhatsAppWebhookChange,
+  WhatsAppMessage,
 } from "../types.ts";
 import type { SupportedLanguage } from "../i18n/language.ts";
 import { coerceToSupportedLanguage } from "../i18n/language.ts";
+import type { DetectionResult, ToneLocale } from "../../../../packages/localization/src/index.ts";
+import { detectToneLocale } from "../../../../packages/localization/src/detection.ts";
+import { mapToneLocaleToLanguage } from "../../../../packages/localization/src/tone.ts";
 
 export type ContactChange = Pick<WhatsAppWebhookChange, "value">;
 
@@ -51,10 +55,20 @@ export function buildContactLocaleIndex(
   return index;
 }
 
+export type MessageLanguageDetection = {
+  language: SupportedLanguage | null;
+  toneLocale: ToneLocale;
+  toneDetection: DetectionResult;
+};
+
 export function detectMessageLanguage(
-  msg: any,
+  msg: WhatsAppMessage,
   contactLocales: Map<string, string>,
-): SupportedLanguage | null {
+): MessageLanguageDetection {
+  const bodyText = extractBodyText(msg);
+  const toneDetection = detectToneLocale(bodyText);
+  const toneLocale = toneDetection.locale;
+
   const directCandidates = [
     msg?.language?.code,
     msg?.language,
@@ -63,16 +77,41 @@ export function detectMessageLanguage(
   ];
   for (const candidate of directCandidates) {
     if (typeof candidate === "string" && candidate.trim()) {
-      return coerceToSupportedLanguage(candidate.trim());
+      const supported = coerceToSupportedLanguage(candidate.trim());
+      if (supported) {
+        return { language: supported, toneLocale, toneDetection };
+      }
     }
   }
 
-  if (typeof msg?.from !== "string" || !msg.from.trim()) return null;
+  if (typeof msg?.from !== "string" || !msg.from.trim()) {
+    return {
+      language: coerceToSupportedLanguage(mapToneLocaleToLanguage(toneLocale)),
+      toneLocale,
+      toneDetection,
+    };
+  }
   const normalized = normalizeWaId(msg.from.trim());
   const match = contactLocales.get(normalized) ??
     contactLocales.get(normalized.replace(/^\+/, "")) ??
     null;
-  return match ? coerceToSupportedLanguage(match) : null;
+  const resolved = match
+    ? coerceToSupportedLanguage(match)
+    : coerceToSupportedLanguage(mapToneLocaleToLanguage(toneLocale));
+  return { language: resolved, toneLocale, toneDetection };
+}
+
+function extractBodyText(msg: WhatsAppMessage): string | null {
+  if (msg?.type === "text" && typeof msg?.text?.body === "string") {
+    return msg.text.body;
+  }
+  if (msg?.type === "interactive") {
+    const listTitle = msg?.interactive?.list_reply?.title || msg?.interactive?.list_reply?.description;
+    if (typeof listTitle === "string") return listTitle;
+    const buttonTitle = msg?.interactive?.button_reply?.title;
+    if (typeof buttonTitle === "string") return buttonTitle;
+  }
+  return null;
 }
 
 function isContactRecord(contact: unknown): contact is WhatsAppContact {

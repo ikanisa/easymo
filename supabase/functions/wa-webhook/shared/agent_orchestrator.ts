@@ -15,6 +15,7 @@ import { getOpenAIClient } from "./openai_client.ts";
 import { getToolManager } from "./tool_manager.ts";
 import { logStructuredEvent } from "../observe/log.ts";
 import { getTemplateRegistry, type ApprovedTemplate } from "./template_registry.ts";
+import { buildToneDirective } from "../../../../packages/localization/src/tone.ts";
 
 export type AgentType =
   | "customer_service"
@@ -523,10 +524,20 @@ Respond with just the category name (e.g., "booking").`,
   ): Promise<ChatMessage[]> {
     const messages: ChatMessage[] = [];
 
-    // Add system prompt
+    // Add system prompt enriched with tone guidance
+    const toneDetection = context.toneDetection ?? {
+      locale: context.toneLocale ?? "en",
+      swahiliScore: context.toneLocale === "sw" ? 1 : 0,
+      englishScore: context.toneLocale === "en" ? 1 : 0,
+    };
+    const toneDirective = buildToneDirective(toneDetection);
+    const languageReminder = toneDetection.locale === "sw"
+      ? "Write your replies fully in Kiswahili unless the farmer switches back to English."
+      : "Respond in natural English while mirroring any Kiswahili phrases the user sends.";
+    const promptContent = `${agent.systemPrompt}\n\n${toneDirective}\n\n${languageReminder}`.trim();
     messages.push({
       role: "system",
-      content: agent.systemPrompt,
+      content: promptContent,
       tool_calls: undefined,
       tool_call_id: undefined,
       name: undefined,

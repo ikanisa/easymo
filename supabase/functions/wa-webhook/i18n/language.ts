@@ -1,6 +1,6 @@
-export type SupportedLanguage = "en" | "fr" | "es" | "pt" | "de";
+export type SupportedLanguage = "en" | "fr" | "es" | "pt" | "de" | "sw";
 
-const SUPPORTED: SupportedLanguage[] = ["en", "fr", "es", "pt", "de"];
+const SUPPORTED: SupportedLanguage[] = ["en", "fr", "es", "pt", "de", "sw"];
 export const DEFAULT_LANGUAGE: SupportedLanguage = "en";
 
 function normalizeCandidate(value: string): string {

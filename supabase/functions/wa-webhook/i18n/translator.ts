@@ -14,6 +14,7 @@ const CATALOGS: Record<SupportedLanguage, Catalog> = {
   es: ES as Catalog,
   pt: PT as Catalog,
   de: DE as Catalog,
+  sw: EN as Catalog,
 };
 
 export type TranslationKey = string;
