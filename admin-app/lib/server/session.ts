@@ -2,6 +2,7 @@ import { createHmac, timingSafeEqual } from "crypto";
 import { cookies } from "next/headers";
 import type { Session as SupabaseSession, User as SupabaseUser } from "@supabase/supabase-js";
 import { createServerSupabaseClient } from "@/lib/supabase/server/client";
+import { logStructured } from "./logger";
 import { isAdminUser } from "@/lib/auth/is-admin-user";
 
 export interface AdminSession {
@@ -141,12 +142,24 @@ async function readSupabaseAdminSession(): Promise<AdminSession | null> {
     const supabase = await createServerSupabaseClient();
     const { data, error } = await supabase.auth.getSession();
     if (error) {
-      console.warn('supabase.session.read_failed', error.message);
+      logStructured({
+        event: "SESSION_READ_FAILED",
+        target: "admin-session",
+        status: "error",
+        message: error.message,
+        details: { source: "supabase" },
+      });
       return null;
     }
     return mapSupabaseSessionToAdmin(data.session);
   } catch (error) {
-    console.warn('supabase.session.error', error instanceof Error ? error.message : error);
+    logStructured({
+      event: "SUPABASE_SESSION_ERROR",
+      target: "admin-session",
+      status: "error",
+      message: error instanceof Error ? error.message : String(error),
+      details: { source: "supabase" },
+    });
     return null;
   }
 }
