@@ -67,7 +67,7 @@ export function SidebarSection({ title, items, onNavigate }: SidebarSectionProps
 
           return item.href ? (
             <a
-              key={item.label}
+              key={item.href ?? item.label}
               href={item.href}
               aria-current={item.active ? "page" : undefined}
               onClick={(event) => {
@@ -87,7 +87,7 @@ export function SidebarSection({ title, items, onNavigate }: SidebarSectionProps
             </a>
           ) : (
             <button
-              key={item.label}
+              key={item.href ?? item.label}
               type="button"
               aria-current={item.active ? "page" : undefined}
               onClick={() => onNavigate?.(item)}
