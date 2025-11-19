@@ -7499,3 +7499,114 @@ CREATE POLICY "router_logs_support_ro" ON "public"."router_logs"
   USING (true);
 
 RESET ALL;
+
+-- Produce logistics schema additions
+CREATE TABLE IF NOT EXISTS "public"."logistics_partners" (
+    "code" text NOT NULL,
+    "name" text NOT NULL,
+    "supports_cod" boolean DEFAULT false,
+    "supports_prepay" boolean DEFAULT true,
+    "priority" integer DEFAULT 100,
+    "region" text DEFAULT 'rw'::text,
+    "metadata" jsonb DEFAULT '{}'::jsonb,
+    "created_at" timestamptz DEFAULT now(),
+    CONSTRAINT "logistics_partners_pkey" PRIMARY KEY ("code")
+);
+
+CREATE TABLE IF NOT EXISTS "public"."produce_listings" (
+    "id" uuid NOT NULL DEFAULT gen_random_uuid(),
+    "farmer_id" uuid NOT NULL,
+    "title" text NOT NULL,
+    "description" text,
+    "unit" text DEFAULT 'kg'::text,
+    "available_quantity" numeric DEFAULT 0,
+    "status" text DEFAULT 'active'::text,
+    "photos" jsonb DEFAULT '[]'::jsonb,
+    "cod_enabled" boolean DEFAULT true,
+    "preferred_partner" text REFERENCES "public"."logistics_partners"("code"),
+    "video_opt_in" boolean DEFAULT false,
+    "sora_promo_status" text DEFAULT 'pending'::text,
+    "metadata" jsonb DEFAULT '{}'::jsonb,
+    "created_at" timestamptz DEFAULT now(),
+    "updated_at" timestamptz DEFAULT now(),
+    CONSTRAINT "produce_listings_pkey" PRIMARY KEY ("id"),
+    CONSTRAINT "produce_listings_status_check" CHECK (("status" = ANY (ARRAY['active'::text, 'paused'::text, 'sold_out'::text])))
+);
+
+CREATE TABLE IF NOT EXISTS "public"."produce_pickups" (
+    "id" uuid NOT NULL DEFAULT gen_random_uuid(),
+    "listing_id" uuid NOT NULL REFERENCES "public"."produce_listings"("id") ON DELETE CASCADE,
+    "partner_code" text NOT NULL REFERENCES "public"."logistics_partners"("code"),
+    "payment_mode" text NOT NULL,
+    "status" text NOT NULL DEFAULT 'scheduled'::text,
+    "scheduled_for" timestamptz,
+    "quantity" numeric NOT NULL DEFAULT 0,
+    "notes" text,
+    "metadata" jsonb DEFAULT '{}'::jsonb,
+    "created_at" timestamptz DEFAULT now(),
+    "updated_at" timestamptz DEFAULT now(),
+    CONSTRAINT "produce_pickups_payment_mode_check" CHECK (("payment_mode" = ANY (ARRAY['COD'::text, 'PREPAID'::text]))),
+    CONSTRAINT "produce_pickups_pkey" PRIMARY KEY ("id")
+);
+
+CREATE TABLE IF NOT EXISTS "public"."produce_inventory_events" (
+    "id" uuid NOT NULL DEFAULT gen_random_uuid(),
+    "listing_id" uuid NOT NULL REFERENCES "public"."produce_listings"("id") ON DELETE CASCADE,
+    "match_id" uuid,
+    "change_amount" numeric NOT NULL,
+    "snapshot_quantity" numeric NOT NULL,
+    "reason" text NOT NULL,
+    "metadata" jsonb DEFAULT '{}'::jsonb,
+    "created_at" timestamptz DEFAULT now(),
+    CONSTRAINT "produce_inventory_events_pkey" PRIMARY KEY ("id")
+);
+
+ALTER TABLE "public"."voice_calls"
+    ADD COLUMN IF NOT EXISTS "consent_recorded_at" timestamptz,
+    ADD COLUMN IF NOT EXISTS "consent_channel" text,
+    ADD COLUMN IF NOT EXISTS "consent_media_url" text,
+    ADD COLUMN IF NOT EXISTS "transcript_locale" text DEFAULT 'en'::text,
+    ADD COLUMN IF NOT EXISTS "transcript_status" text DEFAULT 'pending'::text,
+    ADD COLUMN IF NOT EXISTS "last_transcript_segment_at" timestamptz;
+
+CREATE TABLE IF NOT EXISTS "public"."voice_segments" (
+    "id" uuid NOT NULL DEFAULT gen_random_uuid(),
+    "call_id" uuid NOT NULL REFERENCES "public"."voice_calls"("id") ON DELETE CASCADE,
+    "sequence" integer NOT NULL,
+    "speaker" text NOT NULL,
+    "text" text NOT NULL,
+    "confidence" numeric,
+    "started_at" timestamptz DEFAULT now(),
+    "ended_at" timestamptz,
+    "created_at" timestamptz DEFAULT now(),
+    CONSTRAINT "voice_segments_pkey" PRIMARY KEY ("id"),
+    CONSTRAINT "voice_segments_speaker_check" CHECK (("speaker" = ANY (ARRAY['caller'::text, 'assistant'::text, 'system'::text])))
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS "voice_segments_call_sequence_idx" ON "public"."voice_segments" USING btree ("call_id", "sequence");
+
+ALTER TABLE "public"."produce_listings" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "public"."produce_pickups" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "public"."produce_inventory_events" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "public"."voice_segments" ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "svc_rw_produce_listings" ON "public"."produce_listings" USING (("auth"."role"() = 'service_role'::text)) WITH CHECK (true);
+CREATE POLICY "svc_rw_produce_pickups" ON "public"."produce_pickups" USING (("auth"."role"() = 'service_role'::text)) WITH CHECK (true);
+CREATE POLICY "svc_rw_produce_inventory_events" ON "public"."produce_inventory_events" USING (("auth"."role"() = 'service_role'::text)) WITH CHECK (true);
+CREATE POLICY "svc_rw_voice_segments" ON "public"."voice_segments" USING (("auth"."role"() = 'service_role'::text)) WITH CHECK (true);
+
+GRANT ALL ON TABLE "public"."logistics_partners" TO "anon";
+GRANT ALL ON TABLE "public"."logistics_partners" TO "authenticated";
+GRANT ALL ON TABLE "public"."logistics_partners" TO "service_role";
+GRANT ALL ON TABLE "public"."produce_listings" TO "anon";
+GRANT ALL ON TABLE "public"."produce_listings" TO "authenticated";
+GRANT ALL ON TABLE "public"."produce_listings" TO "service_role";
+GRANT ALL ON TABLE "public"."produce_pickups" TO "anon";
+GRANT ALL ON TABLE "public"."produce_pickups" TO "authenticated";
+GRANT ALL ON TABLE "public"."produce_pickups" TO "service_role";
+GRANT ALL ON TABLE "public"."produce_inventory_events" TO "anon";
+GRANT ALL ON TABLE "public"."produce_inventory_events" TO "authenticated";
+GRANT ALL ON TABLE "public"."produce_inventory_events" TO "service_role";
+GRANT ALL ON TABLE "public"."voice_segments" TO "anon";
+GRANT ALL ON TABLE "public"."voice_segments" TO "authenticated";
+GRANT ALL ON TABLE "public"."voice_segments" TO "service_role";

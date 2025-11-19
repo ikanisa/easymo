@@ -56,9 +56,17 @@ function installHooks() {
     buildMessageContext: async (client, msg, _contactLocales) => {
       if (msg.id === "wamid.null") return null;
       const context: MessageContextResult = {
-        context: { supabase: client, from: msg.from, locale: "en" },
+        context: {
+          supabase: client,
+          from: msg.from,
+          locale: "en",
+          toneLocale: "en",
+          toneDetection: { locale: "en", swahiliScore: 0, englishScore: 1 },
+        },
         state: { key: "home" },
         language: "en",
+        toneLocale: "en",
+        toneDetection: { locale: "en", swahiliScore: 0, englishScore: 1 },
       };
       return context;
     },

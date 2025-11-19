@@ -293,7 +293,7 @@ importers:
         version: 5.9.3
       vitest:
         specifier: ^2.1.6
-        version: 2.1.9(@edge-runtime/vm@3.2.0)(@types/node@20.19.24)(@vitest/ui@3.2.4)(jsdom@26.1.0)(terser@5.44.1)
+        version: 2.1.9(@edge-runtime/vm@3.2.0)(@types/node@20.19.24)(@vitest/ui@3.2.4(vitest@3.2.4))(jsdom@26.1.0)(terser@5.44.1)
 
   packages/circuit-breaker:
     devDependencies:
@@ -352,6 +352,16 @@ importers:
       tsx:
         specifier: ^4.19.2
         version: 4.20.6
+
+  packages/localization:
+    dependencies:
+      zod:
+        specifier: ^3.25.76
+        version: 3.25.76
+    devDependencies:
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
 
   packages/messaging:
     dependencies:
@@ -956,6 +966,43 @@ importers:
       tsx:
         specifier: ^4.7.0
         version: 4.20.6
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+
+  services/voice-bridge:
+    dependencies:
+      '@supabase/supabase-js':
+        specifier: ^2.79.0
+        version: 2.79.0
+      dotenv:
+        specifier: ^16.4.7
+        version: 16.6.1
+      express:
+        specifier: ^4.21.2
+        version: 4.21.2
+      pino:
+        specifier: ^9.5.0
+        version: 9.14.0
+      pino-http:
+        specifier: ^9.0.0
+        version: 9.0.0
+      ws:
+        specifier: ^8.18.0
+        version: 8.18.3
+      zod:
+        specifier: ^3.25.76
+        version: 3.25.76
+    devDependencies:
+      '@types/express':
+        specifier: ^4.17.21
+        version: 4.17.25
+      '@types/ws':
+        specifier: ^8.5.10
+        version: 8.18.1
+      ts-node-dev:
+        specifier: ^2.0.0
+        version: 2.0.0(@swc/core@1.15.0)(@types/node@20.19.24)(typescript@5.9.3)
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
@@ -13931,7 +13978,7 @@ snapshots:
       sirv: 3.0.2
       tinyglobby: 0.2.15
       tinyrainbow: 2.0.0
-      vitest: 3.2.4(@edge-runtime/vm@3.2.0)(@types/node@20.19.24)(@vitest/ui@3.2.4)(jsdom@24.1.0)(terser@5.44.1)
+      vitest: 3.2.4(@edge-runtime/vm@3.2.0)(@types/node@20.19.24)(@vitest/ui@3.2.4)(jsdom@26.1.0)(terser@5.44.1)
     optional: true
 
   '@vitest/utils@2.0.5':
@@ -18825,7 +18872,7 @@ snapshots:
       fsevents: 2.3.3
       terser: 5.44.1
 
-  vitest@2.1.9(@edge-runtime/vm@3.2.0)(@types/node@20.19.24)(@vitest/ui@3.2.4)(jsdom@26.1.0)(terser@5.44.1):
+  vitest@2.1.9(@edge-runtime/vm@3.2.0)(@types/node@20.19.24)(@vitest/ui@3.2.4(vitest@3.2.4))(jsdom@26.1.0)(terser@5.44.1):
     dependencies:
       '@vitest/expect': 2.1.9
       '@vitest/mocker': 2.1.9(vite@5.4.21(@types/node@20.19.24)(terser@5.44.1))
