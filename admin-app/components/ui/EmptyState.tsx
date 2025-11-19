@@ -10,10 +10,11 @@ export function EmptyState(props: EmptyStateProps) {
     return <UiEmptyState {...props} />;
   }
 
-  const { title, description, action } = props;
+  const { title, description, action, className, illustration } = props;
 
   return (
-    <div className="empty-state" role="status" aria-live="polite">
+    <div className={className ?? "empty-state"} role="status" aria-live="polite">
+      {illustration}
       <h3>{title}</h3>
       <p>{description}</p>
       {action}
