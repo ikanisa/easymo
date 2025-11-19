@@ -35,11 +35,19 @@ const createPrismaMock = () => ({
 
 describe("ToolsService", () => {
   let prisma: ReturnType<typeof createPrismaMock>;
+  let supabaseTools: Record<string, jest.Mock>;
   let service: ToolsService;
 
   beforeEach(() => {
     prisma = createPrismaMock();
-    service = new ToolsService(prisma as any, new Logger("ToolsServiceTest"));
+    supabaseTools = {
+      searchSupabase: jest.fn(),
+      createListing: jest.fn(),
+      createOrder: jest.fn(),
+      createMatch: jest.fn(),
+      recordPayment: jest.fn(),
+    };
+    service = new ToolsService(prisma as any, new Logger("ToolsServiceTest"), supabaseTools as any);
   });
 
   it("scopes fetchLead queries to the agent tenant", async () => {
@@ -131,5 +139,25 @@ describe("ToolsService", () => {
 
     const manual = service.collectPayment(agent, { region: "ke", amount: 5, currency: "USD" });
     expect(manual.type).toBe("MANUAL");
+  });
+
+  it("snake-cases filters and order when invoking Supabase search", async () => {
+    supabaseTools.searchSupabase.mockResolvedValue({ items: [], count: 0 });
+
+    await service.searchSupabase(agent, {
+      tenantId: TENANT_ID,
+      table: "produce_listings",
+      filters: { harvestDateGte: "2024-01-01", farmId: "farm-1" },
+      order: { column: "harvestDate", ascending: false },
+    });
+
+    expect(supabaseTools.searchSupabase).toHaveBeenCalledWith({
+      tenant_id: TENANT_ID,
+      table: "produce_listings",
+      filters: { harvest_date_gte: "2024-01-01", farm_id: "farm-1" },
+      limit: undefined,
+      order: { column: "harvest_date", ascending: false },
+      attribution: expect.objectContaining({ org_id: TENANT_ID, user_id: agent.agentId }),
+    });
   });
 });
