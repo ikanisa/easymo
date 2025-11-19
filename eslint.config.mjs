@@ -15,7 +15,8 @@ const reactBoundaryPlugin = {
             "Ensure React entry files declare clear client/server boundaries and avoid server imports in client components.",
         },
         messages: {
-          mixedDirectives: "Do not combine 'use client' and 'use server' directives in the same module.",
+          mixedDirectives:
+            "Do not combine 'use client' and 'use server' directives in the same module.",
           serverImportInClient:
             "Avoid importing server-only module '{{source}}' in a client component. Move the logic to a server file or remove the client directive.",
         },

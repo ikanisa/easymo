@@ -12,7 +12,8 @@ populating the `restaurant_menu_items` table with a shared menu across 97 bars.
 **Path:** `supabase/seed/fixtures/bar_menu_items_seed.sql`
 
 - **Purpose:** Populate menu items for every bar where `country = 'Rwanda'`
-- **Structure:** Validates bar presence, deletes existing menu items for those bars, then cross-joins a menu template with the target bars
+- **Structure:** Validates bar presence, deletes existing menu items for those bars, then
+  cross-joins a menu template with the target bars
 - **Records:** 17,848 total (97 bars × 184 items per bar)
 - **Features:**
   - Transaction-safe (BEGIN/COMMIT)
@@ -158,7 +159,8 @@ LIMIT 10;
 
 ## Target Bars
 
-The seed selects every row from `public.bars` where `country = 'Rwanda'`. As of this release that equals 97 bars, but the script automatically adapts if more bars are added or removed.
+The seed selects every row from `public.bars` where `country = 'Rwanda'`. As of this release that
+equals 97 bars, but the script automatically adapts if more bars are added or removed.
 
 ## Integration Points
 

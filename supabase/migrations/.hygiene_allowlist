@@ -3,4 +3,9 @@
 
 20250907104112_bb1041f4-1b8a-4bce-b154-b8a3e8eb8462.sql
 20251017220824_remote_schema.sql
-
+20251002120000_core_schema.sql
+20251027120000_admin_core_schema.sql
+20251118100000_business_deeplink_code.sql
+20250316090000_cod_logistics.sql
+20250316090500_voice_segments.sql
+20251119123000_farmer_market_foundation.sql
