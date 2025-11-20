@@ -10,9 +10,7 @@ BEGIN;
 
 -- Make event_type nullable and add default value for idempotency tracking
 ALTER TABLE public.wa_events 
-  ALTER COLUMN event_type DROP NOT NULL;
-
-ALTER TABLE public.wa_events 
+  ALTER COLUMN event_type DROP NOT NULL,
   ALTER COLUMN event_type SET DEFAULT 'idempotency_check';
 
 -- Add comment to clarify dual purpose of table

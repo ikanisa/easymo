@@ -1,5 +1,8 @@
 import { supabase } from "../config.ts";
 
+// Event type for idempotency tracking
+const IDEMPOTENCY_EVENT_TYPE = "idempotency_check";
+
 function getPgError(err: unknown): { code?: string; message?: string } {
   if (err && typeof err === "object" && (err as any).code) return err as any;
   try {
@@ -29,7 +32,7 @@ export async function claimEvent(id: string): Promise<boolean> {
     const { data, error } = await supabase
       .from("wa_events")
       .upsert(
-        { message_id: id, event_type: "idempotency_check" },
+        { message_id: id, event_type: IDEMPOTENCY_EVENT_TYPE },
         { onConflict: "message_id", ignoreDuplicates: true },
       )
       .select("message_id");
@@ -41,7 +44,7 @@ export async function claimEvent(id: string): Promise<boolean> {
       const pre = await supabase.from("wa_events").select("message_id").eq("message_id", id).maybeSingle();
       if (!pre.error && pre.data) return false; // already exists
       // try plain insert
-      const ins = await supabase.from("wa_events").insert({ message_id: id, event_type: "idempotency_check" });
+      const ins = await supabase.from("wa_events").insert({ message_id: id, event_type: IDEMPOTENCY_EVENT_TYPE });
       if (ins.error) throw ins.error;
       return true;
     }
@@ -51,7 +54,7 @@ export async function claimEvent(id: string): Promise<boolean> {
       .from("wa_events")
       .upsert(
         // @ts-ignore: legacy column
-        { wa_message_id: id, event_type: "idempotency_check" },
+        { wa_message_id: id, event_type: IDEMPOTENCY_EVENT_TYPE },
         // @ts-ignore: legacy column
         { onConflict: "wa_message_id", ignoreDuplicates: true },
       )

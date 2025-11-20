@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS public.wa_interactions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   
   -- WhatsApp identifiers
-  wa_id TEXT NOT NULL,
+  wa_id TEXT,
   phone_number TEXT,
   message_id TEXT,
   conversation_id TEXT,
