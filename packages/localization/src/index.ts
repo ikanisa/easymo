@@ -1,3 +1,3 @@
-export * from "./detection";
-export * from "./tone";
+export * from "./detection.ts";
+export * from "./tone.ts";
 export * from "./types.ts";

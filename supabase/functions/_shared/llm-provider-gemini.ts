@@ -15,7 +15,6 @@ import type {
 } from "./llm-provider-interface.ts";
 
 // Using Google's Generative AI SDK for Deno
-// @deno-types="npm:@types/google__generative-ai"
 import { GoogleGenerativeAI, FunctionDeclarationSchemaType } from "npm:@google/generative-ai@^0.21.0";
 
 export class GeminiProvider implements LLMProvider {
