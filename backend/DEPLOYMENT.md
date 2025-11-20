@@ -3,7 +3,7 @@
 This guide connects the Terraform infrastructure, Python backend, and Dialogflow CX agent.
 
 ## Prerequisites
-1.  Google Cloud Project with Billing Enabled (**Project ID: easymo-478117**).
+1.  Google Cloud Project with Billing Enabled (**Project ID: gen-lang-client-0738932886**).
 2.  `gcloud` CLI installed and authenticated.
 3.  `terraform` installed.
 4.  An MTN SIP Trunk account (credentials).
@@ -17,7 +17,7 @@ This guide connects the Terraform infrastructure, Python backend, and Dialogflow
 2.  Initialize and apply:
     ```bash
     terraform init
-    terraform apply -var="project_id=easymo-478117" -var="region=us-central1"
+    terraform apply -var="project_id=gen-lang-client-0738932886" -var="region=us-central1"
     ```
     *This will create the Cloud Run service, Firestore DB, Service Accounts, and Secret Manager entries.*
 
@@ -26,10 +26,10 @@ This guide connects the Terraform infrastructure, Python backend, and Dialogflow
 1.  Store your API keys in Google Secret Manager:
     ```bash
     # OpenAI API Key (for function calling tool)
-    echo -n "sk-..." | gcloud secrets versions add openai_api_key --project=easymo-478117 --data-file=-
+    echo -n "sk-..." | gcloud secrets versions add openai_api_key --project=gen-lang-client-0738932886 --data-file=-
 
     # MTN SIP Credentials (if needed by webhook, otherwise configured in Dialogflow Gateway)
-    echo -n "user:pass" | gcloud secrets versions add mtn_sip_creds --project=easymo-478117 --data-file=-
+    echo -n "user:pass" | gcloud secrets versions add mtn_sip_creds --project=gen-lang-client-0738932886 --data-file=-
     ```
 
 ## Phase 3: Deploy Backend (Cloud Run)
@@ -37,12 +37,12 @@ This guide connects the Terraform infrastructure, Python backend, and Dialogflow
 1.  Build and Deploy the Main Webhook:
     ```bash
     cd backend/app
-    gcloud builds submit --tag gcr.io/easymo-478117/easymo-webhook --project=easymo-478117
+    gcloud builds submit --tag gcr.io/gen-lang-client-0738932886/easymo-webhook --project=gen-lang-client-0738932886
     gcloud run deploy easymo-webhook \
-        --image gcr.io/easymo-478117/easymo-webhook \
+        --image gcr.io/gen-lang-client-0738932886/easymo-webhook \
         --platform managed \
         --region us-central1 \
-        --project=easymo-478117 \
+        --project=gen-lang-client-0738932886 \
         --allow-unauthenticated # Secure this via Dialogflow settings in prod
     ```
 2.  **Copy the Service URL** returned (e.g., `https://easymo-webhook-xyz.a.run.app`).
@@ -69,7 +69,7 @@ This guide connects the Terraform infrastructure, Python backend, and Dialogflow
     gcloud run deploy easymo-admin-api \
         --source . \
         --region us-central1 \
-        --project=easymo-478117
+        --project=gen-lang-client-0738932886
     ```
 2.  Connect the React Frontend:
     *   Update the frontend `config` to point to the Admin API URL for dashboard data.
