@@ -8,7 +8,7 @@ import {
   requireAdminAuth,
 } from "../_shared/admin.ts";
 import { verifyQrPayload } from "../wa-webhook/utils/qr.ts";
-import { getRotatingSecret } from "shared/env.ts";
+import { getRotatingSecret } from "../_shared/env.ts";
 
 const supabase = createServiceRoleClient();
 const requestSchema = z.object({

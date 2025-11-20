@@ -1,6 +1,6 @@
 import { serve } from "$std/http/server.ts";
-import { getServiceClient } from "shared/supabase.ts";
-import { getSecret, getSecretPair, getStringList } from "shared/secrets.ts";
+import { getServiceClient } from "../_shared/supabase.ts";
+import { getSecret, getSecretPair, getStringList } from "../_shared/secrets.ts";
 
 const supabase = getServiceClient();
 

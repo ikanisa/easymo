@@ -5,9 +5,9 @@
 // configured or returns an error.
 
 import { serve } from "$std/http/server.ts";
-import { getServiceClient } from "shared/supabase.ts";
-import { CONFIG } from "shared/env.ts";
-import { requireAdmin } from "shared/auth.ts";
+import { getServiceClient } from "../_shared/supabase.ts";
+import { CONFIG } from "../_shared/env.ts";
+import { requireAdmin } from "../_shared/auth.ts";
 import { z } from "zod";
 
 const ENABLE_AGENT_CHAT = ["1", "true", "yes"].includes(

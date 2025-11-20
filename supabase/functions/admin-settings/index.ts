@@ -13,15 +13,15 @@
 
 import { serve } from "$std/http/server.ts";
 import { z } from "zod";
-import { getServiceClient } from "shared/supabase.ts";
-import { requireAdmin } from "shared/auth.ts";
+import { getServiceClient } from "../_shared/supabase.ts";
+import { requireAdmin } from "../_shared/auth.ts";
 import {
   badRequest,
   methodNotAllowed,
   notFound,
   ok,
   serverError,
-} from "shared/http.ts";
+} from "../_shared/http.ts";
 
 const supabase = getServiceClient();
 

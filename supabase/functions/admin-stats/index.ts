@@ -5,9 +5,9 @@
 // Supabase service role key to perform unrestricted reads.
 
 import { serve } from "$std/http/server.ts";
-import { getServiceClient } from "shared/supabase.ts";
-import { requireAdmin } from "shared/auth.ts";
-import { methodNotAllowed, ok, serverError } from "shared/http.ts";
+import { getServiceClient } from "../_shared/supabase.ts";
+import { requireAdmin } from "../_shared/auth.ts";
+import { methodNotAllowed, ok, serverError } from "../_shared/http.ts";
 
 const supabase = getServiceClient();
 

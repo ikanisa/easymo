@@ -1,5 +1,5 @@
 import { corsHeaders } from "../_shared/http.ts";
-import { getServiceClient } from "shared/supabase.ts";
+import { getServiceClient } from "../_shared/supabase.ts";
 
 const supabase = getServiceClient();
 

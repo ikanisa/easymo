@@ -7,8 +7,8 @@
 
 import { serve } from "$std/http/server.ts";
 import { logStructuredEvent, recordMetric } from "../_shared/observability.ts";
-import { getServiceClient } from "shared/supabase.ts";
-import { getEnv, requireEnv } from "shared/env.ts";
+import { getServiceClient } from "../_shared/supabase.ts";
+import { getEnv, requireEnv } from "../_shared/env.ts";
 
 const supabase = getServiceClient();
 

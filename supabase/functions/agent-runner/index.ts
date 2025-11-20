@@ -4,8 +4,8 @@
 // Supports BookingAgent, TokenRedemptionAgent, and TriageAgent.
 
 import { serve } from "$std/http/server.ts";
-import { getServiceClient } from "shared/supabase.ts";
-import { requireAdmin } from "shared/auth.ts";
+import { getServiceClient } from "../_shared/supabase.ts";
+import { requireAdmin } from "../_shared/auth.ts";
 import { z } from "zod";
 
 // Feature flag check

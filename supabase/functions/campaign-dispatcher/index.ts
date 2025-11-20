@@ -1,5 +1,5 @@
 import { serve } from "$std/http/server.ts";
-import { getServiceClient } from "shared/supabase.ts";
+import { getServiceClient } from "../_shared/supabase.ts";
 import { logStructuredEvent } from "../_shared/observability.ts";
 
 const WA_TOKEN = Deno.env.get('WA_TOKEN') || Deno.env.get('WHATSAPP_ACCESS_TOKEN') || '';

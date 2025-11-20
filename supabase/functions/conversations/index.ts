@@ -8,8 +8,8 @@
 import { serve } from "$std/http/server.ts";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
-import { getServiceClient } from "shared/supabase.ts";
-import { getAdminToken } from "shared/env.ts";
+import { getServiceClient } from "../_shared/supabase.ts";
+import { getAdminToken } from "../_shared/env.ts";
 
 const BASE_HEADERS: Record<string, string> = {
   "content-type": "application/json; charset=utf-8",

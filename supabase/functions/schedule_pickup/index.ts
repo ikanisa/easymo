@@ -8,8 +8,8 @@ import {
   logStructuredEvent,
   logError,
 } from "../_shared/observability.ts";
-import { getServiceClient } from "shared/supabase.ts";
-import { getSupabaseServiceConfig } from "shared/env.ts";
+import { getServiceClient } from "../_shared/supabase.ts";
+import { getSupabaseServiceConfig } from "../_shared/env.ts";
 
 const supabase = getServiceClient();
 const serviceConfig = getSupabaseServiceConfig();

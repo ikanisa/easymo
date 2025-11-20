@@ -5,7 +5,7 @@ import {
   methodNotAllowed,
   ok,
   serverError,
-} from "shared/http.ts";
+} from "../_shared/http.ts";
 import {
   appendLineage,
   applyMutation,
