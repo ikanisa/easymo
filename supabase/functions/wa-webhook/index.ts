@@ -1,5 +1,22 @@
 import { serve } from "./deps.ts";
-import { supabase } from "./config.ts";
+
+// Wrap config import in try-catch to catch initialization errors
+let supabase: any;
+let configError: Error | null = null;
+
+try {
+  const configModule = await import("./config.ts");
+  supabase = configModule.supabase;
+} catch (err) {
+  configError = err instanceof Error ? err : new Error(String(err));
+  console.error(JSON.stringify({
+    event: "CONFIG_INITIALIZATION_ERROR",
+    error: configError.message,
+    errorType: configError.constructor.name,
+    errorStack: configError.stack,
+  }));
+}
+
 import { processWebhookRequest } from "./router/pipeline.ts";
 import { handlePreparedWebhook } from "./router/processor.ts";
 import {
@@ -11,6 +28,23 @@ import {
 import { incrementMetric } from "./utils/metrics_collector.ts";
 
 serve(async (req: Request): Promise<Response> => {
+  // Check for config initialization error first
+  if (configError) {
+    console.error(JSON.stringify({
+      event: "CONFIG_ERROR_ON_REQUEST",
+      error: configError.message,
+      path: new URL(req.url).pathname,
+    }));
+    return new Response(JSON.stringify({
+      error: "configuration_error",
+      message: configError.message,
+      details: "Missing required environment variables. Check Supabase secrets."
+    }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" }
+    });
+  }
+
   const url = new URL(req.url);
   const correlationId = req.headers.get("x-correlation-id") ?? crypto.randomUUID();
   const instrumentedRequest = new Request(req, {
@@ -83,11 +117,17 @@ serve(async (req: Request): Promise<Response> => {
     return finalize(await handlePreparedWebhook(supabase, result));
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : String(err);
+    const errorStack = err instanceof Error ? err.stack : undefined;
+    const errorObj = err && typeof err === 'object' ? JSON.stringify(err, Object.getOwnPropertyNames(err)) : String(err);
+    
     console.error(JSON.stringify({
       event: "WEBHOOK_UNHANDLED_ERROR",
       correlationId,
       path: url.pathname,
       error: errorMessage,
+      errorType: err?.constructor?.name,
+      errorStack,
+      errorObject: errorObj,
     }));
     return finalize(new Response("internal_error", { status: 500 }), {
       reason: "unhandled",
