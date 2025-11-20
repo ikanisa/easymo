@@ -275,6 +275,10 @@ CREATE TRIGGER set_updated_at_on_payments
 CREATE INDEX IF NOT EXISTS farms_owner_idx ON public.farms (owner_profile_id);
 CREATE INDEX IF NOT EXISTS farms_tenant_idx ON public.farms (tenant_id);
 CREATE INDEX IF NOT EXISTS produce_catalog_category_idx ON public.produce_catalog (category);
+
+-- Add tenant_id column if it doesn't exist
+ALTER TABLE public.produce_listings ADD COLUMN IF NOT EXISTS tenant_id uuid;
+
 CREATE INDEX IF NOT EXISTS produce_listings_farm_status_idx ON public.produce_listings (tenant_id, farm_id, status);
 CREATE INDEX IF NOT EXISTS produce_listings_produce_idx ON public.produce_listings (produce_id);
 CREATE INDEX IF NOT EXISTS produce_listings_search_document_idx ON public.produce_listings USING GIN (search_document);
