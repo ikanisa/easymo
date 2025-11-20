@@ -111,6 +111,6 @@ export async function runGeneralBrokerAgent(
   return runAgent(GeneralBrokerAgent, {
     userId,
     query,
-    context: { ...context, language },
+    context: context || {} as AgentContext,
   });
 }
