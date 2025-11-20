@@ -254,7 +254,7 @@ async function sendSMSNotification(
   request: NotifyRequest,
   correlationId: string,
 ): Promise<{ success: boolean; message_id?: string }> {
-  // TODO: Implement SMS via Twilio or other SMS provider
+  // TODO: Implement SMS via MTN or other SMS provider
   throw new Error("SMS notifications not yet implemented");
 }
 

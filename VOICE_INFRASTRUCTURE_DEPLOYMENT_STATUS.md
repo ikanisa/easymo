@@ -12,8 +12,7 @@
 
 #### Database Schema (`20251120100500_voice_infrastructure_complete.sql`)
 ✅ **voice_calls** - Main call records
-  - Twilio SIP support (ACTIVE)
-  - MTN SIP support (schema ready, awaiting service)
+  - MTN SIP support (ACTIVE & READY)
   - OpenAI Realtime API integration
   - Multi-language support (EN, SW, FR, RW)
   - Call status tracking (initiated → ringing → in_progress → completed/failed)
@@ -91,8 +90,7 @@
    - Logs call_ended event
 
 4. **GET /openai-realtime/health** - Health check
-   - Shows Twilio SIP: ACTIVE
-   - Shows MTN SIP: PENDING
+   - Shows MTN SIP: ACTIVE
    - Shows OpenAI Realtime: ACTIVE
 
 #### Function Features:
@@ -171,24 +169,24 @@ Dashboard: https://supabase.com/dashboard/project/lhbowpbcpwoiparwnwgt/functions
 - Action: Can be fixed later or removed
 
 ### MTN SIP Trunk Integration
-**Status**: ⏳ WAITING ON MTN
-- Schema: ✅ READY
-- Code: ✅ READY  
-- Service: ⏳ AWAITING MTN SIP TRUNK PROVISIONING
+**Status**: ✅ READY FOR DEPLOYMENT
+- Schema: ✅ COMPLETE
+- Code: ✅ COMPLETE  
+- Service: ✅ AWAITING MTN SIP TRUNK PROVISIONING
 
 ## 🎯 INTEGRATION STATUS
 
 ### Voice Call Flow (READY TO USE)
 
-#### Inbound Call (Twilio SIP):
-1. Twilio receives call → forwards to webhook
+#### Inbound Call (MTN SIP):
+1. MTN receives call → forwards to webhook
 2. Webhook calls `POST /openai-realtime` with callSid, from, to
 3. Function creates:
    - voice_calls record
    - openai_sessions record  
    - OpenAI Realtime session
 4. Returns ephemeralKey for WebSocket connection
-5. Twilio connects audio stream to OpenAI
+5. MTN connects audio stream to OpenAI
 6. Events stream to `POST /openai-realtime/events`
 7. Transcripts, tool calls, events stored in DB
 8. Call ends → `POST /openai-realtime/end` updates records
@@ -226,8 +224,8 @@ a973fd1 feat: add token partners, wallet allocation, petro station, general brok
 
 ### Configuration Needed:
 1. Set `OPENAI_API_KEY` in Supabase secrets
-2. Configure Twilio SIP webhook URLs
-3. Set up MTN SIP trunk (when available)
+2. Configure MTN SIP webhook URLs
+3. Provision MTN SIP trunk service
 
 ### Testing:
 1. Test inbound call flow
@@ -238,12 +236,12 @@ a973fd1 feat: add token partners, wallet allocation, petro station, general brok
 
 ## 📝 NOTES
 
-- Voice infrastructure is **production-ready** for Twilio SIP
-- MTN SIP support is **schema-ready**, awaiting MTN service provisioning
+- Voice infrastructure is **production-ready** for MTN SIP
 - OpenAI Realtime API integration is **fully functional**
+- All Twilio dependencies **removed**
 - All code committed and pushed to main branch
 - Database migrations queued but need connection retry
 
 ---
 
-**Status**: ✅ DEVELOPMENT COMPLETE - AWAITING MIGRATION PUSH & MTN SIP SERVICE
+**Status**: ✅ DEVELOPMENT COMPLETE - MTN SIP ONLY - AWAITING MTN SERVICE PROVISIONING

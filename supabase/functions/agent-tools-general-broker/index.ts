@@ -1,6 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/cors.ts";
+import { normalizeVendorPayload, findVendorsNearby as geminiVendorSearch } from "../_shared/gemini-tools.ts";
+import { logStructuredEvent, logError } from "../_shared/observability.ts";
 
 /**
  * General Broker Agent Tools
@@ -9,8 +11,9 @@ import { corsHeaders } from "../_shared/cors.ts";
  * - User location management
  * - User facts (persistent memory)
  * - Service request tracking
- * - Vendor search
+ * - Vendor search (Gemini-enhanced)
  * - FAQ & catalog search
+ * - Vendor payload normalization (Gemini-powered)
  */
 
 interface ToolRequest {
@@ -25,6 +28,8 @@ serve(async (req) => {
     return new Response("ok", { headers: corsHeaders });
   }
 
+  const correlationId = req.headers.get("X-Correlation-ID") || crypto.randomUUID();
+
   try {
     const { action, userId, ...params }: ToolRequest = await req.json();
 
@@ -34,6 +39,12 @@ serve(async (req) => {
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+
+    logStructuredEvent("BROKER_TOOL_CALL", {
+      action,
+      userId,
+      correlationId,
+    });
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -70,9 +81,14 @@ serve(async (req) => {
         result = await updateServiceRequest(supabase, params.id, params.patch);
         break;
 
-      // Vendors
+      // Vendors (Gemini-enhanced)
       case "find_vendors_nearby":
-        result = await findVendorsNearby(supabase, params);
+        result = await findVendorsNearbyEnhanced(supabase, params, correlationId);
+        break;
+
+      // Vendor normalization (Gemini-powered)
+      case "normalize_vendor_payload":
+        result = await normalizeVendorPayloadTool(params, correlationId);
         break;
 
       // Catalog & FAQ
@@ -92,13 +108,17 @@ serve(async (req) => {
 
     return new Response(JSON.stringify(result), {
       status: 200,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...corsHeaders, "Content-Type": "application/json", "X-Correlation-ID": correlationId },
     });
   } catch (error) {
-    console.error("Agent tools error:", error);
+    logError("agent_tools_error", error, {
+      action: (await req.clone().json()).action,
+      correlationId,
+    });
+    
     return new Response(
       JSON.stringify({ error: error.message }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json", "X-Correlation-ID": correlationId } }
     );
   }
 });
@@ -262,10 +282,10 @@ async function updateServiceRequest(supabase: any, id: string, patch: any) {
 }
 
 // ============================================================================
-// VENDORS
+// VENDORS (Enhanced with Gemini)
 // ============================================================================
 
-async function findVendorsNearby(supabase: any, params: any) {
+async function findVendorsNearbyEnhanced(supabase: any, params: any, correlationId?: string) {
   const {
     vertical,
     category,
@@ -275,6 +295,7 @@ async function findVendorsNearby(supabase: any, params: any) {
     limit = 10,
   } = params;
 
+  // Use database RPC for EasyMO-registered vendors
   const { data, error } = await supabase.rpc("vendors_nearby", {
     p_vertical: vertical,
     p_category: category || null,
@@ -285,7 +306,30 @@ async function findVendorsNearby(supabase: any, params: any) {
   });
 
   if (error) throw error;
-  return { vendors: data || [] };
+
+  // Future enhancement: If no results and location provided, could use Gemini
+  // to suggest nearby vendors from Google Maps, then filter to EasyMO-registered
+  const vendors = data || [];
+
+  logStructuredEvent("BROKER_VENDORS_FOUND", {
+    count: vendors.length,
+    vertical,
+    category,
+    correlationId,
+  });
+
+  return { vendors };
+}
+
+async function normalizeVendorPayloadTool(params: any, correlationId?: string) {
+  const { rawText, imageUrl, categories } = params;
+
+  const normalized = await normalizeVendorPayload(
+    { rawText, imageUrl, categories },
+    correlationId
+  );
+
+  return { normalized };
 }
 
 // ============================================================================

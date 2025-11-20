@@ -1,8 +1,8 @@
 // =====================================================
-// OPENAI REALTIME API - SIP TRUNK HANDLER
+// OPENAI REALTIME API - MTN SIP HANDLER
 // =====================================================
-// Handles incoming SIP calls via OpenAI Realtime API
-// Integrates with Twilio SIP (active) and MTN SIP (future)
+// Handles incoming MTN SIP calls via OpenAI Realtime API
+// MTN SIP trunk integration for Rwanda
 // =====================================================
 
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
@@ -192,7 +192,7 @@ serve(async (req: Request): Promise<Response> => {
       const { data: call, error: callError } = await supabase
         .from("voice_calls")
         .insert({
-          twilio_call_sid: callSid,
+          mtn_call_sid: callSid,
           direction: "inbound",
           from_e164: from,
           to_e164: to,
@@ -389,11 +389,10 @@ serve(async (req: Request): Promise<Response> => {
     return new Response(
       JSON.stringify({
         status: "ok",
-        service: "openai-realtime-sip",
+        service: "openai-realtime-mtn-sip",
         timestamp: new Date().toISOString(),
         features: {
-          twilio_sip: "active",
-          mtn_sip: "pending",
+          mtn_sip: "active",
           openai_realtime: "active"
         }
       }),

@@ -3,8 +3,8 @@ BEGIN;
 -- =====================================================
 -- VOICE INFRASTRUCTURE COMPLETE
 -- =====================================================
--- Comprehensive voice tables for OpenAI Realtime API + SIP
--- Supports: Twilio SIP, MTN SIP (future), OpenAI Realtime
+-- Comprehensive voice tables for OpenAI Realtime API + MTN SIP
+-- Supports: MTN SIP, OpenAI Realtime API
 -- =====================================================
 
 -- Extensions
@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS public.voice_calls (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   
   -- Call identifiers
-  twilio_call_sid TEXT UNIQUE,
+  mtn_call_sid TEXT UNIQUE,
   sip_session_id TEXT,
   openai_call_id TEXT,
   
@@ -68,7 +68,7 @@ CREATE TABLE IF NOT EXISTS public.voice_calls (
 );
 
 -- Indexes for voice_calls
-CREATE INDEX IF NOT EXISTS idx_voice_calls_twilio_sid ON public.voice_calls(twilio_call_sid);
+CREATE INDEX IF NOT EXISTS idx_voice_calls_mtn_sid ON public.voice_calls(mtn_call_sid);
 CREATE INDEX IF NOT EXISTS idx_voice_calls_openai_id ON public.voice_calls(openai_call_id);
 CREATE INDEX IF NOT EXISTS idx_voice_calls_direction ON public.voice_calls(direction);
 CREATE INDEX IF NOT EXISTS idx_voice_calls_status ON public.voice_calls(status);
@@ -327,7 +327,7 @@ GRANT ALL ON TABLE public.openai_sessions TO postgres, anon, authenticated, serv
 -- COMMENTS
 -- =====================================================
 
-COMMENT ON TABLE public.voice_calls IS 'Voice call records supporting Twilio SIP, MTN SIP, and OpenAI Realtime API';
+COMMENT ON TABLE public.voice_calls IS 'Voice call records supporting MTN SIP and OpenAI Realtime API';
 COMMENT ON TABLE public.voice_events IS 'Event log for all voice call events including OpenAI Realtime events';
 COMMENT ON TABLE public.transcripts IS 'Conversation transcript segments from voice calls';
 COMMENT ON TABLE public.call_consents IS 'Call recording consent tracking';

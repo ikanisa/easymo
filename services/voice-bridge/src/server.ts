@@ -114,7 +114,7 @@ app.post("/calls/:id/segments", async (req: Request, res: Response) => {
 });
 
 const server = http.createServer(app);
-const wss = new WebSocketServer({ server, path: "/twilio-media" });
+const wss = new WebSocketServer({ server, path: "/mtn-media" });
 
 wss.on("connection", (socket: WebSocket) => {
   logger.info({ msg: "voice_bridge.ws_connected" });
