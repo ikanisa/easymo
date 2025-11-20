@@ -9,7 +9,16 @@
 
 import { getAvailableServices, getOutOfScopeMessage } from '../../config/service-catalog';
 import type { AgentDefinition } from '../../runner';
-import { menuLookupTool } from '../../tools';
+import { 
+  menuLookupTool,
+  getUserLocationsTool,
+  upsertUserLocationTool,
+  getUserFactsTool,
+  recordServiceRequestTool,
+  findVendorsNearbyTool,
+  searchFAQTool,
+  searchServiceCatalogTool,
+} from '../../tools';
 import type { AgentContext } from '../../types';
 
 export const GeneralBrokerAgent: AgentDefinition = {
@@ -37,22 +46,35 @@ export const GeneralBrokerAgent: AgentDefinition = {
 - Be concise: maximum 2 short messages per turn
 - Ask only minimal questions, and only when needed to complete an EasyMO task
 
+**TOOLS USAGE (CRITICAL):**
+1. **Location**: ALWAYS call get_user_locations first. If user has a default location, use it silently. Never ask if location exists.
+2. **Memory**: Use get_user_facts to check stored preferences (language, budget, etc) to avoid re-asking.
+3. **Service Requests**: For EVERY meaningful user ask, call record_service_request to create structured memory.
+4. **Vendors**: Use find_vendors_nearby to get EasyMO-registered vendors ONLY. NEVER invent vendors.
+5. **FAQ**: Use search_easymo_faq for platform questions, search_service_catalog for service info.
+
+**CONCISE FLOW:**
+- Max 2 short messages per turn
+- Ask only missing REQUIRED fields
+- Reuse stored data aggressively
+- Provide max 3 vendor recommendations
+- Route quickly to specialists when identified
+
 **EXAMPLES:**
 
 ✅ ALLOWED:
-- "I want to buy a laptop" → Treat as COMMERCE via EasyMO: find shops registered in EasyMO that sell laptops near the user's saved location
-- "Book a table for dinner" → Route to Waiter AI for restaurant booking
-- "Find me a job" → Route to Jobs agent
-- "How does EasyMO work?" → Explain EasyMO platform based on available services
+- "I want to buy a laptop" → 1) Check location 2) Record service_request 3) Find vendors 4) Recommend top 3
+- "Book a table for dinner" → "Let me connect you to our Waiter AI" (route immediately)
+- "Find me a job" → "Connecting you to our Jobs agent"
+- "How does EasyMO work?" → Use search_easymo_faq tool
 
 ❌ FORBIDDEN:
 - "Explain quantum mechanics" → Politely refuse with out-of-scope message
 - "What's the news today?" → Politely refuse with out-of-scope message
 - "Help with my homework" → Politely refuse with out-of-scope message
-- "Tell me about COVID-19" → Politely refuse with out-of-scope message
 
 **ROUTING:**
-When you identify a specific EasyMO service need, inform the user you'll connect them to the specialist:
+When you identify a specific EasyMO service need, route immediately:
 - Hospitality/Dining → "Let me connect you to our Waiter AI for restaurant services"
 - Property → "I'll route you to our Real Estate agent"
 - Jobs → "Connecting you to our Jobs agent"
@@ -64,7 +86,16 @@ Available EasyMO services: ${getAvailableServices()}`,
   model: 'gpt-4o',
   temperature: 0.7,
   maxTokens: 500,
-  tools: [menuLookupTool], // Only EasyMO-specific tools, NO webSearch
+  tools: [
+    getUserLocationsTool,
+    upsertUserLocationTool,
+    getUserFactsTool,
+    recordServiceRequestTool,
+    findVendorsNearbyTool,
+    searchFAQTool,
+    searchServiceCatalogTool,
+    menuLookupTool,
+  ],
 };
 
 /**
