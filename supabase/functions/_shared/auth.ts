@@ -1,5 +1,5 @@
-import { unauthorized } from "shared/http.ts";
-import { getAdminToken } from "shared/env.ts";
+import { unauthorized } from "./http.ts";
+import { getAdminToken } from "./env.ts";
 
 export function requireAdmin(req: Request): Response | null {
   const token = getAdminToken();
