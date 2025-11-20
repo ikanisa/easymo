@@ -348,8 +348,8 @@ export const AgentManager: React.FC<Props> = ({ onNotify }) => {
                             onChange={(e) => updateField('persona.voice', e.target.value)}
                             className="w-full p-2 border border-gray-300 rounded text-sm bg-white text-gray-900"
                         >
-                            <option value="rw-RW-Standard-A">rw-RW-Standard-A (Kinyarwanda Female)</option>
-                            <option value="rw-RW-Standard-B">rw-RW-Standard-B (Kinyarwanda Male)</option>
+                            <option value="rw-RW-Standard-A">rw-RW-Standard-A (Native Kinyarwanda Female) ★</option>
+                            <option value="rw-RW-Standard-B">rw-RW-Standard-B (Native Kinyarwanda Male)</option>
                             <option value="en-US-Wavenet-D">en-US-Wavenet-D (English Male)</option>
                             <option value="fr-FR-Standard-A">fr-FR-Standard-A (French Female)</option>
                             <option value="N/A (Text Only)">N/A (Text Only)</option>

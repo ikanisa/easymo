@@ -1,3 +1,4 @@
+
 # EasyMo Full Stack Deployment Commands
 
 Copy and paste these commands into your terminal (Cloud Shell recommended).
@@ -99,6 +100,7 @@ gcloud run deploy easymo-webhook \
 **IMPORTANT:** Copy the URL of `easymo-webhook` (e.g., `https://easymo-webhook-xyz.run.app`).
 - **Dialogflow Webhook URL:** `https://[URL]/webhook`
 - **WhatsApp Callback URL:** `https://[URL]/webhook/whatsapp`
+- **WhatsApp Verify Token:** `easymo_verify_token_secure_123`
 
 ## 6. Deploy Frontend (React PWA)
 
