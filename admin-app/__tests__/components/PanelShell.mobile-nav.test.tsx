@@ -4,6 +4,21 @@ import userEvent from "@testing-library/user-event";
 
 import { PanelShell } from "@/components/layout/PanelShell";
 
+// Mock Supabase auth context used by PanelShell so tests don't require the
+// real provider or environment configuration.
+vi.mock("@/components/providers/SupabaseAuthProvider", () => ({
+  useSupabaseAuth: () => ({
+    user: null,
+    session: null,
+    status: "unauthenticated",
+    isAdmin: false,
+    signInWithPassword: vi.fn(),
+    signOut: vi.fn(),
+    refreshSession: vi.fn(),
+  }),
+  SupabaseAuthProvider: ({ children }: { children: ReactNode }) => <>{children}</>,
+}));
+
 vi.mock("next/navigation", () => ({
   useRouter: () => ({
     replace: vi.fn(),
@@ -59,7 +74,7 @@ describe("PanelShell mobile navigation accessibility", () => {
     const dialog = await screen.findByRole("dialog", {
       name: /primary navigation/i,
     });
-    const firstLink = within(dialog).getByRole("link", { name: "Dashboard" });
+    const firstLink = within(dialog).getByRole("link", { name: /insurance agent/i });
 
     await waitFor(() => expect(firstLink).toHaveFocus());
   });
@@ -118,7 +133,7 @@ describe("PanelShell mobile navigation accessibility", () => {
       name: /primary navigation/i,
     });
 
-    const firstLink = within(dialog).getByRole("link", { name: "Dashboard" });
+    const firstLink = within(dialog).getByRole("link", { name: /insurance agent/i });
 
     const closeButton = within(dialog).getByRole("button", {
       name: /close navigation/i,
@@ -140,4 +155,3 @@ describe("PanelShell mobile navigation accessibility", () => {
     expect(menuButton).toHaveFocus();
   });
 });
-

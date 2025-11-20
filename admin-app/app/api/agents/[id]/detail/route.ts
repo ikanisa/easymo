@@ -30,10 +30,22 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
   const { id } = await params;
 
   try {
+    const agentResPromise = admin.from("agent_personas").select("*").eq("id", id).maybeSingle();
+    const versionsResPromise = admin
+      .from("agent_versions")
+      .select("*")
+      .eq("agent_id", id)
+      .order("version", { ascending: false });
+    const docsResPromise = admin
+      .from("agent_documents")
+      .select("*")
+      .eq("agent_id", id)
+      .order("created_at", { ascending: false });
+
     const [agentRes, versionsRes, docsRes] = await Promise.all([
-      admin.from("agent_personas").select("*").eq("id", id).maybeSingle() as Promise<{ data: PersonaRow | null; error: unknown | null }>,
-      admin.from("agent_versions").select("*").eq("agent_id", id).order("version", { ascending: false }) as Promise<{ data: VersionRow[] | null; error: unknown | null }>,
-      admin.from("agent_documents").select("*").eq("agent_id", id).order("created_at", { ascending: false }) as Promise<{ data: DocumentRow[] | null; error: unknown | null }>,
+      agentResPromise,
+      versionsResPromise,
+      docsResPromise,
     ]);
 
     const agentErr = agentRes?.error; const versionsErr = versionsRes?.error; const docsErr = docsRes?.error;

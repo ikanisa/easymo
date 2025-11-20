@@ -154,22 +154,61 @@ async function readSupabaseAdminSession(): Promise<AdminSession | null> {
 export async function readSessionFromCookies(store?: CookieStore): Promise<AdminSession | null> {
   const cookieStore = (store ?? cookies()) as CookieStore;
   const rawCookie = cookieStore.get(SESSION_COOKIE_NAME);
-  const value = getCookieValue(rawCookie);
-  if (!value) {
+  const token = getCookieValue(rawCookie);
+  if (!token) {
     // Always attempt Supabase fallback when no legacy session exists
     return readSupabaseAdminSession();
   }
 
-  const payload = decodePayload(value);
+  // Expect format: <payload>.<signature>
+  const [payloadB64, sig] = token.split(".");
+  if (!payloadB64 || !sig) {
+    cookieStore.delete?.(SESSION_COOKIE_NAME);
+    return readSupabaseAdminSession();
+  }
+  const expected = signPayload(payloadB64);
+  if (expected !== sig) {
+    cookieStore.delete?.(SESSION_COOKIE_NAME);
+    return readSupabaseAdminSession();
+  }
+  const payload = decodePayload(payloadB64);
   if (!payload) {
     cookieStore.delete?.(SESSION_COOKIE_NAME);
     return readSupabaseAdminSession();
   }
-
   if (Date.parse(payload.expiresAt) <= Date.now()) {
     cookieStore.delete?.(SESSION_COOKIE_NAME);
     return readSupabaseAdminSession();
   }
 
   return payload;
+}
+
+// Synchronous accessor for server components: reads and validates only the legacy cookie
+export function getCurrentSession(): AdminSession | null {
+  try {
+    const jar: any = (cookies as unknown as () => any)();
+    const raw = jar?.get?.(SESSION_COOKIE_NAME);
+    const token = getCookieValue(raw);
+    if (!token) return null;
+    const [payloadB64, sig] = token.split(".");
+    if (!payloadB64 || !sig) return null;
+    const expected = signPayload(payloadB64);
+    if (expected !== sig) return null;
+    const payload = decodePayload(payloadB64);
+    if (!payload) return null;
+    if (Date.parse(payload.expiresAt) <= Date.now()) return null;
+    return payload;
+  } catch {
+    return null;
+  }
+}
+
+export function createSessionCookie(input: { actorId: string; label: string | null | undefined; ttlMs?: number }) {
+  const session: AdminSession = {
+    actorId: input.actorId,
+    label: input.label ?? null,
+    expiresAt: new Date(Date.now() + (typeof input.ttlMs === 'number' ? input.ttlMs : SESSION_TTL_MS)).toISOString(),
+  };
+  return writeSessionCookie(session);
 }

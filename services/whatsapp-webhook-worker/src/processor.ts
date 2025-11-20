@@ -1,13 +1,25 @@
+import {
+  AgentResult,
+  BookingAgent,
+  FarmerAgent,
+  JobsAgent,
+  PropertyRentalAgent,
+  SalesAgent,
+  SupportAgent,
+  TriageAgent,
+  analyzeIntent,
+  runAgent
+} from "@easymo/agents";
+import { IdempotencyStore } from "@easymo/messaging";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { config } from "./config.js";
 import { logger } from "./logger.js";
-import { IdempotencyStore } from "@easymo/messaging";
 import { resolveSecret } from "./secrets.js";
 
 export interface WebhookPayload {
   id: string;
   headers: Record<string, string>;
-  body: unknown;
+  body: Record<string, any>;
   timestamp: string;
   retryCount?: number;
 }
@@ -17,6 +29,7 @@ export interface WebhookProcessingResult {
   messageId: string;
   error?: string;
   duration: number;
+  agentResponse?: string;
 }
 
 /**
@@ -24,8 +37,6 @@ export interface WebhookProcessingResult {
  * Reuses the existing wa-webhook handler logic
  */
 export class WebhookProcessor {
-  private supabase: SupabaseClient;
-  private idempotencyStore: any;
   private supabase!: SupabaseClient;
   private idempotencyStore: IdempotencyStore;
   private serviceRolePromise: Promise<string | undefined>;
@@ -61,7 +72,6 @@ export class WebhookProcessor {
 
   /**
    * Process a webhook payload with idempotency
-   * This delegates to the Supabase Edge Function handler
    */
   async process(payload: WebhookPayload): Promise<WebhookProcessingResult> {
     const startTime = Date.now();
@@ -79,9 +89,6 @@ export class WebhookProcessor {
       const result = await this.idempotencyStore.execute(
         payload.id,
         async () => {
-          // Call the Supabase wa-webhook function
-          // In practice, this would invoke the handler directly
-          // For now, we'll simulate the processing
           return await this.invokeWebhookHandler(payload);
         }
       );
@@ -93,12 +100,14 @@ export class WebhookProcessor {
         webhookId: payload.id,
         correlationId,
         duration,
+        agentResponse: result?.agentResponse // Log the response
       });
 
       return {
         success: true,
         messageId: payload.id,
         duration,
+        agentResponse: result?.agentResponse
       };
     } catch (error) {
       const duration = Date.now() - startTime;
@@ -124,23 +133,96 @@ export class WebhookProcessor {
 
   /**
    * Invoke the webhook handler logic
-   * This is where we'd call into the existing wa-webhook processing
    */
-  private async invokeWebhookHandler(payload: WebhookPayload): Promise<void> {
-    // TODO: Import and call the existing handlePreparedWebhook logic
-    // For now, we simulate processing
-    
+  private async invokeWebhookHandler(payload: WebhookPayload): Promise<{ agentResponse: string }> {
     // Validate payload structure
     if (!payload.body || typeof payload.body !== "object") {
       throw new Error("Invalid webhook payload structure");
     }
 
-    // Simulate processing delay
-    await new Promise((resolve) => setTimeout(resolve, 100));
+    // Extract message details (simplified for WhatsApp payload)
+    // Assuming standard WhatsApp Cloud API format
+    const entry = payload.body.entry?.[0];
+    const changes = entry?.changes?.[0];
+    const value = changes?.value;
+    const message = value?.messages?.[0];
+    
+    if (!message) {
+      logger.info("No message found in webhook payload (status update?)");
+      return { agentResponse: "No message processed" };
+    }
 
-    logger.debug({
-      msg: "webhook.handler.invoked",
-      webhookId: payload.id,
-    });
+    const userId = message.from; // Phone number
+    const messageType = message.type;
+    let userText = "";
+
+    if (messageType === "text") {
+      userText = message.text.body;
+    } else if (messageType === "interactive") {
+      userText = message.interactive.button_reply?.title || message.interactive.list_reply?.title || "";
+    } else {
+      // Handle other types (image, audio) if needed, or skip
+      logger.info(`Skipping unsupported message type: ${messageType}`);
+      return { agentResponse: "Unsupported message type" };
+    }
+
+    logger.info({ msg: "Processing user message", userId, text: userText });
+
+    // 1. Analyze Intent / Triage
+    const intent = analyzeIntent(userText);
+    logger.info({ msg: "Intent analyzed", intent });
+
+    let agentResult: AgentResult;
+
+    // 2. Route to appropriate agent
+    switch (intent.agent) {
+      case "booking":
+        agentResult = await runAgent(BookingAgent, { userId, query: userText });
+        break;
+      case "real_estate":
+        agentResult = await runAgent(PropertyRentalAgent, { userId, query: userText });
+        break;
+      case "farmer":
+        agentResult = await runAgent(FarmerAgent, { userId, query: userText });
+        break;
+      case "jobs":
+        agentResult = await runAgent(JobsAgent, { userId, query: userText });
+        break;
+      case "sales":
+        agentResult = await runAgent(SalesAgent, { userId, query: userText });
+        break;
+      case "support":
+        agentResult = await runAgent(SupportAgent, { userId, query: userText });
+        break;
+      case "redemption":
+        // TODO: Use TokenRedemptionAgent when available/exported
+        // agentResult = await runAgent(TokenRedemptionAgent, { userId, query: userText });
+        agentResult = await runAgent(TriageAgent, { userId, query: userText });
+        break;
+      default:
+        // Default to Triage for general queries
+        agentResult = await runAgent(TriageAgent, { userId, query: userText });
+        break;
+    }
+
+    // 3. Handle Result
+    if (agentResult.success) {
+      logger.info({ 
+        msg: "Agent execution successful", 
+        agent: intent.agent, 
+        response: agentResult.finalOutput 
+      });
+      
+      // TODO: Send response back via WhatsApp API (Producer or direct call)
+      // For now, we just return it
+      return { agentResponse: agentResult.finalOutput };
+    } else {
+      logger.error({ 
+        msg: "Agent execution failed", 
+        agent: intent.agent, 
+        error: agentResult.error 
+      });
+      throw new Error(`Agent execution failed: ${agentResult.error}`);
+    }
   }
 }

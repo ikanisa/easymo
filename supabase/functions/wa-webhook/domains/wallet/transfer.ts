@@ -71,7 +71,7 @@ export async function handleWalletTransferText(
     }
     await setState(ctx.supabase, ctx.profileId, {
       key: "wallet_transfer",
-      data: { stage: "amount", to },
+      data: { stage: "amount", to, idem: data.idem },
     });
     await sendButtonsMessage(
       ctx,

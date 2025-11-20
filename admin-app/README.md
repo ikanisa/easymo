@@ -14,8 +14,8 @@ remain additive-only.
 
 ### Framework baseline
 
-- The admin panel is pinned to **Next.js 14.2.33**. Do not bump to 15.x until Supabase’s SSR helpers and our cookie adapters are certified against the new runtime. Any trial upgrades should happen on a feature branch with full build + smoke tests.
-- React 18.3.x remains the supported runtime; React 19/Next 15 features (new lint CLI, React Compiler) are intentionally disabled to avoid breaking production builds.
+- The admin panel is pinned to **Next.js 15.1.6**. Runtime has been verified against our Supabase SSR helpers and cookie adapters. Future upgrades should occur on a feature branch with full build + smoke tests.
+- React 18.3.x remains the supported runtime; React 19 features are not enabled.
 
 ## Middleware Expectations
 
@@ -57,7 +57,7 @@ full runbook.
    - Build command: `pnpm netlify:build`
    - Publish directory: `admin-app/.next`
    - Plugin: `@netlify/plugin-nextjs`
-   - Node: `18.18.0`
+   - Node: `20.x` (see `netlify.toml`)
 
 **Environment variables:** add the values listed in the [Environment](#environment)
 section to Netlify → Site settings → Environment. Use Production/Deploy Preview
@@ -144,8 +144,9 @@ fixture dataset without Supabase connectivity.
 - The app ships a full Web App Manifest (`public/manifest.webmanifest`) with
   icons, shortcuts, and install metadata. Browsers will prompt to install once a
   user visits `/` twice.
-- A service worker (`public/sw.js`) precaches the shell, serves an offline
-  fallback, caches runtime GET requests with network-first semantics, and posts
+- A service worker (`public/sw.js`) precaches the shell (including
+  `offline.html`), serves an offline fallback for navigations, caches runtime
+  GET requests with network-first semantics, and posts
   `SW_ACTIVATED` to the client when a new bundle is ready. Operators see a
   "Refresh" toast so they can reload on their schedule.
 - POST mutations are queued when offline and replayed automatically via
@@ -155,6 +156,12 @@ fixture dataset without Supabase connectivity.
 - When `navigator.onLine` reports offline, an overlay banner appears and write
   buttons are disabled globally. Lists remain readable from cache, but actions
   resume only after connectivity returns.
+
+### Caching and Persistence
+
+- Read queries are persisted locally and rehydrated on reload to improve
+  perceived performance and enable limited offline reads. The cache TTL is
+  bounded to avoid stale data.
 
 ## Testing
 

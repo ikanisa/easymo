@@ -128,7 +128,7 @@ export async function POST(req: NextRequest, context: { params: Promise<{ id: st
   const folder = String(obj?.folder ?? '').trim();
   const folderId = parseFolderId(folder);
   if (!folderId) return NextResponse.json({ error: 'invalid_folder' }, { status: 400 });
-  const pageSize = Math.min(Number(body?.page_size ?? 100), 1000);
+  const pageSize = Math.min(Number((obj as Record<string, unknown>)?.page_size ?? 100), 1000);
   const maxPerHour = Number(process.env.AGENT_DOCS_IMPORT_MAX_PER_HOUR || '0') || 0;
   const maxPerDay = Number(process.env.AGENT_DOCS_IMPORT_MAX_PER_DAY || '0') || 0;
   const maxPerRequest = Number(process.env.AGENT_DOCS_IMPORT_MAX_PER_REQUEST || '0') || 0;

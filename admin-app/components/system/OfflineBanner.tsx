@@ -12,7 +12,7 @@ export function OfflineBanner() {
       <div className={styles.wrapper}>
         <div className={styles.indicator} aria-hidden="true" />
         <div className={styles.copy}>
-          <strong>Offline mode</strong>
+          <strong>You appear to be offline</strong>
           <span>
             Connection lost. Lists stay readable, but writes resume once you are
             back online.

@@ -11,6 +11,28 @@ vi.mock('@/lib/queries/users', () => ({
   }),
 }));
 
+// Avoid coupling to auth provider in this isolated client test.
+vi.mock('@/components/auth/ProtectedRoute', () => ({
+  ProtectedRoute: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+}));
+
+vi.mock('@/components/providers/SupabaseAuthProvider', () => ({
+  useSupabaseAuth: () => ({
+    user: { id: 'test-user-id' },
+    session: { user: { id: 'test-user-id' } },
+    status: 'authenticated',
+    isAdmin: true,
+    signInWithPassword: vi.fn(),
+    signOut: vi.fn(),
+    refreshSession: vi.fn(),
+  }),
+}));
+
+vi.mock('@/components/ui/ToastProvider', () => ({
+  ToastProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  useToast: () => ({ pushToast: vi.fn() }),
+}));
+
 describe('UsersClient', () => {
   afterEach(() => vi.clearAllMocks());
 
@@ -25,4 +47,3 @@ describe('UsersClient', () => {
     expect(screen.getByText('No users yet')).toBeInTheDocument();
   });
 });
-

@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import type { Metadata } from "next";
 import { PanelShell } from "@/components/layout/PanelShell";
-import { getCurrentSession } from "@/lib/server/session";
+import { readSessionFromCookies } from "@/lib/server/session";
 import { redirect } from "next/navigation";
 
 export const metadata: Metadata = {
@@ -18,7 +18,7 @@ interface PanelLayoutProps {
 }
 
 export default async function PanelLayout({ children }: PanelLayoutProps) {
-  const session = getCurrentSession();
+  const session = await readSessionFromCookies();
   if (!session) {
     redirect('/login');
   }

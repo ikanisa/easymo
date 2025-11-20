@@ -1,10 +1,13 @@
 // Scaffolded service worker for the admin offline roadmap. Detailed caching and
 // background sync policies will be finalised during Phase 7.
-const SHELL_CACHE = "easymo-shell-v2";
-const RUNTIME_CACHE = "easymo-runtime-v2";
-const STATIC_CACHE = "easymo-static-v2";
+// Bump SW_VERSION to invalidate previous caches on deploy
+const SW_VERSION = "v3";
+const SHELL_CACHE = `easymo-shell-${SW_VERSION}`;
+const RUNTIME_CACHE = `easymo-runtime-${SW_VERSION}`;
+const STATIC_CACHE = `easymo-static-${SW_VERSION}`;
 const PRECACHE_URLS = [
   "/manifest.webmanifest",
+  "/offline.html",
   "/icons/icon-192.png",
   "/icons/icon-512.png",
   "/icons/icon-maskable-512.png",
@@ -105,9 +108,8 @@ async function cacheFirst(request, cacheName) {
     }
     return response;
   } catch (error) {
-    if (process.env.NODE_ENV === "production") {
-      console.warn('sw.cache_first_failed', error);
-    }
+    // Avoid referencing process.env in SW context
+    try { console.warn('sw.cache_first_failed', error); } catch (_) {}
     return new Response("", { status: 503 });
   }
 }
@@ -124,13 +126,14 @@ async function networkFirst(request) {
     const cached = await cache.match(request);
     if (cached) return cached;
     if (request.mode === "navigate") {
-      return new Response(
-        "Offline. Please reconnect and refresh.",
-        {
-          status: 503,
-          headers: { "Content-Type": "text/plain; charset=utf-8" },
-        },
-      );
+      // Serve offline fallback page when navigation fails
+      const shell = await caches.open(SHELL_CACHE);
+      const offline = await shell.match('/offline.html');
+      if (offline) return offline;
+      return new Response("Offline. Please reconnect and refresh.", {
+        status: 503,
+        headers: { "Content-Type": "text/plain; charset=utf-8" },
+      });
     }
     if (request.headers.get("accept")?.includes("application/json")) {
       return new Response(
@@ -169,15 +172,14 @@ async function handleOfflinePost(event, request) {
   try {
     return await fetch(request.clone());
   } catch (_error) {
-    if (!('sync' in self.registration)) {
-      throw _error;
-    }
-
+    // Queue request for retry even if Background Sync is unavailable
     const id = await queueRequest(request);
-    try {
-      await self.registration.sync.register(SYNC_TAG);
-    } catch (syncError) {
-      console.warn('sw.sync_register_failed', syncError);
+    if ('sync' in self.registration) {
+      try {
+        await self.registration.sync.register(SYNC_TAG);
+      } catch (syncError) {
+        try { console.warn('sw.sync_register_failed', syncError); } catch (_) {}
+      }
     }
     await notifyClients({
       type: 'SW_BACKGROUND_SYNC_QUEUED',

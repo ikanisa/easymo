@@ -11,22 +11,30 @@ export type { AgentDefinition } from './runner';
 // Agents
 export {
   BookingAgent,
-  runBookingAgent,
-  TokenRedemptionAgent,
-  runTokenRedemptionAgent,
+  FarmerAgent,
+  JobsAgent,
+  NearbyDriversAgent,
+  PharmacyAgent,
+  PropertyRentalAgent,
+  QuincaillerieAgent,
+  SalesAgent,
+  ScheduleTripAgent,
+  ShopsAgent,
+  SupportAgent,
   TriageAgent,
-  runTriageAgent,
   analyzeIntent,
+  runBookingAgent,
+  runTriageAgent,
 } from './agents';
 
 // Tools
 export {
-  webSearchTool,
-  menuLookupTool,
   checkAvailabilityTool,
   createBookingTool,
-  checkBalanceTool,
+  menuLookupTool,
   scriptPlannerTool,
+  vectorSearchTool,
+  webSearchTool,
 } from './tools';
 
 // Types
@@ -41,12 +49,12 @@ export type {
 
 // Observability
 export {
-  logStructuredEvent,
-  logAgentStart,
   logAgentComplete,
   logAgentError,
-  logToolInvocation,
   logAgentHandoff,
+  logAgentStart,
+  logStructuredEvent,
+  logToolInvocation,
   recordMetric,
   storeAgentTrace,
 } from './observability';

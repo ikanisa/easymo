@@ -232,6 +232,18 @@ export async function handleButton(
     }
     case IDS.WALLET_SHARE_DONE:
       return await handleWalletShareDone(ctx);
+    case IDS.FARMER_AGENT: {
+      const { startFarmerAgentMenu } = await import("../domains/ai-agents/farmer_home.ts");
+      return await startFarmerAgentMenu(ctx);
+    }
+    case IDS.FARMER_AGENT_SUPPLY: {
+      const { handleFarmerAgentSupply } = await import("../domains/ai-agents/farmer_home.ts");
+      return await handleFarmerAgentSupply(ctx);
+    }
+    case IDS.FARMER_AGENT_DEMAND: {
+      const { handleFarmerAgentDemand } = await import("../domains/ai-agents/farmer_home.ts");
+      return await handleFarmerAgentDemand(ctx);
+    }
     case IDS.PROFILE_ADD_VEHICLE: {
       const { handleAddVehicle } = await import("../domains/profile/index.ts");
       return await handleAddVehicle(ctx);

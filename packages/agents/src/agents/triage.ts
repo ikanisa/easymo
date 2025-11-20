@@ -7,10 +7,10 @@
  * - Direct response for simple queries
  */
 
-import type { AgentDefinition } from '../runner';
-import type { AgentContext } from '../types';
-import { menuLookupTool, webSearchTool } from '../tools';
 import { requireAgentFeature } from '../feature-flags';
+import type { AgentDefinition } from '../runner';
+import { menuLookupTool, webSearchTool } from '../tools';
+import type { AgentContext } from '../types';
 
 export const TriageAgent: AgentDefinition = {
   name: 'TriageAgent',
@@ -68,49 +68,63 @@ export async function runTriageAgent(
  * This is a helper for orchestration logic
  */
 export function analyzeIntent(query: string): {
-  agent: 'booking' | 'redemption' | 'triage';
+  agent: 'booking' | 'redemption' | 'real_estate' | 'jobs' | 'farmer' | 'sales' | 'support' | 'triage';
   confidence: number;
 } {
   const lowerQuery = query.toLowerCase();
 
-  // Booking keywords
-  const bookingKeywords = [
-    'book',
-    'reserve',
-    'availability',
-    'slot',
-    'time',
-    'date',
-    'schedule',
-  ];
-  const bookingScore = bookingKeywords.filter(kw =>
-    lowerQuery.includes(kw)
-  ).length;
+  // Helper to calculate score
+  const calculateScore = (keywords: string[]) => 
+    keywords.filter(kw => lowerQuery.includes(kw)).length;
+
+  // Booking keywords (Waiter)
+  const bookingKeywords = ['book', 'reserve', 'availability', 'slot', 'time', 'date', 'schedule', 'table', 'menu', 'drink', 'food', 'bar'];
+  const bookingScore = calculateScore(bookingKeywords);
 
   // Redemption keywords
-  const redemptionKeywords = [
-    'balance',
-    'token',
-    'credit',
-    'redeem',
-    'points',
-    'wallet',
-  ];
-  const redemptionScore = redemptionKeywords.filter(kw =>
-    lowerQuery.includes(kw)
-  ).length;
+  const redemptionKeywords = ['balance', 'token', 'credit', 'redeem', 'points', 'wallet'];
+  const redemptionScore = calculateScore(redemptionKeywords);
 
-  if (bookingScore > redemptionScore && bookingScore > 0) {
-    return {
-      agent: 'booking',
-      confidence: Math.min(bookingScore / bookingKeywords.length, 1.0),
-    };
-  }
+  // Real Estate keywords
+  const realEstateKeywords = ['rent', 'buy', 'house', 'apartment', 'land', 'property', 'lease', 'room', 'estate', 'tenant', 'landlord'];
+  const realEstateScore = calculateScore(realEstateKeywords);
 
-  if (redemptionScore > bookingScore && redemptionScore > 0) {
+  // Jobs keywords
+  const jobsKeywords = ['job', 'work', 'hiring', 'career', 'apply', 'vacancy', 'position', 'salary', 'resume', 'cv', 'employment'];
+  const jobsScore = calculateScore(jobsKeywords);
+
+  // Farmer keywords
+  const farmerKeywords = ['farm', 'crop', 'produce', 'harvest', 'seed', 'fertilizer', 'market', 'price', 'commodity', 'vegetable', 'fruit', 'sell'];
+  const farmerScore = calculateScore(farmerKeywords);
+
+  // Sales & Marketing keywords
+  const salesKeywords = ['product', 'buy', 'price', 'cost', 'offer', 'discount', 'deal', 'purchase', 'order', 'catalog'];
+  // Note: overlap with others, context matters. For now, simple keyword counting.
+  const salesScore = calculateScore(salesKeywords);
+
+  // Customer Support keywords
+  const supportKeywords = ['help', 'support', 'issue', 'problem', 'error', 'complaint', 'question', 'how to', 'contact', 'service'];
+  const supportScore = calculateScore(supportKeywords);
+
+  const scores = [
+    { agent: 'booking', score: bookingScore, max: bookingKeywords.length },
+    { agent: 'redemption', score: redemptionScore, max: redemptionKeywords.length },
+    { agent: 'real_estate', score: realEstateScore, max: realEstateKeywords.length },
+    { agent: 'jobs', score: jobsScore, max: jobsKeywords.length },
+    { agent: 'farmer', score: farmerScore, max: farmerKeywords.length },
+    { agent: 'sales', score: salesScore, max: salesKeywords.length },
+    { agent: 'support', score: supportScore, max: supportKeywords.length },
+  ] as const;
+
+  // Find highest score
+  const bestMatch = scores.reduce((prev, current) => 
+    (current.score > prev.score) ? current : prev
+  );
+
+  if (bestMatch.score > 0) {
     return {
-      agent: 'redemption',
-      confidence: Math.min(redemptionScore / redemptionKeywords.length, 1.0),
+      agent: bestMatch.agent,
+      confidence: Math.min(bestMatch.score / bestMatch.max, 1.0),
     };
   }
 

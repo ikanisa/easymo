@@ -1026,5 +1026,13 @@
   "jobs.candidates.detail": "*{{name}}*\n📱 {{phone}}\n💪 {{skills}}\n🗓️ Experience: {{experience}} years",
   "jobs.candidates.contact": "📱 Message them on WhatsApp: {{link}}",
   "jobs.candidates.buttons.backList": "⬅️ Back to candidates",
-  "jobs.candidates.experience.unknown": "Unknown"
+  "jobs.candidates.experience.unknown": "Unknown",
+  "home.rows.farmerAgent.title": "🌾 Farmers & Buyers",
+  "home.rows.farmerAgent.description": "Buy and sell agricultural produce - connect farmers with buyers",
+  "farmer.welcome": "🌾 *Agricultural Marketplace*\n\nConnect with buyers and sellers of agricultural produce. Choose your role:",
+  "farmer.supply.title": "🚜 I'm a Farmer (Seller)",
+  "farmer.supply.prompt": "Tell me about the produce you want to sell. Include:\n• Crop type (maize, beans, etc.)\n• Quantity\n• Location\n• Grade/quality\n\nExample: \"50kg maize, grade A, Kigali\"",
+  "farmer.demand.title": "🏪 I'm a Buyer",
+  "farmer.demand.prompt": "Tell me what produce you're looking for. Include:\n• Crop type\n• Quantity needed\n• Delivery location\n• Any quality requirements\n\nExample: \"100kg beans, Kigali delivery\"",
+  "common.back": "⬅️ Back"
 }

@@ -4,14 +4,15 @@
  * Central registry of all available tools for agents.
  */
 
-export { webSearchTool } from './webSearch';
-export { menuLookupTool } from './menuLookup';
-export { checkAvailabilityTool } from './checkAvailability';
-export { createBookingTool } from './createBooking';
-export { scriptPlannerTool } from './scriptPlanner';
+export * from './checkAvailability';
+export * from './createBooking';
+export * from './menuLookup';
+export * from './scriptPlanner';
+export * from './vectorSearch';
+export * from './webSearch';
 
 // Export types
-export type { WebSearchParams } from './webSearch';
-export type { MenuLookupParams } from './menuLookup';
 export type { CheckAvailabilityParams } from './checkAvailability';
 export type { CreateBookingParams } from './createBooking';
+export type { MenuLookupParams } from './menuLookup';
+export type { VectorSearchParams } from './vectorSearch';

@@ -23,6 +23,7 @@ export type MenuItemKey =
   | "momo_qr"
   | "bars_restaurants"
   | "notary_services"
+  | "farmer_agent"
   | "profile"
   | "customer_support";
 
@@ -108,6 +109,7 @@ export function getMenuItemId(key: MenuItemKey): string {
     momo_qr: "momoqr_start",
     bars_restaurants: "bars_restaurants",
     notary_services: "notary_services",
+    farmer_agent: "farmer_agent",
     profile: "profile",
     customer_support: "customer_support",
   };
@@ -172,6 +174,10 @@ export function getMenuItemTranslationKeys(
     notary_services: {
       titleKey: "home.rows.notaryServices.title",
       descriptionKey: "home.rows.notaryServices.description",
+    },
+    farmer_agent: {
+      titleKey: "home.rows.farmerAgent.title",
+      descriptionKey: "home.rows.farmerAgent.description",
     },
     profile: {
       titleKey: "home.rows.profile.title",

@@ -4,7 +4,8 @@
 
 [build]
   base = "."
-  command = "pnpm install --frozen-lockfile && pnpm --filter @va/shared build && pnpm --filter @easymo/commons build && pnpm --filter @easymo/admin-app build"
+  # Enforce type checks before building to prevent TS regressions reaching prod
+  command = "pnpm install --frozen-lockfile && pnpm --filter @va/shared build && pnpm --filter @easymo/commons build && pnpm --filter @easymo/admin-app run type-check && pnpm --filter @easymo/admin-app build"
   publish = "admin-app/.next"
 
 [build.lifecycle]

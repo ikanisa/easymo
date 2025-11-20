@@ -27,6 +27,12 @@ model Tenant {
   brandGuides BrandGuide[]
   figures Figure[]
   campaigns Campaign[]
+  jobListings JobListing[]
+  propertyListings PropertyListing[]
+  farmerListings FarmerListing[]
+  menuCategories MenuCategory[]
+  reservations Reservation[]
+  jobSeekers JobSeeker[]
 }
 
 model AgentConfig {
@@ -344,7 +350,7 @@ model AgentTask {
 
 // ===== Video Studio =====
 
-model BrandGuide {
+model VideoBrandGuide {
   id        String   @id @default(uuid()) @db.Uuid
   slug      String   @unique
   title     String
@@ -365,7 +371,7 @@ model Product {
   keywords     String[]    @default([])
   media        Json?       @map("media_assets")
   brandGuideId String?     @db.Uuid @map("brand_guide_id")
-  brandGuide   BrandGuide? @relation(fields: [brandGuideId], references: [id], onDelete: SetNull)
+  brandGuide   VideoBrandGuide? @relation(fields: [brandGuideId], references: [id], onDelete: SetNull)
   createdAt    DateTime    @default(now()) @map("created_at")
   updatedAt    DateTime    @updatedAt @map("updated_at")
 
@@ -380,7 +386,7 @@ model VideoTemplate {
   rightsStart  DateTime?   @map("rights_start")
   rightsEnd    DateTime?   @map("rights_end")
   brandGuideId String?     @db.Uuid @map("brand_guide_id")
-  brandGuide   BrandGuide? @relation(fields: [brandGuideId], references: [id], onDelete: SetNull)
+  brandGuide   VideoBrandGuide? @relation(fields: [brandGuideId], references: [id], onDelete: SetNull)
   createdAt    DateTime    @default(now()) @map("created_at")
   updatedAt    DateTime    @updatedAt @map("updated_at")
   scripts      VideoScript[]
@@ -522,4 +528,196 @@ model GenerationLimit {
 enum CallPlatform {
   pstn
   sip
+}
+
+// ===== Job Board =====
+
+model JobListing {
+  id          String   @id @default(uuid()) @db.Uuid
+  tenantId    String   @db.Uuid
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  title       String
+  description String
+  category    String
+  jobType     String   @map("job_type") // full_time, part_time, contract, gig
+  location    String
+  payMin      Decimal? @map("pay_min") @db.Decimal(18, 2)
+  payMax      Decimal? @map("pay_max") @db.Decimal(18, 2)
+  payType     String   @default("fixed") @map("pay_type") // hourly, fixed, monthly
+  currency    String   @default("RWF")
+  status      String   @default("open") // open, closed, filled
+  postedBy    String   @map("posted_by")
+  expiresAt   DateTime? @map("expires_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  applications JobApplication[]
+  embedding   Unsupported("vector(1536)")?
+
+  @@index([tenantId, status])
+  @@map("job_listings")
+}
+
+model JobSeeker {
+  id          String   @id @default(uuid()) @db.Uuid
+  tenantId    String   @db.Uuid
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name        String
+  phone       String   @unique
+  skills      String[]
+  experience  String?
+  location    String?
+  resumeUrl   String?  @map("resume_url")
+  lastActive  DateTime @default(now()) @map("last_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  applications JobApplication[]
+  embedding   Unsupported("vector(1536)")?
+
+  @@index([tenantId])
+  @@map("job_seekers")
+}
+
+model JobApplication {
+  id          String   @id @default(uuid()) @db.Uuid
+  jobId       String   @db.Uuid @map("job_id")
+  job         JobListing @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  seekerId    String   @db.Uuid @map("seeker_id")
+  seeker      JobSeeker @relation(fields: [seekerId], references: [id], onDelete: Cascade)
+  status      String   @default("pending") // pending, reviewed, interviewed, hired, rejected
+  coverLetter String?  @map("cover_letter")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@unique([jobId, seekerId])
+  @@map("job_applications")
+}
+
+model JobMatch {
+  id          String   @id @default(uuid()) @db.Uuid
+  jobId       String   @db.Uuid @map("job_id")
+  seekerId    String   @db.Uuid @map("seeker_id")
+  score       Float
+  status      String   @default("suggested") // suggested, notified, applied
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([jobId])
+  @@index([seekerId])
+  @@map("job_matches")
+}
+
+// ===== Real Estate =====
+
+model PropertyListing {
+  id          String   @id @default(uuid()) @db.Uuid
+  tenantId    String   @db.Uuid
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  title       String
+  description String
+  type        String   // sale, rent_short, rent_long
+  propertyType String  @map("property_type") // house, apartment, land, commercial
+  bedrooms    Int?
+  bathrooms   Int?
+  areaSqm     Float?   @map("area_sqm")
+  price       Decimal  @db.Decimal(18, 2)
+  currency    String   @default("RWF")
+  location    Json     // { lat, lng, address }
+  amenities   String[]
+  images      String[]
+  status      String   @default("active") // active, sold, rented, inactive
+  ownerId     String   @map("owner_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  embedding   Unsupported("vector(1536)")?
+
+  @@index([tenantId, status])
+  @@index([type])
+  @@map("property_listings")
+}
+
+// ===== Farmer Market =====
+
+model Commodity {
+  id          String   @id @default(uuid()) @db.Uuid
+  code        String   @unique
+  name        String
+  category    String
+  defaultUnit String   @map("default_unit")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  listings    FarmerListing[]
+
+  @@map("commodities")
+}
+
+model FarmerListing {
+  id          String   @id @default(uuid()) @db.Uuid
+  tenantId    String   @db.Uuid
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  commodityId String   @db.Uuid @map("commodity_id")
+  commodity   Commodity @relation(fields: [commodityId], references: [id], onDelete: Restrict)
+  variety     String?
+  grade       String?
+  quantity    Float
+  unit        String
+  price       Decimal? @db.Decimal(18, 2)
+  currency    String   @default("RWF")
+  location    String   // City/Region
+  status      String   @default("active") // active, sold, expired
+  farmerId    String   @map("farmer_id")
+  expiresAt   DateTime? @map("expires_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@index([tenantId, status])
+  @@index([commodityId])
+  @@map("farmer_listings")
+}
+
+// ===== Waiter / Booking =====
+
+model MenuCategory {
+  id          String   @id @default(uuid()) @db.Uuid
+  tenantId    String   @db.Uuid
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  sortOrder   Int      @default(0) @map("sort_order")
+  items       MenuItem[]
+
+  @@map("menu_categories")
+}
+
+model MenuItem {
+  id          String   @id @default(uuid()) @db.Uuid
+  categoryId  String   @db.Uuid @map("category_id")
+  category    MenuCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  price       Decimal  @db.Decimal(18, 2)
+  currency    String   @default("RWF")
+  imageUrl    String?  @map("image_url")
+  available   Boolean  @default(true)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("menu_items")
+}
+
+model Reservation {
+  id          String   @id @default(uuid()) @db.Uuid
+  tenantId    String   @db.Uuid
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customerId  String   @map("customer_id") // Phone or User ID
+  customerName String  @map("customer_name")
+  tableId     String?  @map("table_id")
+  partySize   Int      @map("party_size")
+  startTime   DateTime @map("start_time")
+  endTime     DateTime? @map("end_time")
+  status      String   @default("confirmed") // pending, confirmed, cancelled, completed
+  notes       String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@index([tenantId, startTime])
+  @@map("reservations")
 }

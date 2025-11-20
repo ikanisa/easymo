@@ -10,8 +10,10 @@ const PUBLIC_PATHS = [
   '/',
   '/login',
   '/favicon',
+  '/manifest.webmanifest',
   '/manifest.json',
   '/robots.txt',
+  '/sw.js',
 ];
 
 function buildRequestId(): string {
@@ -27,7 +29,9 @@ function buildRequestId(): string {
 }
 
 function isPublicPath(pathname: string): boolean {
-  if (PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(p))) return true;
+  // Root path should be exact match only
+  if (pathname === '/') return true;
+  if (PUBLIC_PATHS.some((p) => p !== '/' && (pathname === p || pathname.startsWith(p)))) return true;
   if (pathname.endsWith('.svg') || pathname.endsWith('.ico') || pathname.endsWith('.png')) return true;
   if (pathname.startsWith('/_next/')) return true;
   return false;
@@ -117,5 +121,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|manifest.json|robots.txt).*)'],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|manifest.json|manifest.webmanifest|robots.txt|sw.js).*)'],
 };
