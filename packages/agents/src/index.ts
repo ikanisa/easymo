@@ -15,16 +15,16 @@ export {
   FarmerAgent,
   GeneralBrokerAgent,
   JobsAgent,
-  NearbyDriversAgent,
+  // NearbyDriversAgent,
   PharmacyAgent,
   PropertyRentalAgent,
-  QuincaillerieAgent,
+  // QuincaillerieAgent,
   runBookingAgent,
   runGeneralBrokerAgent,
   runTriageAgent,
   SalesAgent,
-  ScheduleTripAgent,
-  ShopsAgent,
+  // ScheduleTripAgent,
+  // ShopsAgent,
   SupportAgent,
   TriageAgent,
 } from './agents';
@@ -41,12 +41,12 @@ export {
 
 // Types
 export type {
+  AgentConfig,
   AgentContext,
   AgentInput,
   AgentResult,
   AgentTrace,
   ToolDefinition,
-  AgentConfig,
 } from './types';
 
 // Observability

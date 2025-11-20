@@ -1,0 +1,60 @@
+{
+  "annotations": { "list": [] },
+  "panels": [
+    {
+      "title": "WA HTTP Success/Failure (5m rate)",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "sum(rate(wa_webhook_http_success_total[5m]))", "legendFormat": "success" },
+        { "expr": "sum(rate(wa_webhook_http_failure_total[5m]))", "legendFormat": "failure" }
+      ],
+      "gridPos": { "x": 0, "y": 0, "w": 12, "h": 8 }
+    },
+    {
+      "title": "WA Requests Success/Failure (5m rate)",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "sum(rate(wa_webhook_request_success_total[5m]))", "legendFormat": "success" },
+        { "expr": "sum(rate(wa_webhook_request_failed_total[5m]))", "legendFormat": "failed" }
+      ],
+      "gridPos": { "x": 12, "y": 0, "w": 12, "h": 8 }
+    },
+    {
+      "title": "WA Message Routing (5m rate)",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "sum(rate(wa_webhook_message_success_total[5m]))", "legendFormat": "routed" },
+        { "expr": "sum(rate(wa_webhook_message_failed_total[5m]))", "legendFormat": "failed" }
+      ],
+      "gridPos": { "x": 0, "y": 8, "w": 12, "h": 8 }
+    },
+    {
+      "title": "Notification Queue Depth",
+      "type": "stat",
+      "targets": [ { "expr": "max(notification_queue_depth)" } ],
+      "gridPos": { "x": 12, "y": 8, "w": 12, "h": 8 }
+    },
+    {
+      "title": "LLM Router Success/Error (5m rate)",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "sum(rate(llm_router_success[5m]))", "legendFormat": "success" },
+        { "expr": "sum(rate(llm_router_error[5m]))", "legendFormat": "error" }
+      ],
+      "gridPos": { "x": 0, "y": 16, "w": 12, "h": 8 }
+    },
+    {
+      "title": "LLM Failover (5m rate)",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "sum(rate(llm_router_failover_success[5m]))", "legendFormat": "failover_success" },
+        { "expr": "sum(rate(llm_router_failover_error[5m]))", "legendFormat": "failover_error" }
+      ],
+      "gridPos": { "x": 12, "y": 16, "w": 12, "h": 8 }
+    }
+  ],
+  "schemaVersion": 38,
+  "version": 1,
+  "title": "WhatsApp + LLM Overview"
+}
+

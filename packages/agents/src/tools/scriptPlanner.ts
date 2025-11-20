@@ -91,7 +91,7 @@ type PerformanceRow = {
 type RowWithScore = { row: PerformanceRow; score: number };
 
 type SupabaseQueryContext = {
-  client: SupabaseClient | null;
+  client: SupabaseClient;
   params: Required<Pick<ScriptPlannerParams, 'slots' | 'lookbackDays' | 'limit'>> & Pick<ScriptPlannerParams, 'campaignId'>;
 };
 
@@ -202,7 +202,7 @@ async function fetchPerformanceRows({
     return [];
   }
 
-  const rows = (data ?? []) as PerformanceRow[];
+  const rows = (data ?? []) as unknown as PerformanceRow[];
   const scored: RowWithScore[] = rows.map((row) => ({
     row,
     score: computeScore(row),

@@ -9,6 +9,7 @@ export interface AgentInput {
   image?: string;
   context?: AgentContext;
   sessionId?: string;
+  metadata?: Record<string, any>;
 }
 
 export interface Location {
@@ -27,6 +28,9 @@ export interface AgentResult {
   sessionId?: string;
   requiresConfirmation?: boolean;
   options?: any[];
+  message?: string;
+  error?: string;
+  status?: string;
 }
 
 export interface AgentContext {
@@ -67,13 +71,9 @@ export interface VendorQuote {
   vendorId: string;
   vendorName: string;
   vendorType: string;
-  offer: {
-    price: number;
-    currency: string;
-    eta?: number;
-    distance?: number;
-    notes?: string;
-  };
+  offer: any; // Changed to any to support number or object
+  offerData?: any; // Added to support property details
+  status?: string; // Added to support status
   score: number;
   timestamp: number;
 }

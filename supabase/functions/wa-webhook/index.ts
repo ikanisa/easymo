@@ -6,6 +6,14 @@ let configError: Error | null = null;
 
 try {
   const configModule = await import("./config.ts");
+  // Fail fast if required runtime envs are missing
+  try {
+    if (typeof configModule.assertRuntimeReady === "function") {
+      configModule.assertRuntimeReady();
+    }
+  } catch (e) {
+    configError = e instanceof Error ? e : new Error(String(e));
+  }
   supabase = configModule.supabase;
 } catch (err) {
   configError = err instanceof Error ? err : new Error(String(err));

@@ -20,7 +20,9 @@ export type { SupabaseClient };
 
 export const createClientFactory = createClientMock ?? createClientReal;
 export const crypto = globalThis.crypto;
-export { TextDecoder, TextEncoder } from "node:util";
+// Use global TextEncoder/TextDecoder available in Deno
+export const TextEncoder = globalThis.TextEncoder;
+export const TextDecoder = globalThis.TextDecoder;
 
 export function base64Decode(input: string): Uint8Array {
   const binary = globalThis.atob(input);

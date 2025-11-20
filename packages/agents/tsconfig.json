@@ -2,11 +2,11 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "outDir": "./dist",
-    "rootDir": "./src",
+    "rootDir": "../..",
     "declaration": true,
     "declarationMap": true,
     "composite": true
   },
-  "include": ["src/**/*.ts"],
+  "include": ["src/**/*.ts", "../../config/farmer-agent/**/*.ts", "../../config/farmer-agent/**/*.json"],
   "exclude": ["node_modules", "dist", "**/*.test.ts"]
 }

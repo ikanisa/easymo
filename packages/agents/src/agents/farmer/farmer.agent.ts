@@ -8,7 +8,7 @@ import {
   type CommodityRule,
   type VarietyRule,
   normalize,
-} from '../../../../../config/farmer-agent/markets/index.ts';
+} from '../../../../../config/farmer-agent/markets/index';
 
 interface ListingToolParams {
   marketCode: string;
@@ -272,11 +272,11 @@ export class FarmerAgent extends BaseAgent {
     };
   }
 
-  protected formatSingleOption(): string {
+  protected formatSingleOption(option: any): string {
     return '';
   }
 
-  protected calculateScore(): number {
+  protected calculateScore(option: any, criteria: any): number {
     return 0;
   }
 }

@@ -279,35 +279,50 @@ export class LLMRouter {
     try {
       const { data, error } = await this.supabase
         .from('agent_configurations')
-        .select('agent_type, model_config, routing_config')
+        .select('agent_type, primary_provider, fallback_provider, provider_config, model_config, routing_config, is_active')
         .eq('agent_type', agentSlug)
         .eq('is_active', true)
-        .single();
+        .maybeSingle();
 
       if (error || !data) {
-        // Return default rules if not found
         return this.getDefaultRules(agentSlug);
       }
 
-      const modelConfig = data.model_config as any || {};
-      const routingConfig = data.routing_config as any || {};
+      // Prefer new columns if present
+      const primary = (data as any).primary_provider as ('openai' | 'gemini') | null;
+      const fallback = (data as any).fallback_provider as ('openai' | 'gemini') | null;
+      const providerCfgRaw = (data as any).provider_config as any | null;
+      const modelConfig = (data as any).model_config as any || {};
+      const routingConfig = (data as any).routing_config as any || {};
+
+      // Build provider config from new provider_config or fallback to legacy model_config
+      const openaiCfg = providerCfgRaw?.openai || {
+        model: modelConfig.openai_model || 'gpt-4-turbo-preview',
+        temperature: modelConfig.temperature,
+        max_tokens: modelConfig.max_tokens,
+      };
+      const geminiCfg = providerCfgRaw?.gemini || {
+        model: modelConfig.gemini_model || 'gemini-1.5-flash',
+        temperature: modelConfig.temperature,
+        max_tokens: modelConfig.max_tokens,
+      };
 
       return {
         agentSlug,
-        primaryProvider: modelConfig.primary_provider || 'openai',
-        fallbackProvider: modelConfig.fallback_provider || 'gemini',
+        primaryProvider: primary ?? (modelConfig.primary_provider || 'openai'),
+        fallbackProvider: fallback ?? (modelConfig.fallback_provider || 'gemini'),
         providerConfig: {
           openai: {
             provider: 'openai',
-            primaryModel: modelConfig.openai_model || 'gpt-4-turbo-preview',
-            temperature: modelConfig.temperature,
-            maxTokens: modelConfig.max_tokens,
+            primaryModel: openaiCfg.model,
+            temperature: openaiCfg.temperature,
+            maxTokens: openaiCfg.max_tokens,
           },
           gemini: {
             provider: 'gemini',
-            primaryModel: modelConfig.gemini_model || 'gemini-1.5-flash',
-            temperature: modelConfig.temperature,
-            maxTokens: modelConfig.max_tokens,
+            primaryModel: geminiCfg.model,
+            temperature: geminiCfg.temperature,
+            maxTokens: geminiCfg.max_tokens,
           },
         },
         toolProviders: routingConfig.tool_providers || {},
@@ -318,7 +333,6 @@ export class LLMRouter {
         agentSlug,
         correlationId: this.config.correlationId,
       });
-
       return this.getDefaultRules(agentSlug);
     }
   }

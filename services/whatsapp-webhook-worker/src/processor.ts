@@ -1,18 +1,18 @@
 import {
-  analyzeIntent,
   BookingAgent,
   FarmerAgent,
   JobsAgent,
   PropertyRentalAgent,
-  runAgent,
-  runGeneralBrokerAgent,
   SalesAgent,
   SupportAgent,
   TriageAgent,
+  analyzeIntent,
+  runAgent,
+  runGeneralBrokerAgent,
   type AgentResult,
 } from "@easymo/agents";
 import { IdempotencyStore } from "@easymo/messaging";
-import { createClient, SupabaseClient } from "@supabase/supabase-js";
+import { SupabaseClient, createClient } from "@supabase/supabase-js";
 import { config } from "./config.js";
 import { logger } from "./logger.js";
 import { resolveSecret } from "./secrets.js";
@@ -20,7 +20,7 @@ import { resolveSecret } from "./secrets.js";
 export interface WebhookPayload {
   id: string;
   headers: Record<string, string>;
-  body: Record<string, any>;
+  body: Record<string, unknown>;
   timestamp: string;
   retryCount?: number;
 }
@@ -33,13 +33,23 @@ export interface WebhookProcessingResult {
   agentResponse?: string;
 }
 
+interface WhatsAppMessage {
+  from: string;
+  type: string;
+  text?: { body: string };
+  interactive?: {
+    button_reply?: { title: string };
+    list_reply?: { title: string };
+  };
+}
+
 /**
  * Processes WhatsApp webhook payloads
  * Reuses the existing wa-webhook handler logic
  */
 export class WebhookProcessor {
   private supabase!: SupabaseClient;
-  private idempotencyStore: IdempotencyStore;
+  private idempotencyStore: InstanceType<typeof IdempotencyStore>;
   private serviceRolePromise: Promise<string | undefined>;
 
   constructor() {
@@ -143,7 +153,8 @@ export class WebhookProcessor {
 
     // Extract message details (simplified for WhatsApp payload)
     // Assuming standard WhatsApp Cloud API format
-    const entry = payload.body.entry?.[0];
+    const body = payload.body as { entry?: { changes?: { value?: { messages?: WhatsAppMessage[] } }[] }[] };
+    const entry = body.entry?.[0];
     const changes = entry?.changes?.[0];
     const value = changes?.value;
     const message = value?.messages?.[0];
@@ -158,9 +169,9 @@ export class WebhookProcessor {
     let userText = "";
 
     if (messageType === "text") {
-      userText = message.text.body;
+      userText = message.text?.body || "";
     } else if (messageType === "interactive") {
-      userText = message.interactive.button_reply?.title || message.interactive.list_reply?.title || "";
+      userText = message.interactive?.button_reply?.title || message.interactive?.list_reply?.title || "";
     } else {
       // Handle other types (image, audio) if needed, or skip
       logger.info(`Skipping unsupported message type: ${messageType}`);
@@ -193,10 +204,10 @@ export class WebhookProcessor {
           agentResult = await runAgent(BookingAgent, { userId, query: userText });
           break;
         case "real_estate":
-          agentResult = await runAgent(PropertyRentalAgent, { userId, query: userText });
+          agentResult = await runAgent(new PropertyRentalAgent(), { userId, query: userText });
           break;
         case "farmer":
-          agentResult = await runAgent(FarmerAgent, { userId, query: userText });
+          agentResult = await runAgent(new FarmerAgent(), { userId, query: userText });
           break;
         case "jobs":
           agentResult = await runAgent(JobsAgent, { userId, query: userText });
@@ -229,9 +240,35 @@ export class WebhookProcessor {
         agent: intent.agent, 
         response: agentResult.finalOutput 
       });
-      
-      // TODO: Send response back via WhatsApp API (Producer or direct call)
-      // For now, we just return it
+
+      // Queue outbound WhatsApp message via Supabase notifications + worker
+      try {
+        const to = userId.startsWith("+") ? userId : `+${userId}`;
+        const insertPayload: Record<string, unknown> = {
+          to_wa_id: to,
+          notification_type: "agent-reply",
+          channel: "freeform",
+          payload: { text: agentResult.finalOutput },
+          status: "queued",
+          retry_count: 0,
+        };
+        const { error } = await this.supabase
+          .from("notifications")
+          .insert(insertPayload);
+        if (error) {
+          logger.warn({ msg: "webhook.queue_notification_failed", error: error.message });
+        } else {
+          // best-effort trigger of the notification worker
+          try {
+            await this.supabase.functions.invoke("notification-worker", { body: {} });
+          } catch (invokeErr) {
+            logger.warn({ msg: "webhook.notification_worker_invoke_failed", error: String(invokeErr) });
+          }
+        }
+      } catch (queueErr) {
+        logger.warn({ msg: "webhook.queue_outbound_failed", error: String(queueErr) });
+      }
+
       return { agentResponse: agentResult.finalOutput };
     } else {
       logger.error({ 

@@ -21,6 +21,7 @@ export interface AgentInput {
   userId: string;
   query: string;
   context?: AgentContext;
+  metadata?: Record<string, unknown>;
 }
 
 /**
@@ -29,6 +30,7 @@ export interface AgentInput {
 export interface AgentResult {
   success: boolean;
   finalOutput: string;
+  message?: string; // Legacy/Alternative output field
   toolsInvoked?: string[];
   handoffs?: string[];
   duration?: number;

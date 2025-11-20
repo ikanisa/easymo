@@ -12,6 +12,15 @@ export function AgentsClient() {
   return (
     <div className="p-6 space-y-6">
       <h1 className="text-2xl font-semibold">AI Agents</h1>
+      <div className="rounded border bg-amber-50 text-amber-900 p-3 text-sm">
+        Tip: Configure LLM provider routing per agent in
+        {" "}
+        <a className="underline" href="/agents/provider-routing">Provider routing</a>
+        {" "}
+        (or {" "}
+        <a className="underline" href="/agent-admin/agents">Admin view</a>
+        ).
+      </div>
       <form
         className="flex gap-2 items-end"
         onSubmit={(e) => {
@@ -63,4 +72,3 @@ export function AgentsClient() {
     </div>
   );
 }
-

@@ -50,7 +50,7 @@ async function generateEmbedding(text: string): Promise<number[]> {
 export async function executeVectorSearch(
   params: VectorSearchParams,
   context: AgentContext
-): Promise<{ results: any[] }> {
+): Promise<{ results: Record<string, unknown>[] }> {
   await logToolInvocation('VectorSearch', context, params);
 
   try {

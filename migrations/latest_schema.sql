@@ -3404,7 +3404,7 @@ ALTER TABLE "public"."wa_contacts" OWNER TO "postgres";
 
 
 CREATE TABLE IF NOT EXISTS "public"."wa_events" (
-    "wa_message_id" "text" NOT NULL,
+    "message_id" "text" NOT NULL,
     "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
     "received_at" timestamp with time zone DEFAULT "timezone"('utc'::"text", "now"()) NOT NULL
 );

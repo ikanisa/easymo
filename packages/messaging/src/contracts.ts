@@ -30,7 +30,7 @@ export const webhookTopics = Object.freeze(
     type Controller = typeof controller;
     const endpoints = Object.keys(definition.endpoints) as Array<ControllerEndpoint<Controller>>;
     acc[controller] = endpoints
-      .filter((endpoint) => definition.endpoints[endpoint]?.method === "POST")
+      .filter((endpoint) => (definition.endpoints as Record<string, { method: string }>)[endpoint]?.method === "POST")
       .map((endpoint) => ({
         endpoint,
         topic: getWebhookTopic(controller, endpoint),

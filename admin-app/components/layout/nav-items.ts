@@ -48,6 +48,7 @@ const legacySections = [
       { href: "/agents/learning", title: "Agent learning" },
       { href: "/agents/performance", title: "Performance" },
       { href: "/agents/settings", title: "Agent settings" },
+      { href: "/agent-admin/agents", title: "Provider routing" },
       { href: "/agents/tools", title: "Tools registry" },
       { href: "/agents/tasks", title: "Tasks and workflows" },
       { href: "/agents/sessions", title: "Active sessions" },

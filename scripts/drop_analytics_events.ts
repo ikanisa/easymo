@@ -1,6 +1,6 @@
-import { Client } from 'pg';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
+import { Client } from 'pg';
 
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
 

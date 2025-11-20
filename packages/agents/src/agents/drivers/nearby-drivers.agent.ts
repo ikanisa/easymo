@@ -6,7 +6,7 @@
 
 import { BaseAgent } from '../base/agent.base';
 import type { AgentInput, AgentResult, AgentContext, Tool, VendorQuote } from '../../types/agent.types';
-import { createSupabaseClient } from '@supabase/supabase-js';
+
 
 interface DriverQuote extends VendorQuote {
   driverId: string;
@@ -224,10 +224,11 @@ Never invent prices - only use actual driver quotes or standard rates.`;
 
   private async parseRequest(input: AgentInput): Promise<any> {
     // TODO: Use OpenAI to parse natural language request
+    const metadata = input.metadata || input.context?.metadata || {};
     return {
       pickup: input.location,
-      dropoff: input.context?.destination,
-      vehicleType: input.context?.vehicleType || 'Moto'
+      dropoff: metadata.destination,
+      vehicleType: metadata.vehicleType || 'Moto'
     };
   }
 
@@ -324,7 +325,7 @@ Never invent prices - only use actual driver quotes or standard rates.`;
     };
   }
 
-  protected formatSingleOption(option: DriverQuote): string {
+  protected formatSingleOption(option: any): string {
     let formatted = `👤 Driver: ${option.driverName}\n`;
     formatted += `⭐ Rating: ${option.rating}/5\n`;
     formatted += `🚗 Vehicle: ${option.vehicleInfo}\n`;
@@ -337,7 +338,7 @@ Never invent prices - only use actual driver quotes or standard rates.`;
     return formatted;
   }
 
-  protected calculateScore(option: DriverQuote, criteria: any): number {
+  protected calculateScore(option: any, criteria: any): number {
     let score = 0;
 
     // Rating (40%)

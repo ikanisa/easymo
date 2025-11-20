@@ -21,6 +21,71 @@ const MAX_REQUEST_BYTES = Math.max(
 
 const ADMIN_BYPASS_TOKEN = Deno.env.get("EASYMO_ADMIN_TOKEN") ?? "";
 
+// Simple in-memory rate limiter (per IP) with fixed window
+type WindowCounter = { count: number; windowStart: number };
+const rlStore = new Map<string, WindowCounter>();
+
+function getClientIp(req: Request): string {
+  const h = req.headers.get("x-forwarded-for") ?? req.headers.get("x-real-ip") ?? "";
+  const ip = h.split(",")[0].trim();
+  return ip || "unknown";
+}
+
+async function checkRateLimit(req: Request): Promise<PreparedResponse | null> {
+  if (!webhookConfig.rateLimit?.enabled) return null;
+  const windowMs = webhookConfig.rateLimit.windowMs ?? 60_000;
+  const maxReq = webhookConfig.rateLimit.maxRequests ?? 100;
+  const now = Date.now();
+  const ip = getClientIp(req);
+  const key = `${webhookConfig.rateLimit.keyPrefix || "wa"}:${ip}`;
+
+  // Prefer distributed limiter via Upstash REST if configured
+  const upstashUrl = Deno.env.get("UPSTASH_REDIS_REST_URL");
+  const upstashToken = Deno.env.get("UPSTASH_REDIS_REST_TOKEN");
+  if (upstashUrl && upstashToken) {
+    try {
+      const k = `ratelimit:${key}:${Math.floor(now / windowMs)}`;
+      // INCR key; if first increment, set expiry
+      const incrRes = await fetch(`${upstashUrl}/INCR/${encodeURIComponent(k)}`, {
+        headers: { Authorization: `Bearer ${upstashToken}` },
+      });
+      const incrJson = await incrRes.json();
+      const count = Number(incrJson.result ?? incrJson) || 0;
+      if (count === 1) {
+        // set expiration in seconds
+        await fetch(`${upstashUrl}/EXPIRE/${encodeURIComponent(k)}/${Math.ceil(windowMs / 1000)}`, {
+          headers: { Authorization: `Bearer ${upstashToken}` },
+        }).catch(() => {});
+      }
+      if (count > maxReq) {
+        return {
+          type: "response",
+          response: new Response("too_many_requests", { status: 429 }),
+          correlationId: req.headers.get("x-correlation-id") ?? crypto.randomUUID(),
+        };
+      }
+      return null;
+    } catch (_) {
+      // Fall through to in-memory limiter on any error
+    }
+  }
+
+  const entry = rlStore.get(key);
+  if (!entry || now - entry.windowStart >= windowMs) {
+    rlStore.set(key, { count: 1, windowStart: now });
+    return null;
+  }
+  entry.count += 1;
+  if (entry.count > maxReq) {
+    return {
+      type: "response",
+      response: new Response("too_many_requests", { status: 429 }),
+      correlationId: req.headers.get("x-correlation-id") ?? crypto.randomUUID(),
+    };
+  }
+  return null;
+}
+
 class PayloadTooLargeError extends Error {
   constructor(readonly bytes: number) {
     super("payload_too_large");
@@ -270,6 +335,14 @@ export async function processWebhookRequest(
   }
 
   const requestStart = Date.now();
+
+  // Early rate limit check (per IP)
+  const rlViolation = await checkRateLimit(req);
+  if (rlViolation) {
+    await hooks.logStructuredEvent("WEBHOOK_RATE_LIMIT", withCid({ reason: "ip_window_exceeded" }));
+    incrementMetric("wa_webhook_request_failed_total", 1, { method: "POST", reason: "rate_limit", status: 429 });
+    return rlViolation;
+  }
   const declaredLength = Number(req.headers.get("content-length") ?? "");
   if (Number.isFinite(declaredLength) && declaredLength > MAX_REQUEST_BYTES) {
     await hooks.logStructuredEvent("WEBHOOK_BODY_TOO_LARGE", withCid({
@@ -312,12 +385,22 @@ export async function processWebhookRequest(
   }
   await hooks.logStructuredEvent("WEBHOOK_BODY_READ", withCid({ bytes: rawBody.length }));
 
-  const adminBypass = Boolean(
-    ADMIN_BYPASS_TOKEN &&
-      req.headers.get("x-admin-token") === ADMIN_BYPASS_TOKEN,
-  );
-  const shouldVerify = webhookConfig.verification.enabled !== false &&
-    !adminBypass;
+  // Signature verification policy
+  const envFlag = (Deno.env.get("APP_ENV") ?? Deno.env.get("NODE_ENV") ?? "").toLowerCase();
+  const isProd = envFlag === "production";
+  const bypassEnabled = (Deno.env.get("WA_ADMIN_BYPASS_ENABLED") ?? "").toLowerCase() !== "false";
+  const adminBypassCandidate = Boolean(ADMIN_BYPASS_TOKEN && req.headers.get("x-admin-token") === ADMIN_BYPASS_TOKEN);
+  let adminBypass = false;
+  if (!isProd && bypassEnabled && adminBypassCandidate) {
+    const allowlist = (Deno.env.get("WA_ADMIN_BYPASS_IPS") ?? "").split(",").map((s) => s.trim()).filter(Boolean);
+    if (allowlist.length === 0) {
+      adminBypass = true;
+    } else {
+      const ip = getClientIp(req);
+      adminBypass = allowlist.includes(ip);
+    }
+  }
+  const shouldVerify = webhookConfig.verification.enabled !== false && !adminBypass;
   if (shouldVerify) {
     const verified = await hooks.verifySignature(req, rawBody);
     if (!verified) {
