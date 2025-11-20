@@ -5,7 +5,7 @@ Copy and paste these commands into your terminal (Cloud Shell recommended).
 
 ## 1. Setup Environment Variables
 ```bash
-export PROJECT_ID="gen-lang-client-0738932886"
+export PROJECT_ID="easymo-478117"
 export REGION="us-central1"
 export WHATSAPP_TOKEN="easymo_verify_token_secure_123"
 
