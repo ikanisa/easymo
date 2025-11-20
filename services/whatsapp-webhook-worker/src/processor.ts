@@ -1,14 +1,15 @@
 import {
-  AgentResult,
+  analyzeIntent,
   BookingAgent,
   FarmerAgent,
   JobsAgent,
   PropertyRentalAgent,
+  runAgent,
+  runGeneralBrokerAgent,
   SalesAgent,
   SupportAgent,
   TriageAgent,
-  analyzeIntent,
-  runAgent
+  type AgentResult,
 } from "@easymo/agents";
 import { IdempotencyStore } from "@easymo/messaging";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
@@ -170,39 +171,55 @@ export class WebhookProcessor {
 
     // 1. Analyze Intent / Triage
     const intent = analyzeIntent(userText);
-    logger.info({ msg: "Intent analyzed", intent });
+    logger.info({ 
+      msg: "Intent analyzed", 
+      agent: intent.agent,
+      vertical: intent.vertical,
+      isOutOfScope: intent.isOutOfScope,
+      confidence: intent.confidence 
+    });
 
     let agentResult: AgentResult;
 
     // 2. Route to appropriate agent
-    switch (intent.agent) {
-      case "booking":
-        agentResult = await runAgent(BookingAgent, { userId, query: userText });
-        break;
-      case "real_estate":
-        agentResult = await runAgent(PropertyRentalAgent, { userId, query: userText });
-        break;
-      case "farmer":
-        agentResult = await runAgent(FarmerAgent, { userId, query: userText });
-        break;
-      case "jobs":
-        agentResult = await runAgent(JobsAgent, { userId, query: userText });
-        break;
-      case "sales":
-        agentResult = await runAgent(SalesAgent, { userId, query: userText });
-        break;
-      case "support":
-        agentResult = await runAgent(SupportAgent, { userId, query: userText });
-        break;
-      case "redemption":
-        // TODO: Use TokenRedemptionAgent when available/exported
-        // agentResult = await runAgent(TokenRedemptionAgent, { userId, query: userText });
-        agentResult = await runAgent(TriageAgent, { userId, query: userText });
-        break;
-      default:
-        // Default to Triage for general queries
-        agentResult = await runAgent(TriageAgent, { userId, query: userText });
-        break;
+    // Check for out-of-scope requests FIRST
+    if (intent.isOutOfScope) {
+      logger.info({ msg: "Out-of-scope request detected", vertical: intent.vertical });
+      agentResult = await runGeneralBrokerAgent(userId, userText);
+    } else {
+      // Route based on agent type
+      switch (intent.agent) {
+        case "booking":
+          agentResult = await runAgent(BookingAgent, { userId, query: userText });
+          break;
+        case "real_estate":
+          agentResult = await runAgent(PropertyRentalAgent, { userId, query: userText });
+          break;
+        case "farmer":
+          agentResult = await runAgent(FarmerAgent, { userId, query: userText });
+          break;
+        case "jobs":
+          agentResult = await runAgent(JobsAgent, { userId, query: userText });
+          break;
+        case "sales":
+          agentResult = await runAgent(SalesAgent, { userId, query: userText });
+          break;
+        case "support":
+          agentResult = await runAgent(SupportAgent, { userId, query: userText });
+          break;
+        case "redemption":
+          // TODO: Use TokenRedemptionAgent when available/exported
+          agentResult = await runAgent(TriageAgent, { userId, query: userText });
+          break;
+        case "general_broker":
+          // Use GeneralBrokerAgent for general EasyMO queries
+          agentResult = await runGeneralBrokerAgent(userId, userText);
+          break;
+        default:
+          // Default to GeneralBrokerAgent (was TriageAgent)
+          agentResult = await runGeneralBrokerAgent(userId, userText);
+          break;
+      }
     }
 
     // 3. Handle Result

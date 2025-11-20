@@ -1,0 +1,16 @@
+model TokenPartner {
+  id           String   @id @default(uuid()) @db.Uuid
+  tenantId     String   @db.Uuid
+  tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name         String
+  whatsappE164 String?  @unique @map("whatsapp_e164")
+  category     String?  // petrol_station, supermarket, restaurant, pharmacy, retail, services, utility, transport, accommodation
+  isActive     Boolean  @default(true) @map("is_active")
+  metadata     Json?
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@index([category, isActive])
+  @@index([isActive, createdAt])
+  @@map("token_partners")
+}

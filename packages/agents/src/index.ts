@@ -10,21 +10,23 @@ export type { AgentDefinition } from './runner';
 
 // Agents
 export {
+  analyzeIntent,
   BookingAgent,
   FarmerAgent,
+  GeneralBrokerAgent,
   JobsAgent,
   NearbyDriversAgent,
   PharmacyAgent,
   PropertyRentalAgent,
   QuincaillerieAgent,
+  runBookingAgent,
+  runGeneralBrokerAgent,
+  runTriageAgent,
   SalesAgent,
   ScheduleTripAgent,
   ShopsAgent,
   SupportAgent,
   TriageAgent,
-  analyzeIntent,
-  runBookingAgent,
-  runTriageAgent,
 } from './agents';
 
 // Tools

@@ -3,7 +3,7 @@ import { verifyQrPayload } from "../wa-webhook/utils/qr.ts";
 import { ensureProfile, setState } from "../wa-webhook/state/store.ts";
 import { supabase } from "../wa-webhook/config.ts";
 import { logStructuredEvent } from "../wa-webhook/observe/log.ts";
-import { getRotatingSecret } from "shared/env.ts";
+import { getRotatingSecret } from "../_shared/env.ts";
 
 function normalize(label: string): string {
   return label.trim().replace(/\s+/g, " ").toUpperCase();

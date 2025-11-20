@@ -7,10 +7,12 @@
  * - Direct response for simple queries
  */
 
+import { detectVerticalFromQuery, isOutOfScope } from '../config/service-catalog';
 import { requireAgentFeature } from '../feature-flags';
 import type { AgentDefinition } from '../runner';
-import { menuLookupTool, webSearchTool } from '../tools';
+import { menuLookupTool } from '../tools';
 import type { AgentContext } from '../types';
+import type { AgentType, EasyMOVertical, IntentAnalysis } from '../types/verticals';
 
 export const TriageAgent: AgentDefinition = {
   name: 'TriageAgent',
@@ -42,7 +44,7 @@ For simple questions, just answer directly without mentioning other agents.`,
   model: 'gpt-4o',
   temperature: 0.8,
   maxTokens: 600,
-  tools: [menuLookupTool, webSearchTool],
+  tools: [menuLookupTool], // Removed webSearchTool - EasyMO only
 };
 
 /**
@@ -66,12 +68,26 @@ export async function runTriageAgent(
 /**
  * Analyze user intent and determine which agent to use
  * This is a helper for orchestration logic
+ * 
+ * Now includes:
+ * - Out-of-scope detection for non-EasyMO topics
+ * - Vertical classification for EasyMO services
  */
-export function analyzeIntent(query: string): {
-  agent: 'booking' | 'redemption' | 'real_estate' | 'jobs' | 'farmer' | 'sales' | 'support' | 'triage';
-  confidence: number;
-} {
+export function analyzeIntent(query: string): IntentAnalysis {
   const lowerQuery = query.toLowerCase();
+
+  // Check for out-of-scope patterns FIRST
+  if (isOutOfScope(query)) {
+    return {
+      agent: 'general_broker',
+      vertical: 'none',
+      confidence: 0.9,
+      isOutOfScope: true,
+    };
+  }
+
+  // Detect vertical from query
+  const detectedVertical = detectVerticalFromQuery(query);
 
   // Helper to calculate score
   const calculateScore = (keywords: string[]) => 
@@ -122,14 +138,32 @@ export function analyzeIntent(query: string): {
   );
 
   if (bestMatch.score > 0) {
+    // Map agent to vertical
+    const verticalMap: Record<AgentType, EasyMOVertical> = {
+      booking: 'hospitality',
+      redemption: 'payments',
+      real_estate: 'property',
+      jobs: 'jobs',
+      farmer: 'farming',
+      sales: 'marketing',
+      support: 'support',
+      general_broker: detectedVertical || 'commerce',
+      triage: detectedVertical || 'support',
+    };
+
     return {
       agent: bestMatch.agent,
+      vertical: verticalMap[bestMatch.agent],
       confidence: Math.min(bestMatch.score / bestMatch.max, 1.0),
+      isOutOfScope: false,
     };
   }
 
+  // Default to general broker with detected vertical or support
   return {
-    agent: 'triage',
+    agent: 'general_broker',
+    vertical: detectedVertical || 'support',
     confidence: 0.5,
+    isOutOfScope: false,
   };
 }

@@ -10,6 +10,7 @@ export { TriageAgent, runTriageAgent, analyzeIntent } from './triage';
 
 // New enhanced agents - ALL COMPLETE ✅
 export { BaseAgent } from './base/agent.base';
+export { GeneralBrokerAgent, runGeneralBrokerAgent } from './general/general-broker.agent';
 export { NearbyDriversAgent } from './drivers/nearby-drivers.agent';
 export { FarmerAgent } from './farmer/farmer.agent';
 export { JobsAgent } from './jobs/jobs.agent';
