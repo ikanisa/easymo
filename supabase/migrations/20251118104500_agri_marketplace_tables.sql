@@ -276,8 +276,50 @@ CREATE INDEX IF NOT EXISTS farms_owner_idx ON public.farms (owner_profile_id);
 CREATE INDEX IF NOT EXISTS farms_tenant_idx ON public.farms (tenant_id);
 CREATE INDEX IF NOT EXISTS produce_catalog_category_idx ON public.produce_catalog (category);
 
--- Add tenant_id column if it doesn't exist
+-- Add ALL missing columns to produce_listings if they don't exist
 ALTER TABLE public.produce_listings ADD COLUMN IF NOT EXISTS tenant_id uuid;
+ALTER TABLE public.produce_listings ADD COLUMN IF NOT EXISTS farm_id uuid;
+ALTER TABLE public.produce_listings ADD COLUMN IF NOT EXISTS produce_id uuid;
+ALTER TABLE public.produce_listings ADD COLUMN IF NOT EXISTS title text;
+ALTER TABLE public.produce_listings ADD COLUMN IF NOT EXISTS description text;
+ALTER TABLE public.produce_listings ADD COLUMN IF NOT EXISTS quantity numeric(18,4);
+ALTER TABLE public.produce_listings ADD COLUMN IF NOT EXISTS unit_price numeric(18,2);
+ALTER TABLE public.produce_listings ADD COLUMN IF NOT EXISTS currency text DEFAULT 'RWF';
+ALTER TABLE public.produce_listings ADD COLUMN IF NOT EXISTS status text DEFAULT 'draft';
+ALTER TABLE public.produce_listings ADD COLUMN IF NOT EXISTS location_lat numeric(10,7);
+ALTER TABLE public.produce_listings ADD COLUMN IF NOT EXISTS location_lng numeric(10,7);
+ALTER TABLE public.produce_listings ADD COLUMN IF NOT EXISTS location_name text;
+ALTER TABLE public.produce_listings ADD COLUMN IF NOT EXISTS harvest_date date;
+ALTER TABLE public.produce_listings ADD COLUMN IF NOT EXISTS expiry_date date;
+ALTER TABLE public.produce_listings ADD COLUMN IF NOT EXISTS images jsonb DEFAULT '[]'::jsonb;
+ALTER TABLE public.produce_listings ADD COLUMN IF NOT EXISTS tags text[] DEFAULT ARRAY[]::text[];
+ALTER TABLE public.produce_listings ADD COLUMN IF NOT EXISTS search_document tsvector;
+ALTER TABLE public.produce_listings ADD COLUMN IF NOT EXISTS search_embedding vector(1536);
+ALTER TABLE public.produce_listings ADD COLUMN IF NOT EXISTS metadata jsonb DEFAULT '{}'::jsonb;
+ALTER TABLE public.produce_listings ADD COLUMN IF NOT EXISTS created_at timestamptz DEFAULT timezone('utc', now());
+ALTER TABLE public.produce_listings ADD COLUMN IF NOT EXISTS updated_at timestamptz DEFAULT timezone('utc', now());
+
+-- Add foreign key constraints if they don't exist
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint 
+    WHERE conname = 'produce_listings_farm_id_fkey'
+  ) THEN
+    ALTER TABLE public.produce_listings 
+      ADD CONSTRAINT produce_listings_farm_id_fkey 
+      FOREIGN KEY (farm_id) REFERENCES public.farms (id) ON DELETE CASCADE;
+  END IF;
+  
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint 
+    WHERE conname = 'produce_listings_produce_id_fkey'
+  ) THEN
+    ALTER TABLE public.produce_listings 
+      ADD CONSTRAINT produce_listings_produce_id_fkey 
+      FOREIGN KEY (produce_id) REFERENCES public.produce_catalog (id) ON DELETE RESTRICT;
+  END IF;
+END $$;
 
 CREATE INDEX IF NOT EXISTS produce_listings_farm_status_idx ON public.produce_listings (tenant_id, farm_id, status);
 CREATE INDEX IF NOT EXISTS produce_listings_produce_idx ON public.produce_listings (produce_id);
