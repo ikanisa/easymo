@@ -513,64 +513,43 @@ function detectCategory(query: string, vertical: string | null): string | null {
 // ============================================================================
 
 /**
- * Search business directory using Gemini-enhanced search
- * Supports text search, category, city, and rating filters
+ * Search business directory using Gemini API directly
+ * Gets real-time results from Google Maps via Gemini
  */
 async function searchBusinessDirectory(supabase: any, params: any) {
   const { query, category, city, minRating, limit = 10 } = params;
 
-  let dbQuery = supabase
-    .from("business_directory")
-    .select("*");
-
-  // Category filter
-  if (category) {
-    dbQuery = dbQuery.eq("category", category);
-  }
-
-  // City filter
-  if (city) {
-    dbQuery = dbQuery.eq("city", city);
-  }
-
-  // Rating filter
-  if (minRating) {
-    dbQuery = dbQuery.gte("rating", minRating);
-  }
-
-  // Text search on name, category, address
+  // Build search query for Gemini
+  let searchQuery = "";
+  
   if (query) {
-    dbQuery = dbQuery.or(`name.ilike.%${query}%,category.ilike.%${query}%,address.ilike.%${query}%`);
+    searchQuery = query;
+  } else if (category) {
+    searchQuery = category;
+  } else {
+    searchQuery = "businesses";
   }
 
-  dbQuery = dbQuery
-    .order("rating", { ascending: false })
-    .limit(limit);
-
-  const { data, error } = await dbQuery;
-
-  if (error) throw error;
-
-  // If no results and we have a query, try Gemini search as fallback
-  if ((!data || data.length === 0) && query) {
-    const geminiResults = await searchBusinessViaGemini(query, city || "Rwanda");
-    return {
-      businesses: geminiResults,
-      source: "gemini",
-      count: geminiResults.length,
-    };
+  // Add category if specified and not in query
+  if (category && !query) {
+    searchQuery = category;
   }
+
+  const searchCity = city || "Rwanda";
+  
+  // Get results from Gemini API (Google Maps)
+  const geminiResults = await searchBusinessViaGemini(searchQuery, searchCity, minRating, limit);
 
   return {
-    businesses: data || [],
-    source: "database",
-    count: data?.length || 0,
+    businesses: geminiResults,
+    source: "gemini",
+    count: geminiResults.length,
   };
 }
 
 /**
- * Search businesses by geographic location
- * Finds businesses within a radius of a given point
+ * Search businesses by geographic location using Gemini
+ * Finds businesses near a specific location via Google Maps
  */
 async function searchBusinessByLocation(supabase: any, params: any) {
   const { latitude, longitude, radiusKm = 5, category, limit = 10 } = params;
@@ -579,106 +558,155 @@ async function searchBusinessByLocation(supabase: any, params: any) {
     throw new Error("latitude and longitude are required");
   }
 
-  // Use PostgreSQL/PostGIS for geospatial search
-  const query = `
-    SELECT *,
-      (6371 * acos(
-        cos(radians($1)) * cos(radians(lat)) *
-        cos(radians(lng) - radians($2)) +
-        sin(radians($1)) * sin(radians(lat))
-      )) AS distance_km
-    FROM business_directory
-    WHERE lat IS NOT NULL AND lng IS NOT NULL
-    ${category ? `AND category = '${category}'` : ''}
-    HAVING distance_km <= $3
-    ORDER BY distance_km ASC
-    LIMIT $4
-  `;
-
-  const { data, error } = await supabase.rpc("exec_sql", {
-    sql: query,
-    params: [latitude, longitude, radiusKm, limit],
-  });
-
-  // Fallback to simple query if RPC not available
-  if (error || !data) {
-    let fallbackQuery = supabase
-      .from("business_directory")
-      .select("*")
-      .not("lat", "is", null)
-      .not("lng", "is", null);
-
-    if (category) {
-      fallbackQuery = fallbackQuery.eq("category", category);
-    }
-
-    const { data: businesses, error: fbError } = await fallbackQuery
-      .order("rating", { ascending: false })
-      .limit(limit);
-
-    if (fbError) throw fbError;
-
-    // Calculate distance in-memory
-    const withDistance = (businesses || []).map((b: any) => ({
-      ...b,
-      distance_km: calculateDistance(latitude, longitude, b.lat, b.lng),
-    })).filter((b: any) => b.distance_km <= radiusKm)
-      .sort((a: any, b: any) => a.distance_km - b.distance_km);
-
-    return {
-      businesses: withDistance,
-      count: withDistance.length,
-    };
-  }
+  // Search via Gemini with location context
+  const locationQuery = category || "businesses";
+  const geminiResults = await searchBusinessViaGeminiWithLocation(
+    locationQuery,
+    latitude,
+    longitude,
+    radiusKm,
+    limit
+  );
 
   return {
-    businesses: data || [],
-    count: data?.length || 0,
+    businesses: geminiResults,
+    source: "gemini",
+    count: geminiResults.length,
   };
 }
 
 /**
  * Get detailed information about a specific business
+ * Note: Since we're not storing businesses, this searches by name
  */
 async function getBusinessDetails(supabase: any, businessId: string) {
-  const { data, error } = await supabase
-    .from("business_directory")
-    .select("*")
-    .eq("id", businessId)
-    .single();
-
-  if (error) throw error;
+  // If businessId is actually a business name (from previous search)
+  // Search for it via Gemini
+  const results = await searchBusinessViaGemini(businessId, "Rwanda", undefined, 1);
+  
+  if (results.length > 0) {
+    return {
+      business: results[0],
+      source: "gemini",
+    };
+  }
 
   return {
-    business: data,
+    business: null,
+    error: "Business not found",
   };
 }
 
 /**
- * Search businesses via Gemini API (fallback when DB has no results)
+ * Search businesses via Gemini API (primary method)
  */
-async function searchBusinessViaGemini(query: string, city: string) {
+async function searchBusinessViaGemini(query: string, city: string, minRating?: number, limit: number = 10) {
   const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY") || Deno.env.get("API_KEY");
   
   if (!GEMINI_API_KEY) {
+    console.warn("No Gemini API key configured");
+    return [];
+  }
+
+  const ratingFilter = minRating ? `with rating ${minRating} stars or higher` : "";
+  
+  const prompt = `
+    Search for "${query}" businesses in "${city}, Rwanda" ${ratingFilter} using Google Maps.
+    
+    Return a JSON array of up to ${limit} businesses. Each business should have:
+    - name: Business name (string)
+    - address: Full address (string)
+    - city: City name (string)
+    - phone: Phone number or "N/A" (string)
+    - category: Business category (string)
+    - rating: Number 0-5 (number)
+    - lat: Latitude (number)
+    - lng: Longitude (number)
+    - website: Website URL or null (string or null)
+    - place_id: Google Place ID if available (string or null)
+    
+    Return ONLY a valid JSON array, no markdown, no explanation.
+    Example: [{"name": "Restaurant A", "address": "...", ...}]
+  `;
+
+  try {
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${GEMINI_API_KEY}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          tools: [{ googleSearchRetrieval: {} }],
+          generationConfig: {
+            temperature: 0.1,
+            topK: 1,
+            topP: 0.95,
+          },
+        }),
+      }
+    );
+
+    const data = await response.json();
+    let jsonStr = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+
+    if (!jsonStr) {
+      console.warn("No response from Gemini API");
+      return [];
+    }
+
+    // Clean markdown
+    jsonStr = jsonStr.replace(/^```json\s*/, "").replace(/^```\s*/, "").replace(/```\s*$/, "");
+
+    const businesses = JSON.parse(jsonStr);
+    const validBusinesses = Array.isArray(businesses) ? businesses : [];
+    
+    // Filter by rating if specified
+    if (minRating && minRating > 0) {
+      return validBusinesses.filter(b => b.rating >= minRating);
+    }
+    
+    return validBusinesses;
+  } catch (error) {
+    console.error("Gemini search error:", error);
+    return [];
+  }
+}
+
+/**
+ * Search businesses via Gemini API with location context
+ */
+async function searchBusinessViaGeminiWithLocation(
+  query: string,
+  latitude: number,
+  longitude: number,
+  radiusKm: number,
+  limit: number = 10
+) {
+  const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY") || Deno.env.get("API_KEY");
+  
+  if (!GEMINI_API_KEY) {
+    console.warn("No Gemini API key configured");
     return [];
   }
 
   const prompt = `
-    Search for "${query}" businesses in "${city}, Rwanda" using Google Maps.
+    Search for "${query}" near coordinates ${latitude}, ${longitude} in Rwanda within ${radiusKm}km radius using Google Maps.
     
-    Return a JSON array of businesses. Each business should have:
-    - name: Business name
-    - address: Full address
-    - city: City name
-    - phone: Phone number (or "N/A")
-    - category: Business category
-    - rating: Number 0-5
-    - lat: Latitude
-    - lng: Longitude
-    - website: Website URL (or null)
+    Return a JSON array of up to ${limit} businesses. Each business should have:
+    - name: Business name (string)
+    - address: Full address (string)
+    - city: City name (string)
+    - phone: Phone number or "N/A" (string)
+    - category: Business category (string)
+    - rating: Number 0-5 (number)
+    - lat: Latitude (number)
+    - lng: Longitude (number)
+    - distance_km: Approximate distance from search point in km (number)
+    - website: Website URL or null (string or null)
     
-    Return ONLY the JSON array, no markdown.
+    Sort by distance from the search coordinates.
+    Return ONLY a valid JSON array, no markdown.
   `;
 
   try {
@@ -710,7 +738,7 @@ async function searchBusinessViaGemini(query: string, city: string) {
     const businesses = JSON.parse(jsonStr);
     return Array.isArray(businesses) ? businesses : [];
   } catch (error) {
-    console.error("Gemini search error:", error);
+    console.error("Gemini location search error:", error);
     return [];
   }
 }
