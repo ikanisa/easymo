@@ -98,12 +98,16 @@ CREATE TABLE IF NOT EXISTS public.farm_synonyms (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   farm_id uuid REFERENCES public.farms(id) ON DELETE CASCADE,
   synonym text NOT NULL,
+  phrase text,  -- Error #13 fix: code expects phrase column
   created_at timestamptz DEFAULT NOW()
 );
 
 ALTER TABLE IF EXISTS public.farm_synonyms DISABLE ROW LEVEL SECURITY;
 GRANT ALL ON public.farm_synonyms TO anon, authenticated, service_role, postgres;
 CREATE INDEX IF NOT EXISTS idx_farm_synonyms_farm_id ON public.farm_synonyms(farm_id);
+
+-- Error #11 fix: Add is_active column to menu_items
+ALTER TABLE IF EXISTS public.menu_items ADD COLUMN IF NOT EXISTS is_active boolean DEFAULT true;
 
 -- 8. RELOAD SCHEMA CACHE
 NOTIFY pgrst, 'reload schema';
