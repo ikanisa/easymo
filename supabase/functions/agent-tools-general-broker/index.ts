@@ -598,7 +598,8 @@ async function getBusinessDetails(supabase: any, businessId: string) {
 }
 
 /**
- * Search businesses via Gemini API (primary method)
+ * Search businesses via Gemini API with Google Maps grounding
+ * Uses Google Maps tool to get real-time business data
  */
 async function searchBusinessViaGemini(query: string, city: string, minRating?: number, limit: number = 10) {
   const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY") || Deno.env.get("API_KEY");
@@ -608,25 +609,25 @@ async function searchBusinessViaGemini(query: string, city: string, minRating?: 
     return [];
   }
 
-  const ratingFilter = minRating ? `with rating ${minRating} stars or higher` : "";
+  const ratingFilter = minRating ? ` with rating ${minRating} stars or higher` : "";
   
   const prompt = `
-List ${limit} popular ${query} businesses in ${city}, Rwanda ${ratingFilter}.
+Act as a Data Extractor. Search for "${query}" in "${city}, Rwanda"${ratingFilter} using Google Maps.
 
-For each business, provide this information in JSON format:
-- name: The business name
-- address: Street address in ${city}
-- city: "${city}"
-- phone: Phone number (use +250 country code, or "N/A" if unknown)
-- category: Business type/category
-- rating: Rating from 1-5 (estimate if unknown)
-- lat: Latitude coordinate (approximate for ${city})
-- lng: Longitude coordinate (approximate for ${city})
-- website: Website URL if known, or null
-- place_id: null
+Return a valid JSON array of up to ${limit} objects. Each object must have:
+- "name": Name of the business (string)
+- "address": Full street address (string)
+- "city": City name (string)
+- "phone": Phone number with country code, or "N/A" if not available (string)
+- "category": Business category/type (string)
+- "rating": Rating from 0-5 (number)
+- "lat": Latitude coordinate (number)
+- "lng": Longitude coordinate (number)
+- "website": Website URL or null (string or null)
+- "place_id": Google Place ID or null (string or null)
 
-Return ONLY a JSON array with no markdown, no explanation. Start with [ and end with ].
-Example: [{"name":"Heaven Restaurant","address":"KG 7 Ave","city":"Kigali","phone":"+250788234567","category":"Restaurant","rating":4.8,"lat":-1.9447,"lng":30.0594,"website":"https://example.com","place_id":null}]
+Do NOT return markdown code blocks. Return ONLY the raw JSON array.
+Example: [{"name":"Heaven Restaurant","address":"KG 7 Ave","city":"Kigali","phone":"+250788234567","category":"Restaurant","rating":4.8,"lat":-1.9447,"lng":30.0594,"website":"https://example.com","place_id":"ChIJ..."}]
   `.trim();
 
   try {
@@ -637,8 +638,9 @@ Example: [{"name":"Heaven Restaurant","address":"KG 7 Ave","city":"Kigali","phon
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }],
+          tools: [{ googleMaps: {} }],  // KEY: Enable Google Maps grounding!
           generationConfig: {
-            temperature: 0.7,
+            temperature: 0.3,
             topP: 0.9,
             topK: 40,
             maxOutputTokens: 2048,
@@ -655,15 +657,25 @@ Example: [{"name":"Heaven Restaurant","address":"KG 7 Ave","city":"Kigali","phon
       return [];
     }
     
+    // Log grounding metadata if available
+    if (data.candidates?.[0]?.groundingMetadata) {
+      console.log("Grounding metadata:", JSON.stringify(data.candidates[0].groundingMetadata));
+    }
+    
     let jsonStr = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
 
     if (!jsonStr) {
       console.warn("No response from Gemini API");
+      console.log("Full Gemini response:", JSON.stringify(data, null, 2));
       return [];
     }
 
-    // Clean markdown
-    jsonStr = jsonStr.replace(/^```json\s*/, "").replace(/^```\s*/, "").replace(/```\s*$/, "");
+    // Clean markdown if present
+    if (jsonStr.startsWith('```json')) {
+      jsonStr = jsonStr.replace(/^```json/, '').replace(/```$/, '');
+    } else if (jsonStr.startsWith('```')) {
+      jsonStr = jsonStr.replace(/^```/, '').replace(/```$/, '');
+    }
 
     const businesses = JSON.parse(jsonStr);
     const validBusinesses = Array.isArray(businesses) ? businesses : [];
@@ -681,7 +693,7 @@ Example: [{"name":"Heaven Restaurant","address":"KG 7 Ave","city":"Kigali","phon
 }
 
 /**
- * Search businesses via Gemini API with location context
+ * Search businesses via Gemini API with location context and Google Maps grounding
  */
 async function searchBusinessViaGeminiWithLocation(
   query: string,
@@ -698,21 +710,22 @@ async function searchBusinessViaGeminiWithLocation(
   }
 
   const prompt = `
-List ${limit} ${query} businesses near coordinates ${latitude}, ${longitude} in Rwanda (within ${radiusKm}km).
+Act as a Data Extractor. Search for "${query}" near GPS coordinates ${latitude}, ${longitude} in Rwanda, within ${radiusKm}km radius using Google Maps.
 
-For each business, provide:
-- name: Business name
-- address: Street address
-- city: City/area name
-- phone: Phone with +250 code or "N/A"
-- category: Business category
-- rating: 1-5 rating (estimate if unknown)
-- lat: Latitude
-- lng: Longitude  
-- distance_km: Approximate distance from ${latitude}, ${longitude}
-- website: URL or null
+Return a valid JSON array of up to ${limit} objects. Each object must have:
+- "name": Business name (string)
+- "address": Full street address (string)
+- "city": City name (string)
+- "phone": Phone number with country code, or "N/A" (string)
+- "category": Business category (string)
+- "rating": Rating from 0-5 (number)
+- "lat": Latitude (number)
+- "lng": Longitude (number)
+- "distance_km": Approximate distance from ${latitude}, ${longitude} in kilometers (number)
+- "website": Website URL or null (string or null)
 
-Return ONLY a JSON array, no markdown. Start with [ and end with ]. Sort by distance (closest first).
+Sort results by distance (closest first).
+Do NOT return markdown code blocks. Return ONLY the raw JSON array.
   `.trim();
 
   try {
@@ -723,8 +736,9 @@ Return ONLY a JSON array, no markdown. Start with [ and end with ]. Sort by dist
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }],
+          tools: [{ googleMaps: {} }],  // KEY: Enable Google Maps grounding!
           generationConfig: {
-            temperature: 0.7,
+            temperature: 0.3,
             topP: 0.9,
             topK: 40,
             maxOutputTokens: 2048,
@@ -734,12 +748,25 @@ Return ONLY a JSON array, no markdown. Start with [ and end with ]. Sort by dist
     );
 
     const data = await response.json();
+    
+    if (data.error) {
+      console.error("Gemini location search error:", data.error);
+      return [];
+    }
+
     let jsonStr = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
 
-    if (!jsonStr) return [];
+    if (!jsonStr) {
+      console.warn("No response from Gemini API for location search");
+      return [];
+    }
 
     // Clean markdown
-    jsonStr = jsonStr.replace(/^```json\s*/, "").replace(/^```\s*/, "").replace(/```\s*$/, "");
+    if (jsonStr.startsWith('```json')) {
+      jsonStr = jsonStr.replace(/^```json/, '').replace(/```$/, '');
+    } else if (jsonStr.startsWith('```')) {
+      jsonStr = jsonStr.replace(/^```/, '').replace(/```$/, '');
+    }
 
     const businesses = JSON.parse(jsonStr);
     return Array.isArray(businesses) ? businesses : [];
