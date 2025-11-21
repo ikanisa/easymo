@@ -33,6 +33,26 @@ CREATE TABLE IF NOT EXISTS public.farms (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- Add missing columns to existing farms table if they don't exist
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'farms' AND column_name = 'phone_number') THEN
+    ALTER TABLE public.farms ADD COLUMN phone_number TEXT;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'farms' AND column_name = 'whatsapp_e164') THEN
+    ALTER TABLE public.farms ADD COLUMN whatsapp_e164 TEXT;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'farms' AND column_name = 'status') THEN
+    ALTER TABLE public.farms ADD COLUMN status TEXT DEFAULT 'active';
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'farms' AND column_name = 'cooperative_member') THEN
+    ALTER TABLE public.farms ADD COLUMN cooperative_member BOOLEAN DEFAULT FALSE;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'farms' AND column_name = 'cooperative_name') THEN
+    ALTER TABLE public.farms ADD COLUMN cooperative_name TEXT;
+  END IF;
+END $$;
+
 CREATE INDEX IF NOT EXISTS farms_owner_profile_id_idx ON public.farms(owner_profile_id);
 CREATE INDEX IF NOT EXISTS farms_district_idx ON public.farms(district);
 CREATE INDEX IF NOT EXISTS farms_commodities_idx ON public.farms USING GIN(commodities);
