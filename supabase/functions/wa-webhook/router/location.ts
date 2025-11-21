@@ -10,9 +10,7 @@ import { sendText } from "../wa/client.ts";
 import { clearState } from "../state/store.ts";
 // AI Agents Integration
 import { handleAIAgentLocationUpdate } from "../domains/ai-agents/index.ts";
-import { handlePharmacyLocation } from "../domains/healthcare/pharmacies.ts";
-import { handleQuincaillerieLocation } from "../domains/healthcare/quincailleries.ts";
-import { handleNotaryLocation } from "../domains/services/notary.ts";
+
 import {
   handleFindPropertyLocation,
   handleAddPropertyLocation,
@@ -101,27 +99,7 @@ export async function handleLocation(
     );
   }
   
-  if (state.key === "pharmacy_awaiting_location") {
-    return await handlePharmacyLocation(ctx, { lat, lng });
-  }
-  
-  if (state.key === "quincaillerie_awaiting_location") {
-    return await handleQuincaillerieLocation(ctx, { lat, lng });
-  }
-  
-  if (state.key === "bars_wait_location") {
-    const { handleBarsLocation } = await import("../domains/bars/search.ts");
-    return await handleBarsLocation(ctx, { lat, lng }, state.data as { preference?: string });
-  }
-  
-  if (state.key === "shops_wait_location") {
-    const { handleShopsLocation } = await import("../domains/shops/services.ts");
-    return await handleShopsLocation(ctx, state.data || {}, { lat, lng });
-  }
-  
-  if (state.key === "notary_awaiting_location") {
-    return await handleNotaryLocation(ctx, { lat, lng });
-  }
+
   
   if (state.key === "property_find_location") {
     const stateData = state.data as {

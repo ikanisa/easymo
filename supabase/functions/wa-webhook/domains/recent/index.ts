@@ -19,21 +19,7 @@ export async function showRecentHub(ctx: RouterContext): Promise<boolean> {
 
   const rows: RecentRow[] = [];
 
-  // Bar resumes
-  for (const a of acts || []) {
-    const type = String((a as any).activity_type || '');
-    const ref = (a as any).ref_id ? String((a as any).ref_id) : '';
-    const details = (a as any).details || {};
-    const barName = (details?.barName ?? '').toString();
-    if ((type === 'bar_menu' || type === 'bar_detail') && ref) {
-      rows.push({
-        id: `bar_resume::${ref}`,
-        title: t(ctx.locale, 'home.buttons.resume', { bar: barName || 'bar' }),
-        description: t(ctx.locale, 'home.resume.body', { bar: barName || 'bar' }),
-      });
-      break; // only need the most recent bar
-    }
-  }
+
 
   // Property search resume (most recent)
   for (const a of acts || []) {
@@ -77,23 +63,11 @@ export async function showRecentHub(ctx: RouterContext): Promise<boolean> {
     }
   }
 
-  // Pharmacies resume (use recent location)
-  for (const a of acts || []) {
-    const type = String((a as any).activity_type || '');
-    if (type === 'pharmacy_search') {
-      rows.push({
-        id: 'pharmacy_resume',
-        title: '💊 Pharmacies near you',
-        description: 'Open nearby pharmacies using your recent location.',
-      });
-      break;
-    }
-  }
 
-  // Quick entries: drivers / passengers / pharmacies
+
+  // Quick entries: drivers / passengers
   rows.push({ id: IDS.SEE_DRIVERS, title: t(ctx.locale, 'home.rows.seeDrivers.title'), description: t(ctx.locale, 'home.rows.seeDrivers.description') });
   rows.push({ id: IDS.SEE_PASSENGERS, title: t(ctx.locale, 'home.rows.seePassengers.title'), description: t(ctx.locale, 'home.rows.seePassengers.description') });
-  rows.push({ id: IDS.NEARBY_PHARMACIES, title: t(ctx.locale, 'home.rows.nearbyPharmacies.title'), description: t(ctx.locale, 'home.rows.nearbyPharmacies.description') });
 
   if (!rows.length) {
     rows.push({ id: IDS.BACK_MENU, title: t(ctx.locale, 'common.menu_back'), description: t(ctx.locale, 'common.back_to_menu.description') });
@@ -117,26 +91,7 @@ export async function showRecentHub(ctx: RouterContext): Promise<boolean> {
 }
 
 export async function handleRecentSelection(ctx: RouterContext, id: string): Promise<boolean> {
-  if (id.startsWith('bar_resume::')) {
-    const barId = id.substring('bar_resume::'.length);
-    try {
-      const { data: bar } = await ctx.supabase
-        .from('bars')
-        .select('id,name,country,slug')
-        .eq('id', barId)
-        .maybeSingle();
-      const detail: Record<string, unknown> = {
-        barId,
-        barName: bar?.name || 'Bar',
-        barCountry: bar?.country || null,
-        barSlug: bar?.slug || null,
-      };
-      const { startBarMenuOrder } = await import('../bars/search.ts');
-      return await startBarMenuOrder(ctx, detail);
-    } catch (_err) {
-      return false;
-    }
-  }
+
   if (id === 'property_resume') {
     try {
       // Load last property_search details
@@ -179,17 +134,7 @@ export async function handleRecentSelection(ctx: RouterContext, id: string): Pro
       return false;
     }
   }
-  if (id === 'pharmacy_resume') {
-    try {
-      const { getRecentLocation } = await import('../locations/recent.ts');
-      const recent = await getRecentLocation(ctx, 'pharmacies');
-      if (!recent) return false;
-      const { processPharmacyRequest } = await import('../healthcare/pharmacies.ts');
-      return await processPharmacyRequest(ctx, recent, '');
-    } catch (_err) {
-      return false;
-    }
-  }
+
   if (id.startsWith('shops_resume::')) {
     const tagId = id.substring('shops_resume::'.length);
     try {
@@ -223,9 +168,6 @@ export async function handleRecentSelection(ctx: RouterContext, id: string): Pro
       ? await handleSeeDrivers(ctx)
       : await handleSeePassengers(ctx);
   }
-  if (id === IDS.NEARBY_PHARMACIES) {
-    const { startNearbyPharmacies } = await import('../healthcare/pharmacies.ts');
-    return await startNearbyPharmacies(ctx);
-  }
+
   return false;
 }

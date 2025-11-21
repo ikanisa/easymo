@@ -18,12 +18,7 @@ import { t } from "../i18n/translator.ts";
 import { maybeHandleDriverText } from "../observe/driver_parser.ts";
 import { recordInbound } from "../observe/conv_audit.ts";
 import { getTextBody } from "../utils/messages.ts";
-import { processPharmacyRequest } from "../domains/healthcare/pharmacies.ts";
-import { processQuincaillerieRequest } from "../domains/healthcare/quincailleries.ts";
-import { processNotaryRequest } from "../domains/services/notary.ts";
-import { handleBarWaiterMessage } from "../domains/bars/waiter_ai.ts";
-import { handleBusinessDeeplinkCode } from "../domains/business/deeplink.ts";
-import { maybeHandleFarmerBroker } from "../domains/ai-agents/farmer.ts";
+
 
 import {
   handleAddPropertyPrice,
@@ -49,20 +44,9 @@ export async function handleText(
     await maybeHandleDriverText(ctx, msg);
   } catch (_) { /* noop */ }
   
-  // Check for active AI customer support chat
-  if (state.key === "ai_customer_support_active") {
-    const { handleCustomerSupportMessage } = await import("../domains/ai-agents/customer-support.ts");
-    return await handleCustomerSupportMessage(
-      ctx,
-      body,
-      state.data?.agent_config,
-      state.data?.conversation_history || []
-    );
-  }
+
   
-  if (state.key === "bar_waiter_chat") {
-    return await handleBarWaiterMessage(ctx, body, state.data);
-  }
+
   if (state.key === "wallet_transfer") {
     return await handleWalletTransferText(ctx, body, (state as any));
   }
@@ -119,32 +103,7 @@ export async function handleText(
     return false; // expect list or location
   }
 
-  // Handle pharmacy medicine input
-  if (state.key === "pharmacy_awaiting_medicine") {
-    const stateData = state.data as { location?: { lat: number; lng: number } };
-    if (stateData.location) {
-      await processPharmacyRequest(ctx, stateData.location, body);
-    }
-    return true;
-  }
 
-  // Handle quincaillerie items input
-  if (state.key === "quincaillerie_awaiting_items") {
-    const stateData = state.data as { location?: { lat: number; lng: number } };
-    if (stateData.location) {
-      await processQuincaillerieRequest(ctx, stateData.location, body);
-    }
-    return true;
-  }
-
-  // Handle notary service input
-  if (state.key === "notary_awaiting_service") {
-    const stateData = state.data as { location?: { lat: number; lng: number } };
-    if (stateData.location) {
-      await processNotaryRequest(ctx, stateData.location, body);
-    }
-    return true;
-  }
   
   // Handle business name search
   if (state.key === "business_claim") {
