@@ -2,7 +2,7 @@ BEGIN;
 
 CREATE TABLE IF NOT EXISTS public.farms (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  profile_id uuid NOT NULL REFERENCES public.profiles(user_id) ON DELETE CASCADE,
+  owner_profile_id uuid NOT NULL REFERENCES public.profiles(user_id) ON DELETE CASCADE,
   farm_name text NOT NULL,
   district text,
   sector text,
@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS public.farms (
   updated_at timestamptz NOT NULL DEFAULT timezone('utc', now())
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS idx_farms_profile ON public.farms(profile_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_farms_profile ON public.farms(owner_profile_id);
 CREATE INDEX IF NOT EXISTS idx_farms_district ON public.farms(district);
 
 CREATE TABLE IF NOT EXISTS public.farm_synonyms (
