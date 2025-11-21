@@ -342,10 +342,10 @@ GRANT SELECT ON public.ops_pickup_metrics TO service_role;
 -- schedule_pickup RPC to enforce pickup photo + linkage
 CREATE OR REPLACE FUNCTION public.schedule_pickup(
   p_farm_id uuid,
-  p_listing_id uuid DEFAULT NULL,
-  p_order_id uuid DEFAULT NULL,
   p_pickup_at timestamptz,
   p_pickup_photo_path text,
+  p_listing_id uuid DEFAULT NULL,
+  p_order_id uuid DEFAULT NULL,
   p_pickup_address text DEFAULT NULL,
   p_pickup_lat double precision DEFAULT NULL,
   p_pickup_lng double precision DEFAULT NULL,
