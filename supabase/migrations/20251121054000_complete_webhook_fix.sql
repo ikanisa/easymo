@@ -102,7 +102,9 @@ CREATE TABLE IF NOT EXISTS public.farm_synonyms (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   farm_id uuid REFERENCES public.farms(id) ON DELETE CASCADE,
   synonym text NOT NULL,
-  phrase text,  -- Error #13 fix: code expects phrase column
+  phrase text NOT NULL,
+  locale text,
+  category text,
   created_at timestamptz DEFAULT NOW()
 );
 
