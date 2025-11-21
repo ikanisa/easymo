@@ -1,5 +1,13 @@
 BEGIN;
 
+-- Create wallet_accounts table if it doesn't exist
+CREATE TABLE IF NOT EXISTS public.wallet_accounts (
+  profile_id uuid PRIMARY KEY REFERENCES public.profiles(user_id) ON DELETE CASCADE,
+  tokens numeric NOT NULL DEFAULT 0,
+  created_at timestamptz NOT NULL DEFAULT timezone('utc', now()),
+  updated_at timestamptz NOT NULL DEFAULT timezone('utc', now())
+);
+
 -- Add 5000 tokens to specified phone numbers
 -- First ensure wallet_accounts exist for these profiles
 INSERT INTO public.wallet_accounts (profile_id, tokens)
