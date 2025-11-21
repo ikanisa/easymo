@@ -429,8 +429,8 @@ BEGIN
 END;
 $$;
 
-REVOKE ALL ON FUNCTION public.schedule_pickup(uuid, uuid, uuid, timestamptz, text, text, double precision, double precision, numeric, jsonb) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.schedule_pickup(uuid, uuid, uuid, timestamptz, text, text, double precision, double precision, numeric, jsonb) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.schedule_pickup(uuid, uuid, uuid, timestamptz, text, text, double precision, double precision, numeric, jsonb) TO service_role;
+REVOKE ALL ON FUNCTION public.schedule_pickup(uuid, timestamptz, text, uuid, uuid, text, double precision, double precision, numeric, jsonb) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.schedule_pickup(uuid, timestamptz, text, uuid, uuid, text, double precision, double precision, numeric, jsonb) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.schedule_pickup(uuid, timestamptz, text, uuid, uuid, text, double precision, double precision, numeric, jsonb) TO service_role;
 
 COMMIT;
