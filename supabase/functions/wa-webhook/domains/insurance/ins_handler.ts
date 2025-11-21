@@ -370,8 +370,7 @@ export async function processInsuranceDocument(
  * Handle insurance help request - show admin contacts
  */
 export async function handleInsuranceHelp(ctx: RouterContext): Promise<boolean> {
-  const { sendButtonsMessage } = await import("../../wa/client.ts");
-  const { homeOnly } = await import("../../utils/reply.ts");
+  const { sendButtonsMessage, homeOnly } = await import("../../utils/reply.ts");
   const { IDS } = await import("../../wa/ids.ts");
   
   // Fetch insurance admin contacts from database

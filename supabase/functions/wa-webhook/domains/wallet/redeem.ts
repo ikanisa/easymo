@@ -1,3 +1,4 @@
+import { notifyWalletRedemptionAdmin } from "./notifications.ts";
 import type { RouterContext } from "../../types.ts";
 import { sendButtonsMessage, sendListMessage } from "../../utils/reply.ts";
 import { t } from "../../i18n/translator.ts";
@@ -158,6 +159,14 @@ export async function handleWalletRedeemConfirm(
         t(ctx.locale, "wallet.redeem.notify_once_ready"),
       ].join("\n\n");
       await sendButtonsMessage(ctx, summary, [{ id: IDS.WALLET_REDEEM, title: "Done" }]);
+
+      // Notify admin
+      notifyWalletRedemptionAdmin(
+        ctx.supabase,
+        ctx.profileId,
+        option.title ?? "Reward",
+        cost
+      ).catch(console.error);
     } else {
       await sendButtonsMessage(ctx, t(ctx.locale, 'wallet.redeem.load_fail'), [{ id: IDS.WALLET_REDEEM, title: 'Back' }]);
     }

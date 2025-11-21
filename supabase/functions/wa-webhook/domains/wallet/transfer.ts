@@ -1,3 +1,4 @@
+import { notifyWalletTransferRecipient } from "./notifications.ts";
 import type { RouterContext } from "../../types.ts";
 import { sendButtonsMessage, sendListMessage } from "../../utils/reply.ts";
 import { IDS } from "../../wa/ids.ts";
@@ -108,6 +109,19 @@ export async function handleWalletTransferText(
           `✅ Sent ${amount} tokens to ${data.to}.`,
           [{ id: IDS.WALLET, title: "💎 Wallet" }],
         );
+
+        // Notify recipient
+        if (row.transfer_id) {
+           const { data: transfer } = await ctx.supabase
+             .from("wallet_transfers")
+             .select("recipient_profile")
+             .eq("id", row.transfer_id)
+             .single();
+             
+           if (transfer?.recipient_profile) {
+             notifyWalletTransferRecipient(ctx.supabase, transfer.recipient_profile, amount, "A friend").catch(console.error);
+           }
+        }
       } else {
         const reason = row?.reason || "failed";
         await sendButtonsMessage(
