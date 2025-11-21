@@ -275,7 +275,15 @@ export async function handleText(
     await sendDineInDisabledNotice(ctx);
     return true;
   }
-  await sendHomeMenu(ctx);
+  // If no other handler matches, send home menu
+  console.log("DEBUG: handleText sending home menu");
+  try {
+    await sendHomeMenu(ctx);
+    console.log("DEBUG: handleText sent home menu");
+  } catch (e) {
+    console.log("DEBUG: handleText sendHomeMenu error", e);
+    throw e;
+  }
   return true;
 }
 

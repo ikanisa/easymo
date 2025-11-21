@@ -1,3 +1,4 @@
+console.log("DEBUG: utils/http.ts loaded from", import.meta.url);
 const DEFAULT_TIMEOUT_MS = Math.max(
   Number(Deno.env.get("WA_HTTP_TIMEOUT_MS") ?? "10000") || 10000,
   1000,
@@ -21,6 +22,15 @@ export type FetchOptions = RequestInit & {
   retryDelayMs?: number;
 };
 
+export const fetchConfig = {
+  implementation: globalThis.fetch,
+};
+
+export function setFetchImplementation(impl: any) {
+  console.log("DEBUG: setFetchImplementation called", impl);
+  fetchConfig.implementation = impl;
+}
+
 export async function fetchWithTimeout(
   input: Request | URL | string,
   options: FetchOptions = {},
@@ -39,7 +49,8 @@ export async function fetchWithTimeout(
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
     try {
-      const response = await fetch(input, {
+      console.log("DEBUG: fetchWithTimeout using implementation", fetchConfig.implementation);
+      const response = await fetchConfig.implementation(input, {
         ...options,
         signal: controller.signal,
       });

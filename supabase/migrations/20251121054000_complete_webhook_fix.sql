@@ -31,11 +31,12 @@ ALTER TABLE IF EXISTS public.profiles DROP CONSTRAINT IF EXISTS profiles_user_id
 -- 5. CREATE chat_state TABLE
 CREATE TABLE IF NOT EXISTS public.chat_state (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  phone_number text NOT NULL,
+  user_id uuid NOT NULL,
+  phone_number text,
   state jsonb DEFAULT '{}'::jsonb,
   last_updated timestamptz DEFAULT NOW(),
   created_at timestamptz DEFAULT NOW(),
-  UNIQUE(phone_number)
+  UNIQUE(user_id)
 );
 
 -- Disable RLS on chat_state
@@ -45,6 +46,7 @@ ALTER TABLE IF EXISTS public.chat_state DISABLE ROW LEVEL SECURITY;
 GRANT ALL ON public.chat_state TO anon, authenticated, service_role, postgres;
 
 -- Create indexes on chat_state
+CREATE INDEX IF NOT EXISTS idx_chat_state_user ON public.chat_state(user_id);
 CREATE INDEX IF NOT EXISTS idx_chat_state_phone ON public.chat_state(phone_number);
 CREATE INDEX IF NOT EXISTS idx_chat_state_updated ON public.chat_state(last_updated DESC);
 

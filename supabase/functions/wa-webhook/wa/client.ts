@@ -23,7 +23,7 @@ import {
   WA_LIMITS_CONST,
 } from "../utils/wa_validate.ts";
 
-const GRAPH_BASE = "https://graph.facebook.com/v20.0";
+const GRAPH_BASE = "https://graph.facebook.com/v17.0";
 const STATUS_RETRY_CODES = new Set([408, 425, 429, 500, 502, 503, 504]);
 const STATUS_RETRIES = Math.max(
   Number(Deno.env.get("WA_HTTP_STATUS_RETRIES") ?? "2") || 2,
