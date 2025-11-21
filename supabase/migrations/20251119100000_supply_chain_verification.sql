@@ -125,7 +125,7 @@ BEGIN
     SELECT 1 FROM pg_policies
     WHERE schemaname = 'storage' AND tablename = 'objects' AND policyname = 'verification_artifacts_secure_access'
   ) THEN
-    EXECUTE $$
+    EXECUTE $POLICY$
       CREATE POLICY verification_artifacts_secure_access
       ON storage.objects
       FOR ALL
@@ -137,14 +137,14 @@ BEGIN
         bucket_id = 'verification-artifacts'
         AND (auth.role() = 'service_role' OR owner = auth.uid())
       );
-    $$;
+    $POLICY$;
   END IF;
 
   IF NOT EXISTS (
     SELECT 1 FROM pg_policies
     WHERE schemaname = 'storage' AND tablename = 'objects' AND policyname = 'pickup_photos_secure_access'
   ) THEN
-    EXECUTE $$
+    EXECUTE $POLICY$
       CREATE POLICY pickup_photos_secure_access
       ON storage.objects
       FOR ALL
@@ -156,7 +156,7 @@ BEGIN
         bucket_id = 'pickup-photos'
         AND (auth.role() = 'service_role' OR owner = auth.uid())
       );
-    $$;
+    $POLICY$;
   END IF;
 END;
 $$;
