@@ -111,10 +111,10 @@ $$;
 DO $$
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM storage.buckets WHERE id = 'verification-artifacts') THEN
-    PERFORM storage.create_bucket('verification-artifacts', public => false);
+    INSERT INTO storage.buckets (id, name, public) VALUES ('verification-artifacts', 'verification-artifacts', false);
   END IF;
   IF NOT EXISTS (SELECT 1 FROM storage.buckets WHERE id = 'pickup-photos') THEN
-    PERFORM storage.create_bucket('pickup-photos', public => false);
+    INSERT INTO storage.buckets (id, name, public) VALUES ('pickup-photos', 'pickup-photos', false);
   END IF;
 END;
 $$;
