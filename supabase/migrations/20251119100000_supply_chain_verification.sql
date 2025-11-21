@@ -189,7 +189,7 @@ CREATE TABLE IF NOT EXISTS public.farms (
 );
 
 CREATE INDEX IF NOT EXISTS idx_farms_owner ON public.farms(owner_profile_id);
-CREATE INDEX IF NOT EXISTS idx_farms_location ON public.farms USING GIST(location);
+-- CREATE INDEX IF NOT EXISTS idx_farms_location ON public.farms USING GIST(location);
 
 DROP TRIGGER IF EXISTS set_updated_at_farms ON public.farms;
 CREATE TRIGGER set_updated_at_farms

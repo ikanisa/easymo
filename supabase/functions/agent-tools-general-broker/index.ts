@@ -99,6 +99,17 @@ serve(async (req) => {
         result = await searchFAQ(supabase, params.query, params.locale || "en");
         break;
 
+      // Business Directory Search
+      case "search_business_directory":
+        result = await searchBusinessDirectory(supabase, params);
+        break;
+      case "search_business_by_location":
+        result = await searchBusinessByLocation(supabase, params);
+        break;
+      case "get_business_details":
+        result = await getBusinessDetails(supabase, params.businessId);
+        break;
+
       default:
         return new Response(
           JSON.stringify({ error: `Unknown action: ${action}` }),
@@ -111,13 +122,14 @@ serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json", "X-Correlation-ID": correlationId },
     });
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
     logError("agent_tools_error", error, {
       action: (await req.clone().json()).action,
       correlationId,
     });
     
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: errorMessage }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json", "X-Correlation-ID": correlationId } }
     );
   }
@@ -494,4 +506,226 @@ function detectCategory(query: string, vertical: string | null): string | null {
   }
 
   return null;
+}
+
+// ============================================================================
+// BUSINESS DIRECTORY SEARCH
+// ============================================================================
+
+/**
+ * Search business directory using Gemini-enhanced search
+ * Supports text search, category, city, and rating filters
+ */
+async function searchBusinessDirectory(supabase: any, params: any) {
+  const { query, category, city, minRating, limit = 10 } = params;
+
+  let dbQuery = supabase
+    .from("business_directory")
+    .select("*");
+
+  // Category filter
+  if (category) {
+    dbQuery = dbQuery.eq("category", category);
+  }
+
+  // City filter
+  if (city) {
+    dbQuery = dbQuery.eq("city", city);
+  }
+
+  // Rating filter
+  if (minRating) {
+    dbQuery = dbQuery.gte("rating", minRating);
+  }
+
+  // Text search on name, category, address
+  if (query) {
+    dbQuery = dbQuery.or(`name.ilike.%${query}%,category.ilike.%${query}%,address.ilike.%${query}%`);
+  }
+
+  dbQuery = dbQuery
+    .order("rating", { ascending: false })
+    .limit(limit);
+
+  const { data, error } = await dbQuery;
+
+  if (error) throw error;
+
+  // If no results and we have a query, try Gemini search as fallback
+  if ((!data || data.length === 0) && query) {
+    const geminiResults = await searchBusinessViaGemini(query, city || "Rwanda");
+    return {
+      businesses: geminiResults,
+      source: "gemini",
+      count: geminiResults.length,
+    };
+  }
+
+  return {
+    businesses: data || [],
+    source: "database",
+    count: data?.length || 0,
+  };
+}
+
+/**
+ * Search businesses by geographic location
+ * Finds businesses within a radius of a given point
+ */
+async function searchBusinessByLocation(supabase: any, params: any) {
+  const { latitude, longitude, radiusKm = 5, category, limit = 10 } = params;
+
+  if (!latitude || !longitude) {
+    throw new Error("latitude and longitude are required");
+  }
+
+  // Use PostgreSQL/PostGIS for geospatial search
+  const query = `
+    SELECT *,
+      (6371 * acos(
+        cos(radians($1)) * cos(radians(lat)) *
+        cos(radians(lng) - radians($2)) +
+        sin(radians($1)) * sin(radians(lat))
+      )) AS distance_km
+    FROM business_directory
+    WHERE lat IS NOT NULL AND lng IS NOT NULL
+    ${category ? `AND category = '${category}'` : ''}
+    HAVING distance_km <= $3
+    ORDER BY distance_km ASC
+    LIMIT $4
+  `;
+
+  const { data, error } = await supabase.rpc("exec_sql", {
+    sql: query,
+    params: [latitude, longitude, radiusKm, limit],
+  });
+
+  // Fallback to simple query if RPC not available
+  if (error || !data) {
+    let fallbackQuery = supabase
+      .from("business_directory")
+      .select("*")
+      .not("lat", "is", null)
+      .not("lng", "is", null);
+
+    if (category) {
+      fallbackQuery = fallbackQuery.eq("category", category);
+    }
+
+    const { data: businesses, error: fbError } = await fallbackQuery
+      .order("rating", { ascending: false })
+      .limit(limit);
+
+    if (fbError) throw fbError;
+
+    // Calculate distance in-memory
+    const withDistance = (businesses || []).map((b: any) => ({
+      ...b,
+      distance_km: calculateDistance(latitude, longitude, b.lat, b.lng),
+    })).filter((b: any) => b.distance_km <= radiusKm)
+      .sort((a: any, b: any) => a.distance_km - b.distance_km);
+
+    return {
+      businesses: withDistance,
+      count: withDistance.length,
+    };
+  }
+
+  return {
+    businesses: data || [],
+    count: data?.length || 0,
+  };
+}
+
+/**
+ * Get detailed information about a specific business
+ */
+async function getBusinessDetails(supabase: any, businessId: string) {
+  const { data, error } = await supabase
+    .from("business_directory")
+    .select("*")
+    .eq("id", businessId)
+    .single();
+
+  if (error) throw error;
+
+  return {
+    business: data,
+  };
+}
+
+/**
+ * Search businesses via Gemini API (fallback when DB has no results)
+ */
+async function searchBusinessViaGemini(query: string, city: string) {
+  const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY") || Deno.env.get("API_KEY");
+  
+  if (!GEMINI_API_KEY) {
+    return [];
+  }
+
+  const prompt = `
+    Search for "${query}" businesses in "${city}, Rwanda" using Google Maps.
+    
+    Return a JSON array of businesses. Each business should have:
+    - name: Business name
+    - address: Full address
+    - city: City name
+    - phone: Phone number (or "N/A")
+    - category: Business category
+    - rating: Number 0-5
+    - lat: Latitude
+    - lng: Longitude
+    - website: Website URL (or null)
+    
+    Return ONLY the JSON array, no markdown.
+  `;
+
+  try {
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${GEMINI_API_KEY}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          tools: [{ googleSearchRetrieval: {} }],
+          generationConfig: {
+            temperature: 0.1,
+            topK: 1,
+            topP: 0.95,
+          },
+        }),
+      }
+    );
+
+    const data = await response.json();
+    let jsonStr = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+
+    if (!jsonStr) return [];
+
+    // Clean markdown
+    jsonStr = jsonStr.replace(/^```json\s*/, "").replace(/^```\s*/, "").replace(/```\s*$/, "");
+
+    const businesses = JSON.parse(jsonStr);
+    return Array.isArray(businesses) ? businesses : [];
+  } catch (error) {
+    console.error("Gemini search error:", error);
+    return [];
+  }
+}
+
+/**
+ * Calculate distance between two points using Haversine formula
+ */
+function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371; // Earth's radius in km
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
 }
