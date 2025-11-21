@@ -753,6 +753,10 @@ async function handleHomeMenuSelection(
     }
     case IDS.MOMO_QR:
       return await startMomoQr(ctx, state);
+    case IDS.GENERAL_BROKER: {
+      const { handleGeneralBrokerStart } = await import("../domains/ai-agents/general_broker.ts");
+      return await handleGeneralBrokerStart(ctx);
+    }
     case IDS.PROFILE: {
       const { sendProfileMenu } = await import("../flows/profile.ts");
       await sendProfileMenu(ctx);

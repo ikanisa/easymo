@@ -7,6 +7,24 @@ import {
   buildFarmerBrokerMessages,
   type FarmerBrokerInput,
 } from "../../agents/farmer-broker.js";
+import {
+  buildWaiterBrokerMessages,
+  type WaiterBrokerInput,
+} from "../../agents/waiter-broker.js";
+
+type FarmerBrokerResult = {
+  success: boolean;
+  message?: string;
+  locale?: string;
+  responseId?: string;
+};
+
+type WaiterBrokerResult = {
+  success: boolean;
+  message?: string;
+  locale?: string;
+  responseId?: string;
+};
 
 type AgentPersona = "broker" | "sales" | "marketing" | "cold_caller";
 type AgentSendResult = {
@@ -402,6 +420,34 @@ export class AiService {
       return { success: true, message: text, locale, responseId: response.id };
     } catch (error) {
       this.logger.error({ msg: "ai.farmer_broker.failed", error: this.formatError(error) });
+      return { success: false, message: fallbackMessage, locale: fallbackLocale };
+    }
+  }
+
+  async runWaiterBroker(input: WaiterBrokerInput): Promise<WaiterBrokerResult> {
+    const fallbackLocale = input.locale ?? input.profile?.locale ?? "en";
+    const fallbackMessage = input.intent === "get_recommendations"
+      ? "Let me suggest some great options for you!"
+      : "Welcome! How can I help you today?";
+
+    if (!this.client) {
+      this.logger.warn({ msg: "ai.waiter_broker.skipped", reason: "OpenAI client not configured" });
+      return { success: false, message: fallbackMessage, locale: fallbackLocale };
+    }
+
+    try {
+      const { messages, metadata, locale } = buildWaiterBrokerMessages(input);
+      const modelName = process.env.WAITER_BROKER_MODEL || "o1";
+      const response = await this.client.chat.completions.create({
+        model: modelName,
+        messages: messages as any,
+        max_completion_tokens: 1500,
+        metadata,
+      });
+      const text = (response.choices[0]?.message?.content ?? "").trim() || fallbackMessage;
+      return { success: true, message: text, locale, responseId: response.id };
+    } catch (error) {
+      this.logger.error({ msg: "ai.waiter_broker.failed", error: this.formatError(error) });
       return { success: false, message: fallbackMessage, locale: fallbackLocale };
     }
   }

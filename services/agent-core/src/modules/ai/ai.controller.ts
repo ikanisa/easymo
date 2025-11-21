@@ -79,6 +79,53 @@ const FarmerBrokerSchema = z.object({
   }).optional(),
 });
 
+const WaiterBrokerSchema = z.object({
+  msisdn: z.string().min(8),
+  message: z.string().min(1),
+  intent: z.enum(["order_food", "get_recommendations", "ask_question", "manage_order"]),
+  locale: z.string().min(2).max(5).optional(),
+  conversationId: z.string().uuid().optional(),
+  profile: z.object({
+    id: z.string().uuid().optional(),
+    locale: z.string().min(2).max(5).nullable().optional(),
+    metadata: z.record(z.any()).nullable().optional(),
+  }).optional(),
+  bar: z.object({
+    id: z.string().uuid().optional(),
+    name: z.string().nullable().optional(),
+    slug: z.string().nullable().optional(),
+    country: z.string().nullable().optional(),
+    city_area: z.string().nullable().optional(),
+    cuisine_types: z.array(z.string()).nullable().optional(),
+    price_range: z.string().nullable().optional(),
+    metadata: z.record(z.any()).nullable().optional(),
+  }).optional(),
+  menu: z.object({
+    categories: z.array(z.object({
+      id: z.string(),
+      name: z.string(),
+      items: z.array(z.object({
+        id: z.string(),
+        name: z.string(),
+        price: z.number().nullable().optional(),
+        currency: z.string().nullable().optional(),
+        description: z.string().nullable().optional(),
+        is_available: z.boolean().nullable().optional(),
+      })),
+    })).optional(),
+    specials: z.array(z.string()).nullable().optional(),
+    popular_items: z.array(z.string()).nullable().optional(),
+  }).optional(),
+  orderContext: z.object({
+    tableNumber: z.string().optional(),
+    currentOrder: z.array(z.object({
+      item: z.string(),
+      quantity: z.number(),
+    })).optional(),
+    totalAmount: z.number().optional(),
+  }).nullable().optional(),
+});
+
 const SoraGenerationSchema = z.object({
   campaignId: z.string().uuid(),
   figureId: z.string().uuid(),
@@ -137,6 +184,13 @@ export class AiController {
   async farmerBroker(@Body() body: unknown) {
     const payload = FarmerBrokerSchema.parse(body) as Parameters<AiService["runFarmerBroker"]>[0];
     return await this.ai.runFarmerBroker(payload);
+  }
+
+  @Post(getAgentCoreRouteSegment("aiWaiterBrokerRun"))
+  @ServiceScopes(...getAgentCoreRouteServiceScopes("aiWaiterBrokerRun"))
+  async waiterBroker(@Body() body: unknown) {
+    const payload = WaiterBrokerSchema.parse(body) as Parameters<AiService["runWaiterBroker"]>[0];
+    return await this.ai.runWaiterBroker(payload);
   }
 
   @Post(getAgentCoreRouteSegment("aiSoraGenerate"))

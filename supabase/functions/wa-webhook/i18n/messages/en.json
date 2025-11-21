@@ -1036,6 +1036,8 @@
   "home.rows.farmerAgent.description": "Buy and sell agricultural produce - connect farmers with buyers",
   "home.rows.generalBroker.title": "🤝 General Broker",
   "home.rows.generalBroker.description": "Find and connect with service providers for various needs",
+  "generalBroker.welcome": "Welcome to General Broker! 🤝\n\nI can help you find and connect with service providers for various needs.\n\nWhat service are you looking for? You can ask me about:\n• Home repairs & maintenance\n• Professional services\n• Event planning\n• Transportation & logistics\n• And much more!\n\nJust tell me what you need.",
+  "generalBroker.prompt": "What service do you need help with?",
   "home.rows.tokenTransfer.title": "💰 Token Transfer",
   "home.rows.tokenTransfer.description": "Send tokens to friends and family",
   "farmer.welcome": "🌾 *Agricultural Marketplace*\n\nConnect with buyers and sellers of agricultural produce. Choose your role:",

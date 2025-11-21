@@ -5,11 +5,13 @@ import { AiController } from "./ai.controller.js";
 import { ServiceTokenGuard } from "../../common/guards/service-token.guard.js";
 import { PrismaModule } from "../../prisma/prisma.module.js";
 import { SoraOrchestratorService } from "./sora-orchestrator.service.js";
+import { RealtimeFarmerService } from "./realtime-farmer.service.js";
+import { RealtimeFarmerController } from "./realtime-farmer.controller.js";
 
 @Module({
   imports: [ConfigModule, PrismaModule],
-  providers: [AiService, ServiceTokenGuard, SoraOrchestratorService],
-  controllers: [AiController],
-  exports: [AiService, SoraOrchestratorService],
+  providers: [AiService, ServiceTokenGuard, SoraOrchestratorService, RealtimeFarmerService],
+  controllers: [AiController, RealtimeFarmerController],
+  exports: [AiService, SoraOrchestratorService, RealtimeFarmerService],
 })
 export class AiModule {}
