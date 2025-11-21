@@ -10,15 +10,12 @@ export { TriageAgent, runTriageAgent, analyzeIntent } from './triage';
 
 // New enhanced agents - ALL COMPLETE ✅
 export { BaseAgent } from './base/agent.base';
-export { GeneralBrokerAgent, runGeneralBrokerAgent } from './general/general-broker.agent';
-// export { NearbyDriversAgent } from './drivers/nearby-drivers.agent';
+export { BusinessBrokerAgent, runBusinessBrokerAgent } from './general/business-broker.agent';
+export { WaiterAgent } from './waiter/waiter.agent';
 export { FarmerAgent } from './farmer/farmer.agent';
 export { JobsAgent } from './jobs/jobs.agent';
 export { PharmacyAgent } from './pharmacy/pharmacy.agent';
-export { PropertyRentalAgent } from './property/property-rental.agent';
-// export { QuincaillerieAgent } from './quincaillerie/quincaillerie.agent';
+export { RealEstateAgent } from './property/real-estate.agent';
 export { SalesAgent } from './sales/sales.agent';
-// export { ScheduleTripAgent } from './schedule/schedule-trip.agent';
-// export { ShopsAgent } from './shops/shops.agent';
 export { SupportAgent } from './support/support.agent';
 

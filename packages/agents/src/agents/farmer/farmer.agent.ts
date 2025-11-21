@@ -47,7 +47,15 @@ interface NormalizedProduceInput {
 export class FarmerAgent extends BaseAgent {
   name = 'farmer_agent';
   instructions =
-    'You help farmers and merchant buyers create listings or reserve produce. Always validate market rules before confirming actions.';
+    `You help farmers and merchant buyers create listings or reserve produce. Always convert free text into structured listings. Assume low smartphone literacy: use simple language and few steps. Protect farmer margin; prefer multiple buyers over dependence on one middleman.
+
+Guardrails & Policies:
+- No financial advice beyond simple price math.
+- No health/medical claims about produce.
+- No arrangement of illegal transport.
+- Respect buyer/farmer privacy.
+- Never share one farmer’s contact with others without consent.`;
+
   tools: Tool[];
 
   constructor() {
@@ -58,9 +66,9 @@ export class FarmerAgent extends BaseAgent {
   private defineTools(): Tool[] {
     return [
       {
-        name: 'create_listing',
+        name: 'create_or_update_produce_listing',
         description:
-          'Create a farmer listing for a commodity. Requires market code, city, commodity, quantity, and grade/unit that match local policy.',
+          'Save structured listing: farmer_id, crop, quantity, unit, min_price, location, harvest date, quality, photos.',
         parameters: {
           type: 'object',
           properties: {
@@ -80,53 +88,99 @@ export class FarmerAgent extends BaseAgent {
         execute: this.createListing.bind(this),
       },
       {
-        name: 'create_order',
-        description:
-          'Create a buyer order for a commodity. Validates destination city, buyer type and COD fallback policy per market.',
+        name: 'search_buyers',
+        description: 'Match farmers to buyers (shops, restaurants, households) based on crop, location, volumes.',
         parameters: {
           type: 'object',
           properties: {
-            marketCode: { type: 'string' },
             commodity: { type: 'string' },
-            variety: { type: 'string' },
-            grade: { type: 'string' },
-            unit: { type: 'string' },
-            quantity: { type: 'number', minimum: 1 },
-            deliveryCity: { type: 'string' },
-            buyerType: { type: 'string', enum: ['merchant', 'institution'] },
-            paymentPreference: { type: 'string', enum: ['wallet', 'cod'] },
+            location: { type: 'string' },
+            volume: { type: 'number' }
           },
-          required: ['marketCode', 'commodity', 'quantity', 'deliveryCity'],
+          required: ['commodity', 'location']
         },
-        execute: this.createOrder.bind(this),
+        execute: async (params, context) => {
+           // Mock implementation
+           return { buyers: [{ id: 'b1', name: 'Local Shop', distance: '2km' }] };
+        }
       },
+      {
+        name: 'price_estimator',
+        description: 'Suggest price ranges based on past deals and market data; returns min/avg/max; clearly “estimate only”.',
+        parameters: {
+          type: 'object',
+          properties: {
+            commodity: { type: 'string' },
+            market: { type: 'string' }
+          },
+          required: ['commodity']
+        },
+        execute: async (params, context) => {
+           // Mock implementation
+           return { min: 100, avg: 150, max: 200, currency: 'RWF' };
+        }
+      },
+      {
+        name: 'matchmaker_job',
+        description: 'Create “match task” that pings buyers who opted into notifications for that crop.',
+        parameters: {
+          type: 'object',
+          properties: {
+            listing_id: { type: 'string' }
+          },
+          required: ['listing_id']
+        },
+        execute: async (params, context) => {
+           return { status: 'queued', potential_matches: 5 };
+        }
+      },
+      {
+        name: 'log_deal',
+        description: 'Confirmed deal: buyer, farmer, quantity, price, date; used for analytics and future price hints.',
+        parameters: {
+          type: 'object',
+          properties: {
+            buyer_id: { type: 'string' },
+            farmer_id: { type: 'string' },
+            commodity: { type: 'string' },
+            quantity: { type: 'number' },
+            price: { type: 'number' }
+          },
+          required: ['buyer_id', 'farmer_id', 'commodity', 'quantity', 'price']
+        },
+        execute: async (params, context) => {
+           return { deal_id: 'deal_123', status: 'logged' };
+        }
+      }
     ];
   }
 
   async execute(input: AgentInput): Promise<AgentResult> {
     const context: AgentContext = input.context ?? { userId: input.userId };
-    const action = (context.metadata?.action as string) ?? 'create_listing';
+    const action = (context.metadata?.action as string) ?? 'create_or_update_produce_listing';
     const params = (context.metadata?.params ?? {}) as ListingToolParams & OrderToolParams;
     const started = Date.now();
 
-    if (action === 'create_order') {
-      const data = await this.createOrder(params, context);
-      return {
-        success: true,
-        finalOutput: this.renderSummary('order', data),
-        data,
-        toolsInvoked: ['create_order'],
-        duration: Date.now() - started,
-      };
+    // Logic to dispatch to tools based on action or LLM decision
+    // For now, keeping the existing direct call logic if action is set, otherwise defaulting
+    
+    if (action === 'create_or_update_produce_listing') {
+        const data = await this.createListing(params, context);
+        return {
+            success: true,
+            finalOutput: this.renderSummary('listing', data),
+            data,
+            toolsInvoked: ['create_or_update_produce_listing'],
+            duration: Date.now() - started,
+        };
     }
 
-    const data = await this.createListing(params, context);
     return {
-      success: true,
-      finalOutput: this.renderSummary('listing', data),
-      data,
-      toolsInvoked: ['create_listing'],
-      duration: Date.now() - started,
+        success: true,
+        finalOutput: "I am the Farmer Agent. How can I help you?",
+        data: {},
+        toolsInvoked: [],
+        duration: Date.now() - started
     };
   }
 
@@ -166,39 +220,6 @@ export class FarmerAgent extends BaseAgent {
       currency: normalized.config.currency,
       notes: params.notes ?? null,
       pricePerUnit: params.pricePerUnit ?? null,
-      codFallback,
-      createdBy: context.userId,
-      allowedUnits: normalized.variety.allowedUnits,
-      allowedGrades: normalized.variety.grades,
-    };
-  }
-
-  private async createOrder(params: OrderToolParams, context: AgentContext) {
-    const normalized = this.normalizeProduceInput(
-      params.marketCode,
-      params.commodity,
-      params.variety,
-      params.grade,
-      params.unit,
-      params.quantity,
-    );
-
-    this.assertCity(normalized.config, params.deliveryCity, 'order');
-
-    const codFallback = this.resolveCodFallback(normalized.config, params.paymentPreference ?? (params.buyerType === 'merchant' ? 'cod' : 'wallet'));
-
-    return {
-      type: 'order',
-      marketCode: normalized.config.marketCode,
-      commodity: normalized.commodity.commodity,
-      variety: normalized.variety.code,
-      varietyLabel: normalized.variety.name,
-      grade: normalized.grade,
-      unit: normalized.unit,
-      quantity: normalized.quantity,
-      deliveryCity: params.deliveryCity,
-      buyerType: params.buyerType ?? 'merchant',
-      currency: normalized.config.currency,
       codFallback,
       createdBy: context.userId,
       allowedUnits: normalized.variety.allowedUnits,

@@ -1,77 +1,128 @@
-import { z } from 'zod';
-import type { AgentDefinition } from '../../runner';
-import type { AgentContext } from '../../types';
+import { BaseAgent } from '../base/agent.base';
+import type { AgentContext, AgentInput, AgentResult, Tool } from '../../types/agent.types';
 
-// Define tools for JobsAgent
-const searchJobsTool = {
-  name: 'searchJobs',
-  description: 'Search for job listings based on criteria',
-  parameters: z.object({
-    query: z.string().describe('Search query (e.g. "driver", "cook")'),
-    location: z.string().optional().describe('Location filter'),
-    jobType: z.string().optional().describe('Job type (full_time, part_time, etc.)'),
-  }),
-  execute: async ({ query: _query, location, jobType }: { query: string; location?: string; jobType?: string }, _context: AgentContext) => {
-    // TODO: Implement actual DB search using Supabase
-    // For now, return mock data
-    return {
-      results: [
-        {
-          id: 'job-123',
-          title: 'Truck Driver',
-          company: 'Logistics Co.',
-          location: location || 'Kigali',
-          type: jobType || 'full_time',
-          salary: '200,000 RWF',
-        },
-        {
-          id: 'job-456',
-          title: 'Warehouse Assistant',
-          company: 'Retail Ltd.',
-          location: location || 'Kigali',
-          type: 'part_time',
-          salary: '150,000 RWF',
-        },
-      ],
-      count: 2,
-    };
-  },
-};
+export class JobsAgent extends BaseAgent {
+  name = 'jobs_agent';
+  instructions = `You are a career coach for blue-collar workers. Build profiles from chat (skills, location). Match aggressively to verified gigs. Warn about scams (never ask for money). Follow up on interview status.
 
-const applyForJobTool = {
-  name: 'applyForJob',
-  description: 'Apply for a specific job',
-  parameters: z.object({
-    jobId: z.string().describe('ID of the job to apply for'),
-    seekerName: z.string().describe('Name of the applicant'),
-    experience: z.string().describe('Brief summary of experience'),
-  }),
-  execute: async ({ jobId, seekerName: _seekerName, experience: _experience }: { jobId: string; seekerName: string; experience: string }, _context: AgentContext) => {
-    // TODO: Implement actual application submission
+Guardrails & Policies:
+- No unverified high-pay promises.
+- Zero tolerance for "pay to apply" scams.
+- Safety first: advise meeting in public places.
+- Respect worker privacy; share details only with applied employers.`;
+
+  tools: Tool[];
+
+  constructor() {
+    super();
+    this.tools = this.defineTools();
+  }
+
+  private defineTools(): Tool[] {
+    return [
+      {
+        name: 'search_gigs',
+        description: 'Find jobs by role, location, salary, type (full-time/gig).',
+        parameters: {
+          type: 'object',
+          properties: {
+            role: { type: 'string' },
+            location: { type: 'string' },
+            min_salary: { type: 'number' }
+          },
+          required: ['role']
+        },
+        execute: async (params, context) => {
+          // Mock implementation
+          return { 
+            jobs: [
+              { id: 'j1', title: 'Driver', company: 'Logistics Co', salary: 200000, verified: true },
+              { id: 'j2', title: 'Construction Worker', company: 'BuildIt', salary: 150000, verified: true }
+            ]
+          };
+        }
+      },
+      {
+        name: 'create_worker_profile',
+        description: 'Build/Update CV from chat (skills, experience, certificates).',
+        parameters: {
+          type: 'object',
+          properties: {
+            skills: { type: 'array', items: { type: 'string' } },
+            experience: { type: 'string' },
+            location: { type: 'string' }
+          },
+          required: ['skills', 'location']
+        },
+        execute: async (params, context) => {
+          return { profile_id: context.userId, status: 'updated' };
+        }
+      },
+      {
+        name: 'verify_employer',
+        description: 'Check employer trust score & reviews.',
+        parameters: {
+          type: 'object',
+          properties: {
+            employer_id: { type: 'string' }
+          },
+          required: ['employer_id']
+        },
+        execute: async (params, context) => {
+          return { employer_id: 'emp_123', trust_score: 95, verified: true };
+        }
+      },
+      {
+        name: 'application_tracker',
+        description: 'Manage applications: submit, check status, withdraw.',
+        parameters: {
+          type: 'object',
+          properties: {
+            job_id: { type: 'string' },
+            action: { type: 'string', enum: ['apply', 'status', 'withdraw'] }
+          },
+          required: ['job_id', 'action']
+        },
+        execute: async (params, context) => {
+          return { job_id: 'j1', status: 'applied', timestamp: Date.now() };
+        }
+      },
+      {
+        name: 'salary_insights',
+        description: 'Provide market rate ranges for specific roles.',
+        parameters: {
+          type: 'object',
+          properties: {
+            role: { type: 'string' },
+            location: { type: 'string' }
+          },
+          required: ['role']
+        },
+        execute: async (params, context) => {
+          return { role: 'Driver', min: 150000, max: 300000, avg: 220000 };
+        }
+      }
+    ];
+  }
+
+  async execute(input: AgentInput): Promise<AgentResult> {
+    const context = input.context ?? { userId: input.userId };
+    
+    // Basic execution logic
     return {
       success: true,
-      applicationId: `app-${Date.now()}`,
-      message: `Application submitted for job ${jobId}`,
+      finalOutput: "I am the Jobs Agent. Looking for work?",
+      data: {},
+      toolsInvoked: [],
+      duration: 0
     };
-  },
-};
+  }
 
-export const JobsAgent: AgentDefinition = {
-  name: 'JobsAgent',
-  instructions: `You are a helpful job board assistant for EasyMO.
-Your goal is to help users find and apply for jobs.
+  protected formatSingleOption(option: any): string {
+    return `${option.title} at ${option.company} - ${option.salary} RWF`;
+  }
 
-Capabilities:
-- Search for jobs by keyword, location, and type.
-- Help users apply for jobs by collecting their details.
-- Answer questions about job listings.
-
-Guidelines:
-- Ask clarifying questions if the user's search is too broad.
-- Present job listings in a clear, concise format.
-- Encourage users to apply if they seem interested.
-- Be professional and encouraging.`,
-  model: 'gpt-4o',
-  temperature: 0.7,
-  tools: [searchJobsTool, applyForJobTool],
-};
+  protected calculateScore(option: any, criteria: any): number {
+    return 1;
+  }
+}
