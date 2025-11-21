@@ -16,12 +16,5 @@ export {
 export {
   handleAIAgentLocationUpdate,
   handleAIAgentOptionSelection,
-  handleAINearbyDrivers,
-  handleAINearbyPharmacies,
-  handleAINearbyQuincailleries,
-  handleAINearbyShops,
   handleAIPropertyRental,
-  handleAIScheduleTrip,
-  handleShopFallbackSelection,
 } from "./handlers.ts";
-export type { ShopResultsState } from "./handlers.ts";
