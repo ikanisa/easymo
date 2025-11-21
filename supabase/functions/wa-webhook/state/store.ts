@@ -90,22 +90,45 @@ export async function ensureProfile(
     // If the error is "phone_exists", the user already exists in auth.
     // We need to look them up by phone number to get their user_id
     if (authError.message?.includes("already registered") || authError.message?.includes("phone_exists")) {
-      // List users and find by phone number
-      const { data: users, error: listError } = await client.auth.admin.listUsers();
-      
-      if (listError) {
-        await logStructuredEvent("AUTH_USER_LOOKUP_FAILED", {
-          masked_phone: maskMsisdn(normalized),
-          error: listError.message,
-        });
-        throw listError;
-      }
+      await logStructuredEvent("AUTH_USER_EXISTS_LOOKING_UP", {
+        masked_phone: maskMsisdn(normalized),
+        error_code: (authError as any).code,
+      });
 
-      const existingUser = users.users.find(u => u.phone === normalized);
+      // List users with pagination to find the existing user
+      let page = 1;
+      let existingUser = null;
+      const perPage = 1000; // Max per page
+      
+      while (!existingUser && page <= 10) { // Limit to 10 pages (10k users max)
+        const { data: users, error: listError } = await client.auth.admin.listUsers({
+          page,
+          perPage,
+        });
+        
+        if (listError) {
+          await logStructuredEvent("AUTH_USER_LOOKUP_FAILED", {
+            masked_phone: maskMsisdn(normalized),
+            error: listError.message,
+            page,
+          });
+          throw listError;
+        }
+
+        existingUser = users.users.find(u => u.phone === normalized);
+        
+        if (!existingUser && users.users.length < perPage) {
+          // No more pages to check
+          break;
+        }
+        
+        page++;
+      }
       
       if (!existingUser) {
         await logStructuredEvent("AUTH_USER_NOT_FOUND_AFTER_EXISTS_ERROR", {
           masked_phone: maskMsisdn(normalized),
+          pages_checked: page - 1,
         });
         throw new Error(`Phone exists in auth but user not found: ${maskMsisdn(normalized)}`);
       }
@@ -115,16 +138,31 @@ export async function ensureProfile(
       await logStructuredEvent("AUTH_USER_FOUND_EXISTING", {
         masked_phone: maskMsisdn(normalized),
         user_id: userId,
+        page_found: page,
       });
     } else {
-      // Some other auth error - propagate it
+      // Some other auth error - log and propagate it
+      await logStructuredEvent("AUTH_USER_CREATE_FAILED", {
+        masked_phone: maskMsisdn(normalized),
+        error: authError.message,
+        error_code: (authError as any).code,
+        error_status: (authError as any).status,
+      });
       throw authError;
     }
   } else {
     if (!authUser.user) {
+      await logStructuredEvent("AUTH_USER_CREATE_NO_USER", {
+        masked_phone: maskMsisdn(normalized),
+      });
       throw new Error("Failed to create auth user");
     }
     userId = authUser.user.id;
+    
+    await logStructuredEvent("AUTH_USER_CREATED_NEW", {
+      masked_phone: maskMsisdn(normalized),
+      user_id: userId,
+    });
   }
 
   // 3. Create Profile with the user_id
@@ -136,7 +174,22 @@ export async function ensureProfile(
     .upsert(payload, { onConflict: "whatsapp_e164" })
     .select("user_id, whatsapp_e164, locale")
     .single();
-  if (error) throw error;
+    
+  if (error) {
+    await logStructuredEvent("PROFILE_UPSERT_FAILED", {
+      masked_phone: maskMsisdn(normalized),
+      user_id: userId,
+      error: error.message,
+      error_code: error.code,
+    });
+    throw error;
+  }
+  
+  await logStructuredEvent("PROFILE_ENSURED", {
+    masked_phone: maskMsisdn(normalized),
+    user_id: userId,
+  });
+  
   return data as ProfileRecord;
 }
 
