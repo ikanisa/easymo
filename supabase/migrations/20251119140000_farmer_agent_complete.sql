@@ -176,6 +176,42 @@ BEGIN
   IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'farmer_listings' AND column_name = 'market_code') THEN
     ALTER TABLE public.farmer_listings ADD COLUMN market_code TEXT;
   END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'farmer_listings' AND column_name = 'commodity') THEN
+    ALTER TABLE public.farmer_listings ADD COLUMN commodity TEXT;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'farmer_listings' AND column_name = 'variety') THEN
+    ALTER TABLE public.farmer_listings ADD COLUMN variety TEXT;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'farmer_listings' AND column_name = 'variety_label') THEN
+    ALTER TABLE public.farmer_listings ADD COLUMN variety_label TEXT;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'farmer_listings' AND column_name = 'grade') THEN
+    ALTER TABLE public.farmer_listings ADD COLUMN grade TEXT;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'farmer_listings' AND column_name = 'unit') THEN
+    ALTER TABLE public.farmer_listings ADD COLUMN unit TEXT;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'farmer_listings' AND column_name = 'quantity') THEN
+    ALTER TABLE public.farmer_listings ADD COLUMN quantity NUMERIC(10, 2);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'farmer_listings' AND column_name = 'price_per_unit') THEN
+    ALTER TABLE public.farmer_listings ADD COLUMN price_per_unit NUMERIC(10, 2);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'farmer_listings' AND column_name = 'currency') THEN
+    ALTER TABLE public.farmer_listings ADD COLUMN currency TEXT DEFAULT 'RWF';
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'farmer_listings' AND column_name = 'city') THEN
+    ALTER TABLE public.farmer_listings ADD COLUMN city TEXT;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'farmer_listings' AND column_name = 'notes') THEN
+    ALTER TABLE public.farmer_listings ADD COLUMN notes TEXT;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'farmer_listings' AND column_name = 'status') THEN
+    ALTER TABLE public.farmer_listings ADD COLUMN status TEXT DEFAULT 'pending';
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'farmer_listings' AND column_name = 'phone_number') THEN
+    ALTER TABLE public.farmer_listings ADD COLUMN phone_number TEXT;
+  END IF;
   IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'farmer_listings' AND column_name = 'matched_order_id') THEN
     ALTER TABLE public.farmer_listings ADD COLUMN matched_order_id UUID;
   END IF;
