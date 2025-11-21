@@ -17,21 +17,80 @@ create table if not exists public.produce_catalog (
   updated_at timestamptz not null default now()
 );
 
--- Add market_code column if it doesn't exist
+-- Add columns if they don't exist (for existing produce_catalog with different schema)
 do $$
 begin
-  if not exists (
-    select 1 from information_schema.columns
-    where table_schema = 'public'
-    and table_name = 'produce_catalog'
-    and column_name = 'market_code'
-  ) then
-    alter table public.produce_catalog add column market_code text not null default 'RW';
+  -- Add commodity if missing
+  if not exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'produce_catalog' and column_name = 'commodity') then
+    alter table public.produce_catalog add column commodity text;
+  end if;
+  
+  -- Add variety if missing
+  if not exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'produce_catalog' and column_name = 'variety') then
+    alter table public.produce_catalog add column variety text;
+  end if;
+  
+  -- Add market_code if missing
+  if not exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'produce_catalog' and column_name = 'market_code') then
+    alter table public.produce_catalog add column market_code text;
+  end if;
+  
+  -- Add grade if missing
+  if not exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'produce_catalog' and column_name = 'grade') then
+    alter table public.produce_catalog add column grade text;
+  end if;
+  
+  -- Add unit if missing
+  if not exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'produce_catalog' and column_name = 'unit') then
+    alter table public.produce_catalog add column unit text;
+  end if;
+  
+  -- Add min_order if missing
+  if not exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'produce_catalog' and column_name = 'min_order') then
+    alter table public.produce_catalog add column min_order numeric default 1;
+  end if;
+  
+  -- Add price_floor if missing
+  if not exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'produce_catalog' and column_name = 'price_floor') then
+    alter table public.produce_catalog add column price_floor numeric;
+  end if;
+  
+  -- Add price_ceiling if missing
+  if not exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'produce_catalog' and column_name = 'price_ceiling') then
+    alter table public.produce_catalog add column price_ceiling numeric;
+  end if;
+  
+  -- Add synonyms if missing
+  if not exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'produce_catalog' and column_name = 'synonyms') then
+    alter table public.produce_catalog add column synonyms text[] default array[]::text[];
+  end if;
+  
+  -- Add localized_names if missing
+  if not exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'produce_catalog' and column_name = 'localized_names') then
+    alter table public.produce_catalog add column localized_names jsonb default '{}'::jsonb;
   end if;
 end $$;
 
-create unique index if not exists produce_catalog_market_idx
-  on public.produce_catalog (market_code, commodity, variety, grade);
+-- Only create index if all required columns exist
+do $$
+begin
+  if exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'produce_catalog' and column_name = 'market_code'
+  ) and exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'produce_catalog' and column_name = 'commodity'
+  ) and exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'produce_catalog' and column_name = 'variety'
+  ) and exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'produce_catalog' and column_name = 'grade'
+  ) then
+    create unique index if not exists produce_catalog_market_idx
+      on public.produce_catalog (market_code, commodity, variety, grade);
+  end if;
+end $$;
 
 create table if not exists public.buyer_market_alerts (
   id uuid primary key default gen_random_uuid(),
