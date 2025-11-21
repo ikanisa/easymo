@@ -1,0 +1,37 @@
+{
+  "agent_config": {
+    "model": "gemini-3-pro-preview",
+    "temperature": 0.7,
+    "thinking_budget": 8192
+  },
+  "session_context": {
+    "call_id": "call_123456789",
+    "start_time": "2023-10-27T10:00:00Z",
+    "direction": "outbound"
+  },
+  "customer_profile": {
+    "id": "cust_98765",
+    "name": "Jean-Pierre Mugisha",
+    "phone": "+250788123456",
+    "language_preference": "Kinyarwanda",
+    "business_type": "Logistics/Transport",
+    "last_interaction": "2023-09-15 (Sent WhatsApp Inquiry)"
+  },
+  "call_objective": {
+    "primary": "Schedule Demo for SIP Trunking Service",
+    "secondary": "Gather email address for brochure",
+    "bant_status": {
+      "budget": "Unknown",
+      "authority": "Likely Decision Maker",
+      "need": "High (Active Fleet)",
+      "timing": "Unknown"
+    }
+  },
+  "conversation_history": [
+    {
+      "role": "system",
+      "content": "Call initiated. Ringing..."
+    }
+    // This array populates dynamically as the call progresses
+  ]
+}

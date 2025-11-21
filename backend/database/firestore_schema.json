@@ -1,0 +1,55 @@
+
+{
+  "collections": {
+    "call_sessions": {
+      "document_id": "unique_session_id_uuid",
+      "fields": {
+        "session_id": { "type": "string" },
+        "customer_id": { "type": "string" },
+        "start_time": { "type": "timestamp" },
+        "status": { "type": "string" },
+        "conversation_history": "array",
+        "context_state": "map",
+        "bant_qualification": "map",
+        "metadata": "map"
+      }
+    },
+    "agents": {
+      "document_id": "agent_id_string",
+      "fields": {
+        "name": { "type": "string" },
+        "status": { "type": "string", "enum": ["ACTIVE", "PAUSED", "AB_TEST"] },
+        "version": { "type": "integer" },
+        "last_updated_by": { "type": "string" },
+        "model_config": {
+          "type": "map",
+          "fields": {
+            "model_name": "string",
+            "temperature": "float",
+            "max_output_tokens": "integer"
+          }
+        },
+        "persona": {
+          "type": "map",
+          "fields": {
+            "system_instruction": "string",
+            "voice_id": "string",
+            "call_objective_prompt": "string",
+            "objection_handling": "map",
+            "qualification_schema": "map"
+          }
+        },
+        "tools": {
+          "type": "array",
+          "items": {
+            "tool_name": "string",
+            "tool_description": "string",
+            "function_schema": "map",
+            "endpoint_path": "string",
+            "active": "boolean"
+          }
+        }
+      }
+    }
+  }
+}
