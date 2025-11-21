@@ -57,6 +57,10 @@ ALTER TABLE IF EXISTS public.wa_interactions DISABLE ROW LEVEL SECURITY;
 
 -- 7. CREATE MISSING TABLES
 
+-- Drop existing views if they exist (replace with tables)
+DROP VIEW IF EXISTS public.whatsapp_home_menu_items CASCADE;
+DROP VIEW IF EXISTS public.app_config CASCADE;
+
 -- Create whatsapp_home_menu_items table with proper schema
 CREATE TABLE IF NOT EXISTS public.whatsapp_home_menu_items (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
