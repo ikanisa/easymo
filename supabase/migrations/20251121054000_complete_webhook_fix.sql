@@ -55,18 +55,42 @@ ALTER TABLE IF EXISTS public.webhook_logs DISABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS public.wa_events DISABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS public.wa_interactions DISABLE ROW LEVEL SECURITY;
 
--- 7. CREATE MISSING VIEWS AND TABLES
+-- 7. CREATE MISSING TABLES
 
--- Create whatsapp_home_menu_items view (points to menu_items)
-CREATE OR REPLACE VIEW public.whatsapp_home_menu_items AS
-SELECT * FROM public.menu_items;
+-- Create whatsapp_home_menu_items table with proper schema
+CREATE TABLE IF NOT EXISTS public.whatsapp_home_menu_items (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  name text NOT NULL,
+  key text NOT NULL,
+  is_active boolean DEFAULT true,
+  active_countries text[] DEFAULT '{}',
+  display_order integer DEFAULT 0,
+  icon text,
+  country_specific_names jsonb,
+  created_at timestamptz DEFAULT NOW(),
+  updated_at timestamptz DEFAULT NOW()
+);
 
+ALTER TABLE IF EXISTS public.whatsapp_home_menu_items DISABLE ROW LEVEL SECURITY;
 GRANT ALL ON public.whatsapp_home_menu_items TO anon, authenticated, service_role, postgres;
+CREATE INDEX IF NOT EXISTS idx_whatsapp_home_menu_items_active ON public.whatsapp_home_menu_items(is_active);
+CREATE INDEX IF NOT EXISTS idx_whatsapp_home_menu_items_order ON public.whatsapp_home_menu_items(display_order);
 
--- Create app_config view (points to AgentConfig)
-CREATE OR REPLACE VIEW public.app_config AS
-SELECT * FROM public."AgentConfig";
+-- Create app_config table with integer id
+CREATE TABLE IF NOT EXISTS public.app_config (
+  id integer PRIMARY KEY DEFAULT 1,
+  search_radius_km numeric,
+  max_results integer,
+  subscription_price numeric,
+  wa_bot_number_e164 text,
+  admin_numbers text[],
+  insurance_admin_numbers text[],
+  created_at timestamptz DEFAULT NOW(),
+  updated_at timestamptz DEFAULT NOW(),
+  CONSTRAINT app_config_single_row CHECK (id = 1)
+);
 
+ALTER TABLE IF EXISTS public.app_config DISABLE ROW LEVEL SECURITY;
 GRANT ALL ON public.app_config TO anon, authenticated, service_role, postgres;
 
 -- Create farm_synonyms table if it doesn't exist
