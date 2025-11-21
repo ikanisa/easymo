@@ -1,5 +1,6 @@
 
-import React, { useState } from 'react';
+
+import React, { useState, useCallback, useMemo } from 'react';
 import { AgentConfig, AgentTool } from '../types';
 
 interface Props {
@@ -83,12 +84,27 @@ export const AgentManager: React.FC<Props> = ({ onNotify }) => {
   const [agents, setAgents] = useState<AgentConfig[]>(MOCK_AGENTS);
   const [selectedAgent, setSelectedAgent] = useState<AgentConfig | null>(null);
   const [activeTab, setActiveTab] = useState<'persona' | 'goals' | 'knowledge' | 'tools'>('persona');
-  const [instructionTranslation, setInstructionTranslation] = useState('');
+
+  const copyToClipboard = useCallback((text: string, fieldName: string) => {
+    navigator.clipboard.writeText(text).then(() => {
+      onNotify(`${fieldName} copied to clipboard!`, 'success');
+    }, (err) => {
+      onNotify(`Failed to copy ${fieldName}`, 'warning');
+      console.error('Could not copy text: ', err);
+    });
+  }, [onNotify]);
 
   const handleEdit = (agent: AgentConfig) => {
-    setSelectedAgent({ ...agent }); // Deep copy would be better in prod
+    setSelectedAgent({ ...agent }); 
     setView('edit');
     setActiveTab('persona');
+  };
+  
+  const handleCancelEdit = () => {
+    if (window.confirm('Are you sure you want to discard your changes?')) {
+        setView('list');
+        setSelectedAgent(null);
+    }
   };
 
   const handleCreate = () => {
@@ -143,7 +159,7 @@ export const AgentManager: React.FC<Props> = ({ onNotify }) => {
       onNotify('Translating to Kinyarwanda via Gemini 2.5 Flash...', 'info');
       setTimeout(() => {
           if (selectedAgent) {
-              const translated = selectedAgent.persona.systemInstruction + "\n\n[KINYARWANDA TRANSLATION ATTACHED]";
+              const translated = selectedAgent.persona.systemInstruction + "\n\n--- KINYARWANDA ---\n[Icyongereza cyahinduwe hano]";
               updateField('persona.systemInstruction', translated);
               onNotify('Translation Applied', 'success');
           }
@@ -234,7 +250,7 @@ export const AgentManager: React.FC<Props> = ({ onNotify }) => {
         {/* Header */}
         <div className="flex items-center justify-between mb-6 border-b border-gray-200 pb-4">
           <div className="flex items-center">
-            <button onClick={() => setView('list')} className="mr-4 text-gray-400 hover:text-gray-600 transition-colors">
+            <button onClick={handleCancelEdit} className="mr-4 text-gray-400 hover:text-gray-600 transition-colors">
               <i className="fas fa-arrow-left text-xl"></i>
             </button>
             <div>
@@ -259,7 +275,7 @@ export const AgentManager: React.FC<Props> = ({ onNotify }) => {
             </div>
           </div>
           <div className="flex gap-3">
-             <button onClick={() => setView('list')} className="px-4 py-2 text-gray-600 font-medium hover:bg-gray-100 rounded-lg transition-colors">Cancel</button>
+             <button onClick={handleCancelEdit} className="px-4 py-2 text-gray-600 font-medium hover:bg-gray-100 rounded-lg transition-colors">Cancel</button>
              <button onClick={handleSave} className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg shadow-sm transition-colors flex items-center">
                 <i className="fas fa-save mr-2"></i> Save Config
              </button>
@@ -302,7 +318,10 @@ export const AgentManager: React.FC<Props> = ({ onNotify }) => {
                 <div>
                     <div className="flex justify-between items-center mb-2">
                         <label className="block text-sm font-bold text-gray-700">System Instruction (Persona)</label>
-                        <button onClick={translateInstruction} className="text-xs text-blue-600 hover:underline"><i className="fas fa-language mr-1"></i> Translate to Kinyarwanda</button>
+                        <div className="flex items-center gap-3">
+                           <button onClick={translateInstruction} className="text-xs text-blue-600 hover:underline"><i className="fas fa-language mr-1"></i> Translate to Kinyarwanda</button>
+                           <button onClick={() => copyToClipboard(selectedAgent.persona.systemInstruction, 'Instruction')} className="text-xs text-gray-400 hover:text-blue-600" title="Copy instruction"><i className="fas fa-copy"></i></button>
+                        </div>
                     </div>
                     <p className="text-xs text-gray-500 mb-2">Define exactly who the agent is and how it should behave. This is the "Brain".</p>
                     <textarea 
@@ -435,15 +454,16 @@ export const AgentManager: React.FC<Props> = ({ onNotify }) => {
                         <h3 className="font-bold text-blue-800 mb-2"><i className="fab fa-google-drive mr-2"></i>Google Drive Integration</h3>
                         <p className="text-xs text-blue-600 mb-4">Connect a folder for the agent to learn from. Supports PDFs, Docs, and Sheets.</p>
                         
-                        <div className="mb-4">
+                        <div className="relative mb-4">
                             <label className="block text-xs font-bold text-gray-700 mb-1">Drive Folder ID</label>
                             <input 
                                 type="text"
                                 value={selectedAgent.knowledgeBase.driveFolderId}
                                 onChange={(e) => updateField('knowledgeBase.driveFolderId', e.target.value)}
-                                className="w-full p-2 border border-blue-200 rounded text-sm focus:ring-2 focus:ring-blue-500 outline-none font-mono bg-white text-gray-900"
+                                className="w-full p-2 pr-8 border border-blue-200 rounded text-sm focus:ring-2 focus:ring-blue-500 outline-none font-mono bg-white text-gray-900"
                                 placeholder="e.g., 1mU1gdPmyt..."
                             />
+                             <button onClick={() => copyToClipboard(selectedAgent.knowledgeBase.driveFolderId, 'Folder ID')} className="absolute right-2 top-7 text-gray-400 hover:text-blue-600" title="Copy Folder ID"><i className="fas fa-copy"></i></button>
                         </div>
                         
                         <div className="flex items-center justify-between mb-4">
@@ -465,14 +485,6 @@ export const AgentManager: React.FC<Props> = ({ onNotify }) => {
                         </div>
 
                         <div className="mt-6 flex gap-2">
-                            <a 
-                                href={`https://drive.google.com/drive/folders/${selectedAgent.knowledgeBase.driveFolderId}`}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="flex-1 bg-white text-blue-600 border border-blue-200 py-2 rounded text-xs font-bold text-center hover:bg-blue-50 transition-colors"
-                            >
-                                <i className="fas fa-external-link-alt mr-1"></i> Open Drive
-                            </a>
                             <button 
                                 onClick={() => onNotify('Sync triggered. Processing documents...', 'info')}
                                 className="flex-1 bg-blue-600 text-white py-2 rounded text-xs font-bold hover:bg-blue-700 transition-colors"
@@ -485,22 +497,21 @@ export const AgentManager: React.FC<Props> = ({ onNotify }) => {
 
                 <div className="lg:col-span-2 h-full flex flex-col">
                     <h3 className="font-bold text-gray-800 mb-3">Internal Knowledge Viewer</h3>
-                    <div className="flex-1 bg-gray-100 rounded-xl border border-gray-200 overflow-hidden relative">
-                        {selectedAgent.knowledgeBase.driveFolderId ? (
-                             <iframe 
-                                src={`https://drive.google.com/embeddedfolderview?id=${selectedAgent.knowledgeBase.driveFolderId}#list`}
-                                className="w-full h-full border-0"
-                                title="Google Drive Folder View"
-                             ></iframe>
-                        ) : (
-                            <div className="flex flex-col items-center justify-center h-full text-gray-400">
-                                <i className="fab fa-google-drive text-4xl mb-2"></i>
-                                <p>Enter a Folder ID to view documents.</p>
-                            </div>
-                        )}
+                    <div className="flex-1 bg-gray-100 rounded-xl border border-gray-200 overflow-hidden relative flex flex-col items-center justify-center text-center p-4">
+                       <i className="fab fa-google-drive text-5xl text-gray-300 mb-4"></i>
+                       <h4 className="font-bold text-gray-700">Secure Folder Access</h4>
+                       <p className="text-xs text-gray-500 mb-4">The embedded view is disabled for security. Please use the button below to open the folder in a new tab.</p>
+                       <a 
+                          href={selectedAgent.knowledgeBase.driveFolderId ? `https://drive.google.com/drive/folders/${selectedAgent.knowledgeBase.driveFolderId}` : '#'}
+                          target="_blank"
+                          rel="noreferrer"
+                          className={`bg-white text-blue-600 border border-blue-200 py-2 px-5 rounded text-sm font-bold text-center hover:bg-blue-50 transition-colors ${!selectedAgent.knowledgeBase.driveFolderId ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        >
+                            <i className="fas fa-external-link-alt mr-2"></i> Open Knowledge Base in New Tab
+                        </a>
                     </div>
                     <p className="text-[10px] text-gray-400 mt-2 text-right">
-                        <i className="fas fa-lock mr-1"></i> Internal Use Only. Ensure you are logged into the authorized Google Account.
+                        <i className="fas fa-lock mr-1"></i> You must be signed into an authorized Google Account to view.
                     </p>
                 </div>
              </div>
