@@ -164,6 +164,35 @@ CREATE TABLE IF NOT EXISTS public.farmer_listings (
   expires_at TIMESTAMPTZ
 );
 
+-- Add missing columns to existing farmer_listings table if they don't exist
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'farmer_listings' AND column_name = 'farm_id') THEN
+    ALTER TABLE public.farmer_listings ADD COLUMN farm_id UUID REFERENCES public.farms(id) ON DELETE CASCADE;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'farmer_listings' AND column_name = 'conversation_id') THEN
+    ALTER TABLE public.farmer_listings ADD COLUMN conversation_id UUID;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'farmer_listings' AND column_name = 'market_code') THEN
+    ALTER TABLE public.farmer_listings ADD COLUMN market_code TEXT;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'farmer_listings' AND column_name = 'matched_order_id') THEN
+    ALTER TABLE public.farmer_listings ADD COLUMN matched_order_id UUID;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'farmer_listings' AND column_name = 'whatsapp_e164') THEN
+    ALTER TABLE public.farmer_listings ADD COLUMN whatsapp_e164 TEXT;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'farmer_listings' AND column_name = 'expires_at') THEN
+    ALTER TABLE public.farmer_listings ADD COLUMN expires_at TIMESTAMPTZ;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'farmer_listings' AND column_name = 'payment_preference') THEN
+    ALTER TABLE public.farmer_listings ADD COLUMN payment_preference TEXT DEFAULT 'wallet';
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'farmer_listings' AND column_name = 'cod_fallback') THEN
+    ALTER TABLE public.farmer_listings ADD COLUMN cod_fallback JSONB;
+  END IF;
+END $$;
+
 CREATE INDEX IF NOT EXISTS farmer_listings_farm_idx ON public.farmer_listings(farm_id);
 CREATE INDEX IF NOT EXISTS farmer_listings_market_idx ON public.farmer_listings(market_code);
 CREATE INDEX IF NOT EXISTS farmer_listings_commodity_idx ON public.farmer_listings(commodity);
