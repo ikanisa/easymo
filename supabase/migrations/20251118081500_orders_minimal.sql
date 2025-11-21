@@ -45,7 +45,7 @@ ALTER TABLE public.order_items ENABLE ROW LEVEL SECURITY;
 DO $$
 BEGIN
   IF NOT EXISTS (
-    SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'orders' AND polname = 'Managers can read their bar orders'
+    SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'orders' AND policyname = 'Managers can read their bar orders'
   ) THEN
     CREATE POLICY "Managers can read their bar orders"
       ON public.orders
@@ -65,7 +65,7 @@ END $$;
 DO $$
 BEGIN
   IF NOT EXISTS (
-    SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'order_items' AND polname = 'Managers can read their bar order items'
+    SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'order_items' AND policyname = 'Managers can read their bar order items'
   ) THEN
     CREATE POLICY "Managers can read their bar order items"
       ON public.order_items
@@ -87,7 +87,7 @@ END $$;
 DO $$
 BEGIN
   IF NOT EXISTS (
-    SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'orders' AND polname = 'Service role can manage orders'
+    SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'orders' AND policyname = 'Service role can manage orders'
   ) THEN
     CREATE POLICY "Service role can manage orders"
       ON public.orders
@@ -101,7 +101,7 @@ END $$;
 DO $$
 BEGIN
   IF NOT EXISTS (
-    SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'order_items' AND polname = 'Service role can manage order items'
+    SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'order_items' AND policyname = 'Service role can manage order items'
   ) THEN
     CREATE POLICY "Service role can manage order items"
       ON public.order_items

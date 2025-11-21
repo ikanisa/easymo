@@ -275,7 +275,7 @@ ALTER TABLE public.shipments ENABLE ROW LEVEL SECURITY;
 DO $$
 BEGIN
   IF NOT EXISTS (
-    SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'shipments' AND polname = 'Farm owners read shipments'
+    SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'shipments' AND policyname = 'Farm owners read shipments'
   ) THEN
     CREATE POLICY "Farm owners read shipments"
       ON public.shipments
@@ -290,7 +290,7 @@ BEGIN
   END IF;
 
   IF NOT EXISTS (
-    SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'shipments' AND polname = 'Service role manage shipments'
+    SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'shipments' AND policyname = 'Service role manage shipments'
   ) THEN
     CREATE POLICY "Service role manage shipments"
       ON public.shipments
