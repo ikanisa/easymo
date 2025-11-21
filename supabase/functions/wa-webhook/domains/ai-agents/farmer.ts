@@ -164,7 +164,7 @@ async function fetchProfileAndFarm(ctx: RouterContext): Promise<{ profile?: Farm
   const farm = await ctx.supabase
     .from("farms")
     .select("id, farm_name, district, sector, region, hectares, commodities, certifications, irrigation, metadata, farm_synonyms(phrase, locale, category)")
-    .eq("profile_id", profile.data.user_id)
+    .eq("owner_profile_id", profile.data.user_id)
     .maybeSingle();
   if (farm.error && farm.error.code !== "PGRST116") {
     throw farm.error;
