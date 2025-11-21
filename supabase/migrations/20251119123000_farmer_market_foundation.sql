@@ -17,6 +17,19 @@ create table if not exists public.produce_catalog (
   updated_at timestamptz not null default now()
 );
 
+-- Add market_code column if it doesn't exist
+do $$
+begin
+  if not exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public'
+    and table_name = 'produce_catalog'
+    and column_name = 'market_code'
+  ) then
+    alter table public.produce_catalog add column market_code text not null default 'RW';
+  end if;
+end $$;
+
 create unique index if not exists produce_catalog_market_idx
   on public.produce_catalog (market_code, commodity, variety, grade);
 
