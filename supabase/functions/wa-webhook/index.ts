@@ -34,6 +34,7 @@ import {
   handlePrometheusMetrics
 } from "./shared/health_metrics.ts";
 import { incrementMetric } from "./utils/metrics_collector.ts";
+import { handlePreparedWebhookEnhanced } from "./router/enhanced_processor.ts";
 
 serve(async (req: Request): Promise<Response> => {
   // Check for config initialization error first
@@ -122,7 +123,7 @@ serve(async (req: Request): Promise<Response> => {
       return finalize(result.response);
     }
 
-    return finalize(await handlePreparedWebhook(supabase, result));
+    return finalize(await handlePreparedWebhookEnhanced(supabase, result, handlePreparedWebhook));
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : String(err);
     const errorStack = err instanceof Error ? err.stack : undefined;

@@ -16,16 +16,16 @@ import type { SupabaseClient } from "../deps.ts";
 import type { PreparedWebhook } from "./pipeline.ts";
 import type { WhatsAppMessage } from "../types.ts";
 import {
-  checkIdempotency,
-  recordProcessedMessage,
-  acquireConversationLock,
-  releaseConversationLock,
-  addToDeadLetterQueue,
-  processWithTimeout,
-  getOrCreateConversation,
   WEBHOOK_TIMEOUT_MS,
-} from "../_shared/webhook-utils.ts";
-import { logStructuredEvent, logError, recordMetric } from "../_shared/observability.ts";
+  acquireConversationLock,
+  addToDeadLetterQueue,
+  checkIdempotency,
+  getOrCreateConversation,
+  processWithTimeout,
+  recordProcessedMessage,
+  releaseConversationLock,
+} from "../../_shared/webhook-utils.ts";
+import { logStructuredEvent, logError, recordMetric } from "../../_shared/observability.ts";
 
 // Feature flag for enhanced processing
 const ENHANCED_PROCESSING_ENABLED = 
@@ -212,9 +212,13 @@ async function processMessageEnhanced(
 
   try {
     // 4. Process message using original handler
-    // Note: This is a simplified integration point
-    // The original handler processes the entire prepared webhook
-    // In production, you'd need to extract just this message's processing
+    // Create a prepared payload with just this message to avoid duplicate processing
+    const singleMessagePrepared = {
+      ...prepared,
+      messages: [msg],
+    };
+    
+    await originalHandler(supabase, singleMessagePrepared);
     
     const duration = Date.now() - startTime;
     
