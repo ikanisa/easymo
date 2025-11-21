@@ -1,7 +1,35 @@
 // wa-webhook-mobility - Standalone version
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "./deps.ts";
 import { logStructuredEvent } from "../_shared/observability.ts";
+import { getState } from "./state/store.ts";
+import {
+  handleSeeDrivers,
+  handleSeePassengers,
+  handleVehicleSelection,
+  handleNearbyLocation,
+  handleNearbyResultSelection,
+  handleChangeVehicleRequest,
+  startNearbySavedLocationPicker,
+  handleNearbySavedLocationSelection,
+  isVehicleOption,
+} from "./handlers/nearby.ts";
+import {
+  startScheduleTrip,
+  handleScheduleRole,
+  handleScheduleVehicle,
+  handleScheduleChangeVehicle,
+  handleScheduleLocation,
+  handleScheduleDropoff,
+  handleScheduleSkipDropoff,
+  handleScheduleTimeSelection,
+  handleScheduleRecurrenceSelection,
+  handleScheduleRefresh,
+  startScheduleSavedLocationPicker,
+  handleScheduleSavedLocationSelection,
+} from "./handlers/schedule.ts";
+import type { RouterContext, WhatsAppWebhookPayload, RawWhatsAppMessage } from "./types.ts";
+import { IDS } from "./wa/ids.ts";
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL") ?? "",
@@ -32,47 +60,9 @@ serve(async (req: Request): Promise<Response> => {
     }, level);
   };
 
-  logEvent("MOBILITY_WEBHOOK_REQUEST", {
-    method: req.method,
-    timestamp: new Date().toISOString(),
-  });
-
   // Health check
   if (url.pathname === "/health" || url.pathname.endsWith("/health")) {
-    const startedAt = Date.now();
-    try {
-      const { error } = await supabase.from("trips").select("id").limit(1);
-      const healthy = !error;
-
-      logEvent("MOBILITY_HEALTH_CHECK", {
-        healthy,
-        durationMs: Date.now() - startedAt,
-        error: error?.message,
-      }, healthy ? "info" : "warn");
-
-      return respond({
-        status: healthy ? "healthy" : "unhealthy",
-        service: "wa-webhook-mobility",
-        timestamp: new Date().toISOString(),
-        requestId,
-        checks: { database: healthy ? "connected" : "disconnected" },
-        metrics: { duration_ms: Date.now() - startedAt },
-        version: "1.0.0",
-        ...(error && { error: error.message }),
-      }, { status: healthy ? 200 : 503 });
-    } catch (err) {
-      logEvent("MOBILITY_HEALTH_CHECK_ERROR", {
-        durationMs: Date.now() - startedAt,
-        error: err instanceof Error ? err.message : String(err),
-      }, "error");
-
-      return respond({
-        status: "unhealthy",
-        service: "wa-webhook-mobility",
-        requestId,
-        error: err instanceof Error ? err.message : String(err),
-      }, { status: 503 });
-    }
+    return respond({ status: "healthy", service: "wa-webhook-mobility" });
   }
 
   // Webhook verification
@@ -82,41 +72,147 @@ serve(async (req: Request): Promise<Response> => {
     const challenge = url.searchParams.get("hub.challenge");
 
     if (mode === "subscribe" && token === Deno.env.get("WA_VERIFY_TOKEN")) {
-      return respond(challenge, { status: 200 });
+      return new Response(challenge ?? "", { status: 200 });
     }
     return respond({ error: "forbidden" }, { status: 403 });
   }
 
   // Main webhook handler
   try {
-    const payload = await req.json();
+    const payload: WhatsAppWebhookPayload = await req.json();
+    const entry = payload.entry?.[0];
+    const change = entry?.changes?.[0];
+    const value = change?.value;
+    const message = value?.messages?.[0];
 
-    logEvent("MOBILITY_WEBHOOK_RECEIVED", {
-      entryCount: payload.entry?.length || 0,
-    });
+    if (!message) {
+      return respond({ success: true, ignored: "no_message" });
+    }
 
-    for (const entry of payload.entry || []) {
-      for (const change of entry.changes || []) {
-        const messages = change.value?.messages || [];
+    const from = message.from;
+    if (!from) {
+      return respond({ success: true, ignored: "no_sender" });
+    }
 
-        for (const message of messages) {
-          logEvent("MOBILITY_MESSAGE_RECEIVED", {
-            id: message.id,
-            from: message.from,
-            type: message.type,
-            textPreview: message.text?.body?.slice(0, 100),
-          }, "debug");
+    // 1. Build Context
+    // Fetch profile
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("user_id, language")
+      .or(`phone_number.eq.${from},wa_id.eq.${from}`)
+      .maybeSingle();
+
+    const ctx: RouterContext = {
+      supabase,
+      from,
+      profileId: profile?.user_id,
+      locale: (profile?.language as any) || "en",
+    };
+
+    logEvent("MOBILITY_MESSAGE_PROCESSING", { from, type: message.type });
+
+    // 2. Get State
+    const state = ctx.profileId ? await getState(supabase, ctx.profileId) : null;
+    logEvent("MOBILITY_STATE", { key: state?.key });
+
+    // 3. Dispatch
+    let handled = false;
+
+    // A. Handle Interactive Messages (Buttons/Lists)
+    if (message.type === "interactive") {
+      const interactive = message.interactive as any;
+      const buttonId = interactive?.button_reply?.id;
+      const listId = interactive?.list_reply?.id;
+      const id = buttonId || listId;
+
+      if (id) {
+        logEvent("MOBILITY_INTERACTION", { id });
+
+        // Nearby Flows
+        if (id === IDS.SEE_DRIVERS) {
+          handled = await handleSeeDrivers(ctx);
+        } else if (id === IDS.SEE_PASSENGERS) {
+          handled = await handleSeePassengers(ctx);
+        } else if (isVehicleOption(id) && state?.key === "mobility_nearby_select") {
+          handled = await handleVehicleSelection(ctx, state.data as any, id);
+        } else if (id.startsWith("MTCH::") && state?.key === "mobility_nearby_results") {
+          handled = await handleNearbyResultSelection(ctx, state.data as any, id);
+        } else if (id === IDS.MOBILITY_CHANGE_VEHICLE) {
+          handled = await handleChangeVehicleRequest(ctx, state?.data as any);
+        } else if (id === IDS.LOCATION_SAVED_LIST && state?.key === "mobility_nearby_location") {
+          handled = await startNearbySavedLocationPicker(ctx, state.data as any);
+        } else if (id.startsWith("FAV::") && state?.key === "location_saved_picker" && state.data?.source === "nearby") {
+          handled = await handleNearbySavedLocationSelection(ctx, state.data as any, id);
+        }
+        
+        // Schedule Flows
+        else if (id === IDS.SCHEDULE_TRIP) {
+          handled = await startScheduleTrip(ctx, state as any);
+        } else if ((id === IDS.ROLE_DRIVER || id === IDS.ROLE_PASSENGER) && state?.key === "schedule_role") {
+          handled = await handleScheduleRole(ctx, id);
+        } else if (isVehicleOption(id) && state?.key === "schedule_location") {
+          handled = await handleScheduleVehicle(ctx, state.data as any, id);
+        } else if (id === IDS.MOBILITY_CHANGE_VEHICLE && state?.key?.startsWith("schedule_")) {
+          handled = await handleScheduleChangeVehicle(ctx, state.data as any);
+        } else if (id === IDS.SCHEDULE_SKIP_DROPOFF && state?.key === "schedule_dropoff") {
+          handled = await handleScheduleSkipDropoff(ctx, state.data as any);
+        } else if (id.startsWith("time::") && state?.key === "schedule_time_select") {
+          handled = await handleScheduleTimeSelection(ctx, state.data as any, id);
+        } else if (id.startsWith("recur::") && state?.key === "schedule_recur") {
+          handled = await handleScheduleRecurrenceSelection(ctx, state.data as any, id);
+        } else if (id === IDS.SCHEDULE_REFRESH_RESULTS && state?.key === "mobility_nearby_results") { // Reusing results key? Check schedule.ts
+           // Schedule refresh might need its own key or reuse nearby results structure
+           // Checking schedule.ts: handleScheduleRefresh uses state.tripId
+           handled = await handleScheduleRefresh(ctx, state?.data as any);
+        } else if (id === IDS.LOCATION_SAVED_LIST && state?.key === "schedule_location") {
+           handled = await startScheduleSavedLocationPicker(ctx, state.data as any, "pickup");
+        } else if (id === IDS.LOCATION_SAVED_LIST && state?.key === "schedule_dropoff") {
+           handled = await startScheduleSavedLocationPicker(ctx, state.data as any, "dropoff");
+        } else if (id.startsWith("FAV::") && state?.key === "location_saved_picker" && state.data?.source === "schedule") {
+           handled = await handleScheduleSavedLocationSelection(ctx, state.data as any, id);
         }
       }
     }
 
-    return respond({
-      success: true,
-      service: "wa-webhook-mobility",
-      requestId,
-    }, {
-      status: 200,
-    });
+    // B. Handle Location Messages
+    else if (message.type === "location") {
+      const loc = message.location as any;
+      if (loc && loc.latitude && loc.longitude) {
+        const coords = { lat: Number(loc.latitude), lng: Number(loc.longitude) };
+        logEvent("MOBILITY_LOCATION", coords);
+
+        if (state?.key === "mobility_nearby_location") {
+          handled = await handleNearbyLocation(ctx, state.data as any, coords);
+        } else if (state?.key === "schedule_location") {
+          handled = await handleScheduleLocation(ctx, state.data as any, coords);
+        } else if (state?.key === "schedule_dropoff") {
+          handled = await handleScheduleDropoff(ctx, state.data as any, coords);
+        }
+      }
+    }
+
+    // C. Handle Text Messages (Keywords/Fallbacks)
+    else if (message.type === "text") {
+      const text = (message.text as any)?.body?.toLowerCase() ?? "";
+      
+      // Simple keyword triggers if not in a specific flow or if flow allows interruption
+      if (text.includes("driver") || text.includes("ride")) {
+        handled = await handleSeeDrivers(ctx);
+      } else if (text.includes("passenger")) {
+        handled = await handleSeePassengers(ctx);
+      } else if (text.includes("schedule") || text.includes("book")) {
+        handled = await startScheduleTrip(ctx, state as any);
+      }
+    }
+
+    if (!handled) {
+      // If we have state but didn't handle the input, maybe show a generic "I didn't understand" or just ignore
+      // For now, we'll just log it.
+      logEvent("MOBILITY_UNHANDLED_MESSAGE", { from, type: message.type });
+    }
+
+    return respond({ success: true, handled });
+
   } catch (err) {
     logEvent("MOBILITY_WEBHOOK_ERROR", {
       error: err instanceof Error ? err.message : String(err),

@@ -203,7 +203,7 @@ SELECT
   'register_job_seeker',
   'Register Job Seeker',
   'Capture structured job seeker profile',
-  'User says "I\'m looking for work" or similar',
+  'User says "I''m looking for work" or similar',
   ARRAY['upsert_job_seeker']::text[],
   'Seeker profile stored; confirmation with summary & edit options',
   false,

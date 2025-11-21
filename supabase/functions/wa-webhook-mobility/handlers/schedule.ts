@@ -1,8 +1,8 @@
-import type { ButtonSpec, RouterContext } from "../../types.ts";
-import { clearState, setState } from "../../state/store.ts";
-import { IDS } from "../../wa/ids.ts";
+import type { ButtonSpec, RouterContext } from "../types.ts";
+import { clearState, setState } from "../state/store.ts";
+import { IDS } from "../wa/ids.ts";
 import { VEHICLE_OPTIONS, vehicleFromId } from "./nearby.ts";
-import { t } from "../../i18n/translator.ts";
+import { t } from "../i18n/translator.ts";
 import {
   gateProFeature,
   insertTrip,
@@ -10,21 +10,21 @@ import {
   matchPassengersForTrip,
   type MatchResult,
   updateTripDropoff,
-} from "../../rpc/mobility.ts";
-import { getAppConfig } from "../../utils/app_config.ts";
-import { waChatLink } from "../../utils/links.ts";
-import { maskPhone } from "../../flows/support.ts";
-import { logStructuredEvent } from "../../observe/log.ts";
-import { timeAgo } from "../../utils/text.ts";
-import { sendText } from "../../wa/client.ts";
+} from "../rpc/mobility.ts";
+import { getAppConfig } from "../utils/app_config.ts";
+import { waChatLink } from "../utils/links.ts";
+import { maskPhone } from "../flows/support.ts";
+import { logStructuredEvent } from "../observe/log.ts";
+import { timeAgo } from "../utils/text.ts";
+import { sendText } from "../wa/client.ts";
 import {
   buildButtons,
   homeOnly,
   sendButtonsMessage,
   sendListMessage,
   sendListWithActions,
-} from "../../utils/reply.ts";
-import { emitAlert } from "../../observe/alert.ts";
+} from "../utils/reply.ts";
+import { emitAlert } from "../observe/alert.ts";
 import {
   ensureVehiclePlate,
   getStoredVehicleType,
@@ -424,7 +424,7 @@ async function requestScheduleTime(
   if (!ctx.profileId) return false;
   await setState(ctx.supabase, ctx.profileId, {
     key: "schedule_time_select",
-    data: state,
+    data: state as unknown as Record<string, unknown>,
   });
 
   const rows = [
@@ -602,7 +602,7 @@ export async function startScheduleSavedLocationPicker(
       body,
       sectionTitle: t(ctx.locale, "location.saved.list.section"),
       rows: [
-        ...favorites.map((fav) => scheduleFavoriteToRow(fav)),
+        ...favorites.map((fav: UserFavorite) => scheduleFavoriteToRow(fav)),
         ...buildSaveRows(ctx),
         {
           id: IDS.BACK_MENU,
@@ -794,7 +794,7 @@ async function createTripAndDeliverMatches(
 
     if (options.dropoff) {
       await updateTripDropoff(ctx.supabase, {
-        tripId,
+        tripId: tripId ?? undefined,
         lat: options.dropoff.lat,
         lng: options.dropoff.lng,
         // Ensure dropoff radius is set to avoid NOT NULL violations

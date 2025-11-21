@@ -1,34 +1,34 @@
-import type { ButtonSpec, RouterContext } from "../../types.ts";
-import { clearState, setState } from "../../state/store.ts";
-import { t } from "../../i18n/translator.ts";
-import { IDS } from "../../wa/ids.ts";
+import type { ButtonSpec, RouterContext } from "../types.ts";
+import { clearState, setState } from "../state/store.ts";
+import { t } from "../i18n/translator.ts";
+import { IDS } from "../wa/ids.ts";
 import {
   insertTrip,
   matchDriversForTrip,
   matchPassengersForTrip,
   type MatchResult,
   updateTripDropoff,
-} from "../../rpc/mobility.ts";
-import { getAppConfig } from "../../utils/app_config.ts";
-import { waChatLink } from "../../utils/links.ts";
-import { maskPhone } from "../../flows/support.ts";
-import { logStructuredEvent } from "../../observe/log.ts";
-import { emitAlert } from "../../observe/alert.ts";
-import { timeAgo } from "../../utils/text.ts";
-import { sendText } from "../../wa/client.ts";
+} from "../rpc/mobility.ts";
+import { getAppConfig } from "../utils/app_config.ts";
+import { waChatLink } from "../utils/links.ts";
+import { maskPhone } from "../flows/support.ts";
+import { logStructuredEvent } from "../observe/log.ts";
+import { emitAlert } from "../observe/alert.ts";
+import { timeAgo } from "../utils/text.ts";
+import { sendText } from "../wa/client.ts";
 import {
   buildButtons,
   homeOnly,
   sendButtonsMessage,
   sendListMessage,
-} from "../../utils/reply.ts";
+} from "../utils/reply.ts";
 import {
   ensureVehiclePlate,
   getStoredVehicleType,
   updateStoredVehicleType,
 } from "./vehicle_plate.ts";
 import { getRecentNearbyIntent, storeNearbyIntent } from "./intent_cache.ts";
-import { isFeatureEnabled } from "../../../_shared/feature-flags.ts";
+import { isFeatureEnabled } from "../../_shared/feature-flags.ts";
 import { routeToAIAgent, sendAgentOptions } from "../ai-agents/index.ts";
 import {
   getFavoriteById,
@@ -444,7 +444,7 @@ export async function startNearbySavedLocationPicker(
       body,
       sectionTitle: t(ctx.locale, "location.saved.list.section"),
       rows: [
-        ...favorites.map((favorite) => favoriteToRow(ctx, favorite)),
+        ...favorites.map((favorite: UserFavorite) => favoriteToRow(ctx, favorite)),
         ...buildSaveRows(ctx),
         {
           id: IDS.BACK_MENU,

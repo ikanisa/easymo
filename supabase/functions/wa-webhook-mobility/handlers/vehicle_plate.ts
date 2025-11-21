@@ -1,7 +1,7 @@
-import type { RouterContext } from "../../types.ts";
-import type { SupabaseClient } from "../../deps.ts";
-import { setState } from "../../state/store.ts";
-import { sendText } from "../../wa/client.ts";
+import type { RouterContext } from "../types.ts";
+import type { SupabaseClient } from "../deps.ts";
+import { setState } from "../state/store.ts";
+import { sendText } from "../wa/client.ts";
 
 const PLATE_STATE_KEY = "vehicle_plate_register";
 

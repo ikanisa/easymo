@@ -1,0 +1,54 @@
+{
+  "home.rows.jobs.title": "💼 Imirimo n'Akazi",
+  "home.rows.jobs.description": "Shakisha akazi cyangwa utangaze imirimo - kuva ku murimo w'umunsi umwe kugeza ku kazi cyuzuye",
+  
+  "jobs.menu.title": "💼 Ikibanza cy'akazi",
+  "jobs.menu.greeting": "💼 Ikibanza cy'akazi\n\nShakisha akazi cyangwa utangaze imirimo. Niba ushaka akazi k'umunsi umwe cyangwa akazi karambye, turimo!",
+  "jobs.menu.button": "Hitamo Igikorwa",
+  "jobs.menu.section": "Hitamo icyo ukora",
+  
+  "jobs.menu.find.title": "🔍 Shakisha Akazi",
+  "jobs.menu.find.description": "Shakisha imirimo ihuye n'ubushobozi bwawe",
+  
+  "jobs.menu.post.title": "📝 Tangaza Akazi",
+  "jobs.menu.post.description": "Gukoresha umuntu ku kazi cyangwa igikorwa",
+  
+  "jobs.menu.myApplications.title": "📋 Imirimo Nasabye",
+  "jobs.menu.myApplications.description": "Reba imirimo wasabye",
+  
+  "jobs.menu.myJobs.title": "💼 Imirimo Natangaje",
+  "jobs.menu.myJobs.description": "Gucunga imirimo watangaje no kureba abasaba",
+  
+  "jobs.seeker.welcome": "🔍 *Shakisha Akazi*\n\nMbwira ubwoko bw'akazi ushaka. Sobanura mu buryo busanzwe:\n\n• Ubwoko bw'akazi (isuku, gutanga, ubwubatsi, ku biro, n'ibindi)\n• Aho (mu karere kihe cyangwa umujyi?)\n• Igihe ubonetse\n• Amafaranga wifuza kwakira\n\nUrugero: _\"Nkeneye akazi k'umunsi ku wa gatandatu i Kimironko, nk'umushoferi cyangwa gupakira ibicuruzwa, 10,000 FRW\"_\n\nKomeza, andika ubutumwa bwawe! 👇",
+  
+  "jobs.poster.welcome": "📝 *Tangaza Akazi*\n\nMbwira ku kazi ushaka gukoresha umuntu. Sobanura mu buryo busanzwe:\n\n• Icyo ukeneye\n• Aho (ahantu)\n• Ryari (itariki/isaha)\n• Amafaranga uzishyura\n• Ibisabwa\n\nUrugero: _\"Nkeneye umuserukira ku birori bya ku wa gatandatu nimugoroba i Remera, 10,000 FRW ku masaha 4, agomba kuvuga Icyongereza n'Igifaransa\"_\n\nKomeza, sobanura akazi! 👇",
+  
+  "jobs.applications.header": "📋 *Imirimo Wasabye*",
+  "jobs.applications.none": "Ntakazi usaba.\n\nSubiza *Shakisha Akazi* utangire!",
+  "jobs.applications.footer": "\n💡 Subiza umubare kugira ngo urebe ibisobanuro byuzuye.",
+  
+  "jobs.myJobs.header": "💼 *Imirimo Watangaje*",
+  "jobs.myJobs.none": "Ntakazi watangaje.\n\nSubiza *Tangaza Akazi* kugira ngo ukoreshe umuntu!",
+  "jobs.myJobs.footer": "\n💡 Subiza umubare kugira ngo urebe abasaba.",
+  
+  "jobs.status.pending": "⏳ Bitegerezwa",
+  "jobs.status.open": "✅ Birafunguye",
+  "jobs.status.closed": "🔒 Birafunze",
+  "jobs.status.reviewing": "👀 Birasuzumwa",
+  "jobs.status.accepted": "✅ Byemewe",
+  "jobs.status.rejected": "❌ Ntibyatoranijwe",
+  
+  "jobs.type.one_day": "Umunsi Umwe",
+  "jobs.type.short_term": "Igihe Gito",
+  "jobs.type.part_time": "Agace k'Igihe",
+  "jobs.type.full_time": "Igihe Cyose",
+  "jobs.type.contract": "Amasezerano",
+  "jobs.type.gig": "Akazi Gato",
+  
+  "jobs.pay.negotiable": "Bishobora Kuganirwaho",
+  "jobs.applicants": "abasaba",
+  
+  "jobs.error.agent_failed": "Ihangane, hari ikibazo. Gerageza nyuma gato.",
+  "jobs.error.something_wrong": "Hariho ikosa. Gerageza nyuma cyangwa andika *menu* kugira ngo ugaruke.",
+  "jobs.error.fetch_failed": "Ihangane, ntabwo byashobotse gupakira amakuru. Gerageza."
+}

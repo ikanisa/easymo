@@ -1,0 +1,81 @@
+{
+  "version": "6.3",
+  "screens": [
+    {
+      "id": "s_qr_generate",
+      "title": "Generate QR",
+      "layout": { "type": "single_column" },
+      "data_exchange": {
+        "submit": { "action": { "id": "a_admin_qr_generate" } }
+      },
+      "widgets": [
+        {
+          "type": "text_input",
+          "id": "target",
+          "label": "Number or code",
+          "required": true
+        },
+        {
+          "type": "text_input",
+          "id": "amount",
+          "label": "Amount",
+          "input_type": "number"
+        },
+        {
+          "type": "footer_buttons",
+          "buttons": [
+            {
+              "id": "BTN_GEN",
+              "title": "Generate",
+              "action": { "type": "data_exchange", "id": "a_admin_qr_generate" }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "s_qr_result",
+      "title": "QR result",
+      "layout": { "type": "single_column" },
+      "widgets": [
+        { "type": "text_block", "id": "w_qr_url", "text": "${data.qr_url}" },
+        { "type": "text_block", "id": "w_ussd", "text": "${data.ussd}" },
+        {
+          "type": "footer_buttons",
+          "buttons": [
+            {
+              "id": "BTN_DIAL",
+              "title": "Dial",
+              "action": { "type": "open_url", "url": "${data.tel_uri}" }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "s_qr_recent",
+      "title": "Recent requests",
+      "layout": { "type": "single_column" },
+      "widgets": [
+        {
+          "type": "list",
+          "id": "w_recent",
+          "options_data_binding": "requests"
+        },
+        {
+          "type": "footer_buttons",
+          "buttons": [
+            {
+              "id": "BTN_RECENT_REFRESH",
+              "title": "Refresh",
+              "action": {
+                "type": "data_exchange",
+                "id": "a_admin_momoqr_recent"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
