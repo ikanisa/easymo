@@ -160,8 +160,10 @@ function isTargetPhoneNumber(change: WhatsAppWebhookChange): boolean {
     : "";
   if (displayRaw) {
     const displayNormalized = normalizeDisplayNumber(displayRaw);
-    const configured = WA_BOT_NUMBER_E164
-      ? normalizeDisplayNumber(WA_BOT_NUMBER_E164)
+    // Allow runtime override for testing
+    const configuredNumber = Deno.env.get("WA_BOT_NUMBER_E164") ?? WA_BOT_NUMBER_E164;
+    const configured = configuredNumber
+      ? normalizeDisplayNumber(configuredNumber)
       : "";
     if (configured && displayNormalized !== configured) {
       return false;

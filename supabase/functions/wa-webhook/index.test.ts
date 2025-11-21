@@ -52,12 +52,36 @@ const mockSupabase = {
         return createWebhookLogsQuery();
       case "whatsapp_home_menu_items":
         return createHomeMenuQuery();
+      case "processed_webhook_messages":
+        return createIdempotencyMockQuery();
+      case "webhook_conversations":
+        return createConversationMockQuery();
+      case "conversation_state_transitions":
+      case "webhook_dlq":
+        return createGenericMockQuery();
       default:
         throw new Error(`Unexpected table ${table}`);
     }
   },
-  rpc(_fn: string) {
+  rpc(fn: string) {
+    if (fn === "acquire_conversation_lock" || fn === "release_conversation_lock") {
+      return Promise.resolve({ data: true, error: null });
+    }
     return Promise.resolve({ data: [], error: { code: "42883" } });
+  },
+  auth: {
+    admin: {
+      createUser: (params: { phone: string }) => {
+        return Promise.resolve({
+          data: {
+            user: {
+              id: `user-${params.phone.replace(/\D/g, "")}`,
+            },
+          },
+          error: null,
+        });
+      },
+    },
   },
 };
 
@@ -102,7 +126,20 @@ if (!handlerRef.current) {
   throw new Error("Webhook handler was not registered");
 }
 
+  // Override processor hooks
+  const { __setProcessorTestOverrides: setProcessorOverrides } = await import("./router/processor.ts");
+  setProcessorOverrides({
+    claimEvent: async (id: string) => {
+      waEvents.set(id, { wa_message_id: id });
+      return true;
+    },
+    releaseEvent: async (id: string) => {
+      waEvents.delete(id);
+    },
+  });
+  
 function reset() {
+  // Reset state
   waEvents.clear();
   contacts.length = 0;
   logs.length = 0;
@@ -171,10 +208,17 @@ function createProfilesQuery() {
     select() {
       return this;
     },
+    eq(_column: string, _value: string) {
+      return this;
+    },
     async single() {
       if (!lastUpsert) throw new Error("profile upsert missing");
       const record = profiles.get(String(lastUpsert.whatsapp_e164));
       return { data: record!, error: null };
+    },
+    async maybeSingle() {
+      // For now, return null to simulate no profile found, triggering creation
+      return { data: null, error: null };
     },
   };
 }
@@ -262,6 +306,71 @@ function createHomeMenuQuery() {
   };
 }
 
+function createIdempotencyMockQuery() {
+  return {
+    select() { return this; },
+    eq() { return this; },
+    single() { return Promise.resolve({ data: null, error: null }); },
+    maybeSingle() { return Promise.resolve({ data: null, error: null }); },
+    insert() { return this; },
+  };
+}
+
+function createConversationMockQuery() {
+  return {
+    select() { return this; },
+    insert() { return this; },
+    update() { return this; },
+    eq() { return this; },
+    order() { return this; },
+    limit() { return this; },
+    single() {
+      // Return a mock conversation ID
+      return Promise.resolve({ data: { id: "conv-mock-123" }, error: null });
+    },
+    maybeSingle() {
+      // Simulate no existing active conversation so we create a new one
+      return Promise.resolve({ data: null, error: null });
+    },
+  };
+}
+
+function createGenericMockQuery() {
+  return {
+    select() { return this; },
+    insert() { return this; },
+    upsert() { return this; },
+    update() { return this; },
+    delete() { return this; },
+    eq() { return this; },
+    neq() { return this; },
+    gt() { return this; },
+    lt() { return this; },
+    gte() { return this; },
+    lte() { return this; },
+    in() { return this; },
+    is() { return this; },
+    like() { return this; },
+    ilike() { return this; },
+    contains() { return this; },
+    range() { return this; },
+    textSearch() { return this; },
+    match() { return this; },
+    not() { return this; },
+    or() { return this; },
+    filter() { return this; },
+    order() { return this; },
+    limit() { return this; },
+    offset() { return this; },
+    single() { return Promise.resolve({ data: {}, error: null }); },
+    maybeSingle() { return Promise.resolve({ data: {}, error: null }); },
+    then(resolve: (value: unknown) => void) {
+      resolve({ data: [], error: null });
+    },
+    rpc() { return Promise.resolve({ data: true, error: null }); },
+  };
+}
+
 async function signPayload(secret: string, body: string): Promise<string> {
   const key = await crypto.subtle.importKey(
     "raw",
@@ -324,6 +433,11 @@ test("processes STOP command and records contact opt-out", async () => {
         changes: [
           {
             value: {
+              messaging_product: "whatsapp",
+              metadata: {
+                display_phone_number: "250700000000",
+                phone_number_id: "12345",
+              },
               messages: [
                 {
                   id: "wamid.stop.1",
@@ -373,6 +487,11 @@ test("releases idempotency lock on handler error", async () => {
         changes: [
           {
             value: {
+              messaging_product: "whatsapp",
+              metadata: {
+                display_phone_number: "250700000000",
+                phone_number_id: "12345",
+              },
               messages: [
                 {
                   id: "wamid.fail.1",
@@ -427,7 +546,8 @@ test("releases idempotency lock on handler error", async () => {
     }),
   );
 
-  assertEquals(response.status, 500);
+  // With enhanced processing, we return 200 and DLQ the error
+  assertEquals(response.status, 200);
   assert(response.headers.get("X-Correlation-ID"));
   assertEquals(waEvents.has("wamid.fail.1"), false);
   // restore fetch
@@ -459,6 +579,11 @@ test("renders home menu list on free text and records state", async () => {
         changes: [
           {
             value: {
+              messaging_product: "whatsapp",
+              metadata: {
+                display_phone_number: "250700000000",
+                phone_number_id: "12345",
+              },
               messages: [
                 {
                   id: "wamid.menu.1",
@@ -509,6 +634,11 @@ test("BACK_HOME button returns the home menu list", async () => {
         changes: [
           {
             value: {
+              messaging_product: "whatsapp",
+              metadata: {
+                display_phone_number: "250700000000",
+                phone_number_id: "12345",
+              },
               messages: [
                 {
                   id: "wamid.back_home.1",

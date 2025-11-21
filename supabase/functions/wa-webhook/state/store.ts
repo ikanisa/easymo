@@ -66,6 +66,38 @@ export async function ensureProfile(
   }
   const payload: Record<string, unknown> = { whatsapp_e164: normalized };
   if (locale) payload.locale = locale;
+
+  // 1. Try to find existing profile first to avoid unnecessary auth calls
+  const { data: existing } = await client
+    .from("profiles")
+    .select("user_id, whatsapp_e164, locale")
+    .eq("whatsapp_e164", normalized)
+    .maybeSingle();
+
+  if (existing) return existing as ProfileRecord;
+
+  // 2. Create Auth User to get a valid user_id
+  // This requires the client to have service_role privileges (which it does in the webhook)
+  const { data: authUser, error: authError } = await client.auth.admin.createUser({
+    phone: normalized,
+    phone_confirm: true,
+    user_metadata: { role: "buyer" },
+  });
+
+  if (authError) {
+    // If user already exists in Auth but not in Profiles, we have a consistency issue.
+    // For now, we propagate the error as we can't easily retrieve the ID by phone without listing.
+    throw authError;
+  }
+
+  if (!authUser.user) {
+    throw new Error("Failed to create auth user");
+  }
+
+  // 3. Create Profile with the new user_id
+  payload.user_id = authUser.user.id;
+  payload.role = "buyer";
+
   const { data, error } = await client
     .from("profiles")
     .upsert(payload, { onConflict: "whatsapp_e164" })

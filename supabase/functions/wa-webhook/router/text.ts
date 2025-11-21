@@ -38,6 +38,7 @@ export async function handleText(
   state: { key: string; data?: Record<string, unknown> },
 ): Promise<boolean> {
   const body = getTextBody(msg);
+  console.log(`DEBUG: handleText body="${body}" state.key="${state.key}"`);
   if (!body) return false;
   // Record inbound for correlation (best-effort)
   try {
