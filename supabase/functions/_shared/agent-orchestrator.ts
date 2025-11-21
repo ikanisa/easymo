@@ -138,18 +138,41 @@ export class AgentOrchestrator {
     // Keyword-based routing
     const lowerBody = messageBody.toLowerCase();
     
+    // Rides keywords (highest priority - time-sensitive)
+    if (lowerBody.includes("ride") || lowerBody.includes("driver") || lowerBody.includes("passenger") || 
+        lowerBody.includes("pick") || lowerBody.includes("drop") || lowerBody.includes("take me") ||
+        lowerBody.includes("need transport") || lowerBody.includes("going to")) {
+      return "rides";
+    }
+    
+    // Insurance keywords
+    if (lowerBody.includes("insurance") || lowerBody.includes("certificate") || 
+        lowerBody.includes("carte jaune") || lowerBody.includes("policy") || 
+        lowerBody.includes("cover") || lowerBody.includes("insure")) {
+      return "insurance";
+    }
+    
+    // Waiter keywords
     if (lowerBody.includes("menu") || lowerBody.includes("food") || lowerBody.includes("order")) {
       return "waiter";
     }
+    
+    // Jobs keywords
     if (lowerBody.includes("job") || lowerBody.includes("work") || lowerBody.includes("employ")) {
       return "jobs";
     }
+    
+    // Real Estate keywords
     if (lowerBody.includes("property") || lowerBody.includes("house") || lowerBody.includes("apartment") || lowerBody.includes("rent")) {
       return "real_estate";
     }
+    
+    // Farmer keywords
     if (lowerBody.includes("farm") || lowerBody.includes("produce") || lowerBody.includes("crop")) {
       return "farmer";
     }
+    
+    // Business Broker keywords
     if (lowerBody.includes("business") || lowerBody.includes("shop") || lowerBody.includes("service")) {
       return "business_broker";
     }
@@ -360,6 +383,76 @@ export class AgentOrchestrator {
           structuredPayload: { query: messageBody },
           confidence: 0.85,
         };
+      
+      case "rides":
+        if (lowerBody.includes("need") && (lowerBody.includes("ride") || lowerBody.includes("driver"))) {
+          return {
+            type: "find_driver",
+            summary: `User needs a ride: ${messageBody}`,
+            structuredPayload: this.extractRideParams(messageBody),
+            confidence: 0.90,
+          };
+        }
+        if (lowerBody.includes("passenger") || lowerBody.includes("looking for") || lowerBody.includes("empty seats")) {
+          return {
+            type: "find_passenger",
+            summary: `Driver looking for passengers: ${messageBody}`,
+            structuredPayload: this.extractRideParams(messageBody),
+            confidence: 0.85,
+          };
+        }
+        if (lowerBody.includes("schedule") || lowerBody.includes("book") || lowerBody.includes("tomorrow")) {
+          return {
+            type: "schedule_trip",
+            summary: `User wants to schedule a trip: ${messageBody}`,
+            structuredPayload: this.extractRideParams(messageBody),
+            confidence: 0.85,
+          };
+        }
+        if (lowerBody.includes("cancel") || lowerBody.includes("change")) {
+          return {
+            type: "cancel_trip",
+            summary: `User wants to cancel/modify trip`,
+            structuredPayload: {},
+            confidence: 0.90,
+          };
+        }
+        break;
+      
+      case "insurance":
+        if (lowerBody.includes("upload") || lowerBody.includes("send") || lowerBody.includes("certificate") || lowerBody.includes("carte jaune")) {
+          return {
+            type: "submit_documents",
+            summary: `User wants to submit insurance documents`,
+            structuredPayload: {},
+            confidence: 0.90,
+          };
+        }
+        if (lowerBody.includes("quote") || lowerBody.includes("new") || lowerBody.includes("how much") || lowerBody.includes("cost")) {
+          return {
+            type: "get_quote",
+            summary: `User wants insurance quote: ${messageBody}`,
+            structuredPayload: this.extractInsuranceParams(messageBody),
+            confidence: 0.85,
+          };
+        }
+        if (lowerBody.includes("renew") || lowerBody.includes("extend") || lowerBody.includes("expir")) {
+          return {
+            type: "renew_policy",
+            summary: `User wants to renew insurance policy`,
+            structuredPayload: {},
+            confidence: 0.90,
+          };
+        }
+        if (lowerBody.includes("status") || lowerBody.includes("check") || lowerBody.includes("progress")) {
+          return {
+            type: "track_status",
+            summary: `User checking insurance status`,
+            structuredPayload: {},
+            confidence: 0.85,
+          };
+        }
+        break;
     }
 
     return {
@@ -427,6 +520,76 @@ export class AgentOrchestrator {
   }
 
   /**
+   * Extract ride parameters from message
+   */
+  private extractRideParams(message: string): Record<string, unknown> {
+    const params: Record<string, unknown> = {};
+    
+    // Extract locations (from X to Y)
+    const fromToMatch = message.match(/from\s+([^to]+?)\s+to\s+(.+?)(?:\s|$|,|\.)/i);
+    if (fromToMatch) {
+      params.pickup_address = fromToMatch[1].trim();
+      params.dropoff_address = fromToMatch[2].trim();
+    }
+    
+    // Extract "take me to X" pattern
+    const takeMeMatch = message.match(/take\s+me\s+to\s+(.+?)(?:\s|$|,|\.)/i);
+    if (takeMeMatch) {
+      params.dropoff_address = takeMeMatch[1].trim();
+    }
+    
+    // Extract time indicators
+    if (message.toLowerCase().includes("now") || message.toLowerCase().includes("immediately")) {
+      params.scheduled_at = null;
+      params.urgent = true;
+    }
+    
+    if (message.toLowerCase().includes("tomorrow")) {
+      params.scheduled_at = "tomorrow";
+    }
+    
+    // Extract time (e.g., "at 3pm", "3:00")
+    const timeMatch = message.match(/(?:at\s+)?(\d{1,2})(?::(\d{2}))?\s*(am|pm)?/i);
+    if (timeMatch) {
+      params.scheduled_time = timeMatch[0].trim();
+    }
+    
+    return params;
+  }
+
+  /**
+   * Extract insurance parameters from message
+   */
+  private extractInsuranceParams(message: string): Record<string, unknown> {
+    const params: Record<string, unknown> = {};
+    
+    // Extract vehicle info
+    const plateMatch = message.match(/(?:plate|number|registration)\s*:?\s*([A-Z0-9]+)/i);
+    if (plateMatch) {
+      params.vehicle_identifier = plateMatch[1];
+    }
+    
+    // Extract vehicle type
+    const lowerMsg = message.toLowerCase();
+    if (lowerMsg.includes("car") || lowerMsg.includes("vehicle")) {
+      params.vehicle_type = "car";
+    } else if (lowerMsg.includes("moto") || lowerMsg.includes("bike")) {
+      params.vehicle_type = "motorcycle";
+    } else if (lowerMsg.includes("truck")) {
+      params.vehicle_type = "truck";
+    }
+    
+    // Extract insurance type
+    if (lowerMsg.includes("third party") || lowerMsg.includes("tiers")) {
+      params.insurance_type = "third_party";
+    } else if (lowerMsg.includes("comprehensive") || lowerMsg.includes("tous risques")) {
+      params.insurance_type = "comprehensive";
+    }
+    
+    return params;
+  }
+
+  /**
    * Store parsed intent in database
    */
   private async storeIntent(
@@ -485,6 +648,12 @@ export class AgentOrchestrator {
         break;
       case "business_broker":
         await this.executeBusinessBrokerAgentAction(context, intentId, intent);
+        break;
+      case "rides":
+        await this.executeRidesAgentAction(context, intentId, intent);
+        break;
+      case "insurance":
+        await this.executeInsuranceAgentAction(context, intentId, intent);
         break;
       default:
         console.warn(`No action handler for agent: ${context.agentSlug}`);
@@ -587,6 +756,66 @@ export class AgentOrchestrator {
   }
 
   /**
+   * Rides agent actions
+   */
+  private async executeRidesAgentAction(
+    context: AgentContext,
+    intentId: string,
+    intent: ParsedIntent
+  ): Promise<void> {
+    console.log(JSON.stringify({
+      event: "RIDES_ACTION_REQUESTED",
+      intentType: intent.type,
+      params: intent.structuredPayload,
+    }));
+
+    if (intent.type === "find_driver") {
+      // Create ride request
+      // TODO: Query rides_driver_status for online drivers nearby
+      // TODO: Create ai_agent_match_events with compatible drivers
+    } else if (intent.type === "find_passenger") {
+      // Find passengers along route
+      // TODO: Query rides_trips for pending requests
+      // TODO: Create matches
+    } else if (intent.type === "schedule_trip") {
+      // Create scheduled trip
+      // TODO: Insert into rides_trips with scheduled_at
+    } else if (intent.type === "cancel_trip") {
+      // Cancel existing trip
+      // TODO: Update rides_trips status to 'cancelled'
+    }
+  }
+
+  /**
+   * Insurance agent actions
+   */
+  private async executeInsuranceAgentAction(
+    context: AgentContext,
+    intentId: string,
+    intent: ParsedIntent
+  ): Promise<void> {
+    console.log(JSON.stringify({
+      event: "INSURANCE_ACTION_REQUESTED",
+      intentType: intent.type,
+      params: intent.structuredPayload,
+    }));
+
+    if (intent.type === "submit_documents") {
+      // Guide user through document upload
+      // TODO: Store in insurance_documents
+    } else if (intent.type === "get_quote") {
+      // Create quote request
+      // TODO: Insert into insurance_quote_requests
+    } else if (intent.type === "renew_policy") {
+      // Initiate renewal
+      // TODO: Query existing policies, create renewal request
+    } else if (intent.type === "track_status") {
+      // Check status
+      // TODO: Query insurance_quote_requests for user
+    }
+  }
+
+  /**
    * Send response back to user via WhatsApp
    */
   private async sendResponse(
@@ -658,6 +887,50 @@ export class AgentOrchestrator {
         return `🏢 Searching local businesses...\n\n` +
                `Finding matches for: ${intent.structuredPayload.query}\n\n` +
                `Stand by for results! 📍`;
+      
+      // Rides agent responses
+      case "find_driver":
+        return `🚗 Finding a driver for you...\n\n` +
+               `Pickup: ${intent.structuredPayload.pickup_address || "Your location"}\n` +
+               `Drop-off: ${intent.structuredPayload.dropoff_address || "Not specified"}\n\n` +
+               `Searching nearby drivers... ⏱️`;
+      
+      case "find_passenger":
+        return `👥 Looking for passengers along your route...\n\n` +
+               `I'll find people going the same way! 🚙`;
+      
+      case "schedule_trip":
+        return `📅 Scheduling your trip...\n\n` +
+               `Time: ${intent.structuredPayload.scheduled_time || intent.structuredPayload.scheduled_at}\n` +
+               `I'll confirm the details soon! ⏰`;
+      
+      case "cancel_trip":
+        return `❌ Canceling your trip...\n\n` +
+               `I'll update the status and notify the other party. 📱`;
+      
+      // Insurance agent responses
+      case "submit_documents":
+        return `📄 Ready to receive your documents!\n\n` +
+               `Please send:\n` +
+               `1️⃣ Insurance certificate\n` +
+               `2️⃣ Carte jaune\n` +
+               `3️⃣ Vehicle photos (optional)\n\n` +
+               `Send them one by one, I'll confirm each! ✅`;
+      
+      case "get_quote":
+        return `💰 Creating your insurance quote request...\n\n` +
+               `Vehicle: ${intent.structuredPayload.vehicle_type || "Not specified"}\n` +
+               `Type: ${intent.structuredPayload.insurance_type || "Standard"}\n\n` +
+               `A partner will contact you within 24 hours! 📞`;
+      
+      case "renew_policy":
+        return `🔄 Initiating policy renewal...\n\n` +
+               `I'll check your existing policy and prepare the renewal.\n` +
+               `You'll hear from us soon! 📋`;
+      
+      case "track_status":
+        return `📊 Checking your insurance status...\n\n` +
+               `Let me pull up your requests... 🔍`;
       
       default:
         return `I understand you said: "${intent.summary}"\n\n` +

@@ -76,7 +76,7 @@ export async function ensureProfile(
 
   if (existing) return existing as ProfileRecord;
 
-  // 2. Create Auth User to get a valid user_id
+  // 2. Try to create Auth User to get a valid user_id
   // This requires the client to have service_role privileges (which it does in the webhook)
   const { data: authUser, error: authError } = await client.auth.admin.createUser({
     phone: normalized,
@@ -84,18 +84,51 @@ export async function ensureProfile(
     user_metadata: { role: "buyer" },
   });
 
+  let userId: string;
+
   if (authError) {
-    // If user already exists in Auth but not in Profiles, we have a consistency issue.
-    // For now, we propagate the error as we can't easily retrieve the ID by phone without listing.
-    throw authError;
+    // If the error is "phone_exists", the user already exists in auth.
+    // We need to look them up by phone number to get their user_id
+    if (authError.message?.includes("already registered") || authError.message?.includes("phone_exists")) {
+      // List users and find by phone number
+      const { data: users, error: listError } = await client.auth.admin.listUsers();
+      
+      if (listError) {
+        await logStructuredEvent("AUTH_USER_LOOKUP_FAILED", {
+          masked_phone: maskMsisdn(normalized),
+          error: listError.message,
+        });
+        throw listError;
+      }
+
+      const existingUser = users.users.find(u => u.phone === normalized);
+      
+      if (!existingUser) {
+        await logStructuredEvent("AUTH_USER_NOT_FOUND_AFTER_EXISTS_ERROR", {
+          masked_phone: maskMsisdn(normalized),
+        });
+        throw new Error(`Phone exists in auth but user not found: ${maskMsisdn(normalized)}`);
+      }
+
+      userId = existingUser.id;
+      
+      await logStructuredEvent("AUTH_USER_FOUND_EXISTING", {
+        masked_phone: maskMsisdn(normalized),
+        user_id: userId,
+      });
+    } else {
+      // Some other auth error - propagate it
+      throw authError;
+    }
+  } else {
+    if (!authUser.user) {
+      throw new Error("Failed to create auth user");
+    }
+    userId = authUser.user.id;
   }
 
-  if (!authUser.user) {
-    throw new Error("Failed to create auth user");
-  }
-
-  // 3. Create Profile with the new user_id
-  payload.user_id = authUser.user.id;
+  // 3. Create Profile with the user_id
+  payload.user_id = userId;
   payload.role = "buyer";
 
   const { data, error } = await client
