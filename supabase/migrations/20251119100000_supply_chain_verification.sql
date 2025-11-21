@@ -232,7 +232,7 @@ CREATE TABLE IF NOT EXISTS public.shipments (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   farm_id uuid NOT NULL REFERENCES public.farms(id) ON DELETE CASCADE,
   listing_id uuid,
-  order_id uuid REFERENCES public.orders(id) ON DELETE SET NULL,
+  order_id uuid, -- Remove FK constraint for now (orders table doesn't exist yet)
   status text NOT NULL DEFAULT 'scheduled' CHECK (status IN ('scheduled','in_transit','delivered','cancelled','failed')),
   pickup_window_start timestamptz,
   pickup_window_end timestamptz,
