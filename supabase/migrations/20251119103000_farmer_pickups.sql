@@ -117,35 +117,55 @@ ALTER TABLE public.farm_pickup_windows ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.farm_pickup_registrations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.farm_pickup_deposits ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY IF NOT EXISTS farms_service_role_full_access
-  ON public.farms
-  FOR ALL
-  USING (auth.role() = 'service_role')
-  WITH CHECK (auth.role() = 'service_role');
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'farms' AND policyname = 'farms_service_role_full_access') THEN
+    CREATE POLICY farms_service_role_full_access
+      ON public.farms
+      FOR ALL
+      USING (auth.role() = 'service_role')
+      WITH CHECK (auth.role() = 'service_role');
+  END IF;
+END $$;
 
-CREATE POLICY IF NOT EXISTS farm_synonyms_service_role_full_access
-  ON public.farm_synonyms
-  FOR ALL
-  USING (auth.role() = 'service_role')
-  WITH CHECK (auth.role() = 'service_role');
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'farm_synonyms' AND policyname = 'farm_synonyms_service_role_full_access') THEN
+    CREATE POLICY farm_synonyms_service_role_full_access
+      ON public.farm_synonyms
+      FOR ALL
+      USING (auth.role() = 'service_role')
+      WITH CHECK (auth.role() = 'service_role');
+  END IF;
+END $$;
 
-CREATE POLICY IF NOT EXISTS farm_pickup_windows_service_role_full_access
-  ON public.farm_pickup_windows
-  FOR ALL
-  USING (auth.role() = 'service_role')
-  WITH CHECK (auth.role() = 'service_role');
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'farm_pickup_windows' AND policyname = 'farm_pickup_windows_service_role_full_access') THEN
+    CREATE POLICY farm_pickup_windows_service_role_full_access
+      ON public.farm_pickup_windows
+      FOR ALL
+      USING (auth.role() = 'service_role')
+      WITH CHECK (auth.role() = 'service_role');
+  END IF;
+END $$;
 
-CREATE POLICY IF NOT EXISTS farm_pickup_registrations_service_role_full_access
-  ON public.farm_pickup_registrations
-  FOR ALL
-  USING (auth.role() = 'service_role')
-  WITH CHECK (auth.role() = 'service_role');
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'farm_pickup_registrations' AND policyname = 'farm_pickup_registrations_service_role_full_access') THEN
+    CREATE POLICY farm_pickup_registrations_service_role_full_access
+      ON public.farm_pickup_registrations
+      FOR ALL
+      USING (auth.role() = 'service_role')
+      WITH CHECK (auth.role() = 'service_role');
+  END IF;
+END $$;
 
-CREATE POLICY IF NOT EXISTS farm_pickup_deposits_service_role_full_access
-  ON public.farm_pickup_deposits
-  FOR ALL
-  USING (auth.role() = 'service_role')
-  WITH CHECK (auth.role() = 'service_role');
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'farm_pickup_deposits' AND policyname = 'farm_pickup_deposits_service_role_full_access') THEN
+    CREATE POLICY farm_pickup_deposits_service_role_full_access
+      ON public.farm_pickup_deposits
+      FOR ALL
+      USING (auth.role() = 'service_role')
+      WITH CHECK (auth.role() = 'service_role');
+  END IF;
+END $$;
 
 CREATE OR REPLACE TRIGGER trg_farms_updated
   BEFORE UPDATE ON public.farms

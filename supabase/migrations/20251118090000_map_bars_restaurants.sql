@@ -16,7 +16,7 @@ CREATE INDEX IF NOT EXISTS idx_bar_restaurant_map_restaurant ON public.bar_resta
 ALTER TABLE public.bar_restaurant_map ENABLE ROW LEVEL SECURITY;
 
 -- Managers can read the mapping for their bars
-CREATE POLICY IF NOT EXISTS "Managers can read their mappings"
+DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'POLICY_NAME_HERE') THEN CREATE POLICY "Managers can read their mappings"
   ON public.bar_restaurant_map
   FOR SELECT
   TO authenticated
@@ -30,7 +30,7 @@ CREATE POLICY IF NOT EXISTS "Managers can read their mappings"
   );
 
 -- Service role manages mappings
-CREATE POLICY IF NOT EXISTS "Service role manage mappings"
+DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'POLICY_NAME_HERE') THEN CREATE POLICY "Service role manage mappings"
   ON public.bar_restaurant_map
   FOR ALL
   TO service_role
