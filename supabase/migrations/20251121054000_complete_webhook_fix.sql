@@ -31,12 +31,12 @@ ALTER TABLE IF EXISTS public.profiles DROP CONSTRAINT IF EXISTS profiles_user_id
 -- 5. CREATE chat_state TABLE
 CREATE TABLE IF NOT EXISTS public.chat_state (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id uuid NOT NULL,
-  phone_number text,
+  phone_number text,  -- Made nullable (fixes error #7)
   state jsonb DEFAULT '{}'::jsonb,
   last_updated timestamptz DEFAULT NOW(),
   created_at timestamptz DEFAULT NOW(),
-  UNIQUE(user_id)
+  user_id uuid,  -- Added (fixes error #6)
+  UNIQUE(phone_number)
 );
 
 -- Disable RLS on chat_state
@@ -46,9 +46,9 @@ ALTER TABLE IF EXISTS public.chat_state DISABLE ROW LEVEL SECURITY;
 GRANT ALL ON public.chat_state TO anon, authenticated, service_role, postgres;
 
 -- Create indexes on chat_state
-CREATE INDEX IF NOT EXISTS idx_chat_state_user ON public.chat_state(user_id);
 CREATE INDEX IF NOT EXISTS idx_chat_state_phone ON public.chat_state(phone_number);
 CREATE INDEX IF NOT EXISTS idx_chat_state_updated ON public.chat_state(last_updated DESC);
+CREATE INDEX IF NOT EXISTS idx_chat_state_user_id ON public.chat_state(user_id);
 
 -- 6. ENSURE webhook tables have no RLS
 ALTER TABLE IF EXISTS public.webhook_logs DISABLE ROW LEVEL SECURITY;
