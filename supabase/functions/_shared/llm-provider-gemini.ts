@@ -15,7 +15,17 @@ import type {
 } from "./llm-provider-interface.ts";
 
 // Using Google's Generative AI SDK for Deno
-import { GoogleGenerativeAI, FunctionDeclarationSchemaType } from "npm:@google/generative-ai@^0.21.0";
+import { GoogleGenerativeAI } from "npm:@google/generative-ai@^0.21.0";
+
+// Schema type enum (compatible with Gemini API)
+enum FunctionDeclarationSchemaType {
+  STRING = "string",
+  NUMBER = "number",
+  INTEGER = "integer",
+  BOOLEAN = "boolean",
+  ARRAY = "array",
+  OBJECT = "object",
+}
 
 export class GeminiProvider implements LLMProvider {
   readonly name = 'gemini';

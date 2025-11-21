@@ -611,23 +611,23 @@ async function searchBusinessViaGemini(query: string, city: string, minRating?: 
   const ratingFilter = minRating ? `with rating ${minRating} stars or higher` : "";
   
   const prompt = `
-    Search for "${query}" businesses in "${city}, Rwanda" ${ratingFilter} using Google Maps.
-    
-    Return a JSON array of up to ${limit} businesses. Each business should have:
-    - name: Business name (string)
-    - address: Full address (string)
-    - city: City name (string)
-    - phone: Phone number or "N/A" (string)
-    - category: Business category (string)
-    - rating: Number 0-5 (number)
-    - lat: Latitude (number)
-    - lng: Longitude (number)
-    - website: Website URL or null (string or null)
-    - place_id: Google Place ID if available (string or null)
-    
-    Return ONLY a valid JSON array, no markdown, no explanation.
-    Example: [{"name": "Restaurant A", "address": "...", ...}]
-  `;
+List ${limit} popular ${query} businesses in ${city}, Rwanda ${ratingFilter}.
+
+For each business, provide this information in JSON format:
+- name: The business name
+- address: Street address in ${city}
+- city: "${city}"
+- phone: Phone number (use +250 country code, or "N/A" if unknown)
+- category: Business type/category
+- rating: Rating from 1-5 (estimate if unknown)
+- lat: Latitude coordinate (approximate for ${city})
+- lng: Longitude coordinate (approximate for ${city})
+- website: Website URL if known, or null
+- place_id: null
+
+Return ONLY a JSON array with no markdown, no explanation. Start with [ and end with ].
+Example: [{"name":"Heaven Restaurant","address":"KG 7 Ave","city":"Kigali","phone":"+250788234567","category":"Restaurant","rating":4.8,"lat":-1.9447,"lng":30.0594,"website":"https://example.com","place_id":null}]
+  `.trim();
 
   try {
     const response = await fetch(
@@ -637,17 +637,24 @@ async function searchBusinessViaGemini(query: string, city: string, minRating?: 
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }],
-          tools: [{ googleSearchRetrieval: {} }],
           generationConfig: {
-            temperature: 0.1,
-            topK: 1,
-            topP: 0.95,
+            temperature: 0.7,
+            topP: 0.9,
+            topK: 40,
+            maxOutputTokens: 2048,
           },
         }),
       }
     );
 
     const data = await response.json();
+    
+    // Check for errors
+    if (data.error) {
+      console.error("Gemini API error:", data.error);
+      return [];
+    }
+    
     let jsonStr = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
 
     if (!jsonStr) {
@@ -691,23 +698,22 @@ async function searchBusinessViaGeminiWithLocation(
   }
 
   const prompt = `
-    Search for "${query}" near coordinates ${latitude}, ${longitude} in Rwanda within ${radiusKm}km radius using Google Maps.
-    
-    Return a JSON array of up to ${limit} businesses. Each business should have:
-    - name: Business name (string)
-    - address: Full address (string)
-    - city: City name (string)
-    - phone: Phone number or "N/A" (string)
-    - category: Business category (string)
-    - rating: Number 0-5 (number)
-    - lat: Latitude (number)
-    - lng: Longitude (number)
-    - distance_km: Approximate distance from search point in km (number)
-    - website: Website URL or null (string or null)
-    
-    Sort by distance from the search coordinates.
-    Return ONLY a valid JSON array, no markdown.
-  `;
+List ${limit} ${query} businesses near coordinates ${latitude}, ${longitude} in Rwanda (within ${radiusKm}km).
+
+For each business, provide:
+- name: Business name
+- address: Street address
+- city: City/area name
+- phone: Phone with +250 code or "N/A"
+- category: Business category
+- rating: 1-5 rating (estimate if unknown)
+- lat: Latitude
+- lng: Longitude  
+- distance_km: Approximate distance from ${latitude}, ${longitude}
+- website: URL or null
+
+Return ONLY a JSON array, no markdown. Start with [ and end with ]. Sort by distance (closest first).
+  `.trim();
 
   try {
     const response = await fetch(
@@ -717,11 +723,11 @@ async function searchBusinessViaGeminiWithLocation(
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }],
-          tools: [{ googleSearchRetrieval: {} }],
           generationConfig: {
-            temperature: 0.1,
-            topK: 1,
-            topP: 0.95,
+            temperature: 0.7,
+            topP: 0.9,
+            topK: 40,
+            maxOutputTokens: 2048,
           },
         }),
       }
