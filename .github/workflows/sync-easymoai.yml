@@ -1,0 +1,172 @@
+name: Sync EasyMOAI Repository
+
+on:
+  schedule:
+    # Run every 6 hours
+    - cron: '0 */6 * * *'
+  workflow_dispatch: # Allow manual trigger
+  repository_dispatch:
+    types: [easymoai-updated]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    
+    steps:
+      - name: Checkout easymo- repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+      
+      - name: Add easyMOAI remote
+        run: |
+          git remote add easymoai https://github.com/ikanisa/easyMOAI.git || true
+          git remote set-url easymoai https://github.com/ikanisa/easyMOAI.git
+      
+      - name: Fetch easyMOAI updates
+        id: fetch
+        run: |
+          git fetch easymoai main
+          
+          # Check if there are new commits
+          LOCAL=$(git rev-parse main)
+          REMOTE=$(git rev-parse easymoai/main)
+          
+          echo "local=$LOCAL" >> $GITHUB_OUTPUT
+          echo "remote=$REMOTE" >> $GITHUB_OUTPUT
+          
+          # Get the merge base
+          MERGE_BASE=$(git merge-base main easymoai/main 2>/dev/null || echo "none")
+          echo "merge_base=$MERGE_BASE" >> $GITHUB_OUTPUT
+          
+          if [ "$MERGE_BASE" = "none" ]; then
+            echo "has_updates=true" >> $GITHUB_OUTPUT
+            echo "First time sync - no merge base"
+          elif [ "$MERGE_BASE" = "$REMOTE" ]; then
+            echo "has_updates=false" >> $GITHUB_OUTPUT
+            echo "No new updates in easyMOAI"
+          else
+            echo "has_updates=true" >> $GITHUB_OUTPUT
+            echo "New updates available in easyMOAI"
+          fi
+      
+      - name: Create sync branch
+        if: steps.fetch.outputs.has_updates == 'true'
+        run: |
+          TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+          BRANCH_NAME="sync/easymoai-$TIMESTAMP"
+          git checkout -b $BRANCH_NAME
+          echo "branch_name=$BRANCH_NAME" >> $GITHUB_ENV
+      
+      - name: Merge easyMOAI changes
+        if: steps.fetch.outputs.has_updates == 'true'
+        id: merge
+        run: |
+          # Attempt merge with strategy to keep our config files
+          if git merge easymoai/main \
+            --allow-unrelated-histories \
+            --strategy-option=ours \
+            -m "chore: sync updates from easyMOAI repository" \
+            -m "Auto-synced from https://github.com/ikanisa/easyMOAI" \
+            -m "easyMOAI commit: $(git rev-parse easymoai/main)"; then
+            echo "merge_status=success" >> $GITHUB_OUTPUT
+          else
+            # If there are conflicts, resolve them by keeping our versions
+            # of critical config files
+            if git status --short | grep -q '^UU\|^AA'; then
+              echo "Resolving conflicts..."
+              
+              # Keep our versions of config files
+              for file in .gitignore README.md package.json tsconfig.json; do
+                if git status --short | grep -q "$file"; then
+                  echo "Resolving conflict in $file (keeping ours)"
+                  git checkout --ours "$file"
+                  git add "$file"
+                fi
+              done
+              
+              # Add all other files
+              git add .
+              
+              # Complete the merge
+              git commit -m "chore: sync updates from easyMOAI repository" \
+                -m "Auto-synced from https://github.com/ikanisa/easyMOAI" \
+                -m "easyMOAI commit: $(git rev-parse easymoai/main)" \
+                -m "Conflicts resolved: kept easymo- config files"
+              
+              echo "merge_status=success_with_conflicts" >> $GITHUB_OUTPUT
+            else
+              echo "merge_status=failed" >> $GITHUB_OUTPUT
+              exit 1
+            fi
+          fi
+      
+      - name: Push sync branch
+        if: steps.fetch.outputs.has_updates == 'true' && steps.merge.outputs.merge_status != 'failed'
+        run: |
+          git push origin ${{ env.branch_name }}
+      
+      - name: Create Pull Request
+        if: steps.fetch.outputs.has_updates == 'true' && steps.merge.outputs.merge_status != 'failed'
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ env.branch_name }}
+          title: "🔄 Sync updates from easyMOAI"
+          body: |
+            ## Auto-sync from easyMOAI Repository
+            
+            This PR automatically syncs updates from [ikanisa/easyMOAI](https://github.com/ikanisa/easyMOAI).
+            
+            ### Details
+            - **Source commit**: `${{ steps.fetch.outputs.remote }}`
+            - **Merge status**: `${{ steps.merge.outputs.merge_status }}`
+            - **Sync timestamp**: `$(date -u +"%Y-%m-%d %H:%M:%S UTC")`
+            
+            ### Conflict Resolution
+            The following files were preserved from easymo- repository:
+            - `.gitignore` - easymo- ignore patterns
+            - `README.md` - easymo- documentation
+            - `package.json` - easymo- monorepo configuration
+            - `tsconfig.json` - easymo- TypeScript settings
+            
+            ### Review Checklist
+            - [ ] Review new/modified files for conflicts
+            - [ ] Check that build passes
+            - [ ] Verify no breaking changes
+            - [ ] Test integration with existing features
+            
+            ---
+            *Auto-generated by sync-easymoai workflow*
+          labels: |
+            sync
+            automated
+            easymoai
+          draft: false
+      
+      - name: Summary
+        if: always()
+        run: |
+          echo "## EasyMOAI Sync Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Has updates**: ${{ steps.fetch.outputs.has_updates }}" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ steps.fetch.outputs.has_updates }}" = "true" ]; then
+            echo "- **Merge status**: ${{ steps.merge.outputs.merge_status }}" >> $GITHUB_STEP_SUMMARY
+            echo "- **Branch created**: \`${{ env.branch_name }}\`" >> $GITHUB_STEP_SUMMARY
+            echo "- **easyMOAI commit**: \`${{ steps.fetch.outputs.remote }}\`" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- **Status**: No updates needed" >> $GITHUB_STEP_SUMMARY
+          fi
