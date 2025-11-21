@@ -7,8 +7,6 @@ import { t } from "../i18n/translator.ts";
 // AI Agents Integration
 import {
   handleAIAgentOptionSelection,
-  handleShopFallbackSelection,
-  type ShopResultsState,
 } from "../domains/ai-agents/index.ts";
 import {
   handleNearbyResultSelection,
@@ -292,13 +290,7 @@ export async function handleList(
     }
     return await handleBusinessClaim(ctx, (state.data ?? {}) as any, id);
   }
-  if (state.key === "shop_results") {
-    return await handleShopFallbackSelection(
-      ctx,
-      (state.data ?? {}) as ShopResultsState,
-      id,
-    );
-  }
+
   if (state.key === "schedule_time_picker") {
     return await handleScheduleTimeSelection(
       ctx,
