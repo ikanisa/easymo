@@ -30,6 +30,44 @@ CREATE TABLE IF NOT EXISTS public.bars (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc', now())
 );
 
+-- Ensure columns exist if table already existed
+DO $$ 
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'bars' AND column_name = 'slug') THEN
+    ALTER TABLE public.bars ADD COLUMN slug TEXT;
+    -- Add unique constraint if slug is added (might need to handle existing data first, but assuming empty or nullable for now)
+    -- If there is existing data, slug might need to be populated.
+  END IF;
+  
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'bars' AND column_name = 'name') THEN
+    ALTER TABLE public.bars ADD COLUMN name TEXT;
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'bars' AND column_name = 'location_text') THEN
+    ALTER TABLE public.bars ADD COLUMN location_text TEXT;
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'bars' AND column_name = 'country') THEN
+    ALTER TABLE public.bars ADD COLUMN country TEXT;
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'bars' AND column_name = 'city_area') THEN
+    ALTER TABLE public.bars ADD COLUMN city_area TEXT;
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'bars' AND column_name = 'currency') THEN
+    ALTER TABLE public.bars ADD COLUMN currency TEXT;
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'bars' AND column_name = 'momo_code') THEN
+    ALTER TABLE public.bars ADD COLUMN momo_code TEXT;
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'bars' AND column_name = 'is_active') THEN
+    ALTER TABLE public.bars ADD COLUMN is_active BOOLEAN NOT NULL DEFAULT false;
+  END IF;
+END $$;
+
 -- Create bar_numbers table if it doesn't exist
 CREATE TABLE IF NOT EXISTS public.bar_numbers (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

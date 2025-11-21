@@ -53,33 +53,56 @@ CREATE TABLE IF NOT EXISTS public.vendor_capabilities (
 );
 
 -- Indexes
-CREATE INDEX idx_vendors_location ON public.vendors USING GIST (
+CREATE INDEX IF NOT EXISTS idx_vendors_location ON public.vendors USING GIST (
   ll_to_earth(latitude, longitude)
 ) WHERE latitude IS NOT NULL AND longitude IS NOT NULL;
-CREATE INDEX idx_vendors_active ON public.vendors(is_active) WHERE is_active = TRUE;
-CREATE INDEX idx_vendors_country ON public.vendors(country);
-CREATE INDEX idx_vendor_capabilities_vertical ON public.vendor_capabilities(vertical);
-CREATE INDEX idx_vendor_capabilities_vendor_id ON public.vendor_capabilities(vendor_id);
-CREATE INDEX idx_vendor_capabilities_category ON public.vendor_capabilities(category);
+CREATE INDEX IF NOT EXISTS idx_vendors_active ON public.vendors(is_active) WHERE is_active = TRUE;
+CREATE INDEX IF NOT EXISTS idx_vendors_country ON public.vendors(country);
+CREATE INDEX IF NOT EXISTS idx_vendor_capabilities_vertical ON public.vendor_capabilities(vertical);
+CREATE INDEX IF NOT EXISTS idx_vendor_capabilities_vendor_id ON public.vendor_capabilities(vendor_id);
+CREATE INDEX IF NOT EXISTS idx_vendor_capabilities_category ON public.vendor_capabilities(category);
 
 -- RLS
 ALTER TABLE public.vendors ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.vendor_capabilities ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "vendors_select" ON public.vendors FOR SELECT USING (TRUE);
-CREATE POLICY "vendors_insert" ON public.vendors FOR INSERT WITH CHECK (
-  org_id IN (SELECT id FROM public.organizations WHERE owner_id = auth.uid())
-);
-CREATE POLICY "vendors_update" ON public.vendors FOR UPDATE USING (
-  org_id IN (SELECT id FROM public.organizations WHERE owner_id = auth.uid())
-);
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'vendors' AND policyname = 'vendors_select') THEN
+    CREATE POLICY "vendors_select" ON public.vendors FOR SELECT USING (TRUE);
+  END IF;
+END $$;
 
-CREATE POLICY "vendor_capabilities_select" ON public.vendor_capabilities FOR SELECT USING (TRUE);
-CREATE POLICY "vendor_capabilities_insert" ON public.vendor_capabilities FOR INSERT WITH CHECK (
-  vendor_id IN (SELECT id FROM public.vendors WHERE org_id IN (
-    SELECT id FROM public.organizations WHERE owner_id = auth.uid()
-  ))
-);
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'vendors' AND policyname = 'vendors_insert') THEN
+    CREATE POLICY "vendors_insert" ON public.vendors FOR INSERT WITH CHECK (
+      org_id IN (SELECT id FROM public.organizations WHERE owner_id = auth.uid())
+    );
+  END IF;
+END $$;
+
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'vendors' AND policyname = 'vendors_update') THEN
+    CREATE POLICY "vendors_update" ON public.vendors FOR UPDATE USING (
+      org_id IN (SELECT id FROM public.organizations WHERE owner_id = auth.uid())
+    );
+  END IF;
+END $$;
+
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'vendor_capabilities' AND policyname = 'vendor_capabilities_select') THEN
+    CREATE POLICY "vendor_capabilities_select" ON public.vendor_capabilities FOR SELECT USING (TRUE);
+  END IF;
+END $$;
+
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'vendor_capabilities' AND policyname = 'vendor_capabilities_insert') THEN
+    CREATE POLICY "vendor_capabilities_insert" ON public.vendor_capabilities FOR INSERT WITH CHECK (
+      vendor_id IN (SELECT id FROM public.vendors WHERE org_id IN (
+        SELECT id FROM public.organizations WHERE owner_id = auth.uid()
+      ))
+    );
+  END IF;
+END $$;
 
 -- PostGIS function for nearby vendor search
 CREATE OR REPLACE FUNCTION vendors_nearby(

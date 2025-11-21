@@ -32,27 +32,49 @@ CREATE TABLE IF NOT EXISTS public.faq_articles (
 );
 
 -- Indexes
-CREATE INDEX idx_service_catalog_vertical ON public.service_catalog(vertical);
-CREATE INDEX idx_service_catalog_enabled ON public.service_catalog(enabled) WHERE enabled = TRUE;
-CREATE INDEX idx_faq_locale ON public.faq_articles(locale);
-CREATE INDEX idx_faq_tags ON public.faq_articles USING GIN(tags);
-CREATE INDEX idx_faq_active ON public.faq_articles(is_active) WHERE is_active = TRUE;
-CREATE INDEX idx_faq_vertical ON public.faq_articles(vertical);
+CREATE INDEX IF NOT EXISTS idx_service_catalog_vertical ON public.service_catalog(vertical);
+CREATE INDEX IF NOT EXISTS idx_service_catalog_enabled ON public.service_catalog(enabled) WHERE enabled = TRUE;
+CREATE INDEX IF NOT EXISTS idx_faq_locale ON public.faq_articles(locale);
+CREATE INDEX IF NOT EXISTS idx_faq_tags ON public.faq_articles USING GIN(tags);
+CREATE INDEX IF NOT EXISTS idx_faq_active ON public.faq_articles(is_active) WHERE is_active = TRUE;
+CREATE INDEX IF NOT EXISTS idx_faq_vertical ON public.faq_articles(vertical);
+
+-- Add unique constraints for idempotency
+ALTER TABLE public.service_catalog ADD CONSTRAINT service_catalog_vertical_key UNIQUE (vertical);
+ALTER TABLE public.faq_articles ADD CONSTRAINT faq_articles_question_locale_key UNIQUE (question, locale);
 
 -- RLS
 ALTER TABLE public.service_catalog ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.faq_articles ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "service_catalog_select" ON public.service_catalog FOR SELECT USING (enabled = TRUE);
-CREATE POLICY "faq_articles_select" ON public.faq_articles FOR SELECT USING (is_active = TRUE);
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'service_catalog' AND policyname = 'service_catalog_select') THEN
+    CREATE POLICY "service_catalog_select" ON public.service_catalog FOR SELECT USING (enabled = TRUE);
+  END IF;
+END $$;
+
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'faq_articles' AND policyname = 'faq_articles_select') THEN
+    CREATE POLICY "faq_articles_select" ON public.faq_articles FOR SELECT USING (is_active = TRUE);
+  END IF;
+END $$;
 
 -- Admin policies (adjust based on your auth setup)
-CREATE POLICY "service_catalog_admin" ON public.service_catalog FOR ALL USING (
-  EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('admin', 'staff'))
-);
-CREATE POLICY "faq_articles_admin" ON public.faq_articles FOR ALL USING (
-  EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('admin', 'staff'))
-);
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'service_catalog' AND policyname = 'service_catalog_admin') THEN
+    CREATE POLICY "service_catalog_admin" ON public.service_catalog FOR ALL USING (
+      EXISTS (SELECT 1 FROM public.profiles WHERE user_id = auth.uid() AND role IN ('admin', 'staff'))
+    );
+  END IF;
+END $$;
+
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'faq_articles' AND policyname = 'faq_articles_admin') THEN
+    CREATE POLICY "faq_articles_admin" ON public.faq_articles FOR ALL USING (
+      EXISTS (SELECT 1 FROM public.profiles WHERE user_id = auth.uid() AND role IN ('admin', 'staff'))
+    );
+  END IF;
+END $$;
 
 -- Seed initial service catalog
 INSERT INTO public.service_catalog (vertical, name, description, keywords) VALUES
@@ -67,7 +89,7 @@ INSERT INTO public.service_catalog (vertical, name, description, keywords) VALUE
   ('marketing', 'Marketing & Sales', 'Campaign management, CRM, lead generation', ARRAY['marketing', 'campaign', 'ads', 'crm', 'sales', 'promotion']),
   ('sora_video', 'Sora Video Ads', 'AI-generated video advertisements using Sora-2', ARRAY['sora', 'video', 'ad', 'advertisement', 'ai video']),
   ('support', 'Customer Support', 'Help, troubleshooting, issue resolution', ARRAY['help', 'support', 'problem', 'issue', 'question', 'complaint'])
-ON CONFLICT DO NOTHING;
+ON CONFLICT (vertical) DO NOTHING;
 
 -- Seed initial FAQs
 INSERT INTO public.faq_articles (question, answer, locale, tags) VALUES
@@ -76,6 +98,6 @@ INSERT INTO public.faq_articles (question, answer, locale, tags) VALUES
   ('How do I get started?', 'Just send a message on WhatsApp describing what you need. Our AI assistant will guide you through the process.', 'en', ARRAY['onboarding', 'general']),
   ('Which countries does EasyMO support?', 'Currently available in Rwanda, with expansion to other East African countries coming soon.', 'en', ARRAY['coverage', 'general']),
   ('How do I register my business?', 'Send "I want to register my shop/business" and our assistant will guide you through the vendor onboarding process.', 'en', ARRAY['vendor', 'onboarding'])
-ON CONFLICT DO NOTHING;
+ON CONFLICT (question, locale) DO NOTHING;
 
 COMMIT;

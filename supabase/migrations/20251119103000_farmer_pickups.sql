@@ -16,6 +16,19 @@ CREATE TABLE IF NOT EXISTS public.farms (
   updated_at timestamptz NOT NULL DEFAULT timezone('utc', now())
 );
 
+-- Add missing columns if table already exists (from previous migration)
+ALTER TABLE public.farms ADD COLUMN IF NOT EXISTS farm_name text;
+ALTER TABLE public.farms ADD COLUMN IF NOT EXISTS district text;
+ALTER TABLE public.farms ADD COLUMN IF NOT EXISTS sector text;
+ALTER TABLE public.farms ADD COLUMN IF NOT EXISTS hectares numeric;
+ALTER TABLE public.farms ADD COLUMN IF NOT EXISTS commodities text[] DEFAULT ARRAY[]::text[];
+ALTER TABLE public.farms ADD COLUMN IF NOT EXISTS certifications text[] DEFAULT ARRAY[]::text[];
+ALTER TABLE public.farms ADD COLUMN IF NOT EXISTS irrigation boolean;
+
+-- Backfill farm_name from name if needed
+UPDATE public.farms SET farm_name = name WHERE farm_name IS NULL AND name IS NOT NULL;
+
+
 CREATE UNIQUE INDEX IF NOT EXISTS idx_farms_profile ON public.farms(owner_profile_id);
 CREATE INDEX IF NOT EXISTS idx_farms_district ON public.farms(district);
 

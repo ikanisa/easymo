@@ -80,26 +80,53 @@ ALTER TABLE public.business_directory ENABLE ROW LEVEL SECURITY;
 
 -- Create RLS policies
 -- Read access for authenticated users
-CREATE POLICY "business_directory_read_authenticated"
-  ON public.business_directory
-  FOR SELECT
-  TO authenticated
-  USING (true);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE tablename = 'business_directory' 
+    AND policyname = 'business_directory_read_authenticated'
+  ) THEN
+    CREATE POLICY "business_directory_read_authenticated"
+      ON public.business_directory
+      FOR SELECT
+      TO authenticated
+      USING (true);
+  END IF;
+END $$;
 
 -- Read access for anon users (public directory)
-CREATE POLICY "business_directory_read_public"
-  ON public.business_directory
-  FOR SELECT
-  TO anon
-  USING (true);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE tablename = 'business_directory' 
+    AND policyname = 'business_directory_read_public'
+  ) THEN
+    CREATE POLICY "business_directory_read_public"
+      ON public.business_directory
+      FOR SELECT
+      TO anon
+      USING (true);
+  END IF;
+END $$;
 
 -- Write access for authenticated users (service role for imports)
-CREATE POLICY "business_directory_write_service"
-  ON public.business_directory
-  FOR ALL
-  TO service_role
-  USING (true)
-  WITH CHECK (true);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE tablename = 'business_directory' 
+    AND policyname = 'business_directory_write_service'
+  ) THEN
+    CREATE POLICY "business_directory_write_service"
+      ON public.business_directory
+      FOR ALL
+      TO service_role
+      USING (true)
+      WITH CHECK (true);
+  END IF;
+END $$;
 
 -- Update trigger for updated_at
 CREATE OR REPLACE FUNCTION public.update_business_directory_updated_at()
@@ -110,6 +137,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS trigger_business_directory_updated_at ON public.business_directory;
 CREATE TRIGGER trigger_business_directory_updated_at
   BEFORE UPDATE ON public.business_directory
   FOR EACH ROW

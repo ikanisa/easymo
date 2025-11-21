@@ -361,26 +361,31 @@ CREATE POLICY "Users view own orders" ON public.farmer_orders
 -- 9. TRIGGERS
 -- ============================================================================
 
+DROP TRIGGER IF EXISTS set_updated_at_farms ON public.farms;
 CREATE TRIGGER set_updated_at_farms
   BEFORE UPDATE ON public.farms
   FOR EACH ROW
   EXECUTE FUNCTION public.set_updated_at();
 
+DROP TRIGGER IF EXISTS set_updated_at_agent_conversations ON public.agent_conversations;
 CREATE TRIGGER set_updated_at_agent_conversations
   BEFORE UPDATE ON public.agent_conversations
   FOR EACH ROW
   EXECUTE FUNCTION public.set_updated_at();
 
+DROP TRIGGER IF EXISTS set_updated_at_farmer_listings ON public.farmer_listings;
 CREATE TRIGGER set_updated_at_farmer_listings
   BEFORE UPDATE ON public.farmer_listings
   FOR EACH ROW
   EXECUTE FUNCTION public.set_updated_at();
 
+DROP TRIGGER IF EXISTS set_updated_at_farmer_orders ON public.farmer_orders;
 CREATE TRIGGER set_updated_at_farmer_orders
   BEFORE UPDATE ON public.farmer_orders
   FOR EACH ROW
   EXECUTE FUNCTION public.set_updated_at();
 
+DROP TRIGGER IF EXISTS set_updated_at_farmer_matches ON public.farmer_matches;
 CREATE TRIGGER set_updated_at_farmer_matches
   BEFORE UPDATE ON public.farmer_matches
   FOR EACH ROW

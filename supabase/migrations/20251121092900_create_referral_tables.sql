@@ -1,6 +1,7 @@
 BEGIN;
 
 -- Create referral_links table for tracking user referral codes
+-- Create referral_links table for tracking user referral codes
 CREATE TABLE IF NOT EXISTS public.referral_links (
   user_id uuid REFERENCES public.profiles(user_id) ON DELETE CASCADE,
   code text NOT NULL,
@@ -9,6 +10,15 @@ CREATE TABLE IF NOT EXISTS public.referral_links (
   created_at timestamptz NOT NULL DEFAULT timezone('utc', now()),
   PRIMARY KEY (user_id, code)
 );
+
+-- Evolve referral_links if it exists from previous migration
+DO $$ 
+BEGIN
+  -- Add short_url if missing
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'referral_links' AND column_name = 'short_url') THEN
+    ALTER TABLE public.referral_links ADD COLUMN short_url text;
+  END IF;
+END $$;
 
 CREATE UNIQUE INDEX IF NOT EXISTS referral_links_code_key ON public.referral_links(code);
 
@@ -33,6 +43,33 @@ CREATE TABLE IF NOT EXISTS public.referral_attributions (
   credited_tokens int NOT NULL DEFAULT 0,
   reason text
 );
+
+-- Evolve referral_attributions if it exists from previous migration
+DO $$ 
+BEGIN
+  -- Rename promoter_user_id to sharer_user_id if it exists and sharer_user_id does not
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'referral_attributions' AND column_name = 'promoter_user_id') 
+     AND NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'referral_attributions' AND column_name = 'sharer_user_id') THEN
+    ALTER TABLE public.referral_attributions RENAME COLUMN promoter_user_id TO sharer_user_id;
+  END IF;
+
+  -- Add missing columns
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'referral_attributions' AND column_name = 'code') THEN
+    ALTER TABLE public.referral_attributions ADD COLUMN code text;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'referral_attributions' AND column_name = 'first_message_at') THEN
+    ALTER TABLE public.referral_attributions ADD COLUMN first_message_at timestamptz;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'referral_attributions' AND column_name = 'credited') THEN
+    ALTER TABLE public.referral_attributions ADD COLUMN credited boolean NOT NULL DEFAULT false;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'referral_attributions' AND column_name = 'credited_tokens') THEN
+    ALTER TABLE public.referral_attributions ADD COLUMN credited_tokens int NOT NULL DEFAULT 0;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'referral_attributions' AND column_name = 'reason') THEN
+    ALTER TABLE public.referral_attributions ADD COLUMN reason text;
+  END IF;
+END $$;
 
 -- Enable RLS on referral tables
 ALTER TABLE public.referral_links ENABLE ROW LEVEL SECURITY;

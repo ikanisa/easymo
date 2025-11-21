@@ -58,7 +58,15 @@ ALTER TABLE IF EXISTS public.wa_interactions DISABLE ROW LEVEL SECURITY;
 -- 7. CREATE MISSING TABLES
 
 -- Drop existing views/tables if they exist (replace with proper tables)
-DROP VIEW IF EXISTS public.whatsapp_home_menu_items CASCADE;
+DO $$ 
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_views WHERE viewname = 'whatsapp_home_menu_items' AND schemaname = 'public') THEN
+    DROP VIEW public.whatsapp_home_menu_items CASCADE;
+  END IF;
+  IF EXISTS (SELECT 1 FROM pg_tables WHERE tablename = 'whatsapp_home_menu_items' AND schemaname = 'public') THEN
+    DROP TABLE public.whatsapp_home_menu_items CASCADE;
+  END IF;
+END $$;
 DROP TABLE IF EXISTS public.app_config CASCADE;
 
 -- Create whatsapp_home_menu_items table with proper schema
