@@ -124,6 +124,10 @@ export async function handleButton(
     return true;
   }
   switch (id) {
+    case IDS.RIDES_MENU: {
+      const { showRidesMenu } = await import("../domains/mobility/rides_menu.ts");
+      return await showRidesMenu(ctx);
+    }
     case IDS.SEE_DRIVERS:
       return await handleSeeDrivers(ctx);
     case IDS.SEE_PASSENGERS:
@@ -243,6 +247,15 @@ export async function handleButton(
     case IDS.FARMER_AGENT_DEMAND: {
       const { handleFarmerAgentDemand } = await import("../domains/ai-agents/farmer_home.ts");
       return await handleFarmerAgentDemand(ctx);
+    }
+    case "farmer_continue": {
+      // Continue farmer conversation - just acknowledge and wait for text
+      await sendButtonsMessage(
+        ctx,
+        t(ctx.locale, "farmer.supply.prompt"),
+        [{ id: IDS.BACK_HOME, title: t(ctx.locale, "common.back") }],
+      );
+      return true;
     }
     case IDS.GENERAL_BROKER: {
       const { handleGeneralBrokerStart } = await import("../domains/ai-agents/general_broker.ts");

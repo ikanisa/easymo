@@ -1,5 +1,6 @@
 export const IDS = {
   // Home menu
+  RIDES_MENU: "rides_menu",
   JOB_BOARD: "job_board",
   JOB_FIND: "job_find",
   JOB_POST: "job_post",

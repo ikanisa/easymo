@@ -641,6 +641,10 @@ async function handleHomeMenuSelection(
   state: { key: string; data?: Record<string, unknown> },
 ): Promise<boolean> {
   switch (id) {
+    case IDS.RIDES_MENU: {
+      const { showRidesMenu } = await import("../domains/mobility/rides_menu.ts");
+      return await showRidesMenu(ctx);
+    }
     case IDS.SEE_DRIVERS:
       return await handleSeeDrivers(ctx);
     case IDS.SEE_PASSENGERS:

@@ -138,3 +138,34 @@ SET
   localized_names = EXCLUDED.localized_names,
   metadata = public.produce_catalog.metadata || EXCLUDED.metadata,
   updated_at = now();
+
+-- WhatsApp Home Menu: Farmer Agent
+INSERT INTO public.whatsapp_home_menu_items (
+  key,
+  name,
+  is_active,
+  active_countries,
+  display_order,
+  icon,
+  country_specific_names
+) VALUES (
+  'farmer_agent',
+  'Farmers & Buyers',
+  true,
+  ARRAY['RW', 'CI', 'SN', 'GH', 'KE', 'TZ', 'UG'],
+  15,
+  '🌾',
+  jsonb_build_object(
+    'RW', jsonb_build_object('name', 'Abahinzi n''Abaguzi', 'description', 'Gura no kugurisha ibihingwa'),
+    'CI', jsonb_build_object('name', 'Agriculteurs et Acheteurs', 'description', 'Acheter et vendre des produits agricoles'),
+    'SN', jsonb_build_object('name', 'Fermiers et Acheteurs', 'description', 'Connecter fermiers et acheteurs'),
+    'GH', jsonb_build_object('name', 'Farmers & Buyers', 'description', 'Connect farmers with buyers'),
+    'KE', jsonb_build_object('name', 'Farmers & Buyers', 'description', 'Connect farmers with buyers'),
+    'TZ', jsonb_build_object('name', 'Wakulima na Wanunuzi', 'description', 'Unganisha wakulima na wanunuzi'),
+    'UG', jsonb_build_object('name', 'Farmers & Buyers', 'description', 'Connect farmers with buyers')
+  )
+) ON CONFLICT (key) DO UPDATE SET
+  is_active = EXCLUDED.is_active,
+  active_countries = EXCLUDED.active_countries,
+  display_order = EXCLUDED.display_order,
+  country_specific_names = EXCLUDED.country_specific_names;

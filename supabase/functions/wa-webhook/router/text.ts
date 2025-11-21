@@ -163,6 +163,23 @@ export async function handleText(
     return await handleAddNewBusinessText(ctx, body, (state.data ?? {}) as any);
   }
 
+  // Handle farmer agent menu number selection
+  if (state.key === "farmer_agent_menu") {
+    const num = body.trim();
+    if (num === "1" || num === "1️⃣") {
+      const { handleFarmerAgentSupply } = await import("../domains/ai-agents/farmer_home.ts");
+      return await handleFarmerAgentSupply(ctx);
+    }
+    if (num === "2" || num === "2️⃣") {
+      const { handleFarmerAgentDemand } = await import("../domains/ai-agents/farmer_home.ts");
+      return await handleFarmerAgentDemand(ctx);
+    }
+    if (num === "0" || num === "0️⃣") {
+      await sendHomeMenu(ctx);
+      return true;
+    }
+  }
+
   if (await maybeHandleFarmerBroker(ctx, body, state)) {
     return true;
   }

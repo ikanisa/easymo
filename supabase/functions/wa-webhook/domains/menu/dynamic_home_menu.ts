@@ -13,6 +13,7 @@ const MENU_CACHE_TTL_SECONDS = Math.max(
 export type MenuItemKey =
   | "jobs"
   | "jobs_gigs"
+  | "rides"
   | "nearby_drivers"
   | "nearby_passengers"
   | "schedule_trip"
@@ -104,6 +105,7 @@ export function getMenuItemId(key: MenuItemKey): string {
   const mapping: Record<MenuItemKey, string> = {
     jobs: "job_board",
     jobs_gigs: "job_board",
+    rides: "rides_menu",
     nearby_drivers: "see_drivers",
     nearby_passengers: "see_passengers",
     schedule_trip: "schedule_trip",
@@ -144,6 +146,10 @@ export function getMenuItemTranslationKeys(
     jobs_gigs: {
       titleKey: "home.rows.jobs.title",
       descriptionKey: "home.rows.jobs.description",
+    },
+    rides: {
+      titleKey: "home.rows.rides.title",
+      descriptionKey: "home.rows.rides.description",
     },
     nearby_drivers: {
       titleKey: "home.rows.seeDrivers.title",

@@ -10,6 +10,11 @@
   "home.menu.section": "Actions rapides",
   "home.menu.button": "Ouvrir",
   "home.menu.greeting": "Bonjour 👋 Faites plus avec easyMO, Trajets, Boutiques, QR codes MOMO ..et plus.\nPage {{current}}/{{total}}",
+  "home.rows.rides.title": "🚗 Trajets",
+  "home.rows.rides.description": "Trouvez chauffeurs, passagers, ou planifiez trajets.",
+  "rides.menu.title": "Trajets",
+  "rides.menu.body": "Choisissez votre option de trajet:",
+  "rides.menu.section": "Options de Mobilité",
   "home.rows.seeDrivers.title": "🚖 Chauffeurs à proximité",
   "home.rows.seeDrivers.description": "Trouvez des partenaires moto ou taxi proches de vous.",
   "home.rows.seePassengers.title": "🧍‍♀️ Passagers à proximité",
@@ -982,5 +987,13 @@
   "jobs.candidates.contact": "📱 Écrire sur WhatsApp : {{link}}",
   "jobs.candidates.buttons.backList": "⬅️ Retour aux candidats",
   "jobs.candidates.experience.unknown": "Inconnue",
-  "bars.menu.select_prompt": "Veuillez d'abord choisir un lieu dans la liste, puis appuyez sur Voir le menu."
+  "bars.menu.select_prompt": "Veuillez d'abord choisir un lieu dans la liste, puis appuyez sur Voir le menu.",
+  "home.rows.farmerAgent.title": "🌾 Agriculteurs et Acheteurs",
+  "home.rows.farmerAgent.description": "Acheter et vendre des produits agricoles - connecter agriculteurs et acheteurs",
+  "farmer.welcome": "🌾 *Marché Agricole*\n\nConnectez acheteurs et vendeurs de produits agricoles. Choisissez votre rôle:",
+  "farmer.supply.title": "Je suis Agriculteur (Vendeur)",
+  "farmer.supply.prompt": "📝 Dites-moi ce que vous voulez vendre:\n• Type de culture (maïs, haricots, etc.)\n• Quantité\n• Localisation\n• Grade/qualité\n\nExemple: \"50kg maïs, grade A, Kigali\"\n\nTapez 0 pour retourner au menu.",
+  "farmer.demand.title": "Je suis Acheteur",
+  "farmer.demand.prompt": "📝 Dites-moi ce que vous recherchez:\n• Type de culture\n• Quantité nécessaire\n• Lieu de livraison\n• Exigences de qualité\n\nExemple: \"100kg haricots, livraison Kigali\"\n\nTapez 0 pour retourner au menu.",
+  "farmer.continue": "💬 Continuer la Discussion"
 }

@@ -63,6 +63,13 @@ export async function maybeHandleFarmerBroker(
   const trimmed = body.trim();
   if (!trimmed) return false;
 
+  // Handle "0" to go back home when in farmer broker state
+  if (trimmed === "0" && state.key === "ai_farmer_broker") {
+    const { sendHomeMenu } = await import("../../flows/home.ts");
+    await sendHomeMenu(ctx);
+    return true;
+  }
+
   const messageIntent = intentFromMessage(trimmed, state);
   let profileData: { profile?: FarmerProfile; farm?: FarmRecord } | null = null;
   try {
@@ -90,6 +97,7 @@ export async function maybeHandleFarmerBroker(
     const reply = agentResponse.message?.trim() ||
       "Murakoze! Twakiriye ubutumwa bwanyu. Tuzabagezaho ibisubizo by''isoko ryanyu bidatinze.";
 
+    const { sendText } = await import("../../wa/client.ts");
     await sendText(ctx.from, reply);
     await saveAgentMessage(ctx, conversation.id, "assistant", reply, { responseId: agentResponse.responseId });
     await ctx.supabase

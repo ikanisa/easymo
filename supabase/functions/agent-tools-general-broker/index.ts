@@ -604,6 +604,8 @@ async function getBusinessDetails(supabase: any, businessId: string) {
 async function searchBusinessViaGemini(query: string, city: string, minRating?: number, limit: number = 10) {
   const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY") || Deno.env.get("API_KEY");
   
+  console.log(`searchBusinessViaGemini called: query="${query}", city="${city}", limit=${limit}`);
+  
   if (!GEMINI_API_KEY) {
     console.warn("No Gemini API key configured");
     return [];
@@ -672,20 +674,28 @@ Example: [{"name":"Heaven Restaurant","address":"KG 7 Ave","city":"Kigali","phon
 
     // Clean markdown if present
     if (jsonStr.startsWith('```json')) {
-      jsonStr = jsonStr.replace(/^```json/, '').replace(/```$/, '');
+      jsonStr = jsonStr.replace(/^```json/, '').replace(/```$/, '').trim();
     } else if (jsonStr.startsWith('```')) {
-      jsonStr = jsonStr.replace(/^```/, '').replace(/```$/, '');
+      jsonStr = jsonStr.replace(/^```/, '').replace(/```$/, '').trim();
     }
 
-    const businesses = JSON.parse(jsonStr);
-    const validBusinesses = Array.isArray(businesses) ? businesses : [];
-    
-    // Filter by rating if specified
-    if (minRating && minRating > 0) {
-      return validBusinesses.filter(b => b.rating >= minRating);
+    try {
+      const businesses = JSON.parse(jsonStr);
+      const validBusinesses = Array.isArray(businesses) ? businesses : [];
+      
+      console.log(`Parsed ${validBusinesses.length} businesses from Gemini`);
+      
+      // Filter by rating if specified
+      if (minRating && minRating > 0) {
+        return validBusinesses.filter(b => b.rating >= minRating);
+      }
+      
+      return validBusinesses;
+    } catch (parseError) {
+      console.error("JSON parse error:", parseError);
+      console.log("Attempted to parse:", jsonStr.substring(0, 200));
+      return [];
     }
-    
-    return validBusinesses;
   } catch (error) {
     console.error("Gemini search error:", error);
     return [];

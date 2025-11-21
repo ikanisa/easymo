@@ -391,14 +391,14 @@ export class AiService {
 
     try {
       const { messages, metadata, locale } = buildFarmerBrokerMessages(input);
-      const temperature = input.intent === "buyer_demand" ? 0.4 : 0.6;
-      const response = await this.client.responses.create({
-        model: "gpt-4o-mini",
-        input: messages,
-        temperature,
+      const modelName = process.env.FARMER_BROKER_MODEL || "o1";
+      const response = await this.client.chat.completions.create({
+        model: modelName,
+        messages: messages as any,
+        max_completion_tokens: 1500,
         metadata,
       });
-      const text = (response.output_text ?? "").trim() || fallbackMessage;
+      const text = (response.choices[0]?.message?.content ?? "").trim() || fallbackMessage;
       return { success: true, message: text, locale, responseId: response.id };
     } catch (error) {
       this.logger.error({ msg: "ai.farmer_broker.failed", error: this.formatError(error) });
