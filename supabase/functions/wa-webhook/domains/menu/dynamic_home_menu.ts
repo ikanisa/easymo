@@ -12,10 +12,12 @@ const MENU_CACHE_TTL_SECONDS = Math.max(
 
 export type MenuItemKey =
   | "jobs"
+  | "jobs_gigs"
   | "nearby_drivers"
   | "nearby_passengers"
   | "schedule_trip"
   | "motor_insurance"
+  | "insurance_agent"
   | "nearby_pharmacies"
   | "quincailleries"
   | "shops_services"
@@ -25,6 +27,9 @@ export type MenuItemKey =
   | "notary_services"
   | "farmer_agent"
   | "profile"
+  | "profile_assets"
+  | "token_transfer"
+  | "general_broker"
   | "customer_support";
 
 export interface WhatsAppHomeMenuItem {
@@ -98,10 +103,12 @@ export async function fetchActiveMenuItems(
 export function getMenuItemId(key: MenuItemKey): string {
   const mapping: Record<MenuItemKey, string> = {
     jobs: "job_board",
+    jobs_gigs: "job_board",
     nearby_drivers: "see_drivers",
     nearby_passengers: "see_passengers",
     schedule_trip: "schedule_trip",
     motor_insurance: "motor_insurance",
+    insurance_agent: "motor_insurance",
     nearby_pharmacies: "nearby_pharmacies",
     quincailleries: "nearby_quincailleries",
     shops_services: "shops_services_menu",
@@ -111,6 +118,9 @@ export function getMenuItemId(key: MenuItemKey): string {
     notary_services: "notary_services",
     farmer_agent: "farmer_agent",
     profile: "profile",
+    profile_assets: "profile",
+    token_transfer: "wallet_transfer",
+    general_broker: "general_broker",
     customer_support: "customer_support",
   };
 
@@ -131,6 +141,10 @@ export function getMenuItemTranslationKeys(
       titleKey: "home.rows.jobs.title",
       descriptionKey: "home.rows.jobs.description",
     },
+    jobs_gigs: {
+      titleKey: "home.rows.jobs.title",
+      descriptionKey: "home.rows.jobs.description",
+    },
     nearby_drivers: {
       titleKey: "home.rows.seeDrivers.title",
       descriptionKey: "home.rows.seeDrivers.description",
@@ -144,6 +158,10 @@ export function getMenuItemTranslationKeys(
       descriptionKey: "home.rows.scheduleTrip.description",
     },
     motor_insurance: {
+      titleKey: "home.rows.motorInsurance.title",
+      descriptionKey: "home.rows.motorInsurance.description",
+    },
+    insurance_agent: {
       titleKey: "home.rows.motorInsurance.title",
       descriptionKey: "home.rows.motorInsurance.description",
     },
@@ -182,6 +200,18 @@ export function getMenuItemTranslationKeys(
     profile: {
       titleKey: "home.rows.profile.title",
       descriptionKey: "home.rows.profile.description",
+    },
+    profile_assets: {
+      titleKey: "home.rows.profile.title",
+      descriptionKey: "home.rows.profile.description",
+    },
+    token_transfer: {
+      titleKey: "home.rows.tokenTransfer.title",
+      descriptionKey: "home.rows.tokenTransfer.description",
+    },
+    general_broker: {
+      titleKey: "home.rows.generalBroker.title",
+      descriptionKey: "home.rows.generalBroker.description",
     },
     customer_support: {
       titleKey: "home.rows.customerSupport.title",

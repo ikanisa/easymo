@@ -71,6 +71,7 @@ export const IDS = {
   FARMER_AGENT: "farmer_agent",
   FARMER_AGENT_SUPPLY: "farmer_agent_supply",
   FARMER_AGENT_DEMAND: "farmer_agent_demand",
+  GENERAL_BROKER: "general_broker",
   ADMIN_HUB: "admin_hub",
   ADMIN_HUB_VIEW: "admin_hub_view",
   ADMIN_INSURANCE_VIEW: "admin_insurance_view",

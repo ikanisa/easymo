@@ -244,6 +244,10 @@ export async function handleButton(
       const { handleFarmerAgentDemand } = await import("../domains/ai-agents/farmer_home.ts");
       return await handleFarmerAgentDemand(ctx);
     }
+    case IDS.GENERAL_BROKER: {
+      const { handleGeneralBrokerStart } = await import("../domains/ai-agents/general_broker.ts");
+      return await handleGeneralBrokerStart(ctx);
+    }
     case IDS.PROFILE_ADD_VEHICLE: {
       const { handleAddVehicle } = await import("../domains/profile/index.ts");
       return await handleAddVehicle(ctx);
