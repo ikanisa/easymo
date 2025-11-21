@@ -14,7 +14,7 @@ BEGIN;
 -- Stores farmer profiles and farm information
 CREATE TABLE IF NOT EXISTS public.farms (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  profile_id UUID REFERENCES public.profiles(user_id) ON DELETE CASCADE,
+  owner_profile_id UUID REFERENCES public.profiles(user_id) ON DELETE CASCADE,
   farm_name TEXT NOT NULL,
   district TEXT,
   sector TEXT,
@@ -33,7 +33,7 @@ CREATE TABLE IF NOT EXISTS public.farms (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX IF NOT EXISTS farms_profile_id_idx ON public.farms(profile_id);
+CREATE INDEX IF NOT EXISTS farms_owner_profile_id_idx ON public.farms(owner_profile_id);
 CREATE INDEX IF NOT EXISTS farms_district_idx ON public.farms(district);
 CREATE INDEX IF NOT EXISTS farms_commodities_idx ON public.farms USING GIN(commodities);
 CREATE INDEX IF NOT EXISTS farms_phone_idx ON public.farms(phone_number);
@@ -260,11 +260,11 @@ CREATE POLICY "Service role full access - farmer_matches" ON public.farmer_match
 
 -- Users can view their own data
 CREATE POLICY "Users view own farms" ON public.farms
-  FOR SELECT USING (profile_id = auth.uid());
+  FOR SELECT USING (owner_profile_id = auth.uid());
 
 CREATE POLICY "Users view own listings" ON public.farmer_listings
   FOR SELECT USING (
-    farm_id IN (SELECT id FROM public.farms WHERE profile_id = auth.uid())
+    farm_id IN (SELECT id FROM public.farms WHERE owner_profile_id = auth.uid())
   );
 
 CREATE POLICY "Users view own orders" ON public.farmer_orders
