@@ -22,17 +22,7 @@ import {
   startScheduleTrip,
 } from "../domains/mobility/schedule.ts";
 import { startInsurance } from "../domains/insurance/index.ts";
-import {
-  replayBarsResults,
-  startBarsSearch,
-  startBarMenuOrder,
-} from "../domains/bars/search.ts";
-import { startBarWaiterChat } from "../domains/bars/waiter_ai.ts";
-import {
-  handleBarWaiterPreferences,
-  handleBarWaiterSuggestions,
-  handleBarWaiterSuggestionsMore,
-} from "../domains/bars/waiter_ai.ts";
+
 import {
   evaluateMotorInsuranceGate,
   recordMotorInsuranceHidden,
@@ -281,87 +271,7 @@ export async function handleButton(
       const { showManageBusinesses } = await import("../domains/business/management.ts");
       return await showManageBusinesses(ctx);
     }
-    case IDS.BAR_VIEW_MENU: {
-      try {
-        console.log(JSON.stringify({ event: 'BAR_VIEW_MENU_TAP', stateKey: state?.key || null, hasData: !!state?.data, hasBarId: !!(state as any)?.data?.barId }));
-      } catch {}
-      // Prefer bar_detail state, but accept any state that contains barId
-      if (state.key === "bar_detail" && state.data) {
-        return await startBarMenuOrder(ctx, state.data || {});
-      }
-      if (state.data && (state.data as any).barId) {
-        return await startBarMenuOrder(ctx, state.data as any);
-      }
-      if (state.key === "bar_waiter_chat" && state.data?.barId) {
-        const detail = {
-          barId: state.data.barId as string,
-          barName: state.data.barName as string,
-          barCountry: state.data.barCountry as string | undefined,
-          barSlug: state.data.barSlug as string | undefined,
-        };
-        return await startBarMenuOrder(ctx, detail);
-      }
-      // Graceful fallback: ask user to select a place again
-      try {
-        console.warn(JSON.stringify({ event: 'BAR_VIEW_MENU_MISSING_CONTEXT', stateKey: state?.key || null }));
-      } catch {}
-      await sendButtonsMessage(
-        ctx,
-        t(ctx.locale, "bars.menu.select_prompt"),
-        buildButtons(
-          { id: "bars_search_now", title: t(ctx.locale, "bars.buttons.search_again") },
-          { id: IDS.BACK_MENU, title: t(ctx.locale, "common.menu_back") },
-        ),
-      );
-      return true;
-    }
-    case "bars_search_now": {
-      if (state.key === "bar_detail" && state.data?.barsResults) {
-        const replayed = await replayBarsResults(
-          ctx,
-          state.data.barsResults as any,
-        );
-        if (replayed) return true;
-      }
-      return await startBarsSearch(ctx);
-    }
-    case IDS.BAR_CHAT_WAITER:
-    case "bar_chat_waiter": {
-      if (state.key === "bar_detail") {
-        return await startBarWaiterChat(ctx, state.data || {});
-      }
-      return false;
-    }
-    case IDS.WAITER_VIEW_PREFERENCES: {
-      if (state.key === "bar_waiter_chat") {
-        return await handleBarWaiterPreferences(ctx, state.data || {});
-      }
-      return false;
-    }
-    case IDS.WAITER_SUGGESTIONS: {
-      if (state.key === "bar_waiter_chat") {
-        return await handleBarWaiterSuggestions(ctx, state.data || {});
-      }
-      return false;
-    }
-    case IDS.WAITER_SUGGESTIONS_MORE: {
-      if (state.key === "bar_waiter_chat") {
-        return await handleBarWaiterSuggestionsMore(ctx, state.data || {});
-      }
-      return false;
-    }
-    case IDS.WAITER_VIEW_PREFERENCES: {
-      if (state.key === "bar_waiter_chat") {
-        return await handleBarWaiterPreferences(ctx, state.data || {});
-      }
-      return false;
-    }
-    case IDS.WAITER_SUGGESTIONS: {
-      if (state.key === "bar_waiter_chat") {
-        return await handleBarWaiterSuggestions(ctx, state.data || {});
-      }
-      return false;
-    }
+
     case IDS.MENU_ORDER_ADD:
     case IDS.MENU_ORDER_VIEW:
     case IDS.MENU_ORDER_FINISH:

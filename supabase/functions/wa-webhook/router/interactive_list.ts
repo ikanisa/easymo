@@ -40,21 +40,7 @@ import {
 import { setState } from "../state/store.ts";
 import type { ScheduleSavedPickerState } from "../domains/mobility/schedule.ts";
 import { sendHomeMenu } from "../flows/home.ts";
-import { startNearbyPharmacies } from "../domains/healthcare/pharmacies.ts";
-import { startNearbyQuincailleries } from "../domains/healthcare/quincailleries.ts";
-import { startNotaryServices } from "../domains/services/notary.ts";
-import {
-  handlePharmacyResultSelection,
-  type PharmacyResultsState,
-} from "../domains/healthcare/pharmacies.ts";
-import {
-  handleQuincaillerieResultSelection,
-  type QuincaResultsState,
-} from "../domains/healthcare/quincailleries.ts";
-import {
-  handleNotaryResultSelection,
-  type NotaryResultsState,
-} from "../domains/services/notary.ts";
+
 import {
   handleAddPropertyBedrooms,
   handleAddPropertyType,
@@ -247,39 +233,7 @@ export async function handleList(
       "next",
     );
   }
-  if (state.key === "pharmacy_results") {
-    if (id === "pharmacy_more") {
-      const { handlePharmacyMore } = await import(
-        "../domains/healthcare/pharmacies.ts"
-      );
-      return await handlePharmacyMore(ctx, state.data ?? {});
-    }
-    return await handlePharmacyResultSelection(
-      ctx,
-      (state.data ?? {}) as PharmacyResultsState,
-      id,
-    );
-  }
-  if (state.key === "quincaillerie_results") {
-    if (id === "quincaillerie_more") {
-      const { handleQuincaillerieMore } = await import(
-        "../domains/healthcare/quincailleries.ts"
-      );
-      return await handleQuincaillerieMore(ctx, state.data ?? {});
-    }
-    return await handleQuincaillerieResultSelection(
-      ctx,
-      (state.data ?? {}) as QuincaResultsState,
-      id,
-    );
-  }
-  if (state.key === "notary_results") {
-    return await handleNotaryResultSelection(
-      ctx,
-      (state.data ?? {}) as NotaryResultsState,
-      id,
-    );
-  }
+
   if (state.key === "business_claim") {
     const { handleBusinessClaim } = await import(
       "../domains/business/claim.ts"
@@ -317,27 +271,7 @@ export async function handleList(
     return await handleAIAgentOptionSelection(ctx, state, id);
   }
 
-  // Resume last bar menu from Home quick row
-  if (id.startsWith('bar_resume::')) {
-    const barId = id.substring('bar_resume::'.length);
-    try {
-      const { data: bar } = await ctx.supabase
-        .from('bars')
-        .select('id,name,country,slug')
-        .eq('id', barId)
-        .maybeSingle();
-      const detail: Record<string, unknown> = {
-        barId,
-        barName: bar?.name || 'Bar',
-        barCountry: bar?.country || null,
-        barSlug: bar?.slug || null,
-      };
-      const { startBarMenuOrder } = await import('../domains/bars/search.ts');
-      return await startBarMenuOrder(ctx, detail);
-    } catch (_err) {
-      return false;
-    }
-  }
+
 
   // Check if this is a WhatsApp number selection
   if (id.startsWith("whatsapp::")) {
@@ -419,25 +353,10 @@ export async function handleList(
     const { showManageBusinesses } = await import("../domains/business/management.ts");
     return await showManageBusinesses(ctx);
   }
+  // Legacy services menu - redirect to General Broker
   if (id === IDS.SHOPS_SERVICES_MENU || id === 'shops_services_menu') {
-    // Show category-specific services hub instead of deprecated marketplace
-    await sendListMessage(
-      ctx,
-      {
-        title: t(ctx.locale, "services.menu.title"),
-        body: t(ctx.locale, "services.menu.body"),
-        sectionTitle: t(ctx.locale, "services.menu.section"),
-        rows: [
-          { id: IDS.NEARBY_PHARMACIES, title: t(ctx.locale, "services.menu.pharmacies"), description: t(ctx.locale, "services.menu.find_nearby") },
-          { id: IDS.NEARBY_QUINCAILLERIES, title: t(ctx.locale, "services.menu.quincailleries"), description: t(ctx.locale, "services.menu.find_nearby") },
-          { id: IDS.NOTARY_SERVICES, title: t(ctx.locale, "services.menu.notary"), description: t(ctx.locale, "services.menu.request") },
-          { id: IDS.BACK_MENU, title: t(ctx.locale, "common.menu_back"), description: t(ctx.locale, "common.back_to_menu.description") },
-        ],
-        buttonText: t(ctx.locale, "common.buttons.choose"),
-      },
-      { emoji: "🛎️" },
-    );
-    return true;
+    const { handleGeneralBrokerStart } = await import("../domains/ai-agents/general_broker.ts");
+    return await handleGeneralBrokerStart(ctx);
   }
   // Marketplace flows retired
 
@@ -645,12 +564,7 @@ async function handleHomeMenuSelection(
       return await startScheduleTrip(ctx, state);
     case IDS.SAVED_PLACES:
       return await startSavedPlaces(ctx);
-    case IDS.NEARBY_PHARMACIES:
-      return await startNearbyPharmacies(ctx);
-    case IDS.NEARBY_QUINCAILLERIES:
-      return await startNearbyQuincailleries(ctx);
-    case IDS.NEARBY_NOTARY_SERVICES:
-      return await startNotaryServices(ctx);
+
     case IDS.PROPERTY_RENTALS:
       return await startPropertyRentals(ctx);
     case IDS.MARKETPLACE: {
