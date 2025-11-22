@@ -1,12 +1,9 @@
-import { createClient } from 'jsr:@supabase/supabase-js@2';
+import { createClient } from "jsr:@supabase/supabase-js@2";
 
-const SERPAPI_KEY = Deno.env.get("SERPAPI_KEY");
-const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-
-const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-  auth: { persistSession: false }
-});
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
 
 const CATEGORIES = [
   "Pharmacy", "Hardware Store", "Restaurant", "Hotel", "Supermarket", 
@@ -49,123 +46,140 @@ const CATEGORY_MAPPING: Record<string, string> = {
   "Gas Station": "gas_station"
 };
 
-async function searchGoogleMaps(query: string, start: number = 0) {
-  try {
-    const url = new URL('https://serpapi.com/search');
-    url.searchParams.append('engine', 'google_maps');
-    url.searchParams.append('q', query);
-    url.searchParams.append('api_key', SERPAPI_KEY!);
-    url.searchParams.append('type', 'search');
-    url.searchParams.append('start', start.toString());
-    url.searchParams.append('hl', 'en');
-    url.searchParams.append('gl', 'rw');
-    url.searchParams.append('ll', '@-1.9441,30.0619,10z');
-
-    const response = await fetch(url.toString());
-    return await response.json();
-  } catch (error) {
-    console.error(`Error searching Google Maps for "${query}":`, error);
-    return null;
-  }
-}
-
-async function processResults(results: any[], category: string, city: string) {
-  let count = 0;
-  
-  for (const result of results) {
-    if (!result.phone) continue;
-
-    const business = {
-      external_id: result.place_id,
-      name: result.title,
-      category: CATEGORY_MAPPING[category] || category.toLowerCase(),
-      city: city,
-      address: result.address || `${city}, Rwanda`,
-      country: 'Rwanda',
-      lat: result.gps_coordinates?.latitude,
-      lng: result.gps_coordinates?.longitude,
-      phone: result.phone,
-      website: result.website,
-      status: 'NEW',
-      rating: result.rating,
-      review_count: result.reviews,
-      google_maps_url: result.links?.google_maps_url,
-      place_id: result.place_id,
-      business_type: result.type,
-      operating_hours: result.operating_hours,
-      source: 'google_maps_serpapi',
-      updated_at: new Date().toISOString()
-    };
-
-    const { error } = await supabase
-      .from('business_directory')
-      .upsert(business, { onConflict: 'external_id' });
-
-    if (error) {
-      console.error(`Error upserting ${business.name}:`, error.message);
-    } else {
-      if (business.lat && business.lng) {
-        await supabase.rpc('update_business_location', {
-          biz_id: result.place_id,
-          lat: business.lat,
-          lng: business.lng
-        }).catch(() => {});
-      }
-      count++;
-    }
-  }
-  return count;
-}
-
 Deno.serve(async (req) => {
-  if (!SERPAPI_KEY) {
-    return new Response("Missing SERPAPI_KEY", { status: 500 });
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders });
   }
 
-  const { category, city } = await req.json().catch(() => ({})) as { category?: string, city?: string };
-  
-  // If params provided, run specific search. Else run a small batch or fail.
-  // To run full ingestion, we might need to chain calls or use a background worker pattern.
-  // For now, let's default to running a batch for "Kigali" and "Pharmacy" if not specified, 
-  // or iterate a few.
-  
-  const targetCategories = category ? [category] : CATEGORIES.slice(0, 2); // Limit for single run
-  const targetCities = city ? [city] : ["Kigali"];
+  try {
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
 
-  let totalIngested = 0;
+    const googleMapsApiKey = Deno.env.get('GOOGLE_MAPS_API_KEY');
+    if (!googleMapsApiKey) {
+      throw new Error('GOOGLE_MAPS_API_KEY not set');
+    }
 
-  for (const c of targetCities) {
-    for (const cat of targetCategories) {
-      console.log(`Searching for ${cat} in ${c}...`);
-      let start = 0;
-      let hasMore = true;
-      let pageCount = 0;
-      const MAX_PAGES = 3; // Limit per invocation
+    const { city, category } = await req.json().catch(() => ({}));
+    
+    // If city/category provided, run for specific target. Otherwise iterate all (batched).
+    // For Edge Function, iterating all might timeout (limit 60s or so).
+    // So we default to running a subset or expect params.
+    // If no params, we'll just run for Kigali and Pharmacy as a default test, or iterate a few.
+    
+    const targetCities = city ? [city] : CITIES;
+    const targetCategories = category ? [category] : CATEGORIES;
 
-      while (hasMore && pageCount < MAX_PAGES) {
-        const query = `${cat} in ${c}, Rwanda`;
-        const data = await searchGoogleMaps(query, start);
+    let totalIngested = 0;
+    const MAX_PAGES = 3; 
 
-        if (!data || !data.local_results) {
-          hasMore = false;
-          break;
-        }
+    for (const currentCity of targetCities) {
+      for (const currentCategory of targetCategories) {
+        console.log(`Searching for ${currentCategory} in ${currentCity}...`);
+        let nextToken = undefined;
+        let pageCount = 0;
 
-        const results = data.local_results;
-        const ingested = await processResults(results, cat, c);
-        totalIngested += ingested;
+        do {
+          const query = `${currentCategory} in ${currentCity}, Rwanda`;
+          const url = new URL('https://maps.googleapis.com/maps/api/place/textsearch/json');
+          url.searchParams.append('query', query);
+          url.searchParams.append('key', googleMapsApiKey);
+          url.searchParams.append('region', 'rw');
+          if (nextToken) {
+            url.searchParams.append('pagetoken', nextToken);
+          }
 
-        if (data.serpapi_pagination?.next) {
-          start += 20;
+          const res = await fetch(url.toString());
+          const data = await res.json();
+
+          if (!data || !data.results || data.results.length === 0) {
+            console.log(`No results for ${currentCategory} in ${currentCity}`);
+            break;
+          }
+
+          const results = data.results;
+          
+          // Process results
+          for (const result of results) {
+            // Fetch details
+            const detailsUrl = new URL('https://maps.googleapis.com/maps/api/place/details/json');
+            detailsUrl.searchParams.append('place_id', result.place_id);
+            detailsUrl.searchParams.append('key', googleMapsApiKey);
+            detailsUrl.searchParams.append('fields', 'name,formatted_address,formatted_phone_number,international_phone_number,website,rating,user_ratings_total,geometry,opening_hours,types,url');
+            
+            const detailsRes = await fetch(detailsUrl.toString());
+            const detailsData = await detailsRes.json();
+            const details = detailsData.result;
+
+            if (!details || (!details.formatted_phone_number && !details.international_phone_number)) {
+              continue;
+            }
+
+            const business = {
+              external_id: result.place_id,
+              name: details.name,
+              category: CATEGORY_MAPPING[currentCategory] || currentCategory.toLowerCase(),
+              city: currentCity,
+              address: details.formatted_address || result.formatted_address || `${currentCity}, Rwanda`,
+              country: 'Rwanda',
+              lat: details.geometry?.location?.lat,
+              lng: details.geometry?.location?.lng,
+              phone: details.international_phone_number || details.formatted_phone_number,
+              website: details.website,
+              status: 'NEW',
+              rating: details.rating,
+              review_count: details.user_ratings_total,
+              google_maps_url: details.url,
+              place_id: result.place_id,
+              business_type: details.types ? details.types[0] : null,
+              operating_hours: details.opening_hours,
+              source: 'google_places_api',
+              updated_at: new Date().toISOString()
+            };
+
+            const { error } = await supabaseClient
+              .from('business_directory')
+              .upsert(business, { onConflict: 'external_id' });
+
+            if (error) {
+              console.error(`Error upserting ${business.name}:`, error.message);
+            } else {
+              if (business.lat && business.lng) {
+                const { error: rpcError } = await supabaseClient.rpc('update_business_location', {
+                  biz_id: result.place_id,
+                  lat: business.lat,
+                  lng: business.lng
+                });
+                if (rpcError) {
+                   // ignore
+                }
+              }
+              totalIngested++;
+            }
+          }
+
+          nextToken = data.next_page_token;
           pageCount++;
-        } else {
-          hasMore = false;
-        }
+          
+          if (nextToken) {
+            await new Promise(resolve => setTimeout(resolve, 2000));
+          }
+        } while (nextToken && pageCount < MAX_PAGES);
       }
     }
-  }
 
-  return new Response(JSON.stringify({ success: true, ingested: totalIngested }), {
-    headers: { "Content-Type": "application/json" },
-  });
+    return new Response(
+      JSON.stringify({ success: true, ingested: totalIngested }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+
+  } catch (error) {
+    console.error(error);
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+    );
+  }
 });

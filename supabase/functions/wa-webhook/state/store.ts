@@ -95,12 +95,8 @@ export async function ensureProfile(
         error_code: (authError as any).code,
       });
 
-      // Query auth.users table directly (indexed, fast, reliable)
-      const { data: authUsers, error: lookupError } = await client
-        .from("auth.users")
-        .select("id, phone")
-        .eq("phone", normalized)
-        .maybeSingle();
+      // List users and filter by phone (admin API)
+      const { data: listResult, error: lookupError } = await client.auth.admin.listUsers();
       
       if (lookupError) {
         await logStructuredEvent("AUTH_USER_LOOKUP_ERROR", {
@@ -111,15 +107,17 @@ export async function ensureProfile(
         throw lookupError;
       }
       
-      if (!authUsers) {
+      const authUser = listResult?.users?.find(u => u.phone === normalized);
+      
+      if (!authUser) {
         await logStructuredEvent("AUTH_USER_NOT_FOUND_AFTER_EXISTS_ERROR", {
           masked_phone: maskMsisdn(normalized),
-          note: "Phone exists error but user not found in auth.users table",
+          note: "Phone exists error but user not found via listUsers",
         });
         throw new Error(`Phone exists in auth but user not found: ${maskMsisdn(normalized)}`);
       }
       
-      userId = authUsers.id;
+      userId = authUser.id;
       
       await logStructuredEvent("AUTH_USER_FOUND_EXISTING", {
         masked_phone: maskMsisdn(normalized),
