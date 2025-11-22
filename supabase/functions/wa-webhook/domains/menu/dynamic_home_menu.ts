@@ -11,27 +11,36 @@ const MENU_CACHE_TTL_SECONDS = Math.max(
 );
 
 export type MenuItemKey =
-  | "jobs"
-  | "jobs_gigs"
-  | "rides"
-  | "nearby_drivers"
-  | "nearby_passengers"
-  | "schedule_trip"
-  | "motor_insurance"
-  | "insurance_agent"
-  | "nearby_pharmacies"
-  | "quincailleries"
-  | "shops_services"
-  | "property_rentals"
-  | "momo_qr"
-  | "bars_restaurants"
-  | "notary_services"
+  // 8 AI Agents (aligned with ai_agents table)
+  | "waiter_agent"
+  | "rides_agent"
+  | "jobs_agent"
+  | "business_broker_agent"
+  | "real_estate_agent"
   | "farmer_agent"
+  | "insurance_agent"
+  | "sales_agent"
+  // Profile (not an agent)
   | "profile"
-  | "profile_assets"
-  | "token_transfer"
-  | "general_broker"
-  | "customer_support";
+  // Legacy keys (kept for backward compatibility, marked as deprecated)
+  | "jobs" // @deprecated Use jobs_agent
+  | "jobs_gigs" // @deprecated Use jobs_agent
+  | "rides" // @deprecated Use rides_agent
+  | "nearby_drivers" // @deprecated Covered by rides_agent
+  | "nearby_passengers" // @deprecated Covered by rides_agent
+  | "schedule_trip" // @deprecated Covered by rides_agent
+  | "motor_insurance" // @deprecated Use insurance_agent
+  | "nearby_pharmacies" // @deprecated Covered by business_broker_agent
+  | "quincailleries" // @deprecated Covered by business_broker_agent
+  | "shops_services" // @deprecated Covered by business_broker_agent
+  | "property_rentals" // @deprecated Use real_estate_agent
+  | "momo_qr" // @deprecated Moved to separate payment flow
+  | "bars_restaurants" // @deprecated Use waiter_agent
+  | "notary_services" // @deprecated Covered by business_broker_agent
+  | "profile_assets" // @deprecated Use profile
+  | "token_transfer" // @deprecated Moved to wallet
+  | "general_broker" // @deprecated Use business_broker_agent
+  | "customer_support"; // @deprecated Accessed via support flow
 
 export interface WhatsAppHomeMenuItem {
   id: string;
@@ -103,26 +112,35 @@ export async function fetchActiveMenuItems(
  */
 export function getMenuItemId(key: MenuItemKey): string {
   const mapping: Record<MenuItemKey, string> = {
-    jobs: "job_board",
-    jobs_gigs: "job_board",
-    rides: "rides_menu",
-    nearby_drivers: "see_drivers",
-    nearby_passengers: "see_passengers",
-    schedule_trip: "schedule_trip",
-    motor_insurance: "motor_insurance",
-    insurance_agent: "motor_insurance",
-    nearby_pharmacies: "nearby_pharmacies",
-    quincailleries: "nearby_quincailleries",
-    shops_services: "shops_services_menu",
-    property_rentals: "property_rentals",
-    momo_qr: "momoqr_start",
-    bars_restaurants: "bars_restaurants",
-    notary_services: "notary_services",
+    // 8 AI Agents
+    waiter_agent: "waiter_agent",
+    rides_agent: "rides_agent",
+    jobs_agent: "jobs_agent",
+    business_broker_agent: "business_broker_agent",
+    real_estate_agent: "real_estate_agent",
     farmer_agent: "farmer_agent",
+    insurance_agent: "insurance_agent",
+    sales_agent: "sales_agent",
+    // Profile
     profile: "profile",
+    // Legacy mappings (backward compatibility)
+    jobs: "jobs_agent",
+    jobs_gigs: "jobs_agent",
+    rides: "rides_agent",
+    nearby_drivers: "rides_agent",
+    nearby_passengers: "rides_agent",
+    schedule_trip: "rides_agent",
+    motor_insurance: "insurance_agent",
+    nearby_pharmacies: "business_broker_agent",
+    quincailleries: "business_broker_agent",
+    shops_services: "business_broker_agent",
+    property_rentals: "real_estate_agent",
+    momo_qr: "momoqr_start",
+    bars_restaurants: "waiter_agent",
+    notary_services: "business_broker_agent",
     profile_assets: "profile",
     token_transfer: "wallet_transfer",
-    general_broker: "general_broker",
+    general_broker: "business_broker_agent",
     customer_support: "customer_support",
   };
 
@@ -139,6 +157,45 @@ export function getMenuItemTranslationKeys(
     MenuItemKey,
     { titleKey: string; descriptionKey: string }
   > = {
+    // 8 AI Agents
+    waiter_agent: {
+      titleKey: "home.rows.waiterAgent.title",
+      descriptionKey: "home.rows.waiterAgent.description",
+    },
+    rides_agent: {
+      titleKey: "home.rows.ridesAgent.title",
+      descriptionKey: "home.rows.ridesAgent.description",
+    },
+    jobs_agent: {
+      titleKey: "home.rows.jobsAgent.title",
+      descriptionKey: "home.rows.jobsAgent.description",
+    },
+    business_broker_agent: {
+      titleKey: "home.rows.businessBrokerAgent.title",
+      descriptionKey: "home.rows.businessBrokerAgent.description",
+    },
+    real_estate_agent: {
+      titleKey: "home.rows.realEstateAgent.title",
+      descriptionKey: "home.rows.realEstateAgent.description",
+    },
+    farmer_agent: {
+      titleKey: "home.rows.farmerAgent.title",
+      descriptionKey: "home.rows.farmerAgent.description",
+    },
+    insurance_agent: {
+      titleKey: "home.rows.insuranceAgent.title",
+      descriptionKey: "home.rows.insuranceAgent.description",
+    },
+    sales_agent: {
+      titleKey: "home.rows.salesAgent.title",
+      descriptionKey: "home.rows.salesAgent.description",
+    },
+    // Profile
+    profile: {
+      titleKey: "home.rows.profile.title",
+      descriptionKey: "home.rows.profile.description",
+    },
+    // Legacy mappings (backward compatibility)
     jobs: {
       titleKey: "home.rows.jobs.title",
       descriptionKey: "home.rows.jobs.description",
@@ -164,10 +221,6 @@ export function getMenuItemTranslationKeys(
       descriptionKey: "home.rows.scheduleTrip.description",
     },
     motor_insurance: {
-      titleKey: "home.rows.motorInsurance.title",
-      descriptionKey: "home.rows.motorInsurance.description",
-    },
-    insurance_agent: {
       titleKey: "home.rows.motorInsurance.title",
       descriptionKey: "home.rows.motorInsurance.description",
     },
@@ -198,14 +251,6 @@ export function getMenuItemTranslationKeys(
     notary_services: {
       titleKey: "home.rows.notaryServices.title",
       descriptionKey: "home.rows.notaryServices.description",
-    },
-    farmer_agent: {
-      titleKey: "home.rows.farmerAgent.title",
-      descriptionKey: "home.rows.farmerAgent.description",
-    },
-    profile: {
-      titleKey: "home.rows.profile.title",
-      descriptionKey: "home.rows.profile.description",
     },
     profile_assets: {
       titleKey: "home.rows.profile.title",

@@ -40,7 +40,9 @@
   "dependencies": {
     "@easymo/ui": "workspace:*",
     "@supabase/supabase-js": "^2.79.0",
-    "@va/shared": "workspace:*"
+    "@va/shared": "workspace:*",
+    "axios": "^1.13.2",
+    "dotenv": "^17.2.3"
   },
   "devDependencies": {
     "@eslint/js": "^9.37.0",
@@ -54,13 +56,14 @@
     "eslint-plugin-react-refresh": "^0.4.9",
     "eslint-plugin-simple-import-sort": "^12.1.1",
     "globals": "^15.15.0",
+    "jsdom": "^26.1.0",
     "postcss": "^8.5.6",
     "prettier": "^3.4.2",
     "tailwindcss": "^3.4.17",
+    "tsx": "^4.20.6",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.38.0",
     "vitest": "^3.2.4",
-    "jsdom": "^26.1.0",
     "yaml": "^2.8.1"
   },
   "pnpm": {

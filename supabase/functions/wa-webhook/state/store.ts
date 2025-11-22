@@ -95,50 +95,35 @@ export async function ensureProfile(
         error_code: (authError as any).code,
       });
 
-      // List users with pagination to find the existing user
-      let page = 1;
-      let existingUser = null;
-      const perPage = 1000; // Max per page
+      // Query auth.users table directly (indexed, fast, reliable)
+      const { data: authUsers, error: lookupError } = await client
+        .from("auth.users")
+        .select("id, phone")
+        .eq("phone", normalized)
+        .maybeSingle();
       
-      while (!existingUser && page <= 10) { // Limit to 10 pages (10k users max)
-        const { data: users, error: listError } = await client.auth.admin.listUsers({
-          page,
-          perPage,
+      if (lookupError) {
+        await logStructuredEvent("AUTH_USER_LOOKUP_ERROR", {
+          masked_phone: maskMsisdn(normalized),
+          error: lookupError.message,
+          error_code: (lookupError as any).code,
         });
-        
-        if (listError) {
-          await logStructuredEvent("AUTH_USER_LOOKUP_FAILED", {
-            masked_phone: maskMsisdn(normalized),
-            error: listError.message,
-            page,
-          });
-          throw listError;
-        }
-
-        existingUser = users.users.find(u => u.phone === normalized);
-        
-        if (!existingUser && users.users.length < perPage) {
-          // No more pages to check
-          break;
-        }
-        
-        page++;
+        throw lookupError;
       }
       
-      if (!existingUser) {
+      if (!authUsers) {
         await logStructuredEvent("AUTH_USER_NOT_FOUND_AFTER_EXISTS_ERROR", {
           masked_phone: maskMsisdn(normalized),
-          pages_checked: page - 1,
+          note: "Phone exists error but user not found in auth.users table",
         });
         throw new Error(`Phone exists in auth but user not found: ${maskMsisdn(normalized)}`);
       }
-
-      userId = existingUser.id;
+      
+      userId = authUsers.id;
       
       await logStructuredEvent("AUTH_USER_FOUND_EXISTING", {
         masked_phone: maskMsisdn(normalized),
         user_id: userId,
-        page_found: page,
       });
     } else {
       // Some other auth error - log and propagate it

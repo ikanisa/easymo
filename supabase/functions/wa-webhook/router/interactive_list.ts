@@ -663,6 +663,60 @@ async function handleHomeMenuSelection(
       const { handleGeneralBrokerStart } = await import("../domains/ai-agents/general_broker.ts");
       return await handleGeneralBrokerStart(ctx);
     }
+    // ===============================================================
+    // 8 AI AGENTS - Aligned with ai_agents table
+    // ===============================================================
+    case IDS.WAITER_AGENT: {
+      // Waiter AI - Bars & Restaurants
+      const { startBarsRestaurants } = await import("../domains/bars/index.ts");
+      return await startBarsRestaurants(ctx);
+    }
+    case IDS.RIDES_AGENT: {
+      // Rides AI - Mobility coordinator
+      const { showRidesMenu } = await import("../domains/mobility/rides_menu.ts");
+      return await showRidesMenu(ctx);
+    }
+    case IDS.JOBS_AGENT: {
+      // Jobs AI - Job board and gigs
+      const { showJobBoardMenu } = await import("../domains/jobs/index.ts");
+      return await showJobBoardMenu(ctx);
+    }
+    case IDS.BUSINESS_BROKER_AGENT: {
+      // Business Broker AI - Find nearby businesses
+      const { handleGeneralBrokerStart } = await import("../domains/ai-agents/general_broker.ts");
+      return await handleGeneralBrokerStart(ctx);
+    }
+    case IDS.REAL_ESTATE_AGENT: {
+      // Real Estate AI - Property rentals concierge
+      const { startPropertyRentals } = await import("../domains/property/rentals.ts");
+      return await startPropertyRentals(ctx);
+    }
+    case IDS.FARMER_AGENT: {
+      // Farmer AI - Produce listing and buyer matching
+      const { startFarmerAgent } = await import("../domains/ai-agents/farmer_home.ts");
+      return await startFarmerAgent(ctx);
+    }
+    case IDS.INSURANCE_AGENT: {
+      // Insurance AI - Quotes, claims, policies
+      const gate = await evaluateMotorInsuranceGate(ctx);
+      if (!gate.allowed) {
+        await recordMotorInsuranceHidden(ctx, gate, "command");
+        await sendMotorInsuranceBlockedMessage(ctx);
+        return true;
+      }
+      return await startInsurance(ctx, state);
+    }
+    case IDS.SALES_AGENT: {
+      // Sales AI - SDR for easyMO (internal use)
+      // TODO: Implement sales agent handler
+      await sendButtonsMessage(
+        ctx,
+        "📞 Sales AI Agent coming soon! This will help with prospecting, lead enrichment, and demo booking.",
+        homeOnly()
+      );
+      return true;
+    }
+    // ===============================================================
     case IDS.PROFILE: {
       const { sendProfileMenu } = await import("../flows/profile.ts");
       await sendProfileMenu(ctx);
