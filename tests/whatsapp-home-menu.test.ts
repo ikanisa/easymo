@@ -1,11 +1,28 @@
 /**
  * Test for WhatsApp Home Menu Cleanup
  * Validates the normalizeMenuKey function and alias mappings
+ * 
+ * NOTE: These constants are duplicated from dynamic_home_menu.ts because
+ * that file is Deno code and cannot be imported into Node.js tests.
+ * The test suite validates that the mappings are correct and comprehensive.
  */
 
 import { describe, it, expect } from 'vitest';
 
-// Copied from dynamic_home_menu.ts for testing
+// CANONICAL KEYS - These must match dynamic_home_menu.ts
+const CANONICAL_KEYS = [
+  'waiter_agent',
+  'rides_agent',
+  'jobs_agent',
+  'business_broker_agent',
+  'real_estate_agent',
+  'farmer_agent',
+  'insurance_agent',
+  'sales_agent',
+  'profile',
+] as const;
+
+// LEGACY KEY MAPPINGS - These must match HOME_MENU_KEY_ALIASES in dynamic_home_menu.ts
 const HOME_MENU_KEY_ALIASES: Record<string, string> = {
   // Canonical keys (9 active items) - map to themselves
   waiter_agent: "waiter_agent",
@@ -46,19 +63,7 @@ function normalizeMenuKey(key: string): string {
 describe('WhatsApp Home Menu Cleanup', () => {
   describe('normalizeMenuKey', () => {
     it('should map canonical keys to themselves', () => {
-      const canonicalKeys = [
-        'waiter_agent',
-        'rides_agent',
-        'jobs_agent',
-        'business_broker_agent',
-        'real_estate_agent',
-        'farmer_agent',
-        'insurance_agent',
-        'sales_agent',
-        'profile',
-      ];
-
-      canonicalKeys.forEach(key => {
+      CANONICAL_KEYS.forEach(key => {
         expect(normalizeMenuKey(key)).toBe(key);
       });
     });
@@ -137,39 +142,17 @@ describe('WhatsApp Home Menu Cleanup', () => {
     });
 
     it('should have all required canonical keys', () => {
-      const requiredKeys = [
-        'waiter_agent',
-        'rides_agent',
-        'jobs_agent',
-        'business_broker_agent',
-        'real_estate_agent',
-        'farmer_agent',
-        'insurance_agent',
-        'sales_agent',
-        'profile',
-      ];
-
-      requiredKeys.forEach(key => {
+      CANONICAL_KEYS.forEach(key => {
         expect(HOME_MENU_KEY_ALIASES).toHaveProperty(key);
         expect(HOME_MENU_KEY_ALIASES[key]).toBe(key);
       });
     });
 
     it('should map all legacy keys to one of the 9 canonical keys', () => {
-      const canonicalKeys = new Set([
-        'waiter_agent',
-        'rides_agent',
-        'jobs_agent',
-        'business_broker_agent',
-        'real_estate_agent',
-        'farmer_agent',
-        'insurance_agent',
-        'sales_agent',
-        'profile',
-      ]);
+      const canonicalKeysSet = new Set(CANONICAL_KEYS);
 
       Object.entries(HOME_MENU_KEY_ALIASES).forEach(([key, value]) => {
-        expect(canonicalKeys.has(value)).toBe(true);
+        expect(canonicalKeysSet.has(value)).toBe(true);
       });
     });
   });
