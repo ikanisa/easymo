@@ -112,8 +112,14 @@ export async function handleText(
       const { handleBusinessNameSearch } = await import(
         "../domains/business/claim.ts"
       );
-      return await handleBusinessNameSearch(ctx, body);
+      return await runBusinessBrokerAgent(ctx, body);
     }
+  }
+
+  // Handle Sales AI Agent
+  if (state.key === "sales_agent" || body.toLowerCase().startsWith("sales agent")) {
+    const { runSalesAgent } = await import("../domains/ai-agents/sales_agent.ts");
+    return await runSalesAgent(ctx, body);
   }
   
   // Handle add-new business text stages

@@ -10,6 +10,13 @@ type ProfileRecord = {
   locale: string | null;
 };
 
+type WhatsAppUserRecord = {
+  id: string;
+  phone_number: string;
+  display_name: string | null;
+  preferred_language: string | null;
+};
+
 const WA_NUMBER_REGEX = /^\+\d{8,15}$/;
 const ALLOWED_PREFIXES = (Deno.env.get("WA_ALLOWED_MSISDN_PREFIXES") ?? "")
   .split(",")
@@ -64,106 +71,143 @@ export async function ensureProfile(
     }
     throw error;
   }
-  const payload: Record<string, unknown> = { whatsapp_e164: normalized };
-  if (locale) payload.locale = locale;
 
-  // 1. Try to find existing profile first to avoid unnecessary auth calls
+  // NEW AI AGENT FLOW: Use whatsapp_users table
+  // 1. Check if WhatsApp user exists
+  const { data: waUser, error: waUserError } = await client
+    .from("whatsapp_users")
+    .select("id, phone_number, preferred_language")
+    .eq("phone_number", normalized)
+    .maybeSingle();
+
+  if (waUserError && waUserError.code !== "PGRST116") {
+    await logStructuredEvent("WHATSAPP_USER_QUERY_ERROR", {
+      masked_phone: maskMsisdn(normalized),
+      error: waUserError.message,
+      error_code: waUserError.code,
+    });
+    throw waUserError;
+  }
+
+  let waUserId: string;
+  let userLanguage: string | null = null;
+
+  if (waUser) {
+    // User exists
+    waUserId = waUser.id;
+    userLanguage = waUser.preferred_language;
+    
+    await logStructuredEvent("WHATSAPP_USER_FOUND", {
+      masked_phone: maskMsisdn(normalized),
+      user_id: waUserId,
+    });
+  } else {
+    // Create new WhatsApp user
+    const { data: newWaUser, error: createError } = await client
+      .from("whatsapp_users")
+      .insert({
+        phone_number: normalized,
+        preferred_language: locale || "en",
+        user_roles: ["guest"],
+      })
+      .select("id")
+      .single();
+
+    if (createError) {
+      await logStructuredEvent("WHATSAPP_USER_CREATE_ERROR", {
+        masked_phone: maskMsisdn(normalized),
+        error: createError.message,
+        error_code: createError.code,
+      });
+      throw createError;
+    }
+
+    waUserId = newWaUser.id;
+    userLanguage = locale || "en";
+
+    await logStructuredEvent("WHATSAPP_USER_CREATED", {
+      masked_phone: maskMsisdn(normalized),
+      user_id: waUserId,
+    });
+  }
+
+  // LEGACY COMPATIBILITY: Also maintain profiles table for backward compatibility
+  // 1. Try to find existing profile
   const { data: existing } = await client
     .from("profiles")
     .select("user_id, whatsapp_e164, locale")
     .eq("whatsapp_e164", normalized)
     .maybeSingle();
 
-  if (existing) return existing as ProfileRecord;
+  if (existing) {
+    await logStructuredEvent("PROFILE_FOUND_EXISTING", {
+      masked_phone: maskMsisdn(normalized),
+      user_id: existing.user_id,
+    });
+    return existing as ProfileRecord;
+  }
 
-  // 2. Try to create Auth User to get a valid user_id
-  // This requires the client to have service_role privileges (which it does in the webhook)
+  // 2. Create auth user for backward compatibility
   const { data: authUser, error: authError } = await client.auth.admin.createUser({
     phone: normalized,
     phone_confirm: true,
-    user_metadata: { role: "buyer" },
+    user_metadata: { role: "buyer", wa_user_id: waUserId },
   });
 
   let userId: string;
 
   if (authError) {
-    // If the error is "phone_exists", the user already exists in auth.
-    // We need to look them up by phone number to get their user_id
     if (authError.message?.includes("already registered") || authError.message?.includes("phone_exists")) {
-      await logStructuredEvent("AUTH_USER_EXISTS_LOOKING_UP", {
-        masked_phone: maskMsisdn(normalized),
-        error_code: (authError as any).code,
-      });
-
-      // List users and filter by phone (admin API)
       const { data: listResult, error: lookupError } = await client.auth.admin.listUsers();
       
       if (lookupError) {
         await logStructuredEvent("AUTH_USER_LOOKUP_ERROR", {
           masked_phone: maskMsisdn(normalized),
           error: lookupError.message,
-          error_code: (lookupError as any).code,
         });
         throw lookupError;
       }
       
-      const authUser = listResult?.users?.find(u => u.phone === normalized);
+      const foundUser = listResult?.users?.find(u => u.phone === normalized);
       
-      if (!authUser) {
-        await logStructuredEvent("AUTH_USER_NOT_FOUND_AFTER_EXISTS_ERROR", {
-          masked_phone: maskMsisdn(normalized),
-          note: "Phone exists error but user not found via listUsers",
-        });
+      if (!foundUser) {
         throw new Error(`Phone exists in auth but user not found: ${maskMsisdn(normalized)}`);
       }
       
-      userId = authUser.id;
-      
-      await logStructuredEvent("AUTH_USER_FOUND_EXISTING", {
-        masked_phone: maskMsisdn(normalized),
-        user_id: userId,
-      });
+      userId = foundUser.id;
     } else {
-      // Some other auth error - log and propagate it
       await logStructuredEvent("AUTH_USER_CREATE_FAILED", {
         masked_phone: maskMsisdn(normalized),
         error: authError.message,
-        error_code: (authError as any).code,
-        error_status: (authError as any).status,
       });
       throw authError;
     }
   } else {
     if (!authUser.user) {
-      await logStructuredEvent("AUTH_USER_CREATE_NO_USER", {
-        masked_phone: maskMsisdn(normalized),
-      });
       throw new Error("Failed to create auth user");
     }
     userId = authUser.user.id;
-    
-    await logStructuredEvent("AUTH_USER_CREATED_NEW", {
-      masked_phone: maskMsisdn(normalized),
-      user_id: userId,
-    });
   }
 
-  // 3. Create Profile with the user_id
-  payload.user_id = userId;
-  payload.role = "buyer";
-
+  // 3. Create profile
   const { data, error } = await client
     .from("profiles")
-    .upsert(payload, { onConflict: "whatsapp_e164" })
+    .upsert(
+      {
+        user_id: userId,
+        whatsapp_e164: normalized,
+        locale: userLanguage || locale || "en",
+        role: "buyer",
+      },
+      { onConflict: "whatsapp_e164" }
+    )
     .select("user_id, whatsapp_e164, locale")
     .single();
     
   if (error) {
     await logStructuredEvent("PROFILE_UPSERT_FAILED", {
       masked_phone: maskMsisdn(normalized),
-      user_id: userId,
       error: error.message,
-      error_code: error.code,
     });
     throw error;
   }
@@ -171,6 +215,7 @@ export async function ensureProfile(
   await logStructuredEvent("PROFILE_ENSURED", {
     masked_phone: maskMsisdn(normalized),
     user_id: userId,
+    wa_user_id: waUserId,
   });
   
   return data as ProfileRecord;
