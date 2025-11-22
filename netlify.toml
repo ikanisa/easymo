@@ -8,7 +8,7 @@
   command = "cd .. && pnpm install --frozen-lockfile && pnpm --filter @va/shared build && pnpm --filter @easymo/commons build && pnpm --filter @easymo/video-agent-schema build && cd admin-app && pnpm build"
 
 [build.environment]
-  NODE_VERSION = "20"
+  NODE_VERSION = "20.18.0"
   PNPM_VERSION = "10.18.3"
 
 # The @netlify/plugin-nextjs plugin automatically handles Next.js deployment
