@@ -135,6 +135,14 @@ export class BusinessBrokerAgent {
   async execute(query: string, userId: string): Promise<string> {
     const model = this.gemini.getGenerativeModel({ model: this.model });
     
+    const geminiTools = [{
+      functionDeclarations: this.tools.map(t => ({
+        name: t.name,
+        description: t.description,
+        parameters: t.parameters
+      }))
+    }];
+
     const chat = model.startChat({
       history: [
         {
@@ -146,54 +154,13 @@ export class BusinessBrokerAgent {
           parts: [{ text: "Understood. I am ready to help users find businesses in Rwanda." }],
         }
       ],
+      tools: geminiTools as any
     });
 
-    let currentQuery = query;
+    let result = await chat.sendMessage(query);
     const MAX_TURNS = 5;
 
     for (let i = 0; i < MAX_TURNS; i++) {
-      // We append a system instruction to guide tool use if not natively supported well in text-only
-      // But Gemini 1.5 supports function calling. Let's try to use it if we can map it, 
-      // or stick to text-based tool invocation for simplicity in this "deep review" implementation 
-      // if we want to be sure it works without complex type mapping.
-      // However, the user asked for "deep review and analysis and implement this complete".
-      // Implementing proper function calling is better.
-      
-      // For simplicity in this Deno port without full type definitions for Gemini Tools,
-      // I'll use a ReAct-style prompt injection or just rely on the model's intelligence 
-      // to ask for tools in a specific format if I instruct it.
-      // But let's try to use the `tools` config in `startChat` if possible.
-      // The `npm:@google/generative-ai` package supports `tools`.
-      
-      // Mapping tools to Gemini format
-      const geminiTools = [{
-        functionDeclarations: this.tools.map(t => ({
-          name: t.name,
-          description: t.description,
-          parameters: t.parameters
-        }))
-      }];
-
-      // Re-initialize chat with tools if it's the first turn (actually startChat should have tools)
-      // Since I already started chat, I might need to restart it or just use sendMessage with tools?
-      // `startChat` takes `tools`.
-      
-      // Let's restart chat with tools properly.
-      const chatWithTools = model.startChat({
-        history: [
-           {
-            role: "user",
-            parts: [{ text: this.instructions }],
-          },
-          {
-            role: "model",
-            parts: [{ text: "Understood. I am ready to help users find businesses in Rwanda." }],
-          }
-        ],
-        tools: geminiTools as any
-      });
-
-      const result = await chatWithTools.sendMessage(currentQuery);
       const response = result.response;
       const call = response.functionCalls()?.[0];
 
@@ -207,45 +174,30 @@ export class BusinessBrokerAgent {
             const toolResult = await tool.execute(toolParams, { userId });
             
             // Send tool result back
-            const nextResult = await chatWithTools.sendMessage([{
+            result = await chat.sendMessage([{
               functionResponse: {
                 name: toolName,
                 response: toolResult
               }
             }]);
             
-            if (nextResult.response.text()) {
-              return nextResult.response.text();
-            }
-            // If it calls another tool, loop continues (but here we just return text if available)
-            // Gemini might chain calls.
-             if (nextResult.response.functionCalls()?.length) {
-               // Handle chained calls? For now, let's just return the text if present or loop.
-               // To support loop, we need to update `currentQuery` or manage history manually.
-               // `chatWithTools` maintains history.
-               // But `sendMessage` returns the next response.
-               // If we are in a loop, we should continue.
-               // But `chatWithTools` object is stateful.
-               
-               // Actually, `sendMessage` advances the chat.
-               // So we just need to handle the new response.
-               // But my loop re-initializes chat every time which is wrong.
-               
-               // Refactoring loop:
-               // Move initialization outside loop.
-             }
-             return nextResult.response.text();
-
           } catch (err) {
-             return `Error executing tool ${toolName}: ${err.message}`;
+             result = await chat.sendMessage([{
+              functionResponse: {
+                name: toolName,
+                response: { error: err instanceof Error ? err.message : String(err) }
+              }
+            }]);
           }
+        } else {
+          break; // Tool not found
         }
       } else {
         return response.text();
       }
     }
     
-    return "I'm sorry, I couldn't complete your request.";
+    return result.response.text();
   }
 }
 
@@ -253,16 +205,6 @@ export class BusinessBrokerAgent {
 export async function runBusinessBrokerAgent(ctx: RouterContext, query: string) {
   try {
     const agent = new BusinessBrokerAgent(ctx.supabase);
-    // We need to handle the chat loop properly.
-    // Since this is a webhook, we might not want to keep state in memory for long multi-turn reasoning 
-    // if it spans multiple user messages.
-    // But for a single user message triggering multiple tool calls (ReAct), we do it in `execute`.
-    
-    // However, we need to maintain conversation history across user messages.
-    // The `BusinessBrokerAgent` here re-initializes history every time.
-    // We should load history from Supabase `wa_interactions` or similar if we want context.
-    // For now, let's assume stateless per request or simple context.
-    
     const response = await agent.execute(query, ctx.from);
     await sendText(ctx.from, response);
     return true;
