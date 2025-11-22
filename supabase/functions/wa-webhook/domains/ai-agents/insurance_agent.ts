@@ -7,6 +7,15 @@ import { createClient, SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { GoogleGenerativeAI } from "npm:@google/generative-ai";
 import { sendText } from "../../wa/client.ts";
 import { RouterContext } from "../../types.ts";
+import { 
+  sendAgentListResponse, 
+  sendAgentMessageWithActions, 
+  sendAgentMessage,
+  AGENT_TEMPLATES,
+  formatEmojiNumberedList,
+  parseEmojiNumber,
+  createQuickReplyInstruction
+} from "../../utils/ai-chat-interface.ts";
 
 interface Tool {
   name: string;
@@ -47,6 +56,13 @@ YOUR ROLE:
 - Help file and track insurance claims
 - Answer insurance questions
 - Guide users through the insurance process
+
+RESPONSE FORMAT (CRITICAL):
+- ALWAYS use emoji-numbered lists (1️⃣, 2️⃣, 3️⃣) when showing insurance options or steps
+- Keep messages concise and conversational
+- Use emojis: 🚗, 🏥, 🏠, 💼, 📄, ✅
+- Format options as: "1️⃣ Plan Name - Coverage\\n   Price, Benefits"
+- Guide users with clear next steps and action buttons
 
 INSURANCE TYPES:
 1. **Motor Insurance**

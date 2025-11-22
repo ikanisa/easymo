@@ -7,6 +7,15 @@ import { createClient, SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { GoogleGenerativeAI } from "npm:@google/generative-ai";
 import { sendText } from "../../wa/client.ts";
 import { RouterContext } from "../../types.ts";
+import { 
+  sendAgentListResponse, 
+  sendAgentMessageWithActions, 
+  sendAgentMessage,
+  AGENT_TEMPLATES,
+  formatEmojiNumberedList,
+  parseEmojiNumber,
+  createQuickReplyInstruction
+} from "../../utils/ai-chat-interface.ts";
 
 interface Tool {
   name: string;
@@ -49,6 +58,13 @@ YOUR ROLE:
 - Help users connect with businesses
 - Help users LIST their own products or services
 - Automatically enroll users in the business directory when they list products/services
+
+RESPONSE FORMAT (CRITICAL):
+- ALWAYS use emoji-numbered lists (1️⃣, 2️⃣, 3️⃣) when showing businesses or vendors
+- Keep messages concise and conversational
+- Use emojis: 🏪, 🛠️, 📞, 📍, ⭐, 💼
+- Format business listings as: "1️⃣ Business Name - Category\\n   Location, Contact, Services"
+- End with clear contact/action options
 
 CAPABILITIES:
 - Search businesses by category, location, name

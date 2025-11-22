@@ -7,6 +7,15 @@ import { createClient, SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { GoogleGenerativeAI } from "npm:@google/generative-ai";
 import { sendText } from "../../wa/client.ts";
 import { RouterContext } from "../../types.ts";
+import { 
+  sendAgentListResponse, 
+  sendAgentMessageWithActions, 
+  sendAgentMessage,
+  AGENT_TEMPLATES,
+  formatEmojiNumberedList,
+  parseEmojiNumber,
+  createQuickReplyInstruction
+} from "../../utils/ai-chat-interface.ts";
 import { googleSearch } from "shared/google_search.ts";
 import { deepSearch } from "shared/deep_search.ts";
 
@@ -50,6 +59,13 @@ YOUR ROLE:
 - Contact property owners
 - Schedule viewings
 - Present top 5 options with reasons
+
+RESPONSE FORMAT (CRITICAL):
+- ALWAYS use emoji-numbered lists (1️⃣, 2️⃣, 3️⃣) when showing properties
+- Keep messages concise and conversational
+- Use emojis: 🏠, 🏢, 🛏️, 💰, 📍, 🔑
+- Format property listings as: "1️⃣ Property Type - Location\\n   Price, Beds, Details"
+- End with clear viewing/contact options
 
 PROPERTY TYPES:
 - Residential (apartments, houses, villas)

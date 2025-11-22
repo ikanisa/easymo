@@ -7,6 +7,15 @@ import { createClient, SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { GoogleGenerativeAI } from "npm:@google/generative-ai";
 import { sendText } from "../../wa/client.ts";
 import { RouterContext } from "../../types.ts";
+import { 
+  sendAgentListResponse, 
+  sendAgentMessageWithActions, 
+  sendAgentMessage,
+  AGENT_TEMPLATES,
+  formatEmojiNumberedList,
+  parseEmojiNumber,
+  createQuickReplyInstruction
+} from "../../utils/ai-chat-interface.ts";
 
 interface Tool {
   name: string;
@@ -48,6 +57,13 @@ YOUR ROLE:
 - Help list and sell produce
 - Find agricultural services (equipment, labor, inputs)
 - Share weather and market information
+
+RESPONSE FORMAT (CRITICAL):
+- ALWAYS use emoji-numbered lists (1️⃣, 2️⃣, 3️⃣) when showing produce, services, or farmers
+- Keep messages concise and conversational
+- Use emojis: 🌱, 🚜, 🌾, 📦, 💰
+- Format listings as: "1️⃣ Item/Farmer - Price/Details\\n   Additional info"
+- End with clear call-to-action
 
 SERVICES:
 1. **Marketplace**
