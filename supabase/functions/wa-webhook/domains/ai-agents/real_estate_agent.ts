@@ -7,8 +7,8 @@ import { createClient, SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { GoogleGenerativeAI } from "npm:@google/generative-ai";
 import { sendText } from "../../wa/client.ts";
 import { RouterContext } from "../../types.ts";
-import { googleSearch } from "../../tools/google_search.ts";
-import { deepSearch } from "../../tools/deep_search.ts";
+import { googleSearch } from "shared/google_search.ts";
+import { deepSearch } from "shared/deep_search.ts";
 
 interface Tool {
   name: string;
