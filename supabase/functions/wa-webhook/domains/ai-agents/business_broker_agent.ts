@@ -47,12 +47,23 @@ YOUR ROLE:
 - Search the business directory using location and category
 - Provide relevant recommendations
 - Help users connect with businesses
+- Help users LIST their own products or services
+- Automatically enroll users in the business directory when they list products/services
 
 CAPABILITIES:
 - Search businesses by category, location, name
 - Get detailed business information
 - Find businesses near a specific location
 - Provide contact information
+- **List products for sale** (auto-enrolls user in directory)
+- **List services offered** (auto-enrolls user in directory)
+- Add complete business listings
+
+AUTOMATIC BUSINESS ENROLLMENT:
+- When a user lists a product → Create product listing + enroll as business
+- When a user lists a service → Create service listing + enroll as business
+- User appears in search results immediately
+- Source marked as 'user_generated'
 
 GUIDELINES:
 - Ask clarifying questions if the request is vague
@@ -60,12 +71,17 @@ GUIDELINES:
 - Provide 3-5 relevant results when possible
 - Include key details: name, location, phone, category
 - Be helpful and conversational
+- Encourage users to list their own products/services
+- Explain that listing automatically adds them to the business directory
 
 TOOLS AVAILABLE:
 - search_businesses: Find businesses by criteria
 - get_business_details: Get full information about a business
 - search_nearby: Find businesses near coordinates
 - geocode_location: Convert address to coordinates
+- list_product: List a product for sale (auto-enrolls user)
+- list_service: List a service offering (auto-enrolls user)
+- add_business: Add a complete business listing
 
 Always provide helpful, accurate information based on the business directory.`;
   }
@@ -226,6 +242,203 @@ Always provide helpful, accurate information based on the business directory.`;
             coordinates: kigaliCoords,
             message: 'Geocoding integration pending - using Kigali center coordinates'
           };
+        }
+      },
+      {
+        name: 'list_product',
+        description: 'List a product for sale. User will be automatically enrolled in business directory.',
+        parameters: {
+          type: 'object',
+          properties: {
+            product_name: { type: 'string', description: 'Name of the product' },
+            description: { type: 'string', description: 'Product description' },
+            price: { type: 'number', description: 'Price in RWF' },
+            category: { type: 'string', description: 'Product category (e.g., "Electronics", "Clothing", "Food")' },
+            business_name: { type: 'string', description: 'Optional business name (defaults to user name)' },
+            city: { type: 'string', description: 'City/location' }
+          },
+          required: ['product_name', 'category', 'city']
+        },
+        execute: async (params, context) => {
+          try {
+            // Auto-enroll user in business directory if not already enrolled
+            const businessName = params.business_name || `${params.product_name} Seller`;
+            
+            // Check if user already has a business
+            const { data: existing } = await this.supabase
+              .from('business_directory')
+              .select('id')
+              .eq('phone', context.userId)
+              .single();
+            
+            let businessId = existing?.id;
+            
+            if (!existing) {
+              // Create business entry for user
+              const { data: newBusiness, error: bizError } = await this.supabase
+                .from('business_directory')
+                .insert({
+                  name: businessName,
+                  category: params.category,
+                  city: params.city,
+                  phone: context.userId,
+                  source: 'user_generated',
+                  status: 'ACTIVE',
+                  verified: false
+                })
+                .select('id')
+                .single();
+              
+              if (bizError) {
+                return { error: 'Failed to create business profile' };
+              }
+              
+              businessId = newBusiness.id;
+            }
+            
+            // Create product listing (if you have a products table)
+            // For now, we'll add it to business description
+            const productInfo = `\n\n📦 Product: ${params.product_name}\n💰 Price: ${params.price} RWF\n📝 ${params.description || ''}`;
+            
+            await this.supabase
+              .from('business_directory')
+              .update({
+                description: productInfo
+              })
+              .eq('id', businessId);
+            
+            return {
+              success: true,
+              message: `✅ Product "${params.product_name}" listed successfully! You've been added to the business directory.`,
+              business_id: businessId
+            };
+          } catch (error) {
+            return { error: 'Failed to list product' };
+          }
+        }
+      },
+      {
+        name: 'list_service',
+        description: 'List a service offering. User will be automatically enrolled in business directory.',
+        parameters: {
+          type: 'object',
+          properties: {
+            service_name: { type: 'string', description: 'Name of the service' },
+            description: { type: 'string', description: 'Service description' },
+            price: { type: 'string', description: 'Price or rate (e.g., "5000 RWF/hour", "Negotiable")' },
+            category: { type: 'string', description: 'Service category (e.g., "Plumbing", "IT Support", "Tutoring")' },
+            business_name: { type: 'string', description: 'Optional business name (defaults to user name)' },
+            city: { type: 'string', description: 'City/location where service is offered' }
+          },
+          required: ['service_name', 'category', 'city']
+        },
+        execute: async (params, context) => {
+          try {
+            // Auto-enroll user in business directory if not already enrolled
+            const businessName = params.business_name || `${params.service_name} Services`;
+            
+            // Check if user already has a business
+            const { data: existing } = await this.supabase
+              .from('business_directory')
+              .select('id')
+              .eq('phone', context.userId)
+              .single();
+            
+            let businessId = existing?.id;
+            
+            if (!existing) {
+              // Create business entry for user
+              const { data: newBusiness, error: bizError } = await this.supabase
+                .from('business_directory')
+                .insert({
+                  name: businessName,
+                  category: params.category,
+                  city: params.city,
+                  phone: context.userId,
+                  source: 'user_generated',
+                  status: 'ACTIVE',
+                  verified: false
+                })
+                .select('id')
+                .single();
+              
+              if (bizError) {
+                return { error: 'Failed to create business profile' };
+              }
+              
+              businessId = newBusiness.id;
+            }
+            
+            // Add service info to business description
+            const serviceInfo = `\n\n🛠️ Service: ${params.service_name}\n💰 Rate: ${params.price || 'Contact for pricing'}\n📝 ${params.description || ''}`;
+            
+            await this.supabase
+              .from('business_directory')
+              .update({
+                description: serviceInfo
+              })
+              .eq('id', businessId);
+            
+            return {
+              success: true,
+              message: `✅ Service "${params.service_name}" listed successfully! You've been added to the business directory.`,
+              business_id: businessId
+            };
+          } catch (error) {
+            return { error: 'Failed to list service' };
+          }
+        }
+      },
+      {
+        name: 'add_business',
+        description: 'Add a complete business listing to the directory',
+        parameters: {
+          type: 'object',
+          properties: {
+            business_name: { type: 'string', description: 'Business name' },
+            category: { type: 'string', description: 'Business category' },
+            description: { type: 'string', description: 'Business description' },
+            city: { type: 'string', description: 'City/location' },
+            address: { type: 'string', description: 'Street address' },
+            phone: { type: 'string', description: 'Contact phone number' },
+            email: { type: 'string', description: 'Contact email' },
+            website: { type: 'string', description: 'Website URL' }
+          },
+          required: ['business_name', 'category', 'city']
+        },
+        execute: async (params, context) => {
+          try {
+            const { data, error } = await this.supabase
+              .from('business_directory')
+              .insert({
+                name: params.business_name,
+                category: params.category,
+                description: params.description,
+                city: params.city,
+                address: params.address,
+                phone: params.phone || context.userId,
+                email: params.email,
+                website: params.website,
+                source: 'user_generated',
+                status: 'ACTIVE',
+                verified: false,
+                user_id: context.userId
+              })
+              .select('id')
+              .single();
+            
+            if (error) {
+              return { error: 'Failed to add business' };
+            }
+            
+            return {
+              success: true,
+              message: `✅ Business "${params.business_name}" added successfully to the directory!`,
+              business_id: data.id
+            };
+          } catch (error) {
+            return { error: 'Failed to add business' };
+          }
         }
       }
     ];

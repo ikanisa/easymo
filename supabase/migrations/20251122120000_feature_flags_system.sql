@@ -16,10 +16,16 @@ CREATE INDEX IF NOT EXISTS idx_system_config_key ON system_config(key);
 CREATE INDEX IF NOT EXISTS idx_system_config_active ON system_config(is_active) WHERE is_active = true;
 
 -- Updated timestamp trigger
-CREATE TRIGGER set_updated_at_system_config
-  BEFORE UPDATE ON system_config
-  FOR EACH ROW
-  EXECUTE FUNCTION set_updated_at();
+-- Updated timestamp trigger
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'set_updated_at_system_config') THEN
+    CREATE TRIGGER set_updated_at_system_config
+      BEFORE UPDATE ON system_config
+      FOR EACH ROW
+      EXECUTE FUNCTION set_updated_at();
+  END IF;
+END $$;
 
 -- Insert initial feature flags
 INSERT INTO system_config (key, value, description, is_active)
