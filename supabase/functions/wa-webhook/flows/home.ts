@@ -32,12 +32,6 @@ type MenuRowDef = {
   descriptionKey: TranslationKey;
 };
 
-const ADMIN_ROW_DEF: MenuRowDef = {
-  id: IDS.ADMIN_HUB,
-  titleKey: "home.rows.admin.title",
-  descriptionKey: "home.rows.admin.description",
-};
-
 export async function sendHomeMenu(
   ctx: RouterContext,
   page = 0,
@@ -47,7 +41,6 @@ export async function sendHomeMenu(
     await recordMotorInsuranceHidden(ctx, gate, "menu");
   }
   const rows = await buildRows({
-    isAdmin: gate.isAdmin,
     showInsurance: gate.allowed,
     locale: ctx.locale,
     ctx,
@@ -113,7 +106,6 @@ export async function sendHomeMenu(
 }
 
 async function buildRows(options: {
-  isAdmin: boolean;
   showInsurance: boolean;
   locale: RouterContext["locale"];
   ctx: RouterContext;
@@ -179,16 +171,7 @@ async function buildRows(options: {
     ? dynamicRows
     : dynamicRows.filter((row) => row.id !== IDS.MOTOR_INSURANCE);
   
-  // Add admin row if user is admin
-  if (!options.isAdmin) return filteredRows;
-  return [
-    {
-      id: ADMIN_ROW_DEF.id,
-      title: t(options.locale, ADMIN_ROW_DEF.titleKey),
-      description: t(options.locale, ADMIN_ROW_DEF.descriptionKey),
-    },
-    ...filteredRows,
-  ];
+  return filteredRows;
 }
 
 function getCountryFromPhone(phone: string): string {

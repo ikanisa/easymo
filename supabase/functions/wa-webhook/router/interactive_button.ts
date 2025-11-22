@@ -42,9 +42,6 @@ import {
 import { showWalletTop } from "../domains/wallet/top.ts";
 import { ensureReferralLink } from "../utils/share.ts";
 import { logStructuredEvent } from "../observe/log.ts";
-import { openAdminHub, showAdminHubList } from "../flows/admin/hub.ts";
-import { handleAdminQuickAction } from "../flows/admin/actions.ts";
-import { handleInsuranceButton } from "../flows/admin/insurance.ts";
 import { buildButtons, sendButtonsMessage, homeOnly } from "../utils/reply.ts";
 import {
   handleQuickSaveLocation,
@@ -383,27 +380,6 @@ export async function handleButton(
       ) {
         return await handleScheduleChangeVehicle(ctx, state.data);
       }
-      return false;
-    case IDS.ADMIN_HUB:
-      await openAdminHub(ctx);
-      return true;
-    case IDS.ADMIN_HUB_VIEW:
-      await showAdminHubList(ctx);
-      return true;
-    case IDS.ADMIN_TODAY:
-    case IDS.ADMIN_ALERTS:
-    case IDS.ADMIN_SETTINGS:
-      await handleAdminQuickAction(ctx, id);
-      return true;
-    case IDS.ADMIN_INSURANCE_VIEW:
-    case IDS.ADMIN_INSURANCE_DETAIL_VIEW:
-    case IDS.ADMIN_INSURANCE_MORE_VIEW:
-    case IDS.ADMIN_INSURANCE_DM_SUBMIT:
-    case IDS.ADMIN_INSURANCE_REVIEW_SUBMIT:
-    case IDS.ADMIN_INSURANCE_REQUEST_SUBMIT:
-    case IDS.ADMIN_INSURANCE_ASSIGN_SUBMIT:
-    case IDS.ADMIN_INSURANCE_EXPORT_SUBMIT:
-      if (await handleInsuranceButton(ctx, id, state)) return true;
       return false;
     case IDS.BUSINESS_DELETE_CONFIRM: {
       if (

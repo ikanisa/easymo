@@ -70,7 +70,7 @@ import {
 } from "../domains/business/management.ts";
 import { startAddNewBusiness } from "../domains/business/add_new.ts";
 import { handleWalletRedeemSelection } from "../domains/wallet/redeem.ts";
-import { ADMIN_ROW_IDS, openAdminHub } from "../flows/admin/hub.ts";
+import { ADMIN_ROW_IDS } from "../flows/admin/hub.ts";
 import { handleAdminRow } from "../flows/admin/dispatcher.ts";
 import { handleRecentSelection } from "../domains/recent/index.ts";
 import { IDS } from "../wa/ids.ts";
@@ -1056,9 +1056,6 @@ async function handleHomeMenuSelection(
       return await showWalletTop(ctx);
     case IDS.WALLET_TRANSFER:
       return await startWalletTransfer(ctx);
-    case IDS.ADMIN_HUB:
-      await openAdminHub(ctx);
-      return true;
     default:
       // Check for bars preference selection
       if (id.startsWith("bars_pref_") && state.key === "bars_wait_preference") {
