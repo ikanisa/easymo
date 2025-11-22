@@ -7,6 +7,15 @@ import { createClient, SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { GoogleGenerativeAI } from "npm:@google/generative-ai";
 import { sendText } from "../../wa/client.ts";
 import { RouterContext } from "../../types.ts";
+import { 
+  sendAgentListResponse, 
+  sendAgentMessageWithActions, 
+  sendAgentMessage,
+  AGENT_TEMPLATES,
+  formatEmojiNumberedList,
+  parseEmojiNumber,
+  createQuickReplyInstruction
+} from "../../utils/ai-chat-interface.ts";
 import { googleSearch } from "shared/google_search.ts";
 import { deepSearch } from "shared/deep_search.ts";
 
@@ -50,6 +59,13 @@ YOUR ROLE:
 - Provide career guidance and interview tips
 - Warn about job scams
 - Track application status
+
+RESPONSE FORMAT (CRITICAL):
+- ALWAYS use emoji-numbered lists (1️⃣, 2️⃣, 3️⃣) when showing job opportunities
+- Keep messages concise and conversational
+- Use emojis: 💼, 🏗️, 🚗, 🍽️, 💰, ⏰
+- Format job listings as: "1️⃣ Job Title - Company\\n   Salary, Location, Type"
+- End with clear next steps for application
 
 JOB CATEGORIES:
 - Construction (mason, carpenter, plumber, electrician)

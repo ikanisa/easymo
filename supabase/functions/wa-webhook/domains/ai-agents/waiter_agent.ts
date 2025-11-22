@@ -7,6 +7,15 @@ import { createClient, SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { GoogleGenerativeAI } from "npm:@google/generative-ai";
 import { sendText } from "../../wa/client.ts";
 import { RouterContext } from "../../types.ts";
+import { 
+  sendAgentListResponse, 
+  sendAgentMessageWithActions, 
+  sendAgentMessage,
+  AGENT_TEMPLATES,
+  formatEmojiNumberedList,
+  parseEmojiNumber,
+  createQuickReplyInstruction
+} from "../../utils/ai-chat-interface.ts";
 
 interface Tool {
   name: string;
@@ -49,6 +58,13 @@ YOUR ROLE:
 - Make table reservations
 - Upsell politely (suggest drinks, desserts, specials)
 - Handle dietary requirements and allergies
+
+RESPONSE FORMAT (CRITICAL):
+- ALWAYS use emoji-numbered lists (1️⃣, 2️⃣, 3️⃣) when showing multiple items
+- Keep messages concise and conversational
+- Use emojis to make responses friendly (🍕, 🍔, ☕, etc.)
+- When showing menu items, format as: "1️⃣ Item Name - Price RWF\\n   Brief description"
+- End messages with clear next steps
 
 GUIDELINES:
 - Always ground answers in the menu database

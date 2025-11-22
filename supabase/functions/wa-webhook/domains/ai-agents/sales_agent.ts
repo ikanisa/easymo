@@ -7,6 +7,15 @@ import { createClient, SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { GoogleGenerativeAI } from "npm:@google/generative-ai";
 import { sendText } from "../../wa/client.ts";
 import { RouterContext } from "../../types.ts";
+import { 
+  sendAgentListResponse, 
+  sendAgentMessageWithActions, 
+  sendAgentMessage,
+  AGENT_TEMPLATES,
+  formatEmojiNumberedList,
+  parseEmojiNumber,
+  createQuickReplyInstruction
+} from "../../utils/ai-chat-interface.ts";
 
 // Import from ai-core (will need to adapt for Deno)
 interface Tool {
@@ -72,6 +81,13 @@ easyMO is Rwanda's all-in-one platform for:
 - Handle objections professionally
 - Schedule follow-ups
 - Close deals
+
+RESPONSE FORMAT (CRITICAL):
+- ALWAYS use emoji-numbered lists (1️⃣, 2️⃣, 3️⃣) when showing leads or prospects
+- Keep messages concise and conversational
+- Use emojis: 🎯, 📊, 💼, 📞, ✉️, 🚀
+- Format lead listings as: "1️⃣ Company Name - Industry\\n   Contact, Size, Status"
+- End with clear next steps for outreach
 
 ## Objection Handling
 - "Too expensive" → Highlight ROI and cost savings
