@@ -24,8 +24,8 @@ import {
   processWithTimeout,
   recordProcessedMessage,
   releaseConversationLock,
-} from "../_shared/webhook-utils.ts";
-import { logStructuredEvent, logError, recordMetric } from "../_shared/observability.ts";
+} from "../../_shared/webhook-utils.ts";
+import { logStructuredEvent, logError, recordMetric } from "../../_shared/observability.ts";
 
 // Feature flag for enhanced processing
 const ENHANCED_PROCESSING_ENABLED = 
