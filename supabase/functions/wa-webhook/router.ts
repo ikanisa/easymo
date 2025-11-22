@@ -3,6 +3,7 @@
 
 import { SUPABASE_SERVICE_ROLE_KEY } from "./config.ts";
 import { fetchWithTimeout } from "./utils/http.ts";
+import { isFeatureEnabled } from "../_shared/feature-flags.ts";
 
 const MICROSERVICES_BASE_URL = Deno.env.get("SUPABASE_URL") + "/functions/v1";
 const ROUTER_TIMEOUT_MS = Math.max(
@@ -60,6 +61,16 @@ export async function routeMessage(
   messageText: string,
   chatState?: string
 ): Promise<string> {
+  // If unified agent system is enabled, route everything to ai-agents
+  if (isFeatureEnabled("agent.unified_system")) {
+    console.log(JSON.stringify({
+      event: "ROUTE_TO_UNIFIED_AGENT_SYSTEM",
+      message: messageText.substring(0, 50),
+      unified_system_enabled: true,
+    }));
+    return "wa-webhook-ai-agents";
+  }
+
   const text = messageText.toLowerCase();
 
   // 1. Check chat state first (user is in a flow)

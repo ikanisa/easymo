@@ -26,6 +26,7 @@ export type FeatureFlag =
   | "agent.shops"
   | "agent.quincaillerie"
   | "agent.notary"
+  | "agent.unified_system"
   | "wallet.service"
   | "ocr.processor"
   | "cart.reminders"
@@ -52,6 +53,7 @@ const DEFAULT_FLAGS: Record<FeatureFlag, boolean> = {
   "agent.shops": false,
   "agent.quincaillerie": false,
   "agent.notary": false,
+  "agent.unified_system": true,
   "wallet.service": false,
   "ocr.processor": true,
   "cart.reminders": true,
