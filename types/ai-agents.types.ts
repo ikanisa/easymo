@@ -391,7 +391,9 @@ export type AgentSlug =
   | 'business_broker'
   | 'real_estate'
   | 'jobs'
-  | 'sales_cold_caller';
+  | 'sales_cold_caller'
+  | 'rides'
+  | 'insurance';
 
 export type Channel =
   | 'whatsapp'
@@ -430,7 +432,9 @@ export type MatchType =
   | 'produce'
   | 'business'
   | 'menu_item'
-  | 'lead';
+  | 'lead'
+  | 'ride'
+  | 'insurance_quote';
 
 // =====================================================================
 // Helper Types
@@ -806,3 +810,197 @@ export function toAiAgentIntentInsert(input: CreateAiAgentIntentInput): Database
     metadata: input.metadata,
   };
 }
+
+// =====================================================================
+// Rides Domain Types
+// =====================================================================
+
+export interface RidesSavedLocationRow {
+  id: string;
+  user_id: string;
+  label: string | null;
+  address_text: string | null;
+  lat: number | null;
+  lng: number | null;
+  metadata: Record<string, any>;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface RidesTripRow {
+  id: string;
+  rider_user_id: string;
+  driver_user_id: string | null;
+  pickup_address: string | null;
+  pickup_lat: number | null;
+  pickup_lng: number | null;
+  dropoff_address: string | null;
+  dropoff_lat: number | null;
+  dropoff_lng: number | null;
+  scheduled_at: string | null;
+  started_at: string | null;
+  completed_at: string | null;
+  status: string;
+  price_estimate: number | null;
+  currency: string;
+  metadata: Record<string, any>;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface RidesDriverStatusRow {
+  id: string;
+  user_id: string;
+  is_online: boolean;
+  current_lat: number | null;
+  current_lng: number | null;
+  last_seen_at: string;
+  metadata: Record<string, any>;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface RidesSavedLocation {
+  id: string;
+  userId: string;
+  label?: string;
+  addressText?: string;
+  lat?: number;
+  lng?: number;
+  metadata: Record<string, any>;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface RidesTrip {
+  id: string;
+  riderUserId: string;
+  driverUserId?: string;
+  pickupAddress?: string;
+  pickupLat?: number;
+  pickupLng?: number;
+  dropoffAddress?: string;
+  dropoffLat?: number;
+  dropoffLng?: number;
+  scheduledAt?: Date;
+  startedAt?: Date;
+  completedAt?: Date;
+  status: RideTripStatus;
+  priceEstimate?: number;
+  currency: string;
+  metadata: Record<string, any>;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface RidesDriverStatus {
+  id: string;
+  userId: string;
+  isOnline: boolean;
+  currentLat?: number;
+  currentLng?: number;
+  lastSeenAt: Date;
+  metadata: Record<string, any>;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export type RideTripStatus =
+  | 'pending'
+  | 'matched'
+  | 'en_route'
+  | 'completed'
+  | 'cancelled';
+
+// =====================================================================
+// Insurance Domain Types
+// =====================================================================
+
+export interface InsuranceProfileRow {
+  id: string;
+  user_id: string;
+  vehicle_identifier: string | null;
+  vehicle_metadata: Record<string, any>;
+  owner_name: string | null;
+  owner_id_number: string | null;
+  metadata: Record<string, any>;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface InsuranceDocumentRow {
+  id: string;
+  profile_id: string;
+  document_type: string | null;
+  file_url: string | null;
+  wa_message_id: string | null;
+  metadata: Record<string, any>;
+  uploaded_at: string;
+}
+
+export interface InsuranceQuoteRequestRow {
+  id: string;
+  profile_id: string;
+  agent_id: string;
+  intent_id: string | null;
+  request_type: string | null;
+  status: string;
+  requested_at: string;
+  resolved_at: string | null;
+  quote_details: Record<string, any>;
+  metadata: Record<string, any>;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface InsuranceProfile {
+  id: string;
+  userId: string;
+  vehicleIdentifier?: string;
+  vehicleMetadata: Record<string, any>;
+  ownerName?: string;
+  ownerIdNumber?: string;
+  metadata: Record<string, any>;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface InsuranceDocument {
+  id: string;
+  profileId: string;
+  documentType?: string;
+  fileUrl?: string;
+  waMessageId?: string;
+  metadata: Record<string, any>;
+  uploadedAt: Date;
+}
+
+export interface InsuranceQuoteRequest {
+  id: string;
+  profileId: string;
+  agentId: string;
+  intentId?: string;
+  requestType?: InsuranceRequestType;
+  status: InsuranceQuoteStatus;
+  requestedAt: Date;
+  resolvedAt?: Date;
+  quoteDetails: Record<string, any>;
+  metadata: Record<string, any>;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export type InsuranceRequestType =
+  | 'new'
+  | 'renewal';
+
+export type InsuranceQuoteStatus =
+  | 'pending'
+  | 'in_review'
+  | 'approved'
+  | 'rejected';
+
+export type InsuranceDocumentType =
+  | 'certificate'
+  | 'carte_jaune'
+  | 'other';

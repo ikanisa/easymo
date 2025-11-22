@@ -131,8 +131,10 @@ export async function ensureProfile(
     });
   }
 
-  // LEGACY COMPATIBILITY: Also maintain profiles table for backward compatibility
-  // 1. Try to find existing profile
+  // LEGACY COMPATIBILITY: Maintain profiles table for backward compatibility
+  // Use whatsapp_users.id as the user_id for profiles table
+  
+  // 1. Check if profile already exists
   const { data: existing } = await client
     .from("profiles")
     .select("user_id, whatsapp_e164, locale")
@@ -143,58 +145,18 @@ export async function ensureProfile(
     await logStructuredEvent("PROFILE_FOUND_EXISTING", {
       masked_phone: maskMsisdn(normalized),
       user_id: existing.user_id,
+      wa_user_id: waUserId,
     });
     return existing as ProfileRecord;
   }
 
-  // 2. Create auth user for backward compatibility
-  const { data: authUser, error: authError } = await client.auth.admin.createUser({
-    phone: normalized,
-    phone_confirm: true,
-    user_metadata: { role: "buyer", wa_user_id: waUserId },
-  });
-
-  let userId: string;
-
-  if (authError) {
-    if (authError.message?.includes("already registered") || authError.message?.includes("phone_exists")) {
-      const { data: listResult, error: lookupError } = await client.auth.admin.listUsers();
-      
-      if (lookupError) {
-        await logStructuredEvent("AUTH_USER_LOOKUP_ERROR", {
-          masked_phone: maskMsisdn(normalized),
-          error: lookupError.message,
-        });
-        throw lookupError;
-      }
-      
-      const foundUser = listResult?.users?.find(u => u.phone === normalized);
-      
-      if (!foundUser) {
-        throw new Error(`Phone exists in auth but user not found: ${maskMsisdn(normalized)}`);
-      }
-      
-      userId = foundUser.id;
-    } else {
-      await logStructuredEvent("AUTH_USER_CREATE_FAILED", {
-        masked_phone: maskMsisdn(normalized),
-        error: authError.message,
-      });
-      throw authError;
-    }
-  } else {
-    if (!authUser.user) {
-      throw new Error("Failed to create auth user");
-    }
-    userId = authUser.user.id;
-  }
-
-  // 3. Create profile
-  const { data, error } = await client
+  // 2. Create new profile using whatsapp_users.id as user_id
+  // This maintains backward compatibility without requiring auth.admin API
+  const { data: newProfile, error: profileError } = await client
     .from("profiles")
     .upsert(
       {
-        user_id: userId,
+        user_id: waUserId, // Use WhatsApp user ID directly
         whatsapp_e164: normalized,
         locale: userLanguage || locale || "en",
         role: "buyer",
@@ -204,21 +166,34 @@ export async function ensureProfile(
     .select("user_id, whatsapp_e164, locale")
     .single();
     
-  if (error) {
+  if (profileError) {
     await logStructuredEvent("PROFILE_UPSERT_FAILED", {
       masked_phone: maskMsisdn(normalized),
-      error: error.message,
+      error: profileError.message,
+      error_code: profileError.code,
     });
-    throw error;
+    // Non-blocking: profile creation failed but whatsapp_user exists
+    // Return a synthetic ProfileRecord for compatibility
+    await logStructuredEvent("PROFILE_CREATION_SKIPPED", {
+      masked_phone: maskMsisdn(normalized),
+      wa_user_id: waUserId,
+      reason: "Using whatsapp_users table as primary source",
+    });
+    
+    return {
+      user_id: waUserId,
+      whatsapp_e164: normalized,
+      locale: userLanguage || locale || "en",
+    } as ProfileRecord;
   }
   
   await logStructuredEvent("PROFILE_ENSURED", {
     masked_phone: maskMsisdn(normalized),
-    user_id: userId,
+    user_id: newProfile.user_id,
     wa_user_id: waUserId,
   });
   
-  return data as ProfileRecord;
+  return newProfile as ProfileRecord;
 }
 
 export async function getState(
