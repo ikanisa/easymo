@@ -108,43 +108,63 @@ export async function fetchActiveMenuItems(
 }
 
 /**
+ * Alias mapping from legacy menu keys to canonical agent keys.
+ * Used for backward compatibility when old keys are referenced in code or user sessions.
+ * After cleanup migration (2025-11-22), only 9 canonical keys are active in DB:
+ * waiter_agent, rides_agent, jobs_agent, business_broker_agent, real_estate_agent,
+ * farmer_agent, insurance_agent, sales_agent, profile.
+ */
+export const HOME_MENU_KEY_ALIASES: Record<string, string> = {
+  // Canonical keys (9 active items) - map to themselves
+  waiter_agent: "waiter_agent",
+  rides_agent: "rides_agent",
+  jobs_agent: "jobs_agent",
+  business_broker_agent: "business_broker_agent",
+  real_estate_agent: "real_estate_agent",
+  farmer_agent: "farmer_agent",
+  insurance_agent: "insurance_agent",
+  sales_agent: "sales_agent",
+  profile: "profile",
+  
+  // Legacy aliases - route to canonical agents
+  schedule_trip: "rides_agent",
+  nearby_drivers: "rides_agent",
+  nearby_passengers: "rides_agent",
+  rides: "rides_agent",
+  jobs_gigs: "jobs_agent",
+  jobs: "jobs_agent",
+  bars_restaurants: "waiter_agent",
+  nearby_pharmacies: "business_broker_agent",
+  quincailleries: "business_broker_agent",
+  shops_services: "business_broker_agent",
+  notary_services: "business_broker_agent",
+  general_broker: "business_broker_agent",
+  property_rentals: "real_estate_agent",
+  motor_insurance: "insurance_agent",
+  momo_qr: "profile",  // Payment QR accessed via profile
+  token_transfer: "profile",  // Wallet transfers via profile
+  profile_assets: "profile",
+  customer_support: "sales_agent",  // Support routed to sales agent
+};
+
+/**
+ * Normalize a menu key (legacy or canonical) to its canonical agent key.
+ * @param key - Menu item key (can be legacy or canonical)
+ * @returns Canonical agent key
+ */
+export function normalizeMenuKey(key: string): string {
+  return HOME_MENU_KEY_ALIASES[key] || key;
+}
+
+/**
  * Map menu item keys to IDS constants
+ * @deprecated Use normalizeMenuKey instead for cleaner semantic
+ * Note: This function has been updated to align with HOME_MENU_KEY_ALIASES
+ * for consistency. All legacy keys now route to canonical agents.
  */
 export function getMenuItemId(key: MenuItemKey): string {
-  const mapping: Record<MenuItemKey, string> = {
-    // 8 AI Agents
-    waiter_agent: "waiter_agent",
-    rides_agent: "rides_agent",
-    jobs_agent: "jobs_agent",
-    business_broker_agent: "business_broker_agent",
-    real_estate_agent: "real_estate_agent",
-    farmer_agent: "farmer_agent",
-    insurance_agent: "insurance_agent",
-    sales_agent: "sales_agent",
-    // Profile
-    profile: "profile",
-    // Legacy mappings (backward compatibility)
-    jobs: "jobs_agent",
-    jobs_gigs: "jobs_agent",
-    rides: "rides_agent",
-    nearby_drivers: "rides_agent",
-    nearby_passengers: "rides_agent",
-    schedule_trip: "rides_agent",
-    motor_insurance: "insurance_agent",
-    nearby_pharmacies: "business_broker_agent",
-    quincailleries: "business_broker_agent",
-    shops_services: "business_broker_agent",
-    property_rentals: "real_estate_agent",
-    momo_qr: "momoqr_start",
-    bars_restaurants: "waiter_agent",
-    notary_services: "business_broker_agent",
-    profile_assets: "profile",
-    token_transfer: "wallet_transfer",
-    general_broker: "business_broker_agent",
-    customer_support: "customer_support",
-  };
-
-  return mapping[key] || key;
+  // Use the same mapping as HOME_MENU_KEY_ALIASES for consistency
+  return normalizeMenuKey(key);
 }
 
 /**
