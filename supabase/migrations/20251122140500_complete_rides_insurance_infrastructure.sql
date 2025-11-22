@@ -409,11 +409,11 @@ END;
 $$;
 
 -- =====================================================================
--- 5. GENERIC APPLY INTENT FUNCTIONS
+-- 5. GENERIC APPLY INTENT FUNCTIONS (V2 - new signatures)
 -- =====================================================================
 
--- Function: Apply Rides intent (create trip, update status, etc.)
-CREATE OR REPLACE FUNCTION public.apply_intent_rides(
+-- Function: Apply Rides intent (new signature - create trip, update status, etc.)
+CREATE OR REPLACE FUNCTION public.apply_intent_rides_v2(
   p_intent_id uuid
 )
 RETURNS jsonb LANGUAGE plpgsql AS $$
@@ -516,8 +516,8 @@ BEGIN
 END;
 $$;
 
--- Function: Apply Insurance intent
-CREATE OR REPLACE FUNCTION public.apply_intent_insurance(
+-- Function: Apply Insurance intent (new signature)
+CREATE OR REPLACE FUNCTION public.apply_intent_insurance_v2(
   p_intent_id uuid
 )
 RETURNS jsonb LANGUAGE plpgsql AS $$
@@ -625,7 +625,7 @@ COMMENT ON FUNCTION public.rides_search_nearby_drivers IS 'Find online drivers w
 COMMENT ON FUNCTION public.rides_search_nearby_passengers IS 'Find pending trip requests within radius for drivers';
 COMMENT ON FUNCTION public.rides_update_driver_location IS 'Upsert driver location and online status';
 COMMENT ON FUNCTION public.insurance_upsert_profile IS 'Create or update insurance profile for user/vehicle';
-COMMENT ON FUNCTION public.apply_intent_rides IS 'Process Rides agent intents and create/update trips';
-COMMENT ON FUNCTION public.apply_intent_insurance IS 'Process Insurance agent intents and create quotes/profiles';
+COMMENT ON FUNCTION public.apply_intent_rides_v2 IS 'Process Rides agent intents and create/update trips (v2 - single param)';
+COMMENT ON FUNCTION public.apply_intent_insurance_v2 IS 'Process Insurance agent intents and create quotes/profiles (v2 - single param)';
 
 COMMIT;
