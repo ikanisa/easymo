@@ -7,6 +7,8 @@ import { createClient, SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { GoogleGenerativeAI } from "npm:@google/generative-ai";
 import { sendText } from "../../wa/client.ts";
 import { RouterContext } from "../../types.ts";
+import { googleSearch } from "../../tools/google_search.ts";
+import { deepSearch } from "../../tools/deep_search.ts";
 
 interface Tool {
   name: string;
@@ -81,7 +83,10 @@ TOOLS AVAILABLE:
 - get_property_details: Get full property information
 - contact_owner: Send message to property owner
 - schedule_viewing: Arrange property viewing
+- schedule_viewing: Arrange property viewing
 - save_favorite: Save property to favorites
+- web_search: Search the web for property news or listings not in DB
+- deep_search: Perform a deep research on specific property topics
 
 Always be helpful, professional, and transparent.`;
   }
@@ -302,6 +307,42 @@ Always be helpful, professional, and transparent.`;
             message: 'Property saved to your favorites',
             favorite_id: data.id
           };
+          return {
+            message: 'Property saved to your favorites',
+            favorite_id: data.id
+          };
+        }
+      },
+      {
+        name: 'web_search',
+        description: 'Search the web for property listings, market trends, or general info',
+        parameters: {
+          type: 'object',
+          properties: {
+            query: { type: 'string', description: 'Search query' }
+          },
+          required: ['query']
+        },
+        execute: async (params) => {
+          const results = await googleSearch(params.query);
+          return { results };
+        }
+      },
+      {
+        name: 'deep_search',
+        description: 'Perform a deep research on complex property topics or to find specific listings across the web',
+        parameters: {
+          type: 'object',
+          properties: {
+            query: { type: 'string', description: 'Research topic or complex query' }
+          },
+          required: ['query']
+        },
+        execute: async (params) => {
+          const apiKey = Deno.env.get("GEMINI_API_KEY");
+          if (!apiKey) return { error: "API key missing" };
+          const answer = await deepSearch(params.query, apiKey);
+          return { answer };
         }
       }
     ];

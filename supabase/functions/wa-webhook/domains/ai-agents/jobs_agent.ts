@@ -7,6 +7,8 @@ import { createClient, SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { GoogleGenerativeAI } from "npm:@google/generative-ai";
 import { sendText } from "../../wa/client.ts";
 import { RouterContext } from "../../types.ts";
+import { googleSearch } from "../../tools/google_search.ts";
+import { deepSearch } from "../../tools/deep_search.ts";
 
 interface Tool {
   name: string;
@@ -70,6 +72,8 @@ TOOLS AVAILABLE:
 - apply_to_job: Submit job application
 - check_application_status: Track applications
 - get_salary_insights: Get salary ranges for roles
+- web_search: Search for jobs on the web
+- deep_search: Research career advice or specific companies
 
 Always be supportive, honest, and safety-focused.`;
   }
@@ -274,6 +278,38 @@ Always be supportive, honest, and safety-focused.`;
             salary_range: `${minSalary} - ${maxSalary} RWF`,
             sample_size: data.length
           };
+        }
+      },
+      {
+        name: 'web_search',
+        description: 'Search the web for jobs, career advice, or company info',
+        parameters: {
+          type: 'object',
+          properties: {
+            query: { type: 'string', description: 'Search query' }
+          },
+          required: ['query']
+        },
+        execute: async (params) => {
+          const results = await googleSearch(params.query);
+          return { results };
+        }
+      },
+      {
+        name: 'deep_search',
+        description: 'Perform deep research on career topics, companies, or find niche jobs',
+        parameters: {
+          type: 'object',
+          properties: {
+            query: { type: 'string', description: 'Research topic' }
+          },
+          required: ['query']
+        },
+        execute: async (params) => {
+          const apiKey = Deno.env.get("GEMINI_API_KEY");
+          if (!apiKey) return { error: "API key missing" };
+          const answer = await deepSearch(params.query, apiKey);
+          return { answer };
         }
       }
     ];
