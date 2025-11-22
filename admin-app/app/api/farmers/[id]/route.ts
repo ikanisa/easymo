@@ -1,5 +1,6 @@
 export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
+
 import { getSupabaseAdminClient } from '@/lib/server/supabase-admin';
 
 // GET /api/farmers/[id] - Get farm details

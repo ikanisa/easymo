@@ -1,4 +1,4 @@
-import { QueryClient, dehydrate, hydrate } from "@tanstack/react-query";
+import { dehydrate, hydrate,QueryClient } from "@tanstack/react-query";
 
 const DEFAULT_QUERY_OPTIONS = {
   queries: {

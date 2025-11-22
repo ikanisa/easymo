@@ -1,7 +1,8 @@
 import { QueryKey, useQuery, UseQueryOptions } from "@tanstack/react-query";
+
 import type { SettingEntry } from "@/lib/schemas";
-import type { PaginatedResult } from "@/lib/shared/pagination";
 import { listSettingsPreview } from "@/lib/settings/settings-preview-service";
+import type { PaginatedResult } from "@/lib/shared/pagination";
 import type { Pagination } from "@/lib/shared/pagination";
 
 export type SettingsPreviewParams = Pagination;

@@ -1,5 +1,6 @@
 import type { Config } from "tailwindcss";
-import { colors, spacing, radii, typography } from "./index";
+
+import { colors, radii, spacing, typography } from "./index";
 
 const colorVariables = Object.fromEntries(
   Object.keys(colors).map((key) => [key, `var(--ui-color-${key.replace(/[A-Z]/g, (match) => `-${match.toLowerCase()}`)})`]),

@@ -190,4 +190,4 @@ export function describeOcrConfidence(confidence?: number | null): {
   };
 }
 
-export type { PremiumInputs as InsurancePremiumInputs, Installment as InsuranceInstallment };
+export type { Installment as InsuranceInstallment,PremiumInputs as InsurancePremiumInputs };

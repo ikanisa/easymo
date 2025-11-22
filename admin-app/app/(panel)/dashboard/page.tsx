@@ -1,13 +1,15 @@
 export const dynamic = 'force-dynamic';
 
-import { createPanelPageMetadata } from "@/components/layout/nav-items";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
+
+import { createPanelPageMetadata } from "@/components/layout/nav-items";
 import { createQueryClient } from "@/lib/api/queryClient";
+import { getDashboardSnapshot } from "@/lib/dashboard/dashboard-service";
 import {
   dashboardQueryKeys,
   fetchDashboardWebhookErrors,
 } from "@/lib/queries/dashboard";
-import { getDashboardSnapshot } from "@/lib/dashboard/dashboard-service";
+
 import { DashboardClient } from "./DashboardClient";
 
 export const metadata = createPanelPageMetadata("/dashboard");

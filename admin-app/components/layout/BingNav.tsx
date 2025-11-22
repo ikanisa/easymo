@@ -1,12 +1,13 @@
 "use client";
 
+import classNames from "classnames";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import classNames from "classnames";
 import type { Ref } from "react";
 
-import { NAV_SECTIONS } from "./nav-items";
 import { toLinkHref } from "@/lib/link-helpers";
+
+import { NAV_SECTIONS } from "./nav-items";
 
 interface BingNavProps {
   mode?: "desktop" | "overlay";

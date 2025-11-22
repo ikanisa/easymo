@@ -1,7 +1,11 @@
 "use client";
 
+import clsx from "clsx";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   createContext,
+  type KeyboardEvent,
   ReactNode,
   useCallback,
   useContext,
@@ -9,15 +13,18 @@ import {
   useMemo,
   useRef,
   useState,
-  type KeyboardEvent,
 } from "react";
-import clsx from "clsx";
-import { usePathname } from "next/navigation";
+
 import {
+  AgentTaskItem,
+  AgentTool,
+  AtlasMapPoint,
+  AtlasRequestRow,
   CandidateCompare3,
   CandidateSummary,
   KnowledgeDocument,
   KnowledgeUpload,
+  MapCard,
   NegotiationMessage,
   NegotiationThread,
   PromptEditor,
@@ -27,13 +34,7 @@ import {
   ToolsGrid,
   Wizard,
   WizardStep,
-  AgentTool,
-  AgentTaskItem,
-  AtlasRequestRow,
-  AtlasMapPoint,
-  MapCard,
 } from "@/components/atlas";
-import Link from "next/link";
 import { toLinkHref } from "@/lib/link-helpers";
 
 export type AgentSidecarTab =

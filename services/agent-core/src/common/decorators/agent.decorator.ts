@@ -1,5 +1,6 @@
-import { createParamDecorator, ExecutionContext } from "@nestjs/common";
 import type { AgentContext } from "@easymo/commons";
+import { createParamDecorator, ExecutionContext } from "@nestjs/common";
+
 import type { AgentRequest } from "../types.js";
 
 export const AgentCtx = createParamDecorator(

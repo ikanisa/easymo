@@ -1,4 +1,5 @@
 import { Pill } from "@/components/ui/Pill";
+
 import styles from "../AssistantPanel.module.css";
 
 type LimitationsListProps = {

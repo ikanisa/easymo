@@ -1,6 +1,8 @@
 import classNames from "classnames";
 import { type RefObject } from "react";
+
 import type { AssistantMessage } from "@/lib/schemas";
+
 import styles from "../AssistantPanel.module.css";
 
 type TranscriptProps = {

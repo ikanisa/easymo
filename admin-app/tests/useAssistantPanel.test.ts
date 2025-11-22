@@ -1,9 +1,10 @@
-import { renderHook, act } from "@testing-library/react";
+import { act,renderHook } from "@testing-library/react";
 import type { FormEvent } from "react";
-import { beforeEach, afterEach, describe, expect, it, vi } from "vitest";
-import type { AssistantRun } from "@/lib/schemas";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
 import { QUICK_PROMPTS } from "@/components/assistant/constants";
 import { useAssistantPanel } from "@/components/assistant/useAssistantPanel";
+import type { AssistantRun } from "@/lib/schemas";
 
 const pushToast = vi.fn();
 const fetchSuggestion = vi.fn<(input: unknown) => Promise<AssistantRun>>();

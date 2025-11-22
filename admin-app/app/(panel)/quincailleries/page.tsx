@@ -1,12 +1,14 @@
 export const dynamic = "force-dynamic";
 
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
+
 import { createQueryClient } from "@/lib/api/queryClient";
 import {
   fetchMarketplaceAgentSessions,
   marketplaceAgentSessionsQueryKeys,
   type MarketplaceAgentSessionsQueryParams,
 } from "@/lib/queries/marketplaceAgentSessions";
+
 import { QuincailleriesClient } from "./QuincailleriesClient";
 
 const DEFAULT_PARAMS: MarketplaceAgentSessionsQueryParams = {

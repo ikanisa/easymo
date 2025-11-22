@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
 import type {
   RealtimeChannel,
   RealtimePostgresChangesPayload,
   SupabaseClient,
 } from "@supabase/supabase-js";
+import { useEffect, useMemo, useRef } from "react";
+
 import { getSupabaseClient } from "@/lib/supabase-client";
 
 export type RealtimeDomain = "drivers" | "negotiations" | "tasks" | "sla";

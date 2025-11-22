@@ -1,10 +1,11 @@
 'use client';
 
-import { ChatInterface } from '@/components/chat/ChatInterface';
-import { ChatProvider } from '@/contexts/ChatContext';
-import { LanguageSwitcher } from '@/components/LanguageSwitcher';
-import { useLocale, useTranslations } from 'next-intl';
 import Link from 'next/link';
+import { useLocale, useTranslations } from 'next-intl';
+
+import { ChatInterface } from '@/components/chat/ChatInterface';
+import { LanguageSwitcher } from '@/components/LanguageSwitcher';
+import { ChatProvider } from '@/contexts/ChatContext';
 
 export default function ChatPage() {
   const t = useTranslations();

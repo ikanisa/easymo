@@ -1,15 +1,17 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import classNames from "classnames";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import classNames from "classnames";
+import { useEffect, useMemo, useState } from "react";
+
+import { toLinkHref } from "@/lib/link-helpers";
+
 import {
   PANEL_NAVIGATION,
   type PanelNavGroup,
   type PanelNavGroupId,
 } from "./nav-items";
-import { toLinkHref } from "@/lib/link-helpers";
 
 function isLinkActive(href: string, pathname: string) {
   return pathname === href || pathname.startsWith(`${href}/`);

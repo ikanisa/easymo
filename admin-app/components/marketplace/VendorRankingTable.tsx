@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
+import { useEffect, useMemo, useState } from "react";
+
 import { DataTable } from "@/components/data-table/DataTable";
-import type { VendorRanking } from "@/lib/schemas";
 import { getAdminApiRoutePath } from "@/lib/routes";
+import type { VendorRanking } from "@/lib/schemas";
 
 interface VendorRankingTableProps {
   data: VendorRanking[];

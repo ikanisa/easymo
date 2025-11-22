@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+
 import {
-  listAgentRequests,
   type AgentRequest,
+  listAgentRequests,
 } from "@/lib/supabase/server/requests";
-import { SupabaseUnavailableError, SupabaseQueryError } from "@/lib/supabase/server/utils";
+import { SupabaseQueryError,SupabaseUnavailableError } from "@/lib/supabase/server/utils";
 
 const querySchema = z.object({
   agentType: z.string().optional(),

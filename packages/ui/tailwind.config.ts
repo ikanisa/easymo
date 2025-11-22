@@ -1,4 +1,5 @@
 import type { Config } from "tailwindcss";
+
 import { tailwindPreset } from "./src/tokens/tailwind";
 
 const config: Config = {

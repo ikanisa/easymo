@@ -1,9 +1,10 @@
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+
 import { useToast } from "@/components/ui/ToastProvider";
 import {
   fetchPlatformSettings,
-  savePlatformSettings,
   type PlatformSettingsIntegration,
+  savePlatformSettings,
 } from "@/lib/settings/platform-settings-service";
 
 export type SettingsFormState = {

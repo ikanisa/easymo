@@ -1,12 +1,14 @@
 "use client";
 
-import { useMemo } from "react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
 import classNames from "classnames";
 import { ChevronRight, Home } from "lucide-react";
-import { buildPanelBreadcrumbs } from "../layout/nav-items";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useMemo } from "react";
+
 import { toLinkHref } from "@/lib/link-helpers";
+
+import { buildPanelBreadcrumbs } from "../layout/nav-items";
 
 interface EnhancedBreadcrumbsProps {
   className?: string;

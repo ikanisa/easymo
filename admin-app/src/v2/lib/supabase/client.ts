@@ -1,6 +1,7 @@
-import { createBrowserClient, createServerClient } from "@supabase/ssr";
 import type { CookieMethodsServer } from "@supabase/ssr";
+import { createBrowserClient, createServerClient } from "@supabase/ssr";
 import type { SupabaseClient } from "@supabase/supabase-js";
+
 import type { Database } from "./database.types";
 
 function requireEnv(name: string) {

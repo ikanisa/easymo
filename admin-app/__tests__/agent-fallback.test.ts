@@ -3,10 +3,11 @@
  * Phase 3: Exercise and Harden Fallbacks
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach,describe, expect, it, vi } from 'vitest';
+
 import {
-  handleAgentFallback,
   ForcedFallbackError,
+  handleAgentFallback,
   withSyntheticFailure,
 } from '../lib/server/agent-fallback-handler';
 

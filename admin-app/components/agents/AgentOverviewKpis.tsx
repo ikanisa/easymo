@@ -1,8 +1,9 @@
 "use client";
 
 import { type ComponentProps } from "react";
-import { SectionCard } from "@/components/ui/SectionCard";
+
 import { Badge } from "@/components/ui/Badge";
+import { SectionCard } from "@/components/ui/SectionCard";
 
 interface AgentMetric {
   label: string;

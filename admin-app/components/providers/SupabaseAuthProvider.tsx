@@ -1,17 +1,18 @@
 "use client";
 
+import type { Session, User } from "@supabase/supabase-js";
 import {
   createContext,
+  type ReactNode,
   useCallback,
   useContext,
   useEffect,
   useMemo,
   useState,
-  type ReactNode,
 } from "react";
-import type { Session, User } from "@supabase/supabase-js";
-import { getSupabaseClient } from "@/lib/supabase-client";
+
 import { isAdminUser } from "@/lib/auth/is-admin-user";
+import { getSupabaseClient } from "@/lib/supabase-client";
 
 export type AuthStatus = "loading" | "authenticated" | "unauthenticated";
 

@@ -5,7 +5,8 @@
  */
 
 import { z } from 'zod';
-import type { ToolDefinition, AgentContext } from '../types';
+
+import type { AgentContext,ToolDefinition } from '../types';
 
 const AGENT_TOOLS_ENDPOINT = process.env.SUPABASE_URL
   ? `${process.env.SUPABASE_URL}/functions/v1/agent-tools-general-broker`

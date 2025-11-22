@@ -1,4 +1,5 @@
 import { z } from "zod";
+
 import { propertyListingSchema } from "@/lib/schemas";
 
 const responseSchema = z.object({

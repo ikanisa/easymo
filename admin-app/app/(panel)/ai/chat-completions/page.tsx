@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+
 import { ChatCompletionsPlayground } from "@/components/ai/ChatCompletionsPlayground";
 
 export const metadata: Metadata = {

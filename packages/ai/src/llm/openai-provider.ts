@@ -1,12 +1,12 @@
-import OpenAI from 'openai';
-import { z } from 'zod';
-import type { 
-  ChatCompletionMessageParam, 
-  ChatCompletionTool,
-  ChatCompletionChunk
-} from 'openai/resources/chat/completions';
 import { EventEmitter } from 'events';
-import type { TokenUsage, ExecutionMetrics, AgentResponse, Message, ToolCall, StreamChunk } from '../types/index.js';
+import OpenAI from 'openai';
+import type { 
+  ChatCompletionChunk,
+  ChatCompletionMessageParam, 
+  ChatCompletionTool} from 'openai/resources/chat/completions';
+import { z } from 'zod';
+
+import type { AgentResponse, ExecutionMetrics, Message, StreamChunk,TokenUsage, ToolCall } from '../types/index.js';
 
 export interface OpenAIConfig {
   apiKey: string;

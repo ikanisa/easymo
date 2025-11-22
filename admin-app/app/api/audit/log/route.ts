@@ -1,7 +1,8 @@
 import { z } from "zod";
+
 import { createHandler } from "@/app/api/withObservability";
-import { getSupabaseAdminClient } from "@/lib/server/supabase-admin";
 import { jsonError, jsonOk, zodValidationError } from "@/lib/api/http";
+import { getSupabaseAdminClient } from "@/lib/server/supabase-admin";
 
 const Body = z.object({
   agentId: z.string().uuid(),

@@ -1,4 +1,4 @@
-import type { PaymentProviderAdapter, PaymentRequest, ProviderSecrets, PaymentResponse } from './types.ts';
+import type { PaymentProviderAdapter, PaymentRequest, PaymentResponse,ProviderSecrets } from './types.ts';
 
 const WAVE_BASE_URL = {
   sandbox: 'https://api.wave.com/sandbox',

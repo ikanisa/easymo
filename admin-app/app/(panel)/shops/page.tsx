@@ -1,13 +1,15 @@
 export const dynamic = "force-dynamic";
 
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
+
 import { createQueryClient } from "@/lib/api/queryClient";
-import { ShopsClient } from "./ShopsClient";
 import {
   fetchShops,
   shopsQueryKeys,
   type ShopsQueryParams,
 } from "@/lib/queries/shops";
+
+import { ShopsClient } from "./ShopsClient";
 
 const DEFAULT_PARAMS: ShopsQueryParams = {
   limit: 50,

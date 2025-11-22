@@ -1,13 +1,14 @@
 "use client";
 
-import { ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ToastProvider } from "@/components/ui/ToastProvider";
+import { ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
+
+import { AssistantPanel } from "@/components/assistant/AssistantPanel";
+import { useSupabaseAuth } from "@/components/providers/SupabaseAuthProvider";
 import { OfflineBanner } from "@/components/system/OfflineBanner";
 import { ServiceWorkerToast } from "@/components/system/ServiceWorkerToast";
 import { ServiceWorkerToasts } from "@/components/system/ServiceWorkerToasts";
-import { AssistantPanel } from "@/components/assistant/AssistantPanel";
-import { useSupabaseAuth } from "@/components/providers/SupabaseAuthProvider";
+import { ToastProvider } from "@/components/ui/ToastProvider";
 // Securely determine DEFAULT_ACTOR_ID: require explicit env in production
 const _adminActorId =
   process.env.NEXT_PUBLIC_ADMIN_ACTOR_ID ||
@@ -24,11 +25,12 @@ if (_adminActorId) {
 }
 const DEFAULT_ACTOR_LABEL =
   process.env.NEXT_PUBLIC_ADMIN_ACTOR_LABEL || "Operator";
-import { SidebarRail } from "@/components/layout/SidebarRail";
-import { TopBar } from "@/components/layout/TopBar";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
 import { MobileNav } from "@/components/layout/MobileNav";
 import { PanelContextProvider, type SidecarState } from "@/components/layout/PanelContext";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { SidebarRail } from "@/components/layout/SidebarRail";
+import { TopBar } from "@/components/layout/TopBar";
 
 interface PanelShellProps {
   children: ReactNode;

@@ -1,13 +1,14 @@
 "use client";
 
+import type { ColumnDef } from "@tanstack/react-table";
+import { maskMsisdn } from "@va/shared";
 import { useMemo } from "react";
 
 import { DataTable } from "@/components/data-table/DataTable";
 import { LoadMoreButton } from "@/components/ui/LoadMoreButton";
 import type { User } from "@/lib/schemas";
-import type { ColumnDef } from "@tanstack/react-table";
+
 import { UserDrawerTrigger } from "./UserDrawer";
-import { maskMsisdn } from "@va/shared";
 
 interface UsersTableProps {
   data: User[];

@@ -1,7 +1,7 @@
 'use client'
 
-import type { Message } from '@/types/chat'
 import { cn } from '@/lib/utils'
+import type { Message } from '@/types/chat'
 
 interface MessageBubbleProps {
   message: Message

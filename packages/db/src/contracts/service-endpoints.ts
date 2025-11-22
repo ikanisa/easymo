@@ -1,9 +1,9 @@
 import {
+  type ApiControllerKey,
+  type ApiEndpointKey,
   apiRoutes,
   getApiEndpointMethod,
   getApiEndpointPath,
-  type ApiControllerKey,
-  type ApiEndpointKey,
   type HttpMethod,
 } from "@easymo/commons";
 

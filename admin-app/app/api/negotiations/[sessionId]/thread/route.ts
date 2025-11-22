@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+
 import {
   getNegotiationThread,
   type NegotiationThread,
 } from "@/lib/supabase/server/negotiations";
-import { SupabaseUnavailableError, SupabaseQueryError } from "@/lib/supabase/server/utils";
+import { SupabaseQueryError,SupabaseUnavailableError } from "@/lib/supabase/server/utils";
 
 const paramsSchema = z.object({
   sessionId: z.string().uuid(),

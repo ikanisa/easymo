@@ -1,18 +1,19 @@
 "use client";
 
-import { useMemo } from "react";
 import {
+  type QueryKey,
   useQuery,
   useQueryClient,
-  type QueryKey,
   type UseQueryOptions,
 } from "@tanstack/react-query";
-import type { AgentRequest } from "@/lib/supabase/server/requests";
-import type { NegotiationThread } from "@/lib/supabase/server/negotiations";
-import type { KnowledgeAsset } from "@/lib/supabase/server/knowledge";
-import type { AgentTool } from "@/lib/supabase/server/tools";
-import type { AgentTask } from "@/lib/supabase/server/tasks";
+import { useMemo } from "react";
+
 import { useSupabaseRealtime } from "@/lib/supabase/realtime";
+import type { KnowledgeAsset } from "@/lib/supabase/server/knowledge";
+import type { NegotiationThread } from "@/lib/supabase/server/negotiations";
+import type { AgentRequest } from "@/lib/supabase/server/requests";
+import type { AgentTask } from "@/lib/supabase/server/tasks";
+import type { AgentTool } from "@/lib/supabase/server/tools";
 
 const JSON_HEADERS = { "Content-Type": "application/json" };
 

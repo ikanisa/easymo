@@ -1,7 +1,8 @@
 import { createServer, IncomingMessage, ServerResponse } from "node:http";
+
 import { loadConfig } from "./config.js";
-import { VideoOrchestrator } from "./orchestrator.js";
 import type { RenderPlanOptions } from "./orchestrator.js";
+import { VideoOrchestrator } from "./orchestrator.js";
 import type { RenderInputs } from "./types.js";
 
 async function readJson<T>(req: IncomingMessage): Promise<T> {

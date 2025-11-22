@@ -1,8 +1,8 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { NextRequest } from 'next/server';
+import { afterAll,beforeAll, describe, expect, it } from 'vitest';
 
-import { middleware } from '../middleware';
 import { createSessionCookie } from '../lib/server/session';
+import { middleware } from '../middleware';
 
 function buildRequest(path: string, init?: { cookie?: string; headers?: Record<string, string> }) {
   const url = new URL(`https://example.com${path}`);

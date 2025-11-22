@@ -1,7 +1,8 @@
 import { QueryKey, useQuery, UseQueryOptions } from "@tanstack/react-query";
+
+import type { PaginatedResult } from "@/lib/shared/pagination";
 import { listShops, type ShopListParams } from "@/lib/shops/shops-service";
 import type { Shop } from "@/lib/shops/types";
-import type { PaginatedResult } from "@/lib/shared/pagination";
 
 export type ShopsQueryParams = ShopListParams;
 

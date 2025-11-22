@@ -5,9 +5,9 @@
 
 'use client';
 
-import { createContext, useContext, useState, useCallback, ReactNode } from 'react';
-import { XMarkIcon, CheckCircleIcon, ExclamationCircleIcon, InformationCircleIcon } from '@heroicons/react/24/outline';
-import { motion, AnimatePresence } from 'framer-motion';
+import { CheckCircleIcon, ExclamationCircleIcon, InformationCircleIcon,XMarkIcon } from '@heroicons/react/24/outline';
+import { AnimatePresence,motion } from 'framer-motion';
+import { createContext, ReactNode,useCallback, useContext, useState } from 'react';
 
 type ToastType = 'success' | 'error' | 'info' | 'warning';
 

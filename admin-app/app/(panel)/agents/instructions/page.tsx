@@ -1,5 +1,5 @@
-import { PageHeader } from "@/components/layout/PageHeader";
 import { InstructionsPlaybooks } from "@/components/agents/InstructionsPlaybooks";
+import { PageHeader } from "@/components/layout/PageHeader";
 
 export default function AgentInstructionsPage() {
   return (

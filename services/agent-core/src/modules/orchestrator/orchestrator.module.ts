@@ -1,7 +1,8 @@
 import { Module } from "@nestjs/common";
+
 import { OrchestratorService } from "./orchestrator.service";
-import { SessionManagerService } from "./session-manager.service";
 import { QuoteAggregatorService } from "./quote-aggregator.service";
+import { SessionManagerService } from "./session-manager.service";
 
 /**
  * Agent Orchestrator Module

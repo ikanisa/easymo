@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+
 import AgentRow from "@/components/agent-admin/AgentRow";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 

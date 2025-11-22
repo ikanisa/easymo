@@ -1,8 +1,10 @@
-import { render, screen, waitFor } from "./utils/react-testing";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
+import { afterEach,beforeEach, describe, expect, it, vi } from "vitest";
+
 import { AdminDiagnosticsContent } from "@/components/dashboard/admin-diagnostics/AdminDiagnosticsContent";
 import type { AdminDiagnosticsSnapshot } from "@/lib/schemas";
+
+import { render, screen, waitFor } from "./utils/react-testing";
 
 const getAdminDiagnosticsMatch = vi.fn();
 

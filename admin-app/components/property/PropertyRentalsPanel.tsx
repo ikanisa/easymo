@@ -1,13 +1,14 @@
 "use client";
 
-import { MarketplaceRequestWizard } from "@/components/marketplace/MarketplaceRequestWizard";
-import { MarketplaceQuoteComparison } from "@/components/marketplace/MarketplaceQuoteComparison";
-import { MarketplaceThreadViewer } from "@/components/marketplace/MarketplaceThreadViewer";
-import { type MarketplaceAgentSessionsQueryParams, useMarketplaceAgentSessionsQuery } from "@/lib/queries/marketplaceAgentSessions";
 import { useMemo } from "react";
-import { SectionCard } from "@/components/ui/SectionCard";
-import { PropertyHighlights } from "@/components/property/PropertyHighlights";
+
+import { MarketplaceQuoteComparison } from "@/components/marketplace/MarketplaceQuoteComparison";
+import { MarketplaceRequestWizard } from "@/components/marketplace/MarketplaceRequestWizard";
+import { MarketplaceThreadViewer } from "@/components/marketplace/MarketplaceThreadViewer";
 import { PropertyDemandHeatmap } from "@/components/property/PropertyDemandHeatmap";
+import { PropertyHighlights } from "@/components/property/PropertyHighlights";
+import { SectionCard } from "@/components/ui/SectionCard";
+import { type MarketplaceAgentSessionsQueryParams, useMarketplaceAgentSessionsQuery } from "@/lib/queries/marketplaceAgentSessions";
 
 interface PropertyRentalsPanelProps {
   params: MarketplaceAgentSessionsQueryParams;

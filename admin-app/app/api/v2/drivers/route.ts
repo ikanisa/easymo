@@ -5,9 +5,9 @@ import { createAdminClient } from "@/src/v2/lib/supabase/client";
 import { coerceNullableString, handleRouteError } from "../_lib/utils";
 import {
   driverCreateSchema,
+  type DriverRow,
   driverSelect,
   sanitizeDriver,
-  type DriverRow,
 } from "./schema";
 
 export const runtime = "nodejs";

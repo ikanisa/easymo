@@ -1,11 +1,12 @@
 // Note: This module is designed for server-side use only
 // It has runtime checks and is primarily used in API routes or server components
-import { createServerClient } from "@supabase/ssr";
 import type {
   CookieMethodsServer,
   CookieMethodsServerDeprecated,
 } from "@supabase/ssr";
+import { createServerClient } from "@supabase/ssr";
 import type { SupabaseClient } from "@supabase/supabase-js";
+
 import { requireServiceSupabaseConfig } from "../env-server";
 
 type CookieAdapter = CookieMethodsServer & CookieMethodsServerDeprecated;

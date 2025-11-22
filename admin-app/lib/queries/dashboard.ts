@@ -1,12 +1,13 @@
 import { QueryKey, useQuery, UseQueryOptions } from "@tanstack/react-query";
 import { z } from "zod";
+
 import type { DashboardSnapshotResult } from "@/lib/dashboard/dashboard-types";
+import { getAdminApiPath } from "@/lib/routes";
 import {
   dashboardKpiSchema,
   timeseriesPointSchema,
   type WebhookError,
 } from "@/lib/schemas";
-import { getAdminApiPath } from "@/lib/routes";
 import { listLatestWebhookErrors } from "@/lib/webhooks/webhook-service";
 
 const DASHBOARD_SNAPSHOT_KEY: QueryKey = ["dashboard", "snapshot"];

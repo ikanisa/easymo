@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
-import type { User } from "@/lib/schemas";
-import styles from "./UserDrawer.module.css";
-import { Drawer } from "@/components/ui/Drawer";
 import { maskMsisdn } from "@va/shared";
+import { useState } from "react";
+
+import { Drawer } from "@/components/ui/Drawer";
+import type { User } from "@/lib/schemas";
+
+import styles from "./UserDrawer.module.css";
 
 interface UserDrawerProps {
   user: User | null;

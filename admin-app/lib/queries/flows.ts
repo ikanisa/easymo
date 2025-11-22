@@ -1,7 +1,8 @@
 import { QueryKey, useQuery, UseQueryOptions } from "@tanstack/react-query";
+
+import { type FlowListParams, listFlows } from "@/lib/flows/flows-service";
 import type { FlowMeta } from "@/lib/schemas";
 import type { PaginatedResult } from "@/lib/shared/pagination";
-import { type FlowListParams, listFlows } from "@/lib/flows/flows-service";
 
 export type FlowsQueryParams = FlowListParams;
 

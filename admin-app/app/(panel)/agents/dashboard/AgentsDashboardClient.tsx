@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useEffect, useMemo, useCallback } from "react";
-import { getSupabaseClient } from "@/lib/supabase-client";
-import { subscribeWithMonitoring } from "@/lib/monitoring/realtime";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
+import Link from "next/link";
+import { useCallback,useEffect, useMemo, useState } from "react";
+
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import Link from "next/link";
+import { Card, CardContent,CardHeader, CardTitle } from "@/components/ui/Card";
+import { subscribeWithMonitoring } from "@/lib/monitoring/realtime";
+import { getSupabaseClient } from "@/lib/supabase-client";
 
 interface AgentStatus {
   agentType: string;

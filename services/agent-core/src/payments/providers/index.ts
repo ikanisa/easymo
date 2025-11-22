@@ -1,6 +1,6 @@
-import type { MobileMoneyProviderId, PaymentProviderAdapter } from './types.ts';
 import { mtnAdapter } from './mtn.adapter.ts';
 import { orangeAdapter } from './orange.adapter.ts';
+import type { MobileMoneyProviderId, PaymentProviderAdapter } from './types.ts';
 import { waveAdapter } from './wave.adapter.ts';
 
 const adapters: Record<MobileMoneyProviderId, PaymentProviderAdapter> = {

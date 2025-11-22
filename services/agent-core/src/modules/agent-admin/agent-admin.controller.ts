@@ -1,7 +1,8 @@
-import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards } from "@nestjs/common";
-import { AgentAdminService } from "./agent-admin.service.js";
-import { ServiceTokenGuard } from "../../common/guards/service-token.guard.js";
 import { getAgentCoreControllerBasePath, getAgentCoreRouteSegment } from "@easymo/commons";
+import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards } from "@nestjs/common";
+
+import { ServiceTokenGuard } from "../../common/guards/service-token.guard.js";
+import { AgentAdminService } from "./agent-admin.service.js";
 
 @Controller(getAgentCoreControllerBasePath("agentAdmin"))
 @UseGuards(ServiceTokenGuard)

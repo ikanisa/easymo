@@ -1,16 +1,17 @@
 "use client";
 
 import { useState } from "react";
+
 import { PageHeader } from "@/components/layout/PageHeader";
-import { SectionCard } from "@/components/ui/SectionCard";
-import { SettingsForm } from "@/components/settings/SettingsForm";
 import { AlertPreferences } from "@/components/settings/AlertPreferences";
+import { IntegrationsSection } from "@/components/settings/IntegrationsSection";
+import { SettingsForm } from "@/components/settings/SettingsForm";
+import { SettingsPreviewSection } from "@/components/settings/SettingsPreviewSection";
+import { SectionCard } from "@/components/ui/SectionCard";
 import {
   type SettingsPreviewParams,
   useSettingsPreviewQuery,
 } from "@/lib/queries/settings";
-import { SettingsPreviewSection } from "@/components/settings/SettingsPreviewSection";
-import { IntegrationsSection } from "@/components/settings/IntegrationsSection";
 
 interface SettingsClientProps {
   initialPreviewParams?: SettingsPreviewParams;

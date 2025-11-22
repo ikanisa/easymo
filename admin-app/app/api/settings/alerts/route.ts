@@ -1,18 +1,19 @@
 export const dynamic = 'force-dynamic';
 import { headers } from "next/headers";
 import { z } from "zod";
-import { getSupabaseAdminClient } from "@/lib/server/supabase-admin";
-import { logStructured } from "@/lib/server/logger";
-import { recordAudit } from "@/lib/server/audit";
-import { jsonOk, jsonError, zodValidationError } from "@/lib/api/http";
+
+import { createHandler } from "@/app/api/withObservability";
+import { jsonError, jsonOk, zodValidationError } from "@/lib/api/http";
 import type { AdminAlertPreference } from "@/lib/schemas";
+import { recordAudit } from "@/lib/server/audit";
+import { requireActorId, UnauthorizedError } from "@/lib/server/auth";
+import { logStructured } from "@/lib/server/logger";
+import { getSupabaseAdminClient } from "@/lib/server/supabase-admin";
 import {
   ALERT_DEFINITIONS,
   DEFAULT_ALERT_CHANNELS,
   definitionForAlert,
 } from "@/lib/settings/alert-definitions";
-import { requireActorId, UnauthorizedError } from "@/lib/server/auth";
-import { createHandler } from "@/app/api/withObservability";
 
 const supabaseRowSchema = z.object({
   alert_key: z.string().nullable(),

@@ -1,12 +1,13 @@
 export const dynamic = 'force-dynamic';
 import { headers } from 'next/headers';
-import { jsonOk, jsonError, zodValidationError } from '@/lib/api/http';
-import { createHandler } from '@/app/api/withObservability';
 import { z } from 'zod';
-import { getSupabaseAdminClient } from '@/lib/server/supabase-admin';
-import { logStructured } from '@/lib/server/logger';
+
+import { createHandler } from '@/app/api/withObservability';
+import { jsonError, jsonOk, zodValidationError } from '@/lib/api/http';
 import { recordAudit } from '@/lib/server/audit';
 import { requireActorId, UnauthorizedError } from '@/lib/server/auth';
+import { logStructured } from '@/lib/server/logger';
+import { getSupabaseAdminClient } from '@/lib/server/supabase-admin';
 
 const settingsResponseSchema = z.object({
   quietHours: z.object({ start: z.string(), end: z.string() }),

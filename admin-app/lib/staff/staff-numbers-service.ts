@@ -1,8 +1,8 @@
 import { apiFetch } from "@/lib/api/client";
 import { getAdminApiPath } from "@/lib/routes";
+import type { StaffNumber } from "@/lib/schemas";
 import { type PaginatedResult, type Pagination } from "@/lib/shared/pagination";
 import { matchesSearch } from "@/lib/shared/search";
-import type { StaffNumber } from "@/lib/schemas";
 const isServer = typeof window === "undefined";
 
 export type StaffNumberListParams = Pagination & {

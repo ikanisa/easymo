@@ -1,25 +1,26 @@
 import {
-  Controller,
-  Post,
-  Get,
-  Delete,
-  Body,
-  Param,
-  UseGuards,
-  Sse,
-  MessageEvent,
-} from "@nestjs/common";
-import { Observable, fromEvent, map } from "rxjs";
-import { z } from "zod";
-import { RealtimeFarmerService } from "./realtime-farmer.service.js";
-import { ServiceTokenGuard } from "../../common/guards/service-token.guard.js";
-import { ServiceScopes } from "../../common/decorators/service-scopes.decorator.js";
-import {
   getAgentCoreControllerBasePath,
   getAgentCoreRouteSegment,
   getAgentCoreRouteServiceScopes,
 } from "@easymo/commons";
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  MessageEvent,
+  Param,
+  Post,
+  Sse,
+  UseGuards,
+} from "@nestjs/common";
+import { fromEvent, map,Observable } from "rxjs";
+import { z } from "zod";
+
 import type { FarmerBrokerIntent } from "../../agents/farmer-broker.js";
+import { ServiceScopes } from "../../common/decorators/service-scopes.decorator.js";
+import { ServiceTokenGuard } from "../../common/guards/service-token.guard.js";
+import { RealtimeFarmerService } from "./realtime-farmer.service.js";
 
 const CreateSessionSchema = z.object({
   msisdn: z.string().min(8),

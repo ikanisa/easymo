@@ -1,8 +1,9 @@
 export const dynamic = 'force-dynamic';
 import { z } from "zod";
-import { liveCallSchema } from "@/lib/schemas";
-import { getVoiceBridgeApiUrl, shouldUseMocks } from "@/lib/runtime-config";
+
 import { jsonError, jsonOk } from "@/lib/api/http";
+import { getVoiceBridgeApiUrl, shouldUseMocks } from "@/lib/runtime-config";
+import { liveCallSchema } from "@/lib/schemas";
 
 const liveCallsResponseSchema = z.object({
   calls: z.array(liveCallSchema),

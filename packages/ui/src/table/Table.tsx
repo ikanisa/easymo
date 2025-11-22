@@ -1,8 +1,8 @@
 "use client";
 
-import { forwardRef, createContext, useContext } from "react";
-import type { HTMLAttributes, TableHTMLAttributes, ThHTMLAttributes, TdHTMLAttributes } from "react";
 import { clsx } from "clsx";
+import type { HTMLAttributes, TableHTMLAttributes, TdHTMLAttributes,ThHTMLAttributes } from "react";
+import { createContext, forwardRef, useContext } from "react";
 
 interface TableContextValue {
   compact: boolean;

@@ -1,6 +1,7 @@
 "use client";
 
 import { GeoHeatmapWidget } from "@easymo/ui/widgets/GeoHeatmapWidget";
+
 import { SectionCard } from "@/components/ui/SectionCard";
 
 export function PropertyDemandHeatmap() {

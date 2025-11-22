@@ -1,12 +1,14 @@
 'use client'
 
+import { useRouter,useSearchParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { useSearchParams, useRouter } from 'next/navigation'
+
 import { useChatContext } from '@/contexts/ChatContext'
-import MessageList from './MessageList'
-import MessageInput from './MessageInput'
-import QuickActions from './QuickActions'
 import { cn } from '@/lib/utils'
+
+import MessageInput from './MessageInput'
+import MessageList from './MessageList'
+import QuickActions from './QuickActions'
 
 function ChatInterface() {
   const { conversation, createConversation, isLoading, error, clearError } = useChatContext()

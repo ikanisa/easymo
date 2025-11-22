@@ -1,8 +1,9 @@
+import type { AgentContext } from "@easymo/commons";
 import { ForbiddenException } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
+
 import { ToolsController } from "../src/modules/tools/tools.controller";
 import { ToolsService } from "../src/modules/tools/tools.service";
-import type { AgentContext } from "@easymo/commons";
 
 describe("ToolsController", () => {
   let controller: ToolsController;

@@ -1,14 +1,15 @@
 export const dynamic = 'force-dynamic';
-import { jsonOk, jsonError } from "@/lib/api/http";
-import { getSupabaseAdminClient } from "@/lib/server/supabase-admin";
+import type { SupabaseClient } from "@supabase/supabase-js";
+
+import { createHandler } from "@/app/api/withObservability";
+import { jsonError,jsonOk } from "@/lib/api/http";
 import {
   composeDiagnosticsSnapshot,
   parseAdminDiagnosticsHealth,
   parseAdminDiagnosticsLogs,
 } from "@/lib/flow-exchange/admin-diagnostics";
-import { createHandler } from "@/app/api/withObservability";
-import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ObservabilityContext } from "@/lib/server/observability";
+import { getSupabaseAdminClient } from "@/lib/server/supabase-admin";
 
 type MatchSummary = {
   matchesLastHour: number;

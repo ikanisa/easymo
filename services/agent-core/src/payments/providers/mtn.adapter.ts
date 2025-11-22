@@ -1,4 +1,4 @@
-import type { PaymentProviderAdapter, PaymentRequest, ProviderSecrets, PaymentResponse } from './types.ts';
+import type { PaymentProviderAdapter, PaymentRequest, PaymentResponse,ProviderSecrets } from './types.ts';
 import { encodeBase64 } from './utils.ts';
 
 const MTN_BASE_URL = {

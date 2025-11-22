@@ -1,12 +1,14 @@
 "use client";
 
 import { ReactNode, useEffect, useState } from "react";
-import { ThemeProvider } from "./ThemeProvider";
-import { MotionProviders } from "@/components/motion/MotionProviders";
+
 import { useServiceWorkerRegistration } from "@/app/sw/register";
-import { ConnectivityProvider } from "@/components/providers/ConnectivityProvider";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { MotionProviders } from "@/components/motion/MotionProviders";
+import { ConnectivityProvider } from "@/components/providers/ConnectivityProvider";
 import { SupabaseAuthProvider } from "@/components/providers/SupabaseAuthProvider";
+
+import { ThemeProvider } from "./ThemeProvider";
 
 interface AppProvidersProps {
   children: ReactNode;

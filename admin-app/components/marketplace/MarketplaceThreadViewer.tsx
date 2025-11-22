@@ -1,10 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import type { MarketplaceAgentSession } from "@/lib/marketplace/types";
+
 import { Badge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { LoadingState } from "@/components/ui/LoadingState";
+import type { MarketplaceAgentSession } from "@/lib/marketplace/types";
 import { cn } from "@/lib/utils";
 
 interface MarketplaceThreadViewerProps {

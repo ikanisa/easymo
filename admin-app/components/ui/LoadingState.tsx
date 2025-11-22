@@ -1,5 +1,5 @@
-import classNames from "classnames";
 import { LoadingState as UiLoadingState, type LoadingStateProps as UiLoadingStateProps } from "@easymo/ui/components/feedback";
+import classNames from "classnames";
 
 const uiKitEnabled = (process.env.NEXT_PUBLIC_UI_V2_ENABLED ?? "false").trim().toLowerCase() === "true";
 

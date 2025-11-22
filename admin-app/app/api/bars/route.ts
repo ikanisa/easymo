@@ -1,9 +1,10 @@
 export const dynamic = 'force-dynamic';
 import { z } from 'zod';
-import { getSupabaseAdminClient } from '@/lib/server/supabase-admin';
-import { logStructured } from '@/lib/server/logger';
+
 import { createHandler } from '@/app/api/withObservability';
 import { jsonError, jsonOk, zodValidationError } from '@/lib/api/http';
+import { logStructured } from '@/lib/server/logger';
+import { getSupabaseAdminClient } from '@/lib/server/supabase-admin';
 
 const querySchema = z.object({
   status: z.enum(['active', 'inactive']).optional(),

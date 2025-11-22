@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { SectionCard } from "@/components/ui/SectionCard";
-import { Drawer } from "@/components/ui/Drawer";
+
 import { Badge } from "@/components/ui/Badge";
+import { Drawer } from "@/components/ui/Drawer";
+import { SectionCard } from "@/components/ui/SectionCard";
 
 interface Playbook {
   id: string;

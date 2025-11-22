@@ -1,17 +1,19 @@
 "use client";
 
 import { useMemo, useState } from "react";
+
 import { PageHeader } from "@/components/layout/PageHeader";
-import { SectionCard } from "@/components/ui/SectionCard";
-import { LoadingState } from "@/components/ui/LoadingState";
-import { EmptyState } from "@/components/ui/EmptyState";
 import { Button } from "@/components/ui/Button";
-import { VoiceCallsTable } from "./VoiceCallsTable";
-import { VoiceFollowupsTable } from "./VoiceFollowupsTable";
-import { VoiceStatsSummary } from "./VoiceStatsSummary";
-import { VoiceFilters, type VoiceFilterState } from "./VoiceFilters";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { LoadingState } from "@/components/ui/LoadingState";
+import { SectionCard } from "@/components/ui/SectionCard";
 import { useVoiceAnalyticsQuery } from "@/lib/queries/voiceAnalytics";
 import { getAdminApiRoutePath } from "@/lib/routes";
+
+import { VoiceCallsTable } from "./VoiceCallsTable";
+import { VoiceFilters, type VoiceFilterState } from "./VoiceFilters";
+import { VoiceFollowupsTable } from "./VoiceFollowupsTable";
+import { VoiceStatsSummary } from "./VoiceStatsSummary";
 
 export function VoiceAnalyticsPage() {
   const [filters, setFilters] = useState<VoiceFilterState>({});

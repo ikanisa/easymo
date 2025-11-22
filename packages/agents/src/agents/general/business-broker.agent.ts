@@ -1,7 +1,8 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import axios from 'axios';
-import { BaseAgent } from '../base/agent.base';
+
 import type { AgentInput, AgentResult, Tool } from '../../types/agent.types';
+import { BaseAgent } from '../base/agent.base';
 
 export class BusinessBrokerAgent extends BaseAgent {
   name = 'business_broker_agent';
@@ -169,7 +170,7 @@ export class BusinessBrokerAgent extends BaseAgent {
 
     // 2. LLM Call (Loop for tool use)
     let finalOutput = "";
-    let toolsInvoked: string[] = [];
+    const toolsInvoked: string[] = [];
     const MAX_TURNS = 5;
 
     for (let i = 0; i < MAX_TURNS; i++) {

@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { PlaceWidget } from "@easymo/ui";
+import { useEffect, useState } from "react";
+
 import type { FeaturedProperty } from "@/lib/properties/mock-data";
 import { fetchFeaturedProperties } from "@/lib/properties/service";
 

@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
-import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
+
 import type { Database } from "@/src/v2/lib/supabase/database.types";
 
 import { clearSessionCookie, isAdminSupabaseUser, readSessionFromCookies } from './lib/server/session';

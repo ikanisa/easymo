@@ -1,8 +1,9 @@
 import {
-  useQuery,
   type QueryKey,
+  useQuery,
   type UseQueryOptions,
 } from "@tanstack/react-query";
+
 import {
   listPropertyListings,
   type PropertyListingsResponse,

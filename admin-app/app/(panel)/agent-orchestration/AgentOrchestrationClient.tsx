@@ -1,13 +1,14 @@
 "use client";
 
-import { SectionCard } from "@/components/ui/SectionCard";
-import { KpiCard } from "@/components/dashboard/KpiCard";
-import { useAgentRegistry, useAgentSessions, useAgentMetrics } from "@/lib/queries/agent-orchestration";
-import { SessionDrawer } from "@/components/agent-orchestration/SessionDrawer";
-import { AgentConfigDrawer } from "@/components/agent-orchestration/AgentConfigDrawer";
 import { useState } from "react";
-import type { DashboardKpi } from "@/lib/schemas";
+
+import { AgentConfigDrawer } from "@/components/agent-orchestration/AgentConfigDrawer";
+import { SessionDrawer } from "@/components/agent-orchestration/SessionDrawer";
 import { SessionTimelineCard } from "@/components/agent-orchestration/SessionTimelineCard";
+import { KpiCard } from "@/components/dashboard/KpiCard";
+import { SectionCard } from "@/components/ui/SectionCard";
+import { useAgentMetrics,useAgentRegistry, useAgentSessions } from "@/lib/queries/agent-orchestration";
+import type { DashboardKpi } from "@/lib/schemas";
 
 export function AgentOrchestrationClient() {
   const registryQuery = useAgentRegistry();

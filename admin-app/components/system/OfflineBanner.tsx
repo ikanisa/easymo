@@ -1,6 +1,7 @@
 "use client";
 
 import { useConnectivity } from "@/components/providers/ConnectivityProvider";
+
 import styles from "./OfflineBanner.module.css";
 
 export function OfflineBanner() {

@@ -1,7 +1,7 @@
+import { SettingsTable } from "@/components/settings/SettingsTable";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { LoadingState } from "@/components/ui/LoadingState";
 import { SectionCard } from "@/components/ui/SectionCard";
-import { SettingsTable } from "@/components/settings/SettingsTable";
 import type { SettingEntry } from "@/lib/schemas";
 
 type SettingsPreviewSectionProps = {

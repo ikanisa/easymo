@@ -1,17 +1,19 @@
 "use client";
 
+import { CheckCircle2, Info, TriangleAlert } from "lucide-react";
 import {
   createContext,
+  type JSX,
+  type ReactNode,
   useCallback,
   useContext,
   useMemo,
   useState,
-  type JSX,
-  type ReactNode,
 } from "react";
-import { CheckCircle2, Info, TriangleAlert } from "lucide-react";
-import styles from "./ToastProvider.module.css";
+
 import { Button } from "@/components/ui/Button";
+
+import styles from "./ToastProvider.module.css";
 
 export type ToastVariant = "info" | "success" | "error";
 

@@ -1,5 +1,6 @@
-import type { DashboardKpi } from "@/lib/schemas";
 import { KpiWidget } from "@easymo/ui/widgets/KpiWidget";
+
+import type { DashboardKpi } from "@/lib/schemas";
 import { isUiKitEnabled } from "@/lib/ui-kit";
 
 interface KpiCardProps {

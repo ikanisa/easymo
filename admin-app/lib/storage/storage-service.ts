@@ -1,11 +1,11 @@
 import { apiFetch } from "@/lib/api/client";
 import { getAdminApiPath } from "@/lib/routes";
+import type { StorageObject } from "@/lib/schemas";
 import {
   paginateArray,
   type PaginatedResult,
   type Pagination,
 } from "@/lib/shared/pagination";
-import type { StorageObject } from "@/lib/schemas";
 
 export type StorageListParams = Pagination & {
   bucket?: string;

@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
 import Papa from "papaparse";
+import { useState } from "react";
+
 import styles from "./CsvUpload.module.css";
 
 interface CsvUploadProps<T = Record<string, unknown>> {

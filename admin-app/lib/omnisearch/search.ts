@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+
 import type { OmniSearchResult } from "./types";
 
 interface SearchOptions {

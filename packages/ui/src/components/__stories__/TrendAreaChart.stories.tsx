@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react";
+
 import { TrendAreaChart } from "../../charts/TrendAreaChart";
 
 const meta: Meta<typeof TrendAreaChart> = {

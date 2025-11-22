@@ -1,6 +1,7 @@
+import { FeatureFlag, isFeatureEnabled } from "@easymo/commons";
 import { CanActivate, ExecutionContext, ForbiddenException, Injectable } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
-import { FeatureFlag, isFeatureEnabled } from "@easymo/commons";
+
 import { FEATURE_FLAG_KEY } from "../decorators/feature-flag.decorator.js";
 
 @Injectable()

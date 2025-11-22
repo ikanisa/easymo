@@ -1,7 +1,8 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { z } from 'zod';
-import type { AgentContext } from '../types';
+
 import { logToolInvocation } from '../observability';
+import type { AgentContext } from '../types';
 
 const scriptPlannerSchema = z.object({
   campaignId: z.string().uuid().optional(),

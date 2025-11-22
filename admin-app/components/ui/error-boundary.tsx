@@ -5,8 +5,8 @@
 
 'use client';
 
-import { Component, ReactNode } from 'react';
 import { ExclamationTriangleIcon } from '@heroicons/react/24/outline';
+import { Component, ReactNode } from 'react';
 
 interface Props {
   children: ReactNode;

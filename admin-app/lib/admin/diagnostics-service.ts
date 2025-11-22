@@ -1,10 +1,10 @@
-import {
-  adminDiagnosticsMatchSchema,
-  adminDiagnosticsSnapshotSchema,
-  type AdminDiagnosticsMatch,
-  type AdminDiagnosticsSnapshot,
-} from "@/lib/schemas";
 import { getAdminApiPath } from "@/lib/routes";
+import {
+  type AdminDiagnosticsMatch,
+  adminDiagnosticsMatchSchema,
+  type AdminDiagnosticsSnapshot,
+  adminDiagnosticsSnapshotSchema,
+} from "@/lib/schemas";
 
 export async function getAdminDiagnostics(): Promise<AdminDiagnosticsSnapshot> {
   try {

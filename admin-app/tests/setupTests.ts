@@ -1,8 +1,10 @@
 import "@testing-library/jest-dom/vitest";
-import { afterEach, beforeEach, vi } from "vitest";
-import { cleanup } from "./utils/react-testing";
+
 // import { clearCachedCredentials } from "@/lib/auth/credentials"; // REMOVED: Auth disabled
 import { webcrypto } from "crypto";
+import { afterEach, beforeEach, vi } from "vitest";
+
+import { cleanup } from "./utils/react-testing";
 
 const cookieStore = new Map<string, { value: string }>();
 

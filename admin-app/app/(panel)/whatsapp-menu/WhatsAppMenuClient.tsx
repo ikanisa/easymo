@@ -1,11 +1,12 @@
 "use client";
 
 import { useState } from "react";
+
 import { PageHeader } from "@/components/layout/PageHeader";
-import { SectionCard } from "@/components/ui/SectionCard";
-import { WhatsAppMenuTable } from "@/components/whatsapp-menu/WhatsAppMenuTable";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { LoadingState } from "@/components/ui/LoadingState";
+import { SectionCard } from "@/components/ui/SectionCard";
+import { WhatsAppMenuTable } from "@/components/whatsapp-menu/WhatsAppMenuTable";
 import type { WhatsAppHomeMenuItem } from "@/types/whatsapp-menu";
 
 interface WhatsAppMenuClientProps {

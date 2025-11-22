@@ -1,10 +1,12 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
+
 import { useChatContext } from '@/contexts/ChatContext'
+import { cn } from '@/lib/utils'
+
 import MessageBubble from './MessageBubble'
 import TypingIndicator from './TypingIndicator'
-import { cn } from '@/lib/utils'
 
 export default function MessageList() {
   const { messages, isTyping } = useChatContext()

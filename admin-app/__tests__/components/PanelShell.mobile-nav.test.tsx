@@ -1,6 +1,6 @@
-import { ReactNode } from "react";
 import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { ReactNode } from "react";
 
 import { PanelShell } from "@/components/layout/PanelShell";
 

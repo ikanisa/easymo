@@ -1,4 +1,4 @@
-import { Tool, AgentContext } from '../../base/types';
+import { AgentContext,Tool } from '../../base/types';
 
 /**
  * MoMo USSD Payment Tool
@@ -63,7 +63,7 @@ export const whatsappTool: Tool = {
 
     const url = `https://graph.facebook.com/v18.0/${phoneNumberId}/messages`;
 
-    let messageData: any = {
+    const messageData: any = {
       messaging_product: 'whatsapp',
       to: params.to
     };

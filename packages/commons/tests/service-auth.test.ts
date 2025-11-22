@@ -1,5 +1,6 @@
-import { describe, expect, beforeEach, it, vi } from "vitest";
 import type { RequestHandler } from "express";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
 import {
   buildAuthHeaders,
   expressRequestContext,

@@ -4,8 +4,8 @@ import { z } from "zod";
 import { createHandler } from "@/app/api/withObservability";
 import { jsonError, jsonOk, zodValidationError } from "@/lib/api/http";
 import { buildQrPreview, buildShareLink } from "@/lib/qr/qr-preview-helpers";
-import { logStructured } from "@/lib/server/logger";
 import { requireActorId, UnauthorizedError } from "@/lib/server/auth";
+import { logStructured } from "@/lib/server/logger";
 import { getSupabaseAdminClient } from "@/lib/server/supabase-admin";
 import { sendWhatsAppMessage } from "@/lib/server/whatsapp";
 

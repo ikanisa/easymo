@@ -3,8 +3,8 @@
  * Provides consistent empty state UI across the admin panel
  */
 
-import { ReactNode } from 'react';
 import { PlusIcon } from '@heroicons/react/24/outline';
+import { ReactNode } from 'react';
 
 interface EmptyStateProps {
   icon?: ReactNode;

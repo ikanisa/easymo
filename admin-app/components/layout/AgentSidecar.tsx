@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
 import classNames from "classnames";
-import { Drawer } from "@/components/ui/Drawer";
-import { getSupabaseClient } from "@/lib/supabase-client";
-import type { OmniSearchResult, OmniSearchCategory } from "@/lib/omnisearch/types";
+import { useEffect, useMemo, useState } from "react";
+
 import type { SidecarTab } from "@/components/layout/PanelContext";
+import { Drawer } from "@/components/ui/Drawer";
+import type { OmniSearchCategory,OmniSearchResult } from "@/lib/omnisearch/types";
+import { getSupabaseClient } from "@/lib/supabase-client";
 
 interface AgentSidecarProps {
   open: boolean;

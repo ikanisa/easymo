@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+
 import { getSupabaseAdminClient } from "@/lib/server/supabase-admin";
 
 const BUCKET = process.env.AGENT_DOCS_BUCKET || "agent-docs";

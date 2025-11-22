@@ -1,12 +1,13 @@
-import { apiFetch } from "@/lib/api/client";
-import { getAdminApiPath } from "@/lib/routes";
 import {
   QueryKey,
   useQuery,
-  UseQueryOptions,
   useQueryClient,
+  UseQueryOptions,
 } from "@tanstack/react-query";
 import { useCallback } from "react";
+
+import { apiFetch } from "@/lib/api/client";
+import { getAdminApiPath } from "@/lib/routes";
 
 export type IntegrationStatusLevel = "green" | "amber" | "red";
 

@@ -1,13 +1,14 @@
-import { Body, Controller, Post, UseGuards } from "@nestjs/common";
-import { z } from "zod";
-import { TasksService } from "./tasks.service.js";
-import { ServiceTokenGuard } from "../../common/guards/service-token.guard.js";
-import { ServiceScopes } from "../../common/decorators/service-scopes.decorator.js";
 import {
   getAgentCoreControllerBasePath,
   getAgentCoreRouteSegment,
   getAgentCoreRouteServiceScopes,
 } from "@easymo/commons";
+import { Body, Controller, Post, UseGuards } from "@nestjs/common";
+import { z } from "zod";
+
+import { ServiceScopes } from "../../common/decorators/service-scopes.decorator.js";
+import { ServiceTokenGuard } from "../../common/guards/service-token.guard.js";
+import { TasksService } from "./tasks.service.js";
 
 const ScheduleSchema = z.object({
   tenantId: z.string().uuid(),

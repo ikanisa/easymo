@@ -1,13 +1,14 @@
 "use client";
 
-import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
+
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
 import { useToast } from "@/components/ui/ToastProvider";
-import { createShop } from "@/lib/shops/shops-service";
 import { shopsQueryKeys } from "@/lib/queries/shops";
+import { createShop } from "@/lib/shops/shops-service";
 
 export function ShopWizard() {
   const [name, setName] = useState("");

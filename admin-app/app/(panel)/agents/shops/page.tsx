@@ -1,9 +1,11 @@
 export const dynamic = "force-dynamic";
 
-import { HydrationBoundary, dehydrate } from "@tanstack/react-query";
-import { createQueryClient } from "@/lib/api/queryClient";
-import { ShopsAgentClient } from "./ShopsAgentClient";
+import { dehydrate,HydrationBoundary } from "@tanstack/react-query";
+
 import { agentShopsQueryKey, fetchAgentShops } from "@/lib/agents/shops-service";
+import { createQueryClient } from "@/lib/api/queryClient";
+
+import { ShopsAgentClient } from "./ShopsAgentClient";
 
 export default async function ShopsAgentPage() {
   const queryClient = createQueryClient();

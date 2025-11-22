@@ -1,18 +1,20 @@
 export const dynamic = 'force-dynamic';
 
-import { createPanelPageMetadata } from "@/components/layout/nav-items";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
+
+import { createPanelPageMetadata } from "@/components/layout/nav-items";
 import { createQueryClient } from "@/lib/api/queryClient";
-import { SettingsClient } from "./SettingsClient";
+import {
+  alertPreferencesQueryKeys,
+  fetchAdminAlertPreferences,
+} from "@/lib/queries/alertPreferences";
 import {
   fetchSettingsPreview,
   type SettingsPreviewParams,
   settingsQueryKeys,
 } from "@/lib/queries/settings";
-import {
-  fetchAdminAlertPreferences,
-  alertPreferencesQueryKeys,
-} from "@/lib/queries/alertPreferences";
+
+import { SettingsClient } from "./SettingsClient";
 
 export const metadata = createPanelPageMetadata("/settings");
 

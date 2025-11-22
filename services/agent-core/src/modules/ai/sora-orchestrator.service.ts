@@ -1,8 +1,10 @@
+import { createHash, randomUUID } from "node:crypto";
+
+import { PrismaService } from "@easymo/db";
 import { BadRequestException, ForbiddenException, Injectable, Logger, NotFoundException } from "@nestjs/common";
 import { Prisma } from "@prisma/client";
-import { PrismaService } from "@easymo/db";
+
 import { emitMetric } from "../../common/metrics.js";
-import { createHash, randomUUID } from "node:crypto";
 
 export type SoraGenerationRequest = {
   campaignId: string;

@@ -1,5 +1,5 @@
 import type { RouterContext } from "../../types.ts";
-import { sendTextMessage } from "../../utils/reply.ts";
+import { sendText } from "../../wa/client.ts";
 import { t } from "../../i18n/translator.ts";
 import { setState } from "../../state/store.ts";
 
@@ -17,10 +17,10 @@ export async function handleGeneralBrokerStart(ctx: RouterContext): Promise<bool
   }
 
   // Send welcome message and route to AI agent
-  await sendTextMessage(
-    ctx,
-    t(ctx.locale, "generalBroker.welcome" as any) || 
-    "Welcome to General Broker! 🤝\n\nI can help you find and connect with service providers for various needs. What service are you looking for?"
+  await sendText(
+    ctx.from,
+    t(ctx.locale, "generalBroker.welcome") ||
+      "Welcome to General Broker! 🤝\n\nI can help you find and connect with service providers for various needs. What service are you looking for?"
   );
 
   return true;

@@ -1,7 +1,8 @@
-import { describe, it, expect, vi, afterEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
-import { UsersClient } from '@/app/(panel)/users/UsersClient';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { render, screen } from '@testing-library/react';
+import { afterEach,describe, expect, it, vi } from 'vitest';
+
+import { UsersClient } from '@/app/(panel)/users/UsersClient';
 
 vi.mock('@/lib/queries/users', () => ({
   useUsersQuery: () => ({

@@ -1,5 +1,6 @@
-import { AgentsDashboardClient } from "./AgentsDashboardClient";
 import { createPanelPageMetadata } from "@/components/layout/nav-items";
+
+import { AgentsDashboardClient } from "./AgentsDashboardClient";
 
 export const metadata = createPanelPageMetadata("/agents/dashboard");
 

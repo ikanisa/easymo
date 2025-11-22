@@ -1,10 +1,11 @@
 'use client'
 
-import { useParams, usePathname, useRouter } from 'next/navigation'
-import { useTransition } from 'react'
-import { locales, localeNames, type Locale } from '@/i18n/config'
 import { LanguageIcon } from '@heroicons/react/24/outline'
 import { CheckIcon } from '@heroicons/react/24/solid'
+import { useParams, usePathname, useRouter } from 'next/navigation'
+import { useTransition } from 'react'
+
+import { type Locale,localeNames, locales } from '@/i18n/config'
 
 export default function LanguageSwitcher() {
   const router = useRouter()

@@ -1,7 +1,7 @@
 import { apiFetch } from "@/lib/api/client";
 import { getAdminApiPath } from "@/lib/routes";
-import { type PaginatedResult, type Pagination } from "@/lib/shared/pagination";
 import type { OcrJob } from "@/lib/schemas";
+import { type PaginatedResult, type Pagination } from "@/lib/shared/pagination";
 
 
 export type OcrJobListParams = Pagination & {

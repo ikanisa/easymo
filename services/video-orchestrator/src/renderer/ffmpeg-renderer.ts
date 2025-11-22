@@ -1,11 +1,13 @@
 import { spawn } from "node:child_process";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
+
 import {
-  resolveSafeZonePreset,
   type OverlayPlan,
   type RenderJobDefinition,
+  resolveSafeZonePreset,
 } from "@easymo/video-agent-schema";
+
 import type { RenderContext, RenderResult } from "../types.js";
 
 function runFfmpeg(args: string[], ffmpegBinary?: string): Promise<void> {

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+
 import { getSupabaseAdminClient } from "@/lib/server/supabase-admin";
 
 const listParamsSchema = z.object({
@@ -76,7 +77,7 @@ export async function GET(request: NextRequest) {
   const rows = (data ?? []).map(mapRow);
   // Enrich with policy numbers by quoteId
   const quoteIds = Array.from(new Set(rows.map((r) => r.quoteId).filter((v): v is string => Boolean(v))));
-  let policyByQuote = new Map<string, string>();
+  const policyByQuote = new Map<string, string>();
   if (quoteIds.length) {
     const { data: policies } = await admin
       .from('insurance_policies')

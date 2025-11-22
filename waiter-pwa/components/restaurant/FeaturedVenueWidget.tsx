@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import Link from "next/link";
 import { PlaceWidget } from "@easymo/ui";
+import Link from "next/link";
+import { useEffect, useState } from "react";
+
 import { fetchVenueSpotlight, type VenueSpotlight } from "@/lib/venues/spotlight";
 
 export function FeaturedVenueWidget() {

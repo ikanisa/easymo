@@ -1,7 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
-import { leadSchema } from "@/lib/schemas";
+
 import { getAdminApiPath } from "@/lib/routes";
+import { leadSchema } from "@/lib/schemas";
 
 const LEADS_KEY = ["leads"] as const;
 

@@ -1,14 +1,15 @@
+import { ServiceAuthError,verifyServiceJwt } from "@easymo/commons";
 import {
   CanActivate,
   ExecutionContext,
+  ForbiddenException,
   Injectable,
   UnauthorizedException,
-  ForbiddenException,
 } from "@nestjs/common";
-import type { Request } from "express";
 import { ConfigService } from "@nestjs/config";
 import { Reflector } from "@nestjs/core";
-import { verifyServiceJwt, ServiceAuthError } from "@easymo/commons";
+import type { Request } from "express";
+
 import { SERVICE_SCOPES_KEY } from "../decorators/service-scopes.decorator.js";
 
 @Injectable()

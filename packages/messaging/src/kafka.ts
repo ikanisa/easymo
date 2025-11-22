@@ -1,4 +1,4 @@
-import { Kafka, KafkaConfig, Producer, Consumer, logLevel, ProducerRecord, ConsumerRunConfig } from "kafkajs";
+import { Consumer, ConsumerRunConfig,Kafka, KafkaConfig, logLevel, Producer, ProducerRecord } from "kafkajs";
 import merge from "lodash.merge";
 import { Logger } from "pino";
 import { ulid } from "ulid";

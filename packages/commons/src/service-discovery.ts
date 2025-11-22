@@ -7,8 +7,8 @@
  * @module service-discovery
  */
 
-import { logger } from "./logger";
 import { CircuitBreaker, CircuitBreakerOptions } from "./circuit-breaker";
+import { logger } from "./logger";
 
 /**
  * Service endpoint configuration

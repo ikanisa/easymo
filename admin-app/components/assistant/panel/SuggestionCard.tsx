@@ -4,6 +4,7 @@ import type {
   AssistantAction,
   AssistantSuggestion,
 } from "@/lib/schemas";
+
 import styles from "../AssistantPanel.module.css";
 
 type SuggestionCardProps = {

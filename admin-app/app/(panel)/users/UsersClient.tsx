@@ -1,13 +1,14 @@
 "use client";
 
 import { useState } from "react";
+
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { UsersTable } from "@/components/users/UsersTable";
-import { SectionCard } from "@/components/ui/SectionCard";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { LoadingState } from "@/components/ui/LoadingState";
-import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { SectionCard } from "@/components/ui/SectionCard";
 import { InviteUserCard } from "@/components/users/InviteUserCard";
+import { UsersTable } from "@/components/users/UsersTable";
 import { type UsersQueryParams, useUsersQuery } from "@/lib/queries/users";
 
 interface UsersClientProps {

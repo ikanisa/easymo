@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+
 import { getSupabaseAdminClient } from "@/lib/server/supabase-admin";
 
 const listParamsSchema = z.object({
@@ -83,7 +84,7 @@ export async function GET(request: NextRequest) {
   }> = (data ?? []).map(mapRow);
   // Enrich with contact info
   const contactIds = Array.from(new Set(rows.map((r) => r.contactId).filter((v): v is string => Boolean(v))));
-  let contactsMap = new Map<string, { name: string | null; phone: string | null }>();
+  const contactsMap = new Map<string, { name: string | null; phone: string | null }>();
   if (contactIds.length) {
     const { data: contacts } = await admin
       .from('wa_contacts')

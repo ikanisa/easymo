@@ -3,7 +3,7 @@
  * Provides a standardized loop for agents to reason and act
  */
 
-import { Tool, AgentContext, ToolInvocation } from '../base/types';
+import { AgentContext, Tool, ToolInvocation } from '../base/types';
 
 export interface ReActStep {
   thought: string;

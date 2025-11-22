@@ -1,8 +1,9 @@
 "use client";
 
-import { useMemo } from "react";
-import { DayPicker, DateRange } from "react-day-picker";
 import "react-day-picker/dist/style.css";
+
+import { useMemo } from "react";
+import { DateRange,DayPicker } from "react-day-picker";
 
 interface DateRangePickerProps {
   value: { from?: Date; to?: Date };

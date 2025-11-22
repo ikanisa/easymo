@@ -1,14 +1,9 @@
 export const dynamic = 'force-dynamic';
 
-import { createPanelPageMetadata } from "@/components/layout/nav-items";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
+
+import { createPanelPageMetadata } from "@/components/layout/nav-items";
 import { createQueryClient } from "@/lib/api/queryClient";
-import { QrClient } from "./QrClient";
-import {
-  fetchQrTokens,
-  qrQueryKeys,
-  type QrTokensQueryParams,
-} from "@/lib/queries/qr";
 import {
   barsQueryKeys,
   type BarsQueryParams,
@@ -19,6 +14,13 @@ import {
   marketplaceAgentSessionsQueryKeys,
   type MarketplaceAgentSessionsQueryParams,
 } from "@/lib/queries/marketplaceAgentSessions";
+import {
+  fetchQrTokens,
+  qrQueryKeys,
+  type QrTokensQueryParams,
+} from "@/lib/queries/qr";
+
+import { QrClient } from "./QrClient";
 
 export const metadata = createPanelPageMetadata("/qr");
 

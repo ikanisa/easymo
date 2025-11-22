@@ -1,4 +1,5 @@
 import { z } from "zod";
+
 import { scheduledTripSchema } from "@/lib/schemas";
 
 const responseSchema = z.object({

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+
 import { FeaturedProperties } from "@/components/property/FeaturedProperties";
 
 export default function HomePage() {

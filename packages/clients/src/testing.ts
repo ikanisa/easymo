@@ -1,4 +1,6 @@
 import { randomUUID } from 'node:crypto'
+
+import type { SupabaseRepositories } from './supabase'
 import type {
   AdminAuditRow,
   BrokerMessageRow,
@@ -10,7 +12,6 @@ import type {
   PaginatedResult,
   PaginationOptions
 } from './types'
-import type { SupabaseRepositories } from './supabase'
 
 export interface SupabaseTestData {
   favorites?: FavoriteRow[]

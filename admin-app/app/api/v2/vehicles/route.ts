@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/src/v2/lib/supabase/client";
 
 import { handleRouteError } from "../_lib/utils";
-import { sanitizeVehicle, vehicleSelect, type VehicleRow } from "./schema";
+import { sanitizeVehicle, type VehicleRow,vehicleSelect } from "./schema";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

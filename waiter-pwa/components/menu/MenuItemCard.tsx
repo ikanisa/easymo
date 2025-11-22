@@ -1,11 +1,12 @@
 'use client'
 
+import { CheckIcon,PlusIcon } from '@heroicons/react/24/outline'
 import Image from 'next/image'
-import { useMenu } from '@/contexts/MenuContext'
-import type { MenuItem } from '@/types/menu'
-import { PlusIcon, CheckIcon } from '@heroicons/react/24/outline'
 import { useState } from 'react'
+
+import { useMenu } from '@/contexts/MenuContext'
 import { cn } from '@/lib/utils'
+import type { MenuItem } from '@/types/menu'
 
 interface MenuItemCardProps {
   item: MenuItem

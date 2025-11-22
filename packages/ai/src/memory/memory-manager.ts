@@ -1,8 +1,9 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { Redis } from 'ioredis';
-import type { Memory, Message } from '../types/index.js';
-import type { OpenAIProvider } from '../llm/openai-provider.js';
 import { v4 as uuidv4 } from 'uuid';
+
+import type { OpenAIProvider } from '../llm/openai-provider.js';
+import type { Memory, Message } from '../types/index.js';
 
 export interface MemoryConfig {
   redis?: {

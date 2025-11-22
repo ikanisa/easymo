@@ -4,7 +4,7 @@ import { z } from "zod";
 import { createAdminClient } from "@/src/v2/lib/supabase/client";
 
 import { coerceNullableString, handleRouteError } from "../../_lib/utils";
-import { sanitizeStation, stationSelect, stationUpdateSchema, type StationRow } from "../schema";
+import { sanitizeStation, type StationRow,stationSelect, stationUpdateSchema } from "../schema";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

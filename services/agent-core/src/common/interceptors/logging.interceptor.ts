@@ -4,8 +4,8 @@ import {
   Injectable,
   NestInterceptor,
 } from "@nestjs/common";
-import { Observable, tap } from "rxjs";
 import { Logger } from "nestjs-pino";
+import { Observable, tap } from "rxjs";
 
 @Injectable()
 export class LoggingInterceptor implements NestInterceptor {

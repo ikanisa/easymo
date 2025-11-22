@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type Ref } from "react";
 import classNames from "classnames";
-import { Search, HelpCircle, ArrowRight } from "lucide-react";
+import { ArrowRight,HelpCircle, Search } from "lucide-react";
+import { type Ref,useEffect, useMemo, useRef, useState } from "react";
+
+import { usePanelContext } from "@/components/layout/PanelContext";
 import { Button } from "@/components/ui/Button";
 import { useIntegrationBadgeMetrics } from "@/lib/hooks/useIntegrationBadgeMetrics";
-import { usePanelContext } from "@/components/layout/PanelContext";
 
 interface TopBarProps {
   environmentLabel: string;

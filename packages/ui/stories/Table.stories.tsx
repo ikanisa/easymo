@@ -1,12 +1,13 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import type { ComponentProps } from "react";
+
 import {
   Table,
-  TableHeader,
   TableBody,
-  TableRow,
-  TableHead,
   TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "../src/components/table";
 
 const meta: Meta<typeof Table> = {

@@ -1,13 +1,14 @@
 'use client';
 
-import { MenuBrowser } from '@/components/menu/MenuBrowser';
-import { MenuProvider } from '@/contexts/MenuContext';
-import { CartButton } from '@/components/menu/CartButton';
-import { LanguageSwitcher } from '@/components/LanguageSwitcher';
-import { useLocale, useTranslations } from 'next-intl';
-import { FeaturedVenueWidget } from '@/components/restaurant/FeaturedVenueWidget';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
+import { useLocale, useTranslations } from 'next-intl';
+import { useTranslations } from 'next-intl';
+
+import { LanguageSwitcher } from '@/components/LanguageSwitcher';
+import { CartButton } from '@/components/menu/CartButton';
+import { MenuBrowser } from '@/components/menu/MenuBrowser';
+import { FeaturedVenueWidget } from '@/components/restaurant/FeaturedVenueWidget';
+import { MenuProvider } from '@/contexts/MenuContext';
 
 export default function MenuPage() {
   const t = useTranslations();

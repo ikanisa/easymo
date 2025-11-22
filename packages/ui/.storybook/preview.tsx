@@ -1,8 +1,8 @@
-import type { Decorator, Preview } from "@storybook/react";
-import { useEffect } from "react";
-
 import "../styles.css";
 import "../storybook.tailwind.css";
+
+import type { Decorator, Preview } from "@storybook/react";
+import { useEffect } from "react";
 
 const withUiTokens: Decorator = (Story) => {
   useEffect(() => {

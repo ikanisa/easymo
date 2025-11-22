@@ -1,16 +1,18 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import styles from "./AlertPreferences.module.css";
-import { useAdminAlertPreferencesQuery } from "@/lib/queries/alertPreferences";
-import type { AdminAlertPreference } from "@/lib/schemas";
-import type { AlertPreferencesIntegration } from "@/lib/settings/alert-preferences-service";
-import { LoadingState } from "@/components/ui/LoadingState";
+
 import { EmptyState } from "@/components/ui/EmptyState";
+import { IntegrationStatusBadge } from "@/components/ui/IntegrationStatusBadge";
+import { LoadingState } from "@/components/ui/LoadingState";
 import { Pill } from "@/components/ui/Pill";
 import { useToast } from "@/components/ui/ToastProvider";
-import { IntegrationStatusBadge } from "@/components/ui/IntegrationStatusBadge";
+import { useAdminAlertPreferencesQuery } from "@/lib/queries/alertPreferences";
 import { getAdminApiPath } from "@/lib/routes";
+import type { AdminAlertPreference } from "@/lib/schemas";
+import type { AlertPreferencesIntegration } from "@/lib/settings/alert-preferences-service";
+
+import styles from "./AlertPreferences.module.css";
 
 function formatUpdatedAt(timestamp?: string | null) {
   if (!timestamp) return null;

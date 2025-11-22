@@ -1,6 +1,7 @@
 "use client";
 
 import classNames from "classnames";
+
 import styles from "./Pill.module.css";
 
 interface PillProps {

@@ -1,9 +1,10 @@
 import "server-only";
 
 import { z } from "zod";
+
 import { getAdminApiPath } from "@/lib/routes";
-import { callAdminFunction } from "@/lib/server/functions-client";
 import { type User, userSchema } from "@/lib/schemas";
+import { callAdminFunction } from "@/lib/server/functions-client";
 import {
   paginateArray,
   type PaginatedResult,

@@ -1,14 +1,16 @@
 export const dynamic = 'force-dynamic';
 
-import { createPanelPageMetadata } from "@/components/layout/nav-items";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
+
+import { createPanelPageMetadata } from "@/components/layout/nav-items";
 import { createQueryClient } from "@/lib/api/queryClient";
-import { UsersClient } from "./UsersClient";
 import {
   usersQueryKeys,
   type UsersQueryParams,
 } from "@/lib/queries/users";
 import { listUsers } from "@/lib/users/users-service";
+
+import { UsersClient } from "./UsersClient";
 
 export const metadata = createPanelPageMetadata("/users");
 

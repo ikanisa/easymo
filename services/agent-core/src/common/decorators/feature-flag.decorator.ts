@@ -1,5 +1,5 @@
-import { SetMetadata } from "@nestjs/common";
 import type { FeatureFlag } from "@easymo/commons";
+import { SetMetadata } from "@nestjs/common";
 
 export const FEATURE_FLAG_KEY = "agent.featureFlags";
 

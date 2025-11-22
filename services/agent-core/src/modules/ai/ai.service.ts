@@ -1,8 +1,9 @@
+import { getApiEndpointPath, getRequestId } from "@easymo/commons";
 import { Injectable, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import axios, { AxiosInstance } from "axios";
 import { OpenAI } from "openai";
-import { getApiEndpointPath, getRequestId } from "@easymo/commons";
+
 import {
   buildFarmerBrokerMessages,
   type FarmerBrokerInput,

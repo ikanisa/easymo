@@ -1,10 +1,11 @@
 export const dynamic = "force-dynamic";
 
 import { z } from "zod";
+
 import { createHandler } from "@/app/api/withObservability";
 import { jsonError, jsonOk, zodValidationError } from "@/lib/api/http";
-import { getSupabaseAdminClient } from "@/lib/server/supabase-admin";
 import { logStructured } from "@/lib/server/logger";
+import { getSupabaseAdminClient } from "@/lib/server/supabase-admin";
 
 const querySchema = z.object({
   barId: z.string().uuid().optional(),

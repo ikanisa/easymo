@@ -1,10 +1,12 @@
 export const dynamic = "force-dynamic";
 
-import { redirect } from "next/navigation";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
+import { redirect } from "next/navigation";
+
 import { createQueryClient } from "@/lib/api/queryClient";
-import { adminHubQueryKeys, fetchAdminHubSnapshot } from "@/lib/queries/adminHub";
 import { isFeatureFlagEnabled } from "@/lib/flags";
+import { adminHubQueryKeys, fetchAdminHubSnapshot } from "@/lib/queries/adminHub";
+
 import { HubClient } from "./HubClient";
 
 export default async function HubPage() {

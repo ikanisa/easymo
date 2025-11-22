@@ -1,8 +1,10 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+
 import { getSupabaseClient } from "@/lib/supabase/client";
+
 import {
-  mockFeaturedProperties,
   type FeaturedProperty,
+  mockFeaturedProperties,
 } from "./mock-data";
 
 type Row = {

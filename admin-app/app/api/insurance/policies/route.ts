@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+
 import { getSupabaseAdminClient } from "@/lib/server/supabase-admin";
 
 const listParamsSchema = z.object({
@@ -73,7 +74,7 @@ export async function GET(request: NextRequest) {
   let quotes: Array<Record<string, any>> = [];
   let hadQuoteError = false;
   if (quoteIds.length) {
-    let qr = await admin
+    const qr = await admin
       .from("insurance_quotes")
       .select("id, user_id, intent_id")
       .in("id", quoteIds);
@@ -98,7 +99,7 @@ export async function GET(request: NextRequest) {
         .filter((v): v is string => Boolean(v)),
     ),
   );
-  let intentsMap = new Map<string, { plate: string | null; contactId: string | null }>();
+  const intentsMap = new Map<string, { plate: string | null; contactId: string | null }>();
   if (intentIds.length) {
     const { data: intents } = await admin
       .from("insurance_intents")
@@ -123,7 +124,7 @@ export async function GET(request: NextRequest) {
       quotes.map((q: any) => q.user_id as string | null | undefined).filter((v): v is string => Boolean(v)),
     ),
   );
-  let contactMap = new Map<string, { name: string | null; phone: string | null }>();
+  const contactMap = new Map<string, { name: string | null; phone: string | null }>();
   if (contactIds.length) {
     const { data: contacts } = await admin
       .from("wa_contacts")
@@ -133,7 +134,7 @@ export async function GET(request: NextRequest) {
       contactMap.set(String(c.id), { name: (c.display_name as string | null) ?? null, phone: (c.phone_e164 as string | null) ?? null }),
     );
   }
-  let profileMap = new Map<string, { name: string | null }>();
+  const profileMap = new Map<string, { name: string | null }>();
   if (userIds.length) {
     const { data: profiles } = await admin
       .from("profiles")

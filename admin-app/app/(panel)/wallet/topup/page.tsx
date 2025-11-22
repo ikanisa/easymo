@@ -1,5 +1,6 @@
-import { WalletTopupClient } from "./WalletTopupClient";
 import { createPanelPageMetadata } from "@/components/layout/nav-items";
+
+import { WalletTopupClient } from "./WalletTopupClient";
 
 export const metadata = createPanelPageMetadata("/wallet/topup");
 

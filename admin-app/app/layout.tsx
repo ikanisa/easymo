@@ -1,15 +1,18 @@
-import type { Metadata, Viewport } from "next";
-import type { ReactNode } from "react";
 import "../styles/design-tokens.css";
 import "../styles/theme.css";
 import "../styles/typography.css";
 import "./globals.css";
-import { AppProviders } from "@/components/providers/AppProviders";
-import { QueryProvider } from "@/app/providers/QueryProvider";
+
 import { cssVariableSheet } from "@easymo/ui/tokens";
-import { isUiKitEnabled } from "@/lib/ui-kit";
-import { ToastProvider } from '@/components/ui/toast';
+import type { Metadata, Viewport } from "next";
+import type { ReactNode } from "react";
+
+import { QueryProvider } from "@/app/providers/QueryProvider";
+import { AppProviders } from "@/components/providers/AppProviders";
 import { ErrorBoundary } from '@/components/ui/error-boundary';
+import { ThemeProvider } from '@/components/ui/theme-provider';
+import { ToastProvider } from '@/components/ui/toast';
+import { isUiKitEnabled } from "@/lib/ui-kit";
 
 export const metadata: Metadata = {
   title: "easyMO Admin Panel",
@@ -35,14 +38,16 @@ export default function RootLayout({
     <html lang="en" className="app-html" suppressHydrationWarning>
       <body className="app-body" data-ui-theme={uiKitEnabled ? "v2" : undefined} suppressHydrationWarning>
         <ErrorBoundary>
-          <QueryProvider>
-            <ToastProvider>
-              <a className="skip-link" href="#main-content">
-                Skip to main content
-              </a>
-              <AppProviders>{children}</AppProviders>
-            </ToastProvider>
-          </QueryProvider>
+          <ThemeProvider>
+            <QueryProvider>
+              <ToastProvider>
+                <a className="skip-link" href="#main-content">
+                  Skip to main content
+                </a>
+                <AppProviders>{children}</AppProviders>
+              </ToastProvider>
+            </QueryProvider>
+          </ThemeProvider>
         </ErrorBoundary>
       </body>
     </html>

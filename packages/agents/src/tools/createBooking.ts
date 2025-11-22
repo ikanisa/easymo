@@ -5,8 +5,9 @@
  */
 
 import { z } from 'zod';
-import type { AgentContext } from '../types';
+
 import { logToolInvocation } from '../observability';
+import type { AgentContext } from '../types';
 
 export const createBookingSchema = z.object({
   slotId: z.string().uuid().describe('ID of the time slot to book'),

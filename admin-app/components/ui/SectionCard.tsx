@@ -1,4 +1,5 @@
 import classNames from "classnames";
+
 import { GlassPanel } from "@/components/layout/GlassPanel";
 
 interface SectionCardProps {

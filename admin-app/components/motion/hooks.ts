@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+
 import { usePrefersReducedMotion } from "./MotionProviders";
 
 export function usePageTransition() {

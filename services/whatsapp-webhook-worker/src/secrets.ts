@@ -1,4 +1,4 @@
-import { SecretsManagerClient, GetSecretValueCommand } from "@aws-sdk/client-secrets-manager";
+import { GetSecretValueCommand,SecretsManagerClient } from "@aws-sdk/client-secrets-manager";
 
 const AWS_SECRET_REGEX = /^aws-sm:\/\/(.+)$/i;
 const ENV_SECRET_REGEX = /^env:\/\/(.+)$/i;

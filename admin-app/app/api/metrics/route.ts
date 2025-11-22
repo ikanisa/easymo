@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+
 import { metrics } from '@/lib/monitoring/metrics';
 
 export const dynamic = 'force-dynamic';

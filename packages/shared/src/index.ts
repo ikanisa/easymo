@@ -1,9 +1,9 @@
-export { maskMsisdn } from './utils/msisdn'
 export {
   requireEmbedding,
   requireFirstChoice,
   requireFirstMessageContent,
 } from './openaiGuard'
+export { maskMsisdn } from './utils/msisdn'
 
 // Re-export voice schemas (so imports like { voiceCallSchema } resolve)
 export * from './voice/dto'

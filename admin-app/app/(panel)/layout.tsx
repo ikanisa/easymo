@@ -1,8 +1,9 @@
-import type { ReactNode } from "react";
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
+import type { ReactNode } from "react";
+
 import { PanelShell } from "@/components/layout/PanelShell";
 import { readSessionFromCookies } from "@/lib/server/session";
-import { redirect } from "next/navigation";
 
 export const metadata: Metadata = {
   title: {

@@ -1,7 +1,8 @@
 "use client";
 
-import { ReactNode, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { ReactNode, useEffect, useState } from "react";
+
 import { useSupabaseAuth } from "@/components/providers/SupabaseAuthProvider";
 
 interface ProtectedRouteProps {

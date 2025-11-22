@@ -1,7 +1,9 @@
 import { ReactNode } from "react";
-import { describe, it, expect, beforeEach, vi } from "vitest";
-import { render, screen } from "../../tests/utils/react-testing";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
 import { EnhancedNav } from "@/components/navigation/EnhancedNav";
+
+import { render, screen } from "../../tests/utils/react-testing";
 
 const { mockUsePathname } = vi.hoisted(() => ({
   mockUsePathname: vi.fn(() => "/insurance"),

@@ -1,10 +1,11 @@
 export const dynamic = 'force-dynamic';
 import { z } from 'zod';
-import { getSupabaseAdminClient } from '@/lib/server/supabase-admin';
-import { logStructured } from '@/lib/server/logger';
-import { mockAuditEvents } from '@/lib/mock-data';
-import { jsonOk, jsonError, zodValidationError } from '@/lib/api/http';
+
 import { createHandler } from '@/app/api/withObservability';
+import { jsonError, jsonOk, zodValidationError } from '@/lib/api/http';
+import { mockAuditEvents } from '@/lib/mock-data';
+import { logStructured } from '@/lib/server/logger';
+import { getSupabaseAdminClient } from '@/lib/server/supabase-admin';
 
 const querySchema = z.object({
   limit: z.coerce.number().int().min(1).max(200).optional(),

@@ -1,6 +1,7 @@
 "use client";
 
 import type { ColumnDef } from "@tanstack/react-table";
+
 import { DataTable } from "@/components/data-table/DataTable";
 import type { SettingEntry } from "@/lib/schemas";
 

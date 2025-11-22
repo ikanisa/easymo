@@ -1,9 +1,11 @@
 'use client'
 
+import { ArrowPathIcon } from '@heroicons/react/24/outline'
+
 import { useMenu } from '@/contexts/MenuContext'
+
 import CategoryTabs from './CategoryTabs'
 import MenuItemCard from './MenuItemCard'
-import { ArrowPathIcon } from '@heroicons/react/24/outline'
 
 function MenuBrowser() {
   const { items, loading, error } = useMenu()

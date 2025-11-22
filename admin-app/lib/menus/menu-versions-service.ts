@@ -1,7 +1,7 @@
 import { apiFetch } from "@/lib/api/client";
 import { getAdminApiPath } from "@/lib/routes";
-import { type PaginatedResult, type Pagination } from "@/lib/shared/pagination";
 import type { MenuVersion } from "@/lib/schemas";
+import { type PaginatedResult, type Pagination } from "@/lib/shared/pagination";
 
 export type MenuVersionListParams = Pagination & {
   status?: MenuVersion["status"];

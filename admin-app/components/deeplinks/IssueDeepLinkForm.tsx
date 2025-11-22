@@ -1,10 +1,13 @@
 "use client";
 
+import { maskMsisdn } from "@va/shared";
 import { FormEvent, useMemo, useState } from "react";
+
 import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/ToastProvider";
 import { apiFetch } from "@/lib/api/client";
 import { getAdminApiPath } from "@/lib/routes";
+
 import {
   AdminDeeplinkFlow,
   DEFAULT_TTL_DAYS,
@@ -13,7 +16,6 @@ import {
   FlowField,
 } from "./config";
 import styles from "./IssueDeepLinkForm.module.css";
-import { maskMsisdn } from "@va/shared";
 
 interface IssueResponse {
   ok: boolean;

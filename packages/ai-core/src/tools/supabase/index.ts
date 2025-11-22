@@ -1,7 +1,6 @@
 // Supabase Database Tools
 export { 
-  supabaseVectorSearchTool,
+  supabaseQueryTool,
   supabaseRPCTool,
   supabaseStorageTool,
-  supabaseQueryTool
-} from './database';
+  supabaseVectorSearchTool} from './database';

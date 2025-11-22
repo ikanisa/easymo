@@ -1,6 +1,7 @@
+import { randomUUID } from "crypto";
 import PQueue from "p-queue";
 import pRetry from "p-retry";
-import { randomUUID } from "crypto";
+
 import { maskMsisdn } from "./utils/pii";
 
 type QueueMeta = {

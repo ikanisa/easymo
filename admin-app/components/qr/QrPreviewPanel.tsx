@@ -2,11 +2,11 @@
 
 import { useEffect, useMemo, useState } from "react";
 
-import { IntegrationStatusBadge } from "@/components/ui/IntegrationStatusBadge";
 import { Button } from "@/components/ui/Button";
+import { IntegrationStatusBadge } from "@/components/ui/IntegrationStatusBadge";
 import { useToast } from "@/components/ui/ToastProvider";
-import type { Bar, QrPreview } from "@/lib/schemas";
 import { requestQrPreview } from "@/lib/qr/qr-preview-service";
+import type { Bar, QrPreview } from "@/lib/schemas";
 
 import styles from "./QrPreviewPanel.module.css";
 

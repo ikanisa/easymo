@@ -1,13 +1,14 @@
 "use client";
 
 import { useMemo, useState } from "react";
+
 import { PageHeader } from "@/components/layout/PageHeader";
-import { SectionCard } from "@/components/ui/SectionCard";
-import { MarketplaceRequestWizard } from "@/components/marketplace/MarketplaceRequestWizard";
 import { MarketplaceQuoteComparison } from "@/components/marketplace/MarketplaceQuoteComparison";
+import { MarketplaceRequestWizard } from "@/components/marketplace/MarketplaceRequestWizard";
 import { MarketplaceThreadViewer } from "@/components/marketplace/MarketplaceThreadViewer";
-import { type MarketplaceAgentSessionsQueryParams, useMarketplaceAgentSessionsQuery } from "@/lib/queries/marketplaceAgentSessions";
 import { Button } from "@/components/ui/Button";
+import { SectionCard } from "@/components/ui/SectionCard";
+import { type MarketplaceAgentSessionsQueryParams, useMarketplaceAgentSessionsQuery } from "@/lib/queries/marketplaceAgentSessions";
 
 interface PharmaciesClientProps {
   initialParams: MarketplaceAgentSessionsQueryParams;

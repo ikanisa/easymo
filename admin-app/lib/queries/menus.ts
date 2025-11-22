@@ -1,11 +1,12 @@
 import { QueryKey, useQuery, UseQueryOptions } from "@tanstack/react-query";
-import type { MenuVersion, OcrJob } from "@/lib/schemas";
-import type { PaginatedResult } from "@/lib/shared/pagination";
+
 import {
   listMenuVersions,
   type MenuVersionListParams,
 } from "@/lib/menus/menu-versions-service";
 import { listOcrJobs, type OcrJobListParams } from "@/lib/ocr/ocr-jobs-service";
+import type { MenuVersion, OcrJob } from "@/lib/schemas";
+import type { PaginatedResult } from "@/lib/shared/pagination";
 
 export type MenuQueryParams = MenuVersionListParams;
 

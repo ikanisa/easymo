@@ -1,12 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import type { InsuranceQuote } from "@/lib/schemas";
-import { Drawer } from "@/components/ui/Drawer";
-import styles from "./InsuranceDrawer.module.css";
-import { IntegrationStatusBadge } from "@/components/ui/IntegrationStatusBadge";
-import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+
 import { Button } from "@/components/ui/Button";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { Drawer } from "@/components/ui/Drawer";
+import { IntegrationStatusBadge } from "@/components/ui/IntegrationStatusBadge";
+import type { InsuranceQuote } from "@/lib/schemas";
+
+import styles from "./InsuranceDrawer.module.css";
 
 interface InsuranceDrawerProps {
   quote: InsuranceQuote;

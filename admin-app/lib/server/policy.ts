@@ -1,9 +1,9 @@
 "use server";
 
-import { getSupabaseAdminClient } from "@/lib/server/supabase-admin";
-import type { ObservabilityContext } from "@/lib/server/observability";
-import { claimThrottleWindow, type ThrottleWindow } from "@/lib/server/throttle-store";
 import { logStructured } from "@/lib/server/logger";
+import type { ObservabilityContext } from "@/lib/server/observability";
+import { getSupabaseAdminClient } from "@/lib/server/supabase-admin";
+import { claimThrottleWindow, type ThrottleWindow } from "@/lib/server/throttle-store";
 
 export interface PolicyResult {
   allowed: boolean;

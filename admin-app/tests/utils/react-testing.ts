@@ -1,11 +1,11 @@
-import { act } from "react";
 import {
-  render as rtlRender,
-  fireEvent as rtlFireEvent,
-  waitFor as rtlWaitFor,
   cleanup as rtlCleanup,
+  fireEvent as rtlFireEvent,
+  render as rtlRender,
   screen,
+  waitFor as rtlWaitFor,
 } from "@testing-library/react";
+import { act } from "react";
 
 if (typeof globalThis !== "undefined") {
   (globalThis as typeof globalThis & {

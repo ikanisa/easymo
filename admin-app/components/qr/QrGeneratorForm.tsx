@@ -1,12 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import type { Bar } from "@/lib/schemas";
-import styles from "./QrGeneratorForm.module.css";
-import { useToast } from "@/components/ui/ToastProvider";
-import { IntegrationStatusBadge } from "@/components/ui/IntegrationStatusBadge";
+
 import { Button } from "@/components/ui/Button";
+import { IntegrationStatusBadge } from "@/components/ui/IntegrationStatusBadge";
+import { useToast } from "@/components/ui/ToastProvider";
 import { getAdminApiPath } from "@/lib/routes";
+import type { Bar } from "@/lib/schemas";
+
+import styles from "./QrGeneratorForm.module.css";
 
 interface QrGeneratorFormProps {
   bars: Bar[];

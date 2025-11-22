@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState, type ComponentProps } from "react";
-import { SectionCard } from "@/components/ui/SectionCard";
+import { type ComponentProps,useEffect, useState } from "react";
+
 import { Badge } from "@/components/ui/Badge";
+import { SectionCard } from "@/components/ui/SectionCard";
 // Live data only; no mock imports
 
 const currencyFormatter = new Intl.NumberFormat("en-RW", {

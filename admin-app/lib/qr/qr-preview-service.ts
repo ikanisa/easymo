@@ -1,7 +1,7 @@
 import { apiFetch } from "@/lib/api/client";
+import { buildQrPreview } from "@/lib/qr/qr-preview-helpers";
 import { getAdminApiPath } from "@/lib/routes";
 import type { QrPreview } from "@/lib/schemas";
-import { buildQrPreview } from "@/lib/qr/qr-preview-helpers";
 
 export interface QrPreviewRequest {
   barId: string;

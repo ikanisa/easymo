@@ -1,7 +1,7 @@
 "use client";
 
-import { createElement, forwardRef } from "react";
 import * as Icons from "lucide-react";
+import { createElement, forwardRef } from "react";
 
 export type IconName = keyof typeof Icons;
 

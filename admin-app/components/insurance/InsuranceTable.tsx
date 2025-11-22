@@ -1,11 +1,13 @@
 "use client";
 
-import { useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
+import { useMemo, useState } from "react";
+
 import { DataTable } from "@/components/data-table/DataTable";
 import { Button } from "@/components/ui/Button";
 import { LoadMoreButton } from "@/components/ui/LoadMoreButton";
 import type { InsuranceQuote } from "@/lib/schemas";
+
 import { InsuranceDrawer } from "./InsuranceDrawer";
 
 interface InsuranceTableProps {

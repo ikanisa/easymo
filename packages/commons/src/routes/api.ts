@@ -1,7 +1,7 @@
 import {
   buildEndpointPath,
-  defineHttpControllers,
   type ControllerDefinition,
+  defineHttpControllers,
   type EndpointDefinition,
   type HttpMethod,
 } from "./utils";

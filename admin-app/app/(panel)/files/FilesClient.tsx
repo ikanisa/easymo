@@ -1,12 +1,13 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { PageHeader } from "@/components/layout/PageHeader";
-import { SectionCard } from "@/components/ui/SectionCard";
+
 import { StorageTable } from "@/components/files/StorageTable";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { LoadingState } from "@/components/ui/LoadingState";
 import { IntegrationStatusChip } from "@/components/ui/IntegrationStatusChip";
+import { LoadingState } from "@/components/ui/LoadingState";
+import { SectionCard } from "@/components/ui/SectionCard";
 import {
   type StorageQueryParams,
   useStorageObjectsQuery,

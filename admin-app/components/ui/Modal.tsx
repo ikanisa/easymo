@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useId, useRef } from "react";
-import styles from "./Modal.module.css";
+
 import { Button } from "@/components/ui/Button";
+
+import styles from "./Modal.module.css";
 
 interface ModalProps {
   title: string;

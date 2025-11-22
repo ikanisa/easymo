@@ -1,6 +1,6 @@
+import { jsonError } from "@/lib/api/http";
 import type { ObservabilityContext } from "@/lib/server/observability";
 import { withApiObservability } from "@/lib/server/observability";
-import { jsonError } from "@/lib/api/http";
 import { captureException } from "@/lib/server/sentry";
 
 export type ApiHandler<T = unknown> = (

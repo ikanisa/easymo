@@ -1,8 +1,9 @@
 'use client'
 
-import { useOnlineStatus } from '@/hooks/useOnlineStatus'
-import { useTranslations } from 'next-intl'
 import { WifiIcon } from '@heroicons/react/24/outline'
+import { useTranslations } from 'next-intl'
+
+import { useOnlineStatus } from '@/hooks/useOnlineStatus'
 
 export default function OfflineBanner() {
   const isOnline = useOnlineStatus()

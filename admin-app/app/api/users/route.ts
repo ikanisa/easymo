@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { listUsers } from "@/lib/users/users-service";
-import { userSchema } from "@/lib/schemas";
-import { jsonOk, jsonError, zodValidationError } from "@/lib/api/http";
+
 import { createHandler } from "@/app/api/withObservability";
+import { jsonError, jsonOk, zodValidationError } from "@/lib/api/http";
+import { userSchema } from "@/lib/schemas";
+import { listUsers } from "@/lib/users/users-service";
 
 const querySchema = z.object({
   search: z.string().optional(),

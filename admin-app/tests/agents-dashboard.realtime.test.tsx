@@ -1,4 +1,5 @@
-import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
+import { afterEach,beforeEach, describe, expect, it, vi } from "vitest";
+
 import { render, screen, waitFor } from "./utils/react-testing";
 
 const subscribeMock = vi.fn();

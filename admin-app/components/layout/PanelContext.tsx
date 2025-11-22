@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext } from "react";
+
 import type { OmniSearchResult } from "@/lib/omnisearch/types";
 
 export type SidecarTab = "overview" | "logs" | "tasks" | "policies";

@@ -1,6 +1,7 @@
 "use client";
 
 import { PaymentStatusWidget } from "@easymo/ui/widgets/PaymentStatusWidget";
+
 import { SectionCard } from "@/components/ui/SectionCard";
 
 export function PaymentsHealthWidget() {

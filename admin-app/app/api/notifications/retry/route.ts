@@ -4,12 +4,12 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { createHandler } from '@/app/api/withObservability';
-import { evaluateOutboundPolicy } from '@/lib/server/policy';
+import { jsonError, jsonOk, zodValidationError } from '@/lib/api/http';
 import { recordAudit } from '@/lib/server/audit';
-import { logStructured } from '@/lib/server/logger';
-import { getSupabaseAdminClient } from '@/lib/server/supabase-admin';
-import { jsonOk, jsonError, zodValidationError } from '@/lib/api/http';
 import { requireActorId, UnauthorizedError } from '@/lib/server/auth';
+import { logStructured } from '@/lib/server/logger';
+import { evaluateOutboundPolicy } from '@/lib/server/policy';
+import { getSupabaseAdminClient } from '@/lib/server/supabase-admin';
 
 const payloadSchema = z.object({
   ids: z.array(z.string().uuid()).min(1).max(50),

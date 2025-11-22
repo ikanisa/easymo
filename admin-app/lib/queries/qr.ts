@@ -1,10 +1,11 @@
 import { QueryKey, useQuery, UseQueryOptions } from "@tanstack/react-query";
-import type { QrToken } from "@/lib/schemas";
-import type { PaginatedResult } from "@/lib/shared/pagination";
+
 import {
   listQrTokens,
   type QrTokenListParams,
 } from "@/lib/qr/qr-tokens-service";
+import type { QrToken } from "@/lib/schemas";
+import type { PaginatedResult } from "@/lib/shared/pagination";
 
 export type QrTokensQueryParams = QrTokenListParams;
 

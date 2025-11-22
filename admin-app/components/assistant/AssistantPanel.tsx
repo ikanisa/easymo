@@ -1,7 +1,9 @@
 "use client";
 
 import classNames from "classnames";
+
 import { Button } from "@/components/ui/Button";
+
 import styles from "./AssistantPanel.module.css";
 
 interface AssistantPanelProps {
@@ -10,11 +12,11 @@ interface AssistantPanelProps {
 }
 
 import { QUICK_PROMPTS } from "./constants";
+import { InputForm } from "./panel/InputForm";
 import { LimitationsList } from "./panel/LimitationsList";
 import { QuickPrompts } from "./panel/QuickPrompts";
-import { Transcript } from "./panel/Transcript";
 import { SuggestionCard } from "./panel/SuggestionCard";
-import { InputForm } from "./panel/InputForm";
+import { Transcript } from "./panel/Transcript";
 import { useAssistantPanel } from "./useAssistantPanel";
 
 export function AssistantPanel({ open, onClose }: AssistantPanelProps) {

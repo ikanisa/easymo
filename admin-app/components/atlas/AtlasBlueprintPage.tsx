@@ -1,8 +1,10 @@
 import Link from "next/link";
+
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import type { AtlasPageConfig } from "./page-config";
 import { toLinkHref } from "@/lib/link-helpers";
+
+import type { AtlasPageConfig } from "./page-config";
 
 const statusAccentMap: Record<
   NonNullable<AtlasPageConfig["roadmap"][number]["status"]>,

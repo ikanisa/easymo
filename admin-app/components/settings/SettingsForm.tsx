@@ -1,8 +1,9 @@
 "use client";
 
-import styles from "./SettingsForm.module.css";
-import { IntegrationStatusBadge } from "@/components/ui/IntegrationStatusBadge";
 import { Button } from "@/components/ui/Button";
+import { IntegrationStatusBadge } from "@/components/ui/IntegrationStatusBadge";
+
+import styles from "./SettingsForm.module.css";
 import { useSettingsForm } from "./useSettingsForm";
 
 export function SettingsForm() {

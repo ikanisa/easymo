@@ -2,14 +2,14 @@ export const dynamic = 'force-dynamic';
 import { headers } from 'next/headers';
 import { z } from 'zod';
 
+import { createHandler } from '@/app/api/withObservability';
+import { jsonError, jsonOk, zodValidationError } from '@/lib/api/http';
 import { recordAudit } from '@/lib/server/audit';
+import { requireActorId, UnauthorizedError } from '@/lib/server/auth';
 import { callBridge } from '@/lib/server/edge-bridges';
 import { logStructured } from '@/lib/server/logger';
 import { evaluateOutboundPolicy } from '@/lib/server/policy';
 import { getSupabaseAdminClient } from '@/lib/server/supabase-admin';
-import { jsonOk, jsonError, zodValidationError } from '@/lib/api/http';
-import { requireActorId, UnauthorizedError } from '@/lib/server/auth';
-import { createHandler } from '@/app/api/withObservability';
 
 const paramsSchema = z.object({ id: z.string().uuid() });
 

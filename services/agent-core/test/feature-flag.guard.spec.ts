@@ -1,6 +1,7 @@
 import { ForbiddenException } from "@nestjs/common";
-import { FeatureFlagGuard } from "../src/common/guards/feature-flag.guard";
 import { Reflector } from "@nestjs/core";
+
+import { FeatureFlagGuard } from "../src/common/guards/feature-flag.guard";
 
 class ReflectorStub extends Reflector {
   constructor(private readonly permissions: string[] | undefined) {

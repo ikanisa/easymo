@@ -1,9 +1,10 @@
-import { ForbiddenException, UnauthorizedException } from "@nestjs/common";
-import { ServiceAuthGuard } from "../src/common/guards/service-auth.guard";
-import type { ExecutionContext } from "@nestjs/common";
-import { SignJWT } from "jose";
-import { generateKeyPairSync } from "crypto";
 import type { AgentPermission } from "@easymo/commons";
+import type { ExecutionContext } from "@nestjs/common";
+import { ForbiddenException, UnauthorizedException } from "@nestjs/common";
+import { generateKeyPairSync } from "crypto";
+import { SignJWT } from "jose";
+
+import { ServiceAuthGuard } from "../src/common/guards/service-auth.guard";
 
 const TENANT_ID = "a4a8cf2d-0a4f-446c-8bf2-28509641158f";
 const CONFIG_ID = "26db67d6-e0dd-49aa-bf19-31d3de42b5ca";

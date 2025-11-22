@@ -1,7 +1,7 @@
 // OpenAI Search & Analysis
 export { 
-  openaiWebSearchTool, 
-  openaiDeepSearchTool,
   openaiCodeInterpreterTool,
+  openaiDeepSearchTool,
+  openaiWebSearchTool, 
   sipTrunkTool
 } from './search';

@@ -1,7 +1,9 @@
-import { fireEvent, render, screen, waitFor } from "./utils/react-testing";
-import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
-import type { AdminDiagnosticsMatch } from "@/lib/schemas";
+import { afterEach,beforeEach, describe, expect, it, vi } from "vitest";
+
 import { TripDiagnosticsSection } from "@/components/dashboard/admin-diagnostics/TripDiagnosticsSection";
+import type { AdminDiagnosticsMatch } from "@/lib/schemas";
+
+import { fireEvent, render, screen, waitFor } from "./utils/react-testing";
 
 const getAdminDiagnosticsMatch = vi.fn<
   [string],

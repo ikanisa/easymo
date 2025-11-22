@@ -1,8 +1,8 @@
 "use client";
 
-import { createContext, useContext } from "react";
-import type { HTMLAttributes, TableHTMLAttributes } from "react";
 import { clsx } from "clsx";
+import type { HTMLAttributes, TableHTMLAttributes } from "react";
+import { createContext, useContext } from "react";
 
 interface TableContextValue {
   zebra: boolean;

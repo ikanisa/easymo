@@ -1,5 +1,5 @@
-import React from "react";
 import { EmptyState as UiEmptyState, type EmptyStateProps as UiEmptyStateProps } from "@easymo/ui/components/feedback";
+import React from "react";
 
 const uiKitEnabled = (process.env.NEXT_PUBLIC_UI_V2_ENABLED ?? "false").trim().toLowerCase() === "true";
 

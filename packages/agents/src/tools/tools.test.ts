@@ -2,11 +2,12 @@
  * Tests for agent tools
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, expect,it } from 'vitest';
+
 import { 
   checkAvailabilityTool,
-  createBookingTool,
   checkBalanceTool,
+  createBookingTool,
   menuLookupTool,
   webSearchTool,
 } from './index';

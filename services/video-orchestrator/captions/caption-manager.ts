@@ -1,10 +1,12 @@
 import { spawn } from "node:child_process";
 import { promises as fs } from "node:fs";
 import { dirname, join, resolve } from "node:path";
+
 import type { RenderJobDefinition } from "@easymo/video-agent-schema";
+
 import type { RenderResult } from "../src/types.js";
 import { TtsSynthesizer } from "./tts.js";
-import { WhisperService, type CaptionSegment } from "./whisper.js";
+import { type CaptionSegment,WhisperService } from "./whisper.js";
 
 function segmentsToSrt(segments: CaptionSegment[]): string {
   return segments

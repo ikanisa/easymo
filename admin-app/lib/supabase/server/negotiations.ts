@@ -1,11 +1,12 @@
 import { z } from "zod";
+
+import { listCandidatesForSession, NegotiationCandidate } from "./candidates";
 import {
   parseArray,
   parseRecord,
   requireSupabaseAdminClient,
   SupabaseQueryError,
 } from "./utils";
-import { listCandidatesForSession, NegotiationCandidate } from "./candidates";
 
 const negotiationThreadRow = z.object({
   session_id: z.string().uuid(),

@@ -1,6 +1,7 @@
 import { PrismaService } from "@easymo/db";
-import { rankVendors } from "./scoring";
+
 import { fetchRecentTrips } from "./adminApi";
+import { rankVendors } from "./scoring";
 
 export type RankVendorsOptions = {
   tenantId: string;

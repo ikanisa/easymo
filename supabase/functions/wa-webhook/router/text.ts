@@ -16,6 +16,7 @@ import { handleSeePassengers } from "../domains/mobility/nearby.ts";
 import { sendText } from "../wa/client.ts";
 import { t } from "../i18n/translator.ts";
 import { maybeHandleDriverText } from "../observe/driver_parser.ts";
+import { maybeHandleFarmerBroker } from "../domains/ai-agents/farmer.ts";
 import { recordInbound } from "../observe/conv_audit.ts";
 import { getTextBody } from "../utils/messages.ts";
 

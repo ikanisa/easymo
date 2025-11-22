@@ -1,7 +1,9 @@
 "use client";
 
 import { useMemo } from "react";
+
 import { useSettingsPreviewQuery } from "@/lib/queries/settings";
+
 import styles from "./PolicyDetails.module.css";
 
 const QUIET_HOURS_KEY = "quiet_hours.rw";

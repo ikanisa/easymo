@@ -2,7 +2,8 @@
  * Tests for feature flags
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { afterEach,beforeEach, describe, expect, it } from 'vitest';
+
 import { isAgentFeatureEnabled, requireAgentFeature } from './feature-flags';
 
 describe('Feature Flags', () => {

@@ -7,21 +7,22 @@
  * @packageDocumentation
  */
 
-import OpenAI from 'openai';
-import { Redis } from 'ioredis';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { Redis } from 'ioredis';
+import OpenAI from 'openai';
+
 import type {
-  OrchestratorConfig,
-  ProcessMessageParams,
+  AgentConfig,
   AgentResponse,
   Conversation,
-  AgentConfig,
   ExecutionParams,
+  MemoryEntry,
+  Message,
+  OrchestratorConfig,
+  ProcessMessageParams,
+  TokenUsage,
   Tool,
   ToolCall,
-  Message,
-  TokenUsage,
-  MemoryEntry,
 } from './types';
 
 export class AgentOrchestrator {

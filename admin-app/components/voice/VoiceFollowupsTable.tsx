@@ -1,5 +1,6 @@
-import { DataTable } from "@/components/data-table/DataTable";
 import type { ColumnDef } from "@tanstack/react-table";
+
+import { DataTable } from "@/components/data-table/DataTable";
 
 interface VoiceFollowupRow {
   id: string;

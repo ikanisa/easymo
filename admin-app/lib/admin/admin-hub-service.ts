@@ -1,5 +1,5 @@
-import { type AdminHubSnapshot, adminHubSnapshotSchema } from "@/lib/schemas";
 import { getAdminApiPath } from "@/lib/routes";
+import { type AdminHubSnapshot, adminHubSnapshotSchema } from "@/lib/schemas";
 
 export async function getAdminHubSnapshot(): Promise<AdminHubSnapshot> {
   try {

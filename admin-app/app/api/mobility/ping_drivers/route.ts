@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSupabaseAdminClient } from "@/lib/server/supabase-admin";
+
 import { logStructured } from "@/lib/server/logger";
+import { getSupabaseAdminClient } from "@/lib/server/supabase-admin";
 
 export async function POST(req: NextRequest) {
   const reqId = req.headers.get("x-request-id") || undefined;

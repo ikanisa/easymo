@@ -1,6 +1,7 @@
-import { z } from 'zod';
-import type { Tool } from '../../core/types';
 import { createClient } from '@supabase/supabase-js';
+import { z } from 'zod';
+
+import type { Tool } from '../../core/types';
 
 const SendMoneySchema = z.object({
   from_user_id: z.string().uuid(),
