@@ -40,3 +40,10 @@
 # Plugin configuration
 [[plugins]]
   package = "@netlify/plugin-nextjs"
+
+# Configure netlify-plugin-no-more-404 to warn instead of error
+# This is needed for Next.js 15 dynamic rendering
+[[plugins]]
+  package = "netlify-plugin-no-more-404"
+  [plugins.inputs]
+    on404 = "warn"
