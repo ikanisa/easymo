@@ -1,8 +1,8 @@
 "use client";
 
-import type { Shop } from "@/lib/shops/types";
-import { Drawer } from "@/components/ui/Drawer";
 import { Badge } from "@/components/ui/Badge";
+import { Drawer } from "@/components/ui/Drawer";
+import type { Shop } from "@/lib/shops/types";
 
 interface ShopProfileDrawerProps {
   shop: Shop | null;

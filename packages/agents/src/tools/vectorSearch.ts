@@ -7,6 +7,7 @@
 import { createClient } from '@supabase/supabase-js';
 import OpenAI from 'openai';
 import { z } from 'zod';
+
 import { logToolInvocation } from '../observability';
 import type { AgentContext } from '../types';
 

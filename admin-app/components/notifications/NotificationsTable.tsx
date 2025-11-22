@@ -1,18 +1,20 @@
 "use client";
 
+import type { ColumnDef } from "@tanstack/react-table";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import useSWRInfinite from "swr/infinite";
+
 import { DataTable } from "@/components/data-table/DataTable";
-import type { NotificationOutbox } from "@/lib/schemas";
-import styles from "./NotificationsTable.module.css";
-import type { ColumnDef } from "@tanstack/react-table";
-import { useToast } from "@/components/ui/ToastProvider";
-import { IntegrationStatusBadge } from "@/components/ui/IntegrationStatusBadge";
-import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { Button } from "@/components/ui/Button";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { IntegrationStatusBadge } from "@/components/ui/IntegrationStatusBadge";
 import { LoadMoreButton } from "@/components/ui/LoadMoreButton";
 import { PolicyBanner } from "@/components/ui/PolicyBanner";
+import { useToast } from "@/components/ui/ToastProvider";
 import { getAdminApiPath } from "@/lib/routes";
+import type { NotificationOutbox } from "@/lib/schemas";
+
+import styles from "./NotificationsTable.module.css";
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 

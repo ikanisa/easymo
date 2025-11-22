@@ -1,14 +1,14 @@
-import { BaseAgent } from '../base/agent.base';
-import type { AgentContext, AgentInput, AgentResult, Tool } from '../../types/agent.types';
 import {
+  type CommodityRule,
+  type FarmerMarketConfig,
   getMarketConfig,
   matchCommodity,
   matchVariety,
-  type FarmerMarketConfig,
-  type CommodityRule,
-  type VarietyRule,
   normalize,
+  type VarietyRule,
 } from '../../../../../config/farmer-agent/markets/index';
+import type { AgentContext, AgentInput, AgentResult, Tool } from '../../types/agent.types';
+import { BaseAgent } from '../base/agent.base';
 
 interface ListingToolParams {
   marketCode: string;

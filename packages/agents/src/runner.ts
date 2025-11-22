@@ -8,13 +8,14 @@
 
 import OpenAI from 'openai';
 import { z } from 'zod';
-import type { AgentInput, AgentResult, AgentContext } from './types';
+
 import {
-  logAgentStart,
   logAgentComplete,
   logAgentError,
+  logAgentStart,
   storeAgentTrace,
 } from './observability';
+import type { AgentContext,AgentInput, AgentResult } from './types';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,

@@ -1,7 +1,8 @@
+import { agentCoreControllerBasePath, getAgentCoreRouteSegment } from "@easymo/commons";
 import { Body, Controller, Post } from "@nestjs/common";
+
 import { ChatService } from "./chat.service.js";
 import { ChatRequestSchema } from "./types.js";
-import { agentCoreControllerBasePath, getAgentCoreRouteSegment } from "@easymo/commons";
 
 @Controller(agentCoreControllerBasePath)
 export class ChatController {

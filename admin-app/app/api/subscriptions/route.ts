@@ -1,6 +1,7 @@
 import { z } from "zod";
+
 import { createHandler } from "@/app/api/withObservability";
-import { jsonOk, jsonError } from "@/lib/api/http";
+import { jsonError,jsonOk } from "@/lib/api/http";
 import { listSubscriptions } from "@/lib/subscriptions/subscriptions-service";
 
 const querySchema = z.object({

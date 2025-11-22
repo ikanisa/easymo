@@ -1,9 +1,10 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useInstallPrompt } from '@/hooks/useInstallPrompt'
+import { ArrowDownTrayIcon,XMarkIcon } from '@heroicons/react/24/outline'
 import { useTranslations } from 'next-intl'
-import { XMarkIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline'
+import { useEffect,useState } from 'react'
+
+import { useInstallPrompt } from '@/hooks/useInstallPrompt'
 
 export default function InstallPrompt() {
   const { isInstallable, isInstalled, promptInstall } = useInstallPrompt()

@@ -1,5 +1,5 @@
-import { PageHeader } from "@/components/layout/PageHeader";
 import { InsuranceComparisonsBoard } from "@/components/insurance/InsuranceComparisonsBoard";
+import { PageHeader } from "@/components/layout/PageHeader";
 
 export default function InsuranceComparisonsPage() {
   return (

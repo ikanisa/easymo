@@ -1,10 +1,12 @@
-import { render, screen, fireEvent, waitFor } from "./utils/react-testing";
-import { describe, expect, it, beforeEach, afterEach, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
 import { SettingsForm } from "@/components/settings/SettingsForm";
 import type {
   PlatformSettingsData,
   SavePlatformSettingsResult,
 } from "@/lib/settings/platform-settings-service";
+
+import { fireEvent, render, screen, waitFor } from "./utils/react-testing";
 
 const fetchPlatformSettings = vi.fn<[], Promise<PlatformSettingsData>>();
 const savePlatformSettings = vi.fn<

@@ -1,17 +1,17 @@
 "use client";
 
+import classNames from "classnames";
+import { AlertCircle, Loader2, Search, Sparkles } from "lucide-react";
 import {
+  type ChangeEvent,
+  type KeyboardEvent as ReactKeyboardEvent,
   useCallback,
   useEffect,
   useId,
   useMemo,
   useRef,
   useState,
-  type ChangeEvent,
-  type KeyboardEvent as ReactKeyboardEvent,
 } from "react";
-import classNames from "classnames";
-import { AlertCircle, Loader2, Search, Sparkles } from "lucide-react";
 
 import type {
   OmniSearchResult,

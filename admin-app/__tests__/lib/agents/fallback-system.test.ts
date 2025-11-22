@@ -8,16 +8,17 @@
  * - Pagination logic
  */
 
-import { describe, it, expect } from "vitest";
+import { describe, expect,it } from "vitest";
+
 import {
-  scoreItem,
-  filterBySearch,
-  createFallbackResponse,
   classifyError,
+  createFallbackResponse,
+  FallbackErrorType,
+  filterBySearch,
   getUserMessage,
   paginateFallback,
   rankItems,
-  FallbackErrorType,
+  scoreItem,
 } from "@/lib/agents/fallback-system";
 
 describe("Fallback System", () => {

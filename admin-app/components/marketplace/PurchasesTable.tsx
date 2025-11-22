@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
+import { useMemo } from "react";
+
 import { DataTable } from "@/components/data-table/DataTable";
 import type { MarketplacePurchase } from "@/lib/schemas";
 

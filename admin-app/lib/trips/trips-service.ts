@@ -1,7 +1,7 @@
+import { apiClient } from "@/lib/api/client";
+import { callAdminFunction } from "@/lib/server/functions-client";
 import { paginateArray, type PaginatedResult, type Pagination } from "@/lib/shared/pagination";
 import { matchesSearch } from "@/lib/shared/search";
-import { callAdminFunction } from "@/lib/server/functions-client";
-import { apiClient } from "@/lib/api/client";
 
 const isServer = typeof window === "undefined";
 

@@ -1,10 +1,11 @@
-import { Injectable, Logger } from "@nestjs/common";
 import { isFeatureEnabled } from "@easymo/commons";
+import { Injectable, Logger } from "@nestjs/common";
+
 import {
   AgentSession,
   CreateSessionRequest,
-  SessionStatus,
   FlowType,
+  SessionStatus,
 } from "./types";
 
 /**

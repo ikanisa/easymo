@@ -1,9 +1,9 @@
 "use client";
 
+import { Badge } from "@/components/ui/Badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { LoadingState } from "@/components/ui/LoadingState";
-import { Badge } from "@/components/ui/Badge";
 
 export interface MapLocation {
   lat: number;

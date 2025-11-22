@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
+import { useMemo, useState } from "react";
+
 import { DataTable } from "@/components/data-table/DataTable";
 import { LoadMoreButton } from "@/components/ui/LoadMoreButton";
 import type { Bar } from "@/lib/schemas";

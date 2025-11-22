@@ -1,7 +1,7 @@
-import type { InsuranceQuote } from "@/lib/schemas";
-import { type PaginatedResult, type Pagination } from "@/lib/shared/pagination";
 import { apiFetch } from "@/lib/api/client";
 import { getAdminApiPath } from "@/lib/routes";
+import type { InsuranceQuote } from "@/lib/schemas";
+import { type PaginatedResult, type Pagination } from "@/lib/shared/pagination";
 
 const isServer = typeof window === "undefined";
 

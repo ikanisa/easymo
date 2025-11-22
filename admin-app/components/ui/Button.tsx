@@ -1,12 +1,13 @@
 "use client";
 
-import { forwardRef } from "react";
-import { Button as LegacyButton, buttonVariants, type ButtonProps as LegacyButtonProps } from "@/components/ui/shadcn/button";
 import {
   Button as UiButton,
   type ButtonProps as UiButtonProps,
 } from "@easymo/ui/components/Button";
+import { forwardRef } from "react";
+
 import { useConnectivity } from "@/components/providers/ConnectivityProvider";
+import { Button as LegacyButton, type ButtonProps as LegacyButtonProps,buttonVariants } from "@/components/ui/shadcn/button";
 
 const uiKitEnabled = (process.env.NEXT_PUBLIC_UI_V2_ENABLED ?? "false").trim().toLowerCase() === "true";
 

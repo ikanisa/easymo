@@ -1,8 +1,9 @@
 import { z } from "zod";
+
 import { createHandler } from "@/app/api/withObservability";
 import { jsonError, jsonOk } from "@/lib/api/http";
-import { getSupabaseAdminClient } from "@/lib/server/supabase-admin";
 import { readSessionFromCookies } from "@/lib/server/session";
+import { getSupabaseAdminClient } from "@/lib/server/supabase-admin";
 
 const payloadSchema = z.object({
   email: z.string().email(),

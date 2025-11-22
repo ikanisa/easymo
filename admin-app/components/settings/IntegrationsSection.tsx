@@ -1,5 +1,5 @@
-import { SectionCard } from "@/components/ui/SectionCard";
 import { IntegrationsStatus } from "@/components/settings/IntegrationsStatus";
+import { SectionCard } from "@/components/ui/SectionCard";
 
 export function IntegrationsSection() {
   return (

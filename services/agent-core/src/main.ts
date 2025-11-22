@@ -1,12 +1,13 @@
+import { runWithRequestContext } from "@easymo/commons";
+import { ValidationPipe } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
 import helmet from "helmet";
+import { Logger } from "nestjs-pino";
+
 import { AppModule } from "./app.module.js";
 import { LoggingInterceptor } from "./common/interceptors/logging.interceptor.js";
 import { RequestIdInterceptor } from "./common/interceptors/request-id.interceptor.js";
 import { initialiseTelemetry } from "./telemetry.js";
-import { ValidationPipe } from "@nestjs/common";
-import { Logger } from "nestjs-pino";
-import { runWithRequestContext } from "@easymo/commons";
 
 async function bootstrap() {
   initialiseTelemetry();

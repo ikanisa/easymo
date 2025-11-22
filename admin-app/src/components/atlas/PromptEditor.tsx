@@ -1,7 +1,7 @@
 "use client";
 
-import { FormEvent, useId, useState } from "react";
 import clsx from "clsx";
+import { FormEvent, useId, useState } from "react";
 
 export interface PromptEditorProps {
   value?: string;

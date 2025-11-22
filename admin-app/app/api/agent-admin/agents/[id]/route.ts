@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+
 import { getAgentCoreUrl } from '@/lib/runtime-config';
 
 const idSchema = z.object({ id: z.string().uuid() });

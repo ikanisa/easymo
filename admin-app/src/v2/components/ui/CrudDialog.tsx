@@ -2,9 +2,9 @@
 
 import { FormEvent, ReactNode, useEffect, useMemo, useState } from "react";
 
-import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { Modal } from "@/components/ui/Modal";
 
 export interface CrudDialogProps<FormValues> {
   open: boolean;

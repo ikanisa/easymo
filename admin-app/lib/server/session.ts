@@ -1,9 +1,11 @@
+import type { Session as SupabaseSession, User as SupabaseUser } from "@supabase/supabase-js";
 import { createHmac } from "crypto";
 import { cookies } from "next/headers";
-import type { Session as SupabaseSession, User as SupabaseUser } from "@supabase/supabase-js";
-import { createClient } from "@/lib/supabase/server/client";
-import { logStructured } from "./logger";
+
 import { isAdminUser } from "@/lib/auth/is-admin-user";
+import { createClient } from "@/lib/supabase/server/client";
+
+import { logStructured } from "./logger";
 
 export interface AdminSession {
   actorId: string;

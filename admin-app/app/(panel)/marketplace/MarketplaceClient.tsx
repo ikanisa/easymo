@@ -1,12 +1,12 @@
 "use client";
 
 import { PageHeader } from "@/components/layout/PageHeader";
-import { SectionCard } from "@/components/ui/SectionCard";
-import { LoadingState } from "@/components/ui/LoadingState";
-import { EmptyState } from "@/components/ui/EmptyState";
-import { VendorRankingTable } from "@/components/marketplace/VendorRankingTable";
 import { IntentsTable } from "@/components/marketplace/IntentsTable";
 import { PurchasesTable } from "@/components/marketplace/PurchasesTable";
+import { VendorRankingTable } from "@/components/marketplace/VendorRankingTable";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { LoadingState } from "@/components/ui/LoadingState";
+import { SectionCard } from "@/components/ui/SectionCard";
 import { useMarketplaceSummaryQuery } from "@/lib/queries/marketplace";
 
 export function MarketplaceClient() {

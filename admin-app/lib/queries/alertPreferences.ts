@@ -1,7 +1,8 @@
 import { QueryKey, useQuery, UseQueryOptions } from "@tanstack/react-query";
+
 import {
-  listAdminAlertPreferences,
   type AdminAlertPreferencesResult,
+  listAdminAlertPreferences,
 } from "@/lib/settings/alert-preferences-service";
 
 const alertPreferencesKey = ["admin-alert-preferences"] satisfies QueryKey;

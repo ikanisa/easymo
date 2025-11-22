@@ -1,6 +1,7 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { RealtimeClient } from "openai/lib/realtime";
+
 import type { FarmerBrokerIntent } from "../../agents/farmer-broker.js";
 
 type RealtimeSessionConfig = {

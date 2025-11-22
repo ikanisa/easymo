@@ -2,6 +2,7 @@
 
 import type { ColumnDef } from "@tanstack/react-table";
 import { useMemo, useState } from "react";
+
 import { DataTable } from "@/components/data-table/DataTable";
 import type { AuditEvent } from "@/lib/schemas";
 

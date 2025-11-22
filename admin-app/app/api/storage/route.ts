@@ -1,9 +1,10 @@
 export const dynamic = 'force-dynamic';
 import { z } from 'zod';
-import { getSupabaseAdminClient } from '@/lib/server/supabase-admin';
-import { logStructured } from '@/lib/server/logger';
-import { jsonOk, jsonError, zodValidationError } from '@/lib/api/http';
+
 import { createHandler } from '@/app/api/withObservability';
+import { jsonError, jsonOk, zodValidationError } from '@/lib/api/http';
+import { logStructured } from '@/lib/server/logger';
+import { getSupabaseAdminClient } from '@/lib/server/supabase-admin';
 
 const allowedBuckets = new Set(['operations', 'qr', 'docs']);
 

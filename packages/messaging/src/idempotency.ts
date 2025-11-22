@@ -1,6 +1,7 @@
 import Redis from "ioredis";
-import { IdempotencyConflictError } from "./errors.js";
 import { Logger } from "pino";
+
+import { IdempotencyConflictError } from "./errors.js";
 
 export type IdempotencyRecord<T extends object = Record<string, unknown>> = {
   key: string;

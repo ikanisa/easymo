@@ -1,20 +1,20 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
 import { PlusIcon } from "@heroicons/react/24/outline";
+import { useMemo, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { useToast } from "@/components/ui/ToastProvider";
+import { CrudDialog } from "@/src/v2/components/ui/CrudDialog";
 import { DataTable, type DataTableColumn } from "@/src/v2/components/ui/DataTable";
 import { SearchBar } from "@/src/v2/components/ui/SearchBar";
-import { CrudDialog } from "@/src/v2/components/ui/CrudDialog";
 import {
+  type Agent,
   useAgents,
   useCreateAgent,
   useDeleteAgent,
   useUpdateAgent,
-  type Agent,
 } from "@/src/v2/lib/supabase/hooks";
 
 interface AgentFormValues {

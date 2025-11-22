@@ -1,5 +1,7 @@
 import { FormEvent } from "react";
+
 import { Button } from "@/components/ui/Button";
+
 import styles from "../AssistantPanel.module.css";
 
 type InputFormProps = {

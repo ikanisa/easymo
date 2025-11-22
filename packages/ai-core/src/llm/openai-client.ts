@@ -1,4 +1,5 @@
 import OpenAI from 'openai';
+
 import { ModelConfig } from '../base/types';
 
 export class OpenAIClient {

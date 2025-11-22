@@ -1,6 +1,8 @@
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { clearRateLimit } from "@/lib/server/rate-limit";
 import { cookies } from "next/headers";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+
+import { clearRateLimit } from "@/lib/server/rate-limit";
+
 import { createAdminApiRequest } from "./utils/api";
 
 const VALID_EMAIL = "info@ikanisa.com";

@@ -9,8 +9,8 @@
  */
 
 // Re-export from the new location
-export { locales, defaultLocale, localeNames } from './i18n/config';
 export type { Locale } from './i18n/config';
+export { defaultLocale, localeNames,locales } from './i18n/config';
 
 // For next-intl configuration, import from i18n/request.ts
 import requestConfig from './i18n/request';

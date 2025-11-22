@@ -1,11 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import type { Shop } from "@/lib/shops/types";
+
+import { ShopProfileDrawer } from "@/components/shops/ShopProfileDrawer";
+import { Badge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { LoadingState } from "@/components/ui/LoadingState";
-import { Badge } from "@/components/ui/Badge";
-import { ShopProfileDrawer } from "@/components/shops/ShopProfileDrawer";
+import type { Shop } from "@/lib/shops/types";
 
 interface ShopListProps {
   shops: Shop[];

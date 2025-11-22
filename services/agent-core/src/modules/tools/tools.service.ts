@@ -1,9 +1,11 @@
-import { Injectable, Logger, NotFoundException } from "@nestjs/common";
-import { PrismaService } from "@easymo/db";
-import { CallDirection, CallPlatform } from "@prisma/client";
-import { getRequestId } from "@easymo/commons";
 import { randomUUID } from "node:crypto";
+
 import type { AgentContext } from "@easymo/commons";
+import { getRequestId } from "@easymo/commons";
+import { PrismaService } from "@easymo/db";
+import { Injectable, Logger, NotFoundException } from "@nestjs/common";
+import { CallDirection, CallPlatform } from "@prisma/client";
+
 import { SupabaseToolService } from "../../tools/supabase-tool.service.js";
 import type {
   CreateListingInput,

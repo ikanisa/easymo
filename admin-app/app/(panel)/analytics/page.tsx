@@ -1,5 +1,5 @@
-import { PageHeader } from "@/components/layout/PageHeader";
 import { AnalyticsDashboards } from "@/components/analytics/AnalyticsDashboards";
+import { PageHeader } from "@/components/layout/PageHeader";
 
 export default function AnalyticsPage() {
   return (

@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react";
+
 import { KPIWidget } from "../src/components/kpi-widget";
 
 const meta: Meta<typeof KPIWidget> = {

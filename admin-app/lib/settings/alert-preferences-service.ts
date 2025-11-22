@@ -1,9 +1,10 @@
 import { z } from "zod";
+
 import { apiFetch } from "@/lib/api/client";
 import { getAdminApiPath } from "@/lib/routes";
 import {
-  adminAlertPreferenceSchema,
   type AdminAlertPreference,
+  adminAlertPreferenceSchema,
 } from "@/lib/schemas";
 
 export type AlertPreferencesIntegration = {

@@ -1,3 +1,4 @@
+import { AGENT_PERMISSIONS, AgentContext, AgentPermission } from "@easymo/commons";
 import {
   CanActivate,
   ExecutionContext,
@@ -6,10 +7,10 @@ import {
   UnauthorizedException,
 } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
-import { jwtVerify } from "jose";
 import { createPublicKey } from "crypto";
+import { jwtVerify } from "jose";
 import { z } from "zod";
-import { AGENT_PERMISSIONS, AgentContext, AgentPermission } from "@easymo/commons";
+
 import { PERMISSIONS_KEY } from "../decorators/permissions.decorator.js";
 import type { AgentRequest } from "../types.js";
 

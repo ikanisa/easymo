@@ -1,6 +1,7 @@
 import classNames from "classnames";
-import type { QuickPrompt } from "../constants";
+
 import styles from "../AssistantPanel.module.css";
+import type { QuickPrompt } from "../constants";
 
 type QuickPromptsProps = {
   prompts: QuickPrompt[];

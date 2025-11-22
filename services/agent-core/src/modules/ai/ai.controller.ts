@@ -1,13 +1,14 @@
-import { Body, Controller, Post, UseGuards } from "@nestjs/common";
-import { z } from "zod";
-import { AiService } from "./ai.service.js";
-import { ServiceTokenGuard } from "../../common/guards/service-token.guard.js";
-import { ServiceScopes } from "../../common/decorators/service-scopes.decorator.js";
 import {
   getAgentCoreControllerBasePath,
   getAgentCoreRouteSegment,
   getAgentCoreRouteServiceScopes,
 } from "@easymo/commons";
+import { Body, Controller, Post, UseGuards } from "@nestjs/common";
+import { z } from "zod";
+
+import { ServiceScopes } from "../../common/decorators/service-scopes.decorator.js";
+import { ServiceTokenGuard } from "../../common/guards/service-token.guard.js";
+import { AiService } from "./ai.service.js";
 import { SoraOrchestratorService } from "./sora-orchestrator.service.js";
 
 const OrchestrateSchema = z.object({

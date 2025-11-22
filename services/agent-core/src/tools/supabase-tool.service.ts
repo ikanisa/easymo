@@ -1,8 +1,10 @@
+import { randomUUID } from "node:crypto";
+
+import { getRequestId } from "@easymo/commons";
 import { BadGatewayException, Injectable, Logger, ServiceUnavailableException } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import { randomUUID } from "node:crypto";
-import { getRequestId } from "@easymo/commons";
 import type { Response } from "undici";
+
 import type {
   CreateListingRequest,
   CreateListingResponse,

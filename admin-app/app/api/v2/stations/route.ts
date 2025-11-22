@@ -6,8 +6,8 @@ import { coerceNullableString, handleRouteError } from "../_lib/utils";
 import {
   sanitizeStation,
   stationCreateSchema,
-  stationSelect,
   type StationRow,
+  stationSelect,
 } from "./schema";
 
 export const runtime = "nodejs";

@@ -1,16 +1,17 @@
 "use client";
 
 import { useMemo, useState } from "react";
+
 import { PageHeader } from "@/components/layout/PageHeader";
-import { SectionCard } from "@/components/ui/SectionCard";
 import { NotificationsTable } from "@/components/notifications/NotificationsTable";
+import { PolicyDetails } from "@/components/policy/PolicyDetails";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { LoadingState } from "@/components/ui/LoadingState";
+import { SectionCard } from "@/components/ui/SectionCard";
 import {
   type NotificationsQueryParams,
   useNotificationsQuery,
 } from "@/lib/queries/notifications";
-import { PolicyDetails } from "@/components/policy/PolicyDetails";
 
 const STATUS_FILTERS = ["queued", "sent", "failed"] as const;
 

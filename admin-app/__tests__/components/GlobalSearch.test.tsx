@@ -1,11 +1,13 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { afterEach,beforeEach, describe, expect, it, vi } from "vitest";
+
+import { GlobalSearch } from "@/components/search/GlobalSearch";
+
 import {
+  fireEvent,
   render,
   screen,
-  fireEvent,
   waitFor,
 } from "../../tests/utils/react-testing";
-import { GlobalSearch } from "@/components/search/GlobalSearch";
 
 const originalFetch = global.fetch;
 

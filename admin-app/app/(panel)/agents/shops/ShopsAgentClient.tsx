@@ -1,14 +1,15 @@
 "use client";
 
-import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
+
+import { PageHeader } from "@/components/layout/PageHeader";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { LoadingState } from "@/components/ui/LoadingState";
 import {
   agentShopsQueryKey,
   fetchAgentShops,
 } from "@/lib/agents/shops-service";
-import { PageHeader } from "@/components/layout/PageHeader";
-import { LoadingState } from "@/components/ui/LoadingState";
-import { EmptyState } from "@/components/ui/EmptyState";
 
 export function ShopsAgentClient() {
   const query = useQuery({

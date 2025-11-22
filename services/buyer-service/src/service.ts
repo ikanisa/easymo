@@ -1,7 +1,8 @@
-import axios from "axios";
-import { Prisma } from "@prisma/client";
-import { PrismaService } from "@easymo/db";
 import { isFeatureEnabled } from "@easymo/commons";
+import { PrismaService } from "@easymo/db";
+import { Prisma } from "@prisma/client";
+import axios from "axios";
+
 import { settings } from "./config";
 import { logger } from "./logger";
 import { fetchBuyerTrips } from "./trips";

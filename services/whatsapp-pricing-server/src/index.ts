@@ -1,23 +1,23 @@
-import express from "express";
-import multer from "multer";
-import fetch from "node-fetch";
-import OpenAI from "openai";
-import { enqueueOutboundSend } from "./outboundQueue";
-import { resolveSecretValue } from "./secrets";
-import { maskMsisdn } from "./utils/pii";
-
+import { classifyVehicle, extractFromImages,VehicleDoc } from "@insure/ocr-extract";
 import {
+  CoverSelection,
   INSURER_PROFILES,
   InsurerProfile,
+  multiPrice,
   MultiQuoteOutput,
   PricingInput,
   PricingOutput,
   UsageType,
   VehicleCategory,
-  CoverSelection,
-  multiPrice,
 } from "@insure/pricing-engine";
-import { VehicleDoc, classifyVehicle, extractFromImages } from "@insure/ocr-extract";
+import express from "express";
+import multer from "multer";
+import fetch from "node-fetch";
+import OpenAI from "openai";
+
+import { enqueueOutboundSend } from "./outboundQueue";
+import { resolveSecretValue } from "./secrets";
+import { maskMsisdn } from "./utils/pii";
 
 type UploadedFile = { mimetype: string; buffer: Buffer };
 

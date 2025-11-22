@@ -1,5 +1,5 @@
-import { Injectable, Logger, NotFoundException } from "@nestjs/common";
 import { PrismaService } from "@easymo/db";
+import { Injectable, Logger, NotFoundException } from "@nestjs/common";
 import type {
   BrandGuide,
   Product,
@@ -7,6 +7,7 @@ import type {
   VideoScript,
   VideoTemplate,
 } from "@prisma/client";
+
 import { VideoJobQueueService } from "./video-job-queue.service.js";
 
 interface ShotPlanReferenceProduct {

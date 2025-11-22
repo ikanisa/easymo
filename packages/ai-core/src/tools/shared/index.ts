@@ -1,6 +1,5 @@
 // Payment & Messaging Tools
 export { 
   momoUSSDTool,
-  whatsappTool,
-  smsTool
-} from './payments';
+  smsTool,
+  whatsappTool} from './payments';

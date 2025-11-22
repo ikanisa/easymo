@@ -1,4 +1,5 @@
 import type { AdminDiagnosticsLogs } from "@/lib/schemas";
+
 import { DiagnosticsNotice } from "./DiagnosticsNotice";
 
 type LogsSectionProps = {

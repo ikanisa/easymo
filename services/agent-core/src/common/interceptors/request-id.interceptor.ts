@@ -1,12 +1,12 @@
+import { getRequestId, setRequestId } from "@easymo/commons";
 import {
   CallHandler,
   ExecutionContext,
   Injectable,
   NestInterceptor,
 } from "@nestjs/common";
-import { Observable } from "rxjs";
 import { randomUUID } from "crypto";
-import { getRequestId, setRequestId } from "@easymo/commons";
+import { Observable } from "rxjs";
 
 @Injectable()
 export class RequestIdInterceptor implements NestInterceptor {

@@ -1,5 +1,6 @@
+import { IdempotencyStore,KafkaConsumer, KafkaFactory, KafkaProducer, RetryPolicy } from "@easymo/messaging";
 import axios from "axios";
-import { KafkaFactory, KafkaConsumer, KafkaProducer, RetryPolicy, IdempotencyStore } from "@easymo/messaging";
+
 import { settings } from "./config";
 import { logger } from "./logger";
 import { chargeWallet } from "./wallet";

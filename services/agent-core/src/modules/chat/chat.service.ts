@@ -1,7 +1,8 @@
+import type { AgentKind } from "@easymo/commons";
 import { Injectable, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { OpenAI } from "openai";
-import type { AgentKind } from "@easymo/commons";
+
 import { ChatHistoryMessage, ToolkitConfig } from "./types.js";
 
 const RESPONSE_SCHEMA = {

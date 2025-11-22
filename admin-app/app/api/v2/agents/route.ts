@@ -5,9 +5,9 @@ import { createAdminClient } from "@/src/v2/lib/supabase/client";
 import { coerceNullableString, handleRouteError, normalizeNumber } from "../_lib/utils";
 import {
   agentCreateSchema,
+  type AgentRow,
   agentSelect,
   sanitizeAgent,
-  type AgentRow,
 } from "./schema";
 
 export const runtime = "nodejs";

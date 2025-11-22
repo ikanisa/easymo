@@ -1,15 +1,16 @@
-import { useState } from "react";
 import type { Meta, StoryObj } from "@storybook/react";
+import { useState } from "react";
+
+import { Button } from "../Button";
 import {
   Dialog,
-  DialogTrigger,
+  DialogClose,
   DialogContent,
-  DialogTitle,
   DialogDescription,
   DialogFooter,
-  DialogClose,
+  DialogTitle,
+  DialogTrigger,
 } from "../Dialog";
-import { Button } from "../Button";
 
 const meta: Meta<typeof Dialog> = {
   title: "Components/Dialog",

@@ -1,4 +1,5 @@
 import { Prisma } from "@prisma/client";
+
 import { computeVendorScore, rankVendors } from "../src/scoring";
 
 describe("computeVendorScore", () => {

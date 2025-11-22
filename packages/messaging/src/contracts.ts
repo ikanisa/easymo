@@ -1,4 +1,4 @@
-import { apiRoutes, type ApiControllerKey, type ApiEndpointKey } from "@easymo/commons";
+import { type ApiControllerKey, type ApiEndpointKey,apiRoutes } from "@easymo/commons";
 
 type ControllerEndpoint<Controller extends ApiControllerKey> = Extract<ApiEndpointKey<Controller>, string>;
 

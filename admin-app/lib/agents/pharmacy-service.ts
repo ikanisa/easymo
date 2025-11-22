@@ -1,7 +1,8 @@
 import { z } from "zod";
+
 import {
-  pharmacyRequestSchema,
   type PharmacyRequest,
+  pharmacyRequestSchema,
 } from "@/lib/schemas";
 
 const responseSchema = z.object({

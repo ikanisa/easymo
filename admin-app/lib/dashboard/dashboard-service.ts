@@ -1,15 +1,16 @@
 import "server-only";
 
 import { z } from "zod";
-import {
-  dashboardKpiSchema,
-  timeseriesPointSchema,
-} from "@/lib/schemas";
+
 import {
   type DashboardSnapshot,
   type DashboardSnapshotIntegration,
   type DashboardSnapshotResult,
 } from "@/lib/dashboard/dashboard-types";
+import {
+  dashboardKpiSchema,
+  timeseriesPointSchema,
+} from "@/lib/schemas";
 import { getSupabaseAdminClient } from "@/lib/server/supabase-admin";
 
 export type {

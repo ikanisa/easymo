@@ -1,5 +1,5 @@
 // Broker orchestrator operates solely via Kafka topics; no HTTP endpoints are exposed.
-import { defineBackgroundTriggers, type BackgroundTriggerDefinition } from "./utils";
+import { type BackgroundTriggerDefinition,defineBackgroundTriggers } from "./utils";
 
 const brokerOrchestratorBackgroundDefinitions = defineBackgroundTriggers({
   whatsappInbound: {

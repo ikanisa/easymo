@@ -1,5 +1,6 @@
-import { GoogleGenerativeAI, GenerativeModel } from '@google/generative-ai';
-import { ModelConfig, AgentContext } from '../base/types';
+import { GenerativeModel,GoogleGenerativeAI } from '@google/generative-ai';
+
+import { AgentContext,ModelConfig } from '../base/types';
 
 export class GeminiClient {
   private gemini: GoogleGenerativeAI;

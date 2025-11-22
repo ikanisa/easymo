@@ -1,7 +1,8 @@
-import { KafkaFactory, KafkaConsumer, KafkaProducer } from "@easymo/messaging";
+import { KafkaConsumer, KafkaFactory, KafkaProducer } from "@easymo/messaging";
+
 import { config } from "./config.js";
 import { logger } from "./logger.js";
-import { WebhookProcessor, WebhookPayload, WebhookProcessingResult } from "./processor.js";
+import { WebhookPayload, WebhookProcessingResult,WebhookProcessor } from "./processor.js";
 
 /**
  * Kafka-based webhook worker

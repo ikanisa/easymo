@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react";
+
 import { PaymentStatusWidget } from "../PaymentStatusWidget";
 
 const meta: Meta<typeof PaymentStatusWidget> = {

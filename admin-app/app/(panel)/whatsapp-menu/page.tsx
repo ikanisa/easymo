@@ -1,8 +1,9 @@
 export const dynamic = "force-dynamic";
 
 import { createClient } from "@/lib/supabase/server";
-import { WhatsAppMenuClient } from "./WhatsAppMenuClient";
 import type { WhatsAppHomeMenuItem } from "@/types/whatsapp-menu";
+
+import { WhatsAppMenuClient } from "./WhatsAppMenuClient";
 
 export const metadata = {
   title: "WhatsApp Home Menu | EasyMO Admin",

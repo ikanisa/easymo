@@ -4,6 +4,7 @@ import {
   IntegrationTarget,
   useIntegrationStatusQuery,
 } from "@/lib/queries/integrations";
+
 import styles from "./IntegrationsStatus.module.css";
 
 const PANEL_TARGETS: IntegrationTarget[] = [

@@ -1,12 +1,14 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import classNames from "classnames";
+import { Menu, Search, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import classNames from "classnames";
-import { Search, Menu, X } from "lucide-react";
-import { PANEL_NAVIGATION, type PanelNavGroup, type PanelNavGroupId } from "../layout/nav-items";
+import { useEffect, useMemo, useState } from "react";
+
 import { toLinkHref } from "@/lib/link-helpers";
+
+import { PANEL_NAVIGATION, type PanelNavGroup, type PanelNavGroupId } from "../layout/nav-items";
 
 interface EnhancedNavProps {
   onSearchOpen?: () => void;

@@ -1,10 +1,10 @@
 "use client";
-import { PageHeader } from "@/components/layout/PageHeader";
-import { SectionCard } from "@/components/ui/SectionCard";
-import { LoadingState } from "@/components/ui/LoadingState";
-import { EmptyState } from "@/components/ui/EmptyState";
 import { AdminDiagnosticsCard } from "@/components/dashboard/AdminDiagnosticsCard";
 import { AdminHubSectionGrid } from "@/components/dashboard/AdminHubSectionGrid";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { LoadingState } from "@/components/ui/LoadingState";
+import { SectionCard } from "@/components/ui/SectionCard";
 import { useAdminHubSnapshotQuery } from "@/lib/queries/adminHub";
 
 export function HubClient() {

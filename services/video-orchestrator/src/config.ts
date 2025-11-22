@@ -1,5 +1,5 @@
-import { resolve } from "node:path";
 import { mkdirSync } from "node:fs";
+import { resolve } from "node:path";
 
 export interface EnvironmentConfig {
   port: number;

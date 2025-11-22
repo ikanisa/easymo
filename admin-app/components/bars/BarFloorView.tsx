@@ -1,7 +1,7 @@
 "use client";
 
-import type { BarFloorTable } from "@/lib/bars/bars-dashboard-service";
 import { EmptyState } from "@/components/ui/EmptyState";
+import type { BarFloorTable } from "@/lib/bars/bars-dashboard-service";
 
 interface BarFloorViewProps {
   tables: BarFloorTable[];

@@ -1,5 +1,6 @@
-import pLimit from "p-limit";
 import type { RenderJobDefinition, ShotPlan } from "@easymo/video-agent-schema";
+import pLimit from "p-limit";
+
 import {
   CaptionManager,
   type CaptionOrchestrationResult,

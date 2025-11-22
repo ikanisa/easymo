@@ -3,11 +3,12 @@
  * All specialized agents extend this class
  */
 
+import { GenerativeModel,GoogleGenerativeAI } from '@google/generative-ai';
 import { EventEmitter } from 'events';
 import OpenAI from 'openai';
-import { GoogleGenerativeAI, GenerativeModel } from '@google/generative-ai';
-import type { AgentInput, AgentResult, AgentContext, Tool, AgentSession } from '../../types/agent.types';
-import { logAgentStart, logAgentComplete, logAgentError } from '../../observability';
+
+import { logAgentComplete, logAgentError,logAgentStart } from '../../observability';
+import type { AgentContext, AgentInput, AgentResult, AgentSession,Tool } from '../../types/agent.types';
 
 export abstract class BaseAgent extends EventEmitter {
   protected openai: OpenAI;

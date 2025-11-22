@@ -1,9 +1,10 @@
 "use client";
 
-import { SectionCard } from "@/components/ui/SectionCard";
-import { LoadingState } from "@/components/ui/LoadingState";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { LoadingState } from "@/components/ui/LoadingState";
+import { SectionCard } from "@/components/ui/SectionCard";
 import { useAdminDiagnosticsQuery } from "@/lib/queries/adminDiagnostics";
+
 import { AdminDiagnosticsContent } from "./admin-diagnostics/AdminDiagnosticsContent";
 
 export function AdminDiagnosticsCard() {

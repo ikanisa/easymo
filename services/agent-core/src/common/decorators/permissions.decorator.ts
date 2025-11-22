@@ -1,5 +1,5 @@
-import { SetMetadata } from "@nestjs/common";
 import type { AgentPermission } from "@easymo/commons";
+import { SetMetadata } from "@nestjs/common";
 
 export const PERMISSIONS_KEY = "agent.permissions";
 

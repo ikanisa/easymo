@@ -1,4 +1,5 @@
 import { headers as nextHeaders } from 'next/headers';
+
 import { isActorAuthorized } from '@/lib/auth/credentials';
 
 // Looser UUID shape to tolerate test IDs and non-versioned UUIDs

@@ -1,17 +1,18 @@
 "use client";
 
 import { useState } from "react";
+
 import { PageHeader } from "@/components/layout/PageHeader";
-import { SectionCard } from "@/components/ui/SectionCard";
-import { QrTokenTable } from "@/components/qr/QrTokenTable";
-import { QrGeneratorForm } from "@/components/qr/QrGeneratorForm";
-import { LoadingState } from "@/components/ui/LoadingState";
-import { type QrTokensQueryParams, useQrTokensQuery } from "@/lib/queries/qr";
-import { type BarsQueryParams, useBarsQuery } from "@/lib/queries/bars";
-import { EmptyState } from "@/components/ui/EmptyState";
-import { QrPreviewPanel } from "@/components/qr/QrPreviewPanel";
 import { PropertyRentalsPanel } from "@/components/property/PropertyRentalsPanel";
+import { QrGeneratorForm } from "@/components/qr/QrGeneratorForm";
+import { QrPreviewPanel } from "@/components/qr/QrPreviewPanel";
+import { QrTokenTable } from "@/components/qr/QrTokenTable";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { LoadingState } from "@/components/ui/LoadingState";
+import { SectionCard } from "@/components/ui/SectionCard";
+import { type BarsQueryParams, useBarsQuery } from "@/lib/queries/bars";
 import { type MarketplaceAgentSessionsQueryParams } from "@/lib/queries/marketplaceAgentSessions";
+import { type QrTokensQueryParams, useQrTokensQuery } from "@/lib/queries/qr";
 
 interface QrClientProps {
   initialTokenParams?: QrTokensQueryParams;

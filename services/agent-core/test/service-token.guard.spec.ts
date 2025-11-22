@@ -1,8 +1,9 @@
-import { ConfigService } from "@nestjs/config";
-import { ServiceTokenGuard } from "../src/common/guards/service-token.guard";
 import type { ExecutionContext } from "@nestjs/common";
 import { ForbiddenException, UnauthorizedException } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 import { Reflector } from "@nestjs/core";
+
+import { ServiceTokenGuard } from "../src/common/guards/service-token.guard";
 
 const createExecutionContext = (headers: Record<string, string>): ExecutionContext => ({
   switchToHttp: () => ({

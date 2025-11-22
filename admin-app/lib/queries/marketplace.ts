@@ -1,11 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
 import { z } from "zod";
+
+import { getAdminApiPath } from "@/lib/routes";
 import {
-  vendorRankingSchema,
   marketplaceIntentSchema,
   marketplacePurchaseSchema,
+  vendorRankingSchema,
 } from "@/lib/schemas";
-import { getAdminApiPath } from "@/lib/routes";
 
 const MARKETPLACE_KEY = ["marketplace", "summary"] as const;
 

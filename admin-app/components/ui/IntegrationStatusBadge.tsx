@@ -1,6 +1,7 @@
-import styles from "./IntegrationStatusBadge.module.css";
 import { Badge } from "@/components/ui/Badge";
 import { Tooltip } from "@/components/ui/Tooltip";
+
+import styles from "./IntegrationStatusBadge.module.css";
 
 interface IntegrationStatus {
   target: string;

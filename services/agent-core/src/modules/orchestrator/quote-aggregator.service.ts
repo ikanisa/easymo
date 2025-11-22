@@ -1,5 +1,6 @@
 import { Injectable, Logger } from "@nestjs/common";
-import { Quote, QuoteStatus, CreateQuoteRequest } from "./types";
+
+import { CreateQuoteRequest,Quote, QuoteStatus } from "./types";
 
 /**
  * Quote Aggregator Service

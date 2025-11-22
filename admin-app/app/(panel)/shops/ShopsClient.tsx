@@ -1,13 +1,14 @@
 "use client";
 
 import { useMemo, useState } from "react";
+
 import { PageHeader } from "@/components/layout/PageHeader";
-import { SectionCard } from "@/components/ui/SectionCard";
-import { ShopWizard } from "@/components/shops/ShopWizard";
-import { ShopMap } from "@/components/shops/ShopMap";
 import { ShopList } from "@/components/shops/ShopList";
+import { ShopMap } from "@/components/shops/ShopMap";
+import { ShopWizard } from "@/components/shops/ShopWizard";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { SectionCard } from "@/components/ui/SectionCard";
 import { type ShopsQueryParams, useShopsQuery } from "@/lib/queries/shops";
 
 interface ShopsClientProps {

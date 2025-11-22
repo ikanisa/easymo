@@ -1,5 +1,6 @@
-import { AgentDetailsClient } from "./AgentDetailsClient";
 import { createPanelPageMetadata } from "@/components/layout/nav-items";
+
+import { AgentDetailsClient } from "./AgentDetailsClient";
 
 export const metadata = createPanelPageMetadata("/agents/[id]");
 

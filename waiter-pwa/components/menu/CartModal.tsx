@@ -1,11 +1,12 @@
 'use client'
 
-import Image from 'next/image'
-import { useMenu } from '@/contexts/MenuContext'
-import { XMarkIcon, MinusIcon, PlusIcon, TrashIcon } from '@heroicons/react/24/outline'
 import { Dialog, Transition } from '@headlessui/react'
-import { Fragment } from 'react'
+import { MinusIcon, PlusIcon, TrashIcon,XMarkIcon } from '@heroicons/react/24/outline'
+import Image from 'next/image'
 import { useRouter } from 'next/navigation'
+import { Fragment } from 'react'
+
+import { useMenu } from '@/contexts/MenuContext'
 
 interface CartModalProps {
   isOpen: boolean

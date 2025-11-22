@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+
 import { useToast } from "@/components/ui/ToastProvider";
 
 const EVENT_COPY: Record<string, { message: string; variant: 'info' | 'success' | 'error'; duration?: number; }> = {

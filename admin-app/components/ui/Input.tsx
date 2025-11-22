@@ -1,6 +1,7 @@
-import * as React from "react";
-import { cva, type VariantProps } from "class-variance-authority";
 import { Input as UiInput } from "@easymo/ui/components/forms";
+import { cva, type VariantProps } from "class-variance-authority";
+import * as React from "react";
+
 import { cn } from "@/lib/utils";
 
 const uiKitEnabled = (process.env.NEXT_PUBLIC_UI_V2_ENABLED ?? "false").trim().toLowerCase() === "true";

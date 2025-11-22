@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react";
+
 import { SessionTimelineWidget } from "../SessionTimelineWidget";
 
 const meta: Meta<typeof SessionTimelineWidget> = {

@@ -1,8 +1,8 @@
 import {
   buildEndpointPath,
+  type ControllerDefinition,
   defineHttpControllers,
   defineWebSocketRoutes,
-  type ControllerDefinition,
   type EndpointDefinition,
   type WebSocketRouteDefinition,
 } from "./utils";

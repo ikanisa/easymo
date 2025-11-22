@@ -1,4 +1,5 @@
 import { QueryKey, useQuery, UseQueryOptions } from "@tanstack/react-query";
+
 import { getAdminHubSnapshot } from "@/lib/admin/admin-hub-service";
 import type { AdminHubSnapshot } from "@/lib/schemas";
 

@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import type {
-  WhatsAppHomeMenuItem,
   UpdateMenuItemInput,
+  WhatsAppHomeMenuItem,
 } from "@/types/whatsapp-menu";
 
 export async function fetchWhatsAppMenuItems(): Promise<WhatsAppHomeMenuItem[]> {

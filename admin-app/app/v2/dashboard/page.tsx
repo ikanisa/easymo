@@ -1,13 +1,14 @@
 "use client";
 
+import {
+  CurrencyDollarIcon,
+  MapPinIcon,
+  TruckIcon,
+  UsersIcon,
+} from "@heroicons/react/24/outline";
+
 import { MetricCard } from "@/src/v2/components/dashboard/MetricCard";
 import { RecentActivity } from "@/src/v2/components/dashboard/RecentActivity";
-import {
-  UsersIcon,
-  TruckIcon,
-  MapPinIcon,
-  CurrencyDollarIcon,
-} from "@heroicons/react/24/outline";
 import { useDashboardMetrics } from "@/src/v2/lib/supabase/hooks";
 
 export default function DashboardPage() {

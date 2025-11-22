@@ -1,7 +1,7 @@
 "use client";
 
-import type { BarThreadEvent } from "@/lib/bars/bars-dashboard-service";
 import { EmptyState } from "@/components/ui/EmptyState";
+import type { BarThreadEvent } from "@/lib/bars/bars-dashboard-service";
 
 interface BarThreadFeedProps {
   events: BarThreadEvent[];

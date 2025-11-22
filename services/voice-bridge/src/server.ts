@@ -1,10 +1,11 @@
-import http from "http";
 import express, { type Request, type Response } from "express";
-import { WebSocketServer, type WebSocket, type RawData } from "ws";
+import http from "http";
+import { type RawData,type WebSocket, WebSocketServer } from "ws";
 import { z } from "zod";
+
 import { config } from "./config";
+import { fetchLiveCalls, insertSegments, insertVoiceCall, type TranscriptSegment,updateConsent } from "./db";
 import { httpLogger, logger } from "./logger";
-import { fetchLiveCalls, insertSegments, insertVoiceCall, updateConsent, type TranscriptSegment } from "./db";
 import { resolveRoute } from "./routing";
 
 const app = express();

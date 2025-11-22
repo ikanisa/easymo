@@ -1,21 +1,22 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { PageHeader } from "@/components/layout/PageHeader";
-import { SectionCard } from "@/components/ui/SectionCard";
+
+import { BarFloorView } from "@/components/bars/BarFloorView";
+import { BarKitchenFeed } from "@/components/bars/BarKitchenFeed";
 import { BarsTable } from "@/components/bars/BarsTable";
+import { BarThreadFeed } from "@/components/bars/BarThreadFeed";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { LoadingState } from "@/components/ui/LoadingState";
+import { SectionCard } from "@/components/ui/SectionCard";
+import { useBarDashboardQuery } from "@/lib/queries/barDashboard";
 import { type BarsQueryParams, useBarsQuery } from "@/lib/queries/bars";
+import { useMenuVersionsQuery } from "@/lib/queries/menus";
 import {
   type StaffNumbersQueryParams,
   useStaffNumbersQuery,
 } from "@/lib/queries/staffNumbers";
-import { useBarDashboardQuery } from "@/lib/queries/barDashboard";
-import { useMenuVersionsQuery } from "@/lib/queries/menus";
-import { BarFloorView } from "@/components/bars/BarFloorView";
-import { BarKitchenFeed } from "@/components/bars/BarKitchenFeed";
-import { BarThreadFeed } from "@/components/bars/BarThreadFeed";
 
 const BAR_STATUS_FILTERS = ["active", "inactive"] as const;
 

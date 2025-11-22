@@ -10,5 +10,5 @@
  * - Responsive breadcrumbs
  */
 
-export { EnhancedNav } from "./EnhancedNav";
 export { EnhancedBreadcrumbs } from "./EnhancedBreadcrumbs";
+export { EnhancedNav } from "./EnhancedNav";

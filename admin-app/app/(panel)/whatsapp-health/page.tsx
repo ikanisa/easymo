@@ -1,18 +1,20 @@
 export const dynamic = 'force-dynamic';
 
-import { createPanelPageMetadata } from "@/components/layout/nav-items";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
+
+import { createPanelPageMetadata } from "@/components/layout/nav-items";
 import { createQueryClient } from "@/lib/api/queryClient";
-import { WhatsAppHealthClient } from "./WhatsAppHealthClient";
+import {
+  dashboardQueryKeys,
+  fetchDashboardWebhookErrors,
+} from "@/lib/queries/dashboard";
 import {
   fetchNotifications,
   notificationsQueryKeys,
   type NotificationsQueryParams,
 } from "@/lib/queries/notifications";
-import {
-  dashboardQueryKeys,
-  fetchDashboardWebhookErrors,
-} from "@/lib/queries/dashboard";
+
+import { WhatsAppHealthClient } from "./WhatsAppHealthClient";
 
 export const metadata = createPanelPageMetadata("/whatsapp-health");
 

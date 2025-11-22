@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Search, UsersRound, FileWarning, ClipboardList, ShieldAlert } from "lucide-react";
 import classNames from "classnames";
-import { getSupabaseClient } from "@/lib/supabase-client";
+import { ClipboardList, FileWarning, Search, ShieldAlert,UsersRound } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+
 import { runOmniSearch } from "@/lib/omnisearch/search";
-import type { OmniSearchResult, OmniSearchCategory } from "@/lib/omnisearch/types";
+import type { OmniSearchCategory,OmniSearchResult } from "@/lib/omnisearch/types";
+import { getSupabaseClient } from "@/lib/supabase-client";
 
 const CATEGORY_LABELS: Record<OmniSearchCategory, string> = {
   agent: "Agents",

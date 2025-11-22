@@ -1,5 +1,5 @@
-import { PageHeader } from "@/components/layout/PageHeader";
 import { RequestsDatabase } from "@/components/insurance/RequestsDatabase";
+import { PageHeader } from "@/components/layout/PageHeader";
 
 export default function InsuranceRequestsPage() {
   return (

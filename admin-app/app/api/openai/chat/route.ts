@@ -1,10 +1,11 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
+
 import {
+  type ChatCompletionErrorShape,
   type ChatCompletionMessage,
   type ChatCompletionRequestOptions,
   type ChatCompletionResponse,
-  type ChatCompletionErrorShape,
 } from "@/lib/ai/chat-completions";
 
 const DEFAULT_MODEL = "gpt-4o-mini";

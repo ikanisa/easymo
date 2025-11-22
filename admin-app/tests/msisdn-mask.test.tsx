@@ -1,6 +1,7 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
 import { maskMsisdn } from "@va/shared";
+import { describe, expect, it, vi } from "vitest";
+
 import { UserDrawer } from "@/components/users/UserDrawer";
 import type { User } from "@/lib/schemas";
 

@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { createBrowserClient } from "@supabase/ssr";
+import { useEffect, useState } from "react";
 
 interface User {
   user_id: string;

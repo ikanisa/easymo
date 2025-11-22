@@ -1,6 +1,6 @@
-import { assistantRunSchema } from "@/lib/schemas";
-import type { AssistantRun } from "@/lib/schemas";
 import { getAdminApiPath } from "@/lib/routes";
+import type { AssistantRun } from "@/lib/schemas";
+import { assistantRunSchema } from "@/lib/schemas";
 
 export type AssistantRequest = {
   promptId: string;

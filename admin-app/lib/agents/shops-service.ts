@@ -1,4 +1,5 @@
 import { z } from "zod";
+
 import { shopSchema } from "@/lib/schemas";
 
 const responseSchema = z.object({

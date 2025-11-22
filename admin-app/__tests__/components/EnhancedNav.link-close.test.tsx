@@ -1,7 +1,9 @@
 import type { ReactNode } from "react";
 import { describe, it } from "vitest";
-import { render, screen, fireEvent, waitFor } from "../../tests/utils/react-testing";
+
 import { EnhancedNav } from "@/components/navigation/EnhancedNav";
+
+import { fireEvent, render, screen, waitFor } from "../../tests/utils/react-testing";
 
 // Use the same next/link mock behavior as the main spec file to avoid jsdom navigation.
 vi.mock("next/link", () => {

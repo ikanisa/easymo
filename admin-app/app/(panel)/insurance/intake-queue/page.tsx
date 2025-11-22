@@ -1,5 +1,5 @@
-import { PageHeader } from "@/components/layout/PageHeader";
 import { IntakeQueue } from "@/components/insurance/IntakeQueue";
+import { PageHeader } from "@/components/layout/PageHeader";
 
 export default function InsuranceIntakeQueuePage() {
   return (

@@ -1,8 +1,8 @@
 "use client";
 
-import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts";
-import type { TooltipProps } from "recharts";
 import type { ReactNode } from "react";
+import type { TooltipProps } from "recharts";
+import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip,XAxis, YAxis } from "recharts";
 
 export interface TrendAreaPoint {
   name: string;

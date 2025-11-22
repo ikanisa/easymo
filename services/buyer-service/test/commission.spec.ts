@@ -1,5 +1,6 @@
 import { describe, expect, it } from "@jest/globals";
 import { Prisma } from "@prisma/client";
+
 import { computeCommissionAmount } from "../src/commission";
 
 describe("computeCommissionAmount", () => {

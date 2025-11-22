@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+
 import { captureException } from "@/lib/client/sentry";
 
 type GlobalErrorProps = {

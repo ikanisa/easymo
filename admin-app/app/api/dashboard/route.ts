@@ -1,8 +1,9 @@
 import { z } from "zod";
-import { jsonOk, jsonError } from "@/lib/api/http";
+
+import { createHandler } from "@/app/api/withObservability";
+import { jsonError,jsonOk } from "@/lib/api/http";
 import { getDashboardSnapshot } from "@/lib/dashboard/dashboard-service";
 import { dashboardKpiSchema, timeseriesPointSchema } from "@/lib/schemas";
-import { createHandler } from "@/app/api/withObservability";
 
 const responseSchema = z.object({
   kpis: z.array(dashboardKpiSchema),

@@ -1,6 +1,6 @@
-import { getSupabaseAdminClient } from "@/lib/server/supabase-admin";
-import { logStructured } from "@/lib/server/logger";
 import { recordAudit } from "@/lib/server/audit";
+import { logStructured } from "@/lib/server/logger";
+import { getSupabaseAdminClient } from "@/lib/server/supabase-admin";
 
 type NotificationIntent = {
   type: string;

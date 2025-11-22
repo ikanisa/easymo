@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { SectionCard } from "@/components/ui/SectionCard";
+
 import { Button } from "@/components/ui/Button";
 import { IntegrationStatusChip } from "@/components/ui/IntegrationStatusChip";
+import { SectionCard } from "@/components/ui/SectionCard";
 import { useIntegrationBadgeMetrics } from "@/lib/hooks/useIntegrationBadgeMetrics";
 import {
   type IntegrationTarget,

@@ -1,15 +1,17 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import classNames from "classnames";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import classNames from "classnames";
+import { useEffect, useMemo, useRef, useState } from "react";
+
 import { Button } from "@/components/ui/Button";
+import { toLinkHref } from "@/lib/link-helpers";
+
 import {
   PANEL_NAVIGATION,
   type PanelNavGroupId,
 } from "./nav-items";
-import { toLinkHref } from "@/lib/link-helpers";
 
 interface MobileNavProps {
   open: boolean;

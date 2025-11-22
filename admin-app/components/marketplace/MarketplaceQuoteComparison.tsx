@@ -1,11 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import type { MarketplaceAgentSession, MarketplaceQuote } from "@/lib/marketplace/types";
+
+import { Badge } from "@/components/ui/Badge";
 import { Drawer } from "@/components/ui/Drawer";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { LoadingState } from "@/components/ui/LoadingState";
-import { Badge } from "@/components/ui/Badge";
+import type { MarketplaceAgentSession, MarketplaceQuote } from "@/lib/marketplace/types";
 
 interface MarketplaceQuoteComparisonProps {
   sessions: MarketplaceAgentSession[];

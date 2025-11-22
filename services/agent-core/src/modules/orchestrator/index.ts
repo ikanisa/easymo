@@ -6,6 +6,6 @@
 
 export * from "./orchestrator.module";
 export * from "./orchestrator.service";
-export * from "./session-manager.service";
 export * from "./quote-aggregator.service";
+export * from "./session-manager.service";
 export * from "./types";

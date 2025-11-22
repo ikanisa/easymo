@@ -2,8 +2,8 @@
 
 import { getInsuranceServiceUrl } from "@/lib/env-client";
 import {
-  insuranceSimulationResultSchema,
   type InsuranceSimulationResult,
+  insuranceSimulationResultSchema,
 } from "@/lib/schemas";
 
 export type InsuranceSimulationFields = Record<

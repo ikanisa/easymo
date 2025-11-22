@@ -1,19 +1,20 @@
 "use client";
 
-import { useMemo, useState } from "react";
 import { QueryErrorResetBoundary } from "@tanstack/react-query";
-import { PageHeader } from "@/components/layout/PageHeader";
-import { SectionCard } from "@/components/ui/SectionCard";
+import { useMemo, useState } from "react";
+
 import { InsuranceTable } from "@/components/insurance/InsuranceTable";
 import { InsuranceWorkbench } from "@/components/insurance/InsuranceWorkbench";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { LoadingState } from "@/components/ui/LoadingState";
 import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
+import { LoadingState } from "@/components/ui/LoadingState";
+import { SectionCard } from "@/components/ui/SectionCard";
 import {
   type InsuranceQueryParams,
+  useApproveInsuranceQuoteMutation,
   useInsuranceQuotesQuery,
   useInsuranceQuotesRealtime,
-  useApproveInsuranceQuoteMutation,
   useRequestChangesMutation,
   useUpdateInsuranceQuoteStatusMutation,
 } from "@/lib/queries/insurance";

@@ -4,7 +4,7 @@ import { z } from "zod";
 import { createAdminClient } from "@/src/v2/lib/supabase/client";
 
 import { coerceNullableString, handleRouteError } from "../../_lib/utils";
-import { driverSelect, driverUpdateSchema, sanitizeDriver, type DriverRow } from "../schema";
+import { type DriverRow,driverSelect, driverUpdateSchema, sanitizeDriver } from "../schema";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

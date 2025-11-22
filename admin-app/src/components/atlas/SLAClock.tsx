@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
 import clsx from "clsx";
+import { useEffect, useMemo, useState } from "react";
 
 export interface SLAClockProps {
   /**

@@ -1,6 +1,7 @@
 "use client";
 
 import { ReactNode } from "react";
+
 import { AgentSidecar, AgentSidecarProvider, useAgentSidecarDataset } from "@/components/agent/Sidecar";
 
 export default function AgentsLayout({ children }: { children: ReactNode }) {

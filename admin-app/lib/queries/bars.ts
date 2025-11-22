@@ -1,8 +1,9 @@
 import { QueryKey, useQuery, UseQueryOptions } from "@tanstack/react-query";
+
+import type { BarListParams } from "@/lib/bars/bars-service";
+import { listBars } from "@/lib/bars/bars-service";
 import type { Bar } from "@/lib/schemas";
 import type { PaginatedResult } from "@/lib/shared/pagination";
-import { listBars } from "@/lib/bars/bars-service";
-import type { BarListParams } from "@/lib/bars/bars-service";
 
 export type BarsQueryParams = BarListParams;
 

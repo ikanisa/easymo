@@ -1,5 +1,6 @@
 import { QueryKey, useQuery, UseQueryOptions } from "@tanstack/react-query";
-import { fetchBarDashboard, type BarDashboardParams, type BarDashboardSnapshot } from "@/lib/bars/bars-dashboard-service";
+
+import { type BarDashboardParams, type BarDashboardSnapshot,fetchBarDashboard } from "@/lib/bars/bars-dashboard-service";
 
 export type BarDashboardQueryParams = BarDashboardParams;
 

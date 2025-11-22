@@ -6,8 +6,8 @@ import { createAdminClient } from "@/src/v2/lib/supabase/client";
 import { handleRouteError } from "../_lib/utils";
 import {
   sanitizeTransaction,
-  transactionSelect,
   type TransactionRow,
+  transactionSelect,
 } from "./schema";
 
 export const runtime = "nodejs";

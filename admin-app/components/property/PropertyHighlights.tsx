@@ -1,6 +1,7 @@
 "use client";
 
 import { PlaceWidget } from "@easymo/ui/widgets/PlaceWidget";
+
 import { SectionCard } from "@/components/ui/SectionCard";
 
 interface PropertyHighlight {

@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react";
+
 import { GeoHeatmapWidget } from "../GeoHeatmapWidget";
 
 const meta: Meta<typeof GeoHeatmapWidget> = {

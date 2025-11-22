@@ -1,6 +1,7 @@
-import request from "supertest";
 import { signServiceJwt } from "@easymo/commons";
 import type { PrismaService } from "@easymo/db";
+import request from "supertest";
+
 import type { WalletService } from "../src/service";
 
 const DEFAULT_TENANT_ID = "a4a8cf2d-0a4f-446c-8bf2-28509641158f";

@@ -5,8 +5,9 @@
  */
 
 import { z } from 'zod';
-import type { AgentContext } from '../types';
+
 import { logToolInvocation } from '../observability';
+import type { AgentContext } from '../types';
 
 export const menuLookupSchema = z.object({
   query: z.string().min(1).max(200).describe('Search query for menu items'),

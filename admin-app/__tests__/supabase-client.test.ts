@@ -1,4 +1,4 @@
-import { describe, expect, it, beforeEach, afterEach, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const createBrowserClientSpy = vi.fn();
 const createServerClientSpy = vi.fn();
@@ -31,7 +31,7 @@ beforeEach(() => {
 afterEach(() => {
   vi.resetModules();
   process.env = { ...originalEnv };
-  // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+   
   delete (globalThis as { window?: unknown }).window;
 });
 

@@ -1,10 +1,11 @@
 import { z } from "zod";
-import { recordAudit } from "@/lib/server/audit";
-import { getSupabaseAdminClient } from "@/lib/server/supabase-admin";
-import { bridgeDegraded, bridgeHealthy, callBridge } from "@/lib/server/edge-bridges";
-import { jsonOk, jsonError, zodValidationError } from "@/lib/api/http";
-import { requireActorId, UnauthorizedError } from "@/lib/server/auth";
+
 import { createHandler } from "@/app/api/withObservability";
+import { jsonError, jsonOk, zodValidationError } from "@/lib/api/http";
+import { recordAudit } from "@/lib/server/audit";
+import { requireActorId, UnauthorizedError } from "@/lib/server/auth";
+import { bridgeDegraded, bridgeHealthy, callBridge } from "@/lib/server/edge-bridges";
+import { getSupabaseAdminClient } from "@/lib/server/supabase-admin";
 
 const bridgeResponseSchema = z
   .object({

@@ -1,11 +1,12 @@
 import { Injectable, Logger } from "@nestjs/common";
-import { SessionManagerService } from "./session-manager.service";
+
 import { QuoteAggregatorService } from "./quote-aggregator.service";
+import { SessionManagerService } from "./session-manager.service";
 import {
   CreateSessionRequest,
+  FlowType,
   NegotiationResult,
   VendorContactInfo,
-  FlowType,
 } from "./types";
 
 /**

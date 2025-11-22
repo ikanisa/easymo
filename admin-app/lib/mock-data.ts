@@ -1,54 +1,14 @@
-import { addDays, formatISO, subDays } from "./time-utils";
-import type {
-  AdminAlertPreference,
-  AdminDiagnosticsMatch,
-  AdminDiagnosticsSnapshot,
-  AdminHubSnapshot,
-  AssistantRun,
-  AuditEvent,
-  Bar,
-  DashboardKpi,
-  FlowMeta,
-  InsuranceComparisonQuote,
-  InsuranceDocumentDetail,
-  InsurancePaymentDetail,
-  InsurancePolicyDetail,
-  InsurancePolicy,
-  InsuranceQuote,
-  InsuranceRequestDetail,
-  InsuranceTask,
-  InsuranceVehicle,
-  MenuVersion,
-  NotificationOutbox,
-  OcrJob,
-  QrPreview,
-  QrToken,
-  SettingEntry,
-  StaffNumber,
-  Station,
-  StorageObject,
-  User,
-  WebhookError,
-  LiveCall,
-  Lead,
-  VendorRanking,
-  MarketplaceIntent,
-  MarketplacePurchase,
-} from "./schemas";
+import type { SessionTimelineEvent } from "@easymo/ui/widgets/SessionTimelineWidget";
+
 import type { MarketplaceAgentSession } from "@/lib/marketplace/types";
 import type { Shop } from "@/lib/shops/types";
-import type { SessionTimelineEvent } from "@easymo/ui/widgets/SessionTimelineWidget";
 import {
-  ALERT_DEFINITIONS,
-  DEFAULT_ALERT_CHANNELS,
-} from "./settings/alert-definitions";
-import {
-  createAuditEvent,
   createAdminAlertPreference,
   createAdminDiagnosticsMatch,
   createAdminDiagnosticsSnapshot,
   createAdminHubSnapshot,
   createAssistantRun,
+  createAuditEvent,
   createDashboardKpi,
   createFlowMeta,
   createInsuranceQuote,
@@ -62,7 +22,49 @@ import {
   createWebhookError,
 } from "@/lib/test-utils/factories";
 import { mockBars, mockStations, mockUsers } from "@/lib/test-utils/mock-base";
-export { mockBars, mockUsers, mockStations };
+
+import type {
+  AdminAlertPreference,
+  AdminDiagnosticsMatch,
+  AdminDiagnosticsSnapshot,
+  AdminHubSnapshot,
+  AssistantRun,
+  AuditEvent,
+  Bar,
+  DashboardKpi,
+  FlowMeta,
+  InsuranceComparisonQuote,
+  InsuranceDocumentDetail,
+  InsurancePaymentDetail,
+  InsurancePolicy,
+  InsurancePolicyDetail,
+  InsuranceQuote,
+  InsuranceRequestDetail,
+  InsuranceTask,
+  InsuranceVehicle,
+  Lead,
+  LiveCall,
+  MarketplaceIntent,
+  MarketplacePurchase,
+  MenuVersion,
+  NotificationOutbox,
+  OcrJob,
+  QrPreview,
+  QrToken,
+  SettingEntry,
+  StaffNumber,
+  Station,
+  StorageObject,
+  User,
+  VendorRanking,
+  WebhookError,
+} from "./schemas";
+import {
+  ALERT_DEFINITIONS,
+  DEFAULT_ALERT_CHANNELS,
+} from "./settings/alert-definitions";
+import { addDays, formatISO, subDays } from "./time-utils";
+export { mockBars, mockStations,mockUsers };
 
 const now = new Date();
 const currencyFormatter = new Intl.NumberFormat("en-RW", {

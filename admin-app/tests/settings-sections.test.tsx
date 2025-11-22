@@ -1,9 +1,11 @@
-import { render, screen } from "./utils/react-testing";
-import { describe, expect, it } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { SettingsPreviewSection } from "@/components/settings/SettingsPreviewSection";
+import { describe, expect, it } from "vitest";
+
 import { IntegrationsSection } from "@/components/settings/IntegrationsSection";
+import { SettingsPreviewSection } from "@/components/settings/SettingsPreviewSection";
 import type { SettingEntry } from "@/lib/schemas";
+
+import { render, screen } from "./utils/react-testing";
 
 const previewEntries: SettingEntry[] = [
   {

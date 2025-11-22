@@ -1,6 +1,7 @@
-import request from "supertest";
 import { getAttributionServiceRoutePath, signServiceJwt } from "@easymo/commons";
 import type { PrismaService } from "@easymo/db";
+import request from "supertest";
+
 import type { evaluateAttribution as evaluateAttributionType } from "../src/evaluator";
 
 jest.mock("../src/evaluator", () => ({

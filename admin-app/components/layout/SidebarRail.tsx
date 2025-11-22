@@ -1,8 +1,9 @@
 "use client";
 
+import classNames from "classnames";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import classNames from "classnames";
+
 import { NAV_ITEMS } from "@/components/layout/nav-items";
 import { toLinkHref } from "@/lib/link-helpers";
 

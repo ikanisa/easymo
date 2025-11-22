@@ -1,7 +1,8 @@
-import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { createSessionCookie } from "@/lib/server/session";
+import { NextResponse } from "next/server";
+
 import { clearRateLimit, getRateLimit, recordFailure } from "@/lib/server/rate-limit";
+import { createSessionCookie } from "@/lib/server/session";
 
 type Credentials = { actorId: string; email: string; password: string; username?: string; label?: string };
 

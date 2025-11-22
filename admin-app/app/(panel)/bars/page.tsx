@@ -1,9 +1,9 @@
 export const dynamic = 'force-dynamic';
 
-import { createPanelPageMetadata } from "@/components/layout/nav-items";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
+
+import { createPanelPageMetadata } from "@/components/layout/nav-items";
 import { createQueryClient } from "@/lib/api/queryClient";
-import { BarsClient } from "./BarsClient";
 import {
   barsQueryKeys,
   type BarsQueryParams,
@@ -14,6 +14,8 @@ import {
   staffNumbersQueryKeys,
   type StaffNumbersQueryParams,
 } from "@/lib/queries/staffNumbers";
+
+import { BarsClient } from "./BarsClient";
 
 export const metadata = createPanelPageMetadata("/bars");
 

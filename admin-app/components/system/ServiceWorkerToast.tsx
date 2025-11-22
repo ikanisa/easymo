@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+
 import { useToast } from "@/components/ui/ToastProvider";
 
 export function ServiceWorkerToast() {

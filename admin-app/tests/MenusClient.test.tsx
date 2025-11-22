@@ -1,6 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, fireEvent } from "./utils/react-testing";
+
 import { MenusClient } from '@/app/(panel)/menus/MenusClient';
+
+import { fireEvent,render, screen } from "./utils/react-testing";
 
 vi.mock('@/lib/queries/menus', () => ({
   useMenuVersionsQuery: vi.fn(() => ({

@@ -1,7 +1,7 @@
 "use client";
 
-import type { KitchenTicket } from "@/lib/bars/bars-dashboard-service";
 import { EmptyState } from "@/components/ui/EmptyState";
+import type { KitchenTicket } from "@/lib/bars/bars-dashboard-service";
 
 interface BarKitchenFeedProps {
   tickets: KitchenTicket[];

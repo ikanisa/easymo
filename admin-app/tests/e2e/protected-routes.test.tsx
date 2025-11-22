@@ -1,7 +1,9 @@
-import { describe, expect, it } from "vitest";
 import { NextRequest } from "next/server";
-import { middleware } from "../../middleware";
+import { describe, expect, it } from "vitest";
+
 import { createSessionCookie } from "@/lib/server/session";
+
+import { middleware } from "../../middleware";
 
 const buildRequest = (path: string, cookieHeader?: string) =>
   new NextRequest(new URL(`https://example.com${path}`), {

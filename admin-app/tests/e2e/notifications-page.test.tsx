@@ -1,9 +1,11 @@
-import { describe, it, expect, vi, afterEach } from 'vitest';
-import { render, screen } from '../utils/react-testing';
-import userEvent from '@testing-library/user-event';
-import { NotificationsClient } from '@/app/(panel)/notifications/NotificationsClient';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import userEvent from '@testing-library/user-event';
+import { afterEach,describe, expect, it, vi } from 'vitest';
+
+import { NotificationsClient } from '@/app/(panel)/notifications/NotificationsClient';
 import { ToastProvider } from '@/components/ui/ToastProvider';
+
+import { render, screen } from '../utils/react-testing';
 
 const queryMock = {
   isLoading: false,

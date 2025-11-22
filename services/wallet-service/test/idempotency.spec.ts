@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+
 import { idempotencyMiddleware, isValidIdempotencyKey } from "../src/idempotency";
 
 describe("Idempotency Middleware", () => {

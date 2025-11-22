@@ -1,10 +1,11 @@
 import { QueryKey, useQuery, UseQueryOptions } from "@tanstack/react-query";
-import type { PaginatedResult } from "@/lib/shared/pagination";
-import type { NotificationOutbox } from "@/lib/schemas";
+
 import {
   listNotifications,
   type NotificationListParams,
 } from "@/lib/notifications/notifications-service";
+import type { NotificationOutbox } from "@/lib/schemas";
+import type { PaginatedResult } from "@/lib/shared/pagination";
 
 export type NotificationsQueryParams = NotificationListParams;
 

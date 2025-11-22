@@ -1,6 +1,6 @@
-import { PageHeader } from "@/components/layout/PageHeader";
-import { NewRequestWizard } from "@/components/insurance/NewRequestWizard";
 import { InsuranceComparisonsBoard } from "@/components/insurance/InsuranceComparisonsBoard";
+import { NewRequestWizard } from "@/components/insurance/NewRequestWizard";
+import { PageHeader } from "@/components/layout/PageHeader";
 
 export default function InsuranceQuoteBuilderPage() {
   return (

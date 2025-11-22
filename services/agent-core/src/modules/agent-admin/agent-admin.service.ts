@@ -1,5 +1,5 @@
-import { Injectable } from "@nestjs/common";
 import { PrismaService } from "@easymo/db";
+import { Injectable } from "@nestjs/common";
 
 @Injectable()
 export class AgentAdminService {

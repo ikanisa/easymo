@@ -1,9 +1,10 @@
 "use client";
 
 import { useMemo, useState } from "react";
+
 import { PageHeader } from "@/components/layout/PageHeader";
-import { LoadingState } from "@/components/ui/LoadingState";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { LoadingState } from "@/components/ui/LoadingState";
 import { usePropertyListingsQuery } from "@/lib/queries/property-rentals";
 
 function formatCurrency(value: number | null | undefined) {

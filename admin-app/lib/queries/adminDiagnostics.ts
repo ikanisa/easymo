@@ -1,4 +1,5 @@
 import { QueryKey, useQuery, UseQueryOptions } from "@tanstack/react-query";
+
 import { getAdminDiagnostics } from "@/lib/admin/diagnostics-service";
 import type { AdminDiagnosticsSnapshot } from "@/lib/schemas";
 

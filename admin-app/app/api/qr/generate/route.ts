@@ -2,10 +2,11 @@ export const dynamic = 'force-dynamic';
 import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { getSupabaseAdminClient } from '@/lib/server/supabase-admin';
-import { logStructured } from '@/lib/server/logger';
-import { recordAudit } from '@/lib/server/audit';
+
 import { createHandler } from '@/app/api/withObservability';
+import { recordAudit } from '@/lib/server/audit';
+import { logStructured } from '@/lib/server/logger';
+import { getSupabaseAdminClient } from '@/lib/server/supabase-admin';
 
 const requestSchema = z.object({
   stationId: z.string().uuid(),
@@ -137,7 +138,7 @@ export const POST = createHandler('admin_api.qr.generate', async (request: Reque
     integration: { status: 'ok' as const, target: 'qr_generate' }
   }, 201);
 });
-import { jsonOk, jsonError, zodValidationError } from '@/lib/api/http';
+import { jsonError, jsonOk, zodValidationError } from '@/lib/api/http';
 import { requireActorId, UnauthorizedError } from '@/lib/server/auth';
 
 export const runtime = "nodejs";

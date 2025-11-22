@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { SectionCard } from "@/components/ui/SectionCard";
+
 import { EmptyState } from "@/components/ui/EmptyState";
-import { LoadingState } from "@/components/ui/LoadingState";
 import { IntegrationStatusBadge } from "@/components/ui/IntegrationStatusBadge";
-import { useLogsQuery } from "@/lib/queries/logs";
+import { LoadingState } from "@/components/ui/LoadingState";
 import { LoadMoreButton } from "@/components/ui/LoadMoreButton";
+import { SectionCard } from "@/components/ui/SectionCard";
+import { useLogsQuery } from "@/lib/queries/logs";
 
 export function LogsClient() {
   const { data, isLoading, isError } = useLogsQuery();

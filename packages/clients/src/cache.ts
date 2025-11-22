@@ -5,14 +5,14 @@ export interface QueryCache {
 }
 
 export class NoopCache implements QueryCache {
-  // eslint-disable-next-line class-methods-use-this
+   
   get<T>(): T | undefined {
     return undefined
   }
 
-  // eslint-disable-next-line class-methods-use-this
+   
   set(): void {}
 
-  // eslint-disable-next-line class-methods-use-this
+   
   delete(): void {}
 }

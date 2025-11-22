@@ -3,8 +3,8 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { createHandler } from '@/app/api/withObservability';
-import { logStructured } from '@/lib/server/logger';
 import { isFeatureEnabled } from '@/lib/server/feature-flags';
+import { logStructured } from '@/lib/server/logger';
 import { getSupabaseAdminClient } from '@/lib/server/supabase-admin';
 
 const requestSchema = z.object({

@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic';
 
 import { createPanelPageMetadata } from "@/components/layout/nav-items";
 import type { InsuranceQueryParams } from "@/lib/queries/insurance";
+
 import { InsuranceClient } from "./InsuranceClient";
 
 export const metadata = createPanelPageMetadata("/insurance");

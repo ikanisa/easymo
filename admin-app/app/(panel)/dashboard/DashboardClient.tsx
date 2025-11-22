@@ -1,21 +1,22 @@
 "use client";
 
 import { Fragment } from "react";
-import { PageHeader } from "@/components/layout/PageHeader";
+
+import { AdminDiagnosticsCard } from "@/components/dashboard/AdminDiagnosticsCard";
+import { AdminHubSectionGrid } from "@/components/dashboard/AdminHubSectionGrid";
+import { IntegrationHealthWidget } from "@/components/dashboard/IntegrationHealthWidget";
 import { KpiCard } from "@/components/dashboard/KpiCard";
-import { SectionCard } from "@/components/ui/SectionCard";
+import { PaymentsHealthWidget } from "@/components/dashboard/PaymentsHealthWidget";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { LoadingState } from "@/components/ui/LoadingState";
+import { SectionCard } from "@/components/ui/SectionCard";
 import { WebhookErrorList } from "@/components/whatsapp/WebhookErrorList";
+import { useAdminHubSnapshotQuery } from "@/lib/queries/adminHub";
 import {
   useDashboardSnapshotQuery,
   useDashboardWebhookErrorsQuery,
 } from "@/lib/queries/dashboard";
-import { LoadingState } from "@/components/ui/LoadingState";
-import { useAdminHubSnapshotQuery } from "@/lib/queries/adminHub";
-import { AdminHubSectionGrid } from "@/components/dashboard/AdminHubSectionGrid";
-import { AdminDiagnosticsCard } from "@/components/dashboard/AdminDiagnosticsCard";
-import { IntegrationHealthWidget } from "@/components/dashboard/IntegrationHealthWidget";
-import { PaymentsHealthWidget } from "@/components/dashboard/PaymentsHealthWidget";
 
 export function DashboardClient() {
   const snapshotQuery = useDashboardSnapshotQuery();

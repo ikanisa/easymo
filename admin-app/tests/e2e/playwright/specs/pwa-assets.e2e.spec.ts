@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { expect,test } from '@playwright/test';
 
 test.describe('PWA assets accessibility', () => {
   test('manifest and service worker are publicly accessible on login', async ({ page, request }) => {

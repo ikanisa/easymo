@@ -1,12 +1,13 @@
 export const dynamic = 'force-dynamic';
 import { z } from "zod";
+
+import { jsonError, jsonOk } from "@/lib/api/http";
+import { getMarketplaceServiceUrls, shouldUseMocks } from "@/lib/runtime-config";
 import {
-  vendorRankingSchema,
   marketplaceIntentSchema,
   marketplacePurchaseSchema,
+  vendorRankingSchema,
 } from "@/lib/schemas";
-import { getMarketplaceServiceUrls, shouldUseMocks } from "@/lib/runtime-config";
-import { jsonError, jsonOk } from "@/lib/api/http";
 
 const rankingResponseSchema = z.object({
   vendors: z.array(vendorRankingSchema),

@@ -1,12 +1,12 @@
 "use client";
 
 import { PageHeader } from "@/components/layout/PageHeader";
+import { StationListWithActions } from "@/components/stations/StationListWithActions";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { LoadingState } from "@/components/ui/LoadingState";
-import { StationListWithActions } from "@/components/stations/StationListWithActions";
 import {
-  useStationsQuery,
   type StationsQueryParams,
+  useStationsQuery,
 } from "@/lib/queries/stations";
 
 const DEFAULT_PARAMS: StationsQueryParams = { limit: 200 };

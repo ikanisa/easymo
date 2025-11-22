@@ -1,7 +1,9 @@
 import type { ReactNode } from "react";
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent, waitFor } from "../../tests/utils/react-testing";
+import { beforeEach,describe, expect, it, vi } from "vitest";
+
 import { EnhancedNav } from "@/components/navigation/EnhancedNav";
+
+import { fireEvent, render, screen, waitFor } from "../../tests/utils/react-testing";
 
 const { mockUsePathname } = vi.hoisted(() => ({
   mockUsePathname: vi.fn(() => "/insurance"),

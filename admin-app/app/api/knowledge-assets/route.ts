@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+
 import {
-  listKnowledgeAssets,
   type KnowledgeAsset,
+  listKnowledgeAssets,
 } from "@/lib/supabase/server/knowledge";
-import { SupabaseUnavailableError, SupabaseQueryError } from "@/lib/supabase/server/utils";
+import { SupabaseQueryError,SupabaseUnavailableError } from "@/lib/supabase/server/utils";
 
 const querySchema = z.object({
   agentId: z.string().uuid().optional(),

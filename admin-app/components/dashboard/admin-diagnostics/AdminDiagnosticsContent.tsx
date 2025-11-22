@@ -1,10 +1,11 @@
 import type { AdminDiagnosticsSnapshot } from "@/lib/schemas";
-import { DiagnosticsNotice } from "./DiagnosticsNotice";
+
 import { AdminConfigSection } from "./AdminConfigSection";
+import { DiagnosticsNotice } from "./DiagnosticsNotice";
 import { LogsSection } from "./LogsSection";
-import { TripDiagnosticsSection } from "./TripDiagnosticsSection";
 import { MatchMetricsSection } from "./MatchMetricsSection";
 import { QueueHealthSection } from "./QueueHealthSection";
+import { TripDiagnosticsSection } from "./TripDiagnosticsSection";
 
 type AdminDiagnosticsContentProps = {
   snapshot: AdminDiagnosticsSnapshot;

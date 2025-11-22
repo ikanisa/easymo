@@ -1,7 +1,7 @@
 "use client";
 
-import type { ChangeEvent } from "react";
 import clsx from "clsx";
+import type { ChangeEvent } from "react";
 
 interface SearchBarProps {
   value: string;

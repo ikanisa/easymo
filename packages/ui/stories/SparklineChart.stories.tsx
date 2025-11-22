@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react";
+
 import { SparklineChart } from "../src/components/charts";
 
 const meta: Meta<typeof SparklineChart> = {

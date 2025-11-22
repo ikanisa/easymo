@@ -6,6 +6,7 @@ import {
   useRef,
   useState,
 } from "react";
+
 import { useToast } from "@/components/ui/ToastProvider";
 import {
   useAssistantDecisionMutation,
@@ -17,6 +18,7 @@ import type {
   AssistantRun,
   AssistantSuggestion,
 } from "@/lib/schemas";
+
 import {
   DEFAULT_LIMITATIONS,
   INTRO_MESSAGE,

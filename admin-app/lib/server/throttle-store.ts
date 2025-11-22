@@ -1,7 +1,7 @@
 "use server";
 
-import { getSupabaseAdminClient } from "@/lib/server/supabase-admin";
 import { logStructured } from "@/lib/server/logger";
+import { getSupabaseAdminClient } from "@/lib/server/supabase-admin";
 
 const WINDOW_MS = 60_000;
 

@@ -1,8 +1,10 @@
 'use client'
 
-import { useMenu } from '@/contexts/MenuContext'
 import { ShoppingCartIcon } from '@heroicons/react/24/outline'
 import { useState } from 'react'
+
+import { useMenu } from '@/contexts/MenuContext'
+
 import CartModal from './CartModal'
 
 function CartButton() {

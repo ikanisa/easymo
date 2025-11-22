@@ -1,5 +1,5 @@
-import { z } from 'zod';
 import type { ChatCompletionMessageParam, ChatCompletionTool } from 'openai/resources/chat/completions';
+import { z } from 'zod';
 
 // ============================================================================
 // AGENT TYPES

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+
 import { getSupabaseAdminClient } from "@/lib/server/supabase-admin";
 
 type Provider = 'bing' | 'serpapi';

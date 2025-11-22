@@ -1,5 +1,5 @@
-import type { Database, Json } from '../types/database'
 import type { Conversation, Message } from '../types/chat'
+import type { Database, Json } from '../types/database'
 
 export type ConversationInsert = Database['public']['Tables']['conversations']['Insert']
 export type MessageInsert = Database['public']['Tables']['messages']['Insert']

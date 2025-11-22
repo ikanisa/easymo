@@ -1,4 +1,5 @@
 import { SupabaseClient } from '@supabase/supabase-js';
+
 import { Message } from '../base/types';
 
 export interface MemoryConfig {

@@ -1,13 +1,14 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { getAdminApiRoutePath } from "@/lib/routes";
+
 import { Button } from "@/components/ui/Button";
 import { SectionCard } from "@/components/ui/SectionCard";
 import {
   type ChatCompletionMessage,
   type ChatCompletionResponse,
 } from "@/lib/ai/chat-completions";
+import { getAdminApiRoutePath } from "@/lib/routes";
 
 interface PlaygroundResponse {
   completion: ChatCompletionResponse;

@@ -1,20 +1,20 @@
 import { EventEmitter } from 'events';
+
 import { GeminiClient } from '../llm/gemini-client';
-import { OpenAIClient } from '../llm/openai-client';
 import { ModelRouter } from '../llm/model-router';
+import { OpenAIClient } from '../llm/openai-client';
 import { ToolRegistry } from './tool.interface';
 import {
+  AgentContext,
   AgentInput,
   AgentResult,
-  AgentContext,
-  Tool,
   AgentSession,
-  ModelType,
-  VoiceConfig,
-  VisionConfig,
   MemoryConfig,
-  ToolInvocation
-} from './types';
+  ModelType,
+  Tool,
+  ToolInvocation,
+  VisionConfig,
+  VoiceConfig} from './types';
 
 export abstract class BaseAgent extends EventEmitter {
   // LLM Clients

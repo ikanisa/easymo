@@ -1,11 +1,12 @@
 import type { Meta, StoryObj } from "@storybook/react";
+
 import {
-  DialogRoot,
-  DialogTrigger,
-  DialogContent,
-  DialogTitle,
-  DialogDescription,
   Button,
+  DialogContent,
+  DialogDescription,
+  DialogRoot,
+  DialogTitle,
+  DialogTrigger,
 } from "../src";
 
 const meta: Meta = {

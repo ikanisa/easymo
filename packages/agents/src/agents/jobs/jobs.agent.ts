@@ -1,5 +1,5 @@
-import { BaseAgent } from '../base/agent.base';
 import type { AgentContext, AgentInput, AgentResult, Tool } from '../../types/agent.types';
+import { BaseAgent } from '../base/agent.base';
 
 export class JobsAgent extends BaseAgent {
   name = 'jobs_agent';

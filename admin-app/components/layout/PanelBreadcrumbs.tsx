@@ -1,9 +1,10 @@
 "use client";
 
-import { useMemo } from "react";
+import classNames from "classnames";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import classNames from "classnames";
+import { useMemo } from "react";
+
 import { buildPanelBreadcrumbs } from "@/components/layout/nav-items";
 import { toLinkHref } from "@/lib/link-helpers";
 

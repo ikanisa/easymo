@@ -1,12 +1,13 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
+
 import type {
-  FavoriteRow,
-  DriverRow,
-  MatchRow,
-  DeeplinkRow,
-  DeeplinkInsert,
-  BrokerMessageRow,
   AdminAuditRow,
+  BrokerMessageRow,
+  DeeplinkInsert,
+  DeeplinkRow,
+  DriverRow,
+  FavoriteRow,
+  MatchRow,
   PaginatedResult,
   PaginationOptions
 } from './types'

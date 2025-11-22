@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 declare global {
-  // eslint-disable-next-line no-var
+   
   var __EASYMO_FEATURE_FLAGS__:
     | {
         adminHubV2?: boolean;

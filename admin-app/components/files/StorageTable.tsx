@@ -1,14 +1,16 @@
 "use client";
 
-import { useCallback, useMemo } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
+import { useCallback, useMemo } from "react";
+
 import { DataTable } from "@/components/data-table/DataTable";
-import type { StorageObject } from "@/lib/schemas";
-import { useToast } from "@/components/ui/ToastProvider";
-import styles from "./StorageTable.module.css";
 import { Button } from "@/components/ui/Button";
 import { LoadMoreButton } from "@/components/ui/LoadMoreButton";
+import { useToast } from "@/components/ui/ToastProvider";
 import { getAdminApiPath } from "@/lib/routes";
+import type { StorageObject } from "@/lib/schemas";
+
+import styles from "./StorageTable.module.css";
 
 interface StorageTableProps {
   data: StorageObject[];

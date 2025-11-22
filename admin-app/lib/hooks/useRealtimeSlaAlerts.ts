@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
 import type { PostgrestSingleResponse } from "@supabase/supabase-js";
+import { useEffect, useMemo, useRef, useState } from "react";
+
 import { getSupabaseClient } from "@/lib/supabase-client";
 
 type SessionStatus = "searching" | "negotiating" | "completed" | "timeout" | "cancelled" | string;

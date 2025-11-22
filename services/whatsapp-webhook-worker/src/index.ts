@@ -1,9 +1,10 @@
 import express from "express";
 import pinoHttp from "pino-http";
+
 import { config } from "./config.js";
+import { buildHealthReport } from "./health.js";
 import { logger } from "./logger.js";
 import { WebhookWorker } from "./worker.js";
-import { buildHealthReport } from "./health.js";
 
 async function main() {
   logger.info({ config: { ...config, SUPABASE_SERVICE_ROLE_KEY: "***" } }, "Starting service");

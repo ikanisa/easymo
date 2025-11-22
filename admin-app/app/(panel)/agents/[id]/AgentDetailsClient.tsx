@@ -1,31 +1,32 @@
 "use client";
 import { useParams } from "next/navigation";
-import {
-  useAgentDetailAggregate,
-  useCreateVersion,
-  useDeployVersion,
-  useUploadAgentDocument,
-  useDeleteAgentDocument,
-  useAgentTasks,
-  useAgentRuns,
-  useAgentRunDetails,
-  useAgentAudit,
-  useAddAgentDocUrl,
-  useEmbedAllAgentDocs,
-  useDriveSyncAgentDocs,
-  useWebSearchImportAgentDocs,
-  useEmbedAgentDocument,
-  useSearchAgentKnowledge,
-  type AgentDocument,
-  type AgentTask,
-  type AgentRun,
-  type AgentAuditEvent,
-  type AgentPersona,
-} from "@/lib/queries/agents";
-import { getAdminApiRoutePath } from "@/lib/routes";
 import { useEffect, useState } from "react";
+
 import { useToast } from "@/components/ui/ToastProvider";
 import { Tooltip } from "@/components/ui/Tooltip";
+import {
+  type AgentAuditEvent,
+  type AgentDocument,
+  type AgentPersona,
+  type AgentRun,
+  type AgentTask,
+  useAddAgentDocUrl,
+  useAgentAudit,
+  useAgentDetailAggregate,
+  useAgentRunDetails,
+  useAgentRuns,
+  useAgentTasks,
+  useCreateVersion,
+  useDeleteAgentDocument,
+  useDeployVersion,
+  useDriveSyncAgentDocs,
+  useEmbedAgentDocument,
+  useEmbedAllAgentDocs,
+  useSearchAgentKnowledge,
+  useUploadAgentDocument,
+  useWebSearchImportAgentDocs,
+} from "@/lib/queries/agents";
+import { getAdminApiRoutePath } from "@/lib/routes";
 
 export function AgentDetailsClient() {
   const params = useParams();

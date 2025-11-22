@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+
 import type { Database } from "@/src/v2/lib/supabase/database.types";
 
 function requireEnv(name: string) {

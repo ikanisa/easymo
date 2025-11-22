@@ -1,18 +1,19 @@
 import {
+  type AgentResult,
+  analyzeIntent,
   BookingAgent,
   FarmerAgent,
   JobsAgent,
   PropertyRentalAgent,
+  runAgent,
+  runGeneralBrokerAgent,
   SalesAgent,
   SupportAgent,
   TriageAgent,
-  analyzeIntent,
-  runAgent,
-  runGeneralBrokerAgent,
-  type AgentResult,
 } from "@easymo/agents";
 import { IdempotencyStore } from "@easymo/messaging";
-import { SupabaseClient, createClient } from "@supabase/supabase-js";
+import { createClient,SupabaseClient } from "@supabase/supabase-js";
+
 import { config } from "./config.js";
 import { logger } from "./logger.js";
 import { resolveSecret } from "./secrets.js";

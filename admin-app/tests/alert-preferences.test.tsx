@@ -1,14 +1,17 @@
+import "@testing-library/jest-dom/vitest";
+
 import React from "react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+import { AlertPreferences } from "@/components/settings/AlertPreferences";
+import { getAdminApiPath } from "@/lib/routes";
+
 import {
   fireEvent,
   render,
   screen,
   waitFor,
 } from "./utils/react-testing";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import "@testing-library/jest-dom/vitest";
-import { AlertPreferences } from "@/components/settings/AlertPreferences";
-import { getAdminApiPath } from "@/lib/routes";
 
 const pushToast = vi.fn();
 const useAdminAlertPreferencesQuery = vi.fn();

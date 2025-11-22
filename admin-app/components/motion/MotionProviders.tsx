@@ -1,7 +1,7 @@
 "use client";
 
-import { createContext, ReactNode, useContext } from "react";
 import { AnimatePresence, MotionConfig } from "framer-motion";
+import { createContext, ReactNode, useContext } from "react";
 
 const ReducedMotionContext = createContext<boolean>(false);
 

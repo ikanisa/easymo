@@ -1,5 +1,5 @@
-import { PageHeader } from "@/components/layout/PageHeader";
 import { PaymentsIssuanceBoard } from "@/components/insurance/PaymentsIssuanceBoard";
+import { PageHeader } from "@/components/layout/PageHeader";
 
 export default function InsurancePaymentsIssuancePage() {
   return (

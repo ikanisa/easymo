@@ -1,8 +1,8 @@
 "use client";
 
-import type { Shop } from "@/lib/shops/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
+import type { Shop } from "@/lib/shops/types";
 
 interface ShopMapProps {
   shops: Shop[];

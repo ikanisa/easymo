@@ -1,13 +1,13 @@
 export {
-  panelNavigation as PANEL_NAVIGATION,
-  type PanelNavigation,
-  type PanelNavGroup,
-  type PanelNavItem,
-  type PanelNavGroupId,
-  type PanelBreadcrumb,
   buildPanelBreadcrumbs,
   createPanelPageMetadata,
   getRouteMetadata,
+  panelNavigation as PANEL_NAVIGATION,
+  type PanelBreadcrumb,
+  type PanelNavGroup,
+  type PanelNavGroupId,
+  type PanelNavigation,
+  type PanelNavItem,
 } from "@/lib/panel-navigation";
 
 // Expose a compatibility NAV_SECTIONS shape for tests and legacy UI.
@@ -16,7 +16,7 @@ export {
 //  - Hub preview (single section "Hub" with one item "Admin hub")
 
 declare global {
-  // eslint-disable-next-line no-var
+   
   var __EASYMO_FEATURE_FLAGS__:
     | {
         adminHubV2?: boolean;

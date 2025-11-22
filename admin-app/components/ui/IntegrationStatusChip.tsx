@@ -1,6 +1,7 @@
 "use client";
 
 import type { IntegrationStatusEntry } from "@/lib/queries/integrations";
+
 import styles from "./IntegrationStatusChip.module.css";
 
 const STATUS_LABELS: Record<IntegrationStatusEntry["status"], string> = {

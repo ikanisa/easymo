@@ -1,6 +1,7 @@
 "use client";
 
 import { useId } from "react";
+
 import { useRecentTransactions } from "@/src/v2/lib/supabase/hooks";
 
 export function RecentActivity() {

@@ -1,8 +1,9 @@
 "use client";
 
 import { useMemo } from "react";
-import { useIntegrationStatusQuery } from "@/lib/queries/integrations";
+
 import { useRealtimeSlaAlerts } from "@/lib/hooks/useRealtimeSlaAlerts";
+import { useIntegrationStatusQuery } from "@/lib/queries/integrations";
 
 interface BadgeMetrics {
   badgeValue: string;

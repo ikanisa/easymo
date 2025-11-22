@@ -1,9 +1,10 @@
 "use client";
 
-import Link from "next/link";
-import type { AdminHubSections } from "@/lib/schemas";
-import { adminRoutePaths, toAdminRoute, type NavigableAdminRouteKey } from "@/lib/routes";
 import { ChevronRight } from "lucide-react";
+import Link from "next/link";
+
+import { adminRoutePaths, type NavigableAdminRouteKey,toAdminRoute } from "@/lib/routes";
+import type { AdminHubSections } from "@/lib/schemas";
 
 const SECTION_LINKS: Record<
   string,

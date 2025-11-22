@@ -1,6 +1,5 @@
 "use client";
 
-import { CSSProperties, useCallback, useId, useMemo, useRef, useState } from "react";
 import {
   ColumnDef,
   type ColumnFiltersState,
@@ -12,8 +11,9 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import Papa from "papaparse";
 import classNames from "classnames";
+import Papa from "papaparse";
+import { CSSProperties, useCallback, useId, useMemo, useRef, useState } from "react";
 
 import styles from '@/components/data-table/DataTable.module.css';
 import { Button } from '@/components/ui/Button';

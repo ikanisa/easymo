@@ -1,5 +1,5 @@
-import { Type } from "@sinclair/typebox";
 import type { TSchema } from "@sinclair/typebox";
+import { Type } from "@sinclair/typebox";
 import { z } from "zod";
 
 export const literalUnion = <T extends readonly string[]>(values: T): TSchema =>

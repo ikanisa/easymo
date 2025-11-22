@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+
 import { getSupabaseAdminClient } from "@/lib/server/supabase-admin";
 
 export async function POST(_: Request, context: { params: Promise<{ id: string; docId: string }> }) {

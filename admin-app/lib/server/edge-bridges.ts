@@ -1,5 +1,6 @@
 // Note: Server-side module for edge bridges
 import { z } from "zod";
+
 import { logStructured } from "@/lib/server/logger";
 
 type BridgeTarget =

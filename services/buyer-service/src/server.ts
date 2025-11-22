@@ -1,11 +1,12 @@
+import { isFeatureEnabled } from "@easymo/commons";
+import { PrismaService } from "@easymo/db";
 import express from "express";
 import pinoHttp from "pino-http";
 import { z } from "zod";
+
 import { settings } from "./config";
 import { logger } from "./logger";
-import { PrismaService } from "@easymo/db";
 import { BuyerService, CreateBuyerInput, PurchaseInput } from "./service";
-import { isFeatureEnabled } from "@easymo/commons";
 
 const CreateBuyerSchema = z.object({
   tenantId: z.string().uuid().default(settings.defaultTenantId),

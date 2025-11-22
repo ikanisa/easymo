@@ -1,5 +1,6 @@
-import { createClient } from "@supabase/supabase-js";
 import type { PostgrestError } from "@supabase/supabase-js";
+import { createClient } from "@supabase/supabase-js";
+
 import { config } from "./config";
 import { logger } from "./logger";
 

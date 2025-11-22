@@ -1,6 +1,7 @@
 "use client";
 
 import type { ColumnDef } from "@tanstack/react-table";
+
 import { DataTable } from "@/components/data-table/DataTable";
 import { LoadMoreButton } from "@/components/ui/LoadMoreButton";
 import type { OcrJob } from "@/lib/schemas";

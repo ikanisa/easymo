@@ -1,10 +1,11 @@
 'use client';
 
-import { useLocale, useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
-import { createClient } from '@/lib/supabase/client';
+
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
+import { createClient } from '@/lib/supabase/client';
 
 export default function HomePage() {
   const t = useTranslations();

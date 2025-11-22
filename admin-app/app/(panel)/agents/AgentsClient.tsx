@@ -1,7 +1,8 @@
 "use client";
 import Link from "next/link";
-import { useAgentsList, useCreateAgent, type AgentPersona } from "@/lib/queries/agents";
 import { useState } from "react";
+
+import { type AgentPersona,useAgentsList, useCreateAgent } from "@/lib/queries/agents";
 
 export function AgentsClient() {
   const { data, isLoading, error } = useAgentsList();

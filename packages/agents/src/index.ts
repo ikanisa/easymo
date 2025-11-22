@@ -5,8 +5,8 @@
  */
 
 // Core functionality
-export { runAgent } from './runner';
 export type { AgentDefinition } from './runner';
+export { runAgent } from './runner';
 
 // Agents
 export {
@@ -56,8 +56,8 @@ export {
 } from './observability';
 
 // Feature flags
+export type { AgentFeatureFlag } from './feature-flags';
 export {
   isAgentFeatureEnabled,
   requireAgentFeature,
 } from './feature-flags';
-export type { AgentFeatureFlag } from './feature-flags';

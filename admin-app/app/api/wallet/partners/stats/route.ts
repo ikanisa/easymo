@@ -1,6 +1,6 @@
 export const dynamic = 'force-dynamic';
 import { createHandler } from '@/app/api/withObservability';
-import { jsonOk, jsonError } from '@/lib/api/http';
+import { jsonError,jsonOk } from '@/lib/api/http';
 import { getSupabaseAdminClient } from '@/lib/server/supabase-admin';
 
 export const GET = createHandler('admin_api.wallet.partners.stats', async () => {

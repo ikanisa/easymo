@@ -3,8 +3,8 @@ import { z } from "zod";
 
 import { createAdminClient } from "@/src/v2/lib/supabase/client";
 
-import { handleRouteError, normalizeNumber, coerceNullableString } from "../../_lib/utils";
-import { agentSelect, agentUpdateSchema, sanitizeAgent, type AgentRow } from "../schema";
+import { coerceNullableString,handleRouteError, normalizeNumber } from "../../_lib/utils";
+import { type AgentRow,agentSelect, agentUpdateSchema, sanitizeAgent } from "../schema";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

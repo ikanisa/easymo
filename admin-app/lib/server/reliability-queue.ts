@@ -1,8 +1,8 @@
 "use server";
 
-import { getSupabaseAdminClient } from "@/lib/server/supabase-admin";
 import { logStructured } from "@/lib/server/logger";
 import { emitMetric } from "@/lib/server/metrics";
+import { getSupabaseAdminClient } from "@/lib/server/supabase-admin";
 
 type ReliabilityMetadata = Record<string, unknown> | undefined;
 
