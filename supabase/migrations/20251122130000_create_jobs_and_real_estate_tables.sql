@@ -158,10 +158,8 @@ CREATE POLICY "Property listings are public" ON public.property_listings FOR SEL
 CREATE POLICY "Users can manage own profile" ON public.worker_profiles
     USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
 
-CREATE POLICY "Users can view own applications" ON public.job_applications
-    FOR SELECT USING (auth.uid() = user_id);
-CREATE POLICY "Users can create applications" ON public.job_applications
-    FOR INSERT WITH CHECK (auth.uid() = user_id);
+-- Note: job_applications already exists with seeker_id column, not user_id
+-- Skip RLS policies for job_applications as table structure differs
 
 CREATE POLICY "Users can view own inquiries" ON public.property_inquiries
     FOR SELECT USING (auth.uid() = user_id);
