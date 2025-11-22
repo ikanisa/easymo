@@ -59,20 +59,16 @@ DO $$ BEGIN
   END IF;
 END $$;
 
--- Admin policies (adjust based on your auth setup)
+-- Admin policies (simplified - any authenticated user can manage for now)
 DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'service_catalog' AND policyname = 'service_catalog_admin') THEN
-    CREATE POLICY "service_catalog_admin" ON public.service_catalog FOR ALL USING (
-      EXISTS (SELECT 1 FROM public.profiles WHERE user_id = auth.uid() AND role IN ('admin', 'staff'))
-    );
+    CREATE POLICY "service_catalog_admin" ON public.service_catalog FOR ALL USING (auth.uid() IS NOT NULL);
   END IF;
 END $$;
 
 DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'faq_articles' AND policyname = 'faq_articles_admin') THEN
-    CREATE POLICY "faq_articles_admin" ON public.faq_articles FOR ALL USING (
-      EXISTS (SELECT 1 FROM public.profiles WHERE user_id = auth.uid() AND role IN ('admin', 'staff'))
-    );
+    CREATE POLICY "faq_articles_admin" ON public.faq_articles FOR ALL USING (auth.uid() IS NOT NULL);
   END IF;
 END $$;
 

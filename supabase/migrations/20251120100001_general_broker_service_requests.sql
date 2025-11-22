@@ -10,7 +10,7 @@ CREATE EXTENSION IF NOT EXISTS "earthdistance";
 -- Unified service request tracking across all verticals
 CREATE TABLE IF NOT EXISTS public.service_requests (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  org_id UUID REFERENCES public.organizations(id),
+  org_id UUID,  -- References organizations if/when that table exists
   user_id UUID NOT NULL REFERENCES public.profiles(user_id),
   
   -- Classification
@@ -61,8 +61,7 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'service_requests' AND policyname = 'service_requests_select') THEN
     CREATE POLICY "service_requests_select" ON public.service_requests
       FOR SELECT USING (
-        user_id = auth.uid() OR 
-        org_id IN (SELECT id FROM public.organizations WHERE owner_id = auth.uid())
+        user_id = auth.uid()
       );
   END IF;
 END $$;
@@ -78,8 +77,7 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'service_requests' AND policyname = 'service_requests_update') THEN
     CREATE POLICY "service_requests_update" ON public.service_requests
       FOR UPDATE USING (
-        user_id = auth.uid() OR 
-        org_id IN (SELECT id FROM public.organizations WHERE owner_id = auth.uid())
+        user_id = auth.uid()
       );
   END IF;
 END $$;
