@@ -16,14 +16,21 @@ import { getToolManager } from "./tool_manager.ts";
 import { logStructuredEvent } from "../observe/log.ts";
 import { getTemplateRegistry, type ApprovedTemplate } from "./template_registry.ts";
 import { buildToneDirective } from "../../../../packages/localization/src/tone.ts";
+import { AGENT_CONFIGURATIONS } from "./agent_configs.ts";
 
 export type AgentType =
-  | "customer_service"
-  | "booking"
-  | "wallet"
-  | "marketplace"
-  | "support"
-  | "general";
+  | "waiter"           // Bars & Restaurants
+  | "rides"            // Mobility coordinator
+  | "jobs"             // Job board and gigs
+  | "business_broker"  // Find nearby businesses
+  | "real_estate"      // Property rentals
+  | "farmer"           // Produce listing
+  | "insurance"        // Quotes, claims, policies
+  | "sales"            // SDR for easyMO
+  | "support"          // Customer support
+  | "pharmacy"         // Medicine finder
+  | "wallet"           // Wallet & payments (legacy)
+  | "general";         // Fallback
 
 export interface AgentConfig {
   id: string;
@@ -48,6 +55,10 @@ export interface AgentResponse {
   sessionData?: Record<string, any>;
   suggestedNextAgent?: AgentType;
   approvedTemplate?: ApprovedTemplate | null;
+  // Chat-first architecture fields
+  actionButtons?: Array<{ id: string; title: string }>;
+  optionsPresented?: Array<{ id: string; title: string; description?: string }>;
+  requiresSelection?: boolean;
 }
 
 export class AgentOrchestrator {
@@ -65,226 +76,12 @@ export class AgentOrchestrator {
    * Initialize default agent configurations
    */
   private initializeAgents(): void {
-    // Customer Service Agent
-    this.registerAgent({
-      id: "cs-agent-01",
-      type: "customer_service",
-      name: "Customer Service Agent",
-      systemPrompt: `You are a helpful customer service agent for EasyMO, a mobility platform in Rwanda.
+    // Register all agents from centralized configuration
+    for (const config of AGENT_CONFIGURATIONS) {
+      this.registerAgent(config);
+    }
 
-Your responsibilities:
-- Greet users warmly in their preferred language (English, French, Kinyarwanda)
-- Answer general questions about EasyMO services
-- Help with account issues
-- Guide users to book trips, check wallet balance, or use marketplace
-- Escalate complex issues to human support
-- Always be empathetic, patient, and solution-oriented
-
-Guidelines:
-- Use simple, clear language
-- Ask clarifying questions when needed
-- Provide step-by-step instructions
-- Offer to help with related tasks
-- Keep responses concise (2-3 sentences max for WhatsApp)
-
-Available services:
-- Bus/taxi booking (route search, seat selection, payment)
-- Wallet (balance, top-up, transfer)
-- Marketplace (shop products, local services)
-- Support (help, complaints, feedback)`,
-      temperature: 0.7,
-      maxTokens: 500,
-      enabledTools: [
-        "get_user_info",
-        "search_help_articles",
-        "create_support_ticket",
-      ],
-      priority: 1,
-      triggers: [
-        "help",
-        "support",
-        "problem",
-        "issue",
-        "question",
-        "how",
-        "what",
-        "hello",
-        "hi",
-        "hey",
-        "bonjour",
-        "muraho",
-      ],
-    });
-
-    // Booking Agent
-    this.registerAgent({
-      id: "booking-agent-01",
-      type: "booking",
-      name: "Travel Booking Agent",
-      systemPrompt: `You are a travel booking specialist for EasyMO.
-
-Your responsibilities:
-- Help users search for bus/taxi routes
-- Assist with trip booking (origin, destination, date, passengers)
-- Show available seats and help with seat selection
-- Process bookings and payments
-- Provide trip details and confirmations
-- Handle booking modifications and cancellations
-
-Guidelines:
-- Be efficient and accurate with travel information
-- Always confirm details before booking
-- Explain payment options clearly
-- Provide booking confirmation with trip details
-- Suggest alternative routes if needed
-
-Use these tools:
-- search_routes: Find available trips
-- get_trip_details: Show trip information
-- book_trip: Complete booking
-- check_seat_availability: Show available seats`,
-      temperature: 0.5,
-      maxTokens: 600,
-      enabledTools: [
-        "search_routes",
-        "get_trip_details",
-        "book_trip",
-        "check_seat_availability",
-        "get_booking_history",
-      ],
-      priority: 2,
-      triggers: [
-        "book",
-        "trip",
-        "travel",
-        "bus",
-        "taxi",
-        "route",
-        "seat",
-        "destination",
-        "kigali",
-        "gisenyi",
-        "musanze",
-      ],
-    });
-
-    // Wallet Agent
-    this.registerAgent({
-      id: "wallet-agent-01",
-      type: "wallet",
-      name: "Wallet & Payment Agent",
-      systemPrompt: `You are a wallet and payment specialist for EasyMO.
-
-Your responsibilities:
-- Help users check wallet balance
-- Process money transfers
-- Assist with top-ups and withdrawals
-- Show transaction history
-- Handle payment issues
-- Explain fees and limits
-
-Guidelines:
-- Be precise with monetary amounts
-- Always confirm amounts before transfers
-- Explain transaction status clearly
-- Provide transaction IDs for reference
-- Handle financial data with care (mask sensitive info in logs)
-
-Security:
-- Verify user identity for transactions
-- Confirm recipient details before transfers
-- Never share full account numbers in chat`,
-      temperature: 0.3,
-      maxTokens: 400,
-      enabledTools: [
-        "get_wallet_balance",
-        "transfer_money",
-        "get_transaction_history",
-        "initiate_topup",
-      ],
-      priority: 2,
-      triggers: [
-        "balance",
-        "wallet",
-        "money",
-        "transfer",
-        "send",
-        "pay",
-        "payment",
-        "cash",
-        "franc",
-        "rwf",
-      ],
-    });
-
-    // Marketplace Agent
-    this.registerAgent({
-      id: "marketplace-agent-01",
-      type: "marketplace",
-      name: "Marketplace Agent",
-      systemPrompt: `You are a marketplace shopping assistant for EasyMO.
-
-Your responsibilities:
-- Help users discover products and services
-- Assist with searches and recommendations
-- Provide product information and pricing
-- Guide through purchasing process
-- Handle orders and deliveries
-
-Guidelines:
-- Show relevant products based on user needs
-- Provide clear pricing and delivery info
-- Explain payment options
-- Assist with order tracking`,
-      temperature: 0.6,
-      maxTokens: 500,
-      enabledTools: [
-        "search_marketplace",
-        "get_product_details",
-        "create_order",
-        "track_order",
-      ],
-      priority: 3,
-      triggers: [
-        "shop",
-        "buy",
-        "product",
-        "marketplace",
-        "store",
-        "order",
-        "delivery",
-        "price",
-      ],
-    });
-
-    // General Agent (fallback)
-    this.registerAgent({
-      id: "general-agent-01",
-      type: "general",
-      name: "General Assistant",
-      systemPrompt: `You are a general assistant for EasyMO.
-
-Handle general queries and route users to specialized services:
-- Greetings and small talk
-- General information about EasyMO
-- Guidance to specific services (booking, wallet, marketplace)
-- FAQs and common questions
-
-If user needs specific help:
-- Booking: "I can help you book a trip. Where would you like to go?"
-- Wallet: "I can help with your wallet. What would you like to do?"
-- Shopping: "Check out our marketplace for products and services."
-- Support: "I'll connect you with our support team."
-
-Keep responses friendly, brief, and helpful.`,
-      temperature: 0.8,
-      maxTokens: 400,
-      enabledTools: ["get_user_info", "search_help_articles"],
-      priority: 10, // Lowest priority (fallback)
-      triggers: [], // Catches everything not matched by other agents
-    });
-
-    logStructuredEvent("AGENT_ORCHESTRATOR_INITIALIZED", {
+    logStructuredEvent("agent_orchestrator_initialized", {
       agent_count: this.agents.size,
       agent_types: Array.from(this.agents.keys()),
     });
@@ -496,18 +293,6 @@ Respond with just the category name (e.g., "booking").`,
       agent_type: agentType,
       latency_ms: latencyMs,
       tokens_used: response.usage.total_tokens,
-      cost_usd: response.cost_usd,
-      tool_calls: toolCallsExecuted,
-    });
-
-    return await this.attachTemplateMetadata(context, agentType, {
-      text: response.text || "I apologize, I couldn't generate a response.",
-      agentType,
-      tokensUsed: response.usage.total_tokens,
-      costUsd: response.cost_usd,
-      latencyMs,
-      toolCallsExecuted,
-      confidence: 0.9,
       sessionData: {
         last_agent: agentType,
         last_topic: this.extractTopic(context.currentMessage),

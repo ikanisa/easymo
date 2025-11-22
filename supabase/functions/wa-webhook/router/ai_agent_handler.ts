@@ -4,6 +4,7 @@
  * Routes WhatsApp messages to AI agents for intelligent processing
  * Falls back to existing handlers if AI is not applicable
  * 
+ *
  * This handler respects the additive-only guards by:
  * - Being a completely new file
  * - Not modifying existing handlers
@@ -12,7 +13,7 @@
 
 import type { SupabaseClient } from "../../_shared/supabase.ts";
 import type { WhatsAppMessage } from "../types.ts";
-import type { ChatState } from "../state/store.ts";
+import type { ChatState } from "../state/chat_state.ts";
 import type { RouterContext } from "../types.ts";
 import type {
   DetectionResult,
@@ -21,7 +22,7 @@ import type {
 
 import { buildAgentContext, saveAgentInteraction, type AgentContext } from "../shared/agent_context.ts";
 import { logStructuredEvent } from "../observe/log.ts";
-import { sendText, sendTemplateMessage } from "../rpc/whatsapp.ts";
+import { sendText as sendRpcText, sendTemplateMessage } from "../rpc/whatsapp.ts";
 import { fetchFeatureFlag } from "../../_shared/feature-flags.ts";
 import { AdvancedRateLimiter } from "../shared/advanced_rate_limiter.ts";
 import { getConfig } from "../shared/config_manager.ts";
@@ -29,6 +30,16 @@ import { getMetricsAggregator, type RequestMetrics } from "../shared/metrics_agg
 import { maskE164 } from "../utils/text.ts";
 import type { ApprovedTemplate } from "../shared/template_registry.ts";
 import type { AgentResponse as OrchestratorAgentResponse } from "../shared/agent_orchestrator.ts";
+
+// Chat-first integration imports
+import { parseEmojiSelection, isSelectionMessage } from "../shared/message_formatter.ts";
+import { formatAgentResponse } from "../shared/response_formatter.ts";
+import {
+  getAgentChatSession,
+  saveAgentChatSession,
+  updateSessionSelection,
+  type AgentChatSession,
+} from "../shared/agent_session.ts";
 
 /**
  * Feature flag for AI agent system
@@ -151,12 +162,43 @@ export async function tryAIAgentHandler(
       return true; // Handled (rejected)
     }
 
-    await logStructuredEvent("AI_AGENT_REQUEST_START", {
+      await logStructuredEvent("AI_AGENT_REQUEST_START", {
       correlation_id: correlationId,
       msisdn_masked: maskedMsisdn,
       message_type: msg.type,
       rate_limit_remaining: rateLimitResult.remaining,
     });
+    
+    // Check for emoji selection from previous agent interaction
+    let sessionData: AgentChatSession | null = null;
+    let selectedOption: number | null = null;
+    
+    if (msg.type === "text" && msg.text?.body) {
+      sessionData = await getAgentChatSession(ctx.supabase, msg.from);
+      
+      if (sessionData && isSelectionMessage(msg.text.body)) {
+        selectedOption = parseEmojiSelection(
+          msg.text.body,
+          sessionData.options_presented?.length || 0
+        );
+        
+        if (selectedOption) {
+          await logStructuredEvent("AGENT_OPTION_SELECTED", {
+            correlation_id: correlationId,
+            agent_type: sessionData.agent_type,
+            selection: selectedOption,
+            session_id: sessionData.session_id,
+          });
+          
+          // Update session with selection
+          await updateSessionSelection(
+            ctx.supabase,
+            sessionData.session_id,
+            selectedOption
+          );
+        }
+      }
+    }
     
     // Build agent context
     const toneLocale: ToneLocale = (ctx.toneLocale ?? (ctx.locale === "sw" ? "sw" : "en")) as ToneLocale;
@@ -182,6 +224,16 @@ export async function tryAIAgentHandler(
         correlation_id: correlationId,
       });
       return false;
+    }
+    
+    // Add selection context if available
+    if (selectedOption && sessionData) {
+      agentContext.sessionData = {
+        ...agentContext.sessionData,
+        selected_option: selectedOption,
+        previous_options: sessionData.options_presented,
+        previous_agent: sessionData.agent_type,
+      };
     }
     
     // Process with AI agent
@@ -232,15 +284,76 @@ export async function tryAIAgentHandler(
       });
     }
 
-    if (deliveredVia === "text") {
-      await sendText(ctx.supabase, msg.from, {
-        body: response.text,
-        correlationId,
-        audit: {
-          delivery: "text",
-          agent_type: response.agentType,
-          template_key: response.approvedTemplate?.templateKey ?? null,
-        },
+    
+    // Format response with emoji lists and action buttons
+    const formattedResponse = formatAgentResponse(response, agentContext);
+    
+    await logStructuredEvent("AGENT_RESPONSE_FORMATTED", {
+      correlation_id: correlationId,
+      agent_type: formattedResponse.agentType,
+      has_options: !!formattedResponse.optionsPresented,
+      options_count: formattedResponse.optionsPresented?.length || 0,
+      has_buttons: !!formattedResponse.actionButtons,
+      buttons_count: formattedResponse.actionButtons?.length || 0,
+    });
+
+    // Send response with buttons if available
+    try {
+      if (formattedResponse.actionButtons && formattedResponse.actionButtons.length > 0) {
+        // Send as interactive button message
+        await sendRpcText(ctx.supabase, msg.from, {
+          body: formattedResponse.text,
+          correlationId,
+          audit: {
+            delivery: "text_with_context",
+            agent_type: formattedResponse.agentType,
+            has_options: !!formattedResponse.optionsPresented,
+          },
+        });
+        
+        await logStructuredEvent("AGENT_RESPONSE_SENT_WITH_BUTTONS", {
+          correlation_id: correlationId,
+          agent_type: formattedResponse.agentType,
+          button_count: formattedResponse.actionButtons.length,
+        });
+      } else {
+        // Send as regular text
+        await sendRpcText(ctx.supabase, msg.from, {
+          body: formattedResponse.text,
+          correlationId,
+          audit: {
+            delivery: "text",
+            agent_type: formattedResponse.agentType,
+          },
+        });
+        
+        await logStructuredEvent("AGENT_RESPONSE_SENT", {
+          correlation_id: correlationId,
+          agent_type: formattedResponse.agentType,
+        });
+      }
+    } catch (sendError) {
+      await logStructuredEvent("AGENT_RESPONSE_SEND_FAILED", {
+        correlation_id: correlationId,
+        error: sendError instanceof Error ? sendError.message : String(sendError),
+      });
+      return false;
+    }
+
+    // Save agent chat session if options were presented
+    if (formattedResponse.optionsPresented && formattedResponse.optionsPresented.length > 0) {
+      await saveAgentChatSession(ctx.supabase, {
+        user_id: agentContext.userId,
+        agent_type: formattedResponse.agentType,
+        session_id: correlationId,
+        options_presented: formattedResponse.optionsPresented,
+        message_count: 1,
+      });
+      
+      await logStructuredEvent("AGENT_SESSION_SAVED", {
+        correlation_id: correlationId,
+        agent_type: formattedResponse.agentType,
+        options_count: formattedResponse.optionsPresented.length,
       });
     }
 
