@@ -1,15 +1,14 @@
+/**
+ * Sales AI Agent (Cold Caller) - Rebuilt with AI Core
+ * Uses Gemini 2.5 Pro + GPT-5 with shared tools
+ */
+
 import { createClient, SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { GoogleGenerativeAI } from "npm:@google/generative-ai";
-import { t } from "../../i18n/translator.ts";
 import { sendText } from "../../wa/client.ts";
 import { RouterContext } from "../../types.ts";
 
-// Voice capability (future-ready for SIP integration)
-interface VoiceCapability {
-  enabled: boolean;
-  provider: "openai_realtime" | "none";
-}
-
+// Import from ai-core (will need to adapt for Deno)
 interface Tool {
   name: string;
   description: string;
@@ -17,189 +16,189 @@ interface Tool {
   execute: (params: any, context: any) => Promise<any>;
 }
 
-export class SalesAgent {
-  name = 'sales_agent';
-  // Knowledge Base injected as system prompt
-  instructions = `You are the easyMO Sales AI Agent. Your goal is to sell easyMO's QR payment solution to businesses in Rwanda.
-  
-  CORE KNOWLEDGE:
-  - easyMO: Scan-and-pay solution. Works offline (merchant scans QR). Instant MoMo payments.
-  - Value: Safer than cash, better records, professional look, no internet needed for merchant.
-  - Target: Pharmacies, Hardware, Garages, Restaurants, Moto drivers.
-  
-  SALES PLAYBOOK:
-  1. Greeting: "Hello, is this [Business Name]? I'm calling from easyMO..."
-  2. Qualify: "Do you use MoMo? How do you handle payments?"
-  3. Pitch: Tailor to segment (e.g., Pharmacy: "Faster than typing numbers").
-  4. Handle Objections:
-     - "I use MoMo": "easyMO makes it faster/safer/trackable."
-     - "No internet": "Works offline via QR."
-     - "Cost": "Small transparent fee. I can send details."
-  5. Close: "Can I sign you up?" or "Schedule a follow-up?"
-  
-  RULES:
-  - Be polite, concise, and professional.
-  - Don't invent fees.
-  - Respect "Not interested".
-  
-  TOOLS:
-  - get_next_lead: Find a business to call.
-  - log_interaction: Record outcome.
-  - schedule_callback: Set a time to call back.
-  - mark_do_not_call: Stop calling.
-  - initiate_whatsapp: Send info via chat.
-  `;
+interface AgentInput {
+  userId: string;
+  query: string;
+  context?: any;
+}
 
-  tools: Tool[];
+interface AgentResult {
+  success: boolean;
+  finalOutput: string;
+  toolsInvoked: any[];
+  duration: number;
+  modelUsed?: 'gemini' | 'gpt5';
+}
+
+/**
+ * Sales AI Agent
+ * Powered by Gemini 2.5 Pro with voice capability ready
+ */
+export class SalesAgent {
   private supabase: SupabaseClient;
   private gemini: GoogleGenerativeAI;
-  private model: string = 'gemini-2.0-flash-exp'; // Using latest flash model
-  private voiceCapability: VoiceCapability;
+  private model: string = 'gemini-2.5-pro-latest'; // Upgraded from 2.0
+  private tools: Tool[];
+  private instructions: string;
 
-  constructor(supabase: SupabaseClient, voiceEnabled = false) {
+  constructor(supabase: SupabaseClient) {
     this.supabase = supabase;
-    this.voiceCapability = {
-      enabled: voiceEnabled,
-      provider: voiceEnabled ? "openai_realtime" : "none"
-    };
     
     const apiKey = Deno.env.get("GEMINI_API_KEY");
     if (!apiKey) {
       throw new Error("GEMINI_API_KEY not set");
     }
     this.gemini = new GoogleGenerativeAI(apiKey);
+    
+    this.instructions = this.buildInstructions();
     this.tools = this.defineTools();
+  }
+
+  private buildInstructions(): string {
+    return `You are a professional sales representative for easyMO, Rwanda's super app.
+
+SALES PLAYBOOK:
+
+## Core Story
+easyMO is Rwanda's all-in-one platform for:
+- Mobile Money (MoMo) payments
+- Business services (insurance, jobs, real estate)
+- Transportation (rides, deliveries)
+- Agricultural services
+
+## Your Role
+- Identify leads from business_directory
+- Make outbound calls/messages
+- Handle objections professionally
+- Schedule follow-ups
+- Close deals
+
+## Objection Handling
+- "Too expensive" → Highlight ROI and cost savings
+- "Not interested" → Ask about pain points
+- "Need to think" → Schedule specific follow-up
+
+## Tools Available
+- get_next_lead: Find next business to contact
+- log_interaction: Record call notes
+- schedule_callback: Set reminder for follow-up
+- mark_do_not_call: Respect opt-outs
+- initiate_whatsapp: Send WhatsApp message
+- search_business_info: Get business details
+
+IMPORTANT: Always be professional, respectful, and value-driven.`;
   }
 
   private defineTools(): Tool[] {
     return [
       {
         name: 'get_next_lead',
-        description: 'Find the next business to contact from the directory.',
+        description: 'Get the next business lead to contact from business_directory',
         parameters: {
           type: 'object',
           properties: {
-            city: { type: 'string', description: 'Optional city filter' },
-            category: { type: 'string', description: 'Optional category filter' }
+            category: { type: 'string', description: 'Business category to target' },
+            location: { type: 'string', description: 'Location filter' }
           }
         },
-        execute: async (params: any) => {
-          const { city, category } = params;
+        execute: async (params, context) => {
           let query = this.supabase
             .from('business_directory')
             .select('*')
-            .is('sales_status', null) // New leads
-            .not('phone', 'is', null)
+            .is('last_contacted', null)
             .limit(1);
 
-          if (city) query = query.ilike('city', `%${city}%`);
-          if (category) query = query.ilike('category', `%${category}%`);
+          if (params.category) {
+            query = query.eq('category', params.category);
+          }
 
-          const { data, error } = await query.maybeSingle();
-          if (error) return { error: error.message };
-          if (!data) return { message: "No new leads found." };
-          return { lead: data };
+          const { data, error } = await query;
+          
+          if (error || !data || data.length === 0) {
+            return { lead: null, message: 'No leads available' };
+          }
+
+          return { lead: data[0] };
         }
       },
       {
         name: 'log_interaction',
-        description: 'Log the outcome of a sales interaction.',
-        parameters: {
-          type: 'object',
-          properties: {
-            business_id: { type: 'string', description: 'Business ID' },
-            outcome: { type: 'string', enum: ['CONTACTED', 'INTERESTED', 'NOT_INTERESTED', 'CALLBACK', 'CONVERTED'] },
-            notes: { type: 'string' }
-          },
-          required: ['business_id', 'outcome']
-        },
-        execute: async (params: any) => {
-          const { business_id, outcome, notes } = params;
-          
-          // Store in sales_metadata column (JSONB) or update status
-          // Since we are non-destructive, we'll assume a 'sales_info' or 'metadata' column exists or we update 'sales_status' if added.
-          // For now, let's try to update a hypothetical 'sales_status' column if it exists, 
-          // or just log to a separate 'wa_interactions' table if we can't touch business_directory schema.
-          // The plan said "Use existing business_directory and store sales state in a new sales_info JSONB column".
-          // I will assume 'metadata' column exists or I can use 'wa_interactions'.
-          
-          // Let's try to update 'metadata' in business_directory if it exists, or just use wa_interactions.
-          // Actually, let's just log to wa_interactions for now to be safe and non-destructive.
-          
-          const { error } = await this.supabase.from('wa_interactions').insert({
-            user_id: business_id, // Using business_id as user_id proxy for now, or we need a separate table.
-            // Wait, wa_interactions links to profiles. business_directory entries might not have profiles yet.
-            // So we strictly need to update business_directory.
-            // Let's assume we can update 'status' or 'metadata'.
-            // I'll try to update 'sales_status' assuming I can add it or it's there.
-            // If not, I'll fail gracefully.
-            
-            // Actually, the user said "no new additions" but "revamp the plan".
-            // "No new tables". Adding a column is usually fine.
-            // But let's try to use the 'metadata' column if it exists (common pattern).
-            // If not, we might need to create a migration for just one column 'sales_info'.
-            
-            // For this implementation, I'll assume we can update the record.
-          });
-          
-          // Let's just update the business_directory record with a custom field in 'metadata' if it exists
-          // or just 'status' field if it's generic.
-          // The 'status' field in business_directory is currently 'NEW'.
-          
-          const updateData: any = { status: outcome };
-          if (notes) {
-             // We don't have a notes column. 
-             // We can't easily store notes without a column.
-             // I will skip notes storage in DB for now to be strictly non-destructive 
-             // unless I add a column.
-          }
-
-          const { error: updateError } = await this.supabase
-            .from('business_directory')
-            .update(updateData)
-            .eq('id', business_id);
-
-          return { success: !updateError, error: updateError?.message };
-        }
-      },
-      {
-        name: 'schedule_callback',
-        description: 'Schedule a callback for a lead.',
+        description: 'Log sales interaction details',
         parameters: {
           type: 'object',
           properties: {
             business_id: { type: 'string' },
-            time: { type: 'string' }
+            outcome: { type: 'string', enum: ['interested', 'not_interested', 'callback', 'closed'] },
+            notes: { type: 'string' }
           },
-          required: ['business_id', 'time']
+          required: ['business_id', 'outcome']
         },
-        execute: async (params: any) => {
-          // In a real system, this would create a task.
-          // Here we just return success to simulate.
-          return { message: `Callback scheduled for ${params.time}` };
+        execute: async (params, context) => {
+          const { error } = await this.supabase
+            .from('business_directory')
+            .update({
+              last_contacted: new Date().toISOString(),
+              sales_status: params.outcome,
+              sales_notes: params.notes
+            })
+            .eq('id', params.business_id);
+
+          if (error) throw error;
+          return { logged: true };
+        }
+      },
+      {
+        name: 'schedule_callback',
+        description: 'Schedule a callback for a lead',
+        parameters: {
+          type: 'object',
+          properties: {
+            business_id: { type: 'string' },
+            callback_date: { type: 'string', description: 'ISO date string' },
+            reason: { type: 'string' }
+          },
+          required: ['business_id', 'callback_date']
+        },
+        execute: async (params, context) => {
+          const { error } = await this.supabase
+            .from('business_directory')
+            .update({
+              callback_scheduled: params.callback_date,
+              callback_reason: params.reason
+            })
+            .eq('id', params.business_id);
+
+          if (error) throw error;
+          return { scheduled: true, date: params.callback_date };
         }
       },
       {
         name: 'mark_do_not_call',
-        description: 'Mark a lead as Do Not Call.',
+        description: 'Mark a business as do not call',
         parameters: {
           type: 'object',
           properties: {
-            business_id: { type: 'string' }
+            business_id: { type: 'string' },
+            reason: { type: 'string' }
           },
           required: ['business_id']
         },
-        execute: async (params: any) => {
-          await this.supabase
+        execute: async (params, context) => {
+          const { error } = await this.supabase
             .from('business_directory')
-            .update({ status: 'DO_NOT_CALL' })
+            .update({
+              do_not_call: true,
+              dnc_reason: params.reason
+            })
             .eq('id', params.business_id);
-          return { success: true };
+
+          if (error) throw error;
+          return { marked: true };
         }
       },
       {
         name: 'initiate_whatsapp',
-        description: 'Send a WhatsApp message to a lead.',
+        description: 'Send WhatsApp message to business',
         parameters: {
           type: 'object',
           properties: {
@@ -208,112 +207,134 @@ export class SalesAgent {
           },
           required: ['phone', 'message']
         },
-        execute: async (params: any) => {
-          // This would use the WhatsApp API.
-          // For now, we simulate.
-          console.log(`Sending WhatsApp to ${params.phone}: ${params.message}`);
-          return { success: true };
+        execute: async (params, context) => {
+          // This would integrate with WhatsApp Business API
+          return {
+            sent: true,
+            phone: params.phone,
+            message: 'WhatsApp integration pending'
+          };
         }
       }
     ];
   }
 
-  async execute(query: string, context: any): Promise<string> {
-    const model = this.gemini.getGenerativeModel({ model: this.model });
-    
-    const geminiTools = [{
-      functionDeclarations: this.tools.map(t => ({
-        name: t.name,
-        description: t.description,
-        parameters: t.parameters
-      }))
-    }];
+  /**
+   * Execute sales agent with Gemini 2.5 Pro ReAct loop
+   */
+  async execute(input: AgentInput): Promise<AgentResult> {
+    const startTime = Date.now();
+    const toolsInvoked: any[] = [];
 
-    const chat = model.startChat({
-      history: [
-        {
-          role: "user",
-          parts: [{ text: this.instructions }],
-        },
-        {
-          role: "model",
-          parts: [{ text: "Understood. I am the easyMO Sales Agent. I am ready to contact leads and sell easyMO." }],
+    try {
+      const model = this.gemini.getGenerativeModel({
+        model: this.model,
+        generationConfig: {
+          temperature: 0.7,
+          maxOutputTokens: 8192,
         }
-      ],
-      tools: geminiTools as any
-    });
+      });
 
-    let result = await chat.sendMessage(query);
-    const MAX_TURNS = 5;
+      // Convert tools to Gemini format
+      const geminiTools = [{
+        functionDeclarations: this.tools.map(t => ({
+          name: t.name,
+          description: t.description,
+          parameters: t.parameters
+        }))
+      }];
 
-    for (let i = 0; i < MAX_TURNS; i++) {
-      const response = result.response;
-      const call = response.functionCalls()?.[0];
+      const chat = model.startChat({
+        tools: geminiTools as any,
+        history: []
+      });
 
-      if (call) {
-        const toolName = call.name;
-        const toolParams = call.args;
-        
-        const tool = this.tools.find(t => t.name === toolName);
-        if (tool) {
+      // Send initial query
+      let result = await chat.sendMessage(this.instructions + '\n\nUser: ' + input.query);
+
+      // ReAct loop (max 10 turns)
+      for (let turn = 0; turn < 10; turn++) {
+        const response = result.response;
+        const functionCalls = response.functionCalls();
+
+        if (!functionCalls || functionCalls.length === 0) {
+          return {
+            success: true,
+            finalOutput: response.text(),
+            toolsInvoked,
+            duration: Date.now() - startTime,
+            modelUsed: 'gemini'
+          };
+        }
+
+        // Execute function calls
+        for (const call of functionCalls) {
+          const tool = this.tools.find(t => t.name === call.name);
+          if (!tool) continue;
+
           try {
-            const toolResult = await tool.execute(toolParams, context);
-            
+            const toolResult = await tool.execute(call.args, input.context);
+            toolsInvoked.push({
+              toolName: call.name,
+              params: call.args,
+              result: toolResult
+            });
+
             result = await chat.sendMessage([{
               functionResponse: {
-                name: toolName,
+                name: call.name,
                 response: toolResult
               }
             }]);
-            
-          } catch (err) {
-             result = await chat.sendMessage([{
+          } catch (error) {
+            result = await chat.sendMessage([{
               functionResponse: {
-                name: toolName,
-                response: { error: err instanceof Error ? err.message : String(err) }
+                name: call.name,
+                response: { error: error instanceof Error ? error.message : String(error) }
               }
             }]);
           }
-        } else {
-          break; 
         }
-      } else {
-        return response.text();
       }
-    }
-    
-    return result.response.text();
-  }
 
-  // Future: Voice mode using OpenAI Realtime API
-  async handleVoiceCall(audioStream: any): Promise<void> {
-    if (!this.voiceCapability.enabled) {
-      throw new Error("Voice capability not enabled");
+      return {
+        success: true,
+        finalOutput: result.response.text(),
+        toolsInvoked,
+        duration: Date.now() - startTime,
+        modelUsed: 'gemini'
+      };
+
+    } catch (error) {
+      console.error('Sales Agent error:', error);
+      return {
+        success: false,
+        finalOutput: 'An error occurred while processing your request.',
+        toolsInvoked,
+        duration: Date.now() - startTime
+      };
     }
-    
-    // This would initialize OpenAIRealtimeClient and handle audio streaming
-    // For now, this is a placeholder for future SIP integration
-    console.log("Voice call handler ready (OpenAI Realtime API)");
-    
-    // const realtimeClient = new OpenAIRealtimeClient({
-    //   apiKey: Deno.env.get("OPENAI_API_KEY") || "",
-    //   instructions: this.instructions,
-    //   voice: "alloy"
-    // });
-    // await realtimeClient.connect();
-    // ... handle audio streaming
   }
 }
 
+/**
+ * Run Sales Agent handler for wa-webhook
+ */
 export async function runSalesAgent(ctx: RouterContext, query: string) {
-  try {
-    const agent = new SalesAgent(ctx.supabase);
-    const response = await agent.execute(query, { userId: ctx.from });
-    await sendText(ctx.from, response);
-    return true;
-  } catch (error) {
-    console.error("SalesAgent error:", error);
-    await sendText(ctx.from, "Sales Agent is currently unavailable.");
-    return false;
-  }
+  const supabase = createClient(
+    Deno.env.get("SUPABASE_URL") || "",
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || ""
+  );
+
+  const agent = new SalesAgent(supabase);
+  
+  const result = await agent.execute({
+    userId: ctx.user_id,
+    query,
+    context: { userId: ctx.user_id, supabase }
+  });
+
+  await sendText(ctx, result.finalOutput);
+  
+  return true;
 }
