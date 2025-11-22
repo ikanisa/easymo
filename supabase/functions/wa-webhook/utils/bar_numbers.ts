@@ -387,20 +387,19 @@ function inferCountryAndCurrency(
 function guessByDialCode(
   number: string,
 ): { country?: string; currency?: string } {
+  // Supported countries only
   if (number.startsWith("+250")) {
     return { country: "Rwanda", currency: "RWF" };
   }
-  if (number.startsWith("+356")) {
-    return { country: "Malta", currency: "EUR" };
+  if (number.startsWith("+257")) {
+    return { country: "Burundi", currency: "BIF" };
   }
-  if (number.startsWith("+254")) {
-    return { country: "Kenya", currency: "KES" };
+  if (number.startsWith("+255")) {
+    return { country: "Tanzania", currency: "TZS" };
   }
-  if (number.startsWith("+233")) {
-    return { country: "Ghana", currency: "GHS" };
+  if (number.startsWith("+243")) {
+    return { country: "Congo DRC", currency: "CDF" };
   }
-  if (number.startsWith("+234")) {
-    return { country: "Nigeria", currency: "NGN" };
-  }
-  return {};
+  // Default to Rwanda
+  return { country: "Rwanda", currency: "RWF" };
 }

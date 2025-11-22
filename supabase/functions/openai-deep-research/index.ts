@@ -587,8 +587,8 @@ async function fetchSerpAPIProperties(country: string, city?: string): Promise<R
       const countryCode = country === "Rwanda" ? "rw" : 
                          country === "Malta" ? "mt" :
                          country === "Tanzania" ? "tz" :
-                         country === "Kenya" ? "ke" :
-                         country === "Uganda" ? "ug" : "us";
+                         country === "Tanzania" ? "tz" :
+                         country === "Burundi" ? "bi" : country === "Congo DRC" ? "cd" : "rw";
       
       const response = await fetch(
         `https://serpapi.com/search?` + new URLSearchParams({
@@ -763,8 +763,8 @@ function normalizePhoneNumber(phone: string, country: string): string | null {
     "Rwanda": "+250",
     "Malta": "+356",
     "Tanzania": "+255",
-    "Kenya": "+254",
-    "Uganda": "+256",
+    "Tanzania": "+255",
+    "Burundi": "+257",
     "Burundi": "+257"
   };
 
@@ -807,8 +807,8 @@ function getCurrencyForCountry(country: string): string {
     "Rwanda": "RWF",
     "Malta": "EUR",
     "Tanzania": "TZS",
-    "Kenya": "KES",
-    "Uganda": "UGX",
+    "Tanzania": "TZS",
+    "Burundi": "BIF",
     "Burundi": "BIF"
   };
   return currencyMap[country] || "USD";
