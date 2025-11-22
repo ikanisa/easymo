@@ -8,6 +8,8 @@ import { AppProviders } from "@/components/providers/AppProviders";
 import { QueryProvider } from "@/app/providers/QueryProvider";
 import { cssVariableSheet } from "@easymo/ui/tokens";
 import { isUiKitEnabled } from "@/lib/ui-kit";
+import { ToastProvider } from '@/components/ui/toast';
+import { ErrorBoundary } from '@/components/ui/error-boundary';
 
 export const metadata: Metadata = {
   title: "easyMO Admin Panel",
