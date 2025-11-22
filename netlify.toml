@@ -40,3 +40,8 @@
 # Plugin configuration
 [[plugins]]
   package = "@netlify/plugin-nextjs"
+
+[[plugins]]
+  package = "netlify-plugin-no-more-404"
+  [plugins.inputs]
+    on404 = "warn"
