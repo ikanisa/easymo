@@ -140,16 +140,29 @@ async function runGeminiOCR(signedUrl: string): Promise<Record<string, unknown>>
 
 export async function runInsuranceOCR(
   signedUrl: string,
+  mimeType?: string,
 ): Promise<Record<string, unknown>> {
+  // If PDF, prefer Gemini directly for better reliability
+  const lowerMime = (mimeType || '').toLowerCase();
+  const isPdf = lowerMime.includes('pdf') || /\.pdf(\?|$)/i.test(signedUrl);
+  if (isPdf) {
+    try {
+      return await runGeminiOCR(signedUrl);
+    } catch (geminiError) {
+      console.error('INS_OCR_PDF_GEMINI_FAIL', geminiError);
+      // fall through to OpenAI attempt (may fail for pdf)
+    }
+  }
   // Try OpenAI first
   try {
     if (!OPENAI_API_KEY) {
+      console.warn("INS_OCR_OPENAI_KEY_MISSING", { fallback: "gemini" });
       throw new MissingOpenAIKeyError();
     }
 
     const payload = {
       model: OPENAI_VISION_MODEL,
-      input: [
+      messages: [
         {
           role: "system",
           content: "You are an expert insurance document parser.",
@@ -157,17 +170,17 @@ export async function runInsuranceOCR(
         {
           role: "user",
           content: [
-            { type: "input_text", text: OCR_PROMPT },
+            { type: "text", text: OCR_PROMPT },
             {
-              type: "input_image",
-              image_url: signedUrl,
+              type: "image_url",
+              image_url: { url: signedUrl },
             },
           ],
         },
       ],
-      text: {
-        format: {
-          type: "json_schema",
+      response_format: {
+        type: "json_schema",
+        json_schema: {
           name: OCR_SCHEMA_NAME,
           schema: OCR_JSON_SCHEMA,
         },
@@ -184,7 +197,7 @@ export async function runInsuranceOCR(
           model: OPENAI_VISION_MODEL,
           attempt: attempt + 1,
         });
-        const response = await fetch(`${OPENAI_BASE_URL}/responses`, {
+        const response = await fetch(`${OPENAI_BASE_URL}/chat/completions`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -211,27 +224,19 @@ export async function runInsuranceOCR(
         }
 
         const json = await response.json();
-        const helperContent = resolveOpenAiResponseText(json);
-        if (helperContent && helperContent.trim().length) {
-          console.info("INS_OCR_HELPER_OK", {
-            preview: helperContent.slice(0, 120),
-          });
+        
+        // Extract content from OpenAI chat completion response
+        const messageContent = json?.choices?.[0]?.message?.content;
+        
+        if (!messageContent || typeof messageContent !== 'string') {
+          console.error("INS_OCR_NO_CONTENT", { response: JSON.stringify(json).slice(0, 200) });
+          throw new Error("OpenAI response missing message content");
         }
-        if (helperContent && helperContent.trim().length) {
-          return JSON.parse(helperContent);
-        }
-        const resolved =
-          typeof json?.output_text === "string" && json.output_text.trim().length
-            ? json.output_text
-            : extractContentText(
-              json?.output?.[0]?.content ?? json?.choices?.[0]?.message?.content,
-            );
-        if (!resolved) {
-          console.error("INS_OCR_NO_TEXT");
-          throw new Error("OpenAI response missing content");
-        }
-        console.info("INS_OCR_RESOLVED_OK", { preview: resolved.slice(0, 120) });
-        const parsed = JSON.parse(resolved);
+        
+        console.info("INS_OCR_RESOLVED_OK", { preview: messageContent.slice(0, 120) });
+        
+        // Parse the JSON response
+        const parsed = JSON.parse(messageContent);
         return parsed;
       } catch (error) {
         clearTimeout(timeout);

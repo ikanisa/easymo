@@ -35,6 +35,24 @@ async function upsertLead(
   ctx: RouterContext,
   userId: string | null,
 ): Promise<{ id: string }> {
+  // Try to reuse a recent open lead within 15 minutes
+  try {
+    const fifteenMinAgo = new Date(Date.now() - 15 * 60 * 1000).toISOString();
+    const { data: recent } = await ctx.supabase
+      .from('insurance_leads')
+      .select('id, created_at, status')
+      .gte('created_at', fifteenMinAgo)
+      .eq('whatsapp', ctx.from)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (recent?.id) {
+      return { id: recent.id };
+    }
+  } catch (_) {
+    // non-fatal
+  }
+
   const basePayload: Record<string, unknown> = { status: "received" };
   if (userId) basePayload.user_id = userId;
   const includeWhatsApp = { ...basePayload, whatsapp: ctx.from };
@@ -119,6 +137,17 @@ async function updateLead(
     leadId,
     status: patch.status,
   });
+}
+
+function mergeExtractions(oldVal: any, newVal: any) {
+  const out: Record<string, any> = { ...(oldVal || {}) };
+  const src = newVal || {};
+  for (const key of Object.keys(src)) {
+    if (src[key] !== null && src[key] !== undefined && String(src[key]).trim() !== '') {
+      out[key] = src[key];
+    }
+  }
+  return out;
 }
 
 async function markLeadError(
@@ -251,7 +280,7 @@ async function maybeEnqueueForWorker(
   }
   try {
     // Fire-and-forget: attempt to wake the worker; ignore errors
-    await sharedSupabase.functions.invoke("ocr-processor");
+    await sharedSupabase.functions.invoke("insurance-ocr");
   } catch (_err) {
     /* noop */
   }
@@ -312,13 +341,26 @@ export async function processInsuranceDocument(
     const started = performance.now();
     const rawOcr = await (async () => {
       ocrAttempted = true;
-      return await runInsuranceOCR(signedUrl);
+      return await runInsuranceOCR(signedUrl, media.mime);
     })();
     const duration = Math.round(performance.now() - started);
     console.info("INS_OCR_OK", { leadId, ms: duration });
     await logStructuredEvent("INS_OCR_OK", { leadId, ms: duration });
 
     const extracted = normalizeInsuranceExtraction(rawOcr);
+
+    // Merge with existing extraction if present (multi-page aggregation)
+    try {
+      const { data: current } = await ctx.supabase
+        .from('insurance_leads')
+        .select('extracted')
+        .eq('id', leadId)
+        .maybeSingle();
+      if (current?.extracted) {
+        const merged = mergeExtractions(current.extracted, extracted);
+        (patch as any) = { ...patch, extracted: merged };
+      }
+    } catch (_) { /* non-fatal */ }
 
     await updateLead(ctx, leadId, {
       file_path: path,
@@ -398,51 +440,47 @@ export async function processInsuranceDocument(
  * Handle insurance help request - show admin contacts
  */
 export async function handleInsuranceHelp(ctx: RouterContext): Promise<boolean> {
-  const { sendButtonsMessage, homeOnly } = await import("../../utils/reply.ts");
+  const { sendListMessage } = await import("../../utils/reply.ts");
   const { IDS } = await import("../../wa/ids.ts");
   
-  // Fetch insurance admin contacts from database
   const { data: contacts } = await ctx.supabase
     .from('insurance_admin_contacts')
-    .select('*')
+    .select('id, contact_type, contact_value, display_name, is_active')
     .eq('is_active', true)
     .order('display_order');
 
   if (!contacts || contacts.length === 0) {
-    await sendButtonsMessage(
+    await sendListMessage(
       ctx,
-      "Insurance support contacts are currently unavailable. Please try again later.",
-      homeOnly()
+      {
+        title: '🏥 Insurance Support',
+        body: 'Insurance support contacts are currently unavailable. Please try again later.',
+        sectionTitle: 'Support',
+        rows: [{ id: IDS.BACK_MENU, title: 'Back' }],
+        buttonText: 'Open'
+      },
+      { emoji: '🏥' }
     );
     return true;
   }
 
-  // Build contact list message
-  const contactList = contacts
-    .map((c: any) => `${c.display_name}: ${c.contact_value}`)
-    .join('\n');
+  const rows = contacts
+    .filter((c: any) => String(c.contact_type || '').toLowerCase() === 'whatsapp')
+    .map((c: any) => ({ id: `insurance_contact_${c.id}`, title: c.display_name.substring(0, 24), description: c.contact_value }))
+    .slice(0, 10);
 
-  const message = `🏥 *Motor Insurance Support*\n\n` +
-    `Contact our insurance team for help:\n\n${contactList}\n\n` +
-    `Tap a contact to start chatting on WhatsApp.`;
+  await sendListMessage(
+    ctx,
+    {
+      title: '🏥 Insurance Support',
+      body: 'Contact our support team for assistance. Tap a contact below to start chatting on WhatsApp.',
+      sectionTitle: 'Contacts',
+      rows: [...rows, { id: IDS.BACK_MENU, title: 'Back to Menu' }],
+      buttonText: 'Choose'
+    },
+    { emoji: '🏥' }
+  );
 
-  // Build contact buttons (max 3)
-  const buttons = contacts.slice(0, 3).map((contact: any) => ({
-    id: `insurance_contact_${contact.id}`,
-    title: contact.display_name.substring(0, 20) // WhatsApp button limit
-  }));
-
-  buttons.push({
-    id: IDS.BACK_MENU,
-    title: "Back to Menu"
-  });
-
-  await sendButtonsMessage(ctx, message, buttons, { emoji: "🏥" });
-  
-  await logStructuredEvent("INSURANCE_HELP_REQUESTED", {
-    profile_id: ctx.profileId,
-    wa_id: ctx.from
-  });
-
+  await logStructuredEvent('INSURANCE_HELP_REQUESTED', { profile_id: ctx.profileId, wa_id: ctx.from });
   return true;
 }

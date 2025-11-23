@@ -5,7 +5,7 @@ import { IDS } from "../../wa/ids.ts";
 import { setState } from "../../state/store.ts";
 import { t } from "../../i18n/translator.ts";
 import { toE164 } from "../../utils/phone.ts";
-import { listWalletPartners } from "../../rpc/wallet.ts";
+import { listWalletPartners, fetchWalletSummary } from "../../rpc/wallet.ts";
 
 type TransferState = {
   key: string;
@@ -20,8 +20,13 @@ export async function startWalletTransfer(ctx: RouterContext): Promise<boolean> 
   if (!ctx.profileId) return false;
   
   // Check balance - minimum 2000 tokens required
-  const { data: balance } = await ctx.supabase.rpc("wallet_get_balance", { p_user_id: ctx.profileId });
-  const currentBalance = typeof balance === "number" ? balance : 0;
+  let currentBalance = 0;
+  try {
+    const summary = await fetchWalletSummary(ctx.supabase, ctx.profileId);
+    currentBalance = Number(summary?.tokens ?? 0);
+  } catch (_) {
+    currentBalance = 0;
+  }
   
   if (currentBalance < 2000) {
     await sendButtonsMessage(
@@ -106,41 +111,61 @@ export async function handleWalletTransferText(
       return true;
     }
     try {
-      const { data: result, error } = await ctx.supabase.rpc(
-        "wallet_transfer_tokens",
-        {
-          p_sender: ctx.profileId,
-          p_recipient_whatsapp: data.to,
-          p_amount: amount,
-          p_idempotency_key: data.idem ?? crypto.randomUUID(),
-        },
-      );
-      if (error) throw error;
-      const row = Array.isArray(result) ? result[0] : result;
-      if (row?.success) {
+      // Resolve recipient profile by WhatsApp
+      const { data: recipient } = await ctx.supabase
+        .from("profiles")
+        .select("user_id")
+        .eq("whatsapp_e164", data.to as string)
+        .maybeSingle();
+      if (!recipient?.user_id) {
+        await sendButtonsMessage(ctx, "Recipient not found.", [{ id: IDS.WALLET, title: "💎 Wallet" }]);
+        return true;
+      }
+
+      // Enforce 2000-min eligibility and sufficient balance
+      let senderTokens = 0;
+      try {
+        const summary = await fetchWalletSummary(ctx.supabase, ctx.profileId);
+        senderTokens = Number(summary?.tokens ?? 0);
+      } catch (_) {}
+      if (senderTokens < 2000) {
+        await sendButtonsMessage(
+          ctx,
+          `⚠️ You need at least 2000 tokens to transfer. Your balance: ${senderTokens}.`,
+          [{ id: IDS.WALLET, title: "💎 Wallet" }],
+        );
+        return true;
+      }
+      if (amount > senderTokens) {
+        await sendButtonsMessage(
+          ctx,
+          `⚠️ Insufficient balance. You have ${senderTokens} tokens.`,
+          [{ id: IDS.WALLET, title: "💎 Wallet" }],
+        );
+        return true;
+      }
+
+      // Execute transfer via wallet_transfer (core engine)
+      const { data: result2, error: err2 } = await ctx.supabase.rpc("wallet_transfer", {
+        p_from: ctx.profileId,
+        p_to: recipient.user_id,
+        p_amount: amount,
+        p_reason: "transfer",
+        p_meta: { source: "wa_webhook", idempotency_key: data.idem ?? crypto.randomUUID() },
+      } as any);
+      if (err2) throw err2;
+      const ok = Array.isArray(result2) ? Boolean(result2[0]) : Boolean(result2);
+      if (ok) {
         await sendButtonsMessage(
           ctx,
           `✅ Sent ${amount} tokens to ${data.to}.`,
           [{ id: IDS.WALLET, title: "💎 Wallet" }],
         );
-
-        // Notify recipient
-        if (row.transfer_id) {
-           const { data: transfer } = await ctx.supabase
-             .from("wallet_transfers")
-             .select("recipient_profile")
-             .eq("id", row.transfer_id)
-             .single();
-             
-           if (transfer?.recipient_profile) {
-             notifyWalletTransferRecipient(ctx.supabase, transfer.recipient_profile, amount, "A friend").catch(console.error);
-           }
-        }
+        notifyWalletTransferRecipient(ctx.supabase, recipient.user_id, amount, "A friend").catch(console.error);
       } else {
-        const reason = row?.reason || "failed";
         await sendButtonsMessage(
           ctx,
-          `Transfer failed: ${reason}.`,
+          `Transfer failed.`,
           [{ id: IDS.WALLET, title: "💎 Wallet" }],
         );
       }

@@ -58,6 +58,12 @@ function getSupabaseClient(): SupabaseClient {
   return cachedClient;
 }
 
+function hasAnyOCRProvider(): boolean {
+  const hasOpenAI = Boolean(Deno.env.get("OPENAI_API_KEY"));
+  const hasGemini = Boolean(Deno.env.get("GEMINI_API_KEY"));
+  return hasOpenAI || hasGemini;
+}
+
 export async function handler(req: Request): Promise<Response> {
   if (req.method === "OPTIONS") {
     return new Response("ok", {
@@ -74,11 +80,13 @@ export async function handler(req: Request): Promise<Response> {
     return json({ error: "method_not_allowed" }, 405);
   }
 
-  if (!hasOpenAIKey()) {
+  // Require at least one OCR provider (OpenAI or Gemini)
+  if (!hasAnyOCRProvider()) {
     return json(
       {
-        error: "openai_key_missing",
-        message: "OPENAI_API_KEY not configured; skipping insurance OCR run.",
+        error: "no_ocr_provider",
+        message:
+          "Neither OPENAI_API_KEY nor GEMINI_API_KEY configured; cannot process OCR.",
       },
       503,
     );
@@ -191,7 +199,7 @@ async function processQueueRow(
 
   try {
     const signedUrl = await createSignedUrl(client, row.storage_path);
-    const raw = await runInsuranceOCR(signedUrl);
+    const raw = await runInsuranceOCR(signedUrl, row.mime_type ?? undefined);
     const normalized = normalizeInsuranceExtraction(raw);
 
     await client
@@ -333,6 +341,7 @@ function parsePositiveInt(
   return parsed;
 }
 
+// kept for backward compatibility if used elsewhere
 function hasOpenAIKey(): boolean {
   return Boolean(Deno.env.get("OPENAI_API_KEY"));
 }

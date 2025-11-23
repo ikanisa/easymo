@@ -140,6 +140,28 @@ export function walletBackRow(): WalletListRow {
   };
 }
 
+export async function showWalletBalance(ctx: RouterContext): Promise<boolean> {
+  if (!ctx.profileId) return false;
+  try {
+    const summary = await fetchWalletSummary(ctx.supabase, ctx.profileId);
+    const tokens = Number(summary?.tokens ?? 0);
+    const balanceMinor = Number(summary?.balance_minor ?? 0);
+    const currency = summary?.currency || 'RWF';
+    const parts: string[] = [
+      `Tokens: ${tokens}`,
+    ];
+    if (Number.isFinite(balanceMinor)) {
+      parts.push(`Balance: ${(balanceMinor / 100).toLocaleString('en-US', { style: 'currency', currency })}`);
+    }
+    const body = parts.join('\n');
+    await sendButtonsMessage(ctx, body, [{ id: IDS.WALLET, title: '💎 Wallet' }]);
+    return true;
+  } catch (e) {
+    await sendButtonsMessage(ctx, 'Could not load your balance.', [{ id: IDS.WALLET, title: '💎 Wallet' }]);
+    return true;
+  }
+}
+
 export function walletRefreshRow(id: string, title: string): WalletListRow {
   return {
     id,
@@ -150,6 +172,11 @@ export function walletRefreshRow(id: string, title: string): WalletListRow {
 
 function buildWalletHomeRows(): WalletListRow[] {
   return [
+    {
+      id: IDS.WALLET_VIEW_BALANCE,
+      title: "View balance",
+      description: "See your current tokens.",
+    },
     {
       id: IDS.WALLET_EARN,
       title: "Earn tokens",

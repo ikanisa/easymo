@@ -116,14 +116,29 @@ export async function handleDriverLocationUpdate(
 ): Promise<boolean> {
   if (!ctx.profileId) return false;
 
-  // Update profile last_location
-  await ctx.supabase
-    .from("profiles")
-    .update({
-      last_location: `SRID=4326;POINT(${coords.lng} ${coords.lat})`,
-      last_location_at: new Date().toISOString(),
-    })
-    .eq("user_id", ctx.profileId);
+  // Update last location in metadata for consistency across flows
+  try {
+    const { data, error } = await ctx.supabase
+      .from("profiles")
+      .select("metadata")
+      .eq("user_id", ctx.profileId)
+      .maybeSingle();
+    if (error && error.code !== 'PGRST116') throw error;
+    const metadata = (data?.metadata && typeof data.metadata === 'object' && data.metadata)
+      ? { ...(data.metadata as Record<string, unknown>) }
+      : {};
+    const mobility = (metadata.mobility && typeof metadata.mobility === 'object')
+      ? { ...(metadata.mobility as Record<string, unknown>) }
+      : {};
+    mobility.last_location = { lat: coords.lat, lng: coords.lng, capturedAt: new Date().toISOString() };
+    metadata.mobility = mobility;
+    await ctx.supabase
+      .from("profiles")
+      .update({ metadata })
+      .eq("user_id", ctx.profileId);
+  } catch (e) {
+    console.warn('driver.last_location_meta_fail', e);
+  }
 
   // Also update driver_status (legacy/compatibility)
   // We assume vehicle type is stored or default to 'veh_moto' if not found for now, 
@@ -148,5 +163,23 @@ export async function handleDriverLocationUpdate(
     [{ id: IDS.BACK_MENU, title: "Back to Menu" }]
   );
 
+  return true;
+}
+
+export async function handleGoOffline(ctx: RouterContext): Promise<boolean> {
+  if (!ctx.profileId) return false;
+  try {
+    await ctx.supabase
+      .from('driver_status')
+      .update({ online: false, last_seen: new Date().toISOString() })
+      .eq('user_id', ctx.profileId);
+  } catch (e) {
+    // non-fatal
+  }
+  await sendButtonsMessage(
+    ctx,
+    '🔴 You are now Offline. You will not receive new ride requests.',
+    [{ id: IDS.BACK_MENU, title: 'Back to Menu' }]
+  );
   return true;
 }

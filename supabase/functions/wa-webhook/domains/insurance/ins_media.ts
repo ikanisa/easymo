@@ -74,19 +74,36 @@ export async function uploadInsuranceBytes(
       mime: file.mime,
       bytes: file.bytes.length,
     });
-    const { error } = await client.storage
-      .from(INSURANCE_MEDIA_BUCKET)
-      .upload(relativePath, file.bytes, {
+    // Attempt upload, create bucket on-demand if missing
+    const bucket = client.storage.from(INSURANCE_MEDIA_BUCKET);
+    let { error } = await bucket.upload(relativePath, file.bytes, {
+      contentType: file.mime,
+      upsert: false,
+    });
+    if (error &&
+      (error.message?.toLowerCase().includes("bucket not found") ||
+        error.message?.toLowerCase().includes("does not exist"))) {
+      const { error: createError } = await client.storage.createBucket(
+        INSURANCE_MEDIA_BUCKET,
+        { public: false },
+      );
+      if (
+        createError &&
+        !createError.message?.toLowerCase().includes("already exists")
+      ) {
+        throw createError;
+      }
+      const retry = await bucket.upload(relativePath, file.bytes, {
         contentType: file.mime,
         upsert: false,
       });
+      error = retry.error;
+    }
     if (error) throw error;
 
     const { data: signed, error: signedError } = await client.storage
       .from(INSURANCE_MEDIA_BUCKET)
-      .createSignedUrl(relativePath, 300, {
-        transform: undefined,
-      });
+      .createSignedUrl(relativePath, 300, { transform: undefined });
     if (signedError || !signed?.signedUrl) {
       throw signedError ?? new Error("signed_url_missing");
     }

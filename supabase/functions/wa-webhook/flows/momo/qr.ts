@@ -6,6 +6,7 @@ import {
 import { IDS } from "../../wa/ids.ts";
 import { clearState, setState } from "../../state/store.ts";
 import { buildMomoUssd, buildMomoUssdForQr } from "../../utils/momo.ts";
+import { getMomoProvider } from "../../domains/exchange/country_support.ts";
 import { maskPhone } from "../support.ts";
 import { buildWaLink } from "../../utils/share.ts";
 import { logMomoQrRequest } from "../../rpc/momo.ts";
@@ -32,18 +33,15 @@ type MomoData = {
   e164?: string;
 };
 
-// Helper to check if a number is from a MOMO-supported country
+// Helper to check country support for MoMo using countries table
+import { checkCountrySupport } from "../../domains/exchange/country_support.ts";
 async function isMomoSupported(ctx: RouterContext, phone: string): Promise<boolean> {
-  const clean = phone.replace(/^\+/, "");
-  // Fetch supported prefixes from DB
-  const { data: countries } = await ctx.supabase
-    .from("countries")
-    .select("phone_code")
-    .eq("momo_supported", true);
-  
-  if (!countries) return false; // Default to false if DB fails
-  
-  return countries.some(c => clean.startsWith(c.phone_code));
+  try {
+    const res = await checkCountrySupport(ctx.supabase as any, phone, "momo");
+    return res.supported === true;
+  } catch (_e) {
+    return false;
+  }
 }
 
 export async function startMomoQr(
@@ -208,8 +206,10 @@ async function handleNumberInput(
   input: string,
 ): Promise<boolean> {
   if (!ctx.profileId) return false;
+  // Support "number amount" in a single message
+  const combined = parseNumberAndAmount(input);
   // Relaxed normalization to accept any valid-looking number
-  const normalized = normalizeMsisdn(input) || simpleNormalize(input);
+  const normalized = normalizeMsisdn(combined.number) || simpleNormalize(combined.number);
   
   if (!normalized) {
     await sendButtonsMessage(
@@ -230,8 +230,18 @@ async function handleNumberInput(
       e164,
     },
   });
-  await promptAmount(ctx, display);
-  return true;
+  if (combined.amount != null) {
+    await deliverMomoQr(ctx, {
+      target: local,
+      targetType: "msisdn",
+      display,
+      e164,
+    }, combined.amount);
+    return true;
+  } else {
+    await promptAmount(ctx, display);
+    return true;
+  }
 }
 
 async function handleCodeInput(
@@ -239,7 +249,7 @@ async function handleCodeInput(
   input: string,
 ): Promise<boolean> {
   if (!ctx.profileId) return false;
-  const code = sanitizeCode(input);
+  const { code, amount } = parseCodeAndAmount(input);
   if (!code) {
     await sendButtonsMessage(
       ctx,
@@ -256,8 +266,17 @@ async function handleCodeInput(
       display: code,
     },
   });
-  await promptAmount(ctx, code);
-  return true;
+  if (amount != null) {
+    await deliverMomoQr(ctx, {
+      target: code,
+      targetType: "code",
+      display: code,
+    }, amount);
+    return true;
+  } else {
+    await promptAmount(ctx, code);
+    return true;
+  }
 }
 
 async function handleAmountInput(
@@ -295,29 +314,31 @@ async function deliverMomoQr(
   const isCode = data.targetType === "code";
   const targetValue = data.targetType === "msisdn" ? data.target : data.target;
   
+  // Try provider-specific USSD format if available
+  const provider = await getMomoProvider(ctx.supabase as any, ctx.from).catch(() => null);
+  const format = provider?.ussdFormat || null; // e.g., *182*8*1*{CODE}# or *182*1*1*{NUMBER}#{AMT}
+
+  const customUssd = format
+    ? buildFromFormat(format, targetValue, isCode, amountRwf ?? undefined)
+    : null;
+
   // Use QR-optimized encoding for QR codes (unencoded * and # for Android compatibility)
-  const qrData = buildMomoUssdForQr(
-    targetValue,
-    isCode,
-    amountRwf ?? undefined,
-  );
+  const qrData = customUssd
+    ? { ussd: customUssd, telUri: encodeTelUriForQr(customUssd) }
+    : buildMomoUssdForQr(targetValue, isCode, amountRwf ?? undefined);
   
   // Use standard encoding for WhatsApp buttons/links (iOS requirement)
-  const buttonData = buildMomoUssd(
-    targetValue,
-    isCode,
-    amountRwf ?? undefined,
-  );
+  const buttonData = customUssd
+    ? { ussd: customUssd, telUri: encodeTelUri(customUssd) }
+    : buildMomoUssd(targetValue, isCode, amountRwf ?? undefined);
   
   const qrUrl = buildQrLink(qrData.telUri);
   const lines: string[] = [
     `Target: ${data.display}`,
+    provider?.provider ? `Provider: ${provider.provider}` : undefined,
+    amountRwf && amountRwf > 0 ? `Amount: ${amountRwf.toLocaleString('en-US')} RWF` : undefined,
     `Dial: ${buttonData.ussd}`,
-    // `Tap: ${buttonData.telUri}`, // Removed to reduce clutter
-  ];
-  if (amountRwf && amountRwf > 0) {
-    lines.splice(1, 0, `Amount: ${amountRwf.toLocaleString("en-US")}`);
-  }
+  ].filter(Boolean) as string[];
   const shareLink = buildWaLink(`Pay via MoMo ${data.display}: ${buttonData.ussd}`);
   if (shareLink) {
     lines.push(`Share: ${shareLink}`);
@@ -328,7 +349,12 @@ async function deliverMomoQr(
   let fallbackNeeded = false;
 
   try {
-    await sendImageUrl(ctx.from, qrUrl, `Scan to pay ${data.display}`);
+    const capParts = [
+      `Scan to pay ${data.display}`,
+      provider?.provider ? `via ${provider.provider}` : undefined,
+      amountRwf && amountRwf > 0 ? `${amountRwf.toLocaleString('en-US')} RWF` : undefined,
+    ].filter(Boolean) as string[];
+    await sendImageUrl(ctx.from, qrUrl, capParts.join(' • '));
   } catch (error) {
     fallbackNeeded = true;
     const message = error instanceof Error ? error.message : String(error);
@@ -413,10 +439,22 @@ function simpleNormalize(raw: string): NormalizedMsisdn | null {
     return { local: digits, e164: `+${digits}` };
 }
 
-function sanitizeCode(raw: string): string | null {
+function parseNumberAndAmount(raw: string): { number: string; amount: number | null } {
+  const parts = raw.trim().split(/\s+/);
+  if (parts.length >= 2) {
+    const num = parts[0];
+    const amt = parseAmount(parts.slice(1).join(" "));
+    return { number: num, amount: amt == null ? null : amt };
+  }
+  return { number: raw, amount: null };
+}
+
+function parseCodeAndAmount(raw: string): { code: string | null; amount: number | null } {
   const digits = raw.replace(/\D/g, "");
-  if (digits.length < 4 || digits.length > 12) return null;
-  return digits;
+  if (digits.length < 4 || digits.length > 9) return { code: null, amount: null };
+  // Try to extract trailing amount if present in raw (e.g., "123456 5000")
+  const maybeAmount = parseAmount(raw.replace(digits, "").trim());
+  return { code: digits, amount: maybeAmount == null ? null : maybeAmount };
 }
 
 async function promptAmount(
@@ -445,6 +483,25 @@ function buildQrLink(text: string): string {
   return `https://quickchart.io/qr?size=512&margin=2&text=${encoded}`;
 }
 
+function buildFromFormat(
+  fmt: string,
+  target: string,
+  isCode: boolean,
+  amount?: number | null,
+): string {
+  const digits = target.replace(/\D/g, "");
+  let out = fmt;
+  out = out.replace('{CODE}', digits);
+  out = out.replace('{NUMBER}', digits);
+  if (typeof amount === 'number' && amount > 0) {
+    out = out.replace('{AMOUNT}', String(amount));
+  } else {
+    // If format contains {AMOUNT} but amount missing, strip placeholder and any stray * around it
+    out = out.replace('*{AMOUNT}', '').replace('{AMOUNT}', '');
+  }
+  return out;
+}
+
 function localToE164(local: string): string {
   if (!local) return local;
   if (local.startsWith("+")) return local;
@@ -453,4 +510,3 @@ function localToE164(local: string): string {
   }
   return local.startsWith("250") ? `+${local}` : local;
 }
-

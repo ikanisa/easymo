@@ -21,30 +21,89 @@ export async function ensureReferralLink(
   client: SupabaseClient,
   profileId: string,
 ): Promise<{ code: string; shortLink: string; waLink: string; qrUrl: string }> {
-  const existing = await client
-    .from("referral_links")
-    .select("code, short_url")
-    .eq("user_id", profileId)
-    .eq("active", true)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  if (existing.error) throw existing.error;
-
-  let code = existing.data?.code ?? "";
-  if (!code) {
-    code = await insertReferralLink(client, profileId);
-  } else if (!existing.data?.short_url) {
-    const shortLink = buildShortLink(code);
-    await client
-      .from("referral_links")
-      .update({ short_url: shortLink })
+  // 1) Try to read an existing code from profiles for backward compatibility
+  let code = "";
+  try {
+    const { data: prof } = await client
+      .from("profiles")
+      .select("referral_code, whatsapp_e164")
       .eq("user_id", profileId)
-      .eq("code", code);
+      .maybeSingle();
+    if (prof?.referral_code && typeof prof.referral_code === "string") {
+      code = prof.referral_code.trim().toUpperCase();
+    }
+  } catch (_) {
+    // non-fatal
   }
 
-  const shortLink = existing.data?.short_url ?? buildShortLink(code);
+  // 2) Ensure a referral link exists (prefer existing active link)
+  let shortLinkFromDb: string | undefined;
+  try {
+    const existing = await client
+      .from("referral_links")
+      .select("code, short_url")
+      .eq("user_id", profileId)
+      .eq("active", true)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (existing.error && (existing.error as any)?.code !== "PGRST116") {
+      throw existing.error;
+    }
+    if (existing.data?.code) {
+      code = code || existing.data.code;
+      shortLinkFromDb = existing.data.short_url || undefined;
+    }
+  } catch (_) {
+    // non-fatal
+  }
+
+  // 3) If no code yet, try RPC generator; else fallback to local generation
+  if (!code) {
+    try {
+      const { data } = await client.rpc("generate_referral_code", {
+        p_profile_id: profileId,
+      });
+      if (typeof data === "string" && data) {
+        code = data.trim().toUpperCase();
+      }
+    } catch (_) {
+      // fallback to local
+      code = generateReferralCode(8);
+    }
+    // Persist on profiles (best-effort)
+    try {
+      await client
+        .from("profiles")
+        .update({ referral_code: code })
+        .eq("user_id", profileId);
+    } catch (_) {
+      // non-fatal
+    }
+  }
+
+  // 4) Upsert into referral_links to ensure referral_apply_code_v2 can map code→user
+  const shortLink = shortLinkFromDb ?? buildShortLink(code);
+  try {
+    // Try to insert first (most schemas permit duplicates via conflict handling)
+    const { error } = await client
+      .from("referral_links")
+      .upsert({ user_id: profileId, code, short_url: shortLink, active: true }, {
+        onConflict: "code",
+        ignoreDuplicates: false,
+      } as any);
+    if (error && (error as any).code !== "23505") {
+      // fallback: attempt targeted update
+      await client
+        .from("referral_links")
+        .update({ short_url: shortLink, active: true })
+        .eq("user_id", profileId)
+        .eq("code", code);
+    }
+  } catch (_) {
+    // non-fatal: we can still return a valid wa.me link
+  }
+
   const waLink = buildWaLink(`REF:${code}`, REFERRAL_NUMBER_E164) || shortLink;
   const qrPayload = waLink || shortLink;
   const qrUrl = buildQrUrl(qrPayload);

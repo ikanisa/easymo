@@ -10,6 +10,7 @@ import { walletBackRow, walletRefreshRow } from "./home.ts";
 import { setState } from "../../state/store.ts";
 import { logWalletAdjust } from "../../observe/log.ts";
 import { IDS } from "../../wa/ids.ts";
+import { fetchWalletSummary } from "../../rpc/wallet.ts";
 
 const STATES = {
   LIST: "wallet_redeem",
@@ -23,9 +24,14 @@ type RedeemState =
 export async function showWalletRedeem(ctx: RouterContext): Promise<boolean> {
   if (!ctx.profileId) return false;
   
-  // Check balance
-  const { data: balance } = await ctx.supabase.rpc("wallet_get_balance", { p_user_id: ctx.profileId });
-  const currentBalance = typeof balance === "number" ? balance : 0;
+  // Check balance (min 2000 tokens required)
+  let currentBalance = 0;
+  try {
+    const summary = await fetchWalletSummary(ctx.supabase, ctx.profileId);
+    currentBalance = Number(summary?.tokens ?? 0);
+  } catch (_) {
+    currentBalance = 0;
+  }
   
   if (currentBalance < 2000) {
     await sendButtonsMessage(

@@ -36,11 +36,8 @@ import {
   type UserFavorite,
 } from "../locations/favorites.ts";
 import { buildSaveRows } from "../locations/save.ts";
-import {
-  checkLocationCache,
-  isLocationCacheValid,
-  formatLocationCacheAge,
-} from "./location_cache.ts";
+import { checkLocationCache } from "./location_cache.ts";
+import { readLastLocationMeta } from "../locations/favorites.ts";
 
 const DEFAULT_WINDOW_DAYS = 30;
 const REQUIRED_RADIUS_METERS = 10_000;
@@ -189,39 +186,17 @@ export async function handleSeeDrivers(ctx: RouterContext): Promise<boolean> {
   if (!ctx.profileId) return false;
   
   // 1. Check for cached location (30 min window)
-  const { data: profile } = await ctx.supabase
-    .from("profiles")
-    .select("last_location, last_location_at")
-    .eq("user_id", ctx.profileId)
-    .single();
-
-  // Use location cache helper for validation
-  const cacheCheck = checkLocationCache(profile?.last_location_at);
-
-  if (!cacheCheck.needsRefresh && profile?.last_location) {
-    // Parse POINT(lng lat)
-    // PostGIS text format: SRID=4326;POINT(lng lat)
-    const matches = /POINT\(([^ ]+) ([^ ]+)\)/.exec(profile.last_location as unknown as string);
-    if (matches) {
-      const lng = parseFloat(matches[1]);
-      const lat = parseFloat(matches[2]);
-      
-      // Use cached location directly
-      await setState(ctx.supabase, ctx.profileId, {
-        key: "mobility_nearby_location",
-        data: { mode: "drivers", vehicle: "veh_moto", pickup: { lat, lng } }, // Default to moto if not known
-      });
-      
-      // We need to know vehicle type. Try to get from cache or default
-      const cachedIntent = await getRecentNearbyIntent(ctx.supabase, ctx.profileId, "drivers");
-      const vehicle = cachedIntent?.vehicle ?? "veh_moto";
-      
-      return await handleNearbyLocation(
-        ctx,
-        { mode: "drivers", vehicle },
-        { lat, lng },
-      );
-    }
+  const last = await readLastLocationMeta(ctx);
+  const cacheCheck = checkLocationCache(last?.capturedAt ?? null);
+  if (!cacheCheck.needsRefresh && last) {
+    const { lat, lng } = last;
+    await setState(ctx.supabase, ctx.profileId, {
+      key: "mobility_nearby_location",
+      data: { mode: "drivers", vehicle: "veh_moto", pickup: { lat, lng } },
+    });
+    const cachedIntent = await getRecentNearbyIntent(ctx.supabase, ctx.profileId, "drivers");
+    const vehicle = cachedIntent?.vehicle ?? "veh_moto";
+    return await handleNearbyLocation(ctx, { mode: "drivers", vehicle }, { lat, lng });
   }
 
   // Fallback to asking for location
@@ -241,29 +216,12 @@ export async function handleSeePassengers(
   if (!ready) return true;
 
   // 1. Check for cached location (30 min window)
-  const { data: profile } = await ctx.supabase
-    .from("profiles")
-    .select("last_location, last_location_at")
-    .eq("user_id", ctx.profileId)
-    .single();
-
-  // Use location cache helper for validation
-  const cacheCheck = checkLocationCache(profile?.last_location_at);
-  
-  if (!cacheCheck.needsRefresh && profile?.last_location) {
-    const matches = /POINT\(([^ ]+) ([^ ]+)\)/.exec(profile.last_location as unknown as string);
-    if (matches) {
-      const lng = parseFloat(matches[1]);
-      const lat = parseFloat(matches[2]);
-      
-      const storedVehicle = await getStoredVehicleType(ctx.supabase, ctx.profileId) ?? "veh_moto";
-      
-      return await handleNearbyLocation(
-        ctx,
-        { mode: "passengers", vehicle: storedVehicle },
-        { lat, lng },
-      );
-    }
+  const last2 = await readLastLocationMeta(ctx);
+  const cacheCheck2 = checkLocationCache(last2?.capturedAt ?? null);
+  if (!cacheCheck2.needsRefresh && last2) {
+    const { lat, lng } = last2;
+    const storedVehicle = await getStoredVehicleType(ctx.supabase, ctx.profileId) ?? "veh_moto";
+    return await handleNearbyLocation(ctx, { mode: "passengers", vehicle: storedVehicle }, { lat, lng });
   }
 
   const storedVehicle = await getStoredVehicleType(
@@ -307,6 +265,35 @@ export async function handleVehicleSelection(
     allowVehicleChange: state.mode === "passengers",
   });
   return true;
+}
+
+export async function handleNearbyRecent(ctx: RouterContext): Promise<boolean> {
+  if (!ctx.profileId) return false;
+  try {
+    // Prefer last drivers intent; fallback to passengers
+    const drivers = await getRecentNearbyIntent(ctx.supabase, ctx.profileId, 'drivers');
+    const passengers = await getRecentNearbyIntent(ctx.supabase, ctx.profileId, 'passengers');
+    const pick = drivers || passengers;
+    if (!pick) {
+      await sendButtonsMessage(ctx, 'No recent search found. Pick a mode.', buildButtons(
+        { id: IDS.SEE_DRIVERS, title: 'Drivers' },
+        { id: IDS.SEE_PASSENGERS, title: 'Passengers' },
+      ));
+      return true;
+    }
+    const mode = drivers ? 'drivers' : 'passengers';
+    const vehicle = pick.vehicle || 'veh_moto';
+    const coords = { lat: pick.lat, lng: pick.lng };
+    if (mode === 'drivers') {
+      await setState(ctx.supabase, ctx.profileId, { key: 'mobility_nearby_location', data: { mode, vehicle, pickup: coords } });
+    } else {
+      await setState(ctx.supabase, ctx.profileId, { key: 'mobility_nearby_location', data: { mode, vehicle } });
+    }
+    return await handleNearbyLocation(ctx, { mode: mode as any, vehicle }, coords);
+  } catch (e) {
+    await sendButtonsMessage(ctx, 'Could not load your recent search.', buildButtons({ id: IDS.BACK_MENU, title: 'Back' }));
+    return true;
+  }
 }
 
 export async function handleNearbyLocation(
@@ -654,11 +641,12 @@ async function runMatchingFallback(
       return true;
     }
 
-    // NOTIFY DRIVERS (if searching for drivers)
-    if (state.mode === "drivers") {
+  // NOTIFY DRIVERS (if searching for drivers)
+  if (state.mode === "drivers") {
       const { sendText } = await import("../../wa/client.ts");
+      const { waChatLink } = await import("../../utils/links.ts");
       
-      // Get passenger name and contact
+      // Get passenger name
       const { data: passenger } = await ctx.supabase
         .from("profiles")
         .select("full_name, whatsapp_number")
@@ -666,42 +654,49 @@ async function runMatchingFallback(
         .single();
         
       const passengerName = passenger?.full_name ?? "A passenger";
-      const passengerContact = passenger?.whatsapp_number ?? ctx.from;
       
       // Send notifications to top 9 drivers
       for (const match of matches.slice(0, 9)) {
         if (match.whatsapp_e164) {
-          try {
-            // Send notification message to driver
-            const distanceLabel = toDistanceLabel(match.distance_km) ?? "nearby";
-            const notificationMessage = 
-              `🚖 *New Ride Request!*\n\n` +
-              `📍 Passenger: ${passengerName}\n` +
-              `📏 Distance: ${distanceLabel}\n` +
-              `📞 Contact: ${passengerContact}\n\n` +
-              `Reply "ACCEPT" to offer this ride or tap the link below to chat with the passenger.\n\n` +
-              `https://wa.me/${passengerContact.replace(/[^0-9]/g, '')}?text=Hi%2C%20I%20can%20give%20you%20a%20ride!`;
-            
-            await sendText(match.whatsapp_e164, notificationMessage);
-            
-            // Log notification
-            await ctx.supabase.from("ride_notifications").insert({
-              trip_id: tempTripId,
-              driver_id: match.creator_user_id,
-              status: "sent"
-            }).catch(e => console.error("log_notification_fail", e));
-            
-            await logStructuredEvent("DRIVER_NOTIFIED", {
-              trip_id: tempTripId,
-              driver_wa: match.whatsapp_e164,
-              distance_km: match.distance_km
-            });
-          } catch (e) {
-            console.error("notify_driver_fail", {
-              driver_wa: match.whatsapp_e164,
-              error: e instanceof Error ? e.message : String(e)
-            });
-          }
+            // Quiet hours check
+            const quiet = await isDriverQuiet(ctx.supabase, match.creator_user_id).catch(() => false);
+            if (quiet) continue;
+             // Create accept link/button payload
+             // For now, we use a simple text message with a button if possible, or just text
+             // Since we can't easily send buttons outside 24h window without template, 
+             // we will use a text message with a clear instruction or link if applicable.
+             // But here we are in the webhook, so we might be able to send buttons if the driver messaged recently.
+             // To be safe and robust, we'll send a text message with a "Reply ACCEPT" instruction or similar,
+             // OR better, we use the new "Accept Ride" button flow if we assume drivers are active.
+             
+             // We will send a template-like message.
+             const acceptId = `RIDE_ACCEPT::${tempTripId}`;
+             try {
+               await sendButtonsMessage(
+               { ...ctx, from: match.whatsapp_e164, profileId: match.creator_user_id }, // Mock context for the recipient
+               `🚖 **New Ride Request!**\n\nPassenger: ${passengerName}\nDistance: ${toDistanceLabel(match.distance_km)}\n\nDo you want to accept this ride?`,
+               [{ id: acceptId, title: "✅ Accept Ride" }]
+               );
+             } catch (e) {
+               // Fallback to template/text if interactive fails
+               try {
+                 const { sendTemplate } = await import("../../wa/client.ts");
+                 const tpl = Deno.env.get('WA_DRIVER_NOTIFY_TEMPLATE') ?? 'ride_notify';
+                 const lang = Deno.env.get('WA_TEMPLATE_LANG') ?? 'en';
+                 const compact = `New ride near you. Passenger: ${passengerName}. ${toDistanceLabel(match.distance_km) ?? ''}`.trim();
+                 await sendTemplate(match.whatsapp_e164, { name: tpl, language: lang, bodyParameters: [{ type: 'text', text: compact }] });
+               } catch (tplErr) {
+                 const { sendText } = await import("../../wa/client.ts");
+                 await sendText(match.whatsapp_e164, `🚖 New ride near you. Passenger: ${passengerName}. Reply ACCEPT to confirm.`);
+               }
+             }
+             
+             // Log notification
+             await ctx.supabase.from("ride_notifications").insert({
+               trip_id: tempTripId,
+               driver_id: match.creator_user_id,
+               status: "sent"
+             });
         }
       }
     }
@@ -782,6 +777,36 @@ async function runMatchingFallback(
           );
         }
     }
+  }
+}
+
+async function isDriverQuiet(client: any, driverId: string): Promise<boolean> {
+  try {
+    const { data } = await client
+      .from('profiles')
+      .select('metadata')
+      .eq('user_id', driverId)
+      .maybeSingle();
+    const meta = (data?.metadata && typeof data.metadata === 'object') ? (data!.metadata as any) : {};
+    const quiet = meta?.driver?.quiet;
+    if (!quiet?.enabled) return false;
+    const tz = quiet.tz || 'Africa/Kigali';
+    const now = new Date();
+    const hours = new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: tz }).format(now);
+    const toMinutes = (hhmm: string) => {
+      const [h, m] = hhmm.split(':').map((x: string) => parseInt(x, 10));
+      return h * 60 + (m || 0);
+    };
+    const cur = toMinutes(hours);
+    const start = toMinutes(String(quiet.start || '22:00'));
+    const end = toMinutes(String(quiet.end || '06:00'));
+    // Quiet window may cross midnight
+    if (start <= end) {
+      return cur >= start && cur < end;
+    }
+    return cur >= start || cur < end;
+  } catch (_) {
+    return false;
   }
 }
 

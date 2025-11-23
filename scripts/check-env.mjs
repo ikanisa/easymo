@@ -27,3 +27,37 @@ if (missing.length > 0) {
 }
 
 console.log('✅ All critical environment variables are set.');
+
+// Additional recommendations (non-fatal)
+const optionalVars = [
+  'WA_INSURANCE_ADMIN_TEMPLATE',
+  'WA_TEMPLATE_LANG',
+  'WA_DRIVER_NOTIFY_TEMPLATE',
+];
+const missingOptional = optionalVars.filter((k) => !process.env[k]);
+if (missingOptional.length) {
+  console.warn('\nℹ️ Recommended env variables missing (optional):');
+  for (const key of missingOptional) console.warn(`  - ${key}`);
+}
+
+// Wallet system profile
+console.log('\nChecking wallet system profile setting...');
+try {
+  // Best-effort dynamic import of supabase config if available
+  const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2.76.1');
+  const url = process.env.SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (url && key) {
+    const sb = createClient(url, key, { auth: { persistSession: false } });
+    const { data, error } = await sb.from('wallet_settings').select('key, value').eq('key', 'wallet_system_profile_id').maybeSingle();
+    if (error) {
+      console.warn('  ⚠️ Could not verify wallet_system_profile_id:', error.message);
+    } else if (!data?.value) {
+      console.warn('  ⚠️ wallet_system_profile_id not set. Admin allocations may fail.');
+    } else {
+      console.log('  ✅ wallet_system_profile_id is set.');
+    }
+  }
+} catch (_) {
+  // ignore
+}

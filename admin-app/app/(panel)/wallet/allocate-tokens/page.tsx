@@ -10,6 +10,14 @@ interface User {
   tokens?: number;
 }
 
+interface Policy {
+  policy_id: string;
+  user_id: string;
+  policy_number: string;
+  insurer: string | null;
+  valid_until: string | null;
+}
+
 interface AllocationPreset {
   label: string;
   amount: number;
@@ -47,6 +55,7 @@ export default function AllocateTokensPage() {
   const [loading, setLoading] = useState(false);
   const [searching, setSearching] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [eligiblePolicies, setEligiblePolicies] = useState<Policy[]>([]);
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -95,6 +104,23 @@ export default function AllocateTokensPage() {
         ...profileData,
         tokens: walletData?.tokens || 0,
       });
+
+      // Load eligible insurance policies for this user (not yet allocated)
+      try {
+        const { data: policies } = await supabase.rpc('wallet_insurance_eligible', {
+          p_user_id: profileData.user_id,
+          p_whatsapp: null,
+        });
+        setEligiblePolicies((policies || []).map((p: any) => ({
+          policy_id: p.policy_id,
+          user_id: p.user_id,
+          policy_number: p.policy_number,
+          insurer: p.insurer,
+          valid_until: p.valid_until,
+        })));
+      } catch {
+        setEligiblePolicies([]);
+      }
 
       setMessage({ type: "success", text: "User found!" });
     } catch (error) {
@@ -170,6 +196,37 @@ export default function AllocateTokensPage() {
         type: "error",
         text: `Error: ${error.message || "Failed to allocate tokens"}`,
       });
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function allocateForPolicy(policy: Policy) {
+    if (!selectedUser) return;
+    setLoading(true);
+    setMessage(null);
+    try {
+      const idempotencyKey = `policy:${policy.policy_id}`;
+      const { data, error } = await supabase.rpc('wallet_transfer_tokens', {
+        p_sender: null,
+        p_recipient: selectedUser.user_id,
+        p_recipient_whatsapp: null,
+        p_amount: 2000,
+        p_idempotency_key: idempotencyKey,
+      });
+      if (error) throw error;
+      const row = Array.isArray(data) ? data[0] : data;
+      if (row?.success) {
+        // Mark policy allocated
+        await supabase.rpc('allocate_insurance_tokens_simple', { p_policy_id: policy.policy_id }).catch(() => {});
+        setMessage({ type: 'success', text: `✅ Allocated 2000 tokens for policy ${policy.policy_number}` });
+        // Refresh eligible list
+        await searchUser();
+      } else {
+        setMessage({ type: 'error', text: `Failed: ${row?.reason || 'Unknown error'}` });
+      }
+    } catch (err: any) {
+      setMessage({ type: 'error', text: `Error: ${err?.message || 'Failed to allocate tokens'}` });
     } finally {
       setLoading(false);
     }
@@ -313,6 +370,34 @@ export default function AllocateTokensPage() {
           </div>
         </div>
       </div>
+
+      {/* Eligible Insurance Policies */}
+      {selectedUser && (
+        <div className="bg-white rounded-lg shadow p-6 mb-6">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">Eligible Insurance Policies</h2>
+          {eligiblePolicies.length === 0 ? (
+            <p className="text-gray-600">No eligible (unallocated) policies found for this user.</p>
+          ) : (
+            <div className="space-y-3">
+              {eligiblePolicies.map((p) => (
+                <div key={p.policy_id} className="flex items-center justify-between border rounded p-3">
+                  <div>
+                    <div className="font-medium">{p.policy_number}</div>
+                    <div className="text-sm text-gray-600">{p.insurer || 'Insurer'} {p.valid_until ? `• Valid until ${new Date(p.valid_until).toLocaleDateString()}` : ''}</div>
+                  </div>
+                  <button
+                    onClick={() => allocateForPolicy(p)}
+                    className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700"
+                    disabled={loading}
+                  >
+                    Allocate 2000 tokens
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Info Box */}
       <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">

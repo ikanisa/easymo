@@ -264,6 +264,35 @@ export async function readLastLocation(
   }
   return null;
 }
+
+export async function readLastLocationMeta(
+  ctx: RouterContext,
+): Promise<{ lat: number; lng: number; capturedAt: string } | null> {
+  if (!ctx.profileId) return null;
+  try {
+    const { data, error } = await ctx.supabase
+      .from("profiles")
+      .select("metadata")
+      .eq("user_id", ctx.profileId)
+      .maybeSingle();
+    if (error && error.code !== "PGRST116") throw error;
+    const entry = data?.metadata;
+    if (!isRecord(entry)) return null;
+    const mobility = isRecord(entry.mobility) ? entry.mobility : null;
+    const last = mobility && isRecord(mobility.last_location)
+      ? mobility.last_location as Record<string, unknown>
+      : null;
+    const lat = typeof last?.lat === 'number' ? last.lat : NaN;
+    const lng = typeof last?.lng === 'number' ? last.lng : NaN;
+    const capturedAt = typeof last?.capturedAt === 'string' ? last.capturedAt : null;
+    if (Number.isFinite(lat) && Number.isFinite(lng) && capturedAt) {
+      return { lat, lng, capturedAt };
+    }
+  } catch (err) {
+    console.error("locations.read_last_meta_fail", err);
+  }
+  return null;
+}
 type MetadataRecord = Record<string, unknown>;
 
 function isRecord(value: unknown): value is MetadataRecord {

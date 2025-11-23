@@ -39,9 +39,24 @@ export async function showRidesMenu(ctx: RouterContext): Promise<boolean> {
           description: t(ctx.locale, "home.rows.scheduleTrip.description"),
         },
         {
+          id: IDS.SCHEDULE_RECENT,
+          title: "🔁 Recent scheduled trip",
+          description: "Reuse your last schedule preferences",
+        },
+        {
+          id: IDS.NEARBY_RECENT,
+          title: "🔁 Recent nearby search",
+          description: "Run your last search using cached location",
+        },
+        {
           id: "driver_go_online",
           title: "🟢 Go Online (Driver)",
           description: "Share location to get requests",
+        },
+        {
+          id: IDS.DRIVER_GO_OFFLINE,
+          title: "🔴 Go Offline (Driver)",
+          description: "Stop receiving ride requests",
         },
         {
           id: IDS.BACK_MENU,

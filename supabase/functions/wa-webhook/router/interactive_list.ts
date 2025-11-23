@@ -440,6 +440,10 @@ export async function handleList(
       id,
     );
   }
+  if (id === IDS.SCHEDULE_RECENT) {
+    const { handleScheduleRecent } = await import("../domains/mobility/schedule.ts");
+    return await handleScheduleRecent(ctx);
+  }
   // Marketplace flows removed
   if (await handleWalletEarnSelection(ctx, state as any, id)) {
     return true;
@@ -452,6 +456,10 @@ export async function handleList(
   }
   if (id === IDS.WALLET_TRANSACTIONS) {
     return await showWalletTransactions(ctx);
+  }
+  if (id === IDS.WALLET_VIEW_BALANCE) {
+    const { showWalletBalance } = await import("../domains/wallet/home.ts");
+    return await showWalletBalance(ctx);
   }
   if (id === IDS.WALLET_REDEEM) {
     return await showWalletRedeem(ctx);
