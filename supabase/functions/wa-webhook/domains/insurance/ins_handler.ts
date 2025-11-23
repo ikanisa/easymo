@@ -66,15 +66,20 @@ async function upsertLead(
   ({ data, error } = await tryInsert(includeWhatsApp));
   if (error) {
     const msg = (error as any)?.message ?? String(error);
-    if (msg.includes("'user_id'")) {
+    // Handle FK constraint on user_id or column not found
+    if (msg.includes("user_id") || msg.includes("violates foreign key constraint")) {
+      console.warn("INS_LEAD_USER_ID_FK_FAIL", { userId, error: msg });
       const { user_id, ...rest } = includeWhatsApp as any;
       ({ data, error } = await tryInsert(rest));
     }
   }
   if (error) {
     const msg = (error as any)?.message ?? String(error);
-    if (msg.includes("'whatsapp'")) {
-      ({ data, error } = await tryInsert(basePayload));
+    // Handle whatsapp column issues
+    if (msg.includes("'whatsapp'") || msg.includes("whatsapp")) {
+      console.warn("INS_LEAD_WHATSAPP_FAIL", { error: msg });
+      const { whatsapp, ...rest } = basePayload as any;
+      ({ data, error } = await tryInsert(rest));
     }
   }
   if (error || !data) throw error ?? new Error("lead_insert_failed");
@@ -120,15 +125,18 @@ async function updateLead(
   let { error } = await attempt({ ...patch, whatsapp: ctx.from });
   if (error) {
     const msg = (error as any)?.message ?? String(error);
-    if (msg.includes("'user_id'")) {
+    // Handle FK constraint on user_id
+    if (msg.includes("user_id") || msg.includes("violates foreign key constraint")) {
+      console.warn("INS_LEAD_UPDATE_USER_ID_FK_FAIL", { leadId, error: msg });
       const { user_id, ...rest } = patch as any;
       ({ error } = await attempt({ ...rest, whatsapp: ctx.from }));
     }
   }
   if (error) {
     const msg = (error as any)?.message ?? String(error);
-    if (msg.includes("'whatsapp'")) {
-      const { whatsapp, ...rest } = patch as any; // ensure patch copies
+    if (msg.includes("'whatsapp'") || msg.includes("whatsapp")) {
+      console.warn("INS_LEAD_UPDATE_WHATSAPP_FAIL", { leadId, error: msg });
+      const { whatsapp, ...rest } = patch as any;
       ({ error } = await attempt(rest));
     }
   }
