@@ -27,7 +27,7 @@ function validatePayload(body: unknown): body is { email: string; password: stri
 }
 
 export async function POST(request: Request) {
-  const jar = cookies();
+  const jar = await cookies();
   const payload = await request.json().catch(() => null);
 
   if (!validatePayload(payload)) {
@@ -40,6 +40,30 @@ export async function POST(request: Request) {
   const { email, password } = payload;
   const key = `login:${email}`;
 
+  // Check if using admin token
+  const adminToken = process.env.EASYMO_ADMIN_TOKEN;
+  if (adminToken && password === adminToken) {
+    // Token-based authentication
+    clearRateLimit(key);
+    const cookie = createSessionCookie({ 
+      actorId: "admin-token", 
+      label: email.split("@")[0] || "Admin" 
+    });
+    try {
+      jar.set(cookie.name, cookie.value, { httpOnly: true, sameSite: "lax", path: "/" });
+    } catch {
+      // ignore
+    }
+
+    const res = NextResponse.json(
+      { actorId: "admin-token", label: email.split("@")[0] || "Admin" },
+      { status: 200 },
+    );
+    res.headers.set("x-admin-session-refreshed", "true");
+    return res;
+  }
+
+  // Credentials-based authentication
   const creds = readCredentials();
   const found = creds.find((c) => c.email.toLowerCase() === email.toLowerCase());
 
