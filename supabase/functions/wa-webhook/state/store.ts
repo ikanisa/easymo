@@ -253,10 +253,37 @@ export async function setState(
   userId: string,
   state: ChatState,
 ): Promise<void> {
-  const { error } = await client
-    .from("chat_state")
-    .upsert({ user_id: userId, state, last_updated: new Date().toISOString() }, { onConflict: "user_id" });
-  if (error) throw error;
+  // Prefer upsert with conflict on user_id when the constraint exists
+  try {
+    const { error } = await client
+      .from("chat_state")
+      .upsert({ user_id: userId, state, last_updated: new Date().toISOString() }, { onConflict: "user_id" });
+    if (error) throw error;
+    return;
+  } catch (_err) {
+    // Fallback path for environments without the unique constraint on user_id
+    const nowIso = new Date().toISOString();
+    const { data, error } = await client
+      .from("chat_state")
+      .select("id")
+      .eq("user_id", userId)
+      .order("last_updated", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (error && error.code !== "PGRST116") throw error;
+    if (data?.id) {
+      const { error: updErr } = await client
+        .from("chat_state")
+        .update({ state, last_updated: nowIso })
+        .eq("id", data.id);
+      if (updErr) throw updErr;
+    } else {
+      const { error: insErr } = await client
+        .from("chat_state")
+        .insert({ user_id: userId, state, last_updated: nowIso });
+      if (insErr) throw insErr;
+    }
+  }
 }
 
 export async function clearState(
