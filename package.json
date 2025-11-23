@@ -30,7 +30,7 @@
     "functions:deploy": "supabase functions deploy admin-settings admin-stats admin-users admin-trips wa-webhook insurance-ocr",
     "functions:deploy:insurance": "supabase functions deploy insurance-ocr",
     "functions:deploy:agents": "supabase functions deploy agents/nearby-drivers agents/pharmacy agents/property-rental agents/schedule-trip agents/quincaillerie agents/shops",
-    "functions:deploy:wa": "supabase functions deploy wa-webhook wa-webhook-core notification-worker agent-tools-general-broker wa-webhook-ai-agents",
+    "functions:deploy:wa": "supabase functions deploy wa-webhook wa-webhook-core wa-webhook-ai-agents wa-webhook-mobility wa-webhook-wallet wa-webhook-jobs wa-webhook-property",
     "embeddings:sync": "node ./scripts/embeddings/ingest-documents.mjs",
     "diagnostics:supabase": "node ./scripts/test-supabase-connection.mjs",
     "mcp:supabase": "bash ./scripts/run-supabase-mcp-server.sh",
