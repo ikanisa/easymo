@@ -4,20 +4,49 @@
 BEGIN;
 
 CREATE TABLE IF NOT EXISTS public.countries (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  country_code text UNIQUE NOT NULL,         -- ISO 3166-1 alpha-2 (e.g., RW)
-  country_name text NOT NULL,
-  phone_code text NOT NULL,                  -- digits only without + (e.g., 250)
-  supports_momo boolean NOT NULL DEFAULT false,
-  supports_rides boolean NOT NULL DEFAULT false,
-  supports_insurance boolean NOT NULL DEFAULT false,
-  momo_provider text,                        -- e.g., MTN, M-Pesa, Airtel
-  created_at timestamptz NOT NULL DEFAULT now(),
-  updated_at timestamptz NOT NULL DEFAULT now()
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid()
 );
 
-CREATE INDEX IF NOT EXISTS idx_countries_code ON public.countries(country_code);
-CREATE INDEX IF NOT EXISTS idx_countries_phone ON public.countries(phone_code);
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'countries' AND column_name = 'country_code') THEN
+    ALTER TABLE public.countries ADD COLUMN country_code text;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'countries' AND column_name = 'country_name') THEN
+    ALTER TABLE public.countries ADD COLUMN country_name text;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'countries' AND column_name = 'phone_code') THEN
+    ALTER TABLE public.countries ADD COLUMN phone_code text;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'countries' AND column_name = 'supports_momo') THEN
+    ALTER TABLE public.countries ADD COLUMN supports_momo boolean NOT NULL DEFAULT false;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'countries' AND column_name = 'supports_rides') THEN
+    ALTER TABLE public.countries ADD COLUMN supports_rides boolean NOT NULL DEFAULT false;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'countries' AND column_name = 'supports_insurance') THEN
+    ALTER TABLE public.countries ADD COLUMN supports_insurance boolean NOT NULL DEFAULT false;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'countries' AND column_name = 'momo_provider') THEN
+    ALTER TABLE public.countries ADD COLUMN momo_provider text;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'countries' AND column_name = 'created_at') THEN
+    ALTER TABLE public.countries ADD COLUMN created_at timestamptz NOT NULL DEFAULT now();
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'countries' AND column_name = 'updated_at') THEN
+    ALTER TABLE public.countries ADD COLUMN updated_at timestamptz NOT NULL DEFAULT now();
+  END IF;
+END $$;
+
+-- Indexes
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname='public' AND indexname='idx_countries_code') THEN
+    CREATE INDEX idx_countries_code ON public.countries(country_code);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname='public' AND indexname='idx_countries_phone') THEN
+    CREATE INDEX idx_countries_phone ON public.countries(phone_code);
+  END IF;
+END $$;
 
 -- Seed initial set
 INSERT INTO public.countries (country_code, country_name, phone_code, supports_momo, supports_rides, supports_insurance, momo_provider)
@@ -39,4 +68,3 @@ SET country_name = EXCLUDED.country_name,
     updated_at = now();
 
 COMMIT;
-
