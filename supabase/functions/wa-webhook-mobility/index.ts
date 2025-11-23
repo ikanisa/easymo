@@ -29,6 +29,12 @@ import {
   startScheduleSavedLocationPicker,
   handleScheduleSavedLocationSelection,
 } from "./handlers/schedule.ts";
+import {
+  startGoOnline,
+  handleGoOnlineLocation,
+  handleGoOnlineUseCached,
+  handleGoOffline,
+} from "./handlers/go_online.ts";
 import type { RouterContext, WhatsAppWebhookPayload, RawWhatsAppMessage } from "./types.ts";
 import { IDS } from "./wa/ids.ts";
 
@@ -142,10 +148,19 @@ serve(async (req: Request): Promise<Response> => {
           handled = await handleChangeVehicleRequest(ctx, state?.data as any);
         } else if (id === IDS.USE_CACHED_LOCATION && state?.key === "mobility_nearby_location") {
           handled = await handleUseCachedLocation(ctx, state.data as any);
+        } else if (id === IDS.USE_CACHED_LOCATION && state?.key === "go_online_prompt") {
+          handled = await handleGoOnlineUseCached(ctx);
         } else if (id === IDS.LOCATION_SAVED_LIST && state?.key === "mobility_nearby_location") {
           handled = await startNearbySavedLocationPicker(ctx, state.data as any);
         } else if (id.startsWith("FAV::") && state?.key === "location_saved_picker" && state.data?.source === "nearby") {
           handled = await handleNearbySavedLocationSelection(ctx, state.data as any, id);
+        }
+        
+        // Go Online / Offline Flows
+        else if (id === IDS.GO_ONLINE || id === "driver_go_online") {
+          handled = await startGoOnline(ctx);
+        } else if (id === IDS.DRIVER_GO_OFFLINE) {
+          handled = await handleGoOffline(ctx);
         }
         
         // Schedule Flows
@@ -186,6 +201,8 @@ serve(async (req: Request): Promise<Response> => {
 
         if (state?.key === "mobility_nearby_location") {
           handled = await handleNearbyLocation(ctx, state.data as any, coords);
+        } else if (state?.key === "go_online_prompt") {
+          handled = await handleGoOnlineLocation(ctx, coords);
         } else if (state?.key === "schedule_location") {
           handled = await handleScheduleLocation(ctx, state.data as any, coords);
         } else if (state?.key === "schedule_dropoff") {

@@ -320,6 +320,7 @@
   "mobility.passenger_notification.contact_driver": "Contact Driver",
   "mobility.go_online.title": "🟢 Go Online",
   "mobility.go_online.prompt": "Share your location to start receiving ride requests. Your location will be saved for 30 minutes.",
+  "mobility.go_online.share_new": "Share Current Location",
   "mobility.go_online.success": "✅ You're now online! We'll notify you when passengers nearby need rides.",
   "mobility.go_online.offline": "🔴 You're now offline. You won't receive ride requests.",
   "mobility.go_online.update_success": "📍 Location updated successfully!",
