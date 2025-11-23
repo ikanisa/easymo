@@ -42,7 +42,6 @@ function getRevolutConfig(): RevolutConfig {
     environment: env as "sandbox" | "production",
   };
 }
-}
 
 // =====================================================
 // REVOLUT API FUNCTIONS
