@@ -219,13 +219,10 @@ CREATE TABLE IF NOT EXISTS webhook_metrics (
   metric_name text NOT NULL,
   metric_value numeric NOT NULL,
   tags jsonb DEFAULT '{}'::jsonb,
-  timestamp timestamptz DEFAULT now(),
-  
-  -- Time-series optimization
-  time_bucket timestamptz GENERATED ALWAYS AS (date_trunc('minute', timestamp)) STORED
+  timestamp timestamptz DEFAULT now()
 );
 
-CREATE INDEX IF NOT EXISTS idx_metrics_type_name_time ON webhook_metrics(metric_type, metric_name, time_bucket DESC);
+CREATE INDEX IF NOT EXISTS idx_metrics_type_name_time ON webhook_metrics(metric_type, metric_name, timestamp DESC);
 CREATE INDEX IF NOT EXISTS idx_metrics_tags ON webhook_metrics USING gin(tags);
 
 -- ============================================
