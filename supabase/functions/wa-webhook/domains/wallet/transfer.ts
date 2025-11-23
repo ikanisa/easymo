@@ -18,6 +18,20 @@ type TransferState = {
 
 export async function startWalletTransfer(ctx: RouterContext): Promise<boolean> {
   if (!ctx.profileId) return false;
+  
+  // Check balance - minimum 2000 tokens required
+  const { data: balance } = await ctx.supabase.rpc("wallet_get_balance", { p_user_id: ctx.profileId });
+  const currentBalance = typeof balance === "number" ? balance : 0;
+  
+  if (currentBalance < 2000) {
+    await sendButtonsMessage(
+      ctx,
+      `⚠️ You need at least 2000 tokens to transfer. Your balance: ${currentBalance}.`,
+      [{ id: IDS.WALLET, title: "💎 Wallet" }],
+    );
+    return true;
+  }
+  
   const idem = crypto.randomUUID();
   await setState(ctx.supabase, ctx.profileId, { key: "wallet_transfer", data: { stage: "choose", idem } });
   try {

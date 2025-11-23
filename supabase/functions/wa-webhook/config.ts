@@ -42,6 +42,7 @@ export const WA_VERIFY_TOKEN = mustGetOne(
   "WHATSAPP_VERIFY_TOKEN",
 );
 export const OPENAI_API_KEY = getEnv("OPENAI_API_KEY") ?? "";
+export const GEMINI_API_KEY = getEnv("GEMINI_API_KEY") ?? "";
 export const WA_BOT_NUMBER_E164 =
   getEnv("WA_BOT_NUMBER_E164", "WHATSAPP_PHONE_NUMBER_E164") ?? "";
 export const QR_SALT = getEnv("QR_SALT") ?? "";

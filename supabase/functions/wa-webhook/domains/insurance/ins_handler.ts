@@ -261,7 +261,11 @@ export async function processInsuranceDocument(
   msg: Record<string, unknown>,
   stateKey: string,
 ): Promise<InsuranceProcessOutcome> {
-  if (stateKey !== "ins_wait_doc" && stateKey !== "insurance_upload") {
+  if (
+    stateKey !== "ins_wait_doc" &&
+    stateKey !== "insurance_upload" &&
+    stateKey !== "insurance_menu"
+  ) {
     return "skipped";
   }
 

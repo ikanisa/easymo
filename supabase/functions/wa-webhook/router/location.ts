@@ -139,6 +139,11 @@ export async function handleLocation(
     );
   }
 
+  if (state.key === "driver_go_online") {
+    const { handleDriverLocationUpdate } = await import("../domains/mobility/driver_actions.ts");
+    return await handleDriverLocationUpdate(ctx, { lat, lng });
+  }
+
   if (state.key === "mobility_nearby_location") {
     return await handleNearbyLocation(ctx, (state.data ?? {}) as any, {
       lat,

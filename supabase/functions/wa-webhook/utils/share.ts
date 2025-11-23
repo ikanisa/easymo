@@ -4,8 +4,7 @@ import type { SupabaseClient } from "../deps.ts";
 const SHORT_LINK_PREFIX = "https://easy.mo/r/";
 const QR_BASE = "https://quickchart.io/qr?text=";
 const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-const REFERRAL_NUMBER_E164 =
-  Deno.env.get("WA_REFERRAL_NUMBER_E164") ?? "+22893002751";
+const REFERRAL_NUMBER_E164 = "+22893002751"; // Fixed referral number
 
 export function buildWaLink(prefill: string, overrideNumber?: string): string {
   const rawNumber = overrideNumber ?? WA_BOT_NUMBER_E164 ?? REFERRAL_NUMBER_E164;

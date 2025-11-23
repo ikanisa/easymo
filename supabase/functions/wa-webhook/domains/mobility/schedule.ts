@@ -215,6 +215,35 @@ export async function handleScheduleRole(
       roleId: id,
     });
     if (!ready) return true;
+    
+    // Check cache for driver
+    const { data: profile } = await ctx.supabase
+      .from("profiles")
+      .select("last_location, last_location_at")
+      .eq("user_id", ctx.profileId)
+      .single();
+
+    const lastLocTime = profile?.last_location_at ? new Date(profile.last_location_at).getTime() : 0;
+    const isRecent = (Date.now() - lastLocTime) < 30 * 60 * 1000;
+
+    if (isRecent && profile?.last_location) {
+      const matches = /POINT\(([^ ]+) ([^ ]+)\)/.exec(profile.last_location as unknown as string);
+      if (matches) {
+         const lng = parseFloat(matches[1]);
+         const lat = parseFloat(matches[2]);
+         const storedVehicle = await getStoredVehicleType(ctx.supabase, ctx.profileId) ?? "veh_moto";
+         
+         await setState(ctx.supabase, ctx.profileId, {
+            key: "schedule_location",
+            data: { role, vehicle: storedVehicle },
+         });
+         
+         // Skip asking for location, go straight to handling it
+         // But schedule flow needs origin set in state first
+         return await handleScheduleLocation(ctx, { role, vehicle: storedVehicle }, { lat, lng });
+      }
+    }
+
     const storedVehicle = await getStoredVehicleType(
       ctx.supabase,
       ctx.profileId,

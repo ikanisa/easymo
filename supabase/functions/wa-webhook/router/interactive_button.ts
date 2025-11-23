@@ -565,5 +565,16 @@ async function handleSavedPlacesSkip(
     default:
       break;
   }
+  if (id === "driver_go_online") {
+    const { handleGoOnline } = await import("../domains/mobility/driver_actions.ts");
+    return await handleGoOnline(ctx);
+  }
+
+  if (id.startsWith("RIDE_ACCEPT::")) {
+    const tripId = id.split("::")[1];
+    const { handleDriverAcceptRide } = await import("../domains/mobility/driver_actions.ts");
+    return await handleDriverAcceptRide(ctx, tripId);
+  }
+
   return false;
 }

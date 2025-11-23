@@ -22,6 +22,20 @@ type RedeemState =
 
 export async function showWalletRedeem(ctx: RouterContext): Promise<boolean> {
   if (!ctx.profileId) return false;
+  
+  // Check balance
+  const { data: balance } = await ctx.supabase.rpc("wallet_get_balance", { p_user_id: ctx.profileId });
+  const currentBalance = typeof balance === "number" ? balance : 0;
+  
+  if (currentBalance < 2000) {
+    await sendButtonsMessage(
+      ctx,
+      `⚠️ You need at least 2000 tokens to redeem rewards. Your balance: ${currentBalance}.`,
+      [{ id: IDS.WALLET, title: "💎 Wallet" }],
+    );
+    return true;
+  }
+
   try {
     const options = await listWalletRedeemOptions(ctx.supabase, ctx.profileId);
     const navRows = buildWalletNavRows(IDS.WALLET_REDEEM);

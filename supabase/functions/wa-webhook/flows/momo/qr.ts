@@ -2,7 +2,6 @@ import type { RouterContext } from "../../types.ts";
 import {
   sendImageUrl,
   sendText,
-  WhatsAppClientError,
 } from "../../wa/client.ts";
 import { IDS } from "../../wa/ids.ts";
 import { clearState, setState } from "../../state/store.ts";
@@ -33,25 +32,46 @@ type MomoData = {
   e164?: string;
 };
 
+// Helper to check if a number is from a MOMO-supported country
+async function isMomoSupported(ctx: RouterContext, phone: string): Promise<boolean> {
+  const clean = phone.replace(/^\+/, "");
+  // Fetch supported prefixes from DB
+  const { data: countries } = await ctx.supabase
+    .from("countries")
+    .select("phone_code")
+    .eq("momo_supported", true);
+  
+  if (!countries) return false; // Default to false if DB fails
+  
+  return countries.some(c => clean.startsWith(c.phone_code));
+}
+
 export async function startMomoQr(
   ctx: RouterContext,
   _state: MomoState,
 ): Promise<boolean> {
   if (!ctx.profileId) return false;
   await setState(ctx.supabase, ctx.profileId, { key: STATES.MENU, data: {} });
+  
+  const isSupported = await isMomoSupported(ctx, ctx.from);
   const selfNumber = normalizeMsisdn(ctx.from);
-  const rows = [
-    {
+  
+  const rows: any[] = [];
+
+  // Only show "Use my number" if supported country
+  if (isSupported && selfNumber) {
+    rows.push({
       id: IDS.MOMO_QR_MY,
       title: "Use my number",
-      description: selfNumber
-        ? `Use ${selfNumber.local} from this chat.`
-        : "Use your WhatsApp number (07…).",
-    },
+      description: `Use ${selfNumber.local} from this chat.`,
+    });
+  }
+
+  rows.push(
     {
       id: IDS.MOMO_QR_NUMBER,
       title: "Enter number",
-      description: "Provide the customer's 07… MoMo number.",
+      description: "Provide the customer's MoMo number.",
     },
     {
       id: IDS.MOMO_QR_CODE,
@@ -63,7 +83,8 @@ export async function startMomoQr(
       title: "← Back",
       description: "Return to the main menu.",
     },
-  ];
+  );
+
   await sendListMessage(
     ctx,
     {
@@ -90,7 +111,7 @@ export async function handleMomoButton(
       if (!normalized) {
         await sendButtonsMessage(
           ctx,
-          "⚠️ Couldn't read your MoMo number. Reply with your 07… number instead.",
+          "⚠️ Couldn't read your MoMo number. Reply with your number instead.",
           buildButtons({ id: IDS.MOMO_QR, title: "↩️ Menu" }),
         );
         return true;
@@ -127,7 +148,7 @@ export async function handleMomoButton(
       });
       await sendButtonsMessage(
         ctx,
-        "📱 Send the customer's MoMo number (format 07XXXXXXXX).",
+        "📱 Send the customer's MoMo number.",
         buildButtons({ id: IDS.MOMO_QR, title: "↩️ Menu" }),
       );
       return true;
@@ -187,11 +208,13 @@ async function handleNumberInput(
   input: string,
 ): Promise<boolean> {
   if (!ctx.profileId) return false;
-  const normalized = normalizeMsisdn(input);
+  // Relaxed normalization to accept any valid-looking number
+  const normalized = normalizeMsisdn(input) || simpleNormalize(input);
+  
   if (!normalized) {
     await sendButtonsMessage(
       ctx,
-      "⚠️ Invalid number. Use format 07XXXXXXXX.",
+      "⚠️ Invalid number format.",
       buildButtons({ id: IDS.MOMO_QR, title: "↩️ Menu" }),
     );
     return true;
@@ -290,10 +313,10 @@ async function deliverMomoQr(
   const lines: string[] = [
     `Target: ${data.display}`,
     `Dial: ${buttonData.ussd}`,
-    `Tap: ${buttonData.telUri}`,
+    // `Tap: ${buttonData.telUri}`, // Removed to reduce clutter
   ];
   if (amountRwf && amountRwf > 0) {
-    lines.splice(1, 0, `Amount: RWF ${amountRwf.toLocaleString("en-US")}`);
+    lines.splice(1, 0, `Amount: ${amountRwf.toLocaleString("en-US")}`);
   }
   const shareLink = buildWaLink(`Pay via MoMo ${data.display}: ${buttonData.ussd}`);
   if (shareLink) {
@@ -364,6 +387,7 @@ function normalizeMsisdn(raw: string): NormalizedMsisdn | null {
     digits = digits.slice(2);
   }
 
+  // Rwanda specific
   if (digits.startsWith("2507") && digits.length >= 12) {
     const core = digits.slice(0, 12);
     const local = `0${core.slice(-9)}`;
@@ -382,6 +406,13 @@ function normalizeMsisdn(raw: string): NormalizedMsisdn | null {
   return null;
 }
 
+// Simple normalization for other countries or generic numbers
+function simpleNormalize(raw: string): NormalizedMsisdn | null {
+    const digits = raw.replace(/\D/g, "");
+    if (digits.length < 8) return null;
+    return { local: digits, e164: `+${digits}` };
+}
+
 function sanitizeCode(raw: string): string | null {
   const digits = raw.replace(/\D/g, "");
   if (digits.length < 4 || digits.length > 12) return null;
@@ -394,7 +425,7 @@ async function promptAmount(
 ): Promise<void> {
   await sendButtonsMessage(
     ctx,
-    `💰 Enter amount in RWF for ${display} (or tap Skip).`,
+    `💰 Enter amount for ${display} (or tap Skip).`,
     buildButtons({ id: IDS.MOMO_QR_SKIP, title: "Skip" }),
   );
 }
@@ -422,3 +453,4 @@ function localToE164(local: string): string {
   }
   return local.startsWith("250") ? `+${local}` : local;
 }
+

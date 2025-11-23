@@ -43,7 +43,7 @@ export async function startInsurance(
         {
           id: IDS.INSURANCE_HELP,
           title: "Help",
-          description: "See tips about accepted formats and quality.",
+          description: "Contact our support team for assistance.",
         },
         {
           id: IDS.BACK_MENU,
@@ -77,16 +77,8 @@ export async function handleInsuranceListSelection(
       return true;
     }
     case IDS.INSURANCE_HELP: {
-      await sendButtonsMessage(
-        ctx,
-        [
-          "✅ Accepted formats: JPG, PNG, PDF",
-          "📷 Tip: capture the full page in good lighting",
-          "⏱️ Reviews happen within minutes during business hours",
-        ].join("\n\n"),
-        buildButtons({ id: IDS.MOTOR_INSURANCE, title: "Done" }),
-      );
-      return true;
+      const { handleInsuranceHelp } = await import("./ins_handler.ts");
+      return await handleInsuranceHelp(ctx);
     }
     case IDS.BACK_MENU: {
       await clearState(ctx.supabase, ctx.profileId);

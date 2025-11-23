@@ -39,6 +39,11 @@ export async function showRidesMenu(ctx: RouterContext): Promise<boolean> {
           description: t(ctx.locale, "home.rows.scheduleTrip.description"),
         },
         {
+          id: "driver_go_online",
+          title: "🟢 Go Online (Driver)",
+          description: "Share location to get requests",
+        },
+        {
           id: IDS.BACK_MENU,
           title: t(ctx.locale, "common.menu_back"),
           description: t(ctx.locale, "common.back_to_menu.description"),
