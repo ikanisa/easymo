@@ -4,6 +4,8 @@
 [build]
   # Set base to admin-app so the Netlify Next.js plugin can find the app
   base = "admin-app"
+  # Publish directory relative to base
+  publish = ".next"
   # Build workspace dependencies from root, then build the admin app
   command = "cd .. && pnpm install --frozen-lockfile && pnpm --filter @va/shared build && pnpm --filter @easymo/commons build && pnpm --filter @easymo/video-agent-schema build && cd admin-app && pnpm build"
 
