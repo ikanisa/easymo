@@ -217,9 +217,17 @@ export async function recordLastLocation(
       capturedAt: new Date().toISOString(),
     };
     metadata.mobility = mobilityMeta;
+    
+    // Create PostGIS POINT geometry for location caching (30-minute validity)
+    const point = `SRID=4326;POINT(${coords.lng} ${coords.lat})`;
+    
     const { error: updateError } = await ctx.supabase
       .from("profiles")
-      .update({ metadata })
+      .update({ 
+        metadata,
+        last_location: point,
+        last_location_at: new Date().toISOString()
+      })
       .eq("user_id", ctx.profileId);
     if (updateError) throw updateError;
   } catch (err) {
