@@ -2,8 +2,8 @@
  * Webhook Processing Utilities
  * 
  * Provides core utilities for WhatsApp webhook processing:
- * - Signature verification
- * - Payload validation
+ * - Signature verification (timing-safe)
+ * - Payload validation (Zod schemas)
  * - Webhook queue management
  * - Rate limiting
  * - Circuit breaker pattern
@@ -22,33 +22,140 @@ import {
   CircuitBreakerOpenError,
   TimeoutError
 } from "./errors.ts";
-import { createHmac } from "https://deno.land/std@0.224.0/crypto/mod.ts";
+import { createHmac, timingSafeEqual } from "https://deno.land/std@0.224.0/crypto/mod.ts";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 export const WEBHOOK_TIMEOUT_MS = 10000; // 10 seconds
 export const MAX_RETRIES = 3;
 export const LOCK_TIMEOUT_MS = 120000; // 2 minutes
 
+// ============================================
+// ZOD VALIDATION SCHEMAS
+// ============================================
+const WhatsAppTextMessageSchema = z.object({
+  body: z.string().max(4096)
+});
+
+const WhatsAppMediaMessageSchema = z.object({
+  id: z.string(),
+  mime_type: z.string(),
+  sha256: z.string(),
+  caption: z.string().optional()
+});
+
+const WhatsAppLocationMessageSchema = z.object({
+  latitude: z.number().min(-90).max(90),
+  longitude: z.number().min(-180).max(180),
+  name: z.string().optional(),
+  address: z.string().optional()
+});
+
+const WhatsAppInteractiveMessageSchema = z.object({
+  type: z.enum(["button_reply", "list_reply"]),
+  button_reply: z.object({
+    id: z.string(),
+    title: z.string()
+  }).optional(),
+  list_reply: z.object({
+    id: z.string(),
+    title: z.string(),
+    description: z.string().optional()
+  }).optional()
+});
+
+const WhatsAppMessageSchema = z.object({
+  from: z.string().regex(/^\d{10,15}$/),
+  id: z.string(),
+  timestamp: z.string(),
+  type: z.enum(["text", "image", "document", "audio", "video", "location", "contacts", "interactive", "reaction", "sticker"]),
+  text: WhatsAppTextMessageSchema.optional(),
+  image: WhatsAppMediaMessageSchema.optional(),
+  document: WhatsAppMediaMessageSchema.optional(),
+  audio: WhatsAppMediaMessageSchema.optional(),
+  video: WhatsAppMediaMessageSchema.optional(),
+  location: WhatsAppLocationMessageSchema.optional(),
+  interactive: WhatsAppInteractiveMessageSchema.optional(),
+  context: z.object({
+    from: z.string(),
+    id: z.string()
+  }).optional()
+});
+
+const WhatsAppStatusSchema = z.object({
+  id: z.string(),
+  status: z.enum(["sent", "delivered", "read", "failed"]),
+  timestamp: z.string(),
+  recipient_id: z.string(),
+  conversation: z.object({
+    id: z.string(),
+    origin: z.object({
+      type: z.string()
+    })
+  }).optional(),
+  pricing: z.object({
+    billable: z.boolean(),
+    pricing_model: z.string(),
+    category: z.string()
+  }).optional(),
+  errors: z.array(z.object({
+    code: z.number(),
+    title: z.string(),
+    message: z.string(),
+    error_data: z.object({
+      details: z.string()
+    }).optional()
+  })).optional()
+});
+
+export const WhatsAppWebhookSchema = z.object({
+  object: z.literal("whatsapp_business_account"),
+  entry: z.array(z.object({
+    id: z.string(),
+    changes: z.array(z.object({
+      value: z.object({
+        messaging_product: z.literal("whatsapp"),
+        metadata: z.object({
+          display_phone_number: z.string(),
+          phone_number_id: z.string()
+        }),
+        contacts: z.array(z.object({
+          profile: z.object({
+            name: z.string()
+          }),
+          wa_id: z.string()
+        })).optional(),
+        messages: z.array(WhatsAppMessageSchema).optional(),
+        statuses: z.array(WhatsAppStatusSchema).optional(),
+        errors: z.array(z.any()).optional()
+      }),
+      field: z.string()
+    }))
+  }))
+});
+
 /**
- * Verify webhook signature using HMAC-SHA256
+ * Verify webhook signature using HMAC-SHA256 with timing-safe comparison
  */
 export function verifyWebhookSignature(
-  body: string,
+  payload: string,
   signature: string | null,
-  secret: string
+  appSecret: string
 ): boolean {
   if (!signature) return false;
 
   try {
-    const key = new TextEncoder().encode(secret);
-    const message = new TextEncoder().encode(body);
-    
-    const hmac = createHmac("sha256", key);
-    hmac.update(message);
-    const expectedSignature = "sha256=" + Array.from(hmac.digest())
-      .map(b => b.toString(16).padStart(2, "0"))
-      .join("");
+    const [method, receivedHash] = signature.split("=");
+    if (method !== "sha256") return false;
 
-    return signature === expectedSignature;
+    const hmac = createHmac("sha256", appSecret);
+    hmac.update(payload);
+    const expectedHash = hmac.toString("hex");
+
+    // Use timing-safe comparison to prevent timing attacks
+    return timingSafeEqual(
+      new TextEncoder().encode(receivedHash),
+      new TextEncoder().encode(expectedHash)
+    );
   } catch (error) {
     logError("signature_verification", error, { signatureProvided: !!signature });
     return false;
@@ -56,22 +163,17 @@ export function verifyWebhookSignature(
 }
 
 /**
- * Validate webhook payload structure
+ * Validate webhook payload structure using Zod schemas
  */
-export function validateWebhookPayload(payload: any): any {
-  if (!payload || typeof payload !== "object") {
-    throw new ValidationError("Invalid payload structure");
+export function validateWebhookPayload(data: unknown) {
+  try {
+    return WhatsAppWebhookSchema.parse(data);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      throw new ValidationError(`Invalid webhook payload: ${error.errors.map(e => e.message).join(", ")}`);
+    }
+    throw error;
   }
-
-  if (!Array.isArray(payload.entry)) {
-    throw new ValidationError("Missing entry array", "entry");
-  }
-
-  if (payload.entry.length === 0) {
-    throw new ValidationError("Empty entry array", "entry");
-  }
-
-  return payload;
 }
 
 /**
@@ -134,7 +236,7 @@ export class Logger {
 }
 
 /**
- * Metrics class for recording metrics
+ * Metrics class for recording metrics with support for different types
  */
 export class Metrics {
   constructor(private supabase: SupabaseClient) {}
@@ -158,6 +260,34 @@ export class Metrics {
     } catch (error) {
       // Don't throw - metrics failures shouldn't break the flow
       console.error("Failed to record metric:", error);
+    }
+  }
+
+  async gauge(metricName: string, value: number, tags?: Record<string, any>): Promise<void> {
+    try {
+      await this.supabase.from("webhook_metrics").insert({
+        metric_type: "gauge",
+        metric_name: metricName,
+        metric_value: value,
+        tags: tags || {},
+        timestamp: new Date().toISOString(),
+      });
+    } catch (error) {
+      console.error("Failed to record gauge:", error);
+    }
+  }
+
+  async histogram(metricName: string, value: number, tags?: Record<string, any>): Promise<void> {
+    try {
+      await this.supabase.from("webhook_metrics").insert({
+        metric_type: "histogram",
+        metric_name: metricName,
+        metric_value: value,
+        tags: tags || {},
+        timestamp: new Date().toISOString(),
+      });
+    } catch (error) {
+      console.error("Failed to record histogram:", error);
     }
   }
 }
@@ -203,7 +333,7 @@ export class RateLimiter {
 }
 
 /**
- * Webhook processor for queuing webhooks
+ * Webhook processor for queuing and processing webhooks
  */
 export class WebhookProcessor {
   constructor(
@@ -212,13 +342,13 @@ export class WebhookProcessor {
     private metrics: Metrics
   ) {}
 
-  async queueWebhook(options: {
+  async queueWebhook(params: {
     payload: any;
     correlationId: string;
     priority?: number;
     source?: string;
   }): Promise<void> {
-    const { payload, correlationId, priority = 5, source = "whatsapp" } = options;
+    const { payload, correlationId, priority = 5, source = "whatsapp" } = params;
 
     try {
       const { error } = await this.supabase.from("webhook_queue").insert({
@@ -242,15 +372,234 @@ export class WebhookProcessor {
       throw new WebhookError("Failed to queue webhook", 500, "QUEUE_ERROR", true);
     }
   }
+
+  async processQueuedWebhooks(): Promise<void> {
+    // Get pending webhooks
+    const { data: webhooks, error } = await this.supabase
+      .from("webhook_queue")
+      .select("*")
+      .eq("status", "pending")
+      .order("priority", { ascending: false })
+      .order("created_at", { ascending: true })
+      .limit(10);
+
+    if (error) {
+      this.logger.error("Failed to fetch queued webhooks", { error });
+      return;
+    }
+
+    // Process each webhook
+    for (const webhook of webhooks || []) {
+      await this.processWebhook(webhook);
+    }
+  }
+
+  private async processWebhook(webhook: any): Promise<void> {
+    const startTime = Date.now();
+
+    try {
+      // Mark as processing
+      await this.supabase
+        .from("webhook_queue")
+        .update({ 
+          status: "processing",
+          started_at: new Date().toISOString()
+        })
+        .eq("id", webhook.id);
+
+      // Process based on webhook type
+      const value = webhook.payload.entry?.[0]?.changes?.[0]?.value;
+
+      if (value?.messages) {
+        await this.processMessages(value.messages, value.metadata);
+      }
+
+      if (value?.statuses) {
+        await this.processStatuses(value.statuses);
+      }
+
+      // Mark as completed
+      await this.supabase
+        .from("webhook_queue")
+        .update({ 
+          status: "completed",
+          completed_at: new Date().toISOString()
+        })
+        .eq("id", webhook.id);
+
+      const processingTime = Date.now() - startTime;
+      await this.metrics.record("webhook.processed", 1, {
+        type: "success",
+        processing_time: processingTime
+      });
+
+    } catch (error) {
+      await this.handleProcessingError(webhook, error);
+    }
+  }
+
+  private async processMessages(messages: any[], metadata: any): Promise<void> {
+    for (const message of messages) {
+      await this.processMessage(message, metadata);
+    }
+  }
+
+  private async processMessage(message: any, metadata: any): Promise<void> {
+    // Get or create conversation
+    const conversation = await this.getOrCreateConversation(
+      message.from,
+      metadata.display_phone_number
+    );
+
+    // Build message data
+    const messageData: any = {
+      wa_message_id: message.id,
+      conversation_id: conversation.id,
+      direction: "inbound",
+      type: message.type,
+      metadata: message,
+      created_at: new Date(parseInt(message.timestamp) * 1000).toISOString()
+    };
+
+    // Add type-specific fields
+    switch (message.type) {
+      case "text":
+        messageData.text_body = message.text.body;
+        break;
+      case "image":
+      case "document":
+      case "audio":
+      case "video":
+        const media = message[message.type];
+        messageData.media_url = media.id;
+        messageData.media_mime_type = media.mime_type;
+        messageData.media_sha256 = media.sha256;
+        messageData.caption = media.caption;
+        break;
+      case "location":
+        messageData.location_latitude = message.location.latitude;
+        messageData.location_longitude = message.location.longitude;
+        messageData.location_name = message.location.name;
+        messageData.location_address = message.location.address;
+        break;
+      case "interactive":
+        messageData.interactive_type = message.interactive.type;
+        messageData.interactive_payload = message.interactive;
+        break;
+    }
+
+    // Insert message with idempotency
+    const { data, error } = await this.supabase
+      .rpc("process_webhook_idempotent", {
+        p_wa_message_id: message.id,
+        p_payload: messageData
+      });
+
+    if (error && error.code !== "23505") {
+      throw error;
+    }
+
+    // Trigger business logic for new messages
+    if (data?.status === "processed") {
+      await this.triggerMessageHandlers(conversation.id, messageData);
+    }
+  }
+
+  private async processStatuses(statuses: any[]): Promise<void> {
+    for (const status of statuses) {
+      await this.supabase
+        .rpc("update_message_status", {
+          p_wa_message_id: status.id,
+          p_new_status: status.status,
+          p_metadata: status
+        });
+
+      await this.metrics.record("message.status_update", 1, {
+        status: status.status
+      });
+    }
+  }
+
+  private async getOrCreateConversation(phoneNumber: string, businessPhone: string): Promise<any> {
+    let { data: conversation } = await this.supabase
+      .from("conversations")
+      .select("*")
+      .eq("phone_number", phoneNumber)
+      .single();
+
+    if (!conversation) {
+      const { data: newConversation, error } = await this.supabase
+        .from("conversations")
+        .insert({
+          phone_number: phoneNumber,
+          metadata: {
+            business_phone: businessPhone,
+            created_via: "webhook"
+          }
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      conversation = newConversation;
+    }
+
+    // Update last message timestamp
+    await this.supabase
+      .from("conversations")
+      .update({ 
+        last_message_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+      .eq("id", conversation.id);
+
+    return conversation;
+  }
+
+  private async triggerMessageHandlers(conversationId: string, message: any): Promise<void> {
+    // Integration point for business logic
+    this.logger.info("Triggering message handlers", {
+      conversationId,
+      messageType: message.type
+    });
+  }
+
+  private async handleProcessingError(webhook: any, error: any): Promise<void> {
+    this.logger.error("Webhook processing failed", {
+      webhookId: webhook.id,
+      error: error.message
+    });
+
+    const shouldRetry = webhook.retry_count < webhook.max_retries;
+    const nextRetryAt = shouldRetry 
+      ? new Date(Date.now() + Math.pow(2, webhook.retry_count) * 60000).toISOString()
+      : null;
+
+    await this.supabase
+      .from("webhook_queue")
+      .update({
+        status: shouldRetry ? "failed" : "dead",
+        error_message: error.message,
+        error_details: { stack: error.stack },
+        retry_count: webhook.retry_count + 1,
+        next_retry_at: nextRetryAt
+      })
+      .eq("id", webhook.id);
+
+    await this.metrics.record("webhook.processing_error", 1, {
+      retryable: shouldRetry
+    });
+  }
 }
 
 /**
- * Circuit breaker pattern implementation
+ * Circuit breaker pattern implementation with half-open state
  */
 export class CircuitBreaker {
   private failures = 0;
   private lastFailTime = 0;
   private state: "closed" | "open" | "half-open" = "closed";
+  private successCount = 0;
 
   constructor(
     private config: {
@@ -265,6 +614,7 @@ export class CircuitBreaker {
       if (Date.now() - this.lastFailTime > this.config.resetTimeout) {
         this.state = "half-open";
         this.failures = 0;
+        this.successCount = 0;
       } else {
         throw new CircuitBreakerOpenError();
       }
@@ -274,8 +624,11 @@ export class CircuitBreaker {
       const result = await fn();
       
       if (this.state === "half-open") {
-        this.state = "closed";
-        this.failures = 0;
+        this.successCount++;
+        if (this.successCount >= 3) {
+          this.state = "closed";
+          this.failures = 0;
+        }
       }
       
       return result;
@@ -295,6 +648,7 @@ export class CircuitBreaker {
     return {
       state: this.state,
       failures: this.failures,
+      successCount: this.successCount,
       lastFailTime: this.lastFailTime,
     };
   }
