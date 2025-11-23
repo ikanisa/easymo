@@ -495,24 +495,40 @@ ALTER TABLE conversation_states ENABLE ROW LEVEL SECURITY;
 ALTER TABLE webhook_queue ENABLE ROW LEVEL SECURITY;
 
 -- Service role policies (full access)
-CREATE POLICY IF NOT EXISTS "Service role can manage all conversations"
-  ON conversations
-  FOR ALL
-  USING (auth.jwt() ->> 'role' = 'service_role');
+DO $$ BEGIN
+  CREATE POLICY "Service role can manage all conversations"
+    ON conversations
+    FOR ALL
+    USING (auth.jwt() ->> 'role' = 'service_role');
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;
 
-CREATE POLICY IF NOT EXISTS "Service role can manage all messages"
-  ON messages
-  FOR ALL
-  USING (auth.jwt() ->> 'role' = 'service_role');
+DO $$ BEGIN
+  CREATE POLICY "Service role can manage all messages"
+    ON messages
+    FOR ALL
+    USING (auth.jwt() ->> 'role' = 'service_role');
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;
 
-CREATE POLICY IF NOT EXISTS "Service role can manage all conversation states"
-  ON conversation_states
-  FOR ALL
-  USING (auth.jwt() ->> 'role' = 'service_role');
+DO $$ BEGIN
+  CREATE POLICY "Service role can manage all conversation states"
+    ON conversation_states
+    FOR ALL
+    USING (auth.jwt() ->> 'role' = 'service_role');
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;
 
-CREATE POLICY IF NOT EXISTS "Service role can manage all webhook queue"
-  ON webhook_queue
-  FOR ALL
-  USING (auth.jwt() ->> 'role' = 'service_role');
+DO $$ BEGIN
+  CREATE POLICY "Service role can manage all webhook queue"
+    ON webhook_queue
+    FOR ALL
+    USING (auth.jwt() ->> 'role' = 'service_role');
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;
 
 COMMIT;
