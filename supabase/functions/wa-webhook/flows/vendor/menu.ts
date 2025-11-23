@@ -23,6 +23,12 @@ export async function handleVendorMenuMedia(
   // Check if user is in restaurant_upload state
   if (ctx.profileId) {
     const state = await getState(ctx.supabase, ctx.profileId);
+    
+    // Skip if this is an insurance document upload
+    if (state.key === "ins_wait_doc" || state.key === "insurance_upload" || state.key === "insurance_menu") {
+      return false;
+    }
+    
     if (state.key === "restaurant_upload" && state.data?.barId) {
       return await handleRestaurantMenuUpload(ctx, msg, mediaId, state.data.barId as string);
     }
