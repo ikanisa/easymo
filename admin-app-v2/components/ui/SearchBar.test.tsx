@@ -1,4 +1,5 @@
-import { describe, it, expect } from 'vitest';
+```typescript
+import { describe, it, expect, vi } from 'vitest';
 import { renderWithProviders, screen } from '../../tests/utils';
 import { SearchBar } from './SearchBar';
 import userEvent from '@testing-library/user-event';
@@ -16,17 +17,15 @@ describe('SearchBar', () => {
   });
 
   it('calls onChange when typing', async () => {
-    let value = '';
-    const handleChange = (newValue: string) => {
-      value = newValue;
-    };
+    const handleChange = vi.fn();
 
-    renderWithProviders(<SearchBar value={value} onChange={handleChange} />);
+    renderWithProviders(<SearchBar value="" onChange={handleChange} />);
     
     const input = screen.getByRole('textbox');
     await userEvent.type(input, 'search');
     
-    expect(value).toBe('search');
+    expect(handleChange).toHaveBeenCalledTimes(6); // For each character typed
+    expect(handleChange).toHaveBeenLastCalledWith('search');
   });
 
   it('shows clear button when value is not empty', () => {
@@ -42,17 +41,15 @@ describe('SearchBar', () => {
   });
 
   it('clears value when clear button is clicked', async () => {
-    let value = 'test';
-    const handleChange = (newValue: string) => {
-      value = newValue;
-    };
+    const handleChange = vi.fn();
 
-    renderWithProviders(<SearchBar value={value} onChange={handleChange} />);
+    renderWithProviders(<SearchBar value="test" onChange={handleChange} />);
     
-    const clearButton = screen.getByRole('button');
+    const clearButton = screen.getByRole('button', { name: /clear search/i });
     await userEvent.click(clearButton);
     
-    expect(value).toBe('');
+    expect(handleChange).toHaveBeenCalledTimes(1);
+    expect(handleChange).toHaveBeenCalledWith('');
   });
 
   it('has search icon', () => {
@@ -61,3 +58,4 @@ describe('SearchBar', () => {
     expect(searchIcon).toBeInTheDocument();
   });
 });
+```

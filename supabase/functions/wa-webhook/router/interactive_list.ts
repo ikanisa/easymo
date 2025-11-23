@@ -824,8 +824,8 @@ async function handleHomeMenuSelection(
       return await showJobBoardMenu(ctx);
     }
     case "show_momo_qr": {
-      // Action target alias from whatsapp_profile_menu_items
-      return await startWallet(ctx, state);
+      // Action target alias from whatsapp_profile_menu_items → start MoMo QR flow
+      return await startMomoQr(ctx, state);
     }
     case "show_profile": {
       // Action target alias for profile view

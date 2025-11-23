@@ -41,7 +41,7 @@ export function extractCountryCode(phoneNumber: string): string {
 export async function checkCountrySupport(
   supabase: SupabaseClient,
   phoneNumber: string,
-  feature: "momo" | "rides" | "insurance"
+  feature: "momo" | "rides" | "insurance",
 ): Promise<CountrySupportResult> {
   const countryCode = extractCountryCode(phoneNumber);
 
@@ -52,11 +52,27 @@ export async function checkCountrySupport(
     };
   }
 
-  const { data: country, error } = await supabase
+  // Support both legacy and new schemas:
+  // - Legacy: columns: id, name, code, phone_code, momo_supported
+  // - New:    columns: country_code, country_name, supports_momo, supports_rides, supports_insurance, momo_provider
+  const { data: list, error } = await supabase
     .from("countries")
-    .select("*")
-    .eq("country_code", countryCode)
-    .single();
+    .select("*");
+
+  if (error) {
+    return {
+      supported: false,
+      message: "❌ Countries metadata not available.",
+    };
+  }
+
+  const country = (list || []).find((c: any) => {
+    const codeLegacy = (c && typeof c.code === "string") ? c.code.toUpperCase() : null;
+    const codeNew = (c && typeof c.country_code === "string")
+      ? c.country_code.toUpperCase()
+      : null;
+    return codeLegacy === countryCode || codeNew === countryCode;
+  }) as any | undefined;
 
   if (error || !country) {
     return {
@@ -70,31 +86,40 @@ export async function checkCountrySupport(
   let provider: string | undefined;
 
   switch (feature) {
-    case "momo":
-      isSupported = country.supports_momo === true;
+    case "momo": {
+      const flagNew = country.supports_momo === true;
+      const flagLegacy = country.momo_supported === true;
+      isSupported = flagNew || flagLegacy;
       provider = country.momo_provider;
       break;
-    case "rides":
-      isSupported = country.supports_rides === true;
+    }
+    case "rides": {
+      // Legacy schema had no rides flag; default to true if missing
+      const flagNew = country.supports_rides === true;
+      isSupported = flagNew ?? false;
       break;
-    case "insurance":
-      isSupported = country.supports_insurance === true;
+    }
+    case "insurance": {
+      // Legacy schema had no insurance flag; default to true if missing
+      const flagNew = country.supports_insurance === true;
+      isSupported = flagNew ?? false;
       break;
+    }
   }
 
   if (!isSupported) {
     return {
       supported: false,
       countryCode,
-      countryName: country.country_name,
-      message: `❌ ${feature.toUpperCase()} is not available in ${country.country_name} yet.\n\nWe're working on expanding to more countries. Stay tuned!`,
-    };
+    countryName: country.country_name ?? country.name,
+    message: `❌ ${feature.toUpperCase()} is not available in ${country.country_name ?? country.name} yet.\n\nWe're working on expanding to more countries. Stay tuned!`,
+  };
   }
 
   return {
     supported: true,
     countryCode,
-    countryName: country.country_name,
+    countryName: country.country_name ?? country.name,
     momoProvider: provider,
   };
 }
@@ -104,17 +129,23 @@ export async function checkCountrySupport(
  */
 export async function getMomoProvider(
   supabase: SupabaseClient,
-  phoneNumber: string
+  phoneNumber: string,
 ): Promise<{ provider: string; ussdFormat: string } | null> {
   const countryCode = extractCountryCode(phoneNumber);
-
-  const { data: country } = await supabase
+  const { data: list } = await supabase
     .from("countries")
-    .select("momo_provider, supports_momo")
-    .eq("country_code", countryCode)
-    .single();
+    .select("*");
 
-  if (!country?.supports_momo) return null;
+  const country = (list || []).find((c: any) => {
+    const codeLegacy = (c && typeof c.code === "string") ? c.code.toUpperCase() : null;
+    const codeNew = (c && typeof c.country_code === "string")
+      ? c.country_code.toUpperCase()
+      : null;
+    return codeLegacy === countryCode || codeNew === countryCode;
+  }) as any | undefined;
+
+  const supportsMomo = country?.supports_momo === true || country?.momo_supported === true;
+  if (!supportsMomo) return null;
 
   // USSD formats by provider
   const ussdFormats: Record<string, string> = {
@@ -126,8 +157,8 @@ export async function getMomoProvider(
   };
 
   return {
-    provider: country.momo_provider || "Unknown",
-    ussdFormat: ussdFormats[country.momo_provider] || "*#",
+    provider: country?.momo_provider || "Unknown",
+    ussdFormat: ussdFormats[country?.momo_provider] || "*#",
   };
 }
 
@@ -154,9 +185,15 @@ export async function listSupportedCountries(
 
   const { data: countries } = await supabase
     .from("countries")
-    .select("country_name")
-    .eq(column, true)
-    .order("country_name");
+    .select("*");
 
-  return (countries || []).map((c) => c.country_name);
+  const rows = (countries || []).filter((c: any) => {
+    const flag = c[column];
+    if (flag === true) return true;
+    // Support legacy flag name for momo
+    if (column === "supports_momo" && c.momo_supported === true) return true;
+    return false;
+  });
+
+  return rows.map((c: any) => c.country_name ?? c.name).filter(Boolean);
 }

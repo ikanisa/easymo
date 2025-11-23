@@ -297,13 +297,18 @@ export async function handleScheduleVehicle(
     },
   });
   const instructions = t(ctx.locale, "location.share.instructions");
-  await sendButtonsMessage(
-    ctx,
-    t(ctx.locale, "schedule.pickup.prompt", { instructions }),
-    sharePickupButtons(ctx, state.role, {
-      allowChange: state.role === "driver",
-    }),
-  );
+  const body = t(ctx.locale, "schedule.pickup.prompt", { instructions });
+  try {
+    await sendButtonsMessage(
+      ctx,
+      body,
+      sharePickupButtons(ctx, state.role, {
+        allowChange: state.role === "driver",
+      }),
+    );
+  } catch (e) {
+    try { await sendText(ctx.from, body); } catch (_) { /* noop */ }
+  }
   return true;
 }
 
@@ -339,13 +344,20 @@ export async function handleScheduleLocation(
     },
   });
 
-  await sendButtonsMessage(
-    ctx,
-    t(ctx.locale, "schedule.dropoff.prompt", {
+  try {
+    await sendButtonsMessage(
+      ctx,
+      t(ctx.locale, "schedule.dropoff.prompt", {
+        instructions: t(ctx.locale, "location.share.instructions"),
+      }),
+      shareDropoffButtons(ctx),
+    );
+  } catch (e) {
+    const fallbackBody = t(ctx.locale, "schedule.dropoff.prompt", {
       instructions: t(ctx.locale, "location.share.instructions"),
-    }),
-    shareDropoffButtons(ctx),
-  );
+    });
+    try { await sendText(ctx.from, fallbackBody); } catch (_) { /* noop */ }
+  }
   return true;
 }
 
@@ -798,13 +810,20 @@ export async function requestScheduleDropoff(
     key: "schedule_dropoff",
     data: { ...state },
   });
-  await sendButtonsMessage(
-    ctx,
-    t(ctx.locale, "schedule.dropoff.instructions", {
+  try {
+    await sendButtonsMessage(
+      ctx,
+      t(ctx.locale, "schedule.dropoff.instructions", {
+        instructions: t(ctx.locale, "location.share.instructions"),
+      }),
+      shareDropoffButtons(ctx),
+    );
+  } catch (e) {
+    const fallbackBody = t(ctx.locale, "schedule.dropoff.instructions", {
       instructions: t(ctx.locale, "location.share.instructions"),
-    }),
-    shareDropoffButtons(ctx),
-  );
+    });
+    try { await sendText(ctx.from, fallbackBody); } catch (_) { /* noop */ }
+  }
   return true;
 }
 

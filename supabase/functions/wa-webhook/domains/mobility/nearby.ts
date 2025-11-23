@@ -527,19 +527,28 @@ async function sendVehicleSelector(ctx: RouterContext, mode: NearbyMode) {
       description: t(ctx.locale, "common.back_to_menu.description"),
     },
   ];
-  await sendListMessage(
-    ctx,
-    {
-      title: mode === "drivers"
-        ? t(ctx.locale, "mobility.nearby.title.drivers")
-        : t(ctx.locale, "mobility.nearby.title.passengers"),
-      body: t(ctx.locale, "mobility.nearby.vehicle_prompt"),
-      sectionTitle: t(ctx.locale, "mobility.nearby.vehicle_section"),
-      rows,
-      buttonText: t(ctx.locale, "common.buttons.choose"),
-    },
-    { emoji: mode === "drivers" ? "🚖" : "🧭" },
-  );
+  try {
+    await sendListMessage(
+      ctx,
+      {
+        title: mode === "drivers"
+          ? t(ctx.locale, "mobility.nearby.title.drivers")
+          : t(ctx.locale, "mobility.nearby.title.passengers"),
+        body: t(ctx.locale, "mobility.nearby.vehicle_prompt"),
+        sectionTitle: t(ctx.locale, "mobility.nearby.vehicle_section"),
+        rows,
+        buttonText: t(ctx.locale, "common.buttons.choose"),
+      },
+      { emoji: mode === "drivers" ? "🚖" : "🧭" },
+    );
+  } catch (e) {
+    const body = t(ctx.locale, "mobility.nearby.vehicle_prompt");
+    try {
+      await sendText(ctx.from, body);
+    } catch (_) {
+      // last resort: ignore
+    }
+  }
 }
 
 async function promptShareLocation(
@@ -559,11 +568,20 @@ async function promptShareLocation(
     title: t(ctx.locale, "location.saved.button"),
   });
   const instructions = t(ctx.locale, "location.share.instructions");
-  await sendButtonsMessage(
-    ctx,
-    t(ctx.locale, "mobility.nearby.share_location", { instructions }),
-    buttons,
-  );
+  const body = t(ctx.locale, "mobility.nearby.share_location", { instructions });
+  try {
+    await sendButtonsMessage(
+      ctx,
+      body,
+      buttons,
+    );
+  } catch (e) {
+    try {
+      await sendText(ctx.from, body);
+    } catch (_) {
+      // swallow
+    }
+  }
 }
 
 async function runMatchingFallback(

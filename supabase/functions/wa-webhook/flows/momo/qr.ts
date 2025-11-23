@@ -190,6 +190,57 @@ export async function handleMomoText(
   }
 
   switch (state.key) {
+    case STATES.MENU: {
+      // Be lenient: allow the user to type either a phone number or a merchant code
+      const byNumber = parseNumberAndAmount(trimmed);
+      const normalized = normalizeMsisdn(byNumber.number) || simpleNormalize(byNumber.number);
+      if (normalized) {
+        const { local, e164 } = normalized;
+        const display = maskPhone(e164);
+        await setState(ctx.supabase, ctx.profileId, {
+          key: STATES.AMOUNT_INPUT,
+          data: {
+            target: local,
+            targetType: "msisdn",
+            display,
+            e164,
+          },
+        });
+        if (byNumber.amount != null) {
+          await deliverMomoQr(
+            ctx,
+            { target: local, targetType: "msisdn", display, e164 },
+            byNumber.amount,
+          );
+          return true;
+        }
+        await promptAmount(ctx, display);
+        return true;
+      }
+      const byCode = parseCodeAndAmount(trimmed);
+      if (byCode.code) {
+        await setState(ctx.supabase, ctx.profileId, {
+          key: STATES.AMOUNT_INPUT,
+          data: {
+            target: byCode.code,
+            targetType: "code",
+            display: byCode.code,
+          },
+        });
+        if (byCode.amount != null) {
+          await deliverMomoQr(
+            ctx,
+            { target: byCode.code, targetType: "code", display: byCode.code },
+            byCode.amount,
+          );
+          return true;
+        }
+        await promptAmount(ctx, byCode.code);
+        return true;
+      }
+      // Not a recognisable input for MoMo QR menu
+      return false;
+    }
     case STATES.NUMBER_INPUT:
       return await handleNumberInput(ctx, trimmed);
     case STATES.CODE_INPUT:
