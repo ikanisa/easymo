@@ -2,7 +2,7 @@
 // AI-powered property ranking and shortlist generation with explanations
 // Implements scoring algorithm and generates Top-5 recommendations
 
-import { serve } from "$std/http/server.ts";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "@supabase/supabase-js";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;

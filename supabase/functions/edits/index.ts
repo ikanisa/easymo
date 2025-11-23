@@ -1,4 +1,4 @@
-import { serve } from "$std/http/server.ts";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { v4 as uuid } from "https://esm.sh/uuid@9.0.1";
 import {
   badRequest,

@@ -1,4 +1,4 @@
-import { serve } from "$std/http/server.ts";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { getServiceClient } from "../_shared/supabase.ts";
 import { getSecret, getSecretPair, getStringList } from "../_shared/secrets.ts";
 

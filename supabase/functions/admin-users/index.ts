@@ -3,7 +3,7 @@
 // Returns an array of user objects for the admin panel.  Each user
 // includes subscription status calculated from the subscriptions table.
 
-import { serve } from "$std/http/server.ts";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { getServiceClient } from "../_shared/supabase.ts";
 import { requireAdmin } from "../_shared/auth.ts";
 import { getInvitationDefaults } from "../_shared/env.ts";

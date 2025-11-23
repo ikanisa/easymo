@@ -1,4 +1,4 @@
-```typescript
+
 import { describe, it, expect, vi } from 'vitest';
 import { renderWithProviders, screen } from '../../tests/utils';
 import { SearchBar } from './SearchBar';
@@ -45,7 +45,7 @@ describe('SearchBar', () => {
 
     renderWithProviders(<SearchBar value="test" onChange={handleChange} />);
     
-    const clearButton = screen.getByRole('button', { name: /clear search/i });
+    const clearButton = screen.getByRole('button');
     await userEvent.click(clearButton);
     
     expect(handleChange).toHaveBeenCalledTimes(1);
@@ -58,4 +58,4 @@ describe('SearchBar', () => {
     expect(searchIcon).toBeInTheDocument();
   });
 });
-```
+

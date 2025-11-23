@@ -4,7 +4,7 @@
 // src/lib/adapter.real.ts#getAdminStats for example usage.  Uses
 // Supabase service role key to perform unrestricted reads.
 
-import { serve } from "$std/http/server.ts";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { getServiceClient } from "../_shared/supabase.ts";
 import { requireAdmin } from "../_shared/auth.ts";
 import { methodNotAllowed, ok, serverError } from "../_shared/http.ts";

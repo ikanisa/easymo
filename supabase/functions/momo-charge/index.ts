@@ -6,7 +6,7 @@
 // Following GROUND_RULES.md: observability, security, error handling
 // =====================================================
 
-import { serve } from "$std/http/server.ts";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { logStructuredEvent, recordMetric, maskPII } from "../_shared/observability.ts";
 import { getServiceClient } from "../_shared/supabase.ts";
 import { getEnv, requireEnv } from "../_shared/env.ts";

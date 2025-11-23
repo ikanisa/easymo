@@ -1,4 +1,4 @@
-import { serve } from "$std/http/server.ts";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { CONFIG } from "../_shared/env.ts";
 import { badRequest, methodNotAllowed, ok, serverError } from "../_shared/http.ts";
 

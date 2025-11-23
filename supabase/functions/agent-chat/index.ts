@@ -4,7 +4,7 @@
 // for LLM responses. Falls back to canned responses when Agent-Core is not
 // configured or returns an error.
 
-import { serve } from "$std/http/server.ts";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { getServiceClient } from "../_shared/supabase.ts";
 import { CONFIG } from "../_shared/env.ts";
 import { requireAdmin } from "../_shared/auth.ts";

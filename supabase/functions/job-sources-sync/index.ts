@@ -7,7 +7,7 @@
 // - Other configured sources
 // =====================================================
 
-import { serve } from "$std/http/server.ts";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "@supabase/supabase-js";
 import OpenAI from "openai";
 import { logStructuredEvent } from "../_shared/observability.ts";

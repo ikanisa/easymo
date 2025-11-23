@@ -11,7 +11,7 @@
 // - Audit logging to admin_audit_logs table
 // - Returns only non-sensitive fields in responses
 
-import { serve } from "$std/http/server.ts";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { z } from "zod";
 import { getServiceClient } from "../_shared/supabase.ts";
 import { requireAdmin } from "../_shared/auth.ts";

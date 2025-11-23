@@ -1,7 +1,7 @@
 // Property Rental Agent
 // Handles short-term and long-term rental matching, property listing, and price negotiation
 
-import { serve } from "$std/http/server.ts";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "@supabase/supabase-js@2";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;

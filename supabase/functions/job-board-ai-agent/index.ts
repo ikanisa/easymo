@@ -7,7 +7,7 @@ import { transcribeAudio, textToSpeech } from "../_shared/voice-handler.ts";
 // Matches job seekers with opportunities using OpenAI embeddings
 // =====================================================
 
-import { serve } from "$std/http/server.ts";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "@supabase/supabase-js";
 import OpenAI from "openai";
 import { SYSTEM_PROMPT } from "./prompts.ts";

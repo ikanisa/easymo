@@ -5,7 +5,7 @@
 // endpoints documented in the OpenAPI specification, enabling admin tools
 // to fetch transcripts, append audit notes, or enrich metadata.
 
-import { serve } from "$std/http/server.ts";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { getServiceClient } from "../_shared/supabase.ts";

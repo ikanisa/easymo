@@ -2,7 +2,7 @@
 // Multi-channel notification system for property updates
 // Supports WhatsApp messages, templates, and PWA push notifications
 
-import { serve } from "$std/http/server.ts";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "@supabase/supabase-js";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
