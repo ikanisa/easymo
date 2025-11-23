@@ -37,6 +37,14 @@ import {
   type UserFavorite,
 } from "../locations/favorites.ts";
 import { buildSaveRows } from "../locations/save.ts";
+import {
+  getCachedLocation,
+  saveLocationToCache,
+} from "../locations/cache.ts";
+import {
+  findOnlineDriversForTrip,
+  notifyMultipleDrivers,
+} from "../notifications/drivers.ts";
 
 const DEFAULT_WINDOW_DAYS = 30;
 const REQUIRED_RADIUS_METERS = 10_000;
@@ -319,6 +327,18 @@ export async function handleScheduleLocation(
   coords: { lat: number; lng: number },
 ): Promise<boolean> {
   if (!ctx.profileId || !state.role || !state.vehicle) return false;
+  
+  // Save location to 30-minute cache
+  try {
+    await saveLocationToCache(ctx.supabase, ctx.profileId, coords);
+    await logStructuredEvent("LOCATION_CACHED", {
+      userId: ctx.profileId,
+      flow: "schedule",
+    });
+  } catch (error) {
+    console.error("schedule.location_cache_save_fail", error);
+  }
+  
   await setState(ctx.supabase, ctx.profileId, {
     key: "schedule_dropoff",
     data: {

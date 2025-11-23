@@ -138,5 +138,19 @@ export const IDS = {
   BUSINESS_EDIT_LOCATION: "business_edit_location",
   BUSINESS_EDIT_SPECIALTIES: "business_edit_specialties",
   BUSINESS_EDIT_PROMOTIONS: "business_edit_promotions",
+  // Driver notification actions
+  DRIVER_OFFER_RIDE: "driver_offer_ride",
+  DRIVER_VIEW_DETAILS: "driver_view_details",
+  DRIVER_GO_OFFLINE: "driver_go_offline",
+  CONTACT_DRIVER: "contact_driver",
+  // Go Online feature
+  GO_ONLINE: "driver_go_online",
+  GO_OFFLINE: "go_offline",
+  UPDATE_LOCATION: "update_location",
+  USE_CACHED_LOCATION: "use_cached_location",
+  SHARE_NEW_LOCATION: "share_new_location",
+  // Recent actions
+  SCHEDULE_RECENT: "schedule_recent",
+  NEARBY_RECENT: "nearby_recent",
   // Existing flows will add more IDs during implementation.
 } as const;
