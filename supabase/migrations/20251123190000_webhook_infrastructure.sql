@@ -150,10 +150,7 @@ CREATE TABLE IF NOT EXISTS messages (
   retry_count integer DEFAULT 0,
   
   -- Performance
-  processing_time_ms integer,
-  
-  -- Timestamps  
-  created_at timestamptz DEFAULT now()
+  processing_time_ms integer
 );
 
 -- Comprehensive indexes for messages
