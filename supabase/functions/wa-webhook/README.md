@@ -1,7 +1,7 @@
 # wa-webhook
 
-Additive edge function that modularises the WhatsApp webhook and new dine-in
-flows. Modules:
+Core WhatsApp webhook edge function that handles all incoming WhatsApp messages
+and routes them to appropriate domain handlers. Modules:
 
 - `index.ts`: entrypoint (GET verify, POST dispatch)
 - `config.ts`: runtime configuration & Supabase client
@@ -15,11 +15,12 @@ flows. Modules:
 - `flows/`: message-driven UX blocks
 - `exchange/`: Flow Data Channel handlers (Meta WhatsApp Flows)
 - `observe/`: logging and diagnostics utilities
+- `domains/`: business domain handlers (insurance, wallet, mobility, etc.)
 
-This directory now houses both the original vendor upload handler and the v2
-conversational flows so nothing is lost while keeping a single deployment
-target. All new dine-in capabilities and future WA features should live here to
-honour the repository's additive-only guard.
+This directory houses all WhatsApp webhook functionality including insurance,
+referrals, MOMO QR codes, wallet/tokens, and rides workflows. **Modifications
+to wa-webhook are now permitted** (as of 2025-11-23) to allow bug fixes and
+feature improvements while other edge functions remain under additive-only guard.
 
 ## Runtime configuration
 
