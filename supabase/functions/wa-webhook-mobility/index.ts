@@ -35,6 +35,9 @@ import {
   handleGoOnlineUseCached,
   handleGoOffline,
 } from "./handlers/go_online.ts";
+import {
+  routeDriverAction,
+} from "./handlers/driver_response.ts";
 import type { RouterContext, WhatsAppWebhookPayload, RawWhatsAppMessage } from "./types.ts";
 import { IDS } from "./wa/ids.ts";
 
@@ -161,6 +164,11 @@ serve(async (req: Request): Promise<Response> => {
           handled = await startGoOnline(ctx);
         } else if (id === IDS.DRIVER_GO_OFFLINE) {
           handled = await handleGoOffline(ctx);
+        }
+        
+        // Driver Response Actions (Offer Ride, View Details)
+        else if (id.startsWith(IDS.DRIVER_OFFER_RIDE + "::") || id.startsWith(IDS.DRIVER_VIEW_DETAILS + "::")) {
+          handled = await routeDriverAction(ctx, id);
         }
         
         // Schedule Flows
