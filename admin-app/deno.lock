@@ -11,14 +11,18 @@
   "workspace": {
     "packageJson": {
       "dependencies": [
+        "npm:@headlessui/react@^2.2.2",
+        "npm:@heroicons/react@^2.1.5",
         "npm:@netlify/plugin-nextjs@^5.14.5",
+        "npm:@next/bundle-analyzer@^15.5.6",
         "npm:@radix-ui/react-slot@^1.0.2",
+        "npm:@supabase/ssr@0.7",
         "npm:@supabase/supabase-js@^2.76.1",
         "npm:@tanstack/query-async-storage-persister@^5.90.8",
         "npm:@tanstack/react-query@^5.51.21",
         "npm:@tanstack/react-table@8.16.0",
         "npm:@tanstack/react-virtual@3.13.12",
-        "npm:@testing-library/jest-dom@6.4.2",
+        "npm:@testing-library/jest-dom@6.9.1",
         "npm:@testing-library/react@14.2.1",
         "npm:@testing-library/user-event@14.6.1",
         "npm:@types/node@22.18.12",
@@ -29,12 +33,14 @@
         "npm:class-variance-authority@0.7",
         "npm:classnames@2.5.1",
         "npm:clsx@^2.1.1",
-        "npm:eslint-config-next@14.2.33",
+        "npm:esbuild@~0.23.1",
+        "npm:eslint-config-next@15.1.6",
         "npm:eslint@8.57.0",
         "npm:framer-motion@^11.3.9",
         "npm:jsdom@24.1.0",
+        "npm:lru-cache@^11.2.2",
         "npm:lucide-react@0.475",
-        "npm:next@^14.2.33",
+        "npm:next@15.1.6",
         "npm:openai@^4.104.0",
         "npm:papaparse@5.5.3",
         "npm:postcss@^8.4.41",
@@ -47,7 +53,7 @@
         "npm:tailwindcss@^3.4.13",
         "npm:typescript@5.5.4",
         "npm:vitest@^3.2.4",
-        "npm:zod@3.23.8"
+        "npm:zod@3.25.76"
       ]
     }
   }
