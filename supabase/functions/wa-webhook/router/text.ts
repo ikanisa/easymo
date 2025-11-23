@@ -34,7 +34,7 @@ export async function handleText(
   state: { key: string; data?: Record<string, unknown> },
 ): Promise<boolean> {
   const body = getTextBody(msg);
-  console.log(`DEBUG: handleText body="${body}" state.key="${state.key}"`);
+  // Debug logging removed for production
   if (!body) return false;
   // Record inbound for correlation (best-effort)
   try {
@@ -260,12 +260,12 @@ export async function handleText(
     return true;
   }
   // If no other handler matches, send home menu
-  console.log("DEBUG: handleText sending home menu");
+  // Fallback to home menu
   try {
     await sendHomeMenu(ctx);
-    console.log("DEBUG: handleText sent home menu");
+    // Home menu sent successfully
   } catch (e) {
-    console.log("DEBUG: handleText sendHomeMenu error", e);
+    console.error("handleText.sendHomeMenu.error", e);
     throw e;
   }
   return true;

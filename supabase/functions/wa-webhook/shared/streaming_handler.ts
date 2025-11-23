@@ -82,7 +82,10 @@ export class StreamingHandler {
       });
 
       if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
+        const error = await response.json().catch((e) => {
+          console.error("streaming_handler.parse_error_response.failed", e);
+          return {};
+        });
         throw new Error(
           `OpenAI streaming error: ${response.status} - ${
             error.error?.message || "Unknown error"

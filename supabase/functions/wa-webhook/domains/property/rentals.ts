@@ -594,7 +594,31 @@ export async function handleAddPropertyLocation(
     : resolveUserCurrency(ctx.from);
   const priceLabel = formatCurrencyFromInput(state.price, currencyPref);
 
-  // TODO: Save to database
+  // Save to database
+  try {
+    const { error: saveError } = await ctx.supabase
+      .from('property_rentals')
+      .insert({
+        user_id: ctx.profileId,
+        rental_type: state.rentalType,
+        bedrooms: parseInt(state.bedrooms),
+        price: state.price,
+        currency: state.currency || currencyPref.code,
+        price_unit: state.priceUnit || 'per_month',
+        latitude: location.lat,
+        longitude: location.lng,
+        contact_phone: ctx.from,
+        status: 'active',
+      });
+    
+    if (saveError) {
+      console.error('property.save.error', saveError);
+      // Continue even if save fails - user still gets response
+    }
+  } catch (error) {
+    console.error('property.save.failed', error);
+    // Continue even if save fails - user still gets response
+  }
   await clearState(ctx.supabase, ctx.profileId);
 
   const rentalLabel = state.rentalType === "short_term"
