@@ -11,6 +11,21 @@ import {
 } from "./ui.ts";
 
 const MAX_LEAD_ROWS = 9;
+const JSON_EXPORT_MAX_LENGTH = 3000;
+
+// Messages for insurance admin actions
+const MESSAGES = {
+  REUPLOAD_REQUEST:
+    "Hello! We need you to re-upload your insurance documents. Please send clearer photos of your insurance certificate and carte jaune. Thank you!",
+};
+
+type InsuranceExtracted = {
+  registration_plate?: string;
+  plate?: string;
+  insurer?: string;
+  insurance_company?: string;
+  [key: string]: unknown;
+};
 
 type AdminLead = {
   id: string;
@@ -272,7 +287,7 @@ export async function hydrateInsuranceLeads(
     }
 
     return data.map((lead) => {
-      const extracted = lead.extracted as Record<string, any> | null;
+      const extracted = lead.extracted as InsuranceExtracted | null;
       const plate = extracted?.registration_plate || extracted?.plate || null;
       const insurer = extracted?.insurer || extracted?.insurance_company || null;
       
@@ -338,6 +353,10 @@ function findLeadInState(state: ChatState, leadId: string): AdminLead | null {
   return match ?? null;
 }
 
+function sanitizePhoneNumber(phone: string): string {
+  return phone.replace(/[^0-9]/g, "");
+}
+
 async function handleMarkReviewed(
   ctx: RouterContext,
   state: ChatState,
@@ -396,7 +415,7 @@ async function handleDMClient(
       return;
     }
 
-    const waLink = `https://wa.me/${whatsapp.replace(/[^0-9]/g, "")}`;
+    const waLink = `https://wa.me/${sanitizePhoneNumber(whatsapp)}`;
     await sendText(
       ctx.from,
       `📱 Client contact:\n\nWhatsApp: ${whatsapp}\n\nClick to message: ${waLink}`,
@@ -431,14 +450,12 @@ async function handleRequestReupload(
     }
 
     // Queue a notification to the client
-    const message = "Hello! We need you to re-upload your insurance documents. Please send clearer photos of your insurance certificate and carte jaune. Thank you!";
-    
     const { error: notifError } = await ctx.supabase
       .from("notifications")
       .insert({
         to_wa_id: data.whatsapp,
         notification_type: "insurance_reupload_request",
-        payload: { text: message, lead_id: leadId },
+        payload: { text: MESSAGES.REUPLOAD_REQUEST, lead_id: leadId },
         status: "queued",
       });
 
@@ -449,10 +466,15 @@ async function handleRequestReupload(
     }
 
     // Update lead status
-    await ctx.supabase
+    const { error: updateError } = await ctx.supabase
       .from("insurance_leads")
       .update({ status: "reupload_requested", updated_at: new Date().toISOString() })
       .eq("id", leadId);
+
+    if (updateError) {
+      console.error("Failed to update lead status:", updateError);
+      // Don't return error to user since notification was queued successfully
+    }
 
     await sendText(ctx.from, "✅ Re-upload request queued for delivery.");
   } catch (err) {
@@ -518,8 +540,8 @@ async function handleExportJSON(
     }
 
     const jsonExport = JSON.stringify(data, null, 2);
-    const preview = jsonExport.length > 3000 
-      ? jsonExport.substring(0, 3000) + "\n\n... (truncated)" 
+    const preview = jsonExport.length > JSON_EXPORT_MAX_LENGTH
+      ? jsonExport.substring(0, JSON_EXPORT_MAX_LENGTH) + "\n\n... (truncated)"
       : jsonExport;
 
     await sendText(ctx.from, `📄 Lead Export (JSON):\n\n\`\`\`json\n${preview}\n\`\`\``);
