@@ -252,13 +252,41 @@ async function showInsuranceConfirm(
 }
 
 export async function hydrateInsuranceLeads(
-  _ctx: RouterContext,
+  ctx: RouterContext,
 ): Promise<AdminLead[]> {
-  // Placeholder data until Supabase integration ships.
-  return [
-    { id: "lead-1", title: "RAB123C • Radiant" },
-    { id: "lead-2", title: "RAD987Q • Jubilee" },
-  ];
+  try {
+    const { data, error } = await ctx.supabase
+      .from("insurance_leads")
+      .select("id, extracted, status")
+      .in("status", ["received", "pending", "in_review"])
+      .order("created_at", { ascending: false })
+      .limit(MAX_LEAD_ROWS);
+
+    if (error) {
+      console.error("Failed to fetch insurance leads:", error);
+      return [];
+    }
+
+    if (!data || data.length === 0) {
+      return [];
+    }
+
+    return data.map((lead) => {
+      const extracted = lead.extracted as Record<string, any> | null;
+      const plate = extracted?.registration_plate || extracted?.plate || null;
+      const insurer = extracted?.insurer || extracted?.insurance_company || null;
+      
+      return {
+        id: lead.id,
+        title: [plate, insurer].filter(Boolean).join(" • ") || "Untitled Lead",
+        plate,
+        insurer,
+      };
+    });
+  } catch (err) {
+    console.error("Error hydrating insurance leads:", err);
+    return [];
+  }
 }
 
 export async function handleInsuranceButton(
@@ -277,19 +305,19 @@ export async function handleInsuranceButton(
       await showInsuranceMoreMenu(ctx, state);
       return true;
     case IDS.ADMIN_INSURANCE_DM_SUBMIT:
-      await sendText(ctx.from, "Insurance DM flow coming soon.");
+      await handleDMClient(ctx, state);
       return true;
     case IDS.ADMIN_INSURANCE_REVIEW_SUBMIT:
-      await sendText(ctx.from, "Insurance review flow coming soon.");
+      await handleMarkReviewed(ctx, state);
       return true;
     case IDS.ADMIN_INSURANCE_REQUEST_SUBMIT:
-      await sendText(ctx.from, "Insurance re-upload request coming soon.");
+      await handleRequestReupload(ctx, state);
       return true;
     case IDS.ADMIN_INSURANCE_ASSIGN_SUBMIT:
-      await sendText(ctx.from, "Insurance owner assignment coming soon.");
+      await handleAssignOwner(ctx, state);
       return true;
     case IDS.ADMIN_INSURANCE_EXPORT_SUBMIT:
-      await sendText(ctx.from, "Insurance export flow coming soon.");
+      await handleExportJSON(ctx, state);
       return true;
     default:
       return false;
@@ -308,4 +336,195 @@ function findLeadInState(state: ChatState, leadId: string): AdminLead | null {
   if (!Array.isArray(raw)) return null;
   const match = raw.find((item) => item?.id === leadId);
   return match ?? null;
+}
+
+async function handleMarkReviewed(
+  ctx: RouterContext,
+  state: ChatState,
+): Promise<void> {
+  const leadId = state.data?.leadId;
+  if (!leadId) {
+    await sendText(ctx.from, "❌ No lead selected.");
+    return;
+  }
+
+  try {
+    const { error } = await ctx.supabase
+      .from("insurance_leads")
+      .update({ status: "reviewed", updated_at: new Date().toISOString() })
+      .eq("id", leadId);
+
+    if (error) {
+      await sendText(ctx.from, "❌ Failed to mark lead as reviewed.");
+      console.error("Failed to mark lead as reviewed:", error);
+      return;
+    }
+
+    await sendText(ctx.from, "✅ Lead marked as reviewed.");
+  } catch (err) {
+    await sendText(ctx.from, "❌ Error marking lead as reviewed.");
+    console.error("Error marking lead as reviewed:", err);
+  }
+}
+
+async function handleDMClient(
+  ctx: RouterContext,
+  state: ChatState,
+): Promise<void> {
+  const leadId = state.data?.leadId;
+  if (!leadId) {
+    await sendText(ctx.from, "❌ No lead selected.");
+    return;
+  }
+
+  try {
+    const { data, error } = await ctx.supabase
+      .from("insurance_leads")
+      .select("whatsapp, extracted")
+      .eq("id", leadId)
+      .single();
+
+    if (error || !data) {
+      await sendText(ctx.from, "❌ Failed to fetch lead details.");
+      console.error("Failed to fetch lead details:", error);
+      return;
+    }
+
+    const whatsapp = data.whatsapp;
+    if (!whatsapp) {
+      await sendText(ctx.from, "❌ No WhatsApp contact found for this lead.");
+      return;
+    }
+
+    const waLink = `https://wa.me/${whatsapp.replace(/[^0-9]/g, "")}`;
+    await sendText(
+      ctx.from,
+      `📱 Client contact:\n\nWhatsApp: ${whatsapp}\n\nClick to message: ${waLink}`,
+    );
+  } catch (err) {
+    await sendText(ctx.from, "❌ Error fetching client contact.");
+    console.error("Error fetching client contact:", err);
+  }
+}
+
+async function handleRequestReupload(
+  ctx: RouterContext,
+  state: ChatState,
+): Promise<void> {
+  const leadId = state.data?.leadId;
+  if (!leadId) {
+    await sendText(ctx.from, "❌ No lead selected.");
+    return;
+  }
+
+  try {
+    const { data, error } = await ctx.supabase
+      .from("insurance_leads")
+      .select("whatsapp")
+      .eq("id", leadId)
+      .single();
+
+    if (error || !data?.whatsapp) {
+      await sendText(ctx.from, "❌ Failed to fetch lead contact.");
+      console.error("Failed to fetch lead contact:", error);
+      return;
+    }
+
+    // Queue a notification to the client
+    const message = "Hello! We need you to re-upload your insurance documents. Please send clearer photos of your insurance certificate and carte jaune. Thank you!";
+    
+    const { error: notifError } = await ctx.supabase
+      .from("notifications")
+      .insert({
+        to_wa_id: data.whatsapp,
+        notification_type: "insurance_reupload_request",
+        payload: { text: message, lead_id: leadId },
+        status: "queued",
+      });
+
+    if (notifError) {
+      await sendText(ctx.from, "❌ Failed to queue re-upload request.");
+      console.error("Failed to queue notification:", notifError);
+      return;
+    }
+
+    // Update lead status
+    await ctx.supabase
+      .from("insurance_leads")
+      .update({ status: "reupload_requested", updated_at: new Date().toISOString() })
+      .eq("id", leadId);
+
+    await sendText(ctx.from, "✅ Re-upload request queued for delivery.");
+  } catch (err) {
+    await sendText(ctx.from, "❌ Error requesting re-upload.");
+    console.error("Error requesting re-upload:", err);
+  }
+}
+
+async function handleAssignOwner(
+  ctx: RouterContext,
+  state: ChatState,
+): Promise<void> {
+  const leadId = state.data?.leadId;
+  if (!leadId) {
+    await sendText(ctx.from, "❌ No lead selected.");
+    return;
+  }
+
+  // For now, assign to the current admin
+  try {
+    const { error } = await ctx.supabase
+      .from("insurance_leads")
+      .update({ 
+        status: "assigned",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", leadId);
+
+    if (error) {
+      await sendText(ctx.from, "❌ Failed to assign owner.");
+      console.error("Failed to assign owner:", error);
+      return;
+    }
+
+    await sendText(ctx.from, `✅ Lead assigned to you (${ctx.from}).`);
+  } catch (err) {
+    await sendText(ctx.from, "❌ Error assigning owner.");
+    console.error("Error assigning owner:", err);
+  }
+}
+
+async function handleExportJSON(
+  ctx: RouterContext,
+  state: ChatState,
+): Promise<void> {
+  const leadId = state.data?.leadId;
+  if (!leadId) {
+    await sendText(ctx.from, "❌ No lead selected.");
+    return;
+  }
+
+  try {
+    const { data, error } = await ctx.supabase
+      .from("insurance_leads")
+      .select("*")
+      .eq("id", leadId)
+      .single();
+
+    if (error || !data) {
+      await sendText(ctx.from, "❌ Failed to fetch lead data.");
+      console.error("Failed to fetch lead data:", error);
+      return;
+    }
+
+    const jsonExport = JSON.stringify(data, null, 2);
+    const preview = jsonExport.length > 3000 
+      ? jsonExport.substring(0, 3000) + "\n\n... (truncated)" 
+      : jsonExport;
+
+    await sendText(ctx.from, `📄 Lead Export (JSON):\n\n\`\`\`json\n${preview}\n\`\`\``);
+  } catch (err) {
+    await sendText(ctx.from, "❌ Error exporting lead.");
+    console.error("Error exporting lead:", err);
+  }
 }
