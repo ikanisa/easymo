@@ -121,7 +121,6 @@ BEGIN
     now()
   )
   ON CONFLICT (trip_id, driver_id) 
-  WHERE trip_id IS NOT NULL AND driver_id IS NOT NULL
   DO UPDATE SET
     notified_at = now(),
     updated_at = now()
@@ -289,8 +288,11 @@ BEGIN
       WHERE rr.trip_id = _trip_id 
         AND rr.driver_id = p.user_id
     )
-    -- Optional: match vehicle type if driver has one set
-    AND (ds.vehicle_type IS NULL OR ds.vehicle_type = v_vehicle_type OR ds.is_online = true)
+    -- Match vehicle type if driver has one set and is online
+    AND (
+      ds.vehicle_type IS NULL 
+      OR (ds.vehicle_type = v_vehicle_type AND (ds.is_online IS NULL OR ds.is_online = true))
+    )
     -- Bounding box filter
     AND ST_Y(p.last_location::geometry) BETWEEN (v_pickup_lat - (_radius_km / 111.0)) 
                                              AND (v_pickup_lat + (_radius_km / 111.0))

@@ -51,7 +51,10 @@ BEGIN
     t.dropoff_latitude,
     t.dropoff_longitude,
     t.vehicle_type,
-    COALESCE(_radius_m::double precision / 1000.0, 10.0)
+    CASE 
+      WHEN _radius_m IS NULL OR _radius_m <= 0 THEN 10.0
+      ELSE _radius_m::double precision / 1000.0
+    END
   INTO 
     v_pickup_lat,
     v_pickup_lng,
@@ -170,7 +173,10 @@ BEGIN
     t.dropoff_latitude,
     t.dropoff_longitude,
     t.vehicle_type,
-    COALESCE(_radius_m::double precision / 1000.0, 10.0)
+    CASE 
+      WHEN _radius_m IS NULL OR _radius_m <= 0 THEN 10.0
+      ELSE _radius_m::double precision / 1000.0
+    END
   INTO 
     v_pickup_lat,
     v_pickup_lng,
