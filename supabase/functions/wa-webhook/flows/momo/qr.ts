@@ -367,9 +367,16 @@ async function deliverMomoQr(
   const isCode = data.targetType === "code";
   const targetValue = data.targetType === "msisdn" ? data.target : data.target;
   
-  // Try provider-specific USSD format if available
-  const provider = await getMomoProvider(ctx.supabase as any, ctx.from).catch(() => null);
-  const format = provider?.ussdFormat || null; // e.g., *182*8*1*{CODE}# or *182*1*1*{NUMBER}#{AMT}
+  // Try provider-specific USSD format if available.
+  // For MSISDN targets, infer provider from the target's country rather than the WhatsApp sender.
+  const providerProbeNumber = data.targetType === "msisdn"
+    ? (data.e164 ?? localToE164(targetValue))
+    : ctx.from;
+  const provider = await getMomoProvider(ctx.supabase as any, providerProbeNumber).catch(() => null);
+  // Only accept provider formats that contain a placeholder we can fill.
+  const format = provider?.ussdFormat && /\{(NUMBER|CODE)\}/.test(provider.ussdFormat)
+    ? provider.ussdFormat
+    : null; // e.g., *182*8*1*{CODE}# or *182*1*1*{NUMBER}*{AMOUNT}#
 
   const customUssd = format
     ? buildFromFormat(format, targetValue, isCode, amountRwf ?? undefined)

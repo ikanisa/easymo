@@ -156,10 +156,11 @@ export async function getMomoProvider(
     "Airtel": "*778#",               // Zambia
   };
 
-  return {
-    provider: country?.momo_provider || "Unknown",
-    ussdFormat: ussdFormats[country?.momo_provider] || "*#",
-  };
+  const provider: string | undefined = country?.momo_provider;
+  if (!provider) return null;
+  const format = ussdFormats[provider];
+  if (!format) return null;
+  return { provider, ussdFormat: format };
 }
 
 /**

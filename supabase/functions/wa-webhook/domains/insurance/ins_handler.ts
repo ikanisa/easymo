@@ -291,10 +291,14 @@ export async function processInsuranceDocument(
   msg: Record<string, unknown>,
   stateKey: string,
 ): Promise<InsuranceProcessOutcome> {
+  // Accept uploads from the explicit insurance states, and be permissive when
+  // users send a document from the home screen. This avoids silently dropping
+  // valid document uploads when the user hasn't opened the insurance menu yet.
   if (
     stateKey !== "ins_wait_doc" &&
     stateKey !== "insurance_upload" &&
-    stateKey !== "insurance_menu"
+    stateKey !== "insurance_menu" &&
+    stateKey !== "home"
   ) {
     return "skipped";
   }

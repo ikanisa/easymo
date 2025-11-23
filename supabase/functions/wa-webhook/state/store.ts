@@ -227,13 +227,16 @@ export async function getState(
   client = supabase,
   userId: string,
 ): Promise<ChatState> {
+  // Be resilient to accidental duplicates by taking the latest row
   const { data, error } = await client
     .from("chat_state")
     .select("state")
     .eq("user_id", userId)
+    .order("last_updated", { ascending: false })
+    .limit(1)
     .maybeSingle();
   if (error && error.code !== "PGRST116") throw error;
-  const raw = data?.state;
+  const raw = (data as any)?.state;
   if (!raw) return { key: "home", data: {} };
   if (typeof raw === "string") return { key: raw, data: {} };
   if (typeof raw === "object" && raw !== null) {
@@ -252,8 +255,7 @@ export async function setState(
 ): Promise<void> {
   const { error } = await client
     .from("chat_state")
-    .upsert({ user_id: userId, state })
-    .eq("user_id", userId);
+    .upsert({ user_id: userId, state, last_updated: new Date().toISOString() }, { onConflict: "user_id" });
   if (error) throw error;
 }
 
