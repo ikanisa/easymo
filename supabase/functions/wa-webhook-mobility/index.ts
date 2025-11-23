@@ -10,6 +10,7 @@ import {
   handleNearbyLocation,
   handleNearbyResultSelection,
   handleChangeVehicleRequest,
+  handleUseCachedLocation,
   startNearbySavedLocationPicker,
   handleNearbySavedLocationSelection,
   isVehicleOption,
@@ -139,6 +140,8 @@ serve(async (req: Request): Promise<Response> => {
           handled = await handleNearbyResultSelection(ctx, state.data as any, id);
         } else if (id === IDS.MOBILITY_CHANGE_VEHICLE) {
           handled = await handleChangeVehicleRequest(ctx, state?.data as any);
+        } else if (id === IDS.USE_CACHED_LOCATION && state?.key === "mobility_nearby_location") {
+          handled = await handleUseCachedLocation(ctx, state.data as any);
         } else if (id === IDS.LOCATION_SAVED_LIST && state?.key === "mobility_nearby_location") {
           handled = await startNearbySavedLocationPicker(ctx, state.data as any);
         } else if (id.startsWith("FAV::") && state?.key === "location_saved_picker" && state.data?.source === "nearby") {

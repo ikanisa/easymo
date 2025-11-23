@@ -138,5 +138,15 @@ export const IDS = {
   BUSINESS_EDIT_LOCATION: "business_edit_location",
   BUSINESS_EDIT_SPECIALTIES: "business_edit_specialties",
   BUSINESS_EDIT_PROMOTIONS: "business_edit_promotions",
+  // Driver notification actions
+  DRIVER_OFFER_RIDE: "driver_offer_ride",
+  DRIVER_VIEW_DETAILS: "driver_view_details",
+  CONTACT_DRIVER: "contact_driver",
+  // Go Online feature
+  GO_ONLINE: "go_online",
+  GO_OFFLINE: "go_offline",
+  UPDATE_LOCATION: "update_location",
+  USE_CACHED_LOCATION: "use_cached_location",
+  SHARE_NEW_LOCATION: "share_new_location",
   // Existing flows will add more IDs during implementation.
 } as const;
