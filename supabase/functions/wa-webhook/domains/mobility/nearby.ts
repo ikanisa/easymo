@@ -36,6 +36,11 @@ import {
   type UserFavorite,
 } from "../locations/favorites.ts";
 import { buildSaveRows } from "../locations/save.ts";
+import {
+  checkLocationCache,
+  isLocationCacheValid,
+  formatLocationCacheAge,
+} from "./location_cache.ts";
 
 const DEFAULT_WINDOW_DAYS = 30;
 const REQUIRED_RADIUS_METERS = 10_000;
@@ -190,10 +195,10 @@ export async function handleSeeDrivers(ctx: RouterContext): Promise<boolean> {
     .eq("user_id", ctx.profileId)
     .single();
 
-  const lastLocTime = profile?.last_location_at ? new Date(profile.last_location_at).getTime() : 0;
-  const isRecent = (Date.now() - lastLocTime) < 30 * 60 * 1000;
+  // Use location cache helper for validation
+  const cacheCheck = checkLocationCache(profile?.last_location_at);
 
-  if (isRecent && profile?.last_location) {
+  if (!cacheCheck.needsRefresh && profile?.last_location) {
     // Parse POINT(lng lat)
     // PostGIS text format: SRID=4326;POINT(lng lat)
     const matches = /POINT\(([^ ]+) ([^ ]+)\)/.exec(profile.last_location as unknown as string);
@@ -242,10 +247,10 @@ export async function handleSeePassengers(
     .eq("user_id", ctx.profileId)
     .single();
 
-  const lastLocTime = profile?.last_location_at ? new Date(profile.last_location_at).getTime() : 0;
-  const isRecent = (Date.now() - lastLocTime) < 30 * 60 * 1000;
-
-  if (isRecent && profile?.last_location) {
+  // Use location cache helper for validation
+  const cacheCheck = checkLocationCache(profile?.last_location_at);
+  
+  if (!cacheCheck.needsRefresh && profile?.last_location) {
     const matches = /POINT\(([^ ]+) ([^ ]+)\)/.exec(profile.last_location as unknown as string);
     if (matches) {
       const lng = parseFloat(matches[1]);
