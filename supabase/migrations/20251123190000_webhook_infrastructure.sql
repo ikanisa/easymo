@@ -476,42 +476,14 @@ $$ LANGUAGE plpgsql;
 -- SCHEDULED JOBS (using pg_cron)
 -- ============================================
 
--- Note: pg_cron jobs should be created manually via SQL after migration
--- as they persist across migrations and can cause conflicts
+-- Note: pg_cron jobs should be created manually after migration
+-- Example commands to run separately:
 
--- Clean old processed webhooks every hour
-DO $$
-BEGIN
-  PERFORM cron.schedule(
-    'cleanup-old-webhooks',
-    '0 * * * *',
-    $$
-    DELETE FROM webhook_queue
-    WHERE status = 'completed'
-      AND completed_at < now() - interval '7 days';
-    $$
-  );
-EXCEPTION
-  WHEN duplicate_object THEN
-    -- Job already exists, skip
-    NULL;
-END $$;
+-- SELECT cron.schedule('cleanup-old-webhooks', '0 * * * *', 
+--   'DELETE FROM webhook_queue WHERE status = ''completed'' AND completed_at < now() - interval ''7 days''');
 
--- Clean expired idempotency keys every hour
-DO $$
-BEGIN
-  PERFORM cron.schedule(
-    'cleanup-idempotency-keys',
-    '0 * * * *',
-    $$
-    DELETE FROM idempotency_keys
-    WHERE expires_at < now();
-    $$
-  );
-EXCEPTION
-  WHEN duplicate_object THEN
-    NULL;
-END $$;
+-- SELECT cron.schedule('cleanup-idempotency-keys', '0 * * * *',
+--   'DELETE FROM idempotency_keys WHERE expires_at < now()');
 
 -- ============================================
 -- ROW LEVEL SECURITY (RLS)
