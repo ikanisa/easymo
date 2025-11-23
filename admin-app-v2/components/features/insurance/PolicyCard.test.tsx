@@ -15,9 +15,9 @@ const mockPolicy = {
 describe('PolicyCard', () => {
   it('renders all policy details', () => {
     renderWithProviders(<PolicyCard policy={mockPolicy} />);
-    expect(screen.getByText(mockPolicy.policyNumber)).toBeInTheDocument();
+    expect(screen.getByText(`#${mockPolicy.policyNumber}`)).toBeInTheDocument();
     expect(screen.getByText(mockPolicy.holderName)).toBeInTheDocument();
-    expect(screen.getByText('Auto Insurance')).toBeInTheDocument(); // Component adds " Insurance"
+    expect(screen.getByText('Auto Insurance')).toBeInTheDocument();
     expect(screen.getByText(mockPolicy.status)).toBeInTheDocument();
     expect(screen.getByText(mockPolicy.premium)).toBeInTheDocument();
     expect(screen.getByText(mockPolicy.expiryDate)).toBeInTheDocument();
@@ -27,6 +27,6 @@ describe('PolicyCard', () => {
     const inactivePolicy = { ...mockPolicy, status: 'expired' as const };
     renderWithProviders(<PolicyCard policy={inactivePolicy} />);
     const statusElement = screen.getByText('expired');
-    expect(statusElement).toHaveClass('bg-red-100'); // Assuming destructive variant maps to this or similar
+    expect(statusElement).toHaveClass('bg-red-500');
   });
 });
