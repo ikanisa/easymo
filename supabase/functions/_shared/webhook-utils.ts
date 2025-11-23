@@ -2,20 +2,303 @@
  * Webhook Processing Utilities
  * 
  * Provides core utilities for WhatsApp webhook processing:
- * - Idempotency checking
- * - Distributed locking
- * - Dead letter queue management
- * - Timeout handling
+ * - Signature verification
+ * - Payload validation
+ * - Webhook queue management
+ * - Rate limiting
+ * - Circuit breaker pattern
+ * - Logging and metrics
  * 
  * @see docs/GROUND_RULES.md for error handling requirements
  */
 
 import { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { logStructuredEvent, logError, recordMetric } from "./observability.ts";
+import { 
+  WebhookError, 
+  ValidationError, 
+  SignatureError, 
+  RateLimitError,
+  CircuitBreakerOpenError,
+  TimeoutError
+} from "./errors.ts";
+import { createHmac } from "https://deno.land/std@0.224.0/crypto/mod.ts";
 
 export const WEBHOOK_TIMEOUT_MS = 10000; // 10 seconds
 export const MAX_RETRIES = 3;
 export const LOCK_TIMEOUT_MS = 120000; // 2 minutes
+
+/**
+ * Verify webhook signature using HMAC-SHA256
+ */
+export function verifyWebhookSignature(
+  body: string,
+  signature: string | null,
+  secret: string
+): boolean {
+  if (!signature) return false;
+
+  try {
+    const key = new TextEncoder().encode(secret);
+    const message = new TextEncoder().encode(body);
+    
+    const hmac = createHmac("sha256", key);
+    hmac.update(message);
+    const expectedSignature = "sha256=" + Array.from(hmac.digest())
+      .map(b => b.toString(16).padStart(2, "0"))
+      .join("");
+
+    return signature === expectedSignature;
+  } catch (error) {
+    logError("signature_verification", error, { signatureProvided: !!signature });
+    return false;
+  }
+}
+
+/**
+ * Validate webhook payload structure
+ */
+export function validateWebhookPayload(payload: any): any {
+  if (!payload || typeof payload !== "object") {
+    throw new ValidationError("Invalid payload structure");
+  }
+
+  if (!Array.isArray(payload.entry)) {
+    throw new ValidationError("Missing entry array", "entry");
+  }
+
+  if (payload.entry.length === 0) {
+    throw new ValidationError("Empty entry array", "entry");
+  }
+
+  return payload;
+}
+
+/**
+ * Logger class with context support
+ */
+export class Logger {
+  private context: Record<string, any> = {};
+  private config: {
+    service: string;
+    environment: string;
+  };
+
+  constructor(config: { service: string; environment: string }) {
+    this.config = config;
+  }
+
+  setContext(context: Record<string, any>) {
+    this.context = { ...this.context, ...context };
+  }
+
+  private log(level: string, message: string, data?: Record<string, any>) {
+    const logEntry = {
+      timestamp: new Date().toISOString(),
+      level,
+      service: this.config.service,
+      environment: this.config.environment,
+      message,
+      ...this.context,
+      ...data,
+    };
+
+    console.log(JSON.stringify(logEntry));
+
+    // Also use structured event logging
+    if (level === "error") {
+      logError(message, new Error(message), { ...this.context, ...data });
+    } else {
+      logStructuredEvent(message.toUpperCase().replace(/ /g, "_"), {
+        ...this.context,
+        ...data,
+      }, level as any);
+    }
+  }
+
+  info(message: string, data?: Record<string, any>) {
+    this.log("info", message, data);
+  }
+
+  warn(message: string, data?: Record<string, any>) {
+    this.log("warn", message, data);
+  }
+
+  error(message: string, data?: Record<string, any>) {
+    this.log("error", message, data);
+  }
+
+  debug(message: string, data?: Record<string, any>) {
+    this.log("debug", message, data);
+  }
+}
+
+/**
+ * Metrics class for recording metrics
+ */
+export class Metrics {
+  constructor(private supabase: SupabaseClient) {}
+
+  async record(
+    name: string,
+    value: number,
+    tags: Record<string, any> = {}
+  ): Promise<void> {
+    try {
+      await this.supabase.from("webhook_metrics").insert({
+        metric_type: "counter",
+        metric_name: name,
+        metric_value: value,
+        tags,
+        timestamp: new Date().toISOString(),
+      });
+
+      // Also use recordMetric from observability
+      await recordMetric(name, value, tags);
+    } catch (error) {
+      // Don't throw - metrics failures shouldn't break the flow
+      console.error("Failed to record metric:", error);
+    }
+  }
+}
+
+/**
+ * Rate limiter using token bucket algorithm
+ */
+export class RateLimiter {
+  constructor(private supabase: SupabaseClient) {}
+
+  async checkLimit(
+    identifier: string,
+    bucket: string,
+    tokensRequested = 1
+  ): Promise<any> {
+    try {
+      const { data, error } = await this.supabase.rpc("check_rate_limit", {
+        p_identifier: identifier,
+        p_bucket: bucket,
+        p_tokens_requested: tokensRequested,
+      });
+
+      if (error) throw error;
+
+      if (!data.allowed) {
+        throw new RateLimitError(
+          `Rate limit exceeded for ${identifier}`,
+          data.blocked_until ? 
+            Math.ceil((new Date(data.blocked_until).getTime() - Date.now()) / 1000) : 
+            60
+        );
+      }
+
+      return data;
+    } catch (error) {
+      if (error instanceof RateLimitError) throw error;
+      
+      // On error, allow the request to proceed (fail open)
+      logError("rate_limit_check", error, { identifier, bucket });
+      return { allowed: true, max_tokens: 100, tokens_remaining: 100 };
+    }
+  }
+}
+
+/**
+ * Webhook processor for queuing webhooks
+ */
+export class WebhookProcessor {
+  constructor(
+    private supabase: SupabaseClient,
+    private logger: Logger,
+    private metrics: Metrics
+  ) {}
+
+  async queueWebhook(options: {
+    payload: any;
+    correlationId: string;
+    priority?: number;
+    source?: string;
+  }): Promise<void> {
+    const { payload, correlationId, priority = 5, source = "whatsapp" } = options;
+
+    try {
+      const { error } = await this.supabase.from("webhook_queue").insert({
+        source,
+        payload,
+        priority,
+        correlation_id: correlationId,
+        status: "pending",
+        created_at: new Date().toISOString(),
+      });
+
+      if (error) throw error;
+
+      this.logger.info("Webhook queued", { correlationId, priority, source });
+      await this.metrics.record("webhook.queued", 1, { priority, source });
+    } catch (error) {
+      this.logger.error("Failed to queue webhook", {
+        error: error.message,
+        correlationId,
+      });
+      throw new WebhookError("Failed to queue webhook", 500, "QUEUE_ERROR", true);
+    }
+  }
+}
+
+/**
+ * Circuit breaker pattern implementation
+ */
+export class CircuitBreaker {
+  private failures = 0;
+  private lastFailTime = 0;
+  private state: "closed" | "open" | "half-open" = "closed";
+
+  constructor(
+    private config: {
+      threshold: number;
+      timeout: number;
+      resetTimeout: number;
+    }
+  ) {}
+
+  async fire<T>(fn: () => Promise<T>): Promise<T> {
+    if (this.state === "open") {
+      if (Date.now() - this.lastFailTime > this.config.resetTimeout) {
+        this.state = "half-open";
+        this.failures = 0;
+      } else {
+        throw new CircuitBreakerOpenError();
+      }
+    }
+
+    try {
+      const result = await fn();
+      
+      if (this.state === "half-open") {
+        this.state = "closed";
+        this.failures = 0;
+      }
+      
+      return result;
+    } catch (error) {
+      this.failures++;
+      this.lastFailTime = Date.now();
+
+      if (this.failures >= this.config.threshold) {
+        this.state = "open";
+      }
+
+      throw error;
+    }
+  }
+
+  getState() {
+    return {
+      state: this.state,
+      failures: this.failures,
+      lastFailTime: this.lastFailTime,
+    };
+  }
+}
 
 /**
  * Check if a WhatsApp message has already been processed (idempotency)
