@@ -190,7 +190,9 @@ export async function handleMomoText(
   }
 
   switch (state.key) {
-    case STATES.MENU: {
+    case STATES.MENU:
+    case "home": // Also handle phone numbers from home state
+    {
       // Be lenient: allow the user to type either a phone number or a merchant code
       const byNumber = parseNumberAndAmount(trimmed);
       const normalized = normalizeMsisdn(byNumber.number) || simpleNormalize(byNumber.number);

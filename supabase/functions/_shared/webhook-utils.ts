@@ -22,7 +22,7 @@ import {
   CircuitBreakerOpenError,
   TimeoutError
 } from "./errors.ts";
-import { createHmac, timingSafeEqual } from "https://deno.land/std@0.224.0/crypto/mod.ts";
+import { timingSafeEqual } from "https://deno.land/std@0.224.0/crypto/timing_safe_equal.ts";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 export const WEBHOOK_TIMEOUT_MS = 10000; // 10 seconds
@@ -136,25 +136,41 @@ export const WhatsAppWebhookSchema = z.object({
 /**
  * Verify webhook signature using HMAC-SHA256 with timing-safe comparison
  */
-export function verifyWebhookSignature(
+export async function verifyWebhookSignature(
   payload: string,
   signature: string | null,
   appSecret: string
-): boolean {
+): Promise<boolean> {
   if (!signature) return false;
 
   try {
     const [method, receivedHash] = signature.split("=");
     if (method !== "sha256") return false;
 
-    const hmac = createHmac("sha256", appSecret);
-    hmac.update(payload);
-    const expectedHash = hmac.toString("hex");
+    // Use Web Crypto API (modern Deno approach)
+    const encoder = new TextEncoder();
+    const key = await crypto.subtle.importKey(
+      "raw",
+      encoder.encode(appSecret),
+      { name: "HMAC", hash: "SHA-256" },
+      false,
+      ["sign"]
+    );
+    
+    const signatureBytes = await crypto.subtle.sign(
+      "HMAC",
+      key,
+      encoder.encode(payload)
+    );
+    
+    const expectedHash = Array.from(new Uint8Array(signatureBytes))
+      .map(b => b.toString(16).padStart(2, "0"))
+      .join("");
 
     // Use timing-safe comparison to prevent timing attacks
     return timingSafeEqual(
-      new TextEncoder().encode(receivedHash),
-      new TextEncoder().encode(expectedHash)
+      encoder.encode(receivedHash),
+      encoder.encode(expectedHash)
     );
   } catch (error) {
     logError("signature_verification", error, { signatureProvided: !!signature });

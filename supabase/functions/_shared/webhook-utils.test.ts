@@ -6,7 +6,7 @@
 
 import { assertEquals, assertExists, assertRejects } from "https://deno.land/std@0.224.0/testing/asserts.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.0";
-import { createHmac } from "https://deno.land/std@0.224.0/crypto/mod.ts";
+import { createHmac } from "https://deno.land/std@0.224.0/node/crypto.ts";
 import {
   WEBHOOK_TIMEOUT_MS,
   MAX_RETRIES,
@@ -77,19 +77,19 @@ Deno.test("Webhook Signature Verification", async (t) => {
   const secret = "test_secret_key";
   const payload = '{"test": "data"}';
   
-  await t.step("should verify valid signature", () => {
+  await t.step("should verify valid signature", async () => {
     const signature = createSignature(payload, secret);
-    const result = verifyWebhookSignature(payload, signature, secret);
+    const result = await verifyWebhookSignature(payload, signature, secret);
     assertEquals(result, true);
   });
 
-  await t.step("should reject invalid signature", () => {
-    const result = verifyWebhookSignature(payload, "sha256=invalid_hash", secret);
+  await t.step("should reject invalid signature", async () => {
+    const result = await verifyWebhookSignature(payload, "sha256=invalid_hash", secret);
     assertEquals(result, false);
   });
 
-  await t.step("should reject missing signature", () => {
-    const result = verifyWebhookSignature(payload, null, secret);
+  await t.step("should reject missing signature", async () => {
+    const result = await verifyWebhookSignature(payload, null, secret);
     assertEquals(result, false);
   });
 });

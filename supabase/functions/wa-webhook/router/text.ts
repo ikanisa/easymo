@@ -228,6 +228,7 @@ export async function handleText(
     return await handleJobBoardText(ctx, body);
   }
 
+  // Try MOMO QR handler before other fallbacks
   if (await handleMomoText(ctx, body, state)) {
     return true;
   }
