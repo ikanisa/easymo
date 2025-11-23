@@ -28,6 +28,11 @@ interface RouteConfig {
 // Define routing rules
 const ROUTES: RouteConfig[] = [
   {
+    service: "wa-webhook-insurance",
+    keywords: ["insurance", "assurance", "cover", "claim", "policy", "premium", "insure"],
+    priority: 1,
+  },
+  {
     service: "wa-webhook-jobs",
     keywords: ["job", "work", "employment", "hire", "career", "apply", "cv", "resume"],
     priority: 1,
@@ -44,7 +49,7 @@ const ROUTES: RouteConfig[] = [
   },
   {
     service: "wa-webhook-wallet",
-    keywords: ["wallet", "payment", "pay", "balance", "deposit", "withdraw", "money"],
+    keywords: ["wallet", "token", "transfer", "redeem", "earn", "reward", "balance", "payment", "pay", "deposit", "withdraw", "money", "referral", "share"],
     priority: 1,
   },
   {
@@ -105,6 +110,9 @@ export async function routeMessage(
  * Get service from chat state
  */
 function getServiceFromState(chatState: string): string | null {
+  if (chatState.includes("insurance") || chatState.includes("ins_")) {
+    return "wa-webhook-insurance";
+  }
   if (chatState.includes("jobs") || chatState.includes("job_")) {
     return "wa-webhook-jobs";
   }

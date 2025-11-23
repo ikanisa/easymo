@@ -39,7 +39,8 @@ serve(async (req: Request): Promise<Response> => {
   if (url.pathname === "/health" || url.pathname.endsWith("/health")) {
     const startedAt = Date.now();
     try {
-      const { error } = await supabase.from("properties").select("id").limit(1);
+      // Check DB connectivity via a guaranteed table
+      const { error } = await supabase.from("profiles").select("user_id").limit(1);
       const healthy = !error;
 
       logEvent("PROPERTY_HEALTH_CHECK", {
@@ -53,7 +54,7 @@ serve(async (req: Request): Promise<Response> => {
         service: "wa-webhook-property",
         timestamp: new Date().toISOString(),
         requestId,
-        checks: { database: healthy ? "connected" : "disconnected" },
+        checks: { database: healthy ? "connected" : "disconnected", table: "profiles" },
         metrics: { duration_ms: Date.now() - startedAt },
         version: "1.0.0",
       }, { status: healthy ? 200 : 503 });

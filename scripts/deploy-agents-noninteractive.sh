@@ -58,11 +58,21 @@ supabase functions deploy agent-shops \
   --project-ref $PROJECT_REF \
   --no-verify-jwt || log_warning "agent-shops deployment failed"
 
-# Redeploy wa-webhook with AI agents integration
-echo "Deploying wa-webhook..."
-supabase functions deploy wa-webhook \
-  --project-ref $PROJECT_REF \
-  --no-verify-jwt || log_warning "wa-webhook deployment failed"
+# Deploy WhatsApp microservices to pick shared library changes
+echo "Deploying WhatsApp microservices..."
+for svc in \
+  wa-webhook-core \
+  wa-webhook-ai-agents \
+  wa-webhook-mobility \
+  wa-webhook-wallet \
+  wa-webhook-jobs \
+  wa-webhook-property \
+  wa-webhook-marketplace; do
+  echo "Deploying $svc..."
+  supabase functions deploy "$svc" \
+    --project-ref $PROJECT_REF \
+    --no-verify-jwt || log_warning "$svc deployment failed"
+done
 
 log_success "Edge functions deployed"
 
@@ -101,7 +111,13 @@ echo "   - agent-property-rental"
 echo "   - agent-schedule-trip"
 echo "   - agent-quincaillerie"
 echo "   - agent-shops"
-echo "   - wa-webhook (updated)"
+echo "   - wa-webhook-core"
+echo "   - wa-webhook-ai-agents"
+echo "   - wa-webhook-mobility"
+echo "   - wa-webhook-wallet"
+echo "   - wa-webhook-jobs"
+echo "   - wa-webhook-property"
+echo "   - wa-webhook-marketplace"
 echo ""
 echo "🔍 View logs:"
 echo "   supabase functions logs --project-ref $PROJECT_REF"

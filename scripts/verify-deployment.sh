@@ -15,7 +15,15 @@ echo ""
 
 # Check each function
 functions=(
-  "wa-webhook"
+  # WhatsApp microservices (deployed)
+  "wa-webhook-core"
+  "wa-webhook-ai-agents"
+  "wa-webhook-mobility"
+  "wa-webhook-wallet"
+  "wa-webhook-jobs"
+  "wa-webhook-property"
+  "wa-webhook-marketplace"
+  # Agents
   "agent-negotiation"
   "agent-property-rental"
   "agent-schedule-trip"
@@ -70,5 +78,5 @@ echo ""
 echo "🎯 Next Steps:"
 echo "1. Enable feature flags in database"
 echo "2. Test via WhatsApp"
-echo "3. Monitor logs: supabase functions logs wa-webhook"
+echo "3. Monitor logs: supabase functions logs wa-webhook-core"
 echo ""

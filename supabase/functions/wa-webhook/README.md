@@ -1,26 +1,57 @@
-# wa-webhook
+# wa-webhook (Shared Library – Not Deployed)
 
-Core WhatsApp webhook edge function that handles all incoming WhatsApp messages
-and routes them to appropriate domain handlers. Modules:
+This folder is a shared code library used by the deployed WhatsApp microservices.
+It is no longer a deployed Edge Function by itself.
 
-- `index.ts`: entrypoint (GET verify, POST dispatch)
-- `config.ts`: runtime configuration & Supabase client
-- `deps.ts`: centralised imports
+Deployed functions that import code from this folder:
+
+- `wa-webhook-core` (ingress/router/health)
+- `wa-webhook-ai-agents`
+- `wa-webhook-mobility`
+- `wa-webhook-wallet`
+- `wa-webhook-jobs`
+- `wa-webhook-property`
+- `wa-webhook-marketplace`
+
+Implications:
+
+- Editing files here DOES NOT deploy anything by itself.
+- You must redeploy the microservices above for changes to take effect.
+
+Deploy all WhatsApp microservices:
+
+```
+pnpm run functions:deploy:wa
+```
+
+or directly with Supabase CLI:
+
+```
+supabase functions deploy \
+  wa-webhook-core \
+  wa-webhook-ai-agents \
+  wa-webhook-mobility \
+  wa-webhook-wallet \
+  wa-webhook-jobs \
+  wa-webhook-property \
+  wa-webhook-marketplace
+```
+
+Typical modules in this library:
+
+- `config.ts`: runtime configuration & Supabase client helpers
 - `types.ts`: shared type definitions
-- `health.ts`: health probe handler
+- `router/`: message-type routers (media, interactive, location, text)
 - `wa/`: WhatsApp client helpers and signature verification
 - `state/`: chat state & idempotency utilities
-- `router/`: message-type routers (media, interactive, location, text)
-- `rpc/`: Supabase access helpers (mobility, dine-in, marketplace, etc.)
 - `flows/`: message-driven UX blocks
-- `exchange/`: Flow Data Channel handlers (Meta WhatsApp Flows)
-- `observe/`: logging and diagnostics utilities
 - `domains/`: business domain handlers (insurance, wallet, mobility, etc.)
 
-This directory houses all WhatsApp webhook functionality including insurance,
-referrals, MOMO QR codes, wallet/tokens, and rides workflows. **Modifications
-to wa-webhook are now permitted** (as of 2025-11-23) to allow bug fixes and
-feature improvements while other edge functions remain under additive-only guard.
+Operational note: to verify live deployments, use `wa-webhook-core` health:
+
+```
+curl -s https://<project>.supabase.co/functions/v1/wa-webhook-core/health
+```
 
 ## Runtime configuration
 

@@ -29,6 +29,7 @@ const ROUTED_SERVICES = [
   "wa-webhook-property",
   "wa-webhook-mobility",
   "wa-webhook-wallet",
+  "wa-webhook-insurance",
   "wa-webhook-core",
 ];
 

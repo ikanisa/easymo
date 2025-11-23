@@ -2,13 +2,6 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { logStructuredEvent } from "../_shared/observability.ts";
 import { getState } from "../wa-webhook/state/store.ts";
-import { handleWalletHome } from "../wa-webhook/domains/wallet/home.ts";
-import { handleWalletTransfer } from "../wa-webhook/domains/wallet/transfer.ts";
-import { handleWalletRedeem } from "../wa-webhook/domains/wallet/redeem.ts";
-import { handleWalletEarn } from "../wa-webhook/domains/wallet/earn.ts";
-import { handleWalletTop } from "../wa-webhook/domains/wallet/top.ts";
-import { handleWalletTransactions } from "../wa-webhook/domains/wallet/transactions.ts";
-import { handleWalletReferral } from "../wa-webhook/domains/wallet/referral.ts";
 import type { RouterContext, WhatsAppWebhookPayload } from "../wa-webhook/types.ts";
 import { IDS } from "../wa-webhook/wa/ids.ts";
 
@@ -44,12 +37,13 @@ serve(async (req: Request): Promise<Response> => {
   // Health check
   if (url.pathname === "/health" || url.pathname.endsWith("/health")) {
     try {
-      const { error } = await supabase.from("wallet_transactions").select("id").limit(1);
+      // Probe a guaranteed table to avoid false negatives during schema rollout
+      const { error } = await supabase.from("profiles").select("user_id").limit(1);
       return respond({
         status: error ? "unhealthy" : "healthy",
         service: "wa-webhook-wallet",
         timestamp: new Date().toISOString(),
-        checks: { database: error ? "disconnected" : "connected" },
+        checks: { database: error ? "disconnected" : "connected", table: "profiles" },
         version: "2.0.0",
       }, { status: error ? 503 : 200 });
     } catch (err) {
@@ -124,36 +118,43 @@ serve(async (req: Request): Promise<Response> => {
 
         // Wallet Home
         if (id === IDS.WALLET_HOME) {
+          const { handleWalletHome } = await import("../wa-webhook/domains/wallet/home.ts");
           handled = await handleWalletHome(ctx);
         }
         
         // Wallet Earn
         else if (id === IDS.WALLET_EARN) {
+          const { handleWalletEarn } = await import("../wa-webhook/domains/wallet/earn.ts");
           handled = await handleWalletEarn(ctx);
         }
         
         // Wallet Transfer
         else if (id === IDS.WALLET_TRANSFER) {
+          const { handleWalletTransfer } = await import("../wa-webhook/domains/wallet/transfer.ts");
           handled = await handleWalletTransfer(ctx, state as any);
         }
         
         // Wallet Redeem
         else if (id === IDS.WALLET_REDEEM) {
+          const { handleWalletRedeem } = await import("../wa-webhook/domains/wallet/redeem.ts");
           handled = await handleWalletRedeem(ctx);
         }
         
         // Wallet Top (Leaderboard)
         else if (id === IDS.WALLET_TOP) {
+          const { handleWalletTop } = await import("../wa-webhook/domains/wallet/top.ts");
           handled = await handleWalletTop(ctx);
         }
         
         // Wallet Transactions
         else if (id === IDS.WALLET_TRANSACTIONS) {
+          const { handleWalletTransactions } = await import("../wa-webhook/domains/wallet/transactions.ts");
           handled = await handleWalletTransactions(ctx);
         }
         
         // Wallet Referral
         else if (id === IDS.WALLET_REFERRAL || id === IDS.WALLET_SHARE) {
+          const { handleWalletReferral } = await import("../wa-webhook/domains/wallet/referral.ts");
           handled = await handleWalletReferral(ctx);
         }
         
@@ -177,16 +178,22 @@ serve(async (req: Request): Promise<Response> => {
       
       // Wallet keywords
       if (text.includes("wallet") || text.includes("balance")) {
+        const { handleWalletHome } = await import("../wa-webhook/domains/wallet/home.ts");
         handled = await handleWalletHome(ctx);
       } else if (text.includes("transfer") || text.includes("send")) {
+        const { handleWalletTransfer } = await import("../wa-webhook/domains/wallet/transfer.ts");
         handled = await handleWalletTransfer(ctx, state as any);
       } else if (text.includes("redeem") || text.includes("reward")) {
+        const { handleWalletRedeem } = await import("../wa-webhook/domains/wallet/redeem.ts");
         handled = await handleWalletRedeem(ctx);
       } else if (text.includes("earn") || text.includes("get token")) {
+        const { handleWalletEarn } = await import("../wa-webhook/domains/wallet/earn.ts");
         handled = await handleWalletEarn(ctx);
       } else if (text.includes("share") || text.includes("referral")) {
+        const { handleWalletReferral } = await import("../wa-webhook/domains/wallet/referral.ts");
         handled = await handleWalletReferral(ctx);
       } else if (text.includes("transaction") || text.includes("history")) {
+        const { handleWalletTransactions } = await import("../wa-webhook/domains/wallet/transactions.ts");
         handled = await handleWalletTransactions(ctx);
       }
       

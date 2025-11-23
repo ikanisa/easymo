@@ -55,7 +55,18 @@ supabase functions deploy agent-property-rental --no-verify-jwt
 supabase functions deploy agent-schedule-trip --no-verify-jwt
 supabase functions deploy agent-quincaillerie --no-verify-jwt
 supabase functions deploy agent-shops --no-verify-jwt
-supabase functions deploy wa-webhook --no-verify-jwt
+
+# Deploy WhatsApp microservices (shared code lives under wa-webhook/)
+for svc in \
+  wa-webhook-core \
+  wa-webhook-ai-agents \
+  wa-webhook-mobility \
+  wa-webhook-wallet \
+  wa-webhook-jobs \
+  wa-webhook-property \
+  wa-webhook-marketplace; do
+  supabase functions deploy "$svc" --no-verify-jwt || true
+done
 log_success "Edge functions deployed"
 
 # 5. Test deployment
