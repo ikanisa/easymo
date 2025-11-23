@@ -16,6 +16,7 @@ import {
 import type { InsuranceExtraction } from "./ins_normalize.ts";
 import { emitAlert } from "../../observe/alert.ts";
 import { supabase as sharedSupabase } from "../../config.ts";
+import { allocateInsuranceBonus } from "../wallet/allocate.ts";
 
 const ADMIN_ALERT_TYPE = "insurance_document";
 
@@ -342,6 +343,29 @@ export async function processInsuranceDocument(
     console.info("INS_USER_SUMMARY_SEND", { leadId });
     await sendText(ctx.from, summary);
     await notifyAdmins(ctx, leadId, extracted);
+    
+    // Award insurance bonus tokens (if user has profile)
+    if (profileId) {
+      try {
+        const bonusResult = await allocateInsuranceBonus(
+          ctx.supabase,
+          profileId,
+          leadId,
+          2000
+        );
+        if (bonusResult.success && bonusResult.message) {
+          await sendText(ctx.from, bonusResult.message);
+        }
+      } catch (bonusError) {
+        // Log but don't fail the main flow
+        console.warn("INS_BONUS_ALLOCATION_WARN", {
+          leadId,
+          profileId,
+          error: bonusError instanceof Error ? bonusError.message : String(bonusError),
+        });
+      }
+    }
+    
     return "ocr_ok";
   } catch (error) {
     const errMsg =
