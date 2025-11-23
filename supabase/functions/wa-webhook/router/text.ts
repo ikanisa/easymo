@@ -113,7 +113,7 @@ export async function handleText(
       const { handleBusinessNameSearch } = await import(
         "../domains/business/claim.ts"
       );
-      return await runBusinessBrokerAgent(ctx, body);
+      return await handleBusinessNameSearch(ctx, body);
     }
   }
 

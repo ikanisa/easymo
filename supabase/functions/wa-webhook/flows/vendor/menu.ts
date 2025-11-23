@@ -32,26 +32,20 @@ export async function handleVendorMenuMedia(
     if (state.key === "restaurant_upload" && state.data?.barId) {
       return await handleRestaurantMenuUpload(ctx, msg, mediaId, state.data.barId as string);
     }
+    
+    // If user has a profile but not in restaurant_upload state, skip vendor processing
+    // This prevents intercepting other document uploads (insurance, etc.)
+    return false;
   }
 
-  // Fallback to legacy bar_numbers lookup
+  // Only process for legacy users without profileId if they have an active bar number
   let record;
   try {
     record = await findActiveBarNumber(ctx.supabase, ctx.from);
   } catch (error) {
     console.error("vendor.menu.lookup_fail", error, { from: ctx.from });
-    await sendText(
-      ctx.from,
-      t(ctx.locale, "vendor.menu.lookup_fail"),
-    );
-    await logStructuredEvent("VENDOR_MENU_UPLOAD_FAIL", {
-      wa_id: `***${ctx.from.slice(-4)}`,
-      reason: "lookup_error",
-      code: error instanceof Error && "code" in error
-        ? (error as { code?: string }).code
-        : undefined,
-    });
-    return true; // consider handled to avoid duplicate processing
+    // Don't send error message, just skip
+    return false;
   }
 
   if (!record?.bar_id) {
@@ -59,17 +53,11 @@ export async function handleVendorMenuMedia(
       from: ctx.from,
       tried: ctx.from,
     });
-    await sendText(
-      ctx.from,
-      t(ctx.locale, "vendor.menu.no_bar_mapping"),
-    );
-    await logStructuredEvent("VENDOR_MENU_UPLOAD_SKIPPED", {
-      wa_id: `***${ctx.from.slice(-4)}`,
-      reason: "no_bar_mapping",
-    });
-    return true;
+    // Don't send message, just skip to allow other handlers
+    return false;
   }
 
+  // Legacy vendor menu upload for users with active bar_numbers
   try {
     const media = await fetchWhatsAppMedia(mediaId);
     const filename = pickFilename(msg, media.filename, mediaId);
