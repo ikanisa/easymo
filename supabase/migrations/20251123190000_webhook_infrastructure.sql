@@ -32,32 +32,8 @@ CREATE TABLE IF NOT EXISTS webhook_queue (
   created_at timestamptz DEFAULT now(),
   started_at timestamptz,
   completed_at timestamptz,
-  next_retry_at timestamptz,
-  
-  -- Partitioning by month for better performance
-  partition_key text GENERATED ALWAYS AS (to_char(created_at, 'YYYY_MM')) STORED
-) PARTITION BY LIST (partition_key);
-
--- Create partitions for next 6 months
-DO $$
-DECLARE
-  i integer;
-  partition_date date;
-  partition_name text;
-  partition_key text;
-BEGIN
-  FOR i IN 0..5 LOOP
-    partition_date := date_trunc('month', CURRENT_DATE) + (i || ' months')::interval;
-    partition_key := to_char(partition_date, 'YYYY_MM');
-    partition_name := 'webhook_queue_' || partition_key;
-    
-    EXECUTE format('
-      CREATE TABLE IF NOT EXISTS %I PARTITION OF webhook_queue
-      FOR VALUES IN (%L)',
-      partition_name, partition_key
-    );
-  END LOOP;
-END $$;
+  next_retry_at timestamptz
+);
 
 -- Indexes for webhook_queue
 CREATE INDEX IF NOT EXISTS idx_webhook_queue_status_retry 
@@ -176,30 +152,9 @@ CREATE TABLE IF NOT EXISTS messages (
   -- Performance
   processing_time_ms integer,
   
-  -- Partitioning by month
-  partition_key text GENERATED ALWAYS AS (to_char(created_at, 'YYYY_MM')) STORED
-) PARTITION BY LIST (partition_key);
-
--- Create message partitions
-DO $$
-DECLARE
-  i integer;
-  partition_date date;
-  partition_name text;
-  partition_key text;
-BEGIN
-  FOR i IN 0..5 LOOP
-    partition_date := date_trunc('month', CURRENT_DATE) + (i || ' months')::interval;
-    partition_key := to_char(partition_date, 'YYYY_MM');
-    partition_name := 'messages_' || partition_key;
-    
-    EXECUTE format('
-      CREATE TABLE IF NOT EXISTS %I PARTITION OF messages
-      FOR VALUES IN (%L)',
-      partition_name, partition_key
-    );
-  END LOOP;
-END $$;
+  -- Timestamps  
+  created_at timestamptz DEFAULT now()
+);
 
 -- Comprehensive indexes for messages
 CREATE INDEX IF NOT EXISTS idx_messages_conversation_created ON messages(conversation_id, created_at DESC);
