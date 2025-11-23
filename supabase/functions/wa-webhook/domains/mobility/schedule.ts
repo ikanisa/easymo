@@ -1250,7 +1250,14 @@ async function deliverMatches(
             await sendText(d.whatsapp_e164, `🚖 New scheduled trip. Passenger: ${passengerName}. Reply ACCEPT to confirm.`);
           }
         }
-        await ctx.supabase.from('ride_notifications').insert({ trip_id: state.tripId, driver_id: d.creator_user_id, status: 'sent' }).catch(() => {});
+        await ctx.supabase.from('ride_notifications').insert({ trip_id: state.tripId, driver_id: d.creator_user_id, status: 'sent' }).catch((error) => {
+          console.error(JSON.stringify({
+            event: "RIDE_NOTIFICATION_INSERT_FAILED",
+            error: error instanceof Error ? error.message : String(error),
+            tripId: state.tripId,
+            driverId: d.creator_user_id
+          }));
+        });
       }
     } catch (e) {
       console.warn('schedule.notify_drivers_warn', e);
