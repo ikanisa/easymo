@@ -657,9 +657,8 @@ async function runMatchingFallback(
     // NOTIFY DRIVERS (if searching for drivers)
     if (state.mode === "drivers") {
       const { sendText } = await import("../../wa/client.ts");
-      const { waChatLink } = await import("../../utils/links.ts");
       
-      // Get passenger name
+      // Get passenger name and contact
       const { data: passenger } = await ctx.supabase
         .from("profiles")
         .select("full_name, whatsapp_number")
@@ -667,32 +666,42 @@ async function runMatchingFallback(
         .single();
         
       const passengerName = passenger?.full_name ?? "A passenger";
+      const passengerContact = passenger?.whatsapp_number ?? ctx.from;
       
       // Send notifications to top 9 drivers
       for (const match of matches.slice(0, 9)) {
         if (match.whatsapp_e164) {
-             // Create accept link/button payload
-             // For now, we use a simple text message with a button if possible, or just text
-             // Since we can't easily send buttons outside 24h window without template, 
-             // we will use a text message with a clear instruction or link if applicable.
-             // But here we are in the webhook, so we might be able to send buttons if the driver messaged recently.
-             // To be safe and robust, we'll send a text message with a "Reply ACCEPT" instruction or similar,
-             // OR better, we use the new "Accept Ride" button flow if we assume drivers are active.
-             
-             // We will send a template-like message.
-             const acceptId = `RIDE_ACCEPT::${tempTripId}`;
-             await sendButtonsMessage(
-               { ...ctx, from: match.whatsapp_e164, profileId: match.creator_user_id }, // Mock context for the recipient
-               `🚖 **New Ride Request!**\n\nPassenger: ${passengerName}\nDistance: ${toDistanceLabel(match.distance_km)}\n\nDo you want to accept this ride?`,
-               [{ id: acceptId, title: "✅ Accept Ride" }]
-             ).catch(e => console.error("notify_driver_fail", e));
-             
-             // Log notification
-             await ctx.supabase.from("ride_notifications").insert({
-               trip_id: tempTripId,
-               driver_id: match.creator_user_id,
-               status: "sent"
-             });
+          try {
+            // Send notification message to driver
+            const distanceLabel = toDistanceLabel(match.distance_km) ?? "nearby";
+            const notificationMessage = 
+              `🚖 *New Ride Request!*\n\n` +
+              `📍 Passenger: ${passengerName}\n` +
+              `📏 Distance: ${distanceLabel}\n` +
+              `📞 Contact: ${passengerContact}\n\n` +
+              `Reply "ACCEPT" to offer this ride or tap the link below to chat with the passenger.\n\n` +
+              `https://wa.me/${passengerContact.replace(/[^0-9]/g, '')}?text=Hi%2C%20I%20can%20give%20you%20a%20ride!`;
+            
+            await sendText(match.whatsapp_e164, notificationMessage);
+            
+            // Log notification
+            await ctx.supabase.from("ride_notifications").insert({
+              trip_id: tempTripId,
+              driver_id: match.creator_user_id,
+              status: "sent"
+            }).catch(e => console.error("log_notification_fail", e));
+            
+            await logStructuredEvent("DRIVER_NOTIFIED", {
+              trip_id: tempTripId,
+              driver_wa: match.whatsapp_e164,
+              distance_km: match.distance_km
+            });
+          } catch (e) {
+            console.error("notify_driver_fail", {
+              driver_wa: match.whatsapp_e164,
+              error: e instanceof Error ? e.message : String(e)
+            });
+          }
         }
       }
     }

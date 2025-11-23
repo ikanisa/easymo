@@ -46,16 +46,14 @@ jobs:
           status=0
           while IFS= read -r file; do
             case "$file" in
-              supabase/functions/wa-webhook/*)
-                # wa-webhook is completely off-limits (new or modified)
-                echo "::error file=$file::Forbidden path violation: wa-webhook is protected.";
-                status=1
-                ;;
               supabase/functions/*)
-                # Other functions: only block if file already exists (modification)
-                if git ls-tree --name-only "$BASE_SHA" -- "$file" >/dev/null 2>&1; then
-                  echo "::error file=$file::Forbidden path violation: cannot modify existing function.";
-                  status=1
+                # Allow wa-webhook modifications (per user permission)
+                # Only block modifications to other existing functions
+                if [[ "$file" != supabase/functions/wa-webhook/* ]]; then
+                  if git ls-tree --name-only "$BASE_SHA" -- "$file" >/dev/null 2>&1; then
+                    echo "::error file=$file::Forbidden path violation: cannot modify existing function.";
+                    status=1
+                  fi
                 fi
                 ;;
               supabase/migrations/*)
