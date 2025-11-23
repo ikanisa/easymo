@@ -41,10 +41,14 @@ export function ConfigPanel() {
           ]}
         />
         <div>
-          <label className="mb-2 block text-sm font-medium text-gray-900">
+          <label
+            htmlFor="temperature"
+            className="mb-2 block text-sm font-medium text-gray-900"
+          >
             Temperature ({config.temperature})
           </label>
           <input
+            id="temperature"
             type="range"
             min="0"
             max="1"
@@ -57,10 +61,14 @@ export function ConfigPanel() {
           />
         </div>
         <div>
-          <label className="mb-2 block text-sm font-medium text-gray-900">
+          <label
+            htmlFor="system-prompt"
+            className="mb-2 block text-sm font-medium text-gray-900"
+          >
             System Prompt
           </label>
           <textarea
+            id="system-prompt"
             rows={4}
             className="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500"
             value={config.systemPrompt}
