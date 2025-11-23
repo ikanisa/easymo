@@ -693,14 +693,27 @@ async function createBusinessFromBar(
       .from('bars')
       .update({ claimed: true })
       .eq('id', barId);
-  } catch (_) {}
+  } catch (error) {
+    console.error(JSON.stringify({
+      event: "BAR_CLAIM_UPDATE_FAILED",
+      error: error instanceof Error ? error.message : String(error),
+      barId
+    }));
+  }
   // Attach menu items to the new business reference (best effort)
   try {
     await ctx.supabase
       .from('restaurant_menu_items')
       .update({ business_id: created?.id })
       .eq('bar_id', barId);
-  } catch (_) {}
+  } catch (error) {
+    console.error(JSON.stringify({
+      event: "MENU_ITEMS_MIGRATION_FAILED",
+      error: error instanceof Error ? error.message : String(error),
+      barId,
+      businessId: created?.id
+    }));
+  }
   return { businessId: created!.id as string, barId: (created?.bar_id ?? barId) as string };
 }
 

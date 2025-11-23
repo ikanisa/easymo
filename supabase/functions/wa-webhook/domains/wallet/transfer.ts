@@ -127,7 +127,14 @@ export async function handleWalletTransferText(
       try {
         const summary = await fetchWalletSummary(ctx.supabase, ctx.profileId);
         senderTokens = Number(summary?.tokens ?? 0);
-      } catch (_) {}
+      } catch (error) {
+        console.error(JSON.stringify({
+          event: "WALLET_SUMMARY_FETCH_FAILED",
+          error: error instanceof Error ? error.message : String(error),
+          profileId: ctx.profileId
+        }));
+        // Continue with senderTokens = 0, which will trigger the minimum balance check
+      }
       if (senderTokens < 2000) {
         await sendButtonsMessage(
           ctx,

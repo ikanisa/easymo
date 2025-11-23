@@ -55,7 +55,13 @@ async function checkRateLimit(req: Request): Promise<PreparedResponse | null> {
         // set expiration in seconds
         await fetch(`${upstashUrl}/EXPIRE/${encodeURIComponent(k)}/${Math.ceil(windowMs / 1000)}`, {
           headers: { Authorization: `Bearer ${upstashToken}` },
-        }).catch(() => {});
+        }).catch((error) => {
+          console.error(JSON.stringify({
+            event: "RATE_LIMIT_EXPIRE_FAILED",
+            error: error instanceof Error ? error.message : String(error),
+            key: k
+          }));
+        });
       }
       if (count > maxReq) {
         return {
