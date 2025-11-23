@@ -450,6 +450,35 @@ export async function processWebhookRequest(
     };
   }
 
+  // Edge-level idempotency check (prevents duplicate processing)
+  const webhookId = payload?.entry?.[0]?.id;
+  if (webhookId && webhookConfig.cache.enabled) {
+    const idempotencyKey = `wa:webhook:processed:${webhookId}`;
+    const existingCorrelationId = getCached<string>(idempotencyKey);
+    if (existingCorrelationId) {
+      await hooks.logStructuredEvent("WEBHOOK_DUPLICATE_DETECTED", withCid({
+        webhookId,
+        originalCorrelationId: existingCorrelationId,
+      }));
+      incrementMetric("wa_webhook_duplicate_total", 1, { 
+        scope: "edge_idempotency" 
+      });
+      return {
+        type: "response",
+        response: new Response("OK", { 
+          status: 200,
+          headers: { 
+            "X-Idempotent-Replay": "true",
+            "X-Original-Correlation-Id": existingCorrelationId 
+          }
+        }),
+        correlationId,
+      };
+    }
+    // Mark as processed immediately (TTL: 24 hours)
+    setCached(idempotencyKey, correlationId, 86400);
+  }
+
   await hooks.logInbound(payload);
 
   const allChanges: WhatsAppWebhookChange[] = payload?.entry?.flatMap((entry) =>

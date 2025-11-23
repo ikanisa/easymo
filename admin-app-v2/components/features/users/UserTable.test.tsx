@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { renderWithProviders, screen } from '../../../tests/utils';
 import { UserTable } from './UserTable';
+import userEvent from '@testing-library/user-event';
 
 const mockUsers = [
   {
@@ -44,7 +45,7 @@ describe('UserTable', () => {
   it('calls onEdit when edit button is clicked', async () => {
     const handleEdit = vi.fn();
     renderWithProviders(<UserTable users={mockUsers} onEdit={handleEdit} onDelete={() => {}} />);
-    const editButtons = screen.getAllByLabelText('Edit');
+    const editButtons = screen.getAllByRole('button', { name: /edit/i });
     await userEvent.click(editButtons[0]);
     expect(handleEdit).toHaveBeenCalledWith(mockUsers[0]);
   });
@@ -52,7 +53,7 @@ describe('UserTable', () => {
   it('calls onDelete when delete button is clicked', async () => {
     const handleDelete = vi.fn();
     renderWithProviders(<UserTable users={mockUsers} onEdit={() => {}} onDelete={handleDelete} />);
-    const deleteButtons = screen.getAllByLabelText('Delete');
+    const deleteButtons = screen.getAllByRole('button', { name: /delete/i });
     await userEvent.click(deleteButtons[1]);
     expect(handleDelete).toHaveBeenCalledWith(mockUsers[1]);
   });

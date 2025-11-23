@@ -6,10 +6,28 @@ import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { useState } from "react";
 
-export function TokenAllocator() {
+interface TokenAllocatorProps {
+  onAllocate?: (data: {
+    amount: string;
+    recipient: string;
+    type: string;
+  }) => void;
+}
+
+export function TokenAllocator({ onAllocate }: TokenAllocatorProps) {
   const [amount, setAmount] = useState("");
   const [recipient, setRecipient] = useState("");
   const [type, setType] = useState("partner");
+  const [error, setError] = useState("");
+
+  const handleAllocate = () => {
+    if (!amount) {
+      setError("Amount is required");
+      return;
+    }
+    setError("");
+    onAllocate?.({ amount, recipient, type });
+  };
 
   return (
     <Card className="p-6">
@@ -28,20 +46,33 @@ export function TokenAllocator() {
             { label: "User", value: "user" },
           ]}
         />
-        <Input
-          label="Recipient ID / Email"
-          placeholder={type === "partner" ? "Partner ID" : "User Email"}
-          value={recipient}
-          onChange={(e) => setRecipient(e.target.value)}
-        />
+        {type === "partner" && (
+          <Input
+            label="Select Partner"
+            placeholder="Partner ID"
+            value={recipient}
+            onChange={(e) => setRecipient(e.target.value)}
+          />
+        )}
+        {type === "user" && (
+          <Input
+            label="Recipient ID / Email"
+            placeholder="User Email"
+            value={recipient}
+            onChange={(e) => setRecipient(e.target.value)}
+          />
+        )}
         <Input
           label="Amount (Tokens)"
           type="number"
           placeholder="0.00"
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
+          error={error}
         />
-        <Button className="w-full">Send Tokens</Button>
+        <Button className="w-full" onClick={handleAllocate}>
+          Allocate Tokens
+        </Button>
       </div>
     </Card>
   );

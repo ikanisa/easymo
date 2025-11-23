@@ -7,7 +7,7 @@ describe('TokenAllocator', () => {
   it('renders allocation form', () => {
     renderWithProviders(<TokenAllocator onAllocate={() => {}} />);
     
-    expect(screen.getByText(/allocate tokens/i)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /allocate tokens/i })).toBeInTheDocument();
   });
 
   it('renders recipient type selector', () => {

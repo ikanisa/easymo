@@ -13,6 +13,13 @@ import { getRoutingText } from "../utils/messages.ts";
 import { sendButtonsMessage } from "../utils/reply.ts";
 import { IDS } from "../wa/ids.ts";
 import { t } from "../i18n/translator.ts";
+import { 
+  ValidationError,
+  SignatureError,
+  RateLimitError,
+  ProcessingError,
+  TimeoutError 
+} from "../../_shared/errors.ts";
 
 import type {
   RouterContext,

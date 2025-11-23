@@ -10,6 +10,17 @@
 import { sendText } from "../wa/client.ts";
 import { logStructuredEvent } from "../observe/log.ts";
 
+// Re-export new error classes from shared for consistency
+export { 
+  WebhookError as BaseWebhookError,
+  ValidationError,
+  SignatureError,
+  RateLimitError,
+  ProcessingError,
+  TimeoutError,
+  CircuitBreakerOpenError
+} from "../../_shared/errors.ts";
+
 export enum ErrorCode {
   VALIDATION_ERROR = "VALIDATION_ERROR",
   AUTHENTICATION_ERROR = "AUTHENTICATION_ERROR",
@@ -22,6 +33,7 @@ export enum ErrorCode {
   UNKNOWN_ERROR = "UNKNOWN_ERROR",
 }
 
+// Keep existing WebhookError for backward compatibility
 export class WebhookError extends Error {
   code: ErrorCode;
   statusCode: number;

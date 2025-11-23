@@ -3,29 +3,30 @@ import { renderWithProviders, screen } from '../../../tests/utils';
 import { PolicyCard } from './PolicyCard';
 
 const mockPolicy = {
+  id: '1',
   policyNumber: 'POL123456',
   holderName: 'John Doe',
   type: 'Auto',
-  status: 'Active',
+  status: 'active' as const,
   premium: '$120.00',
   expiryDate: '2026-12-31',
 };
 
 describe('PolicyCard', () => {
   it('renders all policy details', () => {
-    renderWithProviders(<PolicyCard {...mockPolicy} />);
+    renderWithProviders(<PolicyCard policy={mockPolicy} />);
     expect(screen.getByText(mockPolicy.policyNumber)).toBeInTheDocument();
     expect(screen.getByText(mockPolicy.holderName)).toBeInTheDocument();
-    expect(screen.getByText(mockPolicy.type)).toBeInTheDocument();
+    expect(screen.getByText('Auto Insurance')).toBeInTheDocument(); // Component adds " Insurance"
     expect(screen.getByText(mockPolicy.status)).toBeInTheDocument();
     expect(screen.getByText(mockPolicy.premium)).toBeInTheDocument();
     expect(screen.getByText(mockPolicy.expiryDate)).toBeInTheDocument();
   });
 
   it('applies correct status styling', () => {
-    renderWithProviders(<PolicyCard {...mockPolicy} status="Inactive" />);
-    const statusElement = screen.getByText('Inactive');
-    // Assuming status badge has a class based on status, e.g., "bg-red-100" for Inactive
-    expect(statusElement).toHaveClass('bg-red-100');
+    const inactivePolicy = { ...mockPolicy, status: 'expired' as const };
+    renderWithProviders(<PolicyCard policy={inactivePolicy} />);
+    const statusElement = screen.getByText('expired');
+    expect(statusElement).toHaveClass('bg-red-100'); // Assuming destructive variant maps to this or similar
   });
 });

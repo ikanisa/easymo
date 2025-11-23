@@ -11,15 +11,22 @@ export interface SelectProps
 }
 
 const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
-  ({ className, label, error, options, ...props }, ref) => {
+  ({ className, label, error, options, id, ...props }, ref) => {
+    const generatedId = React.useId();
+    const selectId = id || generatedId;
+
     return (
       <div className="w-full">
         {label && (
-          <label className="mb-2 block text-sm font-medium text-gray-900">
+          <label
+            htmlFor={selectId}
+            className="mb-2 block text-sm font-medium text-gray-900"
+          >
             {label}
           </label>
         )}
         <select
+          id={selectId}
           className={cn(
             "block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 disabled:cursor-not-allowed disabled:opacity-50",
             error && "border-error text-error focus:border-error focus:ring-error",
