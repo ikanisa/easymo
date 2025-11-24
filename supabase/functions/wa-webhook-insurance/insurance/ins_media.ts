@@ -1,7 +1,7 @@
-import type { SupabaseClient } from "../../deps.ts";
-import { INSURANCE_MEDIA_BUCKET } from "../../config.ts";
-import { fetchWhatsAppMedia } from "../../utils/media.ts";
-import { logStructuredEvent } from "../../observe/log.ts";
+import type { SupabaseClient } from "../../_shared/wa-webhook-shared/deps.ts";
+import { INSURANCE_MEDIA_BUCKET } from "../../_shared/wa-webhook-shared/config.ts";
+import { fetchWhatsAppMedia } from "../../_shared/wa-webhook-shared/utils/media.ts";
+import { logStructuredEvent } from "../../_shared/wa-webhook-shared/observe/log.ts";
 
 export type MediaFetchResult = {
   bytes: Uint8Array;

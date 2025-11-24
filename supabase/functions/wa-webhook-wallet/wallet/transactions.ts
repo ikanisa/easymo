@@ -5,14 +5,14 @@ import {
   type WalletTransaction,
 } from "../../_shared/wa-webhook-shared/rpc/wallet.ts";
 import { fmtCurrency, timeAgo } from "../../_shared/wa-webhook-shared/utils/text.ts";
-import { setState } from "../../state/store.ts";
+import { setState } from "../../_shared/wa-webhook-shared/state/store.ts";
 import {
   WALLET_STATE_TRANSACTIONS,
   walletBackRow,
   walletRefreshRow,
 } from "./home.ts";
-import { logWalletAdjust } from "../../observe/log.ts";
-import { IDS } from "../../wa/ids.ts";
+import { logWalletAdjust } from "../../_shared/wa-webhook-shared/observe/log.ts";
+import { IDS } from "../../_shared/wa-webhook-shared/wa/ids.ts";
 
 export async function showWalletTransactions(
   ctx: RouterContext,

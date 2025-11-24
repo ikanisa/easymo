@@ -2,7 +2,6 @@ import type { RouterContext } from "../../types.ts";
 import {
   sendImageUrl,
   sendText,
-  WhatsAppClientError,
 } from "../../wa/client.ts";
 import { IDS } from "../../wa/ids.ts";
 import { clearState, setState } from "../../state/store.ts";
@@ -17,6 +16,7 @@ import {
   sendListMessage,
 } from "../../utils/reply.ts";
 import { sendHomeMenu } from "../home.ts";
+import { checkCountrySupport } from "../../domains/exchange/country_support.ts";
 
 const STATES = {
   MENU: "momo_qr_menu",
@@ -39,19 +39,23 @@ export async function startMomoQr(
 ): Promise<boolean> {
   if (!ctx.profileId) return false;
   await setState(ctx.supabase, ctx.profileId, { key: STATES.MENU, data: {} });
-  const selfNumber = normalizeMsisdn(ctx.from);
-  const rows = [
-    {
+  const canUseSelf = await canUseSelfNumber(ctx);
+  const selfNumber = canUseSelf
+    ? normalizeMsisdn(ctx.from) ?? simpleNormalize(ctx.from)
+    : null;
+  const rows: Array<{ id: string; title: string; description: string }> = [];
+  if (selfNumber) {
+    rows.push({
       id: IDS.MOMO_QR_MY,
       title: "Use my number",
-      description: selfNumber
-        ? `Use ${selfNumber.local} from this chat.`
-        : "Use your WhatsApp number (07…).",
-    },
+      description: `Use ${selfNumber.local} from this chat.`,
+    });
+  }
+  rows.push(
     {
       id: IDS.MOMO_QR_NUMBER,
       title: "Enter number",
-      description: "Provide the customer's 07… MoMo number.",
+      description: "Provide the customer's MoMo number.",
     },
     {
       id: IDS.MOMO_QR_CODE,
@@ -63,7 +67,7 @@ export async function startMomoQr(
       title: "← Back",
       description: "Return to the main menu.",
     },
-  ];
+  );
   await sendListMessage(
     ctx,
     {
@@ -86,11 +90,11 @@ export async function handleMomoButton(
   if (!ctx.profileId) return false;
   switch (id) {
     case IDS.MOMO_QR_MY: {
-      const normalized = normalizeMsisdn(ctx.from);
+      const normalized = normalizeMsisdn(ctx.from) ?? simpleNormalize(ctx.from);
       if (!normalized) {
         await sendButtonsMessage(
           ctx,
-          "⚠️ Couldn't read your MoMo number. Reply with your 07… number instead.",
+          "⚠️ Couldn't read your MoMo number. Reply with your number instead.",
           buildButtons({ id: IDS.MOMO_QR, title: "↩️ Menu" }),
         );
         return true;
@@ -127,7 +131,7 @@ export async function handleMomoButton(
       });
       await sendButtonsMessage(
         ctx,
-        "📱 Send the customer's MoMo number (format 07XXXXXXXX).",
+        "📱 Send the customer's MoMo number.",
         buildButtons({ id: IDS.MOMO_QR, title: "↩️ Menu" }),
       );
       return true;
@@ -138,7 +142,7 @@ export async function handleMomoButton(
       });
       await sendButtonsMessage(
         ctx,
-        "🏪 Send the merchant paycode (digits only).",
+        "🏪 Send the merchant paycode (4-12 digits).",
         buildButtons({ id: IDS.MOMO_QR, title: "↩️ Menu" }),
       );
       return true;
@@ -170,6 +174,15 @@ export async function handleMomoText(
     return true;
   }
 
+  if (
+    state.key === STATES.MENU ||
+    state.key === "" ||
+    state.key === "home"
+  ) {
+    const handled = await handleDirectEntry(ctx, trimmed);
+    if (handled) return true;
+  }
+
   switch (state.key) {
     case STATES.NUMBER_INPUT:
       return await handleNumberInput(ctx, trimmed);
@@ -182,16 +195,77 @@ export async function handleMomoText(
   }
 }
 
+async function handleDirectEntry(
+  ctx: RouterContext,
+  input: string,
+): Promise<boolean> {
+  if (!ctx.profileId) return false;
+  const numberCandidate = parseNumberAndAmount(input);
+  const normalized = normalizeMsisdn(numberCandidate.number) ??
+    simpleNormalize(numberCandidate.number);
+  if (normalized) {
+    const { local, e164 } = normalized;
+    const display = maskPhone(e164);
+    await setState(ctx.supabase, ctx.profileId, {
+      key: STATES.AMOUNT_INPUT,
+      data: {
+        target: local,
+        targetType: "msisdn",
+        display,
+        e164,
+      },
+    });
+    if (numberCandidate.amount !== undefined) {
+      await deliverMomoQr(
+        ctx,
+        { target: local, targetType: "msisdn", display, e164 },
+        numberCandidate.amount,
+      );
+    } else {
+      await promptAmount(ctx, display);
+    }
+    return true;
+  }
+  const codeCandidate = parseCodeAndAmount(input);
+  if (codeCandidate.code) {
+    await setState(ctx.supabase, ctx.profileId, {
+      key: STATES.AMOUNT_INPUT,
+      data: {
+        target: codeCandidate.code,
+        targetType: "code",
+        display: codeCandidate.code,
+      },
+    });
+    if (codeCandidate.amount !== undefined) {
+      await deliverMomoQr(
+        ctx,
+        {
+          target: codeCandidate.code,
+          targetType: "code",
+          display: codeCandidate.code,
+        },
+        codeCandidate.amount,
+      );
+    } else {
+      await promptAmount(ctx, codeCandidate.code);
+    }
+    return true;
+  }
+  return false;
+}
+
 async function handleNumberInput(
   ctx: RouterContext,
   input: string,
 ): Promise<boolean> {
   if (!ctx.profileId) return false;
-  const normalized = normalizeMsisdn(input);
+  const combined = parseNumberAndAmount(input);
+  const normalized = normalizeMsisdn(combined.number) ??
+    simpleNormalize(combined.number);
   if (!normalized) {
     await sendButtonsMessage(
       ctx,
-      "⚠️ Invalid number. Use format 07XXXXXXXX.",
+      "⚠️ Invalid number. Use digits only (e.g. 07XXXXXXXX).",
       buildButtons({ id: IDS.MOMO_QR, title: "↩️ Menu" }),
     );
     return true;
@@ -207,7 +281,15 @@ async function handleNumberInput(
       e164,
     },
   });
-  await promptAmount(ctx, display);
+  if (combined.amount !== undefined) {
+    await deliverMomoQr(
+      ctx,
+      { target: local, targetType: "msisdn", display, e164 },
+      combined.amount,
+    );
+  } else {
+    await promptAmount(ctx, display);
+  }
   return true;
 }
 
@@ -216,7 +298,7 @@ async function handleCodeInput(
   input: string,
 ): Promise<boolean> {
   if (!ctx.profileId) return false;
-  const code = sanitizeCode(input);
+  const { code, amount } = parseCodeAndAmount(input);
   if (!code) {
     await sendButtonsMessage(
       ctx,
@@ -233,7 +315,15 @@ async function handleCodeInput(
       display: code,
     },
   });
-  await promptAmount(ctx, code);
+  if (amount !== undefined) {
+    await deliverMomoQr(
+      ctx,
+      { target: code, targetType: "code", display: code },
+      amount,
+    );
+  } else {
+    await promptAmount(ctx, code);
+  }
   return true;
 }
 
@@ -353,6 +443,17 @@ async function deliverMomoQr(
   await clearState(ctx.supabase, ctx.profileId!);
 }
 
+async function canUseSelfNumber(ctx: RouterContext): Promise<boolean> {
+  try {
+    const support = await checkCountrySupport(ctx.supabase, ctx.from);
+    return support.momoSupported;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error("momo.country_support_error", { message });
+    return !!normalizeMsisdn(ctx.from);
+  }
+}
+
 type NormalizedMsisdn = { local: string; e164: string };
 
 function normalizeMsisdn(raw: string): NormalizedMsisdn | null {
@@ -382,10 +483,47 @@ function normalizeMsisdn(raw: string): NormalizedMsisdn | null {
   return null;
 }
 
-function sanitizeCode(raw: string): string | null {
+function simpleNormalize(raw: string): NormalizedMsisdn | null {
   const digits = raw.replace(/\D/g, "");
-  if (digits.length < 4 || digits.length > 12) return null;
-  return digits;
+  if (digits.length < 8) return null;
+  const local = digits;
+  const e164 = digits.startsWith("+") ? digits : `+${digits}`;
+  return { local, e164 };
+}
+
+function parseNumberAndAmount(
+  raw: string,
+): { number: string; amount: number | null | undefined } {
+  const trimmed = raw.trim();
+  if (!trimmed) return { number: raw, amount: null };
+  const parts = trimmed.split(/\s+/);
+  if (parts.length === 1) {
+    return { number: trimmed, amount: null };
+  }
+  for (let i = 1; i < parts.length; i += 1) {
+    const amountSlice = parts.slice(parts.length - i).join(" ");
+    const parsedAmount = parseAmount(amountSlice);
+    if (parsedAmount !== undefined) {
+      const numberPart = parts.slice(0, parts.length - i).join(" ").trim();
+      if (!numberPart) {
+        return { number: trimmed, amount: parsedAmount };
+      }
+      return { number: numberPart, amount: parsedAmount };
+    }
+  }
+  return { number: trimmed, amount: null };
+}
+
+function parseCodeAndAmount(
+  raw: string,
+): { code: string | null; amount: number | null | undefined } {
+  const match = raw.match(/(\d{4,12})/);
+  if (!match) return { code: null, amount: null };
+  const code = match[1];
+  const remainderIndex = (match.index ?? 0) + code.length;
+  const remainder = raw.slice(remainderIndex).trim();
+  const amount = remainder ? parseAmount(remainder) : null;
+  return { code, amount };
 }
 
 async function promptAmount(
@@ -420,5 +558,8 @@ function localToE164(local: string): string {
   if (local.startsWith("07") && local.length === 10) {
     return `+250${local.slice(1)}`;
   }
-  return local.startsWith("250") ? `+${local}` : local;
+  const digits = local.replace(/\D/g, "");
+  if (!digits) return local;
+  if (digits.startsWith("250")) return `+${digits}`;
+  return `+${digits}`;
 }

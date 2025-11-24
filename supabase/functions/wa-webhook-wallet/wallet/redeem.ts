@@ -1,14 +1,14 @@
 import { notifyWalletRedemptionAdmin } from "./notifications.ts";
 import type { RouterContext } from "../../_shared/wa-webhook-shared/types.ts";
 import { sendButtonsMessage, sendListMessage } from "../../_shared/wa-webhook-shared/utils/reply.ts";
-import { t } from "../../i18n/translator.ts";
+import { t } from "../../_shared/wa-webhook-shared/i18n/translator.ts";
 import {
   listWalletRedeemOptions,
   type WalletRedeemOption,
-} from "../../rpc/wallet.ts";
+} from "../../_shared/wa-webhook-shared/rpc/wallet.ts";
 import { walletBackRow, walletRefreshRow } from "./home.ts";
 import { setState } from "../../_shared/wa-webhook-shared/state/store.ts";
-import { logWalletAdjust } from "../../observe/log.ts";
+import { logWalletAdjust } from "../../_shared/wa-webhook-shared/observe/log.ts";
 import { IDS } from "../../_shared/wa-webhook-shared/wa/ids.ts";
 import { fetchWalletSummary, redeemReward } from "../../_shared/wa-webhook-shared/rpc/wallet.ts";
 

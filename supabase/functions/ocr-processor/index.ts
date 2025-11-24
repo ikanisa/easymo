@@ -1,5 +1,5 @@
 import { IDS } from "../wa-webhook/wa/ids.ts";
-import { resolveOpenAiResponseText } from "../../lib/openai_responses.ts";
+import { resolveOpenAiResponseText } from "../_shared/wa-webhook-shared/utils/openai_responses.ts";
 import { SupabaseRest } from "./supabase_rest.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ??

@@ -2,11 +2,11 @@ import type { RouterContext } from "../../_shared/wa-webhook-shared/types.ts";
 import { sendButtonsMessage, sendListMessage } from "../../_shared/wa-webhook-shared/utils/reply.ts";
 import { ensureReferralLink as ensureReferralLinkShared } from "../../_shared/wa-webhook-shared/utils/share.ts";
 import { IDS } from "../../_shared/wa-webhook-shared/wa/ids.ts";
-import { setState } from "../../state/store.ts";
-import { logWalletAdjust } from "../../observe/log.ts";
+import { setState } from "../../_shared/wa-webhook-shared/state/store.ts";
+import { logWalletAdjust } from "../../_shared/wa-webhook-shared/observe/log.ts";
 import { fetchWalletSummary } from "../../_shared/wa-webhook-shared/rpc/wallet.ts";
 import { startWallet, walletBackRow } from "./home.ts";
-import { t } from "../../i18n/translator.ts";
+import { t } from "../../_shared/wa-webhook-shared/i18n/translator.ts";
 
 const STATE_KEY = "wallet_share";
 

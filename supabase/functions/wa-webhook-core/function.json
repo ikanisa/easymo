@@ -1,3 +1,4 @@
 {
+  "name": "wa-webhook-core",
   "verify_jwt": false
 }

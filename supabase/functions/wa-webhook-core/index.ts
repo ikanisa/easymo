@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { logStructuredEvent } from "../_shared/observability.ts";
+import { verifyWebhookSignature } from "../_shared/webhook-utils.ts";
 import { forwardToEdgeService, routeIncomingPayload, summarizeServiceHealth } from "./router.ts";
 import { LatencyTracker } from "./telemetry.ts";
 
@@ -86,9 +87,37 @@ serve(async (req: Request): Promise<Response> => {
 
   // Webhook ingress (POST)
   try {
-    const payload = await req.json();
+    // Read raw body for signature verification
+    const rawBody = await req.text();
+    
+    // Verify WhatsApp signature
+    const signature = req.headers.get("x-hub-signature-256");
+    const appSecret = Deno.env.get("WHATSAPP_APP_SECRET");
+    
+    if (!appSecret) {
+      log("CORE_AUTH_CONFIG_ERROR", { error: "WHATSAPP_APP_SECRET not configured" }, "error");
+      return json({ error: "server_misconfigured" }, { status: 500 });
+    }
+    
+    const isValid = await verifyWebhookSignature(rawBody, signature, appSecret);
+    
+    if (!isValid) {
+      log("CORE_AUTH_FAILED", { 
+        signatureProvided: !!signature,
+        userAgent: req.headers.get("user-agent") 
+      }, "warn");
+      return json({ error: "unauthorized" }, { status: 401 });
+    }
+    
+    // Parse payload after verification
+    const payload = JSON.parse(rawBody);
     log("CORE_WEBHOOK_RECEIVED", { payloadType: typeof payload });
     const decision = await routeIncomingPayload(payload);
+    log("CORE_ROUTING_DECISION", { 
+      service: decision.service, 
+      reason: decision.reason,
+      routingText: decision.routingText 
+    });
     const forwarded = await forwardToEdgeService(decision, payload, req.headers);
     return finalize(forwarded, decision.service);
   } catch (err) {

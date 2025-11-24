@@ -5,7 +5,7 @@ import type { WhatsAppMessage, WhatsAppWebhookPayload } from "../_shared/wa-webh
 
 type RoutingDecision = {
   service: string;
-  reason: "keyword" | "state" | "fallback";
+  reason: "keyword" | "state" | "fallback" | "home_menu";
   routingText?: string | null;
 };
 
@@ -37,11 +37,13 @@ export async function routeIncomingPayload(payload: WhatsAppWebhookPayload): Pro
   const routingMessage = getFirstMessage(payload);
   const routingText = routingMessage ? getRoutingText(routingMessage) : null;
   const chatStateKey = extractChatState(payload);
-  const service = routingText ? await routeMessage(routingText, chatStateKey) : "wa-webhook-core";
+  
+  // All messages handled by wa-webhook-core (shows home menu)
+  const service = "wa-webhook-core";
 
   return {
     service,
-    reason: routingText ? "keyword" : chatStateKey ? "state" : "fallback",
+    reason: "home_menu",
     routingText,
   };
 }
@@ -60,10 +62,8 @@ export async function forwardToEdgeService(
   }
 
   if (decision.service === "wa-webhook-core") {
-    return new Response(JSON.stringify({ success: true, service: decision.service }), {
-      status: 200,
-      headers: { "Content-Type": "application/json" },
-    });
+    // Handle home menu in core
+    return await handleHomeMenu(payload, headers);
   }
 
   const url = `${MICROSERVICES_BASE_URL}/${decision.service}`;
@@ -176,4 +176,121 @@ function getFirstMessage(payload: WhatsAppWebhookPayload): WhatsAppMessage | und
     }
   }
   return undefined;
+}
+
+async function handleHomeMenu(payload: WhatsAppWebhookPayload, headers?: Headers): Promise<Response> {
+  console.log(JSON.stringify({ event: "HANDLE_HOME_MENU_START" }));
+  
+  const message = getFirstMessage(payload);
+  if (!message) {
+    console.log(JSON.stringify({ event: "NO_MESSAGE_IN_PAYLOAD" }));
+    return new Response(JSON.stringify({ success: true, message: "No message to process" }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  const phoneNumber = message.from;
+  const text = getRoutingText(message);
+  
+  console.log(JSON.stringify({ 
+    event: "MESSAGE_RECEIVED", 
+    from: phoneNumber, 
+    text: text?.substring(0, 50) 
+  }));
+  
+  // Check if message is a menu selection (number 1-9)
+  const menuSelection = text?.trim();
+  if (menuSelection && /^[1-9]$/.test(menuSelection)) {
+    console.log(JSON.stringify({ event: "MENU_SELECTION", selection: menuSelection }));
+    
+    const serviceMap: Record<string, string> = {
+      "1": "wa-webhook-mobility",
+      "2": "wa-webhook-insurance",
+      "3": "wa-webhook-jobs",
+      "4": "wa-webhook-property",
+      "5": "wa-webhook-wallet",
+      "6": "wa-webhook-marketplace",
+      "7": "wa-webhook-ai-agents",
+    };
+
+    const targetService = serviceMap[menuSelection];
+    if (targetService) {
+      console.log(JSON.stringify({ event: "ROUTING_TO_SERVICE", service: targetService }));
+      
+      const url = `${MICROSERVICES_BASE_URL}/${targetService}`;
+      const forwardHeaders = new Headers(headers);
+      forwardHeaders.set("Content-Type", "application/json");
+      forwardHeaders.set("X-Routed-From", "wa-webhook-core");
+      forwardHeaders.set("X-Menu-Selection", menuSelection);
+
+      try {
+        const response = await fetch(url, {
+          method: "POST",
+          headers: forwardHeaders,
+          body: JSON.stringify(payload),
+        });
+        console.log(JSON.stringify({ event: "FORWARDED", service: targetService, status: response.status }));
+        return response;
+      } catch (error) {
+        console.error(JSON.stringify({ event: "FORWARD_FAILED", service: targetService, error: String(error) }));
+      }
+    }
+  }
+
+  // Show home menu - direct WhatsApp API call
+  console.log(JSON.stringify({ event: "SHOWING_HOME_MENU", to: phoneNumber }));
+  
+  const menuMessage = `Welcome to EasyMO! 🎯
+
+Choose a service:
+
+1️⃣ Rides & Transport
+2️⃣ Insurance
+3️⃣ Jobs & Careers
+4️⃣ Property Rentals
+5️⃣ Wallet & Profile
+6️⃣ Marketplace
+7️⃣ AI Support
+
+Reply with a number (1-7) to continue.`;
+
+  const accessToken = Deno.env.get("WHATSAPP_ACCESS_TOKEN");
+  const phoneNumberId = Deno.env.get("WHATSAPP_PHONE_NUMBER_ID");
+
+  if (!accessToken || !phoneNumberId) {
+    console.error(JSON.stringify({ event: "MISSING_CREDENTIALS" }));
+    return new Response(JSON.stringify({ error: "Configuration error" }), { status: 500 });
+  }
+
+  try {
+    const response = await fetch(
+      `https://graph.facebook.com/v18.0/${phoneNumberId}/messages`,
+      {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          messaging_product: "whatsapp",
+          to: phoneNumber,
+          type: "text",
+          text: { body: menuMessage },
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      const error = await response.text();
+      console.error(JSON.stringify({ event: "WHATSAPP_API_ERROR", status: response.status, error }));
+      return new Response(JSON.stringify({ error: "Failed to send message" }), { status: 500 });
+    }
+
+    console.log(JSON.stringify({ event: "MENU_SENT_SUCCESS", to: phoneNumber }));
+    return new Response(JSON.stringify({ success: true, menu_shown: true }), { status: 200 });
+  } catch (error) {
+    console.error(JSON.stringify({ event: "SEND_MESSAGE_FAILED", error: String(error) }));
+    return new Response(JSON.stringify({ error: "Failed to send message" }), { status: 500 });
+  }
 }

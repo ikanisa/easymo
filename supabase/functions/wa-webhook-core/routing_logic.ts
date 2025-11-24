@@ -72,11 +72,18 @@ export async function routeMessage(
   chatState?: string
 ): Promise<string> {
   // If unified agent system is enabled, route everything to ai-agents
-  if (isFeatureEnabled("agent.unified_system")) {
+  const unifiedSystemEnabled = isFeatureEnabled("agent.unified_system");
+  console.log(JSON.stringify({
+    event: "ROUTE_CHECK_UNIFIED_SYSTEM",
+    message: messageText.substring(0, 50),
+    unified_system_enabled: unifiedSystemEnabled,
+  }));
+  
+  if (unifiedSystemEnabled) {
     console.log(JSON.stringify({
       event: "ROUTE_TO_UNIFIED_AGENT_SYSTEM",
       message: messageText.substring(0, 50),
-      unified_system_enabled: true,
+      target: "wa-webhook-ai-agents",
     }));
     return "wa-webhook-ai-agents";
   }

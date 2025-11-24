@@ -1,5 +1,5 @@
-import { resolveOpenAiResponseText } from "../../../../lib/openai_responses.ts";
-import { GEMINI_API_KEY } from "../../config.ts";
+import { resolveOpenAiResponseText } from "../../_shared/wa-webhook-shared/utils/openai_responses.ts";
+import { GEMINI_API_KEY } from "../../_shared/wa-webhook-shared/config.ts";
 
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY") ?? "";
 const OPENAI_VISION_MODEL = Deno.env.get("OPENAI_VISION_MODEL") ??

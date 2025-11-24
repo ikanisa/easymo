@@ -11,7 +11,7 @@ import {
   homeOnly,
   sendButtonsMessage,
 } from "../../utils/reply.ts";
-import { resolveOpenAiResponseText } from "../../../lib/openai_responses.ts";
+import { resolveOpenAiResponseText } from "../utils/openai_responses.ts";
 
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY") ?? "";
 const OPENAI_MODEL = Deno.env.get("OPENAI_VISION_MODEL") ?? "gpt-4o-mini";

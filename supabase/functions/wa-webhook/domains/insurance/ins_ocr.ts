@@ -1,4 +1,4 @@
-import { resolveOpenAiResponseText } from "../../../../lib/openai_responses.ts";
+import { resolveOpenAiResponseText } from "../../../_shared/wa-webhook-shared/utils/openai_responses.ts";
 
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY") ?? "";
 const OPENAI_VISION_MODEL = Deno.env.get("OPENAI_VISION_MODEL") ??

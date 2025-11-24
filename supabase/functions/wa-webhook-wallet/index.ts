@@ -118,8 +118,8 @@ serve(async (req: Request): Promise<Response> => {
 
         // Wallet Home
         if (id === IDS.WALLET_HOME) {
-          const { handleWalletHome } = await import("./wallet/home.ts");
-          handled = await handleWalletHome(ctx);
+          const { startWallet } = await import("./wallet/home.ts");
+          handled = await startWallet(ctx, state ?? { key: "home" });
         }
         
         // Wallet Earn
@@ -178,8 +178,8 @@ serve(async (req: Request): Promise<Response> => {
       
       // Wallet keywords
       if (text.includes("wallet") || text.includes("balance")) {
-        const { handleWalletHome } = await import("./wallet/home.ts");
-        handled = await handleWalletHome(ctx);
+        const { startWallet } = await import("./wallet/home.ts");
+        handled = await startWallet(ctx, state ?? { key: "home" });
       } else if (text.includes("transfer") || text.includes("send")) {
         const { handleWalletTransfer } = await import("./wallet/transfer.ts");
         handled = await handleWalletTransfer(ctx, state as any);
@@ -217,9 +217,9 @@ serve(async (req: Request): Promise<Response> => {
     return respond({ success: true, handled });
 
   } catch (err) {
-    logEvent("WALLET_WEBHOOK_ERROR", {
-      error: err instanceof Error ? err.message : String(err),
-    }, "error");
+    const message = err instanceof Error ? err.message : String(err);
+    logEvent("WALLET_WEBHOOK_ERROR", { error: message }, "error");
+    console.error("wallet.webhook_error", message);
 
     return respond({
       error: "internal_error",
