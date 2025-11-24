@@ -1,5 +1,6 @@
 import { isFeatureEnabled } from "@easymo/commons";
 import { Injectable, Logger } from "@nestjs/common";
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
 
 import {
   AgentSession,
@@ -23,6 +24,19 @@ import {
 export class SessionManagerService {
   private readonly logger = new Logger(SessionManagerService.name);
   private readonly DEFAULT_WINDOW_MINUTES = 5;
+  private readonly supabase: SupabaseClient;
+
+  constructor() {
+    // Initialize Supabase client with service role key
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    
+    if (!supabaseUrl || !supabaseKey) {
+      throw new Error("SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set");
+    }
+    
+    this.supabase = createClient(supabaseUrl, supabaseKey);
+  }
 
   /**
    * Create a new agent negotiation session
@@ -51,19 +65,39 @@ export class SessionManagerService {
       deadline: deadline.toISOString(),
     });
 
-    // TODO: Insert into database (agent_sessions table)
-    // For now, return mock session
+    // Insert into database
+    const { data, error } = await this.supabase
+      .from("agent_sessions")
+      .insert({
+        user_id: request.userId,
+        flow_type: request.flowType,
+        status: "searching",
+        request_data: request.requestData,
+        deadline_at: deadline.toISOString(),
+      })
+      .select()
+      .single();
+
+    if (error) {
+      this.logger.error({
+        event: "SESSION_CREATE_FAILED",
+        error: error.message,
+        userId: this.maskUserId(request.userId),
+      });
+      throw new Error(`Failed to create session: ${error.message}`);
+    }
+
     const session: AgentSession = {
-      id: this.generateId(),
-      userId: request.userId,
-      flowType: request.flowType,
-      status: "searching",
-      requestData: request.requestData,
-      startedAt: now,
-      deadlineAt: deadline,
+      id: data.id,
+      userId: data.user_id,
+      flowType: data.flow_type,
+      status: data.status,
+      requestData: data.request_data,
+      startedAt: new Date(data.started_at),
+      deadlineAt: new Date(data.deadline_at),
       quotesCollected: [],
-      createdAt: now,
-      updatedAt: now,
+      createdAt: new Date(data.created_at),
+      updatedAt: new Date(data.updated_at),
     };
 
     return session;
@@ -91,9 +125,27 @@ export class SessionManagerService {
       hasResultData: Boolean(resultData),
     });
 
-    // TODO: Update database
-    // Validate status transition
-    // Update updated_at timestamp
+    const updateData: Record<string, unknown> = { status };
+    if (resultData) {
+      updateData.result_data = resultData;
+    }
+    if (status === "completed") {
+      updateData.completed_at = new Date().toISOString();
+    }
+
+    const { error } = await this.supabase
+      .from("agent_sessions")
+      .update(updateData)
+      .eq("id", sessionId);
+
+    if (error) {
+      this.logger.error({
+        event: "SESSION_UPDATE_FAILED",
+        error: error.message,
+        sessionId,
+      });
+      throw new Error(`Failed to update session: ${error.message}`);
+    }
   }
 
   /**
@@ -103,9 +155,17 @@ export class SessionManagerService {
    * @returns True if session deadline has passed
    */
   async isSessionExpired(sessionId: string): Promise<boolean> {
-    // TODO: Query database
-    // For now, return mock
-    return false;
+    const { data, error } = await this.supabase
+      .from("agent_sessions")
+      .select("deadline_at")
+      .eq("id", sessionId)
+      .single();
+
+    if (error || !data) {
+      return true; // Assume expired if not found
+    }
+
+    return new Date(data.deadline_at) < new Date();
   }
 
   /**
@@ -122,8 +182,38 @@ export class SessionManagerService {
       minutesThreshold,
     });
 
-    // TODO: Query database using get_expiring_agent_sessions function
-    return [];
+    interface ExpiringSessionRow {
+      session_id: string;
+      user_id: string;
+      flow_type: string;
+      minutes_remaining: number;
+      quotes_count: number;
+    }
+
+    const { data, error } = await this.supabase.rpc("get_expiring_agent_sessions", {
+      minutes_threshold: minutesThreshold,
+    });
+
+    if (error) {
+      this.logger.error({
+        event: "GET_EXPIRING_SESSIONS_FAILED",
+        error: error.message,
+      });
+      return [];
+    }
+
+    return ((data || []) as ExpiringSessionRow[]).map((row) => ({
+      id: row.session_id,
+      userId: row.user_id,
+      flowType: row.flow_type as FlowType,
+      status: "searching" as const,
+      requestData: {},
+      startedAt: new Date(),
+      deadlineAt: new Date(Date.now() + row.minutes_remaining * 60 * 1000),
+      quotesCollected: [],
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    }));
   }
 
   /**
@@ -133,8 +223,31 @@ export class SessionManagerService {
    * @returns Session or null if not found
    */
   async getSession(sessionId: string): Promise<AgentSession | null> {
-    // TODO: Query database
-    return null;
+    const { data, error } = await this.supabase
+      .from("agent_sessions")
+      .select("*")
+      .eq("id", sessionId)
+      .single();
+
+    if (error || !data) {
+      return null;
+    }
+
+    return {
+      id: data.id,
+      userId: data.user_id,
+      flowType: data.flow_type,
+      status: data.status,
+      requestData: data.request_data || {},
+      resultData: data.result_data,
+      startedAt: new Date(data.started_at),
+      deadlineAt: new Date(data.deadline_at),
+      completedAt: data.completed_at ? new Date(data.completed_at) : undefined,
+      selectedQuoteId: data.selected_quote_id,
+      quotesCollected: [],
+      createdAt: new Date(data.created_at),
+      updatedAt: new Date(data.updated_at),
+    };
   }
 
   /**
@@ -149,8 +262,36 @@ export class SessionManagerService {
       userId: this.maskUserId(userId),
     });
 
-    // TODO: Query database
-    return [];
+    const { data, error } = await this.supabase
+      .from("agent_sessions")
+      .select("*")
+      .eq("user_id", userId)
+      .in("status", ["searching", "negotiating", "presenting"])
+      .order("started_at", { ascending: false });
+
+    if (error) {
+      this.logger.error({
+        event: "GET_USER_SESSIONS_FAILED",
+        error: error.message,
+      });
+      return [];
+    }
+
+    return (data || []).map((row) => ({
+      id: row.id,
+      userId: row.user_id,
+      flowType: row.flow_type,
+      status: row.status,
+      requestData: row.request_data || {},
+      resultData: row.result_data,
+      startedAt: new Date(row.started_at),
+      deadlineAt: new Date(row.deadline_at),
+      completedAt: row.completed_at ? new Date(row.completed_at) : undefined,
+      selectedQuoteId: row.selected_quote_id,
+      quotesCollected: [],
+      createdAt: new Date(row.created_at),
+      updatedAt: new Date(row.updated_at),
+    }));
   }
 
   /**
@@ -166,13 +307,32 @@ export class SessionManagerService {
       reason,
     });
 
-    // TODO: Update database
-    // Notify vendors if needed
-    // Clean up pending operations
+    const { error } = await this.supabase
+      .from("agent_sessions")
+      .update({
+        status: "cancelled",
+        cancellation_reason: reason,
+        completed_at: new Date().toISOString(),
+      })
+      .eq("id", sessionId);
+
+    if (error) {
+      this.logger.error({
+        event: "SESSION_CANCEL_FAILED",
+        error: error.message,
+        sessionId,
+      });
+      throw new Error(`Failed to cancel session: ${error.message}`);
+    }
   }
 
   /**
-   * Mark session as timed out
+   * Get Supabase client for internal use
+   * Exposed for orchestrator to access database directly
+   */
+  getSupabaseClient(): SupabaseClient {
+    return this.supabase;
+  }
    * 
    * Called by background worker when deadline passes
    * 
@@ -188,16 +348,6 @@ export class SessionManagerService {
 
     // TODO: Notify user of timeout
     // Offer to extend window or present partial results
-  }
-
-  /**
-   * Generate a unique session ID
-   * 
-   * @returns UUID string
-   */
-  private generateId(): string {
-    // Use native crypto.randomUUID() for standards compliance
-    return crypto.randomUUID();
   }
 
   /**
