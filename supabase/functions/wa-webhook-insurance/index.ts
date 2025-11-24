@@ -2,19 +2,19 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { logStructuredEvent } from "../_shared/observability.ts";
-import type { RouterContext, WhatsAppWebhookPayload, RawWhatsAppMessage } from "../wa-webhook/types.ts";
-import { getState } from "../wa-webhook/state/store.ts";
-import { IDS } from "../wa-webhook/wa/ids.ts";
+import type { RouterContext, WhatsAppWebhookPayload, RawWhatsAppMessage } from "../_shared/wa-webhook-shared/types.ts";
+import { getState } from "../_shared/wa-webhook-shared/state/store.ts";
+import { IDS } from "../_shared/wa-webhook-shared/wa/ids.ts";
 
 // Insurance domain imports
-import { startInsurance, handleInsuranceMedia } from "../wa-webhook/domains/insurance/index.ts";
+import { startInsurance, handleInsuranceMedia } from "./insurance/index.ts";
 import {
   isInsuranceGated,
   getInsuranceGateMessage,
   handleInsuranceUnlock,
   handleInsuranceHelp,
-} from "../wa-webhook/domains/insurance/gate.ts";
-import { handleInsuranceDocumentUpload } from "../wa-webhook/domains/insurance/ins_handler.ts";
+} from "./insurance/gate.ts";
+import { handleInsuranceDocumentUpload } from "./insurance/ins_handler.ts";
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL") ?? "",

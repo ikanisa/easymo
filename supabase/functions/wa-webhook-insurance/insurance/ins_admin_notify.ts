@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.76.1";
-import { sendText } from "../../wa/client.ts";
+import { sendText } from "../../_shared/wa-webhook-shared/wa/client.ts";
 import type { InsuranceExtraction } from "./ins_normalize.ts";
 
 export interface AdminNotificationPayload {
@@ -178,7 +178,7 @@ export async function notifyInsuranceAdmins(
         const lang = Deno.env.get("WA_TEMPLATE_LANG") ?? "en";
         // Compact message as 1 body parameter to match a generic template
         const compact = message.replace(/[*_]|[\r\n]+/g, ' ').trim().slice(0, 1024);
-        const { sendTemplate } = await import("../../wa/client.ts");
+        const { sendTemplate } = await import("../../_shared/wa-webhook-shared/wa/client.ts");
         await sendTemplate(adminWaId, { name: templateName, language: lang, bodyParameters: [{ type: 'text', text: compact }] });
       } catch (tplError) {
         const tplMsg = tplError instanceof Error ? tplError.message : String(tplError ?? "unknown");

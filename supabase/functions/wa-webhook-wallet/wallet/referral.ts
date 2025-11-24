@@ -1,6 +1,6 @@
-import type { RouterContext } from "../../types.ts";
-import { sendText } from "../../wa/client.ts";
-import { logWalletAdjust } from "../../observe/log.ts";
+import type { RouterContext } from "../../_shared/wa-webhook-shared/types.ts";
+import { sendText } from "../../_shared/wa-webhook-shared/wa/client.ts";
+import { logWalletAdjust } from "../../_shared/wa-webhook-shared/observe/log.ts";
 
 const SUCCESS_MESSAGE = "Thanks! Your invite code is confirmed. Enjoy easyMO.";
 const INVALID_MESSAGE =

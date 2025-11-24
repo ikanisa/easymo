@@ -1,9 +1,9 @@
-import type { RouterContext } from "../../types.ts";
-import { ensureProfile } from "../../state/store.ts";
-import { sendText } from "../../wa/client.ts";
-import { getAppConfig } from "../../utils/app_config.ts";
-import { toE164 } from "../../utils/phone.ts";
-import { logStructuredEvent } from "../../observe/log.ts";
+import type { RouterContext } from "../../_shared/wa-webhook-shared/types.ts";
+import { ensureProfile } from "../../_shared/wa-webhook-shared/state/store.ts";
+import { sendText } from "../../_shared/wa-webhook-shared/wa/client.ts";
+import { getAppConfig } from "../../_shared/wa-webhook-shared/utils/app_config.ts";
+import { toE164 } from "../../_shared/wa-webhook-shared/utils/phone.ts";
+import { logStructuredEvent } from "../../_shared/wa-webhook-shared/observe/log.ts";
 import { fetchInsuranceMedia, uploadInsuranceBytes } from "./ins_media.ts";
 import { runInsuranceOCR } from "./ins_ocr.ts";
 import { normalizeInsuranceExtraction } from "./ins_normalize.ts";
@@ -14,9 +14,9 @@ import {
   buildUserSummary,
 } from "./ins_messages.ts";
 import type { InsuranceExtraction } from "./ins_normalize.ts";
-import { emitAlert } from "../../observe/alert.ts";
-import { supabase as sharedSupabase } from "../../config.ts";
-import { allocateInsuranceBonus } from "../wallet/allocate.ts";
+import { emitAlert } from "../../_shared/wa-webhook-shared/observe/alert.ts";
+import { supabase as sharedSupabase } from "../../_shared/wa-webhook-shared/config.ts";
+import { allocateInsuranceBonus } from "../../_shared/wa-webhook-shared/wallet/allocate.ts";
 
 const ADMIN_ALERT_TYPE = "insurance_document";
 
@@ -452,8 +452,8 @@ export async function processInsuranceDocument(
  * Handle insurance help request - show admin contacts
  */
 export async function handleInsuranceHelp(ctx: RouterContext): Promise<boolean> {
-  const { sendListMessage } = await import("../../utils/reply.ts");
-  const { IDS } = await import("../../wa/ids.ts");
+  const { sendListMessage } = await import("../../_shared/wa-webhook-shared/utils/reply.ts");
+  const { IDS } = await import("../../_shared/wa-webhook-shared/wa/ids.ts");
   
   const { data: contacts } = await ctx.supabase
     .from('insurance_admin_contacts')

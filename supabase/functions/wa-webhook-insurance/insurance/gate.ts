@@ -1,9 +1,9 @@
-import type { RouterContext } from "../../types.ts";
-import { detectCountryIso, normalizeE164 } from "../../utils/phone.ts";
-import { homeOnly, sendButtonsMessage } from "../../utils/reply.ts";
-import { isAdminNumber } from "../../flows/admin/auth.ts";
-import { logStructuredEvent } from "../../observe/log.ts";
-import { t } from "../../i18n/translator.ts";
+import type { RouterContext } from "../../_shared/wa-webhook-shared/types.ts";
+import { detectCountryIso, normalizeE164 } from "../../_shared/wa-webhook-shared/utils/phone.ts";
+import { homeOnly, sendButtonsMessage } from "../../_shared/wa-webhook-shared/utils/reply.ts";
+import { isAdminNumber } from "../../_shared/wa-webhook-shared/flows/admin/auth.ts";
+import { logStructuredEvent } from "../../_shared/wa-webhook-shared/observe/log.ts";
+import { t } from "../../_shared/wa-webhook-shared/i18n/translator.ts";
 
 const FEATURE_NAME = "motor_insurance";
 const ALLOWED_COUNTRIES = new Set(["RW"]);
