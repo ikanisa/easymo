@@ -48,7 +48,7 @@ jobs:
 
       - name: Upload audit artifacts
         if: always() && env.AUDIT_BASE_URL != ''
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: accessibility-and-lighthouse-reports
           path: artifacts
