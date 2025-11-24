@@ -1,12 +1,11 @@
-import type { ButtonSpec, RouterContext } from "../../types.ts";
-import {
+import type { ButtonSpec, RouterContext } from "../../_shared/wa-webhook-shared/types.ts";
   sendButtonsMessage,
   sendListMessage,
-} from "../../utils/reply.ts";
-import { IDS } from "../../wa/ids.ts";
-import { clearState, setState } from "../../state/store.ts";
+} from "../../_shared/wa-webhook-shared/utils/reply.ts";
+import { IDS } from "../../_shared/wa-webhook-shared/wa/ids.ts";
+import { clearState, setState } from "../../_shared/wa-webhook-shared/state/store.ts";
 import { fetchWalletSummary } from "../../rpc/wallet.ts";
-import { fmtCurrency } from "../../utils/text.ts";
+import { fmtCurrency } from "../../_shared/wa-webhook-shared/utils/text.ts";
 import { sendHomeMenu } from "../../flows/home.ts";
 
 export const WALLET_STATE_HOME = "wallet_home";

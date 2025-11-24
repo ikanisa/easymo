@@ -1,9 +1,9 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { logStructuredEvent } from "../_shared/observability.ts";
-import { getState } from "../wa-webhook/state/store.ts";
-import type { RouterContext, WhatsAppWebhookPayload } from "../wa-webhook/types.ts";
-import { IDS } from "../wa-webhook/wa/ids.ts";
+import { getState } from "../_shared/wa-webhook-shared/state/store.ts";
+import type { RouterContext, WhatsAppWebhookPayload } from "../_shared/wa-webhook-shared/types.ts";
+import { IDS } from "../_shared/wa-webhook-shared/wa/ids.ts";
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL") ?? "",
@@ -118,55 +118,55 @@ serve(async (req: Request): Promise<Response> => {
 
         // Wallet Home
         if (id === IDS.WALLET_HOME) {
-          const { handleWalletHome } = await import("../wa-webhook/domains/wallet/home.ts");
+          const { handleWalletHome } = await import("./wallet/home.ts");
           handled = await handleWalletHome(ctx);
         }
         
         // Wallet Earn
         else if (id === IDS.WALLET_EARN) {
-          const { handleWalletEarn } = await import("../wa-webhook/domains/wallet/earn.ts");
+          const { handleWalletEarn } = await import("./wallet/earn.ts");
           handled = await handleWalletEarn(ctx);
         }
         
         // Wallet Transfer
         else if (id === IDS.WALLET_TRANSFER) {
-          const { handleWalletTransfer } = await import("../wa-webhook/domains/wallet/transfer.ts");
+          const { handleWalletTransfer } = await import("./wallet/transfer.ts");
           handled = await handleWalletTransfer(ctx, state as any);
         }
         
         // Wallet Redeem
         else if (id === IDS.WALLET_REDEEM) {
-          const { handleWalletRedeem } = await import("../wa-webhook/domains/wallet/redeem.ts");
+          const { handleWalletRedeem } = await import("./wallet/redeem.ts");
           handled = await handleWalletRedeem(ctx);
         }
         
         // Wallet Top (Leaderboard)
         else if (id === IDS.WALLET_TOP) {
-          const { handleWalletTop } = await import("../wa-webhook/domains/wallet/top.ts");
+          const { handleWalletTop } = await import("./wallet/top.ts");
           handled = await handleWalletTop(ctx);
         }
         
         // Wallet Transactions
         else if (id === IDS.WALLET_TRANSACTIONS) {
-          const { handleWalletTransactions } = await import("../wa-webhook/domains/wallet/transactions.ts");
+          const { handleWalletTransactions } = await import("./wallet/transactions.ts");
           handled = await handleWalletTransactions(ctx);
         }
         
         // Wallet Referral
         else if (id === IDS.WALLET_REFERRAL || id === IDS.WALLET_SHARE) {
-          const { handleWalletReferral } = await import("../wa-webhook/domains/wallet/referral.ts");
+          const { handleWalletReferral } = await import("./wallet/referral.ts");
           handled = await handleWalletReferral(ctx);
         }
         
         // Reward selection
         else if (id.startsWith("REWARD::") && state?.key === "wallet_redeem") {
-          const { handleRewardSelection } = await import("../wa-webhook/domains/wallet/redeem.ts");
+          const { handleRewardSelection } = await import("./wallet/redeem.ts");
           handled = await handleRewardSelection(ctx, state.data as any, id);
         }
         
         // Transfer partner selection
         else if (id.startsWith("PARTNER::") && state?.key === "wallet_transfer_partner") {
-          const { handlePartnerSelection } = await import("../wa-webhook/domains/wallet/transfer.ts");
+          const { handlePartnerSelection } = await import("./wallet/transfer.ts");
           handled = await handlePartnerSelection(ctx, state.data as any, id);
         }
       }
@@ -178,34 +178,34 @@ serve(async (req: Request): Promise<Response> => {
       
       // Wallet keywords
       if (text.includes("wallet") || text.includes("balance")) {
-        const { handleWalletHome } = await import("../wa-webhook/domains/wallet/home.ts");
+        const { handleWalletHome } = await import("./wallet/home.ts");
         handled = await handleWalletHome(ctx);
       } else if (text.includes("transfer") || text.includes("send")) {
-        const { handleWalletTransfer } = await import("../wa-webhook/domains/wallet/transfer.ts");
+        const { handleWalletTransfer } = await import("./wallet/transfer.ts");
         handled = await handleWalletTransfer(ctx, state as any);
       } else if (text.includes("redeem") || text.includes("reward")) {
-        const { handleWalletRedeem } = await import("../wa-webhook/domains/wallet/redeem.ts");
+        const { handleWalletRedeem } = await import("./wallet/redeem.ts");
         handled = await handleWalletRedeem(ctx);
       } else if (text.includes("earn") || text.includes("get token")) {
-        const { handleWalletEarn } = await import("../wa-webhook/domains/wallet/earn.ts");
+        const { handleWalletEarn } = await import("./wallet/earn.ts");
         handled = await handleWalletEarn(ctx);
       } else if (text.includes("share") || text.includes("referral")) {
-        const { handleWalletReferral } = await import("../wa-webhook/domains/wallet/referral.ts");
+        const { handleWalletReferral } = await import("./wallet/referral.ts");
         handled = await handleWalletReferral(ctx);
       } else if (text.includes("transaction") || text.includes("history")) {
-        const { handleWalletTransactions } = await import("../wa-webhook/domains/wallet/transactions.ts");
+        const { handleWalletTransactions } = await import("./wallet/transactions.ts");
         handled = await handleWalletTransactions(ctx);
       }
       
       // Handle transfer amount input
       else if (state?.key === "wallet_transfer_amount") {
-        const { handleTransferAmount } = await import("../wa-webhook/domains/wallet/transfer.ts");
+        const { handleTransferAmount } = await import("./wallet/transfer.ts");
         handled = await handleTransferAmount(ctx, state.data as any, text);
       }
       
       // Handle transfer phone input
       else if (state?.key === "wallet_transfer_phone") {
-        const { handleTransferPhone } = await import("../wa-webhook/domains/wallet/transfer.ts");
+        const { handleTransferPhone } = await import("./wallet/transfer.ts");
         handled = await handleTransferPhone(ctx, state.data as any, text);
       }
     }

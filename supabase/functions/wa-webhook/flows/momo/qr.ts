@@ -17,6 +17,7 @@ import {
   sendListMessage,
 } from "../../utils/reply.ts";
 import { sendHomeMenu } from "../home.ts";
+import { encodeTelUri, encodeTelUriForQr } from "../../../_shared/wa-webhook-shared/utils/ussd.ts";
 
 const STATES = {
   MENU: "momo_qr_menu",

@@ -1,11 +1,12 @@
 import { notifyWalletTransferRecipient } from "./notifications.ts";
-import type { RouterContext } from "../../types.ts";
-import { sendButtonsMessage, sendListMessage } from "../../utils/reply.ts";
-import { IDS } from "../../wa/ids.ts";
-import { setState } from "../../state/store.ts";
+import type { RouterContext } from "../../_shared/wa-webhook-shared/types.ts";
+import { sendButtonsMessage, sendListMessage } from "../../_shared/wa-webhook-shared/utils/reply.ts";
+import { IDS } from "../../_shared/wa-webhook-shared/wa/ids.ts";
+import { setState } from "../../_shared/wa-webhook-shared/state/store.ts";
 import { t } from "../../i18n/translator.ts";
-import { toE164 } from "../../utils/phone.ts";
-import { listWalletPartners, fetchWalletSummary } from "../../rpc/wallet.ts";
+import { toE164 } from "../../_shared/wa-webhook-shared/utils/phone.ts";
+import { listWalletPartners } from "../../rpc/wallet.ts";
+import { fetchWalletSummary, transferTokens } from "../../_shared/wa-webhook-shared/rpc/wallet.ts";
 
 type TransferState = {
   key: string;

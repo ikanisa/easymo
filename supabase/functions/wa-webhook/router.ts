@@ -57,6 +57,11 @@ const ROUTES: RouteConfig[] = [
     keywords: ["agent", "chat", "help", "support", "ask"],
     priority: 3,
   },
+  {
+    service: "wa-webhook-marketplace",
+    keywords: ["marketplace", "shop", "buy", "sell", "store", "product"],
+    priority: 1,
+  },
 ];
 
 /**

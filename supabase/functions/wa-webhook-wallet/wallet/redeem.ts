@@ -1,16 +1,16 @@
 import { notifyWalletRedemptionAdmin } from "./notifications.ts";
-import type { RouterContext } from "../../types.ts";
-import { sendButtonsMessage, sendListMessage } from "../../utils/reply.ts";
+import type { RouterContext } from "../../_shared/wa-webhook-shared/types.ts";
+import { sendButtonsMessage, sendListMessage } from "../../_shared/wa-webhook-shared/utils/reply.ts";
 import { t } from "../../i18n/translator.ts";
 import {
   listWalletRedeemOptions,
   type WalletRedeemOption,
 } from "../../rpc/wallet.ts";
 import { walletBackRow, walletRefreshRow } from "./home.ts";
-import { setState } from "../../state/store.ts";
+import { setState } from "../../_shared/wa-webhook-shared/state/store.ts";
 import { logWalletAdjust } from "../../observe/log.ts";
-import { IDS } from "../../wa/ids.ts";
-import { fetchWalletSummary } from "../../rpc/wallet.ts";
+import { IDS } from "../../_shared/wa-webhook-shared/wa/ids.ts";
+import { fetchWalletSummary, redeemReward } from "../../_shared/wa-webhook-shared/rpc/wallet.ts";
 
 const STATES = {
   LIST: "wallet_redeem",

@@ -1,14 +1,12 @@
-import type { RouterContext } from "../../types.ts";
-import { sendButtonsMessage, sendListMessage } from "../../utils/reply.ts";
-import {
-  listWalletTopPromoters,
-  type WalletPromoter,
-} from "../../rpc/wallet.ts";
+```typescript
+import type { RouterContext } from "../../_shared/wa-webhook-shared/types.ts";
+import { sendButtonsMessage, sendListMessage } from "../../_shared/wa-webhook-shared/utils/reply.ts";
+import { fetchWalletLeaderboard, type WalletPromoter } from "../../_shared/wa-webhook-shared/rpc/wallet.ts";
 import { setState } from "../../state/store.ts";
 import { walletBackRow, walletRefreshRow } from "./home.ts";
 import { maskPhone } from "../../flows/support.ts";
 import { logWalletAdjust } from "../../observe/log.ts";
-import { IDS } from "../../wa/ids.ts";
+import { IDS } from "../../_shared/wa-webhook-shared/wa/ids.ts";
 
 export async function showWalletTop(ctx: RouterContext): Promise<boolean> {
   if (!ctx.profileId) return false;
