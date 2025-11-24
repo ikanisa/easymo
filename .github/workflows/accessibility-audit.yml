@@ -14,7 +14,7 @@ jobs:
       AUDIT_BASE_URL: ${{ vars.AUDIT_BASE_URL || secrets.AUDIT_BASE_URL || '' }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Setup Node.js
         if: env.AUDIT_BASE_URL != ''
