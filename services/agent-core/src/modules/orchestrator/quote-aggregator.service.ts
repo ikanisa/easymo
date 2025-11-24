@@ -1,6 +1,7 @@
 import { Injectable, Logger } from "@nestjs/common";
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
 
-import { CreateQuoteRequest,Quote, QuoteStatus } from "./types";
+import { CreateQuoteRequest, Quote, QuoteStatus } from "./types";
 
 /**
  * Quote Aggregator Service
@@ -14,6 +15,19 @@ import { CreateQuoteRequest,Quote, QuoteStatus } from "./types";
 export class QuoteAggregatorService {
   private readonly logger = new Logger(QuoteAggregatorService.name);
   private readonly DEFAULT_QUOTE_EXPIRY_MINUTES = 10;
+  private readonly supabase: SupabaseClient;
+
+  constructor() {
+    // Initialize Supabase client with service role key
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    
+    if (!supabaseUrl || !supabaseKey) {
+      throw new Error("SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set");
+    }
+    
+    this.supabase = createClient(supabaseUrl, supabaseKey);
+  }
 
   /**
    * Add a new quote to a session
@@ -38,27 +52,53 @@ export class QuoteAggregatorService {
       estimatedTimeMinutes: request.estimatedTimeMinutes,
     });
 
-    // TODO: Insert into database (agent_quotes table)
-    const quote: Quote = {
-      id: this.generateId(),
-      sessionId: request.sessionId,
-      vendorId: request.vendorId,
-      vendorType: request.vendorType,
-      vendorName: request.vendorName,
-      vendorPhone: request.vendorPhone,
-      offerData: request.offerData,
-      status: "received",
-      priceAmount: request.priceAmount,
-      priceCurrency: request.priceCurrency ?? "RWF",
-      estimatedTimeMinutes: request.estimatedTimeMinutes,
-      notes: request.notes,
-      receivedAt: now,
-      expiresAt,
-      createdAt: now,
-      updatedAt: now,
-    };
+    const { data, error } = await this.supabase
+      .from("agent_quotes")
+      .insert({
+        session_id: request.sessionId,
+        vendor_id: request.vendorId,
+        vendor_type: request.vendorType,
+        vendor_name: request.vendorName,
+        vendor_phone: request.vendorPhone,
+        offer_data: request.offerData,
+        status: "received",
+        price_amount: request.priceAmount,
+        price_currency: request.priceCurrency || "RWF",
+        estimated_time_minutes: request.estimatedTimeMinutes,
+        notes: request.notes,
+        received_at: now.toISOString(),
+        expires_at: expiresAt.toISOString(),
+      })
+      .select()
+      .single();
 
-    return quote;
+    if (error) {
+      this.logger.error({
+        event: "QUOTE_ADD_FAILED",
+        error: error.message,
+        sessionId: request.sessionId,
+      });
+      throw new Error(`Failed to add quote: ${error.message}`);
+    }
+
+    return {
+      id: data.id,
+      sessionId: data.session_id,
+      vendorId: data.vendor_id,
+      vendorType: data.vendor_type,
+      vendorName: data.vendor_name,
+      vendorPhone: data.vendor_phone,
+      offerData: data.offer_data || {},
+      status: data.status,
+      priceAmount: data.price_amount,
+      priceCurrency: data.price_currency,
+      estimatedTimeMinutes: data.estimated_time_minutes,
+      notes: data.notes,
+      receivedAt: new Date(data.received_at),
+      expiresAt: new Date(data.expires_at),
+      createdAt: new Date(data.created_at),
+      updatedAt: new Date(data.updated_at),
+    };
   }
 
   /**
@@ -73,8 +113,39 @@ export class QuoteAggregatorService {
       sessionId,
     });
 
-    // TODO: Query database
-    return [];
+    const { data, error } = await this.supabase
+      .from("agent_quotes")
+      .select("*")
+      .eq("session_id", sessionId)
+      .order("received_at", { ascending: true });
+
+    if (error) {
+      this.logger.error({
+        event: "GET_QUOTES_FAILED",
+        error: error.message,
+        sessionId,
+      });
+      return [];
+    }
+
+    return (data || []).map((row) => ({
+      id: row.id,
+      sessionId: row.session_id,
+      vendorId: row.vendor_id,
+      vendorType: row.vendor_type,
+      vendorName: row.vendor_name,
+      vendorPhone: row.vendor_phone,
+      offerData: row.offer_data || {},
+      status: row.status,
+      priceAmount: row.price_amount,
+      priceCurrency: row.price_currency,
+      estimatedTimeMinutes: row.estimated_time_minutes,
+      notes: row.notes,
+      receivedAt: new Date(row.received_at),
+      expiresAt: row.expires_at ? new Date(row.expires_at) : undefined,
+      createdAt: new Date(row.created_at),
+      updatedAt: new Date(row.updated_at),
+    }));
   }
 
   /**
@@ -139,7 +210,19 @@ export class QuoteAggregatorService {
       newStatus: status,
     });
 
-    // TODO: Update database
+    const { error } = await this.supabase
+      .from("agent_quotes")
+      .update({ status })
+      .eq("id", quoteId);
+
+    if (error) {
+      this.logger.error({
+        event: "QUOTE_UPDATE_FAILED",
+        error: error.message,
+        quoteId,
+      });
+      throw new Error(`Failed to update quote: ${error.message}`);
+    }
   }
 
   /**
@@ -179,9 +262,22 @@ export class QuoteAggregatorService {
       event: "EXPIRE_OLD_QUOTES_START",
     });
 
-    // TODO: Query database for quotes where expires_at < now() and status = 'pending'
-    // Update their status to 'expired'
-    const expiredCount = 0;
+    const { data, error } = await this.supabase
+      .from("agent_quotes")
+      .update({ status: "expired" })
+      .eq("status", "pending")
+      .lt("expires_at", new Date().toISOString())
+      .select("id");
+
+    if (error) {
+      this.logger.error({
+        event: "EXPIRE_QUOTES_FAILED",
+        error: error.message,
+      });
+      return 0;
+    }
+
+    const expiredCount = data?.length || 0;
 
     if (expiredCount > 0) {
       this.logger.log({
@@ -236,15 +332,5 @@ export class QuoteAggregatorService {
     }
 
     return stats;
-  }
-
-  /**
-   * Generate a unique quote ID
-   * 
-   * @returns UUID string
-   */
-  private generateId(): string {
-    // Use native crypto.randomUUID() for standards compliance
-    return crypto.randomUUID();
   }
 }
