@@ -1,8 +1,8 @@
 import { assertEquals, assertMatch } from "https://deno.land/std@0.203.0/testing/asserts.ts";
 import { routeIncomingPayload, summarizeServiceHealth } from "./router.ts";
 import { LatencyTracker } from "./telemetry.ts";
-import { routeMessage } from "../wa-webhook/router.ts";
-import type { WhatsAppWebhookPayload } from "../wa-webhook/types.ts";
+import { routeMessage } from "./routing_logic.ts";
+import type { WhatsAppWebhookPayload } from "../_shared/wa-webhook-shared/types.ts";
 
 function makePayload(text: string, state?: string): WhatsAppWebhookPayload {
   return {

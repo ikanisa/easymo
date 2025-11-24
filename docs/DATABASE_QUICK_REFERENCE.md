@@ -24,7 +24,7 @@ Quick reference guide for developers using the new database schema enhancements.
 ```typescript
 // Edge Function (Deno)
 await supabase.rpc("record_metric", {
-  p_service_name: "wa-webhook",
+  p_service_name: "wa-webhook-core",
   p_metric_type: "latency",
   p_metric_name: "message_processing",
   p_value: 125,

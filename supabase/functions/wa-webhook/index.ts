@@ -4,6 +4,35 @@ import type { WhatsAppWebhookPayload } from "../_shared/wa-webhook-shared/types.
 import { getRoutingText } from "../_shared/wa-webhook-shared/utils/messages.ts";
 import { routeMessage } from "../wa-webhook-core/routing_logic.ts";
 
+/**
+ * ⚠️ DEPRECATION NOTICE ⚠️
+ * 
+ * This function (wa-webhook) is DEPRECATED and should NOT be deployed.
+ * 
+ * This directory now serves as a SHARED CODE LIBRARY for WhatsApp webhook microservices.
+ * The actual webhook routing is handled by wa-webhook-core.
+ * 
+ * Deployed microservices that use this shared code:
+ * - wa-webhook-core (ingress/router)
+ * - wa-webhook-ai-agents
+ * - wa-webhook-mobility
+ * - wa-webhook-wallet
+ * - wa-webhook-jobs
+ * - wa-webhook-property
+ * - wa-webhook-marketplace
+ * - wa-webhook-insurance
+ * 
+ * If you need to make changes, edit files here but deploy the microservices above.
+ * 
+ * To deploy all WhatsApp functions: pnpm run functions:deploy:wa
+ * 
+ * DO NOT USE: supabase functions deploy wa-webhook
+ * USE INSTEAD: supabase functions deploy wa-webhook-core (and other microservices)
+ */
+
+// Wrap config import in try-catch to catch initialization errors
+let supabase: any;
+let configError: Error | null = null;
 const { url: SUPABASE_URL, serviceRoleKey: SERVICE_KEY } = getSupabaseServiceConfig();
 const MICROSVC_BASE = `${SUPABASE_URL}/functions/v1`;
 

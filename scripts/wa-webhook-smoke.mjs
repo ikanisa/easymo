@@ -28,7 +28,7 @@ async function main() {
     console.error('missing_functions_base: Set SUPABASE_FUNCTIONS_URL or SUPABASE_URL');
     process.exit(2);
   }
-  const endpoints = ['wa-webhook/health', 'wa-webhook-core/health'];
+  const endpoints = ['wa-webhook-core/health'];
   let failures = 0;
   for (const ep of endpoints) {
     const url = `${base}/${ep}`;

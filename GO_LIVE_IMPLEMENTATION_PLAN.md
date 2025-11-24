@@ -109,7 +109,7 @@ export async function logToDatadog(event: string, data: Record<string, unknown>)
       },
       body: JSON.stringify({
         ddsource: "supabase-functions",
-        service: "wa-webhook",
+        service: "wa-webhook-core",
         hostname: "easymo-prod",
         message: event,
         ...data,
@@ -332,7 +332,7 @@ import { describe, it, expect } from "vitest";
 
 describe("WhatsApp Message Routing", () => {
   it("should route job query to wa-webhook-jobs", async () => {
-    const response = await fetch("http://localhost:54321/functions/v1/wa-webhook", {
+    const response = await fetch("http://localhost:54321/functions/v1/wa-webhook-core", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

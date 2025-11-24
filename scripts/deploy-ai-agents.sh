@@ -84,12 +84,12 @@ for agent in "${agents[@]}"; do
 done
 
 echo ""
-print_info "Step 2: Deploying WhatsApp Webhook (with AI integration)..."
+print_info "Step 2: Deploying WhatsApp Webhook Core (with AI integration)..."
 echo "-----------------------------------------------------------"
-if supabase functions deploy wa-webhook --no-verify-jwt 2>&1 | grep -q "Deployed"; then
-    print_success "WhatsApp webhook deployed with AI integration"
+if supabase functions deploy wa-webhook-core --no-verify-jwt 2>&1 | grep -q "Deployed"; then
+    print_success "WhatsApp webhook core deployed with AI integration"
 else
-    print_error "WhatsApp webhook deployment failed"
+    print_error "WhatsApp webhook core deployment failed"
     exit 1
 fi
 
@@ -101,7 +101,7 @@ echo "----------------------------------------"
 print_info "Setting OPENAI_API_KEY for all functions..."
 OPENAI_KEY=$(grep OPENAI_API_KEY .env | cut -d'=' -f2)
 
-for agent in "${agents[@]}" "wa-webhook"; do
+for agent in "${agents[@]}" "wa-webhook-core"; do
     supabase secrets set "OPENAI_API_KEY=$OPENAI_KEY" --env-file .env 2>/dev/null || true
 done
 
@@ -134,11 +134,11 @@ if [ -n "$PROJECT_REF" ]; then
         print_warning "agent-negotiation may not be responding correctly"
     fi
     
-    print_info "Testing wa-webhook endpoint..."
-    if curl -s "${BASE_URL}/wa-webhook/health" | grep -q "ok\|healthy"; then
-        print_success "wa-webhook is responding"
+    print_info "Testing wa-webhook-core endpoint..."
+    if curl -s "${BASE_URL}/wa-webhook-core/health" | grep -q "ok\|healthy"; then
+        print_success "wa-webhook-core is responding"
     else
-        print_warning "wa-webhook may not be responding correctly"
+        print_warning "wa-webhook-core may not be responding correctly"
     fi
 else
     print_warning "PROJECT_REF not found, skipping endpoint tests"
@@ -176,7 +176,7 @@ echo ""
 print_success "Deployment Summary:"
 echo "==================="
 print_info "✓ All AI agent functions deployed"
-print_info "✓ WhatsApp webhook updated with AI integration"
+print_info "✓ WhatsApp webhook-core updated with AI integration"
 print_info "✓ Environment variables configured"
 print_info "✓ Database migrations applied"
 echo ""
@@ -184,7 +184,7 @@ echo ""
 print_info "🎯 Next Steps:"
 echo "-------------"
 echo "1. Test via WhatsApp by sending a message"
-echo "2. Check logs: supabase functions logs wa-webhook"
+echo "2. Check logs: supabase functions logs wa-webhook-core"
 echo "3. Monitor agent sessions in database"
 echo "4. Enable feature flags if needed:"
 echo "   - agent.negotiation"
@@ -196,7 +196,7 @@ echo ""
 
 print_info "📊 Monitoring Commands:"
 echo "----------------------"
-echo "• Watch logs: supabase functions logs wa-webhook --follow"
+echo "• Watch logs: supabase functions logs wa-webhook-core --follow"
 echo "• Check agent sessions: SELECT * FROM agent_sessions ORDER BY created_at DESC LIMIT 10;"
 echo "• Check agent quotes: SELECT * FROM agent_quotes ORDER BY created_at DESC LIMIT 10;"
 echo ""
