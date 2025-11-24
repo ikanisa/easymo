@@ -1,4 +1,5 @@
 import type { RouterContext, WhatsAppMediaMessage } from "../types.ts";
+import { handleVendorMenuMedia } from "../flows/vendor/menu.ts";
 import { handleInsuranceMedia } from "../domains/insurance/index.ts";
 
 
@@ -19,8 +20,8 @@ export async function handleMedia(
   }
   
 
+
   if (await handleInsuranceMedia(ctx, msg, state)) return true;
-  
-  // Vendor menu removed - vendors don't have menus (only bars/restaurants)
+  if (await handleVendorMenuMedia(ctx, msg)) return true;
   return false;
 }

@@ -33,11 +33,11 @@ const ROUTED_SERVICES = [
   "wa-webhook-core",
 ];
 
-export function routeIncomingPayload(payload: WhatsAppWebhookPayload): RoutingDecision {
+export async function routeIncomingPayload(payload: WhatsAppWebhookPayload): Promise<RoutingDecision> {
   const routingMessage = getFirstMessage(payload);
   const routingText = routingMessage ? getRoutingText(routingMessage) : null;
   const chatStateKey = extractChatState(payload);
-  const service = routingText ? routeMessage(routingText, chatStateKey) : "wa-webhook-core";
+  const service = routingText ? await routeMessage(routingText, chatStateKey) : "wa-webhook-core";
 
   return {
     service,

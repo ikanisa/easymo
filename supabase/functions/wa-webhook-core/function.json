@@ -1,6 +1,3 @@
 {
-  "name": "wa-webhook-core",
-  "version": "1.0.0",
-  "verify_jwt": false,
-  "import_map": "./deno.json"
+  "verify_jwt": false
 }

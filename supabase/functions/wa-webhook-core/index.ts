@@ -88,7 +88,7 @@ serve(async (req: Request): Promise<Response> => {
   try {
     const payload = await req.json();
     log("CORE_WEBHOOK_RECEIVED", { payloadType: typeof payload });
-    const decision = routeIncomingPayload(payload);
+    const decision = await routeIncomingPayload(payload);
     const forwarded = await forwardToEdgeService(decision, payload, req.headers);
     return finalize(forwarded, decision.service);
   } catch (err) {

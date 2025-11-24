@@ -13,7 +13,7 @@ jobs:
       EDGE_FUNCTIONS_TOKEN: ${{ secrets.EDGE_FUNCTIONS_TOKEN }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Setup Deno
         uses: denoland/setup-deno@v2
@@ -25,7 +25,7 @@ jobs:
           deno test --allow-env --allow-read --allow-net supabase/functions/wa-webhook/index.test.ts supabase/functions/wa-webhook/shared/openai_client.test.ts | tee e2e-edge.log
 
       - name: Upload E2E logs
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: edge-e2e-logs
           path: e2e-edge.log
@@ -45,7 +45,7 @@ jobs:
         run: echo "Skipping deployment verification because EDGE_FUNCTIONS_BASE is not configured."
 
       - name: Upload verification logs
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: edge-deployment-logs
           path: edge-verify.log

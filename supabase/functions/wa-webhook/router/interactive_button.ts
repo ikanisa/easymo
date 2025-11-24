@@ -429,54 +429,6 @@ export async function handleButton(
         return false;
       }
       
-      // Driver and ride actions
-      if (id === "driver_go_online") {
-        const { handleGoOnline } = await import("../domains/mobility/driver_actions.ts");
-        return await handleGoOnline(ctx);
-      }
-
-      if (id.startsWith("RIDE_ACCEPT::")) {
-        const tripId = id.split("::")[1];
-        const { handleDriverAcceptRide } = await import("../domains/mobility/driver_actions.ts");
-        return await handleDriverAcceptRide(ctx, tripId);
-      }
-      
-      if (id === IDS.NEARBY_RECENT) {
-        const { handleNearbyRecent } = await import("../domains/mobility/nearby.ts");
-        return await handleNearbyRecent(ctx);
-      }
-      
-      if (id === IDS.DRIVER_GO_OFFLINE) {
-        const { handleGoOffline } = await import("../domains/mobility/driver_actions.ts");
-        return await handleGoOffline(ctx);
-      }
-
-      // Insurance admin contact quick chat
-      if (id.startsWith('insurance_contact_')) {
-        const contactId = id.replace('insurance_contact_', '');
-        try {
-          const { data: contact } = await ctx.supabase
-            .from('insurance_admin_contacts')
-            .select('contact_type, contact_value, display_name, is_active')
-            .eq('id', contactId)
-            .maybeSingle();
-          if (!contact || contact.is_active !== true) return true;
-          const type = String(contact.contact_type || '').toLowerCase();
-          if (type !== 'whatsapp') return true;
-          const digits = String(contact.contact_value || '').replace(/\D/g, '');
-          if (!digits) return true;
-          const link = `https://wa.me/${digits}`;
-          await sendButtonsMessage(
-            ctx,
-            `👤 Contact ${contact.display_name || 'Insurance Admin'}\n${link}`,
-            [{ id: IDS.BACK_MENU, title: 'Back' }]
-          );
-        } catch (e) {
-          console.warn('insurance.contact_button_fail', e);
-        }
-        return true;
-      }
-      
       // Removed: pharmacy_search_now and quincaillerie_search_now buttons
       // These flows now go directly to showing results after location
       
@@ -613,6 +565,5 @@ async function handleSavedPlacesSkip(
     default:
       break;
   }
-
   return false;
 }

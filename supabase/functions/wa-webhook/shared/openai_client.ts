@@ -161,10 +161,7 @@ export class OpenAIClient {
     });
 
     if (!response.ok) {
-      const error = await response.json().catch((e) => {
-        console.error("openai_client.parse_error_response.failed", e);
-        return {};
-      });
+      const error = await response.json().catch(() => ({}));
       throw new Error(
         `OpenAI API error: ${response.status} - ${
           error.error?.message || "Unknown error"

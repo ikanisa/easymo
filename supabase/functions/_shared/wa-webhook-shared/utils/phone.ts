@@ -5,4 +5,4 @@ export {
   digitsOnly,
   normalizeE164,
   toE164,
-} from "../../_shared/phone.ts";
+} from "../../phone.ts";

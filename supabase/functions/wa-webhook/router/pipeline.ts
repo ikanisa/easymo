@@ -55,13 +55,7 @@ async function checkRateLimit(req: Request): Promise<PreparedResponse | null> {
         // set expiration in seconds
         await fetch(`${upstashUrl}/EXPIRE/${encodeURIComponent(k)}/${Math.ceil(windowMs / 1000)}`, {
           headers: { Authorization: `Bearer ${upstashToken}` },
-        }).catch((error) => {
-          console.error(JSON.stringify({
-            event: "RATE_LIMIT_EXPIRE_FAILED",
-            error: error instanceof Error ? error.message : String(error),
-            key: k
-          }));
-        });
+        }).catch(() => {});
       }
       if (count > maxReq) {
         return {
@@ -454,35 +448,6 @@ export async function processWebhookRequest(
       response: new Response("bad_json", { status: 400 }),
       correlationId,
     };
-  }
-
-  // Edge-level idempotency check (prevents duplicate processing)
-  const webhookId = payload?.entry?.[0]?.id;
-  if (webhookId && webhookConfig.cache.enabled) {
-    const idempotencyKey = `wa:webhook:processed:${webhookId}`;
-    const existingCorrelationId = getCached<string>(idempotencyKey);
-    if (existingCorrelationId) {
-      await hooks.logStructuredEvent("WEBHOOK_DUPLICATE_DETECTED", withCid({
-        webhookId,
-        originalCorrelationId: existingCorrelationId,
-      }));
-      incrementMetric("wa_webhook_duplicate_total", 1, { 
-        scope: "edge_idempotency" 
-      });
-      return {
-        type: "response",
-        response: new Response("OK", { 
-          status: 200,
-          headers: { 
-            "X-Idempotent-Replay": "true",
-            "X-Original-Correlation-Id": existingCorrelationId 
-          }
-        }),
-        correlationId,
-      };
-    }
-    // Mark as processed immediately (TTL: 24 hours)
-    setCached(idempotencyKey, correlationId, 86400);
   }
 
   await hooks.logInbound(payload);

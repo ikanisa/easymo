@@ -43,7 +43,7 @@ jobs:
       FUNCTIONS: "wa-webhook wa-webhook-core wa-webhook-marketplace wa-webhook-jobs wa-webhook-ai-agents agent-property-rental"
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v1

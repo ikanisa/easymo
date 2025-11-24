@@ -1,0 +1,11 @@
+{
+  "home.rows.farmerAgent.title": "🌾 Abahinzi n'Abaguzi",
+  "home.rows.farmerAgent.description": "Gura no kugurisha ibihingwa - guhuza abahinzi n'abaguzi",
+  "farmer.welcome": "🌾 *Isoko ry'Ubuhinzi*\n\nGuhuza abaguzi n'abagurisha ibihingwa. Hitamo uruhare rwawe:",
+  "farmer.supply.title": "Ndi umuhinzi (Ugurisha)",
+  "farmer.supply.prompt": "📝 Mbwira ku bihingwa ushaka kugurisha:\n• Ubwoko bw'ibihingwa (ibigori, ibishyimbo, ibindi)\n• Umubare\n• Aho uri\n• Ubwiza/ubwoko\n\nUrugero: \"50kg ibigori, grade A, Kigali\"\n\nAndika 0 kugira ngo usubire ahabanza.",
+  "farmer.demand.title": "Ndi umuguzi",
+  "farmer.demand.prompt": "📝 Mbwira ibihingwa ushaka kugura:\n• Ubwoko bw'ibihingwa\n• Umubare ukeneye\n• Aho bizaherekeza\n• Ubwiza ushaka\n\nUrugero: \"100kg ibishyimbo, gutwara i Kigali\"\n\nAndika 0 kugira ngo usubire ahabanza.",
+  "farmer.continue": "💬 Komeza Ikiganiro",
+  "common.back": "⬅️ Subira"
+}

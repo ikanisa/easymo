@@ -34,7 +34,7 @@ export async function handleText(
   state: { key: string; data?: Record<string, unknown> },
 ): Promise<boolean> {
   const body = getTextBody(msg);
-  // Debug logging removed for production
+  console.log(`DEBUG: handleText body="${body}" state.key="${state.key}"`);
   if (!body) return false;
   // Record inbound for correlation (best-effort)
   try {
@@ -113,7 +113,7 @@ export async function handleText(
       const { handleBusinessNameSearch } = await import(
         "../domains/business/claim.ts"
       );
-      return await handleBusinessNameSearch(ctx, body);
+      return await runBusinessBrokerAgent(ctx, body);
     }
   }
 
@@ -228,7 +228,6 @@ export async function handleText(
     return await handleJobBoardText(ctx, body);
   }
 
-  // Try MOMO QR handler before other fallbacks
   if (await handleMomoText(ctx, body, state)) {
     return true;
   }
@@ -260,12 +259,12 @@ export async function handleText(
     return true;
   }
   // If no other handler matches, send home menu
-  // Fallback to home menu
+  console.log("DEBUG: handleText sending home menu");
   try {
     await sendHomeMenu(ctx);
-    // Home menu sent successfully
+    console.log("DEBUG: handleText sent home menu");
   } catch (e) {
-    console.error("handleText.sendHomeMenu.error", e);
+    console.log("DEBUG: handleText sendHomeMenu error", e);
     throw e;
   }
   return true;

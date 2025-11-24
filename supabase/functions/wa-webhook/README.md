@@ -1,57 +1,25 @@
-# wa-webhook (Shared Library – Not Deployed)
+# wa-webhook
 
-This folder is a shared code library used by the deployed WhatsApp microservices.
-It is no longer a deployed Edge Function by itself.
+Additive edge function that modularises the WhatsApp webhook and new dine-in
+flows. Modules:
 
-Deployed functions that import code from this folder:
-
-- `wa-webhook-core` (ingress/router/health)
-- `wa-webhook-ai-agents`
-- `wa-webhook-mobility`
-- `wa-webhook-wallet`
-- `wa-webhook-jobs`
-- `wa-webhook-property`
-- `wa-webhook-marketplace`
-
-Implications:
-
-- Editing files here DOES NOT deploy anything by itself.
-- You must redeploy the microservices above for changes to take effect.
-
-Deploy all WhatsApp microservices:
-
-```
-pnpm run functions:deploy:wa
-```
-
-or directly with Supabase CLI:
-
-```
-supabase functions deploy \
-  wa-webhook-core \
-  wa-webhook-ai-agents \
-  wa-webhook-mobility \
-  wa-webhook-wallet \
-  wa-webhook-jobs \
-  wa-webhook-property \
-  wa-webhook-marketplace
-```
-
-Typical modules in this library:
-
-- `config.ts`: runtime configuration & Supabase client helpers
+- `index.ts`: entrypoint (GET verify, POST dispatch)
+- `config.ts`: runtime configuration & Supabase client
+- `deps.ts`: centralised imports
 - `types.ts`: shared type definitions
-- `router/`: message-type routers (media, interactive, location, text)
+- `health.ts`: health probe handler
 - `wa/`: WhatsApp client helpers and signature verification
 - `state/`: chat state & idempotency utilities
+- `router/`: message-type routers (media, interactive, location, text)
+- `rpc/`: Supabase access helpers (mobility, dine-in, marketplace, etc.)
 - `flows/`: message-driven UX blocks
-- `domains/`: business domain handlers (insurance, wallet, mobility, etc.)
+- `exchange/`: Flow Data Channel handlers (Meta WhatsApp Flows)
+- `observe/`: logging and diagnostics utilities
 
-Operational note: to verify live deployments, use `wa-webhook-core` health:
-
-```
-curl -s https://<project>.supabase.co/functions/v1/wa-webhook-core/health
-```
+This directory now houses both the original vendor upload handler and the v2
+conversational flows so nothing is lost while keeping a single deployment
+target. All new dine-in capabilities and future WA features should live here to
+honour the repository's additive-only guard.
 
 ## Runtime configuration
 
