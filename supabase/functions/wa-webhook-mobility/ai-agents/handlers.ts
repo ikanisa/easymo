@@ -190,14 +190,52 @@ export async function handleAINearbyPharmacies(
     } else {
       // Fallback: fetch from database
       await sendText(ctx.from, t(ctx.locale, "pharmacy.finding_nearby"));
-      // TODO: Implement database fallback - fetch top 10 pharmacies by distance
-      await sendButtonsMessage(
-        ctx,
-        t(ctx.locale, "pharmacy.no_results"),
-        buildButtons(
-          { id: IDS.BACK_HOME, title: t(ctx.locale, "common.menu_back") }
-        )
-      );
+      
+      // Database fallback - fetch top 10 pharmacies by distance
+      try {
+        const { data: pharmacies, error } = await ctx.supabase
+          .from("businesses")
+          .select("id, name, phone_number, location, address")
+          .eq("business_type", "pharmacy")
+          .eq("is_active", true)
+          .limit(10);
+
+        if (error) throw error;
+
+        if (pharmacies && pharmacies.length > 0) {
+          // Build list of pharmacy options
+          const pharmacyRows = pharmacies.map((pharmacy: any) => ({
+            id: `pharmacy::${pharmacy.id}`,
+            title: pharmacy.name || "Pharmacy",
+            description: pharmacy.address || t(ctx.locale, "pharmacy.tap_for_details"),
+          }));
+
+          await sendListMessage(ctx, {
+            title: t(ctx.locale, "pharmacy.results_title"),
+            body: t(ctx.locale, "pharmacy.found_count", { count: pharmacies.length }),
+            sectionTitle: t(ctx.locale, "pharmacy.nearby"),
+            rows: pharmacyRows,
+            buttonText: t(ctx.locale, "pharmacy.select"),
+          });
+        } else {
+          await sendButtonsMessage(
+            ctx,
+            t(ctx.locale, "pharmacy.no_results"),
+            buildButtons(
+              { id: IDS.BACK_HOME, title: t(ctx.locale, "common.menu_back") }
+            )
+          );
+        }
+      } catch (dbError) {
+        console.error("Database fallback error:", dbError);
+        await sendButtonsMessage(
+          ctx,
+          t(ctx.locale, "pharmacy.error"),
+          buildButtons(
+            { id: IDS.BACK_HOME, title: t(ctx.locale, "common.menu_back") }
+          )
+        );
+      }
     }
 
     return true;
@@ -271,14 +309,52 @@ export async function handleAINearbyQuincailleries(
     } else {
       // Fallback: fetch from database
       await sendText(ctx.from, t(ctx.locale, "quincaillerie.finding_nearby"));
-      // TODO: Implement database fallback - fetch top 10 quincailleries by distance
-      await sendButtonsMessage(
-        ctx,
-        t(ctx.locale, "quincaillerie.no_results"),
-        buildButtons(
-          { id: IDS.BACK_HOME, title: t(ctx.locale, "common.menu_back") }
-        )
-      );
+      
+      // Database fallback - fetch top 10 quincailleries by distance
+      try {
+        const { data: quincailleries, error } = await ctx.supabase
+          .from("businesses")
+          .select("id, name, phone_number, location, address")
+          .eq("business_type", "hardware")
+          .eq("is_active", true)
+          .limit(10);
+
+        if (error) throw error;
+
+        if (quincailleries && quincailleries.length > 0) {
+          // Build list of quincaillerie options
+          const quincaillerieRows = quincailleries.map((shop: any) => ({
+            id: `quincaillerie::${shop.id}`,
+            title: shop.name || "Quincaillerie",
+            description: shop.address || t(ctx.locale, "quincaillerie.tap_for_details"),
+          }));
+
+          await sendListMessage(ctx, {
+            title: t(ctx.locale, "quincaillerie.results_title"),
+            body: t(ctx.locale, "quincaillerie.found_count", { count: quincailleries.length }),
+            sectionTitle: t(ctx.locale, "quincaillerie.nearby"),
+            rows: quincaillerieRows,
+            buttonText: t(ctx.locale, "quincaillerie.select"),
+          });
+        } else {
+          await sendButtonsMessage(
+            ctx,
+            t(ctx.locale, "quincaillerie.no_results"),
+            buildButtons(
+              { id: IDS.BACK_HOME, title: t(ctx.locale, "common.menu_back") }
+            )
+          );
+        }
+      } catch (dbError) {
+        console.error("Database fallback error:", dbError);
+        await sendButtonsMessage(
+          ctx,
+          t(ctx.locale, "quincaillerie.error"),
+          buildButtons(
+            { id: IDS.BACK_HOME, title: t(ctx.locale, "common.menu_back") }
+          )
+        );
+      }
     }
 
     return true;

@@ -2,6 +2,8 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { waRouterConfig } from "./router.config.ts";
 import { AgentOrchestrator } from "../_shared/agent-orchestrator.ts";
+import { verifyWebhookSignature } from "../_shared/webhook-utils.ts";
+import { logStructuredEvent } from "../_shared/observability.ts";
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL") ?? "",
@@ -13,9 +15,19 @@ const orchestrator = new AgentOrchestrator(supabase);
 serve(async (req: Request): Promise<Response> => {
   const url = new URL(req.url);
   const correlationId = req.headers.get("X-Correlation-ID") ?? crypto.randomUUID();
+  const requestId = req.headers.get("X-Request-ID") ?? crypto.randomUUID();
+
+  const respond = (body: unknown, init: ResponseInit = {}): Response => {
+    const headers = new Headers(init.headers);
+    headers.set("Content-Type", "application/json");
+    headers.set("X-Request-ID", requestId);
+    headers.set("X-Correlation-ID", correlationId);
+    headers.set("X-Service", "wa-webhook-ai-agents");
+    return new Response(JSON.stringify(body), { ...init, headers });
+  };
 
   if (url.pathname === "/health" || url.pathname.endsWith("/health")) {
-    return new Response(JSON.stringify({
+    return respond({
       status: "healthy",
       service: "wa-webhook-ai-agents",
       version: "3.0.0",
@@ -29,23 +41,55 @@ serve(async (req: Request): Promise<Response> => {
         featureToggles: waRouterConfig.featureToggles,
         locales: Object.keys(waRouterConfig.proactiveTemplates),
       },
-    }), { headers: { "Content-Type": "application/json" } });
+    });
+  }
+
+  // WhatsApp verification handshake (GET)
+  if (req.method === "GET") {
+    const mode = url.searchParams.get("hub.mode");
+    const token = url.searchParams.get("hub.verify_token");
+    const challenge = url.searchParams.get("hub.challenge");
+    if (mode === "subscribe" && token === Deno.env.get("WA_VERIFY_TOKEN")) {
+      return new Response(challenge ?? "", { status: 200 });
+    }
+    return respond({ error: "forbidden" }, { status: 403 });
   }
 
   try {
-    const payload = await req.json();
+    // Read raw body for signature verification
+    const rawBody = await req.text();
+    
+    // Verify WhatsApp signature (SECURITY FIX)
+    const signature = req.headers.get("x-hub-signature-256");
+    const appSecret = Deno.env.get("WHATSAPP_APP_SECRET");
+    
+    if (!appSecret) {
+      await logStructuredEvent("AI_AGENTS_AUTH_CONFIG_ERROR", {
+        error: "WHATSAPP_APP_SECRET not configured",
+        correlationId,
+      }, "error");
+      return respond({ error: "server_misconfigured" }, { status: 500 });
+    }
+    
+    if (!signature) {
+      await logStructuredEvent("AI_AGENTS_MISSING_SIGNATURE", { correlationId }, "warn");
+      return respond({ error: "missing_signature" }, { status: 401 });
+    }
+    
+    const isValid = await verifyWebhookSignature(rawBody, signature, appSecret);
+    if (!isValid) {
+      await logStructuredEvent("AI_AGENTS_INVALID_SIGNATURE", { correlationId }, "error");
+      return respond({ error: "invalid_signature" }, { status: 401 });
+    }
+    
+    const payload = JSON.parse(rawBody);
     
     // Extract WhatsApp message from webhook payload
     const message = extractWhatsAppMessage(payload);
     
     if (!message) {
-      console.warn(JSON.stringify({
-        event: "NO_MESSAGE_IN_PAYLOAD",
-        correlationId,
-      }));
-      return new Response(JSON.stringify({ success: true, message: "no_message" }), {
-        headers: { "Content-Type": "application/json" },
-      });
+      await logStructuredEvent("AI_AGENTS_NO_MESSAGE", { correlationId }, "warn");
+      return respond({ success: true, message: "no_message" });
     }
 
     // Process message through orchestrator
@@ -54,30 +98,43 @@ serve(async (req: Request): Promise<Response> => {
     // Log event for debugging
     await captureAgentRequest(payload, correlationId);
     
-    return new Response(JSON.stringify({ 
+    await logStructuredEvent("AI_AGENTS_MESSAGE_PROCESSED", {
+      correlationId,
+      messageType: message.type,
+      from: maskPhone(message.from),
+    });
+    
+    return respond({ 
       success: true, 
       service: "wa-webhook-ai-agents",
       messageProcessed: true,
-    }), {
-      headers: { "Content-Type": "application/json", "X-Correlation-ID": correlationId },
     });
   } catch (error) {
-    console.error(JSON.stringify({
-      event: "AI_AGENT_HANDLER_ERROR",
+    await logStructuredEvent("AI_AGENT_HANDLER_ERROR", {
       correlationId,
       error: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : undefined,
-    }));
-    return new Response(JSON.stringify({ 
+    }, "error");
+    
+    return respond({ 
       error: "internal_error", 
       service: "wa-webhook-ai-agents",
       details: error instanceof Error ? error.message : String(error),
-    }), {
-      status: 500,
-      headers: { "Content-Type": "application/json", "X-Correlation-ID": correlationId },
-    });
+    }, { status: 500 });
   }
 });
+
+/**
+ * Mask phone number for logging (PII protection)
+ */
+function maskPhone(phone: string): string {
+  if (!phone) return "***";
+  const match = phone.match(/^(\+\d{3})\d+(\d{4})$/);
+  if (match) {
+    return `${match[1]}****${match[2]}`;
+  }
+  return "***";
+}
 
 /**
  * Extract WhatsApp message from webhook payload
@@ -121,15 +178,16 @@ function extractWhatsAppMessage(payload: any): {
 }
 
 async function captureAgentRequest(payload: unknown, correlationId: string) {
-  await supabase.from("wa_ai_agent_events").insert({
-    correlation_id: correlationId,
-    payload,
-    received_at: new Date().toISOString(),
-  }).catch((error) => {
-    console.warn(JSON.stringify({
-      event: "AI_AGENT_EVENT_LOG_FAILURE",
+  try {
+    await supabase.from("wa_ai_agent_events").insert({
+      correlation_id: correlationId,
+      payload,
+      received_at: new Date().toISOString(),
+    });
+  } catch (error) {
+    await logStructuredEvent("AI_AGENT_EVENT_LOG_FAILURE", {
       correlationId,
       error: error instanceof Error ? error.message : String(error),
-    }));
-  });
+    }, "warn");
+  }
 }
