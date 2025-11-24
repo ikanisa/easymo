@@ -193,6 +193,14 @@ export async function handleAINearbyPharmacies(
       
       // Database fallback - fetch top 10 pharmacies by distance
       try {
+        interface PharmacyBusiness {
+          id: string;
+          name: string;
+          phone_number?: string;
+          location?: unknown;
+          address?: string;
+        }
+        
         const { data: pharmacies, error } = await ctx.supabase
           .from("businesses")
           .select("id, name, phone_number, location, address")
@@ -204,7 +212,7 @@ export async function handleAINearbyPharmacies(
 
         if (pharmacies && pharmacies.length > 0) {
           // Build list of pharmacy options
-          const pharmacyRows = pharmacies.map((pharmacy: any) => ({
+          const pharmacyRows = (pharmacies as PharmacyBusiness[]).map((pharmacy) => ({
             id: `pharmacy::${pharmacy.id}`,
             title: pharmacy.name || "Pharmacy",
             description: pharmacy.address || t(ctx.locale, "pharmacy.tap_for_details"),
@@ -312,6 +320,14 @@ export async function handleAINearbyQuincailleries(
       
       // Database fallback - fetch top 10 quincailleries by distance
       try {
+        interface QuincaillerieBusiness {
+          id: string;
+          name: string;
+          phone_number?: string;
+          location?: unknown;
+          address?: string;
+        }
+        
         const { data: quincailleries, error } = await ctx.supabase
           .from("businesses")
           .select("id, name, phone_number, location, address")
@@ -323,7 +339,7 @@ export async function handleAINearbyQuincailleries(
 
         if (quincailleries && quincailleries.length > 0) {
           // Build list of quincaillerie options
-          const quincaillerieRows = quincailleries.map((shop: any) => ({
+          const quincaillerieRows = (quincailleries as QuincaillerieBusiness[]).map((shop) => ({
             id: `quincaillerie::${shop.id}`,
             title: shop.name || "Quincaillerie",
             description: shop.address || t(ctx.locale, "quincaillerie.tap_for_details"),

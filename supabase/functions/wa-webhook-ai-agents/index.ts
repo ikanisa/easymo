@@ -49,7 +49,14 @@ serve(async (req: Request): Promise<Response> => {
     const mode = url.searchParams.get("hub.mode");
     const token = url.searchParams.get("hub.verify_token");
     const challenge = url.searchParams.get("hub.challenge");
-    if (mode === "subscribe" && token === Deno.env.get("WA_VERIFY_TOKEN")) {
+    const verifyToken = Deno.env.get("WA_VERIFY_TOKEN");
+    
+    if (!verifyToken) {
+      await logStructuredEvent("AI_AGENTS_VERIFY_TOKEN_NOT_SET", { correlationId }, "error");
+      return respond({ error: "server_misconfigured" }, { status: 500 });
+    }
+    
+    if (mode === "subscribe" && token && token === verifyToken) {
       return new Response(challenge ?? "", { status: 200 });
     }
     return respond({ error: "forbidden" }, { status: 403 });
@@ -126,14 +133,20 @@ serve(async (req: Request): Promise<Response> => {
 
 /**
  * Mask phone number for logging (PII protection)
+ * Handles international phone number formats
  */
 function maskPhone(phone: string): string {
-  if (!phone) return "***";
-  const match = phone.match(/^(\+\d{3})\d+(\d{4})$/);
-  if (match) {
-    return `${match[1]}****${match[2]}`;
+  if (!phone || phone.length < 8) return "***";
+  
+  // For E.164 format (+country_code...)
+  if (phone.startsWith("+")) {
+    // Show country code and last 4 digits: +250****1234
+    const countryCodeEnd = Math.min(4, phone.length - 4);
+    return `${phone.substring(0, countryCodeEnd)}****${phone.substring(phone.length - 4)}`;
   }
-  return "***";
+  
+  // For other formats, show first 2 and last 2: 07****34
+  return `${phone.substring(0, 2)}****${phone.substring(phone.length - 2)}`;
 }
 
 /**
