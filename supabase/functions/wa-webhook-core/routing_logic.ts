@@ -1,8 +1,8 @@
 // Traffic Router for wa-webhook microservices
 // Routes incoming WhatsApp messages to appropriate microservice based on domain
 
-import { SUPABASE_SERVICE_ROLE_KEY } from "./config.ts";
-import { fetchWithTimeout } from "./utils/http.ts";
+import { SUPABASE_SERVICE_ROLE_KEY } from "../_shared/wa-webhook-shared/config.ts";
+import { fetchWithTimeout } from "../_shared/wa-webhook-shared/utils/http.ts";
 import { isFeatureEnabled } from "../_shared/feature-flags.ts";
 
 const MICROSERVICES_BASE_URL = Deno.env.get("SUPABASE_URL") + "/functions/v1";

@@ -1,5 +1,5 @@
-import { assertEquals, assertExists } from "https://deno.land/std@0.203.0/testing/asserts.ts";
-import type { SupabaseClient } from "../../deps.ts";
+import { assertEquals, assertExists } from "https://deno.land/std@0.168.0/testing/asserts.ts";
+import { createClient, type SupabaseClient } from "../../_shared/wa-webhook-shared/deps.ts";
 
 // Set up environment variables
 const envReady = (() => {

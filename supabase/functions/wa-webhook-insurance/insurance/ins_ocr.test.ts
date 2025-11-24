@@ -1,4 +1,4 @@
-import { assertEquals, assertExists, assertRejects } from "https://deno.land/std@0.203.0/testing/asserts.ts";
+import { assertEquals, assertExists, assertRejects } from "https://deno.land/std@0.168.0/testing/asserts.ts";
 
 // Set up environment variables
 const envReady = (() => {
@@ -229,7 +229,7 @@ test("Insurance OCR - should handle missing content in response", () => {
   ];
 
   for (const response of invalidResponses) {
-    const messageContent = response?.choices?.[0]?.message?.content;
+    const messageContent = (response as any)?.choices?.[0]?.message?.content;
     
     if (!messageContent || typeof messageContent !== 'string') {
       // Should handle missing content gracefully

@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { routeMessage } from "../wa-webhook/router.ts";
-import { getRoutingText } from "../wa-webhook/utils/messages.ts";
-import type { WhatsAppMessage, WhatsAppWebhookPayload } from "../wa-webhook/types.ts";
+import { routeMessage } from "./routing_logic.ts";
+import { getRoutingText } from "../_shared/wa-webhook-shared/utils/messages.ts";
+import type { WhatsAppMessage, WhatsAppWebhookPayload } from "../_shared/wa-webhook-shared/types.ts";
 
 type RoutingDecision = {
   service: string;
