@@ -38,6 +38,7 @@ export class OrchestratorService {
    * Main entry point for all agent-driven flows.
    * 
    * @param request - Session creation parameters
+   * @param correlationId - Optional correlation ID for distributed tracing
    * @returns Created session with initial status
    * 
    * @example
@@ -50,14 +51,21 @@ export class OrchestratorService {
    *     dropoff: { lat: -1.9536, lng: 30.0909 },
    *   },
    *   windowMinutes: 5,
-   * });
+   * }, correlationId);
    * ```
    */
-  async startNegotiation(request: CreateSessionRequest): Promise<NegotiationResult> {
+  async startNegotiation(
+    request: CreateSessionRequest,
+    correlationId?: string,
+  ): Promise<NegotiationResult> {
+    const cid = correlationId || this.generateCorrelationId();
+    
     this.logger.log({
       event: "NEGOTIATION_START",
       flowType: request.flowType,
       windowMinutes: request.windowMinutes ?? 5,
+      correlationId: cid,
+      userId: this.maskUserId(request.userId),
     });
 
     // Create session
@@ -70,14 +78,16 @@ export class OrchestratorService {
       event: "VENDORS_FOUND",
       sessionId: session.id,
       vendorCount: vendors.length,
+      correlationId: cid,
     });
 
     // Contact vendors in parallel (fire and forget)
-    this.contactVendors(session.id, vendors, request.requestData).catch((error) => {
+    this.contactVendors(session.id, vendors, request.requestData, cid).catch((error) => {
       this.logger.error({
         event: "VENDOR_CONTACT_FAILED",
         sessionId: session.id,
         error: error.message,
+        correlationId: cid,
       });
     });
 
@@ -104,26 +114,30 @@ export class OrchestratorService {
    * @param sessionId - Session identifier
    * @param vendors - Array of vendor contact information
    * @param requestDetails - Details of the request
+   * @param correlationId - Correlation ID for distributed tracing
    */
   private async contactVendors(
     sessionId: string,
     vendors: VendorContactInfo[],
     requestDetails: Record<string, unknown>,
+    correlationId: string,
   ): Promise<void> {
     this.logger.log({
       event: "CONTACTING_VENDORS",
       sessionId,
       vendorCount: vendors.length,
+      correlationId,
     });
 
     // Send requests in parallel
     const promises = vendors.map((vendor) =>
-      this.sendQuoteRequest(sessionId, vendor, requestDetails).catch((error) => {
+      this.sendQuoteRequest(sessionId, vendor, requestDetails, correlationId).catch((error) => {
         this.logger.error({
           event: "SINGLE_VENDOR_CONTACT_FAILED",
           sessionId,
           vendorId: vendor.id,
           error: error.message,
+          correlationId,
         });
         // Don't let one failure stop others
       }),
@@ -135,6 +149,7 @@ export class OrchestratorService {
       event: "VENDORS_CONTACTED",
       sessionId,
       vendorCount: vendors.length,
+      correlationId,
     });
   }
 
@@ -295,7 +310,7 @@ export class OrchestratorService {
       flowType,
     });
 
-    const supabase = this.sessionManager["supabase"]; // Access private supabase client
+    const supabase = this.sessionManager.getSupabaseClient();
 
     switch (flowType) {
       case "nearby_drivers": {
@@ -342,36 +357,46 @@ export class OrchestratorService {
           return [];
         }
 
-        // Query marketplace_entries or businesses table
-        // This is a placeholder - actual implementation depends on schema
+        // Query businesses table if it exists
+        // Fallback to empty array if table doesn't exist yet
         const vendorType = flowType === "pharmacy" ? "pharmacy" 
           : flowType === "quincaillerie" ? "hardware" 
           : "shop";
 
-        const { data, error } = await supabase
-          .from("businesses")
-          .select("id, name, phone_number, location, business_type")
-          .eq("business_type", vendorType)
-          .limit(10);
+        try {
+          const { data, error } = await supabase
+            .from("businesses")
+            .select("id, name, phone_number, location, business_type")
+            .eq("business_type", vendorType)
+            .limit(10);
 
-        if (error) {
+          if (error) {
+            // Table may not exist - log and return empty
+            this.logger.warn({
+              event: "BUSINESSES_TABLE_NOT_FOUND",
+              error: error.message,
+              flowType,
+            });
+            return [];
+          }
+
+          return (data || []).map((vendor: any) => ({
+            id: vendor.id,
+            type: vendorType,
+            name: vendor.name,
+            phone: vendor.phone_number,
+            metadata: {
+              location: vendor.location,
+            },
+          }));
+        } catch (error) {
           this.logger.error({
             event: "FIND_VENDORS_FAILED",
-            error: error.message,
+            error: error instanceof Error ? error.message : String(error),
             flowType,
           });
           return [];
         }
-
-        return (data || []).map((vendor: any) => ({
-          id: vendor.id,
-          type: vendorType,
-          name: vendor.name,
-          phone: vendor.phone_number,
-          metadata: {
-            location: vendor.location,
-          },
-        }));
       }
 
       case "property_rental": {
@@ -379,33 +404,42 @@ export class OrchestratorService {
         const bedrooms = requestData.bedrooms as number;
         const budget = requestData.budget as number;
 
-        const { data, error } = await supabase
-          .from("property_listings")
-          .select("id, owner_id, bedrooms, price, location, address")
-          .eq("status", "available")
-          .gte("bedrooms", bedrooms || 1)
-          .lte("price", budget || 1000000)
-          .limit(10);
+        try {
+          const { data, error } = await supabase
+            .from("property_listings")
+            .select("id, owner_id, bedrooms, price, location, address")
+            .eq("status", "available")
+            .gte("bedrooms", bedrooms || 1)
+            .lte("price", budget || 1000000)
+            .limit(10);
 
-        if (error) {
+          if (error) {
+            // Table may not exist - log and return empty
+            this.logger.warn({
+              event: "PROPERTY_LISTINGS_TABLE_NOT_FOUND",
+              error: error.message,
+            });
+            return [];
+          }
+
+          return (data || []).map((property: any) => ({
+            id: property.id,
+            type: "property_owner",
+            name: `Property ${property.id.substring(0, 8)}`,
+            phone: null, // Get from owner profile
+            metadata: {
+              bedrooms: property.bedrooms,
+              price: property.price,
+              address: property.address,
+            },
+          }));
+        } catch (error) {
           this.logger.error({
             event: "FIND_PROPERTIES_FAILED",
-            error: error.message,
+            error: error instanceof Error ? error.message : String(error),
           });
           return [];
         }
-
-        return (data || []).map((property: any) => ({
-          id: property.id,
-          type: "property_owner",
-          name: `Property ${property.id.substring(0, 8)}`,
-          phone: null, // Get from owner profile
-          metadata: {
-            bedrooms: property.bedrooms,
-            price: property.price,
-            address: property.address,
-          },
-        }));
       }
 
       default:
@@ -426,17 +460,21 @@ export class OrchestratorService {
    * @param sessionId - Session identifier
    * @param vendor - Vendor contact information
    * @param requestDetails - Details of the request
+   * @param correlationId - Correlation ID for distributed tracing
    */
   private async sendQuoteRequest(
     sessionId: string,
     vendor: VendorContactInfo,
     requestDetails: Record<string, unknown>,
+    correlationId: string,
   ): Promise<void> {
     this.logger.log({
       event: "QUOTE_REQUEST_SENT",
       sessionId,
       vendorId: vendor.id,
       vendorType: vendor.type,
+      vendorPhone: this.maskPhone(vendor.phone || ""),
+      correlationId,
     });
 
     if (!vendor.phone) {
@@ -444,6 +482,7 @@ export class OrchestratorService {
         event: "VENDOR_NO_PHONE",
         sessionId,
         vendorId: vendor.id,
+        correlationId,
       });
       return;
     }
@@ -461,6 +500,7 @@ export class OrchestratorService {
         headers: {
           "Content-Type": "application/json",
           "x-session-id": sessionId,
+          "x-correlation-id": correlationId,
         },
         body: JSON.stringify({
           to: vendor.phone,
@@ -481,6 +521,7 @@ export class OrchestratorService {
         event: "QUOTE_REQUEST_DELIVERED",
         sessionId,
         vendorId: vendor.id,
+        correlationId,
       });
     } catch (error) {
       this.logger.error({
@@ -488,6 +529,7 @@ export class OrchestratorService {
         sessionId,
         vendorId: vendor.id,
         error: error instanceof Error ? error.message : String(error),
+        correlationId,
       });
       throw error;
     }
@@ -711,7 +753,7 @@ export class OrchestratorService {
    * Should be called by a scheduled job every minute.
    */
   async timeoutExpiredSessions(): Promise<void> {
-    const supabase = this.sessionManager["supabase"];
+    const supabase = this.sessionManager.getSupabaseClient();
     
     // Find sessions past deadline with active status
     const { data: sessions, error } = await supabase
@@ -781,5 +823,34 @@ export class OrchestratorService {
 
     // TODO: Send WhatsApp message
     // "😔 No vendors responded within the time window. Try again or expand search?"
+  }
+
+  /**
+   * Generate correlation ID for distributed tracing
+   */
+  private generateCorrelationId(): string {
+    return crypto.randomUUID();
+  }
+
+  /**
+   * Mask user ID for logging (PII protection)
+   * Shows first and last 4 characters only
+   */
+  private maskUserId(userId: string): string {
+    if (!userId || userId.length <= 8) return "***";
+    return `${userId.substring(0, 4)}***${userId.substring(userId.length - 4)}`;
+  }
+
+  /**
+   * Mask phone number for logging (PII protection)
+   */
+  private maskPhone(phone: string): string {
+    if (!phone) return "***";
+    // Format: +250****1234
+    const match = phone.match(/^(\+\d{3})\d+(\d{4})$/);
+    if (match) {
+      return `${match[1]}****${match[2]}`;
+    }
+    return "***";
   }
 }

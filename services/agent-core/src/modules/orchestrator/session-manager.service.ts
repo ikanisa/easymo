@@ -182,6 +182,14 @@ export class SessionManagerService {
       minutesThreshold,
     });
 
+    interface ExpiringSessionRow {
+      session_id: string;
+      user_id: string;
+      flow_type: string;
+      minutes_remaining: number;
+      quotes_count: number;
+    }
+
     const { data, error } = await this.supabase.rpc("get_expiring_agent_sessions", {
       minutes_threshold: minutesThreshold,
     });
@@ -194,11 +202,11 @@ export class SessionManagerService {
       return [];
     }
 
-    return (data || []).map((row: any) => ({
+    return ((data || []) as ExpiringSessionRow[]).map((row) => ({
       id: row.session_id,
       userId: row.user_id,
-      flowType: row.flow_type,
-      status: "searching",
+      flowType: row.flow_type as FlowType,
+      status: "searching" as const,
       requestData: {},
       startedAt: new Date(),
       deadlineAt: new Date(Date.now() + row.minutes_remaining * 60 * 1000),
@@ -319,7 +327,12 @@ export class SessionManagerService {
   }
 
   /**
-   * Mark session as timed out
+   * Get Supabase client for internal use
+   * Exposed for orchestrator to access database directly
+   */
+  getSupabaseClient(): SupabaseClient {
+    return this.supabase;
+  }
    * 
    * Called by background worker when deadline passes
    * 
