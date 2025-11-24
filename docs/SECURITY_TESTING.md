@@ -27,7 +27,7 @@ verification, authentication, authorization, and vulnerability scanning.
 #!/bin/bash
 # Test WhatsApp webhook with valid signature
 
-WEBHOOK_URL="https://your-project.supabase.co/functions/v1/wa-webhook"
+WEBHOOK_URL="https://your-project.supabase.co/functions/v1/wa-webhook-core"
 PAYLOAD='{"object":"whatsapp_business_account","entry":[{"id":"123","changes":[]}]}'
 SECRET="your_wa_app_secret"
 

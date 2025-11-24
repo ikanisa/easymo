@@ -130,7 +130,7 @@ if (!authUsers) {
 ### Before Fix:
 ```bash
 # Error 500 - Database error finding users
-curl -X POST "https://lhbowpbcpwoiparwnwgt.supabase.co/functions/v1/wa-webhook" \
+curl -X POST "https://lhbowpbcpwoiparwnwgt.supabase.co/functions/v1/wa-webhook-core" \
   -H "Content-Type: application/json" \
   -d '{"from": "+250788999888", "body": "Hello", "type": "text"}'
 ```
@@ -138,7 +138,7 @@ curl -X POST "https://lhbowpbcpwoiparwnwgt.supabase.co/functions/v1/wa-webhook" 
 ### After Fix (Expected):
 ```bash
 # Success 200 - User profile found/created
-curl -X POST "https://lhbowpbcpwoiparwnwgt.supabase.co/functions/v1/wa-webhook" \
+curl -X POST "https://lhbowpbcpwoiparwnwgt.supabase.co/functions/v1/wa-webhook-core" \
   -H "Content-Type: application/json" \
   -d '{"from": "+250788999888", "body": "Hello", "type": "text"}'
 ```
