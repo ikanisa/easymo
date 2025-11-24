@@ -1,146 +1,68 @@
-import { serve } from "./deps.ts";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { getWabaCredentials, getSupabaseServiceConfig } from "../_shared/env.ts";
+import type { WhatsAppWebhookPayload } from "../_shared/wa-webhook-shared/types.ts";
+import { getRoutingText } from "../_shared/wa-webhook-shared/utils/messages.ts";
+import { routeMessage } from "../wa-webhook-core/routing_logic.ts";
 
-// Wrap config import in try-catch to catch initialization errors
-let supabase: any;
-let configError: Error | null = null;
+const { url: SUPABASE_URL, serviceRoleKey: SERVICE_KEY } = getSupabaseServiceConfig();
+const MICROSVC_BASE = `${SUPABASE_URL}/functions/v1`;
 
-try {
-  const configModule = await import("./config.ts");
-  // Fail fast if required runtime envs are missing
-  try {
-    if (typeof configModule.assertRuntimeReady === "function") {
-      configModule.assertRuntimeReady();
-    }
-  } catch (e) {
-    configError = e instanceof Error ? e : new Error(String(e));
-  }
-  supabase = configModule.supabase;
-} catch (err) {
-  configError = err instanceof Error ? err : new Error(String(err));
-  console.error(JSON.stringify({
-    event: "CONFIG_INITIALIZATION_ERROR",
-    error: configError.message,
-    errorType: configError.constructor.name,
-    errorStack: configError.stack,
-  }));
+function withAuth(headers: Headers): Headers {
+  const h = new Headers(headers);
+  if (!h.get("Authorization")) h.set("Authorization", `Bearer ${Deno.env.get("SUPABASE_ANON_KEY") ?? ""}`);
+  h.set("Content-Type", "application/json");
+  return h;
 }
 
-import { processWebhookRequest } from "./router/pipeline.ts";
-import { handlePreparedWebhook } from "./router/processor.ts";
-import {
-  handleHealthCheck,
-  handleMetricsRequest,
-  handleMetricsSummaryRequest,
-  handlePrometheusMetrics
-} from "./shared/health_metrics.ts";
-import { incrementMetric } from "./utils/metrics_collector.ts";
-import { handlePreparedWebhookEnhanced } from "./router/enhanced_processor.ts";
+async function tryForward(url: string, req: Request, timeoutMs = 2000): Promise<Response | null> {
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    const headers = withAuth(req.headers);
+    const res = await fetch(url, { method: req.method, headers, body: req.body, signal: ctrl.signal });
+    if (res.status >= 500) return null;
+    return res;
+  } catch (_) {
+    return null;
+  } finally {
+    clearTimeout(t);
+  }
+}
+
+async function fallbackRoute(req: Request): Promise<Response> {
+  try {
+    const payload = (await req.json()) as WhatsAppWebhookPayload;
+    const msg = payload?.entry?.[0]?.changes?.[0]?.value?.messages?.[0];
+    const text = msg ? getRoutingText(msg) : null;
+    const state = payload?.entry?.[0]?.changes?.[0]?.value?.metadata?.routing_state ?? undefined;
+    const service = text ? await routeMessage(text, state) : "wa-webhook-core";
+    const headers = withAuth(req.headers);
+    const url = `${MICROSVC_BASE}/${service}`;
+    const res = await fetch(url, { method: "POST", headers, body: JSON.stringify(payload) });
+    return res;
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error(JSON.stringify({ event: "WA_WEBHOOK_FALLBACK_ERROR", message }));
+    return new Response(JSON.stringify({ success: true, fallback: true }), { status: 200, headers: { "Content-Type": "application/json" } });
+  }
+}
 
 serve(async (req: Request): Promise<Response> => {
-  // Check for config initialization error first
-  if (configError) {
-    console.error(JSON.stringify({
-      event: "CONFIG_ERROR_ON_REQUEST",
-      error: configError.message,
-      path: new URL(req.url).pathname,
-    }));
-    return new Response(JSON.stringify({
-      error: "configuration_error",
-      message: configError.message,
-      details: "Missing required environment variables. Check Supabase secrets."
-    }), {
-      status: 500,
-      headers: { "Content-Type": "application/json" }
-    });
-  }
-
   const url = new URL(req.url);
-  const correlationId = req.headers.get("x-correlation-id") ?? crypto.randomUUID();
-  const instrumentedRequest = new Request(req, {
-    headers: new Headers(req.headers),
-  });
-  instrumentedRequest.headers.set("x-correlation-id", correlationId);
 
-  const finalize = (
-    response: Response,
-    extraDimensions: Record<string, string | number> = {},
-  ): Response => {
-    const headers = new Headers(response.headers);
-    headers.set("X-Correlation-ID", correlationId);
-    const wrapped = new Response(response.body, {
-      status: response.status,
-      statusText: response.statusText,
-      headers,
-    });
-    const metricName = response.status >= 400
-      ? "wa_webhook_http_failure_total"
-      : "wa_webhook_http_success_total";
-    incrementMetric(metricName, 1, {
-      status: response.status,
-      path: url.pathname,
-      ...extraDimensions,
-    });
-    console.log(JSON.stringify({
-      event: "WEBHOOK_HTTP_RESPONSE",
-      correlationId,
-      path: url.pathname,
-      status: response.status,
-    }));
-    return wrapped;
-  };
+  // Always attempt to forward to core first
+  // Health and verification requests are handled by core as well
+  const coreUrl = `${MICROSVC_BASE}/wa-webhook-core${url.pathname === "/" ? "" : url.pathname}${url.search}`;
+  const forwarded = await tryForward(coreUrl, req);
+  if (forwarded) return forwarded;
 
-  console.log(JSON.stringify({
-    event: "WEBHOOK_HANDLER_ENTRY",
-    correlationId,
-    method: req.method,
-    path: url.pathname,
-  }));
-
-  // Health check endpoint
-  if (url.pathname === "/health" || url.pathname.endsWith("/health")) {
-    const response = await handleHealthCheck(supabase);
-    return finalize(response, { scope: "health" });
+  // If core failed (timeout/5xx), attempt direct microservice routing
+  if (req.method === "POST") {
+    const routed = await fallbackRoute(req);
+    if (routed.status < 500) return routed;
   }
 
-  // Metrics endpoints
-  if (url.pathname === "/metrics" || url.pathname.endsWith("/metrics")) {
-    // Prometheus format if requested
-    if (req.headers.get("accept")?.includes("text/plain")) {
-      return finalize(handlePrometheusMetrics(), { scope: "metrics" });
-    }
-    return finalize(await handleMetricsRequest(), { scope: "metrics" });
-  }
-
-  if (url.pathname === "/metrics/summary" || url.pathname.endsWith("/metrics/summary")) {
-    return finalize(await handleMetricsSummaryRequest(), { scope: "metrics" });
-  }
-
-  // Main webhook processing
-  try {
-    const result = await processWebhookRequest(instrumentedRequest);
-
-    if (result.type === "response") {
-      return finalize(result.response);
-    }
-
-    return finalize(await handlePreparedWebhookEnhanced(supabase, result, handlePreparedWebhook));
-  } catch (err) {
-    const errorMessage = err instanceof Error ? err.message : String(err);
-    const errorStack = err instanceof Error ? err.stack : undefined;
-    const errorObj = err && typeof err === 'object' ? JSON.stringify(err, Object.getOwnPropertyNames(err)) : String(err);
-    
-    console.error(JSON.stringify({
-      event: "WEBHOOK_UNHANDLED_ERROR",
-      correlationId,
-      path: url.pathname,
-      error: errorMessage,
-      errorType: err?.constructor?.name,
-      errorStack,
-      errorObject: errorObj,
-    }));
-    return finalize(new Response("internal_error", { status: 500 }), {
-      reason: "unhandled",
-    });
-  }
+  // Last resort: ack to avoid 500s
+  return new Response(JSON.stringify({ success: true, degraded: true }), { status: 200, headers: { "Content-Type": "application/json" } });
 });
-// Updated Fri Nov 14 12:59:49 CET 2025
+
