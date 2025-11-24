@@ -16,23 +16,20 @@ function makePayload(text: string, state?: string): WhatsAppWebhookPayload {
   } as WhatsAppWebhookPayload;
 }
 
-Deno.test("routeIncomingPayload mirrors legacy router", () => {
-  const payload = makePayload("I need a job");
-  const decision = routeIncomingPayload(payload);
-  assertEquals(decision.service, routeMessage("I need a job", undefined));
+Deno.test("routes job-related messages to wa-webhook-jobs", async () => {
+  const decision = await routeIncomingPayload(makePayload("I need a job"));
+  assertEquals(decision.service, await routeMessage("I need a job", undefined));
   assertEquals(decision.reason, "keyword");
 });
 
-Deno.test("routeIncomingPayload respects chat state", () => {
-  const payload = makePayload("Hello", "wallet_active");
-  const decision = routeIncomingPayload(payload);
+Deno.test("routes based on chat state", async () => {
+  const decision = await routeIncomingPayload(makePayload("Continue", "wallet_transfer"));
   assertEquals(decision.service, "wa-webhook-wallet");
   assertEquals(decision.reason, "state");
 });
 
-Deno.test("routeIncomingPayload falls back to core when no text", () => {
-  const payload: WhatsAppWebhookPayload = { object: "whatsapp_business_account", entry: [] } as WhatsAppWebhookPayload;
-  const decision = routeIncomingPayload(payload);
+Deno.test("falls back to core for unknown messages", async () => {
+  const decision = await routeIncomingPayload(makePayload("Random text"));
   assertEquals(decision.service, "wa-webhook-core");
   assertEquals(decision.reason, "fallback");
 });

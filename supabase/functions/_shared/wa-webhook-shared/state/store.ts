@@ -260,8 +260,10 @@ export async function setState(
       .upsert({ user_id: userId, state, last_updated: new Date().toISOString() }, { onConflict: "user_id" });
     if (error) throw error;
     return;
-  } catch (_err) {
-    // Fallback path for environments without the unique constraint on user_id
+  } catch (err: any) {
+    // If it's a duplicate key error, the upsert should have worked but didn't
+    // This means the constraint might not exist or there's a different issue
+    // Try update-or-insert pattern instead
     const nowIso = new Date().toISOString();
     const { data, error } = await client
       .from("chat_state")
@@ -272,16 +274,42 @@ export async function setState(
       .maybeSingle();
     if (error && error.code !== "PGRST116") throw error;
     if (data?.id) {
+      // Update existing record
       const { error: updErr } = await client
         .from("chat_state")
         .update({ state, last_updated: nowIso })
         .eq("id", data.id);
       if (updErr) throw updErr;
     } else {
+      // Insert new record, but handle duplicate key gracefully
       const { error: insErr } = await client
         .from("chat_state")
         .insert({ user_id: userId, state, last_updated: nowIso });
-      if (insErr) throw insErr;
+      
+      // If we get a duplicate key error here, it means a race condition occurred
+      // Try one more time with update
+      if (insErr && insErr.code === "23505") {
+        const { data: retryData } = await client
+          .from("chat_state")
+          .select("id")
+          .eq("user_id", userId)
+          .order("last_updated", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        
+        if (retryData?.id) {
+          const { error: retryUpdErr } = await client
+            .from("chat_state")
+            .update({ state, last_updated: nowIso })
+            .eq("id", retryData.id);
+          if (retryUpdErr) throw retryUpdErr;
+        } else {
+          // Still can't find it, throw the original error
+          throw insErr;
+        }
+      } else if (insErr) {
+        throw insErr;
+      }
     }
   }
 }
