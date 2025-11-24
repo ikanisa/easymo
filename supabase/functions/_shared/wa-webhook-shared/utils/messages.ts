@@ -119,23 +119,27 @@ export function getRoutingText(
     return getTextBody(msg);
   }
   if (isInteractiveButtonMessage(msg)) {
-    const title = msg.interactive?.button_reply?.title;
-    if (typeof title === "string" && title.trim().length) {
-      return title.trim();
-    }
+    // Prioritize ID for routing (e.g., "rides_agent")
     const id = msg.interactive?.button_reply?.id;
     if (typeof id === "string" && id.trim().length) {
       return id.trim();
     }
-  }
-  if (isInteractiveListMessage(msg)) {
-    const title = msg.interactive?.list_reply?.title;
+    // Fallback to title if ID is missing
+    const title = msg.interactive?.button_reply?.title;
     if (typeof title === "string" && title.trim().length) {
       return title.trim();
     }
+  }
+  if (isInteractiveListMessage(msg)) {
+    // Prioritize ID for routing (e.g., "rides_agent")
     const id = msg.interactive?.list_reply?.id;
     if (typeof id === "string" && id.trim().length) {
       return id.trim();
+    }
+    // Fallback to title if ID is missing
+    const title = msg.interactive?.list_reply?.title;
+    if (typeof title === "string" && title.trim().length) {
+      return title.trim();
     }
   }
   return null;
