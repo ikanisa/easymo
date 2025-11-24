@@ -175,12 +175,14 @@ async function buildRows(options: {
 }
 
 function getCountryFromPhone(phone: string): string {
-  // Map country codes for supported East/Central African countries only
+  // Map country codes for supported East/Central African countries
   const countryMap: Record<string, string> = {
     "250": "RW", // Rwanda
     "257": "BI", // Burundi
     "255": "TZ", // Tanzania
-    "243": "CD", // Congo DRC
+    "243": "CD", // DR Congo
+    "260": "ZM", // Zambia
+    "228": "TG", // Togo
   };
   
   // Extract prefix from E.164 format (+250... or 250...)
