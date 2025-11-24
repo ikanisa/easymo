@@ -192,7 +192,7 @@ deploy_functions() {
         "agent-schedule-trip"
         "agent-quincaillerie"
         "agent-shops"
-        "wa-webhook"
+        "wa-webhook-core"
     )
     
     for func in "${functions[@]}"; do
@@ -349,14 +349,14 @@ generate_report() {
 - **Supabase Studio**: http://localhost:54323
 
 ### Deployed Functions
-$(supabase functions list 2>/dev/null | grep -v "No functions" || echo "- agent-runner\n- nearby-drivers\n- pharmacy\n- property-rental\n- schedule-trip\n- quincaillerie\n- shops\n- wa-webhook")
+$(supabase functions list 2>/dev/null | grep -v "No functions" || echo "- agent-runner\n- nearby-drivers\n- pharmacy\n- property-rental\n- schedule-trip\n- quincaillerie\n- shops\n- wa-webhook-core")
 
 ## Next Steps
 
 1. **Configure WhatsApp Webhook**
    \`\`\`bash
    # Get your webhook URL
-   echo "\${SUPABASE_URL}/functions/v1/wa-webhook"
+   echo "\${SUPABASE_URL}/functions/v1/wa-webhook-core"
    
    # Register with Meta
    # Go to: https://developers.facebook.com/apps
@@ -366,7 +366,7 @@ $(supabase functions list 2>/dev/null | grep -v "No functions" || echo "- agent-
 2. **Test WhatsApp Integration**
    \`\`\`bash
    # Send test message
-   curl -X POST "\${SUPABASE_URL}/functions/v1/wa-webhook" \\
+   curl -X POST "\${SUPABASE_URL}/functions/v1/wa-webhook-core" \\
      -H "Content-Type: application/json" \\
      -d @tests/fixtures/driver-search-message.json
    \`\`\`

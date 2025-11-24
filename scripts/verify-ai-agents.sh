@@ -247,7 +247,7 @@ test_webhook() {
     echo ""
     echo "📱 Testing WhatsApp Webhook..."
     
-    test_function_health "wa-webhook"
+    test_function_health "wa-webhook-core"
 }
 
 # Run all tests

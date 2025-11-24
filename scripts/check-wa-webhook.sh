@@ -6,7 +6,7 @@
 set -e
 
 PROJECT_REF="${SUPABASE_PROJECT_REF:-lhbowpbcpwoiparwnwgt}"
-BASE_URL="https://${PROJECT_REF}.supabase.co/functions/v1/wa-webhook"
+BASE_URL="https://${PROJECT_REF}.supabase.co/functions/v1/wa-webhook-core"
 VERIFY_TOKEN="${WA_VERIFY_TOKEN:-your_verify_token_here}"
 
 GREEN='\033[0;32m'

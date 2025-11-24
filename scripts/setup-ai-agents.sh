@@ -99,7 +99,7 @@ deploy_functions() {
         "agents/quincaillerie"
         "agents/shops"
         "agent-negotiation"
-        "wa-webhook"
+        "wa-webhook-core"
     )
     
     for func in "${functions[@]}"; do
