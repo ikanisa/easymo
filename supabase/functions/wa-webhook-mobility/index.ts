@@ -38,6 +38,11 @@ import {
 import {
   routeDriverAction,
 } from "./handlers/driver_response.ts";
+import {
+  driverInsuranceStateKey,
+  parseInsuranceState,
+  handleInsuranceCertificateUpload,
+} from "./handlers/driver_insurance.ts";
 import type { RouterContext, WhatsAppWebhookPayload, RawWhatsAppMessage } from "./types.ts";
 import { IDS } from "./wa/ids.ts";
 
@@ -219,7 +224,36 @@ serve(async (req: Request): Promise<Response> => {
       }
     }
 
-    // C. Handle Text Messages (Keywords/Fallbacks)
+    // C. Handle Image/Document Messages (Insurance Certificate Upload)
+    else if ((message.type === "image" || message.type === "document") && state?.key === driverInsuranceStateKey) {
+      const mediaId = (message.image as any)?.id || (message.document as any)?.id;
+      const mimeType = (message.image as any)?.mime_type || (message.document as any)?.mime_type || "image/jpeg";
+      
+      if (mediaId) {
+        logEvent("MOBILITY_INSURANCE_UPLOAD", { mediaId, mimeType });
+        
+        const resumeData = parseInsuranceState(state.data);
+        if (resumeData) {
+          const result = await handleInsuranceCertificateUpload(ctx, resumeData, mediaId, mimeType);
+          
+          if (result.success && result.resumeData) {
+            // Resume the original flow after successful upload
+            if (result.resumeData.type === "go_online") {
+              handled = await startGoOnline(ctx);
+            } else if (result.resumeData.type === "nearby_passengers") {
+              handled = await handleSeePassengers(ctx);
+            } else if (result.resumeData.type === "schedule_role") {
+              handled = await startScheduleTrip(ctx, state as any);
+            }
+          } else if (result.error) {
+            // Error message already sent by handler
+            handled = true;
+          }
+        }
+      }
+    }
+
+    // D. Handle Text Messages (Keywords/Fallbacks)
     else if (message.type === "text") {
       const text = (message.text as any)?.body?.toLowerCase() ?? "";
       

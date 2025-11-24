@@ -13,6 +13,7 @@ import {
   saveLocationToCache,
 } from "../locations/cache.ts";
 import { getStoredVehicleType } from "./vehicle_plate.ts";
+import { ensureDriverInsurance } from "./driver_insurance.ts";
 import { timeAgo } from "../utils/text.ts";
 
 /**
@@ -20,6 +21,13 @@ import { timeAgo } from "../utils/text.ts";
  */
 export async function startGoOnline(ctx: RouterContext): Promise<boolean> {
   if (!ctx.profileId) return false;
+
+  // Check if driver has valid insurance certificate
+  const hasInsurance = await ensureDriverInsurance(ctx, { type: "go_online" });
+  if (!hasInsurance) {
+    // ensureDriverInsurance will prompt for certificate upload
+    return true;
+  }
 
   // Check if driver has cached location
   const cached = await getCachedLocation(ctx.supabase, ctx.profileId);
