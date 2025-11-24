@@ -27,7 +27,7 @@ serve(async (req: Request): Promise<Response> => {
     level: "debug" | "info" | "warn" | "error" = "info",
   ) => {
     logStructuredEvent(event, {
-      service: "wa-webhook-wallet",
+      service: "wa-webhook-profile",
       requestId,
       path: url.pathname,
       ...details,
@@ -41,7 +41,7 @@ serve(async (req: Request): Promise<Response> => {
       const { error } = await supabase.from("profiles").select("user_id").limit(1);
       return respond({
         status: error ? "unhealthy" : "healthy",
-        service: "wa-webhook-wallet",
+        service: "wa-webhook-profile",
         timestamp: new Date().toISOString(),
         checks: { database: error ? "disconnected" : "connected", table: "profiles" },
         version: "2.0.0",
@@ -84,12 +84,9 @@ serve(async (req: Request): Promise<Response> => {
       return respond({ success: true, ignored: "no_sender" });
     }
 
-    // Build Context
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("user_id, language")
-      .or(`phone_number.eq.${from},wa_id.eq.${from}`)
-      .maybeSingle();
+    // Build Context - Auto-create profile if needed
+    const { ensureProfile } = await import("../_shared/wa-webhook-shared/utils/profile.ts");
+    const profile = await ensureProfile(supabase, from);
 
     const ctx: RouterContext = {
       supabase,
@@ -98,11 +95,11 @@ serve(async (req: Request): Promise<Response> => {
       locale: (profile?.language as any) || "en",
     };
 
-    logEvent("WALLET_MESSAGE_PROCESSING", { from, type: message.type });
+    logEvent("PROFILE_MESSAGE_PROCESSING", { from, type: message.type, hasProfile: !!profile });
 
     // Get State
     const state = ctx.profileId ? await getState(supabase, ctx.profileId) : null;
-    logEvent("WALLET_STATE", { key: state?.key });
+    logEvent("PROFILE_STATE", { key: state?.key });
 
     let handled = false;
 
@@ -114,12 +111,72 @@ serve(async (req: Request): Promise<Response> => {
       const id = buttonId || listId;
 
       if (id) {
-        logEvent("WALLET_INTERACTION", { id });
+        logEvent("PROFILE_INTERACTION", { id });
 
+        // Profile Home
+        if (id === "profile") {
+          const { startProfile } = await import("./profile/home.ts");
+          handled = await startProfile(ctx, state ?? { key: "home" });
+        }
+        
         // Wallet Home
-        if (id === IDS.WALLET_HOME) {
+        else if (id === IDS.WALLET_HOME || id === "wallet") {
           const { startWallet } = await import("./wallet/home.ts");
           handled = await startWallet(ctx, state ?? { key: "home" });
+        }
+        
+        // My Businesses
+        else if (id === IDS.MY_BUSINESSES || id === "my_business") {
+          const { listMyBusinesses } = await import("./business/list.ts");
+          handled = await listMyBusinesses(ctx);
+        }
+        else if (id === IDS.CREATE_BUSINESS) {
+          const { startCreateBusiness } = await import("./business/list.ts");
+          handled = await startCreateBusiness(ctx);
+        }
+        else if (id.startsWith("BIZ::")) {
+          const businessId = id.replace("BIZ::", "");
+          const { handleBusinessSelection } = await import("./business/list.ts");
+          handled = await handleBusinessSelection(ctx, businessId);
+        }
+        
+        // My Jobs
+        else if (id === IDS.MY_JOBS || id === "my_jobs") {
+          const { listMyJobs } = await import("./jobs/list.ts");
+          handled = await listMyJobs(ctx);
+        }
+        else if (id.startsWith("JOB::")) {
+          const jobId = id.replace("JOB::", "");
+          const { handleJobSelection } = await import("./jobs/list.ts");
+          handled = await handleJobSelection(ctx, jobId);
+        }
+        
+        // My Properties
+        else if (id === IDS.MY_PROPERTIES || id === "my_properties") {
+          const { listMyProperties } = await import("./properties/list.ts");
+          handled = await listMyProperties(ctx);
+        }
+        else if (id.startsWith("PROP::")) {
+          const propertyId = id.replace("PROP::", "");
+          const { handlePropertySelection } = await import("./properties/list.ts");
+          handled = await handlePropertySelection(ctx, propertyId);
+        }
+        
+        // Saved Locations
+        else if (id === IDS.SAVED_LOCATIONS || id === "saved_locations") {
+          const { listSavedLocations } = await import("./profile/locations.ts");
+          handled = await listSavedLocations(ctx);
+        }
+        else if (id.startsWith("LOC::")) {
+          const locationId = id.replace("LOC::", "");
+          const { handleLocationSelection } = await import("./profile/locations.ts");
+          handled = await handleLocationSelection(ctx, locationId);
+        }
+        
+        // Back to Profile
+        else if (id === IDS.BACK_PROFILE) {
+          const { startProfile } = await import("./profile/home.ts");
+          handled = await startProfile(ctx, state ?? { key: "home" });
         }
         
         // Wallet Earn
@@ -176,8 +233,13 @@ serve(async (req: Request): Promise<Response> => {
     else if (message.type === "text") {
       const text = (message.text as any)?.body?.toLowerCase() ?? "";
       
+      // Check for menu selection key first
+      if (text === "profile") {
+        const { startWallet } = await import("./wallet/home.ts");
+        handled = await startWallet(ctx, state ?? { key: "home" });
+      }
       // Wallet keywords
-      if (text.includes("wallet") || text.includes("balance")) {
+      else if (text.includes("wallet") || text.includes("balance")) {
         const { startWallet } = await import("./wallet/home.ts");
         handled = await startWallet(ctx, state ?? { key: "home" });
       } else if (text.includes("transfer") || text.includes("send")) {
@@ -211,19 +273,19 @@ serve(async (req: Request): Promise<Response> => {
     }
 
     if (!handled) {
-      logEvent("WALLET_UNHANDLED_MESSAGE", { from, type: message.type });
+      logEvent("PROFILE_UNHANDLED_MESSAGE", { from, type: message.type });
     }
 
     return respond({ success: true, handled });
 
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    logEvent("WALLET_WEBHOOK_ERROR", { error: message }, "error");
-    console.error("wallet.webhook_error", message);
+    logEvent("PROFILE_WEBHOOK_ERROR", { error: message }, "error");
+    console.error("profile.webhook_error", message);
 
     return respond({
       error: "internal_error",
-      service: "wa-webhook-wallet",
+      service: "wa-webhook-profile",
       requestId,
     }, {
       status: 500,
@@ -231,4 +293,4 @@ serve(async (req: Request): Promise<Response> => {
   }
 });
 
-console.log("✅ wa-webhook-wallet service started (v2.0.0)");
+console.log("✅ wa-webhook-profile service started (v2.0.0)");

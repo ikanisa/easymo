@@ -150,5 +150,26 @@ export const IDS = {
   BUSINESS_EDIT_LOCATION: "business_edit_location",
   BUSINESS_EDIT_SPECIALTIES: "business_edit_specialties",
   BUSINESS_EDIT_PROMOTIONS: "business_edit_promotions",
+  
+  // Profile microservice IDs
+  WALLET_HOME: "wallet_home",
+  MY_BUSINESSES: "my_businesses",
+  CREATE_BUSINESS: "create_business",
+  MY_JOBS: "my_jobs",
+  CREATE_JOB: "create_job",
+  EDIT_JOB: "edit_job",
+  DELETE_JOB: "delete_job",
+  MY_PROPERTIES: "my_properties",
+  CREATE_PROPERTY: "create_property",
+  EDIT_PROPERTY: "edit_property",
+  DELETE_PROPERTY: "delete_property",
+  SAVED_LOCATIONS: "saved_locations",
+  ADD_LOCATION: "add_location",
+  REMOVE_LOCATION: "remove_location",
+  USE_CACHED_LOCATION: "use_cached_location",
+  ACCOUNT_SETTINGS: "account_settings",
+  BACK_PROFILE: "back_profile",
+  BACK_BUSINESSES: "back_businesses",
+  
   // Existing flows will add more IDs during implementation.
 } as const;

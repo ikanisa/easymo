@@ -189,7 +189,22 @@ function buildNearbyRow(
 }
 
 export async function handleSeeDrivers(ctx: RouterContext): Promise<boolean> {
-  if (!ctx.profileId) return false;
+  console.log(JSON.stringify({
+    event: "HANDLE_SEE_DRIVERS_START",
+    hasProfileId: !!ctx.profileId,
+    profileId: ctx.profileId,
+    from: ctx.from,
+  }));
+  
+  if (!ctx.profileId) {
+    console.error(JSON.stringify({
+      event: "HANDLE_SEE_DRIVERS_BLOCKED",
+      reason: "no_profile_id",
+      from: ctx.from,
+    }));
+    return false;
+  }
+  
   try {
     const cached = await getRecentNearbyIntent(
       ctx.supabase,
@@ -197,6 +212,7 @@ export async function handleSeeDrivers(ctx: RouterContext): Promise<boolean> {
       "drivers",
     );
     if (cached) {
+      console.log(JSON.stringify({ event: "USING_CACHED_INTENT", vehicle: cached.vehicle }));
       await setState(ctx.supabase, ctx.profileId, {
         key: "mobility_nearby_location",
         data: { mode: "drivers", vehicle: cached.vehicle, pickup: null },
@@ -210,11 +226,14 @@ export async function handleSeeDrivers(ctx: RouterContext): Promise<boolean> {
   } catch (error) {
     console.error("mobility.nearby_cache_read_fail", error);
   }
+  
+  console.log(JSON.stringify({ event: "SENDING_VEHICLE_SELECTOR", mode: "drivers" }));
   await setState(ctx.supabase, ctx.profileId, {
     key: "mobility_nearby_select",
     data: { mode: "drivers" },
   });
   await sendVehicleSelector(ctx, "drivers");
+  console.log(JSON.stringify({ event: "HANDLE_SEE_DRIVERS_COMPLETE", success: true }));
   return true;
 }
 

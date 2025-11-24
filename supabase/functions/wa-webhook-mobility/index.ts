@@ -109,13 +109,9 @@ serve(async (req: Request): Promise<Response> => {
       return respond({ success: true, ignored: "no_sender" });
     }
 
-    // 1. Build Context
-    // Fetch profile
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("user_id, language")
-      .or(`phone_number.eq.${from},wa_id.eq.${from}`)
-      .maybeSingle();
+    // 1. Build Context - Auto-create profile if needed
+    const { ensureProfile } = await import("../_shared/wa-webhook-shared/utils/profile.ts");
+    const profile = await ensureProfile(supabase, from);
 
     const ctx: RouterContext = {
       supabase,
@@ -124,7 +120,21 @@ serve(async (req: Request): Promise<Response> => {
       locale: (profile?.language as any) || "en",
     };
 
-    logEvent("MOBILITY_MESSAGE_PROCESSING", { from, type: message.type });
+    logEvent("MOBILITY_MESSAGE_PROCESSING", { from, type: message.type, hasProfile: !!profile });
+
+    // DIAGNOSTIC LOGGING
+    console.log(JSON.stringify({
+      event: "MOBILITY_DIAGNOSTIC",
+      from,
+      messageType: message.type,
+      hasInteractive: !!message.interactive,
+      interactiveType: (message.interactive as any)?.type,
+      listReplyId: (message.interactive as any)?.list_reply?.id,
+      buttonReplyId: (message.interactive as any)?.button_reply?.id,
+      textBody: (message.text as any)?.body,
+      hasProfileId: !!ctx.profileId,
+      profileId: ctx.profileId,
+    }));
 
     // 2. Get State
     const state = ctx.profileId ? await getState(supabase, ctx.profileId) : null;
@@ -142,10 +152,20 @@ serve(async (req: Request): Promise<Response> => {
 
       if (id) {
         logEvent("MOBILITY_INTERACTION", { id });
+        
+        // DIAGNOSTIC: Log what we're checking
+        console.log(JSON.stringify({
+          event: "MOBILITY_CHECKING_ID",
+          id,
+          expectedKeys: ["rides_agent", "rides", IDS.SEE_DRIVERS],
+          willMatch: id === IDS.SEE_DRIVERS || id === "rides_agent" || id === "rides",
+        }));
 
         // Nearby Flows
-        if (id === IDS.SEE_DRIVERS) {
+        if (id === IDS.SEE_DRIVERS || id === "rides_agent" || id === "rides") {
+          console.log(JSON.stringify({ event: "MOBILITY_LAUNCHING_WORKFLOW", workflow: "handleSeeDrivers" }));
           handled = await handleSeeDrivers(ctx);
+          console.log(JSON.stringify({ event: "MOBILITY_WORKFLOW_RESULT", workflow: "handleSeeDrivers", handled }));
         } else if (id === IDS.SEE_PASSENGERS) {
           handled = await handleSeePassengers(ctx);
         } else if (isVehicleOption(id) && state?.key === "mobility_nearby_select") {
@@ -257,8 +277,12 @@ serve(async (req: Request): Promise<Response> => {
     else if (message.type === "text") {
       const text = (message.text as any)?.body?.toLowerCase() ?? "";
       
+      // Check for menu selection keys first
+      if (text === "rides_agent" || text === "rides") {
+        handled = await handleSeeDrivers(ctx);
+      }
       // Simple keyword triggers if not in a specific flow or if flow allows interruption
-      if (text.includes("driver") || text.includes("ride")) {
+      else if (text.includes("driver") || text.includes("ride")) {
         handled = await handleSeeDrivers(ctx);
       } else if (text.includes("passenger")) {
         handled = await handleSeePassengers(ctx);

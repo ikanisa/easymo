@@ -1,7 +1,9 @@
-import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { routeMessage } from "./routing_logic.ts";
+
 import { getRoutingText } from "../_shared/wa-webhook-shared/utils/messages.ts";
-import type { WhatsAppMessage, WhatsAppWebhookPayload } from "../_shared/wa-webhook-shared/types.ts";
+import type { WhatsAppWebhookPayload, RouterContext, WhatsAppMessage } from "../_shared/wa-webhook-shared/types.ts";
+import { sendListMessage } from "../_shared/wa-webhook-shared/utils/reply.ts";
+import { supabase } from "../_shared/wa-webhook-shared/config.ts";
+import type { SupabaseClient } from "../_shared/wa-webhook-shared/deps.ts";
 
 type RoutingDecision = {
   service: string;
@@ -19,6 +21,52 @@ type HealthStatus = {
   error?: string;
 };
 
+type WhatsAppHomeMenuItem = {
+  id: string;
+  name: string;
+  key: string;
+  description: string | null;
+  icon: string | null;
+  display_order: number;
+  is_active: boolean;
+  active_countries: string[];
+};
+
+const SERVICE_KEY_MAP: Record<string, string> = {
+  "rides": "wa-webhook-mobility",
+  "mobility": "wa-webhook-mobility",
+  "insurance": "wa-webhook-insurance",
+  "jobs": "wa-webhook-jobs",
+  "property": "wa-webhook-property",
+  "wallet": "wa-webhook-profile",  // Updated to profile
+  "marketplace": "wa-webhook-marketplace",
+  "ai_agents": "wa-webhook-ai-agents",
+  // DB Item Mappings
+  "rides_agent": "wa-webhook-mobility",
+  "jobs_agent": "wa-webhook-jobs",
+  "business_broker_agent": "wa-webhook-marketplace",
+  "real_estate_agent": "wa-webhook-property",
+  "farmer_agent": "wa-webhook-ai-agents",
+  "insurance_agent": "wa-webhook-insurance",
+  "sales_agent": "wa-webhook-ai-agents",
+  "waiter_agent": "wa-webhook-ai-agents",
+  "profile": "wa-webhook-profile",  // Updated to profile
+  // Profile-related features
+  "my_business": "wa-webhook-profile",
+  "my_businesses": "wa-webhook-profile",
+  "my_jobs": "wa-webhook-profile",
+  "my_properties": "wa-webhook-profile",
+  "saved_locations": "wa-webhook-profile",
+  // Legacy numeric mapping
+  "1": "wa-webhook-mobility",
+  "2": "wa-webhook-insurance",
+  "3": "wa-webhook-jobs",
+  "4": "wa-webhook-property",
+  "5": "wa-webhook-profile",  // Updated to profile
+  "6": "wa-webhook-marketplace",
+  "7": "wa-webhook-ai-agents",
+};
+
 const MICROSERVICES_BASE_URL = `${Deno.env.get("SUPABASE_URL")}/functions/v1`;
 const ROUTER_TIMEOUT_MS = Math.max(Number(Deno.env.get("WA_ROUTER_TIMEOUT_MS") ?? "4000") || 4000, 1000);
 
@@ -28,7 +76,7 @@ const ROUTED_SERVICES = [
   "wa-webhook-ai-agents",
   "wa-webhook-property",
   "wa-webhook-mobility",
-  "wa-webhook-wallet",
+  "wa-webhook-profile",  // Updated from wa-webhook-wallet
   "wa-webhook-insurance",
   "wa-webhook-core",
 ];
@@ -36,9 +84,20 @@ const ROUTED_SERVICES = [
 export async function routeIncomingPayload(payload: WhatsAppWebhookPayload): Promise<RoutingDecision> {
   const routingMessage = getFirstMessage(payload);
   const routingText = routingMessage ? getRoutingText(routingMessage) : null;
-  const chatStateKey = extractChatState(payload);
   
-  // All messages handled by wa-webhook-core (shows home menu)
+  // Check if text matches a service key
+  if (routingText) {
+    const normalized = routingText.trim().toLowerCase();
+    if (SERVICE_KEY_MAP[normalized]) {
+      return {
+        service: SERVICE_KEY_MAP[normalized],
+        reason: "keyword",
+        routingText,
+      };
+    }
+  }
+
+  // All other messages handled by wa-webhook-core (shows home menu)
   const service = "wa-webhook-core";
 
   return {
@@ -159,12 +218,7 @@ async function checkServiceHealth(service: string): Promise<boolean> {
   }
 }
 
-function extractChatState(payload: WhatsAppWebhookPayload): string | undefined {
-  const states = payload?.entry?.flatMap((entry) => entry?.changes ?? [])
-    .map((change) => change?.value?.metadata?.routing_state)
-    .filter((state): state is string => typeof state === "string" && state.length > 0);
-  return states?.[0];
-}
+
 
 function getFirstMessage(payload: WhatsAppWebhookPayload): WhatsAppMessage | undefined {
   for (const entry of payload?.entry ?? []) {
@@ -176,6 +230,21 @@ function getFirstMessage(payload: WhatsAppWebhookPayload): WhatsAppMessage | und
     }
   }
   return undefined;
+}
+
+async function fetchHomeMenuItems(): Promise<WhatsAppHomeMenuItem[]> {
+  const { data, error } = await supabase
+    .from("whatsapp_home_menu_items")
+    .select("*")
+    .eq("is_active", true)
+    .order("display_order", { ascending: true });
+
+  if (error) {
+    console.error("Failed to fetch home menu items:", error);
+    return [];
+  }
+
+  return data as WhatsAppHomeMenuItem[];
 }
 
 async function handleHomeMenu(payload: WhatsAppWebhookPayload, headers?: Headers): Promise<Response> {
@@ -199,95 +268,73 @@ async function handleHomeMenu(payload: WhatsAppWebhookPayload, headers?: Headers
     text: text?.substring(0, 50) 
   }));
   
-  // Check if message is a menu selection (number 1-9)
-  const menuSelection = text?.trim();
-  if (menuSelection && /^[1-9]$/.test(menuSelection)) {
-    console.log(JSON.stringify({ event: "MENU_SELECTION", selection: menuSelection }));
+  // Check if message is a menu selection (mapped key)
+  const menuSelection = text?.trim().toLowerCase();
+  if (menuSelection && SERVICE_KEY_MAP[menuSelection]) {
+    const targetService = SERVICE_KEY_MAP[menuSelection];
+    console.log(JSON.stringify({ event: "ROUTING_TO_SERVICE", service: targetService, selection: menuSelection }));
     
-    const serviceMap: Record<string, string> = {
-      "1": "wa-webhook-mobility",
-      "2": "wa-webhook-insurance",
-      "3": "wa-webhook-jobs",
-      "4": "wa-webhook-property",
-      "5": "wa-webhook-wallet",
-      "6": "wa-webhook-marketplace",
-      "7": "wa-webhook-ai-agents",
-    };
+    const url = `${MICROSERVICES_BASE_URL}/${targetService}`;
+    const forwardHeaders = new Headers(headers);
+    forwardHeaders.set("Content-Type", "application/json");
+    forwardHeaders.set("X-Routed-From", "wa-webhook-core");
+    forwardHeaders.set("X-Menu-Selection", menuSelection);
 
-    const targetService = serviceMap[menuSelection];
-    if (targetService) {
-      console.log(JSON.stringify({ event: "ROUTING_TO_SERVICE", service: targetService }));
-      
-      const url = `${MICROSERVICES_BASE_URL}/${targetService}`;
-      const forwardHeaders = new Headers(headers);
-      forwardHeaders.set("Content-Type", "application/json");
-      forwardHeaders.set("X-Routed-From", "wa-webhook-core");
-      forwardHeaders.set("X-Menu-Selection", menuSelection);
-
-      try {
-        const response = await fetch(url, {
-          method: "POST",
-          headers: forwardHeaders,
-          body: JSON.stringify(payload),
-        });
-        console.log(JSON.stringify({ event: "FORWARDED", service: targetService, status: response.status }));
-        return response;
-      } catch (error) {
-        console.error(JSON.stringify({ event: "FORWARD_FAILED", service: targetService, error: String(error) }));
-      }
+    try {
+      const response = await fetch(url, {
+        method: "POST",
+        headers: forwardHeaders,
+        body: JSON.stringify(payload),
+      });
+      console.log(JSON.stringify({ event: "FORWARDED", service: targetService, status: response.status }));
+      return response;
+    } catch (error) {
+      console.error(JSON.stringify({ event: "FORWARD_FAILED", service: targetService, error: String(error) }));
     }
   }
 
-  // Show home menu - direct WhatsApp API call
+  // Show home menu - interactive list message
   console.log(JSON.stringify({ event: "SHOWING_HOME_MENU", to: phoneNumber }));
-  
-  const menuMessage = `Welcome to EasyMO! 🎯
 
-Choose a service:
-
-1️⃣ Rides & Transport
-2️⃣ Insurance
-3️⃣ Jobs & Careers
-4️⃣ Property Rentals
-5️⃣ Wallet & Profile
-6️⃣ Marketplace
-7️⃣ AI Support
-
-Reply with a number (1-7) to continue.`;
-
-  const accessToken = Deno.env.get("WHATSAPP_ACCESS_TOKEN");
-  const phoneNumberId = Deno.env.get("WHATSAPP_PHONE_NUMBER_ID");
-
-  if (!accessToken || !phoneNumberId) {
-    console.error(JSON.stringify({ event: "MISSING_CREDENTIALS" }));
-    return new Response(JSON.stringify({ error: "Configuration error" }), { status: 500 });
-  }
+  const ctx: RouterContext = {
+    supabase,
+    from: phoneNumber,
+    locale: "en",
+  };
 
   try {
-    const response = await fetch(
-      `https://graph.facebook.com/v18.0/${phoneNumberId}/messages`,
-      {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${accessToken}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          messaging_product: "whatsapp",
-          to: phoneNumber,
-          type: "text",
-          text: { body: menuMessage },
-        }),
-      }
-    );
+    // Fetch dynamic menu items
+    const menuItems = await fetchHomeMenuItems();
+    
+    const rows = menuItems.map(item => ({
+      id: item.key, // Use key as the ID for routing
+      title: item.name,
+      description: item.description || undefined,
+    }));
 
-    if (!response.ok) {
-      const error = await response.text();
-      console.error(JSON.stringify({ event: "WHATSAPP_API_ERROR", status: response.status, error }));
-      return new Response(JSON.stringify({ error: "Failed to send message" }), { status: 500 });
+    // Fallback if no items found (shouldn't happen if DB is populated)
+    if (rows.length === 0) {
+      console.warn("No active menu items found in DB, using fallback");
+      rows.push(
+        { id: "rides", title: "Rides & Transport", description: "Request a ride or delivery" },
+        { id: "insurance", title: "Insurance", description: "Buy or manage insurance" },
+        { id: "jobs", title: "Jobs & Careers", description: "Find jobs or hire" },
+        { id: "property", title: "Property Rentals", description: "Rent houses or apartments" },
+        { id: "wallet", title: "Wallet & Profile", description: "Manage funds and settings" },
+        { id: "marketplace", title: "Marketplace", description: "Buy and sell items" },
+        { id: "ai_agents", title: "AI Support", description: "Chat with our AI assistant" }
+      );
     }
 
-    console.log(JSON.stringify({ event: "MENU_SENT_SUCCESS", to: phoneNumber }));
+    await sendListMessage(ctx, {
+      title: "easyMO Services",
+      body: "✨ Hello 👋 Do more with easyMO, Rides, Shops, MOMO QR codes ..and more.",
+      buttonText: "View Services",
+      sectionTitle: "Services",
+      rows: rows,
+    });
+
+    console.log(JSON.stringify({ event: "MENU_SENT_SUCCESS", to: phoneNumber, itemCount: rows.length }));
     return new Response(JSON.stringify({ success: true, menu_shown: true }), { status: 200 });
   } catch (error) {
     console.error(JSON.stringify({ event: "SEND_MESSAGE_FAILED", error: String(error) }));

@@ -9,12 +9,10 @@ import { IDS } from "../_shared/wa-webhook-shared/wa/ids.ts";
 // Insurance domain imports
 import { startInsurance, handleInsuranceMedia } from "./insurance/index.ts";
 import {
-  isInsuranceGated,
-  getInsuranceGateMessage,
-  handleInsuranceUnlock,
-  handleInsuranceHelp,
+  evaluateMotorInsuranceGate,
+  recordMotorInsuranceHidden,
+  sendMotorInsuranceBlockedMessage,
 } from "./insurance/gate.ts";
-import { handleInsuranceDocumentUpload } from "./insurance/ins_handler.ts";
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL") ?? "",
@@ -78,15 +76,6 @@ serve(async (req: Request): Promise<Response> => {
 
     // Build context
     const ctx: RouterContext = await buildContext(message, payload);
-
-    // Check insurance gate
-    const gated = await isInsuranceGated(supabase, ctx.from);
-    if (gated) {
-      await logEvent("INSURANCE_GATED", { from: ctx.from });
-      const gateMessage = await getInsuranceGateMessage(ctx.locale);
-      // Send gate message (implementation needed)
-      return respond({ success: true, gated: true });
-    }
 
     // Get user state
     const state = ctx.profileId
@@ -156,24 +145,18 @@ function getFirstMessage(payload: WhatsAppWebhookPayload): RawWhatsAppMessage | 
 
 async function buildContext(
   message: RawWhatsAppMessage,
-  payload: WhatsAppWebhookPayload,
+  _payload: WhatsAppWebhookPayload,
 ): Promise<RouterContext> {
   const from = message.from;
-  const messageId = message.id;
 
-  // Get profile ID (simplified - should query database)
-  const { data: profile } = await supabase
-    .from("whatsapp_users")
-    .select("user_id")
-    .eq("wa_id", from)
-    .single();
-
-  const profileId = profile?.user_id ?? null;
+  // Auto-create profile if needed
+  const { ensureProfile } = await import("../_shared/wa-webhook-shared/utils/profile.ts");
+  const profile = await ensureProfile(supabase, from);
 
   return {
     from,
-    profileId,
-    locale: "en", // Default, should detect from profile
+    profileId: profile?.user_id ?? null,
+    locale: profile?.language || "en",
     supabase,
   };
 }
@@ -183,22 +166,13 @@ async function handleInsuranceButton(
   buttonId: string,
   state: { key: string; data?: Record<string, unknown> },
 ): Promise<boolean> {
-  switch (buttonId) {
-    case IDS.INSURANCE_START:
-      await startInsurance(ctx, state);
-      return true;
-
-    case IDS.INSURANCE_HELP:
-      await handleInsuranceHelp(ctx);
-      return true;
-
-    case IDS.INSURANCE_UNLOCK:
-      await handleInsuranceUnlock(ctx);
-      return true;
-
-    default:
-      return false;
+  // Handle insurance button selections
+  if (buttonId.startsWith("ins_") || buttonId === "insurance_agent" || buttonId === "insurance") {
+    await startInsurance(ctx, state);
+    return true;
   }
+  
+  return false;
 }
 
 async function handleInsuranceList(
@@ -207,7 +181,7 @@ async function handleInsuranceList(
   state: { key: string; data?: Record<string, unknown> },
 ): Promise<boolean> {
   // Handle insurance list selections
-  if (listId.startsWith("ins_")) {
+  if (listId.startsWith("ins_") || listId === "insurance_agent" || listId === "insurance") {
     await startInsurance(ctx, state);
     return true;
   }
@@ -223,8 +197,14 @@ async function handleInsuranceText(
   const text = message.text?.body?.trim().toLowerCase();
   if (!text) return false;
 
+  // Check for menu selection keys first
+  if (text === "insurance_agent" || text === "insurance") {
+    await startInsurance(ctx, state);
+    return true;
+  }
+
   // Handle insurance-related keywords
-  if (["insurance", "assurance", "cover", "claim"].includes(text)) {
+  if (["assurance", "cover", "claim"].includes(text)) {
     await startInsurance(ctx, state);
     return true;
   }
