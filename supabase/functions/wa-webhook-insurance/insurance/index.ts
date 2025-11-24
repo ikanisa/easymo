@@ -1,12 +1,12 @@
-import type { RouterContext } from "../../types.ts";
-import { clearState, setState } from "../../state/store.ts";
-import { IDS } from "../../wa/ids.ts";
+import type { RouterContext } from "../../_shared/wa-webhook-shared/types.ts";
+import { clearState, setState } from "../../_shared/wa-webhook-shared/state/store.ts";
+import { IDS } from "../../_shared/wa-webhook-shared/wa/ids.ts";
 import {
   buildButtons,
   sendButtonsMessage,
   sendListMessage,
-} from "../../utils/reply.ts";
-import { sendHomeMenu } from "../../flows/home.ts";
+} from "../../_shared/wa-webhook-shared/utils/reply.ts";
+import { sendHomeMenu } from "../../_shared/wa-webhook-shared/flows/home.ts";
 import { processInsuranceDocument } from "./ins_handler.ts";
 
 const STATES = {

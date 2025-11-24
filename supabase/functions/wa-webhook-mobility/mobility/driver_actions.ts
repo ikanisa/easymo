@@ -16,7 +16,7 @@ export async function handleDriverAcceptRide(
 
   // 1. Check if trip is still open
   const { data: trip, error } = await ctx.supabase
-    .from("trips")
+    .from("rides_trips")
     .select("*, profiles!creator_user_id(whatsapp_number)")
     .eq("id", tripId)
     .single();

@@ -39,7 +39,7 @@ export async function handleDriverOfferRide(
   try {
     // Get trip details
     const { data: trip } = await ctx.supabase
-      .from("trips")
+      .from("rides_trips")
       .select("id, creator_user_id, pickup_latitude, pickup_longitude, dropoff_latitude, dropoff_longitude, vehicle_type, pickup_text, dropoff_text")
       .eq("id", tripId)
       .single();
@@ -139,7 +139,7 @@ export async function handleDriverViewDetails(
   try {
     // Get trip details
     const { data: trip } = await ctx.supabase
-      .from("trips")
+      .from("rides_trips")
       .select("id, creator_user_id, pickup_latitude, pickup_longitude, dropoff_latitude, dropoff_longitude, vehicle_type, pickup_text, dropoff_text, created_at")
       .eq("id", tripId)
       .single();

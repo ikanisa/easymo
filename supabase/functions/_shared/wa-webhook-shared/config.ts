@@ -3,7 +3,7 @@ import {
   createClientFactory,
   type SupabaseClient,
 } from "./deps.ts";
-import { getEnv as getSharedEnv } from "../_shared/env.ts";
+import { getEnv as getSharedEnv } from "../env.ts";
 
 function getEnv(...names: string[]): string | undefined {
   for (const name of names) {
