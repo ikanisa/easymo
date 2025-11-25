@@ -4,7 +4,7 @@
 // Handles real-time driver location updates and ETA calculation during trips
 // ============================================================================
 
-import { logStructuredEvent } from "../observe/observability.ts";
+import { logStructuredEvent } from "../../_shared/observability.ts";
 import type { SupabaseClient } from "../deps.ts";
 
 // ============================================================================
@@ -168,7 +168,7 @@ export async function updateDriverLocation(
   } catch (error) {
     await logStructuredEvent("LOCATION_UPDATE_ERROR", {
       tripId,
-      error: error.message,
+      error: (error as Error)?.message || String(error),
     }, "error");
     return false;
   }
@@ -217,7 +217,7 @@ export async function calculateETA(
     };
   } catch (error) {
     await logStructuredEvent("ETA_CALCULATION_ERROR", {
-      error: error.message,
+      error: (error as Error)?.message || String(error),
     }, "error");
     
     // Return default values on error
@@ -290,7 +290,7 @@ export async function startDriverTracking(
   } catch (error) {
     await logStructuredEvent("TRACKING_START_ERROR", {
       tripId,
-      error: error.message,
+      error: (error as Error)?.message || String(error),
     }, "error");
     return false;
   }
@@ -318,7 +318,7 @@ export async function stopDriverTracking(
   } catch (error) {
     await logStructuredEvent("TRACKING_STOP_ERROR", {
       tripId,
-      error: error.message,
+      error: (error as Error)?.message || String(error),
     }, "error");
     return false;
   }
@@ -353,7 +353,7 @@ export async function getDriverLocation(
   } catch (error) {
     await logStructuredEvent("GET_LOCATION_ERROR", {
       driverId,
-      error: error.message,
+      error: (error as Error)?.message || String(error),
     }, "error");
     return null;
   }
@@ -415,7 +415,7 @@ export async function getTripProgress(
   } catch (error) {
     await logStructuredEvent("GET_TRIP_PROGRESS_ERROR", {
       tripId,
-      error: error.message,
+      error: (error as Error)?.message || String(error),
     }, "error");
     return null;
   }

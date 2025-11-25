@@ -149,6 +149,14 @@ export const IDS = {
   UPDATE_LOCATION: "update_location",
   USE_CACHED_LOCATION: "use_cached_location",
   SHARE_NEW_LOCATION: "share_new_location",
+  // Trip Lifecycle
+  TRIP_START: "TRIP_START",
+  TRIP_ARRIVED: "TRIP_ARRIVED",
+  TRIP_PICKED_UP: "TRIP_PICKED_UP",
+  TRIP_COMPLETE: "TRIP_COMPLETE",
+  TRIP_CANCEL: "TRIP_CANCEL",
+  TRIP_RATE: "RATE",
+  VIEW_DRIVER_LOCATION: "VIEW_DRIVER_LOCATION",
   // Recent actions
   SCHEDULE_RECENT: "schedule_recent",
   NEARBY_RECENT: "nearby_recent",

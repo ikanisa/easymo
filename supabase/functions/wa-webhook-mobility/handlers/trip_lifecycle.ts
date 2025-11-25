@@ -5,7 +5,7 @@
 // Target: 75% production readiness
 // ============================================================================
 
-import { logStructuredEvent } from "../observe/observability.ts";
+import { logStructuredEvent } from "../../_shared/observability.ts";
 import type { SupabaseClient } from "../deps.ts";
 
 // ============================================================================

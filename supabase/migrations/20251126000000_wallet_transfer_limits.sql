@@ -3,10 +3,9 @@
 -- Get total tokens transferred out today
 CREATE OR REPLACE FUNCTION get_daily_transfer_total(p_user_id UUID)
 RETURNS NUMERIC AS $$
-  SELECT COALESCE(SUM(amount), 0)
-  FROM wallet_transactions
-  WHERE user_id = p_user_id
-    AND type = 'transfer_out'
+  SELECT COALESCE(SUM(amount_tokens), 0)
+  FROM wallet_transfers
+  WHERE sender_profile = p_user_id
     AND created_at >= CURRENT_DATE
     AND created_at < CURRENT_DATE + INTERVAL '1 day'
 $$ LANGUAGE sql SECURITY DEFINER;
@@ -15,9 +14,8 @@ $$ LANGUAGE sql SECURITY DEFINER;
 CREATE OR REPLACE FUNCTION get_hourly_transfer_count(p_user_id UUID)
 RETURNS INTEGER AS $$
   SELECT COUNT(*)::INTEGER
-  FROM wallet_transactions
-  WHERE user_id = p_user_id
-    AND type = 'transfer_out'
+  FROM wallet_transfers
+  WHERE sender_profile = p_user_id
     AND created_at >= NOW() - INTERVAL '1 hour'
 $$ LANGUAGE sql SECURITY DEFINER;
 

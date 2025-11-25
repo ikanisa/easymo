@@ -43,6 +43,23 @@ import {
   parseInsuranceState,
   handleInsuranceCertificateUpload,
 } from "./handlers/driver_insurance.ts";
+import {
+  handleTripStart,
+  handleTripArrivedAtPickup,
+  handleTripPickedUp,
+  handleTripComplete,
+  handleTripCancel,
+  handleTripRate,
+} from "./handlers/trip_lifecycle.ts";
+import {
+  startDriverTracking,
+  updateDriverLocation,
+  stopDriverTracking,
+  getDriverLocation,
+} from "./handlers/tracking.ts";
+import {
+  calculateFareEstimate,
+} from "./handlers/fare.ts";
 import type { RouterContext, WhatsAppWebhookPayload, RawWhatsAppMessage } from "./types.ts";
 import { IDS } from "./wa/ids.ts";
 import { verifyWebhookSignature } from "../_shared/webhook-utils.ts";
@@ -304,6 +321,43 @@ serve(async (req: Request): Promise<Response> => {
         } else if (id.startsWith("FAV::") && state?.key === "location_saved_picker" && state.data?.source === "schedule") {
            handled = await handleScheduleSavedLocationSelection(ctx, state.data as any, id);
         }
+        
+        // Trip Lifecycle Management
+        else if (id === "TRIP_START" && state?.data?.matchId) {
+          const matchId = state.data.matchId;
+          handled = await handleTripStart(ctx, matchId);
+        } else if (id === "TRIP_ARRIVED" && state?.data?.tripId) {
+          const tripId = state.data.tripId;
+          handled = await handleTripArrivedAtPickup(ctx, tripId);
+        } else if (id === "TRIP_PICKED_UP" && state?.data?.tripId) {
+          const tripId = state.data.tripId;
+          handled = await handleTripPickedUp(ctx, tripId);
+        } else if (id === "TRIP_COMPLETE" && state?.data?.tripId) {
+          const tripId = state.data.tripId;
+          handled = await handleTripComplete(ctx, tripId);
+        } else if (id.startsWith("TRIP_CANCEL::")) {
+          const tripId = id.replace("TRIP_CANCEL::", "");
+          handled = await handleTripCancel(ctx, tripId, "user", ctx.profileId || "");
+        } else if (id.startsWith("RATE::")) {
+          const parts = id.split("::");
+          const tripId = parts[1];
+          const rating = parseInt(parts[2]);
+          handled = await handleTripRate(ctx, tripId, rating);
+        }
+        
+        // Real-Time Tracking
+        else if (id === "UPDATE_LOCATION" && state?.data?.tripId) {
+          const tripId = state.data.tripId;
+          // Location will come from location message, just acknowledge
+          handled = true;
+        } else if (id === "VIEW_DRIVER_LOCATION" && state?.data?.tripId) {
+          const tripId = state.data.tripId;
+          const location = await getDriverLocation(ctx, tripId);
+          if (location) {
+            // Send location back to user (TODO: implement location message sending)
+            handled = true;
+          }
+        }
       }
     }
 
@@ -314,7 +368,13 @@ serve(async (req: Request): Promise<Response> => {
         const coords = { lat: Number(loc.latitude), lng: Number(loc.longitude) };
         logEvent("MOBILITY_LOCATION", coords);
 
-        if (state?.key === "mobility_nearby_location") {
+        // Real-time tracking location updates
+        if (state?.key === "trip_in_progress" && state?.data?.tripId && state?.data?.role === "driver") {
+          const tripId = state.data.tripId;
+          handled = await updateDriverLocation(ctx, tripId, coords);
+        }
+        // Existing location handlers
+        else if (state?.key === "mobility_nearby_location") {
           handled = await handleNearbyLocation(ctx, state.data as any, coords);
         } else if (state?.key === "go_online_prompt") {
           handled = await handleGoOnlineLocation(ctx, coords);

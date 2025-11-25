@@ -187,7 +187,7 @@ export async function calculateFareEstimate(
   } catch (error) {
     await logStructuredEvent("FARE_ESTIMATION_ERROR", {
       vehicleType,
-      error: error.message,
+      error: (error as Error)?.message || String(error),
     }, "error");
 
     // Return default estimate on error
@@ -281,7 +281,7 @@ export async function calculateActualFare(
   } catch (error) {
     await logStructuredEvent("ACTUAL_FARE_CALCULATION_ERROR", {
       vehicleType,
-      error: error.message,
+      error: (error as Error)?.message || String(error),
     }, "error");
 
     throw error;
