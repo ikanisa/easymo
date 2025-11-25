@@ -359,7 +359,7 @@ export async function processInsuranceDocument(
     console.info("INS_OCR_OK", { leadId, ms: duration });
     await logStructuredEvent("INS_OCR_OK", { leadId, ms: duration });
 
-    const extracted = normalizeInsuranceExtraction(rawOcr);
+    let extracted = normalizeInsuranceExtraction(rawOcr);
 
     // Merge with existing extraction if present (multi-page aggregation)
     try {
@@ -369,8 +369,7 @@ export async function processInsuranceDocument(
         .eq('id', leadId)
         .maybeSingle();
       if (current?.extracted) {
-        const merged = mergeExtractions(current.extracted, extracted);
-        (patch as any) = { ...patch, extracted: merged };
+        extracted = mergeExtractions(current.extracted, extracted) as InsuranceExtraction;
       }
     } catch (_) { /* non-fatal */ }
 

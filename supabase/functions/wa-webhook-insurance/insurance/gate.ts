@@ -7,6 +7,73 @@ import { t } from "../../_shared/wa-webhook-shared/i18n/translator.ts";
 import { getAppConfig } from "../../_shared/wa-webhook-shared/utils/app_config.ts";
 
 const FEATURE_NAME = "motor_insurance";
+
+// Global app config row ID (singleton pattern used by app_config table)
+const APP_CONFIG_ID = 1;
+
+// Default countries (fallback if not configured in app_config)
+const DEFAULT_ALLOWED_COUNTRIES = new Set(["RW"]);
+
+// Cache for allowed countries from app_config
+type CountryCache = {
+  countries: Set<string>;
+  loadedAt: number;
+};
+
+let countryCache: CountryCache | null = null;
+const COUNTRY_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
+/**
+ * Get allowed countries for insurance feature.
+ * Tries to load from app_config table, falls back to default if not configured.
+ */
+async function getAllowedCountries(ctx: RouterContext): Promise<Set<string>> {
+  const now = Date.now();
+  
+  // Return cached value if still valid
+  if (countryCache && now - countryCache.loadedAt < COUNTRY_CACHE_TTL_MS) {
+    return countryCache.countries;
+  }
+
+  try {
+    // Try to load from app_config table (singleton row)
+    const { data, error } = await ctx.supabase
+      .from("app_config")
+      .select("insurance_allowed_countries")
+      .eq("id", APP_CONFIG_ID)
+      .maybeSingle();
+    
+    if (error) {
+      console.warn("motor_insurance.config_load_fail", { error: error.message });
+      countryCache = { countries: DEFAULT_ALLOWED_COUNTRIES, loadedAt: now };
+      return DEFAULT_ALLOWED_COUNTRIES;
+    }
+    
+    // Parse countries from config
+    const configuredCountries = data?.insurance_allowed_countries;
+    if (Array.isArray(configuredCountries) && configuredCountries.length > 0) {
+      const countries = new Set(
+        configuredCountries
+          .map((c: unknown) => typeof c === 'string' ? c.toUpperCase().trim() : '')
+          .filter((c: string) => c.length === 2)
+      );
+      
+      if (countries.size > 0) {
+        countryCache = { countries, loadedAt: now };
+        return countries;
+      }
+    }
+    
+    // Use default if config is empty or invalid
+    countryCache = { countries: DEFAULT_ALLOWED_COUNTRIES, loadedAt: now };
+    return DEFAULT_ALLOWED_COUNTRIES;
+  } catch (err) {
+    console.error("motor_insurance.config_load_error", {
+      error: err instanceof Error ? err.message : String(err),
+    });
+    countryCache = { countries: DEFAULT_ALLOWED_COUNTRIES, loadedAt: now };
+    return DEFAULT_ALLOWED_COUNTRIES;
+  }
 const FALLBACK_ALLOWED_COUNTRIES = ["RW"];
 
 async function getAllowedCountries(ctx: RouterContext): Promise<Set<string>> {
@@ -49,6 +116,10 @@ export async function evaluateMotorInsuranceGate(
       rule: "admin_override",
     };
   }
+  
+  // Get allowed countries dynamically from config
+  const allowedCountries = await getAllowedCountries(ctx);
+  
   const allowedCountries = await getAllowedCountries(ctx);
   const upperCountry = detectedCountry?.toUpperCase() ?? null;
   if (upperCountry && allowedCountries.has(upperCountry)) {
