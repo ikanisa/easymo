@@ -19,28 +19,23 @@ BEGIN;
 
 CREATE TABLE IF NOT EXISTS public.agent_chat_sessions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  
-  -- User reference (WhatsApp user or authenticated user)
   user_id UUID REFERENCES public.whatsapp_users(id) ON DELETE CASCADE,
-  user_phone TEXT, -- WhatsApp phone number for quick lookup
-  
-  -- Agent configuration
-  agent_type TEXT NOT NULL, -- 'sales', 'business_broker', 'waiter', 'farmer', 'jobs', 'real_estate', 'rides', 'insurance'
-  agent_id UUID, -- Reference to ai_agents table if applicable
-  
-  -- Conversation state
-  conversation_history JSONB DEFAULT '[]'::jsonb, -- Array of messages
-  context JSONB DEFAULT '{}'::jsonb, -- Session context (location, preferences, etc.)
-  
-  -- Session management
+  user_phone TEXT,
+  agent_type TEXT NOT NULL,
+  agent_id UUID,
+  conversation_history JSONB DEFAULT '[]'::jsonb,
+  context JSONB DEFAULT '{}'::jsonb,
   status TEXT DEFAULT 'active' CHECK (status IN ('active', 'paused', 'completed', 'expired')),
-  
-  -- Timestamps
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
   last_message_at TIMESTAMPTZ DEFAULT NOW(),
   expires_at TIMESTAMPTZ DEFAULT NOW() + INTERVAL '24 hours'
 );
+
+ALTER TABLE public.agent_chat_sessions
+  ADD COLUMN IF NOT EXISTS user_phone TEXT,
+  ADD COLUMN IF NOT EXISTS agent_type TEXT NOT NULL DEFAULT 'general',
+  ALTER COLUMN agent_type DROP DEFAULT;
 
 COMMENT ON TABLE public.agent_chat_sessions IS 
   'Persistent chat sessions for AI agents with conversation history';
