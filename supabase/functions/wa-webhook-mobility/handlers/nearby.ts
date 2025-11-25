@@ -296,6 +296,30 @@ export async function handleNearbyRecent(ctx: RouterContext): Promise<boolean> {
   }
 }
 
+export async function handleUseCachedLocation(
+  ctx: RouterContext,
+  state: NearbyState,
+): Promise<boolean> {
+  if (!ctx.profileId || !state?.mode || !state?.vehicle) return false;
+
+  let pickup = state.pickup ?? null;
+  if (!pickup) {
+    const last = await readLastLocation(ctx);
+    if (last) {
+      pickup = { lat: last.lat, lng: last.lng };
+    }
+  }
+
+  if (!pickup) {
+    await promptShareLocation(ctx, state, {
+      allowVehicleChange: state.mode === "passengers",
+    });
+    return true;
+  }
+
+  return await handleNearbyLocation(ctx, { ...state, pickup }, pickup);
+}
+
 export async function handleNearbyLocation(
   ctx: RouterContext,
   state: NearbyState,

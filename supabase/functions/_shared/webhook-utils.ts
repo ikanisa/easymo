@@ -180,7 +180,7 @@ export async function verifyWebhookSignature(
       encoder.encode(expectedHash),
     );
   } catch (error) {
-    logError("signature_verification", error, { signatureProvided: !!signature });
+    logError("signature_verification", error instanceof Error ? error : new Error(String(error)), { signatureProvided: !!signature });
     return false;
   }
 }
@@ -392,7 +392,7 @@ export class WebhookProcessor {
         error: error.message,
         correlationId,
       });
-      throw new WebhookError("Failed to queue webhook", 500, "QUEUE_ERROR", true);
+      throw new WebhookError("Failed to queue webhook", "500", "QUEUE_ERROR", true);
     }
   }
 
@@ -872,7 +872,7 @@ export async function releaseConversationLock(
 export async function addToDeadLetterQueue(
   supabase: SupabaseClient,
   payload: unknown,
-  error: Error,
+  originalError: Error, // Renamed parameter to avoid confusion
   whatsappMessageId: string | null,
   correlationId: string,
   retryCount = 0
@@ -886,8 +886,8 @@ export async function addToDeadLetterQueue(
       .from('webhook_dlq')
       .insert({
         payload,
-        error: error.message,
-        error_stack: error.stack,
+        error: originalError.message, // Use originalError
+        error_stack: originalError.stack, // Use originalError
         correlation_id: correlationId,
         whatsapp_message_id: whatsappMessageId,
         retry_count: retryCount,
@@ -906,7 +906,7 @@ export async function addToDeadLetterQueue(
       correlationId,
       retryCount,
       nextRetryAt: nextRetryAt?.toISOString(),
-      errorMessage: error.message,
+      errorMessage: originalError.message, // Use originalError
     }, "error");
     
     recordMetric("webhook.dlq_added", 1, {
@@ -915,16 +915,16 @@ export async function addToDeadLetterQueue(
     });
     
   } catch (dlqError) {
-    logError("add_to_dlq", dlqError, {
+    logError("add_to_dlq", dlqError instanceof Error ? dlqError : new Error(String(dlqError)), {
       correlationId,
-      originalError: error.message,
+      originalError: originalError.message, // Use originalError
     });
     
     // Critical: If we can't add to DLQ, log prominently
     console.error(JSON.stringify({
       event: "CRITICAL_DLQ_FAILURE",
       correlationId,
-      originalError: error.message,
+      originalError: originalError.message, // Use originalError
       dlqError: dlqError instanceof Error ? dlqError.message : String(dlqError),
     }));
   }

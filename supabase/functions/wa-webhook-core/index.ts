@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { supabase } from "../_shared/wa-webhook-shared/config.ts";
 import { logStructuredEvent } from "../_shared/observability.ts";
 import { verifyWebhookSignature } from "../_shared/webhook-utils.ts";
 import { forwardToEdgeService, routeIncomingPayload, summarizeServiceHealth } from "./router.ts";
@@ -9,10 +9,7 @@ import { maskPhone } from "../_shared/phone-utils.ts";
 import { logError } from "../_shared/correlation-logging.ts";
 
 const coldStartMarker = performance.now();
-const supabase = createClient(
-  Deno.env.get("SUPABASE_URL") ?? "",
-  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-);
+
 
 const latencyTracker = new LatencyTracker({
   windowSize: 120,

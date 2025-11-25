@@ -35,7 +35,6 @@ async function getAllowedCountries(ctx: RouterContext): Promise<Set<string>> {
   }
 
   try {
-    // Try to load from app_config table (singleton row)
     const { data, error } = await ctx.supabase
       .from("app_config")
       .select("insurance_allowed_countries")
@@ -48,7 +47,6 @@ async function getAllowedCountries(ctx: RouterContext): Promise<Set<string>> {
       return DEFAULT_ALLOWED_COUNTRIES;
     }
     
-    // Parse countries from config
     const configuredCountries = data?.insurance_allowed_countries;
     if (Array.isArray(configuredCountries) && configuredCountries.length > 0) {
       const countries = new Set(
@@ -63,7 +61,6 @@ async function getAllowedCountries(ctx: RouterContext): Promise<Set<string>> {
       }
     }
     
-    // Use default if config is empty or invalid
     countryCache = { countries: DEFAULT_ALLOWED_COUNTRIES, loadedAt: now };
     return DEFAULT_ALLOWED_COUNTRIES;
   } catch (err) {
@@ -104,7 +101,6 @@ export async function evaluateMotorInsuranceGate(
     };
   }
   
-  // Get allowed countries dynamically from config
   const allowedCountries = await getAllowedCountries(ctx);
   const upperCountry = detectedCountry?.toUpperCase() ?? null;
   if (upperCountry && allowedCountries.has(upperCountry)) {
