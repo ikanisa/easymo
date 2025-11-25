@@ -9,16 +9,10 @@ const supabase = createClient(
 
 // User state tracking (in-memory for session)
 interface UserState {
-  mode: "idle" | "browsing" | "selling" | "listing_details" | "search";
+  mode: "idle" | "browsing" | "search" | "register_business";
   lastAction: string;
-  pendingListing?: {
-    title?: string;
-    description?: string;
-    price?: number;
-    category?: string;
-    images?: string[];
-  };
   searchQuery?: string;
+  selectedBusinessId?: string;
 }
 
 const userStates = new Map<string, UserState>();
@@ -46,194 +40,176 @@ serve(async (req: Request): Promise<Response> => {
       // Get or create user state
       let state = userStates.get(userPhone) || { mode: "idle", lastAction: "" };
 
-      // Handle image uploads for listings
-      if (message.type === "image" && state.mode === "selling") {
-        const imageUrl = message.image?.link || message.image?.url;
-        if (imageUrl && state.pendingListing) {
-          state.pendingListing.images = state.pendingListing.images || [];
-          state.pendingListing.images.push(imageUrl);
-          userStates.set(userPhone, state);
-          
-          await sendText(userPhone, "📸 Image received! Send more photos or describe your item (title, price, description).");
-          return new Response(JSON.stringify({ success: true }), { headers: { "Content-Type": "application/json" } });
-        }
-      }
-
       let response = "";
 
       // Main menu or welcome
       if (!text || text === "marketplace" || text === "shops_services" || text === "shop" || text === "menu" || text === "home") {
         state = { mode: "idle", lastAction: "menu" };
         response = `🛍️ *EasyMO Marketplace*\n\n` +
-          `1. 🛒 Browse Items\n` +
-          `2. 🏷️ Sell Item\n` +
-          `3. 📋 My Listings\n` +
-          `4. 🔍 Search\n\n` +
-          `Reply with a number or keyword.`;
+          `Find local businesses and services in Rwanda.\n\n` +
+          `1. 🏪 Browse Businesses\n` +
+          `2. 🔍 Search by Category\n` +
+          `3. 📍 Nearby Services\n` +
+          `4. ➕ Register Your Business\n\n` +
+          `Reply with a number or type what you're looking for.`;
       }
-      // Browse items
-      else if (text === "1" || text.includes("browse") || text.includes("buy")) {
+      // Browse businesses
+      else if (text === "1" || text.includes("browse") || text.includes("businesses")) {
         state = { mode: "browsing", lastAction: "browse" };
         
-        // Fetch recent listings
-        const { data: listings } = await supabase
-          .from("marketplace_listings")
-          .select("id, title, price, category, location_name")
-          .eq("status", "active")
-          .order("created_at", { ascending: false })
+        // Fetch businesses from business_directory table
+        const { data: businesses } = await supabase
+          .from("business_directory")
+          .select("id, name, category, city, phone, rating")
+          .neq("status", "DO_NOT_CALL")
+          .order("rating", { ascending: false })
           .limit(5);
         
-        if (listings && listings.length > 0) {
-          response = "🛒 *Recent Listings*\n\n";
-          listings.forEach((item, i) => {
-            response += `${i + 1}. *${item.title}*\n`;
-            response += `   💰 ${item.price?.toLocaleString() || "Price TBD"} RWF\n`;
-            response += `   📍 ${item.location_name || "Rwanda"}\n\n`;
+        if (businesses && businesses.length > 0) {
+          response = "🏪 *Featured Businesses*\n\n";
+          businesses.forEach((biz, i) => {
+            const stars = biz.rating ? "⭐".repeat(Math.round(biz.rating)) : "";
+            response += `${i + 1}. *${biz.name}*\n`;
+            response += `   📂 ${biz.category}\n`;
+            response += `   📍 ${biz.city}\n`;
+            if (biz.rating) response += `   ${stars} (${biz.rating})\n`;
+            response += `\n`;
           });
-          response += `Reply with a number for details, or type what you're looking for.`;
+          response += `Reply with a number for details and contact info.`;
         } else {
-          response = "🛒 No listings available right now.\n\nBe the first to sell something! Type *sell* to list an item.";
+          response = "🏪 No businesses found in directory yet.\n\nType *register* to add your business!";
         }
       }
-      // Sell item
-      else if (text === "2" || text.includes("sell")) {
-        state = { 
-          mode: "selling", 
-          lastAction: "sell_start",
-          pendingListing: {}
-        };
-        response = `🏷️ *Sell an Item*\n\n` +
-          `Let's create your listing!\n\n` +
-          `📸 Send a photo of your item\n` +
-          `Then tell me:\n` +
-          `• Title (what are you selling?)\n` +
-          `• Price in RWF\n` +
-          `• Brief description\n\n` +
-          `Example: "iPhone 12, 350000, Like new condition with charger"\n\n` +
-          `Type *cancel* to exit.`;
+      // Search by category
+      else if (text === "2" || text.includes("category") || text.includes("categories")) {
+        state = { mode: "search", lastAction: "category_prompt" };
+        response = `🔍 *Search by Category*\n\n` +
+          `Popular categories:\n` +
+          `• Restaurant 🍽️\n` +
+          `• Pharmacy 💊\n` +
+          `• Hotel 🏨\n` +
+          `• Supermarket 🛒\n` +
+          `• Bank 🏦\n` +
+          `• Hospital 🏥\n\n` +
+          `Type a category to search.`;
       }
-      // My listings
-      else if (text === "3" || text.includes("my listing")) {
-        const { data: myListings } = await supabase
-          .from("marketplace_listings")
-          .select("id, title, price, status, views, created_at")
-          .eq("seller_phone", userPhone)
-          .order("created_at", { ascending: false })
-          .limit(5);
-        
-        if (myListings && myListings.length > 0) {
-          response = "📋 *Your Listings*\n\n";
-          myListings.forEach((item, i) => {
-            const statusIcon = item.status === "active" ? "🟢" : item.status === "sold" ? "✅" : "⚪";
-            response += `${i + 1}. ${statusIcon} *${item.title}*\n`;
-            response += `   💰 ${item.price?.toLocaleString() || "TBD"} RWF | 👁️ ${item.views || 0} views\n\n`;
-          });
-          response += `Reply with a number to manage listing.`;
-        } else {
-          response = "📋 You haven't listed anything yet.\n\nType *sell* to create your first listing!";
-        }
+      // Nearby services
+      else if (text === "3" || text.includes("nearby") || text.includes("near me")) {
+        state = { mode: "search", lastAction: "nearby" };
+        response = `📍 *Find Nearby Services*\n\n` +
+          `Tell me your location (city or area) and what you need.\n\n` +
+          `Example: "pharmacy in Kigali" or "restaurant Nyarugenge"`;
       }
-      // Search
-      else if (text === "4" || text === "search" || text.startsWith("find ") || text.startsWith("looking for ")) {
-        const searchQuery = text.replace(/^(4|search|find|looking for)\s*/i, "").trim();
-        
-        if (searchQuery) {
-          // Perform search
-          const { data: results } = await supabase
-            .from("marketplace_listings")
-            .select("id, title, price, category, location_name")
-            .eq("status", "active")
-            .or(`title.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%,category.ilike.%${searchQuery}%`)
-            .order("created_at", { ascending: false })
-            .limit(5);
-          
-          if (results && results.length > 0) {
-            response = `🔍 *Results for "${searchQuery}"*\n\n`;
-            results.forEach((item, i) => {
-              response += `${i + 1}. *${item.title}*\n`;
-              response += `   💰 ${item.price?.toLocaleString() || "Price TBD"} RWF\n`;
-              response += `   📍 ${item.location_name || "Rwanda"}\n\n`;
-            });
-            response += `Reply with a number for details.`;
-          } else {
-            response = `🔍 No results for "${searchQuery}".\n\nTry a different search or browse all items with *browse*.`;
-          }
-        } else {
-          state = { mode: "search", lastAction: "search_prompt" };
-          response = "🔍 *Search Marketplace*\n\nWhat are you looking for?\n\nType a keyword like 'phone', 'furniture', or 'car'.";
-        }
+      // Register business
+      else if (text === "4" || text.includes("register") || text.includes("add business")) {
+        state = { mode: "register_business", lastAction: "register_start" };
+        response = `➕ *Register Your Business*\n\n` +
+          `To add your business to our directory, please provide:\n\n` +
+          `Business Name, Category, City, Phone\n\n` +
+          `Example:\n` +
+          `"Kigali Pharmacy, Pharmacy, Kigali, 0788123456"\n\n` +
+          `Type *cancel* to go back.`;
       }
       // Cancel
-      else if (text === "cancel" || text === "exit") {
+      else if (text === "cancel" || text === "exit" || text === "back") {
         state = { mode: "idle", lastAction: "cancelled" };
         response = "✅ Cancelled. Type *marketplace* to see the main menu.";
       }
-      // Handle listing creation (in selling mode)
-      else if (state.mode === "selling" && state.pendingListing) {
-        // Try to parse: "Title, Price, Description"
+      // Handle business registration
+      else if (state.mode === "register_business") {
         const parts = text.split(",").map(p => p.trim());
         
-        if (parts.length >= 2) {
-          const title = parts[0];
-          const priceStr = parts[1].replace(/[^0-9]/g, "");
-          const price = parseInt(priceStr) || null;
-          const description = parts.slice(2).join(", ") || null;
+        if (parts.length >= 3) {
+          const name = parts[0];
+          const category = parts[1];
+          const city = parts[2];
+          const phone = parts[3] || userPhone;
           
-          // Create listing
-          const { data: newListing, error } = await supabase
-            .from("marketplace_listings")
+          // Add to business_directory
+          const { data: newBiz, error } = await supabase
+            .from("business_directory")
             .insert({
-              seller_phone: userPhone,
-              title,
-              price,
-              description,
-              images: state.pendingListing.images || [],
-              status: "active"
+              name,
+              category,
+              city,
+              address: city, // Default address to city
+              phone,
+              status: "NEW",
+              source: "whatsapp_registration"
             })
-            .select("id, title, price")
+            .select("id, name, category, city")
             .single();
           
           if (error) {
-            logEvent("MARKETPLACE_LISTING_ERROR", { error: error.message }, "error");
-            response = "❌ Sorry, there was an error creating your listing. Please try again.";
+            logEvent("BUSINESS_REGISTER_ERROR", { error: error.message }, "error");
+            response = "❌ Sorry, there was an error registering your business. Please try again.";
           } else {
-            state = { mode: "idle", lastAction: "listing_created" };
-            response = `✅ *Listing Created!*\n\n` +
-              `📦 ${newListing.title}\n` +
-              `💰 ${newListing.price?.toLocaleString() || "Price TBD"} RWF\n\n` +
-              `Your listing is now live! Buyers can contact you on WhatsApp.\n\n` +
-              `Type *my listings* to manage your listings.`;
+            state = { mode: "idle", lastAction: "business_registered" };
+            response = `✅ *Business Registered!*\n\n` +
+              `🏪 ${newBiz.name}\n` +
+              `📂 ${newBiz.category}\n` +
+              `📍 ${newBiz.city}\n\n` +
+              `Your business is now in our directory! Customers can find you by searching.\n\n` +
+              `Type *marketplace* to return to menu.`;
           }
         } else {
-          response = "Please provide details in this format:\n\n*Title, Price, Description*\n\nExample: iPhone 12, 350000, Like new with charger";
+          response = `Please provide details in this format:\n\n` +
+            `*Business Name, Category, City, Phone*\n\n` +
+            `Example: Kigali Pharmacy, Pharmacy, Kigali, 0788123456`;
         }
       }
-      // Handle search mode
-      else if (state.mode === "search") {
+      // Handle search mode (category or location search)
+      else if (state.mode === "search" || text.includes(" in ") || text.includes(" near ")) {
         const searchQuery = text;
+        
+        // Search in business_directory
         const { data: results } = await supabase
-          .from("marketplace_listings")
-          .select("id, title, price, category, location_name")
-          .eq("status", "active")
-          .or(`title.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%,category.ilike.%${searchQuery}%`)
-          .order("created_at", { ascending: false })
+          .from("business_directory")
+          .select("id, name, category, city, phone, rating, address")
+          .neq("status", "DO_NOT_CALL")
+          .or(`name.ilike.%${searchQuery}%,category.ilike.%${searchQuery}%,city.ilike.%${searchQuery}%`)
+          .order("rating", { ascending: false })
           .limit(5);
         
         if (results && results.length > 0) {
           response = `🔍 *Results for "${searchQuery}"*\n\n`;
-          results.forEach((item, i) => {
-            response += `${i + 1}. *${item.title}*\n`;
-            response += `   💰 ${item.price?.toLocaleString() || "Price TBD"} RWF\n\n`;
+          results.forEach((biz, i) => {
+            const stars = biz.rating ? "⭐".repeat(Math.round(biz.rating)) : "";
+            response += `${i + 1}. *${biz.name}*\n`;
+            response += `   📂 ${biz.category}\n`;
+            response += `   📍 ${biz.city}\n`;
+            if (biz.phone) response += `   📞 ${biz.phone}\n`;
+            if (biz.rating) response += `   ${stars}\n`;
+            response += `\n`;
           });
-          response += `Reply with a number for details.`;
+          response += `Reply with a number for more details.`;
         } else {
-          response = `🔍 No results for "${searchQuery}".\n\nTry *browse* to see all items.`;
+          response = `🔍 No businesses found for "${searchQuery}".\n\nTry browsing with *browse* or search a different category.`;
         }
         state = { mode: "idle", lastAction: "search_complete" };
       }
-      // Default handler
+      // Default handler - treat as search
       else {
-        response = `You said: "${text}"\n\nType *marketplace* to see the menu.`;
+        // Try searching with the input
+        const { data: results } = await supabase
+          .from("business_directory")
+          .select("id, name, category, city, phone, rating")
+          .neq("status", "DO_NOT_CALL")
+          .or(`name.ilike.%${text}%,category.ilike.%${text}%,city.ilike.%${text}%`)
+          .order("rating", { ascending: false })
+          .limit(5);
+        
+        if (results && results.length > 0) {
+          response = `🔍 *Results for "${text}"*\n\n`;
+          results.forEach((biz, i) => {
+            response += `${i + 1}. *${biz.name}*\n`;
+            response += `   📂 ${biz.category} | 📍 ${biz.city}\n`;
+            if (biz.phone) response += `   📞 ${biz.phone}\n`;
+            response += `\n`;
+          });
+        } else {
+          response = `I didn't find any businesses matching "${text}".\n\nType *marketplace* to see options.`;
+        }
       }
 
       // Update user state
