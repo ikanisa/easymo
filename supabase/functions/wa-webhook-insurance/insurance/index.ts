@@ -6,6 +6,7 @@ import {
   sendButtonsMessage,
   sendListMessage,
 } from "../../_shared/wa-webhook-shared/utils/reply.ts";
+import { sendText } from "../../_shared/wa-webhook-shared/wa/client.ts";
 import { sendHomeMenu } from "../../_shared/wa-webhook-shared/flows/home.ts";
 import { processInsuranceDocument } from "./ins_handler.ts";
 
@@ -31,19 +32,19 @@ export async function startInsurance(
     {
       title: "🛡️ Motor Insurance",
       body:
-        "Share your insurance certificate for instant review and a quick summary.",
+        "Upload a clear insurance certificate photo or PDF. We’ll read it, summarize the details, and notify our insurance experts instantly.",
       sectionTitle: "Insurance",
       buttonText: "Open",
       rows: [
         {
           id: IDS.INSURANCE_SUBMIT,
-          title: "Submit document",
-          description: "Send a photo or PDF of your certificate.",
+          title: "Submit certificate",
+          description: "Send a clear photo/PDF and we auto-fill all fields.",
         },
         {
           id: IDS.INSURANCE_HELP,
           title: "Help",
-          description: "Contact our support team for assistance.",
+          description: "Chat with an insurance specialist on WhatsApp.",
         },
         {
           id: IDS.BACK_MENU,
@@ -71,7 +72,7 @@ export async function handleInsuranceListSelection(
       });
       await sendButtonsMessage(
         ctx,
-        "📄 Send a clear photo or PDF of your insurance certificate. You can upload multiple pages one after another.",
+        "📄 Send a clear photo or PDF of your insurance certificate. You can upload multiple pages one after another so we capture the full document.",
         buildButtons({ id: IDS.BACK_MENU, title: "Cancel" }),
       );
       return true;
@@ -100,6 +101,9 @@ export async function handleInsuranceMedia(
   const outcome = await processInsuranceDocument(ctx, msg, state.key);
   if (outcome === "ocr_ok" && ctx.profileId) {
     await setState(ctx.supabase, ctx.profileId, { key: STATES.MENU, data: {} });
+  } else if (outcome === "ocr_queued") {
+    await sendText(ctx.from, "Thanks for submitting your insurance certificate! We're processing it now and will send you a summary shortly.");
+    return true; // Handled
   }
   return outcome !== "skipped";
 }

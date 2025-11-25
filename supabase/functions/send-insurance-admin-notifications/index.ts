@@ -31,7 +31,7 @@ serve(async (req) => {
     // Get queued insurance admin notifications
     const { data: notifications, error: fetchError } = await supabase
       .from("notifications")
-      .select("id, to_wa_id, payload")
+      .select("id, to_wa_id, payload, retry_count")
       .eq("notification_type", "insurance_admin_alert")
       .eq("status", "queued")
       .order("created_at")
@@ -61,9 +61,14 @@ serve(async (req) => {
 
     // Send each notification
     for (const notif of notifications) {
+      const payload = notif.payload as Record<string, any> | null;
+      const adminNotificationId = payload?.admin_notification_id as string | undefined;
+      const message = payload?.text || payload?.message;
+      const currentRetries = typeof notif.retry_count === "number"
+        ? notif.retry_count
+        : 0;
+
       try {
-        const message = notif.payload.text || notif.payload.message;
-        
         if (!message) {
           throw new Error("No message text found in payload");
         }
@@ -77,20 +82,23 @@ serve(async (req) => {
           .update({
             status: "sent",
             sent_at: new Date().toISOString(),
+            retry_count: currentRetries,
             updated_at: new Date().toISOString(),
           })
           .eq("id", notif.id);
 
-        // Update insurance_admin_notifications
-        await supabase
-          .from("insurance_admin_notifications")
-          .update({
-            status: "sent",
-            sent_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          })
-          .eq("admin_wa_id", notif.to_wa_id)
-          .eq("status", "queued");
+        if (adminNotificationId) {
+          await supabase
+            .from("insurance_admin_notifications")
+            .update({
+              status: "sent",
+              sent_at: new Date().toISOString(),
+              retry_count: currentRetries,
+              error_message: null,
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", adminNotificationId);
+        }
 
         sent++;
         console.log(`Sent notification to ${notif.to_wa_id}`);
@@ -98,18 +106,32 @@ serve(async (req) => {
         failed++;
         const errorMsg = error instanceof Error ? error.message : String(error);
         errors.push(`${notif.to_wa_id}: ${errorMsg}`);
-        
-        // Mark as failed
+
+        const nextRetry = currentRetries + 1;
+        const failureTime = new Date().toISOString();
+
         await supabase
           .from("notifications")
           .update({
             status: "failed",
             error_message: errorMsg,
-            retry_count: (notif.payload.retry_count || 0) + 1,
-            updated_at: new Date().toISOString(),
+            retry_count: nextRetry,
+            updated_at: failureTime,
           })
           .eq("id", notif.id);
-        
+
+        if (adminNotificationId) {
+          await supabase
+            .from("insurance_admin_notifications")
+            .update({
+              status: "failed",
+              error_message: errorMsg,
+              retry_count: nextRetry,
+              updated_at: failureTime,
+            })
+            .eq("id", adminNotificationId);
+        }
+
         console.error(`Failed to send to ${notif.to_wa_id}:`, error);
       }
     }
