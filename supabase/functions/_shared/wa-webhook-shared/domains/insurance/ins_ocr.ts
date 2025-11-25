@@ -95,50 +95,60 @@ function recordFailure(service: 'openai' | 'gemini'): void {
   }
 }
 
-async function fetchAndResizeImage(signedUrl: string, originalMimeType?: string): Promise<{ base64: string; mimeType: string }> {
+async function fetchAndResizeImage(
+  signedUrl: string,
+  originalMimeType?: string,
+): Promise<{ base64: string; mimeType: string }> {
   const imgResp = await fetch(signedUrl);
   if (!imgResp.ok) throw new Error("Failed to fetch image for processing");
   const arrayBuffer = await imgResp.arrayBuffer();
   const bytes = new Uint8Array(arrayBuffer);
 
-  let image = await ImageScript.decode(bytes);
+  try {
+    let image = await ImageScript.decode(bytes);
 
-  const { width, height } = image;
-  let newWidth = width;
-  let newHeight = height;
+    const { width, height } = image;
+    let newWidth = width;
+    let newHeight = height;
 
-  if (Math.max(width, height) > MAX_IMAGE_LONGEST_EDGE) {
-    if (width > height) {
-      newWidth = MAX_IMAGE_LONGEST_EDGE;
-      newHeight = Math.round(height * (MAX_IMAGE_LONGEST_EDGE / width));
-    } else {
-      newHeight = MAX_IMAGE_LONGEST_EDGE;
-      newWidth = Math.round(width * (MAX_IMAGE_LONGEST_EDGE / height));
+    if (Math.max(width, height) > MAX_IMAGE_LONGEST_EDGE) {
+      if (width > height) {
+        newWidth = MAX_IMAGE_LONGEST_EDGE;
+        newHeight = Math.round(height * (MAX_IMAGE_LONGEST_EDGE / width));
+      } else {
+        newHeight = MAX_IMAGE_LONGEST_EDGE;
+        newWidth = Math.round(width * (MAX_IMAGE_LONGEST_EDGE / height));
+      }
+      image = image.resize(newWidth, newHeight);
     }
-    image = image.resize(newWidth, newHeight);
+
+    let outputMimeType = originalMimeType || "image/jpeg";
+    let encodedBytes: Uint8Array;
+
+    if (outputMimeType.includes("png")) {
+      encodedBytes = await image.encode(MIME_PNG);
+    } else if (outputMimeType.includes("jpeg") || outputMimeType.includes("jpg")) {
+      encodedBytes = await image.encode(MIME_JPEG);
+      outputMimeType = "image/jpeg";
+    } else if (outputMimeType.includes("webp")) {
+      encodedBytes = await image.encode(MIME_WEBP);
+    } else {
+      encodedBytes = await image.encode(MIME_JPEG);
+      outputMimeType = "image/jpeg";
+    }
+
+    const base64 = btoa(String.fromCharCode(...encodedBytes));
+    return { base64, mimeType: outputMimeType };
+  } catch (err) {
+    console.warn("INS_OCR_RESIZE_FAIL", {
+      error: err instanceof Error ? err.message : String(err ?? "unknown"),
+    });
+    const base64 = btoa(String.fromCharCode(...bytes));
+    return {
+      base64,
+      mimeType: originalMimeType || "image/jpeg",
+    };
   }
-
-  // Encode back to original mime type if supported, otherwise default to JPEG
-  let outputMimeType = originalMimeType || "image/jpeg";
-  let encodedBytes: Uint8Array;
-
-  // ImageScript's encode function needs the MIME type to determine the output format.
-  // It returns a Promise<Uint8Array>.
-  if (outputMimeType.includes("png")) {
-    encodedBytes = await image.encode(MIME_PNG);
-  } else if (outputMimeType.includes("jpeg") || outputMimeType.includes("jpg")) {
-    encodedBytes = await image.encode(MIME_JPEG);
-    outputMimeType = "image/jpeg"; // Ensure consistency
-  } else if (outputMimeType.includes("webp")) { // Handle webp if needed
-    encodedBytes = await image.encode(MIME_WEBP);
-  } else {
-    // Default to JPEG for broadest compatibility and compression
-    encodedBytes = await image.encode(MIME_JPEG);
-    outputMimeType = "image/jpeg";
-  }
-
-  const base64 = btoa(String.fromCharCode(...encodedBytes));
-  return { base64, mimeType: outputMimeType };
 }
 
 
