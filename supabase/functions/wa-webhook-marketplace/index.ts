@@ -14,6 +14,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { logStructuredEvent, recordMetric } from "../_shared/observability.ts";
+import { verifyWebhookSignature } from "../_shared/webhook-utils.ts";
 import { MarketplaceAgent } from "./agent.ts";
 import {
   extractWhatsAppMessage,
@@ -38,32 +39,117 @@ const AI_AGENT_ENABLED = Deno.env.get("FEATURE_MARKETPLACE_AI") === "true";
 
 serve(async (req: Request): Promise<Response> => {
   const requestId = req.headers.get("x-request-id") ?? crypto.randomUUID();
+  const correlationId = req.headers.get("x-correlation-id") ?? requestId;
+
+  const respond = (body: unknown, init: ResponseInit = {}): Response => {
+    const headers = new Headers(init.headers);
+    headers.set("Content-Type", "application/json");
+    headers.set("X-Request-ID", requestId);
+    headers.set("X-Correlation-ID", correlationId);
+    return new Response(JSON.stringify(body), { ...init, headers });
+  };
 
   // Health check endpoint
   if (req.method === "GET") {
-    return new Response(
-      JSON.stringify({
-        status: "healthy",
-        service: "wa-webhook-marketplace",
-        aiEnabled: AI_AGENT_ENABLED,
-        timestamp: new Date().toISOString(),
-      }),
-      { headers: { "Content-Type": "application/json" } },
-    );
+    return respond({
+      status: "healthy",
+      service: "wa-webhook-marketplace",
+      aiEnabled: AI_AGENT_ENABLED,
+      timestamp: new Date().toISOString(),
+    });
   }
 
   if (req.method === "POST") {
     const startTime = Date.now();
 
     try {
-      const payload = await req.json();
+      // Read raw body for signature verification
+      const rawBody = await req.text();
+
+      // Verify WhatsApp signature (Security requirement per docs/GROUND_RULES.md)
+      const signatureHeader = req.headers.has("x-hub-signature-256")
+        ? "x-hub-signature-256"
+        : req.headers.has("x-hub-signature")
+        ? "x-hub-signature"
+        : null;
+      const signature = signatureHeader ? req.headers.get(signatureHeader) : null;
+      const signatureMeta = (() => {
+        if (!signature) {
+          return {
+            provided: false,
+            header: signatureHeader,
+            method: null as string | null,
+            sample: null as string | null,
+          };
+        }
+        const [method, hash] = signature.split("=", 2);
+        return {
+          provided: true,
+          header: signatureHeader,
+          method: method?.toLowerCase() ?? null,
+          sample: hash ? `${hash.slice(0, 6)}…${hash.slice(-4)}` : null,
+        };
+      })();
+      const appSecret = Deno.env.get("WHATSAPP_APP_SECRET") ?? Deno.env.get("WA_APP_SECRET");
+      const allowUnsigned = (Deno.env.get("WA_ALLOW_UNSIGNED_WEBHOOKS") ?? "false").toLowerCase() === "true";
+      const internalForward = req.headers.get("x-wa-internal-forward") === "true";
+
+      if (!appSecret) {
+        logStructuredEvent("MARKETPLACE_AUTH_CONFIG_ERROR", {
+          error: "WHATSAPP_APP_SECRET not configured",
+          correlationId,
+        }, "error");
+        return respond({ error: "server_misconfigured" }, { status: 500 });
+      }
+
+      let isValidSignature = false;
+      if (signature) {
+        try {
+          isValidSignature = await verifyWebhookSignature(rawBody, signature, appSecret);
+          if (isValidSignature) {
+            logStructuredEvent("MARKETPLACE_SIGNATURE_VALID", {
+              signatureHeader,
+              signatureMethod: signatureMeta.method,
+              correlationId,
+            });
+          }
+        } catch (err) {
+          logStructuredEvent("MARKETPLACE_SIGNATURE_ERROR", {
+            error: err instanceof Error ? err.message : String(err),
+            correlationId,
+          }, "error");
+        }
+      }
+
+      if (!isValidSignature) {
+        if (allowUnsigned || internalForward) {
+          logStructuredEvent("MARKETPLACE_AUTH_BYPASS", {
+            reason: internalForward ? "internal_forward" : signature ? "signature_mismatch" : "no_signature",
+            signatureHeader,
+            signatureMethod: signatureMeta.method,
+            signatureSample: signatureMeta.sample,
+            userAgent: req.headers.get("user-agent"),
+            correlationId,
+          }, "warn");
+        } else {
+          logStructuredEvent("MARKETPLACE_AUTH_FAILED", {
+            signatureProvided: signatureMeta.provided,
+            signatureHeader,
+            signatureMethod: signatureMeta.method,
+            signatureSample: signatureMeta.sample,
+            userAgent: req.headers.get("user-agent"),
+            correlationId,
+          }, "warn");
+          return respond({ error: "unauthorized" }, { status: 401 });
+        }
+      }
+
+      // Parse payload after verification
+      const payload = JSON.parse(rawBody);
       const message = extractWhatsAppMessage(payload);
 
       if (!message?.from) {
-        return new Response(
-          JSON.stringify({ success: true, ignored: "no_message" }),
-          { headers: { "Content-Type": "application/json" } },
-        );
+        return respond({ success: true, ignored: "no_message" });
       }
 
       const text = message.body?.trim() ?? "";
@@ -106,9 +192,7 @@ serve(async (req: Request): Promise<Response> => {
         duration_ms: duration,
       });
 
-      return new Response(JSON.stringify({ success: true }), {
-        headers: { "Content-Type": "application/json" },
-      });
+      return respond({ success: true });
     } catch (error) {
       const duration = Date.now() - startTime;
       logMarketplaceEvent(
@@ -117,20 +201,18 @@ serve(async (req: Request): Promise<Response> => {
           error: error instanceof Error ? error.message : String(error),
           durationMs: duration,
           requestId,
+          correlationId,
         },
         "error",
       );
 
       recordMetric("marketplace.message.error", 1);
 
-      return new Response(JSON.stringify({ error: String(error) }), {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
-      });
+      return respond({ error: String(error) }, { status: 500 });
     }
   }
 
-  return new Response("OK");
+  return respond({ error: "method_not_allowed" }, { status: 405 });
 });
 
 // =====================================================
