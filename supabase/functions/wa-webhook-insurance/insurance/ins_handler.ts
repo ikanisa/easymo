@@ -18,6 +18,9 @@ import { emitAlert } from "../../_shared/wa-webhook-shared/observe/alert.ts";
 import { supabase as sharedSupabase } from "../../_shared/wa-webhook-shared/config.ts";
 import { allocateInsuranceBonus } from "../../_shared/wa-webhook-shared/wallet/allocate.ts";
 
+const INLINE_OCR_ENABLED = (Deno.env.get("INSURANCE_INLINE_OCR") ?? "true")
+  .toLowerCase() !== "false";
+
 const ADMIN_ALERT_TYPE = "insurance_document";
 
 function normalizeClientDigits(e164: string): string {
@@ -294,6 +297,83 @@ async function maybeEnqueueForWorker(
   }
 }
 
+type InlineOcrParams = {
+  leadId: string;
+  profileId: string | null;
+  waId: string;
+  mime: string;
+  signedUrl: string;
+  storagePath: string;
+};
+
+async function processInlineOcr(
+  ctx: RouterContext,
+  params: InlineOcrParams,
+): Promise<boolean> {
+  try {
+    const raw = await runInsuranceOCR(params.signedUrl, params.mime);
+    const normalized = normalizeInsuranceExtraction(raw);
+
+    await ctx.supabase
+      .from("insurance_leads")
+      .update({
+        raw_ocr: raw,
+        extracted: normalized,
+        extracted_json: normalized,
+        status: "ocr_ok",
+        file_path: params.storagePath,
+      })
+      .eq("id", params.leadId);
+
+    await notifyInsuranceAdmins(ctx.supabase, {
+      leadId: params.leadId,
+      userWaId: params.waId,
+      extracted: normalized,
+      documentUrl: params.signedUrl,
+    });
+
+    const summary = buildUserSummary(normalized);
+    await sendText(params.waId, summary);
+
+    if (params.profileId) {
+      try {
+        const bonus = await allocateInsuranceBonus(
+          ctx.supabase,
+          params.profileId,
+          params.leadId,
+          2000,
+        );
+        if (bonus.success && bonus.message) {
+          await sendText(params.waId, bonus.message);
+        }
+      } catch (bonusError) {
+        console.warn("INS_INLINE_BONUS_FAIL", {
+          leadId: params.leadId,
+          error: bonusError instanceof Error
+            ? bonusError.message
+            : String(bonusError),
+        });
+      }
+    }
+
+    await logStructuredEvent("INS_INLINE_OCR_OK", {
+      leadId: params.leadId,
+    });
+    return true;
+  } catch (error) {
+    const errMsg = error instanceof Error ? error.message : String(error);
+    console.warn("INS_INLINE_OCR_FAIL", {
+      leadId: params.leadId,
+      error: errMsg,
+    });
+    await logStructuredEvent("INS_INLINE_OCR_FAIL", {
+      leadId: params.leadId,
+      error: errMsg,
+    });
+    return false;
+  }
+}
+
 export async function processInsuranceDocument(
   ctx: RouterContext,
   msg: Record<string, unknown>,
@@ -335,7 +415,6 @@ export async function processInsuranceDocument(
   if (!mediaId) return "skipped";
 
   let leadId = "";
-  let ocrAttempted = false;
   try {
     console.info("INS_LEAD_UPSERT_START", { from: ctx.from, profileId });
     const lead = await upsertLead(ctx, profileId);
@@ -350,7 +429,20 @@ export async function processInsuranceDocument(
     );
     await insertMediaRecord(ctx, leadId, mediaId, path, media.mime);
 
-
+    if (INLINE_OCR_ENABLED) {
+      const inlineSuccess = await processInlineOcr(ctx, {
+        leadId,
+        profileId,
+        waId: ctx.from,
+        mime: media.mime,
+        signedUrl,
+        storagePath: path,
+      });
+      if (inlineSuccess) {
+        return "ocr_ok";
+      }
+      console.warn("INS_INLINE_OCR_FALLBACK_QUEUE", { leadId });
+    }
 
     // Enqueue to worker for OCR processing
     await maybeEnqueueForWorker(ctx, leadId, path, media.mime);
