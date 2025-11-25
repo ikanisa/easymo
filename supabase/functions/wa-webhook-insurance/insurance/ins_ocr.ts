@@ -272,7 +272,7 @@ export async function runInsuranceOCR(
           if (response.status >= 500 && response.status < 600) {
             console.warn("INS_OCR_RETRYABLE_STATUS", { status: response.status });
             lastError = new Error(`openai_${response.status}`);
-            recordFailure('openai');
+            // Don't record failure during retries - only record once after all retries exhausted
             continue;
           }
 
@@ -282,6 +282,7 @@ export async function runInsuranceOCR(
               status: response.status,
               text: text?.slice(0, 200),
             });
+            // Record failure for non-retryable errors
             recordFailure('openai');
             throw new Error(`OpenAI request failed: ${response.status} ${text}`);
           }
@@ -311,13 +312,13 @@ export async function runInsuranceOCR(
           } else {
             lastError = new Error(String(error ?? "unknown_error"));
           }
-
-          recordFailure('openai');
           
           const isRetryable = attempt < MAX_RETRIES - 1 &&
             (lastError instanceof Error) &&
             /openai_5/.test(lastError.message);
           if (!isRetryable) {
+            // Only record failure once after all retries are exhausted
+            recordFailure('openai');
             console.error("INS_OCR_ERROR", {
               error: lastError instanceof Error
                 ? lastError.message
