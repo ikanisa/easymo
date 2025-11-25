@@ -2,7 +2,7 @@
  * Error Handling Tests
  */
 
-import { z,ZodError } from "zod";
+import { z, ZodError } from "zod";
 
 import {
   AppError,

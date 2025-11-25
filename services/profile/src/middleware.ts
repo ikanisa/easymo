@@ -1,4 +1,4 @@
-import { NextFunction,Request, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 
 import { settings } from "./config";
 import { AppError, ErrorCodes } from "./errors";

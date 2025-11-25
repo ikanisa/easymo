@@ -4,7 +4,7 @@ import express from "express";
 import pinoHttp from "pino-http";
 
 import { settings } from "./config";
-import { AppError, ErrorCodes,errorHandler, notFoundHandler } from "./errors";
+import { AppError, ErrorCodes, errorHandler, notFoundHandler } from "./errors";
 import { logger } from "./logger";
 import { rateLimitMiddleware, validateRequest } from "./middleware";
 import {
