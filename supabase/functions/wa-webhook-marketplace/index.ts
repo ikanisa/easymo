@@ -17,6 +17,7 @@ import { logStructuredEvent, recordMetric } from "../_shared/observability.ts";
 import { verifyWebhookSignature } from "../_shared/webhook-utils.ts";
 import { sendText } from "../_shared/wa-webhook-shared/wa/client.ts";
 import { MarketplaceAgent } from "./agent.ts";
+import { handleMediaUpload, ensureStorageBucket } from "./media.ts";
 import {
   extractWhatsAppMessage,
   logMarketplaceEvent,
@@ -189,8 +190,22 @@ serve(async (req: Request): Promise<Response> => {
 
       let responseText: string;
 
+      // Handle media uploads (photos, documents)
+      if (message.type === "image" || message.type === "document") {
+        if (AI_AGENT_ENABLED) {
+          const context = await MarketplaceAgent.loadContext(userPhone, supabase);
+          responseText = await handleMediaUpload(
+            userPhone,
+            message,
+            context,
+            supabase
+          );
+        } else {
+          responseText = "📸 Photo uploads are only available when using the AI assistant. Please enable AI mode.";
+        }
+      }
       // Use AI agent if enabled, otherwise fall back to menu-based approach
-      if (AI_AGENT_ENABLED) {
+      else if (AI_AGENT_ENABLED) {
         responseText = await handleWithAIAgent(
           userPhone,
           text,
