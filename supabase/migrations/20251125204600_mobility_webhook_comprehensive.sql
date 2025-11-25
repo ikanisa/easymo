@@ -178,36 +178,9 @@ CREATE INDEX IF NOT EXISTS idx_driver_insurance_status ON driver_insurance(statu
 CREATE INDEX IF NOT EXISTS idx_driver_insurance_expiry ON driver_insurance(policy_expiry);
 
 -- ============================================================================
--- DRIVER LICENSES
+-- DRIVER LICENSES (defined in 20251126040000_mobility_payment_verification.sql)
 -- ============================================================================
-
-CREATE TABLE IF NOT EXISTS driver_licenses (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID REFERENCES profiles(user_id) ON DELETE CASCADE,
-  license_number TEXT NOT NULL,
-  full_name TEXT NOT NULL,
-  date_of_birth DATE,
-  expiry_date DATE NOT NULL,
-  issuing_country TEXT DEFAULT 'RW',
-  license_class TEXT,
-  image_url TEXT,
-  media_id TEXT,
-  ocr_provider TEXT CHECK (ocr_provider IN ('openai', 'gemini')),
-  ocr_raw_data JSONB,
-  status TEXT DEFAULT 'pending' CHECK (status IN (
-    'pending', 'verified', 'expired', 'rejected'
-  )),
-  verified_at TIMESTAMPTZ,
-  rejected_reason TEXT,
-  created_at TIMESTAMPTZ DEFAULT now(),
-  updated_at TIMESTAMPTZ DEFAULT now(),
-  UNIQUE(user_id)
-);
-
-CREATE INDEX IF NOT EXISTS idx_driver_licenses_user ON driver_licenses(user_id);
-CREATE INDEX IF NOT EXISTS idx_driver_licenses_number ON driver_licenses(license_number);
-CREATE INDEX IF NOT EXISTS idx_driver_licenses_status ON driver_licenses(status);
-CREATE INDEX IF NOT EXISTS idx_driver_licenses_expiry ON driver_licenses(expiry_date);
+-- Skipped to avoid duplication
 
 -- ============================================================================
 -- INTENT CACHE

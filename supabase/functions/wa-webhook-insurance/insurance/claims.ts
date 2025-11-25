@@ -1,6 +1,7 @@
 import type { RouterContext } from "../../_shared/wa-webhook-shared/types.ts";
 import { setState, getState } from "../../_shared/wa-webhook-shared/state/store.ts";
-import { sendListMessage, sendText, sendButtonsMessage } from "../../_shared/wa-webhook-shared/wa/client.ts";
+import { sendListMessage, sendButtonsMessage } from "../../_shared/wa-webhook-shared/utils/reply.ts";
+import { sendText } from "../../_shared/wa-webhook-shared/wa/client.ts";
 import { IDS } from "../../_shared/wa-webhook-shared/wa/ids.ts";
 import { logStructuredEvent } from "../../_shared/observability.ts";
 
