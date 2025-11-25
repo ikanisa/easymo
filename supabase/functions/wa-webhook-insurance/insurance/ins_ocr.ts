@@ -282,8 +282,7 @@ export async function runInsuranceOCR(
               status: response.status,
               text: text?.slice(0, 200),
             });
-            // Record failure for non-retryable errors
-            recordFailure('openai');
+            // Non-retryable error - will be caught and failure recorded in catch block
             throw new Error(`OpenAI request failed: ${response.status} ${text}`);
           }
 
@@ -317,7 +316,7 @@ export async function runInsuranceOCR(
             (lastError instanceof Error) &&
             /openai_5/.test(lastError.message);
           if (!isRetryable) {
-            // Only record failure once after all retries are exhausted
+            // Record failure once after all retries are exhausted (covers all error cases)
             recordFailure('openai');
             console.error("INS_OCR_ERROR", {
               error: lastError instanceof Error

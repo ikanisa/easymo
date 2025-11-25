@@ -7,6 +7,9 @@ import { t } from "../../_shared/wa-webhook-shared/i18n/translator.ts";
 
 const FEATURE_NAME = "motor_insurance";
 
+// Global app config row ID (singleton pattern used by app_config table)
+const APP_CONFIG_ID = 1;
+
 // Default countries (fallback if not configured in app_config)
 const DEFAULT_ALLOWED_COUNTRIES = new Set(["RW"]);
 
@@ -32,11 +35,11 @@ async function getAllowedCountries(ctx: RouterContext): Promise<Set<string>> {
   }
 
   try {
-    // Try to load from app_config table
+    // Try to load from app_config table (singleton row)
     const { data, error } = await ctx.supabase
       .from("app_config")
       .select("insurance_allowed_countries")
-      .eq("id", 1)
+      .eq("id", APP_CONFIG_ID)
       .maybeSingle();
     
     if (error) {
