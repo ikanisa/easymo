@@ -156,6 +156,36 @@ serve(async (req: Request): Promise<Response> => {
           const { handleBusinessSelection } = await import("./business/list.ts");
           handled = await handleBusinessSelection(ctx, businessId);
         }
+        else if (id.startsWith("EDIT_BIZ::")) {
+          const businessId = id.replace("EDIT_BIZ::", "");
+          const { startEditBusiness } = await import("./business/update.ts");
+          handled = await startEditBusiness(ctx, businessId);
+        }
+        else if (id.startsWith("DELETE_BIZ::")) {
+          const businessId = id.replace("DELETE_BIZ::", "");
+          const { confirmDeleteBusiness } = await import("./business/delete.ts");
+          handled = await confirmDeleteBusiness(ctx, businessId);
+        }
+        else if (id.startsWith("CONFIRM_DELETE_BIZ::")) {
+          const businessId = id.replace("CONFIRM_DELETE_BIZ::", "");
+          const { handleDeleteBusiness } = await import("./business/delete.ts");
+          handled = await handleDeleteBusiness(ctx, businessId);
+        }
+        else if (id.startsWith("EDIT_BIZ_NAME::")) {
+          const businessId = id.replace("EDIT_BIZ_NAME::", "");
+          const { promptEditField } = await import("./business/update.ts");
+          handled = await promptEditField(ctx, businessId, "name");
+        }
+        else if (id.startsWith("EDIT_BIZ_DESC::")) {
+          const businessId = id.replace("EDIT_BIZ_DESC::", "");
+          const { promptEditField } = await import("./business/update.ts");
+          handled = await promptEditField(ctx, businessId, "description");
+        }
+        else if (id.startsWith("BACK_BIZ::")) {
+          const businessId = id.replace("BACK_BIZ::", "");
+          const { handleBusinessSelection } = await import("./business/list.ts");
+          handled = await handleBusinessSelection(ctx, businessId);
+        }
         
         // My Jobs
         else if (id === IDS.MY_JOBS || id === "my_jobs") {
@@ -167,6 +197,50 @@ serve(async (req: Request): Promise<Response> => {
           const { handleJobSelection } = await import("./jobs/list.ts");
           handled = await handleJobSelection(ctx, jobId);
         }
+        else if (id === IDS.CREATE_JOB) {
+          const { startCreateJob } = await import("./jobs/create.ts");
+          handled = await startCreateJob(ctx);
+        }
+        else if (id.startsWith("EDIT_JOB::")) {
+          const jobId = id.replace("EDIT_JOB::", "");
+          const { startEditJob } = await import("./jobs/update.ts");
+          handled = await startEditJob(ctx, jobId);
+        }
+        else if (id.startsWith("DELETE_JOB::")) {
+          const jobId = id.replace("DELETE_JOB::", "");
+          const { confirmDeleteJob } = await import("./jobs/delete.ts");
+          handled = await confirmDeleteJob(ctx, jobId);
+        }
+        else if (id.startsWith("CONFIRM_DELETE_JOB::")) {
+          const jobId = id.replace("CONFIRM_DELETE_JOB::", "");
+          const { handleDeleteJob } = await import("./jobs/delete.ts");
+          handled = await handleDeleteJob(ctx, jobId);
+        }
+        else if (id.startsWith("EDIT_JOB_TITLE::")) {
+          const jobId = id.replace("EDIT_JOB_TITLE::", "");
+          const { promptEditJobField } = await import("./jobs/update.ts");
+          handled = await promptEditJobField(ctx, jobId, "title");
+        }
+        else if (id.startsWith("EDIT_JOB_DESC::")) {
+          const jobId = id.replace("EDIT_JOB_DESC::", "");
+          const { promptEditJobField } = await import("./jobs/update.ts");
+          handled = await promptEditJobField(ctx, jobId, "description");
+        }
+        else if (id.startsWith("EDIT_JOB_LOC::")) {
+          const jobId = id.replace("EDIT_JOB_LOC::", "");
+          const { promptEditJobField } = await import("./jobs/update.ts");
+          handled = await promptEditJobField(ctx, jobId, "location");
+        }
+        else if (id.startsWith("EDIT_JOB_REQ::")) {
+          const jobId = id.replace("EDIT_JOB_REQ::", "");
+          const { promptEditJobField } = await import("./jobs/update.ts");
+          handled = await promptEditJobField(ctx, jobId, "requirements");
+        }
+        else if (id.startsWith("BACK_JOB::")) {
+          const jobId = id.replace("BACK_JOB::", "");
+          const { handleJobSelection } = await import("./jobs/list.ts");
+          handled = await handleJobSelection(ctx, jobId);
+        }
         
         // My Properties
         else if (id === IDS.MY_PROPERTIES || id === "my_properties") {
@@ -175,6 +249,50 @@ serve(async (req: Request): Promise<Response> => {
         }
         else if (id.startsWith("PROP::")) {
           const propertyId = id.replace("PROP::", "");
+          const { handlePropertySelection } = await import("./properties/list.ts");
+          handled = await handlePropertySelection(ctx, propertyId);
+        }
+        else if (id === IDS.CREATE_PROPERTY) {
+          const { startCreateProperty } = await import("./properties/create.ts");
+          handled = await startCreateProperty(ctx);
+        }
+        else if (id.startsWith("EDIT_PROP::")) {
+          const propertyId = id.replace("EDIT_PROP::", "");
+          const { startEditProperty } = await import("./properties/update.ts");
+          handled = await startEditProperty(ctx, propertyId);
+        }
+        else if (id.startsWith("DELETE_PROP::")) {
+          const propertyId = id.replace("DELETE_PROP::", "");
+          const { confirmDeleteProperty } = await import("./properties/delete.ts");
+          handled = await confirmDeleteProperty(ctx, propertyId);
+        }
+        else if (id.startsWith("CONFIRM_DELETE_PROP::")) {
+          const propertyId = id.replace("CONFIRM_DELETE_PROP::", "");
+          const { handleDeleteProperty } = await import("./properties/delete.ts");
+          handled = await handleDeleteProperty(ctx, propertyId);
+        }
+        else if (id.startsWith("EDIT_PROP_TITLE::")) {
+          const propertyId = id.replace("EDIT_PROP_TITLE::", "");
+          const { promptEditPropertyField } = await import("./properties/update.ts");
+          handled = await promptEditPropertyField(ctx, propertyId, "title");
+        }
+        else if (id.startsWith("EDIT_PROP_DESC::")) {
+          const propertyId = id.replace("EDIT_PROP_DESC::", "");
+          const { promptEditPropertyField } = await import("./properties/update.ts");
+          handled = await promptEditPropertyField(ctx, propertyId, "description");
+        }
+        else if (id.startsWith("EDIT_PROP_LOC::")) {
+          const propertyId = id.replace("EDIT_PROP_LOC::", "");
+          const { promptEditPropertyField } = await import("./properties/update.ts");
+          handled = await promptEditPropertyField(ctx, propertyId, "location");
+        }
+        else if (id.startsWith("EDIT_PROP_PRICE::")) {
+          const propertyId = id.replace("EDIT_PROP_PRICE::", "");
+          const { promptEditPropertyField } = await import("./properties/update.ts");
+          handled = await promptEditPropertyField(ctx, propertyId, "price");
+        }
+        else if (id.startsWith("BACK_PROP::")) {
+          const propertyId = id.replace("BACK_PROP::", "");
           const { handlePropertySelection } = await import("./properties/list.ts");
           handled = await handlePropertySelection(ctx, propertyId);
         }
@@ -361,6 +479,70 @@ serve(async (req: Request): Promise<Response> => {
       else if (state?.key === "wallet_cashout_phone") {
         const { handleCashOutPhone } = await import("./wallet/cashout.ts");
         handled = await handleCashOutPhone(ctx, text);
+      }
+      
+      // Handle business creation name
+      else if (state?.key === "business_create_name") {
+        const { handleCreateBusinessName } = await import("./business/create.ts");
+        handled = await handleCreateBusinessName(ctx, (message.text as any)?.body ?? "");
+      }
+      
+      // Handle business edit fields
+      else if (state?.key === "business_edit_name") {
+        const { handleUpdateBusinessField } = await import("./business/update.ts");
+        handled = await handleUpdateBusinessField(ctx, state.data.businessId, "name", (message.text as any)?.body ?? "");
+      }
+      else if (state?.key === "business_edit_description") {
+        const { handleUpdateBusinessField } = await import("./business/update.ts");
+        handled = await handleUpdateBusinessField(ctx, state.data.businessId, "description", (message.text as any)?.body ?? "");
+      }
+      
+      // Handle job creation title
+      else if (state?.key === "job_create_title") {
+        const { handleCreateJobTitle } = await import("./jobs/create.ts");
+        handled = await handleCreateJobTitle(ctx, (message.text as any)?.body ?? "");
+      }
+      
+      // Handle job edit fields
+      else if (state?.key === "job_edit_title") {
+        const { handleUpdateJobField } = await import("./jobs/update.ts");
+        handled = await handleUpdateJobField(ctx, state.data.jobId, "title", (message.text as any)?.body ?? "");
+      }
+      else if (state?.key === "job_edit_description") {
+        const { handleUpdateJobField } = await import("./jobs/update.ts");
+        handled = await handleUpdateJobField(ctx, state.data.jobId, "description", (message.text as any)?.body ?? "");
+      }
+      else if (state?.key === "job_edit_location") {
+        const { handleUpdateJobField } = await import("./jobs/update.ts");
+        handled = await handleUpdateJobField(ctx, state.data.jobId, "location", (message.text as any)?.body ?? "");
+      }
+      else if (state?.key === "job_edit_requirements") {
+        const { handleUpdateJobField } = await import("./jobs/update.ts");
+        handled = await handleUpdateJobField(ctx, state.data.jobId, "requirements", (message.text as any)?.body ?? "");
+      }
+      
+      // Handle property creation title
+      else if (state?.key === "property_create_title") {
+        const { handleCreatePropertyTitle } = await import("./properties/create.ts");
+        handled = await handleCreatePropertyTitle(ctx, (message.text as any)?.body ?? "");
+      }
+      
+      // Handle property edit fields
+      else if (state?.key === "property_edit_title") {
+        const { handleUpdatePropertyField } = await import("./properties/update.ts");
+        handled = await handleUpdatePropertyField(ctx, state.data.propertyId, "title", (message.text as any)?.body ?? "");
+      }
+      else if (state?.key === "property_edit_description") {
+        const { handleUpdatePropertyField } = await import("./properties/update.ts");
+        handled = await handleUpdatePropertyField(ctx, state.data.propertyId, "description", (message.text as any)?.body ?? "");
+      }
+      else if (state?.key === "property_edit_location") {
+        const { handleUpdatePropertyField } = await import("./properties/update.ts");
+        handled = await handleUpdatePropertyField(ctx, state.data.propertyId, "location", (message.text as any)?.body ?? "");
+      }
+      else if (state?.key === "property_edit_price") {
+        const { handleUpdatePropertyField } = await import("./properties/update.ts");
+        handled = await handleUpdatePropertyField(ctx, state.data.propertyId, "price", (message.text as any)?.body ?? "");
       }
     }
 

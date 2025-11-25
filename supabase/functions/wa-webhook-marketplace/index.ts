@@ -19,6 +19,11 @@ import { sendText } from "../_shared/wa-webhook-shared/wa/client.ts";
 import { MarketplaceAgent } from "./agent.ts";
 import { handleMediaUpload, ensureStorageBucket } from "./media.ts";
 import {
+  isPaymentCommand,
+  handlePaymentCommand,
+  showTransactionStatus,
+} from "./payment-handler.ts";
+import {
   extractWhatsAppMessage,
   logMarketplaceEvent,
   parseLocationFromText,
@@ -262,8 +267,26 @@ async function handleWithAIAgent(
   requestId: string,
 ): Promise<string> {
   try {
-    // Handle special commands that reset context
+    // Check for payment commands first
+    if (isPaymentCommand(text)) {
+      const paymentResponse = await handlePaymentCommand({
+        phone: userPhone,
+        text,
+        supabase,
+      });
+      
+      if (paymentResponse) {
+        return paymentResponse;
+      }
+    }
+
+    // Check for transaction status request
     const textLower = text.toLowerCase();
+    if (textLower === "my transactions" || textLower === "status" || textLower === "transaction status") {
+      return await showTransactionStatus(userPhone, supabase);
+    }
+
+    // Handle special commands that reset context
     if (
       textLower === "reset" ||
       textLower === "start over" ||
@@ -275,7 +298,8 @@ async function handleWithAIAgent(
         "I'm your EasyMO Marketplace assistant. I can help you:\n" +
         "• *Sell* something (just tell me what you want to sell)\n" +
         "• *Find* products, services, or businesses\n" +
-        "• *Connect* with buyers and sellers near you\n\n" +
+        "• *Connect* with buyers and sellers near you\n" +
+        "• *Track* transactions (reply 'STATUS')\n\n" +
         "What would you like to do?"
       );
     }
@@ -296,7 +320,8 @@ async function handleWithAIAgent(
         "You can:\n" +
         "• Say what you want to *sell* (e.g., \"I want to sell my dining table\")\n" +
         "• Say what you're *looking for* (e.g., \"Looking for a pharmacy nearby\")\n" +
-        "• Ask about *businesses* (e.g., \"Where can I find a plumber?\")\n\n" +
+        "• Ask about *businesses* (e.g., \"Where can I find a plumber?\")\n" +
+        "• Check *transaction status* (reply 'STATUS')\n\n" +
         "Just tell me what you need in your own words!"
       );
     }

@@ -1,6 +1,7 @@
 import type { RouterContext } from "../../_shared/wa-webhook-shared/types.ts";
 import { setState, getState } from "../../_shared/wa-webhook-shared/state/store.ts";
-import { sendListMessage, sendText, sendButtonsMessage } from "../../_shared/wa-webhook-shared/wa/client.ts";
+import { sendListMessage, sendButtonsMessage } from "../../_shared/wa-webhook-shared/utils/reply.ts";
+import { sendText } from "../../_shared/wa-webhook-shared/wa/client.ts";
 import { logStructuredEvent } from "../../_shared/observability.ts";
 import { IDS } from "../../_shared/wa-webhook-shared/wa/ids.ts";
 
@@ -159,7 +160,8 @@ async function initiatePurchase(
 export async function confirmPurchase(
   supabase: any,
   purchaseId: string,
-  momoTransactionId: string
+  momoTransactionId: string,
+  notifier?: (to: string, body: string) => Promise<void>
 ): Promise<boolean> {
   try {
     const { data: purchase } = await supabase
@@ -197,8 +199,8 @@ export async function confirmPurchase(
       .eq("id", purchaseId);
 
     // Notify user
-    const { sendText } = await import("../../_shared/wa-webhook-shared/wa/client.ts");
-    await sendText(purchase.user_wa_id,
+    const sendTextFn = notifier || (await import("../../_shared/wa-webhook-shared/wa/client.ts")).sendText;
+    await sendTextFn(purchase.user_wa_id,
       `✅ *Purchase Complete!*\n\n` +
       `${purchase.token_amount.toLocaleString()} tokens added to your wallet.\n\n` +
       `Type 'wallet' to view your balance.`

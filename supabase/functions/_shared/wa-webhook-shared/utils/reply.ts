@@ -17,7 +17,14 @@ function coerceBody(body: string, emojiPrefix = ""): string {
   const prefix = emojiPrefix ? `${emojiPrefix} ` : "";
   return `${prefix}${trimmed}`.trim();
 }
-
+export async function sendTextMessage(
+  ctx: RouterContext,
+  body: string,
+  options: { emoji?: string } = {},
+): Promise<void> {
+  const { sendText } = await import("../wa/client.ts");
+  await sendText(ctx.from, coerceBody(body, options.emoji ?? ""));
+}
 export async function sendButtonsMessage(
   ctx: RouterContext,
   body: string,
