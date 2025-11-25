@@ -2,7 +2,6 @@ import { GEMINI_API_KEY } from "../../config.ts";
 import { supabase as sharedSupabase } from "../../config.ts";
 import { openaiCircuitBreaker, geminiCircuitBreaker } from "./circuit_breaker.ts";
 import * as ImageScript from "https://deno.land/x/imagescript@1.2.15/mod.ts";
-import { MIME_PNG, MIME_JPEG, MIME_WebP } from "https://deno.land/x/imagescript@1.2.15/mod.ts";
 
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY") ?? "";
 const OPENAI_VISION_MODEL = Deno.env.get("OPENAI_VISION_MODEL") ??
