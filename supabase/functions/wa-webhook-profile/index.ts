@@ -53,7 +53,7 @@ serve(async (req: Request): Promise<Response> => {
     } catch (err) {
       return respond({
         status: "unhealthy",
-        service: "wa-webhook-wallet",
+        service: "wa-webhook-profile",
         error: err instanceof Error ? err.message : String(err),
       }, { status: 503 });
     }
@@ -66,16 +66,20 @@ serve(async (req: Request): Promise<Response> => {
     const challenge = url.searchParams.get("hub.challenge");
 
     if (mode === "subscribe" && token === Deno.env.get("WA_VERIFY_TOKEN")) {
-      return new Response(challenge ?? "", { status: 200 });
+      return new Response(challenge ?? "", { 
+        status: 200,
+        headers: { "X-Request-ID": requestId, "X-Correlation-ID": correlationId },
+      });
     }
     return respond({ error: "forbidden" }, { status: 403 });
   }
 
-  // Main webhook handler
+  // Only POST is allowed for webhook messages
   if (req.method !== "POST") {
     return respond({ error: "method_not_allowed" }, { status: 405 });
   }
 
+  // Main webhook handler
   try {
     // Read raw body for signature verification
     const rawBody = await req.text();

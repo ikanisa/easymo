@@ -49,20 +49,43 @@ serve(async (req: Request): Promise<Response> => {
     return new Response(JSON.stringify(body), { ...init, headers });
   };
 
-  // Health check endpoint
+  // Health check and webhook verification endpoint (GET)
   if (req.method === "GET") {
-    return respond({
-      status: "healthy",
-      service: "wa-webhook-marketplace",
-      aiEnabled: AI_AGENT_ENABLED,
-      timestamp: new Date().toISOString(),
-    });
+    const url = new URL(req.url);
+    const mode = url.searchParams.get("hub.mode");
+    const token = url.searchParams.get("hub.verify_token");
+    const challenge = url.searchParams.get("hub.challenge");
+
+    // WhatsApp webhook verification
+    if (mode === "subscribe" && token === Deno.env.get("WA_VERIFY_TOKEN")) {
+      return new Response(challenge ?? "", { 
+        status: 200,
+        headers: { "X-Request-ID": requestId, "X-Correlation-ID": correlationId },
+      });
+    }
+
+    // Health check (no verification params)
+    if (!mode && !token) {
+      return respond({
+        status: "healthy",
+        service: "wa-webhook-marketplace",
+        aiEnabled: AI_AGENT_ENABLED,
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    // Invalid verification attempt
+    return respond({ error: "forbidden" }, { status: 403 });
   }
 
-  if (req.method === "POST") {
-    const startTime = Date.now();
+  // Only POST is allowed for webhook messages
+  if (req.method !== "POST") {
+    return respond({ error: "method_not_allowed" }, { status: 405 });
+  }
 
-    try {
+  const startTime = Date.now();
+
+  try {
       // Read raw body for signature verification
       const rawBody = await req.text();
 
@@ -210,9 +233,6 @@ serve(async (req: Request): Promise<Response> => {
 
       return respond({ error: String(error) }, { status: 500 });
     }
-  }
-
-  return respond({ error: "method_not_allowed" }, { status: 405 });
 });
 
 // =====================================================
