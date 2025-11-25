@@ -67,7 +67,29 @@ serve(async (req: Request): Promise<Response> => {
     const rawBody = await req.text();
     
     // Verify WhatsApp signature (SECURITY FIX)
-    const signature = req.headers.get("x-hub-signature-256");
+    const signatureHeader = req.headers.has("x-hub-signature-256")
+      ? "x-hub-signature-256"
+      : req.headers.has("x-hub-signature")
+      ? "x-hub-signature"
+      : null;
+    const signature = signatureHeader ? req.headers.get(signatureHeader) : null;
+    const signatureMeta = (() => {
+      if (!signature) {
+        return {
+          provided: false,
+          header: signatureHeader,
+          method: null as string | null,
+          sample: null as string | null,
+        };
+      }
+      const [method, hash] = signature.split("=", 2);
+      return {
+        provided: true,
+        header: signatureHeader,
+        method: method?.toLowerCase() ?? null,
+        sample: hash ? `${hash.slice(0, 6)}…${hash.slice(-4)}` : null,
+      };
+    })();
     const appSecret = Deno.env.get("WHATSAPP_APP_SECRET");
     
     if (!appSecret) {
@@ -79,15 +101,28 @@ serve(async (req: Request): Promise<Response> => {
     }
     
     if (!signature) {
-      await logStructuredEvent("AI_AGENTS_MISSING_SIGNATURE", { correlationId }, "warn");
+      await logStructuredEvent("AI_AGENTS_MISSING_SIGNATURE", {
+        correlationId,
+        signatureHeader,
+      }, "warn");
       return respond({ error: "missing_signature" }, { status: 401 });
     }
     
     const isValid = await verifyWebhookSignature(rawBody, signature, appSecret);
     if (!isValid) {
-      await logStructuredEvent("AI_AGENTS_INVALID_SIGNATURE", { correlationId }, "error");
+      await logStructuredEvent("AI_AGENTS_INVALID_SIGNATURE", {
+        correlationId,
+        signatureHeader,
+        signatureMethod: signatureMeta.method,
+        signatureSample: signatureMeta.sample,
+      }, "error");
       return respond({ error: "invalid_signature" }, { status: 401 });
     }
+    await logStructuredEvent("AI_AGENTS_SIGNATURE_VALID", {
+      correlationId,
+      signatureHeader,
+      signatureMethod: signatureMeta.method,
+    }, "debug");
     
     const payload = JSON.parse(rawBody);
     
