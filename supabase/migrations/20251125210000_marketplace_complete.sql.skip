@@ -1,0 +1,296 @@
+-- ============================================================================
+-- Marketplace Complete Migration
+-- Creates all required tables, functions, and indexes for marketplace feature
+-- ============================================================================
+
+BEGIN;
+
+-- ============================================================================
+-- TABLES
+-- ============================================================================
+
+-- Marketplace Listings (Products/Services for sale)
+CREATE TABLE IF NOT EXISTS marketplace_listings (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  seller_phone TEXT NOT NULL,
+  listing_type TEXT DEFAULT 'product' CHECK (listing_type IN ('product', 'service')),
+  title TEXT NOT NULL,
+  product_name TEXT,
+  description TEXT,
+  price NUMERIC,
+  currency TEXT DEFAULT 'RWF',
+  location_text TEXT,
+  lat NUMERIC,
+  lng NUMERIC,
+  attributes JSONB DEFAULT '{}',
+  images TEXT[], -- Array of storage paths
+  status TEXT DEFAULT 'active' CHECK (status IN ('active', 'sold', 'expired', 'deleted')),
+  view_count INTEGER DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now(),
+  expires_at TIMESTAMPTZ,
+  country_code TEXT DEFAULT 'RW'
+);
+
+-- Marketplace Conversations (AI Agent State)
+CREATE TABLE IF NOT EXISTS marketplace_conversations (
+  phone TEXT PRIMARY KEY,
+  flow_type TEXT CHECK (flow_type IN ('selling', 'buying', 'inquiry')),
+  flow_step TEXT,
+  collected_data JSONB DEFAULT '{}',
+  conversation_history JSONB DEFAULT '[]',
+  last_ai_response TEXT,
+  current_listing_id UUID REFERENCES marketplace_listings(id) ON DELETE SET NULL,
+  current_intent_id UUID,
+  location JSONB,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- Marketplace Matches (Buyer-Seller Connections)
+CREATE TABLE IF NOT EXISTS marketplace_matches (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  listing_id UUID REFERENCES marketplace_listings(id) ON DELETE CASCADE,
+  buyer_phone TEXT NOT NULL,
+  seller_phone TEXT NOT NULL,
+  distance_km NUMERIC,
+  match_score NUMERIC,
+  status TEXT DEFAULT 'suggested' CHECK (status IN ('suggested', 'contacted', 'connected', 'completed')),
+  buyer_notified_at TIMESTAMPTZ,
+  seller_notified_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- Marketplace Buyer Intents (What buyers are looking for)
+CREATE TABLE IF NOT EXISTS marketplace_buyer_intents (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  buyer_phone TEXT NOT NULL,
+  looking_for TEXT NOT NULL,
+  description TEXT,
+  max_price NUMERIC,
+  location_text TEXT,
+  lat NUMERIC,
+  lng NUMERIC,
+  radius_km NUMERIC DEFAULT 10,
+  status TEXT DEFAULT 'active' CHECK (status IN ('active', 'matched', 'expired')),
+  created_at TIMESTAMPTZ DEFAULT now(),
+  expires_at TIMESTAMPTZ,
+  country_code TEXT DEFAULT 'RW'
+);
+
+-- Marketplace Transactions
+CREATE TABLE IF NOT EXISTS marketplace_transactions (
+  id TEXT PRIMARY KEY, -- Generated transaction ID
+  listing_id UUID REFERENCES marketplace_listings(id) ON DELETE SET NULL,
+  buyer_phone TEXT NOT NULL,
+  seller_phone TEXT NOT NULL,
+  agreed_price NUMERIC NOT NULL,
+  currency TEXT DEFAULT 'RWF',
+  payment_method TEXT, -- 'momo_ussd', 'cash', etc.
+  payment_reference TEXT,
+  status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'initiated', 'success', 'failed', 'cancelled')),
+  created_at TIMESTAMPTZ DEFAULT now(),
+  completed_at TIMESTAMPTZ
+);
+
+-- ============================================================================
+-- INDEXES
+-- ============================================================================
+
+-- Marketplace Listings
+CREATE INDEX IF NOT EXISTS idx_listings_status ON marketplace_listings(status) WHERE status = 'active';
+CREATE INDEX IF NOT EXISTS idx_listings_location ON marketplace_listings(lat, lng) WHERE lat IS NOT NULL AND lng IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_listings_seller ON marketplace_listings(seller_phone);
+CREATE INDEX IF NOT EXISTS idx_listings_country ON marketplace_listings(country_code);
+CREATE INDEX IF NOT EXISTS idx_listings_created ON marketplace_listings(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_listings_expires ON marketplace_listings(expires_at) WHERE status = 'active';
+
+-- Full text search on listings
+CREATE INDEX IF NOT EXISTS idx_listings_search 
+  ON marketplace_listings 
+  USING gin(to_tsvector('english', COALESCE(title, '') || ' ' || COALESCE(product_name, '') || ' ' || COALESCE(description, '')));
+
+-- Marketplace Matches
+CREATE INDEX IF NOT EXISTS idx_matches_listing ON marketplace_matches(listing_id);
+CREATE INDEX IF NOT EXISTS idx_matches_buyer ON marketplace_matches(buyer_phone);
+CREATE INDEX IF NOT EXISTS idx_matches_status ON marketplace_matches(status);
+
+-- Marketplace Buyer Intents
+CREATE INDEX IF NOT EXISTS idx_buyer_intents_status ON marketplace_buyer_intents(status) WHERE status = 'active';
+CREATE INDEX IF NOT EXISTS idx_buyer_intents_location ON marketplace_buyer_intents(lat, lng) WHERE lat IS NOT NULL AND lng IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_buyer_intents_country ON marketplace_buyer_intents(country_code);
+
+-- Marketplace Transactions
+CREATE INDEX IF NOT EXISTS idx_transactions_listing ON marketplace_transactions(listing_id);
+CREATE INDEX IF NOT EXISTS idx_transactions_buyer ON marketplace_transactions(buyer_phone);
+CREATE INDEX IF NOT EXISTS idx_transactions_seller ON marketplace_transactions(seller_phone);
+CREATE INDEX IF NOT EXISTS idx_transactions_status ON marketplace_transactions(status);
+
+-- ============================================================================
+-- RPC FUNCTIONS
+-- ============================================================================
+
+-- Search marketplace listings nearby
+CREATE OR REPLACE FUNCTION search_marketplace_listings_nearby(
+  search_term TEXT,
+  user_lat NUMERIC,
+  user_lng NUMERIC,
+  radius_km NUMERIC DEFAULT 10,
+  result_limit INTEGER DEFAULT 10
+)
+RETURNS TABLE (
+  id UUID,
+  title TEXT,
+  description TEXT,
+  price NUMERIC,
+  currency TEXT,
+  seller_phone TEXT,
+  distance_km NUMERIC,
+  location_text TEXT,
+  images TEXT[]
+) AS $$
+BEGIN
+  RETURN QUERY
+  SELECT 
+    l.id,
+    l.title,
+    l.description,
+    l.price,
+    l.currency,
+    l.seller_phone,
+    (
+      6371 * acos(
+        cos(radians(user_lat)) * cos(radians(l.lat)) *
+        cos(radians(l.lng) - radians(user_lng)) +
+        sin(radians(user_lat)) * sin(radians(l.lat))
+      )
+    ) AS distance_km,
+    l.location_text,
+    l.images
+  FROM marketplace_listings l
+  WHERE l.status = 'active'
+    AND l.lat IS NOT NULL
+    AND l.lng IS NOT NULL
+    AND (
+      l.title ILIKE '%' || search_term || '%'
+      OR l.product_name ILIKE '%' || search_term || '%'
+      OR l.description ILIKE '%' || search_term || '%'
+    )
+  HAVING (
+    6371 * acos(
+      cos(radians(user_lat)) * cos(radians(l.lat)) *
+      cos(radians(l.lng) - radians(user_lng)) +
+      sin(radians(user_lat)) * sin(radians(l.lat))
+    )
+  ) <= radius_km
+  ORDER BY distance_km
+  LIMIT result_limit;
+END;
+$$ LANGUAGE plpgsql STABLE;
+
+-- Find matching buyers for a new listing
+CREATE OR REPLACE FUNCTION find_matching_marketplace_buyers(
+  p_listing_id UUID
+)
+RETURNS TABLE (
+  buyer_phone TEXT,
+  distance_km NUMERIC,
+  match_score NUMERIC
+) AS $$
+BEGIN
+  RETURN QUERY
+  WITH listing AS (
+    SELECT * FROM marketplace_listings WHERE id = p_listing_id
+  )
+  SELECT 
+    i.buyer_phone,
+    (
+      6371 * acos(
+        cos(radians(l.lat)) * cos(radians(i.lat)) *
+        cos(radians(i.lng) - radians(l.lng)) +
+        sin(radians(l.lat)) * sin(radians(i.lat))
+      )
+    ) AS distance_km,
+    (
+      CASE WHEN l.title ILIKE '%' || i.looking_for || '%' THEN 50 ELSE 0 END +
+      CASE WHEN l.product_name ILIKE '%' || i.looking_for || '%' THEN 30 ELSE 0 END +
+      CASE WHEN l.price <= COALESCE(i.max_price, 999999999) THEN 20 ELSE 0 END
+    )::NUMERIC AS match_score
+  FROM marketplace_buyer_intents i, listing l
+  WHERE i.status = 'active'
+    AND i.lat IS NOT NULL
+    AND i.lng IS NOT NULL
+    AND l.lat IS NOT NULL
+    AND l.lng IS NOT NULL
+    AND (
+      l.title ILIKE '%' || i.looking_for || '%'
+      OR l.product_name ILIKE '%' || i.looking_for || '%'
+    )
+  HAVING (
+    6371 * acos(
+      cos(radians(l.lat)) * cos(radians(i.lat)) *
+      cos(radians(i.lng) - radians(l.lng)) +
+      sin(radians(l.lat)) * sin(radians(i.lat))
+    )
+  ) <= COALESCE(i.radius_km, 10)
+  ORDER BY match_score DESC, distance_km
+  LIMIT 10;
+END;
+$$ LANGUAGE plpgsql STABLE;
+
+-- Expire old listings
+CREATE OR REPLACE FUNCTION expire_old_marketplace_listings()
+RETURNS void AS $$
+BEGIN
+  UPDATE marketplace_listings
+  SET status = 'expired'
+  WHERE status = 'active'
+    AND expires_at < now();
+  
+  UPDATE marketplace_buyer_intents
+  SET status = 'expired'
+  WHERE status = 'active'
+    AND expires_at < now();
+END;
+$$ LANGUAGE plpgsql;
+
+-- ============================================================================
+-- TRIGGERS
+-- ============================================================================
+
+-- Auto-update updated_at timestamp
+CREATE OR REPLACE FUNCTION update_marketplace_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = now();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER marketplace_listings_updated_at
+  BEFORE UPDATE ON marketplace_listings
+  FOR EACH ROW
+  EXECUTE FUNCTION update_marketplace_updated_at();
+
+CREATE TRIGGER marketplace_conversations_updated_at
+  BEFORE UPDATE ON marketplace_conversations
+  FOR EACH ROW
+  EXECUTE FUNCTION update_marketplace_updated_at();
+
+-- ============================================================================
+-- GRANTS (RLS will be added separately if needed)
+-- ============================================================================
+
+-- Allow anon access for service role queries
+GRANT SELECT, INSERT, UPDATE, DELETE ON marketplace_listings TO anon, authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON marketplace_conversations TO anon, authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON marketplace_matches TO anon, authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON marketplace_buyer_intents TO anon, authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON marketplace_transactions TO anon, authenticated;
+
+-- Grant execute on functions
+GRANT EXECUTE ON FUNCTION search_marketplace_listings_nearby TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION find_matching_marketplace_buyers TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION expire_old_marketplace_listings TO anon, authenticated;
+
+COMMIT;

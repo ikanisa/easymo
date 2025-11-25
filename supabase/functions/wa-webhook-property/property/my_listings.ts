@@ -1,5 +1,10 @@
 import type { RouterContext } from "../../_shared/wa-webhook-shared/types.ts";
-import { sendButtonsMessage, sendListMessage, sendText } from "../../_shared/wa-webhook-shared/wa/client.ts";
+import {
+  sendListMessage,
+  sendButtonsMessage,
+  buildButtons,
+} from "../../_shared/wa-webhook-shared/utils/reply.ts";
+import { sendText } from "../../_shared/wa-webhook-shared/wa/client.ts";
 import { setState } from "../../_shared/wa-webhook-shared/state/store.ts";
 import { logStructuredEvent } from "../../_shared/observability.ts";
 import { IDS } from "../../_shared/wa-webhook-shared/wa/ids.ts";
@@ -10,9 +15,9 @@ import { t } from "../../_shared/wa-webhook-shared/i18n/translator.ts";
  */
 export async function showMyProperties(ctx: RouterContext): Promise<boolean> {
   if (!ctx.profileId) {
-    await sendButtonsMessage(ctx, "Please create a profile first.", [
+    await sendButtonsMessage(ctx, "Please create a profile first.", buildButtons(
       { id: IDS.BACK_HOME, title: "← Home" }
-    ]);
+    ));
     return false;
   }
 
@@ -30,11 +35,7 @@ export async function showMyProperties(ctx: RouterContext): Promise<boolean> {
       error: error.message
     }, "error");
 
-    await sendButtonsMessage(
-      ctx,
-      "❌ Error loading your listings. Please try again.",
-      [{ id: IDS.BACK_HOME, title: "← Home" }]
-    );
+    await sendButtonsMessage(ctx, "❌ Error loading your listings. Please try again.", buildButtons({ id: IDS.BACK_HOME, title: "← Home" }));
     return false;
   }
 
@@ -44,10 +45,10 @@ export async function showMyProperties(ctx: RouterContext): Promise<boolean> {
       "📋 *No Active Listings*\n\n" +
       "You haven't listed any properties yet.\n\n" +
       "Ready to list your first property?",
-      [
+      buildButtons(
         { id: "PROPERTY_ADD", title: "➕ Add Property" },
         { id: IDS.BACK_HOME, title: "← Home" }
-      ]
+      )
     );
     return true;
   }
@@ -58,7 +59,11 @@ export async function showMyProperties(ctx: RouterContext): Promise<boolean> {
     description: `${p.price} ${p.currency}/${p.listing_type} - ${p.status}`
   }));
 
-  rows.push({ id: IDS.BACK_HOME, title: "← Back to Home" });
+  rows.push({ 
+    id: IDS.BACK_HOME, 
+    title: "← Back to Home",
+    description: "Return to main menu"
+  });
 
   await sendListMessage(ctx, {
     title: "🏠 My Property Listings",
@@ -90,9 +95,9 @@ export async function handlePropertyDetailView(
     .single();
 
   if (error || !property) {
-    await sendButtonsMessage(ctx, "❌ Property not found.", [
+    await sendButtonsMessage(ctx, "❌ Property not found.", buildButtons(
       { id: IDS.BACK_HOME, title: "← Home" }
-    ]);
+    ));
     return false;
   }
 
@@ -157,11 +162,7 @@ export async function handlePropertyActions(
     .single();
 
   if (error || !property) {
-    await sendButtonsMessage(
-      ctx,
-      "❌ Property not found or you don't have permission to modify it.",
-      [{ id: IDS.BACK_HOME, title: "← Home" }]
-    );
+    await sendButtonsMessage(ctx, "❌ Property not found or you don't have permission to modify it.", buildButtons({ id: IDS.BACK_HOME, title: "← Home" }));
     return false;
   }
 
@@ -172,14 +173,10 @@ export async function handlePropertyActions(
         .update({ status: 'deleted', updated_at: new Date().toISOString() })
         .eq('id', propertyId);
 
-      await sendButtonsMessage(
-        ctx,
-        "✅ *Property Removed*\n\nYour listing has been removed from the marketplace.",
-        [
+      await sendButtonsMessage(ctx, "✅ *Property Removed*\n\nYour listing has been removed from the marketplace.", buildButtons(
           { id: "MY_PROPERTIES", title: "📋 My Listings" },
           { id: IDS.BACK_HOME, title: "← Home" }
-        ]
-      );
+        ));
 
       await logStructuredEvent("PROPERTY_DELETED", {
         userId: ctx.profileId,
@@ -193,14 +190,10 @@ export async function handlePropertyActions(
         .update({ status: 'rented', updated_at: new Date().toISOString() })
         .eq('id', propertyId);
 
-      await sendButtonsMessage(
-        ctx,
-        "✅ *Property Marked as Rented*\n\nThe listing is now marked as rented and won't appear in searches.",
-        [
+      await sendButtonsMessage(ctx, "✅ *Property Marked as Rented*\n\nThe listing is now marked as rented and won't appear in searches.", buildButtons(
           { id: "MY_PROPERTIES", title: "📋 My Listings" },
           { id: IDS.BACK_HOME, title: "← Home" }
-        ]
-      );
+        ));
 
       await logStructuredEvent("PROPERTY_MARKED_RENTED", {
         userId: ctx.profileId,
@@ -214,14 +207,10 @@ export async function handlePropertyActions(
         .update({ status: 'active', updated_at: new Date().toISOString() })
         .eq('id', propertyId);
 
-      await sendButtonsMessage(
-        ctx,
-        "✅ *Property Marked as Available*\n\nThe listing is now active again.",
-        [
+      await sendButtonsMessage(ctx, "✅ *Property Marked as Available*\n\nThe listing is now active again.", buildButtons(
           { id: "MY_PROPERTIES", title: "📋 My Listings" },
           { id: IDS.BACK_HOME, title: "← Home" }
-        ]
-      );
+        ));
 
       await logStructuredEvent("PROPERTY_MARKED_AVAILABLE", {
         userId: ctx.profileId,
@@ -235,16 +224,12 @@ export async function handlePropertyActions(
         data: { propertyId }
       });
 
-      await sendButtonsMessage(
-        ctx,
-        `✏️ *Edit Property*\n\nWhat would you like to update for:\n${property.title || 'this property'}?`,
-        [
+      await sendButtonsMessage(ctx, `✏️ *Edit Property*\n\nWhat would you like to update for:\n${property.title || 'this property'}?`, buildButtons(
           { id: "PROP_EDIT_PRICE", title: "💰 Update Price" },
           { id: "PROP_EDIT_DESC", title: "📝 Update Description" },
           { id: "PROP_EDIT_AMENITIES", title: "✨ Update Amenities" },
           { id: `VIEW_PROP::${propertyId}`, title: "← Back to Property" }
-        ]
-      );
+        ));
       break;
   }
 
@@ -269,9 +254,9 @@ export async function sendPropertyInquiry(
     .single();
 
   if (!property) {
-    await sendButtonsMessage(ctx, "❌ Property not found.", [
+    await sendButtonsMessage(ctx, "❌ Property not found.", buildButtons(
       { id: IDS.BACK_HOME, title: "← Home" }
-    ]);
+    ));
     return false;
   }
 
@@ -293,9 +278,9 @@ export async function sendPropertyInquiry(
       error: inquiryError.message
     }, "error");
 
-    await sendButtonsMessage(ctx, "❌ Failed to send inquiry. Please try again.", [
+    await sendButtonsMessage(ctx, "❌ Failed to send inquiry. Please try again.", buildButtons(
       { id: IDS.BACK_HOME, title: "← Home" }
-    ]);
+    ));
     return false;
   }
 
@@ -321,13 +306,9 @@ export async function sendPropertyInquiry(
     `Reply to this message to contact them directly.`
   );
 
-  await sendButtonsMessage(
-    ctx,
-    "✅ *Inquiry Sent!*\n\n" +
+  await sendButtonsMessage(ctx, "✅ *Inquiry Sent!*\n\n" +
     "The property owner has been notified and will contact you shortly.\n\n" +
-    "You'll receive a message when they respond.",
-    [{ id: IDS.BACK_HOME, title: "← Home" }]
-  );
+    "You'll receive a message when they respond.", buildButtons({ id: IDS.BACK_HOME, title: "← Home" }));
 
   await logStructuredEvent("PROPERTY_INQUIRY_SENT", {
     userId: ctx.profileId,
