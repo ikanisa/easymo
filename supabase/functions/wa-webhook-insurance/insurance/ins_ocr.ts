@@ -1,7 +1,6 @@
 import { resolveOpenAiResponseText } from "../../_shared/wa-webhook-shared/utils/openai_responses.ts";
 import { GEMINI_API_KEY } from "../../_shared/wa-webhook-shared/config.ts";
 import { supabase as sharedSupabase } from "../../_shared/wa-webhook-shared/config.ts";
-import { getAppConfig } from "../../_shared/wa-webhook-shared/utils/app_config.ts";
 import { openaiCircuitBreaker, geminiCircuitBreaker } from "./circuit_breaker.ts";
 
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY") ?? "";
@@ -24,13 +23,18 @@ async function getOCRConfig(): Promise<{ timeout: number; retries: number }> {
   }
 
   try {
-    const [timeoutConfig, retriesConfig] = await Promise.all([
-      getAppConfig(sharedSupabase, "insurance.ocr_timeout_ms"),
-      getAppConfig(sharedSupabase, "insurance.ocr_max_retries"),
-    ]);
+    const { data } = await sharedSupabase
+      .from('app_config')
+      .select('insurance_ocr_timeout_ms, insurance_ocr_max_retries')
+      .eq('id', 1)
+      .single();
 
-    const timeout = typeof timeoutConfig === 'number' ? timeoutConfig : DEFAULT_OCR_TIMEOUT_MS;
-    const retries = typeof retriesConfig === 'number' ? retriesConfig : DEFAULT_MAX_RETRIES;
+    const timeout = typeof data?.insurance_ocr_timeout_ms === 'number' 
+      ? data.insurance_ocr_timeout_ms 
+      : DEFAULT_OCR_TIMEOUT_MS;
+    const retries = typeof data?.insurance_ocr_max_retries === 'number' 
+      ? data.insurance_ocr_max_retries 
+      : DEFAULT_MAX_RETRIES;
 
     configCache = { timeout, retries, fetchedAt: now };
     return { timeout, retries };

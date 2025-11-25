@@ -1,67 +1,30 @@
 -- Migration: Insurance Dynamic Country Configuration
 -- Date: 2025-11-25
--- Purpose: Move hardcoded country list to app_config table for dynamic management
+-- Purpose: Add insurance configuration columns to app_config table
 
 BEGIN;
 
--- Insert insurance country configuration
-INSERT INTO public.app_config (key, value, description, updated_at)
-VALUES 
-    (
-        'insurance.allowed_countries',
-        '["RW"]'::jsonb,
-        'List of ISO country codes where motor insurance feature is enabled',
-        now()
-    )
-ON CONFLICT (key) DO UPDATE 
-SET 
-    value = EXCLUDED.value,
-    description = EXCLUDED.description,
-    updated_at = now();
+-- Add insurance configuration columns to app_config table
+ALTER TABLE public.app_config 
+ADD COLUMN IF NOT EXISTS insurance_allowed_countries JSONB DEFAULT '["RW"]'::jsonb;
 
--- Add OCR timeout configuration
-INSERT INTO public.app_config (key, value, description, updated_at)
-VALUES 
-    (
-        'insurance.ocr_timeout_ms',
-        '30000'::jsonb,
-        'Timeout in milliseconds for OCR API calls',
-        now()
-    )
-ON CONFLICT (key) DO UPDATE 
-SET 
-    value = EXCLUDED.value,
-    description = EXCLUDED.description,
-    updated_at = now();
+ALTER TABLE public.app_config 
+ADD COLUMN IF NOT EXISTS insurance_ocr_timeout_ms INTEGER DEFAULT 30000;
 
--- Add max OCR retries configuration
-INSERT INTO public.app_config (key, value, description, updated_at)
-VALUES 
-    (
-        'insurance.ocr_max_retries',
-        '2'::jsonb,
-        'Maximum number of retry attempts for failed OCR calls',
-        now()
-    )
-ON CONFLICT (key) DO UPDATE 
-SET 
-    value = EXCLUDED.value,
-    description = EXCLUDED.description,
-    updated_at = now();
+ALTER TABLE public.app_config 
+ADD COLUMN IF NOT EXISTS insurance_ocr_max_retries INTEGER DEFAULT 2;
 
--- Add token bonus amount configuration
-INSERT INTO public.app_config (key, value, description, updated_at)
-VALUES 
-    (
-        'insurance.token_bonus_amount',
-        '2000'::jsonb,
-        'Number of tokens awarded for insurance document submission',
-        now()
-    )
-ON CONFLICT (key) DO UPDATE 
+ALTER TABLE public.app_config 
+ADD COLUMN IF NOT EXISTS insurance_token_bonus_amount INTEGER DEFAULT 2000;
+
+-- Update the single row with default values if it exists
+INSERT INTO public.app_config (id, insurance_allowed_countries, insurance_ocr_timeout_ms, insurance_ocr_max_retries, insurance_token_bonus_amount)
+VALUES (1, '["RW"]'::jsonb, 30000, 2, 2000)
+ON CONFLICT (id) DO UPDATE 
 SET 
-    value = EXCLUDED.value,
-    description = EXCLUDED.description,
-    updated_at = now();
+  insurance_allowed_countries = COALESCE(app_config.insurance_allowed_countries, '["RW"]'::jsonb),
+  insurance_ocr_timeout_ms = COALESCE(app_config.insurance_ocr_timeout_ms, 30000),
+  insurance_ocr_max_retries = COALESCE(app_config.insurance_ocr_max_retries, 2),
+  insurance_token_bonus_amount = COALESCE(app_config.insurance_token_bonus_amount, 2000);
 
 COMMIT;

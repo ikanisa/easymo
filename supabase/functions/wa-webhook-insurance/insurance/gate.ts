@@ -4,7 +4,6 @@ import { homeOnly, sendButtonsMessage } from "../../_shared/wa-webhook-shared/ut
 import { isAdminNumber } from "../../_shared/wa-webhook-shared/flows/admin/auth.ts";
 import { logStructuredEvent } from "../../_shared/wa-webhook-shared/observe/log.ts";
 import { t } from "../../_shared/wa-webhook-shared/i18n/translator.ts";
-import { getAppConfig } from "../../_shared/wa-webhook-shared/utils/app_config.ts";
 
 const FEATURE_NAME = "motor_insurance";
 
@@ -78,9 +77,14 @@ const FALLBACK_ALLOWED_COUNTRIES = ["RW"];
 
 async function getAllowedCountries(ctx: RouterContext): Promise<Set<string>> {
   try {
-    const config = await getAppConfig(ctx.supabase, "insurance.allowed_countries");
-    if (config && Array.isArray(config)) {
-      return new Set(config.map((c: string) => c.toUpperCase()));
+    const { data } = await ctx.supabase
+      .from('app_config')
+      .select('insurance_allowed_countries')
+      .eq('id', 1)
+      .single();
+    
+    if (data?.insurance_allowed_countries && Array.isArray(data.insurance_allowed_countries)) {
+      return new Set(data.insurance_allowed_countries.map((c: string) => c.toUpperCase()));
     }
   } catch (err) {
     console.warn("insurance.gate.config_fetch_fail", err);
