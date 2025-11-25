@@ -16,12 +16,16 @@ import { createClient,SupabaseClient } from "@supabase/supabase-js";
 
 import { config } from "./config.js";
 import { logger } from "./logger.js";
+import { maskPhone, RateLimiter } from "./rate-limiter.js";
 import { resolveSecret } from "./secrets.js";
+import { verifyWebhookSignature } from "./signature.js";
 
 export interface WebhookPayload {
   id: string;
   headers: Record<string, string>;
   body: Record<string, unknown>;
+  /** Raw JSON body for signature verification */
+  rawBody?: string;
   timestamp: string;
   retryCount?: number;
 }
@@ -32,6 +36,8 @@ export interface WebhookProcessingResult {
   error?: string;
   duration: number;
   agentResponse?: string;
+  /** Indicates if signature was verified (when signature verification is enabled) */
+  signatureVerified?: boolean;
 }
 
 interface WhatsAppMessage {
@@ -47,17 +53,35 @@ interface WhatsAppMessage {
 /**
  * Processes WhatsApp webhook payloads
  * Reuses the existing wa-webhook handler logic
+ * 
+ * Security features (per docs/GROUND_RULES.md):
+ * - Webhook signature verification using HMAC-SHA256
+ * - Rate limiting per phone number
  */
 export class WebhookProcessor {
   private supabase!: SupabaseClient;
   private idempotencyStore: InstanceType<typeof IdempotencyStore>;
   private serviceRolePromise: Promise<string | undefined>;
+  private appSecretPromise: Promise<string | undefined>;
+
+  // Rate limiting (per docs/GROUND_RULES.md recommendation)
+  private rateLimiter = new RateLimiter({
+    maxRequests: 60, // requests per window
+    windowMs: 60 * 1000, // 1 minute
+  });
 
   constructor() {
     this.serviceRolePromise = resolveSecret({
       ref: config.SUPABASE_SERVICE_ROLE_KEY,
       fallbackEnv: "SUPABASE_SERVICE_ROLE_KEY",
       label: "supabase_service_role",
+    });
+
+    this.appSecretPromise = resolveSecret({
+      ref: config.WHATSAPP_APP_SECRET,
+      fallbackEnv: "WHATSAPP_APP_SECRET",
+      label: "whatsapp_app_secret",
+      optional: true,
     });
 
     this.idempotencyStore = new IdempotencyStore({
@@ -75,6 +99,16 @@ export class WebhookProcessor {
     }
     this.supabase = createClient(config.SUPABASE_URL, serviceRoleKey);
     await this.idempotencyStore.connect();
+    
+    const appSecret = await this.appSecretPromise;
+    if (!appSecret) {
+      logger.warn({
+        msg: "webhook.signature_verification_disabled",
+        event: "SIGNATURE_VERIFICATION_DISABLED",
+        reason: "WHATSAPP_APP_SECRET not configured"
+      });
+    }
+    
     logger.info("WebhookProcessor initialized");
   }
 
@@ -84,6 +118,11 @@ export class WebhookProcessor {
 
   /**
    * Process a webhook payload with idempotency
+   * 
+   * Security checks performed:
+   * 1. Signature verification (if WHATSAPP_APP_SECRET is configured)
+   * 2. Rate limiting per phone number
+   * 3. Idempotency to prevent duplicate processing
    */
   async process(payload: WebhookPayload): Promise<WebhookProcessingResult> {
     const startTime = Date.now();
@@ -97,7 +136,90 @@ export class WebhookProcessor {
     });
 
     try {
-      // Use idempotency to prevent duplicate processing
+      // 1. Verify signature (per docs/GROUND_RULES.md - ALL webhook endpoints MUST verify signatures)
+      const appSecret = await this.appSecretPromise;
+      const signature = payload.headers["x-hub-signature-256"];
+      const allowUnsigned = config.WA_ALLOW_UNSIGNED_WEBHOOKS.toLowerCase() === "true";
+      const isInternalForward = payload.headers["x-wa-internal-forward"] === "true";
+      let signatureVerified = false;
+
+      if (appSecret && payload.rawBody) {
+        signatureVerified = verifyWebhookSignature(payload.rawBody, signature, appSecret);
+        
+        if (!signatureVerified) {
+          if (allowUnsigned || isInternalForward) {
+            logger.warn({
+              msg: "webhook.signature_bypass",
+              webhookId: payload.id,
+              correlationId,
+              reason: isInternalForward ? "internal_forward" : signature ? "signature_mismatch" : "no_signature",
+              event: "SIGNATURE_BYPASS"
+            });
+          } else {
+            logger.warn({
+              msg: "webhook.signature_failed",
+              webhookId: payload.id,
+              correlationId,
+              signatureProvided: !!signature,
+              event: "SIGNATURE_FAILED"
+            });
+            return {
+              success: false,
+              messageId: payload.id,
+              error: "Invalid or missing webhook signature",
+              duration: Date.now() - startTime,
+              signatureVerified: false,
+            };
+          }
+        } else {
+          logger.debug({
+            msg: "webhook.signature_verified",
+            webhookId: payload.id,
+            correlationId,
+            event: "SIGNATURE_VERIFIED"
+          });
+        }
+      } else if (appSecret && !payload.rawBody) {
+        logger.warn({
+          msg: "webhook.signature_skipped",
+          webhookId: payload.id,
+          correlationId,
+          reason: "rawBody not provided",
+          event: "SIGNATURE_SKIPPED"
+        });
+      }
+
+      // 2. Extract phone number for rate limiting
+      const body = payload.body as { entry?: { changes?: { value?: { messages?: WhatsAppMessage[] } }[] }[] };
+      const phoneNumber = body?.entry?.[0]?.changes?.[0]?.value?.messages?.[0]?.from;
+
+      if (phoneNumber) {
+        // Periodically cleanup rate limiter (every ~100 requests)
+        if (Math.random() < 0.01) {
+          this.rateLimiter.cleanup();
+        }
+
+        const rateCheck = this.rateLimiter.check(phoneNumber);
+        if (!rateCheck.allowed) {
+          logger.warn({
+            msg: "webhook.rate_limited",
+            webhookId: payload.id,
+            correlationId,
+            phone: maskPhone(phoneNumber),
+            resetAt: new Date(rateCheck.resetAt).toISOString(),
+            event: "RATE_LIMITED"
+          });
+          return {
+            success: false,
+            messageId: payload.id,
+            error: "Rate limit exceeded",
+            duration: Date.now() - startTime,
+            signatureVerified,
+          };
+        }
+      }
+
+      // 3. Use idempotency to prevent duplicate processing
       const result = await this.idempotencyStore.execute(
         payload.id,
         async () => {
@@ -119,7 +241,8 @@ export class WebhookProcessor {
         success: true,
         messageId: payload.id,
         duration,
-        agentResponse: result?.agentResponse
+        agentResponse: result?.agentResponse,
+        signatureVerified,
       };
     } catch (error) {
       const duration = Date.now() - startTime;

@@ -20,6 +20,11 @@ const envSchema = z.object({
   SUPABASE_URL: z.string(),
   SUPABASE_SERVICE_ROLE_KEY: z.string(),
 
+  // WhatsApp
+  WHATSAPP_APP_SECRET: z.string().optional(),
+  // Allow unsigned webhooks (for internal forwarding or testing)
+  WA_ALLOW_UNSIGNED_WEBHOOKS: z.string().default("false"),
+
   // OpenAI
   OPENAI_API_KEY: z.string(),
   OPENAI_MODEL: z.string().default("gpt-4o-mini"),

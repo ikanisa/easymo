@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { useEffect,useState } from 'react';
 
 export default function InsuranceAdminContacts() {
   const [contacts, setContacts] = useState<any[]>([]);

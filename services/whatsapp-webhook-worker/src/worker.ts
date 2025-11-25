@@ -130,10 +130,22 @@ export class WebhookWorker {
     }
 
     const parsed = JSON.parse(value);
+    
+    // Extract x-hub-signature-256 from message headers if available
+    const headers: Record<string, string> = parsed.headers || {};
+    if (message.headers?.["x-hub-signature-256"]) {
+      headers["x-hub-signature-256"] = message.headers["x-hub-signature-256"].toString();
+    }
+    if (message.headers?.["x-wa-internal-forward"]) {
+      headers["x-wa-internal-forward"] = message.headers["x-wa-internal-forward"].toString();
+    }
+    
     return {
       id: parsed.id || message.headers?.["x-message-id"]?.toString(),
-      headers: parsed.headers || {},
+      headers,
       body: parsed.body,
+      // Include raw body for signature verification if the producer included it
+      rawBody: parsed.rawBody,
       timestamp: parsed.timestamp || new Date().toISOString(),
       retryCount: parsed.retryCount || 0,
     };
