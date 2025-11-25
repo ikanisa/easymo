@@ -54,27 +54,40 @@ export class AgentOrchestrator {
     // 2. Determine which agent to route to (based on context or default)
     const agentSlug = await this.determineAgent(user.id, message.body);
     
-    // 3. Get or create conversation
+    // 3. Get or create chat session for session persistence
+    const sessionId = await this.getOrCreateChatSession(message.from, agentSlug, user.id);
+    
+    // 4. Get or create conversation (for existing workflow compatibility)
     const context = await this.getOrCreateConversation(user.id, agentSlug);
     
-    // 4. Store the message
+    // 5. Store the message in session history
+    await this.addMessageToSession(sessionId, "user", message.body);
+    
+    // 6. Store the message
     const messageId = await this.storeMessage(context.conversationId, message);
     
-    // 5. Parse intent from message
-    const intent = await this.parseIntent(message.body, context);
+    // 7. Get conversation history for context
+    const conversationHistory = await this.getSessionHistory(sessionId);
     
-    // 6. Store intent
+    // 8. Parse intent from message with conversation context
+    const intent = await this.parseIntent(message.body, context, conversationHistory);
+    
+    // 9. Store intent
     const intentId = await this.storeIntent(
       context,
       messageId,
       intent
     );
     
-    // 7. Execute agent action based on intent
+    // 10. Execute agent action based on intent
     await this.executeAgentAction(context, intentId, intent);
     
-    // 8. Send response back to user
+    // 11. Generate and send response back to user
+    const responseText = this.generateResponse(intent, null);
     await this.sendResponse(context, intent);
+    
+    // 12. Store response in session history
+    await this.addMessageToSession(sessionId, "assistant", responseText);
     
     console.log(JSON.stringify({
       event: "AGENT_MESSAGE_PROCESSED",
@@ -82,7 +95,150 @@ export class AgentOrchestrator {
       agentSlug,
       intentType: intent.type,
       confidence: intent.confidence,
+      sessionId,
     }));
+  }
+
+  /**
+   * Get or create a chat session for session persistence
+   */
+  private async getOrCreateChatSession(
+    userPhone: string,
+    agentType: string,
+    userId?: string
+  ): Promise<string> {
+    try {
+      // Try using the RPC function
+      const { data, error } = await this.supabase.rpc("get_or_create_agent_session", {
+        p_user_phone: userPhone,
+        p_agent_type: agentType,
+        p_user_id: userId || null,
+        p_agent_id: null
+      });
+      
+      if (error) {
+        console.warn("Failed to get/create session via RPC:", error.message);
+        // Fallback to direct query
+        return await this.fallbackGetOrCreateSession(userPhone, agentType, userId);
+      }
+      
+      return data;
+    } catch (error) {
+      console.warn("Session RPC error:", error);
+      return await this.fallbackGetOrCreateSession(userPhone, agentType, userId);
+    }
+  }
+
+  /**
+   * Fallback method to get or create session without RPC
+   */
+  private async fallbackGetOrCreateSession(
+    userPhone: string,
+    agentType: string,
+    userId?: string
+  ): Promise<string> {
+    // Check for existing active session
+    const { data: existing } = await this.supabase
+      .from("agent_chat_sessions")
+      .select("id")
+      .eq("user_phone", userPhone)
+      .eq("agent_type", agentType)
+      .eq("status", "active")
+      .gt("expires_at", new Date().toISOString())
+      .single();
+    
+    if (existing) {
+      // Update last_message_at
+      await this.supabase
+        .from("agent_chat_sessions")
+        .update({ last_message_at: new Date().toISOString() })
+        .eq("id", existing.id);
+      return existing.id;
+    }
+    
+    // Create new session
+    const { data: newSession } = await this.supabase
+      .from("agent_chat_sessions")
+      .insert({
+        user_phone: userPhone,
+        user_id: userId || null,
+        agent_type: agentType,
+        status: "active"
+      })
+      .select("id")
+      .single();
+    
+    return newSession?.id || crypto.randomUUID();
+  }
+
+  /**
+   * Add message to session history
+   */
+  private async addMessageToSession(
+    sessionId: string,
+    role: "user" | "assistant" | "system",
+    content: string
+  ): Promise<void> {
+    try {
+      // Try using the RPC function
+      await this.supabase.rpc("add_agent_message", {
+        p_session_id: sessionId,
+        p_role: role,
+        p_content: content,
+        p_metadata: {}
+      });
+    } catch (error) {
+      // Fallback: update directly
+      const { data: session } = await this.supabase
+        .from("agent_chat_sessions")
+        .select("conversation_history")
+        .eq("id", sessionId)
+        .single();
+      
+      if (session) {
+        const history = session.conversation_history || [];
+        history.push({
+          role,
+          content,
+          timestamp: new Date().toISOString()
+        });
+        
+        await this.supabase
+          .from("agent_chat_sessions")
+          .update({ 
+            conversation_history: history,
+            last_message_at: new Date().toISOString()
+          })
+          .eq("id", sessionId);
+      }
+    }
+  }
+
+  /**
+   * Get session conversation history
+   */
+  private async getSessionHistory(sessionId: string): Promise<Array<{ role: string; content: string }>> {
+    try {
+      const { data } = await this.supabase.rpc("get_agent_conversation", {
+        p_session_id: sessionId,
+        p_limit: 10
+      });
+      
+      return data?.messages || [];
+    } catch (error) {
+      // Fallback: query directly
+      const { data: session } = await this.supabase
+        .from("agent_chat_sessions")
+        .select("conversation_history")
+        .eq("id", sessionId)
+        .single();
+      
+      if (session?.conversation_history) {
+        return session.conversation_history.slice(-10);
+      }
+      
+      return [];
+    }
   }
 
   /**
@@ -277,7 +433,8 @@ export class AgentOrchestrator {
    */
   private async parseIntent(
     messageBody: string,
-    context: AgentContext
+    context: AgentContext,
+    conversationHistory?: Array<{ role: string; content: string }>
   ): Promise<ParsedIntent> {
     // Get agent's system instructions
     const { data: agent } = await this.supabase
@@ -291,9 +448,9 @@ export class AgentOrchestrator {
 
     const systemInstructions = (agent as any)?.ai_agent_system_instructions;
     
-    // Use OpenAI/Gemini to parse intent
-    // For now, use simple keyword matching (production would use LLM)
-    const intent = await this.simpleIntentParse(messageBody, context.agentSlug);
+    // Use simple keyword matching with conversation context
+    // (Production would use LLM with full conversation history)
+    const intent = await this.simpleIntentParse(messageBody, context.agentSlug, conversationHistory);
     
     return intent;
   }
@@ -303,9 +460,14 @@ export class AgentOrchestrator {
    */
   private async simpleIntentParse(
     messageBody: string,
-    agentSlug: string
+    agentSlug: string,
+    conversationHistory?: Array<{ role: string; content: string }>
   ): Promise<ParsedIntent> {
     const lowerBody = messageBody.toLowerCase();
+    
+    // Use conversation history for context (e.g., follow-up questions)
+    const hasRecentContext = conversationHistory && conversationHistory.length > 0;
+    const lastAssistantMessage = conversationHistory?.filter(m => m.role === "assistant").pop()?.content || "";
 
     switch (agentSlug) {
       case "jobs":
