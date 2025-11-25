@@ -139,13 +139,14 @@ Format as JSON with: { script: string, scenes: [{duration: string, visual: strin
             visual_prompts = []
           } = params;
           
-          const userPhone = context?.userId || context?.userPhone;
+          // userId can be a phone number or UUID depending on context
+          const userIdentifier = context?.userId;
           
           // Create campaign in database
           const { data, error } = await this.supabase
             .from('ad_campaigns')
             .insert({
-              user_phone: userPhone,
+              user_phone: userIdentifier,
               campaign_name,
               product_name,
               budget,
@@ -266,12 +267,12 @@ Format as JSON with: { script: string, scenes: [{duration: string, visual: strin
           }
         },
         execute: async (params, context) => {
-          const userPhone = context?.userId || context?.userPhone;
+          const userIdentifier = context?.userId;
           
           let query = this.supabase
             .from('ad_campaigns')
             .select('id, campaign_name, product_name, budget, spend, views, clicks, status, created_at')
-            .eq('user_phone', userPhone)
+            .eq('user_phone', userIdentifier)
             .order('created_at', { ascending: false });
           
           if (params?.status) {
