@@ -4,6 +4,7 @@ import { homeOnly, sendButtonsMessage } from "../../_shared/wa-webhook-shared/ut
 import { isAdminNumber } from "../../_shared/wa-webhook-shared/flows/admin/auth.ts";
 import { logStructuredEvent } from "../../_shared/wa-webhook-shared/observe/log.ts";
 import { t } from "../../_shared/wa-webhook-shared/i18n/translator.ts";
+import { getAppConfig } from "../../_shared/wa-webhook-shared/utils/app_config.ts";
 
 const FEATURE_NAME = "motor_insurance";
 
@@ -73,6 +74,18 @@ async function getAllowedCountries(ctx: RouterContext): Promise<Set<string>> {
     countryCache = { countries: DEFAULT_ALLOWED_COUNTRIES, loadedAt: now };
     return DEFAULT_ALLOWED_COUNTRIES;
   }
+const FALLBACK_ALLOWED_COUNTRIES = ["RW"];
+
+async function getAllowedCountries(ctx: RouterContext): Promise<Set<string>> {
+  try {
+    const config = await getAppConfig(ctx.supabase, "insurance.allowed_countries");
+    if (config && Array.isArray(config)) {
+      return new Set(config.map((c: string) => c.toUpperCase()));
+    }
+  } catch (err) {
+    console.warn("insurance.gate.config_fetch_fail", err);
+  }
+  return new Set(FALLBACK_ALLOWED_COUNTRIES);
 }
 
 type GateRule =
@@ -107,6 +120,7 @@ export async function evaluateMotorInsuranceGate(
   // Get allowed countries dynamically from config
   const allowedCountries = await getAllowedCountries(ctx);
   
+  const allowedCountries = await getAllowedCountries(ctx);
   const upperCountry = detectedCountry?.toUpperCase() ?? null;
   if (upperCountry && allowedCountries.has(upperCountry)) {
     return {

@@ -1,16 +1,20 @@
 /**
- * Marketplace Domain Handler (Coming Soon)
- * 
- * This is a stub implementation for the marketplace domain.
- * Full marketplace functionality will be implemented in a future release.
+ * Marketplace Domain Handler
+ *
+ * Re-exports the AI agent and database operations for the marketplace domain.
+ * This module provides a unified interface for marketplace functionality.
  */
 
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
+export { MarketplaceAgent } from "../agent.ts";
+export * from "../db/index.ts";
+export * from "../utils/index.ts";
 
 export interface MarketplaceMessage {
   text: string;
   from: string;
   messageId: string;
+  location?: { lat: number; lng: number };
 }
 
 export interface MarketplaceResponse {
@@ -19,41 +23,17 @@ export interface MarketplaceResponse {
 }
 
 /**
- * Handle marketplace-related messages
- * Currently returns a "coming soon" message
- */
-export async function handleMarketplace(
-  message: MarketplaceMessage,
-  _supabase: SupabaseClient
-): Promise<MarketplaceResponse> {
-  console.log(JSON.stringify({
-    event: "MARKETPLACE_STUB_INVOKED",
-    from: message.from,
-    messageId: message.messageId,
-  }));
-
-  return {
-    text: "🛍️ **Marketplace Coming Soon!**\n\nWe're building an amazing marketplace experience for you.\n\nIn the meantime, explore our other services:",
-    buttons: [
-      { id: "jobs", title: "💼 Find Jobs" },
-      { id: "mobility", title: "🚗 Book Rides" },
-      { id: "property", title: "🏠 Rent Property" },
-      { id: "home", title: "🏠 Back to Home" },
-    ],
-  };
-}
-
-/**
  * Get marketplace feature status
  */
 export function getMarketplaceStatus(): {
   enabled: boolean;
-  comingSoon: boolean;
-  eta: string;
+  aiEnabled: boolean;
+  version: string;
 } {
+  const aiEnabled = Deno.env.get("FEATURE_MARKETPLACE_AI") === "true";
   return {
-    enabled: false,
-    comingSoon: true,
-    eta: "Q1 2026",
+    enabled: true,
+    aiEnabled,
+    version: "2.0.0",
   };
 }

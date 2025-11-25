@@ -1,5 +1,8 @@
 import { resolveOpenAiResponseText } from "../../_shared/wa-webhook-shared/utils/openai_responses.ts";
 import { GEMINI_API_KEY } from "../../_shared/wa-webhook-shared/config.ts";
+import { supabase as sharedSupabase } from "../../_shared/wa-webhook-shared/config.ts";
+import { getAppConfig } from "../../_shared/wa-webhook-shared/utils/app_config.ts";
+import { openaiCircuitBreaker, geminiCircuitBreaker } from "./circuit_breaker.ts";
 
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY") ?? "";
 const OPENAI_VISION_MODEL = Deno.env.get("OPENAI_VISION_MODEL") ??
@@ -7,8 +10,35 @@ const OPENAI_VISION_MODEL = Deno.env.get("OPENAI_VISION_MODEL") ??
 const OPENAI_BASE_URL = Deno.env.get("OPENAI_BASE_URL") ??
   "https://api.openai.com/v1";
 
-const OCR_TIMEOUT_MS = 30_000;
-const MAX_RETRIES = 2; // initial attempt + one retry on 5xx
+const DEFAULT_OCR_TIMEOUT_MS = 30_000;
+const DEFAULT_MAX_RETRIES = 2;
+
+// Dynamic config cache (refresh every 5 minutes)
+let configCache: { timeout: number; retries: number; fetchedAt: number } | null = null;
+const CONFIG_TTL_MS = 5 * 60 * 1000;
+
+async function getOCRConfig(): Promise<{ timeout: number; retries: number }> {
+  const now = Date.now();
+  if (configCache && (now - configCache.fetchedAt) < CONFIG_TTL_MS) {
+    return { timeout: configCache.timeout, retries: configCache.retries };
+  }
+
+  try {
+    const [timeoutConfig, retriesConfig] = await Promise.all([
+      getAppConfig(sharedSupabase, "insurance.ocr_timeout_ms"),
+      getAppConfig(sharedSupabase, "insurance.ocr_max_retries"),
+    ]);
+
+    const timeout = typeof timeoutConfig === 'number' ? timeoutConfig : DEFAULT_OCR_TIMEOUT_MS;
+    const retries = typeof retriesConfig === 'number' ? retriesConfig : DEFAULT_MAX_RETRIES;
+
+    configCache = { timeout, retries, fetchedAt: now };
+    return { timeout, retries };
+  } catch (err) {
+    console.warn("insurance.ocr.config_fetch_fail", err);
+    return { timeout: DEFAULT_OCR_TIMEOUT_MS, retries: DEFAULT_MAX_RETRIES };
+  }
+}
 
 // Circuit breaker configuration
 const CIRCUIT_BREAKER_THRESHOLD = 5; // Number of failures before opening circuit
@@ -126,9 +156,10 @@ export class MissingOpenAIKeyError extends Error {
 }
 
 async function runGeminiOCR(signedUrl: string): Promise<Record<string, unknown>> {
-  if (!GEMINI_API_KEY) {
-    throw new Error("GEMINI_API_KEY is not configured");
-  }
+  return await geminiCircuitBreaker.execute(async () => {
+    if (!GEMINI_API_KEY) {
+      throw new Error("GEMINI_API_KEY is not configured");
+    }
 
   // Check circuit breaker
   if (isCircuitOpen('gemini')) {
@@ -138,6 +169,8 @@ async function runGeminiOCR(signedUrl: string): Promise<Record<string, unknown>>
   console.info("INS_OCR_FALLBACK_GEMINI_START");
 
   try {
+    console.info("INS_OCR_FALLBACK_GEMINI_START");
+
     // Fetch image data
     const imgResp = await fetch(signedUrl);
     if (!imgResp.ok) throw new Error("Failed to fetch image for Gemini");
@@ -192,12 +225,39 @@ async function runGeminiOCR(signedUrl: string): Promise<Record<string, unknown>>
     recordFailure('gemini');
     throw error;
   }
+
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      }
+    );
+
+    if (!response.ok) {
+      const text = await response.text();
+      throw new Error(`Gemini request failed: ${response.status} ${text}`);
+    }
+
+    const json = await response.json();
+    const content = json.candidates?.[0]?.content?.parts?.[0]?.text;
+    
+    if (!content) {
+      throw new Error("Gemini response missing content");
+    }
+
+    console.info("INS_OCR_GEMINI_OK");
+    return JSON.parse(content);
+  });
 }
 
 export async function runInsuranceOCR(
   signedUrl: string,
   mimeType?: string,
 ): Promise<Record<string, unknown>> {
+  const config = await getOCRConfig();
+  
   // If PDF, prefer Gemini directly for better reliability
   const lowerMime = (mimeType || '').toLowerCase();
   const isPdf = lowerMime.includes('pdf') || /\.pdf(\?|$)/i.test(signedUrl);
@@ -221,6 +281,7 @@ export async function runInsuranceOCR(
         throw new MissingOpenAIKeyError();
       }
 
+    const result = await openaiCircuitBreaker.execute(async () => {
       const payload = {
         model: OPENAI_VISION_MODEL,
         messages: [
@@ -253,10 +314,16 @@ export async function runInsuranceOCR(
       for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), OCR_TIMEOUT_MS);
+      for (let attempt = 0; attempt < config.retries; attempt++) {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), config.timeout);
         try {
           console.info("INS_OCR_CALL", {
             model: OPENAI_VISION_MODEL,
             attempt: attempt + 1,
+            timeout: config.timeout,
+            maxRetries: config.retries,
+            circuitState: openaiCircuitBreaker.getState(),
           });
           const response = await fetch(`${OPENAI_BASE_URL}/chat/completions`, {
             method: "POST",
@@ -318,6 +385,51 @@ export async function runInsuranceOCR(
           if (!isRetryable) {
             // Record failure once after all retries are exhausted (covers all error cases)
             recordFailure('openai');
+
+          if (response.status >= 500 && response.status < 600) {
+            console.warn("INS_OCR_RETRYABLE_STATUS", { status: response.status });
+            lastError = new Error(`openai_${response.status}`);
+            continue;
+          }
+
+          if (!response.ok) {
+            const text = await response.text().catch(() => "");
+            console.error("INS_OCR_BAD_STATUS", {
+              status: response.status,
+              text: text?.slice(0, 200),
+            });
+            throw new Error(`OpenAI request failed: ${response.status} ${text}`);
+          }
+
+          const json = await response.json();
+          
+          // Extract content from OpenAI chat completion response
+          const messageContent = json?.choices?.[0]?.message?.content;
+          
+          if (!messageContent || typeof messageContent !== 'string') {
+            console.error("INS_OCR_NO_CONTENT", { response: JSON.stringify(json).slice(0, 200) });
+            throw new Error("OpenAI response missing message content");
+          }
+          
+          console.info("INS_OCR_RESOLVED_OK", { preview: messageContent.slice(0, 120) });
+          
+          // Parse the JSON response
+          const parsed = JSON.parse(messageContent);
+          return parsed;
+        } catch (error) {
+          clearTimeout(timeout);
+          if (error instanceof DOMException && error.name === "AbortError") {
+            lastError = new Error("openai_timeout");
+          } else if (error instanceof Error) {
+            lastError = error;
+          } else {
+            lastError = new Error(String(error ?? "unknown_error"));
+          }
+
+          const isRetryable = attempt < config.retries - 1 &&
+            (lastError instanceof Error) &&
+            /openai_5/.test(lastError.message);
+          if (!isRetryable) {
             console.error("INS_OCR_ERROR", {
               error: lastError instanceof Error
                 ? lastError.message
@@ -333,14 +445,30 @@ export async function runInsuranceOCR(
     }
   } else {
     console.info("INS_OCR_OPENAI_CIRCUIT_OPEN", { skipping: true });
+            throw lastError;
+          }
+        }
+      }
+      throw lastError ?? new Error("OpenAI OCR failed after retries");
+    });
+    
+    return result;
+  } catch (e) {
+    console.warn("INS_OCR_OPENAI_FAILED", { 
+      error: e instanceof Error ? e.message : String(e),
+      circuitState: openaiCircuitBreaker.getState(),
+    });
   }
 
   // Fallback to Gemini
   try {
     return await runGeminiOCR(signedUrl);
   } catch (geminiError) {
-    console.error("INS_OCR_GEMINI_FAILED", geminiError);
-    throw geminiError; // Throw the final error if both fail
+    console.error("INS_OCR_GEMINI_FAILED", { 
+      error: geminiError instanceof Error ? geminiError.message : String(geminiError),
+      circuitState: geminiCircuitBreaker.getState(),
+    });
+    throw geminiError;
   }
 }
 
