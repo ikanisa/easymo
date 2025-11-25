@@ -50,6 +50,13 @@ import {
   handleSkipPayment,
   PAYMENT_STATES,
 } from "./handlers/trip_payment.ts";
+// MOMO USSD Payment
+import {
+  initiateTripPayment,
+  handlePaymentConfirmation as handleMomoPaymentConfirmation,
+  getMomoPaymentStateKey,
+  parsePaymentState,
+} from "./handlers/momo_ussd_payment.ts";
 // Verification handlers
 import {
   showVerificationMenu,
@@ -457,8 +464,18 @@ serve(async (req: Request): Promise<Response> => {
       const text = (message.text as any)?.body?.toLowerCase() ?? "";
       const rawText = (message.text as any)?.body ?? "";
       
+      // MOMO Payment confirmation
+      if (state?.key === getMomoPaymentStateKey()) {
+        if (text === "paid") {
+          handled = await handleMomoPaymentConfirmation(ctx, true);
+        } else if (text === "cancel") {
+          handled = await handleMomoPaymentConfirmation(ctx, false);
+        } else {
+          handled = true; // Ignore other text during payment flow
+        }
+      }
       // Payment transaction reference input
-      if (state?.key === PAYMENT_STATES.CONFIRMATION) {
+      else if (state?.key === PAYMENT_STATES.CONFIRMATION) {
         handled = await processTransactionReference(ctx, rawText, state);
       }
       // Check for menu selection keys first

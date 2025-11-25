@@ -52,9 +52,9 @@ CREATE TABLE IF NOT EXISTS driver_licenses (
 );
 
 -- Indexes
-CREATE INDEX idx_driver_licenses_user_id ON driver_licenses(user_id);
-CREATE INDEX idx_driver_licenses_status ON driver_licenses(status);
-CREATE INDEX idx_driver_licenses_expiry ON driver_licenses(expiry_date);
+CREATE INDEX IF NOT EXISTS idx_driver_licenses_user_id ON driver_licenses(user_id);
+CREATE INDEX IF NOT EXISTS idx_driver_licenses_status ON driver_licenses(status);
+CREATE INDEX IF NOT EXISTS idx_driver_licenses_expiry ON driver_licenses(expiry_date);
 
 -- ============================================================================
 -- DRIVER INSURANCE CERTIFICATES TABLE
@@ -100,10 +100,10 @@ CREATE TABLE IF NOT EXISTS driver_insurance_certificates (
 );
 
 -- Indexes
-CREATE INDEX idx_driver_insurance_user_id ON driver_insurance_certificates(user_id);
-CREATE INDEX idx_driver_insurance_vehicle_plate ON driver_insurance_certificates(vehicle_plate);
-CREATE INDEX idx_driver_insurance_status ON driver_insurance_certificates(status);
-CREATE INDEX idx_driver_insurance_expiry ON driver_insurance_certificates(policy_expiry);
+CREATE INDEX IF NOT EXISTS idx_driver_insurance_user_id ON driver_insurance_certificates(user_id);
+CREATE INDEX IF NOT EXISTS idx_driver_insurance_vehicle_plate ON driver_insurance_certificates(vehicle_plate);
+CREATE INDEX IF NOT EXISTS idx_driver_insurance_status ON driver_insurance_certificates(status);
+CREATE INDEX IF NOT EXISTS idx_driver_insurance_expiry ON driver_insurance_certificates(policy_expiry);
 
 -- ============================================================================
 -- VEHICLE INSPECTIONS TABLE
@@ -134,9 +134,9 @@ CREATE TABLE IF NOT EXISTS vehicle_inspections (
 );
 
 -- Indexes
-CREATE INDEX idx_vehicle_inspections_user_id ON vehicle_inspections(user_id);
-CREATE INDEX idx_vehicle_inspections_vehicle_plate ON vehicle_inspections(vehicle_plate);
-CREATE INDEX idx_vehicle_inspections_status ON vehicle_inspections(status);
+CREATE INDEX IF NOT EXISTS idx_vehicle_inspections_user_id ON vehicle_inspections(user_id);
+CREATE INDEX IF NOT EXISTS idx_vehicle_inspections_vehicle_plate ON vehicle_inspections(vehicle_plate);
+CREATE INDEX IF NOT EXISTS idx_vehicle_inspections_status ON vehicle_inspections(status);
 
 -- ============================================================================
 -- TRIP PAYMENT REQUESTS TABLE
@@ -164,9 +164,9 @@ CREATE TABLE IF NOT EXISTS trip_payment_requests (
 );
 
 -- Indexes
-CREATE INDEX idx_trip_payment_requests_trip_id ON trip_payment_requests(trip_id);
-CREATE INDEX idx_trip_payment_requests_payer_id ON trip_payment_requests(payer_id);
-CREATE INDEX idx_trip_payment_requests_status ON trip_payment_requests(status);
+CREATE INDEX IF NOT EXISTS idx_trip_payment_requests_trip_id ON trip_payment_requests(trip_id);
+CREATE INDEX IF NOT EXISTS idx_trip_payment_requests_payer_id ON trip_payment_requests(payer_id);
+CREATE INDEX IF NOT EXISTS idx_trip_payment_requests_status ON trip_payment_requests(status);
 
 -- ============================================================================
 -- UPDATE MOBILITY_MATCHES TABLE (add payment columns)
