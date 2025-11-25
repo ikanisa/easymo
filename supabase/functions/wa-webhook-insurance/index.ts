@@ -15,6 +15,15 @@ import {
   recordMotorInsuranceHidden,
   sendMotorInsuranceBlockedMessage,
 } from "../_shared/wa-webhook-shared/domains/insurance/gate.ts";
+import {
+  startClaimFlow,
+  handleClaimType,
+  handleClaimDescription,
+  handleClaimDocuments,
+  handleClaimSubmit,
+  handleClaimStatus,
+  CLAIM_STATES
+} from "./insurance/claims.ts";
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL") ?? "",
@@ -308,6 +317,25 @@ async function handleInsuranceText(
   const text = (message as WhatsAppTextMessage).text?.body?.trim().toLowerCase();
   if (!text) return false;
 
+  // Handle claims-related keywords
+  if (text === "claim" || text === "file claim" || text.startsWith("claim ")) {
+    if (text.startsWith("claim status")) {
+      const claimRef = text.replace("claim status", "").trim();
+      return await handleClaimStatus(ctx, claimRef || undefined);
+    }
+    return await startClaimFlow(ctx);
+  }
+
+  // Handle "done" for document upload completion
+  if (text === "done" && state.key === CLAIM_STATES.DOCUMENTS) {
+    return await handleClaimSubmit(ctx);
+  }
+
+  // Handle claim description input
+  if (state.key === CLAIM_STATES.DESCRIPTION) {
+    return await handleClaimDescription(ctx, text);
+  }
+
   // Check for menu selection keys first
   if (text === "insurance_agent" || text === "insurance") {
     await startInsurance(ctx, state);
@@ -315,7 +343,7 @@ async function handleInsuranceText(
   }
 
   // Handle insurance-related keywords
-  if (["assurance", "cover", "claim"].includes(text)) {
+  if (["assurance", "cover"].includes(text)) {
     await startInsurance(ctx, state);
     return true;
   }
