@@ -28,6 +28,11 @@ export async function startProfile(
       description: "View balance, transfer, redeem rewards",
     },
     {
+      id: "MOMO_QR",
+      title: "📱 MoMo QR Code",
+      description: "Generate QR for payments",
+    },
+    {
       id: IDS.MY_BUSINESSES,
       title: "🏪 My Businesses",
       description: "Manage your business listings",

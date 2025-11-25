@@ -1,5 +1,6 @@
 import type { RouterContext } from "../../_shared/wa-webhook-shared/types.ts";
 import { sendButtonsMessage, sendListMessage } from "../../_shared/wa-webhook-shared/utils/reply.ts";
+import { sendImageUrl } from "../../_shared/wa-webhook-shared/wa/client.ts";
 import { ensureReferralLink as ensureReferralLinkShared } from "../../_shared/wa-webhook-shared/utils/share.ts";
 import { IDS } from "../../_shared/wa-webhook-shared/wa/ids.ts";
 import { setState } from "../../_shared/wa-webhook-shared/state/store.ts";

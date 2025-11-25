@@ -335,8 +335,18 @@ serve(async (req: Request): Promise<Response> => {
         
         // Wallet Earn
         else if (id === IDS.WALLET_EARN) {
-          const { handleWalletEarn } = await import("./wallet/earn.ts");
-          handled = await handleWalletEarn(ctx);
+          const { showWalletEarn } = await import("./wallet/earn.ts");
+          handled = await showWalletEarn(ctx);
+        }
+        
+        // Wallet Share - WhatsApp
+        else if (id === IDS.WALLET_SHARE_WHATSAPP || id === IDS.WALLET_SHARE_QR || id === IDS.WALLET_SHARE_DONE) {
+          const { handleWalletEarnSelection, handleWalletShareDone } = await import("./wallet/earn.ts");
+          if (id === IDS.WALLET_SHARE_DONE) {
+            handled = await handleWalletShareDone(ctx);
+          } else {
+            handled = await handleWalletEarnSelection(ctx, state as any, id);
+          }
         }
         
         // Wallet Transfer
