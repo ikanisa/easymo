@@ -3,37 +3,22 @@
 import { Card } from "@/components/ui/Card";
 import { Avatar } from "@/components/ui/Avatar";
 import { Button } from "@/components/ui/Button";
-import { Phone, Mail, MoreVertical } from "lucide-react";
+import { Phone, Mail, MoreVertical, Loader2 } from "lucide-react";
+import { useInsuranceContacts } from "@/lib/hooks/useData";
 
 interface Contact {
   id: string;
   name: string;
   role: string;
   phone: string;
-  email: string;
+  email?: string;
   status: "online" | "offline";
 }
 
-const mockContacts: Contact[] = [
-  {
-    id: "1",
-    name: "Sarah Wilson",
-    role: "Claims Manager",
-    phone: "+250 788 123 456",
-    email: "sarah@easymo.com",
-    status: "online",
-  },
-  {
-    id: "2",
-    name: "Mike Brown",
-    role: "Underwriter",
-    phone: "+250 788 654 321",
-    email: "mike@easymo.com",
-    status: "offline",
-  },
-];
-
 export function ContactManager() {
+  const { data, isLoading, error } = useInsuranceContacts();
+  const contacts: Contact[] = (data as { contacts?: Contact[] })?.contacts || [];
+
   return (
     <Card className="p-6">
       <div className="flex items-center justify-between mb-6">
@@ -41,8 +26,26 @@ export function ContactManager() {
         <Button size="sm" variant="secondary">Add Contact</Button>
       </div>
 
+      {isLoading && (
+        <div className="flex items-center justify-center py-8">
+          <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+        </div>
+      )}
+
+      {error && (
+        <div className="text-center py-8 text-red-500">
+          Failed to load contacts
+        </div>
+      )}
+
+      {!isLoading && !error && contacts.length === 0 && (
+        <div className="text-center py-8 text-gray-500">
+          No contacts available. Add insurance admin contacts to get started.
+        </div>
+      )}
+
       <div className="space-y-4">
-        {mockContacts.map((contact) => (
+        {contacts.map((contact) => (
           <div
             key={contact.id}
             className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition-colors"
@@ -62,12 +65,24 @@ export function ContactManager() {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Button size="icon" variant="ghost" className="h-8 w-8 text-gray-500">
+              <Button 
+                size="icon" 
+                variant="ghost" 
+                className="h-8 w-8 text-gray-500"
+                onClick={() => window.open(`https://wa.me/${contact.phone.replace(/[^0-9]/g, '')}`, '_blank')}
+              >
                 <Phone className="w-4 h-4" />
               </Button>
-              <Button size="icon" variant="ghost" className="h-8 w-8 text-gray-500">
-                <Mail className="w-4 h-4" />
-              </Button>
+              {contact.email && (
+                <Button 
+                  size="icon" 
+                  variant="ghost" 
+                  className="h-8 w-8 text-gray-500"
+                  onClick={() => window.open(`mailto:${contact.email}`, '_blank')}
+                >
+                  <Mail className="w-4 h-4" />
+                </Button>
+              )}
               <Button size="icon" variant="ghost" className="h-8 w-8 text-gray-500">
                 <MoreVertical className="w-4 h-4" />
               </Button>

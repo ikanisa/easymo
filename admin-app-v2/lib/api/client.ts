@@ -62,8 +62,14 @@ class APIClient {
   insurance = {
     leads: () => this.request('/api/insurance/leads'),
     policies: () => this.request('/api/insurance/policies'),
-    createPolicy: (data: any) =>
+    createPolicy: (data: unknown) =>
       this.request('/api/insurance/policies', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    contacts: () => this.request('/api/insurance/contacts'),
+    createContact: (data: unknown) =>
+      this.request('/api/insurance/contacts', {
         method: 'POST',
         body: JSON.stringify(data),
       }),
