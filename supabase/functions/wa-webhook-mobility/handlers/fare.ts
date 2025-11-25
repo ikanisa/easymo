@@ -4,7 +4,7 @@
 // Handles fare estimation and calculation for mobility trips
 // ============================================================================
 
-import { logStructuredEvent } from "../observe/observability.ts";
+import { logStructuredEvent } from "../../_shared/observability.ts";
 import { calculateHaversineDistance } from "./tracking.ts";
 import type { Coordinates } from "./tracking.ts";
 
