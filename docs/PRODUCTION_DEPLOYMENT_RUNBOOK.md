@@ -218,18 +218,21 @@ pnpm --filter @easymo/db prisma:generate
 
 ```bash
 # Deploy all functions at once
-supabase functions deploy --project-ref $SUPABASE_PROJECT_REF
+supabase functions deploy --project-ref $SUPABASE_PROJECT_REF --no-verify-jwt
 
 # Or deploy individually (safer)
-supabase functions deploy wa-webhook --project-ref $SUPABASE_PROJECT_REF
-supabase functions deploy admin-agents --project-ref $SUPABASE_PROJECT_REF
-supabase functions deploy admin-metrics --project-ref $SUPABASE_PROJECT_REF
+supabase functions deploy wa-webhook --project-ref $SUPABASE_PROJECT_REF --no-verify-jwt
+supabase functions deploy admin-agents --project-ref $SUPABASE_PROJECT_REF --no-verify-jwt
+supabase functions deploy admin-metrics --project-ref $SUPABASE_PROJECT_REF --no-verify-jwt
 # ... repeat for all functions
 
 # Verify deployment
 curl https://lhbowpbcpwoiparwnwgt.supabase.co/functions/v1/_health
 # Expected: {"status":"healthy","version":"2.0.0"}
 ```
+
+> **JWT Verification Policy**  
+> Supabase’s “Verify JWT with legacy secret” switch must remain **OFF** for every WhatsApp-facing function. Always deploy with `--no-verify-jwt` (as shown above) and, after each deploy, visit Supabase Dashboard → Functions → Settings to confirm the Legacy JWT toggle is disabled. All authentication is handled inside the functions via WhatsApp HMAC signatures; leaving the legacy check enabled will reject legitimate webhook traffic.
 
 ### 3.2 Test Webhook Endpoint
 
