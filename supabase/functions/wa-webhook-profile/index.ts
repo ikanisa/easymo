@@ -155,6 +155,17 @@ serve(async (req: Request): Promise<Response> => {
           handled = await handleEditLanguage(ctx, languageCode);
         }
         
+        // MoMo QR Code
+        else if (id === "MOMO_QR" || id === "momo_qr") {
+          const { startMomoQr } = await import("../_shared/wa-webhook-shared/flows/momo/qr.ts");
+          handled = await startMomoQr(ctx, state ?? { key: "home" });
+        }
+        // MoMo QR Flow buttons
+        else if (id === IDS.MOMO_QR_MY || id === IDS.MOMO_QR_NUMBER || id === IDS.MOMO_QR_CODE) {
+          const { handleMomoButton } = await import("../_shared/wa-webhook-shared/flows/momo/qr.ts");
+          handled = await handleMomoButton(ctx, state, id);
+        }
+        
         // Wallet Home
         else if (id === IDS.WALLET_HOME || id === "wallet") {
           const { startWallet } = await import("./wallet/home.ts");
