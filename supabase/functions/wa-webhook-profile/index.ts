@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { logStructuredEvent } from "../_shared/observability.ts";
+import { verifyWebhookSignature } from "../_shared/webhook-utils.ts";
 import { getState } from "../_shared/wa-webhook-shared/state/store.ts";
 import type { RouterContext, WhatsAppWebhookPayload } from "../_shared/wa-webhook-shared/types.ts";
 import { IDS } from "../_shared/wa-webhook-shared/wa/ids.ts";
@@ -13,11 +14,13 @@ const supabase = createClient(
 serve(async (req: Request): Promise<Response> => {
   const url = new URL(req.url);
   const requestId = req.headers.get("x-request-id") ?? crypto.randomUUID();
+  const correlationId = req.headers.get("x-correlation-id") ?? requestId;
 
   const respond = (body: unknown, init: ResponseInit = {}): Response => {
     const headers = new Headers(init.headers);
     headers.set("Content-Type", "application/json");
     headers.set("X-Request-ID", requestId);
+    headers.set("X-Correlation-ID", correlationId);
     return new Response(JSON.stringify(body), { ...init, headers });
   };
 
@@ -29,6 +32,7 @@ serve(async (req: Request): Promise<Response> => {
     logStructuredEvent(event, {
       service: "wa-webhook-profile",
       requestId,
+      correlationId,
       path: url.pathname,
       ...details,
     }, level);
@@ -62,14 +66,97 @@ serve(async (req: Request): Promise<Response> => {
     const challenge = url.searchParams.get("hub.challenge");
 
     if (mode === "subscribe" && token === Deno.env.get("WA_VERIFY_TOKEN")) {
-      return new Response(challenge ?? "", { status: 200 });
+      return new Response(challenge ?? "", { 
+        status: 200,
+        headers: { "X-Request-ID": requestId, "X-Correlation-ID": correlationId },
+      });
     }
     return respond({ error: "forbidden" }, { status: 403 });
   }
 
+  // Only POST is allowed for webhook messages
+  if (req.method !== "POST") {
+    return respond({ error: "method_not_allowed" }, { status: 405 });
+  }
+
   // Main webhook handler
   try {
-    const payload: WhatsAppWebhookPayload = await req.json();
+    // Read raw body for signature verification
+    const rawBody = await req.text();
+
+    // Verify WhatsApp signature (Security requirement per docs/GROUND_RULES.md)
+    const signatureHeader = req.headers.has("x-hub-signature-256")
+      ? "x-hub-signature-256"
+      : req.headers.has("x-hub-signature")
+      ? "x-hub-signature"
+      : null;
+    const signature = signatureHeader ? req.headers.get(signatureHeader) : null;
+    const signatureMeta = (() => {
+      if (!signature) {
+        return {
+          provided: false,
+          header: signatureHeader,
+          method: null as string | null,
+          sample: null as string | null,
+        };
+      }
+      const [method, hash] = signature.split("=", 2);
+      return {
+        provided: true,
+        header: signatureHeader,
+        method: method?.toLowerCase() ?? null,
+        sample: hash ? `${hash.slice(0, 6)}…${hash.slice(-4)}` : null,
+      };
+    })();
+    const appSecret = Deno.env.get("WHATSAPP_APP_SECRET") ?? Deno.env.get("WA_APP_SECRET");
+    const allowUnsigned = (Deno.env.get("WA_ALLOW_UNSIGNED_WEBHOOKS") ?? "false").toLowerCase() === "true";
+    const internalForward = req.headers.get("x-wa-internal-forward") === "true";
+
+    if (!appSecret) {
+      logEvent("PROFILE_AUTH_CONFIG_ERROR", { error: "WHATSAPP_APP_SECRET not configured" }, "error");
+      return respond({ error: "server_misconfigured" }, { status: 500 });
+    }
+
+    let isValidSignature = false;
+    if (signature) {
+      try {
+        isValidSignature = await verifyWebhookSignature(rawBody, signature, appSecret);
+        if (isValidSignature) {
+          logEvent("PROFILE_SIGNATURE_VALID", {
+            signatureHeader,
+            signatureMethod: signatureMeta.method,
+          });
+        }
+      } catch (err) {
+        logEvent("PROFILE_SIGNATURE_ERROR", {
+          error: err instanceof Error ? err.message : String(err),
+        }, "error");
+      }
+    }
+
+    if (!isValidSignature) {
+      if (allowUnsigned || internalForward) {
+        logEvent("PROFILE_AUTH_BYPASS", {
+          reason: internalForward ? "internal_forward" : signature ? "signature_mismatch" : "no_signature",
+          signatureHeader,
+          signatureMethod: signatureMeta.method,
+          signatureSample: signatureMeta.sample,
+          userAgent: req.headers.get("user-agent"),
+        }, "warn");
+      } else {
+        logEvent("PROFILE_AUTH_FAILED", {
+          signatureProvided: signatureMeta.provided,
+          signatureHeader,
+          signatureMethod: signatureMeta.method,
+          signatureSample: signatureMeta.sample,
+          userAgent: req.headers.get("user-agent"),
+        }, "warn");
+        return respond({ error: "unauthorized" }, { status: 401 });
+      }
+    }
+
+    // Parse payload after verification
+    const payload: WhatsAppWebhookPayload = JSON.parse(rawBody);
     const entry = payload.entry?.[0];
     const change = entry?.changes?.[0];
     const value = change?.value;
