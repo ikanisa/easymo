@@ -232,6 +232,30 @@ serve(async (req: Request): Promise<Response> => {
           handled = await handleWalletReferral(ctx);
         }
         
+        // Token Purchase
+        else if (id === "WALLET_PURCHASE" || id === "buy_tokens") {
+          const { handleWalletPurchase } = await import("./wallet/purchase.ts");
+          handled = await handleWalletPurchase(ctx);
+        }
+        else if (id.startsWith("purchase_")) {
+          const { handlePurchasePackage } = await import("./wallet/purchase.ts");
+          handled = await handlePurchasePackage(ctx, id);
+        }
+        
+        // Cash Out
+        else if (id === "WALLET_CASHOUT" || id === "cash_out") {
+          const { handleCashOut } = await import("./wallet/cashout.ts");
+          handled = await handleCashOut(ctx);
+        }
+        else if (id === "cashout_confirm_yes") {
+          const { handleCashOutConfirm } = await import("./wallet/cashout.ts");
+          handled = await handleCashOutConfirm(ctx);
+        }
+        else if (id === "cashout_confirm_no") {
+          const { handleCashOutCancel } = await import("./wallet/cashout.ts");
+          handled = await handleCashOutCancel(ctx);
+        }
+        
         // MoMo QR
         else if (id === IDS.MOMO_QR || id.startsWith("momoqr_")) {
           const { handleMomoButton, startMomoQr } = await import("../_shared/wa-webhook-shared/flows/momo/qr.ts");
@@ -287,6 +311,18 @@ serve(async (req: Request): Promise<Response> => {
         handled = await handleWalletTransactions(ctx);
       }
       
+      // Purchase keywords
+      else if (["buy", "buy tokens", "purchase", "purchase tokens"].includes(text)) {
+        const { handleWalletPurchase } = await import("./wallet/purchase.ts");
+        handled = await handleWalletPurchase(ctx);
+      }
+      
+      // Cash-out keywords
+      else if (["cash out", "cashout", "withdraw", "withdrawal"].includes(text)) {
+        const { handleCashOut } = await import("./wallet/cashout.ts");
+        handled = await handleCashOut(ctx);
+      }
+      
       // MOMO QR Text
       else if (text.includes("momo") || text.includes("qr") || state?.key?.startsWith("momo_qr")) {
         const { handleMomoText, startMomoQr } = await import("../_shared/wa-webhook-shared/flows/momo/qr.ts");
@@ -307,6 +343,24 @@ serve(async (req: Request): Promise<Response> => {
       else if (state?.key === "wallet_transfer_phone") {
         const { handleTransferPhone } = await import("./wallet/transfer.ts");
         handled = await handleTransferPhone(ctx, state.data as any, text);
+      }
+      
+      // Handle purchase amount input
+      else if (state?.key === "wallet_purchase_amount") {
+        const { handlePurchaseAmount } = await import("./wallet/purchase.ts");
+        handled = await handlePurchaseAmount(ctx, text);
+      }
+      
+      // Handle cash-out amount input
+      else if (state?.key === "wallet_cashout_amount") {
+        const { handleCashOutAmount } = await import("./wallet/cashout.ts");
+        handled = await handleCashOutAmount(ctx, text);
+      }
+      
+      // Handle cash-out phone input
+      else if (state?.key === "wallet_cashout_phone") {
+        const { handleCashOutPhone } = await import("./wallet/cashout.ts");
+        handled = await handleCashOutPhone(ctx, text);
       }
     }
 

@@ -157,9 +157,10 @@ CREATE TABLE IF NOT EXISTS scheduled_trips (
 CREATE INDEX IF NOT EXISTS idx_scheduled_trips_user 
 ON scheduled_trips(user_id, status, scheduled_time);
 
+-- Index for upcoming active scheduled trips (without now() to avoid immutability issue)
 CREATE INDEX IF NOT EXISTS idx_scheduled_trips_upcoming 
 ON scheduled_trips(scheduled_time, status) 
-WHERE status = 'active' AND scheduled_time > now();
+WHERE status = 'active';
 
 -- Trigger to update updated_at timestamp
 CREATE OR REPLACE FUNCTION update_scheduled_trips_updated_at()
