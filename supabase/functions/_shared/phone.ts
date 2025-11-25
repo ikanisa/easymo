@@ -1,4 +1,4 @@
-import { parsePhoneNumberFromString } from "https://esm.sh/libphonenumber-js@1.11.9?dts";
+import { parsePhoneNumberFromString } from "libphonenumber-js";
 
 export function normalizeE164(raw: string): string | null {
   const trimmed = raw.trim();
