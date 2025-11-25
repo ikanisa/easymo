@@ -3,6 +3,23 @@
 
 BEGIN;
 
+-- Rename old webhook_dlq table if it exists (different schema)
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1 FROM information_schema.tables 
+        WHERE table_schema = 'public' 
+        AND table_name = 'webhook_dlq'
+    ) AND NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_schema = 'public' 
+        AND table_name = 'webhook_dlq' 
+        AND column_name = 'phone_number'
+    ) THEN
+        ALTER TABLE public.webhook_dlq RENAME TO webhook_dlq_old;
+    END IF;
+END $$;
+
 CREATE TABLE IF NOT EXISTS public.webhook_dlq (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     
@@ -31,6 +48,20 @@ CREATE TABLE IF NOT EXISTS public.webhook_dlq (
     updated_at timestamptz DEFAULT now(),
     reprocessed_at timestamptz
 );
+
+-- Add status column if it doesn't exist (for existing tables)
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_schema = 'public' 
+        AND table_name = 'webhook_dlq' 
+        AND column_name = 'status'
+    ) THEN
+        ALTER TABLE public.webhook_dlq 
+        ADD COLUMN status text DEFAULT 'pending' CHECK (status IN ('pending', 'processing', 'reprocessed', 'failed', 'discarded'));
+    END IF;
+END $$;
 
 -- Indexes for efficient querying
 CREATE INDEX IF NOT EXISTS idx_webhook_dlq_status 

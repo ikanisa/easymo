@@ -171,14 +171,16 @@ serve(async (req: Request): Promise<Response> => {
 
     try {
       // Handle interactive buttons
-      if (message.type === "interactive" && message.interactive?.type === "button_reply") {
-        const buttonId = message.interactive.button_reply?.id;
+      if (message.type === "interactive" && (message as WhatsAppInteractiveMessage).interactive?.type === "button_reply") {
+        const interactiveMessage = message as WhatsAppInteractiveMessage;
+        const buttonId = interactiveMessage.interactive?.button_reply?.id;
         handled = await handleInsuranceButton(ctx, buttonId, state);
       }
 
       // Handle interactive lists
-      if (message.type === "interactive" && message.interactive?.type === "list_reply") {
-        const listId = message.interactive.list_reply?.id;
+      if (message.type === "interactive" && (message as WhatsAppInteractiveMessage).interactive?.type === "list_reply") {
+        const interactiveMessage = message as WhatsAppInteractiveMessage;
+        const listId = interactiveMessage.interactive?.list_reply?.id;
         handled = await handleInsuranceList(ctx, listId, state);
       }
 
@@ -244,6 +246,9 @@ async function buildContext(
   message: RawWhatsAppMessage,
   _payload: WhatsAppWebhookPayload,
 ): Promise<RouterContext> {
+  if (!message.from) { // Add null check
+    throw new Error("Message 'from' field is missing.");
+  }
   const from = message.from;
 
   // Auto-create profile if needed
@@ -252,8 +257,8 @@ async function buildContext(
 
   return {
     from,
-    profileId: profile?.user_id ?? null,
-    locale: profile?.language || "en",
+    profileId: profile?.user_id ?? undefined,
+    locale: (profile?.language || "en") as SupportedLanguage,
     supabase,
   };
 }
@@ -300,7 +305,7 @@ async function handleInsuranceText(
   message: RawWhatsAppMessage,
   state: { key: string; data?: Record<string, unknown> },
 ): Promise<boolean> {
-  const text = message.text?.body?.trim().toLowerCase();
+  const text = (message as WhatsAppTextMessage).text?.body?.trim().toLowerCase();
   if (!text) return false;
 
   // Check for menu selection keys first

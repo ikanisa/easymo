@@ -49,7 +49,7 @@ serve(async (req: Request): Promise<Response> => {
     } catch (err) {
       return respond({
         status: "unhealthy",
-        service: "wa-webhook-wallet",
+        service: "wa-webhook-profile",
         error: err instanceof Error ? err.message : String(err),
       }, { status: 503 });
     }
@@ -213,6 +213,17 @@ serve(async (req: Request): Promise<Response> => {
         else if (id === IDS.WALLET_REFERRAL || id === IDS.WALLET_SHARE) {
           const { handleWalletReferral } = await import("./wallet/referral.ts");
           handled = await handleWalletReferral(ctx);
+        }
+        
+        // MoMo QR
+        else if (id === IDS.MOMO_QR || id.startsWith("momoqr_")) {
+          const { handleMomoButton, startMomoQr } = await import("../_shared/wa-webhook-shared/flows/momo/qr.ts");
+          const momoState = state ?? { key: "momo_qr_menu", data: {} };
+          if (id === IDS.MOMO_QR) {
+            handled = await startMomoQr(ctx, momoState);
+          } else {
+            handled = await handleMomoButton(ctx, id, momoState);
+          }
         }
         
         // Reward selection

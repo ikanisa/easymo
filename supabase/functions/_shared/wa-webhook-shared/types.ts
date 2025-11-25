@@ -46,8 +46,17 @@ export type WhatsAppMessage = {
   [key: string]: unknown;
 };
 
-export type RawWhatsAppMessage = Partial<WhatsAppMessage> &
-  Record<string, unknown>;
+// CORRECTED: Make RawWhatsAppMessage a union of all specific message types
+export type RawWhatsAppMessage =
+  | WhatsAppTextMessage
+  | WhatsAppInteractiveMessage
+  | WhatsAppInteractiveButtonMessage
+  | WhatsAppInteractiveListMessage
+  | WhatsAppLocationMessage
+  | WhatsAppImageMessage
+  | WhatsAppDocumentMessage
+  | WhatsAppAudioMessage
+  | (WhatsAppMessage & Record<string, unknown>); // Fallback for unknown types
 
 export type WhatsAppTextMessage = WhatsAppMessage & {
   type: "text";

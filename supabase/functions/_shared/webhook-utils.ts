@@ -349,7 +349,7 @@ export class RateLimiter {
       if (error instanceof RateLimitError) throw error;
       
       // On error, allow the request to proceed (fail open)
-      logError("rate_limit_check", error, { identifier, bucket });
+      logError("rate_limit_check", error instanceof Error ? error : new Error(String(error)), { identifier, bucket });
       return { allowed: true, max_tokens: 100, tokens_remaining: 100 };
     }
   }
@@ -392,7 +392,7 @@ export class WebhookProcessor {
         error: error.message,
         correlationId,
       });
-      throw new WebhookError("Failed to queue webhook", "500", "QUEUE_ERROR", true);
+      throw new WebhookError("Failed to queue webhook", "QUEUE_ERROR", true, 500);
     }
   }
 

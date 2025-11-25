@@ -1,6 +1,9 @@
 {
   "importMap": "./supabase/functions/import_map.json",
   "nodeModulesDir": "auto",
+  "npm": {
+    "supabase-js": "npm:@supabase/supabase-js@2.84.0"
+  },
   "fmt": {
     "exclude": [
       "supabase/functions/wa-webhook/flows/json"
