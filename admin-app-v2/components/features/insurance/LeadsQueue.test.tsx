@@ -1,6 +1,34 @@
-import { describe, it, expect } from 'vitest';
-import { renderWithProviders, screen } from '../../../tests/utils';
+import { describe, it, expect, vi } from 'vitest';
+import { renderWithProviders, screen, waitFor } from '../../../tests/utils';
 import { LeadsQueue } from './LeadsQueue';
+
+// Mock the useData hook
+vi.mock('@/lib/hooks/useData', () => ({
+  useInsuranceLeads: vi.fn(() => ({
+    data: {
+      leads: [
+        {
+          id: '1',
+          customerName: 'Alice Johnson',
+          type: 'motor',
+          status: 'new',
+          submittedAt: new Date().toISOString(),
+          details: 'Toyota RAV4 2020, Comprehensive',
+        },
+        {
+          id: '2',
+          customerName: 'Bob Smith',
+          type: 'health',
+          status: 'reviewing',
+          submittedAt: new Date().toISOString(),
+          details: 'Family Plan, 4 members',
+        },
+      ],
+    },
+    isLoading: false,
+    error: null,
+  })),
+}));
 
 describe('LeadsQueue', () => {
   it('renders title and pending count', () => {
@@ -9,18 +37,21 @@ describe('LeadsQueue', () => {
     expect(screen.getByText(/Pending/)).toBeInTheDocument();
   });
 
-  it('renders leads list', () => {
+  it('renders leads list', async () => {
     renderWithProviders(<LeadsQueue />);
-    expect(screen.getByText('Alice Johnson')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText('Alice Johnson')).toBeInTheDocument();
+    });
     expect(screen.getByText('Toyota RAV4 2020, Comprehensive')).toBeInTheDocument();
     expect(screen.getByText('Bob Smith')).toBeInTheDocument();
   });
 
-  it('renders action buttons for each lead', () => {
+  it('renders action buttons for each lead', async () => {
     renderWithProviders(<LeadsQueue />);
-    // 3 leads * 2 buttons = 6 buttons
-    // Buttons don't have accessible names, so we check for button role
-    const buttons = screen.getAllByRole('button');
-    expect(buttons.length).toBeGreaterThanOrEqual(6);
+    await waitFor(() => {
+      // 2 leads * 2 buttons = 4 action buttons
+      const buttons = screen.getAllByRole('button');
+      expect(buttons.length).toBeGreaterThanOrEqual(4);
+    });
   });
 });
