@@ -54,8 +54,12 @@ function formatAdminNotificationMessage(
 
 function normalizeAdminWaId(value: string | null | undefined): string {
   if (!value) return "";
-  const digits = value.replace(/[^0-9]/g, "").trim();
-  return digits;
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+  const hasPlus = trimmed.startsWith("+");
+  const digits = trimmed.replace(/[^0-9]/g, "");
+  if (!digits) return "";
+  return hasPlus ? `+${digits}` : digits;
 }
 
 function getFallbackAdminIds(): string[] {
@@ -71,7 +75,7 @@ export async function notifyInsuranceAdmins(
   payload: AdminNotificationPayload,
 ): Promise<{ sent: number; failed: number; errors: string[] }> {
   const { leadId, userWaId, extracted } = payload;
-  const targets = await resolveAdminTargets(client);
+  const targets = dedupeAdmins(await resolveAdminTargets(client));
 
   if (!targets.length) {
     console.warn("insurance.no_active_admins");
@@ -295,4 +299,15 @@ async function fetchActiveContacts(client: SupabaseClient): Promise<AdminTarget[
     console.error("insurance.admin_contacts_fetch_error", err);
     return [];
   }
+}
+function dedupeAdmins(targets: AdminTarget[]): AdminTarget[] {
+  const map = new Map<string, AdminTarget>();
+  for (const target of targets) {
+    const id = normalizeAdminWaId(target.waId);
+    if (!id) continue;
+    if (!map.has(id)) {
+      map.set(id, { ...target, waId: id });
+    }
+  }
+  return Array.from(map.values());
 }

@@ -237,6 +237,22 @@ async function processQueueRow(
     return { id: row.id, status: "skipped", reason: "already_processing" };
   }
 
+  const leadStatus = claimed.lead_id
+    ? await getLeadStatus(client, claimed.lead_id)
+    : null;
+
+  if (leadStatus === "ocr_ok") {
+    await client
+      .from("insurance_media_queue")
+      .update({
+        status: "succeeded",
+        processed_at: now,
+        last_error: null,
+      })
+      .eq("id", row.id);
+    return { id: row.id, status: "skipped", reason: "already_processed" };
+  }
+
   const leadId = claimed.lead_id ?? await ensureLeadForQueue(client, row);
 
   try {
@@ -425,4 +441,19 @@ function json(body: unknown, status = 200): Response {
 
 if (import.meta.main) {
   Deno.serve(handler);
+}
+async function getLeadStatus(
+  client: SupabaseClient,
+  leadId: string,
+): Promise<string | null> {
+  const { data, error } = await client
+    .from("insurance_leads")
+    .select("status")
+    .eq("id", leadId)
+    .maybeSingle();
+  if (error) {
+    console.warn("insurance-ocr.lead_status_fail", { leadId, error: error.message });
+    return null;
+  }
+  return data?.status ?? null;
 }
