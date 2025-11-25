@@ -100,6 +100,21 @@ serve(async (req: Request): Promise<Response> => {
     // Verify WhatsApp signature
     const signature = req.headers.get("x-hub-signature-256") ??
       req.headers.get("x-hub-signature");
+    const signatureMeta = (() => {
+      if (!signature) return { provided: false, header: null as string | null, method: null as string | null, sample: null as string | null };
+      const header = req.headers.has("x-hub-signature-256")
+        ? "x-hub-signature-256"
+        : req.headers.has("x-hub-signature")
+        ? "x-hub-signature"
+        : null;
+      const [method, hash] = signature.split("=", 2);
+      return {
+        provided: true,
+        header,
+        method: method?.toLowerCase() ?? null,
+        sample: hash ? `${hash.slice(0, 6)}…${hash.slice(-4)}` : null,
+      };
+    })();
     const appSecret = Deno.env.get("WHATSAPP_APP_SECRET") ??
       Deno.env.get("WA_APP_SECRET");
     const allowUnsigned = (Deno.env.get("WA_ALLOW_UNSIGNED_WEBHOOKS") ?? "false").toLowerCase() === "true";
@@ -113,27 +128,29 @@ serve(async (req: Request): Promise<Response> => {
     let isValid = false;
     if (signature) {
       isValid = await verifyWebhookSignature(rawBody, signature, appSecret);
+      if (isValid) {
+        log("CORE_AUTH_SIGNATURE_VALID", {
+          header: signatureMeta.header,
+          method: signatureMeta.method,
+        }, "debug");
+      }
     }
     
     if (!isValid) {
       if (allowUnsigned || internalForward) {
         log("CORE_AUTH_BYPASS", {
           reason: internalForward ? "internal_forward" : signature ? "signature_mismatch" : "no_signature",
-          signatureHeader: req.headers.has("x-hub-signature-256")
-            ? "x-hub-signature-256"
-            : req.headers.has("x-hub-signature")
-            ? "x-hub-signature"
-            : null,
+          signatureHeader: signatureMeta.header,
+          signatureMethod: signatureMeta.method,
+          signatureSample: signatureMeta.sample,
           userAgent: req.headers.get("user-agent"),
         }, "warn");
       } else {
         log("CORE_AUTH_FAILED", { 
-          signatureProvided: !!signature,
-          signatureHeader: req.headers.has("x-hub-signature-256")
-            ? "x-hub-signature-256"
-            : req.headers.has("x-hub-signature")
-            ? "x-hub-signature"
-            : null,
+          signatureProvided: signatureMeta.provided,
+          signatureHeader: signatureMeta.header,
+          signatureMethod: signatureMeta.method,
+          signatureSample: signatureMeta.sample,
           userAgent: req.headers.get("user-agent") 
         }, "warn");
         return json({ error: "unauthorized" }, { status: 401 });
