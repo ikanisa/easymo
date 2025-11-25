@@ -89,7 +89,7 @@ import {
   evaluateMotorInsuranceGate,
   recordMotorInsuranceHidden,
   sendMotorInsuranceBlockedMessage,
-} from "../domains/insurance/gate.ts";
+} from "../../_shared/wa-webhook-shared/domains/insurance/gate.ts";
 import {
   homeOnly,
   sendButtonsMessage,

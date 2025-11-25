@@ -26,7 +26,7 @@ import {
 } from "../../utils/reply.ts";
 import { emitAlert } from "../../observe/alert.ts";
 import { ensureVehiclePlate, getStoredVehicleType, updateStoredVehicleType } from "./vehicle_plate.ts";
-import { readLastLocationMeta } from "../locations/favorites.ts";
+import { readLastLocation } from "../locations/favorites.ts";
 import { checkLocationCache } from "./location_cache.ts";
 import {
   getFavoriteById,
@@ -215,7 +215,7 @@ export async function handleScheduleRole(
     if (!ready) return true;
     
     // Check cache for driver
-    const last = await readLastLocationMeta(ctx);
+    const last = await readLastLocation(ctx);
     const fresh = checkLocationCache(last?.capturedAt ?? null);
     if (!fresh.needsRefresh && last) {
       const { lat, lng } = last;

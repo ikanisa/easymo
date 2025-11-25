@@ -31,43 +31,80 @@ const ROUTER_RETRY_DELAY_MS = Math.max(
 /**
  * Route message to appropriate microservice
  */
+/**
+ * @deprecated This function is deprecated as of 2025-11-25.
+ * Use `routeIncomingPayload` from `./router.ts` instead.
+ * 
+ * This wrapper is provided for backward compatibility with legacy wa-webhook service.
+ * It will be removed in a future version.
+ * 
+ * Migration guide:
+ * - Old: `await routeMessage(messageText, chatState)`
+ * - New: `await routeIncomingPayload(whatsAppPayload)`
+ * 
+ * The new implementation provides:
+ * - Better type safety with WhatsAppWebhookPayload
+ * - Detailed routing decisions with reason tracking
+ * - Integrated session management
+ * - Unified agent system support
+ */
 export async function routeMessage(
   messageText: string,
   chatState?: string
 ): Promise<string> {
-  // If unified agent system is enabled, route everything to ai-agents
-  const unifiedSystemEnabled = isFeatureEnabled("agent.unified_system");
-  console.log(JSON.stringify({
-    event: "ROUTE_CHECK_UNIFIED_SYSTEM",
-    message: messageText.substring(0, 50),
-    unified_system_enabled: unifiedSystemEnabled,
-  }));
-  
-  if (unifiedSystemEnabled) {
-    console.log(JSON.stringify({
-      event: "ROUTE_TO_UNIFIED_AGENT_SYSTEM",
-      message: messageText.substring(0, 50),
-      target: "wa-webhook-ai-agents",
-    }));
-    return "wa-webhook-ai-agents";
-  }
+  console.warn(
+    "DEPRECATION WARNING: routeMessage() from routing_logic.ts is deprecated. " +
+    "Use routeIncomingPayload() from router.ts instead."
+  );
 
-  // 1. Check chat state first (user is in a flow)
-  if (chatState) {
-    const stateService = getServiceFromStateConfig(chatState);
-    if (stateService) {
-      return stateService;
+  // Temporary wrapper for backward compatibility
+  // Construct a minimal payload to use the new routing logic
+  const mockPayload = {
+    entry: [{
+      changes: [{
+        value: {
+          messages: [{
+            from: "unknown", // Legacy callers don't have phone context
+            type: "text" as const,
+            text: { body: messageText },
+          }],
+        },
+      }],
+    }],
+  };
+
+  try {
+    const { routeIncomingPayload } = await import("./router.ts");
+    const decision = await routeIncomingPayload(mockPayload as any);
+    return decision.service;
+  } catch (error) {
+    console.error("Routing fallback error:", error);
+    
+    // Fallback to original logic if new router fails
+    // If unified agent system is enabled, route everything to ai-agents
+    const unifiedSystemEnabled = isFeatureEnabled("agent.unified_system");
+    
+    if (unifiedSystemEnabled) {
+      return "wa-webhook-ai-agents";
     }
-  }
 
-  // 2. Match keywords using consolidated config
-  const matchedService = matchKeywordsToService(messageText);
-  if (matchedService) {
-    return matchedService;
-  }
+    // 1. Check chat state first (user is in a flow)
+    if (chatState) {
+      const stateService = getServiceFromStateConfig(chatState);
+      if (stateService) {
+        return stateService;
+      }
+    }
 
-  // 3. Default to core service (handles general queries)
-  return "wa-webhook-core";
+    // 2. Match keywords using consolidated config
+    const matchedService = matchKeywordsToService(messageText);
+    if (matchedService) {
+      return matchedService;
+    }
+
+    // 3. Default to core service (handles general queries)
+    return "wa-webhook-core";
+  }
 }
 
 // Note: getServiceFromState is now imported from route-config.ts as getServiceFromStateConfig

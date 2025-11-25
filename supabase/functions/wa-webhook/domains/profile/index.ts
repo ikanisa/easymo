@@ -5,8 +5,8 @@ import { IDS } from "../../wa/ids.ts";
 import { setState, clearState } from "../../state/store.ts";
 import { logStructuredEvent } from "../../observe/log.ts";
 import { detectCountryIso } from "../../utils/phone.ts";
-import { fetchInsuranceMedia, uploadInsuranceBytes } from "../insurance/ins_media.ts";
-import { runInsuranceOCR } from "../insurance/ins_ocr.ts";
+import { fetchInsuranceMedia, uploadInsuranceBytes } from "../../../_shared/wa-webhook-shared/domains/insurance/ins_media.ts";
+import { runInsuranceOCR } from "../../../_shared/wa-webhook-shared/domains/insurance/ins_ocr.ts";
 import { fetchProfileMenuItems, submenuItemsToRows } from "../../utils/dynamic_submenu.ts";
 
 /**

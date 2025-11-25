@@ -1,7 +1,7 @@
 -- Create insurance_leads table
 CREATE TABLE IF NOT EXISTS public.insurance_leads (
     id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
-    user_id uuid REFERENCES auth.users(id) ON DELETE SET NULL,
+    user_id uuid REFERENCES public.profiles(user_id) ON DELETE SET NULL,
     whatsapp text,
     status text DEFAULT 'received',
     file_path text,
@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS public.insurance_media (
 -- Create insurance_quotes table
 CREATE TABLE IF NOT EXISTS public.insurance_quotes (
     id uuid PRIMARY KEY REFERENCES public.insurance_leads(id) ON DELETE CASCADE,
-    user_id uuid REFERENCES auth.users(id) ON DELETE SET NULL,
+    user_id uuid REFERENCES public.profiles(user_id) ON DELETE SET NULL,
     uploaded_docs text[],
     insurer text,
     status text DEFAULT 'pending',
@@ -67,7 +67,7 @@ CREATE TABLE IF NOT EXISTS public.insurance_admin_notifications (
 -- Create insurance_media_queue table
 CREATE TABLE IF NOT EXISTS public.insurance_media_queue (
     id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
-    profile_id uuid REFERENCES auth.users(id) ON DELETE SET NULL,
+    profile_id uuid REFERENCES public.profiles(user_id) ON DELETE SET NULL,
     wa_id text,
     storage_path text,
     mime_type text,

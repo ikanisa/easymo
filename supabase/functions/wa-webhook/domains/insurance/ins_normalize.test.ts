@@ -1,4 +1,4 @@
-import { normalizeInsuranceExtraction } from "./ins_normalize.ts";
+import { normalizeInsuranceExtraction } from "shared/wa-webhook-shared/domains/insurance/ins_normalize.ts";
 import { assertEquals } from "../../../../../tests/deps/asserts.ts";
 
 Deno.test("normalizeInsuranceExtraction coerces fields", () => {

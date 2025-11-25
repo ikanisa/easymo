@@ -1,6 +1,8 @@
-import { GEMINI_API_KEY } from "../../_shared/wa-webhook-shared/config.ts";
-import { supabase as sharedSupabase } from "../../_shared/wa-webhook-shared/config.ts";
+import { GEMINI_API_KEY } from "../../config.ts";
+import { supabase as sharedSupabase } from "../../config.ts";
 import { openaiCircuitBreaker, geminiCircuitBreaker } from "./circuit_breaker.ts";
+import * as ImageScript from "https://deno.land/x/imagescript@1.2.15/mod.ts";
+import { MIME_PNG, MIME_JPEG, MIME_WebP } from "https://deno.land/x/imagescript@1.2.15/mod.ts";
 
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY") ?? "";
 const OPENAI_VISION_MODEL = Deno.env.get("OPENAI_VISION_MODEL") ??
@@ -10,6 +12,8 @@ const OPENAI_BASE_URL = Deno.env.get("OPENAI_BASE_URL") ??
 
 const DEFAULT_OCR_TIMEOUT_MS = 30_000;
 const DEFAULT_MAX_RETRIES = 2;
+
+const MAX_IMAGE_LONGEST_EDGE = 1024; // pixels
 
 // Dynamic config cache (refresh every 5 minutes)
 let configCache: { timeout: number; retries: number; fetchedAt: number } | null = null;
@@ -158,7 +162,7 @@ export class MissingOpenAIKeyError extends Error {
   }
 }
 
-async function runGeminiOCR(signedUrl: string): Promise<Record<string, unknown>> {
+async function runGeminiOCR(signedUrl: string, originalMimeType?: string): Promise<Record<string, unknown>> {
   if (!GEMINI_API_KEY) {
     throw new Error("GEMINI_API_KEY is not configured");
   }
@@ -173,12 +177,7 @@ async function runGeminiOCR(signedUrl: string): Promise<Record<string, unknown>>
     console.info("INS_OCR_FALLBACK_GEMINI_START");
 
     try {
-      const imgResp = await fetch(signedUrl);
-      if (!imgResp.ok) throw new Error("Failed to fetch image for Gemini");
-      const blob = await imgResp.blob();
-      const arrayBuffer = await blob.arrayBuffer();
-      const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
-      const mimeType = blob.type || "image/jpeg";
+      const { base64, mimeType } = await fetchAndResizeImage(signedUrl, originalMimeType);
 
       const payload = {
         contents: [{
@@ -239,7 +238,7 @@ export async function runInsuranceOCR(
   const isPdf = lowerMime.includes("pdf") || /\.pdf(\?|$)/i.test(signedUrl);
   if (isPdf) {
     try {
-      return await runGeminiOCR(signedUrl);
+      return await runGeminiOCR(signedUrl, mimeType); // Pass mimeType
     } catch (geminiError) {
       console.error("INS_OCR_PDF_GEMINI_FAIL", geminiError);
     }
@@ -253,6 +252,8 @@ export async function runInsuranceOCR(
         console.warn("INS_OCR_OPENAI_KEY_MISSING", { fallback: "gemini" });
         throw new MissingOpenAIKeyError();
       }
+
+      const { base64, mimeType: processedMimeType } = await fetchAndResizeImage(signedUrl, mimeType); // Fetch and resize
 
       const result = await openaiCircuitBreaker.execute(async () => {
         const payload = {
@@ -268,7 +269,7 @@ export async function runInsuranceOCR(
                 { type: "text", text: OCR_PROMPT },
                 {
                   type: "image_url",
-                  image_url: { url: signedUrl },
+                  image_url: { url: `data:${processedMimeType};base64,${base64}` }, // Use base64 data
                 },
               ],
             },
@@ -314,7 +315,7 @@ export async function runInsuranceOCR(
               console.warn("INS_OCR_RETRYABLE_STATUS", {
                 status: response.status,
               });
-              lastError = new Error(`openai_${response.status}`);
+              lastError = new Error("openai_500");
               continue;
             }
 
@@ -389,7 +390,7 @@ export async function runInsuranceOCR(
   }
 
   try {
-    return await runGeminiOCR(signedUrl);
+    return await runGeminiOCR(signedUrl, mimeType); // Pass mimeType
   } catch (geminiError) {
     console.error("INS_OCR_GEMINI_FAILED", {
       error: geminiError instanceof Error

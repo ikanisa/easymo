@@ -6,6 +6,7 @@ import { forwardToEdgeService, routeIncomingPayload, summarizeServiceHealth } fr
 import { LatencyTracker } from "./telemetry.ts";
 import { checkRateLimit, cleanupRateLimitState } from "../_shared/service-resilience.ts";
 import { maskPhone } from "../_shared/phone-utils.ts";
+import { logError } from "../_shared/correlation-logging.ts";
 
 const coldStartMarker = performance.now();
 const supabase = createClient(
@@ -195,7 +196,7 @@ serve(async (req: Request): Promise<Response> => {
     return finalize(forwarded, decision.service);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    console.error(JSON.stringify({ event: "WA_WEBHOOK_CORE_ERROR", correlationId, message }));
+    logError("WA_WEBHOOK_CORE_ERROR", { correlationId, message }, { correlationId });
     return finalize(new Response(JSON.stringify({ error: "internal_error" }), { status: 500, headers: { "Content-Type": "application/json" } }));
   }
 });

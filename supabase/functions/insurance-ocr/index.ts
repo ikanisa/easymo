@@ -5,9 +5,12 @@ import {
 import {
   MissingOpenAIKeyError,
   runInsuranceOCR,
-} from "../wa-webhook/domains/insurance/ins_ocr.ts";
-import { normalizeInsuranceExtraction } from "../wa-webhook/domains/insurance/ins_normalize.ts";
-import { notifyInsuranceAdmins } from "../wa-webhook/domains/insurance/ins_admin_notify.ts";
+} from "../_shared/wa-webhook-shared/domains/insurance/ins_ocr.ts";
+import { normalizeInsuranceExtraction } from "../_shared/wa-webhook-shared/domains/insurance/ins_normalize.ts";
+import { notifyInsuranceAdmins } from "../_shared/wa-webhook-shared/domains/insurance/ins_admin_notify.ts";
+import { sendText } from "../_shared/wa-webhook-shared/wa/client.ts";
+import { buildUserSummary } from "../_shared/wa-webhook-shared/domains/insurance/ins_messages.ts";
+import { allocateInsuranceBonus } from "../_shared/wa-webhook-shared/wallet/allocate.ts";
 import { determineNextStatus } from "./utils.ts";
 import { recordRunMetrics } from "./telemetry.ts";
 
@@ -236,6 +239,32 @@ async function processQueueRow(
         sent: notifyResult.sent,
         failed: notifyResult.failed,
       });
+      // Send summary to user
+      const userSummary = buildUserSummary(normalized);
+      await sendText(row.wa_id, userSummary);
+      console.log("insurance-ocr.user_summary_sent", { leadId, waId: row.wa_id });
+
+      // Award insurance bonus tokens (if user has profile)
+      if (row.profile_id) {
+        try {
+          const bonusResult = await allocateInsuranceBonus(
+            client,
+            row.profile_id,
+            leadId,
+            2000
+          );
+          if (bonusResult.success && bonusResult.message) {
+            await sendText(row.wa_id, bonusResult.message);
+          }
+        } catch (bonusError) {
+          // Log but don't fail the main flow
+          console.warn("INS_BONUS_ALLOCATION_WARN", {
+            leadId,
+            profileId: row.profile_id,
+            error: bonusError instanceof Error ? bonusError.message : String(bonusError),
+          });
+        }
+      }
     } else {
       console.warn("insurance-ocr.no_user_wa_id", { leadId, queueId: row.id });
     }

@@ -4,16 +4,16 @@ import { sendText } from "../../_shared/wa-webhook-shared/wa/client.ts";
 import { getAppConfig } from "../../_shared/wa-webhook-shared/utils/app_config.ts";
 import { toE164 } from "../../_shared/wa-webhook-shared/utils/phone.ts";
 import { logStructuredEvent } from "../../_shared/wa-webhook-shared/observe/log.ts";
-import { fetchInsuranceMedia, uploadInsuranceBytes } from "./ins_media.ts";
-import { runInsuranceOCR } from "./ins_ocr.ts";
-import { normalizeInsuranceExtraction } from "./ins_normalize.ts";
-import { notifyInsuranceAdmins } from "./ins_admin_notify.ts";
+import { fetchInsuranceMedia, uploadInsuranceBytes } from "../../_shared/wa-webhook-shared/domains/insurance/ins_media.ts";
+import { runInsuranceOCR } from "../../_shared/wa-webhook-shared/domains/insurance/ins_ocr.ts";
+import { normalizeInsuranceExtraction } from "../../_shared/wa-webhook-shared/domains/insurance/ins_normalize.ts";
+import { notifyInsuranceAdmins } from "../../_shared/wa-webhook-shared/domains/insurance/ins_admin_notify.ts";
 import {
   buildAdminAlert,
   buildUserErrorMessage,
   buildUserSummary,
-} from "./ins_messages.ts";
-import type { InsuranceExtraction } from "./ins_normalize.ts";
+} from "../../_shared/wa-webhook-shared/domains/insurance/ins_messages.ts";
+import type { InsuranceExtraction } from "../../_shared/wa-webhook-shared/domains/insurance/ins_normalize.ts";
 import { emitAlert } from "../../_shared/wa-webhook-shared/observe/alert.ts";
 import { supabase as sharedSupabase } from "../../_shared/wa-webhook-shared/config.ts";
 import { allocateInsuranceBonus } from "../../_shared/wa-webhook-shared/wallet/allocate.ts";
@@ -223,7 +223,7 @@ async function notifyAdmins(
   }
 }
 
-export type InsuranceProcessOutcome = "skipped" | "ocr_ok" | "ocr_error";
+export type InsuranceProcessOutcome = "skipped" | "ocr_ok" | "ocr_error" | "ocr_queued";
 
 async function ensureInsuranceQuote(
   ctx: RouterContext,
@@ -350,76 +350,12 @@ export async function processInsuranceDocument(
     );
     await insertMediaRecord(ctx, leadId, mediaId, path, media.mime);
 
-    const started = performance.now();
-    const rawOcr = await (async () => {
-      ocrAttempted = true;
-      return await runInsuranceOCR(signedUrl, media.mime);
-    })();
-    const duration = Math.round(performance.now() - started);
-    console.info("INS_OCR_OK", { leadId, ms: duration });
-    await logStructuredEvent("INS_OCR_OK", { leadId, ms: duration });
 
-    let extracted = normalizeInsuranceExtraction(rawOcr);
 
-    // Merge with existing extraction if present (multi-page aggregation)
-    try {
-      const { data: current } = await ctx.supabase
-        .from('insurance_leads')
-        .select('extracted')
-        .eq('id', leadId)
-        .maybeSingle();
-      if (current?.extracted) {
-        extracted = mergeExtractions(current.extracted, extracted) as InsuranceExtraction;
-      }
-    } catch (_) { /* non-fatal */ }
-
-    await updateLead(ctx, leadId, {
-      file_path: path,
-      raw_ocr: rawOcr,
-      extracted,
-      status: "ocr_ok",
-      user_id: profileId,
-    });
-
-    // Ensure admin panel sync via insurance_quotes
-    await ensureInsuranceQuote(ctx, {
-      leadId,
-      userId: profileId,
-      filePath: path,
-      extracted,
-    });
-
-    // Optional background mirror to worker queue for redundancy/audit
+    // Enqueue to worker for OCR processing
     await maybeEnqueueForWorker(ctx, leadId, path, media.mime);
-
-    const summary = buildUserSummary(extracted);
-    console.info("INS_USER_SUMMARY_SEND", { leadId });
-    await sendText(ctx.from, summary);
-    await notifyAdmins(ctx, leadId, extracted);
     
-    // Award insurance bonus tokens (if user has profile)
-    if (profileId) {
-      try {
-        const bonusResult = await allocateInsuranceBonus(
-          ctx.supabase,
-          profileId,
-          leadId,
-          2000
-        );
-        if (bonusResult.success && bonusResult.message) {
-          await sendText(ctx.from, bonusResult.message);
-        }
-      } catch (bonusError) {
-        // Log but don't fail the main flow
-        console.warn("INS_BONUS_ALLOCATION_WARN", {
-          leadId,
-          profileId,
-          error: bonusError instanceof Error ? bonusError.message : String(bonusError),
-        });
-      }
-    }
-    
-    return "ocr_ok";
+    return "ocr_queued";
   } catch (error) {
     const errMsg =
       (error && typeof error === "object" && (error as any).message)
@@ -430,19 +366,9 @@ export async function processInsuranceDocument(
       error: errMsg,
     });
     if (leadId) {
-      if (ocrAttempted) {
-        await logStructuredEvent("INS_OCR_FAIL", {
-          leadId,
-          error: errMsg,
-        });
-        await emitAlert("INS_OCR_FAIL", {
-          leadId,
-          error: errMsg,
-        });
-      }
       await markLeadError(ctx, leadId, error);
     }
-    await sendText(ctx.from, buildUserErrorMessage());
+    // No message to user yet, this will be handled by handleInsuranceMedia
     return "ocr_error";
   }
 }

@@ -19,6 +19,7 @@ import {
 } from "../_shared/service-resilience.ts";
 import { addToDeadLetterQueue } from "../_shared/dead-letter-queue.ts";
 import { circuitBreakerManager } from "../_shared/circuit-breaker.ts";
+import { logError, logWarn, logInfo } from "../_shared/correlation-logging.ts";
 
 type RoutingDecision = {
   service: string;
@@ -98,6 +99,29 @@ export async function routeIncomingPayload(payload: WhatsAppWebhookPayload): Pro
   const routingMessage = getFirstMessage(payload);
   const routingText = routingMessage ? getRoutingText(routingMessage) : null;
   const phoneNumber = routingMessage?.from ?? null;
+
+  // Check if unified agent system is enabled (consolidation from routing_logic.ts)
+  const unifiedSystemEnabled = await (async () => {
+    try {
+      const { isFeatureEnabled } = await import("../_shared/feature-flags.ts");
+      return isFeatureEnabled("agent.unified_system");
+    } catch {
+      return false; // Graceful degradation if feature flags unavailable
+    }
+  })();
+
+  if (unifiedSystemEnabled) {
+    console.log(JSON.stringify({
+      event: "ROUTE_TO_UNIFIED_AGENT_SYSTEM",
+      message: routingText?.substring(0, 50) ?? null,
+      target: "wa-webhook-ai-agents",
+    }));
+    return {
+      service: "wa-webhook-ai-agents",
+      reason: "keyword",
+      routingText,
+    };
+  }
 
   if (routingText) {
     const normalized = routingText.trim().toLowerCase();
@@ -217,12 +241,7 @@ export async function forwardToEdgeService(
       recordServiceFailure(decision.service, response.status, correlationId);
     }
 
-    console.log(JSON.stringify({
-      event: "WA_CORE_ROUTED",
-      service: decision.service,
-      status: response.status,
-      correlationId,
-    }));
+    logInfo("WA_CORE_ROUTED", { service: decision.service, status: response.status }, { correlationId });
 
     return response;
   } catch (error) {
@@ -231,12 +250,10 @@ export async function forwardToEdgeService(
     // Record failure for circuit breaker
     recordServiceFailure(decision.service, "error", correlationId);
     
-    console.error(JSON.stringify({
-      event: "WA_CORE_ROUTING_FAILURE",
+    logError("WA_CORE_ROUTING_FAILURE", {
       service: decision.service,
       error: errorMessage,
-      correlationId,
-    }));
+    }, { correlationId });
 
     // Add failed payload to DLQ
     const message = getFirstMessage(payload);
@@ -368,7 +385,8 @@ async function fetchHomeMenuItems(): Promise<WhatsAppHomeMenuItem[]> {
     .order("display_order", { ascending: true });
 
   if (error) {
-    console.error("Failed to fetch home menu items:", error);
+    // Use structured logging instead of raw console.error
+    logError("FETCH_HOME_MENU_FAILED", { error: error.message }, { correlationId: crypto.randomUUID() });
     return [];
   }
 
@@ -376,11 +394,11 @@ async function fetchHomeMenuItems(): Promise<WhatsAppHomeMenuItem[]> {
 }
 
 async function handleHomeMenu(payload: WhatsAppWebhookPayload, headers?: Headers): Promise<Response> {
-  console.log(JSON.stringify({ event: "HANDLE_HOME_MENU_START" }));
+  logInfo("HANDLE_HOME_MENU_START", {}, { correlationId: crypto.randomUUID() });
   
   const message = getFirstMessage(payload);
   if (!message) {
-    console.log(JSON.stringify({ event: "NO_MESSAGE_IN_PAYLOAD" }));
+    logInfo("NO_MESSAGE_IN_PAYLOAD", {}, { correlationId: crypto.randomUUID() });
     return new Response(JSON.stringify({ success: true, message: "No message to process" }), {
       status: 200,
       headers: { "Content-Type": "application/json" },
@@ -393,20 +411,16 @@ async function handleHomeMenu(payload: WhatsAppWebhookPayload, headers?: Headers
   const normalizedText = text?.trim().toLowerCase() ?? null;
   const selection = interactiveId ?? normalizedText;
   
-  console.log(JSON.stringify({ 
-    event: "MESSAGE_RECEIVED", 
-    from: phoneNumber, 
-    text: selection ?? null,
-  }));
+  logInfo("MESSAGE_RECEIVED", { from: phoneNumber, text: selection ?? null }, { correlationId: crypto.randomUUID() });
   
   if (selection === "menu" || selection === "home") {
-    console.log(JSON.stringify({ event: "MENU_REQUESTED", from: phoneNumber }));
+    logInfo("MENU_REQUESTED", { from: phoneNumber }, { correlationId: crypto.randomUUID() });
     if (phoneNumber) await clearActiveService(supabase, phoneNumber);
   } else if (selection) {
     const isInteractive = Boolean(interactiveId);
     const targetService = SERVICE_KEY_MAP[selection] ?? (isInteractive ? FALLBACK_SERVICE : null);
     if (targetService) {
-      console.log(JSON.stringify({ event: "ROUTING_TO_SERVICE", service: targetService, selection }));
+      logInfo("ROUTING_TO_SERVICE", { service: targetService, selection }, { correlationId: crypto.randomUUID() });
       if (phoneNumber) await setActiveService(supabase, phoneNumber, targetService);
       const url = `${MICROSERVICES_BASE_URL}/${targetService}`;
       const forwardHeaders = new Headers(headers);
@@ -420,13 +434,13 @@ async function handleHomeMenu(payload: WhatsAppWebhookPayload, headers?: Headers
           headers: forwardHeaders,
           body: JSON.stringify(payload),
         });
-        console.log(JSON.stringify({ event: "FORWARDED", service: targetService, status: response.status }));
+        logInfo("FORWARDED", { service: targetService, status: response.status }, { correlationId: crypto.randomUUID() });
         return response;
       } catch (error) {
-        console.error(JSON.stringify({ event: "FORWARD_FAILED", service: targetService, error: String(error) }));
+        logError("FORWARD_FAILED", { service: targetService, error: String(error) }, { correlationId: crypto.randomUUID() });
       }
     } else if (!isInteractive) {
-      console.log(JSON.stringify({ event: "TEXT_NOT_RECOGNIZED", input: selection }));
+      logInfo("TEXT_NOT_RECOGNIZED", { input: selection }, { correlationId: crypto.randomUUID() });
       if (phoneNumber) await clearActiveService(supabase, phoneNumber);
     }
   } else if (phoneNumber) {
@@ -434,7 +448,7 @@ async function handleHomeMenu(payload: WhatsAppWebhookPayload, headers?: Headers
   }
 
   // Show home menu - interactive list message
-  console.log(JSON.stringify({ event: "SHOWING_HOME_MENU", to: phoneNumber }));
+  logInfo("SHOWING_HOME_MENU", { to: phoneNumber }, { correlationId: crypto.randomUUID() });
 
   const ctx: RouterContext = {
     supabase,
@@ -454,7 +468,7 @@ async function handleHomeMenu(payload: WhatsAppWebhookPayload, headers?: Headers
 
     // Fallback if no items found (shouldn't happen if DB is populated)
     if (rows.length === 0) {
-      console.warn("No active menu items found in DB, using fallback");
+      logWarn("NO_ACTIVE_MENU_ITEMS", { message: "No active menu items found in DB, using fallback" }, { correlationId: crypto.randomUUID() });
       rows.push(
         { id: "rides", title: "Rides & Transport", description: "Request a ride or delivery" },
         { id: "insurance", title: "Insurance", description: "Buy or manage insurance" },
@@ -477,7 +491,7 @@ async function handleHomeMenu(payload: WhatsAppWebhookPayload, headers?: Headers
     console.log(JSON.stringify({ event: "MENU_SENT_SUCCESS", to: phoneNumber, itemCount: rows.length }));
     return new Response(JSON.stringify({ success: true, menu_shown: true }), { status: 200 });
   } catch (error) {
-    console.error(JSON.stringify({ event: "SEND_MESSAGE_FAILED", error: String(error) }));
+    logError("SEND_MESSAGE_FAILED", { error: String(error) }, { correlationId: crypto.randomUUID() });
     return new Response(JSON.stringify({ error: "Failed to send message" }), { status: 500 });
   }
 }

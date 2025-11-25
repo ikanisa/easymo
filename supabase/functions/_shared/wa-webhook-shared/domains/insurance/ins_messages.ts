@@ -17,12 +17,9 @@ export function buildUserSummary(extracted: InsuranceExtraction): string {
     `• Certificate #: ${safe(extracted.certificate_number)}`,
     `• Plate: ${safe(extracted.registration_plate)}`,
     `• VIN/Chassis: ${safe(extracted.vin_chassis)}`,
-    `• Inception: ${safe(extracted.policy_inception)} • Expiry: ${
-      safe(extracted.policy_expiry)
-    }`,
-    `• Make/Model/Year: ${safe(extracted.make)}/${safe(extracted.model)}/${
-      safe(extracted.vehicle_year)
-    }`,
+    `• Inception: ${safe(extracted.policy_inception)} • Expiry: ` +
+      `$${safe(extracted.policy_expiry)}`,
+    `• Make/Model/Year: ${safe(extracted.make)}/${safe(extracted.model)}/${safe(extracted.vehicle_year)}`,
     "Our team will contact you shortly.",
   ].join("\n");
 }
@@ -37,11 +34,9 @@ export function buildAdminAlert(
 ): string {
   return [
     "New motor insurance lead:",
-    `• Plate ${safe(extracted.registration_plate)}, Policy ${
-      safe(extracted.policy_number)
-    }, Cert ${safe(extracted.certificate_number)}, Exp ${
-      safe(extracted.policy_expiry)
-    }`,
+    `• Plate ${safe(extracted.registration_plate)}, Policy ` +
+      `${safe(extracted.policy_number)}, Cert ${safe(extracted.certificate_number)}, Exp ` +
+      `${safe(extracted.policy_expiry)}`,
     `Chat client: https://wa.me/${clientDigits}`,
   ].join("\n");
 }

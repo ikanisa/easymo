@@ -1,4 +1,4 @@
-import type { SupabaseClient } from "../../deps.ts";
+import type { SupabaseClient } from "../deps.ts";
 
 export type NearbyIntentMode = "drivers" | "passengers";
 

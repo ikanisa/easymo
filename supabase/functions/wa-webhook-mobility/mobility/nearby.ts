@@ -28,7 +28,7 @@ import {
   updateStoredVehicleType,
 } from "./vehicle_plate.ts";
 import { getRecentNearbyIntent, storeNearbyIntent } from "./intent_cache.ts";
-import { isFeatureEnabled } from "../../../_shared/feature-flags.ts";
+import { isFeatureEnabled } from "shared/feature-flags.ts";
 import { routeToAIAgent, sendAgentOptions } from "../ai-agents/index.ts";
 import {
   getFavoriteById,
@@ -37,7 +37,7 @@ import {
 } from "../locations/favorites.ts";
 import { buildSaveRows } from "../locations/save.ts";
 import { checkLocationCache } from "./location_cache.ts";
-import { readLastLocationMeta } from "../locations/favorites.ts";
+import { readLastLocation } from "../locations/favorites.ts";
 
 const DEFAULT_WINDOW_DAYS = 30;
 const REQUIRED_RADIUS_METERS = 10_000;
@@ -186,7 +186,7 @@ export async function handleSeeDrivers(ctx: RouterContext): Promise<boolean> {
   if (!ctx.profileId) return false;
   
   // 1. Check for cached location (30 min window)
-  const last = await readLastLocationMeta(ctx);
+  const last = await readLastLocation(ctx);
   const cacheCheck = checkLocationCache(last?.capturedAt ?? null);
   if (!cacheCheck.needsRefresh && last) {
     const { lat, lng } = last;
@@ -216,7 +216,7 @@ export async function handleSeePassengers(
   if (!ready) return true;
 
   // 1. Check for cached location (30 min window)
-  const last2 = await readLastLocationMeta(ctx);
+  const last2 = await readLastLocation(ctx);
   const cacheCheck2 = checkLocationCache(last2?.capturedAt ?? null);
   if (!cacheCheck2.needsRefresh && last2) {
     const { lat, lng } = last2;
