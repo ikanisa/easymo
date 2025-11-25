@@ -88,30 +88,45 @@ serve(async (req: Request): Promise<Response> => {
     // Route based on message type
     let handled = false;
 
-    // Handle interactive buttons
-    if (message.type === "interactive" && message.interactive?.type === "button_reply") {
-      const buttonId = message.interactive.button_reply?.id;
-      handled = await handleInsuranceButton(ctx, buttonId, state);
-    }
+    try {
+      // Handle interactive buttons
+      if (message.type === "interactive" && message.interactive?.type === "button_reply") {
+        const buttonId = message.interactive.button_reply?.id;
+        handled = await handleInsuranceButton(ctx, buttonId, state);
+      }
 
-    // Handle interactive lists
-    if (message.type === "interactive" && message.interactive?.type === "list_reply") {
-      const listId = message.interactive.list_reply?.id;
-      handled = await handleInsuranceList(ctx, listId, state);
-    }
+      // Handle interactive lists
+      if (message.type === "interactive" && message.interactive?.type === "list_reply") {
+        const listId = message.interactive.list_reply?.id;
+        handled = await handleInsuranceList(ctx, listId, state);
+      }
 
-    // Handle media (images/documents)
-    if (message.type === "image" || message.type === "document") {
-      handled = await handleInsuranceMedia(ctx, message);
-    }
+      // Handle media (images/documents)
+      if (message.type === "image" || message.type === "document") {
+        handled = await handleInsuranceMedia(ctx, message, state);
+      }
 
-    // Handle text messages
-    if (message.type === "text" && !handled) {
-      handled = await handleInsuranceText(ctx, message, state);
-    }
+      // Handle text messages
+      if (message.type === "text" && !handled) {
+        handled = await handleInsuranceText(ctx, message, state);
+      }
 
-    if (!handled) {
-      await logEvent("INSURANCE_UNHANDLED", { type: message.type });
+      if (!handled) {
+        await logEvent("INSURANCE_UNHANDLED", { type: message.type });
+      }
+    } catch (handlerError) {
+      await logEvent("INSURANCE_HANDLER_ERROR", { 
+        error: handlerError instanceof Error ? handlerError.message : String(handlerError),
+        messageType: message.type,
+      });
+      // Send error message to user
+      const { sendText } = await import("../_shared/wa-webhook-shared/wa/client.ts");
+      try {
+        await sendText(ctx.from, "Sorry, something went wrong. Please try again.");
+      } catch (_sendError) {
+        // Ignore send errors - already logged main error
+      }
+      return respond({ success: false, error: "handler_error" });
     }
 
     return respond({ success: true, handled });
@@ -169,6 +184,10 @@ async function handleInsuranceButton(
 ): Promise<boolean> {
   // Handle insurance button selections
   if (buttonId.startsWith("ins_") || buttonId === "insurance_agent" || buttonId === "insurance" || buttonId === "insurance_submit" || buttonId === "insurance_help" || buttonId === "motor_insurance_upload") {
+    // If it's a specific action like submit or help, delegate to list selection handler
+    if (buttonId === "insurance_submit" || buttonId === "insurance_help" || buttonId === "motor_insurance_upload") {
+      return await handleInsuranceListSelection(ctx, state, buttonId);
+    }
     await startInsurance(ctx, state);
     return true;
   }
@@ -181,7 +200,6 @@ async function handleInsuranceList(
   listId: string,
   state: { key: string; data?: Record<string, unknown> },
 ): Promise<boolean> {
-  // Handle insurance list selections
   // Handle insurance list selections
   if (listId.startsWith("ins_") || listId === "insurance_agent" || listId === "insurance" || listId === "insurance_submit" || listId === "insurance_help" || listId === "motor_insurance_upload") {
     // If it's a specific action like submit or help, handle the selection

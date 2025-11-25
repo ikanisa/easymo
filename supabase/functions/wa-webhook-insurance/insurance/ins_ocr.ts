@@ -10,6 +10,51 @@ const OPENAI_BASE_URL = Deno.env.get("OPENAI_BASE_URL") ??
 const OCR_TIMEOUT_MS = 30_000;
 const MAX_RETRIES = 2; // initial attempt + one retry on 5xx
 
+// Circuit breaker configuration
+const CIRCUIT_BREAKER_THRESHOLD = 5; // Number of failures before opening circuit
+const CIRCUIT_BREAKER_RESET_MS = 60_000; // Time to wait before trying again (60 seconds)
+
+// Circuit breaker state (module-level for persistence across calls within same instance)
+type CircuitState = {
+  failures: number;
+  lastFailure: number;
+  isOpen: boolean;
+};
+
+const circuitState: { openai: CircuitState; gemini: CircuitState } = {
+  openai: { failures: 0, lastFailure: 0, isOpen: false },
+  gemini: { failures: 0, lastFailure: 0, isOpen: false },
+};
+
+function isCircuitOpen(service: 'openai' | 'gemini'): boolean {
+  const state = circuitState[service];
+  if (!state.isOpen) return false;
+  
+  // Check if enough time has passed to try again
+  if (Date.now() - state.lastFailure >= CIRCUIT_BREAKER_RESET_MS) {
+    console.info(`INS_OCR_CIRCUIT_HALF_OPEN`, { service });
+    return false; // Allow a test request
+  }
+  return true;
+}
+
+function recordSuccess(service: 'openai' | 'gemini'): void {
+  const state = circuitState[service];
+  state.failures = 0;
+  state.isOpen = false;
+}
+
+function recordFailure(service: 'openai' | 'gemini'): void {
+  const state = circuitState[service];
+  state.failures++;
+  state.lastFailure = Date.now();
+  
+  if (state.failures >= CIRCUIT_BREAKER_THRESHOLD) {
+    state.isOpen = true;
+    console.warn(`INS_OCR_CIRCUIT_OPEN`, { service, failures: state.failures });
+  }
+}
+
 const OCR_PROMPT =
   `You are extracting fields from a motor insurance certificate (photo or PDF).
 Return a single JSON object. No prose. Fields:
@@ -85,57 +130,68 @@ async function runGeminiOCR(signedUrl: string): Promise<Record<string, unknown>>
     throw new Error("GEMINI_API_KEY is not configured");
   }
 
+  // Check circuit breaker
+  if (isCircuitOpen('gemini')) {
+    throw new Error("Gemini circuit breaker is open - service temporarily unavailable");
+  }
+
   console.info("INS_OCR_FALLBACK_GEMINI_START");
 
-  // Fetch image data
-  const imgResp = await fetch(signedUrl);
-  if (!imgResp.ok) throw new Error("Failed to fetch image for Gemini");
-  const blob = await imgResp.blob();
-  const arrayBuffer = await blob.arrayBuffer();
-  const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
-  const mimeType = blob.type || "image/jpeg";
+  try {
+    // Fetch image data
+    const imgResp = await fetch(signedUrl);
+    if (!imgResp.ok) throw new Error("Failed to fetch image for Gemini");
+    const blob = await imgResp.blob();
+    const arrayBuffer = await blob.arrayBuffer();
+    const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+    const mimeType = blob.type || "image/jpeg";
 
-  const payload = {
-    contents: [{
-      parts: [
-        { text: OCR_PROMPT },
-        {
-          inline_data: {
-            mime_type: mimeType,
-            data: base64
+    const payload = {
+      contents: [{
+        parts: [
+          { text: OCR_PROMPT },
+          {
+            inline_data: {
+              mime_type: mimeType,
+              data: base64
+            }
           }
-        }
-      ]
-    }],
-    generationConfig: {
-      response_mime_type: "application/json",
-      response_schema: OCR_JSON_SCHEMA
+        ]
+      }],
+      generationConfig: {
+        response_mime_type: "application/json",
+        response_schema: OCR_JSON_SCHEMA
+      }
+    };
+
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      }
+    );
+
+    if (!response.ok) {
+      const text = await response.text();
+      throw new Error(`Gemini request failed: ${response.status} ${text}`);
     }
-  };
 
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
+    const json = await response.json();
+    const content = json.candidates?.[0]?.content?.parts?.[0]?.text;
+    
+    if (!content) {
+      throw new Error("Gemini response missing content");
     }
-  );
 
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`Gemini request failed: ${response.status} ${text}`);
+    console.info("INS_OCR_GEMINI_OK");
+    recordSuccess('gemini');
+    return JSON.parse(content);
+  } catch (error) {
+    recordFailure('gemini');
+    throw error;
   }
-
-  const json = await response.json();
-  const content = json.candidates?.[0]?.content?.parts?.[0]?.text;
-  
-  if (!content) {
-    throw new Error("Gemini response missing content");
-  }
-
-  console.info("INS_OCR_GEMINI_OK");
-  return JSON.parse(content);
 }
 
 export async function runInsuranceOCR(
@@ -153,117 +209,130 @@ export async function runInsuranceOCR(
       // fall through to OpenAI attempt (may fail for pdf)
     }
   }
-  // Try OpenAI first
-  try {
-    if (!OPENAI_API_KEY) {
-      console.warn("INS_OCR_OPENAI_KEY_MISSING", { fallback: "gemini" });
-      throw new MissingOpenAIKeyError();
-    }
+  
+  // Check OpenAI circuit breaker
+  const openAICircuitOpen = isCircuitOpen('openai');
+  
+  // Try OpenAI first (unless circuit is open)
+  if (!openAICircuitOpen) {
+    try {
+      if (!OPENAI_API_KEY) {
+        console.warn("INS_OCR_OPENAI_KEY_MISSING", { fallback: "gemini" });
+        throw new MissingOpenAIKeyError();
+      }
 
-    const payload = {
-      model: OPENAI_VISION_MODEL,
-      messages: [
-        {
-          role: "system",
-          content: "You are an expert insurance document parser.",
-        },
-        {
-          role: "user",
-          content: [
-            { type: "text", text: OCR_PROMPT },
-            {
-              type: "image_url",
-              image_url: { url: signedUrl },
-            },
-          ],
-        },
-      ],
-      response_format: {
-        type: "json_schema",
-        json_schema: {
-          name: OCR_SCHEMA_NAME,
-          schema: OCR_JSON_SCHEMA,
-        },
-      },
-    } as const;
-
-    let lastError: unknown = null;
-
-    for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), OCR_TIMEOUT_MS);
-      try {
-        console.info("INS_OCR_CALL", {
-          model: OPENAI_VISION_MODEL,
-          attempt: attempt + 1,
-        });
-        const response = await fetch(`${OPENAI_BASE_URL}/chat/completions`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${OPENAI_API_KEY}`,
+      const payload = {
+        model: OPENAI_VISION_MODEL,
+        messages: [
+          {
+            role: "system",
+            content: "You are an expert insurance document parser.",
           },
-          signal: controller.signal,
-          body: JSON.stringify(payload),
-        });
-        clearTimeout(timeout);
+          {
+            role: "user",
+            content: [
+              { type: "text", text: OCR_PROMPT },
+              {
+                type: "image_url",
+                image_url: { url: signedUrl },
+              },
+            ],
+          },
+        ],
+        response_format: {
+          type: "json_schema",
+          json_schema: {
+            name: OCR_SCHEMA_NAME,
+            schema: OCR_JSON_SCHEMA,
+          },
+        },
+      } as const;
 
-        if (response.status >= 500 && response.status < 600) {
-          console.warn("INS_OCR_RETRYABLE_STATUS", { status: response.status });
-          lastError = new Error(`openai_${response.status}`);
-          continue;
-        }
+      let lastError: unknown = null;
 
-        if (!response.ok) {
-          const text = await response.text().catch(() => "");
-          console.error("INS_OCR_BAD_STATUS", {
-            status: response.status,
-            text: text?.slice(0, 200),
+      for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), OCR_TIMEOUT_MS);
+        try {
+          console.info("INS_OCR_CALL", {
+            model: OPENAI_VISION_MODEL,
+            attempt: attempt + 1,
           });
-          throw new Error(`OpenAI request failed: ${response.status} ${text}`);
-        }
-
-        const json = await response.json();
-        
-        // Extract content from OpenAI chat completion response
-        const messageContent = json?.choices?.[0]?.message?.content;
-        
-        if (!messageContent || typeof messageContent !== 'string') {
-          console.error("INS_OCR_NO_CONTENT", { response: JSON.stringify(json).slice(0, 200) });
-          throw new Error("OpenAI response missing message content");
-        }
-        
-        console.info("INS_OCR_RESOLVED_OK", { preview: messageContent.slice(0, 120) });
-        
-        // Parse the JSON response
-        const parsed = JSON.parse(messageContent);
-        return parsed;
-      } catch (error) {
-        clearTimeout(timeout);
-        if (error instanceof DOMException && error.name === "AbortError") {
-          lastError = new Error("openai_timeout");
-        } else if (error instanceof Error) {
-          lastError = error;
-        } else {
-          lastError = new Error(String(error ?? "unknown_error"));
-        }
-
-        const isRetryable = attempt < MAX_RETRIES - 1 &&
-          (lastError instanceof Error) &&
-          /openai_5/.test(lastError.message);
-        if (!isRetryable) {
-          console.error("INS_OCR_ERROR", {
-            error: lastError instanceof Error
-              ? lastError.message
-              : String(lastError),
+          const response = await fetch(`${OPENAI_BASE_URL}/chat/completions`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${OPENAI_API_KEY}`,
+            },
+            signal: controller.signal,
+            body: JSON.stringify(payload),
           });
-          // Don't throw yet, break to fallback
-          break;
+          clearTimeout(timeout);
+
+          if (response.status >= 500 && response.status < 600) {
+            console.warn("INS_OCR_RETRYABLE_STATUS", { status: response.status });
+            lastError = new Error(`openai_${response.status}`);
+            recordFailure('openai');
+            continue;
+          }
+
+          if (!response.ok) {
+            const text = await response.text().catch(() => "");
+            console.error("INS_OCR_BAD_STATUS", {
+              status: response.status,
+              text: text?.slice(0, 200),
+            });
+            recordFailure('openai');
+            throw new Error(`OpenAI request failed: ${response.status} ${text}`);
+          }
+
+          const json = await response.json();
+          
+          // Extract content from OpenAI chat completion response
+          const messageContent = json?.choices?.[0]?.message?.content;
+          
+          if (!messageContent || typeof messageContent !== 'string') {
+            console.error("INS_OCR_NO_CONTENT", { response: JSON.stringify(json).slice(0, 200) });
+            throw new Error("OpenAI response missing message content");
+          }
+          
+          console.info("INS_OCR_RESOLVED_OK", { preview: messageContent.slice(0, 120) });
+          
+          // Parse the JSON response
+          const parsed = JSON.parse(messageContent);
+          recordSuccess('openai');
+          return parsed;
+        } catch (error) {
+          clearTimeout(timeout);
+          if (error instanceof DOMException && error.name === "AbortError") {
+            lastError = new Error("openai_timeout");
+          } else if (error instanceof Error) {
+            lastError = error;
+          } else {
+            lastError = new Error(String(error ?? "unknown_error"));
+          }
+
+          recordFailure('openai');
+          
+          const isRetryable = attempt < MAX_RETRIES - 1 &&
+            (lastError instanceof Error) &&
+            /openai_5/.test(lastError.message);
+          if (!isRetryable) {
+            console.error("INS_OCR_ERROR", {
+              error: lastError instanceof Error
+                ? lastError.message
+                : String(lastError),
+            });
+            // Don't throw yet, break to fallback
+            break;
+          }
         }
       }
+    } catch (e) {
+      console.warn("INS_OCR_OPENAI_FAILED", e);
     }
-  } catch (e) {
-    console.warn("INS_OCR_OPENAI_FAILED", e);
+  } else {
+    console.info("INS_OCR_OPENAI_CIRCUIT_OPEN", { skipping: true });
   }
 
   // Fallback to Gemini
