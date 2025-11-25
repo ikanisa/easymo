@@ -52,6 +52,9 @@ const SERVICE_KEY_MAP: Record<string, string> = {
   "insurance": "wa-webhook-insurance",
   "insurance_agent": "wa-webhook-insurance",
   "motor_insurance": "wa-webhook-insurance",
+  "insurance_submit": "wa-webhook-insurance",
+  "insurance_help": "wa-webhook-insurance",
+  "motor_insurance_upload": "wa-webhook-insurance",
 
   // Jobs
   "jobs": "wa-webhook-jobs",

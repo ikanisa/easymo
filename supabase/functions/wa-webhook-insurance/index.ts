@@ -5,10 +5,10 @@ import { logStructuredEvent } from "../_shared/observability.ts";
 import type { RouterContext, WhatsAppWebhookPayload, RawWhatsAppMessage } from "../_shared/wa-webhook-shared/types.ts";
 import { getState } from "../_shared/wa-webhook-shared/state/store.ts";
 import { IDS } from "../_shared/wa-webhook-shared/wa/ids.ts";
-import { getFirstMessage } from "../_shared/wa-webhook-shared/utils/messages.ts";
+
 
 // Insurance domain imports
-import { startInsurance, handleInsuranceMedia } from "./insurance/index.ts";
+import { startInsurance, handleInsuranceMedia, handleInsuranceListSelection } from "./insurance/index.ts";
 import {
   evaluateMotorInsuranceGate,
   recordMotorInsuranceHidden,
@@ -168,7 +168,7 @@ async function handleInsuranceButton(
   state: { key: string; data?: Record<string, unknown> },
 ): Promise<boolean> {
   // Handle insurance button selections
-  if (buttonId.startsWith("ins_") || buttonId === "insurance_agent" || buttonId === "insurance") {
+  if (buttonId.startsWith("ins_") || buttonId === "insurance_agent" || buttonId === "insurance" || buttonId === "insurance_submit" || buttonId === "insurance_help" || buttonId === "motor_insurance_upload") {
     await startInsurance(ctx, state);
     return true;
   }
@@ -182,7 +182,13 @@ async function handleInsuranceList(
   state: { key: string; data?: Record<string, unknown> },
 ): Promise<boolean> {
   // Handle insurance list selections
-  if (listId.startsWith("ins_") || listId === "insurance_agent" || listId === "insurance") {
+  // Handle insurance list selections
+  if (listId.startsWith("ins_") || listId === "insurance_agent" || listId === "insurance" || listId === "insurance_submit" || listId === "insurance_help" || listId === "motor_insurance_upload") {
+    // If it's a specific action like submit or help, handle the selection
+    if (listId === "insurance_submit" || listId === "insurance_help" || listId === "motor_insurance_upload") {
+      return await handleInsuranceListSelection(ctx, state, listId);
+    }
+    // Otherwise show the menu
     await startInsurance(ctx, state);
     return true;
   }
