@@ -18,6 +18,15 @@ import { logStructuredEvent, recordMetric } from "../_shared/observability.ts";
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 // =====================================================
+// CONFIGURATION
+// =====================================================
+
+// AI Model Configuration
+const GEMINI_MODEL = Deno.env.get("MARKETPLACE_AI_MODEL") || "gemini-1.5-flash";
+const AI_TEMPERATURE = parseFloat(Deno.env.get("MARKETPLACE_AI_TEMPERATURE") || "0.7");
+const AI_MAX_TOKENS = parseInt(Deno.env.get("MARKETPLACE_AI_MAX_TOKENS") || "1024", 10);
+
+// =====================================================
 // TYPES
 // =====================================================
 
@@ -185,7 +194,7 @@ export class MarketplaceAgent {
       }
 
       const model = this.genAI.getGenerativeModel({
-        model: "gemini-1.5-flash",
+        model: GEMINI_MODEL,
         systemInstruction: SYSTEM_PROMPT + contextPrompt,
       });
 
@@ -193,8 +202,8 @@ export class MarketplaceAgent {
       const chat = model.startChat({
         history: messages.slice(0, -1), // All but last message
         generationConfig: {
-          temperature: 0.7,
-          maxOutputTokens: 1024,
+          temperature: AI_TEMPERATURE,
+          maxOutputTokens: AI_MAX_TOKENS,
           responseMimeType: "application/json",
         },
       });
@@ -525,6 +534,22 @@ export class MarketplaceAgent {
    */
   private async notifyMatchingBuyers(listingId: string): Promise<void> {
     try {
+      // First, get the listing to retrieve seller_phone
+      const { data: listing } = await this.supabase
+        .from("marketplace_listings")
+        .select("seller_phone")
+        .eq("id", listingId)
+        .single();
+
+      if (!listing) {
+        logStructuredEvent(
+          "MARKETPLACE_NOTIFY_BUYERS_LISTING_NOT_FOUND",
+          { listingId, correlationId: this.correlationId },
+          "warn",
+        );
+        return;
+      }
+
       const { data: matches } = await this.supabase.rpc(
         "find_matching_marketplace_buyers",
         {
@@ -544,7 +569,7 @@ export class MarketplaceAgent {
           await this.supabase.from("marketplace_matches").insert({
             listing_id: listingId,
             buyer_phone: match.buyer_phone,
-            seller_phone: "", // Will be populated from listing
+            seller_phone: listing.seller_phone,
             distance_km: match.distance_km,
             match_score: match.match_score,
             status: "suggested",

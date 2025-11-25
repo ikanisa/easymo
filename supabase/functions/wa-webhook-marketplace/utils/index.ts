@@ -9,6 +9,17 @@
 import { logStructuredEvent } from "../../_shared/observability.ts";
 
 // =====================================================
+// CONSTANTS
+// =====================================================
+
+/**
+ * Rwanda phone number validation pattern
+ * Matches: +250XXXXXXXXX, 250XXXXXXXXX, 07XXXXXXXX
+ * Rwanda country code is 250, local numbers start with 07
+ */
+const RWANDA_PHONE_PATTERN = /^(250|07)\d{8,9}$/;
+
+// =====================================================
 // TYPES
 // =====================================================
 
@@ -346,7 +357,7 @@ export function parsePriceFromText(text: string): number | null {
 export function isValidPhone(phone: string): boolean {
   // Rwanda phone formats: +250... or 07...
   const cleaned = phone.replace(/\D/g, "");
-  return /^(250|07)\d{8,9}$/.test(cleaned);
+  return RWANDA_PHONE_PATTERN.test(cleaned);
 }
 
 /**

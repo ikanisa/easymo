@@ -22,6 +22,12 @@ import {
   logMarketplaceEvent,
 } from "./utils/index.ts";
 
+// =====================================================
+// CONFIGURATION
+// =====================================================
+
+const WHATSAPP_API_VERSION = Deno.env.get("WHATSAPP_API_VERSION") || "v18.0";
+
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL") ?? "",
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
@@ -485,7 +491,7 @@ async function sendText(to: string, text: string): Promise<void> {
 
   try {
     const response = await fetch(
-      `https://graph.facebook.com/v18.0/${phoneNumberId}/messages`,
+      `https://graph.facebook.com/${WHATSAPP_API_VERSION}/${phoneNumberId}/messages`,
       {
         method: "POST",
         headers: {
