@@ -4,6 +4,7 @@ import { logStructuredEvent } from "../_shared/observability.ts";
 import { verifyWebhookSignature } from "../_shared/webhook-utils.ts";
 import { forwardToEdgeService, routeIncomingPayload, summarizeServiceHealth } from "./router.ts";
 import { LatencyTracker } from "./telemetry.ts";
+import { checkRateLimit, cleanupRateLimitState } from "../_shared/service-resilience.ts";
 
 const coldStartMarker = performance.now();
 const supabase = createClient(
@@ -123,6 +124,31 @@ serve(async (req: Request): Promise<Response> => {
     
     // Parse payload after verification
     const payload = JSON.parse(rawBody);
+    
+    // Extract phone number for rate limiting
+    const phoneNumber = extractPhoneFromPayload(payload);
+    if (phoneNumber) {
+      const rateCheck = checkRateLimit(phoneNumber);
+      if (!rateCheck.allowed) {
+        log("CORE_RATE_LIMITED", { 
+          phone: maskPhone(phoneNumber),
+          resetAt: new Date(rateCheck.resetAt).toISOString(),
+        }, "warn");
+        return json({ 
+          error: "rate_limit_exceeded",
+          retryAfter: Math.ceil((rateCheck.resetAt - Date.now()) / 1000),
+        }, { 
+          status: 429,
+          headers: { "Retry-After": String(Math.ceil((rateCheck.resetAt - Date.now()) / 1000)) },
+        });
+      }
+    }
+    
+    // Periodically cleanup rate limit state (every ~100 requests)
+    if (Math.random() < 0.01) {
+      cleanupRateLimitState();
+    }
+    
     log("CORE_WEBHOOK_RECEIVED", { payloadType: typeof payload });
     const decision = await routeIncomingPayload(payload);
     log("CORE_ROUTING_DECISION", { 
@@ -138,3 +164,27 @@ serve(async (req: Request): Promise<Response> => {
     return finalize(new Response(JSON.stringify({ error: "internal_error" }), { status: 500, headers: { "Content-Type": "application/json" } }));
   }
 });
+
+/**
+ * Extract phone number from WhatsApp webhook payload
+ */
+function extractPhoneFromPayload(payload: unknown): string | null {
+  try {
+    const p = payload as { entry?: Array<{ changes?: Array<{ value?: { messages?: Array<{ from?: string }> } }> }> };
+    const messages = p?.entry?.[0]?.changes?.[0]?.value?.messages;
+    if (Array.isArray(messages) && messages.length > 0) {
+      return messages[0]?.from ?? null;
+    }
+  } catch {
+    // Ignore parsing errors
+  }
+  return null;
+}
+
+/**
+ * Mask phone number for logging (privacy protection)
+ */
+function maskPhone(phone: string): string {
+  if (!phone || phone.length < 7) return "***";
+  return phone.slice(0, 4) + "****" + phone.slice(-3);
+}

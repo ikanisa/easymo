@@ -9,6 +9,15 @@ import {
   getSessionByPhone,
   setActiveService,
 } from "../_shared/session-manager.ts";
+import {
+  isServiceCircuitOpen,
+  recordServiceSuccess,
+  recordServiceFailure,
+  checkRateLimit,
+  fetchWithRetry,
+  getAllCircuitStates,
+} from "../_shared/service-resilience.ts";
+import { addToDeadLetterQueue } from "../_shared/dead-letter-queue.ts";
 
 type RoutingDecision = {
   service: string;
@@ -22,6 +31,7 @@ type HealthStatus = {
   timestamp: string;
   checks: Record<string, string>;
   microservices: Record<string, boolean>;
+  circuitBreakers?: Record<string, { state: string; failures: number }>;
   version: string;
   error?: string;
 };
@@ -37,92 +47,19 @@ type WhatsAppHomeMenuItem = {
   active_countries: string[];
 };
 
+import {
+  buildMenuKeyMap,
+  ROUTED_SERVICES,
+  getServiceFromState as getServiceFromStateConfig,
+} from "../_shared/route-config.ts";
+
 const FALLBACK_SERVICE = "wa-webhook";
 
-const SERVICE_KEY_MAP: Record<string, string> = {
-  // Mobility / rides
-  "rides": "wa-webhook-mobility",
-  "mobility": "wa-webhook-mobility",
-  "rides_agent": "wa-webhook-mobility",
-  "nearby_drivers": "wa-webhook-mobility",
-  "nearby_passengers": "wa-webhook-mobility",
-  "schedule_trip": "wa-webhook-mobility",
-
-  // Insurance
-  "insurance": "wa-webhook-insurance",
-  "insurance_agent": "wa-webhook-insurance",
-  "motor_insurance": "wa-webhook-insurance",
-  "insurance_submit": "wa-webhook-insurance",
-  "insurance_help": "wa-webhook-insurance",
-  "motor_insurance_upload": "wa-webhook-insurance",
-
-  // Jobs
-  "jobs": "wa-webhook-jobs",
-  "jobs_agent": "wa-webhook-jobs",
-
-  // Property
-  "property": "wa-webhook-property",
-  "property_rentals": "wa-webhook-property",
-  "property rentals": "wa-webhook-property",
-  "real_estate_agent": "wa-webhook-property",
-
-  // Marketplace / commerce
-  "marketplace": "wa-webhook-marketplace",
-  "shops_services": "wa-webhook-marketplace",
-  "buy_and_sell": "wa-webhook-marketplace",
-  "buy and sell": "wa-webhook-marketplace",
-  "business_broker_agent": "wa-webhook-marketplace",
-  "general_broker": "wa-webhook-marketplace",
-
-  // Wallet / profile
-  "wallet": "wa-webhook-profile",
-  "token_transfer": "wa-webhook-profile",
-  "momo_qr": "wa-webhook-profile",
-  "momo qr": "wa-webhook-profile",
-  "momoqr": "wa-webhook-profile",
-  "profile": "wa-webhook-profile",
-  "profile_assets": "wa-webhook-profile",
-  "my_business": "wa-webhook-profile",
-  "my_businesses": "wa-webhook-profile",
-  "my_jobs": "wa-webhook-profile",
-  "my_properties": "wa-webhook-profile",
-  "saved_locations": "wa-webhook-profile",
-
-  // AI / support agents
-  "ai_agents": "wa-webhook-ai-agents",
-  "farmer_agent": "wa-webhook-ai-agents",
-  "sales_agent": "wa-webhook-ai-agents",
-  "waiter_agent": "wa-webhook-ai-agents",
-  "waiter": "wa-webhook-ai-agents",
-  "support": "wa-webhook-ai-agents",
-  "customer_support": "wa-webhook-ai-agents",
-  "farmers": "wa-webhook-ai-agents",
-
-
-  // Legacy numeric mapping (keep for backwards compatibility)
-  "1": "wa-webhook-mobility",
-  "2": "wa-webhook-insurance",
-  "3": "wa-webhook-jobs",
-  "4": "wa-webhook-property",
-  "5": "wa-webhook-profile",  // Consolidated: wallet is now part of profile
-  "6": "wa-webhook-marketplace",
-  "7": "wa-webhook-ai-agents",
-};
+// Build SERVICE_KEY_MAP from consolidated route config
+const SERVICE_KEY_MAP = buildMenuKeyMap();
 
 const MICROSERVICES_BASE_URL = `${Deno.env.get("SUPABASE_URL")}/functions/v1`;
 const ROUTER_TIMEOUT_MS = Math.max(Number(Deno.env.get("WA_ROUTER_TIMEOUT_MS") ?? "4000") || 4000, 1000);
-
-const ROUTED_SERVICES = [
-  "wa-webhook-jobs",
-  "wa-webhook-marketplace",
-  "wa-webhook-ai-agents",
-  "wa-webhook-property",
-  "wa-webhook-mobility",
-  "wa-webhook-profile",  // Includes wallet functionality
-  "wa-webhook-insurance",
-  FALLBACK_SERVICE,
-  "wa-webhook-core",
-];
 
 export async function routeIncomingPayload(payload: WhatsAppWebhookPayload): Promise<RoutingDecision> {
   const routingMessage = getFirstMessage(payload);
@@ -176,6 +113,8 @@ export async function forwardToEdgeService(
   payload: WhatsAppWebhookPayload,
   headers?: Headers,
 ): Promise<Response> {
+  const correlationId = headers?.get("X-Correlation-ID") ?? crypto.randomUUID();
+  
   if (!ROUTED_SERVICES.includes(decision.service)) {
     console.warn(`Unknown service '${decision.service}', handling inside core.`);
     return new Response(JSON.stringify({ success: true, service: "wa-webhook-core" }), {
@@ -189,36 +128,92 @@ export async function forwardToEdgeService(
     return await handleHomeMenu(payload, headers);
   }
 
+  // Check circuit breaker before attempting request
+  if (isServiceCircuitOpen(decision.service)) {
+    console.warn(JSON.stringify({
+      event: "WA_CORE_CIRCUIT_OPEN",
+      service: decision.service,
+      correlationId,
+    }));
+    
+    // Add to DLQ for later processing
+    const message = getFirstMessage(payload);
+    if (message) {
+      await addToDeadLetterQueue(supabase, {
+        message_id: message.id,
+        from_number: message.from,
+        payload,
+        error_message: `Circuit breaker open for ${decision.service}`,
+      }, correlationId);
+    }
+    
+    return new Response(JSON.stringify({
+      success: false,
+      service: decision.service,
+      error: "Service temporarily unavailable (circuit open)",
+      circuitOpen: true,
+    }), {
+      status: 503,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
   const url = `${MICROSERVICES_BASE_URL}/${decision.service}`;
   const forwardHeaders = new Headers(headers);
   forwardHeaders.set("Content-Type", "application/json");
   forwardHeaders.set("X-Routed-From", "wa-webhook-core");
   forwardHeaders.set("X-Routed-Service", decision.service);
-
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), ROUTER_TIMEOUT_MS);
+  forwardHeaders.set("X-Correlation-ID", correlationId);
 
   try {
-    const response = await fetch(url, {
+    // Use fetchWithRetry for automatic retry with exponential backoff
+    const response = await fetchWithRetry(url, {
       method: "POST",
       headers: forwardHeaders,
       body: JSON.stringify(payload),
-      signal: controller.signal,
-    });
+      timeoutMs: ROUTER_TIMEOUT_MS,
+    }, correlationId);
+
+    if (response.ok || response.status < 500) {
+      // Success or client error - record success for circuit breaker
+      recordServiceSuccess(decision.service);
+    } else {
+      // Server error - record failure
+      recordServiceFailure(decision.service, response.status, correlationId);
+    }
 
     console.log(JSON.stringify({
       event: "WA_CORE_ROUTED",
       service: decision.service,
       status: response.status,
+      correlationId,
     }));
 
     return response;
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    
+    // Record failure for circuit breaker
+    recordServiceFailure(decision.service, "error", correlationId);
+    
     console.error(JSON.stringify({
       event: "WA_CORE_ROUTING_FAILURE",
       service: decision.service,
-      error: error instanceof Error ? error.message : String(error),
+      error: errorMessage,
+      correlationId,
     }));
+
+    // Add failed payload to DLQ
+    const message = getFirstMessage(payload);
+    if (message) {
+      await addToDeadLetterQueue(supabase, {
+        message_id: message.id,
+        from_number: message.from,
+        payload,
+        error_message: errorMessage,
+        error_stack: error instanceof Error ? error.stack : undefined,
+      }, correlationId);
+    }
 
     return new Response(JSON.stringify({
       success: false,
@@ -228,8 +223,6 @@ export async function forwardToEdgeService(
       status: 503,
       headers: { "Content-Type": "application/json" },
     });
-  } finally {
-    clearTimeout(timeout);
   }
 }
 
@@ -249,6 +242,9 @@ export async function summarizeServiceHealth(supabase: SupabaseClient): Promise<
   // We use allSettled so one slow service doesn't block the response
   const microservices = await getAllServicesHealth();
 
+  // 3. Get circuit breaker states
+  const circuitBreakers = getAllCircuitStates();
+
   const duration = performance.now() - start;
 
   return {
@@ -260,7 +256,8 @@ export async function summarizeServiceHealth(supabase: SupabaseClient): Promise<
       latency: `${Math.round(duration)}ms`,
     },
     microservices,
-    version: "2.1.0",
+    circuitBreakers,
+    version: "2.2.0", // Version bump for resilience features
   };
 }
 
