@@ -8,6 +8,7 @@
  */
 
 import { logStructuredEvent, recordMetric } from "./observability.ts";
+import { normalizePhone, maskPhone } from "./phone-utils.ts";
 
 // Circuit Breaker Configuration
 const CIRCUIT_BREAKER_THRESHOLD = Math.max(
@@ -42,6 +43,18 @@ const BASE_RETRY_DELAY_MS = Math.max(
   Number(Deno.env.get("WA_BASE_RETRY_DELAY_MS") ?? "200") || 200,
   50,
 );
+
+/**
+ * HTTP status codes that should trigger retry
+ * Configurable via WA_RETRIABLE_STATUS_CODES env var (comma-separated)
+ */
+const RETRIABLE_STATUS_CODES = ((): number[] => {
+  const envValue = Deno.env.get("WA_RETRIABLE_STATUS_CODES");
+  if (envValue) {
+    return envValue.split(",").map((s) => parseInt(s.trim(), 10)).filter((n) => !isNaN(n));
+  }
+  return [408, 429, 503, 504];
+})();
 
 type CircuitState = "closed" | "open" | "half-open";
 
@@ -215,7 +228,7 @@ export function checkRateLimit(phoneNumber: string): {
   resetAt: number;
 } {
   const now = Date.now();
-  const key = phoneNumber.replace(/[^0-9+]/g, ""); // Normalize phone number
+  const key = normalizePhone(phoneNumber); // Use shared normalization
   
   let entry = rateLimitState.get(key);
 
@@ -243,17 +256,11 @@ export function checkRateLimit(phoneNumber: string): {
   return { allowed: true, remaining: remaining - 1, resetAt };
 }
 
-/**
- * Mask phone number for logging (privacy protection)
- */
-function maskPhone(phone: string): string {
-  if (!phone || phone.length < 7) return "***";
-  return phone.slice(0, 4) + "****" + phone.slice(-3);
-}
+// maskPhone is now imported from phone-utils.ts
 
 /**
  * Retry with exponential backoff
- * Implements retry for transient failures (408, 429, 503)
+ * Implements retry for transient failures (configurable via WA_RETRIABLE_STATUS_CODES)
  */
 export async function fetchWithRetry(
   url: string,
@@ -261,7 +268,6 @@ export async function fetchWithRetry(
   correlationId?: string,
 ): Promise<Response> {
   const timeoutMs = options.timeoutMs ?? 4000;
-  const retriableStatusCodes = [408, 429, 503, 504];
   let lastError: Error | undefined;
   let lastResponse: Response | undefined;
 
@@ -277,7 +283,7 @@ export async function fetchWithRetry(
       clearTimeout(timer);
 
       // Don't retry on success or non-retriable errors
-      if (response.ok || !retriableStatusCodes.includes(response.status)) {
+      if (response.ok || !RETRIABLE_STATUS_CODES.includes(response.status)) {
         return response;
       }
 

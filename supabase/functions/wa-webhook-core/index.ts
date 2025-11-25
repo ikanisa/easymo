@@ -5,6 +5,7 @@ import { verifyWebhookSignature } from "../_shared/webhook-utils.ts";
 import { forwardToEdgeService, routeIncomingPayload, summarizeServiceHealth } from "./router.ts";
 import { LatencyTracker } from "./telemetry.ts";
 import { checkRateLimit, cleanupRateLimitState } from "../_shared/service-resilience.ts";
+import { maskPhone } from "../_shared/phone-utils.ts";
 
 const coldStartMarker = performance.now();
 const supabase = createClient(
@@ -18,7 +19,12 @@ const latencyTracker = new LatencyTracker({
   p95SloMs: Number(Deno.env.get("WA_CORE_P95_SLO_MS") ?? "1200") || 1200,
 });
 
+// Request counter for deterministic cleanup scheduling
+let requestCounter = 0;
+const CLEANUP_INTERVAL = 100; // Cleanup every N requests
+
 serve(async (req: Request): Promise<Response> => {
+  requestCounter++;
   const requestStart = performance.now();
   const url = new URL(req.url);
   const requestId = req.headers.get("x-request-id") ?? crypto.randomUUID();
@@ -144,8 +150,8 @@ serve(async (req: Request): Promise<Response> => {
       }
     }
     
-    // Periodically cleanup rate limit state (every ~100 requests)
-    if (Math.random() < 0.01) {
+    // Periodically cleanup rate limit state using deterministic counter
+    if (requestCounter % CLEANUP_INTERVAL === 0) {
       cleanupRateLimitState();
     }
     
@@ -181,10 +187,4 @@ function extractPhoneFromPayload(payload: unknown): string | null {
   return null;
 }
 
-/**
- * Mask phone number for logging (privacy protection)
- */
-function maskPhone(phone: string): string {
-  if (!phone || phone.length < 7) return "***";
-  return phone.slice(0, 4) + "****" + phone.slice(-3);
-}
+// maskPhone is imported from phone-utils.ts

@@ -44,9 +44,25 @@ export const ROUTE_CONFIGS: RouteConfig[] = [
     priority: 1,
   },
   {
+    // Profile service handles both user profile and wallet functionality
+    // This consolidation simplifies the architecture - "wallet" is now part of "profile"
     service: "wa-webhook-profile",
-    keywords: ["wallet", "token", "transfer", "redeem", "earn", "reward", "balance", "payment", "pay", "deposit", "withdraw", "money", "referral", "share", "profile"],
-    menuKeys: ["wallet", "token_transfer", "momo_qr", "momo qr", "momoqr", "profile", "profile_assets", "my_business", "my_businesses", "my_jobs", "my_properties", "saved_locations", "5"],
+    keywords: [
+      // Wallet/financial keywords
+      "wallet", "token", "transfer", "redeem", "earn", "reward", "balance",
+      "payment", "pay", "deposit", "withdraw", "money", "referral", "share",
+      // Profile keywords
+      "profile",
+    ],
+    menuKeys: [
+      // Wallet menu keys
+      "wallet", "token_transfer", "momo_qr", "momo qr", "momoqr",
+      // Profile menu keys
+      "profile", "profile_assets", "my_business", "my_businesses",
+      "my_jobs", "my_properties", "saved_locations",
+      // Legacy numeric
+      "5",
+    ],
     priority: 1,
   },
   {
