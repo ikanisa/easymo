@@ -93,20 +93,31 @@ serve(async (req: Request): Promise<Response> => {
     // Verify WhatsApp signature
     const signature = req.headers.get("x-hub-signature-256");
     const appSecret = Deno.env.get("WHATSAPP_APP_SECRET");
+    const allowUnsigned = (Deno.env.get("WA_ALLOW_UNSIGNED_WEBHOOKS") ?? "false").toLowerCase() === "true";
     
     if (!appSecret) {
       log("CORE_AUTH_CONFIG_ERROR", { error: "WHATSAPP_APP_SECRET not configured" }, "error");
       return json({ error: "server_misconfigured" }, { status: 500 });
     }
     
-    const isValid = await verifyWebhookSignature(rawBody, signature, appSecret);
+    let isValid = false;
+    if (signature) {
+      isValid = await verifyWebhookSignature(rawBody, signature, appSecret);
+    }
     
     if (!isValid) {
-      log("CORE_AUTH_FAILED", { 
-        signatureProvided: !!signature,
-        userAgent: req.headers.get("user-agent") 
-      }, "warn");
-      return json({ error: "unauthorized" }, { status: 401 });
+      if (allowUnsigned) {
+        log("CORE_AUTH_BYPASS", {
+          reason: signature ? "signature_mismatch" : "no_signature",
+          userAgent: req.headers.get("user-agent"),
+        }, "warn");
+      } else {
+        log("CORE_AUTH_FAILED", { 
+          signatureProvided: !!signature,
+          userAgent: req.headers.get("user-agent") 
+        }, "warn");
+        return json({ error: "unauthorized" }, { status: 401 });
+      }
     }
     
     // Parse payload after verification

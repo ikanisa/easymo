@@ -33,9 +33,19 @@ CREATE TABLE IF NOT EXISTS public.agent_chat_sessions (
 );
 
 ALTER TABLE public.agent_chat_sessions
-  ADD COLUMN IF NOT EXISTS user_phone TEXT,
-  ADD COLUMN IF NOT EXISTS agent_type TEXT NOT NULL DEFAULT 'general',
-  ALTER COLUMN agent_type DROP DEFAULT;
+  ADD COLUMN IF NOT EXISTS user_phone TEXT;
+
+ALTER TABLE public.agent_chat_sessions
+  ADD COLUMN IF NOT EXISTS agent_type TEXT;
+
+ALTER TABLE public.agent_chat_sessions
+  ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'active';
+
+ALTER TABLE public.agent_chat_sessions
+  ADD COLUMN IF NOT EXISTS last_message_at TIMESTAMPTZ DEFAULT NOW();
+
+ALTER TABLE public.agent_chat_sessions
+  ADD COLUMN IF NOT EXISTS expires_at TIMESTAMPTZ DEFAULT NOW() + INTERVAL '24 hours';
 
 COMMENT ON TABLE public.agent_chat_sessions IS 
   'Persistent chat sessions for AI agents with conversation history';
