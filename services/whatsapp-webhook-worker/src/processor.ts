@@ -16,6 +16,7 @@ import { createClient,SupabaseClient } from "@supabase/supabase-js";
 
 import { config } from "./config.js";
 import { logger } from "./logger.js";
+import { maskPhone,RateLimiter } from "./rate-limiter.js";
 import { resolveSecret } from "./secrets.js";
 import { verifyWebhookSignature } from "./signature.js";
 
@@ -63,10 +64,11 @@ export class WebhookProcessor {
   private serviceRolePromise: Promise<string | undefined>;
   private appSecretPromise: Promise<string | undefined>;
 
-  // Rate limiting state (in-memory, per docs/GROUND_RULES.md recommendation)
-  private rateLimitStore = new Map<string, { count: number; resetAt: number }>();
-  private readonly RATE_LIMIT_MAX_REQUESTS = 60; // requests per window
-  private readonly RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute
+  // Rate limiting (per docs/GROUND_RULES.md recommendation)
+  private rateLimiter = new RateLimiter({
+    maxRequests: 60, // requests per window
+    windowMs: 60 * 1000, // 1 minute
+  });
 
   constructor() {
     this.serviceRolePromise = resolveSecret({
@@ -112,55 +114,6 @@ export class WebhookProcessor {
 
   async disconnect(): Promise<void> {
     await this.idempotencyStore.disconnect();
-  }
-
-  /**
-   * Check rate limit for a phone number
-   * Per docs/GROUND_RULES.md - Public endpoints MUST implement rate limiting
-   */
-  private checkRateLimit(phoneNumber: string): { allowed: boolean; resetAt: number } {
-    const now = Date.now();
-    const entry = this.rateLimitStore.get(phoneNumber);
-
-    // Periodically cleanup old entries (every 100th call on average)
-    if (Math.random() < 0.01) {
-      this.cleanupRateLimitStore();
-    }
-
-    if (!entry || entry.resetAt < now) {
-      // New window
-      this.rateLimitStore.set(phoneNumber, { count: 1, resetAt: now + this.RATE_LIMIT_WINDOW_MS });
-      return { allowed: true, resetAt: now + this.RATE_LIMIT_WINDOW_MS };
-    }
-
-    if (entry.count >= this.RATE_LIMIT_MAX_REQUESTS) {
-      // Rate limit exceeded
-      return { allowed: false, resetAt: entry.resetAt };
-    }
-
-    // Increment count
-    entry.count++;
-    return { allowed: true, resetAt: entry.resetAt };
-  }
-
-  /**
-   * Clean up expired rate limit entries to prevent memory leaks
-   */
-  private cleanupRateLimitStore(): void {
-    const now = Date.now();
-    for (const [key, entry] of this.rateLimitStore.entries()) {
-      if (entry.resetAt < now) {
-        this.rateLimitStore.delete(key);
-      }
-    }
-  }
-
-  /**
-   * Mask phone number for logging (per docs/GROUND_RULES.md - PII masking)
-   */
-  private maskPhone(phone: string): string {
-    if (!phone || phone.length < 8) return "****";
-    return phone.replace(/(\+?\d{3})\d+(\d{4})/, "$1****$2");
   }
 
   /**
@@ -241,13 +194,18 @@ export class WebhookProcessor {
       const phoneNumber = body?.entry?.[0]?.changes?.[0]?.value?.messages?.[0]?.from;
 
       if (phoneNumber) {
-        const rateCheck = this.checkRateLimit(phoneNumber);
+        // Periodically cleanup rate limiter (every ~100 requests)
+        if (Math.random() < 0.01) {
+          this.rateLimiter.cleanup();
+        }
+
+        const rateCheck = this.rateLimiter.check(phoneNumber);
         if (!rateCheck.allowed) {
           logger.warn({
             msg: "webhook.rate_limited",
             webhookId: payload.id,
             correlationId,
-            phone: this.maskPhone(phoneNumber),
+            phone: maskPhone(phoneNumber),
             resetAt: new Date(rateCheck.resetAt).toISOString(),
             event: "RATE_LIMITED"
           });

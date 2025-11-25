@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 
+import { logStructured } from "@/lib/server/logger";
 import { getSupabaseAdminClient } from "@/lib/server/supabase-admin";
 import { sendWhatsAppMessage } from "@/lib/server/whatsapp";
-import { logStructured } from "@/lib/server/logger";
 
 export async function POST(req: NextRequest) {
   const reqId = req.headers.get("x-request-id") || crypto.randomUUID();
