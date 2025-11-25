@@ -1,9 +1,9 @@
 // Real Estate AI Agent Integration for Property Rentals
-import type { RouterContext } from "../../types.ts";
-import { t } from "../../i18n/translator.ts";
-import { sendMessage, sendButtonsMessage } from "../../utils/reply.ts";
-import { logStructuredEvent } from "../../observe/log.ts";
-import { setState, getState } from "../../state/store.ts";
+import type { RouterContext } from "../../_shared/wa-webhook-shared/types.ts";
+import { t } from "../../_shared/wa-webhook-shared/i18n/translator.ts";
+import { sendMessage, sendButtonsMessage } from "../../_shared/wa-webhook-shared/utils/reply.ts";
+import { logStructuredEvent } from "../../_shared/observability.ts";
+import { setState, getState } from "../../_shared/wa-webhook-shared/state/store.ts";
 
 interface PropertySearchState {
   sessionId?: string;

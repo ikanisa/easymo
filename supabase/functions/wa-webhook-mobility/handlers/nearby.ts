@@ -36,14 +36,8 @@ import {
   type UserFavorite,
 } from "../locations/favorites.ts";
 import { buildSaveRows } from "../locations/save.ts";
-import {
-  getCachedLocation,
-  saveLocationToCache,
-} from "../locations/cache.ts";
-import {
-  findOnlineDriversForTrip,
-  notifyMultipleDrivers,
-} from "../notifications/drivers.ts";
+import { checkLocationCache } from "./location_cache.ts";
+import { readLastLocation } from "../locations/favorites.ts";
 
 const DEFAULT_WINDOW_DAYS = 30;
 const REQUIRED_RADIUS_METERS = 10_000;
@@ -189,51 +183,28 @@ function buildNearbyRow(
 }
 
 export async function handleSeeDrivers(ctx: RouterContext): Promise<boolean> {
-  console.log(JSON.stringify({
-    event: "HANDLE_SEE_DRIVERS_START",
-    hasProfileId: !!ctx.profileId,
-    profileId: ctx.profileId,
-    from: ctx.from,
-  }));
+  if (!ctx.profileId) return false;
   
-  if (!ctx.profileId) {
-    console.error(JSON.stringify({
-      event: "HANDLE_SEE_DRIVERS_BLOCKED",
-      reason: "no_profile_id",
-      from: ctx.from,
-    }));
-    return false;
+  // 1. Check for cached location (30 min window)
+  const last = await readLastLocation(ctx);
+  const cacheCheck = checkLocationCache(last?.capturedAt ?? null);
+  if (!cacheCheck.needsRefresh && last) {
+    const { lat, lng } = last;
+    await setState(ctx.supabase, ctx.profileId, {
+      key: "mobility_nearby_location",
+      data: { mode: "drivers", vehicle: "veh_moto", pickup: { lat, lng } },
+    });
+    const cachedIntent = await getRecentNearbyIntent(ctx.supabase, ctx.profileId, "drivers");
+    const vehicle = cachedIntent?.vehicle ?? "veh_moto";
+    return await handleNearbyLocation(ctx, { mode: "drivers", vehicle }, { lat, lng });
   }
-  
-  try {
-    const cached = await getRecentNearbyIntent(
-      ctx.supabase,
-      ctx.profileId,
-      "drivers",
-    );
-    if (cached) {
-      console.log(JSON.stringify({ event: "USING_CACHED_INTENT", vehicle: cached.vehicle }));
-      await setState(ctx.supabase, ctx.profileId, {
-        key: "mobility_nearby_location",
-        data: { mode: "drivers", vehicle: cached.vehicle, pickup: null },
-      });
-      return await handleNearbyLocation(
-        ctx,
-        { mode: "drivers", vehicle: cached.vehicle },
-        { lat: cached.lat, lng: cached.lng },
-      );
-    }
-  } catch (error) {
-    console.error("mobility.nearby_cache_read_fail", error);
-  }
-  
-  console.log(JSON.stringify({ event: "SENDING_VEHICLE_SELECTOR", mode: "drivers" }));
+
+  // Fallback to asking for location
   await setState(ctx.supabase, ctx.profileId, {
     key: "mobility_nearby_select",
     data: { mode: "drivers" },
   });
   await sendVehicleSelector(ctx, "drivers");
-  console.log(JSON.stringify({ event: "HANDLE_SEE_DRIVERS_COMPLETE", success: true }));
   return true;
 }
 
@@ -244,25 +215,13 @@ export async function handleSeePassengers(
   const ready = await ensureVehiclePlate(ctx, { type: "nearby_passengers" });
   if (!ready) return true;
 
-  try {
-    const cached = await getRecentNearbyIntent(
-      ctx.supabase,
-      ctx.profileId,
-      "passengers",
-    );
-    if (cached) {
-      await setState(ctx.supabase, ctx.profileId, {
-        key: "mobility_nearby_location",
-        data: { mode: "passengers", vehicle: cached.vehicle },
-      });
-      return await handleNearbyLocation(
-        ctx,
-        { mode: "passengers", vehicle: cached.vehicle },
-        { lat: cached.lat, lng: cached.lng },
-      );
-    }
-  } catch (error) {
-    console.error("mobility.nearby_cache_read_fail", error);
+  // 1. Check for cached location (30 min window)
+  const last2 = await readLastLocation(ctx);
+  const cacheCheck2 = checkLocationCache(last2?.capturedAt ?? null);
+  if (!cacheCheck2.needsRefresh && last2) {
+    const { lat, lng } = last2;
+    const storedVehicle = await getStoredVehicleType(ctx.supabase, ctx.profileId) ?? "veh_moto";
+    return await handleNearbyLocation(ctx, { mode: "passengers", vehicle: storedVehicle }, { lat, lng });
   }
 
   const storedVehicle = await getStoredVehicleType(
@@ -308,6 +267,35 @@ export async function handleVehicleSelection(
   return true;
 }
 
+export async function handleNearbyRecent(ctx: RouterContext): Promise<boolean> {
+  if (!ctx.profileId) return false;
+  try {
+    // Prefer last drivers intent; fallback to passengers
+    const drivers = await getRecentNearbyIntent(ctx.supabase, ctx.profileId, 'drivers');
+    const passengers = await getRecentNearbyIntent(ctx.supabase, ctx.profileId, 'passengers');
+    const pick = drivers || passengers;
+    if (!pick) {
+      await sendButtonsMessage(ctx, 'No recent search found. Pick a mode.', buildButtons(
+        { id: IDS.SEE_DRIVERS, title: 'Drivers' },
+        { id: IDS.SEE_PASSENGERS, title: 'Passengers' },
+      ));
+      return true;
+    }
+    const mode = drivers ? 'drivers' : 'passengers';
+    const vehicle = pick.vehicle || 'veh_moto';
+    const coords = { lat: pick.lat, lng: pick.lng };
+    if (mode === 'drivers') {
+      await setState(ctx.supabase, ctx.profileId, { key: 'mobility_nearby_location', data: { mode, vehicle, pickup: coords } });
+    } else {
+      await setState(ctx.supabase, ctx.profileId, { key: 'mobility_nearby_location', data: { mode, vehicle } });
+    }
+    return await handleNearbyLocation(ctx, { mode: mode as any, vehicle }, coords);
+  } catch (e) {
+    await sendButtonsMessage(ctx, 'Could not load your recent search.', buildButtons({ id: IDS.BACK_MENU, title: 'Back' }));
+    return true;
+  }
+}
+
 export async function handleNearbyLocation(
   ctx: RouterContext,
   state: NearbyState,
@@ -325,17 +313,6 @@ export async function handleNearbyLocation(
       key: "mobility_nearby_location",
       data: updatedState,
     });
-  }
-
-  // Save location to 30-minute cache
-  try {
-    await saveLocationToCache(ctx.supabase, ctx.profileId, pickup);
-    await logStructuredEvent("LOCATION_CACHED", {
-      userId: ctx.profileId,
-      mode: state.mode,
-    });
-  } catch (error) {
-    console.error("mobility.location_cache_save_fail", error);
   }
 
   try {
@@ -446,41 +423,6 @@ export async function handleChangeVehicleRequest(
   return true;
 }
 
-export async function handleUseCachedLocation(
-  ctx: RouterContext,
-  state: NearbyState,
-): Promise<boolean> {
-  if (!ctx.profileId) return false;
-  
-  try {
-    const cached = await getCachedLocation(ctx.supabase, ctx.profileId);
-    if (!cached || !cached.isValid) {
-      await sendText(ctx.from, t(ctx.locale, "mobility.location_cache.expired"));
-      // Re-prompt for location
-      await promptShareLocation(ctx, state, {
-        allowVehicleChange: state.mode === "passengers",
-      });
-      return true;
-    }
-
-    // Use cached location
-    const coords = { lat: cached.lat, lng: cached.lng };
-    const timeAgoText = timeAgo(cached.cachedAt);
-    
-    await sendText(
-      ctx.from,
-      t(ctx.locale, "mobility.location_cache.using_cached", { time: timeAgoText }),
-    );
-
-    // Process location as if user just shared it
-    return await handleNearbyLocation(ctx, state, coords);
-  } catch (error) {
-    console.error("mobility.use_cached_location_fail", error);
-    await sendText(ctx.from, t(ctx.locale, "mobility.nearby.error"));
-    return true;
-  }
-}
-
 export async function startNearbySavedLocationPicker(
   ctx: RouterContext,
   state: NearbyState,
@@ -517,7 +459,7 @@ export async function startNearbySavedLocationPicker(
       body,
       sectionTitle: t(ctx.locale, "location.saved.list.section"),
       rows: [
-        ...favorites.map((favorite: UserFavorite) => favoriteToRow(ctx, favorite)),
+        ...favorites.map((favorite) => favoriteToRow(ctx, favorite)),
         ...buildSaveRows(ctx),
         {
           id: IDS.BACK_MENU,
@@ -585,19 +527,28 @@ async function sendVehicleSelector(ctx: RouterContext, mode: NearbyMode) {
       description: t(ctx.locale, "common.back_to_menu.description"),
     },
   ];
-  await sendListMessage(
-    ctx,
-    {
-      title: mode === "drivers"
-        ? t(ctx.locale, "mobility.nearby.title.drivers")
-        : t(ctx.locale, "mobility.nearby.title.passengers"),
-      body: t(ctx.locale, "mobility.nearby.vehicle_prompt"),
-      sectionTitle: t(ctx.locale, "mobility.nearby.vehicle_section"),
-      rows,
-      buttonText: t(ctx.locale, "common.buttons.choose"),
-    },
-    { emoji: mode === "drivers" ? "🚖" : "🧭" },
-  );
+  try {
+    await sendListMessage(
+      ctx,
+      {
+        title: mode === "drivers"
+          ? t(ctx.locale, "mobility.nearby.title.drivers")
+          : t(ctx.locale, "mobility.nearby.title.passengers"),
+        body: t(ctx.locale, "mobility.nearby.vehicle_prompt"),
+        sectionTitle: t(ctx.locale, "mobility.nearby.vehicle_section"),
+        rows,
+        buttonText: t(ctx.locale, "common.buttons.choose"),
+      },
+      { emoji: mode === "drivers" ? "🚖" : "🧭" },
+    );
+  } catch (e) {
+    const body = t(ctx.locale, "mobility.nearby.vehicle_prompt");
+    try {
+      await sendText(ctx.from, body);
+    } catch (_) {
+      // last resort: ignore
+    }
+  }
 }
 
 async function promptShareLocation(
@@ -606,26 +557,6 @@ async function promptShareLocation(
   options: { allowVehicleChange?: boolean } = {},
 ): Promise<void> {
   const buttons: ButtonSpec[] = [];
-  
-  // Check if user has valid cached location
-  let hasCachedLocation = false;
-  if (ctx.profileId) {
-    try {
-      const cached = await getCachedLocation(ctx.supabase, ctx.profileId);
-      if (cached && cached.isValid) {
-        hasCachedLocation = true;
-        buttons.push({
-          id: IDS.USE_CACHED_LOCATION,
-          title: t(ctx.locale, "mobility.location_cache.use_cached_button", {
-            defaultValue: "Use Saved Location",
-          }),
-        });
-      }
-    } catch (error) {
-      console.error("mobility.check_cached_location_fail", error);
-    }
-  }
-  
   if (options.allowVehicleChange) {
     buttons.push({
       id: IDS.MOBILITY_CHANGE_VEHICLE,
@@ -636,18 +567,21 @@ async function promptShareLocation(
     id: IDS.LOCATION_SAVED_LIST,
     title: t(ctx.locale, "location.saved.button"),
   });
-  
-  const message = hasCachedLocation
-    ? t(ctx.locale, "mobility.nearby.share_location_or_cached", {
-        defaultValue: "📍 Share your current location or use your saved location from earlier.\n\nTap ➕ → Location → Share to share current location.",
-      })
-    : t(ctx.locale, "mobility.nearby.share_location");
-  
-  await sendButtonsMessage(
-    ctx,
-    message,
-    buttons,
-  );
+  const instructions = t(ctx.locale, "location.share.instructions");
+  const body = t(ctx.locale, "mobility.nearby.share_location", { instructions });
+  try {
+    await sendButtonsMessage(
+      ctx,
+      body,
+      buttons,
+    );
+  } catch (e) {
+    try {
+      await sendText(ctx.from, body);
+    } catch (_) {
+      // swallow
+    }
+  }
 }
 
 async function runMatchingFallback(
@@ -713,39 +647,6 @@ async function runMatchingFallback(
       count: matches.length,
     });
 
-    // If passenger is looking for drivers, notify nearby online drivers
-    if (state.mode === "drivers" && tempTripId && ctx.profileId) {
-      try {
-        const onlineDrivers = await findOnlineDriversForTrip(
-          ctx.supabase,
-          tempTripId,
-          config.search_radius_km ?? 10,
-          9,
-        );
-
-        if (onlineDrivers.length > 0) {
-          await logStructuredEvent("NOTIFYING_DRIVERS", {
-            tripId: tempTripId,
-            driverCount: onlineDrivers.length,
-          });
-
-          // Notify drivers in background (don't await to avoid delaying passenger response)
-          notifyMultipleDrivers(ctx, onlineDrivers, {
-            tripId: tempTripId,
-            passengerId: ctx.profileId,
-            vehicleType: state.vehicle!,
-            pickupText: null,
-            dropoffText: dropoff ? "Dropoff specified" : null,
-          }).catch((err) => {
-            console.error("mobility.driver_notification_fail", err);
-          });
-        }
-      } catch (error) {
-        console.error("mobility.find_online_drivers_fail", error);
-        // Don't fail the whole flow if driver notifications fail
-      }
-    }
-
     // Per requirement: Never send fallback error messages
     // Instead, proceed with database results (even if empty) and return to menu
     if (!matches.length) {
@@ -756,6 +657,66 @@ async function runMatchingFallback(
       );
       await clearState(ctx.supabase, ctx.profileId!);
       return true;
+    }
+
+  // NOTIFY DRIVERS (if searching for drivers)
+  if (state.mode === "drivers") {
+      const { sendText } = await import("../../wa/client.ts");
+      const { waChatLink } = await import("../../utils/links.ts");
+      
+      // Get passenger name
+      const { data: passenger } = await ctx.supabase
+        .from("profiles")
+        .select("full_name, whatsapp_number")
+        .eq("user_id", ctx.profileId!)
+        .single();
+        
+      const passengerName = passenger?.full_name ?? "A passenger";
+      
+      // Send notifications to top 9 drivers
+      for (const match of matches.slice(0, 9)) {
+        if (match.whatsapp_e164) {
+            // Quiet hours check
+            const quiet = await isDriverQuiet(ctx.supabase, match.creator_user_id).catch(() => false);
+            if (quiet) continue;
+             // Create accept link/button payload
+             // For now, we use a simple text message with a button if possible, or just text
+             // Since we can't easily send buttons outside 24h window without template, 
+             // we will use a text message with a clear instruction or link if applicable.
+             // But here we are in the webhook, so we might be able to send buttons if the driver messaged recently.
+             // To be safe and robust, we'll send a text message with a "Reply ACCEPT" instruction or similar,
+             // OR better, we use the new "Accept Ride" button flow if we assume drivers are active.
+             
+             // We will send a template-like message.
+             const acceptId = `RIDE_ACCEPT::${tempTripId}`;
+             try {
+               await sendButtonsMessage(
+               { ...ctx, from: match.whatsapp_e164, profileId: match.creator_user_id }, // Mock context for the recipient
+               `🚖 **New Ride Request!**\n\nPassenger: ${passengerName}\nDistance: ${toDistanceLabel(match.distance_km)}\n\nDo you want to accept this ride?`,
+               [{ id: acceptId, title: "✅ Accept Ride" }]
+               );
+             } catch (e) {
+               // Fallback to template/text if interactive fails
+               try {
+                 const { sendTemplate } = await import("../../wa/client.ts");
+                 const tpl = Deno.env.get('WA_DRIVER_NOTIFY_TEMPLATE') ?? 'ride_notify';
+                 const lang = Deno.env.get('WA_TEMPLATE_LANG') ?? 'en';
+                 const compact = `New ride near you. Passenger: ${passengerName}. ${toDistanceLabel(match.distance_km) ?? ''}`.trim();
+                 await sendTemplate(match.whatsapp_e164, { name: tpl, language: lang, bodyParameters: [{ type: 'text', text: compact }] });
+               } catch (tplErr) {
+                 const { sendText } = await import("../../wa/client.ts");
+                 await sendText(match.whatsapp_e164, `🚖 New ride near you. Passenger: ${passengerName}. Reply ACCEPT to confirm.`);
+               }
+             }
+             
+             // Log notification
+             await ctx.supabase.from("ride_notifications").insert({
+               trip_id: tempTripId,
+               driver_id: match.creator_user_id,
+               status: "sent"
+             });
+        }
+      }
     }
 
     const rendered = matches
@@ -820,12 +781,50 @@ async function runMatchingFallback(
     }
     return true;
   } finally {
-    if (tempTripId) {
-      await ctx.supabase.from("rides_trips").update({ status: "expired" }).eq(
-        "id",
-        tempTripId,
-      );
+    // Keep trip open for a bit if we notified drivers, otherwise expire
+    // If we notified drivers, we want the trip to stay 'open' so they can accept it.
+    // The migration sets default status to 'open'.
+    // We should ONLY expire if no matches found or if it was a passenger search (maybe).
+    // For now, let's keep it open for 10 mins if drivers were notified.
+    
+    if (state.mode !== "drivers") {
+        if (tempTripId) {
+          await ctx.supabase.from("rides_trips").update({ status: "expired" }).eq(
+            "id",
+            tempTripId,
+          );
+        }
     }
+  }
+}
+
+async function isDriverQuiet(client: any, driverId: string): Promise<boolean> {
+  try {
+    const { data } = await client
+      .from('profiles')
+      .select('metadata')
+      .eq('user_id', driverId)
+      .maybeSingle();
+    const meta = (data?.metadata && typeof data.metadata === 'object') ? (data!.metadata as any) : {};
+    const quiet = meta?.driver?.quiet;
+    if (!quiet?.enabled) return false;
+    const tz = quiet.tz || 'Africa/Kigali';
+    const now = new Date();
+    const hours = new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: tz }).format(now);
+    const toMinutes = (hhmm: string) => {
+      const [h, m] = hhmm.split(':').map((x: string) => parseInt(x, 10));
+      return h * 60 + (m || 0);
+    };
+    const cur = toMinutes(hours);
+    const start = toMinutes(String(quiet.start || '22:00'));
+    const end = toMinutes(String(quiet.end || '06:00'));
+    // Quiet window may cross midnight
+    if (start <= end) {
+      return cur >= start && cur < end;
+    }
+    return cur >= start || cur < end;
+  } catch (_) {
+    return false;
   }
 }
 

@@ -6,7 +6,7 @@ import {
   getRecentNearbyIntent,
   storeNearbyIntent,
 } from "./intent_cache.ts";
-import type { SupabaseClient } from "../../deps.ts";
+import type { SupabaseClient } from "../deps.ts";
 
 type ProfilesMetadata = Record<string, unknown>;
 

@@ -91,76 +91,6 @@ function isRetriable(error: unknown, statusCode?: number): boolean {
   return false;
 }
 
-const SERVICE_KEY_MAP: Record<string, string> = {
-  // Mobility / rides
-  "rides": "wa-webhook-mobility",
-  "mobility": "wa-webhook-mobility",
-  "rides_agent": "wa-webhook-mobility",
-  "nearby_drivers": "wa-webhook-mobility",
-  "nearby_passengers": "wa-webhook-mobility",
-  "schedule_trip": "wa-webhook-mobility",
-
-  // Insurance
-  "insurance": "wa-webhook-insurance",
-  "insurance_agent": "wa-webhook-insurance",
-  "motor_insurance": "wa-webhook-insurance",
-  "insurance_submit": "wa-webhook-insurance",
-  "insurance_help": "wa-webhook-insurance",
-  "motor_insurance_upload": "wa-webhook-insurance",
-
-  // Jobs
-  "jobs": "wa-webhook-jobs",
-  "jobs_agent": "wa-webhook-jobs",
-
-  // Property
-  "property": "wa-webhook-property",
-  "property_rentals": "wa-webhook-property",
-  "property rentals": "wa-webhook-property",
-  "real_estate_agent": "wa-webhook-property",
-
-  // Marketplace / commerce
-  "marketplace": "wa-webhook-marketplace",
-  "shops_services": "wa-webhook-marketplace",
-  "buy_and_sell": "wa-webhook-marketplace",
-  "buy and sell": "wa-webhook-marketplace",
-  "business_broker_agent": "wa-webhook-marketplace",
-  "general_broker": "wa-webhook-marketplace",
-
-  // Wallet / profile
-  "wallet": "wa-webhook-profile",
-  "token_transfer": "wa-webhook-profile",
-  "momo_qr": "wa-webhook-profile",
-  "momo qr": "wa-webhook-profile",
-  "momoqr": "wa-webhook-profile",
-  "profile": "wa-webhook-profile",
-  "profile_assets": "wa-webhook-profile",
-  "my_business": "wa-webhook-profile",
-  "my_businesses": "wa-webhook-profile",
-  "my_jobs": "wa-webhook-profile",
-  "my_properties": "wa-webhook-profile",
-  "saved_locations": "wa-webhook-profile",
-
-  // AI / support agents
-  "ai_agents": "wa-webhook-ai-agents",
-  "farmer_agent": "wa-webhook-ai-agents",
-  "sales_agent": "wa-webhook-ai-agents",
-  "waiter_agent": "wa-webhook-ai-agents",
-  "waiter": "wa-webhook-ai-agents",
-  "support": "wa-webhook-ai-agents",
-  "customer_support": "wa-webhook-ai-agents",
-  "farmers": "wa-webhook-ai-agents",
-
-
-  // Legacy numeric mapping (keep for backwards compatibility)
-  "1": "wa-webhook-mobility",
-  "2": "wa-webhook-insurance",
-  "3": "wa-webhook-jobs",
-  "4": "wa-webhook-property",
-  "5": "wa-webhook-profile",  // Consolidated: wallet is now part of profile
-  "6": "wa-webhook-marketplace",
-  "7": "wa-webhook-ai-agents",
-};
-
 const MICROSERVICES_BASE_URL = `${Deno.env.get("SUPABASE_URL")}/functions/v1`;
 const ROUTER_TIMEOUT_MS = Math.max(Number(Deno.env.get("WA_ROUTER_TIMEOUT_MS") ?? "4000") || 4000, 1000);
 
@@ -233,9 +163,11 @@ export async function forwardToEdgeService(
 
   // Check circuit breaker before attempting request
   if (isServiceCircuitOpen(decision.service)) {
+    const breakerState = circuitBreakerManager.getBreaker(decision.service).getState();
     console.warn(JSON.stringify({
       event: "WA_CORE_CIRCUIT_OPEN",
       service: decision.service,
+      breakerState,
       correlationId,
     }));
     
@@ -255,19 +187,6 @@ export async function forwardToEdgeService(
       service: decision.service,
       error: "Service temporarily unavailable (circuit open)",
       circuitOpen: true,
-  // Check circuit breaker
-  const breaker = circuitBreakerManager.getBreaker(decision.service);
-  if (!breaker.canExecute()) {
-    console.warn(JSON.stringify({
-      event: "WA_CORE_CIRCUIT_OPEN",
-      service: decision.service,
-      state: breaker.getState(),
-    }));
-    
-    return new Response(JSON.stringify({
-      success: false,
-      service: decision.service,
-      error: "Service temporarily unavailable (circuit breaker open)",
     }), {
       status: 503,
       headers: { "Content-Type": "application/json" },
@@ -339,106 +258,7 @@ export async function forwardToEdgeService(
       status: 503,
       headers: { "Content-Type": "application/json" },
     });
-
-  // Retry logic with exponential backoff
-  let lastError: unknown = null;
-  let lastResponse: Response | null = null;
-  
-  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), ROUTER_TIMEOUT_MS);
-
-    try {
-      const response = await fetch(url, {
-        method: "POST",
-        headers: forwardHeaders,
-        body: JSON.stringify(payload),
-        signal: controller.signal,
-      });
-
-      clearTimeout(timeout);
-
-      // Success - record in circuit breaker
-      if (response.ok) {
-        breaker.recordSuccess();
-        
-        console.log(JSON.stringify({
-          event: "WA_CORE_ROUTED",
-          service: decision.service,
-          status: response.status,
-          attempt: attempt + 1,
-        }));
-
-        return response;
-      }
-
-      // Check if we should retry
-      if (isRetriable(null, response.status) && attempt < MAX_RETRIES) {
-        lastResponse = response;
-        const delay = INITIAL_RETRY_DELAY_MS * Math.pow(2, attempt);
-        
-        console.warn(JSON.stringify({
-          event: "WA_CORE_RETRY",
-          service: decision.service,
-          status: response.status,
-          attempt: attempt + 1,
-          nextRetryMs: delay,
-        }));
-        
-        await sleep(delay);
-        continue;
-      }
-
-      // Non-retriable error or max retries reached
-      if (!response.ok) {
-        breaker.recordFailure(`HTTP ${response.status}`);
-      }
-
-      return response;
-      
-    } catch (error) {
-      clearTimeout(timeout);
-      lastError = error;
-
-      // Check if we should retry
-      if (isRetriable(error) && attempt < MAX_RETRIES) {
-        const delay = INITIAL_RETRY_DELAY_MS * Math.pow(2, attempt);
-        
-        console.warn(JSON.stringify({
-          event: "WA_CORE_RETRY",
-          service: decision.service,
-          error: error instanceof Error ? error.message : String(error),
-          attempt: attempt + 1,
-          nextRetryMs: delay,
-        }));
-        
-        await sleep(delay);
-        continue;
-      }
-
-      // Max retries reached or non-retriable error
-      break;
-    }
   }
-
-  // All retries failed
-  breaker.recordFailure(lastError instanceof Error ? lastError.message : "max_retries_exceeded");
-  
-  console.error(JSON.stringify({
-    event: "WA_CORE_ROUTING_FAILURE",
-    service: decision.service,
-    error: lastError instanceof Error ? lastError.message : String(lastError),
-    attempts: MAX_RETRIES + 1,
-  }));
-
-  return new Response(JSON.stringify({
-    success: false,
-    service: decision.service,
-    error: "Service temporarily unavailable",
-  }), {
-    status: 503,
-    headers: { "Content-Type": "application/json" },
-  });
 }
 
 export async function summarizeServiceHealth(supabase: SupabaseClient): Promise<HealthStatus> {

@@ -1,4 +1,4 @@
-import { createClient, type SupabaseClient } from "../deps.ts";
+import type { SupabaseClient } from "../deps.ts";
 
 export type NearbyIntentMode = "drivers" | "passengers";
 
@@ -9,7 +9,13 @@ export type NearbyIntentSnapshot = {
   capturedAt: string;
 };
 
-const TEN_MINUTES_MS = 10 * 60 * 1000;
+// Intent cache TTL: configurable via environment variable, default 10 minutes
+const DEFAULT_INTENT_TTL_MINUTES = 10;
+const envTtlMinutes = Number(Deno.env.get("MOBILITY_INTENT_TTL_MINUTES"));
+const INTENT_TTL_MINUTES = Number.isFinite(envTtlMinutes) && envTtlMinutes > 0 
+  ? envTtlMinutes 
+  : DEFAULT_INTENT_TTL_MINUTES;
+const INTENT_TTL_MS = INTENT_TTL_MINUTES * 60 * 1000;
 
 type MetadataRecord = Record<string, unknown>;
 
@@ -99,7 +105,7 @@ export async function getRecentNearbyIntent(
   if (!snapshot) return null;
   const capturedMs = Date.parse(snapshot.capturedAt);
   if (!Number.isFinite(capturedMs)) return null;
-  if (now - capturedMs > TEN_MINUTES_MS) return null;
+  if (now - capturedMs > INTENT_TTL_MS) return null;
   return snapshot;
 }
 
@@ -141,5 +147,5 @@ export async function storeNearbyIntent(
 }
 
 export function getIntentTtlMs(): number {
-  return TEN_MINUTES_MS;
+  return INTENT_TTL_MS;
 }

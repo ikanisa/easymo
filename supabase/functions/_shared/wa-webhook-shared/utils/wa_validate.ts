@@ -78,7 +78,7 @@ export function previewListPayload(input: ListInput) {
     header: head(input.title, 30),
     section: Array.isArray(input.sections) && input.sections.length
       ? head(input.sections[0].title, 24)
-      : head(input.sectionTitle, 24),
+      : head(input.sectionTitle ?? "", 24),
     bodyPreview: head(input.body, 40),
     rowCount: Array.isArray(input.sections)
       ? input.sections.reduce((sum, section) => sum + section.rows.length, 0)

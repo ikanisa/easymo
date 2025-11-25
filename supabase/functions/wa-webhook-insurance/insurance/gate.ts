@@ -73,23 +73,6 @@ async function getAllowedCountries(ctx: RouterContext): Promise<Set<string>> {
     countryCache = { countries: DEFAULT_ALLOWED_COUNTRIES, loadedAt: now };
     return DEFAULT_ALLOWED_COUNTRIES;
   }
-const FALLBACK_ALLOWED_COUNTRIES = ["RW"];
-
-async function getAllowedCountries(ctx: RouterContext): Promise<Set<string>> {
-  try {
-    const { data } = await ctx.supabase
-      .from('app_config')
-      .select('insurance_allowed_countries')
-      .eq('id', 1)
-      .single();
-    
-    if (data?.insurance_allowed_countries && Array.isArray(data.insurance_allowed_countries)) {
-      return new Set(data.insurance_allowed_countries.map((c: string) => c.toUpperCase()));
-    }
-  } catch (err) {
-    console.warn("insurance.gate.config_fetch_fail", err);
-  }
-  return new Set(FALLBACK_ALLOWED_COUNTRIES);
 }
 
 type GateRule =
@@ -122,8 +105,6 @@ export async function evaluateMotorInsuranceGate(
   }
   
   // Get allowed countries dynamically from config
-  const allowedCountries = await getAllowedCountries(ctx);
-  
   const allowedCountries = await getAllowedCountries(ctx);
   const upperCountry = detectedCountry?.toUpperCase() ?? null;
   if (upperCountry && allowedCountries.has(upperCountry)) {

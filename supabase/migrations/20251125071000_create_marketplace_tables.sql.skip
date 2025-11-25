@@ -152,17 +152,14 @@ CREATE INDEX IF NOT EXISTS idx_marketplace_matches_status ON public.marketplace_
 -- =====================================================
 -- LOCATION-BASED INDEXES (PostGIS)
 -- =====================================================
+-- Note: Using conditional creation to avoid errors if PostGIS not installed
 DO $$
 BEGIN
   IF EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'postgis') THEN
-    -- Create geography indexes for proximity search
-    EXECUTE 'CREATE INDEX IF NOT EXISTS idx_marketplace_listings_geo ON public.marketplace_listings USING GIST(
-      ST_SetSRID(ST_MakePoint(lng, lat), 4326)::geography
-    ) WHERE lat IS NOT NULL AND lng IS NOT NULL';
+    -- Create geography indexes for proximity search (using dollar quoting)
+    EXECUTE $exec$CREATE INDEX IF NOT EXISTS idx_marketplace_listings_geo ON public.marketplace_listings USING GIST(ST_SetSRID(ST_MakePoint(lng, lat), 4326)::geography) WHERE lat IS NOT NULL AND lng IS NOT NULL$exec$;
     
-    EXECUTE 'CREATE INDEX IF NOT EXISTS idx_marketplace_buyer_intents_geo ON public.marketplace_buyer_intents USING GIST(
-      ST_SetSRID(ST_MakePoint(lng, lat), 4326)::geography
-    ) WHERE lat IS NOT NULL AND lng IS NOT NULL';
+    EXECUTE $exec$CREATE INDEX IF NOT EXISTS idx_marketplace_buyer_intents_geo ON public.marketplace_buyer_intents USING GIST(ST_SetSRID(ST_MakePoint(lng, lat), 4326)::geography) WHERE lat IS NOT NULL AND lng IS NOT NULL$exec$;
   END IF;
 END
 $$;

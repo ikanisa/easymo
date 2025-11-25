@@ -6,34 +6,33 @@
  * Option B - Find Property: Collect search criteria → AI Agent
  */
 
-import type { RouterContext } from "../../types.ts";
-import { setState, clearState } from "../../state/store.ts";
+import type { RouterContext } from "../../_shared/wa-webhook-shared/types.ts";
+import { setState, clearState } from "../../_shared/wa-webhook-shared/state/store.ts";
 import {
   sendListMessage,
   sendButtonsMessage,
   buildButtons,
   homeOnly,
-} from "../../utils/reply.ts";
-import { sendText } from "../../wa/client.ts";
-import { IDS } from "../../wa/ids.ts";
-import { isFeatureEnabled } from "../../../_shared/feature-flags.ts";
-import { handleAIPropertyRental } from "../ai-agents/index.ts";
-import { sendHomeMenu } from "../../flows/home.ts";
-import { t } from "../../i18n/translator.ts";
+} from "../../_shared/wa-webhook-shared/utils/reply.ts";
+import { sendText } from "../../_shared/wa-webhook-shared/wa/client.ts";
+import { IDS } from "../../_shared/wa-webhook-shared/wa/ids.ts";
+import { isFeatureEnabled } from "../../_shared/feature-flags.ts";
+import { sendHomeMenu } from "../../_shared/wa-webhook-shared/flows/home.ts";
+import { t } from "../../_shared/wa-webhook-shared/i18n/translator.ts";
 import {
   describeCurrency,
   formatCurrencyFromInput,
   getCurrencyByCode,
   resolveUserCurrency,
-} from "../../utils/currency.ts";
+} from "../../_shared/wa-webhook-shared/utils/currency.ts";
 import {
   getFavoriteById,
   listFavorites,
   type UserFavorite,
-} from "../locations/favorites.ts";
-import { buildSaveRows } from "../locations/save.ts";
-import { recordRecentActivity } from "../locations/recent.ts";
-import { getRecentLocation } from "../locations/recent.ts";
+} from "../../_shared/wa-webhook-shared/domains/locations/favorites.ts";
+import { buildSaveRows } from "../../_shared/wa-webhook-shared/domains/locations/save.ts";
+import { recordRecentActivity } from "../../_shared/wa-webhook-shared/domains/locations/recent.ts";
+import { getRecentLocation } from "../../_shared/wa-webhook-shared/domains/locations/recent.ts";
 
 export type PropertyFindState = {
   rentalType: string;
@@ -363,7 +362,7 @@ export async function handleFindPropertyBudget(
 
   // Record recent property search criteria
   try {
-    await recordRecentActivity(ctx, 'property_search', null, nextState as unknown as Record<string, unknown>);
+    await recordRecentActivity(ctx, 'property_search', undefined, nextState as unknown as Record<string, unknown>);
   } catch (_) { /* non-fatal */ }
 
   // Recent-location skip: if we have a fresh location, proceed directly
@@ -403,17 +402,48 @@ export async function handleFindPropertyLocation(
     await sendText(ctx.from, t(ctx.locale, "property.find.searching"));
     
     try {
-      return await handleAIPropertyRental(
-        ctx,
-        "find",
-        state.rentalType as "short_term" | "long_term",
-        { latitude: location.lat, longitude: location.lng },
-        {
-          bedrooms: parseInt(state.bedrooms),
-          budget: state.budget,
-          currency: currencyPref.code,
+      // Call the property-rental agent edge function
+      const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+      const SUPABASE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+
+      if (!SUPABASE_URL || !SUPABASE_KEY) {
+        throw new Error("Missing Supabase credentials");
+      }
+
+      const response = await fetch(`${SUPABASE_URL}/functions/v1/agent-property-rental`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${SUPABASE_KEY}`,
         },
-      );
+        body: JSON.stringify({
+          userId: ctx.profileId,
+          action: "find",
+          rentalType: state.rentalType,
+          location: { latitude: location.lat, longitude: location.lng },
+          criteria: {
+            bedrooms: parseInt(state.bedrooms),
+            maxBudget: state.budget,
+            currency: currencyPref.code,
+          },
+          userPhone: ctx.from,
+          locale: ctx.locale,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`AI agent failed: ${response.statusText}`);
+      }
+
+      const aiResponse = await response.json();
+      
+      if (aiResponse.message) {
+        await sendText(ctx.from, aiResponse.message);
+      }
+
+      await clearState(ctx.supabase, ctx.profileId);
+      return true;
+
     } catch (error) {
       console.error("Property AI agent error:", error);
       await sendText(
@@ -558,7 +588,7 @@ export async function handleAddPropertyPrice(
 
   // Record recent property posting criteria for resume
   try {
-    await recordRecentActivity(ctx, 'property_add', null, nextState as unknown as Record<string, unknown>);
+    await recordRecentActivity(ctx, 'property_add', undefined, nextState as unknown as Record<string, unknown>);
   } catch (_) { /* non-fatal */ }
 
   // Recent-location skip for add flow

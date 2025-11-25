@@ -98,8 +98,10 @@ serve(async (req: Request): Promise<Response> => {
     const rawBody = await req.text();
     
     // Verify WhatsApp signature
-    const signature = req.headers.get("x-hub-signature-256");
-    const appSecret = Deno.env.get("WHATSAPP_APP_SECRET");
+    const signature = req.headers.get("x-hub-signature-256") ??
+      req.headers.get("x-hub-signature");
+    const appSecret = Deno.env.get("WHATSAPP_APP_SECRET") ??
+      Deno.env.get("WA_APP_SECRET");
     const allowUnsigned = (Deno.env.get("WA_ALLOW_UNSIGNED_WEBHOOKS") ?? "false").toLowerCase() === "true";
     const internalForward = req.headers.get("x-wa-internal-forward") === "true";
     
@@ -117,11 +119,21 @@ serve(async (req: Request): Promise<Response> => {
       if (allowUnsigned || internalForward) {
         log("CORE_AUTH_BYPASS", {
           reason: internalForward ? "internal_forward" : signature ? "signature_mismatch" : "no_signature",
+          signatureHeader: req.headers.has("x-hub-signature-256")
+            ? "x-hub-signature-256"
+            : req.headers.has("x-hub-signature")
+            ? "x-hub-signature"
+            : null,
           userAgent: req.headers.get("user-agent"),
         }, "warn");
       } else {
         log("CORE_AUTH_FAILED", { 
           signatureProvided: !!signature,
+          signatureHeader: req.headers.has("x-hub-signature-256")
+            ? "x-hub-signature-256"
+            : req.headers.has("x-hub-signature")
+            ? "x-hub-signature"
+            : null,
           userAgent: req.headers.get("user-agent") 
         }, "warn");
         return json({ error: "unauthorized" }, { status: 401 });

@@ -178,13 +178,14 @@ export async function ensureProfile(
     });
     // Try to update by whatsapp_e164; if no row updated, insert
     try {
-      const { count: updCount, error: updErr } = await client
+      const upd = await client
         .from("profiles")
         .update({ user_id: waUserId, locale: userLanguage || locale || "en", role: "buyer" })
         .eq("whatsapp_e164", normalized)
-        .select("user_id, whatsapp_e164, locale", { count: "exact" });
-      if (updErr) throw updErr;
-      if (!updCount || updCount === 0) {
+        .select("user_id, whatsapp_e164, locale");
+      if (upd.error) throw upd.error;
+      const updCount = Array.isArray(upd.data) ? upd.data.length : 0;
+      if (updCount === 0) {
         const ins = await client
           .from("profiles")
           .insert({ user_id: waUserId, whatsapp_e164: normalized, locale: userLanguage || locale || "en", role: "buyer" })

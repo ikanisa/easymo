@@ -229,7 +229,7 @@ export async function recordLastLocation(
 
 export async function readLastLocation(
   ctx: RouterContext,
-): Promise<{ lat: number; lng: number } | null> {
+): Promise<{ lat: number; lng: number; capturedAt?: string } | null> {
   if (!ctx.profileId) return null;
   try {
     const { data, error } = await ctx.supabase
@@ -249,7 +249,11 @@ export async function readLastLocation(
       typeof last.lat === "number" &&
       typeof last.lng === "number"
     ) {
-      return { lat: last.lat, lng: last.lng };
+      return { 
+        lat: last.lat, 
+        lng: last.lng,
+        capturedAt: typeof last.capturedAt === "string" ? last.capturedAt : undefined
+      };
     }
   } catch (err) {
     console.error("locations.read_last_fail", err);

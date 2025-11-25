@@ -139,38 +139,45 @@ export const WhatsAppWebhookSchema = z.object({
 export async function verifyWebhookSignature(
   payload: string,
   signature: string | null,
-  appSecret: string
+  appSecret: string,
 ): Promise<boolean> {
   if (!signature) return false;
 
   try {
-    const [method, receivedHash] = signature.split("=");
-    if (method !== "sha256") return false;
+    const [rawMethod, rawHash] = signature.split("=");
+    const method = rawMethod?.toLowerCase();
+    const receivedHash = rawHash?.trim().toLowerCase();
+    if (!method || !receivedHash) return false;
 
-    // Use Web Crypto API (modern Deno approach)
+    const hashAlgorithm = method === "sha256"
+      ? "SHA-256"
+      : method === "sha1"
+      ? "SHA-1"
+      : null;
+    if (!hashAlgorithm) return false;
+
     const encoder = new TextEncoder();
     const key = await crypto.subtle.importKey(
       "raw",
       encoder.encode(appSecret),
-      { name: "HMAC", hash: "SHA-256" },
+      { name: "HMAC", hash: hashAlgorithm },
       false,
-      ["sign"]
+      ["sign"],
     );
-    
+
     const signatureBytes = await crypto.subtle.sign(
       "HMAC",
       key,
-      encoder.encode(payload)
+      encoder.encode(payload),
     );
-    
+
     const expectedHash = Array.from(new Uint8Array(signatureBytes))
-      .map(b => b.toString(16).padStart(2, "0"))
+      .map((b) => b.toString(16).padStart(2, "0"))
       .join("");
 
-    // Use timing-safe comparison to prevent timing attacks
     return timingSafeEqual(
       encoder.encode(receivedHash),
-      encoder.encode(expectedHash)
+      encoder.encode(expectedHash),
     );
   } catch (error) {
     logError("signature_verification", error, { signatureProvided: !!signature });
