@@ -27,7 +27,13 @@ import {
 import { buildSaveRows } from "../locations/save.ts";
 import { point as geoPoint } from "../../utils/geo.ts";
 import { resolveUserCurrency } from "../../utils/currency.ts";
-import { getApplyButtonId } from "./applications.ts";
+import { 
+  getApplyButtonId, 
+  extractJobIdFromApply,
+  handleJobApplication,
+  handleJobApplyMessage 
+} from "./applications.ts";
+import { handleSeekerOnboardingStep } from "./seeker-profile.ts";
 
 // Helper function to send text messages
 async function sendMessage(ctx: RouterContext, options: { text: string }): Promise<void> {
@@ -555,6 +561,12 @@ export async function handleJobResultsSelection(
   selectionId: string,
 ): Promise<boolean> {
   if (!ctx.profileId) return false;
+
+  // Check for apply button click
+  const applyJobId = extractJobIdFromApply(selectionId);
+  if (applyJobId) {
+    return await handleJobApplication(ctx, applyJobId);
+  }
 
   if (selectionId.startsWith(JOB_RESULT_PREFIX)) {
     const jobId = selectionId.slice(JOB_RESULT_PREFIX.length);
@@ -1260,4 +1272,35 @@ export async function listMyJobs(ctx: RouterContext): Promise<boolean> {
     });
     return true;
   }
+}
+
+/**
+ * Main text message router
+ * Handles state-based routing for text messages
+ */
+export async function handleJobTextMessage(
+  ctx: RouterContext,
+  messageText: string
+): Promise<boolean> {
+  if (!ctx.profileId) return false;
+
+  const state = await getState(ctx.supabase, ctx.profileId);
+
+  // Handle job application cover message
+  if (state?.key === "job_apply_message") {
+    return await handleJobApplyMessage(ctx, state.data, messageText);
+  }
+
+  // Handle seeker onboarding steps
+  if (state?.key === "seeker_onboarding") {
+    return await handleSeekerOnboardingStep(ctx, state.data, messageText);
+  }
+
+  // Handle job posting details
+  if (state?.key === "job_post_details") {
+    return await handleJobPostDetails(ctx, state.data, messageText);
+  }
+
+  // Not handled by job board
+  return false;
 }
