@@ -242,7 +242,7 @@ export class ToolRegistry {
       },
       handler: async (args, context) => {
         const { data, error } = await context.supabase
-          .from("trips")
+          .from("rides_trips")
           .select(`
             *,
             route:routes(origin, destination, route_code),
@@ -343,7 +343,7 @@ export class ToolRegistry {
 
         // Get trip price
         const { data: tripData, error: tripError } = await context.supabase
-          .from("trips")
+          .from("rides_trips")
           .select("price")
           .eq("id", args.tripId)
           .single();

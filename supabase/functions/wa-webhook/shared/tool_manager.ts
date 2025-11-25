@@ -327,7 +327,7 @@ export class ToolManager {
 
     // Build query
     let query = context.supabase
-      .from("trips")
+      .from("rides_trips")
       .select("id, route, departure_time, price, available_seats, vehicle_type")
       .eq("status", "scheduled")
       .gte("available_seats", passengers);

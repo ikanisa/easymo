@@ -1,5 +1,13 @@
 import type { SupabaseClient } from "../deps.ts";
 
+// Trip expiry: configurable via environment variable, default 30 minutes
+const DEFAULT_TRIP_EXPIRY_MINUTES = 30;
+const envExpiryMinutes = Number(Deno.env.get("MOBILITY_TRIP_EXPIRY_MINUTES"));
+const TRIP_EXPIRY_MINUTES = Number.isFinite(envExpiryMinutes) && envExpiryMinutes > 0 
+  ? envExpiryMinutes 
+  : DEFAULT_TRIP_EXPIRY_MINUTES;
+const TRIP_EXPIRY_MS = TRIP_EXPIRY_MINUTES * 60 * 1000;
+
 export async function gateProFeature(client: SupabaseClient, userId: string) {
   const { data, error } = await client.rpc("gate_pro_feature", {
     _user_id: userId,
@@ -51,7 +59,7 @@ export async function insertTrip(
     pickupText?: string;
   },
 ): Promise<string> {
-  const expires = new Date(Date.now() + 30 * 60 * 1000).toISOString();
+  const expires = new Date(Date.now() + TRIP_EXPIRY_MS).toISOString();
   const { data, error } = await client
     .from("rides_trips")
     .insert({

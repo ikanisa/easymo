@@ -45,6 +45,7 @@ import {
 } from "./handlers/driver_insurance.ts";
 import type { RouterContext, WhatsAppWebhookPayload, RawWhatsAppMessage } from "./types.ts";
 import { IDS } from "./wa/ids.ts";
+import { verifySignature } from "./wa/verify.ts";
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL") ?? "",
@@ -94,7 +95,19 @@ serve(async (req: Request): Promise<Response> => {
 
   // Main webhook handler
   try {
-    const payload: WhatsAppWebhookPayload = await req.json();
+    // Read raw body for signature verification
+    const rawBody = await req.text();
+    
+    // Verify WhatsApp signature (security requirement per GROUND_RULES.md)
+    const isValidSignature = await verifySignature(req, rawBody);
+    if (!isValidSignature) {
+      logEvent("MOBILITY_WEBHOOK_SIGNATURE_INVALID", { 
+        hasHeader: !!req.headers.get("x-hub-signature-256") 
+      }, "warn");
+      return respond({ error: "unauthorized" }, { status: 401 });
+    }
+
+    const payload: WhatsAppWebhookPayload = JSON.parse(rawBody);
     const entry = payload.entry?.[0];
     const change = entry?.changes?.[0];
     const value = change?.value;

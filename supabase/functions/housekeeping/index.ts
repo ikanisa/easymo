@@ -31,7 +31,7 @@ serve(async (_req) => {
       .select("id", { count: "exact" });
     // 3) expire trips older than 24h that are still open
     const { count: tripsExpired, error: tripErr } = await supabase
-      .from("trips")
+      .from("rides_trips")
       .update({ status: "expired", updated_at: now.toISOString() })
       .lt("created_at", dayAgo)
       .eq("status", "open")

@@ -60,7 +60,7 @@ async function listOpenTrips(
   req: FlowExchangeRequest,
 ): Promise<FlowExchangeResponse> {
   const { data, error } = await supabase
-    .from("trips")
+    .from("rides_trips")
     .select(
       "id, role, vehicle_type, status, pickup_text, dropoff_text, created_at",
     )
@@ -97,7 +97,7 @@ async function runMatchNow(
     };
   }
   const { data: trip, error } = await supabase
-    .from("trips")
+    .from("rides_trips")
     .select("id, role, vehicle_type")
     .eq("id", tripId)
     .maybeSingle();
@@ -162,7 +162,7 @@ async function updateTripStatus(
     };
   }
   const { data: before, error } = await supabase
-    .from("trips")
+    .from("rides_trips")
     .select("id, status")
     .eq("id", tripId)
     .maybeSingle();
@@ -173,7 +173,7 @@ async function updateTripStatus(
     };
   }
   const { error: updateError } = await supabase
-    .from("trips")
+    .from("rides_trips")
     .update({ status: newStatus })
     .eq("id", tripId);
   if (updateError) {
@@ -214,7 +214,7 @@ async function expireTrip(
     };
   }
   const { error } = await supabase
-    .from("trips")
+    .from("rides_trips")
     .update({ status: "expired" })
     .eq("id", tripId);
   if (error) {
