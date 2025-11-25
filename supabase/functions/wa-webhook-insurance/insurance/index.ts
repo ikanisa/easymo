@@ -102,7 +102,7 @@ export async function handleInsuranceMedia(
   if (outcome === "ocr_ok" && ctx.profileId) {
     await setState(ctx.supabase, ctx.profileId, { key: STATES.MENU, data: {} });
   } else if (outcome === "ocr_queued") {
-    await sendText(ctx.from, "Thanks for submitting your insurance certificate! We're processing it now and will send you a summary shortly.");
+    await sendText(ctx.from, "Processing document...");
     return true; // Handled
   }
   return outcome !== "skipped";
