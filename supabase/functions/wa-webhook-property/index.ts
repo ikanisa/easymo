@@ -2,6 +2,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { logStructuredEvent } from "../_shared/observability.ts";
+import { verifyWebhookSignature } from "../_shared/webhook-utils.ts";
 import type { RouterContext, WhatsAppWebhookPayload, RawWhatsAppMessage } from "../_shared/wa-webhook-shared/types.ts";
 import { getState } from "../_shared/wa-webhook-shared/state/store.ts";
 import { IDS } from "../_shared/wa-webhook-shared/wa/ids.ts";
@@ -74,8 +75,86 @@ serve(async (req: Request): Promise<Response> => {
       return respond({ error: "Method not allowed" }, { status: 405 });
     }
 
-    // Parse webhook payload
-    const payload: WhatsAppWebhookPayload = await req.json();
+    const rawBody = await req.text();
+    const signatureHeader = req.headers.has("x-hub-signature-256")
+      ? "x-hub-signature-256"
+      : req.headers.has("x-hub-signature")
+      ? "x-hub-signature"
+      : null;
+    const signature = signatureHeader ? req.headers.get(signatureHeader) : null;
+    const signatureMeta = (() => {
+      if (!signature) {
+        return {
+          provided: false,
+          header: signatureHeader,
+          method: null as string | null,
+          sample: null as string | null,
+        };
+      }
+      const [method, hash] = signature.split("=", 2);
+      return {
+        provided: true,
+        header: signatureHeader,
+        method: method?.toLowerCase() ?? null,
+        sample: hash ? `${hash.slice(0, 6)}…${hash.slice(-4)}` : null,
+      };
+    })();
+    const appSecret = Deno.env.get("WHATSAPP_APP_SECRET") ?? Deno.env.get("WA_APP_SECRET");
+    const allowUnsigned = (Deno.env.get("WA_ALLOW_UNSIGNED_WEBHOOKS") ?? "false").toLowerCase() === "true";
+    const internalForward = req.headers.get("x-wa-internal-forward") === "true";
+
+    if (!appSecret) {
+      await logEvent("PROPERTY_AUTH_CONFIG_ERROR", { reason: "missing_app_secret" });
+      return respond({ error: "server_misconfigured" }, { status: 500 });
+    }
+
+    let isValidSignature = false;
+    if (signature) {
+      try {
+        isValidSignature = await verifyWebhookSignature(rawBody, signature, appSecret);
+        if (isValidSignature) {
+          await logEvent("PROPERTY_SIGNATURE_VALID", {
+            signatureHeader,
+            signatureMethod: signatureMeta.method,
+          });
+        }
+      } catch (err) {
+        await logEvent("PROPERTY_SIGNATURE_ERROR", {
+          error: err instanceof Error ? err.message : String(err),
+        });
+      }
+    }
+
+    if (!isValidSignature) {
+      if (allowUnsigned || internalForward) {
+        await logEvent("PROPERTY_AUTH_BYPASS", {
+          reason: internalForward ? "internal_forward" : signature ? "signature_mismatch" : "no_signature",
+          signatureHeader,
+          signatureMethod: signatureMeta.method,
+          signatureSample: signatureMeta.sample,
+          userAgent: req.headers.get("user-agent"),
+        });
+      } else {
+        await logEvent("PROPERTY_AUTH_FAILED", {
+          signatureProvided: signatureMeta.provided,
+          signatureHeader,
+          signatureMethod: signatureMeta.method,
+          signatureSample: signatureMeta.sample,
+          userAgent: req.headers.get("user-agent"),
+        });
+        return respond({ error: "unauthorized" }, { status: 401 });
+      }
+    }
+
+    let payload: WhatsAppWebhookPayload;
+    try {
+      payload = rawBody ? JSON.parse(rawBody) as WhatsAppWebhookPayload : {} as WhatsAppWebhookPayload;
+    } catch (parseError) {
+      await logEvent("PROPERTY_PAYLOAD_INVALID_JSON", {
+        error: parseError instanceof Error ? parseError.message : String(parseError),
+      });
+      return respond({ error: "invalid_payload" }, { status: 400 });
+    }
 
     await logEvent("PROPERTY_WEBHOOK_RECEIVED", {
       entry_count: payload.entry?.length ?? 0,

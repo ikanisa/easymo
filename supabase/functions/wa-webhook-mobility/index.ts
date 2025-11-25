@@ -45,7 +45,7 @@ import {
 } from "./handlers/driver_insurance.ts";
 import type { RouterContext, WhatsAppWebhookPayload, RawWhatsAppMessage } from "./types.ts";
 import { IDS } from "./wa/ids.ts";
-import { verifySignature } from "./wa/verify.ts";
+import { verifyWebhookSignature } from "../_shared/webhook-utils.ts";
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL") ?? "",
@@ -97,17 +97,86 @@ serve(async (req: Request): Promise<Response> => {
   try {
     // Read raw body for signature verification
     const rawBody = await req.text();
-    
-    // Verify WhatsApp signature (security requirement per GROUND_RULES.md)
-    const isValidSignature = await verifySignature(req, rawBody);
-    if (!isValidSignature) {
-      logEvent("MOBILITY_WEBHOOK_SIGNATURE_INVALID", { 
-        hasHeader: !!req.headers.get("x-hub-signature-256") 
-      }, "warn");
-      return respond({ error: "unauthorized" }, { status: 401 });
+
+    const signatureHeader = req.headers.has("x-hub-signature-256")
+      ? "x-hub-signature-256"
+      : req.headers.has("x-hub-signature")
+      ? "x-hub-signature"
+      : null;
+    const signature = signatureHeader ? req.headers.get(signatureHeader) : null;
+    const signatureMeta = (() => {
+      if (!signature) {
+        return {
+          provided: false,
+          header: signatureHeader,
+          method: null as string | null,
+          sample: null as string | null,
+        };
+      }
+      const [method, hash] = signature.split("=", 2);
+      return {
+        provided: true,
+        header: signatureHeader,
+        method: method?.toLowerCase() ?? null,
+        sample: hash ? `${hash.slice(0, 6)}…${hash.slice(-4)}` : null,
+      };
+    })();
+    const appSecret = Deno.env.get("WHATSAPP_APP_SECRET") ?? Deno.env.get("WA_APP_SECRET");
+    const allowUnsigned = (Deno.env.get("WA_ALLOW_UNSIGNED_WEBHOOKS") ?? "false").toLowerCase() === "true";
+    const internalForward = req.headers.get("x-wa-internal-forward") === "true";
+
+    if (!appSecret) {
+      logEvent("MOBILITY_AUTH_CONFIG_ERROR", { reason: "missing_app_secret" }, "error");
+      return respond({ error: "server_misconfigured" }, { status: 500 });
     }
 
-    const payload: WhatsAppWebhookPayload = JSON.parse(rawBody);
+    let isValidSignature = false;
+    if (signature) {
+      try {
+        isValidSignature = await verifyWebhookSignature(rawBody, signature, appSecret);
+        if (isValidSignature) {
+          logEvent("MOBILITY_SIGNATURE_VALID", {
+            signatureHeader,
+            signatureMethod: signatureMeta.method,
+          });
+        }
+      } catch (err) {
+        logEvent("MOBILITY_SIGNATURE_ERROR", {
+          error: err instanceof Error ? err.message : String(err),
+        }, "error");
+      }
+    }
+
+    if (!isValidSignature) {
+      if (allowUnsigned || internalForward) {
+        logEvent("MOBILITY_AUTH_BYPASS", {
+          reason: internalForward ? "internal_forward" : signature ? "signature_mismatch" : "no_signature",
+          signatureHeader,
+          signatureMethod: signatureMeta.method,
+          signatureSample: signatureMeta.sample,
+          userAgent: req.headers.get("user-agent"),
+        }, "warn");
+      } else {
+        logEvent("MOBILITY_AUTH_FAILED", {
+          signatureProvided: signatureMeta.provided,
+          signatureHeader,
+          signatureMethod: signatureMeta.method,
+          signatureSample: signatureMeta.sample,
+          userAgent: req.headers.get("user-agent"),
+        }, "warn");
+        return respond({ error: "unauthorized" }, { status: 401 });
+      }
+    }
+
+    let payload: WhatsAppWebhookPayload;
+    try {
+      payload = rawBody ? JSON.parse(rawBody) : {} as WhatsAppWebhookPayload;
+    } catch (err) {
+      logEvent("MOBILITY_PAYLOAD_INVALID_JSON", {
+        error: err instanceof Error ? err.message : String(err),
+      }, "warn");
+      return respond({ error: "invalid_payload" }, { status: 400 });
+    }
     const entry = payload.entry?.[0];
     const change = entry?.changes?.[0];
     const value = change?.value;
