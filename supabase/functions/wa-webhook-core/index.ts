@@ -94,6 +94,7 @@ serve(async (req: Request): Promise<Response> => {
     const signature = req.headers.get("x-hub-signature-256");
     const appSecret = Deno.env.get("WHATSAPP_APP_SECRET");
     const allowUnsigned = (Deno.env.get("WA_ALLOW_UNSIGNED_WEBHOOKS") ?? "false").toLowerCase() === "true";
+    const internalForward = req.headers.get("x-wa-internal-forward") === "true";
     
     if (!appSecret) {
       log("CORE_AUTH_CONFIG_ERROR", { error: "WHATSAPP_APP_SECRET not configured" }, "error");
@@ -106,9 +107,9 @@ serve(async (req: Request): Promise<Response> => {
     }
     
     if (!isValid) {
-      if (allowUnsigned) {
+      if (allowUnsigned || internalForward) {
         log("CORE_AUTH_BYPASS", {
-          reason: signature ? "signature_mismatch" : "no_signature",
+          reason: internalForward ? "internal_forward" : signature ? "signature_mismatch" : "no_signature",
           userAgent: req.headers.get("user-agent"),
         }, "warn");
       } else {

@@ -98,12 +98,13 @@ const SERVICE_KEY_MAP: Record<string, string> = {
   "customer_support": "wa-webhook-ai-agents",
   "farmers": "wa-webhook-ai-agents",
 
+
   // Legacy numeric mapping (keep for backwards compatibility)
   "1": "wa-webhook-mobility",
   "2": "wa-webhook-insurance",
   "3": "wa-webhook-jobs",
   "4": "wa-webhook-property",
-  "5": "wa-webhook-wallet",
+  "5": "wa-webhook-profile",  // Consolidated: wallet is now part of profile
   "6": "wa-webhook-marketplace",
   "7": "wa-webhook-ai-agents",
 };
@@ -117,8 +118,7 @@ const ROUTED_SERVICES = [
   "wa-webhook-ai-agents",
   "wa-webhook-property",
   "wa-webhook-mobility",
-  "wa-webhook-wallet",
-  "wa-webhook-profile",
+  "wa-webhook-profile",  // Includes wallet functionality
   "wa-webhook-insurance",
   FALLBACK_SERVICE,
   "wa-webhook-core",

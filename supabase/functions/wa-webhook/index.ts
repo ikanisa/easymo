@@ -48,6 +48,7 @@ async function tryForward(url: string, req: Request, timeoutMs = 2000): Promise<
   const t = setTimeout(() => ctrl.abort(), timeoutMs);
   try {
     const headers = withAuth(req.headers);
+    headers.set("x-wa-internal-forward", "true");
     const res = await fetch(url, { method: req.method, headers, body: req.body, signal: ctrl.signal });
     if (res.status >= 500) return null;
     return res;
@@ -66,6 +67,7 @@ async function fallbackRoute(req: Request): Promise<Response> {
     const state = payload?.entry?.[0]?.changes?.[0]?.value?.metadata?.routing_state ?? undefined;
     const service = text ? await routeMessage(text, state) : "wa-webhook-core";
     const headers = withAuth(req.headers);
+    headers.set("x-wa-internal-forward", "true");
     const url = `${MICROSVC_BASE}/${service}`;
     const res = await fetch(url, { method: "POST", headers, body: JSON.stringify(payload) });
     return res;
@@ -94,4 +96,3 @@ serve(async (req: Request): Promise<Response> => {
   // Last resort: ack to avoid 500s
   return new Response(JSON.stringify({ success: true, degraded: true }), { status: 200, headers: { "Content-Type": "application/json" } });
 });
-
