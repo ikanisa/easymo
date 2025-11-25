@@ -4,7 +4,7 @@
 // Handles fare estimation and calculation for mobility trips
 // ============================================================================
 
-import { console.log } from "../../_shared/observability.ts";
+import { logStructuredEvent } from "../../_shared/observability.ts";
 import { calculateHaversineDistance } from "./tracking.ts";
 import type { Coordinates } from "./tracking.ts";
 
@@ -175,7 +175,7 @@ export async function calculateFareEstimate(
       },
     };
 
-    await console.log("FARE_ESTIMATED", {
+    await logStructuredEvent("FARE_ESTIMATED", {
       vehicleType,
       distanceKm: estimate.breakdown.distanceKm,
       estimatedMinutes,
@@ -185,7 +185,7 @@ export async function calculateFareEstimate(
 
     return estimate;
   } catch (error) {
-    await console.log("FARE_ESTIMATION_ERROR", {
+    await logStructuredEvent("FARE_ESTIMATION_ERROR", {
       vehicleType,
       error: (error as Error)?.message || String(error),
     }, "error");
@@ -269,7 +269,7 @@ export async function calculateActualFare(
       },
     };
 
-    await console.log("ACTUAL_FARE_CALCULATED", {
+    await logStructuredEvent("ACTUAL_FARE_CALCULATED", {
       vehicleType,
       distanceKm: actualDistanceKm,
       durationMinutes: actualDurationMinutes,
@@ -279,7 +279,7 @@ export async function calculateActualFare(
 
     return actualFare;
   } catch (error) {
-    await console.log("ACTUAL_FARE_CALCULATION_ERROR", {
+    await logStructuredEvent("ACTUAL_FARE_CALCULATION_ERROR", {
       vehicleType,
       error: (error as Error)?.message || String(error),
     }, "error");

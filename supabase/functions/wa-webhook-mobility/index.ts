@@ -439,6 +439,8 @@ serve(async (req: Request): Promise<Response> => {
               handled = await handleSeePassengers(ctx);
             } else if (result.resumeData.type === "schedule_role") {
               handled = await startScheduleTrip(ctx, state as any);
+            } else {
+              handled = true;
             }
           } else {
             handled = true;
@@ -447,17 +449,6 @@ serve(async (req: Request): Promise<Response> => {
       } else if (mediaId && state?.key === VERIFICATION_STATES.LICENSE_UPLOAD) {
         logEvent("MOBILITY_LICENSE_UPLOAD", { mediaId, mimeType });
         handled = await handleLicenseUpload(ctx, mediaId, mimeType);
-      }
-    }
-
-    // D. Handle Text Messages
-              handled = await startScheduleTrip(ctx, state as any);
-            }
-          } else if (result.error) {
-            // Error message already sent by handler
-            handled = true;
-          }
-        }
       }
     }
 

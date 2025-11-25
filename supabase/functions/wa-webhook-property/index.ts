@@ -29,6 +29,15 @@ import {
   type PropertySavedPickerState,
 } from "./property/rentals.ts";
 
+// My listings imports
+import {
+  showMyProperties,
+  handlePropertyDetailView,
+  handlePropertyActions,
+  promptInquiryMessage,
+  handleInquiryMessage,
+} from "./property/my_listings.ts";
+
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL") ?? "",
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
@@ -261,9 +270,37 @@ async function handlePropertyButton(
     return true;
   }
 
+  // Handle My Properties
+  if (buttonId === "MY_PROPERTIES") {
+    return await showMyProperties(ctx);
+  }
+
   // Handle menu selections
   if ([IDS.PROPERTY_FIND, IDS.PROPERTY_ADD, IDS.PROPERTY_CHAT_AI, IDS.BACK_HOME].includes(buttonId)) {
     return await handlePropertyMenuSelection(ctx, buttonId);
+  }
+
+  // Handle property actions
+  if (buttonId.startsWith("PROP_EDIT::")) {
+    const propertyId = buttonId.replace("PROP_EDIT::", "");
+    return await handlePropertyActions(ctx, propertyId, "edit");
+  }
+
+  if (buttonId.startsWith("PROP_DELETE::")) {
+    const propertyId = buttonId.replace("PROP_DELETE::", "");
+    return await handlePropertyActions(ctx, propertyId, "delete");
+  }
+
+  if (buttonId.startsWith("PROP_STATUS::")) {
+    const propertyId = buttonId.replace("PROP_STATUS::", "");
+    // Show status menu
+    await ctx.supabase; // placeholder for status menu
+    return true;
+  }
+
+  if (buttonId.startsWith("PROP_INQUIRE::")) {
+    const propertyId = buttonId.replace("PROP_INQUIRE::", "");
+    return await promptInquiryMessage(ctx, propertyId);
   }
 
   // Handle saved location picker
@@ -289,6 +326,17 @@ async function handlePropertyList(
   if (listId === "property" || listId === "property_rentals" || listId === "real_estate_agent") {
     await startPropertyRentals(ctx);
     return true;
+  }
+
+  // Handle My Properties
+  if (listId === "MY_PROPERTIES") {
+    return await showMyProperties(ctx);
+  }
+
+  // View specific property
+  if (listId.startsWith("VIEW_PROP::")) {
+    const propertyId = listId.replace("VIEW_PROP::", "");
+    return await handlePropertyDetailView(ctx, propertyId);
   }
 
   // Handle menu selections
@@ -367,6 +415,14 @@ async function handlePropertyText(
 ): Promise<boolean> {
   const text = message.text?.body?.trim();
   if (!text) return false;
+
+  // Handle inquiry message
+  if (state.key === "property_inquiry") {
+    const propertyId = state.data?.propertyId as string;
+    if (propertyId) {
+      return await handleInquiryMessage(ctx, propertyId, text);
+    }
+  }
 
   // Handle AI chat mode
   if (state.key === "property_ai_chat") {
