@@ -319,6 +319,14 @@ async function processInlineOcr(
       },
     );
     if (error || !data) {
+      console.error("INS_INLINE_INVOKE_FAIL", {
+        leadId: params.leadId,
+        status: error?.status,
+        message: error?.message,
+        details: error?.details,
+        hint: error?.hint,
+        body: error?.body ?? undefined,
+      });
       throw error ?? new Error("inline_ocr_invoke_failed");
     }
     const raw = data.raw;

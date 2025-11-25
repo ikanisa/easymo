@@ -105,14 +105,19 @@ export async function handler(req: Request): Promise<Response> {
 
   if (inlinePayload) {
     try {
+      console.info("INS_OCR_INLINE_REQUEST", {
+        mime: inlinePayload.mime ?? null,
+      });
       const raw = await runInsuranceOCR(
         inlinePayload.signedUrl,
         inlinePayload.mime ?? undefined,
       );
       const normalized = normalizeInsuranceExtraction(raw);
+      console.info("INS_OCR_INLINE_SUCCESS");
       return json({ raw, normalized });
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
+      console.error("INS_OCR_INLINE_ERROR", { error: message });
       return json({ error: message }, 500);
     }
   }
