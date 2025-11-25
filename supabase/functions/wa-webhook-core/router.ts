@@ -241,6 +241,28 @@ export async function forwardToEdgeService(
       recordServiceFailure(decision.service, response.status, correlationId);
     }
 
+    if (response.status === 404) {
+      logWarn(
+        "WA_CORE_SERVICE_NOT_FOUND",
+        { service: decision.service, status: response.status },
+        { correlationId },
+      );
+      const message = getFirstMessage(payload);
+      if (message) {
+        await addToDeadLetterQueue(
+          supabase,
+          {
+            message_id: message.id,
+            from_number: message.from,
+            payload,
+            error_message: `Service ${decision.service} not deployed (404)`,
+          },
+          correlationId,
+        );
+      }
+      return await handleHomeMenu(payload, headers);
+    }
+
     logInfo("WA_CORE_ROUTED", { service: decision.service, status: response.status }, { correlationId });
 
     return response;
