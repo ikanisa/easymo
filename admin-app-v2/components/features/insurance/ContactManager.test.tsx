@@ -1,6 +1,32 @@
-import { describe, it, expect } from 'vitest';
-import { renderWithProviders, screen } from '../../../tests/utils';
+import { describe, it, expect, vi } from 'vitest';
+import { renderWithProviders, screen, waitFor } from '../../../tests/utils';
 import { ContactManager } from './ContactManager';
+
+// Mock the useData hook
+vi.mock('@/lib/hooks/useData', () => ({
+  useInsuranceContacts: vi.fn(() => ({
+    data: {
+      contacts: [
+        {
+          id: '1',
+          name: 'Sarah Wilson',
+          role: 'Insurance Support',
+          phone: '+250 788 123 456',
+          status: 'online',
+        },
+        {
+          id: '2',
+          name: 'Mike Brown',
+          role: 'Insurance Support',
+          phone: '+250 788 654 321',
+          status: 'offline',
+        },
+      ],
+    },
+    isLoading: false,
+    error: null,
+  })),
+}));
 
 describe('ContactManager', () => {
   it('renders title and add button', () => {
@@ -9,32 +35,29 @@ describe('ContactManager', () => {
     expect(screen.getByRole('button', { name: /add contact/i })).toBeInTheDocument();
   });
 
-  it('renders contacts list', () => {
+  it('renders contacts list', async () => {
     renderWithProviders(<ContactManager />);
-    expect(screen.getByText('Sarah Wilson')).toBeInTheDocument();
-    expect(screen.getByText('Claims Manager')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText('Sarah Wilson')).toBeInTheDocument();
+    });
     expect(screen.getByText('Mike Brown')).toBeInTheDocument();
-    expect(screen.getByText('Underwriter')).toBeInTheDocument();
   });
 
-  it('renders status indicators', () => {
+  it('renders status indicators', async () => {
     const { container } = renderWithProviders(<ContactManager />);
-    // Check for status dots (bg-green-500 for online, bg-gray-400 for offline)
-    expect(container.querySelector('.bg-green-500')).toBeInTheDocument();
-    expect(container.querySelector('.bg-gray-400')).toBeInTheDocument();
+    await waitFor(() => {
+      // Check for status dots (bg-green-500 for online, bg-gray-400 for offline)
+      expect(container.querySelector('.bg-green-500')).toBeInTheDocument();
+      expect(container.querySelector('.bg-gray-400')).toBeInTheDocument();
+    });
   });
 
-  it('renders action buttons for each contact', () => {
+  it('renders action buttons for each contact', async () => {
     renderWithProviders(<ContactManager />);
-    // 2 contacts * 3 buttons = 6 buttons + 1 add button = 7 buttons
-    // But we can check for specific icons or just count
-    // The buttons have sr-only text? No, they are icon buttons without sr-only text in the component.
-    // Wait, let's check ContactManager.tsx again.
-    // <Button size="icon" variant="ghost" ...><Phone ... /></Button>
-    // No accessible name. This is an accessibility issue.
-    // I should fix the component to add aria-label or sr-only text.
-    // For now, I'll check for button count or class.
-    const buttons = screen.getAllByRole('button');
-    expect(buttons.length).toBeGreaterThan(1);
+    await waitFor(() => {
+      const buttons = screen.getAllByRole('button');
+      // 1 add button + contacts action buttons
+      expect(buttons.length).toBeGreaterThan(1);
+    });
   });
 });

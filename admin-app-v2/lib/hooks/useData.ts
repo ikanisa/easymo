@@ -15,6 +15,13 @@ export function useInsurancePolicies() {
   });
 }
 
+export function useInsuranceContacts() {
+  return useQuery({
+    queryKey: ['insurance', 'contacts'],
+    queryFn: () => apiClient.insurance.contacts(),
+  });
+}
+
 export function useWalletTransactions() {
   return useQuery({
     queryKey: ['wallet', 'transactions'],
