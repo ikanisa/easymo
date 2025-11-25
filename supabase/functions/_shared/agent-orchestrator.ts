@@ -82,9 +82,8 @@ export class AgentOrchestrator {
     // 10. Execute agent action based on intent
     await this.executeAgentAction(context, intentId, intent);
     
-    // 11. Generate and send response back to user
-    const responseText = this.generateResponse(intent, null);
-    await this.sendResponse(context, intent);
+    // 11. Send response back to user and get the response text for session history
+    const responseText = await this.sendResponse(context, intent);
     
     // 12. Store response in session history
     await this.addMessageToSession(sessionId, "assistant", responseText);
@@ -979,11 +978,12 @@ export class AgentOrchestrator {
 
   /**
    * Send response back to user via WhatsApp
+   * Returns the response text for session history
    */
   private async sendResponse(
     context: AgentContext,
     intent: ParsedIntent
-  ): Promise<void> {
+  ): Promise<string> {
     // Get agent persona for tone/style
     const { data: persona } = await this.supabase
       .from("ai_agent_personas")
@@ -1014,6 +1014,8 @@ export class AgentOrchestrator {
       intentType: intent.type,
       responseLength: responseText.length,
     }));
+    
+    return responseText;
   }
 
   /**

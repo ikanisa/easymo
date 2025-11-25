@@ -229,7 +229,7 @@ CREATE TRIGGER trigger_ad_campaigns_updated_at
   FOR EACH ROW
   EXECUTE FUNCTION public.update_ad_campaigns_updated_at();
 
--- Updated_at trigger for ad_campaign_analytics
+-- Updated_at trigger for ad_campaign_analytics (reuses the same function which just sets updated_at = NOW())
 DROP TRIGGER IF EXISTS trigger_ad_campaign_analytics_updated_at ON public.ad_campaign_analytics;
 CREATE TRIGGER trigger_ad_campaign_analytics_updated_at
   BEFORE UPDATE ON public.ad_campaign_analytics
@@ -332,7 +332,7 @@ BEGIN
   ) VALUES (
     p_campaign_id,
     CURRENT_DATE,
-    CASE WHEN p_metric_type = 'view' THEN 1 ELSE 0 END,
+    CASE WHEN p_metric_type = 'impression' THEN 1 ELSE 0 END,
     CASE WHEN p_metric_type = 'view' THEN 1 ELSE 0 END,
     CASE WHEN p_metric_type = 'click' THEN 1 ELSE 0 END,
     CASE WHEN p_metric_type = 'conversion' THEN 1 ELSE 0 END,
@@ -340,7 +340,7 @@ BEGIN
   )
   ON CONFLICT (campaign_id, date)
   DO UPDATE SET
-    impressions = ad_campaign_analytics.impressions + CASE WHEN p_metric_type = 'view' THEN 1 ELSE 0 END,
+    impressions = ad_campaign_analytics.impressions + CASE WHEN p_metric_type = 'impression' THEN 1 ELSE 0 END,
     views = ad_campaign_analytics.views + CASE WHEN p_metric_type = 'view' THEN 1 ELSE 0 END,
     clicks = ad_campaign_analytics.clicks + CASE WHEN p_metric_type = 'click' THEN 1 ELSE 0 END,
     conversions = ad_campaign_analytics.conversions + CASE WHEN p_metric_type = 'conversion' THEN 1 ELSE 0 END,

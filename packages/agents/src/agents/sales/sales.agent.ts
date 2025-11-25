@@ -29,11 +29,13 @@ Guardrails & Policies:
     this.tools = this.defineTools();
     
     // Initialize Supabase client
+    // Server-side uses SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY
+    // Client-side fallback uses NEXT_PUBLIC_SUPABASE_URL and SERVICE_ROLE_KEY
     const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SERVICE_ROLE_KEY;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
     
     if (!supabaseUrl || !supabaseKey) {
-      console.warn("Supabase credentials missing for SalesAgent");
+      console.warn("SalesAgent: Supabase credentials missing. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.");
     }
     
     this.supabase = createClient(supabaseUrl || '', supabaseKey || '', {
@@ -84,7 +86,7 @@ Format as JSON with: { script: string, scenes: [{duration: string, visual: strin
               return JSON.parse(jsonMatch[0]);
             }
             
-            // Fallback structured response
+            // Fallback structured response when JSON parsing fails
             return {
               script: content,
               visual_prompts: [
@@ -94,6 +96,10 @@ Format as JSON with: { script: string, scenes: [{duration: string, visual: strin
               ]
             };
           } catch (error) {
+            // Log the error for debugging but provide graceful fallback
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            console.warn(`LLM script generation failed: ${errorMessage}. Using template fallback.`);
+            
             // Fallback to template-based script
             return {
               script: `[Opening] ${product_name} - Made for ${audience}\n[Middle] Experience the difference with ${product_name}\n[Close] Try it today!`,
