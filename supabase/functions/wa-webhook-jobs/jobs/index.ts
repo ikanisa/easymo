@@ -27,6 +27,7 @@ import {
 import { buildSaveRows } from "../locations/save.ts";
 import { point as geoPoint } from "../../utils/geo.ts";
 import { resolveUserCurrency } from "../../utils/currency.ts";
+import { getApplyButtonId } from "./applications.ts";
 
 // Helper function to send text messages
 async function sendMessage(ctx: RouterContext, options: { text: string }): Promise<void> {
@@ -625,6 +626,7 @@ async function sendJobResultDetail(
     ctx,
     `${summary}\n\n${contactLine}`,
     buildButtons(
+      { id: getApplyButtonId(job.id), title: "📝 Apply Now" },
       { id: IDS.JOB_RESULTS_BACK, title: t(ctx.locale, "jobs.find.buttons.backList") },
       { id: IDS.BACK_MENU, title: t(ctx.locale, "common.menu_back") },
     ),

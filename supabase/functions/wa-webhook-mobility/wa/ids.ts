@@ -160,5 +160,13 @@ export const IDS = {
   // Recent actions
   SCHEDULE_RECENT: "schedule_recent",
   NEARBY_RECENT: "nearby_recent",
+  // Payment actions
+  TRIP_PAYMENT_PAID: "trip_payment_paid",
+  TRIP_PAYMENT_SKIP: "trip_payment_skip",
+  // Driver verification actions
+  VERIFY_LICENSE: "verify_license",
+  VERIFY_INSURANCE: "verify_insurance",
+  VERIFY_INSPECTION: "verify_inspection",
+  VERIFY_STATUS: "verify_status",
   // Existing flows will add more IDs during implementation.
 } as const;

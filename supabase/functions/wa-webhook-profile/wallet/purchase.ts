@@ -122,17 +122,21 @@ async function initiatePurchase(
       data: { purchaseId: purchase.id, tokenAmount, rwfAmount }
     });
 
-    const ussdCode = `*182*7*1*${rwfAmount}*${purchase.id.slice(0, 8)}#`;
+    // USSD format: *182*8*1*[code]*[amount]#
+    const merchantCode = Deno.env.get("USSD_MERCHANT_CODE") || "EASYMO";
+    const ussdCode = `*182*8*1*${merchantCode}*${rwfAmount}#`;
+    const reference = purchase.id.slice(0, 8).toUpperCase();
     
     await sendText(ctx.from,
       `📱 *Token Purchase Initiated*\n\n` +
       `Tokens: ${tokenAmount.toLocaleString()}\n` +
       `Amount: ${rwfAmount.toLocaleString()} RWF\n` +
-      `Reference: ${purchase.id.slice(0, 8)}\n\n` +
+      `Reference: ${reference}\n\n` +
       `💳 *Tap to Pay via USSD:*\n` +
       `tel:${encodeURIComponent(ussdCode)}\n\n` +
       `Or dial manually:\n` +
       `${ussdCode}\n\n` +
+      `📝 Use this reference when prompted: ${reference}\n\n` +
       `You'll receive confirmation once payment is received.`
     );
 

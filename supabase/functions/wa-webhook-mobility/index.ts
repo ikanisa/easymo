@@ -43,6 +43,20 @@ import {
   parseInsuranceState,
   handleInsuranceCertificateUpload,
 } from "./handlers/driver_insurance.ts";
+// Payment handlers
+import {
+  handlePaymentConfirmation,
+  processTransactionReference,
+  handleSkipPayment,
+  PAYMENT_STATES,
+} from "./handlers/trip_payment.ts";
+// Verification handlers
+import {
+  showVerificationMenu,
+  startLicenseVerification,
+  handleLicenseUpload,
+  VERIFICATION_STATES,
+} from "./handlers/driver_verification.ts";
 // Full integration - All handlers enabled (using console.log for logging)
 import {
   handleTripStart,
@@ -346,6 +360,24 @@ serve(async (req: Request): Promise<Response> => {
           handled = await handleTripRate(ctx, tripId, rating);
         }
         
+        // Payment Handlers
+        else if (id === IDS.TRIP_PAYMENT_PAID && state?.key === PAYMENT_STATES.PENDING) {
+          handled = await handlePaymentConfirmation(ctx, state);
+        } else if (id === IDS.TRIP_PAYMENT_SKIP && state?.key === PAYMENT_STATES.PENDING) {
+          handled = await handleSkipPayment(ctx, state);
+        }
+        
+        // Driver Verification Handlers
+        else if (id === IDS.VERIFY_LICENSE) {
+          handled = await startLicenseVerification(ctx);
+        } else if (id === IDS.VERIFY_INSURANCE) {
+          // Redirect to existing insurance handler
+          const { ensureDriverInsurance } = await import("./handlers/driver_insurance.ts");
+          handled = await ensureDriverInsurance(ctx, { type: "nearby_passengers" });
+        } else if (id === IDS.VERIFY_STATUS) {
+          handled = await showVerificationMenu(ctx);
+        }
+        
         // Real-Time Tracking
         else if (id === "UPDATE_LOCATION" && state?.data?.tripId) {
           const tripId = state.data.tripId;
@@ -387,12 +419,12 @@ serve(async (req: Request): Promise<Response> => {
       }
     }
 
-    // C. Handle Image/Document Messages (Insurance Certificate Upload)
-    else if ((message.type === "image" || message.type === "document") && state?.key === driverInsuranceStateKey) {
+    // C. Handle Image/Document Messages (Insurance & License Upload)
+    else if ((message.type === "image" || message.type === "document")) {
       const mediaId = (message.image as any)?.id || (message.document as any)?.id;
       const mimeType = (message.image as any)?.mime_type || (message.document as any)?.mime_type || "image/jpeg";
       
-      if (mediaId) {
+      if (mediaId && state?.key === driverInsuranceStateKey) {
         logEvent("MOBILITY_INSURANCE_UPLOAD", { mediaId, mimeType });
         
         const resumeData = parseInsuranceState(state.data);
@@ -408,6 +440,19 @@ serve(async (req: Request): Promise<Response> => {
             } else if (result.resumeData.type === "schedule_role") {
               handled = await startScheduleTrip(ctx, state as any);
             }
+          } else {
+            handled = true;
+          }
+        }
+      } else if (mediaId && state?.key === VERIFICATION_STATES.LICENSE_UPLOAD) {
+        logEvent("MOBILITY_LICENSE_UPLOAD", { mediaId, mimeType });
+        handled = await handleLicenseUpload(ctx, mediaId, mimeType);
+      }
+    }
+
+    // D. Handle Text Messages
+              handled = await startScheduleTrip(ctx, state as any);
+            }
           } else if (result.error) {
             // Error message already sent by handler
             handled = true;
@@ -419,9 +464,14 @@ serve(async (req: Request): Promise<Response> => {
     // D. Handle Text Messages (Keywords/Fallbacks)
     else if (message.type === "text") {
       const text = (message.text as any)?.body?.toLowerCase() ?? "";
+      const rawText = (message.text as any)?.body ?? "";
       
+      // Payment transaction reference input
+      if (state?.key === PAYMENT_STATES.CONFIRMATION) {
+        handled = await processTransactionReference(ctx, rawText, state);
+      }
       // Check for menu selection keys first
-      if (text === "rides_agent" || text === "rides") {
+      else if (text === "rides_agent" || text === "rides") {
         handled = await handleSeeDrivers(ctx);
       }
       // Simple keyword triggers if not in a specific flow or if flow allows interruption
