@@ -16,7 +16,7 @@ import { createClient,SupabaseClient } from "@supabase/supabase-js";
 
 import { config } from "./config.js";
 import { logger } from "./logger.js";
-import { maskPhone,RateLimiter } from "./rate-limiter.js";
+import { maskPhone, RateLimiter } from "./rate-limiter.js";
 import { resolveSecret } from "./secrets.js";
 import { verifyWebhookSignature } from "./signature.js";
 

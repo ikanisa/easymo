@@ -1,4 +1,4 @@
-import { maskPhone,RateLimiter } from "../src/rate-limiter";
+import { maskPhone, RateLimiter } from "../src/rate-limiter";
 
 describe("RateLimiter", () => {
   let limiter: RateLimiter;
