@@ -42,7 +42,12 @@ export type OrchestratorAgentType =
  * Common parameters for processing a message
  */
 export interface ProcessMessageParams {
-  /** User identifier (phone number or UUID) */
+  /** 
+   * User identifier - can be either:
+   * - E.164 phone number (e.g., "+250788123456")
+   * - UUID from the profiles table
+   * The orchestrator will handle both formats appropriately.
+   */
   userId: string;
   /** The message content to process */
   message: string;
@@ -50,7 +55,7 @@ export interface ProcessMessageParams {
   conversationId?: string;
   /** Optional context for the conversation */
   context?: Record<string, unknown>;
-  /** Optional correlation ID for tracing */
+  /** Optional correlation ID for distributed tracing */
   correlationId?: string;
 }
 
@@ -258,15 +263,20 @@ export interface IAIProvider {
 
 /**
  * Configuration for fallback provider
+ * 
+ * Note: When configuring, ensure primary and fallback are different
+ * provider types (e.g., OpenAI primary with Gemini fallback) for
+ * effective failover. Using the same provider for both may result
+ * in ineffective failover if the provider itself is experiencing issues.
  */
 export interface FallbackProviderConfig {
   /** Primary provider to use first */
   primary: IAIProvider;
-  /** Fallback provider if primary fails */
+  /** Fallback provider if primary fails (should be different from primary) */
   fallback: IAIProvider;
-  /** Maximum retries before failing over */
+  /** Maximum retries on primary before failing over (default: 1) */
   maxRetries?: number;
-  /** Timeout in milliseconds */
+  /** Timeout in milliseconds before failing over (default: 30000) */
   timeout?: number;
 }
 
