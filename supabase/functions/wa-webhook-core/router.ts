@@ -9,6 +9,7 @@ import {
   getSessionByPhone,
   setActiveService,
 } from "../_shared/session-manager.ts";
+import { circuitBreakerManager } from "../_shared/circuit-breaker.ts";
 
 type RoutingDecision = {
   service: string;
@@ -38,6 +39,39 @@ type WhatsAppHomeMenuItem = {
 };
 
 const FALLBACK_SERVICE = "wa-webhook";
+
+// Retry configuration
+const MAX_RETRIES = 2;
+const INITIAL_RETRY_DELAY_MS = 200;
+const RETRIABLE_STATUS_CODES = [408, 429, 503, 504];
+
+/**
+ * Sleep for a given duration with optional jitter
+ */
+function sleep(ms: number, jitter = true): Promise<void> {
+  const delay = jitter ? ms * (0.8 + Math.random() * 0.4) : ms;
+  return new Promise((resolve) => setTimeout(resolve, delay));
+}
+
+/**
+ * Check if an error or status code is retriable
+ */
+function isRetriable(error: unknown, statusCode?: number): boolean {
+  // Network errors are retriable
+  if (error instanceof Error) {
+    const message = error.message.toLowerCase();
+    if (message.includes("network") || message.includes("timeout") || message.includes("abort")) {
+      return true;
+    }
+  }
+  
+  // Specific status codes are retriable
+  if (statusCode && RETRIABLE_STATUS_CODES.includes(statusCode)) {
+    return true;
+  }
+  
+  return false;
+}
 
 const SERVICE_KEY_MAP: Record<string, string> = {
   // Mobility / rides
@@ -189,48 +223,130 @@ export async function forwardToEdgeService(
     return await handleHomeMenu(payload, headers);
   }
 
+  // Check circuit breaker
+  const breaker = circuitBreakerManager.getBreaker(decision.service);
+  if (!breaker.canExecute()) {
+    console.warn(JSON.stringify({
+      event: "WA_CORE_CIRCUIT_OPEN",
+      service: decision.service,
+      state: breaker.getState(),
+    }));
+    
+    return new Response(JSON.stringify({
+      success: false,
+      service: decision.service,
+      error: "Service temporarily unavailable (circuit breaker open)",
+    }), {
+      status: 503,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
   const url = `${MICROSERVICES_BASE_URL}/${decision.service}`;
   const forwardHeaders = new Headers(headers);
   forwardHeaders.set("Content-Type", "application/json");
   forwardHeaders.set("X-Routed-From", "wa-webhook-core");
   forwardHeaders.set("X-Routed-Service", decision.service);
 
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), ROUTER_TIMEOUT_MS);
+  // Retry logic with exponential backoff
+  let lastError: unknown = null;
+  let lastResponse: Response | null = null;
+  
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), ROUTER_TIMEOUT_MS);
 
-  try {
-    const response = await fetch(url, {
-      method: "POST",
-      headers: forwardHeaders,
-      body: JSON.stringify(payload),
-      signal: controller.signal,
-    });
+    try {
+      const response = await fetch(url, {
+        method: "POST",
+        headers: forwardHeaders,
+        body: JSON.stringify(payload),
+        signal: controller.signal,
+      });
 
-    console.log(JSON.stringify({
-      event: "WA_CORE_ROUTED",
-      service: decision.service,
-      status: response.status,
-    }));
+      clearTimeout(timeout);
 
-    return response;
-  } catch (error) {
-    console.error(JSON.stringify({
-      event: "WA_CORE_ROUTING_FAILURE",
-      service: decision.service,
-      error: error instanceof Error ? error.message : String(error),
-    }));
+      // Success - record in circuit breaker
+      if (response.ok) {
+        breaker.recordSuccess();
+        
+        console.log(JSON.stringify({
+          event: "WA_CORE_ROUTED",
+          service: decision.service,
+          status: response.status,
+          attempt: attempt + 1,
+        }));
 
-    return new Response(JSON.stringify({
-      success: false,
-      service: decision.service,
-      error: "Service temporarily unavailable",
-    }), {
-      status: 503,
-      headers: { "Content-Type": "application/json" },
-    });
-  } finally {
-    clearTimeout(timeout);
+        return response;
+      }
+
+      // Check if we should retry
+      if (isRetriable(null, response.status) && attempt < MAX_RETRIES) {
+        lastResponse = response;
+        const delay = INITIAL_RETRY_DELAY_MS * Math.pow(2, attempt);
+        
+        console.warn(JSON.stringify({
+          event: "WA_CORE_RETRY",
+          service: decision.service,
+          status: response.status,
+          attempt: attempt + 1,
+          nextRetryMs: delay,
+        }));
+        
+        await sleep(delay);
+        continue;
+      }
+
+      // Non-retriable error or max retries reached
+      if (!response.ok) {
+        breaker.recordFailure(`HTTP ${response.status}`);
+      }
+
+      return response;
+      
+    } catch (error) {
+      clearTimeout(timeout);
+      lastError = error;
+
+      // Check if we should retry
+      if (isRetriable(error) && attempt < MAX_RETRIES) {
+        const delay = INITIAL_RETRY_DELAY_MS * Math.pow(2, attempt);
+        
+        console.warn(JSON.stringify({
+          event: "WA_CORE_RETRY",
+          service: decision.service,
+          error: error instanceof Error ? error.message : String(error),
+          attempt: attempt + 1,
+          nextRetryMs: delay,
+        }));
+        
+        await sleep(delay);
+        continue;
+      }
+
+      // Max retries reached or non-retriable error
+      break;
+    }
   }
+
+  // All retries failed
+  breaker.recordFailure(lastError instanceof Error ? lastError.message : "max_retries_exceeded");
+  
+  console.error(JSON.stringify({
+    event: "WA_CORE_ROUTING_FAILURE",
+    service: decision.service,
+    error: lastError instanceof Error ? lastError.message : String(lastError),
+    attempts: MAX_RETRIES + 1,
+  }));
+
+  return new Response(JSON.stringify({
+    success: false,
+    service: decision.service,
+    error: "Service temporarily unavailable",
+  }), {
+    status: 503,
+    headers: { "Content-Type": "application/json" },
+  });
 }
 
 export async function summarizeServiceHealth(supabase: SupabaseClient): Promise<HealthStatus> {
