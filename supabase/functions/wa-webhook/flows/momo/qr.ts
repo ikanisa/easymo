@@ -450,7 +450,7 @@ async function canUseSelfNumber(ctx: RouterContext): Promise<boolean> {
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.error("momo.country_support_error", { message });
-    return !!normalizeMsisdn(ctx.from);
+    return false;
   }
 }
 

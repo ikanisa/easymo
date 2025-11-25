@@ -4,6 +4,11 @@ import type { WhatsAppWebhookPayload, RouterContext, WhatsAppMessage } from "../
 import { sendListMessage } from "../_shared/wa-webhook-shared/utils/reply.ts";
 import { supabase } from "../_shared/wa-webhook-shared/config.ts";
 import type { SupabaseClient } from "../_shared/wa-webhook-shared/deps.ts";
+import {
+  clearActiveService,
+  getSessionByPhone,
+  setActiveService,
+} from "../_shared/session-manager.ts";
 
 type RoutingDecision = {
   service: string;
@@ -32,37 +37,70 @@ type WhatsAppHomeMenuItem = {
   active_countries: string[];
 };
 
+const FALLBACK_SERVICE = "wa-webhook";
+
 const SERVICE_KEY_MAP: Record<string, string> = {
+  // Mobility / rides
   "rides": "wa-webhook-mobility",
   "mobility": "wa-webhook-mobility",
-  "insurance": "wa-webhook-insurance",
-  "jobs": "wa-webhook-jobs",
-  "property": "wa-webhook-property",
-  "wallet": "wa-webhook-profile",  // Updated to profile
-  "marketplace": "wa-webhook-marketplace",
-  "ai_agents": "wa-webhook-ai-agents",
-  // DB Item Mappings
   "rides_agent": "wa-webhook-mobility",
-  "jobs_agent": "wa-webhook-jobs",
-  "business_broker_agent": "wa-webhook-marketplace",
-  "real_estate_agent": "wa-webhook-property",
-  "farmer_agent": "wa-webhook-ai-agents",
+  "nearby_drivers": "wa-webhook-mobility",
+  "nearby_passengers": "wa-webhook-mobility",
+  "schedule_trip": "wa-webhook-mobility",
+
+  // Insurance
+  "insurance": "wa-webhook-insurance",
   "insurance_agent": "wa-webhook-insurance",
-  "sales_agent": "wa-webhook-ai-agents",
-  "waiter_agent": "wa-webhook-ai-agents",
-  "profile": "wa-webhook-profile",  // Updated to profile
-  // Profile-related features
+  "motor_insurance": "wa-webhook-insurance",
+
+  // Jobs
+  "jobs": "wa-webhook-jobs",
+  "jobs_agent": "wa-webhook-jobs",
+
+  // Property
+  "property": "wa-webhook-property",
+  "property_rentals": "wa-webhook-property",
+  "property rentals": "wa-webhook-property",
+  "real_estate_agent": "wa-webhook-property",
+
+  // Marketplace / commerce
+  "marketplace": "wa-webhook-marketplace",
+  "shops_services": "wa-webhook-marketplace",
+  "buy_and_sell": "wa-webhook-marketplace",
+  "buy and sell": "wa-webhook-marketplace",
+  "business_broker_agent": "wa-webhook-marketplace",
+  "general_broker": "wa-webhook-marketplace",
+
+  // Wallet / profile
+  "wallet": "wa-webhook-profile",
+  "token_transfer": "wa-webhook-profile",
+  "momo_qr": "wa-webhook-profile",
+  "momo qr": "wa-webhook-profile",
+  "momoqr": "wa-webhook-profile",
+  "profile": "wa-webhook-profile",
+  "profile_assets": "wa-webhook-profile",
   "my_business": "wa-webhook-profile",
   "my_businesses": "wa-webhook-profile",
   "my_jobs": "wa-webhook-profile",
   "my_properties": "wa-webhook-profile",
   "saved_locations": "wa-webhook-profile",
-  // Legacy numeric mapping
+
+  // AI / support agents
+  "ai_agents": "wa-webhook-ai-agents",
+  "farmer_agent": "wa-webhook-ai-agents",
+  "sales_agent": "wa-webhook-ai-agents",
+  "waiter_agent": "wa-webhook-ai-agents",
+  "waiter": "wa-webhook-ai-agents",
+  "support": "wa-webhook-ai-agents",
+  "customer_support": "wa-webhook-ai-agents",
+  "farmers": "wa-webhook-ai-agents",
+
+  // Legacy numeric mapping (keep for backwards compatibility)
   "1": "wa-webhook-mobility",
   "2": "wa-webhook-insurance",
   "3": "wa-webhook-jobs",
   "4": "wa-webhook-property",
-  "5": "wa-webhook-profile",  // Updated to profile
+  "5": "wa-webhook-wallet",
   "6": "wa-webhook-marketplace",
   "7": "wa-webhook-ai-agents",
 };
@@ -76,19 +114,34 @@ const ROUTED_SERVICES = [
   "wa-webhook-ai-agents",
   "wa-webhook-property",
   "wa-webhook-mobility",
-  "wa-webhook-profile",  // Updated from wa-webhook-wallet
+  "wa-webhook-wallet",
+  "wa-webhook-profile",
   "wa-webhook-insurance",
+  FALLBACK_SERVICE,
   "wa-webhook-core",
 ];
 
 export async function routeIncomingPayload(payload: WhatsAppWebhookPayload): Promise<RoutingDecision> {
   const routingMessage = getFirstMessage(payload);
   const routingText = routingMessage ? getRoutingText(routingMessage) : null;
-  
-  // Check if text matches a service key
+  const phoneNumber = routingMessage?.from ?? null;
+
   if (routingText) {
     const normalized = routingText.trim().toLowerCase();
+    if (normalized === "menu" || normalized === "home" || normalized === "exit") {
+      if (phoneNumber) {
+        await clearActiveService(supabase, phoneNumber);
+      }
+      return {
+        service: "wa-webhook-core",
+        reason: "home_menu",
+        routingText,
+      };
+    }
     if (SERVICE_KEY_MAP[normalized]) {
+      if (phoneNumber) {
+        await setActiveService(supabase, phoneNumber, SERVICE_KEY_MAP[normalized]);
+      }
       return {
         service: SERVICE_KEY_MAP[normalized],
         reason: "keyword",
@@ -97,11 +150,19 @@ export async function routeIncomingPayload(payload: WhatsAppWebhookPayload): Pro
     }
   }
 
-  // All other messages handled by wa-webhook-core (shows home menu)
-  const service = "wa-webhook-core";
+  if (phoneNumber) {
+    const session = await getSessionByPhone(supabase, phoneNumber);
+    if (session?.active_service && ROUTED_SERVICES.includes(session.active_service)) {
+      return {
+        service: session.active_service,
+        reason: "state",
+        routingText,
+      };
+    }
+  }
 
   return {
-    service,
+    service: "wa-webhook-core",
     reason: "home_menu",
     routingText,
   };
@@ -170,47 +231,64 @@ export async function forwardToEdgeService(
 }
 
 export async function summarizeServiceHealth(supabase: SupabaseClient): Promise<HealthStatus> {
+  const start = performance.now();
+  
+  // 1. Check Database (Critical)
+  let dbStatus = "unknown";
   try {
     const { error } = await supabase.from("profiles").select("user_id").limit(1);
-    const microservices = await getAllServicesHealth();
-    return {
-      status: error ? "unhealthy" : "healthy",
-      service: "wa-webhook-core",
-      timestamp: new Date().toISOString(),
-      checks: {
-        database: error ? "disconnected" : "connected",
-        table: "profiles",
-      },
-      microservices,
-      version: "2.0.0",
-      ...(error && { error: error.message }),
-    };
-  } catch (err) {
-    return {
-      status: "unhealthy",
-      service: "wa-webhook-core",
-      timestamp: new Date().toISOString(),
-      checks: { database: "error" },
-      microservices: {},
-      version: "2.0.0",
-      error: err instanceof Error ? err.message : String(err),
-    };
+    dbStatus = error ? "disconnected" : "connected";
+  } catch {
+    dbStatus = "error";
   }
+
+  // 2. Check Microservices (Non-critical for core health)
+  // We use allSettled so one slow service doesn't block the response
+  const microservices = await getAllServicesHealth();
+
+  const duration = performance.now() - start;
+
+  return {
+    status: dbStatus === "connected" ? "healthy" : "unhealthy",
+    service: "wa-webhook-core",
+    timestamp: new Date().toISOString(),
+    checks: {
+      database: dbStatus,
+      latency: `${Math.round(duration)}ms`,
+    },
+    microservices,
+    version: "2.1.0",
+  };
 }
 
 async function getAllServicesHealth(): Promise<Record<string, boolean>> {
-  const entries = await Promise.all(
-    ROUTED_SERVICES.map(async (service) => [service, await checkServiceHealth(service)] as const),
-  );
-  return Object.fromEntries(entries);
+  // Check all services in parallel with a strict timeout per service
+  const checks = ROUTED_SERVICES
+    .filter(s => s !== "wa-webhook-core" && s !== FALLBACK_SERVICE)
+    .map(async (service) => {
+      const isHealthy = await checkServiceHealth(service);
+      return [service, isHealthy] as const;
+    });
+
+  const results = await Promise.all(checks);
+  return Object.fromEntries(results);
 }
 
 async function checkServiceHealth(service: string): Promise<boolean> {
   try {
+    // Short timeout for health checks (1.5s) to prevent cascading latency
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 1500);
+    
     const response = await fetch(`${MICROSERVICES_BASE_URL}/${service}/health`, {
       method: "GET",
-      signal: AbortSignal.timeout(ROUTER_TIMEOUT_MS),
+      signal: controller.signal,
     });
+    
+    clearTimeout(timeoutId);
+    
+    if (!response.ok) return false;
+    
     const data = await response.json();
     return data.status === "healthy";
   } catch {
@@ -230,6 +308,21 @@ function getFirstMessage(payload: WhatsAppWebhookPayload): WhatsAppMessage | und
     }
   }
   return undefined;
+}
+
+function getMenuSelectionId(message?: WhatsAppMessage): string | null {
+  if (!message || message.type !== "interactive") return null;
+  const interactive = (message as { interactive?: Record<string, unknown> }).interactive;
+  if (!interactive) return null;
+  const listReply = interactive.list_reply as { id?: string } | undefined;
+  if (listReply?.id && listReply.id.trim().length) {
+    return listReply.id.trim().toLowerCase();
+  }
+  const buttonReply = interactive.button_reply as { id?: string } | undefined;
+  if (buttonReply?.id && buttonReply.id.trim().length) {
+    return buttonReply.id.trim().toLowerCase();
+  }
+  return null;
 }
 
 async function fetchHomeMenuItems(): Promise<WhatsAppHomeMenuItem[]> {
@@ -261,36 +354,48 @@ async function handleHomeMenu(payload: WhatsAppWebhookPayload, headers?: Headers
 
   const phoneNumber = message.from;
   const text = getRoutingText(message);
+  const interactiveId = getMenuSelectionId(message);
+  const normalizedText = text?.trim().toLowerCase() ?? null;
+  const selection = interactiveId ?? normalizedText;
   
   console.log(JSON.stringify({ 
     event: "MESSAGE_RECEIVED", 
     from: phoneNumber, 
-    text: text?.substring(0, 50) 
+    text: selection ?? null,
   }));
   
-  // Check if message is a menu selection (mapped key)
-  const menuSelection = text?.trim().toLowerCase();
-  if (menuSelection && SERVICE_KEY_MAP[menuSelection]) {
-    const targetService = SERVICE_KEY_MAP[menuSelection];
-    console.log(JSON.stringify({ event: "ROUTING_TO_SERVICE", service: targetService, selection: menuSelection }));
-    
-    const url = `${MICROSERVICES_BASE_URL}/${targetService}`;
-    const forwardHeaders = new Headers(headers);
-    forwardHeaders.set("Content-Type", "application/json");
-    forwardHeaders.set("X-Routed-From", "wa-webhook-core");
-    forwardHeaders.set("X-Menu-Selection", menuSelection);
+  if (selection === "menu" || selection === "home") {
+    console.log(JSON.stringify({ event: "MENU_REQUESTED", from: phoneNumber }));
+    if (phoneNumber) await clearActiveService(supabase, phoneNumber);
+  } else if (selection) {
+    const isInteractive = Boolean(interactiveId);
+    const targetService = SERVICE_KEY_MAP[selection] ?? (isInteractive ? FALLBACK_SERVICE : null);
+    if (targetService) {
+      console.log(JSON.stringify({ event: "ROUTING_TO_SERVICE", service: targetService, selection }));
+      if (phoneNumber) await setActiveService(supabase, phoneNumber, targetService);
+      const url = `${MICROSERVICES_BASE_URL}/${targetService}`;
+      const forwardHeaders = new Headers(headers);
+      forwardHeaders.set("Content-Type", "application/json");
+      forwardHeaders.set("X-Routed-From", "wa-webhook-core");
+      forwardHeaders.set("X-Menu-Selection", selection);
 
-    try {
-      const response = await fetch(url, {
-        method: "POST",
-        headers: forwardHeaders,
-        body: JSON.stringify(payload),
-      });
-      console.log(JSON.stringify({ event: "FORWARDED", service: targetService, status: response.status }));
-      return response;
-    } catch (error) {
-      console.error(JSON.stringify({ event: "FORWARD_FAILED", service: targetService, error: String(error) }));
+      try {
+        const response = await fetch(url, {
+          method: "POST",
+          headers: forwardHeaders,
+          body: JSON.stringify(payload),
+        });
+        console.log(JSON.stringify({ event: "FORWARDED", service: targetService, status: response.status }));
+        return response;
+      } catch (error) {
+        console.error(JSON.stringify({ event: "FORWARD_FAILED", service: targetService, error: String(error) }));
+      }
+    } else if (!isInteractive) {
+      console.log(JSON.stringify({ event: "TEXT_NOT_RECOGNIZED", input: selection }));
+      if (phoneNumber) await clearActiveService(supabase, phoneNumber);
     }
+  } else if (phoneNumber) {
+    await clearActiveService(supabase, phoneNumber);
   }
 
   // Show home menu - interactive list message

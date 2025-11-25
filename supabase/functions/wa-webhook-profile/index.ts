@@ -235,8 +235,8 @@ serve(async (req: Request): Promise<Response> => {
       
       // Check for menu selection key first
       if (text === "profile") {
-        const { startWallet } = await import("./wallet/home.ts");
-        handled = await startWallet(ctx, state ?? { key: "home" });
+        const { startProfile } = await import("./profile/home.ts");
+        handled = await startProfile(ctx, state ?? { key: "home" });
       }
       // Wallet keywords
       else if (text.includes("wallet") || text.includes("balance")) {
@@ -259,6 +259,16 @@ serve(async (req: Request): Promise<Response> => {
         handled = await handleWalletTransactions(ctx);
       }
       
+      // MOMO QR Text
+      else if (text.includes("momo") || text.includes("qr") || state?.key?.startsWith("momo_qr")) {
+        const { handleMomoText, startMomoQr } = await import("../_shared/wa-webhook-shared/flows/momo/qr.ts");
+        if (state?.key?.startsWith("momo_qr")) {
+            handled = await handleMomoText(ctx, (message.text as any)?.body ?? "", state);
+        } else {
+            handled = await startMomoQr(ctx, state ?? { key: "home" });
+        }
+      }
+
       // Handle transfer amount input
       else if (state?.key === "wallet_transfer_amount") {
         const { handleTransferAmount } = await import("./wallet/transfer.ts");

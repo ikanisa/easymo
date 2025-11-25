@@ -1,10 +1,11 @@
 // wa-webhook-insurance - Dedicated Insurance Microservice
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { logStructuredEvent } from "../_shared/wa-webhook-shared/observe/log.ts";
+import { logStructuredEvent } from "../_shared/observability.ts";
 import type { RouterContext, WhatsAppWebhookPayload, RawWhatsAppMessage } from "../_shared/wa-webhook-shared/types.ts";
 import { getState } from "../_shared/wa-webhook-shared/state/store.ts";
 import { IDS } from "../_shared/wa-webhook-shared/wa/ids.ts";
+import { getFirstMessage } from "../_shared/wa-webhook-shared/utils/messages.ts";
 
 // Insurance domain imports
 import { startInsurance, handleInsuranceMedia } from "./insurance/index.ts";

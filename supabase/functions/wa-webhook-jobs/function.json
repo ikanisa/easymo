@@ -1,6 +1,5 @@
 {
   "name": "wa-webhook-jobs",
   "version": "1.0.0",
-  "verify_jwt": false,
-  "import_map": "./deno.json"
+  "verify_jwt": false
 }

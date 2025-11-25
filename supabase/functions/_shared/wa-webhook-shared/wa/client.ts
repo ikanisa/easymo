@@ -1,4 +1,5 @@
 import { WA_PHONE_ID, WA_TOKEN } from "../config.ts";
+import { logStructuredEvent } from "../../observability.ts";
 import { delay, fetchWithTimeout } from "../utils/http.ts";
 
 export class WhatsAppClientError extends Error {
@@ -34,7 +35,12 @@ const STATUS_RETRY_DELAY_MS = Math.max(
   0,
 );
 
-async function post(payload: unknown): Promise<void> {
+type SendMeta = {
+  to?: string;
+  kind?: string;
+};
+
+async function post(payload: Record<string, unknown>, meta?: SendMeta): Promise<void> {
   let attempt = 0;
   while (attempt <= STATUS_RETRIES) {
     const res = await fetchWithTimeout(
@@ -48,9 +54,21 @@ async function post(payload: unknown): Promise<void> {
         body: JSON.stringify(payload),
       },
     );
-    if (res.ok) return;
+    if (res.ok) {
+      logStructuredEvent("WA_MESSAGE_SENT", {
+        to: meta?.to,
+        kind: meta?.kind ?? payload.type ?? "unknown",
+      });
+      return;
+    }
     const text = await res.text();
-    console.error("wa_client.send_fail", res.status, text);
+    logStructuredEvent("WA_MESSAGE_SEND_FAILED", {
+      status: res.status,
+      detail: text,
+      to: meta?.to,
+      kind: meta?.kind ?? payload.type ?? "unknown",
+      attempt,
+    }, "error");
     if (attempt >= STATUS_RETRIES || !STATUS_RETRY_CODES.has(res.status)) {
       throw new WhatsAppClientError(res.status, text);
     }
@@ -67,7 +85,7 @@ export async function sendText(to: string, body: string): Promise<void> {
     to,
     type: "text",
     text: { body },
-  });
+  }, { to, kind: "text" });
 }
 
 export async function sendButtons(
@@ -99,7 +117,7 @@ export async function sendButtons(
         })),
       },
     },
-  });
+  }, { to, kind: "interactive_buttons" });
 }
 
 export async function sendList(
@@ -175,7 +193,7 @@ export async function sendList(
         sections,
       },
     },
-  });
+  }, { to, kind: "interactive_list" });
 }
 
 export async function sendTemplate(
@@ -213,7 +231,7 @@ export async function sendTemplate(
     to,
     type: "template",
     template: templatePayload,
-  });
+  }, { to, kind: "template" });
 }
 
 export async function sendImageUrl(
