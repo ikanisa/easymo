@@ -15,19 +15,20 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { logStructuredEvent, recordMetric } from "../_shared/observability.ts";
 import { verifyWebhookSignature } from "../_shared/webhook-utils.ts";
+import { sendText } from "../_shared/wa-webhook-shared/wa/client.ts";
 import { MarketplaceAgent } from "./agent.ts";
 import {
   extractWhatsAppMessage,
-  parseWhatsAppLocation,
-  parseLocationFromText,
   logMarketplaceEvent,
+  parseLocationFromText,
+  parseWhatsAppLocation,
 } from "./utils/index.ts";
 
 // =====================================================
 // CONFIGURATION
 // =====================================================
 
-const WHATSAPP_API_VERSION = Deno.env.get("WHATSAPP_API_VERSION") || "v18.0";
+
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL") ?? "",
@@ -574,57 +575,4 @@ async function handleWithMenu(
   return response;
 }
 
-// =====================================================
-// WHATSAPP SENDER
-// =====================================================
 
-async function sendText(to: string, text: string): Promise<void> {
-  const phoneNumberId = Deno.env.get("WHATSAPP_PHONE_NUMBER_ID");
-  const accessToken = Deno.env.get("WHATSAPP_ACCESS_TOKEN");
-
-  if (!phoneNumberId || !accessToken) {
-    logMarketplaceEvent(
-      "WHATSAPP_CREDENTIALS_MISSING",
-      { hasPhoneId: !!phoneNumberId, hasToken: !!accessToken },
-      "error",
-    );
-    return;
-  }
-
-  try {
-    const response = await fetch(
-      `https://graph.facebook.com/${WHATSAPP_API_VERSION}/${phoneNumberId}/messages`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          messaging_product: "whatsapp",
-          to,
-          type: "text",
-          text: { body: text },
-        }),
-      },
-    );
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      logMarketplaceEvent(
-        "WHATSAPP_SEND_ERROR",
-        {
-          status: response.status,
-          error: JSON.stringify(errorData),
-        },
-        "error",
-      );
-    }
-  } catch (error) {
-    logMarketplaceEvent(
-      "WHATSAPP_SEND_EXCEPTION",
-      { error: error instanceof Error ? error.message : String(error) },
-      "error",
-    );
-  }
-}

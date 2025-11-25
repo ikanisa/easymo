@@ -109,11 +109,17 @@ export async function errorHandler(
   try {
     return await func();
   } catch (error) {
-    logger.error("Unhandled error", {
-      error: error.message,
-      stack: error.stack,
-      name: error.name
-    });
+    if (error instanceof Error) {
+      logger.error("Unhandled error", {
+        error: error.message,
+        stack: error.stack,
+        name: error.name
+      });
+    } else {
+      logger.error("Unhandled error", {
+        error: String(error)
+      });
+    }
 
     if (error instanceof WebhookError) {
       const headers: Record<string, string> = {

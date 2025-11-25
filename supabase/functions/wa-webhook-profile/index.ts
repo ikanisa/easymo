@@ -302,6 +302,17 @@ serve(async (req: Request): Promise<Response> => {
           handled = await handleWalletReferral(ctx);
         }
         
+        // MoMo QR
+        else if (id === IDS.MOMO_QR || id.startsWith("momoqr_")) {
+          const { handleMomoButton, startMomoQr } = await import("../_shared/wa-webhook-shared/flows/momo/qr.ts");
+          const momoState = state ?? { key: "momo_qr_menu", data: {} };
+          if (id === IDS.MOMO_QR) {
+            handled = await startMomoQr(ctx, momoState);
+          } else {
+            handled = await handleMomoButton(ctx, id, momoState);
+          }
+        }
+        
         // Reward selection
         else if (id.startsWith("REWARD::") && state?.key === "wallet_redeem") {
           const { handleRewardSelection } = await import("./wallet/redeem.ts");

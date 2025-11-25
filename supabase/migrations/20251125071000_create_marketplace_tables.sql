@@ -152,17 +152,46 @@ CREATE INDEX IF NOT EXISTS idx_marketplace_matches_status ON public.marketplace_
 -- =====================================================
 -- LOCATION-BASED INDEXES (PostGIS)
 -- =====================================================
--- Note: Using conditional creation to avoid errors if PostGIS not installed
+-- Note: PostGIS extension is not currently enabled on the database
+-- The RPC functions include Haversine formula fallback for distance calculations
+-- To enable PostGIS indexes in the future:
+-- 1. Enable PostGIS extension: CREATE EXTENSION IF NOT EXISTS postgis;
+-- 2. Uncomment and run the index creation below
+
+/*
 DO $$
 BEGIN
   IF EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'postgis') THEN
-    -- Create geography indexes for proximity search (using dollar quoting)
-    EXECUTE $exec$CREATE INDEX IF NOT EXISTS idx_marketplace_listings_geo ON public.marketplace_listings USING GIST(ST_SetSRID(ST_MakePoint(lng, lat), 4326)::geography) WHERE lat IS NOT NULL AND lng IS NOT NULL$exec$;
+    -- Create geography index for listings
+    IF NOT EXISTS (
+      SELECT 1 FROM pg_indexes 
+      WHERE schemaname = 'public' 
+      AND tablename = 'marketplace_listings' 
+      AND indexname = 'idx_marketplace_listings_geo'
+    ) THEN
+      CREATE INDEX idx_marketplace_listings_geo 
+      ON public.marketplace_listings 
+      USING GIST(ST_SetSRID(ST_MakePoint(lng, lat), 4326)::geography) 
+      WHERE lat IS NOT NULL AND lng IS NOT NULL;
+    END IF;
     
-    EXECUTE $exec$CREATE INDEX IF NOT EXISTS idx_marketplace_buyer_intents_geo ON public.marketplace_buyer_intents USING GIST(ST_SetSRID(ST_MakePoint(lng, lat), 4326)::geography) WHERE lat IS NOT NULL AND lng IS NOT NULL$exec$;
+    -- Create geography index for buyer intents
+    IF NOT EXISTS (
+      SELECT 1 FROM pg_indexes 
+      WHERE schemaname = 'public' 
+      AND tablename = 'marketplace_buyer_intents' 
+      AND indexname = 'idx_marketplace_buyer_intents_geo'
+    ) THEN
+      CREATE INDEX idx_marketplace_buyer_intents_geo 
+      ON public.marketplace_buyer_intents 
+      USING GIST(ST_SetSRID(ST_MakePoint(lng, lat), 4326)::geography) 
+      WHERE lat IS NOT NULL AND lng IS NOT NULL;
+    END IF;
   END IF;
 END
 $$;
+*/
+
 
 -- =====================================================
 -- RLS POLICIES
@@ -340,6 +369,9 @@ BEGIN
   END IF;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Drop old version of search_businesses_nearby if it exists (different signature)
+DROP FUNCTION IF EXISTS public.search_businesses_nearby(TEXT, DECIMAL, DECIMAL, INTEGER, INTEGER);
 
 -- Function to search business directory by proximity
 CREATE OR REPLACE FUNCTION public.search_businesses_nearby(

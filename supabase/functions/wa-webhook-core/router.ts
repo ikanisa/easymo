@@ -456,8 +456,21 @@ async function handleHomeMenu(payload: WhatsAppWebhookPayload, headers?: Headers
           headers: forwardHeaders,
           body: JSON.stringify(payload),
         });
-        logInfo("FORWARDED", { service: targetService, status: response.status }, { correlationId: crypto.randomUUID() });
-        return response;
+        if (response.status === 404) {
+          logWarn(
+            "WA_CORE_MENU_SERVICE_NOT_FOUND",
+            { service: targetService, status: response.status },
+            { correlationId: crypto.randomUUID() },
+          );
+          console.warn(JSON.stringify({
+            event: "WA_CORE_MENU_FALLBACK",
+            reason: "service_missing",
+            service: targetService,
+          }));
+        } else {
+          logInfo("FORWARDED", { service: targetService, status: response.status }, { correlationId: crypto.randomUUID() });
+          return response;
+        }
       } catch (error) {
         logError("FORWARD_FAILED", { service: targetService, error: String(error) }, { correlationId: crypto.randomUUID() });
       }

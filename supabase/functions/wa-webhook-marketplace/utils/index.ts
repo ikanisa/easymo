@@ -262,8 +262,8 @@ export function extractWhatsAppMessage(payload: unknown): {
           from: msg.from as string,
           body:
             (msg.text as Record<string, unknown>)?.body as string ||
-            (msg.interactive as Record<string, unknown>)?.button_reply?.title as string ||
-            (msg.interactive as Record<string, unknown>)?.list_reply?.title as string ||
+            ((msg.interactive as any)?.button_reply?.title as string) ||
+            ((msg.interactive as any)?.list_reply?.title as string) ||
             "",
           type: msg.type as string,
           location: msg.location as { latitude: number; longitude: number; name?: string; address?: string },

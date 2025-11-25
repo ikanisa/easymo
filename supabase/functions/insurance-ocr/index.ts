@@ -67,6 +67,11 @@ function hasAnyOCRProvider(): boolean {
   return hasOpenAI || hasGemini;
 }
 
+type InlineRequest = {
+  signedUrl: string;
+  mime?: string | null;
+};
+
 export async function handler(req: Request): Promise<Response> {
   if (req.method === "OPTIONS") {
     return new Response("ok", {
@@ -81,6 +86,40 @@ export async function handler(req: Request): Promise<Response> {
 
   if (req.method !== "POST" && req.method !== "GET") {
     return json({ error: "method_not_allowed" }, 405);
+  }
+
+  let inlinePayload: InlineRequest | null = null;
+  if (req.method === "POST") {
+    try {
+      const parsed = await req.json();
+      if (
+        parsed && typeof parsed === "object" &&
+        parsed.inline && typeof parsed.inline.signedUrl === "string"
+      ) {
+        inlinePayload = parsed.inline as InlineRequest;
+      }
+    } catch (_) {
+      // ignore body parse errors for queue processing
+    }
+  }
+
+  if (inlinePayload) {
+    try {
+      console.info("INS_OCR_INLINE_REQUEST", {
+        mime: inlinePayload.mime ?? null,
+      });
+      const raw = await runInsuranceOCR(
+        inlinePayload.signedUrl,
+        inlinePayload.mime ?? undefined,
+      );
+      const normalized = normalizeInsuranceExtraction(raw);
+      console.info("INS_OCR_INLINE_SUCCESS");
+      return json({ raw, normalized });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.error("INS_OCR_INLINE_ERROR", { error: message });
+      return json({ error: message }, 500);
+    }
   }
 
   // Require at least one OCR provider (OpenAI or Gemini)
@@ -196,6 +235,22 @@ async function processQueueRow(
 
   if (!claimed) {
     return { id: row.id, status: "skipped", reason: "already_processing" };
+  }
+
+  const leadStatus = claimed.lead_id
+    ? await getLeadStatus(client, claimed.lead_id)
+    : null;
+
+  if (leadStatus === "ocr_ok") {
+    await client
+      .from("insurance_media_queue")
+      .update({
+        status: "succeeded",
+        processed_at: now,
+        last_error: null,
+      })
+      .eq("id", row.id);
+    return { id: row.id, status: "skipped", reason: "already_processed" };
   }
 
   const leadId = claimed.lead_id ?? await ensureLeadForQueue(client, row);
@@ -386,4 +441,19 @@ function json(body: unknown, status = 200): Response {
 
 if (import.meta.main) {
   Deno.serve(handler);
+}
+async function getLeadStatus(
+  client: SupabaseClient,
+  leadId: string,
+): Promise<string | null> {
+  const { data, error } = await client
+    .from("insurance_leads")
+    .select("status")
+    .eq("id", leadId)
+    .maybeSingle();
+  if (error) {
+    console.warn("insurance-ocr.lead_status_fail", { leadId, error: error.message });
+    return null;
+  }
+  return data?.status ?? null;
 }
