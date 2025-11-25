@@ -15,9 +15,39 @@ interface Contact {
   status: "online" | "offline";
 }
 
+// Validate phone number format (digits only, optional + prefix)
+function isValidPhone(phone: string): boolean {
+  return /^\+?[0-9]{7,15}$/.test(phone.replace(/\s/g, ''));
+}
+
+// Validate email format
+function isValidEmail(email: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+// Safely format phone for WhatsApp URL
+function formatPhoneForWhatsApp(phone: string): string | null {
+  const cleaned = phone.replace(/[^0-9]/g, '');
+  if (cleaned.length < 7 || cleaned.length > 15) return null;
+  return cleaned;
+}
+
 export function ContactManager() {
   const { data, isLoading, error } = useInsuranceContacts();
   const contacts: Contact[] = (data as { contacts?: Contact[] })?.contacts || [];
+
+  const handlePhoneClick = (phone: string) => {
+    const formattedPhone = formatPhoneForWhatsApp(phone);
+    if (formattedPhone) {
+      window.open(`https://wa.me/${formattedPhone}`, '_blank', 'noopener,noreferrer');
+    }
+  };
+
+  const handleEmailClick = (email: string) => {
+    if (isValidEmail(email)) {
+      window.open(`mailto:${encodeURIComponent(email)}`, '_blank', 'noopener,noreferrer');
+    }
+  };
 
   return (
     <Card className="p-6">
@@ -65,20 +95,22 @@ export function ContactManager() {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Button 
-                size="icon" 
-                variant="ghost" 
-                className="h-8 w-8 text-gray-500"
-                onClick={() => window.open(`https://wa.me/${contact.phone.replace(/[^0-9]/g, '')}`, '_blank')}
-              >
-                <Phone className="w-4 h-4" />
-              </Button>
-              {contact.email && (
+              {isValidPhone(contact.phone) && (
                 <Button 
                   size="icon" 
                   variant="ghost" 
                   className="h-8 w-8 text-gray-500"
-                  onClick={() => window.open(`mailto:${contact.email}`, '_blank')}
+                  onClick={() => handlePhoneClick(contact.phone)}
+                >
+                  <Phone className="w-4 h-4" />
+                </Button>
+              )}
+              {contact.email && isValidEmail(contact.email) && (
+                <Button 
+                  size="icon" 
+                  variant="ghost" 
+                  className="h-8 w-8 text-gray-500"
+                  onClick={() => handleEmailClick(contact.email!)}
                 >
                   <Mail className="w-4 h-4" />
                 </Button>

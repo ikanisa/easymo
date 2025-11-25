@@ -1,6 +1,23 @@
 // API Client for admin panel
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '';
 
+// Type definitions for API requests
+interface CreatePolicyRequest {
+  userId?: string;
+  policyNumber: string;
+  insurer?: string;
+  status?: string;
+  validFrom?: string;
+  validUntil?: string;
+}
+
+interface CreateContactRequest {
+  name: string;
+  phone: string;
+  type?: string;
+  email?: string;
+}
+
 class APIClient {
   private async request<T>(
     endpoint: string,
@@ -42,12 +59,12 @@ class APIClient {
   users = {
     list: () => this.request('/api/users'),
     get: (id: string) => this.request(`/api/users/${id}`),
-    create: (data: any) =>
+    create: (data: Record<string, unknown>) =>
       this.request('/api/users', {
         method: 'POST',
         body: JSON.stringify(data),
       }),
-    update: (id: string, data: any) =>
+    update: (id: string, data: Record<string, unknown>) =>
       this.request(`/api/users/${id}`, {
         method: 'PUT',
         body: JSON.stringify(data),
@@ -62,13 +79,13 @@ class APIClient {
   insurance = {
     leads: () => this.request('/api/insurance/leads'),
     policies: () => this.request('/api/insurance/policies'),
-    createPolicy: (data: unknown) =>
+    createPolicy: (data: CreatePolicyRequest) =>
       this.request('/api/insurance/policies', {
         method: 'POST',
         body: JSON.stringify(data),
       }),
     contacts: () => this.request('/api/insurance/contacts'),
-    createContact: (data: unknown) =>
+    createContact: (data: CreateContactRequest) =>
       this.request('/api/insurance/contacts', {
         method: 'POST',
         body: JSON.stringify(data),
@@ -79,7 +96,7 @@ class APIClient {
   wallet = {
     transactions: () => this.request('/api/wallet/transactions'),
     partners: () => this.request('/api/wallet/partners'),
-    allocate: (data: any) =>
+    allocate: (data: Record<string, unknown>) =>
       this.request('/api/wallet/allocate', {
         method: 'POST',
         body: JSON.stringify(data),
@@ -90,7 +107,7 @@ class APIClient {
   whatsapp = {
     health: () => this.request('/api/whatsapp/health'),
     templates: () => this.request('/api/whatsapp/templates'),
-    createTemplate: (data: any) =>
+    createTemplate: (data: Record<string, unknown>) =>
       this.request('/api/whatsapp/templates', {
         method: 'POST',
         body: JSON.stringify(data),
@@ -101,7 +118,7 @@ class APIClient {
   agents = {
     list: () => this.request('/api/agents'),
     get: (id: string) => this.request(`/api/agents/${id}`),
-    updateConfig: (id: string, data: any) =>
+    updateConfig: (id: string, data: Record<string, unknown>) =>
       this.request(`/api/agents/${id}/config`, {
         method: 'PUT',
         body: JSON.stringify(data),
@@ -110,7 +127,7 @@ class APIClient {
 
   // Analytics
   analytics = {
-    metrics: (params?: any) => {
+    metrics: (params?: Record<string, string>) => {
       const query = params ? `?${new URLSearchParams(params)}` : '';
       return this.request(`/api/analytics/metrics${query}`);
     },

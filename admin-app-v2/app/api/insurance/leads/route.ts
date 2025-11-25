@@ -1,6 +1,20 @@
 import { NextResponse } from 'next/server';
 import { createServiceClient } from '@/lib/supabase/server';
 
+// Type for OCR extracted data from insurance documents
+interface ExtractedInsuranceData {
+  make?: string;
+  model?: string;
+  vehicle_year?: string | number;
+  insurance_type?: string;
+  insurer_name?: string;
+  policy_number?: string;
+  certificate_number?: string;
+  registration_plate?: string;
+  vin_chassis?: string;
+  [key: string]: unknown;
+}
+
 export async function GET() {
   try {
     const supabase = await createServiceClient();
@@ -34,7 +48,7 @@ export async function GET() {
     // Transform data to match expected format
     const transformedLeads = (leads || []).map((lead) => {
       // Extract vehicle info from OCR data if available
-      const extracted = lead.extracted as Record<string, unknown> | null;
+      const extracted = lead.extracted as ExtractedInsuranceData | null;
       const vehicleInfo = extracted?.make && extracted?.model 
         ? `${extracted.make} ${extracted.model} ${extracted.vehicle_year || ''}`.trim()
         : null;
