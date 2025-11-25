@@ -58,7 +58,17 @@ echo -n "YOUR_WHATSAPP_ACCESS_TOKEN" | gcloud secrets versions add whatsapp_api_
 echo -n "admin:password123" | gcloud secrets versions add mtn_sip_creds --data-file=-
 ```
 
-## 5. Deploy Backend Services
+## 5. Seed Firestore Database (IMPORTANT)
+This script populates your database so the app has data to start with.
+```bash
+# Install dependencies for the script
+pip install google-cloud-firestore
+
+# Run the seeding script
+python backend/scripts/seed_database.py
+```
+
+## 6. Deploy Backend Services
 
 ### A. Indexer Service (Google Maps Scraper)
 ```bash
@@ -102,7 +112,7 @@ gcloud run deploy easymo-webhook \
 - **WhatsApp Callback URL:** `https://[URL]/webhook/whatsapp`
 - **WhatsApp Verify Token:** `easymo_verify_token_secure_123`
 
-## 6. Deploy Frontend (React PWA)
+## 7. Deploy Frontend (React PWA)
 
 ```bash
 # Build the Docker image
@@ -116,7 +126,7 @@ gcloud run deploy easymo-frontend \
   --allow-unauthenticated
 ```
 
-## 7. Post-Deployment Configuration
+## 8. Post-Deployment Configuration
 
 1.  **Meta Developers Console:**
     *   Go to **WhatsApp** > **Configuration**.
