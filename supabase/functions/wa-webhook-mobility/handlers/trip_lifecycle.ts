@@ -199,6 +199,69 @@ export async function handleTripArrivedAtPickup(
 }
 
 // ============================================================================
+// TRIP PICKED UP (START JOURNEY)
+// ============================================================================
+
+/**
+ * Handles trip start (passenger picked up)
+ * 1. Update trip status to 'in_progress'
+ * 2. Notify passenger trip started
+ * 3. Record metric: TRIP_PICKED_UP
+ */
+export async function handleTripPickedUp(
+  ctx: TripLifecycleContext,
+  tripId: string
+): Promise<boolean> {
+  try {
+    await logStructuredEvent("TRIP_PICKUP_INITIATED", { tripId });
+
+    // 1. Update trip status
+    const { data: trip, error: updateError } = await ctx.client
+      .from("mobility_matches")
+      .update({
+        status: "in_progress",
+        pickup_time: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", tripId)
+      .eq("driver_id", ctx.profile.user_id)
+      .eq("status", "driver_arrived")
+      .select()
+      .single();
+
+    if (updateError || !trip) {
+      await logStructuredEvent("TRIP_PICKUP_FAILED", { 
+        tripId, 
+        error: updateError?.message 
+      }, "error");
+      return false;
+    }
+
+    // 2. Notify passenger
+    // TODO: Send notification
+    // await sendWhatsAppMessage(trip.passenger_id, {
+    //   type: "text",
+    //   text: t("trip.started", ctx.locale),
+    // });
+
+    // 3. Record metrics
+    await logStructuredEvent("TRIP_PICKED_UP", { 
+      tripId, 
+      driverId: trip.driver_id,
+      passengerId: trip.passenger_id 
+    });
+
+    return true;
+  } catch (error) {
+    await logStructuredEvent("TRIP_PICKUP_ERROR", { 
+      tripId, 
+      error: (error as Error)?.message || String(error) 
+    }, "error");
+    return false;
+  }
+}
+
+// ============================================================================
 // TRIP COMPLETION
 // ============================================================================
 
