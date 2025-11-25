@@ -19,7 +19,6 @@ import { createClient, type SupabaseClient } from "https://esm.sh/@supabase/supa
 import { logStructuredEvent } from "../_shared/observability.ts";
 import { sendText, sendList } from "../_shared/wa-webhook-shared/wa/client.ts";
 import type { WhatsAppMessage, WhatsAppWebhookPayload } from "../_shared/wa-webhook-shared/types.ts";
-import { getRoutingText } from "../_shared/wa-webhook-shared/utils/messages.ts";
 import { t } from "./utils/i18n.ts";
 import { detectJobIntent, shouldRouteToJobAgent } from "./jobs/utils.ts";
 
@@ -264,7 +263,7 @@ async function handleMyApplications(phone: string, locale: string): Promise<void
       .maybeSingle();
 
     if (!seeker) {
-      await sendText(phone, "You haven't created a job seeker profile yet. Reply with your skills to get started!");
+      await sendText(phone, t(locale, "jobs.applications.noProfile"));
       return;
     }
 
@@ -291,13 +290,13 @@ async function handleMyApplications(phone: string, locale: string): Promise<void
     if (error) throw error;
 
     if (!applications || applications.length === 0) {
-      await sendText(phone, "📋 *My Applications*\n\nYou haven't applied to any jobs yet. Reply '1' to search for jobs!");
+      await sendText(phone, t(locale, "jobs.applications.empty"));
       return;
     }
 
-    let message = "📋 *My Applications*\n\n";
-    applications.forEach((app: any, i: number) => {
-      const job = app.job_listings;
+    let message = t(locale, "jobs.applications.header") + "\n\n";
+    applications.forEach((app: Record<string, unknown>, i: number) => {
+      const job = app.job_listings as Record<string, unknown>;
       const pay = job.pay_min && job.pay_max 
         ? `${job.currency || "RWF"} ${job.pay_min}-${job.pay_max}` 
         : "Negotiable";
@@ -307,7 +306,7 @@ async function handleMyApplications(phone: string, locale: string): Promise<void
     await sendText(phone, message);
   } catch (error) {
     logStructuredEvent("JOBS_APPLICATIONS_ERROR", { error: String(error) }, "error");
-    await sendText(phone, "Sorry, I couldn't fetch your applications. Please try again.");
+    await sendText(phone, t(locale, "jobs.applications.error"));
   }
 }
 
@@ -335,12 +334,12 @@ async function handleMyJobs(phone: string, locale: string): Promise<void> {
     if (error) throw error;
 
     if (!jobs || jobs.length === 0) {
-      await sendText(phone, "💼 *My Posted Jobs*\n\nYou haven't posted any jobs yet. Reply '2' to post a job!");
+      await sendText(phone, t(locale, "jobs.myJobs.empty"));
       return;
     }
 
-    let message = "💼 *My Posted Jobs*\n\n";
-    jobs.forEach((job: any, i: number) => {
+    let message = t(locale, "jobs.myJobs.header") + "\n\n";
+    jobs.forEach((job: Record<string, unknown>, i: number) => {
       const pay = job.pay_min && job.pay_max 
         ? `${job.currency || "RWF"} ${job.pay_min}-${job.pay_max}` 
         : "Negotiable";
@@ -350,7 +349,7 @@ async function handleMyJobs(phone: string, locale: string): Promise<void> {
     await sendText(phone, message);
   } catch (error) {
     logStructuredEvent("JOBS_MY_JOBS_ERROR", { error: String(error) }, "error");
-    await sendText(phone, "Sorry, I couldn't fetch your jobs. Please try again.");
+    await sendText(phone, t(locale, "jobs.myJobs.error"));
   }
 }
 
@@ -389,12 +388,12 @@ async function handleJobAgentQuery(
     if (data.message) {
       await sendText(phone, data.message);
     } else {
-      await sendText(phone, "I'm processing your request. Please wait a moment...");
+      await sendText(phone, t(locale, "jobs.seeker.welcome"));
     }
   } catch (error) {
     logStructuredEvent("JOBS_AGENT_ERROR", { error: String(error) }, "error");
     // Fallback to menu
-    await sendText(phone, `I couldn't process that request.\n\n${t(locale, "jobs.menu.greeting")}`);
+    await sendText(phone, `${t(locale, "jobs.agent.error")}\n\n${t(locale, "jobs.menu.greeting")}`);
   }
 }
 
