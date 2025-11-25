@@ -238,11 +238,11 @@ formatTransferLimits() → string
    - Priority: Medium
    - Effort: 6 hours
 
-5. **MoMo API Integration**
+5. **USSD Integration**
    - Current: Manual instructions for purchase/cashout
    - Impact: Medium (requires user action)
    - Priority: High
-   - Effort: 16 hours (requires MTN API credentials)
+   - Effort: 16 hours (requires USSD credentials)
 
 ---
 
@@ -315,12 +315,10 @@ WHATSAPP_APP_SECRET=your-app-secret (for signature verification)
 WA_ALLOW_UNSIGNED_WEBHOOKS=false (production)
 ```
 
-Optional (for future MoMo integration):
+Optional (for future USSD integration):
 ```bash
-MOMO_API_KEY=
-MOMO_API_USER=
-MOMO_SUBSCRIPTION_KEY=
-MOMO_ENVIRONMENT=sandbox
+USSD_MERCHANT_CODE=         # Your USSD merchant code
+USSD_CALLBACK_URL=          # USSD transaction callback endpoint
 ```
 
 ---
@@ -428,7 +426,7 @@ The service is ready to deploy with confidence. The only remaining items are enh
 2. Deploy updated edge function
 3. Run verification tests
 4. Monitor structured events
-5. Schedule MoMo API integration (2-week sprint)
+5. Schedule USSD integration (2-week sprint)
 
 ---
 

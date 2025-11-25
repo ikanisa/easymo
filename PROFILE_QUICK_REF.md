@@ -81,7 +81,7 @@ The profile microservice is **95% production ready**. All critical gaps have bee
 1. ✅ Deploy (use script)
 2. ✅ Run manual tests
 3. Monitor events for 48h
-4. Schedule MoMo API integration (2 weeks)
+4. Schedule USSD integration (2 weeks)
 
 ## 🔗 References
 - Full details: `PROFILE_MICROSERVICE_GAPS_IMPLEMENTED.md`

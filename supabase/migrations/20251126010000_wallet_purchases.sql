@@ -6,9 +6,9 @@ CREATE TABLE IF NOT EXISTS wallet_purchases (
   user_wa_id TEXT NOT NULL,
   token_amount NUMERIC NOT NULL CHECK (token_amount >= 100),
   rwf_amount NUMERIC NOT NULL CHECK (rwf_amount > 0),
-  payment_method TEXT DEFAULT 'momo',
+  payment_method TEXT DEFAULT 'ussd',
   status TEXT DEFAULT 'pending', -- 'pending', 'completed', 'failed', 'cancelled'
-  momo_transaction_id TEXT,
+  ussd_transaction_id TEXT,
   completed_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ DEFAULT now(),
   updated_at TIMESTAMPTZ DEFAULT now()
@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS wallet_purchases (
 -- Create indexes
 CREATE INDEX IF NOT EXISTS idx_wallet_purchases_user ON wallet_purchases(user_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_wallet_purchases_status ON wallet_purchases(status, created_at);
-CREATE INDEX IF NOT EXISTS idx_wallet_purchases_momo_tx ON wallet_purchases(momo_transaction_id) WHERE momo_transaction_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_wallet_purchases_ussd_tx ON wallet_purchases(ussd_transaction_id) WHERE ussd_transaction_id IS NOT NULL;
 
 -- Enable RLS
 ALTER TABLE wallet_purchases ENABLE ROW LEVEL SECURITY;
@@ -33,4 +33,4 @@ CREATE TRIGGER set_wallet_purchases_updated_at
   EXECUTE FUNCTION update_updated_at_column();
 
 -- Add comment
-COMMENT ON TABLE wallet_purchases IS 'Tracks token purchase transactions via MoMo';
+COMMENT ON TABLE wallet_purchases IS 'Tracks token purchase transactions via USSD';

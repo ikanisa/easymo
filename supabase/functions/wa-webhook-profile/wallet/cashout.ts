@@ -92,14 +92,15 @@ export async function handleCashOutAmount(
   });
 
   await sendText(ctx.from,
-    `📱 *Enter MoMo Number*\n\n` +
+    `📱 *Enter Mobile Money Number*\n\n` +
     `💰 Summary:\n` +
     `Tokens: ${amount.toLocaleString()}\n` +
     `Fee (2%): ${fee.toLocaleString()} tokens\n` +
     `Net: ${netTokens.toLocaleString()} tokens\n` +
     `Cash: ${rwfAmount.toLocaleString()} RWF\n\n` +
-    `Enter your MTN MoMo number:\n` +
-    `Format: 078XXXXXXX or 079XXXXXXX`
+    `Enter your mobile money number:\n` +
+    `Format: 078XXXXXXX or 079XXXXXXX\n\n` +
+    `Cash will be sent via USSD to this number.`
   );
 
   return true;
@@ -117,7 +118,7 @@ export async function handleCashOutPhone(
   
   if (!/^(078|079)\d{7}$/.test(cleanPhone)) {
     await sendText(ctx.from,
-      "❌ Invalid MoMo number.\n\n" +
+      "❌ Invalid mobile money number.\n\n" +
       "Use format: 078XXXXXXX or 079XXXXXXX"
     );
     return true;
@@ -136,8 +137,9 @@ export async function handleCashOutPhone(
     `Processing fee (2%): ${fee.toLocaleString()} tokens\n` +
     `Net tokens: ${netTokens.toLocaleString()}\n` +
     `Cash amount: ${rwfAmount.toLocaleString()} RWF\n\n` +
-    `MoMo number: ${formattedPhone}\n\n` +
+    `Mobile Money: ${formattedPhone}\n\n` +
     `⚠️ This will deduct ${amount.toLocaleString()} tokens from your wallet.\n\n` +
+    `Cash will be sent via USSD within 1-24 hours.\n\n` +
     `Confirm withdrawal?`,
     [
       { id: "cashout_confirm_yes", title: "✅ Confirm" },
@@ -217,9 +219,9 @@ export async function handleCashOutConfirm(ctx: RouterContext): Promise<boolean>
       `✅ *Cash-Out Request Submitted*\n\n` +
       `Reference: ${cashoutRef}\n` +
       `Amount: ${rwfAmount.toLocaleString()} RWF\n` +
-      `MoMo: ${momoPhone}\n\n` +
+      `Mobile Money: ${momoPhone}\n\n` +
       `⏱️ Processing time: 1-24 hours\n\n` +
-      `You'll receive an SMS confirmation once the money is sent to your MoMo account.\n\n` +
+      `You'll receive the cash via USSD transfer to your mobile money account.\n\n` +
       `${amount.toLocaleString()} tokens have been deducted from your wallet.`
     );
 
@@ -231,8 +233,8 @@ export async function handleCashOutConfirm(ctx: RouterContext): Promise<boolean>
       momoPhone
     });
 
-    // TODO: Trigger admin notification or automated disbursement
-    // For now, admin will process manually
+    // TODO: Trigger admin notification or automated USSD disbursement
+    // For now, admin will process manually via USSD
 
     return true;
   } catch (error) {

@@ -116,24 +116,23 @@ async function initiatePurchase(
       return false;
     }
 
-    // TODO: Initiate MoMo payment
-    // For now, send instructions
+    // Initiate USSD payment
     await setState(ctx.supabase, ctx.profileId!, {
       key: PURCHASE_STATES.PENDING,
       data: { purchaseId: purchase.id, tokenAmount, rwfAmount }
     });
 
+    const ussdCode = `*182*7*1*${rwfAmount}*${purchase.id.slice(0, 8)}#`;
+    
     await sendText(ctx.from,
       `📱 *Token Purchase Initiated*\n\n` +
       `Tokens: ${tokenAmount.toLocaleString()}\n` +
       `Amount: ${rwfAmount.toLocaleString()} RWF\n` +
       `Reference: ${purchase.id.slice(0, 8)}\n\n` +
-      `💳 *Payment Instructions:*\n` +
-      `1. Dial *182*7*1#\n` +
-      `2. Select "Pay Bill"\n` +
-      `3. Enter merchant code: [MERCHANT_CODE]\n` +
-      `4. Enter amount: ${rwfAmount}\n` +
-      `5. Enter reference: ${purchase.id.slice(0, 8)}\n\n` +
+      `💳 *Tap to Pay via USSD:*\n` +
+      `tel:${encodeURIComponent(ussdCode)}\n\n` +
+      `Or dial manually:\n` +
+      `${ussdCode}\n\n` +
       `You'll receive confirmation once payment is received.`
     );
 
@@ -156,11 +155,10 @@ async function initiatePurchase(
   }
 }
 
-// Called by payment webhook to confirm purchase
 export async function confirmPurchase(
   supabase: any,
   purchaseId: string,
-  momoTransactionId: string,
+  ussdTransactionId: string,
   notifier?: (to: string, body: string) => Promise<void>
 ): Promise<boolean> {
   try {
@@ -193,7 +191,7 @@ export async function confirmPurchase(
       .from("wallet_purchases")
       .update({
         status: "completed",
-        momo_transaction_id: momoTransactionId,
+        ussd_transaction_id: ussdTransactionId,
         completed_at: new Date().toISOString()
       })
       .eq("id", purchaseId);

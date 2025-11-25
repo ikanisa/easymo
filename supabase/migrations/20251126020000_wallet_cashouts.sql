@@ -1,4 +1,4 @@
--- Create wallet_cashouts table for tracking token withdrawals
+-- Create wallet_cashouts table for tracking token withdrawals via USSD
 
 CREATE TABLE IF NOT EXISTS wallet_cashouts (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -8,9 +8,9 @@ CREATE TABLE IF NOT EXISTS wallet_cashouts (
   fee_amount NUMERIC NOT NULL CHECK (fee_amount >= 0),
   net_tokens NUMERIC NOT NULL CHECK (net_tokens > 0),
   rwf_amount NUMERIC NOT NULL CHECK (rwf_amount > 0),
-  momo_number TEXT NOT NULL,
+  mobile_money_number TEXT NOT NULL,
   status TEXT DEFAULT 'pending', -- 'pending', 'processing', 'completed', 'failed', 'cancelled'
-  momo_transaction_id TEXT,
+  ussd_transaction_id TEXT,
   admin_notes TEXT,
   processed_by UUID REFERENCES profiles(user_id),
   processed_at TIMESTAMPTZ,
@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS wallet_cashouts (
 CREATE INDEX IF NOT EXISTS idx_wallet_cashouts_user ON wallet_cashouts(user_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_wallet_cashouts_status ON wallet_cashouts(status, created_at);
 CREATE INDEX IF NOT EXISTS idx_wallet_cashouts_pending ON wallet_cashouts(status, created_at) WHERE status = 'pending';
-CREATE INDEX IF NOT EXISTS idx_wallet_cashouts_momo_tx ON wallet_cashouts(momo_transaction_id) WHERE momo_transaction_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_wallet_cashouts_ussd_tx ON wallet_cashouts(ussd_transaction_id) WHERE ussd_transaction_id IS NOT NULL;
 
 -- Enable RLS
 ALTER TABLE wallet_cashouts ENABLE ROW LEVEL SECURITY;
@@ -49,8 +49,8 @@ CREATE TRIGGER set_wallet_cashouts_updated_at
   EXECUTE FUNCTION update_updated_at_column();
 
 -- Add comment
-COMMENT ON TABLE wallet_cashouts IS 'Tracks token cash-out/withdrawal requests to MoMo';
+COMMENT ON TABLE wallet_cashouts IS 'Tracks token cash-out/withdrawal requests via USSD';
 COMMENT ON COLUMN wallet_cashouts.token_amount IS 'Total tokens requested for withdrawal';
 COMMENT ON COLUMN wallet_cashouts.fee_amount IS 'Fee charged (2% of token_amount)';
 COMMENT ON COLUMN wallet_cashouts.net_tokens IS 'Net tokens after fee (token_amount - fee_amount)';
-COMMENT ON COLUMN wallet_cashouts.rwf_amount IS 'Cash amount to disburse (net_tokens * 0.5)';
+COMMENT ON COLUMN wallet_cashouts.rwf_amount IS 'Cash amount to disburse via USSD (net_tokens * 0.5)';
