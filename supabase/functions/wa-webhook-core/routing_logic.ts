@@ -4,6 +4,12 @@
 import { SUPABASE_SERVICE_ROLE_KEY } from "../_shared/wa-webhook-shared/config.ts";
 import { fetchWithTimeout } from "../_shared/wa-webhook-shared/utils/http.ts";
 import { isFeatureEnabled } from "../_shared/feature-flags.ts";
+import {
+  ROUTE_CONFIGS,
+  ROUTED_SERVICES,
+  getServiceFromState as getServiceFromStateConfig,
+  matchKeywordsToService,
+} from "../_shared/route-config.ts";
 
 const MICROSERVICES_BASE_URL = Deno.env.get("SUPABASE_URL") + "/functions/v1";
 const ROUTER_TIMEOUT_MS = Math.max(
@@ -19,50 +25,8 @@ const ROUTER_RETRY_DELAY_MS = Math.max(
   0,
 );
 
-interface RouteConfig {
-  service: string;
-  keywords: string[];
-  priority: number;
-}
-
-// Define routing rules
-const ROUTES: RouteConfig[] = [
-  {
-    service: "wa-webhook-insurance",
-    keywords: ["insurance", "assurance", "cover", "claim", "policy", "premium", "insure"],
-    priority: 1,
-  },
-  {
-    service: "wa-webhook-jobs",
-    keywords: ["job", "work", "employment", "hire", "career", "apply", "cv", "resume"],
-    priority: 1,
-  },
-  {
-    service: "wa-webhook-mobility",
-    keywords: ["ride", "trip", "driver", "taxi", "transport", "schedule", "book", "nearby"],
-    priority: 1,
-  },
-  {
-    service: "wa-webhook-property",
-    keywords: ["property", "rent", "house", "apartment", "rental", "landlord", "tenant"],
-    priority: 1,
-  },
-  {
-    service: "wa-webhook-wallet",
-    keywords: ["wallet", "token", "transfer", "redeem", "earn", "reward", "balance", "payment", "pay", "deposit", "withdraw", "money", "referral", "share"],
-    priority: 1,
-  },
-  {
-    service: "wa-webhook-ai-agents",
-    keywords: ["agent", "chat", "help", "support", "ask"],
-    priority: 3,
-  },
-  {
-    service: "wa-webhook-marketplace",
-    keywords: ["marketplace", "shop", "buy", "sell", "store", "product"],
-    priority: 1,
-  },
-];
+// Note: Route configuration is now in _shared/route-config.ts
+// Using the consolidated ROUTE_CONFIGS from there
 
 /**
  * Route message to appropriate microservice
@@ -88,57 +52,25 @@ export async function routeMessage(
     return "wa-webhook-ai-agents";
   }
 
-  const text = messageText.toLowerCase();
-
   // 1. Check chat state first (user is in a flow)
   if (chatState) {
-    const stateService = getServiceFromState(chatState);
+    const stateService = getServiceFromStateConfig(chatState);
     if (stateService) {
       return stateService;
     }
   }
 
-  // 2. Match keywords
-  const matches = ROUTES.map((route) => ({
-    service: route.service,
-    score: route.keywords.filter((kw) => text.includes(kw)).length,
-    priority: route.priority,
-  })).filter((m) => m.score > 0);
-
-  if (matches.length > 0) {
-    // Sort by score (descending), then by priority (ascending)
-    matches.sort((a, b) => {
-      if (b.score !== a.score) return b.score - a.score;
-      return a.priority - b.priority;
-    });
-    return matches[0].service;
+  // 2. Match keywords using consolidated config
+  const matchedService = matchKeywordsToService(messageText);
+  if (matchedService) {
+    return matchedService;
   }
 
   // 3. Default to core service (handles general queries)
   return "wa-webhook-core";
 }
 
-/**
- * Get service from chat state
- */
-function getServiceFromState(chatState: string): string | null {
-  if (chatState.includes("insurance") || chatState.includes("ins_")) {
-    return "wa-webhook-insurance";
-  }
-  if (chatState.includes("jobs") || chatState.includes("job_")) {
-    return "wa-webhook-jobs";
-  }
-  if (chatState.includes("mobility") || chatState.includes("trip_")) {
-    return "wa-webhook-mobility";
-  }
-  if (chatState.includes("property") || chatState.includes("rental_")) {
-    return "wa-webhook-property";
-  }
-  if (chatState.includes("wallet") || chatState.includes("payment_")) {
-    return "wa-webhook-wallet";
-  }
-  return null;
-}
+// Note: getServiceFromState is now imported from route-config.ts as getServiceFromStateConfig
 
 /**
  * Forward request to microservice
@@ -223,14 +155,10 @@ export async function checkServiceHealth(service: string): Promise<boolean> {
  * Get all services health
  */
 export async function getAllServicesHealth(): Promise<Record<string, boolean>> {
-  const services = [
-    "wa-webhook-jobs",
-    "wa-webhook-mobility",
-    "wa-webhook-property",
-    "wa-webhook-wallet",
-    "wa-webhook-ai-agents",
-    "wa-webhook-core",
-  ];
+  // Use consolidated ROUTED_SERVICES list, filter out fallback service
+  const services = ROUTED_SERVICES.filter(
+    (s) => s !== "wa-webhook" && s !== "wa-webhook-core"
+  );
 
   const health: Record<string, boolean> = {};
   

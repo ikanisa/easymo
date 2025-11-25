@@ -23,8 +23,9 @@ Deno.test("routes job-related messages to wa-webhook-jobs", async () => {
 });
 
 Deno.test("routes based on chat state", async () => {
+  // wallet/payment states route to wa-webhook-profile (wallet is part of profile service)
   const decision = await routeIncomingPayload(makePayload("Continue", "wallet_transfer"));
-  assertEquals(decision.service, "wa-webhook-wallet");
+  assertEquals(decision.service, "wa-webhook-profile");
   assertEquals(decision.reason, "state");
 });
 

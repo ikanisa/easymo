@@ -9,6 +9,15 @@ import {
   getSessionByPhone,
   setActiveService,
 } from "../_shared/session-manager.ts";
+import {
+  isServiceCircuitOpen,
+  recordServiceSuccess,
+  recordServiceFailure,
+  checkRateLimit,
+  fetchWithRetry,
+  getAllCircuitStates,
+} from "../_shared/service-resilience.ts";
+import { addToDeadLetterQueue } from "../_shared/dead-letter-queue.ts";
 import { circuitBreakerManager } from "../_shared/circuit-breaker.ts";
 
 type RoutingDecision = {
@@ -23,6 +32,7 @@ type HealthStatus = {
   timestamp: string;
   checks: Record<string, string>;
   microservices: Record<string, boolean>;
+  circuitBreakers?: Record<string, { state: string; failures: number }>;
   version: string;
   error?: string;
 };
@@ -38,8 +48,16 @@ type WhatsAppHomeMenuItem = {
   active_countries: string[];
 };
 
+import {
+  buildMenuKeyMap,
+  ROUTED_SERVICES,
+  getServiceFromState as getServiceFromStateConfig,
+} from "../_shared/route-config.ts";
+
 const FALLBACK_SERVICE = "wa-webhook";
 
+// Build SERVICE_KEY_MAP from consolidated route config
+const SERVICE_KEY_MAP = buildMenuKeyMap();
 // Retry configuration
 const MAX_RETRIES = 2;
 const INITIAL_RETRY_DELAY_MS = 200;
@@ -146,18 +164,6 @@ const SERVICE_KEY_MAP: Record<string, string> = {
 const MICROSERVICES_BASE_URL = `${Deno.env.get("SUPABASE_URL")}/functions/v1`;
 const ROUTER_TIMEOUT_MS = Math.max(Number(Deno.env.get("WA_ROUTER_TIMEOUT_MS") ?? "4000") || 4000, 1000);
 
-const ROUTED_SERVICES = [
-  "wa-webhook-jobs",
-  "wa-webhook-marketplace",
-  "wa-webhook-ai-agents",
-  "wa-webhook-property",
-  "wa-webhook-mobility",
-  "wa-webhook-profile",  // Includes wallet functionality
-  "wa-webhook-insurance",
-  FALLBACK_SERVICE,
-  "wa-webhook-core",
-];
-
 export async function routeIncomingPayload(payload: WhatsAppWebhookPayload): Promise<RoutingDecision> {
   const routingMessage = getFirstMessage(payload);
   const routingText = routingMessage ? getRoutingText(routingMessage) : null;
@@ -210,6 +216,8 @@ export async function forwardToEdgeService(
   payload: WhatsAppWebhookPayload,
   headers?: Headers,
 ): Promise<Response> {
+  const correlationId = headers?.get("X-Correlation-ID") ?? crypto.randomUUID();
+  
   if (!ROUTED_SERVICES.includes(decision.service)) {
     console.warn(`Unknown service '${decision.service}', handling inside core.`);
     return new Response(JSON.stringify({ success: true, service: "wa-webhook-core" }), {
@@ -223,6 +231,30 @@ export async function forwardToEdgeService(
     return await handleHomeMenu(payload, headers);
   }
 
+  // Check circuit breaker before attempting request
+  if (isServiceCircuitOpen(decision.service)) {
+    console.warn(JSON.stringify({
+      event: "WA_CORE_CIRCUIT_OPEN",
+      service: decision.service,
+      correlationId,
+    }));
+    
+    // Add to DLQ for later processing
+    const message = getFirstMessage(payload);
+    if (message) {
+      await addToDeadLetterQueue(supabase, {
+        message_id: message.id,
+        from_number: message.from,
+        payload,
+        error_message: `Circuit breaker open for ${decision.service}`,
+      }, correlationId);
+    }
+    
+    return new Response(JSON.stringify({
+      success: false,
+      service: decision.service,
+      error: "Service temporarily unavailable (circuit open)",
+      circuitOpen: true,
   // Check circuit breaker
   const breaker = circuitBreakerManager.getBreaker(decision.service);
   if (!breaker.canExecute()) {
@@ -247,6 +279,66 @@ export async function forwardToEdgeService(
   forwardHeaders.set("Content-Type", "application/json");
   forwardHeaders.set("X-Routed-From", "wa-webhook-core");
   forwardHeaders.set("X-Routed-Service", decision.service);
+  forwardHeaders.set("X-Correlation-ID", correlationId);
+
+  try {
+    // Use fetchWithRetry for automatic retry with exponential backoff
+    const response = await fetchWithRetry(url, {
+      method: "POST",
+      headers: forwardHeaders,
+      body: JSON.stringify(payload),
+      timeoutMs: ROUTER_TIMEOUT_MS,
+    }, correlationId);
+
+    if (response.ok || response.status < 500) {
+      // Success or client error - record success for circuit breaker
+      recordServiceSuccess(decision.service);
+    } else {
+      // Server error - record failure
+      recordServiceFailure(decision.service, response.status, correlationId);
+    }
+
+    console.log(JSON.stringify({
+      event: "WA_CORE_ROUTED",
+      service: decision.service,
+      status: response.status,
+      correlationId,
+    }));
+
+    return response;
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    
+    // Record failure for circuit breaker
+    recordServiceFailure(decision.service, "error", correlationId);
+    
+    console.error(JSON.stringify({
+      event: "WA_CORE_ROUTING_FAILURE",
+      service: decision.service,
+      error: errorMessage,
+      correlationId,
+    }));
+
+    // Add failed payload to DLQ
+    const message = getFirstMessage(payload);
+    if (message) {
+      await addToDeadLetterQueue(supabase, {
+        message_id: message.id,
+        from_number: message.from,
+        payload,
+        error_message: errorMessage,
+        error_stack: error instanceof Error ? error.stack : undefined,
+      }, correlationId);
+    }
+
+    return new Response(JSON.stringify({
+      success: false,
+      service: decision.service,
+      error: "Service temporarily unavailable",
+    }), {
+      status: 503,
+      headers: { "Content-Type": "application/json" },
+    });
 
   // Retry logic with exponential backoff
   let lastError: unknown = null;
@@ -365,6 +457,9 @@ export async function summarizeServiceHealth(supabase: SupabaseClient): Promise<
   // We use allSettled so one slow service doesn't block the response
   const microservices = await getAllServicesHealth();
 
+  // 3. Get circuit breaker states
+  const circuitBreakers = getAllCircuitStates();
+
   const duration = performance.now() - start;
 
   return {
@@ -376,7 +471,8 @@ export async function summarizeServiceHealth(supabase: SupabaseClient): Promise<
       latency: `${Math.round(duration)}ms`,
     },
     microservices,
-    version: "2.1.0",
+    circuitBreakers,
+    version: "2.2.0", // Version bump for resilience features
   };
 }
 

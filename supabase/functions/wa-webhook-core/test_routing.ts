@@ -2,69 +2,18 @@
 
 /**
  * Routing Test Script for wa-webhook-core
- * Tests keyword-based routing without requiring full environment setup
+ * Tests keyword-based routing using the consolidated route config
  */
 
-// Mock routing logic (simplified from routing_logic.ts)
-const ROUTES = [
-  {
-    service: "wa-webhook-insurance",
-    keywords: ["insurance", "assurance", "cover", "claim", "policy", "premium", "insure"],
-    priority: 1,
-  },
-  {
-    service: "wa-webhook-jobs",
-    keywords: ["job", "work", "employment", "hire", "career", "apply", "cv", "resume"],
-    priority: 1,
-  },
-  {
-    service: "wa-webhook-mobility",
-    keywords: ["ride", "trip", "driver", "taxi", "transport", "schedule", "book", "nearby"],
-    priority: 1,
-  },
-  {
-    service: "wa-webhook-property",
-    keywords: ["property", "rent", "house", "apartment", "rental", "landlord", "tenant"],
-    priority: 1,
-  },
-  {
-    service: "wa-webhook-wallet",
-    keywords: ["wallet", "token", "transfer", "redeem", "earn", "reward", "balance", "payment", "pay", "deposit", "withdraw", "money", "referral", "share"],
-    priority: 1,
-  },
-  {
-    service: "wa-webhook-marketplace",
-    keywords: ["marketplace", "shop", "buy", "sell", "store", "product"],
-    priority: 1,
-  },
-  {
-    service: "wa-webhook-ai-agents",
-    keywords: ["agent", "chat", "help", "support", "ask"],
-    priority: 3,
-  },
-];
+import { matchKeywordsToService } from "../_shared/route-config.ts";
 
+// Use the consolidated route matching function
 function routeMessage(messageText: string): string {
-  const text = messageText.toLowerCase();
-  
-  const matches = ROUTES.map((route) => ({
-    service: route.service,
-    score: route.keywords.filter((kw) => text.includes(kw)).length,
-    priority: route.priority,
-  })).filter((m) => m.score > 0);
-
-  if (matches.length > 0) {
-    matches.sort((a, b) => {
-      if (b.score !== a.score) return b.score - a.score;
-      return a.priority - b.priority;
-    });
-    return matches[0].service;
-  }
-
-  return "wa-webhook-ai-agents"; // fallback
+  const matched = matchKeywordsToService(messageText);
+  return matched ?? "wa-webhook-core"; // Default to core if no match
 }
 
-// Test cases
+// Test cases - updated to use consolidated service names
 const tests = [
   // Insurance
   { input: "I need motor insurance", expected: "wa-webhook-insurance" },
@@ -87,25 +36,28 @@ const tests = [
   { input: "Show me apartments", expected: "wa-webhook-property" },
   { input: "Property rentals near me", expected: "wa-webhook-property" },
   
-  // Wallet
-  { input: "Transfer tokens", expected: "wa-webhook-wallet" },
-  { input: "Check my balance", expected: "wa-webhook-wallet" },
-  { input: "I want to redeem my rewards", expected: "wa-webhook-wallet" },
-  { input: "How do I earn money?", expected: "wa-webhook-wallet" },
-  { input: "Share easyMO", expected: "wa-webhook-wallet" },
+  // Profile (formerly wallet - now consolidated)
+  { input: "Transfer tokens", expected: "wa-webhook-profile" },
+  { input: "Check my balance", expected: "wa-webhook-profile" },
+  { input: "I want to redeem my rewards", expected: "wa-webhook-profile" },
+  { input: "How do I earn money?", expected: "wa-webhook-profile" },
+  { input: "Share easyMO", expected: "wa-webhook-profile" },
   
   // Marketplace
   { input: "I want to buy something", expected: "wa-webhook-marketplace" },
   { input: "Sell my product", expected: "wa-webhook-marketplace" },
   { input: "Show me the marketplace", expected: "wa-webhook-marketplace" },
   
-  // Fallback
-  { input: "Hello", expected: "wa-webhook-ai-agents" },
-  { input: "Random message", expected: "wa-webhook-ai-agents" },
-  { input: "What can you do?", expected: "wa-webhook-ai-agents" },
+  // AI Agents (fallback for general queries)
+  { input: "I need help", expected: "wa-webhook-ai-agents" },
+  { input: "Chat with support", expected: "wa-webhook-ai-agents" },
+  
+  // No match - falls back to core
+  { input: "Hello", expected: "wa-webhook-core" },
+  { input: "Random message", expected: "wa-webhook-core" },
 ];
 
-console.log("🧪 Testing wa-webhook-core Routing Logic\n");
+console.log("🧪 Testing wa-webhook-core Routing Logic (Consolidated Config)\n");
 console.log("=".repeat(60));
 
 let passed = 0;
