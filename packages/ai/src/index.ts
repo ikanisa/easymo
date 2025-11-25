@@ -29,7 +29,7 @@ export {
   toolExists,
 } from './tools';
 
-// Type exports
+// Type exports from core types
 export type {
   AgentConfig,
   AgentResponse,
@@ -51,3 +51,25 @@ export type {
   ToolExecution,
   ToolHandler,
 } from './core/types';
+
+// Unified interface exports for orchestrator consolidation
+export type {
+  // Orchestrator interfaces
+  IAgentOrchestrator,
+  OrchestratorAgentType,
+  ProcessMessageParams as UnifiedProcessMessageParams,
+  IntentResult,
+  OrchestratorResponse,
+  // Provider interfaces
+  IAIProvider,
+  ProviderMessage,
+  ProviderToolDefinition,
+  ProviderToolCall,
+  ProviderChatOptions,
+  ProviderChatResponse,
+  FallbackProviderConfig,
+  ProviderFactory,
+  // Agent configuration
+  AgentConfiguration,
+  AgentInteractionMetrics,
+} from './core/interfaces';
