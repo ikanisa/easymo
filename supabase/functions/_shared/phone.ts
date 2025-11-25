@@ -1,4 +1,4 @@
-import { parsePhoneNumberFromString } from "libphonenumber-js";
+import { parsePhoneNumberFromString } from "https://cdn.jsdelivr.net/npm/libphonenumber-js@1.12.29/+esm";
 
 export function normalizeE164(raw: string): string | null {
   const trimmed = raw.trim();
