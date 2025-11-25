@@ -67,6 +67,11 @@ function hasAnyOCRProvider(): boolean {
   return hasOpenAI || hasGemini;
 }
 
+type InlineRequest = {
+  signedUrl: string;
+  mime?: string | null;
+};
+
 export async function handler(req: Request): Promise<Response> {
   if (req.method === "OPTIONS") {
     return new Response("ok", {
@@ -81,6 +86,35 @@ export async function handler(req: Request): Promise<Response> {
 
   if (req.method !== "POST" && req.method !== "GET") {
     return json({ error: "method_not_allowed" }, 405);
+  }
+
+  let inlinePayload: InlineRequest | null = null;
+  if (req.method === "POST") {
+    try {
+      const parsed = await req.json();
+      if (
+        parsed && typeof parsed === "object" &&
+        parsed.inline && typeof parsed.inline.signedUrl === "string"
+      ) {
+        inlinePayload = parsed.inline as InlineRequest;
+      }
+    } catch (_) {
+      // ignore body parse errors for queue processing
+    }
+  }
+
+  if (inlinePayload) {
+    try {
+      const raw = await runInsuranceOCR(
+        inlinePayload.signedUrl,
+        inlinePayload.mime ?? undefined,
+      );
+      const normalized = normalizeInsuranceExtraction(raw);
+      return json({ raw, normalized });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      return json({ error: message }, 500);
+    }
   }
 
   // Require at least one OCR provider (OpenAI or Gemini)

@@ -5,7 +5,6 @@ import { getAppConfig } from "../../_shared/wa-webhook-shared/utils/app_config.t
 import { toE164 } from "../../_shared/wa-webhook-shared/utils/phone.ts";
 import { logStructuredEvent } from "../../_shared/wa-webhook-shared/observe/log.ts";
 import { fetchInsuranceMedia, uploadInsuranceBytes } from "../../_shared/wa-webhook-shared/domains/insurance/ins_media.ts";
-import { runInsuranceOCR } from "../../_shared/wa-webhook-shared/domains/insurance/ins_ocr.ts";
 import { normalizeInsuranceExtraction } from "../../_shared/wa-webhook-shared/domains/insurance/ins_normalize.ts";
 import { notifyInsuranceAdmins } from "../../_shared/wa-webhook-shared/domains/insurance/ins_admin_notify.ts";
 import {
@@ -311,8 +310,20 @@ async function processInlineOcr(
   params: InlineOcrParams,
 ): Promise<boolean> {
   try {
-    const raw = await runInsuranceOCR(params.signedUrl, params.mime);
-    const normalized = normalizeInsuranceExtraction(raw);
+    const { data, error } = await sharedSupabase.functions.invoke(
+      "insurance-ocr",
+      {
+        body: {
+          inline: { signedUrl: params.signedUrl, mime: params.mime },
+        },
+      },
+    );
+    if (error || !data) {
+      throw error ?? new Error("inline_ocr_invoke_failed");
+    }
+    const raw = data.raw;
+    const normalized = data.normalized ??
+      normalizeInsuranceExtraction(raw as Record<string, unknown>);
 
     await ctx.supabase
       .from("insurance_leads")
