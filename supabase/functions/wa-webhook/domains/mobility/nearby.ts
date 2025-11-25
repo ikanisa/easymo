@@ -689,7 +689,7 @@ async function runMatchingFallback(
     return true;
   } finally {
     if (tempTripId) {
-      await ctx.supabase.from("trips").update({ status: "expired" }).eq(
+      await ctx.supabase.from("rides_trips").update({ status: "expired" }).eq(
         "id",
         tempTripId,
       );

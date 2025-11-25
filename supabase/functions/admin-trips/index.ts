@@ -32,7 +32,7 @@ serve(async (req) => {
       if (!id) return badRequest("id_required");
 
       const { error } = await supabase
-        .from("trips")
+        .from("rides_trips")
         .update({ status: "expired" })
         .eq("id", id);
 
@@ -42,7 +42,7 @@ serve(async (req) => {
 
     // Default: list trips (GET or otherwise)
     const { data, error } = await supabase
-      .from("trips")
+      .from("rides_trips")
       .select("*")
       .order("created_at", { ascending: false });
 

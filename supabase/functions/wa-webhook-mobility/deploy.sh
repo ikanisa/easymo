@@ -13,6 +13,10 @@ echo "🔍 Type checking..."
 deno check index.ts
 
 echo "🚀 Deploying..."
+# NOTE: --no-verify-jwt is required for WhatsApp webhooks because Meta's servers
+# don't send Supabase JWT tokens. Security is maintained via WhatsApp signature
+# verification (x-hub-signature-256 header) which is validated in the webhook handler.
+# See: wa/verify.ts for signature verification implementation.
 supabase functions deploy wa-webhook-mobility --project-ref $SUPABASE_PROJECT_ID --no-verify-jwt
 
 echo "✅ Deployed!"
