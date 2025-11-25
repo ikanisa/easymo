@@ -43,6 +43,7 @@ import {
   parseInsuranceState,
   handleInsuranceCertificateUpload,
 } from "./handlers/driver_insurance.ts";
+// Full integration - All handlers enabled (using console.log for logging)
 import {
   handleTripStart,
   handleTripArrivedAtPickup,

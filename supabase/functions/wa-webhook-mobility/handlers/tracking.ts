@@ -4,7 +4,7 @@
 // Handles real-time driver location updates and ETA calculation during trips
 // ============================================================================
 
-import { logStructuredEvent } from "../../_shared/observability.ts";
+import { console.log } from "../../_shared/observability.ts";
 import type { SupabaseClient } from "../deps.ts";
 
 // ============================================================================
@@ -61,7 +61,7 @@ export async function updateDriverLocation(
   try {
     // 1. Validate coordinates
     if (!isValidCoordinates(coords)) {
-      await logStructuredEvent("LOCATION_UPDATE_FAILED", {
+      await console.log("LOCATION_UPDATE_FAILED", {
         tripId,
         reason: "invalid_coordinates",
         coords,
@@ -79,7 +79,7 @@ export async function updateDriverLocation(
       .single();
 
     if (tripError || !trip) {
-      await logStructuredEvent("LOCATION_UPDATE_FAILED", {
+      await console.log("LOCATION_UPDATE_FAILED", {
         tripId,
         reason: "trip_not_found_or_invalid_status",
       }, "error");
@@ -98,7 +98,7 @@ export async function updateDriverLocation(
       .eq("user_id", ctx.profile.user_id);
 
     if (updateError) {
-      await logStructuredEvent("LOCATION_UPDATE_FAILED", {
+      await console.log("LOCATION_UPDATE_FAILED", {
         tripId,
         error: updateError.message,
       }, "error");
@@ -148,7 +148,7 @@ export async function updateDriverLocation(
         //   text: t("trip.eta_updated", ctx.locale, { eta: eta.durationMinutes }),
         // });
 
-        await logStructuredEvent("ETA_UPDATED", {
+        await console.log("ETA_UPDATED", {
           tripId,
           previousETA,
           newETA: eta.durationMinutes,
@@ -158,7 +158,7 @@ export async function updateDriverLocation(
     }
 
     // 6. Record metrics
-    await logStructuredEvent("LOCATION_UPDATED", {
+    await console.log("LOCATION_UPDATED", {
       tripId,
       driverId: ctx.profile.user_id,
       location: coords,
@@ -166,7 +166,7 @@ export async function updateDriverLocation(
 
     return true;
   } catch (error) {
-    await logStructuredEvent("LOCATION_UPDATE_ERROR", {
+    await console.log("LOCATION_UPDATE_ERROR", {
       tripId,
       error: (error as Error)?.message || String(error),
     }, "error");
@@ -203,7 +203,7 @@ export async function calculateETA(
     // Calculate estimated arrival time
     const estimatedArrival = new Date(Date.now() + durationMinutes * 60000);
 
-    await logStructuredEvent("ETA_CALCULATED", {
+    await console.log("ETA_CALCULATED", {
       origin,
       destination,
       distanceKm: actualDistanceKm,
@@ -216,7 +216,7 @@ export async function calculateETA(
       estimatedArrival,
     };
   } catch (error) {
-    await logStructuredEvent("ETA_CALCULATION_ERROR", {
+    await console.log("ETA_CALCULATION_ERROR", {
       error: (error as Error)?.message || String(error),
     }, "error");
     
@@ -275,7 +275,7 @@ export async function startDriverTracking(
   tripId: string
 ): Promise<boolean> {
   try {
-    await logStructuredEvent("TRACKING_STARTED", {
+    await console.log("TRACKING_STARTED", {
       tripId,
       driverId: ctx.profile.user_id,
     });
@@ -288,7 +288,7 @@ export async function startDriverTracking(
     // For now, just log the event
     return true;
   } catch (error) {
-    await logStructuredEvent("TRACKING_START_ERROR", {
+    await console.log("TRACKING_START_ERROR", {
       tripId,
       error: (error as Error)?.message || String(error),
     }, "error");
@@ -304,7 +304,7 @@ export async function stopDriverTracking(
   tripId: string
 ): Promise<boolean> {
   try {
-    await logStructuredEvent("TRACKING_STOPPED", {
+    await console.log("TRACKING_STOPPED", {
       tripId,
       driverId: ctx.profile.user_id,
     });
@@ -316,7 +316,7 @@ export async function stopDriverTracking(
     
     return true;
   } catch (error) {
-    await logStructuredEvent("TRACKING_STOP_ERROR", {
+    await console.log("TRACKING_STOP_ERROR", {
       tripId,
       error: (error as Error)?.message || String(error),
     }, "error");
@@ -351,7 +351,7 @@ export async function getDriverLocation(
       longitude: parseFloat(data.current_lng),
     };
   } catch (error) {
-    await logStructuredEvent("GET_LOCATION_ERROR", {
+    await console.log("GET_LOCATION_ERROR", {
       driverId,
       error: (error as Error)?.message || String(error),
     }, "error");
@@ -413,7 +413,7 @@ export async function getTripProgress(
       status: trip.status,
     };
   } catch (error) {
-    await logStructuredEvent("GET_TRIP_PROGRESS_ERROR", {
+    await console.log("GET_TRIP_PROGRESS_ERROR", {
       tripId,
       error: (error as Error)?.message || String(error),
     }, "error");

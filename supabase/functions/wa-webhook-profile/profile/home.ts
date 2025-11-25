@@ -18,6 +18,11 @@ export async function startProfile(
 
   const rows = [
     {
+      id: "EDIT_PROFILE",
+      title: "✏️ Edit Profile",
+      description: "Update name, language & settings",
+    },
+    {
       id: IDS.WALLET_HOME,
       title: "💎 Wallet & Tokens",
       description: "View balance, transfer, redeem rewards",

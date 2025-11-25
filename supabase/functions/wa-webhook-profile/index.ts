@@ -136,6 +136,25 @@ serve(async (req: Request): Promise<Response> => {
           handled = await startProfile(ctx, state ?? { key: "home" });
         }
         
+        // Profile Edit
+        else if (id === "EDIT_PROFILE" || id === "edit_profile") {
+          const { startEditProfile } = await import("./profile/edit.ts");
+          handled = await startEditProfile(ctx);
+        }
+        else if (id === "EDIT_PROFILE_NAME") {
+          const { promptEditName } = await import("./profile/edit.ts");
+          handled = await promptEditName(ctx);
+        }
+        else if (id === "EDIT_PROFILE_LANGUAGE") {
+          const { promptEditLanguage } = await import("./profile/edit.ts");
+          handled = await promptEditLanguage(ctx);
+        }
+        else if (id.startsWith("LANG::")) {
+          const languageCode = id.replace("LANG::", "");
+          const { handleEditLanguage } = await import("./profile/edit.ts");
+          handled = await handleEditLanguage(ctx, languageCode);
+        }
+        
         // Wallet Home
         else if (id === IDS.WALLET_HOME || id === "wallet") {
           const { startWallet } = await import("./wallet/home.ts");
@@ -543,6 +562,12 @@ serve(async (req: Request): Promise<Response> => {
       else if (state?.key === "property_edit_price") {
         const { handleUpdatePropertyField } = await import("./properties/update.ts");
         handled = await handleUpdatePropertyField(ctx, state.data.propertyId, "price", (message.text as any)?.body ?? "");
+      }
+      
+      // Handle profile edit name
+      else if (state?.key === "profile_edit_name") {
+        const { handleEditName } = await import("./profile/edit.ts");
+        handled = await handleEditName(ctx, (message.text as any)?.body ?? "");
       }
     }
 

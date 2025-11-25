@@ -5,7 +5,7 @@
 // Target: 75% production readiness
 // ============================================================================
 
-import { console.log } from "../../_shared/observability.ts";
+import { logStructuredEvent } from "../../_shared/observability.ts";
 import type { SupabaseClient } from "../deps.ts";
 
 // ============================================================================
@@ -57,7 +57,7 @@ export async function handleTripStart(
   tripId: string
 ): Promise<boolean> {
   try {
-    await console.log("TRIP_START_INITIATED", { tripId, userId: ctx.profile.user_id });
+    await logStructuredEvent("TRIP_START_INITIATED", { tripId, userId: ctx.profile.user_id });
 
     // 1. Verify trip exists and is in accepted state
     const { data: trip, error: tripError } = await ctx.client
@@ -68,7 +68,7 @@ export async function handleTripStart(
       .single();
 
     if (tripError || !trip) {
-      await console.log("TRIP_START_FAILED", { 
+      await logStructuredEvent("TRIP_START_FAILED", { 
         tripId, 
         reason: "trip_not_found_or_wrong_status",
         error: tripError?.message 
@@ -78,7 +78,7 @@ export async function handleTripStart(
 
     // 2. Verify user is the driver
     if (trip.driver_id !== ctx.profile.user_id) {
-      await console.log("TRIP_START_FAILED", { 
+      await logStructuredEvent("TRIP_START_FAILED", { 
         tripId, 
         reason: "unauthorized_user" 
       }, "error");
@@ -96,7 +96,7 @@ export async function handleTripStart(
       .eq("id", tripId);
 
     if (updateError) {
-      await console.log("TRIP_START_FAILED", { 
+      await logStructuredEvent("TRIP_START_FAILED", { 
         tripId, 
         reason: "update_failed",
         error: updateError.message 
@@ -116,7 +116,7 @@ export async function handleTripStart(
     // await startDriverTracking(ctx, tripId);
 
     // 6. Record metrics
-    await console.log("TRIP_STARTED", { 
+    await logStructuredEvent("TRIP_STARTED", { 
       tripId, 
       driverId: trip.driver_id,
       passengerId: trip.passenger_id,
@@ -128,7 +128,7 @@ export async function handleTripStart(
 
     return true;
   } catch (error) {
-    await console.log("TRIP_START_ERROR", { 
+    await logStructuredEvent("TRIP_START_ERROR", { 
       tripId, 
       error: (error as Error)?.message || String(error) 
     }, "error");
@@ -151,7 +151,7 @@ export async function handleTripArrivedAtPickup(
   tripId: string
 ): Promise<boolean> {
   try {
-    await console.log("DRIVER_ARRIVAL_INITIATED", { tripId });
+    await logStructuredEvent("DRIVER_ARRIVAL_INITIATED", { tripId });
 
     // 1. Update trip status
     const { data: trip, error: updateError } = await ctx.client
@@ -167,7 +167,7 @@ export async function handleTripArrivedAtPickup(
       .single();
 
     if (updateError || !trip) {
-      await console.log("DRIVER_ARRIVAL_FAILED", { 
+      await logStructuredEvent("DRIVER_ARRIVAL_FAILED", { 
         tripId, 
         error: updateError?.message 
       }, "error");
@@ -182,7 +182,7 @@ export async function handleTripArrivedAtPickup(
     // });
 
     // 3. Record metrics
-    await console.log("DRIVER_ARRIVED", { 
+    await logStructuredEvent("DRIVER_ARRIVED", { 
       tripId, 
       driverId: trip.driver_id,
       passengerId: trip.passenger_id 
@@ -190,7 +190,7 @@ export async function handleTripArrivedAtPickup(
 
     return true;
   } catch (error) {
-    await console.log("DRIVER_ARRIVAL_ERROR", { 
+    await logStructuredEvent("DRIVER_ARRIVAL_ERROR", { 
       tripId, 
       error: (error as Error)?.message || String(error) 
     }, "error");
@@ -215,7 +215,7 @@ export async function handleTripComplete(
   tripId: string
 ): Promise<boolean> {
   try {
-    await console.log("TRIP_COMPLETION_INITIATED", { tripId });
+    await logStructuredEvent("TRIP_COMPLETION_INITIATED", { tripId });
 
     // 1. Get trip details
     const { data: trip, error: tripError } = await ctx.client
@@ -226,7 +226,7 @@ export async function handleTripComplete(
       .single();
 
     if (tripError || !trip) {
-      await console.log("TRIP_COMPLETION_FAILED", { 
+      await logStructuredEvent("TRIP_COMPLETION_FAILED", { 
         tripId, 
         reason: "trip_not_found_or_wrong_status" 
       }, "error");
@@ -235,7 +235,7 @@ export async function handleTripComplete(
 
     // 2. Verify user is the driver
     if (trip.driver_id !== ctx.profile.user_id) {
-      await console.log("TRIP_COMPLETION_FAILED", { 
+      await logStructuredEvent("TRIP_COMPLETION_FAILED", { 
         tripId, 
         reason: "unauthorized_user" 
       }, "error");
@@ -268,7 +268,7 @@ export async function handleTripComplete(
       .eq("id", tripId);
 
     if (updateError) {
-      await console.log("TRIP_COMPLETION_FAILED", { 
+      await logStructuredEvent("TRIP_COMPLETION_FAILED", { 
         tripId, 
         error: updateError.message 
       }, "error");
@@ -285,7 +285,7 @@ export async function handleTripComplete(
     // await requestRating(ctx, tripId, trip.passenger_id, trip.driver_id);
 
     // 8. Record metrics
-    await console.log("TRIP_COMPLETED", { 
+    await logStructuredEvent("TRIP_COMPLETED", { 
       tripId, 
       driverId: trip.driver_id,
       passengerId: trip.passenger_id,
@@ -301,7 +301,7 @@ export async function handleTripComplete(
 
     return true;
   } catch (error) {
-    await console.log("TRIP_COMPLETION_ERROR", { 
+    await logStructuredEvent("TRIP_COMPLETION_ERROR", { 
       tripId, 
       error: (error as Error)?.message || String(error) 
     }, "error");
@@ -327,7 +327,7 @@ export async function handleTripCancel(
   cancelledBy: "driver" | "passenger"
 ): Promise<boolean> {
   try {
-    await console.log("TRIP_CANCELLATION_INITIATED", { 
+    await logStructuredEvent("TRIP_CANCELLATION_INITIATED", { 
       tripId, 
       cancelledBy, 
       reason 
@@ -341,7 +341,7 @@ export async function handleTripCancel(
       .single();
 
     if (tripError || !trip) {
-      await console.log("TRIP_CANCELLATION_FAILED", { 
+      await logStructuredEvent("TRIP_CANCELLATION_FAILED", { 
         tripId, 
         reason: "trip_not_found" 
       }, "error");
@@ -353,7 +353,7 @@ export async function handleTripCancel(
     const isPassenger = trip.passenger_id === ctx.profile.user_id;
     
     if (!isDriver && !isPassenger) {
-      await console.log("TRIP_CANCELLATION_FAILED", { 
+      await logStructuredEvent("TRIP_CANCELLATION_FAILED", { 
         tripId, 
         reason: "unauthorized_user" 
       }, "error");
@@ -384,7 +384,7 @@ export async function handleTripCancel(
       .eq("id", tripId);
 
     if (updateError) {
-      await console.log("TRIP_CANCELLATION_FAILED", { 
+      await logStructuredEvent("TRIP_CANCELLATION_FAILED", { 
         tripId, 
         error: updateError.message 
       }, "error");
@@ -400,7 +400,7 @@ export async function handleTripCancel(
     // });
 
     // 7. Record metrics
-    await console.log("TRIP_CANCELLED", { 
+    await logStructuredEvent("TRIP_CANCELLED", { 
       tripId, 
       cancelledBy: cancellationStatus,
       reason,
@@ -410,7 +410,7 @@ export async function handleTripCancel(
 
     return true;
   } catch (error) {
-    await console.log("TRIP_CANCELLATION_ERROR", { 
+    await logStructuredEvent("TRIP_CANCELLATION_ERROR", { 
       tripId, 
       error: (error as Error)?.message || String(error) 
     }, "error");
@@ -436,11 +436,11 @@ export async function handleTripRating(
   comment?: string
 ): Promise<boolean> {
   try {
-    await console.log("TRIP_RATING_INITIATED", { tripId, rating });
+    await logStructuredEvent("TRIP_RATING_INITIATED", { tripId, rating });
 
     // 1. Validate rating
     if (rating < 1 || rating > 5 || !Number.isInteger(rating)) {
-      await console.log("TRIP_RATING_FAILED", { 
+      await logStructuredEvent("TRIP_RATING_FAILED", { 
         tripId, 
         reason: "invalid_rating",
         rating 
@@ -457,7 +457,7 @@ export async function handleTripRating(
       .single();
 
     if (tripError || !trip) {
-      await console.log("TRIP_RATING_FAILED", { 
+      await logStructuredEvent("TRIP_RATING_FAILED", { 
         tripId, 
         reason: "trip_not_found_or_not_completed" 
       }, "error");
@@ -482,12 +482,12 @@ export async function handleTripRating(
     if (insertError) {
       // Check if rating already exists
       if (insertError.code === "23505") { // Unique violation
-        await console.log("TRIP_RATING_FAILED", { 
+        await logStructuredEvent("TRIP_RATING_FAILED", { 
           tripId, 
           reason: "rating_already_submitted" 
         }, "error");
       } else {
-        await console.log("TRIP_RATING_FAILED", { 
+        await logStructuredEvent("TRIP_RATING_FAILED", { 
           tripId, 
           error: insertError.message 
         }, "error");
@@ -496,7 +496,7 @@ export async function handleTripRating(
     }
 
     // 5. Record metrics
-    await console.log("TRIP_RATED", { 
+    await logStructuredEvent("TRIP_RATED", { 
       tripId, 
       raterId: ctx.profile.user_id,
       ratedId: ratedUserId,
@@ -509,7 +509,7 @@ export async function handleTripRating(
 
     return true;
   } catch (error) {
-    await console.log("TRIP_RATING_ERROR", { 
+    await logStructuredEvent("TRIP_RATING_ERROR", { 
       tripId, 
       error: (error as Error)?.message || String(error) 
     }, "error");
@@ -541,7 +541,7 @@ export async function getTripStatus(
 
     return { status: trip.status as TripStatus, trip };
   } catch (error) {
-    await console.log("GET_TRIP_STATUS_ERROR", { 
+    await logStructuredEvent("GET_TRIP_STATUS_ERROR", { 
       tripId, 
       error: (error as Error)?.message || String(error) 
     }, "error");

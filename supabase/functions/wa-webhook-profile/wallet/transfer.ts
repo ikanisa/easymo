@@ -6,6 +6,7 @@ import { setState } from "../../_shared/wa-webhook-shared/state/store.ts";
 import { t } from "../../_shared/wa-webhook-shared/i18n/translator.ts";
 import { toE164 } from "../../_shared/wa-webhook-shared/utils/phone.ts";
 import { listWalletPartners, fetchWalletSummary, transferTokens } from "../../_shared/wa-webhook-shared/rpc/wallet.ts";
+import { validateTransfer, checkFraudRisk } from "./security.ts";
 
 type TransferState = {
   key: string;
@@ -110,6 +111,18 @@ export async function handleWalletTransferText(
       );
       return true;
     }
+    
+    // Validate transfer amount and limits
+    const validation = await validateTransfer(ctx, amount, ctx.profileId!);
+    if (!validation.valid) {
+      await sendButtonsMessage(
+        ctx,
+        `❌ ${validation.error}`,
+        [{ id: IDS.WALLET, title: "💎 Back to Wallet" }],
+      );
+      return true;
+    }
+    
     try {
       // Resolve recipient profile by WhatsApp
       const { data: recipient } = await ctx.supabase
@@ -119,6 +132,17 @@ export async function handleWalletTransferText(
         .maybeSingle();
       if (!recipient?.user_id) {
         await sendButtonsMessage(ctx, "Recipient not found.", [{ id: IDS.WALLET, title: "💎 Wallet" }]);
+        return true;
+      }
+      
+      // Check fraud risk
+      const fraudCheck = await checkFraudRisk(ctx, ctx.profileId!, amount, recipient.user_id);
+      if (fraudCheck.risky) {
+        await sendButtonsMessage(
+          ctx,
+          `⚠️ Transfer blocked: ${fraudCheck.reason}\n\nPlease contact support if you believe this is an error.`,
+          [{ id: IDS.WALLET, title: "💎 Wallet" }],
+        );
         return true;
       }
 
