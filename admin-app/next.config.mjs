@@ -156,3 +156,5 @@ const nextConfig = {
     return config;
   },
 };
+
+export default withBundleAnalyzer(nextConfig);
