@@ -56,13 +56,27 @@
     "copyright": "Copyright © 2025 EasyMO",
     "shortDescription": "Operational control centre for EasyMO mobility platform",
     "longDescription": "EasyMO Admin is a powerful desktop application for managing the EasyMO mobility and marketplace platform. Features include real-time analytics, WhatsApp integration, user management, and comprehensive operational controls.",
+    "fileAssociations": [
+      {
+        "ext": ["easymo"],
+        "name": "EasyMO Data File",
+        "description": "EasyMO application data file",
+        "role": "Editor",
+        "mimeType": "application/x-easymo"
+      }
+    ],
     "macOS": {
-      "minimumSystemVersion": "10.15"
+      "minimumSystemVersion": "10.15",
+      "urlScheme": ["easymo"]
     },
     "windows": {
       "webviewInstallMode": {
         "type": "downloadBootstrapper"
-      }
+      },
+      "urlScheme": ["easymo"]
+    },
+    "linux": {
+      "urlScheme": ["easymo"]
     }
   },
   "plugins": {

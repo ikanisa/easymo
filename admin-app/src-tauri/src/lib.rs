@@ -5,6 +5,10 @@ use tauri::{
 };
 
 mod commands;
+mod menu;
+mod windows;
+mod deep_links;
+mod files;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -38,11 +42,30 @@ pub fn run() {
 
             Ok(())
         })
+        .menu(menu::create_app_menu())
+        .on_menu_event(|app, event| {
+            if let Some(window) = app.get_webview_window("main") {
+                tauri::async_runtime::spawn(async move {
+                    let _ = menu::handle_menu_event(event.id.as_ref().to_string(), window).await;
+                });
+            }
+        })
         .invoke_handler(tauri::generate_handler![
             commands::send_notification,
             commands::minimize_to_tray,
             commands::show_window,
             commands::get_platform_info,
+            menu::handle_menu_event,
+            windows::create_window,
+            windows::get_all_windows,
+            windows::close_window,
+            windows::focus_window,
+            windows::broadcast_event,
+            deep_links::parse_deep_link_url,
+            files::open_file_dialog,
+            files::save_file_dialog,
+            files::read_file,
+            files::write_file,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
