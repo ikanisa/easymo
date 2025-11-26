@@ -5,15 +5,8 @@
   base = "admin-app"
   publish = ".next"
   # Build workspace dependencies, then the admin app
-  command = """
-    cd .. && \
-    pnpm install --frozen-lockfile && \
-    pnpm --filter @va/shared build && \
-    pnpm --filter @easymo/commons build && \
-    pnpm --filter @easymo/video-agent-schema build && \
-    cd admin-app && \
-    pnpm build
-  """
+  # Simplified command for local deployment (dependencies assumed built)
+  command = "pnpm build"
 
 [build.environment]
   NODE_VERSION = "20.18.0"
