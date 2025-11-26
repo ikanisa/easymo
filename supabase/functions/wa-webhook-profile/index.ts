@@ -390,6 +390,41 @@ serve(async (req: Request): Promise<Response> => {
           handled = await handleWalletReferral(ctx);
         }
         
+        // Share EasyMO
+        else if (id === IDS.SHARE_EASYMO) {
+          if (ctx.profileId) {
+            const { ensureReferralLink } = await import("../_shared/wa-webhook-shared/rpc/wallet.ts");
+            const { t } = await import("../_shared/wa-webhook-shared/i18n/translator.ts");
+            try {
+              const link = await ensureReferralLink(ctx.supabase, ctx.profileId);
+              const shareText = [
+                t(ctx.locale, "wallet.earn.forward.instructions"),
+                t(ctx.locale, "wallet.earn.share_text_intro"),
+                link.waLink,
+                t(ctx.locale, "wallet.earn.copy.code", { code: link.code }),
+                t(ctx.locale, "wallet.earn.note.keep_code"),
+              ].join("\n\n");
+              
+              await sendButtonsMessage(
+                ctx,
+                shareText,
+                [
+                  { id: IDS.WALLET_EARN, title: t(ctx.locale, "wallet.earn.button") },
+                  { id: IDS.BACK_PROFILE, title: "← Back" },
+                ],
+              );
+              handled = true;
+            } catch (e) {
+              await sendButtonsMessage(
+                ctx,
+                t(ctx.locale, "wallet.earn.error"),
+                [{ id: IDS.BACK_PROFILE, title: "← Back" }],
+              );
+              handled = true;
+            }
+          }
+        }
+        
         // Token Purchase
         else if (id === "WALLET_PURCHASE" || id === "buy_tokens") {
           const { handleWalletPurchase } = await import("./wallet/purchase.ts");
