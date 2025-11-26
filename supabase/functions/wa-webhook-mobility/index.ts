@@ -86,6 +86,7 @@ import type { RouterContext, WhatsAppWebhookPayload, RawWhatsAppMessage } from "
 import { IDS } from "./wa/ids.ts";
 import { verifyWebhookSignature } from "../_shared/webhook-utils.ts";
 import { sendListMessage } from "./utils/reply.ts";
+import { recordLastLocation } from "./locations/favorites.ts";
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL") ?? "",
@@ -164,6 +165,7 @@ serve(async (req: Request): Promise<Response> => {
     const appSecret = Deno.env.get("WHATSAPP_APP_SECRET") ?? Deno.env.get("WA_APP_SECRET");
     const allowUnsigned = (Deno.env.get("WA_ALLOW_UNSIGNED_WEBHOOKS") ?? "false").toLowerCase() === "true";
     const internalForward = req.headers.get("x-wa-internal-forward") === "true";
+    const allowInternalForward = (Deno.env.get("WA_ALLOW_INTERNAL_FORWARD") ?? "false").toLowerCase() === "true";
 
     if (!appSecret) {
       logEvent("MOBILITY_AUTH_CONFIG_ERROR", { reason: "missing_app_secret" }, "error");
@@ -188,7 +190,8 @@ serve(async (req: Request): Promise<Response> => {
     }
 
     if (!isValidSignature) {
-      if (allowUnsigned || internalForward) {
+      const bypass = allowUnsigned || (internalForward && allowInternalForward);
+      if (bypass) {
         logEvent("MOBILITY_AUTH_BYPASS", {
           reason: internalForward ? "internal_forward" : signature ? "signature_mismatch" : "no_signature",
           signatureHeader,
@@ -287,6 +290,9 @@ serve(async (req: Request): Promise<Response> => {
         if (id === IDS.RIDES_MENU || id === "rides_agent" || id === "rides") {
           handled = await showMobilityMenu(ctx);
         }
+        else if (id === IDS.BACK_MENU || id === IDS.BACK_HOME) {
+          handled = await showMobilityMenu(ctx);
+        }
         // Nearby Flows
         else if (id === IDS.SEE_DRIVERS) {
           console.log(JSON.stringify({ event: "MOBILITY_LAUNCHING_WORKFLOW", workflow: "handleSeeDrivers" }));
@@ -327,7 +333,7 @@ serve(async (req: Request): Promise<Response> => {
           handled = await startScheduleTrip(ctx, state as any);
         } else if ((id === IDS.ROLE_DRIVER || id === IDS.ROLE_PASSENGER) && state?.key === "schedule_role") {
           handled = await handleScheduleRole(ctx, id);
-        } else if (isVehicleOption(id) && state?.key === "schedule_location") {
+        } else if (isVehicleOption(id) && (state?.key === "schedule_location" || state?.key === "schedule_vehicle")) {
           handled = await handleScheduleVehicle(ctx, state.data as any, id);
         } else if (id === IDS.MOBILITY_CHANGE_VEHICLE && state?.key?.startsWith("schedule_")) {
           handled = await handleScheduleChangeVehicle(ctx, state.data as any);
@@ -412,6 +418,9 @@ serve(async (req: Request): Promise<Response> => {
       if (loc && loc.latitude && loc.longitude) {
         const coords = { lat: Number(loc.latitude), lng: Number(loc.longitude) };
         logEvent("MOBILITY_LOCATION", coords);
+        await recordLastLocation(ctx, coords).catch((e) =>
+          console.warn("mobility.record_location_fail", e),
+        );
 
         // Real-time tracking location updates
         if (state?.key === "trip_in_progress" && state?.data?.tripId && state?.data?.role === "driver") {

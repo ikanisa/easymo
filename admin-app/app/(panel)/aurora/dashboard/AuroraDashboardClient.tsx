@@ -132,10 +132,10 @@ export function AuroraDashboardClient() {
             <motion.div key={index} variants={listItem}>
               <KpiCard
                 title={kpi.label}
-                value={kpi.value}
-                change={kpi.change}
-                trend={kpi.change && kpi.change > 0 ? 'up' : kpi.change && kpi.change < 0 ? 'down' : 'neutral'}
-                changeLabel="vs last week"
+                value={kpi.primaryValue}
+                change={kpi.secondaryValue ? parseFloat(kpi.secondaryValue) : undefined}
+                trend={kpi.trend === 'flat' ? 'neutral' : kpi.trend === null ? undefined : kpi.trend}
+                changeLabel={kpi.helpText}
                 icon={getKpiIcon(kpi.label)}
               />
             </motion.div>

@@ -19,6 +19,7 @@ import { sendText } from "../wa/client.ts";
 import {
   buildButtons,
   homeOnly,
+  sendButtonsDirect,
   sendButtonsMessage,
   sendListMessage,
 } from "../utils/reply.ts";
@@ -685,9 +686,6 @@ async function runMatchingFallback(
 
   // NOTIFY DRIVERS (if searching for drivers)
   if (state.mode === "drivers") {
-      const { sendText } = await import("../../wa/client.ts");
-      const { waChatLink } = await import("../../utils/links.ts");
-      
       // Get passenger name
       const { data: passenger } = await ctx.supabase
         .from("profiles")
@@ -714,10 +712,11 @@ async function runMatchingFallback(
              // We will send a template-like message.
              const acceptId = `RIDE_ACCEPT::${tempTripId}`;
              try {
-               await sendButtonsMessage(
-               { ...ctx, from: match.whatsapp_e164, profileId: match.creator_user_id }, // Mock context for the recipient
-               `🚖 **New Ride Request!**\n\nPassenger: ${passengerName}\nDistance: ${toDistanceLabel(match.distance_km)}\n\nDo you want to accept this ride?`,
-               [{ id: acceptId, title: "✅ Accept Ride" }]
+               await sendButtonsDirect(
+                 match.whatsapp_e164,
+                 ctx.locale,
+                 `🚖 **New Ride Request!**\n\nPassenger: ${passengerName}\nDistance: ${toDistanceLabel(match.distance_km)}\n\nDo you want to accept this ride?`,
+                 [{ id: acceptId, title: "✅ Accept Ride" }],
                );
              } catch (e) {
                // Fallback to template/text if interactive fails

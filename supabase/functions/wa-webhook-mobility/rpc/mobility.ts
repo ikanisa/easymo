@@ -8,6 +8,31 @@ const TRIP_EXPIRY_MINUTES = Number.isFinite(envExpiryMinutes) && envExpiryMinute
   : DEFAULT_TRIP_EXPIRY_MINUTES;
 const TRIP_EXPIRY_MS = TRIP_EXPIRY_MINUTES * 60 * 1000;
 
+let ridesSchemaReady = false;
+let ridesSchemaCheck: Promise<void> | null = null;
+
+async function ensureRidesTripsSchema(client: SupabaseClient): Promise<void> {
+  if (ridesSchemaReady) return;
+  if (ridesSchemaCheck) {
+    await ridesSchemaCheck;
+    return;
+  }
+  ridesSchemaCheck = (async () => {
+    const { error } = await client
+      .from("rides_trips")
+      .select("creator_user_id, pickup_latitude, pickup_longitude")
+      .limit(1);
+    if (error) {
+      ridesSchemaCheck = null;
+      const reason = `RIDES_TRIPS_SCHEMA_INCOMPLETE: ${error.message ?? error.code ?? "unknown"}`;
+      console.error(reason);
+      throw new Error(reason);
+    }
+    ridesSchemaReady = true;
+  })();
+  await ridesSchemaCheck;
+}
+
 export async function gateProFeature(client: SupabaseClient, userId: string) {
   const { data, error } = await client.rpc("gate_pro_feature", {
     _user_id: userId,
@@ -59,6 +84,7 @@ export async function insertTrip(
     pickupText?: string;
   },
 ): Promise<string> {
+  await ensureRidesTripsSchema(client);
   const expires = new Date(Date.now() + TRIP_EXPIRY_MS).toISOString();
   const { data, error } = await client
     .from("rides_trips")
@@ -90,6 +116,7 @@ export async function updateTripDropoff(
     radiusMeters?: number;
   },
 ): Promise<void> {
+  await ensureRidesTripsSchema(client);
   const { error } = await client
     .from("rides_trips")
     .update({
@@ -124,6 +151,7 @@ export async function matchDriversForTrip(
   radiusMeters?: number,
   windowDays = 30,
 ) {
+  await ensureRidesTripsSchema(client);
   const { data, error } = await client.rpc("match_drivers_for_trip_v2", {
     _trip_id: tripId,
     _limit: limit,
@@ -143,6 +171,7 @@ export async function matchPassengersForTrip(
   radiusMeters?: number,
   windowDays = 30,
 ) {
+  await ensureRidesTripsSchema(client);
   const { data, error } = await client.rpc("match_passengers_for_trip_v2", {
     _trip_id: tripId,
     _limit: limit,

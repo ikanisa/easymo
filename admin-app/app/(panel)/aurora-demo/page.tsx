@@ -43,7 +43,7 @@ export default function AuroraDemoPage() {
       header: '',
       accessor: (row) => (
         <DropdownMenu
-          trigger={<Button variant="ghost" size="icon-sm"><MoreVertical className="w-4 h-4" /></Button>}
+          trigger={<Button variant="ghost" size="sm" className="w-8 h-8 p-0"><MoreVertical className="w-4 h-4" /></Button>}
           items={[
             { id: 'edit', label: 'Edit', icon: <Edit className="w-4 h-4" /> },
             { id: 'delete', label: 'Delete', icon: <Trash className="w-4 h-4" />, danger: true },

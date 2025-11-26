@@ -29,6 +29,9 @@ import {
   type PropertySavedPickerState,
 } from "./property/rentals.ts";
 
+// Location handler
+import { cachePropertyLocation } from "./handlers/location-handler.ts";
+
 // My listings imports
 import {
   showMyProperties,
@@ -386,6 +389,9 @@ async function handlePropertyLocation(
 ): Promise<boolean> {
   const location = message.location;
   if (!location?.latitude || !location?.longitude) return false;
+
+  // Save to location cache (30-min TTL) for all property location shares
+  await cachePropertyLocation(ctx, location.latitude, location.longitude);
 
   // Handle find property location
   if (state.key === "property_find_location") {

@@ -39,8 +39,8 @@ export function AuroraUsersClient({ initialParams }: AuroraUsersClientProps) {
     if (!search) return true;
     const searchLower = search.toLowerCase();
     return (
-      user.phone_number?.toLowerCase().includes(searchLower) ||
-      user.whatsapp_name?.toLowerCase().includes(searchLower) ||
+      user.msisdn?.toLowerCase().includes(searchLower) ||
+      user.displayName?.toLowerCase().includes(searchLower) ||
       user.id?.toLowerCase().includes(searchLower)
     );
   });
@@ -49,15 +49,16 @@ export function AuroraUsersClient({ initialParams }: AuroraUsersClientProps) {
     {
       id: 'user',
       header: 'User',
+      accessor: (user: any) => user.displayName || 'Unknown',
       cell: (user: any) => (
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-aurora-accent/10 
                           flex items-center justify-center text-aurora-accent font-semibold">
-            {user.whatsapp_name?.[0]?.toUpperCase() || user.phone_number?.[0] || '?'}
+            {user.displayName?.[0]?.toUpperCase() || user.msisdn?.[0] || '?'}
           </div>
           <div>
             <p className="font-medium text-aurora-text-primary">
-              {user.whatsapp_name || 'Unknown'}
+              {user.displayName || 'Unknown'}
             </p>
             <p className="text-sm text-aurora-text-muted">ID: {user.id?.slice(0, 8)}</p>
           </div>
@@ -67,11 +68,12 @@ export function AuroraUsersClient({ initialParams }: AuroraUsersClientProps) {
     {
       id: 'contact',
       header: 'Contact',
+      accessor: (user: any) => user.msisdn,
       cell: (user: any) => (
         <div className="space-y-1">
           <div className="flex items-center gap-2 text-sm text-aurora-text-secondary">
             <Phone className="w-3.5 h-3.5" />
-            {user.phone_number || 'N/A'}
+            {user.msisdn || 'N/A'}
           </div>
           {user.email && (
             <div className="flex items-center gap-2 text-sm text-aurora-text-muted">
@@ -85,24 +87,27 @@ export function AuroraUsersClient({ initialParams }: AuroraUsersClientProps) {
     {
       id: 'language',
       header: 'Language',
+      accessor: (user: any) => user.locale,
       cell: (user: any) => (
-        <Badge variant={user.preferred_language === 'en' ? 'success' : 'default'}>
-          {user.preferred_language?.toUpperCase() || 'N/A'}
+        <Badge variant={user.locale === 'en' ? 'success' : 'default'}>
+          {user.locale?.toUpperCase() || 'N/A'}
         </Badge>
       ),
     },
     {
       id: 'joined',
       header: 'Joined',
+      accessor: (user: any) => user.createdAt,
       cell: (user: any) => (
         <span className="text-sm text-aurora-text-secondary">
-          {user.created_at ? new Date(user.created_at).toLocaleDateString() : 'N/A'}
+          {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}
         </span>
       ),
     },
     {
       id: 'actions',
       header: 'Actions',
+      accessor: (user: any) => user.id,
       cell: (user: any) => (
         <div className="flex items-center gap-2">
           <Button size="sm" variant="ghost">

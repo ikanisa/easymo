@@ -33,7 +33,7 @@ import {
 import { buildSaveRows } from "../../_shared/wa-webhook-shared/domains/locations/save.ts";
 import { recordRecentActivity } from "../../_shared/wa-webhook-shared/domains/locations/recent.ts";
 import { getRecentLocation } from "../../_shared/wa-webhook-shared/domains/locations/recent.ts";
-import { cachePropertyLocation } from "../handlers/location-handler.ts";
+import { cachePropertyLocation, resolvePropertyLocation } from "../handlers/location-handler.ts";
 
 export type PropertyFindState = {
   rentalType: string;
@@ -366,7 +366,15 @@ export async function handleFindPropertyBudget(
     await recordRecentActivity(ctx, 'property_search', undefined, nextState as unknown as Record<string, unknown>);
   } catch (_) { /* non-fatal */ }
 
-  // Recent-location skip: if we have a fresh location, proceed directly
+  // Try standard 30-min location cache first (priority 1)
+  try {
+    const locationResult = await resolvePropertyLocation(ctx);
+    if (locationResult.location) {
+      return await handleFindPropertyLocation(ctx, nextState, locationResult.location);
+    }
+  } catch (_) { /* non-fatal - fall through to prompt */ }
+
+  // Fallback: Recent-location skip from older cache
   try {
     const recent = await getRecentLocation(ctx, 'property');
     if (recent) {

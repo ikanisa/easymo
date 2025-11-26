@@ -187,9 +187,11 @@ export async function handleInsuranceCertificateUpload(
 
   try {
     // Get WA token from env
-    const waToken = Deno.env.get("WA_TOKEN") || "";
+    const waToken = resolveWaToken();
     if (!waToken) {
-      throw new Error("WA_TOKEN not configured");
+      console.error("DRIVER_INS_UPLOAD_ERROR", "WA_TOKEN not configured");
+      await sendText(ctx.from, "⚠️ Unable to process insurance uploads at the moment (missing WhatsApp credentials). Please try again later.");
+      return { success: false, error: "missing_token" };
     }
 
     // Send processing message
@@ -290,4 +292,10 @@ export async function getVehiclePlate(
 ): Promise<string | null> {
   const insurance = await getActiveInsurance(client, profileId);
   return insurance?.vehicle_plate || null;
+}
+function resolveWaToken(): string | null {
+  return Deno.env.get("WA_DRIVER_TOKEN") ??
+    Deno.env.get("WA_TOKEN") ??
+    Deno.env.get("WHATSAPP_ACCESS_TOKEN") ??
+    null;
 }

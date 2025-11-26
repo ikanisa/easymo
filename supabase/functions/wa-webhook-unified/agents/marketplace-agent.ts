@@ -21,6 +21,7 @@ import {
   AIResponse,
 } from "../core/types.ts";
 import { logStructuredEvent, recordMetric } from "../../_shared/observability.ts";
+import { resolveUnifiedLocation, cacheUnifiedLocation } from "../core/location-handler.ts";
 
 export class MarketplaceAgent extends BaseAgent {
   get type(): AgentType {
@@ -176,14 +177,25 @@ OUTPUT FORMAT (JSON):
       };
     }
 
-    // Extract location if provided
-    if (message.location) {
+    // Resolve location (cache → saved → message → prompt)
+    const locationResult = await resolveUnifiedLocation(
+      this.supabase,
+      message.from,
+      message.location
+    );
+
+    if (locationResult.location) {
       session.location = {
-        lat: message.location.latitude,
-        lng: message.location.longitude,
+        lat: locationResult.location.lat,
+        lng: locationResult.location.lng,
       };
-      session.collectedData.lat = message.location.latitude;
-      session.collectedData.lng = message.location.longitude;
+      session.collectedData.lat = locationResult.location.lat;
+      session.collectedData.lng = locationResult.location.lng;
+      
+      await logStructuredEvent("MARKETPLACE_LOCATION_RESOLVED", {
+        source: locationResult.location.source,
+        from: message.from,
+      });
     }
 
     // Process with AI

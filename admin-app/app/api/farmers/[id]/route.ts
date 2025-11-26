@@ -6,8 +6,9 @@ import { getSupabaseAdminClient } from '@/lib/server/supabase-admin';
 // GET /api/farmers/[id] - Get farm details
 export async function GET(
   _request: NextRequest,
-  { params }: { params: { id: string } }
+  props: { params: Promise<{ id: string }> }
 ) {
+  const params = await props.params;
   const admin = getSupabaseAdminClient();
   if (!admin) {
     return NextResponse.json({ error: 'supabase_unavailable' }, { status: 503 });
@@ -33,8 +34,9 @@ export async function GET(
 // PATCH /api/farmers/[id] - Update farm
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  props: { params: Promise<{ id: string }> }
 ) {
+  const params = await props.params;
   const admin = getSupabaseAdminClient();
   if (!admin) {
     return NextResponse.json({ error: 'supabase_unavailable' }, { status: 503 });
@@ -79,8 +81,9 @@ export async function PATCH(
 // DELETE /api/farmers/[id] - Soft delete farm
 export async function DELETE(
   _request: NextRequest,
-  { params }: { params: { id: string } }
+  props: { params: Promise<{ id: string }> }
 ) {
+  const params = await props.params;
   const admin = getSupabaseAdminClient();
   if (!admin) {
     return NextResponse.json({ error: 'supabase_unavailable' }, { status: 503 });

@@ -57,6 +57,22 @@ export async function sendButtonsMessage(
   await sendButtons(ctx.from, coerceBody(body, options.emoji ?? ""), payload);
 }
 
+export async function sendButtonsDirect(
+  to: string,
+  locale: RouterContext["locale"],
+  body: string,
+  buttons: ButtonSpec[],
+  options: { emoji?: string } = {},
+): Promise<void> {
+  if (!buttons.length) return;
+  const payload = buttons.slice(0, 3).map((button) =>
+    button.id === IDS.BACK_HOME
+      ? { ...button, title: t(locale, "common.home_button") }
+      : button
+  );
+  await sendButtons(to, coerceBody(body, options.emoji ?? ""), payload);
+}
+
 export async function sendListWithActions(
   ctx: RouterContext,
   list: {
