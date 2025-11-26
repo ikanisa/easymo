@@ -1,7 +1,6 @@
 import type { RouterContext } from "../types.ts";
 import type { SupabaseClient } from "../deps.ts";
-import { setState } from "../state/store.ts";
-import { sendText } from "../wa/client.ts";
+import { ensureDriverInsurance } from "./driver_insurance.ts";
 
 const PLATE_STATE_KEY = "vehicle_plate_register";
 
@@ -62,14 +61,7 @@ export async function ensureVehiclePlate(
   if (!ctx.profileId) return false;
   const existing = await getVehiclePlate(ctx.supabase, ctx.profileId);
   if (existing) return true;
-  const prompt =
-    "🚘 RURA regulation: please reply with your vehicle plate (e.g. RAA123C) to continue.";
-  await setState(ctx.supabase, ctx.profileId, {
-    key: PLATE_STATE_KEY,
-    data: resume,
-  });
-  await sendText(ctx.from, prompt);
-  return false;
+  return await ensureDriverInsurance(ctx, resume as any);
 }
 
 export const vehiclePlateStateKey = PLATE_STATE_KEY;

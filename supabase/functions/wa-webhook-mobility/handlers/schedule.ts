@@ -207,6 +207,8 @@ export async function handleScheduleRole(
     ? "passenger"
     : null;
   if (!role) return false;
+  const storedVehicle = await getStoredVehicleType(ctx.supabase, ctx.profileId);
+
   if (role === "driver") {
     const ready = await ensureVehiclePlate(ctx, {
       type: "schedule_role",
@@ -219,15 +221,11 @@ export async function handleScheduleRole(
     const fresh = checkLocationCache(last?.capturedAt ?? null);
     if (!fresh.needsRefresh && last) {
       const { lat, lng } = last;
-      const storedVehicle = await getStoredVehicleType(ctx.supabase, ctx.profileId) ?? "veh_moto";
-      await setState(ctx.supabase, ctx.profileId, { key: "schedule_location", data: { role, vehicle: storedVehicle } });
-      return await handleScheduleLocation(ctx, { role, vehicle: storedVehicle }, { lat, lng });
+      const vehicle = storedVehicle ?? "veh_moto";
+      await setState(ctx.supabase, ctx.profileId, { key: "schedule_location", data: { role, vehicle } });
+      return await handleScheduleLocation(ctx, { role, vehicle }, { lat, lng });
     }
 
-    const storedVehicle = await getStoredVehicleType(
-      ctx.supabase,
-      ctx.profileId,
-    );
     if (storedVehicle) {
       await setState(ctx.supabase, ctx.profileId, {
         key: "schedule_location",
@@ -240,7 +238,19 @@ export async function handleScheduleRole(
       );
       return true;
     }
+  } else if (storedVehicle) {
+    await setState(ctx.supabase, ctx.profileId, {
+      key: "schedule_location",
+      data: { role, vehicle: storedVehicle },
+    });
+    await sendButtonsMessage(
+      ctx,
+      t(ctx.locale, "schedule.pickup.prompt"),
+      sharePickupButtons(ctx, role),
+    );
+    return true;
   }
+
   await promptScheduleVehicleSelection(ctx, role);
   return true;
 }
@@ -286,9 +296,7 @@ export async function handleScheduleVehicle(
 ): Promise<boolean> {
   if (!ctx.profileId || !state.role) return false;
   const vehicleType = vehicleFromId(vehicleId);
-  if (state.role === "driver") {
-    await updateStoredVehicleType(ctx.supabase, ctx.profileId, vehicleType);
-  }
+  await updateStoredVehicleType(ctx.supabase, ctx.profileId, vehicleType);
   await setState(ctx.supabase, ctx.profileId, {
     key: "schedule_location",
     data: {

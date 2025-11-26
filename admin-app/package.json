@@ -10,11 +10,15 @@
     "dev": "next dev",
     "dev:prod": "npm run build && npm run start",
     "build": "node scripts/check-env.js && node scripts/assert-no-mocks-in-admin.mjs && next build",
+    "build:desktop": "node scripts/build-desktop.js",
     "start": "next start",
     "lint": "next lint",
     "type-check": "tsc --noEmit -p tsconfig.ci.json",
     "test": "vitest run",
-    "load-test": "tsx scripts/load-test.ts"
+    "load-test": "tsx scripts/load-test.ts",
+    "tauri": "tauri",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "tauri build"
   },
   "dependencies": {
     "@easymo/commons": "workspace:*",

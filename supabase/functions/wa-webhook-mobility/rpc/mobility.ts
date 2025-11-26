@@ -86,10 +86,14 @@ export async function insertTrip(
 ): Promise<string> {
   await ensureRidesTripsSchema(client);
   const expires = new Date(Date.now() + TRIP_EXPIRY_MS).toISOString();
+  const riderUserId = params.userId;
+  const driverUserId = params.role === "driver" ? params.userId : null;
   const { data, error } = await client
     .from("rides_trips")
     .insert({
       creator_user_id: params.userId,
+      rider_user_id: riderUserId,
+      driver_user_id: driverUserId,
       role: params.role,
       vehicle_type: params.vehicleType,
       pickup_latitude: params.lat,

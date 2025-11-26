@@ -25,8 +25,8 @@ const nextConfig = {
   compress: true,
   poweredByHeader: false,
   
-  // Output configuration for Netlify
-  output: 'standalone',
+  // Output configuration for Netlify and Desktop
+  output: process.env.TAURI_ENV_PLATFORM ? undefined : 'standalone',
   
   // Image optimization
   images: {
