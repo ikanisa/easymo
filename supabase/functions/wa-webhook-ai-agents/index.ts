@@ -193,29 +193,47 @@ function extractWhatsAppMessage(payload: any): {
   type: string;
   timestamp: string;
   id: string;
+  location?: { latitude: number; longitude: number };
 } | null {
   try {
     // Handle WhatsApp Business API webhook format
     if (payload?.entry?.[0]?.changes?.[0]?.value?.messages?.[0]) {
       const msg = payload.entry[0].changes[0].value.messages[0];
-      return {
+      const extracted: any = {
         from: msg.from,
         body: msg.text?.body || msg.interactive?.button_reply?.title || "",
         type: msg.type,
         timestamp: new Date(parseInt(msg.timestamp) * 1000).toISOString(),
         id: msg.id,
       };
+      
+      // Extract location if present
+      if (msg.type === "location" && msg.location) {
+        extracted.location = {
+          latitude: msg.location.latitude,
+          longitude: msg.location.longitude,
+        };
+      }
+      
+      return extracted;
     }
     
     // Handle direct message format (for testing)
     if (payload?.from && payload?.body) {
-      return {
+      const extracted: any = {
         from: payload.from,
         body: payload.body,
         type: payload.type || "text",
         timestamp: payload.timestamp || new Date().toISOString(),
         id: payload.id || crypto.randomUUID(),
       };
+      
+      // Extract location if present
+      if (payload.location) {
+        extracted.location = payload.location;
+      }
+      
+      return extracted;
     }
     
     return null;

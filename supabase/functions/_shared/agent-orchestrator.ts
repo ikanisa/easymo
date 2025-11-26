@@ -14,6 +14,7 @@ interface WhatsAppMessage {
   type: string;
   timestamp: string;
   id: string;
+  location?: { latitude: number; longitude: number };
 }
 
 interface AgentContext {

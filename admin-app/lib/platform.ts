@@ -223,3 +223,131 @@ export async function setAutostart(enabled: boolean): Promise<void> {
     console.error('Failed to set autostart:', error);
   }
 }
+
+/**
+ * Update system tray status
+ */
+export async function updateTrayStatus(status: 'online' | 'offline' | 'busy'): Promise<void> {
+  if (!isDesktop()) return;
+
+  try {
+    await invoke('update_tray_status', { status });
+  } catch (error) {
+    console.error('Failed to update tray status:', error);
+  }
+}
+
+/**
+ * Show tray message
+ */
+export async function showTrayMessage(title: string, message: string): Promise<void> {
+  if (!isDesktop()) return;
+
+  try {
+    await invoke('show_tray_message', { title, message });
+  } catch (error) {
+    console.error('Failed to show tray message:', error);
+  }
+}
+
+/**
+ * Flash tray icon for user attention
+ */
+export async function flashTrayIcon(): Promise<void> {
+  if (!isDesktop()) return;
+
+  try {
+    await invoke('flash_tray_icon');
+  } catch (error) {
+    console.error('Failed to flash tray icon:', error);
+  }
+}
+
+/**
+ * Register global shortcut
+ */
+export async function registerGlobalShortcut(
+  id: string,
+  modifiers: string[],
+  key: string
+): Promise<void> {
+  if (!isDesktop()) return;
+
+  try {
+    await invoke('register_global_shortcut', {
+      shortcutId: id,
+      modifiers,
+      key,
+    });
+  } catch (error) {
+    console.error('Failed to register global shortcut:', error);
+  }
+}
+
+/**
+ * Unregister global shortcut
+ */
+export async function unregisterGlobalShortcut(
+  modifiers: string[],
+  key: string
+): Promise<void> {
+  if (!isDesktop()) return;
+
+  try {
+    await invoke('unregister_global_shortcut', { modifiers, key });
+  } catch (error) {
+    console.error('Failed to unregister global shortcut:', error);
+  }
+}
+
+/**
+ * Check for app updates
+ */
+export interface UpdateInfo {
+  version: string;
+  currentVersion: string;
+  available: boolean;
+  downloadUrl?: string;
+  releaseNotes?: string;
+}
+
+export async function checkForUpdates(): Promise<UpdateInfo | null> {
+  if (!isDesktop()) return null;
+
+  try {
+    return await invoke<UpdateInfo>('check_for_updates');
+  } catch (error) {
+    console.error('Failed to check for updates:', error);
+    return null;
+  }
+}
+
+/**
+ * Download and install update
+ */
+export async function downloadAndInstallUpdate(): Promise<void> {
+  if (!isDesktop()) return;
+
+  try {
+    await invoke('download_and_install_update');
+  } catch (error) {
+    console.error('Failed to download and install update:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get app version
+ */
+export async function getAppVersion(): Promise<string> {
+  if (!isDesktop()) {
+    return process.env.NEXT_PUBLIC_APP_VERSION || '1.0.0';
+  }
+
+  try {
+    return await invoke<string>('get_app_version');
+  } catch (error) {
+    console.error('Failed to get app version:', error);
+    return '1.0.0';
+  }
+}

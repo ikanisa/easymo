@@ -9,6 +9,9 @@ mod menu;
 mod windows;
 mod deep_links;
 mod files;
+mod tray;
+mod shortcuts;
+mod updates;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -66,6 +69,14 @@ pub fn run() {
             files::save_file_dialog,
             files::read_file,
             files::write_file,
+            tray::update_tray_status,
+            tray::show_tray_message,
+            tray::flash_tray_icon,
+            shortcuts::register_global_shortcut,
+            shortcuts::unregister_global_shortcut,
+            updates::check_for_updates,
+            updates::download_and_install_update,
+            updates::get_app_version,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
