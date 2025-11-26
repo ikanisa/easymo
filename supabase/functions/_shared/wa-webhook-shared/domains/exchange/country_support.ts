@@ -88,3 +88,22 @@ export async function checkCountrySupport(
 export function resetCountrySupportCache(): void {
   cache = null;
 }
+
+export type MomoProvider = {
+  name: string;
+  ussdFormat: string | null;
+};
+
+/**
+ * Get MoMo provider configuration for a phone number
+ * Returns null if no provider-specific configuration exists
+ * Falls back to default USSD codes in qr.ts
+ */
+export async function getMomoProvider(
+  _supabase: SupabaseClient,
+  _phoneNumber: string,
+): Promise<MomoProvider | null> {
+  // TODO: Implement provider-specific USSD format lookup from database
+  // For now, return null to use default USSD codes
+  return null;
+}
