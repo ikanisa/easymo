@@ -163,7 +163,7 @@ serve(async (req: Request): Promise<Response> => {
         // MoMo QR Flow buttons
         else if (id === IDS.MOMO_QR_MY || id === IDS.MOMO_QR_NUMBER || id === IDS.MOMO_QR_CODE) {
           const { handleMomoButton } = await import("../_shared/wa-webhook-shared/flows/momo/qr.ts");
-          handled = await handleMomoButton(ctx, state, id);
+          handled = await handleMomoButton(ctx, id, state ?? { key: "home", data: {} });
         }
         
         // Wallet Home
