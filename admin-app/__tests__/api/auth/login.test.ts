@@ -1,16 +1,33 @@
-import { describe, expect, it, vi, beforeEach } from "vitest";
-import { POST } from "@/app/api/auth/login/route";
-import { NextRequest } from "next/server";
+// @vitest-environment node
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock dependencies
+vi.mock("@sentry/nextjs", () => ({
+  captureException: vi.fn(),
+}));
+
+vi.mock("@supabase/ssr", () => ({
+  createServerClient: vi.fn(() => ({
+    auth: {
+      getSession: vi.fn().mockResolvedValue({ data: { session: null }, error: null }),
+    },
+  })),
+}));
+
 vi.mock("next/headers", () => ({
   cookies: () => ({
     set: vi.fn(),
     get: vi.fn(),
+    getAll: vi.fn(() => []),
   }),
 }));
 
-
+vi.mock("next/server", () => ({
+  NextResponse: class {
+    static json(data: any, init?: any) { return new Response(JSON.stringify(data), init); }
+    static redirect(url: string, init?: any) { return new Response(null, { status: 302, headers: { Location: url }, ...init }); }
+  },
+}));
 
 vi.mock("@/lib/server/rate-limit", () => ({
   clearRateLimit: vi.fn(),
@@ -24,16 +41,19 @@ vi.mock("@/lib/api/rate-limit", () => ({
   }),
 }));
 
+import { POST } from "@/app/api/auth/login/route";
+
 describe("Auth Login API", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     process.env.ADMIN_ACCESS_CREDENTIALS = JSON.stringify([
       { actorId: "user-123", email: "admin@example.com", password: "password123", label: "Admin User" },
     ]);
+    process.env.ADMIN_SESSION_SECRET = "test-secret-key-minimum-16-chars";
   });
 
   it("should return 200 for valid credentials", async () => {
-    const req = new NextRequest("http://localhost/api/auth/login", {
+    const req = new Request("http://localhost/api/auth/login", {
       method: "POST",
       body: JSON.stringify({ email: "admin@example.com", password: "password123" }),
     });
@@ -45,7 +65,7 @@ describe("Auth Login API", () => {
   });
 
   it("should return 401 for invalid credentials", async () => {
-    const req = new NextRequest("http://localhost/api/auth/login", {
+    const req = new Request("http://localhost/api/auth/login", {
       method: "POST",
       body: JSON.stringify({ email: "admin@example.com", password: "wrongpassword" }),
     });
@@ -57,7 +77,7 @@ describe("Auth Login API", () => {
   });
 
   it("should return 400 for invalid input format", async () => {
-    const req = new NextRequest("http://localhost/api/auth/login", {
+    const req = new Request("http://localhost/api/auth/login", {
       method: "POST",
       body: JSON.stringify({ email: "not-an-email", password: "123" }),
     });

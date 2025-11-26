@@ -333,6 +333,7 @@ async function processInlineOcr(
     const normalized = data.normalized ??
       normalizeInsuranceExtraction(raw as Record<string, unknown>);
 
+    // Update lead status FIRST to prevent worker from processing duplicate
     await ctx.supabase
       .from("insurance_leads")
       .update({
@@ -343,6 +344,17 @@ async function processInlineOcr(
         file_path: params.storagePath,
       })
       .eq("id", params.leadId);
+
+    // Mark any queued items as succeeded to prevent duplicate processing
+    await ctx.supabase
+      .from("insurance_media_queue")
+      .update({
+        status: "succeeded",
+        processed_at: new Date().toISOString(),
+        last_error: null,
+      })
+      .eq("lead_id", params.leadId)
+      .in("status", ["queued", "retry", "processing"]);
 
     await notifyInsuranceAdmins(ctx.supabase, {
       leadId: params.leadId,
