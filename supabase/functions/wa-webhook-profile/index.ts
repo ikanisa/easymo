@@ -337,6 +337,24 @@ serve(async (req: Request): Promise<Response> => {
           const { handleLocationSelection } = await import("./profile/locations.ts");
           handled = await handleLocationSelection(ctx, locationId);
         }
+        else if (id.startsWith("ADD_LOC::")) {
+          const locationType = id.replace("ADD_LOC::", "");
+          if (ctx.profileId) {
+            const { setState } = await import("../_shared/wa-webhook-shared/state/store.ts");
+            await setState(ctx.supabase, ctx.profileId, {
+              key: "add_location",
+              data: { type: locationType },
+            });
+            await sendButtonsMessage(
+              ctx,
+              `📍 *Add ${locationType.charAt(0).toUpperCase() + locationType.slice(1)} Location*\n\nPlease share your location or send the address.`,
+              [
+                { id: IDS.SAVED_LOCATIONS, title: "← Cancel" },
+              ],
+            );
+            handled = true;
+          }
+        }
         
         // Back to Profile
         else if (id === IDS.BACK_PROFILE) {
@@ -624,6 +642,75 @@ serve(async (req: Request): Promise<Response> => {
       else if (state?.key === "profile_edit_name") {
         const { handleEditName } = await import("./profile/edit.ts");
         handled = await handleEditName(ctx, (message.text as any)?.body ?? "");
+      }
+      
+      // Handle add location (text address)
+      else if (state?.key === "add_location" && message.type === "text") {
+        if (ctx.profileId && state.data?.type) {
+          const address = (message.text as any)?.body ?? "";
+          const locationType = state.data.type as string;
+          
+          // For now, just confirm receipt - actual location saving would need geocoding
+          const { clearState } = await import("../_shared/wa-webhook-shared/state/store.ts");
+          await clearState(ctx.supabase, ctx.profileId);
+          
+          await sendButtonsMessage(
+            ctx,
+            `✅ Thank you! We've received your ${locationType} address:\n\n${address}\n\nTo save it with coordinates, please share your location using WhatsApp's location feature.`,
+            [
+              { id: IDS.SAVED_LOCATIONS, title: "📍 Locations" },
+              { id: IDS.BACK_PROFILE, title: "← Back" },
+            ],
+          );
+          handled = true;
+        }
+      }
+    }
+    
+    // Handle location messages (when user shares location)
+    else if (message.type === "location" && state?.key === "add_location") {
+      if (ctx.profileId && state.data?.type) {
+        const location = (message as any).location;
+        const lat = location?.latitude;
+        const lng = location?.longitude;
+        const locationType = state.data.type as string;
+        
+        if (lat && lng) {
+          // Save the location to database
+          const { error } = await ctx.supabase
+            .from("saved_locations")
+            .insert({
+              user_id: ctx.profileId,
+              label: locationType,
+              lat,
+              lng,
+              address: location?.address || null,
+            });
+          
+          const { clearState } = await import("../_shared/wa-webhook-shared/state/store.ts");
+          await clearState(ctx.supabase, ctx.profileId);
+          
+          if (error) {
+            await sendButtonsMessage(
+              ctx,
+              `⚠️ Failed to save location: ${error.message}`,
+              [
+                { id: IDS.SAVED_LOCATIONS, title: "📍 Try Again" },
+                { id: IDS.BACK_PROFILE, title: "← Back" },
+              ],
+            );
+          } else {
+            await sendButtonsMessage(
+              ctx,
+              `✅ Your ${locationType} location has been saved!\n\nYou can now use it for rides and deliveries.`,
+              [
+                { id: IDS.SAVED_LOCATIONS, title: "📍 View Locations" },
+                { id: IDS.BACK_PROFILE, title: "← Back" },
+              ],
+            );
+          }
+          handled = true;
+        }
       }
     }
 
