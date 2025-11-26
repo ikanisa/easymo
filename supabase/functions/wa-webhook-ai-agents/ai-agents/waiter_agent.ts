@@ -101,6 +101,69 @@ Always be helpful, accurate, and customer-focused.`;
   private defineTools(): Tool[] {
     return [
       {
+        name: 'find_nearby_restaurants',
+        description: 'Find restaurants near user location. Use this when user asks for nearby restaurants.',
+        parameters: {
+          type: 'object',
+          properties: {
+            user_id: { type: 'string', description: 'User ID for location lookup' },
+            cuisine: { type: 'string', description: 'Cuisine type filter (optional)' },
+            radius_km: { type: 'number', description: 'Search radius in kilometers', default: 10 },
+            limit: { type: 'number', description: 'Maximum results', default: 10 }
+          },
+          required: ['user_id']
+        },
+        execute: async (params) => {
+          // Resolve user location
+          const locationResult = await this.locationHelper.resolveUserLocation(
+            params.user_id,
+            'waiter_agent'
+          );
+
+          if (!locationResult.location) {
+            return { 
+              message: 'Please share your location to find nearby restaurants.',
+              needs_location: true 
+            };
+          }
+
+          // GPS search for nearby restaurants
+          const { data, error } = await this.supabase.rpc('search_nearby_restaurants', {
+            _lat: locationResult.location.lat,
+            _lng: locationResult.location.lng,
+            _radius_km: params.radius_km || 10,
+            _cuisine: params.cuisine || null,
+            _limit: params.limit || 10
+          });
+
+          if (error) {
+            console.warn('GPS restaurant search failed:', error);
+            return { message: 'Unable to search for restaurants at the moment.' };
+          }
+
+          if (!data || data.length === 0) {
+            return { 
+              message: `No restaurants found within ${params.radius_km || 10}km.`,
+              location_context: this.locationHelper.formatLocationContext(locationResult.location)
+            };
+          }
+
+          return {
+            location_context: this.locationHelper.formatLocationContext(locationResult.location),
+            count: data.length,
+            restaurants: data.map((r: any) => ({
+              id: r.id,
+              name: r.name,
+              cuisine: r.cuisine,
+              location: r.location,
+              phone: r.phone,
+              rating: r.rating,
+              distance_km: Math.round(r.distance_km * 10) / 10
+            }))
+          };
+        }
+      },
+      {
         name: 'search_menu',
         description: 'Search menu items by name, category, or dietary tags',
         parameters: {

@@ -111,50 +111,89 @@ Always be helpful, practical, and farmer-focused.`;
     return [
       {
         name: 'search_marketplace',
-        description: 'Search agricultural marketplace for produce, equipment, or inputs',
+        description: 'Search agricultural marketplace for produce, equipment, or inputs near user location',
         parameters: {
           type: 'object',
           properties: {
+            user_id: { type: 'string', description: 'User ID for location lookup' },
             category: { type: 'string', enum: ['produce', 'livestock', 'equipment', 'inputs', 'seeds'] },
             product: { type: 'string', description: 'Product name or type' },
-            location: { type: 'string', description: 'Location preference' }
+            radius_km: { type: 'number', description: 'Search radius in kilometers', default: 50 }
           },
-          required: ['category']
+          required: ['user_id', 'category']
         },
         execute: async (params) => {
-          let query = this.supabase
-            .from('agricultural_marketplace')
-            .select('id, title, category, price, unit, location, seller_contact, available')
-            .eq('available', true);
+          // Resolve user location first
+          const locationResult = await this.locationHelper.resolveUserLocation(
+            params.user_id,
+            'farmer_agent'
+          );
 
-          if (params.category) {
-            query = query.eq('category', params.category);
+          if (!locationResult.location) {
+            return { 
+              message: 'Please share your location to find nearby agricultural products and services.',
+              needs_location: true 
+            };
           }
 
-          if (params.product) {
-            query = query.ilike('title', `%${params.product}%`);
+          // Use GPS search if location available
+          const { data, error } = await this.supabase.rpc('search_nearby_agricultural_marketplace', {
+            _lat: locationResult.location.lat,
+            _lng: locationResult.location.lng,
+            _radius_km: params.radius_km || 50,
+            _category: params.category,
+            _product: params.product || null,
+            _limit: 10
+          });
+
+          if (error) {
+            console.warn('GPS search failed, falling back to text search:', error);
+            
+            // Fallback to text-based search
+            let query = this.supabase
+              .from('agricultural_marketplace')
+              .select('id, title, category, price, unit, location, seller_contact, available')
+              .eq('available', true)
+              .eq('category', params.category);
+
+            if (params.product) {
+              query = query.ilike('title', `%${params.product}%`);
+            }
+
+            query = query.limit(5);
+
+            const { data: fallbackData, error: fallbackError } = await query;
+
+            if (fallbackError || !fallbackData || fallbackData.length === 0) {
+              return { message: 'No items found in the marketplace.' };
+            }
+
+            return {
+              items: fallbackData.map(item => ({
+                id: item.id,
+                title: item.title,
+                category: item.category,
+                price: `${item.price} RWF per ${item.unit}`,
+                location: item.location,
+                contact: item.seller_contact
+              }))
+            };
           }
 
-          if (params.location) {
-            query = query.ilike('location', `%${params.location}%`);
-          }
-
-          query = query.limit(5);
-
-          const { data, error } = await query;
-
-          if (error || !data || data.length === 0) {
-            return { message: 'No items found in the marketplace.' };
+          if (!data || data.length === 0) {
+            return { message: `No ${params.category} found within ${params.radius_km || 50}km of your location.` };
           }
 
           return {
-            items: data.map(item => ({
+            location_context: this.locationHelper.formatLocationContext(locationResult.location),
+            items: data.map((item: any) => ({
               id: item.id,
               title: item.title,
               category: item.category,
               price: `${item.price} RWF per ${item.unit}`,
               location: item.location,
-              contact: item.seller_contact
+              contact: item.seller_contact,
+              distance_km: Math.round(item.distance_km * 10) / 10
             }))
           };
         }
@@ -228,41 +267,81 @@ Always be helpful, practical, and farmer-focused.`;
       },
       {
         name: 'find_services',
-        description: 'Find agricultural services (equipment rental, labor, transport)',
+        description: 'Find agricultural services (equipment rental, labor, transport) near user',
         parameters: {
           type: 'object',
           properties: {
+            user_id: { type: 'string', description: 'User ID for location lookup' },
             service_type: { type: 'string', enum: ['equipment_rental', 'labor', 'transport', 'veterinary'] },
-            location: { type: 'string' }
+            radius_km: { type: 'number', description: 'Search radius in kilometers', default: 50 }
           },
-          required: ['service_type']
+          required: ['user_id', 'service_type']
         },
         execute: async (params) => {
-          let query = this.supabase
-            .from('agricultural_services')
-            .select('id, service_name, service_type, provider_name, location, contact, price_range')
-            .eq('service_type', params.service_type);
+          // Resolve user location
+          const locationResult = await this.locationHelper.resolveUserLocation(
+            params.user_id,
+            'farmer_agent'
+          );
 
-          if (params.location) {
-            query = query.ilike('location', `%${params.location}%`);
+          if (!locationResult.location) {
+            return { 
+              message: 'Please share your location to find nearby agricultural services.',
+              needs_location: true 
+            };
           }
 
-          query = query.limit(5);
+          // Try GPS search first
+          const { data, error } = await this.supabase.rpc('search_nearby_agricultural_services', {
+            _lat: locationResult.location.lat,
+            _lng: locationResult.location.lng,
+            _radius_km: params.radius_km || 50,
+            _service_type: params.service_type,
+            _limit: 10
+          });
 
-          const { data, error } = await query;
+          if (error) {
+            console.warn('GPS search failed, falling back to text search:', error);
+            
+            // Fallback to text-based search
+            const query = this.supabase
+              .from('agricultural_services')
+              .select('id, service_name, service_type, provider_name, location, contact, price_range')
+              .eq('service_type', params.service_type)
+              .limit(5);
 
-          if (error || !data || data.length === 0) {
-            return { message: 'No services found matching your criteria.' };
+            const { data: fallbackData, error: fallbackError } = await query;
+
+            if (fallbackError || !fallbackData || fallbackData.length === 0) {
+              return { message: 'No services found matching your criteria.' };
+            }
+
+            return {
+              services: fallbackData.map(s => ({
+                id: s.id,
+                name: s.service_name,
+                provider: s.provider_name,
+                location: s.location,
+                contact: s.contact,
+                price_range: s.price_range
+              }))
+            };
+          }
+
+          if (!data || data.length === 0) {
+            return { message: `No ${params.service_type} services found within ${params.radius_km || 50}km.` };
           }
 
           return {
-            services: data.map(s => ({
+            location_context: this.locationHelper.formatLocationContext(locationResult.location),
+            services: data.map((s: any) => ({
               id: s.id,
               name: s.service_name,
               provider: s.provider_name,
               location: s.location,
               contact: s.contact,
-              price_range: s.price_range
+              price_range: s.price_range,
+              distance_km: Math.round(s.distance_km * 10) / 10
             }))
           };
         }

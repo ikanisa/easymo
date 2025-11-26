@@ -109,54 +109,101 @@ Always provide helpful, accurate information based on the business directory.`;
     return [
       {
         name: 'search_businesses',
-        description: 'Search for businesses by name, category, or location',
+        description: 'Search for businesses near user location by category or name. Automatically uses GPS-based proximity search.',
         parameters: {
           type: 'object',
           properties: {
+            user_id: { type: 'string', description: 'User ID for location lookup' },
             query: { type: 'string', description: 'Search query (name, category, or keyword)' },
-            location: { type: 'string', description: 'City or area (e.g., "Kigali", "Musanze")' },
             category: { type: 'string', description: 'Business category (e.g., "pharmacy", "restaurant")' },
-            limit: { type: 'number', description: 'Maximum results (default 5)' }
-          }
+            radius_km: { type: 'number', description: 'Search radius in kilometers', default: 50 },
+            limit: { type: 'number', description: 'Maximum results (default 10)' }
+          },
+          required: ['user_id']
         },
         execute: async (params) => {
-          let query = this.supabase
-            .from('business_directory')
-            .select('id, name, category, city, address, phone, rating');
+          // Resolve user location first
+          const locationResult = await this.locationHelper.resolveUserLocation(
+            params.user_id,
+            'business_broker_agent'
+          );
 
-          if (params.query) {
-            query = query.or(`name.ilike.%${params.query}%,category.ilike.%${params.query}%`);
+          if (!locationResult.location) {
+            return { 
+              message: 'Please share your location to find nearby businesses.',
+              needs_location: true 
+            };
           }
 
-          if (params.location) {
-            query = query.ilike('city', `%${params.location}%`);
-          }
-
-          if (params.category) {
-            query = query.ilike('category', `%${params.category}%`);
-          }
-
-          query = query.limit(params.limit || 5);
-
-          const { data, error } = await query;
+          // GPS-based search
+          const { data, error } = await this.supabase.rpc('search_nearby_businesses', {
+            _lat: locationResult.location.lat,
+            _lng: locationResult.location.lng,
+            _radius_km: params.radius_km || 50,
+            _category: params.category || null,
+            _query: params.query || null,
+            _limit: params.limit || 10
+          });
 
           if (error) {
-            return { error: error.message };
+            console.warn('GPS search failed, falling back to text search:', error);
+            
+            // Fallback to text-based search
+            let query = this.supabase
+              .from('business_directory')
+              .select('id, name, category, city, address, phone, rating');
+
+            if (params.query) {
+              query = query.or(`name.ilike.%${params.query}%,category.ilike.%${params.query}%`);
+            }
+
+            if (params.category) {
+              query = query.ilike('category', `%${params.category}%`);
+            }
+
+            query = query.limit(params.limit || 5);
+
+            const { data: fallbackData, error: fallbackError } = await query;
+
+            if (fallbackError) {
+              return { error: fallbackError.message };
+            }
+
+            if (!fallbackData || fallbackData.length === 0) {
+              return { message: 'No businesses found matching your criteria.' };
+            }
+
+            return {
+              count: fallbackData.length,
+              businesses: fallbackData.map(b => ({
+                id: b.id,
+                name: b.name,
+                category: b.category,
+                location: `${b.city}${b.address ? ', ' + b.address : ''}`,
+                phone: b.phone,
+                rating: b.rating
+              }))
+            };
           }
 
           if (!data || data.length === 0) {
-            return { message: 'No businesses found matching your criteria.' };
+            return { 
+              message: `No businesses found within ${params.radius_km || 50}km of your location.`,
+              location_context: this.locationHelper.formatLocationContext(locationResult.location)
+            };
           }
 
           return {
+            location_context: this.locationHelper.formatLocationContext(locationResult.location),
             count: data.length,
-            businesses: data.map(b => ({
+            businesses: data.map((b: any) => ({
               id: b.id,
               name: b.name,
               category: b.category,
               location: `${b.city}${b.address ? ', ' + b.address : ''}`,
               phone: b.phone,
-              rating: b.rating
+              rating: b.rating,
+              distance_km: Math.round(b.distance_km * 10) / 10
             }))
           };
         }
