@@ -76,6 +76,9 @@ jobs:
           pnpm --filter @va/shared build
           pnpm --filter @easymo/commons build
 
+      - name: Install Tauri CLI
+        run: cd admin-app && pnpm add -D @tauri-apps/cli@^2.0.0
+
       - name: Build desktop app
         uses: tauri-apps/tauri-action@v0
         env:
