@@ -43,8 +43,7 @@ export { Tooltip } from './overlay/Tooltip';
 export type { TooltipProps } from './overlay/Tooltip';
 
 // Navigation
-export { Tabs } from './navigation/Tabs';
-export type { TabsProps, Tab } from './navigation/Tabs';
+export { Tabs, TabsList, TabsTrigger, TabsContent } from './navigation/Tabs';
 
 export { Breadcrumbs } from './navigation/Breadcrumbs';
 export type { BreadcrumbsProps, BreadcrumbItem } from './navigation/Breadcrumbs';

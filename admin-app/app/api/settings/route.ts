@@ -3,7 +3,7 @@ import { headers } from 'next/headers';
 import { z } from 'zod';
 
 import { createHandler } from '@/app/api/withObservability';
-import { handleAPIError, jsonError, jsonOk } from '@/lib/api/http';
+import { jsonError, jsonOk } from '@/lib/api/http';
 import { rateLimit } from "@/lib/api/rate-limit";
 import { recordAudit } from '@/lib/server/audit';
 import { requireActorId, UnauthorizedError } from '@/lib/server/auth';
@@ -78,7 +78,7 @@ export const GET = createHandler('admin_api.settings.get', async (request: Reque
 
     return buildDegradedError('Supabase credentials are not configured.');
   } catch (error) {
-    return handleAPIError(error);
+    return jsonError({ error: 'internal_error', message: error instanceof Error ? error.message : 'Unknown error' }, 500);
   }
 });
 
@@ -143,7 +143,7 @@ export const POST = createHandler('admin_api.settings.post', async (request: Req
     if (error instanceof z.ZodError) {
       return jsonError({ error: 'validation_error', details: error.flatten() }, 400);
     }
-    return handleAPIError(error);
+    return jsonError({ error: 'internal_error', message: error instanceof Error ? error.message : 'Unknown error' }, 500);
   }
 });
  

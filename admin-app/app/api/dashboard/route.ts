@@ -32,7 +32,7 @@ export const GET = createHandler("admin_api.dashboard.get", async (request: Requ
       headers.set("x-dashboard-integration-remediation", integration.remediation);
     }
 
-    return jsonOk(payload, { headers });
+    return jsonOk(payload);
   } catch (error) {
     return handleAPIError(error);
   }

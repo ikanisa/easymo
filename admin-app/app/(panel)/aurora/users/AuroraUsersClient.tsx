@@ -162,20 +162,7 @@ export function AuroraUsersClient({ initialParams }: AuroraUsersClientProps) {
         columns={columns}
         loading={isLoading}
         selectable
-        emptyState={
-          <div className="text-center py-12">
-            <UserPlus className="w-12 h-12 text-aurora-text-muted mx-auto mb-3" />
-            <h3 className="text-lg font-semibold text-aurora-text-primary">No users found</h3>
-            <p className="text-sm text-aurora-text-muted mt-1">
-              {search ? 'Try a different search term' : 'Get started by adding your first user'}
-            </p>
-            {!search && (
-              <Button className="mt-4" leftIcon={<Plus className="w-4 h-4" />}>
-                Add User
-              </Button>
-            )}
-          </div>
-        }
+        emptyMessage={search ? 'No users match your search' : 'No users found. Get started by adding your first user.'}
       />
     </div>
   );

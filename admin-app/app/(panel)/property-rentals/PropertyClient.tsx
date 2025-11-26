@@ -85,7 +85,7 @@ export function PropertyClient({ initialStats, initialListings }: PropertyClient
       {/* Tabs */}
       <div className="border-b border-gray-200 mb-6">
         <nav className="flex space-x-8">
-          {(['overview', 'for-sale', 'for-rent' | 'analytics'] as const).map((tab) => (
+          {(['overview', 'for-sale', 'for-rent', 'analytics'] as const).map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}

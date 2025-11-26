@@ -8,7 +8,7 @@ import { useState } from 'react';
 import {
   Button, Input, Select, Textarea, Toggle, Checkbox,
   Card, CardHeader, CardTitle, CardContent,
-  Badge, KpiCard, Modal, ModalFooter, Tooltip, Tabs,
+  Badge, KpiCard, Modal, ModalFooter, Tooltip, Tabs, TabsList, TabsTrigger, TabsContent,
   Spinner, Skeleton, SkeletonText, useToast, PageHeader,
 } from '@/components-v2';
 import { Mail, User, Settings, Home, Users, DollarSign, MessageCircle, TrendingUp } from 'lucide-react';
@@ -76,10 +76,18 @@ export default function ComponentsDemoPage() {
 
         <section>
           <h2 className="text-2xl font-bold mb-4">Tabs</h2>
-          <Tabs tabs={[
-            { id: '1', label: 'Home', icon: <Home className="w-4 h-4" />, content: <Card><CardContent>Home</CardContent></Card> },
-            { id: '2', label: 'Settings', icon: <Settings className="w-4 h-4" />, content: <Card><CardContent>Settings</CardContent></Card> },
-          ]} />
+          <Tabs defaultValue="1">
+            <TabsList>
+              <TabsTrigger value="1"><Home className="w-4 h-4 mr-2" />Home</TabsTrigger>
+              <TabsTrigger value="2"><Settings className="w-4 h-4 mr-2" />Settings</TabsTrigger>
+            </TabsList>
+            <TabsContent value="1">
+              <Card><CardContent>Home</CardContent></Card>
+            </TabsContent>
+            <TabsContent value="2">
+              <Card><CardContent>Settings</CardContent></Card>
+            </TabsContent>
+          </Tabs>
         </section>
 
         <section>

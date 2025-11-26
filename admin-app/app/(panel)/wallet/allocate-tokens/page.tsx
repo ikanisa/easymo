@@ -218,7 +218,7 @@ export default function AllocateTokensPage() {
       const row = Array.isArray(data) ? data[0] : data;
       if (row?.success) {
         // Mark policy allocated
-        await supabase.rpc('allocate_insurance_tokens_simple', { p_policy_id: policy.policy_id }).catch(() => {});
+        await supabase.rpc('allocate_insurance_tokens_simple', { p_policy_id: policy.policy_id });
         setMessage({ type: 'success', text: `✅ Allocated 2000 tokens for policy ${policy.policy_number}` });
         // Refresh eligible list
         await searchUser();
