@@ -93,20 +93,63 @@ jobs:
           tagName: ${{ github.ref_name }}
           releaseName: 'EasyMO Admin ${{ github.ref_name }}'
           releaseBody: |
-            ## EasyMO Admin Desktop Release
+            ## 🎉 EasyMO Admin Desktop ${{ github.ref_name }}
             
-            ### What's New
-            See [CHANGELOG.md](../CHANGELOG.md) for details.
+            ### ✨ Features
+            - **Command Palette**: Press Cmd+K (or Ctrl+K) for quick actions
+            - **Native Menus**: Full menu bar with keyboard shortcuts (File, Edit, View, Window, Help)
+            - **Multi-Window Support**: Detach panels into separate windows
+            - **File Handling**: Import/export .easymo data files
+            - **Deep Links**: Open app via easymo:// URLs
+            - **System Tray**: Minimize to system tray for persistent background operation
+            - **Global Shortcuts**: System-wide keyboard shortcuts
+            - **Native Notifications**: OS-level notification integration
+            - **Auto-Start**: Launch on login (optional)
             
-            ### Installation
-            - **macOS**: Download the `.dmg` file
-            - **Windows**: Download the `.msi` installer
-            - **Linux**: Download the `.AppImage` or `.deb` package
+            ### 📦 Installation
             
-            ### System Requirements
+            **macOS**:
+            - Download the `.dmg` file for your architecture
+            - ARM64: For M1/M2/M3 Macs (recommended for newer Macs)
+            - Intel: For older Intel-based Macs
+            - Drag EasyMO Admin to Applications folder
+            - On first launch: Right-click → Open (to bypass Gatekeeper if not notarized)
+            
+            **Windows**:
+            - Download the `.msi` installer
+            - Run installer and follow the setup wizard
+            - Launch from Start Menu or Desktop shortcut
+            
+            **Linux**:
+            - AppImage: `chmod +x *.AppImage && ./EasyMO-Admin*.AppImage`
+            - Debian/Ubuntu: `sudo dpkg -i *.deb`
+            
+            ### 🚀 Getting Started
+            1. Install the application
+            2. Launch EasyMO Admin
+            3. Press **Cmd+K** (Mac) or **Ctrl+K** (Windows/Linux) to open the command palette
+            4. Explore available commands and features
+            
+            ### 📚 Documentation
+            - [Installation Guide](https://github.com/ikanisa/easymo-/blob/main/DESKTOP_INSTALLATION_GUIDE.md)
+            - [User Guide](https://github.com/ikanisa/easymo-/blob/main/DESKTOP_START_HERE.md)
+            - [Phase 2 Features](https://github.com/ikanisa/easymo-/blob/main/DESKTOP_PHASE2_COMPLETE.md)
+            
+            ### 💻 System Requirements
             - **macOS**: 10.15 (Catalina) or later
-            - **Windows**: Windows 10 or later
-            - **Linux**: Ubuntu 22.04 or equivalent
+            - **Windows**: Windows 10 (64-bit) or later
+            - **Linux**: Ubuntu 22.04 or equivalent (glibc 2.31+)
+            
+            ### 🔐 Security
+            - macOS builds are code-signed (when secrets are configured)
+            - Windows builds are signed with valid certificate (when secrets are configured)
+            - All builds include integrity checksums below
+            
+            ### 🐛 Known Issues
+            None reported. Please file issues on GitHub if you encounter problems.
+            
+            ### 💬 Support
+            For questions, bugs, or feature requests, please [open an issue](https://github.com/ikanisa/easymo-/issues).
           releaseDraft: true
           prerelease: false
           args: --target ${{ matrix.target }}
