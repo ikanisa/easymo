@@ -111,11 +111,13 @@ Always be helpful, professional, and transparent.`;
     return [
       {
         name: 'search_properties',
-        description: 'Search for properties by criteria',
+        description: 'Search for properties by criteria. Use GPS search when user has shared location or asks for nearby properties.',
         parameters: {
           type: 'object',
           properties: {
-            location: { type: 'string', description: 'City or neighborhood' },
+            location: { type: 'string', description: 'City or neighborhood (text-based search)' },
+            use_gps: { type: 'boolean', description: 'Use GPS coordinates for nearby search if available' },
+            radius_km: { type: 'number', description: 'Search radius in kilometers (default 5km)', default: 5 },
             price_min: { type: 'number', description: 'Minimum price in RWF' },
             price_max: { type: 'number', description: 'Maximum price in RWF' },
             bedrooms: { type: 'number', description: 'Number of bedrooms' },
@@ -123,7 +125,58 @@ Always be helpful, professional, and transparent.`;
             listing_type: { type: 'string', enum: ['rent', 'sale', 'short_term'] }
           }
         },
-        execute: async (params) => {
+        execute: async (params, context) => {
+          // GPS-based search if user location is available and requested
+          if (params.use_gps && context?.userLocation) {
+            const { lat, lng } = context.userLocation;
+            const { data, error } = await this.supabase.rpc('nearby_properties', {
+              _lat: lat,
+              _lng: lng,
+              _radius_km: params.radius_km || 5,
+              _limit: 10,
+              _price_min: params.price_min || null,
+              _price_max: params.price_max || null,
+              _bedrooms: params.bedrooms || null,
+              _property_type: params.property_type || null,
+              _listing_type: params.listing_type || null,
+            });
+
+            if (error) {
+              console.error('nearby_properties error:', error);
+              return {
+                success: false,
+                message: 'Failed to search nearby properties',
+                error: error.message
+              };
+            }
+
+            if (!data || data.length === 0) {
+              return {
+                success: true,
+                message: `No properties found within ${params.radius_km || 5}km. Try increasing the search radius or adjusting filters.`,
+                properties: []
+              };
+            }
+
+            return {
+              success: true,
+              message: `Found ${data.length} properties near you`,
+              properties: data.map((p: any) => ({
+                id: p.id,
+                title: p.title,
+                location: p.location,
+                price: p.price,
+                bedrooms: p.bedrooms,
+                bathrooms: p.bathrooms,
+                type: p.property_type,
+                listing_type: p.listing_type,
+                amenities: p.amenities,
+                distance_km: Math.round(p.distance_km * 10) / 10, // Round to 1 decimal
+              }))
+            };
+          }
+          
+          // Text-based search (original implementation)
           let query = this.supabase
             .from('property_listings')
             .select('id, title, location, price, bedrooms, bathrooms, property_type, listing_type, amenities')

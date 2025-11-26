@@ -340,9 +340,60 @@ async function handleWithAIAgent(
           lng: location.lng,
           location_text: location.text,
         };
+        
+        // Save to cache for future use (30-minute TTL)
+        try {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("user_id")
+            .eq("whatsapp_e164", userPhone)
+            .single();
+          
+          if (profile?.user_id) {
+            await supabase.rpc("update_user_location_cache", {
+              _user_id: profile.user_id,
+              _lat: location.lat,
+              _lng: location.lng,
+            });
+            logMarketplaceEvent("LOCATION_CACHED", { userPhone }, "info");
+          }
+        } catch (cacheError) {
+          // Non-critical - log but continue
+          console.warn("marketplace.location_cache_fail", cacheError);
+        }
       }
-    } else {
-      // Try to extract location from text
+    } else if (!context.location) {
+      // Try to use cached location (30-min TTL)
+      try {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("user_id")
+          .eq("whatsapp_e164", userPhone)
+          .single();
+        
+        if (profile?.user_id) {
+          const { data: cached } = await supabase.rpc("get_cached_location", {
+            _user_id: profile.user_id,
+            _cache_minutes: 30,
+          });
+          
+          if (cached && cached.length > 0 && cached[0].is_valid) {
+            context.location = { lat: cached[0].lat, lng: cached[0].lng };
+            context.collectedData = {
+              ...context.collectedData,
+              lat: cached[0].lat,
+              lng: cached[0].lng,
+              location_text: "Cached location",
+            };
+            logMarketplaceEvent("LOCATION_FROM_CACHE", { userPhone }, "info");
+          }
+        }
+      } catch (cacheError) {
+        // Non-critical - continue without cached location
+        console.warn("marketplace.location_cache_read_fail", cacheError);
+      }
+      
+      // If still no location, try to extract from text
       const textLocation = parseLocationFromText(text);
       if (textLocation && !context.location) {
         context.location = { lat: textLocation.lat, lng: textLocation.lng };
