@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { logStructuredEvent } from "../_shared/observability.ts";
 import { getState } from "../_shared/wa-webhook-shared/state/store.ts";
+import { sendButtonsMessage } from "../_shared/wa-webhook-shared/utils/reply.ts";
 import type { RouterContext, WhatsAppWebhookPayload } from "../_shared/wa-webhook-shared/types.ts";
 import { IDS } from "../_shared/wa-webhook-shared/wa/ids.ts";
 
@@ -367,7 +368,11 @@ serve(async (req: Request): Promise<Response> => {
           const { showWalletEarn } = await import("./wallet/earn.ts");
           handled = await showWalletEarn(ctx);
         }
-        
+        else if (id === IDS.WALLET_VIEW_BALANCE) {
+          const { showWalletBalance } = await import("./wallet/home.ts");
+          handled = await showWalletBalance(ctx);
+        }
+
         // Wallet Share - WhatsApp
         else if (id === IDS.WALLET_SHARE_WHATSAPP || id === IDS.WALLET_SHARE_QR || id === IDS.WALLET_SHARE_DONE) {
           const { handleWalletEarnSelection, handleWalletShareDone } = await import("./wallet/earn.ts");
@@ -386,20 +391,20 @@ serve(async (req: Request): Promise<Response> => {
         
         // Wallet Redeem
         else if (id === IDS.WALLET_REDEEM) {
-          const { handleWalletRedeem } = await import("./wallet/redeem.ts");
-          handled = await handleWalletRedeem(ctx);
+          const { showWalletRedeem } = await import("./wallet/redeem.ts");
+          handled = await showWalletRedeem(ctx);
         }
         
         // Wallet Top (Leaderboard)
         else if (id === IDS.WALLET_TOP) {
-          const { handleWalletTop } = await import("./wallet/top.ts");
-          handled = await handleWalletTop(ctx);
+          const { showWalletTop } = await import("./wallet/top.ts");
+          handled = await showWalletTop(ctx);
         }
         
         // Wallet Transactions
         else if (id === IDS.WALLET_TRANSACTIONS) {
-          const { handleWalletTransactions } = await import("./wallet/transactions.ts");
-          handled = await handleWalletTransactions(ctx);
+          const { showWalletTransactions } = await import("./wallet/transactions.ts");
+          handled = await showWalletTransactions(ctx);
         }
         
         // Wallet Referral
@@ -407,11 +412,23 @@ serve(async (req: Request): Promise<Response> => {
           const { handleWalletReferral } = await import("./wallet/referral.ts");
           handled = await handleWalletReferral(ctx);
         }
+        else if (id.startsWith("partner::") || id === "manual_recipient") {
+          const { handleWalletTransferSelection } = await import("./wallet/transfer.ts");
+          handled = await handleWalletTransferSelection(ctx, state as any, id);
+        }
+        else if (id.startsWith("wallet_tx::")) {
+          const { showWalletTransactions } = await import("./wallet/transactions.ts");
+          handled = await showWalletTransactions(ctx);
+        }
+        else if (id.startsWith("wallet_top::")) {
+          const { showWalletTop } = await import("./wallet/top.ts");
+          handled = await showWalletTop(ctx);
+        }
         
         // Share EasyMO
         else if (id === IDS.SHARE_EASYMO) {
           if (ctx.profileId) {
-            const { ensureReferralLink } = await import("../_shared/wa-webhook-shared/rpc/wallet.ts");
+            const { ensureReferralLink } = await import("../_shared/wa-webhook-shared/utils/share.ts");
             const { t } = await import("../_shared/wa-webhook-shared/i18n/translator.ts");
             try {
               const link = await ensureReferralLink(ctx.supabase, ctx.profileId);
@@ -484,11 +501,6 @@ serve(async (req: Request): Promise<Response> => {
           handled = await handleRewardSelection(ctx, state.data as any, id);
         }
         
-        // Transfer partner selection
-        else if (id.startsWith("PARTNER::") && state?.key === "wallet_transfer_partner") {
-          const { handlePartnerSelection } = await import("./wallet/transfer.ts");
-          handled = await handlePartnerSelection(ctx, state.data as any, id);
-        }
       }
     }
 
@@ -506,20 +518,20 @@ serve(async (req: Request): Promise<Response> => {
         const { startWallet } = await import("./wallet/home.ts");
         handled = await startWallet(ctx, state ?? { key: "home" });
       } else if (text.includes("transfer") || text.includes("send")) {
-        const { handleWalletTransfer } = await import("./wallet/transfer.ts");
-        handled = await handleWalletTransfer(ctx, state as any);
+        const { startWalletTransfer } = await import("./wallet/transfer.ts");
+        handled = await startWalletTransfer(ctx);
       } else if (text.includes("redeem") || text.includes("reward")) {
-        const { handleWalletRedeem } = await import("./wallet/redeem.ts");
-        handled = await handleWalletRedeem(ctx);
+        const { showWalletRedeem } = await import("./wallet/redeem.ts");
+        handled = await showWalletRedeem(ctx);
       } else if (text.includes("earn") || text.includes("get token")) {
-        const { handleWalletEarn } = await import("./wallet/earn.ts");
-        handled = await handleWalletEarn(ctx);
+        const { showWalletEarn } = await import("./wallet/earn.ts");
+        handled = await showWalletEarn(ctx);
       } else if (text.includes("share") || text.includes("referral")) {
         const { handleWalletReferral } = await import("./wallet/referral.ts");
         handled = await handleWalletReferral(ctx);
       } else if (text.includes("transaction") || text.includes("history")) {
-        const { handleWalletTransactions } = await import("./wallet/transactions.ts");
-        handled = await handleWalletTransactions(ctx);
+        const { showWalletTransactions } = await import("./wallet/transactions.ts");
+        handled = await showWalletTransactions(ctx);
       }
       
       // Purchase keywords
@@ -534,26 +546,25 @@ serve(async (req: Request): Promise<Response> => {
         handled = await handleCashOut(ctx);
       }
       
-      // MOMO QR Text
-      else if (text.includes("momo") || text.includes("qr") || state?.key?.startsWith("momo_qr")) {
+      // MOMO QR Text - handle state-based input or keywords
+      else if (state?.key?.startsWith("momo_qr") || text.includes("momo") || text.includes("qr")) {
         const { handleMomoText, startMomoQr } = await import("../_shared/wa-webhook-shared/flows/momo/qr.ts");
         if (state?.key?.startsWith("momo_qr")) {
+            // User is in MoMo flow, handle their text input
             handled = await handleMomoText(ctx, (message.text as any)?.body ?? "", state);
         } else {
+            // User mentioned "momo" or "qr", start the flow
             handled = await startMomoQr(ctx, state ?? { key: "home" });
         }
       }
 
-      // Handle transfer amount input
-      else if (state?.key === "wallet_transfer_amount") {
-        const { handleTransferAmount } = await import("./wallet/transfer.ts");
-        handled = await handleTransferAmount(ctx, state.data as any, text);
+      else if (state?.key === "wallet_transfer") {
+        const { handleWalletTransferText } = await import("./wallet/transfer.ts");
+        handled = await handleWalletTransferText(ctx, (message.text as any)?.body ?? "", state as any);
       }
-      
-      // Handle transfer phone input
-      else if (state?.key === "wallet_transfer_phone") {
-        const { handleTransferPhone } = await import("./wallet/transfer.ts");
-        handled = await handleTransferPhone(ctx, state.data as any, text);
+      else if (state?.key === "wallet_referral") {
+        const { applyReferralCodeFromMessage } = await import("./wallet/referral.ts");
+        handled = await applyReferralCodeFromMessage(ctx, (message.text as any)?.body ?? "");
       }
       
       // Handle purchase amount input
@@ -687,6 +698,28 @@ serve(async (req: Request): Promise<Response> => {
               address: location?.address || null,
             });
           
+          // Also save to location cache (30-min TTL) for use by other services
+          if (!error) {
+            try {
+              await ctx.supabase.rpc('update_user_location_cache', {
+                p_user_id: ctx.profileId,
+                p_lat: lat,
+                p_lng: lng
+              });
+              logEvent("PROFILE_LOCATION_CACHED", { 
+                user: ctx.profileId, 
+                type: locationType,
+                lat, 
+                lng 
+              });
+            } catch (cacheError) {
+              // Log but don't fail - saved location is more important
+              logEvent("PROFILE_CACHE_FAILED", { 
+                error: cacheError instanceof Error ? cacheError.message : String(cacheError) 
+              }, "warn");
+            }
+          }
+          
           const { clearState } = await import("../_shared/wa-webhook-shared/state/store.ts");
           await clearState(ctx.supabase, ctx.profileId);
           
@@ -711,6 +744,18 @@ serve(async (req: Request): Promise<Response> => {
           }
           handled = true;
         }
+      }
+    }
+
+    // Fallback: Detect phone number pattern (for MoMo QR without keywords)
+    if (!handled && message.type === "text") {
+      const text = (message.text as any)?.body?.trim() ?? "";
+      // Match phone patterns: +250788123456, 0788123456, 788123456, etc.
+      const phonePattern = /^(\+?\d{10,15}|\d{9,10})$/;
+      if (phonePattern.test(text.replace(/[\s\-]/g, ''))) {
+        // Looks like a phone number, treat as MoMo QR input
+        const { handleMomoText } = await import("../_shared/wa-webhook-shared/flows/momo/qr.ts");
+        handled = await handleMomoText(ctx, text, state ?? { key: "home" });
       }
     }
 

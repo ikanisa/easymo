@@ -33,6 +33,7 @@ import {
 import { buildSaveRows } from "../../_shared/wa-webhook-shared/domains/locations/save.ts";
 import { recordRecentActivity } from "../../_shared/wa-webhook-shared/domains/locations/recent.ts";
 import { getRecentLocation } from "../../_shared/wa-webhook-shared/domains/locations/recent.ts";
+import { cachePropertyLocation } from "../handlers/location-handler.ts";
 
 export type PropertyFindState = {
   rentalType: string;
@@ -397,6 +398,9 @@ export async function handleFindPropertyLocation(
     ? getCurrencyByCode(state.currency)
     : resolveUserCurrency(ctx.from);
 
+  // Save location to cache (30-min TTL) for reuse by other services
+  await cachePropertyLocation(ctx, location.lat, location.lng);
+
   // Call AI agent if enabled
   if (isFeatureEnabled("agent.property_rental")) {
     await sendText(ctx.from, t(ctx.locale, "property.find.searching"));
@@ -623,6 +627,9 @@ export async function handleAddPropertyLocation(
     ? getCurrencyByCode(state.currency)
     : resolveUserCurrency(ctx.from);
   const priceLabel = formatCurrencyFromInput(state.price, currencyPref);
+
+  // Save location to cache (30-min TTL) for reuse by other services
+  await cachePropertyLocation(ctx, location.lat, location.lng);
 
   // Save to database
   try {

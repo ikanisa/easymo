@@ -580,6 +580,16 @@ export async function handleTripRating(
   }
 }
 
+// Backward compatibility alias for older router imports
+export async function handleTripRate(
+  ctx: TripLifecycleContext,
+  tripId: string,
+  rating: number,
+  comment?: string,
+): Promise<boolean> {
+  return await handleTripRating(ctx, tripId, rating, comment);
+}
+
 // ============================================================================
 // HELPER FUNCTIONS
 // ============================================================================

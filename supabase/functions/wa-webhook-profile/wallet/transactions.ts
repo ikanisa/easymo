@@ -1,7 +1,7 @@
 import type { RouterContext } from "../../_shared/wa-webhook-shared/types.ts";
 import { sendListMessage } from "../../_shared/wa-webhook-shared/utils/reply.ts";
 import {
-  fetchWalletTransactions,
+  listWalletTransactions,
   type WalletTransaction,
 } from "../../_shared/wa-webhook-shared/rpc/wallet.ts";
 import { fmtCurrency, timeAgo } from "../../_shared/wa-webhook-shared/utils/text.ts";

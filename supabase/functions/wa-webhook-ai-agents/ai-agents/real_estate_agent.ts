@@ -18,6 +18,7 @@ import {
 } from "../../utils/ai-chat-interface.ts";
 import { googleSearch } from "shared/google_search.ts";
 import { deepSearch } from "shared/deep_search.ts";
+import { AgentLocationHelper } from "./location-helper.ts";
 
 interface Tool {
   name: string;
@@ -36,9 +37,11 @@ export class RealEstateAgent {
   private model: string = 'gemini-2.5-pro-latest';
   private tools: Tool[];
   private instructions: string;
+  private locationHelper: AgentLocationHelper;
 
   constructor(supabase: SupabaseClient) {
     this.supabase = supabase;
+    this.locationHelper = new AgentLocationHelper(supabase);
     
     const apiKey = Deno.env.get("GEMINI_API_KEY");
     if (!apiKey) {

@@ -23,6 +23,7 @@ import { SessionManager } from "./session-manager.ts";
 import { AgentRegistry } from "../agents/registry.ts";
 import { sendWhatsAppMessage } from "../../_shared/whatsapp-api.ts";
 import { logStructuredEvent } from "../../_shared/observability.ts";
+import { resolveUnifiedLocation } from "./location-handler.ts";
 
 export class UnifiedOrchestrator {
   private sessionManager: SessionManager;
@@ -52,7 +53,22 @@ export class UnifiedOrchestrator {
       // 1. Load or create session
       let session = await this.sessionManager.getOrCreateSession(message.from);
 
-      // 2. Determine which agent should handle this message
+      // 2. Resolve location (cache → saved → prompt)
+      const locationResult = await resolveUnifiedLocation(
+        this.supabase,
+        message.from,
+        message.location
+      );
+
+      // Update session with resolved location
+      if (locationResult.location) {
+        session.location = {
+          latitude: locationResult.location.lat,
+          longitude: locationResult.location.lng,
+        };
+      }
+
+      // 3. Determine which agent should handle this message
       const agentType = await this.determineAgent(session, message, correlationId);
 
       // Update session with current agent if changed

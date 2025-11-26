@@ -18,6 +18,7 @@ import {
 } from "../../utils/ai-chat-interface.ts";
 import { googleSearch } from "shared/google_search.ts";
 import { deepSearch } from "shared/deep_search.ts";
+import { AgentLocationHelper } from "./location-helper.ts";
 
 interface Tool {
   name: string;
@@ -36,9 +37,11 @@ export class JobsAgent {
   private model: string = 'gemini-2.5-pro-latest';
   private tools: Tool[];
   private instructions: string;
+  private locationHelper: AgentLocationHelper;
 
   constructor(supabase: SupabaseClient) {
     this.supabase = supabase;
+    this.locationHelper = new AgentLocationHelper(supabase);
     
     const apiKey = Deno.env.get("GEMINI_API_KEY");
     if (!apiKey) {
@@ -98,59 +101,128 @@ Always be supportive, honest, and safety-focused.`;
     return [
       {
         name: 'search_jobs',
-        description: 'Search for jobs by role, location, and salary requirements',
+        description: 'Search for jobs near user location by role and salary. Automatically uses GPS-based proximity search.',
         parameters: {
           type: 'object',
           properties: {
+            user_id: { type: 'string', description: 'User ID for location lookup' },
             role: { type: 'string', description: 'Job role or title' },
-            location: { type: 'string', description: 'City or area' },
             min_salary: { type: 'number', description: 'Minimum salary in RWF' },
-            job_type: { type: 'string', enum: ['full_time', 'part_time', 'contract', 'gig'] }
+            job_type: { type: 'string', enum: ['full_time', 'part_time', 'contract', 'gig'] },
+            radius_km: { type: 'number', description: 'Search radius in kilometers', default: 50 },
+            category: { type: 'string', description: 'Job category filter' }
           },
-          required: ['role']
+          required: ['user_id']
         },
         execute: async (params) => {
-          let query = this.supabase
-            .from('job_listings')
-            .select('id, title, company, location, salary_min, salary_max, job_type, verified, description')
-            .eq('status', 'active');
+          // Resolve user location first
+          const locationResult = await this.locationHelper.resolveUserLocation(
+            params.user_id,
+            'jobs_agent'
+          );
 
-          if (params.role) {
-            query = query.ilike('title', `%${params.role}%`);
+          if (!locationResult.location) {
+            return {
+              message: 'Please share your location to find jobs near you.',
+              needs_location: true,
+            };
           }
 
-          if (params.location) {
-            query = query.ilike('location', `%${params.location}%`);
+          // Use PostGIS search if location available
+          try {
+            const { data: jobs, error } = await this.supabase.rpc('search_nearby_jobs', {
+              _lat: locationResult.location.lat,
+              _lng: locationResult.location.lng,
+              _radius_km: params.radius_km || 50,
+              _limit: 10,
+              _category: params.category || null,
+              _job_type: params.job_type || null,
+            });
+
+            if (error) throw error;
+
+            // Filter by role if specified
+            let filteredJobs = jobs || [];
+            if (params.role) {
+              filteredJobs = filteredJobs.filter((j: any) =>
+                j.title.toLowerCase().includes(params.role.toLowerCase())
+              );
+            }
+
+            // Filter by min_salary if specified
+            if (params.min_salary) {
+              filteredJobs = filteredJobs.filter((j: any) =>
+                j.pay_min >= params.min_salary
+              );
+            }
+
+            if (filteredJobs.length === 0) {
+              return {
+                message: `No jobs found matching your criteria within ${params.radius_km || 50}km.`,
+                location_context: this.locationHelper.formatLocationContext(locationResult.location),
+              };
+            }
+
+            return {
+              count: filteredJobs.length,
+              location_context: this.locationHelper.formatLocationContext(locationResult.location),
+              jobs: filteredJobs.map((j: any) => ({
+                id: j.id,
+                title: j.title,
+                company: j.company,
+                location: j.location,
+                distance_km: j.distance_km,
+                salary: `${j.pay_min} - ${j.pay_max} ${j.currency || 'RWF'}`,
+                type: j.job_type,
+                status: j.status,
+              })),
+            };
+          } catch (error) {
+            console.error('jobs_agent.gps_search_failed', error);
+            
+            // Fallback to text-based search
+            let query = this.supabase
+              .from('job_listings')
+              .select('id, title, company, location, pay_min, pay_max, currency, job_type, status, category')
+              .in('status', ['open', 'active']);
+
+            if (params.role) {
+              query = query.ilike('title', `%${params.role}%`);
+            }
+
+            if (params.min_salary) {
+              query = query.gte('pay_min', params.min_salary);
+            }
+
+            if (params.job_type) {
+              query = query.eq('job_type', params.job_type);
+            }
+
+            if (params.category) {
+              query = query.eq('category', params.category);
+            }
+
+            query = query.limit(10);
+
+            const { data, error: fallbackError } = await query;
+
+            if (fallbackError || !data || data.length === 0) {
+              return { message: 'No jobs found matching your criteria.' };
+            }
+
+            return {
+              count: data.length,
+              jobs: data.map((j: any) => ({
+                id: j.id,
+                title: j.title,
+                company: j.company,
+                location: j.location,
+                salary: `${j.pay_min} - ${j.pay_max} ${j.currency || 'RWF'}`,
+                type: j.job_type,
+                status: j.status,
+              })),
+            };
           }
-
-          if (params.min_salary) {
-            query = query.gte('salary_min', params.min_salary);
-          }
-
-          if (params.job_type) {
-            query = query.eq('job_type', params.job_type);
-          }
-
-          query = query.limit(5);
-
-          const { data, error } = await query;
-
-          if (error || !data || data.length === 0) {
-            return { message: 'No jobs found matching your criteria.' };
-          }
-
-          return {
-            count: data.length,
-            jobs: data.map(j => ({
-              id: j.id,
-              title: j.title,
-              company: j.company,
-              location: j.location,
-              salary: `${j.salary_min} - ${j.salary_max} RWF`,
-              type: j.job_type,
-              verified: j.verified
-            }))
-          };
         }
       },
       {

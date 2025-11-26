@@ -34,7 +34,6 @@ const translations: Record<string, Record<string, string>> = {
     "jobs.apply.error.message_required": "Please write a message to the employer explaining why you're interested in this job.",
     "jobs.apply.error.submission_failed": "❌ Failed to submit your application. Please try again.",
     "jobs.apply.employer_notification": "🔔 *New Application!*\n\nSomeone applied to: *{{title}}*\n\n👤 Applicant: {{phone}}\n\n💬 Message:\n\"{{message}}\"\n\nView all applications: Reply 'MY JOBS'",
-    "jobs.applications.empty": "📋 *My Applications*\n\nYou haven't applied to any jobs yet.\n\nTap 'Find Jobs' to search for opportunities!",
     "jobs.applications.list": "📋 *Your Applications*\n\n{{applications}}\n\n⏳ Pending | 👁️ Reviewed | ✅ Accepted | ❌ Rejected",
     
     // Seeker onboarding translations
@@ -47,6 +46,16 @@ const translations: Record<string, Record<string, string>> = {
     "jobs.seeker.onboarding.locations_invalid": "Please enter at least one location (e.g., Kigali, Nyarugenge).",
     "jobs.seeker.onboarding.experience_invalid": "Please enter a valid number of years (0-50).",
     "jobs.seeker.onboarding.creation_failed": "Failed to create your profile. Please try again.",
+    
+    // Location translations
+    "jobs.location.invalid": "❌ Invalid location. Please share your location again using WhatsApp's location sharing feature.",
+    "jobs.location.noResults": "📍 No jobs found within {{radius}}km of your location.\n\nTry expanding your search radius or check other areas.",
+    "jobs.location.expandSearch": "Would you like to search in a wider area? Reply:\n• '50km' for 50km radius\n• '100km' for 100km radius\n• 'All' for all jobs",
+    "jobs.location.resultsHeader": "📍 *{{count}} Jobs Near You* (within {{radius}}km)\n\n",
+    "jobs.location.footer": "\n💡 Tip: Save your home location in Profile → Saved Locations for faster searches!",
+    "jobs.location.searchError": "❌ Error searching for nearby jobs. Please try again.",
+    "jobs.location.promptSearch": "📍 To find jobs near you, please share your location or save your home address in Profile → Saved Locations.",
+    "jobs.location.promptPost": "📍 To help others find your job posting, please share the job location.",
   },
   fr: {
     "jobs.menu.greeting": "Bienvenue sur EasyMO Jobs! 💼\n\nTrouvez l'emploi de vos rêves ou publiez des opportunités.",
@@ -80,7 +89,6 @@ const translations: Record<string, Record<string, string>> = {
     "jobs.apply.error.message_required": "Veuillez écrire un message pour expliquer votre intérêt.",
     "jobs.apply.error.submission_failed": "❌ Échec de l'envoi. Veuillez réessayer.",
     "jobs.apply.employer_notification": "🔔 *Nouvelle Candidature!*\n\nQuelqu'un a postulé à: *{{title}}*\n\n👤 Candidat: {{phone}}\n\n💬 Message:\n\"{{message}}\"\n\nVoir les candidatures: Répondez 'MES OFFRES'",
-    "jobs.applications.empty": "📋 *Mes Candidatures*\n\nVous n'avez pas encore postulé.\n\nAppuyez sur 'Trouver des emplois'!",
     "jobs.applications.list": "📋 *Vos Candidatures*\n\n{{applications}}\n\n⏳ En attente | 👁️ Vue | ✅ Acceptée | ❌ Rejetée",
     "jobs.seeker.onboarding.skills_prompt": "💼 *Créons votre profil!*\n\nQuelles sont vos compétences?\n\nExemples:\n• Chauffeur, Mécanicien\n• Cuisinier, Serveur\n• Agent de sécurité\n• Support IT\n\nSéparez avec des virgules.",
     "jobs.seeker.onboarding.locations_prompt": "📍 *Parfait! Vos zones préférées...*\n\nOù préférez-vous travailler?\n\nExemples:\n• Kigali, Nyarugenge\n• Kimironko, Remera\n\nSéparez avec des virgules.",
@@ -91,6 +99,16 @@ const translations: Record<string, Record<string, string>> = {
     "jobs.seeker.onboarding.locations_invalid": "Entrez au moins un lieu.",
     "jobs.seeker.onboarding.experience_invalid": "Entrez un nombre valide (0-50).",
     "jobs.seeker.onboarding.creation_failed": "Échec de création. Réessayez.",
+    
+    // Location translations (French)
+    "jobs.location.invalid": "❌ Position invalide. Veuillez partager votre position à nouveau.",
+    "jobs.location.noResults": "📍 Aucun emploi trouvé dans un rayon de {{radius}}km.\n\nÉlargissez votre recherche ou vérifiez d'autres zones.",
+    "jobs.location.expandSearch": "Voulez-vous élargir la recherche? Répondez:\n• '50km' pour 50km\n• '100km' pour 100km\n• 'Tout' pour tous",
+    "jobs.location.resultsHeader": "📍 *{{count}} Emplois Près de Vous* (dans {{radius}}km)\n\n",
+    "jobs.location.footer": "\n💡 Astuce: Enregistrez votre adresse dans Profil → Lieux enregistrés!",
+    "jobs.location.searchError": "❌ Erreur de recherche. Veuillez réessayer.",
+    "jobs.location.promptSearch": "📍 Pour trouver des emplois près de vous, partagez votre position ou enregistrez votre adresse.",
+    "jobs.location.promptPost": "📍 Pour aider les autres à trouver votre offre, partagez l'emplacement du poste.",
   },
   rw: {
     "jobs.menu.greeting": "Murakaza neza kuri EasyMO Jobs! 💼\n\nShaka akazi cyiza cyangwa utangaze imirimo.",
@@ -124,7 +142,6 @@ const translations: Record<string, Record<string, string>> = {
     "jobs.apply.error.message_required": "Nyamuneka wandika ubutumwa.",
     "jobs.apply.error.submission_failed": "❌ Byanze kohereza. Ongera ugerageze.",
     "jobs.apply.employer_notification": "🔔 *Icyifuzo Gishya!*\n\nUmuntu yasabye: *{{title}}*\n\n👤 Usaba: {{phone}}\n\n💬 Ubutumwa:\n\"{{message}}\"\n\nReba ibyasabwe: Subiza 'IMIRIMO YANJYE'",
-    "jobs.applications.empty": "📋 *Ibyasabwe Byanjye*\n\nNtabwo wasabye akazi.\n\nKanda 'Shakisha Akazi'!",
     "jobs.applications.list": "📋 *Ibyasabwe Byawe*\n\n{{applications}}\n\n⏳ Bitegerejwe | 👁️ Byarebwe | ✅ Byemewe | ❌ Byanze",
     "jobs.seeker.onboarding.skills_prompt": "💼 *Reka dukore umwirondoro wawe!*\n\nNi ubuhe bumenyi ufite?\n\nIngero:\n• Umushoferi, Mekanikiye\n• Umutetsi, Umukorera\n• Umukozi wa IT\n\nVamo utandukanya n'akabago.",
     "jobs.seeker.onboarding.locations_prompt": "📍 *Ni byiza! Ahantu ukunda...*\n\nNi hehe ukunda gukorera?\n\nIngero:\n• Kigali, Nyarugenge\n• Kimironko, Remera\n\nVamo utandukanya n'akabago.",
@@ -135,6 +152,16 @@ const translations: Record<string, Record<string, string>> = {
     "jobs.seeker.onboarding.locations_invalid": "Andika byibura ahantu hamwe.",
     "jobs.seeker.onboarding.experience_invalid": "Andika umubare wemewe (0-50).",
     "jobs.seeker.onboarding.creation_failed": "Byanze gukora. Ongera ugerageze.",
+    
+    // Location translations (Kinyarwanda)
+    "jobs.location.invalid": "❌ Aho hantu ntihakwiye. Nyamuneka sangiza aho uriho ukongera.",
+    "jobs.location.noResults": "📍 Nta kazi kabonetse mu {{radius}}km.\n\nGerageza gushakisha kure cyangwa ahantu handi.",
+    "jobs.location.expandSearch": "Urashaka gushakisha kure? Subiza:\n• '50km' kuri 50km\n• '100km' kuri 100km\n• 'Byose' kubyose",
+    "jobs.location.resultsHeader": "📍 *Imirimo {{count}} Hafi Yawe* (mu {{radius}}km)\n\n",
+    "jobs.location.footer": "\n💡 Icyifuzo: Bika aho utuye muri Profile → Ahantu byabitse!",
+    "jobs.location.searchError": "❌ Ikosa ryo gushakisha. Ongera ugerageze.",
+    "jobs.location.promptSearch": "📍 Gushaka imirimo hafi yawe, sangiza aho uriho cyangwa bika aho utuye.",
+    "jobs.location.promptPost": "📍 Gufasha abandi kubona akazi kawe, sangiza aho kari.",
   },
 };
 

@@ -363,7 +363,7 @@ async function handleWithAIAgent(
         }
       }
     } else if (!context.location) {
-      // Try to use cached location (30-min TTL)
+      // Try location resolution: cache → saved → prompt
       try {
         const { data: profile } = await supabase
           .from("profiles")
@@ -372,6 +372,7 @@ async function handleWithAIAgent(
           .single();
         
         if (profile?.user_id) {
+          // 1. Try cached location (30-min TTL)
           const { data: cached } = await supabase.rpc("get_cached_location", {
             _user_id: profile.user_id,
             _cache_minutes: 30,
@@ -386,11 +387,34 @@ async function handleWithAIAgent(
               location_text: "Cached location",
             };
             logMarketplaceEvent("LOCATION_FROM_CACHE", { userPhone }, "info");
+          } 
+          // 2. Try saved home location
+          else {
+            const { data: savedLoc } = await supabase
+              .from('saved_locations')
+              .select('lat, lng, label')
+              .eq('user_id', profile.user_id)
+              .eq('label', 'home')
+              .single();
+            
+            if (savedLoc?.lat && savedLoc?.lng) {
+              context.location = { lat: savedLoc.lat, lng: savedLoc.lng };
+              context.collectedData = {
+                ...context.collectedData,
+                lat: savedLoc.lat,
+                lng: savedLoc.lng,
+                location_text: `${savedLoc.label} location`,
+              };
+              logMarketplaceEvent("LOCATION_FROM_SAVED", { 
+                userPhone, 
+                label: savedLoc.label 
+              }, "info");
+            }
           }
         }
       } catch (cacheError) {
         // Non-critical - continue without cached location
-        console.warn("marketplace.location_cache_read_fail", cacheError);
+        console.warn("marketplace.location_resolution_fail", cacheError);
       }
       
       // If still no location, try to extract from text

@@ -1,15 +1,16 @@
-# UI/UX Components Export Index
+/**
+ * UI/UX Components Export Index
+ * Export all UI/UX components for easy importing
+ */
 
-Export all UI/UX components for easy importing
-
-## Toast Notifications
+// Toast Notifications
 export { ToastProvider, useToast } from './toast';
 
-## Error Handling
+// Error Handling
 export { ErrorBoundary } from './error-boundary';
 export { PageErrorBoundary } from './page-error-boundary';
 
-## Loading States
+// Loading States
 export { 
   Skeleton,
   TableSkeleton,
@@ -19,8 +20,8 @@ export {
   PageSkeleton
 } from './skeleton';
 
-## Empty States
+// Empty States
 export { EmptyState } from './empty-state';
 
-## Theme
+// Theme
 export { ThemeProvider, ThemeToggle, useTheme } from './theme-provider';

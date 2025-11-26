@@ -1,6 +1,9 @@
 import type { RouterContext } from "../../_shared/wa-webhook-shared/types.ts";
 import { sendText } from "../../_shared/wa-webhook-shared/wa/client.ts";
+import { sendButtonsMessage } from "../../_shared/wa-webhook-shared/utils/reply.ts";
 import { logWalletAdjust } from "../../_shared/wa-webhook-shared/observe/log.ts";
+import { setState, clearState } from "../../_shared/wa-webhook-shared/state/store.ts";
+import { IDS } from "../../_shared/wa-webhook-shared/wa/ids.ts";
 
 const SUCCESS_MESSAGE = "Thanks! Your invite code is confirmed. Enjoy easyMO.";
 const INVALID_MESSAGE =
@@ -10,6 +13,17 @@ const EXISTING_MESSAGE =
 const SELF_MESSAGE = "You can't use your own referral code.";
 const ERROR_MESSAGE =
   "We couldn't process that referral code right now. Please try again later.";
+
+export async function handleWalletReferral(ctx: RouterContext): Promise<boolean> {
+  if (!ctx.profileId) return false;
+  await setState(ctx.supabase, ctx.profileId, { key: "wallet_referral", data: {} });
+  await sendButtonsMessage(
+    ctx,
+    "Paste the referral code you received (example: ABC123). We'll confirm it right away.",
+    [{ id: IDS.BACK_PROFILE, title: "← Back" }],
+  );
+  return true;
+}
 
 export async function applyReferralCodeFromMessage(
   ctx: RouterContext,
@@ -55,6 +69,9 @@ export async function applyReferralCodeFromMessage(
         action: "referral_applied",
         code: normalized,
       });
+      if (ctx.profileId) {
+        await clearState(ctx.supabase, ctx.profileId);
+      }
       return true;
     }
     switch (reason) {

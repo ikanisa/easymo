@@ -2,7 +2,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "./deps.ts";
 import { logStructuredEvent } from "../_shared/observability.ts";
-import { getState } from "./state/store.ts";
+import { getState, setState } from "./state/store.ts";
 import {
   handleSeeDrivers,
   handleSeePassengers,
@@ -85,6 +85,7 @@ import {
 import type { RouterContext, WhatsAppWebhookPayload, RawWhatsAppMessage } from "./types.ts";
 import { IDS } from "./wa/ids.ts";
 import { verifyWebhookSignature } from "../_shared/webhook-utils.ts";
+import { sendListMessage } from "./utils/reply.ts";
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL") ?? "",
@@ -282,8 +283,12 @@ serve(async (req: Request): Promise<Response> => {
           willMatch: id === IDS.SEE_DRIVERS || id === "rides_agent" || id === "rides",
         }));
 
+        // Mobility main menu
+        if (id === IDS.RIDES_MENU || id === "rides_agent" || id === "rides") {
+          handled = await showMobilityMenu(ctx);
+        }
         // Nearby Flows
-        if (id === IDS.SEE_DRIVERS || id === "rides_agent" || id === "rides") {
+        else if (id === IDS.SEE_DRIVERS) {
           console.log(JSON.stringify({ event: "MOBILITY_LAUNCHING_WORKFLOW", workflow: "handleSeeDrivers" }));
           handled = await handleSeeDrivers(ctx);
           console.log(JSON.stringify({ event: "MOBILITY_WORKFLOW_RESULT", workflow: "handleSeeDrivers", handled }));
@@ -480,7 +485,7 @@ serve(async (req: Request): Promise<Response> => {
       }
       // Check for menu selection keys first
       else if (text === "rides_agent" || text === "rides") {
-        handled = await handleSeeDrivers(ctx);
+        handled = await showMobilityMenu(ctx);
       }
       // Simple keyword triggers if not in a specific flow or if flow allows interruption
       else if (text.includes("driver") || text.includes("ride")) {
@@ -516,3 +521,42 @@ serve(async (req: Request): Promise<Response> => {
 });
 
 console.log("✅ wa-webhook-mobility service started");
+
+async function showMobilityMenu(ctx: RouterContext): Promise<boolean> {
+  if (!ctx.profileId) return false;
+  await setState(supabase, ctx.profileId, { key: "mobility_menu", data: {} });
+  const rows = [
+    {
+      id: IDS.SEE_DRIVERS,
+      title: "🚖 Nearby drivers",
+      description: "Request riders close to your location.",
+    },
+    {
+      id: IDS.SEE_PASSENGERS,
+      title: "🧍 Nearby passengers",
+      description: "Drivers find people needing a ride.",
+    },
+    {
+      id: IDS.SCHEDULE_TRIP,
+      title: "🗓️ Schedule trip",
+      description: "Plan a future pickup with reminders.",
+    },
+    {
+      id: IDS.GO_ONLINE,
+      title: "🟢 Go online",
+      description: "Share your location to receive ride offers.",
+    },
+  ];
+  await sendListMessage(
+    ctx,
+    {
+      title: "🚗 Mobility",
+      body: "Choose what you need help with.",
+      sectionTitle: "Options",
+      rows,
+      buttonText: "Open",
+    },
+    { emoji: "🚗" },
+  );
+  return true;
+}

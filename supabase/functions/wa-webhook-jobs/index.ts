@@ -22,6 +22,12 @@ import { sendText, sendList } from "../_shared/wa-webhook-shared/wa/client.ts";
 import type { WhatsAppMessage, WhatsAppWebhookPayload } from "../_shared/wa-webhook-shared/types.ts";
 import { t } from "./utils/i18n.ts";
 import { detectJobIntent, shouldRouteToJobAgent } from "./jobs/utils.ts";
+import { 
+  handleLocationMessage, 
+  getUserLocation, 
+  promptForLocation,
+  searchAndSendNearbyJobs 
+} from "./handlers/location-handler.ts";
 
 // Initialize Supabase client
 const supabase: SupabaseClient = createClient(
@@ -168,11 +174,41 @@ serve(async (req: Request): Promise<Response> => {
       const text = input ?? "";
       const locale = detectLocale(payload) || "en";
 
+      // Get user ID for location/profile operations
+      let userId: string | null = null;
+      try {
+        const { data: user } = await supabase
+          .from("whatsapp_users")
+          .select("id")
+          .eq("phone_number", message.from)
+          .maybeSingle();
+        userId = user?.id || null;
+      } catch (err) {
+        logEvent("JOBS_USER_LOOKUP_FAILED", { error: String(err) }, "warn");
+      }
+
       logEvent("JOBS_MESSAGE_RECEIVED", { 
         from: maskPhone(message.from), 
         type: message.type,
-        inputLength: text.length 
+        inputLength: text.length,
+        hasUserId: !!userId
       });
+
+      // Handle location messages FIRST (high priority for job searches)
+      if (message.type === "location" && userId) {
+        const handled = await handleLocationMessage(
+          supabase,
+          message,
+          userId,
+          locale,
+          correlationId
+        );
+        
+        if (handled) {
+          logEvent("JOBS_MESSAGE_PROCESSED", { success: true, type: "location" });
+          return json({ success: true });
+        }
+      }
 
       // Detect job intent for better routing
       const intent = detectJobIntent(text);
@@ -189,8 +225,27 @@ serve(async (req: Request): Promise<Response> => {
         // Show job board menu
         await showJobBoardMenu(message.from, locale);
       } else if (text === "1" || text === "job_find" || intent.type === "find_job") {
-        // Find jobs
-        await sendText(message.from, t(locale, "jobs.seeker.welcome"));
+        // Find jobs - use location if available
+        if (userId) {
+          const userLocation = await getUserLocation(supabase, userId);
+          if (userLocation) {
+            // User has location - search nearby jobs
+            logEvent("JOBS_USING_LOCATION", { source: userLocation.source });
+            await searchAndSendNearbyJobs(
+              supabase,
+              message.from,
+              userLocation.lat,
+              userLocation.lng,
+              locale,
+              correlationId
+            );
+          } else {
+            // No location - prompt user
+            await promptForLocation(message.from, locale, 'job_search');
+          }
+        } else {
+          await sendText(message.from, t(locale, "jobs.seeker.welcome"));
+        }
       } else if (text === "2" || text === "job_post" || intent.type === "post_job") {
         // Post a job
         await sendText(message.from, t(locale, "jobs.poster.welcome"));

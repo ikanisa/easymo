@@ -29,25 +29,55 @@ export async function startPropertyAISearch(
       rentalType
     });
 
-    // Initialize search state
-    await setState(ctx.supabase, ctx.profileId, {
-      key: "property_ai_search",
-      data: {
-        rentalType,
-        status: "awaiting_criteria"
-      } as PropertySearchState
-    });
+    // Check if we already have a location (cache or saved)
+    const { resolvePropertyLocation } = await import("../handlers/location-handler.ts");
+    const locationResult = await resolvePropertyLocation(ctx);
 
-    // Ask for criteria
-    await sendMessage(ctx, {
-      text: `🏠 *AI Property Search - ${rentalType === "short_term" ? "Short-term" : "Long-term"} Rental*\n\n` +
-            `Let me help you find the perfect property!\n\n` +
-            `Please provide:\n` +
-            `1. Number of bedrooms (e.g., "2 bedrooms")\n` +
-            `2. Your maximum budget in RWF (e.g., "500000")\n` +
-            `3. Share your location when prompted (use WhatsApp Location map pin)\n\n` +
-            `_Type your criteria, then send your location via WhatsApp Location (map pin)_`
-    });
+    if (locationResult.location) {
+      // We have a location! Save it to state and proceed
+      await setState(ctx.supabase, ctx.profileId, {
+        key: "property_ai_search",
+        data: {
+          rentalType,
+          status: "awaiting_criteria",
+          location: {
+            latitude: locationResult.location.lat,
+            longitude: locationResult.location.lng
+          }
+        } as PropertySearchState
+      });
+
+      const { formatLocationContext } = await import("../handlers/location-handler.ts");
+      const locationContext = formatLocationContext(locationResult.location);
+
+      await sendMessage(ctx, {
+        text: `🏠 *AI Property Search - ${rentalType === "short_term" ? "Short-term" : "Long-term"} Rental*\n\n` +
+              `${locationContext}\n\n` +
+              `Great! Now please provide:\n` +
+              `1. Number of bedrooms (e.g., "2 bedrooms")\n` +
+              `2. Your maximum budget in RWF (e.g., "500000")\n\n` +
+              `_Type your criteria and I'll search for properties nearby._`
+      });
+    } else {
+      // No location - ask for criteria first, then location
+      await setState(ctx.supabase, ctx.profileId, {
+        key: "property_ai_search",
+        data: {
+          rentalType,
+          status: "awaiting_criteria"
+        } as PropertySearchState
+      });
+
+      await sendMessage(ctx, {
+        text: `🏠 *AI Property Search - ${rentalType === "short_term" ? "Short-term" : "Long-term"} Rental*\n\n` +
+              `Let me help you find the perfect property!\n\n` +
+              `Please provide:\n` +
+              `1. Number of bedrooms (e.g., "2 bedrooms")\n` +
+              `2. Your maximum budget in RWF (e.g., "500000")\n` +
+              `3. Share your location when prompted (use WhatsApp Location map pin)\n\n` +
+              `_Type your criteria, then send your location via WhatsApp Location (map pin)_`
+      });
+    }
 
     return true;
 
@@ -164,6 +194,10 @@ export async function executePropertyAISearch(
       return false;
     }
 
+    // Save location to cache for future use
+    const { cachePropertyLocation } = await import("../handlers/location-handler.ts");
+    await cachePropertyLocation(ctx, latitude, longitude);
+
     await sendMessage(ctx, {
       text: "🔍 *Searching Properties...*\n\nOur AI agent is searching for properties that match your criteria. This may take a moment..."
     });
@@ -172,7 +206,9 @@ export async function executePropertyAISearch(
       userId: ctx.profileId,
       bedrooms: state.data.bedrooms,
       maxBudget: state.data.maxBudget,
-      rentalType: state.data.rentalType
+      rentalType: state.data.rentalType,
+      lat: latitude,
+      lng: longitude
     });
 
     // Call property-rental agent
