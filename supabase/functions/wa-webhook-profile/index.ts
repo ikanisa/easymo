@@ -702,9 +702,9 @@ serve(async (req: Request): Promise<Response> => {
           if (!error) {
             try {
               await ctx.supabase.rpc('update_user_location_cache', {
-                p_user_id: ctx.profileId,
-                p_lat: lat,
-                p_lng: lng
+                _user_id: ctx.profileId,
+                _lat: lat,
+                _lng: lng
               });
               logEvent("PROFILE_LOCATION_CACHED", { 
                 user: ctx.profileId, 
