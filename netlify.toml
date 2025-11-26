@@ -1,26 +1,50 @@
-# Netlify Configuration for EasyMO Admin Panel
-# Next.js 15 in a pnpm monorepo
+# Netlify Configuration for EasyMO Admin Panel (Aurora Redesign)
+# Next.js 15 PWA in a pnpm monorepo
 
 [build]
-  # Set base to admin-app so the Netlify Next.js plugin can find the app
   base = "admin-app"
-  # Publish directory relative to base
   publish = ".next"
-  # Build workspace dependencies from root, then build the admin app
-  command = "cd .. && pnpm install --frozen-lockfile && pnpm --filter @va/shared build && pnpm --filter @easymo/commons build && pnpm --filter @easymo/video-agent-schema build && cd admin-app && pnpm build"
+  # Build workspace dependencies, then the admin app
+  command = """
+    cd .. && \
+    pnpm install --frozen-lockfile && \
+    pnpm --filter @va/shared build && \
+    pnpm --filter @easymo/commons build && \
+    pnpm --filter @easymo/video-agent-schema build && \
+    cd admin-app && \
+    pnpm build
+  """
 
 [build.environment]
   NODE_VERSION = "20.18.0"
   PNPM_VERSION = "10.18.3"
+  NODE_ENV = "production"
+  NEXT_PUBLIC_USE_MOCKS = "false"
+  NEXT_PUBLIC_UI_V2_ENABLED = "true"
 
-# The @netlify/plugin-nextjs plugin automatically handles Next.js deployment
-# It creates Netlify Functions for server-side rendering and API routes
+# Next.js plugin for SSR and edge functions
 [[plugins]]
   package = "@netlify/plugin-nextjs"
 
-# Configure netlify-plugin-no-more-404 to warn instead of error
-# This is needed for Next.js 15 dynamic rendering
+# Handle 404s gracefully for dynamic routes
 [[plugins]]
   package = "netlify-plugin-no-more-404"
   [plugins.inputs]
     on404 = "warn"
+
+# Context-specific settings
+[context.production]
+  environment = { NEXT_PUBLIC_ENV = "production" }
+
+[context.deploy-preview]
+  environment = { NEXT_PUBLIC_ENV = "preview" }
+
+[context.branch-deploy]
+  environment = { NEXT_PUBLIC_ENV = "staging" }
+
+# Dev settings
+[dev]
+  command = "pnpm dev"
+  port = 3000
+  targetPort = 3000
+  autoLaunch = true

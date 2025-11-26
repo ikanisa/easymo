@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { createHandler } from "@/app/api/withObservability";
-import { jsonError, jsonOk, zodValidationError } from "@/lib/api/http";
+import { handleAPIError, jsonError, jsonOk } from "@/lib/api/error-handler";
+import { rateLimit } from "@/lib/api/rate-limit";
 import { userSchema } from "@/lib/schemas";
 import { listUsers } from "@/lib/users/users-service";
 
@@ -22,6 +23,11 @@ export const dynamic = "force-dynamic";
 
 export const GET = createHandler("admin_api.users.list", async (request: Request) => {
   try {
+    const limiter = rateLimit({ interval: 60 * 1000, uniqueTokenPerInterval: 500 });
+    // Use IP or a fallback token for rate limiting
+    const ip = request.headers.get("x-forwarded-for") ?? "anonymous";
+    await limiter.check(20, ip); // 20 requests per minute
+
     const { searchParams } = new URL(request.url);
     const parsedQuery = querySchema.parse({
       search: searchParams.get("search") ?? undefined,
@@ -34,10 +40,9 @@ export const GET = createHandler("admin_api.users.list", async (request: Request
     return jsonOk(payload);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return jsonError({ error: "invalid_query", details: error.flatten() }, 400);
+      return jsonError("Validation failed", 400, "invalid_query");
     }
-    console.error("Failed to list users", error);
-    return jsonError({ error: "users_list_failed" }, 500);
+    return handleAPIError(error);
   }
 });
 

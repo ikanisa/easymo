@@ -1,0 +1,234 @@
+/**
+ * Aurora Design System
+ * World-class design tokens for the EasyMO Admin Panel
+ */
+
+:root {
+  /* ==================== Aurora Base Palette ==================== */
+  /* Light Mode */
+  --aurora-bg: #fafbfc;
+  --aurora-surface: #ffffff;
+  --aurora-surface-elevated: rgba(255, 255, 255, 0.8);
+  --aurora-surface-muted: #f8fafc;
+  --aurora-border: rgba(0, 0, 0, 0.06);
+  --aurora-border-subtle: rgba(0, 0, 0, 0.03);
+  
+  /* ==================== Text Hierarchy ==================== */
+  --aurora-text-primary: #0f172a;
+  --aurora-text-secondary: #475569;
+  --aurora-text-muted: #94a3b8;
+  --aurora-text-disabled: #cbd5e1;
+  
+  /* ==================== Accent Colors ==================== */
+  --aurora-accent: #0ea5e9;
+  --aurora-accent-hover: #0284c7;
+  --aurora-accent-subtle: rgba(14, 165, 233, 0.1);
+  --aurora-accent-contrast: #ffffff;
+  
+  /* ==================== Semantic Colors ==================== */
+  --aurora-success: #10b981;
+  --aurora-success-subtle: rgba(16, 185, 129, 0.1);
+  --aurora-warning: #f59e0b;
+  --aurora-warning-subtle: rgba(245, 158, 11, 0.1);
+  --aurora-error: #ef4444;
+  --aurora-error-subtle: rgba(239, 68, 68, 0.1);
+  --aurora-info: #6366f1;
+  --aurora-info-subtle: rgba(99, 102, 241, 0.1);
+  
+  /* ==================== Gradients ==================== */
+  --aurora-gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --aurora-gradient-success: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+  --aurora-gradient-glass: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.4) 0%, 
+    rgba(255, 255, 255, 0.1) 100%);
+  --aurora-gradient-ambient: radial-gradient(
+    ellipse 80% 50% at 50% -20%,
+    rgba(14, 165, 233, 0.15),
+    transparent
+  );
+  
+  /* ==================== Glass Morphism ==================== */
+  --aurora-glass-bg: rgba(255, 255, 255, 0.7);
+  --aurora-glass-border: rgba(255, 255, 255, 0.5);
+  --aurora-glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+  --aurora-glass-blur: 20px;
+  
+  /* ==================== Spacing Scale (8px base) ==================== */
+  --aurora-space-1: 0.25rem;   /* 4px */
+  --aurora-space-2: 0.5rem;    /* 8px */
+  --aurora-space-3: 0.75rem;   /* 12px */
+  --aurora-space-4: 1rem;      /* 16px */
+  --aurora-space-5: 1.5rem;    /* 24px */
+  --aurora-space-6: 2rem;      /* 32px */
+  --aurora-space-8: 3rem;      /* 48px */
+  --aurora-space-10: 4rem;     /* 64px */
+  
+  /* ==================== Border Radius ==================== */
+  --aurora-radius-sm: 6px;
+  --aurora-radius-md: 10px;
+  --aurora-radius-lg: 16px;
+  --aurora-radius-xl: 24px;
+  --aurora-radius-full: 9999px;
+  
+  /* ==================== Typography ==================== */
+  --aurora-font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --aurora-font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+  
+  /* ==================== Motion ==================== */
+  --aurora-motion-fast: 150ms;
+  --aurora-motion-normal: 250ms;
+  --aurora-motion-slow: 400ms;
+  --aurora-easing-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --aurora-easing-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+  
+  /* ==================== Shadows ==================== */
+  --aurora-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --aurora-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --aurora-shadow-lg: 0 12px 24px rgba(0, 0, 0, 0.12);
+  --aurora-shadow-xl: 0 24px 48px rgba(0, 0, 0, 0.16);
+  --aurora-shadow-glow: 0 0 40px rgba(14, 165, 233, 0.3);
+  
+  /* ==================== Z-Index Scale ==================== */
+  --aurora-z-base: 0;
+  --aurora-z-raised: 10;
+  --aurora-z-overlay: 100;
+  --aurora-z-modal: 1000;
+  --aurora-z-toast: 2000;
+}
+
+/* ==================== Dark Mode ==================== */
+[data-theme="dark"] {
+  --aurora-bg: #0f172a;
+  --aurora-surface: #1e293b;
+  --aurora-surface-elevated: rgba(30, 41, 59, 0.8);
+  --aurora-surface-muted: #0f172a;
+  --aurora-border: rgba(255, 255, 255, 0.08);
+  --aurora-border-subtle: rgba(255, 255, 255, 0.04);
+  
+  --aurora-text-primary: #f1f5f9;
+  --aurora-text-secondary: #94a3b8;
+  --aurora-text-muted: #64748b;
+  --aurora-text-disabled: #475569;
+  
+  --aurora-glass-bg: rgba(30, 41, 59, 0.7);
+  --aurora-glass-border: rgba(255, 255, 255, 0.1);
+  --aurora-glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  
+  --aurora-gradient-ambient: radial-gradient(
+    ellipse 80% 50% at 50% -20%,
+    rgba(14, 165, 233, 0.1),
+    transparent
+  );
+}
+
+/* ==================== Utility Classes ==================== */
+
+/* Glass Effect */
+.glass-surface {
+  background: var(--aurora-glass-bg);
+  border: 1px solid var(--aurora-glass-border);
+  backdrop-filter: blur(var(--aurora-glass-blur));
+  -webkit-backdrop-filter: blur(var(--aurora-glass-blur));
+}
+
+.glass-header {
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid var(--aurora-border-subtle);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+[data-theme="dark"] .glass-header {
+  background: rgba(30, 41, 59, 0.85);
+}
+
+.glass-button {
+  background: var(--aurora-glass-bg);
+  border: 1px solid var(--aurora-glass-border);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+/* Shadow Effects */
+.shadow-glow-sm {
+  box-shadow: 0 0 20px rgba(14, 165, 233, 0.25);
+}
+
+.shadow-glow-md {
+  box-shadow: 0 0 40px rgba(14, 165, 233, 0.3);
+}
+
+.shadow-glow-lg {
+  box-shadow: 0 0 60px rgba(14, 165, 233, 0.35);
+}
+
+/* Ambient Background */
+.ambient-bg {
+  position: relative;
+}
+
+.ambient-bg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--aurora-gradient-ambient);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Scrollbar Styling */
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: var(--aurora-border) transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: var(--aurora-border);
+  border-radius: var(--aurora-radius-full);
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: var(--aurora-text-muted);
+}
+
+/* Safe Area Padding for iOS */
+.safe-area-pb {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.safe-area-pt {
+  padding-top: env(safe-area-inset-top);
+}
+
+/* Focus Visible Improvements */
+*:focus-visible {
+  outline: 2px solid var(--aurora-accent);
+  outline-offset: 2px;
+  border-radius: var(--aurora-radius-sm);
+}
+
+/* Selection Styling */
+::selection {
+  background: var(--aurora-accent-subtle);
+  color: var(--aurora-text-primary);
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

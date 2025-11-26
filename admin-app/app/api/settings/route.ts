@@ -3,7 +3,8 @@ import { headers } from 'next/headers';
 import { z } from 'zod';
 
 import { createHandler } from '@/app/api/withObservability';
-import { jsonError, jsonOk, zodValidationError } from '@/lib/api/http';
+import { handleAPIError, jsonError, jsonOk } from '@/lib/api/http';
+import { rateLimit } from "@/lib/api/rate-limit";
 import { recordAudit } from '@/lib/server/audit';
 import { requireActorId, UnauthorizedError } from '@/lib/server/auth';
 import { logStructured } from '@/lib/server/logger';
@@ -52,52 +53,59 @@ async function fetchSettingsFromSupabase() {
   return entries;
 }
 
-export const GET = createHandler('admin_api.settings.get', async () => {
-  const supabaseSettings = await fetchSettingsFromSupabase();
-  if (supabaseSettings) {
-    const quiet = supabaseSettings.get('quiet_hours.rw') as { start: string; end: string } | null;
-    const throttleValue = supabaseSettings.get('send_throttle.whatsapp.per_minute') as { value?: number } | number | null;
-    const optOut = supabaseSettings.get('opt_out.list') as string[] | null;
-    const payload = {
-      quietHours: {
-        start: quiet?.start ?? '22:00',
-        end: quiet?.end ?? '06:00'
-      },
-      throttlePerMinute:
-        typeof throttleValue === 'number' ? throttleValue : throttleValue?.value ?? 60,
-      optOutList: Array.isArray(optOut) ? optOut : []
-    } satisfies z.infer<typeof settingsResponseSchema>;
-    return jsonOk(payload);
-  }
+export const GET = createHandler('admin_api.settings.get', async (request: Request) => {
+  try {
+    const limiter = rateLimit({ interval: 60 * 1000, uniqueTokenPerInterval: 500 });
+    const ip = request.headers.get("x-forwarded-for") ?? "anonymous";
+    await limiter.check(30, ip); // 30 requests per minute
 
-  return buildDegradedError('Supabase credentials are not configured.');
+    const supabaseSettings = await fetchSettingsFromSupabase();
+    if (supabaseSettings) {
+      const quiet = supabaseSettings.get('quiet_hours.rw') as { start: string; end: string } | null;
+      const throttleValue = supabaseSettings.get('send_throttle.whatsapp.per_minute') as { value?: number } | number | null;
+      const optOut = supabaseSettings.get('opt_out.list') as string[] | null;
+      const payload = {
+        quietHours: {
+          start: quiet?.start ?? '22:00',
+          end: quiet?.end ?? '06:00'
+        },
+        throttlePerMinute:
+          typeof throttleValue === 'number' ? throttleValue : throttleValue?.value ?? 60,
+        optOutList: Array.isArray(optOut) ? optOut : []
+      } satisfies z.infer<typeof settingsResponseSchema>;
+      return jsonOk(payload);
+    }
+
+    return buildDegradedError('Supabase credentials are not configured.');
+  } catch (error) {
+    return handleAPIError(error);
+  }
 });
 
 export const POST = createHandler('admin_api.settings.post', async (request: Request) => {
-  const adminClient = getSupabaseAdminClient();
-  if (!adminClient) {
-    return buildDegradedError('Supabase service role not available. Configure environment variables to persist settings.');
-  }
-
-  let parsed: z.infer<typeof settingsMutationSchema>;
   try {
-    const json = await request.json();
-    parsed = settingsMutationSchema.parse(json);
-  } catch (error) {
-    return zodValidationError(error);
-  }
+    const limiter = rateLimit({ interval: 60 * 1000, uniqueTokenPerInterval: 500 });
+    const ip = request.headers.get("x-forwarded-for") ?? "anonymous";
+    await limiter.check(10, ip); // 10 requests per minute for updates
 
-  let actorId: string;
-  try {
-    actorId = requireActorId();
-  } catch (err) {
-    if (err instanceof UnauthorizedError) {
-      return jsonError({ error: 'unauthorized', message: err.message }, 401);
+    const adminClient = getSupabaseAdminClient();
+    if (!adminClient) {
+      return buildDegradedError('Supabase service role not available. Configure environment variables to persist settings.');
     }
-    throw err;
-  }
 
-  try {
+    const json = await request.json();
+    const parsed = settingsMutationSchema.parse(json);
+
+    let actorId: string;
+    try {
+      actorId = requireActorId();
+    } catch (err) {
+      if (err instanceof UnauthorizedError) {
+        return jsonError({ error: 'unauthorized', message: err.message }, 401);
+      }
+      throw err;
+    }
+
     const timestamp = new Date().toISOString();
     await adminClient.from('settings').upsert([
       { key: 'quiet_hours.rw', value: parsed.quietHours, updated_at: timestamp },
@@ -132,16 +140,11 @@ export const POST = createHandler('admin_api.settings.post', async (request: Req
       integration: { status: 'ok' as const, target: 'settings_store' }
     });
   } catch (error) {
-    logStructured({
-      event: 'settings_update_failed',
-      target: 'settings_store',
-      status: 'degraded',
-      message: 'Failed to upsert settings in Supabase.',
-      details: { error: error instanceof Error ? error.message : 'unknown' }
-    });
-    return jsonError({ error: 'settings_update_failed', message: 'Unable to persist settings. Try again later.' }, 500);
+    if (error instanceof z.ZodError) {
+      return jsonError({ error: 'validation_error', details: error.flatten() }, 400);
+    }
+    return handleAPIError(error);
   }
 });
  
-
 export const runtime = "nodejs";

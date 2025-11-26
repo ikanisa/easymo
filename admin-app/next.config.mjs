@@ -22,39 +22,85 @@ const enableOptimizedImports =
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  compress: true, // Enable gzip compression
-  poweredByHeader: false, // Remove unnecessary headers
+  compress: true,
+  poweredByHeader: false,
+  
+  // Output configuration for Netlify
+  output: 'standalone',
+  
+  // Image optimization
+  images: {
+    formats: ['image/avif', 'image/webp'],
+    deviceSizes: [360, 640, 768, 1024, 1280, 1536],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256],
+    minimumCacheTTL: 60 * 60 * 24 * 30, // 30 days
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '**.supabase.co',
+      },
+    ],
+  },
+  
   experimental: {
     typedRoutes: true,
     optimizePackageImports: enableOptimizedImports
-      ? ['@headlessui/react', '@heroicons/react', 'framer-motion']
+      ? [
+          '@headlessui/react',
+          '@heroicons/react',
+          'framer-motion',
+          'lucide-react',
+          '@radix-ui/react-slot',
+        ]
       : undefined,
   },
+  
   serverExternalPackages: ['@easymo/commons'],
+  
   typescript: {
-    // Type checking is handled in CI; allow build to proceed
     ignoreBuildErrors: true,
   },
+  
   eslint: {
-    // Allow deployment despite warnings; we still run lint in CI separately
     ignoreDuringBuilds: true,
   },
-  // Optimize for Chrome memory usage
+  
+  // Security and performance headers
   headers: async () => [
     {
       source: '/:path*',
       headers: [
-        {
-          key: 'X-Content-Type-Options',
-          value: 'nosniff',
-        },
-        {
-          key: 'X-Frame-Options',
-          value: 'DENY',
-        },
+        { key: 'X-Content-Type-Options', value: 'nosniff' },
+        { key: 'X-Frame-Options', value: 'DENY' },
+        { key: 'X-XSS-Protection', value: '1; mode=block' },
+        { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+      ],
+    },
+    // Service Worker headers
+    {
+      source: '/sw.js',
+      headers: [
+        { key: 'Cache-Control', value: 'public, max-age=0, must-revalidate' },
+        { key: 'Service-Worker-Allowed', value: '/' },
+      ],
+    },
+    {
+      source: '/sw.v4.js',
+      headers: [
+        { key: 'Cache-Control', value: 'public, max-age=0, must-revalidate' },
+        { key: 'Service-Worker-Allowed', value: '/' },
+      ],
+    },
+    // Manifest headers
+    {
+      source: '/manifest.webmanifest',
+      headers: [
+        { key: 'Content-Type', value: 'application/manifest+json' },
+        { key: 'Cache-Control', value: 'public, max-age=86400' },
       ],
     },
   ],
+  
   webpack: (config, { isServer }) => {
     // Force video-agent-schema to resolve from dist, not src
     config.resolve.alias = {
@@ -69,10 +115,26 @@ const nextConfig = {
         'cls-hooked': false,
         'crypto': false,
       };
-      // Optimize chunk splitting for better caching
+      
+      // Optimize chunk splitting for PWA
       config.optimization = {
         ...config.optimization,
         moduleIds: 'deterministic',
+        splitChunks: {
+          chunks: 'all',
+          cacheGroups: {
+            vendor: {
+              test: /[\\/]node_modules[\\/]/,
+              name: 'vendors',
+              chunks: 'all',
+            },
+            common: {
+              minChunks: 2,
+              priority: -10,
+              reuseExistingChunk: true,
+            },
+          },
+        },
       };
     } else {
       // Server-side: exclude pino worker threads from bundling
@@ -91,14 +153,6 @@ const nextConfig = {
       };
     }
 
-    if (enableOptimizedImports) {
-      config.module.generator = {
-        ...config.module.generator,
-        'asset/resource': { emit: true },
-      };
-    }
     return config;
   },
 };
-
-export default withBundleAnalyzer(nextConfig);

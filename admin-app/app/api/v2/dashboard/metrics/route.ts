@@ -1,14 +1,19 @@
 import { NextResponse } from "next/server";
 
 import { createAdminClient } from "@/src/v2/lib/supabase/client";
-
-import { handleRouteError, normalizeNumber } from "../../_lib/utils";
+import { handleAPIError, jsonOk } from "@/lib/api/error-handler";
+import { rateLimit } from "@/lib/api/rate-limit";
+import { normalizeNumber } from "../../_lib/utils";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const limiter = rateLimit({ interval: 60 * 1000, uniqueTokenPerInterval: 500 });
+    const ip = request.headers.get("x-forwarded-for") ?? "anonymous";
+    await limiter.check(20, ip); // 20 requests per minute
+
     const supabase = await createAdminClient();
     const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
 
@@ -31,13 +36,13 @@ export async function GET() {
       return total + (normalizeNumber(transaction.amount) ?? 0);
     }, 0);
 
-    return NextResponse.json({
+    return jsonOk({
       totalAgents: agentsResult.count ?? 0,
       totalDrivers: driversResult.count ?? 0,
       totalStations: stationsResult.count ?? 0,
       monthlyRevenue,
     });
   } catch (error) {
-    return handleRouteError(error);
+    return handleAPIError(error);
   }
 }

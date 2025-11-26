@@ -1,8 +1,16 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import { z } from "zod";
 
+import { handleAPIError, jsonError, jsonOk } from "@/lib/api/error-handler";
+import { rateLimit } from "@/lib/api/rate-limit";
 import { clearRateLimit, getRateLimit, recordFailure } from "@/lib/server/rate-limit";
 import { createSessionCookie } from "@/lib/server/session";
+
+const loginSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(4),
+});
 
 type Credentials = { actorId: string; email: string; password: string; username?: string; label?: string };
 
@@ -18,82 +26,78 @@ function readCredentials(): Credentials[] {
   }
 }
 
-function validatePayload(body: unknown): body is { email: string; password: string } {
-  if (!body || typeof body !== "object") return false;
-  const { email, password } = body as { email?: unknown; password?: unknown };
-  const emailOk = typeof email === "string" && /.+@.+\..+/.test(email);
-  const pwOk = typeof password === "string" && password.length >= 4;
-  return emailOk && pwOk;
-}
-
 export async function POST(request: Request) {
-  const jar = await cookies();
-  const payload = await request.json().catch(() => null);
+  try {
+    // 1. Global Rate Limit (IP-based) - protect against DDoS
+    const globalLimiter = rateLimit({ interval: 60 * 1000, uniqueTokenPerInterval: 500 });
+    const ip = request.headers.get("x-forwarded-for") ?? "anonymous";
+    await globalLimiter.check(10, ip); // Strict limit for login endpoint (10 req/min)
 
-  if (!validatePayload(payload)) {
-    return NextResponse.json(
-      { error: "validation_error", message: "Invalid email or password format." },
-      { status: 400 },
-    );
-  }
+    const jar = await cookies();
+    const body = await request.json().catch(() => ({}));
+    
+    // 2. Input Validation
+    const payload = loginSchema.parse(body);
+    const { email, password } = payload;
+    
+    // 3. Login Logic Rate Limit (Email-based) - protect against brute force
+    const key = `login:${email}`;
 
-  const { email, password } = payload;
-  const key = `login:${email}`;
+    // Check if using admin token
+    const adminToken = process.env.EASYMO_ADMIN_TOKEN;
+    if (adminToken && password === adminToken) {
+      // Token-based authentication
+      clearRateLimit(key);
+      const cookie = createSessionCookie({ 
+        actorId: "admin-token", 
+        label: email.split("@")[0] || "Admin" 
+      });
+      try {
+        jar.set(cookie.name, cookie.value, { httpOnly: true, sameSite: "lax", path: "/" });
+      } catch {
+        // ignore
+      }
 
-  // Check if using admin token
-  const adminToken = process.env.EASYMO_ADMIN_TOKEN;
-  if (adminToken && password === adminToken) {
-    // Token-based authentication
+      const res = jsonOk({ actorId: "admin-token", label: email.split("@")[0] || "Admin" });
+      res.headers.set("x-admin-session-refreshed", "true");
+      return res;
+    }
+
+    // Credentials-based authentication
+    const creds = readCredentials();
+    const found = creds.find((c) => c.email.toLowerCase() === email.toLowerCase());
+
+    if (!found || found.password !== password) {
+      // Enforce: allow MAX_ATTEMPTS failures (401), then block with 429 on subsequent attempts.
+      const before = getRateLimit(key);
+      if (before.remaining <= 0) {
+        const { resetIn, remaining } = before;
+        const res = new NextResponse("Too Many Attempts", { status: 429 });
+        res.headers.set("Retry-After", String(resetIn));
+        res.headers.set("X-RateLimit-Remaining", String(remaining));
+        return res;
+      }
+      recordFailure(key);
+      return jsonError("Invalid credentials", 401, "unauthorized");
+    }
+
+    // Successful login
     clearRateLimit(key);
-    const cookie = createSessionCookie({ 
-      actorId: "admin-token", 
-      label: email.split("@")[0] || "Admin" 
-    });
+    const cookie = createSessionCookie({ actorId: found.actorId, label: found.label ?? found.username });
     try {
       jar.set(cookie.name, cookie.value, { httpOnly: true, sameSite: "lax", path: "/" });
     } catch {
       // ignore
     }
 
-    const res = NextResponse.json(
-      { actorId: "admin-token", label: email.split("@")[0] || "Admin" },
-      { status: 200 },
-    );
+    const res = jsonOk({ actorId: found.actorId, label: found.label ?? found.username ?? "Admin" });
     res.headers.set("x-admin-session-refreshed", "true");
     return res;
-  }
 
-  // Credentials-based authentication
-  const creds = readCredentials();
-  const found = creds.find((c) => c.email.toLowerCase() === email.toLowerCase());
-
-  if (!found || found.password !== password) {
-    // Enforce: allow MAX_ATTEMPTS failures (401), then block with 429 on subsequent attempts.
-    const before = getRateLimit(key);
-    if (before.remaining <= 0) {
-      const { resetIn, remaining } = before;
-      const res = new NextResponse("Too Many Attempts", { status: 429 });
-      res.headers.set("Retry-After", String(resetIn));
-      res.headers.set("X-RateLimit-Remaining", String(remaining));
-      return res;
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return jsonError("Validation failed", 400, "validation_error");
     }
-    recordFailure(key);
-    return new NextResponse("Unauthorized", { status: 401 });
+    return handleAPIError(error);
   }
-
-  // Successful login
-  clearRateLimit(key);
-  const cookie = createSessionCookie({ actorId: found.actorId, label: found.label ?? found.username });
-  try {
-    jar.set(cookie.name, cookie.value, { httpOnly: true, sameSite: "lax", path: "/" });
-  } catch {
-    // ignore
-  }
-
-  const res = NextResponse.json(
-    { actorId: found.actorId, label: found.label ?? found.username ?? "Admin" },
-    { status: 200 },
-  );
-  res.headers.set("x-admin-session-refreshed", "true");
-  return res;
 }
