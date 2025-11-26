@@ -362,8 +362,8 @@ serve(async (req: Request): Promise<Response> => {
         
         // Wallet Transfer
         else if (id === IDS.WALLET_TRANSFER) {
-          const { handleWalletTransfer } = await import("./wallet/transfer.ts");
-          handled = await handleWalletTransfer(ctx, state as any);
+          const { startWalletTransfer } = await import("./wallet/transfer.ts");
+          handled = await startWalletTransfer(ctx);
         }
         
         // Wallet Redeem
