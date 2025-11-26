@@ -382,6 +382,36 @@ async function handlePropertyList(
   return false;
 }
 
+/**
+ * Save user's shared location to cache (30-minute TTL)
+ * Allows reusing location across property searches without re-sharing
+ */
+async function cachePropertyLocation(
+  ctx: RouterContext,
+  lat: number,
+  lng: number
+): Promise<void> {
+  try {
+    if (!ctx.profileId) return;
+    
+    await ctx.supabase.rpc('update_user_location_cache', {
+      _user_id: ctx.profileId,
+      _lat: lat,
+      _lng: lng,
+    });
+    
+    console.log(JSON.stringify({
+      event: "PROPERTY_LOCATION_CACHED",
+      userId: ctx.profileId,
+    }));
+  } catch (error) {
+    console.error(JSON.stringify({
+      event: "PROPERTY_LOCATION_CACHE_FAILED",
+      error: String(error),
+    }));
+  }
+}
+
 async function handlePropertyLocation(
   ctx: RouterContext,
   message: RawWhatsAppMessage,

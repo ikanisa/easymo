@@ -52,41 +52,53 @@ export class AgentOrchestrator {
     // 1. Get or create WhatsApp user
     const user = await this.getOrCreateUser(message.from);
     
-    // 2. Determine which agent to route to (based on context or default)
+    // 2. Handle location messages - Save to cache for 30 minutes
+    if (message.type === "location" && message.location) {
+      await this.saveLocationToCache(user.id, message.location.latitude, message.location.longitude);
+      console.log(JSON.stringify({
+        event: "LOCATION_CACHED",
+        correlationId,
+        userId: user.id,
+        lat: message.location.latitude,
+        lng: message.location.longitude,
+      }));
+    }
+    
+    // 3. Determine which agent to route to (based on context or default)
     const agentSlug = await this.determineAgent(user.id, message.body);
     
-    // 3. Get or create chat session for session persistence
+    // 4. Get or create chat session for session persistence
     const sessionId = await this.getOrCreateChatSession(message.from, agentSlug, user.id);
     
-    // 4. Get or create conversation (for existing workflow compatibility)
+    // 5. Get or create conversation (for existing workflow compatibility)
     const context = await this.getOrCreateConversation(user.id, agentSlug);
     
-    // 5. Store the message in session history
-    await this.addMessageToSession(sessionId, "user", message.body);
+    // 6. Store the message in session history
+    await this.addMessageToSession(sessionId, "user", message.body || "[Location shared]");
     
-    // 6. Store the message
+    // 7. Store the message
     const messageId = await this.storeMessage(context.conversationId, message);
     
-    // 7. Get conversation history for context
+    // 8. Get conversation history for context
     const conversationHistory = await this.getSessionHistory(sessionId);
     
-    // 8. Parse intent from message with conversation context
-    const intent = await this.parseIntent(message.body, context, conversationHistory);
+    // 9. Parse intent from message with conversation context
+    const intent = await this.parseIntent(message.body || "location_shared", context, conversationHistory);
     
-    // 9. Store intent
+    // 10. Store intent
     const intentId = await this.storeIntent(
       context,
       messageId,
       intent
     );
     
-    // 10. Execute agent action based on intent
+    // 11. Execute agent action based on intent
     await this.executeAgentAction(context, intentId, intent);
     
-    // 11. Send response back to user and get the response text for session history
+    // 12. Send response back to user and get the response text for session history
     const responseText = await this.sendResponse(context, intent);
     
-    // 12. Store response in session history
+    // 13. Store response in session history
     await this.addMessageToSession(sessionId, "assistant", responseText);
     
     console.log(JSON.stringify({
@@ -267,6 +279,38 @@ export class AgentOrchestrator {
       .single();
 
     return newUser!;
+  }
+
+  /**
+   * Save user's location to cache (30-minute TTL)
+   * Used when user shares GPS coordinates
+   */
+  private async saveLocationToCache(
+    userId: string,
+    lat: number,
+    lng: number
+  ): Promise<void> {
+    try {
+      const { error } = await this.supabase.rpc('update_user_location_cache', {
+        _user_id: userId,
+        _lat: lat,
+        _lng: lng,
+      });
+      
+      if (error) {
+        console.error(JSON.stringify({
+          event: "LOCATION_CACHE_SAVE_FAILED",
+          userId,
+          error: error.message,
+        }));
+      }
+    } catch (error) {
+      console.error(JSON.stringify({
+        event: "LOCATION_CACHE_SAVE_ERROR",
+        userId,
+        error: error instanceof Error ? error.message : String(error),
+      }));
+    }
   }
 
   /**
