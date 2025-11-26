@@ -354,7 +354,11 @@ async function handleInsuranceText(
     return true;
   }
 
-  return false;
+  // Fallback: Show home menu for any unhandled text
+  // This provides better UX - any free text returns user to home menu
+  const { sendHomeMenu } = await import("../_shared/wa-webhook-shared/flows/home.ts");
+  await sendHomeMenu(ctx);
+  return true;
 }
 
 console.log("wa-webhook-insurance service started");
