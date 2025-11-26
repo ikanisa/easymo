@@ -11,8 +11,8 @@ export async function listSavedLocations(
   if (!ctx.profileId) return false;
 
   const { data: locations, error } = await ctx.supabase
-    .from("user_favorites")
-    .select("id, name, address, lat, lng, created_at")
+    .from("saved_locations")
+    .select("id, label, address, lat, lng, created_at")
     .eq("user_id", ctx.profileId)
     .order("created_at", { ascending: false })
     .limit(20);
@@ -22,26 +22,58 @@ export async function listSavedLocations(
     await sendButtonsMessage(
       ctx,
       "⚠️ Failed to load your saved locations. Please try again.",
-      [{ id: IDS.BACK_PROFILE, title: "← Back" }],
+      [
+        { id: IDS.BACK_PROFILE, title: "← Back" },
+        { id: IDS.SHARE_EASYMO, title: "🔗 Share easyMO" },
+      ],
     );
     return true;
   }
 
   if (!locations || locations.length === 0) {
-    await sendButtonsMessage(
+    await sendListMessage(
       ctx,
-      "📍 You don't have any saved locations yet.\n\nSave your favorite places for quick access!",
-      [
-        { id: IDS.ADD_LOCATION, title: "➕ Add Location" },
-        { id: IDS.BACK_PROFILE, title: "← Back" },
-      ],
+      {
+        title: "📍 Saved Locations",
+        body: "You don't have any saved locations yet.\n\nSave your favorite places for quick access:",
+        sectionTitle: "Add Location",
+        buttonText: "Choose",
+        rows: [
+          {
+            id: "ADD_LOC::home",
+            title: "🏠 Home",
+            description: "Save your home address",
+          },
+          {
+            id: "ADD_LOC::work",
+            title: "💼 Work",
+            description: "Save your work address",
+          },
+          {
+            id: "ADD_LOC::school",
+            title: "🎓 School",
+            description: "Save your school address",
+          },
+          {
+            id: "ADD_LOC::other",
+            title: "📍 Other",
+            description: "Save another favorite place",
+          },
+          {
+            id: IDS.BACK_PROFILE,
+            title: "← Back",
+            description: "Return to profile menu",
+          },
+        ],
+      },
+      { emoji: "📍" },
     );
     return true;
   }
 
   const rows = locations.map((loc) => ({
     id: `LOC::${loc.id}`,
-    title: loc.name || "Unnamed Location",
+    title: loc.label || "Unnamed Location",
     description: loc.address || `${loc.lat?.toFixed(6)}, ${loc.lng?.toFixed(6)}`,
   }));
 
@@ -80,7 +112,7 @@ export async function handleLocationSelection(
   if (!ctx.profileId) return false;
 
   const { data: location, error } = await ctx.supabase
-    .from("user_favorites")
+    .from("saved_locations")
     .select("*")
     .eq("id", locationId)
     .eq("user_id", ctx.profileId)
@@ -96,7 +128,7 @@ export async function handleLocationSelection(
   }
 
   const details = [
-    `*${location.name || "Unnamed Location"}*`,
+    `*${location.label || "Unnamed Location"}*`,
     location.address ? `📍 ${location.address}` : null,
     location.lat && location.lng
       ? `Coordinates: ${location.lat.toFixed(6)}, ${location.lng.toFixed(6)}`
