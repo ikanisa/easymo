@@ -831,7 +831,7 @@ serve(async (req: Request): Promise<Response> => {
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     logEvent("PROFILE_WEBHOOK_ERROR", { error: message }, "error");
-    console.error("profile.webhook_error", message);
+    await logStructuredEvent("ERROR", { data: "profile.webhook_error", message });
 
     return respond({
       error: "internal_error",
@@ -843,4 +843,4 @@ serve(async (req: Request): Promise<Response> => {
   }
 });
 
-console.log("✅ wa-webhook-profile service started (v2.0.0)");
+await logStructuredEvent("LOG", { data: "✅ wa-webhook-profile service started (v2.0.0)" });

@@ -1,7 +1,11 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { logStructuredEvent } from "../_shared/observability.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { logStructuredEvent } from "../_shared/observability.ts";
 import { GoogleGenerativeAI } from "npm:@google/generative-ai";
+import { logStructuredEvent } from "../_shared/observability.ts";
 import { googleSearch } from "shared/google_search.ts";
+import { logStructuredEvent } from "../_shared/observability.ts";
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL")!,
@@ -27,7 +31,7 @@ serve(async (req) => {
       const config = source.config as { queries: string[], country: string };
       
       for (const query of config.queries) {
-        console.log(`Processing query: ${query} for ${source.type}`);
+        await logStructuredEvent("LOG", { data: `Processing query: ${query} for ${source.type}` });
         
         // 2. Search
         const results = await googleSearch(query, 10); // Get top 10 results
@@ -43,7 +47,7 @@ serve(async (req) => {
               .single();
 
             if (existing) {
-              console.log(`Skipping duplicate: ${result.link}`);
+              await logStructuredEvent("LOG", { data: `Skipping duplicate: ${result.link}` });
               continue;
             }
 
@@ -132,7 +136,7 @@ serve(async (req) => {
             }
 
           } catch (e) {
-            console.error(`Error processing result ${result.link}:`, e);
+            await logStructuredEvent("ERROR", { data: `Error processing result ${result.link}:`, e });
             stats.errors++;
           }
         }
@@ -145,7 +149,7 @@ serve(async (req) => {
     return new Response(JSON.stringify(stats), { headers: { "Content-Type": "application/json" } });
 
   } catch (e) {
-    console.error("Sync error:", e);
+    await logStructuredEvent("ERROR", { data: "Sync error:", e });
     return new Response(JSON.stringify({ error: e.message }), { status: 500 });
   }
 });

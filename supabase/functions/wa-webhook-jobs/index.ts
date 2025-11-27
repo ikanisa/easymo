@@ -608,4 +608,7 @@ function maskPhone(phone: string): string {
   return phone.slice(0, 4) + "***" + phone.slice(-3);
 }
 
-console.log(`✅ ${SERVICE_NAME} service started`);
+await logStructuredEvent("SERVICE_STARTED", { 
+  service: SERVICE_NAME,
+  version: "1.0.0"
+});

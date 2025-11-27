@@ -604,10 +604,10 @@ async function getBusinessDetails(supabase: any, businessId: string) {
 async function searchBusinessViaGemini(query: string, city: string, minRating?: number, limit: number = 10) {
   const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY") || Deno.env.get("API_KEY");
   
-  console.log(`searchBusinessViaGemini called: query="${query}", city="${city}", limit=${limit}`);
+  await logStructuredEvent("LOG", { data: `searchBusinessViaGemini called: query="${query}", city="${city}", limit=${limit}` });
   
   if (!GEMINI_API_KEY) {
-    console.warn("No Gemini API key configured");
+    await logStructuredEvent("WARNING", { data: "No Gemini API key configured" });
     return [];
   }
 
@@ -655,20 +655,20 @@ Example: [{"name":"Heaven Restaurant","address":"KG 7 Ave","city":"Kigali","phon
     
     // Check for errors
     if (data.error) {
-      console.error("Gemini API error:", data.error);
+      await logStructuredEvent("ERROR", { data: "Gemini API error:", data.error });
       return [];
     }
     
     // Log grounding metadata if available
     if (data.candidates?.[0]?.groundingMetadata) {
-      console.log("Grounding metadata:", JSON.stringify(data.candidates[0].groundingMetadata));
+      await logStructuredEvent("LOG", { data: "Grounding metadata:", JSON.stringify(data.candidates[0].groundingMetadata) });
     }
     
     let jsonStr = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
 
     if (!jsonStr) {
-      console.warn("No response from Gemini API");
-      console.log("Full Gemini response:", JSON.stringify(data, null, 2));
+      await logStructuredEvent("WARNING", { data: "No response from Gemini API" });
+      await logStructuredEvent("LOG", { data: "Full Gemini response:", JSON.stringify(data, null, 2) });
       return [];
     }
 
@@ -683,7 +683,7 @@ Example: [{"name":"Heaven Restaurant","address":"KG 7 Ave","city":"Kigali","phon
       const businesses = JSON.parse(jsonStr);
       const validBusinesses = Array.isArray(businesses) ? businesses : [];
       
-      console.log(`Parsed ${validBusinesses.length} businesses from Gemini`);
+      await logStructuredEvent("LOG", { data: `Parsed ${validBusinesses.length} businesses from Gemini` });
       
       // Filter by rating if specified
       if (minRating && minRating > 0) {
@@ -692,12 +692,12 @@ Example: [{"name":"Heaven Restaurant","address":"KG 7 Ave","city":"Kigali","phon
       
       return validBusinesses;
     } catch (parseError) {
-      console.error("JSON parse error:", parseError);
-      console.log("Attempted to parse:", jsonStr.substring(0, 200));
+      await logStructuredEvent("ERROR", { data: "JSON parse error:", parseError });
+      await logStructuredEvent("LOG", { data: "Attempted to parse:", jsonStr.substring(0, 200) });
       return [];
     }
   } catch (error) {
-    console.error("Gemini search error:", error);
+    await logStructuredEvent("ERROR", { data: "Gemini search error:", error });
     return [];
   }
 }
@@ -715,7 +715,7 @@ async function searchBusinessViaGeminiWithLocation(
   const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY") || Deno.env.get("API_KEY");
   
   if (!GEMINI_API_KEY) {
-    console.warn("No Gemini API key configured");
+    await logStructuredEvent("WARNING", { data: "No Gemini API key configured" });
     return [];
   }
 
@@ -760,14 +760,14 @@ Do NOT return markdown code blocks. Return ONLY the raw JSON array.
     const data = await response.json();
     
     if (data.error) {
-      console.error("Gemini location search error:", data.error);
+      await logStructuredEvent("ERROR", { data: "Gemini location search error:", data.error });
       return [];
     }
 
     let jsonStr = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
 
     if (!jsonStr) {
-      console.warn("No response from Gemini API for location search");
+      await logStructuredEvent("WARNING", { data: "No response from Gemini API for location search" });
       return [];
     }
 
@@ -781,7 +781,7 @@ Do NOT return markdown code blocks. Return ONLY the raw JSON array.
     const businesses = JSON.parse(jsonStr);
     return Array.isArray(businesses) ? businesses : [];
   } catch (error) {
-    console.error("Gemini location search error:", error);
+    await logStructuredEvent("ERROR", { data: "Gemini location search error:", error });
     return [];
   }
 }

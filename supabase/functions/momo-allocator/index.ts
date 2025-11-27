@@ -1,10 +1,14 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { logStructuredEvent } from "../_shared/observability.ts";
 import { getServiceClient } from "../_shared/supabase.ts";
+import { logStructuredEvent } from "../_shared/observability.ts";
 import {
+import { logStructuredEvent } from "../_shared/observability.ts";
   buildNumberLookupCandidates,
   normalizeE164,
 } from "../_shared/phone.ts";
 import { rateLimitMiddleware } from "../_shared/rate-limit/index.ts";
+import { logStructuredEvent } from "../_shared/observability.ts";
 
 const BATCH_SIZE = (() => {
   const value = Number(Deno.env.get("MOMO_ALLOCATOR_BATCH_SIZE") ?? "10");
@@ -159,7 +163,7 @@ async function fetchPending(limit: number): Promise<InboxRow[] | Error> {
     .limit(limit);
 
   if (error) {
-    console.error("momo_allocator.fetch_failed", error);
+    await logStructuredEvent("ERROR", { data: "momo_allocator.fetch_failed", error });
     return new Error("fetch_pending_failed");
   }
 
@@ -463,7 +467,7 @@ async function findProfileByMsisdn(
     .in("whatsapp_e164", candidates)
     .limit(5);
   if (error) {
-    console.error("momo_allocator.profile_lookup_failed", error);
+    await logStructuredEvent("ERROR", { data: "momo_allocator.profile_lookup_failed", error });
     return null;
   }
   if (!data || data.length === 0) return null;
@@ -487,7 +491,7 @@ async function findActiveMembership(
     .in("status", ["active"])
     .limit(5);
   if (error) {
-    console.error("momo_allocator.membership_lookup_failed", error);
+    await logStructuredEvent("ERROR", { data: "momo_allocator.membership_lookup_failed", error });
     return null;
   }
   if (!data || data.length === 0) return null;

@@ -1,4 +1,5 @@
 import {
+import { logStructuredEvent } from "../_shared/observability.ts";
   createServiceRoleClient,
   handleOptions,
   json,
@@ -7,6 +8,7 @@ import {
   withAdminTracing,
 } from "../_shared/admin.ts";
 import { rateLimitMiddleware } from "../_shared/rate-limit/index.ts";
+import { logStructuredEvent } from "../_shared/observability.ts";
 
 const supabase = createServiceRoleClient();
 
@@ -35,7 +37,7 @@ Deno.serve(withAdminTracing("admin-health", async (req, ctx) => {
   try {
     const { error } = await supabase.from("app_config").select("id").limit(1);
     if (error) {
-      console.error("admin-health.db_failed", error);
+      await logStructuredEvent("ERROR", { data: "admin-health.db_failed", error });
       return json({ status: "error", db: "unreachable" }, 500);
     }
 
@@ -47,7 +49,7 @@ Deno.serve(withAdminTracing("admin-health", async (req, ctx) => {
     logResponse("admin-health", 200, { ...payload, requestId: ctx.requestId, durationMs: Date.now() - ctx.startedAt });
     return json(payload);
   } catch (err) {
-    console.error("admin-health.unhandled", err);
+    await logStructuredEvent("ERROR", { data: "admin-health.unhandled", err });
     return json({ status: "error", reason: "unhandled" }, 500);
   }
 }));

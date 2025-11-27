@@ -1,7 +1,11 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
+import { logStructuredEvent } from "../_shared/observability.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { logStructuredEvent } from "../_shared/observability.ts";
 import OpenAI from "https://esm.sh/openai@4.26.0";
+import { logStructuredEvent } from "../_shared/observability.ts";
 import { DOMParser } from "https://deno.land/x/deno_dom/deno-dom-wasm.ts";
+import { logStructuredEvent } from "../_shared/observability.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -49,7 +53,7 @@ serve(async (req) => {
     // LIMIT TO 1 SOURCE FOR DEBUGGING
     for (const source of (jobSources || []).slice(0, 1)) {
       try {
-        console.log(`Crawling job source: ${source.name} (${source.url})`);
+        await logStructuredEvent("LOG", { data: `Crawling job source: ${source.name} (${source.url})` });
         
         const response = await fetch(source.url, {
           headers: {
@@ -141,14 +145,14 @@ serve(async (req) => {
             if (!insertError) {
               results.jobsProcessed++;
             } else {
-              console.error('Insert error:', insertError);
+              await logStructuredEvent("ERROR", { data: 'Insert error:', insertError });
               results.errors.push(`Insert Error (${source.name}): ${insertError.message}`);
             }
           }
         }
 
       } catch (e) {
-        console.error(`Error processing job source ${source.name}:`, e);
+        await logStructuredEvent("ERROR", { data: `Error processing job source ${source.name}:`, e });
         results.errors.push(`Job Source ${source.name}: ${e instanceof Error ? e.message : String(e)}`);
       }
     }
@@ -157,7 +161,7 @@ serve(async (req) => {
     // LIMIT TO 1 SOURCE FOR DEBUGGING
     for (const source of (propertySources || []).slice(0, 1)) {
       try {
-        console.log(`Crawling property source: ${source.source_name} (${source.url})`);
+        await logStructuredEvent("LOG", { data: `Crawling property source: ${source.source_name} (${source.url})` });
         
         const response = await fetch(source.url, {
           headers: {
@@ -239,14 +243,14 @@ serve(async (req) => {
             if (!insertError) {
               results.propertiesProcessed++;
             } else {
-              console.error('Insert error:', insertError);
+              await logStructuredEvent("ERROR", { data: 'Insert error:', insertError });
               results.errors.push(`Insert Error (${source.source_name}): ${insertError.message}`);
             }
           }
         }
 
       } catch (e) {
-        console.error(`Error processing property source ${source.source_name}:`, e);
+        await logStructuredEvent("ERROR", { data: `Error processing property source ${source.source_name}:`, e });
         results.errors.push(`Property Source ${source.source_name}: ${e instanceof Error ? e.message : String(e)}`);
       }
     }

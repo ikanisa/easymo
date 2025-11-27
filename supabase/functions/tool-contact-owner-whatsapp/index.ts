@@ -3,7 +3,9 @@
 // Handles template messaging and outreach tracking
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { logStructuredEvent } from "../_shared/observability.ts";
 import { createClient } from "@supabase/supabase-js";
+import { logStructuredEvent } from "../_shared/observability.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;

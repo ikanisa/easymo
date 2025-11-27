@@ -1,5 +1,6 @@
 // deno-lint-ignore-file no-explicit-any
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.76.1";
+import { logStructuredEvent } from "../_shared/observability.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ??
   Deno.env.get("SERVICE_URL");
@@ -21,7 +22,7 @@ const CRON_ENABLED =
     "false";
 
 if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
-  console.error("recurring-trips-scheduler missing Supabase configuration");
+  await logStructuredEvent("ERROR", { data: "recurring-trips-scheduler missing Supabase configuration" });
 }
 
 const supabase = createClient(SUPABASE_URL ?? "", SUPABASE_SERVICE_KEY ?? "");
@@ -119,7 +120,7 @@ async function shortlistTrip(trip: any) {
   );
 
   if (liveError) {
-    console.error("recurring-trips-scheduler.live_failed", liveError);
+    await logStructuredEvent("ERROR", { data: "recurring-trips-scheduler.live_failed", liveError });
   }
 
   const { data: parkingData, error: parkingError } = await supabase.rpc(
@@ -135,7 +136,7 @@ async function shortlistTrip(trip: any) {
   );
 
   if (parkingError) {
-    console.error("recurring-trips-scheduler.parking_failed", parkingError);
+    await logStructuredEvent("ERROR", { data: "recurring-trips-scheduler.parking_failed", parkingError });
   }
 
   const liveCount = Array.isArray(liveData) ? liveData.length : 0;
@@ -166,7 +167,7 @@ async function runScheduler(trigger: "http" | "cron") {
   });
 
   if (error) {
-    console.error("recurring-trips-scheduler.find_due_failed", error);
+    await logStructuredEvent("ERROR", { data: "recurring-trips-scheduler.find_due_failed", error });
     return {
       ok: false,
       error: error.message,
@@ -185,7 +186,7 @@ async function runScheduler(trigger: "http" | "cron") {
         results.push(outcome);
       }
     } catch (taskError) {
-      console.error("recurring-trips-scheduler.shortlist_failed", taskError);
+      await logStructuredEvent("ERROR", { data: "recurring-trips-scheduler.shortlist_failed", taskError });
     }
   }
 
@@ -218,9 +219,9 @@ if (typeof denoWithCron.cron === "function" && CRON_ENABLED) {
     try {
       await runScheduler("cron");
     } catch (error) {
-      console.error("recurring-trips-scheduler.cron_failed", error);
+      await logStructuredEvent("ERROR", { data: "recurring-trips-scheduler.cron_failed", error });
     }
   });
 } else if (!CRON_ENABLED) {
-  console.warn("recurring-trips-scheduler cron disabled via env");
+  await logStructuredEvent("WARNING", { data: "recurring-trips-scheduler cron disabled via env" });
 }

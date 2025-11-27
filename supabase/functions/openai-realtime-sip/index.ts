@@ -6,7 +6,9 @@
 // =====================================================
 
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
+import { logStructuredEvent } from "../_shared/observability.ts";
 import { getServiceClient } from "../_shared/supabase.ts";
+import { logStructuredEvent } from "../_shared/observability.ts";
 
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY")!;
 const OPENAI_REALTIME_MODEL = Deno.env.get("OPENAI_REALTIME_MODEL") || "gpt-4o-realtime-preview-2024-10-01";
@@ -249,7 +251,7 @@ serve(async (req: Request): Promise<Response> => {
       );
 
     } catch (error) {
-      console.error("Error creating OpenAI session:", error);
+      await logStructuredEvent("ERROR", { data: "Error creating OpenAI session:", error });
       return new Response(
         JSON.stringify({ error: error.message }),
         { status: 500, headers: { "Content-Type": "application/json" } }
@@ -312,7 +314,7 @@ serve(async (req: Request): Promise<Response> => {
           break;
 
         case "error":
-          console.error("OpenAI error:", event);
+          await logStructuredEvent("ERROR", { data: "OpenAI error:", event });
           await supabase.from("voice_calls").update({
             status: "failed"
           }).eq("id", callId);
@@ -325,7 +327,7 @@ serve(async (req: Request): Promise<Response> => {
       );
 
     } catch (error) {
-      console.error("Error handling event:", error);
+      await logStructuredEvent("ERROR", { data: "Error handling event:", error });
       return new Response(
         JSON.stringify({ error: error.message }),
         { status: 500, headers: { "Content-Type": "application/json" } }
@@ -374,7 +376,7 @@ serve(async (req: Request): Promise<Response> => {
       );
 
     } catch (error) {
-      console.error("Error ending call:", error);
+      await logStructuredEvent("ERROR", { data: "Error ending call:", error });
       return new Response(
         JSON.stringify({ error: error.message }),
         { status: 500, headers: { "Content-Type": "application/json" } }

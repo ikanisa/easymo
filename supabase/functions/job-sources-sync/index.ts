@@ -271,7 +271,7 @@ Aim for MINIMUM 20 jobs per query. Be comprehensive and thorough.
           else if (jobStats.updated) stats.updated++;
           else stats.skipped++;
         } catch (error: any) {
-          console.error("Error processing job:", error);
+          await logStructuredEvent("ERROR", { data: "Error processing job:", error });
           stats.errors++;
         }
       }
@@ -432,7 +432,7 @@ async function processSerpAPI(
             stats.skipped++;
           }
         } catch (error: any) {
-          console.error("Error processing SerpAPI result:", error);
+          await logStructuredEvent("ERROR", { data: "Error processing SerpAPI result:", error });
           stats.errors++;
         }
       }
@@ -531,13 +531,13 @@ If this doesn't look like a real job posting, return null.`;
                       url; // URL itself is a contact method
     
     if (!hasContact) {
-      console.log(`Skipping job without contact: ${result.title}`);
+      await logStructuredEvent("LOG", { data: `Skipping job without contact: ${result.title}` });
       return null;
     }
 
     return result;
   } catch (error) {
-    console.error("AI extraction error:", error);
+    await logStructuredEvent("ERROR", { data: "AI extraction error:", error });
     return null;
   }
 }

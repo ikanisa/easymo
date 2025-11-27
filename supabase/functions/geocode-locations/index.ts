@@ -6,7 +6,9 @@
  */
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { logStructuredEvent } from "../_shared/observability.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { logStructuredEvent } from "../_shared/observability.ts";
 
 const GOOGLE_MAPS_API_KEY = Deno.env.get('GOOGLE_MAPS_API_KEY')!
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
@@ -46,10 +48,10 @@ async function geocodeAddress(
       }
     }
 
-    console.warn(`Geocoding failed for "${fullAddress}": ${data.status}`)
+    await logStructuredEvent("WARNING", { data: `Geocoding failed for "${fullAddress}": ${data.status}` })
     return null
   } catch (error) {
-    console.error('Geocoding error:', error)
+    await logStructuredEvent("ERROR", { data: 'Geocoding error:', error })
     return null
   }
 }

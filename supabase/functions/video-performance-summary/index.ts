@@ -1,5 +1,7 @@
 import { z } from "zod";
+import { logStructuredEvent } from "../_shared/observability.ts";
 import {
+import { logStructuredEvent } from "../_shared/observability.ts";
   createServiceRoleClient,
   handleOptions,
   json,
@@ -9,6 +11,7 @@ import {
   requireAdminAuth,
 } from "../_shared/admin.ts";
 import { queueNotification } from "../wa-webhook/notify/sender.ts";
+import { logStructuredEvent } from "../_shared/observability.ts";
 
 const supabase = createServiceRoleClient();
 
@@ -179,7 +182,7 @@ if (typeof denoWithCron.cron === "function" && CRON_ENABLED) {
       lookbackDays: DEFAULT_DAILY_LOOKBACK,
       trigger: "cron",
     }).catch((error) => {
-      console.error("video-performance-summary.daily_cron_failed", error);
+      await logStructuredEvent("ERROR", { data: "video-performance-summary.daily_cron_failed", error });
     });
   });
 
@@ -189,11 +192,11 @@ if (typeof denoWithCron.cron === "function" && CRON_ENABLED) {
       lookbackDays: DEFAULT_WEEKLY_LOOKBACK,
       trigger: "cron",
     }).catch((error) => {
-      console.error("video-performance-summary.weekly_cron_failed", error);
+      await logStructuredEvent("ERROR", { data: "video-performance-summary.weekly_cron_failed", error });
     });
   });
 } else if (CRON_ENABLED) {
-  console.warn("video-performance-summary.cron_unavailable");
+  await logStructuredEvent("WARNING", { data: "video-performance-summary.cron_unavailable" });
 }
 
 type RunSummaryOptions = {
@@ -239,7 +242,7 @@ async function runSummary(
         deliveries.push({ to, queued: true, notificationId: result.id });
       } catch (error) {
         const detail = error instanceof Error ? error.message : String(error ?? "error");
-        console.error("video-performance-summary.enqueue_failed", { to, error: detail });
+        await logStructuredEvent("ERROR", { data: "video-performance-summary.enqueue_failed", { to, error: detail } });
         deliveries.push({ to, queued: false, error: detail });
       }
     }
@@ -278,7 +281,7 @@ async function fetchHighlights(
     .limit(Math.max(options.limit * 6, options.limit));
 
   if (error) {
-    console.error("video-performance-summary.fetch_highlights_failed", error);
+    await logStructuredEvent("ERROR", { data: "video-performance-summary.fetch_highlights_failed", error });
     return { highlights: [], rightsExpiring: await fetchRightsExpiring() };
   }
 
@@ -349,7 +352,7 @@ async function fetchRightsExpiring(): Promise<RightsExpiry[]> {
     .limit(10);
 
   if (error) {
-    console.error("video-performance-summary.fetch_rights_failed", error);
+    await logStructuredEvent("ERROR", { data: "video-performance-summary.fetch_rights_failed", error });
     return [];
   }
 
@@ -441,7 +444,7 @@ function resolveRecipients(override: string[] | null | undefined): string[] {
     .filter(Boolean);
 
   if (parts.length === 0) {
-    console.warn("video-performance-summary.recipients_missing");
+    await logStructuredEvent("WARNING", { data: "video-performance-summary.recipients_missing" });
   }
 
   return parts;

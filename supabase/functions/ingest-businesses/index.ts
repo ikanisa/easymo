@@ -1,4 +1,5 @@
 import { createClient } from "jsr:@supabase/supabase-js@2";
+import { logStructuredEvent } from "../_shared/observability.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -77,7 +78,7 @@ Deno.serve(async (req) => {
 
     for (const currentCity of targetCities) {
       for (const currentCategory of targetCategories) {
-        console.log(`Searching for ${currentCategory} in ${currentCity}...`);
+        await logStructuredEvent("LOG", { data: `Searching for ${currentCategory} in ${currentCity}...` });
         let nextToken = undefined;
         let pageCount = 0;
 
@@ -95,7 +96,7 @@ Deno.serve(async (req) => {
           const data = await res.json();
 
           if (!data || !data.results || data.results.length === 0) {
-            console.log(`No results for ${currentCategory} in ${currentCity}`);
+            await logStructuredEvent("LOG", { data: `No results for ${currentCategory} in ${currentCity}` });
             break;
           }
 
@@ -144,7 +145,7 @@ Deno.serve(async (req) => {
               .upsert(business, { onConflict: 'external_id' });
 
             if (error) {
-              console.error(`Error upserting ${business.name}:`, error.message);
+              await logStructuredEvent("ERROR", { data: `Error upserting ${business.name}:`, error.message });
             } else {
               if (business.lat && business.lng) {
                 const { error: rpcError } = await supabaseClient.rpc('update_business_location', {
@@ -176,7 +177,7 @@ Deno.serve(async (req) => {
     );
 
   } catch (error) {
-    console.error(error);
+    await logStructuredEvent("ERROR", { data: error });
     return new Response(
       JSON.stringify({ error: error.message }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }

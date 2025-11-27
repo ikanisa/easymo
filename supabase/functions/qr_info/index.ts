@@ -1,5 +1,7 @@
 import { z } from "https://deno.land/x/zod@v3.23.8/mod.ts";
+import { logStructuredEvent } from "../_shared/observability.ts";
 import {
+import { logStructuredEvent } from "../_shared/observability.ts";
   createServiceRoleClient,
   handleOptions,
   json,
@@ -8,7 +10,9 @@ import {
   requireAdminAuth,
 } from "../_shared/admin.ts";
 import { verifyQrPayload } from "../wa-webhook/utils/qr.ts";
+import { logStructuredEvent } from "../_shared/observability.ts";
 import { getRotatingSecret } from "../_shared/env.ts";
+import { logStructuredEvent } from "../_shared/observability.ts";
 
 const supabase = createServiceRoleClient();
 const requestSchema = z.object({
@@ -49,7 +53,7 @@ Deno.serve(async (req) => {
   );
 
   if (!secrets.length) {
-    console.error("qr-info.secret_missing");
+    await logStructuredEvent("ERROR", { data: "qr-info.secret_missing" });
     return json({ error: "qr_token_secret_missing" }, 500);
   }
 
@@ -92,7 +96,7 @@ Deno.serve(async (req) => {
     logResponse("qr-info", 200, result);
     return json({ ok: true, ...result });
   } catch (error) {
-    console.warn("qr-info.lookup_failed", error);
+    await logStructuredEvent("WARNING", { data: "qr-info.lookup_failed", error });
     const message = error instanceof Error
       ? error.message
       : String(error ?? "error");

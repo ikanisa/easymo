@@ -1,6 +1,9 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { logStructuredEvent } from "../_shared/observability.ts";
 import { getServiceClient } from "../_shared/supabase.ts";
+import { logStructuredEvent } from "../_shared/observability.ts";
 import { getSecret, getSecretPair, getStringList } from "../_shared/secrets.ts";
+import { logStructuredEvent } from "../_shared/observability.ts";
 
 const supabase = getServiceClient();
 
@@ -180,7 +183,7 @@ serve(async (request) => {
   const config = loadRuntimeConfig();
 
   if (!config.secrets.length && !config.allowedIps.length) {
-    console.error("momo-sms.security_not_configured");
+    await logStructuredEvent("ERROR", { data: "momo-sms.security_not_configured" });
     return jsonResponse({ ok: false, error: "security_not_configured" }, 503);
   }
 
@@ -232,7 +235,7 @@ serve(async (request) => {
     if (error.code === "23505") {
       return jsonResponse({ ok: true, duplicate: true });
     }
-    console.error("momo_sms_hook.insert_failed", error);
+    await logStructuredEvent("ERROR", { data: "momo_sms_hook.insert_failed", error });
     return jsonResponse({ ok: false, error: "inbox_insert_failed" }, 500);
   }
 

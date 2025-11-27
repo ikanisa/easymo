@@ -372,4 +372,4 @@ async function handleInsuranceText(
   return true;
 }
 
-console.log("wa-webhook-insurance service started");
+await logStructuredEvent("LOG", { data: "wa-webhook-insurance service started" });

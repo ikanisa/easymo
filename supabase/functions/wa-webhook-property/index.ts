@@ -522,4 +522,4 @@ async function handlePropertyText(
   return false;
 }
 
-console.log("wa-webhook-property service started");
+await logStructuredEvent("LOG", { data: "wa-webhook-property service started" });

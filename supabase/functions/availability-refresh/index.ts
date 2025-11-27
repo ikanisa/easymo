@@ -1,5 +1,6 @@
 // deno-lint-ignore-file no-explicit-any
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.76.1";
+import { logStructuredEvent } from "../_shared/observability.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ??
   Deno.env.get("SERVICE_URL");
@@ -18,7 +19,7 @@ const CRON_ENABLED =
     .toLowerCase() !== "false";
 
 if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
-  console.error("availability-refresh missing Supabase configuration");
+  await logStructuredEvent("ERROR", { data: "availability-refresh missing Supabase configuration" });
 }
 
 const supabase = createClient(SUPABASE_URL ?? "", SUPABASE_SERVICE_KEY ?? "");
@@ -77,9 +78,9 @@ if (typeof denoWithCron.cron === "function" && CRON_ENABLED) {
     try {
       await runRefresh("cron");
     } catch (error) {
-      console.error("availability-refresh.cron_failed", error);
+      await logStructuredEvent("ERROR", { data: "availability-refresh.cron_failed", error });
     }
   });
 } else if (!CRON_ENABLED) {
-  console.warn("availability-refresh cron disabled via env");
+  await logStructuredEvent("WARNING", { data: "availability-refresh cron disabled via env" });
 }

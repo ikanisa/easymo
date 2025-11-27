@@ -58,7 +58,7 @@ async function runNotificationWorker(trigger: "http" | "cron") {
     const message = error instanceof Error
       ? error.message
       : String(error ?? "unknown_error");
-    console.error("notification-worker.run_failed", error);
+    await logStructuredEvent("ERROR", { data: "notification-worker.run_failed", error });
     await emitAlert("NOTIFY_WORKER_ERROR", {
       trigger,
       error: message,
@@ -73,7 +73,7 @@ async function runNotificationWorker(trigger: "http" | "cron") {
       try {
         await releaseWorkerLease();
       } catch (releaseError) {
-        console.error("notification-worker.release_failed", releaseError);
+        await logStructuredEvent("ERROR", { data: "notification-worker.release_failed", releaseError });
       }
     }
     running = false;
@@ -87,12 +87,12 @@ async function publishNotificationQueueDepth(trigger: "http" | "cron") {
       .select("id", { head: true, count: "exact" })
       .eq("status", "queued");
     if (error) {
-      console.error("notification-worker.queue_depth_fail", error);
+      await logStructuredEvent("ERROR", { data: "notification-worker.queue_depth_fail", error });
       return;
     }
     await recordGauge("notification_queue_depth", count ?? 0, { trigger });
   } catch (error) {
-    console.error("notification-worker.queue_depth_error", error);
+    await logStructuredEvent("ERROR", { data: "notification-worker.queue_depth_error", error });
   }
 }
 
@@ -120,7 +120,7 @@ if (typeof denoWithCron.cron === "function") {
       try {
         await runNotificationWorker("cron");
       } catch (error) {
-        console.error("notification-worker.cron", error);
+        await logStructuredEvent("ERROR", { data: "notification-worker.cron", error });
         await emitAlert("NOTIFY_CRON_FAIL", {
           error: error instanceof Error
             ? error.message
@@ -145,7 +145,7 @@ if (typeof denoWithCron.cron === "function") {
   }
 } else {
   if (CRON_ENABLED) {
-    console.warn("notification-worker cron not available in this runtime");
+    await logStructuredEvent("WARNING", { data: "notification-worker cron not available in this runtime" });
     await emitAlert("NOTIFY_CRON_UNSUPPORTED", { schedule: CRON_EXPR });
   }
 }

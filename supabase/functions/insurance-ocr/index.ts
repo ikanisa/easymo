@@ -1,18 +1,27 @@
 import {
+import { logStructuredEvent } from "../_shared/observability.ts";
   createClient,
   type SupabaseClient,
 } from "https://esm.sh/@supabase/supabase-js@2.76.1";
 import {
+import { logStructuredEvent } from "../_shared/observability.ts";
   MissingOpenAIKeyError,
   runInsuranceOCR,
 } from "../_shared/wa-webhook-shared/domains/insurance/ins_ocr.ts";
 import { normalizeInsuranceExtraction } from "../_shared/wa-webhook-shared/domains/insurance/ins_normalize.ts";
+import { logStructuredEvent } from "../_shared/observability.ts";
 import { notifyInsuranceAdmins } from "../_shared/wa-webhook-shared/domains/insurance/ins_admin_notify.ts";
+import { logStructuredEvent } from "../_shared/observability.ts";
 import { sendText } from "../_shared/wa-webhook-shared/wa/client.ts";
+import { logStructuredEvent } from "../_shared/observability.ts";
 import { buildUserSummary } from "../_shared/wa-webhook-shared/domains/insurance/ins_messages.ts";
+import { logStructuredEvent } from "../_shared/observability.ts";
 import { allocateInsuranceBonus } from "../_shared/wa-webhook-shared/wallet/allocate.ts";
+import { logStructuredEvent } from "../_shared/observability.ts";
 import { determineNextStatus } from "./utils.ts";
+import { logStructuredEvent } from "../_shared/observability.ts";
 import { recordRunMetrics } from "./telemetry.ts";
+import { logStructuredEvent } from "../_shared/observability.ts";
 
 type QueueStatus = "queued" | "processing" | "retry" | "succeeded" | "failed";
 
@@ -113,11 +122,11 @@ export async function handler(req: Request): Promise<Response> {
         inlinePayload.mime ?? undefined,
       );
       const normalized = normalizeInsuranceExtraction(raw);
-      console.info("INS_OCR_INLINE_SUCCESS");
+      await logStructuredEvent("INFO", { data: "INS_OCR_INLINE_SUCCESS" });
       return json({ raw, normalized });
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      console.error("INS_OCR_INLINE_ERROR", { error: message });
+      await logStructuredEvent("ERROR", { data: "INS_OCR_INLINE_ERROR", { error: message } });
       return json({ error: message }, 500);
     }
   }
@@ -185,7 +194,7 @@ async function fetchQueue(
     .limit(limit);
 
   if (error) {
-    console.error("insurance-ocr.fetch_queue_fail", error);
+    await logStructuredEvent("ERROR", { data: "insurance-ocr.fetch_queue_fail", error });
     throw new Error("fetch_queue_failed");
   }
 
@@ -199,7 +208,7 @@ async function countQueued(client: SupabaseClient): Promise<number> {
     .in("status", ["queued", "retry"]);
 
   if (error) {
-    console.error("insurance-ocr.queue_count_fail", error);
+    await logStructuredEvent("ERROR", { data: "insurance-ocr.queue_count_fail", error });
     return -1;
   }
 
@@ -297,7 +306,7 @@ async function processQueueRow(
       // Send summary to user
       const userSummary = buildUserSummary(normalized);
       await sendText(row.wa_id, userSummary);
-      console.log("insurance-ocr.user_summary_sent", { leadId, waId: row.wa_id });
+      await logStructuredEvent("LOG", { data: "insurance-ocr.user_summary_sent", { leadId, waId: row.wa_id } });
 
       // Award insurance bonus tokens (if user has profile)
       if (row.profile_id) {
@@ -321,7 +330,7 @@ async function processQueueRow(
         }
       }
     } else {
-      console.warn("insurance-ocr.no_user_wa_id", { leadId, queueId: row.id });
+      await logStructuredEvent("WARNING", { data: "insurance-ocr.no_user_wa_id", { leadId, queueId: row.id } });
     }
 
     return { id: row.id, status: "succeeded", leadId };
@@ -338,7 +347,7 @@ async function processQueueRow(
           last_error: message.substring(0, 500),
         })
         .eq("id", row.id);
-      console.warn("insurance-ocr.openai_missing", { id: row.id });
+      await logStructuredEvent("WARNING", { data: "insurance-ocr.openai_missing", { id: row.id } });
       return { id: row.id, status: "skipped", reason: "openai_key_missing" };
     }
     const nextStatus = determineNextStatus(attempts, MAX_ATTEMPTS);
@@ -359,7 +368,7 @@ async function processQueueRow(
       })
       .eq("id", leadId);
 
-    console.error("insurance-ocr.process_fail", { id: row.id, message });
+    await logStructuredEvent("ERROR", { data: "insurance-ocr.process_fail", { id: row.id, message } });
     return { id: row.id, status: nextStatus, error: message, leadId };
   }
 }
@@ -452,7 +461,7 @@ async function getLeadStatus(
     .eq("id", leadId)
     .maybeSingle();
   if (error) {
-    console.warn("insurance-ocr.lead_status_fail", { leadId, error: error.message });
+    await logStructuredEvent("WARNING", { data: "insurance-ocr.lead_status_fail", { leadId, error: error.message } });
     return null;
   }
   return data?.status ?? null;

@@ -117,7 +117,7 @@ Deno.serve(async (req) => {
       });
 
     if (certError) {
-      console.error("Error storing certificate:", certError);
+      await logStructuredEvent("ERROR", { data: "Error storing certificate:", certError });
       throw certError;
     }
 
@@ -150,7 +150,7 @@ Deno.serve(async (req) => {
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
-    console.error("Vehicle OCR error:", error);
+    await logStructuredEvent("ERROR", { data: "Vehicle OCR error:", error });
     
     await logStructuredEvent("VEHICLE_OCR_ERROR", {
       error: error.message,
@@ -225,7 +225,7 @@ async function extractCertificateData(fileUrl: string): Promise<{
       fields = JSON.parse(jsonMatch[0]);
     }
   } catch (e) {
-    console.error("Error parsing OCR response:", e);
+    await logStructuredEvent("ERROR", { data: "Error parsing OCR response:", e });
   }
 
   // Calculate confidence based on field completeness

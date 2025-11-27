@@ -6,7 +6,9 @@
 // =====================================================
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { logStructuredEvent } from "../_shared/observability.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { logStructuredEvent } from "../_shared/observability.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -64,7 +66,7 @@ serve(async (req) => {
       }
     );
   } catch (error) {
-    console.error("Scraper error:", error);
+    await logStructuredEvent("ERROR", { data: "Scraper error:", error });
     return new Response(
       JSON.stringify({
         success: false,
@@ -106,7 +108,7 @@ async function scrapeJobSources(country_code?: string, limit = 5, source_id?: st
     }
 
     if (!sources || sources.length === 0) {
-      console.log("No job sources need scraping");
+      await logStructuredEvent("LOG", { data: "No job sources need scraping" });
       return stats;
     }
 
@@ -115,12 +117,12 @@ async function scrapeJobSources(country_code?: string, limit = 5, source_id?: st
       ? sources.filter((s: any) => s.country_code === country_code).slice(0, limit)
       : sources.slice(0, limit);
 
-    console.log(`Scraping ${sourcesToScrape.length} job sources`);
+    await logStructuredEvent("LOG", { data: `Scraping ${sourcesToScrape.length} job sources` });
 
     // Scrape each source
     for (const source of sourcesToScrape) {
       try {
-        console.log(`Scraping job source: ${source.name} (${source.url})`);
+        await logStructuredEvent("LOG", { data: `Scraping job source: ${source.name} (${source.url})` });
         const listings = await invokeDeepResearch("jobs", source, fast);
 
         let newCount = 0;
@@ -149,7 +151,7 @@ async function scrapeJobSources(country_code?: string, limit = 5, source_id?: st
         stats.scraped++;
         stats.new_listings += newCount;
       } catch (error) {
-        console.error(`Error scraping ${source.name}:`, error);
+        await logStructuredEvent("ERROR", { data: `Error scraping ${source.name}:`, error });
         
         await supabase.rpc("update_job_source_scrape_stats", {
           p_source_id: source.id,
@@ -161,7 +163,7 @@ async function scrapeJobSources(country_code?: string, limit = 5, source_id?: st
       }
     }
   } catch (error) {
-    console.error("Job scraping error:", error);
+    await logStructuredEvent("ERROR", { data: "Job scraping error:", error });
     stats.errors++;
   }
 
@@ -196,7 +198,7 @@ async function scrapePropertySources(country_code?: string, limit = 5, source_id
     }
 
     if (!sources || sources.length === 0) {
-      console.log("No property sources need scraping");
+      await logStructuredEvent("LOG", { data: "No property sources need scraping" });
       return stats;
     }
 
@@ -205,12 +207,12 @@ async function scrapePropertySources(country_code?: string, limit = 5, source_id
       ? sources.filter((s: any) => s.country_code === country_code).slice(0, limit)
       : sources.slice(0, limit);
 
-    console.log(`Scraping ${sourcesToScrape.length} property sources`);
+    await logStructuredEvent("LOG", { data: `Scraping ${sourcesToScrape.length} property sources` });
 
     // Scrape each source
     for (const source of sourcesToScrape) {
       try {
-        console.log(`Scraping property source: ${source.name} (${source.url})`);
+        await logStructuredEvent("LOG", { data: `Scraping property source: ${source.name} (${source.url})` });
         const listings = await invokeDeepResearch("properties", source, fast);
         const ownerId = await getPropertyOwnerId();
 
@@ -241,7 +243,7 @@ async function scrapePropertySources(country_code?: string, limit = 5, source_id
         stats.scraped++;
         stats.new_listings += newCount;
       } catch (error) {
-        console.error(`Error scraping ${source.name}:`, error);
+        await logStructuredEvent("ERROR", { data: `Error scraping ${source.name}:`, error });
         
         await supabase.rpc("update_property_source_scrape_stats", {
           p_source_id: source.id,
@@ -253,7 +255,7 @@ async function scrapePropertySources(country_code?: string, limit = 5, source_id
       }
     }
   } catch (error) {
-    console.error("Property scraping error:", error);
+    await logStructuredEvent("ERROR", { data: "Property scraping error:", error });
     stats.errors++;
   }
 

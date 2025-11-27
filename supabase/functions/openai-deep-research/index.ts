@@ -253,7 +253,7 @@ function parseDeepResearchOutput(outputText: string, annotations: any[]): Resear
         availableFrom
       });
     } catch (error) {
-      console.error('Error parsing property block:', error);
+      await logStructuredEvent("ERROR", { data: 'Error parsing property block:', error });
       continue;
     }
   }
@@ -368,7 +368,7 @@ async function fetchEconfaryProperties(country: string, city?: string): Promise<
       city: city || "nationwide",
       error: error.message
     });
-    console.error("Econfary API error:", error);
+    await logStructuredEvent("ERROR", { data: "Econfary API error:", error });
     return [];
   }
 }
@@ -554,7 +554,7 @@ Respond with JSON only.`;
 
 async function fetchSerpAPIProperties(country: string, city?: string): Promise<ResearchedProperty[]> {
   if (!SERPAPI_KEY) {
-    console.warn("SerpAPI key not configured, skipping web search");
+    await logStructuredEvent("WARNING", { data: "SerpAPI key not configured, skipping web search" });
     return [];
   }
 
@@ -635,7 +635,7 @@ async function fetchSerpAPIProperties(country: string, city?: string): Promise<R
       city: city || "nationwide",
       error: error.message
     });
-    console.error("SerpAPI error:", error);
+    await logStructuredEvent("ERROR", { data: "SerpAPI error:", error });
     return [];
   }
 }
@@ -744,7 +744,7 @@ ${text}`;
     };
 
   } catch (error) {
-    console.error("Error extracting property from search result:", error);
+    await logStructuredEvent("ERROR", { data: "Error extracting property from search result:", error });
     return null;
   }
 }
@@ -837,7 +837,7 @@ async function geocodeAddress(address: string, city: string, country: string): P
       };
     }
   } catch (error) {
-    console.error("Geocoding error:", error);
+    await logStructuredEvent("ERROR", { data: "Geocoding error:", error });
   }
   return null;
 }
@@ -947,7 +947,7 @@ async function executeDeepResearch(
         city: city || "nationwide",
         error: error.message
       });
-      console.error(`Deep research error for ${city || country.name}:`, error);
+      await logStructuredEvent("ERROR", { data: `Deep research error for ${city || country.name}:`, error });
     }
   }
 
@@ -997,7 +997,7 @@ function validateAndNormalizeProperty(
       availableFrom: prop.availableFrom || new Date().toISOString().split('T')[0]
     };
   } catch (error) {
-    console.error("Property validation error:", error);
+    await logStructuredEvent("ERROR", { data: "Property validation error:", error });
     return null;
   }
 }
@@ -1060,13 +1060,13 @@ async function insertResearchedProperties(properties: ResearchedProperty[], rese
         });
 
       if (error) {
-        console.error("Insert error:", error);
+        await logStructuredEvent("ERROR", { data: "Insert error:", error });
         insertedCount.failed++;
       } else {
         insertedCount.success++;
       }
     } catch (error) {
-      console.error("Property insertion error:", error);
+      await logStructuredEvent("ERROR", { data: "Property insertion error:", error });
       insertedCount.failed++;
     }
   }

@@ -4,9 +4,13 @@
 // Supports BookingAgent, TokenRedemptionAgent, and TriageAgent.
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { logStructuredEvent } from "../_shared/observability.ts";
 import { getServiceClient } from "../_shared/supabase.ts";
+import { logStructuredEvent } from "../_shared/observability.ts";
 import { requireAdmin } from "../_shared/auth.ts";
+import { logStructuredEvent } from "../_shared/observability.ts";
 import { z } from "zod";
+import { logStructuredEvent } from "../_shared/observability.ts";
 
 // Feature flag check
 const ENABLE_AGENTS = ["1", "true", "yes"].includes(

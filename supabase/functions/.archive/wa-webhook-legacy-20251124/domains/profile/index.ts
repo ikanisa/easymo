@@ -58,7 +58,7 @@ export async function handleProfileMenu(ctx: RouterContext): Promise<boolean> {
   );
 
   if (!menuItems || menuItems.length === 0) {
-    console.error("No profile menu items found, using fallback");
+    await logStructuredEvent("ERROR", { data: "No profile menu items found, using fallback" });
     await sendListMessage(
       ctx,
       {
@@ -347,7 +347,7 @@ export async function handleVehicleCertificateMedia(
     await clearState(ctx.supabase, ctx.profileId);
     return true;
   } catch (error) {
-    console.error("Vehicle certificate upload error:", error);
+    await logStructuredEvent("ERROR", { data: "Vehicle certificate upload error:", error });
     
     await sendButtonsMessage(
       ctx,

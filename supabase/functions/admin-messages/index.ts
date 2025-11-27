@@ -1,5 +1,7 @@
 import { z } from "https://deno.land/x/zod@v3.23.8/mod.ts";
+import { logStructuredEvent } from "../_shared/observability.ts";
 import {
+import { logStructuredEvent } from "../_shared/observability.ts";
   createServiceRoleClient,
   handleOptions,
   json,
@@ -8,6 +10,7 @@ import {
   requireAdminAuth,
 } from "../_shared/admin.ts";
 import { rateLimitMiddleware } from "../_shared/rate-limit/index.ts";
+import { logStructuredEvent } from "../_shared/observability.ts";
 
 const supabase = createServiceRoleClient();
 
@@ -60,14 +63,14 @@ Deno.serve(async (req) => {
 
     const { data, error } = await builder;
     if (error) {
-      console.error("admin-messages.query_failed", error);
+      await logStructuredEvent("ERROR", { data: "admin-messages.query_failed", error });
       return json({ error: "query_failed" }, 500);
     }
 
     logResponse("admin-messages", 200, { count: data?.length ?? 0 });
     return json({ messages: data ?? [] });
   } catch (error) {
-    console.error("admin-messages.unhandled", error);
+    await logStructuredEvent("ERROR", { data: "admin-messages.unhandled", error });
     return json({ error: "internal_error" }, 500);
   }
 });

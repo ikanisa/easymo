@@ -1,5 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { logStructuredEvent } from "../_shared/observability.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { logStructuredEvent } from "../_shared/observability.ts";
 
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY") || "";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "";
@@ -39,7 +41,7 @@ serve(async (req) => {
       headers: { "Content-Type": "application/json" },
     });
   } catch (error) {
-    console.error("classify-business-tags.error", error);
+    await logStructuredEvent("ERROR", { data: "classify-business-tags.error", error });
     return new Response(
       JSON.stringify({ error: error.message }),
       { status: 500, headers: { "Content-Type": "application/json" } },
@@ -145,7 +147,7 @@ async function classifyBatch(batchSize: number) {
       const result = await classifySingleBusiness(business.id);
       results.push(result);
     } catch (err) {
-      console.error(`Failed to classify ${business.id}:`, err);
+      await logStructuredEvent("ERROR", { data: `Failed to classify ${business.id}:`, err });
       results.push({
         business_id: business.id,
         error: err.message,
@@ -235,7 +237,7 @@ Return ONLY a valid JSON array with this structure:
     const jsonString = jsonMatch ? jsonMatch[1] || jsonMatch[0] : content;
     results = JSON.parse(jsonString);
   } catch (err) {
-    console.error("Failed to parse OpenAI response:", content);
+    await logStructuredEvent("ERROR", { data: "Failed to parse OpenAI response:", content });
     throw new Error("Invalid JSON response from OpenAI");
   }
 

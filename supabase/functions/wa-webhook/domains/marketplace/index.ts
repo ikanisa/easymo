@@ -6,6 +6,7 @@
  */
 
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { logStructuredEvent } from "../_shared/observability.ts";
 
 export interface MarketplaceMessage {
   text: string;

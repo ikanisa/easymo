@@ -1,10 +1,17 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { logStructuredEvent } from "../_shared/observability.ts";
 import { getWabaCredentials, getSupabaseServiceConfig } from "../_shared/env.ts";
+import { logStructuredEvent } from "../_shared/observability.ts";
 import type { WhatsAppWebhookPayload } from "../_shared/wa-webhook-shared/types.ts";
+import { logStructuredEvent } from "../_shared/observability.ts";
 import { getRoutingText } from "../_shared/wa-webhook-shared/utils/messages.ts";
+import { logStructuredEvent } from "../_shared/observability.ts";
 import { routeMessage } from "../wa-webhook-core/routing_logic.ts";
+import { logStructuredEvent } from "../_shared/observability.ts";
 import { verifyWebhookSignature } from "../_shared/webhook-utils.ts";
+import { logStructuredEvent } from "../_shared/observability.ts";
 import { rateLimitMiddleware } from "../_shared/rate-limit/index.ts";
+import { logStructuredEvent } from "../_shared/observability.ts";
 
 /**
  * ⚠️ DEPRECATION NOTICE ⚠️
@@ -75,7 +82,7 @@ async function fallbackRoute(req: Request): Promise<Response> {
     return res;
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    console.error(JSON.stringify({ event: "WA_WEBHOOK_FALLBACK_ERROR", message }));
+    await logStructuredEvent("ERROR", { data: JSON.stringify({ event: "WA_WEBHOOK_FALLBACK_ERROR", message }) });
     return new Response(JSON.stringify({ success: true, fallback: true }), { status: 200, headers: { "Content-Type": "application/json" } });
   }
 }
@@ -93,7 +100,7 @@ serve(async (req: Request): Promise<Response> => {
       const isValid = await verifyWebhookSignature(rawBody, signature, appSecret);
       
       if (!isValid) {
-        console.error(JSON.stringify({ event: "WA_WEBHOOK_INVALID_SIGNATURE" }));
+        await logStructuredEvent("ERROR", { data: JSON.stringify({ event: "WA_WEBHOOK_INVALID_SIGNATURE" }) });
         return new Response(JSON.stringify({ error: "invalid_signature" }), {
           status: 401,
           headers: { "Content-Type": "application/json" }

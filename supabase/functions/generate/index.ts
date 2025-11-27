@@ -1,8 +1,13 @@
 import { z } from "https://deno.land/x/zod@v3.23.8/mod.ts";
+import { logStructuredEvent } from "../_shared/observability.ts";
 import { getServiceClient } from "../_shared/supabase.ts";
+import { logStructuredEvent } from "../_shared/observability.ts";
 import { requireEnv } from "../_shared/env.ts";
+import { logStructuredEvent } from "../_shared/observability.ts";
 import { badRequest, json, methodNotAllowed, notFound, serverError } from "../_shared/http.ts";
+import { logStructuredEvent } from "../_shared/observability.ts";
 import { buildWhatsappPreset } from "../../../tools/ffmpeg-presets/whatsapp.ts";
+import { logStructuredEvent } from "../_shared/observability.ts";
 
 const requestSchema = z.object({
   job_id: z.string().uuid(),
@@ -133,7 +138,7 @@ Deno.serve(async (req) => {
     .maybeSingle();
 
   if (jobError) {
-    console.error("generate.job_lookup_failed", jobError);
+    await logStructuredEvent("ERROR", { data: "generate.job_lookup_failed", jobError });
     return serverError("job_lookup_failed");
   }
 
@@ -217,7 +222,7 @@ Deno.serve(async (req) => {
       sora_job_id: sora.id,
     });
   } catch (error) {
-    console.error("generate.unhandled", error);
+    await logStructuredEvent("ERROR", { data: "generate.unhandled", error });
     return serverError("generation_failed", {
       message: error instanceof Error ? error.message : String(error ?? "error"),
     });

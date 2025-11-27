@@ -6,8 +6,11 @@
 // =====================================================
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { logStructuredEvent } from "../_shared/observability.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { logStructuredEvent } from "../_shared/observability.ts";
 import { sendText } from "../wa-webhook/wa/client.ts";
+import { logStructuredEvent } from "../_shared/observability.ts";
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL")!,
@@ -101,7 +104,7 @@ serve(async (req) => {
         }
 
         sent++;
-        console.log(`Sent notification to ${notif.to_wa_id}`);
+        await logStructuredEvent("LOG", { data: `Sent notification to ${notif.to_wa_id}` });
       } catch (error) {
         failed++;
         const errorMsg = error instanceof Error ? error.message : String(error);
@@ -132,7 +135,7 @@ serve(async (req) => {
             .eq("id", adminNotificationId);
         }
 
-        console.error(`Failed to send to ${notif.to_wa_id}:`, error);
+        await logStructuredEvent("ERROR", { data: `Failed to send to ${notif.to_wa_id}:`, error });
       }
     }
 
@@ -150,7 +153,7 @@ serve(async (req) => {
       }
     );
   } catch (error) {
-    console.error("Send insurance admin notifications error:", error);
+    await logStructuredEvent("ERROR", { data: "Send insurance admin notifications error:", error });
     return new Response(
       JSON.stringify({
         success: false,

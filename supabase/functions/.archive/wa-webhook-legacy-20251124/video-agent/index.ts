@@ -1,7 +1,11 @@
 import type { RouterContext } from "../types.ts";
+import { logStructuredEvent } from "../_shared/observability.ts";
 import type { ChatState } from "../state/store.ts";
+import { logStructuredEvent } from "../_shared/observability.ts";
 import { setState } from "../state/store.ts";
+import { logStructuredEvent } from "../_shared/observability.ts";
 import { homeOnly, sendButtonsMessage } from "../utils/reply.ts";
+import { logStructuredEvent } from "../_shared/observability.ts";
 
 const TEMPLATE_PREFIX = "video_template::";
 
@@ -108,7 +112,7 @@ export async function handleVideoTemplateSelection(
     .maybeSingle();
 
   if (error) {
-    console.error("video_agent.template_lookup_failed", { error, slug });
+    await logStructuredEvent("ERROR", { data: "video_agent.template_lookup_failed", { error, slug } });
     await sendButtonsMessage(
       ctx,
       "⚠️ We couldn't load that video template. Please try again later.",
@@ -161,7 +165,7 @@ export async function handleVideoTemplateSelection(
       homeOnly(),
     );
   } catch (persistError) {
-    console.error("video_agent.persist_failed", persistError);
+    await logStructuredEvent("ERROR", { data: "video_agent.persist_failed", persistError });
     await sendButtonsMessage(
       ctx,
       "We hit a snag saving that request. Please try again or pick another template.",

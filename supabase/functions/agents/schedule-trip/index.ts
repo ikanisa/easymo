@@ -2,7 +2,9 @@
 // Handles trip scheduling, pattern learning, recurring trips, and predictive recommendations
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { logStructuredEvent } from "../_shared/observability.ts";
 import { createClient } from "@supabase/supabase-js@2";
+import { logStructuredEvent } from "../_shared/observability.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -400,7 +402,7 @@ async function generateInsights(patterns: any[], analysis: any): Promise<string[
     const insights = data.choices[0].message.content.split("\n").filter((s: string) => s.trim());
     return insights.slice(0, 3);
   } catch (error) {
-    console.error("Failed to generate AI insights:", error);
+    await logStructuredEvent("ERROR", { data: "Failed to generate AI insights:", error });
     return [
       "You have consistent travel patterns",
       "Consider scheduling recurring trips to save time",

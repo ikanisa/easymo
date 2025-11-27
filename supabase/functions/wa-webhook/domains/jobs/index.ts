@@ -446,7 +446,7 @@ export async function handleJobFindLocation(
   });
 
   if (error) {
-    console.error("jobs.find.nearby_fail", error);
+    await logStructuredEvent("ERROR", { data: "jobs.find.nearby_fail", error });
     await sendButtonsMessage(
       ctx,
       t(ctx.locale, "jobs.error.fetch_failed"),
@@ -720,7 +720,7 @@ export async function handleJobPostDetails(
     .single();
 
   if (error) {
-    console.error("jobs.post.save_error", error);
+    await logStructuredEvent("ERROR", { data: "jobs.post.save_error", error });
     await sendButtonsMessage(
       ctx,
       t(ctx.locale, "jobs.post.error.save_failed"),
@@ -784,7 +784,7 @@ export async function showJobCandidates(
 
   const { data, error } = await query;
   if (error) {
-    console.error("jobs.candidates.fetch_fail", error);
+    await logStructuredEvent("ERROR", { data: "jobs.candidates.fetch_fail", error });
     await sendButtonsMessage(
       ctx,
       t(ctx.locale, "jobs.error.fetch_failed"),
@@ -1005,7 +1005,7 @@ export async function handleJobBoardText(
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("Job agent error:", errorText);
+      await logStructuredEvent("ERROR", { data: "Job agent error:", errorText });
       
       await sendMessage(ctx, {
         text: t(ctx.locale, "jobs.error.agent_failed"),
@@ -1034,7 +1034,7 @@ export async function handleJobBoardText(
 
     return true;
   } catch (error: any) {
-    console.error("Job board agent error:", error);
+    await logStructuredEvent("ERROR", { data: "Job board agent error:", error });
     
     await sendMessage(ctx, {
       text: t(ctx.locale, "jobs.error.something_wrong"),
@@ -1124,7 +1124,7 @@ export async function showMyApplications(ctx: RouterContext): Promise<boolean> {
 
     return true;
   } catch (error: any) {
-    console.error("Error fetching applications:", error);
+    await logStructuredEvent("ERROR", { data: "Error fetching applications:", error });
     await sendMessage(ctx, {
       text: t(ctx.locale, "jobs.error.fetch_failed"),
     });
@@ -1252,7 +1252,7 @@ export async function listMyJobs(ctx: RouterContext): Promise<boolean> {
 
     return true;
   } catch (error: any) {
-    console.error("Error fetching my jobs:", error);
+    await logStructuredEvent("ERROR", { data: "Error fetching my jobs:", error });
     await sendMessage(ctx, {
       text: t(ctx.locale, "jobs.error.fetch_failed"),
     });

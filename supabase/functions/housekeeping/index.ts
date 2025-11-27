@@ -1,7 +1,10 @@
 // deno-lint-ignore-file no-explicit-any
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { logStructuredEvent } from "../_shared/observability.ts";
 import { getServiceClient } from "../_shared/supabase.ts";
+import { logStructuredEvent } from "../_shared/observability.ts";
 import { ok, serverError } from "../_shared/http.ts";
+import { logStructuredEvent } from "../_shared/observability.ts";
 /*
  * housekeeping
  *
@@ -55,7 +58,7 @@ serve(async (_req) => {
       trips_expired: tripsExpired ?? 0,
     });
   } catch (e) {
-    console.error("housekeeping error:", e);
+    await logStructuredEvent("ERROR", { data: "housekeeping error:", e });
     return serverError("internal_error");
   }
 });

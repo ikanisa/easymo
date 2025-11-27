@@ -1,13 +1,19 @@
 import type { RouterContext } from "../../types.ts";
+import { logStructuredEvent } from "../_shared/observability.ts";
 import { clearState, setState } from "../../state/store.ts";
+import { logStructuredEvent } from "../_shared/observability.ts";
 import { IDS } from "../../wa/ids.ts";
+import { logStructuredEvent } from "../_shared/observability.ts";
 import {
+import { logStructuredEvent } from "../_shared/observability.ts";
   buildButtons,
   sendButtonsMessage,
   sendListMessage,
 } from "../../utils/reply.ts";
 import { sendHomeMenu } from "../../flows/home.ts";
+import { logStructuredEvent } from "../_shared/observability.ts";
 import { processInsuranceDocument } from "./ins_handler.ts";
+import { logStructuredEvent } from "../_shared/observability.ts";
 
 const STATES = {
   MENU: "insurance_menu",
@@ -21,7 +27,7 @@ export async function startInsurance(
   _state: InsuranceState,
 ): Promise<boolean> {
   if (!ctx.profileId) return false;
-  console.info("insurance.menu.start", { from: ctx.from });
+  await logStructuredEvent("INFO", { data: "insurance.menu.start", { from: ctx.from } });
   await setState(ctx.supabase, ctx.profileId, {
     key: STATES.MENU,
     data: {},
@@ -104,7 +110,7 @@ export async function handleInsuranceMedia(
   state: InsuranceState,
 ): Promise<boolean> {
   if (!ctx.profileId) return false;
-  console.info("insurance.ocr.media", { from: ctx.from, state: state.key });
+  await logStructuredEvent("INFO", { data: "insurance.ocr.media", { from: ctx.from, state: state.key } });
   const outcome = await processInsuranceDocument(ctx, msg, state.key);
   if (outcome === "ocr_ok" && ctx.profileId) {
     await setState(ctx.supabase, ctx.profileId, { key: STATES.MENU, data: {} });

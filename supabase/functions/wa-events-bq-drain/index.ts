@@ -1,6 +1,9 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { logStructuredEvent } from "../_shared/observability.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { logStructuredEvent } from "../_shared/observability.ts";
 import { streamRowsToBigQuery } from "../_shared/bigquery.ts";
+import { logStructuredEvent } from "../_shared/observability.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
@@ -56,7 +59,7 @@ serve(async (req) => {
   });
 
   if (leaseError) {
-    console.error("wa-events-bq-drain.lease_failed", leaseError);
+    await logStructuredEvent("ERROR", { data: "wa-events-bq-drain.lease_failed", leaseError });
     return respond({ success: false, error: "lease_failed" }, 500);
   }
 
@@ -88,7 +91,7 @@ serve(async (req) => {
       .delete()
       .in("id", ids);
     if (deleteError) {
-      console.error("wa-events-bq-drain.delete_failed", deleteError);
+      await logStructuredEvent("ERROR", { data: "wa-events-bq-drain.delete_failed", deleteError });
       return respond({ success: false, error: "delete_failed" }, 500);
     }
     return respond({ success: true, processed: rows.length });

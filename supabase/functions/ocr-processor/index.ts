@@ -1,6 +1,9 @@
 import { IDS } from "../wa-webhook/wa/ids.ts";
+import { logStructuredEvent } from "../_shared/observability.ts";
 import { resolveOpenAiResponseText } from "../_shared/wa-webhook-shared/utils/openai_responses.ts";
+import { logStructuredEvent } from "../_shared/observability.ts";
 import { SupabaseRest } from "./supabase_rest.ts";
+import { logStructuredEvent } from "../_shared/observability.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ??
   Deno.env.get("SERVICE_URL") ?? "";
@@ -120,11 +123,11 @@ export async function processNextJob(
 
   const job = await activeDeps.claimNextJob();
   if (!job) {
-    console.log("ocr.job_none_available");
+    await logStructuredEvent("LOG", { data: "ocr.job_none_available" });
     return { status: "no_job" };
   }
 
-  console.log("ocr.job_start", { jobId: job.id, barId: job.bar_id });
+  await logStructuredEvent("LOG", { data: "ocr.job_start", { jobId: job.id, barId: job.bar_id } });
   let menuId: string | null = null;
   try {
     const file = await activeDeps.downloadSourceFile(job.source_file_id);
@@ -142,7 +145,7 @@ export async function processNextJob(
       menuId,
     });
     await activeDeps.publishMenu(job.bar_id, menuId);
-    console.log("ocr.job_succeeded", { jobId: job.id, resultPath, menuId });
+    await logStructuredEvent("LOG", { data: "ocr.job_succeeded", { jobId: job.id, resultPath, menuId } });
     await activeDeps.notifyMenuReady(job.bar_id);
     return { status: "processed", jobId: job.id };
   } catch (error) {
@@ -150,7 +153,7 @@ export async function processNextJob(
       errorMessage: error instanceof Error ? error.message : String(error),
       menuId,
     });
-    console.error("ocr.job_failed", { jobId: job.id, error, menuId });
+    await logStructuredEvent("ERROR", { data: "ocr.job_failed", { jobId: job.id, error, menuId } });
     throw error;
   }
 }
@@ -164,24 +167,24 @@ if (!globalFlags.__DISABLE_OCR_SERVER__) {
 
   Deno.serve(async () => {
     if (!SUPABASE_SERVICE_ROLE_KEY) {
-      console.error("Missing SUPABASE_SERVICE_ROLE_KEY");
+      await logStructuredEvent("ERROR", { data: "Missing SUPABASE_SERVICE_ROLE_KEY" });
       return new Response("Missing SUPABASE_SERVICE_ROLE_KEY", { status: 500 });
     }
     if (!OPENAI_API_KEY) {
-      console.error("Missing OPENAI_API_KEY");
+      await logStructuredEvent("ERROR", { data: "Missing OPENAI_API_KEY" });
       return new Response("Missing OPENAI_API_KEY", { status: 500 });
     }
 
     try {
       const result = await processNextJob();
       if (result.status === "no_job") {
-        console.log("ocr.process_none_available");
+        await logStructuredEvent("LOG", { data: "ocr.process_none_available" });
         return new Response("No jobs", { status: 200 });
       }
-      console.log("ocr.processed", result);
+      await logStructuredEvent("LOG", { data: "ocr.processed", result });
       return new Response("Job processed", { status: 200 });
     } catch (error) {
-      console.error("ocr.job_failed", error);
+      await logStructuredEvent("ERROR", { data: "ocr.job_failed", error });
       const message = error instanceof Error
         ? `${error.name ?? "Error"}: ${error.message}`
         : String(error ?? "unknown_error");
@@ -542,7 +545,7 @@ async function publishMenu(
     ],
   });
   if (archiveResult.error) {
-    console.error("ocr.publish.archive_fail", archiveResult.error);
+    await logStructuredEvent("ERROR", { data: "ocr.publish.archive_fail", archiveResult.error });
   }
 
   const publishResult = await client.update("menus", {
@@ -552,7 +555,7 @@ async function publishMenu(
     filters: [{ column: "id", operator: "eq", value: menuId }],
   });
   if (publishResult.error) {
-    console.error("ocr.publish.publish_fail", publishResult.error);
+    await logStructuredEvent("ERROR", { data: "ocr.publish.publish_fail", publishResult.error });
     throw new Error(publishResult.error.message);
   }
 
@@ -804,9 +807,9 @@ async function sendMenuReadyNotification(
     if (insertResult.error) {
       throw new Error(insertResult.error.message);
     }
-    console.log("ocr.notify_menu_ready_done", { barId });
+    await logStructuredEvent("LOG", { data: "ocr.notify_menu_ready_done", { barId } });
   } catch (error) {
-    console.error("ocr.notify_menu_ready_fail", error, { barId });
+    await logStructuredEvent("ERROR", { data: "ocr.notify_menu_ready_fail", error, { barId } });
   }
 }
 

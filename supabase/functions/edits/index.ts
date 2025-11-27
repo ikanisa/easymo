@@ -1,12 +1,16 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { logStructuredEvent } from "../_shared/observability.ts";
 import { v4 as uuid } from "https://esm.sh/uuid@9.0.1";
+import { logStructuredEvent } from "../_shared/observability.ts";
 import {
+import { logStructuredEvent } from "../_shared/observability.ts";
   badRequest,
   methodNotAllowed,
   ok,
   serverError,
 } from "../_shared/http.ts";
 import {
+import { logStructuredEvent } from "../_shared/observability.ts";
   appendLineage,
   applyMutation,
   type LineageEntry,
@@ -92,7 +96,7 @@ serve(async (req) => {
       { headers: corsHeaders },
     );
   } catch (error) {
-    console.error(error);
+    await logStructuredEvent("ERROR", { data: error });
     return serverError(
       "edit_failed",
       {

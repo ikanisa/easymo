@@ -370,7 +370,7 @@ async function handleWithAIAgent(
           }
         } catch (cacheError) {
           // Non-critical - log but continue
-          console.warn("marketplace.location_cache_fail", cacheError);
+          await logStructuredEvent("WARNING", { data: "marketplace.location_cache_fail", cacheError });
         }
       }
     } else if (!context.location) {
@@ -425,7 +425,7 @@ async function handleWithAIAgent(
         }
       } catch (cacheError) {
         // Non-critical - continue without cached location
-        console.warn("marketplace.location_resolution_fail", cacheError);
+        await logStructuredEvent("WARNING", { data: "marketplace.location_resolution_fail", cacheError });
       }
       
       // If still no location, try to extract from text

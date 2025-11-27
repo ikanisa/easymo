@@ -1,5 +1,7 @@
 import { corsHeaders } from "../_shared/http.ts";
+import { logStructuredEvent } from "../_shared/observability.ts";
 import { getServiceClient } from "../_shared/supabase.ts";
+import { logStructuredEvent } from "../_shared/observability.ts";
 
 const supabase = getServiceClient();
 
@@ -79,7 +81,7 @@ Deno.serve(async (req) => {
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
-    console.error("Bars lookup error:", error);
+    await logStructuredEvent("ERROR", { data: "Bars lookup error:", error });
     return new Response(
       JSON.stringify({ error: error.message }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }

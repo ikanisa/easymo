@@ -265,7 +265,7 @@ async function findAndContactNearbyVendors(
   );
 
   if (vendorsError) {
-    console.error("Vendor matching failed:", vendorsError);
+    await logStructuredEvent("ERROR", { data: "Vendor matching failed:", vendorsError });
     throw vendorsError;
   }
 

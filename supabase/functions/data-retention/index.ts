@@ -1,7 +1,10 @@
 // deno-lint-ignore-file no-explicit-any
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { logStructuredEvent } from "../_shared/observability.ts";
 import { getServiceClient } from "../_shared/supabase.ts";
+import { logStructuredEvent } from "../_shared/observability.ts";
 import { ok, serverError } from "../_shared/http.ts";
+import { logStructuredEvent } from "../_shared/observability.ts";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const supabase = getServiceClient();
@@ -98,10 +101,10 @@ async function runRetention(trigger: "http" | "cron") {
     const insuranceDeleted = await deleteInsuranceDocuments(now);
     summary.insurance_documents_deleted = insuranceDeleted;
     summary.ok = true;
-    console.info("data_retention.completed", summary);
+    await logStructuredEvent("INFO", { data: "data_retention.completed", summary });
     return summary;
   } catch (error) {
-    console.error("data_retention.failed", error);
+    await logStructuredEvent("ERROR", { data: "data_retention.failed", error });
     return {
       ok: false,
       trigger,
@@ -124,9 +127,9 @@ if (typeof denoWithCron.cron === "function" && CRON_ENABLED) {
     try {
       await runRetention("cron");
     } catch (error) {
-      console.error("data_retention.cron_failed", error);
+      await logStructuredEvent("ERROR", { data: "data_retention.cron_failed", error });
     }
   });
 } else if (!CRON_ENABLED) {
-  console.warn("data-retention cron disabled via env");
+  await logStructuredEvent("WARNING", { data: "data-retention cron disabled via env" });
 }

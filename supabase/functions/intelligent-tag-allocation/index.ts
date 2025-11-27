@@ -1,5 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { logStructuredEvent } from "../_shared/observability.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { logStructuredEvent } from "../_shared/observability.ts";
 
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY") || "";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "";
@@ -27,8 +29,8 @@ serve(async (req) => {
   try {
     const { batchSize = 50, dryRun = false } = await req.json().catch(() => ({}));
 
-    console.log("Starting intelligent tag allocation...");
-    console.log(`Batch size: ${batchSize}, Dry run: ${dryRun}`);
+    await logStructuredEvent("LOG", { data: "Starting intelligent tag allocation..." });
+    await logStructuredEvent("LOG", { data: `Batch size: ${batchSize}, Dry run: ${dryRun}` });
 
     // Get active tags (first 11 primary tags)
     const { data: allTags, error: tagsError } = await supabase
@@ -45,8 +47,8 @@ serve(async (req) => {
     const primaryTags = allTags.slice(0, 11);
     const othersTag = allTags.find(t => t.slug === "others" || t.name.toLowerCase() === "others");
 
-    console.log(`Primary tags: ${primaryTags.map(t => t.name).join(", ")}`);
-    console.log(`Others tag: ${othersTag?.name || "Not found"}`);
+    await logStructuredEvent("LOG", { data: `Primary tags: ${primaryTags.map(t => t.name).join(", ")}` });
+    await logStructuredEvent("LOG", { data: `Others tag: ${othersTag?.name || "Not found"}` });
 
     // Get businesses without tag_id
     const { data: businesses, error: businessError } = await supabase
@@ -71,7 +73,7 @@ serve(async (req) => {
       );
     }
 
-    console.log(`Processing ${businesses.length} businesses...`);
+    await logStructuredEvent("LOG", { data: `Processing ${businesses.length} businesses...` });
 
     // Use OpenAI to intelligently allocate tags
     const results = await allocateTagsWithOpenAI(businesses, primaryTags, othersTag);
@@ -88,7 +90,7 @@ serve(async (req) => {
         if (!updateError) {
           updated++;
         } else {
-          console.error(`Failed to update ${result.business_name}:`, updateError);
+          await logStructuredEvent("ERROR", { data: `Failed to update ${result.business_name}:`, updateError });
         }
       }
     }
@@ -104,7 +106,7 @@ serve(async (req) => {
       { headers: { "Content-Type": "application/json" } }
     );
   } catch (error) {
-    console.error("Error:", error);
+    await logStructuredEvent("ERROR", { data: "Error:", error });
     return new Response(
       JSON.stringify({ 
         success: false, 
@@ -164,7 +166,7 @@ ${businessList}
 Respond with ONLY the JSON object, no other text.`;
 
   try {
-    console.log("Calling OpenAI with gpt-4o-mini for intelligent reasoning...");
+    await logStructuredEvent("LOG", { data: "Calling OpenAI with gpt-4o-mini for intelligent reasoning..." });
     
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
@@ -201,7 +203,7 @@ Respond with ONLY the JSON object, no other text.`;
       throw new Error("No response from OpenAI");
     }
 
-    console.log("OpenAI response received");
+    await logStructuredEvent("LOG", { data: "OpenAI response received" });
 
     // Parse JSON response
     let allocations: Array<{
@@ -219,7 +221,7 @@ Respond with ONLY the JSON object, no other text.`;
         throw new Error("Expected array of allocations");
       }
     } catch (err) {
-      console.error("Failed to parse OpenAI response:", content);
+      await logStructuredEvent("ERROR", { data: "Failed to parse OpenAI response:", content });
       throw new Error("Invalid JSON response from OpenAI");
     }
 
@@ -229,7 +231,7 @@ Respond with ONLY the JSON object, no other text.`;
       const tag = [...primaryTags, othersTag].find(t => t?.slug === alloc.tag_slug);
 
       if (!business || !tag) {
-        console.warn(`Invalid allocation: business_index=${alloc.business_index}, tag_slug=${alloc.tag_slug}`);
+        await logStructuredEvent("WARNING", { data: `Invalid allocation: business_index=${alloc.business_index}, tag_slug=${alloc.tag_slug}` });
         return null;
       }
 
@@ -250,10 +252,10 @@ Respond with ONLY the JSON object, no other text.`;
       reasoning: string;
     }>;
 
-    console.log(`Successfully allocated tags for ${results.length} businesses`);
+    await logStructuredEvent("LOG", { data: `Successfully allocated tags for ${results.length} businesses` });
     return results;
   } catch (error) {
-    console.error("OpenAI allocation error:", error);
+    await logStructuredEvent("ERROR", { data: "OpenAI allocation error:", error });
     throw error;
   }
 }

@@ -82,7 +82,7 @@ Deno.serve(async (req) => {
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
-    console.error("Business lookup error:", error);
+    await logStructuredEvent("ERROR", { data: "Business lookup error:", error });
     
     await logStructuredEvent("BUSINESS_LOOKUP_ERROR", {
       error: error.message,
@@ -135,7 +135,7 @@ async function searchByName(
   });
 
   if (error) {
-    console.error("Supabase RPC error:", error);
+    await logStructuredEvent("ERROR", { data: "Supabase RPC error:", error });
     throw error;
   }
 
@@ -158,7 +158,7 @@ async function searchByLocation(
   });
 
   if (error) {
-    console.error("Supabase RPC error:", error);
+    await logStructuredEvent("ERROR", { data: "Supabase RPC error:", error });
     throw error;
   }
 

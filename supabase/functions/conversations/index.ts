@@ -6,10 +6,15 @@
 // to fetch transcripts, append audit notes, or enrich metadata.
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { logStructuredEvent } from "../_shared/observability.ts";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { logStructuredEvent } from "../_shared/observability.ts";
 import { z } from "zod";
+import { logStructuredEvent } from "../_shared/observability.ts";
 import { getServiceClient } from "../_shared/supabase.ts";
+import { logStructuredEvent } from "../_shared/observability.ts";
 import { getAdminToken } from "../_shared/env.ts";
+import { logStructuredEvent } from "../_shared/observability.ts";
 
 const BASE_HEADERS: Record<string, string> = {
   "content-type": "application/json; charset=utf-8",
@@ -107,7 +112,7 @@ function methodNotAllowed(allowed: string[]): Response {
 function ensureAdmin(req: Request): Response | null {
   const token = getAdminToken();
   if (!token) {
-    console.warn("conversations.missing_admin_token");
+    await logStructuredEvent("WARNING", { data: "conversations.missing_admin_token" });
     return unauthorized();
   }
   const provided = req.headers.get("x-api-key") ?? req.headers.get("x-admin-token");
@@ -384,7 +389,7 @@ export const handler = async (req: Request): Promise<Response> => {
       }
       return respond(200, mapConversation(conversation));
     } catch (error) {
-      console.error("conversations.create_failed", error);
+      await logStructuredEvent("ERROR", { data: "conversations.create_failed", error });
       return serverError("failed_to_create_conversation");
     }
   }
@@ -401,7 +406,7 @@ export const handler = async (req: Request): Promise<Response> => {
         if (!conversation) return notFound("conversation_not_found");
         return respond(200, mapConversation(conversation));
       } catch (error) {
-        console.error("conversations.fetch_failed", error);
+        await logStructuredEvent("ERROR", { data: "conversations.fetch_failed", error });
         return serverError("failed_to_fetch_conversation");
       }
     }
@@ -422,7 +427,7 @@ export const handler = async (req: Request): Promise<Response> => {
         if (!data) return notFound("conversation_not_found");
         return respond(200, mapConversation(data as ConversationRow));
       } catch (error) {
-        console.error("conversations.update_failed", error);
+        await logStructuredEvent("ERROR", { data: "conversations.update_failed", error });
         return serverError("failed_to_update_conversation");
       }
     }
@@ -442,7 +447,7 @@ export const handler = async (req: Request): Promise<Response> => {
           deleted: true,
         });
       } catch (error) {
-        console.error("conversations.delete_failed", error);
+        await logStructuredEvent("ERROR", { data: "conversations.delete_failed", error });
         return serverError("failed_to_delete_conversation");
       }
     }
@@ -473,7 +478,7 @@ export const handler = async (req: Request): Promise<Response> => {
         const { rows, hasMore } = await listItems(conversationId, limit, after, orderParam);
         return respond(200, buildListResponse(rows, hasMore));
       } catch (error) {
-        console.error("conversations.list_items_failed", error);
+        await logStructuredEvent("ERROR", { data: "conversations.list_items_failed", error });
         return serverError("failed_to_list_items");
       }
     }
@@ -489,7 +494,7 @@ export const handler = async (req: Request): Promise<Response> => {
         const rows = await insertItems(conversationId, parsed.data.items);
         return respond(200, buildListResponse(rows, false));
       } catch (error) {
-        console.error("conversations.create_items_failed", error);
+        await logStructuredEvent("ERROR", { data: "conversations.create_items_failed", error });
         return serverError("failed_to_create_items");
       }
     }
@@ -513,7 +518,7 @@ export const handler = async (req: Request): Promise<Response> => {
         if (!data) return notFound("item_not_found");
         return respond(200, mapMessage(data as MessageRow));
       } catch (error) {
-        console.error("conversations.fetch_item_failed", error);
+        await logStructuredEvent("ERROR", { data: "conversations.fetch_item_failed", error });
         return serverError("failed_to_fetch_item");
       }
     }
@@ -532,7 +537,7 @@ export const handler = async (req: Request): Promise<Response> => {
         if (!conversation) return notFound("conversation_not_found");
         return respond(200, mapConversation(conversation));
       } catch (error) {
-        console.error("conversations.delete_item_failed", error);
+        await logStructuredEvent("ERROR", { data: "conversations.delete_item_failed", error });
         return serverError("failed_to_delete_item");
       }
     }

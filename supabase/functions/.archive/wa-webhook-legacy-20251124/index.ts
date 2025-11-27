@@ -1,4 +1,5 @@
 import { serve } from "./deps.ts";
+import { logStructuredEvent } from "../_shared/observability.ts";
 
 // Wrap config import in try-catch to catch initialization errors
 let supabase: any;
@@ -26,15 +27,20 @@ try {
 }
 
 import { processWebhookRequest } from "./router/pipeline.ts";
+import { logStructuredEvent } from "../_shared/observability.ts";
 import { handlePreparedWebhook } from "./router/processor.ts";
+import { logStructuredEvent } from "../_shared/observability.ts";
 import {
+import { logStructuredEvent } from "../_shared/observability.ts";
   handleHealthCheck,
   handleMetricsRequest,
   handleMetricsSummaryRequest,
   handlePrometheusMetrics
 } from "./shared/health_metrics.ts";
 import { incrementMetric } from "./utils/metrics_collector.ts";
+import { logStructuredEvent } from "../_shared/observability.ts";
 import { handlePreparedWebhookEnhanced } from "./router/enhanced_processor.ts";
+import { logStructuredEvent } from "../_shared/observability.ts";
 
 serve(async (req: Request): Promise<Response> => {
   // Check for config initialization error first

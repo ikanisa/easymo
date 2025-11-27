@@ -307,9 +307,9 @@ serve(async (req: Request): Promise<Response> => {
         }
         // Nearby Flows
         else if (id === IDS.SEE_DRIVERS) {
-          console.log(JSON.stringify({ event: "MOBILITY_LAUNCHING_WORKFLOW", workflow: "handleSeeDrivers" }));
+          await logStructuredEvent("LOG", { data: JSON.stringify({ event: "MOBILITY_LAUNCHING_WORKFLOW", workflow: "handleSeeDrivers" }) });
           handled = await handleSeeDrivers(ctx);
-          console.log(JSON.stringify({ event: "MOBILITY_WORKFLOW_RESULT", workflow: "handleSeeDrivers", handled }));
+          await logStructuredEvent("LOG", { data: JSON.stringify({ event: "MOBILITY_WORKFLOW_RESULT", workflow: "handleSeeDrivers", handled }) });
         } else if (id === IDS.SEE_PASSENGERS) {
           handled = await handleSeePassengers(ctx);
         } else if (isVehicleOption(id) && state?.key === "mobility_nearby_select") {
@@ -451,7 +451,7 @@ serve(async (req: Request): Promise<Response> => {
         const coords = { lat: Number(loc.latitude), lng: Number(loc.longitude) };
         logEvent("MOBILITY_LOCATION", coords);
         await recordLastLocation(ctx, coords).catch((e) =>
-          console.warn("mobility.record_location_fail", e),
+          await logStructuredEvent("WARNING", { data: "mobility.record_location_fail", e }),
         );
 
         // Real-time tracking location updates
@@ -561,7 +561,7 @@ serve(async (req: Request): Promise<Response> => {
   }
 });
 
-console.log("✅ wa-webhook-mobility service started");
+await logStructuredEvent("LOG", { data: "✅ wa-webhook-mobility service started" });
 
 async function showMobilityMenu(ctx: RouterContext): Promise<boolean> {
   if (!ctx.profileId) return false;

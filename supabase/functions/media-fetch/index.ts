@@ -1,5 +1,7 @@
 import { z } from "https://deno.land/x/zod@v3.23.8/mod.ts";
+import { logStructuredEvent } from "../_shared/observability.ts";
 import {
+import { logStructuredEvent } from "../_shared/observability.ts";
   createServiceRoleClient,
   handleOptions,
   json,
@@ -70,7 +72,7 @@ Deno.serve(async (req) => {
   }
 
   if (!WA_TOKEN) {
-    console.error("media-fetch.wa_token_missing");
+    await logStructuredEvent("ERROR", { data: "media-fetch.wa_token_missing" });
     return json({ error: "wa_token_missing" }, 500);
   }
 
@@ -132,7 +134,7 @@ Deno.serve(async (req) => {
     };
 
     if (signedError) {
-      console.warn("media-fetch.signed_url_failed", signedError);
+      await logStructuredEvent("WARNING", { data: "media-fetch.signed_url_failed", signedError });
     }
 
     logResponse("media-fetch", 200, { subscriptionId });
@@ -141,7 +143,7 @@ Deno.serve(async (req) => {
       withCors({ status: 200 }),
     );
   } catch (error) {
-    console.error("media-fetch.unhandled", error);
+    await logStructuredEvent("ERROR", { data: "media-fetch.unhandled", error });
     const message = error instanceof Error
       ? error.message
       : String(error ?? "error");

@@ -5,11 +5,17 @@
 // configured or returns an error.
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { logStructuredEvent } from "../_shared/observability.ts";
 import { getServiceClient } from "../_shared/supabase.ts";
+import { logStructuredEvent } from "../_shared/observability.ts";
 import { CONFIG } from "../_shared/env.ts";
+import { logStructuredEvent } from "../_shared/observability.ts";
 import { requireAdmin } from "../_shared/auth.ts";
+import { logStructuredEvent } from "../_shared/observability.ts";
 import { z } from "zod";
+import { logStructuredEvent } from "../_shared/observability.ts";
 import { rateLimitMiddleware } from "../_shared/rate-limit/index.ts";
+import { logStructuredEvent } from "../_shared/observability.ts";
 
 const ENABLE_AGENT_CHAT = ["1", "true", "yes"].includes(
   (Deno.env.get("ENABLE_AGENT_CHAT") ?? "true").toLowerCase(),
@@ -124,7 +130,7 @@ async function lookupProfileId(profileRef?: string | null): Promise<string | nul
     .eq("ref_code", profileRef)
     .maybeSingle();
   if (error) {
-    console.error("agent-chat.lookup_profile_failed", error);
+    await logStructuredEvent("ERROR", { data: "agent-chat.lookup_profile_failed", error });
     return null;
   }
   return data?.user_id ?? null;
@@ -139,7 +145,7 @@ async function fetchToolkit(agentKind: z.infer<typeof AgentKind>): Promise<Toolk
     .maybeSingle();
 
   if (error) {
-    console.error("agent-chat.toolkit_fetch_failed", error);
+    await logStructuredEvent("ERROR", { data: "agent-chat.toolkit_fetch_failed", error });
     return null;
   }
 
@@ -147,7 +153,7 @@ async function fetchToolkit(agentKind: z.infer<typeof AgentKind>): Promise<Toolk
 
   const parsed = ToolkitRowSchema.safeParse(data);
   if (!parsed.success) {
-    console.warn("agent-chat.toolkit_parse_failed", parsed.error.flatten());
+    await logStructuredEvent("WARNING", { data: "agent-chat.toolkit_parse_failed", parsed.error.flatten() });
     return null;
   }
   return parsed.data;
@@ -204,7 +210,7 @@ async function ensureSession(params: {
     .single();
 
   if (error) {
-    console.error("agent-chat.create_session_failed", error);
+    await logStructuredEvent("ERROR", { data: "agent-chat.create_session_failed", error });
     throw new Error(error.message);
   }
 
@@ -232,7 +238,7 @@ async function appendMessages(
     .order("created_at", { ascending: true });
 
   if (error) {
-    console.error("agent-chat.insert_messages_failed", error);
+    await logStructuredEvent("ERROR", { data: "agent-chat.insert_messages_failed", error });
     throw new Error(error.message);
   }
 
@@ -334,10 +340,10 @@ async function callAgentCore(params: {
         };
       }
     } catch (parseError) {
-      console.error("agent-chat.core_parse_failed", parseError);
+      await logStructuredEvent("ERROR", { data: "agent-chat.core_parse_failed", parseError });
     }
   } catch (error) {
-    console.error("agent-chat.core_request_failed", error);
+    await logStructuredEvent("ERROR", { data: "agent-chat.core_request_failed", error });
   }
 
   return null;
@@ -440,7 +446,7 @@ export async function handler(req: Request): Promise<Response> {
       }
       return respond(200, history);
     } catch (error) {
-      console.error("agent-chat.history_failed", error);
+      await logStructuredEvent("ERROR", { data: "agent-chat.history_failed", error });
       return respond(500, { error: "Failed to load history" });
     }
   }
@@ -492,7 +498,7 @@ export async function handler(req: Request): Promise<Response> {
               .filter((msg): msg is { role: "user" | "assistant" | "system"; content: string } => Boolean(msg));
           }
         } catch (err) {
-          console.error("agent-chat.history_for_core_failed", err);
+          await logStructuredEvent("ERROR", { data: "agent-chat.history_for_core_failed", err });
         }
 
         historyMessages.push({ role: "user", content: result.data.message });
@@ -540,7 +546,7 @@ export async function handler(req: Request): Promise<Response> {
             };
           }
         } catch (err) {
-          console.error("agent-chat.core_respond_failed", err);
+          await logStructuredEvent("ERROR", { data: "agent-chat.core_respond_failed", err });
         }
         const metadataSummary = agentMetadata || {};
         const summary: Record<string, unknown> = {
@@ -633,7 +639,7 @@ export async function handler(req: Request): Promise<Response> {
         suggestions: assistantSuggestions,
       });
     } catch (error) {
-      console.error("agent-chat.post_failed", error);
+      await logStructuredEvent("ERROR", { data: "agent-chat.post_failed", error });
       return respond(500, { error: "Failed to process message" });
     }
   }
