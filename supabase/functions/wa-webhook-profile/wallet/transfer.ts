@@ -251,20 +251,37 @@ export async function handleWalletTransferText(
       const idempotencyKey = data.idem ?? crypto.randomUUID();
       const { data: result2, error: err2 } = await ctx.supabase.rpc("wallet_transfer_tokens", {
         p_sender: ctx.profileId,
-        p_recipient: recipient.user_id,
         p_amount: amount,
+        p_recipient: recipient.user_id,
         p_idempotency_key: idempotencyKey,
       });
-      if (err2) throw err2;
       
-      const ok = result2?.success === true;
+      if (err2) {
+        console.error(JSON.stringify({
+          event: "WALLET_TRANSFER_RPC_ERROR",
+          error: err2.message,
+          details: err2.details,
+          hint: err2.hint,
+          code: err2.code,
+          sender: ctx.profileId,
+          recipient: recipient.user_id,
+          amount
+        }));
+        throw err2;
+      }
+      
+      // RPC returns array, get first row
+      const result = Array.isArray(result2) ? result2[0] : result2;
+      const ok = result?.success === true;
       if (ok) {
         console.log(JSON.stringify({
           event: "WALLET_TRANSFER_SUCCESS",
           sender: ctx.profileId,
           recipient: recipient.user_id,
           amount,
-          transfer_id: result2?.transfer_id,
+          transfer_id: result?.transfer_id,
+          sender_tokens: result?.sender_tokens,
+          recipient_tokens: result?.recipient_tokens,
           idempotency_key: idempotencyKey
         }));
         
@@ -297,12 +314,12 @@ export async function handleWalletTransferText(
           sender: ctx.profileId,
           recipient: recipient.user_id,
           amount,
-          reason: result2?.reason || "unknown"
+          reason: result?.reason || "unknown"
         }));
         
         await sendButtonsMessage(
           ctx,
-          `❌ Transfer failed: ${result2?.reason || "Unknown error"}`,
+          `❌ Transfer failed: ${result?.reason || "Unknown error"}`,
           [{ id: IDS.WALLET, title: "💎 Wallet" }],
         );
       }
