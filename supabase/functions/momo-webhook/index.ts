@@ -8,6 +8,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { logStructuredEvent, recordMetric } from "../_shared/observability.ts";
+import { rateLimitMiddleware } from "../_shared/rate-limit/index.ts";
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL")!,
@@ -198,6 +199,21 @@ serve(async (req) => {
   const correlationId = req.headers.get("x-correlation-id") || crypto.randomUUID();
 
   try {
+    // Rate limiting (50 req/min for payment webhooks)
+    const rateLimitCheck = await rateLimitMiddleware(req, {
+      limit: 50,
+      windowSeconds: 60,
+    });
+
+    if (!rateLimitCheck.allowed) {
+      await logStructuredEvent("MOMO_WEBHOOK_RATE_LIMITED", {
+        correlationId,
+        remaining: rateLimitCheck.result.remaining,
+      });
+      await recordMetric("momo.webhook.rate_limited", 1);
+      return rateLimitCheck.response!;
+    }
+
     // Get raw body for signature verification
     const rawBody = await req.text();
     const signature = req.headers.get("x-momo-signature");

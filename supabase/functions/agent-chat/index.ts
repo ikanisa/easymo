@@ -9,6 +9,7 @@ import { getServiceClient } from "../_shared/supabase.ts";
 import { CONFIG } from "../_shared/env.ts";
 import { requireAdmin } from "../_shared/auth.ts";
 import { z } from "zod";
+import { rateLimitMiddleware } from "../_shared/rate-limit/index.ts";
 
 const ENABLE_AGENT_CHAT = ["1", "true", "yes"].includes(
   (Deno.env.get("ENABLE_AGENT_CHAT") ?? "true").toLowerCase(),
@@ -394,6 +395,16 @@ function summariseToolkit(toolkit: ToolkitRow | null): Record<string, unknown> |
 }
 
 export async function handler(req: Request): Promise<Response> {
+  // Rate limiting (30 req/min for AI agent endpoints - resource intensive)
+  const rateLimitCheck = await rateLimitMiddleware(req, {
+    limit: 30,
+    windowSeconds: 60,
+  });
+
+  if (!rateLimitCheck.allowed) {
+    return rateLimitCheck.response!;
+  }
+
   if (req.method === "OPTIONS") {
     return new Response(null, {
       status: 204,

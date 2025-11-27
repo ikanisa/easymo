@@ -1,22 +1,22 @@
 {
   "$schema": "../../node_modules/@tauri-apps/cli/config.schema.json",
-  "productName": "EasyMO Admin",
+  "productName": "EasyMO Bar Manager",
   "version": "1.0.0",
-  "identifier": "dev.easymo.admin",
+  "identifier": "dev.easymo.barmanager",
   "build": {
     "frontendDist": "out",
     "devUrl": "http://localhost:3000",
-    "beforeDevCommand": "pnpm dev",
-    "beforeBuildCommand": "npm run build:desktop"
+    "beforeDevCommand": "npm run dev",
+    "beforeBuildCommand": "npm run build"
   },
   "app": {
     "windows": [
       {
-        "title": "EasyMO Admin - Operations Hub",
-        "width": 1400,
-        "height": 900,
-        "minWidth": 1024,
-        "minHeight": 768,
+        "title": "EasyMO Bar Manager",
+        "width": 1200,
+        "height": 800,
+        "minWidth": 800,
+        "minHeight": 600,
         "decorations": true,
         "transparent": false,
         "fullscreen": false,
@@ -28,7 +28,7 @@
     "security": {
       "csp": {
         "default-src": "'self'",
-        "connect-src": "'self' https://*.supabase.co wss://*.supabase.co https://sentry.io",
+        "connect-src": "'self' https://*.supabase.co wss://*.supabase.co https://generativelanguage.googleapis.com",
         "script-src": "'self' 'unsafe-inline' 'unsafe-eval'",
         "style-src": "'self' 'unsafe-inline'",
         "img-src": "'self' data: https://*.supabase.co blob:",
@@ -54,8 +54,8 @@
     ],
     "publisher": "EasyMO Platform",
     "copyright": "Copyright © 2025 EasyMO",
-    "shortDescription": "Operational control centre for EasyMO mobility platform",
-    "longDescription": "EasyMO Admin is a powerful desktop application for managing the EasyMO mobility and marketplace platform. Features include real-time analytics, WhatsApp integration, user management, and comprehensive operational controls.",
+    "shortDescription": "Bar & Restaurant Order Management System",
+    "longDescription": "EasyMO Bar Manager is a desktop application for managing bar and restaurant orders in real-time. Features include AI-powered menu upload, order queue management, and promotional campaigns.",
     "fileAssociations": [
       {
         "ext": ["easymo"],

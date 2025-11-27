@@ -1,0 +1,79 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 4%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 4%;
+    --primary: 43 95% 56%;
+    --primary-foreground: 0 0% 4%;
+    --secondary: 0 0% 96%;
+    --secondary-foreground: 0 0% 4%;
+    --muted: 0 0% 91%;
+    --muted-foreground: 0 0% 45%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 90%;
+    --ring: 43 95% 56%;
+    --radius: 0.75rem;
+  }
+
+  .dark {
+    --background: 0 0% 4%;
+    --foreground: 0 0% 100%;
+    --card: 0 0% 8%;
+    --card-foreground: 0 0% 100%;
+    --primary: 43 95% 56%;
+    --primary-foreground: 0 0% 4%;
+    --secondary: 0 0% 12%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 63%;
+    --destructive: 0 62% 50%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 15%;
+    --ring: 43 95% 56%;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overscroll-behavior-y: none;
+  }
+
+  @media (display-mode: standalone) {
+    body {
+      overscroll-behavior-y: contain;
+    }
+  }
+}
+
+@layer components {
+  .btn-touch {
+    @apply min-h-[44px] min-w-[44px] flex items-center justify-center;
+    @apply active:scale-95 transition-transform duration-150 touch-manipulation;
+  }
+
+  .card-glass {
+    @apply bg-card/80 backdrop-blur-xl border border-border/50 rounded-2xl shadow-lg;
+  }
+
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@layer utilities {
+  .tap-highlight-none {
+    -webkit-tap-highlight-color: transparent;
+  }
+}

@@ -6,6 +6,7 @@ packages:
   - ai
   - waiter-pwa
   - real-estate-pwa
+  - client-pwa
 
 onlyBuiltDependencies:
   - '@nestjs/core'
