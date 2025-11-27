@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 import OpenAI from "https://esm.sh/openai@4.26.0";
+import { DOMParser } from "https://deno.land/x/deno_dom/deno-dom-wasm.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -49,20 +50,43 @@ serve(async (req) => {
       try {
         console.log(`Crawling job source: ${source.name} (${source.url})`);
         
-        // Use OpenAI to extract jobs from the URL (simulated via search/completion)
-        // In a real scenario, we might fetch the HTML and pass it, or ask GPT to search for recent jobs from this site.
+        // Fetch HTML content
+        const response = await fetch(source.url, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Failed to fetch ${source.url}: ${response.status} ${response.statusText}`);
+        }
+        
+        const html = await response.text();
+        
+        // Parse HTML and extract text
+        const doc = new DOMParser().parseFromString(html, "text/html");
+        const textContent = doc?.body?.textContent || "";
+        
+        // Clean up text (remove excessive whitespace)
+        const cleanText = textContent.replace(/\s+/g, ' ').trim().substring(0, 15000); // Limit to 15k chars for token limits
+        
+        if (!cleanText) {
+          throw new Error("No text content extracted");
+        }
+
+        // Use OpenAI to extract jobs from the text
         const completion = await openai.chat.completions.create({
           model: 'gpt-4o',
           messages: [
             {
               role: 'system',
-              content: `You are a job crawler. Search for and extract recent job listings from ${source.url} (${source.name}) in ${source.country_code}. 
-              Return a JSON array of objects with keys: title, company, location, description, url, is_remote (boolean).
-              Limit to 5 most recent jobs.`
+              content: `You are a job extractor. Analyze the following web page text from ${source.name} (${source.url}) and extract the 5 most recent job listings.
+              Return a JSON array of objects with keys: title, description (brief summary), category, type (full_time, part_time, contract, freelance), location, salary_min (number or null), salary_max (number or null), url (absolute URL if possible, or relative).
+              If no specific jobs are found, return an empty array.`
             },
             {
               role: 'user',
-              content: `Find jobs at ${source.name}`
+              content: `Extract jobs from this text:\n\n${cleanText}`
             }
           ],
           response_format: { type: "json_object" }
@@ -71,24 +95,33 @@ serve(async (req) => {
         const content = completion.choices[0].message.content;
         if (content) {
           const parsed = JSON.parse(content);
-          const jobs = parsed.jobs || parsed.listings || []; // Handle potential root keys
+          const jobs = parsed.jobs || parsed.listings || [];
 
           for (const job of jobs) {
-            // Upsert job listing with actual schema
+            // Fix relative URLs
+            let jobUrl = job.url;
+            if (jobUrl && !jobUrl.startsWith('http')) {
+              const baseUrl = new URL(source.url);
+              jobUrl = new URL(jobUrl, baseUrl.origin).toString();
+            }
+
             const { error: insertError } = await supabaseClient.from('job_listings').insert({
               title: job.title || 'Untitled Position',
               description: job.description || '',
               category: job.category || 'General',
-              job_type: job.job_type || job.type || 'full_time',
+              job_type: job.type || 'full_time',
               location: job.location || source.country_code,
-              pay_min: job.salary_min || job.pay_min,
-              pay_max: job.salary_max || job.pay_max,
+              pay_min: job.salary_min,
+              pay_max: job.salary_max,
               pay_type: 'annual',
               currency: source.country_code === 'MT' ? 'EUR' : 'RWF',
               status: 'open',
               posted_by: source.name,
               country_code: source.country_code,
               created_at: new Date().toISOString(),
+              source_id: source.id,
+              // Store original URL if we have a column for it, otherwise it might be lost or need a schema update
+              // Based on previous check, we don't have original_url column, but we have source_id
             });
             
             if (!insertError) {
@@ -110,18 +143,33 @@ serve(async (req) => {
       try {
         console.log(`Crawling property source: ${source.source_name} (${source.url})`);
         
+        const response = await fetch(source.url, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Failed to fetch ${source.url}: ${response.status} ${response.statusText}`);
+        }
+        
+        const html = await response.text();
+        const doc = new DOMParser().parseFromString(html, "text/html");
+        const textContent = doc?.body?.textContent || "";
+        const cleanText = textContent.replace(/\s+/g, ' ').trim().substring(0, 15000);
+        
         const completion = await openai.chat.completions.create({
           model: 'gpt-4o',
           messages: [
             {
               role: 'system',
-              content: `You are a real estate crawler. Search for and extract recent property listings from ${source.url} (${source.source_name}) in ${source.country_code}.
-              Return a JSON array of objects with keys: title, price, location, description, url, type (rent/sale), bedrooms (number).
-              Limit to 5 most recent listings.`
+              content: `You are a real estate extractor. Analyze the following web page text from ${source.source_name} (${source.url}) and extract the 5 most recent property listings.
+              Return a JSON array of objects with keys: title, description, type (rent/sale), property_type (apartment, house, villa, office, land), bedrooms (number), bathrooms (number), price (number), location (string), url.
+              If no specific listings are found, return an empty array.`
             },
             {
               role: 'user',
-              content: `Find properties at ${source.source_name}`
+              content: `Extract properties from this text:\n\n${cleanText}`
             }
           ],
           response_format: { type: "json_object" }
@@ -133,6 +181,12 @@ serve(async (req) => {
           const properties = parsed.properties || parsed.listings || [];
 
           for (const prop of properties) {
+            let propUrl = prop.url;
+            if (propUrl && !propUrl.startsWith('http')) {
+              const baseUrl = new URL(source.url);
+              propUrl = new URL(propUrl, baseUrl.origin).toString();
+            }
+
             const { error: insertError } = await supabaseClient.from('property_listings').insert({
               title: prop.title || 'Property Listing',
               description: prop.description || '',
@@ -144,8 +198,9 @@ serve(async (req) => {
               currency: source.country_code === 'MT' ? 'EUR' : 'RWF',
               location: { address: prop.location || source.country_code },
               status: 'available',
-              source_url: prop.url || source.url,
+              source_url: propUrl || source.url,
               created_at: new Date().toISOString(),
+              source_id: source.id
             });
             
             if (!insertError) {

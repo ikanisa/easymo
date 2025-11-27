@@ -27,9 +27,7 @@
     "processing",
     "easymo"
   ],
-  "dependencies": {
-    "@google/genai": "^0.21.0"
-  },
+  "dependencies": {},
   "devDependencies": {
     "@types/node": "^22.18.12",
     "@types/web": "^0.0.162",
