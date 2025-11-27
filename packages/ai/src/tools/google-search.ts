@@ -12,9 +12,9 @@ export const googleSearchTool: Tool = {
     num_results: z.number().optional().default(10).describe('Number of results to return.'),
     country: z.string().optional().describe('Country code to restrict search (e.g., "mt" for Malta).'),
   }),
-  execute: async (args: { query: string; num_results?: number; country?: string }, _context: ToolContext) => {
-    const apiKey = process.env.GOOGLE_API_KEY;
-    const cx = process.env.GOOGLE_SEARCH_ENGINE_ID;
+  execute: async (args: { query: string; num_results?: number; country?: string }, context: ToolContext) => {
+    const apiKey = context.env.GOOGLE_SEARCH_API_KEY;
+    const cx = context.env.GOOGLE_SEARCH_CX;
 
     if (!apiKey || !cx) {
       throw new Error('GOOGLE_API_KEY or GOOGLE_SEARCH_ENGINE_ID is not set');
