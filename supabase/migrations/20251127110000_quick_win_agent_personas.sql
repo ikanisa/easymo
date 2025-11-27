@@ -50,13 +50,7 @@ SELECT
   true as is_default
 FROM public.ai_agents
 WHERE slug IN ('waiter', 'farmer', 'broker', 'real_estate', 'jobs', 'sales_cold_caller', 'rides', 'insurance')
-ON CONFLICT (agent_id, code) DO UPDATE SET
-  role_name = EXCLUDED.role_name,
-  tone_style = EXCLUDED.tone_style,
-  languages = EXCLUDED.languages,
-  traits = EXCLUDED.traits,
-  is_default = EXCLUDED.is_default,
-  updated_at = now();
+ON CONFLICT DO NOTHING;
 
 -- Verify insertion
 DO $$

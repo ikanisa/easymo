@@ -107,13 +107,7 @@ MANDATORY BEHAVIORS:
   'context_window_summary',
   true
 )
-ON CONFLICT (agent_id, code) DO UPDATE SET
-  title = EXCLUDED.title,
-  instructions = EXCLUDED.instructions,
-  guardrails = EXCLUDED.guardrails,
-  memory_strategy = EXCLUDED.memory_strategy,
-  is_active = EXCLUDED.is_active,
-  updated_at = now();
+ON CONFLICT DO NOTHING;
 
 -- Business Broker Agent System Instructions (Basic)
 INSERT INTO public.ai_agent_system_instructions (
@@ -154,11 +148,7 @@ Be professional, thorough, and solution-focused.',
   'context_window_summary',
   true
 )
-ON CONFLICT (agent_id, code) DO UPDATE SET
-  title = EXCLUDED.title,
-  instructions = EXCLUDED.instructions,
-  guardrails = EXCLUDED.guardrails,
-  updated_at = now();
+ON CONFLICT DO NOTHING;
 
 -- Verify insertion
 DO $$
