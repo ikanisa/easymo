@@ -11,7 +11,7 @@ import { BaseAgent } from "./base-agent.ts";
 
 // Import all domain agents
 import { SupportAgent } from "./support-agent.ts";
-import { MarketplaceAgent } from "./marketplace-agent.ts";
+import { CommerceAgent } from "./commerce-agent.ts"; // Unified commerce agent
 import { FarmerAgent } from "./farmer-agent.ts";
 import { WaiterAgent } from "./waiter-agent.ts";
 import { InsuranceAgent } from "./insurance-agent.ts";
@@ -19,7 +19,6 @@ import { RidesAgent } from "./rides-agent.ts";
 import { JobsAgent } from "./jobs-agent.ts";
 import { PropertyAgent } from "./property-agent.ts";
 import { SalesAgent } from "./sales-agent.ts";
-import { BusinessBrokerAgent } from "./business-broker-agent.ts";
 
 export class AgentRegistry {
   private agents: Map<AgentType, BaseAgent> = new Map();
@@ -51,7 +50,9 @@ export class AgentRegistry {
         return new SupportAgent(deps);
       
       case "marketplace":
-        return new MarketplaceAgent(deps);
+      case "business_broker":
+        // Both marketplace and business_broker now use CommerceAgent
+        return new CommerceAgent(deps);
       
       case "farmer":
         return new FarmerAgent(deps);
@@ -73,9 +74,6 @@ export class AgentRegistry {
       
       case "sales":
         return new SalesAgent(deps);
-      
-      case "business_broker":
-        return new BusinessBrokerAgent(deps);
 
       default:
         // Fallback to support agent

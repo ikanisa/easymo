@@ -24,9 +24,11 @@ import {
   handleGetMyApplications,
   handleUpdateJobStatus,
   handleGetJobDetails,
+} from "./handlers.ts";
+import {
   handleGoogleSearch,
   handleWebSearch,
-} from "./handlers.ts";
+} from "./search-handlers.ts";
 import { logStructuredEvent } from "../_shared/observability.ts";
 
 const openai = new OpenAI({

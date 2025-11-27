@@ -27,6 +27,7 @@ import {
 } from "../core/types.ts";
 import { logStructuredEvent, recordMetric } from "../../_shared/observability.ts";
 import { resolveUnifiedLocation } from "../core/location-handler.ts";
+import { createGooglePlacesTool, searchHybrid as searchHybridTool } from "../tools/google-places.ts";
 
 // =====================================================
 // CONSTANTS & CATEGORIES
@@ -1305,8 +1306,31 @@ OUTPUT FORMAT (JSON):
     location: { lat: number; lng: number },
     radiusKm: number
   ): Promise<{ places: any[] }> {
-    // TODO: Implement Google Places API integration (Phase 2)
-    // For now, return empty results
-    return { places: [] };
+    try {
+      const placesTool = createGooglePlacesTool(this.supabase);
+      
+      if (!placesTool.isAvailable()) {
+        console.log("Google Places API not available");
+        return { places: [] };
+      }
+
+      const results = await placesTool.searchNearby({
+        lat: location.lat,
+        lng: location.lng,
+        radius: radiusKm * 1000, // Convert km to meters
+        keyword: query,
+      });
+
+      await logStructuredEvent("COMMERCE_GOOGLE_PLACES_SEARCH", {
+        query,
+        resultCount: results.length,
+        correlationId: this.correlationId,
+      });
+
+      return { places: results };
+    } catch (error) {
+      console.error("Google Places search error:", error);
+      return { places: [] };
+    }
   }
 }
