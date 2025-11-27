@@ -138,8 +138,8 @@ export function PWAInstallPrompt() {
                   <p className="flex items-center gap-2">
                     1. Tap the <Share2 className="w-4 h-4 inline" /> share button
                   </p>
-                  <p>2. Scroll and tap "Add to Home Screen"</p>
-                  <p>3. Tap "Add"</p>
+                  <p>2. Scroll and tap &quot;Add to Home Screen&quot;</p>
+                  <p>3. Tap &quot;Add&quot;</p>
                 </div>
               ) : (
                 <Button

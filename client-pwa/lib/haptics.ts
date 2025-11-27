@@ -48,7 +48,7 @@ class HapticEngine {
     if (typeof window === 'undefined') return;
     
     try {
-      this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      this.audioContext = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
       
       for (const [key, url] of Object.entries(SOUNDS)) {
         try {
@@ -56,11 +56,11 @@ class HapticEngine {
           const arrayBuffer = await response.arrayBuffer();
           const audioBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
           this.soundCache.set(key, audioBuffer);
-        } catch (e) {
+        } catch {
           console.warn(`Failed to preload sound: ${key}`);
         }
       }
-    } catch (e) {
+    } catch {
       console.warn('Audio context not available');
     }
   }

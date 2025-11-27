@@ -26,7 +26,7 @@ export function QRScanner({ onScan, onClose, overlay = true }: QRScannerProps) {
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
 
   const handleQRDetected = useCallback(
-    async (result: QrScanner.ScanResult) => {
+    async (result: { data: string }) => {
       const data = result.data;
 
       // Vibrate on successful scan
@@ -86,9 +86,8 @@ export function QRScanner({ onScan, onClose, overlay = true }: QRScannerProps) {
       // Initialize QR scanner
       const scanner = new QrScanner(
         videoRef.current,
-        (result) => handleQRDetected(result),
+        (result: { data: string }) => handleQRDetected(result),
         {
-          returnDetailedScanResult: true,
           highlightScanRegion: true,
           highlightCodeOutline: true,
           preferredCamera: 'environment', // Back camera on mobile
@@ -160,8 +159,7 @@ export function QRScanner({ onScan, onClose, overlay = true }: QRScannerProps) {
             <Button
               onClick={handleClose}
               variant="ghost"
-              size="icon"
-              className="text-white hover:bg-white/10"
+              className="text-white hover:bg-white/10 w-10 h-10"
             >
               <X className="w-6 h-6" />
             </Button>

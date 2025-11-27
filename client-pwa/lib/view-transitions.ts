@@ -25,7 +25,7 @@ export function useViewTransition() {
 
       // Check if View Transitions API is supported
       if (typeof document !== 'undefined' && 'startViewTransition' in document) {
-        (document as any).startViewTransition(() => {
+        (document as Document & { startViewTransition: (callback: () => void) => void }).startViewTransition(() => {
           startTransition(() => {
             router.push(href);
           });
@@ -46,7 +46,7 @@ export function useViewTransition() {
     }
 
     if (typeof document !== 'undefined' && 'startViewTransition' in document) {
-      (document as any).startViewTransition(() => {
+      (document as Document & { startViewTransition: (callback: () => void) => void }).startViewTransition(() => {
         startTransition(() => {
           router.back();
         });

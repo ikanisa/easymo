@@ -128,7 +128,7 @@ export function RevolutPayment({
           >
             <div className="p-4 rounded-2xl bg-muted/50">
               <p className="text-sm text-muted-foreground">
-                You'll be redirected to Revolut to complete your payment securely.
+                You&apos;ll be redirected to Revolut to complete your payment securely.
                 Accepts cards, Apple Pay, and Google Pay.
               </p>
             </div>

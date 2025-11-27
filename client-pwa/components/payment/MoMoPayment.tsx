@@ -151,7 +151,7 @@ export function MoMoPayment({
                 type="tel"
                 placeholder="078 XXX XXXX"
                 value={phoneNumber}
-                onChange={(e) => setPhoneNumber(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPhoneNumber(e.target.value)}
                 className="text-base"
               />
               <p className="text-xs text-muted-foreground mt-1">

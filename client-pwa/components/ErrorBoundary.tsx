@@ -83,7 +83,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
                 Something went wrong
               </h1>
               <p className="text-muted-foreground">
-                We encountered an unexpected error. Don't worry, your cart is saved.
+                We encountered an unexpected error. Don&apos;t worry, your cart is saved.
               </p>
             </div>
 
