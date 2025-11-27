@@ -244,5 +244,65 @@ export const tools = [
         required: ["job_id"]
       }
     }
+  },
+  {
+    type: "function",
+    function: {
+      name: "google_search",
+      description: "Perform a Google Search to find external job listings or information.",
+      parameters: {
+        type: "object",
+        properties: {
+          query: { type: "string", description: "The search query" },
+          num_results: { type: "number", description: "Number of results (default 10)" },
+          country: { type: "string", description: "Country code (e.g., 'mt')" }
+        },
+        required: ["query"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "web_search",
+      description: "Perform a deep web search using OpenAI's browsing capabilities.",
+      parameters: {
+        type: "object",
+        properties: {
+          query: { type: "string", description: "The search query" }
+        },
+        required: ["query"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "google_search",
+      description: "Perform a Google Search to find external job listings or information.",
+      parameters: {
+        type: "object",
+        properties: {
+          query: { type: "string", description: "The search query" },
+          num_results: { type: "number", description: "Number of results (default 10)" },
+          country: { type: "string", description: "Country code (e.g., 'mt')" }
+        },
+        required: ["query"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "web_search",
+      description: "Perform a deep web search using OpenAI's browsing capabilities.",
+      parameters: {
+        type: "object",
+        properties: {
+          query: { type: "string", description: "The search query" }
+        },
+        required: ["query"]
+      }
+    }
   }
 ];

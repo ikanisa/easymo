@@ -24,6 +24,8 @@ import {
   handleGetMyApplications,
   handleUpdateJobStatus,
   handleGetJobDetails,
+  handleGoogleSearch,
+  handleWebSearch,
 } from "./handlers.ts";
 import { logStructuredEvent } from "../_shared/observability.ts";
 
@@ -271,6 +273,14 @@ serve(async (req: Request) => {
 
           case "get_job_details":
             result = await handleGetJobDetails(functionArgs, supabase);
+            break;
+
+          case "google_search":
+            result = await handleGoogleSearch(functionArgs, supabase, openai, phone_number);
+            break;
+
+          case "web_search":
+            result = await handleWebSearch(functionArgs, supabase, openai, phone_number);
             break;
 
           default:

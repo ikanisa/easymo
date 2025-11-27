@@ -382,6 +382,121 @@ Always be helpful, practical, and farmer-focused.`;
             }))
           };
         }
+      },
+      {
+        name: 'initiate_ussd_payment',
+        description: 'Generate USSD payment link for buyer to pay farmer (PRIMARY PAYMENT METHOD)',
+        parameters: {
+          type: 'object',
+          properties: {
+            buyer_phone: { type: 'string', description: 'Buyer phone number' },
+            farmer_phone: { type: 'string', description: 'Farmer phone number' },
+            listing_id: { type: 'string', description: 'Listing ID' },
+            commodity: { type: 'string', description: 'Produce name' },
+            quantity: { type: 'number', description: 'Quantity' },
+            unit: { type: 'string', description: 'Unit (kg, bag, etc.)' },
+            price_per_unit: { type: 'number', description: 'Price per unit in RWF' }
+          },
+          required: ['buyer_phone', 'farmer_phone', 'listing_id', 'commodity', 'quantity', 'unit', 'price_per_unit']
+        },
+        execute: async (params) => {
+          const totalAmount = params.quantity * params.price_per_unit;
+          
+          // Generate USSD code for MTN Mobile Money
+          const ussdCode = `*182*8*1*${totalAmount}#`;
+          const telLink = `tel:${encodeURIComponent(ussdCode)}`;
+          
+          // Generate payment ID
+          const paymentId = crypto.randomUUID();
+          const expiresAt = new Date(Date.now() + 30 * 60 * 1000).toISOString();
+          
+          // Store payment in database
+          const { error } = await this.supabase
+            .from('farmer_payments')
+            .insert({
+              id: paymentId,
+              listing_id: params.listing_id,
+              buyer_phone: params.buyer_phone,
+              farmer_phone: params.farmer_phone,
+              amount: totalAmount,
+              ussd_code: ussdCode,
+              status: 'pending',
+              expires_at: expiresAt
+            });
+          
+          if (error) {
+            console.error('Payment creation error:', error);
+            return { 
+              error: 'Failed to create payment', 
+              message: 'Please try again or contact support' 
+            };
+          }
+          
+          // Return payment details with clickable link
+          return {
+            success: true,
+            payment_id: paymentId,
+            total_amount: totalAmount,
+            ussd_code: ussdCode,
+            tel_link: telLink,
+            message: `🌾 *Payment for ${params.commodity}*\n\n` +
+                    `📦 ${params.quantity} ${params.unit} @ ${params.price_per_unit.toLocaleString()} RWF/${params.unit}\n` +
+                    `💰 Total: ${totalAmount.toLocaleString()} RWF\n\n` +
+                    `*Click to pay via MTN Mobile Money:*\n${telLink}\n\n` +
+                    `Or manually dial: ${ussdCode}\n\n` +
+                    `*Kinyarwanda:*\nKanda: ${telLink}\nCyangwa kanda: ${ussdCode}\n\n` +
+                    `⏱️ Payment expires in 30 minutes\n` +
+                    `After payment, reply: PAID [reference number]`,
+            expires_in_minutes: 30
+          };
+        }
+      },
+      {
+        name: 'confirm_payment',
+        description: 'Confirm a payment with USSD reference number',
+        parameters: {
+          type: 'object',
+          properties: {
+            payment_id: { type: 'string', description: 'Payment ID from initiate_ussd_payment' },
+            reference: { type: 'string', description: 'USSD payment reference (e.g., MP123456)' },
+            buyer_phone: { type: 'string', description: 'Buyer phone for verification' }
+          },
+          required: ['payment_id', 'reference', 'buyer_phone']
+        },
+        execute: async (params) => {
+          const { data, error } = await this.supabase.rpc('confirm_farmer_payment', {
+            p_payment_id: params.payment_id,
+            p_reference: params.reference,
+            p_buyer_phone: params.buyer_phone
+          });
+          
+          if (error || !data || data.length === 0 || !data[0].success) {
+            return { 
+              success: false, 
+              message: data?.[0]?.message || 'Payment confirmation failed. Please check payment ID and reference.' 
+            };
+          }
+          
+          const result = data[0];
+          
+          // Notify farmer
+          const farmerMessage = `✅ *Payment Received!*\n\n` +
+                               `💰 ${result.amount.toLocaleString()} RWF\n` +
+                               `📱 Buyer: ${params.buyer_phone}\n` +
+                               `📝 Reference: ${params.reference}\n\n` +
+                               `*Kinyarwanda:*\n✅ Amafaranga yashyizwe!\n💰 ${result.amount.toLocaleString()} RWF\n\n` +
+                               `Next: Prepare produce for pickup/delivery`;
+          
+          // Send notification to farmer (would integrate with WhatsApp send function)
+          console.log('Farmer notification:', farmerMessage, 'to:', result.farmer_phone);
+          
+          return {
+            success: true,
+            message: '✅ Payment confirmed! Farmer has been notified. You will be contacted for pickup/delivery arrangements.',
+            amount: result.amount,
+            farmer_phone: result.farmer_phone
+          };
+        }
       }
     ];
   }

@@ -288,7 +288,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         clearError,
       }}
     >
-      {children as any}
+      {children}
     </ChatContext.Provider>
   )
 }

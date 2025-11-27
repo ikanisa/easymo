@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
-import { useTranslations } from 'next-intl';
 
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { CartButton } from '@/components/menu/CartButton';

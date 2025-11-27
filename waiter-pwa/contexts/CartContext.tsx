@@ -34,7 +34,7 @@ interface CartContextType {
 
 const CartContext = createContext<CartContextType | undefined>(undefined)
 
-export function CartProvider({ children }: { children: React.ReactNode }) {
+export function CartProvider({ children }: { children: React.ReactNode }): React.ReactElement {
   const supabase = createClient()
   const [items, setItems] = useState<CartItem[]>([])
   const [draftOrderId, setDraftOrderId] = useState<string | null>(null)
@@ -187,6 +187,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     setTimeout(() => syncCart(), 500)
   }, [syncCart])
 
+  const removeItem = useCallback(async (itemId: string) => {
+    setItems(prev => prev.filter(item => item.id !== itemId))
+    setTimeout(() => syncCart(), 500)
+  }, [syncCart])
+
   const updateQuantity = useCallback(async (itemId: string, quantity: number) => {
     if (quantity <= 0) {
       await removeItem(itemId)
@@ -201,11 +206,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
     setTimeout(() => syncCart(), 500)
   }, [removeItem, syncCart])
-
-  const removeItem = useCallback(async (itemId: string) => {
-    setItems(prev => prev.filter(item => item.id !== itemId))
-    setTimeout(() => syncCart(), 500)
-  }, [syncCart])
 
   const clearCart = useCallback(async () => {
     setItems([])
@@ -242,7 +242,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         syncCart,
       }}
     >
-      {children}
+      {children as any}
     </CartContext.Provider>
   )
 }
