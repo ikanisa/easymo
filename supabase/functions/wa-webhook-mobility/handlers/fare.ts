@@ -85,6 +85,35 @@ export const PRICING_CONFIG: Record<string, PricingConfig> = {
   },
 };
 
+type PricingOverrides = Record<string, Partial<PricingConfig>>;
+
+const PRICING_OVERRIDES = loadPricingOverrides();
+
+function loadPricingOverrides(): PricingOverrides | null {
+  const raw = Deno.env.get("MOBILITY_PRICING_OVERRIDES");
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw) as PricingOverrides;
+    return parsed;
+  } catch (error) {
+    console.warn("fare.pricing_override_parse_fail", error);
+    return null;
+  }
+}
+
+function resolvePricingConfig(vehicleType: string): PricingConfig | null {
+  const key = vehicleType.toLowerCase();
+  const base = PRICING_CONFIG[key];
+  if (!base) return null;
+  if (!PRICING_OVERRIDES || !PRICING_OVERRIDES[key]) {
+    return base;
+  }
+  return {
+    ...base,
+    ...PRICING_OVERRIDES[key],
+  };
+}
+
 /**
  * Tax configuration
  * TODO: Make configurable per country/region
@@ -118,7 +147,7 @@ export async function calculateFareEstimate(
 ): Promise<FareEstimate> {
   try {
     // Get pricing config for vehicle type
-    const config = PRICING_CONFIG[vehicleType.toLowerCase()];
+    const config = resolvePricingConfig(vehicleType);
     if (!config) {
       throw new Error(`Unknown vehicle type: ${vehicleType}`);
     }

@@ -6,6 +6,9 @@
 
 import { logStructuredEvent } from "../../_shared/observability.ts";
 import type { SupabaseClient } from "../deps.ts";
+import { resolveLanguage } from "../i18n/language.ts";
+import { t } from "../i18n/translator.ts";
+import { notifyPassenger } from "./trip_notifications.ts";
 
 // ============================================================================
 // TYPES
@@ -142,11 +145,11 @@ export async function updateDriverLocation(
           })
           .eq("id", tripId);
 
-        // TODO: Notify passenger of ETA change
-        // await sendWhatsAppMessage(trip.passenger_id, {
-        //   type: "text",
-        //   text: t("trip.eta_updated", ctx.locale, { eta: eta.durationMinutes }),
-        // });
+        await notifyPassenger(
+          ctx.client,
+          trip.passenger_id,
+          buildEtaMessage(ctx.locale, eta.durationMinutes),
+        );
 
         await logStructuredEvent("ETA_UPDATED", {
           tripId,
@@ -487,6 +490,16 @@ export function calculateSpeed(
   if (timeDiffHours === 0) return 0;
   
   return distanceKm / timeDiffHours; // km/h
+}
+
+function buildEtaMessage(locale: string, etaMinutes: number): string {
+  const lang = resolveLanguage(locale);
+  const params = { eta: etaMinutes.toString() };
+  const translated = t(lang, "trip.notifications.eta_updated", params);
+  if (translated === "trip.notifications.eta_updated") {
+    return `⏱️ Updated ETA: ${etaMinutes} min.`;
+  }
+  return translated;
 }
 
 // ============================================================================

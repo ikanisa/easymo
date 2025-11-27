@@ -13,7 +13,7 @@ async function resolveContact(
   userId: string,
 ): Promise<string | null> {
   const { data, error } = await client
-    .from<ContactColumns>("profiles")
+    .from("profiles")
     .select("whatsapp_number, phone_number, wa_id")
     .eq("user_id", userId)
     .maybeSingle();
@@ -29,15 +29,17 @@ async function resolveContact(
   return data?.whatsapp_number ?? data?.phone_number ?? data?.wa_id ?? null;
 }
 
-export async function notifyPassenger(
+async function notifyUser(
   client: SupabaseClient,
-  passengerId: string,
+  userId: string,
+  audience: "passenger" | "driver",
   message: string,
 ): Promise<boolean> {
-  const contact = await resolveContact(client, passengerId);
+  const contact = await resolveContact(client, userId);
   if (!contact) {
     await logStructuredEvent("TRIP_NOTIFICATION_MISSING_CONTACT", {
-      userId: passengerId,
+      audience,
+      userId,
     }, "warn");
     return false;
   }
@@ -45,16 +47,32 @@ export async function notifyPassenger(
   try {
     await sendText(contact, message);
     await logStructuredEvent("TRIP_NOTIFICATION_SENT", {
-      audience: "passenger",
-      userId: passengerId,
+      audience,
+      userId,
     });
     return true;
   } catch (error) {
     await logStructuredEvent("TRIP_NOTIFICATION_SEND_FAILED", {
-      audience: "passenger",
-      userId: passengerId,
+      audience,
+      userId,
       error: error instanceof Error ? error.message : String(error),
     }, "error");
     return false;
   }
+}
+
+export async function notifyPassenger(
+  client: SupabaseClient,
+  passengerId: string,
+  message: string,
+): Promise<boolean> {
+  return await notifyUser(client, passengerId, "passenger", message);
+}
+
+export async function notifyDriver(
+  client: SupabaseClient,
+  driverId: string,
+  message: string,
+): Promise<boolean> {
+  return await notifyUser(client, driverId, "driver", message);
 }

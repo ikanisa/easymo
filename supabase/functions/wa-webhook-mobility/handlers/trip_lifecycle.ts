@@ -7,6 +7,14 @@
 
 import { logStructuredEvent } from "../../_shared/observability.ts";
 import type { SupabaseClient } from "../deps.ts";
+import { resolveLanguage, type SupportedLanguage } from "../i18n/language.ts";
+import { t } from "../i18n/translator.ts";
+import { notifyDriver, notifyPassenger } from "./trip_notifications.ts";
+import {
+  startDriverTracking,
+  stopDriverTracking,
+  type TrackingContext,
+} from "./tracking.ts";
 
 // ============================================================================
 // TYPES
@@ -105,15 +113,15 @@ export async function handleTripStart(
     }
 
     // 4. Notify passenger
-    // TODO: Send WhatsApp notification to passenger
-    // await sendWhatsAppMessage(trip.passenger_id, {
-    //   type: "text",
-    //   text: t("trip.started_notification", ctx.locale),
-    // });
+    await notifyTripPassenger(
+      ctx,
+      trip.passenger_id,
+      "trip.notifications.started",
+      "🚗 Your driver just started the trip.",
+    );
 
-    // 5. Start tracking (if enabled)
-    // TODO: Enable real-time location updates
-    // await startDriverTracking(ctx, tripId);
+    // 5. Start tracking
+    await startDriverTracking(asTrackingContext(ctx), tripId);
 
     // 6. Record metrics
     await logStructuredEvent("TRIP_STARTED", { 
@@ -122,9 +130,6 @@ export async function handleTripStart(
       passengerId: trip.passenger_id,
       vehicleType: trip.vehicle_type 
     });
-
-    // TODO: Record metric
-    // await recordMetric("TRIP_STARTED", 1, { vehicleType: trip.vehicle_type });
 
     return true;
   } catch (error) {
@@ -175,11 +180,12 @@ export async function handleTripArrivedAtPickup(
     }
 
     // 2. Notify passenger
-    // TODO: Send notification
-    // await sendWhatsAppMessage(trip.passenger_id, {
-    //   type: "text",
-    //   text: t("trip.driver_arrived", ctx.locale),
-    // });
+    await notifyTripPassenger(
+      ctx,
+      trip.passenger_id,
+      "trip.notifications.driver_arrived",
+      "✅ Your driver has arrived at the pickup point.",
+    );
 
     // 3. Record metrics
     await logStructuredEvent("DRIVER_ARRIVED", { 
@@ -238,11 +244,12 @@ export async function handleTripPickedUp(
     }
 
     // 2. Notify passenger
-    // TODO: Send notification
-    // await sendWhatsAppMessage(trip.passenger_id, {
-    //   type: "text",
-    //   text: t("trip.started", ctx.locale),
-    // });
+    await notifyTripPassenger(
+      ctx,
+      trip.passenger_id,
+      "trip.notifications.in_progress",
+      "🛣️ You're on your way.",
+    );
 
     // 3. Record metrics
     await logStructuredEvent("TRIP_PICKED_UP", { 
@@ -338,6 +345,23 @@ export async function handleTripComplete(
       return false;
     }
 
+    const fareParams: Record<string, string> = finalFare
+      ? {
+        amount: finalFare.toString(),
+        currency: trip.currency ?? "RWF",
+      }
+      : {};
+
+    await notifyTripPassenger(
+      ctx,
+      trip.passenger_id,
+      "trip.notifications.completed",
+      finalFare
+        ? `✅ Trip completed. Fare: ${finalFare} ${trip.currency ?? "RWF"}.`
+        : "✅ Trip completed. Thanks for riding with easyMO.",
+      fareParams,
+    );
+
     // 6. Initiate payment
     // TODO: Integrate with payment system
     // await initiateTripPayment(ctx, tripId, finalFare);
@@ -361,6 +385,8 @@ export async function handleTripComplete(
     // await recordMetric("TRIP_COMPLETED", 1, { vehicleType: trip.vehicle_type });
     // await recordMetric("TRIP_DURATION_SECONDS", durationMinutes * 60, { vehicleType: trip.vehicle_type });
     // await recordMetric("TRIP_FARE_RWF", finalFare, { vehicleType: trip.vehicle_type });
+
+    await stopDriverTracking(asTrackingContext(ctx), tripId);
 
     return true;
   } catch (error) {
@@ -456,11 +482,21 @@ export async function handleTripCancel(
 
     // 6. Notify other party
     const otherPartyId = isDriver ? trip.passenger_id : trip.driver_id;
-    // TODO: Send cancellation notification
-    // await sendWhatsAppMessage(otherPartyId, {
-    //   type: "text",
-    //   text: t("trip.cancelled_notification", ctx.locale, { reason }),
-    // });
+    const notificationKey = isDriver
+      ? "trip.notifications.cancelled_by_driver"
+      : "trip.notifications.cancelled_by_passenger";
+    const fallback = isDriver
+      ? `🚫 Your driver cancelled this trip.${reason ? ` Reason: ${reason}.` : ""}`
+      : `🚫 The passenger cancelled this trip.${reason ? ` Reason: ${reason}.` : ""}`;
+    if (isDriver) {
+      await notifyTripPassenger(ctx, otherPartyId, notificationKey, fallback, {
+        reason,
+      });
+    } else {
+      await notifyTripDriver(ctx, otherPartyId, notificationKey, fallback, {
+        reason,
+      });
+    }
 
     // 7. Record metrics
     await logStructuredEvent("TRIP_CANCELLED", { 
@@ -648,6 +684,50 @@ export function canPerformAction(
     default:
       return false;
   }
+}
+
+function asTrackingContext(
+  ctx: TripLifecycleContext,
+): TrackingContext {
+  return {
+    client: ctx.client,
+    sender: ctx.sender,
+    profile: ctx.profile,
+    locale: ctx.locale,
+  };
+}
+
+function translateTripMessage(
+  locale: string,
+  key: string,
+  fallback: string,
+  params: Record<string, string> = {},
+): string {
+  const lang = resolveLanguage(locale) ?? (resolveLanguage(null) as SupportedLanguage);
+  const translated = t(lang, key, params);
+  return translated === key ? fallback : translated;
+}
+
+async function notifyTripPassenger(
+  ctx: TripLifecycleContext,
+  passengerId: string,
+  key: string,
+  fallback: string,
+  params: Record<string, string> = {},
+): Promise<void> {
+  const message = translateTripMessage(ctx.locale, key, fallback, params);
+  await notifyPassenger(ctx.client, passengerId, message);
+}
+
+async function notifyTripDriver(
+  ctx: TripLifecycleContext,
+  driverId: string,
+  key: string,
+  fallback: string,
+  params: Record<string, string> = {},
+): Promise<void> {
+  const message = translateTripMessage(ctx.locale, key, fallback, params);
+  await notifyDriver(ctx.client, driverId, message);
 }
 
 // ============================================================================

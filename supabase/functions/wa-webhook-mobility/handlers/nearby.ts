@@ -42,6 +42,7 @@ import { readLastLocation } from "../locations/favorites.ts";
 
 const DEFAULT_WINDOW_DAYS = 30;
 const REQUIRED_RADIUS_METERS = 10_000;
+const MAX_RADIUS_METERS = 25_000;
 const SAVED_ROW_PREFIX = "FAV::";
 
 const VEHICLE_OPTION_DEFS = [
@@ -134,7 +135,10 @@ function requiredRadius(configRadiusKm?: number | null): number {
   if (!Number.isFinite(configRadiusKm ?? NaN)) return REQUIRED_RADIUS_METERS;
   const meters = Math.round(Number(configRadiusKm) * 1000);
   if (!Number.isFinite(meters) || meters <= 0) return REQUIRED_RADIUS_METERS;
-  return Math.min(Math.max(meters, REQUIRED_RADIUS_METERS), REQUIRED_RADIUS_METERS);
+  return Math.min(
+    Math.max(meters, REQUIRED_RADIUS_METERS),
+    MAX_RADIUS_METERS,
+  );
 }
 
 function toDistanceLabel(distanceKm: unknown): string | null {

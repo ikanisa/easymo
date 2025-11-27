@@ -136,14 +136,14 @@ describe("Schedule Handlers - Trip Scheduling", () => {
     });
 
     it("should require insurance for driver role", async () => {
-      const role = "driver";
+      const role: string = "driver";
       const requiresInsurance = role === "driver";
       
       assertEquals(requiresInsurance, true);
     });
 
     it("should not require insurance for passenger role", () => {
-      const role = "passenger";
+      const role: string = "passenger";
       const requiresInsurance = role === "driver";
       
       assertEquals(requiresInsurance, false);
@@ -305,8 +305,8 @@ describe("Schedule Handlers - Trip Scheduling", () => {
 
       assertEquals(result.error, null);
       assertExists(result.data);
-      assertEquals(result.data.status, "active");
-      assertEquals(result.data.role, "passenger");
+      assertEquals((result.data as any).status, "active");
+      assertEquals((result.data as any).role, "passenger");
     });
 
     it("should create driver trip without dropoff", async () => {
@@ -333,7 +333,7 @@ describe("Schedule Handlers - Trip Scheduling", () => {
 
       assertEquals(result.error, null);
       assertExists(result.data);
-      assertEquals(result.data.dropoff_lat, null);
+      assertEquals((result.data as any).dropoff_lat, null);
     });
   });
 
@@ -358,7 +358,7 @@ describe("Schedule Handlers - Trip Scheduling", () => {
 
       assertEquals(result.error, null);
       assertExists(result.data);
-      assertEquals(result.data.status, "verified");
+      assertEquals((result.data as any).status, "verified");
     });
 
     it("should detect expired insurance", () => {
