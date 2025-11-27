@@ -46,11 +46,11 @@ serve(async (req) => {
     };
 
     // 3. Process Job Sources
-    for (const source of jobSources || []) {
+    // LIMIT TO 1 SOURCE FOR DEBUGGING
+    for (const source of (jobSources || []).slice(0, 1)) {
       try {
         console.log(`Crawling job source: ${source.name} (${source.url})`);
         
-        // Fetch HTML content
         const response = await fetch(source.url, {
           headers: {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
@@ -62,25 +62,36 @@ serve(async (req) => {
         }
         
         const html = await response.text();
-        
-        // Parse HTML and extract text
         const doc = new DOMParser().parseFromString(html, "text/html");
-        const textContent = doc?.body?.textContent || "";
         
-        // Clean up text (remove excessive whitespace)
-        const cleanText = textContent.replace(/\s+/g, ' ').trim().substring(0, 15000); // Limit to 15k chars for token limits
+        // Better text extraction: preserve newlines for block elements
+        // This is a simple heuristic since deno-dom doesn't support innerText perfectly
+        const body = doc?.body;
+        let textContent = "";
+        if (body) {
+           // Replace <br> with \n
+           const brs = body.getElementsByTagName('br');
+           for (const br of brs) {
+             br.replaceWith(doc.createTextNode('\n'));
+           }
+           // Simple text extraction
+           textContent = body.textContent;
+        }
+        
+        // Clean up text but preserve some structure
+        const cleanText = textContent.replace(/\n\s*\n/g, '\n').substring(0, 100000); // Increase to 100k chars
         
         if (!cleanText) {
           throw new Error("No text content extracted");
         }
 
-        // Use OpenAI to extract jobs from the text
         const completion = await openai.chat.completions.create({
           model: 'gpt-4o',
           messages: [
             {
               role: 'system',
               content: `You are a job extractor. Analyze the following web page text from ${source.name} (${source.url}) and extract the 5 most recent job listings.
+              The text is raw and might contain navigation, footers, etc. Look for patterns like "Job Title", "Location", "Salary", or lists of roles.
               Return a JSON array of objects with keys: title, description (brief summary), category, type (full_time, part_time, contract, freelance), location, salary_min (number or null), salary_max (number or null), url (absolute URL if possible, or relative).
               If no specific jobs are found, return an empty array.`
             },
@@ -93,12 +104,17 @@ serve(async (req) => {
         });
 
         const content = completion.choices[0].message.content;
+        results.errors.push(`DEBUG Job Content: ${content?.substring(0, 200)}...`);
+
         if (content) {
           const parsed = JSON.parse(content);
           const jobs = parsed.jobs || parsed.listings || [];
 
+          if (jobs.length === 0) {
+             results.errors.push(`DEBUG: No jobs found in OpenAI response for ${source.name}`);
+          }
+
           for (const job of jobs) {
-            // Fix relative URLs
             let jobUrl = job.url;
             if (jobUrl && !jobUrl.startsWith('http')) {
               const baseUrl = new URL(source.url);
@@ -120,14 +136,13 @@ serve(async (req) => {
               country_code: source.country_code,
               created_at: new Date().toISOString(),
               source_id: source.id,
-              // Store original URL if we have a column for it, otherwise it might be lost or need a schema update
-              // Based on previous check, we don't have original_url column, but we have source_id
             });
             
             if (!insertError) {
               results.jobsProcessed++;
             } else {
               console.error('Insert error:', insertError);
+              results.errors.push(`Insert Error (${source.name}): ${insertError.message}`);
             }
           }
         }
@@ -139,7 +154,8 @@ serve(async (req) => {
     }
 
     // 4. Process Real Estate Sources
-    for (const source of propertySources || []) {
+    // LIMIT TO 1 SOURCE FOR DEBUGGING
+    for (const source of (propertySources || []).slice(0, 1)) {
       try {
         console.log(`Crawling property source: ${source.source_name} (${source.url})`);
         
@@ -155,8 +171,18 @@ serve(async (req) => {
         
         const html = await response.text();
         const doc = new DOMParser().parseFromString(html, "text/html");
-        const textContent = doc?.body?.textContent || "";
-        const cleanText = textContent.replace(/\s+/g, ' ').trim().substring(0, 15000);
+        
+        const body = doc?.body;
+        let textContent = "";
+        if (body) {
+           const brs = body.getElementsByTagName('br');
+           for (const br of brs) {
+             br.replaceWith(doc.createTextNode('\n'));
+           }
+           textContent = body.textContent;
+        }
+        
+        const cleanText = textContent.replace(/\n\s*\n/g, '\n').substring(0, 100000);
         
         const completion = await openai.chat.completions.create({
           model: 'gpt-4o',
@@ -164,6 +190,7 @@ serve(async (req) => {
             {
               role: 'system',
               content: `You are a real estate extractor. Analyze the following web page text from ${source.source_name} (${source.url}) and extract the 5 most recent property listings.
+              The text is raw and might contain navigation, footers, etc. Look for patterns like "Price", "Location", "Bedrooms", or property titles.
               Return a JSON array of objects with keys: title, description, type (rent/sale), property_type (apartment, house, villa, office, land), bedrooms (number), bathrooms (number), price (number), location (string), url.
               If no specific listings are found, return an empty array.`
             },
@@ -176,9 +203,15 @@ serve(async (req) => {
         });
 
         const content = completion.choices[0].message.content;
+        results.errors.push(`DEBUG Property Content: ${content?.substring(0, 200)}...`);
+
         if (content) {
           const parsed = JSON.parse(content);
           const properties = parsed.properties || parsed.listings || [];
+
+          if (properties.length === 0) {
+             results.errors.push(`DEBUG: No properties found in OpenAI response for ${source.source_name}`);
+          }
 
           for (const prop of properties) {
             let propUrl = prop.url;
@@ -207,6 +240,7 @@ serve(async (req) => {
               results.propertiesProcessed++;
             } else {
               console.error('Insert error:', insertError);
+              results.errors.push(`Insert Error (${source.source_name}): ${insertError.message}`);
             }
           }
         }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback } from 'use';
+import { useCallback } from 'react';
 
 type HapticPattern = 'light' | 'medium' | 'heavy' | 'success' | 'warning' | 'error' | 'selection' | 'impact';
 
