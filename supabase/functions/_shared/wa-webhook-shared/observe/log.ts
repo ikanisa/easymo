@@ -15,6 +15,15 @@ const DEFAULT_DB_EVENT_PATTERNS = [
   "WEBHOOK_UNHANDLED_ERROR",
   "RETENTION_*",
   "HEALTH_CHECK_ERROR",
+  "WALLET_*", // All wallet events (adjust, cashout, purchase, etc.)
+  "PAYMENT_*", // All payment events
+  "MOBILITY_MATCH",
+  "OCR_STATUS",
+  "*_PAYMENT_*", // Insurance, Jobs, Marketplace, Rides payment matches
+  "ADMIN_ACTION",
+  "AGENT_ALERT",
+  "AGENT_TRANSFER",
+  "*_ERROR", // All error events
 ];
 const DB_EVENT_PATTERNS = buildPatternList(
   Deno.env.get("WA_LOG_DB_EVENTS") ?? DEFAULT_DB_EVENT_PATTERNS.join(","),
