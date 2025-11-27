@@ -16,6 +16,7 @@ import {
   type ProviderSecrets,
   type MobileMoneyProviderId,
 } from "../../../services/agent-core/src/payments/index.ts";
+import { rateLimitMiddleware } from "../_shared/rate-limit/index.ts";
 
 const supabase = getServiceClient();
 
@@ -309,6 +310,20 @@ serve(async (req) => {
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders, status: 204 });
+  }
+
+  // Rate limiting (50 req/min for payment initiation)
+  const rateLimitCheck = await rateLimitMiddleware(req, {
+    limit: 50,
+    windowSeconds: 60,
+  });
+
+  if (!rateLimitCheck.allowed) {
+    await logStructuredEvent("MOMO_CHARGE_RATE_LIMITED", {
+      remaining: rateLimitCheck.result.remaining,
+    });
+    await recordMetric("momo.charge.rate_limited", 1);
+    return rateLimitCheck.response!;
   }
 
   const correlationId = req.headers.get("x-correlation-id") || crypto.randomUUID();

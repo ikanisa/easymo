@@ -25,15 +25,23 @@ export default function HomePage() {
         {/* CTA Buttons */}
         <div className="space-y-4 pt-8">
           <Link
-            href="/scan"
+            href="/demo"
             className="w-full btn-touch bg-primary text-primary-foreground rounded-2xl font-semibold text-lg shadow-glow flex items-center justify-center gap-2"
+          >
+            <Sparkles className="w-6 h-6" />
+            View Demo
+          </Link>
+
+          <Link
+            href="/scan"
+            className="w-full btn-touch bg-secondary text-secondary-foreground rounded-2xl font-semibold text-lg flex items-center justify-center gap-2"
           >
             <QrCode className="w-6 h-6" />
             Scan QR Code
           </Link>
 
           <div className="text-sm text-muted-foreground">
-            Point your camera at the table QR code to get started
+            Try the demo or scan a table QR code
           </div>
         </div>
 

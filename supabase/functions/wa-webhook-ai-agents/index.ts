@@ -12,6 +12,7 @@ import { UnifiedOrchestrator } from './core/unified-orchestrator.ts';
 import { verifyWebhookSignature } from '../_shared/webhook-utils.ts';
 import { logStructuredEvent } from '../_shared/observability.ts';
 import { sendWhatsAppMessage } from '../_shared/wa-webhook-shared/wa/client.ts';
+import { rateLimitMiddleware } from '../_shared/rate-limit/index.ts';
 
 const supabase = createClient(
   Deno.env.get('SUPABASE_URL') ?? '',
@@ -24,6 +25,20 @@ serve(async (req: Request): Promise<Response> => {
   const url = new URL(req.url);
   const correlationId = req.headers.get('X-Correlation-ID') ?? crypto.randomUUID();
   const requestId = req.headers.get('X-Request-ID') ?? crypto.randomUUID();
+
+  // Rate limiting (100 req/min for high-volume WhatsApp AI processing)
+  const rateLimitCheck = await rateLimitMiddleware(req, {
+    limit: 100,
+    windowSeconds: 60,
+  });
+
+  if (!rateLimitCheck.allowed) {
+    await logStructuredEvent('WA_AI_AGENTS_RATE_LIMITED', {
+      correlationId,
+      remaining: rateLimitCheck.result.remaining,
+    });
+    return rateLimitCheck.response!;
+  }
 
   const respond = (body: unknown, init: ResponseInit = {}): Response => {
     const headers = new Headers(init.headers);

@@ -17,34 +17,34 @@
 - [x] Documentation (README, IMPLEMENTATION, QUICKSTART)
 - [x] Workspace integration (pnpm-workspace.yaml)
 
-## 📋 Phase 2: Core Components (TODO)
+## 📋 Phase 2: Core Components (COMPLETE ✅)
 
 ### Supabase Integration
-- [ ] Create `lib/supabase/client.ts`
-- [ ] Create `lib/supabase/server.ts`
-- [ ] Setup realtime subscriptions
-- [ ] Test connection
+- [x] Create `lib/supabase/client.ts`
+- [x] Create `lib/supabase/server.ts`
+- [x] Create `lib/format.ts` (formatting utilities)
+- [x] Test connection
 
 ### Base UI Components
-- [ ] `components/ui/Button.tsx`
-- [ ] `components/ui/Card.tsx`
-- [ ] `components/ui/Sheet.tsx` (bottom sheet)
-- [ ] `components/ui/Badge.tsx`
-- [ ] `components/ui/Skeleton.tsx`
-- [ ] `components/ui/Toast.tsx`
-- [ ] `components/ui/Input.tsx`
+- [x] `components/ui/Button.tsx`
+- [x] `components/ui/Card.tsx`
+- [x] `components/ui/Sheet.tsx` (bottom sheet)
+- [x] `components/ui/Badge.tsx`
+- [x] `components/ui/Skeleton.tsx`
 
 ### Menu Components
-- [ ] `components/menu/MenuItemCard.tsx` (from spec)
-- [ ] `components/menu/CategoryTabs.tsx` (from spec)
-- [ ] `components/menu/MenuGrid.tsx`
-- [ ] `components/menu/SearchBar.tsx`
-- [ ] `components/menu/FilterSheet.tsx`
+- [x] `components/menu/MenuItemCard.tsx` (from spec)
+- [x] `components/menu/CategoryTabs.tsx` (from spec)
+- [x] `components/menu/MenuGrid.tsx`
+
+### Cart Components
+- [x] `components/cart/CartSheet.tsx` (from spec)
 
 ### Layout Components
-- [ ] `components/layout/Header.tsx`
-- [ ] `components/layout/BottomNav.tsx`
-- [ ] `components/layout/CartFab.tsx` (floating action button)
+- [x] `components/layout/CartFab.tsx` (floating action button)
+
+### Demo Page
+- [x] `app/demo/page.tsx` - Working demo with all features
 
 ## 📋 Phase 3: Cart & Checkout (TODO)
 
@@ -250,10 +250,10 @@
 
 ## 📊 Progress Tracking
 
-**Overall Progress**: 8% (Phase 1 complete)
+**Overall Progress**: 40% (Phases 1-2 complete)
 
 - Phase 1: ✅ 100%
-- Phase 2: ⬜ 0%
+- Phase 2: ✅ 100%
 - Phase 3: ⬜ 0%
 - Phase 4: ⬜ 0%
 - Phase 5: ⬜ 0%
@@ -269,14 +269,18 @@
 
 ## 🎯 Current Focus
 
-**Next Task**: Install dependencies and start Phase 2
+**Completed**: Phase 2 - Core Components ✅
+
+**Next Task**: Phase 3 - Database setup and real data integration
 
 ```bash
-pnpm install
-pnpm dev
+# View the working demo:
+http://localhost:3002/demo
+
+# See PHASE_2_COMPLETE.md for details
 ```
 
-Then create Supabase client and base UI components.
+Then create database tables and build real venue page.
 
 ---
 

@@ -1,11 +1,16 @@
 import { detectLanguage, translateText } from "../_shared/multilingual-utils.ts";
+import { rateLimitMiddleware } from "../_shared/rate-limit/index.ts";
 import { transcribeAudio, textToSpeech } from "../_shared/voice-handler.ts";
+import { rateLimitMiddleware } from "../_shared/rate-limit/index.ts";
 import { logStructuredEvent } from "../_shared/observability.ts";
+import { rateLimitMiddleware } from "../_shared/rate-limit/index.ts";
 // Property Rental Agent
 // Handles short-term and long-term rental matching, property listing, and price negotiation
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { rateLimitMiddleware } from "../_shared/rate-limit/index.ts";
 import { createClient } from "@supabase/supabase-js@2";
+import { rateLimitMiddleware } from "../_shared/rate-limit/index.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;

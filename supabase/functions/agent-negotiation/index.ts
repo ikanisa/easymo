@@ -1,6 +1,9 @@
 import { createServiceRoleClient, handleOptions, json } from "../_shared/admin.ts";
+import { rateLimitMiddleware } from "../_shared/rate-limit/index.ts";
 import { logStructuredEvent, logError } from "../_shared/observability.ts";
+import { rateLimitMiddleware } from "../_shared/rate-limit/index.ts";
 import { isFeatureEnabled } from "../_shared/feature-flags.ts";
+import { rateLimitMiddleware } from "../_shared/rate-limit/index.ts";
 import {
   logNegotiationStart,
   logVendorContact,

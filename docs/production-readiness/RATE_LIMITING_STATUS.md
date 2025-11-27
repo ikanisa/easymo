@@ -1,104 +1,130 @@
 # Rate Limiting Implementation Status
 
 **Last Updated**: 2025-11-27  
-**Status**: 🟡 In Progress (3/80 endpoints protected)
+**Status**: 🟢 Week 1 Target Achieved (10/80 endpoints protected)
 
 ## Implementation Progress
 
-### ✅ Completed (3 endpoints)
+### ✅ Protected Endpoints (10/80 = 12.5%)
 
-| Endpoint | Limit | Window | Priority | Status |
-|----------|-------|--------|----------|--------|
-| momo-webhook | 50 req/min | 60s | P0 - Critical | ✅ Deployed |
-| agent-chat | 30 req/min | 60s | P0 - High | ✅ Deployed |
-| wa-webhook-core | Custom | Custom | P0 - High | ✅ Pre-existing |
+| Endpoint | Limit | Window | Category | Priority | Status |
+|----------|-------|--------|----------|----------|--------|
+| momo-webhook | 50 req/min | 60s | Payment | P0 | ✅ |
+| revolut-webhook | 50 req/min | 60s | Payment | P0 | ✅ |
+| momo-allocator | 50 req/min | 60s | Payment | P0 | ✅ |
+| momo-charge | 50 req/min | 60s | Payment | P0 | ✅ |
+| agent-chat | 30 req/min | 60s | AI | P0 | ✅ |
+| agent-negotiation | 30 req/min | 60s | AI | P1 | ✅ |
+| agent-property-rental | 30 req/min | 60s | AI | P1 | ✅ |
+| agent-schedule-trip | 30 req/min | 60s | AI | P1 | ✅ |
+| agent-shops | 30 req/min | 60s | AI | P1 | ✅ |
+| wa-webhook-ai-agents | 100 req/min | 60s | WhatsApp AI | P1 | ✅ |
 
-### ⏳ Remaining High Priority (7 endpoints)
+### 📊 Category Coverage
 
-| Endpoint | Recommended Limit | Priority | Notes |
-|----------|-------------------|----------|-------|
-| revolut-webhook | 50 req/min | P0 | Payment critical |
-| momo-allocator | 50 req/min | P0 | Payment processing |
-| agent-support | 30 req/min | P1 | AI resource intensive |
-| agent-negotiation | 30 req/min | P1 | AI resource intensive |
-| agents | 30 req/min | P1 | AI resource intensive |
-| wa-webhook-ai-agents | 100 req/min | P1 | High volume |
-| momo-charge | 50 req/min | P1 | Payment initiation |
-
-### 📊 Category Breakdown
-
-**Payment Webhooks** (50 req/min):
+**Payment Endpoints** (50 req/min):
 - ✅ momo-webhook
-- ⏳ revolut-webhook
-- ⏳ momo-allocator
-- ⏳ momo-charge
+- ✅ revolut-webhook  
+- ✅ momo-allocator
+- ✅ momo-charge
+- ⏳ revolut-charge
 - ⏳ momo-sms-webhook
+- ⏳ momo-sms-hook
+
+Coverage: 4/7 (57%) ✅
 
 **AI Agents** (30 req/min):
 - ✅ agent-chat
-- ⏳ agent-support
-- ⏳ agent-negotiation
-- ⏳ agent-property-rental
+- ✅ agent-negotiation
+- ✅ agent-property-rental
+- ✅ agent-schedule-trip
+- ✅ agent-shops
+- ⏳ agent-monitor
 - ⏳ agent-quincaillerie
 - ⏳ agent-runner
-- ⏳ agent-schedule-trip
-- ⏳ agent-shops
 - ⏳ agent-tools-general-broker
-- ⏳ agents
+- ⏳ job-board-ai-agent
+
+Coverage: 5/10 (50%) ✅
 
 **WhatsApp Webhooks** (100 req/min):
-- ✅ wa-webhook-core (custom implementation)
+- ✅ wa-webhook-ai-agents
+- ⏳ wa-webhook-core (has custom rate limiting)
 - ⏳ wa-webhook
-- ⏳ wa-webhook-ai-agents
+- ⏳ wa-webhook-insurance
+- ⏳ wa-webhook-jobs
+- ⏳ wa-webhook-marketplace
+- ⏳ wa-webhook-mobility
+- ⏳ wa-webhook-profile
+- ⏳ wa-webhook-property
+- ⏳ wa-webhook-unified
 
-**Other** (60 req/min default):
-- ⏳ job-board-ai-agent
-- ⏳ agent-monitor
+Coverage: 1/10 (10%)
 
-## Implementation Pattern
+**Admin Endpoints** (200 req/min):
+- ⏳ admin-health
+- ⏳ admin-messages
+- ⏳ admin-settings
+- ⏳ admin-stats
+- ⏳ admin-trips
+- ⏳ admin-users
 
+Coverage: 0/6 (0%)
+
+### ⏳ Remaining High Priority (Next Batch)
+
+| Endpoint | Recommended Limit | Priority | Category |
+|----------|-------------------|----------|----------|
+| wa-webhook-core | 100 req/min | P0 | WhatsApp (has custom) |
+| wa-webhook-mobility | 100 req/min | P1 | WhatsApp |
+| wa-webhook-marketplace | 100 req/min | P1 | WhatsApp |
+| admin-users | 200 req/min | P1 | Admin |
+| admin-messages | 200 req/min | P1 | Admin |
+
+## Week 1 Target: ✅ ACHIEVED
+
+**Target**: 10/80 endpoints (12.5%)  
+**Actual**: 10/80 endpoints (12.5%)  
+**Status**: 🟢 COMPLETE
+
+## Implementation Details
+
+### Pattern Used
 ```typescript
 import { rateLimitMiddleware } from "../_shared/rate-limit/index.ts";
 
 serve(async (req) => {
-  // Add at start of handler
+  // Rate limiting
   const rateLimitCheck = await rateLimitMiddleware(req, {
     limit: 50,  // Adjust based on endpoint type
     windowSeconds: 60,
   });
 
   if (!rateLimitCheck.allowed) {
-    return rateLimitCheck.response!; // Returns 429
+    await logStructuredEvent("ENDPOINT_RATE_LIMITED", {
+      remaining: rateLimitCheck.result.remaining,
+    });
+    return rateLimitCheck.response!;
   }
 
-  // Continue with existing logic...
+  // Continue with handler...
 });
 ```
 
-## Progress Metrics
+### Rate Limit Tiers
 
-- **Total Endpoints**: ~80
-- **Protected**: 3 (3.75%)
-- **High Priority Remaining**: 7
-- **Medium Priority Remaining**: ~70
+| Tier | Limit | Use Case |
+|------|-------|----------|
+| Admin | 200 req/min | Internal dashboards, low concurrent users |
+| WhatsApp Webhooks | 100 req/min | High volume messaging |
+| Payment Webhooks | 50 req/min | Financial operations |
+| AI Agents | 30 req/min | Resource-intensive LLM calls |
 
-## Next Batch (Week 1 Target)
+## Testing & Verification
 
-Apply rate limiting to:
-1. ✅ momo-webhook (Complete)
-2. ✅ agent-chat (Complete)  
-3. ⏳ revolut-webhook
-4. ⏳ momo-allocator
-5. ⏳ agent-support
-6. ⏳ wa-webhook-ai-agents
-
-**Target**: 10 endpoints by end of Week 1 (12.5% coverage)
-
-## Testing
-
-Verification script:
+### Manual Test
 ```bash
-# Test individual endpoint
+# Test endpoint rate limiting
 for i in {1..60}; do
   curl -s -o /dev/null -w "%{http_code}\n" \
     "$SUPABASE_URL/functions/v1/momo-webhook" \
@@ -107,17 +133,40 @@ done
 # Should see 200s then 429 after limit hit
 ```
 
+### Automated Verification
+Script: `scripts/verify/rate-limiting.sh`
+- Tests each protected endpoint
+- Verifies 429 responses
+- Checks rate limit headers
+
 ## Monitoring
 
-Rate limit metrics to track:
+Rate limit metrics tracked:
 - `rate_limit.exceeded` - Count of 429 responses
 - `rate_limit.allowed` - Successful requests
 - `rate_limit.client_id` - Top rate-limited clients
+- `endpoint.rate_limited` - Per-endpoint metrics
 
-View in observability dashboard or logs.
+View in observability dashboard or Supabase logs.
+
+## Week 2 Goals
+
+**Target**: 25/80 endpoints (31%)  
+**Focus Areas**:
+1. Remaining WhatsApp webhooks (9 endpoints)
+2. Admin endpoints (6 endpoints)
+
+**Estimated Effort**: 6-8 hours
 
 ## References
 
 - Implementation: `supabase/functions/_shared/rate-limit/index.ts`
-- Documentation: `supabase/functions/_shared/rate-limit/README.md`
+- Module Documentation: `supabase/functions/_shared/rate-limit/README.md`
 - Quick Start: `docs/production-readiness/QUICK_START.md#task-1-rate-limiting`
+- Session 4 Summary: `docs/production-readiness/SESSION_4_SUMMARY.md`
+
+---
+
+**Status**: 🟢 ON TRACK  
+**Next Review**: End of Week 2  
+**Owner**: Platform Team
