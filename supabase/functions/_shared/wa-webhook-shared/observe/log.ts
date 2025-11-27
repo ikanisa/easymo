@@ -15,15 +15,35 @@ const DEFAULT_DB_EVENT_PATTERNS = [
   "WEBHOOK_UNHANDLED_ERROR",
   "RETENTION_*",
   "HEALTH_CHECK_ERROR",
-  "WALLET_*", // All wallet events (adjust, cashout, purchase, etc.)
-  "PAYMENT_*", // All payment events
+  // Wallet events
+  "WALLET_*",
+  // Payment events
+  "PAYMENT_*",
+  "INSURANCE_PAYMENT_*",
+  "JOBS_PAYMENT_*",
+  "MARKETPLACE_PAYMENT_*",
+  "RIDES_PAYMENT_*",
+  "TRIP_PAYMENT_*",
+  "MOMO_PAYMENT_*",
+  "REVOLUT_*",
+  // Mobility
   "MOBILITY_MATCH",
+  // OCR
   "OCR_STATUS",
-  "*_PAYMENT_*", // Insurance, Jobs, Marketplace, Rides payment matches
+  "VEHICLE_OCR_*",
+  "INS_*",
+  // Admin & Agents
   "ADMIN_ACTION",
   "AGENT_ALERT",
   "AGENT_TRANSFER",
-  "*_ERROR", // All error events
+  // Errors (using suffix pattern)
+  "WALLET_*_ERROR",
+  "PAYMENT_*_ERROR",
+  "TRIP_*_ERROR",
+  "MOMO_*_ERROR",
+  "REVOLUT_*_ERROR",
+  "VEHICLE_*_ERROR",
+  "TOKEN_*_ERROR",
 ];
 const DB_EVENT_PATTERNS = buildPatternList(
   Deno.env.get("WA_LOG_DB_EVENTS") ?? DEFAULT_DB_EVENT_PATTERNS.join(","),
@@ -97,8 +117,12 @@ function buildPatternList(raw: string): RegExp[] {
     .filter((token) => token.length > 0)
     .map((token) => {
       if (token === "*") return /^.*$/;
-      const escaped = token.replace(/[-/\\^$+?.()|[\]{}]/g, "\\$&");
-      const withWildcards = escaped.replace(/\\\*/g, ".*");
+      // Replace * with placeholder before escaping
+      const withPlaceholder = token.replace(/\*/g, "___WILDCARD___");
+      // Escape regex special chars
+      const escaped = withPlaceholder.replace(/[-/\\^$+?.()|[\]{}]/g, "\\$&");
+      // Replace placeholder with .*
+      const withWildcards = escaped.replace(/___WILDCARD___/g, ".*");
       return new RegExp(`^${withWildcards}$`, "i");
     });
 }
