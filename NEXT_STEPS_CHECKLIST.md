@@ -44,21 +44,16 @@ supabase functions logs wa-webhook-profile --tail | grep WALLET_TRANSFER
 
 ---
 
-### 2. Verify Mobility Pricing
+### 2. Verify Mobility Trip Flow
 **Priority:** 🟡 MEDIUM
 
 **Steps:**
-1. Request ride estimate via WhatsApp
-2. Note the pricing shown
-3. Verify calculation matches expected
+1. Request ride via WhatsApp
+2. Verify driver receives notification
+3. Test driver acceptance/rejection
+4. Verify passenger notified of status
 
-**Optional - Configure custom pricing:**
-```sql
-UPDATE app_config 
-SET mobility_pricing = '{
-  "moto": {"baseFare": 1500, "perKm": 500}
-}'::jsonb;
-```
+**Note:** Fares are negotiated between driver and passenger (not calculated by system)
 
 ---
 
@@ -120,10 +115,10 @@ supabase functions list
 - [ ] Error types and frequency
 
 **Mobility:**
-- [ ] Pricing calculation accuracy
-- [ ] Remote config load success
+- [ ] Trip request success rate
+- [ ] Driver notification delivery
 - [ ] Trip creation rate
-- [ ] Payment success rate
+- [ ] Trip completion rate
 
 ---
 
@@ -158,18 +153,17 @@ supabase functions list
 
 ### Mobility Tests
 
-**Test 1: Default Pricing**
-- No custom config
-- Expected: Uses hardcoded pricing
+**Test 1: Trip Request**
+- Passenger requests ride
+- Expected: Driver receives notification
 
-**Test 2: Custom Pricing**
-- After setting mobility_pricing
-- Expected: Uses database config
+**Test 2: Driver Response**
+- Driver accepts/rejects
+- Expected: Passenger gets status update
 
-**Test 3: Cache Behavior**
-- Config change
-- Wait 6 minutes
-- Expected: New pricing loaded
+**Test 3: Trip Lifecycle**
+- Trip starts → in progress → completes
+- Expected: All status transitions work
 
 ---
 
