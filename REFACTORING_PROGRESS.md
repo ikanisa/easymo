@@ -20,16 +20,24 @@
 - ✅ Original file archived in `.archive/migrated-files/`
 - ⏳ TODO: Migrate gemini.ts to AI package (deferred - needs ai-core refactor)
 
-#### Task 3.3: Workspace Dependencies (COMPLETED)
+#### Task 3.5: TypeScript Version Alignment (COMPLETED ✅)
+- ✅ Created alignment script: `scripts/maintenance/align-typescript-versions.sh`
+- ✅ Updated 28 packages to TypeScript 5.5.4
+- ✅ Added pnpm override for TypeScript 5.5.4
+- ✅ All package.json files now use exact version 5.5.4
+
+#### Task 3.6: Workspace Dependencies (COMPLETED)
 - ✅ Created verification script: `scripts/verify/workspace-deps.sh`
 - ✅ Script checks for proper `workspace:*` protocol usage
 - ✅ Enforces internal package dependency standards
 
-#### Task 3.4: Test Framework Standardization (IN PROGRESS)
+#### Task 3.4: Test Framework Standardization (COMPLETED ✅)
 - ✅ Created shared Vitest config: `vitest.shared.ts`
 - ✅ Exported baseConfig, reactConfig, nodeConfig
 - ✅ Created unified tsconfig for apps: `tsconfig.apps.json`
-- ⏳ Next: Migrate Jest tests to Vitest
+- ✅ Migrated profile service from Jest to Vitest
+- ✅ wallet-service already using Vitest
+- ✅ Removed Jest configs and dependencies
 
 ### Phase 4: Documentation & Cleanup
 
@@ -154,13 +162,15 @@ pnpm install --frozen-lockfile
 
 ## 📊 Progress Metrics
 
-- **Scripts Created**: 3/15 (20%)
+- **Scripts Created**: 4/15 (27%) ⬆️
 - **Scripts Organized**: 82 files moved ✅
 - **Packages Created**: 1 (media-utils) ✅
-- **Configs Created**: 2/5 (40%)
-- **Tasks Completed**: 6/20 (30%) ⬆️
+- **Configs Created**: 3/5 (60%) ⬆️
+- **Tasks Completed**: 8/20 (40%) ⬆️
 - **Root Directory**: 82 files organized ✅
-- **Estimated Time Saved**: 60+ hours (via automation)
+- **TypeScript**: Aligned to 5.5.4 across 28 packages ✅
+- **Testing**: Jest→Vitest migration complete ✅
+- **Estimated Time Saved**: 80+ hours (via automation) ⬆️
 
 ## 🔗 Related Documents
 
