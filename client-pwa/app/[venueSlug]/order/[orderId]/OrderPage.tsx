@@ -209,6 +209,15 @@ export function OrderPage({ venue, order }: OrderPageProps) {
           )}
         </Card>
 
+        {/* Payment Action */}
+        {order.paymentStatus === 'pending' && (
+          <Button asChild size="lg" className="w-full">
+            <Link href={`/${venue.slug}/order/${order.id}/payment`}>
+              Pay Now • {formatPrice(order.total, order.currency)}
+            </Link>
+          </Button>
+        )}
+
         {/* Actions */}
         <div className="space-y-3">
           <Button asChild variant="outline" className="w-full">
@@ -225,3 +234,12 @@ export function OrderPage({ venue, order }: OrderPageProps) {
     </div>
   );
 }
+
+        {/* Payment Action - Add before Actions section */}
+        {order.paymentStatus === 'pending' && (
+          <Button asChild size="lg" className="w-full">
+            <Link href={`/${venue.slug}/order/${order.id}/payment`}>
+              Pay Now • {formatPrice(order.total, order.currency)}
+            </Link>
+          </Button>
+        )}

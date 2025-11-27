@@ -88,3 +88,30 @@ export async function getOrder(orderId: string) {
     return null;
   }
 }
+
+export async function updatePaymentStatus(
+  orderId: string,
+  status: 'pending' | 'processing' | 'completed' | 'failed',
+  method: 'momo' | 'revolut' | 'cash' | 'card'
+) {
+  try {
+    const { error } = await supabase
+      .from('client_orders')
+      .update({
+        payment_status: status,
+        payment_method: method,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', orderId);
+
+    if (error) {
+      console.error('Error updating payment status:', error);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error updating payment status:', error);
+    return false;
+  }
+}
