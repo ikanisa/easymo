@@ -1,0 +1,279 @@
+╔════════════════════════════════════════════════════════════════════════════╗
+║              BAR MANAGER DESKTOP APP - QUICK REFERENCE                     ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+📁 LOCATION
+──────────────────────────────────────────────────────────────────────────────
+/Users/jeanbosco/workspace/easymo-/bar-manager-app/
+
+
+🚀 QUICK START (5 MINUTES)
+──────────────────────────────────────────────────────────────────────────────
+cd bar-manager-app
+./setup.sh                              # Install dependencies
+nano .env.local                         # Add API keys
+npm run dev                             # Start server
+open http://localhost:3001              # Open browser
+
+
+🔑 REQUIRED ENV VARS (.env.local)
+──────────────────────────────────────────────────────────────────────────────
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbG...
+GEMINI_API_KEY=AIzaSy...
+
+
+📋 FIRST TIME SETUP
+──────────────────────────────────────────────────────────────────────────────
+1. Open browser console (F12)
+2. Run: localStorage.setItem("bar_id", "your-bar-uuid-from-supabase")
+3. Refresh page
+4. Enable Realtime on 'orders' table in Supabase Dashboard
+
+
+🎯 CORE FEATURES
+──────────────────────────────────────────────────────────────────────────────
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│  FEATURE           │  URL                    │  WHAT IT DOES            │
+├────────────────────┼─────────────────────────┼──────────────────────────┤
+│  📱 Order Queue    │  /                      │  Live orders with        │
+│                    │  (Dashboard)            │  real-time updates       │
+├────────────────────┼─────────────────────────┼──────────────────────────┤
+│  🤖 AI Upload      │  /menu/upload           │  Upload menu images/PDFs │
+│                    │                         │  AI extracts items       │
+├────────────────────┼─────────────────────────┼──────────────────────────┤
+│  📋 Menu List      │  /menu                  │  View/edit all items     │
+│                    │                         │  Toggle availability     │
+└────────────────────┴─────────────────────────┴──────────────────────────┘
+
+
+📂 KEY FILES
+──────────────────────────────────────────────────────────────────────────────
+app/page.tsx                            # Order queue dashboard
+app/menu/page.tsx                       # Menu list
+app/menu/upload/page.tsx                # AI menu upload
+app/api/menu/parse/route.ts             # Gemini parsing API
+
+components/ui/FileDropzone.tsx          # Drag & drop upload
+components/menu/MenuReviewTable.tsx     # Review extracted items
+
+lib/supabase/client.ts                  # Supabase client
+lib/gemini/client.ts                    # Gemini API
+lib/gemini/menu-parser.ts               # AI parsing logic
+lib/notifications.ts                    # Desktop notifications
+
+
+🔧 NPM SCRIPTS
+──────────────────────────────────────────────────────────────────────────────
+npm run dev                             # Development server (port 3001)
+npm run build                           # Production build
+npm start                               # Production server
+npm run lint                            # ESLint
+npm run tauri:dev                       # Desktop app dev
+npm run tauri:build                     # Build desktop app
+
+
+🎨 UI COMPONENTS CHEAT SHEET
+──────────────────────────────────────────────────────────────────────────────
+
+ORDER CARD STATES:
+  🟡 Yellow border → PENDING (just received)
+  🔵 Blue border   → PREPARING (staff working on it)
+  🟢 Green border  → CONFIRMED (ready for pickup)
+
+STATUS FLOW:
+  PENDING → [Click "Start Preparing"] → PREPARING
+          → [Click "Mark Ready"]      → CONFIRMED
+          → [Click "Mark Served"]     → SERVED (disappears)
+
+CONFIDENCE SCORES:
+  🟢 90%+ → Green badge (high confidence)
+  🟡 70-89% → Yellow badge (medium confidence)
+  🔴 <70% → Red badge (low confidence, review carefully)
+
+
+🤖 AI MENU UPLOAD WORKFLOW
+──────────────────────────────────────────────────────────────────────────────
+1. Go to /menu/upload
+2. Drag & drop: images (.jpg, .png), PDFs, Excel files
+3. Wait 2-5 seconds (AI processing with Gemini)
+4. Review extracted items:
+   - ✅ Check names, prices, categories
+   - ✏️  Edit if needed (click Edit button)
+   - 🗑️  Delete wrong items
+   - ☑️  Select items to save
+5. Click "Save X Items" button
+6. Items appear in /menu
+
+
+🗄️  DATABASE TABLES (Supabase)
+──────────────────────────────────────────────────────────────────────────────
+
+orders
+  ├── id (UUID)
+  ├── bar_id (UUID) ← Filter by this
+  ├── order_code (TEXT)
+  ├── status (pending|preparing|confirmed|served|cancelled)
+  ├── table_label (TEXT)
+  ├── total_minor (INTEGER)
+  └── created_at (TIMESTAMPTZ)
+
+order_items
+  ├── id (UUID)
+  ├── order_id (UUID)
+  ├── item_name (TEXT)
+  ├── qty (INTEGER)
+  └── price_minor (INTEGER)
+
+restaurant_menu_items
+  ├── id (UUID)
+  ├── bar_id (UUID) ← Filter by this
+  ├── name (TEXT)
+  ├── category (TEXT)
+  ├── description (TEXT)
+  ├── price (NUMERIC)
+  ├── currency (TEXT) default 'RWF'
+  ├── is_available (BOOLEAN)
+  ├── ocr_extracted (BOOLEAN)
+  └── ocr_confidence (NUMERIC)
+
+
+🔔 NOTIFICATIONS
+──────────────────────────────────────────────────────────────────────────────
+
+Desktop Notifications (Browser):
+  • Grant permission when prompted
+  • New order → Sound plays + notification shows
+  • Click notification → App gets focus
+
+Sound:
+  • Place file: public/sounds/notification.mp3
+  • Auto-plays on new order (if browser allows)
+
+
+🐛 TROUBLESHOOTING
+──────────────────────────────────────────────────────────────────────────────
+
+Problem: No orders showing
+  ✓ Check bar_id in localStorage (console: localStorage.getItem("bar_id"))
+  ✓ Enable Realtime for 'orders' table (Supabase Dashboard → Database → Realtime)
+  ✓ Verify NEXT_PUBLIC_SUPABASE_* vars in .env.local
+
+Problem: AI upload fails
+  ✓ Check GEMINI_API_KEY in .env.local
+  ✓ File size must be <10MB
+  ✓ Supported formats: JPG, PNG, PDF, XLSX, CSV, TXT
+
+Problem: Notifications not working
+  ✓ Click "Allow" when browser asks
+  ✓ Check browser settings (chrome://settings/content/notifications)
+  ✓ Test: showDesktopNotification("Test", "Body")
+
+Problem: Build errors
+  ✓ Run: rm -rf .next node_modules
+  ✓ Run: npm install
+  ✓ Run: npm run build
+
+
+📊 TESTING CHECKLIST
+──────────────────────────────────────────────────────────────────────────────
+
+Order Queue:
+  [ ] Create order in Supabase → Appears in dashboard
+  [ ] Click "Start Preparing" → Status changes to blue
+  [ ] Click "Mark Ready" → Status changes to green
+  [ ] Click "Mark Served" → Order disappears
+  [ ] Notification plays on new order
+
+AI Menu Upload:
+  [ ] Upload menu image → AI extracts items
+  [ ] Items grouped by category
+  [ ] Confidence scores shown
+  [ ] Edit item → Changes saved
+  [ ] Delete item → Removed from list
+  [ ] Save selected → Items in database
+  [ ] View in /menu → Items appear
+
+Menu Management:
+  [ ] Toggle availability → Updates in database
+  [ ] Filter by category → Shows filtered items
+  [ ] Delete item → Confirms + removes
+
+
+🎓 FOR STAFF TRAINING
+──────────────────────────────────────────────────────────────────────────────
+
+ORDER HANDLING:
+  1. 🔔 Notification sounds → New order arrived
+  2. 👀 Check order card (items, table number)
+  3. 👨‍🍳 Click "START PREPARING" (yellow button)
+  4. 🍳 Prepare food/drinks
+  5. ✅ Click "MARK READY" (blue button)
+  6. 🛎️  Notify waiter/customer
+  7. 📦 Click "MARK SERVED" (green button) when delivered
+
+MENU UPDATES:
+  1. New menu? → Click "AI Upload"
+  2. Drag menu PDF/image
+  3. Wait 5 seconds
+  4. Review items (fix prices if needed)
+  5. Click "Save Items"
+
+  Item sold out? → Click availability toggle (turns red)
+  Price changed? → Click item → Edit → Save
+
+
+📱 MOBILE/TABLET SUPPORT
+──────────────────────────────────────────────────────────────────────────────
+• Responsive design works on tablets (iPad, Android tablets)
+• Touch-friendly buttons (large tap targets)
+• Swipe gestures not needed (all clicks)
+• Best on 10"+ screens
+
+
+🚢 DEPLOYMENT OPTIONS
+──────────────────────────────────────────────────────────────────────────────
+
+Option 1: Web App (Easiest)
+  • npm run build
+  • Upload 'out/' folder to any static host
+  • Access via browser
+
+Option 2: Desktop App
+  • npm run tauri:build
+  • Executable in: src-tauri/target/release/bundle/
+  • Double-click to run (no browser needed)
+
+
+📚 DOCUMENTATION
+──────────────────────────────────────────────────────────────────────────────
+README.md                               # Full documentation
+BAR_MANAGER_IMPLEMENTATION_COMPLETE.md  # Technical details
+BAR_MANAGER_VISUAL_ARCHITECTURE.txt     # System diagrams
+setup.sh                                # Setup script
+
+
+💡 PRO TIPS
+──────────────────────────────────────────────────────────────────────────────
+• Keep browser tab open for real-time updates
+• Use Chrome/Edge for best notifications
+• Upload high-quality menu images for better AI accuracy
+• Set display_order on menu items for custom sorting
+• Enable browser "Do not disturb override" for notifications
+
+
+🆘 SUPPORT
+──────────────────────────────────────────────────────────────────────────────
+• GitHub Issues: [your-repo]/issues
+• Email: support@easymo.com
+• Docs: README.md
+
+
+═══════════════════════════════════════════════════════════════════════════
+
+                        ✅ READY TO RUN!
+
+                    Run: cd bar-manager-app && ./setup.sh
+
+═══════════════════════════════════════════════════════════════════════════
