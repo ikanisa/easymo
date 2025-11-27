@@ -247,36 +247,83 @@ export async function handleWalletTransferText(
         return true;
       }
 
-      // Execute transfer via wallet_transfer (core engine)
-      const { data: result2, error: err2 } = await ctx.supabase.rpc("wallet_transfer", {
-        p_from: ctx.profileId,
-        p_to: recipient.user_id,
+      // Execute transfer via wallet_transfer_tokens (core engine)
+      const idempotencyKey = data.idem ?? crypto.randomUUID();
+      const { data: result2, error: err2 } = await ctx.supabase.rpc("wallet_transfer_tokens", {
+        p_sender: ctx.profileId,
+        p_recipient: recipient.user_id,
         p_amount: amount,
-        p_reason: "transfer",
-        p_meta: { source: "wa_webhook", idempotency_key: data.idem ?? crypto.randomUUID() },
-      } as any);
+        p_idempotency_key: idempotencyKey,
+      });
       if (err2) throw err2;
-      const ok = Array.isArray(result2) ? Boolean(result2[0]) : Boolean(result2);
+      
+      const ok = result2?.success === true;
       if (ok) {
+        console.log(JSON.stringify({
+          event: "WALLET_TRANSFER_SUCCESS",
+          sender: ctx.profileId,
+          recipient: recipient.user_id,
+          amount,
+          transfer_id: result2?.transfer_id,
+          idempotency_key: idempotencyKey
+        }));
+        
         await sendButtonsMessage(
           ctx,
           `✅ Sent ${amount} tokens to ${data.to}.`,
           [{ id: IDS.WALLET, title: "💎 Wallet" }],
         );
-        notifyWalletTransferRecipient(ctx.supabase, recipient.user_id, amount, "A friend").catch(console.error);
+        
+        // Fetch sender's name for notification
+        const { data: senderProfile } = await ctx.supabase
+          .from("profiles")
+          .select("display_name")
+          .eq("user_id", ctx.profileId)
+          .single();
+        const senderName = senderProfile?.display_name || "A friend";
+        
+        // Send notification to recipient
+        notifyWalletTransferRecipient(ctx.supabase, recipient.user_id, amount, senderName)
+          .catch((err) => {
+            console.error(JSON.stringify({
+              event: "WALLET_TRANSFER_NOTIFICATION_FAILED",
+              error: err instanceof Error ? err.message : String(err),
+              recipient: recipient.user_id
+            }));
+          });
       } else {
+        console.error(JSON.stringify({
+          event: "WALLET_TRANSFER_REJECTED",
+          sender: ctx.profileId,
+          recipient: recipient.user_id,
+          amount,
+          reason: result2?.reason || "unknown"
+        }));
+        
         await sendButtonsMessage(
           ctx,
-          `Transfer failed.`,
+          `❌ Transfer failed: ${result2?.reason || "Unknown error"}`,
           [{ id: IDS.WALLET, title: "💎 Wallet" }],
         );
       }
-      await setState(ctx.supabase, ctx.profileId, { key: "wallet_home", data: {} });
+      
+      const { clearState } = await import("../../_shared/wa-webhook-shared/state/store.ts");
+      await clearState(ctx.supabase, ctx.profileId);
       return true;
     } catch (e) {
+      const errorMsg = e instanceof Error ? e.message : String(e);
+      console.error(JSON.stringify({
+        event: "WALLET_TRANSFER_FAILED",
+        error: errorMsg,
+        sender: ctx.profileId,
+        recipient: data.to,
+        amount,
+        idempotency_key: data.idem
+      }));
+      
       await sendButtonsMessage(
         ctx,
-        "Could not transfer tokens. Try later.",
+        `❌ Transfer failed: ${errorMsg}\n\nPlease try again or contact support.`,
         [{ id: IDS.WALLET, title: "💎 Wallet" }],
       );
       return true;
