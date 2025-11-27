@@ -21,9 +21,9 @@
     "tauri:build": "tauri build"
   },
   "dependencies": {
-    "@easymo/commons": "workspace:*",
-    "@easymo/ui": "workspace:*",
-    "@easymo/video-agent-schema": "workspace:*",
+    "@easymo/commons": "*",
+    "@easymo/ui": "*",
+    "@easymo/video-agent-schema": "*",
     "@google/generative-ai": "^0.24.1",
     "@headlessui/react": "^2.2.2",
     "@heroicons/react": "^2.1.5",
@@ -44,7 +44,7 @@
     "@tauri-apps/plugin-store": "^2.0.0",
     "@tauri-apps/plugin-updater": "^2.0.0",
     "@tauri-apps/plugin-window-state": "^2.0.0",
-    "@va/shared": "workspace:*",
+    "@va/shared": "*",
     "class-variance-authority": "^0.7.0",
     "classnames": "2.5.1",
     "clsx": "^2.1.1",
