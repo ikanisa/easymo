@@ -103,14 +103,14 @@ export default [
       "react-boundary": reactBoundaryPlugin,
     },
     rules: {
-      "simple-import-sort/imports": "warn",
-      "simple-import-sort/exports": "warn",
-      "react-hooks/rules-of-hooks": "warn",
-      "react-hooks/exhaustive-deps": "warn",
-      "react-refresh/only-export-components": ["warn", { allowConstantExport: true }],
-      "@next/next/no-async-client-component": "warn",
-      "react-boundary/enforce-directives": "warn",
-      "no-case-declarations": "warn",
+      "simple-import-sort/imports": "error",
+      "simple-import-sort/exports": "error",
+      "react-hooks/rules-of-hooks": "error",
+      "react-hooks/exhaustive-deps": "error",
+      "react-refresh/only-export-components": ["error", { allowConstantExport: true }],
+      "@next/next/no-async-client-component": "error",
+      "react-boundary/enforce-directives": "error",
+      "no-case-declarations": "error",
       "no-console": ["error", { allow: ["warn", "error"] }],
     },
     settings: {
@@ -146,7 +146,7 @@ export default [
     rules: {
       "@typescript-eslint/no-explicit-any": "error",
       "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_" }],
-      "@typescript-eslint/no-require-imports": "warn",
+      "@typescript-eslint/no-require-imports": "error",
     },
   },
   {

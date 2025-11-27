@@ -1,0 +1,31 @@
+
+=== packages (1 instances) ===
+packages/commons/src/logger.ts:165: * Console wrapper for gradual migration from console.log to structured logging
+
+=== admin-app/app (1 instances) ===
+admin-app/app/(panel)/aurora/settings/AuroraSettingsClient.tsx:34:    console.log('Saving settings...');
+
+=== admin-app/components (9 instances) ===
+admin-app/components/auth/LoginForm.tsx:27:    console.log('[LOGIN] Starting login attempt', { email, timestamp: new Date().toISOString() });
+admin-app/components/auth/LoginForm.tsx:31:      console.log('[LOGIN] Login successful, redirecting to dashboard');
+admin-app/components/providers/SupabaseAuthProvider.tsx:59:          console.log("auth.session.loaded", { event: "SESSION_LOADED", userId: data.session.user.id });
+admin-app/components/providers/SupabaseAuthProvider.tsx:73:      console.log("auth.state.changed", { event: "AUTH_STATE_CHANGED", authEvent: event, userId: nextSession?.user?.id });
+admin-app/components/providers/SupabaseAuthProvider.tsx:93:    console.log("auth.signin.success", { event: "USER_SIGNED_IN", userId: data.user.id });
+admin-app/components/providers/SupabaseAuthProvider.tsx:110:    console.log("auth.signout.success", { event: "USER_SIGNED_OUT", userId });
+admin-app/components/providers/SupabaseAuthProvider.tsx:132:      console.log("auth.refresh.success", { event: "SESSION_REFRESHED" });
+admin-app/components/pwa/PWAProvider.tsx:70:          console.log('[PWA] Service Worker registered');
+admin-app/components/WebVitals.tsx:9:      console.log(metric);
+
+=== admin-app/lib (12 instances) ===
+admin-app/lib/server/simple-logger.ts:70:        console.debug(formatted);
+admin-app/lib/server/simple-logger.ts:73:        console.log(formatted);
+admin-app/lib/updater.ts:8:      console.log(`Found update ${update.version} from ${update.date}`);
+admin-app/lib/updater.ts:16:            console.log(`Started downloading ${contentLength} bytes`);
+admin-app/lib/updater.ts:20:            console.log(`Downloaded ${downloaded} of ${contentLength}`);
+admin-app/lib/updater.ts:23:            console.log('Download finished');
+admin-app/lib/updater.ts:28:      console.log('Update installed, relaunching...');
+admin-app/lib/updater.ts:31:        console.log('No updates found');
+admin-app/lib/deep-links.ts:64:      console.log(`Opening feature: ${featureName}`);
+admin-app/lib/monitoring/performance.ts:103:      console.log("[METRIC]", {
+admin-app/lib/monitoring/logger.ts:39:      console.debug(this.formatEntry(entry));
+admin-app/lib/monitoring/logger.ts:45:    console.info(this.formatEntry(entry));
