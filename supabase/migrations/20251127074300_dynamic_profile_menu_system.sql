@@ -75,7 +75,7 @@ CREATE POLICY "Admins can manage menu items" ON profile_menu_items
     EXISTS (
       SELECT 1 FROM whatsapp_users
       WHERE id = auth.uid()
-      AND role = 'admin'
+      AND 'admin' = ANY(user_roles)
     )
   );
 
