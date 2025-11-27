@@ -9,9 +9,9 @@ import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowUpDown, ArrowUp, ArrowDown, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Button } from '../primitives/Button';
-import { Input } from '../primitives/Input';
-import { Checkbox } from '../primitives/Checkbox';
+import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
+import { Checkbox } from '@/components/ui/Checkbox';
 import { Skeleton } from '../feedback/Skeleton';
 
 export interface Column<T> {
@@ -80,6 +80,8 @@ export function DataTable<T extends { id: string }>({
       const bVal = typeof column.accessor === 'function' ? column.accessor(b) : b[column.accessor];
 
       if (aVal === bVal) return 0;
+      if (aVal === null || aVal === undefined) return 1;
+      if (bVal === null || bVal === undefined) return -1;
       const comparison = aVal > bVal ? 1 : -1;
       return sortDirection === 'asc' ? comparison : -comparison;
     });
@@ -247,7 +249,7 @@ export function DataTable<T extends { id: string }>({
                           column.align === 'right' && 'text-right'
                         )}
                       >
-                        {getCellValue(row, column)}
+                        {getCellValue(row, column) as React.ReactNode}
                       </td>
                     ))}
                   </motion.tr>

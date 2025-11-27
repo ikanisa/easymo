@@ -133,8 +133,8 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                     toast.onAction?.();
                     dismissToast(toast.id);
                   }}
-                  offlineBehavior="allow"
-                  className={styles.actionButton}
+                  onClick={() => window.location.reload()}
+                  className={cn("w-full", styles.actionButton)}
                 >
                   {toast.actionLabel}
                 </Button>

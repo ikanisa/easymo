@@ -168,13 +168,13 @@ serve(async (req: Request): Promise<Response> => {
         }
         
         // Wallet Home
-        else if (id === IDS.WALLET_HOME || id === IDS.WALLET || id === "wallet" || id === "wallet_tokens") {
+        else if (id === IDS.WALLET_HOME || id === "WALLET_HOME" || id === IDS.WALLET || id === "wallet" || id === "wallet_tokens") {
           const { startWallet } = await import("./wallet/home.ts");
           handled = await startWallet(ctx, state ?? { key: "home" });
         }
         
         // My Businesses
-        else if (id === IDS.MY_BUSINESSES || id === "my_business") {
+        else if (id === IDS.MY_BUSINESSES || id === "MY_BUSINESSES" || id === "my_business") {
           const { listMyBusinesses } = await import("./business/list.ts");
           handled = await listMyBusinesses(ctx);
         }
@@ -219,7 +219,7 @@ serve(async (req: Request): Promise<Response> => {
         }
         
         // My Jobs
-        else if (id === IDS.MY_JOBS || id === "my_jobs") {
+        else if (id === IDS.MY_JOBS || id === "MY_JOBS" || id === "my_jobs") {
           const { listMyJobs } = await import("./jobs/list.ts");
           handled = await listMyJobs(ctx);
         }
@@ -274,7 +274,7 @@ serve(async (req: Request): Promise<Response> => {
         }
         
         // My Properties
-        else if (id === IDS.MY_PROPERTIES || id === "my_properties") {
+        else if (id === IDS.MY_PROPERTIES || id === "MY_PROPERTIES" || id === "my_properties") {
           const { listMyProperties } = await import("./properties/list.ts");
           handled = await listMyProperties(ctx);
         }
@@ -329,7 +329,7 @@ serve(async (req: Request): Promise<Response> => {
         }
         
         // My Vehicles
-        else if (id === IDS.MY_VEHICLES || id === "my_vehicles") {
+        else if (id === IDS.MY_VEHICLES || id === "MY_VEHICLES" || id === "my_vehicles") {
           const { listMyVehicles } = await import("./vehicles/list.ts");
           handled = await listMyVehicles(ctx);
         }
@@ -340,7 +340,7 @@ serve(async (req: Request): Promise<Response> => {
         }
         
         // Saved Locations
-        else if (id === IDS.SAVED_LOCATIONS || id === "saved_locations") {
+        else if (id === IDS.SAVED_LOCATIONS || id === "SAVED_LOCATIONS" || id === "saved_locations") {
           const { listSavedLocations } = await import("./profile/locations.ts");
           handled = await listSavedLocations(ctx);
         }

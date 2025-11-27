@@ -14,6 +14,7 @@ import { ErrorBoundary } from '@/components/ui/error-boundary';
 import { ThemeProvider } from '@/components/ui/theme-provider';
 import { ToastProvider } from '@/components/ui/toast';
 import { WebVitals } from '@/components/WebVitals';
+import { UpdaterInit } from '@/components/system/UpdaterInit';
 import { isUiKitEnabled } from "@/lib/ui-kit";
 
 export const metadata: Metadata = {
@@ -48,6 +49,7 @@ export default function RootLayout({
                 </a>
                 <AppProviders>
                   <WebVitals />
+                  <UpdaterInit />
                   {children}
                 </AppProviders>
               </ToastProvider>

@@ -28,6 +28,8 @@ pub fn run() {
             Some(vec![]),
         ))
         .plugin(tauri_plugin_os::init())
+        .plugin(tauri_plugin_window_state::Builder::default().build())
+        .plugin(tauri_plugin_deep_link::init())
         .setup(|app| {
             if cfg!(debug_assertions) {
                 app.handle().plugin(

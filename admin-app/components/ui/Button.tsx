@@ -5,6 +5,7 @@
 
 'use client';
 
+import { Slot } from '@radix-ui/react-slot';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { forwardRef } from 'react';
 import { cn } from '@/lib/utils';
@@ -24,11 +25,17 @@ const buttonVariants = cva(
         ghost: `text-[var(--aurora-text-secondary)] hover:bg-[var(--aurora-surface-elevated)] hover:text-[var(--aurora-text-primary)]`,
         danger: `bg-[var(--aurora-error)] text-white hover:bg-[var(--aurora-error)]/90 shadow-sm`,
         success: `bg-[var(--aurora-success)] text-white hover:bg-[var(--aurora-success)]/90 shadow-sm`,
+        // Backward compatibility
+        outline: `bg-[var(--aurora-surface)] text-[var(--aurora-text-primary)] border border-[var(--aurora-border)] hover:bg-[var(--aurora-surface-elevated)]`,
+        default: `bg-[var(--aurora-accent)] text-white hover:bg-[var(--aurora-accent-hover)] shadow-sm hover:shadow-md`,
+        destructive: `bg-[var(--aurora-error)] text-white hover:bg-[var(--aurora-error)]/90 shadow-sm`,
+        link: `text-[var(--aurora-accent)] hover:underline underline-offset-4`,
       },
       size: {
         sm: 'h-8 px-3 text-sm rounded-lg',
         md: 'h-10 px-4 text-sm rounded-lg',
         lg: 'h-12 px-6 text-base rounded-xl',
+        icon: 'h-10 w-10',
       },
     },
     defaultVariants: {
@@ -44,6 +51,7 @@ export interface ButtonProps
   loading?: boolean;
   leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
+  asChild?: boolean;
 }
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
@@ -57,12 +65,14 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       rightIcon,
       children,
       disabled,
+      asChild = false,
       ...props
     },
     ref
   ) => {
+    const Comp = asChild ? Slot : 'button';
     return (
-      <button
+      <Comp
         ref={ref}
         className={cn(buttonVariants({ variant, size }), className)}
         disabled={disabled || loading}
@@ -94,7 +104,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         )}
         {children}
         {!loading && rightIcon}
-      </button>
+      </Comp>
     );
   }
 );

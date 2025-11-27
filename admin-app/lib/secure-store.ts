@@ -17,5 +17,6 @@ export async function setSecureItem(key: string, value: unknown) {
 
 export async function getSecureItem<T>(key: string): Promise<T | null> {
   const s = await getStore();
-  return await s.get<T>(key);
+  const val = await s.get<T>(key);
+  return val ?? null;
 }

@@ -6,12 +6,37 @@
 
 import { useState } from 'react';
 import {
-  Button, Input, Select, Textarea, Toggle, Checkbox,
-  Card, CardHeader, CardTitle, CardContent,
-  Badge, KpiCard, Modal, ModalFooter, Tooltip, Tabs, TabsList, TabsTrigger, TabsContent,
-  Spinner, Skeleton, SkeletonText, useToast, PageHeader,
+  Button,
+  Input,
+  Select,
+  Textarea,
+  Toggle,
+  Checkbox,
+  Card,
+  CardTitle,
+  CardContent,
+  Badge,
+  KpiCard,
+  Modal,
+  ModalFooter,
+  Tooltip,
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  TabsContent,
+  Spinner,
+  SkeletonText,
+  useToast,
+  PageHeader,
 } from '@/components';
-import { Mail, User, Settings, Home, Users, DollarSign, MessageCircle, TrendingUp } from 'lucide-react';
+import { Mail, Settings, Home, Users, DollarSign, MessageCircle, TrendingUp } from 'lucide-react';
+
+const COUNTRY_OPTIONS = [
+  { value: 'RW', label: 'Rwanda' },
+  { value: 'CD', label: 'Democratic Republic of Congo' },
+  { value: 'BI', label: 'Burundi' },
+  { value: 'TZ', label: 'Tanzania' },
+];
 
 export default function ComponentsDemoPage() {
   const [modalOpen, setModalOpen] = useState(false);
@@ -43,7 +68,7 @@ export default function ComponentsDemoPage() {
           <h2 className="text-2xl font-bold mb-4">Forms</h2>
           <div className="grid grid-cols-2 gap-6">
             <Input label="Email" placeholder="you@example.com" leftIcon={<Mail className="w-4 h-4" />} />
-            <Select label="Country" options={[{ value: 'us', label: 'USA' }]} />
+            <Select label="Country" options={COUNTRY_OPTIONS} />
             <Textarea label="Message" rows={3} />
             <div className="space-y-4">
               <Toggle checked={toggleChecked} onChange={setToggleChecked} label="Notifications" />
