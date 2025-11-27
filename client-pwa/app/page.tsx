@@ -25,23 +25,22 @@ export default function HomePage() {
         {/* CTA Buttons */}
         <div className="space-y-4 pt-8">
           <Link
-            href="/demo"
+            href="/heaven-bar"
             className="w-full btn-touch bg-primary text-primary-foreground rounded-2xl font-semibold text-lg shadow-glow flex items-center justify-center gap-2"
           >
             <Sparkles className="w-6 h-6" />
-            View Demo
+            View Live Menu
           </Link>
 
           <Link
-            href="/scan"
+            href="/demo"
             className="w-full btn-touch bg-secondary text-secondary-foreground rounded-2xl font-semibold text-lg flex items-center justify-center gap-2"
           >
-            <QrCode className="w-6 h-6" />
-            Scan QR Code
+            View Demo
           </Link>
 
           <div className="text-sm text-muted-foreground">
-            Try the demo or scan a table QR code
+            Try the live menu with Supabase data
           </div>
         </div>
 

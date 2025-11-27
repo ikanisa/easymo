@@ -13,6 +13,16 @@ import { badRequest, methodNotAllowed, ok, serverError } from "../_shared/http.t
 const supabase = getServiceClient();
 
 serve(async (req) => {
+  // Rate limiting (200 req/min for admin endpoints)
+  const rateLimitCheck = await rateLimitMiddleware(req, {
+    limit: 200,
+    windowSeconds: 60,
+  });
+
+  if (!rateLimitCheck.allowed) {
+    return rateLimitCheck.response!;
+  }
+
   const json = (body: unknown, status = 200) =>
     new Response(JSON.stringify(body), {
       status,

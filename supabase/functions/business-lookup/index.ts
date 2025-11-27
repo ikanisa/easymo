@@ -2,6 +2,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/http.ts";
 import { logStructuredEvent } from "../_shared/observability.ts";
 import { requireEmbedding } from "../_shared/openaiGuard.ts";
+import { rateLimitMiddleware } from "../_shared/rate-limit/index.ts";
 
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
@@ -26,6 +27,16 @@ interface BusinessResult {
 }
 
 Deno.serve(async (req) => {
+  // Rate limiting (60 req/min for public lookup endpoint)
+  const rateLimitCheck = await rateLimitMiddleware(req, {
+    limit: 60,
+    windowSeconds: 60,
+  });
+
+  if (!rateLimitCheck.allowed) {
+    return rateLimitCheck.response!;
+  }
+
   // Handle CORS
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });

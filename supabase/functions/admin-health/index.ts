@@ -6,10 +6,21 @@ import {
   requireAdminAuth,
   withAdminTracing,
 } from "../_shared/admin.ts";
+import { rateLimitMiddleware } from "../_shared/rate-limit/index.ts";
 
 const supabase = createServiceRoleClient();
 
 Deno.serve(withAdminTracing("admin-health", async (req, ctx) => {
+  // Rate limiting (200 req/min for admin endpoints)
+  const rateLimitCheck = await rateLimitMiddleware(req, {
+    limit: 200,
+    windowSeconds: 60,
+  });
+
+  if (!rateLimitCheck.allowed) {
+    return rateLimitCheck.response!;
+  }
+
   if (req.method === "OPTIONS") {
     return handleOptions();
   }

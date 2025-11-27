@@ -19,6 +19,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { UnifiedOrchestrator } from "./core/orchestrator.ts";
 import { verifyWebhookSignature } from "../_shared/webhook-utils.ts";
 import { logStructuredEvent } from "../_shared/observability.ts";
+import { rateLimitMiddleware } from "../_shared/rate-limit/index.ts";
 import { storeDLQEntry } from "../_shared/dlq-manager.ts";
 
 const supabase = createClient(
@@ -29,6 +30,16 @@ const supabase = createClient(
 const orchestrator = new UnifiedOrchestrator(supabase);
 
 serve(async (req: Request): Promise<Response> => {
+  // Rate limiting (100 req/min for high-volume WhatsApp)
+  const rateLimitCheck = await rateLimitMiddleware(req, {
+    limit: 100,
+    windowSeconds: 60,
+  });
+
+  if (!rateLimitCheck.allowed) {
+    return rateLimitCheck.response!;
+  }
+
   const url = new URL(req.url);
   const correlationId = req.headers.get("X-Correlation-ID") ?? crypto.randomUUID();
   const requestId = req.headers.get("X-Request-ID") ?? crypto.randomUUID();

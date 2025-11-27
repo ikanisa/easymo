@@ -15,6 +15,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { z } from "zod";
 import { getServiceClient } from "../_shared/supabase.ts";
 import { requireAdmin } from "../_shared/auth.ts";
+import { rateLimitMiddleware } from "../_shared/rate-limit/index.ts";
 import {
   badRequest,
   methodNotAllowed,
@@ -77,6 +78,16 @@ async function createAuditLog(
 }
 
 serve(async (req) => {
+  // Rate limiting (200 req/min for admin endpoints)
+  const rateLimitCheck = await rateLimitMiddleware(req, {
+    limit: 200,
+    windowSeconds: 60,
+  });
+
+  if (!rateLimitCheck.allowed) {
+    return rateLimitCheck.response!;
+  }
+
   const guard = requireAdmin(req);
   if (guard) return guard;
 

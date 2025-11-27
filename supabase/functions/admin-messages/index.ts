@@ -7,6 +7,7 @@ import {
   logResponse,
   requireAdminAuth,
 } from "../_shared/admin.ts";
+import { rateLimitMiddleware } from "../_shared/rate-limit/index.ts";
 
 const supabase = createServiceRoleClient();
 
@@ -16,6 +17,16 @@ const querySchema = z.object({
 });
 
 Deno.serve(async (req) => {
+  // Rate limiting (200 req/min for admin endpoints)
+  const rateLimitCheck = await rateLimitMiddleware(req, {
+    limit: 200,
+    windowSeconds: 60,
+  });
+
+  if (!rateLimitCheck.allowed) {
+    return rateLimitCheck.response!;
+  }
+
   logRequest("admin-messages", req);
 
   if (req.method === "OPTIONS") {

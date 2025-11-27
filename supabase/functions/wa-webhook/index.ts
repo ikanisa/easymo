@@ -4,6 +4,7 @@ import type { WhatsAppWebhookPayload } from "../_shared/wa-webhook-shared/types.
 import { getRoutingText } from "../_shared/wa-webhook-shared/utils/messages.ts";
 import { routeMessage } from "../wa-webhook-core/routing_logic.ts";
 import { verifyWebhookSignature } from "../_shared/webhook-utils.ts";
+import { rateLimitMiddleware } from "../_shared/rate-limit/index.ts";
 
 /**
  * ⚠️ DEPRECATION NOTICE ⚠️

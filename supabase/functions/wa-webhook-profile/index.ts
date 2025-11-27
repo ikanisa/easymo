@@ -5,6 +5,7 @@ import { getState } from "../_shared/wa-webhook-shared/state/store.ts";
 import { sendButtonsMessage } from "../_shared/wa-webhook-shared/utils/reply.ts";
 import type { RouterContext, WhatsAppWebhookPayload } from "../_shared/wa-webhook-shared/types.ts";
 import { IDS } from "../_shared/wa-webhook-shared/wa/ids.ts";
+import { rateLimitMiddleware } from "../_shared/rate-limit/index.ts";
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL") ?? "",
@@ -12,6 +13,16 @@ const supabase = createClient(
 );
 
 serve(async (req: Request): Promise<Response> => {
+  // Rate limiting (100 req/min for high-volume WhatsApp)
+  const rateLimitCheck = await rateLimitMiddleware(req, {
+    limit: 100,
+    windowSeconds: 60,
+  });
+
+  if (!rateLimitCheck.allowed) {
+    return rateLimitCheck.response!;
+  }
+
   const url = new URL(req.url);
   const requestId = req.headers.get("x-request-id") ?? crypto.randomUUID();
 
