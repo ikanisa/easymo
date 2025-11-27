@@ -16,6 +16,9 @@ import { sendMoneyTool } from './payment/send-money';
 import { getUserProfileTool } from './profile/get-user-profile';
 // Support tools
 import { createTicketTool } from './support/create-ticket';
+// Search tools
+import { openaiWebSearchTool } from './openai-web-search';
+import { serpapiJobsTool } from './serpapi-jobs';
 
 /**
  * All available tools
@@ -34,6 +37,10 @@ export const ALL_TOOLS: Tool[] = [
   
   // Support
   createTicketTool,
+
+  // Search
+  openaiWebSearchTool,
+  serpapiJobsTool,
 ];
 
 /**
@@ -112,10 +119,9 @@ function zodToJsonSchema(schema: any): any {
 
 // Export individual tools
 export {
-  checkAvailabilityTool,
-  checkBalanceTool,
-  createBookingTool,
   createTicketTool,
   getUserProfileTool,
+  openaiWebSearchTool,
   sendMoneyTool,
+  serpapiJobsTool,
 };
