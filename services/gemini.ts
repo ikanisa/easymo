@@ -2,9 +2,13 @@ import { GoogleGenAI, LiveServerMessage, Modality, Type } from '@google/genai';
 
 import { createBlob, decodeAudioData } from '@easymo/media-utils';
 
+import { childLogger } from '@easymo/commons';
+
+const log = childLogger({ service: 'gemini.ts' });
+
 // Ensure API KEY is available
 if (!process.env.API_KEY) {
-  console.error("API_KEY is missing in process.env");
+  log.error("API_KEY is missing in process.env");
 }
 
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
@@ -132,7 +136,7 @@ export const disconnectLiveSession = async () => {
   if (currentSession) {
     try {
         (currentSession as any).close(); 
-    } catch(e) { console.warn("Session close error", e)}
+    } catch(e) { log.warn("Session close error", e)}
     currentSession = null;
   }
   
@@ -224,7 +228,7 @@ export const searchLocalBusinesses = async (query: string, city: string): Promis
 
     return JSON.parse(jsonStr);
   } catch (e) {
-    console.error("Failed to search businesses", e);
+    log.error("Failed to search businesses", e);
     return [];
   }
 };

@@ -2,6 +2,10 @@ import OpenAI from 'openai';
 import { z } from 'zod';
 import type { Tool, ToolContext } from '../core/types';
 
+import { childLogger } from '@easymo/commons';
+
+const log = childLogger({ service: 'ai' });
+
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
@@ -67,7 +71,7 @@ export const openaiWebSearchTool: Tool = {
         }
       };
     } catch (error) {
-      console.error('OpenAI Web Search error:', error);
+      log.error('OpenAI Web Search error:', error);
       throw new Error(`Failed to perform OpenAI web search: ${error instanceof Error ? error.message : String(error)}`);
     }
   },

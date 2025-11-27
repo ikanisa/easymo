@@ -3,6 +3,10 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import type { AgentInput, AgentResult, Tool } from '../../types/agent.types';
 import { BaseAgent } from '../base/agent.base';
 
+import { childLogger } from '@easymo/commons';
+
+const log = childLogger({ service: 'agents' });
+
 export class SalesAgent extends BaseAgent {
   name = 'sales_agent';
   instructions = `You are a creative director for ad campaigns. Generate Sora-2 video scripts, catchy hooks, and localized copy. Track campaign performance. Upsell premium visibility.
@@ -35,7 +39,7 @@ Guardrails & Policies:
     const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
     
     if (!supabaseUrl || !supabaseKey) {
-      console.warn("SalesAgent: Supabase credentials missing. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.");
+      log.warn("SalesAgent: Supabase credentials missing. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.");
     }
     
     this.supabase = createClient(supabaseUrl || '', supabaseKey || '', {
@@ -98,7 +102,7 @@ Format as JSON with: { script: string, scenes: [{duration: string, visual: strin
           } catch (error) {
             // Log the error for debugging but provide graceful fallback
             const errorMessage = error instanceof Error ? error.message : String(error);
-            console.warn(`LLM script generation failed: ${errorMessage}. Using template fallback.`);
+            log.warn(`LLM script generation failed: ${errorMessage}. Using template fallback.`);
             
             // Fallback to template-based script
             return {
@@ -160,7 +164,7 @@ Format as JSON with: { script: string, scenes: [{duration: string, visual: strin
             .single();
           
           if (error) {
-            console.error('Create campaign error:', error);
+            log.error('Create campaign error:', error);
             // Fallback response
             return { 
               success: false,
@@ -230,7 +234,7 @@ Format as JSON with: { script: string, scenes: [{duration: string, visual: strin
           });
           
           if (error) {
-            console.error('Get stats error:', error);
+            log.error('Get stats error:', error);
             // Fallback to direct query
             const { data: campaign } = await this.supabase
               .from('ad_campaigns')

@@ -4,6 +4,10 @@ import pRetry from "p-retry";
 
 import { maskMsisdn } from "./utils/pii";
 
+import { childLogger } from '@easymo/commons';
+
+const log = childLogger({ service: 'whatsapp-pricing-server' });
+
 type QueueMeta = {
   to: string;
   type: string;
@@ -32,7 +36,7 @@ class OutboundMessageQueue {
     const retries = Number.isFinite(DEFAULT_RETRIES) ? Math.max(0, DEFAULT_RETRIES) : 2;
     const maskedRecipient = maskMsisdn(meta.to);
 
-    console.info("outbound.queue.schedule", {
+    log.info("outbound.queue.schedule", {
       correlationId,
       to: maskedRecipient,
       type: meta.type,
@@ -42,7 +46,7 @@ class OutboundMessageQueue {
       pRetry(task, {
         retries,
         onFailedAttempt: (error) => {
-          console.warn("outbound.queue.retry", {
+          log.warn("outbound.queue.retry", {
             correlationId,
             to: maskedRecipient,
             attempt: error.attemptNumber,
@@ -53,7 +57,7 @@ class OutboundMessageQueue {
       }),
     );
 
-    console.info("outbound.queue.delivered", {
+    log.info("outbound.queue.delivered", {
       correlationId,
       to: maskedRecipient,
       type: meta.type,

@@ -5,6 +5,10 @@
 
 import { SupabaseClient } from '@supabase/supabase-js';
 
+import { childLogger } from '@easymo/commons';
+
+const log = childLogger({ service: 'ai-core' });
+
 export interface AnalyticsEvent {
   agentType: string;
   userId: string;
@@ -57,7 +61,7 @@ export class AgentAnalytics {
           metadata: event.metadata || {}
         });
     } catch (error) {
-      console.error('Failed to log analytics event:', error);
+      log.error('Failed to log analytics event:', error);
       // Don't throw - analytics failures shouldn't break agent functionality
     }
   }

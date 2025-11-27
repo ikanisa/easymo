@@ -1,5 +1,9 @@
 import { CallDirection, CallPlatform, Prisma, PrismaClient } from "@prisma/client";
 
+import { childLogger } from '@easymo/commons';
+
+const log = childLogger({ service: 'db' });
+
 const prisma = new PrismaClient();
 
 const TENANT_ID = "a4a8cf2d-0a4f-446c-8bf2-28509641158f";
@@ -304,7 +308,7 @@ main()
     await prisma.$disconnect();
   })
   .catch(async (error) => {
-    console.error("Seed failed", error);
+    log.error("Seed failed", error);
     await prisma.$disconnect();
     process.exit(1);
   });

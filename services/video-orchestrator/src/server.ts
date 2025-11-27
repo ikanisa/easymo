@@ -5,6 +5,10 @@ import type { RenderPlanOptions } from "./orchestrator.js";
 import { VideoOrchestrator } from "./orchestrator.js";
 import type { RenderInputs } from "./types.js";
 
+import { childLogger } from '@easymo/commons';
+
+const log = childLogger({ service: 'video-orchestrator' });
+
 async function readJson<T>(req: IncomingMessage): Promise<T> {
   const chunks: Buffer[] = [];
   for await (const chunk of req) {
@@ -55,7 +59,7 @@ createServer(async (req, res) => {
       const outcome = await orchestrator.render({ plan }, options);
       sendJson(res, 200, { ok: true, data: outcome });
     } catch (error) {
-      console.error(error);
+      log.error(error);
       sendJson(res, 500, {
         ok: false,
         error: error instanceof Error ? error.message : "render_failed",
@@ -66,5 +70,5 @@ createServer(async (req, res) => {
 
   sendJson(res, 404, { ok: false, error: "not_found" });
 }).listen(config.port, () => {
-  console.log(`video orchestrator listening on :${config.port}`);
+  log.info(`video orchestrator listening on :${config.port}`);
 });

@@ -11,6 +11,10 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { Redis } from 'ioredis';
 import OpenAI from 'openai';
 
+import { childLogger } from '@easymo/commons';
+
+const log = childLogger({ service: 'ai' });
+
 import type {
   AgentConfig,
   AgentResponse,
@@ -100,7 +104,7 @@ export class AgentOrchestrator {
 
       return response;
     } catch (error) {
-      console.error('[AgentOrchestrator] Error processing message:', error);
+      log.error('[AgentOrchestrator] Error processing message:', error);
       throw error;
     }
   }
@@ -435,7 +439,7 @@ Respond with ONLY the agent type, nothing else.`,
 
         executedTools.push(tool.name);
       } catch (error: any) {
-        console.error(`[AgentOrchestrator] Tool execution error:`, error);
+        log.error(`[AgentOrchestrator] Tool execution error:`, error);
 
         // Log failed execution
         await this.logToolExecution(
@@ -584,7 +588,7 @@ Respond with ONLY the agent type, nothing else.`,
       const messages = await this.redis.lrange(key, -limit, -1);
       return messages.map((msg) => JSON.parse(msg));
     } catch (error) {
-      console.error('[AgentOrchestrator] Error loading history:', error);
+      log.error('[AgentOrchestrator] Error loading history:', error);
       return [];
     }
   }
@@ -614,13 +618,13 @@ Respond with ONLY the agent type, nothing else.`,
       });
 
       if (error) {
-        console.error('[AgentOrchestrator] Memory retrieval error:', error);
+        log.error('[AgentOrchestrator] Memory retrieval error:', error);
         return [];
       }
 
       return (data as MemoryEntry[])?.map((entry) => entry.content) || [];
     } catch (error) {
-      console.error('[AgentOrchestrator] Memory retrieval error:', error);
+      log.error('[AgentOrchestrator] Memory retrieval error:', error);
       return [];
     }
   }
@@ -676,7 +680,7 @@ Respond with ONLY the agent type, nothing else.`,
         });
       }
     } catch (error) {
-      console.error('[AgentOrchestrator] Error saving to memory:', error);
+      log.error('[AgentOrchestrator] Error saving to memory:', error);
     }
   }
 
@@ -749,7 +753,7 @@ Respond with ONLY the agent type, nothing else.`,
         created_at: new Date().toISOString(),
       });
     } catch (err) {
-      console.error('[AgentOrchestrator] Error logging tool execution:', err);
+      log.error('[AgentOrchestrator] Error logging tool execution:', err);
     }
   }
 
@@ -789,7 +793,7 @@ Respond with ONLY the agent type, nothing else.`,
         });
       }
     } catch (error) {
-      console.error('[AgentOrchestrator] Error tracking metrics:', error);
+      log.error('[AgentOrchestrator] Error tracking metrics:', error);
     }
   }
 

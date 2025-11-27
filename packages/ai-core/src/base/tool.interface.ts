@@ -1,5 +1,9 @@
 import { AgentContext,Tool } from './types';
 
+import { childLogger } from '@easymo/commons';
+
+const log = childLogger({ service: 'ai-core' });
+
 export class ToolRegistry {
   private tools: Map<string, Tool> = new Map();
 
@@ -8,7 +12,7 @@ export class ToolRegistry {
    */
   register(tool: Tool): void {
     if (this.tools.has(tool.name)) {
-      console.warn(`Tool ${tool.name} already registered. Overwriting.`);
+      log.warn(`Tool ${tool.name} already registered. Overwriting.`);
     }
     this.tools.set(tool.name, tool);
   }
@@ -113,7 +117,7 @@ export class ToolRegistry {
       const result = await tool.execute(params, context);
       return result;
     } catch (error) {
-      console.error(`Error executing tool ${name}:`, error);
+      log.error(`Error executing tool ${name}:`, error);
       throw error;
     }
   }

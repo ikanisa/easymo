@@ -9,6 +9,10 @@ import { LoggingInterceptor } from "./common/interceptors/logging.interceptor.js
 import { RequestIdInterceptor } from "./common/interceptors/request-id.interceptor.js";
 import { initialiseTelemetry } from "./telemetry.js";
 
+import { childLogger } from '@easymo/commons';
+
+const log = childLogger({ service: 'agent-core' });
+
 async function bootstrap() {
   initialiseTelemetry();
 
@@ -34,6 +38,6 @@ async function bootstrap() {
 }
 
 bootstrap().catch((error) => {
-  console.error("agent-core bootstrap failed", error);
+  log.error("agent-core bootstrap failed", error);
   process.exit(1);
 });

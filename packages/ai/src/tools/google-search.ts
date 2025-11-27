@@ -1,6 +1,10 @@
 import { z } from 'zod';
 import type { Tool, ToolContext } from '../core/types';
 
+import { childLogger } from '@easymo/commons';
+
+const log = childLogger({ service: 'ai' });
+
 export const googleSearchTool: Tool = {
   name: 'google_search',
   description: 'Perform a Google Search using the Custom Search JSON API.',
@@ -54,7 +58,7 @@ export const googleSearchTool: Tool = {
         searchInformation: data.searchInformation,
       };
     } catch (error) {
-      console.error('Google Search error:', error);
+      log.error('Google Search error:', error);
       throw new Error(`Failed to perform Google search: ${error instanceof Error ? error.message : String(error)}`);
     }
   },

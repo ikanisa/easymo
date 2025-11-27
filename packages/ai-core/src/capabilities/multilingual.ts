@@ -5,6 +5,10 @@
 
 import { SupabaseClient } from '@supabase/supabase-js';
 
+import { childLogger } from '@easymo/commons';
+
+const log = childLogger({ service: 'ai-core' });
+
 export type SupportedLanguage = 'en' | 'fr' | 'rw' | 'sw';
 
 export interface TranslationConfig {
@@ -180,7 +184,7 @@ export class MultilingualSupport {
       const data = await response.json();
       return data.data.translations[0].translatedText;
     } catch (error) {
-      console.error('Translation error:', error);
+      log.error('Translation error:', error);
       return config.text; // Return original on error
     }
   }

@@ -11,6 +11,10 @@ import { z } from 'zod';
 import { logToolInvocation } from '../observability';
 import type { AgentContext } from '../types';
 
+import { childLogger } from '@easymo/commons';
+
+const log = childLogger({ service: 'agents' });
+
 // Schema for vector search parameters
 export const vectorSearchSchema = z.object({
   query: z.string().min(1).describe('The search query string'),
@@ -79,7 +83,7 @@ export async function executeVectorSearch(
 
     return { results: data || [] };
   } catch (error) {
-    console.error('Vector search error:', error);
+    log.error('Vector search error:', error);
     // Fallback or rethrow
     throw error;
   }

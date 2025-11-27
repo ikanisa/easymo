@@ -5,6 +5,10 @@
 
 import { SupabaseClient } from '@supabase/supabase-js';
 
+import { childLogger } from '@easymo/commons';
+
+const log = childLogger({ service: 'ai-core' });
+
 export interface NotificationConfig {
   userId: string;
   agentType: string;
@@ -82,7 +86,7 @@ export class ProactiveNotifications {
 
     try {
       // Send via WhatsApp (would integrate with WhatsApp Business API)
-      console.log(`Sending notification to ${notification.user_id}:`, notification.message);
+      log.info(`Sending notification to ${notification.user_id}:`, notification.message);
 
       // Update status
       await this.supabase

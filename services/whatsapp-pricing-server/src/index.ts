@@ -19,6 +19,10 @@ import { enqueueOutboundSend } from "./outboundQueue";
 import { resolveSecretValue } from "./secrets";
 import { maskMsisdn } from "./utils/pii";
 
+import { childLogger } from '@easymo/commons';
+
+const log = childLogger({ service: 'whatsapp-pricing-server' });
+
 type UploadedFile = { mimetype: string; buffer: Buffer };
 
 type DecoratedQuote = PricingOutput & {
@@ -103,7 +107,7 @@ async function sendWhatsApp(to: string, bodyText: string, phoneIdOverride?: stri
   const token = await getWhatsAppToken();
 
   if (!phoneId || !token) {
-    console.warn("whatsapp.send.credentials_missing", {
+    log.warn("whatsapp.send.credentials_missing", {
       hasPhoneId: Boolean(phoneId),
       hasToken: Boolean(token),
     });
@@ -138,7 +142,7 @@ async function sendWhatsApp(to: string, bodyText: string, phoneIdOverride?: stri
     );
   } catch (error) {
     const reason = error instanceof Error ? error.message : String(error);
-    console.error("whatsapp.send.error", {
+    log.error("whatsapp.send.error", {
       to: maskedRecipient,
       reason,
     });
@@ -222,14 +226,14 @@ async function downloadMedia(mediaId: string): Promise<UploadedFile | undefined>
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!infoRes.ok) {
-    console.error("Failed to fetch media metadata", await infoRes.text());
+    log.error("Failed to fetch media metadata", await infoRes.text());
     return undefined;
   }
   const info = (await infoRes.json()) as { url: string; mime_type: string };
   const url = info.url;
   const mediaRes = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
   if (!mediaRes.ok) {
-    console.error("Failed to download media", await mediaRes.text());
+    log.error("Failed to download media", await mediaRes.text());
     return undefined;
   }
   const buffer = Buffer.from(await mediaRes.arrayBuffer());
@@ -377,7 +381,7 @@ app.post("/webhook", async (req, res) => {
     }
     res.sendStatus(200);
   } catch (err) {
-    console.error("Webhook processing error", err);
+    log.error("Webhook processing error", err);
     res.sendStatus(500);
   }
 });
@@ -398,7 +402,7 @@ app.post("/simulate", upload.array("files"), async (req, res) => {
 
     res.json(simulation);
   } catch (error) {
-    console.error(error);
+    log.error(error);
     res.status(500).json({ error: (error as Error).message });
   }
 });
@@ -429,5 +433,5 @@ app.get("/paylink", (req, res) => {
 
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {
-  console.log(`WhatsApp pricing server listening on ${PORT}`);
+  log.info(`WhatsApp pricing server listening on ${PORT}`);
 });

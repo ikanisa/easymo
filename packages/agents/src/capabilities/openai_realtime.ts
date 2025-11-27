@@ -1,5 +1,9 @@
 import { WebSocket } from "ws";
 
+import { childLogger } from '@easymo/commons';
+
+const log = childLogger({ service: 'agents' });
+
 export interface RealtimeConfig {
   apiKey: string;
   model?: string;
@@ -31,7 +35,7 @@ export class OpenAIRealtimeClient {
       if (!this.ws) return reject("WebSocket not initialized");
 
       this.ws.on("open", () => {
-        console.log("Connected to OpenAI Realtime API");
+        log.info("Connected to OpenAI Realtime API");
         this.initializeSession();
         resolve(true);
       });
@@ -41,12 +45,12 @@ export class OpenAIRealtimeClient {
       });
 
       this.ws.on("error", (error) => {
-        console.error("Realtime API Error:", error);
+        log.error("Realtime API Error:", error);
         reject(error);
       });
 
       this.ws.on("close", () => {
-        console.log("Disconnected from OpenAI Realtime API");
+        log.info("Disconnected from OpenAI Realtime API");
       });
     });
   }
@@ -70,16 +74,16 @@ export class OpenAIRealtimeClient {
     switch (event.type) {
       case "response.audio.delta":
         // Handle incoming audio stream (e.g., send to SIP trunk)
-        // console.log("Received audio delta");
+        // log.info("Received audio delta");
         break;
       case "response.text.delta":
         // Handle text stream
         break;
       case "response.done":
-        console.log("Response complete");
+        log.info("Response complete");
         break;
       default:
-        // console.log("Received event:", event.type);
+        // log.info("Received event:", event.type);
     }
   }
 

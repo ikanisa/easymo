@@ -111,6 +111,7 @@ export default [
       "@next/next/no-async-client-component": "warn",
       "react-boundary/enforce-directives": "warn",
       "no-case-declarations": "warn",
+      "no-console": ["error", { allow: ["warn", "error"] }],
     },
     settings: {
       next: {
@@ -143,8 +144,8 @@ export default [
   {
     files: ["**/*.{ts,tsx}"],
     rules: {
-      "@typescript-eslint/no-explicit-any": "warn",
-      "@typescript-eslint/no-unused-vars": ["warn", { argsIgnorePattern: "^_" }],
+      "@typescript-eslint/no-explicit-any": "error",
+      "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_" }],
       "@typescript-eslint/no-require-imports": "warn",
     },
   },

@@ -4,6 +4,10 @@ import axios from 'axios';
 import type { AgentInput, AgentResult, Tool } from '../../types/agent.types';
 import { BaseAgent } from '../base/agent.base';
 
+import { childLogger } from '@easymo/commons';
+
+const log = childLogger({ service: 'agents' });
+
 export class BusinessBrokerAgent extends BaseAgent {
   name = 'business_broker_agent';
   instructions = `You are a local business discovery agent for Rwanda. Map user needs → business categories → specific nearby businesses. 
@@ -33,7 +37,7 @@ export class BusinessBrokerAgent extends BaseAgent {
     const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SERVICE_ROLE_KEY;
     
     if (!supabaseUrl || !supabaseKey) {
-      console.warn("Supabase credentials missing for BusinessBrokerAgent");
+      log.warn("Supabase credentials missing for BusinessBrokerAgent");
     }
     
     this.supabase = createClient(supabaseUrl || '', supabaseKey || '', {
@@ -74,7 +78,7 @@ export class BusinessBrokerAgent extends BaseAgent {
 
           if (error) {
             // Fallback to simple query if RPC fails or doesn't exist yet
-            console.error("RPC search_businesses_nearby failed:", error);
+            log.error("RPC search_businesses_nearby failed:", error);
             const { data: fallbackData, error: fallbackError } = await this.supabase
               .from('business_directory')
               .select('*')
@@ -129,7 +133,7 @@ export class BusinessBrokerAgent extends BaseAgent {
             // Fallback check for simple lat/lng in other fields
             return { error: "Location not found" };
           } catch (error) {
-            console.error("Geocode error:", error);
+            log.error("Geocode error:", error);
             return { error: "Geocoding failed" };
           }
         }

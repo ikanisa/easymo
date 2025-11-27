@@ -7,6 +7,10 @@
 
 import type { AgentContext, AgentTrace } from './types';
 
+import { childLogger } from '@easymo/commons';
+
+const log = childLogger({ service: 'agents' });
+
 /**
  * Log structured event for agent execution
  */
@@ -21,7 +25,7 @@ export async function logStructuredEvent(
   };
 
   // In production, this would send to centralized logging
-  console.log(JSON.stringify(logEntry));
+  log.info(JSON.stringify(logEntry));
 }
 
 /**

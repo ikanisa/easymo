@@ -3,6 +3,10 @@ import { z } from 'zod';
 
 import type { Tool } from '../../core/types';
 
+import { childLogger } from '@easymo/commons';
+
+const log = childLogger({ service: 'ai' });
+
 const CreateTicketSchema = z.object({
   user_id: z.string().uuid(),
   subject: z.string().min(5).max(200),
@@ -214,7 +218,7 @@ async function autoAssignTicket(
 
     return null;
   } catch (error) {
-    console.error('Auto-assign failed:', error);
+    log.error('Auto-assign failed:', error);
     return null;
   }
 }

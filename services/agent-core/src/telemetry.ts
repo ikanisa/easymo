@@ -4,6 +4,10 @@ import { Resource } from "@opentelemetry/resources";
 import { NodeSDK } from "@opentelemetry/sdk-node";
 import { SemanticResourceAttributes } from "@opentelemetry/semantic-conventions";
 
+import { childLogger } from '@easymo/commons';
+
+const log = childLogger({ service: 'agent-core' });
+
 let sdk: NodeSDK | null = null;
 
 export const initialiseTelemetry = () => {
@@ -31,7 +35,7 @@ export const initialiseTelemetry = () => {
   const startResult = sdk.start() as unknown;
   if (startResult && typeof (startResult as Promise<void>).catch === "function") {
     (startResult as Promise<void>).catch((error) => {
-      console.warn("opentelemetry init failed", error);
+      log.warn("opentelemetry init failed", error);
     });
   }
   process.once("SIGTERM", () => {

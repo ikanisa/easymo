@@ -1,6 +1,10 @@
 import { z } from 'zod';
 import type { Tool, ToolContext } from '../core/types';
 
+import { childLogger } from '@easymo/commons';
+
+const log = childLogger({ service: 'ai' });
+
 const SERPAPI_BASE = "https://serpapi.com/search.json";
 
 export const serpapiJobsTool: Tool = {
@@ -60,7 +64,7 @@ export const serpapiJobsTool: Tool = {
         total_results: jobs.length,
       };
     } catch (error) {
-      console.error('SerpApi Jobs error:', error);
+      log.error('SerpApi Jobs error:', error);
       throw new Error(`Failed to fetch jobs from SerpApi: ${error instanceof Error ? error.message : String(error)}`);
     }
   },

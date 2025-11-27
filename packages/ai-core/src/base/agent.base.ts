@@ -4,6 +4,10 @@ import { GeminiClient } from '../llm/gemini-client';
 import { ModelRouter } from '../llm/model-router';
 import { OpenAIClient } from '../llm/openai-client';
 import { ToolRegistry } from './tool.interface';
+import { childLogger } from '@easymo/commons';
+
+const log = childLogger({ service: 'ai-core' });
+
 import {
   AgentContext,
   AgentInput,
@@ -135,7 +139,7 @@ export abstract class BaseAgent extends EventEmitter {
             }]);
 
           } catch (error) {
-            console.error(`Error executing tool ${call.name}:`, error);
+            log.error(`Error executing tool ${call.name}:`, error);
             
             // Send error back to model
             result = await chat.sendMessage([{
@@ -158,7 +162,7 @@ export abstract class BaseAgent extends EventEmitter {
       };
 
     } catch (error) {
-      console.error('Error in Gemini ReAct loop:', error);
+      log.error('Error in Gemini ReAct loop:', error);
       return {
         success: false,
         finalOutput: 'An error occurred while processing your request.',
@@ -241,7 +245,7 @@ export abstract class BaseAgent extends EventEmitter {
             });
 
           } catch (error) {
-            console.error(`Error executing tool ${toolCall.function.name}:`, error);
+            log.error(`Error executing tool ${toolCall.function.name}:`, error);
             
             messages.push({
               role: 'tool',
@@ -262,7 +266,7 @@ export abstract class BaseAgent extends EventEmitter {
       };
 
     } catch (error) {
-      console.error('Error in OpenAI ReAct loop:', error);
+      log.error('Error in OpenAI ReAct loop:', error);
       return {
         success: false,
         finalOutput: 'An error occurred while processing your request.',

@@ -1,5 +1,9 @@
 import { WebSocket } from 'ws';
 
+import { childLogger } from '@easymo/commons';
+
+const log = childLogger({ service: 'ai-core' });
+
 export interface RealtimeConfig {
   apiKey: string;
   model?: string;
@@ -46,7 +50,7 @@ export class OpenAIRealtimeClient {
       if (!this.ws) return reject('WebSocket not initialized');
 
       this.ws.on('open', () => {
-        console.log('Connected to OpenAI Realtime API');
+        log.info('Connected to OpenAI Realtime API');
         this.initializeSession();
         resolve();
       });
@@ -56,12 +60,12 @@ export class OpenAIRealtimeClient {
       });
 
       this.ws.on('error', (error) => {
-        console.error('Realtime API Error:', error);
+        log.error('Realtime API Error:', error);
         reject(error);
       });
 
       this.ws.on('close', () => {
-        console.log('Disconnected from OpenAI Realtime API');
+        log.info('Disconnected from OpenAI Realtime API');
       });
     });
   }
@@ -101,10 +105,10 @@ export class OpenAIRealtimeClient {
         // Text chunk received
         break;
       case 'response.done':
-        console.log('Response complete');
+        log.info('Response complete');
         break;
       case 'error':
-        console.error('Realtime API error:', event.error);
+        log.error('Realtime API error:', event.error);
         break;
     }
   }

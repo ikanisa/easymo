@@ -26,5 +26,21 @@ export function useHaptics() {
     }
   }, []);
 
-  return { trigger };
+  // Additional helper methods for common actions
+  const notification = useCallback(() => trigger('medium'), [trigger]);
+  const orderConfirmed = useCallback(() => {
+    // Success pattern
+    if ('vibrate' in navigator) {
+      navigator.vibrate([10, 50, 20, 50, 30]);
+    }
+  }, []);
+  const checkout = useCallback(() => trigger('heavy'), [trigger]);
+  const error = useCallback(() => {
+    // Error pattern
+    if ('vibrate' in navigator) {
+      navigator.vibrate([50, 100, 50, 100, 50]);
+    }
+  }, []);
+
+  return { trigger, notification, orderConfirmed, checkout, error };
 }

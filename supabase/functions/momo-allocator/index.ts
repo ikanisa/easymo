@@ -4,6 +4,7 @@ import {
   buildNumberLookupCandidates,
   normalizeE164,
 } from "../_shared/phone.ts";
+import { rateLimitMiddleware } from "../_shared/rate-limit/index.ts";
 
 const BATCH_SIZE = (() => {
   const value = Number(Deno.env.get("MOMO_ALLOCATOR_BATCH_SIZE") ?? "10");
@@ -68,6 +69,16 @@ function jsonResponse(body: Record<string, unknown>, status = 200): Response {
 serve(async (request) => {
   if (request.method === "OPTIONS") {
     return new Response(null, { status: 204, headers: corsHeaders });
+  }
+
+  // Rate limiting (50 req/min for payment processing)
+  const rateLimitCheck = await rateLimitMiddleware(request, {
+    limit: 50,
+    windowSeconds: 60,
+  });
+
+  if (!rateLimitCheck.allowed) {
+    return rateLimitCheck.response!;
   }
 
   if (request.method !== "POST") {

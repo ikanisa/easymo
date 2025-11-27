@@ -9,6 +9,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { logStructuredEvent, recordMetric } from "../_shared/observability.ts";
 import { getServiceClient } from "../_shared/supabase.ts";
 import { getEnv, getRotatingSecret } from "../_shared/env.ts";
+import { rateLimitMiddleware } from "../_shared/rate-limit/index.ts";
 
 const supabase = getServiceClient();
 
@@ -217,6 +218,20 @@ serve(async (req) => {
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders, status: 204 });
+  }
+
+  // Rate limiting (50 req/min for payment webhooks)
+  const rateLimitCheck = await rateLimitMiddleware(req, {
+    limit: 50,
+    windowSeconds: 60,
+  });
+
+  if (!rateLimitCheck.allowed) {
+    await logStructuredEvent("REVOLUT_WEBHOOK_RATE_LIMITED", {
+      remaining: rateLimitCheck.result.remaining,
+    });
+    await recordMetric("revolut.webhook.rate_limited", 1);
+    return rateLimitCheck.response!;
   }
 
   const correlationId = req.headers.get("x-correlation-id") || crypto.randomUUID();

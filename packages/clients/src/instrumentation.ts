@@ -68,7 +68,7 @@ export async function instrumentedQuery<T>({
 
   if (thresholdMs && durationMs > thresholdMs) {
      
-    console.warn(
+    log.warn(
       `Span ${span} for request ${requestId} exceeded threshold ${thresholdMs}ms with ${durationMs.toFixed(2)}ms`
     )
   }

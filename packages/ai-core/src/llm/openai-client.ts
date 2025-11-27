@@ -2,6 +2,10 @@ import OpenAI from 'openai';
 
 import { ModelConfig } from '../base/types';
 
+import { childLogger } from '@easymo/commons';
+
+const log = childLogger({ service: 'ai-core' });
+
 export class OpenAIClient {
   private openai: OpenAI;
   private defaultModel: string = 'gpt-4-turbo'; // Will use gpt-5 when available
@@ -52,7 +56,7 @@ export class OpenAIClient {
     } catch (error: any) {
       // Fallback to GPT-4 Turbo if GPT-5 not available
       if (error?.error?.code === 'model_not_found' && modelName === 'gpt-5') {
-        console.warn('GPT-5 not available, falling back to GPT-4 Turbo');
+        log.warn('GPT-5 not available, falling back to GPT-4 Turbo');
         return await this.openai.chat.completions.create({
           model: 'gpt-4-turbo-preview',
           messages,

@@ -4,6 +4,10 @@ import { z } from 'zod';
 import { logToolInvocation } from '../observability';
 import type { AgentContext } from '../types';
 
+import { childLogger } from '@easymo/commons';
+
+const log = childLogger({ service: 'agents' });
+
 const scriptPlannerSchema = z.object({
   campaignId: z.string().uuid().optional(),
   slots: z.array(z.string().min(1, 'Slot key is required')).min(1, 'At least one slot is required'),
@@ -172,7 +176,7 @@ function createSupabaseClient(params: ScriptPlannerParams): SupabaseClient | nul
   try {
     return createClient(url, key, { auth: { persistSession: false } });
   } catch (error) {
-    console.warn('script-planner.supabase_init_failed', error);
+    log.warn('script-planner.supabase_init_failed', error);
     return null;
   }
 }
@@ -199,7 +203,7 @@ async function fetchPerformanceRows({
 
   const { data, error } = await query;
   if (error) {
-    console.error('script-planner.fetch_failed', error);
+    log.error('script-planner.fetch_failed', error);
     return [];
   }
 

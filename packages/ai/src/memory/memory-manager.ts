@@ -5,6 +5,10 @@ import { v4 as uuidv4 } from 'uuid';
 import type { OpenAIProvider } from '../llm/openai-provider.js';
 import type { Memory, Message } from '../types/index.js';
 
+import { childLogger } from '@easymo/commons';
+
+const log = childLogger({ service: 'ai' });
+
 export interface MemoryConfig {
   redis?: {
     host: string;
@@ -55,7 +59,7 @@ export class MemoryManager {
       .limit(1);
     
     if (error && error.message.includes('relation "ai_memories" does not exist')) {
-      console.warn('ai_memories table does not exist. Run migrations first.');
+      log.warn('ai_memories table does not exist. Run migrations first.');
     }
   }
 
@@ -134,7 +138,7 @@ export class MemoryManager {
         });
 
       if (error) {
-        console.error('Failed to save to long-term memory:', error);
+        log.error('Failed to save to long-term memory:', error);
       }
 
       // Also cache in memory for faster access
@@ -147,7 +151,7 @@ export class MemoryManager {
         this.embeddings.delete(firstKey);
       }
     } catch (error) {
-      console.error('Error saving to long-term memory:', error);
+      log.error('Error saving to long-term memory:', error);
     }
   }
 
@@ -170,7 +174,7 @@ export class MemoryManager {
       });
 
       if (error) {
-        console.error('Failed to retrieve memories:', error);
+        log.error('Failed to retrieve memories:', error);
         return [];
       }
 
@@ -184,7 +188,7 @@ export class MemoryManager {
         similarity: item.similarity,
       }));
     } catch (error) {
-      console.error('Error retrieving memories:', error);
+      log.error('Error retrieving memories:', error);
       return [];
     }
   }

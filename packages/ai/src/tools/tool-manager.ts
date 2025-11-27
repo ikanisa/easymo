@@ -3,6 +3,10 @@ import { z } from 'zod';
 
 import type { Tool, ToolContext,ToolHandler } from '../types/index.js';
 
+import { childLogger } from '@easymo/commons';
+
+const log = childLogger({ service: 'ai' });
+
 export class ToolManager {
   private tools: Map<string, Tool> = new Map();
   private executionQueue: PQueue;
@@ -18,7 +22,7 @@ export class ToolManager {
    */
   private registerBuiltinTools(): void {
     // Built-in tools will be registered here
-    console.log('Tool manager initialized');
+    log.info('Tool manager initialized');
   }
 
   /**
@@ -26,7 +30,7 @@ export class ToolManager {
    */
   registerTool(name: string, tool: Tool): void {
     this.tools.set(name, tool);
-    console.log(`Tool registered: ${name}`);
+    log.info(`Tool registered: ${name}`);
   }
 
   /**
@@ -159,7 +163,7 @@ export class ToolManager {
     durationMs: number,
     context: ToolContext
   ): Promise<void> {
-    console.log(`Tool executed: ${name}`, { 
+    log.info(`Tool executed: ${name}`, { 
       args, 
       durationMs,
       conversationId: context.conversationId 
@@ -170,7 +174,7 @@ export class ToolManager {
    * Log tool error
    */
   private async logToolError(name: string, args: any, error: any, context: ToolContext): Promise<void> {
-    console.error(`Tool error: ${name}`, { args, error: error.message, context });
+    log.error(`Tool error: ${name}`, { args, error: error.message, context });
   }
 
   /**
