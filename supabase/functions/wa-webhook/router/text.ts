@@ -117,6 +117,26 @@ export async function handleText(
     }
   }
 
+  // Handle Support AI Agent
+  if (state.key === "support_agent") {
+    const { handleSupportMessage } = await import("../domains/ai-agents/customer-support.ts");
+    return await handleSupportMessage(ctx, body);
+  }
+
+  // Check for active support session
+  const { data: activeSupport } = await ctx.supabase
+    .from("ai_chat_sessions")
+    .select("id")
+    .eq("profile_id", ctx.profileId)
+    .eq("agent_slug", "support")
+    .eq("status", "active")
+    .maybeSingle();
+
+  if (activeSupport) {
+    const { handleSupportMessage } = await import("../domains/ai-agents/customer-support.ts");
+    return await handleSupportMessage(ctx, body);
+  }
+
   // Handle Sales AI Agent
   if (state.key === "sales_agent" || body.toLowerCase().startsWith("sales agent")) {
     const { runSalesAgent } = await import("../domains/ai-agents/sales_agent.ts");

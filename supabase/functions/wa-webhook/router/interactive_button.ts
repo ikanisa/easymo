@@ -562,6 +562,15 @@ async function handleSavedPlacesSkip(
       );
       return true;
     }
+    case "support_payment":
+    case "support_technical":
+    case "support_navigation":
+    case "support_other":
+    case "support_resolved":
+    case "support_continue": {
+      const { handleSupportButton } = await import("../domains/ai-agents/customer-support.ts");
+      return await handleSupportButton(ctx, id);
+    }
     default:
       break;
   }
