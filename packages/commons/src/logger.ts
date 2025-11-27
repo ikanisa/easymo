@@ -160,3 +160,59 @@ export const withTelemetryContext = async <T>(
 export const attachTraceToLogger = (traceId: string) => setTraceId(traceId);
 export const attachRequestToLogger = (requestId: string) => setRequestId(requestId);
 export const attachSpanToLogger = (spanId: string) => setSpanId(spanId);
+
+/**
+ * Console wrapper for gradual migration from console.log to structured logging
+ * 
+ * @example
+ * const log = createServiceLogger('wallet-service');
+ * log.info({ amount: 100 }, 'Processing payment');
+ */
+type LogLevel = 'debug' | 'info' | 'warn' | 'error';
+
+interface ConsoleWrapper {
+  log: (...args: unknown[]) => void;
+  debug: (...args: unknown[]) => void;
+  info: (...args: unknown[]) => void;
+  warn: (...args: unknown[]) => void;
+  error: (...args: unknown[]) => void;
+}
+
+function formatConsoleArgs(args: unknown[]): { message: string; data?: unknown } {
+  if (args.length === 0) return { message: '' };
+  if (args.length === 1) {
+    if (typeof args[0] === 'string') return { message: args[0] };
+    return { message: 'log', data: args[0] };
+  }
+  
+  const [first, ...rest] = args;
+  if (typeof first === 'string') {
+    return { message: first, data: rest.length === 1 ? rest[0] : rest };
+  }
+  return { message: 'log', data: args };
+}
+
+/**
+ * Create a console-compatible logger (for migration purposes)
+ * Use childLogger() for new code instead
+ */
+export function createServiceConsole(serviceName: string): ConsoleWrapper {
+  const logger = childLogger({ service: serviceName });
+  
+  const log = (level: LogLevel, ...args: unknown[]): void => {
+    const { message, data } = formatConsoleArgs(args);
+    if (data !== undefined) {
+      logger[level]({ data }, message);
+    } else {
+      logger[level](message);
+    }
+  };
+
+  return {
+    log: (...args) => log('info', ...args),
+    debug: (...args) => log('debug', ...args),
+    info: (...args) => log('info', ...args),
+    warn: (...args) => log('warn', ...args),
+    error: (...args) => log('error', ...args),
+  };
+}

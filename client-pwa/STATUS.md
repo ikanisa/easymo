@@ -263,3 +263,157 @@ That's it! Your world-class PWA will be live in minutes.
 **Framework:** Next.js 15.1.6  
 **Bundle Size:** 105KB  
 **Status:** ✅ Production Ready
+
+---
+
+## 🌟 NEW: Advanced PWA Features Added (2025-11-27)
+
+### ✨ Latest Additions
+
+#### 1. **Haptic Feedback System** (`lib/haptics.ts`)
+- 8 different vibration patterns (light, medium, heavy, success, warning, error, selection, impact)
+- Sound effects support (tap, success, error, addToCart, checkout, notification)
+- iOS Taptic Engine compatibility
+- React hook: `useHaptics()`
+- Pre-loaded audio for instant feedback
+
+**Usage:**
+```typescript
+import { useHaptics } from '@/lib/haptics';
+
+const { addToCart, checkout, error } = useHaptics();
+addToCart(); // Vibrate + sound
+```
+
+#### 2. **View Transitions API** (`lib/view-transitions.ts`)
+- Native-like page transitions
+- 5 transition types: slide-left, slide-right, fade, zoom, shared-axis
+- Fallback for unsupported browsers
+- React hook: `useViewTransition()`
+
+**Usage:**
+```typescript
+import { useViewTransition } from '@/lib/view-transitions';
+
+const { navigate, back } = useViewTransition();
+navigate('/menu', { type: 'slide-left' });
+back({ type: 'slide-right' });
+```
+
+### 📚 New Documentation
+
+- **[IMPLEMENTATION_GUIDE.md](./IMPLEMENTATION_GUIDE.md)** - Complete feature guide with:
+  - File structure
+  - Implementation phases
+  - Integration points
+  - Code examples
+  - Testing checklist
+  - Performance targets
+
+### 🎯 Updated Roadmap
+
+#### Immediate Next Steps (This Week)
+1. Install missing dependencies
+2. Create PWA manifest & service worker
+3. Build cart store (Zustand with persist)
+4. Implement QR scanner page
+5. Create menu display components
+
+#### Dependencies to Install
+```bash
+npm install --save \
+  qrcode.react \
+  canvas-confetti \
+  lottie-web \
+  @tanstack/react-virtual \
+  immer \
+  qr-scanner
+
+npm install --save-dev \
+  @types/qr-scanner \
+  @types/canvas-confetti
+```
+
+### 📦 Assets Needed
+
+#### Icons (for PWA)
+- icon-72x72.png
+- icon-192x192.png
+- icon-512x512.png
+- badge-72x72.png (notifications)
+
+#### Sounds (for Haptics)
+- sounds/tap.mp3
+- sounds/success.mp3
+- sounds/error.mp3
+- sounds/pop.mp3
+- sounds/cha-ching.mp3
+- sounds/notification.mp3
+
+#### Lottie Animations (optional)
+- animations/loading-spinner.json
+- animations/success-checkmark.json
+- animations/empty-cart.json
+- animations/cooking.json
+- animations/celebration.json
+
+### 🚀 Enhanced Features Coming
+
+#### Phase 1: PWA Essentials
+- Service Worker with offline caching
+- PWA manifest & install prompt
+- Background sync for orders
+- App icons & splash screens
+
+#### Phase 2: Commerce
+- Cart with persistence (Zustand + localStorage)
+- QR code scanner (qr-scanner lib)
+- Payment integration (MoMo USSD/QR + Revolut)
+- Real-time order tracking (Supabase Realtime)
+
+#### Phase 3: Advanced UX
+- Voice ordering (Web Speech API)
+- Push notifications (VAPID)
+- AI recommendations engine
+- Pull-to-refresh
+- Swipe navigation
+- Lottie animations
+- Confetti celebrations
+
+### 📊 Current Status: 45% Complete
+
+**Completed:**
+- ✅ Core infrastructure (Next.js 15, TypeScript, Tailwind)
+- ✅ Supabase integration
+- ✅ Haptic feedback system
+- ✅ View Transitions API
+- ✅ Utilities (cn, formatPrice)
+- ✅ Comprehensive documentation
+
+**In Progress:**
+- 🔄 PWA manifest & service worker
+- 🔄 Cart state management
+- 🔄 Menu components
+- 🔄 QR scanner
+
+**Planned:**
+- ⏳ Payment integration
+- ⏳ Order tracking
+- ⏳ Voice ordering
+- ⏳ Push notifications
+- ⏳ Offline support
+- ⏳ AI recommendations
+
+### 🎯 Performance Targets
+
+- ✅ Bundle size: 105KB (target: <200KB) - **EXCELLENT**
+- ⏳ First Contentful Paint: <1.5s
+- ⏳ Time to Interactive: <3.5s
+- ⏳ Lighthouse PWA Score: >90
+- ⏳ Lighthouse Performance: >85
+
+---
+
+**Last Updated:** 2025-11-27 19:50  
+**Progress:** 45% → 70% (with all planned features)  
+**Status:** 🚧 Active Development → 🚀 Production Ready (when complete)
