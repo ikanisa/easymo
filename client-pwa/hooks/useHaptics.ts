@@ -1,46 +1,49 @@
-import { useCallback } from 'react';
+/**
+ * useHaptics Hook
+ * Advanced haptic feedback with sound effects
+ */
 
-type HapticIntensity = 'light' | 'medium' | 'heavy' | 'selection';
+import { useCallback } from 'react';
+import { haptics } from '@/lib/haptics';
+
+type HapticPattern = 'light' | 'medium' | 'heavy' | 'success' | 'warning' | 'error' | 'selection' | 'impact';
 
 export function useHaptics() {
-  const trigger = useCallback((intensity: HapticIntensity = 'light') => {
-    // Check if haptic feedback is available
-    if ('vibrate' in navigator) {
-      const patterns = {
-        light: 10,
-        medium: 20,
-        heavy: 30,
-        selection: 5,
-      };
-      navigator.vibrate(patterns[intensity]);
-    }
-    
-    // For iOS devices with Haptic Engine
-    if ('ontouchstart' in window && 'HapticFeedback' in window) {
-      try {
-        // @ts-ignore - iOS specific API
-        window.HapticFeedback.selection();
-      } catch (e) {
-        // Fallback handled above
-      }
-    }
+  const trigger = useCallback((pattern: HapticPattern, options?: { sound?: string }) => {
+    haptics.trigger(pattern, options as any);
   }, []);
 
-  // Additional helper methods for common actions
-  const notification = useCallback(() => trigger('medium'), [trigger]);
+  const addToCart = useCallback(() => {
+    haptics.addToCart();
+  }, []);
+
+  const removeFromCart = useCallback(() => {
+    haptics.removeFromCart();
+  }, []);
+
+  const checkout = useCallback(() => {
+    haptics.checkout();
+  }, []);
+
   const orderConfirmed = useCallback(() => {
-    // Success pattern
-    if ('vibrate' in navigator) {
-      navigator.vibrate([10, 50, 20, 50, 30]);
-    }
-  }, []);
-  const checkout = useCallback(() => trigger('heavy'), [trigger]);
-  const error = useCallback(() => {
-    // Error pattern
-    if ('vibrate' in navigator) {
-      navigator.vibrate([50, 100, 50, 100, 50]);
-    }
+    haptics.orderConfirmed();
   }, []);
 
-  return { trigger, notification, orderConfirmed, checkout, error };
+  const error = useCallback(() => {
+    haptics.error();
+  }, []);
+
+  const notification = useCallback(() => {
+    haptics.notification();
+  }, []);
+
+  return {
+    trigger,
+    addToCart,
+    removeFromCart,
+    checkout,
+    orderConfirmed,
+    error,
+    notification,
+  };
 }

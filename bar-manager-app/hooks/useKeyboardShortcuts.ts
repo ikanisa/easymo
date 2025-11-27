@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useRef } from 'react';
+import { useEffect, useCallback, useRef, useState } from 'react';
 
 type ShortcutHandler = () => void;
 type ShortcutMap = Record<string, ShortcutHandler>;
@@ -160,6 +160,3 @@ export function usePrinter() {
   };
 }
 
-function useState(arg0: boolean): [any, any] {
-  throw new Error('Function not implemented.');
-}
