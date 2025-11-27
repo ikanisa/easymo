@@ -138,3 +138,60 @@ pnpm run functions:deploy:wa  # If script exists
 ---
 
 **Note**: The `WA_LOG_DB_EVENTS` environment variable can override these defaults if needed. Current default patterns ensure comprehensive event tracking without manual configuration.
+
+---
+
+## Follow-up Fix: Wallet Button Not Responding
+
+**Date**: 2025-11-27  
+**Issue**: Clicking "💎 Wallet" button resulted in no response  
+**Status**: ✅ **FIXED & DEPLOYED**
+
+### Problem
+From production logs:
+```json
+{"event":"PROFILE_INTERACTION","id":"wallet_tokens"}
+{"event":"PROFILE_STATE","key":"wallet_home"}
+{"event":"PROFILE_UNHANDLED_MESSAGE","from":"35677186193","type":"interactive"}
+```
+
+The button click was received but not handled - router returned `PROFILE_UNHANDLED_MESSAGE`.
+
+### Root Cause
+In `wa-webhook-profile/index.ts` line 171, the wallet home handler only checked for:
+- `IDS.WALLET_HOME` (value: `"wallet_home"`)
+- Hardcoded `"wallet"`
+
+But the actual button ID being sent was `wallet_tokens` which is defined as `IDS.WALLET` in the constants file.
+
+### Solution
+```typescript
+// Before
+else if (id === IDS.WALLET_HOME || id === "wallet") {
+
+// After  
+else if (id === IDS.WALLET_HOME || id === IDS.WALLET || id === "wallet" || id === "wallet_tokens") {
+```
+
+### Deployment
+✅ **Deployed**: `wa-webhook-profile`  
+📅 **Timestamp**: 2025-11-27T07:08:00Z  
+🔗 **Commit**: `e0858cc`
+
+### Testing
+The wallet button should now properly respond with the wallet menu showing:
+- View balance
+- Earn tokens
+- Transfer tokens
+- Redeem rewards
+- Transactions
+- Top promoters
+- Back to Profile
+
+---
+
+**Total Fixes Applied**: 2
+1. Event persistence (WALLET_*, PAYMENT_*, errors)
+2. Wallet button routing (wallet_tokens ID)
+
+Both deployed to `wa-webhook-profile` microservice.
