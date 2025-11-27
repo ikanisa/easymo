@@ -1,10 +1,17 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'export',
-  images: {
-    unoptimized: true,
+  reactStrictMode: true,
+  compress: true,
+  poweredByHeader: false,
+  
+  experimental: {
+    optimizePackageImports: ['@google/generative-ai', '@supabase/supabase-js'],
   },
-  distDir: 'out',
+
+  webpack: (config) => {
+    config.externals = [...(config.externals || []), { canvas: 'canvas' }]
+    return config
+  },
 }
 
-module.exports = nextConfig
+export default nextConfig

@@ -74,26 +74,28 @@ serve(async (req) => {
           const jobs = parsed.jobs || parsed.listings || []; // Handle potential root keys
 
           for (const job of jobs) {
-            // Upsert job listing
-            // Note: This assumes job_listings table structure. Adjusting to match likely schema.
-            // We use a composite key or URL to avoid duplicates if possible.
-            // Since we don't have the exact schema, we'll try a best-effort insert.
-            
-            // Generate a unique ID or use URL if available
-            
-            await supabaseClient.from('job_listings').upsert({
-              title: job.title,
-              company: job.company, // Check if column is 'company' or 'company_name'
-              location: job.location,
-              description: job.description,
-              original_url: job.url || source.url,
-              source_id: source.id,
-              is_remote: job.is_remote,
+            // Upsert job listing with actual schema
+            const { error: insertError } = await supabaseClient.from('job_listings').insert({
+              title: job.title || 'Untitled Position',
+              description: job.description || '',
+              category: job.category || 'General',
+              job_type: job.job_type || job.type || 'full_time',
+              location: job.location || source.country_code,
+              pay_min: job.salary_min || job.pay_min,
+              pay_max: job.salary_max || job.pay_max,
+              pay_type: 'annual',
+              currency: source.country_code === 'MT' ? 'EUR' : 'RWF',
+              status: 'open',
+              posted_by: source.name,
               country_code: source.country_code,
-              posted_at: new Date().toISOString(), // Approximation
-            }, { onConflict: 'original_url' }).select(); // Assuming original_url is unique
+              created_at: new Date().toISOString(),
+            });
             
-            results.jobsProcessed++;
+            if (!insertError) {
+              results.jobsProcessed++;
+            } else {
+              console.error('Insert error:', insertError);
+            }
           }
         }
 
@@ -131,20 +133,26 @@ serve(async (req) => {
           const properties = parsed.properties || parsed.listings || [];
 
           for (const prop of properties) {
-            await supabaseClient.from('property_listings').upsert({
-              title: prop.title,
-              price: prop.price, // Might need parsing to number
-              location: prop.location,
-              description: prop.description,
-              original_url: prop.url || source.url,
-              source_id: source.id,
-              listing_type: prop.type,
-              bedrooms: prop.bedrooms,
-              country_code: source.country_code,
-              listed_at: new Date().toISOString(),
-            }, { onConflict: 'original_url' }).select();
+            const { error: insertError } = await supabaseClient.from('property_listings').insert({
+              title: prop.title || 'Property Listing',
+              description: prop.description || '',
+              type: prop.type || 'rent',
+              property_type: prop.property_type || 'apartment',
+              bedrooms: prop.bedrooms || 1,
+              bathrooms: prop.bathrooms || 1,
+              price: prop.price,
+              currency: source.country_code === 'MT' ? 'EUR' : 'RWF',
+              location: { address: prop.location || source.country_code },
+              status: 'available',
+              source_url: prop.url || source.url,
+              created_at: new Date().toISOString(),
+            });
             
-            results.propertiesProcessed++;
+            if (!insertError) {
+              results.propertiesProcessed++;
+            } else {
+              console.error('Insert error:', insertError);
+            }
           }
         }
 
