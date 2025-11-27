@@ -3,9 +3,15 @@
  * 
  * Manages WhatsApp message routing to appropriate AI agents,
  * intent parsing, and domain action execution.
+ * 
+ * NOW WITH DATABASE-DRIVEN CONFIGURATION:
+ * - Loads personas, system instructions, tools, tasks, KBs from database
+ * - Caches configs for 5 minutes to reduce DB load
+ * - Falls back to hardcoded configs if DB fails
  */
 
 import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { AgentConfigLoader, type AgentConfig } from "./agent-config-loader.ts";
 
 // Types from our schema
 interface WhatsAppMessage {
@@ -34,7 +40,11 @@ interface ParsedIntent {
 }
 
 export class AgentOrchestrator {
-  constructor(private supabase: SupabaseClient) {}
+  private configLoader: AgentConfigLoader;
+
+  constructor(private supabase: SupabaseClient) {
+    this.configLoader = new AgentConfigLoader(supabase);
+  }
 
   /**
    * Main entry point: Process incoming WhatsApp message
@@ -484,38 +494,51 @@ export class AgentOrchestrator {
 
   /**
    * Parse intent from user message using LLM
+   * NOW LOADS SYSTEM INSTRUCTIONS FROM DATABASE
    */
   private async parseIntent(
     messageBody: string,
     context: AgentContext,
     conversationHistory?: Array<{ role: string; content: string }>
   ): Promise<ParsedIntent> {
-    // Get agent's system instructions
-    const { data: agent } = await this.supabase
-      .from("ai_agents")
-      .select(`
-        default_system_instruction_code,
-        ai_agent_system_instructions!inner(instructions, guardrails)
-      `)
-      .eq("id", context.agentId)
-      .single();
-
-    const systemInstructions = (agent as any)?.ai_agent_system_instructions;
+    // Load agent configuration from database
+    const config = await this.configLoader.loadAgentConfig(context.agentSlug);
+    
+    // Log what we loaded
+    console.log(JSON.stringify({
+      event: "INTENT_PARSING_WITH_CONFIG",
+      agentSlug: context.agentSlug,
+      hasInstructions: !!config.systemInstructions,
+      hasPersona: !!config.persona,
+      toolsCount: config.tools.length,
+      loadedFrom: config.loadedFrom,
+    }));
+    
+    // Use system instructions if available
+    const systemInstructions = config.systemInstructions?.instructions || null;
+    const guardrails = config.systemInstructions?.guardrails || null;
     
     // Use simple keyword matching with conversation context
-    // (Production would use LLM with full conversation history)
-    const intent = await this.simpleIntentParse(messageBody, context.agentSlug, conversationHistory);
+    // (Production would use LLM with full conversation history + system instructions)
+    const intent = await this.simpleIntentParse(
+      messageBody, 
+      context.agentSlug, 
+      conversationHistory,
+      config
+    );
     
     return intent;
   }
 
   /**
    * Simple intent parsing (placeholder for LLM integration)
+   * NOW RECEIVES AGENT CONFIG WITH TOOLS AND TASKS
    */
   private async simpleIntentParse(
     messageBody: string,
     agentSlug: string,
-    conversationHistory?: Array<{ role: string; content: string }>
+    conversationHistory?: Array<{ role: string; content: string }>,
+    config?: AgentConfig
   ): Promise<ParsedIntent> {
     const lowerBody = messageBody.toLowerCase();
     
