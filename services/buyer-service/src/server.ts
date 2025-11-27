@@ -8,6 +8,10 @@ import { settings } from "./config";
 import { logger } from "./logger";
 import { BuyerService, CreateBuyerInput, PurchaseInput } from "./service";
 
+import { childLogger } from '@easymo/commons';
+
+const log = childLogger({ service: 'buyer-service' });
+
 const CreateBuyerSchema = z.object({
   tenantId: z.string().uuid().default(settings.defaultTenantId),
   name: z.string().min(2),

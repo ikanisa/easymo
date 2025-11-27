@@ -18,6 +18,7 @@ import { verifyWebhookSignature } from "../_shared/webhook-utils.ts";
 import { sendText } from "../_shared/wa-webhook-shared/wa/client.ts";
 import { MarketplaceAgent } from "./agent.ts";
 import { handleMediaUpload, ensureStorageBucket } from "./media.ts";
+import { rateLimitMiddleware } from "../_shared/rate-limit/index.ts";
 import {
   isPaymentCommand,
   handlePaymentCommand,
@@ -45,6 +46,16 @@ const supabase = createClient(
 const AI_AGENT_ENABLED = Deno.env.get("FEATURE_MARKETPLACE_AI") === "true";
 
 serve(async (req: Request): Promise<Response> => {
+  // Rate limiting (100 req/min for high-volume WhatsApp)
+  const rateLimitCheck = await rateLimitMiddleware(req, {
+    limit: 100,
+    windowSeconds: 60,
+  });
+
+  if (!rateLimitCheck.allowed) {
+    return rateLimitCheck.response!;
+  }
+
   const requestId = req.headers.get("x-request-id") ?? crypto.randomUUID();
   const correlationId = req.headers.get("x-correlation-id") ?? requestId;
 

@@ -8,6 +8,10 @@ import { fetchLiveCalls, insertSegments, insertVoiceCall, type TranscriptSegment
 import { httpLogger, logger } from "./logger";
 import { resolveRoute } from "./routing";
 
+import { childLogger } from '@easymo/commons';
+
+const log = childLogger({ service: 'voice-bridge' });
+
 const app = express();
 app.use(express.json());
 app.use(httpLogger);

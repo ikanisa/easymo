@@ -6,6 +6,10 @@ import { buildHealthReport } from "./health.js";
 import { logger } from "./logger.js";
 import { WebhookWorker } from "./worker.js";
 
+import { childLogger } from '@easymo/commons';
+
+const log = childLogger({ service: 'whatsapp-webhook-worker' });
+
 async function main() {
   logger.info({ config: { ...config, SUPABASE_SERVICE_ROLE_KEY: "***" } }, "Starting service");
 

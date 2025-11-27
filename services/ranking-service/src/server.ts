@@ -8,6 +8,10 @@ import { settings } from "./config";
 import { logger } from "./logger";
 import { RankingService } from "./service";
 
+import { childLogger } from '@easymo/commons';
+
+const log = childLogger({ service: 'ranking-service' });
+
 const QuerySchema = z.object({
   tenantId: z.string().uuid().default(settings.defaultTenantId),
   categories: z.string().optional(),

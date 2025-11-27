@@ -4,6 +4,10 @@ import { settings } from "./config";
 import { logger } from "./logger";
 import { BrokerOrchestrator } from "./orchestrator";
 
+import { childLogger } from '@easymo/commons';
+
+const log = childLogger({ service: 'broker-orchestrator' });
+
 async function bootstrap() {
   const factory = new KafkaFactory({ clientId: settings.kafka.clientId, brokers: settings.kafka.brokers, logger });
   const orchestrator = new BrokerOrchestrator(factory);

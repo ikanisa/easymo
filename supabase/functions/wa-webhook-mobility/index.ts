@@ -2,6 +2,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "./deps.ts";
 import { logStructuredEvent } from "../_shared/observability.ts";
+import { rateLimitMiddleware } from "../_shared/rate-limit/index.ts";
 import { getState, setState } from "./state/store.ts";
 import {
   handleSeeDrivers,
@@ -95,6 +96,16 @@ const supabase = createClient(
 );
 
 serve(async (req: Request): Promise<Response> => {
+  // Rate limiting (100 req/min for high-volume WhatsApp)
+  const rateLimitCheck = await rateLimitMiddleware(req, {
+    limit: 100,
+    windowSeconds: 60,
+  });
+
+  if (!rateLimitCheck.allowed) {
+    return rateLimitCheck.response!;
+  }
+
   const url = new URL(req.url);
   const requestId = req.headers.get("x-request-id") ?? crypto.randomUUID();
 

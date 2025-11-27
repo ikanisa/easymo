@@ -8,6 +8,10 @@ import { settings } from "./config";
 import { logger } from "./logger";
 import { CreateVendorInput,VendorService } from "./service";
 
+import { childLogger } from '@easymo/commons';
+
+const log = childLogger({ service: 'vendor-service' });
+
 const CreateVendorSchema = z.object({
   tenantId: z.string().uuid().default(settings.defaultTenantId),
   name: z.string().min(2),

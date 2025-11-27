@@ -15,6 +15,10 @@ import { settings } from "./config";
 import { evaluateAttribution } from "./evaluator";
 import { logger } from "./logger";
 
+import { childLogger } from '@easymo/commons';
+
+const log = childLogger({ service: 'attribution-service' });
+
 const prisma = new PrismaService();
 
 export function buildApp(deps: { prisma: PrismaService }): Express {

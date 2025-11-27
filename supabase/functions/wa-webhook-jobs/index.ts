@@ -22,6 +22,7 @@ import { sendText, sendList } from "../_shared/wa-webhook-shared/wa/client.ts";
 import type { WhatsAppMessage, WhatsAppWebhookPayload } from "../_shared/wa-webhook-shared/types.ts";
 import { t } from "./utils/i18n.ts";
 import { detectJobIntent, shouldRouteToJobAgent } from "./jobs/utils.ts";
+import { rateLimitMiddleware } from "../_shared/rate-limit/index.ts";
 import { 
   handleLocationMessage, 
   getUserLocation, 
@@ -40,6 +41,16 @@ const SERVICE_NAME = "wa-webhook-jobs";
 const WA_VERIFY_TOKEN = Deno.env.get("WA_VERIFY_TOKEN") ?? Deno.env.get("WHATSAPP_VERIFY_TOKEN") ?? "";
 
 serve(async (req: Request): Promise<Response> => {
+  // Rate limiting (100 req/min for high-volume WhatsApp)
+  const rateLimitCheck = await rateLimitMiddleware(req, {
+    limit: 100,
+    windowSeconds: 60,
+  });
+
+  if (!rateLimitCheck.allowed) {
+    return rateLimitCheck.response!;
+  }
+
   const url = new URL(req.url);
   const requestId = req.headers.get("x-request-id") ?? crypto.randomUUID();
   const correlationId = req.headers.get("x-correlation-id") ?? requestId;
