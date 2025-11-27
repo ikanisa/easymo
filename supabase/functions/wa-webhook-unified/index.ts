@@ -153,14 +153,41 @@ serve(async (req: Request): Promise<Response> => {
       from: maskPhone(message.from),
     });
 
+    // Check if this is from admin panel (needs synchronous response)
+    const isAdminPanel = req.headers.get("X-Admin-Panel") === "true" || 
+                        req.headers.get("x-admin-panel") === "true" ||
+                        payload.entry?.[0]?.id === "admin-desktop-app";
+    
+    const forceAgent = req.headers.get("X-Force-Agent") || 
+                       req.headers.get("x-force-agent") ||
+                       message.context?.force_agent;
+
     // Process message through unified orchestrator
-    await orchestrator.processMessage(message, correlationId);
+    const result = await orchestrator.processMessage(
+      message, 
+      correlationId,
+      { skipSend: isAdminPanel } // Don't send WhatsApp message if from admin panel
+    );
     
     await logStructuredEvent("UNIFIED_MESSAGE_PROCESSED", {
       correlationId,
       messageType: message.type,
       from: maskPhone(message.from),
+      agentType: result.agentType,
     });
+    
+    // Return response text for admin panel
+    if (isAdminPanel) {
+      return respond({ 
+        success: true, 
+        service: "wa-webhook-unified",
+        messageProcessed: true,
+        agentResponse: result.responseText,
+        agentType: result.agentType,
+        message: result.responseText,
+        response: result.responseText,
+      });
+    }
     
     return respond({ 
       success: true, 

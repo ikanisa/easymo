@@ -38,11 +38,13 @@ export class UnifiedOrchestrator {
 
   /**
    * Main entry point: Process incoming WhatsApp message
+   * Returns the agent's response text for synchronous callers (e.g., admin panel)
    */
   async processMessage(
     message: WhatsAppMessage,
-    correlationId: string
-  ): Promise<void> {
+    correlationId: string,
+    options: { skipSend?: boolean } = {}
+  ): Promise<{ responseText: string; agentType: AgentType }> {
     await logStructuredEvent("ORCHESTRATOR_PROCESSING", {
       correlationId,
       from: message.from,
@@ -86,6 +88,8 @@ export class UnifiedOrchestrator {
 
       // 4. Process message with agent
       const response = await agent.process(message, session);
+      let finalResponse = response;
+      let finalAgentType = agentType;
 
       // 5. Handle agent handoff if requested
       if (response.handoffTo) {
@@ -108,12 +112,18 @@ export class UnifiedOrchestrator {
         // Process again with new agent
         const newAgent = this.agentRegistry.getAgent(response.handoffTo, correlationId);
         const handoffResponse = await newAgent.process(message, session);
+        finalResponse = handoffResponse;
+        finalAgentType = response.handoffTo;
 
-        // Send handoff response
-        await this.sendResponse(message.from, handoffResponse, correlationId);
+        // Send handoff response (unless skipped)
+        if (!options.skipSend) {
+          await this.sendResponse(message.from, handoffResponse, correlationId);
+        }
       } else {
-        // Send response
-        await this.sendResponse(message.from, response, correlationId);
+        // Send response (unless skipped)
+        if (!options.skipSend) {
+          await this.sendResponse(message.from, response, correlationId);
+        }
       }
 
       // 6. Save updated session
@@ -121,9 +131,15 @@ export class UnifiedOrchestrator {
 
       await logStructuredEvent("ORCHESTRATOR_COMPLETED", {
         correlationId,
-        agentType,
+        agentType: finalAgentType,
         flowActive: !!session.activeFlow,
       });
+
+      // Return response text for synchronous callers
+      return {
+        responseText: finalResponse.text,
+        agentType: finalAgentType,
+      };
     } catch (error) {
       await logStructuredEvent("ORCHESTRATOR_ERROR", {
         correlationId,
@@ -131,10 +147,12 @@ export class UnifiedOrchestrator {
         stack: error instanceof Error ? error.stack : undefined,
       }, "error");
 
-      // Send error message to user
-      await sendWhatsAppMessage(message.from, {
-        text: "Sorry, I encountered an error processing your request. Please try again.",
-      });
+      // Send error message to user (unless skipped)
+      if (!options.skipSend) {
+        await sendWhatsAppMessage(message.from, {
+          text: "Sorry, I encountered an error processing your request. Please try again.",
+        });
+      }
 
       throw error;
     }

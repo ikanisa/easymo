@@ -23,30 +23,38 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Call the WhatsApp webhook function with support agent context
-    const webhookUrl = `${supabaseUrl}/functions/v1/wa-webhook`;
+    // Call the unified AI agent webhook
+    const webhookUrl = `${supabaseUrl}/functions/v1/wa-webhook-unified`;
+    
+    // Create a simulated WhatsApp message payload for the support agent
+    const phoneNumber = conversationId.replace(/[^0-9]/g, ''); // Extract just numbers
+    const timestamp = Math.floor(Date.now() / 1000).toString();
     
     const payload = {
       object: "whatsapp_business_account",
       entry: [
         {
-          id: "admin-panel",
+          id: "admin-desktop-app",
           changes: [
             {
               value: {
                 messaging_product: "whatsapp",
                 metadata: {
-                  display_phone_number: "admin-panel",
-                  phone_number_id: "admin-panel"
+                  display_phone_number: "+250788123456",
+                  phone_number_id: "admin-desktop"
                 },
                 messages: [
                   {
-                    from: conversationId,
-                    id: `msg_${Date.now()}`,
-                    timestamp: Math.floor(Date.now() / 1000).toString(),
+                    from: phoneNumber.length > 5 ? phoneNumber : "250788000000",
+                    id: `admin_msg_${Date.now()}`,
+                    timestamp: timestamp,
                     type: "text",
                     text: {
                       body: message
+                    },
+                    context: {
+                      from_admin_panel: true,
+                      force_agent: "support"
                     }
                   }
                 ]
@@ -55,10 +63,7 @@ export async function POST(req: NextRequest) {
             }
           ]
         }
-      ],
-      // Force routing to support agent
-      _admin_panel: true,
-      _force_agent: "support"
+      ]
     };
 
     const response = await fetch(webhookUrl, {
@@ -66,6 +71,8 @@ export async function POST(req: NextRequest) {
       headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${supabaseAnonKey}`,
+        "X-Admin-Panel": "true",
+        "X-Force-Agent": "support",
       },
       body: JSON.stringify(payload),
     });
@@ -78,8 +85,23 @@ export async function POST(req: NextRequest) {
 
     const data = await response.json();
 
-    // Extract the assistant's response
-    const assistantMessage = data.response || data.message || generateFallbackResponse(message);
+    // Extract the assistant's response from various possible response formats
+    let assistantMessage: string;
+    
+    if (data.agentResponse) {
+      assistantMessage = data.agentResponse;
+    } else if (data.response) {
+      assistantMessage = data.response;
+    } else if (data.message) {
+      assistantMessage = data.message;
+    } else if (data.reply) {
+      assistantMessage = data.reply;
+    } else if (data.text) {
+      assistantMessage = data.text;
+    } else {
+      // Fallback to generated response
+      assistantMessage = generateFallbackResponse(message);
+    }
 
     return NextResponse.json({
       message: assistantMessage,

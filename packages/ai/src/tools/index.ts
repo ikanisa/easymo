@@ -17,6 +17,7 @@ import { getUserProfileTool } from './profile/get-user-profile';
 // Support tools
 import { createTicketTool } from './support/create-ticket';
 // Search tools
+import { googleSearchTool } from './google-search';
 import { openaiWebSearchTool } from './openai-web-search';
 import { serpapiJobsTool } from './serpapi-jobs';
 
@@ -39,6 +40,7 @@ export const ALL_TOOLS: Tool[] = [
   createTicketTool,
 
   // Search
+  googleSearchTool,
   openaiWebSearchTool,
   serpapiJobsTool,
 ];
@@ -107,7 +109,7 @@ export function getAllToolSchemas(): any[] {
  * Convert Zod schema to JSON Schema for OpenAI
  * This is a simplified version - for production, use zod-to-json-schema library
  */
-function zodToJsonSchema(schema: any): any {
+function zodToJsonSchema(_schema: any): any {
   // This would be implemented with proper zod-to-json-schema conversion
   // For now, returning a placeholder
   return {
@@ -121,6 +123,7 @@ function zodToJsonSchema(schema: any): any {
 export {
   createTicketTool,
   getUserProfileTool,
+  googleSearchTool,
   openaiWebSearchTool,
   sendMoneyTool,
   serpapiJobsTool,

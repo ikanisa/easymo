@@ -38,7 +38,7 @@ export const serpapiJobsTool: Tool = {
         throw new Error(`SerpApi request failed: ${response.status} ${response.statusText}`);
       }
 
-      const data = await response.json();
+      const data = await response.json() as any;
       
       if (data.error) {
         throw new Error(`SerpApi error: ${data.error}`);
