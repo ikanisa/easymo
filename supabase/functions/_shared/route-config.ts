@@ -21,25 +21,25 @@ export interface RouteConfig {
 export const ROUTE_CONFIGS: RouteConfig[] = [
   {
     service: "wa-webhook-mobility",
-    keywords: ["ride", "trip", "driver", "taxi", "transport", "schedule", "book", "nearby"],
+    keywords: ["ride", "trip", "driver", "taxi", "transport", "schedule", "book", "nearby", "delivery"],
     menuKeys: ["rides", "mobility", "rides_agent", "nearby_drivers", "nearby_passengers", "schedule_trip", "1"],
     priority: 1,
   },
   {
     service: "wa-webhook-insurance",
-    keywords: ["insurance", "assurance", "cover", "claim", "policy", "premium", "insure"],
+    keywords: ["insurance", "assurance", "cover", "claim", "policy", "premium", "insure", "protection"],
     menuKeys: ["insurance", "insurance_agent", "motor_insurance", "insurance_submit", "insurance_help", "motor_insurance_upload", "2"],
     priority: 1,
   },
   {
     service: "wa-webhook-jobs",
-    keywords: ["job", "work", "employment", "hire", "career", "apply", "cv", "resume"],
+    keywords: ["job", "work", "employment", "hire", "career", "apply", "cv", "resume", "gig", "gigs"],
     menuKeys: ["jobs", "jobs_agent", "3"],
     priority: 1,
   },
   {
     service: "wa-webhook-property",
-    keywords: ["property", "rent", "house", "apartment", "rental", "landlord", "tenant"],
+    keywords: ["property", "rent", "house", "apartment", "rental", "landlord", "tenant", "real estate"],
     menuKeys: ["property", "property_rentals", "property rentals", "real_estate_agent", "4"],
     priority: 1,
   },
@@ -52,7 +52,7 @@ export const ROUTE_CONFIGS: RouteConfig[] = [
       "wallet", "token", "transfer", "redeem", "earn", "reward", "balance",
       "payment", "pay", "deposit", "withdraw", "money", "referral", "share",
       // Profile keywords
-      "profile",
+      "profile", "account", "my account",
     ],
     menuKeys: [
       // Wallet menu keys
@@ -67,14 +67,24 @@ export const ROUTE_CONFIGS: RouteConfig[] = [
   },
   {
     service: "wa-webhook-marketplace",
-    keywords: ["marketplace", "shop", "buy", "sell", "store", "product"],
+    keywords: ["marketplace", "shop", "buy", "sell", "store", "product", "business", "broker"],
     menuKeys: ["marketplace", "shops_services", "buy_and_sell", "buy and sell", "business_broker_agent", "general_broker", "6"],
     priority: 1,
   },
   {
     service: "wa-webhook-ai-agents",
-    keywords: ["agent", "chat", "help", "support", "ask", "farmer", "waiter"],
-    menuKeys: ["ai_agents", "farmer_agent", "sales_agent", "waiter_agent", "waiter", "support", "customer_support", "farmers", "7"],
+    keywords: ["agent", "chat", "help", "support", "ask", "farmer", "waiter", "restaurant", "bar", "food"],
+    menuKeys: [
+      "ai_agents", 
+      "farmer_agent",    // Farmers Market
+      "sales_agent",     // Help Center
+      "waiter_agent",    // Bar & Restaurants
+      "waiter", 
+      "support", 
+      "customer_support", 
+      "farmers", 
+      "7"
+    ],
     priority: 3, // Lower priority so specific services match first
   },
 ];

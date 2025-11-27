@@ -4,14 +4,16 @@
  * Manages WhatsApp message routing to appropriate AI agents,
  * intent parsing, and domain action execution.
  * 
- * NOW WITH DATABASE-DRIVEN CONFIGURATION:
+ * NOW WITH DATABASE-DRIVEN CONFIGURATION & TOOL EXECUTION:
  * - Loads personas, system instructions, tools, tasks, KBs from database
  * - Caches configs for 5 minutes to reduce DB load
  * - Falls back to hardcoded configs if DB fails
+ * - Executes tools with validation and logging
  */
 
 import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { AgentConfigLoader, type AgentConfig } from "./agent-config-loader.ts";
+import { ToolExecutor } from "./tool-executor.ts";
 
 // Types from our schema
 interface WhatsAppMessage {
@@ -41,9 +43,11 @@ interface ParsedIntent {
 
 export class AgentOrchestrator {
   private configLoader: AgentConfigLoader;
+  private toolExecutor: ToolExecutor;
 
   constructor(private supabase: SupabaseClient) {
     this.configLoader = new AgentConfigLoader(supabase);
+    this.toolExecutor = new ToolExecutor(supabase);
   }
 
   /**
@@ -859,6 +863,7 @@ export class AgentOrchestrator {
 
   /**
    * Execute agent-specific action based on intent
+   * NOW WITH TOOL EXECUTION FROM DATABASE
    */
   private async executeAgentAction(
     context: AgentContext,
@@ -872,6 +877,78 @@ export class AgentOrchestrator {
       intentId,
     }));
 
+    // Load agent config to get available tools
+    const config = await this.configLoader.loadAgentConfig(context.agentSlug);
+
+    // Find tool that matches the intent type
+    const tool = config.tools.find(t => 
+      t.name === intent.type || 
+      t.name.includes(intent.type) ||
+      intent.type.includes(t.name)
+    );
+
+    if (tool) {
+      // Execute the tool with structured payload as inputs
+      const toolContext = {
+        userId: context.userId,
+        agentId: context.agentId,
+        conversationId: context.conversationId,
+        agentSlug: context.agentSlug,
+      };
+
+      const result = await this.toolExecutor.executeTool(
+        tool,
+        intent.structuredPayload,
+        toolContext
+      );
+
+      console.log(JSON.stringify({
+        event: "TOOL_EXECUTED_FOR_INTENT",
+        toolName: tool.name,
+        success: result.success,
+        executionTime: result.executionTime,
+      }));
+
+      // Store tool result in intent metadata
+      await this.supabase
+        .from("ai_agent_intents")
+        .update({
+          metadata: {
+            tool_executed: tool.name,
+            tool_result: result.success ? result.data : null,
+            tool_error: result.error,
+          },
+        })
+        .eq("id", intentId);
+    } else {
+      // Fallback to legacy action handlers
+      console.log(JSON.stringify({
+        event: "NO_TOOL_FOUND_USING_LEGACY",
+        intentType: intent.type,
+        availableTools: config.tools.map(t => t.name),
+      }));
+
+      await this.executeLegacyAgentAction(context, intentId, intent);
+    }
+
+    // Mark intent as applied
+    await this.supabase
+      .from("ai_agent_intents")
+      .update({
+        status: "applied",
+        applied_at: new Date().toISOString(),
+      })
+      .eq("id", intentId);
+  }
+
+  /**
+   * Legacy action handlers (fallback when no tool matches)
+   */
+  private async executeLegacyAgentAction(
+    context: AgentContext,
+    intentId: string,
+    intent: ParsedIntent
+  ): Promise<void> {
     switch (context.agentSlug) {
       case "jobs":
         await this.executeJobsAgentAction(context, intentId, intent);
@@ -894,18 +971,14 @@ export class AgentOrchestrator {
       case "insurance":
         await this.executeInsuranceAgentAction(context, intentId, intent);
         break;
+      case "sales":
+      case "sales_cold_caller":
+        // Sales agent - mostly conversational, no specific tools needed
+        console.log("Sales agent action - conversational mode");
+        break;
       default:
         console.warn(`No action handler for agent: ${context.agentSlug}`);
     }
-
-    // Mark intent as applied
-    await this.supabase
-      .from("ai_agent_intents")
-      .update({
-        status: "applied",
-        applied_at: new Date().toISOString(),
-      })
-      .eq("id", intentId);
   }
 
   /**
