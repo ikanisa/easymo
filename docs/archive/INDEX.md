@@ -1,63 +1,18 @@
 # Archived Content Index
 
-Generated: 2025-11-27 18:03:30 UTC
+Generated: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
 
-## Session Notes
-- AI_AGENT_INTEGRATION_COMPLETE.md
-- AI_AGENT_INTEGRATION_COMPLETE_2025-11-27.md
-- AI_AGENT_SUPPORT_INTEGRATION_COMPLETE.md
-- AI_AGENT_VISUAL_SUMMARY.txt
-- ANALYSIS_SUMMARY_2025-11-23.txt
-- APPLY_THIS_SQL_NOW.md
-- BAR_MANAGER_COMPLETE_SUMMARY.md
-- BAR_MANAGER_CURRENT_STATUS.md
-- BAR_MANAGER_FINAL_COMPLETE.md
-- BAR_MANAGER_FINAL_STATUS.md
-- BAR_MANAGER_IMPLEMENTATION_COMPLETE.md
-- CLEANUP_COMPLETE_2025-11-27.md
-- CLIENT_PWA_COMPLETE.md
-- COMPLETE_SESSION_SUMMARY_2025-11-27.md
-- DEPLOYMENT_SUMMARY.txt
-- DEPLOYMENT_VISUAL_SUMMARY.txt
-- DLQ_COMPLETE.md
-- EXECUTIVE_SUMMARY_2025-11-27.md
-- EXECUTIVE_SUMMARY_AI_AGENTS_2025-11-27.md
-- FINAL_PROJECT_SUMMARY.md
-- FINAL_STATUS_2025-11-27.md
-- MOBILITY_WEBHOOK_DELIVERY_SUMMARY.txt
-- PHASE1_COMPLETE_2025-11-27.md
-- PHASE_2_COMPLETE.md
-- PWA_VISUAL_SUMMARY.txt
-- QUICK_START_NEXT_SESSION.md
-- README.md
-- README_SESSION.md
-- REFACTORING_SESSION_2_COMPLETE.md
-- REFACTORING_SESSION_4_COMPLETE.md
-- REFACTORING_SESSION_5_COMPLETE.md
-- REFACTORING_SESSION_6_COMPLETE.md
-- REFACTORING_SESSION_7_COMPLETE.md
-- REVIEW_VISUAL_SUMMARY.txt
-- SESSION_COMPLETE_2025-11-27.md
-- SESSION_COMPLETE_2025-11-27_FINAL.md
-- SESSION_COMPLETE_2025-11-27_FINAL_SUMMARY.md
-- SESSION_COMPLETE_REFACTORING_2025-11-27.md
-- SUPPORT_AGENT_IMPLEMENTATION_COMPLETE.md
-- WAITER_AI_COMPLETE_STATUS.md
-- WAITER_AI_COMPLETE_SYSTEM_ARCHITECTURE.md
-- WAITER_AI_DESKTOP_SUMMARY.txt
-- WAITER_AI_EXECUTIVE_SUMMARY.md
-- WAITER_AI_SYSTEM_SUMMARY.txt
-- WA_WEBHOOK_AI_VISUAL_SUMMARY.txt
-- commit-messages
-- weekly-reports
+## Session Notes (docs/sessions/)
+All refactoring session notes, AI analysis, and progress tracking.
 
-## Archived Scripts
-- enable-unified-agent-system.sh
-- execute-mobility-phase1-cleanup.sh
-- final-verification.sh
-- migrate-ai-agents-location.sh
-- monitor-location-performance.sh
-- retry-migration.sh
-- setup-monitoring.sh
-- start-desktop-waiter.sh
-- waiter-ai-deploy.sh
+## Logs (.archive/logs/)
+Migration logs, deployment logs, and historical execution logs.
+
+## Old Documentation (.archive/old-docs/)
+Superseded or deprecated documentation files.
+
+## Navigation
+
+- **Current Documentation**: See root-level markdown files
+- **Active Development**: See CHECKLIST.md, PRODUCTION_READINESS_TRACKER.md
+- **Getting Started**: See START_HERE.md, QUICKSTART.md

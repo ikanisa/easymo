@@ -1,4 +1,6 @@
 import type { Metadata, Viewport } from 'next';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { PWAInstallPrompt } from '@/components/layout/PWAInstallPrompt';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -28,7 +30,12 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <ErrorBoundary>
+          {children}
+          <PWAInstallPrompt />
+        </ErrorBoundary>
+      </body>
     </html>
   );
 }

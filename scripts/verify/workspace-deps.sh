@@ -4,14 +4,14 @@ set -euo pipefail
 echo "🔍 Verifying workspace dependencies..."
 
 # Find all package.json files
-PACKAGES=$(find . -name "package.json" -not -path "*/node_modules/*" -not -path "*/.archive/*" -not -path "*/admin-app-v2/*")
+PACKAGES=$(find . -name "package.json" -not -path "*/node_modules/*" -not -path "*/.archive/*" -not -path "*/dist/*")
 
 ERRORS=0
 
 for pkg in $PACKAGES; do
   # Check for internal deps without workspace: protocol
   BAD_DEPS=$(jq -r '
-    (. dependencies // {}) + (.devDependencies // {}) | 
+    (.dependencies // {}) + (.devDependencies // {}) | 
     to_entries[] | 
     select(.key | startswith("@easymo/") or startswith("@va/")) | 
     select(.value | test("^workspace:") | not) | 

@@ -71,6 +71,12 @@ jobs:
       - name: Assert no service role in client env
         run: node scripts/assert-no-service-role-in-client.mjs
 
+      - name: Verify workspace dependencies
+        run: bash scripts/verify/workspace-deps.sh
+
+      - name: Check observability compliance
+        run: npx tsx scripts/audit/observability-compliance.ts || echo "⚠️ Observability compliance below threshold"
+
       - name: Lint, type-check and unit tests
         run: pnpm test:ci
 
