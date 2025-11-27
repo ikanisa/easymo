@@ -275,33 +275,180 @@ export const tools = [
       }
     }
   },
+  // =====================================================
+  // WEEK 2: Saved Searches & Notifications
+  // =====================================================
   {
     type: "function",
     function: {
-      name: "google_search",
-      description: "Perform a Google Search to find external job listings or information.",
+      name: "save_search",
+      description: "Save a search query and set up notifications for new matches. Use this when user wants to be notified of new job or property listings.",
       parameters: {
         type: "object",
         properties: {
-          query: { type: "string", description: "The search query" },
-          num_results: { type: "number", description: "Number of results (default 10)" },
-          country: { type: "string", description: "Country code (e.g., 'mt')" }
+          searchType: { 
+            type: "string", 
+            enum: ["job", "property"],
+            description: "Type of search to save"
+          },
+          searchCriteria: {
+            type: "object",
+            properties: {
+              query: { type: "string", description: "Search query text" },
+              location: { type: "string", description: "Location filter" },
+              priceMin: { type: "number", description: "Minimum price" },
+              priceMax: { type: "number", description: "Maximum price" },
+              jobType: { type: "array", items: { type: "string" }, description: "Job types" },
+              propertyType: { type: "array", items: { type: "string" }, description: "Property types" },
+              bedrooms: { type: "number", description: "Minimum bedrooms" },
+              bathrooms: { type: "number", description: "Minimum bathrooms" }
+            }
+          },
+          notificationFrequency: {
+            type: "string",
+            enum: ["instant", "daily", "weekly"],
+            description: "How often to notify (instant=hourly, daily, weekly)"
+          }
         },
-        required: ["query"]
+        required: ["searchType", "searchCriteria"]
       }
     }
   },
   {
     type: "function",
     function: {
-      name: "web_search",
-      description: "Perform a deep web search using OpenAI's browsing capabilities.",
+      name: "list_saved_searches",
+      description: "List all saved searches for the user.",
       parameters: {
         type: "object",
         properties: {
-          query: { type: "string", description: "The search query" }
+          searchType: {
+            type: "string",
+            enum: ["job", "property", "all"],
+            description: "Filter by search type"
+          }
+        }
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "delete_saved_search",
+      description: "Delete a saved search alert.",
+      parameters: {
+        type: "object",
+        properties: {
+          alertId: { type: "string", description: "ID of the alert to delete" }
         },
-        required: ["query"]
+        required: ["alertId"]
+      }
+    }
+  },
+  // =====================================================
+  // WEEK 2: Application Tracking
+  // =====================================================
+  {
+    type: "function",
+    function: {
+      name: "track_job_application",
+      description: "Track a job application with status and follow-up reminders.",
+      parameters: {
+        type: "object",
+        properties: {
+          jobListingId: { type: "string", description: "ID of the job listing" },
+          notes: { type: "string", description: "Optional notes" },
+          followUpDays: { type: "number", description: "Days until follow-up reminder" }
+        },
+        required: ["jobListingId"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "update_application_status",
+      description: "Update job application status (interviewing, offered, etc.).",
+      parameters: {
+        type: "object",
+        properties: {
+          applicationId: { type: "string", description: "Application ID" },
+          status: {
+            type: "string",
+            enum: ["applied", "interviewing", "offered", "rejected", "accepted", "withdrawn"],
+            description: "New status"
+          },
+          notes: { type: "string", description: "Optional notes" }
+        },
+        required: ["applicationId", "status"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "list_job_applications",
+      description: "List all tracked job applications.",
+      parameters: {
+        type: "object",
+        properties: {
+          status: {
+            type: "string",
+            enum: ["applied", "interviewing", "offered", "rejected", "accepted", "withdrawn", "all"],
+            description: "Filter by status"
+          }
+        }
+      }
+    }
+  },
+  // =====================================================
+  // WEEK 2: Property Viewings
+  // =====================================================
+  {
+    type: "function",
+    function: {
+      name: "schedule_property_viewing",
+      description: "Schedule a property viewing with reminder.",
+      parameters: {
+        type: "object",
+        properties: {
+          propertyListingId: { type: "string", description: "Property ID" },
+          preferredDate: { type: "string", description: "Date (YYYY-MM-DD)" },
+          preferredTime: { type: "string", description: "Time (HH:MM)" },
+          notes: { type: "string", description: "Special requests" }
+        },
+        required: ["propertyListingId", "preferredDate"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "list_property_viewings",
+      description: "List all scheduled property viewings.",
+      parameters: {
+        type: "object",
+        properties: {
+          status: {
+            type: "string",
+            enum: ["pending", "confirmed", "cancelled", "completed", "all"],
+            description: "Filter by status"
+          }
+        }
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "cancel_property_viewing",
+      description: "Cancel a scheduled viewing.",
+      parameters: {
+        type: "object",
+        properties: {
+          viewingId: { type: "string", description: "Viewing ID" }
+        },
+        required: ["viewingId"]
       }
     }
   }
