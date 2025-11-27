@@ -20,6 +20,27 @@ import { createTicketTool } from './support/create-ticket';
 import { googleSearchTool } from './google-search';
 import { openaiWebSearchTool } from './openai-web-search';
 import { serpapiJobsTool } from './serpapi-jobs';
+// Saved searches (Week 2)
+import { 
+  saveSearchTool, 
+  listSavedSearchesTool, 
+  deleteSavedSearchTool,
+  updateSearchFrequencyTool 
+} from './search/save-search';
+// Application tracking (Week 2)
+import {
+  trackApplicationTool,
+  updateApplicationStatusTool,
+  listApplicationsTool,
+  setFollowUpReminderTool
+} from './applications/track-application';
+// Property viewings (Week 2)
+import {
+  scheduleViewingTool,
+  listViewingsTool,
+  cancelViewingTool,
+  confirmViewingTool
+} from './viewings/schedule-viewing';
 
 /**
  * All available tools
@@ -43,6 +64,24 @@ export const ALL_TOOLS: Tool[] = [
   googleSearchTool,
   openaiWebSearchTool,
   serpapiJobsTool,
+
+  // Saved Searches (Week 2)
+  saveSearchTool,
+  listSavedSearchesTool,
+  deleteSavedSearchTool,
+  updateSearchFrequencyTool,
+
+  // Application Tracking (Week 2)
+  trackApplicationTool,
+  updateApplicationStatusTool,
+  listApplicationsTool,
+  setFollowUpReminderTool,
+
+  // Property Viewings (Week 2)
+  scheduleViewingTool,
+  listViewingsTool,
+  cancelViewingTool,
+  confirmViewingTool,
 ];
 
 /**
