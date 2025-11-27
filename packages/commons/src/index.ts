@@ -1,5 +1,6 @@
 export * from "./circuit-breaker";
 export * from "./feature-flags";
+export * from "./health";
 export * from "./logger";
 export * from "./rate-limit";
 export * from "./request-context";

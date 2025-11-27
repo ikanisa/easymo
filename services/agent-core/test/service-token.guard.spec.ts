@@ -1,3 +1,4 @@
+import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import type { ExecutionContext } from "@nestjs/common";
 import { ForbiddenException, UnauthorizedException } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
@@ -15,14 +16,14 @@ const createExecutionContext = (headers: Record<string, string>): ExecutionConte
 
 const reflectorWithScopes = (scopes?: string[]) => {
   const reflector = new Reflector();
-  jest.spyOn(reflector, "getAllAndOverride").mockImplementation(() => scopes ?? undefined);
+  vi.spyOn(reflector, "getAllAndOverride").mockImplementation(() => scopes ?? undefined);
   return reflector;
 };
 
 describe("ServiceTokenGuard", () => {
   const audience = "agent-core";
   const configService = {
-    get: jest.fn(() => audience),
+    get: vi.fn(() => audience),
   } as unknown as ConfigService;
 
   beforeAll(() => {

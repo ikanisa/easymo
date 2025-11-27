@@ -1,3 +1,4 @@
+import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import request from "supertest";
 
 let prismaMock: any;
@@ -15,13 +16,13 @@ describe("vendor-service auth", () => {
     process.env.FEATURE_MARKETPLACE_VENDOR = "1";
     prismaMock = {
       vendorProfile: {
-        findMany: jest.fn().mockResolvedValue([]),
+        findMany: vi.fn().mockResolvedValue([]),
       },
     };
     vendorServiceMock = {
-      createVendor: jest.fn().mockResolvedValue({ id: "vendor" }),
-      listVendors: jest.fn().mockResolvedValue([]),
-      createQuote: jest.fn().mockResolvedValue({ id: "quote" }),
+      createVendor: vi.fn().mockResolvedValue({ id: "vendor" }),
+      listVendors: vi.fn().mockResolvedValue([]),
+      createQuote: vi.fn().mockResolvedValue({ id: "quote" }),
     };
   });
 

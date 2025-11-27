@@ -1,3 +1,4 @@
+import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { createHmac } from "crypto";
 
 // Import only the signature module without triggering config loading

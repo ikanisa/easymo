@@ -1,10 +1,11 @@
+import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { BuyerService } from "../src/service";
 
 const prismaMock: any = {
-  buyerProfile: { findUnique: jest.fn() },
-  intent: { create: jest.fn(), findMany: jest.fn() },
-  quote: { findUnique: jest.fn(), update: jest.fn() },
-  purchase: { create: jest.fn(), findMany: jest.fn() },
+  buyerProfile: { findUnique: vi.fn() },
+  intent: { create: vi.fn(), findMany: vi.fn() },
+  quote: { findUnique: vi.fn(), update: vi.fn() },
+  purchase: { create: vi.fn(), findMany: vi.fn() },
 };
 
 describe("BuyerService", () => {

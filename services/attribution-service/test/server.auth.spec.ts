@@ -1,11 +1,12 @@
+import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { getAttributionServiceRoutePath, signServiceJwt } from "@easymo/commons";
 import type { PrismaService } from "@easymo/db";
 import request from "supertest";
 
 import type { evaluateAttribution as evaluateAttributionType } from "../src/evaluator";
 
-jest.mock("../src/evaluator", () => ({
-  evaluateAttribution: jest.fn().mockReturnValue({ type: "ENDORER", entityId: "agent-1" }),
+vi.mock("../src/evaluator", () => ({
+  evaluateAttribution: vi.fn().mockReturnValue({ type: "ENDORER", entityId: "agent-1" }),
 }));
 
 const evaluateAttribution = require("../src/evaluator").evaluateAttribution as jest.MockedFunction<typeof evaluateAttributionType>;
@@ -21,13 +22,13 @@ async function setupApp(overrides?: { prisma?: Partial<{ quote: unknown; attribu
 
   const prismaMock = {
     quote: {
-      update: jest.fn().mockResolvedValue({ id: "quote-1" }),
+      update: vi.fn().mockResolvedValue({ id: "quote-1" }),
     },
     attributionEvidence: {
-      create: jest.fn().mockResolvedValue({ id: "evidence-1" }),
+      create: vi.fn().mockResolvedValue({ id: "evidence-1" }),
     },
     dispute: {
-      create: jest.fn().mockResolvedValue({ id: "dispute-1" }),
+      create: vi.fn().mockResolvedValue({ id: "dispute-1" }),
     },
   };
 

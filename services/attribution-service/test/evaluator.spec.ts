@@ -1,3 +1,4 @@
+import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { evaluateAttribution } from '../src/evaluator';
 
 describe('evaluateAttribution', () => {

@@ -1,3 +1,4 @@
+import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { signServiceJwt } from "@easymo/commons";
 import type { PrismaService } from "@easymo/db";
 import request from "supertest";
@@ -36,21 +37,21 @@ async function setupApp(overrides?: {
 
   const prismaMock: PrismaMock = {
     purchase: {
-      findUnique: jest.fn().mockResolvedValue(null),
-      update: jest.fn(),
+      findUnique: vi.fn().mockResolvedValue(null),
+      update: vi.fn(),
     },
     walletAccount: {
-      findFirst: jest.fn(),
+      findFirst: vi.fn(),
     },
   };
 
   const buyersMock: BuyersMock = {
-    createBuyer: jest.fn().mockResolvedValue({ id: "buyer-1" }),
-    createIntent: jest.fn(),
-    listIntents: jest.fn().mockResolvedValue([]),
-    listPurchases: jest.fn().mockResolvedValue([]),
-    recordPurchase: jest.fn(),
-    buyerContext: jest.fn(),
+    createBuyer: vi.fn().mockResolvedValue({ id: "buyer-1" }),
+    createIntent: vi.fn(),
+    listIntents: vi.fn().mockResolvedValue([]),
+    listPurchases: vi.fn().mockResolvedValue([]),
+    recordPurchase: vi.fn(),
+    buyerContext: vi.fn(),
   };
 
   Object.assign(prismaMock, overrides?.prisma);
@@ -94,7 +95,7 @@ describe("buyer-service authentication", () => {
   });
 
   it("allows requests with valid scope", async () => {
-    const createBuyer = jest.fn().mockResolvedValue({ id: "buyer-123" });
+    const createBuyer = vi.fn().mockResolvedValue({ id: "buyer-123" });
     const { app, buyersMock } = await setupApp({
       buyers: { createBuyer },
     });

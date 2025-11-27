@@ -1,3 +1,4 @@
+import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import type { AgentContext } from "@easymo/commons";
 import { NotFoundException } from "@nestjs/common";
 import { Logger } from "@nestjs/common";
@@ -18,19 +19,19 @@ const agent: AgentContext = {
 
 const createPrismaMock = () => ({
   lead: {
-    findFirst: jest.fn(),
-    findMany: jest.fn(),
-    upsert: jest.fn(),
+    findFirst: vi.fn(),
+    findMany: vi.fn(),
+    upsert: vi.fn(),
   },
   call: {
-    findFirst: jest.fn(),
-    create: jest.fn(),
+    findFirst: vi.fn(),
+    create: vi.fn(),
   },
   disposition: {
-    create: jest.fn(),
+    create: vi.fn(),
   },
   optOut: {
-    upsert: jest.fn(),
+    upsert: vi.fn(),
   },
 });
 
@@ -42,11 +43,11 @@ describe("ToolsService", () => {
   beforeEach(() => {
     prisma = createPrismaMock();
     supabaseTools = {
-      searchSupabase: jest.fn(),
-      createListing: jest.fn(),
-      createOrder: jest.fn(),
-      createMatch: jest.fn(),
-      recordPayment: jest.fn(),
+      searchSupabase: vi.fn(),
+      createListing: vi.fn(),
+      createOrder: vi.fn(),
+      createMatch: vi.fn(),
+      recordPayment: vi.fn(),
     };
     service = new ToolsService(prisma as any, new Logger("ToolsServiceTest"), supabaseTools as any);
   });

@@ -1,3 +1,4 @@
+import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 process.env.KAFKA_BROKERS = "localhost:9092";
 process.env.REDIS_URL = "redis://localhost:6379";
 process.env.AGENT_CORE_URL = "http://localhost:4000";

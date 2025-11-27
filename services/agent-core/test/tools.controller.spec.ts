@@ -1,3 +1,4 @@
+import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import type { AgentContext } from "@easymo/commons";
 import { ForbiddenException } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
@@ -24,12 +25,12 @@ describe("ToolsController", () => {
         {
           provide: ToolsService,
           useValue: {
-            collectPayment: jest.fn().mockReturnValue({ type: "USSD", code: "*182*8*1*AGENT*1000#" }),
-            searchSupabase: jest.fn(),
-            createListing: jest.fn(),
-            createOrder: jest.fn(),
-            createMatch: jest.fn(),
-            recordPayment: jest.fn(),
+            collectPayment: vi.fn().mockReturnValue({ type: "USSD", code: "*182*8*1*AGENT*1000#" }),
+            searchSupabase: vi.fn(),
+            createListing: vi.fn(),
+            createOrder: vi.fn(),
+            createMatch: vi.fn(),
+            recordPayment: vi.fn(),
           },
         },
       ],

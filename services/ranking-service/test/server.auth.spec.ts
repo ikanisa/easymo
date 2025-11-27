@@ -1,9 +1,10 @@
+import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import request from "supertest";
 
 let vendorFindMock: jest.Mock;
 let vendorUpdateMock: jest.Mock;
 
-jest.mock("@easymo/commons", () => {
+vi.mock("@easymo/commons", () => {
   const actual = jest.requireActual("@easymo/commons");
   return {
     ...actual,
@@ -20,8 +21,8 @@ describe("ranking-service auth", () => {
     process.env.DEFAULT_TENANT_ID = "a4a8cf2d-0a4f-446c-8bf2-28509641158f";
     process.env.SERVICE_AUTH_AUDIENCE = "ranking-service";
     process.env.SERVICE_JWT_KEYS = "test-secret";
-    vendorFindMock = jest.fn();
-    vendorUpdateMock = jest.fn();
+    vendorFindMock = vi.fn();
+    vendorUpdateMock = vi.fn();
   });
 
   const getApp = () => {
@@ -34,7 +35,7 @@ describe("ranking-service auth", () => {
     };
 
     const rankingMock = {
-      rankVendors: jest.fn().mockResolvedValue([]),
+      rankVendors: vi.fn().mockResolvedValue([]),
     } as any;
 
     return buildApp({ prisma: prismaStub, ranking: rankingMock });
