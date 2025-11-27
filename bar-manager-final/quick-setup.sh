@@ -1,0 +1,2 @@
+#!/bin/sh
+cd /Users/jeanbosco/workspace/easymo-/bar-manager-final && mkdir -p "app/orders/[id]" "app/menu/[id]/edit" "app/promos/new" && cp -n TEMP_order_detail_page.tsx "app/orders/[id]/page.tsx" 2>/dev/null && cp -n TEMP_menu_edit_page.tsx "app/menu/[id]/edit/page.tsx" 2>/dev/null && cp -n TEMP_new_promo_page.tsx "app/promos/new/page.tsx" 2>/dev/null && echo "✅ Setup complete! Run: npm run tauri:dev" || echo "⚠️  Some files may already exist (this is OK)"

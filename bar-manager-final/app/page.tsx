@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { playNotificationSound, showDesktopNotification, requestNotificationPermission } from "@/lib/notifications"
+import { OrderQueue } from "@/components/orders/OrderQueue"
 import type { Order } from "@/lib/types"
 
 export default function DashboardPage() {
@@ -119,18 +120,7 @@ export default function DashboardPage() {
         </div>
       </header>
 
-      {orders.length === 0 ? (
-        <div className="bg-white rounded-xl p-12 text-center">
-          <p className="text-gray-500 text-lg">No active orders</p>
-          <p className="text-gray-400 text-sm mt-2">Orders will appear here when customers place them via WhatsApp</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {orders.map((order) => (
-            <OrderCard key={order.id} order={order} onStatusChange={updateOrderStatus} />
-          ))}
-        </div>
-      )}
+      <OrderQueue orders={orders} onStatusChange={updateOrderStatus} />
     </div>
   )
 }

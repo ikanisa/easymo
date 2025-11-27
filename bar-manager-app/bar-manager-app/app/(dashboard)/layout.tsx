@@ -25,6 +25,10 @@ const navigation = [
   { name: 'Orders', href: '/orders', icon: ShoppingBag, shortcut: '2' },
   { name: 'Tables', href: '/tables', icon: Utensils, shortcut: '3' },
   { name: 'Menu', href: '/menu', icon: BookOpen, shortcut: '4' },
+  { name: 'Inventory', href: '/inventory', icon: Package, shortcut: '5' },
+  { name: 'Staff', href: '/staff', icon: Users, shortcut: '6' },
+  { name: 'Analytics', href: '/analytics', icon: BarChart3, shortcut: '7' },
+  { name: 'Settings', href: '/settings', icon: Settings, shortcut: '9' },
 ];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
