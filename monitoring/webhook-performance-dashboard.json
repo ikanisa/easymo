@@ -1,0 +1,122 @@
+{
+  "dashboard": {
+    "title": "Webhook Performance Monitoring",
+    "description": "Monitor webhook processing latency, throughput, and errors",
+    "panels": [
+      {
+        "id": 1,
+        "title": "Webhook Requests per Minute",
+        "type": "timeseries",
+        "targets": [
+          {
+            "query": "SELECT date_trunc('minute', created_at) as minute, COUNT(*) as requests FROM wa_events WHERE created_at > NOW() - INTERVAL '1 hour' GROUP BY minute ORDER BY minute",
+            "legend": "Requests/min"
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "title": "Webhook Processing Success Rate",
+        "type": "gauge",
+        "targets": [
+          {
+            "query": "SELECT ROUND(100.0 * SUM(CASE WHEN processed = true THEN 1 ELSE 0 END) / COUNT(*), 2) as success_rate FROM processed_webhook_messages WHERE created_at > NOW() - INTERVAL '1 hour'",
+            "legend": "Success Rate %"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "min": 0,
+            "max": 100,
+            "thresholds": {
+              "steps": [
+                {"value": 0, "color": "red"},
+                {"value": 95, "color": "yellow"},
+                {"value": 99, "color": "green"}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 3,
+        "title": "Messages by Type",
+        "type": "piechart",
+        "targets": [
+          {
+            "query": "SELECT type, COUNT(*) as count FROM whatsapp_messages WHERE created_at > NOW() - INTERVAL '24 hours' GROUP BY type",
+            "legend": "{{type}}"
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "title": "Error Rate by Service",
+        "type": "timeseries",
+        "targets": [
+          {
+            "query": "SELECT date_trunc('hour', created_at) as hour, service, COUNT(*) as errors FROM webhook_dlq WHERE created_at > NOW() - INTERVAL '24 hours' GROUP BY hour, service ORDER BY hour",
+            "legend": "{{service}}"
+          }
+        ]
+      },
+      {
+        "id": 5,
+        "title": "Active Conversations",
+        "type": "stat",
+        "targets": [
+          {
+            "query": "SELECT COUNT(*) as active FROM conversations WHERE updated_at > NOW() - INTERVAL '24 hours'",
+            "legend": "Active"
+          }
+        ]
+      },
+      {
+        "id": 6,
+        "title": "Message Volume by Hour",
+        "type": "barchart",
+        "targets": [
+          {
+            "query": "SELECT EXTRACT(HOUR FROM created_at) as hour, COUNT(*) as messages FROM whatsapp_messages WHERE created_at > NOW() - INTERVAL '7 days' GROUP BY hour ORDER BY hour",
+            "legend": "Messages"
+          }
+        ]
+      },
+      {
+        "id": 7,
+        "title": "Recent Errors",
+        "type": "table",
+        "targets": [
+          {
+            "query": "SELECT created_at, service, error_message, phone_number FROM webhook_dlq WHERE created_at > NOW() - INTERVAL '1 hour' ORDER BY created_at DESC LIMIT 50"
+          }
+        ]
+      },
+      {
+        "id": 8,
+        "title": "Circuit Breaker Status",
+        "type": "stat",
+        "targets": [
+          {
+            "query": "SELECT state, COUNT(*) FROM circuit_breaker_events WHERE created_at > NOW() - INTERVAL '1 hour' GROUP BY state",
+            "legend": "{{state}}"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "mappings": [
+              {"value": "OPEN", "text": "⚠️ OPEN", "color": "red"},
+              {"value": "HALF_OPEN", "text": "⚡ HALF_OPEN", "color": "yellow"},
+              {"value": "CLOSED", "text": "✅ CLOSED", "color": "green"}
+            ]
+          }
+        }
+      }
+    ],
+    "refresh": "10s",
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    }
+  }
+}

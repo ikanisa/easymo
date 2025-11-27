@@ -13,7 +13,8 @@ import {
   BarChart3,
   Settings,
   LogOut,
-  X
+  X,
+  Headphones
 } from "lucide-react";
 
 const navigation = [
@@ -23,6 +24,7 @@ const navigation = [
   { name: "Wallet", href: "/wallet", icon: Wallet },
   { name: "WhatsApp", href: "/whatsapp", icon: MessageSquare },
   { name: "AI Agents", href: "/agents", icon: Bot },
+  { name: "Support", href: "/support", icon: Headphones },
   { name: "Analytics", href: "/analytics", icon: BarChart3 },
   { name: "Settings", href: "/settings", icon: Settings },
 ];

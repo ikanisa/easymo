@@ -1,0 +1,128 @@
+{
+  "dashboard": {
+    "title": "Dead Letter Queue (DLQ) Monitoring",
+    "description": "Monitor webhook DLQ health, retry rates, and processing performance",
+    "panels": [
+      {
+        "id": 1,
+        "title": "DLQ Status Overview",
+        "type": "stat",
+        "targets": [
+          {
+            "query": "SELECT status, COUNT(*) as count FROM webhook_dlq GROUP BY status",
+            "legend": "{{status}}"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"value": 0, "color": "green"},
+                {"value": 10, "color": "yellow"},
+                {"value": 50, "color": "red"}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 2,
+        "title": "DLQ Entries Over Time",
+        "type": "timeseries",
+        "targets": [
+          {
+            "query": "SELECT created_at, COUNT(*) as entries FROM webhook_dlq WHERE created_at > NOW() - INTERVAL '24 hours' GROUP BY date_trunc('hour', created_at) ORDER BY created_at",
+            "legend": "DLQ Entries"
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "title": "Retry Success Rate",
+        "type": "gauge",
+        "targets": [
+          {
+            "query": "SELECT ROUND(100.0 * SUM(CASE WHEN status = 'reprocessed' THEN 1 ELSE 0 END) / COUNT(*), 2) as success_rate FROM webhook_dlq WHERE created_at > NOW() - INTERVAL '24 hours'",
+            "legend": "Success Rate %"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "min": 0,
+            "max": 100,
+            "thresholds": {
+              "steps": [
+                {"value": 0, "color": "red"},
+                {"value": 70, "color": "yellow"},
+                {"value": 90, "color": "green"}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 4,
+        "title": "DLQ by Service",
+        "type": "piechart",
+        "targets": [
+          {
+            "query": "SELECT service, COUNT(*) as count FROM webhook_dlq WHERE created_at > NOW() - INTERVAL '24 hours' GROUP BY service",
+            "legend": "{{service}}"
+          }
+        ]
+      },
+      {
+        "id": 5,
+        "title": "Average Retry Count",
+        "type": "stat",
+        "targets": [
+          {
+            "query": "SELECT ROUND(AVG(retry_count), 2) as avg_retries FROM webhook_dlq WHERE created_at > NOW() - INTERVAL '24 hours'",
+            "legend": "Avg Retries"
+          }
+        ]
+      },
+      {
+        "id": 6,
+        "title": "DLQ Processing Performance",
+        "type": "timeseries",
+        "targets": [
+          {
+            "query": "SELECT processed_at, entries_processed, entries_failed FROM dlq_processing_log WHERE processed_at > NOW() - INTERVAL '24 hours' ORDER BY processed_at",
+            "legend": "Processed: {{entries_processed}}, Failed: {{entries_failed}}"
+          }
+        ]
+      },
+      {
+        "id": 7,
+        "title": "Failed Messages (Retry Exhausted)",
+        "type": "table",
+        "targets": [
+          {
+            "query": "SELECT id, service, phone_number, error_message, retry_count, created_at FROM webhook_dlq WHERE status = 'failed' ORDER BY created_at DESC LIMIT 20"
+          }
+        ]
+      },
+      {
+        "id": 8,
+        "title": "Pending Messages by Next Retry",
+        "type": "timeseries",
+        "targets": [
+          {
+            "query": "SELECT date_trunc('hour', next_retry_at) as retry_hour, COUNT(*) as pending FROM webhook_dlq WHERE status = 'pending' AND next_retry_at > NOW() GROUP BY retry_hour ORDER BY retry_hour",
+            "legend": "Pending Retries"
+          }
+        ]
+      }
+    ],
+    "refresh": "30s",
+    "time": {
+      "from": "now-24h",
+      "to": "now"
+    }
+  }
+}

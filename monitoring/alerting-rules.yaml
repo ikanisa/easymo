@@ -1,0 +1,180 @@
+# Alerting Rules for Production Monitoring
+# PagerDuty / Opsgenie / Slack integration
+
+groups:
+  - name: dlq_alerts
+    interval: 1m
+    rules:
+      - alert: HighDLQPendingCount
+        expr: |
+          SELECT COUNT(*) as pending_count 
+          FROM webhook_dlq 
+          WHERE status = 'pending'
+        condition: pending_count > 100
+        severity: warning
+        annotations:
+          summary: "High number of pending DLQ entries"
+          description: "{{ pending_count }} messages pending in DLQ. Investigate processing issues."
+        
+      - alert: DLQProcessingFailure
+        expr: |
+          SELECT MAX(processed_at) as last_processed 
+          FROM dlq_processing_log
+        condition: last_processed < NOW() - INTERVAL '15 minutes'
+        severity: critical
+        annotations:
+          summary: "DLQ processor not running"
+          description: "DLQ processor hasn't run in 15 minutes. Check pg_cron job status."
+      
+      - alert: HighDLQFailureRate
+        expr: |
+          SELECT COUNT(*) as failed_count 
+          FROM webhook_dlq 
+          WHERE status = 'failed' 
+          AND created_at > NOW() - INTERVAL '1 hour'
+        condition: failed_count > 10
+        severity: critical
+        annotations:
+          summary: "High DLQ failure rate"
+          description: "{{ failed_count }} messages failed permanently in the last hour. Check error patterns."
+
+  - name: webhook_alerts
+    interval: 1m
+    rules:
+      - alert: WebhookErrorRate
+        expr: |
+          SELECT 
+            ROUND(100.0 * COUNT(CASE WHEN processed = false THEN 1 END) / COUNT(*), 2) as error_rate
+          FROM processed_webhook_messages
+          WHERE created_at > NOW() - INTERVAL '5 minutes'
+        condition: error_rate > 5
+        severity: warning
+        annotations:
+          summary: "High webhook error rate"
+          description: "{{ error_rate }}% of webhooks failing in last 5 minutes."
+      
+      - alert: WebhookLatency
+        expr: |
+          SELECT 
+            EXTRACT(EPOCH FROM (MAX(updated_at) - MAX(created_at))) as latency_seconds
+          FROM processed_webhook_messages
+          WHERE created_at > NOW() - INTERVAL '5 minutes'
+        condition: latency_seconds > 5
+        severity: warning
+        annotations:
+          summary: "High webhook processing latency"
+          description: "Webhooks taking {{ latency_seconds }}s to process (>5s threshold)."
+
+  - name: database_alerts
+    interval: 5m
+    rules:
+      - alert: HighDatabaseBloat
+        expr: |
+          SELECT 
+            tablename,
+            ROUND(100.0 * n_dead_tup / NULLIF(n_live_tup + n_dead_tup, 0), 2) as bloat_pct
+          FROM pg_stat_user_tables
+          WHERE n_dead_tup > 10000
+        condition: bloat_pct > 20
+        severity: warning
+        annotations:
+          summary: "High table bloat detected"
+          description: "Table {{ tablename }} has {{ bloat_pct }}% dead tuples. Consider manual VACUUM."
+      
+      - alert: LargeTableGrowth
+        expr: |
+          SELECT 
+            tablename,
+            pg_size_pretty(pg_total_relation_size(schemaname||'.'||tablename)) as size
+          FROM pg_tables
+          WHERE schemaname = 'public'
+        condition: pg_total_relation_size > 10GB
+        severity: info
+        annotations:
+          summary: "Large table detected"
+          description: "Table {{ tablename }} is {{ size }}. Consider archival or partitioning."
+
+  - name: circuit_breaker_alerts
+    interval: 1m
+    rules:
+      - alert: CircuitBreakerOpen
+        expr: |
+          SELECT state, COUNT(*) as count
+          FROM circuit_breaker_events
+          WHERE created_at > NOW() - INTERVAL '5 minutes'
+          GROUP BY state
+        condition: state = 'OPEN'
+        severity: critical
+        annotations:
+          summary: "Circuit breaker opened"
+          description: "Circuit breaker in OPEN state. External service may be down."
+
+  - name: system_health_alerts
+    interval: 5m
+    rules:
+      - alert: HighConnectionCount
+        expr: |
+          SELECT COUNT(*) as connections 
+          FROM pg_stat_activity 
+          WHERE state != 'idle'
+        condition: connections > 80
+        severity: warning
+        annotations:
+          summary: "High database connection count"
+          description: "{{ connections }} active database connections. Check for connection leaks."
+      
+      - alert: LongRunningQueries
+        expr: |
+          SELECT 
+            pid,
+            EXTRACT(EPOCH FROM (NOW() - query_start)) as duration_seconds,
+            LEFT(query, 100) as query_preview
+          FROM pg_stat_activity
+          WHERE state = 'active'
+          AND query NOT LIKE '%pg_stat_activity%'
+        condition: duration_seconds > 30
+        severity: warning
+        annotations:
+          summary: "Long-running query detected"
+          description: "Query {{ pid }} running for {{ duration_seconds }}s: {{ query_preview }}"
+
+# Notification channels configuration
+notification_channels:
+  - name: pagerduty_critical
+    type: pagerduty
+    settings:
+      integration_key: "${PAGERDUTY_INTEGRATION_KEY}"
+      severity_mapping:
+        critical: "critical"
+        warning: "warning"
+        info: "info"
+  
+  - name: slack_alerts
+    type: slack
+    settings:
+      webhook_url: "${SLACK_WEBHOOK_URL}"
+      channel: "#alerts-production"
+      username: "EasyMO Monitor"
+      
+  - name: email_oncall
+    type: email
+    settings:
+      recipients:
+        - oncall@easymo.com
+      subject_template: "[{{ severity }}] {{ summary }}"
+
+# Alert routing
+routing:
+  - match:
+      severity: critical
+    receiver: pagerduty_critical
+    continue: true
+  
+  - match:
+      severity: warning
+    receiver: slack_alerts
+    continue: true
+  
+  - match:
+      severity: info
+    receiver: email_oncall
