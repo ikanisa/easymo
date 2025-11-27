@@ -195,14 +195,39 @@ export async function handleWalletTransferText(
     }
     
     try {
-      // Resolve recipient profile by WhatsApp
-      const { data: recipient } = await ctx.supabase
+      // Resolve recipient profile by WhatsApp - try both e164 and wa_id
+      let recipient: { user_id: string } | null = null;
+      
+      // Try whatsapp_e164 first
+      const { data: recipient1 } = await ctx.supabase
         .from("profiles")
         .select("user_id")
         .eq("whatsapp_e164", data.to as string)
         .maybeSingle();
+      
+      if (recipient1?.user_id) {
+        recipient = recipient1;
+      } else {
+        // Fallback to wa_id
+        const { data: recipient2 } = await ctx.supabase
+          .from("profiles")
+          .select("user_id")
+          .eq("wa_id", (data.to as string).replace('+', ''))
+          .maybeSingle();
+        recipient = recipient2;
+      }
+      
       if (!recipient?.user_id) {
-        await sendButtonsMessage(ctx, "Recipient not found.", [{ id: IDS.WALLET, title: "💎 Wallet" }]);
+        console.warn(JSON.stringify({
+          event: "WALLET_TRANSFER_RECIPIENT_NOT_FOUND",
+          searched_number: data.to,
+          sender: ctx.profileId
+        }));
+        await sendButtonsMessage(
+          ctx, 
+          `❌ Recipient not found.\n\nThe number ${data.to} is not registered on easyMO. They need to chat with us first.`, 
+          [{ id: IDS.WALLET, title: "💎 Wallet" }]
+        );
         return true;
       }
       
@@ -272,6 +297,15 @@ export async function handleWalletTransferText(
       
       // RPC returns array, get first row
       const result = Array.isArray(result2) ? result2[0] : result2;
+      
+      console.log(JSON.stringify({
+        event: "WALLET_TRANSFER_RPC_RESPONSE",
+        raw_response: result2,
+        unwrapped: result,
+        success_field: result?.success,
+        reason: result?.reason
+      }));
+      
       const ok = result?.success === true;
       if (ok) {
         console.log(JSON.stringify({
@@ -309,19 +343,55 @@ export async function handleWalletTransferText(
             }));
           });
       } else {
+        // Check if transfer actually succeeded but success flag is wrong
+        const likelySucceeded = result?.transfer_id || result?.reason === 'ok' || result?.reason === 'duplicate';
+        
         console.error(JSON.stringify({
-          event: "WALLET_TRANSFER_REJECTED",
+          event: likelySucceeded ? "WALLET_TRANSFER_SUCCESS_FLAG_MISMATCH" : "WALLET_TRANSFER_REJECTED",
           sender: ctx.profileId,
           recipient: recipient.user_id,
           amount,
-          reason: result?.reason || "unknown"
+          success_field: result?.success,
+          reason: result?.reason,
+          transfer_id: result?.transfer_id,
+          likely_succeeded: likelySucceeded
         }));
         
-        await sendButtonsMessage(
-          ctx,
-          `❌ Transfer failed: ${result?.reason || "Unknown error"}`,
-          [{ id: IDS.WALLET, title: "💎 Wallet" }],
-        );
+        // If we have a transfer_id or reason is 'ok', treat as success
+        if (likelySucceeded) {
+          await sendButtonsMessage(
+            ctx,
+            `✅ Sent ${amount} tokens to ${data.to}.`,
+            [{ id: IDS.WALLET, title: "💎 Wallet" }],
+          );
+          
+          // Try to send notification
+          try {
+            const { data: senderProfile } = await ctx.supabase
+              .from("profiles")
+              .select("display_name")
+              .eq("user_id", ctx.profileId)
+              .maybeSingle();
+            const senderName = senderProfile?.display_name || "A friend";
+            
+            notifyWalletTransferRecipient(ctx.supabase, recipient.user_id, amount, senderName)
+              .catch((err) => {
+                console.error(JSON.stringify({
+                  event: "WALLET_TRANSFER_NOTIFICATION_FAILED",
+                  error: err instanceof Error ? err.message : String(err),
+                  recipient: recipient.user_id
+                }));
+              });
+          } catch {
+            // Ignore notification errors
+          }
+        } else {
+          await sendButtonsMessage(
+            ctx,
+            `❌ Transfer failed: ${result?.reason || "Unknown error"}`,
+            [{ id: IDS.WALLET, title: "💎 Wallet" }],
+          );
+        }
       }
       
       const { clearState } = await import("../../_shared/wa-webhook-shared/state/store.ts");

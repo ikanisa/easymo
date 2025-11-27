@@ -436,59 +436,63 @@ ON CONFLICT DO NOTHING;
 -- 6. INSERT KNOWLEDGE BASE ENTRIES
 -- =====================================================================
 
-INSERT INTO public.ai_agent_knowledge_bases (agent_id, title, content, category, tags, source_url, is_active)
+INSERT INTO public.ai_agent_knowledge_bases (agent_id, code, name, description, storage_type, access_method, config)
 SELECT
   a.id,
-  kb.title,
-  kb.content,
-  kb.category,
-  kb.tags,
-  kb.source_url,
-  true
+  kb.code,
+  kb.name,
+  kb.description,
+  'embedded',
+  'semantic_search',
+  jsonb_build_object(
+    'category', kb.category,
+    'tags', kb.tags,
+    'source_url', kb.source_url
+  )
 FROM public.ai_agents a,
 LATERAL (
   VALUES
     (
+      'KB-SUPPORT-001',
       'How to Order Food on EasyMO',
       E'To order food using EasyMO:\n1. From the home menu, tap "Waiter AI"\n2. Browse nearby restaurants or search by cuisine\n3. Select items and add to your order\n4. Review your cart and confirm\n5. Choose payment method (Mobile Money)\n6. Track your delivery in real-time\n\nDelivery usually takes 20-45 minutes depending on restaurant and location.',
       'features',
       ARRAY['waiter', 'food', 'ordering', 'delivery'],
-      'https://easymo.rw/help/order-food',
-      true
+      'https://easymo.rw/help/order-food'
     ),
     (
+      'KB-SUPPORT-002',
       'How to Book a Ride',
       E'To book a ride on EasyMO:\n1. Tap "Rides AI" from the home menu\n2. Enter your pickup location (or use GPS)\n3. Enter your destination\n4. Choose ride type (Moto, Car, Share)\n5. Confirm fare estimate\n6. Pay and track your driver\n\nYou can also schedule rides in advance for later pickup.',
       'features',
       ARRAY['rides', 'mobility', 'booking', 'transport'],
-      'https://easymo.rw/help/book-ride',
-      true
+      'https://easymo.rw/help/book-ride'
     ),
     (
+      'KB-SUPPORT-003',
       'Payment Methods Accepted',
       E'EasyMO accepts the following payment methods:\n- MTN Mobile Money\n- Airtel Money\n- EasyMO Wallet (prepaid)\n- Cash (for some services)\n\nTo add funds to your wallet:\n1. Go to Profile\n2. Tap "Top Up Wallet"\n3. Enter amount and choose Mobile Money provider\n4. Confirm on your phone\n\nPayments are instant and secure.',
       'payments',
       ARRAY['payment', 'mobile_money', 'wallet', 'mtn', 'airtel'],
-      'https://easymo.rw/help/payments',
-      true
+      'https://easymo.rw/help/payments'
     ),
     (
+      'KB-SUPPORT-004',
       'Account Login Issues',
       E'If you can''t log in:\n1. Make sure you''re using the correct phone number\n2. Check if you have network connectivity\n3. Restart WhatsApp and try again\n4. Clear app cache (Settings > Apps > WhatsApp > Clear Cache)\n\nIf the issue persists, contact support and we''ll reset your account within 1 hour.',
       'account',
       ARRAY['login', 'account', 'troubleshooting', 'access'],
-      'https://easymo.rw/help/login-issues',
-      true
+      'https://easymo.rw/help/login-issues'
     ),
     (
+      'KB-SUPPORT-005',
       'Failed Payment / Money Deducted',
       E'If your payment failed but money was deducted:\n1. Note the transaction reference number\n2. Take a screenshot of the deduction message\n3. Contact support immediately\n4. Provide: phone number, amount, time of transaction\n\nOur finance team will investigate and refund within 24 hours. Most refunds are processed within 2-4 hours.',
       'payments',
       ARRAY['payment', 'refund', 'failed_payment', 'dispute'],
-      'https://easymo.rw/help/payment-issues',
-      true
+      'https://easymo.rw/help/payment-issues'
     )
-) AS kb(title, content, category, tags, source_url, is_active)
+) AS kb(code, name, description, category, tags, source_url)
 WHERE a.slug = 'support'
 ON CONFLICT DO NOTHING;
 
@@ -499,10 +503,8 @@ ON CONFLICT DO NOTHING;
 -- Update the customer_support menu item to use the support agent
 UPDATE public.whatsapp_home_menu_items
 SET 
-  handler_intent = 'support',
   updated_at = now()
-WHERE menu_key = 'customer_support'
-  OR handler_intent = 'sales_agent'  -- Catch any existing sales_agent routing
-  OR menu_key IN ('support', 'help');
+WHERE key = 'customer_support'
+  OR key IN ('support', 'help');
 
 COMMIT;
