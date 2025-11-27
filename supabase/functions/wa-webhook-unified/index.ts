@@ -314,9 +314,15 @@ function extractWhatsAppMessage(payload: any): {
     
     return null;
   } catch (error) {
-    console.error("Error extracting WhatsApp message:", error);
+    await logStructuredEvent("MESSAGE_EXTRACTION_ERROR", {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    });
     return null;
   }
 }
 
-console.log("wa-webhook-unified service started");
+await logStructuredEvent("SERVICE_STARTED", {
+  service: "wa-webhook-unified",
+  timestamp: new Date().toISOString(),
+});
