@@ -1,6 +1,5 @@
 import type { RouterContext } from "../../_shared/wa-webhook-shared/types.ts";
 import { sendListMessage } from "../../_shared/wa-webhook-shared/utils/reply.ts";
-import { IDS } from "../../_shared/wa-webhook-shared/wa/ids.ts";
 import { setState } from "../../_shared/wa-webhook-shared/state/store.ts";
 import { logStructuredEvent } from "../../_shared/observability.ts";
 
@@ -221,4 +220,31 @@ export async function startProfile(
   );
 
   return true;
+}
+
+/**
+ * Track menu item click analytics
+ */
+export async function trackMenuItemClick(
+  ctx: RouterContext,
+  itemKey: string,
+): Promise<void> {
+  try {
+    const { data } = await ctx.supabase
+      .from("profile_menu_items")
+      .select("analytics_event_name, track_analytics")
+      .eq("item_key", itemKey)
+      .eq("enabled", true)
+      .single();
+
+    if (data?.track_analytics && data.analytics_event_name) {
+      await logStructuredEvent(data.analytics_event_name, {
+        userId: ctx.profileId,
+        itemKey,
+        timestamp: new Date().toISOString(),
+      });
+    }
+  } catch (err) {
+    console.error("profile.track_click_error", err);
+  }
 }
