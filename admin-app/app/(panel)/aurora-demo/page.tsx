@@ -9,7 +9,7 @@ import {
   Button, Card, CardContent, PageHeader,
   DataTable, Column, DropdownMenu, Breadcrumbs, Pagination,
   ThemeSwitcher, KpiCard, Badge,
-} from '@/components-v2';
+} from '@/components';
 import { MoreVertical, Edit, Trash, Users, DollarSign } from 'lucide-react';
 
 interface User {

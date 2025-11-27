@@ -120,11 +120,11 @@ CREATE POLICY "Service role can manage menu items" ON public.whatsapp_home_menu_
 
 -- Seed initial menu items
 INSERT INTO public.whatsapp_home_menu_items (name, key, is_active, active_countries, display_order, icon) VALUES
-  ('Nearby Drivers', 'nearby_drivers', true, ARRAY['RW', 'UG', 'KE', 'TZ', 'BI', 'CD'], 1, '🚖'),
-  ('Nearby Passengers', 'nearby_passengers', true, ARRAY['RW', 'UG', 'KE', 'TZ', 'BI', 'CD'], 2, '🧍'),
-  ('Schedule Trip', 'schedule_trip', true, ARRAY['RW', 'UG', 'KE', 'TZ', 'BI', 'CD'], 3, '🚦'),
+  ('Nearby Drivers', 'nearby_drivers', true, ARRAY['RW', 'TZ', 'BI', 'CD'], 1, '🚖'),
+  ('Nearby Passengers', 'nearby_passengers', true, ARRAY['RW', 'TZ', 'BI', 'CD'], 2, '🧍'),
+  ('Schedule Trip', 'schedule_trip', true, ARRAY['RW', 'TZ', 'BI', 'CD'], 3, '🚦'),
   ('Motor Insurance', 'motor_insurance', true, ARRAY['RW'], 4, '🛡️'),
-  ('Bars & Restaurants', 'bars_restaurants', true, ARRAY['RW', 'UG', 'KE', 'TZ', 'BI', 'CD'], 10, '🍽️')
+  ('Bars & Restaurants', 'bars_restaurants', true, ARRAY['RW', 'TZ', 'BI', 'CD'], 10, '🍽️')
 ON CONFLICT (key) DO NOTHING;
 
 -- =====================================================

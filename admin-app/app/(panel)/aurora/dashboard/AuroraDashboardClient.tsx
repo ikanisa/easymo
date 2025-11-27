@@ -11,12 +11,12 @@ import {
   AlertCircle
 } from "lucide-react";
 
-import { Button } from "@/components-v2/primitives/Button";
-import { KpiCard } from "@/components-v2/data-display/KpiCard";
-import { Card } from "@/components-v2/data-display/Card";
-import { PageHeader } from "@/components-v2/layout/PageHeader";
-import { Spinner } from "@/components-v2/feedback/Spinner";
-import { Skeleton } from "@/components-v2/feedback/Skeleton";
+import { Button } from "@/components/ui/Button";
+import { KpiCard } from "@/components/data-display/KpiCard";
+import { Card } from "@/components/data-display/Card";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { Spinner } from "@/components/feedback/Spinner";
+import { Skeleton } from "@/components/feedback/Skeleton";
 import { IntegrationHealthWidget } from "@/components/dashboard/IntegrationHealthWidget";
 import { PaymentsHealthWidget } from "@/components/dashboard/PaymentsHealthWidget";
 import { AdminDiagnosticsCard } from "@/components/dashboard/AdminDiagnosticsCard";

@@ -1,91 +1,88 @@
-import { Input as UiInput } from "@easymo/ui/components/forms";
-import { cva, type VariantProps } from "class-variance-authority";
-import * as React from "react";
+/**
+ * Aurora Input Component
+ * Clean, accessible text input with validation states
+ */
 
-import { cn } from "@/lib/utils";
+'use client';
 
-const uiKitEnabled = (process.env.NEXT_PUBLIC_UI_V2_ENABLED ?? "false").trim().toLowerCase() === "true";
+import { forwardRef } from 'react';
+import { cn } from '@/lib/utils';
 
-const legacyInputVariants = cva(
-  "block w-full rounded-xl border bg-[color:var(--color-surface)]/95 text-[color:var(--color-foreground)] placeholder:text-[color:var(--color-muted)] transition-all duration-[var(--motion-duration-fast)] ease-[var(--motion-ease-standard)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-accent)]/45 focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--color-surface)] disabled:cursor-not-allowed disabled:opacity-60",
-  {
-    variants: {
-      variant: {
-        outline: "border-[color:var(--color-border)]",
-        subtle: "border-transparent bg-[color:var(--color-surface-muted)]/85",
-        ghost: "border-transparent bg-transparent focus-visible:ring-offset-0",
-      },
-      size: {
-        sm: "min-h-[2.5rem] rounded-lg px-3 text-body-sm",
-        md: "min-h-[2.75rem] rounded-xl px-4 text-body",
-        lg: "min-h-[3.1rem] rounded-2xl px-5 text-body-lg",
-      },
-      status: {
-        default: "",
-        success:
-          "border-[color:var(--color-success)]/45 focus-visible:ring-[color:var(--color-success)]/40",
-        error:
-          "border-[color:var(--color-danger)]/60 focus-visible:ring-[color:var(--color-danger)]/45",
-      },
+export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+  label?: string;
+  error?: string;
+  helperText?: string;
+  leftIcon?: React.ReactNode;
+  rightIcon?: React.ReactNode;
+}
+
+export const Input = forwardRef<HTMLInputElement, InputProps>(
+  (
+    {
+      className,
+      label,
+      error,
+      helperText,
+      leftIcon,
+      rightIcon,
+      disabled,
+      ...props
     },
-    defaultVariants: {
-      variant: "outline",
-      size: "md",
-      status: "default",
-    },
-  },
-);
-
-type NativeInputProps = Omit<React.InputHTMLAttributes<HTMLInputElement>, "size">;
-
-export interface InputProps extends NativeInputProps, VariantProps<typeof legacyInputVariants> {}
-
-const Input = React.forwardRef<HTMLInputElement, InputProps>(
-  ({ className, type = "text", variant, size, status = "default", ...props }, ref) => {
-    const ariaInvalid = props["aria-invalid"] ?? (status === "error" ? true : undefined);
-
-    if (uiKitEnabled) {
-      const { formAction: fa, ...restUi } = props as Record<string, unknown>;
-      const uiProps: any = restUi;
-      if (typeof fa === "string") {
-        uiProps.formAction = fa;
-      }
-      return (
-        <UiInput
-          ref={ref}
-          type={type}
-          // Cast variant props to satisfy ui kit input props when enabled
-          status={status as any}
-          variant={variant as any}
-          size={size as any}
-          aria-invalid={ariaInvalid}
-          className={className}
-          {...uiProps}
-        />
-      );
-    }
-
-    const { formAction, ...rest } = props as Record<string, unknown>;
-    const inputProps = rest as unknown as React.InputHTMLAttributes<HTMLInputElement>;
-    if (typeof formAction === "string") {
-      (inputProps as any).formAction = formAction;
-    }
-
-    const inputAny = inputProps as any;
-    const NativeInput: any = 'input';
-
+    ref
+  ) => {
     return (
-      <NativeInput
-        type={type}
-        ref={ref}
-        data-status={status !== "default" ? status : undefined}
-        aria-invalid={ariaInvalid}
-        className={cn(legacyInputVariants({ variant, size, status }), className)}
-        {...inputAny}
-      />
+      <div className="w-full">
+        {label && (
+          <label className="block text-sm font-medium text-[var(--aurora-text-primary)] mb-2">
+            {label}
+          </label>
+        )}
+        
+        <div className="relative">
+          {leftIcon && (
+            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--aurora-text-muted)]">
+              {leftIcon}
+            </div>
+          )}
+          
+          <input
+            ref={ref}
+            disabled={disabled}
+            className={cn(
+              'w-full h-10 px-3 rounded-lg',
+              'bg-[var(--aurora-surface)] border border-[var(--aurora-border)]',
+              'text-[var(--aurora-text-primary)] text-sm',
+              'placeholder:text-[var(--aurora-text-muted)]',
+              'focus:outline-none focus:ring-2 focus:ring-[var(--aurora-accent)]/20',
+              'focus:border-[var(--aurora-accent)]',
+              'transition-all duration-200',
+              'disabled:opacity-50 disabled:cursor-not-allowed',
+              error && 'border-[var(--aurora-error)] focus:ring-[var(--aurora-error)]/20',
+              leftIcon && 'pl-10',
+              rightIcon && 'pr-10',
+              className
+            )}
+            {...props}
+          />
+          
+          {rightIcon && (
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--aurora-text-muted)]">
+              {rightIcon}
+            </div>
+          )}
+        </div>
+        
+        {(error || helperText) && (
+          <p className={cn(
+            'mt-1.5 text-xs',
+            error ? 'text-[var(--aurora-error)]' : 'text-[var(--aurora-text-muted)]'
+          )}>
+            {error || helperText}
+          </p>
+        )}
+      </div>
     );
-  },
+  }
 );
-Input.displayName = "Input";
 
-export { Input, legacyInputVariants as inputVariants };
+Input.displayName = 'Input';

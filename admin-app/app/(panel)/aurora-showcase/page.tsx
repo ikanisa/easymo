@@ -5,15 +5,15 @@
 'use client';
 
 import { useState } from 'react';
-import { Button } from '@/components-v2/primitives/Button';
-import { Input } from '@/components-v2/primitives/Input';
-import { Select } from '@/components-v2/primitives/Select';
-import { KpiCard } from '@/components-v2/data-display/KpiCard';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components-v2/data-display/Card';
-import { Badge } from '@/components-v2/data-display/Badge';
-import { Spinner } from '@/components-v2/feedback/Spinner';
-import { Skeleton, SkeletonText } from '@/components-v2/feedback/Skeleton';
-import { Modal, ModalFooter } from '@/components-v2/overlay/Modal';
+import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
+import { Select } from '@/components/ui/Select';
+import { KpiCard } from '@/components/data-display/KpiCard';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/data-display/Card';
+import { Badge } from '@/components/data-display/Badge';
+import { Spinner } from '@/components/feedback/Spinner';
+import { Skeleton, SkeletonText } from '@/components/feedback/Skeleton';
+import { Modal, ModalFooter } from '@/components/overlay/Modal';
 import { Users, DollarSign, MessageCircle, TrendingUp, Search, Mail } from 'lucide-react';
 
 export default function AuroraShowcasePage() {

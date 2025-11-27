@@ -60,7 +60,7 @@ VALUES (
   'Waiter AI',
   '🍽️',
   true,
-  ARRAY['RW', 'UG', 'KE', 'TZ', 'BI', 'CD'],
+  ARRAY['RW', 'TZ', 'BI', 'CD'],
   1,
   NOW(),
   NOW()
@@ -92,7 +92,7 @@ VALUES (
   'Rides AI',
   '🚗',
   true,
-  ARRAY['RW', 'UG', 'KE', 'TZ', 'BI', 'CD'],
+  ARRAY['RW', 'TZ', 'BI', 'CD'],
   2,
   NOW(),
   NOW()
@@ -124,7 +124,7 @@ VALUES (
   'Jobs AI',
   '💼',
   true,
-  ARRAY['RW', 'UG', 'KE', 'TZ', 'BI', 'CD'],
+  ARRAY['RW', 'TZ', 'BI', 'CD'],
   3,
   NOW(),
   NOW()
@@ -156,7 +156,7 @@ VALUES (
   'Business Finder',
   '🏪',
   true,
-  ARRAY['RW', 'UG', 'KE', 'TZ', 'BI', 'CD'],
+  ARRAY['RW', 'TZ', 'BI', 'CD'],
   4,
   NOW(),
   NOW()
@@ -188,7 +188,7 @@ VALUES (
   'Property AI',
   '🏠',
   true,
-  ARRAY['RW', 'UG', 'KE', 'TZ', 'BI', 'CD'],
+  ARRAY['RW', 'TZ', 'BI', 'CD'],
   5,
   NOW(),
   NOW()
@@ -220,7 +220,7 @@ VALUES (
   'Farmer AI',
   '🌾',
   true,
-  ARRAY['RW', 'UG', 'KE', 'TZ', 'BI', 'CD'],
+  ARRAY['RW', 'TZ', 'BI', 'CD'],
   6,
   NOW(),
   NOW()
@@ -252,7 +252,7 @@ VALUES (
   'Insurance AI',
   '🛡️',
   true,
-  ARRAY['RW', 'UG', 'KE', 'TZ', 'BI', 'CD'],
+  ARRAY['RW', 'TZ', 'BI', 'CD'],
   7,
   NOW(),
   NOW()
@@ -284,7 +284,7 @@ VALUES (
   'Sales AI',
   '📞',
   true,
-  ARRAY['RW', 'UG', 'KE', 'TZ', 'BI', 'CD'],
+  ARRAY['RW', 'TZ', 'BI', 'CD'],
   8,
   NOW(),
   NOW()
@@ -316,7 +316,7 @@ VALUES (
   'My Profile',
   '👤',
   true,
-  ARRAY['RW', 'UG', 'KE', 'TZ', 'BI', 'CD'],
+  ARRAY['RW', 'TZ', 'BI', 'CD'],
   9,
   NOW(),
   NOW()

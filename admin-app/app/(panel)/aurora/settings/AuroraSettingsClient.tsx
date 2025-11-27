@@ -15,13 +15,13 @@ import {
   Sun
 } from "lucide-react";
 
-import { Button } from "@/components-v2/primitives/Button";
-import { Input } from "@/components-v2/primitives/Input";
-import { Toggle } from "@/components-v2/primitives/Toggle";
-import { Select } from "@/components-v2/primitives/Select";
-import { PageHeader } from "@/components-v2/layout/PageHeader";
-import { Card } from "@/components-v2/data-display/Card";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components-v2/navigation/Tabs";
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
+import { Toggle } from "@/components/ui/Toggle";
+import { Select } from "@/components/ui/Select";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { Card } from "@/components/data-display/Card";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/navigation/Tabs";
 
 export function AuroraSettingsClient() {
   const [darkMode, setDarkMode] = useState(false);

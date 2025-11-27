@@ -38,18 +38,18 @@ CREATE POLICY "Service role can manage menu items"
 
 -- Seed initial menu items based on current implementation
 INSERT INTO public.whatsapp_home_menu_items (name, key, is_active, active_countries, display_order, icon) VALUES
-  ('Nearby Drivers', 'nearby_drivers', true, ARRAY['RW', 'UG', 'KE', 'TZ', 'BI', 'CD'], 1, '🚖'),
-  ('Nearby Passengers', 'nearby_passengers', true, ARRAY['RW', 'UG', 'KE', 'TZ', 'BI', 'CD'], 2, '🧍'),
-  ('Schedule Trip', 'schedule_trip', true, ARRAY['RW', 'UG', 'KE', 'TZ', 'BI', 'CD'], 3, '🚦'),
+  ('Nearby Drivers', 'nearby_drivers', true, ARRAY['RW', 'TZ', 'BI', 'CD'], 1, '🚖'),
+  ('Nearby Passengers', 'nearby_passengers', true, ARRAY['RW', 'TZ', 'BI', 'CD'], 2, '🧍'),
+  ('Schedule Trip', 'schedule_trip', true, ARRAY['RW', 'TZ', 'BI', 'CD'], 3, '🚦'),
   ('Motor Insurance', 'motor_insurance', true, ARRAY['RW'], 4, '🛡️'),
-  ('Nearby Pharmacies', 'nearby_pharmacies', true, ARRAY['RW', 'UG', 'KE', 'TZ', 'BI', 'CD'], 5, '💊'),
-  ('Quincailleries', 'quincailleries', true, ARRAY['RW', 'UG', 'KE', 'TZ', 'BI', 'CD'], 6, '🔧'),
-  ('Shops & Services', 'shops_services', true, ARRAY['RW', 'UG', 'KE', 'TZ', 'BI', 'CD'], 7, '🏪'),
-  ('Property Rentals', 'property_rentals', true, ARRAY['RW', 'UG', 'KE', 'TZ', 'BI', 'CD'], 8, '🏠'),
+  ('Nearby Pharmacies', 'nearby_pharmacies', true, ARRAY['RW', 'TZ', 'BI', 'CD'], 5, '💊'),
+  ('Quincailleries', 'quincailleries', true, ARRAY['RW', 'TZ', 'BI', 'CD'], 6, '🔧'),
+  ('Shops & Services', 'shops_services', true, ARRAY['RW', 'TZ', 'BI', 'CD'], 7, '🏪'),
+  ('Property Rentals', 'property_rentals', true, ARRAY['RW', 'TZ', 'BI', 'CD'], 8, '🏠'),
   ('MOMO QR Code', 'momo_qr', true, ARRAY['RW'], 9, '📱'),
-  ('Bars & Restaurants', 'bars_restaurants', true, ARRAY['RW', 'UG', 'KE', 'TZ', 'BI', 'CD'], 10, '🍽️'),
+  ('Bars & Restaurants', 'bars_restaurants', true, ARRAY['RW', 'TZ', 'BI', 'CD'], 10, '🍽️'),
   ('Notary Services', 'notary_services', true, ARRAY['RW'], 11, '📜'),
-  ('Customer Support', 'customer_support', true, ARRAY['RW', 'UG', 'KE', 'TZ', 'BI', 'CD'], 12, '💬')
+  ('Customer Support', 'customer_support', true, ARRAY['RW', 'TZ', 'BI', 'CD'], 12, '💬')
 ON CONFLICT (key) DO NOTHING;
 
 -- Add updated_at trigger

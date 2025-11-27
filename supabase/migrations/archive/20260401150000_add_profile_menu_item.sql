@@ -7,7 +7,7 @@ BEGIN;
 -- Insert Profile menu item if it doesn't exist
 INSERT INTO public.whatsapp_home_menu_items (name, key, is_active, active_countries, display_order, icon)
 VALUES
-  ('Profile', 'profile', true, ARRAY['RW', 'UG', 'KE', 'TZ', 'BI', 'CD'], 13, '👤')
+  ('Profile', 'profile', true, ARRAY['RW', 'TZ', 'BI', 'CD'], 13, '👤')
 ON CONFLICT (key) DO UPDATE
   SET name = EXCLUDED.name,
       is_active = EXCLUDED.is_active,

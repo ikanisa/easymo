@@ -195,8 +195,8 @@ function getCountryFromPhone(phone: string): string {
   // Map common country codes for East Africa
   const countryMap: Record<string, string> = {
     "250": "RW", // Rwanda
-    "256": "UG", // Uganda
-    "254": "KE", // Kenya
+    "256": // Uganda
+    "254": // Kenya
     "255": "TZ", // Tanzania
     "257": "BI", // Burundi
     "243": "CD", // DR Congo

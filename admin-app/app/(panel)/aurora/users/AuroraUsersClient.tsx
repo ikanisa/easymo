@@ -13,12 +13,12 @@ import {
   MapPin
 } from "lucide-react";
 
-import { Button } from "@/components-v2/primitives/Button";
-import { Input } from "@/components-v2/primitives/Input";
-import { PageHeader } from "@/components-v2/layout/PageHeader";
-import { DataTable } from "@/components-v2/data-display/DataTable";
-import { Badge } from "@/components-v2/data-display/Badge";
-import { Spinner } from "@/components-v2/feedback/Spinner";
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { DataTable } from "@/components/data-display/DataTable";
+import { Badge } from "@/components/data-display/Badge";
+import { Spinner } from "@/components/feedback/Spinner";
 import { type UsersQueryParams } from "@/lib/queries/users";
 import { useUsersQuery } from "@/lib/queries/users";
 

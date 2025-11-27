@@ -58,11 +58,11 @@ const nextConfig = {
   serverExternalPackages: ['@easymo/commons'],
   
   typescript: {
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: false,
   },
   
   eslint: {
-    ignoreDuringBuilds: true,
+    ignoreDuringBuilds: false,
   },
   
   // Security and performance headers

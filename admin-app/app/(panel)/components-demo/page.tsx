@@ -10,7 +10,7 @@ import {
   Card, CardHeader, CardTitle, CardContent,
   Badge, KpiCard, Modal, ModalFooter, Tooltip, Tabs, TabsList, TabsTrigger, TabsContent,
   Spinner, Skeleton, SkeletonText, useToast, PageHeader,
-} from '@/components-v2';
+} from '@/components';
 import { Mail, User, Settings, Home, Users, DollarSign, MessageCircle, TrendingUp } from 'lucide-react';
 
 export default function ComponentsDemoPage() {

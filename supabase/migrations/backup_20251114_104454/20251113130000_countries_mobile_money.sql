@@ -54,8 +54,8 @@ CREATE TRIGGER countries_updated_at
 INSERT INTO countries (code, name, currency_code, currency_symbol, phone_prefix, mobile_money_provider, mobile_money_brand, ussd_send_to_phone, ussd_pay_merchant, flag_emoji, timezone, sort_order) VALUES
   -- East Africa
   ('RW', 'Rwanda', 'RWF', 'FRw', '+250', 'MTN Mobile Money', 'MoMo', '*182*1*1*{phone}*{amount}#', '*182*8*1*{code}*{amount}#', '🇷🇼', 'Africa/Kigali', 1),
-  ('UG', 'Uganda', 'UGX', 'USh', '+256', 'MTN Mobile Money', 'MoMo', '*165*{phone}*{amount}#', '*165*3*{code}*{amount}#', '🇺🇬', 'Africa/Kampala', 2),
-  ('KE', 'Kenya', 'KES', 'KSh', '+254', 'M-Pesa (Safaricom)', 'M-Pesa', '*126*{phone}*{amount}#', '*126*4*{code}*{amount}#', '🇰🇪', 'Africa/Nairobi', 3),
+  ('Uganda', 'UGX', 'USh', '+256', 'MTN Mobile Money', 'MoMo', '*165*{phone}*{amount}#', '*165*3*{code}*{amount}#', '🇺🇬', 'Africa/Kampala', 2),
+  ('Kenya', 'KES', 'KSh', '+254', 'M-Pesa (Safaricom)', 'M-Pesa', '*126*{phone}*{amount}#', '*126*4*{code}*{amount}#', '🇰🇪', 'Africa/Nairobi', 3),
   ('TZ', 'Tanzania', 'TZS', 'TSh', '+255', 'Vodacom M-Pesa', 'M-Pesa', '*150*00*{phone}*{amount}#', '*150*00*{code}*{amount}#', '🇹🇿', 'Africa/Dar_es_Salaam', 4),
   ('BI', 'Burundi', 'BIF', 'FBu', '+257', 'Econet EcoCash', 'EcoCash', '*151*1*1*{phone}*{amount}#', '*151*1*2*{phone}*{amount}#', '🇧🇮', 'Africa/Bujumbura', 5),
   
@@ -112,8 +112,8 @@ ADD COLUMN IF NOT EXISTS country_specific_names JSONB DEFAULT '{}'::jsonb;
 UPDATE whatsapp_home_menu_items
 SET country_specific_names = jsonb_build_object(
   'RW', jsonb_build_object('name', 'MOMO QR Code', 'description', 'Generate MTN MoMo payment QR codes'),
-  'UG', jsonb_build_object('name', 'MOMO QR Code', 'description', 'Generate MTN MoMo payment QR codes'),
-  'KE', jsonb_build_object('name', 'M-Pesa QR Code', 'description', 'Generate M-Pesa payment QR codes'),
+  jsonb_build_object('name', 'MOMO QR Code', 'description', 'Generate MTN MoMo payment QR codes'),
+  jsonb_build_object('name', 'M-Pesa QR Code', 'description', 'Generate M-Pesa payment QR codes'),
   'TZ', jsonb_build_object('name', 'M-Pesa QR Code', 'description', 'Generate M-Pesa payment QR codes'),
   'BI', jsonb_build_object('name', 'EcoCash QR Code', 'description', 'Generate EcoCash payment QR codes'),
   'CM', jsonb_build_object('name', 'MOMO QR Code', 'description', 'Generate MTN MoMo payment QR codes'),

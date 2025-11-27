@@ -38,7 +38,7 @@ CREATE TABLE IF NOT EXISTS profile_menu_items (
   min_app_version text,
   
   -- Country Availability
-  available_countries text[] DEFAULT ARRAY['RW', 'KE', 'TZ', 'UG', 'BI', 'CD'], -- ISO country codes
+  available_countries text[] DEFAULT ARRAY['RW', 'CD', 'BI', 'TZ'], -- ISO country codes
   excluded_countries text[] DEFAULT ARRAY[]::text[],
   
   -- Access Control
@@ -109,7 +109,7 @@ INSERT INTO profile_menu_items (
     'Hindura izina, ururimi n''igenamiterere',
     'route',
     'EDIT_PROFILE',
-    ARRAY['RW', 'KE', 'TZ', 'UG', 'BI', 'CD'],
+    ARRAY['RW', 'CD', 'BI', 'TZ'],
     true,
     'profile.edit_clicked'
   ),
@@ -127,7 +127,7 @@ INSERT INTO profile_menu_items (
     'Reba amafaranga, ohereza, gura ibihembo',
     'route',
     'WALLET_HOME',
-    ARRAY['RW', 'KE', 'TZ', 'UG', 'BI', 'CD'],
+    ARRAY['RW', 'CD', 'BI', 'TZ'],
     true,
     'profile.wallet_clicked'
   ),
@@ -145,7 +145,7 @@ INSERT INTO profile_menu_items (
     'Kora QR yo kwishyura',
     'route',
     'MOMO_QR',
-    ARRAY['RW', 'UG', 'TZ'],
+    ARRAY['RW', 'TZ'],
     true,
     'profile.momo_qr_clicked'
   ),
@@ -163,7 +163,7 @@ INSERT INTO profile_menu_items (
     'Gahunda y''ubucuruzi bwawe',
     'route',
     'MY_BUSINESSES',
-    ARRAY['RW', 'KE', 'TZ', 'UG', 'BI', 'CD'],
+    ARRAY['RW', 'CD', 'BI', 'TZ'],
     true,
     'profile.businesses_clicked'
   ),
@@ -181,7 +181,7 @@ INSERT INTO profile_menu_items (
     'Gahunda y''imirimo yawe',
     'route',
     'MY_JOBS',
-    ARRAY['RW', 'KE', 'TZ', 'UG', 'BI', 'CD'],
+    ARRAY['RW', 'CD', 'BI', 'TZ'],
     true,
     'profile.jobs_clicked'
   ),
@@ -199,7 +199,7 @@ INSERT INTO profile_menu_items (
     'Gahunda y''imitungo yawe',
     'route',
     'MY_PROPERTIES',
-    ARRAY['RW', 'KE', 'TZ', 'UG', 'BI', 'CD'],
+    ARRAY['RW', 'CD', 'BI', 'TZ'],
     true,
     'profile.properties_clicked'
   ),
@@ -217,7 +217,7 @@ INSERT INTO profile_menu_items (
     'Gahunda y''ibinyabiziga byawe',
     'route',
     'MY_VEHICLES',
-    ARRAY['RW', 'KE', 'TZ', 'UG'],
+    ARRAY['RW', 'TZ'],
     true,
     'profile.vehicles_clicked'
   ),
@@ -235,7 +235,7 @@ INSERT INTO profile_menu_items (
     'Ahantu ukunda',
     'route',
     'SAVED_LOCATIONS',
-    ARRAY['RW', 'KE', 'TZ', 'UG', 'BI', 'CD'],
+    ARRAY['RW', 'CD', 'BI', 'TZ'],
     true,
     'profile.locations_clicked'
   ),
@@ -253,7 +253,7 @@ INSERT INTO profile_menu_items (
     'Subira ku menu nyamukuru',
     'route',
     'BACK_MENU',
-    ARRAY['RW', 'KE', 'TZ', 'UG', 'BI', 'CD'],
+    ARRAY['RW', 'CD', 'BI', 'TZ'],
     false,
     NULL
   )

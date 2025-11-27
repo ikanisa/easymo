@@ -77,11 +77,11 @@ VALUES (
       'name', 'Abahinzi & Abaguzi',
       'description', 'Gura no kugurisha ibihingwa byawe'
     ),
-    'KE', jsonb_build_object(
+    jsonb_build_object(
       'name', 'Farmers & Buyers',
       'description', 'Buy and sell your produce'
     ),
-    'UG', jsonb_build_object(
+    jsonb_build_object(
       'name', 'Farmers & Buyers',
       'description', 'Buy and sell your produce'
     ),
