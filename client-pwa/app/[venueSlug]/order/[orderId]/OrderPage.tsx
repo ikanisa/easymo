@@ -1,12 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { CheckCircle2, Clock, ChefHat, Bell } from 'lucide-react';
+import { CheckCircle2, Clock, ChefHat, Bell, Wifi, WifiOff } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { formatPrice } from '@/lib/format';
+import { useOrderRealtime } from '@/lib/supabase/realtime';
 import type { Venue } from '@/types/venue';
 
 interface Order {
@@ -71,23 +72,19 @@ const statusConfig = {
 
 export function OrderPage({ venue, order }: OrderPageProps) {
   const [currentStatus, setCurrentStatus] = useState(order.status);
+  const [currentPaymentStatus, setCurrentPaymentStatus] = useState(order.paymentStatus);
+  const { order: realtimeOrder, isConnected } = useOrderRealtime(order.id);
+  
   const config = statusConfig[currentStatus as keyof typeof statusConfig] || statusConfig.pending;
   const StatusIcon = config.icon;
 
-  // In a real app, this would be a realtime subscription
+  // Update local state when realtime data arrives
   useEffect(() => {
-    // Simulate status updates for demo
-    const interval = setInterval(() => {
-      setCurrentStatus(prev => {
-        if (prev === 'pending') return 'confirmed';
-        if (prev === 'confirmed') return 'preparing';
-        if (prev === 'preparing') return 'ready';
-        return prev;
-      });
-    }, 10000); // Update every 10 seconds for demo
-
-    return () => clearInterval(interval);
-  }, []);
+    if (realtimeOrder) {
+      setCurrentStatus(realtimeOrder.status);
+      setCurrentPaymentStatus(realtimeOrder.payment_status);
+    }
+  }, [realtimeOrder]);
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -101,6 +98,21 @@ export function OrderPage({ venue, order }: OrderPageProps) {
           <p className="text-muted-foreground">
             Order #{order.id.slice(0, 8)}
           </p>
+          
+          {/* Realtime Connection Indicator */}
+          <div className="flex items-center justify-center gap-2 mt-3">
+            {isConnected ? (
+              <>
+                <Wifi className="w-4 h-4 text-green-500" />
+                <span className="text-xs text-green-500">Live updates</span>
+              </>
+            ) : (
+              <>
+                <WifiOff className="w-4 h-4 text-muted-foreground" />
+                <span className="text-xs text-muted-foreground">Connecting...</span>
+              </>
+            )}
+          </div>
         </div>
       </header>
 
@@ -198,11 +210,11 @@ export function OrderPage({ venue, order }: OrderPageProps) {
           <h2 className="text-lg font-semibold mb-2">Payment</h2>
           <div className="flex items-center justify-between">
             <span className="text-muted-foreground">Status</span>
-            <Badge variant={order.paymentStatus === 'completed' ? 'success' : 'warning'}>
-              {order.paymentStatus === 'pending' ? 'Pay when ready' : order.paymentStatus}
+            <Badge variant={currentPaymentStatus === 'completed' ? 'success' : 'warning'}>
+              {currentPaymentStatus === 'pending' ? 'Pay when ready' : currentPaymentStatus}
             </Badge>
           </div>
-          {order.paymentStatus === 'pending' && (
+          {currentPaymentStatus === 'pending' && (
             <p className="text-sm text-muted-foreground mt-2">
               You can pay with MoMo or cash when your order is served.
             </p>
@@ -210,7 +222,7 @@ export function OrderPage({ venue, order }: OrderPageProps) {
         </Card>
 
         {/* Payment Action */}
-        {order.paymentStatus === 'pending' && (
+        {currentPaymentStatus === 'pending' && (
           <Button asChild size="lg" className="w-full">
             <Link href={`/${venue.slug}/order/${order.id}/payment`}>
               Pay Now • {formatPrice(order.total, order.currency)}

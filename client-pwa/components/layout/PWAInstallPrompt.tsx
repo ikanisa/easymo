@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
+import { X, Download, Share } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Download, Share, Plus, Smartphone } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { useAdvancedHaptics } from '@/lib/haptics';
+import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -14,171 +14,125 @@ interface BeforeInstallPromptEvent extends Event {
 export function PWAInstallPrompt() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showPrompt, setShowPrompt] = useState(false);
-  const [showIOSGuide, setShowIOSGuide] = useState(false);
-  const [isInstalled, setIsInstalled] = useState(false);
-  const haptics = useAdvancedHaptics();
+  const [isIOS, setIsIOS] = useState(false);
+  const [isStandalone, setIsStandalone] = useState(false);
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    // Check if already installed
+    const isInStandaloneMode = window.matchMedia('(display-mode: standalone)').matches;
+    setIsStandalone(isInStandaloneMode);
 
-    if (window.matchMedia('(display-mode: standalone)').matches) {
-      setIsInstalled(true);
+    // Check if iOS
+    const iOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    setIsIOS(iOS);
+
+    // Don't show if already installed
+    if (isInStandaloneMode) {
       return;
     }
 
-    const dismissedAt = localStorage.getItem('pwa-prompt-dismissed');
-    if (dismissedAt) {
-      const dismissedTime = parseInt(dismissedAt, 10);
+    // Check if already dismissed
+    const dismissed = localStorage.getItem('pwa-install-dismissed');
+    if (dismissed) {
+      const dismissedTime = parseInt(dismissed);
       const daysSinceDismissed = (Date.now() - dismissedTime) / (1000 * 60 * 60 * 24);
-      if (daysSinceDismissed < 7) return;
+      if (daysSinceDismissed < 7) {
+        return; // Don't show again for 7 days
+      }
     }
 
-    const handleBeforeInstall = (e: Event) => {
+    // Listen for install prompt
+    const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
-      setTimeout(() => setShowPrompt(true), 30000);
+      
+      // Show prompt after 30 seconds
+      setTimeout(() => {
+        setShowPrompt(true);
+      }, 30000);
     };
 
-    window.addEventListener('beforeinstallprompt', handleBeforeInstall);
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
-    if (isIOS && !window.matchMedia('(display-mode: standalone)').matches) {
-      setTimeout(() => setShowIOSGuide(true), 30000);
+    // For iOS, show after 30 seconds if not dismissed
+    if (iOS && !isInStandaloneMode) {
+      setTimeout(() => {
+        setShowPrompt(true);
+      }, 30000);
     }
 
     return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     };
-  }, []);
+  }, [isStandalone]);
 
-  const handleInstall = useCallback(async () => {
+  const handleInstallClick = async () => {
     if (!deferredPrompt) return;
 
-    haptics.trigger('medium');
     deferredPrompt.prompt();
-    
     const { outcome } = await deferredPrompt.userChoice;
     
     if (outcome === 'accepted') {
-      setIsInstalled(true);
-      haptics.orderConfirmed();
+      console.log('PWA installed');
     }
     
     setDeferredPrompt(null);
     setShowPrompt(false);
-  }, [deferredPrompt, haptics]);
+  };
 
-  const handleDismiss = useCallback(() => {
-    haptics.trigger('light');
+  const handleDismiss = () => {
     setShowPrompt(false);
-    setShowIOSGuide(false);
-    localStorage.setItem('pwa-prompt-dismissed', Date.now().toString());
-  }, [haptics]);
+    localStorage.setItem('pwa-install-dismissed', Date.now().toString());
+  };
 
-  if (isInstalled) return null;
+  if (isStandalone || !showPrompt) {
+    return null;
+  }
 
   return (
     <AnimatePresence>
-      {showPrompt && deferredPrompt && (
+      {showPrompt && (
         <motion.div
           initial={{ y: 100, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: 100, opacity: 0 }}
-          className={cn(
-            'fixed bottom-0 inset-x-0 z-50',
-            'p-4 pb-safe m-4 rounded-2xl',
-            'bg-card border border-border shadow-2xl'
-          )}
+          className="fixed bottom-20 left-4 right-4 z-50 safe-area-bottom"
         >
-          <button
-            onClick={handleDismiss}
-            className="absolute top-3 right-3 p-2 rounded-full hover:bg-muted"
-          >
-            <X className="w-5 h-5" />
-          </button>
-
-          <div className="flex items-start gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-amber-500 flex items-center justify-center flex-shrink-0">
-              <Smartphone className="w-8 h-8 text-white" />
-            </div>
-            
-            <div className="flex-1">
-              <h3 className="font-semibold text-lg">Install EasyMO</h3>
-              <p className="text-sm text-muted-foreground mt-1">
-                Add to your home screen for quick access and a better experience
-              </p>
-              
-              <div className="flex gap-3 mt-4">
-                <button
-                  onClick={handleInstall}
-                  className={cn(
-                    'flex-1 py-3 rounded-xl font-medium',
-                    'bg-primary text-primary-foreground',
-                    'flex items-center justify-center gap-2',
-                    'active:scale-95 transition-transform'
-                  )}
-                >
-                  <Download className="w-5 h-5" />
-                  Install App
-                </button>
-                <button
-                  onClick={handleDismiss}
-                  className="px-4 py-3 rounded-xl font-medium bg-muted"
-                >
-                  Later
-                </button>
-              </div>
-            </div>
-          </div>
-        </motion.div>
-      )}
-
-      {showIOSGuide && (
-        <motion.div
-          initial={{ y: 100, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          exit={{ y: 100, opacity: 0 }}
-          className={cn(
-            'fixed bottom-0 inset-x-0 z-50',
-            'p-4 pb-safe m-4 rounded-2xl',
-            'bg-card border border-border shadow-2xl'
-          )}
-        >
-          <button
-            onClick={handleDismiss}
-            className="absolute top-3 right-3 p-2 rounded-full hover:bg-muted"
-          >
-            <X className="w-5 h-5" />
-          </button>
-
-          <div className="text-center space-y-4">
-            <div className="w-14 h-14 mx-auto rounded-2xl bg-gradient-to-br from-primary to-amber-500 flex items-center justify-center">
-              <Plus className="w-8 h-8 text-white" />
-            </div>
-            
-            <div>
-              <h3 className="font-semibold text-lg">Install EasyMO</h3>
-              <p className="text-sm text-muted-foreground mt-1">
-                Add to your home screen for the best experience
-              </p>
-            </div>
-
-            <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-              <span>Tap</span>
-              <div className="p-2 rounded-lg bg-muted">
-                <Share className="w-5 h-5 text-primary" />
-              </div>
-              <span>then</span>
-              <span className="font-medium text-foreground">&ldquo;Add to Home Screen&rdquo;</span>
-            </div>
-
+          <Card className="p-4 shadow-2xl border-primary/20">
             <button
               onClick={handleDismiss}
-              className="w-full py-3 rounded-xl font-medium bg-muted"
+              className="absolute top-2 right-2 p-1 rounded-full hover:bg-muted"
+              aria-label="Close"
             >
-              Got it
+              <X className="w-4 h-4" />
             </button>
-          </div>
+
+            <div className="flex gap-4 pr-6">
+              <div className="w-12 h-12 bg-primary/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                <Download className="w-6 h-6 text-primary" />
+              </div>
+              
+              <div className="flex-1">
+                <h3 className="font-semibold mb-1">Install EasyMO</h3>
+                <p className="text-sm text-muted-foreground mb-3">
+                  Add to your home screen for quick access and a better experience
+                </p>
+
+                {isIOS ? (
+                  <div className="space-y-2">
+                    <p className="text-xs text-muted-foreground">
+                      Tap <Share className="w-3 h-3 inline" /> then "Add to Home Screen"
+                    </p>
+                  </div>
+                ) : (
+                  <Button onClick={handleInstallClick} size="sm" className="w-full">
+                    <Download className="w-4 h-4 mr-2" />
+                    Install App
+                  </Button>
+                )}
+              </div>
+            </div>
+          </Card>
         </motion.div>
       )}
     </AnimatePresence>
