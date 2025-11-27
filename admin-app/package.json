@@ -1,7 +1,7 @@
 {
   "name": "@easymo/admin-app",
   "private": true,
-  "version": "0.1.0",
+  "version": "1.0.0",
   "engines": {
     "node": ">=18.18.0",
     "npm": ">=9.8.1"

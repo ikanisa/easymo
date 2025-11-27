@@ -78,7 +78,6 @@ export function AgentCreator() {
                 }}
                 placeholder="Broker Assistant"
                 autoComplete="off"
-                size="md"
               />
             </Field>
             <Field
@@ -92,7 +91,6 @@ export function AgentCreator() {
                 onChange={(event) => setSlug(event.target.value)}
                 placeholder="broker-assistant"
                 autoComplete="off"
-                size="md"
               />
             </Field>
           </div>

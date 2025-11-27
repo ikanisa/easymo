@@ -77,7 +77,7 @@ import {
   startDriverTracking,
   updateDriverLocation,
   stopDriverTracking,
-  getDriverLocation,
+  getTripProgress,
 } from "./handlers/tracking.ts";
 import {
   calculateFareEstimate,
@@ -87,6 +87,7 @@ import { IDS } from "./wa/ids.ts";
 import { verifyWebhookSignature } from "../_shared/webhook-utils.ts";
 import { sendListMessage } from "./utils/reply.ts";
 import { recordLastLocation } from "./locations/favorites.ts";
+import { sendLocation, sendText } from "./wa/client.ts";
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL") ?? "",
@@ -370,7 +371,8 @@ serve(async (req: Request): Promise<Response> => {
           handled = await handleTripComplete(ctx, tripId);
         } else if (id.startsWith("TRIP_CANCEL::")) {
           const tripId = id.replace("TRIP_CANCEL::", "");
-          handled = await handleTripCancel(ctx, tripId, "user", ctx.profileId || "");
+          const initiator = state?.data?.role === "passenger" ? "passenger" : "driver";
+          handled = await handleTripCancel(ctx, tripId, "user", initiator);
         } else if (id.startsWith("RATE::")) {
           const parts = id.split("::");
           const tripId = parts[1];
@@ -403,9 +405,28 @@ serve(async (req: Request): Promise<Response> => {
           handled = true;
         } else if (id === "VIEW_DRIVER_LOCATION" && state?.data?.tripId) {
           const tripId = state.data.tripId;
-          const location = await getDriverLocation(ctx, tripId);
-          if (location) {
-            // Send location back to user (TODO: implement location message sending)
+          const progress = await getTripProgress(ctx, tripId);
+          if (progress?.driverLocation) {
+            await sendLocation(ctx.from, {
+              latitude: progress.driverLocation.latitude,
+              longitude: progress.driverLocation.longitude,
+              name: "Driver live location",
+              address: progress.eta
+                ? `ETA ~${progress.eta.durationMinutes} min`
+                : undefined,
+            });
+            if (progress.eta) {
+              await sendText(
+                ctx.from,
+                `🚗 Driver is en route. ETA: ${progress.eta.durationMinutes} min.`,
+              );
+            }
+            handled = true;
+          } else {
+            await sendText(
+              ctx.from,
+              "⚠️ We couldn't fetch the driver's live location. Please try again shortly.",
+            );
             handled = true;
           }
         }

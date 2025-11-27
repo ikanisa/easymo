@@ -66,18 +66,14 @@
       }
     ],
     "macOS": {
-      "minimumSystemVersion": "10.15",
-      "urlScheme": ["easymo"]
+      "minimumSystemVersion": "10.15"
     },
     "windows": {
       "webviewInstallMode": {
         "type": "downloadBootstrapper"
-      },
-      "urlScheme": ["easymo"]
+      }
     },
-    "linux": {
-      "urlScheme": ["easymo"]
-    }
+    "linux": {}
   },
   "plugins": {
     "updater": {

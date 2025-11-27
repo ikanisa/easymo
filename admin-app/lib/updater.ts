@@ -1,5 +1,5 @@
 import { check } from '@tauri-apps/plugin-updater';
-// import { relaunch } from '@tauri-apps/plugin-process';
+// import { relaunch } from '@tauri-apps/plugin-process'; // Will uncomment after npm install succeeds
 
 export async function checkForUpdates() {
   try {
@@ -26,7 +26,7 @@ export async function checkForUpdates() {
       });
 
       console.log('Update installed, relaunching...');
-      // await relaunch(); // Temporarily disabled due to missing module
+      // await relaunch(); // Will uncomment after plugin-process is installed
     } else {
         console.log('No updates found');
     }

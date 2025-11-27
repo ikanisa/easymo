@@ -22,8 +22,8 @@ export async function handleTripComplete(ctx: any, tripId: string): Promise<bool
 export async function handleTripCancel(
   ctx: any,
   tripId: string,
-  cancelledBy: string,
-  userId: string
+  cancelledBy?: string,
+  userId?: string
 ): Promise<boolean> {
   console.log("STUB: handleTripCancel called", tripId, cancelledBy, userId);
   return true;

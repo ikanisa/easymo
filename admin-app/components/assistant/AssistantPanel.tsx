@@ -68,7 +68,6 @@ export function AssistantPanel({ open, onClose }: AssistantPanelProps) {
             aria-label="Close assistant"
             onClick={handleClose}
             disabled={isBusy}
-            offlineBehavior="allow"
           >
             ×
           </Button>

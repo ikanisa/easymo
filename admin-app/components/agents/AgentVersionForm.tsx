@@ -117,7 +117,6 @@ export function AgentVersionForm({ personaId }: Props) {
               }}
               required
               rows={6}
-              status={error?.field === "instructions" ? "error" : "default"}
               placeholder="Detailed system instructions for the agent persona."
             />
           </Field>
@@ -137,7 +136,6 @@ export function AgentVersionForm({ personaId }: Props) {
                 setToolsJson(event.target.value);
               }}
               rows={3}
-              status={error?.field === "tools" ? "error" : "default"}
               className="font-mono"
             />
           </Field>
@@ -157,7 +155,6 @@ export function AgentVersionForm({ personaId }: Props) {
                 setMemoryJson(event.target.value);
               }}
               rows={3}
-              status={error?.field === "memory" ? "error" : "default"}
               className="font-mono"
             />
           </Field>
@@ -177,7 +174,6 @@ export function AgentVersionForm({ personaId }: Props) {
                 setEvaluationJson(event.target.value);
               }}
               rows={3}
-              status={error?.field === "evaluation" ? "error" : "default"}
               className="font-mono"
             />
           </Field>

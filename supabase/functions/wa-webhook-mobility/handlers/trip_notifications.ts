@@ -5,6 +5,7 @@ import { sendText } from "../wa/client.ts";
 type ContactColumns = {
   whatsapp_number?: string | null;
   phone_number?: string | null;
+  whatsapp_e164?: string | null;
   wa_id?: string | null;
 };
 
@@ -14,7 +15,7 @@ async function resolveContact(
 ): Promise<string | null> {
   const { data, error } = await client
     .from("profiles")
-    .select("whatsapp_number, phone_number, wa_id")
+    .select("whatsapp_number, phone_number, whatsapp_e164, wa_id")
     .eq("user_id", userId)
     .maybeSingle();
 
@@ -26,7 +27,7 @@ async function resolveContact(
     return null;
   }
 
-  return data?.whatsapp_number ?? data?.phone_number ?? data?.wa_id ?? null;
+  return data?.whatsapp_number ?? data?.phone_number ?? data?.whatsapp_e164 ?? data?.wa_id ?? null;
 }
 
 async function notifyUser(

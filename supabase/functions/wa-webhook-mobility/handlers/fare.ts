@@ -5,6 +5,8 @@
 // ============================================================================
 
 import { logStructuredEvent } from "../../_shared/observability.ts";
+import type { SupabaseClient } from "../deps.ts";
+import { getAppConfig } from "../utils/app_config.ts";
 import { calculateHaversineDistance } from "./tracking.ts";
 import type { Coordinates } from "./tracking.ts";
 
@@ -38,6 +40,10 @@ export interface PricingConfig {
   minimumFare: number;
   currency: string;
 }
+
+type FareCalculationOptions = {
+  client?: SupabaseClient;
+};
 
 // ============================================================================
 // PRICING CONFIGURATION
@@ -88,6 +94,11 @@ export const PRICING_CONFIG: Record<string, PricingConfig> = {
 type PricingOverrides = Record<string, Partial<PricingConfig>>;
 
 const PRICING_OVERRIDES = loadPricingOverrides();
+type SurgeConfig = typeof SURGE_PRICING;
+
+const REMOTE_PRICING_TTL_MS = 5 * 60 * 1000;
+let remotePricingCache: { loadedAt: number; value: PricingOverrides | null } | null = null;
+let remoteSurgeCache: { loadedAt: number; value: SurgeConfig | null } | null = null;
 
 function loadPricingOverrides(): PricingOverrides | null {
   const raw = Deno.env.get("MOBILITY_PRICING_OVERRIDES");
@@ -101,16 +112,121 @@ function loadPricingOverrides(): PricingOverrides | null {
   }
 }
 
-function resolvePricingConfig(vehicleType: string): PricingConfig | null {
+async function loadRemotePricing(
+  client?: SupabaseClient,
+): Promise<PricingOverrides | null> {
+  const now = Date.now();
+  if (
+    remotePricingCache &&
+    now - remotePricingCache.loadedAt < REMOTE_PRICING_TTL_MS
+  ) {
+    return remotePricingCache.value;
+  }
+  if (!client) return remotePricingCache?.value ?? null;
+  try {
+    const config = await getAppConfig(client);
+    const raw = config.mobility_pricing;
+    if (raw && typeof raw === "object") {
+      const normalized: PricingOverrides = {};
+      for (const [vehicle, overrides] of Object.entries(
+        raw as Record<string, unknown>,
+      )) {
+        if (!overrides || typeof overrides !== "object") continue;
+        const key = vehicle.toLowerCase();
+        const patch: Partial<PricingConfig> = {};
+        for (const field of [
+          "baseFare",
+          "perKm",
+          "perMinute",
+          "minimumFare",
+        ] as const) {
+          const value = (overrides as Record<string, unknown>)[field];
+          const num = Number(value);
+          if (Number.isFinite(num)) {
+            patch[field] = num;
+          }
+        }
+        const currency = (overrides as Record<string, unknown>).currency;
+        if (typeof currency === "string" && currency.trim()) {
+          patch.currency = currency.trim();
+        }
+        if (Object.keys(patch).length) {
+          normalized[key] = patch;
+        }
+      }
+      remotePricingCache = { loadedAt: now, value: normalized };
+      return normalized;
+    }
+  } catch (error) {
+    console.warn("fare.remote_pricing_load_failed", {
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+  remotePricingCache = { loadedAt: now, value: null };
+  return null;
+}
+
+async function loadRemoteSurgeConfig(
+  client?: SupabaseClient,
+): Promise<SurgeConfig | null> {
+  const now = Date.now();
+  if (remoteSurgeCache && now - remoteSurgeCache.loadedAt < REMOTE_PRICING_TTL_MS) {
+    return remoteSurgeCache.value;
+  }
+  if (!client) return remoteSurgeCache?.value ?? null;
+  try {
+    const config = await getAppConfig(client);
+    const raw = config.surge_pricing;
+    if (raw && typeof raw === "object") {
+      const source = raw as Record<string, unknown>;
+      const normalized: SurgeConfig = {
+        enabled: Boolean(
+          typeof source.enabled === "boolean"
+            ? source.enabled
+            : SURGE_PRICING.enabled,
+        ),
+        peakHours: Array.isArray(source.peak_hours)
+          ? source.peak_hours.map((v) => Number(v)).filter((v) => Number.isInteger(v))
+          : SURGE_PRICING.peakHours,
+        weekendMultiplier: Number.isFinite(Number(source.weekend_multiplier))
+          ? Number(source.weekend_multiplier)
+          : SURGE_PRICING.weekendMultiplier,
+        peakHourMultiplier: Number.isFinite(Number(source.peak_hour_multiplier))
+          ? Number(source.peak_hour_multiplier)
+          : SURGE_PRICING.peakHourMultiplier,
+        highDemandMultiplier: Number.isFinite(Number(source.high_demand_multiplier))
+          ? Number(source.high_demand_multiplier)
+          : SURGE_PRICING.highDemandMultiplier,
+      };
+      remoteSurgeCache = { loadedAt: now, value: normalized };
+      return normalized;
+    }
+  } catch (error) {
+    console.warn("fare.remote_surge_load_failed", {
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+  remoteSurgeCache = { loadedAt: now, value: null };
+  return null;
+}
+
+async function resolvePricingConfig(
+  vehicleType: string,
+  client?: SupabaseClient,
+): Promise<PricingConfig | null> {
   const key = vehicleType.toLowerCase();
   const base = PRICING_CONFIG[key];
   if (!base) return null;
-  if (!PRICING_OVERRIDES || !PRICING_OVERRIDES[key]) {
-    return base;
-  }
+  const remote = await loadRemotePricing(client);
+  const merged = {
+    ...(PRICING_OVERRIDES ?? {}),
+    ...(remote ?? {}),
+  } as PricingOverrides;
+  const patch = merged[key];
+  if (!patch) return base;
   return {
     ...base,
-    ...PRICING_OVERRIDES[key],
+    ...patch,
   };
 }
 
@@ -143,11 +259,12 @@ export const SURGE_PRICING = {
 export async function calculateFareEstimate(
   pickup: Coordinates,
   dropoff: Coordinates | null,
-  vehicleType: string
+  vehicleType: string,
+  options: FareCalculationOptions = {},
 ): Promise<FareEstimate> {
   try {
     // Get pricing config for vehicle type
-    const config = resolvePricingConfig(vehicleType);
+    const config = await resolvePricingConfig(vehicleType, options.client);
     if (!config) {
       throw new Error(`Unknown vehicle type: ${vehicleType}`);
     }
@@ -172,7 +289,8 @@ export async function calculateFareEstimate(
     const timeFare = estimatedMinutes * config.perMinute;
 
     // Calculate surge pricing multiplier
-    const surgeMultiplier = calculateSurgeMultiplier();
+    const surgeConfig = await loadRemoteSurgeConfig(options.client) ?? SURGE_PRICING;
+    const surgeMultiplier = calculateSurgeMultiplier(surgeConfig);
     const surgePricing = (baseFare + distanceFare + timeFare) * (surgeMultiplier - 1);
 
     // Calculate subtotal
@@ -251,11 +369,12 @@ export async function calculateFareEstimate(
 export async function calculateActualFare(
   vehicleType: string,
   actualDistanceKm: number,
-  actualDurationMinutes: number
+  actualDurationMinutes: number,
+  options: FareCalculationOptions = {},
 ): Promise<FareEstimate> {
   try {
     // Get pricing config for vehicle type
-    const config = PRICING_CONFIG[vehicleType.toLowerCase()];
+    const config = await resolvePricingConfig(vehicleType, options.client);
     if (!config) {
       throw new Error(`Unknown vehicle type: ${vehicleType}`);
     }
@@ -266,7 +385,8 @@ export async function calculateActualFare(
     const timeFare = actualDurationMinutes * config.perMinute;
 
     // Calculate surge pricing (if applicable at time of trip)
-    const surgeMultiplier = calculateSurgeMultiplier();
+    const surgeConfig = await loadRemoteSurgeConfig(options.client) ?? SURGE_PRICING;
+    const surgeMultiplier = calculateSurgeMultiplier(surgeConfig);
     const surgePricing = (baseFare + distanceFare + timeFare) * (surgeMultiplier - 1);
 
     // Calculate subtotal
@@ -325,8 +445,8 @@ export async function calculateActualFare(
  * Calculates surge pricing multiplier based on current conditions
  * TODO: Implement dynamic surge based on real demand/supply data
  */
-export function calculateSurgeMultiplier(): number {
-  if (!SURGE_PRICING.enabled) {
+export function calculateSurgeMultiplier(config: SurgeConfig = SURGE_PRICING): number {
+  if (!config.enabled) {
     return 1.0;
   }
 
@@ -338,18 +458,18 @@ export function calculateSurgeMultiplier(): number {
 
   // Weekend surge
   if (day === 0 || day === 6) {
-    multiplier *= SURGE_PRICING.weekendMultiplier;
+    multiplier *= config.weekendMultiplier;
   }
 
   // Peak hour surge
-  if (SURGE_PRICING.peakHours.includes(hour)) {
-    multiplier *= SURGE_PRICING.peakHourMultiplier;
+  if ((config.peakHours ?? []).includes(hour)) {
+    multiplier *= config.peakHourMultiplier;
   }
 
   // TODO: Add high demand surge based on driver/passenger ratio
   // const demandRatio = await calculateDemandRatio();
   // if (demandRatio > 2.0) {
-  //   multiplier *= SURGE_PRICING.highDemandMultiplier;
+  //   multiplier *= config.highDemandMultiplier;
   // }
 
   return multiplier;

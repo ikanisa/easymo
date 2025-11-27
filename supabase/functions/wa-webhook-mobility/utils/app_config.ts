@@ -7,6 +7,8 @@ type AppConfigRow = {
   wa_bot_number_e164?: string | null;
   admin_numbers?: string[] | null;
   insurance_admin_numbers?: string[] | null;
+  mobility_pricing?: Record<string, unknown> | null;
+  surge_pricing?: Record<string, unknown> | null;
 };
 
 type ConfigCache = {

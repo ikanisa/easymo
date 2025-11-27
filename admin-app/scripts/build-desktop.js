@@ -18,7 +18,7 @@ process.env.NEXT_PUBLIC_IS_DESKTOP = 'true';
 try {
   // Run Next.js build with desktop config
   console.log('📦 Building Next.js app with static export...');
-  execSync('next build -c next.config.desktop.mjs', {
+  execSync('next build', {
     stdio: 'inherit',
     cwd: __dirname + '/..',
   });

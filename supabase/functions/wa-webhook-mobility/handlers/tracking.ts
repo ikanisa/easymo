@@ -5,7 +5,7 @@
 // ============================================================================
 
 import { logStructuredEvent } from "../../_shared/observability.ts";
-import type { SupabaseClient } from "../deps.ts";
+import type { RouterContext } from "../types.ts";
 import { resolveLanguage } from "../i18n/language.ts";
 import { t } from "../i18n/translator.ts";
 import { notifyPassenger } from "./trip_notifications.ts";
@@ -14,15 +14,7 @@ import { notifyPassenger } from "./trip_notifications.ts";
 // TYPES
 // ============================================================================
 
-export interface TrackingContext {
-  client: SupabaseClient;
-  sender: string;
-  profile: {
-    user_id: string;
-    phone_number: string;
-  };
-  locale: string;
-}
+export type TrackingContext = RouterContext;
 
 export interface Coordinates {
   latitude: number;
@@ -62,6 +54,13 @@ export async function updateDriverLocation(
   coords: Coordinates
 ): Promise<boolean> {
   try {
+    if (!ctx.profileId) {
+      await logStructuredEvent("LOCATION_UPDATE_FAILED", {
+        tripId,
+        reason: "missing_profile",
+      }, "error");
+      return false;
+    }
     // 1. Validate coordinates
     if (!isValidCoordinates(coords)) {
       await logStructuredEvent("LOCATION_UPDATE_FAILED", {
@@ -73,11 +72,11 @@ export async function updateDriverLocation(
     }
 
     // 2. Verify trip is in progress
-    const { data: trip, error: tripError } = await ctx.client
+    const { data: trip, error: tripError } = await ctx.supabase
       .from("mobility_matches")
       .select("*")
       .eq("id", tripId)
-      .eq("driver_id", ctx.profile.user_id)
+      .eq("driver_id", ctx.profileId)
       .in("status", ["accepted", "driver_arrived", "in_progress"])
       .single();
 
@@ -90,7 +89,7 @@ export async function updateDriverLocation(
     }
 
     // 3. Update driver location in driver_status
-    const { error: updateError } = await ctx.client
+    const { error: updateError } = await ctx.supabase
       .from("driver_status")
       .update({
         current_lat: coords.latitude,
@@ -98,7 +97,7 @@ export async function updateDriverLocation(
         last_seen_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       })
-      .eq("user_id", ctx.profile.user_id);
+      .eq("user_id", ctx.profileId);
 
     if (updateError) {
       await logStructuredEvent("LOCATION_UPDATE_FAILED", {
@@ -136,7 +135,7 @@ export async function updateDriverLocation(
       
       if (etaDifference > 5) { // Significant change (>5 minutes)
         // Update trip ETA
-        await ctx.client
+        await ctx.supabase
           .from("mobility_matches")
           .update({
             eta_minutes: eta.durationMinutes,
@@ -146,7 +145,7 @@ export async function updateDriverLocation(
           .eq("id", tripId);
 
         await notifyPassenger(
-          ctx.client,
+          ctx.supabase,
           trip.passenger_id,
           buildEtaMessage(ctx.locale, eta.durationMinutes),
         );
@@ -163,7 +162,7 @@ export async function updateDriverLocation(
     // 6. Record metrics
     await logStructuredEvent("LOCATION_UPDATED", {
       tripId,
-      driverId: ctx.profile.user_id,
+      driverId: ctx.profileId,
       location: coords,
     });
 
@@ -278,9 +277,16 @@ export async function startDriverTracking(
   tripId: string
 ): Promise<boolean> {
   try {
+    if (!ctx.profileId) {
+      await logStructuredEvent("TRACKING_START_ERROR", {
+        tripId,
+        reason: "missing_profile",
+      }, "error");
+      return false;
+    }
     await logStructuredEvent("TRACKING_STARTED", {
       tripId,
-      driverId: ctx.profile.user_id,
+      driverId: ctx.profileId,
     });
 
     // TODO: In production:
@@ -307,9 +313,16 @@ export async function stopDriverTracking(
   tripId: string
 ): Promise<boolean> {
   try {
+    if (!ctx.profileId) {
+      await logStructuredEvent("TRACKING_STOP_ERROR", {
+        tripId,
+        reason: "missing_profile",
+      }, "error");
+      return false;
+    }
     await logStructuredEvent("TRACKING_STOPPED", {
       tripId,
-      driverId: ctx.profile.user_id,
+      driverId: ctx.profileId,
     });
 
     // TODO: In production:
@@ -339,7 +352,7 @@ export async function getDriverLocation(
   driverId: string
 ): Promise<Coordinates | null> {
   try {
-    const { data, error } = await ctx.client
+    const { data, error } = await ctx.supabase
       .from("driver_status")
       .select("current_lat, current_lng")
       .eq("user_id", driverId)
@@ -376,7 +389,7 @@ export async function getTripProgress(
 } | null> {
   try {
     // Get trip details
-    const { data: trip, error: tripError } = await ctx.client
+    const { data: trip, error: tripError } = await ctx.supabase
       .from("mobility_matches")
       .select("*")
       .eq("id", tripId)

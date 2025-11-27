@@ -102,6 +102,25 @@ export async function sendButtons(
   });
 }
 
+export async function sendLocation(
+  to: string,
+  location: { latitude: number; longitude: number; name?: string; address?: string },
+): Promise<void> {
+  const latitude = Number(location.latitude);
+  const longitude = Number(location.longitude);
+  await post({
+    messaging_product: "whatsapp",
+    to,
+    type: "location",
+    location: {
+      latitude: Number.isFinite(latitude) ? Number(latitude.toFixed(6)) : latitude,
+      longitude: Number.isFinite(longitude) ? Number(longitude.toFixed(6)) : longitude,
+      ...(location.name ? { name: location.name.slice(0, 100) } : {}),
+      ...(location.address ? { address: location.address.slice(0, 300) } : {}),
+    },
+  });
+}
+
 export async function sendList(
   to: string,
   opts: {

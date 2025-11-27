@@ -42,6 +42,7 @@ import { buildSaveRows } from "../../locations/save.ts";
 
 const DEFAULT_WINDOW_DAYS = 30;
 const REQUIRED_RADIUS_METERS = 10_000;
+const MAX_RADIUS_METERS = 25_000;
 const DEFAULT_TIMEZONE = "Africa/Kigali";
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -951,9 +952,11 @@ async function promptScheduleVehicleSelection(
 
 export function kmToMeters(km: number | null | undefined): number {
   if (!km || Number.isNaN(km)) return REQUIRED_RADIUS_METERS;
+  const meters = Math.round(km * 1000);
+  if (!Number.isFinite(meters) || meters <= 0) return REQUIRED_RADIUS_METERS;
   return Math.min(
-    Math.max(Math.round(km * 1000), REQUIRED_RADIUS_METERS),
-    REQUIRED_RADIUS_METERS,
+    Math.max(meters, REQUIRED_RADIUS_METERS),
+    MAX_RADIUS_METERS,
   );
 }
 

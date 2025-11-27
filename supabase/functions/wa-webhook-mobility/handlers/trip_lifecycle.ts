@@ -6,29 +6,18 @@
 // ============================================================================
 
 import { logStructuredEvent } from "../../_shared/observability.ts";
-import type { SupabaseClient } from "../deps.ts";
+import type { RouterContext } from "../types.ts";
 import { resolveLanguage, type SupportedLanguage } from "../i18n/language.ts";
 import { t } from "../i18n/translator.ts";
 import { notifyDriver, notifyPassenger } from "./trip_notifications.ts";
-import {
-  startDriverTracking,
-  stopDriverTracking,
-  type TrackingContext,
-} from "./tracking.ts";
+import { startDriverTracking, stopDriverTracking } from "./tracking.ts";
+import { calculateActualFare } from "./fare.ts";
 
 // ============================================================================
 // TYPES
 // ============================================================================
 
-export interface TripLifecycleContext {
-  client: SupabaseClient;
-  sender: string;
-  profile: {
-    user_id: string;
-    phone_number: string;
-  };
-  locale: string;
-}
+export type TripLifecycleContext = RouterContext;
 
 export interface TripStatusUpdate {
   tripId: string;
@@ -65,10 +54,12 @@ export async function handleTripStart(
   tripId: string
 ): Promise<boolean> {
   try {
-    await logStructuredEvent("TRIP_START_INITIATED", { tripId, userId: ctx.profile.user_id });
+    const userId = requireProfileId(ctx, "trip_start");
+    if (!userId) return false;
+    await logStructuredEvent("TRIP_START_INITIATED", { tripId, userId });
 
     // 1. Verify trip exists and is in accepted state
-    const { data: trip, error: tripError } = await ctx.client
+    const { data: trip, error: tripError } = await ctx.supabase
       .from("mobility_matches")
       .select("*")
       .eq("id", tripId)
@@ -85,7 +76,7 @@ export async function handleTripStart(
     }
 
     // 2. Verify user is the driver
-    if (trip.driver_id !== ctx.profile.user_id) {
+    if (trip.driver_id !== userId) {
       await logStructuredEvent("TRIP_START_FAILED", { 
         tripId, 
         reason: "unauthorized_user" 
@@ -94,7 +85,7 @@ export async function handleTripStart(
     }
 
     // 3. Update trip status to in_progress
-    const { error: updateError } = await ctx.client
+    const { error: updateError } = await ctx.supabase
       .from("mobility_matches")
       .update({
         status: "in_progress",
@@ -121,7 +112,7 @@ export async function handleTripStart(
     );
 
     // 5. Start tracking
-    await startDriverTracking(asTrackingContext(ctx), tripId);
+    await startDriverTracking(ctx, tripId);
 
     // 6. Record metrics
     await logStructuredEvent("TRIP_STARTED", { 
@@ -156,17 +147,19 @@ export async function handleTripArrivedAtPickup(
   tripId: string
 ): Promise<boolean> {
   try {
+    const userId = requireProfileId(ctx, "trip_arrived");
+    if (!userId) return false;
     await logStructuredEvent("DRIVER_ARRIVAL_INITIATED", { tripId });
 
     // 1. Update trip status
-    const { data: trip, error: updateError } = await ctx.client
+    const { data: trip, error: updateError } = await ctx.supabase
       .from("mobility_matches")
       .update({
         status: "driver_arrived",
         updated_at: new Date().toISOString(),
       })
       .eq("id", tripId)
-      .eq("driver_id", ctx.profile.user_id)
+      .eq("driver_id", userId)
       .eq("status", "accepted")
       .select()
       .single();
@@ -219,10 +212,12 @@ export async function handleTripPickedUp(
   tripId: string
 ): Promise<boolean> {
   try {
+    const userId = requireProfileId(ctx, "trip_picked_up");
+    if (!userId) return false;
     await logStructuredEvent("TRIP_PICKUP_INITIATED", { tripId });
 
     // 1. Update trip status
-    const { data: trip, error: updateError } = await ctx.client
+    const { data: trip, error: updateError } = await ctx.supabase
       .from("mobility_matches")
       .update({
         status: "in_progress",
@@ -230,7 +225,7 @@ export async function handleTripPickedUp(
         updated_at: new Date().toISOString(),
       })
       .eq("id", tripId)
-      .eq("driver_id", ctx.profile.user_id)
+      .eq("driver_id", userId)
       .eq("status", "driver_arrived")
       .select()
       .single();
@@ -285,10 +280,12 @@ export async function handleTripComplete(
   tripId: string
 ): Promise<boolean> {
   try {
+    const userId = requireProfileId(ctx, "trip_complete");
+    if (!userId) return false;
     await logStructuredEvent("TRIP_COMPLETION_INITIATED", { tripId });
 
     // 1. Get trip details
-    const { data: trip, error: tripError } = await ctx.client
+    const { data: trip, error: tripError } = await ctx.supabase
       .from("mobility_matches")
       .select("*")
       .eq("id", tripId)
@@ -304,7 +301,7 @@ export async function handleTripComplete(
     }
 
     // 2. Verify user is the driver
-    if (trip.driver_id !== ctx.profile.user_id) {
+    if (trip.driver_id !== userId) {
       await logStructuredEvent("TRIP_COMPLETION_FAILED", { 
         tripId, 
         reason: "unauthorized_user" 
@@ -319,14 +316,36 @@ export async function handleTripComplete(
 
     // 4. Calculate final fare (if not already set)
     let finalFare = trip.actual_fare;
+    let fareStrategy = "existing_actual";
     if (!finalFare) {
-      finalFare = trip.fare_estimate; // Use estimate if no actual fare
-      // TODO: Implement dynamic fare calculation based on actual distance/time
-      // finalFare = await calculateActualFare(trip, durationMinutes);
+      const distance = typeof trip.distance_km === "number"
+        ? trip.distance_km
+        : Number(trip.distance_km ?? 0);
+      if (
+        trip.vehicle_type && Number.isFinite(distance) && distance > 0
+      ) {
+        try {
+          const actual = await calculateActualFare(
+            trip.vehicle_type,
+            distance,
+            durationMinutes,
+            { client: ctx.supabase },
+          );
+          finalFare = actual.totalFare;
+          fareStrategy = "recalculated";
+        } catch (error) {
+          console.warn("trip.fare_actual_fail", error);
+          finalFare = trip.fare_estimate;
+          fareStrategy = "estimate_fallback";
+        }
+      } else {
+        finalFare = trip.fare_estimate;
+        fareStrategy = "estimate_fallback";
+      }
     }
 
     // 5. Update trip status
-    const { error: updateError } = await ctx.client
+    const { error: updateError } = await ctx.supabase
       .from("mobility_matches")
       .update({
         status: "completed",
@@ -362,6 +381,20 @@ export async function handleTripComplete(
       fareParams,
     );
 
+    await notifyTripPassenger(
+      ctx,
+      trip.passenger_id,
+      "trip.notifications.rate_driver",
+      "🙏 Please rate your driver so we can keep rides safe and pleasant.",
+    );
+
+    await notifyTripDriver(
+      ctx,
+      trip.driver_id,
+      "trip.notifications.completed_driver",
+      "✅ Trip logged. Remember to confirm payment and rate your passenger.",
+    );
+
     // 6. Initiate payment
     // TODO: Integrate with payment system
     // await initiateTripPayment(ctx, tripId, finalFare);
@@ -378,7 +411,8 @@ export async function handleTripComplete(
       passengerId: trip.passenger_id,
       durationMinutes,
       finalFare,
-      vehicleType: trip.vehicle_type 
+      vehicleType: trip.vehicle_type,
+      fareStrategy,
     });
 
     // TODO: Record metrics
@@ -386,7 +420,7 @@ export async function handleTripComplete(
     // await recordMetric("TRIP_DURATION_SECONDS", durationMinutes * 60, { vehicleType: trip.vehicle_type });
     // await recordMetric("TRIP_FARE_RWF", finalFare, { vehicleType: trip.vehicle_type });
 
-    await stopDriverTracking(asTrackingContext(ctx), tripId);
+    await stopDriverTracking(ctx, tripId);
 
     return true;
   } catch (error) {
@@ -413,17 +447,19 @@ export async function handleTripCancel(
   ctx: TripLifecycleContext,
   tripId: string,
   reason: string,
-  cancelledBy: "driver" | "passenger"
+  cancelledBy?: "driver" | "passenger"
 ): Promise<boolean> {
   try {
+    const userId = requireProfileId(ctx, "trip_cancel");
+    if (!userId) return false;
     await logStructuredEvent("TRIP_CANCELLATION_INITIATED", { 
       tripId, 
-      cancelledBy, 
+      cancelledBy: cancelledBy ?? "unknown", 
       reason 
     });
 
     // 1. Get trip details
-    const { data: trip, error: tripError } = await ctx.client
+    const { data: trip, error: tripError } = await ctx.supabase
       .from("mobility_matches")
       .select("*")
       .eq("id", tripId)
@@ -438,8 +474,8 @@ export async function handleTripCancel(
     }
 
     // 2. Verify user is authorized to cancel
-    const isDriver = trip.driver_id === ctx.profile.user_id;
-    const isPassenger = trip.passenger_id === ctx.profile.user_id;
+    const isDriver = trip.driver_id === userId;
+    const isPassenger = trip.passenger_id === userId;
     
     if (!isDriver && !isPassenger) {
       await logStructuredEvent("TRIP_CANCELLATION_FAILED", { 
@@ -455,14 +491,10 @@ export async function handleTripCancel(
       : "cancelled_by_passenger";
 
     // 4. Calculate cancellation fee (if trip already started)
-    let cancellationFee = 0;
-    if (trip.status === "in_progress") {
-      // TODO: Implement cancellation fee logic
-      // cancellationFee = await calculateCancellationFee(trip);
-    }
+    const cancellationFee = determineCancellationFee(trip, isPassenger);
 
     // 5. Update trip status
-    const { error: updateError } = await ctx.client
+    const { error: updateError } = await ctx.supabase
       .from("mobility_matches")
       .update({
         status: cancellationStatus,
@@ -480,22 +512,39 @@ export async function handleTripCancel(
       return false;
     }
 
+    if (trip.status === "in_progress" && isDriver) {
+      await stopDriverTracking(ctx, tripId);
+    }
+
     // 6. Notify other party
     const otherPartyId = isDriver ? trip.passenger_id : trip.driver_id;
     const notificationKey = isDriver
       ? "trip.notifications.cancelled_by_driver"
       : "trip.notifications.cancelled_by_passenger";
+    const feeSuffix = cancellationFee > 0
+      ? ` Cancellation fee: ${cancellationFee} ${trip.currency ?? "RWF"}.`
+      : "";
     const fallback = isDriver
       ? `🚫 Your driver cancelled this trip.${reason ? ` Reason: ${reason}.` : ""}`
-      : `🚫 The passenger cancelled this trip.${reason ? ` Reason: ${reason}.` : ""}`;
+      : `🚫 The passenger cancelled this trip.${reason ? ` Reason: ${reason}.` : ""}${feeSuffix}`;
     if (isDriver) {
       await notifyTripPassenger(ctx, otherPartyId, notificationKey, fallback, {
         reason,
       });
     } else {
-      await notifyTripDriver(ctx, otherPartyId, notificationKey, fallback, {
-        reason,
-      });
+      const driverParams: Record<string, string> = { reason: reason ?? "" };
+      if (cancellationFee) driverParams.fee = String(cancellationFee);
+      await notifyTripDriver(ctx, otherPartyId, notificationKey, fallback, driverParams);
+    }
+
+    if (cancellationFee > 0 && isPassenger) {
+      await notifyTripPassenger(
+        ctx,
+        trip.passenger_id,
+        "trip.notifications.cancellation_fee",
+        `💰 A cancellation fee of ${cancellationFee} ${trip.currency ?? "RWF"} applies because your driver was already on the way.`,
+        { fee: String(cancellationFee), currency: trip.currency ?? "RWF" },
+      );
     }
 
     // 7. Record metrics
@@ -535,6 +584,8 @@ export async function handleTripRating(
   comment?: string
 ): Promise<boolean> {
   try {
+    const userId = requireProfileId(ctx, "trip_rating");
+    if (!userId) return false;
     await logStructuredEvent("TRIP_RATING_INITIATED", { tripId, rating });
 
     // 1. Validate rating
@@ -548,7 +599,7 @@ export async function handleTripRating(
     }
 
     // 2. Get trip details
-    const { data: trip, error: tripError } = await ctx.client
+    const { data: trip, error: tripError } = await ctx.supabase
       .from("mobility_matches")
       .select("*")
       .eq("id", tripId)
@@ -564,15 +615,15 @@ export async function handleTripRating(
     }
 
     // 3. Determine who is being rated
-    const isDriver = trip.driver_id === ctx.profile.user_id;
+    const isDriver = trip.driver_id === userId;
     const ratedUserId = isDriver ? trip.passenger_id : trip.driver_id;
 
     // 4. Insert rating
-    const { error: insertError } = await ctx.client
+    const { error: insertError } = await ctx.supabase
       .from("trip_ratings")
       .insert({
         trip_id: tripId,
-        rater_id: ctx.profile.user_id,
+        rater_id: userId,
         rated_id: ratedUserId,
         rating,
         comment: comment || null,
@@ -597,7 +648,7 @@ export async function handleTripRating(
     // 5. Record metrics
     await logStructuredEvent("TRIP_RATED", { 
       tripId, 
-      raterId: ctx.profile.user_id,
+      raterId: userId,
       ratedId: ratedUserId,
       rating,
       hasComment: !!comment 
@@ -638,7 +689,7 @@ export async function getTripStatus(
   tripId: string
 ): Promise<{ status: TripStatus; trip: any } | null> {
   try {
-    const { data: trip, error } = await ctx.client
+    const { data: trip, error } = await ctx.supabase
       .from("mobility_matches")
       .select("*")
       .eq("id", tripId)
@@ -686,15 +737,26 @@ export function canPerformAction(
   }
 }
 
-function asTrackingContext(
+function requireProfileId(
   ctx: TripLifecycleContext,
-): TrackingContext {
-  return {
-    client: ctx.client,
-    sender: ctx.sender,
-    profile: ctx.profile,
-    locale: ctx.locale,
-  };
+  action: string,
+): string | null {
+  if (ctx.profileId) return ctx.profileId;
+  logStructuredEvent("TRIP_ACTION_MISSING_PROFILE", { action }, "warn");
+  return null;
+}
+
+function determineCancellationFee(
+  trip: any,
+  cancelledByPassenger: boolean,
+): number {
+  if (!cancelledByPassenger) return 0;
+  const estimate = Number(trip?.fare_estimate ?? 0);
+  if (!Number.isFinite(estimate) || estimate <= 0) return 0;
+  if (trip.status !== "driver_arrived" && trip.status !== "in_progress") {
+    return 0;
+  }
+  return Math.max(500, Math.round(estimate * 0.2));
 }
 
 function translateTripMessage(
@@ -716,7 +778,7 @@ async function notifyTripPassenger(
   params: Record<string, string> = {},
 ): Promise<void> {
   const message = translateTripMessage(ctx.locale, key, fallback, params);
-  await notifyPassenger(ctx.client, passengerId, message);
+  await notifyPassenger(ctx.supabase, passengerId, message);
 }
 
 async function notifyTripDriver(
@@ -727,7 +789,7 @@ async function notifyTripDriver(
   params: Record<string, string> = {},
 ): Promise<void> {
   const message = translateTripMessage(ctx.locale, key, fallback, params);
-  await notifyDriver(ctx.client, driverId, message);
+  await notifyDriver(ctx.supabase, driverId, message);
 }
 
 // ============================================================================
