@@ -100,32 +100,14 @@ export async function routeIncomingPayload(payload: WhatsAppWebhookPayload): Pro
   const routingText = routingMessage ? getRoutingText(routingMessage) : null;
   const phoneNumber = routingMessage?.from ?? null;
 
-  // Check if unified agent system is enabled (consolidation from routing_logic.ts)
-  const unifiedSystemEnabled = await (async () => {
-    try {
-      const { isFeatureEnabled } = await import("../_shared/feature-flags.ts");
-      return isFeatureEnabled("agent.unified_system");
-    } catch {
-      return false; // Graceful degradation if feature flags unavailable
-    }
-  })();
-
-  if (unifiedSystemEnabled) {
-    console.log(JSON.stringify({
-      event: "ROUTE_TO_UNIFIED_AGENT_SYSTEM",
-      message: routingText?.substring(0, 50) ?? null,
-      target: "wa-webhook-ai-agents",
-    }));
-    return {
-      service: "wa-webhook-ai-agents",
-      reason: "keyword",
-      routingText,
-    };
-  }
-
   if (routingText) {
     const normalized = routingText.trim().toLowerCase();
-    if (normalized === "menu" || normalized === "home" || normalized === "exit") {
+    
+    // Always show home menu for generic greetings and menu keywords
+    // This ensures users get the home menu regardless of other settings
+    const isGreeting = /^(hi|hello|hey|hola|bonjour|menu|home|exit|start|help|\?)$/i.test(normalized);
+    
+    if (isGreeting || normalized === "menu" || normalized === "home" || normalized === "exit") {
       if (phoneNumber) {
         await clearActiveService(supabase, phoneNumber);
       }
@@ -147,6 +129,16 @@ export async function routeIncomingPayload(payload: WhatsAppWebhookPayload): Pro
     }
   }
 
+  // Check if unified agent system is enabled (but only for non-greeting text)
+  const unifiedSystemEnabled = await (async () => {
+    try {
+      const { isFeatureEnabled } = await import("../_shared/feature-flags.ts");
+      return isFeatureEnabled("agent.unified_system");
+    } catch {
+      return false; // Graceful degradation if feature flags unavailable
+    }
+  })();
+
   if (phoneNumber) {
     const session = await getSessionByPhone(supabase, phoneNumber);
     if (session?.active_service && ROUTED_SERVICES.includes(session.active_service)) {
@@ -158,6 +150,21 @@ export async function routeIncomingPayload(payload: WhatsAppWebhookPayload): Pro
     }
   }
 
+  // If unified system enabled, route to AI agents (but greetings were already handled above)
+  if (unifiedSystemEnabled) {
+    console.log(JSON.stringify({
+      event: "ROUTE_TO_UNIFIED_AGENT_SYSTEM",
+      message: routingText?.substring(0, 50) ?? null,
+      target: "wa-webhook-ai-agents",
+    }));
+    return {
+      service: "wa-webhook-ai-agents",
+      reason: "keyword",
+      routingText,
+    };
+  }
+
+  // Default: show home menu for any unrecognized text
   return {
     service: "wa-webhook-core",
     reason: "home_menu",
