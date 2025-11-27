@@ -18,3 +18,11 @@ export {
   handleAIAgentOptionSelection,
   handleAIPropertyRental,
 } from "./handlers.ts";
+
+export {
+  handleSupportAgent,
+  handleSupportAgentMessage,
+  handleSupportAgentButton,
+  startCustomerSupportChat,
+  escalateToHumanSupport,
+} from "./support_agent.ts";

@@ -11,7 +11,7 @@ import { GeminiProvider } from '../core/providers/gemini.ts';
 import { logStructuredEvent } from '../../_shared/observability.ts';
 
 export class SupportAgent extends BaseAgent {
-  type = 'support';
+  type = 'support_agent';
   name = '🆘 Support AI';
   description = 'General help and customer support';
 

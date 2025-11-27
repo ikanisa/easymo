@@ -7,6 +7,7 @@ import { LatencyTracker } from "./telemetry.ts";
 import { checkRateLimit, cleanupRateLimitState } from "../_shared/service-resilience.ts";
 import { maskPhone } from "../_shared/phone-utils.ts";
 import { logError } from "../_shared/correlation-logging.ts";
+import { storeDLQEntry } from "../_shared/dlq-manager.ts";
 
 const coldStartMarker = performance.now();
 
@@ -194,6 +195,37 @@ serve(async (req: Request): Promise<Response> => {
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     logError("WA_WEBHOOK_CORE_ERROR", { correlationId, message }, { correlationId });
+    
+    // Store failed message in DLQ for retry
+    try {
+      const rawBody = await req.clone().text();
+      const payload = JSON.parse(rawBody);
+      const phoneNumber = extractPhoneFromPayload(payload);
+      
+      if (phoneNumber) {
+        await storeDLQEntry(supabase, {
+          phone_number: phoneNumber,
+          service: "wa-webhook-core",
+          correlation_id: correlationId,
+          request_id: requestId,
+          payload: payload,
+          error_message: message,
+          error_type: err instanceof Error ? err.constructor.name : "UnknownError",
+          status_code: 500,
+          retry_count: 0,
+        });
+        
+        log("CORE_MESSAGE_QUEUED_FOR_RETRY", {
+          phone: maskPhone(phoneNumber),
+        }, "info");
+      }
+    } catch (dlqError) {
+      logError("CORE_DLQ_STORE_FAILED", {
+        correlationId,
+        dlqError: dlqError instanceof Error ? dlqError.message : String(dlqError),
+      }, { correlationId });
+    }
+    
     return finalize(new Response(JSON.stringify({ error: "internal_error" }), { status: 500, headers: { "Content-Type": "application/json" } }));
   }
 });

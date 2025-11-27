@@ -1,5 +1,5 @@
 export const IDS = {
-  // Home menu - 8 AI Agents
+  // Home menu - 9 AI Agents + Profile
   WAITER_AGENT: "waiter_agent",
   RIDES_AGENT: "rides_agent",
   JOBS_AGENT: "jobs_agent",
@@ -8,6 +8,7 @@ export const IDS = {
   FARMER_AGENT: "farmer_agent",
   INSURANCE_AGENT: "insurance_agent",
   SALES_AGENT: "sales_agent",
+  SUPPORT_AGENT: "support_agent",
   // Legacy IDs (backward compatibility)
   RIDES_MENU: "rides_menu",
   JOB_BOARD: "job_board",

@@ -132,7 +132,24 @@ export async function handleWalletTransferText(
   body: string,
   state: TransferState,
 ): Promise<boolean> {
-  if (!ctx.profileId || state.key !== "wallet_transfer") return false;
+  console.log(JSON.stringify({
+    event: "WALLET_TRANSFER_TEXT_HANDLER_CALLED",
+    body_length: body.length,
+    body_preview: body.substring(0, 50),
+    state_key: state.key,
+    stage: state.data?.stage,
+    sender: ctx.profileId
+  }));
+  
+  if (!ctx.profileId || state.key !== "wallet_transfer") {
+    console.warn(JSON.stringify({
+      event: "WALLET_TRANSFER_TEXT_HANDLER_SKIPPED",
+      reason: !ctx.profileId ? "no_profile_id" : "wrong_state_key",
+      state_key: state.key,
+      expected_key: "wallet_transfer"
+    }));
+    return false;
+  }
   const data = state.data || { stage: "recipient" };
   if (data.stage === "choose") {
     // If the user typed instead of selecting, treat as manual
@@ -173,8 +190,22 @@ export async function handleWalletTransferText(
     return true;
   }
   if (data.stage === "amount") {
+    console.log(JSON.stringify({
+      event: "WALLET_TRANSFER_AMOUNT_INPUT",
+      raw_body: body,
+      sender: ctx.profileId,
+      recipient: data.to,
+      state_data: data
+    }));
+    
     const amount = parseInt(body.replace(/[^0-9]/g, ""), 10);
     if (!Number.isFinite(amount) || amount <= 0) {
+      console.warn(JSON.stringify({
+        event: "WALLET_TRANSFER_INVALID_AMOUNT",
+        raw_body: body,
+        parsed_amount: amount,
+        sender: ctx.profileId
+      }));
       await sendButtonsMessage(
         ctx,
         "Enter a positive number of tokens.",
@@ -319,11 +350,22 @@ export async function handleWalletTransferText(
           idempotency_key: idempotencyKey
         }));
         
+        console.log(JSON.stringify({
+          event: "WALLET_TRANSFER_SENDING_SUCCESS_MESSAGE",
+          to: ctx.from,
+          message: `✅ Sent ${amount} tokens to ${data.to}.`
+        }));
+        
         await sendButtonsMessage(
           ctx,
           `✅ Sent ${amount} tokens to ${data.to}.`,
           [{ id: IDS.WALLET, title: "💎 Wallet" }],
         );
+        
+        console.log(JSON.stringify({
+          event: "WALLET_TRANSFER_SUCCESS_MESSAGE_SENT",
+          to: ctx.from
+        }));
         
         // Fetch sender's name for notification
         const { data: senderProfile } = await ctx.supabase
@@ -333,8 +375,21 @@ export async function handleWalletTransferText(
           .single();
         const senderName = senderProfile?.display_name || "A friend";
         
+        console.log(JSON.stringify({
+          event: "WALLET_TRANSFER_SENDING_NOTIFICATION",
+          recipient: recipient.user_id,
+          amount,
+          senderName
+        }));
+        
         // Send notification to recipient
         notifyWalletTransferRecipient(ctx.supabase, recipient.user_id, amount, senderName)
+          .then(() => {
+            console.log(JSON.stringify({
+              event: "WALLET_TRANSFER_NOTIFICATION_SENT",
+              recipient: recipient.user_id
+            }));
+          })
           .catch((err) => {
             console.error(JSON.stringify({
               event: "WALLET_TRANSFER_NOTIFICATION_FAILED",

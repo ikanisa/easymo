@@ -19,6 +19,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { UnifiedOrchestrator } from "./core/orchestrator.ts";
 import { verifyWebhookSignature } from "../_shared/webhook-utils.ts";
 import { logStructuredEvent } from "../_shared/observability.ts";
+import { storeDLQEntry } from "../_shared/dlq-manager.ts";
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL") ?? "",
@@ -167,16 +168,51 @@ serve(async (req: Request): Promise<Response> => {
       messageProcessed: true,
     });
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    
     await logStructuredEvent("UNIFIED_HANDLER_ERROR", {
       correlationId,
-      error: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined,
+      error: errorMessage,
+      stack: errorStack,
     }, "error");
+    
+    // Store failed message in DLQ for retry
+    try {
+      const rawBody = await req.clone().text();
+      const payload = JSON.parse(rawBody);
+      const message = extractWhatsAppMessage(payload);
+      
+      if (message) {
+        await storeDLQEntry(supabase, {
+          phone_number: message.from,
+          service: "wa-webhook-unified",
+          correlation_id: correlationId,
+          request_id: requestId,
+          payload: payload,
+          error_message: errorMessage,
+          error_type: error instanceof Error ? error.constructor.name : "UnknownError",
+          status_code: 500,
+          retry_count: 0,
+        });
+        
+        await logStructuredEvent("UNIFIED_MESSAGE_QUEUED_FOR_RETRY", {
+          correlationId,
+          phone: maskPhone(message.from),
+        }, "info");
+      }
+    } catch (dlqError) {
+      // DLQ failed - log but don't fail the request
+      await logStructuredEvent("UNIFIED_DLQ_STORE_FAILED", {
+        correlationId,
+        dlqError: dlqError instanceof Error ? dlqError.message : String(dlqError),
+      }, "error");
+    }
     
     return respond({ 
       error: "internal_error", 
       service: "wa-webhook-unified",
-      details: error instanceof Error ? error.message : String(error),
+      details: errorMessage,
     }, { status: 500 });
   }
 });

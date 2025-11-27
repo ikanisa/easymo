@@ -77,11 +77,13 @@ export const ROUTE_CONFIGS: RouteConfig[] = [
     menuKeys: [
       "ai_agents", 
       "farmer_agent",    // Farmers Market
-      "sales_agent",     // Help Center
+      "sales_agent",     // Sales SDR
+      "support_agent",   // Customer Support
       "waiter_agent",    // Bar & Restaurants
       "waiter", 
       "support", 
       "customer_support", 
+      "help",
       "farmers", 
       "7"
     ],

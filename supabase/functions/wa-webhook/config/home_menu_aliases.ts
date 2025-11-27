@@ -81,8 +81,13 @@ export const HOME_MENU_KEY_ALIASES: Record<string, string> = {
   // SALES SDR AI AGENT ALIASES
   // ========================================
   'sales_ai': 'sales_agent',
-  'customer_support': 'sales_agent',
-  'support': 'sales_agent',
+  
+  // ========================================
+  // SUPPORT AI AGENT ALIASES
+  // ========================================
+  'customer_support': 'support_agent',
+  'support': 'support_agent',
+  'help': 'support_agent',
 };
 
 /**
@@ -100,7 +105,7 @@ export function isLegacyMenuKey(key: string): boolean {
 }
 
 /**
- * The 9 canonical menu keys (in display order)
+ * The 10 canonical menu keys (in display order)
  */
 export const CANONICAL_MENU_KEYS = [
   'waiter_agent',
@@ -111,6 +116,7 @@ export const CANONICAL_MENU_KEYS = [
   'farmer_agent',
   'insurance_agent',
   'sales_agent',
+  'support_agent',
   'profile',
 ] as const;
 
