@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { findLeads } from '../services/gemini';
+import { findLeads } from '@easymo/ai';
 import ReactMarkdown from 'react-markdown';
 
 interface Props {

@@ -73,3 +73,15 @@ export type {
   AgentConfiguration,
   AgentInteractionMetrics,
 } from './core/interfaces';
+
+// Gemini Live API exports
+export {
+  connectLiveSession,
+  disconnectLiveSession,
+  findLeads,
+  searchLocalBusinesses,
+  chatWithStrategist,
+  chatFast,
+  transcribeAudioFile,
+  type LiveSessionCallbacks,
+} from './providers-gemini-live';

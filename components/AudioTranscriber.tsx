@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { transcribeAudioFile } from '../services/gemini';
+import { transcribeAudioFile } from '@easymo/ai';
 
 interface Props {
   onNotify: (msg: string, type: 'success' | 'info' | 'warning') => void;

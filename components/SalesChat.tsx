@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { chatWithStrategist, chatFast, transcribeAudioFile } from '../services/gemini';
+import { chatWithStrategist, chatFast, transcribeAudioFile } from '@easymo/ai';
 import { arrayBufferToBase64 } from '../services/audioUtils';
 import ReactMarkdown from 'react-markdown';
 

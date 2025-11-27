@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { connectLiveSession, disconnectLiveSession } from '../services/gemini';
+import { connectLiveSession, disconnectLiveSession } from '@easymo/ai';
 
 interface Props {
   onNotify: (msg: string, type: 'success' | 'info' | 'warning') => void;

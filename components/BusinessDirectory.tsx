@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Business } from '../types';
-import { searchLocalBusinesses } from '../services/gemini';
+import { searchLocalBusinesses } from '@easymo/ai';
 
 interface Props {
   onNotify: (msg: string, type: 'success' | 'info' | 'warning') => void;
