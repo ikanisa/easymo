@@ -3,6 +3,7 @@ import { getWabaCredentials, getSupabaseServiceConfig } from "../_shared/env.ts"
 import type { WhatsAppWebhookPayload } from "../_shared/wa-webhook-shared/types.ts";
 import { getRoutingText } from "../_shared/wa-webhook-shared/utils/messages.ts";
 import { routeMessage } from "../wa-webhook-core/routing_logic.ts";
+import { verifyWebhookSignature } from "../_shared/webhook-utils.ts";
 
 /**
  * ⚠️ DEPRECATION NOTICE ⚠️
@@ -80,6 +81,25 @@ async function fallbackRoute(req: Request): Promise<Response> {
 
 serve(async (req: Request): Promise<Response> => {
   const url = new URL(req.url);
+
+  // Verify webhook signature for POST requests (unless internal forward)
+  if (req.method === "POST" && req.headers.get("x-wa-internal-forward") !== "true") {
+    const signature = req.headers.get("x-hub-signature-256") || req.headers.get("x-hub-signature");
+    const appSecret = Deno.env.get("WHATSAPP_APP_SECRET");
+    
+    if (signature && appSecret) {
+      const rawBody = await req.clone().text();
+      const isValid = await verifyWebhookSignature(rawBody, signature, appSecret);
+      
+      if (!isValid) {
+        console.error(JSON.stringify({ event: "WA_WEBHOOK_INVALID_SIGNATURE" }));
+        return new Response(JSON.stringify({ error: "invalid_signature" }), {
+          status: 401,
+          headers: { "Content-Type": "application/json" }
+        });
+      }
+    }
+  }
 
   // Always attempt to forward to core first
   // Health and verification requests are handled by core as well
