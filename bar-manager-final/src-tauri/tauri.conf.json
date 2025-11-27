@@ -1,0 +1,84 @@
+{
+  "$schema": "../../node_modules/@tauri-apps/cli/config.schema.json",
+  "productName": "EasyMO Admin",
+  "version": "1.0.0",
+  "identifier": "dev.easymo.admin",
+  "build": {
+    "frontendDist": "out",
+    "devUrl": "http://localhost:3000",
+    "beforeDevCommand": "pnpm dev",
+    "beforeBuildCommand": "npm run build:desktop"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "EasyMO Admin - Operations Hub",
+        "width": 1400,
+        "height": 900,
+        "minWidth": 1024,
+        "minHeight": 768,
+        "decorations": true,
+        "transparent": false,
+        "fullscreen": false,
+        "resizable": true,
+        "center": true,
+        "visible": true
+      }
+    ],
+    "security": {
+      "csp": {
+        "default-src": "'self'",
+        "connect-src": "'self' https://*.supabase.co wss://*.supabase.co https://sentry.io",
+        "script-src": "'self' 'unsafe-inline' 'unsafe-eval'",
+        "style-src": "'self' 'unsafe-inline'",
+        "img-src": "'self' data: https://*.supabase.co blob:",
+        "font-src": "'self' data:"
+      }
+    },
+    "withGlobalTauri": true,
+    "trayIcon": {
+      "iconPath": "icons/icon.png",
+      "iconAsTemplate": true,
+      "menuOnLeftClick": false
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "publisher": "EasyMO Platform",
+    "copyright": "Copyright © 2025 EasyMO",
+    "shortDescription": "Operational control centre for EasyMO mobility platform",
+    "longDescription": "EasyMO Admin is a powerful desktop application for managing the EasyMO mobility and marketplace platform. Features include real-time analytics, WhatsApp integration, user management, and comprehensive operational controls.",
+    "fileAssociations": [
+      {
+        "ext": ["easymo"],
+        "name": "EasyMO Data File",
+        "description": "EasyMO application data file",
+        "role": "Editor",
+        "mimeType": "application/x-easymo"
+      }
+    ],
+    "macOS": {
+      "minimumSystemVersion": "10.15"
+    },
+    "windows": {
+      "webviewInstallMode": {
+        "type": "downloadBootstrapper"
+      }
+    },
+    "linux": {}
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "",
+      "endpoints": ["https://releases.easymo.dev/desktop/{{target}}/{{current_version}}"]
+    }
+  }
+}

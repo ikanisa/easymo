@@ -1,0 +1,52 @@
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  background: rgba(148, 163, 184, 0.12);
+  font-size: 0.8rem;
+  line-height: 1.3;
+  color: #0f172a;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+}
+
+.dot_green {
+  background: #16a34a;
+}
+
+.dot_amber {
+  background: #f97316;
+}
+
+.dot_red {
+  background: #dc2626;
+}
+
+.dot_unknown {
+  background: #94a3b8;
+}
+
+.label {
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.state {
+  font-weight: 500;
+}
+
+@media (max-width: 600px) {
+  .chip {
+    font-size: 0.75rem;
+    gap: 6px;
+    padding: 5px 10px;
+  }
+}

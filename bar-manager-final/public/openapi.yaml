@@ -1,0 +1,421 @@
+openapi: 3.0.3
+info:
+  title: Broker AI API
+  version: 1.0.0
+servers:
+  - url: https://admin.easymo.dev
+    description: Netlify proxy with path prefixes
+paths:
+  /api/buyer/intents:
+    post:
+      summary: Create intent (alias to /buyers/{id}/intents)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                tenantId: { type: string }
+                buyerId: { type: string }
+                channel: { type: string }
+                payload: { type: object }
+                expiresAt: { type: string }
+      responses:
+        '201': { description: Created }
+  /api/buyer/purchases/{id}/confirm:
+    post:
+      summary: Vendor or buyer confirms purchase
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                actor: { type: string, enum: [VENDOR, BUYER] }
+                amount: { type: number }
+                currency: { type: string }
+      responses:
+        '200': { description: OK }
+  /api/vendor/vendors/{id}/quotes:
+    post:
+      summary: Vendor issues quote for intent
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                tenantId: { type: string }
+                intentId: { type: string }
+                price: { type: number }
+                currency: { type: string }
+                etaMinutes: { type: integer }
+      responses:
+        '201': { description: Created }
+  /api/ranking/ranking/vendors:
+    get:
+      summary: Ranked vendor recommendations
+      parameters:
+        - in: query
+          name: tenantId
+          required: true
+          schema: { type: string }
+        - in: query
+          name: categories
+          schema: { type: string, description: 'comma-separated' }
+        - in: query
+          name: region
+          schema: { type: string }
+      responses:
+        '200': { description: OK }
+  /api/wallet/wallet/transfer:
+    post:
+      summary: Post double-entry transfer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                tenantId: { type: string }
+                sourceAccountId: { type: string }
+                destinationAccountId: { type: string }
+                amount: { type: number }
+                currency: { type: string }
+                reference: { type: string }
+      responses:
+        '201': { description: Created }
+  /api/subscriptions/entitlements:
+    get:
+      summary: Get vendor entitlements (free contacts and subscription status)
+      parameters:
+        - in: query
+          name: tenantId
+          schema: { type: string }
+        - in: query
+          name: vendorId
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: OK }
+  /api/subscriptions/subscribe:
+    post:
+      summary: Charge vendor monthly subscription (tokens)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                tenantId: { type: string }
+                vendorId: { type: string }
+                accountId: { type: string }
+                tokens: { type: number, default: 4 }
+      responses:
+        '201': { description: Created }
+  /api/wallet/platform/provision:
+    post:
+      summary: Provision tenant platform wallet account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                tenantId: { type: string }
+      responses:
+        '201': { description: Created }
+  /api/fx/convert:
+    get:
+      summary: Convert local currency amount to token (USD) amount
+      parameters:
+        - in: query
+          name: amount
+          required: true
+          schema: { type: number }
+        - in: query
+          name: currency
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: OK }
+  /api/marketplace/settings:
+    get:
+      summary: Get marketplace settings for a tenant
+      parameters:
+        - in: query
+          name: tenantId
+          schema: { type: string }
+      responses:
+        '200': { description: OK }
+    post:
+      summary: Update marketplace settings for a tenant
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                tenantId: { type: string }
+                freeContacts: { type: integer }
+                windowDays: { type: integer }
+                subscriptionTokens: { type: integer }
+      responses:
+        '200': { description: OK }
+  /api/wa/outbound/messages:
+    post:
+      summary: Send WhatsApp text message
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                to: { type: string }
+                text: { type: string }
+      responses:
+        '202': { description: Accepted }
+  /api/insurance/ingest_media:
+    post:
+      summary: Ingest WhatsApp media for insurance
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                wa_media_id: { type: string }
+                wa_media_url: { type: string }
+                intent_id: { type: string }
+                kind: { type: string, enum: [logbook,yellow_card,old_policy,id_card,other] }
+              required: [intent_id, kind]
+      responses: { '201': { description: Created } }
+
+  /api/insurance/ocr:
+    post:
+      summary: Run OCR on uploaded documents
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                document_ids: { type: array, items: { type: string } }
+              required: [document_ids]
+      responses: { '200': { description: OK } }
+
+  /api/insurance/notify_backoffice:
+    post:
+      summary: Notify back office to issue/validate policy
+      responses: { '202': { description: Accepted } }
+
+  /api/mobility/match:
+    post:
+      summary: Find nearby drivers for a ride
+      responses: { '200': { description: OK } }
+
+  /api/mobility/ping_drivers:
+    post:
+      summary: Send WhatsApp invites to candidate drivers
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MobilityPingDriversRequest'
+      responses:
+        '202':
+          description: All fan-out requests accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MobilityPingDriversResponse'
+        '207':
+          description: Partial fan-out failures
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MobilityPingDriversResponse'
+
+  /api/mobility/book:
+    post:
+      summary: Book selected driver and notify both sides
+      responses: { '200': { description: OK } }
+  /api/recon/reconciliation/mobile-money:
+    post:
+      summary: Reconcile mobile-money CSV
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file: { type: string, format: binary }
+      responses:
+        '202': { description: Accepted }
+  /api/attrib/attribution/evaluate:
+    post:
+      summary: Evaluate attribution
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                quoteId: { type: string }
+                referrals: { type: array, items: { type: object } }
+                events: { type: array, items: { type: object } }
+      responses:
+        '200': { description: OK }
+  /api/insurance/ingest_media:
+    post:
+      summary: Ingest WhatsApp media for insurance
+      responses: { '201': { description: Created } }
+  /api/insurance/ocr:
+    post:
+      summary: Run OCR
+      responses: { '200': { description: OK } }
+  /api/insurance/notify_backoffice:
+    post:
+      summary: Handoff to back office
+      responses: { '202': { description: Accepted } }
+  /api/mobility/match:
+    post:
+      summary: Find nearby drivers
+      responses: { '200': { description: OK } }
+  /api/mobility/ping_drivers:
+    post:
+      summary: Fan-out messages to drivers
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MobilityPingDriversRequest'
+      responses:
+        '202':
+          description: All fan-out requests accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MobilityPingDriversResponse'
+        '207':
+          description: Partial fan-out failures
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MobilityPingDriversResponse'
+  /api/mobility/collect_offer:
+    post:
+      summary: Record driver offer
+      responses: { '201': { description: Created } }
+  /api/mobility/book:
+    post:
+      summary: Book selected driver
+      responses: { '200': { description: OK } }
+  /api/mobility/driver_location:
+    post:
+      summary: Update driver availability from WA location
+      responses: { '201': { description: Created } }
+  /api/agents:
+    get:
+      summary: List agent personas
+      responses: { '200': { description: OK } }
+    post:
+      summary: Create agent persona
+      responses: { '201': { description: Created } }
+  /api/agents/{id}:
+    get:
+      summary: Get agent persona with knowledge documents, versions, and deployments
+      responses: { '200': { description: OK } }
+    patch:
+      summary: Update agent persona
+      responses: { '200': { description: OK } }
+  /api/agents/{id}/versions:
+    get:
+      summary: List versions of an agent
+      responses: { '200': { description: OK } }
+    post:
+      summary: Create new agent version
+      responses: { '201': { description: Created } }
+  /api/agents/{id}/versions/{versionId}/publish:
+    post:
+      summary: Publish version to default environment
+      responses: { '200': { description: OK } }
+  /api/agents/{id}/deploy:
+    post:
+      summary: Deploy an agent version to staging or production
+      responses: { '200': { description: OK } }
+  /api/agents/{id}/documents:
+    get:
+      summary: List knowledge documents for an agent
+      responses: { '200': { description: OK } }
+    post:
+      summary: Add knowledge document to an agent
+      responses: { '201': { description: Created } }
+  /api/agents/{id}/documents/upload:
+    post:
+      summary: Upload knowledge document (multipart/form-data)
+      responses: { '201': { description: Created } }
+  /api/agents/{id}/tasks:
+    get:
+      summary: List tasks for an agent
+      responses: { '200': { description: OK } }
+    post:
+      summary: Create task for an agent
+      responses: { '201': { description: Created } }
+
+components:
+  schemas:
+    MobilityPingDriversRequest:
+      type: object
+      properties:
+        ride_id: { type: string }
+        driver_ids:
+          type: array
+          items: { type: string }
+        text: { type: string, nullable: true }
+      required: [ride_id, driver_ids]
+    MobilityPingDriversResponse:
+      type: object
+      properties:
+        ride_id: { type: string }
+        total: { type: integer, minimum: 0 }
+        queued: { type: integer, minimum: 0 }
+        failed: { type: integer, minimum: 0 }
+        reqId: { type: string, nullable: true }
+        duration_ms: { type: integer, minimum: 0 }
+        failures:
+          type: array
+          items:
+            type: object
+            properties:
+              to: { type: string }
+              error: { type: string }
+              status: { type: integer, nullable: true }
+              body: { type: string, nullable: true }
+              duration_ms: { type: integer, nullable: true, minimum: 0 }
+            required: [to, error]
+      required: [ride_id, total, queued, failed]

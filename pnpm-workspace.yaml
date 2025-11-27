@@ -2,6 +2,7 @@ packages:
   - services/*
   - packages/*
   - admin-app
+  # - admin-app-v2  # DEPRECATED: Removed 2025-11-27
   - ai
   - waiter-pwa
   - real-estate-pwa

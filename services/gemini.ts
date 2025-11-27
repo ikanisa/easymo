@@ -1,6 +1,6 @@
 import { GoogleGenAI, LiveServerMessage, Modality, Type } from '@google/genai';
 
-import { createBlob, decodeAudioData,decodeBase64 } from './audioUtils';
+import { createBlob, decodeAudioData } from '@easymo/media-utils';
 
 // Ensure API KEY is available
 if (!process.env.API_KEY) {
