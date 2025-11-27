@@ -168,7 +168,7 @@ serve(async (req: Request): Promise<Response> => {
         }
         
         // Wallet Home
-        else if (id === IDS.WALLET_HOME || id === "wallet") {
+        else if (id === IDS.WALLET_HOME || id === IDS.WALLET || id === "wallet" || id === "wallet_tokens") {
           const { startWallet } = await import("./wallet/home.ts");
           handled = await startWallet(ctx, state ?? { key: "home" });
         }
