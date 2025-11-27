@@ -377,8 +377,18 @@ export class AgentOrchestrator {
       return "business_broker";
     }
 
-    // Default to jobs agent (most common use case)
-    return "jobs";
+    // Support/Sales/Customer Service keywords (FIX: Support button routing)
+    if (lowerBody.includes("support") || lowerBody.includes("help") || 
+        lowerBody.includes("sales") || lowerBody.includes("customer") ||
+        lowerBody.includes("general") || lowerBody.includes("ai_agents") ||
+        lowerBody.includes("agent") || lowerBody.includes("chat") ||
+        lowerBody.includes("ask") || lowerBody.includes("question")) {
+      return "sales"; // Use sales agent for general support/inquiries
+    }
+
+    // Default to sales agent for general support (was "jobs")
+    // This ensures support button and general queries get proper assistance
+    return "sales";
   }
 
   /**
