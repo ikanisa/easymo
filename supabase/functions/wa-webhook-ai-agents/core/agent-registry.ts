@@ -9,11 +9,10 @@
 import type { BaseAgent } from './base-agent.ts';
 import { WaiterAgent } from '../agents/waiter-agent.ts';
 import { SupportAgent } from '../agents/support-agent.ts';
-// TODO: Import other agents as they are migrated
-// import { FarmerAgent } from '../agents/farmer-agent.ts';
-// import { JobsAgent } from '../agents/jobs-agent.ts';
-// import { PropertyAgent } from '../agents/property-agent.ts';
-// import { MarketplaceAgent } from '../agents/marketplace-agent.ts';
+import { FarmerAgent } from '../agents/farmer-agent.ts';
+import { JobsAgent } from '../agents/jobs-agent.ts';
+import { PropertyAgent } from '../agents/property-agent.ts';
+import { MarketplaceAgent } from '../agents/marketplace-agent.ts';
 
 export class AgentRegistry {
   private agents = new Map<string, BaseAgent>();
@@ -28,15 +27,13 @@ export class AgentRegistry {
    * Register all available agents
    */
   private registerAllAgents(): void {
-    // Currently implemented agents
+    // All unified agents
     this.register(new WaiterAgent());
     this.register(new SupportAgent());
-    
-    // TODO: Register as implemented
-    // this.register(new FarmerAgent());
-    // this.register(new JobsAgent());
-    // this.register(new PropertyAgent());
-    // this.register(new MarketplaceAgent());
+    this.register(new FarmerAgent());
+    this.register(new JobsAgent());
+    this.register(new PropertyAgent());
+    this.register(new MarketplaceAgent());
   }
 
   /**
@@ -48,34 +45,35 @@ export class AgentRegistry {
     this.intentMapping.set('restaurant', 'waiter_agent');
     this.intentMapping.set('food', 'waiter_agent');
     this.intentMapping.set('bar', 'waiter_agent');
-    this.intentMapping.set('menu', 'waiter_agent');
     
     // Support Agent
-    this.intentMapping.set('support', 'support');
-    this.intentMapping.set('help', 'support');
-    this.intentMapping.set('question', 'support');
-    this.intentMapping.set('issue', 'support');
+    this.intentMapping.set('support', 'sales_agent');
+    this.intentMapping.set('help', 'sales_agent');
+    this.intentMapping.set('question', 'sales_agent');
     
-    // TODO: Add mappings for other agents
-    // Farmer
-    // this.intentMapping.set('farmer', 'farmer_agent');
-    // this.intentMapping.set('agriculture', 'farmer_agent');
-    // this.intentMapping.set('crop', 'farmer_agent');
+    // Farmer Agent
+    this.intentMapping.set('farmer', 'farmer_agent');
+    this.intentMapping.set('agriculture', 'farmer_agent');
+    this.intentMapping.set('crop', 'farmer_agent');
+    this.intentMapping.set('farming', 'farmer_agent');
     
-    // Jobs
-    // this.intentMapping.set('jobs', 'jobs_agent');
-    // this.intentMapping.set('employment', 'jobs_agent');
-    // this.intentMapping.set('hire', 'jobs_agent');
+    // Jobs Agent
+    this.intentMapping.set('jobs', 'jobs_agent');
+    this.intentMapping.set('employment', 'jobs_agent');
+    this.intentMapping.set('hire', 'jobs_agent');
+    this.intentMapping.set('work', 'jobs_agent');
     
-    // Property
-    // this.intentMapping.set('property', 'real_estate_agent');
-    // this.intentMapping.set('rental', 'real_estate_agent');
-    // this.intentMapping.set('house', 'real_estate_agent');
+    // Property Agent
+    this.intentMapping.set('property', 'real_estate_agent');
+    this.intentMapping.set('rental', 'real_estate_agent');
+    this.intentMapping.set('house', 'real_estate_agent');
+    this.intentMapping.set('apartment', 'real_estate_agent');
     
-    // Marketplace
-    // this.intentMapping.set('marketplace', 'business_broker_agent');
-    // this.intentMapping.set('buy', 'business_broker_agent');
-    // this.intentMapping.set('sell', 'business_broker_agent');
+    // Marketplace Agent
+    this.intentMapping.set('marketplace', 'business_broker_agent');
+    this.intentMapping.set('buy', 'business_broker_agent');
+    this.intentMapping.set('sell', 'business_broker_agent');
+    this.intentMapping.set('shopping', 'business_broker_agent');
   }
 
   /**
