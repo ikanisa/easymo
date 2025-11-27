@@ -1,0 +1,93 @@
+name: Lint and Compliance Check
+
+on:
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches: [main]
+
+jobs:
+  lint:
+    name: ESLint Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 10.18.3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+      
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      
+      - name: Build shared packages
+        run: |
+          pnpm --filter @va/shared build
+          pnpm --filter @easymo/commons build
+      
+      - name: Run ESLint
+        run: pnpm lint
+        
+  observability:
+    name: Observability Compliance
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Run Observability Compliance Check
+        run: node scripts/audit/observability-compliance.mjs
+        continue-on-error: true
+      
+      - name: Comment compliance report on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const { execSync } = require('child_process');
+            
+            try {
+              const output = execSync('node scripts/audit/observability-compliance.mjs', {
+                encoding: 'utf-8',
+                stdio: 'pipe'
+              });
+              
+              await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: `## Observability Compliance Report\n\n\`\`\`\n${output}\n\`\`\``
+              });
+            } catch (error) {
+              console.log('Compliance check output:', error.stdout);
+            }
+  
+  workspace-deps:
+    name: Workspace Dependencies Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Verify workspace dependencies
+        run: bash scripts/verify/workspace-deps.sh
+        
+  security:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Check environment files
+        run: bash scripts/security/audit-env-files.sh

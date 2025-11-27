@@ -1,531 +1,397 @@
-# EasyMO Microservices API Documentation
+# EasyMO API Documentation
+
+**Version**: 1.0  
+**Last Updated**: 2025-11-27
+
+---
 
 ## Overview
 
-This document provides comprehensive API documentation for all EasyMO microservices.
+EasyMO provides a comprehensive API for managing mobility services, marketplace transactions, and AI-powered assistance across WhatsApp and web interfaces.
 
-## Service Architecture
+### Base URLs
 
 ```
-┌─────────────┐     ┌──────────────┐     ┌─────────────┐
-│   Client    │────▶│  API Gateway │────▶│  Services   │
-│  (Admin/WA) │     │   (Supabase) │     │ (Microserv) │
-└─────────────┘     └──────────────┘     └─────────────┘
-                           │
-                           ▼
-                    ┌──────────────┐
-                    │   Database   │
-                    │  (Postgres)  │
-                    └──────────────┘
+Production:  https://api.easymo.rw
+Staging:     https://staging-api.easymo.rw
+Development: http://localhost:3000
 ```
 
-## Services Directory
+### Authentication
 
-| Service             | Port | Description                              | Status            |
-| ------------------- | ---- | ---------------------------------------- | ----------------- |
-| wallet-service      | 4400 | Payment processing and wallet management | ✅ Stable         |
-| ranking-service     | 4401 | Vendor ranking and scoring               | ✅ Stable         |
-| vendor-service      | 4402 | Vendor management                        | ⚠️ Partial        |
-| buyer-service       | 4403 | Buyer operations                         | ✅ Stable         |
-| agent-core          | 4404 | AI agent orchestration                   | ✅ Stable         |
-| voice-bridge        | 4405 | Voice call handling                      | ❌ In Development |
-| broker-orchestrator | 4406 | Intent brokering                         | ✅ Stable         |
+All API requests require authentication via JWT tokens or Supabase session tokens.
+
+```http
+Authorization: Bearer <your-token>
+```
 
 ---
 
-## Authentication
+## Core Services
 
-All service endpoints require authentication via service token or user JWT.
+### 1. WhatsApp Webhook Service
 
-### Service-to-Service Authentication
+**Endpoint**: `/api/webhook/whatsapp`
 
-```http
-POST /api/endpoint
-Authorization: Bearer <SERVICE_TOKEN>
-Content-Type: application/json
-```
+Handles incoming WhatsApp messages and routes them to appropriate handlers.
 
-### User Authentication
+#### POST /api/webhook/whatsapp
 
-```http
-POST /api/endpoint
-Authorization: Bearer <USER_JWT>
-Content-Type: application/json
-```
+Receives WhatsApp webhook events from Meta.
 
-### Headers
-
-| Header           | Required | Description                                                                |
-| ---------------- | -------- | -------------------------------------------------------------------------- |
-| Authorization    | Yes      | Bearer token for authentication                                            |
-| Content-Type     | Yes      | application/json                                                           |
-| X-Correlation-Id | No       | Request tracing ID                                                         |
-| Idempotency-Key  | No\*     | Unique key for idempotent operations (\*Required for financial operations) |
-
----
-
-## Wallet Service
-
-**Base URL:** `http://localhost:4400`
-
-### POST /wallet/transfer
-
-Transfer funds between wallet accounts.
-
-**Authentication:** Required  
-**Idempotent:** Yes
-
-**Request:**
-
+**Request Body**:
 ```json
 {
-  "tenantId": "550e8400-e29b-41d4-a716-446655440000",
-  "sourceAccountId": "550e8400-e29b-41d4-a716-446655440001",
-  "destinationAccountId": "550e8400-e29b-41d4-a716-446655440002",
-  "amount": 1000.0,
-  "currency": "USD",
-  "reference": "Payment for order #12345",
-  "metadata": {
-    "orderId": "12345",
-    "description": "Product purchase"
-  },
-  "product": "marketplace"
+  "object": "whatsapp_business_account",
+  "entry": [{
+    "id": "WHATSAPP_BUSINESS_ACCOUNT_ID",
+    "changes": [{
+      "value": {
+        "messaging_product": "whatsapp",
+        "metadata": {
+          "display_phone_number": "PHONE_NUMBER",
+          "phone_number_id": "PHONE_NUMBER_ID"
+        },
+        "messages": [{
+          "from": "SENDER_PHONE_NUMBER",
+          "id": "MESSAGE_ID",
+          "timestamp": "TIMESTAMP",
+          "text": {
+            "body": "MESSAGE_CONTENT"
+          },
+          "type": "text"
+        }]
+      }
+    }]
+  }]
 }
 ```
 
-**Headers:**
-
-```http
-Authorization: Bearer <token>
-Idempotency-Key: <unique-key>
-Content-Type: application/json
-```
-
-**Response (201 Created):**
-
+**Response**:
 ```json
 {
-  "transaction": {
-    "id": "tx_550e8400-e29b-41d4-a716-446655440003",
-    "tenantId": "550e8400-e29b-41d4-a716-446655440000",
-    "type": "marketplace",
-    "reference": "Payment for order #12345",
-    "metadata": {
-      "orderId": "12345",
-      "description": "Product purchase"
-    },
-    "createdAt": "2024-03-15T10:30:00Z"
-  },
-  "entries": [
-    {
-      "accountId": "550e8400-e29b-41d4-a716-446655440001",
-      "amount": "1000.00",
-      "direction": "debit"
-    },
-    {
-      "accountId": "550e8400-e29b-41d4-a716-446655440002",
-      "amount": "1000.00",
-      "direction": "credit"
+  "success": true,
+  "messageId": "msg_123"
+}
+```
+
+**Status Codes**:
+- `200 OK` - Message processed successfully
+- `400 Bad Request` - Invalid webhook payload
+- `401 Unauthorized` - Invalid verification token
+- `500 Internal Server Error` - Processing error
+
+#### GET /api/webhook/whatsapp
+
+Webhook verification endpoint for Meta.
+
+**Query Parameters**:
+- `hub.mode` - Should be "subscribe"
+- `hub.verify_token` - Verification token
+- `hub.challenge` - Challenge string to echo
+
+---
+
+### 2. AI Agent Services
+
+#### POST /api/agents/:agentType/chat
+
+Send a message to a specific AI agent.
+
+**Parameters**:
+- `agentType`: `nearby-drivers` | `pharmacy` | `property-rental` | `schedule-trip` | `shops` | `quincaillerie`
+
+**Request Body**:
+```json
+{
+  "message": "I need a ride from Kigali to Gisenyi",
+  "userId": "user_123",
+  "sessionId": "session_456",
+  "context": {
+    "location": {
+      "latitude": -1.9403,
+      "longitude": 29.8739
     }
-  ],
-  "commissionAmount": null
-}
-```
-
-**Error Responses:**
-
-| Status | Error Code          | Description                             |
-| ------ | ------------------- | --------------------------------------- |
-| 400    | validation_error    | Invalid request parameters              |
-| 403    | feature_disabled    | Wallet service is disabled              |
-| 404    | account_not_found   | One or more accounts not found          |
-| 409    | insufficient_funds  | Source account has insufficient balance |
-| 429    | rate_limit_exceeded | Too many requests                       |
-
-**Error Example:**
-
-```json
-{
-  "error": "insufficient_funds",
-  "message": "Account balance too low",
-  "details": {
-    "accountId": "550e8400-e29b-41d4-a716-446655440001",
-    "balance": "500.00",
-    "required": "1000.00"
   }
 }
 ```
 
-### GET /wallet/accounts/:id
-
-Get account summary including balance and recent transactions.
-
-**Authentication:** Required
-
-**Request:**
-
-```http
-GET /wallet/accounts/550e8400-e29b-41d4-a716-446655440001
-Authorization: Bearer <token>
-```
-
-**Response (200 OK):**
-
+**Response**:
 ```json
 {
-  "account": {
-    "id": "550e8400-e29b-41d4-a716-446655440001",
-    "tenantId": "550e8400-e29b-41d4-a716-446655440000",
-    "ownerType": "vendor",
-    "ownerId": "vendor_123",
-    "currency": "USD",
-    "balance": "5000.00",
-    "status": "active",
-    "createdAt": "2024-01-01T00:00:00Z",
-    "updatedAt": "2024-03-15T10:30:00Z"
-  },
-  "recentTransactions": [
+  "success": true,
+  "response": "I can help you find a driver. When do you need the ride?",
+  "sessionId": "session_456",
+  "suggestedActions": [
     {
-      "id": "tx_001",
-      "type": "marketplace",
-      "amount": "1000.00",
-      "direction": "credit",
-      "createdAt": "2024-03-15T10:30:00Z"
+      "type": "button",
+      "label": "Book Now",
+      "action": "book_ride"
     }
   ]
 }
 ```
 
-### GET /health
+---
 
-Health check endpoint.
+### 3. Profile Service
 
-**Authentication:** Not required
+#### GET /api/profiles/:userId
 
-**Response (200 OK):**
+Get user profile information.
 
+**Response**:
 ```json
 {
-  "status": "ok",
-  "timestamp": "2024-03-15T10:30:00Z",
-  "version": "0.1.0"
+  "id": "user_123",
+  "whatsappE164": "+250781234567",
+  "name": "John Doe",
+  "email": "john@example.com",
+  "locale": "en",
+  "createdAt": "2025-01-01T00:00:00Z",
+  "metadata": {
+    "preferredLanguage": "en"
+  }
+}
+```
+
+#### PATCH /api/profiles/:userId
+
+Update user profile.
+
+**Request Body**:
+```json
+{
+  "name": "John Doe",
+  "email": "john@example.com",
+  "locale": "fr"
 }
 ```
 
 ---
 
-## Ranking Service
+### 4. Wallet Service
 
-**Base URL:** `http://localhost:4401`
+#### GET /api/wallet/:userId/balance
 
-### POST /ranking/calculate
+Get user wallet balance.
 
-Calculate vendor ranking score.
-
-**Authentication:** Required
-
-**Request:**
-
+**Response**:
 ```json
 {
-  "tenantId": "550e8400-e29b-41d4-a716-446655440000",
-  "vendorId": "vendor_123",
-  "metrics": {
-    "completionRate": 0.95,
-    "averageRating": 4.5,
-    "totalOrders": 150,
-    "responseTime": 300
-  }
+  "balance": 50000,
+  "currency": "RWF",
+  "pendingTransactions": 2
 }
 ```
 
-**Response (200 OK):**
+#### POST /api/wallet/:userId/transfer
 
+Transfer funds.
+
+**Request Body**:
 ```json
 {
-  "vendorId": "vendor_123",
-  "score": 85.5,
-  "rank": 12,
-  "breakdown": {
-    "completionRate": 23.75,
-    "averageRating": 22.5,
-    "volume": 20.0,
-    "speed": 19.25
-  },
-  "calculatedAt": "2024-03-15T10:30:00Z"
+  "toUserId": "user_456",
+  "amount": 10000,
+  "currency": "RWF",
+  "description": "Payment for ride"
+}
+```
+
+**Response**:
+```json
+{
+  "success": true,
+  "transactionId": "txn_789",
+  "newBalance": 40000
 }
 ```
 
 ---
 
-## Agent Core Service
+### 5. Marketplace Service
 
-**Base URL:** `http://localhost:4404`
+#### GET /api/marketplace/listings
 
-### POST /agent/execute
+Get marketplace listings.
 
-Execute an AI agent workflow.
+**Query Parameters**:
+- `category`: Category filter
+- `location`: Location filter
+- `page`: Page number (default: 1)
+- `limit`: Items per page (default: 20)
 
-**Authentication:** Required
-
-**Request:**
-
+**Response**:
 ```json
 {
-  "agentType": "property-rental",
-  "userId": "user_123",
-  "conversationId": "conv_456",
-  "message": "I'm looking for a 2-bedroom apartment in Kigali",
-  "context": {
-    "location": "Kigali",
-    "budget": 300000,
-    "preferences": ["parking", "security"]
-  }
-}
-```
-
-**Response (200 OK):**
-
-```json
-{
-  "response": {
-    "message": "I found 5 properties matching your criteria...",
-    "actions": [
-      {
-        "type": "show_properties",
-        "properties": [
-          {
-            "id": "prop_001",
-            "title": "Modern 2BR Apartment",
-            "price": 280000,
-            "location": "Kigali, Nyarutarama"
-          }
-        ]
+  "listings": [
+    {
+      "id": "listing_123",
+      "title": "2-Bedroom Apartment in Kigali",
+      "description": "Modern apartment with great views",
+      "price": 200000,
+      "currency": "RWF",
+      "category": "property",
+      "images": ["url1", "url2"],
+      "location": {
+        "city": "Kigali",
+        "district": "Gasabo"
       }
-    ]
-  },
-  "conversationState": {
-    "step": "showing_results",
-    "filters": {
-      "bedrooms": 2,
-      "location": "Kigali"
     }
-  }
-}
-```
-
----
-
-## Common Patterns
-
-### Pagination
-
-Services use cursor-based pagination:
-
-**Request:**
-
-```http
-GET /api/resource?limit=20&cursor=abc123
-```
-
-**Response:**
-
-```json
-{
-  "data": [...],
+  ],
   "pagination": {
-    "hasMore": true,
-    "nextCursor": "def456",
+    "page": 1,
+    "limit": 20,
     "total": 150
   }
 }
 ```
 
-### Filtering and Sorting
+---
 
-**Request:**
+## Edge Functions
 
-```http
-GET /api/resource?filter[status]=active&sort=-createdAt
-```
+### Admin Functions
 
-Parameters:
+Located in `supabase/functions/admin-*`
 
-- `filter[field]=value` - Filter by field
-- `sort=field` - Sort ascending
-- `sort=-field` - Sort descending
+- `admin-settings` - Manage application settings
+- `admin-stats` - Get platform statistics
+- `admin-users` - User management
+- `admin-trips` - Trip management
 
-### Rate Limiting
+### WhatsApp Handler Functions
 
-All endpoints implement rate limiting:
+Located in `supabase/functions/wa-webhook-*`
 
-**Response Headers:**
-
-```http
-X-RateLimit-Limit: 100
-X-RateLimit-Remaining: 75
-X-RateLimit-Reset: 2024-03-15T11:00:00Z
-```
-
-**Rate Limit Error (429):**
-
-```json
-{
-  "error": "rate_limit_exceeded",
-  "message": "Too many requests, please try again later",
-  "retryAfter": 60
-}
-```
-
-### Error Handling
-
-All errors follow consistent format:
-
-```json
-{
-  "error": "error_code",
-  "message": "Human-readable message",
-  "details": {
-    "field": "Additional context"
-  },
-  "timestamp": "2024-03-15T10:30:00Z",
-  "requestId": "req_123456"
-}
-```
-
-### Idempotency
-
-Financial operations require idempotency keys:
-
-```http
-POST /wallet/transfer
-Idempotency-Key: unique-request-id-12345
-```
-
-- Same key returns same response (cached for 24 hours)
-- Prevents duplicate transactions
-- Use UUIDs or request-specific identifiers
+- `wa-webhook-core` - Main webhook router
+- `wa-webhook-ai-agents` - AI agent integration
+- `wa-webhook-mobility` - Mobility services
+- `wa-webhook-wallet` - Wallet operations
+- `wa-webhook-jobs` - Job marketplace
+- `wa-webhook-property` - Property listings
 
 ---
 
-## Webhook Events
+## Error Handling
 
-Services can emit webhook events for async notifications.
+All API endpoints follow a consistent error response format:
 
-### Webhook Payload Format
+```json
+{
+  "error": {
+    "code": "ERROR_CODE",
+    "message": "Human-readable error message",
+    "details": {
+      "field": "Additional context"
+    }
+  }
+}
+```
+
+### Common Error Codes
+
+- `UNAUTHORIZED` - Missing or invalid authentication
+- `FORBIDDEN` - Insufficient permissions
+- `NOT_FOUND` - Resource not found
+- `VALIDATION_ERROR` - Invalid request data
+- `RATE_LIMIT_EXCEEDED` - Too many requests
+- `INTERNAL_ERROR` - Server error
+
+---
+
+## Rate Limiting
+
+API endpoints are rate-limited to ensure fair usage:
+
+- **Public endpoints**: 100 requests/minute
+- **Authenticated endpoints**: 1000 requests/minute
+- **Webhook endpoints**: 10,000 requests/minute
+
+Rate limit headers:
+```http
+X-RateLimit-Limit: 1000
+X-RateLimit-Remaining: 999
+X-RateLimit-Reset: 1640995200
+```
+
+---
+
+## Observability
+
+All API requests include correlation IDs for tracking:
+
+**Request Header**:
+```http
+X-Correlation-ID: req_abc123xyz
+```
+
+**Response Header**:
+```http
+X-Correlation-ID: req_abc123xyz
+```
+
+Use correlation IDs when reporting issues to support.
+
+---
+
+## SDKs and Libraries
+
+### TypeScript/JavaScript
+
+```typescript
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  process.env.SUPABASE_URL!,
+  process.env.SUPABASE_ANON_KEY!
+);
+
+// Example: Get user profile
+const { data, error } = await supabase
+  .from('profiles')
+  .select('*')
+  .eq('id', userId)
+  .single();
+```
+
+---
+
+## Webhooks
+
+EasyMO can send webhooks for various events:
+
+### Event Types
+
+- `user.created` - New user registered
+- `transaction.completed` - Payment completed
+- `booking.confirmed` - Booking confirmed
+- `message.received` - New message received
+
+### Webhook Payload
 
 ```json
 {
   "event": "transaction.completed",
-  "timestamp": "2024-03-15T10:30:00Z",
+  "timestamp": "2025-11-27T12:00:00Z",
   "data": {
-    "transactionId": "tx_123",
-    "amount": 1000.0,
-    "status": "completed"
-  },
-  "signature": "sha256=abc123..."
+    "transactionId": "txn_123",
+    "amount": 10000,
+    "userId": "user_456"
+  }
 }
-```
-
-### Webhook Verification
-
-Verify webhook signatures before processing:
-
-```typescript
-import { verifyHMACSignature } from "@easymo/commons";
-
-const isValid = verifyHMACSignature({
-  payload: JSON.stringify(req.body),
-  signature: req.headers["x-signature"],
-  secret: process.env.WEBHOOK_SECRET,
-  algorithm: "sha256",
-  encoding: "hex",
-});
-```
-
----
-
-## Testing
-
-### Using cURL
-
-```bash
-# Health check
-curl http://localhost:4400/health
-
-# Transfer with idempotency
-curl -X POST http://localhost:4400/wallet/transfer \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Idempotency-Key: $(uuidgen)" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "sourceAccountId": "src_123",
-    "destinationAccountId": "dst_456",
-    "amount": 100,
-    "currency": "USD"
-  }'
-```
-
-### Using HTTP Client
-
-```http
-### Transfer funds
-POST http://localhost:4400/wallet/transfer
-Authorization: Bearer {{token}}
-Idempotency-Key: {{$guid}}
-Content-Type: application/json
-
-{
-  "sourceAccountId": "src_123",
-  "destinationAccountId": "dst_456",
-  "amount": 100,
-  "currency": "USD"
-}
-```
-
----
-
-## Monitoring
-
-### Health Check Endpoints
-
-All services expose `/health`:
-
-```json
-{
-  "status": "healthy",
-  "checks": {
-    "database": true,
-    "redis": true,
-    "kafka": true
-  },
-  "uptime": 86400,
-  "timestamp": "2024-03-15T10:30:00Z"
-}
-```
-
-### Metrics
-
-Services expose Prometheus metrics at `/metrics`:
-
-```
-# HELP wallet_transfers_total Total number of wallet transfers
-# TYPE wallet_transfers_total counter
-wallet_transfers_total{status="success",currency="USD"} 1234
-
-# HELP wallet_transfer_duration_seconds Transfer duration in seconds
-# TYPE wallet_transfer_duration_seconds histogram
-wallet_transfer_duration_seconds_bucket{le="0.1"} 100
-wallet_transfer_duration_seconds_bucket{le="0.5"} 450
 ```
 
 ---
 
 ## Support
 
-**Documentation:** https://docs.easymo.com  
-**API Issues:** https://github.com/easymo/issues  
-**Contact:** support@easymo.com
+For API support, contact:
+- Email: api-support@easymo.rw
+- Documentation: https://docs.easymo.rw
+- Status Page: https://status.easymo.rw
 
-**Last Updated:** 2024-03-15  
-**API Version:** v1.0
+---
+
+**Note**: This is a living document. Last updated: 2025-11-27
