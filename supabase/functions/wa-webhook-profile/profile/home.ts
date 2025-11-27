@@ -48,6 +48,11 @@ export async function startProfile(
       description: "Manage your property listings",
     },
     {
+      id: IDS.MY_VEHICLES,
+      title: "🚗 My Vehicles",
+      description: "Manage your registered vehicles",
+    },
+    {
       id: IDS.SAVED_LOCATIONS,
       title: "📍 Saved Locations",
       description: "Your favorite places",
@@ -63,7 +68,7 @@ export async function startProfile(
     ctx,
     {
       title: "👤 Profile",
-      body: "Manage your account, wallet, businesses, jobs, properties and more.",
+      body: "Manage your account, wallet, businesses, jobs, properties, vehicles and more.",
       sectionTitle: "Profile",
       buttonText: "View",
       rows,

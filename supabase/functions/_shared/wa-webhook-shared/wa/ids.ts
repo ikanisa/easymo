@@ -163,6 +163,7 @@ export const IDS = {
   CREATE_PROPERTY: "create_property",
   EDIT_PROPERTY: "edit_property",
   DELETE_PROPERTY: "delete_property",
+  MY_VEHICLES: "my_vehicles",
   SAVED_LOCATIONS: "saved_locations",
   ADD_LOCATION: "add_location",
   REMOVE_LOCATION: "remove_location",

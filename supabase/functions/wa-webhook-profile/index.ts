@@ -328,6 +328,17 @@ serve(async (req: Request): Promise<Response> => {
           handled = await handlePropertySelection(ctx, propertyId);
         }
         
+        // My Vehicles
+        else if (id === IDS.MY_VEHICLES || id === "my_vehicles") {
+          const { listMyVehicles } = await import("./vehicles/list.ts");
+          handled = await listMyVehicles(ctx);
+        }
+        else if (id.startsWith("VEHICLE::")) {
+          const vehicleId = id.replace("VEHICLE::", "");
+          const { handleVehicleSelection } = await import("./vehicles/list.ts");
+          handled = await handleVehicleSelection(ctx, vehicleId);
+        }
+        
         // Saved Locations
         else if (id === IDS.SAVED_LOCATIONS || id === "saved_locations") {
           const { listSavedLocations } = await import("./profile/locations.ts");

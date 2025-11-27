@@ -30,9 +30,9 @@ export async function listMyJobs(
   if (!jobs || jobs.length === 0) {
     await sendButtonsMessage(
       ctx,
-      "💼 You don't have any job postings yet.\n\nCreate your first job posting to find great candidates!",
+      "💼 *You don't have any job postings yet.*\n\nTap below to chat with our Jobs AI Agent who will help you create a job posting through a simple conversation.",
       [
-        { id: IDS.CREATE_JOB, title: "➕ Post a Job" },
+        { id: IDS.JOBS_AGENT, title: "💬 Chat with Jobs Agent" },
         { id: IDS.BACK_PROFILE, title: "← Back" },
       ],
     );
@@ -56,9 +56,9 @@ export async function listMyJobs(
 
   rows.push(
     {
-      id: IDS.CREATE_JOB,
-      title: "➕ Post New Job",
-      description: "Create a new job posting",
+      id: IDS.JOBS_AGENT,
+      title: "💬 Add via AI Agent",
+      description: "Chat with AI to post new job",
     },
     {
       id: IDS.BACK_PROFILE,

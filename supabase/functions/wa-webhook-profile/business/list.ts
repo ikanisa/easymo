@@ -31,9 +31,9 @@ export async function listMyBusinesses(
   if (!businesses || businesses.length === 0) {
     await sendButtonsMessage(
       ctx,
-      "🏪 You don't have any businesses yet.\n\nCreate your first business to get started!",
+      "🏪 *You don't have any businesses yet.*\n\nTap the button below to chat with our Business Broker AI Agent who will help you register your business through a simple conversation.",
       [
-        { id: IDS.CREATE_BUSINESS, title: "➕ Create Business" },
+        { id: IDS.BUSINESS_BROKER_AGENT, title: "💬 Chat with Business Agent" },
         { id: IDS.BACK_PROFILE, title: "← Back" },
       ],
     );
@@ -48,9 +48,9 @@ export async function listMyBusinesses(
 
   rows.push(
     {
-      id: IDS.CREATE_BUSINESS,
-      title: "➕ Create New Business",
-      description: "Add a new business listing",
+      id: IDS.BUSINESS_BROKER_AGENT,
+      title: "💬 Add via AI Agent",
+      description: "Chat with AI to register new business",
     },
     {
       id: IDS.BACK_PROFILE,

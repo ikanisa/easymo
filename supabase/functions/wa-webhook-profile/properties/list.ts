@@ -30,9 +30,9 @@ export async function listMyProperties(
   if (!properties || properties.length === 0) {
     await sendButtonsMessage(
       ctx,
-      "🏠 You don't have any property listings yet.\n\nList your first property to reach potential tenants or buyers!",
+      "🏠 *You don't have any property listings yet.*\n\nTap below to chat with our Real Estate AI Agent who will help you list your property through a simple conversation.",
       [
-        { id: IDS.CREATE_PROPERTY, title: "➕ List Property" },
+        { id: IDS.REAL_ESTATE_AGENT, title: "💬 Chat with Property Agent" },
         { id: IDS.BACK_PROFILE, title: "← Back" },
       ],
     );
@@ -53,9 +53,9 @@ export async function listMyProperties(
 
   rows.push(
     {
-      id: IDS.CREATE_PROPERTY,
-      title: "➕ List New Property",
-      description: "Add a new property listing",
+      id: IDS.REAL_ESTATE_AGENT,
+      title: "💬 Add via AI Agent",
+      description: "Chat with AI to list new property",
     },
     {
       id: IDS.BACK_PROFILE,
