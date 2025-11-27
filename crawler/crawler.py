@@ -2,6 +2,7 @@ import os
 import time
 import json
 import requests
+import uuid
 from bs4 import BeautifulSoup
 from openai import OpenAI
 from supabase import create_client, Client
@@ -70,7 +71,17 @@ def extract_text_from_html(html):
     
     return text[:100000] # Limit to 100k chars
 
-def process_job_source(source):
+def get_tenant_id():
+    """Fetches the first tenant ID."""
+    try:
+        response = supabase.table('Tenant').select("id").limit(1).execute()
+        if response.data:
+            return response.data[0]['id']
+    except Exception as e:
+        logger.error(f"Failed to fetch tenant ID: {e}")
+    return None
+
+def process_job_source(source, tenant_id):
     logger.info(f"Processing Job Source: {source['name']} ({source['url']})")
     
     html = fetch_html(source['url'])
@@ -119,6 +130,8 @@ def process_job_source(source):
             # Insert into Supabase
             try:
                 supabase.table('job_listings').insert({
+                    "id": str(uuid.uuid4()),
+                    "tenantId": tenant_id,
                     "title": job.get('title') or "Untitled",
                     "description": job.get('description') or "",
                     "category": job.get('category') or "General",
@@ -140,7 +153,7 @@ def process_job_source(source):
     except Exception as e:
         logger.error(f"Error processing {source['name']}: {e}")
 
-def process_property_source(source):
+def process_property_source(source, tenant_id):
     logger.info(f"Processing Property Source: {source['source_name']} ({source['url']})")
     
     html = fetch_html(source['url'])
@@ -186,6 +199,8 @@ def process_property_source(source):
 
             try:
                 supabase.table('property_listings').insert({
+                    "id": str(uuid.uuid4()),
+                    "tenantId": tenant_id,
                     "title": prop.get('title') or "Property Listing",
                     "description": prop.get('description') or "",
                     "type": prop.get('type') or "rent",
@@ -209,6 +224,11 @@ def process_property_source(source):
 def run_crawler():
     logger.info("Starting crawler run...")
     
+    tenant_id = get_tenant_id()
+    if not tenant_id:
+        logger.error("No tenant found. Cannot proceed.")
+        return
+
     # Fetch sources
     try:
         job_sources = supabase.table('job_sources').select("*").execute().data
@@ -219,12 +239,12 @@ def run_crawler():
 
     # Process Job Sources
     for source in job_sources:
-        process_job_source(source)
+        process_job_source(source, tenant_id)
         time.sleep(2) # Be polite
 
     # Process Property Sources
     for source in property_sources:
-        process_property_source(source)
+        process_property_source(source, tenant_id)
         time.sleep(2)
 
     logger.info("Crawler run completed.")
