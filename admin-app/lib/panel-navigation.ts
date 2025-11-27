@@ -48,6 +48,7 @@ const coreNavigationGroup: PanelNavGroup = {
     { href: "/leads", title: "Leads" },
     { href: "/live-calls", title: "Live calls" },
     { href: "/marketplace", title: "Marketplace" },
+    { href: "/support", title: "Support" },
     { href: "/settings", title: "Settings" },
   ],
 };
@@ -83,6 +84,10 @@ const routeMetadata: Record<string, { title: string; description: string }> = {
   "/marketplace": {
     title: "Marketplace",
     description: "Review vendor onboarding health and catalog configuration progress.",
+  },
+  "/support": {
+    title: "Support",
+    description: "Chat with Sales, Marketing, and Support AI agents for assistance.",
   },
   "/settings": {
     title: "Settings",

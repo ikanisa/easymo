@@ -93,6 +93,7 @@ const legacySections = [
       { href: "/system/logs", title: "System logs" },
       { href: "/whatsapp/health", title: "WhatsApp health" },
       { href: "/whatsapp/menu", title: "WhatsApp menu" },
+      { href: "/support", title: "Support" },
       { href: "/settings", title: "Settings" },
       { href: "/admin-controls", title: "Admin controls" },
     ],

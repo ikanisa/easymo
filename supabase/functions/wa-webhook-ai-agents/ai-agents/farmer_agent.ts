@@ -17,6 +17,7 @@ import {
   createQuickReplyInstruction
 } from "../../utils/ai-chat-interface.ts";
 import { AgentLocationHelper } from "./location-helper.ts";
+import { buildMomoUssd } from "../../../_shared/wa-webhook-shared/utils/momo.ts";
 
 interface Tool {
   name: string;
@@ -64,7 +65,8 @@ YOUR ROLE:
 PAYMENT SYSTEM:
 - **ONLY** use USSD Mobile Money for all transactions
 - Generate tel: links that buyers can click to automatically dial USSD codes
-- MTN Mobile Money code format: *182*8*1*AMOUNT#
+- MTN Mobile Money format: *182*1*1*[farmer_number]*[amount]# (direct payment to farmer)
+- Alternative merchant code: *182*8*1*[code]*[amount]# (if using merchant codes)
 - Payment flow: Generate link → Buyer clicks/dials → Confirms with PIN → Farmer notified
 - NEVER suggest cash, bank transfer, or any other payment method
 
@@ -415,9 +417,12 @@ Always be helpful, practical, and farmer-focused.`;
         execute: async (params) => {
           const totalAmount = params.quantity * params.price_per_unit;
           
-          // Generate USSD code for MTN Mobile Money
-          const ussdCode = `*182*8*1*${totalAmount}#`;
-          const telLink = `tel:${encodeURIComponent(ussdCode)}`;
+          // Use shared MoMo utility - format: *182*1*1*[number]*[amount]#
+          const { ussd: ussdCode, telUri } = buildMomoUssd(
+            params.farmer_phone,  // Send to farmer's number
+            false,  // Not a merchant code, it's a phone number
+            totalAmount
+          );
           
           // Generate payment ID
           const paymentId = crypto.randomUUID();
@@ -451,7 +456,7 @@ Always be helpful, practical, and farmer-focused.`;
             payment_id: paymentId,
             total_amount: totalAmount,
             ussd_code: ussdCode,
-            tel_link: telLink,
+            tel_link: telUri,
             message: `🌾 *Payment for ${params.commodity}*\n\n` +
                     `📦 ${params.quantity} ${params.unit} @ ${params.price_per_unit.toLocaleString()} RWF/${params.unit}\n` +
                     `💰 Total: ${totalAmount.toLocaleString()} RWF\n\n` +
