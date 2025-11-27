@@ -144,7 +144,7 @@ export const HOME_MENU_KEY_ALIASES: Record<string, string> = {
   momo_qr: "profile",  // Payment QR accessed via profile
   token_transfer: "profile",  // Wallet transfers via profile
   profile_assets: "profile",
-  customer_support: "sales_agent",  // Support routed to sales agent
+  customer_support: "support",  // Support routed to support agent
 };
 
 /**

@@ -51,10 +51,10 @@ export class AgentRegistry {
     this.intentMapping.set('menu', 'waiter_agent');
     
     // Support Agent
-    this.intentMapping.set('support', 'sales_agent');
-    this.intentMapping.set('help', 'sales_agent');
-    this.intentMapping.set('question', 'sales_agent');
-    this.intentMapping.set('issue', 'sales_agent');
+    this.intentMapping.set('support', 'support');
+    this.intentMapping.set('help', 'support');
+    this.intentMapping.set('question', 'support');
+    this.intentMapping.set('issue', 'support');
     
     // TODO: Add mappings for other agents
     // Farmer
@@ -94,7 +94,7 @@ export class AgentRegistry {
     if (!agent) {
       // Fallback to support agent if agent not found
       console.warn(`Agent not found: ${type}, falling back to support agent`);
-      return this.agents.get('sales_agent') || this.agents.values().next().value;
+      return this.agents.get('support') || this.agents.values().next().value;
     }
     return agent;
   }
@@ -106,7 +106,7 @@ export class AgentRegistry {
     const agentType = this.intentMapping.get(intent.toLowerCase());
     if (!agentType) {
       // Fallback to support agent
-      return this.getAgent('sales_agent');
+      return this.getAgent('support');
     }
     return this.getAgent(agentType);
   }
