@@ -7,7 +7,7 @@
 
 import { ChevronLeft, ChevronRight, MoreHorizontal } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Button } from '../primitives/Button';
+import { Button } from '@/components/ui/Button';
 
 export interface PaginationProps {
   currentPage: number;
@@ -69,7 +69,7 @@ export function Pagination({
       {/* Previous button */}
       <Button
         variant="ghost"
-        size="icon-sm"
+        size="sm"
         onClick={() => onPageChange(currentPage - 1)}
         disabled={currentPage === 1}
       >
@@ -109,7 +109,7 @@ export function Pagination({
       {/* Next button */}
       <Button
         variant="ghost"
-        size="icon-sm"
+        size="sm"
         onClick={() => onPageChange(currentPage + 1)}
         disabled={currentPage === totalPages}
       >

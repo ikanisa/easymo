@@ -1,5 +1,5 @@
 import { check } from '@tauri-apps/plugin-updater';
-import { relaunch } from '@tauri-apps/plugin-process';
+// import { relaunch } from '@tauri-apps/plugin-process';
 
 export async function checkForUpdates() {
   try {
@@ -26,7 +26,7 @@ export async function checkForUpdates() {
       });
 
       console.log('Update installed, relaunching...');
-      await relaunch();
+      // await relaunch(); // Temporarily disabled due to missing module
     } else {
         console.log('No updates found');
     }

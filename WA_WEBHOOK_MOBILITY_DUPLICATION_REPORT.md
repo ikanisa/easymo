@@ -2,6 +2,11 @@
 **Date**: 2025-11-25  
 **Status**: ⚠️ CRITICAL FINDING - Do NOT delete mobility/ files yet!
 
+> **Update 2025-11-26**: The duplicate `mobility/` tree was fully merged into
+> `handlers/`, and the temporary backup directory
+> `.backup-mobility-20251125-185738/` has been removed. This report remains for
+> historical context, but the action items below are now complete.
+
 ---
 
 ## 🔍 Analysis Results

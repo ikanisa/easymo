@@ -382,7 +382,7 @@ export function AgentsDashboardClient() {
                           </td>
                           <td className="p-3">
                           <Button asChild variant="ghost" size="sm">
-                              <Link href={`/sessions/${session.id}`}>
+                              <Link href={`/sessions/${session.id}` as any}>
                                 View
                               </Link>
                           </Button>

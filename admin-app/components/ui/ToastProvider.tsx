@@ -12,6 +12,7 @@ import {
 } from "react";
 
 import { Button } from "@/components/ui/Button";
+import { cn } from "@/lib/utils";
 
 import styles from "./ToastProvider.module.css";
 
@@ -133,7 +134,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                     toast.onAction?.();
                     dismissToast(toast.id);
                   }}
-                  onClick={() => window.location.reload()}
+
                   className={cn("w-full", styles.actionButton)}
                 >
                   {toast.actionLabel}

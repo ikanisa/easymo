@@ -3,20 +3,191 @@
 -- Purpose: Add RPC functions referenced by wa-webhook-mobility edge function
 -- Related: WA_WEBHOOK_MOBILITY_DEEP_ANALYSIS.md
 
--- NOTE: PostGIS extension is not currently enabled on the database
--- The functions below require PostGIS (ST_SetSRID, ST_MakePoint, ST_Distance, ST_DWithin)
--- These functions are commented out until PostGIS is enabled
--- To enable: CREATE EXTENSION IF NOT EXISTS postgis; then uncomment below
-
 BEGIN;
 
-/*
+-- Ensure PostGIS is available for geography helpers used in mobility RPCs.
+-- Supabase projects generally support CREATE EXTENSION; this will no-op if
+-- PostGIS is already installed.
+CREATE EXTENSION IF NOT EXISTS postgis;
+
 -- ============================================================================
 -- Function 1: rides_update_driver_location
 -- Purpose: Update driver's last known location for matching
 -- Used by: handlers/go_online.ts
 -- ============================================================================
 
-CREATE OR REPLACE FUNCTION public.rides_update_driver_location(\n  p_driver_id UUID,\n  p_latitude DECIMAL,\n  p_longitude DECIMAL\n)\nRETURNS VOID\nLANGUAGE plpgsql\nSECURITY DEFINER\nSET search_path = public\nAS $$\nBEGIN\n  -- Update profile with new location\n  UPDATE public.profiles\n  SET \n    last_location = ST_SetSRID(ST_MakePoint(p_longitude, p_latitude), 4326),\n    updated_at = NOW()\n  WHERE id = p_driver_id;\n  \n  -- Also update driver status if exists\n  UPDATE public.rides_driver_status\n  SET\n    last_location = ST_SetSRID(ST_MakePoint(p_longitude, p_latitude), 4326),\n    updated_at = NOW()\n  WHERE driver_id = p_driver_id;\n  \nEND;\n$$;\n\nCOMMENT ON FUNCTION public.rides_update_driver_location IS \n'Updates driver location in profiles and rides_driver_status tables';\n\n-- ============================================================================\n-- Function 2: is_driver_insurance_valid\n-- Purpose: Check if driver has valid active insurance\n-- Used by: handlers/driver_insurance.ts\n-- ============================================================================\n\nCREATE OR REPLACE FUNCTION public.is_driver_insurance_valid(\n  p_driver_id UUID\n)\nRETURNS BOOLEAN\nLANGUAGE plpgsql\nSECURITY DEFINER\nSET search_path = public\nAS $$\nDECLARE\n  v_valid BOOLEAN;\nBEGIN\n  -- Check if driver has active, non-expired insurance certificate\n  SELECT EXISTS(\n    SELECT 1 \n    FROM public.driver_insurance_certificates\n    WHERE driver_id = p_driver_id\n      AND status = 'verified'\n      AND expiry_date > NOW()\n  ) INTO v_valid;\n  \n  RETURN COALESCE(v_valid, false);\nEND;\n$$;\n\nCOMMENT ON FUNCTION public.is_driver_insurance_valid IS \n'Returns true if driver has at least one verified, non-expired insurance certificate';\n\n-- ============================================================================\n-- Function 3: get_driver_active_insurance\n-- Purpose: Get driver's active insurance details\n-- Used by: handlers/driver_insurance.ts\n-- ============================================================================\n\nCREATE OR REPLACE FUNCTION public.get_driver_active_insurance(\n  p_driver_id UUID\n)\nRETURNS TABLE(\n  id UUID,\n  policy_number TEXT,\n  provider TEXT,\n  expiry_date TIMESTAMP WITH TIME ZONE,\n  status TEXT,\n  certificate_url TEXT\n)\nLANGUAGE plpgsql\nSECURITY DEFINER\nSET search_path = public\nAS $$\nBEGIN\n  RETURN QUERY\n  SELECT \n    dic.id,\n    dic.policy_number,\n    dic.provider,\n    dic.expiry_date,\n    dic.status,\n    dic.certificate_url\n  FROM public.driver_insurance_certificates dic\n  WHERE dic.driver_id = p_driver_id\n    AND dic.status = 'verified'\n    AND dic.expiry_date > NOW()\n  ORDER BY dic.expiry_date DESC\n  LIMIT 1;\nEND;\n$$;\n\nCOMMENT ON FUNCTION public.get_driver_active_insurance IS \n'Returns the most recent active insurance certificate for a driver';\n\n-- ============================================================================\n-- Function 4: find_online_drivers_near_trip\n-- Purpose: Find online drivers within radius of a location\n-- Used by: notifications/drivers.ts\n-- ============================================================================\n\nCREATE OR REPLACE FUNCTION public.find_online_drivers_near_trip(\n  p_latitude DECIMAL,\n  p_longitude DECIMAL,\n  p_radius_meters INTEGER DEFAULT 10000,\n  p_vehicle_type TEXT DEFAULT NULL\n)\nRETURNS TABLE(\n  driver_id UUID,\n  distance_meters DECIMAL,\n  phone TEXT,\n  full_name TEXT,\n  vehicle_type TEXT\n)\nLANGUAGE plpgsql\nSECURITY DEFINER\nSET search_path = public\nAS $$\nBEGIN\n  RETURN QUERY\n  SELECT \n    p.id as driver_id,\n    ST_Distance(\n      p.last_location::geography,\n      ST_SetSRID(ST_MakePoint(p_longitude, p_latitude), 4326)::geography\n    ) as distance_meters,\n    p.phone,\n    p.full_name,\n    COALESCE(p.metadata->>'vehicle_type', 'standard') as vehicle_type\n  FROM public.profiles p\n  INNER JOIN public.rides_driver_status rds ON rds.driver_id = p.id\n  WHERE \n    p.role = 'driver'\n    AND rds.status = 'online'\n    AND p.last_location IS NOT NULL\n    AND ST_DWithin(\n      p.last_location::geography,\n      ST_SetSRID(ST_MakePoint(p_longitude, p_latitude), 4326)::geography,\n      p_radius_meters\n    )\n    AND (p_vehicle_type IS NULL OR p.metadata->>'vehicle_type' = p_vehicle_type)\n  ORDER BY distance_meters ASC\n  LIMIT 20;\nEND;\n$$;\n\nCOMMENT ON FUNCTION public.find_online_drivers_near_trip IS \n'Finds up to 20 online drivers within specified radius, optionally filtered by vehicle type';\n\n-- ============================================================================\n-- Grant permissions\n-- ============================================================================\n\nGRANT EXECUTE ON FUNCTION public.rides_update_driver_location TO authenticated;\nGRANT EXECUTE ON FUNCTION public.is_driver_insurance_valid TO authenticated;\nGRANT EXECUTE ON FUNCTION public.get_driver_active_insurance TO authenticated;\nGRANT EXECUTE ON FUNCTION public.find_online_drivers_near_trip TO authenticated;\n\nGRANT EXECUTE ON FUNCTION public.rides_update_driver_location TO service_role;\nGRANT EXECUTE ON FUNCTION public.is_driver_insurance_valid TO service_role;\nGRANT EXECUTE ON FUNCTION public.get_driver_active_insurance TO service_role;\nGRANT EXECUTE ON FUNCTION public.find_online_drivers_near_trip TO service_role;\n*/
+CREATE OR REPLACE FUNCTION public.rides_update_driver_location(
+  p_driver_id UUID,
+  p_latitude DECIMAL,
+  p_longitude DECIMAL
+)
+RETURNS VOID
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  -- Update profile with new location
+  UPDATE public.profiles
+  SET 
+    last_location = ST_SetSRID(ST_MakePoint(p_longitude, p_latitude), 4326),
+    updated_at = NOW()
+  WHERE id = p_driver_id;
+  
+  -- Also update driver status if exists
+  UPDATE public.rides_driver_status
+  SET
+    last_location = ST_SetSRID(ST_MakePoint(p_longitude, p_latitude), 4326),
+    updated_at = NOW()
+  WHERE driver_id = p_driver_id;
+  
+END;
+$$;
+
+COMMENT ON FUNCTION public.rides_update_driver_location IS 
+'Updates driver location in profiles and rides_driver_status tables';
+
+-- ============================================================================
+-- Function 2: is_driver_insurance_valid
+-- Purpose: Check if driver has valid active insurance
+-- Used by: handlers/driver_insurance.ts
+-- ============================================================================
+
+CREATE OR REPLACE FUNCTION public.is_driver_insurance_valid(
+  p_driver_id UUID
+)
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_valid BOOLEAN;
+BEGIN
+  -- Check if driver has active, non-expired insurance certificate
+  SELECT EXISTS(
+    SELECT 1 
+    FROM public.driver_insurance_certificates
+    WHERE driver_id = p_driver_id
+      AND status = 'verified'
+      AND expiry_date > NOW()
+  ) INTO v_valid;
+  
+  RETURN COALESCE(v_valid, false);
+END;
+$$;
+
+COMMENT ON FUNCTION public.is_driver_insurance_valid IS 
+'Returns true if driver has at least one verified, non-expired insurance certificate';
+
+-- ============================================================================
+-- Function 3: get_driver_active_insurance
+-- Purpose: Get driver's active insurance details
+-- Used by: handlers/driver_insurance.ts
+-- ============================================================================
+
+CREATE OR REPLACE FUNCTION public.get_driver_active_insurance(
+  p_driver_id UUID
+)
+RETURNS TABLE(
+  id UUID,
+  policy_number TEXT,
+  provider TEXT,
+  expiry_date TIMESTAMP WITH TIME ZONE,
+  status TEXT,
+  certificate_url TEXT
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  RETURN QUERY
+  SELECT 
+    dic.id,
+    dic.policy_number,
+    dic.provider,
+    dic.expiry_date,
+    dic.status,
+    dic.certificate_url
+  FROM public.driver_insurance_certificates dic
+  WHERE dic.driver_id = p_driver_id
+    AND dic.status = 'verified'
+    AND dic.expiry_date > NOW()
+  ORDER BY dic.expiry_date DESC
+  LIMIT 1;
+END;
+$$;
+
+COMMENT ON FUNCTION public.get_driver_active_insurance IS 
+'Returns the most recent active insurance certificate for a driver';
+
+-- ============================================================================
+-- Function 4: find_online_drivers_near_trip
+-- Purpose: Find online drivers within radius of a location
+-- Used by: notifications/drivers.ts
+-- ============================================================================
+
+CREATE OR REPLACE FUNCTION public.find_online_drivers_near_trip(
+  p_latitude DECIMAL,
+  p_longitude DECIMAL,
+  p_radius_meters INTEGER DEFAULT 10000,
+  p_vehicle_type TEXT DEFAULT NULL
+)
+RETURNS TABLE(
+  driver_id UUID,
+  distance_meters DECIMAL,
+  phone TEXT,
+  full_name TEXT,
+  vehicle_type TEXT
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  RETURN QUERY
+  SELECT 
+    p.id as driver_id,
+    ST_Distance(
+      p.last_location::geography,
+      ST_SetSRID(ST_MakePoint(p_longitude, p_latitude), 4326)::geography
+    ) as distance_meters,
+    p.phone,
+    p.full_name,
+    COALESCE(p.metadata->>'vehicle_type', 'standard') as vehicle_type
+  FROM public.profiles p
+  INNER JOIN public.rides_driver_status rds ON rds.driver_id = p.id
+  WHERE 
+    p.role = 'driver'
+    AND rds.status = 'online'
+    AND p.last_location IS NOT NULL
+    AND ST_DWithin(
+      p.last_location::geography,
+      ST_SetSRID(ST_MakePoint(p_longitude, p_latitude), 4326)::geography,
+      p_radius_meters
+    )
+    AND (p_vehicle_type IS NULL OR p.metadata->>'vehicle_type' = p_vehicle_type)
+  ORDER BY distance_meters ASC
+  LIMIT 20;
+END;
+$$;
+
+COMMENT ON FUNCTION public.find_online_drivers_near_trip IS 
+'Finds up to 20 online drivers within specified radius, optionally filtered by vehicle type';
+
+-- ============================================================================
+-- Grant permissions
+-- ============================================================================
+
+GRANT EXECUTE ON FUNCTION public.rides_update_driver_location TO authenticated;
+GRANT EXECUTE ON FUNCTION public.is_driver_insurance_valid TO authenticated;
+GRANT EXECUTE ON FUNCTION public.get_driver_active_insurance TO authenticated;
+GRANT EXECUTE ON FUNCTION public.find_online_drivers_near_trip TO authenticated;
+
+GRANT EXECUTE ON FUNCTION public.rides_update_driver_location TO service_role;
+GRANT EXECUTE ON FUNCTION public.is_driver_insurance_valid TO service_role;
+GRANT EXECUTE ON FUNCTION public.get_driver_active_insurance TO service_role;
+GRANT EXECUTE ON FUNCTION public.find_online_drivers_near_trip TO service_role;
 
 COMMIT;

@@ -15,7 +15,7 @@ const patchSchema = z.object({
 export const PATCH = createHandler('admin_api.wallet.partners.update', async (_req, ctx) => {
   const admin = getSupabaseAdminClient();
   if (!admin) return jsonError({ error: 'supabase_unavailable' }, 503);
-  const id = ctx.params?.id as string;
+  const id = (ctx as any).params?.id as string;
   let body: z.infer<typeof patchSchema>;
   try { body = patchSchema.parse(await _req.json()); } catch (e) { return zodValidationError(e); }
   const update: Record<string, unknown> = {};
@@ -31,7 +31,7 @@ export const PATCH = createHandler('admin_api.wallet.partners.update', async (_r
 export const DELETE = createHandler('admin_api.wallet.partners.delete', async (_req, ctx) => {
   const admin = getSupabaseAdminClient();
   if (!admin) return jsonError({ error: 'supabase_unavailable' }, 503);
-  const id = ctx.params?.id as string;
+  const id = (ctx as any).params?.id as string;
   const { error } = await admin.from('token_partners').update({ is_active: false }).eq('id', id);
   if (error) return jsonError({ error: 'delete_failed', message: error.message }, 500);
   return jsonOk({ ok: true });

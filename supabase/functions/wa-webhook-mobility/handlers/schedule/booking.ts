@@ -1,7 +1,7 @@
 import type { ButtonSpec, RouterContext } from "../../types.ts";
 import { clearState, setState } from "../../state/store.ts";
 import { IDS } from "../../wa/ids.ts";
-import { VEHICLE_OPTIONS, vehicleFromId } from "./nearby.ts";
+import { VEHICLE_OPTIONS, vehicleFromId } from "../nearby.ts";
 import { t } from "../../i18n/translator.ts";
 import {
   gateProFeature,
@@ -25,16 +25,20 @@ import {
   sendListWithActions,
 } from "../../utils/reply.ts";
 import { emitAlert } from "../../observe/alert.ts";
-import { ensureVehiclePlate, getStoredVehicleType, updateStoredVehicleType } from "./vehicle_plate.ts";
-import { readLastLocation } from "../locations/favorites.ts";
-import { checkLocationCache } from "./location_cache.ts";
+import {
+  ensureVehiclePlate,
+  getStoredVehicleType,
+  updateStoredVehicleType,
+} from "../vehicle_plate.ts";
+import { readLastLocation } from "../../locations/favorites.ts";
+import { checkLocationCache } from "../location_cache.ts";
 import {
   getFavoriteById,
   listFavorites,
   saveFavorite,
   type UserFavorite,
-} from "../locations/favorites.ts";
-import { buildSaveRows } from "../locations/save.ts";
+} from "../../locations/favorites.ts";
+import { buildSaveRows } from "../../locations/save.ts";
 
 const DEFAULT_WINDOW_DAYS = 30;
 const REQUIRED_RADIUS_METERS = 10_000;
@@ -207,6 +211,8 @@ export async function handleScheduleRole(
     ? "passenger"
     : null;
   if (!role) return false;
+  const storedVehicle = await getStoredVehicleType(ctx.supabase, ctx.profileId);
+
   if (role === "driver") {
     const ready = await ensureVehiclePlate(ctx, {
       type: "schedule_role",
@@ -219,15 +225,11 @@ export async function handleScheduleRole(
     const fresh = checkLocationCache(last?.capturedAt ?? null);
     if (!fresh.needsRefresh && last) {
       const { lat, lng } = last;
-      const storedVehicle = await getStoredVehicleType(ctx.supabase, ctx.profileId) ?? "veh_moto";
-      await setState(ctx.supabase, ctx.profileId, { key: "schedule_location", data: { role, vehicle: storedVehicle } });
-      return await handleScheduleLocation(ctx, { role, vehicle: storedVehicle }, { lat, lng });
+      const vehicle = storedVehicle ?? "veh_moto";
+      await setState(ctx.supabase, ctx.profileId, { key: "schedule_location", data: { role, vehicle } });
+      return await handleScheduleLocation(ctx, { role, vehicle }, { lat, lng });
     }
 
-    const storedVehicle = await getStoredVehicleType(
-      ctx.supabase,
-      ctx.profileId,
-    );
     if (storedVehicle) {
       await setState(ctx.supabase, ctx.profileId, {
         key: "schedule_location",
@@ -240,7 +242,19 @@ export async function handleScheduleRole(
       );
       return true;
     }
+  } else if (storedVehicle) {
+    await setState(ctx.supabase, ctx.profileId, {
+      key: "schedule_location",
+      data: { role, vehicle: storedVehicle },
+    });
+    await sendButtonsMessage(
+      ctx,
+      t(ctx.locale, "schedule.pickup.prompt"),
+      sharePickupButtons(ctx, role),
+    );
+    return true;
   }
+
   await promptScheduleVehicleSelection(ctx, role);
   return true;
 }
@@ -286,9 +300,7 @@ export async function handleScheduleVehicle(
 ): Promise<boolean> {
   if (!ctx.profileId || !state.role) return false;
   const vehicleType = vehicleFromId(vehicleId);
-  if (state.role === "driver") {
-    await updateStoredVehicleType(ctx.supabase, ctx.profileId, vehicleType);
-  }
+  await updateStoredVehicleType(ctx.supabase, ctx.profileId, vehicleType);
   await setState(ctx.supabase, ctx.profileId, {
     key: "schedule_location",
     data: {
@@ -746,88 +758,7 @@ export async function handleScheduleRecurrenceSelection(
   return true;
 }
 
-export async function handleScheduleRefresh(
-  ctx: RouterContext,
-  state: ScheduleState,
-): Promise<boolean> {
-  if (
-    !ctx.profileId || !state.tripId || !state.role || !state.vehicle ||
-    !state.origin
-  ) {
-    return false;
-  }
-  const config = await getAppConfig(ctx.supabase);
-  const radiusMeters = kmToMeters(config.search_radius_km ?? 10);
-  const max = config.max_results ?? 9;
-
-  try {
-    const matches = await fetchMatches(ctx, state, {
-      preferDropoff: Boolean(state.dropoff),
-      limit: max,
-      radiusMeters,
-    });
-
-    await deliverMatches(ctx, state, matches, {
-      messagePrefix: t(ctx.locale, "schedule.matches.refresh"),
-      radiusMeters,
-    });
-    return true;
-  } catch (error) {
-    console.error("mobility.schedule_refresh_fail", error);
-    await logStructuredEvent("MATCHES_ERROR", {
-      flow: "schedule",
-      stage: "refresh",
-      role: state.role,
-      vehicle: state.vehicle,
-      wa_id: maskPhone(ctx.from),
-    });
-    await emitAlert("MATCHES_ERROR", {
-      flow: "schedule",
-      stage: "refresh",
-      role: state.role,
-      vehicle: state.vehicle,
-      error: error instanceof Error
-        ? error.message
-        : String(error ?? "unknown"),
-    });
-    await sendButtonsMessage(
-      ctx,
-      t(ctx.locale, "schedule.errors.match_refresh"),
-      matchActionButtons(state),
-    );
-    return true;
-  }
-}
-
-export async function requestScheduleDropoff(
-  ctx: RouterContext,
-  state: ScheduleState,
-): Promise<boolean> {
-  if (!ctx.profileId || !state.role || !state.vehicle) {
-    return false;
-  }
-  await setState(ctx.supabase, ctx.profileId, {
-    key: "schedule_dropoff",
-    data: { ...state },
-  });
-  try {
-    await sendButtonsMessage(
-      ctx,
-      t(ctx.locale, "schedule.dropoff.instructions", {
-        instructions: t(ctx.locale, "location.share.instructions"),
-      }),
-      shareDropoffButtons(ctx),
-    );
-  } catch (e) {
-    const fallbackBody = t(ctx.locale, "schedule.dropoff.instructions", {
-      instructions: t(ctx.locale, "location.share.instructions"),
-    });
-    try { await sendText(ctx.from, fallbackBody); } catch (_) { /* noop */ }
-  }
-  return true;
-}
-
-async function createTripAndDeliverMatches(
+export async function createTripAndDeliverMatches(
   ctx: RouterContext,
   state: ScheduleState,
   options: {
@@ -952,64 +883,6 @@ async function createTripAndDeliverMatches(
   }
 }
 
-export async function handleScheduleResultSelection(
-  ctx: RouterContext,
-  state: ScheduleState,
-  id: string,
-): Promise<boolean> {
-  if (!state.rows || !ctx.profileId) return false;
-  const match = state.rows.find((row) => row.id === id);
-  if (!match) return false;
-  await logStructuredEvent("MATCH_SELECTION", {
-    flow: "schedule",
-    role: state.role,
-    trip_id: state.tripId ?? null,
-    selected_trip_id: match.tripId,
-  });
-  const link = waChatLink(match.whatsapp, `Hi, I'm Ref ${match.ref}`);
-  await sendButtonsMessage(
-    ctx,
-    t(ctx.locale, "schedule.chat.cta", { link }),
-    [
-      {
-        id: IDS.SCHEDULE_REFRESH_RESULTS,
-        title: t(ctx.locale, "common.buttons.refresh"),
-      },
-    ],
-  );
-  await clearState(ctx.supabase, ctx.profileId);
-  return true;
-}
-
-export async function handleScheduleRecent(ctx: RouterContext): Promise<boolean> {
-  if (!ctx.profileId) return false;
-  try {
-    const { data } = await ctx.supabase
-      .from('profiles')
-      .select('metadata')
-      .eq('user_id', ctx.profileId)
-      .maybeSingle();
-    const root = (data?.metadata && typeof data.metadata === 'object') ? (data!.metadata as any) : {};
-    const last = root?.mobility?.schedule?.last;
-    if (!last || !last.role || !last.vehicle || !last.origin) {
-      await sendButtonsMessage(ctx, 'No recent schedule found.', [{ id: IDS.SCHEDULE_TRIP, title: 'New schedule' }]);
-      return true;
-    }
-    const state: ScheduleState = {
-      role: last.role,
-      vehicle: last.vehicle,
-      origin: last.origin,
-      dropoff: last.dropoff ?? null,
-      travelLabel: last.travelLabel ?? null,
-    };
-    // Create trip and deliver matches immediately
-    return await createTripAndDeliverMatches(ctx, state, { dropoff: state.dropoff ?? null, travelLabel: state.travelLabel ?? null });
-  } catch (_) {
-    await sendButtonsMessage(ctx, 'Could not load your recent schedule.', [{ id: IDS.SCHEDULE_TRIP, title: 'New schedule' }]);
-    return true;
-  }
-}
-
 export function isScheduleRole(id: string): boolean {
   return id === IDS.ROLE_DRIVER || id === IDS.ROLE_PASSENGER;
 }
@@ -1038,7 +911,7 @@ function sharePickupButtons(
   return buildButtons(primary, ...rest);
 }
 
-function shareDropoffButtons(ctx: RouterContext): ButtonSpec[] {
+export function shareDropoffButtons(ctx: RouterContext): ButtonSpec[] {
   return buildButtons(
     {
       id: IDS.SCHEDULE_SKIP_DROPOFF,
@@ -1076,7 +949,7 @@ async function promptScheduleVehicleSelection(
   );
 }
 
-function kmToMeters(km: number | null | undefined): number {
+export function kmToMeters(km: number | null | undefined): number {
   if (!km || Number.isNaN(km)) return REQUIRED_RADIUS_METERS;
   return Math.min(
     Math.max(Math.round(km * 1000), REQUIRED_RADIUS_METERS),
@@ -1149,7 +1022,7 @@ async function ensureFavoriteForCoords(
   return saved?.id ?? null;
 }
 
-async function fetchMatches(
+export async function fetchMatches(
   ctx: RouterContext,
   state: ScheduleState,
   options: {
@@ -1178,7 +1051,7 @@ async function fetchMatches(
   return matches.sort(sortMatches).slice(0, 9);
 }
 
-async function deliverMatches(
+export async function deliverMatches(
   ctx: RouterContext,
   state: ScheduleState,
   matches: MatchResult[],
@@ -1250,14 +1123,16 @@ async function deliverMatches(
             await sendText(d.whatsapp_e164, `🚖 New scheduled trip. Passenger: ${passengerName}. Reply ACCEPT to confirm.`);
           }
         }
-        await ctx.supabase.from('ride_notifications').insert({ trip_id: state.tripId, driver_id: d.creator_user_id, status: 'sent' }).catch((error) => {
+        try {
+          await ctx.supabase.from('ride_notifications').insert({ trip_id: state.tripId, driver_id: d.creator_user_id, status: 'sent' });
+        } catch (error: unknown) {
           console.error(JSON.stringify({
             event: "RIDE_NOTIFICATION_INSERT_FAILED",
             error: error instanceof Error ? error.message : String(error),
             tripId: state.tripId,
             driverId: d.creator_user_id
           }));
-        });
+        }
       }
     } catch (e) {
       console.warn('schedule.notify_drivers_warn', e);
@@ -1308,7 +1183,7 @@ async function isDriverQuiet(client: any, driverId: string): Promise<boolean> {
   }
 }
 
-function matchActionButtons(_state: ScheduleState): ButtonSpec[] {
+export function matchActionButtons(_state: ScheduleState): ButtonSpec[] {
   return [];
 }
 
