@@ -21,7 +21,13 @@
     "lucide-react": "^0.475.0",
     "clsx": "^2.1.1",
     "tailwind-merge": "^2.3.0",
-    "zod": "^3.25.76"
+    "zod": "^3.25.76",
+    "qrcode.react": "^4.1.0",
+    "canvas-confetti": "^1.9.3",
+    "lottie-web": "^5.12.2",
+    "@tanstack/react-virtual": "^3.10.8",
+    "immer": "^10.0.3",
+    "qr-scanner": "^1.4.2"
   },
   "devDependencies": {
     "@types/node": "^22.10.7",
