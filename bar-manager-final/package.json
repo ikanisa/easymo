@@ -18,9 +18,7 @@
     "load-test": "tsx scripts/load-test.ts",
     "tauri": "tauri",
     "tauri:dev": "tauri dev",
-    "tauri:build": "tauri build",
-    "electron": "electron .",
-    "desktop": "concurrently \"npm run dev\" \"wait-on http://localhost:3000 && electron .\""
+    "tauri:build": "tauri build"
   },
   "dependencies": {
     "@easymo/commons": "*",
@@ -92,6 +90,5 @@
     "typescript": "5.5.4",
     "vitest": "^3.2.4",
     "wait-on": "^9.0.3"
-  },
-  "main": "electron-main.js"
+  }
 }

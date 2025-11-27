@@ -1,10 +1,40 @@
-.next
-node_modules
-.env*.local
-.vercel
-*.log
+## Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build output
+.next/
+out/
+dist/
+build/
+
+# Testing
+coverage/
+.nyc_output
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Debug logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# IDE
+.vscode/*
+!.vscode/extensions.json
+.idea
 .DS_Store
-dist
-build
-coverage
+*.swp
+*.swo
+*~
+
+# Misc
 .turbo
+.vercel
+.netlify
