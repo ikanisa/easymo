@@ -333,6 +333,47 @@ serve(async (req: Request): Promise<Response> => {
           const { listSavedLocations } = await import("./profile/locations.ts");
           handled = await listSavedLocations(ctx);
         }
+        else if (id === IDS.ADD_LOCATION || id === "add_location") {
+          // Show list of location types to add
+          await sendListMessage(
+            ctx,
+            {
+              title: "📍 Add Saved Location",
+              body: "Choose the type of location you want to save:",
+              sectionTitle: "Location Type",
+              buttonText: "Choose",
+              rows: [
+                {
+                  id: "ADD_LOC::home",
+                  title: "🏠 Home",
+                  description: "Save your home address",
+                },
+                {
+                  id: "ADD_LOC::work",
+                  title: "💼 Work",
+                  description: "Save your work address",
+                },
+                {
+                  id: "ADD_LOC::school",
+                  title: "🎓 School",
+                  description: "Save your school address",
+                },
+                {
+                  id: "ADD_LOC::other",
+                  title: "📍 Other",
+                  description: "Save another favorite place",
+                },
+                {
+                  id: IDS.SAVED_LOCATIONS,
+                  title: "← Cancel",
+                  description: "Back to saved locations",
+                },
+              ],
+            },
+            { emoji: "➕" },
+          );
+          handled = true;
+        }
         else if (id.startsWith("LOC::")) {
           const locationId = id.replace("LOC::", "");
           const { handleLocationSelection } = await import("./profile/locations.ts");
