@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { PWAInstallPrompt } from '@/components/layout/PWAInstallPrompt';
 import './globals.css';
+import './view-transitions.css';
 
 export const metadata: Metadata = {
   title: 'EasyMO - Order Food & Drinks',
