@@ -13,6 +13,14 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { logStructuredEvent, recordMetric } from "../_shared/observability.ts";
+import { checkRateLimit, cleanupRateLimitState } from "../_shared/service-resilience.ts";
+import { 
+  withWebhookErrorBoundary, 
+  ValidationError, 
+  AuthenticationError,
+  ProcessingError,
+  type WebhookErrorContext 
+} from "../_shared/webhook-error-boundary.ts";
 import { parseMomoSms } from "./utils/sms-parser.ts";
 import { verifyHmacSignature } from "./utils/hmac.ts";
 import { matchRidePayment } from "./matchers/rides.ts";
@@ -26,6 +34,14 @@ const corsHeaders = {
     "authorization, x-momo-signature, x-momo-timestamp, x-momo-device-id, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
+
+// Rate limit configuration (configurable via environment variables)
+const RATE_LIMIT_MAX = parseInt(Deno.env.get("MOMO_SMS_RATE_LIMIT_MAX") || "100", 10);
+const RATE_LIMIT_WINDOW_SECONDS = parseInt(Deno.env.get("MOMO_SMS_RATE_LIMIT_WINDOW") || "60", 10);
+
+// Request counter for periodic cleanup
+let requestCounter = 0;
+const CLEANUP_INTERVAL = 50;
 
 // PII masking helper (Ground Rules compliant)
 function maskPhone(phone: string): string {
@@ -42,56 +58,72 @@ interface MomoSmsPayload {
   device_id: string;
 }
 
-serve(async (req: Request): Promise<Response> => {
-  const correlationId =
-    req.headers.get("x-correlation-id") || crypto.randomUUID();
+serve(withWebhookErrorBoundary(
+  async (req: Request): Promise<Response> => {
+    const correlationId = req.headers.get("x-correlation-id") || crypto.randomUUID();
+    const requestId = req.headers.get("x-request-id") || crypto.randomUUID();
+    
+    requestCounter++;
 
-  // Handle CORS preflight
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
+    // Handle CORS preflight
+    if (req.method === "OPTIONS") {
+      return new Response("ok", { headers: corsHeaders });
+    }
 
-  // Only accept POST
-  if (req.method !== "POST") {
-    return new Response(JSON.stringify({ error: "Method not allowed" }), {
-      status: 405,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  }
+    // Only accept POST
+    if (req.method !== "POST") {
+      throw new ValidationError("Method not allowed. Only POST is accepted.");
+    }
 
-  try {
     // 1. Extract and validate headers
     const signature = req.headers.get("x-momo-signature");
     const timestamp = req.headers.get("x-momo-timestamp");
     const deviceId = req.headers.get("x-momo-device-id");
+    
+    // 1a. Rate limiting by device ID or IP
+    const rateLimitKey = deviceId || req.headers.get("x-real-ip") || req.headers.get("x-forwarded-for")?.split(",")[0] || "unknown";
+    const rateCheck = checkRateLimit(rateLimitKey);
+    
+    if (!rateCheck.allowed) {
+      await logStructuredEvent("MOMO_WEBHOOK_RATE_LIMITED", {
+        correlationId,
+        deviceId,
+        resetAt: new Date(rateCheck.resetAt).toISOString(),
+      });
+      await recordMetric("momo.webhook.rate_limited", 1);
+      return new Response(
+        JSON.stringify({
+          error: "rate_limit_exceeded",
+          retryAfter: Math.ceil((rateCheck.resetAt - Date.now()) / 1000),
+        }),
+        {
+          status: 429,
+          headers: {
+            ...corsHeaders,
+            "Content-Type": "application/json",
+            "Retry-After": String(Math.ceil((rateCheck.resetAt - Date.now()) / 1000)),
+            "X-RateLimit-Limit": String(RATE_LIMIT_MAX),
+            "X-RateLimit-Remaining": String(rateCheck.remaining),
+            "X-RateLimit-Reset": new Date(rateCheck.resetAt).toISOString(),
+          },
+        }
+      );
+    }
+    
+    // Periodic cleanup of rate limit state
+    if (requestCounter % CLEANUP_INTERVAL === 0) {
+      cleanupRateLimitState();
+    }
 
     if (!signature || !timestamp) {
-      await logStructuredEvent("MOMO_WEBHOOK_MISSING_HEADERS", {
-        correlationId,
-        hasSignature: !!signature,
-        hasTimestamp: !!timestamp,
-      });
-      return new Response(
-        JSON.stringify({ error: "Missing required headers" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      throw new AuthenticationError("Missing required headers: x-momo-signature or x-momo-timestamp");
     }
 
     // 2. Check timestamp freshness (5 minute window - replay protection)
     const requestTime = parseInt(timestamp);
     const now = Math.floor(Date.now() / 1000);
     if (Math.abs(now - requestTime) > 300) {
-      await logStructuredEvent("MOMO_WEBHOOK_EXPIRED_REQUEST", {
-        correlationId,
-        requestTime,
-        serverTime: now,
-        diff: Math.abs(now - requestTime),
-      });
-      await recordMetric("momo.webhook.expired", 1);
-      return new Response(
-        JSON.stringify({ error: "Request expired" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      throw new AuthenticationError(`Request expired. Time difference: ${Math.abs(now - requestTime)}s`);
     }
 
     // 3. Parse request body
@@ -100,25 +132,12 @@ serve(async (req: Request): Promise<Response> => {
     try {
       payload = JSON.parse(rawBody);
     } catch {
-      await logStructuredEvent("MOMO_WEBHOOK_INVALID_JSON", { correlationId });
-      return new Response(
-        JSON.stringify({ error: "Invalid JSON payload" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      throw new ValidationError("Invalid JSON payload");
     }
 
     // 4. Validate payload structure
     if (payload.source !== "momoterminal" || !payload.phone_number || !payload.message) {
-      await logStructuredEvent("MOMO_WEBHOOK_INVALID_PAYLOAD", {
-        correlationId,
-        source: payload.source,
-        hasPhone: !!payload.phone_number,
-        hasMessage: !!payload.message,
-      });
-      return new Response(
-        JSON.stringify({ error: "Invalid payload structure" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      throw new ValidationError("Invalid payload structure. Required: source=momoterminal, phone_number, message");
     }
 
     // 5. Create Supabase client
@@ -135,15 +154,7 @@ serve(async (req: Request): Promise<Response> => {
       .single();
 
     if (endpointError || !endpoint) {
-      await logStructuredEvent("MOMO_WEBHOOK_UNKNOWN_PHONE", {
-        correlationId,
-        phone: maskPhone(payload.phone_number),
-      });
-      await recordMetric("momo.webhook.unknown_phone", 1);
-      return new Response(
-        JSON.stringify({ error: "Webhook not configured for this phone" }),
-        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      throw new AuthenticationError(`Webhook not configured for phone: ${maskPhone(payload.phone_number)}`);
     }
 
     // 7. Verify HMAC signature
@@ -154,16 +165,7 @@ serve(async (req: Request): Promise<Response> => {
     );
 
     if (!isValidSignature) {
-      await logStructuredEvent("MOMO_WEBHOOK_INVALID_SIGNATURE", {
-        correlationId,
-        phone: maskPhone(payload.phone_number),
-        serviceType: endpoint.service_type,
-      });
-      await recordMetric("momo.webhook.invalid_signature", 1, { service: endpoint.service_type });
-      return new Response(
-        JSON.stringify({ error: "Invalid signature" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      throw new AuthenticationError("Invalid HMAC signature");
     }
 
     // 8. Parse SMS content
@@ -204,15 +206,7 @@ serve(async (req: Request): Promise<Response> => {
       .single();
 
     if (insertError) {
-      await logStructuredEvent("MOMO_WEBHOOK_INSERT_ERROR", {
-        correlationId,
-        error: insertError.message,
-        phone: maskPhone(payload.phone_number),
-      });
-      return new Response(
-        JSON.stringify({ error: "Failed to store transaction" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      throw new ProcessingError(`Failed to store transaction: ${insertError.message}`);
     }
 
     // 10. Route to appropriate service matcher
@@ -287,20 +281,22 @@ serve(async (req: Request): Promise<Response> => {
         matched: matchResult !== null,
         matchedTo: matchResult?.table,
       }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json", "X-Correlation-ID": correlationId } }
     );
-
-  } catch (error) {
-    await logStructuredEvent("MOMO_WEBHOOK_FATAL_ERROR", {
-      correlationId,
-      error: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined,
-    });
-    await recordMetric("momo.webhook.error", 1);
-
-    return new Response(
-      JSON.stringify({ error: "Internal server error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+  },
+  (req: Request): WebhookErrorContext => ({
+    service: "momo-sms-webhook",
+    correlationId: req.headers.get("x-correlation-id") || crypto.randomUUID(),
+    requestId: req.headers.get("x-request-id") || crypto.randomUUID(),
+    phoneNumber: undefined, // Will be extracted from payload
+    ipAddress: req.headers.get("x-real-ip") || req.headers.get("x-forwarded-for")?.split(",")[0],
+    userAgent: req.headers.get("user-agent") || undefined,
+  }),
+  {
+    enableDLQ: true,
+    enableRetry: true,
+    maxRetries: 3,
+    userFriendlyMessages: true,
+    notifyUser: false,
   }
-});
+));

@@ -8,9 +8,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { logStructuredEvent } from "../_shared/observability.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { logStructuredEvent } from "../_shared/observability.ts";
 import { sendText } from "../wa-webhook/wa/client.ts";
-import { logStructuredEvent } from "../_shared/observability.ts";
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL")!,

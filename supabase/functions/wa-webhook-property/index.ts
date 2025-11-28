@@ -85,7 +85,7 @@ serve(async (req: Request): Promise<Response> => {
 
   try {
     // Health check
-    if (req.method === "GET" && url.pathname === "/health") {
+    if (req.method === "GET" && (url.pathname === "/health" || url.pathname.endsWith("/health"))) {
       return respond({
         status: "healthy",
         service: "wa-webhook-property",

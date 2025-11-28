@@ -1,14 +1,11 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { logStructuredEvent } from "../_shared/observability.ts";
 import { getServiceClient } from "../_shared/supabase.ts";
-import { logStructuredEvent } from "../_shared/observability.ts";
 import {
-import { logStructuredEvent } from "../_shared/observability.ts";
   buildNumberLookupCandidates,
   normalizeE164,
 } from "../_shared/phone.ts";
 import { rateLimitMiddleware } from "../_shared/rate-limit/index.ts";
-import { logStructuredEvent } from "../_shared/observability.ts";
 
 const BATCH_SIZE = (() => {
   const value = Number(Deno.env.get("MOMO_ALLOCATOR_BATCH_SIZE") ?? "10");
