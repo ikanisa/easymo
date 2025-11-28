@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { supabase } from "../_shared/wa-webhook-shared/config.ts";
-import { sendText, sendButtonsMessage } from "../_shared/wa-webhook-shared/wa/client.ts";
+import { sendText } from "../_shared/wa-webhook-shared/wa/client.ts";
 import { logStructuredEvent } from "../_shared/observability.ts";
 
 serve(async (req) => {
