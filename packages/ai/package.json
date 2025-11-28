@@ -19,21 +19,18 @@
     }
   },
   "dependencies": {
-    "@google/generative-ai": "^0.21.0",
+    "@easymo/commons": "workspace:*",
+    "@easymo/media-utils": "workspace:*",
+    "@google/generative-ai": "^0.24.1",
+    "@google/genai": "^1.0.0",
     "@supabase/supabase-js": "^2.76.1",
     "ioredis": "^5.4.1",
     "nanoid": "^5.0.9",
     "openai": "^4.78.0",
     "p-queue": "^8.0.1",
     "uuid": "^10.0.0",
-    "nanoid": "^5.0.9",
-    "@google/generative-ai": "^0.24.1",
-    "@google/genai": "^1.0.0",
-    "@easymo/commons": "workspace:*",
-    "@easymo/media-utils": "workspace:*"
-    "zod": "^3.23.8",
-    "@google/genai": "^1.0.0",
-    "ws": "^8.18.0"
+    "ws": "^8.18.0",
+    "zod": "^3.23.8"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",
