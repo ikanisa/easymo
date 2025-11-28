@@ -18,19 +18,34 @@ import { getTemplateRegistry, type ApprovedTemplate } from "./template_registry.
 import { buildToneDirective } from "../../../../packages/localization/src/tone.ts";
 import { AGENT_CONFIGURATIONS } from "./agent_configs.ts";
 
+/**
+ * Official 10 agents matching production agent_registry database.
+ * 
+ * Agent slug mapping (from removed agents):
+ * - concierge-router → support
+ * - mobility-orchestrator → rides
+ * - pharmacy-agent → marketplace
+ * - hardware-agent → marketplace
+ * - shop-agent → marketplace
+ * - property-agent → real_estate
+ * - legal-intake → business_broker
+ * - marketing-sales → sales_cold_caller
+ * - sora-video → REMOVED
+ * - locops → INTERNAL (not agent)
+ * - analytics-risk → INTERNAL (not agent)
+ * - payments-agent → INTERNAL (not agent)
+ */
 export type AgentType =
-  | "waiter"           // Bars & Restaurants
-  | "rides"            // Mobility coordinator
-  | "jobs"             // Job board and gigs
-  | "business_broker"  // Find nearby businesses
-  | "real_estate"      // Property rentals
-  | "farmer"           // Produce listing
-  | "insurance"        // Quotes, claims, policies
-  | "sales"            // SDR for easyMO
-  | "support"          // Customer support
-  | "pharmacy"         // Medicine finder
-  | "wallet"           // Wallet & payments (legacy)
-  | "general";         // Fallback
+  | "farmer"           // Farmer AI Agent
+  | "insurance"        // Insurance AI Agent
+  | "sales_cold_caller" // Sales/Marketing Cold Caller AI Agent
+  | "rides"            // Rides AI Agent
+  | "jobs"             // Jobs AI Agent
+  | "waiter"           // Waiter AI Agent
+  | "real_estate"      // Real Estate AI Agent
+  | "marketplace"      // Marketplace AI Agent (includes pharmacy, hardware, shop)
+  | "support"          // Support AI Agent (includes concierge routing)
+  | "business_broker"; // Business Broker AI Agent (includes legal intake)
 
 export interface AgentConfig {
   id: string;
@@ -127,7 +142,7 @@ export class AgentOrchestrator {
         correlation_id: context.correlationId,
         error: error instanceof Error ? error.message : String(error),
       });
-      return { agentType: "general", confidence: 0.5 };
+      return { agentType: "support", confidence: 0.5 };
     }
   }
 
@@ -140,15 +155,19 @@ export class AgentOrchestrator {
     const messages: ChatMessage[] = [
       {
         role: "system",
-        content: `Classify the user's intent into one of these categories:
-- customer_service: General help, questions, account issues
-- booking: Trip booking, route search, travel planning
-- wallet: Balance, transfers, payments, transactions
-- marketplace: Shopping, products, orders
-- support: Technical issues, complaints, feedback
-- general: Greetings, small talk, unclear intent
+        content: `Classify the user's intent into one of these agent categories:
+- farmer: Agricultural produce, farming, crops, harvest
+- insurance: Insurance quotes, claims, policies, coverage
+- sales_cold_caller: Marketing, campaigns, sales outreach
+- rides: Transportation, trips, drivers, passengers, mobility
+- jobs: Employment, job search, hiring, gigs
+- waiter: Restaurant, bar, dining, food ordering, menu
+- real_estate: Property, rentals, housing, apartments
+- marketplace: Shopping, products, pharmacy, hardware, groceries
+- support: Help, account issues, technical problems, general questions
+- business_broker: Business sales, acquisitions, legal services
 
-Respond with just the category name (e.g., "booking").`,
+Respond with just the agent type (e.g., "rides").`,
         tool_calls: undefined,
         tool_call_id: undefined,
         name: undefined,

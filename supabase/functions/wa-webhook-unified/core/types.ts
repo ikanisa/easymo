@@ -65,17 +65,20 @@ export interface UnifiedSession {
 // AGENT TYPES
 // =====================================================
 
+/**
+ * Official 10 agents matching production agent_registry database.
+ */
 export type AgentType =
-  | "marketplace"
-  | "jobs"
-  | "property"
-  | "farmer"
-  | "waiter"
-  | "insurance"
-  | "rides"
-  | "sales"
-  | "business_broker"
-  | "support";
+  | "farmer"           // Farmer AI Agent
+  | "insurance"        // Insurance AI Agent
+  | "sales_cold_caller" // Sales/Marketing Cold Caller AI Agent
+  | "rides"            // Rides AI Agent
+  | "jobs"             // Jobs AI Agent
+  | "waiter"           // Waiter AI Agent
+  | "real_estate"      // Real Estate AI Agent
+  | "marketplace"      // Marketplace AI Agent (includes pharmacy, hardware, shop)
+  | "support"          // Support AI Agent (includes concierge routing)
+  | "business_broker"; // Business Broker AI Agent (includes legal intake)
 
 export interface AgentDependencies {
   supabase: SupabaseClient;
