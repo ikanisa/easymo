@@ -1,4 +1,4 @@
-import { Logger } from './logger';
+import { childLogger } from './logger';
 
 export interface HealthCheckResult {
   status: 'healthy' | 'degraded' | 'unhealthy';
@@ -24,7 +24,7 @@ export interface HealthCheckOptions {
 
 export async function createHealthCheck(options: HealthCheckOptions) {
   const startTime = Date.now();
-  const log = new Logger({ service: 'health-check' });
+  const log = childLogger({ service: 'health-check' });
 
   return async function healthCheck(): Promise<HealthCheckResult> {
     const checks: Record<string, CheckResult> = {};
