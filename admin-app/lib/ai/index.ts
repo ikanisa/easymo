@@ -8,6 +8,10 @@ export { routeChatRequest } from "./router";
 // Google AI integrations (Phase 2)
 export * from "./google";
 
+// Tools & Agent Execution (Phase 3)
+export * from "./tools";
+export * from "./agent-executor";
+
 // Re-export existing chat completions types
 export type {
   ChatCompletionRole,
