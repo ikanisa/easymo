@@ -59,7 +59,12 @@
     "styled-jsx": "5.1.1",
     "swr": "^2.3.6",
     "tailwind-merge": "^2.3.0",
-    "zod": "3.25.76"
+    "zod": "3.25.76",
+    "@google/generative-ai": "^0.21.0",
+    "@googlemaps/google-maps-services-js": "^3.4.0",
+    "p-retry": "^6.2.0",
+    "p-queue": "^8.0.1",
+    "ws": "^8.18.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.1.0",

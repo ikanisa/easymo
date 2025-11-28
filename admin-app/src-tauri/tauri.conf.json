@@ -66,7 +66,8 @@
       }
     ],
     "macOS": {
-      "minimumSystemVersion": "10.15"
+      "minimumSystemVersion": "10.15",
+      "entitlements": "Entitlements.plist"
     },
     "windows": {
       "webviewInstallMode": {
@@ -77,8 +78,13 @@
   },
   "plugins": {
     "updater": {
-      "pubkey": "",
-      "endpoints": ["https://releases.easymo.dev/desktop/{{target}}/{{current_version}}"]
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDJFQkM2NDY1RTlGODNEMDYKUldRR1BmanBaV1M4TGltR3JvUG9lcjdKakp3aGNEQ05JMTJEUFJzUjQ2SGZHR2hvUzNWaS9lKzQK",
+      "endpoints": [
+        "https://releases.easymo.dev/desktop/{{target}}/{{current_version}}"
+      ],
+      "windows": {
+        "installMode": "passive"
+      }
     }
   }
 }
