@@ -96,7 +96,9 @@ export class AgentRegistry {
       
       // 10. Business Broker AI Agent (includes legal intake)
       case "business_broker":
-        return new CommerceAgent(deps); // Uses commerce agent for business discovery
+        // Business brokerage and legal intake functionality
+        // Uses CommerceAgent for business discovery and intake workflows
+        return new CommerceAgent(deps);
 
       default:
         // Fallback to support agent for any unknown types
