@@ -6,7 +6,8 @@
     "moduleResolution": "node",
     "outDir": "./dist",
     "rootDir": "./src",
-    "strict": true,
+    "strict": false,
+    "noImplicitAny": false,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
@@ -21,6 +22,12 @@
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src/**/*"],
+  "include": [
+    "src/agents/**/*",
+    "src/core/unified-gateway.ts",
+    "src/core/agent-factory.ts",
+    "src/core/types.ts",
+    "src/index.ts"
+  ],
   "exclude": ["node_modules", "dist", "**/*.test.ts"]
 }

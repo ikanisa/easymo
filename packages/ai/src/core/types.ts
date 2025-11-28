@@ -1,7 +1,5 @@
 /**
- * Core types for AI Agent System
- * 
- * @packageDocumentation
+ * Shared Types
  */
 
 /**
@@ -51,183 +49,21 @@ export interface AgentConfig {
   metadata?: Record<string, any>;
 }
 
-/**
- * Conversation record
- */
-export interface Conversation {
-  id: string;
-  agent_id: string | null;
-  user_id: string;
-  profile_id?: string;
-  channel: Channel;
-  status: ConversationStatus;
-  context: Record<string, any>;
-  started_at: string;
-  ended_at?: string;
-  last_message_at?: string;
-  summary?: string;
-  total_cost_usd: number;
-  total_tokens: number;
-  message_count: number;
+export interface AIConfig {
+  openaiApiKey: string;
+  googleApiKey: string;
+}
+
+export interface AgentContext {
+  userId: string;
+  sessionId: string;
   metadata?: Record<string, any>;
 }
 
-/**
- * Message record
- */
-export interface Message {
-  id: string;
-  conversation_id: string;
-  role: MessageRole;
-  content: string | null;
-  tool_calls?: ToolCall[];
-  tool_call_id?: string;
-  name?: string;
-  tokens_prompt?: number;
-  tokens_completion?: number;
-  tokens_total?: number;
-  cost_usd?: number;
-  latency_ms?: number;
-  model?: string;
-  created_at: string;
-  metadata?: Record<string, any>;
-}
+export type AgentRole = "user" | "assistant" | "system" | "tool";
 
-/**
- * Tool call from OpenAI
- */
-export interface ToolCall {
-  id: string;
-  type: 'function';
-  function: {
-    name: string;
-    arguments: string;
-  };
-}
-
-/**
- * Tool definition
- */
-export interface Tool {
-  name: string;
-  description: string;
-  category?: string;
-  parameters: any; // JSON Schema
-  enabled: boolean;
-  requiresAuth: boolean;
-  execute: ToolHandler;
-}
-
-/**
- * Tool handler function
- */
-export type ToolHandler = (
-  args: any,
-  context: ToolContext
-) => Promise<any>;
-
-/**
- * Tool execution context
- */
-export interface ToolContext {
-  conversationId: string;
-  userId: string;
-  profileId?: string;
-  agentId: string;
-  supabase: any;
-  variables?: Record<string, any>;
-}
-
-/**
- * Agent response
- */
-export interface AgentResponse {
-  message: string;
-  usage?: TokenUsage;
-  cost?: number;
-  toolsExecuted?: string[];
-  latency?: number;
-  model?: string;
-}
-
-/**
- * Token usage tracking
- */
-export interface TokenUsage {
-  prompt_tokens: number;
-  completion_tokens: number;
-  total_tokens: number;
-}
-
-/**
- * Message processing parameters
- */
-export interface ProcessMessageParams {
-  userId: string;
-  message: string;
-  conversationId?: string;
-  context?: Record<string, any>;
-}
-
-/**
- * Agent execution parameters
- */
-export interface ExecutionParams {
-  conversation: Conversation;
-  message: string;
-  memory: string[];
-  context?: Record<string, any>;
-}
-
-/**
- * Orchestrator configuration
- */
-export interface OrchestratorConfig {
-  openaiKey: string;
-  redisUrl: string;
-  supabaseUrl: string;
-  supabaseKey: string;
-}
-
-/**
- * Memory entry for embeddings
- */
-export interface MemoryEntry {
-  id: string;
-  conversation_id: string;
+export interface AgentMessage {
+  role: AgentRole;
   content: string;
-  embedding: number[];
-  metadata?: Record<string, any>;
-  importance_score: number;
-  created_at: string;
-  similarity?: number;
-}
-
-/**
- * Metric record
- */
-export interface Metric {
-  agent_id: string;
-  conversation_id: string;
-  metric_type: string;
-  value: number;
-  dimensions?: Record<string, any>;
-  timestamp: string;
-}
-
-/**
- * Tool execution log
- */
-export interface ToolExecution {
-  id: string;
-  conversation_id: string;
-  agent_id: string;
-  tool_name: string;
-  input: any;
-  output?: any;
-  success: boolean;
-  error?: string;
-  duration_ms: number;
-  created_at: string;
-  created_by: string;
+  timestamp: Date;
 }

@@ -1,87 +1,24 @@
 /**
- * @easymo/ai - AI Agent Orchestration System
+ * EasyMO AI Package
  * 
- * Central package for managing AI agents, tools, memory, and conversations
- * across the EasyMO platform.
- * 
- * @packageDocumentation
+ * Comprehensive AI infrastructure for EasyMO.
  */
 
-// Core exports
-export { AgentOrchestrator } from './core/orchestrator';
+// OpenAI Agents SDK
+export { default as OpenAIAgentsSDK } from "./agents/openai/sdk-client";
+export { default as OpenAIResponsesAPI } from "./agents/openai/responses-api";
+export { default as RealtimeClient } from "./agents/openai/realtime-client";
+export * from "./agents/openai/agent-definitions";
+export * from "./agents/openai/tools";
 
-// Tool exports
-export {
-  ALL_TOOLS,
-  checkAvailabilityTool,
-  // Individual tools
-  checkBalanceTool,
-  createBookingTool,
-  createTicketTool,
-  getAllToolNames,
-  getAllToolSchemas,
-  getTool,
-  getToolsByCategory,
-  getToolSchema,
-  getUserProfileTool,
-  sendMoneyTool,
-  TOOL_REGISTRY,
-  toolExists,
-} from './tools';
+// Google AI ADK
+export { default as GoogleADKClient } from "./agents/google/adk-client";
+export { default as GeminiLiveClient } from "./agents/google/gemini-live";
+export { default as FlashLiteClient } from "./agents/google/flash-lite";
+export { default as SearchGroundingClient } from "./agents/google/search-grounding";
+export { default as ImagenClient } from "./agents/google/imagen";
 
-// Type exports from core types
-export type {
-  AgentConfig,
-  AgentResponse,
-  AgentType,
-  Channel,
-  Conversation,
-  ConversationStatus,
-  ExecutionParams,
-  MemoryEntry,
-  Message,
-  MessageRole,
-  Metric,
-  OrchestratorConfig,
-  ProcessMessageParams,
-  TokenUsage,
-  Tool,
-  ToolCall,
-  ToolContext,
-  ToolExecution,
-  ToolHandler,
-} from './core/types';
-
-// Unified interface exports for orchestrator consolidation
-export type {
-  // Orchestrator interfaces
-  IAgentOrchestrator,
-  OrchestratorAgentType,
-  ProcessMessageParams as UnifiedProcessMessageParams,
-  IntentResult,
-  OrchestratorResponse,
-  // Provider interfaces
-  IAIProvider,
-  ProviderMessage,
-  ProviderToolDefinition,
-  ProviderToolCall,
-  ProviderChatOptions,
-  ProviderChatResponse,
-  FallbackProviderConfig,
-  ProviderFactory,
-  // Agent configuration
-  AgentConfiguration,
-  AgentInteractionMetrics,
-} from './core/interfaces';
-
-// Gemini Live API exports
-export {
-  connectLiveSession,
-  disconnectLiveSession,
-  findLeads,
-  searchLocalBusinesses,
-  chatWithStrategist,
-  chatFast,
-  transcribeAudioFile,
-  type LiveSessionCallbacks,
-} from './providers-gemini-live';
+// Core Infrastructure
+export { default as UnifiedGateway } from "./core/unified-gateway";
+export { default as AgentFactory } from "./core/agent-factory";
+export * from "./core/types";
