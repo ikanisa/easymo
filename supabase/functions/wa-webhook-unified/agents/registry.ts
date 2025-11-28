@@ -3,6 +3,18 @@
  * 
  * Central registry for all domain agents.
  * Manages agent instantiation and lookup.
+ * 
+ * OFFICIAL AGENTS (10 production agents matching agent_registry database):
+ * 1. farmer - Farmer AI Agent
+ * 2. insurance - Insurance AI Agent
+ * 3. sales_cold_caller - Sales/Marketing Cold Caller AI Agent
+ * 4. rides - Rides AI Agent
+ * 5. jobs - Jobs AI Agent
+ * 6. waiter - Waiter AI Agent
+ * 7. real_estate - Real Estate AI Agent
+ * 8. marketplace - Marketplace AI Agent (includes pharmacy, hardware, shop)
+ * 9. support - Support AI Agent (includes concierge routing)
+ * 10. business_broker - Business Broker AI Agent (includes legal intake)
  */
 
 import { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -11,7 +23,7 @@ import { BaseAgent } from "./base-agent.ts";
 
 // Import all domain agents
 import { SupportAgent } from "./support-agent.ts";
-import { CommerceAgent } from "./commerce-agent.ts"; // Unified commerce agent
+import { CommerceAgent } from "./commerce-agent.ts"; // Unified commerce agent (marketplace)
 import { FarmerAgent } from "./farmer-agent.ts";
 import { WaiterAgent } from "./waiter-agent.ts";
 import { InsuranceAgent } from "./insurance-agent.ts";
@@ -37,7 +49,7 @@ export class AgentRegistry {
   }
 
   /**
-   * Create agent instance
+   * Create agent instance based on the 10 official agent types
    */
   private createAgent(type: AgentType, correlationId: string): BaseAgent {
     const deps: AgentDependencies = {
@@ -46,37 +58,48 @@ export class AgentRegistry {
     };
 
     switch (type) {
-      case "support":
-        return new SupportAgent(deps);
-      
-      case "marketplace":
-      case "business_broker":
-        // Both marketplace and business_broker now use CommerceAgent
-        return new CommerceAgent(deps);
-      
+      // 1. Farmer AI Agent
       case "farmer":
         return new FarmerAgent(deps);
       
-      case "waiter":
-        return new WaiterAgent(deps);
-      
+      // 2. Insurance AI Agent
       case "insurance":
         return new InsuranceAgent(deps);
       
+      // 3. Sales/Marketing Cold Caller AI Agent
+      case "sales_cold_caller":
+        return new SalesAgent(deps);
+      
+      // 4. Rides AI Agent
       case "rides":
         return new RidesAgent(deps);
       
+      // 5. Jobs AI Agent
       case "jobs":
         return new JobsAgent(deps);
       
-      case "property":
+      // 6. Waiter AI Agent
+      case "waiter":
+        return new WaiterAgent(deps);
+      
+      // 7. Real Estate AI Agent (was property-agent)
+      case "real_estate":
         return new PropertyAgent(deps);
       
-      case "sales":
-        return new SalesAgent(deps);
+      // 8. Marketplace AI Agent (includes pharmacy, hardware, shop)
+      case "marketplace":
+        return new CommerceAgent(deps);
+      
+      // 9. Support AI Agent (includes concierge routing)
+      case "support":
+        return new SupportAgent(deps);
+      
+      // 10. Business Broker AI Agent (includes legal intake)
+      case "business_broker":
+        return new CommerceAgent(deps); // Uses commerce agent for business discovery
 
       default:
-        // Fallback to support agent
+        // Fallback to support agent for any unknown types
         console.warn(`Agent type ${type} not implemented, using support agent`);
         return new SupportAgent(deps);
     }

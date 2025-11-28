@@ -21,22 +21,33 @@ import type { TokenUsage } from '../types/index';
 // ============================================================================
 
 /**
- * Agent types supported by the orchestrator
+ * Official 10 agents matching production agent_registry database.
+ * 
+ * Agent slug mapping (from removed agents):
+ * - concierge-router → support
+ * - mobility-orchestrator → rides
+ * - pharmacy-agent → marketplace
+ * - hardware-agent → marketplace
+ * - shop-agent → marketplace
+ * - property-agent → real_estate
+ * - legal-intake → business_broker
+ * - marketing-sales → sales_cold_caller
+ * - sora-video → REMOVED
+ * - locops → INTERNAL (not agent)
+ * - analytics-risk → INTERNAL (not agent)
+ * - payments-agent → INTERNAL (not agent)
  */
 export type OrchestratorAgentType =
-  | 'waiter'           // Restaurant/bar ordering
-  | 'rides'            // Mobility coordination
-  | 'jobs'             // Job board and gigs
-  | 'business_broker'  // Find nearby businesses
-  | 'real_estate'      // Property rentals
-  | 'farmer'           // Produce listing
-  | 'insurance'        // Quotes, claims, policies
-  | 'sales'            // SDR for EasyMO
-  | 'support'          // Customer support
-  | 'pharmacy'         // Medicine finder
-  | 'wallet'           // Wallet & payments
-  | 'general'          // Fallback/triage
-  | 'triage';          // Initial routing
+  | 'farmer'           // Farmer AI Agent
+  | 'insurance'        // Insurance AI Agent
+  | 'sales_cold_caller' // Sales/Marketing Cold Caller AI Agent
+  | 'rides'            // Rides AI Agent
+  | 'jobs'             // Jobs AI Agent
+  | 'waiter'           // Waiter AI Agent
+  | 'real_estate'      // Real Estate AI Agent
+  | 'marketplace'      // Marketplace AI Agent (includes pharmacy, hardware, shop)
+  | 'support'          // Support AI Agent (includes concierge routing)
+  | 'business_broker'; // Business Broker AI Agent (includes legal intake)
 
 /**
  * Common parameters for processing a message

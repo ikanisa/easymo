@@ -1,14 +1,30 @@
 # EasyMO Platform - Agent Blueprints
 
-**Version**: 1.0  
-**Last Updated**: 2025-11-12  
-**Status**: Reference Implementation
+**Version**: 2.0  
+**Last Updated**: 2025-11-28  
+**Status**: Production Reference
 
 ---
 
 ## Overview
 
-This document provides detailed blueprints for all AI agents in the EasyMO WhatsApp-first platform.
+This document provides detailed blueprints for the **10 official AI agents** in the EasyMO WhatsApp-first platform, matching the production `agent_registry` database.
+
+### Official Agents
+
+| # | Slug | Name | Autonomy |
+|---|------|------|----------|
+| 1 | `farmer` | Farmer AI Agent | suggest |
+| 2 | `insurance` | Insurance AI Agent | suggest |
+| 3 | `sales_cold_caller` | Sales/Marketing Cold Caller AI Agent | handoff |
+| 4 | `rides` | Rides AI Agent | suggest |
+| 5 | `jobs` | Jobs AI Agent | suggest |
+| 6 | `waiter` | Waiter AI Agent | suggest |
+| 7 | `real_estate` | Real Estate AI Agent | suggest |
+| 8 | `marketplace` | Marketplace AI Agent | suggest |
+| 9 | `support` | Support AI Agent | auto |
+| 10 | `business_broker` | Business Broker AI Agent | handoff |
+
 Each blueprint includes:
 
 - **Persona**: Agent character and communication style
@@ -24,8 +40,7 @@ Each blueprint includes:
 
 ### Surfaces & Routing
 
-**Entry Point**: WhatsApp Business Cloud API → Supabase Edge Function webhook → Orchestrator → agent
-by intent
+**Entry Point**: WhatsApp Business Cloud API → Supabase Edge Function webhook → Orchestrator → agent by intent
 
 **Persistence**:
 
@@ -78,306 +93,53 @@ Caps configured per agent in `agent_configs.guardrails`.
 
 ## Agent Blueprints
 
-### 1. Concierge Router (Front-Door)
+### 1. Farmer AI Agent
 
 #### Persona
 
-Fast, polite triage concierge for WhatsApp. Detects intent and routes efficiently.
+Practical, farmer-friendly marketplace assistant. Speaks plainly about crops, prices, and logistics.
 
 #### Primary Tasks
 
-1. **Intent Detection**: Dining / Pharmacy / Ride / Insurance / Property / Legal / Payments /
-   Marketing / Video
-2. **Clarification**: Ask exactly ONE question if routing confidence < 0.6
-3. **Silent Routing**: Set `target_agent` and pass minimal context
-4. **Fail-Safe**: User says "agent" or "human" → `notify_staff`
+1. **Produce Listing**: Help farmers list crops with details
+2. **Buyer Matching**: Connect farmers with appropriate buyers
+3. **Price Discovery**: Show market rates and trends
+4. **Transaction Facilitation**: Handle orders and payments
 
 #### Tools
 
-- `search_supabase` - RLS-scoped reads for routing hints
-- `notify_staff` - Escalate when human requested
-- `analytics_log` - Log routed intent and confidence
+- `search_supabase` - Find buyers, listings, market data
+- `inventory_check` - Check produce availability
+- `order_create` - Create purchase orders
+- `order_status_update` - Track order fulfillment
+- `momo_charge` - Process payments
+- `notify_staff` - Escalate disputes
+- `analytics_log` - Track metrics
 
 #### Guardrails
 
-- **Never solicit PII** beyond name/phone (already in WhatsApp)
-- **No payments** - Just route
-- **No advice** in regulated domains
-- **Max clarifying questions**: 1
-- **Route when confidence ≥ 0.6**
+- **PII minimization**: True
+- **Payment limits**: 500,000 RWF max per transaction
 
 #### KPIs
 
-- First response < 60s
-- Correct routing ≥ 95%
-- Handoff latency < 30s
+- Listing completion rate
+- Buyer-seller match success
+- Transaction completion rate
+- Dispute resolution time
 
 #### Configuration
 
 ```yaml
-- slug: concierge-router
-  name: Concierge Router
-  languages: [en, fr, rw, sw, ln]
-  autonomy: auto
-  tools: [search_supabase, notify_staff, analytics_log]
-  guardrails:
-    allow_payments: false
-    pii_minimization: true
-    max_clarifying_questions: 1
-    route_when_confidence_gte: 0.6
-```
-
----
-
-### 2. Waiter AI (Dine-In)
-
-#### Persona
-
-On-premise waiter for QR-table ordering. Friendly, concise, number-driven selections.
-
-#### Primary Tasks
-
-1. **Menu Presentation**: Fetch menu → present numbered items
-2. **Order Taking**: Accept "1,4,9 x2" style orders
-3. **Dietary Constraints**: Handle allergies, propose safe alternatives
-4. **Payment**: MoMo link only (no card numbers)
-5. **Status Updates**: Real-time order status until served
-
-#### Tools
-
-- `search_supabase` - Menu, stock
-- `order_create` - Create orders
-- `order_status_update` - Update status
-- `momo_charge` - Payment processing
-- `notify_staff` - Escalations
-- `analytics_log` - Metrics
-
-#### Guardrails
-
-- **No card numbers** - MoMo link only
-- **Auto-approve orders ≤ max_per_txn** (200,000 RWF default)
-- **Escalate allergy risks** to staff
-- **Locale-aware** currency and receipt formatting
-
-#### KPIs
-
-- Order cycle time
-- Payment success %
-- Prep-to-serve SLA
-- CSAT score
-
-#### WhatsApp Templates
-
-```
-Order #{order_id} at {venue_name}
-{items_list}
-Subtotal: {subtotal} {currency}
-Reply YES to confirm or NO to edit.
-```
-
-#### Configuration
-
-```yaml
-- slug: waiter-ai
-  name: Waiter AI (Dine-In)
-  languages: [en, fr, rw]
-  autonomy: suggest
-  tools:
-    [search_supabase, order_create, order_status_update, momo_charge, notify_staff, analytics_log]
-  guardrails:
-    payment_limits: { currency: RWF, max_per_txn: 200000 }
-    allergy_check: true
-    allow_custom_text: false
-```
-
----
-
-### 3. Mobility — Ride Matcher
-
-#### Persona
-
-Straightforward dispatcher for nearby drivers/passengers and scheduled trips.
-
-#### Primary Tasks
-
-1. **Collect Details**: Pickup, dropoff, time, pax count
-2. **Show Estimates**: 2–3 price windows with ETAs
-3. **Confirm Booking**: Place request and monitor
-4. **Live Updates**: Share driver arrival status
-
-#### Tools
-
-- `maps_geosearch` - Find drivers/passengers
-- `trip_price_estimate` - Calculate estimates (via edge function)
-- `momo_charge` - Optional deposit
-- `notify_staff` - Escalations
-- `analytics_log` - Metrics
-
-#### Guardrails
-
-- **Coarse location only** - Never broadcast exact coordinates
-- **Cancel policy** disclosure before booking
-- **Auto for est. < threshold**, otherwise suggest alternatives
-- **Share vehicle and driver initials only**
-
-#### KPIs
-
-- ETA accuracy
-- Match rate
-- Cancellation rate
-- Response time
-
-#### Configuration
-
-```yaml
-- slug: mobility-matcher
-  name: Mobility — Ride Matcher
+- slug: farmer
+  name: Farmer AI Agent
   languages: [en, fr, rw, sw]
   autonomy: suggest
-  tools: [maps_geosearch, trip_price_estimate, momo_charge, notify_staff, analytics_log]
-  guardrails:
-    share_location_precision: "coarse"
-    payment_deposit_required: false
 ```
 
 ---
 
-### 4. Pharmacy (OTC Commerce)
-
-#### Persona
-
-Helpful OTC clerk. Checks availability, dosage forms, substitutes. Avoids medical advice.
-
-#### Primary Tasks
-
-1. **Item Search**: Availability, dosage forms, prices
-2. **Substitutes**: Offer approved alternatives if OOS
-3. **Rx Handling**: Request photo for Rx items, escalate to licensed partner
-4. **Order & Delivery**: MoMo → receipt → delivery status
-
-#### Tools
-
-- `inventory_check` - Stock levels
-- `order_create` - Place orders
-- `momo_charge` - Payment
-- `order_status_update` - Track delivery
-- `analytics_log` - Metrics
-- `notify_staff` - Rx escalations
-
-#### Guardrails
-
-- **No medical advice** - Refer to pharmacist
-- **No prescription advice**
-- **Quantity caps** enforced
-- **Age-restricted items** → staff handoff
-
-#### KPIs
-
-- Fill rate
-- Time to confirm
-- Substitution success
-- Payment success %
-
-#### Configuration
-
-```yaml
-- slug: pharmacy-agent
-  name: Pharmacy (OTC)
-  languages: [en, fr]
-  autonomy: suggest
-  tools:
-    [inventory_check, order_create, momo_charge, order_status_update, analytics_log, notify_staff]
-  guardrails:
-    age_restricted: handoff
-    medical_advice: forbidden
-```
-
----
-
-### 5. Quincaillerie / Hardware
-
-#### Persona
-
-Practical shopkeeper for hardware and building supplies.
-
-#### Primary Tasks
-
-1. **Specs Capture**: Size, material, quantity
-2. **Stock Check**: Availability and compatible parts
-3. **Delivery Quote**: Auto-compute or escalate for heavy items
-4. **Order & Payment**: MoMo → receipt → delivery
-
-#### Tools
-
-- `inventory_check` - Stock
-- `order_create` - Orders
-- `momo_charge` - Payment
-- `order_status_update` - Delivery
-- `notify_staff` - Heavy item escalations
-- `analytics_log` - Metrics
-
-#### Guardrails
-
-- **Heavy/bulky items** → auto compute delivery fee
-- **Escalate** if delivery ambiguous
-- **Delivery fee threshold**: 20kg default
-
-#### Configuration
-
-```yaml
-- slug: hardware-agent
-  name: Quincaillerie / Hardware
-  languages: [en, fr]
-  autonomy: suggest
-  tools:
-    [inventory_check, order_create, momo_charge, order_status_update, notify_staff, analytics_log]
-  guardrails:
-    delivery_fee_threshold_kg: 20
-```
-
----
-
-### 6. Convenience Shop / Groceries
-
-#### Persona
-
-Fast picker-packer; optimizes for speed and substitutions.
-
-#### Primary Tasks
-
-1. **List Building**: Quick basket assembly
-2. **Smart Substitutions**: Brand → generic → none per preference
-3. **Cut-off Times**: Delivery window management
-4. **Payment & Delivery**: MoMo → updates
-
-#### Tools
-
-- `inventory_check` - Stock
-- `order_create` - Orders
-- `momo_charge` - Payment
-- `order_status_update` - Delivery
-- `analytics_log` - Metrics
-
-#### Guardrails
-
-- **Substitution policy**: "brand→generic→none"
-- **Keep messages short** for speed
-
-#### Configuration
-
-```yaml
-- slug: shop-agent
-  name: Shop / Convenience
-  languages: [en, fr]
-  autonomy: auto
-  tools: [inventory_check, order_create, momo_charge, order_status_update, analytics_log]
-  guardrails:
-    substitution_policy: "brand->generic->none"
-```
-
----
-
-### 7. Insurance (Intake → Quote → Pay → Certificate)
+### 2. Insurance AI Agent
 
 #### Persona
 
@@ -414,74 +176,201 @@ Calm, precise insurance clerk. Guides photo capture, validates fields, explains 
 - Cancellation rate
 - OCR error rate
 
-#### Templates
-
-```
-Quote Ready: "Your {kind} insurance quote is ready: {url}. Reply YES to proceed or HELP."
-Certificate: "Success! Policy {policy_no} active until {date_to}. Download: {pdf_url}."
-```
-
 #### Configuration
 
 ```yaml
-- slug: insurance-agent
-  name: Insurance Intake & Quotes
+- slug: insurance
+  name: Insurance AI Agent
   languages: [en, fr, rw]
   autonomy: suggest
-  tools: [ocr_extract, price_insurance, generate_pdf, momo_charge, notify_staff, analytics_log]
-  guardrails:
-    require_human_approval_if_premium_gt: 500000
-    ocr_min_confidence: 0.8
-    legal_disclaimer_from_country_pack: true
 ```
 
 ---
 
-### 8. Payments (MoMo)
+### 3. Sales/Marketing Cold Caller AI Agent
 
 #### Persona
 
-By-the-book cashier; clear, compact, and safe.
+Results-oriented SDR and campaign planner. Lives inside template approvals and analytics.
 
 #### Primary Tasks
 
-1. **Create Charge**: Generate MoMo link
-2. **Confirm Settlement**: Wait for webhook
-3. **Notify Originating Agent**: Trigger fulfillment
-4. **Reconcile**: Update ledger
+1. **Lead Qualification**: Gather business needs, qualify prospects
+2. **Campaign Planning**: Plan broadcast campaigns
+3. **Template Selection**: Only pre-approved WhatsApp templates
+4. **Audience Targeting**: Select segments
+5. **Results Tracking**: Summarize performance and compliance
 
 #### Tools
 
-- `momo_charge` - Payment processing
-- `analytics_log` - Metrics
-- `notify_staff` - Escalations
+- `search_supabase` - Templates, audiences
+- `notify_staff` - Approvals
+- `analytics_log` - Performance metrics
 
 #### Guardrails
 
-- **Never collect card PANs** - Server-side only
-- **Auto-retry window** and fallback provider
-- **Locale-aware receipts** from country pack
+- **Only preapproved templates** allowed
+- **Quiet hours throttle** enforced
+- **Opt-in compliance** required
+
+#### KPIs
+
+- Lead qualification rate
+- CTR on campaigns
+- Opt-out rate
+- Template approval rate
 
 #### Configuration
 
 ```yaml
-- slug: payments-agent
-  name: Payments (MoMo)
+- slug: sales_cold_caller
+  name: Sales/Marketing Cold Caller AI Agent
   languages: [en, fr]
-  autonomy: auto
-  tools: [momo_charge, notify_staff, analytics_log]
-  guardrails:
-    direct_card_details: forbidden
-    receipt_template_from_country_pack: true
+  autonomy: handoff
 ```
 
 ---
 
-### 9. Property Rentals
+### 4. Rides AI Agent
 
 #### Persona
 
-Polite leasing coordinator.
+Straightforward dispatcher for nearby drivers/passengers and scheduled trips.
+
+#### Primary Tasks
+
+1. **Collect Details**: Pickup, dropoff, time, pax count
+2. **Show Estimates**: 2–3 price windows with ETAs
+3. **Confirm Booking**: Place request and monitor
+4. **Live Updates**: Share driver arrival status
+
+#### Tools
+
+- `maps_geosearch` - Find drivers/passengers
+- `search_supabase` - Route data, pricing
+- `momo_charge` - Optional deposit
+- `notify_staff` - Escalations
+- `analytics_log` - Metrics
+
+#### Guardrails
+
+- **Coarse location only** - Never broadcast exact coordinates
+- **Cancel policy** disclosure before booking
+- **Share vehicle and driver initials only**
+
+#### KPIs
+
+- ETA accuracy
+- Match rate
+- Cancellation rate
+- Response time
+
+#### Configuration
+
+```yaml
+- slug: rides
+  name: Rides AI Agent
+  languages: [en, fr, rw, sw]
+  autonomy: suggest
+```
+
+---
+
+### 5. Jobs AI Agent
+
+#### Persona
+
+Professional job board assistant. Connects seekers with opportunities.
+
+#### Primary Tasks
+
+1. **Job Search**: Help users find suitable positions
+2. **Job Posting**: Assist employers in creating listings
+3. **Application**: Facilitate job applications
+4. **Matching**: Connect candidates with employers
+
+#### Tools
+
+- `search_supabase` - Job listings, candidates
+- `notify_staff` - Escalations
+- `analytics_log` - Metrics
+
+#### Guardrails
+
+- **PII minimization** in applications
+- **Job verification required** for postings
+- **Fraud detection** on suspicious listings
+
+#### KPIs
+
+- Job fill rate
+- Application submission rate
+- Time to hire
+- User satisfaction
+
+#### Configuration
+
+```yaml
+- slug: jobs
+  name: Jobs AI Agent
+  languages: [en, fr, rw]
+  autonomy: suggest
+```
+
+---
+
+### 6. Waiter AI Agent
+
+#### Persona
+
+On-premise waiter for QR-table ordering. Friendly, concise, number-driven selections.
+
+#### Primary Tasks
+
+1. **Menu Presentation**: Fetch menu → present numbered items
+2. **Order Taking**: Accept "1,4,9 x2" style orders
+3. **Dietary Constraints**: Handle allergies, propose safe alternatives
+4. **Payment**: MoMo link only (no card numbers)
+5. **Status Updates**: Real-time order status until served
+
+#### Tools
+
+- `search_supabase` - Menu, stock
+- `order_create` - Create orders
+- `order_status_update` - Update status
+- `momo_charge` - Payment processing
+- `notify_staff` - Escalations
+- `analytics_log` - Metrics
+
+#### Guardrails
+
+- **No card numbers** - MoMo link only
+- **Auto-approve orders ≤ max_per_txn** (200,000 RWF default)
+- **Escalate allergy risks** to staff
+
+#### KPIs
+
+- Order cycle time
+- Payment success %
+- Prep-to-serve SLA
+- CSAT score
+
+#### Configuration
+
+```yaml
+- slug: waiter
+  name: Waiter AI Agent
+  languages: [en, fr, rw]
+  autonomy: suggest
+```
+
+---
+
+### 7. Real Estate AI Agent
+
+#### Persona
+
+Polite leasing and sales coordinator for properties.
 
 #### Primary Tasks
 
@@ -492,390 +381,220 @@ Polite leasing coordinator.
 
 #### Tools
 
-- `property_search` - Find listings
+- `search_supabase` - Property listings
 - `schedule_viewing` - Book viewings
 - `generate_pdf` - Application forms
 - `momo_charge` - Deposit payment
+- `notify_staff` - Escalations
 - `analytics_log` - Metrics
 
 #### Guardrails
 
 - **Don't share exact addresses** until viewing booked
 - **Deposit refunds policy** disclosed pre-payment
-- **Address sharing**: "on-viewing"
+
+#### KPIs
+
+- Viewing scheduled rate
+- Deposit conversion
+- Time-to-lease
 
 #### Configuration
 
 ```yaml
-- slug: property-agent
-  name: Property Rentals
+- slug: real_estate
+  name: Real Estate AI Agent
   languages: [en, fr]
   autonomy: suggest
-  tools: [property_search, schedule_viewing, generate_pdf, momo_charge, notify_staff, analytics_log]
-  guardrails:
-    address_sharing: "on-viewing"
 ```
 
 ---
 
-### 10. Legal Intake
+### 8. Marketplace AI Agent
 
 #### Persona
 
-Neutral, discreet intake coordinator. No legal advice ever.
+Unified commerce assistant for all retail verticals (pharmacy, hardware, grocery, general shopping).
+
+**Note**: This agent consolidates capabilities from the former `pharmacy-agent`, `hardware-agent`, and `shop-agent`.
 
 #### Primary Tasks
 
-1. **Category Triage**: Classify case type
-2. **Summary**: Collect facts and desired outcome
-3. **Document Capture**: Gather supporting docs
-4. **Quote & Retainer**: Generate engagement letter
-5. **Case Board**: Open case file
+1. **Product Search**: Find products across categories
+2. **Availability Check**: Stock levels and substitutes
+3. **Order Processing**: Create orders, track delivery
+4. **Category-Specific Handling**:
+   - **Pharmacy**: OTC products, Rx photo verification, pharmacist escalation
+   - **Hardware**: Specs collection, delivery fee calculation
+   - **Grocery**: Smart substitutions, delivery windows
 
 #### Tools
 
-- `case_intake` - Create case records
-- `generate_pdf` - Engagement letters
-- `momo_charge` - Retainer payment
-- `notify_staff` - Case handoff
+- `search_supabase` - Products, inventory
+- `inventory_check` - Stock levels
+- `order_create` - Place orders
+- `order_status_update` - Track delivery
+- `momo_charge` - Payment
+- `ocr_extract` - Prescription verification
+- `notify_staff` - Escalations
 - `analytics_log` - Metrics
 
 #### Guardrails
 
-- **No advice** - Only process intake and logistics
-- **Sensitive topics** → staff handoff required
-- **Advice**: forbidden
+- **medical_advice**: Forbidden
+- **pharmacist_review_required**: True for Rx items
+- **age_restricted**: Handoff for restricted products
+- **delivery_fee_threshold_kg**: 20kg for heavy items
+- **substitution_policy**: "brand→generic→none"
+
+#### KPIs
+
+- Order completion rate
+- Delivery success rate
+- Substitution acceptance rate
+- Fill rate
 
 #### Configuration
 
 ```yaml
-- slug: legal-intake
-  name: Legal Intake
+- slug: marketplace
+  name: Marketplace AI Agent
   languages: [en, fr]
-  autonomy: handoff
-  tools: [case_intake, generate_pdf, momo_charge, notify_staff, analytics_log]
-  guardrails:
-    advice: forbidden
+  autonomy: suggest
 ```
 
 ---
 
-### 11. Marketing & Sales
+### 9. Support AI Agent
 
 #### Persona
 
-Results-oriented planner. Lives inside template approvals and analytics.
+Customer support and front-door triage concierge. Helpful, efficient routing and problem-solving.
+
+**Note**: This agent consolidates capabilities from the former `concierge-router` and `support-handoff` agents.
 
 #### Primary Tasks
 
-1. **Campaign Wizard**: Plan broadcast campaigns
-2. **Template Selection**: Only pre-approved WhatsApp templates
-3. **Audience Targeting**: Select segments
-4. **Schedule**: Respect quiet hours
-5. **Results**: Summarize performance and compliance
+1. **Intent Detection**: Route to appropriate specialist agent
+2. **FAQ Handling**: Answer common questions
+3. **Troubleshooting**: Help with account and service issues
+4. **Escalation**: Summarize context for human handoff
 
 #### Tools
 
-- `search_supabase` - Templates, audiences
-- `broadcast_schedule` - Schedule campaigns
-- `analytics_log` - Performance metrics
-- `notify_staff` - Approvals
+- `search_supabase` - Help articles, user data
+- `notify_staff` - Escalate to humans
+- `analytics_log` - Metrics
 
 #### Guardrails
 
-- **Only preapproved templates** allowed
-- **Quiet hours throttle** enforced
-- **Opt-in compliance** required
+- **allow_payments**: False
+- **max_clarifying_questions**: 2
+- **route_when_confidence_gte**: 0.6
+- **summarize_last_messages**: 10
+
+#### KPIs
+
+- Routing accuracy
+- First response time
+- Resolution rate
+- Escalation rate
 
 #### Configuration
 
 ```yaml
-- slug: marketing-sales
-  name: Marketing & Sales
-  languages: [en, fr]
-  autonomy: handoff
-  tools: [search_supabase, broadcast_schedule, analytics_log, notify_staff]
-  guardrails:
-    only_preapproved_templates: true
-    quiet_hours_throttle: true
-```
-
----
-
-### 12. Sora-2 Video Ads (In-house Generator)
-
-#### Persona
-
-Brand-safe producer who speaks "cinematographer." Uses explicit Sora API params.
-
-#### Core Facts (Critical)
-
-- **Length & resolution** controlled via API params ONLY: `seconds` (4/8/12), `size` (e.g.,
-  1280x720)
-- **Model selection**: `sora-2` or `sora-2-pro` (more sizes available)
-- **Prompt cannot change** clip length or resolution
-- **Strong prompts** specify: camera framing, action beats, lighting/palette, optional dialogue
-- **Image references** lock design/wardrobe/aesthetic
-- **Remix** for small changes (e.g., "same shot, switch to 85mm")
-- **Prefer multiple 4s shots** for better instruction-following
-
-#### Primary Tasks
-
-1. **Validate**: Brand kit + consent registry
-2. **Assemble Prompt**: Scene + cinematography + actions + dialogue (optional)
-3. **Set API Params**: model, size, seconds (explicit, not in prose)
-4. **Submit Job**: `sora_generate_video`
-5. **Store & Share**: Media assets → WhatsApp link
-
-#### Tools
-
-- `sora_generate_video` - Video generation
-- `search_supabase` - Brand kits/assets
-- `analytics_log` - Job metrics
-
-#### Guardrails
-
-- **Consent & brand kit** must exist; fail closed otherwise
-- **Country pack palette** applied
-- **Prompt structure enforced**:
-  - Scene prose (characters, costumes, setting, weather)
-  - Cinematography (shot, lens/DOF, mood, lighting + palette anchors)
-  - Actions (1–3 timed beats)
-  - Dialogue (optional, concise)
-  - Params (model, size, seconds - always explicit)
-
-#### Ready-to-Fill Template
-
-```yaml
-style: "Brand-safe product vignette; clean daylight; macro→wide"
-scene: |
-  On a countertop, the product stands near props in brand colors.
-cinematography:
-  camera_shot: medium close-up, eye level; slow push-in
-  lighting_palette: soft daylight key, warm fill; anchors: #0057A6, sand, charcoal
-actions:
-  - 0–2s: glint sweeps across logo
-  - 2–4s: gentle tilt to hero angle, end on packshot
-dialogue: []
-params:
-  model: sora-2-pro
-  size: 1280x720
-  seconds: 4
-assets:
-  reference_image: asset://brand/ref01.jpg
-```
-
-#### Configuration
-
-```yaml
-- slug: sora-video
-  name: Sora-2 Video Ads
-  languages: [en, fr]
-  autonomy: handoff
-  tools: [sora_generate_video, search_supabase, analytics_log]
-  guardrails:
-    require_brand_kit: true
-    require_consent_registry: true
-    sora_params:
-      allowed_models: [sora-2, sora-2-pro]
-      allowed_seconds: [4, 8, 12]
-      allowed_sizes:
-        sora-2: [1280x720, 720x1280]
-        sora-2-pro: [1280x720, 720x1280, 1024x1792, 1792x1024]
-```
-
----
-
-### 13. Support & Handoff Agent
-
-#### Persona
-
-Escalation coordinator when automation hits guardrails.
-
-#### Primary Tasks
-
-1. **Detect Triggers**: User asks for human, thresholds breached
-2. **Summarize Context**: Last N messages + structured state
-3. **Notify Staff**: Create ticket in Admin Inbox
-4. **Set Expectations**: Inform user about human joining
-5. **Log SLA Checkpoints**: Track response times
-
-#### Tools
-
-- `notify_staff` - Create tickets
-- `analytics_log` - SLA metrics
-
-#### Guardrails
-
-- **Summarize last 10 messages** by default
-- **PII minimization** in summaries
-
-#### Configuration
-
-```yaml
-- slug: support-handoff
-  name: Support & Handoff
+- slug: support
+  name: Support AI Agent
   languages: [en, fr, rw, sw, ln]
   autonomy: auto
-  tools: [notify_staff, analytics_log]
-  guardrails:
-    summarize_last_messages: 10
-    pii_minimization: true
 ```
 
 ---
 
-### 14. Localization & Country-Pack Agent (System Helper)
+### 10. Business Broker AI Agent
 
 #### Persona
 
-Silent policy enforcer; injects locale, currency, time zone, templates.
+Professional, discreet broker for business sales, acquisitions, and professional services intake.
+
+**Note**: This agent consolidates capabilities from the former `legal-intake` agent.
 
 #### Primary Tasks
 
-1. **Attach Country Pack**: On conversation start or org switch
-2. **Enforce Quiet Hours**: Template throttling
-3. **Select Templates**: Locale-specific WhatsApp template IDs
-4. **Format Currency**: Rounding, symbols per locale
-5. **Legal Text**: Country-specific disclaimers
+1. **Business Brokerage**: Connect buyers and sellers
+2. **Valuation Support**: Facilitate business valuations
+3. **Legal Intake**: Triage cases, collect facts, prepare quotes
+4. **Document Generation**: NDAs, LOIs, engagement letters
+5. **Human Handoff**: All substantive matters require review
 
 #### Tools
 
-- `search_supabase` - Country pack data
-- `analytics_log` - Override metrics
+- `search_supabase` - Business listings, cases
+- `generate_pdf` - Legal documents
+- `momo_charge` - Retainer payments
+- `notify_staff` - Escalations
+- `analytics_log` - Metrics
 
 #### Guardrails
 
-- **Excluded countries** blocked at runtime
-- **Never fail** due to missing locale; fallback to org default
+- **advice**: Forbidden (no legal, tax, or financial advice)
+- **sensitive_topics_handoff**: True
+
+#### KPIs
+
+- Intake→retainer conversion
+- Match success rate
+- Case resolution time
 
 #### Configuration
 
 ```yaml
-- slug: locops
-  name: Localization & Country Pack
+- slug: business_broker
+  name: Business Broker AI Agent
   languages: [en, fr]
-  autonomy: auto
-  tools: [search_supabase, analytics_log]
-  guardrails:
-    excluded_countries_block: true
+  autonomy: handoff
 ```
 
 ---
 
-### 15. Analytics & Risk (System Helper)
+## Agent Slug Migration Reference
 
-#### Persona
+When migrating from the old 15-agent system, use this mapping:
 
-Quiet observer writing breadcrumbs.
-
-#### Primary Tasks
-
-1. **Emit Events**: Funnel checkpoints (first response, quote ready, payment settled, SLA breaches)
-2. **Compute Risk Scores**: Velocity, mismatched names, repeated OCR errors
-3. **Escalate Anomalies**: Flag to staff with short reason
-
-#### Tools
-
-- `analytics_log` - Event logging
-- `notify_staff` - Risk escalations
-
-#### Guardrails
-
-- **Privacy**: PII minimized in events
-- **Don't message end users** directly
-
-#### Configuration
-
-```yaml
-- slug: analytics-risk
-  name: Analytics & Risk
-  languages: [en, fr]
-  autonomy: auto
-  tools: [analytics_log, notify_staff]
-  guardrails:
-    privacy: pii_minimized
-```
-
----
-
-## End-to-End Flows
-
-### Waiter AI Happy Path
-
-1. Present menu (IDs + names + prices)
-2. Capture selection "1x2, 4, 9"
-3. Confirm + MoMo link
-4. Webhook settled → status "Preparing → Served" (WhatsApp updates)
-5. Receipt issued (locale-aware)
-
-### Insurance Happy Path
-
-1. Request photos (front/back) → OCR
-2. Confirm extracted fields → pricing
-3. Staff approval if over cap
-4. MoMo payment
-5. Generate certificate PDF + WhatsApp delivery
-
-### Sora-2 Video Happy Path
-
-1. Staff selects template + brand kit
-2. Compose prompt (scene + cinematography + beats + dialogue)
-3. Set API params explicitly (model/size/seconds)
-4. Submit job; preview; share WhatsApp link
-5. Track job success metric
+| Old Slug | New Slug | Notes |
+|----------|----------|-------|
+| `concierge-router` | `support` | Merged into Support |
+| `waiter-ai` | `waiter` | Renamed |
+| `mobility-orchestrator` | `rides` | Renamed |
+| `pharmacy-agent` | `marketplace` | Merged into Marketplace |
+| `hardware-agent` | `marketplace` | Merged into Marketplace |
+| `shop-agent` | `marketplace` | Merged into Marketplace |
+| `insurance-agent` | `insurance` | Renamed |
+| `property-agent` | `real_estate` | Renamed |
+| `legal-intake` | `business_broker` | Merged into Business Broker |
+| `payments-agent` | N/A | Internal utility (not agent) |
+| `marketing-sales` | `sales_cold_caller` | Renamed |
+| `sora-video` | N/A | Removed |
+| `support-handoff` | `support` | Merged into Support |
+| `locops` | N/A | Internal utility (not agent) |
+| `analytics-risk` | N/A | Internal utility (not agent) |
 
 ---
 
 ## KPIs by Agent
 
-| Agent     | Key Metrics                                                            |
-| --------- | ---------------------------------------------------------------------- |
-| Concierge | Routing accuracy, first-response time                                  |
-| Waiter    | Order cycle time, stockout rate, payment success %, repeat usage       |
-| Mobility  | Match rate, ETA accuracy, cancellations                                |
-| Pharmacy  | Fill rate, substitution success, payment success %                     |
-| Hardware  | Order cycle time, delivery accuracy                                    |
-| Shop      | Order cycle time, substitution accuracy                                |
-| Insurance | Time-to-quote, quote→policy conversion, OCR error rate                 |
-| Payments  | Settlement rate, retry success                                         |
-| Property  | Viewing scheduled rate, deposit conversion, time-to-lease              |
-| Legal     | Intake→retainer conversion, average case start time                    |
-| Marketing | CTR, opt-outs, template rejection rate                                 |
-| Sora-2    | Job success rate, avg duration, review rejections, WhatsApp share rate |
-| Support   | Handoff latency, resolution time                                       |
-| Locops    | Override rate, locale fallback %                                       |
-| Analytics | Event throughput, anomaly detection accuracy                           |
-
----
-
-## QA Checklists (Smoke Tests)
-
-### Localization
-
-- [ ] EN/FR round-trip correct
-- [ ] Numbers/currency/diacritics formatted properly
-- [ ] Quiet hours enforced
-- [ ] Template IDs country-specific
-
-### Payments
-
-- [ ] Initiate → webhook → fulfillment gates verified
-- [ ] Dispute path visible
-- [ ] Idempotency working
-
-### Insurance
-
-- [ ] Low-light vs daylight OCR accuracy
-- [ ] Tariff versioning correct
-- [ ] PDF fonts + diacritics render properly
-
-### Sora-2
-
-- [ ] API param changes reflected in output
-- [ ] 4s vs 8s vs 12s outputs correct length
-- [ ] Remix yields targeted deltas
-- [ ] Dialogue stays brief
+| Agent | Key Metrics |
+|-------|-------------|
+| Farmer | Listing completion, match success, transaction rate |
+| Insurance | Time-to-quote, quote→policy conversion, OCR error rate |
+| Sales Cold Caller | Lead qualification, CTR, opt-out rate |
+| Rides | ETA accuracy, match rate, cancellations |
+| Jobs | Job fill rate, application rate, time to hire |
+| Waiter | Order cycle time, payment success %, CSAT |
+| Real Estate | Viewing rate, deposit conversion, time-to-lease |
+| Marketplace | Order completion, delivery success, fill rate |
+| Support | Routing accuracy, first response time, resolution rate |
+| Business Broker | Intake→retainer conversion, match success |
 
 ---
 
@@ -884,4 +603,3 @@ Quiet observer writing breadcrumbs.
 - [Tool Catalog](./TOOL_CATALOG.md)
 - [Agent Configurations](../../config/agent_configs.yaml)
 - [Ground Rules](../GROUND_RULES.md)
-- [Agent Catalog](../AGENT_CATALOG_COMPLETE.md)
