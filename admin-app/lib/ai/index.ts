@@ -5,6 +5,9 @@ export { getGeminiClient, resetGeminiClient, GEMINI_MODELS } from "./providers/g
 // Multi-provider router
 export { routeChatRequest } from "./router";
 
+// Google AI integrations (Phase 2)
+export * from "./google";
+
 // Re-export existing chat completions types
 export type {
   ChatCompletionRole,
