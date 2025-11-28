@@ -54,6 +54,7 @@ export const WhisperInputSchema = z.object({
   language: z.string().optional().describe('Language code (e.g., "en", "rw", "fr")'),
   prompt: z.string().optional().describe('Optional prompt to guide transcription'),
   responseFormat: z.enum(['json', 'text', 'srt', 'verbose_json', 'vtt']).optional(),
+  mimeType: z.string().optional().describe('MIME type of the audio (e.g., "audio/wav", "audio/mp3", "audio/webm")'),
 });
 
 export const TTSInputSchema = z.object({
@@ -83,11 +84,31 @@ export const whisperTool = {
       audio: { type: 'string', description: 'Base64 encoded audio data' },
       language: { type: 'string', description: 'Language code (e.g., "en", "rw", "fr")' },
       prompt: { type: 'string', description: 'Optional prompt to guide transcription' },
+      mimeType: { type: 'string', description: 'MIME type of the audio (e.g., "audio/wav", "audio/mp3")' },
     },
     required: ['audio'],
   },
   handler: transcribeAudio,
 };
+
+/**
+ * Infer file extension from MIME type
+ */
+function getFileExtension(mimeType?: string): string {
+  const mimeToExt: Record<string, string> = {
+    'audio/wav': 'wav',
+    'audio/wave': 'wav',
+    'audio/x-wav': 'wav',
+    'audio/mp3': 'mp3',
+    'audio/mpeg': 'mp3',
+    'audio/webm': 'webm',
+    'audio/ogg': 'ogg',
+    'audio/flac': 'flac',
+    'audio/m4a': 'm4a',
+    'audio/mp4': 'm4a',
+  };
+  return mimeToExt[mimeType || ''] || 'wav';
+}
 
 /**
  * Transcribe audio using OpenAI Whisper
@@ -110,8 +131,12 @@ export async function transcribeAudio(
     // Convert base64 to Buffer
     const audioBuffer = Buffer.from(input.audio, 'base64');
 
-    // Create a File-like object for the API
-    const file = new File([audioBuffer], 'audio.wav', { type: 'audio/wav' });
+    // Determine file extension and MIME type
+    const mimeType = input.mimeType || 'audio/wav';
+    const extension = getFileExtension(mimeType);
+    
+    // Create a File-like object for the API with correct MIME type
+    const file = new File([audioBuffer], `audio.${extension}`, { type: mimeType });
 
     const response = await client.audio.transcriptions.create({
       file,

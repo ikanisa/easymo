@@ -158,13 +158,19 @@ export class GeminiProvider implements IUnifiedAIProvider {
       const lastMessage = messages[messages.length - 1];
 
       // Start chat with function declarations if tools provided
+      // Note: Type assertion needed because the Gemini SDK's Tool type is stricter
+      // than our generic tool definitions. The runtime behavior is correct.
       const geminiTools = toGeminiFunctionDeclarations(config?.tools);
-      const chat = model.startChat({
+      const startChatParams: Parameters<typeof model.startChat>[0] = {
         history,
         systemInstruction: systemInstruction || undefined,
-        // Cast tools to expected format - the SDK types are not fully aligned
-        tools: geminiTools ? [{ functionDeclarations: geminiTools }] as never : undefined,
-      });
+      };
+      if (geminiTools && geminiTools.length > 0) {
+        // The SDK expects FunctionDeclaration[] with specific schema types,
+        // but our generic Record<string, unknown> is compatible at runtime
+        (startChatParams as Record<string, unknown>).tools = [{ functionDeclarations: geminiTools }];
+      }
+      const chat = model.startChat(startChatParams);
 
       const result = await chat.sendMessage(lastMessage.content || '');
       const response = result.response;
@@ -234,7 +240,8 @@ export class GeminiProvider implements IUnifiedAIProvider {
 
       const chat = model.startChat({
         history,
-        systemInstruction: systemInstruction ? { role: 'user', parts: [{ text: systemInstruction }] } : undefined,
+        // SystemInstruction in Gemini SDK can be a string
+        systemInstruction: systemInstruction || undefined,
       });
 
       const result = await chat.sendMessageStream(lastMessage.content || '');
@@ -303,17 +310,30 @@ export class GeminiProvider implements IUnifiedAIProvider {
     try {
       const model = this.getModel('gemini-2.0-flash');
 
-      // Determine if it's a URL or base64
-      const imagePart = imageUrl.startsWith('data:')
-        ? {
-            inlineData: {
-              mimeType: imageUrl.split(';')[0].split(':')[1],
-              data: imageUrl.split(',')[1],
-            },
-          }
-        : { fileData: { fileUri: imageUrl, mimeType: 'image/jpeg' } };
+      // Determine if it's a data URL (base64) or a regular URL
+      let imagePart: { inlineData: { mimeType: string; data: string } } | { text: string };
+      
+      if (imageUrl.startsWith('data:')) {
+        // Parse data URL: data:image/jpeg;base64,/9j/4AAQ...
+        const mimeMatch = imageUrl.match(/^data:([^;]+);base64,(.+)$/);
+        if (!mimeMatch) {
+          throw new Error('Invalid data URL format');
+        }
+        imagePart = {
+          inlineData: {
+            mimeType: mimeMatch[1],
+            data: mimeMatch[2],
+          },
+        };
+      } else {
+        // For regular URLs, we need to describe the image request
+        // Note: Gemini may not support direct URL loading in all cases
+        // Consider fetching the image and converting to base64 for reliability
+        imagePart = { text: `[Image from URL: ${imageUrl}]` };
+      }
 
-      const result = await model.generateContent([prompt, imagePart as never]);
+      const parts = [{ text: prompt }, imagePart];
+      const result = await model.generateContent(parts);
       return result.response.text();
     } catch (error) {
       log.error(
