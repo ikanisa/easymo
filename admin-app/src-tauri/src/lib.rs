@@ -101,13 +101,23 @@ fn setup_tray<R: Runtime>(app: &tauri::App<R>) -> tauri::Result<()> {
             }
             "show" => {
                 if let Some(window) = app.get_webview_window("main") {
-                    let _ = window.show();
-                    let _ = window.set_focus();
+                    if let Err(e) = window.show() {
+                        log::error!("Failed to show window: {}", e);
+                    }
+                    if let Err(e) = window.set_focus() {
+                        log::error!("Failed to focus window: {}", e);
+                    }
+                } else {
+                    log::warn!("Main window not found when trying to show");
                 }
             }
             "hide" => {
                 if let Some(window) = app.get_webview_window("main") {
-                    let _ = window.hide();
+                    if let Err(e) = window.hide() {
+                        log::error!("Failed to hide window: {}", e);
+                    }
+                } else {
+                    log::warn!("Main window not found when trying to hide");
                 }
             }
             _ => {}
@@ -134,7 +144,7 @@ fn setup_tray<R: Runtime>(app: &tauri::App<R>) -> tauri::Result<()> {
 fn setup_shortcuts<R: Runtime>(app: &tauri::App<R>) -> tauri::Result<()> {
     use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut};
 
-    // Cmd+K (or Ctrl+K on Windows/Linux) to show command palette
+    // Plugin already registered at app level, just use it
     let shortcut = if cfg!(target_os = "macos") {
         Shortcut::new(Some(Modifiers::META), Code::KeyK)
     } else {
@@ -142,9 +152,6 @@ fn setup_shortcuts<R: Runtime>(app: &tauri::App<R>) -> tauri::Result<()> {
     };
 
     let app_handle = app.handle().clone();
-    app.handle()
-        .plugin(tauri_plugin_global_shortcut::Builder::new().build())?;
-    
     app.global_shortcut().on_shortcut(shortcut, move |_app, _shortcut, _event| {
         if let Some(window) = app_handle.get_webview_window("main") {
             let _ = window.show();

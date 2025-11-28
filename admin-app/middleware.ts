@@ -32,9 +32,20 @@ function buildRequestId(): string {
 function isPublicPath(pathname: string): boolean {
   // Root path should be exact match only
   if (pathname === '/') return true;
-  if (PUBLIC_PATHS.some((p) => p !== '/' && (pathname === p || pathname.startsWith(p)))) return true;
+  
+  // Exact match for public paths
+  if (PUBLIC_PATHS.includes(pathname)) return true;
+  
+  // Match with trailing slash for directory paths
+  if (PUBLIC_PATHS.some((p) => {
+    if (p === '/') return false;
+    return pathname === p || pathname.startsWith(p + '/');
+  })) return true;
+  
+  // File extensions
   if (pathname.endsWith('.svg') || pathname.endsWith('.ico') || pathname.endsWith('.png')) return true;
   if (pathname.startsWith('/_next/')) return true;
+  
   return false;
 }
 
