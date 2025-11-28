@@ -10,24 +10,72 @@
 // Core exports
 export { AgentOrchestrator } from './core/orchestrator';
 
-// Tool exports
+// Unified Provider exports
+export {
+  UnifiedAIProvider,
+  createUnifiedProvider,
+  calculateCost,
+  selectCostEffectiveModel,
+  type IUnifiedAIProvider,
+  type UnifiedMessage,
+  type MultiModalContent,
+  type MultiModalMessage,
+  type UnifiedToolDefinition,
+  type UnifiedToolCall,
+  type UnifiedTokenUsage,
+  type UnifiedChatConfig,
+  type UnifiedChatResponse,
+  type UnifiedStreamChunk,
+  type ProviderHealthStatus,
+  type UnifiedProviderConfig,
+} from './core/unified-provider';
+
+// LLM Provider exports
+export { OpenAIProvider, type OpenAIConfig } from './llm/openai-provider';
+export {
+  GeminiProvider,
+  createGeminiProvider,
+  type GeminiProviderConfig,
+} from './llm/gemini-provider';
+
+// Tool registry exports
 export {
   ALL_TOOLS,
-  checkAvailabilityTool,
-  // Individual tools
-  checkBalanceTool,
-  createBookingTool,
-  createTicketTool,
-  getAllToolNames,
-  getAllToolSchemas,
+  TOOL_REGISTRY,
   getTool,
   getToolsByCategory,
-  getToolSchema,
-  getUserProfileTool,
-  sendMoneyTool,
-  TOOL_REGISTRY,
+  getAllToolNames,
   toolExists,
+  getToolSchema,
+  getAllToolSchemas,
 } from './tools';
+
+// Voice tool exports
+export {
+  whisperTool,
+  ttsTool,
+  transcribeAudio,
+  generateSpeech,
+  VOICE_TOOLS,
+  getVoiceToolSchemas,
+  type TranscriptionResult,
+  type TTSResult,
+  type TTSVoice,
+  type WhisperInput,
+  type TTSInput,
+} from './tools/voice';
+
+// Image generation exports
+export {
+  imagenTool,
+  generateImage,
+  generateSingleImage,
+  IMAGE_TOOLS,
+  getImageToolSchemas,
+  type ImageGenerationResult,
+  type AspectRatio,
+  type ImagenInput,
+} from './tools/imagen';
 
 // Type exports from core types
 export type {
