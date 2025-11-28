@@ -1,0 +1,520 @@
+[0;32m[INFO][0m WhatsApp Microservices Deployment
+[0;32m[INFO][0m Project: lhbowpbcpwoiparwnwgt (easyMO)
+[0;32m[INFO][0m Target: all
+
+[0;32m[INFO][0m Deploying all WhatsApp services...
+
+[0;32m[INFO][0m =========================================
+[0;32m[INFO][0m Deploying: wa-webhook-core
+[0;32m[INFO][0m =========================================
+[0;32m[INFO][0m wa-webhook-core: ✅ JWT verification correctly disabled
+[0;32m[INFO][0m Deploying wa-webhook-core...
+WARNING: Functions using fallback import map: wa-webhook-core
+Please use recommended per function dependency declaration  https://supabase.com/docs/guides/functions/import-maps
+WARNING: Docker is not running
+Uploading asset (wa-webhook-core): supabase/functions/import_map.json
+Uploading asset (wa-webhook-core): supabase/functions/wa-webhook-core/index.ts
+Uploading asset (wa-webhook-core): supabase/functions/_shared/dlq-manager.ts
+Uploading asset (wa-webhook-core): supabase/functions/_shared/wa-webhook-shared/deps.ts
+Uploading asset (wa-webhook-core): supabase/functions/_shared/correlation-logging.ts
+Uploading asset (wa-webhook-core): supabase/functions/_shared/observability.ts
+Uploading asset (wa-webhook-core): supabase/functions/_shared/phone-utils.ts
+Uploading asset (wa-webhook-core): supabase/functions/_shared/service-resilience.ts
+Uploading asset (wa-webhook-core): supabase/functions/wa-webhook-core/telemetry.ts
+Uploading asset (wa-webhook-core): supabase/functions/wa-webhook-core/router.ts
+Uploading asset (wa-webhook-core): supabase/functions/_shared/feature-flags.ts
+Uploading asset (wa-webhook-core): supabase/functions/_shared/route-config.ts
+Uploading asset (wa-webhook-core): supabase/functions/_shared/circuit-breaker.ts
+Uploading asset (wa-webhook-core): supabase/functions/_shared/dead-letter-queue.ts
+Uploading asset (wa-webhook-core): supabase/functions/_shared/session-manager.ts
+Uploading asset (wa-webhook-core): supabase/functions/_shared/wa-webhook-shared/config.ts
+Uploading asset (wa-webhook-core): supabase/functions/_shared/env.ts
+Uploading asset (wa-webhook-core): supabase/functions/_shared/secrets.ts
+Uploading asset (wa-webhook-core): supabase/functions/_shared/wa-webhook-shared/utils/reply.ts
+Uploading asset (wa-webhook-core): supabase/functions/_shared/wa-webhook-shared/wa/client.ts
+Uploading asset (wa-webhook-core): supabase/functions/_shared/wa-webhook-shared/utils/wa_validate.ts
+Uploading asset (wa-webhook-core): supabase/functions/_shared/wa-webhook-shared/utils/text.ts
+Uploading asset (wa-webhook-core): supabase/functions/_shared/wa-webhook-shared/utils/http.ts
+Uploading asset (wa-webhook-core): supabase/functions/_shared/wa-webhook-shared/i18n/translator.ts
+Uploading asset (wa-webhook-core): supabase/functions/_shared/wa-webhook-shared/i18n/messages/de.json
+Uploading asset (wa-webhook-core): supabase/functions/_shared/wa-webhook-shared/i18n/messages/pt.json
+Uploading asset (wa-webhook-core): supabase/functions/_shared/wa-webhook-shared/i18n/messages/es.json
+Uploading asset (wa-webhook-core): supabase/functions/_shared/wa-webhook-shared/i18n/messages/fr.json
+Uploading asset (wa-webhook-core): supabase/functions/_shared/wa-webhook-shared/i18n/messages/en.json
+Uploading asset (wa-webhook-core): supabase/functions/_shared/wa-webhook-shared/i18n/language.ts
+Uploading asset (wa-webhook-core): supabase/functions/_shared/wa-webhook-shared/wa/ids.ts
+Uploading asset (wa-webhook-core): supabase/functions/_shared/wa-webhook-shared/types.ts
+Uploading asset (wa-webhook-core): supabase/functions/_shared/wa-webhook-shared/utils/messages.ts
+Uploading asset (wa-webhook-core): supabase/functions/_shared/webhook-utils.ts
+Uploading asset (wa-webhook-core): supabase/functions/_shared/errors.ts
+Deployed Functions on project lhbowpbcpwoiparwnwgt: wa-webhook-core
+You can inspect your deployment in the Dashboard: https://supabase.com/dashboard/project/lhbowpbcpwoiparwnwgt/functions
+[0;32m[INFO][0m ✅ wa-webhook-core deployed successfully
+
+[0;32m[INFO][0m =========================================
+[0;32m[INFO][0m Deploying: wa-webhook-jobs
+[0;32m[INFO][0m =========================================
+[0;32m[INFO][0m wa-webhook-jobs: ✅ JWT verification correctly disabled
+[0;32m[INFO][0m Deploying wa-webhook-jobs...
+WARNING: Functions using fallback import map: wa-webhook-jobs
+Please use recommended per function dependency declaration  https://supabase.com/docs/guides/functions/import-maps
+WARNING: Docker is not running
+Uploading asset (wa-webhook-jobs): supabase/functions/import_map.json
+Uploading asset (wa-webhook-jobs): supabase/functions/wa-webhook-jobs/index.ts
+Uploading asset (wa-webhook-jobs): supabase/functions/wa-webhook-jobs/handlers/location-handler.ts
+Uploading asset (wa-webhook-jobs): supabase/functions/wa-webhook-jobs/utils/i18n.ts
+Uploading asset (wa-webhook-jobs): supabase/functions/_shared/wa-webhook-shared/types.ts
+Uploading asset (wa-webhook-jobs): supabase/functions/_shared/wa-webhook-shared/i18n/language.ts
+Uploading asset (wa-webhook-jobs): supabase/functions/_shared/wa-webhook-shared/deps.ts
+Uploading asset (wa-webhook-jobs): supabase/functions/_shared/wa-webhook-shared/wa/client.ts
+Uploading asset (wa-webhook-jobs): supabase/functions/_shared/wa-webhook-shared/utils/wa_validate.ts
+Uploading asset (wa-webhook-jobs): supabase/functions/_shared/wa-webhook-shared/utils/text.ts
+Uploading asset (wa-webhook-jobs): supabase/functions/_shared/wa-webhook-shared/utils/http.ts
+Uploading asset (wa-webhook-jobs): supabase/functions/_shared/observability.ts
+Uploading asset (wa-webhook-jobs): supabase/functions/_shared/wa-webhook-shared/config.ts
+Uploading asset (wa-webhook-jobs): supabase/functions/_shared/env.ts
+Uploading asset (wa-webhook-jobs): supabase/functions/_shared/secrets.ts
+Uploading asset (wa-webhook-jobs): supabase/functions/_shared/rate-limit/index.ts
+Uploading asset (wa-webhook-jobs): supabase/functions/wa-webhook-jobs/jobs/utils.ts
+Uploading asset (wa-webhook-jobs): supabase/functions/wa-webhook-jobs/jobs/types.ts
+Uploading asset (wa-webhook-jobs): supabase/functions/_shared/webhook-utils.ts
+Uploading asset (wa-webhook-jobs): supabase/functions/_shared/errors.ts
+Deployed Functions on project lhbowpbcpwoiparwnwgt: wa-webhook-jobs
+You can inspect your deployment in the Dashboard: https://supabase.com/dashboard/project/lhbowpbcpwoiparwnwgt/functions
+[0;32m[INFO][0m ✅ wa-webhook-jobs deployed successfully
+
+[0;32m[INFO][0m =========================================
+[0;32m[INFO][0m Deploying: wa-webhook-marketplace
+[0;32m[INFO][0m =========================================
+[0;32m[INFO][0m wa-webhook-marketplace: ✅ JWT verification correctly disabled
+[0;32m[INFO][0m Deploying wa-webhook-marketplace...
+WARNING: Functions using fallback import map: wa-webhook-marketplace
+Please use recommended per function dependency declaration  https://supabase.com/docs/guides/functions/import-maps
+WARNING: Docker is not running
+Uploading asset (wa-webhook-marketplace): supabase/functions/import_map.json
+Uploading asset (wa-webhook-marketplace): supabase/functions/wa-webhook-marketplace/index.ts
+Uploading asset (wa-webhook-marketplace): supabase/functions/wa-webhook-marketplace/utils/index.ts
+Uploading asset (wa-webhook-marketplace): supabase/functions/_shared/observability.ts
+Uploading asset (wa-webhook-marketplace): supabase/functions/wa-webhook-marketplace/payment-handler.ts
+Uploading asset (wa-webhook-marketplace): supabase/functions/wa-webhook-marketplace/payment.ts
+Uploading asset (wa-webhook-marketplace): supabase/functions/_shared/wa-webhook-shared/wa/client.ts
+Uploading asset (wa-webhook-marketplace): supabase/functions/_shared/wa-webhook-shared/utils/wa_validate.ts
+Uploading asset (wa-webhook-marketplace): supabase/functions/_shared/wa-webhook-shared/utils/text.ts
+Uploading asset (wa-webhook-marketplace): supabase/functions/_shared/wa-webhook-shared/utils/http.ts
+Uploading asset (wa-webhook-marketplace): supabase/functions/_shared/wa-webhook-shared/config.ts
+Uploading asset (wa-webhook-marketplace): supabase/functions/_shared/env.ts
+Uploading asset (wa-webhook-marketplace): supabase/functions/_shared/secrets.ts
+Uploading asset (wa-webhook-marketplace): supabase/functions/_shared/wa-webhook-shared/deps.ts
+Uploading asset (wa-webhook-marketplace): supabase/functions/_shared/rate-limit/index.ts
+Uploading asset (wa-webhook-marketplace): supabase/functions/wa-webhook-marketplace/media.ts
+Uploading asset (wa-webhook-marketplace): supabase/functions/wa-webhook-marketplace/agent.ts
+Uploading asset (wa-webhook-marketplace): supabase/functions/_shared/webhook-utils.ts
+Uploading asset (wa-webhook-marketplace): supabase/functions/_shared/errors.ts
+Deployed Functions on project lhbowpbcpwoiparwnwgt: wa-webhook-marketplace
+You can inspect your deployment in the Dashboard: https://supabase.com/dashboard/project/lhbowpbcpwoiparwnwgt/functions
+[0;32m[INFO][0m ✅ wa-webhook-marketplace deployed successfully
+
+[0;32m[INFO][0m =========================================
+[0;32m[INFO][0m Deploying: wa-webhook-property
+[0;32m[INFO][0m =========================================
+[0;32m[INFO][0m wa-webhook-property: ✅ JWT verification correctly disabled
+[0;32m[INFO][0m Deploying wa-webhook-property...
+WARNING: Functions using fallback import map: wa-webhook-property
+Please use recommended per function dependency declaration  https://supabase.com/docs/guides/functions/import-maps
+WARNING: Docker is not running
+Uploading asset (wa-webhook-property): supabase/functions/import_map.json
+Uploading asset (wa-webhook-property): supabase/functions/wa-webhook-property/index.ts
+Uploading asset (wa-webhook-property): supabase/functions/_shared/wa-webhook-shared/utils/profile.ts
+Uploading asset (wa-webhook-property): supabase/functions/_shared/wa-webhook-shared/state/store.ts
+Uploading asset (wa-webhook-property): supabase/functions/_shared/wa-webhook-shared/i18n/language.ts
+Uploading asset (wa-webhook-property): supabase/functions/_shared/wa-webhook-shared/observe/log.ts
+Uploading asset (wa-webhook-property): supabase/functions/_shared/wa-webhook-shared/config.ts
+Uploading asset (wa-webhook-property): supabase/functions/_shared/env.ts
+Uploading asset (wa-webhook-property): supabase/functions/_shared/secrets.ts
+Uploading asset (wa-webhook-property): supabase/functions/_shared/wa-webhook-shared/deps.ts
+Uploading asset (wa-webhook-property): supabase/functions/wa-webhook-property/property/my_listings.ts
+Uploading asset (wa-webhook-property): supabase/functions/_shared/wa-webhook-shared/i18n/translator.ts
+Uploading asset (wa-webhook-property): supabase/functions/_shared/wa-webhook-shared/i18n/messages/de.json
+Uploading asset (wa-webhook-property): supabase/functions/_shared/wa-webhook-shared/i18n/messages/pt.json
+Uploading asset (wa-webhook-property): supabase/functions/_shared/wa-webhook-shared/i18n/messages/es.json
+Uploading asset (wa-webhook-property): supabase/functions/_shared/wa-webhook-shared/i18n/messages/fr.json
+Uploading asset (wa-webhook-property): supabase/functions/_shared/wa-webhook-shared/i18n/messages/en.json
+Uploading asset (wa-webhook-property): supabase/functions/_shared/wa-webhook-shared/wa/ids.ts
+Uploading asset (wa-webhook-property): supabase/functions/_shared/observability.ts
+Uploading asset (wa-webhook-property): supabase/functions/_shared/wa-webhook-shared/wa/client.ts
+Uploading asset (wa-webhook-property): supabase/functions/_shared/wa-webhook-shared/utils/wa_validate.ts
+Uploading asset (wa-webhook-property): supabase/functions/_shared/wa-webhook-shared/utils/text.ts
+Uploading asset (wa-webhook-property): supabase/functions/_shared/wa-webhook-shared/utils/http.ts
+Uploading asset (wa-webhook-property): supabase/functions/_shared/wa-webhook-shared/utils/reply.ts
+Uploading asset (wa-webhook-property): supabase/functions/_shared/wa-webhook-shared/types.ts
+Uploading asset (wa-webhook-property): supabase/functions/wa-webhook-property/handlers/location-handler.ts
+Uploading asset (wa-webhook-property): supabase/functions/wa-webhook-property/property/rentals.ts
+Uploading asset (wa-webhook-property): supabase/functions/_shared/wa-webhook-shared/domains/locations/recent.ts
+Uploading asset (wa-webhook-property): supabase/functions/wa-webhook-mobility/locations/recent.ts
+Uploading asset (wa-webhook-property): supabase/functions/wa-webhook-mobility/types.ts
+Uploading asset (wa-webhook-property): supabase/functions/wa-webhook-mobility/i18n/language.ts
+Uploading asset (wa-webhook-property): supabase/functions/wa-webhook-mobility/deps.ts
+Uploading asset (wa-webhook-property): supabase/functions/_shared/wa-webhook-shared/domains/locations/save.ts
+Uploading asset (wa-webhook-property): supabase/functions/wa-webhook-mobility/locations/save.ts
+Uploading asset (wa-webhook-property): supabase/functions/wa-webhook-mobility/wa/ids.ts
+Uploading asset (wa-webhook-property): supabase/functions/wa-webhook-mobility/utils/reply.ts
+Uploading asset (wa-webhook-property): supabase/functions/wa-webhook-mobility/i18n/translator.ts
+Uploading asset (wa-webhook-property): supabase/functions/wa-webhook-mobility/i18n/messages/de.json
+Uploading asset (wa-webhook-property): supabase/functions/wa-webhook-mobility/i18n/messages/pt.json
+Uploading asset (wa-webhook-property): supabase/functions/wa-webhook-mobility/i18n/messages/es.json
+Uploading asset (wa-webhook-property): supabase/functions/wa-webhook-mobility/i18n/messages/fr.json
+Uploading asset (wa-webhook-property): supabase/functions/wa-webhook-mobility/i18n/messages/en.json
+Uploading asset (wa-webhook-property): supabase/functions/wa-webhook-mobility/wa/client.ts
+Uploading asset (wa-webhook-property): supabase/functions/wa-webhook-mobility/utils/wa_validate.ts
+Uploading asset (wa-webhook-property): supabase/functions/wa-webhook-mobility/utils/text.ts
+Uploading asset (wa-webhook-property): supabase/functions/wa-webhook-mobility/utils/http.ts
+Uploading asset (wa-webhook-property): supabase/functions/wa-webhook-mobility/config.ts
+Uploading asset (wa-webhook-property): supabase/functions/wa-webhook-mobility/locations/favorites.ts
+Uploading asset (wa-webhook-property): supabase/functions/_shared/wa-webhook-shared/domains/locations/favorites.ts
+Uploading asset (wa-webhook-property): supabase/functions/_shared/wa-webhook-shared/utils/currency.ts
+Uploading asset (wa-webhook-property): supabase/functions/_shared/wa-webhook-shared/flows/home.ts
+Uploading asset (wa-webhook-property): supabase/functions/_shared/wa-webhook-shared/domains/menu/dynamic_home_menu.ts
+Uploading asset (wa-webhook-property): supabase/functions/_shared/wa-webhook-shared/utils/cache.ts
+Uploading asset (wa-webhook-property): supabase/functions/_shared/wa-webhook-shared/domains/insurance/gate.ts
+Uploading asset (wa-webhook-property): supabase/functions/_shared/wa-webhook-shared/flows/admin/auth.ts
+Uploading asset (wa-webhook-property): supabase/functions/_shared/wa-webhook-shared/utils/phone.ts
+Uploading asset (wa-webhook-property): supabase/functions/_shared/phone.ts
+Uploading asset (wa-webhook-property): supabase/functions/_shared/wa-webhook-shared/flows/support.ts
+Uploading asset (wa-webhook-property): supabase/functions/_shared/feature-flags.ts
+Uploading asset (wa-webhook-property): supabase/functions/_shared/rate-limit/index.ts
+Uploading asset (wa-webhook-property): supabase/functions/_shared/webhook-utils.ts
+Uploading asset (wa-webhook-property): supabase/functions/_shared/errors.ts
+Deployed Functions on project lhbowpbcpwoiparwnwgt: wa-webhook-property
+You can inspect your deployment in the Dashboard: https://supabase.com/dashboard/project/lhbowpbcpwoiparwnwgt/functions
+[0;32m[INFO][0m ✅ wa-webhook-property deployed successfully
+
+[0;32m[INFO][0m =========================================
+[0;32m[INFO][0m Deploying: wa-webhook-mobility
+[0;32m[INFO][0m =========================================
+[0;32m[INFO][0m wa-webhook-mobility: ✅ JWT verification correctly disabled
+[0;32m[INFO][0m Deploying wa-webhook-mobility...
+WARNING: Functions using fallback import map: wa-webhook-mobility
+Please use recommended per function dependency declaration  https://supabase.com/docs/guides/functions/import-maps
+WARNING: Docker is not running
+Uploading asset (wa-webhook-mobility): supabase/functions/import_map.json
+Uploading asset (wa-webhook-mobility): supabase/functions/wa-webhook-mobility/index.ts
+Uploading asset (wa-webhook-mobility): supabase/functions/wa-webhook-mobility/handlers/driver_insurance.ts
+Uploading asset (wa-webhook-mobility): supabase/functions/wa-webhook-mobility/insurance/driver_insurance_ocr.ts
+Uploading asset (wa-webhook-mobility): supabase/functions/wa-webhook-mobility/deps.ts
+Uploading asset (wa-webhook-mobility): supabase/functions/wa-webhook-mobility/wa/client.ts
+Uploading asset (wa-webhook-mobility): supabase/functions/wa-webhook-mobility/utils/wa_validate.ts
+Uploading asset (wa-webhook-mobility): supabase/functions/wa-webhook-mobility/utils/text.ts
+Uploading asset (wa-webhook-mobility): supabase/functions/wa-webhook-mobility/utils/http.ts
+Uploading asset (wa-webhook-mobility): supabase/functions/wa-webhook-mobility/config.ts
+Uploading asset (wa-webhook-mobility): supabase/functions/_shared/env.ts
+Uploading asset (wa-webhook-mobility): supabase/functions/_shared/secrets.ts
+Uploading asset (wa-webhook-mobility): supabase/functions/wa-webhook-mobility/state/store.ts
+Uploading asset (wa-webhook-mobility): supabase/functions/wa-webhook-mobility/i18n/language.ts
+Uploading asset (wa-webhook-mobility): supabase/functions/wa-webhook-mobility/observe/log.ts
+Uploading asset (wa-webhook-mobility): supabase/functions/wa-webhook-mobility/types.ts
+Uploading asset (wa-webhook-mobility): supabase/functions/_shared/wa-webhook-shared/utils/profile.ts
+Uploading asset (wa-webhook-mobility): supabase/functions/_shared/wa-webhook-shared/state/store.ts
+Uploading asset (wa-webhook-mobility): supabase/functions/_shared/wa-webhook-shared/i18n/language.ts
+Uploading asset (wa-webhook-mobility): supabase/functions/_shared/wa-webhook-shared/observe/log.ts
+Uploading asset (wa-webhook-mobility): supabase/functions/_shared/wa-webhook-shared/config.ts
+Uploading asset (wa-webhook-mobility): supabase/functions/_shared/wa-webhook-shared/deps.ts
+Uploading asset (wa-webhook-mobility): supabase/functions/wa-webhook-mobility/locations/favorites.ts
+Uploading asset (wa-webhook-mobility): supabase/functions/wa-webhook-mobility/utils/reply.ts
+Uploading asset (wa-webhook-mobility): supabase/functions/wa-webhook-mobility/i18n/translator.ts
+Uploading asset (wa-webhook-mobility): supabase/functions/wa-webhook-mobility/i18n/messages/de.json
+Uploading asset (wa-webhook-mobility): supabase/functions/wa-webhook-mobility/i18n/messages/pt.json
+Uploading asset (wa-webhook-mobility): supabase/functions/wa-webhook-mobility/i18n/messages/es.json
+Uploading asset (wa-webhook-mobility): supabase/functions/wa-webhook-mobility/i18n/messages/fr.json
+Uploading asset (wa-webhook-mobility): supabase/functions/wa-webhook-mobility/i18n/messages/en.json
+Uploading asset (wa-webhook-mobility): supabase/functions/wa-webhook-mobility/wa/ids.ts
+Uploading asset (wa-webhook-mobility): supabase/functions/_shared/webhook-utils.ts
+Uploading asset (wa-webhook-mobility): supabase/functions/_shared/errors.ts
+Uploading asset (wa-webhook-mobility): supabase/functions/_shared/observability.ts
+Uploading asset (wa-webhook-mobility): supabase/functions/wa-webhook-mobility/handlers/fare.ts
+Uploading asset (wa-webhook-mobility): supabase/functions/wa-webhook-mobility/handlers/tracking.ts
+Uploading asset (wa-webhook-mobility): supabase/functions/wa-webhook-mobility/handlers/trip_notifications.ts
+Uploading asset (wa-webhook-mobility): supabase/functions/wa-webhook-mobility/utils/app_config.ts
+Uploading asset (wa-webhook-mobility): supabase/functions/wa-webhook-mobility/handlers/trip_lifecycle.ts
+Uploading asset (wa-webhook-mobility): supabase/functions/wa-webhook-mobility/handlers/driver_verification.ts
+Uploading asset (wa-webhook-mobility): supabase/functions/wa-webhook-mobility/insurance/driver_license_ocr.ts
+Uploading asset (wa-webhook-mobility): supabase/functions/wa-webhook-mobility/handlers/momo_ussd_payment.ts
+Uploading asset (wa-webhook-mobility): supabase/functions/wa-webhook-mobility/observe/logger.ts
+Uploading asset (wa-webhook-mobility): supabase/functions/wa-webhook-mobility/handlers/trip_payment.ts
+Uploading asset (wa-webhook-mobility): supabase/functions/wa-webhook-mobility/utils/momo.ts
+Uploading asset (wa-webhook-mobility): supabase/functions/wa-webhook-mobility/utils/ussd.ts
+Uploading asset (wa-webhook-mobility): supabase/functions/wa-webhook-mobility/handlers/driver_response.ts
+Uploading asset (wa-webhook-mobility): supabase/functions/wa-webhook-mobility/notifications/drivers.ts
+Uploading asset (wa-webhook-mobility): supabase/functions/wa-webhook-mobility/utils/links.ts
+Uploading asset (wa-webhook-mobility): supabase/functions/wa-webhook-mobility/handlers/go_online.ts
+Uploading asset (wa-webhook-mobility): supabase/functions/wa-webhook-mobility/handlers/vehicle_plate.ts
+Uploading asset (wa-webhook-mobility): supabase/functions/wa-webhook-mobility/locations/cache.ts
+Uploading asset (wa-webhook-mobility): supabase/functions/wa-webhook-mobility/handlers/schedule.ts
+Uploading asset (wa-webhook-mobility): supabase/functions/wa-webhook-mobility/handlers/schedule/management.ts
+Uploading asset (wa-webhook-mobility): supabase/functions/wa-webhook-mobility/handlers/schedule/booking.ts
+Uploading asset (wa-webhook-mobility): supabase/functions/wa-webhook-mobility/locations/save.ts
+Uploading asset (wa-webhook-mobility): supabase/functions/wa-webhook-mobility/handlers/location_cache.ts
+Uploading asset (wa-webhook-mobility): supabase/functions/wa-webhook-mobility/observe/alert.ts
+Uploading asset (wa-webhook-mobility): supabase/functions/wa-webhook-mobility/flows/support.ts
+Uploading asset (wa-webhook-mobility): supabase/functions/wa-webhook-mobility/rpc/mobility.ts
+Uploading asset (wa-webhook-mobility): supabase/functions/wa-webhook-mobility/handlers/nearby.ts
+WARN: failed to read file: open supabase/functions/wa/client.ts: no such file or directory
+Uploading asset (wa-webhook-mobility): supabase/functions/wa-webhook-mobility/ai-agents/index.ts
+Uploading asset (wa-webhook-mobility): supabase/functions/wa-webhook-mobility/ai-agents/handlers.ts
+Uploading asset (wa-webhook-mobility): supabase/functions/wa-webhook-mobility/rpc/marketplace.ts
+Uploading asset (wa-webhook-mobility): supabase/functions/wa-webhook-mobility/ai-agents/integration.ts
+Uploading asset (wa-webhook-mobility): supabase/functions/_shared/agent-observability.ts
+Uploading asset (wa-webhook-mobility): supabase/functions/_shared/feature-flags.ts
+Uploading asset (wa-webhook-mobility): supabase/functions/wa-webhook-mobility/handlers/intent_cache.ts
+Uploading asset (wa-webhook-mobility): supabase/functions/_shared/rate-limit/index.ts
+Deployed Functions on project lhbowpbcpwoiparwnwgt: wa-webhook-mobility
+You can inspect your deployment in the Dashboard: https://supabase.com/dashboard/project/lhbowpbcpwoiparwnwgt/functions
+[0;32m[INFO][0m ✅ wa-webhook-mobility deployed successfully
+
+[0;32m[INFO][0m =========================================
+[0;32m[INFO][0m Deploying: wa-webhook-ai-agents
+[0;32m[INFO][0m =========================================
+[0;32m[INFO][0m wa-webhook-ai-agents: ✅ JWT verification correctly disabled
+[0;32m[INFO][0m Deploying wa-webhook-ai-agents...
+WARNING: Functions using fallback import map: wa-webhook-ai-agents
+Please use recommended per function dependency declaration  https://supabase.com/docs/guides/functions/import-maps
+WARNING: Docker is not running
+Uploading asset (wa-webhook-ai-agents): supabase/functions/import_map.json
+Uploading asset (wa-webhook-ai-agents): supabase/functions/wa-webhook-ai-agents/index.ts
+Uploading asset (wa-webhook-ai-agents): supabase/functions/_shared/rate-limit/index.ts
+Uploading asset (wa-webhook-ai-agents): supabase/functions/_shared/wa-webhook-shared/wa/client.ts
+Uploading asset (wa-webhook-ai-agents): supabase/functions/_shared/wa-webhook-shared/utils/wa_validate.ts
+Uploading asset (wa-webhook-ai-agents): supabase/functions/_shared/wa-webhook-shared/utils/text.ts
+Uploading asset (wa-webhook-ai-agents): supabase/functions/_shared/wa-webhook-shared/utils/http.ts
+Uploading asset (wa-webhook-ai-agents): supabase/functions/_shared/observability.ts
+Uploading asset (wa-webhook-ai-agents): supabase/functions/_shared/wa-webhook-shared/config.ts
+Uploading asset (wa-webhook-ai-agents): supabase/functions/_shared/env.ts
+Uploading asset (wa-webhook-ai-agents): supabase/functions/_shared/secrets.ts
+Uploading asset (wa-webhook-ai-agents): supabase/functions/_shared/wa-webhook-shared/deps.ts
+Uploading asset (wa-webhook-ai-agents): supabase/functions/_shared/webhook-utils.ts
+Uploading asset (wa-webhook-ai-agents): supabase/functions/_shared/errors.ts
+Uploading asset (wa-webhook-ai-agents): supabase/functions/wa-webhook-ai-agents/core/unified-orchestrator.ts
+Uploading asset (wa-webhook-ai-agents): supabase/functions/wa-webhook-ai-agents/core/base-agent.ts
+Uploading asset (wa-webhook-ai-agents): supabase/functions/wa-webhook-ai-agents/core/session-manager.ts
+Uploading asset (wa-webhook-ai-agents): supabase/functions/wa-webhook-ai-agents/core/providers/gemini.ts
+Uploading asset (wa-webhook-ai-agents): supabase/functions/wa-webhook-ai-agents/core/agent-registry.ts
+Uploading asset (wa-webhook-ai-agents): supabase/functions/wa-webhook-ai-agents/agents/marketplace-agent.ts
+Uploading asset (wa-webhook-ai-agents): supabase/functions/wa-webhook-ai-agents/agents/property-agent.ts
+Uploading asset (wa-webhook-ai-agents): supabase/functions/wa-webhook-ai-agents/agents/jobs-agent.ts
+Uploading asset (wa-webhook-ai-agents): supabase/functions/wa-webhook-ai-agents/agents/farmer-agent.ts
+Uploading asset (wa-webhook-ai-agents): supabase/functions/wa-webhook-ai-agents/agents/support-agent.ts
+Uploading asset (wa-webhook-ai-agents): supabase/functions/wa-webhook-ai-agents/agents/waiter-agent.ts
+Deployed Functions on project lhbowpbcpwoiparwnwgt: wa-webhook-ai-agents
+You can inspect your deployment in the Dashboard: https://supabase.com/dashboard/project/lhbowpbcpwoiparwnwgt/functions
+[0;32m[INFO][0m ✅ wa-webhook-ai-agents deployed successfully
+
+[0;32m[INFO][0m =========================================
+[0;32m[INFO][0m Deploying: wa-webhook-insurance
+[0;32m[INFO][0m =========================================
+[0;32m[INFO][0m wa-webhook-insurance: ✅ JWT verification correctly disabled
+[0;32m[INFO][0m Deploying wa-webhook-insurance...
+WARNING: Functions using fallback import map: wa-webhook-insurance
+Please use recommended per function dependency declaration  https://supabase.com/docs/guides/functions/import-maps
+WARNING: Docker is not running
+Uploading asset (wa-webhook-insurance): supabase/functions/import_map.json
+Uploading asset (wa-webhook-insurance): supabase/functions/wa-webhook-insurance/index.ts
+Uploading asset (wa-webhook-insurance): supabase/functions/_shared/wa-webhook-shared/flows/home.ts
+Uploading asset (wa-webhook-insurance): supabase/functions/_shared/wa-webhook-shared/domains/menu/dynamic_home_menu.ts
+Uploading asset (wa-webhook-insurance): supabase/functions/_shared/wa-webhook-shared/utils/cache.ts
+Uploading asset (wa-webhook-insurance): supabase/functions/_shared/wa-webhook-shared/deps.ts
+Uploading asset (wa-webhook-insurance): supabase/functions/_shared/wa-webhook-shared/config.ts
+Uploading asset (wa-webhook-insurance): supabase/functions/_shared/env.ts
+Uploading asset (wa-webhook-insurance): supabase/functions/_shared/secrets.ts
+Uploading asset (wa-webhook-insurance): supabase/functions/_shared/wa-webhook-shared/types.ts
+Uploading asset (wa-webhook-insurance): supabase/functions/_shared/wa-webhook-shared/i18n/language.ts
+Uploading asset (wa-webhook-insurance): supabase/functions/_shared/wa-webhook-shared/i18n/translator.ts
+Uploading asset (wa-webhook-insurance): supabase/functions/_shared/wa-webhook-shared/i18n/messages/de.json
+Uploading asset (wa-webhook-insurance): supabase/functions/_shared/wa-webhook-shared/i18n/messages/pt.json
+Uploading asset (wa-webhook-insurance): supabase/functions/_shared/wa-webhook-shared/i18n/messages/es.json
+Uploading asset (wa-webhook-insurance): supabase/functions/_shared/wa-webhook-shared/i18n/messages/fr.json
+Uploading asset (wa-webhook-insurance): supabase/functions/_shared/wa-webhook-shared/i18n/messages/en.json
+Uploading asset (wa-webhook-insurance): supabase/functions/_shared/wa-webhook-shared/domains/insurance/gate.ts
+Uploading asset (wa-webhook-insurance): supabase/functions/_shared/wa-webhook-shared/observe/log.ts
+Uploading asset (wa-webhook-insurance): supabase/functions/_shared/wa-webhook-shared/flows/admin/auth.ts
+Uploading asset (wa-webhook-insurance): supabase/functions/_shared/wa-webhook-shared/utils/reply.ts
+Uploading asset (wa-webhook-insurance): supabase/functions/_shared/wa-webhook-shared/wa/client.ts
+Uploading asset (wa-webhook-insurance): supabase/functions/_shared/wa-webhook-shared/utils/wa_validate.ts
+Uploading asset (wa-webhook-insurance): supabase/functions/_shared/wa-webhook-shared/utils/text.ts
+Uploading asset (wa-webhook-insurance): supabase/functions/_shared/wa-webhook-shared/utils/http.ts
+Uploading asset (wa-webhook-insurance): supabase/functions/_shared/observability.ts
+Uploading asset (wa-webhook-insurance): supabase/functions/_shared/wa-webhook-shared/wa/ids.ts
+Uploading asset (wa-webhook-insurance): supabase/functions/_shared/wa-webhook-shared/utils/phone.ts
+Uploading asset (wa-webhook-insurance): supabase/functions/_shared/phone.ts
+Uploading asset (wa-webhook-insurance): supabase/functions/_shared/wa-webhook-shared/flows/support.ts
+Uploading asset (wa-webhook-insurance): supabase/functions/_shared/wa-webhook-shared/state/store.ts
+Uploading asset (wa-webhook-insurance): supabase/functions/_shared/wa-webhook-shared/utils/profile.ts
+Uploading asset (wa-webhook-insurance): supabase/functions/wa-webhook-insurance/insurance/claims.ts
+Uploading asset (wa-webhook-insurance): supabase/functions/wa-webhook-insurance/insurance/index.ts
+Uploading asset (wa-webhook-insurance): supabase/functions/wa-webhook-insurance/insurance/ins_handler.ts
+Uploading asset (wa-webhook-insurance): supabase/functions/_shared/wa-webhook-shared/wallet/allocate.ts
+Uploading asset (wa-webhook-insurance): supabase/functions/_shared/wa-webhook-shared/observe/alert.ts
+Uploading asset (wa-webhook-insurance): supabase/functions/_shared/wa-webhook-shared/domains/insurance/ins_normalize.ts
+Uploading asset (wa-webhook-insurance): supabase/functions/_shared/wa-webhook-shared/domains/insurance/ins_messages.ts
+Uploading asset (wa-webhook-insurance): supabase/functions/_shared/wa-webhook-shared/domains/insurance/ins_admin_notify.ts
+Uploading asset (wa-webhook-insurance): supabase/functions/_shared/wa-webhook-shared/domains/insurance/ins_media.ts
+Uploading asset (wa-webhook-insurance): supabase/functions/_shared/wa-webhook-shared/utils/media.ts
+Uploading asset (wa-webhook-insurance): supabase/functions/_shared/wa-webhook-shared/utils/app_config.ts
+Uploading asset (wa-webhook-insurance): supabase/functions/_shared/rate-limit/index.ts
+Uploading asset (wa-webhook-insurance): supabase/functions/_shared/webhook-utils.ts
+Uploading asset (wa-webhook-insurance): supabase/functions/_shared/errors.ts
+Deployed Functions on project lhbowpbcpwoiparwnwgt: wa-webhook-insurance
+You can inspect your deployment in the Dashboard: https://supabase.com/dashboard/project/lhbowpbcpwoiparwnwgt/functions
+[0;32m[INFO][0m ✅ wa-webhook-insurance deployed successfully
+
+[0;32m[INFO][0m =========================================
+[0;32m[INFO][0m Deploying: wa-webhook-profile
+[0;32m[INFO][0m =========================================
+[0;32m[INFO][0m wa-webhook-profile: ✅ JWT verification correctly disabled
+[0;32m[INFO][0m Deploying wa-webhook-profile...
+WARNING: Functions using fallback import map: wa-webhook-profile
+Please use recommended per function dependency declaration  https://supabase.com/docs/guides/functions/import-maps
+WARNING: Docker is not running
+Uploading asset (wa-webhook-profile): supabase/functions/import_map.json
+Uploading asset (wa-webhook-profile): supabase/functions/wa-webhook-profile/index.ts
+Uploading asset (wa-webhook-profile): supabase/functions/_shared/wa-webhook-shared/flows/momo/qr.ts
+Uploading asset (wa-webhook-profile): supabase/functions/_shared/wa-webhook-shared/domains/exchange/country_support.ts
+Uploading asset (wa-webhook-profile): supabase/functions/_shared/wa-webhook-shared/deps.ts
+Uploading asset (wa-webhook-profile): supabase/functions/_shared/wa-webhook-shared/utils/ussd.ts
+Uploading asset (wa-webhook-profile): supabase/functions/_shared/wa-webhook-shared/flows/home.ts
+Uploading asset (wa-webhook-profile): supabase/functions/_shared/wa-webhook-shared/domains/menu/dynamic_home_menu.ts
+Uploading asset (wa-webhook-profile): supabase/functions/_shared/wa-webhook-shared/utils/cache.ts
+Uploading asset (wa-webhook-profile): supabase/functions/_shared/wa-webhook-shared/config.ts
+Uploading asset (wa-webhook-profile): supabase/functions/_shared/env.ts
+Uploading asset (wa-webhook-profile): supabase/functions/_shared/secrets.ts
+Uploading asset (wa-webhook-profile): supabase/functions/_shared/wa-webhook-shared/types.ts
+Uploading asset (wa-webhook-profile): supabase/functions/_shared/wa-webhook-shared/i18n/language.ts
+Uploading asset (wa-webhook-profile): supabase/functions/_shared/wa-webhook-shared/i18n/translator.ts
+Uploading asset (wa-webhook-profile): supabase/functions/_shared/wa-webhook-shared/i18n/messages/de.json
+Uploading asset (wa-webhook-profile): supabase/functions/_shared/wa-webhook-shared/i18n/messages/pt.json
+Uploading asset (wa-webhook-profile): supabase/functions/_shared/wa-webhook-shared/i18n/messages/es.json
+Uploading asset (wa-webhook-profile): supabase/functions/_shared/wa-webhook-shared/i18n/messages/fr.json
+Uploading asset (wa-webhook-profile): supabase/functions/_shared/wa-webhook-shared/i18n/messages/en.json
+Uploading asset (wa-webhook-profile): supabase/functions/_shared/wa-webhook-shared/domains/insurance/gate.ts
+Uploading asset (wa-webhook-profile): supabase/functions/_shared/wa-webhook-shared/observe/log.ts
+Uploading asset (wa-webhook-profile): supabase/functions/_shared/wa-webhook-shared/flows/admin/auth.ts
+Uploading asset (wa-webhook-profile): supabase/functions/_shared/wa-webhook-shared/utils/reply.ts
+Uploading asset (wa-webhook-profile): supabase/functions/_shared/wa-webhook-shared/wa/client.ts
+Uploading asset (wa-webhook-profile): supabase/functions/_shared/wa-webhook-shared/utils/wa_validate.ts
+Uploading asset (wa-webhook-profile): supabase/functions/_shared/wa-webhook-shared/utils/text.ts
+Uploading asset (wa-webhook-profile): supabase/functions/_shared/wa-webhook-shared/utils/http.ts
+Uploading asset (wa-webhook-profile): supabase/functions/_shared/observability.ts
+Uploading asset (wa-webhook-profile): supabase/functions/_shared/wa-webhook-shared/wa/ids.ts
+Uploading asset (wa-webhook-profile): supabase/functions/_shared/wa-webhook-shared/utils/phone.ts
+Uploading asset (wa-webhook-profile): supabase/functions/_shared/phone.ts
+Uploading asset (wa-webhook-profile): supabase/functions/_shared/wa-webhook-shared/flows/support.ts
+Uploading asset (wa-webhook-profile): supabase/functions/_shared/wa-webhook-shared/state/store.ts
+Uploading asset (wa-webhook-profile): supabase/functions/_shared/wa-webhook-shared/rpc/momo.ts
+Uploading asset (wa-webhook-profile): supabase/functions/_shared/wa-webhook-shared/utils/share.ts
+Uploading asset (wa-webhook-profile): supabase/functions/_shared/wa-webhook-shared/utils/momo.ts
+Uploading asset (wa-webhook-profile): supabase/functions/wa-webhook-profile/profile/edit.ts
+Uploading asset (wa-webhook-profile): supabase/functions/wa-webhook-profile/properties/update.ts
+Uploading asset (wa-webhook-profile): supabase/functions/wa-webhook-profile/properties/list.ts
+Uploading asset (wa-webhook-profile): supabase/functions/wa-webhook-profile/properties/create.ts
+Uploading asset (wa-webhook-profile): supabase/functions/wa-webhook-profile/jobs/update.ts
+Uploading asset (wa-webhook-profile): supabase/functions/wa-webhook-profile/jobs/list.ts
+Uploading asset (wa-webhook-profile): supabase/functions/wa-webhook-profile/jobs/create.ts
+Uploading asset (wa-webhook-profile): supabase/functions/wa-webhook-profile/business/update.ts
+Uploading asset (wa-webhook-profile): supabase/functions/wa-webhook-profile/business/list.ts
+Uploading asset (wa-webhook-profile): supabase/functions/wa-webhook-profile/business/create.ts
+Uploading asset (wa-webhook-profile): supabase/functions/wa-webhook-profile/wallet/cashout.ts
+Uploading asset (wa-webhook-profile): supabase/functions/wa-webhook-profile/wallet/purchase.ts
+Uploading asset (wa-webhook-profile): supabase/functions/wa-webhook-profile/wallet/referral.ts
+Uploading asset (wa-webhook-profile): supabase/functions/wa-webhook-profile/wallet/transfer.ts
+Uploading asset (wa-webhook-profile): supabase/functions/wa-webhook-profile/wallet/security.ts
+Uploading asset (wa-webhook-profile): supabase/functions/_shared/wa-webhook-shared/rpc/wallet.ts
+Uploading asset (wa-webhook-profile): supabase/functions/wa-webhook-profile/wallet/notifications.ts
+Uploading asset (wa-webhook-profile): supabase/functions/wa-webhook-profile/wallet/transactions.ts
+Uploading asset (wa-webhook-profile): supabase/functions/wa-webhook-profile/wallet/home.ts
+Uploading asset (wa-webhook-profile): supabase/functions/wa-webhook-profile/wallet/earn.ts
+Uploading asset (wa-webhook-profile): supabase/functions/wa-webhook-profile/wallet/redeem.ts
+Uploading asset (wa-webhook-profile): supabase/functions/wa-webhook-profile/profile/home.ts
+Uploading asset (wa-webhook-profile): supabase/functions/wa-webhook-profile/wallet/top.ts
+Uploading asset (wa-webhook-profile): supabase/functions/wa-webhook-profile/profile/locations.ts
+Uploading asset (wa-webhook-profile): supabase/functions/wa-webhook-profile/vehicles/list.ts
+Uploading asset (wa-webhook-profile): supabase/functions/wa-webhook-profile/properties/delete.ts
+Uploading asset (wa-webhook-profile): supabase/functions/wa-webhook-profile/jobs/delete.ts
+Uploading asset (wa-webhook-profile): supabase/functions/wa-webhook-profile/business/delete.ts
+Uploading asset (wa-webhook-profile): supabase/functions/_shared/wa-webhook-shared/utils/profile.ts
+Uploading asset (wa-webhook-profile): supabase/functions/_shared/webhook-utils.ts
+Uploading asset (wa-webhook-profile): supabase/functions/_shared/errors.ts
+Uploading asset (wa-webhook-profile): supabase/functions/_shared/rate-limit/index.ts
+Deployed Functions on project lhbowpbcpwoiparwnwgt: wa-webhook-profile
+You can inspect your deployment in the Dashboard: https://supabase.com/dashboard/project/lhbowpbcpwoiparwnwgt/functions
+[0;32m[INFO][0m ✅ wa-webhook-profile deployed successfully
+
+[0;32m[INFO][0m =========================================
+[0;32m[INFO][0m Deploying: wa-webhook-unified
+[0;32m[INFO][0m =========================================
+[0;32m[INFO][0m wa-webhook-unified: ✅ JWT verification correctly disabled
+[0;32m[INFO][0m Deploying wa-webhook-unified...
+WARNING: Functions using fallback import map: wa-webhook-unified
+Please use recommended per function dependency declaration  https://supabase.com/docs/guides/functions/import-maps
+WARNING: Docker is not running
+Uploading asset (wa-webhook-unified): supabase/functions/import_map.json
+Uploading asset (wa-webhook-unified): supabase/functions/wa-webhook-unified/index.ts
+Uploading asset (wa-webhook-unified): supabase/functions/_shared/dlq-manager.ts
+Uploading asset (wa-webhook-unified): supabase/functions/_shared/wa-webhook-shared/deps.ts
+Uploading asset (wa-webhook-unified): supabase/functions/_shared/rate-limit/index.ts
+Uploading asset (wa-webhook-unified): supabase/functions/_shared/observability.ts
+Uploading asset (wa-webhook-unified): supabase/functions/_shared/webhook-utils.ts
+Uploading asset (wa-webhook-unified): supabase/functions/_shared/errors.ts
+Uploading asset (wa-webhook-unified): supabase/functions/wa-webhook-unified/core/orchestrator.ts
+Uploading asset (wa-webhook-unified): supabase/functions/wa-webhook-unified/core/location-handler.ts
+Uploading asset (wa-webhook-unified): supabase/functions/_shared/whatsapp-api.ts
+Uploading asset (wa-webhook-unified): supabase/functions/_shared/wa-webhook-shared/wa/client.ts
+Uploading asset (wa-webhook-unified): supabase/functions/_shared/wa-webhook-shared/utils/wa_validate.ts
+Uploading asset (wa-webhook-unified): supabase/functions/_shared/wa-webhook-shared/utils/text.ts
+Uploading asset (wa-webhook-unified): supabase/functions/_shared/wa-webhook-shared/utils/http.ts
+Uploading asset (wa-webhook-unified): supabase/functions/_shared/wa-webhook-shared/config.ts
+Uploading asset (wa-webhook-unified): supabase/functions/_shared/env.ts
+Uploading asset (wa-webhook-unified): supabase/functions/_shared/secrets.ts
+Uploading asset (wa-webhook-unified): supabase/functions/wa-webhook-unified/agents/registry.ts
+Uploading asset (wa-webhook-unified): supabase/functions/wa-webhook-unified/agents/sales-agent.ts
+Uploading asset (wa-webhook-unified): supabase/functions/wa-webhook-unified/core/types.ts
+Uploading asset (wa-webhook-unified): supabase/functions/wa-webhook-unified/agents/base-agent.ts
+Uploading asset (wa-webhook-unified): supabase/functions/wa-webhook-unified/agents/property-agent.ts
+Uploading asset (wa-webhook-unified): supabase/functions/wa-webhook-unified/agents/jobs-agent.ts
+Uploading asset (wa-webhook-unified): supabase/functions/wa-webhook-unified/agents/rides-agent.ts
+Uploading asset (wa-webhook-unified): supabase/functions/wa-webhook-unified/agents/insurance-agent.ts
+Uploading asset (wa-webhook-unified): supabase/functions/wa-webhook-unified/agents/waiter-agent.ts
+Uploading asset (wa-webhook-unified): supabase/functions/wa-webhook-unified/agents/farmer-agent.ts
+Uploading asset (wa-webhook-unified): supabase/functions/wa-webhook-unified/agents/commerce-agent.ts
+Uploading asset (wa-webhook-unified): supabase/functions/wa-webhook-unified/tools/google-places.ts
+Uploading asset (wa-webhook-unified): supabase/functions/wa-webhook-unified/agents/support-agent.ts
+Uploading asset (wa-webhook-unified): supabase/functions/wa-webhook-unified/core/session-manager.ts
+Uploading asset (wa-webhook-unified): supabase/functions/wa-webhook-unified/core/intent-classifier.ts
+Deployed Functions on project lhbowpbcpwoiparwnwgt: wa-webhook-unified
+You can inspect your deployment in the Dashboard: https://supabase.com/dashboard/project/lhbowpbcpwoiparwnwgt/functions
+[0;32m[INFO][0m ✅ wa-webhook-unified deployed successfully
+
+
+[0;32m[INFO][0m =========================================
+[0;32m[INFO][0m Deployment Summary
+[0;32m[INFO][0m =========================================
+[0;32m[INFO][0m Deployed: 9
+[0;31m[ERROR][0m Failed: 0
+[0;32m[INFO][0m ✅ All deployments successful!
+
+[0;32m[INFO][0m Verifying deployments...
+[0;32m[INFO][0m Verifying wa-webhook-core...
+[0;32m[INFO][0m ✅ wa-webhook-core is ACTIVE
+[0;32m[INFO][0m Verifying wa-webhook-jobs...
+[0;32m[INFO][0m ✅ wa-webhook-jobs is ACTIVE
+[0;32m[INFO][0m Verifying wa-webhook-marketplace...
+[0;32m[INFO][0m ✅ wa-webhook-marketplace is ACTIVE
+[0;32m[INFO][0m Verifying wa-webhook-property...
+[0;32m[INFO][0m ✅ wa-webhook-property is ACTIVE
+[0;32m[INFO][0m Verifying wa-webhook-mobility...
+[0;32m[INFO][0m ✅ wa-webhook-mobility is ACTIVE
+[0;32m[INFO][0m Verifying wa-webhook-ai-agents...
+[0;32m[INFO][0m ✅ wa-webhook-ai-agents is ACTIVE
+[0;32m[INFO][0m Verifying wa-webhook-insurance...
+[0;32m[INFO][0m ✅ wa-webhook-insurance is ACTIVE
+[0;32m[INFO][0m Verifying wa-webhook-profile...
+[0;32m[INFO][0m ✅ wa-webhook-profile is ACTIVE
+[0;32m[INFO][0m Verifying wa-webhook-unified...
+[0;32m[INFO][0m ✅ wa-webhook-unified is ACTIVE

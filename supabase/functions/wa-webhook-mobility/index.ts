@@ -365,20 +365,17 @@ serve(async (req: Request): Promise<Response> => {
            handled = await startScheduleSavedLocationPicker(ctx, state.data as any, "dropoff");
         } else if (id.startsWith("FAV::") && state?.key === "location_saved_picker" && state.data?.source === "schedule") {
            handled = await handleScheduleSavedLocationSelection(ctx, state.data as any, id);
-        }
-        
-        // Trip Lifecycle Management
-        else if (id === "TRIP_START" && state?.data?.matchId) {
-          const matchId = state.data.matchId;
+        } else if (id === "TRIP_START" && state?.data?.matchId) {
+          const matchId = String(state.data.matchId);
           handled = await handleTripStart(ctx, matchId);
         } else if (id === "TRIP_ARRIVED" && state?.data?.tripId) {
-          const tripId = state.data.tripId;
+          const tripId = String(state.data.tripId);
           handled = await handleTripArrivedAtPickup(ctx, tripId);
         } else if (id === "TRIP_PICKED_UP" && state?.data?.tripId) {
-          const tripId = state.data.tripId;
+          const tripId = String(state.data.tripId);
           handled = await handleTripPickedUp(ctx, tripId);
         } else if (id === "TRIP_COMPLETE" && state?.data?.tripId) {
-          const tripId = state.data.tripId;
+          const tripId = String(state.data.tripId);
           handled = await handleTripComplete(ctx, tripId);
         } else if (id.startsWith("TRIP_CANCEL::")) {
           const tripId = id.replace("TRIP_CANCEL::", "");
@@ -415,7 +412,7 @@ serve(async (req: Request): Promise<Response> => {
           // Location will come from location message, just acknowledge
           handled = true;
         } else if (id === "VIEW_DRIVER_LOCATION" && state?.data?.tripId) {
-          const tripId = state.data.tripId;
+          const tripId = String(state.data.tripId);
           const progress = await getTripProgress(ctx, tripId);
           if (progress?.driverLocation) {
             await sendLocation(ctx.from, {
@@ -450,13 +447,13 @@ serve(async (req: Request): Promise<Response> => {
       if (loc && loc.latitude && loc.longitude) {
         const coords = { lat: Number(loc.latitude), lng: Number(loc.longitude) };
         logEvent("MOBILITY_LOCATION", coords);
-        await recordLastLocation(ctx, coords).catch((e) =>
-          await logStructuredEvent("WARNING", { data: "mobility.record_location_fail", e }),
-        );
+        await recordLastLocation(ctx, coords).catch((e) => {
+          logStructuredEvent("WARNING", { data: "mobility.record_location_fail", e });
+        });
 
         // Real-time tracking location updates
         if (state?.key === "trip_in_progress" && state?.data?.tripId && state?.data?.role === "driver") {
-          const tripId = state.data.tripId;
+          const tripId = String(state.data.tripId);
           handled = await updateDriverLocation(ctx, tripId, coords);
         }
         // Existing location handlers

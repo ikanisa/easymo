@@ -134,6 +134,23 @@ async function createMoMoPayment(
       correlationId,
     });
 
+    return {
+      success: false,
+      error: `MoMo API error: ${response.status}`,
+    };
+  } catch (error) {
+    await logStructuredEvent("MOMO_REQUEST_ERROR", {
+      referenceId,
+      error: (error as Error).message,
+      correlationId,
+    });
+    return {
+      success: false,
+      error: (error as Error).message,
+    };
+  }
+}
+
 function buildProviderSecrets(providerId: MobileMoneyProviderId): ProviderSecrets {
   if (providerId === 'orange') {
     return {
@@ -261,7 +278,7 @@ async function handleFarmerDeposit(payload: any, correlationId: string): Promise
       .update({ status: "failed", metadata: { correlationId, error: result.error } })
       .eq("id", depositInsert.data.id);
     await supabase
-      .from("farm_pickup_registrations")"
+      .from("farm_pickup_registrations")
       .update({ deposit_status: "failed" })
       .eq("id", registrationId);
     await recordMetric("payment.momo.failed", 1, { provider: paymentProvider, currency: currency ?? "RWF", flow: "farmer_deposit" });

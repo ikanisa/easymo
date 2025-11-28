@@ -1,12 +1,12 @@
 // wa-webhook-insurance - Dedicated Insurance Microservice
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { logStructuredEvent } from "../_shared/observability.ts";
-import { verifyWebhookSignature } from "../_shared/webhook-utils.ts";
-import type { RouterContext, WhatsAppWebhookPayload, RawWhatsAppMessage } from "../_shared/wa-webhook-shared/types.ts";
-import { getState } from "../_shared/wa-webhook-shared/state/store.ts";
-import { IDS } from "../_shared/wa-webhook-shared/wa/ids.ts";
-import { rateLimitMiddleware } from "../_shared/rate-limit/index.ts";
+import { logStructuredEvent } from "../../_shared/observability.ts";
+import { verifyWebhookSignature } from "../../_shared/webhook-utils.ts";
+import type { RouterContext, WhatsAppWebhookPayload, RawWhatsAppMessage } from "../../_shared/wa-webhook-shared/types.ts";
+import { getState } from "../../_shared/wa-webhook-shared/state/store.ts";
+import { IDS } from "../../_shared/wa-webhook-shared/wa/ids.ts";
+import { rateLimitMiddleware } from "../../_shared/rate-limit/index.ts";
 
 
 // Insurance domain imports
@@ -15,7 +15,7 @@ import {
   evaluateMotorInsuranceGate,
   recordMotorInsuranceHidden,
   sendMotorInsuranceBlockedMessage,
-} from "../_shared/wa-webhook-shared/domains/insurance/gate.ts";
+} from "../../_shared/wa-webhook-shared/domains/insurance/gate.ts";
 import {
   startClaimFlow,
   handleClaimType,
@@ -67,17 +67,17 @@ serve(async (req: Request): Promise<Response> => {
     });
   };
 
-  // Health check - MUST be before method check
-  if (url.pathname === "/health" || url.pathname.endsWith("/health")) {
-    return respond({
-      status: "healthy",
-      service: "wa-webhook-insurance",
-      timestamp: new Date().toISOString(),
-    });
-  }
-
   try {
-    // Only accept POST requests for webhook
+    // Health check
+    if (req.method === "GET" && (url.pathname === "/health" || url.pathname.endsWith("/health"))) {
+      return respond({
+        status: "healthy",
+        service: "wa-webhook-insurance",
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    // Only accept POST requests
     if (req.method !== "POST") {
       return respond({ error: "Method not allowed" }, { status: 405 });
     }
@@ -372,4 +372,4 @@ async function handleInsuranceText(
   return true;
 }
 
-console.log("wa-webhook-insurance service started");
+await logStructuredEvent("LOG", { data: "wa-webhook-insurance service started" });

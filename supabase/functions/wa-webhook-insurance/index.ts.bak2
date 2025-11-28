@@ -67,17 +67,17 @@ serve(async (req: Request): Promise<Response> => {
     });
   };
 
-  // Health check - MUST be before method check
-  if (url.pathname === "/health" || url.pathname.endsWith("/health")) {
-    return respond({
-      status: "healthy",
-      service: "wa-webhook-insurance",
-      timestamp: new Date().toISOString(),
-    });
-  }
-
   try {
-    // Only accept POST requests for webhook
+    // Health check
+    if (req.method === "GET" && (url.pathname === "/health" || url.pathname.endsWith("/health"))) {
+      return respond({
+        status: "healthy",
+        service: "wa-webhook-insurance",
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    // Only accept POST requests
     if (req.method !== "POST") {
       return respond({ error: "Method not allowed" }, { status: 405 });
     }
@@ -372,4 +372,4 @@ async function handleInsuranceText(
   return true;
 }
 
-console.log("wa-webhook-insurance service started");
+await logStructuredEvent("LOG", { data: "wa-webhook-insurance service started" });
