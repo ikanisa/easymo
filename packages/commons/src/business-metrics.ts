@@ -1,5 +1,6 @@
 import { Counter, Histogram, Gauge } from 'prom-client';
 import { MetricsRegistry } from './metrics';
+import { validatePaymentMethod } from './payment-methods';
 
 /**
  * EasyMO-specific business metrics
@@ -205,6 +206,9 @@ export class BusinessMetrics {
   }
 
   trackPayment(paymentMethod: string, amount: number, status: 'success' | 'failed', errorCode?: string) {
+    // Validate payment method
+    validatePaymentMethod(paymentMethod);
+    
     this.paymentTransactionsTotal.inc({ status, payment_method: paymentMethod });
     
     if (status === 'success') {

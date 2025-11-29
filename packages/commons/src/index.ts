@@ -8,6 +8,7 @@ export * from "./health";
 export * from "./input-validation";
 export * from "./logger";
 export * from "./metrics";
+export * from "./payment-methods";
 export * from "./pii-masking";
 export * from "./rate-limit";
 export * from "./request-context";
