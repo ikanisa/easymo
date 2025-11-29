@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
-import { Mic, MicOff, PhoneOff, Loader2, Volume2, VolumeX } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Loader2, Mic, MicOff, PhoneOff, Volume2, VolumeX } from 'lucide-react';
+import { useEffect,useRef, useState } from 'react';
+
+import { Badge } from '@/components/ui/Badge';
+import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select';
 
 type VoiceProvider = 'openai' | 'gemini';
 type ConnectionState = 'disconnected' | 'connecting' | 'connected' | 'error';

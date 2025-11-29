@@ -7,7 +7,7 @@
  * @see https://ai.google.dev/gemini-api/docs
  */
 
-import { GoogleGenerativeAI, GenerativeModel, Content, Tool, Part } from "@google/generative-ai";
+import { Content, GenerativeModel, GoogleGenerativeAI, Part,Tool } from "@google/generative-ai";
 
 // ============================================================================
 // TYPES

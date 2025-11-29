@@ -1,7 +1,7 @@
-import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { getAttributionServiceRoutePath, signServiceJwt } from "@easymo/commons";
 import type { PrismaService } from "@easymo/db";
 import request from "supertest";
+import { afterEach,beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { evaluateAttribution as evaluateAttributionType } from "../src/evaluator";
 

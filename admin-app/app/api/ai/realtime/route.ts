@@ -4,7 +4,8 @@
  */
 
 import { NextRequest } from 'next/server';
-import { createRealtimeSession, sendRealtimeText, subscribeRealtimeEvents, closeRealtimeSession } from '@/lib/ai/openai/realtime';
+
+import { closeRealtimeSession,createRealtimeSession, sendRealtimeText, subscribeRealtimeEvents } from '@/lib/ai/openai/realtime';
 import { logStructuredEvent } from '@/lib/monitoring/logger';
 
 export const runtime = 'nodejs';

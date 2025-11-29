@@ -1,5 +1,5 @@
-import { NextResponse } from 'next/server';
 import * as Sentry from '@sentry/nextjs';
+import { NextResponse } from 'next/server';
 
 export class APIError extends Error {
   constructor(

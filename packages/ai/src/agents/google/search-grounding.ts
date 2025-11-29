@@ -8,7 +8,7 @@
  * - Fact-checking capabilities
  */
 
-import { GoogleGenerativeAI, GenerativeModel } from "@google/generative-ai";
+import { GenerativeModel,GoogleGenerativeAI } from "@google/generative-ai";
 
 export interface SearchGroundingConfig {
   apiKey: string;

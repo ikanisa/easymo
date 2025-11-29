@@ -1,3 +1,6 @@
+-- Transaction wrapper for production safety
+BEGIN;
+
 -- Job application tracking
 CREATE TABLE IF NOT EXISTS job_applications (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -52,3 +55,5 @@ CREATE TRIGGER update_job_applications_updated_at
 COMMENT ON TABLE job_applications IS 'Tracks user job applications with status and follow-up dates';
 COMMENT ON COLUMN job_applications.status IS 'Current status of the application';
 COMMENT ON COLUMN job_applications.follow_up_date IS 'Date to send follow-up reminder';
+
+COMMIT;

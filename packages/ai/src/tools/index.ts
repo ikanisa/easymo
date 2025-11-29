@@ -6,41 +6,39 @@
  */
 
 import type { Tool } from '../core/types';
+// Application tracking (Week 2)
+import {
+  listApplicationsTool,
+  setFollowUpReminderTool,
+  trackApplicationTool,
+  updateApplicationStatusTool} from './applications/track-application';
 // Booking tools
 import { checkAvailabilityTool } from './booking/check-availability';
 import { createBookingTool } from './booking/create-booking';
+// Search tools
+import { googleSearchTool } from './google-search';
+import { openaiWebSearchTool } from './openai-web-search';
 // Payment tools
 import { checkBalanceTool } from './payment/check-balance';
 import { sendMoneyTool } from './payment/send-money';
 // Profile tools
 import { getUserProfileTool } from './profile/get-user-profile';
-// Support tools
-import { createTicketTool } from './support/create-ticket';
-// Search tools
-import { googleSearchTool } from './google-search';
-import { openaiWebSearchTool } from './openai-web-search';
-import { serpapiJobsTool } from './serpapi-jobs';
 // Saved searches (Week 2)
 import { 
-  saveSearchTool, 
-  listSavedSearchesTool, 
   deleteSavedSearchTool,
+  listSavedSearchesTool, 
+  saveSearchTool, 
   updateSearchFrequencyTool 
 } from './search/save-search';
-// Application tracking (Week 2)
-import {
-  trackApplicationTool,
-  updateApplicationStatusTool,
-  listApplicationsTool,
-  setFollowUpReminderTool
-} from './applications/track-application';
+import { serpapiJobsTool } from './serpapi-jobs';
+// Support tools
+import { createTicketTool } from './support/create-ticket';
 // Property viewings (Week 2)
 import {
-  scheduleViewingTool,
-  listViewingsTool,
   cancelViewingTool,
-  confirmViewingTool
-} from './viewings/schedule-viewing';
+  confirmViewingTool,
+  listViewingsTool,
+  scheduleViewingTool} from './viewings/schedule-viewing';
 
 /**
  * All available tools

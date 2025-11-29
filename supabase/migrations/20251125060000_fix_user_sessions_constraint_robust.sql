@@ -1,3 +1,6 @@
+-- Transaction wrapper for production safety
+BEGIN;
+
 -- 1. Clean up duplicate sessions first (keep the most recently updated one)
 DELETE FROM public.user_sessions a USING (
   SELECT min(ctid) as ctid, phone_number
@@ -16,3 +19,5 @@ ADD CONSTRAINT user_sessions_phone_number_key UNIQUE (phone_number);
 
 -- 4. Verify the index exists (implicitly created by UNIQUE constraint, but good to be sure)
 -- This is just a comment, the above command does it.
+
+COMMIT;

@@ -1,27 +1,27 @@
 "use client";
 
-import { useState } from "react";
 import { motion } from "framer-motion";
 import { 
-  Save, 
   Bell,
-  Shield,
-  Palette,
   Globe,
   Key,
   Mail,
-  Smartphone,
   Moon,
+  Palette,
+  Save, 
+  Shield,
+  Smartphone,
   Sun
 } from "lucide-react";
+import { useState } from "react";
 
+import { Card } from "@/components/data-display/Card";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { Tabs, TabsContent,TabsList, TabsTrigger } from "@/components/navigation/Tabs";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { Toggle } from "@/components/ui/Toggle";
 import { Select } from "@/components/ui/Select";
-import { PageHeader } from "@/components/layout/PageHeader";
-import { Card } from "@/components/data-display/Card";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/navigation/Tabs";
+import { Toggle } from "@/components/ui/Toggle";
 
 export function AuroraSettingsClient() {
   const [darkMode, setDarkMode] = useState(false);

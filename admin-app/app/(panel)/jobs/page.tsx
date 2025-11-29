@@ -1,4 +1,5 @@
 import { getSupabaseAdminClient } from '@/lib/server/supabase-admin';
+
 import { JobsClient } from './JobsClient';
 
 export const dynamic = 'force-dynamic';

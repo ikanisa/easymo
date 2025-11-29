@@ -1,3 +1,6 @@
+-- Transaction wrapper for production safety
+BEGIN;
+
 -- Migration: Create Countries Table
 -- Created: 2025-11-23
 -- Purpose: Filter MOMO QR code availability by country.
@@ -34,3 +37,5 @@ CREATE POLICY "Allow public read access" ON public.countries FOR SELECT USING (t
 GRANT ALL ON public.countries TO service_role;
 GRANT SELECT ON public.countries TO authenticated;
 GRANT SELECT ON public.countries TO anon;
+
+COMMIT;

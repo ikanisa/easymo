@@ -1,16 +1,16 @@
 // Google Maps integration
 export {
-  findNearbyPlaces,
-  getDirections,
   calculateDistanceMatrix,
-  searchPlaceByText,
-  getPlaceDetails,
-  geocodeAddress,
-  reverseGeocode,
-  type Location,
-  type NearbyPlacesParams,
   type DirectionsParams,
   type DistanceMatrixParams,
+  findNearbyPlaces,
+  geocodeAddress,
+  getDirections,
+  getPlaceDetails,
+  type Location,
+  type NearbyPlacesParams,
+  reverseGeocode,
+  searchPlaceByText,
 } from "./google-maps";
 
 // Export placeholder for future integrations

@@ -1,19 +1,19 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence,motion } from 'framer-motion';
 import { 
-  Search, 
+  ArrowRight,
+  Clock,
   Home, 
-  Users, 
-  Settings, 
+  type LucideIcon, 
   MessageCircle, 
   Plus,
-  Clock,
-  ArrowRight,
-  type LucideIcon 
-} from 'lucide-react';
+  Search, 
+  Settings, 
+  Users} from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+
 import { cn } from '@/lib/utils';
 
 interface CommandItem {

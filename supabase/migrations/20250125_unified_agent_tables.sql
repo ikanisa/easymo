@@ -1,3 +1,6 @@
+-- Transaction wrapper for production safety
+BEGIN;
+
 -- Unified AI Agent Microservices Database Schema
 -- Migration: 20250125_unified_agent_tables.sql
 -- 
@@ -310,3 +313,5 @@ COMMENT ON TABLE unified_applications IS 'Applications and inquiries across all 
 COMMENT ON TABLE unified_matches IS 'Buyer-seller, job-applicant, tenant-property matches';
 COMMENT ON TABLE unified_agent_events IS 'Observability and analytics for agent interactions';
 COMMENT ON TABLE ai_agent_configs IS 'Database-driven agent configurations';
+
+COMMIT;

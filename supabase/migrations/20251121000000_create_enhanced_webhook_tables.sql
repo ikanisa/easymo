@@ -1,3 +1,6 @@
+-- Transaction wrapper for production safety
+BEGIN;
+
 -- =====================================================
 -- ENHANCED WEBHOOK PROCESSING TABLES
 -- =====================================================
@@ -173,3 +176,5 @@ $$;
 
 GRANT EXECUTE ON FUNCTION public.acquire_conversation_lock TO service_role;
 GRANT EXECUTE ON FUNCTION public.release_conversation_lock TO service_role;
+
+COMMIT;

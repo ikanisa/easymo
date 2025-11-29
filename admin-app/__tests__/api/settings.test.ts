@@ -64,8 +64,8 @@ vi.mock("@/app/api/withObservability", () => ({
 }));
 
 import { GET, POST } from "@/app/api/settings/route";
-import { requireActorId, UnauthorizedError } from "@/lib/server/auth";
 import { recordAudit } from "@/lib/server/audit";
+import { requireActorId, UnauthorizedError } from "@/lib/server/auth";
 import { getSupabaseAdminClient } from "@/lib/server/supabase-admin";
 
 describe("Settings API", () => {

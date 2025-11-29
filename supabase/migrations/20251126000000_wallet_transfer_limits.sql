@@ -1,3 +1,6 @@
+-- Transaction wrapper for production safety
+BEGIN;
+
 -- Add RPC functions for wallet transfer security
 
 -- Get total tokens transferred out today
@@ -29,3 +32,5 @@ GRANT EXECUTE ON FUNCTION get_hourly_transfer_count(UUID) TO authenticated;
 -- Add comments
 COMMENT ON FUNCTION get_daily_transfer_total IS 'Returns total tokens transferred out by user today';
 COMMENT ON FUNCTION get_hourly_transfer_count IS 'Returns count of transfers made by user in last hour';
+
+COMMIT;

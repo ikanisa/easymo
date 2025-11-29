@@ -1,3 +1,6 @@
+-- Transaction wrapper for production safety
+BEGIN;
+
 -- Schedule notification checker to run every hour
 SELECT cron.schedule(
   'search-alert-notifications',
@@ -26,3 +29,5 @@ SELECT cron.schedule(
 
 -- View scheduled jobs
 SELECT * FROM cron.job WHERE jobname IN ('search-alert-notifications', 'daily-reminders');
+
+COMMIT;

@@ -1,4 +1,5 @@
 import helmet, { HelmetOptions } from 'helmet';
+
 import { childLogger } from './logger';
 
 const log = childLogger({ service: 'security-headers' });
@@ -138,7 +139,7 @@ export function createSecurityHeaders(options?: {
     preset = env === 'production' ? 'production' : 'development';
   }
 
-  let config = { ...securityHeaderPresets[preset] };
+  const config = { ...securityHeaderPresets[preset] };
 
   // Merge additional CSP directives if provided
   if (options?.additionalCspDirectives && config.contentSecurityPolicy) {

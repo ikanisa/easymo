@@ -1,3 +1,6 @@
+-- Transaction wrapper for production safety
+BEGIN;
+
 -- Ensure momo_qr_requests table supports the extended logging payload used by the QR flow
 DO $$
 BEGIN
@@ -50,3 +53,5 @@ BEGIN
     ALTER TABLE public.momo_qr_requests ADD COLUMN ussd TEXT;
   END IF;
 END $$;
+
+COMMIT;

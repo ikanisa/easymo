@@ -1,3 +1,4 @@
+import { childLogger } from '@easymo/commons';
 import { classifyVehicle, extractFromImages,VehicleDoc } from "@insure/ocr-extract";
 import {
   CoverSelection,
@@ -18,8 +19,6 @@ import OpenAI from "openai";
 import { enqueueOutboundSend } from "./outboundQueue";
 import { resolveSecretValue } from "./secrets";
 import { maskMsisdn } from "./utils/pii";
-
-import { childLogger } from '@easymo/commons';
 
 const log = childLogger({ service: 'whatsapp-pricing-server' });
 

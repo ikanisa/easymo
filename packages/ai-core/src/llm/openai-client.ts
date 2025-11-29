@@ -1,8 +1,7 @@
+import { childLogger } from '@easymo/commons';
 import OpenAI from 'openai';
 
 import { ModelConfig } from '../base/types';
-
-import { childLogger } from '@easymo/commons';
 
 const log = childLogger({ service: 'ai-core' });
 

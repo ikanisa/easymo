@@ -10,11 +10,11 @@ import type { ReactNode } from "react";
 
 import { QueryProvider } from "@/app/providers/QueryProvider";
 import { AppProviders } from "@/components/providers/AppProviders";
+import { UpdaterInit } from '@/components/system/UpdaterInit';
 import { ErrorBoundary } from '@/components/ui/error-boundary';
 import { ThemeProvider } from '@/components/ui/theme-provider';
 import { ToastProvider } from '@/components/ui/toast';
 import { WebVitals } from '@/components/WebVitals';
-import { UpdaterInit } from '@/components/system/UpdaterInit';
 import { isUiKitEnabled } from "@/lib/ui-kit";
 
 export const metadata: Metadata = {

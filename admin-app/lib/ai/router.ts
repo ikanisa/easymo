@@ -1,6 +1,7 @@
 import pRetry from "p-retry";
+
+import { GEMINI_MODELS,getGeminiClient } from "./providers/gemini-client";
 import { getOpenAIClient } from "./providers/openai-client";
-import { getGeminiClient, GEMINI_MODELS } from "./providers/gemini-client";
 
 type Provider = "openai" | "gemini";
 

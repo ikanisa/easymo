@@ -6,9 +6,8 @@
  * @packageDocumentation
  */
 
-import { z } from 'zod';
-
 import { childLogger } from '@easymo/commons';
+import { z } from 'zod';
 
 const log = childLogger({ service: 'imagen-tool' });
 

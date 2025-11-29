@@ -4,6 +4,7 @@
  */
 
 import WebSocket from 'ws';
+
 import { AI_CONFIG } from '../config';
 import type { RealtimeConfig } from '../types';
 

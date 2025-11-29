@@ -1,5 +1,5 @@
-import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { createHmac } from "crypto";
+import { afterEach,beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Import only the signature module without triggering config loading
 import { verifyWebhookSignature } from "../src/signature";

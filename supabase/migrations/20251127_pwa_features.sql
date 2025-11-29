@@ -1,3 +1,6 @@
+-- Transaction wrapper for production safety
+BEGIN;
+
 -- ============================================
 -- CLIENT PWA DATABASE SCHEMA
 -- Bar & Restaurant Ordering System
@@ -73,3 +76,5 @@ CREATE INDEX idx_analytics_events_user ON analytics_events(user_id);
 CREATE INDEX idx_analytics_events_session ON analytics_events(session_id);
 CREATE INDEX idx_analytics_events_type ON analytics_events(event_type);
 CREATE INDEX idx_analytics_events_created ON analytics_events(created_at DESC);
+
+COMMIT;

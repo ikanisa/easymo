@@ -1,9 +1,8 @@
+import { childLogger } from '@easymo/commons';
 import { createClient } from '@supabase/supabase-js';
 import { z } from 'zod';
 
 import type { Tool } from '../../core/types';
-
-import { childLogger } from '@easymo/commons';
 
 const log = childLogger({ service: 'ai' });
 

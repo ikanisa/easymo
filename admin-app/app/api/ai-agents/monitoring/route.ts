@@ -19,7 +19,7 @@ export async function GET(request: Request) {
   try {
     // Calculate time threshold
     const now = new Date();
-    let threshold = new Date();
+    const threshold = new Date();
     switch (timeRange) {
       case "1h":
         threshold.setHours(now.getHours() - 1);

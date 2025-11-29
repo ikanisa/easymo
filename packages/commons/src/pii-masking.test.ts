@@ -1,9 +1,10 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect,it } from 'vitest';
+
 import {
-  maskPhone,
+  maskCardNumber,
   maskEmail,
   maskIdNumber,
-  maskCardNumber,
+  maskPhone,
   maskPII,
 } from './pii-masking';
 

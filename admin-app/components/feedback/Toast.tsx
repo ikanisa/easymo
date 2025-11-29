@@ -5,9 +5,10 @@
 
 'use client';
 
-import { createContext, useContext, useState, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { X, CheckCircle, AlertCircle, Info, AlertTriangle } from 'lucide-react';
+import { AnimatePresence,motion } from 'framer-motion';
+import { AlertCircle, AlertTriangle,CheckCircle, Info, X } from 'lucide-react';
+import { createContext, useCallback,useContext, useState } from 'react';
+
 import { cn } from '@/lib/utils';
 
 type ToastType = 'success' | 'error' | 'info' | 'warning';

@@ -1,6 +1,6 @@
-import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { describe, expect, it } from "@jest/globals";
 import { Prisma } from "@prisma/client";
+import { afterEach,beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { computeCommissionAmount } from "../src/commission";
 

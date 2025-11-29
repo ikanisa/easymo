@@ -3,6 +3,7 @@
  */
 
 import OpenAI from 'openai';
+
 import { AI_CONFIG } from '../config';
 import type { HealthCheck } from '../types';
 

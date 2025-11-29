@@ -1,3 +1,4 @@
+import { childLogger, rateLimit, strictRateLimit } from '@easymo/commons';
 import express, { type Request, type Response } from "express";
 import http from "http";
 import { type RawData,type WebSocket, WebSocketServer } from "ws";
@@ -7,8 +8,6 @@ import { config } from "./config";
 import { fetchLiveCalls, insertSegments, insertVoiceCall, type TranscriptSegment,updateConsent } from "./db";
 import { httpLogger, logger } from "./logger";
 import { resolveRoute } from "./routing";
-
-import { childLogger, rateLimit, strictRateLimit } from '@easymo/commons';
 
 const log = childLogger({ service: 'voice-bridge' });
 

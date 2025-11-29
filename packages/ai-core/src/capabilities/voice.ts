@@ -1,6 +1,5 @@
-import { WebSocket } from 'ws';
-
 import { childLogger } from '@easymo/commons';
+import { WebSocket } from 'ws';
 
 const log = childLogger({ service: 'ai-core' });
 

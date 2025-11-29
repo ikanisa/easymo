@@ -1,3 +1,6 @@
+-- Transaction wrapper for production safety
+BEGIN;
+
 -- Increase to 50% rollout for unified service
 -- Day 4 of gradual rollout - MAJOR MILESTONE
 
@@ -21,3 +24,5 @@ WHERE id = 1;
 
 -- Add comment for monitoring
 COMMENT ON TABLE public.app_config IS 'Monitor unified service at 50% rollout for 48 hours. This is a major milestone - half of all traffic now uses the unified service. Watch for any performance degradation or increased error rates.';
+
+COMMIT;

@@ -1,3 +1,6 @@
+-- Transaction wrapper for production safety
+BEGIN;
+
 CREATE EXTENSION IF NOT EXISTS vector;
 
 CREATE TABLE IF NOT EXISTS public.listing_sources (
@@ -53,3 +56,5 @@ WHERE NOT EXISTS (SELECT 1 FROM public.listing_sources WHERE name = 'Rwanda Jobs
 INSERT INTO public.listing_sources (name, type, source_type, config)
 SELECT 'Rwanda Real Estate Search', 'real_estate', 'google_search', '{"queries": ["apartments for rent Kigali", "houses for sale Kigali", "land for sale Rwanda", "commercial property for rent Kigali", "plots for sale Kigali"], "country": "Rwanda"}'
 WHERE NOT EXISTS (SELECT 1 FROM public.listing_sources WHERE name = 'Rwanda Real Estate Search');
+
+COMMIT;

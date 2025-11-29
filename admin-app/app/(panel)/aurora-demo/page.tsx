@@ -4,13 +4,14 @@
 
 'use client';
 
+import { DollarSign,Edit, MoreVertical, Trash, Users } from 'lucide-react';
 import { useState } from 'react';
+
 import {
-  Button, Card, CardContent, PageHeader,
-  DataTable, Column, DropdownMenu, Breadcrumbs, Pagination,
-  ThemeSwitcher, KpiCard, Badge,
-} from '@/components';
-import { MoreVertical, Edit, Trash, Users, DollarSign } from 'lucide-react';
+Badge,
+Breadcrumbs,   Button, Card, CardContent, Column,   DataTable, DropdownMenu, KpiCard, PageHeader,
+Pagination,
+  ThemeSwitcher, } from '@/components';
 
 interface User {
   id: string;

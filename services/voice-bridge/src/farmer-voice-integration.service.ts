@@ -1,7 +1,7 @@
+import { CircuitBreaker, createCircuitBreaker } from "@easymo/circuit-breaker";
 import { Injectable, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import axios, { AxiosInstance } from "axios";
-import { CircuitBreaker, createCircuitBreaker } from "@easymo/circuit-breaker";
 
 type StartVoiceCallInput = {
   fromNumber: string; // Caller's phone number

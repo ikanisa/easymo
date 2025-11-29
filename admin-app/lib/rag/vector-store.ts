@@ -1,6 +1,7 @@
 // RAG with Supabase pgvector
 
 import { createClient } from "@supabase/supabase-js";
+
 import { getOpenAIClient } from "../ai/providers/openai-client";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";

@@ -1,3 +1,6 @@
+-- Transaction wrapper for production safety
+BEGIN;
+
 -- Align rides_trips schema with wa-webhook-mobility expectations
 DO $$
 BEGIN
@@ -105,3 +108,5 @@ CREATE INDEX IF NOT EXISTS idx_rides_trips_role
 
 CREATE INDEX IF NOT EXISTS idx_rides_trips_vehicle_type
   ON public.rides_trips(vehicle_type);
+
+COMMIT;

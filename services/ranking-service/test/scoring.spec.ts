@@ -1,5 +1,5 @@
-import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { Prisma } from "@prisma/client";
+import { afterEach,beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { computeVendorScore, rankVendors } from "../src/scoring";
 

@@ -4,17 +4,18 @@
 
 'use client';
 
+import { DollarSign, Mail,MessageCircle, Search, TrendingUp, Users } from 'lucide-react';
 import { useState } from 'react';
+
+import { Badge } from '@/components/data-display/Badge';
+import { Card, CardContent,CardHeader, CardTitle } from '@/components/data-display/Card';
+import { KpiCard } from '@/components/data-display/KpiCard';
+import { Skeleton, SkeletonText } from '@/components/feedback/Skeleton';
+import { Spinner } from '@/components/feedback/Spinner';
+import { Modal, ModalFooter } from '@/components/overlay/Modal';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
-import { KpiCard } from '@/components/data-display/KpiCard';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/data-display/Card';
-import { Badge } from '@/components/data-display/Badge';
-import { Spinner } from '@/components/feedback/Spinner';
-import { Skeleton, SkeletonText } from '@/components/feedback/Skeleton';
-import { Modal, ModalFooter } from '@/components/overlay/Modal';
-import { Users, DollarSign, MessageCircle, TrendingUp, Search, Mail } from 'lucide-react';
 
 export default function AuroraShowcasePage() {
   const [modalOpen, setModalOpen] = useState(false);

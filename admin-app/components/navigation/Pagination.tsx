@@ -6,8 +6,9 @@
 'use client';
 
 import { ChevronLeft, ChevronRight, MoreHorizontal } from 'lucide-react';
-import { cn } from '@/lib/utils';
+
 import { Button } from '@/components/ui/Button';
+import { cn } from '@/lib/utils';
 
 export interface PaginationProps {
   currentPage: number;

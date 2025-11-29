@@ -4,8 +4,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { mobilityAgent, marketplaceAgent, supportAgent } from '@/lib/ai/domain';
+
 import { runAgent } from '@/lib/ai/agent-executor';
+import { marketplaceAgent, mobilityAgent, supportAgent } from '@/lib/ai/domain';
 import { logStructuredEvent } from '@/lib/monitoring/logger';
 
 export const runtime = 'nodejs';

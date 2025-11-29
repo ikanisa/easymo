@@ -4,14 +4,13 @@
  * Performs semantic search using OpenAI embeddings and Supabase pgvector.
  */
 
+import { childLogger } from '@easymo/commons';
 import { createClient } from '@supabase/supabase-js';
 import OpenAI from 'openai';
 import { z } from 'zod';
 
 import { logToolInvocation } from '../observability';
 import type { AgentContext } from '../types';
-
-import { childLogger } from '@easymo/commons';
 
 const log = childLogger({ service: 'agents' });
 

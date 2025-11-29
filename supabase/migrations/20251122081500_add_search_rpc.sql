@@ -1,3 +1,6 @@
+-- Transaction wrapper for production safety
+BEGIN;
+
 -- Function to search businesses nearby using PostGIS
 CREATE OR REPLACE FUNCTION public.search_businesses_nearby(
   p_category TEXT,
@@ -46,3 +49,5 @@ BEGIN
   LIMIT p_limit;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+COMMIT;

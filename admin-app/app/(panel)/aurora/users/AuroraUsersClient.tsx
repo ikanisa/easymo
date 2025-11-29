@@ -1,24 +1,23 @@
 "use client";
 
-import { useState } from "react";
 import { motion } from "framer-motion";
 import { 
-  Plus, 
   Download, 
   Filter, 
-  Search,
-  UserPlus,
   Mail,
+  MapPin,
   Phone,
-  MapPin
-} from "lucide-react";
+  Plus, 
+  Search,
+  UserPlus} from "lucide-react";
+import { useState } from "react";
 
+import { Badge } from "@/components/data-display/Badge";
+import { DataTable } from "@/components/data-display/DataTable";
+import { Spinner } from "@/components/feedback/Spinner";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { PageHeader } from "@/components/layout/PageHeader";
-import { DataTable } from "@/components/data-display/DataTable";
-import { Badge } from "@/components/data-display/Badge";
-import { Spinner } from "@/components/feedback/Spinner";
 import { type UsersQueryParams } from "@/lib/queries/users";
 import { useUsersQuery } from "@/lib/queries/users";
 

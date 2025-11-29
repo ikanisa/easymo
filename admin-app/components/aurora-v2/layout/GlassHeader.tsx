@@ -1,8 +1,9 @@
 'use client';
 
+import { Bell, Menu, Moon, Search, Settings, Sun,User } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
-import { Menu, Search, Bell, Settings, User, Moon, Sun } from 'lucide-react';
+
 import { cn } from '@/lib/utils';
 
 interface GlassHeaderProps {

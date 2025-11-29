@@ -2,25 +2,24 @@
 
 import { motion } from "framer-motion";
 import { 
-  Users, 
+  AlertCircle,
   DollarSign, 
-  MessageCircle, 
-  TrendingUp,
   Download,
+  MessageCircle, 
   Plus,
-  AlertCircle
-} from "lucide-react";
+  TrendingUp,
+  Users} from "lucide-react";
 
-import { Button } from "@/components/ui/Button";
-import { KpiCard } from "@/components/data-display/KpiCard";
-import { Card } from "@/components/data-display/Card";
-import { PageHeader } from "@/components/layout/PageHeader";
-import { Spinner } from "@/components/feedback/Spinner";
-import { Skeleton } from "@/components/feedback/Skeleton";
-import { IntegrationHealthWidget } from "@/components/dashboard/IntegrationHealthWidget";
-import { PaymentsHealthWidget } from "@/components/dashboard/PaymentsHealthWidget";
 import { AdminDiagnosticsCard } from "@/components/dashboard/AdminDiagnosticsCard";
 import { AdminHubSectionGrid } from "@/components/dashboard/AdminHubSectionGrid";
+import { IntegrationHealthWidget } from "@/components/dashboard/IntegrationHealthWidget";
+import { PaymentsHealthWidget } from "@/components/dashboard/PaymentsHealthWidget";
+import { Card } from "@/components/data-display/Card";
+import { KpiCard } from "@/components/data-display/KpiCard";
+import { Skeleton } from "@/components/feedback/Skeleton";
+import { Spinner } from "@/components/feedback/Spinner";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { Button } from "@/components/ui/Button";
 import { WebhookErrorList } from "@/components/whatsapp/WebhookErrorList";
 import { useAdminHubSnapshotQuery } from "@/lib/queries/adminHub";
 import {

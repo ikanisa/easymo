@@ -1,4 +1,5 @@
 import { isFeatureEnabled } from "@easymo/commons";
+import { childLogger } from '@easymo/commons';
 import { PrismaService } from "@easymo/db";
 import express from "express";
 import pinoHttp from "pino-http";
@@ -7,8 +8,6 @@ import { z } from "zod";
 import { settings } from "./config";
 import { logger } from "./logger";
 import { CreateVendorInput,VendorService } from "./service";
-
-import { childLogger } from '@easymo/commons';
 
 const log = childLogger({ service: 'vendor-service' });
 

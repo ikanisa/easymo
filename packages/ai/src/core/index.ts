@@ -4,13 +4,12 @@
  * Export all core AI functionality
  */
 
-export { UnifiedAIProvider } from './unified-provider.js';
+export type { FastResponseConfig, FastResponseOptions } from './fast-response.js';
+export { GeminiFastResponse, getFastResponse,initializeFastResponse } from './fast-response.js';
 export type { 
-  UnifiedConfig, 
+  AIProvider,
   ChatRequest, 
   ProviderMetrics,
-  AIProvider,
+  UnifiedConfig, 
 } from './unified-provider.js';
-
-export { GeminiFastResponse, initializeFastResponse, getFastResponse } from './fast-response.js';
-export type { FastResponseConfig, FastResponseOptions } from './fast-response.js';
+export { UnifiedAIProvider } from './unified-provider.js';

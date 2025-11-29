@@ -1,3 +1,6 @@
+-- Transaction wrapper for production safety
+BEGIN;
+
 -- Minimal admin core schema snapshot for tests
 create table if not exists public.qr_tokens (
   id uuid primary key default gen_random_uuid(),
@@ -17,3 +20,5 @@ create table if not exists public.notifications (
 
 alter table public.notifications add column metadata jsonb;
 
+
+COMMIT;

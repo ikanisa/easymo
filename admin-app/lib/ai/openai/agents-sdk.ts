@@ -3,14 +3,14 @@
  * Implements OpenAI's Assistants/Agents API with function calling
  */
 
-import { getOpenAIClient } from './client';
 import type { 
-  AIMessage, 
-  ToolDefinition, 
   AgentConfig,
   AICompletionOptions,
   AICompletionResponse,
+  AIMessage, 
+  ToolDefinition, 
 } from '../types';
+import { getOpenAIClient } from './client';
 
 export interface OpenAIAgentOptions {
   name: string;

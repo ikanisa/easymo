@@ -1,10 +1,10 @@
+import { childLogger } from '@easymo/commons';
 import { EventEmitter } from 'events';
 
 import { GeminiClient } from '../llm/gemini-client';
 import { ModelRouter } from '../llm/model-router';
 import { OpenAIClient } from '../llm/openai-client';
 import { ToolRegistry } from './tool.interface';
-import { childLogger } from '@easymo/commons';
 
 const log = childLogger({ service: 'ai-core' });
 

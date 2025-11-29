@@ -51,8 +51,8 @@ describe("login API", () => {
 
     expect(response.status).toBe(400);
     expect(await response.json()).toEqual({
-      error: "validation_error",
-      message: "Invalid email or password format.",
+      error: "Validation failed",
+      code: "validation_error",
     });
   });
 

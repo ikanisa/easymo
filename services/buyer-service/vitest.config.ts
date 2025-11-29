@@ -1,6 +1,7 @@
-import { defineConfig, mergeConfig } from 'vitest/config';
-import { nodeConfig } from '../../vitest.shared';
 import path from 'path';
+import { defineConfig, mergeConfig } from 'vitest/config';
+
+import { nodeConfig } from '../../vitest.shared';
 
 export default mergeConfig(nodeConfig, defineConfig({
   test: {

@@ -1,11 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { useEffect,useState } from 'react';
+
 import { cn } from '@/lib/utils';
+
 import { GlassHeader } from './GlassHeader';
-import { RailNav } from './RailNav';
 import { MobileBottomNav } from './MobileBottomNav';
+import { RailNav } from './RailNav';
 
 interface FluidShellProps {
   children: React.ReactNode;

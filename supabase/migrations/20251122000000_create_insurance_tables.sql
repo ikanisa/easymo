@@ -1,3 +1,6 @@
+-- Transaction wrapper for production safety
+BEGIN;
+
 -- Create insurance_leads table
 CREATE TABLE IF NOT EXISTS public.insurance_leads (
     id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -135,3 +138,5 @@ BEGIN
   SET name = EXCLUDED.name, is_active = EXCLUDED.is_active;
 END;
 $$;
+
+COMMIT;

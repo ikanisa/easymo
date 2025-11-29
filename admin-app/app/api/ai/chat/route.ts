@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
+
 import { routeChatRequest } from "@/lib/ai/router";
-import { getRateLimitKey, checkRateLimit, apiRateLimiter } from "@/lib/middleware/rate-limit";
-import { trackApiCall } from "@/lib/monitoring/usage-tracker";
+import { apiRateLimiter,checkRateLimit, getRateLimitKey } from "@/lib/middleware/rate-limit";
 import { trackPerformance } from "@/lib/monitoring/performance";
+import { trackApiCall } from "@/lib/monitoring/usage-tracker";
 
 export const dynamic = "force-dynamic";
 

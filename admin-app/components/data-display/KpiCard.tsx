@@ -6,8 +6,9 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import { TrendingDown,TrendingUp } from 'lucide-react';
+
 import { cn } from '@/lib/utils';
-import { TrendingUp, TrendingDown } from 'lucide-react';
 
 interface KpiCardProps {
   title: string;

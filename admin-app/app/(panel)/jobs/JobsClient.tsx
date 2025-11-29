@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+
 import { SectionCard } from "@/components/ui/SectionCard";
 
 export interface JobListing {

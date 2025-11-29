@@ -1,3 +1,6 @@
+-- Transaction wrapper for production safety
+BEGIN;
+
 -- Fix wallet system config migration
 -- This script manually applies the wallet_system_config migration
 
@@ -61,3 +64,5 @@ SET statements = ARRAY[
   'INSERT wallet_system_profile_id setting'
 ]
 WHERE version = '20251122100000';
+
+COMMIT;

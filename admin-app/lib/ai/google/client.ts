@@ -3,6 +3,7 @@
  */
 
 import { GoogleGenerativeAI } from '@google/generative-ai';
+
 import { AI_CONFIG } from '../config';
 import type { HealthCheck } from '../types';
 

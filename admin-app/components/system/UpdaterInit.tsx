@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+
 import { checkForUpdates, downloadAndInstallUpdate, type UpdateInfo } from '@/lib/updater';
 
 export function UpdaterInit() {

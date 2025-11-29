@@ -7,11 +7,10 @@
  * @packageDocumentation
  */
 
+import { childLogger } from '@easymo/commons';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { Redis } from 'ioredis';
 import OpenAI from 'openai';
-
-import { childLogger } from '@easymo/commons';
 
 const log = childLogger({ service: 'ai' });
 

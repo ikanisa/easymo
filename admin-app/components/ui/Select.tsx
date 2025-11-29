@@ -5,8 +5,9 @@
 
 'use client';
 
-import { forwardRef } from 'react';
 import { ChevronDown } from 'lucide-react';
+import { forwardRef } from 'react';
+
 import { cn } from '@/lib/utils';
 
 export interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {

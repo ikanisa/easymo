@@ -1,4 +1,5 @@
 import { getSupabaseAdminClient } from '@/lib/server/supabase-admin';
+
 import { PropertyClient } from './PropertyClient';
 
 export const dynamic = 'force-dynamic';

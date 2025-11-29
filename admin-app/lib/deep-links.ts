@@ -1,6 +1,7 @@
 'use client';
 
 import { invoke } from '@tauri-apps/api/core';
+
 import { isDesktop } from './platform';
 
 export interface DeepLink {

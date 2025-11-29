@@ -1,3 +1,6 @@
+-- Transaction wrapper for production safety
+BEGIN;
+
 -- Function to update business location geometry
 CREATE OR REPLACE FUNCTION public.update_business_location(biz_id TEXT, lat DECIMAL, lng DECIMAL)
 RETURNS VOID AS $$
@@ -7,3 +10,5 @@ BEGIN
   WHERE external_id = biz_id;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+COMMIT;

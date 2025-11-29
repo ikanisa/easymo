@@ -1,4 +1,5 @@
-import { Counter, Histogram, Gauge } from 'prom-client';
+import { Counter, Gauge,Histogram } from 'prom-client';
+
 import { MetricsRegistry } from './metrics';
 import { validatePaymentMethod } from './payment-methods';
 

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+
 import { multiModalProcessor } from "@/lib/rag/multimodal";
 
 export const dynamic = "force-dynamic";

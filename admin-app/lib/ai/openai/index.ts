@@ -2,37 +2,32 @@
  * OpenAI Module - Main Exports
  */
 
-export { 
-  getOpenAIClient, 
-  resetOpenAIClient, 
-  healthCheckOpenAI 
-} from './client';
-
+export type {
+  AgentRunOptions,
+  OpenAIAgentOptions,
+} from './agents-sdk';
 export {
   createOpenAIAgent,
-  runOpenAIAgent,
   createOpenAICompletion,
-  streamOpenAICompletion,
-  listOpenAIAgents,
   deleteOpenAIAgent,
+  listOpenAIAgents,
+  runOpenAIAgent,
+  streamOpenAICompletion,
 } from './agents-sdk';
-
+export { 
+  getOpenAIClient, 
+  healthCheckOpenAI, 
+  resetOpenAIClient} from './client';
+export type {
+  RealtimeEvent,
+  RealtimeEventHandler,
+  RealtimeSession,
+} from './realtime';
 export {
+  closeRealtimeSession,
   createRealtimeSession,
+  createVoiceAgent,
   sendRealtimeAudio,
   sendRealtimeText,
   subscribeRealtimeEvents,
-  closeRealtimeSession,
-  createVoiceAgent,
-} from './realtime';
-
-export type {
-  OpenAIAgentOptions,
-  AgentRunOptions,
-} from './agents-sdk';
-
-export type {
-  RealtimeSession,
-  RealtimeEvent,
-  RealtimeEventHandler,
 } from './realtime';
