@@ -61,6 +61,7 @@ dist-ssr
 dist/
 lerna-debug.log*
 logs
+deployment_log*.txt
 node_modules/
 npm-debug.log*
 package.json.backup
