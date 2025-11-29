@@ -35,14 +35,19 @@ const orchestrator = new VideoOrchestrator({
   concurrency: config.concurrency,
 });
 
-createServer(async (req, res) => {
+export const server = createServer(async (req, res) => {
   if (!req.url) {
     sendJson(res, 400, { ok: false, error: "missing_url" });
     return;
   }
 
   if (req.method === "GET" && req.url === "/health") {
-    sendJson(res, 200, { ok: true, status: "healthy" });
+    sendJson(res, 200, { 
+      status: "ok", 
+      service: "video-orchestrator",
+      uptime: process.uptime(),
+      timestamp: new Date().toISOString()
+    });
     return;
   }
 
@@ -69,6 +74,11 @@ createServer(async (req, res) => {
   }
 
   sendJson(res, 404, { ok: false, error: "not_found" });
-}).listen(config.port, () => {
-  log.info(`video orchestrator listening on :${config.port}`);
 });
+
+if (import.meta.url === `file://${process.argv[1]}`) {
+  server.listen(config.port, () => {
+    log.info(`video orchestrator listening on :${config.port}`);
+  });
+}
+export { createServer } from "node:http";

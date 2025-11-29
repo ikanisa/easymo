@@ -1,6 +1,7 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import axios, { AxiosInstance } from "axios";
+import { CircuitBreaker, createCircuitBreaker } from "@easymo/circuit-breaker";
 
 type StartVoiceCallInput = {
   fromNumber: string; // Caller's phone number
@@ -22,6 +23,7 @@ type VoiceCallSession = {
 export class FarmerVoiceIntegrationService {
   private readonly logger = new Logger(FarmerVoiceIntegrationService.name);
   private readonly http: AxiosInstance;
+  private readonly circuitBreaker: CircuitBreaker;
   private agentCoreUrl: string;
   private agentCoreToken: string;
 
@@ -34,6 +36,31 @@ export class FarmerVoiceIntegrationService {
     ).replace(/\/$/, "");
     
     this.agentCoreToken = config.get<string>("agentCore.token") || process.env.AGENT_CORE_TOKEN || "";
+
+    // Initialize circuit breaker for agent-core API calls
+    this.circuitBreaker = createCircuitBreaker({
+      name: "agent-core-api",
+      failureThreshold: 50, // Open after 50% failures
+      minimumRequests: 5, // Need at least 5 requests before opening
+      windowMs: 60_000, // 60 second window
+      resetTimeoutMs: 30_000, // Try recovery after 30 seconds
+      requestTimeoutMs: 10_000, // 10 second timeout per request
+      onStateChange: (from, to) => {
+        this.logger.warn({
+          msg: "circuit_breaker_state_change",
+          from,
+          to,
+          service: "agent-core",
+        });
+      },
+      onOpen: () => {
+        this.logger.error({
+          msg: "circuit_breaker_opened",
+          service: "agent-core",
+          action: "failing_fast_for_30s",
+        });
+      },
+    });
   }
 
   async startVoiceCall(input: StartVoiceCallInput): Promise<VoiceCallSession> {
@@ -45,21 +72,23 @@ export class FarmerVoiceIntegrationService {
     const farmContext = await this.fetchFarmContext(input.fromNumber);
 
     try {
-      // Create Realtime API session via agent-core
-      const response = await this.http.post(
-        `${this.agentCoreUrl}/realtime/farmer/session`,
-        {
-          msisdn: input.fromNumber,
-          locale,
-          intent,
-          farmContext,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${this.agentCoreToken}`,
-            "Content-Type": "application/json",
+      // Create Realtime API session via agent-core with circuit breaker protection
+      const response = await this.circuitBreaker.execute(() =>
+        this.http.post(
+          `${this.agentCoreUrl}/realtime/farmer/session`,
+          {
+            msisdn: input.fromNumber,
+            locale,
+            intent,
+            farmContext,
           },
-        },
+          {
+            headers: {
+              Authorization: `Bearer ${this.agentCoreToken}`,
+              "Content-Type": "application/json",
+            },
+          },
+        )
       );
 
       const { sessionId, sseUrl } = response.data;
@@ -94,15 +123,17 @@ export class FarmerVoiceIntegrationService {
   async sendAudio(sessionId: string, audioChunk: Buffer): Promise<void> {
     try {
       const base64Audio = audioChunk.toString("base64");
-      await this.http.post(
-        `${this.agentCoreUrl}/realtime/farmer/session/${sessionId}/audio`,
-        { audioChunk: base64Audio },
-        {
-          headers: {
-            Authorization: `Bearer ${this.agentCoreToken}`,
-            "Content-Type": "application/json",
+      await this.circuitBreaker.execute(() =>
+        this.http.post(
+          `${this.agentCoreUrl}/realtime/farmer/session/${sessionId}/audio`,
+          { audioChunk: base64Audio },
+          {
+            headers: {
+              Authorization: `Bearer ${this.agentCoreToken}`,
+              "Content-Type": "application/json",
+            },
           },
-        },
+        )
       );
     } catch (error) {
       this.logger.error({
