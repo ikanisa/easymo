@@ -20,9 +20,10 @@ process.env.SKIP_ENV_VALIDATION = 'true';
 try {
   // Run Next.js build with desktop config
   console.log('📦 Building Next.js app with static export...');
-  execSync('next build', {
+  execSync('ESLINT_CONFIG_FILE=.eslintrc.desktop.json next build', {
     stdio: 'inherit',
     cwd: __dirname + '/..',
+    env: { ...process.env, ESLINT_CONFIG_FILE: '.eslintrc.desktop.json' }
   });
 
   console.log('\n✅ Desktop build complete! Output in ./out directory');
