@@ -34,7 +34,7 @@ echo -e "${GREEN}✅ Rust installed:${NC} $(rustc --version)"
 # Check if dependencies are installed
 echo ""
 echo -e "${YELLOW}📦 Installing dependencies...${NC}"
-npm ci
+pnpm install --frozen-lockfile
 
 echo ""
 echo -e "${YELLOW}🔨 Building shared packages...${NC}"

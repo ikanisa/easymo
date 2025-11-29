@@ -35,8 +35,7 @@
         "font-src": "'self' data:",
         "worker-src": "'self' blob:",
         "frame-src": "'none'"
-      },
-      "dangerousRemoteDomainIpcAccess": []
+      }
     },
     "withGlobalTauri": true,
     "trayIcon": {

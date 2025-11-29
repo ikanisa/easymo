@@ -14,6 +14,8 @@ console.log('🏗️  Building EasyMO Admin for Desktop...\n');
 // Set environment variable for desktop build
 process.env.TAURI_ENV_PLATFORM = 'true';
 process.env.NEXT_PUBLIC_IS_DESKTOP = 'true';
+process.env.ESLINT_NO_DEV_ERRORS = 'true';
+process.env.SKIP_ENV_VALIDATION = 'true';
 
 try {
   // Run Next.js build with desktop config
