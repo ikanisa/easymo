@@ -1,0 +1,95 @@
+global:
+  # SMTP Configuration (SendGrid example)
+  smtp_smarthost: 'smtp.sendgrid.net:587'
+  smtp_from: 'alerts@easymo.dev'
+  smtp_auth_username: 'apikey'
+  smtp_auth_password: '${SENDGRID_API_KEY}'
+  smtp_require_tls: true
+
+# Alert routing tree
+route:
+  receiver: 'default'
+  group_by: ['alertname', 'cluster', 'service']
+  group_wait: 10s
+  group_interval: 10s
+  repeat_interval: 12h
+  
+  routes:
+    # Critical alerts go to on-call team + Slack
+    - match:
+        severity: critical
+      receiver: 'critical-alerts'
+      continue: true
+      repeat_interval: 5m
+    
+    # Warning alerts go to email only
+    - match:
+        severity: warning
+      receiver: 'warning-alerts'
+      repeat_interval: 1h
+
+receivers:
+  - name: 'default'
+    email_configs:
+      - to: 'devops@easymo.dev'
+        headers:
+          Subject: '[EASYMO] {{ .GroupLabels.alertname }}'
+
+  - name: 'critical-alerts'
+    email_configs:
+      - to: 'oncall@easymo.dev'
+        headers:
+          Subject: '🚨 [CRITICAL] {{ .GroupLabels.alertname }}'
+        html: |
+          <h2>Critical Alert Fired</h2>
+          <p><strong>Alert:</strong> {{ .GroupLabels.alertname }}</p>
+          <p><strong>Service:</strong> {{ .GroupLabels.service }}</p>
+          <p><strong>Severity:</strong> {{ .GroupLabels.severity }}</p>
+          <h3>Details:</h3>
+          {{ range .Alerts }}
+          <p>{{ .Annotations.summary }}</p>
+          <p>{{ .Annotations.description }}</p>
+          {{ end }}
+    
+    # Slack webhook (configure SLACK_WEBHOOK_URL env var)
+    slack_configs:
+      - api_url: '${SLACK_WEBHOOK_URL}'
+        channel: '#alerts-critical'
+        title: '🚨 Critical Alert: {{ .GroupLabels.alertname }}'
+        text: |
+          *Service:* {{ .GroupLabels.service }}
+          *Severity:* {{ .GroupLabels.severity }}
+          {{ range .Alerts }}
+          *Summary:* {{ .Annotations.summary }}
+          *Description:* {{ .Annotations.description }}
+          {{ end }}
+        send_resolved: true
+
+  - name: 'warning-alerts'
+    email_configs:
+      - to: 'devops@easymo.dev'
+        headers:
+          Subject: '⚠️ [WARNING] {{ .GroupLabels.alertname }}'
+        html: |
+          <h2>Warning Alert</h2>
+          <p><strong>Alert:</strong> {{ .GroupLabels.alertname }}</p>
+          <p><strong>Service:</strong> {{ .GroupLabels.service }}</p>
+          {{ range .Alerts }}
+          <p>{{ .Annotations.summary }}</p>
+          {{ end }}
+
+# Inhibit rules (prevent duplicate alerts)
+inhibit_rules:
+  # Don't send warning if critical is firing for same alert
+  - source_match:
+      severity: 'critical'
+    target_match:
+      severity: 'warning'
+    equal: ['alertname', 'service']
+  
+  # Don't send service down if host down
+  - source_match:
+      alertname: 'HostDown'
+    target_match:
+      alertname: 'ServiceDown'
+    equal: ['instance']

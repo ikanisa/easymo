@@ -1,0 +1,165 @@
+version: '3.8'
+
+networks:
+  monitoring:
+    driver: bridge
+  easymo:
+    external: true
+
+volumes:
+  prometheus_data: {}
+  grafana_data: {}
+  loki_data: {}
+  tempo_data: {}
+
+services:
+  # Prometheus - Metrics Collection
+  prometheus:
+    image: prom/prometheus:v2.48.0
+    container_name: easymo-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./prometheus/alerts.yml:/etc/prometheus/alerts.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=30d'
+      - '--web.enable-lifecycle'
+      - '--web.enable-admin-api'
+    networks:
+      - monitoring
+      - easymo
+    restart: unless-stopped
+
+  # Grafana - Visualization
+  grafana:
+    image: grafana/grafana:10.2.2
+    container_name: easymo-grafana
+    ports:
+      - "3001:3000"  # Port 3000 used by admin-app
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-CHANGE_ME_IN_PRODUCTION}
+      - GF_INSTALL_PLUGINS=grafana-piechart-panel,grafana-clock-panel
+      - GF_SERVER_ROOT_URL=https://monitoring.easymo.dev
+      - GF_AUTH_ANONYMOUS_ENABLED=false
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      - ./grafana/dashboards:/var/lib/grafana/dashboards
+    networks:
+      - monitoring
+    depends_on:
+      - prometheus
+      - loki
+      - tempo
+    restart: unless-stopped
+
+  # Loki - Log Aggregation
+  loki:
+    image: grafana/loki:2.9.3
+    container_name: easymo-loki
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./loki/loki-config.yml:/etc/loki/local-config.yml
+      - loki_data:/loki
+    command: -config.file=/etc/loki/local-config.yml
+    networks:
+      - monitoring
+    restart: unless-stopped
+
+  # Promtail - Log Shipper
+  promtail:
+    image: grafana/promtail:2.9.3
+    container_name: easymo-promtail
+    volumes:
+      - ./promtail/promtail-config.yml:/etc/promtail/config.yml
+      - /var/log:/var/log:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: -config.file=/etc/promtail/config.yml
+    networks:
+      - monitoring
+    depends_on:
+      - loki
+    restart: unless-stopped
+
+  # Tempo - Distributed Tracing
+  tempo:
+    image: grafana/tempo:2.3.1
+    container_name: easymo-tempo
+    ports:
+      - "3200:3200"   # Tempo HTTP
+      - "4317:4317"   # OTLP gRPC
+      - "4318:4318"   # OTLP HTTP
+    volumes:
+      - ./tempo/tempo.yml:/etc/tempo/tempo.yml
+      - tempo_data:/var/tempo
+    command: [ "-config.file=/etc/tempo/tempo.yml" ]
+    networks:
+      - monitoring
+    restart: unless-stopped
+
+  # Alertmanager - Alert Routing
+  alertmanager:
+    image: prom/alertmanager:v0.26.0
+    container_name: easymo-alertmanager
+    ports:
+      - "9093:9093"
+    volumes:
+      - ./alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+      - '--storage.path=/alertmanager'
+    networks:
+      - monitoring
+    restart: unless-stopped
+
+  # Node Exporter - Host Metrics
+  node-exporter:
+    image: prom/node-exporter:v1.7.0
+    container_name: easymo-node-exporter
+    ports:
+      - "9100:9100"
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    networks:
+      - monitoring
+    restart: unless-stopped
+
+  # Postgres Exporter - Database Metrics (if using Postgres outside Supabase)
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter:v0.15.0
+    container_name: easymo-postgres-exporter
+    ports:
+      - "9187:9187"
+    environment:
+      - DATA_SOURCE_NAME=${AGENT_CORE_DATABASE_URL:-postgresql://postgres:password@postgres:5432/easymo?sslmode=disable}
+    networks:
+      - monitoring
+      - easymo
+    restart: unless-stopped
+
+  # Redis Exporter - Cache Metrics
+  redis-exporter:
+    image: oliver006/redis_exporter:v1.55.0
+    container_name: easymo-redis-exporter
+    ports:
+      - "9121:9121"
+    environment:
+      - REDIS_ADDR=${REDIS_URL:-redis://redis:6379}
+    networks:
+      - monitoring
+      - easymo
+    restart: unless-stopped

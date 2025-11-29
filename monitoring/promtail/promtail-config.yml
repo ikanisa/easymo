@@ -1,0 +1,74 @@
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+  # Docker containers
+  - job_name: docker
+    docker_sd_configs:
+      - host: unix:///var/run/docker.sock
+        refresh_interval: 5s
+        filters:
+          - name: label
+            values: ["logging=promtail"]
+    relabel_configs:
+      - source_labels: ['__meta_docker_container_name']
+        regex: '/(.*)'
+        target_label: 'container'
+      - source_labels: ['__meta_docker_container_log_stream']
+        target_label: 'stream'
+      - source_labels: ['__meta_docker_container_label_com_docker_compose_service']
+        target_label: 'service'
+    pipeline_stages:
+      # Parse JSON logs
+      - json:
+          expressions:
+            level: level
+            msg: msg
+            timestamp: time
+            service: service
+            trace_id: trace_id
+            request_id: request_id
+            user_id: user_id
+            event: event
+      # Extract labels
+      - labels:
+          level:
+          service:
+          trace_id:
+          event:
+      # Parse timestamp
+      - timestamp:
+          source: timestamp
+          format: RFC3339
+      # Drop noisy health check logs
+      - match:
+          selector: '{service=~".+"} |~ "health"'
+          action: drop
+      # Drop debug logs in production
+      - match:
+          selector: '{level="debug"}'
+          action: drop
+
+  # System logs
+  - job_name: system
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: varlogs
+          __path__: /var/log/*.log
+    pipeline_stages:
+      - regex:
+          expression: '^(?P<timestamp>\S+\s+\S+)\s+(?P<level>\w+)\s+(?P<message>.+)$'
+      - labels:
+          level:
+      - timestamp:
+          source: timestamp
+          format: 'Jan 02 15:04:05'

@@ -1,0 +1,109 @@
+groups:
+  - name: service_health
+    interval: 30s
+    rules:
+      # Service Down
+      - alert: ServiceDown
+        expr: up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Service {{ $labels.job }} is down"
+          description: "{{ $labels.job }} on {{ $labels.instance }} has been down for more than 1 minute."
+
+      # High Error Rate
+      - alert: HighErrorRate
+        expr: rate(http_requests_total{status_code=~"5.."}[5m]) > 0.05
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High error rate on {{ $labels.job }}"
+          description: "{{ $labels.job }} has error rate of {{ $value }} errors/sec"
+
+      # High Response Time
+      - alert: HighResponseTime
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High response time on {{ $labels.job }}"
+          description: "95th percentile response time is {{ $value }}s"
+
+  - name: resource_usage
+    interval: 30s
+    rules:
+      # High CPU Usage
+      - alert: HighCPUUsage
+        expr: rate(process_cpu_seconds_total[5m]) > 0.8
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage on {{ $labels.job }}"
+          description: "CPU usage is {{ humanize $value }}%"
+
+      # High Memory Usage
+      - alert: HighMemoryUsage
+        expr: process_resident_memory_bytes / 1024 / 1024 / 1024 > 2
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage on {{ $labels.job }}"
+          description: "Memory usage is {{ humanize $value }}GB"
+
+      # Disk Space Low
+      - alert: DiskSpaceLow
+        expr: (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) < 0.1
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Disk space low on {{ $labels.instance }}"
+          description: "Only {{ humanizePercentage $value }} disk space remaining"
+
+  - name: business_metrics
+    interval: 1m
+    rules:
+      # Low Ride Acceptance Rate
+      - alert: LowRideAcceptanceRate
+        expr: (rate(ride_requests_accepted_total[10m]) / rate(ride_requests_total[10m])) < 0.7
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Low ride acceptance rate"
+          description: "Acceptance rate is {{ humanizePercentage $value }}"
+
+      # Payment Failures
+      - alert: HighPaymentFailureRate
+        expr: rate(payment_transactions_total{status="failed"}[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High payment failure rate"
+          description: "Payment failure rate is {{ $value }} failures/sec"
+
+      # WhatsApp Message Delivery Issues
+      - alert: WhatsAppDeliveryFailures
+        expr: rate(whatsapp_messages_total{status="failed"}[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "WhatsApp message delivery failures"
+          description: "Failure rate is {{ $value }} failures/sec"
+
+      # Database Connection Pool Exhausted
+      - alert: DatabaseConnectionPoolHigh
+        expr: db_connections_active > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Database connection pool near capacity"
+          description: "{{ $labels.service }} has {{ $value }} active connections"
