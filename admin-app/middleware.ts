@@ -35,7 +35,7 @@ function buildRequestId(): string {
     if (cryptoRef?.randomUUID) {
       return cryptoRef.randomUUID();
     }
-  } catch (_error) {
+  } catch {
     // fall through
   }
   return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
