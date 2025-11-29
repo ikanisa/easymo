@@ -1,10 +1,9 @@
+import { childLogger } from '@easymo/commons';
 import { diag, DiagConsoleLogger, DiagLogLevel } from "@opentelemetry/api";
 import { getNodeAutoInstrumentations } from "@opentelemetry/auto-instrumentations-node";
 import { Resource } from "@opentelemetry/resources";
 import { NodeSDK } from "@opentelemetry/sdk-node";
 import { SemanticResourceAttributes } from "@opentelemetry/semantic-conventions";
-
-import { childLogger } from '@easymo/commons';
 
 const log = childLogger({ service: 'agent-core' });
 

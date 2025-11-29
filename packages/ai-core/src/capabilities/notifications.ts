@@ -3,9 +3,8 @@
  * Sends timely notifications to users based on agent insights
  */
 
-import { SupabaseClient } from '@supabase/supabase-js';
-
 import { childLogger } from '@easymo/commons';
+import { SupabaseClient } from '@supabase/supabase-js';
 
 const log = childLogger({ service: 'ai-core' });
 

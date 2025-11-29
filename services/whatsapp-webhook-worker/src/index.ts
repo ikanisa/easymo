@@ -1,3 +1,4 @@
+import { childLogger } from '@easymo/commons';
 import express from "express";
 import pinoHttp from "pino-http";
 
@@ -5,8 +6,6 @@ import { config } from "./config.js";
 import { buildHealthReport } from "./health.js";
 import { logger } from "./logger.js";
 import { WebhookWorker } from "./worker.js";
-
-import { childLogger } from '@easymo/commons';
 
 const log = childLogger({ service: 'whatsapp-webhook-worker' });
 

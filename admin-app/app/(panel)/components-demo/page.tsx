@@ -4,32 +4,33 @@
 
 'use client';
 
+import { DollarSign, Home, Mail, MessageCircle, Settings, TrendingUp,Users } from 'lucide-react';
 import { useState } from 'react';
+
 import {
-  Button,
-  Input,
-  Select,
-  Textarea,
-  Toggle,
-  Checkbox,
-  Card,
-  CardTitle,
-  CardContent,
   Badge,
+  Button,
+  Card,
+  CardContent,
+  CardTitle,
+  Checkbox,
+  Input,
   KpiCard,
   Modal,
   ModalFooter,
-  Tooltip,
+  PageHeader,
+  Select,
+  SkeletonText,
+  Spinner,
   Tabs,
+  TabsContent,
   TabsList,
   TabsTrigger,
-  TabsContent,
-  Spinner,
-  SkeletonText,
+  Textarea,
+  Toggle,
+  Tooltip,
   useToast,
-  PageHeader,
 } from '@/components';
-import { Mail, Settings, Home, Users, DollarSign, MessageCircle, TrendingUp } from 'lucide-react';
 
 const COUNTRY_OPTIONS = [
   { value: 'RW', label: 'Rwanda' },

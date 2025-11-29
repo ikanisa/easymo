@@ -1,11 +1,11 @@
 import { createServer, IncomingMessage, ServerResponse } from "node:http";
 
+import { childLogger } from '@easymo/commons';
+
 import { loadConfig } from "./config.js";
 import type { RenderPlanOptions } from "./orchestrator.js";
 import { VideoOrchestrator } from "./orchestrator.js";
 import type { RenderInputs } from "./types.js";
-
-import { childLogger } from '@easymo/commons';
 
 const log = childLogger({ service: 'video-orchestrator' });
 

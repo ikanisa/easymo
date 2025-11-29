@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
+
 import {
-  findNearbyPlaces,
-  getDirections,
   calculateDistanceMatrix,
-  searchPlaceByText,
-  getPlaceDetails,
+  findNearbyPlaces,
   geocodeAddress,
-  reverseGeocode,
+  getDirections,
+  getPlaceDetails,
   type Location,
+  reverseGeocode,
+  searchPlaceByText,
 } from "@/lib/integrations/google-maps";
 
 export const dynamic = "force-dynamic";

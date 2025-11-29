@@ -10,6 +10,7 @@ import {
   metricsHandler,
   metricsMiddleware,
 } from "@easymo/commons";
+import { childLogger } from '@easymo/commons';
 import { PrismaService } from "@easymo/db";
 import express, { type Express, type RequestHandler } from "express";
 import pinoHttp from "pino-http";
@@ -18,8 +19,6 @@ import { z } from "zod";
 import { settings } from "./config";
 import { evaluateAttribution } from "./evaluator";
 import { logger } from "./logger";
-
-import { childLogger } from '@easymo/commons';
 
 const log = childLogger({ service: 'attribution-service' });
 

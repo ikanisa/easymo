@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+
 import { SupportChat } from "./SupportChat";
 
 export const metadata: Metadata = {

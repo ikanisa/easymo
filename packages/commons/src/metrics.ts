@@ -1,4 +1,5 @@
-import { Registry, Counter, Histogram, Gauge, collectDefaultMetrics } from 'prom-client';
+import { collectDefaultMetrics,Counter, Gauge, Histogram, Registry } from 'prom-client';
+
 import { childLogger } from './logger';
 
 const log = childLogger({ service: 'metrics' });

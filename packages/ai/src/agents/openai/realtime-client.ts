@@ -11,8 +11,8 @@
  * @see https://platform.openai.com/docs/guides/realtime
  */
 
-import WebSocket from "ws";
 import { EventEmitter } from "events";
+import WebSocket from "ws";
 
 export interface RealtimeConfig {
   apiKey: string;

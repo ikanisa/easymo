@@ -1,9 +1,8 @@
+import { childLogger } from '@easymo/commons';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 import type { AgentInput, AgentResult, Tool } from '../../types/agent.types';
 import { BaseAgent } from '../base/agent.base';
-
-import { childLogger } from '@easymo/commons';
 
 const log = childLogger({ service: 'agents' });
 

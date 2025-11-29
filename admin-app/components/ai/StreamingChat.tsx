@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useRef,useState } from "react";
 
 export function StreamingChat() {
   const [messages, setMessages] = useState<Array<{ role: string; content: string }>>([]);

@@ -8,8 +8,8 @@
  * - Managing agent lifecycle
  */
 
-import OpenAIAgentsSDK, { CreateAgentParams } from "../agents/openai/sdk-client";
 import { AGENT_DEFINITIONS } from "../agents/openai/agent-definitions";
+import OpenAIAgentsSDK, { CreateAgentParams } from "../agents/openai/sdk-client";
 
 export class AgentFactory {
   private sdk: OpenAIAgentsSDK;

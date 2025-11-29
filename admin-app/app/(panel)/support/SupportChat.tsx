@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useEffect,useRef, useState } from "react";
+
 import { useSupabase } from "@/components/providers/SupabaseProvider";
 
 interface Message {

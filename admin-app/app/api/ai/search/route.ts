@@ -4,7 +4,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { searchWithGrounding, generateFactualResponse, searchRecentInfo } from '@/lib/ai/google/search-grounding';
+
+import { generateFactualResponse, searchRecentInfo,searchWithGrounding } from '@/lib/ai/google/search-grounding';
 import { logStructuredEvent } from '@/lib/monitoring/logger';
 
 export const runtime = 'nodejs';

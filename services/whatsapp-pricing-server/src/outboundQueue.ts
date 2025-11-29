@@ -1,10 +1,9 @@
+import { childLogger } from '@easymo/commons';
 import { randomUUID } from "crypto";
 import PQueue from "p-queue";
 import pRetry from "p-retry";
 
 import { maskMsisdn } from "./utils/pii";
-
-import { childLogger } from '@easymo/commons';
 
 const log = childLogger({ service: 'whatsapp-pricing-server' });
 

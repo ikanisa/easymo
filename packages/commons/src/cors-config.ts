@@ -1,4 +1,5 @@
 import cors, { CorsOptions } from 'cors';
+
 import { childLogger } from './logger';
 
 const log = childLogger({ service: 'cors' });

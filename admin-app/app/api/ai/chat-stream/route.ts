@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
-import { getOpenAIClient } from "@/lib/ai/providers/openai-client";
+
 import { getGeminiClient } from "@/lib/ai/providers/gemini-client";
+import { getOpenAIClient } from "@/lib/ai/providers/openai-client";
 
 export const dynamic = "force-dynamic";
 

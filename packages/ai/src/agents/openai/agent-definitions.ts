@@ -4,8 +4,9 @@
  * Defines all 11 official agents with their configurations
  */
 
-import type { CreateAgentParams } from "./sdk-client";
 import type OpenAI from "openai";
+
+import type { CreateAgentParams } from "./sdk-client";
 
 // ============================================================================
 // TOOL DEFINITIONS

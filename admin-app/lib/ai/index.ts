@@ -12,8 +12,8 @@ export * from './types';
 // ============================================================================
 // PROVIDER CLIENTS
 // ============================================================================
+export { GEMINI_MODELS,getGeminiClient, resetGeminiClient } from "./providers/gemini-client";
 export { getOpenAIClient, resetOpenAIClient } from "./providers/openai-client";
-export { getGeminiClient, resetGeminiClient, GEMINI_MODELS } from "./providers/gemini-client";
 
 // ============================================================================
 // CHAT & ROUTING
@@ -34,8 +34,8 @@ export * from './openai';
 // ============================================================================
 // TOOLS & AGENT EXECUTION
 // ============================================================================
-export * from "./tools";
 export * from "./agent-executor";
+export * from "./tools";
 
 // ============================================================================
 // DOMAIN-SPECIFIC AGENTS
@@ -51,21 +51,21 @@ export * from '../integrations/google-maps';
 // RE-EXPORT LEGACY TYPES FOR COMPATIBILITY
 // ============================================================================
 export type {
-  ChatCompletionRole,
-  ChatCompletionMessage,
-  ChatCompletionTool,
-  ChatCompletionRequestOptions,
   ChatCompletionChoice,
-  ChatCompletionUsage,
-  ChatCompletionResponse,
   ChatCompletionErrorShape,
+  ChatCompletionMessage,
+  ChatCompletionRequestOptions,
+  ChatCompletionResponse,
+  ChatCompletionRole,
+  ChatCompletionTool,
+  ChatCompletionUsage,
 } from "./chat-completions";
 
 // ============================================================================
 // QUICK START HELPERS
 // ============================================================================
+import { marketplaceAgent, mobilityAgent, supportAgent } from './domain';
 import { routeChatRequest } from './router';
-import { mobilityAgent, marketplaceAgent, supportAgent } from './domain';
 
 /**
  * Quick chat - auto-routed to best provider

@@ -11,8 +11,8 @@
  * 6. Idempotency
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { PrismaClient, Prisma } from '@prisma/client';
+import { Prisma,PrismaClient } from '@prisma/client';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock implementation - replace with actual service
 interface TransferParams {

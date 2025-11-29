@@ -7,12 +7,12 @@
 
 // Core Agent Management
 export { AgentCreator } from './AgentCreator';
-export { AgentVersionForm } from './AgentVersionForm';
 export { AgentKnowledgeStatusBanner } from './AgentKnowledgeStatusBanner';
 export { AgentOverviewKpis } from './AgentOverviewKpis';
+export { AgentVersionForm } from './AgentVersionForm';
 export { InstructionsPlaybooks } from './InstructionsPlaybooks';
 export { LearningModules } from './LearningModules';
 
 // Phase 5 - New Components
-export { AgentToolConfig } from './AgentToolConfig';
 export { AgentTestBench } from './AgentTestBench';
+export { AgentToolConfig } from './AgentToolConfig';

@@ -1,13 +1,14 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect,it } from 'vitest';
+
 import {
-  SUPPORTED_PAYMENT_METHODS,
-  isValidPaymentMethod,
-  getPaymentMethodForRegion,
-  validatePaymentMethod,
   getPaymentErrorMessage,
+  getPaymentMethodForRegion,
+  isValidPaymentMethod,
   PAYMENT_ERROR_CODES,
-  PAYMENT_METHOD_REGIONS,
   PAYMENT_METHOD_NAMES,
+  PAYMENT_METHOD_REGIONS,
+  SUPPORTED_PAYMENT_METHODS,
+  validatePaymentMethod,
 } from '../src/payment-methods';
 
 describe('Payment Methods', () => {

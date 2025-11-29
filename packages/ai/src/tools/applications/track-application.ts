@@ -1,4 +1,5 @@
 import { z } from 'zod';
+
 import type { Tool } from '../../core/types';
 
 export const trackApplicationTool: Tool = {

@@ -1,8 +1,8 @@
+import { childLogger } from '@easymo/commons';
 import OpenAI from 'openai';
 import { z } from 'zod';
-import type { Tool, ToolContext } from '../core/types';
 
-import { childLogger } from '@easymo/commons';
+import type { Tool, ToolContext } from '../core/types';
 
 const log = childLogger({ service: 'ai' });
 

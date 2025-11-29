@@ -3,7 +3,7 @@
  * Framer Motion animation variants for consistent, fluid interactions
  */
 
-import type { Variants, Transition } from 'framer-motion';
+import type { Transition,Variants } from 'framer-motion';
 
 // ==================== Base Transitions ====================
 export const springTransition: Transition = {

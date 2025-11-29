@@ -1,23 +1,24 @@
 'use client';
 
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence,motion } from 'framer-motion';
 import {
-  Home,
-  Users,
-  Store,
-  MessageCircle,
-  Phone,
+  Bot,
   Briefcase,
   Building,
-  Shield,
-  Bot,
   HelpCircle,
-  Moon,
-  Sun,
+  Home,
   type LucideIcon,
+  MessageCircle,
+  Moon,
+  Phone,
+  Shield,
+  Store,
+  Sun,
+  Users,
 } from 'lucide-react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+
 import { cn } from '@/lib/utils';
 
 interface NavItem {

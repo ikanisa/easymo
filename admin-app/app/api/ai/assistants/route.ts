@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { assistantsManager, ASSISTANT_TEMPLATES } from "@/lib/ai/assistants/manager";
+
+import { ASSISTANT_TEMPLATES,assistantsManager } from "@/lib/ai/assistants/manager";
 
 export const dynamic = "force-dynamic";
 

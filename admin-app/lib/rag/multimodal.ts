@@ -1,5 +1,5 @@
-import { getOpenAIClient } from "../ai/providers/openai-client";
 import { getGeminiClient } from "../ai/providers/gemini-client";
+import { getOpenAIClient } from "../ai/providers/openai-client";
 
 export interface ImageAnalysisResult {
   description: string;

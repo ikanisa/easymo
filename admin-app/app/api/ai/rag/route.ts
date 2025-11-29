@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { vectorStore, ragQuery, processDocument } from "@/lib/rag/vector-store";
+
+import { processDocument,ragQuery, vectorStore } from "@/lib/rag/vector-store";
 
 export const dynamic = "force-dynamic";
 

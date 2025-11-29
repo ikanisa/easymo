@@ -7,12 +7,12 @@
  * - Availability/Health
  */
 
-import OpenAIAgentsSDK from "../agents/openai/sdk-client";
 import GoogleADKClient from "../agents/google/adk-client";
 import FlashLiteClient from "../agents/google/flash-lite";
-import SearchGroundingClient from "../agents/google/search-grounding";
 import ImagenClient from "../agents/google/imagen";
+import SearchGroundingClient from "../agents/google/search-grounding";
 import RealtimeClient from "../agents/openai/realtime-client";
+import OpenAIAgentsSDK from "../agents/openai/sdk-client";
 // import GeminiLiveClient from "../agents/google/gemini-live";
 
 export interface GatewayConfig {

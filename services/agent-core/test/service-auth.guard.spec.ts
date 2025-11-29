@@ -1,9 +1,9 @@
-import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import type { AgentPermission } from "@easymo/commons";
 import type { ExecutionContext } from "@nestjs/common";
 import { ForbiddenException, UnauthorizedException } from "@nestjs/common";
 import { generateKeyPairSync } from "crypto";
 import { SignJWT } from "jose";
+import { afterEach,beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ServiceAuthGuard } from "../src/common/guards/service-auth.guard";
 

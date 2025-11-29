@@ -91,8 +91,8 @@ vi.mock("@/app/api/withObservability", () => ({
 
 // Import after mocks
 import { POST as loginPOST } from "@/app/api/auth/login/route";
-import { POST as invitePOST } from "@/app/api/users/invite/route";
 import { GET as settingsGET, POST as settingsPOST } from "@/app/api/settings/route";
+import { POST as invitePOST } from "@/app/api/users/invite/route";
 import { readSessionFromCookies } from "@/lib/server/session";
 
 describe("Admin Panel Integration Tests", () => {

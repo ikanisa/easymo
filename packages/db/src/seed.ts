@@ -1,6 +1,5 @@
-import { CallDirection, CallPlatform, Prisma, PrismaClient } from "@prisma/client";
-
 import { childLogger } from '@easymo/commons';
+import { CallDirection, CallPlatform, Prisma, PrismaClient } from "@prisma/client";
 
 const log = childLogger({ service: 'db' });
 

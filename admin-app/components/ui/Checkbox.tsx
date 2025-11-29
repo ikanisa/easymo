@@ -5,9 +5,10 @@
 
 'use client';
 
-import { forwardRef } from 'react';
+import { AnimatePresence,motion } from 'framer-motion';
 import { Check, Minus } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { forwardRef } from 'react';
+
 import { cn } from '@/lib/utils';
 
 export interface CheckboxProps {

@@ -1,8 +1,8 @@
 /**
  * Aurora Layout - Modern FluidShell wrapper for migrated pages
  */
-import { FluidShell } from '@/components/aurora-v2/layout';
 import { CommandPalette } from '@/components/aurora-v2/command';
+import { FluidShell } from '@/components/aurora-v2/layout';
 
 export default function AuroraLayout({
   children,

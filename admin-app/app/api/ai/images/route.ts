@@ -4,7 +4,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { generateImage, generateProductImage, generateMarketingBanner, describeImage } from '@/lib/ai/google/imagen';
+
+import { describeImage,generateImage, generateMarketingBanner, generateProductImage } from '@/lib/ai/google/imagen';
 import { logStructuredEvent } from '@/lib/monitoring/logger';
 
 export const runtime = 'nodejs';

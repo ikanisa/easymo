@@ -3,15 +3,15 @@
  * Gemini models with advanced features: grounding, function calling, etc.
  */
 
-import { getGeminiClient } from './client';
 import type {
-  AIMessage,
+  AgentConfig,
   AICompletionOptions,
   AICompletionResponse,
-  ToolDefinition,
-  AgentConfig,
+  AIMessage,
   GroundingSource,
+  ToolDefinition,
 } from '../types';
+import { getGeminiClient } from './client';
 
 export const GEMINI_MODELS = {
   flash: 'gemini-2.0-flash-exp',

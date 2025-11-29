@@ -3,9 +3,8 @@
  * Supports Kinyarwanda, French, English, and Swahili
  */
 
-import { SupabaseClient } from '@supabase/supabase-js';
-
 import { childLogger } from '@easymo/commons';
+import { SupabaseClient } from '@supabase/supabase-js';
 
 const log = childLogger({ service: 'ai-core' });
 

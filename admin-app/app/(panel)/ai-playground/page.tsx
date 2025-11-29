@@ -1,23 +1,23 @@
-import { Metadata } from 'next';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { 
-  Sparkles, 
+  Activity,
+  FlaskConical,
+  Image as ImageIcon,
   MessageSquare, 
   Mic, 
-  Image as ImageIcon,
   Settings,
-  Wrench,
-  FlaskConical,
-  Activity
-} from 'lucide-react';
-import { VoiceAgent } from '@/components/ai/VoiceAgent';
-import { RealtimeChat } from '@/components/ai/RealtimeChat';
-import { ImageGenerator } from '@/components/ai/ImageGenerator';
-import { AgentToolConfig } from '@/components/agents/AgentToolConfig';
+  Sparkles, 
+  Wrench} from 'lucide-react';
+import { Metadata } from 'next';
+
 import { AgentTestBench } from '@/components/agents/AgentTestBench';
+import { AgentToolConfig } from '@/components/agents/AgentToolConfig';
 import { ChatCompletionsPlayground } from '@/components/ai/ChatCompletionsPlayground';
+import { ImageGenerator } from '@/components/ai/ImageGenerator';
+import { RealtimeChat } from '@/components/ai/RealtimeChat';
+import { VoiceAgent } from '@/components/ai/VoiceAgent';
+import { Badge } from '@/components/ui/badge';
+import { Card } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export const metadata: Metadata = {
   title: 'AI Agent Playground | EasyMO',

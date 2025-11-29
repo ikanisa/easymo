@@ -1,11 +1,12 @@
 "use client";
 
+import { Brain,Loader2, Settings, TrendingUp, Zap } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Loader2, Settings, TrendingUp, Zap, Brain } from "lucide-react";
-import Link from "next/link";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface AgentStats {
   toolsCount: number;

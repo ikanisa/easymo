@@ -5,9 +5,9 @@
  * following EasyMO ground rules.
  */
 
-import type { AgentContext, AgentTrace } from './types';
-
 import { childLogger } from '@easymo/commons';
+
+import type { AgentContext, AgentTrace } from './types';
 
 const log = childLogger({ service: 'agents' });
 

@@ -3,9 +3,9 @@
  * Run with: npx tsx scripts/test-ai-agents.ts
  */
 
-import { AI_CONFIG, isConfigured, getProviderStatus } from '../lib/ai/config';
-import { mobilityAgent, marketplaceAgent, supportAgent } from '../lib/ai/domain';
-import { quickChat, quickAgent } from '../lib/ai';
+import { quickAgent,quickChat } from '../lib/ai';
+import { AI_CONFIG, getProviderStatus,isConfigured } from '../lib/ai/config';
+import { marketplaceAgent, mobilityAgent, supportAgent } from '../lib/ai/domain';
 
 const COLORS = {
   reset: '\x1b[0m',

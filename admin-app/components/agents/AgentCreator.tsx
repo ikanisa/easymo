@@ -7,9 +7,9 @@ import { Field } from "@/components/forms/Field";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardDescription,CardFooter, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
-import { Textarea } from "@/components/ui/Textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/Textarea";
 import { getAdminApiRoutePath } from "@/lib/routes";
 
 export function AgentCreator() {

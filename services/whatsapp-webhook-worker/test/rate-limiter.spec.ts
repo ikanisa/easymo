@@ -1,4 +1,5 @@
-import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { afterEach,beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { maskPhone, RateLimiter } from "../src/rate-limiter";
 
 describe("RateLimiter", () => {

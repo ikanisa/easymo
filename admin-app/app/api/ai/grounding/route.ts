@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
+
 import {
-  searchWithGrounding,
+  compareSourcesOnTopic,
+  formatGroundedResponseAsMarkdown,
   generateFactualResponse,
   searchRecentInfo,
-  compareSourcesOnTopic,
+  searchWithGrounding,
   summarizeWithSources,
-  formatGroundedResponseAsMarkdown,
 } from "@/lib/ai/google/search-grounding";
 
 export const dynamic = "force-dynamic";

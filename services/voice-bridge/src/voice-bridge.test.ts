@@ -1,5 +1,6 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import type { Server } from 'http';
+import { afterAll,beforeAll, describe, expect, it } from 'vitest';
+
 import { server } from './server';
 
 const PORT = 3001;

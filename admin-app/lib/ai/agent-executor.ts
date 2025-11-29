@@ -1,6 +1,6 @@
 import { getOpenAIClient } from "./providers/openai-client";
-import { toolRegistry } from "./tools/registry";
 import { toolHandlers } from "./tools/handlers";
+import { toolRegistry } from "./tools/registry";
 
 export interface AgentConfig {
   model?: string;

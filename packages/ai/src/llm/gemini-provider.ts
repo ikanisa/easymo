@@ -7,9 +7,8 @@
  * @packageDocumentation
  */
 
-import { GenerativeModel, GoogleGenerativeAI } from '@google/generative-ai';
-
 import { childLogger } from '@easymo/commons';
+import { GenerativeModel, GoogleGenerativeAI } from '@google/generative-ai';
 
 import type {
   IUnifiedAIProvider,

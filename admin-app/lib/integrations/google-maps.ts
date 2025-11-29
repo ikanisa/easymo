@@ -1,4 +1,4 @@
-import { Client, TravelMode, PlaceInputType } from "@googlemaps/google-maps-services-js";
+import { Client, PlaceInputType,TravelMode } from "@googlemaps/google-maps-services-js";
 
 const client = new Client({});
 const API_KEY = process.env.GOOGLE_MAPS_API_KEY!;

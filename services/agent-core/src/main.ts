@@ -1,4 +1,5 @@
 import { runWithRequestContext } from "@easymo/commons";
+import { childLogger } from '@easymo/commons';
 import { ValidationPipe } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
 import helmet from "helmet";
@@ -8,8 +9,6 @@ import { AppModule } from "./app.module.js";
 import { LoggingInterceptor } from "./common/interceptors/logging.interceptor.js";
 import { RequestIdInterceptor } from "./common/interceptors/request-id.interceptor.js";
 import { initialiseTelemetry } from "./telemetry.js";
-
-import { childLogger } from '@easymo/commons';
 
 const log = childLogger({ service: 'agent-core' });
 

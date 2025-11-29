@@ -1,5 +1,5 @@
-import { QueryClient } from '@tanstack/react-query';
 import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister';
+import { QueryClient } from '@tanstack/react-query';
 import { Store } from '@tauri-apps/plugin-store';
 
 // Create a store instance

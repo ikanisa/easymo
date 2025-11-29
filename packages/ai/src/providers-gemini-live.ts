@@ -1,8 +1,6 @@
-import { GoogleGenAI, LiveServerMessage, Modality, Type } from '@google/genai';
-
-import { createBlob, decodeAudioData } from '@easymo/media-utils';
-
 import { childLogger } from '@easymo/commons';
+import { createBlob, decodeAudioData } from '@easymo/media-utils';
+import { GoogleGenAI, LiveServerMessage, Modality, Type } from '@google/genai';
 
 const log = childLogger({ service: 'gemini.ts' });
 

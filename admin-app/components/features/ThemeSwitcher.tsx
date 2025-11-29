@@ -5,10 +5,11 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Sun, Moon, Monitor } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
+import { Monitor,Moon, Sun } from 'lucide-react';
+import { useEffect,useState } from 'react';
+
+import { cn } from '@/lib/utils';
 
 type Theme = 'light' | 'dark' | 'system';
 

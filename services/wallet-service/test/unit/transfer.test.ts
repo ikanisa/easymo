@@ -11,7 +11,7 @@
  * Target Coverage: 95%+
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock types for wallet service (to be replaced with actual imports)
 interface TransferRequest {

@@ -2,7 +2,7 @@
  * AI Configuration - Centralized AI provider settings
  */
 
-import type { AIProvider, RateLimitConfig, FallbackConfig } from './types';
+import type { AIProvider, FallbackConfig,RateLimitConfig } from './types';
 
 export const AI_CONFIG = {
   // Feature Flags

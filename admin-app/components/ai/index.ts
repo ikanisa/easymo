@@ -15,6 +15,6 @@ export { ImageGenerator } from './ImageGenerator';
 
 // Existing Components (Enhanced)
 export { AgentPlayground } from './AgentPlayground';
+export { AnalyticsDashboard } from './AnalyticsDashboard';
 export { ChatCompletionsPlayground } from './ChatCompletionsPlayground';
 export { StreamingChat } from './StreamingChat';
-export { AnalyticsDashboard } from './AnalyticsDashboard';
