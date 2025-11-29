@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardDescription,CardFooter, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 import { getAdminApiRoutePath } from "@/lib/routes";
 
 export function AgentCreator() {
@@ -15,6 +17,8 @@ export function AgentCreator() {
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [description, setDescription] = useState("");
+  const [provider, setProvider] = useState<'openai' | 'gemini' | 'multi'>('openai');
+  const [model, setModel] = useState('gpt-4o');
   const [error, setError] = useState<{ field: "name" | "form"; message: string } | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -30,7 +34,13 @@ export function AgentCreator() {
       const response = await fetch(getAdminApiRoutePath("agents"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, slug: slug.trim() || undefined, description }),
+        body: JSON.stringify({ 
+          name, 
+          slug: slug.trim() || undefined, 
+          description,
+          provider,
+          model
+        }),
       });
       if (!response.ok) {
         const payload = await response.json().catch(() => ({}));
@@ -93,6 +103,48 @@ export function AgentCreator() {
                 autoComplete="off"
               />
             </Field>
+          </div>
+          <div className="grid gap-5 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="agent-provider">AI Provider</Label>
+              <Select value={provider} onValueChange={(v) => setProvider(v as any)}>
+                <SelectTrigger id="agent-provider">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="openai">OpenAI</SelectItem>
+                  <SelectItem value="gemini">Google Gemini</SelectItem>
+                  <SelectItem value="multi">Multi-Provider (Fallback)</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">Primary AI model provider</p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="agent-model">Model</Label>
+              <Select value={model} onValueChange={setModel}>
+                <SelectTrigger id="agent-model">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {provider === 'openai' ? (
+                    <>
+                      <SelectItem value="gpt-4o">GPT-4o</SelectItem>
+                      <SelectItem value="gpt-4-turbo">GPT-4 Turbo</SelectItem>
+                      <SelectItem value="gpt-3.5-turbo">GPT-3.5 Turbo</SelectItem>
+                    </>
+                  ) : provider === 'gemini' ? (
+                    <>
+                      <SelectItem value="gemini-2.0-flash-exp">Gemini 2.0 Flash</SelectItem>
+                      <SelectItem value="gemini-1.5-pro">Gemini 1.5 Pro</SelectItem>
+                      <SelectItem value="gemini-1.5-flash">Gemini 1.5 Flash</SelectItem>
+                    </>
+                  ) : (
+                    <SelectItem value="auto">Auto-Select</SelectItem>
+                  )}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">Specific model to use</p>
+            </div>
           </div>
           <Field
             label="Description"
