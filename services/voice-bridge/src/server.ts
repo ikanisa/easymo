@@ -8,13 +8,20 @@ import { fetchLiveCalls, insertSegments, insertVoiceCall, type TranscriptSegment
 import { httpLogger, logger } from "./logger";
 import { resolveRoute } from "./routing";
 
-import { childLogger } from '@easymo/commons';
+import { childLogger, rateLimit, strictRateLimit } from '@easymo/commons';
 
 const log = childLogger({ service: 'voice-bridge' });
 
 const app = express();
 app.use(express.json());
 app.use(httpLogger);
+
+// Global rate limiting: 100 requests per 15 minutes per IP
+app.use(rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  message: "Too many requests from this IP, please try again later"
+}));
 
 app.get("/health", (_req: Request, res: Response) => {
   res.json({ status: "ok", service: "voice-bridge", uptime: process.uptime() });
@@ -36,33 +43,37 @@ const outboundSchema = z.object({
   metadata: z.record(z.any()).optional(),
 });
 
-app.post("/calls/outbound", async (req: Request, res: Response) => {
-  const parsed = outboundSchema.safeParse(req.body);
-  if (!parsed.success) {
-    return res.status(400).json({ error: "invalid_payload", details: parsed.error.flatten() });
+// Strict rate limiting for outbound calls: 10 calls per minute per IP
+app.post("/calls/outbound", 
+  strictRateLimit({ windowMs: 60 * 1000, max: 10 }),
+  async (req: Request, res: Response) => {
+    const parsed = outboundSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: "invalid_payload", details: parsed.error.flatten() });
+    }
+
+    const route = resolveRoute({ to: parsed.data.to, topic: parsed.data.topic });
+    const record = await insertVoiceCall({
+      to: parsed.data.to,
+      from: parsed.data.from,
+      agentProfile: route.agentProfile,
+      route: route.sipTarget,
+      metadata: parsed.data.metadata,
+      consentRequired: route.consentRequired,
+      topic: parsed.data.topic,
+    });
+
+    if ("message" in record) {
+      return res.status(502).json({ error: "voice_call_create_failed", details: record.message });
+    }
+
+    res.json({
+      callId: record.id,
+      route,
+      consent: { required: route.consentRequired },
+    });
   }
-
-  const route = resolveRoute({ to: parsed.data.to, topic: parsed.data.topic });
-  const record = await insertVoiceCall({
-    to: parsed.data.to,
-    from: parsed.data.from,
-    agentProfile: route.agentProfile,
-    route: route.sipTarget,
-    metadata: parsed.data.metadata,
-    consentRequired: route.consentRequired,
-    topic: parsed.data.topic,
-  });
-
-  if ("message" in record) {
-    return res.status(502).json({ error: "voice_call_create_failed", details: record.message });
-  }
-
-  res.json({
-    callId: record.id,
-    route,
-    consent: { required: route.consentRequired },
-  });
-});
+);
 
 const consentSchema = z.object({
   recordedAt: z.string().datetime().optional(),
