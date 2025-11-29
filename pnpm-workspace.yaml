@@ -2,11 +2,17 @@ packages:
   - services/*
   - packages/*
   - admin-app
-  # - admin-app-v2  # DEPRECATED: Removed 2025-11-27
+  # - admin-app-v2  # DEPRECATED: Removed 2025-11-27 (see admin-app-v2/DEPRECATED.md)
   - ai
   - waiter-pwa
   - real-estate-pwa
   - client-pwa
+
+# NOTE: The following apps exist but are not in the workspace:
+# - bar-manager-app: Uses workspace packages but requires lockfile update to add (run `pnpm install` without --frozen-lockfile)
+# - bar-manager-final: Has package name conflict with admin-app (@easymo/admin-app) - needs unique name before adding
+# - bar-manager-production: Standalone app with no workspace dependencies
+# - backend: Python/infrastructure directory, not a Node.js package
 
 onlyBuiltDependencies:
   - '@nestjs/core'
