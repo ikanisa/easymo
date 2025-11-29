@@ -1,4 +1,5 @@
 export * from "./business-metrics";
+export * from "./cache";
 export * from "./circuit-breaker";
 export * from "./cors-config";
 export * from "./env-validation";
