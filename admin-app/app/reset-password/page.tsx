@@ -59,7 +59,7 @@ export default function ResetPasswordPage() {
       }
 
       const { error: updateError } = await supabase.auth.updateUser({
-        password: password,
+        password,
       });
 
       if (updateError) {
