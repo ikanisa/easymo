@@ -1,10 +1,14 @@
 import {
   type AttributionServiceRouteKey,
+  createHealthCheck,
+  createMetricsRegistry,
   createRateLimiter,
   expressRequestContext,
   expressServiceAuth,
   getAttributionServiceRoutePath,
   getAttributionServiceRouteRequiredScopes,
+  metricsHandler,
+  metricsMiddleware,
 } from "@easymo/commons";
 import { PrismaService } from "@easymo/db";
 import express, { type Express, type RequestHandler } from "express";
@@ -21,11 +25,31 @@ const log = childLogger({ service: 'attribution-service' });
 
 const prisma = new PrismaService();
 
+// Initialize metrics registry
+const metrics = createMetricsRegistry('attribution-service');
+
+// Create health check with database verification
+const healthCheck = createHealthCheck({
+  version: process.env.npm_package_version || '1.0.0',
+  database: async () => {
+    try {
+      await prisma.$queryRaw`SELECT 1`;
+      return true;
+    } catch (error) {
+      log.error({ error }, 'Database health check failed');
+      return false;
+    }
+  },
+});
+
 export function buildApp(deps: { prisma: PrismaService }): Express {
   const app = express();
   app.use(express.json({ limit: "1mb" }));
   app.use(expressRequestContext({ generateIfMissing: true }));
   app.use(pinoHttp({ logger: logger as any }));
+  
+  // Add metrics middleware to track all HTTP requests
+  app.use(metricsMiddleware(metrics));
 
   if (settings.rateLimit.redisUrl) {
     app.use(
@@ -62,19 +86,24 @@ export function buildApp(deps: { prisma: PrismaService }): Express {
       try {
         const payload = EvaluateSchema.parse(req.body);
 
-        const { type, entityId } = evaluateAttribution({
-          referrals: payload.referrals,
-          events: payload.events,
-          timeboxDays: payload.timeboxDays,
+        // Measure business operation
+        const { type, entityId } = await metrics.measureDuration('evaluate.attribution', async () => {
+          return evaluateAttribution({
+            referrals: payload.referrals,
+            events: payload.events,
+            timeboxDays: payload.timeboxDays,
+          });
         });
 
         if (payload.persist && payload.quoteId) {
-          await deps.prisma.quote.update({
-            where: { id: payload.quoteId },
-            data: {
-              attributionType: type.toLowerCase() as any,
-              attributionEntityId: entityId,
-            },
+          await metrics.measureDuration('persist.attribution', async () => {
+            await deps.prisma.quote.update({
+              where: { id: payload.quoteId },
+              data: {
+                attributionType: type.toLowerCase() as any,
+                attributionEntityId: entityId,
+              },
+            });
           });
         }
 
@@ -138,9 +167,25 @@ export function buildApp(deps: { prisma: PrismaService }): Express {
     },
   );
 
-  app.get(getAttributionServiceRoutePath("health"), (_req, res) => {
-    res.json({ status: "ok" });
+  // Enhanced health endpoint with dependency checks
+  app.get(getAttributionServiceRoutePath("health"), async (_req, res) => {
+    try {
+      const result = await healthCheck();
+      const statusCode = result.status === 'healthy' ? 200 :
+                         result.status === 'degraded' ? 200 : 503;
+      res.status(statusCode).json(result);
+    } catch (error) {
+      log.error({ error }, 'Health check failed');
+      res.status(503).json({
+        status: 'unhealthy',
+        error: error instanceof Error ? error.message : 'Unknown error',
+        timestamp: new Date().toISOString(),
+      });
+    }
   });
+
+  // Metrics endpoint for Prometheus
+  app.get('/metrics', metricsHandler(metrics));
 
   return app;
 }
