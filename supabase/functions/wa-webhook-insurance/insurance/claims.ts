@@ -3,7 +3,7 @@ import { setState, getState } from "../../_shared/wa-webhook-shared/state/store.
 import { sendListMessage, sendButtonsMessage } from "../../_shared/wa-webhook-shared/utils/reply.ts";
 import { sendText } from "../../_shared/wa-webhook-shared/wa/client.ts";
 import { IDS } from "../../_shared/wa-webhook-shared/wa/ids.ts";
-import { logStructuredEvent } from "../../_shared/observability.ts";
+import { logStructuredEvent, maskPII } from "../../_shared/observability.ts";
 
 // Claim state keys
 export const CLAIM_STATES = {
@@ -30,7 +30,7 @@ export async function startClaimFlow(ctx: RouterContext): Promise<boolean> {
   logStructuredEvent("INSURANCE_CLAIM_FLOW_START", {
     profileId: ctx.profileId,
     claimId,
-    from: ctx.from
+    from: maskPII(ctx.from),
   });
 
   await sendListMessage(ctx, {

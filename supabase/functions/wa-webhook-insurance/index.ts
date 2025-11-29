@@ -1,7 +1,7 @@
 // wa-webhook-insurance - Dedicated Insurance Microservice
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { logStructuredEvent } from "../_shared/observability.ts";
+import { logStructuredEvent, maskPII } from "../_shared/observability.ts";
 import { verifyWebhookSignature } from "../_shared/webhook-utils.ts";
 import type { 
   RouterContext, 
@@ -234,7 +234,7 @@ serve(async (req: Request): Promise<Response> => {
         error: handlerError instanceof Error ? handlerError.message : String(handlerError),
         stack: handlerError instanceof Error ? handlerError.stack : undefined,
         messageType: message.type,
-        from: ctx.from,
+        from: maskPII(ctx.from),
       }, "error");
       // Send error message to user
       const { sendText } = await import("../_shared/wa-webhook-shared/wa/client.ts");
