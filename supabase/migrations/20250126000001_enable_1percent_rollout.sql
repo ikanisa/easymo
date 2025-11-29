@@ -1,3 +1,6 @@
+-- Transaction wrapper for production safety
+BEGIN;
+
 -- Enable 1% canary rollout for unified service
 -- Day 1 of gradual rollout
 
@@ -17,3 +20,5 @@ SELECT
   updated_at
 FROM public.app_config 
 WHERE id = 1;
+
+COMMIT;

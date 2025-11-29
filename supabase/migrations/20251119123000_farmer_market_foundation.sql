@@ -1,3 +1,6 @@
+-- Transaction wrapper for production safety
+BEGIN;
+
 -- Farmer market support tables
 
 create table if not exists public.produce_catalog (
@@ -121,3 +124,5 @@ create trigger set_updated_at_buyer_market_alerts
   before update on public.buyer_market_alerts
   for each row
   execute function public.set_updated_at();
+
+COMMIT;

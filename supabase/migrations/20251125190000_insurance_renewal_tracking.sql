@@ -1,3 +1,6 @@
+-- Transaction wrapper for production safety
+BEGIN;
+
 -- Add RPC function to get expiring policies
 -- This function returns policies that expire in exactly N days from today
 
@@ -35,3 +38,5 @@ GRANT EXECUTE ON FUNCTION get_expiring_policies(INTEGER) TO authenticated;
 
 -- Add comment
 COMMENT ON FUNCTION get_expiring_policies IS 'Returns insurance policies expiring in exactly N days from today';
+
+COMMIT;

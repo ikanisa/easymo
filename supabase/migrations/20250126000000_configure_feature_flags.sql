@@ -1,3 +1,6 @@
+-- Transaction wrapper for production safety
+BEGIN;
+
 -- Configure feature flags for unified service
 -- Works with existing app_config table structure (single row with id=1)
 
@@ -72,3 +75,5 @@ ON CONFLICT (id) DO NOTHING;
 SELECT id, unified_service_flags->>'rolloutPercent' as rollout_percent 
 FROM public.app_config 
 WHERE id = 1;
+
+COMMIT;

@@ -1,3 +1,6 @@
+-- Transaction wrapper for production safety
+BEGIN;
+
 -- Create wallet_purchases table for tracking token purchases
 
 CREATE TABLE IF NOT EXISTS wallet_purchases (
@@ -34,3 +37,5 @@ CREATE TRIGGER set_wallet_purchases_updated_at
 
 -- Add comment
 COMMENT ON TABLE wallet_purchases IS 'Tracks token purchase transactions via USSD';
+
+COMMIT;

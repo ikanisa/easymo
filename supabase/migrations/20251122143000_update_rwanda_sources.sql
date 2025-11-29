@@ -1,3 +1,6 @@
+-- Transaction wrapper for production safety
+BEGIN;
+
 -- Update Jobs Source
 UPDATE public.listing_sources
 SET config = '{
@@ -36,3 +39,5 @@ SET config = '{
   ]
 }'
 WHERE name = 'Rwanda Real Estate Search';
+
+COMMIT;

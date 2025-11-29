@@ -1,3 +1,6 @@
+-- Transaction wrapper for production safety
+BEGIN;
+
 -- Increase to 100% rollout for unified service
 -- Day 5 - FULL PRODUCTION DEPLOYMENT
 
@@ -21,3 +24,5 @@ WHERE id = 1;
 
 -- Add comment for full deployment
 COMMENT ON TABLE public.app_config IS 'Unified service at 100% rollout - FULL PRODUCTION DEPLOYMENT. All traffic now uses the unified AI agent service. Monitor for 1 week before deprecating legacy services.';
+
+COMMIT;

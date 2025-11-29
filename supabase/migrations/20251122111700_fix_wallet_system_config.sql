@@ -1,3 +1,6 @@
+-- Transaction wrapper for production safety
+BEGIN;
+
 -- Fix for wallet system config migration
 -- This migration ensures wallet_settings table exists and is properly configured
 
@@ -72,3 +75,5 @@ BEGIN
   END IF;
 
 END $$;
+
+COMMIT;

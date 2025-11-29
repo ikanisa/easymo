@@ -1,3 +1,6 @@
+-- Transaction wrapper for production safety
+BEGIN;
+
 -- Align driver_insurance_certificates.user_id with profiles table
 ALTER TABLE public.driver_insurance_certificates
   DROP CONSTRAINT IF EXISTS driver_insurance_certificates_user_id_fkey;
@@ -8,3 +11,5 @@ ALTER TABLE public.driver_insurance_certificates
   REFERENCES public.profiles(user_id)
   ON UPDATE CASCADE
   ON DELETE CASCADE;
+
+COMMIT;

@@ -1,3 +1,6 @@
+-- Transaction wrapper for production safety
+BEGIN;
+
 -- Enable pgvector extension
 create extension if not exists vector;
 
@@ -62,3 +65,5 @@ execute function update_updated_at_column();
 grant usage on schema public to anon, authenticated;
 grant all on documents to anon, authenticated;
 grant execute on function match_documents to anon, authenticated;
+
+COMMIT;

@@ -1,3 +1,6 @@
+-- Transaction wrapper for production safety
+BEGIN;
+
 -- Increase to 10% rollout for unified service
 -- Day 2-3 of gradual rollout
 
@@ -21,3 +24,5 @@ WHERE id = 1;
 
 -- Show monitoring query for next 48 hours
 COMMENT ON TABLE public.app_config IS 'Monitor unified service at 10% rollout for 48 hours. Check error rates, response times, and user feedback.';
+
+COMMIT;

@@ -1,3 +1,6 @@
+-- Transaction wrapper for production safety
+BEGIN;
+
 -- Jobs Ecosystem
 CREATE TABLE IF NOT EXISTS public.job_listings (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -173,3 +176,5 @@ CREATE POLICY "Users can create viewings" ON public.property_viewings
 
 CREATE POLICY "Users can manage own favorites" ON public.property_favorites
     USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+
+COMMIT;

@@ -1,3 +1,6 @@
+-- Transaction wrapper for production safety
+BEGIN;
+
 -- Fix profiles table schema to match ensureProfile code
 -- The code expects 'phone_number' and 'wa_id' columns.
 
@@ -23,3 +26,5 @@ BEGIN
     END IF;
 
 END $$;
+
+COMMIT;

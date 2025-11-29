@@ -1,3 +1,6 @@
+-- Transaction wrapper for production safety
+BEGIN;
+
 -- Migration: Add wallet_get_balance RPC
 -- Created: 2025-11-23
 -- Purpose: Add RPC function to get user's token balance.
@@ -22,3 +25,5 @@ $$;
 
 GRANT EXECUTE ON FUNCTION public.wallet_get_balance(uuid) TO service_role;
 GRANT EXECUTE ON FUNCTION public.wallet_get_balance(uuid) TO authenticated;
+
+COMMIT;

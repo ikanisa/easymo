@@ -1,3 +1,6 @@
+-- Transaction wrapper for production safety
+BEGIN;
+
 -- Phase 5: Advanced Features - Conversation History & Memory
 -- Enable vector search for semantic memory
 
@@ -151,3 +154,5 @@ COMMENT ON TABLE agent_collaborations IS 'Tracks agent-to-agent collaboration re
 COMMENT ON TABLE proactive_notifications IS 'Manages proactive notifications sent to users';
 COMMENT ON TABLE agent_analytics IS 'Tracks agent performance and usage analytics';
 COMMENT ON TABLE user_preferences IS 'Stores user preferences including language and notifications';
+
+COMMIT;

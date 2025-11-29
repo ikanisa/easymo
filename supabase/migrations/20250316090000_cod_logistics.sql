@@ -1,3 +1,6 @@
+-- Transaction wrapper for production safety
+BEGIN;
+
 -- Produce logistics + COD-first orchestration
 set check_function_bodies = off;
 
@@ -302,3 +305,5 @@ grant all on table public.logistics_partners to postgres, anon, authenticated, s
 grant all on table public.produce_listings to postgres, anon, authenticated, service_role;
 grant all on table public.produce_pickups to postgres, anon, authenticated, service_role;
 grant all on table public.produce_inventory_events to postgres, anon, authenticated, service_role;
+
+COMMIT;

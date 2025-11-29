@@ -1,3 +1,6 @@
+-- Transaction wrapper for production safety
+BEGIN;
+
 -- Create wallet_cashouts table for tracking token withdrawals via USSD
 
 CREATE TABLE IF NOT EXISTS wallet_cashouts (
@@ -54,3 +57,5 @@ COMMENT ON COLUMN wallet_cashouts.token_amount IS 'Total tokens requested for wi
 COMMENT ON COLUMN wallet_cashouts.fee_amount IS 'Fee charged (2% of token_amount)';
 COMMENT ON COLUMN wallet_cashouts.net_tokens IS 'Net tokens after fee (token_amount - fee_amount)';
 COMMENT ON COLUMN wallet_cashouts.rwf_amount IS 'Cash amount to disburse via USSD (net_tokens * 0.5)';
+
+COMMIT;

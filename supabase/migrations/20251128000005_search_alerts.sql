@@ -1,3 +1,6 @@
+-- Transaction wrapper for production safety
+BEGIN;
+
 -- Search alerts for saved searches with notifications
 CREATE TABLE IF NOT EXISTS search_alerts (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -59,3 +62,5 @@ CREATE TRIGGER update_search_alerts_updated_at
 COMMENT ON TABLE search_alerts IS 'Stores saved searches with notification preferences';
 COMMENT ON COLUMN search_alerts.search_criteria IS 'JSONB object containing search filters (location, price, type, etc.)';
 COMMENT ON COLUMN search_alerts.notification_frequency IS 'How often to check for new matches: instant (hourly), daily, or weekly';
+
+COMMIT;
