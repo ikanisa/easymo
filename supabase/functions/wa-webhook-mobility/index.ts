@@ -108,11 +108,14 @@ serve(async (req: Request): Promise<Response> => {
 
   const url = new URL(req.url);
   const requestId = req.headers.get("x-request-id") ?? crypto.randomUUID();
+  const correlationId = req.headers.get("x-correlation-id") ?? requestId;
 
   const respond = (body: unknown, init: ResponseInit = {}): Response => {
     const headers = new Headers(init.headers);
     headers.set("Content-Type", "application/json");
     headers.set("X-Request-ID", requestId);
+    headers.set("X-Correlation-ID", correlationId);
+    headers.set("X-Service", "wa-webhook-mobility");
     return new Response(JSON.stringify(body), { ...init, headers });
   };
 
@@ -124,6 +127,7 @@ serve(async (req: Request): Promise<Response> => {
     logStructuredEvent(event, {
       service: "wa-webhook-mobility",
       requestId,
+      correlationId,
       path: url.pathname,
       ...details,
     }, level);
@@ -131,7 +135,7 @@ serve(async (req: Request): Promise<Response> => {
 
   // Health check
   if (url.pathname === "/health" || url.pathname.endsWith("/health")) {
-    return respond({ status: "healthy", service: "wa-webhook-mobility" });
+    return respond({ status: "healthy", service: "wa-webhook-mobility", timestamp: new Date().toISOString() });
   }
 
   // Webhook verification
@@ -558,7 +562,10 @@ serve(async (req: Request): Promise<Response> => {
   }
 });
 
-await logStructuredEvent("LOG", { data: "✅ wa-webhook-mobility service started" });
+logStructuredEvent("SERVICE_STARTED", { 
+  service: "wa-webhook-mobility",
+  version: "1.1.0",
+});
 
 async function showMobilityMenu(ctx: RouterContext): Promise<boolean> {
   if (!ctx.profileId) return false;

@@ -3,7 +3,14 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { logStructuredEvent } from "../_shared/observability.ts";
 import { verifyWebhookSignature } from "../_shared/webhook-utils.ts";
-import type { RouterContext, WhatsAppWebhookPayload, RawWhatsAppMessage } from "../_shared/wa-webhook-shared/types.ts";
+import type { 
+  RouterContext, 
+  WhatsAppWebhookPayload, 
+  RawWhatsAppMessage,
+  WhatsAppTextMessage,
+  WhatsAppInteractiveMessage,
+} from "../_shared/wa-webhook-shared/types.ts";
+import type { SupportedLanguage } from "../_shared/wa-webhook-shared/i18n/language.ts";
 import { getState } from "../_shared/wa-webhook-shared/state/store.ts";
 import { IDS } from "../_shared/wa-webhook-shared/wa/ids.ts";
 import { rateLimitMiddleware } from "../_shared/rate-limit/index.ts";
@@ -55,16 +62,17 @@ serve(async (req: Request): Promise<Response> => {
     return new Response(JSON.stringify(body), { ...init, headers });
   };
 
-  const logEvent = async (
+  const logEvent = (
     event: string,
     payload?: Record<string, unknown>,
+    level: "debug" | "info" | "warn" | "error" = "info",
   ) => {
-    await logStructuredEvent(event, {
+    logStructuredEvent(event, {
       service: "wa-webhook-insurance",
       requestId,
       correlationId,
       ...payload,
-    });
+    }, level);
   };
 
   // Health check - MUST be before method check
@@ -113,7 +121,7 @@ serve(async (req: Request): Promise<Response> => {
     const internalForward = req.headers.get("x-wa-internal-forward") === "true";
 
     if (!appSecret) {
-      await logEvent("INSURANCE_AUTH_CONFIG_ERROR", { reason: "missing_app_secret" });
+      logEvent("INSURANCE_AUTH_CONFIG_ERROR", { reason: "missing_app_secret" });
       return respond({ error: "server_misconfigured" }, { status: 500 });
     }
 
@@ -122,13 +130,13 @@ serve(async (req: Request): Promise<Response> => {
       try {
         isValidSignature = await verifyWebhookSignature(rawBody, signature, appSecret);
         if (isValidSignature) {
-          await logEvent("INSURANCE_SIGNATURE_VALID", {
+          logEvent("INSURANCE_SIGNATURE_VALID", {
             signatureHeader,
             signatureMethod: signatureMeta.method,
           });
         }
       } catch (err) {
-        await logEvent("INSURANCE_SIGNATURE_ERROR", {
+        logEvent("INSURANCE_SIGNATURE_ERROR", {
           error: err instanceof Error ? err.message : String(err),
         });
       }
@@ -136,7 +144,7 @@ serve(async (req: Request): Promise<Response> => {
 
     if (!isValidSignature) {
       if (allowUnsigned || internalForward) {
-        await logEvent("INSURANCE_AUTH_BYPASS", {
+        logEvent("INSURANCE_AUTH_BYPASS", {
           reason: internalForward ? "internal_forward" : signature ? "signature_mismatch" : "no_signature",
           signatureHeader,
           signatureMethod: signatureMeta.method,
@@ -144,7 +152,7 @@ serve(async (req: Request): Promise<Response> => {
           userAgent: req.headers.get("user-agent"),
         });
       } else {
-        await logEvent("INSURANCE_AUTH_FAILED", {
+        logEvent("INSURANCE_AUTH_FAILED", {
           signatureProvided: signatureMeta.provided,
           signatureHeader,
           signatureMethod: signatureMeta.method,
@@ -159,20 +167,20 @@ serve(async (req: Request): Promise<Response> => {
     try {
       payload = rawBody ? JSON.parse(rawBody) : {} as WhatsAppWebhookPayload;
     } catch (parseError) {
-      await logEvent("INSURANCE_PAYLOAD_INVALID_JSON", {
+      logEvent("INSURANCE_PAYLOAD_INVALID_JSON", {
         error: parseError instanceof Error ? parseError.message : String(parseError),
       });
       return respond({ error: "invalid_payload" }, { status: 400 });
     }
 
-    await logEvent("INSURANCE_WEBHOOK_RECEIVED", {
+    logEvent("INSURANCE_WEBHOOK_RECEIVED", {
       entry_count: payload.entry?.length ?? 0,
     });
 
     // Extract first message
     const message = getFirstMessage(payload);
     if (!message) {
-      await logEvent("INSURANCE_NO_MESSAGE");
+      logEvent("INSURANCE_NO_MESSAGE");
       return respond({ success: true, message: "No message to process" });
     }
 
@@ -184,44 +192,50 @@ serve(async (req: Request): Promise<Response> => {
       ? await getState(supabase, ctx.profileId)
       : { key: "home", data: {} };
 
-    await logEvent("INSURANCE_STATE", { state: state.key });
+    logEvent("INSURANCE_STATE", { state: state.key });
 
     // Route based on message type
     let handled = false;
 
     try {
       // Handle interactive buttons
-      if (message.type === "interactive" && (message as WhatsAppInteractiveMessage).interactive?.type === "button_reply") {
+      if (message.type === "interactive") {
         const interactiveMessage = message as WhatsAppInteractiveMessage;
-        const buttonId = interactiveMessage.interactive?.button_reply?.id;
-        handled = await handleInsuranceButton(ctx, buttonId, state);
-      }
-
-      // Handle interactive lists
-      if (message.type === "interactive" && (message as WhatsAppInteractiveMessage).interactive?.type === "list_reply") {
-        const interactiveMessage = message as WhatsAppInteractiveMessage;
-        const listId = interactiveMessage.interactive?.list_reply?.id;
-        handled = await handleInsuranceList(ctx, listId, state);
+        const interactiveType = interactiveMessage.interactive?.type;
+        
+        if (interactiveType === "button_reply") {
+          const buttonId = interactiveMessage.interactive?.button_reply?.id;
+          if (buttonId) {
+            handled = await handleInsuranceButton(ctx, buttonId, state);
+          }
+        } else if (interactiveType === "list_reply") {
+          const listId = interactiveMessage.interactive?.list_reply?.id;
+          if (listId) {
+            handled = await handleInsuranceList(ctx, listId, state);
+          }
+        }
       }
 
       // Handle media (images/documents)
-      if (message.type === "image" || message.type === "document") {
+      if (!handled && (message.type === "image" || message.type === "document")) {
         handled = await handleInsuranceMedia(ctx, message, state);
       }
 
       // Handle text messages
-      if (message.type === "text" && !handled) {
+      if (!handled && message.type === "text") {
         handled = await handleInsuranceText(ctx, message, state);
       }
 
       if (!handled) {
-        await logEvent("INSURANCE_UNHANDLED", { type: message.type });
+        logEvent("INSURANCE_UNHANDLED", { type: message.type }, "debug");
       }
     } catch (handlerError) {
-      await logEvent("INSURANCE_HANDLER_ERROR", { 
+      logEvent("INSURANCE_HANDLER_ERROR", { 
         error: handlerError instanceof Error ? handlerError.message : String(handlerError),
+        stack: handlerError instanceof Error ? handlerError.stack : undefined,
         messageType: message.type,
-      });
+        from: ctx.from,
+      }, "error");
       // Send error message to user
       const { sendText } = await import("../_shared/wa-webhook-shared/wa/client.ts");
       try {
@@ -235,7 +249,7 @@ serve(async (req: Request): Promise<Response> => {
     return respond({ success: true, handled });
 
   } catch (error) {
-    await logEvent("INSURANCE_ERROR", {
+    logEvent("INSURANCE_ERROR", {
       error: error instanceof Error ? error.message : String(error),
     });
     
@@ -325,7 +339,8 @@ async function handleInsuranceText(
   message: RawWhatsAppMessage,
   state: { key: string; data?: Record<string, unknown> },
 ): Promise<boolean> {
-  const text = (message as WhatsAppTextMessage).text?.body?.trim().toLowerCase();
+  const textMessage = message as WhatsAppTextMessage;
+  const text = textMessage.text?.body?.trim().toLowerCase();
   if (!text) return false;
 
   // Handle claims-related keywords
@@ -372,4 +387,7 @@ async function handleInsuranceText(
   return true;
 }
 
-console.log("wa-webhook-insurance service started");
+logStructuredEvent("SERVICE_STARTED", { 
+  service: "wa-webhook-insurance",
+  version: "1.1.0",
+});

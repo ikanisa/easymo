@@ -15,14 +15,19 @@ export const CLAIM_STATES = {
 };
 
 export async function startClaimFlow(ctx: RouterContext): Promise<boolean> {
+  if (!ctx.profileId) {
+    await sendText(ctx.from, "❌ Please start a conversation first before filing a claim.");
+    return false;
+  }
+  
   const claimId = crypto.randomUUID();
   
-  await setState(ctx.supabase, ctx.profileId!, {
+  await setState(ctx.supabase, ctx.profileId, {
     key: CLAIM_STATES.TYPE,
     data: { claimId, documents: [] }
   });
 
-  await logStructuredEvent("INSURANCE_CLAIM_FLOW_START", {
+  logStructuredEvent("INSURANCE_CLAIM_FLOW_START", {
     profileId: ctx.profileId,
     claimId,
     from: ctx.from
@@ -67,7 +72,12 @@ export async function handleClaimType(
   ctx: RouterContext,
   claimType: string
 ): Promise<boolean> {
-  const state = await getState(ctx.supabase, ctx.profileId!);
+  if (!ctx.profileId) {
+    await sendText(ctx.from, "❌ Session expired. Please start again by typing 'claim'.");
+    return false;
+  }
+  
+  const state = await getState(ctx.supabase, ctx.profileId);
   const { claimId, documents = [] } = state?.data || {};
 
   if (!claimId) {
@@ -76,12 +86,12 @@ export async function handleClaimType(
   }
 
   // Store claim type
-  await setState(ctx.supabase, ctx.profileId!, {
+  await setState(ctx.supabase, ctx.profileId, {
     key: CLAIM_STATES.DESCRIPTION,
     data: { claimId, claimType, documents }
   });
 
-  await logStructuredEvent("INSURANCE_CLAIM_TYPE_SELECTED", {
+  logStructuredEvent("INSURANCE_CLAIM_TYPE_SELECTED", {
     profileId: ctx.profileId,
     claimId,
     claimType
@@ -114,7 +124,12 @@ export async function handleClaimDescription(
   ctx: RouterContext,
   description: string
 ): Promise<boolean> {
-  const state = await getState(ctx.supabase, ctx.profileId!);
+  if (!ctx.profileId) {
+    await sendText(ctx.from, "❌ Session expired. Please start again.");
+    return false;
+  }
+  
+  const state = await getState(ctx.supabase, ctx.profileId);
   const { claimId, claimType, documents = [] } = state?.data || {};
 
   if (!claimId) {
@@ -123,12 +138,12 @@ export async function handleClaimDescription(
   }
 
   // Store description
-  await setState(ctx.supabase, ctx.profileId!, {
+  await setState(ctx.supabase, ctx.profileId, {
     key: CLAIM_STATES.DOCUMENTS,
     data: { claimId, claimType, description, documents }
   });
 
-  await logStructuredEvent("INSURANCE_CLAIM_DESCRIPTION_ADDED", {
+  logStructuredEvent("INSURANCE_CLAIM_DESCRIPTION_ADDED", {
     profileId: ctx.profileId,
     claimId,
     descriptionLength: description.length
@@ -154,7 +169,12 @@ export async function handleClaimDocuments(
   mediaId: string,
   mimeType?: string
 ): Promise<boolean> {
-  const state = await getState(ctx.supabase, ctx.profileId!);
+  if (!ctx.profileId) {
+    await sendText(ctx.from, "❌ Session expired. Please start again.");
+    return false;
+  }
+  
+  const state = await getState(ctx.supabase, ctx.profileId);
   const { claimId, claimType, description, documents = [] } = state?.data || {};
 
   if (!claimId) {
@@ -165,12 +185,12 @@ export async function handleClaimDocuments(
   // Add document to list
   documents.push({ mediaId, mimeType, uploadedAt: new Date().toISOString() });
 
-  await setState(ctx.supabase, ctx.profileId!, {
+  await setState(ctx.supabase, ctx.profileId, {
     key: CLAIM_STATES.DOCUMENTS,
     data: { claimId, claimType, description, documents }
   });
 
-  await logStructuredEvent("INSURANCE_CLAIM_DOCUMENT_ADDED", {
+  logStructuredEvent("INSURANCE_CLAIM_DOCUMENT_ADDED", {
     profileId: ctx.profileId,
     claimId,
     documentCount: documents.length,
@@ -192,7 +212,12 @@ export async function handleClaimDocuments(
 }
 
 export async function handleClaimSubmit(ctx: RouterContext): Promise<boolean> {
-  const state = await getState(ctx.supabase, ctx.profileId!);
+  if (!ctx.profileId) {
+    await sendText(ctx.from, "❌ Session expired. Please start again.");
+    return false;
+  }
+  
+  const state = await getState(ctx.supabase, ctx.profileId);
   const { claimId, claimType, description, documents = [] } = state?.data || {};
 
   if (!claimId) {
@@ -213,13 +238,13 @@ export async function handleClaimSubmit(ctx: RouterContext): Promise<boolean> {
       whatsapp: ctx.from,
       claim_type: claimType,
       description,
-      documents: documents.map((d: any) => d.mediaId),
+      documents: documents.map((d: { mediaId: string }) => d.mediaId),
       status: "submitted",
       submitted_at: new Date().toISOString()
     });
 
     if (claimError) {
-      await logStructuredEvent("INSURANCE_CLAIM_SUBMIT_ERROR", {
+      logStructuredEvent("INSURANCE_CLAIM_SUBMIT_ERROR", {
         profileId: ctx.profileId,
         claimId,
         error: claimError.message
@@ -230,12 +255,12 @@ export async function handleClaimSubmit(ctx: RouterContext): Promise<boolean> {
     }
 
     // Clear state
-    await setState(ctx.supabase, ctx.profileId!, {
+    await setState(ctx.supabase, ctx.profileId, {
       key: "home",
       data: {}
     });
 
-    await logStructuredEvent("INSURANCE_CLAIM_SUBMITTED", {
+    logStructuredEvent("INSURANCE_CLAIM_SUBMITTED", {
       profileId: ctx.profileId,
       claimId,
       claimType,
@@ -261,7 +286,7 @@ export async function handleClaimSubmit(ctx: RouterContext): Promise<boolean> {
 
     return true;
   } catch (error) {
-    await logStructuredEvent("INSURANCE_CLAIM_SUBMIT_EXCEPTION", {
+    logStructuredEvent("INSURANCE_CLAIM_SUBMIT_EXCEPTION", {
       profileId: ctx.profileId,
       claimId,
       error: error instanceof Error ? error.message : String(error)
@@ -291,7 +316,7 @@ export async function handleClaimStatus(
     const { data: claims, error } = await query.limit(5);
 
     if (error) {
-      await logStructuredEvent("INSURANCE_CLAIM_STATUS_ERROR", {
+      logStructuredEvent("INSURANCE_CLAIM_STATUS_ERROR", {
         profileId: ctx.profileId,
         error: error.message
       }, "error");
@@ -345,7 +370,7 @@ export async function handleClaimStatus(
 
     return true;
   } catch (error) {
-    await logStructuredEvent("INSURANCE_CLAIM_STATUS_EXCEPTION", {
+    logStructuredEvent("INSURANCE_CLAIM_STATUS_EXCEPTION", {
       profileId: ctx.profileId,
       error: error instanceof Error ? error.message : String(error)
     }, "error");
@@ -392,7 +417,7 @@ async function notifyAdminsAboutClaim(
       }
     }
 
-    await logStructuredEvent("INSURANCE_CLAIM_ADMIN_NOTIFIED", {
+    logStructuredEvent("INSURANCE_CLAIM_ADMIN_NOTIFIED", {
       claimId,
       adminsNotified: admins?.length || 0
     });

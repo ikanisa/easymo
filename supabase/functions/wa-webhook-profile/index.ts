@@ -2,7 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { logStructuredEvent } from "../_shared/observability.ts";
 import { getState } from "../_shared/wa-webhook-shared/state/store.ts";
-import { sendButtonsMessage } from "../_shared/wa-webhook-shared/utils/reply.ts";
+import { sendButtonsMessage, sendListMessage } from "../_shared/wa-webhook-shared/utils/reply.ts";
 import type { RouterContext, WhatsAppWebhookPayload } from "../_shared/wa-webhook-shared/types.ts";
 import { IDS } from "../_shared/wa-webhook-shared/wa/ids.ts";
 import { rateLimitMiddleware } from "../_shared/rate-limit/index.ts";
@@ -25,11 +25,14 @@ serve(async (req: Request): Promise<Response> => {
 
   const url = new URL(req.url);
   const requestId = req.headers.get("x-request-id") ?? crypto.randomUUID();
+  const correlationId = req.headers.get("x-correlation-id") ?? requestId;
 
   const respond = (body: unknown, init: ResponseInit = {}): Response => {
     const headers = new Headers(init.headers);
     headers.set("Content-Type", "application/json");
     headers.set("X-Request-ID", requestId);
+    headers.set("X-Correlation-ID", correlationId);
+    headers.set("X-Service", "wa-webhook-profile");
     return new Response(JSON.stringify(body), { ...init, headers });
   };
 
@@ -41,6 +44,7 @@ serve(async (req: Request): Promise<Response> => {
     logStructuredEvent(event, {
       service: "wa-webhook-profile",
       requestId,
+      correlationId,
       path: url.pathname,
       ...details,
     }, level);
@@ -843,4 +847,7 @@ serve(async (req: Request): Promise<Response> => {
   }
 });
 
-await logStructuredEvent("LOG", { data: "✅ wa-webhook-profile service started (v2.0.0)" });
+logStructuredEvent("SERVICE_STARTED", { 
+  service: "wa-webhook-profile",
+  version: "2.1.0",
+});

@@ -699,51 +699,73 @@ async function runMatchingFallback(
         
       const passengerName = passenger?.full_name ?? "A passenger";
       
-      // Send notifications to top 9 drivers
-      for (const match of matches.slice(0, 9)) {
-        if (match.whatsapp_e164) {
+      // Send notifications to top 9 drivers (async, don't block the user response)
+      const notifyDrivers = async () => {
+        for (const match of matches.slice(0, 9)) {
+          if (!match.whatsapp_e164) continue;
+          
+          try {
             // Quiet hours check
             const quiet = await isDriverQuiet(ctx.supabase, match.creator_user_id).catch(() => false);
             if (quiet) continue;
-             // Create accept link/button payload
-             // For now, we use a simple text message with a button if possible, or just text
-             // Since we can't easily send buttons outside 24h window without template, 
-             // we will use a text message with a clear instruction or link if applicable.
-             // But here we are in the webhook, so we might be able to send buttons if the driver messaged recently.
-             // To be safe and robust, we'll send a text message with a "Reply ACCEPT" instruction or similar,
-             // OR better, we use the new "Accept Ride" button flow if we assume drivers are active.
-             
-             // We will send a template-like message.
-             const acceptId = `RIDE_ACCEPT::${tempTripId}`;
-             try {
-               await sendButtonsDirect(
-                 match.whatsapp_e164,
-                 ctx.locale,
-                 `🚖 **New Ride Request!**\n\nPassenger: ${passengerName}\nDistance: ${toDistanceLabel(match.distance_km)}\n\nDo you want to accept this ride?`,
-                 [{ id: acceptId, title: "✅ Accept Ride" }],
-               );
-             } catch (e) {
-               // Fallback to template/text if interactive fails
-               try {
-                 const { sendTemplate } = await import("../../wa/client.ts");
-                 const tpl = Deno.env.get('WA_DRIVER_NOTIFY_TEMPLATE') ?? 'ride_notify';
-                 const lang = Deno.env.get('WA_TEMPLATE_LANG') ?? 'en';
-                 const compact = `New ride near you. Passenger: ${passengerName}. ${toDistanceLabel(match.distance_km) ?? ''}`.trim();
-                 await sendTemplate(match.whatsapp_e164, { name: tpl, language: lang, bodyParameters: [{ type: 'text', text: compact }] });
-               } catch (tplErr) {
-                 const { sendText } = await import("../../wa/client.ts");
-                 await sendText(match.whatsapp_e164, `🚖 New ride near you. Passenger: ${passengerName}. Reply ACCEPT to confirm.`);
-               }
-             }
-             
-             // Log notification
-             await ctx.supabase.from("ride_notifications").insert({
-               trip_id: tempTripId,
-               driver_id: match.creator_user_id,
-               status: "sent"
-             });
+            
+            const acceptId = `RIDE_ACCEPT::${tempTripId}`;
+            
+            try {
+              await sendButtonsDirect(
+                match.whatsapp_e164,
+                ctx.locale,
+                `🚖 **New Ride Request!**\n\nPassenger: ${passengerName}\nDistance: ${toDistanceLabel(match.distance_km)}\n\nDo you want to accept this ride?`,
+                [{ id: acceptId, title: "✅ Accept Ride" }],
+              );
+            } catch {
+              // Fallback to template/text if interactive fails
+              try {
+                const { sendTemplate } = await import("../wa/client.ts");
+                const tpl = Deno.env.get('WA_DRIVER_NOTIFY_TEMPLATE') ?? 'ride_notify';
+                const lang = Deno.env.get('WA_TEMPLATE_LANG') ?? 'en';
+                const compact = `New ride near you. Passenger: ${passengerName}. ${toDistanceLabel(match.distance_km) ?? ''}`.trim();
+                await sendTemplate(match.whatsapp_e164, { name: tpl, language: lang, bodyParameters: [{ type: 'text', text: compact }] });
+              } catch {
+                // Last resort - plain text
+                await sendText(match.whatsapp_e164, `🚖 New ride near you. Passenger: ${passengerName}. Reply ACCEPT to confirm.`);
+              }
+            }
+            
+            // Log notification (don't await to avoid blocking)
+            ctx.supabase.from("ride_notifications").insert({
+              trip_id: tempTripId,
+              driver_id: match.creator_user_id,
+              status: "sent"
+            }).then(() => {
+              logStructuredEvent("DRIVER_NOTIFIED", {
+                tripId: tempTripId,
+                driverId: match.creator_user_id,
+              });
+            }).catch((err) => {
+              logStructuredEvent("DRIVER_NOTIFICATION_LOG_FAILED", {
+                tripId: tempTripId,
+                error: err instanceof Error ? err.message : String(err),
+              }, "warn");
+            });
+          } catch (notifyError) {
+            // Log error but continue with other drivers
+            logStructuredEvent("DRIVER_NOTIFICATION_FAILED", {
+              tripId: tempTripId,
+              driverId: match.creator_user_id,
+              error: notifyError instanceof Error ? notifyError.message : String(notifyError),
+            }, "warn");
+          }
         }
-      }
+      };
+      
+      // Fire and forget - don't block user response
+      notifyDrivers().catch((err) => {
+        logStructuredEvent("DRIVER_NOTIFICATION_BATCH_FAILED", {
+          tripId: tempTripId,
+          error: err instanceof Error ? err.message : String(err),
+        }, "error");
+      });
     }
 
     const rendered = matches
