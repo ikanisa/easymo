@@ -21,7 +21,7 @@ const mockCookieStore = {
 };
 
 vi.mock("next/headers", () => ({
-  cookies: () => mockCookieStore,
+  cookies: async () => mockCookieStore,
   headers: () => ({
     get: vi.fn(),
   }),
@@ -60,6 +60,7 @@ const mockSupabaseAdmin = {
 
 vi.mock("@/lib/server/session", () => ({
   readSessionFromCookies: vi.fn(),
+  createSessionCookie: vi.fn(() => ({ name: "admin_session", value: "test-session-value" })),
 }));
 
 vi.mock("@/lib/server/supabase-admin", () => ({

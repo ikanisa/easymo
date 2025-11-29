@@ -27,6 +27,7 @@ const legacyNavTitles = [
   "Agent learning",
   "Performance",
   "Agent settings",
+  "Provider routing",
   "Tools registry",
   "Tasks and workflows",
   "Active sessions",
@@ -51,6 +52,7 @@ const legacyNavTitles = [
   "System logs",
   "WhatsApp health",
   "WhatsApp menu",
+  "Support",
   "Settings",
   "Admin controls",
 ] as const;
