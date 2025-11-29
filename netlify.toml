@@ -1,12 +1,12 @@
-# Netlify Configuration for EasyMO Admin Panel (Aurora Redesign)
-# Next.js 15 PWA in a pnpm monorepo
+# Netlify Configuration for EasyMO Admin Panel
+# Next.js 15 PWA with AI Agent Integration in pnpm monorepo
+# Last Updated: 2025-11-29
 
 [build]
   base = "admin-app"
   publish = ".next"
-  # Build workspace dependencies, then the admin app
-  # Simplified command for local deployment (dependencies assumed built)
-  command = "pnpm build"
+  # Build shared packages FIRST, then admin app
+  command = "cd .. && pnpm --filter @va/shared build && pnpm --filter @easymo/commons build && pnpm --filter @easymo/video-agent-schema build && pnpm --filter @easymo/ui build && cd admin-app && pnpm build"
 
 [build.environment]
   NODE_VERSION = "20.18.0"
@@ -14,16 +14,23 @@
   NODE_ENV = "production"
   NEXT_PUBLIC_USE_MOCKS = "false"
   NEXT_PUBLIC_UI_V2_ENABLED = "true"
+  # Enable Next.js caching for faster builds
+  NETLIFY_CACHE_NEXTJS = "true"
+  # TypeScript build mode
+  NEXT_TELEMETRY_DISABLED = "1"
 
 # Next.js plugin for SSR and edge functions
 [[plugins]]
   package = "@netlify/plugin-nextjs"
 
-# Handle 404s gracefully for dynamic routes
+# Optimize caching strategy
 [[plugins]]
-  package = "netlify-plugin-no-more-404"
+  package = "netlify-plugin-cache"
   [plugins.inputs]
-    on404 = "warn"
+    paths = [
+      "node_modules",
+      ".next/cache"
+    ]
 
 # Context-specific settings
 [context.production]
@@ -35,9 +42,47 @@
 [context.branch-deploy]
   environment = { NEXT_PUBLIC_ENV = "staging" }
 
+# Redirects (add custom rules here)
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
+
+# Health check endpoint
+[[redirects]]
+  from = "/health"
+  to = "/api/health"
+  status = 200
+
+# Security headers for API routes
+[[headers]]
+  for = "/api/*"
+  [headers.values]
+    Access-Control-Allow-Origin = "*"
+    Access-Control-Allow-Methods = "GET, POST, PUT, DELETE, OPTIONS"
+    Access-Control-Allow-Headers = "Content-Type, Authorization"
+    Cache-Control = "no-cache, no-store, must-revalidate"
+
+# Static asset caching
+[[headers]]
+  for = "/_next/static/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/images/*"
+  [headers.values]
+    Cache-Control = "public, max-age=86400, stale-while-revalidate=604800"
+
 # Dev settings
 [dev]
   command = "pnpm dev"
   port = 3000
   targetPort = 3000
   autoLaunch = true
+  
+[functions]
+  # Increase timeout for AI operations
+  timeout = 26
+  # Set memory limit
+  node_bundler = "esbuild"

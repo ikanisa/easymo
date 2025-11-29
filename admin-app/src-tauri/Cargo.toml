@@ -17,7 +17,8 @@ tauri-build = { version = "2.5.1", features = [] }
 
 [features]
 default = []
-devtools = ["tauri/devtools"]
+# devtools feature removed for production security
+# devtools = ["tauri/devtools"]
 
 [dependencies]
 serde_json = "1.0"

@@ -17,8 +17,13 @@
     "test": "vitest run",
     "load-test": "tsx scripts/load-test.ts",
     "tauri": "tauri",
-    "tauri:dev": "tauri dev --features devtools",
-    "tauri:build": "tauri build"
+    "tauri:dev": "tauri dev",
+    "tauri:dev:debug": "tauri dev --features devtools",
+    "tauri:build": "tauri build",
+    "tauri:build:win": "tauri build --target x86_64-pc-windows-msvc",
+    "tauri:build:mac": "tauri build --target x86_64-apple-darwin",
+    "tauri:build:mac-arm": "tauri build --target aarch64-apple-darwin",
+    "tauri:build:universal": "tauri build --target universal-apple-darwin"
   },
   "dependencies": {
     "@easymo/commons": "workspace:*",

@@ -1,0 +1,198 @@
+name: Desktop App - Build & Release
+
+on:
+  push:
+    tags:
+      - 'desktop-v*.*.*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to build (e.g., 1.0.0)'
+        required: true
+        type: string
+
+env:
+  RUST_VERSION: 1.77.2
+  NODE_VERSION: 20
+
+jobs:
+  build-desktop:
+    name: Build ${{ matrix.platform }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            platform: windows
+            target: x86_64-pc-windows-msvc
+            artifact: EasyMO-Admin-*.msi
+          - os: macos-latest
+            platform: macos
+            target: universal-apple-darwin
+            artifact: EasyMO-Admin-*.dmg
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: '10.18.3'
+      
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: ${{ env.RUST_VERSION }}
+          targets: ${{ matrix.target }}
+      
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: admin-app/src-tauri
+      
+      - name: Install dependencies (macOS)
+        if: matrix.platform == 'macos'
+        run: |
+          brew install jq
+      
+      - name: Install dependencies
+        working-directory: admin-app
+        run: |
+          pnpm install --frozen-lockfile
+      
+      - name: Build shared packages
+        run: |
+          pnpm --filter @va/shared build
+          pnpm --filter @easymo/commons build
+      
+      - name: Verify production configuration
+        working-directory: admin-app
+        run: |
+          bash scripts/verify-production-config.sh
+      
+      # Windows Code Signing
+      - name: Import Windows Certificate
+        if: matrix.platform == 'windows'
+        env:
+          WINDOWS_CERTIFICATE: ${{ secrets.WINDOWS_CERTIFICATE_BASE64 }}
+          WINDOWS_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
+        shell: powershell
+        run: |
+          if ($env:WINDOWS_CERTIFICATE) {
+            $cert = [Convert]::FromBase64String($env:WINDOWS_CERTIFICATE)
+            [IO.File]::WriteAllBytes("$env:TEMP\cert.pfx", $cert)
+            Import-PfxCertificate -FilePath "$env:TEMP\cert.pfx" -CertStoreLocation Cert:\CurrentUser\My -Password (ConvertTo-SecureString -String $env:WINDOWS_PASSWORD -AsPlainText -Force)
+          } else {
+            Write-Host "⚠️ Windows certificate not configured - binary will be unsigned"
+          }
+      
+      # macOS Code Signing
+      - name: Import macOS Certificate
+        if: matrix.platform == 'macos'
+        env:
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE_BASE64 }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+        run: |
+          if [ -n "$APPLE_CERTIFICATE" ]; then
+            echo $APPLE_CERTIFICATE | base64 --decode > certificate.p12
+            security create-keychain -p actions build.keychain
+            security default-keychain -s build.keychain
+            security unlock-keychain -p actions build.keychain
+            security import certificate.p12 -k build.keychain -P $APPLE_CERTIFICATE_PASSWORD -T /usr/bin/codesign
+            security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k actions build.keychain
+          else
+            echo "⚠️ macOS certificate not configured - binary will be unsigned"
+          fi
+      
+      - name: Build Tauri App
+        working-directory: admin-app
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          NEXT_PUBLIC_USE_MOCKS: 'false'
+        run: |
+          npm run tauri:build -- --target ${{ matrix.target }}
+      
+      # macOS Notarization
+      - name: Notarize macOS App
+        if: matrix.platform == 'macos'
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_ID_PASSWORD: ${{ secrets.APPLE_ID_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        working-directory: admin-app
+        run: |
+          if [ -n "$APPLE_ID" ]; then
+            DMG_PATH=$(find target/release/bundle/dmg -name "*.dmg" | head -n 1)
+            bash scripts/notarize-macos.sh "$DMG_PATH"
+          else
+            echo "⚠️ macOS notarization not configured"
+          fi
+      
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-${{ matrix.platform }}
+          path: |
+            admin-app/target/release/bundle/**/*.msi
+            admin-app/target/release/bundle/**/*.dmg
+            admin-app/target/release/bundle/**/*.app.tar.gz
+            admin-app/target/release/bundle/**/*.sig
+          retention-days: 30
+  
+  create-release:
+    name: Create GitHub Release
+    needs: build-desktop
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/desktop-v')
+    
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+      
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            desktop-windows/**/*
+            desktop-macos/**/*
+          draft: true
+          prerelease: false
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  
+  deploy-update-server:
+    name: Deploy to Update Server
+    needs: build-desktop
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/desktop-v')
+    
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+      
+      - name: Deploy to releases.easymo.dev
+        env:
+          RELEASE_DEPLOY_KEY: ${{ secrets.RELEASE_DEPLOY_KEY }}
+          RELEASE_SERVER_URL: ${{ secrets.RELEASE_SERVER_URL }}
+        run: |
+          # TODO: Implement deployment to update server
+          # This should:
+          # 1. Upload .sig files for auto-update
+          # 2. Update latest.json manifest
+          # 3. Upload installers for download
+          echo "🚀 Deploying to update server..."
+          echo "   Server: $RELEASE_SERVER_URL"
+          echo "⚠️ Implementation pending"
