@@ -10,11 +10,23 @@ import { childLogger } from './lib/server/simple-logger';
 const PUBLIC_PATHS = [
   '/',
   '/login',
+  '/forgot-password',
+  '/reset-password',
+  '/auth/callback',
   '/favicon',
   '/manifest.webmanifest',
   '/manifest.json',
   '/robots.txt',
   '/sw.js',
+];
+
+const MUTATION_METHODS = ['POST', 'PUT', 'DELETE', 'PATCH'];
+
+// API routes that should be exempt from CSRF (they have their own auth)
+const CSRF_EXEMPT_PATHS = [
+  '/api/auth/login',
+  '/api/auth/logout',
+  '/api/auth/callback',
 ];
 
 function buildRequestId(): string {
@@ -23,7 +35,7 @@ function buildRequestId(): string {
     if (cryptoRef?.randomUUID) {
       return cryptoRef.randomUUID();
     }
-  } catch (_error) {
+  } catch {
     // fall through
   }
   return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -49,6 +61,60 @@ function isPublicPath(pathname: string): boolean {
   return false;
 }
 
+function isCsrfExemptPath(pathname: string): boolean {
+  return CSRF_EXEMPT_PATHS.some((p) => pathname === p || pathname.startsWith(p + '/'));
+}
+
+function validateCsrfToken(request: NextRequest): boolean {
+  // Get the origin and referer headers
+  const origin = request.headers.get('origin');
+  const referer = request.headers.get('referer');
+  const host = request.headers.get('host');
+  
+  // For same-origin requests, either origin or referer should match the host
+  if (origin) {
+    try {
+      const originUrl = new URL(origin);
+      if (originUrl.host === host) {
+        return true;
+      }
+    } catch {
+      // Invalid origin URL
+    }
+  }
+  
+  if (referer) {
+    try {
+      const refererUrl = new URL(referer);
+      if (refererUrl.host === host) {
+        return true;
+      }
+    } catch {
+      // Invalid referer URL
+    }
+  }
+
+  // Also check for X-Requested-With header (common for AJAX requests)
+  const xRequestedWith = request.headers.get('x-requested-with');
+  if (xRequestedWith === 'XMLHttpRequest') {
+    return true;
+  }
+  
+  // Check for custom CSRF header (can be set by client applications)
+  // NOTE: Currently only checks for header presence. For enhanced security,
+  // implement a token verification system that:
+  // 1. Generates unique tokens per session and stores them server-side
+  // 2. Validates the token value matches the stored session token
+  // This origin/referer validation provides baseline CSRF protection for
+  // same-origin requests, which is sufficient for most use cases.
+  const csrfHeader = request.headers.get('x-csrf-token');
+  if (csrfHeader) {
+    return true;
+  }
+
+  return false;
+}
+
 function createCustomCookieStore(request: NextRequest) {
   return {
     get: (name: string) => {
@@ -70,9 +136,23 @@ export async function middleware(request: NextRequest) {
 
   const requestId = headers.get('x-request-id') || 'unknown';
   const log = childLogger({ service: 'admin-middleware', requestId });
+  const pathname = request.nextUrl.pathname;
 
-  if (request.method === 'OPTIONS' || isPublicPath(request.nextUrl.pathname)) {
+  if (request.method === 'OPTIONS' || isPublicPath(pathname)) {
     return NextResponse.next({ request: { headers } });
+  }
+
+  // CSRF validation for mutation requests on protected API routes
+  if (MUTATION_METHODS.includes(request.method) && 
+      pathname.startsWith('/api/') && 
+      !isCsrfExemptPath(pathname)) {
+    if (!validateCsrfToken(request)) {
+      log.warn({ event: 'CSRF_VALIDATION_FAILED', method: request.method, path: pathname }, 'CSRF token validation failed');
+      return NextResponse.json({ error: 'CSRF validation failed' }, {
+        status: 403,
+        headers: { 'x-request-id': requestId },
+      });
+    }
   }
 
   let response = NextResponse.next({ request: { headers } });
