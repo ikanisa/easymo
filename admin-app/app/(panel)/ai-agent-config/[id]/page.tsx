@@ -3,14 +3,14 @@
 import { AlertCircle, CheckCircle2, Loader2, MessageSquare,Save, TrendingUp } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { toast } from "sonner";
 
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Textarea } from "@/components/ui/textarea";
+import { Textarea } from "@/components/ui/Textarea";
+import { useToast } from "@/components/ui/toast";
 
 interface Persona {
   id: string;
@@ -66,6 +66,7 @@ interface Agent {
 export default function AgentDetailPage() {
   const params = useParams();
   const agentId = params.id as string;
+  const toast = useToast();
 
   const [agent, setAgent] = useState<Agent | null>(null);
   const [metrics, setMetrics] = useState<AgentMetrics | null>(null);

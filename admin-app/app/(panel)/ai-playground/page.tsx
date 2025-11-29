@@ -15,8 +15,8 @@ import { ChatCompletionsPlayground } from '@/components/ai/ChatCompletionsPlaygr
 import { ImageGenerator } from '@/components/ai/ImageGenerator';
 import { RealtimeChat } from '@/components/ai/RealtimeChat';
 import { VoiceAgent } from '@/components/ai/VoiceAgent';
-import { Badge } from '@/components/ui/badge';
-import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/Badge';
+import { Card } from '@/components/ui/Card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export const metadata: Metadata = {

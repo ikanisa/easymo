@@ -4,9 +4,9 @@ import { Brain,Loader2, Settings, TrendingUp, Zap } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/Card";
 
 interface AgentStats {
   toolsCount: number;
