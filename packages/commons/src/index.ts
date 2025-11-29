@@ -4,7 +4,7 @@ export * from "./cors-config";
 export * from "./env-validation";
 export * from "./feature-flags";
 export * from "./health";
-export * from "./health-check";
+// export * from "./health-check"; // Duplicate exports with ./health
 export * from "./input-validation";
 export * from "./logger";
 export * from "./metrics";
