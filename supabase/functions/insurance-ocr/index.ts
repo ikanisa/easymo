@@ -1,25 +1,17 @@
 import {
-import { logStructuredEvent } from "../_shared/observability.ts";
   createClient,
   type SupabaseClient,
 } from "https://esm.sh/@supabase/supabase-js@2.76.1";
 import {
-import { logStructuredEvent } from "../_shared/observability.ts";
   MissingOpenAIKeyError,
   runInsuranceOCR,
 } from "../_shared/wa-webhook-shared/domains/insurance/ins_ocr.ts";
 import { normalizeInsuranceExtraction } from "../_shared/wa-webhook-shared/domains/insurance/ins_normalize.ts";
-import { logStructuredEvent } from "../_shared/observability.ts";
 import { notifyInsuranceAdmins } from "../_shared/wa-webhook-shared/domains/insurance/ins_admin_notify.ts";
-import { logStructuredEvent } from "../_shared/observability.ts";
 import { sendText } from "../_shared/wa-webhook-shared/wa/client.ts";
-import { logStructuredEvent } from "../_shared/observability.ts";
 import { buildUserSummary } from "../_shared/wa-webhook-shared/domains/insurance/ins_messages.ts";
-import { logStructuredEvent } from "../_shared/observability.ts";
 import { allocateInsuranceBonus } from "../_shared/wa-webhook-shared/wallet/allocate.ts";
-import { logStructuredEvent } from "../_shared/observability.ts";
 import { determineNextStatus } from "./utils.ts";
-import { logStructuredEvent } from "../_shared/observability.ts";
 import { recordRunMetrics } from "./telemetry.ts";
 import { logStructuredEvent } from "../_shared/observability.ts";
 
@@ -122,11 +114,11 @@ export async function handler(req: Request): Promise<Response> {
         inlinePayload.mime ?? undefined,
       );
       const normalized = normalizeInsuranceExtraction(raw);
-      await logStructuredEvent("INFO", { data: "INS_OCR_INLINE_SUCCESS" });
+      logStructuredEvent("INS_OCR_INLINE_SUCCESS", {}, "info");
       return json({ raw, normalized });
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      await logStructuredEvent("ERROR", { data: "INS_OCR_INLINE_ERROR", { error: message } });
+      logStructuredEvent("INS_OCR_INLINE_ERROR", { error: message }, "error");
       return json({ error: message }, 500);
     }
   }
@@ -194,7 +186,7 @@ async function fetchQueue(
     .limit(limit);
 
   if (error) {
-    await logStructuredEvent("ERROR", { data: "insurance-ocr.fetch_queue_fail", error });
+    logStructuredEvent("OCR_FETCH_QUEUE_FAIL", { error }, "error");
     throw new Error("fetch_queue_failed");
   }
 
@@ -208,7 +200,7 @@ async function countQueued(client: SupabaseClient): Promise<number> {
     .in("status", ["queued", "retry"]);
 
   if (error) {
-    await logStructuredEvent("ERROR", { data: "insurance-ocr.queue_count_fail", error });
+    logStructuredEvent("OCR_QUEUE_COUNT_FAIL", { error }, "error");
     return -1;
   }
 
@@ -306,7 +298,7 @@ async function processQueueRow(
       // Send summary to user
       const userSummary = buildUserSummary(normalized);
       await sendText(row.wa_id, userSummary);
-      await logStructuredEvent("LOG", { data: "insurance-ocr.user_summary_sent", { leadId, waId: row.wa_id } });
+      logStructuredEvent("OCR_USER_SUMMARY_SENT", { leadId, waId: row.wa_id }, "info");
 
       // Award insurance bonus tokens (if user has profile)
       if (row.profile_id) {
@@ -330,7 +322,7 @@ async function processQueueRow(
         }
       }
     } else {
-      await logStructuredEvent("WARNING", { data: "insurance-ocr.no_user_wa_id", { leadId, queueId: row.id } });
+      logStructuredEvent("OCR_NO_USER_WA_ID", { leadId, queueId: row.id }, "warn");
     }
 
     return { id: row.id, status: "succeeded", leadId };
@@ -347,7 +339,7 @@ async function processQueueRow(
           last_error: message.substring(0, 500),
         })
         .eq("id", row.id);
-      await logStructuredEvent("WARNING", { data: "insurance-ocr.openai_missing", { id: row.id } });
+      logStructuredEvent("OCR_OPENAI_MISSING", { id: row.id }, "warn");
       return { id: row.id, status: "skipped", reason: "openai_key_missing" };
     }
     const nextStatus = determineNextStatus(attempts, MAX_ATTEMPTS);
@@ -368,7 +360,7 @@ async function processQueueRow(
       })
       .eq("id", leadId);
 
-    await logStructuredEvent("ERROR", { data: "insurance-ocr.process_fail", { id: row.id, message } });
+    logStructuredEvent("OCR_PROCESS_FAIL", { id: row.id, message }, "error");
     return { id: row.id, status: nextStatus, error: message, leadId };
   }
 }
@@ -461,7 +453,7 @@ async function getLeadStatus(
     .eq("id", leadId)
     .maybeSingle();
   if (error) {
-    await logStructuredEvent("WARNING", { data: "insurance-ocr.lead_status_fail", { leadId, error: error.message } });
+    logStructuredEvent("OCR_LEAD_STATUS_FAIL", { leadId, error: error.message }, "warn");
     return null;
   }
   return data?.status ?? null;
