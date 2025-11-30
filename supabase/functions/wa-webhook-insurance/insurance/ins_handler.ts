@@ -351,7 +351,6 @@ async function processInlineOcr(
       .update({
         raw_ocr: raw,
         extracted: normalized,
-        extracted_json: normalized,
         status: "ocr_ok",
         file_path: params.storagePath,
       })

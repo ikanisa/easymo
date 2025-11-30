@@ -266,7 +266,6 @@ async function processQueueRow(
       .update({
         raw_ocr: raw,
         extracted: normalized,
-        extracted_json: normalized,
         status: "ocr_ok",
       })
       .eq("id", leadId);
