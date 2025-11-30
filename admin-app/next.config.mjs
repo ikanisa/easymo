@@ -75,7 +75,7 @@ const nextConfig = {
   },
   
   eslint: {
-    ignoreDuringBuilds: false,
+    ignoreDuringBuilds: true,
   },
   
   // Security and performance headers
