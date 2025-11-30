@@ -19,7 +19,8 @@ describe('middleware authentication', () => {
   const originalSecret = process.env.ADMIN_SESSION_SECRET;
 
   beforeAll(() => {
-    process.env.ADMIN_SESSION_SECRET = 'test-secret-123456789';
+    // 32+ chars required for HMAC-SHA256 security
+    process.env.ADMIN_SESSION_SECRET = 'test-secret-32-characters-minimum-123';
   });
 
   afterAll(() => {

@@ -61,6 +61,12 @@ const mockSupabaseAdmin = {
 vi.mock("@/lib/server/session", () => ({
   readSessionFromCookies: vi.fn(),
   createSessionCookie: vi.fn(() => ({ name: "admin_session", value: "test-session-value" })),
+  clearSessionCookie: vi.fn(() => ({ name: "admin_session", value: "", attributes: { maxAge: 0 } })),
+  clearCsrfCookie: vi.fn(() => ({ name: "csrf_token", value: "", attributes: { maxAge: 0 } })),
+  createCsrfCookie: vi.fn((token: string) => ({ name: "csrf_token", value: token, attributes: {} })),
+  generateCsrfToken: vi.fn(() => "test-csrf-token"),
+  SESSION_COOKIE_NAME: "admin_session",
+  CSRF_COOKIE_NAME: "csrf_token",
 }));
 
 vi.mock("@/lib/server/supabase-admin", () => ({
@@ -100,12 +106,17 @@ describe("Admin Panel Integration Tests", () => {
     log: vi.fn(),
   };
 
+  // Pre-computed bcrypt hash for "admin123" with 10 salt rounds
+  const ADMIN_PASSWORD_HASH = "$2b$10$b5YI25qVj/7JcxcoOQl65.wmqTlV9/TGl5rHxngw4UBxJVeH1FiTG";
+
   beforeEach(() => {
     vi.clearAllMocks();
+    // Use passwordHash (bcrypt) instead of plaintext password
     process.env.ADMIN_ACCESS_CREDENTIALS = JSON.stringify([
-      { actorId: "admin-123", email: "admin@example.com", password: "admin123", label: "Admin User" },
+      { actorId: "admin-123", email: "admin@example.com", passwordHash: ADMIN_PASSWORD_HASH, label: "Admin User" },
     ]);
-    process.env.ADMIN_SESSION_SECRET = "test-secret-key-minimum-16-chars";
+    // 32+ chars required for HMAC-SHA256 security
+    process.env.ADMIN_SESSION_SECRET = "test-secret-key-minimum-32-chars-required";
   });
 
   describe("Complete Admin Workflow", () => {

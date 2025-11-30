@@ -1,18 +1,26 @@
+import bcrypt from "bcrypt";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { handleAPIError, jsonError, jsonOk } from "@/lib/api/error-handler";
 import { rateLimit } from "@/lib/api/rate-limit";
+import { logStructured } from "@/lib/server/logger";
 import { clearRateLimit, getRateLimit, recordFailure } from "@/lib/server/rate-limit";
-import { createSessionCookie } from "@/lib/server/session";
+import { 
+  clearCsrfCookie,
+  clearSessionCookie, 
+  createCsrfCookie,
+  createSessionCookie,
+  generateCsrfToken,
+} from "@/lib/server/session";
 
 const loginSchema = z.object({
   email: z.string().email(),
-  password: z.string().min(4),
+  password: z.string().min(8),
 });
 
-type Credentials = { actorId: string; email: string; password: string; username?: string; label?: string };
+type Credentials = { actorId: string; email: string; passwordHash: string; username?: string; label?: string };
 
 function readCredentials(): Credentials[] {
   try {
@@ -27,6 +35,9 @@ function readCredentials(): Credentials[] {
 }
 
 export async function POST(request: Request) {
+  // Build correlationId for logging
+  const correlationId = request.headers.get("x-request-id") ?? crypto.randomUUID();
+  
   try {
     // 1. Global Rate Limit (IP-based) - protect against DDoS
     const globalLimiter = rateLimit({ interval: 60 * 1000, uniqueTokenPerInterval: 500 });
@@ -47,7 +58,13 @@ export async function POST(request: Request) {
     const creds = readCredentials();
     const found = creds.find((c) => c.email.toLowerCase() === email.toLowerCase());
 
-    if (!found || found.password !== password) {
+    // Verify password using bcrypt hash comparison
+    let passwordValid = false;
+    if (found?.passwordHash) {
+      passwordValid = await bcrypt.compare(password, found.passwordHash);
+    }
+
+    if (!found || !passwordValid) {
       // Enforce: allow MAX_ATTEMPTS failures (401), then block with 429 on subsequent attempts.
       const before = getRateLimit(key);
       if (before.remaining <= 0) {
@@ -61,14 +78,47 @@ export async function POST(request: Request) {
       return jsonError("Invalid credentials", 401, "unauthorized");
     }
 
-    // Successful login
+    // Successful login - clear rate limit
     clearRateLimit(key);
-    const cookie = createSessionCookie({ actorId: found.actorId, label: found.label ?? found.username });
+
+    // Session rotation: clear any existing session and CSRF cookies before creating new ones
+    const clearSessionCookieObj = clearSessionCookie();
+    const clearCsrfCookieObj = clearCsrfCookie();
     try {
-      jar.set(cookie.name, cookie.value, { httpOnly: true, sameSite: "lax", path: "/" });
+      jar.set(clearSessionCookieObj.name, clearSessionCookieObj.value, clearSessionCookieObj.attributes);
+      jar.set(clearCsrfCookieObj.name, clearCsrfCookieObj.value, clearCsrfCookieObj.attributes);
+    } catch {
+      // ignore - may fail if cookies are already sent
+    }
+
+    // Create new session cookie
+    const sessionCookie = createSessionCookie({ actorId: found.actorId, label: found.label ?? found.username });
+    
+    // Create new CSRF token and cookie for double-submit pattern
+    const csrfToken = generateCsrfToken();
+    const csrfCookie = createCsrfCookie(csrfToken);
+    
+    try {
+      jar.set(sessionCookie.name, sessionCookie.value, { httpOnly: true, sameSite: "lax", path: "/" });
+      jar.set(csrfCookie.name, csrfCookie.value, csrfCookie.attributes);
     } catch {
       // ignore
     }
+
+    // Log successful login per GROUND_RULES.md observability requirements
+    logStructured({
+      event: "USER_LOGIN",
+      target: "admin-auth",
+      actor: found.actorId,
+      status: "ok",
+      message: "Admin user logged in successfully",
+      details: {
+        userId: found.actorId,
+        email: email.toLowerCase(),
+        method: "credentials",
+        correlationId,
+      },
+    });
 
     const res = jsonOk({ actorId: found.actorId, label: found.label ?? found.username ?? "Admin" });
     res.headers.set("x-admin-session-refreshed", "true");
