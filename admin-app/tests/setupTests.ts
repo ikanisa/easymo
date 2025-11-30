@@ -110,14 +110,16 @@ process.env.ADMIN_ACCESS_CREDENTIALS =
     {
       actorId: "00000000-0000-0000-0000-000000000001",
       email: "info@ikanisa.com",
-      password: "MoMo!!0099",
+      // bcrypt hash of "MoMo!!0099" with 10 salt rounds
+      passwordHash: "$2b$10$sob8qk2/51wUsjBXM9WkAu9B/fRDcaMNtg2WHhgfqS/tHY/L4Bt7y",
       username: "Admin",
       label: "Test Operator",
     },
   ]);
 
+// 32+ chars required for HMAC-SHA256 security
 process.env.ADMIN_SESSION_SECRET =
-  process.env.ADMIN_SESSION_SECRET || "test-session-secret-123456789";
+  process.env.ADMIN_SESSION_SECRET || "test-session-secret-32-chars-minimum-123";
 
 process.env.ADMIN_ALLOW_ANY_ACTOR =
   process.env.ADMIN_ALLOW_ANY_ACTOR || "true";

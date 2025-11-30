@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server';
 
 import type { Database } from "@/src/v2/lib/supabase/database.types";
 
-import { clearSessionCookie, isAdminSupabaseUser, readSessionFromCookies } from './lib/server/session';
+import { clearSessionCookie, CSRF_COOKIE_NAME, isAdminSupabaseUser, readSessionFromCookies, SESSION_COOKIE_NAME } from './lib/server/session';
 import { childLogger } from './lib/server/simple-logger';
 
 const PUBLIC_PATHS = [
@@ -100,16 +100,17 @@ function validateCsrfToken(request: NextRequest): boolean {
     return true;
   }
   
-  // Check for custom CSRF header (can be set by client applications)
-  // NOTE: Currently only checks for header presence. For enhanced security,
-  // implement a token verification system that:
-  // 1. Generates unique tokens per session and stores them server-side
-  // 2. Validates the token value matches the stored session token
-  // This origin/referer validation provides baseline CSRF protection for
-  // same-origin requests, which is sufficient for most use cases.
+  // Double-submit cookie pattern: validate CSRF token from header matches cookie
   const csrfHeader = request.headers.get('x-csrf-token');
   if (csrfHeader) {
-    return true;
+    // Get the CSRF cookie value for comparison
+    const csrfCookie = request.cookies.get(CSRF_COOKIE_NAME)?.value;
+    // Token must exist in both places and values must match
+    if (csrfCookie && csrfHeader === csrfCookie) {
+      return true;
+    }
+    // If header is present but doesn't match cookie, fail validation
+    // (prevents attackers from just setting any arbitrary header value)
   }
 
   return false;

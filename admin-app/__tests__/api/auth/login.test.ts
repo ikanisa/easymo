@@ -1,6 +1,9 @@
 // @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+// Pre-computed bcrypt hash for "password123" with 10 salt rounds
+const PASSWORD_HASH = "$2b$10$B8eeOA6.A/Rouqq8dqYOleA/olZcoRfb3TNOLB7Q2FL.qhpDkDjyy";
+
 // Mock dependencies
 vi.mock("@sentry/nextjs", () => ({
   captureException: vi.fn(),
@@ -46,10 +49,12 @@ import { POST } from "@/app/api/auth/login/route";
 describe("Auth Login API", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Use passwordHash (bcrypt) instead of plaintext password
     process.env.ADMIN_ACCESS_CREDENTIALS = JSON.stringify([
-      { actorId: "user-123", email: "admin@example.com", password: "password123", label: "Admin User" },
+      { actorId: "user-123", email: "admin@example.com", passwordHash: PASSWORD_HASH, label: "Admin User" },
     ]);
-    process.env.ADMIN_SESSION_SECRET = "test-secret-key-minimum-16-chars";
+    // 32+ chars required for HMAC-SHA256 security
+    process.env.ADMIN_SESSION_SECRET = "test-secret-key-minimum-32-chars-required";
   });
 
   it("should return 200 for valid credentials", async () => {
@@ -79,7 +84,7 @@ describe("Auth Login API", () => {
   it("should return 400 for invalid input format", async () => {
     const req = new Request("http://localhost/api/auth/login", {
       method: "POST",
-      body: JSON.stringify({ email: "not-an-email", password: "123" }),
+      body: JSON.stringify({ email: "not-an-email", password: "1234567" }),
     });
 
     const res = await POST(req);

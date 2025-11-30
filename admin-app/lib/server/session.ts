@@ -1,5 +1,5 @@
 import type { Session as SupabaseSession, User as SupabaseUser } from "@supabase/supabase-js";
-import { createHmac } from "crypto";
+import { createHmac, randomBytes } from "crypto";
 import { cookies } from "next/headers";
 
 import { isAdminUser } from "@/lib/auth/is-admin-user";
@@ -13,7 +13,11 @@ export interface AdminSession {
   expiresAt: string;
 }
 
-const SESSION_COOKIE_NAME = "admin_session";
+// Use __Host- prefix in production for enhanced cookie security (prevents cookie tossing attacks)
+// Fallback to plain name in development since __Host- requires HTTPS
+export const SESSION_COOKIE_NAME = process.env.NODE_ENV === "production" 
+  ? "__Host-admin_session" 
+  : "admin_session";
 const SESSION_TTL_MS = 1000 * 60 * 60 * 8; // 8 hours
 
 export function isAdminSupabaseUser(user: SupabaseUser | null): boolean {
@@ -46,8 +50,8 @@ export function mapSupabaseSessionToAdmin(
 function getSessionSecret(): string {
   const secret =
     process.env.ADMIN_SESSION_SECRET || process.env.ADMIN_SESSION_SECRET_FALLBACK;
-  if (!secret || secret.length < 16) {
-    throw new Error("ADMIN_SESSION_SECRET must be set and >= 16 characters");
+  if (!secret || secret.length < 32) {
+    throw new Error("ADMIN_SESSION_SECRET must be set and >= 32 characters");
   }
   return secret;
 }
@@ -106,6 +110,54 @@ export function clearSessionCookie() {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax" as const,
+      path: "/",
+      maxAge: 0,
+    },
+  };
+}
+
+// CSRF token cookie name - uses __Host- prefix in production for enhanced security
+export const CSRF_COOKIE_NAME = process.env.NODE_ENV === "production" 
+  ? "__Host-csrf_token" 
+  : "csrf_token";
+
+/**
+ * Generate a cryptographically secure CSRF token
+ */
+export function generateCsrfToken(): string {
+  return randomBytes(32).toString("base64url");
+}
+
+/**
+ * Create a CSRF cookie for the double-submit cookie pattern.
+ * The token is readable by JavaScript (not httpOnly) so the client
+ * can include it in request headers.
+ */
+export function createCsrfCookie(token: string) {
+  return {
+    name: CSRF_COOKIE_NAME,
+    value: token,
+    attributes: {
+      httpOnly: false, // Must be readable by JavaScript to include in headers
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict" as const, // Strict to prevent CSRF
+      path: "/",
+      maxAge: Math.floor(SESSION_TTL_MS / 1000),
+    },
+  };
+}
+
+/**
+ * Clear the CSRF cookie
+ */
+export function clearCsrfCookie() {
+  return {
+    name: CSRF_COOKIE_NAME,
+    value: "",
+    attributes: {
+      httpOnly: false,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict" as const,
       path: "/",
       maxAge: 0,
     },
