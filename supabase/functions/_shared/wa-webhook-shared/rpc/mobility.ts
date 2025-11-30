@@ -53,7 +53,7 @@ export async function insertTrip(
 ): Promise<string> {
   const expires = new Date(Date.now() + 30 * 60 * 1000).toISOString();
   const { data, error } = await client
-    .from("trips")
+    .from("rides_trips")
     .insert({
       creator_user_id: params.userId,
       role: params.role,
@@ -83,7 +83,7 @@ export async function updateTripDropoff(
   },
 ): Promise<void> {
   const { error } = await client
-    .from("trips")
+    .from("rides_trips")
     .update({
       dropoff_latitude: params.lat,
       dropoff_longitude: params.lng,
