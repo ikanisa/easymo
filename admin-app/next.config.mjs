@@ -23,6 +23,15 @@ const enableOptimizedImports =
 const isNetlify = process.env.NETLIFY === 'true';
 const isTauri = !!process.env.TAURI_ENV_PLATFORM;
 
+// Determine output mode based on environment
+// - Tauri desktop app: undefined (uses default Next.js output)
+// - Netlify deployment: undefined (works best with @netlify/plugin-nextjs)
+// - Other deployments: standalone (for container/server deployments)
+const getOutputMode = () => {
+  if (isTauri || isNetlify) return undefined;
+  return 'standalone';
+};
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
@@ -30,10 +39,7 @@ const nextConfig = {
   poweredByHeader: false,
   
   // Output configuration for Netlify and Desktop
-  // - Tauri: undefined (default)
-  // - Netlify: undefined (works best with @netlify/plugin-nextjs)
-  // - Other: standalone
-  output: isTauri ? undefined : (isNetlify ? undefined : 'standalone'),
+  output: getOutputMode(),
   
   // Image optimization
   images: {
