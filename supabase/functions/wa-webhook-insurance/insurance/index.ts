@@ -100,11 +100,18 @@ export async function handleInsuranceMedia(
   if (!ctx.profileId) return false;
   await logStructuredEvent("INFO", { data: "insurance.ocr.media", from: ctx.from, state: state.key });
   const outcome = await processInsuranceDocument(ctx, msg, state.key);
+  
   if (outcome === "ocr_ok" && ctx.profileId) {
     await setState(ctx.supabase, ctx.profileId, { key: STATES.MENU, data: {} });
+    return true;
   } else if (outcome === "ocr_queued") {
     await sendText(ctx.from, "Processing document...");
-    return true; // Handled
+    return true;
+  } else if (outcome === "skipped") {
+    // Skipped means either wrong state or already processed - both are "handled" scenarios
+    return true;
   }
-  return outcome !== "skipped";
+  
+  // ocr_error - still handled, error was logged internally
+  return true;
 }

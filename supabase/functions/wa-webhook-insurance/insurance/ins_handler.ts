@@ -477,7 +477,7 @@ export async function processInsuranceDocument(
       .maybeSingle();
     
     if (existing?.lead_id) {
-      console.info("INS_MEDIA_ALREADY_PROCESSED", { 
+      await logStructuredEvent("INS_MEDIA_ALREADY_PROCESSED", { 
         mediaId, 
         leadId: existing.lead_id 
       });
