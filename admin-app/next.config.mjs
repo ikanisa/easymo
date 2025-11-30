@@ -19,6 +19,10 @@ const preferEdgeBundles = String(process.env.NEXT_EDGE_BUNDLE || '').toLowerCase
 const enableOptimizedImports =
   String(process.env.NEXT_DISABLE_OPTIMIZED_IMPORTS || '').toLowerCase() !== 'true';
 
+// Detect environment for output mode
+const isNetlify = process.env.NETLIFY === 'true';
+const isTauri = !!process.env.TAURI_ENV_PLATFORM;
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
@@ -26,7 +30,10 @@ const nextConfig = {
   poweredByHeader: false,
   
   // Output configuration for Netlify and Desktop
-  output: process.env.TAURI_ENV_PLATFORM ? undefined : 'standalone',
+  // - Tauri: undefined (default)
+  // - Netlify: undefined (works best with @netlify/plugin-nextjs)
+  // - Other: standalone
+  output: isTauri ? undefined : (isNetlify ? undefined : 'standalone'),
   
   // Image optimization
   images: {

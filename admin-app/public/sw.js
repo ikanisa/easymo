@@ -1,7 +1,7 @@
-// Scaffolded service worker for the admin offline roadmap. Detailed caching and
-// background sync policies will be finalised during Phase 7.
-// Bump SW_VERSION to invalidate previous caches on deploy
-const SW_VERSION = "v3";
+// Service Worker v5 - EasyMO Admin PWA
+// Production-ready service worker with enhanced caching strategies
+// Consolidated from previous versions with improved versioning
+const SW_VERSION = 'v5';
 const SHELL_CACHE = `easymo-shell-${SW_VERSION}`;
 const RUNTIME_CACHE = `easymo-runtime-${SW_VERSION}`;
 const STATIC_CACHE = `easymo-static-${SW_VERSION}`;
