@@ -333,8 +333,20 @@ async function processInlineOcr(
     const normalized = data.normalized ??
       normalizeInsuranceExtraction(raw as Record<string, unknown>);
 
-    // Update lead status FIRST to prevent worker from processing duplicate
-    await ctx.supabase
+    // Check if already processed to prevent duplicate messages
+    const { data: existingLead } = await ctx.supabase
+      .from("insurance_leads")
+      .select("status")
+      .eq("id", params.leadId)
+      .single();
+    
+    if (existingLead?.status === "ocr_ok") {
+      console.info("INS_INLINE_ALREADY_PROCESSED", { leadId: params.leadId });
+      return true; // Already processed, skip duplicate notifications
+    }
+
+    // Update lead status atomically to prevent race conditions
+    const { error: updateError } = await ctx.supabase
       .from("insurance_leads")
       .update({
         raw_ocr: raw,
@@ -343,7 +355,17 @@ async function processInlineOcr(
         status: "ocr_ok",
         file_path: params.storagePath,
       })
-      .eq("id", params.leadId);
+      .eq("id", params.leadId)
+      .neq("status", "ocr_ok"); // Only update if not already ocr_ok
+
+    // If update failed (already processed by another instance), skip notifications
+    if (updateError) {
+      console.info("INS_INLINE_RACE_CONDITION", { 
+        leadId: params.leadId,
+        error: updateError.message 
+      });
+      return true;
+    }
 
     // Mark any queued items as succeeded to prevent duplicate processing
     await ctx.supabase
@@ -356,6 +378,7 @@ async function processInlineOcr(
       .eq("lead_id", params.leadId)
       .in("status", ["queued", "retry", "processing"]);
 
+    // Only send notifications if we successfully claimed the lead
     await notifyInsuranceAdmins(ctx.supabase, {
       leadId: params.leadId,
       userWaId: params.waId,
@@ -444,6 +467,29 @@ export async function processInsuranceDocument(
     ? (msg[msg.type as string] as { id?: string } | undefined)?.id
     : undefined;
   if (!mediaId) return "skipped";
+
+  // Check if this media has already been processed to prevent duplicates
+  try {
+    const { data: existing } = await ctx.supabase
+      .from("insurance_media")
+      .select("lead_id")
+      .eq("wa_media_id", mediaId)
+      .maybeSingle();
+    
+    if (existing?.lead_id) {
+      console.info("INS_MEDIA_ALREADY_PROCESSED", { 
+        mediaId, 
+        leadId: existing.lead_id 
+      });
+      return "skipped"; // Already processed, avoid duplicates
+    }
+  } catch (err) {
+    console.warn("INS_MEDIA_CHECK_FAIL", { 
+      mediaId, 
+      error: err instanceof Error ? err.message : String(err) 
+    });
+    // Continue processing if check fails
+  }
 
   let leadId = "";
   try {
