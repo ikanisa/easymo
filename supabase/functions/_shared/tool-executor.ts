@@ -244,6 +244,9 @@ export class ToolExecutor {
       case "get_nearby_listings":
         return await this.getNearbyListings(inputs, context);
       
+      // Support tools
+      case "get_user_info":
+        return await this.getUserInfo(inputs, context);
       // Support agent tools
       case "get_user_info":
         return await this.getUserInfo(context);
@@ -497,6 +500,201 @@ export class ToolExecutor {
       user_location: user.location_cache,
       search_radius_km: radiusKm,
     };
+  }
+
+  /**
+   * Get user information from whatsapp_users table
+   */
+  private async getUserInfo(
+    _inputs: Record<string, unknown>,
+    context: ToolExecutionContext
+  ): Promise<unknown> {
+    // Security: Always use context.userId, never allow user to query other users' info
+    const userId = context.userId;
+
+    if (!userId) {
+      return {
+        success: false,
+        error: "User ID is required",
+      };
+    }
+
+    const { data, error } = await this.supabase
+      .from("whatsapp_users")
+      .select(`
+        id,
+        phone_number,
+        preferred_language,
+        user_roles,
+        created_at,
+        updated_at,
+        location_cache
+      `)
+      .eq("id", userId)
+      .single();
+
+    if (error) {
+      console.error("Get user info error:", error);
+      return {
+        success: false,
+        error: "User not found or access denied",
+      };
+    }
+
+    return {
+      success: true,
+      user: {
+        id: data.id,
+        phone: data.phone_number ? this.maskPhoneNumber(data.phone_number) : null,
+        language: data.preferred_language,
+        roles: data.user_roles,
+        member_since: data.created_at,
+        has_location: !!data.location_cache,
+      },
+    };
+  }
+
+  /**
+   * Mask phone number for privacy (show last 4 digits)
+   */
+  private maskPhoneNumber(phone: string): string {
+    if (!phone || phone.length < 4) return "****";
+    return "****" + phone.slice(-4);
+  }
+
+  /**
+   * Create a support ticket for complex issues
+   */
+  private async createSupportTicket(
+    inputs: Record<string, unknown>,
+    context: ToolExecutionContext
+  ): Promise<unknown> {
+    const issueType = inputs.issue_type as string;
+    const description = inputs.description as string;
+    const priority = (inputs.priority as string) || "medium";
+    const title = inputs.title as string;
+
+    if (!description) {
+      return {
+        success: false,
+        error: "Description is required to create a support ticket",
+      };
+    }
+
+    // Validate priority
+    const validPriorities = ["low", "medium", "high", "urgent"];
+    const normalizedPriority = validPriorities.includes(priority) ? priority : "medium";
+
+    // Map issue_type to category (support_tickets uses 'category' column)
+    const categoryMapping: Record<string, string> = {
+      "payment": "payment",
+      "technical": "technical",
+      "account": "account",
+      "fraud": "fraud",
+      "escalation": "escalation",
+      "other": "other",
+    };
+    const category = categoryMapping[issueType] || "other";
+
+    try {
+      // First, check if user has a profile
+      // Note: profiles table uses 'user_id' as primary key
+      const { data: profile } = await this.supabase
+        .from("profiles")
+        .select("user_id")
+        .eq("user_id", context.userId)
+        .single();
+
+      let profileId: string;
+
+      if (profile) {
+        profileId = profile.user_id;
+      } else {
+        // Try to create a minimal profile for the user if needed
+        // Get user phone from whatsapp_users
+        const { data: waUser } = await this.supabase
+          .from("whatsapp_users")
+          .select("phone_number")
+          .eq("id", context.userId)
+          .single();
+
+        if (!waUser) {
+          // Cannot create ticket without user context
+          return {
+            success: false,
+            error: "Unable to create support ticket. Please ensure your account is properly set up.",
+          };
+        }
+
+        // Create a minimal profile
+        // Note: profiles table uses 'user_id' as primary key and 'phone_number' for phone
+        const { data: newProfile, error: profileError } = await this.supabase
+          .from("profiles")
+          .insert({
+            user_id: context.userId,
+            phone_number: waUser.phone_number,
+          })
+          .select("user_id")
+          .single();
+
+        if (profileError) {
+          console.error("Profile creation error:", profileError);
+          // If we can't create a profile, log the issue and return gracefully
+          return {
+            success: false,
+            error: "Unable to create support ticket. Please contact support directly.",
+            details: "Our support team has been notified of this issue.",
+          };
+        }
+
+        profileId = newProfile.user_id;
+      }
+
+      const ticketData = {
+        profile_id: profileId,
+        category,
+        priority: normalizedPriority,
+        title: title || `Support Request: ${issueType || "General"}`,
+        description,
+        status: "open",
+        metadata: {
+          source: "ai_agent",
+          agent_slug: context.agentSlug,
+          conversation_id: context.conversationId,
+          session_id: context.sessionId,
+        },
+      };
+
+      const { data, error } = await this.supabase
+        .from("support_tickets")
+        .insert(ticketData)
+        .select("id, category, priority, status, created_at")
+        .single();
+
+      if (error) {
+        console.error("Create support ticket error:", error);
+        return {
+          success: false,
+          error: "Failed to create support ticket. Please try again.",
+        };
+      }
+
+      return {
+        success: true,
+        ticket_id: data.id,
+        category: data.category,
+        priority: data.priority,
+        status: data.status,
+        created_at: data.created_at,
+        message: `Support ticket created successfully. Ticket ID: ${data.id.slice(0, 8)}. Our team will review your issue and respond soon.`,
+      };
+    } catch (error) {
+      console.error("Support ticket creation error:", error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Failed to create support ticket",
+      };
+    }
   }
 
   /**
