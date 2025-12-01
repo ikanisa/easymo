@@ -8,6 +8,7 @@ import {
   matchPassengersForTrip,
   type MatchResult,
   updateTripDropoff,
+  updateTripLocation,
   recommendDriversForUser,
   recommendPassengersForUser,
   findScheduledTripsNearby,
@@ -42,8 +43,8 @@ import {
 import { buildSaveRows } from "../locations/save.ts";
 
 const DEFAULT_WINDOW_DAYS = 30;
-// Increased from 10km to 15km to improve match rate (75% → 90%+)
-const REQUIRED_RADIUS_METERS = 15_000;
+// Per requirements: 10km radius consistently
+const REQUIRED_RADIUS_METERS = 10_000;
 const SAVED_ROW_PREFIX = "FAV::";
 
 const VEHICLE_OPTION_DEFS = [

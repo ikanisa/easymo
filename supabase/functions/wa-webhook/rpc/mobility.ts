@@ -89,6 +89,7 @@ export async function insertTrip(
       expires_at: expires,
       scheduled_at: scheduledAtStr,
       recurrence: params.recurrence ?? null,
+      last_location_at: new Date().toISOString(),
     })
     .select("id")
     .single();
@@ -240,4 +241,26 @@ export async function findScheduledTripsNearby(
   });
   if (error) throw error;
   return (data ?? []) as ScheduledTripResult[];
+}
+
+export async function updateTripLocation(
+  client: SupabaseClient,
+  params: {
+    tripId: string;
+    lat: number;
+    lng: number;
+    pickupText?: string;
+  },
+): Promise<void> {
+  const { error } = await client
+    .from("rides_trips")
+    .update({
+      pickup_latitude: params.lat,
+      pickup_longitude: params.lng,
+      pickup: `SRID=4326;POINT(${params.lng} ${params.lat})`,
+      pickup_text: params.pickupText ?? null,
+      last_location_at: new Date().toISOString(),
+    })
+    .eq("id", params.tripId);
+  if (error) throw error;
 }
