@@ -38,6 +38,8 @@ const legacyNavTitles = [
   "Trips",
   "Insurance",
   "Marketplace",
+  "SMS Vendors",
+  "Client Portal",
   "Pharmacies",
   "Quincailleries",
   "Shops and services",
