@@ -1041,11 +1041,16 @@ export class ToolExecutor {
       };
     }
 
+    // Safely mask phone number (show only last 4 digits if length >= 4)
+    const maskedPhone = data.phone_number && data.phone_number.length >= 4
+      ? `***${data.phone_number.slice(-4)}`
+      : data.phone_number ? "***" : null;
+
     return {
       success: true,
       user: {
         id: data.id,
-        phone: data.phone_number ? `***${data.phone_number.slice(-4)}` : null, // Mask phone
+        phone: maskedPhone,
         language: data.preferred_language,
         roles: data.user_roles,
         member_since: data.created_at,
@@ -1145,12 +1150,18 @@ export class ToolExecutor {
       };
     }
 
+    // Safely get short ticket ID for display
+    const ticketId = data?.id;
+    const shortTicketId = typeof ticketId === "string" && ticketId.length >= 8
+      ? ticketId.slice(0, 8)
+      : ticketId || "pending";
+
     return {
       success: true,
-      ticket_id: data?.id,
+      ticket_id: ticketId,
       status: "open",
       priority,
-      message: `Support ticket created! Our team will review and respond within 24 hours. Ticket ID: ${data?.id?.slice(0, 8)}`,
+      message: `Support ticket created! Our team will review and respond within 24 hours. Ticket ID: ${shortTicketId}`,
     };
   }
 
@@ -1272,16 +1283,22 @@ export class ToolExecutor {
         };
       }
 
+      // Constants for fare calculation
+      const MINUTES_PER_KM = 3; // Average time per kilometer in minutes
+
       return {
         count: data.length,
-        drivers: data.map((d: Record<string, unknown>) => ({
-          id: d.id,
-          name: d.driver_name,
-          vehicle_type: d.vehicle_type,
-          rating: d.rating,
-          distance_km: d.distance_km,
-          eta: `${Math.ceil((d.distance_km as number) * 3)} min`,
-        })),
+        drivers: data.map((d: Record<string, unknown>) => {
+          const distanceKm = typeof d.distance_km === "number" ? d.distance_km : 0;
+          return {
+            id: d.id,
+            name: d.driver_name,
+            vehicle_type: d.vehicle_type,
+            rating: d.rating,
+            distance_km: distanceKm,
+            eta: `${Math.ceil(distanceKm * MINUTES_PER_KM)} min`,
+          };
+        }),
         user_location: { lat: userLat, lng: userLng },
       };
     } catch (err) {
@@ -1320,11 +1337,16 @@ export class ToolExecutor {
       };
     }
 
+    // Fare calculation constants
+    const DEFAULT_DISTANCE_KM = 5; // Default estimate when actual routing not available
+    const FARE_RATES = {
+      moto: { base: 500, perKm: 200 },
+      car: { base: 1500, perKm: 500 },
+    };
+
     // Calculate fare estimate
-    const baseFare = vehicleType === "moto" ? 500 : 1500;
-    const estimatedDistance = 5; // Default 5km - would use actual routing
-    const perKmRate = vehicleType === "moto" ? 200 : 500;
-    const estimatedFare = baseFare + estimatedDistance * perKmRate;
+    const rates = FARE_RATES[vehicleType as keyof typeof FARE_RATES] || FARE_RATES.moto;
+    const estimatedFare = rates.base + DEFAULT_DISTANCE_KM * rates.perKm;
 
     const { data, error } = await this.supabase
       .from("rides_trips")
@@ -1369,10 +1391,16 @@ export class ToolExecutor {
     const distanceKm = (inputs.distance_km as number) || 5;
     const vehicleType = (inputs.vehicle_type as string) || "moto";
 
-    const baseFare = vehicleType === "moto" ? 500 : 1500;
-    const perKmRate = vehicleType === "moto" ? 200 : 500;
-    const estimatedFare = baseFare + distanceKm * perKmRate;
-    const estimatedTime = Math.ceil(distanceKm * 3); // 3 min per km
+    // Fare calculation constants
+    const MINUTES_PER_KM = 3; // Average time per kilometer
+    const FARE_RATES = {
+      moto: { base: 500, perKm: 200 },
+      car: { base: 1500, perKm: 500 },
+    };
+
+    const rates = FARE_RATES[vehicleType as keyof typeof FARE_RATES] || FARE_RATES.moto;
+    const estimatedFare = rates.base + distanceKm * rates.perKm;
+    const estimatedTime = Math.ceil(distanceKm * MINUTES_PER_KM);
 
     return {
       vehicle_type: vehicleType,
@@ -1380,8 +1408,8 @@ export class ToolExecutor {
       estimated_fare: `${estimatedFare} RWF`,
       estimated_time: `${estimatedTime} minutes`,
       breakdown: {
-        base_fare: `${baseFare} RWF`,
-        distance_charge: `${Math.round(distanceKm * perKmRate)} RWF`,
+        base_fare: `${rates.base} RWF`,
+        distance_charge: `${Math.round(distanceKm * rates.perKm)} RWF`,
       },
     };
   }
