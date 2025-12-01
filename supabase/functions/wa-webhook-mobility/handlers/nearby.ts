@@ -158,6 +158,8 @@ function buildNearbyRow(
   state: NearbyStateRow;
 } {
   const masked = maskPhone(match.whatsapp_e164 ?? "");
+  // WhatsApp requires non-empty title - use ref code if phone is empty
+  const title = masked || match.ref_code || "Match";
   const distanceLabel = toDistanceLabel(match.distance_km);
   const seenLabel = timeAgo(
     getMatchTimestamp(match) ?? new Date().toISOString(),
@@ -177,7 +179,7 @@ function buildNearbyRow(
   return {
     row: {
       id: rowId,
-      title: masked,
+      title: title,
       description: descriptionParts.join(" • "),
     },
     state: {
