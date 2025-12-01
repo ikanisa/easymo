@@ -29,7 +29,7 @@ import {
   updateStoredVehicleType,
 } from "./vehicle_plate.ts";
 import { getRecentNearbyIntent, storeNearbyIntent } from "./intent_cache.ts";
-import { saveIntent } from "../../_shared/wa-webhook-shared/domains/intent_storage.ts";
+import { saveIntent, getRecentIntents } from "../../_shared/wa-webhook-shared/domains/intent_storage.ts";
 import { isFeatureEnabled } from "../../_shared/feature-flags.ts";
 import { routeToAIAgent, sendAgentOptions } from "../ai-agents/index.ts";
 import {
@@ -206,13 +206,74 @@ export async function handleSeeDrivers(ctx: RouterContext): Promise<boolean> {
     return await handleNearbyLocation(ctx, { mode: "drivers", vehicle }, { lat, lng });
   }
 
-  // Fallback to asking for location
+  // 2. Try to show recent searches
   await setState(ctx.supabase, ctx.profileId, {
     key: "mobility_nearby_select",
     data: { mode: "drivers" },
   });
+  
+  const showedRecent = await showRecentSearches(ctx, { mode: "drivers", vehicle: "veh_moto" });
+  if (showedRecent) {
+    return true; // User will select from recent or choose new location
+  }
+
+  // 3. Fallback to asking for location (no cache, no recent searches)
   await sendVehicleSelector(ctx, "drivers");
   return true;
+}
+
+/**
+ * Handle selection from recent searches list
+ */
+export async function handleRecentSearchSelection(
+  ctx: RouterContext,
+  selectionId: string,
+): Promise<boolean> {
+  if (!ctx.profileId) return false;
+
+  // Handle "Share New Location" option
+  if (selectionId === "SHARE_NEW_LOCATION") {
+    const state = await ctx.supabase
+      .from("user_state")
+      .select("data")
+      .eq("user_id", ctx.profileId)
+      .eq("key", "mobility_nearby_select")
+      .single();
+
+    const mode = state.data?.data?.mode || "drivers";
+    await sendVehicleSelector(ctx, mode);
+    return true;
+  }
+
+  // Parse coordinates from selection ID: "RECENT_SEARCH::0::lat,lng"
+  if (!selectionId.startsWith("RECENT_SEARCH::")) {
+    return false;
+  }
+
+  const parts = selectionId.split("::");
+  if (parts.length < 3) return false;
+
+  const coords = parts[2].split(",");
+  if (coords.length !== 2) return false;
+
+  const lat = parseFloat(coords[0]);
+  const lng = parseFloat(coords[1]);
+
+  if (isNaN(lat) || isNaN(lng)) return false;
+
+  // Get the current state to know mode
+  const state = await ctx.supabase
+    .from("user_state")
+    .select("data")
+    .eq("user_id", ctx.profileId)
+    .eq("key", "mobility_nearby_select")
+    .single();
+
+  const mode = state.data?.data?.mode || "drivers";
+  const vehicle = "veh_moto"; // Default, will be refined later
+
+  // Execute search with these coordinates
+  return await handleNearbyLocation(ctx, { mode: mode as any, vehicle }, { lat, lng });
 }
 
 export async function handleSeePassengers(
@@ -627,6 +688,61 @@ async function sendVehicleSelector(ctx: RouterContext, mode: NearbyMode) {
     } catch (_) {
       // last resort: ignore
     }
+  }
+}
+
+/**
+ * Show user's recent search locations for quick re-search
+ * Returns true if recent searches were shown, false if none available
+ */
+async function showRecentSearches(
+  ctx: RouterContext,
+  state: NearbyState,
+): Promise<boolean> {
+  if (!ctx.profileId) return false;
+
+  try {
+    const intentType = state.mode === "drivers" ? "nearby_drivers" : "nearby_passengers";
+    const recentIntents = await getRecentIntents(
+      ctx.supabase,
+      ctx.profileId,
+      intentType,
+      3, // Show last 3 searches
+    );
+
+    if (!recentIntents || recentIntents.length === 0) {
+      return false; // No recent searches
+    }
+
+    // Build list rows from recent intents
+    const rows = recentIntents.map((intent, i) => {
+      const when = timeAgo(intent.created_at);
+      const coords = `${intent.pickup_lat.toFixed(4)},${intent.pickup_lng.toFixed(4)}`;
+      return {
+        id: `RECENT_SEARCH::${i}::${intent.pickup_lat},${intent.pickup_lng}`,
+        title: `📍 ${when}`,
+        description: `${intent.vehicle_type} · ${coords}`,
+      };
+    });
+
+    // Add option to share new location
+    rows.push({
+      id: "SHARE_NEW_LOCATION",
+      title: t(ctx.locale, "mobility.nearby.new_location") || "📍 Share New Location",
+      description: t(ctx.locale, "mobility.nearby.new_location.desc") || "Search from a different location",
+    });
+
+    await sendListMessage(ctx, {
+      title: t(ctx.locale, "mobility.nearby.recent_searches") || "Recent Searches",
+      body: t(ctx.locale, "mobility.nearby.recent_searches.body") || "Quick search from a recent location, or share a new one:",
+      rows,
+      buttonText: t(ctx.locale, "common.buttons.choose") || "Choose",
+    });
+
+    return true;
+  } catch (error) {
+    console.error("Failed to load recent searches:", error);
+    return false; // Fall back to normal flow
   }
 }
 
