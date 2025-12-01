@@ -74,10 +74,37 @@ CREATE TABLE IF NOT EXISTS public.orders (
 );
 
 -- Indexes for performance
-CREATE INDEX IF NOT EXISTS idx_menu_items_venue ON menu_items(venue_id);
+-- Check if columns exist before creating indexes
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = 'menu_items' AND column_name = 'venue_id'
+  ) THEN
+    CREATE INDEX IF NOT EXISTS idx_menu_items_venue ON menu_items(venue_id);
+  END IF;
+  
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = 'menu_categories' AND column_name = 'venue_id'
+  ) THEN
+    CREATE INDEX IF NOT EXISTS idx_menu_categories_venue ON menu_categories(venue_id);
+  END IF;
+END $$;
+
 CREATE INDEX IF NOT EXISTS idx_menu_items_category ON menu_items(category_id);
 CREATE INDEX IF NOT EXISTS idx_menu_items_available ON menu_items(is_available) WHERE is_available = true;
-CREATE INDEX IF NOT EXISTS idx_orders_venue ON orders(venue_id);
+
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = 'orders' AND column_name = 'venue_id'
+  ) THEN
+    CREATE INDEX IF NOT EXISTS idx_orders_venue ON orders(venue_id);
+  END IF;
+END $$;
+
 CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status);
 CREATE INDEX IF NOT EXISTS idx_orders_created ON orders(created_at DESC);
 
