@@ -11,7 +11,7 @@ jobs:
     name: ESLint Check
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       
       - name: Setup pnpm
         uses: pnpm/action-setup@v2
@@ -39,7 +39,7 @@ jobs:
     name: Observability Compliance
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -78,7 +78,7 @@ jobs:
     name: Workspace Dependencies Check
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       
       - name: Verify workspace dependencies
         run: bash scripts/verify/workspace-deps.sh
@@ -87,7 +87,7 @@ jobs:
     name: Security Audit
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       
       - name: Check environment files
         run: bash scripts/security/audit-env-files.sh
