@@ -141,7 +141,10 @@ export abstract class BaseAgent {
     this.initializeDatabaseConfig(supabase);
     
     if (!this.configLoader) {
-      throw new Error('Config loader not initialized');
+      throw new Error(
+        `Config loader not initialized for agent ${this.type} (slug: ${this.agentSlug}). ` +
+        `This should not happen - please report this as a bug.`
+      );
     }
 
     const config = await this.configLoader.loadAgentConfig(this.agentSlug);
@@ -268,7 +271,7 @@ export abstract class BaseAgent {
     if (!this.toolExecutor) {
       return {
         success: false,
-        error: 'Tool executor not initialized',
+        error: `Tool executor not initialized for agent ${this.type}. Ensure supabase client is passed to executeTool().`,
         executionTime: 0,
         toolName,
         toolType: tool.tool_type,

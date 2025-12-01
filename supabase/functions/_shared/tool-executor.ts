@@ -245,7 +245,9 @@ export class ToolExecutor {
       .limit(15);
 
     if (query) {
-      dbQuery = dbQuery.or(`product_name.ilike.%${query}%,description.ilike.%${query}%`);
+      // Escape special characters for LIKE queries to prevent injection
+      const sanitizedQuery = this.sanitizeSearchQuery(query);
+      dbQuery = dbQuery.or(`product_name.ilike.%${sanitizedQuery}%,description.ilike.%${sanitizedQuery}%`);
     }
 
     if (category) {
@@ -287,10 +289,32 @@ export class ToolExecutor {
         condition: l.condition,
         location: l.location,
         // Mask seller phone for privacy
-        seller_contact: l.seller_phone ? `wa.me/${l.seller_phone.replace('+', '')}` : null,
+        seller_contact: l.seller_phone ? `wa.me/${this.formatPhoneForWhatsApp(l.seller_phone)}` : null,
         photos: l.photos?.slice(0, 3),
       })) || [],
     };
+  }
+
+  /**
+   * Sanitize search query to prevent SQL injection in LIKE patterns
+   */
+  private sanitizeSearchQuery(query: string): string {
+    // Escape special characters used in PostgreSQL LIKE patterns
+    return query
+      .replace(/\\/g, '\\\\')  // Escape backslashes first
+      .replace(/%/g, '\\%')    // Escape percent
+      .replace(/_/g, '\\_')    // Escape underscore
+      .replace(/'/g, "''")     // Escape single quotes
+      .slice(0, 100);          // Limit length to prevent DoS
+  }
+
+  /**
+   * Format phone number for WhatsApp URL (remove non-digit characters except leading +)
+   */
+  private formatPhoneForWhatsApp(phone: string): string {
+    if (!phone) return '';
+    // Keep only digits, removing + prefix and any other characters
+    return phone.replace(/[^0-9]/g, '');
   }
 
   /**
@@ -768,8 +792,8 @@ export class ToolExecutor {
     const defaultMessage = `Hi! I'm interested in your listing "${listing.product_name}" priced at ${listing.price} RWF on easyMO Marketplace.`;
     const message = customMessage || defaultMessage;
     
-    // Clean phone number and build WhatsApp link
-    const cleanPhone = listing.seller_phone.replace(/[^0-9]/g, '');
+    // Use utility function to clean phone number and build WhatsApp link
+    const cleanPhone = this.formatPhoneForWhatsApp(listing.seller_phone);
     const encodedMessage = encodeURIComponent(message);
     const whatsappLink = `https://wa.me/${cleanPhone}?text=${encodedMessage}`;
 
