@@ -35,7 +35,8 @@ export async function listSavedLocations(
       ctx,
       {
         title: "📍 Saved Locations",
-        body: "You don't have any saved locations yet.\n\nSave your favorite places for quick access:",
+        body:
+          "You don't have any saved locations yet.\n\n*How to save a location:*\nTap 📎 → Location → Share your current location or search for an address\n\nSave your favorite places for quick access:",
         sectionTitle: "Add Location",
         buttonText: "Choose",
         rows: [
@@ -74,7 +75,8 @@ export async function listSavedLocations(
   const rows = locations.map((loc) => ({
     id: `LOC::${loc.id}`,
     title: loc.label || "Unnamed Location",
-    description: loc.address || `${loc.lat?.toFixed(6)}, ${loc.lng?.toFixed(6)}`,
+    description: loc.address ||
+      `${loc.lat?.toFixed(6)}, ${loc.lng?.toFixed(6)}`,
   }));
 
   rows.push(
@@ -94,7 +96,9 @@ export async function listSavedLocations(
     ctx,
     {
       title: "📍 Saved Locations",
-      body: `You have ${locations.length} saved location${locations.length === 1 ? "" : "s"}`,
+      body: `You have ${locations.length} saved location${
+        locations.length === 1 ? "" : "s"
+      }`,
       sectionTitle: "Locations",
       buttonText: "View",
       rows,

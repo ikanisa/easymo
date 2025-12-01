@@ -26,13 +26,14 @@ export interface Profile {
 
 /**
  * Saved location data structure
+ * Uses the unified saved_locations table (lat/lng columns)
  */
 export interface SavedLocation {
   id: string;
   user_id: string;
   label: string;
-  latitude: number;
-  longitude: number;
+  lat: number;
+  lng: number;
   address: string | null;
   created_at: string;
 }
@@ -232,7 +233,7 @@ export class ProfileService {
     logger.debug({ msg: "locations.get.start", userId });
 
     const { data, error } = await this.supabase
-      .from("user_saved_locations")
+      .from("saved_locations")
       .select("*")
       .eq("user_id", userId)
       .order("created_at", { ascending: false });
@@ -257,12 +258,12 @@ export class ProfileService {
     logger.info({ msg: "locations.create.start", userId, label: input.label });
 
     const { data, error } = await this.supabase
-      .from("user_saved_locations")
+      .from("saved_locations")
       .insert({
         user_id: userId,
         label: input.label,
-        latitude: input.latitude,
-        longitude: input.longitude,
+        lat: input.latitude,
+        lng: input.longitude,
         address: input.address,
       })
       .select()
@@ -289,7 +290,7 @@ export class ProfileService {
     logger.info({ msg: "locations.delete.start", userId, locationId });
 
     const { error } = await this.supabase
-      .from("user_saved_locations")
+      .from("saved_locations")
       .delete()
       .eq("user_id", userId)
       .eq("id", locationId);

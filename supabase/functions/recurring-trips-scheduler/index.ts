@@ -68,8 +68,8 @@ function parsePoint(input: any): { lat: number; lng: number } | null {
 
 async function shortlistTrip(trip: any) {
   const { data: favorites, error: favoriteError } = await supabase
-    .from("user_favorites")
-    .select("id, geog, kind, label")
+    .from("saved_locations")
+    .select("id, lat, lng, label")
     .in("id", [trip.origin_favorite_id, trip.dest_favorite_id]);
 
   if (favoriteError) {
@@ -95,8 +95,13 @@ async function shortlistTrip(trip: any) {
     return null;
   }
 
-  const originCoords = parsePoint(origin.geog);
-  const destinationCoords = parsePoint(destination.geog);
+  // saved_locations has lat/lng directly, no need to parse geog
+  const originCoords = (Number.isFinite(origin.lat) && Number.isFinite(origin.lng))
+    ? { lat: origin.lat, lng: origin.lng }
+    : null;
+  const destinationCoords = (Number.isFinite(destination.lat) && Number.isFinite(destination.lng))
+    ? { lat: destination.lat, lng: destination.lng }
+    : null;
   if (!originCoords || !destinationCoords) {
     console.warn("recurring-trips-scheduler.invalid_coords", {
       trip_id: trip.id,

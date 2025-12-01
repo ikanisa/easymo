@@ -11,14 +11,6 @@ export type UserFavorite = {
   lng: number;
 };
 
-type RawFavorite = {
-  id: string;
-  kind: FavoriteKind;
-  label: string;
-  address?: string | null;
-  geog?: string | Record<string, unknown>;
-};
-
 const FAVORITE_LABELS: Record<FavoriteKind, string> = {
   home: "Home",
   work: "Work",
@@ -42,15 +34,15 @@ export async function listFavorites(
 ): Promise<UserFavorite[]> {
   if (!ctx.profileId) return [];
   const { data, error } = await ctx.supabase
-    .from("user_favorites")
-    .select("id, kind, label, address, geog")
+    .from("saved_locations")
+    .select("id, label, address, lat, lng")
     .eq("user_id", ctx.profileId)
     .order("created_at", { ascending: true });
   if (error) {
     console.error("locations.favorites_list_fail", error);
     return [];
   }
-  return normalizeFavorites(data ?? []);
+  return normalizeSavedLocations(data ?? []);
 }
 
 export async function getFavoriteById(
@@ -59,8 +51,8 @@ export async function getFavoriteById(
 ): Promise<UserFavorite | null> {
   if (!ctx.profileId) return null;
   const { data, error } = await ctx.supabase
-    .from("user_favorites")
-    .select("id, kind, label, address, geog")
+    .from("saved_locations")
+    .select("id, label, address, lat, lng")
     .eq("user_id", ctx.profileId)
     .eq("id", id)
     .maybeSingle();
@@ -68,7 +60,7 @@ export async function getFavoriteById(
     console.error("locations.favorite_lookup_fail", error, { id });
     return null;
   }
-  const favorites = normalizeFavorites(data ? [data] : []);
+  const favorites = normalizeSavedLocations(data ? [data] : []);
   return favorites[0] ?? null;
 }
 
@@ -80,13 +72,13 @@ export async function saveFavorite(
 ): Promise<UserFavorite | null> {
   if (!ctx.profileId) return null;
   const normalizedLabel = options.label?.trim() || favoriteKindLabel(kind);
-  
-  // First check if this kind already exists for this user
+
+  // First check if a location with this label already exists for this user
   const { data: existing } = await ctx.supabase
-    .from("user_favorites")
+    .from("saved_locations")
     .select("id")
     .eq("user_id", ctx.profileId)
-    .eq("kind", kind)
+    .eq("label", normalizedLabel)
     .maybeSingle();
 
   if (existing) {
@@ -102,22 +94,22 @@ export async function saveFavorite(
   // Insert new favorite
   const payload = {
     user_id: ctx.profileId,
-    kind,
     label: normalizedLabel,
     address: options.address ?? null,
-    geog: `SRID=4326;POINT(${coords.lng} ${coords.lat})`,
+    lat: coords.lat,
+    lng: coords.lng,
   };
 
   const { data, error } = await ctx.supabase
-    .from("user_favorites")
+    .from("saved_locations")
     .insert(payload)
-    .select("id, kind, label, address, geog")
+    .select("id, label, address, lat, lng")
     .single();
   if (error) {
     console.error("locations.favorite_save_fail", error);
     return null;
   }
-  const favorites = normalizeFavorites(data ? [data] : []);
+  const favorites = normalizeSavedLocations(data ? [data] : []);
   return favorites[0] ?? null;
 }
 
@@ -129,13 +121,14 @@ export async function updateFavorite(
 ): Promise<boolean> {
   if (!ctx.profileId) return false;
   const payload: Record<string, unknown> = {
-    geog: `SRID=4326;POINT(${coords.lng} ${coords.lat})`,
+    lat: coords.lat,
+    lng: coords.lng,
   };
   if (options.label) payload.label = options.label;
   if (options.address !== undefined) payload.address = options.address;
 
   const { error } = await ctx.supabase
-    .from("user_favorites")
+    .from("saved_locations")
     .update(payload)
     .eq("user_id", ctx.profileId)
     .eq("id", favoriteId);
@@ -146,51 +139,39 @@ export async function updateFavorite(
   return true;
 }
 
-function normalizeFavorites(rows: RawFavorite[]): UserFavorite[] {
+// Normalize saved_locations rows (has lat/lng directly)
+type SavedLocationRow = {
+  id: string;
+  label: string;
+  address?: string | null;
+  lat: number;
+  lng: number;
+};
+
+function normalizeSavedLocations(rows: SavedLocationRow[]): UserFavorite[] {
   const favorites: UserFavorite[] = [];
   for (const row of rows) {
-    const coords = parsePoint(row.geog);
-    if (!coords) continue;
+    if (!Number.isFinite(row.lat) || !Number.isFinite(row.lng)) continue;
+    // Infer kind from label
+    const label = row.label || "Other";
+    const labelLower = label.toLowerCase();
+    let kind: FavoriteKind = "other";
+    if (labelLower === "home" || labelLower === "🏠 home") kind = "home";
+    else if (labelLower === "work" || labelLower === "💼 work") kind = "work";
+    else if (labelLower === "school" || labelLower === "🎓 school") {
+      kind = "school";
+    }
+
     favorites.push({
       id: row.id,
-      kind: row.kind,
-      label: row.label,
+      kind,
+      label,
       address: row.address ?? null,
-      lat: coords.lat,
-      lng: coords.lng,
+      lat: row.lat,
+      lng: row.lng,
     });
   }
   return favorites;
-}
-
-function parsePoint(
-  value: string | Record<string, unknown> | undefined,
-): { lat: number; lng: number } | null {
-  if (!value) return null;
-  if (typeof value === "string") {
-    const match = value.match(/POINT\\(([-0-9.]+) ([-0-9.]+)\\)/i);
-    if (match) {
-      const [, lngRaw, latRaw] = match;
-      const lat = Number(latRaw);
-      const lng = Number(lngRaw);
-      if (Number.isFinite(lat) && Number.isFinite(lng)) {
-        return { lat, lng };
-      }
-    }
-  }
-  if (
-    typeof value === "object" && value && "coordinates" in value &&
-    Array.isArray((value as { coordinates: number[] }).coordinates)
-  ) {
-    const coords = (value as { coordinates: number[] }).coordinates;
-    if (coords.length === 2) {
-      const [lng, lat] = coords;
-      if (Number.isFinite(lat) && Number.isFinite(lng)) {
-        return { lat, lng };
-      }
-    }
-  }
-  return null;
 }
 
 export async function recordLastLocation(
