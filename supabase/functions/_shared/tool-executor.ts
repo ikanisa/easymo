@@ -58,32 +58,49 @@ export class ToolExecutor {
         throw new Error(`Invalid inputs: ${validationResult.errors.join(", ")}`);
       }
 
-      // 2. Execute based on tool type
+      // 2. Execute based on tool type or tool name
       let result: unknown;
-      switch (tool.tool_type) {
-        case "db":
-          result = await this.executeDbTool(tool, inputs, context);
-          break;
-        case "http":
-          result = await this.executeHttpTool(tool, inputs, context);
-          break;
-        case "deep_search":
-          result = await this.executeDeepSearchTool(tool, inputs, context);
-          break;
-        case "momo":
-          result = await this.executeMoMoTool(tool, inputs, context);
-          break;
-        case "location":
-          result = await this.executeLocationTool(tool, inputs, context);
-          break;
-        case "external":
-          result = await this.executeExternalTool(tool, inputs, context);
-          break;
-        case "whatsapp":
-          result = await this.executeWhatsAppTool(tool, inputs, context);
-          break;
-        default:
-          throw new Error(`Unsupported tool type: ${tool.tool_type}`);
+      
+      // Check for specific tool names first
+      if (tool.name === "get_weather") {
+        result = await this.executeWeatherTool(tool, inputs);
+      } else if (tool.name === "translate_text") {
+        result = await this.executeTranslationTool(tool, inputs);
+      } else if (tool.name === "geocode_address") {
+        result = await this.executeGeocodingTool(tool, inputs);
+      } else if (tool.name === "schedule_appointment") {
+        result = await this.executeSchedulingTool(tool, inputs, context);
+      } else {
+        // Fall back to tool type routing
+        switch (tool.tool_type) {
+          case "db":
+            result = await this.executeDbTool(tool, inputs, context);
+            break;
+          case "http":
+            result = await this.executeHttpTool(tool, inputs, context);
+            break;
+          case "deep_search":
+            result = await this.executeDeepSearchTool(tool, inputs, context);
+            break;
+          case "momo":
+            result = await this.executeMoMoTool(tool, inputs, context);
+            break;
+          case "location":
+            result = await this.executeLocationTool(tool, inputs, context);
+            break;
+          case "external":
+            result = await this.executeExternalTool(tool, inputs, context);
+            break;
+          case "whatsapp":
+            result = await this.executeWhatsAppTool(tool, inputs, context);
+            break;
+          case "static":
+            // Static tools return config directly
+            result = tool.config;
+            break;
+          default:
+            throw new Error(`Unsupported tool type: ${tool.tool_type}`);
+        }
       }
 
       const executionTime = Date.now() - startTime;
@@ -1016,4 +1033,231 @@ export class ToolExecutor {
       // Don't throw - logging failure shouldn't break tool execution
     }
   }
+
+  /**
+   * Execute weather tool (OpenWeather API)
+   */
+  private async executeWeatherTool(
+    tool: AgentTool,
+    inputs: Record<string, unknown>
+  ): Promise<unknown> {
+    const location = inputs.location as string || "Kigali";
+    const days = (inputs.days as number) || 3;
+    
+    const apiKey = Deno.env.get("OPENWEATHER_API_KEY");
+    if (!apiKey) {
+      return {
+        location,
+        error: "Weather API not configured",
+        message: "Weather service temporarily unavailable",
+      };
+    }
+
+    try {
+      const response = await fetch(
+        `https://api.openweathermap.org/data/2.5/forecast?q=${encodeURIComponent(location)}&appid=${apiKey}&units=metric&cnt=${days * 8}`
+      );
+
+      if (!response.ok) {
+        throw new Error(`Weather API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      return {
+        location: data.city?.name || location,
+        current: {
+          temperature: data.list[0]?.main?.temp,
+          description: data.list[0]?.weather[0]?.description,
+          humidity: data.list[0]?.main?.humidity,
+        },
+        forecast: data.list?.slice(0, days).map((item: any) => ({
+          date: item.dt_txt,
+          temp: item.main.temp,
+          description: item.weather[0].description,
+        })),
+      };
+    } catch (error) {
+      console.error("Weather tool error:", error);
+      return {
+        location,
+        error: error instanceof Error ? error.message : "Weather fetch failed",
+      };
+    }
+  }
+
+  /**
+   * Execute translation tool (Google Translate API)
+   */
+  private async executeTranslationTool(
+    tool: AgentTool,
+    inputs: Record<string, unknown>
+  ): Promise<unknown> {
+    const text = inputs.text as string;
+    const targetLanguage = inputs.target_language as string;
+    const sourceLanguage = inputs.source_language as string;
+    
+    if (!text || !targetLanguage) {
+      return {
+        error: "Text and target language required",
+      };
+    }
+
+    const apiKey = Deno.env.get("GOOGLE_TRANSLATE_API_KEY");
+    if (!apiKey) {
+      return {
+        text,
+        translated_text: text, // Fallback: return original
+        message: "Translation service not configured",
+      };
+    }
+
+    try {
+      const response = await fetch(
+        `https://translation.googleapis.com/language/translate/v2?key=${apiKey}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            q: text,
+            target: targetLanguage,
+            source: sourceLanguage,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Translation API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      return {
+        original_text: text,
+        translated_text: data.data?.translations[0]?.translatedText || text,
+        source_language: data.data?.translations[0]?.detectedSourceLanguage || sourceLanguage,
+        target_language: targetLanguage,
+      };
+    } catch (error) {
+      console.error("Translation tool error:", error);
+      return {
+        text,
+        translated_text: text,
+        error: error instanceof Error ? error.message : "Translation failed",
+      };
+    }
+  }
+
+  /**
+   * Execute geocoding tool (Google Maps API)
+   */
+  private async executeGeocodingTool(
+    tool: AgentTool,
+    inputs: Record<string, unknown>
+  ): Promise<unknown> {
+    const address = inputs.address as string;
+    const lat = inputs.lat as number;
+    const lng = inputs.lng as number;
+    
+    const apiKey = Deno.env.get("GOOGLE_MAPS_API_KEY");
+    if (!apiKey) {
+      return {
+        error: "Geocoding API not configured",
+      };
+    }
+
+    try {
+      let url: string;
+      if (address) {
+        // Geocode address to coordinates
+        url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${apiKey}`;
+      } else if (lat && lng) {
+        // Reverse geocode coordinates to address
+        url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${apiKey}`;
+      } else {
+        return {
+          error: "Either address or lat/lng required",
+        };
+      }
+
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`Geocoding API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      if (data.status !== "OK") {
+        return {
+          error: `Geocoding failed: ${data.status}`,
+        };
+      }
+
+      const result = data.results[0];
+      return {
+        formatted_address: result.formatted_address,
+        location: {
+          lat: result.geometry.location.lat,
+          lng: result.geometry.location.lng,
+        },
+        place_id: result.place_id,
+      };
+    } catch (error) {
+      console.error("Geocoding tool error:", error);
+      return {
+        error: error instanceof Error ? error.message : "Geocoding failed",
+      };
+    }
+  }
+
+  /**
+   * Execute scheduling tool
+   */
+  private async executeSchedulingTool(
+    tool: AgentTool,
+    inputs: Record<string, unknown>,
+    context: ToolExecutionContext
+  ): Promise<unknown> {
+    const date = inputs.date as string;
+    const time = inputs.time as string;
+    const type = inputs.type as string;
+    const durationMinutes = (inputs.duration_minutes as number) || 30;
+    const notes = inputs.notes as string;
+
+    try {
+      const { data, error } = await this.supabase
+        .from("appointments")
+        .insert({
+          user_id: context.userId,
+          agent_id: context.agentId,
+          appointment_date: date,
+          appointment_time: time,
+          appointment_type: type,
+          duration_minutes: durationMinutes,
+          notes,
+          status: "scheduled",
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      return {
+        success: true,
+        appointment_id: data.id,
+        date,
+        time,
+        type,
+        duration_minutes: durationMinutes,
+        message: `Appointment scheduled for ${date} at ${time}`,
+      };
+    } catch (error) {
+      console.error("Scheduling tool error:", error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Scheduling failed",
+      };
+    }
+  }
 }
+
