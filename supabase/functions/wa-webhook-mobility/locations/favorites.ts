@@ -226,15 +226,6 @@ function normalizeSavedLocations(rows: SavedLocationRow[]): UserFavorite[] {
   }
   return favorites;
 }
-      kind,
-      label,
-      address: row.address ?? null,
-      lat: row.lat,
-      lng: row.lng,
-    });
-  }
-  return favorites;
-}
 
 function parsePoint(
   value: string | Record<string, unknown> | undefined,
