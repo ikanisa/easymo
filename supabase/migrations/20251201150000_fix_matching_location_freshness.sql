@@ -253,6 +253,14 @@ RETURNS void
 LANGUAGE plpgsql
 AS $$
 BEGIN
+  -- Validate coordinates are within valid ranges
+  IF _lat IS NULL OR _lng IS NULL THEN
+    RAISE EXCEPTION 'Invalid coordinates: lat and lng must not be null';
+  END IF;
+  IF _lat < -90 OR _lat > 90 OR _lng < -180 OR _lng > 180 THEN
+    RAISE EXCEPTION 'Invalid coordinates: lat must be [-90,90], lng must be [-180,180]';
+  END IF;
+  
   UPDATE public.rides_trips
   SET 
     pickup_latitude = _lat,

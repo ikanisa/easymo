@@ -213,6 +213,13 @@ export async function updateTripLocation(
     pickupText?: string;
   },
 ): Promise<void> {
+  // Validate lat/lng are finite numbers to prevent malformed geometry
+  if (!Number.isFinite(params.lat) || !Number.isFinite(params.lng)) {
+    throw new Error("Invalid coordinates: lat and lng must be finite numbers");
+  }
+  if (params.lat < -90 || params.lat > 90 || params.lng < -180 || params.lng > 180) {
+    throw new Error("Invalid coordinates: lat must be [-90,90], lng must be [-180,180]");
+  }
   const { error } = await client
     .from("rides_trips")
     .update({
