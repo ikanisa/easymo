@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "../deps.ts";
+import type { RecurrenceType } from "../../_shared/wa-webhook-shared/domains/intent_storage.ts";
 
 // Trip expiry: configurable via environment variable, default 30 minutes
 const DEFAULT_TRIP_EXPIRY_MINUTES = 30;
@@ -71,8 +72,6 @@ export async function recordDriverPresence(
     }, { onConflict: "user_id" });
   if (error) throw error;
 }
-
-export type RecurrenceType = 'once' | 'daily' | 'weekdays' | 'weekly' | 'monthly';
 
 export async function insertTrip(
   client: SupabaseClient,

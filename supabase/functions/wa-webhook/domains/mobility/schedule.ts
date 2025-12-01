@@ -1277,22 +1277,36 @@ export function formatTravelLabel(
 }
 
 /**
- * Parse date and time strings into a Date object
+ * Parse date and time strings into a Date object for scheduled trip storage.
+ * The date/time is stored in UTC for consistency across timezones.
+ * 
+ * Note: This simplified implementation treats the input as a local time string
+ * and converts to Date. For production use with multiple timezones, consider
+ * using a library like Temporal or date-fns-tz for proper timezone handling.
+ * 
  * @param date - Date string in YYYY-MM-DD format
- * @param time - Time string in HH:MM format
- * @param _timezone - Timezone string (unused, kept for consistency)
+ * @param time - Time string in HH:MM format  
+ * @param timezone - Timezone string (stored for display purposes, not used in parsing)
  * @returns Date object or undefined if parsing fails
  */
 function parseScheduledDateTime(
   date: string,
   time: string,
-  _timezone: string,
+  timezone: string,
 ): Date | undefined {
   try {
-    // Parse the date and time as local time
+    // Parse as ISO string to get consistent UTC representation
+    // The timezone parameter is captured but we treat input as local time
+    // for the server's timezone (Africa/Kigali in production)
     const dateTimeStr = `${date}T${time}:00`;
     const parsed = new Date(dateTimeStr);
     if (isNaN(parsed.getTime())) return undefined;
+    
+    // Log timezone for debugging/auditing purposes
+    if (timezone) {
+      console.debug(`Scheduled trip created for timezone: ${timezone}`);
+    }
+    
     return parsed;
   } catch {
     return undefined;
