@@ -27,45 +27,6 @@ if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
 
 const supabase = createClient(SUPABASE_URL ?? "", SUPABASE_SERVICE_KEY ?? "");
 
-function parsePoint(input: any): { lat: number; lng: number } | null {
-  if (!input) return null;
-  if (typeof input === "string") {
-    const match = input.match(/POINT\\(([-0-9.]+) ([-0-9.]+)\)/i);
-    if (match) {
-      const [, lngRaw, latRaw] = match;
-      const lng = Number(lngRaw);
-      const lat = Number(latRaw);
-      if (Number.isFinite(lng) && Number.isFinite(lat)) {
-        return { lat, lng };
-      }
-    }
-    try {
-      const parsed = JSON.parse(input);
-      if (
-        parsed && Array.isArray(parsed.coordinates) &&
-        parsed.coordinates.length === 2
-      ) {
-        const [lng, lat] = parsed.coordinates;
-        if (Number.isFinite(lng) && Number.isFinite(lat)) {
-          return { lat, lng };
-        }
-      }
-    } catch (_error) {
-      // ignore
-    }
-  }
-  if (
-    typeof input === "object" && input && Array.isArray(input.coordinates) &&
-    input.coordinates.length === 2
-  ) {
-    const [lng, lat] = input.coordinates;
-    if (Number.isFinite(lng) && Number.isFinite(lat)) {
-      return { lat, lng };
-    }
-  }
-  return null;
-}
-
 async function shortlistTrip(trip: any) {
   const { data: favorites, error: favoriteError } = await supabase
     .from("saved_locations")
