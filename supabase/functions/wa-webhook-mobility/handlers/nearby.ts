@@ -830,20 +830,13 @@ async function runMatchingFallback(
     }
     return true;
   } finally {
-    // Keep trip open for a bit if we notified drivers, otherwise expire
-    // If we notified drivers, we want the trip to stay 'open' so they can accept it.
-    // The migration sets default status to 'open'.
-    // We should ONLY expire if no matches found or if it was a passenger search (maybe).
-    // For now, let's keep it open for 10 mins if drivers were notified.
-    
-    if (state.mode !== "drivers") {
-        if (tempTripId) {
-          await ctx.supabase.from("rides_trips").update({ status: "expired" }).eq(
-            "id",
-            tempTripId,
-          );
-        }
-    }
+    // CRITICAL FIX: Don't expire the trip immediately!
+    // The trip should remain 'open' so it can be discovered by other users.
+    // It will auto-expire via the expires_at column (default 30 min).
+    // Benefits:
+    // - Passenger trips stay visible when drivers search
+    // - Driver trips stay visible when passengers search
+    // - Enables true peer-to-peer discovery
   }
 }
 

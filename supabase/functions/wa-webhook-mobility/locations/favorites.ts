@@ -1,4 +1,6 @@
 import type { RouterContext } from "../types.ts";
+import { checkDuplicateLocation } from "../../_shared/wa-webhook-shared/locations/deduplication.ts";
+import { getAddressOrCoords } from "../../_shared/wa-webhook-shared/locations/geocoding.ts";
 
 export type FavoriteKind = "home" | "work" | "school" | "other";
 
@@ -43,7 +45,7 @@ export async function listFavorites(
   if (!ctx.profileId) return [];
   const { data, error } = await ctx.supabase
     .from("saved_locations")
-    .select("id, label, address, lat, lng")
+    .select("id, kind, label, address, lat, lng")
     .eq("user_id", ctx.profileId)
     .order("created_at", { ascending: true });
   if (error) {
@@ -60,7 +62,7 @@ export async function getFavoriteById(
   if (!ctx.profileId) return null;
   const { data, error } = await ctx.supabase
     .from("saved_locations")
-    .select("id, label, address, lat, lng")
+    .select("id, kind, label, address, lat, lng")
     .eq("user_id", ctx.profileId)
     .eq("id", id)
     .maybeSingle();
@@ -76,24 +78,57 @@ export async function saveFavorite(
   ctx: RouterContext,
   kind: FavoriteKind,
   coords: { lat: number; lng: number },
-  options: { label?: string; address?: string | null } = {},
+  options: { label?: string; address?: string | null; skipDedup?: boolean } = {},
 ): Promise<UserFavorite | null> {
   if (!ctx.profileId) return null;
   const normalizedLabel = options.label?.trim() || favoriteKindLabel(kind);
   
-  // First check if a location with this label already exists for this user
+  // Phase 2.1: Auto-geocode if no address provided
+  let finalAddress = options.address;
+  if (!finalAddress) {
+    try {
+      finalAddress = await getAddressOrCoords(coords.lat, coords.lng);
+      console.log("location.geocoded", { lat: coords.lat, lng: coords.lng, address: finalAddress });
+    } catch (error) {
+      console.warn("location.geocode_fail", error);
+      finalAddress = `${coords.lat.toFixed(6)}, ${coords.lng.toFixed(6)}`;
+    }
+  }
+
+  // Phase 2.2: Check for duplicates (skip if explicitly requested)
+  if (!options.skipDedup) {
+    const dupCheck = await checkDuplicateLocation(
+      ctx.supabase,
+      ctx.profileId,
+      coords,
+      50, // 50m radius
+    );
+    
+    if (dupCheck.isDuplicate && dupCheck.nearbyLocations.length > 0) {
+      const closest = dupCheck.nearbyLocations[0];
+      console.log("location.duplicate_detected", {
+        newLabel: normalizedLabel,
+        existingLabel: closest.label,
+        distance: closest.distance,
+      });
+      // Return the existing location instead of creating duplicate
+      return getFavoriteById(ctx, closest.id);
+    }
+  }
+  
+  // Check if a location with this kind already exists for this user
   const { data: existing } = await ctx.supabase
     .from("saved_locations")
     .select("id")
     .eq("user_id", ctx.profileId)
-    .eq("label", normalizedLabel)
+    .eq("kind", kind)
     .maybeSingle();
 
   if (existing) {
-    // Update existing favorite
+    // Update existing favorite of same kind
     const updated = await updateFavorite(ctx, existing.id, coords, {
       label: normalizedLabel,
-      address: options.address,
+      address: finalAddress,
     });
     if (!updated) return null;
     return getFavoriteById(ctx, existing.id);
@@ -102,8 +137,9 @@ export async function saveFavorite(
   // Insert new favorite
   const payload = {
     user_id: ctx.profileId,
+    kind,
     label: normalizedLabel,
-    address: options.address ?? null,
+    address: finalAddress,
     lat: coords.lat,
     lng: coords.lng,
   };
@@ -111,7 +147,7 @@ export async function saveFavorite(
   const { data, error } = await ctx.supabase
     .from("saved_locations")
     .insert(payload)
-    .select("id, label, address, lat, lng")
+    .select("id, kind, label, address, lat, lng")
     .single();
   if (error) {
     console.error("locations.favorite_save_fail", error);
@@ -167,6 +203,7 @@ function normalizeFavorites(rows: RawFavorite[]): UserFavorite[] {
 // Normalize saved_locations rows (has lat/lng directly, not geog)
 type SavedLocationRow = {
   id: string;
+  kind: FavoriteKind;
   label: string;
   address?: string | null;
   lat: number;
@@ -177,16 +214,18 @@ function normalizeSavedLocations(rows: SavedLocationRow[]): UserFavorite[] {
   const favorites: UserFavorite[] = [];
   for (const row of rows) {
     if (!Number.isFinite(row.lat) || !Number.isFinite(row.lng)) continue;
-    // Infer kind from label
-    const label = row.label || "Other";
-    const labelLower = label.toLowerCase();
-    let kind: FavoriteKind = "other";
-    if (labelLower === "home" || labelLower === "🏠 home") kind = "home";
-    else if (labelLower === "work" || labelLower === "💼 work") kind = "work";
-    else if (labelLower === "school" || labelLower === "🎓 school") kind = "school";
     
     favorites.push({
       id: row.id,
+      kind: row.kind || 'other',
+      label: row.label,
+      address: row.address ?? null,
+      lat: row.lat,
+      lng: row.lng,
+    });
+  }
+  return favorites;
+}
       kind,
       label,
       address: row.address ?? null,
