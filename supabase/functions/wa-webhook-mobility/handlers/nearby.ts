@@ -15,7 +15,7 @@ import { waChatLink } from "../utils/links.ts";
 import { maskPhone } from "../flows/support.ts";
 import { logStructuredEvent } from "../observe/log.ts";
 import { emitAlert } from "../observe/alert.ts";
-import { timeAgo } from "../utils/text.ts";
+import { timeAgo, safeRowTitle } from "../utils/text.ts";
 import { sendText } from "../wa/client.ts";
 import {
   buildButtons,
@@ -166,7 +166,7 @@ function buildNearbyRow(
   // WhatsApp requires non-empty title - use ref code if phone is empty
   const refShort = (match.ref_code ?? "").slice(0, 8);
   const rawTitle = masked || refShort || `Match ${match.trip_id.slice(0, 8)}`;
-  const title = rawTitle.trim() || `Ref ${match.trip_id.slice(0, 8)}`;
+  const title = safeRowTitle(rawTitle.trim() || `Ref ${match.trip_id.slice(0, 8)}`);
   const distanceLabel = toDistanceLabel(match.distance_km);
   const seenLabel = timeAgo(
     getMatchTimestamp(match) ?? new Date().toISOString(),
