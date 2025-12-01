@@ -130,6 +130,8 @@ export type MatchResult = {
   dropoff_text: string | null;
   matched_at: string | null;
   created_at?: string | null;
+  vehicle_type?: string;
+  is_exact_match?: boolean;
 };
 
 export async function matchDriversForTrip(

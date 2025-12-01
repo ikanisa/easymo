@@ -158,6 +158,14 @@ function buildNearbyRow(
   const seenLabel = timeAgo(
     getMatchTimestamp(match) ?? new Date().toISOString(),
   );
+  
+  // Show vehicle type prominently, especially if different from requested
+  const vehicleLabel = match.vehicle_type 
+    ? (match.is_exact_match === false 
+        ? ` (${match.vehicle_type} 🚗)` 
+        : ` • ${match.vehicle_type}`)
+    : '';
+  
   const descriptionParts = [
     t(ctx.locale, "mobility.nearby.row.ref", { ref: match.ref_code ?? "---" }),
   ];
@@ -173,7 +181,7 @@ function buildNearbyRow(
   return {
     row: {
       id: rowId,
-      title: masked,
+      title: `${masked}${vehicleLabel}`,
       description: descriptionParts.join(" • "),
     },
     state: {

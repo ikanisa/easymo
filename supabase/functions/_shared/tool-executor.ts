@@ -664,20 +664,71 @@ export class ToolExecutor {
   }
 
   /**
-   * Execute deep search tool
+   * Execute deep search tool (web search integration)
    */
   private async executeDeepSearchTool(
     tool: AgentTool,
     inputs: Record<string, unknown>,
     context: ToolExecutionContext
   ): Promise<unknown> {
-    // Placeholder for deep search implementation
-    // Could integrate with Serper, Tavily, or other search APIs
-    return {
-      query: inputs.query,
-      results: [],
-      message: "Deep search not yet implemented",
-    };
+    const query = inputs.query as string;
+    
+    if (!query) {
+      return {
+        results: [],
+        message: "Query is required for deep search",
+      };
+    }
+
+    try {
+      // Use web search API (Serper, Tavily, or Google Custom Search)
+      const searchApiKey = Deno.env.get("SERPER_API_KEY") || Deno.env.get("TAVILY_API_KEY");
+      
+      if (!searchApiKey) {
+        console.warn("No search API key configured, returning placeholder");
+        return {
+          query,
+          results: [],
+          message: "Deep search not yet configured (missing API key)",
+        };
+      }
+
+      // Example: Serper API integration
+      const response = await fetch("https://google.serper.dev/search", {
+        method: "POST",
+        headers: {
+          "X-API-KEY": searchApiKey,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          q: query,
+          num: 5,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Search API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      return {
+        query,
+        results: data.organic?.slice(0, 5).map((r: any) => ({
+          title: r.title,
+          snippet: r.snippet,
+          link: r.link,
+        })) || [],
+        message: `Found ${data.organic?.length || 0} results`,
+      };
+    } catch (error) {
+      console.error("Deep search error:", error);
+      return {
+        query,
+        results: [],
+        error: error instanceof Error ? error.message : "Search failed",
+      };
+    }
   }
 
   /**
@@ -688,13 +739,138 @@ export class ToolExecutor {
     inputs: Record<string, unknown>,
     context: ToolExecutionContext
   ): Promise<unknown> {
-    // Placeholder - would integrate with actual MoMo API
-    return {
-      phone: inputs.phone,
-      amount: inputs.amount,
-      status: "pending",
-      message: "MoMo integration pending",
-    };
+    const phone = inputs.phone as string;
+    const amount = inputs.amount as number;
+    const currency = (inputs.currency as string) || "RWF";
+    const reference = inputs.reference as string || `EASYMO-${Date.now()}`;
+
+    if (!phone || !amount) {
+      return {
+        success: false,
+        error: "Phone number and amount are required",
+      };
+    }
+
+    try {
+      // Check if MoMo API credentials are configured
+      const momoApiKey = Deno.env.get("MOMO_API_KEY");
+      const momoUserId = Deno.env.get("MOMO_USER_ID");
+      const momoApiUser = Deno.env.get("MOMO_API_USER");
+      const momoSubscriptionKey = Deno.env.get("MOMO_SUBSCRIPTION_KEY");
+
+      if (!momoApiKey || !momoUserId) {
+        console.warn("MoMo API not configured");
+        
+        // Store pending transaction in database for manual processing
+        await this.supabase.from("payment_transactions").insert({
+          user_id: context.userId,
+          amount,
+          currency,
+          phone_number: phone,
+          reference,
+          status: "pending_manual",
+          payment_method: "momo",
+          metadata: {
+            reason: "API not configured",
+            initiated_by_agent: context.agentSlug,
+          },
+        });
+
+        return {
+          phone,
+          amount,
+          currency,
+          reference,
+          status: "pending_manual",
+          message: "Payment request recorded. Our team will process it manually and contact you shortly.",
+        };
+      }
+
+      // MTN MoMo Collection API integration
+      // Generate UUID for transaction
+      const transactionId = crypto.randomUUID();
+
+      // Request to pay
+      const response = await fetch(
+        "https://sandbox.momodeveloper.mtn.com/collection/v1_0/requesttopay",
+        {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${momoApiKey}`,
+            "X-Reference-Id": transactionId,
+            "X-Target-Environment": Deno.env.get("MOMO_ENVIRONMENT") || "sandbox",
+            "Ocp-Apim-Subscription-Key": momoSubscriptionKey || "",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            amount: amount.toString(),
+            currency,
+            externalId: reference,
+            payer: {
+              partyIdType: "MSISDN",
+              partyId: phone.replace(/\D/g, ""), // Strip non-digits
+            },
+            payerMessage: `Payment for easyMO - ${reference}`,
+            payeeNote: `easyMO transaction ${reference}`,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`MoMo API error: ${response.status} ${await response.text()}`);
+      }
+
+      // Store transaction in database
+      await this.supabase.from("payment_transactions").insert({
+        user_id: context.userId,
+        transaction_id: transactionId,
+        amount,
+        currency,
+        phone_number: phone,
+        reference,
+        status: "pending",
+        payment_method: "momo",
+        metadata: {
+          initiated_by_agent: context.agentSlug,
+        },
+      });
+
+      return {
+        success: true,
+        transaction_id: transactionId,
+        phone,
+        amount,
+        currency,
+        reference,
+        status: "pending",
+        message: `Payment request sent to ${phone}. Please approve on your phone.`,
+      };
+    } catch (error) {
+      console.error("MoMo payment error:", error);
+      
+      // Store failed transaction for audit
+      await this.supabase.from("payment_transactions").insert({
+        user_id: context.userId,
+        amount,
+        currency,
+        phone_number: phone,
+        reference,
+        status: "failed",
+        payment_method: "momo",
+        metadata: {
+          error: error instanceof Error ? error.message : String(error),
+          initiated_by_agent: context.agentSlug,
+        },
+      });
+
+      return {
+        success: false,
+        phone,
+        amount,
+        error: error instanceof Error ? error.message : "Payment failed",
+        message: "Payment request failed. Please try again or contact support.",
+      };
+    }
   }
 
   /**
