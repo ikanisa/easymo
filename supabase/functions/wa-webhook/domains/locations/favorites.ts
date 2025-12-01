@@ -42,15 +42,15 @@ export async function listFavorites(
 ): Promise<UserFavorite[]> {
   if (!ctx.profileId) return [];
   const { data, error } = await ctx.supabase
-    .from("user_favorites")
-    .select("id, kind, label, address, geog")
+    .from("saved_locations")
+    .select("id, kind, label, address, lat, lng")
     .eq("user_id", ctx.profileId)
     .order("created_at", { ascending: true });
   if (error) {
     console.error("locations.favorites_list_fail", error);
     return [];
   }
-  return normalizeFavorites(data ?? []);
+  return normalizeSavedLocations(data ?? []);
 }
 
 export async function getFavoriteById(
@@ -59,8 +59,8 @@ export async function getFavoriteById(
 ): Promise<UserFavorite | null> {
   if (!ctx.profileId) return null;
   const { data, error } = await ctx.supabase
-    .from("user_favorites")
-    .select("id, kind, label, address, geog")
+    .from("saved_locations")
+    .select("id, kind, label, address, lat, lng")
     .eq("user_id", ctx.profileId)
     .eq("id", id)
     .maybeSingle();
@@ -68,7 +68,7 @@ export async function getFavoriteById(
     console.error("locations.favorite_lookup_fail", error, { id });
     return null;
   }
-  const favorites = normalizeFavorites(data ? [data] : []);
+  const favorites = normalizeSavedLocations(data ? [data] : []);
   return favorites[0] ?? null;
 }
 
@@ -129,13 +129,14 @@ export async function updateFavorite(
 ): Promise<boolean> {
   if (!ctx.profileId) return false;
   const payload: Record<string, unknown> = {
-    geog: `SRID=4326;POINT(${coords.lng} ${coords.lat})`,
+    lat: coords.lat,
+    lng: coords.lng,
   };
   if (options.label) payload.label = options.label;
   if (options.address !== undefined) payload.address = options.address;
 
   const { error } = await ctx.supabase
-    .from("user_favorites")
+    .from("saved_locations")
     .update(payload)
     .eq("user_id", ctx.profileId)
     .eq("id", favoriteId);
@@ -146,6 +147,27 @@ export async function updateFavorite(
   return true;
 }
 
+type SavedLocationRow = {
+  id: string;
+  kind: FavoriteKind;
+  label: string;
+  address?: string | null;
+  lat: number;
+  lng: number;
+};
+
+function normalizeSavedLocations(rows: SavedLocationRow[]): UserFavorite[] {
+  return rows.map(row => ({
+    id: row.id,
+    kind: row.kind,
+    label: row.label,
+    address: row.address ?? null,
+    lat: row.lat,
+    lng: row.lng,
+  }));
+}
+
+// Legacy function kept for backward compatibility but no longer needed
 function normalizeFavorites(rows: RawFavorite[]): UserFavorite[] {
   const favorites: UserFavorite[] = [];
   for (const row of rows) {
