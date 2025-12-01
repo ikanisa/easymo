@@ -31,6 +31,14 @@ export interface ToolExecutionResult {
  * ToolExecutor - Executes agent tools with validation and logging
  */
 export class ToolExecutor {
+  // Shared constants for fare calculations
+  private static readonly FARE_RATES = {
+    moto: { base: 500, perKm: 200 },
+    car: { base: 1500, perKm: 500 },
+  };
+  private static readonly MINUTES_PER_KM = 3; // Average time per kilometer
+  private static readonly DEFAULT_DISTANCE_KM = 5; // Default estimate when routing unavailable
+
   constructor(private supabase: SupabaseClient) {}
 
   /**
@@ -1042,9 +1050,12 @@ export class ToolExecutor {
     }
 
     // Safely mask phone number (show only last 4 digits if length >= 4)
-    const maskedPhone = data.phone_number && data.phone_number.length >= 4
-      ? `***${data.phone_number.slice(-4)}`
-      : data.phone_number ? "***" : null;
+    let maskedPhone: string | null = null;
+    if (data.phone_number) {
+      maskedPhone = data.phone_number.length >= 4
+        ? `***${data.phone_number.slice(-4)}`
+        : "***";
+    }
 
     return {
       success: true,
@@ -1283,9 +1294,6 @@ export class ToolExecutor {
         };
       }
 
-      // Constants for fare calculation
-      const MINUTES_PER_KM = 3; // Average time per kilometer in minutes
-
       return {
         count: data.length,
         drivers: data.map((d: Record<string, unknown>) => {
@@ -1296,7 +1304,7 @@ export class ToolExecutor {
             vehicle_type: d.vehicle_type,
             rating: d.rating,
             distance_km: distanceKm,
-            eta: `${Math.ceil(distanceKm * MINUTES_PER_KM)} min`,
+            eta: `${Math.ceil(distanceKm * ToolExecutor.MINUTES_PER_KM)} min`,
           };
         }),
         user_location: { lat: userLat, lng: userLng },
@@ -1337,16 +1345,10 @@ export class ToolExecutor {
       };
     }
 
-    // Fare calculation constants
-    const DEFAULT_DISTANCE_KM = 5; // Default estimate when actual routing not available
-    const FARE_RATES = {
-      moto: { base: 500, perKm: 200 },
-      car: { base: 1500, perKm: 500 },
-    };
-
-    // Calculate fare estimate
-    const rates = FARE_RATES[vehicleType as keyof typeof FARE_RATES] || FARE_RATES.moto;
-    const estimatedFare = rates.base + DEFAULT_DISTANCE_KM * rates.perKm;
+    // Calculate fare estimate using class-level constants
+    const rates = ToolExecutor.FARE_RATES[vehicleType as keyof typeof ToolExecutor.FARE_RATES] 
+      || ToolExecutor.FARE_RATES.moto;
+    const estimatedFare = rates.base + ToolExecutor.DEFAULT_DISTANCE_KM * rates.perKm;
 
     const { data, error } = await this.supabase
       .from("rides_trips")
@@ -1388,19 +1390,13 @@ export class ToolExecutor {
    * Get fare estimate for a trip
    */
   private async getFareEstimate(inputs: Record<string, unknown>): Promise<unknown> {
-    const distanceKm = (inputs.distance_km as number) || 5;
+    const distanceKm = (inputs.distance_km as number) || ToolExecutor.DEFAULT_DISTANCE_KM;
     const vehicleType = (inputs.vehicle_type as string) || "moto";
 
-    // Fare calculation constants
-    const MINUTES_PER_KM = 3; // Average time per kilometer
-    const FARE_RATES = {
-      moto: { base: 500, perKm: 200 },
-      car: { base: 1500, perKm: 500 },
-    };
-
-    const rates = FARE_RATES[vehicleType as keyof typeof FARE_RATES] || FARE_RATES.moto;
+    const rates = ToolExecutor.FARE_RATES[vehicleType as keyof typeof ToolExecutor.FARE_RATES] 
+      || ToolExecutor.FARE_RATES.moto;
     const estimatedFare = rates.base + distanceKm * rates.perKm;
-    const estimatedTime = Math.ceil(distanceKm * MINUTES_PER_KM);
+    const estimatedTime = Math.ceil(distanceKm * ToolExecutor.MINUTES_PER_KM);
 
     return {
       vehicle_type: vehicleType,
