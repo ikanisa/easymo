@@ -3,54 +3,12 @@ BEGIN;
 -- Align menu item keys with their AI agent workflows
 -- This ensures menu selections route to the correct AI agents
 
--- 1. Waiter AI - key should be 'waiter_agent' (already correct)
--- No change needed
+-- Most keys are already aligned correctly
+-- Only update if needed
 
--- 2. Rides & Delivery - key should be 'rides_agent' (already correct)
--- No change needed
-
--- 3. Jobs & Gigs - key should be 'jobs_agent' (already correct)
--- No change needed
-
--- 4. Insurance & Protection - key should be 'insurance_agent' (already correct)
--- No change needed
-
--- 5. Property Rentals - Update from 'real_estate_agent' to match routing
--- OR keep as is and update route-config (we'll update route-config instead)
-
--- 6. Farmers Market - key should be 'farmer_agent' (already correct)
--- No change needed
-
--- 7. Buy & Sell - key should be 'business_broker_agent' (already correct)
--- No change needed
-
--- 8. Help Center - Update to 'sales_agent' if not already
--- Check if we have a row with key 'general_broker_agent' and update it
+-- Update general_broker_agent to sales_agent for Help Center
 UPDATE public.whatsapp_home_menu_items
-SET key = 'sales_agent'
-WHERE key = 'general_broker_agent';
-
--- 9. My Account - Update from 'profile' to 'profile' (already correct)
--- No change needed
-
--- Verify no duplicate keys exist
--- This query will help identify any issues
-DO $$
-DECLARE
-  duplicate_count INTEGER;
-BEGIN
-  SELECT COUNT(*) INTO duplicate_count
-  FROM (
-    SELECT key, COUNT(*) as cnt
-    FROM public.whatsapp_home_menu_items
-    WHERE is_active = true
-    GROUP BY key
-    HAVING COUNT(*) > 1
-  ) duplicates;
-  
-  IF duplicate_count > 0 THEN
-    RAISE NOTICE 'Warning: Found % duplicate keys in whatsapp_home_menu_items', duplicate_count;
-  END IF;
-END $$;
+SET key = 'sales_agent', updated_at = NOW()
+WHERE key = 'general_broker_agent' AND is_active = true;
 
 COMMIT;
