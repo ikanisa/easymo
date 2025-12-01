@@ -222,16 +222,28 @@ export function getServiceRedirect(service: string): string {
  * Resolve the final service to route to, taking into account deprecation
  * and the FEATURE_UNIFIED_AGENTS feature flag.
  * 
+ * When useUnified is true and the service is deprecated, returns the redirect target.
+ * When useUnified is false, always returns the original service (even if deprecated).
+ * When the service is not deprecated, always returns the original service.
+ * 
  * @param service - The originally matched service
- * @param useUnified - Whether to use the unified service for deprecated services
+ * @param useUnified - Whether to redirect deprecated services to the unified service
  * @returns The final service to route to
  */
 export function resolveServiceWithMigration(service: string, useUnified: boolean): string {
+  // When unified routing is disabled, always use the original service
   if (!useUnified) {
     return service;
   }
   
-  return getServiceRedirect(service);
+  // When unified routing is enabled, check if service has a redirect configured
+  const config = ROUTE_CONFIGS.find((c) => c.service === service);
+  if (config?.deprecated && config?.redirectTo) {
+    return config.redirectTo;
+  }
+  
+  // Service is not deprecated or has no redirect, use original
+  return service;
 }
 
 /**

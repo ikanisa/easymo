@@ -255,7 +255,7 @@ export async function forwardToEdgeService(
   forwardHeaders.set("Content-Type", "application/json");
   forwardHeaders.set("X-Routed-From", "wa-webhook-core");
   forwardHeaders.set("X-Routed-Service", targetService);
-  forwardHeaders.set("X-Original-Service", originalService);  // Track original for debugging
+  forwardHeaders.set("X-Original-Service", originalService); // Track original for debugging
   forwardHeaders.set("X-Correlation-ID", correlationId);
 
   try {
