@@ -4,6 +4,17 @@
  * 
  * Part of Unified AI Agent Architecture
  * Created: 2025-11-27
+ * 
+ * @deprecated This service is deprecated and will be removed in a future release.
+ * Use wa-webhook-unified instead, which consolidates all AI agent functionality.
+ * 
+ * Migration Status:
+ * - All agents from this service are available in wa-webhook-unified
+ * - New features should ONLY be added to wa-webhook-unified
+ * - This service remains active for backward compatibility during migration
+ * 
+ * @see supabase/functions/wa-webhook-unified for the consolidated service
+ * @see docs/WA_WEBHOOK_CONSOLIDATION.md for migration guide
  */
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';

@@ -3,6 +3,17 @@
  * 
  * Single source of truth for all microservice routing rules.
  * Used by router.ts and routing_logic.ts to prevent inconsistencies.
+ * 
+ * ## Consolidation in Progress
+ * 
+ * The following services are being consolidated into wa-webhook-unified:
+ * - wa-webhook-ai-agents (Farmer, Waiter, Support, Insurance, Rides, Sales, Broker)
+ * - wa-webhook-marketplace (Buy/Sell, Shops, Payments)
+ * 
+ * When FEATURE_UNIFIED_AGENTS is enabled, traffic will be routed to wa-webhook-unified
+ * instead of the legacy services.
+ * 
+ * @see docs/WA_WEBHOOK_CONSOLIDATION.md for migration details
  */
 
 export interface RouteConfig {
@@ -13,6 +24,13 @@ export interface RouteConfig {
   menuKeys: string[];
   /** Priority for conflict resolution (lower = higher priority) */
   priority: number;
+  /** 
+   * If true, this service is deprecated and traffic should be routed to
+   * wa-webhook-unified when FEATURE_UNIFIED_AGENTS is enabled.
+   */
+  deprecated?: boolean;
+  /** The service to redirect to when deprecated */
+  redirectTo?: string;
 }
 
 /**
@@ -70,6 +88,8 @@ export const ROUTE_CONFIGS: RouteConfig[] = [
     keywords: ["marketplace", "shop", "buy", "sell", "store", "product", "business", "broker"],
     menuKeys: ["marketplace", "shops_services", "buy_and_sell", "buy and sell", "business_broker_agent", "general_broker", "6"],
     priority: 1,
+    deprecated: true,
+    redirectTo: "wa-webhook-unified",
   },
   {
     service: "wa-webhook-ai-agents",
@@ -88,6 +108,8 @@ export const ROUTE_CONFIGS: RouteConfig[] = [
       "7"
     ],
     priority: 3, // Lower priority so specific services match first
+    deprecated: true,
+    redirectTo: "wa-webhook-unified",
   },
 ];
 
@@ -98,6 +120,7 @@ export const ROUTED_SERVICES: readonly string[] = [
   "wa-webhook-jobs",
   "wa-webhook-marketplace",
   "wa-webhook-ai-agents",
+  "wa-webhook-unified",   // Consolidated service (replaces marketplace + ai-agents)
   "wa-webhook-property",
   "wa-webhook-mobility",
   "wa-webhook-profile",
@@ -174,3 +197,52 @@ export function matchKeywordsToService(text: string): string | null {
 
   return matches[0].service;
 }
+
+/**
+ * Check if a service is deprecated
+ */
+export function isServiceDeprecated(service: string): boolean {
+  const config = ROUTE_CONFIGS.find((c) => c.service === service);
+  return config?.deprecated === true;
+}
+
+/**
+ * Get the redirect target for a deprecated service
+ * Returns the original service if not deprecated or no redirect configured
+ */
+export function getServiceRedirect(service: string): string {
+  const config = ROUTE_CONFIGS.find((c) => c.service === service);
+  if (config?.deprecated && config?.redirectTo) {
+    return config.redirectTo;
+  }
+  return service;
+}
+
+/**
+ * Resolve the final service to route to, taking into account deprecation
+ * and the FEATURE_UNIFIED_AGENTS feature flag.
+ * 
+ * @param service - The originally matched service
+ * @param useUnified - Whether to use the unified service for deprecated services
+ * @returns The final service to route to
+ */
+export function resolveServiceWithMigration(service: string, useUnified: boolean): string {
+  if (!useUnified) {
+    return service;
+  }
+  
+  return getServiceRedirect(service);
+}
+
+/**
+ * Services that are being consolidated into wa-webhook-unified
+ * Used for monitoring and migration tracking
+ */
+export const DEPRECATED_SERVICES = ROUTE_CONFIGS
+  .filter((c) => c.deprecated)
+  .map((c) => c.service);
+
+/**
+ * The unified service that replaces deprecated services
+ */
+export const UNIFIED_SERVICE = "wa-webhook-unified";
