@@ -27,6 +27,7 @@ export type FeatureFlag =
   | "agent.quincaillerie"
   | "agent.notary"
   | "agent.unified_system"
+  | "agent.unified_webhook"  // Route to wa-webhook-unified instead of legacy services
   | "wallet.service"
   | "ocr.processor"
   | "cart.reminders"
@@ -54,6 +55,7 @@ const DEFAULT_FLAGS: Record<FeatureFlag, boolean> = {
   "agent.quincaillerie": false,
   "agent.notary": false,
   "agent.unified_system": true,
+  "agent.unified_webhook": false, // Start with false for gradual rollout
   "wallet.service": false,
   "ocr.processor": true,
   "cart.reminders": true,

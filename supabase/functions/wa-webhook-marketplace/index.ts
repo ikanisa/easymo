@@ -8,6 +8,17 @@
  * - Proximity-based matching
  * - Integration with business directory
  *
+ * @deprecated This service is deprecated and will be removed in a future release.
+ * Marketplace functionality has been migrated to wa-webhook-unified.
+ * 
+ * Migration Status:
+ * - MarketplaceAgent is available in wa-webhook-unified/agents/marketplace-agent.ts
+ * - Payment handling available in wa-webhook-unified/tools/
+ * - New marketplace features should ONLY be added to wa-webhook-unified
+ * - This service remains active for backward compatibility during migration
+ * 
+ * @see supabase/functions/wa-webhook-unified for the consolidated service
+ * @see docs/WA_WEBHOOK_CONSOLIDATION.md for migration guide
  * @see docs/GROUND_RULES.md for observability requirements
  */
 

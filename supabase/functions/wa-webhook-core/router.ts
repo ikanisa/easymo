@@ -20,6 +20,13 @@ import {
 import { addToDeadLetterQueue } from "../_shared/dead-letter-queue.ts";
 import { circuitBreakerManager } from "../_shared/circuit-breaker.ts";
 import { logError, logWarn, logInfo } from "../_shared/correlation-logging.ts";
+import { isFeatureEnabled } from "../_shared/feature-flags.ts";
+import {
+  resolveServiceWithMigration,
+  isServiceDeprecated,
+  DEPRECATED_SERVICES,
+  UNIFIED_SERVICE,
+} from "../_shared/route-config.ts";
 
 type RoutingDecision = {
   service: string;
@@ -179,25 +186,44 @@ export async function forwardToEdgeService(
 ): Promise<Response> {
   const correlationId = headers?.get("X-Correlation-ID") ?? crypto.randomUUID();
   
-  if (!ROUTED_SERVICES.includes(decision.service)) {
-    console.warn(`Unknown service '${decision.service}', handling inside core.`);
+  // Check if unified webhook migration is enabled
+  const useUnifiedWebhook = isFeatureEnabled("agent.unified_webhook");
+  
+  // Resolve the final service, potentially redirecting deprecated services to unified
+  let targetService = decision.service;
+  const originalService = decision.service;
+  
+  if (useUnifiedWebhook && isServiceDeprecated(decision.service)) {
+    targetService = resolveServiceWithMigration(decision.service, true);
+    
+    // Log the migration redirect for monitoring
+    logInfo("WA_CORE_MIGRATION_REDIRECT", {
+      originalService,
+      targetService,
+      reason: "deprecated_service_redirect",
+    }, { correlationId });
+  }
+  
+  if (!ROUTED_SERVICES.includes(targetService)) {
+    console.warn(`Unknown service '${targetService}', handling inside core.`);
     return new Response(JSON.stringify({ success: true, service: "wa-webhook-core" }), {
       status: 200,
       headers: { "Content-Type": "application/json" },
     });
   }
 
-  if (decision.service === "wa-webhook-core") {
+  if (targetService === "wa-webhook-core") {
     // Handle home menu in core
     return await handleHomeMenu(payload, headers);
   }
 
   // Check circuit breaker before attempting request
-  if (isServiceCircuitOpen(decision.service)) {
-    const breakerState = circuitBreakerManager.getBreaker(decision.service).getState();
+  if (isServiceCircuitOpen(targetService)) {
+    const breakerState = circuitBreakerManager.getBreaker(targetService).getState();
     console.warn(JSON.stringify({
       event: "WA_CORE_CIRCUIT_OPEN",
-      service: decision.service,
+      service: targetService,
+      originalService: originalService !== targetService ? originalService : undefined,
       breakerState,
       correlationId,
     }));
@@ -209,13 +235,13 @@ export async function forwardToEdgeService(
         message_id: message.id,
         from_number: message.from,
         payload,
-        error_message: `Circuit breaker open for ${decision.service}`,
+        error_message: `Circuit breaker open for ${targetService}`,
       }, correlationId);
     }
     
     return new Response(JSON.stringify({
       success: false,
-      service: decision.service,
+      service: targetService,
       error: "Service temporarily unavailable (circuit open)",
       circuitOpen: true,
     }), {
@@ -224,11 +250,12 @@ export async function forwardToEdgeService(
     });
   }
 
-  const url = `${MICROSERVICES_BASE_URL}/${decision.service}`;
+  const url = `${MICROSERVICES_BASE_URL}/${targetService}`;
   const forwardHeaders = new Headers(headers);
   forwardHeaders.set("Content-Type", "application/json");
   forwardHeaders.set("X-Routed-From", "wa-webhook-core");
-  forwardHeaders.set("X-Routed-Service", decision.service);
+  forwardHeaders.set("X-Routed-Service", targetService);
+  forwardHeaders.set("X-Original-Service", originalService); // Track original for debugging
   forwardHeaders.set("X-Correlation-ID", correlationId);
 
   try {
@@ -242,16 +269,16 @@ export async function forwardToEdgeService(
 
     if (response.ok || response.status < 500) {
       // Success or client error - record success for circuit breaker
-      recordServiceSuccess(decision.service);
+      recordServiceSuccess(targetService);
     } else {
       // Server error - record failure
-      recordServiceFailure(decision.service, response.status, correlationId);
+      recordServiceFailure(targetService, response.status, correlationId);
     }
 
     if (response.status === 404) {
       logWarn(
         "WA_CORE_SERVICE_NOT_FOUND",
-        { service: decision.service, status: response.status },
+        { service: targetService, originalService, status: response.status },
         { correlationId },
       );
       const message = getFirstMessage(payload);
@@ -262,7 +289,7 @@ export async function forwardToEdgeService(
             message_id: message.id,
             from_number: message.from,
             payload,
-            error_message: `Service ${decision.service} not deployed (404)`,
+            error_message: `Service ${targetService} not deployed (404)`,
           },
           correlationId,
         );
@@ -270,17 +297,22 @@ export async function forwardToEdgeService(
       return await handleHomeMenu(payload, headers);
     }
 
-    logInfo("WA_CORE_ROUTED", { service: decision.service, status: response.status }, { correlationId });
+    logInfo("WA_CORE_ROUTED", { 
+      service: targetService, 
+      originalService: originalService !== targetService ? originalService : undefined,
+      status: response.status,
+    }, { correlationId });
 
     return response;
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     
     // Record failure for circuit breaker
-    recordServiceFailure(decision.service, "error", correlationId);
+    recordServiceFailure(targetService, "error", correlationId);
     
     logError("WA_CORE_ROUTING_FAILURE", {
-      service: decision.service,
+      service: targetService,
+      originalService: originalService !== targetService ? originalService : undefined,
       error: errorMessage,
     }, { correlationId });
 
@@ -298,7 +330,8 @@ export async function forwardToEdgeService(
 
     return new Response(JSON.stringify({
       success: false,
-      service: decision.service,
+      service: targetService,
+      originalService: originalService !== targetService ? originalService : undefined,
       error: "Service temporarily unavailable",
     }), {
       status: 503,
