@@ -36,6 +36,7 @@ export async function listFavorites(
   const { data, error } = await ctx.supabase
     .from("saved_locations")
     .select("id, label, address, lat, lng")
+    .select("id, kind, label, address, lat, lng")
     .eq("user_id", ctx.profileId)
     .order("created_at", { ascending: true });
   if (error) {
@@ -53,6 +54,7 @@ export async function getFavoriteById(
   const { data, error } = await ctx.supabase
     .from("saved_locations")
     .select("id, label, address, lat, lng")
+    .select("id, kind, label, address, lat, lng")
     .eq("user_id", ctx.profileId)
     .eq("id", id)
     .maybeSingle();
@@ -142,6 +144,9 @@ export async function updateFavorite(
 // Normalize saved_locations rows (has lat/lng directly)
 type SavedLocationRow = {
   id: string;
+type SavedLocationRow = {
+  id: string;
+  kind: FavoriteKind;
   label: string;
   address?: string | null;
   lat: number;
@@ -149,6 +154,18 @@ type SavedLocationRow = {
 };
 
 function normalizeSavedLocations(rows: SavedLocationRow[]): UserFavorite[] {
+  return rows.map(row => ({
+    id: row.id,
+    kind: row.kind,
+    label: row.label,
+    address: row.address ?? null,
+    lat: row.lat,
+    lng: row.lng,
+  }));
+}
+
+// Legacy function kept for backward compatibility but no longer needed
+function normalizeFavorites(rows: RawFavorite[]): UserFavorite[] {
   const favorites: UserFavorite[] = [];
   for (const row of rows) {
     if (!Number.isFinite(row.lat) || !Number.isFinite(row.lng)) continue;

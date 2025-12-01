@@ -15,6 +15,8 @@ import {
 import { getStoredVehicleType } from "./vehicle_plate.ts";
 import { ensureDriverInsurance } from "./driver_insurance.ts";
 import { timeAgo } from "../utils/text.ts";
+import { insertTrip } from "../rpc/mobility.ts";
+import { saveIntent } from "../../_shared/wa-webhook-shared/domains/intent_storage.ts";
 
 /**
  * Start Go Online flow - prompt driver to share location
@@ -76,12 +78,48 @@ export async function handleGoOnlineLocation(
     // Save location to cache
     await saveLocationToCache(ctx.supabase, ctx.profileId, coords);
 
-    // Update driver_status table (if exists) or just rely on cached location
-    // The find_online_drivers_near_trip function uses profiles.last_location
-    // But we can also update rides_driver_status if the driver has set up their vehicle
+    // Get driver's vehicle type
     const vehicleType = await getStoredVehicleType(ctx.supabase, ctx.profileId);
     
+    // CRITICAL FIX: Create a trip record so driver is visible in matching
     if (vehicleType) {
+      try {
+        // Create a driver trip for visibility to passengers
+        await insertTrip(ctx.supabase, {
+          userId: ctx.profileId,
+          role: "driver",
+          vehicleType,
+          lat: coords.lat,
+          lng: coords.lng,
+          radiusMeters: 10000, // 10km default radius
+          pickupText: "Driver online",
+        });
+        
+        await logStructuredEvent("DRIVER_TRIP_CREATED", {
+          userId: ctx.profileId,
+          vehicleType,
+          lat: coords.lat,
+          lng: coords.lng,
+        });
+      } catch (tripError) {
+        console.error("Failed to create driver trip:", tripError);
+        // Continue even if trip creation fails
+      }
+
+      // Save go_online intent for recommendations
+      try {
+        await saveIntent(ctx.supabase, {
+          userId: ctx.profileId,
+          intentType: "go_online",
+          vehicleType,
+          pickup: coords,
+          expiresInMinutes: 30,
+        });
+      } catch (intentError) {
+        console.error("Failed to save go_online intent:", intentError);
+      }
+
+      // Also try to update driver_status table if it exists
       try {
         await ctx.supabase.rpc("rides_update_driver_location", {
           p_user_id: ctx.profileId,
@@ -91,8 +129,8 @@ export async function handleGoOnlineLocation(
           p_metadata: { vehicle_type: vehicleType },
         });
       } catch (error) {
-        // Ignore if function doesn't exist yet - we'll rely on profiles.last_location
-        console.warn("rides_update_driver_location not available, using profile cache only");
+        // Ignore if function doesn't exist yet
+        console.warn("rides_update_driver_location not available");
       }
     }
 

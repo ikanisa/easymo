@@ -28,6 +28,7 @@ import {
   updateStoredVehicleType,
 } from "./vehicle_plate.ts";
 import { getRecentNearbyIntent, storeNearbyIntent } from "./intent_cache.ts";
+import { saveIntent } from "../../../_shared/wa-webhook-shared/domains/intent_storage.ts";
 import { isFeatureEnabled } from "../../../_shared/feature-flags.ts";
 import { routeToAIAgent, sendAgentOptions } from "../ai-agents/index.ts";
 import {
@@ -582,6 +583,21 @@ async function runMatchingFallback(
       });
     }
 
+    // Save intent to new table for better recommendations
+    try {
+      await saveIntent(ctx.supabase, {
+        userId: ctx.profileId!,
+        intentType: state.mode === "drivers" ? "nearby_drivers" : "nearby_passengers",
+        vehicleType: state.vehicle!,
+        pickup,
+        dropoff,
+        expiresInMinutes: 30,
+      });
+    } catch (intentError) {
+      // Don't fail the search if intent saving fails
+      console.error("Failed to save intent:", intentError);
+    }
+
     await logStructuredEvent("MATCHES_CALL", {
       flow: "nearby",
       mode: state.mode,
@@ -688,12 +704,12 @@ async function runMatchingFallback(
     }
     return true;
   } finally {
-    if (tempTripId) {
-      await ctx.supabase.from("rides_trips").update({ status: "expired" }).eq(
-        "id",
-        tempTripId,
-      );
-    }
+    // CRITICAL FIX: Don't expire the trip immediately!
+    // The trip should remain 'open' so it can be discovered by other users.
+    // It will auto-expire via the expires_at column (default 30 min).
+    // Removing this allows:
+    // - Passenger trips to be visible when drivers search
+    // - Driver trips to be visible when passengers search
   }
 }
 
