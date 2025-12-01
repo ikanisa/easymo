@@ -1233,7 +1233,7 @@ function scheduleFavoriteToRow(
   favorite: UserFavorite,
 ): { id: string; title: string; description?: string } {
   return {
-    id: favorite.id,
+    id: `FAV::${favorite.id}`,
     title: `⭐ ${favorite.label}`,
     description: favorite.address ??
       `${favorite.lat.toFixed(4)}, ${favorite.lng.toFixed(4)}`,
