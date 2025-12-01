@@ -21,15 +21,22 @@ import {
   AIResponse,
   Tool,
 } from "../core/types.ts";
+import { AgentConfigLoader, type AgentConfig } from "../../_shared/agent-config-loader.ts";
+import { ToolExecutor } from "../../_shared/tool-executor.ts";
 
 export abstract class BaseAgent {
   protected supabase: SupabaseClient;
   protected genAI: GoogleGenerativeAI;
   protected correlationId: string;
+  protected configLoader: AgentConfigLoader;
+  protected toolExecutor: ToolExecutor;
+  protected cachedConfig: AgentConfig | null = null;
 
   constructor(deps: AgentDependencies) {
     this.supabase = deps.supabase;
     this.correlationId = deps.correlationId;
+    this.configLoader = new AgentConfigLoader(deps.supabase);
+    this.toolExecutor = new ToolExecutor(deps.supabase);
     
     const apiKey = Deno.env.get("GEMINI_API_KEY");
     if (!apiKey) {
@@ -40,7 +47,7 @@ export abstract class BaseAgent {
 
   // Abstract methods each agent must implement
   abstract get type(): AgentType;
-  abstract get systemPrompt(): string;
+  abstract get systemPrompt(): string; // Fallback if database config unavailable
   abstract get keywords(): string[];
   abstract get tools(): Tool[];
 
@@ -107,15 +114,17 @@ export abstract class BaseAgent {
   }
 
   /**
-   * Call AI (Gemini) to process message
+   * Call AI (Gemini) to process message with database-driven config
    */
   protected async callAI(
     message: WhatsAppMessage,
     session: UnifiedSession
   ): Promise<AIResponse> {
+    const systemPrompt = await this.buildPromptAsync(session);
+    
     const model = this.genAI.getGenerativeModel({
       model: "gemini-1.5-flash",
-      systemInstruction: this.buildPrompt(session),
+      systemInstruction: systemPrompt,
     });
 
     const chat = model.startChat({
@@ -132,7 +141,73 @@ export abstract class BaseAgent {
   }
 
   /**
-   * Build system prompt with session context
+   * Load agent configuration from database
+   */
+  protected async loadConfig(): Promise<AgentConfig> {
+    if (!this.cachedConfig) {
+      this.cachedConfig = await this.configLoader.loadAgentConfig(this.type);
+    }
+    return this.cachedConfig;
+  }
+
+  /**
+   * Build system prompt with database config and session context
+   */
+  protected async buildPromptAsync(session: UnifiedSession): Promise<string> {
+    let prompt: string;
+    
+    // Try to load from database first
+    try {
+      const config = await this.loadConfig();
+      if (config.loadedFrom === 'database' && config.systemInstructions?.instructions) {
+        // Build from database config
+        const parts: string[] = [];
+        
+        if (config.persona) {
+          parts.push(`Role: ${config.persona.role_name}`);
+          parts.push(`Tone: ${config.persona.tone_style}`);
+        }
+        
+        parts.push(config.systemInstructions.instructions);
+        
+        if (config.systemInstructions.guardrails) {
+          parts.push(`\nGUARDRAILS:\n${config.systemInstructions.guardrails}`);
+        }
+        
+        prompt = parts.join('\n\n');
+      } else {
+        // Fallback to hardcoded
+        prompt = this.systemPrompt;
+      }
+    } catch (error) {
+      console.error(JSON.stringify({
+        event: 'DB_CONFIG_LOAD_FAILED',
+        agent: this.type,
+        error: error instanceof Error ? error.message : String(error),
+      }));
+      prompt = this.systemPrompt;
+    }
+
+    // Add session context
+    if (session.collectedData && Object.keys(session.collectedData).length > 0) {
+      prompt += `\n\nCOLLECTED DATA: ${JSON.stringify(session.collectedData)}`;
+    }
+
+    if (session.activeFlow) {
+      prompt += `\n\nACTIVE FLOW: ${session.activeFlow}`;
+      prompt += `\nFLOW STEP: ${session.flowStep}`;
+    }
+
+    if (session.location) {
+      prompt += `\n\nUSER LOCATION: ${JSON.stringify(session.location)}`;
+    }
+
+    return prompt;
+  }
+
+  /**
+   * Build system prompt with session context (synchronous fallback)
+   * @deprecated Use buildPromptAsync for database-driven config
    */
   protected buildPrompt(session: UnifiedSession): string {
     let prompt = this.systemPrompt;

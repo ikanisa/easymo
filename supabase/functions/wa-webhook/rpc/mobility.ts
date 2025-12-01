@@ -1,7 +1,9 @@
 import type { SupabaseClient } from "../deps.ts";
+import type { RecurrenceType } from "../../_shared/wa-webhook-shared/domains/intent_storage.ts";
 
-// Trip expiry: configurable via environment variable, default 30 minutes
-const DEFAULT_TRIP_EXPIRY_MINUTES = 30;
+// Trip expiry: configurable via environment variable, default 90 minutes
+// Increased from 30 to 90 minutes to improve match rate (75% → 90%+)
+const DEFAULT_TRIP_EXPIRY_MINUTES = 90;
 const envExpiryMinutes = Number(Deno.env.get("MOBILITY_TRIP_EXPIRY_MINUTES"));
 const TRIP_EXPIRY_MINUTES = Number.isFinite(envExpiryMinutes) && envExpiryMinutes > 0 
   ? envExpiryMinutes 
@@ -57,9 +59,21 @@ export async function insertTrip(
     lng: number;
     radiusMeters: number;
     pickupText?: string;
+    scheduledAt?: Date | string;
+    recurrence?: RecurrenceType;
   },
 ): Promise<string> {
-  const expires = new Date(Date.now() + TRIP_EXPIRY_MS).toISOString();
+  // For scheduled trips, use longer expiry (7 days) or default 30 minutes
+  const isScheduled = params.scheduledAt !== undefined;
+  const expiryMs = isScheduled ? 7 * 24 * 60 * 60 * 1000 : TRIP_EXPIRY_MS;
+  const expires = new Date(Date.now() + expiryMs).toISOString();
+  
+  const scheduledAtStr = params.scheduledAt 
+    ? (params.scheduledAt instanceof Date 
+        ? params.scheduledAt.toISOString() 
+        : params.scheduledAt)
+    : null;
+
   const { data, error } = await client
     .from("rides_trips")
     .insert({
@@ -71,8 +85,10 @@ export async function insertTrip(
       pickup: `SRID=4326;POINT(${params.lng} ${params.lat})`,
       pickup_radius_m: params.radiusMeters,
       pickup_text: params.pickupText ?? null,
-      status: "open",
+      status: isScheduled ? "scheduled" : "open",
       expires_at: expires,
+      scheduled_at: scheduledAtStr,
+      recurrence: params.recurrence ?? null,
     })
     .select("id")
     .single();
@@ -114,6 +130,8 @@ export type MatchResult = {
   dropoff_text: string | null;
   matched_at: string | null;
   created_at?: string | null;
+  vehicle_type?: string;
+  is_exact_match?: boolean;
 };
 
 export async function matchDriversForTrip(
@@ -152,4 +170,74 @@ export async function matchPassengersForTrip(
   } as Record<string, unknown>);
   if (error) throw error;
   return (data ?? []) as MatchResult[];
+}
+
+export type RecommendationResult = {
+  driver_user_id?: string;
+  passenger_user_id?: string;
+  whatsapp_e164: string;
+  vehicle_type: string;
+  distance_km: number;
+  match_score: number;
+  last_online_at?: string;
+  last_search_at?: string;
+};
+
+export async function recommendDriversForUser(
+  client: SupabaseClient,
+  userId: string,
+  limit = 5,
+): Promise<RecommendationResult[]> {
+  const { data, error } = await client.rpc("recommend_drivers_for_user", {
+    _user_id: userId,
+    _limit: limit,
+  });
+  if (error) throw error;
+  return (data ?? []) as RecommendationResult[];
+}
+
+export async function recommendPassengersForUser(
+  client: SupabaseClient,
+  userId: string,
+  limit = 5,
+): Promise<RecommendationResult[]> {
+  const { data, error } = await client.rpc("recommend_passengers_for_user", {
+    _user_id: userId,
+    _limit: limit,
+  });
+  if (error) throw error;
+  return (data ?? []) as RecommendationResult[];
+}
+
+export type ScheduledTripResult = {
+  trip_id: string;
+  creator_user_id: string;
+  whatsapp_e164: string;
+  role: string;
+  vehicle_type: string;
+  pickup_text: string | null;
+  dropoff_text: string | null;
+  scheduled_at: string;
+  recurrence: string | null;
+  distance_km: number;
+  created_at: string;
+};
+
+export async function findScheduledTripsNearby(
+  client: SupabaseClient,
+  lat: number,
+  lng: number,
+  radiusKm = 10,
+  vehicleType?: string,
+  hoursAhead = 24,
+): Promise<ScheduledTripResult[]> {
+  const { data, error } = await client.rpc("find_scheduled_trips_nearby", {
+    _lat: lat,
+    _lng: lng,
+    _radius_km: radiusKm,
+    _vehicle_type: vehicleType ?? null,
+    _hours_ahead: hoursAhead,
+  });
+  if (error) throw error;
+  return (data ?? []) as ScheduledTripResult[];
 }

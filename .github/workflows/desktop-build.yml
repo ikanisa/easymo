@@ -36,7 +36,7 @@ jobs:
     
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -141,7 +141,7 @@ jobs:
           fi
       
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: desktop-${{ matrix.platform }}
           path: |
@@ -159,10 +159,10 @@ jobs:
     
     steps:
       - name: Download all artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
       
       - name: Create Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           files: |
             desktop-windows/**/*
@@ -181,7 +181,7 @@ jobs:
     
     steps:
       - name: Download all artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
       
       - name: Deploy to releases.easymo.dev
         env:

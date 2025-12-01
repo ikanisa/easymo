@@ -1,17 +1,11 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { logStructuredEvent } from "../_shared/observability.ts";
 import { getWabaCredentials, getSupabaseServiceConfig } from "../_shared/env.ts";
-import { logStructuredEvent } from "../_shared/observability.ts";
 import type { WhatsAppWebhookPayload } from "../_shared/wa-webhook-shared/types.ts";
-import { logStructuredEvent } from "../_shared/observability.ts";
 import { getRoutingText } from "../_shared/wa-webhook-shared/utils/messages.ts";
-import { logStructuredEvent } from "../_shared/observability.ts";
-import { routeMessage } from "../wa-webhook-core/routing_logic.ts";
-import { logStructuredEvent } from "../_shared/observability.ts";
+import { routeMessage } from "../wa-webhook-core/router.ts";
 import { verifyWebhookSignature } from "../_shared/webhook-utils.ts";
-import { logStructuredEvent } from "../_shared/observability.ts";
 import { rateLimitMiddleware } from "../_shared/rate-limit/index.ts";
-import { logStructuredEvent } from "../_shared/observability.ts";
 
 /**
  * ⚠️ DEPRECATION NOTICE ⚠️

@@ -10,6 +10,10 @@ export async function listSavedLocations(
 ): Promise<boolean> {
   if (!ctx.profileId) return false;
 
+  // Show loading state
+  const { sendText } = await import("../../_shared/wa-webhook-shared/wa/client.ts");
+  await sendText(ctx.from, "⏳ Loading your saved locations...");
+
   const { data: locations, error } = await ctx.supabase
     .from("saved_locations")
     .select("id, label, address, lat, lng, created_at")
@@ -21,10 +25,11 @@ export async function listSavedLocations(
     console.error("Failed to fetch saved locations:", error);
     await sendButtonsMessage(
       ctx,
-      "⚠️ Failed to load your saved locations. Please try again.",
+      "⚠️ Failed to load your saved locations. Please try again.\n\n" +
+      `Error: ${error.message}`,
       [
+        { id: IDS.SAVED_LOCATIONS, title: "🔄 Try Again" },
         { id: IDS.BACK_PROFILE, title: "← Back" },
-        { id: IDS.SHARE_EASYMO, title: "🔗 Share easyMO" },
       ],
     );
     return true;
@@ -35,7 +40,12 @@ export async function listSavedLocations(
       ctx,
       {
         title: "📍 Saved Locations",
-        body: "You don't have any saved locations yet.\n\nSave your favorite places for quick access:",
+        body:
+          "You don't have any saved locations yet.\n\n*How to save a location:*\n" +
+          "1. Choose a location type below\n" +
+          "2. Share your location using WhatsApp's location button (📎)\n" +
+          "3. Or type an address\n\n" +
+          "Save your favorite places for quick ride booking!",
         sectionTitle: "Add Location",
         buttonText: "Choose",
         rows: [
@@ -74,7 +84,8 @@ export async function listSavedLocations(
   const rows = locations.map((loc) => ({
     id: `LOC::${loc.id}`,
     title: loc.label || "Unnamed Location",
-    description: loc.address || `${loc.lat?.toFixed(6)}, ${loc.lng?.toFixed(6)}`,
+    description: loc.address ||
+      `${loc.lat?.toFixed(6)}, ${loc.lng?.toFixed(6)}`,
   }));
 
   rows.push(
@@ -94,7 +105,9 @@ export async function listSavedLocations(
     ctx,
     {
       title: "📍 Saved Locations",
-      body: `You have ${locations.length} saved location${locations.length === 1 ? "" : "s"}`,
+      body: `You have ${locations.length} saved location${
+        locations.length === 1 ? "" : "s"
+      }`,
       sectionTitle: "Locations",
       buttonText: "View",
       rows,

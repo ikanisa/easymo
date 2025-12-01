@@ -233,11 +233,11 @@ export class RidesAgent {
     const { label, addressText, lat, lng } = payload;
 
     const { data: location, error } = await this.supabase
-      .from("rides_saved_locations")
+      .from("saved_locations")
       .insert({
         user_id: userId,
         label,
-        address_text: addressText,
+        address: addressText,  // Changed from address_text to address
         lat,
         lng
       })

@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       
       - uses: pnpm/action-setup@v4
         with:
@@ -36,7 +36,7 @@ jobs:
           npx tsx scripts/audit/observability-compliance.ts || true
           
       - name: Upload compliance report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: observability-compliance-report
           path: observability-compliance-report.json
@@ -55,7 +55,7 @@ jobs:
           
       - name: Comment PR
         if: github.event_name == 'pull_request'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             const fs = require('fs');

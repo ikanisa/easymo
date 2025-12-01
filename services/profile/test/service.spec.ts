@@ -9,7 +9,7 @@ import { ProfileService } from "../src/service";
 const createMockSupabase = () => {
   const mockData: Record<string, unknown[]> = {
     profiles: [],
-    user_saved_locations: [],
+    saved_locations: [],
   };
 
   let lastError: { message: string; code: string } | null = null;
@@ -220,10 +220,10 @@ describe("ProfileService", () => {
     it("should return user's saved locations", async () => {
       const userId = "123e4567-e89b-12d3-a456-426614174000";
       const mockLocations = [
-        { id: "loc1", user_id: userId, label: "home", latitude: -1.9536, longitude: 30.1047 },
-        { id: "loc2", user_id: userId, label: "work", latitude: -1.9468, longitude: 30.0619 },
+        { id: "loc1", user_id: userId, label: "home", lat: -1.9536, lng: 30.1047 },
+        { id: "loc2", user_id: userId, label: "work", lat: -1.9468, lng: 30.0619 },
       ];
-      mockSupabase._setMockData("user_saved_locations", mockLocations);
+      mockSupabase._setMockData("saved_locations", mockLocations);
 
       const result = await service.getSavedLocations(userId);
 
@@ -246,7 +246,7 @@ describe("ProfileService", () => {
 
       expect(result).toBeDefined();
       expect(result.label).toBe("home");
-      expect(result.latitude).toBe(-1.9536);
+      expect(result.lat).toBe(-1.9536);
     });
   });
 
