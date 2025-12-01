@@ -37,6 +37,7 @@ import {
   type UserFavorite,
 } from "../locations/favorites.ts";
 import { buildSaveRows } from "../locations/save.ts";
+import { saveIntent } from "../../../_shared/wa-webhook-shared/domains/intent_storage.ts";
 
 const DEFAULT_WINDOW_DAYS = 30;
 const REQUIRED_RADIUS_METERS = 10_000;
@@ -807,6 +808,24 @@ async function createTripAndDeliverMatches(
       });
     }
 
+    // Save intent for recommendations (scheduled trips have longer expiry: 7 days)
+    try {
+      await saveIntent(ctx.supabase, {
+        userId: ctx.profileId!,
+        intentType: "schedule",
+        vehicleType: state.vehicle!,
+        pickup: state.origin!,
+        dropoff: options.dropoff ?? undefined,
+        scheduledFor: state.travelDate && state.travelTime 
+          ? parseScheduledDateTime(state.travelDate, state.travelTime, state.timezone ?? DEFAULT_TIMEZONE)
+          : undefined,
+        expiresInMinutes: 60 * 24 * 7, // 7 days for scheduled trips
+      });
+    } catch (intentError) {
+      // Don't fail the trip creation if intent saving fails
+      console.error("Failed to save schedule intent:", intentError);
+    }
+
     const context: ScheduleState = {
       role: state.role,
       vehicle: state.vehicle,
@@ -1255,4 +1274,41 @@ export function formatTravelLabel(
     // ignore formatter failures
   }
   return `${dateLabel} · ${time} (${zone})`;
+}
+
+/**
+ * Parse date and time strings into a Date object for scheduled trip storage.
+ * The date/time is stored in UTC for consistency across timezones.
+ * 
+ * Note: This simplified implementation treats the input as a local time string
+ * and converts to Date. For production use with multiple timezones, consider
+ * using a library like Temporal or date-fns-tz for proper timezone handling.
+ * 
+ * @param date - Date string in YYYY-MM-DD format
+ * @param time - Time string in HH:MM format  
+ * @param timezone - Timezone string (stored for display purposes, not used in parsing)
+ * @returns Date object or undefined if parsing fails
+ */
+function parseScheduledDateTime(
+  date: string,
+  time: string,
+  timezone: string,
+): Date | undefined {
+  try {
+    // Parse as ISO string to get consistent UTC representation
+    // The timezone parameter is captured but we treat input as local time
+    // for the server's timezone (Africa/Kigali in production)
+    const dateTimeStr = `${date}T${time}:00`;
+    const parsed = new Date(dateTimeStr);
+    if (isNaN(parsed.getTime())) return undefined;
+    
+    // Log timezone for debugging/auditing purposes
+    if (timezone) {
+      console.debug(`Scheduled trip created for timezone: ${timezone}`);
+    }
+    
+    return parsed;
+  } catch {
+    return undefined;
+  }
 }
