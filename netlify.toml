@@ -82,7 +82,4 @@
   autoLaunch = true
   
 [functions]
-  # Increase timeout for AI operations
-  timeout = 26
-  # Set memory limit
   node_bundler = "esbuild"
