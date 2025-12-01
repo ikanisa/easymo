@@ -48,6 +48,8 @@ const coreNavigationGroup: PanelNavGroup = {
     { href: "/leads", title: "Leads" },
     { href: "/live-calls", title: "Live calls" },
     { href: "/marketplace", title: "Marketplace" },
+    { href: "/sms-vendors", title: "SMS Vendors" },
+    { href: "/client-portal", title: "Client Portal" },
     { href: "/support", title: "Support" },
     { href: "/settings", title: "Settings" },
   ],
@@ -84,6 +86,30 @@ const routeMetadata: Record<string, { title: string; description: string }> = {
   "/marketplace": {
     title: "Marketplace",
     description: "Review vendor onboarding health and catalog configuration progress.",
+  },
+  "/sms-vendors": {
+    title: "SMS Vendors",
+    description: "Register and manage vendors for SMS parsing service.",
+  },
+  "/sms-vendors/new": {
+    title: "Register SMS Vendor",
+    description: "Register a new vendor for SMS parsing service.",
+  },
+  "/client-portal": {
+    title: "Client Portal",
+    description: "Vendor portal for viewing transactions, payers, and reports.",
+  },
+  "/client-portal/transactions": {
+    title: "Transactions",
+    description: "View all SMS transaction history.",
+  },
+  "/client-portal/payers": {
+    title: "Payers",
+    description: "View payer ledgers and payment history.",
+  },
+  "/client-portal/reports": {
+    title: "Reports",
+    description: "View periodic transaction reports and analytics.",
   },
   "/support": {
     title: "Support",
