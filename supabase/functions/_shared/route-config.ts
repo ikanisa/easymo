@@ -10,7 +10,7 @@
  * - wa-webhook-ai-agents (Farmer, Waiter, Support, Insurance, Rides, Sales, Broker)
  * - wa-webhook-marketplace (Buy/Sell, Shops, Payments)
  * 
- * When FEATURE_UNIFIED_AGENTS is enabled, traffic will be routed to wa-webhook-unified
+ * When FEATURE_AGENT_UNIFIED_WEBHOOK is enabled, traffic will be routed to wa-webhook-unified
  * instead of the legacy services.
  * 
  * @see docs/WA_WEBHOOK_CONSOLIDATION.md for migration details
@@ -26,7 +26,7 @@ export interface RouteConfig {
   priority: number;
   /** 
    * If true, this service is deprecated and traffic should be routed to
-   * wa-webhook-unified when FEATURE_UNIFIED_AGENTS is enabled.
+   * wa-webhook-unified when FEATURE_AGENT_UNIFIED_WEBHOOK is enabled.
    */
   deprecated?: boolean;
   /** The service to redirect to when deprecated */
