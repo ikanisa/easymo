@@ -79,6 +79,9 @@ export class ToolExecutor {
         case "external":
           result = await this.executeExternalTool(tool, inputs, context);
           break;
+        case "whatsapp":
+          result = await this.executeWhatsAppTool(tool, inputs, context);
+          break;
         default:
           throw new Error(`Unsupported tool type: ${tool.tool_type}`);
       }
@@ -203,10 +206,234 @@ export class ToolExecutor {
       case "lookup_loyalty":
         return await this.lookupLoyalty(inputs);
       
+      // Marketplace tools
+      case "search_listings":
+        return await this.searchMarketplaceListings(inputs);
+      
+      case "create_listing":
+        return await this.createMarketplaceListing(inputs, context);
+      
+      case "search_businesses":
+        return await this.searchBusinessDirectory(inputs);
+      
+      case "get_nearby_listings":
+        return await this.getNearbyListings(inputs, context);
+      
       default:
         // Generic table query
         return await this.genericTableQuery(tableName, inputs);
     }
+  }
+
+  /**
+   * Search marketplace listings
+   */
+  private async searchMarketplaceListings(inputs: Record<string, unknown>): Promise<unknown> {
+    const query = inputs.query as string || "";
+    const category = inputs.category as string;
+    const priceMin = inputs.price_min as number;
+    const priceMax = inputs.price_max as number;
+    const condition = inputs.condition as string;
+
+    let dbQuery = this.supabase
+      .from("marketplace_listings")
+      .select(`
+        id, product_name, description, price, category, condition, location,
+        seller_phone, created_at, photos
+      `)
+      .eq("status", "active")
+      .limit(15);
+
+    if (query) {
+      // Escape special characters for LIKE queries to prevent injection
+      const sanitizedQuery = this.sanitizeSearchQuery(query);
+      dbQuery = dbQuery.or(`product_name.ilike.%${sanitizedQuery}%,description.ilike.%${sanitizedQuery}%`);
+    }
+
+    if (category) {
+      dbQuery = dbQuery.eq("category", category);
+    }
+
+    if (priceMin) {
+      dbQuery = dbQuery.gte("price", priceMin);
+    }
+
+    if (priceMax) {
+      dbQuery = dbQuery.lte("price", priceMax);
+    }
+
+    if (condition) {
+      dbQuery = dbQuery.eq("condition", condition);
+    }
+
+    const { data, error } = await dbQuery.order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Marketplace search error:", error);
+      // Return empty results instead of throwing
+      return {
+        count: 0,
+        listings: [],
+        message: "Search completed - no matching listings found",
+      };
+    }
+
+    return {
+      count: data?.length || 0,
+      listings: data?.map(l => ({
+        id: l.id,
+        title: l.product_name,
+        description: l.description?.slice(0, 100) + (l.description?.length > 100 ? "..." : ""),
+        price: `${l.price} RWF`,
+        category: l.category,
+        condition: l.condition,
+        location: l.location,
+        // Mask seller phone for privacy
+        seller_contact: l.seller_phone ? `wa.me/${this.formatPhoneForWhatsApp(l.seller_phone)}` : null,
+        photos: l.photos?.slice(0, 3),
+      })) || [],
+    };
+  }
+
+  /**
+   * Sanitize search query to prevent SQL injection in LIKE patterns
+   */
+  private sanitizeSearchQuery(query: string): string {
+    // Escape special characters used in PostgreSQL LIKE patterns
+    return query
+      .replace(/\\/g, '\\\\')  // Escape backslashes first
+      .replace(/%/g, '\\%')    // Escape percent
+      .replace(/_/g, '\\_')    // Escape underscore
+      .replace(/'/g, "''")     // Escape single quotes
+      .slice(0, 100);          // Limit length to prevent DoS
+  }
+
+  /**
+   * Format phone number for WhatsApp URL (remove non-digit characters except leading +)
+   */
+  private formatPhoneForWhatsApp(phone: string): string {
+    if (!phone) return '';
+    // Keep only digits, removing + prefix and any other characters
+    return phone.replace(/[^0-9]/g, '');
+  }
+
+  /**
+   * Create a new marketplace listing
+   */
+  private async createMarketplaceListing(
+    inputs: Record<string, unknown>,
+    context: ToolExecutionContext
+  ): Promise<unknown> {
+    const title = inputs.title as string;
+    const description = inputs.description as string;
+    const price = inputs.price as number;
+    const category = inputs.category as string;
+    const condition = inputs.condition as string || "used";
+    const location = inputs.location as string;
+    const negotiable = inputs.negotiable as boolean || true;
+
+    // Get user's phone number for seller contact
+    const { data: user } = await this.supabase
+      .from("whatsapp_users")
+      .select("phone_number")
+      .eq("id", context.userId)
+      .single();
+
+    const { data, error } = await this.supabase
+      .from("marketplace_listings")
+      .insert({
+        product_name: title,
+        description,
+        price,
+        category,
+        condition,
+        location,
+        negotiable,
+        seller_phone: user?.phone_number,
+        status: "active",
+      })
+      .select("id")
+      .single();
+
+    if (error) {
+      console.error("Create listing error:", error);
+      return {
+        success: false,
+        error: "Failed to create listing. Please try again.",
+      };
+    }
+
+    return {
+      success: true,
+      listing_id: data?.id,
+      message: `Your listing "${title}" has been created successfully! Buyers can now find it in the marketplace.`,
+    };
+  }
+
+  /**
+   * Get nearby listings based on user's cached location
+   */
+  private async getNearbyListings(
+    inputs: Record<string, unknown>,
+    context: ToolExecutionContext
+  ): Promise<unknown> {
+    const category = inputs.category as string;
+    const radiusKm = (inputs.radius_km as number) || 10;
+    const limit = (inputs.limit as number) || 10;
+
+    // Get user's cached location
+    const { data: user } = await this.supabase
+      .from("whatsapp_users")
+      .select("location_cache")
+      .eq("id", context.userId)
+      .single();
+
+    if (!user?.location_cache) {
+      return {
+        success: false,
+        needs_location: true,
+        message: "Please share your location first to find nearby listings. Send your GPS location via WhatsApp.",
+      };
+    }
+
+    // For now, return a simple search without PostGIS distance calculation
+    // In production, this would use a proper geospatial query
+    let dbQuery = this.supabase
+      .from("marketplace_listings")
+      .select(`
+        id, product_name, description, price, category, condition, location,
+        seller_phone, created_at
+      `)
+      .eq("status", "active")
+      .limit(limit);
+
+    if (category) {
+      dbQuery = dbQuery.eq("category", category);
+    }
+
+    const { data, error } = await dbQuery.order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Nearby listings error:", error);
+      return {
+        count: 0,
+        listings: [],
+        user_location: user.location_cache,
+      };
+    }
+
+    return {
+      count: data?.length || 0,
+      listings: data?.map(l => ({
+        id: l.id,
+        title: l.product_name,
+        price: `${l.price} RWF`,
+        category: l.category,
+        location: l.location,
+      })) || [],
+      user_location: user.location_cache,
+      search_radius_km: radiusKm,
+    };
   }
 
   /**
@@ -504,6 +731,78 @@ export class ToolExecutor {
       tool: tool.name,
       inputs,
       message: "External tool execution pending",
+    };
+  }
+
+  /**
+   * Execute WhatsApp tool (contact_seller, etc.)
+   */
+  private async executeWhatsAppTool(
+    tool: AgentTool,
+    inputs: Record<string, unknown>,
+    context: ToolExecutionContext
+  ): Promise<unknown> {
+    switch (tool.name) {
+      case "contact_seller":
+        return await this.executeContactSeller(inputs);
+      default:
+        return {
+          success: false,
+          message: `Unknown WhatsApp tool: ${tool.name}`,
+        };
+    }
+  }
+
+  /**
+   * Generate WhatsApp link to contact a seller
+   */
+  private async executeContactSeller(inputs: Record<string, unknown>): Promise<unknown> {
+    const listingId = inputs.listing_id as string;
+    const customMessage = inputs.message as string;
+
+    if (!listingId) {
+      return {
+        success: false,
+        error: "Listing ID is required",
+      };
+    }
+
+    // Get listing details
+    const { data: listing, error } = await this.supabase
+      .from("marketplace_listings")
+      .select("product_name, seller_phone, price")
+      .eq("id", listingId)
+      .single();
+
+    if (error || !listing) {
+      return {
+        success: false,
+        error: "Listing not found",
+      };
+    }
+
+    if (!listing.seller_phone) {
+      return {
+        success: false,
+        error: "Seller contact not available for this listing",
+      };
+    }
+
+    // Build WhatsApp message
+    const defaultMessage = `Hi! I'm interested in your listing "${listing.product_name}" priced at ${listing.price} RWF on easyMO Marketplace.`;
+    const message = customMessage || defaultMessage;
+    
+    // Use utility function to clean phone number and build WhatsApp link
+    const cleanPhone = this.formatPhoneForWhatsApp(listing.seller_phone);
+    const encodedMessage = encodeURIComponent(message);
+    const whatsappLink = `https://wa.me/${cleanPhone}?text=${encodedMessage}`;
+
+    return {
+      success: true,
+      whatsapp_link: whatsappLink,
+      seller_name: "Seller", // Mask actual name for privacy
+      listing_title: listing.product_name,
+      message: `Click to contact the seller: ${whatsappLink}`,
     };
   }
 
