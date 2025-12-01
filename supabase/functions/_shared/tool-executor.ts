@@ -925,7 +925,7 @@ export class ToolExecutor {
   }
 
   /**
-   * Execute deep search tool (web search integration)
+   * Execute deep search tool (semantic vector search + web search fallback)
    */
   private async executeDeepSearchTool(
     tool: AgentTool,
@@ -933,6 +933,8 @@ export class ToolExecutor {
     context: ToolExecutionContext
   ): Promise<unknown> {
     const query = inputs.query as string;
+    const domains = (inputs.domains as string[]) || ["marketplace", "jobs", "properties"];
+    const useWeb = inputs.useWeb as boolean || false;
     
     if (!query) {
       return {
@@ -942,19 +944,55 @@ export class ToolExecutor {
     }
 
     try {
-      // Use web search API (Serper, Tavily, or Google Custom Search)
+      // Try semantic search first (local database)
+      if (!useWeb) {
+        const { semanticSearch } = await import("./embedding-service.ts");
+        const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+        const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+        const results = await semanticSearch(
+          query,
+          {
+            domains,
+            matchCount: 10,
+            minSimilarity: 0.7,
+          },
+          supabaseUrl,
+          supabaseKey
+        );
+
+        if (results.length > 0) {
+          return {
+            query,
+            source: "semantic",
+            results: results.map((r: any) => ({
+              id: r.entity_id,
+              domain: r.domain,
+              type: r.entity_type,
+              title: r.title,
+              description: r.description,
+              similarity: r.similarity,
+              relevance: r.relevance_score,
+              distance: r.distance_meters,
+              metadata: r.metadata,
+            })),
+            message: `Found ${results.length} local results`,
+          };
+        }
+      }
+
+      // Fallback to web search if no local results or useWeb=true
       const searchApiKey = Deno.env.get("SERPER_API_KEY") || Deno.env.get("TAVILY_API_KEY");
       
       if (!searchApiKey) {
-        console.warn("No search API key configured, returning placeholder");
         return {
           query,
           results: [],
-          message: "Deep search not yet configured (missing API key)",
+          message: "No local results found and web search not configured",
         };
       }
 
-      // Example: Serper API integration
+      // Web search (Serper API)
       const response = await fetch("https://google.serper.dev/search", {
         method: "POST",
         headers: {
@@ -975,12 +1013,13 @@ export class ToolExecutor {
       
       return {
         query,
+        source: "web",
         results: data.organic?.slice(0, 5).map((r: any) => ({
           title: r.title,
           snippet: r.snippet,
           link: r.link,
         })) || [],
-        message: `Found ${data.organic?.length || 0} results`,
+        message: `Found ${data.organic?.length || 0} web results`,
       };
     } catch (error) {
       console.error("Deep search error:", error);
