@@ -13,6 +13,7 @@ import { verifyWebhookSignature } from '../_shared/webhook-utils.ts';
 import { logStructuredEvent } from '../_shared/observability.ts';
 import { sendWhatsAppMessage } from '../_shared/wa-webhook-shared/wa/client.ts';
 import { rateLimitMiddleware } from '../_shared/rate-limit/index.ts';
+import { MessageDeduplicator } from '../_shared/message-deduplicator.ts';
 
 const supabase = createClient(
   Deno.env.get('SUPABASE_URL') ?? '',
@@ -20,6 +21,7 @@ const supabase = createClient(
 );
 
 const orchestrator = new UnifiedOrchestrator(supabase);
+const deduplicator = new MessageDeduplicator(supabase);
 
 serve(async (req: Request): Promise<Response> => {
   const url = new URL(req.url);
@@ -132,6 +134,24 @@ serve(async (req: Request): Promise<Response> => {
 
     const phone = message.from;
     const text = message.text?.body ?? '';
+    
+    // Check for duplicate messages using MessageDeduplicator
+    const shouldProcess = await deduplicator.shouldProcess({
+      messageId: message.id,
+      from: phone,
+      type: message.type,
+      timestamp: message.timestamp,
+      body: text,
+    });
+
+    if (!shouldProcess) {
+      await logStructuredEvent('WA_AI_AGENT_DUPLICATE_MESSAGE', {
+        correlationId,
+        messageId: message.id,
+        phone: phone.slice(-4),
+      }, 'info');
+      return respond({ success: true, message: 'duplicate_ignored' }, { status: 200 });
+    }
     
     // Get agent type from menu selection
     const agentType = extractAgentType(message);

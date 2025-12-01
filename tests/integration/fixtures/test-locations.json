@@ -1,0 +1,35 @@
+{
+  "testLocations": [
+    {
+      "id": "00000000-0000-0000-0000-000000000001",
+      "kind": "home",
+      "label": "Home",
+      "address": "KG 5 Ave, Kigali",
+      "lat": -1.9536,
+      "lng": 30.1047
+    },
+    {
+      "id": "00000000-0000-0000-0000-000000000002",
+      "kind": "work",
+      "label": "Work",
+      "address": "Kicukiro, Kigali",
+      "lat": -1.9897,
+      "lng": 30.1026
+    },
+    {
+      "id": "00000000-0000-0000-0000-000000000003",
+      "kind": "school",
+      "label": "School",
+      "address": "Nyarutarama, Kigali",
+      "lat": -1.9435,
+      "lng": 30.1147
+    }
+  ],
+  "testUsers": [
+    {
+      "user_id": "00000000-0000-0000-0000-000000000100",
+      "phone": "+250788000001",
+      "name": "Test User 1"
+    }
+  ]
+}
