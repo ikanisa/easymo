@@ -91,7 +91,7 @@ export async function handleGoOnlineLocation(
           vehicleType,
           lat: coords.lat,
           lng: coords.lng,
-          radiusMeters: 10000, // 10km default radius
+          radiusMeters: 15000, // 15km radius (increased for better match rate)
           pickupText: "Driver online",
         });
         
