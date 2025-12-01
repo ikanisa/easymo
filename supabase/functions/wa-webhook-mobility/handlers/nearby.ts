@@ -165,7 +165,8 @@ function buildNearbyRow(
   const masked = maskPhone(match.whatsapp_e164 ?? "");
   // WhatsApp requires non-empty title - use ref code if phone is empty
   const refShort = (match.ref_code ?? "").slice(0, 8);
-  const title = masked || refShort || `Match ${match.trip_id.slice(0, 8)}`;
+  const rawTitle = masked || refShort || `Match ${match.trip_id.slice(0, 8)}`;
+  const title = rawTitle.trim() || `Ref ${match.trip_id.slice(0, 8)}`;
   const distanceLabel = toDistanceLabel(match.distance_km);
   const seenLabel = timeAgo(
     getMatchTimestamp(match) ?? new Date().toISOString(),
