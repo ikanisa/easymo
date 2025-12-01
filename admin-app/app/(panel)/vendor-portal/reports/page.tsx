@@ -78,25 +78,25 @@ export default function ReportsPage() {
         <ReportSummary summary={summary} />
         
         {/* Revenue Chart (simplified for reports) */}
-        <div className="vp-card p-4">
-          <h3 className="text-sm font-semibold text-gray-900 mb-3">Revenue Trend</h3>
-          <div className="flex items-end gap-2 h-24">
+        <div className="vp-card vp-chart">
+          <h3 className="vp-chart__title">Revenue Trend</h3>
+          <div className="vp-chart__bars">
             {mockRevenueData.map((point) => {
               const maxAmount = Math.max(...mockRevenueData.map(d => d.amount));
               const heightPercent = maxAmount > 0 ? (point.amount / maxAmount) * 100 : 0;
               return (
                 <div
                   key={point.day}
-                  className="flex-1 bg-emerald-200 hover:bg-emerald-400 rounded-t transition-colors"
+                  className="vp-chart__bar"
                   style={{ height: `${Math.max(heightPercent, 5)}%` }}
                   title={`${point.label}: RWF ${point.amount.toLocaleString()}`}
                 />
               );
             })}
           </div>
-          <div className="flex justify-between mt-2 text-xs text-gray-500">
+          <div className="vp-chart__labels">
             {mockRevenueData.map((point) => (
-              <span key={point.day}>{point.label}</span>
+              <span key={point.day} className="vp-chart__label">{point.label}</span>
             ))}
           </div>
         </div>

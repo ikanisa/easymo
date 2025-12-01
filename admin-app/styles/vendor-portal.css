@@ -856,3 +856,127 @@
     --vp-border-muted: #1e293b;
   }
 }
+
+/* Additional utility classes for code review fixes */
+
+/* Search clear button */
+.vp-search__clear {
+  position: absolute;
+  right: var(--vp-space-3);
+  top: 50%;
+  transform: translateY(-50%);
+  padding: var(--vp-space-1);
+  border-radius: var(--vp-radius-full);
+  background: transparent;
+  border: none;
+  color: var(--vp-text-muted);
+  cursor: pointer;
+  transition: background var(--vp-duration-fast) var(--vp-ease-default),
+              color var(--vp-duration-fast) var(--vp-ease-default);
+}
+
+.vp-search__clear:hover {
+  background: var(--vp-surface-muted);
+  color: var(--vp-text-secondary);
+}
+
+/* Settings item danger variant */
+.vp-settings-item--danger {
+  color: var(--vp-danger);
+}
+
+.vp-settings-item--danger .vp-settings-item__title {
+  color: var(--vp-danger);
+}
+
+.vp-settings-item--danger .vp-settings-item__arrow {
+  color: var(--vp-danger);
+  opacity: 0.6;
+}
+
+.vp-settings-item__icon--danger {
+  background: var(--vp-danger-light);
+  color: var(--vp-danger);
+}
+
+/* List meta info */
+.vp-list-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--vp-space-1);
+}
+
+.vp-list-meta__count,
+.vp-list-meta__sort {
+  font-size: var(--vp-font-size-sm);
+  color: var(--vp-text-muted);
+}
+
+/* Payer detail styles */
+.vp-payer-detail {
+  padding: var(--vp-space-6);
+}
+
+.vp-payer-detail__header {
+  display: flex;
+  align-items: center;
+  gap: var(--vp-space-4);
+  margin-bottom: var(--vp-space-4);
+}
+
+.vp-payer-detail__avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: var(--vp-radius-xl);
+  background: var(--vp-primary);
+  color: var(--vp-primary-foreground);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--vp-font-size-xl);
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.vp-payer-detail__name {
+  font-size: var(--vp-font-size-lg);
+  font-weight: 600;
+  color: var(--vp-text-primary);
+  margin: 0;
+}
+
+.vp-payer-detail__phone {
+  font-size: var(--vp-font-size-base);
+  color: var(--vp-text-muted);
+  margin: 0;
+}
+
+.vp-payer-detail__stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--vp-space-4);
+  padding-top: var(--vp-space-4);
+  border-top: 1px solid var(--vp-border-muted);
+}
+
+.vp-payer-detail__label {
+  font-size: var(--vp-font-size-sm);
+  color: var(--vp-text-muted);
+  margin: 0 0 var(--vp-space-1);
+}
+
+.vp-payer-detail__value {
+  font-size: var(--vp-font-size-xl);
+  font-weight: 700;
+  color: var(--vp-text-primary);
+  margin: 0;
+}
+
+.vp-payer-detail__value--primary {
+  color: var(--vp-primary);
+}
+
+.vp-payer-detail__full-width {
+  grid-column: span 2;
+}

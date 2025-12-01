@@ -57,11 +57,11 @@ export function PayerList({
         onChange={onSearchChange}
       />
       
-      <div className="flex items-center justify-between px-1">
-        <span className="text-sm text-gray-500">
+      <div className="vp-list-meta">
+        <span className="vp-list-meta__count">
           {filteredPayers.length} payer{filteredPayers.length !== 1 ? 's' : ''}
         </span>
-        <span className="text-sm text-gray-500">
+        <span className="vp-list-meta__sort">
           Sort by: Total Paid
         </span>
       </div>

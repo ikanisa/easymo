@@ -64,11 +64,11 @@ export function SearchInput({
       {value && (
         <button
           type="button"
-          className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-gray-100"
+          className="vp-search__clear"
           onClick={handleClear}
           aria-label="Clear search"
         >
-          <X className="w-4 h-4 text-gray-400" />
+          <X className="w-4 h-4" />
         </button>
       )}
     </div>

@@ -111,17 +111,17 @@ export function SettingsList({
       <div className="vp-card">
         <button
           type="button"
-          className="vp-settings-item text-red-600"
+          className="vp-settings-item vp-settings-item--danger"
           onClick={onLogout}
         >
-          <div className="vp-settings-item__icon bg-red-50">
-            <LogOut className="w-5 h-5 text-red-600" aria-hidden="true" />
+          <div className="vp-settings-item__icon vp-settings-item__icon--danger">
+            <LogOut className="w-5 h-5" aria-hidden="true" />
           </div>
           <div className="vp-settings-item__content">
-            <p className="vp-settings-item__title text-red-600">Log Out</p>
+            <p className="vp-settings-item__title">Log Out</p>
             <p className="vp-settings-item__description">Sign out of your account</p>
           </div>
-          <ChevronRight className="vp-settings-item__arrow text-red-400" aria-hidden="true" />
+          <ChevronRight className="vp-settings-item__arrow" aria-hidden="true" />
         </button>
       </div>
     </div>

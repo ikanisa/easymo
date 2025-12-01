@@ -56,33 +56,33 @@ export default function PayerDetailPage({ params }: PayerDetailPageProps) {
     >
       <div className="space-y-6">
         {/* Payer Info Card */}
-        <div className="vp-card p-6">
-          <div className="flex items-center gap-4 mb-4">
-            <div className="w-16 h-16 rounded-xl bg-emerald-500 text-white flex items-center justify-center text-xl font-bold">
+        <div className="vp-card vp-payer-detail">
+          <div className="vp-payer-detail__header">
+            <div className="vp-payer-detail__avatar">
               {payer.initials}
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-gray-900">{payer.name}</h2>
-              <p className="text-gray-500">{payer.phone}</p>
+              <h2 className="vp-payer-detail__name">{payer.name}</h2>
+              <p className="vp-payer-detail__phone">{payer.phone}</p>
             </div>
           </div>
           
-          <div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-100">
+          <div className="vp-payer-detail__stats">
             <div>
-              <p className="text-sm text-gray-500">Total Paid</p>
-              <p className="text-xl font-bold text-emerald-600">
+              <p className="vp-payer-detail__label">Total Paid</p>
+              <p className="vp-payer-detail__value vp-payer-detail__value--primary">
                 <MoneyDisplay amount={payer.totalPaid} currency={payer.currency} />
               </p>
             </div>
             <div>
-              <p className="text-sm text-gray-500">Payments</p>
-              <p className="text-xl font-bold text-gray-900">
+              <p className="vp-payer-detail__label">Payments</p>
+              <p className="vp-payer-detail__value">
                 {payer.transactionCount}
               </p>
             </div>
-            <div className="col-span-2">
-              <p className="text-sm text-gray-500">Last Payment</p>
-              <p className="text-base font-medium text-gray-900">
+            <div className="vp-payer-detail__full-width">
+              <p className="vp-payer-detail__label">Last Payment</p>
+              <p className="vp-payer-detail__value">
                 {formatRelativeTime(payer.lastPaymentDate)}
               </p>
             </div>
