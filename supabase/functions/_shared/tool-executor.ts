@@ -464,10 +464,11 @@ export class ToolExecutor {
    * Get user information from whatsapp_users table
    */
   private async getUserInfo(
-    inputs: Record<string, unknown>,
+    _inputs: Record<string, unknown>,
     context: ToolExecutionContext
   ): Promise<unknown> {
-    const userId = inputs.user_id as string || context.userId;
+    // Security: Always use context.userId, never allow user to query other users' info
+    const userId = context.userId;
 
     if (!userId) {
       return {
@@ -555,16 +556,17 @@ export class ToolExecutor {
 
     try {
       // First, check if user has a profile
+      // Note: profiles table uses 'user_id' as primary key
       const { data: profile } = await this.supabase
         .from("profiles")
-        .select("id")
-        .eq("id", context.userId)
+        .select("user_id")
+        .eq("user_id", context.userId)
         .single();
 
       let profileId: string;
 
       if (profile) {
-        profileId = profile.id;
+        profileId = profile.user_id;
       } else {
         // Try to create a minimal profile for the user if needed
         // Get user phone from whatsapp_users
@@ -583,14 +585,14 @@ export class ToolExecutor {
         }
 
         // Create a minimal profile
+        // Note: profiles table uses 'user_id' as primary key and 'phone_number' for phone
         const { data: newProfile, error: profileError } = await this.supabase
           .from("profiles")
           .insert({
-            id: context.userId,
+            user_id: context.userId,
             phone_number: waUser.phone_number,
-            created_at: new Date().toISOString(),
           })
-          .select("id")
+          .select("user_id")
           .single();
 
         if (profileError) {
@@ -603,7 +605,7 @@ export class ToolExecutor {
           };
         }
 
-        profileId = newProfile.id;
+        profileId = newProfile.user_id;
       }
 
       const ticketData = {
