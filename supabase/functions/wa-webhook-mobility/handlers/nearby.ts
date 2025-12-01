@@ -8,6 +8,7 @@ import {
   matchPassengersForTrip,
   type MatchResult,
   updateTripDropoff,
+  updateTripLocation,
 } from "../rpc/mobility.ts";
 import { getAppConfig } from "../utils/app_config.ts";
 import { waChatLink } from "../utils/links.ts";
@@ -41,6 +42,9 @@ import { buildSaveRows } from "../locations/save.ts";
 import { checkLocationCache } from "./location_cache.ts";
 import { readLastLocation } from "../locations/favorites.ts";
 
+const DEFAULT_WINDOW_DAYS = 30;
+// Per requirements: 10km radius consistently
+const REQUIRED_RADIUS_METERS = 10_000;
 // Location freshness window: only match trips with locations updated in last 30 minutes
 const DEFAULT_WINDOW_MINUTES = 30;
 // Search radius: read from app_config, default 15km (increased from 10km for 90%+ match rate)
