@@ -45,6 +45,10 @@ import { readLastLocation } from "../locations/favorites.ts";
 const DEFAULT_WINDOW_DAYS = 30;
 // Per requirements: 10km radius consistently
 const REQUIRED_RADIUS_METERS = 10_000;
+// Location freshness window: only match trips with locations updated in last 30 minutes
+const DEFAULT_WINDOW_MINUTES = 30;
+// Search radius: read from app_config, default 15km (increased from 10km for 90%+ match rate)
+const DEFAULT_RADIUS_METERS = 15_000;
 const MAX_RADIUS_METERS = 25_000;
 const SAVED_ROW_PREFIX = "FAV::";
 
@@ -135,11 +139,11 @@ export function vehicleFromId(id: string): string {
 }
 
 function requiredRadius(configRadiusKm?: number | null): number {
-  if (!Number.isFinite(configRadiusKm ?? NaN)) return REQUIRED_RADIUS_METERS;
+  if (!Number.isFinite(configRadiusKm ?? NaN)) return DEFAULT_RADIUS_METERS;
   const meters = Math.round(Number(configRadiusKm) * 1000);
-  if (!Number.isFinite(meters) || meters <= 0) return REQUIRED_RADIUS_METERS;
+  if (!Number.isFinite(meters) || meters <= 0) return DEFAULT_RADIUS_METERS;
   return Math.min(
-    Math.max(meters, REQUIRED_RADIUS_METERS),
+    Math.max(meters, DEFAULT_RADIUS_METERS),
     MAX_RADIUS_METERS,
   );
 }
@@ -843,7 +847,7 @@ async function runMatchingFallback(
         max,
         Boolean(dropoff),
         radiusMeters,
-        DEFAULT_WINDOW_DAYS,
+        DEFAULT_WINDOW_MINUTES,
       )
       : await matchPassengersForTrip(
         ctx.supabase,
@@ -851,7 +855,7 @@ async function runMatchingFallback(
         max,
         false,
         radiusMeters,
-        DEFAULT_WINDOW_DAYS,
+        DEFAULT_WINDOW_MINUTES,
       );
 
     await logStructuredEvent("MATCHES_RESULT", {

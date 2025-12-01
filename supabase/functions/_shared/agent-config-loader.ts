@@ -6,6 +6,7 @@
  */
 
 import { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { Redis } from "https://esm.sh/@upstash/redis@1.28.1";
 
 export interface AgentPersona {
   id: string;
@@ -73,29 +74,84 @@ export interface AgentConfig {
 }
 
 /**
- * AgentConfigLoader - Loads agent configurations from database with caching
+ * AgentConfigLoader - Loads agent configurations from database with Redis caching
  */
 export class AgentConfigLoader {
   private cache: Map<string, { config: AgentConfig; expiresAt: number }> = new Map();
-  private readonly cacheTTL = 5 * 60 * 1000; // 5 minutes
+  private readonly cacheTTL = 5 * 60 * 1000; // 5 minutes (local cache)
+  private readonly redisTTL = 15 * 60; // 15 minutes (Redis cache)
+  private redis: Redis | null = null;
 
-  constructor(private supabase: SupabaseClient) {}
+  constructor(private supabase: SupabaseClient) {
+    // Initialize Redis if URL is available
+    const redisUrl = Deno.env.get("REDIS_URL");
+    if (redisUrl) {
+      try {
+        this.redis = new Redis({ url: redisUrl });
+        console.log(JSON.stringify({
+          event: "REDIS_INITIALIZED",
+          message: "Redis cache enabled for agent configs"
+        }));
+      } catch (error) {
+        console.warn("Redis initialization failed, using local cache only:", error);
+      }
+    } else {
+      console.log(JSON.stringify({
+        event: "REDIS_NOT_CONFIGURED",
+        message: "Using local cache only (5 min TTL)"
+      }));
+    }
+  }
 
   /**
    * Load complete agent configuration from database
    */
   async loadAgentConfig(agentSlug: string): Promise<AgentConfig> {
-    // Check cache first
+    const startTime = Date.now();
+    
+    // 1. Check local memory cache first (fastest)
     const cached = this.cache.get(agentSlug);
     if (cached && Date.now() < cached.expiresAt) {
       console.log(JSON.stringify({
         event: "AGENT_CONFIG_CACHE_HIT",
         agentSlug,
-        source: cached.config.loadedFrom
+        source: "memory",
+        loadTime: Date.now() - startTime
       }));
       return cached.config;
     }
 
+    // 2. Check Redis cache (fast, shared across functions)
+    if (this.redis) {
+      try {
+        const redisKey = `agent:config:${agentSlug}`;
+        const redisData = await this.redis.get(redisKey);
+        
+        if (redisData) {
+          const config = redisData as AgentConfig;
+          config.loadedFrom = 'cached';
+          
+          // Update local cache
+          this.cache.set(agentSlug, {
+            config,
+            expiresAt: Date.now() + this.cacheTTL
+          });
+          
+          console.log(JSON.stringify({
+            event: "AGENT_CONFIG_CACHE_HIT",
+            agentSlug,
+            source: "redis",
+            loadTime: Date.now() - startTime
+          }));
+          
+          return config;
+        }
+      } catch (error) {
+        console.warn("Redis read failed, falling back to database:", error);
+      }
+    }
+
+    // 3. Load from database (slowest, but most up-to-date)
     console.log(JSON.stringify({
       event: "AGENT_CONFIG_LOADING",
       agentSlug,
@@ -137,12 +193,29 @@ export class AgentConfigLoader {
         timestamp: new Date().toISOString(),
       };
 
-      // Cache the result
+      // Cache the result in memory
       this.cache.set(agentSlug, {
         config,
         expiresAt: Date.now() + this.cacheTTL,
       });
 
+      // Cache in Redis (if available)
+      if (this.redis) {
+        try {
+          const redisKey = `agent:config:${agentSlug}`;
+          await this.redis.setex(redisKey, this.redisTTL, JSON.stringify(config));
+          console.log(JSON.stringify({
+            event: "AGENT_CONFIG_CACHED_REDIS",
+            agentSlug,
+            ttl: this.redisTTL
+          }));
+        } catch (error) {
+          console.warn("Redis write failed:", error);
+          // Non-fatal, continue with local cache only
+        }
+      }
+
+      const loadTime = Date.now() - startTime;
       console.log(JSON.stringify({
         event: "AGENT_CONFIG_LOADED_FROM_DB",
         agentSlug,
@@ -151,12 +224,42 @@ export class AgentConfigLoader {
         toolsCount: tools.length,
         tasksCount: tasks.length,
         kbCount: knowledgeBases.length,
+        loadTime
       }));
 
       return config;
     } catch (error) {
       console.error(`Failed to load agent config for ${agentSlug}:`, error);
       return this.createFallbackConfig(agentSlug);
+    }
+  }
+
+  /**
+   * Invalidate cache for a specific agent (used by webhooks)
+   */
+  async invalidateCache(agentSlug: string): Promise<void> {
+    // Clear local cache
+    this.cache.delete(agentSlug);
+    
+    // Clear Redis cache
+    if (this.redis) {
+      try {
+        const redisKey = `agent:config:${agentSlug}`;
+        await this.redis.del(redisKey);
+        console.log(JSON.stringify({
+          event: "AGENT_CONFIG_CACHE_INVALIDATED",
+          agentSlug,
+          message: "Cache cleared from memory and Redis"
+        }));
+      } catch (error) {
+        console.warn("Redis cache invalidation failed:", error);
+      }
+    } else {
+      console.log(JSON.stringify({
+        event: "AGENT_CONFIG_CACHE_INVALIDATED",
+        agentSlug,
+        message: "Cache cleared from memory only"
+      }));
     }
   }
 
