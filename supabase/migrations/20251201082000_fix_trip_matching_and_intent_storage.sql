@@ -252,8 +252,7 @@ CREATE TABLE IF NOT EXISTS mobility_intents (
 );
 
 -- Add indexes for efficient querying
-CREATE INDEX IF NOT EXISTS idx_mobility_intents_type_expires ON mobility_intents(intent_type, expires_at) 
-  WHERE expires_at > now();
+CREATE INDEX IF NOT EXISTS idx_mobility_intents_type_expires ON mobility_intents(intent_type, expires_at);
 CREATE INDEX IF NOT EXISTS idx_mobility_intents_pickup_geog ON mobility_intents USING GIST(pickup_geog);
 CREATE INDEX IF NOT EXISTS idx_mobility_intents_user_type ON mobility_intents(user_id, intent_type);
 CREATE INDEX IF NOT EXISTS idx_mobility_intents_created ON mobility_intents(created_at DESC);

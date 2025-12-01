@@ -660,21 +660,41 @@ export async function startScheduleSavedLocationPicker(
   const body = favorites.length
     ? baseBody
     : `${baseBody}\n\n${t(ctx.locale, "location.saved.list.empty")}`;
+  
+  // Check for cached location (last 30 minutes)
+  const rows: Array<{ id: string; title: string; description?: string }> = [];
+  const lastLoc = await readLastLocation(ctx);
+  if (lastLoc && lastLoc.capturedAt) {
+    const capturedTime = new Date(lastLoc.capturedAt);
+    const now = new Date();
+    const minutesAgo = Math.floor((now.getTime() - capturedTime.getTime()) / (1000 * 60));
+    
+    if (minutesAgo <= 30) {
+      rows.push({
+        id: "USE_CURRENT_LOCATION",
+        title: "📍 Current Location",
+        description: `Last updated ${minutesAgo} min${minutesAgo === 1 ? '' : 's'} ago`,
+      });
+    }
+  }
+  
+  rows.push(
+    ...favorites.map((fav) => scheduleFavoriteToRow(fav)),
+    ...buildSaveRows(ctx),
+    {
+      id: IDS.BACK_MENU,
+      title: t(ctx.locale, "common.menu_back"),
+      description: t(ctx.locale, "common.back_to_menu.description"),
+    },
+  );
+  
   await sendListMessage(
     ctx,
     {
       title: t(ctx.locale, "location.saved.list.title"),
       body,
       sectionTitle: t(ctx.locale, "location.saved.list.section"),
-      rows: [
-        ...favorites.map((fav) => scheduleFavoriteToRow(fav)),
-        ...buildSaveRows(ctx),
-        {
-          id: IDS.BACK_MENU,
-          title: t(ctx.locale, "common.menu_back"),
-          description: t(ctx.locale, "common.back_to_menu.description"),
-        },
-      ],
+      rows,
       buttonText: t(ctx.locale, "location.saved.list.button"),
     },
     { emoji: "⭐" },
@@ -688,6 +708,37 @@ export async function handleScheduleSavedLocationSelection(
   selectionId: string,
 ): Promise<boolean> {
   if (!ctx.profileId) return false;
+  
+  // Handle "Use Current Location"
+  if (selectionId === "USE_CURRENT_LOCATION") {
+    const lastLoc = await readLastLocation(ctx);
+    if (!lastLoc) {
+      await sendButtonsMessage(
+        ctx,
+        "⚠️ Current location not available. Please share your location first.",
+        buildButtons({
+          id: IDS.BACK_MENU,
+          title: t(ctx.locale, "common.menu_back"),
+        }),
+      );
+      return true;
+    }
+    
+    const coords = { lat: lastLoc.lat, lng: lastLoc.lng };
+    if (pickerState.stage === "pickup") {
+      return await handleScheduleLocation(
+        ctx,
+        { ...pickerState.state, originFavoriteId: null },
+        coords,
+      );
+    }
+    return await handleScheduleDropoff(
+      ctx,
+      { ...pickerState.state, dropoffFavoriteId: null },
+      coords,
+    );
+  }
+  
   const favorite = await getFavoriteById(ctx, selectionId);
   if (!favorite) {
     await sendButtonsMessage(

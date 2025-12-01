@@ -482,21 +482,41 @@ export async function startNearbySavedLocationPicker(
   const body = favorites.length
     ? baseBody
     : `${baseBody}\n\n${t(ctx.locale, "location.saved.list.empty")}`;
+  
+  // Check for cached location (last 30 minutes)
+  const rows: Array<{ id: string; title: string; description?: string }> = [];
+  const lastLoc = await readLastLocation(ctx);
+  if (lastLoc && lastLoc.capturedAt) {
+    const capturedTime = new Date(lastLoc.capturedAt);
+    const now = new Date();
+    const minutesAgo = Math.floor((now.getTime() - capturedTime.getTime()) / (1000 * 60));
+    
+    if (minutesAgo <= 30) {
+      rows.push({
+        id: "USE_CURRENT_LOCATION",
+        title: "📍 Current Location",
+        description: `Last updated ${minutesAgo} min${minutesAgo === 1 ? '' : 's'} ago`,
+      });
+    }
+  }
+  
+  rows.push(
+    ...favorites.map((favorite) => favoriteToRow(ctx, favorite)),
+    ...buildSaveRows(ctx),
+    {
+      id: IDS.BACK_MENU,
+      title: t(ctx.locale, "common.menu_back"),
+      description: t(ctx.locale, "common.back_to_menu.description"),
+    },
+  );
+  
   await sendListMessage(
     ctx,
     {
       title: t(ctx.locale, "location.saved.list.title"),
       body,
       sectionTitle: t(ctx.locale, "location.saved.list.section"),
-      rows: [
-        ...favorites.map((favorite) => favoriteToRow(ctx, favorite)),
-        ...buildSaveRows(ctx),
-        {
-          id: IDS.BACK_MENU,
-          title: t(ctx.locale, "common.menu_back"),
-          description: t(ctx.locale, "common.back_to_menu.description"),
-        },
-      ],
+      rows,
       buttonText: t(ctx.locale, "location.saved.list.button"),
     },
     { emoji: "⭐" },
@@ -510,6 +530,34 @@ export async function handleNearbySavedLocationSelection(
   selectionId: string,
 ): Promise<boolean> {
   if (!ctx.profileId) return false;
+  
+  // Handle "Use Current Location"
+  if (selectionId === "USE_CURRENT_LOCATION") {
+    const lastLoc = await readLastLocation(ctx);
+    if (!lastLoc) {
+      await sendButtonsMessage(
+        ctx,
+        "⚠️ Current location not available. Please share your location first.",
+        homeOnly(),
+      );
+      return true;
+    }
+    
+    const restored: NearbyState = {
+      mode: pickerState.snapshot.mode,
+      vehicle: pickerState.snapshot.vehicle,
+      pickup: pickerState.snapshot.pickup ?? undefined,
+    };
+    await setState(ctx.supabase, ctx.profileId, {
+      key: "mobility_nearby_location",
+      data: restored,
+    });
+    return await handleNearbyLocation(ctx, restored, {
+      lat: lastLoc.lat,
+      lng: lastLoc.lng,
+    });
+  }
+  
   const favoriteId = parseFavoriteRowId(selectionId);
   if (!favoriteId) return false;
   const favorite = await getFavoriteById(ctx, favoriteId);

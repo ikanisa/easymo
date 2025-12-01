@@ -81,6 +81,17 @@ export async function saveFavorite(
   options: { label?: string; address?: string | null; skipDedup?: boolean } = {},
 ): Promise<UserFavorite | null> {
   if (!ctx.profileId) return null;
+  
+  // Validate coordinates
+  if (!Number.isFinite(coords.lat) || coords.lat < -90 || coords.lat > 90) {
+    console.error("Invalid latitude:", coords.lat);
+    return null;
+  }
+  if (!Number.isFinite(coords.lng) || coords.lng < -180 || coords.lng > 180) {
+    console.error("Invalid longitude:", coords.lng);
+    return null;
+  }
+  
   const normalizedLabel = options.label?.trim() || favoriteKindLabel(kind);
   
   // Phase 2.1: Auto-geocode if no address provided
@@ -164,6 +175,17 @@ export async function updateFavorite(
   options: { label?: string; address?: string | null } = {},
 ): Promise<boolean> {
   if (!ctx.profileId) return false;
+  
+  // Validate coordinates
+  if (!Number.isFinite(coords.lat) || coords.lat < -90 || coords.lat > 90) {
+    console.error("Invalid latitude:", coords.lat);
+    return false;
+  }
+  if (!Number.isFinite(coords.lng) || coords.lng < -180 || coords.lng > 180) {
+    console.error("Invalid longitude:", coords.lng);
+    return false;
+  }
+  
   const payload: Record<string, unknown> = {
     lat: coords.lat,
     lng: coords.lng,
