@@ -507,8 +507,8 @@ async function requestScheduleTime(
   await sendListMessage(
     ctx,
     {
-      title: "",
-      body: `${listTitle}\n\n${listBody}`.trim(),
+      title: listTitle, // Fixed: WhatsApp requires non-empty title
+      body: listBody,
       sectionTitle: t(ctx.locale, "schedule.time.list.section"),
       rows,
       buttonText: t(ctx.locale, "schedule.time.button"),
@@ -1249,6 +1249,8 @@ function buildScheduleRow(
   state: ScheduleRow;
 } {
   const masked = maskPhone(match.whatsapp_e164 ?? "");
+  // WhatsApp requires non-empty title - use ref code if phone is empty
+  const title = masked || match.ref_code || "Match";
   const distanceLabel = typeof match.distance_km === "number"
     ? toDistanceLabel(match.distance_km)
     : null;
@@ -1268,7 +1270,7 @@ function buildScheduleRow(
   return {
     row: {
       id: rowId,
-      title: masked,
+      title: title,
       description: details,
     },
     state: {
