@@ -106,6 +106,19 @@ export async function handleGoOnlineLocation(
         // Continue even if trip creation fails
       }
 
+      // Save go_online intent for recommendations
+      try {
+        await saveIntent(ctx.supabase, {
+          userId: ctx.profileId,
+          intentType: "go_online",
+          vehicleType,
+          pickup: coords,
+          expiresInMinutes: 30,
+        });
+      } catch (intentError) {
+        console.error("Failed to save go_online intent:", intentError);
+      }
+
       // Also try to update driver_status table if it exists
       try {
         await ctx.supabase.rpc("rides_update_driver_location", {

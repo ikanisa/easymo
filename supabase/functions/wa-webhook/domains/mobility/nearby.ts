@@ -28,7 +28,7 @@ import {
   updateStoredVehicleType,
 } from "./vehicle_plate.ts";
 import { getRecentNearbyIntent, storeNearbyIntent } from "./intent_cache.ts";
-import { saveIntent } from "./intent_storage.ts";
+import { saveIntent } from "../../../_shared/wa-webhook-shared/domains/intent_storage.ts";
 import { isFeatureEnabled } from "../../../_shared/feature-flags.ts";
 import { routeToAIAgent, sendAgentOptions } from "../ai-agents/index.ts";
 import {
