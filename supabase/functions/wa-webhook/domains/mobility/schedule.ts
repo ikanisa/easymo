@@ -37,6 +37,7 @@ import {
   type UserFavorite,
 } from "../locations/favorites.ts";
 import { buildSaveRows } from "../locations/save.ts";
+import { saveIntent } from "../../../_shared/wa-webhook-shared/domains/intent_storage.ts";
 
 const DEFAULT_WINDOW_DAYS = 30;
 const REQUIRED_RADIUS_METERS = 10_000;
@@ -807,6 +808,24 @@ async function createTripAndDeliverMatches(
       });
     }
 
+    // Save intent for recommendations (scheduled trips have longer expiry: 7 days)
+    try {
+      await saveIntent(ctx.supabase, {
+        userId: ctx.profileId!,
+        intentType: "schedule",
+        vehicleType: state.vehicle!,
+        pickup: state.origin!,
+        dropoff: options.dropoff ?? undefined,
+        scheduledFor: state.travelDate && state.travelTime 
+          ? parseScheduledDateTime(state.travelDate, state.travelTime, state.timezone ?? DEFAULT_TIMEZONE)
+          : undefined,
+        expiresInMinutes: 60 * 24 * 7, // 7 days for scheduled trips
+      });
+    } catch (intentError) {
+      // Don't fail the trip creation if intent saving fails
+      console.error("Failed to save schedule intent:", intentError);
+    }
+
     const context: ScheduleState = {
       role: state.role,
       vehicle: state.vehicle,
@@ -1255,4 +1274,27 @@ export function formatTravelLabel(
     // ignore formatter failures
   }
   return `${dateLabel} · ${time} (${zone})`;
+}
+
+/**
+ * Parse date and time strings into a Date object
+ * @param date - Date string in YYYY-MM-DD format
+ * @param time - Time string in HH:MM format
+ * @param _timezone - Timezone string (unused, kept for consistency)
+ * @returns Date object or undefined if parsing fails
+ */
+function parseScheduledDateTime(
+  date: string,
+  time: string,
+  _timezone: string,
+): Date | undefined {
+  try {
+    // Parse the date and time as local time
+    const dateTimeStr = `${date}T${time}:00`;
+    const parsed = new Date(dateTimeStr);
+    if (isNaN(parsed.getTime())) return undefined;
+    return parsed;
+  } catch {
+    return undefined;
+  }
 }

@@ -47,6 +47,8 @@ export async function recordDriverPresence(
   if (error) throw error;
 }
 
+export type RecurrenceType = 'once' | 'daily' | 'weekdays' | 'weekly' | 'monthly';
+
 export async function insertTrip(
   client: SupabaseClient,
   params: {
@@ -57,9 +59,21 @@ export async function insertTrip(
     lng: number;
     radiusMeters: number;
     pickupText?: string;
+    scheduledAt?: Date | string;
+    recurrence?: RecurrenceType;
   },
 ): Promise<string> {
-  const expires = new Date(Date.now() + TRIP_EXPIRY_MS).toISOString();
+  // For scheduled trips, use longer expiry (7 days) or default 30 minutes
+  const isScheduled = params.scheduledAt !== undefined;
+  const expiryMs = isScheduled ? 7 * 24 * 60 * 60 * 1000 : TRIP_EXPIRY_MS;
+  const expires = new Date(Date.now() + expiryMs).toISOString();
+  
+  const scheduledAtStr = params.scheduledAt 
+    ? (params.scheduledAt instanceof Date 
+        ? params.scheduledAt.toISOString() 
+        : params.scheduledAt)
+    : null;
+
   const { data, error } = await client
     .from("rides_trips")
     .insert({
@@ -71,8 +85,10 @@ export async function insertTrip(
       pickup: `SRID=4326;POINT(${params.lng} ${params.lat})`,
       pickup_radius_m: params.radiusMeters,
       pickup_text: params.pickupText ?? null,
-      status: "open",
+      status: isScheduled ? "scheduled" : "open",
       expires_at: expires,
+      scheduled_at: scheduledAtStr,
+      recurrence: params.recurrence ?? null,
     })
     .select("id")
     .single();
