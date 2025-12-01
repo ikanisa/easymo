@@ -9,7 +9,9 @@ function normalizeWhitespace(value: string): string {
 
 export function safeRowTitle(value: string, max = 24): string {
   const cleaned = normalizeWhitespace(stripMarkdown(value ?? ""));
-  return truncate(cleaned, max);
+  const truncated = truncate(cleaned, max);
+  // WhatsApp requires non-empty title
+  return truncated || "Option";
 }
 
 export function safeRowDesc(value: string, max = 72): string {
