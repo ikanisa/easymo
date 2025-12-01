@@ -27,49 +27,10 @@ if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
 
 const supabase = createClient(SUPABASE_URL ?? "", SUPABASE_SERVICE_KEY ?? "");
 
-function parsePoint(input: any): { lat: number; lng: number } | null {
-  if (!input) return null;
-  if (typeof input === "string") {
-    const match = input.match(/POINT\\(([-0-9.]+) ([-0-9.]+)\)/i);
-    if (match) {
-      const [, lngRaw, latRaw] = match;
-      const lng = Number(lngRaw);
-      const lat = Number(latRaw);
-      if (Number.isFinite(lng) && Number.isFinite(lat)) {
-        return { lat, lng };
-      }
-    }
-    try {
-      const parsed = JSON.parse(input);
-      if (
-        parsed && Array.isArray(parsed.coordinates) &&
-        parsed.coordinates.length === 2
-      ) {
-        const [lng, lat] = parsed.coordinates;
-        if (Number.isFinite(lng) && Number.isFinite(lat)) {
-          return { lat, lng };
-        }
-      }
-    } catch (_error) {
-      // ignore
-    }
-  }
-  if (
-    typeof input === "object" && input && Array.isArray(input.coordinates) &&
-    input.coordinates.length === 2
-  ) {
-    const [lng, lat] = input.coordinates;
-    if (Number.isFinite(lng) && Number.isFinite(lat)) {
-      return { lat, lng };
-    }
-  }
-  return null;
-}
-
 async function shortlistTrip(trip: any) {
   const { data: favorites, error: favoriteError } = await supabase
-    .from("user_favorites")
-    .select("id, geog, kind, label")
+    .from("saved_locations")
+    .select("id, lat, lng, label")
     .in("id", [trip.origin_favorite_id, trip.dest_favorite_id]);
 
   if (favoriteError) {
@@ -95,8 +56,13 @@ async function shortlistTrip(trip: any) {
     return null;
   }
 
-  const originCoords = parsePoint(origin.geog);
-  const destinationCoords = parsePoint(destination.geog);
+  // saved_locations has lat/lng directly, no need to parse geog
+  const originCoords = (Number.isFinite(origin.lat) && Number.isFinite(origin.lng))
+    ? { lat: origin.lat, lng: origin.lng }
+    : null;
+  const destinationCoords = (Number.isFinite(destination.lat) && Number.isFinite(destination.lng))
+    ? { lat: destination.lat, lng: destination.lng }
+    : null;
   if (!originCoords || !destinationCoords) {
     console.warn("recurring-trips-scheduler.invalid_coords", {
       trip_id: trip.id,
