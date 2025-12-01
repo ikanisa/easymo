@@ -21,6 +21,7 @@ import { verifyWebhookSignature } from "../_shared/webhook-utils.ts";
 import { logStructuredEvent } from "../_shared/observability.ts";
 import { rateLimitMiddleware } from "../_shared/rate-limit/index.ts";
 import { storeDLQEntry } from "../_shared/dlq-manager.ts";
+import { MessageDeduplicator } from "../_shared/message-deduplicator.ts";
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL") ?? "",
@@ -28,6 +29,7 @@ const supabase = createClient(
 );
 
 const orchestrator = new UnifiedOrchestrator(supabase);
+const deduplicator = new MessageDeduplicator(supabase);
 
 serve(async (req: Request): Promise<Response> => {
   // Rate limiting (100 req/min for high-volume WhatsApp)
@@ -163,6 +165,24 @@ serve(async (req: Request): Promise<Response> => {
       messageType: message.type,
       from: maskPhone(message.from),
     });
+
+    // Check for duplicate messages
+    const shouldProcess = await deduplicator.shouldProcess({
+      messageId: message.id,
+      from: message.from,
+      type: message.type,
+      timestamp: message.timestamp,
+      body: message.body,
+    });
+
+    if (!shouldProcess) {
+      await logStructuredEvent("UNIFIED_DUPLICATE_MESSAGE", {
+        correlationId,
+        messageId: message.id,
+        from: maskPhone(message.from),
+      }, "info");
+      return respond({ success: true, message: "duplicate_ignored" });
+    }
 
     // Check if this is from admin panel (needs synchronous response)
     const isAdminPanel = req.headers.get("X-Admin-Panel") === "true" || 

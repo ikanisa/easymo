@@ -4,6 +4,14 @@
  * 
  * Part of Unified AI Agent Architecture
  * Created: 2025-11-27
+ * 
+ * NOTE: This agent replaces the business_broker agent. The type is 'business_broker_agent'
+ * for backward compatibility but it maps to the 'marketplace' slug in the database.
+ * 
+ * NOW DATABASE-DRIVEN:
+ * - System prompt loaded from ai_agent_system_instructions table
+ * - Persona loaded from ai_agent_personas table
+ * - Tools loaded from ai_agent_tools table (via AgentConfigLoader)
  */
 
 import { BaseAgent, type AgentProcessParams, type AgentResponse } from '../core/base-agent.ts';
@@ -12,7 +20,7 @@ import { logStructuredEvent } from '../../_shared/observability.ts';
 
 export class MarketplaceAgent extends BaseAgent {
   type = 'business_broker_agent';
-  name = '🧱 Marketplace AI';
+  name = '🛒 Marketplace AI';
   description = 'Buy and sell marketplace assistant';
 
   private aiProvider: GeminiProvider;
@@ -26,13 +34,20 @@ export class MarketplaceAgent extends BaseAgent {
     const { message, session, supabase } = params;
 
     try {
-      // Build conversation history
-      const messages = this.buildConversationHistory(session);
+      // Load database config and build conversation history with DB-driven prompt
+      const messages = await this.buildConversationHistoryAsync(session, supabase);
       
       // Add current user message
       messages.push({
         role: 'user',
         content: message,
+      });
+
+      // Log config source for debugging
+      await logStructuredEvent('MARKETPLACE_AGENT_PROCESSING', {
+        sessionId: session.id,
+        configSource: this.cachedConfig?.loadedFrom || 'not_loaded',
+        toolsAvailable: this.cachedConfig?.tools.length || 0,
       });
 
       // Generate AI response
@@ -52,6 +67,7 @@ export class MarketplaceAgent extends BaseAgent {
       await logStructuredEvent('MARKETPLACE_AGENT_RESPONSE', {
         sessionId: session.id,
         responseLength: aiResponse.length,
+        configSource: this.cachedConfig?.loadedFrom,
       });
 
       return {
@@ -59,6 +75,7 @@ export class MarketplaceAgent extends BaseAgent {
         agentType: this.type,
         metadata: {
           model: 'gemini-2.0-flash-exp',
+          configLoadedFrom: this.cachedConfig?.loadedFrom,
         },
       };
 
@@ -77,7 +94,10 @@ export class MarketplaceAgent extends BaseAgent {
     }
   }
 
-  getSystemPrompt(): string {
+  /**
+   * Default system prompt - fallback if database config not available
+   */
+  getDefaultSystemPrompt(): string {
     return `You are a helpful marketplace AI assistant at easyMO Buy & Sell platform.
 
 Your role:
