@@ -4,6 +4,11 @@
  * 
  * Part of Unified AI Agent Architecture
  * Created: 2025-11-27
+ * 
+ * NOW DATABASE-DRIVEN:
+ * - System prompt loaded from ai_agent_system_instructions table
+ * - Persona loaded from ai_agent_personas table
+ * - Tools loaded from ai_agent_tools table (via AgentConfigLoader)
  */
 
 import { BaseAgent, type AgentProcessParams, type AgentResponse } from '../core/base-agent.ts';
@@ -26,13 +31,20 @@ export class WaiterAgent extends BaseAgent {
     const { message, session, supabase } = params;
 
     try {
-      // Build conversation history
-      const messages = this.buildConversationHistory(session);
+      // Load database config and build conversation history with DB-driven prompt
+      const messages = await this.buildConversationHistoryAsync(session, supabase);
       
       // Add current user message
       messages.push({
         role: 'user',
         content: message,
+      });
+
+      // Log config source for debugging
+      await logStructuredEvent('WAITER_AGENT_PROCESSING', {
+        sessionId: session.id,
+        configSource: this.cachedConfig?.loadedFrom || 'not_loaded',
+        toolsAvailable: this.cachedConfig?.tools.length || 0,
       });
 
       // Generate AI response
@@ -52,6 +64,7 @@ export class WaiterAgent extends BaseAgent {
       await logStructuredEvent('WAITER_AGENT_RESPONSE', {
         sessionId: session.id,
         responseLength: aiResponse.length,
+        configSource: this.cachedConfig?.loadedFrom,
       });
 
       return {
@@ -59,6 +72,7 @@ export class WaiterAgent extends BaseAgent {
         agentType: this.type,
         metadata: {
           model: 'gemini-2.0-flash-exp',
+          configLoadedFrom: this.cachedConfig?.loadedFrom,
         },
       };
 
@@ -77,7 +91,10 @@ export class WaiterAgent extends BaseAgent {
     }
   }
 
-  getSystemPrompt(): string {
+  /**
+   * Default system prompt - fallback if database config not available
+   */
+  getDefaultSystemPrompt(): string {
     return `You are a friendly and professional waiter AI assistant at easyMO restaurants and bars.
 
 Your role:

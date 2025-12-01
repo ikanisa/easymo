@@ -4,6 +4,11 @@
  * 
  * Part of Unified AI Agent Architecture
  * Created: 2025-11-27
+ * 
+ * NOW DATABASE-DRIVEN:
+ * - System prompt loaded from ai_agent_system_instructions table
+ * - Persona loaded from ai_agent_personas table
+ * - Tools loaded from ai_agent_tools table (via AgentConfigLoader)
  */
 
 import { BaseAgent, type AgentProcessParams, type AgentResponse } from '../core/base-agent.ts';
@@ -26,13 +31,21 @@ export class FarmerAgent extends BaseAgent {
     const { message, session, supabase } = params;
 
     try {
-      // Build conversation history
-      const messages = this.buildConversationHistory(session);
+      // Load database config and build conversation history with DB-driven prompt
+      const messages = await this.buildConversationHistoryAsync(session, supabase);
       
       // Add current user message
       messages.push({
         role: 'user',
         content: message,
+      });
+
+      // Log config source for debugging
+      await logStructuredEvent('FARMER_AGENT_PROCESSING', {
+        sessionId: session.id,
+        configSource: this.cachedConfig?.loadedFrom || 'not_loaded',
+        toolsAvailable: this.cachedConfig?.tools.length || 0,
+        hasDbPersona: !!this.cachedConfig?.persona,
       });
 
       // Generate AI response
@@ -52,6 +65,7 @@ export class FarmerAgent extends BaseAgent {
       await logStructuredEvent('FARMER_AGENT_RESPONSE', {
         sessionId: session.id,
         responseLength: aiResponse.length,
+        configSource: this.cachedConfig?.loadedFrom,
       });
 
       return {
@@ -59,6 +73,7 @@ export class FarmerAgent extends BaseAgent {
         agentType: this.type,
         metadata: {
           model: 'gemini-2.0-flash-exp',
+          configLoadedFrom: this.cachedConfig?.loadedFrom,
         },
       };
 
@@ -77,7 +92,10 @@ export class FarmerAgent extends BaseAgent {
     }
   }
 
-  getSystemPrompt(): string {
+  /**
+   * Default system prompt - fallback if database config not available
+   */
+  getDefaultSystemPrompt(): string {
     return `You are a knowledgeable and supportive farmer AI assistant at easyMO Farmers Market.
 
 Your role:
