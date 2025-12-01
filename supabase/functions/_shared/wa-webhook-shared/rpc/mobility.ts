@@ -106,6 +106,9 @@ export type MatchResult = {
   dropoff_text: string | null;
   matched_at: string | null;
   created_at?: string | null;
+  vehicle_type?: string | null;
+  is_exact_match?: boolean;
+  location_age_minutes?: number;
 };
 
 export async function matchDriversForTrip(
@@ -114,14 +117,14 @@ export async function matchDriversForTrip(
   limit = 9,
   preferDropoff = false,
   radiusMeters?: number,
-  windowDays = 30,
+  windowMinutes = 30,
 ) {
   const { data, error } = await client.rpc("match_drivers_for_trip_v2", {
     _trip_id: tripId,
     _limit: limit,
     _prefer_dropoff: preferDropoff,
     _radius_m: radiusMeters ?? null,
-    _window_days: windowDays,
+    _window_minutes: windowMinutes,
   } as Record<string, unknown>);
   if (error) throw error;
   return (data ?? []) as MatchResult[];
@@ -133,14 +136,14 @@ export async function matchPassengersForTrip(
   limit = 9,
   preferDropoff = false,
   radiusMeters?: number,
-  windowDays = 30,
+  windowMinutes = 30,
 ) {
   const { data, error } = await client.rpc("match_passengers_for_trip_v2", {
     _trip_id: tripId,
     _limit: limit,
     _prefer_dropoff: preferDropoff,
     _radius_m: radiusMeters ?? null,
-    _window_days: windowDays,
+    _window_minutes: windowMinutes,
   } as Record<string, unknown>);
   if (error) throw error;
   return (data ?? []) as MatchResult[];
