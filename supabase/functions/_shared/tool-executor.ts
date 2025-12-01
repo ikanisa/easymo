@@ -219,6 +219,44 @@ export class ToolExecutor {
       case "get_nearby_listings":
         return await this.getNearbyListings(inputs, context);
       
+      // Support agent tools
+      case "get_user_info":
+        return await this.getUserInfo(context);
+      
+      case "check_wallet_balance":
+        return await this.checkWalletBalance(context);
+      
+      case "create_support_ticket":
+        return await this.createSupportTicket(inputs, context);
+      
+      case "search_faq":
+        return await this.searchFaq(inputs);
+      
+      // Rides agent tools
+      case "search_drivers":
+      case "find_nearby_drivers":
+        return await this.findNearbyDrivers(inputs, context);
+      
+      case "request_ride":
+        return await this.requestRide(inputs, context);
+      
+      case "get_fare_estimate":
+        return await this.getFareEstimate(inputs);
+      
+      case "track_ride":
+        return await this.trackRide(inputs);
+      
+      // Insurance agent tools
+      case "get_motor_quote":
+      case "calculate_quote":
+        return await this.calculateInsuranceQuote(inputs, context);
+      
+      case "check_policy_status":
+        return await this.checkPolicyStatus(inputs);
+      
+      case "submit_claim":
+        return await this.submitInsuranceClaim(inputs, context);
+      
       default:
         // Generic table query
         return await this.genericTableQuery(tableName, inputs);
@@ -979,6 +1017,589 @@ export class ToolExecutor {
       seller_name: "Seller", // Mask actual name for privacy
       listing_title: listing.product_name,
       message: `Click to contact the seller: ${whatsappLink}`,
+    };
+  }
+
+  // =====================================================================
+  // SUPPORT AGENT TOOLS
+  // =====================================================================
+
+  /**
+   * Get user account information
+   */
+  private async getUserInfo(context: ToolExecutionContext): Promise<unknown> {
+    const { data, error } = await this.supabase
+      .from("whatsapp_users")
+      .select("id, phone_number, preferred_language, user_roles, created_at, location_cache")
+      .eq("id", context.userId)
+      .single();
+
+    if (error || !data) {
+      return {
+        success: false,
+        error: "User not found",
+      };
+    }
+
+    return {
+      success: true,
+      user: {
+        id: data.id,
+        phone: data.phone_number ? `***${data.phone_number.slice(-4)}` : null, // Mask phone
+        language: data.preferred_language,
+        roles: data.user_roles,
+        member_since: data.created_at,
+        has_location: !!data.location_cache,
+      },
+    };
+  }
+
+  /**
+   * Check user wallet balance
+   */
+  private async checkWalletBalance(context: ToolExecutionContext): Promise<unknown> {
+    try {
+      // Try RPC function first
+      const { data, error } = await this.supabase.rpc("wallet_get_balance", {
+        p_user_id: context.userId,
+      });
+
+      if (!error && data) {
+        return {
+          success: true,
+          balance: data.balance || 0,
+          currency: data.currency || "RWF",
+          last_updated: data.updated_at,
+        };
+      }
+
+      // Fallback to direct query
+      const { data: wallet, error: walletError } = await this.supabase
+        .from("wallet_balances")
+        .select("balance, currency, updated_at")
+        .eq("user_id", context.userId)
+        .single();
+
+      if (walletError || !wallet) {
+        return {
+          success: true,
+          balance: 0,
+          currency: "RWF",
+          message: "No wallet found - you can top up anytime!",
+        };
+      }
+
+      return {
+        success: true,
+        balance: wallet.balance,
+        currency: wallet.currency,
+        last_updated: wallet.updated_at,
+      };
+    } catch (err) {
+      return {
+        success: false,
+        error: "Unable to check wallet balance",
+      };
+    }
+  }
+
+  /**
+   * Create a support ticket for complex issues
+   */
+  private async createSupportTicket(
+    inputs: Record<string, unknown>,
+    context: ToolExecutionContext
+  ): Promise<unknown> {
+    const issueType = inputs.issue_type as string;
+    const description = inputs.description as string;
+    const priority = (inputs.priority as string) || "medium";
+
+    if (!issueType || !description) {
+      return {
+        success: false,
+        error: "Issue type and description are required",
+      };
+    }
+
+    const { data, error } = await this.supabase
+      .from("support_tickets")
+      .insert({
+        user_id: context.userId,
+        issue_type: issueType,
+        description: description.slice(0, 1000), // Limit description length
+        priority,
+        status: "open",
+        metadata: {
+          created_via: "ai_agent",
+          agent_slug: context.agentSlug,
+        },
+      })
+      .select("id")
+      .single();
+
+    if (error) {
+      console.error("Failed to create support ticket:", error);
+      return {
+        success: false,
+        error: "Unable to create support ticket. Please try again.",
+      };
+    }
+
+    return {
+      success: true,
+      ticket_id: data?.id,
+      status: "open",
+      priority,
+      message: `Support ticket created! Our team will review and respond within 24 hours. Ticket ID: ${data?.id?.slice(0, 8)}`,
+    };
+  }
+
+  /**
+   * Search FAQ/knowledge base for answers
+   */
+  private async searchFaq(inputs: Record<string, unknown>): Promise<unknown> {
+    const query = inputs.query as string;
+
+    if (!query) {
+      return {
+        results: [],
+        message: "Please provide a search query",
+      };
+    }
+
+    // Sanitize query
+    const sanitizedQuery = this.sanitizeSearchQuery(query);
+
+    const { data, error } = await this.supabase
+      .from("support_faq")
+      .select("id, question, answer, category")
+      .or(`question.ilike.%${sanitizedQuery}%,answer.ilike.%${sanitizedQuery}%`)
+      .limit(5);
+
+    if (error || !data || data.length === 0) {
+      return {
+        results: [],
+        message: "No matching FAQ entries found. Creating a support ticket might help!",
+      };
+    }
+
+    return {
+      count: data.length,
+      results: data.map((faq) => ({
+        question: faq.question,
+        answer: faq.answer,
+        category: faq.category,
+      })),
+    };
+  }
+
+  // =====================================================================
+  // RIDES AGENT TOOLS
+  // =====================================================================
+
+  /**
+   * Find nearby available drivers
+   */
+  private async findNearbyDrivers(
+    inputs: Record<string, unknown>,
+    context: ToolExecutionContext
+  ): Promise<unknown> {
+    const vehicleType = (inputs.vehicle_type as string) || "any";
+    const radiusKm = (inputs.radius_km as number) || 5;
+
+    // Get user's location from cache
+    const { data: user } = await this.supabase
+      .from("whatsapp_users")
+      .select("location_cache")
+      .eq("id", context.userId)
+      .single();
+
+    if (!user?.location_cache) {
+      return {
+        success: false,
+        needs_location: true,
+        message: "Please share your GPS location so I can find drivers near you.",
+      };
+    }
+
+    const userLat = user.location_cache.lat;
+    const userLng = user.location_cache.lng;
+
+    try {
+      // Try RPC function for geospatial query
+      const { data, error } = await this.supabase.rpc("find_nearby_drivers", {
+        lat: userLat,
+        lng: userLng,
+        vehicle_filter: vehicleType,
+        radius_km: radiusKm,
+      });
+
+      if (error) {
+        console.warn("RPC find_nearby_drivers failed:", error);
+        // Fallback to simple query
+        const { data: fallbackData } = await this.supabase
+          .from("rides_driver_status")
+          .select("id, driver_name, vehicle_type, rating, is_online")
+          .eq("is_online", true)
+          .limit(5);
+
+        if (!fallbackData || fallbackData.length === 0) {
+          return {
+            count: 0,
+            drivers: [],
+            message: "No drivers available right now. Please try again in a few minutes.",
+          };
+        }
+
+        return {
+          count: fallbackData.length,
+          drivers: fallbackData.map((d) => ({
+            id: d.id,
+            name: d.driver_name,
+            vehicle_type: d.vehicle_type,
+            rating: d.rating,
+            eta: "5-10 min",
+          })),
+          user_location: { lat: userLat, lng: userLng },
+        };
+      }
+
+      if (!data || data.length === 0) {
+        return {
+          count: 0,
+          drivers: [],
+          message: "No drivers available nearby. Try expanding your search or wait a moment.",
+        };
+      }
+
+      return {
+        count: data.length,
+        drivers: data.map((d: Record<string, unknown>) => ({
+          id: d.id,
+          name: d.driver_name,
+          vehicle_type: d.vehicle_type,
+          rating: d.rating,
+          distance_km: d.distance_km,
+          eta: `${Math.ceil((d.distance_km as number) * 3)} min`,
+        })),
+        user_location: { lat: userLat, lng: userLng },
+      };
+    } catch (err) {
+      console.error("Find drivers error:", err);
+      return {
+        count: 0,
+        drivers: [],
+        error: "Unable to search for drivers at the moment.",
+      };
+    }
+  }
+
+  /**
+   * Request a ride
+   */
+  private async requestRide(
+    inputs: Record<string, unknown>,
+    context: ToolExecutionContext
+  ): Promise<unknown> {
+    const pickupAddress = inputs.pickup_address as string;
+    const destinationAddress = inputs.destination_address as string;
+    const vehicleType = (inputs.vehicle_type as string) || "moto";
+
+    // Get user location
+    const { data: user } = await this.supabase
+      .from("whatsapp_users")
+      .select("location_cache, phone_number")
+      .eq("id", context.userId)
+      .single();
+
+    if (!user?.location_cache) {
+      return {
+        success: false,
+        needs_location: true,
+        message: "Please share your GPS location for pickup.",
+      };
+    }
+
+    // Calculate fare estimate
+    const baseFare = vehicleType === "moto" ? 500 : 1500;
+    const estimatedDistance = 5; // Default 5km - would use actual routing
+    const perKmRate = vehicleType === "moto" ? 200 : 500;
+    const estimatedFare = baseFare + estimatedDistance * perKmRate;
+
+    const { data, error } = await this.supabase
+      .from("rides_trips")
+      .insert({
+        passenger_id: context.userId,
+        pickup_lat: user.location_cache.lat,
+        pickup_lng: user.location_cache.lng,
+        pickup_address: pickupAddress || "Current location",
+        destination_address: destinationAddress,
+        vehicle_type: vehicleType,
+        estimated_fare: estimatedFare,
+        status: "pending",
+        created_at: new Date().toISOString(),
+      })
+      .select("id")
+      .single();
+
+    if (error) {
+      console.error("Request ride error:", error);
+      return {
+        success: false,
+        error: "Unable to create ride request. Please try again.",
+      };
+    }
+
+    return {
+      success: true,
+      ride_id: data?.id,
+      status: "pending",
+      pickup: pickupAddress || "Your location",
+      destination: destinationAddress,
+      vehicle_type: vehicleType,
+      estimated_fare: `${estimatedFare} RWF`,
+      message: "Finding a driver for you... You'll be notified when one accepts.",
+    };
+  }
+
+  /**
+   * Get fare estimate for a trip
+   */
+  private async getFareEstimate(inputs: Record<string, unknown>): Promise<unknown> {
+    const distanceKm = (inputs.distance_km as number) || 5;
+    const vehicleType = (inputs.vehicle_type as string) || "moto";
+
+    const baseFare = vehicleType === "moto" ? 500 : 1500;
+    const perKmRate = vehicleType === "moto" ? 200 : 500;
+    const estimatedFare = baseFare + distanceKm * perKmRate;
+    const estimatedTime = Math.ceil(distanceKm * 3); // 3 min per km
+
+    return {
+      vehicle_type: vehicleType,
+      distance_km: distanceKm,
+      estimated_fare: `${estimatedFare} RWF`,
+      estimated_time: `${estimatedTime} minutes`,
+      breakdown: {
+        base_fare: `${baseFare} RWF`,
+        distance_charge: `${Math.round(distanceKm * perKmRate)} RWF`,
+      },
+    };
+  }
+
+  /**
+   * Track ride status
+   */
+  private async trackRide(inputs: Record<string, unknown>): Promise<unknown> {
+    const rideId = inputs.ride_id as string;
+
+    if (!rideId) {
+      return {
+        success: false,
+        error: "Ride ID is required",
+      };
+    }
+
+    const { data, error } = await this.supabase
+      .from("rides_trips")
+      .select("id, status, pickup_address, destination_address, estimated_fare, driver_id")
+      .eq("id", rideId)
+      .single();
+
+    if (error || !data) {
+      return {
+        success: false,
+        error: "Ride not found",
+      };
+    }
+
+    return {
+      success: true,
+      ride_id: data.id,
+      status: data.status,
+      pickup: data.pickup_address,
+      destination: data.destination_address,
+      fare: `${data.estimated_fare} RWF`,
+      has_driver: !!data.driver_id,
+    };
+  }
+
+  // =====================================================================
+  // INSURANCE AGENT TOOLS
+  // =====================================================================
+
+  /**
+   * Calculate insurance quote
+   */
+  private async calculateInsuranceQuote(
+    inputs: Record<string, unknown>,
+    context: ToolExecutionContext
+  ): Promise<unknown> {
+    const vehicleType = (inputs.vehicle_type as string) || "car";
+    const vehicleValue = (inputs.vehicle_value as number) || 5000000; // Default 5M RWF
+    const coverageType = (inputs.coverage_type as string) || "third_party";
+    const driverAge = inputs.driver_age as number;
+
+    // Calculate premium
+    let basePremium = vehicleValue * 0.05; // 5% base rate
+
+    // Coverage multiplier
+    if (coverageType === "comprehensive") {
+      basePremium *= 1.5; // 50% more for comprehensive
+    }
+
+    // Vehicle type adjustment
+    const vehicleMultipliers: Record<string, number> = {
+      motorcycle: 0.5,
+      car: 1.0,
+      truck: 1.5,
+      bus: 2.0,
+    };
+    basePremium *= vehicleMultipliers[vehicleType] || 1.0;
+
+    // Age factor for young drivers
+    if (driverAge && driverAge < 25) {
+      basePremium *= 1.3; // 30% more for young drivers
+    }
+
+    const annualPremium = Math.round(basePremium);
+    const monthlyPremium = Math.round(annualPremium / 12);
+
+    // Store quote request
+    const { data } = await this.supabase
+      .from("insurance_requests")
+      .insert({
+        user_id: context.userId,
+        insurance_type: "motor",
+        coverage_type: coverageType,
+        vehicle_type: vehicleType,
+        vehicle_value: vehicleValue,
+        annual_premium: annualPremium,
+        monthly_premium: monthlyPremium,
+        status: "quoted",
+        metadata: {
+          driver_age: driverAge,
+          quoted_via: "ai_agent",
+        },
+      })
+      .select("id")
+      .single();
+
+    return {
+      success: true,
+      quote_id: data?.id,
+      vehicle_type: vehicleType,
+      coverage: coverageType,
+      annual_premium: `${annualPremium.toLocaleString()} RWF`,
+      monthly_premium: `${monthlyPremium.toLocaleString()} RWF`,
+      currency: "RWF",
+      valid_for_days: 30,
+      message: `Your ${coverageType} insurance quote is ready! Pay monthly or annually.`,
+    };
+  }
+
+  /**
+   * Check insurance policy status
+   */
+  private async checkPolicyStatus(inputs: Record<string, unknown>): Promise<unknown> {
+    const policyNumber = inputs.policy_number as string;
+
+    if (!policyNumber) {
+      return {
+        success: false,
+        error: "Policy number is required",
+      };
+    }
+
+    const { data, error } = await this.supabase
+      .from("insurance_policies")
+      .select("policy_number, insurance_type, coverage_type, status, start_date, end_date, annual_premium")
+      .eq("policy_number", policyNumber)
+      .single();
+
+    if (error || !data) {
+      return {
+        success: false,
+        error: "Policy not found. Please check the policy number.",
+      };
+    }
+
+    const endDate = new Date(data.end_date);
+    const now = new Date();
+    const daysUntilExpiry = Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+
+    return {
+      success: true,
+      policy_number: data.policy_number,
+      type: data.insurance_type,
+      coverage: data.coverage_type,
+      status: data.status,
+      start_date: data.start_date,
+      end_date: data.end_date,
+      days_until_expiry: daysUntilExpiry,
+      premium: `${data.annual_premium} RWF/year`,
+      needs_renewal: daysUntilExpiry <= 30,
+    };
+  }
+
+  /**
+   * Submit an insurance claim
+   */
+  private async submitInsuranceClaim(
+    inputs: Record<string, unknown>,
+    context: ToolExecutionContext
+  ): Promise<unknown> {
+    const policyNumber = inputs.policy_number as string;
+    const claimType = inputs.claim_type as string;
+    const description = inputs.description as string;
+    const incidentDate = inputs.incident_date as string;
+    const estimatedAmount = inputs.estimated_amount as number;
+
+    if (!policyNumber || !claimType || !description) {
+      return {
+        success: false,
+        error: "Policy number, claim type, and description are required",
+      };
+    }
+
+    const { data, error } = await this.supabase
+      .from("insurance_claims")
+      .insert({
+        user_id: context.userId,
+        policy_number: policyNumber,
+        claim_type: claimType,
+        description: description.slice(0, 2000),
+        incident_date: incidentDate || new Date().toISOString(),
+        estimated_amount: estimatedAmount,
+        status: "submitted",
+        submitted_at: new Date().toISOString(),
+        metadata: {
+          submitted_via: "ai_agent",
+          agent_slug: context.agentSlug,
+        },
+      })
+      .select("id")
+      .single();
+
+    if (error) {
+      console.error("Submit claim error:", error);
+      return {
+        success: false,
+        error: "Unable to submit claim. Please try again or contact support.",
+      };
+    }
+
+    return {
+      success: true,
+      claim_id: data?.id,
+      status: "submitted",
+      policy_number: policyNumber,
+      claim_type: claimType,
+      message: "Claim submitted successfully! You'll receive updates via WhatsApp. Please upload supporting documents (photos, police report if applicable).",
+      next_steps: [
+        "Upload photos of damage",
+        "Provide police report (if accident)",
+        "Wait for claims adjuster contact",
+      ],
     };
   }
 
