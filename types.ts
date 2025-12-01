@@ -1,4 +1,5 @@
 
+
 export enum AgentMode {
   LIVE_CALL = 'LIVE_CALL',
   LEAD_GEN = 'LEAD_GEN',
@@ -87,6 +88,7 @@ export interface Business {
   city: string;
   address: string;
   phone: string;
+  whatsapp?: string;
   status: 'NEW' | 'CONTACTED' | 'QUALIFIED' | 'DO_NOT_CALL';
   rating: number;
   lat: number;
