@@ -96,8 +96,7 @@ END $$;
 
 -- Step 6: Add helpful comment
 COMMENT ON TABLE saved_locations IS 
-  'Unified table for user saved locations (home, work, etc). ' ||
-  'Consolidated from rides_saved_locations on 2025-12-01.';
+  'Unified table for user saved locations (home, work, etc). Consolidated from rides_saved_locations on 2025-12-01.';
 
 -- Step 7: Verify final state
 DO $$
