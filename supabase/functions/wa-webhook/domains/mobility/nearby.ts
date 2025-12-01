@@ -8,6 +8,9 @@ import {
   matchPassengersForTrip,
   type MatchResult,
   updateTripDropoff,
+  recommendDriversForUser,
+  recommendPassengersForUser,
+  findScheduledTripsNearby,
 } from "../../rpc/mobility.ts";
 import { getAppConfig } from "../../utils/app_config.ts";
 import { waChatLink } from "../../utils/links.ts";
@@ -28,7 +31,7 @@ import {
   updateStoredVehicleType,
 } from "./vehicle_plate.ts";
 import { getRecentNearbyIntent, storeNearbyIntent } from "./intent_cache.ts";
-import { saveIntent } from "../../../_shared/wa-webhook-shared/domains/intent_storage.ts";
+import { saveIntent, getRecentIntents } from "../../../_shared/wa-webhook-shared/domains/intent_storage.ts";
 import { isFeatureEnabled } from "../../../_shared/feature-flags.ts";
 import { routeToAIAgent, sendAgentOptions } from "../ai-agents/index.ts";
 import {
@@ -182,8 +185,83 @@ function buildNearbyRow(
   };
 }
 
+/**
+ * Show recent searches as quick actions
+ */
+async function showRecentSearches(
+  ctx: RouterContext,
+  mode: "drivers" | "passengers",
+): Promise<boolean> {
+  if (!ctx.profileId) return false;
+  
+  try {
+    const intentType = mode === "drivers" ? "nearby_drivers" : "nearby_passengers";
+    const recentIntents = await getRecentIntents(
+      ctx.supabase,
+      ctx.profileId,
+      intentType as any,
+      3,
+    );
+    
+    if (!recentIntents?.length) {
+      return false; // No recent searches
+    }
+    
+    const rows = recentIntents.map((intent, i) => ({
+      id: `RECENT::${i}::${intent.pickup_lat}::${intent.pickup_lng}::${intent.vehicle_type}`,
+      title: `📍 ${timeAgo(new Date(intent.created_at))} - ${intent.vehicle_type}`,
+      description: `${intent.pickup_lat.toFixed(4)}, ${intent.pickup_lng.toFixed(4)}`,
+    }));
+    
+    await sendListMessage(ctx, {
+      title: mode === "drivers" 
+        ? t(ctx.locale, "mobility.nearby.recent_searches.title_drivers", { 
+            defaultValue: "Recent Driver Searches" 
+          })
+        : t(ctx.locale, "mobility.nearby.recent_searches.title_passengers", { 
+            defaultValue: "Recent Passenger Searches" 
+          }),
+      body: mode === "drivers"
+        ? t(ctx.locale, "mobility.nearby.recent_searches.body_drivers", {
+            defaultValue: "Search again from a recent location:",
+          })
+        : t(ctx.locale, "mobility.nearby.recent_searches.body_passengers", {
+            defaultValue: "Search passengers from a recent location:",
+          }),
+      rows: [
+        ...rows,
+        { 
+          id: IDS.SHARE_NEW_LOCATION, 
+          title: t(ctx.locale, "mobility.nearby.share_new_location", {
+            defaultValue: "📍 New Location",
+          }),
+        },
+      ],
+      buttonText: t(ctx.locale, "common.choose", { defaultValue: "Choose" }),
+    });
+    
+    await setState(ctx.supabase, ctx.profileId, {
+      key: "mobility_nearby_recent",
+      data: { mode, recentIntents },
+    });
+    
+    return true;
+  } catch (error) {
+    console.error("Failed to show recent searches:", error);
+    return false;
+  }
+}
+
 export async function handleSeeDrivers(ctx: RouterContext): Promise<boolean> {
   if (!ctx.profileId) return false;
+  
+  // Try to show recent searches first
+  const showedRecent = await showRecentSearches(ctx, "drivers");
+  if (showedRecent) {
+    return true;
+  }
+  
+  // Fall back to cached or vehicle selection
   try {
     const cached = await getRecentNearbyIntent(
       ctx.supabase,
@@ -269,6 +347,27 @@ export async function handleVehicleSelection(
   id: string,
 ): Promise<boolean> {
   if (!ctx.profileId) return false;
+  
+  // Handle recent search selection
+  if (id.startsWith("RECENT::")) {
+    const parts = id.split("::");
+    if (parts.length === 5) {
+      const [, index, lat, lng, vehicle] = parts;
+      const pickup = { lat: parseFloat(lat), lng: parseFloat(lng) };
+      
+      await setState(ctx.supabase, ctx.profileId, {
+        key: "mobility_nearby_location",
+        data: { mode: state.mode, vehicle, pickup },
+      });
+      
+      return await handleNearbyLocation(
+        ctx,
+        { mode: state.mode, vehicle },
+        pickup,
+      );
+    }
+  }
+  
   const vehicleType = vehicleFromId(id);
   if (state.mode === "passengers") {
     await updateStoredVehicleType(ctx.supabase, ctx.profileId, vehicleType);
@@ -631,9 +730,93 @@ async function runMatchingFallback(
       count: matches.length,
     });
 
+    // ENHANCEMENT: Add recommendations and scheduled trips for better discovery
+    let enhancedMatches = [...matches];
+    
+    // If we have few live matches, add recommendations
+    if (matches.length < 5 && ctx.profileId) {
+      try {
+        const recommendations = state.mode === "drivers"
+          ? await recommendDriversForUser(ctx.supabase, ctx.profileId, 3)
+          : await recommendPassengersForUser(ctx.supabase, ctx.profileId, 3);
+        
+        // Convert recommendations to MatchResult format
+        const recMatches: MatchResult[] = recommendations.map((rec) => ({
+          trip_id: `rec_${rec.driver_user_id ?? rec.passenger_user_id}`,
+          creator_user_id: rec.driver_user_id ?? rec.passenger_user_id ?? "",
+          whatsapp_e164: rec.whatsapp_e164,
+          ref_code: "★ Recommended",
+          distance_km: rec.distance_km,
+          drop_bonus_m: null,
+          pickup_text: `⭐ ${rec.vehicle_type} (often nearby)`,
+          dropoff_text: null,
+          matched_at: rec.last_online_at ?? rec.last_search_at ?? null,
+          created_at: rec.last_online_at ?? rec.last_search_at ?? null,
+        }));
+        
+        enhancedMatches = [...matches, ...recMatches];
+        
+        if (recMatches.length > 0) {
+          await logStructuredEvent("RECOMMENDATIONS_ADDED", {
+            flow: "nearby",
+            mode: state.mode,
+            count: recMatches.length,
+          });
+        }
+      } catch (error) {
+        console.error("Failed to get recommendations:", error);
+        // Don't fail the search if recommendations fail
+      }
+    }
+
+    // Add scheduled trips if searching for drivers
+    if (state.mode === "drivers" && enhancedMatches.length < 7) {
+      try {
+        const scheduled = await findScheduledTripsNearby(
+          ctx.supabase,
+          pickup.lat,
+          pickup.lng,
+          10,
+          state.vehicle,
+          24,
+        );
+        
+        // Convert scheduled trips to MatchResult format
+        const scheduledMatches: MatchResult[] = scheduled
+          .filter(s => s.role === "driver")
+          .map((trip) => ({
+            trip_id: trip.trip_id,
+            creator_user_id: trip.creator_user_id,
+            whatsapp_e164: trip.whatsapp_e164,
+            ref_code: "📅 Scheduled",
+            distance_km: trip.distance_km,
+            drop_bonus_m: null,
+            pickup_text: `📅 ${new Date(trip.scheduled_at).toLocaleString("en-RW", { 
+              hour: "2-digit", 
+              minute: "2-digit",
+              weekday: "short"
+            })}`,
+            dropoff_text: trip.dropoff_text,
+            matched_at: trip.scheduled_at,
+            created_at: trip.created_at,
+          }));
+        
+        enhancedMatches = [...enhancedMatches, ...scheduledMatches];
+        
+        if (scheduledMatches.length > 0) {
+          await logStructuredEvent("SCHEDULED_TRIPS_ADDED", {
+            flow: "nearby",
+            count: scheduledMatches.length,
+          });
+        }
+      } catch (error) {
+        console.error("Failed to get scheduled trips:", error);
+      }
+    }
+
     // Per requirement: Never send fallback error messages
     // Instead, proceed with database results (even if empty) and return to menu
-    if (!matches.length) {
+    if (!enhancedMatches.length) {
       await sendButtonsMessage(
         ctx,
         t(ctx.locale, "mobility.nearby.empty_results"),
@@ -643,7 +826,7 @@ async function runMatchingFallback(
       return true;
     }
 
-    const rendered = matches
+    const rendered = enhancedMatches
       .sort(sortMatches)
       .slice(0, 9)
       .map((match) => buildNearbyRow(ctx, match));
