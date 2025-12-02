@@ -57,6 +57,180 @@ export async function getPlatformInfo(): Promise<PlatformInfo> {
   }
 }
 
+// =============================================================================
+// NETWORK STATUS DETECTION
+// =============================================================================
+
+/**
+ * Network status information
+ */
+export interface NetworkStatus {
+  online: boolean;
+  type?: 'wifi' | 'cellular' | 'ethernet' | 'unknown';
+  effectiveType?: 'slow-2g' | '2g' | '3g' | '4g';
+  downlink?: number; // Mbps
+  rtt?: number; // Round-trip time in ms
+}
+
+/**
+ * Get current network status
+ */
+export function getNetworkStatus(): NetworkStatus {
+  if (typeof window === 'undefined' || typeof navigator === 'undefined') {
+    return { online: true };
+  }
+
+  const online = navigator.onLine;
+
+  // Use Network Information API if available
+  const connection = (navigator as Navigator & { 
+    connection?: {
+      type?: string;
+      effectiveType?: string;
+      downlink?: number;
+      rtt?: number;
+    };
+  }).connection;
+
+  if (connection) {
+    return {
+      online,
+      type: connection.type as NetworkStatus['type'],
+      effectiveType: connection.effectiveType as NetworkStatus['effectiveType'],
+      downlink: connection.downlink,
+      rtt: connection.rtt,
+    };
+  }
+
+  return { online };
+}
+
+/**
+ * Check if currently online
+ */
+export function isOnline(): boolean {
+  if (typeof navigator === 'undefined') return true;
+  return navigator.onLine;
+}
+
+/**
+ * Subscribe to network status changes
+ * @param callback Function to call when network status changes
+ * @returns Cleanup function to unsubscribe
+ */
+export function onNetworkStatusChange(
+  callback: (status: NetworkStatus) => void
+): () => void {
+  if (typeof window === 'undefined') {
+    return () => {};
+  }
+
+  const handleOnline = () => callback(getNetworkStatus());
+  const handleOffline = () => callback(getNetworkStatus());
+
+  window.addEventListener('online', handleOnline);
+  window.addEventListener('offline', handleOffline);
+
+  // Also listen for connection changes if available
+  const connection = (navigator as Navigator & { 
+    connection?: EventTarget;
+  }).connection;
+  
+  if (connection) {
+    connection.addEventListener('change', handleOnline);
+  }
+
+  return () => {
+    window.removeEventListener('online', handleOnline);
+    window.removeEventListener('offline', handleOffline);
+    if (connection) {
+      connection.removeEventListener('change', handleOnline);
+    }
+  };
+}
+
+// =============================================================================
+// DISPLAY / WINDOW INFORMATION
+// =============================================================================
+
+/**
+ * Display information for multi-monitor support
+ */
+export interface DisplayInfo {
+  width: number;
+  height: number;
+  availWidth: number;
+  availHeight: number;
+  colorDepth: number;
+  pixelRatio: number;
+  orientation?: 'landscape' | 'portrait';
+}
+
+/**
+ * Get current display information
+ */
+export function getDisplayInfo(): DisplayInfo {
+  if (typeof window === 'undefined' || typeof screen === 'undefined') {
+    return {
+      width: 1920,
+      height: 1080,
+      availWidth: 1920,
+      availHeight: 1080,
+      colorDepth: 24,
+      pixelRatio: 1,
+    };
+  }
+
+  return {
+    width: screen.width,
+    height: screen.height,
+    availWidth: screen.availWidth,
+    availHeight: screen.availHeight,
+    colorDepth: screen.colorDepth,
+    pixelRatio: window.devicePixelRatio || 1,
+    orientation: screen.width > screen.height ? 'landscape' : 'portrait',
+  };
+}
+
+// =============================================================================
+// CLIPBOARD INTEGRATION
+// =============================================================================
+
+/**
+ * Copy text to clipboard (works in both desktop and web)
+ */
+export async function copyToClipboard(text: string): Promise<boolean> {
+  try {
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+    return false;
+  } catch (error) {
+    console.error('Failed to copy to clipboard:', error);
+    return false;
+  }
+}
+
+/**
+ * Read text from clipboard (works in both desktop and web)
+ */
+export async function readFromClipboard(): Promise<string | null> {
+  try {
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      return await navigator.clipboard.readText();
+    }
+    return null;
+  } catch (error) {
+    console.error('Failed to read from clipboard:', error);
+    return null;
+  }
+}
+
+// =============================================================================
+// NOTIFICATIONS
+// =============================================================================
+
 /**
  * Send native notification (works in both desktop and web)
  */
@@ -105,6 +279,10 @@ export async function showNotification(
   }
 }
 
+// =============================================================================
+// WINDOW MANAGEMENT
+// =============================================================================
+
 /**
  * Minimize window to system tray (desktop only)
  */
@@ -142,6 +320,10 @@ export async function openExternal(url: string): Promise<void> {
     window.open(url, '_blank', 'noopener,noreferrer');
   }
 }
+
+// =============================================================================
+// FILE DIALOGS
+// =============================================================================
 
 /**
  * Save file dialog (desktop only)
@@ -191,6 +373,10 @@ export async function openFile(
   }
 }
 
+// =============================================================================
+// AUTO-START
+// =============================================================================
+
 /**
  * Check if auto-start is enabled (desktop only)
  */
@@ -223,6 +409,10 @@ export async function setAutostart(enabled: boolean): Promise<void> {
     console.error('Failed to set autostart:', error);
   }
 }
+
+// =============================================================================
+// SYSTEM TRAY
+// =============================================================================
 
 /**
  * Update system tray status
@@ -263,6 +453,10 @@ export async function flashTrayIcon(): Promise<void> {
   }
 }
 
+// =============================================================================
+// GLOBAL SHORTCUTS
+// =============================================================================
+
 /**
  * Register global shortcut
  */
@@ -299,6 +493,10 @@ export async function unregisterGlobalShortcut(
     console.error('Failed to unregister global shortcut:', error);
   }
 }
+
+// =============================================================================
+// APP UPDATES
+// =============================================================================
 
 /**
  * Check for app updates
@@ -350,4 +548,39 @@ export async function getAppVersion(): Promise<string> {
     console.error('Failed to get app version:', error);
     return '1.0.0';
   }
+}
+
+// =============================================================================
+// VISIBILITY CHANGE (for session refresh)
+// =============================================================================
+
+/**
+ * Subscribe to visibility changes (for triggering session refresh on window focus)
+ * @param callback Function to call when visibility changes
+ * @returns Cleanup function to unsubscribe
+ */
+export function onVisibilityChange(
+  callback: (visible: boolean) => void
+): () => void {
+  if (typeof document === 'undefined') {
+    return () => {};
+  }
+
+  const handleVisibilityChange = () => {
+    callback(!document.hidden);
+  };
+
+  document.addEventListener('visibilitychange', handleVisibilityChange);
+
+  return () => {
+    document.removeEventListener('visibilitychange', handleVisibilityChange);
+  };
+}
+
+/**
+ * Check if the document is currently visible
+ */
+export function isDocumentVisible(): boolean {
+  if (typeof document === 'undefined') return true;
+  return !document.hidden;
 }

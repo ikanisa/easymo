@@ -1,93 +1,74 @@
-use tauri::{CustomMenuItem, Menu, MenuItem, Submenu};
+use tauri::{
+    menu::{Menu, MenuBuilder, MenuItem, PredefinedMenuItem, Submenu, SubmenuBuilder},
+    AppHandle, Runtime, Wry,
+};
 
-pub fn create_app_menu() -> Menu {
+/// Creates the application menu using the Tauri 2.0 menu API
+pub fn create_app_menu<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<Menu<R>> {
     // File menu
-    let new_window = CustomMenuItem::new("new_window".to_string(), "New Window");
-    let open = CustomMenuItem::new("open".to_string(), "Open...").accelerator("CmdOrCtrl+O");
-    let save = CustomMenuItem::new("save".to_string(), "Save").accelerator("CmdOrCtrl+S");
-    let export = CustomMenuItem::new("export".to_string(), "Export Data...").accelerator("CmdOrCtrl+E");
-    
-    let file_menu = Submenu::new(
-        "File",
-        Menu::new()
-            .add_item(new_window)
-            .add_native_item(MenuItem::Separator)
-            .add_item(open)
-            .add_item(save)
-            .add_item(export)
-            .add_native_item(MenuItem::Separator)
-            .add_native_item(MenuItem::CloseWindow)
-            .add_native_item(MenuItem::Quit),
-    );
+    let file_submenu = SubmenuBuilder::new(app, "File")
+        .item(&MenuItem::with_id(app, "new_window", "New Window", true, None::<&str>)?)
+        .separator()
+        .item(&MenuItem::with_id(app, "open", "Open...", true, Some("CmdOrCtrl+O"))?)
+        .item(&MenuItem::with_id(app, "save", "Save", true, Some("CmdOrCtrl+S"))?)
+        .item(&MenuItem::with_id(app, "export", "Export Data...", true, Some("CmdOrCtrl+E"))?)
+        .separator()
+        .close_window()
+        .quit()
+        .build()?;
 
     // Edit menu
-    let edit_menu = Submenu::new(
-        "Edit",
-        Menu::new()
-            .add_native_item(MenuItem::Undo)
-            .add_native_item(MenuItem::Redo)
-            .add_native_item(MenuItem::Separator)
-            .add_native_item(MenuItem::Cut)
-            .add_native_item(MenuItem::Copy)
-            .add_native_item(MenuItem::Paste)
-            .add_native_item(MenuItem::SelectAll),
-    );
+    let edit_submenu = SubmenuBuilder::new(app, "Edit")
+        .undo()
+        .redo()
+        .separator()
+        .cut()
+        .copy()
+        .paste()
+        .select_all()
+        .build()?;
 
     // View menu
-    let refresh = CustomMenuItem::new("refresh".to_string(), "Refresh").accelerator("CmdOrCtrl+R");
-    let fullscreen = CustomMenuItem::new("fullscreen".to_string(), "Toggle Fullscreen").accelerator("F11");
-    let dev_tools = CustomMenuItem::new("dev_tools".to_string(), "Developer Tools").accelerator("CmdOrCtrl+Shift+I");
-    
-    let view_menu = Submenu::new(
-        "View",
-        Menu::new()
-            .add_item(refresh)
-            .add_native_item(MenuItem::Separator)
-            .add_item(fullscreen)
-            .add_native_item(MenuItem::EnterFullScreen)
-            .add_native_item(MenuItem::Separator)
-            .add_item(dev_tools),
-    );
+    let view_submenu = SubmenuBuilder::new(app, "View")
+        .item(&MenuItem::with_id(app, "refresh", "Refresh", true, Some("CmdOrCtrl+R"))?)
+        .separator()
+        .item(&MenuItem::with_id(app, "fullscreen", "Toggle Fullscreen", true, Some("F11"))?)
+        .fullscreen()
+        .separator()
+        .item(&MenuItem::with_id(app, "dev_tools", "Developer Tools", true, Some("CmdOrCtrl+Shift+I"))?)
+        .build()?;
 
     // Window menu
-    let minimize = CustomMenuItem::new("minimize".to_string(), "Minimize").accelerator("CmdOrCtrl+M");
-    let minimize_to_tray = CustomMenuItem::new("minimize_to_tray".to_string(), "Minimize to Tray");
-    let zoom = CustomMenuItem::new("zoom".to_string(), "Zoom");
-    
-    let window_menu = Submenu::new(
-        "Window",
-        Menu::new()
-            .add_item(minimize)
-            .add_item(minimize_to_tray)
-            .add_item(zoom)
-            .add_native_item(MenuItem::Separator)
-            .add_native_item(MenuItem::CloseWindow),
-    );
+    let window_submenu = SubmenuBuilder::new(app, "Window")
+        .item(&MenuItem::with_id(app, "minimize", "Minimize", true, Some("CmdOrCtrl+M"))?)
+        .item(&MenuItem::with_id(app, "minimize_to_tray", "Minimize to Tray", true, None::<&str>)?)
+        .item(&MenuItem::with_id(app, "zoom", "Zoom", true, None::<&str>)?)
+        .separator()
+        .close_window()
+        .build()?;
 
     // Help menu
-    let documentation = CustomMenuItem::new("documentation".to_string(), "Documentation");
-    let report_issue = CustomMenuItem::new("report_issue".to_string(), "Report Issue");
-    let about = CustomMenuItem::new("about".to_string(), "About EasyMO");
-    
-    let help_menu = Submenu::new(
-        "Help",
-        Menu::new()
-            .add_item(documentation)
-            .add_item(report_issue)
-            .add_native_item(MenuItem::Separator)
-            .add_item(about),
-    );
+    let help_submenu = SubmenuBuilder::new(app, "Help")
+        .item(&MenuItem::with_id(app, "documentation", "Documentation", true, None::<&str>)?)
+        .item(&MenuItem::with_id(app, "report_issue", "Report Issue", true, None::<&str>)?)
+        .separator()
+        .item(&MenuItem::with_id(app, "about", "About EasyMO", true, None::<&str>)?)
+        .build()?;
 
-    Menu::new()
-        .add_submenu(file_menu)
-        .add_submenu(edit_menu)
-        .add_submenu(view_menu)
-        .add_submenu(window_menu)
-        .add_submenu(help_menu)
+    // Build the menu
+    MenuBuilder::new(app)
+        .item(&file_submenu)
+        .item(&edit_submenu)
+        .item(&view_submenu)
+        .item(&window_submenu)
+        .item(&help_submenu)
+        .build()
 }
 
+use tauri::WebviewWindow;
+
 #[tauri::command]
-pub async fn handle_menu_event(event: String, window: tauri::Window) -> Result<(), String> {
+pub async fn handle_menu_event(event: String, window: WebviewWindow) -> Result<(), String> {
     match event.as_str() {
         "new_window" => {
             // Emit event to frontend to handle window creation
