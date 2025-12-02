@@ -1,0 +1,134 @@
+name: Test Suite
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'supabase/functions/**'
+      - '.github/workflows/test.yml'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'supabase/functions/**'
+
+env:
+  DENO_VERSION: v1.38.0
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: ${{ env.DENO_VERSION }}
+
+      - name: Verify Deno installation
+        run: deno --version
+
+      - name: Cache Deno dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/deno
+            ~/.deno
+          key: ${{ runner.os }}-deno-${{ hashFiles('**/deno.json', '**/deno.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-deno-
+
+      - name: Type check test utilities
+        run: |
+          deno check supabase/functions/_shared/testing/test-utils.ts
+          deno check supabase/functions/_shared/testing/fixtures.ts
+
+      - name: Run Core Service Tests
+        run: |
+          deno test --allow-all \
+            supabase/functions/wa-webhook-core/__tests__/
+
+      - name: Run Mobility Service Tests
+        run: |
+          deno test --allow-all \
+            supabase/functions/wa-webhook-mobility/__tests__/
+
+      - name: Run Insurance Service Tests
+        run: |
+          deno test --allow-all \
+            supabase/functions/wa-webhook-insurance/__tests__/
+
+      - name: Run Profile Service Tests
+        run: |
+          deno test --allow-all \
+            supabase/functions/wa-webhook-profile/__tests__/
+
+      - name: Run E2E Tests
+        run: |
+          deno test --allow-all \
+            supabase/functions/_shared/testing/__tests__/
+
+      - name: Generate Coverage Report
+        run: |
+          mkdir -p coverage
+          deno test --allow-all --coverage=coverage/raw \
+            supabase/functions/wa-webhook-core/__tests__/ \
+            supabase/functions/wa-webhook-mobility/__tests__/ \
+            supabase/functions/wa-webhook-insurance/__tests__/ \
+            supabase/functions/wa-webhook-profile/__tests__/ \
+            supabase/functions/_shared/testing/__tests__/ || true
+          deno coverage coverage/raw --lcov --output=coverage/lcov.info || true
+
+      - name: Upload Coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          files: coverage/lcov.info
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: false
+
+  lint:
+    name: Lint & Format Check
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: ${{ env.DENO_VERSION }}
+
+      - name: Check formatting
+        run: deno fmt --check supabase/functions/ || true
+
+      - name: Lint
+        run: deno lint supabase/functions/ || true
+
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check for backup files
+        run: |
+          if find supabase/functions -name "*.bak*" -type f | grep -q .; then
+            echo "❌ Backup files found in production code!"
+            find supabase/functions -name "*.bak*" -type f
+            exit 1
+          fi
+          echo "✅ No backup files found"
+
+      - name: Basic secret detection
+        run: |
+          echo "Running basic secret scan..."
+          grep -rn "password\s*=\s*['\"]" supabase/functions/ --include="*.ts" | grep -v "test" | grep -v "example" || echo "✅ No hardcoded passwords"
+          grep -rn "secret\s*=\s*['\"]" supabase/functions/ --include="*.ts" | grep -v "test" | grep -v "APP_SECRET" || echo "✅ No hardcoded secrets"

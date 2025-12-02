@@ -1,0 +1,20 @@
+{
+  "test": {
+    "include": [
+      "**/*.test.ts",
+      "**/__tests__/*.ts"
+    ],
+    "exclude": [
+      "**/node_modules/**",
+      "**/*.bak*"
+    ]
+  },
+  "compilerOptions": {
+    "allowJs": true,
+    "lib": ["deno.window"],
+    "strict": true
+  },
+  "imports": {
+    "testing/": "https://deno.land/std@0.203.0/testing/"
+  }
+}
