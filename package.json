@@ -11,7 +11,6 @@
     "build:deps": "pnpm --filter @va/shared build && pnpm --filter @easymo/commons build && pnpm --filter @easymo/ui build && pnpm --filter @easymo/video-agent-schema build",
     "build": "pnpm --filter @easymo/admin-app run build",
     "build:all": "pnpm run build:deps && pnpm run build",
-    "netlify:build": "pnpm --filter @va/shared build && pnpm --filter @easymo/commons build && pnpm --filter @easymo/video-agent-schema build && cd admin-app && pnpm build",
     "start": "pnpm --filter @easymo/admin-app run start",
     "lint": "pnpm exec eslint --no-error-on-unmatched-pattern \"apps/**/*.{ts,tsx}\" \"services/**/*.{ts,tsx}\" \"packages/**/*.{ts,tsx}\" \"admin-app/**/*.{ts,tsx}\" \"waiter-pwa/**/*.{ts,tsx}\" \"real-estate-pwa/**/*.{ts,tsx}\"",
     "lint:fix": "pnpm exec eslint --no-error-on-unmatched-pattern \"apps/**/*.{ts,tsx}\" \"services/**/*.{ts,tsx}\" \"packages/**/*.{ts,tsx}\" \"admin-app/**/*.{ts,tsx}\" \"waiter-pwa/**/*.{ts,tsx}\" \"real-estate-pwa/**/*.{ts,tsx}\" --fix",
@@ -44,7 +43,6 @@
     "diagnostics:supabase": "node ./scripts/test-supabase-connection.mjs",
     "mcp:supabase": "bash ./scripts/run-supabase-mcp-server.sh",
     "guard:deprecated": "deno run --allow-read tools/lint/check_deprecated_features.ts",
-    "smoke:netlify": "node ./scripts/smoke/netlify-smoke.mjs",
     "smoke:wa": "node ./scripts/wa-webhook-smoke.mjs"
   },
   "dependencies": {

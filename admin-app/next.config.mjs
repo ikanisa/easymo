@@ -20,15 +20,15 @@ const enableOptimizedImports =
   String(process.env.NEXT_DISABLE_OPTIMIZED_IMPORTS || '').toLowerCase() !== 'true';
 
 // Detect environment for output mode
-const isNetlify = process.env.NETLIFY === 'true';
+const isCloudflare = process.env.CF_PAGES === '1';
 const isTauri = !!process.env.TAURI_ENV_PLATFORM;
 
 // Determine output mode based on environment
 // - Tauri desktop app: undefined (uses default Next.js output)
-// - Netlify deployment: undefined (works best with @netlify/plugin-nextjs)
+// - Cloudflare Pages: undefined (uses @cloudflare/next-on-pages)
 // - Other deployments: standalone (for container/server deployments)
 const getOutputMode = () => {
-  if (isTauri || isNetlify) return undefined;
+  if (isTauri || isCloudflare) return undefined;
   return 'standalone';
 };
 
@@ -38,7 +38,7 @@ const nextConfig = {
   compress: true,
   poweredByHeader: false,
   
-  // Output configuration for Netlify and Desktop
+  // Output configuration for Cloudflare and Desktop
   output: getOutputMode(),
   
   // Image optimization

@@ -1,6 +1,6 @@
 #!/bin/bash
 # EasyMO Admin Panel - Post-Deployment Smoke Test
-# Run this after deploying to Netlify to verify deployment
+# Run this after deploying to verify deployment
 
 set -e
 
@@ -9,7 +9,7 @@ echo "====================================="
 echo ""
 
 # Configuration
-SITE_URL="${1:-https://your-site.netlify.app}"
+SITE_URL="${1:-https://easymo-admin.pages.dev}"
 TIMEOUT=30
 
 # Color codes
@@ -57,7 +57,7 @@ test_endpoint() {
 # Validate URL
 if [[ ! $SITE_URL =~ ^https?:// ]]; then
     echo -e "${RED}❌ Invalid URL: $SITE_URL${NC}"
-    echo "Usage: $0 https://your-site.netlify.app"
+    echo "Usage: $0 https://easymo-admin.pages.dev"
     exit 1
 fi
 

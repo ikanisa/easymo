@@ -1,6 +1,6 @@
 #!/bin/bash
 # EasyMO Admin Panel - Pre-Deployment Validation Script
-# Run this before deploying to Netlify to catch issues early
+# Run this before deploying to catch issues early
 
 set -e  # Exit on any error
 
@@ -127,7 +127,7 @@ REQUIRED_ENV_VARS=(
 cd admin-app
 for var in "${REQUIRED_ENV_VARS[@]}"; do
     if [ -z "${!var}" ]; then
-        warning "Environment variable $var is not set (OK if in Netlify dashboard)"
+        warning "Environment variable $var is not set (OK if set in deployment platform)"
     else
         success "Environment variable $var is set"
     fi
@@ -200,7 +200,7 @@ echo "📊 VALIDATION SUMMARY"
 echo "======================================"
 if [ $ERRORS -eq 0 ] && [ $WARNINGS -eq 0 ]; then
     echo -e "${GREEN}✅ ALL CHECKS PASSED!${NC}"
-    echo "Ready to deploy to Netlify."
+    echo "Ready to deploy."
     exit 0
 elif [ $ERRORS -eq 0 ]; then
     echo -e "${YELLOW}⚠️  PASSED WITH $WARNINGS WARNING(S)${NC}"
@@ -208,6 +208,6 @@ elif [ $ERRORS -eq 0 ]; then
     exit 0
 else
     echo -e "${RED}❌ FAILED WITH $ERRORS ERROR(S) AND $WARNINGS WARNING(S)${NC}"
-    echo "Fix errors before deploying to Netlify."
+    echo "Fix errors before deploying."
     exit 1
 fi
