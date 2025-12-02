@@ -322,6 +322,8 @@
   "mobility.nearby.share_new_location": "📍 Nouveau lieu",
   "mobility.nearby.no_recent_search": "🔍 Aucune recherche récente trouvée. Choisissez un mode.",
   "mobility.nearby.recent_load_error": "😔 Impossible de charger votre recherche récente.",
+  "mobility.nearby.buttons.drivers": "Chauffeurs",
+  "mobility.nearby.buttons.passengers": "Passagers",
   "schedule.menu.title": "🚦 Programmer un trajet",
   "schedule.menu.body": "Choisissez comment vous souhaitez voyager.",
   "schedule.menu.section": "Rôle",
