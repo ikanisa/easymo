@@ -58,10 +58,18 @@ jobs:
             exit 0
           fi
           
-          # Verify migrations for functions with dependencies
-          for fn in wa-webhook-mobility; do
+          # Dynamically get functions with dependencies from manifest
+          chmod +x scripts/verify-migrations-before-deploy.sh
+          FUNCTIONS_WITH_DEPS=$(jq -r 'to_entries | .[] | select(.value.required_migrations | length > 0) | .key' supabase/migration-manifest.json)
+          
+          if [ -z "$FUNCTIONS_WITH_DEPS" ]; then
+            echo "No functions with migration dependencies found"
+            exit 0
+          fi
+          
+          # Verify migrations for each function with dependencies
+          for fn in $FUNCTIONS_WITH_DEPS; do
             echo "Checking migrations for: $fn"
-            chmod +x scripts/verify-migrations-before-deploy.sh
             ./scripts/verify-migrations-before-deploy.sh "$fn" || {
               echo "::error::Migration verification failed for $fn"
               exit 1

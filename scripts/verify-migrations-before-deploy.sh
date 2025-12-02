@@ -39,6 +39,27 @@ log_error() {
   echo -e "${RED}✗${NC} $1" >&2
 }
 
+# Sanitize identifier to prevent SQL injection
+# Only allows alphanumeric characters, underscores, and hyphens
+sanitize_identifier() {
+  local input="$1"
+  # Remove any characters that are not alphanumeric, underscore, or hyphen
+  echo "$input" | sed 's/[^a-zA-Z0-9_-]//g'
+}
+
+# Validate that identifier matches expected pattern
+# Used to ensure values from manifest are safe for SQL
+validate_identifier() {
+  local input="$1"
+  local name="$2"
+  
+  if [[ ! "$input" =~ ^[a-zA-Z0-9_-]+$ ]]; then
+    log_error "Invalid $name: '$input' - only alphanumeric, underscore, and hyphen allowed"
+    return 1
+  fi
+  return 0
+}
+
 # Check required tools
 check_prerequisites() {
   local missing=()
@@ -58,6 +79,11 @@ check_prerequisites() {
   fi
 }
 
+# List functions with dependencies from manifest
+list_functions_with_deps() {
+  jq -r 'to_entries | .[] | select(.value.required_migrations | length > 0) | "  - \(.key)"' "$MANIFEST_FILE" 2>/dev/null || true
+}
+
 # Validate function name argument
 validate_args() {
   if [ $# -lt 1 ]; then
@@ -65,7 +91,13 @@ validate_args() {
     echo "Example: $0 wa-webhook-mobility"
     echo ""
     echo "Available functions with dependencies:"
-    jq -r 'to_entries | .[] | select(.value.required_migrations | length > 0) | "  - \(.key)"' "$MANIFEST_FILE" 2>/dev/null || true
+    list_functions_with_deps
+    exit 1
+  fi
+  
+  # Validate function name format
+  local function_name="$1"
+  if ! validate_identifier "$function_name" "function name"; then
     exit 1
   fi
 }
@@ -94,6 +126,7 @@ get_function_config() {
   local function_name="$1"
   local config
   
+  # Use jq's --arg to safely handle the function name
   config=$(jq -e --arg fn "$function_name" '.[$fn]' "$MANIFEST_FILE" 2>/dev/null)
   
   if [ "$config" = "null" ] || [ -z "$config" ]; then
@@ -123,13 +156,20 @@ check_migrations() {
   while IFS= read -r migration; do
     [ -z "$migration" ] && continue
     
-    # Check if migration exists in supabase_migrations table
+    # Sanitize and validate migration name
+    migration=$(sanitize_identifier "$migration")
+    if ! validate_identifier "$migration" "migration name"; then
+      failed=1
+      continue
+    fi
+    
+    # Check if migration exists in supabase_migrations table using parameterized approach
     local result
-    result=$(psql "$DATABASE_URL" -tAc "SELECT COUNT(*) FROM supabase_migrations.schema_migrations WHERE version = '$migration'" 2>/dev/null || echo "error")
+    result=$(psql "$DATABASE_URL" -tAc "SELECT COUNT(*) FROM supabase_migrations.schema_migrations WHERE version = \$\$${migration}\$\$" 2>/dev/null || echo "error")
     
     if [ "$result" = "error" ]; then
       # Try alternative: check if migration name pattern exists
-      result=$(psql "$DATABASE_URL" -tAc "SELECT COUNT(*) FROM supabase_migrations.schema_migrations WHERE version LIKE '%$migration%'" 2>/dev/null || echo "0")
+      result=$(psql "$DATABASE_URL" -tAc "SELECT COUNT(*) FROM supabase_migrations.schema_migrations WHERE version LIKE \$\$%${migration}%\$\$" 2>/dev/null || echo "0")
     fi
     
     if [ "$result" = "1" ] || [ "$result" -gt 0 ] 2>/dev/null; then
@@ -165,12 +205,22 @@ check_columns() {
     local table_name="${col%.*}"
     local column_name="${col#*.}"
     
+    # Sanitize and validate table/column names
+    table_name=$(sanitize_identifier "$table_name")
+    column_name=$(sanitize_identifier "$column_name")
+    
+    if ! validate_identifier "$table_name" "table name" || ! validate_identifier "$column_name" "column name"; then
+      failed=1
+      continue
+    fi
+    
+    # Use dollar-quoted strings to prevent SQL injection
     local result
     result=$(psql "$DATABASE_URL" -tAc "
       SELECT COUNT(*) FROM information_schema.columns 
       WHERE table_schema = 'public' 
-        AND table_name = '$table_name' 
-        AND column_name = '$column_name'
+        AND table_name = \$\$${table_name}\$\$
+        AND column_name = \$\$${column_name}\$\$
     " 2>/dev/null || echo "0")
     
     if [ "$result" = "1" ]; then
@@ -203,11 +253,19 @@ check_functions() {
   while IFS= read -r func; do
     [ -z "$func" ] && continue
     
+    # Sanitize and validate function name
+    func=$(sanitize_identifier "$func")
+    if ! validate_identifier "$func" "function name"; then
+      failed=1
+      continue
+    fi
+    
+    # Use dollar-quoted strings to prevent SQL injection
     local result
     result=$(psql "$DATABASE_URL" -tAc "
       SELECT COUNT(*) FROM pg_proc p
       JOIN pg_namespace n ON p.pronamespace = n.oid
-      WHERE n.nspname = 'public' AND p.proname = '$func'
+      WHERE n.nspname = 'public' AND p.proname = \$\$${func}\$\$
     " 2>/dev/null || echo "0")
     
     if [ "$result" -ge 1 ] 2>/dev/null; then
