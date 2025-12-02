@@ -407,7 +407,8 @@ async function deliverMomoQr(
   const messageBody = lines.join("\n");
   const fallbackBody = `${messageBody}\nQR link: ${qrUrl}`;
 
-  let fallbackNeeded = false;
+  let qrImageSent = false;
+  let buttonsSent = false;
 
   try {
     const capParts = [
@@ -416,30 +417,41 @@ async function deliverMomoQr(
       amountRwf && amountRwf > 0 ? `${amountRwf.toLocaleString('en-US')} RWF` : undefined,
     ].filter(Boolean) as string[];
     await sendImageUrl(ctx.from, qrUrl, capParts.join(' • '));
+    qrImageSent = true;
   } catch (error) {
-    fallbackNeeded = true;
     const message = error instanceof Error ? error.message : String(error);
-    console.error("momo.qr.send_image_fail", message);
+    await logEvent("MOMO_QR_IMAGE_FAIL", {
+      requester: ctx.from,
+      error: message,
+      qr_url: qrUrl,
+    });
   }
 
   try {
+    const finalMessageBody = qrImageSent ? messageBody : `${messageBody}\n\n📱 QR code: ${qrUrl}`;
     await sendButtonsMessage(
       ctx,
-      messageBody,
+      finalMessageBody,
       buildButtons({ id: IDS.MOMO_QR, title: "🔁 New QR" }),
     );
+    buttonsSent = true;
   } catch (error) {
-    fallbackNeeded = true;
     const message = error instanceof Error ? error.message : String(error);
-    console.error("momo.qr.send_buttons_fail", message);
+    await logEvent("MOMO_QR_BUTTONS_FAIL", {
+      requester: ctx.from,
+      error: message,
+    });
   }
 
-  if (fallbackNeeded) {
+  if (!buttonsSent) {
     try {
       await sendText(ctx.from, fallbackBody);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      console.error("momo.qr.send_text_fail", message);
+      await logEvent("MOMO_QR_TEXT_FAIL", {
+        requester: ctx.from,
+        error: message,
+      });
     }
   }
   const loggedTarget = data.targetType === "msisdn"

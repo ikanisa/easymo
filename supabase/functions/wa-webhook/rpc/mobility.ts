@@ -133,6 +133,7 @@ export type MatchResult = {
   created_at?: string | null;
   vehicle_type?: string;
   is_exact_match?: boolean;
+  number_plate?: string | null;
 };
 
 export async function matchDriversForTrip(

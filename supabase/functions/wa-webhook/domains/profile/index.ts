@@ -122,15 +122,15 @@ export async function handleProfileMenu(ctx: RouterContext): Promise<boolean> {
     if (page > 0) {
       pageRows.unshift({
         id: IDS.PROFILE_PREV,
-        title: "◀ Prev",
-        description: `Page ${page + 1} of ${totalPages}`,
+        title: t(ctx.locale, "profile.menu.pagination.prev"),
+        description: t(ctx.locale, "profile.menu.pagination.page_of", { current: page + 1, total: totalPages }),
       });
     }
     if (page < totalPages - 1 && pageRows.length < pageSize) {
       pageRows.push({
         id: IDS.PROFILE_NEXT,
-        title: "Next ▶",
-        description: `Page ${page + 1} of ${totalPages}`,
+        title: t(ctx.locale, "profile.menu.pagination.next"),
+        description: t(ctx.locale, "profile.menu.pagination.page_of", { current: page + 1, total: totalPages }),
       });
     }
   }
@@ -228,7 +228,7 @@ export async function handleProfileVehicles(ctx: RouterContext): Promise<boolean
         })),
         ...(vehicles.length ? vehicles.map((v) => ({
           id: `VEH-DEL::${v.id}`,
-          title: `🗑️ Delete ${v.plate}`,
+          title: `🗑️ ${t(ctx.locale, "profile.vehicles.delete_button", { plate: v.plate })}`,
           description: t(ctx.locale, "profile.vehicles.delete_confirm_short"),
         })) : []),
         {
@@ -308,7 +308,7 @@ export async function handleVehicleCertificateMedia(
     if (!requiredOk) {
       await sendButtonsMessage(
         ctx,
-        "❌ This does not look like a valid insurance certificate. Please send a clear photo/PDF of your active insurance certificate.",
+        t(ctx.locale, "profile.vehicles.add.invalid_certificate"),
         homeOnly()
       );
       await clearState(ctx.supabase, ctx.profileId);
@@ -406,7 +406,7 @@ export async function handleProfileBusinesses(ctx: RouterContext): Promise<boole
         })),
         {
           id: IDS.PROFILE_MANAGE_BUSINESSES,
-          title: "Manage my businesses",
+          title: t(ctx.locale, "profile.businesses.manage_button"),
         },
         {
           id: IDS.PROFILE_ADD_BUSINESS,
