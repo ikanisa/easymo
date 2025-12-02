@@ -27,7 +27,13 @@ export async function fetchRecentTrips(limit = 50): Promise<Trip[]> {
       headers,
     });
     const trips = response.data?.trips ?? [];
-    return Array.isArray(trips) ? trips : [];
+    const tripsArray = Array.isArray(trips) ? trips : [];
+    // Sort by created_at descending (most recent first)
+    return tripsArray.sort((a, b) => {
+      const dateA = a.created_at ? new Date(a.created_at).getTime() : 0;
+      const dateB = b.created_at ? new Date(b.created_at).getTime() : 0;
+      return dateB - dateA;
+    });
   } catch (error) {
     logger.warn({ msg: "ranking.trips.fetch_failed", error });
     return [];

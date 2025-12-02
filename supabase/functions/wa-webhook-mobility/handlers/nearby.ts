@@ -41,12 +41,12 @@ import {
 import { buildSaveRows } from "../locations/save.ts";
 import { checkLocationCache } from "./location_cache.ts";
 import { readLastLocation } from "../locations/favorites.ts";
+import { sortMatches } from "../../_shared/wa-webhook-shared/utils/sortMatches.ts";
 
+// Time window for matching: SQL function uses days
 const DEFAULT_WINDOW_DAYS = 30;
 // Per requirements: 10km radius consistently
 const REQUIRED_RADIUS_METERS = 10_000;
-// Location freshness window: only match trips with locations updated in last 30 minutes
-const DEFAULT_WINDOW_MINUTES = 30;
 // Search radius: read from app_config, default 15km (increased from 10km for 90%+ match rate)
 const DEFAULT_RADIUS_METERS = 15_000;
 const MAX_RADIUS_METERS = 25_000;
@@ -849,7 +849,7 @@ async function runMatchingFallback(
         max,
         Boolean(dropoff),
         radiusMeters,
-        DEFAULT_WINDOW_MINUTES,
+        DEFAULT_WINDOW_DAYS,
       )
       : await matchPassengersForTrip(
         ctx.supabase,
@@ -857,7 +857,7 @@ async function runMatchingFallback(
         max,
         false,
         radiusMeters,
-        DEFAULT_WINDOW_MINUTES,
+        DEFAULT_WINDOW_DAYS,
       );
 
     await logStructuredEvent("MATCHES_RESULT", {
@@ -958,8 +958,7 @@ async function runMatchingFallback(
       });
     }
 
-    const rendered = matches
-      .sort(sortMatches)
+    const rendered = sortMatches(matches, { prioritize: "distance" })
       .slice(0, 9)
       .map((match) => buildNearbyRow(ctx, match));
 
@@ -1058,20 +1057,6 @@ async function isDriverQuiet(client: any, driverId: string): Promise<boolean> {
   } catch (_) {
     return false;
   }
-}
-
-function sortMatches(a: MatchResult, b: MatchResult): number {
-  const distA = typeof a.distance_km === "number"
-    ? a.distance_km
-    : Number.MAX_SAFE_INTEGER;
-  const distB = typeof b.distance_km === "number"
-    ? b.distance_km
-    : Number.MAX_SAFE_INTEGER;
-  if (distA !== distB) return distA - distB;
-  const timeA = timestampMs(a);
-  const timeB = timestampMs(b);
-  if (timeB !== timeA) return timeB - timeA;
-  return (a.trip_id ?? "").localeCompare(b.trip_id ?? "");
 }
 
 function favoriteToRow(

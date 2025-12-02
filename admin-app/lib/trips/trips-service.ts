@@ -25,7 +25,13 @@ export async function listTrips(params: { search?: string } & Pagination = {}): 
     // Fallback to Edge Function
     const json = await callAdminFunction<{ trips: TripRow[] }>("admin-trips");
     const rows = Array.isArray(json?.trips) ? json.trips : [];
-    const filtered = rows.filter((row: any) => params.search ? matchesSearch(`${row?.id ?? ""} ${row?.creator_user_id ?? ""} ${row?.vehicle_type ?? ""}`, params.search!) : true);
+    // Sort by created_at descending (most recent first)
+    const sorted = rows.sort((a: TripRow, b: TripRow) => {
+      const dateA = a?.created_at ? new Date(a.created_at as string).getTime() : 0;
+      const dateB = b?.created_at ? new Date(b.created_at as string).getTime() : 0;
+      return dateB - dateA;
+    });
+    const filtered = sorted.filter((row: TripRow) => params.search ? matchesSearch(`${row?.id ?? ""} ${row?.creator_user_id ?? ""} ${row?.vehicle_type ?? ""}`, params.search!) : true);
     return paginateArray(filtered, params);
   }
 
