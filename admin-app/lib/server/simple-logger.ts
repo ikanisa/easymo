@@ -113,9 +113,22 @@ class SimpleLogger {
   }
 }
 
-// Create singleton instance
-const logLevel = (process.env.LOG_LEVEL ?? 'info') as LogLevel;
-const serviceName = process.env.SERVICE_NAME ?? 'admin-app';
+// Create singleton instance (Edge Runtime safe)
+function getLogLevel(): LogLevel {
+  try {
+    return (process?.env?.LOG_LEVEL ?? 'info') as LogLevel;
+  } catch {
+    return 'info';
+  }
+}
 
-export const logger = new SimpleLogger(serviceName, logLevel);
+function getServiceName(): string {
+  try {
+    return process?.env?.SERVICE_NAME ?? 'admin-app';
+  } catch {
+    return 'admin-app';
+  }
+}
+
+export const logger = new SimpleLogger(getServiceName(), getLogLevel());
 export const childLogger = (bindings: LogContext) => logger.child(bindings);
