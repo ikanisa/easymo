@@ -1,41 +1,38 @@
 use std::path::PathBuf;
 use tauri::Manager;
+use tauri_plugin_dialog::{DialogExt, FileDialogBuilder};
 
 #[tauri::command]
-pub async fn open_file_dialog(window: tauri::Window) -> Result<Option<PathBuf>, String> {
-    use tauri::api::dialog::FileDialogBuilder;
-    
-    let (tx, rx) = std::sync::mpsc::channel();
-    
-    FileDialogBuilder::new()
+pub async fn open_file_dialog(app: tauri::AppHandle) -> Result<Option<PathBuf>, String> {
+    let result = app.dialog()
+        .file()
         .add_filter("EasyMO Files", &["easymo"])
         .add_filter("All Files", &["*"])
-        .pick_file(move |path| {
-            tx.send(path).ok();
-        });
+        .blocking_pick_file();
     
-    rx.recv().map_err(|e| e.to_string())
+    match result {
+        Some(file_response) => Ok(Some(file_response.path)),
+        None => Ok(None),
+    }
 }
 
 #[tauri::command]
-pub async fn save_file_dialog(window: tauri::Window, default_name: Option<String>) -> Result<Option<PathBuf>, String> {
-    use tauri::api::dialog::FileDialogBuilder;
-    
-    let (tx, rx) = std::sync::mpsc::channel();
-    
-    let mut builder = FileDialogBuilder::new()
+pub async fn save_file_dialog(app: tauri::AppHandle, default_name: Option<String>) -> Result<Option<PathBuf>, String> {
+    let mut dialog = app.dialog()
+        .file()
         .add_filter("EasyMO Files", &["easymo"])
         .add_filter("All Files", &["*"]);
     
     if let Some(name) = default_name {
-        builder = builder.set_file_name(&name);
+        dialog = dialog.set_file_name(&name);
     }
     
-    builder.save_file(move |path| {
-        tx.send(path).ok();
-    });
+    let result = dialog.blocking_save_file();
     
-    rx.recv().map_err(|e| e.to_string())
+    match result {
+        Some(file_response) => Ok(Some(file_response.path)),
+        None => Ok(None),
+    }
 }
 
 #[tauri::command]
@@ -53,7 +50,7 @@ pub fn handle_file_open(app: &tauri::AppHandle, paths: Vec<PathBuf>) {
         if let Some(ext) = path.extension() {
             if ext == "easymo" {
                 // Emit event to frontend
-                if let Err(e) = app.emit_all("file-open", path.to_str().unwrap()) {
+                if let Err(e) = app.emit("file-open", path.to_str().unwrap()) {
                     eprintln!("Failed to emit file-open event: {}", e);
                 }
             }

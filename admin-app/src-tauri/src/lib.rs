@@ -39,6 +39,10 @@ pub fn run() {
                 )?;
             }
 
+            // Setup application menu using Tauri 2.0 API
+            let app_menu = menu::create_app_menu(app.handle())?;
+            app.set_menu(app_menu)?;
+
             // Setup system tray
             setup_tray(app)?;
 
@@ -47,7 +51,6 @@ pub fn run() {
 
             Ok(())
         })
-        .menu(menu::create_app_menu())
         .on_menu_event(|app, event| {
             if let Some(window) = app.get_webview_window("main") {
                 tauri::async_runtime::spawn(async move {

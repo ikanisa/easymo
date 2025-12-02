@@ -39,8 +39,8 @@ impl DeepLink {
 pub fn handle_deep_link(app: &tauri::AppHandle, url: String) {
     match DeepLink::parse(&url) {
         Ok(link) => {
-            // Emit to frontend
-            if let Err(e) = app.emit_all("deep-link", link) {
+            // Emit to frontend using Tauri 2.0 API
+            if let Err(e) = app.emit("deep-link", link) {
                 eprintln!("Failed to emit deep link event: {}", e);
             }
         }
