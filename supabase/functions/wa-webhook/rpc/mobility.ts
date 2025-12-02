@@ -134,6 +134,7 @@ export type MatchResult = {
   vehicle_type?: string | null;
   is_exact_match?: boolean;
   location_age_minutes?: number;
+  number_plate?: string | null;
 };
 
 export async function matchDriversForTrip(

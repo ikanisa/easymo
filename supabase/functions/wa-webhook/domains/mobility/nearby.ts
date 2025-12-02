@@ -158,35 +158,30 @@ function buildNearbyRow(
   row: { id: string; title: string; description?: string };
   state: NearbyStateRow;
 } {
-  const masked = maskPhone(match.whatsapp_e164 ?? "");
   const distanceLabel = toDistanceLabel(match.distance_km);
   const seenLabel = timeAgo(
     getMatchTimestamp(match) ?? new Date().toISOString(),
   );
   
-  // Show vehicle type prominently, especially if different from requested
-  const vehicleLabel = match.vehicle_type 
-    ? (match.is_exact_match === false 
-        ? ` (${match.vehicle_type} 🚗)` 
-        : ` • ${match.vehicle_type}`)
-    : '';
+  // TITLE: Number plate or vehicle type (user-friendly identifier)
+  const title = match.number_plate 
+    ? match.number_plate.toUpperCase()
+    : match.vehicle_type 
+      ? `${match.vehicle_type} ${match.is_exact_match ? '' : '🚗'}`
+      : maskPhone(match.whatsapp_e164 ?? "");
   
-  const descriptionParts = [
-    t(ctx.locale, "mobility.nearby.row.ref", { ref: match.ref_code ?? "---" }),
-  ];
+  // DESCRIPTION: Distance + Time (most relevant info for decision-making)
+  const descriptionParts = [];
   if (distanceLabel) {
-    descriptionParts.push(
-      t(ctx.locale, "mobility.nearby.row.distance", { distance: distanceLabel }),
-    );
+    descriptionParts.push(distanceLabel);
   }
-  descriptionParts.push(
-    t(ctx.locale, "mobility.nearby.row.seen", { time: seenLabel }),
-  );
+  descriptionParts.push(seenLabel);
+  
   const rowId = `MTCH::${match.trip_id}`;
   return {
     row: {
       id: rowId,
-      title: `${masked}${vehicleLabel}`,
+      title,
       description: descriptionParts.join(" • "),
     },
     state: {
