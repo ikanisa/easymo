@@ -38,6 +38,7 @@ import {
 } from "../locations/favorites.ts";
 import { buildSaveRows } from "../locations/save.ts";
 import { saveIntent } from "../../../_shared/wa-webhook-shared/domains/intent_storage.ts";
+import { sortMatches } from "../../../_shared/wa-webhook-shared/utils/sortMatches.ts";
 
 const DEFAULT_WINDOW_DAYS = 30;
 const REQUIRED_RADIUS_METERS = 10_000;
@@ -1108,7 +1109,7 @@ async function fetchMatches(
       options.radiusMeters,
       DEFAULT_WINDOW_DAYS,
     );
-  return matches.sort(sortMatches).slice(0, 9);
+  return sortMatches(matches, { prioritize: "time" }).slice(0, 9);
 }
 
 async function deliverMatches(
@@ -1242,19 +1243,6 @@ function toDistanceLabel(value: number): string {
   if (!Number.isFinite(value)) return "";
   if (value >= 1) return `${value.toFixed(1)} km`;
   return `${Math.round(value * 1000)} m`;
-}
-
-function sortMatches(a: MatchResult, b: MatchResult): number {
-  const timeA = timestampMs(a);
-  const timeB = timestampMs(b);
-  if (timeB !== timeA) return timeB - timeA;
-  const distA = typeof a.distance_km === "number"
-    ? a.distance_km
-    : Number.MAX_SAFE_INTEGER;
-  const distB = typeof b.distance_km === "number"
-    ? b.distance_km
-    : Number.MAX_SAFE_INTEGER;
-  return distA - distB;
 }
 
 export function formatTravelLabel(

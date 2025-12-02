@@ -1,12 +1,12 @@
 import axios from "axios";
 
-import { settings } from "./config";
 import { logger } from "./logger";
 
 type Trip = {
   id: number;
   role: string;
   status: string;
+  created_at?: string | null;
   creator_user_id?: string | null;
 };
 
@@ -27,7 +27,13 @@ export async function fetchBuyerTrips(buyerRef: string): Promise<Trip[]> {
       headers,
     });
     const trips = response.data?.trips ?? [];
-    return (Array.isArray(trips) ? trips : []).filter((trip) => trip.creator_user_id === buyerRef);
+    const filtered = (Array.isArray(trips) ? trips : []).filter((trip) => trip.creator_user_id === buyerRef);
+    // Sort by created_at descending (most recent first)
+    return filtered.sort((a, b) => {
+      const dateA = a.created_at ? new Date(a.created_at).getTime() : 0;
+      const dateB = b.created_at ? new Date(b.created_at).getTime() : 0;
+      return dateB - dateA;
+    });
   } catch (error) {
     logger.warn({ msg: "buyer.trips.fetch_failed", error });
     return [];

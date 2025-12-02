@@ -173,7 +173,7 @@ export async function matchDriversForTrip(
   limit = 9,
   preferDropoff = false,
   radiusMeters?: number,
-  windowMinutes = 30,
+  windowDays = 30,
 ) {
   await ensureRidesTripsSchema(client);
   const { data, error } = await client.rpc("match_drivers_for_trip_v2", {
@@ -181,7 +181,7 @@ export async function matchDriversForTrip(
     _limit: limit,
     _prefer_dropoff: preferDropoff,
     _radius_m: radiusMeters ?? null,
-    _window_minutes: windowMinutes,
+    _window_days: windowDays,
   } as Record<string, unknown>);
   if (error) throw error;
   return (data ?? []) as MatchResult[];
@@ -193,7 +193,7 @@ export async function matchPassengersForTrip(
   limit = 9,
   preferDropoff = false,
   radiusMeters?: number,
-  windowMinutes = 30,
+  windowDays = 30,
 ) {
   await ensureRidesTripsSchema(client);
   const { data, error } = await client.rpc("match_passengers_for_trip_v2", {
@@ -201,7 +201,7 @@ export async function matchPassengersForTrip(
     _limit: limit,
     _prefer_dropoff: preferDropoff,
     _radius_m: radiusMeters ?? null,
-    _window_minutes: windowMinutes,
+    _window_days: windowDays,
   } as Record<string, unknown>);
   if (error) throw error;
   return (data ?? []) as MatchResult[];

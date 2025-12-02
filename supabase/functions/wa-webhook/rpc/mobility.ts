@@ -131,8 +131,9 @@ export type MatchResult = {
   dropoff_text: string | null;
   matched_at: string | null;
   created_at?: string | null;
-  vehicle_type?: string;
+  vehicle_type?: string | null;
   is_exact_match?: boolean;
+  location_age_minutes?: number;
   number_plate?: string | null;
 };
 
