@@ -1,153 +1,183 @@
 # EasyMO Scripts Directory
 
-Automation scripts for the EasyMO platform refactoring and maintenance.
+This directory contains various automation scripts for the EasyMO platform.
 
-## 📁 Directory Structure
+## 📱 macOS Code Signing Scripts
 
-```
-scripts/
-├── verify/          # ✅ Verification and validation scripts (NEW)
-├── security/        # 🔐 Security audit scripts (NEW)
-├── maintenance/     # 🔧 Cleanup and maintenance scripts (NEW)
-├── migration/       # 📦 Code migration scripts (NEW)
-├── codemod/         # 🔄 Automated code transformations (NEW)
-├── audit/           # 📊 Compliance and quality audits (NEW)
-├── checks/          # ✓ Pre-commit and CI checks (NEW)
-├── deploy/          # 🚀 Deployment scripts (organized)
-└── test/            # 🧪 Test runner scripts (organized)
-```
+**Purpose:** Sign macOS desktop apps (Admin Panel + Client/Staff Portal) for internal distribution.
 
-## 🚀 Quick Start
+### Core Signing Scripts
 
-### Refactoring Scripts (2025-11-27)
+| Script | Purpose | Usage |
+|--------|---------|-------|
+| `list_identities.sh` | List available code-signing certificates | `./scripts/list_identities.sh` |
+| `check_certificate.sh` | Verify certificate setup before signing | `./scripts/check_certificate.sh` |
+| `sign_app.sh` | Sign a single .app bundle with verification | `./scripts/sign_app.sh <path> <identity>` |
+| **`sign_all_apps.sh`** | **Sign both apps at once (main entry)** | **`./scripts/sign_all_apps.sh`** |
+| `verify_apps.sh` | Verify signatures after signing | `./scripts/verify_apps.sh` |
+| `test_signing_workflow.sh` | Run end-to-end test suite | `./scripts/test_signing_workflow.sh` |
 
-#### 1. Verify Workspace Dependencies
+### Quick Start
+
 ```bash
-./scripts/verify/workspace-deps.sh
-```
-Ensures all internal packages use the `workspace:*` protocol.
+# 1. First time setup
+./scripts/check_certificate.sh
+./scripts/test_signing_workflow.sh
 
-#### 2. Security Audit
-```bash
-./scripts/security/audit-env-files.sh
-```
-Checks environment files for exposed secrets and sensitive variables.
+# 2. Sign both apps
+./scripts/sign_all_apps.sh
 
-#### 3. Clean Root Directory
-```bash
-# See what would change (recommended first)
-./scripts/maintenance/cleanup-root-directory.sh --dry-run
-
-# Apply changes
-./scripts/maintenance/cleanup-root-directory.sh
-```
-Organizes root directory files into appropriate subdirectories.
-
-## 📋 Script Reference
-
-### ✅ Verification (`verify/`)
-
-**workspace-deps.sh** - Verify workspace dependencies
-- Checks all package.json files for proper `workspace:*` protocol
-- Exit 0: All correct | Exit 1: Issues found
-
-### 🔐 Security (`security/`)
-
-**audit-env-files.sh** - Security audit for environment files
-- Detects real secrets in `.env.example`
-- Flags sensitive vars exposed via `NEXT_PUBLIC_` or `VITE_`
-- Validates `.gitignore` configuration
-- Exit 0: Secure | Exit 1: Issues found
-
-### 🔧 Maintenance (`maintenance/`)
-
-**cleanup-root-directory.sh** - Organize root directory
-- Moves session notes → `docs/sessions/`
-- Moves architecture diagrams → `docs/architecture/diagrams/`
-- Moves deployment scripts → `scripts/deploy/`
-- Moves test scripts → `scripts/test/`
-- Archives old files → `.archive/`
-- Supports `--dry-run` mode
-
-## 💡 Usage Guidelines
-
-### For All Scripts
-
-1. **Read the script first** - Understand what it does
-2. **Use --dry-run** - When available, test first
-3. **Check exit codes** - 0 = success, 1 = failure
-4. **Review output** - Verify changes match expectations
-
-### Script Development
-
-#### Template
-```bash
-#!/bin/bash
-set -euo pipefail
-
-echo "🔧 Script description"
-
-DRY_RUN=false
-if [[ "${1:-}" == "--dry-run" ]]; then
-  DRY_RUN=true
-  echo "⚠️  DRY RUN MODE"
-fi
-
-# Script logic here
-
-# Exit with proper code
-exit 0  # or 1 for errors
+# 3. Verify signatures
+./scripts/verify_apps.sh
 ```
 
-#### Best Practices
-- ✅ Use `set -euo pipefail` for safety
-- ✅ Provide `--dry-run` for destructive operations
-- ✅ Use color-coded output (see existing scripts)
-- ✅ Include usage examples in comments
-- ✅ Handle errors gracefully
-- ✅ Document in this README
+### Documentation
 
-## 📚 Related Documentation
-
-- **Refactoring Progress**: `/REFACTORING_PROGRESS.md`
-- **Ground Rules**: `/docs/GROUND_RULES.md`
-- **Architecture**: `/docs/ARCHITECTURE.md`
-
-## 🆘 Troubleshooting
-
-### "Permission denied"
-```bash
-chmod +x scripts/path/to/script.sh
-```
-
-### "Command not found: jq"
-Install jq: 
-- macOS: `brew install jq`
-- Linux: `apt install jq`
-
-### Script Fails Midway
-1. Check error message
-2. Run with `--dry-run` first
-3. Verify prerequisites
-4. Check file permissions
-
-## 🔄 Migration Status
-
-**Phase**: Code Quality & Standardization (Week 3)  
-**Last Updated**: 2025-11-27
-
-### Completed
-- ✅ Admin app duplication resolution
-- ✅ Workspace dependency verification
-- ✅ Security audit infrastructure
-- ✅ Root directory cleanup automation
-
-### In Progress
-- ⏳ Test framework standardization
-- ⏳ TypeScript version alignment
-- ⏳ ESLint zero-warning enforcement
+- **Quick Start:** [../SIGNING_QUICK_START.md](../SIGNING_QUICK_START.md)
+- **Complete Guide:** [../docs/internal_mac_signing.md](../docs/internal_mac_signing.md)
+- **CI/CD Setup:** [../docs/github_actions_signing.md](../docs/github_actions_signing.md)
+- **Master Index:** [../docs/SIGNING_REFERENCE.md](../docs/SIGNING_REFERENCE.md)
 
 ---
 
-**Maintained By**: EasyMO DevOps Team  
-**Version**: 2.0 (Refactoring Edition)
+## 🚀 Deployment Scripts
+
+| Script | Purpose |
+|--------|---------|
+| `deploy-agents.sh` | Deploy AI agents to production |
+| `deploy-ai-agents.sh` | Deploy AI agent configurations |
+| `complete-deployment.sh` | Complete deployment workflow |
+| `pre-deploy-check.sh` | Pre-deployment validation |
+| `post-deploy-smoke.sh` | Post-deployment smoke tests |
+
+---
+
+## 🧪 Testing & Validation Scripts
+
+| Script | Purpose |
+|--------|---------|
+| `test-agents.sh` | Test AI agent functionality |
+| `test-ai-agents.sh` | Test AI agent integrations |
+| `verify-ai-agents.sh` | Verify AI agent deployments |
+| `verify-deployment.sh` | Verify deployment success |
+| `test-business-directory-broker.sh` | Test business directory features |
+| `test-distance-calculation.sh` | Test geolocation features |
+| `validate-agent-db-architecture.sh` | Validate agent database schema |
+| `validate-agent-fallbacks.sh` | Validate agent fallback logic |
+
+---
+
+## 📊 Analysis & Monitoring Scripts
+
+| Script | Purpose |
+|--------|---------|
+| `analyze-phase3.sh` | Analyze Phase 3 implementation |
+| `monitor-agent-config-loading.sh` | Monitor agent configuration loading |
+| `check-wa-webhook.sh` | Check WhatsApp webhook status |
+| `audit-wa-templates.sh` | Audit WhatsApp message templates |
+
+---
+
+## 🗄️ Database & Migration Scripts
+
+| Script | Purpose |
+|--------|---------|
+| `supabase-backup-restore.sh` | Backup and restore Supabase database |
+| `deploy-consolidated-migrations.sh` | Deploy consolidated migrations |
+| `deploy-distance-fix.sh` | Deploy distance calculation fixes |
+| `create-business-directory-table.sh` | Create business directory table |
+| `cleanup-migrations.sh` | Clean up migration files |
+| `check-migration-hygiene.sh` | Verify migration file hygiene |
+| `verify-mobility-schema.sh` | Verify mobility database schema |
+| `prisma-baseline-supabase.sh` | Baseline Prisma schema with Supabase |
+
+---
+
+## 📦 WhatsApp & Webhook Scripts
+
+| Script | Purpose |
+|--------|---------|
+| `export-wa-realtime-env.sh` | Export WhatsApp realtime environment variables |
+| `wa-webhook-split-phase*.sh` | WhatsApp webhook splitting (Phase 1-5) |
+| `validate-webhook-enhancement.sh` | Validate webhook enhancements |
+
+---
+
+## 🔧 Build & Infrastructure Scripts
+
+| Script | Purpose |
+|--------|---------|
+| `build-desktop.sh` | Build desktop applications |
+| `archive-docs.sh` | Archive documentation files |
+| `setup-ai-agents.sh` | Set up AI agent infrastructure |
+| `setup-supabase-config.sh` | Set up Supabase configuration |
+| `check-deno-lockfiles.sh` | Verify Deno lockfile integrity |
+
+---
+
+## 🌐 Server & Proxy Scripts
+
+| Script | Purpose |
+|--------|---------|
+| `caddy_up.sh` | Start Caddy reverse proxy |
+| `caddy_down.sh` | Stop Caddy reverse proxy |
+| `caddy_bg.sh` | Run Caddy in background |
+| `caddy_common.sh` | Common Caddy utilities |
+| `run-supabase-mcp-server.sh` | Run Supabase MCP server |
+
+---
+
+## 🎯 Phase-Specific Scripts
+
+| Script | Purpose |
+|--------|---------|
+| `phase0-blockers.sh` | Phase 0 blocker checks |
+| `phase3-index.sh` | Phase 3 index |
+| `phase3-quick-start.sh` | Phase 3 quick start |
+| `phase3-summary.sh` | Phase 3 summary |
+| `phase3-tasks.sh` | Phase 3 task list |
+
+---
+
+## 🛠️ Utility Scripts
+
+| Script | Purpose |
+|--------|---------|
+| `seed-remote.sh` | Seed remote database |
+| `test-functions.sh` | Test Supabase Edge Functions |
+| `smoke-brokerai.sh` | Smoke test for broker AI |
+| `remove_ke_ug.sh` | Remove deprecated country codes (KE, UG) |
+| `geocode-data.sh` | Geocode location data |
+
+---
+
+## 💡 Best Practices
+
+### Before Running Scripts
+
+1. **Check requirements:** Most scripts require specific environment variables
+2. **Read script headers:** Each script has usage instructions in comments
+3. **Test in dev first:** Always test scripts in development before production
+4. **Backup data:** Run backups before database-altering scripts
+
+### Script Conventions
+
+- ✅ **Executable:** All scripts should have `chmod +x` permissions
+- ✅ **Exit codes:** 0 = success, non-zero = failure
+- ✅ **Idempotent:** Scripts should be safe to run multiple times
+- ✅ **Documented:** Headers explain purpose, usage, and requirements
+
+---
+
+## 🆘 Getting Help
+
+- **General scripts:** See main [README.md](../README.md)
+- **Code signing:** See [SIGNING_QUICK_START.md](../SIGNING_QUICK_START.md)
+- **Deployment:** See [docs/deployment/](../docs/deployment/)
+- **Testing:** See [docs/testing/](../docs/testing/)
+
+---
+
+**Last updated:** 2025-12-02  
+**Total scripts:** 60+  
+**Categories:** 10

@@ -71,3 +71,9 @@ supabase/.branches/
 supabase/.temp/
 yarn-debug.log*
 yarn-error.log*
+# NEVER commit code-signing certificates
+*.p12
+*.cer
+*.mobileprovision
+InhouseDevSigning.*
+*.certSigningRequest

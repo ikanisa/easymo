@@ -326,6 +326,59 @@ WhatsApp mobility platform.  Future enhancements could include:
   [`docs/inventory-app-assessment.md`](docs/inventory-app-assessment.md) for the
   guardrails and roadmap impact.【F:docs/inventory-app-assessment.md†L1-L44】
 
+## macOS Code Signing (Desktop Apps)
+
+EasyMO includes **two macOS desktop applications** (Admin Panel + Client/Staff Portal) that require code signing for distribution. We provide a complete, production-ready signing infrastructure.
+
+### 🚀 Quick Start (5 minutes)
+
+```bash
+# 1. Read the quick start guide
+open SIGNING_QUICK_START.md
+
+# 2. Create certificate (via Keychain Access GUI - see guide)
+# 3. Verify setup
+./scripts/check_certificate.sh
+
+# 4. Sign both apps
+./scripts/sign_all_apps.sh
+
+# 5. Verify signatures
+./scripts/verify_apps.sh
+```
+
+### 📚 Documentation
+
+- **[SIGNING_QUICK_START.md](./SIGNING_QUICK_START.md)** - 5-minute setup guide
+- **[docs/internal_mac_signing.md](./docs/internal_mac_signing.md)** - Complete reference
+- **[docs/github_actions_signing.md](./docs/github_actions_signing.md)** - CI/CD automation
+- **[docs/SIGNING_REFERENCE.md](./docs/SIGNING_REFERENCE.md)** - Master index
+
+### 🔧 Scripts
+
+```bash
+./scripts/list_identities.sh      # List signing certificates
+./scripts/check_certificate.sh    # Verify certificate setup
+./scripts/sign_all_apps.sh         # Sign both apps (main entry point)
+./scripts/verify_apps.sh           # Verify signatures
+./scripts/test_signing_workflow.sh # Run test suite
+```
+
+See [scripts/README.md](./scripts/README.md) for all available scripts.
+
+### 🤖 CI/CD (GitHub Actions)
+
+Automated signing workflow at `.github/workflows/macos-signing.yml` triggers on:
+- Version tags (`git push --tags v1.0.0`)
+- Manual dispatch (Actions tab in GitHub)
+- PR changes to signing scripts (validation only)
+
+**Features:** Automated signing, DMG creation, secure certificate storage, notarization-ready.
+
+See [docs/github_actions_signing.md](./docs/github_actions_signing.md) for setup instructions.
+
+---
+
 ## Setup
 Copy env sample:
 

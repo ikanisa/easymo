@@ -1,0 +1,217 @@
+name: macOS Code Signing
+
+# Workflow for signing macOS desktop apps
+# Triggers on: manual dispatch, release tags, or push to main with app changes
+
+on:
+  workflow_dispatch:
+    inputs:
+      sign_apps:
+        description: 'Sign both apps'
+        required: true
+        type: boolean
+        default: true
+  push:
+    tags:
+      - 'v*'
+    paths:
+      - 'admin-app/**'
+      - 'client-portal/**'
+      - 'scripts/sign_*.sh'
+  pull_request:
+    paths:
+      - 'scripts/sign_*.sh'
+      - 'scripts/check_certificate.sh'
+      - 'scripts/verify_apps.sh'
+
+jobs:
+  validate-scripts:
+    name: Validate Signing Scripts
+    runs-on: macos-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Check script permissions
+        run: |
+          echo "Checking script executability..."
+          for script in scripts/sign_*.sh scripts/check_certificate.sh scripts/verify_apps.sh scripts/list_identities.sh; do
+            if [ ! -x "$script" ]; then
+              echo "❌ $script is not executable"
+              exit 1
+            fi
+            echo "✅ $script is executable"
+          done
+      
+      - name: Validate script syntax
+        run: |
+          echo "Validating bash syntax..."
+          for script in scripts/sign_*.sh scripts/check_certificate.sh scripts/verify_apps.sh scripts/list_identities.sh; do
+            bash -n "$script" || exit 1
+            echo "✅ $script syntax valid"
+          done
+      
+      - name: Run workflow test suite
+        run: |
+          chmod +x scripts/test_signing_workflow.sh
+          ./scripts/test_signing_workflow.sh
+
+  sign-apps:
+    name: Sign macOS Apps
+    runs-on: macos-latest
+    needs: validate-scripts
+    if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/v')
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      # Install signing certificate from secrets
+      - name: Import signing certificate
+        env:
+          CERTIFICATE_BASE64: ${{ secrets.MACOS_CERTIFICATE_BASE64 }}
+          CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+        run: |
+          # Create temporary keychain
+          KEYCHAIN_PATH=$RUNNER_TEMP/signing.keychain-db
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          
+          # Import certificate
+          echo "$CERTIFICATE_BASE64" | base64 --decode > certificate.p12
+          security import certificate.p12 \
+            -k "$KEYCHAIN_PATH" \
+            -P "$CERTIFICATE_PASSWORD" \
+            -T /usr/bin/codesign \
+            -T /usr/bin/security
+          
+          # Set keychain as default
+          security list-keychains -d user -s "$KEYCHAIN_PATH"
+          security default-keychain -s "$KEYCHAIN_PATH"
+          
+          # Allow codesign to access certificate without prompt
+          security set-key-partition-list -S apple-tool:,apple: \
+            -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          
+          # Verify certificate is available
+          security find-identity -v -p codesigning
+          
+          # Cleanup
+          rm certificate.p12
+      
+      # Build apps (replace with your actual build steps)
+      - name: Build Admin Panel
+        run: |
+          # Example: cd admin-app && npm ci && npm run build:mac
+          echo "Building Admin Panel..."
+          # Your build commands here
+      
+      - name: Build Client Portal
+        run: |
+          # Example: cd client-portal && npm ci && npm run build:mac
+          echo "Building Client Portal..."
+          # Your build commands here
+      
+      # Sign apps
+      - name: List available identities
+        run: ./scripts/list_identities.sh
+      
+      - name: Check certificate
+        run: ./scripts/check_certificate.sh "Inhouse Dev Signing"
+      
+      - name: Sign both apps
+        env:
+          SIGNING_IDENTITY: "Inhouse Dev Signing"
+        run: ./scripts/sign_all_apps.sh
+      
+      - name: Verify signatures
+        run: ./scripts/verify_apps.sh
+      
+      # Upload signed apps as artifacts
+      - name: Upload signed Admin Panel
+        uses: actions/upload-artifact@v4
+        with:
+          name: admin-panel-signed
+          path: dist/mac/AdminPanel.app
+          retention-days: 30
+      
+      - name: Upload signed Client Portal
+        uses: actions/upload-artifact@v4
+        with:
+          name: client-portal-signed
+          path: dist/mac/ClientPortal.app
+          retention-days: 30
+      
+      # Optional: Create DMG files for distribution
+      - name: Create DMG files
+        run: |
+          # Install create-dmg if needed
+          brew install create-dmg || true
+          
+          # Create DMG for Admin Panel
+          create-dmg \
+            --volname "Admin Panel" \
+            --window-pos 200 120 \
+            --window-size 800 400 \
+            --icon-size 100 \
+            --app-drop-link 600 185 \
+            "AdminPanel.dmg" \
+            "dist/mac/AdminPanel.app" || true
+          
+          # Create DMG for Client Portal
+          create-dmg \
+            --volname "Client Portal" \
+            --window-pos 200 120 \
+            --window-size 800 400 \
+            --icon-size 100 \
+            --app-drop-link 600 185 \
+            "ClientPortal.dmg" \
+            "dist/mac/ClientPortal.app" || true
+      
+      - name: Upload DMG files
+        uses: actions/upload-artifact@v4
+        with:
+          name: dmg-installers
+          path: "*.dmg"
+          retention-days: 30
+        if: success()
+      
+      # Cleanup keychain
+      - name: Cleanup keychain
+        if: always()
+        run: |
+          KEYCHAIN_PATH=$RUNNER_TEMP/signing.keychain-db
+          if [ -f "$KEYCHAIN_PATH" ]; then
+            security delete-keychain "$KEYCHAIN_PATH" || true
+          fi
+
+  # Optional: Notarize apps (requires Apple Developer ID)
+  notarize:
+    name: Notarize Apps (Optional)
+    runs-on: macos-latest
+    needs: sign-apps
+    if: false  # Enable this when you have Apple Developer ID
+    
+    steps:
+      - name: Download signed apps
+        uses: actions/download-artifact@v4
+      
+      - name: Notarize Admin Panel
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          xcrun notarytool submit AdminPanel.dmg \
+            --apple-id "$APPLE_ID" \
+            --password "$APPLE_PASSWORD" \
+            --team-id "$APPLE_TEAM_ID" \
+            --wait
+      
+      - name: Staple Admin Panel
+        run: xcrun stapler staple AdminPanel.dmg
+      
+      # Repeat for Client Portal...

@@ -24,7 +24,8 @@
     "tauri:build:win": "tauri build --target x86_64-pc-windows-msvc",
     "tauri:build:mac": "tauri build --target x86_64-apple-darwin",
     "tauri:build:mac-arm": "tauri build --target aarch64-apple-darwin",
-    "tauri:build:universal": "tauri build --target universal-apple-darwin"
+    "tauri:build:universal": "tauri build --target universal-apple-darwin",
+    "desktop": "electron ."
   },
   "dependencies": {
     "@easymo/commons": "workspace:*",
@@ -98,6 +99,7 @@
     "@vitejs/plugin-react": "^4.7.0",
     "autocannon": "^7.15.0",
     "autoprefixer": "^10.4.20",
+    "electron": "^39.2.4",
     "esbuild": "^0.23.1",
     "eslint": "^9.8.0",
     "eslint-config-next": "15.5.6",
@@ -107,5 +109,6 @@
     "tailwindcss": "^3.4.13",
     "typescript": "5.5.4",
     "vitest": "^3.2.4"
-  }
+  },
+  "main": "electron/main.js"
 }
