@@ -221,13 +221,25 @@ export async function clearAllCache(): Promise<void> {
 // =============================================================================
 
 /**
+ * Generate a unique ID for sync queue items
+ * Uses crypto.randomUUID() when available, falls back to timestamp + random
+ */
+function generateSyncId(): string {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return `sync-${crypto.randomUUID()}`;
+  }
+  // Fallback for environments without crypto.randomUUID
+  return `sync-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
+}
+
+/**
  * Add an item to the sync queue
  */
 export async function addToSyncQueue(
   item: Omit<SyncQueueItem, 'id' | 'createdAt' | 'retryCount'>
 ): Promise<string> {
   const db = await openDatabase();
-  const id = `sync-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+  const id = generateSyncId();
   
   return new Promise((resolve, reject) => {
     const transaction = db.transaction(STORES.SYNC_QUEUE, 'readwrite');
@@ -422,8 +434,26 @@ export async function deleteSetting(key: string): Promise<void> {
 // SYNC QUEUE PROCESSOR
 // =============================================================================
 
+/**
+ * Maximum number of retry attempts before permanently failing a sync item
+ */
 const MAX_RETRY_COUNT = 5;
-const RETRY_DELAYS = [1000, 5000, 15000, 60000, 300000]; // Exponential backoff
+
+/**
+ * Exponential backoff delays for retry attempts (in milliseconds)
+ * - Retry 0: 1 second (immediate retry after first failure)
+ * - Retry 1: 5 seconds
+ * - Retry 2: 15 seconds
+ * - Retry 3: 1 minute
+ * - Retry 4+: 5 minutes (max delay)
+ */
+const RETRY_DELAYS_MS = [
+  1000,     // 1 second
+  5000,     // 5 seconds
+  15000,    // 15 seconds
+  60000,    // 1 minute
+  300000,   // 5 minutes (max)
+] as const;
 
 /**
  * Process the sync queue (call when online)
@@ -479,7 +509,8 @@ export async function processSyncQueue(
 
 /**
  * Get the next retry delay based on retry count
+ * Uses exponential backoff with a maximum delay cap
  */
 export function getRetryDelay(retryCount: number): number {
-  return RETRY_DELAYS[Math.min(retryCount, RETRY_DELAYS.length - 1)];
+  return RETRY_DELAYS_MS[Math.min(retryCount, RETRY_DELAYS_MS.length - 1)];
 }

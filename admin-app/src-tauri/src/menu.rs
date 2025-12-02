@@ -1,6 +1,6 @@
 use tauri::{
     menu::{Menu, MenuBuilder, MenuItem, PredefinedMenuItem, Submenu, SubmenuBuilder},
-    AppHandle, Runtime, Wry,
+    AppHandle, Runtime, WebviewWindow, Wry,
 };
 
 /// Creates the application menu using the Tauri 2.0 menu API
@@ -64,8 +64,6 @@ pub fn create_app_menu<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<Menu<R>>
         .item(&help_submenu)
         .build()
 }
-
-use tauri::WebviewWindow;
 
 #[tauri::command]
 pub async fn handle_menu_event(event: String, window: WebviewWindow) -> Result<(), String> {
