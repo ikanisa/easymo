@@ -355,9 +355,6 @@ export async function handleNearbyRecent(ctx: RouterContext): Promise<boolean> {
       await sendButtonsMessage(ctx, t(ctx.locale, 'mobility.nearby.no_recent_search'), buildButtons(
         { id: IDS.SEE_DRIVERS, title: t(ctx.locale, 'mobility.nearby.buttons.drivers') },
         { id: IDS.SEE_PASSENGERS, title: t(ctx.locale, 'mobility.nearby.buttons.passengers') },
-      await sendButtonsMessage(ctx, t(ctx.locale, "mobility.nearby.no_recent_search"), buildButtons(
-        { id: IDS.SEE_DRIVERS, title: 'Drivers' },
-        { id: IDS.SEE_PASSENGERS, title: 'Passengers' },
       ));
       return true;
     }
