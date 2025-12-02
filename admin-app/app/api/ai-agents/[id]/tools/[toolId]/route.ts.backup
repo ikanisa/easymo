@@ -1,5 +1,5 @@
 /**
- * Persona Management API
+ * Tools Management API
  */
 
 import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
@@ -9,22 +9,22 @@ import { NextResponse } from "next/server";
 export const dynamic = "force-dynamic";
 
 /**
- * PUT /api/ai-agents/[id]/persona - Update agent persona
+ * PUT /api/ai-agents/[id]/tools/[toolId] - Toggle tool active status
  */
 export async function PUT(
   request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string; toolId: string } }
 ) {
   const supabase = createRouteHandlerClient({ cookies });
 
   try {
     const body = await request.json();
-    const { personaId, updates } = body;
+    const { is_active } = body;
 
-    const { data, error } = await supabase
-      .from("ai_agent_personas")
-      .update(updates)
-      .eq("id", personaId)
+    const { data, error} = await supabase
+      .from("ai_agent_tools")
+      .update({ is_active })
+      .eq("id", params.toolId)
       .eq("agent_id", params.id)
       .select()
       .single();
@@ -36,7 +36,7 @@ export async function PUT(
       data,
     });
   } catch (error: any) {
-    console.error("Error updating persona:", error);
+    console.error("Error toggling tool:", error);
     return NextResponse.json(
       {
         success: false,

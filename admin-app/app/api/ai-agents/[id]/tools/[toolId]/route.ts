@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
  */
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string; toolId: string } }
+  { params }: { params: Promise<{ id: string; toolId: string }> }
 ) {
   const supabase = createRouteHandlerClient({ cookies });
 
