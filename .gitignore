@@ -8,7 +8,8 @@
 # IDE
 # Logs
 # Misc
-# Netlify build artifacts
+# Cloudflare build artifacts
+.wrangler/
 # Node / JS
 # OS files
 # Supabase CLI/local artifacts
@@ -37,12 +38,12 @@
 .cache/
 .env
 .env.*
+!.env.*.template
 .env.local
 .env.local.backup
 .idea
 .idea/
 .logs/
-.netlify/
 .next/
 .nyc_output/
 .pnp.*

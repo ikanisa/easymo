@@ -297,9 +297,6 @@ importers:
       '@eslint/js':
         specifier: ^9.8.0
         version: 9.39.1
-      '@netlify/plugin-nextjs':
-        specifier: ^5.14.7
-        version: 5.15.1
       '@next/bundle-analyzer':
         specifier: ^15.5.6
         version: 15.5.6
@@ -3585,10 +3582,6 @@ packages:
         optional: true
       '@nestjs/platform-express':
         optional: true
-
-  '@netlify/plugin-nextjs@5.15.1':
-    resolution: {integrity: sha512-HXm94tteOuA0FYwhkxjYIPe0zta+Dsu0wz7LnhfqVlaYcRaOLjHtd2vgfmpz3np/fx9TQg3gCfqGkXt2a9i7Aw==}
-    engines: {node: '>=18.0.0'}
 
   '@next/bundle-analyzer@15.5.6':
     resolution: {integrity: sha512-IHeyk2s9/fVDAGDLNbBkCSG8XBabhuMajiaJggjsg4GyFIswh78DzLo5Nl5th8QTs3U/teYeczvfeV9w1Tx3qA==}
@@ -13566,8 +13559,6 @@ snapshots:
       tslib: 2.8.1
     optionalDependencies:
       '@nestjs/platform-express': 10.4.20(@nestjs/common@10.4.20(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@10.4.20)
-
-  '@netlify/plugin-nextjs@5.15.1': {}
 
   '@next/bundle-analyzer@15.5.6':
     dependencies:
