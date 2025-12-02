@@ -1,6 +1,6 @@
 {
   "name": "wa-webhook-profile",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "verify_jwt": false,
-  "import_map": "./deno.json"
+  "description": "User profile and wallet management"
 }

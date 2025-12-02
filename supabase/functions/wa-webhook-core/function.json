@@ -1,4 +1,6 @@
 {
   "name": "wa-webhook-core",
-  "verify_jwt": false
+  "version": "2.2.0",
+  "verify_jwt": false,
+  "description": "Central router for WhatsApp webhook messages"
 }
