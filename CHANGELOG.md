@@ -2,6 +2,23 @@
 
 All notable changes to this repository are documented here.
 
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+### Added
+- Phase 6: Documentation & Monitoring implementation
+- OpenAPI 3.0 specification for all WhatsApp webhook endpoints
+- Operational runbooks for incident response and deployment
+- Service Level Objectives (SLOs) documentation
+- Architecture documentation with diagrams
+- Developer onboarding guide
+- JSDoc documentation standards and generator
+- API documentation generator (HTML from OpenAPI)
+- Monitoring dashboard configuration (Grafana-compatible)
+- Alert definitions for all critical metrics
+
 ## 2025-11-20 – Supabase onboarding refresh
 
 - Added Supabase-first Quickstart and README instructions covering env vars, CLI setup, migrations, seeds, and function deploys.

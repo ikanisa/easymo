@@ -1,0 +1,193 @@
+openapi: 3.0.3
+info:
+  title: EasyMO WhatsApp Webhook API
+  description: |
+    API documentation for EasyMO WhatsApp webhook microservices.
+    
+    ## Overview
+    This API handles incoming WhatsApp webhook events and routes them to
+    appropriate microservices for processing.
+    
+    ## Services
+    - **wa-webhook-core**: Central router and home menu
+    - **wa-webhook-profile**: User profiles and wallet management
+    - **wa-webhook-mobility**: Ride booking and transport services
+    - **wa-webhook-insurance**: Insurance document processing and claims
+    
+    ## Authentication
+    All webhook endpoints use HMAC-SHA256 signature verification via the
+    `X-Hub-Signature-256` header.
+    
+  version: 2.3.0
+  contact:
+    name: EasyMO Development Team
+    email: dev@easymo.rw
+  license:
+    name: Proprietary
+    url: https://easymo.rw/terms
+
+servers:
+  - url: https://lhbowpbcpwoiparwnwgt.supabase.co/functions/v1
+    description: Production server
+  - url: http://localhost:54321/functions/v1
+    description: Local development
+
+tags:
+  - name: Core
+    description: Central routing and home menu operations
+  - name: Profile
+    description: User profile and wallet operations
+  - name: Mobility
+    description: Ride booking and transport operations
+  - name: Insurance
+    description: Insurance document and claims operations
+  - name: Health
+    description: Service health and monitoring
+
+paths:
+  /wa-webhook-core:
+    get:
+      tags:
+        - Core
+      summary: Webhook verification
+      description: |
+        Handles WhatsApp webhook verification challenge.
+        Called by Meta when setting up the webhook.
+      parameters:
+        - name: hub.mode
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [subscribe]
+          description: Verification mode
+        - name: hub.verify_token
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Verification token configured in Meta dashboard
+        - name: hub.challenge
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Challenge string to echo back
+      responses:
+        '200':
+          description: Verification successful
+          content:
+            text/plain:
+              schema:
+                type: string
+              example: "challenge_string_from_meta"
+        '403':
+          description: Verification failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    
+    post:
+      tags:
+        - Core
+      summary: Receive webhook events
+      description: |
+        Receives incoming WhatsApp webhook events and routes them to
+        appropriate microservices based on message content and user state.
+      security:
+        - webhookSignature: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WebhookPayload'
+      responses:
+        '200':
+          description: Webhook processed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookResponse'
+        '401':
+          description: Invalid signature
+        '429':
+          description: Rate limit exceeded
+
+  /wa-webhook-core/health:
+    get:
+      tags:
+        - Health
+      summary: Core service health check
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+
+  /wa-webhook-core/metrics:
+    get:
+      tags:
+        - Health
+      summary: Performance metrics
+      responses:
+        '200':
+          description: Metrics data
+
+components:
+  securitySchemes:
+    webhookSignature:
+      type: apiKey
+      in: header
+      name: X-Hub-Signature-256
+      description: HMAC-SHA256 signature of request body
+
+  schemas:
+    WebhookPayload:
+      type: object
+      required:
+        - object
+        - entry
+      properties:
+        object:
+          type: string
+          example: "whatsapp_business_account"
+        entry:
+          type: array
+          items:
+            type: object
+
+    WebhookResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        handled:
+          type: boolean
+        message:
+          type: string
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [healthy, degraded, unhealthy]
+        service:
+          type: string
+        version:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
