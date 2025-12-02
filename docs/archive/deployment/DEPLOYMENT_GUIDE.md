@@ -2,6 +2,62 @@
 
 **CRITICAL**: The additive guard was blocking all wa-webhook changes. This has been fixed.
 
+## Pre-deployment Migration Verification
+
+Before deploying edge functions, you **must** verify that required database migrations have been applied. This prevents production incidents where edge functions fail because the database schema doesn't match what the code expects.
+
+### Automatic CI/CD Verification
+
+The CI/CD pipeline automatically runs migration verification before deploying edge functions:
+
+1. **For Supabase Deploy workflow** (`supabase-deploy.yml`): Functions deploy only AFTER migrations have been applied
+2. **For Functions Post-merge workflow** (`supabase-functions-post-merge.yml`): Explicit migration verification runs before deployment
+
+### Manual Verification
+
+To manually verify migrations before deployment:
+
+```bash
+# Set DATABASE_URL to your Supabase connection string
+export DATABASE_URL='postgresql://postgres:password@db.project.supabase.co:5432/postgres'
+
+# Verify migrations for a specific edge function
+./scripts/verify-migrations-before-deploy.sh wa-webhook-mobility
+```
+
+### Migration Manifest
+
+Edge function dependencies are tracked in `supabase/migration-manifest.json`. This file maps each edge function to:
+- **required_migrations**: SQL migrations that must be applied
+- **required_columns**: Database columns that must exist
+- **required_functions**: PostgreSQL functions that must exist
+
+#### Adding New Dependencies
+
+When adding new database dependencies to an edge function:
+
+1. Update `supabase/migration-manifest.json`:
+```json
+{
+  "my-edge-function": {
+    "description": "Description of the function",
+    "required_migrations": ["20251201130000_my_migration"],
+    "required_columns": [{"table": "my_table", "column": "my_column"}],
+    "required_functions": ["my_rpc_function"]
+  }
+}
+```
+
+2. Commit both the migration and manifest update together
+
+### Troubleshooting Verification Failures
+
+If the verification script fails:
+
+1. **Missing migration**: Apply migrations first with `supabase db push`
+2. **Missing column**: The migration may not have been applied correctly
+3. **Missing function**: Check if the SQL migration includes the function definition
+
 ## Quick Deploy
 
 ```bash
@@ -9,21 +65,24 @@
 git checkout main
 git pull origin main
 
-# 2. Verify migrations are applied
+# 2. Verify migrations are applied (automatic in CI, or run manually)
+./scripts/verify-migrations-before-deploy.sh wa-webhook-mobility
+
+# 3. Apply migrations
 cd /path/to/easymo
 supabase db push
 
-# 3. Deploy edge functions
+# 4. Deploy edge functions
 supabase functions deploy wa-webhook
 supabase functions deploy wa-webhook-mobility  
 supabase functions deploy wa-webhook-wallet
 supabase functions deploy wa-webhook-core
 
-# 4. Verify insurance contacts exist
+# 5. Verify insurance contacts exist
 supabase db query "SELECT * FROM insurance_admin_contacts WHERE is_active = true"
 # Expected: 3 rows with +250795588248, +250793094876, +250788767816
 
-# 5. Verify countries exist
+# 6. Verify countries exist
 supabase db query "SELECT name, momo_supported FROM countries"
 # Expected: 7 rows (Rwanda, Burundi, DR Congo, Tanzania, Zambia = true; Malta, Canada = false)
 ```
