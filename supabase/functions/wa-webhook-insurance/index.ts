@@ -3,6 +3,11 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { logStructuredEvent, maskPII } from "../_shared/observability.ts";
 import { verifyWebhookSignature } from "../_shared/webhook-utils.ts";
+// Phase 2: Enhanced security modules
+import { createSecurityMiddleware } from "../_shared/security/middleware.ts";
+import { verifyWebhookRequest } from "../_shared/security/signature.ts";
+import { createAuditLogger } from "../_shared/security/audit-logger.ts";
+import { createErrorHandler } from "../_shared/errors/error-handler.ts";
 import type { 
   RouterContext, 
   WhatsAppWebhookPayload, 

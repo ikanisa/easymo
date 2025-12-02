@@ -4,6 +4,11 @@ import { createClient } from "./deps.ts";
 import { logStructuredEvent } from "../_shared/observability.ts";
 import { rateLimitMiddleware } from "../_shared/rate-limit/index.ts";
 import { getState, setState } from "./state/store.ts";
+// Phase 2: Enhanced security modules
+import { createSecurityMiddleware } from "../_shared/security/middleware.ts";
+import { verifyWebhookRequest } from "../_shared/security/signature.ts";
+import { createAuditLogger } from "../_shared/security/audit-logger.ts";
+import { createErrorHandler } from "../_shared/errors/error-handler.ts";
 import {
   handleSeeDrivers,
   handleSeePassengers,

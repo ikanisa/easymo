@@ -7,11 +7,28 @@ import { sendText } from "../_shared/wa-webhook-shared/wa/client.ts";
 import type { RouterContext, WhatsAppWebhookPayload } from "../_shared/wa-webhook-shared/types.ts";
 import { IDS } from "../_shared/wa-webhook-shared/wa/ids.ts";
 import { rateLimitMiddleware } from "../_shared/rate-limit/index.ts";
+// Phase 2: Enhanced security modules
+import { createSecurityMiddleware } from "../_shared/security/middleware.ts";
+import { verifyWebhookRequest } from "../_shared/security/signature.ts";
+import { createAuditLogger } from "../_shared/security/audit-logger.ts";
+import { createErrorHandler } from "../_shared/errors/error-handler.ts";
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL") ?? "",
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
 );
+
+// Phase 2: Initialize security infrastructure
+const securityMiddleware = createSecurityMiddleware("wa-webhook-profile", {
+  maxBodySize: 2 * 1024 * 1024, // 2MB (for profile photos)
+  rateLimit: {
+    enabled: true,
+    limit: 100,
+    windowSeconds: 60,
+  },
+});
+const auditLogger = createAuditLogger("wa-webhook-profile", supabase);
+const errorHandler = createErrorHandler("wa-webhook-profile");
 
 serve(async (req: Request): Promise<Response> => {
   // Rate limiting (100 req/min for high-volume WhatsApp)

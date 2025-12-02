@@ -8,9 +8,25 @@ import { checkRateLimit, cleanupRateLimitState } from "../_shared/service-resili
 import { maskPhone } from "../_shared/phone-utils.ts";
 import { logError } from "../_shared/correlation-logging.ts";
 import { storeDLQEntry } from "../_shared/dlq-manager.ts";
+// Phase 2: Enhanced security modules
+import { createSecurityMiddleware } from "../_shared/security/middleware.ts";
+import { verifyWebhookRequest } from "../_shared/security/signature.ts";
+import { createAuditLogger } from "../_shared/security/audit-logger.ts";
+import { createErrorHandler } from "../_shared/errors/error-handler.ts";
 
 const coldStartMarker = performance.now();
 
+// Phase 2: Initialize security infrastructure
+const securityMiddleware = createSecurityMiddleware("wa-webhook-core", {
+  maxBodySize: 1024 * 1024, // 1MB
+  rateLimit: {
+    enabled: true,
+    limit: 100,
+    windowSeconds: 60,
+  },
+});
+const auditLogger = createAuditLogger("wa-webhook-core", supabase);
+const errorHandler = createErrorHandler("wa-webhook-core");
 
 const latencyTracker = new LatencyTracker({
   windowSize: 120,
@@ -93,68 +109,43 @@ serve(async (req: Request): Promise<Response> => {
 
   // Webhook ingress (POST)
   try {
+    // Phase 2: Run security middleware checks
+    const securityCheck = await securityMiddleware.check(req);
+    if (!securityCheck.passed) {
+      return finalize(securityCheck.response!, "wa-webhook-core");
+    }
+    
     // Read raw body for signature verification
     const rawBody = await req.text();
     
-    // Verify WhatsApp signature
-    const signature = req.headers.get("x-hub-signature-256") ??
-      req.headers.get("x-hub-signature");
-    const signatureMeta = (() => {
-      if (!signature) return { provided: false, header: null as string | null, method: null as string | null, sample: null as string | null };
-      const header = req.headers.has("x-hub-signature-256")
-        ? "x-hub-signature-256"
-        : req.headers.has("x-hub-signature")
-        ? "x-hub-signature"
-        : null;
-      const [method, hash] = signature.split("=", 2);
-      return {
-        provided: true,
-        header,
-        method: method?.toLowerCase() ?? null,
-        sample: hash ? `${hash.slice(0, 6)}…${hash.slice(-4)}` : null,
-      };
-    })();
-    const appSecret = Deno.env.get("WHATSAPP_APP_SECRET") ??
-      Deno.env.get("WA_APP_SECRET");
-    const allowUnsigned = (Deno.env.get("WA_ALLOW_UNSIGNED_WEBHOOKS") ?? "false").toLowerCase() === "true";
-    const internalForward = req.headers.get("x-wa-internal-forward") === "true";
+    // Phase 2: Enhanced signature verification
+    const signatureResult = await verifyWebhookRequest(
+      req,
+      rawBody,
+      "wa-webhook-core"
+    );
     
-    if (!appSecret) {
-      log("CORE_AUTH_CONFIG_ERROR", { error: "WHATSAPP_APP_SECRET not configured" }, "error");
-      return json({ error: "server_misconfigured" }, { status: 500 });
+    if (!signatureResult.valid) {
+      // Audit log failed authentication
+      await auditLogger.logAuth(requestId, correlationId, "failure", {
+        method: signatureResult.method ?? undefined,
+        reason: signatureResult.reason,
+        ipAddress: securityCheck.context.clientIp ?? undefined,
+        userAgent: securityCheck.context.userAgent ?? undefined,
+      });
+      
+      const error = errorHandler.createError("AUTH_INVALID_SIGNATURE");
+      return finalize(
+        errorHandler.createErrorResponse(error, requestId, correlationId),
+        "wa-webhook-core"
+      );
     }
     
-    let isValid = false;
-    if (signature) {
-      isValid = await verifyWebhookSignature(rawBody, signature, appSecret);
-      if (isValid) {
-        log("CORE_AUTH_SIGNATURE_VALID", {
-          header: signatureMeta.header,
-          method: signatureMeta.method,
-        }, "debug");
-      }
-    }
-    
-    if (!isValid) {
-      if (allowUnsigned || internalForward) {
-        log("CORE_AUTH_BYPASS", {
-          reason: internalForward ? "internal_forward" : signature ? "signature_mismatch" : "no_signature",
-          signatureHeader: signatureMeta.header,
-          signatureMethod: signatureMeta.method,
-          signatureSample: signatureMeta.sample,
-          userAgent: req.headers.get("user-agent"),
-        }, "warn");
-      } else {
-        log("CORE_AUTH_FAILED", { 
-          signatureProvided: signatureMeta.provided,
-          signatureHeader: signatureMeta.header,
-          signatureMethod: signatureMeta.method,
-          signatureSample: signatureMeta.sample,
-          userAgent: req.headers.get("user-agent") 
-        }, "warn");
-        return json({ error: "unauthorized" }, { status: 401 });
-      }
-    }
+    // Log successful authentication
+    await auditLogger.logAuth(requestId, correlationId, "success", {
+      method: signatureResult.method ?? undefined,
+      ipAddress: securityCheck.context.clientIp ?? undefined,
+    });
     
     // Parse payload after verification
     const payload = JSON.parse(rawBody);
@@ -226,7 +217,15 @@ serve(async (req: Request): Promise<Response> => {
       }, { correlationId });
     }
     
-    return finalize(new Response(JSON.stringify({ error: "internal_error" }), { status: 500, headers: { "Content-Type": "application/json" } }));
+    // Phase 2: Enhanced error handling
+    return finalize(
+      await errorHandler.handleError(err, {
+        requestId,
+        correlationId,
+        operation: "webhook_processing",
+      }),
+      "wa-webhook-core"
+    );
   }
 });
 
