@@ -352,6 +352,9 @@ export async function handleNearbyRecent(ctx: RouterContext): Promise<boolean> {
     const passengers = await getRecentNearbyIntent(ctx.supabase, ctx.profileId, 'passengers');
     const pick = drivers || passengers;
     if (!pick) {
+      await sendButtonsMessage(ctx, t(ctx.locale, 'mobility.nearby.no_recent_search'), buildButtons(
+        { id: IDS.SEE_DRIVERS, title: t(ctx.locale, 'mobility.nearby.buttons.drivers') },
+        { id: IDS.SEE_PASSENGERS, title: t(ctx.locale, 'mobility.nearby.buttons.passengers') },
       await sendButtonsMessage(ctx, t(ctx.locale, "mobility.nearby.no_recent_search"), buildButtons(
         { id: IDS.SEE_DRIVERS, title: 'Drivers' },
         { id: IDS.SEE_PASSENGERS, title: 'Passengers' },
@@ -368,6 +371,7 @@ export async function handleNearbyRecent(ctx: RouterContext): Promise<boolean> {
     }
     return await handleNearbyLocation(ctx, { mode: mode as any, vehicle }, coords);
   } catch (e) {
+    await sendButtonsMessage(ctx, t(ctx.locale, 'mobility.nearby.recent_load_error'), buildButtons({ id: IDS.BACK_MENU, title: t(ctx.locale, 'common.buttons.back') }));
     await sendButtonsMessage(ctx, t(ctx.locale, "mobility.nearby.recent_load_error"), buildButtons({ id: IDS.BACK_MENU, title: 'Back' }));
     return true;
   }
