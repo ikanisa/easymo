@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Deploy all WhatsApp webhook microservices
 # Run from repository root
 
@@ -19,8 +19,9 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m'
 
-# Track deployment status
-declare -A DEPLOY_STATUS
+# Track deployment status using files
+TEMP_DIR=$(mktemp -d)
+trap "rm -rf $TEMP_DIR" EXIT
 
 # Function to deploy a service
 deploy_service() {
@@ -32,7 +33,7 @@ deploy_service() {
     # Check if function exists
     if [ ! -d "supabase/functions/${service}" ]; then
         echo -e "${RED}❌ Function directory not found: supabase/functions/${service}${NC}"
-        DEPLOY_STATUS[$service]="FAILED"
+        echo "FAILED" > "$TEMP_DIR/${service}.status"
         return 1
     fi
     
@@ -52,10 +53,10 @@ deploy_service() {
     # Deploy
     echo "   Deploying to Supabase..."
     if supabase functions deploy "${service}" --no-verify-jwt --project-ref "${SUPABASE_PROJECT_REF}"; then
-        DEPLOY_STATUS[$service]="SUCCESS"
+        echo "SUCCESS" > "$TEMP_DIR/${service}.status"
         echo -e "${GREEN}✅ ${service} deployed successfully${NC}"
     else
-        DEPLOY_STATUS[$service]="FAILED"
+        echo "FAILED" > "$TEMP_DIR/${service}.status"
         echo -e "${RED}❌ ${service} deployment failed${NC}"
         return 1
     fi
@@ -111,15 +112,6 @@ if ! supabase projects list &> /dev/null; then
 fi
 echo -e "${GREEN}✓ Supabase authenticated${NC}"
 
-# Run cleanup first
-echo ""
-echo "🧹 Running cleanup..."
-if [ -f "scripts/phase1-cleanup.sh" ]; then
-    bash scripts/phase1-cleanup.sh
-else
-    echo -e "${YELLOW}⚠️ Cleanup script not found, skipping...${NC}"
-fi
-
 # Deploy services in order
 echo ""
 echo "🚀 Deploying Services"
@@ -136,7 +128,7 @@ echo "------------------------"
 
 HEALTH_FAILURES=0
 for service in "${SERVICES[@]}"; do
-    if [ "${DEPLOY_STATUS[$service]}" = "SUCCESS" ]; then
+    if [ -f "$TEMP_DIR/${service}.status" ] && [ "$(cat $TEMP_DIR/${service}.status)" = "SUCCESS" ]; then
         echo -e "${BLUE}Verifying ${service}...${NC}"
         if ! verify_health "$service"; then
             ((HEALTH_FAILURES++))
@@ -150,12 +142,21 @@ echo "======================================"
 echo "📊 Deployment Summary"
 echo "======================================"
 
+SUCCESS_COUNT=0
+FAILED_COUNT=0
 for service in "${SERVICES[@]}"; do
-    local status="${DEPLOY_STATUS[$service]}"
-    if [ "$status" = "SUCCESS" ]; then
-        echo -e "   ${service}: ${GREEN}✅ SUCCESS${NC}"
+    if [ -f "$TEMP_DIR/${service}.status" ]; then
+        status_value=$(cat "$TEMP_DIR/${service}.status")
+        if [ "$status_value" = "SUCCESS" ]; then
+            echo -e "   ${service}: ${GREEN}✅ SUCCESS${NC}"
+            ((SUCCESS_COUNT++))
+        else
+            echo -e "   ${service}: ${RED}❌ FAILED${NC}"
+            ((FAILED_COUNT++))
+        fi
     else
-        echo -e "   ${service}: ${RED}❌ FAILED${NC}"
+        echo -e "   ${service}: ${RED}❌ NOT DEPLOYED${NC}"
+        ((FAILED_COUNT++))
     fi
 done
 
@@ -168,14 +169,6 @@ echo ""
 echo "🔗 Health Check URLs:"
 for service in "${SERVICES[@]}"; do
     echo "   https://${SUPABASE_PROJECT_REF}.supabase.co/functions/v1/${service}/health"
-done
-
-# Final status
-FAILED_COUNT=0
-for service in "${SERVICES[@]}"; do
-    if [ "${DEPLOY_STATUS[$service]}" != "SUCCESS" ]; then
-        ((FAILED_COUNT++))
-    fi
 done
 
 echo ""
