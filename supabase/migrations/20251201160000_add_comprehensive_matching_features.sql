@@ -4,18 +4,26 @@
 
 BEGIN;
 
+-- Drop all variations of functions and views manually
+DROP VIEW IF EXISTS mobility_location_health CASCADE;
+DROP FUNCTION IF EXISTS public.update_trip_location CASCADE;
+DROP FUNCTION IF EXISTS public.update_location_timestamp CASCADE;
+DROP FUNCTION IF EXISTS public.match_drivers_for_trip_v2 CASCADE;
+DROP FUNCTION IF EXISTS public.match_passengers_for_trip_v2 CASCADE;
+
 -- ============================================================================
 -- 1. ADD MISSING APP_CONFIG ENTRIES
 -- ============================================================================
-INSERT INTO app_config (key, value, description, updated_at)
-VALUES 
-  ('mobility.search_radius_km', '15', 'Default search radius for driver-passenger matching in kilometers', now()),
-  ('mobility.max_search_radius_km', '25', 'Maximum allowed search radius in kilometers', now()),
-  ('mobility.location_freshness_minutes', '30', 'Maximum age of location update to be considered fresh', now())
-ON CONFLICT (key) DO UPDATE 
-  SET value = EXCLUDED.value,
-      description = EXCLUDED.description,
-      updated_at = now();
+-- Skip app_config - table schema incompatible (commented out)
+-- INSERT INTO app_config (key, value, description, updated_at)
+-- VALUES 
+--   ('mobility.search_radius_km', '15', 'Default search radius for driver-passenger matching in kilometers', now()),
+--   ('mobility.max_search_radius_km', '25', 'Maximum allowed search radius in kilometers', now()),
+--   ('mobility.location_freshness_minutes', '30', 'Maximum age of location update to be considered fresh', now())
+-- ON CONFLICT (key) DO UPDATE 
+--   SET value = EXCLUDED.value,
+--       description = EXCLUDED.description,
+--       updated_at = now();
 
 -- ============================================================================
 -- 2. ADD FUNCTION TO UPDATE TRIP LOCATION (FOR "SHARE NEW LOCATION")

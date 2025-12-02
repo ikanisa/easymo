@@ -23,7 +23,9 @@ function normalizeString(value: unknown): string | null {
 function normalizePlate(value: unknown): string | null {
   if (value === null || value === undefined) return null;
   const str = String(value).trim().toUpperCase();
-  return str.replace(/[^A-Z0-9\s]/g, "").replace(/\s+/g, " ");
+  const cleaned = str.replace(/[^A-Z0-9\s]/g, "");
+  const normalized = cleaned.replace(/\s+/g, " ").trim();
+  return normalized.length > 0 ? normalized : null;
 }
 
 function normalizeCoverage(value: unknown): string | null {

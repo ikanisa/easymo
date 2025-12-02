@@ -213,7 +213,11 @@ Be brief, helpful, and route efficiently.',
   'Verify identity. Never share sensitive data. Escalate fraud immediately.',
   'Remember context, past tickets.',
   false -- Not active yet, will be enabled via experiment
-FROM public.ai_agents WHERE slug = 'support';
+FROM public.ai_agents WHERE slug = 'support'
+ON CONFLICT (agent_id, code) DO UPDATE SET
+  title = EXCLUDED.title,
+  instructions = EXCLUDED.instructions,
+  is_active = EXCLUDED.is_active;
 
 -- Create experiment
 INSERT INTO public.ai_agent_instruction_experiments (

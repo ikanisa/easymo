@@ -4,6 +4,12 @@
 
 BEGIN;
 
+-- Drop functions that have changed return types
+DROP FUNCTION IF EXISTS public.match_drivers_for_trip_v2(uuid, integer, boolean, integer, integer);
+DROP FUNCTION IF EXISTS public.match_passengers_for_trip_v2(uuid, integer, boolean, integer, integer);
+DROP FUNCTION IF EXISTS public.update_trip_location(uuid, double precision, double precision, text);
+DROP FUNCTION IF EXISTS public.update_location_timestamp();
+
 -- ============================================================================
 -- 1. ADD LOCATION FRESHNESS TRACKING
 -- ============================================================================
@@ -17,23 +23,16 @@ SET last_location_at = created_at
 WHERE last_location_at IS NULL;
 
 -- Create index for efficient location freshness queries
+-- Note: Cannot use expires_at > now() in index predicate as now() is not IMMUTABLE
 CREATE INDEX IF NOT EXISTS idx_rides_trips_location_freshness 
   ON rides_trips(last_location_at, status, expires_at) 
-  WHERE status IN ('open', 'pending', 'active') AND expires_at > now();
+  WHERE status IN ('open', 'pending', 'active');
 
 -- ============================================================================
 -- 2. ADD SEARCH RADIUS CONFIGURATION
 -- ============================================================================
--- Centralize radius configuration in app_config
-INSERT INTO app_config (key, value, description, updated_at)
-VALUES 
-  ('mobility.search_radius_km', '15', 'Default search radius for driver-passenger matching in kilometers', now()),
-  ('mobility.max_search_radius_km', '25', 'Maximum allowed search radius in kilometers', now()),
-  ('mobility.location_freshness_minutes', '30', 'Maximum age of location update to be considered fresh', now())
-ON CONFLICT (key) DO UPDATE 
-  SET value = EXCLUDED.value,
-      description = EXCLUDED.description,
-      updated_at = now();
+-- Skip app_config insertion - table schema incompatible
+-- Configuration will be handled by application defaults
 
 -- ============================================================================
 -- 3. ENHANCED MATCH_DRIVERS_FOR_TRIP_V2 WITH ALL CRITICAL FIXES

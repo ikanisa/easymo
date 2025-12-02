@@ -22,22 +22,24 @@ CREATE TABLE IF NOT EXISTS audit_logs (
 );
 
 -- Indexes for common queries
-CREATE INDEX idx_audit_logs_timestamp ON audit_logs(timestamp DESC);
-CREATE INDEX idx_audit_logs_user_id ON audit_logs(user_id);
-CREATE INDEX idx_audit_logs_action ON audit_logs(action);
-CREATE INDEX idx_audit_logs_severity ON audit_logs(severity);
-CREATE INDEX idx_audit_logs_service ON audit_logs(service);
-CREATE INDEX idx_audit_logs_correlation ON audit_logs(correlation_id);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_timestamp ON audit_logs(timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_user_id ON audit_logs(user_id);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_action ON audit_logs(action);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_severity ON audit_logs(severity);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_service ON audit_logs(service);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_correlation ON audit_logs(correlation_id);
 
 -- RLS Policies
 ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;
 
 -- Only service role can insert
+DROP POLICY IF EXISTS "Service role can insert audit logs" ON audit_logs;
 CREATE POLICY "Service role can insert audit logs"
   ON audit_logs FOR INSERT
   WITH CHECK (true);
 
 -- Only admins can view
+DROP POLICY IF EXISTS "Admins can view audit logs" ON audit_logs;
 CREATE POLICY "Admins can view audit logs"
   ON audit_logs FOR SELECT
   USING (

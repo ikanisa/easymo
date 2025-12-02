@@ -7,13 +7,30 @@
 
 BEGIN;
 
+-- Drop all variations of the matching and location update functions using dynamic SQL
+DO $$ 
+DECLARE
+  r RECORD;
+BEGIN
+  FOR r IN 
+    SELECT 'DROP FUNCTION IF EXISTS ' || oid::regprocedure || ' CASCADE;' as drop_stmt
+    FROM pg_proc 
+    WHERE proname IN ('match_drivers_for_trip_v2', 'match_passengers_for_trip_v2', 'update_trip_location', 'update_location_timestamp')
+      AND pg_function_is_visible(oid)
+  LOOP
+    RAISE NOTICE 'Dropping: %', r.drop_stmt;
+    EXECUTE r.drop_stmt;
+  END LOOP;
+END $$;
+
 -- 1. Add last_location_at column to rides_trips table
 ALTER TABLE rides_trips ADD COLUMN IF NOT EXISTS last_location_at timestamptz DEFAULT now();
 
 -- 2. Create index for efficient location freshness queries
+-- Note: Cannot use expires_at > now() in WHERE clause (now() is not IMMUTABLE)
 CREATE INDEX IF NOT EXISTS idx_rides_trips_location_fresh 
-  ON rides_trips(last_location_at) 
-  WHERE status = 'open' AND expires_at > now();
+  ON rides_trips(last_location_at, status, expires_at) 
+  WHERE status = 'open';
 
 -- 3. Update match_drivers_for_trip_v2 function with:
 --    - 30-minute location freshness check

@@ -261,21 +261,25 @@ CREATE INDEX IF NOT EXISTS idx_mobility_intents_created ON mobility_intents(crea
 ALTER TABLE mobility_intents ENABLE ROW LEVEL SECURITY;
 
 -- Policy: Users can view their own intents
+DROP POLICY IF EXISTS "Users can view own intents" ON mobility_intents;
 CREATE POLICY "Users can view own intents"
   ON mobility_intents FOR SELECT
   USING (auth.uid() = user_id);
 
 -- Policy: Users can insert their own intents
+DROP POLICY IF EXISTS "Users can insert own intents" ON mobility_intents;
 CREATE POLICY "Users can insert own intents"
   ON mobility_intents FOR INSERT
   WITH CHECK (auth.uid() = user_id);
 
 -- Policy: Users can update their own intents
+DROP POLICY IF EXISTS "Users can update own intents" ON mobility_intents;
 CREATE POLICY "Users can update own intents"
   ON mobility_intents FOR UPDATE
   USING (auth.uid() = user_id);
 
 -- Policy: Users can delete their own intents
+DROP POLICY IF EXISTS "Users can delete own intents" ON mobility_intents;
 CREATE POLICY "Users can delete own intents"
   ON mobility_intents FOR DELETE
   USING (auth.uid() = user_id);

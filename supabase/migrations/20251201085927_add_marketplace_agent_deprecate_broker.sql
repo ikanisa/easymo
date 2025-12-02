@@ -354,12 +354,18 @@ WHERE slug = 'broker';
 -- 7. UPDATE HOME MENU TO USE MARKETPLACE
 -- =====================================================================
 
--- Update any menu items pointing to broker to use marketplace
-UPDATE public.whatsapp_home_menu_items
-SET
-  key = 'marketplace_agent',
-  updated_at = now()
+-- Delete old broker menu items (marketplace_agent may already exist)
+DELETE FROM public.whatsapp_home_menu_items
 WHERE key IN ('broker_agent', 'business_broker_agent', 'broker')
   AND key != 'marketplace_agent';
+
+-- Ensure marketplace_agent exists in home menu
+INSERT INTO public.whatsapp_home_menu_items (key, name, icon, display_order, is_active, created_at)
+VALUES ('marketplace_agent', 'Marketplace', '🛒', 5, true, now())
+ON CONFLICT (key) DO UPDATE SET
+  name = EXCLUDED.name,
+  icon = EXCLUDED.icon,
+  is_active = true,
+  created_at = now();
 
 COMMIT;

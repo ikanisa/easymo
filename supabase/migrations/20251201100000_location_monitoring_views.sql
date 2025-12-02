@@ -80,7 +80,8 @@ COMMENT ON VIEW location_kind_distribution IS
 'Distribution of location kinds (home/work/school/other) with usage stats';
 
 -- Function to get current adoption metrics
-CREATE OR REPLACE FUNCTION get_location_adoption_metrics()
+DROP FUNCTION IF EXISTS get_location_adoption_metrics();
+CREATE FUNCTION get_location_adoption_metrics()
 RETURNS TABLE (
   metric text,
   value numeric

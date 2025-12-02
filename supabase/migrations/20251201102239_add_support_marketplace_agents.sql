@@ -34,6 +34,53 @@ VALUES (
   metadata = EXCLUDED.metadata,
   is_active = true;
 
+-- Clean up any duplicate persona/system instruction/tool combinations before adding constraints
+DELETE FROM public.ai_agent_personas a
+USING public.ai_agent_personas b
+WHERE a.id > b.id 
+  AND a.agent_id = b.agent_id 
+  AND a.code = b.code;
+
+DELETE FROM public.ai_agent_system_instructions a
+USING public.ai_agent_system_instructions b
+WHERE a.id > b.id 
+  AND a.agent_id = b.agent_id 
+  AND a.code = b.code;
+
+DELETE FROM public.ai_agent_tools a
+USING public.ai_agent_tools b
+WHERE a.id > b.id 
+  AND a.agent_id = b.agent_id 
+  AND a.name = b.name;
+
+-- Add unique constraints for ON CONFLICT to work (using DO block to handle IF NOT EXISTS)
+DO $$ 
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'ai_agent_personas_agent_code_unique'
+  ) THEN
+    ALTER TABLE public.ai_agent_personas 
+      ADD CONSTRAINT ai_agent_personas_agent_code_unique 
+      UNIQUE (agent_id, code);
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'ai_agent_system_instructions_agent_code_unique'
+  ) THEN
+    ALTER TABLE public.ai_agent_system_instructions 
+      ADD CONSTRAINT ai_agent_system_instructions_agent_code_unique 
+      UNIQUE (agent_id, code);
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'ai_agent_tools_agent_name_unique'
+  ) THEN
+    ALTER TABLE public.ai_agent_tools 
+      ADD CONSTRAINT ai_agent_tools_agent_name_unique 
+      UNIQUE (agent_id, name);
+  END IF;
+END $$;
+
 -- Support agent persona
 WITH support_agent AS (SELECT id FROM public.ai_agents WHERE slug = 'support')
 INSERT INTO public.ai_agent_personas (

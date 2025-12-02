@@ -4,8 +4,8 @@
 
 BEGIN;
 
--- Enable pg_cron extension if not already enabled
-CREATE EXTENSION IF NOT EXISTS pg_cron;
+-- pg_cron extension should already be enabled in Supabase
+-- No need to create it again
 
 -- Function: Cleanup expired intents
 CREATE OR REPLACE FUNCTION public.cleanup_expired_mobility_intents()
@@ -145,11 +145,27 @@ CREATE TABLE IF NOT EXISTS public.system_logs (
 CREATE INDEX IF NOT EXISTS idx_system_logs_event_type ON public.system_logs(event_type, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_system_logs_created ON public.system_logs(created_at DESC);
 
--- Add role and vehicle_type to recurring_trips if not exists
-ALTER TABLE public.recurring_trips 
-  ADD COLUMN IF NOT EXISTS role text DEFAULT 'passenger' CHECK (role IN ('driver', 'passenger')),
-  ADD COLUMN IF NOT EXISTS vehicle_type text,
-  ADD COLUMN IF NOT EXISTS active boolean DEFAULT true;
+-- Create recurring_trips table if it doesn't exist
+CREATE TABLE IF NOT EXISTS public.recurring_trips (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE,
+  pickup_text text NOT NULL,
+  pickup_latitude double precision NOT NULL,
+  pickup_longitude double precision NOT NULL,
+  dropoff_text text,
+  dropoff_latitude double precision,
+  dropoff_longitude double precision,
+  recurrence jsonb NOT NULL DEFAULT '{}'::jsonb,  -- {days: [0-6], time: "HH:MM"}
+  role text DEFAULT 'passenger' CHECK (role IN ('driver', 'passenger')),
+  vehicle_type text,
+  active boolean DEFAULT true,
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now()
+);
+
+-- Add indexes for recurring_trips
+CREATE INDEX IF NOT EXISTS idx_recurring_trips_user ON public.recurring_trips(user_id);
+CREATE INDEX IF NOT EXISTS idx_recurring_trips_active ON public.recurring_trips(active) WHERE active = true;
 
 -- Schedule cron jobs
 -- 1. Cleanup expired intents every day at 2 AM

@@ -1,13 +1,23 @@
 /**
  * Integration tests for wa-webhook-core routing
  * Tests end-to-end routing flows including circuit breaker and DLQ
+ * 
+ * NOTE: These tests require environment variables and are skipped in CI
  */
 
 import { assertEquals, assertExists } from "https://deno.land/std@0.168.0/testing/asserts.ts";
-import { supabase } from "../../_shared/wa-webhook-shared/config.ts";
 
-const CORE_URL = `${Deno.env.get("SUPABASE_URL")}/functions/v1/wa-webhook-core`;
+// Skip integration tests if environment variables are not set
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+const SKIP_INTEGRATION = !SUPABASE_URL || !SERVICE_ROLE_KEY;
+
+if (SKIP_INTEGRATION) {
+  console.log("⚠️  Skipping integration tests - environment variables not set");
+  Deno.exit(0);
+}
+
+const CORE_URL = `${SUPABASE_URL}/functions/v1/wa-webhook-core`;
 
 function createTestPayload(messageText: string, from = "1234567890"): any {
   return {

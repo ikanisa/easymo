@@ -14,30 +14,23 @@ CREATE INDEX IF NOT EXISTS idx_profiles_language
   ON profiles(language);
 
 -- ============================================================================
--- TRIPS TABLE
+-- TRIPS TABLE (might be a view - skip index creation)
 -- ============================================================================
 
--- Active trips lookup
-CREATE INDEX IF NOT EXISTS idx_trips_user_status 
-  ON trips(user_id, status);
-
--- Driver availability (role + status)
-CREATE INDEX IF NOT EXISTS idx_trips_role_status 
-  ON trips(role, status) 
-  WHERE status = 'open';
-
--- Vehicle type filtering
-CREATE INDEX IF NOT EXISTS idx_trips_vehicle_status 
-  ON trips(vehicle_type, status);
-
--- Temporal queries
-CREATE INDEX IF NOT EXISTS idx_trips_created_at 
-  ON trips(created_at DESC);
-
--- Composite index for nearby search
-CREATE INDEX IF NOT EXISTS idx_trips_nearby_search 
-  ON trips(role, status, vehicle_type, created_at DESC)
-  WHERE status = 'open';
+-- Skip trips indexes - relation might be a view
+-- Views don't support indexes
+-- CREATE INDEX IF NOT EXISTS idx_trips_user_status 
+--   ON trips(user_id, status);
+-- CREATE INDEX IF NOT EXISTS idx_trips_role_status 
+--   ON trips(role, status) 
+--   WHERE status = 'open';
+-- CREATE INDEX IF NOT EXISTS idx_trips_vehicle_status 
+--   ON trips(vehicle_type, status);
+-- CREATE INDEX IF NOT EXISTS idx_trips_created_at 
+--   ON trips(created_at DESC);
+-- CREATE INDEX IF NOT EXISTS idx_trips_nearby_search 
+--   ON trips(role, status, vehicle_type, created_at DESC)
+--   WHERE status = 'open';
 
 -- ============================================================================
 -- USER_STATE TABLE

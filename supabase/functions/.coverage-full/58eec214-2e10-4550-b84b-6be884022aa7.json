@@ -1,0 +1,236 @@
+{
+  "scriptId": "333",
+  "url": "file:///Users/jeanbosco/workspace/easymo/supabase/functions/wa-webhook-marketplace/__tests__/payment.test.ts",
+  "functions": [
+    {
+      "functionName": "",
+      "ranges": [
+        {
+          "startOffset": 0,
+          "endOffset": 7061,
+          "count": 1
+        }
+      ],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "createMockSupabase",
+      "ranges": [
+        {
+          "startOffset": 342,
+          "endOffset": 2254,
+          "count": 5
+        }
+      ],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "from",
+      "ranges": [
+        {
+          "startOffset": 434,
+          "endOffset": 1800,
+          "count": 10
+        }
+      ],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "select",
+      "ranges": [
+        {
+          "startOffset": 462,
+          "endOffset": 1195,
+          "count": 5
+        }
+      ],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "eq",
+      "ranges": [
+        {
+          "startOffset": 491,
+          "endOffset": 1182,
+          "count": 5
+        }
+      ],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "single",
+      "ranges": [
+        {
+          "startOffset": 534,
+          "endOffset": 1165,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "insert",
+      "ranges": [
+        {
+          "startOffset": 1213,
+          "endOffset": 1670,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "update",
+      "ranges": [
+        {
+          "startOffset": 1688,
+          "endOffset": 1791,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "rpc",
+      "ranges": [
+        {
+          "startOffset": 1811,
+          "endOffset": 2247,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "",
+      "ranges": [
+        {
+          "startOffset": 2315,
+          "endOffset": 3261,
+          "count": 1
+        },
+        {
+          "startOffset": 2975,
+          "endOffset": 3260,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "supabase.from.select",
+      "ranges": [
+        {
+          "startOffset": 2441,
+          "endOffset": 2814,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "",
+      "ranges": [
+        {
+          "startOffset": 3318,
+          "endOffset": 3939,
+          "count": 1
+        },
+        {
+          "startOffset": 3796,
+          "endOffset": 3850,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "supabase.from.select",
+      "ranges": [
+        {
+          "startOffset": 3420,
+          "endOffset": 3718,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "",
+      "ranges": [
+        {
+          "startOffset": 4006,
+          "endOffset": 4918,
+          "count": 1
+        }
+      ],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "supabase.from.select",
+      "ranges": [
+        {
+          "startOffset": 4146,
+          "endOffset": 4645,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "",
+      "ranges": [
+        {
+          "startOffset": 4979,
+          "endOffset": 5894,
+          "count": 1
+        }
+      ],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "supabase.from.select",
+      "ranges": [
+        {
+          "startOffset": 5119,
+          "endOffset": 5650,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "",
+      "ranges": [
+        {
+          "startOffset": 5953,
+          "endOffset": 6656,
+          "count": 1
+        }
+      ],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "supabase.from.select",
+      "ranges": [
+        {
+          "startOffset": 6093,
+          "endOffset": 6452,
+          "count": 0
+        }
+      ],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "",
+      "ranges": [
+        {
+          "startOffset": 6700,
+          "endOffset": 7058,
+          "count": 1
+        }
+      ],
+      "isBlockCoverage": true
+    }
+  ]
+}
