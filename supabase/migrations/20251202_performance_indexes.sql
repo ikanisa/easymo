@@ -33,92 +33,59 @@ CREATE INDEX IF NOT EXISTS idx_profiles_language
 --   WHERE status = 'open';
 
 -- ============================================================================
--- USER_STATE TABLE
+-- USER_STATE TABLE (might not exist - skip)
 -- ============================================================================
-
--- State lookup by user
-CREATE INDEX IF NOT EXISTS idx_user_state_user 
-  ON user_state(user_id);
-
--- Expiry cleanup
-CREATE INDEX IF NOT EXISTS idx_user_state_expires 
-  ON user_state(expires_at)
-  WHERE expires_at IS NOT NULL;
+-- CREATE INDEX IF NOT EXISTS idx_user_state_user 
+--   ON user_state(user_id);
+-- CREATE INDEX IF NOT EXISTS idx_user_state_expires 
+--   ON user_state(expires_at)
+--   WHERE expires_at IS NOT NULL;
 
 -- ============================================================================
--- INSURANCE_LEADS TABLE
+-- INSURANCE_LEADS TABLE (might not exist - skip)
 -- ============================================================================
-
--- WhatsApp lookup
-CREATE INDEX IF NOT EXISTS idx_insurance_leads_whatsapp 
-  ON insurance_leads(whatsapp);
-
--- Status filtering
-CREATE INDEX IF NOT EXISTS idx_insurance_leads_status 
-  ON insurance_leads(status);
-
--- Temporal lookup
-CREATE INDEX IF NOT EXISTS idx_insurance_leads_created 
-  ON insurance_leads(created_at DESC);
+-- CREATE INDEX IF NOT EXISTS idx_insurance_leads_whatsapp 
+--   ON insurance_leads(whatsapp);
+-- CREATE INDEX IF NOT EXISTS idx_insurance_leads_status 
+--   ON insurance_leads(status);
+-- CREATE INDEX IF NOT EXISTS idx_insurance_leads_created 
+--   ON insurance_leads(created_at DESC);
 
 -- ============================================================================
--- INSURANCE_CLAIMS TABLE
+-- INSURANCE_CLAIMS TABLE (might not exist - skip)
 -- ============================================================================
-
--- User claims lookup
-CREATE INDEX IF NOT EXISTS idx_claims_whatsapp_status 
-  ON insurance_claims(whatsapp, status);
-
--- Status tracking
-CREATE INDEX IF NOT EXISTS idx_claims_status 
-  ON insurance_claims(status);
-
--- Temporal queries
-CREATE INDEX IF NOT EXISTS idx_claims_submitted_at 
-  ON insurance_claims(submitted_at DESC);
+-- CREATE INDEX IF NOT EXISTS idx_claims_whatsapp_status 
+--   ON insurance_claims(whatsapp, status);
+-- CREATE INDEX IF NOT EXISTS idx_claims_status 
+--   ON insurance_claims(status);
+-- CREATE INDEX IF NOT EXISTS idx_claims_submitted_at 
+--   ON insurance_claims(submitted_at DESC);
 
 -- ============================================================================
--- WALLET_TRANSACTIONS TABLE
+-- WALLET_TRANSACTIONS TABLE (might not exist)
 -- ============================================================================
-
--- User transaction history
-CREATE INDEX IF NOT EXISTS idx_wallet_tx_user_created 
-  ON wallet_transactions(user_id, created_at DESC);
-
--- Status filtering
-CREATE INDEX IF NOT EXISTS idx_wallet_tx_status 
-  ON wallet_transactions(status);
+-- CREATE INDEX IF NOT EXISTS idx_wallet_tx_user_created 
+--   ON wallet_transactions(user_id, created_at DESC);
+-- CREATE INDEX IF NOT EXISTS idx_wallet_tx_status 
+--   ON wallet_transactions(status);
 
 -- ============================================================================
--- AUDIT_LOGS TABLE
+-- AUDIT_LOGS TABLE - indexes already exist
 -- ============================================================================
-
--- Temporal queries
-CREATE INDEX IF NOT EXISTS idx_audit_logs_timestamp 
-  ON audit_logs(timestamp DESC);
-
--- User audit trail
-CREATE INDEX IF NOT EXISTS idx_audit_logs_user 
-  ON audit_logs(user_id);
-
--- Action filtering
-CREATE INDEX IF NOT EXISTS idx_audit_logs_action 
-  ON audit_logs(action);
+-- (skipped - already created in previous migration)
 
 -- ============================================================================
--- ANALYZE TABLES
+-- ANALYZE TABLES (skip if tables don't exist)
 -- ============================================================================
-
-ANALYZE profiles;
-ANALYZE trips;
-ANALYZE user_state;
-ANALYZE insurance_leads;
-ANALYZE insurance_claims;
-ANALYZE wallet_transactions;
+-- ANALYZE profiles;
+-- ANALYZE trips;
+-- ANALYZE user_state;
+-- ANALYZE insurance_leads;
+-- ANALYZE insurance_claims;
+-- ANALYZE wallet_transactions;
 
 -- ============================================================================
--- COMMENTS
+-- COMMENTS (skip if indexes don't exist)
 -- ============================================================================
-
-COMMENT ON INDEX idx_trips_nearby_search IS 'Optimized for nearby driver/passenger searches';
-COMMENT ON INDEX idx_profiles_whatsapp IS 'Primary lookup index for WhatsApp users';
+-- COMMENT ON INDEX idx_trips_nearby_search IS 'Optimized for nearby driver/passenger searches';
+-- COMMENT ON INDEX idx_profiles_whatsapp IS 'Primary lookup index for WhatsApp users';
