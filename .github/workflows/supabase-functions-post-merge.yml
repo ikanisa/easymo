@@ -22,6 +22,7 @@ jobs:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
           if [ -n "${SUPABASE_ACCESS_TOKEN}" ] && [ -n "${SUPABASE_PROJECT_REF}" ] && [ -n "${SUPABASE_SERVICE_ROLE_KEY}" ]; then
             echo "can_deploy=true" >> $GITHUB_OUTPUT
@@ -31,9 +32,45 @@ jobs:
             echo "Required secrets missing: skipping deploy." >&2
           fi
 
+  verify-migrations:
+    name: Verify migrations before deploy
+    needs: gate
+    if: ${{ needs.gate.outputs.can_deploy == 'true' }}
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+      - name: Verify migrations for edge functions
+        run: |
+          set -euo pipefail
+          # Check if DATABASE_URL is available
+          if [ -z "${DATABASE_URL:-}" ]; then
+            echo "::warning::DATABASE_URL not set - skipping migration verification"
+            echo "Consider adding DATABASE_URL secret for pre-deployment checks"
+            exit 0
+          fi
+          
+          # Verify migrations for functions with dependencies
+          for fn in wa-webhook-mobility; do
+            echo "Checking migrations for: $fn"
+            chmod +x scripts/verify-migrations-before-deploy.sh
+            ./scripts/verify-migrations-before-deploy.sh "$fn" || {
+              echo "::error::Migration verification failed for $fn"
+              exit 1
+            }
+          done
+
   deploy-functions:
     name: Deploy and verify Supabase functions
-    needs: gate
+    needs: [gate, verify-migrations]
     if: ${{ needs.gate.outputs.can_deploy == 'true' }}
     runs-on: ubuntu-latest
     env:

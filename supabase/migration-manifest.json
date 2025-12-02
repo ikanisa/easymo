@@ -1,0 +1,98 @@
+{
+  "wa-webhook-mobility": {
+    "description": "WhatsApp webhook handler for mobility/rides features",
+    "required_migrations": [
+      "20251201130000_fix_matching_critical_issues",
+      "20251201150000_fix_matching_location_freshness",
+      "20251201160000_add_comprehensive_matching_features"
+    ],
+    "required_columns": [
+      {"table": "rides_trips", "column": "last_location_at"},
+      {"table": "rides_trips", "column": "pickup"},
+      {"table": "rides_trips", "column": "dropoff"}
+    ],
+    "required_functions": [
+      "match_drivers_for_trip_v2",
+      "match_passengers_for_trip_v2",
+      "update_trip_location"
+    ]
+  },
+  "wa-webhook": {
+    "description": "Main WhatsApp webhook router",
+    "required_migrations": [],
+    "required_columns": [],
+    "required_functions": []
+  },
+  "wa-webhook-core": {
+    "description": "Core WhatsApp webhook functionality",
+    "required_migrations": [],
+    "required_columns": [],
+    "required_functions": []
+  },
+  "wa-webhook-jobs": {
+    "description": "WhatsApp webhook handler for jobs features",
+    "required_migrations": [],
+    "required_columns": [],
+    "required_functions": []
+  },
+  "wa-webhook-property": {
+    "description": "WhatsApp webhook handler for property features",
+    "required_migrations": [],
+    "required_columns": [],
+    "required_functions": []
+  },
+  "wa-webhook-marketplace": {
+    "description": "WhatsApp webhook handler for marketplace features",
+    "required_migrations": [],
+    "required_columns": [],
+    "required_functions": []
+  },
+  "wa-webhook-insurance": {
+    "description": "WhatsApp webhook handler for insurance features",
+    "required_migrations": [],
+    "required_columns": [],
+    "required_functions": []
+  },
+  "wa-webhook-profile": {
+    "description": "WhatsApp webhook handler for profile features",
+    "required_migrations": [],
+    "required_columns": [],
+    "required_functions": []
+  },
+  "wa-webhook-ai-agents": {
+    "description": "WhatsApp webhook handler for AI agents",
+    "required_migrations": [],
+    "required_columns": [],
+    "required_functions": []
+  },
+  "agent-property-rental": {
+    "description": "AI agent for property rental",
+    "required_migrations": [],
+    "required_columns": [],
+    "required_functions": []
+  },
+  "job-board-ai-agent": {
+    "description": "AI agent for job board",
+    "required_migrations": [],
+    "required_columns": [],
+    "required_functions": []
+  },
+  "waiter-ai-agent": {
+    "description": "AI agent for waiter/restaurant services",
+    "required_migrations": [],
+    "required_columns": [],
+    "required_functions": []
+  },
+  "notification-worker": {
+    "description": "Background worker for notifications",
+    "required_migrations": [],
+    "required_columns": [],
+    "required_functions": []
+  },
+  "agent-tools-general-broker": {
+    "description": "General broker agent tools",
+    "required_migrations": [],
+    "required_columns": [],
+    "required_functions": []
+  }
+}

@@ -118,7 +118,7 @@ jobs:
   functions:
     name: Deploy wa-webhook function
     runs-on: ubuntu-latest
-    needs: [gate, policy-audit]
+    needs: [gate, policy-audit, migrate]
     if: ${{ needs.gate.outputs.can_deploy == 'true' }}
     steps:
       - name: Checkout
