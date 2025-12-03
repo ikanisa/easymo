@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import {
   ArrowUpRight,
@@ -136,22 +136,24 @@ export function HistoryScreen({ userId, currencySymbol = '' }: HistoryScreenProp
     }
   }, [fetchTransactions, hasMore, isLoadingMore, page, trigger]);
 
-  // Group transactions by date
-  const groupedTransactions = transactions.reduce<Record<string, Transaction[]>>(
-    (groups, transaction) => {
-      const date = new Date(transaction.createdAt).toLocaleDateString(undefined, {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-      });
-      if (!groups[date]) {
-        groups[date] = [];
-      }
-      groups[date].push(transaction);
-      return groups;
-    },
-    {}
-  );
+  // Group transactions by date (memoized)
+  const groupedTransactions = useMemo(() => {
+    return transactions.reduce<Record<string, Transaction[]>>(
+      (groups, transaction) => {
+        const date = new Date(transaction.createdAt).toLocaleDateString(undefined, {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+        });
+        if (!groups[date]) {
+          groups[date] = [];
+        }
+        groups[date].push(transaction);
+        return groups;
+      },
+      {}
+    );
+  }, [transactions]);
 
   return (
     <div className="min-h-screen bg-background">

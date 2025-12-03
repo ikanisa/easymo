@@ -89,6 +89,14 @@ export function MoMoSetup({
     trigger('selection');
   }, [trigger]);
 
+  const handlePhoneNumberChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setPhoneNumber(e.target.value);
+      setError(null);
+    },
+    []
+  );
+
   const handleUseSameCountryChange = useCallback(
     (same: boolean) => {
       setUseSameCountry(same);
@@ -312,10 +320,7 @@ export function MoMoSetup({
             <Input
               type="tel"
               value={phoneNumber}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                setPhoneNumber(e.target.value);
-                setError(null);
-              }}
+              onChange={handlePhoneNumberChange}
               placeholder="Enter your number"
               className="pl-16"
             />

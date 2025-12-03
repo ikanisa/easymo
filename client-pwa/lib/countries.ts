@@ -2,6 +2,10 @@
  * Countries Service
  * Fetches country data from Supabase - NO HARDCODED DATA
  * Following GROUND_RULES.md: observability, caching
+ * 
+ * Note: This service uses simple in-memory caching which works well for
+ * client-side React applications. For more complex scenarios (SSR, concurrent
+ * requests), consider integrating with React Query or SWR at the component level.
  */
 
 import { createClient } from '@/lib/supabase/client';
@@ -9,6 +13,7 @@ import type { Country, CountrySelectOption } from '@/types/country';
 import { logStructuredEvent } from '@/lib/observability';
 
 // In-memory cache for countries (5 minute TTL)
+// This cache is shared across all components in the same page session
 let countriesCache: { data: Country[]; expiresAt: number } | null = null;
 const CACHE_TTL_MS = 5 * 60 * 1000;
 
