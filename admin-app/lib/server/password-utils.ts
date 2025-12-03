@@ -1,6 +1,10 @@
 /**
  * Password hashing utilities for admin credentials.
  * 
+ * IMPORTANT: This module uses bcrypt which is a Node.js-only package.
+ * It MUST only be used in server-side code (API routes, server components).
+ * Never import this file in client-side code.
+ * 
  * USAGE:
  * To generate a password hash for ADMIN_ACCESS_CREDENTIALS:
  * 
@@ -13,6 +17,9 @@
  * 3. Update ADMIN_ACCESS_CREDENTIALS with the hash:
  *    [{"actorId":"...", "email":"...", "passwordHash":"$2b$10$..."}]
  */
+
+// This import enforces that this module can only be used on the server
+import "server-only";
 
 import bcrypt from "bcrypt";
 
