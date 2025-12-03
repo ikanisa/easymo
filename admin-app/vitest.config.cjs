@@ -9,6 +9,14 @@ module.exports = {
     hookTimeout: 10000,
     coverage: {
       reporter: ["text", "json", "html"],
+      // Coverage thresholds per QA review requirements (P1-1)
+      // Target: 70%+ for critical paths
+      thresholds: {
+        statements: 50,
+        branches: 40,
+        functions: 40,
+        lines: 50,
+      },
     },
     exclude: [
       "**/node_modules/**",

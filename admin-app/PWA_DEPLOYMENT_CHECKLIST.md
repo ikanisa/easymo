@@ -6,23 +6,28 @@
 ```bash
 cd admin-app
 
-# Install dependencies
-npm ci
+# NOTE: Use pnpm (not npm) for consistency with monorepo
+# From repository root:
+pnpm install --frozen-lockfile
+pnpm --filter @va/shared build && pnpm --filter @easymo/commons build
+
+# Then in admin-app:
+cd admin-app
 
 # Type check
-npm run type-check
+pnpm run type-check
 
 # Lint
-npm run lint
+pnpm run lint
 
 # Run tests
-npm test -- --run
+pnpm test -- --run
 
 # Build locally
-npm run build
+pnpm run build
 
 # Test production build
-npm run start
+pnpm run start
 ```
 
 ### 2. Verify PWA Assets
@@ -51,11 +56,29 @@ ls -la public/screenshots/
    - Should see offline.html
 
 ### 4. Test PWA Installation
-1. Run local build (`npm run build && npm run start`)
+1. Run local build (`pnpm run build && pnpm run start`)
 2. Open in Chrome (desktop or Android)
 3. Check for install prompt in address bar
 4. Install PWA
 5. Verify it opens in standalone mode
+
+## Offline Support Requirements (P0)
+
+### Critical PWA Features
+To meet PWA requirements, ensure the following offline capabilities:
+
+1. **Service Worker Registration**: Service worker must be registered on first visit
+2. **Offline Page**: Custom offline page (`/offline.html`) must display when network is unavailable
+3. **Static Asset Caching**: All critical static assets must be precached
+4. **API Fallback**: Graceful degradation for API calls when offline
+5. **Background Sync**: Queue operations made while offline for replay when connected
+
+### Testing Offline Mode
+1. Open DevTools > Application > Service Workers
+2. Enable "Offline" checkbox
+3. Refresh the page - should show offline page
+4. Navigate to cached routes - should work
+5. Try API operations - should show appropriate offline messages
 
 ## Netlify Configuration
 
