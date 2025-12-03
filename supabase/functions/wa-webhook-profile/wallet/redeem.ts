@@ -10,7 +10,7 @@ import { walletBackRow, walletRefreshRow } from "./home.ts";
 import { setState } from "../../_shared/wa-webhook-shared/state/store.ts";
 import { logWalletAdjust } from "../../_shared/wa-webhook-shared/observe/log.ts";
 import { IDS } from "../../_shared/wa-webhook-shared/wa/ids.ts";
-import { fetchWalletSummary, redeemReward } from "../../_shared/wa-webhook-shared/rpc/wallet.ts";
+import { fetchWalletSummary } from "../../_shared/wa-webhook-shared/rpc/wallet.ts";
 
 const STATES = {
   LIST: "wallet_redeem",
@@ -162,20 +162,13 @@ export async function handleWalletRedeemConfirm(
   }
   const cost = option.cost_tokens ?? 0;
   try {
-    const { data, error } = await ctx.supabase.rpc('wallet_redeem_request', {
-      p_profile: ctx.profileId,
-      p_option_id: option.id,
-      p_idempotency_key: crypto.randomUUID(),
-    });
-    if (error) throw error;
-    const row = Array.isArray(data) ? data[0] : data;
-    const ok = !!row?.success;
-    await logWalletAdjust({ actor: ctx.from, action: ok ? 'redeem_debited' : 'redeem_failed', cost });
-    if (ok) {
+    // Execute redemption using shared business logic
+    const { redeemTokens } = await import("../../_shared/wa-webhook-shared/wallet/redeem.ts");
+    const result = await redeemTokens(ctx, option.id);
+
+    if (result.success) {
       const summary = [
-        t(ctx.locale, "wallet.redeem.requested", {
-          title: option.title ?? t(ctx.locale, "wallet.redeem.reward"),
-        }),
+        result.message,
         t(ctx.locale, "wallet.redeem.notify_once_ready"),
       ].join("\n\n");
       await sendButtonsMessage(ctx, summary, [{ id: IDS.WALLET_REDEEM, title: "Done" }]);
@@ -188,8 +181,9 @@ export async function handleWalletRedeemConfirm(
         cost
       ).catch(console.error);
     } else {
-      await sendButtonsMessage(ctx, t(ctx.locale, 'wallet.redeem.load_fail'), [{ id: IDS.WALLET_REDEEM, title: 'Back' }]);
+      await sendButtonsMessage(ctx, result.message, [{ id: IDS.WALLET_REDEEM, title: "Back" }]);
     }
+    
     await setState(ctx.supabase, ctx.profileId, { key: STATES.CONFIRM, data: { option } });
     return true;
   } catch (err) {

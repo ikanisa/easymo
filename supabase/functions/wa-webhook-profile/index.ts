@@ -801,7 +801,7 @@ serve(async (req: Request): Promise<Response> => {
         }
         
         // Reward selection
-        else if (id.startsWith("REWARD::") && state?.key === "wallet_redeem") {
+        else if (id.startsWith("REWARD::") && state?.key === IDS.WALLET_REDEEM) {
           const { handleRewardSelection } = await import("./wallet/redeem.ts");
           handled = await handleRewardSelection(ctx, state.data as any, id);
         }
@@ -863,11 +863,11 @@ serve(async (req: Request): Promise<Response> => {
         }
       }
 
-      else if (state?.key === "wallet_transfer") {
+      else if (state?.key === IDS.WALLET_TRANSFER) {
         const { handleWalletTransferText } = await import("./wallet/transfer.ts");
         handled = await handleWalletTransferText(ctx, (message.text as any)?.body ?? "", state as any);
       }
-      else if (state?.key === "wallet_referral") {
+      else if (state?.key === IDS.WALLET_REFERRAL) {
         const { applyReferralCodeFromMessage } = await import("./wallet/referral.ts");
         handled = await applyReferralCodeFromMessage(ctx, (message.text as any)?.body ?? "");
       }
@@ -955,13 +955,13 @@ serve(async (req: Request): Promise<Response> => {
       }
       
       // Handle profile edit name
-      else if (state?.key === "profile_edit_name") {
+      else if (state?.key === IDS.EDIT_PROFILE_NAME) {
         const { handleEditName } = await import("./profile/edit.ts");
         handled = await handleEditName(ctx, (message.text as any)?.body ?? "");
       }
       
       // Handle add location (text address)
-      else if (state?.key === "add_location" && message.type === "text") {
+      else if (state?.key === IDS.ADD_LOCATION && message.type === "text") {
         if (ctx.profileId && state.data?.type) {
           const address = (message.text as any)?.body ?? "";
           const locationType = state.data.type as string;
@@ -984,7 +984,7 @@ serve(async (req: Request): Promise<Response> => {
     }
     
     // Handle location messages (when user shares location)
-    else if (message.type === "location" && (state?.key === "add_location" || state?.key === "edit_location")) {
+    else if (message.type === "location" && (state?.key === IDS.ADD_LOCATION || state?.key === "edit_location")) {
       if (ctx.profileId) {
         const location = (message as any).location;
         const lat = location?.latitude;
@@ -1012,7 +1012,7 @@ serve(async (req: Request): Promise<Response> => {
           );
           logEvent("INVALID_COORDINATES", { lat, lng }, "warn");
           handled = true;
-        } else if (state.key === "add_location" && state.data?.type) {
+        } else if (state.key === IDS.ADD_LOCATION && state.data?.type) {
           // Show confirmation first
           const locationType = state.data.type as string;
           const address = location?.address || `${lat.toFixed(4)}, ${lng.toFixed(4)}`;

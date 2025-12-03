@@ -272,8 +272,70 @@ export async function handleLicenseUpload(
       waToken
     );
 
-    // Process with OCR
-    const { data, provider } = await processDriverLicense(signedUrl, actualMimeType);
+    // Process with OCR (with retry and manual review fallback)
+    let data, provider;
+    let attempts = 0;
+    const MAX_ATTEMPTS = 3;
+    let lastError: Error | null = null;
+
+    while (attempts < MAX_ATTEMPTS) {
+      try {
+        const result = await processDriverLicense(signedUrl, actualMimeType);
+        data = result.data;
+        provider = result.provider;
+        break; // Success, exit retry loop
+      } catch (error) {
+        attempts++;
+        lastError = error instanceof Error ? error : new Error(String(error));
+        
+        await logStructuredEvent("DRIVER_LICENSE_OCR_RETRY", {
+          userId: ctx.profileId,
+          attempt: attempts,
+          error: lastError.message,
+        }, "warn");
+        
+        if (attempts === MAX_ATTEMPTS) {
+          // All retries exhausted, create manual review request
+          await sendText(
+            ctx.from,
+            "⚠️ We're having trouble reading your license automatically. " +
+            "Our team will review it manually within 24 hours. " +
+            "You'll receive a notification once verified. ✅"
+          );
+          
+          // Create manual review request
+          const { error: reviewError } = await ctx.supabase
+            .from("manual_reviews")
+            .insert({
+              user_id: ctx.profileId,
+              review_type: "driver_license",
+              media_id: mediaId,
+              media_url: signedUrl,
+              status: "pending",
+            });
+          
+          if (reviewError) {
+            await logStructuredEvent("MANUAL_REVIEW_INSERT_FAILED", {
+              userId: ctx.profileId,
+              error: reviewError.message,
+            }, "error");
+          } else {
+            await logStructuredEvent("MANUAL_REVIEW_CREATED", {
+              userId: ctx.profileId,
+              reviewType: "driver_license",
+            });
+          }
+          
+          return true; // Exit successfully, manual review queued
+        }
+        
+        // Exponential backoff before retry
+        const backoffMs = Math.pow(2, attempts) * 1000; // 2s, 4s, 8s
+        await new Promise(resolve => setTimeout(resolve, backoffMs));
+      }
+    }
+
+    // If we get here, OCR succeeded
 
     // Validate extracted data
     const validation = validateLicenseData(data);

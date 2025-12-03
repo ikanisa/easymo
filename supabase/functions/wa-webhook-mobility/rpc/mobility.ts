@@ -165,6 +165,9 @@ export type MatchResult = {
   vehicle_type?: string | null;
   is_exact_match?: boolean;
   location_age_minutes?: number;
+  number_plate?: string | null;  // For drivers
+  driver_name?: string | null;   // Optional: driver full name
+  role?: "driver" | "passenger"; // To differentiate in UI
 };
 
 export async function matchDriversForTrip(

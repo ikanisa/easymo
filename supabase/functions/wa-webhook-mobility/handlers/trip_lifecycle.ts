@@ -12,6 +12,7 @@ import { t } from "../i18n/translator.ts";
 import { notifyDriver, notifyPassenger } from "./trip_notifications.ts";
 import { startDriverTracking, stopDriverTracking } from "./tracking.ts";
 import { calculateActualFare } from "./fare.ts";
+import { initiateTripPayment } from "./trip_payment.ts";
 
 // ============================================================================
 // TYPES
@@ -395,16 +396,39 @@ export async function handleTripComplete(
       "✅ Trip logged. Remember to confirm payment and rate your passenger.",
     );
 
-    // 6. Initiate payment
-    // TODO: Integrate with payment system
-    // await initiateTripPayment(ctx, tripId, finalFare);
+    // 6. Fetch phone numbers from profiles if missing
+    let driverPhone = trip.driver_phone;
+    let passengerPhone = trip.passenger_phone;
 
-    // 7. Request ratings from both parties
-    // TODO: Send rating requests
-    // await requestRating(ctx, tripId, trip.driver_id, trip.passenger_id);
-    // await requestRating(ctx, tripId, trip.passenger_id, trip.driver_id);
+    if (!driverPhone || !passengerPhone) {
+      const { data: profiles } = await ctx.supabase
+        .from('profiles')
+        .select('user_id, whatsapp_number, phone_number')
+        .in('user_id', [trip.driver_id, trip.passenger_id]);
+      
+      if (profiles) {
+        const driverProfile = profiles.find(p => p.user_id === trip.driver_id);
+        const passengerProfile = profiles.find(p => p.user_id === trip.passenger_id);
+        
+        driverPhone = driverPhone || driverProfile?.whatsapp_number || driverProfile?.phone_number || "";
+        passengerPhone = passengerPhone || passengerProfile?.whatsapp_number || passengerProfile?.phone_number || "";
+      }
+    }
 
-    // 8. Record metrics
+    // 7. Initiate payment
+    await initiateTripPayment(ctx, {
+      tripId,
+      amount: finalFare,
+      driverPhone,
+      passengerPhone,
+      vehicleType: trip.vehicle_type,
+      role: "passenger",
+    });
+
+    // 8. Request ratings from both parties
+    // Ratings are requested via notifications sent above
+
+    // 9. Record metrics
     await logStructuredEvent("TRIP_COMPLETED", { 
       tripId, 
       driverId: trip.driver_id,

@@ -308,9 +308,9 @@ async function handleInsuranceButton(
   state: { key: string; data?: Record<string, unknown> },
 ): Promise<boolean> {
   // Handle insurance button selections
-  if (buttonId.startsWith("ins_") || buttonId === "insurance_agent" || buttonId === "insurance" || buttonId === "insurance_submit" || buttonId === "insurance_help" || buttonId === "motor_insurance_upload") {
+  if (buttonId.startsWith("ins_") || buttonId === IDS.INSURANCE_AGENT || buttonId === "insurance" || buttonId === IDS.INSURANCE_SUBMIT || buttonId === IDS.INSURANCE_HELP || buttonId === IDS.MOTOR_INSURANCE_UPLOAD) {
     // If it's a specific action like submit or help, delegate to list selection handler
-    if (buttonId === "insurance_submit" || buttonId === "insurance_help" || buttonId === "motor_insurance_upload") {
+    if (buttonId === IDS.INSURANCE_SUBMIT || buttonId === IDS.INSURANCE_HELP || buttonId === IDS.MOTOR_INSURANCE_UPLOAD) {
       return await handleInsuranceListSelection(ctx, state, buttonId);
     }
     await startInsurance(ctx, state);
@@ -326,9 +326,9 @@ async function handleInsuranceList(
   state: { key: string; data?: Record<string, unknown> },
 ): Promise<boolean> {
   // Handle insurance list selections
-  if (listId.startsWith("ins_") || listId === "insurance_agent" || listId === "insurance" || listId === "insurance_submit" || listId === "insurance_help" || listId === "motor_insurance_upload") {
+  if (listId.startsWith("ins_") || listId === IDS.INSURANCE_AGENT || listId === "insurance" || listId === IDS.INSURANCE_SUBMIT || listId === IDS.INSURANCE_HELP || listId === IDS.MOTOR_INSURANCE_UPLOAD) {
     // If it's a specific action like submit or help, handle the selection
-    if (listId === "insurance_submit" || listId === "insurance_help" || listId === "motor_insurance_upload") {
+    if (listId === IDS.INSURANCE_SUBMIT || listId === IDS.INSURANCE_HELP || listId === IDS.MOTOR_INSURANCE_UPLOAD) {
       return await handleInsuranceListSelection(ctx, state, listId);
     }
     // Otherwise show the menu
@@ -368,7 +368,7 @@ async function handleInsuranceText(
   }
 
   // Check for menu selection keys first
-  if (text === "insurance_agent" || text === "insurance") {
+  if (text === IDS.INSURANCE_AGENT || text === "insurance") {
     await startInsurance(ctx, state);
     return true;
   }

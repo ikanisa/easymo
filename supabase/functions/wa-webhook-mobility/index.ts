@@ -56,13 +56,7 @@ import {
   handleSkipPayment,
   PAYMENT_STATES,
 } from "./handlers/trip_payment.ts";
-// MOMO USSD Payment
-import {
-  initiateTripPayment,
-  handlePaymentConfirmation as handleMomoPaymentConfirmation,
-  getMomoPaymentStateKey,
-  parsePaymentState,
-} from "./handlers/momo_ussd_payment.ts";
+
 // Verification handlers
 import {
   showVerificationMenu,
@@ -159,6 +153,13 @@ serve(async (req: Request): Promise<Response> => {
   try {
     // Read raw body for signature verification
     const rawBody = await req.text();
+
+    // Protect against large payloads
+    const MAX_BODY_SIZE = 1024 * 1024; // 1MB
+    if (rawBody.length > MAX_BODY_SIZE) {
+      logEvent("MOBILITY_PAYLOAD_TOO_LARGE", { size: rawBody.length }, "warn");
+      return respond({ error: "payload_too_large" }, { status: 413 });
+    }
 
     const signatureHeader = req.headers.has("x-hub-signature-256")
       ? "x-hub-signature-256"
@@ -268,19 +269,8 @@ serve(async (req: Request): Promise<Response> => {
 
     logEvent("MOBILITY_MESSAGE_PROCESSING", { from, type: message.type, hasProfile: !!profile });
 
-    // DIAGNOSTIC LOGGING
-    console.log(JSON.stringify({
-      event: "MOBILITY_DIAGNOSTIC",
-      from,
-      messageType: message.type,
-      hasInteractive: !!message.interactive,
-      interactiveType: (message.interactive as any)?.type,
-      listReplyId: (message.interactive as any)?.list_reply?.id,
-      buttonReplyId: (message.interactive as any)?.button_reply?.id,
-      textBody: (message.text as any)?.body,
-      hasProfileId: !!ctx.profileId,
-      profileId: ctx.profileId,
-    }));
+    // DIAGNOSTIC LOGGING REMOVED
+
 
     // 2. Get State
     const state = ctx.profileId ? await getState(supabase, ctx.profileId) : null;
@@ -298,14 +288,7 @@ serve(async (req: Request): Promise<Response> => {
 
       if (id) {
         logEvent("MOBILITY_INTERACTION", { id });
-        
-        // DIAGNOSTIC: Log what we're checking
-        console.log(JSON.stringify({
-          event: "MOBILITY_CHECKING_ID",
-          id,
-          expectedKeys: ["rides_agent", "rides", IDS.SEE_DRIVERS],
-          willMatch: id === IDS.SEE_DRIVERS || id === "rides_agent" || id === "rides",
-        }));
+
 
         // Mobility main menu
         if (id === IDS.RIDES_MENU || id === "rides_agent" || id === "rides") {
@@ -374,23 +357,23 @@ serve(async (req: Request): Promise<Response> => {
            handled = await startScheduleSavedLocationPicker(ctx, state.data as any, "dropoff");
         } else if (id.startsWith("FAV::") && state?.key === "location_saved_picker" && state.data?.source === "schedule") {
            handled = await handleScheduleSavedLocationSelection(ctx, state.data as any, id);
-        } else if (id === "TRIP_START" && state?.data?.matchId) {
+        } else if (id === IDS.TRIP_START && state?.data?.matchId) {
           const matchId = String(state.data.matchId);
           handled = await handleTripStart(ctx, matchId);
-        } else if (id === "TRIP_ARRIVED" && state?.data?.tripId) {
+        } else if (id === IDS.TRIP_ARRIVED && state?.data?.tripId) {
           const tripId = String(state.data.tripId);
           handled = await handleTripArrivedAtPickup(ctx, tripId);
-        } else if (id === "TRIP_PICKED_UP" && state?.data?.tripId) {
+        } else if (id === IDS.TRIP_PICKED_UP && state?.data?.tripId) {
           const tripId = String(state.data.tripId);
           handled = await handleTripPickedUp(ctx, tripId);
-        } else if (id === "TRIP_COMPLETE" && state?.data?.tripId) {
+        } else if (id === IDS.TRIP_COMPLETE && state?.data?.tripId) {
           const tripId = String(state.data.tripId);
           handled = await handleTripComplete(ctx, tripId);
-        } else if (id.startsWith("TRIP_CANCEL::")) {
-          const tripId = id.replace("TRIP_CANCEL::", "");
+        } else if (id.startsWith(IDS.TRIP_CANCEL_PREFIX + "::")) {
+          const tripId = id.replace(IDS.TRIP_CANCEL_PREFIX + "::", "");
           const initiator = state?.data?.role === "passenger" ? "passenger" : "driver";
           handled = await handleTripCancel(ctx, tripId, "user", initiator);
-        } else if (id.startsWith("RATE::")) {
+        } else if (id.startsWith(IDS.RATE_PREFIX + "::")) {
           const parts = id.split("::");
           const tripId = parts[1];
           const rating = parseInt(parts[2]);
@@ -416,11 +399,11 @@ serve(async (req: Request): Promise<Response> => {
         }
         
         // Real-Time Tracking
-        else if (id === "UPDATE_LOCATION" && state?.data?.tripId) {
+        else if (id === IDS.UPDATE_LOCATION && state?.data?.tripId) {
           const tripId = state.data.tripId;
           // Location will come from location message, just acknowledge
           handled = true;
-        } else if (id === "VIEW_DRIVER_LOCATION" && state?.data?.tripId) {
+        } else if (id === IDS.VIEW_DRIVER_LOCATION && state?.data?.tripId) {
           const tripId = String(state.data.tripId);
           const progress = await getTripProgress(ctx, tripId);
           if (progress?.driverLocation) {
@@ -516,18 +499,8 @@ serve(async (req: Request): Promise<Response> => {
       const text = (message.text as any)?.body?.toLowerCase() ?? "";
       const rawText = (message.text as any)?.body ?? "";
       
-      // MOMO Payment confirmation
-      if (state?.key === getMomoPaymentStateKey()) {
-        if (text === "paid") {
-          handled = await handleMomoPaymentConfirmation(ctx, true);
-        } else if (text === "cancel") {
-          handled = await handleMomoPaymentConfirmation(ctx, false);
-        } else {
-          handled = true; // Ignore other text during payment flow
-        }
-      }
       // Payment transaction reference input
-      else if (state?.key === PAYMENT_STATES.CONFIRMATION) {
+      if (state?.key === PAYMENT_STATES.CONFIRMATION) {
         handled = await processTransactionReference(ctx, rawText, state);
       }
       // Check for menu selection keys first

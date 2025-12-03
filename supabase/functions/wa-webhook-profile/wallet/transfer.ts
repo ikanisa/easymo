@@ -1,12 +1,9 @@
-import { notifyWalletTransferRecipient } from "./notifications.ts";
 import type { RouterContext } from "../../_shared/wa-webhook-shared/types.ts";
 import { sendButtonsMessage, sendListMessage } from "../../_shared/wa-webhook-shared/utils/reply.ts";
 import { IDS } from "../../_shared/wa-webhook-shared/wa/ids.ts";
 import { setState } from "../../_shared/wa-webhook-shared/state/store.ts";
-import { t } from "../../_shared/wa-webhook-shared/i18n/translator.ts";
 import { toE164 } from "../../_shared/wa-webhook-shared/utils/phone.ts";
 import { listWalletPartners, fetchWalletSummary } from "../../_shared/wa-webhook-shared/rpc/wallet.ts";
-import { validateTransfer, checkFraudRisk } from "./security.ts";
 
 type TransferState = {
   key: string;
@@ -214,16 +211,8 @@ export async function handleWalletTransferText(
       return true;
     }
     
-    // Validate transfer amount and limits
-    const validation = await validateTransfer(ctx, amount, ctx.profileId!);
-    if (!validation.valid) {
-      await sendButtonsMessage(
-        ctx,
-        `❌ ${validation.error}`,
-        [{ id: IDS.WALLET, title: "💎 Back to Wallet" }],
-      );
-      return true;
-    }
+    // Validate transfer amount and limits handled by transferTokens
+
     
     try {
       // Resolve recipient profile by WhatsApp - try both e164 and wa_id
@@ -262,191 +251,22 @@ export async function handleWalletTransferText(
         return true;
       }
       
-      // Check fraud risk
-      const fraudCheck = await checkFraudRisk(ctx, ctx.profileId!, amount, recipient.user_id);
-      if (fraudCheck.risky) {
-        await sendButtonsMessage(
-          ctx,
-          `⚠️ Transfer blocked: ${fraudCheck.reason}\n\nPlease contact support if you believe this is an error.`,
-          [{ id: IDS.WALLET, title: "💎 Wallet" }],
-        );
-        return true;
-      }
+      // Execute transfer using shared business logic
+      const { transferTokens } = await import("../../_shared/wa-webhook-shared/wallet/transfer.ts");
+      const result = await transferTokens(ctx, data.to as string, amount);
 
-      // Enforce 2000-min eligibility and sufficient balance
-      let senderTokens = 0;
-      try {
-        const summary = await fetchWalletSummary(ctx.supabase, ctx.profileId);
-        senderTokens = Number(summary?.tokens ?? 0);
-      } catch (error) {
-        console.error(JSON.stringify({
-          event: "WALLET_SUMMARY_FETCH_FAILED",
-          error: error instanceof Error ? error.message : String(error),
-          profileId: ctx.profileId
-        }));
-        // Continue with senderTokens = 0, which will trigger the minimum balance check
-      }
-      if (senderTokens < 2000) {
+      if (result.success) {
         await sendButtonsMessage(
           ctx,
-          `⚠️ You need at least 2000 tokens to transfer. Your balance: ${senderTokens}.`,
+          result.message,
           [{ id: IDS.WALLET, title: "💎 Wallet" }],
         );
-        return true;
-      }
-      if (amount > senderTokens) {
-        await sendButtonsMessage(
-          ctx,
-          `⚠️ Insufficient balance. You have ${senderTokens} tokens.`,
-          [{ id: IDS.WALLET, title: "💎 Wallet" }],
-        );
-        return true;
-      }
-
-      // Execute transfer via wallet_transfer_tokens (core engine)
-      const idempotencyKey = data.idem ?? crypto.randomUUID();
-      const { data: result2, error: err2 } = await ctx.supabase.rpc("wallet_transfer_tokens", {
-        p_sender: ctx.profileId,
-        p_amount: amount,
-        p_recipient: recipient.user_id,
-        p_idempotency_key: idempotencyKey,
-      });
-      
-      if (err2) {
-        console.error(JSON.stringify({
-          event: "WALLET_TRANSFER_RPC_ERROR",
-          error: err2.message,
-          details: err2.details,
-          hint: err2.hint,
-          code: err2.code,
-          sender: ctx.profileId,
-          recipient: recipient.user_id,
-          amount
-        }));
-        throw err2;
-      }
-      
-      // RPC returns array, get first row
-      const result = Array.isArray(result2) ? result2[0] : result2;
-      
-      console.log(JSON.stringify({
-        event: "WALLET_TRANSFER_RPC_RESPONSE",
-        raw_response: result2,
-        unwrapped: result,
-        success_field: result?.success,
-        reason: result?.reason
-      }));
-      
-      const ok = result?.success === true;
-      if (ok) {
-        console.log(JSON.stringify({
-          event: "WALLET_TRANSFER_SUCCESS",
-          sender: ctx.profileId,
-          recipient: recipient.user_id,
-          amount,
-          transfer_id: result?.transfer_id,
-          sender_tokens: result?.sender_tokens,
-          recipient_tokens: result?.recipient_tokens,
-          idempotency_key: idempotencyKey
-        }));
-        
-        console.log(JSON.stringify({
-          event: "WALLET_TRANSFER_SENDING_SUCCESS_MESSAGE",
-          to: ctx.from,
-          message: `✅ Sent ${amount} tokens to ${data.to}.`
-        }));
-        
-        await sendButtonsMessage(
-          ctx,
-          `✅ Sent ${amount} tokens to ${data.to}.`,
-          [{ id: IDS.WALLET, title: "💎 Wallet" }],
-        );
-        
-        console.log(JSON.stringify({
-          event: "WALLET_TRANSFER_SUCCESS_MESSAGE_SENT",
-          to: ctx.from
-        }));
-        
-        // Fetch sender's name for notification
-        const { data: senderProfile } = await ctx.supabase
-          .from("profiles")
-          .select("display_name")
-          .eq("user_id", ctx.profileId)
-          .single();
-        const senderName = senderProfile?.display_name || "A friend";
-        
-        console.log(JSON.stringify({
-          event: "WALLET_TRANSFER_SENDING_NOTIFICATION",
-          recipient: recipient.user_id,
-          amount,
-          senderName
-        }));
-        
-        // Send notification to recipient
-        notifyWalletTransferRecipient(ctx.supabase, recipient.user_id, amount, senderName)
-          .then(() => {
-            console.log(JSON.stringify({
-              event: "WALLET_TRANSFER_NOTIFICATION_SENT",
-              recipient: recipient.user_id
-            }));
-          })
-          .catch((err) => {
-            console.error(JSON.stringify({
-              event: "WALLET_TRANSFER_NOTIFICATION_FAILED",
-              error: err instanceof Error ? err.message : String(err),
-              recipient: recipient.user_id
-            }));
-          });
       } else {
-        // Check if transfer actually succeeded but success flag is wrong
-        const likelySucceeded = result?.transfer_id || result?.reason === 'ok' || result?.reason === 'duplicate';
-        
-        console.error(JSON.stringify({
-          event: likelySucceeded ? "WALLET_TRANSFER_SUCCESS_FLAG_MISMATCH" : "WALLET_TRANSFER_REJECTED",
-          sender: ctx.profileId,
-          recipient: recipient.user_id,
-          amount,
-          success_field: result?.success,
-          reason: result?.reason,
-          transfer_id: result?.transfer_id,
-          likely_succeeded: likelySucceeded
-        }));
-        
-        // If we have a transfer_id or reason is 'ok', treat as success
-        if (likelySucceeded) {
-          await sendButtonsMessage(
-            ctx,
-            `✅ Sent ${amount} tokens to ${data.to}.`,
-            [{ id: IDS.WALLET, title: "💎 Wallet" }],
-          );
-          
-          // Try to send notification
-          try {
-            const { data: senderProfile } = await ctx.supabase
-              .from("profiles")
-              .select("display_name")
-              .eq("user_id", ctx.profileId)
-              .maybeSingle();
-            const senderName = senderProfile?.display_name || "A friend";
-            
-            notifyWalletTransferRecipient(ctx.supabase, recipient.user_id, amount, senderName)
-              .catch((err) => {
-                console.error(JSON.stringify({
-                  event: "WALLET_TRANSFER_NOTIFICATION_FAILED",
-                  error: err instanceof Error ? err.message : String(err),
-                  recipient: recipient.user_id
-                }));
-              });
-          } catch {
-            // Ignore notification errors
-          }
-        } else {
-          await sendButtonsMessage(
-            ctx,
-            `❌ Transfer failed: ${result?.reason || "Unknown error"}`,
-            [{ id: IDS.WALLET, title: "💎 Wallet" }],
-          );
-        }
+        await sendButtonsMessage(
+          ctx,
+          result.message,
+          [{ id: IDS.WALLET, title: "💎 Wallet" }],
+        );
       }
       
       const { clearState } = await import("../../_shared/wa-webhook-shared/state/store.ts");

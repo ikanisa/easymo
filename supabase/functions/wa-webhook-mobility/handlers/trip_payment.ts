@@ -32,10 +32,13 @@ export interface PaymentState {
   amount: number;
   targetPhone: string;
   role: "driver" | "passenger";
+  expiresAt?: string;
 }
 
 const PAYMENT_STATE_KEY = "trip_payment_pending";
 const PAYMENT_CONFIRMATION_STATE_KEY = "trip_payment_confirm";
+const PAYMENT_TIMEOUT_MINUTES = 15;
+const DEFAULT_CURRENCY = "RWF";
 
 // ============================================================================
 // PAYMENT INITIATION
@@ -90,7 +93,7 @@ export async function initiateTripPayment(
     // Generate QR code image
     const qrUrl = buildQrCodeUrl(telQr);
 
-    // Save payment state
+    // Save payment state with expiration
     await setState(ctx.supabase, ctx.profileId, {
       key: PAYMENT_STATE_KEY,
       data: {
@@ -98,6 +101,7 @@ export async function initiateTripPayment(
         amount: payment.amount,
         targetPhone: recipient,
         role: payment.role,
+        expiresAt: new Date(Date.now() + PAYMENT_TIMEOUT_MINUTES * 60_000).toISOString(),
       },
     });
 
@@ -174,6 +178,22 @@ export async function handlePaymentConfirmation(
     if (!ctx.profileId || !state.data) return false;
 
     const payment = state.data;
+
+    // Check if payment expired
+    if (payment.expiresAt) {
+      const expiresAt = new Date(payment.expiresAt);
+      if (expiresAt < new Date()) {
+        await clearState(ctx.supabase, ctx.profileId);
+        await sendText(
+          ctx.from,
+          "⏱️ Payment session expired (15 minutes). Please start a new trip."
+        );
+        await logStructuredEvent("TRIP_PAYMENT_EXPIRED", {
+          tripId: payment.tripId,
+        }, "warn");
+        return false;
+      }
+    }
 
     await logStructuredEvent("TRIP_PAYMENT_CONFIRMED", {
       tripId: payment.tripId,

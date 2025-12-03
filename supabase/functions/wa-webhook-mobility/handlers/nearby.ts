@@ -43,12 +43,12 @@ import { checkLocationCache } from "./location_cache.ts";
 import { readLastLocation } from "../locations/favorites.ts";
 import { sortMatches } from "../../_shared/wa-webhook-shared/utils/sortMatches.ts";
 
-// Time window for matching: SQL function uses days
-const DEFAULT_WINDOW_DAYS = 30;
+// Time window for matching: 48 hours (2 days) as per requirements
+const DEFAULT_WINDOW_DAYS = 2;
 // Per requirements: 10km radius consistently
 const REQUIRED_RADIUS_METERS = 10_000;
-// Search radius: read from app_config, default 15km (increased from 10km for 90%+ match rate)
-const DEFAULT_RADIUS_METERS = 15_000;
+// Search radius: 10km as per requirements (not 15km)
+const DEFAULT_RADIUS_METERS = 10_000;
 const MAX_RADIUS_METERS = 25_000;
 const SAVED_ROW_PREFIX = "FAV::";
 
@@ -155,6 +155,18 @@ function toDistanceLabel(distanceKm: unknown): string | null {
   return `${Math.round(num * 1000)} m`;
 }
 
+/**
+ * Eclipse phone number for privacy (e.g., "+250788123456" -> "***3456")
+ */
+function eclipsePhone(phone: string): string {
+  if (!phone) return "";
+  // Remove any non-digit characters except +
+  const cleaned = phone.replace(/[^\d+]/g, "");
+  // Get last 4 digits
+  const last4 = cleaned.slice(-4);
+  return `***${last4}`;
+}
+
 function buildNearbyRow(
   ctx: RouterContext,
   match: MatchResult,
@@ -162,26 +174,33 @@ function buildNearbyRow(
   row: { id: string; title: string; description?: string };
   state: NearbyStateRow;
 } {
-  const masked = maskPhone(match.whatsapp_e164 ?? "");
-  // WhatsApp requires non-empty title - use ref code if phone is empty
-  const refShort = (match.ref_code ?? "").slice(0, 8);
-  const rawTitle = masked || refShort || `Match ${match.trip_id.slice(0, 8)}`;
-  const title = safeRowTitle(rawTitle.trim() || `Ref ${match.trip_id.slice(0, 8)}`);
   const distanceLabel = toDistanceLabel(match.distance_km);
-  const seenLabel = timeAgo(
-    getMatchTimestamp(match) ?? new Date().toISOString(),
-  );
-  const descriptionParts = [
-    t(ctx.locale, "mobility.nearby.row.ref", { ref: match.ref_code ?? "---" }),
-  ];
-  if (distanceLabel) {
-    descriptionParts.push(
-      t(ctx.locale, "mobility.nearby.row.distance", { distance: distanceLabel }),
-    );
+  
+  // Use created_at for "listed time" (when trip was created)
+  const listedTime = timeAgo(match.created_at ?? new Date().toISOString());
+  
+  // Build title based on role
+  let title: string;
+  if (match.role === "driver") {
+    // For drivers: show number plate (or fallback to ref code)
+    const plate = match.number_plate?.trim();
+    title = plate || match.ref_code || `Driver ${match.trip_id.slice(0, 8)}`;
+  } else {
+    // For passengers: show eclipsed phone number
+    const eclipsed = eclipsePhone(match.whatsapp_e164 ?? "");
+    title = eclipsed || match.ref_code || `Passenger ${match.trip_id.slice(0, 8)}`;
   }
-  descriptionParts.push(
-    t(ctx.locale, "mobility.nearby.row.seen", { time: seenLabel }),
-  );
+  
+  // Ensure title is safe for WhatsApp
+  title = safeRowTitle(title.trim());
+  
+  // Build description: Distance • Listed time
+  const descriptionParts: string[] = [];
+  if (distanceLabel) {
+    descriptionParts.push(distanceLabel);
+  }
+  descriptionParts.push(`Listed ${listedTime}`);
+  
   const rowId = `MTCH::${match.trip_id}`;
   return {
     row: {
@@ -896,6 +915,23 @@ async function runMatchingFallback(
           if (!match.whatsapp_e164) continue;
           
           try {
+            // Rate limiting: max 5 notifications per driver per hour
+            const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+            const { count: recentNotifications } = await ctx.supabase
+              .from('mobility_matches')
+              .select('id', { count: 'exact', head: true })
+              .eq('driver_id', match.creator_user_id)
+              .eq('status', 'pending')
+              .gte('created_at', oneHourAgo);
+            
+            if ((recentNotifications || 0) >= 5) {
+              logStructuredEvent("DRIVER_NOTIFICATION_RATE_LIMITED", {
+                driverId: match.creator_user_id,
+                count: recentNotifications,
+              });
+              continue; // Skip this driver
+            }
+            
             // Quiet hours check
             const quiet = await isDriverQuiet(ctx.supabase, match.creator_user_id).catch(() => false);
             if (quiet) continue;
@@ -928,16 +964,14 @@ async function runMatchingFallback(
               trip_id: tempTripId,
               driver_id: match.creator_user_id,
               status: "sent"
-            }).then(() => {
-              logStructuredEvent("DRIVER_NOTIFIED", {
-                tripId: tempTripId,
-                driverId: match.creator_user_id,
-              });
-            }).catch((err) => {
-              logStructuredEvent("DRIVER_NOTIFICATION_LOG_FAILED", {
-                tripId: tempTripId,
-                error: err instanceof Error ? err.message : String(err),
-              }, "warn");
+            });
+            
+            // Log notification sent (fire and forget)
+            logStructuredEvent("DRIVER_NOTIFIED", {
+              tripId: tempTripId,
+              driverId: match.creator_user_id,
+            }).catch(() => {
+              // Ignore logging errors
             });
           } catch (notifyError) {
             // Log error but continue with other drivers
@@ -945,17 +979,17 @@ async function runMatchingFallback(
               tripId: tempTripId,
               driverId: match.creator_user_id,
               error: notifyError instanceof Error ? notifyError.message : String(notifyError),
-            }, "warn");
+            });
           }
         }
       };
       
       // Fire and forget - don't block user response
-      notifyDrivers().catch((err) => {
+      notifyDrivers().catch((_err: unknown) => {
         logStructuredEvent("DRIVER_NOTIFICATION_BATCH_FAILED", {
           tripId: tempTripId,
-          error: err instanceof Error ? err.message : String(err),
-        }, "error");
+          error: _err instanceof Error ? _err.message : String(_err),
+        });
       });
     }
 

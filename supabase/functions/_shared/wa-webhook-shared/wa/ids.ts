@@ -172,5 +172,32 @@ export const IDS = {
   BACK_PROFILE: "back_profile",
   BACK_BUSINESSES: "back_businesses",
   
+  // Missing Profile IDs
+  EDIT_PROFILE: "edit_profile",
+  EDIT_PROFILE_NAME: "edit_profile_name",
+  EDIT_PROFILE_LANGUAGE: "edit_profile_language",
+  WALLET_PURCHASE: "wallet_purchase",
+  WALLET_CASHOUT: "wallet_cashout",
+  WALLET_REFERRAL: "wallet_referral",
+  WALLET_SHARE: "wallet_share",
+
+  // Missing Mobility IDs
+  GO_ONLINE: "driver_go_online",
+  TRIP_START: "TRIP_START",
+  TRIP_ARRIVED: "TRIP_ARRIVED",
+  TRIP_PICKED_UP: "TRIP_PICKED_UP",
+  TRIP_COMPLETE: "TRIP_COMPLETE",
+  TRIP_CANCEL_PREFIX: "TRIP_CANCEL",
+  RATE_PREFIX: "RATE",
+  UPDATE_LOCATION: "UPDATE_LOCATION",
+  VIEW_DRIVER_LOCATION: "VIEW_DRIVER_LOCATION",
+  DRIVER_OFFER_RIDE: "DRIVER_OFFER",
+  DRIVER_VIEW_DETAILS: "DRIVER_VIEW",
+  VERIFY_LICENSE: "verify_license",
+  VERIFY_INSURANCE: "verify_insurance",
+  VERIFY_STATUS: "verify_status",
+  TRIP_PAYMENT_PAID: "trip_payment_paid",
+  TRIP_PAYMENT_SKIP: "trip_payment_skip",
+  
   // Existing flows will add more IDs during implementation.
 } as const;

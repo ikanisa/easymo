@@ -16,7 +16,8 @@ export async function allocateTokens(
   ctx: RouterContext,
   recipientPhone: string,
   amount: number,
-  reason: string
+  reason: string,
+  idempotencyKey?: string
 ): Promise<TokenAllocationResult> {
   if (!ctx.profileId) {
     return {
@@ -36,6 +37,23 @@ export async function allocateTokens(
   }
 
   try {
+    // Check idempotency
+    if (idempotencyKey) {
+      const { data: existing } = await ctx.supabase
+        .from("token_allocations")
+        .select("id")
+        .eq("idempotency_key", idempotencyKey)
+        .single();
+
+      if (existing) {
+        return {
+          success: true,
+          allocationId: existing.id,
+          message: "✅ Allocation already processed (idempotent)",
+        };
+      }
+    }
+
     // Find recipient
     const { data: recipient, error: recipientError } = await ctx.supabase
       .from("profiles")
@@ -56,11 +74,13 @@ export async function allocateTokens(
       .from("token_allocations")
       .insert({
         admin_id: ctx.profileId,
-        recipient_id: recipient.id,
+        user_id: recipient.id, // Fixed column name
         amount,
         reason: reason || "Admin allocation",
         status: "approved",
         approved_at: new Date().toISOString(),
+        approved_by: ctx.profileId,
+        idempotency_key: idempotencyKey,
       })
       .select()
       .single();
@@ -169,12 +189,13 @@ export async function allocateInsuranceBonus(
     const { data: allocation, error: allocError } = await supabase
       .from("token_allocations")
       .insert({
-        recipient_id: userId,
+        user_id: userId, // Fixed column name
         amount,
         reason: "insurance_purchase_bonus",
         reference_id: policyId,
         status: "approved",
         approved_at: new Date().toISOString(),
+        approved_by: null, // System allocation
       })
       .select()
       .single();
@@ -256,12 +277,13 @@ export async function allocateReferralBonus(
     const { data: allocation, error: allocError } = await supabase
       .from("token_allocations")
       .insert({
-        recipient_id: referrerId,
+        user_id: referrerId, // Fixed column name
         amount,
         reason: "referral_bonus",
         reference_id: referredUserId,
         status: "approved",
         approved_at: new Date().toISOString(),
+        approved_by: null, // System allocation
       })
       .select()
       .single();
