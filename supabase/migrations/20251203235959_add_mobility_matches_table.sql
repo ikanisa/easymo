@@ -108,11 +108,14 @@ CREATE TRIGGER trg_mobility_matches_updated_at
 ALTER TABLE public.mobility_matches ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies
+-- Service role policy using proper auth.role() check
 DROP POLICY IF EXISTS "Service role full access" ON public.mobility_matches;
 CREATE POLICY "Service role full access"
   ON public.mobility_matches
   FOR ALL
-  USING (current_setting('role') = 'service_role');
+  TO service_role
+  USING (true)
+  WITH CHECK (true);
 
 DROP POLICY IF EXISTS "Users can view own matches" ON public.mobility_matches;
 CREATE POLICY "Users can view own matches"

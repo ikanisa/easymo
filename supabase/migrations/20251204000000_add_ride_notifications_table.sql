@@ -44,12 +44,14 @@ CREATE TRIGGER trg_ride_notifications_updated_at
 ALTER TABLE public.ride_notifications ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies
--- Service role can do everything
+-- Service role policy using proper TO clause (Supabase recommended pattern)
 DROP POLICY IF EXISTS "Service role full access" ON public.ride_notifications;
 CREATE POLICY "Service role full access"
   ON public.ride_notifications
   FOR ALL
-  USING (current_setting('role') = 'service_role');
+  TO service_role
+  USING (true)
+  WITH CHECK (true);
 
 -- Drivers can view their own notifications
 DROP POLICY IF EXISTS "Drivers can view own notifications" ON public.ride_notifications;
