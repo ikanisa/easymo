@@ -101,11 +101,11 @@ const routeMetadata: Record<string, { title: string; description: string }> = {
   },
   "/client-portal": {
     title: "Client Portal",
-    description: "Vendor portal for viewing transactions, payers, and reports.",
+    description: "Receive payments via mobile money QR codes.",
   },
   "/client-portal/transactions": {
     title: "Transactions",
-    description: "View all SMS transaction history.",
+    description: "View all payment transaction history.",
   },
   "/client-portal/payers": {
     title: "Payers",
@@ -114,6 +114,18 @@ const routeMetadata: Record<string, { title: string; description: string }> = {
   "/client-portal/reports": {
     title: "Reports",
     description: "View periodic transaction reports and analytics.",
+  },
+  "/client-portal/profile": {
+    title: "Profile",
+    description: "Manage your account and mobile money settings.",
+  },
+  "/client-portal/momo-setup": {
+    title: "Mobile Money Setup",
+    description: "Configure your mobile money account for receiving payments.",
+  },
+  "/client-portal/settings": {
+    title: "Settings",
+    description: "Manage your account preferences.",
   },
   "/support": {
     title: "Support",
