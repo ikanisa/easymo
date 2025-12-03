@@ -8,6 +8,8 @@
  * - PII masking for phone numbers
  * - HMAC signature verification
  * - Rate limiting
+ * - Nonce validation (replay protection)
+ * - Idempotency key support
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
@@ -21,6 +23,8 @@ import {
   ProcessingError,
   type WebhookErrorContext 
 } from "../_shared/webhook-error-boundary.ts";
+import { checkIdempotency, storeIdempotencyResult } from "../_shared/idempotency.ts";
+import { validateNonce, logSecurityEvent } from "../_shared/nonce-validator.ts";
 import { parseMomoSms } from "./utils/sms-parser.ts";
 import { verifyHmacSignature } from "./utils/hmac.ts";
 import { matchRidePayment } from "./matchers/rides.ts";
@@ -31,13 +35,12 @@ import { matchInsurancePayment } from "./matchers/insurance.ts";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
-    "authorization, x-momo-signature, x-momo-timestamp, x-momo-device-id, content-type",
+    "authorization, x-momo-signature, x-momo-timestamp, x-momo-device-id, x-momo-nonce, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-// Rate limit configuration (configurable via environment variables)
+// Rate limit configuration
 const RATE_LIMIT_MAX = parseInt(Deno.env.get("MOMO_SMS_RATE_LIMIT_MAX") || "100", 10);
-const RATE_LIMIT_WINDOW_SECONDS = parseInt(Deno.env.get("MOMO_SMS_RATE_LIMIT_WINDOW") || "60", 10);
 
 // Request counter for periodic cleanup
 let requestCounter = 0;
@@ -48,14 +51,22 @@ function maskPhone(phone: string): string {
   return phone.replace(/(\+\d{3})\d+(\d{4})/, "$1****$2");
 }
 
-interface MomoSmsPayload {
+interface MomoSmsPayloadV2 {
   source: "momoterminal";
   version: string;
   timestamp: string;
+  nonce?: string;
+  client_transaction_id?: string;
   phone_number: string;
   sender: string;
   message: string;
   device_id: string;
+  parsed?: {
+    amount?: number;
+    currency?: string;
+    provider?: string;
+    transaction_id?: string;
+  };
 }
 
 serve(withWebhookErrorBoundary(
@@ -128,7 +139,7 @@ serve(withWebhookErrorBoundary(
 
     // 3. Parse request body
     const rawBody = await req.text();
-    let payload: MomoSmsPayload;
+    let payload: MomoSmsPayloadV2;
     try {
       payload = JSON.parse(rawBody);
     } catch {
@@ -165,7 +176,37 @@ serve(withWebhookErrorBoundary(
     );
 
     if (!isValidSignature) {
+      await logSecurityEvent(supabase, "SIGNATURE_MISMATCH", deviceId || payload.device_id, 
+        req.headers.get("x-real-ip"), { correlationId });
       throw new AuthenticationError("Invalid HMAC signature");
+    }
+
+    // 7a. Nonce validation (replay protection)
+    const nonce = req.headers.get("x-momo-nonce") || payload.nonce;
+    if (nonce) {
+      const nonceResult = await validateNonce(supabase, nonce, deviceId || payload.device_id);
+      if (!nonceResult.valid) {
+        await logSecurityEvent(supabase, "REPLAY_ATTACK_BLOCKED", deviceId || payload.device_id,
+          req.headers.get("x-real-ip"), { correlationId, nonce });
+        await recordMetric("momo.webhook.replay_blocked", 1);
+        return new Response(
+          JSON.stringify({ error: nonceResult.error }),
+          { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
+
+    // 7b. Idempotency check (if client_transaction_id provided)
+    if (payload.client_transaction_id) {
+      const idempotencyKey = `sms-${payload.client_transaction_id}`;
+      const { cached, result } = await checkIdempotency(supabase, idempotencyKey);
+      if (cached && result) {
+        await recordMetric("momo.webhook.idempotency_hit", 1);
+        return new Response(
+          JSON.stringify({ ...result, cached: true }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
     }
 
     // 8. Parse SMS content
@@ -188,13 +229,14 @@ serve(withWebhookErrorBoundary(
     const { data: transaction, error: insertError } = await supabase
       .from("momo_transactions")
       .insert({
+        client_transaction_id: payload.client_transaction_id || null,
         phone_number: payload.phone_number,
         sender: payload.sender,
         raw_message: payload.message,
-        amount: parsed.amount,
+        amount: payload.parsed?.amount || parsed.amount,
         sender_name: parsed.senderName,
-        transaction_id: parsed.transactionId,
-        provider: parsed.provider || "unknown",
+        transaction_id: payload.parsed?.transaction_id || parsed.transactionId,
+        provider: payload.parsed?.provider || parsed.provider || "unknown",
         service_type: endpoint.service_type,
         status: "pending",
         correlation_id: correlationId,
@@ -202,7 +244,7 @@ serve(withWebhookErrorBoundary(
         signature: signature,
         received_at: new Date().toISOString(),
       })
-      .select()
+      .select("id, client_transaction_id")
       .single();
 
     if (insertError) {
@@ -272,15 +314,25 @@ serve(withWebhookErrorBoundary(
       matchConfidence: matchResult?.confidence,
     });
 
-    // 12. Return success response
+    // 12. Build response
+    const responseData = {
+      success: true,
+      server_transaction_id: transaction.id,
+      client_transaction_id: transaction.client_transaction_id,
+      service: serviceType,
+      matched: matchResult !== null,
+      matchedTo: matchResult?.table,
+    };
+
+    // 12a. Store idempotency result if client_transaction_id was provided
+    if (payload.client_transaction_id) {
+      const idempotencyKey = `sms-${payload.client_transaction_id}`;
+      await storeIdempotencyResult(supabase, idempotencyKey, responseData, 86400);
+    }
+
+    // 13. Return success response
     return new Response(
-      JSON.stringify({
-        success: true,
-        id: transaction.id,
-        service: serviceType,
-        matched: matchResult !== null,
-        matchedTo: matchResult?.table,
-      }),
+      JSON.stringify(responseData),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json", "X-Correlation-ID": correlationId } }
     );
   },
