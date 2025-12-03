@@ -84,9 +84,9 @@ BEGIN
   SET 
     response = _response,
     responded_at = now(),
+    -- Keep status as 'sent' if already delivered, otherwise mark as acknowledged
     status = CASE 
-      WHEN _response = 'accepted' THEN 'delivered'
-      WHEN _response = 'rejected' THEN 'delivered'
+      WHEN _response IN ('accepted', 'rejected') THEN 'read'
       ELSE status
     END
   WHERE id = _notification_id
