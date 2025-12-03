@@ -59,7 +59,7 @@ BEGIN
   RETURNING * INTO result;
   
   -- Log the change
-  RAISE NOTICE 'Routing percentage updated to %%. Enabled: %, Domains: %', 
+  RAISE NOTICE 'Routing percentage updated to %. Enabled: %, Domains: %', 
     result.percentage, result.enabled, result.domains;
   
   RETURN result;

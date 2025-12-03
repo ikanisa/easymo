@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "identifier": "com.easymo.admin",
   "build": {
-    "frontendDist": "out",
+    "frontendDist": "../out",
     "devUrl": "http://localhost:3000",
     "beforeDevCommand": "pnpm dev",
     "beforeBuildCommand": "npm run build:desktop"
