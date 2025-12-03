@@ -2,12 +2,20 @@
   "name": "@easymo/client-pwa",
   "version": "1.0.0",
   "private": true,
+  "engines": {
+    "node": ">=18.18.0",
+    "pnpm": ">=8"
+  },
   "scripts": {
     "dev": "next dev -p 3002",
     "build": "next build",
+    "build:cloudflare": "next build",
     "start": "next start -p 3002",
     "lint": "next lint",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "pages:build": "npx @cloudflare/next-on-pages",
+    "pages:preview": "npx wrangler pages dev .vercel/output/static --compatibility-flags=nodejs_compat",
+    "pages:deploy": "npx wrangler pages deploy .vercel/output/static"
   },
   "dependencies": {
     "@supabase/ssr": "^0.8.0",
@@ -32,6 +40,7 @@
     "zustand": "^5.0.8"
   },
   "devDependencies": {
+    "@cloudflare/next-on-pages": "^1.13.7",
     "@types/node": "^22.10.7",
     "@types/react": "^19.0.6",
     "@types/react-dom": "^19.0.3",

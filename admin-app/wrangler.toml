@@ -1,15 +1,26 @@
 # Cloudflare Pages Configuration for EasyMO Admin Panel
-# Next.js 15 PWA with AI Agent Integration in pnpm monorepo
+# Next.js 15 PWA with AI Agent Integration
+# Internal-only deployment for selected in-house users
 # Documentation: https://developers.cloudflare.com/pages/framework-guides/nextjs/
 
 name = "easymo-admin"
 compatibility_date = "2024-11-01"
 compatibility_flags = ["nodejs_compat"]
 
-# Pages-specific settings - .next is the default Next.js build output
-pages_build_output_dir = ".next"
+# Pages-specific settings
+pages_build_output_dir = ".vercel/output/static"
 
 [vars]
 NODE_VERSION = "20.18.0"
 NEXT_PUBLIC_USE_MOCKS = "false"
 NEXT_PUBLIC_UI_V2_ENABLED = "true"
+NEXT_PUBLIC_APP_ENV = "production"
+
+# Build configuration
+[build]
+command = "npx @cloudflare/next-on-pages"
+
+# Environment-specific settings (set in Cloudflare dashboard for secrets)
+# NEXT_PUBLIC_SUPABASE_URL = "set in dashboard"
+# NEXT_PUBLIC_SUPABASE_ANON_KEY = "set in dashboard"
+# EASYMO_ADMIN_TOKEN = "set in dashboard"

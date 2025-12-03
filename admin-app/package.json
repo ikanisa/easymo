@@ -10,6 +10,7 @@
     "dev": "next dev",
     "dev:prod": "pnpm run build && pnpm run start",
     "build": "node scripts/check-env.js && next build",
+    "build:cloudflare": "node scripts/check-env.js && next build",
     "build:desktop": "node scripts/build-desktop.js",
     "start": "next start",
     "lint": "next lint",
@@ -25,7 +26,10 @@
     "tauri:build:mac": "tauri build --target x86_64-apple-darwin",
     "tauri:build:mac-arm": "tauri build --target aarch64-apple-darwin",
     "tauri:build:universal": "tauri build --target universal-apple-darwin",
-    "desktop": "electron ."
+    "desktop": "electron .",
+    "pages:build": "npx @cloudflare/next-on-pages",
+    "pages:preview": "npx wrangler pages dev .vercel/output/static --compatibility-flags=nodejs_compat",
+    "pages:deploy": "npx wrangler pages deploy .vercel/output/static"
   },
   "dependencies": {
     "@easymo/commons": "workspace:*",
@@ -86,6 +90,7 @@
     "zod": "3.25.76"
   },
   "devDependencies": {
+    "@cloudflare/next-on-pages": "^1.13.7",
     "@eslint/eslintrc": "^3.3.3",
     "@eslint/js": "^9.8.0",
     "@next/bundle-analyzer": "^15.5.6",
