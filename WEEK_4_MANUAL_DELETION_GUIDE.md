@@ -31,12 +31,14 @@ Functions have been archived locally:
 └── session-cleanup/
 ```
 
-**Status:** Removed from local codebase ✓  
-**Deployment:** Still active on Supabase (requires manual deletion)
+**Note:** wa-webhook-ai-agents is still in functions/ folder but marked @deprecated (to be archived after deletion)
+
+**Status:** 5 removed from local codebase ✓, 1 marked deprecated ✓  
+**Deployment:** All 6 still active on Supabase (requires manual deletion)
 
 ---
 
-## 📋 Functions to Delete (5 total)
+## 📋 Functions to Delete (6 total)
 
 ### 1. session-cleanup (v199)
 - **Location:** https://supabase.com/dashboard/project/{project}/functions/session-cleanup
@@ -67,6 +69,13 @@ Functions have been archived locally:
 - **Reason:** Admin features consolidated in admin-app
 - **Code References:** 0
 - **Risk:** NONE
+
+### 6. wa-webhook-ai-agents (v530) ✨ NEW
+- **Location:** https://supabase.com/dashboard/project/{project}/functions/wa-webhook-ai-agents
+- **Reason:** Already consolidated into wa-webhook-unified (marked @deprecated)
+- **Code References:** 0 (migration completed 2025-12)
+- **Risk:** NONE
+- **Note:** File header explicitly states "FULLY DEPRECATED - DO NOT DEPLOY"
 
 ---
 
@@ -145,10 +154,10 @@ After manual deletion:
 
 | Metric | Before | After | Change |
 |--------|--------|-------|--------|
-| **Total Functions** | 74 | 69 | -5 (7%) |
+| **Total Functions** | 74 | 68 | -6 (8%) |
 | **Error Rate** | < 0.1% | < 0.1% | No change |
 | **Protected Webhooks** | 3 active | 3 active | No change |
-| **Deployment Time** | ~90s | ~85s | -5s |
+| **Deployment Time** | ~90s | ~84s | -6s |
 
 ---
 
