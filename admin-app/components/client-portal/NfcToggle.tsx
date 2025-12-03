@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Nfc, NfcOff } from "lucide-react";
+import { Nfc, WifiOff } from "lucide-react";
 
 interface NfcToggleProps {
   onToggle?: (enabled: boolean) => void;
@@ -35,7 +35,7 @@ export function NfcToggle({ onToggle, defaultEnabled = false }: NfcToggleProps) 
     return (
       <div className="flex items-center justify-between p-4 bg-[var(--aurora-surface)] border border-[var(--aurora-border)] rounded-xl opacity-50">
         <div className="flex items-center gap-3">
-          <NfcOff className="w-5 h-5 text-[var(--aurora-text-muted)]" />
+          <WifiOff className="w-5 h-5 text-[var(--aurora-text-muted)]" />
           <div>
             <p className="text-sm font-medium text-[var(--aurora-text-primary)]">
               NFC Writer
@@ -55,7 +55,7 @@ export function NfcToggle({ onToggle, defaultEnabled = false }: NfcToggleProps) 
         {enabled ? (
           <Nfc className="w-5 h-5 text-[var(--aurora-accent)]" />
         ) : (
-          <NfcOff className="w-5 h-5 text-[var(--aurora-text-muted)]" />
+          <WifiOff className="w-5 h-5 text-[var(--aurora-text-muted)]" />
         )}
         <div>
           <p className="text-sm font-medium text-[var(--aurora-text-primary)]">

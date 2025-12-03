@@ -45,6 +45,11 @@ function transformCountry(row: Record<string, unknown>): Country {
 export async function fetchCountries(): Promise<Country[]> {
   const supabase = createClient();
   
+  if (!supabase) {
+    console.warn('Supabase client not available, using fallback data');
+    return getFallbackCountries();
+  }
+  
   const { data, error } = await supabase
     .from('countries')
     .select('*')
@@ -67,6 +72,10 @@ export async function fetchCountryByCode(code: string): Promise<Country | null> 
   }
 
   const supabase = createClient();
+  
+  if (!supabase) {
+    return getFallbackCountryByCode(code);
+  }
   
   const { data, error } = await supabase
     .from('countries')
