@@ -35,10 +35,6 @@ import { SalesAgent } from "./sales-agent.ts";
 
 // Import consolidated agents (from wa-webhook-ai-agents migration)
 import { BuySellAgent } from "./buy-sell.ts";
-import { WaiterAgent as WaiterAgentNew } from "./waiter.ts";
-import { FarmerAgent as FarmerAgentNew } from "./farmer.ts";
-import { SupportAgent as SupportAgentNew } from "./support.ts";
-import { SalesAgent as SalesAgentNew } from "./sales.ts";
 
 export class AgentRegistry {
   private agents: Map<AgentType, BaseAgent> = new Map();
