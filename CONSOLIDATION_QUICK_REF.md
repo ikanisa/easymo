@@ -1,173 +1,174 @@
-# Edge Function Consolidation - Quick Reference V3
+# Consolidation Quick Reference
 
-## 🎯 Phase 1: Enhanced Consolidation (Current)
+**Last Updated:** December 3, 2025  
+**Status:** ✅ PHASE 1 COMPLETE
 
-**Goal:** AI agents + jobs + marketplace + property → wa-webhook-unified  
-**Timeline:** 5-6 weeks  
-**Risk:** LOW (critical services protected) ✅  
+---
 
-### What's Changing
-```
-DELETE: wa-webhook-ai-agents/ai-agents/ (15 files, 6,500 LOC)
-COPY:   wa-webhook-ai-agents/agents/* → wa-webhook-unified/agents/
-COPY:   wa-webhook-jobs → wa-webhook-unified/domains/jobs/
-COPY:   wa-webhook-marketplace → wa-webhook-unified/domains/marketplace/
-COPY:   wa-webhook-property → wa-webhook-unified/domains/property/
-DEPLOY: Gradual rollout per domain 0% → 100%
-ARCHIVE: ai-agents, jobs, marketplace, property (after 30 days stable)
+## 📊 Current State
+
+| Item | Count |
+|------|-------|
+| **Total Functions** | 82 |
+| **Deleted** | 15 |
+| **Deployed** | wa-webhook-unified ✅ |
+| **Protected** | 3 (mobility, profile, insurance) |
+| **To Delete Later** | 4 (after migration) |
+
+---
+
+## 🎯 What Just Happened
+
+✅ Deleted 15 duplicate/inactive functions  
+✅ Removed 14 from Supabase production  
+✅ Deployed wa-webhook-unified to production  
+✅ Backed up all deleted code  
+✅ Committed everything to Git  
+
+**Commits:** 26334168, 54eb90b1, b55fccf8, 50e0057b, 3b994707
+
+---
+
+## 🚀 Next Steps (Week 4-6)
+
+### Week 4: 10% Traffic
+```bash
+# Update WhatsApp webhook routing in Meta Business Suite
+# Old: https://[project].supabase.co/functions/v1/wa-webhook-ai-agents
+# New: https://[project].supabase.co/functions/v1/wa-webhook-unified
+# Set: 10% → new, 90% → old
+
+# Monitor
+# - Error rates
+# - Response times
+# - Success rates
 ```
 
-### 🔴 CRITICAL - NEVER MODIFY
-```
-🚫 DO NOT TOUCH: wa-webhook-mobility (26K LOC) - CRITICAL PRODUCTION
-🚫 DO NOT TOUCH: wa-webhook-profile (6.5K LOC) - CRITICAL PRODUCTION
-🚫 DO NOT TOUCH: wa-webhook-insurance (2.3K LOC) - CRITICAL PRODUCTION
+### Week 5: 50% Traffic
+```bash
+# Increase routing
+# Set: 50% → new, 50% → old
+
+# Validate
+# - All 8 agents working
+# - Database configs loading
+# - Performance acceptable
 ```
 
-### 🟡 Can Consolidate
+### Week 6: 100% Traffic
+```bash
+# Complete migration
+# Set: 100% → new, 0% → old
+
+# Monitor for 30 days
 ```
-✅ wa-webhook-jobs (4.4K LOC) → wa-webhook-unified
-✅ wa-webhook-marketplace (4.2K LOC) → wa-webhook-unified
-✅ wa-webhook-property (2.4K LOC) → wa-webhook-unified
-✅ wa-webhook-core (router - KEEP for critical services)
+
+### Week 7+: Cleanup
+```bash
+# After 30 days stable, delete old functions
+supabase functions delete wa-webhook-ai-agents
+supabase functions delete wa-webhook-jobs
+supabase functions delete wa-webhook-marketplace
+supabase functions delete wa-webhook-property
+
+# Also delete from filesystem
+rm -rf supabase/functions/wa-webhook-ai-agents
+rm -rf supabase/functions/wa-webhook-jobs
+rm -rf supabase/functions/wa-webhook-marketplace
+rm -rf supabase/functions/wa-webhook-property
+
+# Commit
+git add . && git commit -m "chore: delete old webhook functions after migration complete"
 ```
 
 ---
 
-## 📅 Weekly Checklist
+## 🔍 Monitoring Checklist
 
-| Week | Tasks | Domains |
-|------|-------|---------|
-| 1 | Copy agents, test | Agents only |
-| 2 | Copy jobs/marketplace/property, add flags | All domains |
-| 3 | Delete old code, deploy at 0% | All at 0% |
-| 4 | Rollout AI agents 0% → 100% | Agents |
-| 5 | Rollout jobs 0% → 100% | Jobs |
-| 6 | Rollout marketplace & property 0% → 100% | Marketplace, Property |
-| 7+ | Monitor 30 days each, archive | All |
+### Key Metrics to Watch
+- [ ] **Error Rate:** Should stay < 1%
+- [ ] **Response Time:** Should stay < 2s
+- [ ] **Success Rate:** Should stay > 99%
+- [ ] **Agent Coverage:** All 8 agents responding
+- [ ] **Message Dedup:** No duplicate processing
+- [ ] **DLQ Messages:** Should be minimal
 
----
-
-## 🚨 Critical Rules
-
-1. 🔴 **NEVER MODIFY** mobility, profile, insurance (CRITICAL PRODUCTION)
-2. **GRADUAL ROLLOUT PER DOMAIN** - Use separate feature flags for each
-3. **MONITOR INDEPENDENTLY** - Track each domain separately
-4. **ROLLBACK PER DOMAIN** - Can roll back any domain to 0% instantly
+### Where to Monitor
+- Supabase Dashboard: https://supabase.com/dashboard/project/lhbowpbcpwoiparwnwgt/functions
+- Logs: `supabase functions logs wa-webhook-unified`
+- Metrics: Check `webhook_metrics` and `ai_agent_metrics` tables
 
 ---
 
-## 📊 Rollout Steps (Per Domain)
+## 🚨 Rollback Plan
+
+If issues arise:
 
 ```bash
-# Week 4: AI Agents
-Set UNIFIED_ROLLOUT_PERCENT=5  # AI agents only
-Monitor 24-48 hours
-Increase: 10% → 25% → 50% → 100%
+# 1. Stop sending traffic to wa-webhook-unified
+# Update webhook URL back to old functions
 
-# Week 5: Jobs Domain
-Set ENABLE_UNIFIED_JOBS=true
-Set JOBS_ROLLOUT_PERCENT=5
-Monitor 24-48 hours
-Increase: 10% → 25% → 50% → 100%
+# 2. Check logs
+supabase functions logs wa-webhook-unified --limit 100
 
-# Week 6: Marketplace & Property
-Set ENABLE_UNIFIED_MARKETPLACE=true
-Set MARKETPLACE_ROLLOUT_PERCENT=5
-(Same for property)
-Increase: 10% → 25% → 50% → 100%
+# 3. If needed, restore deleted functions
+cp -r supabase/functions/.archive/agent-duplicates-20251203/* supabase/functions/
+supabase functions deploy <function-name>
+
+# 4. Debug and fix
+# Deploy hotfix to wa-webhook-unified
+supabase functions deploy wa-webhook-unified --no-verify-jwt
+
+# 5. Resume migration
+# Gradually increase traffic again
 ```
 
 ---
 
-## ✅ Success Metrics (Per Domain)
+## 📦 Backups
 
-| Metric | Target |
-|--------|--------|
-| Error Rate | ≤ Baseline (current service) |
-| Latency p95 | < 1200ms |
-| Session Continuity | 100% |
-| LOC Reduced | 17,000 total |
-| Functions Archived | 4 (ai-agents, jobs, marketplace, property) |
-| Critical Services Impacted | 0 (mobility, profile, insurance) |
+All deleted functions backed up:
+- `.archive/agent-duplicates-20251203/` (13 functions)
+- `.archive/inactive-functions-20251203/` (1 function)
+- `.archive/inactive-batch2-20251203/` (1 function)
+
+**Recovery:** Available in Git history forever
 
 ---
 
-## 🔄 Rollback Procedure (Per Domain)
+## 📝 Important Files
 
-**If error rate > 1% OR latency p95 > 2000ms in ANY domain:**
-
-```bash
-# Instant rollback for specific domain
-Set UNIFIED_ROLLOUT_PERCENT=0        # For AI agents
-Set JOBS_ROLLOUT_PERCENT=0           # For jobs
-Set MARKETPLACE_ROLLOUT_PERCENT=0    # For marketplace
-Set PROPERTY_ROLLOUT_PERCENT=0       # For property
-
-# Verify traffic back to original service
-Check domain-specific monitoring
-
-# Investigate and fix issues
-Review logs, debug, fix
-
-# Resume rollout when ready
-Start from lower percentage
-```
+- `SUPABASE_CONSOLIDATION_FINAL_REPORT.md` - Full details
+- `SUPABASE_FUNCTIONS_DELETED.md` - Deletion summary
+- `AGENT_DUPLICATES_DELETED.md` - Agent cleanup
+- `WHY_DELETE_THESE_4_FUNCTIONS.md` - Reasoning
+- `COMPLETE_FUNCTIONS_ANALYSIS.md` - Full function list
 
 ---
 
-## 📂 Domains to Copy (Weeks 1-2)
+## 🔑 Key Decisions
 
-**AI Agents (Week 1):**
-- farmer-agent.ts
-- insurance-agent.ts
-- jobs-agent.ts
-- marketplace-agent.ts
-- property-agent.ts
-- rides-agent.ts
-- waiter-agent.ts
-- support-agent.ts (already exists)
-
-**Domain Services (Week 2):**
-- wa-webhook-jobs/* → wa-webhook-unified/domains/jobs/
-- wa-webhook-marketplace/* → wa-webhook-unified/domains/marketplace/
-- wa-webhook-property/* → wa-webhook-unified/domains/property/
-
-**Delete (Week 3):**
-- wa-webhook-ai-agents/ai-agents/ (entire folder)
+1. **Protected:** mobility, profile, insurance (never delete)
+2. **Consolidated:** 13 agents → 1 unified function
+3. **Migration:** Gradual 10% → 50% → 100% over 3 weeks
+4. **Cleanup:** Delete 4 old webhooks after 30 days stable
 
 ---
 
-## 📚 Documentation
+## ✅ Phase 1 Checklist
 
-| Document | Purpose |
-|----------|---------|
-| CONSOLIDATION_SUMMARY.md (V3) | Executive overview |
-| SUPABASE_FUNCTIONS_CONSOLIDATION_PLAN.md (V3) | Full detailed plan (30K) |
-| PHASE_1_CONSOLIDATION_CHECKLIST.md | Week-by-week tasks (needs V3 update) |
-| This file (V3) | Quick reference |
-
----
-
-## ⚠️ Common Mistakes to Avoid
-
-1. ❌ Modifying mobility, profile, or insurance services
-2. ❌ Deleting wa-webhook-core
-3. ❌ Rolling out all domains at once (must be sequential)
-4. ❌ Not monitoring each domain independently
-5. ❌ Deploying without per-domain feature flags
+- [x] Analyze all functions
+- [x] Identify duplicates
+- [x] Delete duplicates
+- [x] Deploy wa-webhook-unified
+- [x] Test deployment
+- [x] Document everything
+- [x] Commit to Git
+- [ ] Set up traffic routing (Week 4)
+- [ ] Monitor migration (Weeks 4-6)
+- [ ] Delete old functions (Week 7+)
 
 ---
 
-## 📞 Get Help
-
-**Technical Questions:** Review SUPABASE_FUNCTIONS_CONSOLIDATION_PLAN.md (V3)  
-**Implementation Questions:** Follow PHASE_1_CONSOLIDATION_CHECKLIST.md  
-**Rollback Issues:** See "Rollback Procedure" above  
-**Critical Services:** 🚫 DO NOT MODIFY mobility, profile, insurance  
-
----
-
-**Last Updated:** December 3, 2025 (V3 Enhanced)  
-**Status:** Ready for Implementation ✅  
-**Critical Services Protected:** mobility, profile, insurance 🔴
+**Current Status:** ✅ READY FOR WEEK 4 MIGRATION  
+**Next Action:** Set up 10% traffic routing to wa-webhook-unified
