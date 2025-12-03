@@ -78,7 +78,8 @@ export type AgentType =
   | "real_estate"      // Real Estate AI Agent
   | "marketplace"      // Marketplace AI Agent (includes pharmacy, hardware, shop)
   | "support"          // Support AI Agent (includes concierge routing)
-  | "business_broker"; // Business Broker AI Agent (includes legal intake)
+  | "business_broker"  // Business Broker AI Agent (includes legal intake)
+  | "buy_sell";        // Buy & Sell Agent (consolidated marketplace + business_broker)
 
 export interface AgentDependencies {
   supabase: SupabaseClient;

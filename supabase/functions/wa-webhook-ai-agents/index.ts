@@ -1,17 +1,19 @@
 /**
- * WA-Webhook-AI-Agents - Unified AI Agent System
- * Single microservice for all AI-powered agents
+ * @deprecated FULLY DEPRECATED - DO NOT DEPLOY
  * 
- * Part of Unified AI Agent Architecture
- * Created: 2025-11-27
+ * WA-Webhook-AI-Agents - Unified AI Agent System (LEGACY)
  * 
- * @deprecated This service is deprecated and will be removed in a future release.
- * Use wa-webhook-unified instead, which consolidates all AI agent functionality.
+ * This service has been consolidated into wa-webhook-unified.
+ * All agents (waiter, farmer, support, sales, marketplace, business_broker)
+ * are now available in wa-webhook-unified with:
+ * - Dual AI provider support (Gemini 2.5 Pro + GPT-5)
+ * - Provider fallback mechanism
+ * - Consolidated BuySellAgent (merges marketplace + business_broker)
+ * - Exit keywords for returning to main menu
  * 
- * Migration Status:
- * - All agents from this service are available in wa-webhook-unified
- * - New features should ONLY be added to wa-webhook-unified
- * - This service remains active for backward compatibility during migration
+ * Migration completed: 2025-12
+ * 
+ * This file is kept for reference only and should be moved to .archive/
  * 
  * @see supabase/functions/wa-webhook-unified for the consolidated service
  * @see docs/WA_WEBHOOK_CONSOLIDATION.md for migration guide

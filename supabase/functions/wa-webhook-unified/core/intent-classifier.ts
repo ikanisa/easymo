@@ -14,18 +14,28 @@
 import { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { AgentType, ClassifiedIntent } from "./types.ts";
 
+/**
+ * Extended agent type including aliases for scoring
+ */
+type ScoringAgentType = AgentType | "property" | "sales";
+
 export class IntentClassifier {
   // Keyword mappings for each agent
-  private static readonly AGENT_KEYWORDS: Record<AgentType, string[]> = {
-    marketplace: [
+  private static readonly AGENT_KEYWORDS: Record<string, string[]> = {
+    // Consolidated buy_sell agent (includes marketplace + business_broker keywords)
+    buy_sell: [
+      // Marketplace keywords
       "buy", "sell", "product", "shop", "store", "purchase", "selling", "buying",
-      "market", "item", "goods", "trade", "merchant"
+      "market", "item", "goods", "trade", "merchant", "listing",
+      // Business broker keywords
+      "business", "company", "enterprise", "startup", "venture", "broker",
+      "investment", "partner", "opportunity", "deal"
     ],
     jobs: [
       "job", "work", "employ", "hire", "career", "position", "vacancy", "recruit",
       "application", "resume", "cv", "interview", "salary", "wage"
     ],
-    property: [
+    real_estate: [
       "property", "house", "apartment", "rent", "rental", "room", "studio",
       "estate", "landlord", "tenant", "lease", "bedroom", "flat"
     ],
@@ -45,13 +55,9 @@ export class IntentClassifier {
       "ride", "driver", "passenger", "transport", "pick", "drop", "take me",
       "going to", "trip", "travel", "taxi", "moto", "car"
     ],
-    sales: [
-      "sales", "sell", "selling", "customer", "client", "deal", "offer",
-      "discount", "price", "quote", "proposal"
-    ],
-    business_broker: [
-      "business", "company", "enterprise", "startup", "venture", "broker",
-      "investment", "partner", "opportunity"
+    sales_cold_caller: [
+      "sales", "customer", "client", "offer",
+      "discount", "price", "quote", "proposal", "lead"
     ],
     support: [
       "help", "support", "question", "how", "what", "why", "problem", "issue",
@@ -98,34 +104,28 @@ export class IntentClassifier {
    * Classify based on keyword matching
    */
   private classifyByKeywords(lowerBody: string): ClassifiedIntent {
-    const scores: Record<AgentType, { score: number; matchedKeywords: string[] }> = {
-      marketplace: { score: 0, matchedKeywords: [] },
-      jobs: { score: 0, matchedKeywords: [] },
-      property: { score: 0, matchedKeywords: [] },
-      farmer: { score: 0, matchedKeywords: [] },
-      waiter: { score: 0, matchedKeywords: [] },
-      insurance: { score: 0, matchedKeywords: [] },
-      rides: { score: 0, matchedKeywords: [] },
-      sales: { score: 0, matchedKeywords: [] },
-      business_broker: { score: 0, matchedKeywords: [] },
-      support: { score: 0, matchedKeywords: [] },
-    };
+    const scores: Record<string, { score: number; matchedKeywords: string[] }> = {};
+    
+    // Initialize scores for all agent types
+    for (const agentType of Object.keys(IntentClassifier.AGENT_KEYWORDS)) {
+      scores[agentType] = { score: 0, matchedKeywords: [] };
+    }
 
     // Count keyword matches for each agent
     for (const [agentType, keywords] of Object.entries(IntentClassifier.AGENT_KEYWORDS)) {
       for (const keyword of keywords) {
         if (lowerBody.includes(keyword)) {
-          scores[agentType as AgentType].score++;
-          scores[agentType as AgentType].matchedKeywords.push(keyword);
+          scores[agentType].score++;
+          scores[agentType].matchedKeywords.push(keyword);
         }
       }
     }
 
     // Priority boost for time-sensitive domains
-    if (scores.rides.score > 0) {
+    if (scores.rides?.score > 0) {
       scores.rides.score *= 1.5; // Rides are time-sensitive
     }
-    if (scores.insurance.score > 0) {
+    if (scores.insurance?.score > 0) {
       scores.insurance.score *= 1.3; // Insurance is important
     }
 

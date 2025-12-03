@@ -30,6 +30,13 @@ export class UnifiedOrchestrator {
   private intentClassifier: IntentClassifier;
   private agentRegistry: AgentRegistry;
 
+  /**
+   * Exit keywords that return user to main menu / support agent
+   */
+  private static readonly EXIT_KEYWORDS = [
+    "menu", "home", "exit", "back", "cancel", "quit", "stop"
+  ];
+
   constructor(private supabase: SupabaseClient) {
     this.sessionManager = new SessionManager(supabase);
     this.intentClassifier = new IntentClassifier(supabase);
@@ -166,6 +173,25 @@ export class UnifiedOrchestrator {
     message: WhatsAppMessage,
     correlationId: string
   ): Promise<AgentType> {
+    const normalized = message.body.trim().toLowerCase();
+
+    // Check for exit keywords - return to main menu / support
+    if (UnifiedOrchestrator.EXIT_KEYWORDS.includes(normalized)) {
+      await logStructuredEvent("ORCHESTRATOR_EXIT_KEYWORD", {
+        correlationId,
+        keyword: normalized,
+      });
+
+      // Clear session state
+      session.currentAgent = "support" as AgentType;
+      session.activeFlow = undefined;
+      session.flowStep = undefined;
+      session.collectedData = {};
+      await this.sessionManager.saveSession(session);
+
+      return "support";
+    }
+
     // If user has an active flow, continue with current agent
     if (session.activeFlow && session.currentAgent) {
       await logStructuredEvent("ORCHESTRATOR_CONTINUE_FLOW", {
