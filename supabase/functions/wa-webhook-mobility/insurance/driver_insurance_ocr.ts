@@ -323,6 +323,58 @@ export function validateInsuranceData(data: DriverInsuranceData): ValidationResu
 }
 
 /**
+ * Validate vehicle-specific data (plate format, VIN, year, etc.)
+ */
+export function validateVehicleData(data: DriverInsuranceData): ValidationResult {
+  const errors: string[] = [];
+
+  // Validate plate format (Rwanda: 3 letters + 3 digits + 1 letter, e.g., RAB 123 A)
+  const plateRegex = /^[A-Z]{3}\s?\d{3}\s?[A-Z]$/;
+  const normalizedPlate = data.registration_plate?.toUpperCase().trim();
+  if (!normalizedPlate || !plateRegex.test(normalizedPlate)) {
+    errors.push("registration_plate (invalid format - expected: ABC 123 D)");
+  }
+
+  // Validate VIN (17 characters if provided)
+  if (data.vin_chassis) {
+    const vin = data.vin_chassis.trim();
+    if (vin.length !== 17) {
+      errors.push("vin_chassis (must be 17 characters)");
+    }
+  }
+
+  // Validate year (1900 to current year + 1)
+  const currentYear = new Date().getFullYear();
+  if (data.vehicle_year) {
+    if (data.vehicle_year < 1900 || data.vehicle_year > currentYear + 1) {
+      errors.push(`vehicle_year (must be between 1900 and ${currentYear + 1})`);
+    }
+  }
+
+  // Validate insurer (whitelist of known Rwandan insurers)
+  const validInsurers = [
+    "SORAS",
+    "RADIANT",
+    "PRIME",
+    "SONARWA",
+    "BRITAM",
+    "SAHAM",
+    "UAP",
+    "PHOENIX",
+    "CORAR",
+  ];
+  const insurerUpper = data.insurer_name?.toUpperCase().trim();
+  if (insurerUpper && !validInsurers.some(valid => insurerUpper.includes(valid))) {
+    errors.push(`insurer_name (unknown insurer: ${data.insurer_name})`);
+  }
+
+  return {
+    valid: errors.length === 0,
+    errors,
+  };
+}
+
+/**
  * Check if vehicle plate is already registered by another user
  */
 export async function checkDuplicateVehicle(
@@ -354,11 +406,32 @@ export async function saveInsuranceCertificate(
   mediaId: string | null,
   provider: "openai" | "gemini",
   rawOcrData: Record<string, unknown>,
-): Promise<{ id: string; error?: string }> {
+  isExpired = false,
+): Promise<{ id: string; vehicleId?: string; error?: string }> {
+  // Step 1: Create or update vehicle record
+  const { data: vehicleId, error: vehicleError } = await supabase.rpc(
+    "upsert_vehicle",
+    {
+      p_plate: data.registration_plate.toUpperCase(),
+      p_make: data.make,
+      p_model: data.model,
+      p_year: data.vehicle_year,
+      p_vin: data.vin_chassis,
+      p_vehicle_type: null, // Will be set later based on vehicle type selection
+    },
+  );
+
+  if (vehicleError) {
+    console.error("VEHICLE_UPSERT_ERROR", vehicleError);
+    return { id: "", error: `Failed to create vehicle record: ${vehicleError.message}` };
+  }
+
+  // Step 2: Insert insurance certificate
   const { data: inserted, error } = await supabase
     .from("driver_insurance_certificates")
     .insert({
       user_id: userId,
+      vehicle_id: vehicleId,
       insurer_name: data.insurer_name,
       policy_number: data.policy_number,
       certificate_number: data.certificate_number,
@@ -377,9 +450,9 @@ export async function saveInsuranceCertificate(
       certificate_media_id: mediaId,
       ocr_provider: provider,
       raw_ocr_data: rawOcrData,
-      status: "approved", // Auto-approve if validation passed
-      is_validated: true,
-      validated_at: new Date().toISOString(),
+      status: isExpired ? "expired" : "pending", // Changed from auto-approve
+      is_validated: false, // Changed from true
+      validated_at: null, // Changed from now()
     })
     .select("id")
     .single();
@@ -389,11 +462,31 @@ export async function saveInsuranceCertificate(
     return { id: "", error: error.message };
   }
 
-  // Update profile with vehicle plate
-  await supabase
+  // Step 3: Create vehicle ownership record
+  const { error: ownershipError } = await supabase.rpc(
+    "create_vehicle_ownership",
+    {
+      p_vehicle_id: vehicleId,
+      p_user_id: userId,
+      p_certificate_id: inserted.id,
+    },
+  );
+
+  if (ownershipError) {
+    console.error("VEHICLE_OWNERSHIP_ERROR", ownershipError);
+    // Don't fail the whole operation, but log it
+  }
+
+  // Step 4: Update profile with vehicle plate (with error handling)
+  const { error: profileError } = await supabase
     .from("profiles")
     .update({ vehicle_plate: data.registration_plate.toUpperCase() })
     .eq("user_id", userId);
 
-  return { id: inserted.id };
+  if (profileError) {
+    console.error("PROFILE_UPDATE_ERROR", profileError);
+    // Don't fail the whole operation, but log it
+  }
+
+  return { id: inserted.id, vehicleId };
 }

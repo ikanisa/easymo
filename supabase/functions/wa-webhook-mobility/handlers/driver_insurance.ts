@@ -12,10 +12,12 @@ import { sendText } from "../wa/client.ts";
 import {
   processDriverInsuranceCertificate,
   validateInsuranceData,
+  validateVehicleData,
   checkDuplicateVehicle,
   saveInsuranceCertificate,
   type DriverInsuranceData,
 } from "../insurance/driver_insurance_ocr.ts";
+import { logStructuredEvent } from "../observe/log.ts";
 
 const INSURANCE_STATE_KEY = "driver_insurance_upload";
 
@@ -210,9 +212,31 @@ export async function handleInsuranceCertificateUpload(
     const validation = validateInsuranceData(data);
     if (!validation.valid) {
       const missingFields = validation.errors.join(", ");
+      await sendText(
+        ctx.from,
+        `⚠️ We couldn't read some important details from your certificate:\n\n` +
+        `Missing: ${missingFields}\n\n` +
+        `Please upload a clearer photo or PDF and make sure all text is visible.`
+      );
       return {
         success: false,
-        error: `⚠️ Could not read the following from your certificate: ${missingFields}\n\nPlease upload a clearer photo or PDF.`,
+        error: "validation_failed",
+      };
+    }
+
+    // Validate vehicle data (plate format, VIN, etc.)
+    const vehicleValidation = validateVehicleData(data);
+    if (!vehicleValidation.valid) {
+      const issues = vehicleValidation.errors.join(", ");
+      await sendText(
+        ctx.from,
+        `⚠️ There's an issue with the vehicle information:\n\n` +
+        `${issues}\n\n` +
+        `Please upload a valid insurance certificate.`
+      );
+      return {
+        success: false,
+        error: "vehicle_validation_failed",
       };
     }
 
@@ -224,14 +248,27 @@ export async function handleInsuranceCertificateUpload(
     );
 
     if (isDuplicate) {
+      await sendText(
+        ctx.from,
+        `⚠️ Vehicle ${data.registration_plate} is already registered by another driver.\n\n` +
+        `If this is your vehicle, please contact support at:\n` +
+        `📞 WhatsApp: +250 788 123 456\n` +
+        `📧 Email: support@easymo.rw`
+      );
       return {
         success: false,
-        error: `⚠️ Vehicle ${data.registration_plate} is already registered by another driver.\n\nIf this is your vehicle, please contact support.`,
+        error: "duplicate_vehicle",
       };
     }
 
-    // Save to database
-    const { id, error: saveError } = await saveInsuranceCertificate(
+    // Check if insurance is expired
+    const expiryDate = new Date(data.policy_expiry);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const isExpired = expiryDate < today;
+
+    // Save to database (with expired flag)
+    const { id, vehicleId, error: saveError } = await saveInsuranceCertificate(
       ctx.supabase,
       ctx.profileId,
       data,
@@ -239,35 +276,78 @@ export async function handleInsuranceCertificateUpload(
       mediaId,
       provider,
       data as unknown as Record<string, unknown>,
+      isExpired,
     );
 
     if (saveError) {
+      await sendText(
+        ctx.from,
+        `⚠️ We couldn't save your certificate right now.\n\n` +
+        `Please try again in a few minutes. If the problem continues, contact support.`
+      );
       return {
         success: false,
-        error: `⚠️ Failed to save insurance certificate: ${saveError}`,
+        error: "save_failed",
       };
     }
+
+    // Log successful upload
+    await logStructuredEvent("INSURANCE_CERTIFICATE_UPLOADED", {
+      userId: ctx.profileId,
+      vehicleId,
+      plate: data.registration_plate,
+      provider,
+      isExpired,
+    });
 
     // Clear state
     await clearState(ctx.supabase, ctx.profileId);
 
-    // Send success message
-    const expiryDate = new Date(data.policy_expiry).toLocaleDateString();
-    await sendText(
-      ctx.from,
-      `✅ Insurance certificate verified!\n\n` +
-      `🚗 Vehicle: ${data.registration_plate}\n` +
-      `🏢 Insurer: ${data.insurer_name}\n` +
-      `📅 Valid until: ${expiryDate}\n\n` +
-      `You're all set to drive on easyMO! 🎉`,
-    );
+    // Send appropriate success message
+    const expiryDateStr = expiryDate.toLocaleDateString();
+    
+    if (isExpired) {
+      await sendText(
+        ctx.from,
+        `⚠️ Your insurance certificate has expired.\n\n` +
+        `🚗 Vehicle: ${data.registration_plate}\n` +
+        `🏢 Insurer: ${data.insurer_name}\n` +
+        `📅 Expired on: ${expiryDateStr}\n\n` +
+        `Please upload a current insurance certificate to drive on easyMO.\n\n` +
+        `Need help? Contact support: +250 788 123 456`
+      );
+    } else {
+      await sendText(
+        ctx.from,
+        `✅ Insurance certificate received!\n\n` +
+        `🚗 Vehicle: ${data.registration_plate}\n` +
+        `🏢 Insurer: ${data.insurer_name}\n` +
+        `📅 Valid until: ${expiryDateStr}\n\n` +
+        `⏳ Your certificate is being reviewed by our team.\n` +
+        `You'll be notified within 24 hours.\n\n` +
+        `Need help? Contact support: +250 788 123 456`
+      );
+    }
 
     return { success: true, resumeData: resume };
   } catch (error) {
     console.error("DRIVER_INS_UPLOAD_ERROR", error);
+    
+    // User-friendly error message (no technical details)
+    await sendText(
+      ctx.from,
+      `⚠️ We couldn't process your certificate right now.\n\n` +
+      `This could be due to:\n` +
+      `• Poor image quality\n` +
+      `• Unsupported file format\n` +
+      `• Temporary service issue\n\n` +
+      `Please try again with a clear photo or PDF.\n\n` +
+      `Need help? Contact support: +250 788 123 456`
+    );
+    
     return {
       success: false,
-      error: `⚠️ Failed to process certificate: ${error instanceof Error ? error.message : "Unknown error"}\n\nPlease try again with a clearer photo.`,
+      error: "processing_failed",
     };
   }
 }
