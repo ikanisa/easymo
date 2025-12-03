@@ -1,174 +1,223 @@
-# Consolidation Quick Reference
-
-**Last Updated:** December 3, 2025  
-**Status:** ✅ PHASE 1 COMPLETE
+# Supabase Functions Consolidation - Quick Reference
+**Last Updated:** December 3, 2025 13:40 CET
 
 ---
 
-## 📊 Current State
+## 📊 Current Status
 
-| Item | Count |
-|------|-------|
-| **Total Functions** | 82 |
-| **Deleted** | 15 |
-| **Deployed** | wa-webhook-unified ✅ |
-| **Protected** | 3 (mobility, profile, insurance) |
-| **To Delete Later** | 4 (after migration) |
-
----
-
-## 🎯 What Just Happened
-
-✅ Deleted 15 duplicate/inactive functions  
-✅ Removed 14 from Supabase production  
-✅ Deployed wa-webhook-unified to production  
-✅ Backed up all deleted code  
-✅ Committed everything to Git  
-
-**Commits:** 26334168, 54eb90b1, b55fccf8, 50e0057b, 3b994707
+| Metric | Value | Target |
+|--------|-------|--------|
+| **Deployed Functions** | 74 | 63 |
+| **Week 4 Archived** | 5 | → Manual deletion pending |
+| **Protected Webhooks** | 3 | Never delete |
+| **Overall Progress** | 75% | Week 4 of 8 |
 
 ---
 
-## 🚀 Next Steps (Week 4-6)
+## 🎯 Quick Actions
 
-### Week 4: 10% Traffic
+### Check Current State
 ```bash
-# Update WhatsApp webhook routing in Meta Business Suite
-# Old: https://[project].supabase.co/functions/v1/wa-webhook-ai-agents
-# New: https://[project].supabase.co/functions/v1/wa-webhook-unified
-# Set: 10% → new, 90% → old
+# Count deployed functions
+supabase functions list | grep -c "ACTIVE"
 
-# Monitor
-# - Error rates
-# - Response times
-# - Success rates
+# Verify protected webhooks
+supabase functions list | grep -E "mobility|profile|insurance"
+
+# List archived functions
+ls -la supabase/functions/.archive/week4-deletions-20251203/
 ```
 
-### Week 5: 50% Traffic
+### Week 4: Manual Deletion (PENDING)
 ```bash
-# Increase routing
-# Set: 50% → new, 50% → old
+# Required: Owner/Admin role
+# Option 1: Supabase Dashboard (easiest)
+# Go to: https://supabase.com/dashboard/project/{project}/functions
+# Delete manually: session-cleanup, search-alert-notifier, 
+#                  reminder-service, search-indexer, insurance-admin-api
 
-# Validate
-# - All 8 agents working
-# - Database configs loading
-# - Performance acceptable
+# Option 2: Authorized CLI
+export SUPABASE_ACCESS_TOKEN="your-admin-token"
+supabase functions delete session-cleanup
+supabase functions delete search-alert-notifier
+supabase functions delete reminder-service
+supabase functions delete search-indexer
+supabase functions delete insurance-admin-api
 ```
 
-### Week 6: 100% Traffic
+### Week 5-8: Automated Execution
 ```bash
-# Complete migration
-# Set: 100% → new, 0% → old
+# Week 5: Webhook integration (no traffic changes)
+./scripts/consolidation-week5-integration.sh
 
-# Monitor for 30 days
-```
+# Week 6: Traffic migration (10% → 50%)
+./scripts/consolidation-week6-traffic-migration.sh
 
-### Week 7+: Cleanup
-```bash
-# After 30 days stable, delete old functions
-supabase functions delete wa-webhook-ai-agents
-supabase functions delete wa-webhook-jobs
-supabase functions delete wa-webhook-marketplace
-supabase functions delete wa-webhook-property
+# Week 7: Full cutover + deprecation (100%)
+./scripts/consolidation-week7-deprecation.sh
 
-# Also delete from filesystem
-rm -rf supabase/functions/wa-webhook-ai-agents
-rm -rf supabase/functions/wa-webhook-jobs
-rm -rf supabase/functions/wa-webhook-marketplace
-rm -rf supabase/functions/wa-webhook-property
-
-# Commit
-git add . && git commit -m "chore: delete old webhook functions after migration complete"
+# Week 8: Cleanup consolidation
+./scripts/consolidation-week8-cleanup.sh
 ```
 
 ---
 
-## 🔍 Monitoring Checklist
+## 📁 Key Documents
 
-### Key Metrics to Watch
-- [ ] **Error Rate:** Should stay < 1%
-- [ ] **Response Time:** Should stay < 2s
-- [ ] **Success Rate:** Should stay > 99%
-- [ ] **Agent Coverage:** All 8 agents responding
-- [ ] **Message Dedup:** No duplicate processing
-- [ ] **DLQ Messages:** Should be minimal
-
-### Where to Monitor
-- Supabase Dashboard: https://supabase.com/dashboard/project/lhbowpbcpwoiparwnwgt/functions
-- Logs: `supabase functions logs wa-webhook-unified`
-- Metrics: Check `webhook_metrics` and `ai_agent_metrics` tables
+| Document | Purpose |
+|----------|---------|
+| **WEEK_4_EXECUTION_STATUS.md** | Current status & next actions |
+| **WEEK_4_MANUAL_DELETION_GUIDE.md** | Step-by-step deletion guide |
+| **WEEK_4_DEEP_ANALYSIS_REPORT.md** | Complete analysis & verification |
+| **WEEKS_5_8_DETAILED_IMPLEMENTATION_PLAN.md** | Next 4 weeks detailed plan |
+| **SUPABASE_FUNCTIONS_CONSOLIDATION_MASTER_PLAN.md** | Complete 8-week overview |
+| **CONSOLIDATION_IMPLEMENTATION_SUMMARY.md** | Executive summary |
 
 ---
 
-## 🚨 Rollback Plan
+## 🗂️ Functions Overview
 
-If issues arise:
+### 🔒 Protected (NEVER DELETE) - 3 functions
+- ✅ wa-webhook-mobility (v492, 80 commits/30d)
+- ✅ wa-webhook-profile (v294, 42 commits/30d)
+- ✅ wa-webhook-insurance (v342, 45 commits/30d)
 
-```bash
-# 1. Stop sending traffic to wa-webhook-unified
-# Update webhook URL back to old functions
+### 🗑️ Week 4: Safe Deletions - 5 functions
+- ⏳ session-cleanup → data-retention
+- ⏳ search-alert-notifier → deprecated
+- ⏳ reminder-service → no usage
+- ⏳ search-indexer → retrieval-search
+- ⏳ insurance-admin-api → admin-app
 
-# 2. Check logs
-supabase functions logs wa-webhook-unified --limit 100
+**Status:** Archived locally, awaiting manual deletion
 
-# 3. If needed, restore deleted functions
-cp -r supabase/functions/.archive/agent-duplicates-20251203/* supabase/functions/
-supabase functions deploy <function-name>
+### 🔄 Weeks 5-7: Webhook Consolidation - 4 functions
+- wa-webhook-ai-agents → wa-webhook-unified
+- wa-webhook-jobs → wa-webhook-unified
+- wa-webhook-marketplace → wa-webhook-unified
+- wa-webhook-property → wa-webhook-unified
 
-# 4. Debug and fix
-# Deploy hotfix to wa-webhook-unified
-supabase functions deploy wa-webhook-unified --no-verify-jwt
+**Timeline:** Gradual traffic migration (0% → 100%)
 
-# 5. Resume migration
-# Gradually increase traffic again
+### 🔄 Week 8: Cleanup Consolidation - 2 functions
+- cleanup-expired-intents → data-retention
+- cleanup-mobility-intents → data-retention
+
+**Timeline:** Merge cron jobs
+
+---
+
+## 📈 Progress Timeline
+
+```
+✅ Week 4: Deep Analysis & Archiving (75% complete)
+   ├── [✓] Analyzed 74 functions
+   ├── [✓] Identified 5 deletion targets
+   ├── [✓] Verified 0 code references
+   ├── [✓] Archived functions locally
+   ├── [⏳] Manual deletion (pending Owner access)
+   └── [⏳] 24h monitoring (post-deletion)
+
+⏳ Week 5: Webhook Integration (0% complete)
+   ├── [ ] Copy 4 webhook domains
+   ├── [ ] Update router logic
+   ├── [ ] Test each domain
+   └── [ ] Deploy wa-webhook-unified
+
+⏳ Week 6: Traffic Migration (0% complete)
+   ├── [ ] Deploy traffic router
+   ├── [ ] Route 10% traffic (4h monitor)
+   ├── [ ] Route 25% traffic (4h monitor)
+   ├── [ ] Route 35% traffic (6h monitor)
+   └── [ ] Route 50% traffic (24h monitor)
+
+⏳ Week 7: Full Cutover (0% complete)
+   ├── [ ] Route 75% traffic (48h monitor)
+   ├── [ ] Route 100% traffic (48h monitor)
+   ├── [ ] Verify 48h stability
+   └── [ ] Delete 4 legacy webhooks
+
+⏳ Week 8: Cleanup Consolidation (0% complete)
+   ├── [ ] Add cleanup jobs to data-retention
+   ├── [ ] Update cron schedules
+   └── [ ] Delete 2 cleanup functions
 ```
 
 ---
 
-## 📦 Backups
+## 🚨 Troubleshooting
 
-All deleted functions backed up:
-- `.archive/agent-duplicates-20251203/` (13 functions)
-- `.archive/inactive-functions-20251203/` (1 function)
-- `.archive/inactive-batch2-20251203/` (1 function)
+### Issue: 403 Forbidden on function delete
+**Solution:** Requires Owner/Admin role. Use Supabase Dashboard or request authorized user.
 
-**Recovery:** Available in Git history forever
+### Issue: Function not found
+**Solution:** Function may already be deleted. Check `supabase functions list`.
 
----
+### Issue: Code references found
+**Solution:** Review references, update code, redeploy, then delete function.
 
-## 📝 Important Files
-
-- `SUPABASE_CONSOLIDATION_FINAL_REPORT.md` - Full details
-- `SUPABASE_FUNCTIONS_DELETED.md` - Deletion summary
-- `AGENT_DUPLICATES_DELETED.md` - Agent cleanup
-- `WHY_DELETE_THESE_4_FUNCTIONS.md` - Reasoning
-- `COMPLETE_FUNCTIONS_ANALYSIS.md` - Full function list
+### Issue: High error rate after migration
+**Solution:** Rollback traffic percentage via routing config table.
 
 ---
 
-## 🔑 Key Decisions
+## 🔄 Rollback Commands
 
-1. **Protected:** mobility, profile, insurance (never delete)
-2. **Consolidated:** 13 agents → 1 unified function
-3. **Migration:** Gradual 10% → 50% → 100% over 3 weeks
-4. **Cleanup:** Delete 4 old webhooks after 30 days stable
+```bash
+# Week 5-6: Reduce traffic routing
+psql "postgresql://..." -c "SELECT update_routing_percentage(0.00);"
+
+# Week 7: Restore deleted webhooks
+cp -r .archive/week7-deprecated-webhooks/* supabase/functions/
+supabase functions deploy wa-webhook-ai-agents
+supabase functions deploy wa-webhook-jobs
+supabase functions deploy wa-webhook-marketplace
+supabase functions deploy wa-webhook-property
+
+# Week 8: Restore cleanup functions
+cp -r .archive/week8-cleanup-consolidated/* supabase/functions/
+supabase functions deploy cleanup-expired-intents
+supabase functions deploy cleanup-mobility-intents
+
+# Restore from git tag
+git checkout week4-pre-deletion
+```
 
 ---
 
-## ✅ Phase 1 Checklist
+## 📊 Success Metrics
 
-- [x] Analyze all functions
-- [x] Identify duplicates
-- [x] Delete duplicates
-- [x] Deploy wa-webhook-unified
-- [x] Test deployment
-- [x] Document everything
-- [x] Commit to Git
-- [ ] Set up traffic routing (Week 4)
-- [ ] Monitor migration (Weeks 4-6)
-- [ ] Delete old functions (Week 7+)
+| Metric | Target | Verify |
+|--------|--------|--------|
+| Function count | 63 | `supabase functions list \| wc -l` |
+| Error rate | < 0.1% | Supabase dashboard |
+| P95 latency | < 2s | Webhook logs |
+| Delivery rate | > 99.9% | WhatsApp Business API |
+| Protected uptime | 100% | Monitor continuously |
 
 ---
 
-**Current Status:** ✅ READY FOR WEEK 4 MIGRATION  
-**Next Action:** Set up 10% traffic routing to wa-webhook-unified
+## 🎯 Next Immediate Action
+
+**MANUAL DELETION REQUIRED**
+
+1. **Login to Supabase Dashboard** (Owner/Admin account)
+2. **Navigate to Functions:** `https://supabase.com/dashboard/project/{project}/functions`
+3. **Delete 5 functions:**
+   - session-cleanup
+   - search-alert-notifier
+   - reminder-service
+   - search-indexer
+   - insurance-admin-api
+4. **Verify:** `supabase functions list | wc -l` = 69
+5. **Monitor:** 24 hours for errors
+6. **Commit:** Archive completion
+7. **Proceed:** Week 5 integration
+
+---
+
+**Status:** Awaiting manual deletion  
+**Blocker:** Requires Owner/Admin role  
+**Est. Time:** 5 min manual + 24h monitoring  
+**Next Milestone:** Week 5 integration (after deletion)
+
