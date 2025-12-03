@@ -1,5 +1,8 @@
-// EasyMO Client Portal PWA - Cloudflare Pages Configuration
+// EasyMO Client Portal - Cloudflare Pages & Tauri Desktop Configuration
 // Internal deployment for selected in-house users
+
+// Detect Tauri environment
+const isTauri = !!process.env.TAURI_ENV_PLATFORM;
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -7,12 +10,17 @@ const nextConfig = {
   compress: true,
   poweredByHeader: false,
   
-  // Image optimization for Cloudflare
+  // Static export for Tauri desktop builds
+  output: isTauri ? 'export' : undefined,
+  
+  // Image optimization
   images: {
     formats: ['image/avif', 'image/webp'],
     deviceSizes: [360, 640, 768, 1024, 1280],
     imageSizes: [16, 32, 48, 64, 96, 128, 256],
     minimumCacheTTL: 60 * 60 * 24 * 30,
+    // Disable image optimization for static export
+    unoptimized: isTauri,
     remotePatterns: [
       {
         protocol: 'https',
@@ -21,8 +29,8 @@ const nextConfig = {
     ],
   },
   
-  // Security and PWA headers
-  headers: async () => [
+  // Security and PWA headers (not used in Tauri)
+  headers: isTauri ? undefined : async () => [
     {
       source: '/:path*',
       headers: [
@@ -35,7 +43,6 @@ const nextConfig = {
         { key: 'X-DNS-Prefetch-Control', value: 'on' },
       ],
     },
-    // Service Worker headers
     {
       source: '/sw.js',
       headers: [
@@ -43,7 +50,6 @@ const nextConfig = {
         { key: 'Service-Worker-Allowed', value: '/' },
       ],
     },
-    // Manifest headers
     {
       source: '/manifest.json',
       headers: [
@@ -53,7 +59,6 @@ const nextConfig = {
     },
   ],
   
-  // Webpack optimizations
   webpack: (config, { isServer }) => {
     if (!isServer) {
       config.resolve.fallback = {
@@ -63,7 +68,6 @@ const nextConfig = {
         path: false,
       };
       
-      // Optimize chunk splitting for PWA
       config.optimization = {
         ...config.optimization,
         moduleIds: 'deterministic',
@@ -83,8 +87,6 @@ const nextConfig = {
   },
   
   typescript: {
-    // Allow build to complete with type errors for Cloudflare deployment
-    // Type errors should be fixed separately
     ignoreBuildErrors: true,
   },
   
