@@ -11,7 +11,7 @@
  * - Tools loaded from ai_agent_tools table (via AgentConfigLoader)
  */
 
-import { BaseAgent, type AgentProcessParams, type AgentResponse } from '../core/base-agent.ts';
+import { BaseAgent, type AgentProcessParams, type AgentResponse } from './base-agent.ts';
 import { GeminiProvider } from '../core/providers/gemini.ts';
 import { logStructuredEvent } from '../../_shared/observability.ts';
 
