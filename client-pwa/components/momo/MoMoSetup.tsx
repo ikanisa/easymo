@@ -264,25 +264,37 @@ export function MoMoSetup({
       )}
 
       {/* Provider Info (auto-determined) */}
-      {selectedCountry && providerInfo && (
+      {selectedCountry && (
         <div className="space-y-2">
           <label className="block text-sm font-medium">Provider</label>
           <div className="p-4 rounded-xl bg-accent/50 border border-border">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-yellow-400 to-yellow-600 flex items-center justify-center">
-                <Smartphone className="w-5 h-5 text-white" />
+            {isLoading ? (
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-muted animate-pulse" />
+                <div className="flex-1">
+                  <div className="h-4 bg-muted rounded animate-pulse w-24 mb-2" />
+                  <div className="h-3 bg-muted rounded animate-pulse w-32" />
+                </div>
               </div>
-              <div>
-                <p className="font-semibold">{providerInfo.brand}</p>
-                <p className="text-xs text-muted-foreground">
-                  {providerInfo.provider}
+            ) : providerInfo ? (
+              <>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-yellow-400 to-yellow-600 flex items-center justify-center">
+                    <Smartphone className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <p className="font-semibold">{providerInfo.brand}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {providerInfo.provider}
+                    </p>
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
+                  <Info className="w-3 h-3" />
+                  Provider is determined by your selected country
                 </p>
-              </div>
-            </div>
-            <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
-              <Info className="w-3 h-3" />
-              Provider is determined by your selected country
-            </p>
+              </>
+            ) : null}
           </div>
         </div>
       )}
