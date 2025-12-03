@@ -118,7 +118,7 @@ export async function matchDriversForTrip(
   limit = 9,
   preferDropoff = false,
   radiusMeters?: number,
-  windowDays = 30,
+  windowDays = 2,  // 48-hour window to match DB default
 ) {
   const { data, error } = await client.rpc("match_drivers_for_trip_v2", {
     _trip_id: tripId,
@@ -137,7 +137,7 @@ export async function matchPassengersForTrip(
   limit = 9,
   preferDropoff = false,
   radiusMeters?: number,
-  windowDays = 30,
+  windowDays = 2,  // 48-hour window to match DB default
 ) {
   const { data, error } = await client.rpc("match_passengers_for_trip_v2", {
     _trip_id: tripId,
