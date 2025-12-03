@@ -67,7 +67,13 @@ export class AgentRegistry {
   }
 
   /**
-   * Create agent instance based on the 11 official agent types
+   * Create agent instance based on agent type.
+   * 
+   * Supports 9 canonical agent types (farmer, insurance, sales_cold_caller,
+   * rides, jobs, waiter, real_estate, support, buy_sell).
+   * 
+   * Legacy types (marketplace, business_broker) are resolved via ALIAS_MAP
+   * before reaching this method.
    */
   private createAgent(type: AgentType, correlationId: string): BaseAgent {
     const deps: AgentDependencies = {

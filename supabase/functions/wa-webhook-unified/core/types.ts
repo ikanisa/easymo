@@ -66,7 +66,14 @@ export interface UnifiedSession {
 // =====================================================
 
 /**
- * Official 10 agents matching production agent_registry database.
+ * Agent types supported by the unified webhook service.
+ * 
+ * Canonical types (11 total):
+ * - farmer, insurance, sales_cold_caller, rides, jobs, waiter, 
+ *   real_estate, marketplace, support, business_broker, buy_sell
+ * 
+ * Note: marketplace and business_broker are legacy types that alias to buy_sell
+ * in the AgentRegistry for backward compatibility.
  */
 export type AgentType =
   | "farmer"           // Farmer AI Agent
@@ -76,9 +83,9 @@ export type AgentType =
   | "jobs"             // Jobs AI Agent
   | "waiter"           // Waiter AI Agent
   | "real_estate"      // Real Estate AI Agent
-  | "marketplace"      // Marketplace AI Agent (includes pharmacy, hardware, shop)
+  | "marketplace"      // Marketplace AI Agent (legacy - aliases to buy_sell)
   | "support"          // Support AI Agent (includes concierge routing)
-  | "business_broker"  // Business Broker AI Agent (includes legal intake)
+  | "business_broker"  // Business Broker AI Agent (legacy - aliases to buy_sell)
   | "buy_sell";        // Buy & Sell Agent (consolidated marketplace + business_broker)
 
 export interface AgentDependencies {
