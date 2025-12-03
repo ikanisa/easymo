@@ -40,8 +40,8 @@ export async function transferTokens(
     };
   }
 
-  // Generate idempotency key for this transfer
-  const idempotencyKey = `transfer:${ctx.profileId}:${recipientPhone}:${amount}:${Date.now()}`;
+  // Generate idempotency key for this transfer using crypto.randomUUID()
+  const idempotencyKey = `transfer:${ctx.profileId}:${recipientPhone}:${amount}:${crypto.randomUUID()}`;
 
   try {
     // Find recipient using whatsapp_e164
@@ -88,7 +88,7 @@ export async function transferTokens(
       throw transferError;
     }
 
-    const row = Array.isArray(result) ? result[0] : result;
+    const row = Array.isArray(result) ? result[0] ?? null : result;
     
     if (row?.success) {
       // Notify both parties
